@@ -3,22 +3,45 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>IRFEN Perú v0.6</title>
+<title>IRFEN Perú v0.7</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
+:root{
+  --navy:#073a5f;
+  --blue:#0b6da8;
+  --bg:#f4f7fa;
+  --line:#d9e2ea;
+  --text:#17212b;
+  --muted:#687b8c;
+  --green:#2e8b57;
+  --yellow:#d2a000;
+  --orange:#e87917;
+  --red:#d34141;
+  --darkred:#7b1328;
+}
+
+*{
+  box-sizing:border-box;
+}
+
 body{
   margin:0;
-  font-family:Arial;
-  background:#f4f7fa;
-  color:#17212b;
+  font-family:Arial,Helvetica,sans-serif;
+  background:var(--bg);
+  color:var(--text);
 }
 
 header{
-  background:linear-gradient(120deg,#073a5f,#0b6da8);
-  color:white;
+  background:linear-gradient(120deg,var(--navy),var(--blue));
+  color:#fff;
   padding:26px 5vw;
+}
+
+header h1{
+  margin:0 0 6px;
+  font-size:34px;
 }
 
 .wrap{
@@ -27,9 +50,10 @@ header{
 
 .notice{
   background:#fff4cf;
-  border-left:5px solid #d2a000;
+  border-left:5px solid var(--yellow);
   padding:12px 14px;
   border-radius:8px;
+  line-height:1.45;
 }
 
 .toolbar{
@@ -40,10 +64,20 @@ header{
   margin:15px 0;
 }
 
+button,
+select{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:9px 12px;
+  cursor:pointer;
+}
+
 .meta{
   margin-left:auto;
-  color:#687b8c;
+  color:var(--muted);
   font-size:13px;
+  text-align:right;
 }
 
 .kpis{
@@ -56,9 +90,11 @@ header{
 .kpi,
 .panel,
 .card,
-.method{
-  background:white;
-  border:1px solid #d9e2ea;
+.method,
+.hist-card,
+.compare-card{
+  background:#fff;
+  border:1px solid var(--line);
   border-radius:12px;
 }
 
@@ -74,7 +110,7 @@ header{
 
 .small{
   font-size:12px;
-  color:#687b8c;
+  color:var(--muted);
 }
 
 .layout{
@@ -91,7 +127,7 @@ header{
   font-size:18px;
   margin:0;
   padding:14px;
-  border-bottom:1px solid #d9e2ea;
+  border-bottom:1px solid var(--line);
 }
 
 #map{
@@ -116,6 +152,7 @@ header{
   display:flex;
   justify-content:space-between;
   gap:12px;
+  align-items:flex-start;
 }
 
 .score{
@@ -156,6 +193,11 @@ header{
   color:#fff;
 }
 
+.neutral{
+  background:#e8eef4;
+  color:#3e5364;
+}
+
 .metrics{
   display:grid;
   grid-template-columns:repeat(3,1fr);
@@ -188,8 +230,8 @@ header{
 
 .tablepanel{
   overflow:auto;
-  background:white;
-  border:1px solid #d9e2ea;
+  background:#fff;
+  border:1px solid var(--line);
   border-radius:12px;
   margin-top:16px;
 }
@@ -203,7 +245,7 @@ table{
 th,
 td{
   padding:10px;
-  border-bottom:1px solid #d9e2ea;
+  border-bottom:1px solid var(--line);
   text-align:left;
   font-size:13px;
 }
@@ -216,19 +258,20 @@ th{
   display:flex;
   gap:8px;
   margin:18px 0 12px;
+  flex-wrap:wrap;
 }
 
 .tab{
   padding:9px 13px;
-  border:1px solid #d9e2ea;
+  border:1px solid var(--line);
   border-radius:999px;
-  background:white;
+  background:#fff;
   cursor:pointer;
 }
 
 .tab.active{
-  background:#073a5f;
-  color:white;
+  background:var(--navy);
+  color:#fff;
 }
 
 .section{
@@ -261,20 +304,132 @@ th{
 
 footer{
   margin-top:18px;
-  color:#687b8c;
+  color:var(--muted);
   font-size:12px;
+  line-height:1.45;
 }
 
-button{
-  background:white;
-  border:1px solid #d9e2ea;
+/* Histórico */
+
+.histnote{
+  background:#eef6fb;
+  border-left:4px solid #0b6da8;
+  padding:12px 14px;
   border-radius:8px;
-  padding:9px 12px;
-  cursor:pointer;
+  margin-bottom:14px;
+  line-height:1.45;
+}
+
+.histtoolbar{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+  margin-bottom:14px;
+}
+
+.histgrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+
+.histcard,
+.comparecard{
+  padding:16px;
+}
+
+.eventlist{
+  display:grid;
+  gap:10px;
+}
+
+.eventitem{
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:12px;
+  background:#fff;
+}
+
+.eventtop{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:flex-start;
+}
+
+.sourcechip{
+  display:inline-block;
+  padding:4px 7px;
+  border-radius:999px;
+  font-size:11px;
+  background:#eef3f7;
+  color:#42596a;
+}
+
+.raingrid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:7px;
+  margin-top:10px;
+}
+
+.rainbox{
+  background:#f7fafc;
+  border-radius:8px;
+  padding:8px;
+}
+
+.rainbox b{
+  display:block;
+  font-size:18px;
+}
+
+.spark{
+  height:90px;
+  display:flex;
+  align-items:end;
+  gap:3px;
+  border-bottom:1px solid #ccd6df;
+  margin-top:10px;
+}
+
+.sparkbar{
+  flex:1;
+  background:#2785bd;
+  min-height:2px;
+  border-radius:3px 3px 0 0;
+}
+
+.preimerg{
+  background:#faf7f0;
+  border-left:4px solid #a9792b;
+}
+
+.comparerow{
+  display:grid;
+  grid-template-columns:150px 1fr 70px;
+  gap:10px;
+  align-items:center;
+  margin:8px 0;
+}
+
+.comparetrack{
+  height:12px;
+  background:#e9eef2;
+  border-radius:999px;
+  overflow:hidden;
+}
+
+.comparefill{
+  height:100%;
+  background:#2785bd;
 }
 
 @media(max-width:1000px){
-  .layout{
+
+  .layout,
+  .histgrid{
     grid-template-columns:1fr;
   }
 
@@ -285,7 +440,9 @@ button{
   .meta{
     margin-left:0;
     width:100%;
+    text-align:left;
   }
+
 }
 </style>
 </head>
@@ -293,10 +450,10 @@ button{
 <body>
 
 <header>
-  <h1>IRFEN Perú <span style="font-weight:400">v0.6</span></h1>
+  <h1>IRFEN Perú <span style="font-weight:400">v0.7</span></h1>
   <div>
     Indicador rápido de prioridad hidrometeorológica ·
-    NASA IMERG + calibración SENAMHI
+    NASA IMERG + calibración histórica
   </div>
 </header>
 
@@ -307,31 +464,46 @@ button{
   </div>
 
   <div class="toolbar">
-    <button onclick="loadData()">Actualizar datos</button>
-    <button onclick="location.reload()">Recargar página</button>
+
+    <button onclick="loadAll()">
+      Actualizar datos
+    </button>
+
+    <button onclick="location.reload()">
+      Recargar página
+    </button>
 
     <div class="meta" id="meta"></div>
+
   </div>
 
   <div class="kpis">
 
     <div class="kpi">
-      <span class="small">Zonas evaluadas</span>
+      <span class="small">
+        Zonas evaluadas
+      </span>
       <b id="k1">—</b>
     </div>
 
     <div class="kpi">
-      <span class="small">Amenaza alta+</span>
+      <span class="small">
+        Amenaza alta+
+      </span>
       <b id="k2">—</b>
     </div>
 
     <div class="kpi">
-      <span class="small">Prioridad alta+</span>
+      <span class="small">
+        Prioridad alta+
+      </span>
       <b id="k3">—</b>
     </div>
 
     <div class="kpi">
-      <span class="small">Máxima prioridad</span>
+      <span class="small">
+        Máxima prioridad
+      </span>
       <b id="k4">—</b>
     </div>
 
@@ -341,6 +513,10 @@ button{
 
     <div class="tab active" data-tab="op">
       Operación diaria
+    </div>
+
+    <div class="tab" data-tab="hist">
+      Histórico y calibración
     </div>
 
     <div class="tab" data-tab="met">
@@ -355,7 +531,9 @@ button{
 
       <div class="panel">
 
-        <h2>Mapa de prioridad operativa</h2>
+        <h2>
+          Mapa de prioridad operativa
+        </h2>
 
         <div id="map"></div>
 
@@ -392,7 +570,9 @@ button{
 
       <div class="panel">
 
-        <h2>Resumen por zona</h2>
+        <h2>
+          Resumen por zona
+        </h2>
 
         <div id="cards" class="cards"></div>
 
@@ -405,6 +585,7 @@ button{
       <table>
 
         <thead>
+
           <tr>
             <th>Zona</th>
             <th>24h</th>
@@ -415,9 +596,104 @@ button{
             <th>Prioridad operativa</th>
             <th>Última observación</th>
           </tr>
+
         </thead>
 
         <tbody id="tbody"></tbody>
+
+      </table>
+
+    </div>
+
+  </section>
+
+  <section id="hist" class="section">
+
+    <div class="histnote">
+
+      Los eventos 1982–83 y 1997–98 se conservan como
+      <b>pre-IMERG</b>
+      y se sustentan con fuentes oficiales históricas.
+
+      Los eventos posteriores a 2000 pueden incorporar
+      <b>IMERG Final</b>.
+
+      Estos valores aún no equivalen a umbrales oficiales de activación.
+
+    </div>
+
+    <div class="histtoolbar">
+
+      <label>
+        <b>Zona:</b>
+      </label>
+
+      <select id="histZone"></select>
+
+      <span class="small" id="histCount"></span>
+
+    </div>
+
+    <div class="histgrid">
+
+      <div class="histcard">
+
+        <h3>
+          Eventos históricos
+        </h3>
+
+        <div id="eventList" class="eventlist"></div>
+
+      </div>
+
+      <div class="histcard">
+
+        <h3>
+          Comparación de acumulados IMERG Final
+        </h3>
+
+        <div
+          id="compare24"
+          class="comparecard"
+          style="margin-bottom:10px"
+        ></div>
+
+        <div
+          id="compare72"
+          class="comparecard"
+          style="margin-bottom:10px"
+        ></div>
+
+        <div
+          id="compare7d"
+          class="comparecard"
+        ></div>
+
+      </div>
+
+    </div>
+
+    <div class="tablepanel" style="margin-top:16px">
+
+      <table>
+
+        <thead>
+
+          <tr>
+            <th>Año</th>
+            <th>Evento</th>
+            <th>IMERG</th>
+            <th>24h</th>
+            <th>72h</th>
+            <th>7 días</th>
+            <th>Confianza</th>
+            <th>Fuente</th>
+            <th>Estado</th>
+          </tr>
+
+        </thead>
+
+        <tbody id="histTable"></tbody>
 
       </table>
 
@@ -429,41 +705,69 @@ button{
 
     <div class="method">
 
-      <h2>Metodología IRFEN v0.6</h2>
+      <h2>
+        Metodología IRFEN v0.7
+      </h2>
 
       <p>
-        <b>Amenaza actual:</b>
-        38% lluvia 24h + 30% lluvia 72h + 32% lluvia 7 días,
-        normalizadas frente a umbrales provisionales de cada zona.
+        <b>Operación diaria:</b>
+        la amenaza se calcula con 38% lluvia 24h +
+        30% lluvia 72h +
+        32% lluvia 7 días,
+        normalizadas frente a umbrales provisionales
+        de cada zona.
       </p>
 
       <p>
         <b>Impacto potencial:</b>
-        índice estructural 0–100 asociado a población e infraestructura
-        potencialmente expuesta.
+        índice estructural 0–100 asociado a población
+        e infraestructura potencialmente expuesta.
       </p>
 
       <p>
         <b>Prioridad operativa:</b>
         Amenaza × Impacto / 100.
-        Así una zona crítica estructuralmente no aparece en alerta
-        si hoy no existe amenaza hidrometeorológica suficiente.
       </p>
 
       <p>
-        <b>Escala:</b>
-        Baja 0–19 ·
-        Vigilancia 20–39 ·
-        Alta 40–59 ·
-        Muy alta 60–79 ·
-        Crítica 80–100.
+        <b>Histórico:</b>
+        se separan dos regímenes de evidencia:
+      </p>
+
+      <ul>
+
+        <li>
+          <b>Pre-IMERG:</b>
+          1982–83 y 1997–98,
+          sustentados por SENAMHI, ANA, INGEMMET,
+          CENEPRED/INDECI u otras fuentes oficiales.
+        </li>
+
+        <li>
+          <b>IMERG Final:</b>
+          eventos posteriores a junio de 2000
+          con estimaciones satelitales retrospectivas.
+        </li>
+
+      </ul>
+
+      <p>
+        <b>Objetivo de calibración:</b>
+        identificar combinaciones de lluvia
+        24h / 72h / 7 días
+        asociadas a activaciones observadas
+        y compararlas con días lluviosos sin evento
+        para reducir falsos positivos.
       </p>
 
       <p>
-        <b>Limitación actual:</b>
-        los umbrales y las áreas de muestreo siguen siendo preliminares;
-        la siguiente fase es usar polígonos reales de microcuencas
-        y calibración histórica SENAMHI.
+        <b>Limitación:</b>
+        las áreas espaciales de muestreo
+        siguen siendo aproximadas.
+
+        La siguiente fase científica es sustituirlas
+        por polígonos reales de microcuencas
+        y aplicar corrección y validación con SENAMHI.
       </p>
 
     </div>
@@ -471,8 +775,10 @@ button{
   </section>
 
   <footer>
+
     IRFEN es experimental y no sustituye avisos oficiales de
     SENAMHI, INDECI, CENEPRED, ANA o INGEMMET.
+
   </footer>
 
 </div>
@@ -501,10 +807,16 @@ const COORDS = {
 };
 
 
-let map = L.map('map').setView(
-  [-9.4,-77.4],
-  5
-);
+let latestData = null;
+let historyData = null;
+
+
+let map = L
+  .map('map')
+  .setView(
+    [-9.4,-77.4],
+    5
+  );
 
 
 L.tileLayer(
@@ -516,7 +828,9 @@ L.tileLayer(
 ).addTo(map);
 
 
-let layer = L.layerGroup().addTo(map);
+let layer =
+  L.layerGroup()
+  .addTo(map);
 
 
 function clamp(x){
@@ -639,15 +953,10 @@ function calc(z){
 
 
   return {
-
     threat,
-
     impact,
-
     priority,
-
     last
-
   };
 
 }
@@ -664,8 +973,8 @@ function bar(v,c){
       style="
         width:${Math.min(100,v)}%;
         background:${c}
-      ">
-    </div>
+      "
+    ></div>
 
   </div>
 
@@ -674,7 +983,11 @@ function bar(v,c){
 }
 
 
-function render(data){
+function renderLatest(data){
+
+  latestData =
+    data;
+
 
   document
     .getElementById('warning')
@@ -842,8 +1155,8 @@ function render(data){
 
 
           <div
-            style="margin-top:10px"
             class="small"
+            style="margin-top:10px"
           >
 
             Amenaza actual:
@@ -871,8 +1184,8 @@ function render(data){
 
 
           <div
-            style="margin-top:9px"
             class="small"
+            style="margin-top:9px"
           >
 
             Impacto potencial:
@@ -1056,6 +1369,7 @@ function render(data){
 
 
   rows.forEach(
+
     z => {
 
       let c =
@@ -1130,32 +1444,677 @@ function render(data){
 }
 
 
-async function loadData(){
+function histEvents(d){
+
+  if(
+    Array.isArray(d)
+  )
+    return d;
+
+
+  if(
+    Array.isArray(
+      d.events
+    )
+  )
+    return d.events;
+
+
+  if(
+    d.history &&
+    Array.isArray(
+      d.history
+    )
+  )
+    return d.history;
+
+
+  return [];
+
+}
+
+
+function zoneLabel(id){
+
+  return (
+
+    {
+
+      chosica:
+        'Chosica / Huaycoloro',
+
+      san_ildefonso:
+        'Quebrada San Ildefonso',
+
+      catacaos:
+        'Catacaos / Bajo Piura'
+
+    }
+
+  )[id] || id;
+
+}
+
+
+function spark(series){
+
+  if(
+    !Array.isArray(series)
+    ||
+    !series.length
+  )
+    return '';
+
+
+  let vals =
+
+    series.map(
+      x =>
+      Number(
+        x.rain_mm
+      ) || 0
+    );
+
+
+  let mx =
+
+    Math.max(
+      1,
+      ...vals
+    );
+
+
+  return `
+
+  <div class="spark">
+
+    ${
+      vals.map(
+
+        (v,i) =>
+
+        `<div
+
+          class="sparkbar"
+
+          title="
+            ${series[i].date}:
+            ${v} mm
+          "
+
+          style="
+            height:
+            ${
+              Math.max(
+                2,
+                Math.round(
+                  v /
+                  mx *
+                  85
+                )
+              )
+            }px
+          "
+
+        ></div>`
+
+      ).join('')
+    }
+
+  </div>
+
+  `;
+
+}
+
+
+function compareHTML(
+  events,
+  key,
+  title
+){
+
+  let a =
+
+    events
+
+    .filter(
+      e =>
+      Number.isFinite(
+        Number(
+          e[key]
+        )
+      )
+    )
+
+    .map(
+      e => ({
+        ...e,
+        val:
+          Number(
+            e[key]
+          )
+      })
+    )
+
+    .sort(
+      (x,y) =>
+      y.val -
+      x.val
+    );
+
+
+  if(
+    !a.length
+  )
+
+    return `
+
+    <b>
+      ${title}
+    </b>
+
+    <div class="small">
+      Sin datos comparables.
+    </div>
+
+    `;
+
+
+  let mx =
+
+    Math.max(
+      ...a.map(
+        x =>
+        x.val
+      ),
+      1
+    );
+
+
+  return `
+
+  <b>
+    ${title}
+  </b>
+
+  ${
+    a.map(
+
+      e => `
+
+      <div class="comparerow">
+
+        <div class="small">
+          ${e.year || ''}
+          ${e.id || ''}
+        </div>
+
+        <div class="comparetrack">
+
+          <div
+            class="comparefill"
+            style="
+              width:
+              ${
+                Math.max(
+                  2,
+                  e.val /
+                  mx *
+                  100
+                )
+              }%
+            "
+          ></div>
+
+        </div>
+
+        <div>
+
+          <b>
+            ${e.val.toFixed(2)}
+          </b>
+
+          mm
+
+        </div>
+
+      </div>
+
+      `
+
+    ).join('')
+  }
+
+  `;
+
+}
+
+
+function renderHistory(){
+
+  let all =
+    histEvents(
+      historyData
+    );
+
+
+  let zid =
+    document
+      .getElementById(
+        'histZone'
+      )
+      .value;
+
+
+  let ev =
+
+    all
+
+    .filter(
+      e =>
+      e.zone_id === zid
+    )
+
+    .sort(
+      (a,b) =>
+      (a.year || 0)
+      -
+      (b.year || 0)
+    );
+
+
+  document
+    .getElementById(
+      'histCount'
+    )
+    .textContent =
+
+    `${ev.length} eventos registrados`;
+
+
+  document
+    .getElementById(
+      'eventList'
+    )
+    .innerHTML =
+
+    ev.map(
+
+      e => `
+
+      <div
+        class="
+          eventitem
+          ${
+            e.imerg === false
+            ?
+            'preimerg'
+            :
+            ''
+          }
+        "
+      >
+
+        <div class="eventtop">
+
+          <div>
+
+            <b>
+
+              ${e.year || ''}
+
+              ·
+
+              ${e.event || e.id || 'Evento'}
+
+            </b>
+
+            <div class="small">
+
+              ${
+                e.date
+                ||
+                'Fecha exacta pendiente'
+              }
+
+            </div>
+
+          </div>
+
+
+          <span class="sourcechip">
+
+            ${
+              e.imerg
+
+              ?
+
+              'IMERG Final'
+
+              :
+
+              'Pre-IMERG'
+            }
+
+          </span>
+
+        </div>
+
+
+        ${
+          (
+            e.rain24 != null
+            ||
+            e.rain72 != null
+            ||
+            e.rain7d != null
+          )
+
+          ?
+
+          `
+
+          <div class="raingrid">
+
+            <div class="rainbox">
+
+              <span class="small">
+                24h
+              </span>
+
+              <b>
+                ${e.rain24 ?? '—'} mm
+              </b>
+
+            </div>
+
+
+            <div class="rainbox">
+
+              <span class="small">
+                72h
+              </span>
+
+              <b>
+                ${e.rain72 ?? '—'} mm
+              </b>
+
+            </div>
+
+
+            <div class="rainbox">
+
+              <span class="small">
+                7 días
+              </span>
+
+              <b>
+                ${e.rain7d ?? '—'} mm
+              </b>
+
+            </div>
+
+          </div>
+
+          `
+
+          :
+
+          ''
+        }
+
+
+        ${spark(e.series)}
+
+
+        <div
+          class="small"
+          style="margin-top:8px"
+        >
+
+          Fuente:
+
+          <b>
+            ${e.source || '—'}
+          </b>
+
+          ·
+
+          Confianza:
+
+          <b>
+            ${e.confidence || '—'}
+          </b>
+
+          <br>
+
+          Estado:
+
+          ${e.status || '—'}
+
+        </div>
+
+      </div>
+
+      `
+
+    ).join('')
+
+    ||
+
+    '<div class="small">No hay eventos para esta zona.</div>';
+
+
+  document
+    .getElementById(
+      'compare24'
+    )
+    .innerHTML =
+
+    compareHTML(
+      ev,
+      'rain24',
+      'Lluvia 24h'
+    );
+
+
+  document
+    .getElementById(
+      'compare72'
+    )
+    .innerHTML =
+
+    compareHTML(
+      ev,
+      'rain72',
+      'Lluvia 72h'
+    );
+
+
+  document
+    .getElementById(
+      'compare7d'
+    )
+    .innerHTML =
+
+    compareHTML(
+      ev,
+      'rain7d',
+      'Lluvia 7 días'
+    );
+
+
+  document
+    .getElementById(
+      'histTable'
+    )
+    .innerHTML =
+
+    ev.map(
+
+      e => `
+
+      <tr>
+
+        <td>
+          ${e.year || '—'}
+        </td>
+
+        <td>
+          ${e.event || e.id || '—'}
+        </td>
+
+        <td>
+          ${e.imerg ? 'Sí' : 'No'}
+        </td>
+
+        <td>
+          ${e.rain24 ?? '—'}
+        </td>
+
+        <td>
+          ${e.rain72 ?? '—'}
+        </td>
+
+        <td>
+          ${e.rain7d ?? '—'}
+        </td>
+
+        <td>
+          ${e.confidence || '—'}
+        </td>
+
+        <td>
+          ${e.source || '—'}
+        </td>
+
+        <td>
+          ${e.status || '—'}
+        </td>
+
+      </tr>
+
+      `
+
+    ).join('');
+
+}
+
+
+function initHistory(d){
+
+  historyData =
+    d;
+
+
+  let all =
+    histEvents(d);
+
+
+  let zones =
+
+    [
+      ...new Set(
+        all
+        .map(
+          e =>
+          e.zone_id
+        )
+        .filter(Boolean)
+      )
+    ];
+
+
+  let selector =
+    document
+    .getElementById(
+      'histZone'
+    );
+
+
+  selector.innerHTML =
+
+    zones.map(
+
+      z =>
+
+      `<option value="${z}">
+        ${zoneLabel(z)}
+      </option>`
+
+    ).join('');
+
+
+  selector.onchange =
+    renderHistory;
+
+
+  renderHistory();
+
+}
+
+
+async function loadAll(){
 
   try{
 
-    let r =
+    const [
+      latestResponse,
+      historyResponse
+    ] =
 
-      await fetch(
+    await Promise.all([
+
+      fetch(
         'data/latest.json?t='
         +
         Date.now()
+      ),
+
+      fetch(
+        'data/history.json?t='
+        +
+        Date.now()
+      )
+
+    ]);
+
+
+    if(
+      !latestResponse.ok
+    )
+      throw new Error(
+        'latest.json HTTP '
+        +
+        latestResponse.status
       );
 
 
-    render(
-      await r.json()
+    renderLatest(
+      await latestResponse.json()
     );
+
+
+    if(
+      historyResponse.ok
+    )
+
+      initHistory(
+        await historyResponse.json()
+      );
 
   }
 
   catch(e){
 
     document
-      .getElementById('warning')
+      .getElementById(
+        'warning'
+      )
       .textContent =
 
-      'No se pudo cargar latest.json: '
+      'Error cargando datos: '
       +
       e;
 
@@ -1165,7 +2124,9 @@ async function loadData(){
 
 
 document
-  .querySelectorAll('.tab')
+  .querySelectorAll(
+    '.tab'
+  )
   .forEach(
 
     t =>
@@ -1173,7 +2134,9 @@ document
     t.onclick = () => {
 
       document
-        .querySelectorAll('.tab')
+        .querySelectorAll(
+          '.tab'
+        )
         .forEach(
           x =>
           x.classList.remove(
@@ -1183,7 +2146,9 @@ document
 
 
       document
-        .querySelectorAll('.section')
+        .querySelectorAll(
+          '.section'
+        )
         .forEach(
           x =>
           x.classList.remove(
@@ -1221,7 +2186,7 @@ document
   );
 
 
-loadData();
+loadAll();
 
 </script>
 
