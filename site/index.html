@@ -1,4 +1,1229 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>IRFEN Perú v0.5</title>
-<style>:root{--navy:#06395f;--blue:#0b69a3;--bg:#f4f7fa;--line:#d9e1e8;--text:#17212b;--muted:#66788a}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Arial,sans-serif;color:var(--text)}header{background:linear-gradient(120deg,#06395f,#0b69a3);color:#fff;padding:28px 5vw}header h1{margin:0 0 7px}.sub{opacity:.9}.wrap{padding:20px 5vw 45px}.alert{background:#fff3cd;border-left:5px solid #d89a00;padding:12px 15px;border-radius:7px;margin-bottom:17px}.toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:15px}button{padding:9px 12px;border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer}.meta{margin-left:auto;color:var(--muted);font-size:13px}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:0 2px 10px #0011220b}.score{font-size:34px;font-weight:800;margin:10px 0 3px}.small{font-size:12px;color:var(--muted)}.badge{display:inline-block;padding:5px 9px;border-radius:999px;font-weight:700;font-size:12px}.low{background:#dff3e5;color:#1d6539}.medium{background:#fff0b5;color:#715700}.high{background:#ffd6a0;color:#844000}.very{background:#ffc3c3;color:#891c1c}.critical{background:#711427;color:#fff}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:12px}.metric{background:#f7fafc;border-radius:8px;padding:8px}.metric b{display:block;font-size:18px}.chart{height:90px;display:flex;align-items:end;gap:3px;margin-top:10px;border-bottom:1px solid #ccd6df}.bar{flex:1;background:#2785bd;min-height:2px;border-radius:3px 3px 0 0}table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;margin-top:17px}th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}th{background:#eaf1f6}footer{padding-top:20px;color:var(--muted);font-size:12px}@media(max-width:900px){.cards{grid-template-columns:1fr}.meta{margin-left:0;width:100%}}</style></head>
-<body><header><h1>IRFEN Perú <span style="font-weight:400">v0.5</span></h1><div class="sub">Indicador rápido de prioridad hidrometeorológica · NASA IMERG + calibración SENAMHI</div></header><div class="wrap"><div id="warning" class="alert">Cargando datos…</div><div class="toolbar"><button onclick="load()">Actualizar</button><span class="meta" id="meta"></span></div><div class="cards" id="cards"></div><table><thead><tr><th>Zona</th><th>24 h</th><th>72 h</th><th>7 días</th><th>Activación</th><th>Impacto</th><th>Prioridad</th></tr></thead><tbody id="tbody"></tbody></table><footer>IRFEN es una herramienta experimental de apoyo a priorización. No constituye un aviso oficial ni sustituye productos de SENAMHI, INDECI, CENEPRED, ANA o INGEMMET. Las áreas de muestreo y umbrales de v0.5 son provisionales.</footer></div>
-<script>function clamp(x){return Math.max(0,Math.min(1.35,x||0))}function state(v){if(v>=85)return['Crítico','critical'];if(v>=70)return['Muy alto','very'];if(v>=50)return['Alto','high'];if(v>=30)return['Medio','medium'];return['Bajo','low']}function calc(z){const t=z.thresholds_provisional||{};const a=100*(.38*clamp((z.rain24||0)/t.rain24)+.30*clamp((z.rain72||0)/t.rain72)+.32*clamp((z.rain7d||0)/t.rain7d))/1.35;const activation=Math.round(a);const priority=Math.round(.60*activation+.40*z.impact_score);return{activation,priority}}function bars(series){let vals=(series||[]).map(x=>x.rain_mm||0),mx=Math.max(1,...vals);return `<div class="chart">${vals.map(v=>`<div class="bar" title="${v} mm" style="height:${Math.max(2,Math.round(v/mx*85))}px"></div>`).join('')}</div>`}function render(d){document.getElementById('warning').textContent=d.warning||'';document.getElementById('meta').textContent=`${d.source||''} · ${d.product||''} ${d.product_version||''} · ${new Date(d.generated_at).toLocaleString()}`;let rows=(d.zones||[]).map(z=>({...z,...calc(z)})).sort((a,b)=>b.priority-a.priority);document.getElementById('cards').innerHTML=rows.map(z=>{let s=state(z.priority);return `<div class="card"><div class="small">${z.region} · ${z.hazard}</div><h3>${z.name}</h3><div class="score">${z.priority}<span class="small"> /100</span></div><span class="badge ${s[1]}">${s[0]}</span><div class="metrics"><div class="metric"><span class="small">24 h</span><b>${z.rain24??'—'} mm</b></div><div class="metric"><span class="small">72 h</span><b>${z.rain72??'—'} mm</b></div><div class="metric"><span class="small">7 días</span><b>${z.rain7d??'—'} mm</b></div></div>${bars(z.series)}<div class="small">Activación ${z.activation}/100 · Impacto ${z.impact_score}/100 · ${z.days_available||0} días disponibles</div></div>`}).join('');document.getElementById('tbody').innerHTML=rows.map(z=>{let s=state(z.priority);return `<tr><td><b>${z.name}</b><br><span class="small">${z.region}</span></td><td>${z.rain24??'—'}</td><td>${z.rain72??'—'}</td><td>${z.rain7d??'—'}</td><td>${z.activation}</td><td>${z.impact_score}</td><td><span class="badge ${s[1]}">${s[0]} ${z.priority}</span></td></tr>`}).join('')}async function load(){try{let r=await fetch('data/latest.json?t='+Date.now());if(!r.ok)throw new Error(r.status);render(await r.json())}catch(e){document.getElementById('warning').textContent='No se pudo cargar latest.json: '+e}}load();</script></body></html>
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IRFEN Perú v0.6</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  background:#f4f7fa;
+  color:#17212b;
+}
+
+header{
+  background:linear-gradient(120deg,#073a5f,#0b6da8);
+  color:white;
+  padding:26px 5vw;
+}
+
+.wrap{
+  padding:20px 5vw 45px;
+}
+
+.notice{
+  background:#fff4cf;
+  border-left:5px solid #d2a000;
+  padding:12px 14px;
+  border-radius:8px;
+}
+
+.toolbar{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+  margin:15px 0;
+}
+
+.meta{
+  margin-left:auto;
+  color:#687b8c;
+  font-size:13px;
+}
+
+.kpis{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin-bottom:16px;
+}
+
+.kpi,
+.panel,
+.card,
+.method{
+  background:white;
+  border:1px solid #d9e2ea;
+  border-radius:12px;
+}
+
+.kpi{
+  padding:12px;
+}
+
+.kpi b{
+  display:block;
+  font-size:24px;
+  margin-top:4px;
+}
+
+.small{
+  font-size:12px;
+  color:#687b8c;
+}
+
+.layout{
+  display:grid;
+  grid-template-columns:1.25fr .95fr;
+  gap:16px;
+}
+
+.panel{
+  overflow:hidden;
+}
+
+.panel h2{
+  font-size:18px;
+  margin:0;
+  padding:14px;
+  border-bottom:1px solid #d9e2ea;
+}
+
+#map{
+  height:450px;
+}
+
+.cards{
+  padding:12px;
+  display:grid;
+  gap:12px;
+}
+
+.card{
+  padding:13px;
+}
+
+.card h3{
+  margin:4px 0 8px;
+}
+
+.row{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.score{
+  font-size:30px;
+  font-weight:800;
+}
+
+.badge{
+  display:inline-block;
+  padding:5px 9px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:800;
+}
+
+.low{
+  background:#dff3e5;
+  color:#1d6539;
+}
+
+.watch{
+  background:#fff0b5;
+  color:#715700;
+}
+
+.high{
+  background:#ffd7ab;
+  color:#7d3e00;
+}
+
+.very{
+  background:#ffc4c4;
+  color:#8b1919;
+}
+
+.critical{
+  background:#731326;
+  color:#fff;
+}
+
+.metrics{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:7px;
+  margin-top:10px;
+}
+
+.metric{
+  background:#f6f9fb;
+  border-radius:8px;
+  padding:8px;
+}
+
+.metric b{
+  display:block;
+  font-size:17px;
+}
+
+.barwrap{
+  height:8px;
+  background:#e9eef2;
+  border-radius:999px;
+  overflow:hidden;
+  margin-top:5px;
+}
+
+.bar{
+  height:100%;
+}
+
+.tablepanel{
+  overflow:auto;
+  background:white;
+  border:1px solid #d9e2ea;
+  border-radius:12px;
+  margin-top:16px;
+}
+
+table{
+  border-collapse:collapse;
+  width:100%;
+  min-width:900px;
+}
+
+th,
+td{
+  padding:10px;
+  border-bottom:1px solid #d9e2ea;
+  text-align:left;
+  font-size:13px;
+}
+
+th{
+  background:#eaf1f6;
+}
+
+.tabs{
+  display:flex;
+  gap:8px;
+  margin:18px 0 12px;
+}
+
+.tab{
+  padding:9px 13px;
+  border:1px solid #d9e2ea;
+  border-radius:999px;
+  background:white;
+  cursor:pointer;
+}
+
+.tab.active{
+  background:#073a5f;
+  color:white;
+}
+
+.section{
+  display:none;
+}
+
+.section.active{
+  display:block;
+}
+
+.method{
+  padding:18px;
+  line-height:1.55;
+}
+
+.legend{
+  padding:10px 14px;
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+.dot{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  display:inline-block;
+  margin-right:5px;
+}
+
+footer{
+  margin-top:18px;
+  color:#687b8c;
+  font-size:12px;
+}
+
+button{
+  background:white;
+  border:1px solid #d9e2ea;
+  border-radius:8px;
+  padding:9px 12px;
+  cursor:pointer;
+}
+
+@media(max-width:1000px){
+  .layout{
+    grid-template-columns:1fr;
+  }
+
+  .kpis{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .meta{
+    margin-left:0;
+    width:100%;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>IRFEN Perú <span style="font-weight:400">v0.6</span></h1>
+  <div>
+    Indicador rápido de prioridad hidrometeorológica ·
+    NASA IMERG + calibración SENAMHI
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div id="warning" class="notice">
+    Cargando datos...
+  </div>
+
+  <div class="toolbar">
+    <button onclick="loadData()">Actualizar datos</button>
+    <button onclick="location.reload()">Recargar página</button>
+
+    <div class="meta" id="meta"></div>
+  </div>
+
+  <div class="kpis">
+
+    <div class="kpi">
+      <span class="small">Zonas evaluadas</span>
+      <b id="k1">—</b>
+    </div>
+
+    <div class="kpi">
+      <span class="small">Amenaza alta+</span>
+      <b id="k2">—</b>
+    </div>
+
+    <div class="kpi">
+      <span class="small">Prioridad alta+</span>
+      <b id="k3">—</b>
+    </div>
+
+    <div class="kpi">
+      <span class="small">Máxima prioridad</span>
+      <b id="k4">—</b>
+    </div>
+
+  </div>
+
+  <div class="tabs">
+
+    <div class="tab active" data-tab="op">
+      Operación diaria
+    </div>
+
+    <div class="tab" data-tab="met">
+      Metodología
+    </div>
+
+  </div>
+
+  <section id="op" class="section active">
+
+    <div class="layout">
+
+      <div class="panel">
+
+        <h2>Mapa de prioridad operativa</h2>
+
+        <div id="map"></div>
+
+        <div class="legend">
+
+          <span>
+            <i class="dot" style="background:#2e8b57"></i>
+            Baja
+          </span>
+
+          <span>
+            <i class="dot" style="background:#d2a000"></i>
+            Vigilancia
+          </span>
+
+          <span>
+            <i class="dot" style="background:#e87917"></i>
+            Alta
+          </span>
+
+          <span>
+            <i class="dot" style="background:#d34141"></i>
+            Muy alta
+          </span>
+
+          <span>
+            <i class="dot" style="background:#7b1328"></i>
+            Crítica
+          </span>
+
+        </div>
+
+      </div>
+
+      <div class="panel">
+
+        <h2>Resumen por zona</h2>
+
+        <div id="cards" class="cards"></div>
+
+      </div>
+
+    </div>
+
+    <div class="tablepanel">
+
+      <table>
+
+        <thead>
+          <tr>
+            <th>Zona</th>
+            <th>24h</th>
+            <th>72h</th>
+            <th>7 días</th>
+            <th>Amenaza actual</th>
+            <th>Impacto potencial</th>
+            <th>Prioridad operativa</th>
+            <th>Última observación</th>
+          </tr>
+        </thead>
+
+        <tbody id="tbody"></tbody>
+
+      </table>
+
+    </div>
+
+  </section>
+
+  <section id="met" class="section">
+
+    <div class="method">
+
+      <h2>Metodología IRFEN v0.6</h2>
+
+      <p>
+        <b>Amenaza actual:</b>
+        38% lluvia 24h + 30% lluvia 72h + 32% lluvia 7 días,
+        normalizadas frente a umbrales provisionales de cada zona.
+      </p>
+
+      <p>
+        <b>Impacto potencial:</b>
+        índice estructural 0–100 asociado a población e infraestructura
+        potencialmente expuesta.
+      </p>
+
+      <p>
+        <b>Prioridad operativa:</b>
+        Amenaza × Impacto / 100.
+        Así una zona crítica estructuralmente no aparece en alerta
+        si hoy no existe amenaza hidrometeorológica suficiente.
+      </p>
+
+      <p>
+        <b>Escala:</b>
+        Baja 0–19 ·
+        Vigilancia 20–39 ·
+        Alta 40–59 ·
+        Muy alta 60–79 ·
+        Crítica 80–100.
+      </p>
+
+      <p>
+        <b>Limitación actual:</b>
+        los umbrales y las áreas de muestreo siguen siendo preliminares;
+        la siguiente fase es usar polígonos reales de microcuencas
+        y calibración histórica SENAMHI.
+      </p>
+
+    </div>
+
+  </section>
+
+  <footer>
+    IRFEN es experimental y no sustituye avisos oficiales de
+    SENAMHI, INDECI, CENEPRED, ANA o INGEMMET.
+  </footer>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+
+const COORDS = {
+
+  san_ildefonso:[
+    -8.1095,
+    -79.0335
+  ],
+
+  chosica:[
+    -11.936,
+    -76.697
+  ],
+
+  catacaos:[
+    -5.2648,
+    -80.6794
+  ]
+
+};
+
+
+let map = L.map('map').setView(
+  [-9.4,-77.4],
+  5
+);
+
+
+L.tileLayer(
+  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  {
+    maxZoom:18,
+    attribution:'&copy; OpenStreetMap contributors'
+  }
+).addTo(map);
+
+
+let layer = L.layerGroup().addTo(map);
+
+
+function clamp(x){
+
+  return Math.max(
+    0,
+    Math.min(
+      1.35,
+      Number(x) || 0
+    )
+  );
+
+}
+
+
+function cls(v){
+
+  if(v >= 80)
+    return [
+      'Crítica',
+      'critical',
+      '#7b1328'
+    ];
+
+  if(v >= 60)
+    return [
+      'Muy alta',
+      'very',
+      '#d34141'
+    ];
+
+  if(v >= 40)
+    return [
+      'Alta',
+      'high',
+      '#e87917'
+    ];
+
+  if(v >= 20)
+    return [
+      'Vigilancia',
+      'watch',
+      '#d2a000'
+    ];
+
+  return [
+    'Baja',
+    'low',
+    '#2e8b57'
+  ];
+
+}
+
+
+function calc(z){
+
+  let t =
+    z.thresholds_provisional || {};
+
+
+  let a =
+    100 * (
+
+      .38 *
+      clamp(
+        (z.rain24 || 0) /
+        t.rain24
+      )
+
+      +
+
+      .30 *
+      clamp(
+        (z.rain72 || 0) /
+        t.rain72
+      )
+
+      +
+
+      .32 *
+      clamp(
+        (z.rain7d || 0) /
+        t.rain7d
+      )
+
+    ) / 1.35;
+
+
+  let threat =
+    Math.round(a);
+
+
+  let impact =
+    Number(
+      z.impact_score || 0
+    );
+
+
+  let priority =
+    Math.round(
+      threat *
+      impact /
+      100
+    );
+
+
+  let last =
+
+    (z.series || []).length
+
+    ?
+
+    z.series[
+      z.series.length - 1
+    ].date
+
+    :
+
+    null;
+
+
+  return {
+
+    threat,
+
+    impact,
+
+    priority,
+
+    last
+
+  };
+
+}
+
+
+function bar(v,c){
+
+  return `
+
+  <div class="barwrap">
+
+    <div
+      class="bar"
+      style="
+        width:${Math.min(100,v)}%;
+        background:${c}
+      ">
+    </div>
+
+  </div>
+
+  `;
+
+}
+
+
+function render(data){
+
+  document
+    .getElementById('warning')
+    .textContent =
+    data.warning || '';
+
+
+  document
+    .getElementById('meta')
+    .innerHTML =
+
+    `<b>
+      ${data.source || ''}
+    </b>
+
+    ·
+    ${data.product || ''}
+    ${data.product_version || ''}
+
+    <br>
+
+    ${
+      data.generated_at
+
+      ?
+
+      new Date(
+        data.generated_at
+      ).toLocaleString()
+
+      :
+
+      'sin fecha'
+    }`;
+
+
+  let rows =
+
+    (data.zones || [])
+
+    .map(
+      z => ({
+        ...z,
+        ...calc(z)
+      })
+    )
+
+    .sort(
+      (a,b) =>
+      b.priority -
+      a.priority
+    );
+
+
+  document
+    .getElementById('k1')
+    .textContent =
+    rows.length;
+
+
+  document
+    .getElementById('k2')
+    .textContent =
+
+    rows.filter(
+      x =>
+      x.threat >= 40
+    ).length;
+
+
+  document
+    .getElementById('k3')
+    .textContent =
+
+    rows.filter(
+      x =>
+      x.priority >= 40
+    ).length;
+
+
+  document
+    .getElementById('k4')
+    .textContent =
+
+    rows.length
+
+    ?
+
+    Math.max(
+      ...rows.map(
+        x =>
+        x.priority
+      )
+    ) + '/100'
+
+    :
+
+    '—';
+
+
+  document
+    .getElementById('cards')
+    .innerHTML =
+
+    rows.map(
+      z => {
+
+        let p =
+          cls(
+            z.priority
+          );
+
+        let a =
+          cls(
+            z.threat
+          );
+
+
+        return `
+
+        <div class="card">
+
+          <div class="small">
+
+            ${z.region}
+
+            ·
+
+            ${z.hazard}
+
+          </div>
+
+
+          <div class="row">
+
+            <div>
+
+              <h3>
+                ${z.name}
+              </h3>
+
+              <span
+                class="badge ${p[1]}"
+              >
+
+                Prioridad
+                ${p[0]}
+
+              </span>
+
+            </div>
+
+
+            <div class="score">
+
+              ${z.priority}
+
+              <span class="small">
+                /100
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div
+            style="margin-top:10px"
+            class="small"
+          >
+
+            Amenaza actual:
+
+            <b
+              style="
+                color:${a[2]}
+              "
+            >
+
+              ${a[0]}
+
+              ·
+
+              ${z.threat}/100
+
+            </b>
+
+            ${bar(
+              z.threat,
+              a[2]
+            )}
+
+          </div>
+
+
+          <div
+            style="margin-top:9px"
+            class="small"
+          >
+
+            Impacto potencial:
+
+            <b>
+              ${z.impact}/100
+            </b>
+
+            ${bar(
+              z.impact,
+              '#66788a'
+            )}
+
+          </div>
+
+
+          <div class="metrics">
+
+            <div class="metric">
+
+              <span class="small">
+                24h
+              </span>
+
+              <b>
+                ${z.rain24 ?? '—'} mm
+              </b>
+
+            </div>
+
+
+            <div class="metric">
+
+              <span class="small">
+                72h
+              </span>
+
+              <b>
+                ${z.rain72 ?? '—'} mm
+              </b>
+
+            </div>
+
+
+            <div class="metric">
+
+              <span class="small">
+                7 días
+              </span>
+
+              <b>
+                ${z.rain7d ?? '—'} mm
+              </b>
+
+            </div>
+
+          </div>
+
+
+          <div
+            class="small"
+            style="margin-top:8px"
+          >
+
+            Última observación:
+
+            ${z.last || '—'}
+
+          </div>
+
+        </div>
+
+        `;
+
+      }
+
+    ).join('');
+
+
+  document
+    .getElementById('tbody')
+    .innerHTML =
+
+    rows.map(
+      z => {
+
+        let a =
+          cls(
+            z.threat
+          );
+
+        let p =
+          cls(
+            z.priority
+          );
+
+
+        return `
+
+        <tr>
+
+          <td>
+
+            <b>
+              ${z.name}
+            </b>
+
+            <br>
+
+            <span class="small">
+              ${z.region}
+            </span>
+
+          </td>
+
+
+          <td>
+            ${z.rain24 ?? '—'} mm
+          </td>
+
+
+          <td>
+            ${z.rain72 ?? '—'} mm
+          </td>
+
+
+          <td>
+            ${z.rain7d ?? '—'} mm
+          </td>
+
+
+          <td>
+
+            <span
+              class="badge ${a[1]}"
+            >
+
+              ${a[0]}
+
+              ${z.threat}
+
+            </span>
+
+          </td>
+
+
+          <td>
+            ${z.impact}/100
+          </td>
+
+
+          <td>
+
+            <span
+              class="badge ${p[1]}"
+            >
+
+              ${p[0]}
+
+              ${z.priority}
+
+            </span>
+
+          </td>
+
+
+          <td>
+            ${z.last || '—'}
+          </td>
+
+        </tr>
+
+        `;
+
+      }
+
+    ).join('');
+
+
+  layer.clearLayers();
+
+
+  rows.forEach(
+    z => {
+
+      let c =
+        COORDS[
+          z.id
+        ];
+
+
+      if(!c)
+        return;
+
+
+      let p =
+        cls(
+          z.priority
+        );
+
+
+      let m =
+
+        L.circleMarker(
+          c,
+          {
+
+            radius:11,
+
+            fillColor:p[2],
+
+            color:'#fff',
+
+            weight:2,
+
+            fillOpacity:.92
+
+          }
+
+        ).addTo(
+          layer
+        );
+
+
+      m.bindPopup(
+
+        `<b>
+          ${z.name}
+        </b>
+
+        <br>
+
+        Amenaza
+        ${z.threat}/100
+
+        <br>
+
+        Impacto
+        ${z.impact}/100
+
+        <br>
+
+        Prioridad
+        ${z.priority}/100
+
+        ·
+        ${p[0]}`
+
+      );
+
+    }
+
+  );
+
+}
+
+
+async function loadData(){
+
+  try{
+
+    let r =
+
+      await fetch(
+        'data/latest.json?t='
+        +
+        Date.now()
+      );
+
+
+    render(
+      await r.json()
+    );
+
+  }
+
+  catch(e){
+
+    document
+      .getElementById('warning')
+      .textContent =
+
+      'No se pudo cargar latest.json: '
+      +
+      e;
+
+  }
+
+}
+
+
+document
+  .querySelectorAll('.tab')
+  .forEach(
+
+    t =>
+
+    t.onclick = () => {
+
+      document
+        .querySelectorAll('.tab')
+        .forEach(
+          x =>
+          x.classList.remove(
+            'active'
+          )
+        );
+
+
+      document
+        .querySelectorAll('.section')
+        .forEach(
+          x =>
+          x.classList.remove(
+            'active'
+          )
+        );
+
+
+      t.classList.add(
+        'active'
+      );
+
+
+      document
+        .getElementById(
+          t.dataset.tab
+        )
+        .classList.add(
+          'active'
+        );
+
+
+      if(
+        t.dataset.tab === 'op'
+      )
+
+        setTimeout(
+          () =>
+          map.invalidateSize(),
+          100
+        );
+
+    }
+
+  );
+
+
+loadData();
+
+</script>
+
+</body>
+</html>
