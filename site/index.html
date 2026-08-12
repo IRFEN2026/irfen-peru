@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>IRFEN Perú v0.7</title>
+<title>IRFEN Perú v0.7.1</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
@@ -80,6 +80,37 @@ select{
   text-align:right;
 }
 
+.statusline{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-wrap:wrap;
+  margin:10px 0 16px;
+}
+
+.statuspill{
+  display:inline-block;
+  padding:5px 9px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:800;
+}
+
+.status-ok{
+  background:#dff3e5;
+  color:#1d6539;
+}
+
+.status-stale{
+  background:#fff0b5;
+  color:#715700;
+}
+
+.status-error{
+  background:#ffc4c4;
+  color:#8b1919;
+}
+
 .kpis{
   display:grid;
   grid-template-columns:repeat(4,1fr);
@@ -91,8 +122,8 @@ select{
 .panel,
 .card,
 .method,
-.hist-card,
-.compare-card{
+.histcard,
+.comparecard{
   background:#fff;
   border:1px solid var(--line);
   border-radius:12px;
@@ -191,11 +222,6 @@ select{
 .critical{
   background:#731326;
   color:#fff;
-}
-
-.neutral{
-  background:#e8eef4;
-  color:#3e5364;
 }
 
 .metrics{
@@ -300,13 +326,6 @@ th{
   border-radius:50%;
   display:inline-block;
   margin-right:5px;
-}
-
-footer{
-  margin-top:18px;
-  color:var(--muted);
-  font-size:12px;
-  line-height:1.45;
 }
 
 /* Histórico */
@@ -426,6 +445,13 @@ footer{
   background:#2785bd;
 }
 
+footer{
+  margin-top:18px;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.45;
+}
+
 @media(max-width:1000px){
 
   .layout,
@@ -450,7 +476,7 @@ footer{
 <body>
 
 <header>
-  <h1>IRFEN Perú <span style="font-weight:400">v0.7</span></h1>
+  <h1>IRFEN Perú <span style="font-weight:400">v0.7.1</span></h1>
   <div>
     Indicador rápido de prioridad hidrometeorológica ·
     NASA IMERG + calibración histórica
@@ -475,6 +501,18 @@ footer{
 
     <div class="meta" id="meta"></div>
 
+  </div>
+
+  <div class="statusline">
+    <span class="small">
+      <b>Estado de datos:</b>
+    </span>
+
+    <span id="dataStatus" class="statuspill status-ok">
+      Comprobando…
+    </span>
+
+    <span id="statusDetail" class="small"></span>
   </div>
 
   <div class="kpis">
@@ -618,7 +656,8 @@ footer{
       Los eventos posteriores a 2000 pueden incorporar
       <b>IMERG Final</b>.
 
-      Estos valores aún no equivalen a umbrales oficiales de activación.
+      Estos valores todavía no equivalen a umbrales oficiales
+      de activación.
 
     </div>
 
@@ -706,7 +745,7 @@ footer{
     <div class="method">
 
       <h2>
-        Metodología IRFEN v0.7
+        Metodología IRFEN v0.7.1
       </h2>
 
       <p>
@@ -750,6 +789,13 @@ footer{
         </li>
 
       </ul>
+
+      <p>
+        <b>Tolerancia a fallos:</b>
+        si NASA Earthdata no está disponible durante una actualización,
+        IRFEN conserva el último dataset válido y publica la aplicación
+        igualmente, indicando que opera en modo contingencia.
+      </p>
 
       <p>
         <b>Objetivo de calibración:</b>
@@ -987,6 +1033,85 @@ function renderLatest(data){
 
   latestData =
     data;
+
+
+  const ds =
+    document.getElementById(
+      'dataStatus'
+    );
+
+
+  const sd =
+    document.getElementById(
+      'statusDetail'
+    );
+
+
+  const op =
+    (
+      data.operational_status
+      ||
+      'updated'
+    ).toLowerCase();
+
+
+  if(ds){
+
+    if(op === 'stale'){
+
+      ds.className =
+        'statuspill status-stale';
+
+      ds.textContent =
+        'CONTINGENCIA · último dato válido';
+
+    }
+
+    else if(op === 'error'){
+
+      ds.className =
+        'statuspill status-error';
+
+      ds.textContent =
+        'ERROR DE DATOS';
+
+    }
+
+    else{
+
+      ds.className =
+        'statuspill status-ok';
+
+      ds.textContent =
+        'ACTUALIZADO';
+
+    }
+
+  }
+
+
+  if(sd){
+
+    sd.textContent =
+      data.status_message
+      ||
+      (
+        data.generated_at
+
+        ?
+
+        'Último dataset válido: '
+        +
+        new Date(
+          data.generated_at
+        ).toLocaleString()
+
+        :
+
+        ''
+      );
+
+  }
 
 
   document
