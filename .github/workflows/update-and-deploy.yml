@@ -31,10 +31,179 @@ jobs:
       - name: Instalar dependencias
         run: pip install -r requirements.txt
 
-      - name: Actualizar datos NASA IMERG
+      - name: Guardar último latest.json publicado
+        shell: bash
+        run: |
+          set -e
+          mkdir -p .fallback
+
+          URL="https://irfen2026.github.io/irfen-peru/data/latest.json"
+
+          echo "Intentando conservar último dataset publicado:"
+          echo "$URL"
+
+          if curl -fsSL \
+            --connect-timeout 15 \
+            --max-time 45 \
+            --retry 3 \
+            --retry-delay 5 \
+            "$URL" \
+            -o .fallback/latest.json
+          then
+            echo "Fallback público guardado."
+          else
+            echo "No se pudo descargar el fallback público."
+            echo "Usando latest.json del repositorio."
+            cp site/data/latest.json .fallback/latest.json
+          fi
+
+      - name: Actualizar datos NASA IMERG con reintentos
         env:
           EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
-        run: python scripts/fetch_imerg.py --days 10
+        shell: bash
+        run: |
+          set +e
+
+          success=0
+
+          for i in 1 2 3 4
+          do
+
+            if [ "$i" = "2" ]; then
+              echo "Esperando 15 segundos..."
+              sleep 15
+            fi
+
+            if [ "$i" = "3" ]; then
+              echo "Esperando 30 segundos..."
+              sleep 30
+            fi
+
+            if [ "$i" = "4" ]; then
+              echo "Esperando 60 segundos..."
+              sleep 60
+            fi
+
+            echo "NASA / IMERG intento ${i}/4"
+
+            python scripts/fetch_imerg.py --days 10
+
+            rc=$?
+
+            if [ "$rc" -eq 0 ]; then
+
+              success=1
+
+              echo "NASA IMERG actualizado correctamente."
+
+              break
+
+            fi
+
+            echo "Intento ${i} falló con código ${rc}."
+
+          done
+
+          if [ "$success" -eq 1 ]; then
+
+            echo "IRFEN_NASA_OK=true" >> "$GITHUB_ENV"
+
+          else
+
+            echo "IRFEN_NASA_OK=false" >> "$GITHUB_ENV"
+
+            echo "NASA/Earthdata no respondió después de 4 intentos."
+
+            echo "Restaurando último dataset válido."
+
+            cp .fallback/latest.json site/data/latest.json
+
+          fi
+
+          exit 0
+
+      - name: Marcar estado operativo del dataset
+        shell: bash
+        run: |
+          python - <<'PY'
+
+          import json
+
+          from pathlib import Path
+          from datetime import datetime, timezone
+
+
+          path = Path(
+              "site/data/latest.json"
+          )
+
+
+          data = json.loads(
+              path.read_text(
+                  encoding="utf-8"
+              )
+          )
+
+
+          nasa_ok = "${{ env.IRFEN_NASA_OK }}"
+
+
+          if nasa_ok == "true":
+
+              data[
+                  "operational_status"
+              ] = "updated"
+
+              data[
+                  "status_message"
+              ] = (
+                  "NASA Earthdata respondió "
+                  "correctamente en esta ejecución."
+              )
+
+          else:
+
+              data[
+                  "operational_status"
+              ] = "stale"
+
+              data[
+                  "status_message"
+              ] = (
+                  "NASA Earthdata no estuvo disponible "
+                  "después de 4 intentos. "
+                  "IRFEN conserva el último dataset "
+                  "válido publicado."
+              )
+
+
+          data[
+              "last_update_attempt"
+          ] = datetime.now(
+              timezone.utc
+          ).isoformat()
+
+
+          path.write_text(
+              json.dumps(
+                  data,
+                  ensure_ascii=False,
+                  indent=2
+              ),
+              encoding="utf-8"
+          )
+
+          PY
+
+      - name: Validar archivos mínimos
+        shell: bash
+        run: |
+          test -s site/index.html
+          test -s site/data/latest.json
+
+          python -m json.tool \
+            site/data/latest.json \
+            >/dev/null
 
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v6
