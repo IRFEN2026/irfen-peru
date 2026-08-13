@@ -2,6 +2,12 @@ name: IRFEN - Construir cuenca San Ildefonso v0.8
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - scripts/build_san_ildefonso_remote.py
+      - .github/workflows/build-san-ildefonso-v08.yml
 
 permissions:
   contents: write
@@ -22,7 +28,7 @@ jobs:
       - name: Instalar dependencias
         run: |
           python -m pip install --upgrade pip
-          pip install requests shapely pyproj geopandas pyogrio
+          pip install requests shapely pyproj
 
       - name: Construir cuenca candidata
         run: |
