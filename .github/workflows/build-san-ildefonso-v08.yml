@@ -1,0 +1,48 @@
+name: IRFEN — Construir cuenca San Ildefonso v0.8
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-watershed:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v6
+
+      - name: Configurar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: |
+          pip install requests shapely pyproj
+
+      - name: Construir cuenca candidata
+        run: |
+          python scripts/build_san_ildefonso_remote.py
+
+      - name: Mostrar validación
+        run: |
+          cat site/data/watersheds/san_ildefonso_validation.json
+
+      - name: Guardar resultados en repositorio
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add \
+            site/data/watersheds/san_ildefonso_hydrobasins.geojson \
+            site/data/watersheds/san_ildefonso_validation.json
+
+          if git diff --cached --quiet; then
+            echo "No hay cambios."
+          else
+            git commit -m "IRFEN v0.8: cuenca candidata San Ildefonso"
+            git push
+          fi
