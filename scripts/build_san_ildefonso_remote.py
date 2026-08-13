@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-"""
-IRFEN v0.8 — San Ildefonso
-Construye una cuenca candidata usando HydroBASINS level 12 vía ArcGIS REST.
-No requiere descargar GeoTIFF ni ejecutar GIS local.
-"""
 
 import json
 import math
@@ -18,22 +13,25 @@ from pyproj import Geod
 
 
 SERVICE = (
-    "https://services1.arcgis.com/euMKmvUChvyJxWq2/ArcGIS/rest/services/"
-    "HaydroBASINS_15s/FeatureServer/15/query"
+    "https://services1.arcgis.com/"
+    "euMKmvUChvyJxWq2/"
+    "ArcGIS/rest/services/"
+    "HaydroBASINS_15s/"
+    "FeatureServer/15/query"
 )
 
 TARGET_AREA = 28.9
 
-# Sector amplio de San Ildefonso / El Porvenir / Trujillo
-BBOX = (
-    -79.08,
-    -8.13,
-    -78.91,
-    -7.97
-)
+BBOX = {
+    "xmin": -79.08,
+    "ymin": -8.13,
+    "xmax": -78.91,
+    "ymax": -7.97,
+    "spatialReference": {
+        "wkid": 4326
+    }
+}
 
-# Referencia espacial para favorecer el sector aguas abajo.
-# No se considera outlet oficial.
 DOWNSTREAM_REF = (
     -78.997,
     -8.063
@@ -50,7 +48,7 @@ REPORT = Path(
 )
 
 
-def get_json(params, attempts=4):
+def post_json(params, attempts=4):
 
     last = None
 
@@ -58,10 +56,10 @@ def get_json(params, attempts=4):
 
         try:
 
-            response = requests.get(
+            response = requests.post(
                 SERVICE,
-                params=params,
-                timeout=45
+                data=params,
+                timeout=60
             )
 
             response.raise_for_status()
@@ -69,6 +67,7 @@ def get_json(params, attempts=4):
             data = response.json()
 
             if "error" in data:
+
                 raise RuntimeError(
                     data["error"]
                 )
@@ -79,15 +78,19 @@ def get_json(params, attempts=4):
 
             last = exc
 
+            print(
+                f"Intento {i + 1} falló:"
+            )
+
+            print(
+                str(exc)
+            )
+
             if i < attempts - 1:
 
                 wait = (
                     i + 1
                 ) * 10
-
-                print(
-                    f"Intento {i + 1} falló."
-                )
 
                 print(
                     f"Esperando {wait}s..."
@@ -105,34 +108,39 @@ def get_json(params, attempts=4):
 
 def query_bbox():
 
-    xmin, ymin, xmax, ymax = BBOX
-
-    return get_json({
+    return post_json({
 
         "where":
             "1=1",
 
         "geometry":
-            f"{xmin},{ymin},{xmax},{ymax}",
+            json.dumps(
+                BBOX
+            ),
 
         "geometryType":
             "esriGeometryEnvelope",
 
         "inSR":
-            4326,
+            "4326",
 
         "spatialRel":
             "esriSpatialRelIntersects",
 
         "outFields":
-            "HYBAS_ID,NEXT_DOWN,"
-            "SUB_AREA,UP_AREA,PFAF_ID",
+            (
+                "HYBAS_ID,"
+                "NEXT_DOWN,"
+                "SUB_AREA,"
+                "UP_AREA,"
+                "PFAF_ID"
+            ),
 
         "returnGeometry":
             "true",
 
         "outSR":
-            4326,
+            "4326",
 
         "f":
             "geojson"
@@ -144,20 +152,25 @@ def query_upstream_children(
     down_id
 ):
 
-    return get_json({
+    return post_json({
 
         "where":
             f"NEXT_DOWN={int(down_id)}",
 
         "outFields":
-            "HYBAS_ID,NEXT_DOWN,"
-            "SUB_AREA,UP_AREA,PFAF_ID",
+            (
+                "HYBAS_ID,"
+                "NEXT_DOWN,"
+                "SUB_AREA,"
+                "UP_AREA,"
+                "PFAF_ID"
+            ),
 
         "returnGeometry":
             "true",
 
         "outSR":
-            4326,
+            "4326",
 
         "f":
             "geojson"
@@ -198,21 +211,23 @@ def choose_candidate(
         )
     )
 
+    print(
+        f"Polígonos recibidos: "
+        f"{len(features)}"
+    )
+
     if not features:
 
         raise RuntimeError(
-            "No se recibieron polígonos "
-            "HydroBASINS en el sector."
+            "No se recibieron "
+            "polígonos HydroBASINS."
         )
-
 
     reference = Point(
         *DOWNSTREAM_REF
     )
 
-
     candidates = []
-
 
     for feature in features:
 
@@ -229,26 +244,19 @@ def choose_candidate(
             )
         )
 
-
         if up_area is None:
             continue
-
 
         up_area = float(
             up_area
         )
 
-
         if not (
-            8
-            <=
-            up_area
-            <=
-            80
+            5
+            <= up_area
+            <= 100
         ):
-
             continue
-
 
         geom = shape(
             feature[
@@ -256,12 +264,10 @@ def choose_candidate(
             ]
         )
 
-
         center = (
             geom
             .representative_point()
         )
-
 
         area_score = abs(
             math.log(
@@ -274,14 +280,11 @@ def choose_candidate(
             )
         )
 
-
         distance = (
-            center
-            .distance(
+            center.distance(
                 reference
             )
         )
-
 
         spatial_score = (
             1.5
@@ -289,13 +292,11 @@ def choose_candidate(
             distance
         )
 
-
         score = (
             area_score
             +
             spatial_score
         )
-
 
         candidates.append(
             (
@@ -304,47 +305,34 @@ def choose_candidate(
             )
         )
 
-
     if not candidates:
 
         raise RuntimeError(
-            "No hay candidatos "
-            "con UP_AREA compatible."
+            "No se encontraron "
+            "candidatos con UP_AREA "
+            "entre 5 y 100 km²."
         )
-
 
     candidates.sort(
         key=lambda item:
         item[0]
     )
 
-
     selected = (
         candidates[0][1]
     )
 
-
     ranking = []
 
-
-    for item in (
+    for score, feature in (
         candidates[:10]
     ):
-
-        score = (
-            item[0]
-        )
-
-        feature = (
-            item[1]
-        )
 
         props = (
             feature[
                 "properties"
             ]
         )
-
 
         ranking.append({
 
@@ -371,7 +359,6 @@ def choose_candidate(
 
         })
 
-
     return (
         selected,
         ranking
@@ -391,17 +378,14 @@ def collect_upstream(
         ]
     )
 
-
     found = {
         seed_id:
         seed_feature
     }
 
-
     frontier = [
         seed_id
     ]
-
 
     while frontier:
 
@@ -411,13 +395,11 @@ def collect_upstream(
             )
         )
 
-
         fc = (
             query_upstream_children(
                 down_id
             )
         )
-
 
         for feature in (
             fc.get(
@@ -434,20 +416,16 @@ def collect_upstream(
                 ]
             )
 
-
             if hyd_id in found:
                 continue
-
 
             found[
                 hyd_id
             ] = feature
 
-
             frontier.append(
                 hyd_id
             )
-
 
             if (
                 len(found)
@@ -461,7 +439,6 @@ def collect_upstream(
                     "el límite de seguridad."
                 )
 
-
     return list(
         found.values()
     )
@@ -473,17 +450,14 @@ def main():
         "Consultando HydroBASINS..."
     )
 
-
     feature_collection = (
         query_bbox()
     )
-
 
     print(
         "Buscando candidato "
         "cercano a 28.9 km²..."
     )
-
 
     seed, ranking = (
         choose_candidate(
@@ -491,19 +465,30 @@ def main():
         )
     )
 
-
     print(
-        "Reconstruyendo cuenca "
-        "aguas arriba..."
+        "Candidato seleccionado:"
     )
 
+    print(
+        json.dumps(
+            seed[
+                "properties"
+            ],
+            ensure_ascii=False,
+            indent=2
+        )
+    )
+
+    print(
+        "Reconstruyendo "
+        "cuenca aguas arriba..."
+    )
 
     upstream = (
         collect_upstream(
             seed
         )
     )
-
 
     geometries = [
 
@@ -518,7 +503,6 @@ def main():
 
     ]
 
-
     basin = (
         unary_union(
             geometries
@@ -526,13 +510,11 @@ def main():
         .buffer(0)
     )
 
-
     area = (
         geodesic_area_km2(
             basin
         )
     )
-
 
     relative_error = (
 
@@ -547,7 +529,6 @@ def main():
         TARGET_AREA
 
     )
-
 
     if (
         relative_error
@@ -569,13 +550,11 @@ def main():
 
         status = "FAIL"
 
-
     seed_props = (
         seed[
             "properties"
         ]
     )
-
 
     output_feature = {
 
@@ -588,18 +567,18 @@ def main():
                 "san_ildefonso",
 
             "name":
-                "Quebrada San Ildefonso "
-                "— cuenca candidata "
-                "HydroBASINS L12",
+                (
+                    "Quebrada San "
+                    "Ildefonso — "
+                    "cuenca candidata "
+                    "HydroBASINS L12"
+                ),
 
             "dataset":
-                "HydroBASINS v1c "
-                "level 12",
-
-            "method":
-                "ArcGIS REST + "
-                "NEXT_DOWN upstream "
-                "reconstruction",
+                (
+                    "HydroBASINS "
+                    "v1c level 12"
+                ),
 
             "candidate_hybas_id":
                 seed_props.get(
@@ -635,17 +614,7 @@ def main():
                 ),
 
             "production_ready":
-                False,
-
-            "note":
-                (
-                    "Candidato vectorial "
-                    "para validación. "
-                    "No sustituye todavía "
-                    "la delineación "
-                    "HydroSHEDS de alta "
-                    "resolución."
-                )
+                False
 
         },
 
@@ -655,7 +624,6 @@ def main():
             )
 
     }
-
 
     report = {
 
@@ -691,27 +659,14 @@ def main():
             ),
 
         "top_candidates":
-            ranking,
-
-        "decision":
-            (
-                "candidate_for_visual_review"
-                if status in (
-                    "PASS",
-                    "REVIEW"
-                )
-                else
-                "do_not_use"
-            )
+            ranking
 
     }
-
 
     OUT.parent.mkdir(
         parents=True,
         exist_ok=True
     )
-
 
     OUT.write_text(
         json.dumps(
@@ -722,7 +677,6 @@ def main():
         encoding="utf-8"
     )
 
-
     REPORT.write_text(
         json.dumps(
             report,
@@ -732,10 +686,9 @@ def main():
         encoding="utf-8"
     )
 
-
     print()
     print(
-        "RESULTADO:"
+        "VALIDACIÓN:"
     )
 
     print(
@@ -745,7 +698,6 @@ def main():
             indent=2
         )
     )
-
 
     return 0
 
