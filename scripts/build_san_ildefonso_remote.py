@@ -11,16 +11,18 @@ from shapely.geometry import shape
 from shapely.ops import unary_union
 from pyproj import Geod
 
+# HydroBASINS South America, Pfafstetter level 11.
+# This layer is publicly exposed and queryable through ArcGIS REST.
 SERVICE = (
-    "https://services2.arcgis.com/IsDCghZ73NgoYoz5/ArcGIS/rest/services/"
-    "Hydrological_basins/FeatureServer/0/query"
+    "https://services1.arcgis.com/euMKmvUChvyJxWq2/ArcGIS/rest/services/"
+    "HaydroBASINS_15s/FeatureServer/16/query"
 )
 
 FIELDS = "HYBAS_ID,NEXT_DOWN,SUB_AREA,UP_AREA,PFAF_ID"
 TARGET_AREA = 28.9
 REF_LON = -78.997
 REF_LAT = -8.063
-SEARCH_RADIUS = 0.10
+SEARCH_RADIUS = 0.18
 
 OUT = Path("site/data/watersheds/san_ildefonso_hydrobasins.geojson")
 REPORT = Path("site/data/watersheds/san_ildefonso_validation.json")
@@ -56,10 +58,10 @@ def request_arcgis(params, attempts=4):
 
 
 def service_test():
-    print("1. Comprobando servicio HydroBASINS...")
+    print("1. Comprobando HydroBASINS SA level 11...")
     data = request_arcgis({
         "where": "1=1",
-        "outFields": "HYBAS_ID,UP_AREA",
+        "outFields": "HYBAS_ID,UP_AREA,SUB_AREA",
         "returnGeometry": "false",
         "resultRecordCount": "1",
         "f": "json",
@@ -68,7 +70,7 @@ def service_test():
     if not features:
         raise RuntimeError("El servicio respondió pero no devolvió registros.")
     attrs = features[0].get("attributes", {})
-    print("Servicio HydroBASINS OK.")
+    print("Servicio HydroBASINS SA L11 OK.")
     print("Registro de prueba:", attrs)
 
 
@@ -110,19 +112,32 @@ def choose_candidate(features):
         except Exception:
             continue
 
-        if not (5 <= up_area <= 120):
+        # Broad bounds: area closeness drives the ranking, not a hard narrow filter.
+        if not (2 <= up_area <= 500):
             continue
 
         geom = shape(feature["geometry"])
         center = geom.representative_point()
         area_score = abs(math.log(max(up_area, 0.001) / TARGET_AREA))
         distance = math.hypot(center.x - REF_LON, center.y - REF_LAT)
-        score = area_score + 0.75 * distance
+        score = area_score + 0.60 * distance
 
         candidates.append((score, feature, up_area, sub_area, hybas_id))
 
     if not candidates:
-        raise RuntimeError("No se encontraron candidatos con UP_AREA entre 5 y 120 km².")
+        # Save diagnostics instead of hiding the available polygons.
+        diagnostics = []
+        for feature in features:
+            p = feature.get("properties", {})
+            diagnostics.append({
+                "HYBAS_ID": p.get("HYBAS_ID"),
+                "UP_AREA": p.get("UP_AREA"),
+                "SUB_AREA": p.get("SUB_AREA"),
+            })
+        raise RuntimeError(
+            "No hubo candidatos en el rango 2-500 km². "
+            f"Polígonos recibidos: {json.dumps(diagnostics, ensure_ascii=False)}"
+        )
 
     candidates.sort(key=lambda x: x[0])
     ranking = []
@@ -196,9 +211,9 @@ def save_result(seed, upstream, ranking):
         "type": "Feature",
         "properties": {
             "id": "san_ildefonso",
-            "name": "Quebrada San Ildefonso — candidato HydroBASINS L12",
-            "dataset": "HydroBASINS v1c level 12",
-            "source_service": "ArcGIS Hydrological_basins (South America)",
+            "name": "Quebrada San Ildefonso — candidato HydroBASINS L11",
+            "dataset": "HydroBASINS v1c level 11",
+            "source_service": "ArcGIS HydroBASINS South America level 11",
             "candidate_hybas_id": int(props["HYBAS_ID"]),
             "candidate_up_area_km2": float(props["UP_AREA"]),
             "reference_area_km2": TARGET_AREA,
@@ -207,7 +222,10 @@ def save_result(seed, upstream, ranking):
             "validation_status": status,
             "n_subbasins": len(upstream),
             "production_ready": False,
-            "note": "Candidato vectorial de validación; no sustituye todavía la delimitación HydroSHEDS v2 de alta resolución.",
+            "note": (
+                "Candidato vectorial de validación a nivel 11. "
+                "No sustituye todavía la delimitación HydroSHEDS v2 de alta resolución."
+            ),
         },
         "geometry": basin.__geo_interface__,
     }
@@ -215,6 +233,7 @@ def save_result(seed, upstream, ranking):
     report = {
         "zone_id": "san_ildefonso",
         "status": status,
+        "dataset": "HydroBASINS v1c level 11",
         "reference_area_km2": TARGET_AREA,
         "delineated_area_km2": round(area, 3),
         "relative_area_error_pct": round(relative_error * 100, 2),
