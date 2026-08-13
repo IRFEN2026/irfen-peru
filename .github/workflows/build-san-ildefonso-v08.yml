@@ -1,4 +1,4 @@
-name: IRFEN — Construir cuenca San Ildefonso v0.8
+name: IRFEN - Construir cuenca San Ildefonso v0.8
 
 on:
   workflow_dispatch:
@@ -20,14 +20,15 @@ jobs:
           python-version: "3.12"
 
       - name: Instalar dependencias
-  run: |
-    pip install requests shapely pyproj geopandas pyogrio
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests shapely pyproj geopandas pyogrio
 
       - name: Construir cuenca candidata
         run: |
           python scripts/build_san_ildefonso_remote.py
 
-      - name: Mostrar validación
+      - name: Mostrar validacion
         run: |
           cat site/data/watersheds/san_ildefonso_validation.json
 
@@ -36,12 +37,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add \
-            site/data/watersheds/san_ildefonso_hydrobasins.geojson \
-            site/data/watersheds/san_ildefonso_validation.json
+          git add site/data/watersheds/san_ildefonso_hydrobasins.geojson
+          git add site/data/watersheds/san_ildefonso_validation.json
 
           if git diff --cached --quiet; then
-            echo "No hay cambios."
+            echo "No hay cambios para guardar."
           else
             git commit -m "IRFEN v0.8: cuenca candidata San Ildefonso"
             git push
