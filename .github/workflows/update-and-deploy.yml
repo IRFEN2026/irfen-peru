@@ -12,6 +12,7 @@ on:
       - requirements.txt
       - scripts/fetch_imerg.py
       - scripts/update_polygon_imerg.py
+      - scripts/build_experimental_state.py
       - scripts/validate_scientific_assets.py
       - site/data/history.json
       - site/data/scientific_status.json
@@ -23,6 +24,7 @@ on:
       - site/v08-forecast.js
       - site/v08-simulator.js
       - site/v08-health.js
+      - site/v08-readiness.js
 
 permissions:
   contents: read
@@ -130,6 +132,9 @@ jobs:
           path.write_text(json.dumps(data,ensure_ascii=False,indent=2),encoding='utf-8')
           PY
 
+      - name: Construir estado experimental de pruebas v0.8
+        run: python scripts/build_experimental_state.py
+
       - name: Activar paneles científicos v0.8
         shell: bash
         run: |
@@ -141,7 +146,8 @@ jobs:
               '<script src="v08-experimental.js"></script>',
               '<script src="v08-forecast.js"></script>',
               '<script src="v08-simulator.js"></script>',
-              '<script src="v08-health.js"></script>'
+              '<script src="v08-health.js"></script>',
+              '<script src="v08-readiness.js"></script>'
           ]
           for tag in tags:
               if tag not in html:
@@ -157,14 +163,17 @@ jobs:
           test -s site/v08-forecast.js
           test -s site/v08-simulator.js
           test -s site/v08-health.js
+          test -s site/v08-readiness.js
           test -s site/data/latest.json
           test -s site/data/history.json
           test -s site/data/scientific_status.json
           test -s site/data/hydraulics/current_infrastructure.json
+          test -s site/data/experimental_state.json
           python -m json.tool site/data/latest.json >/dev/null
           python -m json.tool site/data/history.json >/dev/null
           python -m json.tool site/data/scientific_status.json >/dev/null
           python -m json.tool site/data/hydraulics/current_infrastructure.json >/dev/null
+          python -m json.tool site/data/experimental_state.json >/dev/null
           if [ -s site/data/forecast/latest.json ]; then
             python -m json.tool site/data/forecast/latest.json >/dev/null
           fi
