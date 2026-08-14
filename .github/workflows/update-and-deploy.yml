@@ -11,7 +11,9 @@ on:
       - .github/workflows/update-and-deploy.yml
       - requirements.txt
       - scripts/fetch_imerg.py
+      - scripts/update_polygon_imerg.py
       - site/data/history.json
+      - site/data/scientific_status.json
       - site/data/watersheds/**
       - site/v08-experimental.js
 
@@ -98,98 +100,11 @@ jobs:
             echo "history.json restaurado."
           fi
 
-      - name: Calcular IMERG paralelo sobre microcuenca San Ildefonso
+      - name: Calcular IMERG paralelo sobre polígonos v0.8
         if: env.IRFEN_NASA_OK == 'true'
         env:
           EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
-        shell: bash
-        run: |
-          python - <<'PY'
-          import json,re,tempfile
-          from pathlib import Path
-          from datetime import datetime,timedelta,timezone
-          import numpy as np,h5py,earthaccess
-          from shapely.geometry import shape,box
-
-          latest_path=Path('site/data/latest.json')
-          poly_path=Path('site/data/watersheds/san_ildefonso_watershed.geojson')
-          geom=shape(json.loads(poly_path.read_text(encoding='utf-8'))['geometry']).buffer(0)
-
-          def find_ds(f,names):
-              for n in names:
-                  if n in f:return f[n]
-                  if 'Grid/'+n in f:return f['Grid/'+n]
-              found=[]; wanted={n.lower() for n in names}
-              def visit(n,o):
-                  if isinstance(o,h5py.Dataset) and n.split('/')[-1].lower() in wanted:found.append(o)
-              f.visititems(visit); return found[0] if found else None
-
-          def read_grid(p):
-              with h5py.File(p,'r') as f:
-                  la=find_ds(f,['lat','latitude']); lo=find_ds(f,['lon','longitude']); pr=find_ds(f,['precipitation','precipitationCal','precipitationUncal'])
-                  lat=np.asarray(la[:]).squeeze(); lon=np.asarray(lo[:]).squeeze(); a=np.asarray(pr[:],dtype=float).squeeze()
-                  while a.ndim>2:a=a[0]
-                  if a.shape==(lon.size,lat.size):a=a.T
-                  a[a<0]=np.nan
-                  units=pr.attrs.get('units',''); units=units.decode(errors='ignore') if isinstance(units,bytes) else str(units)
-                  if 'mm/hr' in units.lower() or 'mm h-1' in units.lower() or 'mm/hour' in units.lower():a*=24.0
-                  return lat,lon,a
-
-          def pmean(lat,lon,a):
-              dx=float(np.median(np.abs(np.diff(lon)))); dy=float(np.median(np.abs(np.diff(lat))))
-              minx,miny,maxx,maxy=geom.bounds
-              xs=np.where((lon>=minx-dx/2)&(lon<=maxx+dx/2))[0]; ys=np.where((lat>=miny-dy/2)&(lat<=maxy+dy/2))[0]
-              sw=sv=0.0; cells=valid=0
-              for r in ys:
-                  for c in xs:
-                      inter=geom.intersection(box(float(lon[c])-dx/2,float(lat[r])-dy/2,float(lon[c])+dx/2,float(lat[r])+dy/2))
-                      if inter.is_empty or inter.area<=0:continue
-                      cells+=1; v=float(a[r,c])
-                      if np.isfinite(v):valid+=1; sw+=inter.area; sv+=inter.area*v
-              return (sv/sw if sw else None),{'cells_intersected':cells,'valid_cells':valid,'grid_resolution_deg':[round(dx,4),round(dy,4)],'data_coverage_pct':round(min(100,100*sw/max(geom.area,1e-15)),2)}
-
-          def filedate(p):
-              m=re.search(r'(20\d{2})(\d{2})(\d{2})',Path(p).name)
-              return f'{m.group(1)}-{m.group(2)}-{m.group(3)}' if m else None
-
-          earthaccess.login(strategy='environment')
-          end=datetime.now(timezone.utc).date(); start=end-timedelta(days=12)
-          gran=[]; ver='auto'
-          for v in ('08','07'):
-              try:
-                  gran=earthaccess.search_data(short_name='GPM_3IMERGDL',version=v,temporal=(start.isoformat(),end.isoformat()),count=30)
-                  if gran:ver=v;break
-              except Exception as e:print('Búsqueda',v,e)
-          if not gran:gran=earthaccess.search_data(short_name='GPM_3IMERGDL',temporal=(start.isoformat(),end.isoformat()),count=30)
-          if not gran:raise RuntimeError('Sin gránulos para comparación poligonal')
-
-          series=[]
-          with tempfile.TemporaryDirectory(prefix='irfen_poly_') as td:
-              paths=earthaccess.download(gran,local_path=td,threads=4,show_progress=False)
-              for p in sorted(paths):
-                  d=filedate(p)
-                  if not d:continue
-                  lat,lon,a=read_grid(p); val,meta=pmean(lat,lon,a)
-                  series.append({'date':d,'rain_mm':None if val is None else round(val,2),'sampling':meta})
-          by={x['date']:x for x in series}; series=[by[k] for k in sorted(by)]
-          vals=[x['rain_mm'] for x in series if x['rain_mm'] is not None]
-          def acc(n):return round(sum(vals[-n:]),2) if len(vals)>=n else None
-          data=json.loads(latest_path.read_text(encoding='utf-8'))
-          zone=next(z for z in data['zones'] if z['id']=='san_ildefonso')
-          p24,p72,p7=acc(1),acc(3),acc(7)
-          def delta(a,b):return None if a is None or b is None else round(a-b,2)
-          zone['experimental_polygon']={
-              'status':'parallel_validation_only','production_use':False,'product_version':ver,
-              'geometry':'data/watersheds/san_ildefonso_watershed.geojson',
-              'method':'IMERG por solape de celdas ponderado por área de intersección con la microcuenca DEM',
-              'rain24':p24,'rain72':p72,'rain7d':p7,
-              'delta_vs_operational_bbox_mm':{'rain24':delta(p24,zone.get('rain24')),'rain72':delta(p72,zone.get('rain72')),'rain7d':delta(p7,zone.get('rain7d'))},
-              'series':series[-14:],
-              'warning':'Dato experimental; no modifica amenaza, prioridad ni alertas.'
-          }
-          latest_path.write_text(json.dumps(data,ensure_ascii=False,indent=2),encoding='utf-8')
-          print('Comparación poligonal añadida a latest.json:',p24,p72,p7)
-          PY
+        run: python scripts/update_polygon_imerg.py
 
       - name: Marcar estado operativo del dataset
         shell: bash
@@ -228,8 +143,10 @@ jobs:
           test -s site/v08-experimental.js
           test -s site/data/latest.json
           test -s site/data/history.json
+          test -s site/data/scientific_status.json
           python -m json.tool site/data/latest.json >/dev/null
           python -m json.tool site/data/history.json >/dev/null
+          python -m json.tool site/data/scientific_status.json >/dev/null
 
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v6
