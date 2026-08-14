@@ -18,6 +18,7 @@ on:
       - site/data/watersheds/**
       - site/data/forecast/**
       - site/data/hydrology/**
+      - site/data/hydraulics/**
       - site/v08-experimental.js
       - site/v08-forecast.js
       - site/v08-simulator.js
@@ -159,9 +160,11 @@ jobs:
           test -s site/data/latest.json
           test -s site/data/history.json
           test -s site/data/scientific_status.json
+          test -s site/data/hydraulics/current_infrastructure.json
           python -m json.tool site/data/latest.json >/dev/null
           python -m json.tool site/data/history.json >/dev/null
           python -m json.tool site/data/scientific_status.json >/dev/null
+          python -m json.tool site/data/hydraulics/current_infrastructure.json >/dev/null
           if [ -s site/data/forecast/latest.json ]; then
             python -m json.tool site/data/forecast/latest.json >/dev/null
           fi
