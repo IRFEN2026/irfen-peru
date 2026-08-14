@@ -1,0 +1,91 @@
+name: IRFEN - Verificar sitio publicado
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - "IRFEN — Actualizar IMERG y publicar"
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-smoke-test
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Esperar propagación GitHub Pages
+        run: sleep 8
+
+      - name: Descargar activos publicados
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://irfen2026.github.io/irfen-peru"
+          mkdir -p /tmp/irfen-live
+          files=(
+            "index.html"
+            "data/latest.json"
+            "data/history.json"
+            "data/scientific_status.json"
+            "data/hydraulics/current_infrastructure.json"
+            "data/forecast/latest.json"
+            "data/forecast/verification.json"
+            "data/hydrology/piura_reference_model.json"
+            "data/experimental_state.json"
+            "data/test_report.json"
+            "v08-experimental.js"
+            "v08-forecast.js"
+            "v08-simulator.js"
+            "v08-health.js"
+            "v08-readiness.js"
+          )
+          for path in "${files[@]}"; do
+            echo "GET $path"
+            mkdir -p "/tmp/irfen-live/$(dirname "$path")"
+            curl -fsSL --retry 4 --retry-all-errors --retry-delay 3 --max-time 35 "$BASE/$path?smoke=$(date +%s)" -o "/tmp/irfen-live/$path"
+            test -s "/tmp/irfen-live/$path"
+          done
+
+      - name: Validar contrato publicado
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          root=Path('/tmp/irfen-live')
+          def load(path): return json.loads((root/path).read_text(encoding='utf-8'))
+          latest=load('data/latest.json')
+          assert latest.get('operational_status') in {'updated','stale'}, latest.get('operational_status')
+          assert {z.get('id') for z in latest.get('zones',[])} == {'san_ildefonso','chosica','catacaos'}
+          forecast=load('data/forecast/latest.json')
+          assert forecast.get('production_use') is False
+          hydraulics=load('data/hydraulics/current_infrastructure.json')
+          assert hydraulics.get('production_use') is False
+          for z in hydraulics.get('zones',[]): assert z.get('production_modifier') is None
+          state=load('data/experimental_state.json')
+          assert state.get('production_use') is False
+          cat=next(z for z in state['zones'] if z['zone_id']=='catacaos')
+          if cat.get('river_state_available') is not True:
+              assert 'numeric_river_state_required' in cat.get('blockers',[])
+          tests=load('data/test_report.json')
+          assert tests.get('status')=='PASS', tests
+          verification=load('data/forecast/verification.json')
+          assert verification.get('production_use') is False
+          ref=load('data/hydrology/piura_reference_model.json')
+          assert ref.get('production_use') is False
+          html=(root/'index.html').read_text(encoding='utf-8')
+          for script in ('v08-experimental.js','v08-forecast.js','v08-simulator.js','v08-health.js','v08-readiness.js'):
+              assert script in html, f'Falta {script} en index publicado'
+          print('LIVE SMOKE TEST OK')
+          print('operational_status:',latest.get('operational_status'))
+          print('regression:',tests.get('passed'),'PASS /',tests.get('failed'),'FAIL')
+          print('forecast verification pairs:',verification.get('total_pairs'))
+          PY
