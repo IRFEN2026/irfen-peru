@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Extrae evidencia trazable del PPRRD Catacaos 2026-2030 publicado en SIGRID.
+"""Indexa evidencia del PPRRD Catacaos 2026-2030 publicado en SIGRID.
 
-Descarga temporalmente el PDF oficial, busca conceptos útiles para el modelo
-fluvial y guarda solo metadatos/contextos breves con páginas. No republica el
-PDF ni convierte automáticamente sus referencias en umbrales operativos.
+Descarga temporalmente el PDF oficial, identifica páginas útiles para el modelo
+fluvial y guarda solo metadatos, páginas y candidatos numéricos sin párrafos del
+documento. Ninguna referencia se convierte automáticamente en umbral operativo.
 """
 from __future__ import annotations
 
@@ -38,28 +38,6 @@ def normalize(text):
     return re.sub(r"\s+", " ", text or " ").strip()
 
 
-def snippets(text, needles, limit=4, radius=220):
-    low = text.lower()
-    found = []
-    seen = set()
-    for needle in needles:
-        start = 0
-        n = needle.lower()
-        while len(found) < limit:
-            idx = low.find(n, start)
-            if idx < 0:
-                break
-            a = max(0, idx - radius)
-            b = min(len(text), idx + len(n) + radius)
-            s = normalize(text[a:b])
-            key = s[:120]
-            if key not in seen:
-                seen.add(key)
-                found.append(s)
-            start = idx + len(n)
-    return found
-
-
 def main():
     headers = {"User-Agent": "Mozilla/5.0 IRFEN-research/0.8"}
     report = {
@@ -74,9 +52,9 @@ def main():
             "download_url": URL,
         },
         "status": "starting",
-        "evidence": {},
+        "page_index": {},
         "numeric_candidates": [],
-        "warning": "Los extractos son evidencia documental para revisión; ningún número se convierte automáticamente en umbral o capacidad hidráulica.",
+        "warning": "Índice documental para revisión científica. No contiene extractos extensos y ningún número se convierte automáticamente en umbral o capacidad hidráulica.",
     }
 
     with tempfile.TemporaryDirectory(prefix="irfen_pprrd_") as td:
@@ -96,42 +74,48 @@ def main():
 
         reader = PdfReader(str(pdf))
         report["page_count"] = len(reader.pages)
-        evidence = {k: [] for k in TERMS}
+        page_hits = {k: set() for k in TERMS}
+        match_counts = {k: 0 for k in TERMS}
         numeric = []
 
         for idx, page in enumerate(reader.pages, start=1):
             try:
                 text = normalize(page.extract_text() or "")
-            except Exception as exc:
+            except Exception:
                 continue
             if not text:
                 continue
             low = text.lower()
             for category, needles in TERMS.items():
-                if not any(n.lower() in low for n in needles):
-                    continue
-                for s in snippets(text, needles):
-                    if len(evidence[category]) >= 12:
-                        break
-                    evidence[category].append({"page": idx, "context": s})
+                hits = sum(low.count(n.lower()) for n in needles)
+                if hits:
+                    page_hits[category].add(idx)
+                    match_counts[category] += hits
 
-            # Candidatos numéricos de caudal: solo para revisión manual posterior.
-            for m in re.finditer(r"(.{0,100})(\d{2,5}(?:[.,]\d+)?)\s*(?:m3/s|m³/s)(.{0,140})", text, flags=re.I):
-                if len(numeric) >= 40:
+            # Candidatos numéricos de caudal: valor y página, sin copiar contexto.
+            for m in re.finditer(r"(\d{2,5}(?:[.,]\d+)?)\s*(?:m3/s|m³/s)", text, flags=re.I):
+                if len(numeric) >= 80:
                     break
-                val = m.group(2).replace(",", ".")
+                value_text = m.group(1)
                 numeric.append({
                     "page": idx,
-                    "value_text": m.group(2),
+                    "value_text": value_text,
                     "unit": "m3/s",
-                    "context": normalize(m.group(0)),
                     "validated_meaning": False,
+                    "page_categories": sorted(k for k, pages in page_hits.items() if idx in pages),
                 })
 
-        report["evidence"] = {k: v for k, v in evidence.items() if v}
+        report["page_index"] = {
+            category: {
+                "pages": sorted(pages)[:80],
+                "page_count": len(pages),
+                "match_count": match_counts[category],
+            }
+            for category, pages in page_hits.items() if pages
+        }
         report["numeric_candidates"] = numeric
-        report["status"] = "extracted_for_scientific_review"
-        report["categories_found"] = sorted(report["evidence"].keys())
+        report["status"] = "indexed_for_scientific_review"
+        report["categories_found"] = sorted(report["page_index"].keys())
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
