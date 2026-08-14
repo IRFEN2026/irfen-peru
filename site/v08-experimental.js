@@ -1,210 +1,43 @@
 (() => {
   const fmt = value => value == null ? '—' : `${Number(value).toFixed(2)} mm`;
-  const signed = value => {
-    if (value == null) return '—';
-    const n = Number(value);
-    return `${n >= 0 ? '+' : ''}${n.toFixed(2)} mm`;
-  };
-
-  const safeJson = async url => {
-    try {
-      const r = await fetch(`${url}?t=${Date.now()}`);
-      return r.ok ? await r.json() : null;
-    } catch (_) {
-      return null;
-    }
-  };
+  const signed = value => value == null ? '—' : `${Number(value) >= 0 ? '+' : ''}${Number(value).toFixed(2)} mm`;
+  const safeJson = async url => { try { const r=await fetch(`${url}?t=${Date.now()}`); return r.ok?await r.json():null; } catch(_){return null;} };
 
   function row(label, legacy, polygon, delta) {
-    return `
-      <tr>
-        <td><b>${label}</b></td>
-        <td>${fmt(legacy)}</td>
-        <td>${fmt(polygon)}</td>
-        <td><b>${signed(delta)}</b></td>
-      </tr>`;
+    return `<tr><td><b>${label}</b></td><td>${fmt(legacy)}</td><td>${fmt(polygon)}</td><td><b>${signed(delta)}</b></td></tr>`;
   }
-
   function comparisonTable(title, legacy, polygon, delta, legacyLabel='Caja / operativo') {
     if (!polygon) return '<div class="small" style="margin-top:12px">Comparación poligonal pendiente.</div>';
-    return `
-      <h4 style="margin:16px 0 6px">${title}</h4>
-      <div class="tablepanel" style="margin:0;overflow:auto">
-        <table>
-          <thead><tr><th>Acumulado</th><th>${legacyLabel}</th><th>Polígono DEM</th><th>Diferencia</th></tr></thead>
-          <tbody>
-            ${row('24h', legacy && legacy.rain24, polygon.rain24, delta && delta.rain24)}
-            ${row('72h', legacy && legacy.rain72, polygon.rain72, delta && delta.rain72)}
-            ${row('7 días', legacy && legacy.rain7d, polygon.rain7d, delta && delta.rain7d)}
-          </tbody>
-        </table>
-      </div>`;
+    return `<h4 style="margin:16px 0 6px">${title}</h4><div class="tablepanel" style="margin:0;overflow:auto"><table><thead><tr><th>Acumulado</th><th>${legacyLabel}</th><th>Polígono DEM</th><th>Diferencia</th></tr></thead><tbody>${row('24h',legacy&&legacy.rain24,polygon.rain24,delta&&delta.rain24)}${row('72h',legacy&&legacy.rain72,polygon.rain72,delta&&delta.rain72)}${row('7 días',legacy&&legacy.rain7d,polygon.rain7d,delta&&delta.rain7d)}</tbody></table></div>`;
+  }
+  function createPanel(){let p=document.getElementById('irfenV08Experimental');if(p)return p;const h=document.getElementById('hist');if(!h)return null;p=document.createElement('div');p.id='irfenV08Experimental';p.className='histcard';p.style.marginTop='16px';p.style.border='2px solid #b8c9dc';p.style.background='#f8fbff';const t=h.querySelector('.tablepanel');h.insertBefore(p,t||null);return p;}
+  function geometrySummary(v){if(!v)return'<div class="small">Geometría candidata pendiente.</div>';const s=v.external_spatial_check||{},top=v.topology_check||{};return `<div class="small" style="line-height:1.65"><b>Área de referencia:</b> ${v.reference_area_km2??'—'} km² · <b>DEM:</b> ${v.delineated_area_km2??'—'} km² · <b>error:</b> ${v.relative_area_error_pct??'—'}% · <b>control geométrico:</b> ${v.status||'—'}.<br><b>Control espacial:</b> ${s.spatial_context_status||'pendiente'}${top.status?` · <b>topología:</b> ${top.status}`:''}.<br><b>Decisión científica:</b> ${v.decision||'pendiente'} · <b>Producción:</b> ${v.production_ready?'habilitada':'NO habilitada'}.</div>`;}
+  function header(title,subtitle,tag='NO OPERATIVO'){return `<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap"><div><h3 style="margin:0 0 4px">${title}</h3><div class="small">${subtitle}</div></div><span class="sourcechip" style="background:#e9f2ff;color:#194f82">${tag}</span></div>`;}
+
+  function sanPanel(history,latest,validation){const e=(history.events||[]).find(x=>x.id==='SI-2017-03-15'),c=(latest.zones||[]).find(x=>x.id==='san_ildefonso'),hp=e&&e.experimental_polygon,cp=c&&c.experimental_polygon;return `${header('IRFEN v0.8 · San Ildefonso','Microcuenca DEM + validación IMERG en paralelo')}<div class="histnote" style="margin:12px 0">La amenaza y la prioridad siguen usando la configuración operativa v0.7.1. La v0.8 se mantiene como carril científico paralelo.</div>${geometrySummary(validation)}${comparisonTable('Evento 15/03/2017 · IMERG Final',e,hp,hp&&hp.delta_vs_legacy_bbox_mm,'Caja antigua')}${comparisonTable('Comparación diaria actual',c,cp,cp&&cp.delta_vs_operational_bbox_mm,'Operativo actual')}<div class="small" style="margin-top:12px;line-height:1.55"><b>Puerta pendiente:</b> calibrar explícitamente el sistema hidráulico 2026 (diques, captación, túnel/canales y descarga al río Moche) antes de cambiar la lógica de producción.</div>`;}
+
+  function huayPanel(history,latest,validation){const e=(history.events||[]).find(x=>x.id==='CH-2015-03-23'),c=(latest.zones||[]).find(x=>x.id==='chosica'),hp=e&&e.experimental_polygon,cp=c&&c.experimental_polygon;return `${header('IRFEN v0.8 · Huaycoloro / Chosica','Subcuenca DEM + comparación histórica y diaria en paralelo')}<div class="histnote" style="margin:12px 0">La subcuenca DEM se mantiene separada de la lógica operativa. La canalización de 10.5 km inaugurada en 2025 obliga a distinguir <b>amenaza meteorológica</b>, <b>respuesta hidrológica</b> y <b>capacidad hidráulica urbana</b>.</div>${geometrySummary(validation)}${comparisonTable('Evento 23/03/2015 · IMERG Final',e,hp,hp&&hp.delta_vs_legacy_bbox_mm,'Caja antigua')}${comparisonTable('Comparación diaria actual',c,cp,cp&&cp.delta_vs_operational_bbox_mm,'Operativo actual')}<div class="small" style="margin-top:12px;line-height:1.55"><b>Puerta pendiente:</b> validar la relación lluvia–caudal–impacto con la canalización actual y eventos posteriores a 2025.</div>`;}
+
+  function catacaosPanel(status,ref,source){
+    const hist=(ref&&ref.historical_event_flows)||[]; const design=(ref&&ref.design_references)||[]; const sen=(source&&source.senamhi)||{}; const gore=(source&&source.gore_piura)||{};
+    const histRows=hist.map(x=>`<tr><td>${x.date||x.year||'—'}</td><td>${x.event||x.event_id}</td><td><b>${Number(x.flow_m3s).toFixed(0)} m³/s</b></td><td>${x.location_status==='not_harmonized_to_puente_nacara'?'Ubicación no homologada con Ñácara':'—'}</td></tr>`).join('');
+    const designRows=design.map(x=>`<tr><td>${x.component_type}</td><td><b>${Number(x.design_flow_m3s).toFixed(0)} m³/s</b></td><td>${x.status||'—'}</td></tr>`).join('');
+    return `${header('IRFEN v0.8 · Catacaos / Bajo Piura','Modelo río–cuenca–llanura de inundación','DISEÑO')}
+      <div class="histnote" style="margin:12px 0">Catacaos no se modelará forzándolo a una microcuenca simple. El riesgo depende del río Piura, aportes aguas arriba, defensas, drenaje urbano y llanura de inundación.</div>
+      <div class="small" style="line-height:1.65"><b>Arquitectura:</b> lluvia de cuenca → estado del río → capacidad hidráulica/drenaje → exposición de llanura → prioridad territorial.<br>${status&&status.next_step?`<b>Siguiente paso:</b> ${status.next_step}`:'Se están identificando series hidrológicas y fuentes reutilizables.'}</div>
+      <h4 style="margin:16px 0 6px">Estado de fuentes oficiales</h4>
+      <div class="small" style="line-height:1.65"><b>GORE Piura:</b> ${gore.catalog_status||'—'} · último informe ${gore.latest_report_date||'—'}${gore.report_age_days!=null?` (${gore.report_age_days} días)`:''}.<br><b>SENAMHI Puente Ñácara:</b> dato numérico automático ${sen.numeric_river_state_available?'disponible':'pendiente'} · umbral rojo histórico de referencia ${sen.reference_red_threshold_m3s??'—'} m³/s. <b>Ese umbral no equivale a un umbral de desborde en Catacaos.</b></div>
+      ${hist.length?`<h4 style="margin:16px 0 6px">Caudales históricos de referencia</h4><div class="tablepanel" style="margin:0;overflow:auto"><table><thead><tr><th>Fecha</th><th>Evento</th><th>Caudal publicado</th><th>Control espacial</th></tr></thead><tbody>${histRows}</tbody></table></div>`:''}
+      ${design.length?`<h4 style="margin:16px 0 6px">Referencias de diseño</h4><div class="tablepanel" style="margin:0;overflow:auto"><table><thead><tr><th>Componente</th><th>Caudal</th><th>Uso</th></tr></thead><tbody>${designRows}</tbody></table></div>`:''}
+      <div class="histnote" style="margin-top:12px"><b>Regla v0.8:</b> estos caudales no se compararán entre sí como si pertenecieran al mismo punto de control hasta homologar ubicación, tiempo de tránsito, aportes intermedios y capacidad hidráulica actual.</div>`;
   }
 
-  function createPanel() {
-    let panel = document.getElementById('irfenV08Experimental');
-    if (panel) return panel;
-    const hist = document.getElementById('hist');
-    if (!hist) return null;
-    panel = document.createElement('div');
-    panel.id = 'irfenV08Experimental';
-    panel.className = 'histcard';
-    panel.style.marginTop = '16px';
-    panel.style.border = '2px solid #b8c9dc';
-    panel.style.background = '#f8fbff';
-    const table = hist.querySelector('.tablepanel');
-    hist.insertBefore(panel, table || null);
-    return panel;
-  }
+  async function renderForSelected(){const p=createPanel(),s=document.getElementById('histZone');if(!p||!s)return;p.style.display='block';p.innerHTML='<div class="small">Cargando validación científica v0.8…</div>';
+    const [history,latest,sanV,huayV,status,piuraRef,piuraSource]=await Promise.all([safeJson('data/history.json'),safeJson('data/latest.json'),safeJson('data/watersheds/san_ildefonso_validation.json'),safeJson('data/watersheds/huaycoloro_validation.json'),safeJson('data/scientific_status.json'),safeJson('data/hydrology/piura_reference_model.json'),safeJson('data/hydrology/piura_source_status.json')]);
+    const zid=s.value,zoneStatus=status&&(status.zones||[]).find(z=>z.id===zid);
+    if(zid==='san_ildefonso')p.innerHTML=sanPanel(history||{events:[]},latest||{zones:[]},sanV);else if(zid==='chosica')p.innerHTML=huayPanel(history||{events:[]},latest||{zones:[]},huayV);else if(zid==='catacaos')p.innerHTML=catacaosPanel(zoneStatus,piuraRef,piuraSource);else p.style.display='none';}
 
-  function geometrySummary(v) {
-    if (!v) return '<div class="small">Geometría candidata pendiente.</div>';
-    const spatial = v.external_spatial_check || {};
-    const topology = v.topology_check || {};
-    return `
-      <div class="small" style="line-height:1.65">
-        <b>Área de referencia:</b> ${v.reference_area_km2 ?? '—'} km² ·
-        <b>DEM:</b> ${v.delineated_area_km2 ?? '—'} km² ·
-        <b>error:</b> ${v.relative_area_error_pct ?? '—'}% ·
-        <b>control geométrico:</b> ${v.status || '—'}.
-        <br>
-        <b>Control espacial:</b> ${spatial.spatial_context_status || 'pendiente'}
-        ${topology.status ? ` · <b>topología:</b> ${topology.status}` : ''}.
-        <br>
-        <b>Decisión científica:</b> ${v.decision || 'pendiente'} ·
-        <b>Producción:</b> ${v.production_ready ? 'habilitada' : 'NO habilitada'}.
-      </div>`;
-  }
-
-  function header(title, subtitle, tag='NO OPERATIVO') {
-    return `
-      <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">
-        <div>
-          <h3 style="margin:0 0 4px">${title}</h3>
-          <div class="small">${subtitle}</div>
-        </div>
-        <span class="sourcechip" style="background:#e9f2ff;color:#194f82">${tag}</span>
-      </div>`;
-  }
-
-  function sanPanel(history, latest, validation) {
-    const event = (history.events || []).find(x => x.id === 'SI-2017-03-15');
-    const current = (latest.zones || []).find(x => x.id === 'san_ildefonso');
-    const hp = event && event.experimental_polygon;
-    const cp = current && current.experimental_polygon;
-
-    return `
-      ${header('IRFEN v0.8 · San Ildefonso', 'Microcuenca DEM + validación IMERG en paralelo')}
-      <div class="histnote" style="margin:12px 0">
-        La amenaza y la prioridad siguen usando la configuración operativa v0.7.1. La v0.8 se mantiene como carril científico paralelo.
-      </div>
-      ${geometrySummary(validation)}
-      ${comparisonTable('Evento 15/03/2017 · IMERG Final', event, hp, hp && hp.delta_vs_legacy_bbox_mm, 'Caja antigua')}
-      ${comparisonTable('Comparación diaria actual', current, cp, cp && cp.delta_vs_operational_bbox_mm, 'Operativo actual')}
-      <div class="small" style="margin-top:12px;line-height:1.55">
-        <b>Puerta pendiente:</b> representar el sistema hidráulico 2026 (diques, captación, túnel/canales y descarga al río Moche) antes de cambiar la lógica de producción.
-      </div>`;
-  }
-
-  function huayPanel(history, latest, validation) {
-    const event = (history.events || []).find(x => x.id === 'CH-2015-03-23');
-    const current = (latest.zones || []).find(x => x.id === 'chosica');
-    const hp = event && event.experimental_polygon;
-    const cp = current && current.experimental_polygon;
-
-    return `
-      ${header('IRFEN v0.8 · Huaycoloro / Chosica', 'Subcuenca DEM + comparación histórica y diaria en paralelo')}
-      <div class="histnote" style="margin:12px 0">
-        La subcuenca DEM de Huaycoloro se mantiene separada de la lógica operativa. La canalización de 10.5 km inaugurada en 2025 obliga a distinguir <b>amenaza meteorológica</b>, <b>respuesta hidrológica</b> y <b>capacidad hidráulica urbana</b>.
-      </div>
-      ${geometrySummary(validation)}
-      ${comparisonTable('Evento 23/03/2015 · IMERG Final', event, hp, hp && hp.delta_vs_legacy_bbox_mm, 'Caja antigua')}
-      ${comparisonTable('Comparación diaria actual', current, cp, cp && cp.delta_vs_operational_bbox_mm, 'Operativo actual')}
-      <div class="small" style="margin-top:12px;line-height:1.55">
-        <b>Puerta pendiente:</b> incorporar explícitamente la canalización Huaycoloro y validar la relación lluvia–caudal–impacto con eventos y días lluviosos sin activación antes de producción.
-      </div>`;
-  }
-
-  function catacaosPanel(status) {
-    return `
-      ${header('IRFEN v0.8 · Catacaos / Bajo Piura', 'Modelo río–cuenca–llanura de inundación', 'DISEÑO')}
-      <div class="histnote" style="margin:12px 0">
-        Catacaos no se modelará forzándolo a una microcuenca simple. El riesgo depende del río Piura, aportes aguas arriba, la intercuenca Bajo Piura, defensas, drenaje urbano y llanura de inundación.
-      </div>
-      <div class="small" style="line-height:1.65">
-        <b>Arquitectura:</b> lluvia de cuenca → estado del río → capacidad hidráulica/drenaje → exposición de llanura → prioridad territorial.
-        <br>
-        ${status && status.next_step ? `<b>Siguiente paso:</b> ${status.next_step}` : 'Se están identificando series hidrológicas y fuentes reutilizables.'}
-      </div>`;
-  }
-
-  async function renderForSelected() {
-    const panel = createPanel();
-    const selector = document.getElementById('histZone');
-    if (!panel || !selector) return;
-
-    panel.style.display = 'block';
-    panel.innerHTML = '<div class="small">Cargando validación científica v0.8…</div>';
-
-    const [history, latest, sanValidation, huayValidation, status] = await Promise.all([
-      safeJson('data/history.json'),
-      safeJson('data/latest.json'),
-      safeJson('data/watersheds/san_ildefonso_validation.json'),
-      safeJson('data/watersheds/huaycoloro_validation.json'),
-      safeJson('data/scientific_status.json')
-    ]);
-
-    const zid = selector.value;
-    const zoneStatus = status && (status.zones || []).find(z => z.id === zid);
-
-    if (zid === 'san_ildefonso') {
-      panel.innerHTML = sanPanel(history || {events: []}, latest || {zones: []}, sanValidation);
-    } else if (zid === 'chosica') {
-      panel.innerHTML = huayPanel(history || {events: []}, latest || {zones: []}, huayValidation);
-    } else if (zid === 'catacaos') {
-      panel.innerHTML = catacaosPanel(zoneStatus);
-    } else {
-      panel.style.display = 'none';
-    }
-  }
-
-  async function addWatershedOverlays() {
-    if (typeof L === 'undefined' || typeof map === 'undefined') return;
-    const specs = [
-      ['San Ildefonso · microcuenca v0.8', 'data/watersheds/san_ildefonso_watershed.geojson'],
-      ['Huaycoloro · subcuenca v0.8', 'data/watersheds/huaycoloro_watershed.geojson']
-    ];
-    const overlays = {};
-
-    for (const [label, url] of specs) {
-      const geo = await safeJson(url);
-      if (!geo) continue;
-      const lyr = L.geoJSON(geo, {
-        style: {weight: 2, fillOpacity: 0.08, dashArray: '6 5'}
-      });
-      const p = geo.properties || {};
-      lyr.bindPopup(`<b>${p.name || label}</b><br>Área DEM: ${p.delineated_area_km2 ?? '—'} km²<br>Estado: ${p.validation_status || 'experimental'}<br><b>No operativo</b>`);
-      overlays[label] = lyr;
-      lyr.addTo(map);
-    }
-
-    if (Object.keys(overlays).length) {
-      L.control.layers(null, overlays, {collapsed: true, position: 'topright'}).addTo(map);
-    }
-  }
-
-  async function init() {
-    const selector = document.getElementById('histZone');
-    if (selector) {
-      selector.addEventListener('change', renderForSelected);
-      await renderForSelected();
-    }
-    await addWatershedOverlays();
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => setTimeout(init, 500));
-  } else {
-    setTimeout(init, 500);
-  }
+  async function addWatershedOverlays(){if(typeof L==='undefined'||typeof map==='undefined')return;const specs=[['San Ildefonso · microcuenca v0.8','data/watersheds/san_ildefonso_watershed.geojson'],['Huaycoloro · subcuenca v0.8','data/watersheds/huaycoloro_watershed.geojson']],overlays={};for(const [label,url] of specs){const geo=await safeJson(url);if(!geo)continue;const lyr=L.geoJSON(geo,{style:{weight:2,fillOpacity:.08,dashArray:'6 5'}}),p=geo.properties||{};lyr.bindPopup(`<b>${p.name||label}</b><br>Área DEM: ${p.delineated_area_km2??'—'} km²<br>Estado: ${p.validation_status||'experimental'}<br><b>No operativo</b>`);overlays[label]=lyr;lyr.addTo(map);}if(Object.keys(overlays).length)L.control.layers(null,overlays,{collapsed:true,position:'topright'}).addTo(map);}
+  async function init(){const s=document.getElementById('histZone');if(s){s.addEventListener('change',renderForSelected);await renderForSelected();}await addWatershedOverlays();}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,500));else setTimeout(init,500);
 })();
