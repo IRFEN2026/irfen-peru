@@ -1,0 +1,146 @@
+{
+  "version": "0.8-experimental",
+  "generated_at": "2026-08-14T20:42:11.521535+00:00",
+  "zone_id": "san_ildefonso",
+  "production_use": false,
+  "production_ready": false,
+  "status": "HISTORICAL_SEPARATION_DEMONSTRATED_TEST_ONLY",
+  "source": "data/calibration/san_ildefonso_imerg_halfhour_events.json",
+  "candidate_test_rule": {
+    "mode": "TEST_ONLY",
+    "logic": "trigger if at least 2 of 3 windows cross their candidate midpoint",
+    "windows": {
+      "3h_mm": 4.697,
+      "6h_mm": 6.716,
+      "24h_mm": 14.287
+    },
+    "minimum_crossings": 2,
+    "thresholds_modified_in_production": false,
+    "operational_alert": false
+  },
+  "separation_evidence": {
+    "max_3h": {
+      "control_mm": 3.23,
+      "minimum_impact_mm": 6.164,
+      "candidate_midpoint_mm": 4.697,
+      "absolute_gap_mm": 2.934,
+      "control_to_impact_floor_ratio": 0.524
+    },
+    "max_6h": {
+      "control_mm": 4.136,
+      "minimum_impact_mm": 9.296,
+      "candidate_midpoint_mm": 6.716,
+      "absolute_gap_mm": 5.16,
+      "control_to_impact_floor_ratio": 0.445
+    },
+    "max_24h": {
+      "control_mm": 9.177,
+      "minimum_impact_mm": 19.397,
+      "candidate_midpoint_mm": 14.287,
+      "absolute_gap_mm": 10.22,
+      "control_to_impact_floor_ratio": 0.473
+    }
+  },
+  "case_evaluations": [
+    {
+      "case_id": "SI-2017-03-15",
+      "date": "2017-03-15",
+      "outcome": "urban_debris_flow_impact",
+      "infrastructure_phase": "pre_integral_solution",
+      "checks": {
+        "max_3h": {
+          "value_mm": 10.188,
+          "candidate_mm": 4.697,
+          "crossed": true
+        },
+        "max_6h": {
+          "value_mm": 18.543,
+          "candidate_mm": 6.716,
+          "crossed": true
+        },
+        "max_24h": {
+          "value_mm": 33.02,
+          "candidate_mm": 14.287,
+          "crossed": true
+        }
+      },
+      "crossed_count": 3,
+      "test_rule_triggered": true,
+      "expected_for_separation_test": true,
+      "separation_match": true
+    },
+    {
+      "case_id": "SI-2023-03-10",
+      "date": "2023-03-10",
+      "outcome": "urban_debris_flow_impact",
+      "infrastructure_phase": "before_completion_of_35_dikes",
+      "checks": {
+        "max_3h": {
+          "value_mm": 6.164,
+          "candidate_mm": 4.697,
+          "crossed": true
+        },
+        "max_6h": {
+          "value_mm": 9.296,
+          "candidate_mm": 6.716,
+          "crossed": true
+        },
+        "max_24h": {
+          "value_mm": 19.397,
+          "candidate_mm": 14.287,
+          "crossed": true
+        }
+      },
+      "crossed_count": 3,
+      "test_rule_triggered": true,
+      "expected_for_separation_test": true,
+      "separation_match": true
+    },
+    {
+      "case_id": "SI-2025-03-29",
+      "date": "2025-03-29",
+      "outcome": "activation_controlled_no_san_ildefonso_urban_huaico",
+      "infrastructure_phase": "post_dike_system_pre_full_integral_completion",
+      "checks": {
+        "max_3h": {
+          "value_mm": 3.23,
+          "candidate_mm": 4.697,
+          "crossed": false
+        },
+        "max_6h": {
+          "value_mm": 4.136,
+          "candidate_mm": 6.716,
+          "crossed": false
+        },
+        "max_24h": {
+          "value_mm": 9.177,
+          "candidate_mm": 14.287,
+          "crossed": false
+        }
+      },
+      "crossed_count": 0,
+      "test_rule_triggered": false,
+      "expected_for_separation_test": false,
+      "separation_match": true
+    }
+  ],
+  "confounders": [
+    "The 2025 control occurred after substantial protective works, while the 2017 and 2023 impact cases are from earlier infrastructure phases.",
+    "IMERG 0.1 degree averages only a small number of satellite grid cells over the 28.34 km2 catchment.",
+    "Three cases are insufficient to estimate false-alarm rate, sensitivity or seasonal robustness."
+  ],
+  "decision_gate": {
+    "status": "MORE_CONTROLS_AND_CURRENT_INFRASTRUCTURE_EVENTS_REQUIRED",
+    "can_use_for_historical_replay": true,
+    "can_use_for_live_test_if_same_subdaily_signal_available": true,
+    "can_use_for_production": false,
+    "required_before_production": [
+      "additional rainy non-impact controls",
+      "events observed with the 2026 infrastructure configuration",
+      "hydraulic state/capacity and overflow behaviour",
+      "validation of live subdaily rainfall latency and continuity",
+      "false-alarm and missed-event evaluation"
+    ]
+  },
+  "interpretation": "The candidate rule is a discriminant test, not a calibrated hazard threshold. A successful historical split is useful evidence but does not authorize production promotion."
+}
