@@ -2,15 +2,22 @@ name: IRFEN - Probar IMERG Early subdiario v0.8
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "17 * * * *"
   push:
     branches:
       - main
     paths:
       - scripts/probe_imerg_early_live.py
+      - scripts/archive_imerg_early_probe.py
       - .github/workflows/imerg-early-probe.yml
 
 permissions:
   contents: write
+
+concurrency:
+  group: "imerg-early-probe"
+  cancel-in-progress: true
 
 jobs:
   probe:
@@ -35,18 +42,27 @@ jobs:
           EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
         run: python scripts/probe_imerg_early_live.py
 
+      - name: Archivar latencia y continuidad
+        run: python scripts/archive_imerg_early_probe.py
+
       - name: Validar resultado
         run: |
           test -s site/data/calibration/imerg_early_live_probe.json
+          test -s site/data/calibration/imerg_early_live_archive.json
           python -m json.tool site/data/calibration/imerg_early_live_probe.json >/dev/null
+          python -m json.tool site/data/calibration/imerg_early_live_archive.json >/dev/null
           python - <<'PY'
           import json
           from pathlib import Path
           p=json.loads(Path('site/data/calibration/imerg_early_live_probe.json').read_text())
+          a=json.loads(Path('site/data/calibration/imerg_early_live_archive.json').read_text())
           assert p.get('production_use') is False
           assert p.get('production_ready') is False
           assert p.get('scientific_gate',{}).get('status') == 'SOURCE_CONNECTIVITY_ONLY'
-          print('Puerta de seguridad IMERG Early OK')
+          assert a.get('production_use') is False
+          assert a.get('production_ready') is False
+          assert a.get('scientific_gate',{}).get('status') == 'ACCUMULATING_LATENCY_AND_CONTINUITY_EVIDENCE'
+          print('Puertas de seguridad IMERG Early OK')
           PY
 
       - name: Guardar evidencia del probe
@@ -54,11 +70,13 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add site/data/calibration/imerg_early_live_probe.json
+          git add \
+            site/data/calibration/imerg_early_live_probe.json \
+            site/data/calibration/imerg_early_live_archive.json
           if git diff --cached --quiet; then
             echo "Sin cambios que guardar."
             exit 0
           fi
-          git commit -m "IRFEN v0.8: actualizar probe IMERG Early"
+          git commit -m "IRFEN v0.8: actualizar evidencia IMERG Early"
           git pull --rebase origin main
           git push origin HEAD:main
