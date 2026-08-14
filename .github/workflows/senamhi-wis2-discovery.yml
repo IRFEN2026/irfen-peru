@@ -1,0 +1,45 @@
+name: IRFEN - Descubrir estaciones SENAMHI WIS2
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/senamhi-wis2-discovery.yml
+      - scripts/discover_senamhi_wis2.py
+      - site/data/watersheds/**
+      - site/data/latest.json
+
+permissions:
+  contents: write
+
+concurrency:
+  group: senamhi-wis2-discovery
+  cancel-in-progress: true
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Instalar dependencias
+        run: pip install requests shapely
+      - name: Descubrir estaciones y observaciones WIS2
+        run: python scripts/discover_senamhi_wis2.py
+      - name: Validar resultado
+        run: |
+          test -s site/data/stations/senamhi_wis2_discovery.json
+          python -m json.tool site/data/stations/senamhi_wis2_discovery.json >/dev/null
+      - name: Guardar descubrimiento
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/stations/senamhi_wis2_discovery.json
+          git diff --cached --quiet || git commit -m "IRFEN v0.8: actualizar estaciones SENAMHI WIS2"
+          git pull --rebase origin main
+          git push
