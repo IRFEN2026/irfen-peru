@@ -49,6 +49,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Descargar repositorio
@@ -94,15 +95,19 @@ jobs:
             if [ "$i" = "2" ]; then sleep 15; fi
             if [ "$i" = "3" ]; then sleep 30; fi
             if [ "$i" = "4" ]; then sleep 60; fi
-            echo "NASA / IMERG intento ${i}/4"
-            python scripts/fetch_imerg.py --days 10
+            echo "NASA / IMERG intento ${i}/4 (máximo 90s)"
+            timeout --signal=TERM --kill-after=10s 90s python scripts/fetch_imerg.py --days 10
             rc=$?
             if [ "$rc" -eq 0 ]; then
               success=1
               echo "NASA IMERG actualizado correctamente."
               break
             fi
-            echo "Intento ${i} falló con código ${rc}."
+            if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
+              echo "Intento ${i} agotó el tiempo máximo."
+            else
+              echo "Intento ${i} falló con código ${rc}."
+            fi
           done
           if [ "$success" -eq 1 ]; then
             echo "IRFEN_NASA_OK=true" >> "$GITHUB_ENV"
@@ -122,9 +127,10 @@ jobs:
 
       - name: Calcular IMERG paralelo sobre polígonos v0.8
         if: env.IRFEN_NASA_OK == 'true'
+        continue-on-error: true
         env:
           EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
-        run: python scripts/update_polygon_imerg.py
+        run: timeout --signal=TERM --kill-after=10s 180s python scripts/update_polygon_imerg.py
 
       - name: Marcar estado operativo del dataset
         shell: bash
@@ -138,7 +144,7 @@ jobs:
           if nasa_ok=='true':
               data['operational_status']='updated'; data['status_message']='NASA Earthdata respondió correctamente en esta ejecución.'
           else:
-              data['operational_status']='stale'; data['status_message']='NASA Earthdata no estuvo disponible después de 4 intentos. IRFEN conserva el último dataset válido publicado.'
+              data['operational_status']='stale'; data['status_message']='NASA Earthdata no estuvo disponible después de 4 intentos acotados. IRFEN conserva el último dataset válido publicado.'
           data['last_update_attempt']=datetime.now(timezone.utc).isoformat()
           path.write_text(json.dumps(data,ensure_ascii=False,indent=2),encoding='utf-8')
           PY
