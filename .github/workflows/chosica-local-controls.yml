@@ -1,0 +1,34 @@
+name: IRFEN - Clasificar controles geométricos Chosica
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/resolve_chosica_local_controls.py
+      - .github/workflows/chosica-local-controls.yml
+      - site/data/calibration/chosica_local_catchment_references.json
+
+permissions:
+  contents: write
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install pyproj
+      - run: python scripts/resolve_chosica_local_controls.py
+      - run: |
+          test -s site/data/calibration/chosica_local_geometry_controls.json
+          python -m json.tool site/data/calibration/chosica_local_geometry_controls.json >/dev/null
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/calibration/chosica_local_geometry_controls.json
+          git diff --cached --quiet || git commit -m "IRFEN v0.8: update Chosica local geometry controls"
+          git pull --rebase origin main
+          git push
