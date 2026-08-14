@@ -1,42 +1,59 @@
 {
   "version": "0.8-experimental",
-  "updated_at": "2026-08-14",
-  "principle": "Las mejoras científicas se validan en paralelo y no sustituyen la lógica operativa hasta superar controles geométricos, hidrológicos e hidráulicos.",
+  "updated_at": "2026-08-14T21:00:00Z",
+  "production_use": false,
+  "production_ready": false,
+  "objective_reference": "config/v08_objective.json",
+  "principle": "Cerrar tres pilotos con datos observados, previsión, contexto hidrológico/hidráulico trazable y pruebas end-to-end antes de ampliar el ámbito. Ningún resultado experimental modifica la lógica v0.7.1.",
+  "core_release_status": {
+    "status": "FUNCTIONAL_TEST_MODE_PARTIAL",
+    "reason": "San Ildefonso y Huaycoloro ya disponen de observación por cuenca y forecast; Catacaos dispone de un proxy fluvial categórico secundario válido para pruebas. El submodelo local de Chosica/Pedregal sigue sin una señal terrestre o de mayor fidelidad espacial suficiente para una prueba viva de decisión.",
+    "production_ready": false,
+    "stop_rule": "No añadir Lurín, Cieneguilla ni nuevas quebradas hasta cerrar las brechas del núcleo actual y completar un periodo de validación operacional."
+  },
   "components": {
     "operational_observation": "stable_v0.7.1",
-    "watershed_sampling": "parallel_validation",
-    "historical_calibration": "parallel_validation",
-    "forecast_precipitation": "experimental_geos_cf_available",
+    "daily_imerg_polygon_sampling": "parallel_validation_available",
+    "subdaily_imerg_early": "technical_source_available_latency_and_continuity_accumulating",
+    "historical_calibration": "active_test_only",
+    "forecast_precipitation": "experimental_geos_cf_available_verification_accumulating",
     "scenario_simulator": "available_non_persistent",
     "hydraulic_infrastructure_inventory": "available_no_numeric_modifiers",
-    "hydraulic_response": "required_before_v0.8_production"
+    "hydraulic_response": "calibration_required_before_production",
+    "catacaos_river_state": "secondary_categorical_proxy_test_only_primary_senamhi_numeric_pending"
   },
   "forecast_lane": {
     "source": "NASA GMAO GEOS-CF v2",
     "variable": "total_precipitation (tprec)",
     "grid_resolution_deg": 0.25,
-    "update_mode": "scheduled_daily_experimental",
+    "update_mode": "scheduled_experimental",
+    "verification": "forecast_vs_imerg_pairs_accumulating",
     "production_use": false,
-    "first_successful_test": {
-      "generated_at": "2026-08-14T14:20:32.416524+00:00",
-      "available_future_hours": 91,
-      "san_ildefonso_forecast24_mm": 0.06,
-      "chosica_forecast24_mm": 0.03,
-      "catacaos_forecast24_mm": 0.24
-    },
-    "warning": "GEOS-CF se usa como señal de investigación. Debe validarse contra observaciones y no alimenta el índice operativo v0.7.1."
+    "warning": "La previsión es señal anticipatoria de investigación y no alimenta el índice operativo v0.7.1."
+  },
+  "near_real_time_rainfall_lane": {
+    "source": "NASA GPM IMERG Early GPM_3IMERGHHE V07",
+    "temporal_resolution_minutes": 30,
+    "grid_resolution_deg": 0.1,
+    "last_confirmed_status": "EARLY_HALFHOURLY_SOURCE_AVAILABLE",
+    "last_confirmed_latency_hours": 5.39,
+    "continuity_goal": "48 muestras consecutivas de 30 minutos para evaluar una ventana viva de 24 h",
+    "outage_policy": "Una caída de Earthdata se registra como contingencia; nunca se interpreta como cero de lluvia y se conserva el último dato válido.",
+    "production_use": false,
+    "pedregal_limitation": "La microcuenca Pedregal intersecta muy pocas celdas IMERG 0.1°, por lo que la conectividad técnica no resuelve la representatividad espacial."
   },
   "hydraulic_lane": {
     "inventory": "data/hydraulics/current_infrastructure.json",
     "production_use": false,
     "numeric_modifiers_enabled": false,
-    "principle": "IRFEN registra qué obras modifican la respuesta hidrológica, pero no asigna reducciones porcentuales ni capacidades no verificadas a la amenaza operativa."
+    "principle": "IRFEN registra obras que modifican la respuesta hidrológica, pero no asigna reducciones porcentuales ni capacidades no verificadas."
   },
   "zones": [
     {
       "id": "san_ildefonso",
       "name": "Quebrada San Ildefonso",
-      "watershed_status": "candidate_for_hydraulic_review",
+      "test_status": "METEO_END_TO_END_TESTABLE_HYDRAULIC_CALIBRATION_PENDING",
+      "watershed_status": "GEOMETRY_VALIDATED_FOR_PARALLEL_TESTS",
       "watershed_dataset": "Copernicus DEM GLO-30 Public",
       "reference_area_km2": 28.9,
       "delineated_area_km2": 28.34,
@@ -44,77 +61,108 @@
       "historical_polygon_test": {
         "event_date": "2017-03-15",
         "legacy_bbox_mm": {"rain24": 19.63, "rain72": 39.22, "rain7d": 48.98},
-        "watershed_mm": {"rain24": 20.77, "rain72": 42.77, "rain7d": 53.15},
-        "delta_mm": {"rain24": 1.14, "rain72": 3.55, "rain7d": 4.17}
+        "watershed_mm": {"rain24": 20.77, "rain72": 42.77, "rain7d": 53.15}
+      },
+      "subdaily_test_rule": {
+        "status": "HISTORICAL_SEPARATION_DEMONSTRATED_TEST_ONLY",
+        "rule": "2 de 3 señales candidatas: 3h >= 4.697 mm; 6h >= 6.716 mm; 24h >= 14.287 mm",
+        "impact_cases_detected": ["2017-03-15", "2023-03-10"],
+        "rainy_control_not_triggered": ["2025-03-29"],
+        "production_use": false,
+        "next_gate": "Más controles lluviosos y eventos posteriores a la infraestructura 2026 antes de cualquier promoción."
       },
       "hydraulic_gate": {
         "required": true,
         "status": "HYDRAULIC_CALIBRATION_REQUIRED",
-        "inventory_status": "available",
-        "known_current_system": "35 diques previstos en San Ildefonso, 26 en San Carlos, dique definitivo alto operativo, túnel de trasvase de 1.51 km conectado y sistema de captación/derivación hacia el río Moche en ejecución integral.",
         "numeric_modifier": null,
-        "reason": "El sistema de retención, captación y derivación de San Ildefonso/San Carlos modifica la relación histórica lluvia-caudal-impacto.",
-        "official_sources": [
-          "https://www.gob.pe/institucion/regionlalibertad/noticias/1395875-dique-definitivo-en-parte-alta-de-san-ildefonso-ya-esta-operativo-y-reducira-riesgo-de-huaicos-en-trujillo",
-          "https://www.gob.pe/institucion/anin/noticias/1029559-anin-conectan-tunel-de-trasvase-del-proyecto-san-idelfonso-y-san-carlos-que-permitira-desviar-aguas-ante-posibles-inundaciones",
-          "https://www.gob.pe/institucion/anin/noticias/1412454-anin-y-titular-de-pcm-supervisan-avance-de-las-defensas-riberenas-del-rio-moche"
-        ]
+        "current_context": "El sistema de diques, captación, túnel y derivación al río Moche modifica la relación histórica lluvia-impacto; el dique alto se reporta operativo desde mayo de 2026 y el sistema integral sigue en ejecución."
       },
       "production_ready": false
     },
     {
-      "id": "chosica",
-      "name": "Chosica / Huaycoloro",
-      "watershed_status": "candidate_for_hydraulic_review",
-      "watershed_dataset": "Copernicus DEM GLO-30 Public",
-      "reference_area_km2": 492.31,
-      "delineated_area_km2": 484.122,
-      "area_error_pct": 1.66,
-      "topology_status": "CONSISTENT",
-      "topology_cells": 520560,
-      "spatial_context_status": "CONSISTENT",
-      "reference_outlet": "ANA QHuay-1, 40 m antes de la confluencia con el río Rímac",
-      "outlet_distance_reference_km": 1.107,
-      "historical_polygon_test": {
-        "event_date": "2015-03-23",
-        "legacy_bbox_mm": {"rain24": 3.82, "rain72": 8.68, "rain7d": 15.54},
-        "watershed_mm": {"rain24": 3.94, "rain72": 8.74, "rain7d": 16.81},
-        "delta_mm": {"rain24": 0.12, "rain72": 0.06, "rain7d": 1.27}
-      },
-      "hydraulic_gate": {
-        "required": true,
-        "status": "HYDRAULIC_CALIBRATION_REQUIRED",
-        "inventory_status": "available",
-        "known_current_system": "Canal de concreto armado de 10.5 km inaugurado en 2025, dos acueductos, retención de sedimentos, diques con enrocados e infraestructura natural.",
-        "numeric_modifier": null,
-        "reason": "La canalización de 10.5 km inaugurada en 2025 modifica la exposición y conducción en la cuenca baja.",
-        "official_sources": [
-          "https://www.gob.pe/institucion/anin/noticias/1247801-huaycoloro-nunca-mas-obra-protegera-a-miles-de-habitantes-de-campoy-nieveria-huachipa-y-cajamarquilla",
-          "https://www.gob.pe/institucion/anin/noticias/1079672-anin-proyecto-quebrada-huaycoloro-presenta-98-de-ejecucion-fisica",
-          "https://www.gob.pe/institucion/anin/noticias/1423006-anin-articula-acciones-inmediatas-para-proteger-el-canal-huaycoloro-del-ingreso-ilegal-de-vehiculos"
-        ]
+      "id": "lima_east",
+      "name": "Lima Este - Huaycoloro + quebradas locales de Chosica",
+      "test_status": "PARTIAL_HUAYCOLORO_TESTABLE_PEDREGAL_LIVE_SIGNAL_BLOCKED",
+      "architecture": "TWO_HAZARD_SUBMODELS",
+      "submodels": {
+        "huaycoloro_main_channel": {
+          "watershed_status": "GEOMETRY_VALIDATED_FOR_PARALLEL_TESTS",
+          "reference_area_km2": 492.31,
+          "delineated_area_km2": 484.122,
+          "area_error_pct": 1.66,
+          "topology_status": "CONSISTENT",
+          "historical_controls": {
+            "2015-03-23": "weak signal because this event primarily represents local Chosica debris flows",
+            "2017-03-15": "main-channel Huaycoloro event captured strongly by current rainfall formulation"
+          },
+          "hydraulic_gate": "HYDRAULIC_CALIBRATION_REQUIRED_FOR_10_5_KM_CHANNEL",
+          "production_ready": false
+        },
+        "chosica_local_debris_flows": {
+          "representative_catchment": "Pedregal / San Antonio de Pedregal",
+          "geometry_status": "ANA_CONTROLLED_CANDIDATE",
+          "delineated_area_km2": 3.827,
+          "historical_event": "2015-03-23",
+          "imerg_final_max24h_mm": 10.707,
+          "ground_station_diagnostic": {
+            "station": "Chosica - SENAMHI",
+            "reported_event_day_mm": 18.3,
+            "diagnostic_imerg_to_station_ratio": 0.585,
+            "automatic_bias_correction_allowed": false,
+            "source_file": "data/calibration/pedregal_ground_evidence_2015.json"
+          },
+          "live_test_ready": false,
+          "blocking_requirement": "LOCAL_OR_HIGHER_FIDELITY_RAINFALL_SIGNAL_AND_NON_EVENT_CONTROLS_REQUIRED",
+          "decision": "No reducir umbrales para compensar la subcaptura satelital."
+        }
       },
       "production_ready": false
     },
     {
       "id": "catacaos",
       "name": "Catacaos / Bajo Piura",
-      "watershed_status": "river_basin_floodplain_design_defined",
+      "test_status": "END_TO_END_TESTABLE_WITH_SECONDARY_CATEGORICAL_RIVER_PROXY",
       "model_type": "river_basin_floodplain_system",
-      "note": "Catacaos no debe tratarse como una microcuenca simple: el riesgo depende del sistema río Piura/intercuenca Bajo Piura, aportes aguas arriba, defensas y exposición de llanura de inundación.",
-      "forecast_spatial_status": "provisional_sampling_only",
-      "hydraulic_gate": {
-        "required": true,
-        "status": "RIVER_STATE_REQUIRED",
-        "inventory_status": "available",
-        "urban_drainage_project_status": "viable_not_integrated_operational_system",
-        "urban_drainage_systems": 52,
-        "bajo_piura_design_flow_reference_m3s": 4100,
-        "design_flow_warning": "Referencia de diseño de defensas; no representa el caudal observado ni la capacidad hidráulica actual verificada del río.",
-        "numeric_modifier": null
+      "rainfall_lane": "IMERG + GEOS experimental",
+      "river_state": {
+        "primary_source": "SENAMHI/PHISIS - Puente Ñácara",
+        "primary_numeric_automation": "pending",
+        "secondary_test_proxy": "Copernicus/GloFAS categorical return-period signal",
+        "secondary_proxy_status": "VALIDATED_FOR_TEST_ONLY",
+        "numeric_m3s_from_proxy_allowed": false
       },
-      "next_step": "Resolver una serie automática de nivel/caudal, verificar capacidad hidráulica actual y construir llanura de inundación; mantener IMERG actual mientras se construye el modelo fluvial.",
+      "ana_2026_critical_segments": {
+        "mapped_pass_segments": 4,
+        "role": "official critical river segments; not inundation polygons"
+      },
+      "remaining_production_gates": [
+        "Automated official numeric river state when technically available",
+        "Current hydraulic/channel capacity validation",
+        "Floodplain/exposure response validation"
+      ],
       "production_ready": false
+    }
+  ],
+  "remaining_core_blockers": [
+    {
+      "priority": 1,
+      "blocker": "Pedregal local rainfall fidelity",
+      "closure_condition": "Obtain an independent local/ground or higher-fidelity precipitation signal and rainy non-impact controls sufficient to test a local debris-flow rule."
+    },
+    {
+      "priority": 2,
+      "blocker": "Current hydraulic response after recent works",
+      "closure_condition": "Observe/validate behavior of San Ildefonso and Huaycoloro infrastructure during representative rainfall; no invented attenuation factors."
+    },
+    {
+      "priority": 3,
+      "blocker": "Catacaos primary river state and floodplain validation",
+      "closure_condition": "Prefer SENAMHI numeric river data and validate current river/floodplain response; GloFAS remains test-only fallback."
+    },
+    {
+      "priority": 4,
+      "blocker": "Operational validation period",
+      "closure_condition": "Run the three pilots in shadow/test mode through real rainfall cases, recording false alarms, misses, latency and data outages before production consideration."
     }
   ]
 }
