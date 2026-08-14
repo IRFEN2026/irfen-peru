@@ -12,6 +12,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: huaycoloro-v08
+  cancel-in-progress: false
+
 jobs:
   build-watershed:
     runs-on: ubuntu-latest
@@ -19,6 +23,8 @@ jobs:
     steps:
       - name: Descargar repositorio
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Configurar Python
         uses: actions/setup-python@v6
@@ -33,11 +39,19 @@ jobs:
       - name: Construir subcuenca candidata Huaycoloro
         run: python scripts/build_huaycoloro_dem.py
 
-      - name: Mostrar validacion
-        run: cat site/data/watersheds/huaycoloro_validation.json
+      - name: Validar archivos y resultado
+        shell: bash
+        run: |
+          test -s site/data/watersheds/huaycoloro_watershed.geojson
+          test -s site/data/watersheds/huaycoloro_validation.json
+          test -s site/data/watersheds/huaycoloro_validation_context.json
+          python -m json.tool site/data/watersheds/huaycoloro_validation.json >/dev/null
+          cat site/data/watersheds/huaycoloro_validation.json
 
       - name: Guardar resultados en repositorio
+        shell: bash
         run: |
+          set -e
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add site/data/watersheds/huaycoloro_watershed.geojson
@@ -45,7 +59,8 @@ jobs:
           git add site/data/watersheds/huaycoloro_validation_context.json
           if git diff --cached --quiet; then
             echo "No hay cambios para guardar."
-          else
-            git commit -m "IRFEN v0.8: subcuenca Huaycoloro con Copernicus DEM"
-            git push
+            exit 0
           fi
+          git commit -m "IRFEN v0.8: subcuenca Huaycoloro con Copernicus DEM"
+          git pull --rebase origin main
+          git push origin HEAD:main
