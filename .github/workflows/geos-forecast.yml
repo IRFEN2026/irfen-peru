@@ -1,0 +1,70 @@
+name: IRFEN - Pronóstico experimental NASA GEOS v0.8
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 18 * * *"
+  push:
+    branches:
+      - main
+    paths:
+      - scripts/fetch_geos_forecast.py
+      - .github/workflows/geos-forecast.yml
+      - site/data/watersheds/san_ildefonso_watershed.geojson
+      - site/data/watersheds/huaycoloro_watershed.geojson
+      - config/zones.json
+
+permissions:
+  contents: write
+
+concurrency:
+  group: geos-forecast-v08
+  cancel-in-progress: false
+
+jobs:
+  forecast:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: pip install xarray zarr s3fs fsspec numpy shapely
+
+      - name: Calcular pronóstico experimental
+        run: python scripts/fetch_geos_forecast.py
+
+      - name: Validar reporte
+        run: |
+          test -s site/data/forecast/latest.json
+          python -m json.tool site/data/forecast/latest.json >/dev/null
+          python - <<'PY'
+          import json
+          d=json.load(open('site/data/forecast/latest.json',encoding='utf-8'))
+          assert d.get('production_use') is False
+          assert d.get('status') == 'experimental_forecast_available'
+          assert len(d.get('zones',[])) >= 2
+          print([(z['zone_id'],z['forecast24_mm'],z['forecast72_mm']) for z in d['zones']])
+          PY
+
+      - name: Guardar pronóstico experimental
+        shell: bash
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/forecast/latest.json
+          if git diff --cached --quiet; then
+            echo "Sin cambios."
+            exit 0
+          fi
+          git commit -m "IRFEN v0.8: actualizar pronóstico experimental NASA GEOS"
+          git pull --rebase origin main
+          git push origin HEAD:main
