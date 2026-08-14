@@ -12,6 +12,7 @@ on:
       - requirements.txt
       - scripts/fetch_imerg.py
       - scripts/update_polygon_imerg.py
+      - scripts/verify_geos_against_imerg.py
       - scripts/build_experimental_state.py
       - scripts/build_piura_reference_model.py
       - scripts/validate_scientific_assets.py
@@ -135,6 +136,9 @@ jobs:
           path.write_text(json.dumps(data,ensure_ascii=False,indent=2),encoding='utf-8')
           PY
 
+      - name: Verificar forecast GEOS maduro contra IMERG
+        run: python scripts/verify_geos_against_imerg.py
+
       - name: Construir referencias fluviales Piura v0.8
         run: python scripts/build_piura_reference_model.py
 
@@ -175,12 +179,14 @@ jobs:
           test -s site/data/scientific_status.json
           test -s site/data/hydraulics/current_infrastructure.json
           test -s site/data/hydrology/piura_reference_model.json
+          test -s site/data/forecast/verification.json
           test -s site/data/experimental_state.json
           python -m json.tool site/data/latest.json >/dev/null
           python -m json.tool site/data/history.json >/dev/null
           python -m json.tool site/data/scientific_status.json >/dev/null
           python -m json.tool site/data/hydraulics/current_infrastructure.json >/dev/null
           python -m json.tool site/data/hydrology/piura_reference_model.json >/dev/null
+          python -m json.tool site/data/forecast/verification.json >/dev/null
           python -m json.tool site/data/experimental_state.json >/dev/null
           if [ -s site/data/forecast/latest.json ]; then
             python -m json.tool site/data/forecast/latest.json >/dev/null
