@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Indexa evidencia del IGP 2023 sobre precipitación histórica en Chosica.
+"""Indexa evidencia del IGP 2023 sobre precipitación histórica en Chosica/Huaycoloro.
 
-Descarga temporalmente el informe oficial y guarda solo páginas, términos y
-candidatos numéricos útiles para investigar la brecha del evento 23/03/2015.
-No republica el PDF ni ajusta umbrales automáticamente.
+Busca tanto la brecha del evento Chosica 23/03/2015 como una posible fecha
+exacta documentada para Huaycoloro/Jicamarca 2012. Guarda páginas, términos y
+candidatos numéricos; no republica el PDF ni ajusta umbrales automáticamente.
 """
 from __future__ import annotations
 
@@ -24,8 +24,12 @@ MAX_BYTES = 25 * 1024 * 1024
 
 CATEGORIES = {
     "event_2015": ["2015", "23 de marzo", "23/03/2015", "23-03-2015"],
+    "event_2012": ["2012", "05/04/2012", "5/04/2012", "5 de abril de 2012", "05 de abril de 2012"],
     "chosica": ["chosica", "lurigancho"],
     "chaclacayo": ["chaclacayo"],
+    "huaycoloro": ["huaycoloro"],
+    "jicamarca": ["jicamarca"],
+    "cajamarquilla": ["cajamarquilla"],
     "matucana": ["matucana"],
     "santa_eulalia": ["santa eulalia"],
     "nana": ["ñaña", "nana"],
@@ -45,11 +49,16 @@ def norm(text):
 
 def rainfall_tokens(text):
     out = []
-    # Conserva exactamente el token del documento; no interpreta coma/punto.
-    for m in re.finditer(r"(?<!\d)(\d{1,4}(?:[.,]\d{1,3})?)\s*mm\b", text, re.I):
-        token = m.group(1)
-        if token not in out:
-            out.append(token)
+    patterns = [
+        r"(?<!\d)(\d{1,4}(?:[.,]\d{1,3})?)\s*mm\b",
+        r"(?<!\d)(\d{1,4}(?:[.,]\d{1,3})?)\s*mm\s*/\s*(?:h|hora|día|dia)",
+        r"(?<!\d)(\d{1,4}(?:[.,]\d{1,3})?)\s*mil[ií]metros?",
+    ]
+    for pat in patterns:
+        for m in re.finditer(pat, text, re.I):
+            token = m.group(1)
+            if token not in out:
+                out.append(token)
     return out[:80]
 
 
@@ -79,14 +88,16 @@ def main():
             "item_url": ITEM,
             "download_url": URL,
         },
-        "purpose": "Investigar por qué el evento conocido de Chosica 23/03/2015 obtiene una señal IMERG baja con los parámetros provisionales actuales.",
+        "purpose": "Investigar la baja captura IMERG del evento 23/03/2015 y resolver, si la evidencia lo permite, una fecha exacta del evento Huaycoloro/Jicamarca 2012.",
         "status": "starting",
         "page_index": {},
         "pages_with_2015_and_rainfall": [],
+        "pages_with_2012_huaycoloro_context": [],
+        "date_candidates_2012_huaycoloro_context": [],
         "pages_with_station_and_rainfall": [],
         "rainfall_value_candidates": [],
         "date_candidates": [],
-        "warning": "Índice documental. Los valores candidatos requieren revisar estación, periodo acumulado, ubicación y significado antes de compararlos con IMERG o modificar umbrales.",
+        "warning": "Índice documental. Una fecha candidata solo puede pasar al catálogo histórico si coincide en la misma página con Huaycoloro/Jicamarca/Cajamarquilla y el contexto de evento; los valores de lluvia requieren validar estación y periodo.",
     }
 
     headers = {"User-Agent": "Mozilla/5.0 IRFEN-research/0.8"}
@@ -110,6 +121,8 @@ def main():
             pages = {k: [] for k in CATEGORIES}
             rain_candidates = []
             dates = []
+            page_dates = {}
+            page_categories = {}
             text_pages = 0
 
             for pageno, page in enumerate(reader.pages, start=1):
@@ -126,28 +139,48 @@ def main():
                     if any(n.lower() in low for n in needles):
                         pages[key].append(pageno)
                         hit_categories.append(key)
+                page_categories[pageno] = sorted(hit_categories)
                 tokens = rainfall_tokens(raw)
                 for token in tokens:
                     rain_candidates.append({
                         "page": pageno,
                         "value_text": token,
-                        "unit": "mm",
+                        "unit": "mm_or_mm_rate_unresolved",
                         "page_categories": sorted(hit_categories),
                         "validated_period": False,
                         "validated_station": False,
                     })
-                for value in date_tokens(raw):
+                pd = date_tokens(raw)
+                page_dates[pageno] = pd
+                for value in pd:
                     dates.append({"page": pageno, "date_text": value, "page_categories": sorted(hit_categories)})
 
             report["text_layer_pages"] = text_pages
-            report["page_index"] = {
-                k: {"pages": v, "page_count": len(v)} for k, v in pages.items() if v
-            }
+            report["page_index"] = {k: {"pages": v, "page_count": len(v)} for k, v in pages.items() if v}
+
             s2015 = set(pages.get("event_2015", []))
+            s2012 = set(pages.get("event_2012", []))
             srain = set(pages.get("rainfall", []))
             sstation = set(pages.get("station", []))
+            shuay = set(pages.get("huaycoloro", [])) | set(pages.get("jicamarca", [])) | set(pages.get("cajamarquilla", []))
+            sdebris = set(pages.get("debris_flow", []))
+
             report["pages_with_2015_and_rainfall"] = sorted(s2015 & srain)
             report["pages_with_station_and_rainfall"] = sorted(sstation & srain)
+            candidate_pages = sorted(s2012 & shuay & sdebris)
+            report["pages_with_2012_huaycoloro_context"] = candidate_pages
+            report["date_candidates_2012_huaycoloro_context"] = [
+                {
+                    "page": p,
+                    "dates": [d for d in page_dates.get(p, []) if "2012" in d],
+                    "page_categories": page_categories.get(p, []),
+                    "same_page_huaycoloro_or_jicamarca": True,
+                    "same_page_debris_flow_context": True,
+                    "validated_event_date": False,
+                }
+                for p in candidate_pages
+                if any("2012" in d for d in page_dates.get(p, []))
+            ]
             report["rainfall_value_candidates"] = rain_candidates[:250]
             report["date_candidates"] = dates[:250]
             report["status"] = "indexed_for_calibration_review" if text_pages else "downloaded_without_text_layer"
@@ -160,11 +193,10 @@ def main():
     OUT.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps({
         "status": report["status"],
-        "download_bytes": report.get("download_bytes"),
         "page_count": report.get("page_count"),
-        "text_layer_pages": report.get("text_layer_pages"),
         "pages_with_2015_and_rainfall": report.get("pages_with_2015_and_rainfall"),
-        "pages_with_station_and_rainfall": report.get("pages_with_station_and_rainfall"),
+        "pages_with_2012_huaycoloro_context": report.get("pages_with_2012_huaycoloro_context"),
+        "date_candidates_2012_huaycoloro_context": report.get("date_candidates_2012_huaycoloro_context"),
         "rainfall_value_candidate_count": len(report.get("rainfall_value_candidates", [])),
     }, ensure_ascii=False, indent=2))
     return 0
