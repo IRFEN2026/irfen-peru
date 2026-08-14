@@ -1,21 +1,21 @@
 {
   "version": "0.8-experimental",
-  "generated_at": "2026-08-14T18:38:55.309911+00:00",
+  "generated_at": "2026-08-14T20:33:12.851622+00:00",
   "production_use": false,
   "legacy_operational_zone_id": "chosica",
   "legacy_zone_name": "Chosica / Huaycoloro",
-  "status": "HAZARD_DECOMPOSITION_REQUIRED",
+  "status": "SUBMODEL_SPLIT_ACTIVE_EXPERIMENTAL",
   "reason": "La zona heredada agrupa dos mecanismos espacial e hidrológicamente distintos: desborde/conducción del sistema Huaycoloro y flujos de detritos de quebradas locales de Chosica hacia el río Rímac.",
   "evidence": {
     "official_2015_event_source": {
       "source": "INGEMMET / SIGRID-CENEPRED",
       "url": "https://sigrid4.cenepred.gob.pe/sigridv4/documento/3642",
-      "finding": "El evento 23/03/2015 se documenta entre las quebradas Rayos de Sol y Quirio en Lurigancho-Chosica, además de Cashahuacra en Santa Eulalia."
+      "finding": "El evento 23/03/2015 se documenta en quebradas locales de Lurigancho-Chosica, por lo que no debe calibrarse únicamente con la cuenca completa de Huaycoloro."
     },
     "historical_replay": {
       "huaycoloro_2017": null,
       "chosica_local_2015": null,
-      "interpretation": "La gran diferencia de captura entre ambos eventos es consistente con que no deben calibrarse como un único mecanismo mediante la subcuenca Huaycoloro."
+      "interpretation": "Huaycoloro 2017 y Chosica local 2015 muestran respuestas muy distintas con el agregado espacial heredado; la separación de mecanismos es necesaria antes de calibrar."
     }
   },
   "submodels": [
@@ -34,7 +34,7 @@
         "forecast24",
         "channel_hydraulic_state"
       ],
-      "infrastructure_context": "Canalización 10.5 km y obras asociadas operativas desde 2025.",
+      "infrastructure_context": "Canalización de 10.5 km y obras asociadas operativas desde 2025.",
       "scientific_gate": "HYDRAULIC_CALIBRATION_REQUIRED",
       "production_use": false
     },
@@ -42,14 +42,35 @@
       "id": "chosica_local_debris_flows",
       "name": "Chosica · quebradas locales de flujo de detritos",
       "hazard_type": "short_response_local_debris_flow",
-      "geometry_status": "individual_local_catchments_required",
-      "priority_quebradas": [
-        "Rayos de Sol",
+      "geometry_status": "REPRESENTATIVE_PEDREGAL_ANA_CONTROLLED_CANDIDATE",
+      "representative_catchment": {
+        "name": "Pedregal / San Antonio de Pedregal",
+        "candidate_id": "pedregal_3_8",
+        "geometry": "data/watersheds/pedregal_candidate.geojson",
+        "validation_status": "ANA_CONTROLLED_CANDIDATE",
+        "delineated_area_km2": 3.827,
+        "distance_to_ana_mouth_cross_section_m": 27.3,
+        "ana_outlet_spatial_control": "PASS",
+        "dem_internal_area_consistency": "PASS",
+        "production_use": false
+      },
+      "priority_quebradas_after_representative_model": [
         "Quirio",
-        "Pedregal / San Antonio de Pedregal"
+        "Rayos de Sol"
       ],
       "reference_event": "CH-2015-03-23",
       "reference_event_replay": null,
+      "historical_subdaily_signal": {
+        "available": true,
+        "source": "GPM_3IMERGHH Final V07",
+        "peak_rate_mm_hr": 1.9,
+        "max_1h_mm": 1.81,
+        "max_3h_mm": 3.912,
+        "max_6h_mm": 6.111,
+        "max_24h_mm": 10.707,
+        "interpretation": "IMERG 0.1°/30 min aporta señal subdiaria, pero el evento severo de 2015 sigue sin quedar explicado con suficiente fuerza para derivar umbrales locales.",
+        "production_use": false
+      },
       "core_signals_candidate": [
         "local_catchment_rainfall",
         "short_duration_rainfall_intensity",
@@ -57,16 +78,17 @@
         "debris_sediment_condition",
         "forecast_convective_rainfall"
       ],
-      "known_model_mismatch": "Applying the Huaycoloro/legacy aggregate to the 23/03/2015 local-debris event produces only Vigilancia, despite documented severe impacts.",
+      "known_model_mismatch": "El agregado Huaycoloro/zona heredada deja el evento local severo del 23/03/2015 demasiado bajo; no se deben bajar umbrales para forzar su detección.",
       "next_steps": [
-        "delineate Rayos de Sol/Quirio/Pedregal catchments individually or as justified clusters",
-        "identify local rainfall/station evidence and sub-daily intensity proxies",
-        "build event and non-event catalogue specific to local debris flows",
-        "calibrate thresholds separately from Huaycoloro main channel"
+        "resolver una señal local terrestre o de mayor fidelidad para Pedregal",
+        "construir controles lluviosos sin impacto para evaluar falsas alarmas",
+        "calibrar primero el submodelo representativo de Pedregal",
+        "solo después extender la geometría local a Quirio y Rayos de Sol si sigue siendo necesario para el objetivo v0.8"
       ],
-      "scientific_gate": "LOCAL_CATCHMENTS_AND_EVENT_CALIBRATION_REQUIRED",
+      "scientific_gate": "LOCAL_GROUND_OR_HIGHER_FIDELITY_RAINFALL_AND_NON_EVENT_CALIBRATION_REQUIRED",
       "production_use": false
     }
   ],
-  "operational_rule": "No change to v0.7.1 zone or alert calculation. Decomposition is scientific-only until validated and explicitly promoted."
+  "operational_rule": "No change to v0.7.1 zone or alert calculation. Decomposition is scientific-only until validated and explicitly promoted.",
+  "scope_rule": "No ampliar a Lurín, Cieneguilla ni nuevas quebradas hasta cerrar los tres pilotos del objetivo v0.8."
 }
