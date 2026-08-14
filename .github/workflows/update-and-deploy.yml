@@ -11,7 +11,9 @@ on:
       - .github/workflows/update-and-deploy.yml
       - requirements.txt
       - scripts/fetch_imerg.py
+      - site/data/history.json
       - site/data/watersheds/**
+      - site/v08-experimental.js
 
 permissions:
   contents: read
@@ -206,10 +208,24 @@ jobs:
           path.write_text(json.dumps(data,ensure_ascii=False,indent=2),encoding='utf-8')
           PY
 
+      - name: Activar panel científico v0.8
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path=Path('site/index.html')
+          html=path.read_text(encoding='utf-8')
+          tag='<script src="v08-experimental.js"></script>'
+          if tag not in html:
+              html=html.replace('</body>',tag+'\n</body>')
+          path.write_text(html,encoding='utf-8')
+          PY
+
       - name: Validar archivos mínimos
         shell: bash
         run: |
           test -s site/index.html
+          test -s site/v08-experimental.js
           test -s site/data/latest.json
           test -s site/data/history.json
           python -m json.tool site/data/latest.json >/dev/null
