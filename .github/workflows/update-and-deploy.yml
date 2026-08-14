@@ -14,6 +14,7 @@ on:
       - scripts/update_polygon_imerg.py
       - scripts/verify_geos_against_imerg.py
       - scripts/build_historical_replay.py
+      - scripts/build_ana_catacaos_segments.py
       - scripts/build_experimental_state.py
       - scripts/build_piura_reference_model.py
       - scripts/validate_scientific_assets.py
@@ -148,6 +149,9 @@ jobs:
       - name: Construir referencias fluviales Piura v0.8
         run: python scripts/build_piura_reference_model.py
 
+      - name: Construir tramos críticos ANA Catacaos 2026
+        run: python scripts/build_ana_catacaos_segments.py
+
       - name: Construir estado experimental de pruebas v0.8
         run: python scripts/build_experimental_state.py
 
@@ -185,6 +189,8 @@ jobs:
           test -s site/data/scientific_status.json
           test -s site/data/hydraulics/current_infrastructure.json
           test -s site/data/hydrology/piura_reference_model.json
+          test -s site/data/hydrology/ana_catacaos_critical_segments_2026.geojson
+          test -s site/data/hydrology/ana_catacaos_critical_segments_2026_validation.json
           test -s site/data/forecast/verification.json
           test -s site/data/calibration/historical_replay.json
           test -s site/data/experimental_state.json
@@ -193,6 +199,8 @@ jobs:
           python -m json.tool site/data/scientific_status.json >/dev/null
           python -m json.tool site/data/hydraulics/current_infrastructure.json >/dev/null
           python -m json.tool site/data/hydrology/piura_reference_model.json >/dev/null
+          python -m json.tool site/data/hydrology/ana_catacaos_critical_segments_2026.geojson >/dev/null
+          python -m json.tool site/data/hydrology/ana_catacaos_critical_segments_2026_validation.json >/dev/null
           python -m json.tool site/data/forecast/verification.json >/dev/null
           python -m json.tool site/data/calibration/historical_replay.json >/dev/null
           python -m json.tool site/data/experimental_state.json >/dev/null
