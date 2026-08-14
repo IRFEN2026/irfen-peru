@@ -1,0 +1,43 @@
+name: IRFEN - Descubrir capas SENAMHI IDESEP
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/senamhi-idesep-discovery.yml
+      - scripts/discover_senamhi_idesep.py
+
+permissions:
+  contents: write
+
+concurrency:
+  group: senamhi-idesep-discovery
+  cancel-in-progress: true
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Instalar dependencias
+        run: pip install requests
+      - name: Descubrir capas WFS IDESEP
+        run: python scripts/discover_senamhi_idesep.py
+      - name: Validar resultado
+        run: |
+          test -s site/data/stations/senamhi_idesep_discovery.json
+          python -m json.tool site/data/stations/senamhi_idesep_discovery.json >/dev/null
+      - name: Guardar descubrimiento
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/stations/senamhi_idesep_discovery.json
+          git diff --cached --quiet || git commit -m "IRFEN v0.8: actualizar descubrimiento IDESEP SENAMHI"
+          git pull --rebase origin main
+          git push
