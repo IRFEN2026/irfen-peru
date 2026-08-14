@@ -1,0 +1,152 @@
+{
+  "version": "0.8-experimental",
+  "updated_at": "2026-08-14",
+  "production_use": false,
+  "principle": "Este inventario describe infraestructura hidráulica y su estado conocido. No aplica factores numéricos de reducción de riesgo mientras no exista calibración hidráulica suficiente.",
+  "zones": [
+    {
+      "zone_id": "san_ildefonso",
+      "name": "Quebrada San Ildefonso / San Carlos",
+      "system_status": "partially_operational_integral_system",
+      "known_components": [
+        {
+          "type": "upper_basin_dikes",
+          "status": "partially_operational",
+          "details": "El sistema integral contempla 35 diques en San Ildefonso y 26 en San Carlos. En mayo de 2026 se confirmó operativo el dique definitivo de la parte alta de San Ildefonso."
+        },
+        {
+          "type": "transfer_tunnel",
+          "status": "connected",
+          "length_km": 1.51,
+          "details": "Túnel de trasvase diseñado para desviar aguas de San Ildefonso hacia San Carlos."
+        },
+        {
+          "type": "capture_and_conveyance",
+          "status": "partially_operational",
+          "details": "Estructuras de captación y derivación, canales de conducción en Laredo y Galindo y mallas dinámicas de contención forman parte de la solución integral."
+        },
+        {
+          "type": "moche_discharge_structure",
+          "status": "under_completion_2026",
+          "details": "La estructura de descarga hacia el río Moche forma parte del Paquete 4A y seguía en ejecución durante 2026."
+        }
+      ],
+      "hydrologic_effect": {
+        "rainfall_to_urban_flow_relationship": "materially_modified",
+        "sediment_and_debris_routing": "materially_modified",
+        "numeric_attenuation_factor": null,
+        "numeric_capacity_m3s": null
+      },
+      "scientific_gate": {
+        "status": "HYDRAULIC_CALIBRATION_REQUIRED",
+        "reason": "La relación histórica lluvia-impacto anterior a 2026 ya no puede trasladarse directamente a la ciudad porque parte del flujo de la cuenca alta puede ser captado, retenido y derivado hacia el sistema San Carlos-río Moche.",
+        "required_before_production": [
+          "capacidad hidráulica por componente",
+          "reglas de operación y puntos de rebose",
+          "eventos observados con el sistema actual",
+          "condición de sedimentos/obstrucción",
+          "estado de terminación del sistema integral"
+        ]
+      },
+      "official_sources": [
+        "https://www.gob.pe/institucion/regionlalibertad/noticias/1395875-dique-definitivo-en-parte-alta-de-san-ildefonso-ya-esta-operativo-y-reducira-riesgo-de-huaicos-en-trujillo",
+        "https://www.gob.pe/institucion/anin/noticias/1029559-anin-conectan-tunel-de-trasvase-del-proyecto-san-idelfonso-y-san-carlos-que-permitira-desviar-aguas-ante-posibles-inundaciones",
+        "https://www.gob.pe/institucion/anin/noticias/1412454-anin-y-titular-de-pcm-supervisan-avance-de-las-defensas-riberenas-del-rio-moche"
+      ],
+      "production_modifier": null
+    },
+    {
+      "zone_id": "chosica",
+      "name": "Quebrada Huaycoloro",
+      "system_status": "operational_protection_channel",
+      "known_components": [
+        {
+          "type": "reinforced_concrete_channel",
+          "status": "operational",
+          "length_km": 10.5,
+          "details": "Canal de concreto armado inaugurado en septiembre de 2025 entre el entorno de la autopista Ramiro Prialé y el puente Saracoto."
+        },
+        {
+          "type": "aqueducts",
+          "status": "operational",
+          "count": 2
+        },
+        {
+          "type": "sediment_and_bank_protection",
+          "status": "operational_or_integrated",
+          "details": "La solución incluye retención de sedimentos, diques con enrocados e infraestructura natural."
+        }
+      ],
+      "hydrologic_effect": {
+        "rainfall_to_urban_flow_relationship": "materially_modified_in_lower_reach",
+        "conveyance_and_overbank_flow": "materially_modified",
+        "numeric_attenuation_factor": null,
+        "numeric_capacity_m3s": null
+      },
+      "scientific_gate": {
+        "status": "HYDRAULIC_CALIBRATION_REQUIRED",
+        "reason": "El canal de 10.5 km modifica la conducción y la exposición en el tramo bajo. La cuenca DEM sigue siendo válida para precipitación, pero los umbrales de impacto histórico no deben trasladarse directamente a la situación posterior a 2025.",
+        "required_before_production": [
+          "capacidad de diseño del canal",
+          "condición de sedimentos y obstrucciones",
+          "puntos de desborde y restricciones hidráulicas",
+          "eventos observados posteriores a la inauguración",
+          "estado de mantenimiento de accesos y caja hidráulica"
+        ]
+      },
+      "official_sources": [
+        "https://www.gob.pe/institucion/anin/noticias/1247801-huaycoloro-nunca-mas-obra-protegera-a-miles-de-habitantes-de-campoy-nieveria-huachipa-y-cajamarquilla",
+        "https://www.gob.pe/institucion/anin/noticias/1079672-anin-proyecto-quebrada-huaycoloro-presenta-98-de-ejecucion-fisica",
+        "https://www.gob.pe/institucion/anin/noticias/1423006-anin-articula-acciones-inmediatas-para-proteger-el-canal-huaycoloro-del-ingreso-ilegal-de-vehiculos"
+      ],
+      "production_modifier": null
+    },
+    {
+      "zone_id": "catacaos",
+      "name": "Catacaos / Bajo Piura",
+      "system_status": "river_and_drainage_projects_in_design_or_pre_execution",
+      "known_components": [
+        {
+          "type": "urban_stormwater_drainage_program",
+          "status": "viable_not_operational_as_integrated_system",
+          "systems": 52,
+          "intervention_packages": 10,
+          "coverage_ha": 7621.23,
+          "details": "Proyecto viable en junio de 2026 para Piura, Castilla, Veintiséis de Octubre y Catacaos; contempla captación, conducción, almacenamiento, bombeo y evacuación."
+        },
+        {
+          "type": "river_flood_protection_project",
+          "status": "viable_design_stage",
+          "details": "El proyecto integral del río Piura considera protección ribereña, laminación y evacuación; no se considera todavía una protección operativa completa para IRFEN."
+        },
+        {
+          "type": "bajo_piura_defense_design_reference",
+          "status": "design_reference_only",
+          "design_flow_m3s": 4100,
+          "details": "Referencia de diseño comunicada para defensas del Bajo Piura entre Puente Grau y La Joya. No representa el caudal observado ni la capacidad hidráulica actual verificada del río."
+        }
+      ],
+      "hydrologic_effect": {
+        "current_integrated_protection_effect": "not_quantified",
+        "numeric_attenuation_factor": null
+      },
+      "scientific_gate": {
+        "status": "RIVER_STATE_REQUIRED",
+        "reason": "El riesgo en Catacaos depende del caudal/nivel del río Piura, aportes aguas arriba, condición del cauce, defensas existentes y drenaje urbano; la precipitación por sí sola no es suficiente.",
+        "required_before_production": [
+          "serie automática de nivel o caudal",
+          "capacidad hidráulica actual verificada",
+          "mapa de llanura de inundación y cotas críticas",
+          "estado real de defensas existentes",
+          "drenaje urbano operativo versus proyectado"
+        ]
+      },
+      "official_sources": [
+        "https://www.gob.pe/institucion/anin/noticias/1412429-anin-logra-viabilidad-de-proyecto-de-drenaje-pluvial-para-piura-castilla-veintiseis-de-octubre-y-catacaos",
+        "https://www.gob.pe/institucion/anin/noticias/1420553-anin-logra-destrabar-proyecto-de-proteccion-del-rio-piura-y-obtiene-su-viabilidad",
+        "https://www.gob.pe/institucion/munipiura/noticias/1137167-entregan-terreno-para-elaboracion-de-expedientes-tecnicos-de-defensas-riberenas-en-chato-chico-y-santa-rosa-de-curvan"
+      ],
+      "production_modifier": null
+    }
+  ]
+}
