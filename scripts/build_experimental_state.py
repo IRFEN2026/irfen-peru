@@ -113,6 +113,8 @@ def main():
     glofas = load(SITE / "data" / "hydrology" / "glofas_catacaos_current.json", {}) or {}
     pedregal_validation = load(SITE / "data" / "calibration" / "pedregal_ana_validation.json", {}) or {}
     pedregal_halfhour = load(SITE / "data" / "calibration" / "pedregal_2015_imerg_halfhour.json", {}) or {}
+    pedregal_ground = load(SITE / "data" / "calibration" / "pedregal_ground_evidence_2015.json", {}) or {}
+    isaac = load(SITE / "data" / "stations" / "isaac_access_probe.json", {}) or {}
     lima_decomp = load(SITE / "data" / "hazard_models" / "lima_east_decomposition.json", {}) or {}
 
     forecast_by = {z.get("zone_id"): z for z in forecast.get("zones", [])}
@@ -134,6 +136,7 @@ def main():
             "catacaos_primary_river_authority": "SENAMHI/PHISIS",
             "catacaos_secondary_proxy_allowed_only_for_tests": True,
             "threshold_crossings_are_test_signals_only": True,
+            "manual_external_verification_never_becomes_automatic_alert": True,
         },
         "zones": [],
     }
@@ -259,8 +262,9 @@ def main():
         })
 
     # Lima Este se conserva como dos mecanismos. Pedregal es el representante
-    # local que ya tiene control ANA de boca, pero su señal IMERG 0.1°/30 min
-    # sigue siendo insuficiente para calibrar el evento de 2015.
+    # local que ya tiene control ANA de boca. ISAAC aporta una estación oficial
+    # local para verificación humana en sombra, pero no expone una interfaz de
+    # datos documentada que IRFEN pueda consumir con garantías.
     pedregal_geometry_ok = (
         pedregal_validation.get("status") == "ANA_CONTROLLED_CANDIDATE"
         and (pedregal_validation.get("gates") or {}).get("ana_outlet_spatial_control") == "PASS"
@@ -269,6 +273,18 @@ def main():
     pedregal_history_ok = (
         pedregal_halfhour.get("production_use") is False
         and (pedregal_halfhour.get("metrics") or {}).get("max_24h") is not None
+    )
+    pedregal_ground_ok = (
+        pedregal_ground.get("status") == "GROUND_EVENT_DAY_CONTROL_AVAILABLE_DIAGNOSTIC_ONLY"
+        and (pedregal_ground.get("decision_gate") or {}).get("automatic_bias_correction_allowed") is False
+    )
+    isaac_manual_available = (
+        isaac.get("production_use") is False
+        and (isaac.get("official_context") or {}).get("target_station_named_by_senamhi") == "Pedregal Koica"
+        and isaac.get("status") in {
+            "PUBLIC_PLATFORM_REACHED_NO_OBVIOUS_STRUCTURED_CHANNEL",
+            "STRUCTURED_CHANNEL_CANDIDATE_FOUND",
+        }
     )
     huay_zone = next((z for z in output["zones"] if z.get("zone_id") == "chosica"), {})
     output["lima_east_submodels"] = {
@@ -283,14 +299,27 @@ def main():
         },
         "chosica_local_debris_flows": {
             "representative_catchment": "Pedregal",
-            "status": "HISTORICAL_TEST_ONLY" if pedregal_geometry_ok and pedregal_history_ok else "GEOMETRY_OR_HISTORY_INCOMPLETE",
+            "status": "SHADOW_TEST_WITH_MANUAL_OFFICIAL_VERIFICATION" if pedregal_geometry_ok and pedregal_history_ok and pedregal_ground_ok and isaac_manual_available else ("HISTORICAL_TEST_ONLY" if pedregal_geometry_ok and pedregal_history_ok else "GEOMETRY_OR_HISTORY_INCOMPLETE"),
             "geometry_control": pedregal_validation.get("status"),
             "geometry_area_km2": (pedregal_validation.get("dem_candidate") or {}).get("delineated_area_km2"),
             "outlet_distance_to_ana_m": (pedregal_validation.get("dem_candidate") or {}).get("distance_to_ana_mouth_cross_section_m"),
             "historical_halfhour_imerg_available": pedregal_history_ok,
+            "ground_event_control_available": pedregal_ground_ok,
             "live_test_ready": False,
+            "shadow_test_ready_with_manual_official_verification": bool(isaac_manual_available and pedregal_geometry_ok and pedregal_history_ok and pedregal_ground_ok),
             "blocking_requirement": "LIVE_LOCAL_OR_GROUND_RAINFALL_SIGNAL_REQUIRED",
-            "reason": "IMERG 0.1°/30 min registra señal demasiado débil para explicar por sí solo el evento local severo de 23/03/2015; no se bajarán umbrales para forzar detección.",
+            "official_manual_verification": {
+                "available": isaac_manual_available,
+                "source": "SENAMHI ISAAC",
+                "station": (isaac.get("official_context") or {}).get("target_station_named_by_senamhi"),
+                "platform_url": ((isaac.get("attempts") or [{}])[0]).get("final_url") if isaac.get("attempts") else None,
+                "regular_update_times_local": (isaac.get("official_context") or {}).get("regular_update_times_local"),
+                "event_update_frequency": (isaac.get("official_context") or {}).get("event_update_frequency"),
+                "machine_readable_channel": bool(isaac.get("usable_structured_candidates")),
+                "role": "external_manual_shadow_verification_only",
+                "production_use": False,
+            },
+            "reason": "IMERG 0.1°/30 min subcaptó el evento local severo de 23/03/2015 frente al control terrestre de Chosica. ISAAC dispone de estación Pedregal Koica, pero sin interfaz de datos documentada; se usará como verificación oficial manual durante pruebas en sombra. No se bajarán umbrales ni se aplicará un factor de corrección automático.",
             "production_use": False,
         },
         "other_local_catchments": {
@@ -303,16 +332,18 @@ def main():
     testable = [z.get("zone_id") for z in output["zones"] if z.get("test_ready")]
     missing = [z.get("zone_id") for z in output["zones"] if not z.get("test_ready")]
     all_three = set(testable) == {"san_ildefonso", "chosica", "catacaos"}
+    local_shadow = output["lima_east_submodels"]["chosica_local_debris_flows"].get("shadow_test_ready_with_manual_official_verification") is True
     output["core_test_status"] = {
         "code": "END_TO_END_TEST_MODE_AVAILABLE_WITH_KNOWN_LIMITATIONS" if all_three else "END_TO_END_TEST_MODE_PARTIAL",
         "production_ready": False,
         "testable_pilot_lanes": testable,
         "incomplete_pilot_lanes": missing,
         "local_chosica_status": output["lima_east_submodels"]["chosica_local_debris_flows"]["status"],
+        "local_chosica_shadow_manual_verification_available": local_shadow,
         "statement": (
-            "Los tres pilotos pueden ejecutarse en modo de prueba con señales reales/experimentales y trazabilidad; las puertas científicas indicadas siguen bloqueando producción."
-            if all_three else
-            "El motor de pruebas funciona, pero al menos un piloto aún carece de una señal necesaria para una prueba end-to-end."
+            "Los tres carriles principales pueden ejecutarse en modo de prueba con señales reales/experimentales y trazabilidad. Pedregal puede añadirse a pruebas en sombra mediante verificación manual oficial ISAAC; sigue bloqueado para decisión automática."
+            if all_three and local_shadow else
+            "El motor de pruebas funciona, pero al menos un piloto o submodelo local aún carece de una señal necesaria para una prueba end-to-end."
         ),
         "stop_rule": "No ampliar a nuevas cuencas hasta cerrar calibración, controles sin impacto y puertas de los tres pilotos.",
     }
