@@ -1,0 +1,67 @@
+{
+  "zone_id": "catacaos",
+  "name": "Catacaos / Bajo Piura",
+  "model_type": "river_basin_floodplain_system",
+  "status": "design_defined_not_operational",
+  "reason": "El peligro en Catacaos no depende de una microcuenca local aislada. Debe representarse la cuenca del río Piura, los aportes aguas arriba, la capacidad/estado del cauce, el drenaje pluvial urbano y la llanura de inundación del Bajo Piura.",
+  "proposed_layers": [
+    {
+      "id": "basin_rainfall",
+      "role": "amenaza meteorológica de cuenca",
+      "sources": ["NASA GPM IMERG", "SENAMHI estaciones", "Radar meteorológico Piura cuando exista acceso técnico reutilizable"]
+    },
+    {
+      "id": "river_state",
+      "role": "estado hidrológico del río Piura",
+      "sources": ["SENAMHI/ANA caudales y niveles si están disponibles en forma reutilizable"]
+    },
+    {
+      "id": "urban_drainage",
+      "role": "capacidad de evacuación de lluvia urbana",
+      "sources": ["Proyecto de drenaje pluvial Piura-Castilla-26 de Octubre-Catacaos CUI 2667637"]
+    },
+    {
+      "id": "floodplain_exposure",
+      "role": "exposición territorial",
+      "sources": ["CENEPRED/SIGRID", "ANA", "cartografía municipal y regional"]
+    },
+    {
+      "id": "structural_measures",
+      "role": "modificación de respuesta hidráulica",
+      "sources": ["Programa Integral de Manejo del Río Piura", "defensas ribereñas", "presas laminadoras", "salida al mar", "infraestructura natural"]
+    }
+  ],
+  "current_official_context": {
+    "river_protection_project": {
+      "cui": "2667636",
+      "status": "viable_2026-07",
+      "scope": "protección frente a inundación fluvial y erosión en el río Piura",
+      "source": "https://www.gob.pe/institucion/anin/noticias/1420553-anin-logra-destrabar-proyecto-de-proteccion-del-rio-piura-y-obtiene-su-viabilidad"
+    },
+    "urban_drainage_project": {
+      "cui": "2667637",
+      "status": "viable_2026-06",
+      "scope": "52 sistemas de drenaje pluvial en Piura, Castilla, Veintiséis de Octubre y Catacaos",
+      "source": "https://www.gob.pe/institucion/anin/noticias/1414967-comunicado"
+    },
+    "meteorological_radar": {
+      "status": "operational_2026-07",
+      "technology": "radar meteorológico banda C, doble polarización",
+      "role": "monitoreo y alerta temprana de precipitaciones e inundaciones",
+      "sources": [
+        "https://www.gob.pe/institucion/minam/noticias/1419811-minam-pone-en-operacion-el-radar-meteorologico-de-piura-para-fortalecer-la-alerta-temprana-frente-a-inundaciones",
+        "https://www.senamhi.gob.pe/main.php?dp=piura&p=satelites-RADAR"
+      ]
+    }
+  },
+  "implementation_order": [
+    "1. Mantener IMERG operativo actual sin cambios.",
+    "2. Identificar series de nivel/caudal reutilizables del río Piura y estaciones relevantes.",
+    "3. Delimitar unidades de aporte que controlan el caudal en Catacaos; no usar un único polígono local.",
+    "4. Incorporar la llanura de inundación y exposición territorial.",
+    "5. Añadir radar SENAMHI como fuente complementaria si se identifica un acceso estable y autorizado.",
+    "6. Calibrar con eventos 2017, 2023 y otros eventos documentados, incluyendo días lluviosos sin inundación.",
+    "7. Solo después definir una lógica de alerta específica de río/llanura para Catacaos."
+  ],
+  "production_ready": false
+}
