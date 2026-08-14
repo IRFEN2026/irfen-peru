@@ -16,7 +16,9 @@ on:
       - site/data/history.json
       - site/data/scientific_status.json
       - site/data/watersheds/**
+      - site/data/forecast/**
       - site/v08-experimental.js
+      - site/v08-forecast.js
 
 permissions:
   contents: read
@@ -124,16 +126,20 @@ jobs:
           path.write_text(json.dumps(data,ensure_ascii=False,indent=2),encoding='utf-8')
           PY
 
-      - name: Activar panel científico v0.8
+      - name: Activar paneles científicos v0.8
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
           path=Path('site/index.html')
           html=path.read_text(encoding='utf-8')
-          tag='<script src="v08-experimental.js"></script>'
-          if tag not in html:
-              html=html.replace('</body>',tag+'\n</body>')
+          tags=[
+              '<script src="v08-experimental.js"></script>',
+              '<script src="v08-forecast.js"></script>'
+          ]
+          for tag in tags:
+              if tag not in html:
+                  html=html.replace('</body>',tag+'\n</body>')
           path.write_text(html,encoding='utf-8')
           PY
 
@@ -142,12 +148,16 @@ jobs:
         run: |
           test -s site/index.html
           test -s site/v08-experimental.js
+          test -s site/v08-forecast.js
           test -s site/data/latest.json
           test -s site/data/history.json
           test -s site/data/scientific_status.json
           python -m json.tool site/data/latest.json >/dev/null
           python -m json.tool site/data/history.json >/dev/null
           python -m json.tool site/data/scientific_status.json >/dev/null
+          if [ -s site/data/forecast/latest.json ]; then
+            python -m json.tool site/data/forecast/latest.json >/dev/null
+          fi
 
       - name: Ejecutar puertas científicas v0.8
         run: python scripts/validate_scientific_assets.py
