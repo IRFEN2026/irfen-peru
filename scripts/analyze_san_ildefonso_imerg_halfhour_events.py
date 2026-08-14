@@ -3,8 +3,7 @@
 
 Pregunta científica única: ¿la intensidad subdiaria distingue mejor el huaico
 2023 de la activación controlada 2025 que los acumulados diarios? No deriva ni
-promueve umbrales. Si una primera corrida produjo 0 % de cobertura, una segunda
-corrida hace solo un diagnóstico puntual y cierra la ruta si tampoco hay datos.
+promueve umbrales.
 """
 from __future__ import annotations
 from datetime import datetime, timedelta, timezone
@@ -72,18 +71,6 @@ def sample(cells,start,end,session):
     raise RuntimeError(str(last))
 
 
-def point_diagnostic(lon,lat,dt,session,label):
-    geom=json.dumps({'x':lon,'y':lat,'spatialReference':{'wkid':4326}})
-    params={'geometry':geom,'geometryType':'esriGeometryPoint','time':str(int(dt.timestamp()*1000)),'returnFirstValueOnly':'true','outFields':'StdTime','f':'json'}
-    try:
-        r=session.get(SERVICE,params=params,timeout=40); data=r.json()
-        samples=data.get('samples') or [] if isinstance(data,dict) else []
-        first=samples[0] if samples else {}
-        return {'label':label,'point':[lon,lat],'time_utc':dt.isoformat(),'http_status':r.status_code,'sample_count':len(samples),'first_value':first.get('value'),'attribute_keys':sorted((first.get('attributes') or {}).keys()),'location':first.get('location'),'api_error':data.get('error') if isinstance(data,dict) else None}
-    except Exception as exc:
-        return {'label':label,'point':[lon,lat],'time_utc':dt.isoformat(),'error_type':type(exc).__name__,'error':str(exc)}
-
-
 def rolling(rows,n):
     best=None
     for i in range(n-1,len(rows)):
@@ -97,12 +84,15 @@ def rolling(rows,n):
 def analyze_event(meta,cells,session):
     d=datetime.fromisoformat(meta['date']).replace(tzinfo=timezone.utc)
     start=d-timedelta(hours=24); end=d+timedelta(hours=48)
-    obs={}; cursor=start; requests_count=0
+    obs={}; cursor=start; requests_count=0; raw_samples=0; samples_with_time=0
     while cursor<end:
         block_end=min(end-timedelta(minutes=30),cursor+timedelta(hours=BLOCK_HOURS)-timedelta(minutes=30))
-        for s in sample(cells,cursor,block_end,session):
-            tm=millis((s.get('attributes') or {}).get('StdTime'))
+        batch=sample(cells,cursor,block_end,session); raw_samples+=len(batch)
+        for s in batch:
+            attrs=s.get('attributes') or {}
+            tm=millis(attrs.get('StdTime',attrs.get('stdtime')))
             if tm is None: continue
+            samples_with_time+=1
             loc=s.get('location') or {}; x=float(loc.get('x',0)); y=float(loc.get('y',0))
             idx=min(range(len(cells)),key=lambda i:(cells[i]['lon']-x)**2+(cells[i]['lat']-y)**2)
             try:v=float(s.get('value'))
@@ -120,37 +110,14 @@ def analyze_event(meta,cells,session):
         dt+=timedelta(minutes=30)
     valid=[x for x in rows if x['accum_mm'] is not None]
     peak=max(valid,key=lambda x:x['rate_mm_hr']) if valid else None
-    return {**meta,'window_utc':{'start':start.isoformat(),'end_exclusive':end.isoformat()},'coverage_pct':round(100*len(valid)/len(rows),2),'batch_requests':requests_count,'peak_rate_mm_hr':None if not peak else peak['rate_mm_hr'],'peak_time_utc':None if not peak else peak['time_utc'],'max_30min':rolling(rows,1),'max_1h':rolling(rows,2),'max_3h':rolling(rows,6),'max_6h':rolling(rows,12),'max_24h':rolling(rows,48)}
+    return {**meta,'window_utc':{'start':start.isoformat(),'end_exclusive':end.isoformat()},'coverage_pct':round(100*len(valid)/len(rows),2),'batch_requests':requests_count,'raw_sample_count':raw_samples,'samples_with_time':samples_with_time,'peak_rate_mm_hr':None if not peak else peak['rate_mm_hr'],'peak_time_utc':None if not peak else peak['time_utc'],'max_30min':rolling(rows,1),'max_1h':rolling(rows,2),'max_3h':rolling(rows,6),'max_6h':rolling(rows,12),'max_24h':rolling(rows,48)}
 
 
 def main():
     geom,val=load_geom(); cells=cells_for(geom)
     sess=requests.Session(); sess.headers.update({'User-Agent':'IRFEN-research/0.8'})
-    prior=None
-    if OUT.exists():
-        try: prior=json.loads(OUT.read_text(encoding='utf-8'))
-        except: prior=None
-    prior_zero=bool(prior and prior.get('cases') and all(float(c.get('coverage_pct') or 0)==0 for c in prior['cases']))
-    if prior_zero:
-        rp=geom.representative_point()
-        diagnostics=[
-            point_diagnostic(rp.x,rp.y,datetime(2023,3,10,12,tzinfo=timezone.utc),sess,'san_ildefonso_representative_2023'),
-            point_diagnostic(-78.95,-8.05,datetime(2023,3,10,12,tzinfo=timezone.utc),sess,'san_ildefonso_gridcell_2023'),
-            point_diagnostic(-76.65,-11.95,datetime(2015,3,23,12,tzinfo=timezone.utc),sess,'pedregal_known_service_control_2015'),
-        ]
-        result=prior
-        result['generated_at']=datetime.now(timezone.utc).isoformat()
-        result['point_diagnostics']=diagnostics
-        any_san=any(d.get('sample_count',0)>0 and d.get('first_value') not in (None,'NoData') for d in diagnostics[:2])
-        control_ok=diagnostics[2].get('sample_count',0)>0
-        result['decision_gate']={
-            'status':'QUERY_PARSING_REVIEW_REQUIRED' if any_san else 'CLOSE_GIS_HALFHOURLY_ROUTE_FOR_SAN_ILDEFONSO',
-            'service_control_ok':control_ok,
-            'rule':'If San Ildefonso point diagnostics remain empty/NoData while the service control works, do not spend further development on this GIS half-hour route; require ground observations or another validated source.'
-        }
-    else:
-        cases=[analyze_event(e,cells,sess) for e in EVENTS]
-        result={'version':'0.8-experimental','generated_at':datetime.now(timezone.utc).isoformat(),'production_use':False,'question':'Does sub-daily IMERG intensity discriminate damaging 2023 from controlled 2025 better than daily accumulation?','geometry':{'file':'data/watersheds/san_ildefonso_watershed.geojson','validation_status':val.get('status'),'area_km2':val.get('delineated_area_km2')},'source':{'institution':'NASA GES DISC / GPM IMERG','product':'GPM_3IMERGHH Final V07','spatial_resolution_deg':0.1,'temporal_resolution_minutes':30},'sampling_cells':cells,'cases':cases,'decision_gate':{'status':'REVIEW_AFTER_COMPARISON','rule':'No threshold from three cases. If 2023 does not show a materially stronger short-duration signal than 2025, require ground/local monitoring rather than lowering daily thresholds.'}}
+    cases=[analyze_event(e,cells,sess) for e in EVENTS]
+    result={'version':'0.8-experimental','generated_at':datetime.now(timezone.utc).isoformat(),'production_use':False,'question':'Does sub-daily IMERG intensity discriminate damaging 2023 from controlled 2025 better than daily accumulation?','geometry':{'file':'data/watersheds/san_ildefonso_watershed.geojson','validation_status':val.get('status'),'area_km2':val.get('delineated_area_km2')},'source':{'institution':'NASA GES DISC / GPM IMERG','product':'GPM_3IMERGHH Final V07','spatial_resolution_deg':0.1,'temporal_resolution_minutes':30},'sampling_cells':cells,'cases':cases,'decision_gate':{'status':'REVIEW_AFTER_COMPARISON','rule':'No threshold from three cases. If 2023 does not show a materially stronger short-duration signal than 2025, require ground/local monitoring rather than lowering daily thresholds.'},'parser_note':'ArcGIS returned temporal field as lowercase stdtime; parser accepts both StdTime and stdtime.'}
     OUT.parent.mkdir(parents=True,exist_ok=True); OUT.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8')
-    print(json.dumps({'decision_gate':result.get('decision_gate'),'point_diagnostics':result.get('point_diagnostics')},ensure_ascii=False,indent=2))
+    print(json.dumps({'cases':[{k:c.get(k) for k in ('id','coverage_pct','peak_rate_mm_hr','max_1h','max_3h','max_6h','max_24h')} for c in cases]},ensure_ascii=False,indent=2))
 if __name__=='__main__':main()
