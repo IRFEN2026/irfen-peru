@@ -1,0 +1,52 @@
+name: IRFEN - Candidatos DEM quebradas locales Chosica
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/build_chosica_local_dem_candidates.py
+      - .github/workflows/chosica-local-dem-candidates.yml
+      - site/data/calibration/chosica_osm_search_seeds.json
+      - site/data/calibration/chosica_local_geometry_controls.json
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Instalar dependencias científicas
+        run: pip install "numpy<2" requests rasterio shapely pyproj pysheds
+      - name: Construir conjuntos candidatos
+        run: python scripts/build_chosica_local_dem_candidates.py
+      - name: Validar resultados
+        run: |
+          test -s site/data/watersheds/chosica_local_candidate_sets.geojson
+          test -s site/data/watersheds/chosica_local_candidate_sets_validation.json
+          python -m json.tool site/data/watersheds/chosica_local_candidate_sets.geojson >/dev/null
+          python -m json.tool site/data/watersheds/chosica_local_candidate_sets_validation.json >/dev/null
+          python - <<'PY'
+          import json
+          d=json.load(open('site/data/watersheds/chosica_local_candidate_sets.geojson',encoding='utf-8'))
+          for f in d.get('features',[]):
+              p=f.get('properties',{})
+              assert p.get('candidate_status')=='REVIEW_ONLY'
+              assert p.get('production_ready') is False
+              assert p.get('production_use') is False
+              assert p.get('official_outlet_validated') is False
+          PY
+      - name: Guardar candidatos
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/watersheds/chosica_local_candidate_sets.geojson site/data/watersheds/chosica_local_candidate_sets_validation.json
+          git diff --cached --quiet || git commit -m "IRFEN v0.8: update REVIEW-only local Chosica DEM candidates"
+          git pull --rebase origin main
+          git push
