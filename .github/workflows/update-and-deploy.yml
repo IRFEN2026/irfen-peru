@@ -13,8 +13,10 @@ on:
       - scripts/fetch_imerg.py
       - scripts/update_polygon_imerg.py
       - scripts/build_experimental_state.py
+      - scripts/build_piura_reference_model.py
       - scripts/validate_scientific_assets.py
       - scripts/run_v08_regression_tests.py
+      - config/historical_events.json
       - site/data/history.json
       - site/data/scientific_status.json
       - site/data/watersheds/**
@@ -133,6 +135,9 @@ jobs:
           path.write_text(json.dumps(data,ensure_ascii=False,indent=2),encoding='utf-8')
           PY
 
+      - name: Construir referencias fluviales Piura v0.8
+        run: python scripts/build_piura_reference_model.py
+
       - name: Construir estado experimental de pruebas v0.8
         run: python scripts/build_experimental_state.py
 
@@ -169,11 +174,13 @@ jobs:
           test -s site/data/history.json
           test -s site/data/scientific_status.json
           test -s site/data/hydraulics/current_infrastructure.json
+          test -s site/data/hydrology/piura_reference_model.json
           test -s site/data/experimental_state.json
           python -m json.tool site/data/latest.json >/dev/null
           python -m json.tool site/data/history.json >/dev/null
           python -m json.tool site/data/scientific_status.json >/dev/null
           python -m json.tool site/data/hydraulics/current_infrastructure.json >/dev/null
+          python -m json.tool site/data/hydrology/piura_reference_model.json >/dev/null
           python -m json.tool site/data/experimental_state.json >/dev/null
           if [ -s site/data/forecast/latest.json ]; then
             python -m json.tool site/data/forecast/latest.json >/dev/null
