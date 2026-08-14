@@ -51,7 +51,7 @@
 
   async function render(){
     const body=document.getElementById('healthBody'); if(!body)return;
-    const [latest, forecast, sci, san, huay, gore, probe, sen] = await Promise.all([
+    const [latest, forecast, sci, san, huay, gore, probe, sen, hydraulics] = await Promise.all([
       safeJson('data/latest.json'),
       safeJson('data/forecast/latest.json'),
       safeJson('data/scientific_status.json'),
@@ -59,7 +59,8 @@
       safeJson('data/watersheds/huaycoloro_validation.json'),
       safeJson('data/hydrology/gore_piura_discovery.json'),
       safeJson('data/hydrology/gore_piura_probe.json'),
-      safeJson('data/hydrology/senamhi_piura_discovery.json')
+      safeJson('data/hydrology/senamhi_piura_discovery.json'),
+      safeJson('data/hydraulics/current_infrastructure.json')
     ]);
 
     const op = latest && latest.operational_status || 'sin datos';
@@ -70,6 +71,10 @@
     const piuraDaily = probe && probe.latest_item;
     const goreOk = gore && (gore.sources||[]).some(x=>x.http_status===200);
     const senOk = sen && sen.status !== 'access_failed';
+    const hydZones = hydraulics?.zones || [];
+    const hydSan = hydZones.find(x=>x.zone_id==='san_ildefonso');
+    const hydHuay = hydZones.find(x=>x.zone_id==='chosica');
+    const hydPiura = hydZones.find(x=>x.zone_id==='catacaos');
 
     body.innerHTML=`
       <div class="histnote" style="margin:0 0 14px">
@@ -79,12 +84,15 @@
         ${tile('NASA IMERG · operación',op.toUpperCase(),`${latest && latest.status_message || 'Sin mensaje'}${opAge!=null?`<br>Antigüedad dataset: ${opAge.toFixed(1)} h`:''}`,opLevel)}
         ${tile('NASA GEOS · forecast',fOk?'EXPERIMENTAL DISPONIBLE':'NO DISPONIBLE',fOk?`Última ejecución: ${fAge!=null?fAge.toFixed(1)+' h':'—'} · ${forecast.zones?.[0]?.available_future_hours ?? '—'} h futuras.<br>No alimenta alertas.`:'No se encontró forecast.',fOk?'exp':'warn')}
         ${tile('San Ildefonso · cuenca',san?.status || 'PENDIENTE',san?`${san.delineated_area_km2} km² · error ${san.relative_area_error_pct}% · ${san.decision}.`:'Sin validación.',san?.status==='PASS'?'exp':'warn')}
+        ${tile('San Ildefonso · hidráulica',hydSan?.scientific_gate?.status || 'PENDIENTE',hydSan?`Sistema actual: ${hydSan.system_status}.<br>Diques + túnel de 1.51 km + captación/derivación. Sin factor numérico de atenuación hasta calibración.`:'Inventario hidráulico no disponible.',hydSan?'warn':'bad')}
         ${tile('Huaycoloro · cuenca',huay?.status || 'PENDIENTE',huay?`${huay.delineated_area_km2} km² · error ${huay.relative_area_error_pct}% · topología ${huay.topology_check?.status || '—'}.`:'Sin validación.',huay?.status==='PASS'?'exp':'warn')}
+        ${tile('Huaycoloro · hidráulica',hydHuay?.scientific_gate?.status || 'PENDIENTE',hydHuay?`Canal de 10.5 km operativo + 2 acueductos + control de sedimentos. Capacidad hidráulica cuantitativa todavía pendiente.`:'Inventario hidráulico no disponible.',hydHuay?'warn':'bad')}
         ${tile('Catacaos · hidrología regional',goreOk?'FUENTE DIARIA LOCALIZADA':'EN EXPLORACIÓN',piuraDaily?`GORE Piura lista datos hasta ${piuraDaily.fecha || piuraDaily.fkey}. La extracción de valores sigue en validación.`:'Portal regional '+(goreOk?'accesible':'no accesible')+'.',goreOk?'exp':'warn')}
+        ${tile('Catacaos · puerta fluvial',hydPiura?.scientific_gate?.status || 'PENDIENTE',hydPiura?`El drenaje integral y la protección del río siguen en fase de proyecto/diseño. IRFEN exige nivel/caudal real antes de habilitar lógica fluvial.`:'Inventario hidráulico no disponible.',hydPiura?'warn':'bad')}
         ${tile('SENAMHI · acceso automático',senOk?'ACCESIBLE':'BLOQUEADO DESDE CI',senOk?'Interfaz automática disponible.':'El portal oficial existe, pero las consultas desde GitHub Actions agotaron tiempo. Se mantiene como fuente oficial de referencia y se busca canal reutilizable.',senOk?'exp':'warn')}
       </div>
       <div class="small" style="margin-top:14px;line-height:1.6">
-        <b>Contrato de seguridad:</b> v0.8 conserva <code>production_ready=false</code> / <code>production_use=false</code> y pasa validaciones automáticas antes del despliegue. La función operativa v0.7.1 permanece aislada de forecast y polígonos experimentales.
+        <b>Contrato de seguridad:</b> v0.8 conserva <code>production_ready=false</code> / <code>production_use=false</code>, mantiene <code>production_modifier=null</code> para infraestructura hidráulica no calibrada y pasa validaciones automáticas antes del despliegue. La función operativa v0.7.1 permanece aislada de forecast, polígonos e hidráulica experimental.
         ${sci?`<br><b>Versión científica:</b> ${sci.version || '—'} · actualizada ${sci.updated_at || '—'}.`:''}
       </div>`;
   }
