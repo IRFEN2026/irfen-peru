@@ -138,6 +138,45 @@ def check_hydraulic_inventory():
             ERRORS.append("hydraulics catacaos: debe mantener puerta RIVER_STATE_REQUIRED")
 
 
+def check_experimental_state():
+    p = SITE / "data" / "experimental_state.json"
+    if not p.exists():
+        ERRORS.append("experimental_state: archivo requerido no generado")
+        return
+    data = load(p)
+    if not data:
+        return
+    if data.get("production_use") is not False:
+        ERRORS.append("experimental_state: production_use debe permanecer false")
+    rules = data.get("rules") or {}
+    for key in (
+        "no_composite_risk_score",
+        "no_hydraulic_attenuation_without_calibration",
+        "catacaos_requires_river_state",
+        "threshold_crossings_are_test_signals_only",
+    ):
+        if rules.get(key) is not True:
+            ERRORS.append(f"experimental_state: regla {key} debe ser true")
+    expected = {"san_ildefonso", "chosica", "catacaos"}
+    zones = data.get("zones", [])
+    present = {z.get("zone_id") for z in zones}
+    if expected - present:
+        ERRORS.append(f"experimental_state: faltan zonas {sorted(expected - present)}")
+    forbidden = {"alert", "alert_level", "final_alert", "operational_alert", "production_score"}
+    for z in zones:
+        zid = z.get("zone_id")
+        if z.get("production_use") is not False:
+            ERRORS.append(f"experimental_state {zid}: production_use debe ser false")
+        if forbidden.intersection(z.keys()):
+            ERRORS.append(f"experimental_state {zid}: contiene campos de alerta operativa prohibidos")
+        if (z.get("hydraulic_gate") or {}).get("production_modifier") is not None:
+            ERRORS.append(f"experimental_state {zid}: no puede aplicar modificador hidráulico")
+        if zid == "catacaos" and z.get("river_state_available") is not True:
+            blockers = set(z.get("blockers") or [])
+            if "numeric_river_state_required" not in blockers:
+                ERRORS.append("experimental_state catacaos: debe bloquearse sin estado numérico del río")
+
+
 def check_frontend_contract():
     p = SITE / "index.html"
     text = p.read_text(encoding="utf-8") if p.exists() else ""
@@ -146,7 +185,7 @@ def check_frontend_contract():
     block = text[start:end] if start >= 0 and end > start else ""
     if not block:
         ERRORS.append("No se pudo localizar function calc(z) para validar contrato operativo")
-    elif "experimental_polygon" in block or "forecast" in block or "hydraulic" in block:
+    elif "experimental_polygon" in block or "forecast" in block or "hydraulic" in block or "experimental_state" in block:
         ERRORS.append("La función operativa calc(z) está consumiendo campos experimentales")
 
 
@@ -167,6 +206,7 @@ def main():
     check_history_contract()
     check_forecast_contract()
     check_hydraulic_inventory()
+    check_experimental_state()
     check_frontend_contract()
     check_manifest()
 
