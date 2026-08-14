@@ -1,0 +1,62 @@
+name: IRFEN - Probar SENAMHI Puente Nacara numerico v0.8
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - scripts/probe_senamhi_nacara_numeric.py
+      - .github/workflows/senamhi-nacara-probe.yml
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Instalar requests
+        run: pip install requests
+
+      - name: Probar acceso numerico SENAMHI PHISIS
+        run: python scripts/probe_senamhi_nacara_numeric.py
+
+      - name: Validar seguridad cientifica
+        run: |
+          test -s site/data/hydrology/senamhi_nacara_numeric_probe.json
+          python -m json.tool site/data/hydrology/senamhi_nacara_numeric_probe.json >/dev/null
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('site/data/hydrology/senamhi_nacara_numeric_probe.json').read_text())
+          assert p.get('production_use') is False
+          assert p.get('production_ready') is False
+          assert p.get('numeric_river_state_available') is False
+          assert (p.get('scientific_gate') or {}).get('status') == 'AUTOMATIC_NUMERIC_ACCESS_UNRESOLVED'
+          print('Probe SENAMHI confinado correctamente a descubrimiento')
+          PY
+
+      - name: Guardar evidencia
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/hydrology/senamhi_nacara_numeric_probe.json
+          if git diff --cached --quiet; then
+            echo "Sin cambios que guardar."
+            exit 0
+          fi
+          git commit -m "IRFEN v0.8: actualizar probe SENAMHI Puente Nacara"
+          git pull --rebase origin main
+          git push origin HEAD:main
