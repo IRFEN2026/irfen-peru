@@ -2,6 +2,13 @@
   "version": "0.8-experimental",
   "updated_at": "2026-08-14",
   "principle": "Las mejoras científicas se validan en paralelo y no sustituyen la lógica operativa hasta superar controles geométricos, hidrológicos e hidráulicos.",
+  "components": {
+    "operational_observation": "stable_v0.7.1",
+    "watershed_sampling": "parallel_validation",
+    "historical_calibration": "parallel_validation",
+    "forecast_precipitation": "research_design",
+    "hydraulic_response": "required_before_v0.8_production"
+  },
   "zones": [
     {
       "id": "san_ildefonso",
@@ -31,10 +38,20 @@
     {
       "id": "chosica",
       "name": "Chosica / Huaycoloro",
-      "watershed_status": "building_candidate",
+      "watershed_status": "candidate_for_hydraulic_review",
       "watershed_dataset": "Copernicus DEM GLO-30 Public",
       "reference_area_km2": 492.31,
+      "delineated_area_km2": 484.122,
+      "area_error_pct": 1.66,
+      "topology_status": "CONSISTENT",
+      "topology_cells": 520560,
+      "spatial_context_status": "CONSISTENT",
       "reference_outlet": "ANA QHuay-1, 40 m antes de la confluencia con el río Rímac",
+      "outlet_distance_reference_km": 1.107,
+      "historical_polygon_test": {
+        "status": "running_or_pending_refresh",
+        "target_event": "2015-03-23"
+      },
       "hydraulic_gate": {
         "required": true,
         "reason": "La canalización de 10.5 km inaugurada en 2025 modifica la exposición y conducción en la cuenca baja.",
@@ -49,9 +66,10 @@
     {
       "id": "catacaos",
       "name": "Catacaos / Bajo Piura",
-      "watershed_status": "pending_hydrologic_design",
+      "watershed_status": "river_basin_floodplain_design_defined",
+      "model_type": "river_basin_floodplain_system",
       "note": "Catacaos no debe tratarse como una microcuenca simple: el riesgo depende del sistema río Piura/intercuenca Bajo Piura, aportes aguas arriba, defensas y exposición de llanura de inundación.",
-      "next_step": "Construir un modelo espacial específico de cuenca/intercuenca y llanura de inundación en lugar de forzar un único polígono de microcuenca.",
+      "next_step": "Identificar series reutilizables de nivel/caudal, unidades de aporte y llanura de inundación; mantener IMERG actual mientras se construye el modelo fluvial.",
       "production_ready": false
     }
   ]
