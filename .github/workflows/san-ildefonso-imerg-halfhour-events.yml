@@ -1,0 +1,37 @@
+name: IRFEN - San Ildefonso IMERG 30 min
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/analyze_san_ildefonso_imerg_halfhour_events.py
+      - site/data/watersheds/san_ildefonso_watershed.geojson
+      - site/data/watersheds/san_ildefonso_validation.json
+      - .github/workflows/san-ildefonso-imerg-halfhour-events.yml
+
+permissions:
+  contents: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: pip install requests shapely
+      - run: python scripts/analyze_san_ildefonso_imerg_halfhour_events.py
+      - run: |
+          test -s site/data/calibration/san_ildefonso_imerg_halfhour_events.json
+          python -m json.tool site/data/calibration/san_ildefonso_imerg_halfhour_events.json >/dev/null
+      - name: Guardar análisis
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/calibration/san_ildefonso_imerg_halfhour_events.json
+          git diff --cached --quiet || git commit -m "IRFEN v0.8: update San Ildefonso short-duration event comparison"
+          git pull --rebase origin main
+          git push
