@@ -49,7 +49,6 @@ def polygon_cell_weights(geom, lat, lon):
             inter = geom.intersection(cell)
             if inter.is_empty or inter.area <= 0:
                 continue
-            # Corrección aproximada por convergencia de meridianos.
             weight = float(inter.area) * max(np.cos(np.deg2rad(y)), 0.01)
             cells.append((int(r), int(c), weight))
     return cells, dlat, dlon
@@ -87,12 +86,24 @@ def target_specs():
 
 def build_weights(spec, lat, lon):
     groups = []
-    dlat = dlon = None
     for geom, area_weight in spec["areas"]:
-        cells, dlat, dlon = polygon_cell_weights(geom, lat, lon)
+        cells, _, _ = polygon_cell_weights(geom, lat, lon)
         if cells:
             groups.append({"area_weight": area_weight, "cells": cells})
-    return groups, dlat, dlon
+    return groups
+
+
+def localize_groups(groups, row_pos, col_pos):
+    out = []
+    for group in groups:
+        cells = [
+            (row_pos[r], col_pos[c], w)
+            for r, c, w in group["cells"]
+            if r in row_pos and c in col_pos
+        ]
+        if cells:
+            out.append({"area_weight": group["area_weight"], "cells": cells})
+    return out
 
 
 def weighted_rate(field, groups):
@@ -114,8 +125,10 @@ def weighted_rate(field, groups):
 
 
 def accumulation(hourly, hours):
-    vals = [x["precip_mm"] for x in hourly[:hours] if x.get("precip_mm") is not None]
-    if len(vals) < hours:
+    if len(hourly) < hours:
+        return None
+    vals = [x.get("precip_mm") for x in hourly[:hours]]
+    if any(v is None for v in vals):
         return None
     return round(float(sum(vals)), 2)
 
@@ -139,25 +152,50 @@ def main():
 
     now64 = np.datetime64(datetime.now(timezone.utc).replace(tzinfo=None), "ns")
     future_idx = np.where(times > now64)[0]
-    # Si el ciclo está justo actualizándose, conservar todos los pasos futuros existentes.
     if not len(future_idx):
         raise RuntimeError("El dataset GEOS público no contiene horas futuras respecto de la ejecución")
 
-    specs = target_specs()
     prepared = []
-    for spec in specs:
-        groups, dlat, dlon = build_weights(spec, lat, lon)
+    needed_rows = set()
+    needed_cols = set()
+    for spec in target_specs():
+        groups = build_weights(spec, lat, lon)
         if not groups:
             print("Zona omitida sin celdas GEOS:", spec["zone_id"])
             continue
-        prepared.append({**spec, "groups": groups})
+        for group in groups:
+            for r, c, _ in group["cells"]:
+                needed_rows.add(r)
+                needed_cols.add(c)
+        prepared.append({**spec, "global_groups": groups})
+
+    if not prepared:
+        raise RuntimeError("Ninguna zona IRFEN intersecta la grilla GEOS")
+
+    rows = sorted(needed_rows)
+    cols = sorted(needed_cols)
+    row_pos = {v: i for i, v in enumerate(rows)}
+    col_pos = {v: i for i, v in enumerate(cols)}
+    for spec in prepared:
+        spec["groups"] = localize_groups(spec["global_groups"], row_pos, col_pos)
+        del spec["global_groups"]
+
+    # Descarga únicamente los pasos futuros y las filas/columnas realmente usadas.
+    # Esto evita leer el globo completo (~1 millón de celdas por hora).
+    cube = np.asarray(
+        da.isel(time=future_idx.tolist(), lat=rows, lon=cols).values,
+        dtype=float,
+    )
+    print(
+        "Subconjunto GEOS:", cube.shape,
+        "de", (len(future_idx), len(lat), len(lon)),
+        "celdas espaciales usadas=", len(rows) * len(cols),
+    )
 
     results = {s["zone_id"]: [] for s in prepared}
-    # Cargamos solo lat/lon necesarios por zona de manera sencilla. Son 120 pasos
-    # y pocos cientos de celdas; el acceso sigue siendo muy pequeño frente al globo.
-    for idx in future_idx:
-        field = np.asarray(da.isel(time=int(idx)).values, dtype=float)
-        valid_time = str(times[idx]).replace(".000000000", "Z")
+    for local_t, global_t in enumerate(future_idx):
+        field = cube[local_t]
+        valid_time = str(times[global_t]).replace(".000000000", "Z")
         for spec in prepared:
             rate = weighted_rate(field, spec["groups"])
             mm = None if rate is None else max(0.0, rate * step_seconds)
