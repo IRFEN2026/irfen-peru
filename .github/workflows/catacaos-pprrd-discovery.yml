@@ -1,0 +1,50 @@
+name: IRFEN - Indexar PPRRD Catacaos 2026-2030
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/catacaos-pprrd-discovery.yml
+      - scripts/discover_catacaos_pprrd.py
+
+permissions:
+  contents: write
+
+concurrency:
+  group: catacaos-pprrd-discovery
+  cancel-in-progress: true
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v6
+
+      - name: Configurar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: pip install requests pypdf
+
+      - name: Indexar PPRRD oficial Catacaos 2026-2030
+        run: python scripts/discover_catacaos_pprrd.py
+
+      - name: Validar índice
+        run: |
+          test -s site/data/hydrology/catacaos_pprrd_2026_discovery.json
+          python -m json.tool site/data/hydrology/catacaos_pprrd_2026_discovery.json >/dev/null
+
+      - name: Guardar índice científico
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/hydrology/catacaos_pprrd_2026_discovery.json
+          git diff --cached --quiet || git commit -m "IRFEN v0.8: actualizar índice PPRRD Catacaos 2026-2030"
+          git pull --rebase origin main
+          git push
