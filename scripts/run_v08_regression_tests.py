@@ -37,6 +37,7 @@ def main():
     ana_val=load(SITE/'data/hydrology/ana_catacaos_critical_segments_2026_validation.json')
     pedregal=optional(SITE/'data/calibration/pedregal_ana_validation.json')
     pedregal_hh=optional(SITE/'data/calibration/pedregal_2015_imerg_halfhour.json')
+    pedregal_ground=optional(SITE/'data/calibration/pedregal_ground_evidence_2015.json')
     si_hh=optional(SITE/'data/calibration/san_ildefonso_imerg_halfhour_events.json')
     wis2=optional(SITE/'data/stations/senamhi_wis2_discovery.json')
     idesep=optional(SITE/'data/stations/senamhi_idesep_discovery.json')
@@ -142,6 +143,22 @@ def main():
         check('pedregal_halfhour_no_threshold_promotion',(pedregal_hh.get('decision_gate') or {}).get('status')=='REVIEW_AFTER_RESULT')
         check('pedregal_halfhour_complete_coverage',float((pedregal_hh.get('sampling') or {}).get('coverage_pct',0))>=99)
         check('pedregal_halfhour_metrics_present',all((pedregal_hh.get('metrics') or {}).get(k) is not None for k in ('max_1h','max_3h','max_6h','max_24h')))
+
+    # Control terrestre 2015: evidencia diagnóstica, nunca factor automático.
+    check('pedregal_ground_evidence_present',pedregal_ground is not None)
+    if pedregal_ground:
+        diag=pedregal_ground.get('satellite_comparison') or {}
+        gate=pedregal_ground.get('decision_gate') or {}
+        ground=pedregal_ground.get('ground_rainfall_evidence') or {}
+        check('pedregal_ground_not_production',pedregal_ground.get('production_use') is False and pedregal_ground.get('production_ready') is False)
+        check('pedregal_ground_event_day_control',pedregal_ground.get('status')=='GROUND_EVENT_DAY_CONTROL_AVAILABLE_DIAGNOSTIC_ONLY')
+        check('pedregal_ground_station_is_chosica',ground.get('station')=='Chosica' and ground.get('provider')=='SENAMHI')
+        check('pedregal_ground_event_day_positive',float(ground.get('reported_event_day_mm',0))>0)
+        check('pedregal_ground_documents_satellite_undercapture',float(diag.get('imerg_to_station_ratio',1))<1)
+        check('pedregal_ground_no_auto_bias_correction',gate.get('automatic_bias_correction_allowed') is False)
+        check('pedregal_ground_no_threshold_change',gate.get('threshold_change_allowed') is False)
+        check('pedregal_ground_no_live_recommendation',gate.get('live_test_recommendation_allowed') is False)
+        check('pedregal_ground_requires_more_controls',gate.get('status')=='LOCAL_OR_HIGHER_FIDELITY_SIGNAL_AND_NON_EVENT_CONTROLS_REQUIRED')
 
     # San Ildefonso: tres contrastes subdiarios son evidencia, no umbral automático.
     check('san_ildefonso_halfhour_controls_present',si_hh is not None)
