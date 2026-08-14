@@ -38,7 +38,11 @@ jobs:
             "data/hydraulics/current_infrastructure.json"
             "data/forecast/latest.json"
             "data/forecast/verification.json"
+            "data/calibration/historical_replay.json"
             "data/hydrology/piura_reference_model.json"
+            "data/hydrology/catacaos_official_context.geojson"
+            "data/hydrology/ana_catacaos_critical_segments_2026.geojson"
+            "data/hydrology/ana_catacaos_critical_segments_2026_validation.json"
             "data/experimental_state.json"
             "data/test_report.json"
             "v08-experimental.js"
@@ -62,30 +66,66 @@ jobs:
           import json
           root=Path('/tmp/irfen-live')
           def load(path): return json.loads((root/path).read_text(encoding='utf-8'))
+
           latest=load('data/latest.json')
           assert latest.get('operational_status') in {'updated','stale'}, latest.get('operational_status')
           assert {z.get('id') for z in latest.get('zones',[])} == {'san_ildefonso','chosica','catacaos'}
+
           forecast=load('data/forecast/latest.json')
           assert forecast.get('production_use') is False
+          verification=load('data/forecast/verification.json')
+          assert verification.get('production_use') is False
+          assert int(verification.get('total_pairs',0)) >= 0
+
+          replay=load('data/calibration/historical_replay.json')
+          assert replay.get('production_use') is False
+          assert replay.get('interpretation_gate',{}).get('status') == 'CALIBRATION_REQUIRED'
+          replay_ids={c.get('event_id') for c in replay.get('cases',[])}
+          assert {'SI-2017-03-15','CH-2015-03-23','PI-2017-03-27'}.issubset(replay_ids)
+
           hydraulics=load('data/hydraulics/current_infrastructure.json')
           assert hydraulics.get('production_use') is False
           for z in hydraulics.get('zones',[]): assert z.get('production_modifier') is None
+
           state=load('data/experimental_state.json')
           assert state.get('production_use') is False
           cat=next(z for z in state['zones'] if z['zone_id']=='catacaos')
           if cat.get('river_state_available') is not True:
               assert 'numeric_river_state_required' in cat.get('blockers',[])
-          tests=load('data/test_report.json')
-          assert tests.get('status')=='PASS', tests
-          verification=load('data/forecast/verification.json')
-          assert verification.get('production_use') is False
+
           ref=load('data/hydrology/piura_reference_model.json')
           assert ref.get('production_use') is False
+
+          context=load('data/hydrology/catacaos_official_context.geojson')
+          for f in context.get('features',[]):
+              p=f.get('properties',{})
+              assert p.get('context_only') is True
+              assert p.get('is_hazard_polygon') is False
+              assert p.get('production_use') is False
+
+          ana=load('data/hydrology/ana_catacaos_critical_segments_2026.geojson')
+          ana_val=load('data/hydrology/ana_catacaos_critical_segments_2026_validation.json')
+          assert ana.get('properties',{}).get('production_use') is False
+          assert len(ana.get('features',[])) == int(ana_val.get('published_segment_count',-1))
+          assert len(ana.get('features',[])) >= 4
+          for f in ana.get('features',[]):
+              p=f.get('properties',{})
+              assert f.get('geometry',{}).get('type') == 'LineString'
+              assert p.get('geometry_status') == 'PASS'
+              assert p.get('is_flood_polygon') is False
+              assert p.get('is_inundation_extent') is False
+
+          tests=load('data/test_report.json')
+          assert tests.get('status')=='PASS', tests
+
           html=(root/'index.html').read_text(encoding='utf-8')
           for script in ('v08-experimental.js','v08-forecast.js','v08-simulator.js','v08-health.js','v08-readiness.js'):
               assert script in html, f'Falta {script} en index publicado'
+
           print('LIVE SMOKE TEST OK')
           print('operational_status:',latest.get('operational_status'))
           print('regression:',tests.get('passed'),'PASS /',tests.get('failed'),'FAIL')
           print('forecast verification pairs:',verification.get('total_pairs'))
+          print('historical replay cases:',len(replay.get('cases',[])))
+          print('ANA Catacaos segments:',len(ana.get('features',[])))
           PY
