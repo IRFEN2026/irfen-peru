@@ -85,10 +85,30 @@ def check_history_contract():
             ERRORS.append(f"{e.get('id')}: comparación histórica experimental no puede ser productiva")
 
 
+def check_forecast_contract():
+    p = SITE / "data" / "forecast" / "latest.json"
+    if not p.exists():
+        WARNINGS.append("forecast: dataset experimental aún no disponible")
+        return
+    data = load(p)
+    if not data:
+        return
+    if data.get("production_use") is not False:
+        ERRORS.append("forecast: production_use debe permanecer false")
+    if data.get("status") != "experimental_forecast_available":
+        WARNINGS.append(f"forecast: estado inesperado {data.get('status')}")
+    for z in data.get("zones", []):
+        for key in ("forecast24_mm", "forecast72_mm", "forecast120_mm"):
+            v = z.get(key)
+            if v is not None and float(v) < 0:
+                ERRORS.append(f"forecast {z.get('zone_id')}: {key} negativo")
+        if z.get("zone_id") == "catacaos" and z.get("sampling_method") != "provisional_weighted_operational_sampling_areas":
+            ERRORS.append("Catacaos: el forecast aún debe mantenerse espacialmente provisional hasta tener modelo fluvial")
+
+
 def check_frontend_contract():
     p = SITE / "index.html"
     text = p.read_text(encoding="utf-8") if p.exists() else ""
-    # La función calc operativa no debe consumir campos experimentales.
     start = text.find("function calc(z)")
     end = text.find("function bar(", start)
     block = text[start:end] if start >= 0 and end > start else ""
@@ -113,6 +133,7 @@ def main():
     check_watershed("chosica", "huaycoloro_watershed.geojson", "huaycoloro_validation.json")
     check_latest_contract()
     check_history_contract()
+    check_forecast_contract()
     check_frontend_contract()
     check_manifest()
 
