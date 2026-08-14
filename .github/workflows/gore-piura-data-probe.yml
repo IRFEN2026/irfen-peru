@@ -1,0 +1,51 @@
+name: IRFEN - Probar datos diarios GORE Piura v0.8
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - scripts/probe_gore_piura_data.py
+      - .github/workflows/gore-piura-data-probe.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gore-piura-data-probe
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Instalar dependencias
+        run: pip install requests
+      - name: Probar endpoint y CSV diario
+        run: python scripts/probe_gore_piura_data.py
+      - name: Validar reporte
+        run: |
+          test -s site/data/hydrology/gore_piura_probe.json
+          python -m json.tool site/data/hydrology/gore_piura_probe.json >/dev/null
+          cat site/data/hydrology/gore_piura_probe.json | head -n 220
+      - name: Guardar reporte
+        shell: bash
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/hydrology/gore_piura_probe.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "IRFEN v0.8: perfil datos diarios GORE Piura"
+          git pull --rebase origin main
+          git push origin HEAD:main
