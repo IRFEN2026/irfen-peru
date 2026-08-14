@@ -9,6 +9,7 @@ on:
       - main
     paths:
       - scripts/fetch_geos_forecast.py
+      - scripts/archive_geos_forecast.py
       - .github/workflows/geos-forecast.yml
       - site/data/watersheds/san_ildefonso_watershed.geojson
       - site/data/watersheds/huaycoloro_watershed.geojson
@@ -41,17 +42,26 @@ jobs:
       - name: Calcular pronóstico experimental
         run: python scripts/fetch_geos_forecast.py
 
+      - name: Archivar snapshot para validación futura
+        run: python scripts/archive_geos_forecast.py
+
       - name: Validar reporte
         run: |
           test -s site/data/forecast/latest.json
+          test -s site/data/forecast/archive.json
           python -m json.tool site/data/forecast/latest.json >/dev/null
+          python -m json.tool site/data/forecast/archive.json >/dev/null
           python - <<'PY'
           import json
           d=json.load(open('site/data/forecast/latest.json',encoding='utf-8'))
+          a=json.load(open('site/data/forecast/archive.json',encoding='utf-8'))
           assert d.get('production_use') is False
+          assert a.get('production_use') is False
           assert d.get('status') == 'experimental_forecast_available'
           assert len(d.get('zones',[])) >= 2
+          assert len(a.get('snapshots',[])) >= 1
           print([(z['zone_id'],z['forecast24_mm'],z['forecast72_mm']) for z in d['zones']])
+          print('snapshots:',len(a['snapshots']))
           PY
 
       - name: Guardar pronóstico experimental
@@ -60,11 +70,11 @@ jobs:
           set -e
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add site/data/forecast/latest.json
+          git add site/data/forecast/latest.json site/data/forecast/archive.json
           if git diff --cached --quiet; then
             echo "Sin cambios."
             exit 0
           fi
-          git commit -m "IRFEN v0.8: actualizar pronóstico experimental NASA GEOS"
+          git commit -m "IRFEN v0.8: actualizar y archivar pronóstico NASA GEOS"
           git pull --rebase origin main
           git push origin HEAD:main
