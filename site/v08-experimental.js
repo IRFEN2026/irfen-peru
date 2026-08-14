@@ -6,6 +6,15 @@
     return `${n >= 0 ? '+' : ''}${n.toFixed(2)} mm`;
   };
 
+  const safeJson = async url => {
+    try {
+      const r = await fetch(`${url}?t=${Date.now()}`);
+      return r.ok ? await r.json() : null;
+    } catch (_) {
+      return null;
+    }
+  };
+
   function row(label, legacy, polygon, delta) {
     return `
       <tr>
@@ -32,111 +41,173 @@
     return panel;
   }
 
-  async function render() {
-    const panel = createPanel();
-    if (!panel) return;
+  function geometrySummary(v) {
+    if (!v) return '<div class="small">Geometría candidata pendiente.</div>';
+    const spatial = v.external_spatial_check || {};
+    return `
+      <div class="small" style="line-height:1.6">
+        <b>Área de referencia:</b> ${v.reference_area_km2 ?? '—'} km² ·
+        <b>DEM:</b> ${v.delineated_area_km2 ?? '—'} km² ·
+        <b>error:</b> ${v.relative_area_error_pct ?? '—'}% ·
+        <b>control geométrico:</b> ${v.status || '—'}.
+        <br>
+        <b>Control espacial:</b> ${spatial.spatial_context_status || 'pendiente'}.
+        <br>
+        <b>Producción:</b> ${v.production_ready ? 'habilitada' : 'NO habilitada'}.
+      </div>`;
+  }
 
-    try {
-      const [historyResponse, latestResponse, validationResponse] = await Promise.all([
-        fetch(`data/history.json?t=${Date.now()}`),
-        fetch(`data/latest.json?t=${Date.now()}`),
-        fetch(`data/watersheds/san_ildefonso_validation.json?t=${Date.now()}`)
-      ]);
+  function sanPanel(history, latest, validation) {
+    const event = (history.events || []).find(x => x.id === 'SI-2017-03-15');
+    const current = (latest.zones || []).find(x => x.id === 'san_ildefonso');
+    const historicalPolygon = event && event.experimental_polygon;
+    const currentPolygon = current && current.experimental_polygon;
+    const hDelta = historicalPolygon ? (historicalPolygon.delta_vs_legacy_bbox_mm || {}) : {};
+    const cDelta = currentPolygon ? (currentPolygon.delta_vs_operational_bbox_mm || {}) : {};
 
-      const history = historyResponse.ok ? await historyResponse.json() : {events: []};
-      const latest = latestResponse.ok ? await latestResponse.json() : {zones: []};
-      const validation = validationResponse.ok ? await validationResponse.json() : null;
-
-      const event = (history.events || []).find(x => x.id === 'SI-2017-03-15');
-      const current = (latest.zones || []).find(x => x.id === 'san_ildefonso');
-      const historicalPolygon = event && event.experimental_polygon;
-      const currentPolygon = current && current.experimental_polygon;
-
-      if (!historicalPolygon) {
-        panel.innerHTML = `
-          <h3 style="margin-top:0">v0.8 · Validación por microcuenca</h3>
-          <div class="small">La comparación histórica experimental todavía no está disponible.</div>`;
-        return;
-      }
-
-      const hDelta = historicalPolygon.delta_vs_legacy_bbox_mm || {};
-      const cDelta = currentPolygon ? (currentPolygon.delta_vs_operational_bbox_mm || {}) : {};
-      const spatial = validation && validation.external_spatial_check;
-
-      panel.innerHTML = `
-        <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">
-          <div>
-            <h3 style="margin:0 0 4px">IRFEN v0.8 · Comparación experimental de microcuenca</h3>
-            <div class="small">Quebrada San Ildefonso · Copernicus DEM GLO-30 + NASA GPM IMERG</div>
-          </div>
-          <span class="sourcechip" style="background:#e9f2ff;color:#194f82">NO OPERATIVO</span>
+    return `
+      <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">
+        <div>
+          <h3 style="margin:0 0 4px">IRFEN v0.8 · San Ildefonso</h3>
+          <div class="small">Microcuenca DEM + validación IMERG en paralelo</div>
         </div>
-
-        <div class="histnote" style="margin:12px 0">
-          El cálculo de amenaza y prioridad <b>sigue usando la configuración operativa anterior</b>.
-          Esta sección compara ambos métodos para validar científicamente el cambio antes de adoptarlo.
-        </div>
-
-        <h4 style="margin:12px 0 6px">Evento 15/03/2017 · IMERG Final</h4>
+        <span class="sourcechip" style="background:#e9f2ff;color:#194f82">NO OPERATIVO</span>
+      </div>
+      <div class="histnote" style="margin:12px 0">
+        La amenaza y la prioridad siguen usando la configuración operativa v0.7.1. La v0.8 se mantiene como carril científico paralelo.
+      </div>
+      ${geometrySummary(validation)}
+      ${historicalPolygon ? `
+        <h4 style="margin:16px 0 6px">Evento 15/03/2017 · IMERG Final</h4>
         <div class="tablepanel" style="margin:0;overflow:auto">
           <table>
-            <thead>
-              <tr><th>Acumulado</th><th>Caja antigua</th><th>Microcuenca DEM</th><th>Diferencia</th></tr>
-            </thead>
+            <thead><tr><th>Acumulado</th><th>Caja antigua</th><th>Microcuenca DEM</th><th>Diferencia</th></tr></thead>
             <tbody>
               ${row('24h', event.rain24, historicalPolygon.rain24, hDelta.rain24)}
               ${row('72h', event.rain72, historicalPolygon.rain72, hDelta.rain72)}
               ${row('7 días', event.rain7d, historicalPolygon.rain7d, hDelta.rain7d)}
             </tbody>
           </table>
+        </div>` : '<div class="small" style="margin-top:12px">Comparación histórica pendiente.</div>'}
+      ${currentPolygon ? `
+        <h4 style="margin:16px 0 6px">Comparación diaria actual</h4>
+        <div class="tablepanel" style="margin:0;overflow:auto">
+          <table>
+            <thead><tr><th>Acumulado</th><th>Operativo</th><th>Microcuenca DEM</th><th>Diferencia</th></tr></thead>
+            <tbody>
+              ${row('24h', current.rain24, currentPolygon.rain24, cDelta.rain24)}
+              ${row('72h', current.rain72, currentPolygon.rain72, cDelta.rain72)}
+              ${row('7 días', current.rain7d, currentPolygon.rain7d, cDelta.rain7d)}
+            </tbody>
+          </table>
+        </div>` : ''}
+      <div class="small" style="margin-top:12px;line-height:1.55">
+        <b>Puerta pendiente:</b> representar el sistema hidráulico 2026 (diques, captación, túnel/canales y descarga al río Moche) antes de cambiar la lógica de producción.
+      </div>`;
+  }
+
+  function huayPanel(validation) {
+    return `
+      <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">
+        <div>
+          <h3 style="margin:0 0 4px">IRFEN v0.8 · Huaycoloro / Chosica</h3>
+          <div class="small">Subcuenca DEM + revisión hidráulica de infraestructura existente</div>
         </div>
+        <span class="sourcechip" style="background:#e9f2ff;color:#194f82">NO OPERATIVO</span>
+      </div>
+      <div class="histnote" style="margin:12px 0">
+        El polígono DEM se valida contra una referencia de aproximadamente 492 km². La canalización de 10.5 km inaugurada en 2025 obliga a separar <b>amenaza meteorológica</b> de <b>respuesta hidráulica urbana</b>.
+      </div>
+      ${geometrySummary(validation)}
+      <div class="small" style="margin-top:12px;line-height:1.55">
+        <b>Siguiente prueba:</b> si la geometría pasa, recalcular los eventos históricos y el IMERG diario sobre el polígono, en paralelo con la caja actual, exactamente como en San Ildefonso.
+      </div>`;
+  }
 
-        ${currentPolygon ? `
-          <h4 style="margin:16px 0 6px">Comparación diaria actual</h4>
-          <div class="tablepanel" style="margin:0;overflow:auto">
-            <table>
-              <thead>
-                <tr><th>Acumulado</th><th>Operativo actual</th><th>Microcuenca DEM</th><th>Diferencia</th></tr>
-              </thead>
-              <tbody>
-                ${row('24h', current.rain24, currentPolygon.rain24, cDelta.rain24)}
-                ${row('72h', current.rain72, currentPolygon.rain72, cDelta.rain72)}
-                ${row('7 días', current.rain7d, currentPolygon.rain7d, cDelta.rain7d)}
-              </tbody>
-            </table>
-          </div>` : ''}
+  function catacaosPanel(status) {
+    return `
+      <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">
+        <div>
+          <h3 style="margin:0 0 4px">IRFEN v0.8 · Catacaos / Bajo Piura</h3>
+          <div class="small">Diseño hidrológico específico pendiente</div>
+        </div>
+        <span class="sourcechip" style="background:#fff4dd;color:#795000">DISEÑO</span>
+      </div>
+      <div class="histnote" style="margin:12px 0">
+        Catacaos no se modelará forzándolo a una microcuenca simple. El riesgo depende del río Piura, aportes aguas arriba, la intercuenca Bajo Piura, defensas y llanura de inundación.
+      </div>
+      <div class="small" style="line-height:1.55">
+        ${status && status.next_step ? `<b>Siguiente paso:</b> ${status.next_step}` : 'Se preparará un esquema cuenca-río-llanura de inundación.'}
+      </div>`;
+  }
 
-        <div class="small" style="margin-top:12px;line-height:1.55">
-          <b>Geometría candidata:</b>
-          ${validation ? `${validation.delineated_area_km2} km² frente a ${validation.reference_area_km2} km² de referencia · error ${validation.relative_area_error_pct}%` : '—'}.
-          ${spatial ? `Control ANA/SIGRID: <b>${spatial.spatial_context_status}</b> · intersección con ámbito cartográfico oficial: ${spatial.official_extent_overlap_pct}%.` : ''}
-          <br>
-          <b>Siguiente condición:</b> validación hidráulica e incorporación de las obras de control 2026 antes de cualquier cambio de producción.
-        </div>`;
-    } catch (error) {
-      panel.innerHTML = `<h3>IRFEN v0.8 · Validación por microcuenca</h3><div class="small">No se pudo cargar la comparación experimental: ${error}</div>`;
+  async function renderForSelected() {
+    const panel = createPanel();
+    const selector = document.getElementById('histZone');
+    if (!panel || !selector) return;
+
+    panel.style.display = 'block';
+    panel.innerHTML = '<div class="small">Cargando validación científica v0.8…</div>';
+
+    const [history, latest, sanValidation, huayValidation, status] = await Promise.all([
+      safeJson('data/history.json'),
+      safeJson('data/latest.json'),
+      safeJson('data/watersheds/san_ildefonso_validation.json'),
+      safeJson('data/watersheds/huaycoloro_validation.json'),
+      safeJson('data/scientific_status.json')
+    ]);
+
+    const zid = selector.value;
+    const zoneStatus = status && (status.zones || []).find(z => z.id === zid);
+
+    if (zid === 'san_ildefonso') {
+      panel.innerHTML = sanPanel(history || {events: []}, latest || {zones: []}, sanValidation);
+    } else if (zid === 'chosica') {
+      panel.innerHTML = huayPanel(huayValidation);
+    } else if (zid === 'catacaos') {
+      panel.innerHTML = catacaosPanel(zoneStatus);
+    } else {
+      panel.style.display = 'none';
     }
   }
 
-  function syncVisibility() {
-    const panel = document.getElementById('irfenV08Experimental');
-    const selector = document.getElementById('histZone');
-    if (!panel || !selector) return;
-    panel.style.display = selector.value === 'san_ildefonso' ? 'block' : 'none';
+  async function addWatershedOverlays() {
+    if (typeof L === 'undefined' || typeof map === 'undefined') return;
+    const specs = [
+      ['San Ildefonso · microcuenca v0.8', 'data/watersheds/san_ildefonso_watershed.geojson'],
+      ['Huaycoloro · subcuenca v0.8', 'data/watersheds/huaycoloro_watershed.geojson']
+    ];
+    const overlays = {};
+
+    for (const [label, url] of specs) {
+      const geo = await safeJson(url);
+      if (!geo) continue;
+      const lyr = L.geoJSON(geo, {
+        style: {weight: 2, fillOpacity: 0.08, dashArray: '6 5'}
+      });
+      const p = geo.properties || {};
+      lyr.bindPopup(`<b>${p.name || label}</b><br>Área DEM: ${p.delineated_area_km2 ?? '—'} km²<br>Estado: ${p.validation_status || 'experimental'}<br><b>No operativo</b>`);
+      overlays[label] = lyr;
+      lyr.addTo(map);
+    }
+
+    if (Object.keys(overlays).length) {
+      L.control.layers(null, overlays, {collapsed: true, position: 'topright'}).addTo(map);
+    }
   }
 
   async function init() {
-    await render();
     const selector = document.getElementById('histZone');
     if (selector) {
-      selector.addEventListener('change', syncVisibility);
-      syncVisibility();
+      selector.addEventListener('change', renderForSelected);
+      await renderForSelected();
     }
+    await addWatershedOverlays();
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => setTimeout(init, 400));
+    document.addEventListener('DOMContentLoaded', () => setTimeout(init, 500));
   } else {
-    setTimeout(init, 400);
+    setTimeout(init, 500);
   }
 })();
