@@ -59,12 +59,22 @@ jobs:
           a=json.loads(Path('site/data/calibration/imerg_early_live_archive.json').read_text())
           assert p.get('production_use') is False
           assert p.get('production_ready') is False
-          assert p.get('scientific_gate',{}).get('status') == 'SOURCE_CONNECTIVITY_ONLY'
+          assert p.get('status') in {
+              'EARLY_HALFHOURLY_SOURCE_AVAILABLE',
+              'SOURCE_TEMPORARILY_UNREACHABLE',
+              'NO_RECENT_GRANULES',
+              'NO_DOWNLOADED_GRANULES',
+          }
+          gate=p.get('scientific_gate',{}).get('status')
+          assert gate in {'SOURCE_CONNECTIVITY_ONLY','SOURCE_TEMPORARILY_UNAVAILABLE'}
+          if gate == 'SOURCE_TEMPORARILY_UNAVAILABLE':
+              assert p.get('stale') is True
+              assert p.get('scientific_gate',{}).get('last_valid_retained_for_archive') is True
           assert a.get('production_use') is False
           assert a.get('production_ready') is False
           assert a.get('scientific_gate',{}).get('status') == 'ACCUMULATING_LATENCY_AND_CONTINUITY_EVIDENCE'
           assert a.get('scientific_gate',{}).get('rolling_windows_are_test_only') is True
-          print('Puertas de seguridad IMERG Early OK')
+          print('Puertas de seguridad IMERG Early OK:', p.get('status'))
           PY
 
       - name: Guardar evidencia del probe
