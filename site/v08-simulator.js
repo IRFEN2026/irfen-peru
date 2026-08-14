@@ -2,6 +2,7 @@
   let latest = null;
   let forecast = null;
   let history = null;
+  let piuraSource = null;
   let scenarioLabel = 'observado actual';
 
   const clamp = x => Math.max(0, Math.min(1.35, Number(x) || 0));
@@ -27,7 +28,7 @@
           <div><h2 style="margin:0 0 4px">Simulador de escenarios IRFEN v0.8</h2><div class="small">Prueba local en el navegador · no escribe datos · no envía alertas</div></div>
           <span class="sourcechip" style="background:#fff4dd;color:#795000">SOLO PRUEBAS</span>
         </div>
-        <div class="histnote" style="margin:12px 0">Permite ensayar la fórmula operativa actual con valores hipotéticos o eventos históricos IMERG. La previsión se muestra como contexto separado y <b>no se suma al índice de amenaza</b>.</div>
+        <div class="histnote" style="margin:12px 0">Permite ensayar la fórmula operativa actual con valores hipotéticos o eventos históricos IMERG. La previsión y el estado del río se muestran como contexto separado y <b>no se suman al índice de amenaza</b>.</div>
         <div class="histtoolbar" style="margin-bottom:12px">
           <label><b>Zona:</b></label><select id="simZone"></select>
           <button id="simLive">Observado actual</button><button id="simHistory">Evento histórico</button>
@@ -39,6 +40,14 @@
           <label class="metric">72h observadas<input id="sim72" type="number" min="0" step="0.1" style="width:100%;margin-top:6px"></label>
           <label class="metric">7 días observados<input id="sim7d" type="number" min="0" step="0.1" style="width:100%;margin-top:6px"></label>
           <label class="metric">Previsión 24h<input id="simF24" type="number" min="0" step="0.1" style="width:100%;margin-top:6px"></label>
+        </div>
+        <div id="simRiverBox" class="histnote" style="display:none;margin:0 0 14px">
+          <b>Catacaos · prueba del estado del río Piura</b>
+          <div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr));margin-top:10px">
+            <label class="metric">Caudal manual Puente Ñácara (m³/s)<input id="simRiverFlow" type="number" min="0" step="1" placeholder="Sin dato automático" style="width:100%;margin-top:6px"></label>
+            <label class="metric">Umbral rojo SENAMHI de referencia<input id="simRiverRed" type="number" min="0" step="1" readonly style="width:100%;margin-top:6px"></label>
+          </div>
+          <div class="small" style="margin-top:8px">Este control sirve exclusivamente para pruebas. El umbral pertenece a Puente Ñácara y no representa por sí solo una condición de desborde en Catacaos.</div>
         </div>
         <div id="simResult"></div>
       </div>`;
@@ -58,6 +67,15 @@
       .sort((a,b)=>(b.year||0)-(a.year||0))[0]||null;
   }
 
+  function syncRiverUI(){
+    const z=zone(); const box=document.getElementById('simRiverBox'); if(!box)return;
+    const isPiura=z?.id==='catacaos'; box.style.display=isPiura?'block':'none';
+    if(isPiura){
+      const ref=piuraSource?.senamhi?.reference_red_threshold_m3s;
+      document.getElementById('simRiverRed').value=ref!=null?ref:'';
+    }
+  }
+
   function applyValues(a,b,c,label,forecastValue=null){
     document.getElementById('sim24').value=Number(a||0).toFixed(1);
     document.getElementById('sim72').value=Number(b||0).toFixed(1);
@@ -65,7 +83,9 @@
     const z=zone(); const f=z&&forecastZone(z.id);
     const fv=forecastValue!=null?forecastValue:(f&&f.forecast24_mm!=null?f.forecast24_mm:0);
     document.getElementById('simF24').value=Number(fv||0).toFixed(1);
+    if(z?.id==='catacaos') document.getElementById('simRiverFlow').value='';
     scenarioLabel=label;
+    syncRiverUI();
     render();
   }
 
@@ -83,8 +103,20 @@
     applyValues((t.rain24||0)*factor,(t.rain72||0)*factor,(t.rain7d||0)*factor,`${factor*100}% de umbrales provisionales`);
   }
 
+  function riverContext(z){
+    if(z?.id!=='catacaos')return '';
+    const raw=document.getElementById('simRiverFlow')?.value;
+    const red=Number(document.getElementById('simRiverRed')?.value||0);
+    if(raw===''||raw==null)return `<div class="histnote" style="margin-top:12px"><b>Puerta fluvial:</b> sin caudal numérico. El escenario de Catacaos sigue incompleto aunque exista señal meteorológica.</div>`;
+    const flow=Number(raw);
+    const ratio=red>0?flow/red:null;
+    const text=ratio==null?'sin referencia':ratio>=1?'igual o superior al umbral rojo de referencia':ratio>=0.75?'próximo al umbral rojo de referencia':'por debajo del 75% del umbral rojo de referencia';
+    return `<div class="histnote" style="margin-top:12px"><b>Prueba fluvial:</b> ${fmt(flow)} m³/s · ${ratio==null?'—':(ratio*100).toFixed(0)+'%'} de ${fmt(red)} m³/s → <b>${text}</b>.<br><span class="small">No modifica Amenaza ni Prioridad. Hace falta validar propagación, capacidad del cauce, defensas y llanura de inundación hasta Catacaos.</span></div>`;
+  }
+
   function render(){
     const z=zone(),out=document.getElementById('simResult'); if(!z||!out)return;
+    syncRiverUI();
     const t=z.thresholds_provisional||{};
     const r24=Number(document.getElementById('sim24').value||0),r72=Number(document.getElementById('sim72').value||0),r7d=Number(document.getElementById('sim7d').value||0),f24=Number(document.getElementById('simF24').value||0);
     const raw=100*(.38*clamp(r24/t.rain24)+.30*clamp(r72/t.rain72)+.32*clamp(r7d/t.rain7d))/1.35;
@@ -101,15 +133,18 @@
         <b>Umbrales provisionales:</b> 24h ${t.rain24} mm · 72h ${t.rain72} mm · 7d ${t.rain7d} mm.<br>
         <b>Entrada:</b> ${fmt(r24)} / ${fmt(r72)} / ${fmt(r7d)} mm + forecast24 ${fmt(f24)} mm.<br>
         <b>Importante:</b> el resultado reproduce matemáticamente el índice actual para pruebas de interfaz; un evento histórico no convierte estos valores en umbrales de activación validados.
-      </div>`;
+      </div>
+      ${riverContext(z)}`;
   }
 
   async function init(){
-    ensureUI(); [latest,forecast,history]=await Promise.all([safeJson('data/latest.json'),safeJson('data/forecast/latest.json'),safeJson('data/history.json')]);
+    ensureUI(); [latest,forecast,history,piuraSource]=await Promise.all([
+      safeJson('data/latest.json'),safeJson('data/forecast/latest.json'),safeJson('data/history.json'),safeJson('data/hydrology/piura_source_status.json')
+    ]);
     const selector=document.getElementById('simZone'); if(!selector||!latest)return;
     selector.innerHTML=(latest.zones||[]).map(z=>`<option value="${z.id}">${z.name}</option>`).join('');
     selector.addEventListener('change',()=>setInputs('live'));
-    ['sim24','sim72','sim7d','simF24'].forEach(id=>document.getElementById(id)?.addEventListener('input',()=>{scenarioLabel='entrada manual';render();}));
+    ['sim24','sim72','sim7d','simF24','simRiverFlow'].forEach(id=>document.getElementById(id)?.addEventListener('input',()=>{scenarioLabel='entrada manual';render();}));
     document.getElementById('simLive').onclick=()=>setInputs('live'); document.getElementById('simHistory').onclick=()=>setInputs('history');
     document.getElementById('simHalf').onclick=()=>setInputs('half'); document.getElementById('simThreshold').onclick=()=>setInputs('threshold'); setInputs('live');
   }
