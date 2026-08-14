@@ -6,8 +6,24 @@
     "operational_observation": "stable_v0.7.1",
     "watershed_sampling": "parallel_validation",
     "historical_calibration": "parallel_validation",
-    "forecast_precipitation": "research_design",
+    "forecast_precipitation": "experimental_geos_cf_available",
+    "scenario_simulator": "available_non_persistent",
     "hydraulic_response": "required_before_v0.8_production"
+  },
+  "forecast_lane": {
+    "source": "NASA GMAO GEOS-CF v2",
+    "variable": "total_precipitation (tprec)",
+    "grid_resolution_deg": 0.25,
+    "update_mode": "scheduled_daily_experimental",
+    "production_use": false,
+    "first_successful_test": {
+      "generated_at": "2026-08-14T14:20:32.416524+00:00",
+      "available_future_hours": 91,
+      "san_ildefonso_forecast24_mm": 0.06,
+      "chosica_forecast24_mm": 0.03,
+      "catacaos_forecast24_mm": 0.24
+    },
+    "warning": "GEOS-CF se usa como señal de investigación. Debe validarse contra observaciones y no alimenta el índice operativo v0.7.1."
   },
   "zones": [
     {
@@ -71,6 +87,7 @@
       "watershed_status": "river_basin_floodplain_design_defined",
       "model_type": "river_basin_floodplain_system",
       "note": "Catacaos no debe tratarse como una microcuenca simple: el riesgo depende del sistema río Piura/intercuenca Bajo Piura, aportes aguas arriba, defensas y exposición de llanura de inundación.",
+      "forecast_spatial_status": "provisional_sampling_only",
       "next_step": "Identificar series reutilizables de nivel/caudal, unidades de aporte y llanura de inundación; mantener IMERG actual mientras se construye el modelo fluvial.",
       "production_ready": false
     }
