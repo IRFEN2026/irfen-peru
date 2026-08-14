@@ -1,0 +1,43 @@
+name: IRFEN - Indexar EVAR Catacaos 2017
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/catacaos-evar-discovery.yml
+      - scripts/discover_catacaos_evar_2017.py
+
+permissions:
+  contents: write
+
+concurrency:
+  group: catacaos-evar-discovery
+  cancel-in-progress: true
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Instalar dependencias
+        run: pip install requests pypdf
+      - name: Indexar EVAR CENEPRED 2017
+        run: python scripts/discover_catacaos_evar_2017.py
+      - name: Validar índice
+        run: |
+          test -s site/data/hydrology/catacaos_evar_2017_discovery.json
+          python -m json.tool site/data/hydrology/catacaos_evar_2017_discovery.json >/dev/null
+      - name: Guardar índice científico
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/hydrology/catacaos_evar_2017_discovery.json
+          git diff --cached --quiet || git commit -m "IRFEN v0.8: actualizar índice EVAR Catacaos 2017"
+          git pull --rebase origin main
+          git push
