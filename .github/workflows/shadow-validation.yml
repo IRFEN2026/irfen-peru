@@ -1,0 +1,78 @@
+name: IRFEN - Archivar validación en sombra v0.8
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 17 * * *"
+  push:
+    branches:
+      - main
+    paths:
+      - scripts/archive_shadow_validation.py
+      - .github/workflows/shadow-validation.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: "shadow-validation"
+  cancel-in-progress: true
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Instalar requests
+        run: pip install requests
+
+      - name: Esperar sitio estable tras despliegues recientes
+        run: sleep 20
+
+      - name: Archivar estado de prueba publicado
+        run: python scripts/archive_shadow_validation.py
+
+      - name: Validar contrato del archivo
+        run: |
+          test -s site/data/validation/shadow_runs.json
+          python -m json.tool site/data/validation/shadow_runs.json >/dev/null
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('site/data/validation/shadow_runs.json').read_text())
+          assert d.get('status') == 'SHADOW_VALIDATION_ARCHIVE'
+          assert d.get('production_use') is False
+          assert d.get('production_ready') is False
+          assert int(d.get('record_count',0)) >= 1
+          for rec in d.get('records',[]):
+              assert rec.get('production_use') is False
+              for z in rec.get('zones',[]):
+                  code=(z.get('recommendation') or {}).get('code','')
+                  assert code.startswith('TEST_')
+                  assert (z.get('recommendation') or {}).get('operational_alert') is False
+          print('Archivo de validación en sombra OK:', d.get('record_count'))
+          PY
+
+      - name: Guardar snapshot diario
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/validation/shadow_runs.json
+          if git diff --cached --quiet; then
+            echo "Sin cambios."
+            exit 0
+          fi
+          git commit -m "IRFEN v0.8: archivar validación en sombra diaria"
+          git pull --rebase origin main
+          git push origin HEAD:main
