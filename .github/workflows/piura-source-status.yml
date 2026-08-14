@@ -1,0 +1,54 @@
+name: IRFEN - Estado fuentes hidrológicas Piura v0.8
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "10 17 * * *"
+  push:
+    branches:
+      - main
+    paths:
+      - scripts/fetch_piura_source_status.py
+      - .github/workflows/piura-source-status.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: piura-source-status
+  cancel-in-progress: true
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Actualizar frescura de fuentes Piura
+        run: python scripts/fetch_piura_source_status.py
+      - name: Validar reporte
+        run: |
+          test -s site/data/hydrology/piura_source_status.json
+          python -m json.tool site/data/hydrology/piura_source_status.json >/dev/null
+          python - <<'PY'
+          import json
+          d=json.load(open('site/data/hydrology/piura_source_status.json',encoding='utf-8'))
+          assert d.get('production_use') is False
+          print(d['gore_piura'].get('latest_report_date'), d['gore_piura'].get('catalog_status'))
+          PY
+      - name: Guardar estado de fuente
+        shell: bash
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/hydrology/piura_source_status.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "IRFEN v0.8: actualizar frescura fuentes hidrológicas Piura"
+          git pull --rebase origin main
+          git push origin HEAD:main
