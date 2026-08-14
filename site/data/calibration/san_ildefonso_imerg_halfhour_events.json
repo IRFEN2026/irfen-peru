@@ -1,6 +1,6 @@
 {
   "version": "0.8-experimental",
-  "generated_at": "2026-08-14T19:32:57.841597+00:00",
+  "generated_at": "2026-08-14T19:34:50.110492+00:00",
   "production_use": false,
   "question": "Does sub-daily IMERG intensity discriminate damaging 2023 from controlled 2025 better than daily accumulation?",
   "geometry": {
@@ -86,7 +86,79 @@
     }
   ],
   "decision_gate": {
-    "status": "REVIEW_AFTER_COMPARISON",
-    "rule": "No threshold from three cases. If 2023 does not show a materially stronger short-duration signal than 2025, require ground/local monitoring rather than lowering daily thresholds."
-  }
+    "status": "QUERY_PARSING_REVIEW_REQUIRED",
+    "service_control_ok": true,
+    "rule": "If San Ildefonso point diagnostics remain empty/NoData while the service control works, do not spend further development on this GIS half-hour route; require ground observations or another validated source."
+  },
+  "point_diagnostics": [
+    {
+      "label": "san_ildefonso_representative_2023",
+      "point": [
+        -79.00486111111111,
+        -8.053194444444443
+      ],
+      "time_utc": "2023-03-10T12:00:00+00:00",
+      "http_status": 200,
+      "sample_count": 1,
+      "first_value": "0.529999971",
+      "attribute_keys": [
+        "stdtime"
+      ],
+      "location": {
+        "x": -79.00486111111111,
+        "y": -8.053194444444443,
+        "spatialReference": {
+          "wkid": 4326,
+          "latestWkid": 4326
+        }
+      },
+      "api_error": null
+    },
+    {
+      "label": "san_ildefonso_gridcell_2023",
+      "point": [
+        -78.95,
+        -8.05
+      ],
+      "time_utc": "2023-03-10T12:00:00+00:00",
+      "http_status": 200,
+      "sample_count": 1,
+      "first_value": "0.709999979",
+      "attribute_keys": [
+        "stdtime"
+      ],
+      "location": {
+        "x": -78.95,
+        "y": -8.05,
+        "spatialReference": {
+          "wkid": 4326,
+          "latestWkid": 4326
+        }
+      },
+      "api_error": null
+    },
+    {
+      "label": "pedregal_known_service_control_2015",
+      "point": [
+        -76.65,
+        -11.95
+      ],
+      "time_utc": "2015-03-23T12:00:00+00:00",
+      "http_status": 200,
+      "sample_count": 1,
+      "first_value": "0.000000000",
+      "attribute_keys": [
+        "stdtime"
+      ],
+      "location": {
+        "x": -76.65,
+        "y": -11.95,
+        "spatialReference": {
+          "wkid": 4326,
+          "latestWkid": 4326
+        }
+      },
+      "api_error": null
+    }
+  ]
 }
