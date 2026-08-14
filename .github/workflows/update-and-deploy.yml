@@ -19,6 +19,7 @@ on:
       - site/data/forecast/**
       - site/v08-experimental.js
       - site/v08-forecast.js
+      - site/v08-simulator.js
 
 permissions:
   contents: read
@@ -135,7 +136,8 @@ jobs:
           html=path.read_text(encoding='utf-8')
           tags=[
               '<script src="v08-experimental.js"></script>',
-              '<script src="v08-forecast.js"></script>'
+              '<script src="v08-forecast.js"></script>',
+              '<script src="v08-simulator.js"></script>'
           ]
           for tag in tags:
               if tag not in html:
@@ -149,6 +151,7 @@ jobs:
           test -s site/index.html
           test -s site/v08-experimental.js
           test -s site/v08-forecast.js
+          test -s site/v08-simulator.js
           test -s site/data/latest.json
           test -s site/data/history.json
           test -s site/data/scientific_status.json
