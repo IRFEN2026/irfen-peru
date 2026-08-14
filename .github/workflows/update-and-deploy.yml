@@ -13,6 +13,7 @@ on:
       - scripts/fetch_imerg.py
       - scripts/update_polygon_imerg.py
       - scripts/verify_geos_against_imerg.py
+      - scripts/build_historical_replay.py
       - scripts/build_experimental_state.py
       - scripts/build_piura_reference_model.py
       - scripts/validate_scientific_assets.py
@@ -24,6 +25,8 @@ on:
       - site/data/forecast/**
       - site/data/hydrology/**
       - site/data/hydraulics/**
+      - site/data/stations/**
+      - site/data/calibration/**
       - site/v08-experimental.js
       - site/v08-forecast.js
       - site/v08-simulator.js
@@ -139,6 +142,9 @@ jobs:
       - name: Verificar forecast GEOS maduro contra IMERG
         run: python scripts/verify_geos_against_imerg.py
 
+      - name: Construir replay histórico de calibración
+        run: python scripts/build_historical_replay.py
+
       - name: Construir referencias fluviales Piura v0.8
         run: python scripts/build_piura_reference_model.py
 
@@ -180,6 +186,7 @@ jobs:
           test -s site/data/hydraulics/current_infrastructure.json
           test -s site/data/hydrology/piura_reference_model.json
           test -s site/data/forecast/verification.json
+          test -s site/data/calibration/historical_replay.json
           test -s site/data/experimental_state.json
           python -m json.tool site/data/latest.json >/dev/null
           python -m json.tool site/data/history.json >/dev/null
@@ -187,6 +194,7 @@ jobs:
           python -m json.tool site/data/hydraulics/current_infrastructure.json >/dev/null
           python -m json.tool site/data/hydrology/piura_reference_model.json >/dev/null
           python -m json.tool site/data/forecast/verification.json >/dev/null
+          python -m json.tool site/data/calibration/historical_replay.json >/dev/null
           python -m json.tool site/data/experimental_state.json >/dev/null
           if [ -s site/data/forecast/latest.json ]; then
             python -m json.tool site/data/forecast/latest.json >/dev/null
