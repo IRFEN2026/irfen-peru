@@ -31,14 +31,14 @@ def check_watershed(zone_id,geo_name,val_name):
         if 'REQUIRED' not in str(hyd.get('status','')):ERRORS.append(f'{zone_id}: falta puerta hidráulica requerida')
 
 def check_latest_contract():
-    data=load(SITE/'data/latest.json');
+    data=load(SITE/'data/latest.json')
     if not data:return
     for z in data.get('zones',[]):
         exp=z.get('experimental_polygon')
         if exp and exp.get('production_use') is not False:ERRORS.append(f"{z.get('id')}: experimental_polygon no puede ser productivo")
 
 def check_history_contract():
-    data=load(SITE/'data/history.json');
+    data=load(SITE/'data/history.json')
     if not data:return
     for e in data.get('events',[]):
         exp=e.get('experimental_polygon')
@@ -111,6 +111,59 @@ def check_catacaos_document_context():
             if g.is_empty or not g.is_valid:ERRORS.append(f"Catacaos context {props.get('id')}: geometría inválida")
         except Exception as exc:ERRORS.append(f'Catacaos context: geometría no legible {exc}')
 
+def check_ana_catacaos_segments():
+    gp=SITE/'data/hydrology/ana_catacaos_critical_segments_2026.geojson'
+    vp=SITE/'data/hydrology/ana_catacaos_critical_segments_2026_validation.json'
+    if not gp.exists() or not vp.exists():WARNINGS.append('ANA Catacaos 2026: segmentos validados aún no generados');return
+    geo,val=load(gp),load(vp)
+    if not geo or not val:return
+    if (geo.get('properties') or {}).get('production_use') is not False:ERRORS.append('ANA Catacaos: GeoJSON debe ser experimental')
+    if val.get('production_use') is not False:ERRORS.append('ANA Catacaos: validación debe ser experimental')
+    features=geo.get('features',[])
+    if val.get('status')=='PASS' and not features:ERRORS.append('ANA Catacaos: PASS sin segmentos publicados')
+    if int(val.get('published_segment_count',-1))!=len(features):ERRORS.append('ANA Catacaos: conteo de segmentos no coincide con validación')
+    for f in features:
+        props=f.get('properties') or {}
+        if props.get('production_use') is not False:ERRORS.append('ANA Catacaos: segmento no puede ser productivo')
+        if props.get('geometry_status')!='PASS':ERRORS.append(f"ANA Catacaos {props.get('sector')}: solo PASS puede publicarse")
+        if props.get('is_flood_polygon') is not False or props.get('is_inundation_extent') is not False:ERRORS.append(f"ANA Catacaos {props.get('sector')}: tramo no puede etiquetarse como inundación")
+        if (f.get('geometry') or {}).get('type')!='LineString':ERRORS.append(f"ANA Catacaos {props.get('sector')}: geometría debe ser LineString")
+        try:
+            g=shape(f.get('geometry'))
+            if g.is_empty or not g.is_valid:ERRORS.append(f"ANA Catacaos {props.get('sector')}: geometría inválida")
+        except Exception as exc:ERRORS.append(f'ANA Catacaos: geometría no legible {exc}')
+        diff=props.get('length_relative_difference_pct')
+        if diff is None or float(diff)>15:ERRORS.append(f"ANA Catacaos {props.get('sector')}: diferencia de longitud >15%")
+    for row in val.get('validations',[]):
+        if row.get('status')!='PASS' and row.get('geometry_publication')!='withheld_to_avoid_false_alignment':ERRORS.append(f"ANA Catacaos {row.get('sector')}: REVIEW/FAIL debe quedar retenido")
+
+def check_historical_replay():
+    p=SITE/'data/calibration/historical_replay.json'
+    if not p.exists():WARNINGS.append('Historical replay: aún no generado');return
+    data=load(p)
+    if not data:return
+    if data.get('production_use') is not False:ERRORS.append('Historical replay: production_use debe ser false')
+    forbidden={'new_thresholds','calibrated_thresholds','threshold_update','production_thresholds','production_modifier'}
+    if forbidden.intersection(data.keys()):ERRORS.append('Historical replay: no puede escribir umbrales/calibración productiva')
+    if (data.get('interpretation_gate') or {}).get('status')!='CALIBRATION_REQUIRED':ERRORS.append('Historical replay: debe mantener CALIBRATION_REQUIRED')
+    for case in data.get('cases',[]):
+        if case.get('production_use') is not False:ERRORS.append(f"Historical replay {case.get('event_id')}: debe ser experimental")
+        for block in (case.get('legacy_sampling_replay'),case.get('polygon_sampling_replay')):
+            if not block:continue
+            score=block.get('threat_score')
+            if score is None or not 0<=float(score)<=100:ERRORS.append(f"Historical replay {case.get('event_id')}: amenaza fuera de rango")
+
+def check_senamhi_wis2_discovery():
+    p=SITE/'data/stations/senamhi_wis2_discovery.json'
+    if not p.exists():WARNINGS.append('SENAMHI WIS2: descubrimiento aún no disponible');return
+    data=load(p)
+    if not data:return
+    if data.get('production_use') is not False:ERRORS.append('SENAMHI WIS2: production_use debe ser false')
+    if int(data.get('station_count',0))<0:ERRORS.append('SENAMHI WIS2: station_count inválido')
+    for zid,stations in (data.get('nearest_stations') or {}).items():
+        for s in stations:
+            if float(s.get('distance_km',0))<0:ERRORS.append(f'SENAMHI WIS2 {zid}: distancia negativa')
+
 def check_experimental_state():
     p=SITE/'data/experimental_state.json'
     if not p.exists():ERRORS.append('experimental_state: archivo requerido no generado');return
@@ -134,7 +187,7 @@ def check_frontend_contract():
     text=(SITE/'index.html').read_text(encoding='utf-8') if (SITE/'index.html').exists() else ''
     start=text.find('function calc(z)');end=text.find('function bar(',start);block=text[start:end] if start>=0 and end>start else ''
     if not block:ERRORS.append('No se localizó function calc(z)')
-    elif any(x in block for x in ('experimental_polygon','forecast','hydraulic','experimental_state','river_state')):ERRORS.append('calc(z) consume campos experimentales')
+    elif any(x in block for x in ('experimental_polygon','forecast','hydraulic','experimental_state','river_state','senamhi_wis2')):ERRORS.append('calc(z) consume campos experimentales')
 
 def check_manifest():
     data=load(SITE/'data/scientific_status.json')
@@ -145,7 +198,7 @@ def check_manifest():
 def main():
     check_watershed('san_ildefonso','san_ildefonso_watershed.geojson','san_ildefonso_validation.json')
     check_watershed('chosica','huaycoloro_watershed.geojson','huaycoloro_validation.json')
-    check_latest_contract();check_history_contract();check_forecast_contract();check_forecast_verification();check_hydraulic_inventory();check_piura_reference_model();check_catacaos_document_context();check_experimental_state();check_frontend_contract();check_manifest()
+    check_latest_contract();check_history_contract();check_forecast_contract();check_forecast_verification();check_hydraulic_inventory();check_piura_reference_model();check_catacaos_document_context();check_ana_catacaos_segments();check_historical_replay();check_senamhi_wis2_discovery();check_experimental_state();check_frontend_contract();check_manifest()
     for w in WARNINGS:print('WARNING:',w)
     if ERRORS:
         for e in ERRORS:print('ERROR:',e)
