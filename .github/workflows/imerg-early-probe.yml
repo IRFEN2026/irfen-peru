@@ -3,7 +3,7 @@ name: IRFEN - Probar IMERG Early subdiario v0.8
 on:
   workflow_dispatch:
   schedule:
-    - cron: "17 * * * *"
+    - cron: "17,47 * * * *"
   push:
     branches:
       - main
@@ -22,6 +22,7 @@ concurrency:
 jobs:
   probe:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Descargar repositorio
         uses: actions/checkout@v6
@@ -40,9 +41,9 @@ jobs:
       - name: Probar IMERG Early 30 min vía Earthdata
         env:
           EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
-        run: python scripts/probe_imerg_early_live.py
+        run: timeout --signal=TERM --kill-after=10s 180s python scripts/probe_imerg_early_live.py
 
-      - name: Archivar latencia y continuidad
+      - name: Archivar latencia, continuidad y ventanas
         run: python scripts/archive_imerg_early_probe.py
 
       - name: Validar resultado
@@ -62,6 +63,7 @@ jobs:
           assert a.get('production_use') is False
           assert a.get('production_ready') is False
           assert a.get('scientific_gate',{}).get('status') == 'ACCUMULATING_LATENCY_AND_CONTINUITY_EVIDENCE'
+          assert a.get('scientific_gate',{}).get('rolling_windows_are_test_only') is True
           print('Puertas de seguridad IMERG Early OK')
           PY
 
