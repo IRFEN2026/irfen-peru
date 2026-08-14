@@ -7,20 +7,31 @@ on:
       - main
     paths:
       - .github/workflows/history.yml
+      - requirements.txt
       - scripts/fetch_history.py
-      - scripts/compare_san_ildefonso_history_polygon.py
+      - scripts/update_polygon_imerg.py
+      - scripts/compare_history_polygons.py
       - config/historical_events.json
       - config/historical_zones.json
       - site/data/watersheds/san_ildefonso_watershed.geojson
+      - site/data/watersheds/san_ildefonso_validation.json
+      - site/data/watersheds/huaycoloro_watershed.geojson
+      - site/data/watersheds/huaycoloro_validation.json
 
 permissions:
   contents: write
+
+concurrency:
+  group: history-v08
+  cancel-in-progress: false
 
 jobs:
   history:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v6
         with:
@@ -28,17 +39,17 @@ jobs:
           cache: "pip"
 
       - name: Instalar dependencias históricas
-        run: pip install earthaccess h5py numpy shapely
+        run: pip install -r requirements.txt
 
       - name: Descargar y procesar IMERG Final histórico
         env:
           EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
         run: python scripts/fetch_history.py
 
-      - name: Comparar San Ildefonso 2017 con microcuenca DEM
+      - name: Comparar eventos con polígonos DEM validados
         env:
           EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
-        run: python scripts/compare_san_ildefonso_history_polygon.py
+        run: python scripts/compare_history_polygons.py
 
       - name: Validar histórico enriquecido
         run: |
@@ -46,9 +57,16 @@ jobs:
           test -s site/data/watersheds/san_ildefonso_watershed.geojson
 
       - name: Guardar history.json
+        shell: bash
         run: |
+          set -e
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add site/data/history.json
-          git diff --cached --quiet || git commit -m "IRFEN v0.8: histórico San Ildefonso con comparación por microcuenca"
-          git push
+          if git diff --cached --quiet; then
+            echo "No hay cambios históricos para guardar."
+            exit 0
+          fi
+          git commit -m "IRFEN v0.8: histórico IMERG por polígonos validados"
+          git pull --rebase origin main
+          git push origin HEAD:main
