@@ -4,6 +4,14 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "20 16 * * *"
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/update-and-deploy.yml
+      - requirements.txt
+      - scripts/fetch_imerg.py
+      - site/data/watersheds/**
 
 permissions:
   contents: read
@@ -31,7 +39,7 @@ jobs:
       - name: Instalar dependencias
         run: pip install -r requirements.txt
 
-      - name: Guardar último latest.json publicado
+      - name: Guardar datasets válidos antes de actualizar
         shell: bash
         run: |
           set -e
@@ -55,6 +63,11 @@ jobs:
             echo "No se pudo descargar el fallback público."
             echo "Usando latest.json del repositorio."
             cp site/data/latest.json .fallback/latest.json
+          fi
+
+          if [ -s site/data/history.json ]; then
+            cp site/data/history.json .fallback/history.json
+            echo "Catálogo histórico protegido."
           fi
 
       - name: Actualizar datos NASA IMERG con reintentos
@@ -91,13 +104,9 @@ jobs:
             rc=$?
 
             if [ "$rc" -eq 0 ]; then
-
               success=1
-
               echo "NASA IMERG actualizado correctamente."
-
               break
-
             fi
 
             echo "Intento ${i} falló con código ${rc}."
@@ -105,94 +114,45 @@ jobs:
           done
 
           if [ "$success" -eq 1 ]; then
-
             echo "IRFEN_NASA_OK=true" >> "$GITHUB_ENV"
-
           else
-
             echo "IRFEN_NASA_OK=false" >> "$GITHUB_ENV"
-
             echo "NASA/Earthdata no respondió después de 4 intentos."
-
             echo "Restaurando último dataset válido."
-
             cp .fallback/latest.json site/data/latest.json
-
           fi
 
           exit 0
+
+      - name: Restaurar catálogo histórico protegido
+        shell: bash
+        run: |
+          if [ -s .fallback/history.json ]; then
+            cp .fallback/history.json site/data/history.json
+            echo "history.json restaurado: el flujo diario no puede sobrescribir la calibración histórica."
+          fi
 
       - name: Marcar estado operativo del dataset
         shell: bash
         run: |
           python - <<'PY'
-
           import json
-
           from pathlib import Path
           from datetime import datetime, timezone
 
-
-          path = Path(
-              "site/data/latest.json"
-          )
-
-
-          data = json.loads(
-              path.read_text(
-                  encoding="utf-8"
-              )
-          )
-
-
+          path = Path("site/data/latest.json")
+          data = json.loads(path.read_text(encoding="utf-8"))
           nasa_ok = "${{ env.IRFEN_NASA_OK }}"
 
-
           if nasa_ok == "true":
-
-              data[
-                  "operational_status"
-              ] = "updated"
-
-              data[
-                  "status_message"
-              ] = (
-                  "NASA Earthdata respondió "
-                  "correctamente en esta ejecución."
-              )
-
+              data["operational_status"] = "updated"
+              data["status_message"] = "NASA Earthdata respondió correctamente en esta ejecución."
           else:
+              data["operational_status"] = "stale"
+              data["status_message"] = "NASA Earthdata no estuvo disponible después de 4 intentos. IRFEN conserva el último dataset válido publicado."
 
-              data[
-                  "operational_status"
-              ] = "stale"
-
-              data[
-                  "status_message"
-              ] = (
-                  "NASA Earthdata no estuvo disponible "
-                  "después de 4 intentos. "
-                  "IRFEN conserva el último dataset "
-                  "válido publicado."
-              )
-
-
-          data[
-              "last_update_attempt"
-          ] = datetime.now(
-              timezone.utc
-          ).isoformat()
-
-
-          path.write_text(
-              json.dumps(
-                  data,
-                  ensure_ascii=False,
-                  indent=2
-              ),
-              encoding="utf-8"
-          )
-
+          data["last_update_attempt"] = datetime.now(timezone.utc).isoformat()
+          path.write_text(json.dumps(data,ensure_ascii=False,indent=2),encoding="utf-8")
           PY
 
       - name: Validar archivos mínimos
@@ -200,10 +160,10 @@ jobs:
         run: |
           test -s site/index.html
           test -s site/data/latest.json
+          test -s site/data/history.json
 
-          python -m json.tool \
-            site/data/latest.json \
-            >/dev/null
+          python -m json.tool site/data/latest.json >/dev/null
+          python -m json.tool site/data/history.json >/dev/null
 
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v6
