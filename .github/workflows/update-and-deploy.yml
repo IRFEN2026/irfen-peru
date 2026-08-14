@@ -12,6 +12,7 @@ on:
       - requirements.txt
       - scripts/fetch_imerg.py
       - scripts/update_polygon_imerg.py
+      - scripts/validate_scientific_assets.py
       - site/data/history.json
       - site/data/scientific_status.json
       - site/data/watersheds/**
@@ -147,6 +148,9 @@ jobs:
           python -m json.tool site/data/latest.json >/dev/null
           python -m json.tool site/data/history.json >/dev/null
           python -m json.tool site/data/scientific_status.json >/dev/null
+
+      - name: Ejecutar puertas científicas v0.8
+        run: python scripts/validate_scientific_assets.py
 
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v6
