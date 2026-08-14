@@ -1,8 +1,9 @@
 {
-  "schema_version": "0.7",
+  "schema_version": "0.8-experimental",
   "notes": [
     "Eventos pre-junio 2000 no tienen cobertura IMERG y deben calibrarse con SENAMHI/ANA/INGEMMET/CENEPRED/INDECI.",
-    "Solo los eventos con fecha exacta se descargan automáticamente; fechas aproximadas quedan pendientes."
+    "Solo los eventos con fecha exacta se descargan automáticamente; fechas aproximadas quedan pendientes.",
+    "Los campos outcome e infrastructure_phase son evidencia contextual y no aplican multiplicadores automáticos al peligro."
   ],
   "events": [
     {
@@ -22,8 +23,36 @@
       "event": "Niño Costero 2017 / activación",
       "imerg": true,
       "confidence": "alta",
+      "outcome": "urban_debris_flow_impact",
+      "infrastructure_phase": "pre_integral_solution",
       "source": "SENAMHI",
       "url": "https://www.senamhi.gob.pe/load/file/01401SENA-99.pdf"
+    },
+    {
+      "id": "SI-2023-03-10",
+      "zone_id": "san_ildefonso",
+      "date": "2023-03-10",
+      "event": "Ciclón Yaku / huaico San Ildefonso",
+      "imerg": true,
+      "confidence": "alta",
+      "outcome": "urban_debris_flow_impact",
+      "impact_context": "MPT reportó 83 viviendas inhabitables y 17 colapsadas en Trujillo distrito durante la emergencia.",
+      "infrastructure_phase": "before_completion_of_35_dikes",
+      "source": "Municipalidad Provincial de Trujillo",
+      "url": "https://www.gob.pe/institucion/munitrujillo/noticias/746777-ruta-del-agua-mitigara-danos-en-la-poblacion-de-trujillo"
+    },
+    {
+      "id": "SI-2025-03-29",
+      "zone_id": "san_ildefonso",
+      "date": "2025-03-29",
+      "event": "Lluvias intensas / activación controlada San Ildefonso",
+      "imerg": true,
+      "confidence": "alta",
+      "outcome": "activation_controlled_no_san_ildefonso_urban_huaico",
+      "impact_context": "ANIN informó que los diques retuvieron movimientos en masa y laminaron el agua sin generar un huaico de San Ildefonso en la ciudad.",
+      "infrastructure_phase": "post_dike_system_pre_full_integral_completion",
+      "source": "Autoridad Nacional de Infraestructura (ANIN)",
+      "url": "https://www.gob.pe/institucion/anin/noticias/1136295-emergencia-en-trujillo-anin-monitorea-quebradas-activadas-y-refuerza-acciones-de-contingencia"
     },
     {
       "id": "CH-1983",
@@ -76,6 +105,7 @@
       "event": "Flujos de detritos Chosica",
       "imerg": true,
       "confidence": "alta",
+      "hazard_submodel": "chosica_local_debris_flows",
       "source": "INGEMMET",
       "url": "https://repositorio.ingemmet.gob.pe/bitstream/20.500.12544/2265/1/Villacorta-Evaluacion_geodinamica_flujos_de_detritos_23-03-15.pdf"
     },
@@ -86,6 +116,7 @@
       "event": "Niño Costero 2017 / desborde del río Huaycoloro",
       "imerg": true,
       "confidence": "alta",
+      "hazard_submodel": "huaycoloro_main_channel",
       "source": "Radio Nacional del Perú (IRTP)",
       "url": "https://www.radionacional.gob.pe/informa/locales/rio-huaycoloro-se-desborda-en-san-juan-de-lurigancho"
     },
