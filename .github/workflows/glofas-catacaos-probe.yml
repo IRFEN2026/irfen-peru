@@ -20,7 +20,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
-      - run: pip install requests
+      - run: pip install requests pillow
       - run: python scripts/probe_glofas_catacaos_wms.py
       - run: |
           test -s site/data/hydrology/glofas_catacaos_probe.json
