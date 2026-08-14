@@ -1,0 +1,58 @@
+{
+  "version": "0.8-experimental",
+  "updated_at": "2026-08-14",
+  "principle": "Las mejoras científicas se validan en paralelo y no sustituyen la lógica operativa hasta superar controles geométricos, hidrológicos e hidráulicos.",
+  "zones": [
+    {
+      "id": "san_ildefonso",
+      "name": "Quebrada San Ildefonso",
+      "watershed_status": "candidate_for_hydraulic_review",
+      "watershed_dataset": "Copernicus DEM GLO-30 Public",
+      "reference_area_km2": 28.9,
+      "delineated_area_km2": 28.34,
+      "area_error_pct": 1.94,
+      "historical_polygon_test": {
+        "event_date": "2017-03-15",
+        "legacy_bbox_mm": {"rain24": 19.63, "rain72": 39.22, "rain7d": 48.98},
+        "watershed_mm": {"rain24": 20.77, "rain72": 42.77, "rain7d": 53.15},
+        "delta_mm": {"rain24": 1.14, "rain72": 3.55, "rain7d": 4.17}
+      },
+      "hydraulic_gate": {
+        "required": true,
+        "reason": "El sistema de retención, captación y derivación de San Ildefonso/San Carlos modifica la relación histórica lluvia-caudal-impacto.",
+        "official_sources": [
+          "https://www.gob.pe/institucion/regionlalibertad/noticias/1395875-dique-definitivo-en-parte-alta-de-san-ildefonso-ya-esta-operativo-y-reducira-riesgo-de-huaicos-en-trujillo",
+          "https://www.gob.pe/institucion/anin/noticias/1412454-anin-y-titular-de-pcm-supervisan-avance-de-las-defensas-riberenas-del-rio-moche",
+          "https://www.gob.pe/institucion/munitrujillo/noticias/1415786-mpt-trujillo-afrontara-mejor-posibles-lluvias-fuertes"
+        ]
+      },
+      "production_ready": false
+    },
+    {
+      "id": "chosica",
+      "name": "Chosica / Huaycoloro",
+      "watershed_status": "building_candidate",
+      "watershed_dataset": "Copernicus DEM GLO-30 Public",
+      "reference_area_km2": 492.31,
+      "reference_outlet": "ANA QHuay-1, 40 m antes de la confluencia con el río Rímac",
+      "hydraulic_gate": {
+        "required": true,
+        "reason": "La canalización de 10.5 km inaugurada en 2025 modifica la exposición y conducción en la cuenca baja.",
+        "official_sources": [
+          "https://www.gob.pe/institucion/anin/noticias/1247801-huaycoloro-nunca-mas-obra-protegera-a-miles-de-habitantes-de-campoy-nieveria-huachipa-y-cajamarquilla",
+          "https://www.gob.pe/institucion/anin/noticias/1423006-anin-articula-acciones-inmediatas-para-proteger-el-canal-huaycoloro-del-ingreso-ilegal-de-vehiculos",
+          "https://www.gob.pe/41855-centro-de-monitoreo-de-deslizamientos-y-huaicos-cendehua"
+        ]
+      },
+      "production_ready": false
+    },
+    {
+      "id": "catacaos",
+      "name": "Catacaos / Bajo Piura",
+      "watershed_status": "pending_hydrologic_design",
+      "note": "Catacaos no debe tratarse como una microcuenca simple: el riesgo depende del sistema río Piura/intercuenca Bajo Piura, aportes aguas arriba, defensas y exposición de llanura de inundación.",
+      "next_step": "Construir un modelo espacial específico de cuenca/intercuenca y llanura de inundación en lugar de forzar un único polígono de microcuenca.",
+      "production_ready": false
+    }
+  ]
+}
