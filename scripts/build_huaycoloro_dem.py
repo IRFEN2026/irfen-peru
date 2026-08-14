@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json, math, sys, tempfile
+from collections import deque
 from pathlib import Path
 import numpy as np, requests, rasterio
 from rasterio.merge import merge
@@ -11,10 +12,7 @@ from pyproj import Geod
 from pysheds.grid import Grid
 
 BUCKET = "https://copernicus-dem-30m.s3.amazonaws.com"
-# Cobertura amplia de la cuenca Huaycoloro/Jicamarca según documentación técnica.
 WEST, SOUTH, EAST, NORTH = -77.03, -12.08, -76.62, -11.69
-# Punto ANA de monitoreo QHuay-1: 40 m antes de la confluencia con el Rímac,
-# convertido desde UTM WGS84 zona 18S (287433 E, 8670443 N).
 REF_LON, REF_LAT = -76.9524793, -12.0203374
 TARGET = 492.31
 DIRMAP = (64, 128, 1, 2, 4, 8, 16, 32)
@@ -22,9 +20,14 @@ OUT = Path("site/data/watersheds/huaycoloro_watershed.geojson")
 REPORT = Path("site/data/watersheds/huaycoloro_validation.json")
 CONTEXT = Path("site/data/watersheds/huaycoloro_validation_context.json")
 
-# Extensión geográfica reportada para el proyecto/cuenta de Huaycoloro.
-# Se utiliza como control de coherencia, NO como límite oficial de cuenca.
 CTX_XMIN, CTX_YMIN, CTX_XMAX, CTX_YMAX = -76.95, -12.0334, -76.6667, -11.75
+
+# Código D8 de la dirección desde una celda hacia su vecina aguas abajo.
+D8 = {
+    (-1, 0): 64, (-1, 1): 128, (0, 1): 1, (1, 1): 2,
+    (1, 0): 4, (1, -1): 8, (0, -1): 16, (-1, -1): 32,
+}
+NEIGHBORS = tuple(D8.keys())
 
 
 def prefix(lat, lon):
@@ -101,10 +104,38 @@ def choose_outlet(acc, tr):
             dist = math.hypot(dx, dy)
             score = abs(math.log(area / TARGET)) + 0.03 * dist
             if best is None or score < best[0]:
-                best = (score, lon, lat, area, dist)
+                best = (score, r, c, lon, lat, area, dist, n)
     if best is None:
         raise RuntimeError("No se encontró outlet candidato Huaycoloro")
     return best
+
+
+def upstream_mask(fdir, outlet_r, outlet_c):
+    """Reconstruye la cuenca siguiendo la topología D8 aguas arriba.
+
+    Se usa como método explícito para evitar errores de snapping entre la
+    coordenada del outlet y la celda de la grilla. La máscara resultante se
+    contrasta contra la acumulación calculada por pysheds.
+    """
+    arr = np.asarray(fdir)
+    rows, cols = arr.shape
+    mask = np.zeros((rows, cols), dtype=bool)
+    mask[outlet_r, outlet_c] = True
+    q = deque([(outlet_r, outlet_c)])
+
+    while q:
+        r, c = q.popleft()
+        for dr, dc in NEIGHBORS:
+            nr, nc = r + dr, c + dc
+            if nr < 0 or nc < 0 or nr >= rows or nc >= cols or mask[nr, nc]:
+                continue
+            # El vecino dr,dc drena hacia la celda actual si su dirección es
+            # exactamente la opuesta a su posición relativa.
+            expected = D8[(-dr, -dc)]
+            if int(arr[nr, nc]) == expected:
+                mask[nr, nc] = True
+                q.append((nr, nc))
+    return mask
 
 
 def geom_area(g):
@@ -150,17 +181,34 @@ def delineate(dem, tr):
     z = grid.resolve_flats(z)
     fdir = grid.flowdir(z, dirmap=DIRMAP)
     acc = grid.accumulation(fdir, dirmap=DIRMAP)
-    _, lon, lat, approx, dist = choose_outlet(np.asarray(acc), tr)
-    print("Outlet candidato", lon, lat, "área acumulada aprox", approx)
-    catch = grid.catchment(x=lon, y=lat, fdir=fdir, dirmap=DIRMAP, xytype="coordinate")
-    mask = np.asarray(catch).astype(bool)
+
+    _, r, c, lon, lat, approx, dist, acc_cells = choose_outlet(np.asarray(acc), tr)
+    print("Outlet candidato", lon, lat, "área acumulada aprox", approx, "celdas", int(acc_cells))
+
+    mask = upstream_mask(fdir, r, c)
+    catch_cells = int(mask.sum())
+    count_error = abs(catch_cells - float(acc_cells)) / max(float(acc_cells), 1.0)
+    print("Chequeo topológico: acumulación=", int(acc_cells), "catchment=", catch_cells,
+          "error=", round(count_error * 100, 3), "%")
+
     parts = [shape(g) for g, v in shapes(mask.astype("uint8"), mask=mask, transform=tr) if int(v) == 1]
+    if not parts:
+        raise RuntimeError("No se pudo vectorizar la cuenca Huaycoloro")
     basin = unary_union(parts).buffer(0)
     area = geom_area(basin)
     err = abs(area - TARGET) / TARGET
+
+    topology_status = "CONSISTENT" if count_error <= 0.02 else "REVIEW"
     status = "PASS" if err <= .15 else ("REVIEW" if err <= .25 else "FAIL")
+    if topology_status != "CONSISTENT" and status == "PASS":
+        status = "REVIEW"
+
     external = external_context_check(basin, lon, lat)
-    scientific_gate = status != "FAIL" and external["spatial_context_status"] == "CONSISTENT"
+    scientific_gate = (
+        status != "FAIL"
+        and topology_status == "CONSISTENT"
+        and external["spatial_context_status"] == "CONSISTENT"
+    )
     decision = "candidate_for_hydraulic_review" if scientific_gate else "do_not_use"
 
     feat = {
@@ -169,17 +217,18 @@ def delineate(dem, tr):
             "id": "chosica",
             "name": "Quebrada Huaycoloro — subcuenca candidata",
             "dataset": "Copernicus DEM GLO-30 Public",
-            "method": "DEM+D8+flow accumulation+catchment",
+            "method": "DEM+D8+flow accumulation+explicit upstream topology traversal",
             "reference_area_km2": TARGET,
             "delineated_area_km2": round(area, 3),
             "relative_area_error_pct": round(err * 100, 2),
             "validation_status": status,
+            "topology_status": topology_status,
             "spatial_context_status": external["spatial_context_status"],
             "outlet_lon": round(lon, 7),
             "outlet_lat": round(lat, 7),
             "outlet_distance_reference_km": round(dist, 3),
             "production_ready": False,
-            "note": "Candidato DEM para validación. La canalización Huaycoloro fue inaugurada en 2025, por lo que la relación lluvia-caudal-impacto requiere revisión hidráulica antes de producción."
+            "note": "Candidato DEM para validación. La canalización Huaycoloro inaugurada en 2025 obliga a revisar la respuesta hidráulica antes de producción."
         },
         "geometry": basin.__geo_interface__
     }
@@ -194,10 +243,18 @@ def delineate(dem, tr):
         "delineated_area_km2": round(area, 3),
         "relative_area_error_pct": round(err * 100, 2),
         "selected_outlet": {
+            "row": int(r), "col": int(c),
             "lon": round(lon, 7), "lat": round(lat, 7),
             "distance_reference_km": round(dist, 3),
             "accumulation_area_km2_approx": round(approx, 3),
+            "accumulation_cells": int(round(acc_cells)),
             "reference": "ANA QHuay-1, 40 m antes de la confluencia con el río Rímac"
+        },
+        "topology_check": {
+            "catchment_cells": catch_cells,
+            "accumulation_cells": int(round(acc_cells)),
+            "relative_cell_count_error_pct": round(count_error * 100, 3),
+            "status": topology_status
         },
         "external_spatial_check": external,
         "hydraulic_context": {
