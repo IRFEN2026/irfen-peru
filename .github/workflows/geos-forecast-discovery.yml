@@ -1,0 +1,58 @@
+name: IRFEN - Explorar pronóstico NASA GEOS v0.8
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - scripts/discover_geos_forecast.py
+      - .github/workflows/geos-forecast-discovery.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: geos-forecast-discovery
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: pip install xarray zarr s3fs fsspec numpy
+
+      - name: Explorar forecast público NASA GEOS-CF
+        run: python scripts/discover_geos_forecast.py
+
+      - name: Validar reporte
+        run: |
+          test -s site/data/forecast/geos_cf_discovery.json
+          python -m json.tool site/data/forecast/geos_cf_discovery.json >/dev/null
+          cat site/data/forecast/geos_cf_discovery.json
+
+      - name: Guardar reporte
+        shell: bash
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/forecast/geos_cf_discovery.json
+          if git diff --cached --quiet; then
+            echo "Sin cambios."
+            exit 0
+          fi
+          git commit -m "IRFEN v0.8: resultado exploración NASA GEOS forecast"
+          git pull --rebase origin main
+          git push origin HEAD:main
