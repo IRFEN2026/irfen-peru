@@ -17,9 +17,11 @@ on:
       - site/data/scientific_status.json
       - site/data/watersheds/**
       - site/data/forecast/**
+      - site/data/hydrology/**
       - site/v08-experimental.js
       - site/v08-forecast.js
       - site/v08-simulator.js
+      - site/v08-health.js
 
 permissions:
   contents: read
@@ -137,7 +139,8 @@ jobs:
           tags=[
               '<script src="v08-experimental.js"></script>',
               '<script src="v08-forecast.js"></script>',
-              '<script src="v08-simulator.js"></script>'
+              '<script src="v08-simulator.js"></script>',
+              '<script src="v08-health.js"></script>'
           ]
           for tag in tags:
               if tag not in html:
@@ -152,6 +155,7 @@ jobs:
           test -s site/v08-experimental.js
           test -s site/v08-forecast.js
           test -s site/v08-simulator.js
+          test -s site/v08-health.js
           test -s site/data/latest.json
           test -s site/data/history.json
           test -s site/data/scientific_status.json
