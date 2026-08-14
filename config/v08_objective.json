@@ -1,0 +1,65 @@
+{
+  "version": "0.8",
+  "objective": "Convertir datos reales observados y pronosticados en una alerta/recomendación temprana, trazable y útil para toma de decisiones ante activación de quebradas e inundación en los tres pilotos IRFEN, sin depender de supuestos hidráulicos no validados.",
+  "operational_baseline": "v0.7.1 remains unchanged until explicit promotion",
+  "pilot_scope": [
+    {
+      "id": "san_ildefonso",
+      "name": "Quebrada San Ildefonso",
+      "mechanism": "debris_flow_flash_runoff",
+      "done_when": [
+        "validated catchment geometry",
+        "observed rainfall over catchment",
+        "24h forecast over catchment",
+        "historical event calibration with non-event controls",
+        "action threshold or decision rule supported by evidence",
+        "end-to-end alert recommendation with provenance and fallback"
+      ]
+    },
+    {
+      "id": "chosica_huaycoloro",
+      "name": "Lima Este: Huaycoloro + quebradas locales de Chosica",
+      "mechanism": "two_submodels_required",
+      "done_when": [
+        "Huaycoloro main-channel model remains separated from local debris-flow catchments",
+        "at least one representative local Chosica catchment is validated end-to-end",
+        "observed rainfall and forecast are evaluated at the appropriate spatial scale",
+        "historical event calibration demonstrates detection without unacceptable false alarms",
+        "hydraulic/infrastructure state is represented without invented factors",
+        "end-to-end alert recommendation with provenance and fallback"
+      ]
+    },
+    {
+      "id": "catacaos",
+      "name": "Catacaos / Bajo Piura",
+      "mechanism": "river_floodplain",
+      "done_when": [
+        "observed and forecast basin rainfall are available",
+        "official critical reaches/exposure are represented",
+        "numeric river state or defensible official proxy is automated",
+        "river-state decision rule is calibrated against documented events",
+        "end-to-end alert recommendation with provenance and fallback"
+      ]
+    }
+  ],
+  "global_release_gates": [
+    "all scientific assets expose provenance and freshness",
+    "fallback behavior is tested",
+    "historical replay and rainy non-event controls are evaluated",
+    "no experimental threshold is promoted automatically",
+    "web publication passes regression and live smoke tests",
+    "a human-readable explanation states why an alert/recommendation was produced"
+  ],
+  "stop_rule": "Once the three pilots satisfy their done_when gates and the global release gates pass, stop feature development and run an operational validation period. Do not add new basins before this condition is met.",
+  "deferred_phase_2": [
+    "Lurin basin / quebradas",
+    "Cieneguilla",
+    "additional Peru coastal basins and quebradas"
+  ],
+  "non_goals_before_release": [
+    "cosmetic features not needed for decisions",
+    "additional basins",
+    "machine-learning models without sufficient labelled events",
+    "automatic publication of unvalidated hydraulic factors or thresholds"
+  ]
+}
