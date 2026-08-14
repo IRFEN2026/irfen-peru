@@ -1,0 +1,35 @@
+name: IRFEN - Verificar umbrales plan Chosica
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/extract_chosica_plan_2023_2025_thresholds.py
+      - .github/workflows/chosica-plan-thresholds.yml
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: pip install requests beautifulsoup4 pypdf
+      - run: python scripts/extract_chosica_plan_2023_2025_thresholds.py
+      - run: |
+          test -s site/data/calibration/chosica_plan_2023_2025_thresholds.json
+          python -m json.tool site/data/calibration/chosica_plan_2023_2025_thresholds.json >/dev/null
+      - name: Guardar verificación
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/calibration/chosica_plan_2023_2025_thresholds.json
+          git diff --cached --quiet || git commit -m "IRFEN v0.8: record Chosica plan threshold verification"
+          git pull --rebase origin main
+          git push
