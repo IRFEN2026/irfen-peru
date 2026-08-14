@@ -8,6 +8,7 @@
     "historical_calibration": "parallel_validation",
     "forecast_precipitation": "experimental_geos_cf_available",
     "scenario_simulator": "available_non_persistent",
+    "hydraulic_infrastructure_inventory": "available_no_numeric_modifiers",
     "hydraulic_response": "required_before_v0.8_production"
   },
   "forecast_lane": {
@@ -24,6 +25,12 @@
       "catacaos_forecast24_mm": 0.24
     },
     "warning": "GEOS-CF se usa como señal de investigación. Debe validarse contra observaciones y no alimenta el índice operativo v0.7.1."
+  },
+  "hydraulic_lane": {
+    "inventory": "data/hydraulics/current_infrastructure.json",
+    "production_use": false,
+    "numeric_modifiers_enabled": false,
+    "principle": "IRFEN registra qué obras modifican la respuesta hidrológica, pero no asigna reducciones porcentuales ni capacidades no verificadas a la amenaza operativa."
   },
   "zones": [
     {
@@ -42,11 +49,15 @@
       },
       "hydraulic_gate": {
         "required": true,
+        "status": "HYDRAULIC_CALIBRATION_REQUIRED",
+        "inventory_status": "available",
+        "known_current_system": "35 diques previstos en San Ildefonso, 26 en San Carlos, dique definitivo alto operativo, túnel de trasvase de 1.51 km conectado y sistema de captación/derivación hacia el río Moche en ejecución integral.",
+        "numeric_modifier": null,
         "reason": "El sistema de retención, captación y derivación de San Ildefonso/San Carlos modifica la relación histórica lluvia-caudal-impacto.",
         "official_sources": [
           "https://www.gob.pe/institucion/regionlalibertad/noticias/1395875-dique-definitivo-en-parte-alta-de-san-ildefonso-ya-esta-operativo-y-reducira-riesgo-de-huaicos-en-trujillo",
-          "https://www.gob.pe/institucion/anin/noticias/1412454-anin-y-titular-de-pcm-supervisan-avance-de-las-defensas-riberenas-del-rio-moche",
-          "https://www.gob.pe/institucion/munitrujillo/noticias/1415786-mpt-trujillo-afrontara-mejor-posibles-lluvias-fuertes"
+          "https://www.gob.pe/institucion/anin/noticias/1029559-anin-conectan-tunel-de-trasvase-del-proyecto-san-idelfonso-y-san-carlos-que-permitira-desviar-aguas-ante-posibles-inundaciones",
+          "https://www.gob.pe/institucion/anin/noticias/1412454-anin-y-titular-de-pcm-supervisan-avance-de-las-defensas-riberenas-del-rio-moche"
         ]
       },
       "production_ready": false
@@ -72,11 +83,15 @@
       },
       "hydraulic_gate": {
         "required": true,
+        "status": "HYDRAULIC_CALIBRATION_REQUIRED",
+        "inventory_status": "available",
+        "known_current_system": "Canal de concreto armado de 10.5 km inaugurado en 2025, dos acueductos, retención de sedimentos, diques con enrocados e infraestructura natural.",
+        "numeric_modifier": null,
         "reason": "La canalización de 10.5 km inaugurada en 2025 modifica la exposición y conducción en la cuenca baja.",
         "official_sources": [
           "https://www.gob.pe/institucion/anin/noticias/1247801-huaycoloro-nunca-mas-obra-protegera-a-miles-de-habitantes-de-campoy-nieveria-huachipa-y-cajamarquilla",
-          "https://www.gob.pe/institucion/anin/noticias/1423006-anin-articula-acciones-inmediatas-para-proteger-el-canal-huaycoloro-del-ingreso-ilegal-de-vehiculos",
-          "https://www.gob.pe/41855-centro-de-monitoreo-de-deslizamientos-y-huaicos-cendehua"
+          "https://www.gob.pe/institucion/anin/noticias/1079672-anin-proyecto-quebrada-huaycoloro-presenta-98-de-ejecucion-fisica",
+          "https://www.gob.pe/institucion/anin/noticias/1423006-anin-articula-acciones-inmediatas-para-proteger-el-canal-huaycoloro-del-ingreso-ilegal-de-vehiculos"
         ]
       },
       "production_ready": false
@@ -88,7 +103,17 @@
       "model_type": "river_basin_floodplain_system",
       "note": "Catacaos no debe tratarse como una microcuenca simple: el riesgo depende del sistema río Piura/intercuenca Bajo Piura, aportes aguas arriba, defensas y exposición de llanura de inundación.",
       "forecast_spatial_status": "provisional_sampling_only",
-      "next_step": "Identificar series reutilizables de nivel/caudal, unidades de aporte y llanura de inundación; mantener IMERG actual mientras se construye el modelo fluvial.",
+      "hydraulic_gate": {
+        "required": true,
+        "status": "RIVER_STATE_REQUIRED",
+        "inventory_status": "available",
+        "urban_drainage_project_status": "viable_not_integrated_operational_system",
+        "urban_drainage_systems": 52,
+        "bajo_piura_design_flow_reference_m3s": 4100,
+        "design_flow_warning": "Referencia de diseño de defensas; no representa el caudal observado ni la capacidad hidráulica actual verificada del río.",
+        "numeric_modifier": null
+      },
+      "next_step": "Resolver una serie automática de nivel/caudal, verificar capacidad hidráulica actual y construir llanura de inundación; mantener IMERG actual mientras se construye el modelo fluvial.",
       "production_ready": false
     }
   ]
