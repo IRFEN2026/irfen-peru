@@ -106,6 +106,38 @@ def check_forecast_contract():
             ERRORS.append("Catacaos: el forecast aún debe mantenerse espacialmente provisional hasta tener modelo fluvial")
 
 
+def check_hydraulic_inventory():
+    p = SITE / "data" / "hydraulics" / "current_infrastructure.json"
+    if not p.exists():
+        WARNINGS.append("hydraulics: inventario de infraestructura aún no disponible")
+        return
+    data = load(p)
+    if not data:
+        return
+    if data.get("production_use") is not False:
+        ERRORS.append("hydraulics: production_use debe permanecer false")
+    zones = data.get("zones", [])
+    expected = {"san_ildefonso", "chosica", "catacaos"}
+    present = {z.get("zone_id") for z in zones}
+    missing = expected - present
+    if missing:
+        ERRORS.append(f"hydraulics: faltan zonas {sorted(missing)}")
+    for z in zones:
+        zid = z.get("zone_id")
+        if z.get("production_modifier") is not None:
+            ERRORS.append(f"hydraulics {zid}: production_modifier debe ser null hasta calibración")
+        gate = z.get("scientific_gate") or {}
+        if not gate.get("status"):
+            ERRORS.append(f"hydraulics {zid}: falta scientific_gate.status")
+        effect = z.get("hydrologic_effect") or {}
+        if effect.get("numeric_attenuation_factor") is not None:
+            ERRORS.append(f"hydraulics {zid}: numeric_attenuation_factor debe ser null sin calibración")
+        if zid in {"san_ildefonso", "chosica"} and "HYDRAULIC_CALIBRATION_REQUIRED" not in str(gate.get("status", "")):
+            ERRORS.append(f"hydraulics {zid}: debe mantener puerta HYDRAULIC_CALIBRATION_REQUIRED")
+        if zid == "catacaos" and "RIVER_STATE_REQUIRED" not in str(gate.get("status", "")):
+            ERRORS.append("hydraulics catacaos: debe mantener puerta RIVER_STATE_REQUIRED")
+
+
 def check_frontend_contract():
     p = SITE / "index.html"
     text = p.read_text(encoding="utf-8") if p.exists() else ""
@@ -114,7 +146,7 @@ def check_frontend_contract():
     block = text[start:end] if start >= 0 and end > start else ""
     if not block:
         ERRORS.append("No se pudo localizar function calc(z) para validar contrato operativo")
-    elif "experimental_polygon" in block or "forecast" in block:
+    elif "experimental_polygon" in block or "forecast" in block or "hydraulic" in block:
         ERRORS.append("La función operativa calc(z) está consumiendo campos experimentales")
 
 
@@ -134,6 +166,7 @@ def main():
     check_latest_contract()
     check_history_contract()
     check_forecast_contract()
+    check_hydraulic_inventory()
     check_frontend_contract()
     check_manifest()
 
