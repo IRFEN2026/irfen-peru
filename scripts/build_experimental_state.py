@@ -130,6 +130,7 @@ def main():
             "no_hydraulic_attenuation_without_calibration": True,
             "no_automatic_threshold_promotion": True,
             "test_recommendations_must_start_with_TEST": True,
+            "catacaos_requires_river_state": True,
             "catacaos_primary_river_authority": "SENAMHI/PHISIS",
             "catacaos_secondary_proxy_allowed_only_for_tests": True,
             "threshold_crossings_are_test_signals_only": True,
