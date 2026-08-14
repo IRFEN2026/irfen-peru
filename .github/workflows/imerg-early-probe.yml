@@ -1,0 +1,64 @@
+name: IRFEN - Probar IMERG Early subdiario v0.8
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - scripts/probe_imerg_early_live.py
+      - .github/workflows/imerg-early-probe.yml
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Probar IMERG Early 30 min vía Earthdata
+        env:
+          EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
+        run: python scripts/probe_imerg_early_live.py
+
+      - name: Validar resultado
+        run: |
+          test -s site/data/calibration/imerg_early_live_probe.json
+          python -m json.tool site/data/calibration/imerg_early_live_probe.json >/dev/null
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('site/data/calibration/imerg_early_live_probe.json').read_text())
+          assert p.get('production_use') is False
+          assert p.get('production_ready') is False
+          assert p.get('scientific_gate',{}).get('status') == 'SOURCE_CONNECTIVITY_ONLY'
+          print('Puerta de seguridad IMERG Early OK')
+          PY
+
+      - name: Guardar evidencia del probe
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/calibration/imerg_early_live_probe.json
+          if git diff --cached --quiet; then
+            echo "Sin cambios que guardar."
+            exit 0
+          fi
+          git commit -m "IRFEN v0.8: actualizar probe IMERG Early"
+          git pull --rebase origin main
+          git push origin HEAD:main
