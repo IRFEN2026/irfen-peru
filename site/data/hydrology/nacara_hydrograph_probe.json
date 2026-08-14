@@ -1,0 +1,28 @@
+{
+  "version": "0.8-experimental",
+  "generated_at": "2026-08-14T19:32:55.525992+00:00",
+  "production_use": false,
+  "station": {
+    "name": "Puente Ñácara",
+    "id": "47E0415A",
+    "river": "Piura"
+  },
+  "purpose": "Final bounded test for a stable public numeric river-state path.",
+  "tests": [
+    {
+      "fecha_hora_request": "2024-09-06 19:00:00",
+      "error_type": "ConnectTimeout",
+      "error": "HTTPSConnectionPool(host='www.senamhi.gob.pe', port=443): Max retries exceeded with url: /mapas/mapa-monitoreohidro/include/mnt-grafica-new.php?fecha_hora=2024-09-06+19%3A00%3A00&id=47E0415A&variable=CAUDAL&variable_opcion=C (Caused by ConnectTimeoutError(<HTTPSConnection(host='www.senamhi.gob.pe', port=443) at 0x7f973f005c70>, 'Connection to www.senamhi.gob.pe timed out. (connect timeout=10)'))",
+      "machine_numeric_series_found": false
+    },
+    {
+      "fecha_hora_request": "2026-08-14 12:00:00",
+      "error_type": "ConnectTimeout",
+      "error": "HTTPSConnectionPool(host='www.senamhi.gob.pe', port=443): Max retries exceeded with url: /mapas/mapa-monitoreohidro/include/mnt-grafica-new.php?fecha_hora=2026-08-14+12%3A00%3A00&id=47E0415A&variable=CAUDAL&variable_opcion=C (Caused by ConnectTimeoutError(<HTTPSConnection(host='www.senamhi.gob.pe', port=443) at 0x7f973e9ff2f0>, 'Connection to www.senamhi.gob.pe timed out. (connect timeout=10)'))",
+      "machine_numeric_series_found": false
+    }
+  ],
+  "status": "NO_STABLE_PUBLIC_NUMERIC_SERIES_FROM_GITHUB",
+  "decision": "Close direct machine scraping route. Keep PHISIS/SENAMHI as authoritative external river-state channel; do not fabricate dry-season flow.",
+  "season_rule": "Puente Ñácara short-term forecast is published only during avenida; absence outside avenida is not interpreted as zero flow."
+}
