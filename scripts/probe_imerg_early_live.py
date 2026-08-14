@@ -3,9 +3,11 @@
 
 Objetivo: comprobar que Earthdata entrega GPM_3IMERGHHE desde GitHub Actions y
 muestrear únicamente San Ildefonso, Huaycoloro y Pedregal. Este script NO
-cambia umbrales, amenaza, prioridad ni alertas. Si la fuente funciona, el
-resultado sirve para decidir si merece integrarse como señal subdiaria de
-prueba; no implica que su resolución 0.1° sea suficiente para Pedregal.
+cambia umbrales, amenaza, prioridad ni alertas.
+
+La indisponibilidad temporal de Earthdata se registra como contingencia y no
+se confunde con un cero de lluvia. El archivo histórico conserva los últimos
+gránulos válidos y permite medir disponibilidad/latencia de la fuente.
 """
 from __future__ import annotations
 
@@ -19,15 +21,30 @@ import tempfile
 import earthaccess
 import h5py
 import numpy as np
+import requests
 from shapely.geometry import box, shape
 
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "site"
 OUT = SITE / "data" / "calibration" / "imerg_early_live_probe.json"
 
+SOURCE = {
+    "institution": "NASA GES DISC / GPM IMERG",
+    "short_name": "GPM_3IMERGHHE",
+    "version": "07",
+    "role": "near_real_time_half_hourly_rainfall_probe",
+}
+
 
 def load_json(path: Path):
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def previous_probe():
+    try:
+        return load_json(OUT)
+    except Exception:
+        return {}
 
 
 def load_targets():
@@ -138,41 +155,104 @@ def filename_for(granule):
 
 
 def timestamp_from_filename(name):
-    # IMERG names normally contain YYYYMMDD-SHHMMSS.
     m = re.search(r"(20\d{6})-S(\d{6})", name)
     if not m:
         return None
     return datetime.strptime(m.group(1) + m.group(2), "%Y%m%d%H%M%S").replace(tzinfo=timezone.utc)
 
 
+def last_valid_summary(previous):
+    samples = previous.get("samples") or []
+    latest_targets = samples[-1].get("targets", []) if samples else []
+    if previous.get("status") == "EARLY_HALFHOURLY_SOURCE_AVAILABLE":
+        return {
+            "probe_generated_at": previous.get("generated_at"),
+            "latest_granule_time_utc": previous.get("latest_granule_time_utc"),
+            "observed_latency_hours_at_probe": previous.get("observed_latency_hours_at_probe"),
+            "latest_targets": latest_targets,
+        }
+    return previous.get("last_valid")
+
+
+def write_contingency(now, previous, status, error=None, search_window_hours=None):
+    result = {
+        "version": "0.8-experimental",
+        "generated_at": now.isoformat(),
+        "production_use": False,
+        "production_ready": False,
+        "status": status,
+        "source": SOURCE,
+        "search_window_hours": search_window_hours,
+        "granules_found": 0,
+        "granules_downloaded": 0,
+        "latest_granule_time_utc": None,
+        "observed_latency_hours_at_probe": None,
+        "samples": [],
+        "last_valid": last_valid_summary(previous),
+        "stale": True,
+        "source_error": None if error is None else {
+            "type": type(error).__name__,
+            "message": str(error)[:500],
+        },
+        "scientific_gate": {
+            "status": "SOURCE_TEMPORARILY_UNAVAILABLE",
+            "rule": "La indisponibilidad de la fuente nunca se interpreta como cero de lluvia. Se conserva por separado el último dato válido y el archivo histórico mantiene los gránulos previos.",
+            "last_valid_retained_for_archive": True,
+            "pedregal_next_gate": "compare live/historical signal against ground or higher-fidelity evidence before any decision threshold",
+        },
+    }
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    OUT.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(json.dumps({
+        "status": status,
+        "source_error": result["source_error"],
+        "last_valid": result["last_valid"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
+def earthdata_preflight():
+    # Evita esperar varios minutos dentro de earthaccess cuando el runner no
+    # tiene ruta a URS. Cualquier respuesta HTTP demuestra conectividad; 401/403
+    # también sirven para esta comprobación.
+    response = requests.get("https://urs.earthdata.nasa.gov/profile", timeout=(5, 10), allow_redirects=False)
+    return response.status_code
+
+
 def main():
     if not os.getenv("EARTHDATA_TOKEN"):
         raise SystemExit("Falta EARTHDATA_TOKEN")
 
-    targets = load_targets()
-    earthaccess.login(strategy="environment")
+    previous = previous_probe()
     now = datetime.now(timezone.utc)
+    targets = load_targets()
 
-    # La ventana es corta deliberadamente: queremos probar near-real-time sin
-    # descargar decenas de gránulos globales. Si no aparece nada, ampliamos una
-    # sola vez y seguimos descargando únicamente los dos más recientes hallados.
-    granules = earthaccess.search_data(
-        short_name="GPM_3IMERGHHE",
-        version="07",
-        temporal=((now - timedelta(hours=6)).isoformat(), now.isoformat()),
-        count=20,
-    )
-    search_window_hours = 6
-    if not granules:
+    try:
+        earthdata_preflight()
+        earthaccess.login(strategy="environment")
         granules = earthaccess.search_data(
             short_name="GPM_3IMERGHHE",
             version="07",
-            temporal=((now - timedelta(hours=12)).isoformat(), now.isoformat()),
-            count=30,
+            temporal=((now - timedelta(hours=6)).isoformat(), now.isoformat()),
+            count=20,
         )
+    except (requests.RequestException, OSError, ConnectionError, TimeoutError) as exc:
+        return write_contingency(now, previous, "SOURCE_TEMPORARILY_UNREACHABLE", error=exc, search_window_hours=6)
+
+    search_window_hours = 6
+    if not granules:
+        try:
+            granules = earthaccess.search_data(
+                short_name="GPM_3IMERGHHE",
+                version="07",
+                temporal=((now - timedelta(hours=12)).isoformat(), now.isoformat()),
+                count=30,
+            )
+        except (requests.RequestException, OSError, ConnectionError, TimeoutError) as exc:
+            return write_contingency(now, previous, "SOURCE_TEMPORARILY_UNREACHABLE", error=exc, search_window_hours=12)
         search_window_hours = 12
     if not granules:
-        raise RuntimeError("Earthdata no devolvió gránulos GPM_3IMERGHHE V07 en 12 h")
+        return write_contingency(now, previous, "NO_RECENT_GRANULES", search_window_hours=12)
 
     indexed = []
     for g in granules:
@@ -183,39 +263,41 @@ def main():
     selected = indexed[-2:]
 
     samples = []
-    with tempfile.TemporaryDirectory(prefix="irfen_imerg_early_") as td:
-        paths = earthaccess.download([x[2] for x in selected], local_path=td, threads=2, show_progress=False)
-        by_name = {Path(p).name: p for p in paths}
-        for ts, expected_name, _ in selected:
-            path = by_name.get(expected_name)
-            if path is None and paths:
-                # earthaccess puede normalizar el nombre; buscar por fecha/hora.
-                path = min(paths, key=lambda p: 0 if timestamp_from_filename(Path(p).name) == ts else 1)
-            if path is None:
-                continue
-            actual_name = Path(path).name
-            actual_ts = timestamp_from_filename(actual_name) or ts
-            lat, lon, p, units = read_grid(path)
-            rate_units = "mm/hr" in units.lower() or "mm h-1" in units.lower() or "mm/hour" in units.lower()
-            target_rows = []
-            for target in targets:
-                value, meta = polygon_mean(target["geometry"], lat, lon, p)
-                rate = value if rate_units else None
-                accum = (value * 0.5) if value is not None and rate_units else value
-                target_rows.append({
-                    "target_id": target["id"],
-                    "name": target["name"],
-                    "mean_source_value": None if value is None else round(value, 4),
-                    "rate_mm_hr": None if rate is None else round(rate, 4),
-                    "accum_30min_mm": None if accum is None else round(accum, 4),
-                    "sampling": meta,
+    try:
+        with tempfile.TemporaryDirectory(prefix="irfen_imerg_early_") as td:
+            paths = earthaccess.download([x[2] for x in selected], local_path=td, threads=2, show_progress=False)
+            by_name = {Path(p).name: p for p in paths}
+            for ts, expected_name, _ in selected:
+                path = by_name.get(expected_name)
+                if path is None and paths:
+                    path = min(paths, key=lambda p: 0 if timestamp_from_filename(Path(p).name) == ts else 1)
+                if path is None:
+                    continue
+                actual_name = Path(path).name
+                actual_ts = timestamp_from_filename(actual_name) or ts
+                lat, lon, p, units = read_grid(path)
+                rate_units = "mm/hr" in units.lower() or "mm h-1" in units.lower() or "mm/hour" in units.lower()
+                target_rows = []
+                for target in targets:
+                    value, meta = polygon_mean(target["geometry"], lat, lon, p)
+                    rate = value if rate_units else None
+                    accum = (value * 0.5) if value is not None and rate_units else value
+                    target_rows.append({
+                        "target_id": target["id"],
+                        "name": target["name"],
+                        "mean_source_value": None if value is None else round(value, 4),
+                        "rate_mm_hr": None if rate is None else round(rate, 4),
+                        "accum_30min_mm": None if accum is None else round(accum, 4),
+                        "sampling": meta,
+                    })
+                samples.append({
+                    "granule": actual_name,
+                    "time_utc": actual_ts.isoformat() if actual_ts.year > 1970 else None,
+                    "units": units,
+                    "targets": target_rows,
                 })
-            samples.append({
-                "granule": actual_name,
-                "time_utc": actual_ts.isoformat() if actual_ts.year > 1970 else None,
-                "units": units,
-                "targets": target_rows,
-            })
+    except (requests.RequestException, OSError, ConnectionError, TimeoutError) as exc:
+        return write_contingency(now, previous, "SOURCE_TEMPORARILY_UNREACHABLE", error=exc, search_window_hours=search_window_hours)
 
     valid_times = [datetime.fromisoformat(x["time_utc"]) for x in samples if x.get("time_utc")]
     latest_time = max(valid_times) if valid_times else None
@@ -227,21 +309,20 @@ def main():
         "production_use": False,
         "production_ready": False,
         "status": "EARLY_HALFHOURLY_SOURCE_AVAILABLE" if samples else "NO_DOWNLOADED_GRANULES",
-        "source": {
-            "institution": "NASA GES DISC / GPM IMERG",
-            "short_name": "GPM_3IMERGHHE",
-            "version": "07",
-            "role": "near_real_time_half_hourly_rainfall_probe",
-        },
+        "source": SOURCE,
         "search_window_hours": search_window_hours,
         "granules_found": len(granules),
         "granules_downloaded": len(samples),
         "latest_granule_time_utc": latest_time.isoformat() if latest_time else None,
         "observed_latency_hours_at_probe": latency_hours,
         "samples": samples,
+        "last_valid": None,
+        "stale": False,
+        "source_error": None,
         "scientific_gate": {
             "status": "SOURCE_CONNECTIVITY_ONLY",
             "rule": "Una descarga exitosa resuelve conectividad/latencia técnica, no demuestra que 0.1° represente adecuadamente una microcuenca pequeña.",
+            "last_valid_retained_for_archive": True,
             "pedregal_next_gate": "compare live/historical signal against ground or higher-fidelity evidence before any decision threshold",
         },
     }
