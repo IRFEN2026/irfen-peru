@@ -2,8 +2,14 @@
 
 Plataforma experimental de alerta y priorización hidrometeorológica para zonas vulnerables frente a lluvias intensas, activación de quebradas e impactos asociados a El Niño en Perú.
 
-**Producción actual:** v0.7.1  
-**Carril científico:** v0.8 experimental
+**Núcleo operativo protegido:** v0.7.1
+**Carril científico actual:** v0.8 experimental en validación en sombra
+
+La integración técnica v0.8 supera las pruebas automáticas y permite ejecutar
+los tres pilotos en modo `TEST_ONLY`. La promoción a producción permanece
+bloqueada hasta completar evidencia de lluvia local en Pedregal, validación
+hidráulica posterior a las obras recientes, estado fluvial primario para
+Catacaos y un periodo suficiente de observación operativa.
 
 Sitio público: `https://irfen2026.github.io/irfen-peru/`
 
@@ -65,6 +71,7 @@ No se tratará como una microcuenca simple. La siguiente fase debe representar e
 - `.github/workflows/history.yml` — histórico IMERG Final.
 - `.github/workflows/build-san-ildefonso-v08.yml` — delineación San Ildefonso.
 - `.github/workflows/build-huaycoloro-v08.yml` — delineación Huaycoloro.
+- `.github/workflows/shadow-validation.yml` — registro diario de validación en sombra.
 - `scripts/fetch_imerg.py` — operación diaria.
 - `scripts/fetch_history.py` — histórico.
 - `scripts/compare_san_ildefonso_history_polygon.py` — comparación histórica caja vs. polígono.
@@ -73,6 +80,7 @@ No se tratará como una microcuenca simple. La siguiente fase debe representar e
 - `site/data/latest.json` — dataset operativo publicado.
 - `site/data/history.json` — catálogo histórico.
 - `site/data/scientific_status.json` — estado de validación científica.
+- `site/data/validation/shadow_runs.json` — evidencia diaria TEST_ONLY, contingencias y bloqueos.
 - `site/data/watersheds/` — polígonos y reportes de validación.
 
 ## Seguridad
