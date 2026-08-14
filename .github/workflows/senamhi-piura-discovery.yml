@@ -1,0 +1,57 @@
+name: IRFEN - Explorar hidrología SENAMHI Piura v0.8
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - scripts/discover_senamhi_piura.py
+      - .github/workflows/senamhi-piura-discovery.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: senamhi-piura-discovery
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: pip install requests
+
+      - name: Explorar interfaz hidrológica SENAMHI
+        run: python scripts/discover_senamhi_piura.py
+
+      - name: Validar reporte
+        run: |
+          test -s site/data/hydrology/senamhi_piura_discovery.json
+          python -m json.tool site/data/hydrology/senamhi_piura_discovery.json >/dev/null
+
+      - name: Guardar reporte
+        shell: bash
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/hydrology/senamhi_piura_discovery.json
+          if git diff --cached --quiet; then
+            echo "Sin cambios."
+            exit 0
+          fi
+          git commit -m "IRFEN v0.8: descubrimiento interfaz SENAMHI Piura"
+          git pull --rebase origin main
+          git push origin HEAD:main
