@@ -1,0 +1,75 @@
+{
+  "version": "0.8-experimental",
+  "zone_id": "chosica_local_debris_flows",
+  "representative_catchment": "pedregal_local",
+  "event_date": "2015-03-23",
+  "production_use": false,
+  "production_ready": false,
+  "status": "GROUND_EVENT_DAY_CONTROL_AVAILABLE_DIAGNOSTIC_ONLY",
+  "purpose": "Contrastar la señal IMERG de la microcuenca Pedregal con evidencia pluviométrica terrestre del evento 23/03/2015 sin derivar todavía un factor de corrección ni un umbral operativo.",
+  "event": {
+    "documented_mechanism": "local_debris_flows",
+    "documented_time_window_local": "aprox. 14:30-16:00",
+    "affected_local_catchments_include": [
+      "Pedregal",
+      "Quirio",
+      "Rayos de Sol / Corrales",
+      "Carossio",
+      "La Libertad"
+    ]
+  },
+  "ground_rainfall_evidence": {
+    "station": "Chosica",
+    "provider": "SENAMHI",
+    "period": "2015-03-23 daily accumulation",
+    "reported_event_day_mm": 18.3,
+    "reported_rounding_in_ingemmet_narrative_mm": 18.0,
+    "evidence_range_mm": [18.0, 18.3],
+    "antecedent_condition": "El informe técnico indica precipitaciones desde el 17 de marzo con incremento progresivo hasta el día 23.",
+    "source_chain": [
+      {
+        "role": "official_event_report_catalog",
+        "institution": "CENEPRED / SIGRID",
+        "document_id": 3642,
+        "title": "Evaluación geodinámica de los flujos de detritos del 23-03-2015 entre las quebradas Rayos de Sol y Quirio (Chosica) y Cashahuacra (Santa Eulalia)",
+        "url": "https://sigrid4.cenepred.gob.pe/sigridv4/documento/3642"
+      },
+      {
+        "role": "official_institutional_record",
+        "institution": "INGEMMET / ALICIA-CONCYTEC",
+        "handle": "20.500.12544/1310",
+        "title": "Evaluación geodinámica de los flujos de detritos del 23/03/2015 entre las quebradas Rayos de Sol y Quirio (Chosica) y Cashahuacra (Santa Eulalia)",
+        "url": "https://hdl.handle.net/20.500.12544/1310"
+      },
+      {
+        "role": "measurement_provider_cited_by_report",
+        "institution": "SENAMHI",
+        "note": "La cifra de precipitación de la estación Chosica es atribuida a SENAMHI 2015 en la documentación técnica que analiza el evento."
+      }
+    ]
+  },
+  "satellite_comparison": {
+    "product": "NASA GPM IMERG Final",
+    "sampling_geometry": "Pedregal candidate catchment, 3.827 km2",
+    "max24h_mm": 10.707,
+    "station_reference_mm": 18.3,
+    "difference_imerg_minus_station_mm": -7.593,
+    "imerg_to_station_ratio": 0.585,
+    "relative_undercapture_pct": 41.49,
+    "diagnostic_interpretation": "IMERG subcaptura de forma material la señal diaria observada por la estación Chosica en este evento; esto ayuda a explicar por qué el replay de Chosica 2015 queda demasiado bajo."
+  },
+  "scientific_limits": [
+    "La estación Chosica no representa necesariamente la precipitación de la parte alta de Pedregal.",
+    "Un valor diario de estación no resuelve la intensidad subhoraria que puede disparar flujos de detritos.",
+    "La resolución IMERG 0.1 grados intersecta muy pocas celdas sobre Pedregal.",
+    "La comparación estación/IMERG no autoriza un factor multiplicativo de corrección.",
+    "Se requieren controles lluviosos sin impacto y, preferentemente, una señal local o de mayor fidelidad espacial antes de definir una regla de decisión."
+  ],
+  "decision_gate": {
+    "status": "LOCAL_OR_HIGHER_FIDELITY_SIGNAL_AND_NON_EVENT_CONTROLS_REQUIRED",
+    "automatic_bias_correction_allowed": false,
+    "threshold_change_allowed": false,
+    "live_test_recommendation_allowed": false,
+    "historical_diagnostic_allowed": true
+  }
+}
