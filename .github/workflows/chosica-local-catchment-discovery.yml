@@ -1,0 +1,34 @@
+name: IRFEN - Descubrir microcuencas locales Chosica
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/discover_chosica_local_catchments.py
+      - .github/workflows/chosica-local-catchment-discovery.yml
+
+permissions:
+  contents: write
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install requests pypdf
+      - run: python scripts/discover_chosica_local_catchments.py
+      - run: |
+          test -s site/data/calibration/chosica_local_catchment_references.json
+          python -m json.tool site/data/calibration/chosica_local_catchment_references.json >/dev/null
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/calibration/chosica_local_catchment_references.json
+          git diff --cached --quiet || git commit -m "IRFEN v0.8: update local Chosica catchment references"
+          git pull --rebase origin main
+          git push
