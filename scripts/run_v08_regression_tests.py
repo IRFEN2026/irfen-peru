@@ -165,6 +165,17 @@ def main():
         check('closeout_scorecard_fixed_milestones',[m.get('percentage') for m in milestones]==[25,50,75,100])
         check('closeout_scorecard_current_matches_reached',int(closeout_scorecard.get('current_milestone_pct',0))==max(reached,default=0))
         check('closeout_scorecard_reached_is_cumulative',reached==[25,50,75,100][:len(reached)])
+        final_milestone=next((m for m in milestones if m.get('percentage')==100),{})
+        final_audit=next((c for c in final_milestone.get('checks',[]) if c.get('id')=='final_audit_and_release_documented'),{})
+        final_evidence=final_audit.get('evidence') or {}
+        final_prerequisites=(
+            final_evidence.get('prerequisite_shadow_gate_passed') is True
+            and final_evidence.get('prerequisite_scientific_gate_passed') is True
+        )
+        check(
+            'closeout_final_audit_requires_shadow_and_scientific_gates',
+            final_audit.get('passed') is not True or final_prerequisites,
+        )
 
     # Replay histórico: documenta brechas, no recalibra automáticamente.
     check('historical_replay_not_production',replay.get('production_use') is False)
