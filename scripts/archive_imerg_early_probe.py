@@ -2,12 +2,13 @@
 """Archiva latencia, continuidad y acumulados subdiarios IMERG Early.
 
 El archivo resultante es estrictamente experimental. Conserva los gránulos
-muestreados sobre San Ildefonso, Huaycoloro y Pedregal y calcula ventanas
-3 h / 6 h / 24 h solo cuando existe continuidad temporal suficiente.
+muestreados sobre San Ildefonso, Huaycoloro, Pedregal y Catacaos/Bajo Piura;
+calcula ventanas 3 h / 6 h / 24 h solo cuando existe continuidad temporal
+suficiente y mantiene casos retrospectivos sin efecto operativo.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import json
 import math
@@ -18,6 +19,18 @@ ARCHIVE = ROOT / "site/data/calibration/imerg_early_live_archive.json"
 MAX_PROBE_RECORDS = 240
 MAX_GRANULE_RECORDS = 400  # > 7 días a resolución de 30 min.
 WINDOWS = {"3h": 6, "6h": 12, "24h": 48}
+EVENT_CASES = [
+    {
+        "case_id": "PI-2026-08-14-LOCAL-RAIN",
+        "zone_id": "catacaos",
+        "target_id": "catacaos",
+        "local_date": "2026-08-14",
+        "timezone": "America/Lima",
+        "start_utc": "2026-08-14T05:00:00+00:00",
+        "end_utc": "2026-08-15T05:00:00+00:00",
+        "purpose": "Contrastar una lluvia local reportada en Piura sin modificar umbrales ni emitir alertas.",
+    }
+]
 
 
 def percentile(values, q):
@@ -52,6 +65,8 @@ def compact_targets(sample):
             "accum_30min_mm": row.get("accum_30min_mm"),
             "valid_cells": (row.get("sampling") or {}).get("valid_cells"),
             "grid_resolution_deg": (row.get("sampling") or {}).get("grid_resolution_deg"),
+            "sampling_method": (row.get("sampling") or {}).get("sampling_method"),
+            "sampling_areas": (row.get("sampling") or {}).get("sampling_areas"),
         })
     return rows
 
@@ -176,6 +191,61 @@ def continuity_summary(granules):
     }
 
 
+def build_event_replays(granules):
+    replays = []
+    for case in EVENT_CASES:
+        start = parse_time(case["start_utc"])
+        end = parse_time(case["end_utc"])
+        expected_samples = int((end - start).total_seconds() / 1800)
+        samples = []
+        for granule in granules:
+            timestamp = parse_time(granule.get("time_utc"))
+            if timestamp is None or not (start <= timestamp < end):
+                continue
+            target = next(
+                (row for row in granule.get("targets", []) if row.get("target_id") == case["target_id"]),
+                None,
+            )
+            if not target or target.get("accum_30min_mm") is None:
+                continue
+            samples.append((timestamp, float(target["accum_30min_mm"]), target.get("rate_mm_hr")))
+
+        samples.sort(key=lambda row: row[0])
+        unique = {row[0]: row for row in samples}
+        samples = [unique[key] for key in sorted(unique)]
+        gaps = [
+            (samples[i][0] - samples[i - 1][0]).total_seconds() / 60.0
+            for i in range(1, len(samples))
+        ]
+        continuous = (
+            len(samples) == expected_samples
+            and samples[0][0] == start
+            and samples[-1][0] == end - timedelta(minutes=30)
+            and all(20 <= gap <= 40 for gap in gaps)
+        ) if samples else False
+        partial_accum = round(sum(row[1] for row in samples), 3) if samples else None
+        rates = [float(row[2]) for row in samples if row[2] is not None]
+        replays.append({
+            **case,
+            "production_use": False,
+            "decision_use": "TEST_ONLY",
+            "status": "COMPLETE" if continuous else "ACCUMULATING",
+            "expected_samples": expected_samples,
+            "available_samples": len(samples),
+            "coverage_pct": round(100.0 * len(samples) / expected_samples, 1),
+            "continuous": continuous,
+            "partial_accum_mm": partial_accum,
+            "complete_accum_mm": partial_accum if continuous else None,
+            "max_rate_mm_hr": round(max(rates), 4) if rates else None,
+            "interpretation": (
+                "Satellite accumulation complete; official station/event evidence is still required for local corroboration."
+                if continuous else
+                "Partial satellite accumulation only; absence or low values cannot be interpreted as absence of local rain."
+            ),
+        })
+    return replays
+
+
 def main():
     latest = json.loads(LATEST.read_text(encoding="utf-8"))
     if ARCHIVE.exists():
@@ -211,6 +281,7 @@ def main():
     granules = dedupe_granules(archive.get("granules") or [], samples)
     rolling = rolling_summary(granules)
     continuity = continuity_summary(granules)
+    event_replays = build_event_replays(granules)
 
     latencies = [r.get("latency_hours") for r in records if r.get("latency_hours") is not None]
     available = [r for r in records if r.get("status") == "EARLY_HALFHOURLY_SOURCE_AVAILABLE"]
@@ -231,6 +302,7 @@ def main():
         "records": records,
         "granules": granules,
         "rolling_by_target": rolling,
+        "event_replays": event_replays,
         "summary": {
             "probe_record_count": len(records),
             "source_available_count": len(available),
@@ -252,6 +324,8 @@ def main():
             "production_use": False,
             "rule": "No promover IMERG Early a entrada de decisión en vivo por disponibilidad técnica únicamente; primero revisar continuidad, latencia y representatividad espacial.",
             "rolling_windows_are_test_only": True,
+            "event_replays_are_test_only": True,
+            "local_rain_requires_official_or_ground_control": True,
         },
     })
     ARCHIVE.write_text(json.dumps(archive, ensure_ascii=False, indent=2), encoding="utf-8")
