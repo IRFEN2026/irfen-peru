@@ -2,8 +2,8 @@
 """Prueba acotada de IMERG Early 30 min para señales rápidas IRFEN v0.8.
 
 Objetivo: comprobar que Earthdata entrega GPM_3IMERGHHE desde GitHub Actions y
-muestrear únicamente San Ildefonso, Huaycoloro y Pedregal. Este script NO
-cambia umbrales, amenaza, prioridad ni alertas.
+muestrear San Ildefonso, Huaycoloro, Pedregal y Catacaos/Bajo Piura. Este
+script NO cambia umbrales, amenaza, prioridad ni alertas.
 
 La indisponibilidad temporal de Earthdata se registra como contingencia y no
 se confunde con un cero de lluvia. El archivo histórico conserva los últimos
@@ -30,6 +30,18 @@ OUT = SITE / "data" / "calibration" / "imerg_early_live_probe.json"
 ARCHIVE = SITE / "data" / "calibration" / "imerg_early_live_archive.json"
 SEARCH_WINDOW_HOURS = 12
 MAX_DOWNLOADS_PER_RUN = 4
+REQUIRED_TARGET_IDS = {
+    "san_ildefonso",
+    "huaycoloro_main_channel",
+    "pedregal_local",
+    "catacaos",
+}
+CATACAOS_EVENT_BOOTSTRAP = {
+    "case_id": "PI-2026-08-14-LOCAL-RAIN",
+    "start_utc": "2026-08-14T05:00:00+00:00",  # 00:00 en Perú
+    "end_utc": "2026-08-15T05:00:00+00:00",    # intervalo semiabierto
+    "target_id": "catacaos",
+}
 
 SOURCE = {
     "institution": "NASA GES DISC / GPM IMERG",
@@ -50,14 +62,18 @@ def previous_probe():
         return {}
 
 
-def archived_granule_names():
-    """Return already sampled filenames without making the live probe depend on the archive."""
+def archived_granule_targets():
+    """Return sampled targets by filename without making the live probe depend on the archive."""
     try:
         archive = load_json(ARCHIVE)
     except Exception:
-        return set()
+        return {}
     return {
-        row.get("granule")
+        row.get("granule"): {
+            target.get("target_id")
+            for target in row.get("targets", [])
+            if target.get("target_id")
+        }
         for row in archive.get("granules", [])
         if row.get("granule")
     }
@@ -81,6 +97,22 @@ def load_targets():
         "id": "pedregal_local",
         "name": "Pedregal / San Antonio de Pedregal",
         "geometry": shape(ped["geometry"]).buffer(0),
+    })
+
+    zones = load_json(ROOT / "config/zones.json")
+    catacaos = next(z for z in zones.get("zones", []) if z.get("id") == "catacaos")
+    targets.append({
+        "id": "catacaos",
+        "name": "Catacaos / Bajo Piura",
+        "sampling_areas": [
+            {
+                "id": area["name"],
+                "name": area["name"],
+                "weight": float(area.get("weight", 1.0)),
+                "geometry": box(*area["bbox"]),
+            }
+            for area in catacaos.get("sampling_areas", [])
+        ],
     })
     return targets
 
@@ -158,6 +190,46 @@ def polygon_mean(geom, lat, lon, values):
     }
 
 
+def sample_target(target, lat, lon, values):
+    """Sample a polygon or the weighted provisional areas used by Catacaos."""
+    areas = target.get("sampling_areas")
+    if not areas:
+        return polygon_mean(target["geometry"], lat, lon, values)
+
+    weighted_sum = 0.0
+    available_weight = 0.0
+    rows = []
+    valid_cells = 0
+    intersected_cells = 0
+    grid_resolution = None
+    for area in areas:
+        value, meta = polygon_mean(area["geometry"], lat, lon, values)
+        weight = float(area.get("weight", 1.0))
+        rows.append({
+            "area_id": area["id"],
+            "name": area["name"],
+            "weight": weight,
+            "mean_source_value": None if value is None else round(value, 4),
+            **meta,
+        })
+        valid_cells += int(meta.get("valid_cells", 0))
+        intersected_cells += int(meta.get("cells_intersected", 0))
+        grid_resolution = grid_resolution or meta.get("grid_resolution_deg")
+        if value is not None and np.isfinite(value):
+            weighted_sum += value * weight
+            available_weight += weight
+
+    value = weighted_sum / available_weight if available_weight else None
+    return value, {
+        "sampling_method": "provisional_weighted_operational_sampling_areas",
+        "cells_intersected": intersected_cells,
+        "valid_cells": valid_cells,
+        "grid_resolution_deg": grid_resolution,
+        "available_weight": round(available_weight, 4),
+        "sampling_areas": rows,
+    }
+
+
 def filename_for(granule):
     try:
         links = granule.data_links()
@@ -175,6 +247,16 @@ def timestamp_from_filename(name):
     if not m:
         return None
     return datetime.strptime(m.group(1) + m.group(2), "%Y%m%d%H%M%S").replace(tzinfo=timezone.utc)
+
+
+def index_granules(granules):
+    indexed = []
+    for granule in granules:
+        name = filename_for(granule)
+        timestamp = timestamp_from_filename(name)
+        indexed.append((timestamp or datetime(1970, 1, 1, tzinfo=timezone.utc), name, granule))
+    indexed.sort(key=lambda row: row[0])
+    return indexed
 
 
 def last_valid_summary(previous):
@@ -259,26 +341,64 @@ def main():
     if not granules:
         return write_contingency(now, previous, "NO_RECENT_GRANULES", search_window_hours=SEARCH_WINDOW_HOURS)
 
-    indexed = []
-    for g in granules:
-        name = filename_for(g)
-        ts = timestamp_from_filename(name)
-        indexed.append((ts or datetime(1970, 1, 1, tzinfo=timezone.utc), name, g))
-    indexed.sort(key=lambda x: x[0])
-    archived = archived_granule_names()
-    missing = [row for row in indexed if row[1] and row[1] not in archived]
+    indexed = index_granules(granules)
+    archived = archived_granule_targets()
+    missing = [
+        row for row in indexed
+        if row[1] and not REQUIRED_TARGET_IDS.issubset(archived.get(row[1], set()))
+    ]
+
+    # Caso diagnóstico finito solicitado tras la lluvia local observada en
+    # Piura. Se recupera gradualmente el día civil peruano completo sin elevar
+    # el límite de descargas por ejecución ni alterar el flujo operativo.
+    bootstrap = {
+        **CATACAOS_EVENT_BOOTSTRAP,
+        "status": "NOT_QUERIED",
+        "granules_found": 0,
+        "missing_target_samples_before_run": None,
+        "selected_for_run": 0,
+        "source_error": None,
+    }
+    bootstrap_missing = []
+    try:
+        event_granules = earthaccess.search_data(
+            short_name="GPM_3IMERGHHE",
+            version="07",
+            temporal=(CATACAOS_EVENT_BOOTSTRAP["start_utc"], CATACAOS_EVENT_BOOTSTRAP["end_utc"]),
+            count=60,
+        )
+        event_indexed = index_granules(event_granules)
+        bootstrap_missing = [
+            row for row in event_indexed
+            if row[1] and CATACAOS_EVENT_BOOTSTRAP["target_id"] not in archived.get(row[1], set())
+        ]
+        bootstrap.update({
+            "status": "COMPLETE" if event_indexed and not bootstrap_missing else "ACCUMULATING",
+            "granules_found": len(event_indexed),
+            "missing_target_samples_before_run": len(bootstrap_missing),
+        })
+    except Exception as exc:
+        bootstrap.update({
+            "status": "SOURCE_TEMPORARILY_UNREACHABLE",
+            "source_error": {"type": type(exc).__name__, "message": str(exc)[:500]},
+        })
 
     # Always include the newest available granule so latency remains current.
-    # Use the remaining bounded slots for the oldest missing granules in the
-    # 12-hour search window. This repairs short outages without an unbounded
-    # historical download or a false zero in the time series.
+    # Use the remaining bounded slots first for the finite Catacaos event case
+    # and then for the oldest incomplete live granules. This repairs both the
+    # requested replay and short outages without an unbounded download.
     selected = [indexed[-1]]
-    for row in missing:
+    for row in bootstrap_missing + missing:
         if row[1] == selected[0][1]:
+            continue
+        if any(existing[1] == row[1] for existing in selected):
             continue
         selected.append(row)
         if len(selected) >= MAX_DOWNLOADS_PER_RUN:
             break
+    bootstrap["selected_for_run"] = sum(
+        1 for row in selected if any(row[1] == candidate[1] for candidate in bootstrap_missing)
+    )
     selected.sort(key=lambda x: x[0])
 
     samples = []
@@ -298,7 +418,7 @@ def main():
                 rate_units = "mm/hr" in units.lower() or "mm h-1" in units.lower() or "mm/hour" in units.lower()
                 target_rows = []
                 for target in targets:
-                    value, meta = polygon_mean(target["geometry"], lat, lon, p)
+                    value, meta = sample_target(target, lat, lon, p)
                     rate = value if rate_units else None
                     accum = (value * 0.5) if value is not None and rate_units else value
                     target_rows.append({
@@ -335,6 +455,7 @@ def main():
         "archive_granules_seen": len(archived),
         "missing_granules_in_search_window": len(missing),
         "bounded_download_limit": MAX_DOWNLOADS_PER_RUN,
+        "bootstrap_case": bootstrap,
         "latest_granule_time_utc": latest_time.isoformat() if latest_time else None,
         "observed_latency_hours_at_probe": latency_hours,
         "samples": samples,
@@ -346,6 +467,8 @@ def main():
             "rule": "Una descarga exitosa resuelve conectividad/latencia técnica, no demuestra que 0.1° represente adecuadamente una microcuenca pequeña.",
             "last_valid_retained_for_archive": True,
             "pedregal_next_gate": "compare live/historical signal against ground or higher-fidelity evidence before any decision threshold",
+            "catacaos_next_gate": "compare the local-day satellite replay against official station or event evidence; never infer no rain from a basin mean alone",
+            "catacaos_event_replay_is_test_only": True,
         },
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
