@@ -92,6 +92,7 @@ No se tratará como una microcuenca simple. La siguiente fase debe representar e
 - `site/data/scientific_status.json` — estado de validación científica.
 - `site/data/validation/shadow_runs.json` — evidencia diaria TEST_ONLY, contingencias y bloqueos.
 - `docs/SHADOW_OUTCOME_REVIEW_PROTOCOL.md` — criterios auditables para que un resultado diario cuente en el cierre.
+- `scripts/review_shadow_outcome.py` — aplica una revisión posterior con URLs oficiales sin alterar la fotografía previa.
 - `site/data/v08_scorecard.json` — scorecard auditable de cierre (25/50/75/100), calculada solo con evidencia y sin porcentajes intermedios subjetivos.
 - `config/v08_closeout_contract.json` — condiciones fijas de cada hito, muestras mínimas y guardas de seguridad.
 - `site/data/watersheds/` — polígonos y reportes de validación.
