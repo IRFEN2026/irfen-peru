@@ -46,6 +46,7 @@ def main():
     phase2=load(ROOT/'config/phase2_candidate_inventory_v0_1.json')
     closeout_contract=load(ROOT/'config/v08_closeout_contract.json')
     closeout_scorecard=optional(SITE/'data/v08_scorecard.json')
+    glofas_current=optional(SITE/'data/hydrology/glofas_catacaos_current.json')
 
     # Contrato matemático v0.7.1: nunca cambia como efecto colateral de v0.8.
     check('formula_zero_is_zero',operational_formula(0,0,0,10,20,30)==0)
@@ -114,6 +115,19 @@ def main():
         check('forecast_verification_not_production',verification.get('production_use') is False)
         check('forecast_verification_pairs_nonnegative',int(verification.get('total_pairs',0))>=0)
         check('forecast_verification_min_sample_gate',int(verification.get('minimum_samples_for_initial_review',0))>=30)
+
+    # GloFAS es secundario: una caída remota debe bloquear la señal actual sin
+    # derribar la publicación ni convertir la ausencia de datos en bajo riesgo.
+    check('glofas_current_present',glofas_current is not None)
+    if glofas_current:
+        check('glofas_current_not_production',glofas_current.get('production_use') is False)
+        check('glofas_current_status_controlled',glofas_current.get('status') in {'available','SOURCE_TEMPORARILY_UNREACHABLE','BLOCKED_BY_PROXY_VALIDATION'})
+        if glofas_current.get('status')=='available':
+            check('glofas_current_available_not_stale',glofas_current.get('usable_for_experimental_decision') is True and glofas_current.get('stale') is not True)
+            check('glofas_current_class_categorical',glofas_current.get('river_proxy_class') in {'MODELLED_20Y_EXCEEDANCE','MODELLED_5Y_EXCEEDANCE','NO_MODELLED_RETURN_PERIOD_EXCEEDANCE'})
+        elif glofas_current.get('status')=='SOURCE_TEMPORARILY_UNREACHABLE':
+            check('glofas_outage_blocks_current_use',glofas_current.get('usable_for_experimental_decision') is False and glofas_current.get('stale') is True)
+            check('glofas_outage_not_false_low_risk',glofas_current.get('river_proxy_class') is None)
 
     # IMERG Early: la continuidad se mide explícitamente y sigue fuera de producción.
     check('imerg_early_archive_present',imerg_early is not None)

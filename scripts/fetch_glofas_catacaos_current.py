@@ -20,12 +20,50 @@ SITE=ROOT/'site'
 VALID=SITE/'data/hydrology/glofas_catacaos_probe.json'
 OUT=SITE/'data/hydrology/glofas_catacaos_current.json'
 WMS='https://ows.globalfloods.eu/glofas-ows/ows.py'
+PUBLIC_FALLBACK='https://irfen2026.github.io/irfen-peru/data/hydrology/glofas_catacaos_current.json'
 WEST,SOUTH,EAST,NORTH=-80.75252564,-5.31538835,-80.60180695,-5.20222687
 LAYERS={
     'rp5':'sumALHEGE','rp20':'sumALEEGE',
     'days_1_3':'sumAL41EGE','days_4_10':'sumAL42EGE','days_11_15':'sumAL43EGE',
 }
 HEAD={'User-Agent':'IRFEN-research/0.8 (+public CEMS WMS operational test)'}
+
+
+def previous_valid():
+    """Recupera solo la última señal válida como contexto, nunca como dato actual."""
+    candidates=[]
+    if OUT.exists():
+        try:candidates.append(json.loads(OUT.read_text(encoding='utf-8')))
+        except Exception:pass
+    try:
+        r=requests.get(PUBLIC_FALLBACK,params={'fallback':int(datetime.now(timezone.utc).timestamp())},headers=HEAD,timeout=(8,30))
+        r.raise_for_status();candidates.append(r.json())
+    except (requests.RequestException,ValueError,OSError):
+        pass
+    previous=next((x for x in candidates if x.get('status')=='available'),None)
+    if not previous:return None
+    return {
+        'generated_at':previous.get('generated_at'),
+        'source':previous.get('source'),
+        'river_proxy_class':previous.get('river_proxy_class'),
+        'forecast_signal':previous.get('forecast_signal'),
+        'signals':previous.get('signals'),
+        'usable_as_current':False,
+    }
+
+
+def contingency(error):
+    return {
+        'version':'0.8-experimental','generated_at':datetime.now(timezone.utc).isoformat(),
+        'production_use':False,'status':'SOURCE_TEMPORARILY_UNREACHABLE',
+        'usable_for_experimental_decision':False,'stale':True,
+        'source':'Copernicus Emergency Management Service / GloFAS WMS',
+        'role':'secondary_categorical_modelled_river_proxy',
+        'authority_priority':'Use SENAMHI/PHISIS observed or forecast river state when available.',
+        'source_error':{'type':type(error).__name__,'message':str(error)[:500]},
+        'last_valid':previous_valid(),
+        'interpretation':'La indisponibilidad de GloFAS no equivale a ausencia de peligro. La señal previa se conserva solo como contexto y no se usa como estado fluvial actual.',
+    }
 
 
 def lname(tag): return tag.split('}')[-1]
@@ -77,33 +115,37 @@ def main():
     if validation.get('status')!='GLOFAS_PROXY_MINIMUM_VALIDATION_PASS':
         payload={'version':'0.8-experimental','generated_at':datetime.now(timezone.utc).isoformat(),'production_use':False,'status':'BLOCKED_BY_PROXY_VALIDATION','validation_status':validation.get('status'),'usable_for_experimental_decision':False}
     else:
-        s=requests.Session();s.headers.update(HEAD)
-        cap=s.get(WMS,params={'SERVICE':'WMS','VERSION':'1.3.0','REQUEST':'GetCapabilities'},timeout=(15,60));cap.raise_for_status()
-        meta=layer_meta(ET.fromstring(cap.content)); signals={}
-        for key,layer in LAYERS.items():
-            m=meta.get(layer)
-            if not m: signals[key]={'layer':layer,'available':False,'signal':False};continue
-            t=latest_time(m.get('time_dimension'))
-            signals[key]={**map_signal(s,layer,t),'available':True,'title':m.get('title')}
-        if signals['rp20'].get('signal'): river_class='MODELLED_20Y_EXCEEDANCE'
-        elif signals['rp5'].get('signal'): river_class='MODELLED_5Y_EXCEEDANCE'
-        else: river_class='NO_MODELLED_RETURN_PERIOD_EXCEEDANCE'
-        payload={
-            'version':'0.8-experimental','generated_at':datetime.now(timezone.utc).isoformat(),
-            'production_use':False,'status':'available','usable_for_experimental_decision':True,
-            'source':'Copernicus Emergency Management Service / GloFAS WMS',
-            'role':'secondary_categorical_modelled_river_proxy',
-            'authority_priority':'Use SENAMHI/PHISIS observed or forecast river state when available.',
-            'bbox_wgs84':{'west':WEST,'south':SOUTH,'east':EAST,'north':NORTH},
-            'river_proxy_class':river_class,'signals':signals,
-            'forecast_signal':{
-                'days_1_3':bool(signals['days_1_3'].get('signal')),
-                'days_4_10':bool(signals['days_4_10'].get('signal')),
-                'days_11_15':bool(signals['days_11_15'].get('signal')),
-            },
-            'interpretation':'Categorical GloFAS signal only. It is not an observed discharge and must never be labelled m3/s.',
-            'validation_reference':'data/hydrology/glofas_catacaos_probe.json',
-        }
+        try:
+            s=requests.Session();s.headers.update(HEAD)
+            cap=s.get(WMS,params={'SERVICE':'WMS','VERSION':'1.3.0','REQUEST':'GetCapabilities'},timeout=(15,60));cap.raise_for_status()
+            meta=layer_meta(ET.fromstring(cap.content)); signals={}
+            for key,layer in LAYERS.items():
+                m=meta.get(layer)
+                if not m: signals[key]={'layer':layer,'available':False,'signal':False};continue
+                t=latest_time(m.get('time_dimension'))
+                signals[key]={**map_signal(s,layer,t),'available':True,'title':m.get('title')}
+            if signals['rp20'].get('signal'): river_class='MODELLED_20Y_EXCEEDANCE'
+            elif signals['rp5'].get('signal'): river_class='MODELLED_5Y_EXCEEDANCE'
+            else: river_class='NO_MODELLED_RETURN_PERIOD_EXCEEDANCE'
+            payload={
+                'version':'0.8-experimental','generated_at':datetime.now(timezone.utc).isoformat(),
+                'production_use':False,'status':'available','usable_for_experimental_decision':True,'stale':False,
+                'source':'Copernicus Emergency Management Service / GloFAS WMS',
+                'role':'secondary_categorical_modelled_river_proxy',
+                'authority_priority':'Use SENAMHI/PHISIS observed or forecast river state when available.',
+                'bbox_wgs84':{'west':WEST,'south':SOUTH,'east':EAST,'north':NORTH},
+                'river_proxy_class':river_class,'signals':signals,
+                'forecast_signal':{
+                    'days_1_3':bool(signals['days_1_3'].get('signal')),
+                    'days_4_10':bool(signals['days_4_10'].get('signal')),
+                    'days_11_15':bool(signals['days_11_15'].get('signal')),
+                },
+                'interpretation':'Categorical GloFAS signal only. It is not an observed discharge and must never be labelled m3/s.',
+                'validation_reference':'data/hydrology/glofas_catacaos_probe.json',
+            }
+        except (requests.RequestException,ET.ParseError,OSError,RuntimeError,ValueError) as exc:
+            payload=contingency(exc)
     OUT.parent.mkdir(parents=True,exist_ok=True);OUT.write_text(json.dumps(payload,ensure_ascii=False,indent=2),encoding='utf-8')
     print(json.dumps(payload,ensure_ascii=False,indent=2))
-if __name__=='__main__':main()
+    return 0
+if __name__=='__main__':raise SystemExit(main())
