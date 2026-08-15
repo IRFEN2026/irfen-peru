@@ -259,6 +259,13 @@ def index_granules(granules):
     return indexed
 
 
+def filter_half_open_interval(indexed, start_utc, end_utc):
+    """Keep start <= timestamp < end even when the catalogue returns both endpoints."""
+    start = datetime.fromisoformat(start_utc.replace("Z", "+00:00"))
+    end = datetime.fromisoformat(end_utc.replace("Z", "+00:00"))
+    return [row for row in indexed if start <= row[0] < end]
+
+
 def last_valid_summary(previous):
     samples = previous.get("samples") or []
     latest_targets = samples[-1].get("targets", []) if samples else []
@@ -367,7 +374,11 @@ def main():
             temporal=(CATACAOS_EVENT_BOOTSTRAP["start_utc"], CATACAOS_EVENT_BOOTSTRAP["end_utc"]),
             count=60,
         )
-        event_indexed = index_granules(event_granules)
+        event_indexed = filter_half_open_interval(
+            index_granules(event_granules),
+            CATACAOS_EVENT_BOOTSTRAP["start_utc"],
+            CATACAOS_EVENT_BOOTSTRAP["end_utc"],
+        )
         bootstrap_missing = [
             row for row in event_indexed
             if row[1] and CATACAOS_EVENT_BOOTSTRAP["target_id"] not in archived.get(row[1], set())
