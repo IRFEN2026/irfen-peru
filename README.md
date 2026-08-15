@@ -91,6 +91,8 @@ No se tratará como una microcuenca simple. La siguiente fase debe representar e
 - `site/data/history.json` — catálogo histórico.
 - `site/data/scientific_status.json` — estado de validación científica.
 - `site/data/validation/shadow_runs.json` — evidencia diaria TEST_ONLY, contingencias y bloqueos.
+- `site/data/v08_scorecard.json` — scorecard auditable de cierre (25/50/75/100), calculada solo con evidencia y sin porcentajes intermedios subjetivos.
+- `config/v08_closeout_contract.json` — condiciones fijas de cada hito, muestras mínimas y guardas de seguridad.
 - `site/data/watersheds/` — polígonos y reportes de validación.
 
 ## Seguridad

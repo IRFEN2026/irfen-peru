@@ -5,6 +5,7 @@ on:
   workflow_run:
     workflows:
       - "IRFEN — Actualizar IMERG y publicar"
+      - "IRFEN - Publicar datos experimentales archivados"
     types:
       - completed
 
@@ -45,6 +46,7 @@ jobs:
             "data/hydrology/ana_catacaos_critical_segments_2026_validation.json"
             "data/experimental_state.json"
             "data/test_report.json"
+            "data/v08_scorecard.json"
             "v08-experimental.js"
             "v08-forecast.js"
             "v08-simulator.js"
@@ -117,6 +119,12 @@ jobs:
 
           tests=load('data/test_report.json')
           assert tests.get('status')=='PASS', tests
+
+          score=load('data/v08_scorecard.json')
+          assert score.get('production_use') is False
+          assert score.get('production_ready') is False
+          assert score.get('current_milestone_pct') in {25,50,75,100}
+          assert [m.get('percentage') for m in score.get('milestones',[])] == [25,50,75,100]
 
           html=(root/'index.html').read_text(encoding='utf-8')
           for script in ('v08-experimental.js','v08-forecast.js','v08-simulator.js','v08-health.js','v08-readiness.js'):
