@@ -268,7 +268,13 @@ def filter_half_open_interval(indexed, start_utc, end_utc):
     return [row for row in indexed if start <= row[0] < end]
 
 
-def select_bounded_granules(indexed, repair_missing, bootstrap_missing, limit=MAX_DOWNLOADS_PER_RUN):
+def select_bounded_granules(
+    indexed,
+    continuity_missing,
+    bootstrap_missing,
+    target_incomplete=(),
+    limit=MAX_DOWNLOADS_PER_RUN,
+):
     """Keep latency current, then close recent continuity gaps before replay work.
 
     The live archive must acquire two new half-hourly granules per hour before
@@ -280,7 +286,12 @@ def select_bounded_granules(indexed, repair_missing, bootstrap_missing, limit=MA
 
     selected = [indexed[-1]]
     selected_names = {indexed[-1][1]}
-    for row in list(reversed(repair_missing)) + list(bootstrap_missing):
+    candidates = (
+        list(reversed(continuity_missing))
+        + list(bootstrap_missing)
+        + list(reversed(target_incomplete))
+    )
+    for row in candidates:
         if not row[1] or row[1] in selected_names:
             continue
         selected.append(row)
@@ -400,7 +411,13 @@ def main():
         repair_source_error = {"type": type(exc).__name__, "message": str(exc)[:500]}
     repair_missing = [
         row for row in repair_indexed
-        if row[1] and not REQUIRED_TARGET_IDS.issubset(archived.get(row[1], set()))
+        if row[1] and row[1] not in archived
+    ]
+    repair_incomplete = [
+        row for row in repair_indexed
+        if row[1]
+        and row[1] in archived
+        and not REQUIRED_TARGET_IDS.issubset(archived[row[1]])
     ]
 
     # Caso diagnóstico finito solicitado tras la lluvia local observada en
@@ -445,7 +462,12 @@ def main():
     # Always include the newest granule for latency. The remaining bounded
     # slots repair the newest continuity gaps first; only spare capacity is
     # used by the finite Catacaos event replay.
-    selected = select_bounded_granules(indexed, repair_missing, bootstrap_missing)
+    selected = select_bounded_granules(
+        indexed,
+        repair_missing,
+        bootstrap_missing,
+        target_incomplete=repair_incomplete,
+    )
     bootstrap["selected_for_run"] = sum(
         1 for row in selected if any(row[1] == candidate[1] for candidate in bootstrap_missing)
     )
@@ -506,6 +528,7 @@ def main():
         "repair_window_hours": REPAIR_WINDOW_HOURS,
         "repair_catalog_granules_found": len(repair_indexed),
         "missing_granules_in_repair_window": len(repair_missing),
+        "incomplete_target_granules_in_repair_window": len(repair_incomplete),
         "repair_source_error": repair_source_error,
         "bounded_download_limit": MAX_DOWNLOADS_PER_RUN,
         "bootstrap_case": bootstrap,
