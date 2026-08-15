@@ -113,6 +113,21 @@ class BoundedSelectionTests(unittest.TestCase):
         self.assertEqual(len(selected), 2)
         self.assertEqual({row[1] for row in selected}, {"newest", "gap-2"})
 
+    def test_event_replay_precedes_nonessential_target_backfill(self):
+        live = [self.row(0, "newest")]
+        event = [self.row(-1440, "event")]
+        incomplete = [self.row(-30, "incomplete")]
+
+        selected = probe.select_bounded_granules(
+            live,
+            continuity_missing=[],
+            bootstrap_missing=event,
+            target_incomplete=incomplete,
+            limit=2,
+        )
+
+        self.assertEqual({row[1] for row in selected}, {"newest", "event"})
+
     def test_empty_catalogue_is_safe(self):
         self.assertEqual(probe.select_bounded_granules([], [], [], limit=4), [])
 
