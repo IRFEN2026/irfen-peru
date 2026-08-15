@@ -44,6 +44,8 @@ def main():
     open_data=optional(SITE/'data/stations/senamhi_open_data_catalog.json')
     imerg_early=optional(SITE/'data/calibration/imerg_early_live_archive.json')
     phase2=load(ROOT/'config/phase2_candidate_inventory_v0_1.json')
+    closeout_contract=load(ROOT/'config/v08_closeout_contract.json')
+    closeout_scorecard=optional(SITE/'data/v08_scorecard.json')
 
     # Contrato matemático v0.7.1: nunca cambia como efecto colateral de v0.8.
     check('formula_zero_is_zero',operational_formula(0,0,0,10,20,30)==0)
@@ -131,6 +133,18 @@ def main():
     check('phase2_inventory_no_numeric_scores',all(c.get('priority_score') is None for c in candidates))
     check('phase2_inventory_no_activation',all(c.get('deployment_status')=='RESEARCH_ONLY' for c in candidates))
     check('phase2_inventory_has_official_evidence',all(c.get('official_sources') for c in candidates))
+
+    # Scorecard de cierre: hitos discretos, acumulativos y sin efecto operativo.
+    check('closeout_contract_not_production',closeout_contract.get('production_use') is False)
+    check('closeout_contract_exact_pilots',closeout_contract.get('pilot_zone_ids')==['san_ildefonso','chosica','catacaos'])
+    check('closeout_contract_fixed_milestones',closeout_contract.get('milestone_percentages')==[25,50,75,100])
+    if closeout_scorecard is not None:
+        milestones=closeout_scorecard.get('milestones') or []
+        reached=[int(m.get('percentage',0)) for m in milestones if m.get('reached') is True]
+        check('closeout_scorecard_not_production',closeout_scorecard.get('production_use') is False and closeout_scorecard.get('production_ready') is False)
+        check('closeout_scorecard_fixed_milestones',[m.get('percentage') for m in milestones]==[25,50,75,100])
+        check('closeout_scorecard_current_matches_reached',int(closeout_scorecard.get('current_milestone_pct',0))==max(reached,default=0))
+        check('closeout_scorecard_reached_is_cumulative',reached==[25,50,75,100][:len(reached)])
 
     # Replay histórico: documenta brechas, no recalibra automáticamente.
     check('historical_replay_not_production',replay.get('production_use') is False)

@@ -1,0 +1,51 @@
+{
+  "version": "0.8",
+  "production_use": false,
+  "purpose": "Contrato auditable para medir el cierre de IRFEN v0.8 por evidencia acumulada, nunca por esfuerzo ni por tiempo transcurrido.",
+  "pilot_zone_ids": [
+    "san_ildefonso",
+    "chosica",
+    "catacaos"
+  ],
+  "milestone_percentages": [25, 50, 75, 100],
+  "imerg_early": {
+    "target_ids": [
+      "san_ildefonso",
+      "huaycoloro_main_channel",
+      "pedregal_local"
+    ],
+    "required_windows": ["3h", "6h", "24h"],
+    "minimum_latency_records": 12,
+    "minimum_continuous_half_hour_samples": 48
+  },
+  "forecast_verification": {
+    "minimum_mature_pairs_per_pilot": 30
+  },
+  "shadow_validation": {
+    "minimum_reviewed_daily_records": 30,
+    "accepted_outcome_labels": ["NONE", "EVENT"]
+  },
+  "required_workflows": [
+    ".github/workflows/update-and-deploy.yml",
+    ".github/workflows/publish-committed-data.yml",
+    ".github/workflows/live-smoke-test.yml",
+    ".github/workflows/imerg-early-probe.yml",
+    ".github/workflows/geos-forecast.yml",
+    ".github/workflows/shadow-validation.yml"
+  ],
+  "known_external_blockers": {
+    "san_ildefonso": ["hydraulic_calibration_required"],
+    "chosica": ["hydraulic_calibration_required"],
+    "catacaos": [
+      "senamhi_numeric_river_state_preferred_when_available",
+      "floodplain_and_current_channel_capacity_validation_required"
+    ]
+  },
+  "release_document": "docs/V08_RELEASE.md",
+  "safety_rules": [
+    "v0.7.1 remains unchanged until explicit promotion",
+    "all v0.8 recommendations remain TEST_ONLY",
+    "no threshold or hydraulic factor is promoted without evidence",
+    "phase-2 candidates remain RESEARCH_ONLY until their validation contracts close"
+  ]
+}

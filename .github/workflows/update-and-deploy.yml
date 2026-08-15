@@ -21,6 +21,8 @@ on:
       - scripts/build_piura_reference_model.py
       - scripts/validate_scientific_assets.py
       - scripts/run_v08_regression_tests.py
+      - scripts/build_v08_scorecard.py
+      - config/v08_closeout_contract.json
       - config/historical_events.json
       - site/data/history.json
       - site/data/scientific_status.json
@@ -31,6 +33,7 @@ on:
       - site/data/stations/**
       - site/data/validation/**
       - site/data/calibration/**
+      - site/data/v08_scorecard.json
       - site/data/hazard_models/**
       - site/v08-experimental.js
       - site/v08-forecast.js
@@ -235,6 +238,20 @@ jobs:
         run: |
           python scripts/run_v08_regression_tests.py
           python -m json.tool site/data/test_report.json >/dev/null
+
+      - name: Construir scorecard auditable de cierre v0.8
+        run: |
+          python scripts/build_v08_scorecard.py
+          test -s site/data/v08_scorecard.json
+          python -m json.tool site/data/v08_scorecard.json >/dev/null
+          python - <<'PY'
+          import json
+          d=json.load(open('site/data/v08_scorecard.json',encoding='utf-8'))
+          assert d.get('production_use') is False
+          assert d.get('production_ready') is False
+          assert d.get('current_milestone_pct') in {0,25,50,75,100}
+          assert [m.get('percentage') for m in d.get('milestones',[])] == [25,50,75,100]
+          PY
 
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v6

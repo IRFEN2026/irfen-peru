@@ -50,6 +50,9 @@ jobs:
               "$BASE/$file?t=${GITHUB_RUN_ID}" -o "site/data/$file"
           done
 
+      - name: Recalcular scorecard con la evidencia mas reciente
+        run: python scripts/build_v08_scorecard.py
+
       - name: Validar contrato antes de publicar
         shell: bash
         run: |
@@ -60,19 +63,25 @@ jobs:
           test -s site/data/calibration/imerg_early_live_probe.json
           test -s site/data/calibration/imerg_early_live_archive.json
           test -s site/data/validation/shadow_runs.json
+          test -s site/data/v08_scorecard.json
           python -m json.tool site/data/experimental_state.json >/dev/null
           python -m json.tool site/data/test_report.json >/dev/null
           python -m json.tool site/data/calibration/imerg_early_live_archive.json >/dev/null
           python -m json.tool site/data/validation/shadow_runs.json >/dev/null
+          python -m json.tool site/data/v08_scorecard.json >/dev/null
           python - <<'PY'
           import json
           from pathlib import Path
           state=json.loads(Path('site/data/experimental_state.json').read_text())
           tests=json.loads(Path('site/data/test_report.json').read_text())
+          score=json.loads(Path('site/data/v08_scorecard.json').read_text())
           assert state.get('production_use') is False
           assert state.get('production_ready') is False
           assert tests.get('status') == 'PASS'
           assert int(tests.get('failed',1)) == 0
+          assert score.get('production_use') is False
+          assert score.get('production_ready') is False
+          assert score.get('current_milestone_pct') in {0,25,50,75,100}
           PY
 
       - name: Configurar GitHub Pages
@@ -95,3 +104,4 @@ jobs:
           curl -fsSL --retry 4 "$BASE/?t=${GITHUB_RUN_ID}" >/dev/null
           curl -fsSL --retry 4 "$BASE/data/calibration/imerg_early_live_archive.json?t=${GITHUB_RUN_ID}" | python -m json.tool >/dev/null
           curl -fsSL --retry 4 "$BASE/data/validation/shadow_runs.json?t=${GITHUB_RUN_ID}" | python -m json.tool >/dev/null
+          curl -fsSL --retry 4 "$BASE/data/v08_scorecard.json?t=${GITHUB_RUN_ID}" | python -m json.tool >/dev/null
