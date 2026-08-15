@@ -68,6 +68,20 @@ def check_forecast_verification():
     for row in data.get('pairs',[]):
         if float(row.get('forecast_mm',0))<0 or float(row.get('observed_imerg_mm',0))<0:ERRORS.append('forecast verification: precipitación negativa')
 
+def check_forecast_historical_daily():
+    p=SITE/'data/forecast/historical_daily.json'
+    if not p.exists():WARNINGS.append('forecast historical daily: aún no generado');return
+    data=load(p)
+    if not data:return
+    if data.get('production_use') is not False:ERRORS.append('forecast historical daily: production_use debe ser false')
+    for row in data.get('records',[]):
+        zid=row.get('zone_id')
+        if zid not in {'san_ildefonso','chosica','catacaos'}:ERRORS.append(f'forecast historical daily: zona inesperada {zid}')
+        if row.get('production_use') is not False:ERRORS.append(f'forecast historical daily {zid}: registro no experimental')
+        if int(row.get('hour_count',0))!=24:ERRORS.append(f'forecast historical daily {zid}: día incompleto')
+        if float(row.get('forecast_mm',-1))<0:ERRORS.append(f'forecast historical daily {zid}: precipitación inválida')
+        if not row.get('issue_time') or not row.get('source_dataset'):ERRORS.append(f'forecast historical daily {zid}: procedencia incompleta')
+
 def check_hydraulic_inventory():
     p=SITE/'data/hydraulics/current_infrastructure.json'
     if not p.exists():WARNINGS.append('hydraulics: inventario no disponible');return
@@ -198,7 +212,7 @@ def check_manifest():
 def main():
     check_watershed('san_ildefonso','san_ildefonso_watershed.geojson','san_ildefonso_validation.json')
     check_watershed('chosica','huaycoloro_watershed.geojson','huaycoloro_validation.json')
-    check_latest_contract();check_history_contract();check_forecast_contract();check_forecast_verification();check_hydraulic_inventory();check_piura_reference_model();check_catacaos_document_context();check_ana_catacaos_segments();check_historical_replay();check_senamhi_wis2_discovery();check_experimental_state();check_frontend_contract();check_manifest()
+    check_latest_contract();check_history_contract();check_forecast_contract();check_forecast_verification();check_forecast_historical_daily();check_hydraulic_inventory();check_piura_reference_model();check_catacaos_document_context();check_ana_catacaos_segments();check_historical_replay();check_senamhi_wis2_discovery();check_experimental_state();check_frontend_contract();check_manifest()
     for w in WARNINGS:print('WARNING:',w)
     if ERRORS:
         for e in ERRORS:print('ERROR:',e)
