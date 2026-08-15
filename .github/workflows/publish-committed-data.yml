@@ -1,0 +1,97 @@
+name: IRFEN - Publicar datos experimentales archivados
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/publish-committed-data.yml
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Descargar repositorio actualizado
+        uses: actions/checkout@v6
+
+      - name: Conservar activos transitorios del ultimo deployment
+        shell: bash
+        run: |
+          set -e
+          BASE="https://irfen2026.github.io/irfen-peru/data"
+          files=(
+            "latest.json"
+            "experimental_state.json"
+            "test_report.json"
+            "forecast/verification.json"
+            "calibration/historical_replay.json"
+            "hydrology/piura_reference_model.json"
+            "hydrology/ana_catacaos_critical_segments_2026.geojson"
+            "hydrology/ana_catacaos_critical_segments_2026_validation.json"
+            "hydrology/glofas_catacaos_current.json"
+          )
+          for file in "${files[@]}"; do
+            mkdir -p "site/data/$(dirname "$file")"
+            curl -fsSL --connect-timeout 10 --max-time 35 --retry 3 \
+              "$BASE/$file?t=${GITHUB_RUN_ID}" -o "site/data/$file"
+          done
+
+      - name: Validar contrato antes de publicar
+        shell: bash
+        run: |
+          test -s site/index.html
+          test -s site/data/latest.json
+          test -s site/data/experimental_state.json
+          test -s site/data/test_report.json
+          test -s site/data/calibration/imerg_early_live_probe.json
+          test -s site/data/calibration/imerg_early_live_archive.json
+          test -s site/data/validation/shadow_runs.json
+          python -m json.tool site/data/experimental_state.json >/dev/null
+          python -m json.tool site/data/test_report.json >/dev/null
+          python -m json.tool site/data/calibration/imerg_early_live_archive.json >/dev/null
+          python -m json.tool site/data/validation/shadow_runs.json >/dev/null
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          state=json.loads(Path('site/data/experimental_state.json').read_text())
+          tests=json.loads(Path('site/data/test_report.json').read_text())
+          assert state.get('production_use') is False
+          assert state.get('production_ready') is False
+          assert tests.get('status') == 'PASS'
+          assert int(tests.get('failed',1)) == 0
+          PY
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v6
+
+      - name: Preparar sitio web
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Publicar IRFEN
+        id: deployment
+        uses: actions/deploy-pages@v5
+
+      - name: Verificar activos publicados
+        shell: bash
+        run: |
+          sleep 10
+          BASE="https://irfen2026.github.io/irfen-peru"
+          curl -fsSL --retry 4 "$BASE/?t=${GITHUB_RUN_ID}" >/dev/null
+          curl -fsSL --retry 4 "$BASE/data/calibration/imerg_early_live_archive.json?t=${GITHUB_RUN_ID}" | python -m json.tool >/dev/null
+          curl -fsSL --retry 4 "$BASE/data/validation/shadow_runs.json?t=${GITHUB_RUN_ID}" | python -m json.tool >/dev/null

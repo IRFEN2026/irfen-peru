@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: "shadow-validation"
@@ -76,3 +77,8 @@ jobs:
           git commit -m "IRFEN v0.8: archivar validación en sombra diaria"
           git pull --rebase origin main
           git push origin HEAD:main
+
+      - name: Ordenar publicación del registro en sombra
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run publish-committed-data.yml --repo "$GITHUB_REPOSITORY" --ref main

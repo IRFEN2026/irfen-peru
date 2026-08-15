@@ -17,6 +17,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: geos-forecast-v08
@@ -78,3 +79,8 @@ jobs:
           git commit -m "IRFEN v0.8: actualizar y archivar pronóstico NASA GEOS"
           git pull --rebase origin main
           git push origin HEAD:main
+
+      - name: Ordenar publicación del pronóstico actualizado
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run publish-committed-data.yml --repo "$GITHUB_REPOSITORY" --ref main
