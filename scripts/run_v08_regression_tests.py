@@ -9,6 +9,8 @@ from pathlib import Path
 import json
 import sys
 
+from build_v08_scorecard import final_release_audit_gate
+
 ROOT=Path(__file__).resolve().parents[1]
 SITE=ROOT/'site'
 OUT=SITE/'data/test_report.json'
@@ -158,6 +160,10 @@ def main():
     check('closeout_contract_release_completion_explicit',closeout_contract.get('release_completion_marker')=='Release status: COMPLETE')
     check('closeout_shadow_review_protocol_present',(ROOT/'docs/SHADOW_OUTCOME_REVIEW_PROTOCOL.md').is_file())
     check('closeout_shadow_review_tool_present',(ROOT/'scripts/review_shadow_outcome.py').is_file())
+    check('closeout_final_audit_rejects_missing_shadow',final_release_audit_gate(False,True,True) is False)
+    check('closeout_final_audit_rejects_scientific_blockers',final_release_audit_gate(True,False,True) is False)
+    check('closeout_final_audit_rejects_incomplete_release',final_release_audit_gate(True,True,False) is False)
+    check('closeout_final_audit_accepts_all_prerequisites',final_release_audit_gate(True,True,True) is True)
     if closeout_scorecard is not None:
         milestones=closeout_scorecard.get('milestones') or []
         reached=[int(m.get('percentage',0)) for m in milestones if m.get('reached') is True]
