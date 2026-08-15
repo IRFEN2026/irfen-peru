@@ -63,4 +63,7 @@ La primera preselección debe contener entre 8 y 12 sistemas de peligro y:
   reacción y brechas antes de programar su modelo.
 
 El archivo `config/phase2_expansion_scope.json` contiene el contrato legible
-por máquina para esta preparación.
+por máquina para esta preparación. El inventario preliminar y auditable está
+en `config/phase2_candidate_inventory_v0_1.json`: sus candidatos permanecen
+en `RESEARCH_ONLY`, sin puntuación numérica ni activación, hasta resolver la
+geometría, el mecanismo y el contrato de validación de cada sistema.

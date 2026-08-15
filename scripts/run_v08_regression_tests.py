@@ -42,6 +42,8 @@ def main():
     wis2=optional(SITE/'data/stations/senamhi_wis2_discovery.json')
     idesep=optional(SITE/'data/stations/senamhi_idesep_discovery.json')
     open_data=optional(SITE/'data/stations/senamhi_open_data_catalog.json')
+    imerg_early=optional(SITE/'data/calibration/imerg_early_live_archive.json')
+    phase2=load(ROOT/'config/phase2_candidate_inventory_v0_1.json')
 
     # Contrato matemático v0.7.1: nunca cambia como efecto colateral de v0.8.
     check('formula_zero_is_zero',operational_formula(0,0,0,10,20,30)==0)
@@ -110,6 +112,25 @@ def main():
         check('forecast_verification_not_production',verification.get('production_use') is False)
         check('forecast_verification_pairs_nonnegative',int(verification.get('total_pairs',0))>=0)
         check('forecast_verification_min_sample_gate',int(verification.get('minimum_samples_for_initial_review',0))>=30)
+
+    # IMERG Early: la continuidad se mide explícitamente y sigue fuera de producción.
+    check('imerg_early_archive_present',imerg_early is not None)
+    if imerg_early:
+        summary=imerg_early.get('summary') or {}
+        check('imerg_early_not_production',imerg_early.get('production_use') is False)
+        check('imerg_early_continuity_coverage_range',0<=float(summary.get('continuity_coverage_pct',0))<=100)
+        check('imerg_early_missing_slots_nonnegative',int(summary.get('missing_half_hour_slots_within_span',-1))>=0)
+        check('imerg_early_tail_not_longer_than_archive',int(summary.get('current_continuous_tail_samples',0))<=int(summary.get('observed_unique_timestamps',0)))
+
+    # Expansión: preparación documental sin activar zonas ni inventar puntuaciones.
+    check('phase2_inventory_not_production',phase2.get('production_use') is False)
+    check('phase2_inventory_research_only',phase2.get('deployment_status')=='RESEARCH_ONLY')
+    candidates=phase2.get('candidates') or []
+    check('phase2_inventory_first_wave_size',8<=len(candidates)<=12)
+    check('phase2_inventory_outside_lima_majority',sum(c.get('inside_lima_metropolitana') is False for c in candidates)>=len(candidates)/2)
+    check('phase2_inventory_no_numeric_scores',all(c.get('priority_score') is None for c in candidates))
+    check('phase2_inventory_no_activation',all(c.get('deployment_status')=='RESEARCH_ONLY' for c in candidates))
+    check('phase2_inventory_has_official_evidence',all(c.get('official_sources') for c in candidates))
 
     # Replay histórico: documenta brechas, no recalibra automáticamente.
     check('historical_replay_not_production',replay.get('production_use') is False)

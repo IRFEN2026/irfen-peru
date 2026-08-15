@@ -129,6 +129,53 @@ def rolling_summary(granules):
     return out
 
 
+def continuity_summary(granules):
+    """Resume huecos de la serie sin confundir cantidad con continuidad."""
+    times = sorted({
+        t for t in (parse_time(g.get("time_utc")) for g in granules)
+        if t is not None
+    })
+    if not times:
+        return {
+            "expected_interval_minutes": 30,
+            "observed_unique_timestamps": 0,
+            "expected_timestamps_within_span": 0,
+            "missing_half_hour_slots_within_span": 0,
+            "continuity_coverage_pct": None,
+            "current_continuous_tail_samples": 0,
+            "current_continuous_tail_hours": 0.0,
+            "longest_continuous_run_samples": 0,
+            "longest_continuous_run_hours": 0.0,
+        }
+
+    expected = int(round((times[-1] - times[0]).total_seconds() / 1800.0)) + 1
+    missing = max(0, expected - len(times))
+    runs = []
+    current = 1
+    for previous, observed in zip(times, times[1:]):
+        gap_minutes = (observed - previous).total_seconds() / 60.0
+        if 20 <= gap_minutes <= 40:
+            current += 1
+        else:
+            runs.append(current)
+            current = 1
+    runs.append(current)
+    longest = max(runs)
+    tail = runs[-1]
+
+    return {
+        "expected_interval_minutes": 30,
+        "observed_unique_timestamps": len(times),
+        "expected_timestamps_within_span": expected,
+        "missing_half_hour_slots_within_span": missing,
+        "continuity_coverage_pct": round(100.0 * len(times) / expected, 1),
+        "current_continuous_tail_samples": tail,
+        "current_continuous_tail_hours": round(tail * 0.5, 1),
+        "longest_continuous_run_samples": longest,
+        "longest_continuous_run_hours": round(longest * 0.5, 1),
+    }
+
+
 def main():
     latest = json.loads(LATEST.read_text(encoding="utf-8"))
     if ARCHIVE.exists():
@@ -163,6 +210,7 @@ def main():
 
     granules = dedupe_granules(archive.get("granules") or [], samples)
     rolling = rolling_summary(granules)
+    continuity = continuity_summary(granules)
 
     latencies = [r.get("latency_hours") for r in records if r.get("latency_hours") is not None]
     available = [r for r in records if r.get("status") == "EARLY_HALFHOURLY_SOURCE_AVAILABLE"]
@@ -190,6 +238,7 @@ def main():
             "granule_record_count": len(granules),
             "granule_time_min_utc": min(granule_times).isoformat() if granule_times else None,
             "granule_time_max_utc": max(granule_times).isoformat() if granule_times else None,
+            **continuity,
             "targets_with_continuous_24h": complete_24h_targets,
             "latency_min_hours": round(min(latencies), 2) if latencies else None,
             "latency_median_hours": percentile(latencies, 0.5),

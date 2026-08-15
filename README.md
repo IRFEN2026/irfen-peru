@@ -41,8 +41,10 @@ de IRFEN. La fase posterior se seleccionará por riesgo, recurrencia, rapidez de
 activación, aislamiento y brecha de respuesta, no por tamaño de ciudad. La
 preparación comprende quebradas y sistemas críticos de Lima norte y sur chico,
 Ica/Pisco, Lambayeque y otras zonas prioritarias de la costa norte, central y
-sur, incluidas comunidades pequeñas y rurales. Véase
-`docs/PHASE2_EXPANSION_STRATEGY.md`.
+sur, incluidas comunidades pequeñas y rurales. Véanse
+`docs/PHASE2_EXPANSION_STRATEGY.md` y el inventario preliminar
+`config/phase2_candidate_inventory_v0_1.json` (solo investigación, sin zonas
+activadas).
 
 ## Estado científico v0.8
 
