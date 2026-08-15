@@ -84,6 +84,10 @@ Verificar:
 
 `forecast/verification.json` debe comparar días UTC completos GEOS contra IMERG cuando maduren. No aplicar corrección de sesgo hasta contar como mínimo con 30 pares por zona y revisar además casos lluviosos relevantes.
 
+### Backfill GEOS emitido
+
+`scripts/backfill_geos_forecast_archive.py` consulta el histórico oficial GEOS-CF v2 por OPeNDAP y conserva en `forecast/historical_daily.json` sólo días UTC con 24 horas. Cada fila debe mantener la emisión original, el dataset fuente, el método espacial y `production_use=false`. El backfill sirve para acelerar la revisión inicial de pares forecast–observación; no autoriza correcciones de sesgo, umbrales, modificadores hidráulicos ni alertas. La muestra debe revisarse además por cobertura de casos lluviosos y secos antes de cualquier conclusión científica.
+
 ## 8. Prueba F — Catacaos / Bajo Piura
 
 Sin dato automático de nivel/caudal:

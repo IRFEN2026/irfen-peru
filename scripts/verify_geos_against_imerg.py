@@ -16,6 +16,7 @@ import math
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "site"
 ARCHIVE = SITE / "data" / "forecast" / "archive.json"
+HISTORICAL_DAILY = SITE / "data" / "forecast" / "historical_daily.json"
 LATEST = SITE / "data" / "latest.json"
 OUT = SITE / "data" / "forecast" / "verification.json"
 MIN_SAMPLES = 30
@@ -84,6 +85,7 @@ def metrics(rows):
 
 def main():
     archive = load(ARCHIVE, {"snapshots": []})
+    historical = load(HISTORICAL_DAILY, {"records": []})
     latest = load(LATEST, {"zones": []})
     zones = {z.get("id"): z for z in latest.get("zones", [])}
     pairs = []
@@ -137,6 +139,46 @@ def main():
                     "error_mm": error,
                     "absolute_error_mm": round(abs(error), 3),
                 })
+
+    # Backfill compacto: pronósticos realmente emitidos ya agregados a días UTC
+    # completos. Se mantiene separado del archive horario para no inflar el sitio.
+    if historical.get("production_use") is False:
+        for record in historical.get("records", []):
+            zid = record.get("zone_id")
+            zone = zones.get(zid)
+            day = record.get("valid_date_utc")
+            method = record.get("sampling_method")
+            issued = dt(record.get("issue_time"))
+            if not zone or not day or issued is None or int(record.get("hour_count", 0)) != 24:
+                continue
+            obs = {
+                row.get("date"): row.get("rain_mm")
+                for row in observed_series(zone, method)
+                if row.get("date") and row.get("rain_mm") is not None
+            }
+            if day not in obs:
+                continue
+            day_start = datetime.fromisoformat(day).replace(tzinfo=timezone.utc)
+            lead_h = (day_start - issued).total_seconds() / 3600
+            if lead_h < 0 or record.get("forecast_mm") is None:
+                continue
+            forecast_mm = round(float(record["forecast_mm"]), 3)
+            observed_mm = round(float(obs[day]), 3)
+            error = round(forecast_mm - observed_mm, 3)
+            pairs.append({
+                "zone_id": zid,
+                "sampling_method": method,
+                "snapshot_generated_at": record.get("issue_time"),
+                "valid_date_utc": day,
+                "lead_hours_to_day_start": round(lead_h, 2),
+                "lead_bucket": lead_bucket(lead_h),
+                "forecast_mm": forecast_mm,
+                "observed_imerg_mm": observed_mm,
+                "error_mm": error,
+                "absolute_error_mm": round(abs(error), 3),
+                "forecast_record_kind": "historical_daily_backfill",
+                "source_dataset": record.get("source_dataset"),
+            })
 
     # Eliminar duplicados exactos si el archivo de snapshots fue regenerado.
     dedup = {}
