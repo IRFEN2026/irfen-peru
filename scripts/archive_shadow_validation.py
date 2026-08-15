@@ -134,6 +134,10 @@ def main():
         "source_health": {
             "forecast_available": (forecast or {}).get("status") == "experimental_forecast_available",
             "forecast_verification_pairs": (verification or {}).get("total_pairs"),
+            "forecast_verification_pairs_by_zone": {
+                zone_id: int(((verification or {}).get("by_zone") or {}).get(zone_id, {}).get("n", 0))
+                for zone_id in ("san_ildefonso", "chosica", "catacaos")
+            },
             "imerg_early_status": (early or {}).get("status"),
             "imerg_early_latency_hours": (early or {}).get("observed_latency_hours_at_probe"),
             "regression_status": (test_report or {}).get("status"),

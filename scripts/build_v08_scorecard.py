@@ -41,6 +41,32 @@ def milestone(percentage: int, prior_reached: bool, checks: list[dict]):
     }
 
 
+def shadow_record_eligibility(record: dict, pilots: list[str], minimum_pairs_per_pilot: int):
+    """Return auditable gates for a reviewed shadow day to count toward closure."""
+    health = record.get("source_health") or {}
+    zones = record.get("zones") or []
+    zones_by_id = {zone.get("zone_id"): zone for zone in zones}
+    pair_counts = health.get("forecast_verification_pairs_by_zone") or {}
+    checks = {
+        "snapshot_not_production": record.get("production_use") is False,
+        "all_pilots_present": set(zones_by_id) == set(pilots),
+        "all_recommendations_test_only": all(
+            str(((zones_by_id.get(zid) or {}).get("recommendation") or {}).get("code", "")).startswith("TEST_")
+            and ((zones_by_id.get(zid) or {}).get("recommendation") or {}).get("mode") == "TEST_ONLY"
+            and ((zones_by_id.get(zid) or {}).get("recommendation") or {}).get("operational_alert") is False
+            for zid in pilots
+        ),
+        "forecast_available": health.get("forecast_available") is True,
+        "forecast_pairs_mature_at_snapshot": all(
+            int(pair_counts.get(zid, 0)) >= minimum_pairs_per_pilot for zid in pilots
+        ),
+        "imerg_early_available": health.get("imerg_early_status") == "EARLY_HALFHOURLY_SOURCE_AVAILABLE",
+        "imerg_latency_recorded": health.get("imerg_early_latency_hours") is not None,
+        "regression_passed": health.get("regression_status") == "PASS",
+    }
+    return {"eligible": all(checks.values()), "checks": checks}
+
+
 def main():
     contract = load(CONTRACT_PATH, {}) or {}
     test_report = load(SITE / "data" / "test_report.json", {}) or {}
@@ -173,21 +199,50 @@ def main():
 
     accepted_labels = set((contract.get("shadow_validation") or {}).get("accepted_outcome_labels") or [])
     shadow_records = shadow.get("records") or []
-    reviewed = [
+    reviewed_outcomes = [
         r for r in shadow_records
         if (r.get("outcome_verification") or {}).get("status") != "PENDING_REAL_WORLD_OUTCOME_REVIEW"
         and (r.get("outcome_verification") or {}).get("label") in accepted_labels
     ]
     required_reviewed = int((contract.get("shadow_validation") or {}).get("minimum_reviewed_daily_records", 30))
+    shadow_eligibility = [
+        {
+            "snapshot_date_utc": record.get("snapshot_date_utc"),
+            "label": (record.get("outcome_verification") or {}).get("label"),
+            **shadow_record_eligibility(record, pilots, min_pairs),
+        }
+        for record in reviewed_outcomes
+    ]
+    reviewed = [entry for entry in shadow_eligibility if entry["eligible"]]
+    reviewed_label_counts = {
+        label: sum(1 for entry in reviewed if entry.get("label") == label)
+        for label in accepted_labels
+    }
+    minimum_event_days = int((contract.get("shadow_validation") or {}).get("minimum_verified_event_days", 1))
+    minimum_none_days = int((contract.get("shadow_validation") or {}).get("minimum_verified_none_days", 1))
     unresolved = {zid: zones_by_id.get(zid, {}).get("blockers") or [] for zid in pilots}
     local = (state.get("lima_east_submodels") or {}).get("chosica_local_debris_flows") or {}
     release_path = ROOT / str(contract.get("release_document", "docs/V08_RELEASE.md"))
     release_text = release_path.read_text(encoding="utf-8") if release_path.is_file() else ""
+    release_marker = str(contract.get("release_completion_marker", "Release status: COMPLETE"))
     checks100 = [
         item(
             "shadow_outcomes_sufficient_and_reviewed",
-            len(reviewed) >= required_reviewed,
-            {"reviewed_records": len(reviewed), "required": required_reviewed, "archive_records": len(shadow_records)},
+            len(reviewed) >= required_reviewed
+            and int(reviewed_label_counts.get("EVENT", 0)) >= minimum_event_days
+            and int(reviewed_label_counts.get("NONE", 0)) >= minimum_none_days,
+            {
+                "eligible_reviewed_records": len(reviewed),
+                "reviewed_outcomes_total": len(reviewed_outcomes),
+                "reviewed_but_ineligible": len(reviewed_outcomes) - len(reviewed),
+                "pending_outcome_review": len(shadow_records) - len(reviewed_outcomes),
+                "required": required_reviewed,
+                "eligible_label_counts": reviewed_label_counts,
+                "minimum_verified_event_days": minimum_event_days,
+                "minimum_verified_none_days": minimum_none_days,
+                "archive_records": len(shadow_records),
+                "eligibility": shadow_eligibility,
+            },
         ),
         item(
             "scientific_and_hydraulic_blockers_resolved",
@@ -200,12 +255,15 @@ def main():
             and scientific.get("production_ready") is False
             and release_path.is_file()
             and "v0.8" in release_text
-            and "TEST_ONLY" in release_text,
+            and "TEST_ONLY" in release_text
+            and release_marker in release_text,
             {
                 "regression_status": test_report.get("status"),
                 "scientific_production_ready": scientific.get("production_ready"),
                 "release_document": str(release_path.relative_to(ROOT)),
                 "release_document_present": release_path.is_file(),
+                "completion_marker": release_marker,
+                "completion_marker_present": release_marker in release_text,
             },
         ),
     ]
