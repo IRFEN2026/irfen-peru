@@ -1,0 +1,115 @@
+{
+  "version": "phase-2-planning-v0.1",
+  "status": "OFFICIAL_INVENTORY_AND_PRIORITIZATION_PREPARATION",
+  "production_use": false,
+  "principle": "IRFEN se expande por riesgo, recurrencia, exposición, aislamiento y brecha de respuesta; nunca por tamaño o notoriedad de la ciudad únicamente.",
+  "relationship_to_v08": {
+    "v08_scope_unchanged": true,
+    "current_pilots": [
+      "san_ildefonso",
+      "chosica_huaycoloro",
+      "catacaos_bajo_piura"
+    ],
+    "allowed_before_v08_closure": [
+      "compile official national inventories",
+      "normalize names and coordinates",
+      "document historical activations and exposed settlements",
+      "score and shortlist candidate zones",
+      "test source availability without publishing alerts"
+    ],
+    "not_allowed_before_v08_closure": [
+      "activate new operational zones",
+      "publish unvalidated thresholds",
+      "copy a pilot rule to another catchment",
+      "prioritize a location only because it has a large population"
+    ]
+  },
+  "selection_framework": {
+    "weights_pct": {
+      "documented_severity_and_exposure": 30,
+      "recurrence_and_historical_evidence": 20,
+      "short_lead_time_and_access_fragility": 20,
+      "local_response_gap_and_territorial_equity": 20,
+      "data_readiness": 10
+    },
+    "equity_rules": [
+      "Small or rural settlements are not penalized for having fewer inhabitants.",
+      "Data scarcity is recorded as a deployment constraint, not interpreted as low risk.",
+      "Each expansion wave must include northern, central and southern coastal territories.",
+      "At least half of the first expansion shortlist must be outside Metropolitan Lima."
+    ],
+    "minimum_evidence": [
+      "official ANA, CENEPRED, INGEMMET or INDECI critical point or event record",
+      "identifiable catchment, ravine, river reach or fan/outlet geometry",
+      "documented exposed settlement, road, service, agriculture or evacuation constraint",
+      "meteorological observation or defensible remote-sensing path",
+      "mechanism classification before choosing a model"
+    ]
+  },
+  "candidate_corridors_for_official_inventory": [
+    {
+      "corridor": "Lima norte y cuencas costeras del norte de Lima",
+      "examples_to_verify": ["Chillón/Canta", "Chancay-Huaral", "Huaura"],
+      "instruction": "Identify individual ravines and settlements from official point inventories; do not use a metropolitan proxy."
+    },
+    {
+      "corridor": "Lima sur y Sur Chico",
+      "examples_to_verify": ["Lurín", "Cieneguilla", "Punta Hermosa/Malanche", "Punta Negra", "San Bartolo", "Pucusana", "Chilca"],
+      "instruction": "Separate local debris-flow ravines from river and coastal flood mechanisms."
+    },
+    {
+      "corridor": "Ica, Chincha, Pisco, Palpa y Nazca",
+      "examples_to_verify": ["Pisco", "San Andrés", "Santiago", "Palpa", "Changuillo", "Ica", "Chincha"],
+      "instruction": "Use ANA 2021/2025 critical-point records and INGEMMET/CENEPRED studies to resolve individual ravines and exposed settlements."
+    },
+    {
+      "corridor": "Lambayeque interior y valles costeros",
+      "examples_to_verify": ["Motupe", "Chongoyape", "Oyotún", "Zaña", "Cayaltí", "Lagunas", "Reque/La Puntilla", "Yaipón", "Chiriquipe/Juana Ríos"],
+      "instruction": "Represent both debris-flow ravines and river-valley flooding; preserve small agricultural settlements in the ranking."
+    },
+    {
+      "corridor": "Costa norte adicional",
+      "examples_to_verify": ["Tumbes", "Piura fuera de Catacaos", "Lambayeque", "La Libertad fuera de San Ildefonso", "Áncash"],
+      "instruction": "Prioritize documented recurrent activation and exposed communities rather than departmental capitals."
+    },
+    {
+      "corridor": "Costa sur adicional",
+      "examples_to_verify": ["Arequipa", "Moquegua", "Tacna"],
+      "instruction": "Inventory short-response ravines, road isolation and settlements on alluvial fans before selecting pilots."
+    }
+  ],
+  "first_wave_design": {
+    "target_shortlist_size": "8-12 zones or local hazard systems",
+    "geographic_balance": "north, central and south coast represented",
+    "urban_rural_balance": "minimum 50% outside Metropolitan Lima; include small or rural exposed settlements",
+    "selection_output": "ranked shortlist with evidence, mechanism, geometry, data sources, exposed population/services, lead time and unresolved gates",
+    "activation_rule": "No candidate becomes operational until it passes a zone-specific validation contract."
+  },
+  "official_source_catalog": [
+    {
+      "institution": "ANA/CENEPRED SIGRID",
+      "title": "Identificación de puntos críticos ante inundación, flujo de detritos y erosión 2025",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca//21194_identificacion-de-puntos-criticos-con-peligro-de-inundacion-flujo-de-detritos-huaico-y-erosion-fluvial-en-los-principales-rios-y-quebradas-2025.pdf"
+    },
+    {
+      "institution": "ANA/CENEPRED SIGRID",
+      "title": "Puntos críticos de ríos y quebradas del departamento de Ica 2021",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/13270"
+    },
+    {
+      "institution": "INGEMMET/CENEPRED SIGRID",
+      "title": "Evaluación de flujo de detritos en la quebrada Malanche, Punta Hermosa",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca//22087_informe-tecnico-n0-a7743-evaluacion-de-peligros-geologicos-por-flujo-de-detritos-en-la-quebrada-malanche-distrito-de-punta-hermosa-provincia-de-lima-d.pdf"
+    },
+    {
+      "institution": "INGEMMET/CENEPRED SIGRID",
+      "title": "Evaluación geológica de zonas afectadas por El Niño Costero 2017 en Lambayeque y Cajamarca",
+      "url": "https://sigrid.cenepred.gob.pe/docs/PARA%20PUBLICAR/INGEMMET/Informe_tecnico_A6766_Evaluacion_geologica_de_las_zonas_afectadas_por_el_nino_costero_Lambayeque_Cajamarca_2017.pdf"
+    },
+    {
+      "institution": "INDECI",
+      "title": "Zonas expuestas a alto peligro e inventarios de ANA/CENEPRED",
+      "url": "https://portal.indeci.gob.pe/fondes/zonas-expuestas-a-alto-peligro/"
+    }
+  ]
+}

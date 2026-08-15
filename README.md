@@ -36,6 +36,14 @@ Las mejoras de v0.8 se prueban **en paralelo** y no reemplazan la lógica operat
 - Chosica / Huaycoloro — Lima.
 - Catacaos / Bajo Piura — Piura.
 
+Los tres pilotos cierran el método v0.8; no representan el límite territorial
+de IRFEN. La fase posterior se seleccionará por riesgo, recurrencia, rapidez de
+activación, aislamiento y brecha de respuesta, no por tamaño de ciudad. La
+preparación comprende quebradas y sistemas críticos de Lima norte y sur chico,
+Ica/Pisco, Lambayeque y otras zonas prioritarias de la costa norte, central y
+sur, incluidas comunidades pequeñas y rurales. Véase
+`docs/PHASE2_EXPANSION_STRATEGY.md`.
+
 ## Estado científico v0.8
 
 ### San Ildefonso
