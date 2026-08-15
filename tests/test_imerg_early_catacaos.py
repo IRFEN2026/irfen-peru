@@ -87,5 +87,35 @@ class CatacaosTargetTests(unittest.TestCase):
         self.assertEqual(replay["decision_use"], "TEST_ONLY")
 
 
+class BoundedSelectionTests(unittest.TestCase):
+    def row(self, minute, name):
+        start = archive.parse_time("2026-08-15T00:00:00+00:00")
+        return (start + archive.timedelta(minutes=minute), name, object())
+
+    def test_prioritizes_recent_continuity_gaps_before_event_replay(self):
+        live = [self.row(0, "live-old"), self.row(30, "live-gap"), self.row(60, "live-new")]
+        repairs = [self.row(-60, "repair-old"), self.row(30, "live-gap")]
+        event = [self.row(-1440, "event-1"), self.row(-1410, "event-2")]
+
+        selected = probe.select_bounded_granules(live, repairs, event, limit=3)
+
+        self.assertEqual(
+            [row[1] for row in selected],
+            ["repair-old", "live-gap", "live-new"],
+        )
+
+    def test_deduplicates_candidates_and_preserves_download_cap(self):
+        live = [self.row(0, "newest")]
+        repeated = [self.row(0, "newest"), self.row(-30, "gap-1"), self.row(-60, "gap-2")]
+
+        selected = probe.select_bounded_granules(live, repeated, repeated, limit=2)
+
+        self.assertEqual(len(selected), 2)
+        self.assertEqual({row[1] for row in selected}, {"newest", "gap-2"})
+
+    def test_empty_catalogue_is_safe(self):
+        self.assertEqual(probe.select_bounded_granules([], [], [], limit=4), [])
+
+
 if __name__ == "__main__":
     unittest.main()

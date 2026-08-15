@@ -29,6 +29,8 @@ SITE = ROOT / "site"
 OUT = SITE / "data" / "calibration" / "imerg_early_live_probe.json"
 ARCHIVE = SITE / "data" / "calibration" / "imerg_early_live_archive.json"
 SEARCH_WINDOW_HOURS = 12
+REPAIR_WINDOW_HOURS = 30
+REPAIR_SEARCH_COUNT = 80
 MAX_DOWNLOADS_PER_RUN = 4
 REQUIRED_TARGET_IDS = {
     "san_ildefonso",
@@ -266,6 +268,29 @@ def filter_half_open_interval(indexed, start_utc, end_utc):
     return [row for row in indexed if start <= row[0] < end]
 
 
+def select_bounded_granules(indexed, repair_missing, bootstrap_missing, limit=MAX_DOWNLOADS_PER_RUN):
+    """Keep latency current, then close recent continuity gaps before replay work.
+
+    The live archive must acquire two new half-hourly granules per hour before
+    spending spare capacity on the finite event replay. Newest-first repair
+    grows a usable continuous tail while the hard download cap remains fixed.
+    """
+    if not indexed or limit <= 0:
+        return []
+
+    selected = [indexed[-1]]
+    selected_names = {indexed[-1][1]}
+    for row in list(reversed(repair_missing)) + list(bootstrap_missing):
+        if not row[1] or row[1] in selected_names:
+            continue
+        selected.append(row)
+        selected_names.add(row[1])
+        if len(selected) >= limit:
+            break
+    selected.sort(key=lambda row: row[0])
+    return selected
+
+
 def last_valid_summary(previous):
     samples = previous.get("samples") or []
     latest_targets = samples[-1].get("targets", []) if samples else []
@@ -355,6 +380,29 @@ def main():
         if row[1] and not REQUIRED_TARGET_IDS.issubset(archived.get(row[1], set()))
     ]
 
+    # La ventana primaria de 12 h conserva la medición de actualidad ya
+    # contratada. Una consulta adicional, solo de catálogo, permite reparar
+    # huecos de hasta 30 h sin aumentar el límite de cuatro descargas.
+    repair_indexed = indexed
+    repair_source_error = None
+    try:
+        repair_granules = earthaccess.search_data(
+            short_name="GPM_3IMERGHHE",
+            version="07",
+            temporal=((now - timedelta(hours=REPAIR_WINDOW_HOURS)).isoformat(), now.isoformat()),
+            count=REPAIR_SEARCH_COUNT,
+        )
+        if repair_granules:
+            repair_indexed = index_granules(repair_granules)
+    except Exception as exc:
+        # La recuperación ampliada es complementaria: si falla, el probe
+        # operativo de 12 h continúa y deja el incidente explícito.
+        repair_source_error = {"type": type(exc).__name__, "message": str(exc)[:500]}
+    repair_missing = [
+        row for row in repair_indexed
+        if row[1] and not REQUIRED_TARGET_IDS.issubset(archived.get(row[1], set()))
+    ]
+
     # Caso diagnóstico finito solicitado tras la lluvia local observada en
     # Piura. Se recupera gradualmente el día civil peruano completo sin elevar
     # el límite de descargas por ejecución ni alterar el flujo operativo.
@@ -394,23 +442,13 @@ def main():
             "source_error": {"type": type(exc).__name__, "message": str(exc)[:500]},
         })
 
-    # Always include the newest available granule so latency remains current.
-    # Use the remaining bounded slots first for the finite Catacaos event case
-    # and then for the oldest incomplete live granules. This repairs both the
-    # requested replay and short outages without an unbounded download.
-    selected = [indexed[-1]]
-    for row in bootstrap_missing + missing:
-        if row[1] == selected[0][1]:
-            continue
-        if any(existing[1] == row[1] for existing in selected):
-            continue
-        selected.append(row)
-        if len(selected) >= MAX_DOWNLOADS_PER_RUN:
-            break
+    # Always include the newest granule for latency. The remaining bounded
+    # slots repair the newest continuity gaps first; only spare capacity is
+    # used by the finite Catacaos event replay.
+    selected = select_bounded_granules(indexed, repair_missing, bootstrap_missing)
     bootstrap["selected_for_run"] = sum(
         1 for row in selected if any(row[1] == candidate[1] for candidate in bootstrap_missing)
     )
-    selected.sort(key=lambda x: x[0])
 
     samples = []
     try:
@@ -465,6 +503,10 @@ def main():
         "granules_downloaded": len(samples),
         "archive_granules_seen": len(archived),
         "missing_granules_in_search_window": len(missing),
+        "repair_window_hours": REPAIR_WINDOW_HOURS,
+        "repair_catalog_granules_found": len(repair_indexed),
+        "missing_granules_in_repair_window": len(repair_missing),
+        "repair_source_error": repair_source_error,
         "bounded_download_limit": MAX_DOWNLOADS_PER_RUN,
         "bootstrap_case": bootstrap,
         "latest_granule_time_utc": latest_time.isoformat() if latest_time else None,
