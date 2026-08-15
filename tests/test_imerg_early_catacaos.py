@@ -29,6 +29,20 @@ archive = load_script("archive_imerg_early_probe", "scripts/archive_imerg_early_
 
 
 class CatacaosTargetTests(unittest.TestCase):
+    def test_event_interval_excludes_next_midnight(self):
+        start = archive.parse_time("2026-08-14T05:00:00+00:00")
+        rows = [
+            (start, "first", object()),
+            (start + archive.timedelta(minutes=30 * 47), "last", object()),
+            (start + archive.timedelta(hours=24), "next-day", object()),
+        ]
+        selected = probe.filter_half_open_interval(
+            rows,
+            "2026-08-14T05:00:00+00:00",
+            "2026-08-15T05:00:00+00:00",
+        )
+        self.assertEqual([row[1] for row in selected], ["first", "last"])
+
     def test_required_targets_include_catacaos(self):
         targets = {target["id"]: target for target in probe.load_targets()}
         self.assertEqual(set(targets), probe.REQUIRED_TARGET_IDS)
