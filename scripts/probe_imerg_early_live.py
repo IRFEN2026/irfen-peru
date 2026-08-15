@@ -27,6 +27,9 @@ from shapely.geometry import box, shape
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "site"
 OUT = SITE / "data" / "calibration" / "imerg_early_live_probe.json"
+ARCHIVE = SITE / "data" / "calibration" / "imerg_early_live_archive.json"
+SEARCH_WINDOW_HOURS = 12
+MAX_DOWNLOADS_PER_RUN = 4
 
 SOURCE = {
     "institution": "NASA GES DISC / GPM IMERG",
@@ -45,6 +48,19 @@ def previous_probe():
         return load_json(OUT)
     except Exception:
         return {}
+
+
+def archived_granule_names():
+    """Return already sampled filenames without making the live probe depend on the archive."""
+    try:
+        archive = load_json(ARCHIVE)
+    except Exception:
+        return set()
+    return {
+        row.get("granule")
+        for row in archive.get("granules", [])
+        if row.get("granule")
+    }
 
 
 def load_targets():
@@ -233,26 +249,15 @@ def main():
         granules = earthaccess.search_data(
             short_name="GPM_3IMERGHHE",
             version="07",
-            temporal=((now - timedelta(hours=6)).isoformat(), now.isoformat()),
-            count=20,
+            temporal=((now - timedelta(hours=SEARCH_WINDOW_HOURS)).isoformat(), now.isoformat()),
+            count=30,
         )
     except (requests.RequestException, OSError, ConnectionError, TimeoutError) as exc:
-        return write_contingency(now, previous, "SOURCE_TEMPORARILY_UNREACHABLE", error=exc, search_window_hours=6)
+        return write_contingency(now, previous, "SOURCE_TEMPORARILY_UNREACHABLE", error=exc, search_window_hours=SEARCH_WINDOW_HOURS)
 
-    search_window_hours = 6
+    search_window_hours = SEARCH_WINDOW_HOURS
     if not granules:
-        try:
-            granules = earthaccess.search_data(
-                short_name="GPM_3IMERGHHE",
-                version="07",
-                temporal=((now - timedelta(hours=12)).isoformat(), now.isoformat()),
-                count=30,
-            )
-        except (requests.RequestException, OSError, ConnectionError, TimeoutError) as exc:
-            return write_contingency(now, previous, "SOURCE_TEMPORARILY_UNREACHABLE", error=exc, search_window_hours=12)
-        search_window_hours = 12
-    if not granules:
-        return write_contingency(now, previous, "NO_RECENT_GRANULES", search_window_hours=12)
+        return write_contingency(now, previous, "NO_RECENT_GRANULES", search_window_hours=SEARCH_WINDOW_HOURS)
 
     indexed = []
     for g in granules:
@@ -260,7 +265,21 @@ def main():
         ts = timestamp_from_filename(name)
         indexed.append((ts or datetime(1970, 1, 1, tzinfo=timezone.utc), name, g))
     indexed.sort(key=lambda x: x[0])
-    selected = indexed[-2:]
+    archived = archived_granule_names()
+    missing = [row for row in indexed if row[1] and row[1] not in archived]
+
+    # Always include the newest available granule so latency remains current.
+    # Use the remaining bounded slots for the oldest missing granules in the
+    # 12-hour search window. This repairs short outages without an unbounded
+    # historical download or a false zero in the time series.
+    selected = [indexed[-1]]
+    for row in missing:
+        if row[1] == selected[0][1]:
+            continue
+        selected.append(row)
+        if len(selected) >= MAX_DOWNLOADS_PER_RUN:
+            break
+    selected.sort(key=lambda x: x[0])
 
     samples = []
     try:
@@ -313,6 +332,9 @@ def main():
         "search_window_hours": search_window_hours,
         "granules_found": len(granules),
         "granules_downloaded": len(samples),
+        "archive_granules_seen": len(archived),
+        "missing_granules_in_search_window": len(missing),
+        "bounded_download_limit": MAX_DOWNLOADS_PER_RUN,
         "latest_granule_time_utc": latest_time.isoformat() if latest_time else None,
         "observed_latency_hours_at_probe": latency_hours,
         "samples": samples,
