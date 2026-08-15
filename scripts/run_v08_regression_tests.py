@@ -9,7 +9,7 @@ from pathlib import Path
 import json
 import sys
 
-from build_v08_scorecard import final_release_audit_gate
+from build_v08_scorecard import external_validation_gate, final_release_audit_gate
 
 ROOT=Path(__file__).resolve().parents[1]
 SITE=ROOT/'site'
@@ -47,6 +47,8 @@ def main():
     imerg_early=optional(SITE/'data/calibration/imerg_early_live_archive.json')
     phase2=load(ROOT/'config/phase2_candidate_inventory_v0_1.json')
     closeout_contract=load(ROOT/'config/v08_closeout_contract.json')
+    external_contract=load(ROOT/'config/v08_external_validation_contract.json')
+    external_ledger=load(SITE/'data/validation/v08_external_evidence.json')
     closeout_scorecard=optional(SITE/'data/v08_scorecard.json')
     glofas_current=optional(SITE/'data/hydrology/glofas_catacaos_current.json')
 
@@ -164,6 +166,13 @@ def main():
     check('closeout_final_audit_rejects_scientific_blockers',final_release_audit_gate(True,False,True) is False)
     check('closeout_final_audit_rejects_incomplete_release',final_release_audit_gate(True,True,False) is False)
     check('closeout_final_audit_accepts_all_prerequisites',final_release_audit_gate(True,True,True) is True)
+    external_passed,external_detail=external_validation_gate(external_contract,external_ledger,['san_ildefonso','chosica','catacaos'])
+    check('external_validation_contract_not_production',external_contract.get('production_use') is False)
+    check('external_validation_ledger_not_production',external_ledger.get('production_use') is False)
+    check('external_validation_exact_pilots',set(external_detail)=={'san_ildefonso','chosica','catacaos'})
+    check('external_validation_missing_evidence_stays_blocked',external_passed is False)
+    check('external_validation_no_automatic_acceptance',(external_contract.get('acceptance_rules') or {}).get('automatic_acceptance_forbidden') is True)
+    check('external_validation_no_threshold_promotion',(external_contract.get('acceptance_rules') or {}).get('threshold_or_hydraulic_factor_promotion')=='FORBIDDEN')
     if closeout_scorecard is not None:
         milestones=closeout_scorecard.get('milestones') or []
         reached=[int(m.get('percentage',0)) for m in milestones if m.get('reached') is True]

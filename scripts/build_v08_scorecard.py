@@ -46,6 +46,39 @@ def final_release_audit_gate(shadow_gate_passed: bool, scientific_gate_passed: b
     return bool(shadow_gate_passed and scientific_gate_passed and release_document_complete)
 
 
+def external_validation_gate(contract: dict, ledger: dict, pilots: list[str]):
+    """Accept external evidence only when every required item is traceable and reviewed."""
+    contract_by = {row.get("zone_id"): row for row in contract.get("pilots", [])}
+    ledger_by = {row.get("zone_id"): row for row in ledger.get("pilots", [])}
+    evidence = {}
+    for zone_id in pilots:
+        required = set((contract_by.get(zone_id) or {}).get("required_evidence_ids") or [])
+        items = (ledger_by.get(zone_id) or {}).get("items") or []
+        accepted = {
+            row.get("evidence_id") for row in items
+            if row.get("status") == "ACCEPTED"
+            and row.get("official_sources")
+            and (row.get("review") or {}).get("reviewed_by")
+            and (row.get("review") or {}).get("reviewed_at")
+            and (row.get("review") or {}).get("automatic") is False
+        }
+        missing = sorted(required - accepted)
+        evidence[zone_id] = {
+            "required_count": len(required),
+            "accepted_count": len(required & accepted),
+            "missing_or_unaccepted_evidence_ids": missing,
+            "passed": bool(required) and not missing,
+        }
+    passed = (
+        contract.get("production_use") is False
+        and ledger.get("production_use") is False
+        and set(contract_by) == set(pilots)
+        and set(ledger_by) == set(pilots)
+        and all(row["passed"] for row in evidence.values())
+    )
+    return passed, evidence
+
+
 def shadow_record_eligibility(record: dict, pilots: list[str], minimum_pairs_per_pilot: int):
     """Return auditable gates for a reviewed shadow day to count toward closure."""
     health = record.get("source_health") or {}
@@ -80,6 +113,8 @@ def main():
     verification = load(SITE / "data" / "forecast" / "verification.json", {}) or {}
     shadow = load(SITE / "data" / "validation" / "shadow_runs.json", {}) or {}
     scientific = load(SITE / "data" / "scientific_status.json", {}) or {}
+    external_contract = load(ROOT / "config" / "v08_external_validation_contract.json", {}) or {}
+    external_ledger = load(SITE / "data" / "validation" / "v08_external_evidence.json", {}) or {}
 
     pilots = contract.get("pilot_zone_ids") or []
     zones = state.get("zones") or []
@@ -238,7 +273,12 @@ def main():
         and int(reviewed_label_counts.get("EVENT", 0)) >= minimum_event_days
         and int(reviewed_label_counts.get("NONE", 0)) >= minimum_none_days
     )
-    scientific_gate_passed = all(not values for values in unresolved.values()) and local.get("live_test_ready") is True
+    external_evidence_passed, external_evidence = external_validation_gate(external_contract, external_ledger, pilots)
+    scientific_gate_passed = (
+        all(not values for values in unresolved.values())
+        and local.get("live_test_ready") is True
+        and external_evidence_passed
+    )
     release_document_complete = (
         test_report.get("status") == "PASS"
         and scientific.get("production_ready") is False
@@ -269,7 +309,12 @@ def main():
         item(
             "scientific_and_hydraulic_blockers_resolved",
             scientific_gate_passed,
-            {"pilot_blockers": unresolved, "pedregal_live_test_ready": local.get("live_test_ready")},
+            {
+                "pilot_blockers": unresolved,
+                "pedregal_live_test_ready": local.get("live_test_ready"),
+                "external_evidence_gate_passed": external_evidence_passed,
+                "external_evidence_by_pilot": external_evidence,
+            },
         ),
         item(
             "final_audit_and_release_documented",
