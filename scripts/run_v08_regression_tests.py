@@ -156,6 +156,7 @@ def main():
     check('closeout_contract_shadow_requires_event_day',int(shadow_contract.get('minimum_verified_event_days',0))>=1)
     check('closeout_contract_shadow_requires_none_days',int(shadow_contract.get('minimum_verified_none_days',0))>=1)
     check('closeout_contract_release_completion_explicit',closeout_contract.get('release_completion_marker')=='Release status: COMPLETE')
+    check('closeout_shadow_review_protocol_present',(ROOT/'docs/SHADOW_OUTCOME_REVIEW_PROTOCOL.md').is_file())
     if closeout_scorecard is not None:
         milestones=closeout_scorecard.get('milestones') or []
         reached=[int(m.get('percentage',0)) for m in milestones if m.get('reached') is True]
