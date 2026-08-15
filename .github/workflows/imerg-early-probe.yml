@@ -42,7 +42,7 @@ jobs:
       - name: Probar IMERG Early 30 min vía Earthdata
         env:
           EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
-        run: timeout --signal=TERM --kill-after=10s 180s python scripts/probe_imerg_early_live.py
+        run: timeout --signal=TERM --kill-after=10s 300s python scripts/probe_imerg_early_live.py
 
       - name: Archivar latencia, continuidad y ventanas
         run: python scripts/archive_imerg_early_probe.py
@@ -71,6 +71,10 @@ jobs:
           if gate == 'SOURCE_TEMPORARILY_UNAVAILABLE':
               assert p.get('stale') is True
               assert p.get('scientific_gate',{}).get('last_valid_retained_for_archive') is True
+          if p.get('status') == 'EARLY_HALFHOURLY_SOURCE_AVAILABLE':
+              assert p.get('search_window_hours') == 12
+              assert 1 <= int(p.get('granules_downloaded',0)) <= 4
+              assert int(p.get('missing_granules_in_search_window',0)) >= 0
           assert a.get('production_use') is False
           assert a.get('production_ready') is False
           assert a.get('scientific_gate',{}).get('status') == 'ACCUMULATING_LATENCY_AND_CONTINUITY_EVIDENCE'
