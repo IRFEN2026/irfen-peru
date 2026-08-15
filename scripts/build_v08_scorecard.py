@@ -41,6 +41,11 @@ def milestone(percentage: int, prior_reached: bool, checks: list[dict]):
     }
 
 
+def final_release_audit_gate(shadow_gate_passed: bool, scientific_gate_passed: bool, release_document_complete: bool):
+    """Require every independent closeout prerequisite; no partial shortcut."""
+    return bool(shadow_gate_passed and scientific_gate_passed and release_document_complete)
+
+
 def shadow_record_eligibility(record: dict, pilots: list[str], minimum_pairs_per_pilot: int):
     """Return auditable gates for a reviewed shadow day to count toward closure."""
     health = record.get("source_health") or {}
@@ -268,7 +273,7 @@ def main():
         ),
         item(
             "final_audit_and_release_documented",
-            shadow_gate_passed and scientific_gate_passed and release_document_complete,
+            final_release_audit_gate(shadow_gate_passed, scientific_gate_passed, release_document_complete),
             {
                 "prerequisite_shadow_gate_passed": shadow_gate_passed,
                 "prerequisite_scientific_gate_passed": scientific_gate_passed,
