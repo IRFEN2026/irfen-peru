@@ -213,6 +213,13 @@ def main():
             "No se corrige sesgo ni se cambia ningún umbral hasta acumular suficientes casos lluviosos y secos.",
         ],
         "minimum_samples_for_initial_review": MIN_SAMPLES,
+        "forecast_inputs": {
+            "live_archive_snapshots": len(archive.get("snapshots", [])),
+            "historical_daily_records_available": len(historical.get("records", [])),
+            "historical_daily_pairs_used": sum(
+                row.get("forecast_record_kind") == "historical_daily_backfill" for row in pairs
+            ),
+        },
         "total_pairs": len(pairs),
         "overall_metrics": metrics(pairs),
         "by_zone": by_zone,
