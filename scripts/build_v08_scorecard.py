@@ -228,12 +228,24 @@ def main():
     release_path = ROOT / str(contract.get("release_document", "docs/V08_RELEASE.md"))
     release_text = release_path.read_text(encoding="utf-8") if release_path.is_file() else ""
     release_marker = str(contract.get("release_completion_marker", "Release status: COMPLETE"))
+    shadow_gate_passed = (
+        len(reviewed) >= required_reviewed
+        and int(reviewed_label_counts.get("EVENT", 0)) >= minimum_event_days
+        and int(reviewed_label_counts.get("NONE", 0)) >= minimum_none_days
+    )
+    scientific_gate_passed = all(not values for values in unresolved.values()) and local.get("live_test_ready") is True
+    release_document_complete = (
+        test_report.get("status") == "PASS"
+        and scientific.get("production_ready") is False
+        and release_path.is_file()
+        and "v0.8" in release_text
+        and "TEST_ONLY" in release_text
+        and release_marker in release_text
+    )
     checks100 = [
         item(
             "shadow_outcomes_sufficient_and_reviewed",
-            len(reviewed) >= required_reviewed
-            and int(reviewed_label_counts.get("EVENT", 0)) >= minimum_event_days
-            and int(reviewed_label_counts.get("NONE", 0)) >= minimum_none_days,
+            shadow_gate_passed,
             {
                 "eligible_reviewed_records": len(reviewed),
                 "reviewed_records_total": len(reviewed_all),
@@ -251,18 +263,15 @@ def main():
         ),
         item(
             "scientific_and_hydraulic_blockers_resolved",
-            all(not values for values in unresolved.values()) and local.get("live_test_ready") is True,
+            scientific_gate_passed,
             {"pilot_blockers": unresolved, "pedregal_live_test_ready": local.get("live_test_ready")},
         ),
         item(
             "final_audit_and_release_documented",
-            test_report.get("status") == "PASS"
-            and scientific.get("production_ready") is False
-            and release_path.is_file()
-            and "v0.8" in release_text
-            and "TEST_ONLY" in release_text
-            and release_marker in release_text,
+            shadow_gate_passed and scientific_gate_passed and release_document_complete,
             {
+                "prerequisite_shadow_gate_passed": shadow_gate_passed,
+                "prerequisite_scientific_gate_passed": scientific_gate_passed,
                 "regression_status": test_report.get("status"),
                 "scientific_production_ready": scientific.get("production_ready"),
                 "release_document": str(release_path.relative_to(ROOT)),
