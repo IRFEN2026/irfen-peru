@@ -63,6 +63,11 @@ de consulta y nota que explique cobertura temporal y espacial. Una corrección
 posterior debe mantener trazabilidad del valor anterior mediante commit y pull
 request.
 
+Las anotaciones se aplican con `scripts/review_shadow_outcome.py`. El comando
+rechaza fuentes fuera de dominios institucionales, exige evidencia positiva
+para `EVENT` y una confirmación explícita de cobertura para `NONE`. Una
+revisión `UNCERTAIN` queda auditada, pero no cuenta para el cierre.
+
 ## Regla de promoción
 
 Completar esta muestra no autoriza por sí solo una alerta operativa. El 100%
