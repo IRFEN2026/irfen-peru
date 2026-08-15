@@ -199,10 +199,13 @@ def main():
 
     accepted_labels = set((contract.get("shadow_validation") or {}).get("accepted_outcome_labels") or [])
     shadow_records = shadow.get("records") or []
-    reviewed_outcomes = [
+    reviewed_all = [
         r for r in shadow_records
         if (r.get("outcome_verification") or {}).get("status") != "PENDING_REAL_WORLD_OUTCOME_REVIEW"
-        and (r.get("outcome_verification") or {}).get("label") in accepted_labels
+    ]
+    reviewed_outcomes = [
+        r for r in reviewed_all
+        if (r.get("outcome_verification") or {}).get("label") in accepted_labels
     ]
     required_reviewed = int((contract.get("shadow_validation") or {}).get("minimum_reviewed_daily_records", 30))
     shadow_eligibility = [
@@ -233,9 +236,11 @@ def main():
             and int(reviewed_label_counts.get("NONE", 0)) >= minimum_none_days,
             {
                 "eligible_reviewed_records": len(reviewed),
+                "reviewed_records_total": len(reviewed_all),
                 "reviewed_outcomes_total": len(reviewed_outcomes),
+                "reviewed_uncertain_or_unaccepted": len(reviewed_all) - len(reviewed_outcomes),
                 "reviewed_but_ineligible": len(reviewed_outcomes) - len(reviewed),
-                "pending_outcome_review": len(shadow_records) - len(reviewed_outcomes),
+                "pending_outcome_review": len(shadow_records) - len(reviewed_all),
                 "required": required_reviewed,
                 "eligible_label_counts": reviewed_label_counts,
                 "minimum_verified_event_days": minimum_event_days,
