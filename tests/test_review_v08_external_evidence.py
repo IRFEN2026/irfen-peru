@@ -1,4 +1,5 @@
 import importlib.util
+import json
 from pathlib import Path
 import unittest
 
@@ -43,6 +44,20 @@ def ledger(status="CANDIDATE_REVIEW"):
 
 
 class ExternalEvidenceReviewTests(unittest.TestCase):
+    def test_every_current_ledger_source_is_allowed_as_official(self):
+        data = json.loads(
+            (ROOT / "site/data/validation/v08_external_evidence.json").read_text(encoding="utf-8")
+        )
+        sources = [
+            source
+            for pilot in data["pilots"]
+            for item in pilot["items"]
+            for source in item.get("official_sources", [])
+        ]
+        rejected = [source for source in sources if not reviewer.is_official_url(source)]
+        self.assertTrue(sources)
+        self.assertEqual(rejected, [])
+
     def test_acceptance_requires_explicit_full_requirement_confirmation(self):
         with self.assertRaisesRegex(ValueError, "requisito completo"):
             reviewer.apply_review(
