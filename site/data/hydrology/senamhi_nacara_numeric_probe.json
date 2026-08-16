@@ -1,41 +1,67 @@
 {
   "version": "0.8-experimental",
-  "generated_at": "2026-08-14T20:43:43.492033+00:00",
+  "generated_at": "2026-08-16T14:37:12.100596+00:00",
   "production_use": false,
   "production_ready": false,
-  "station": "Puente Ñácara",
-  "station_id": "47E0415A",
-  "river": "Río Piura",
-  "query_local_time_assumption": "UTC-5",
-  "query_fecha_hora": "2026-08-14 15:00:00",
-  "status": "NO_UNAMBIGUOUS_NUMERIC_VALUE_FOUND",
-  "numeric_river_state_available": false,
-  "explicit_numeric_candidates": [],
-  "probes": [
-    {
-      "name": "station_chart_current",
-      "url": "https://www.senamhi.gob.pe/mapas/mapa-monitoreohidro/include/mnt-grafica-new.php?fecha_hora=2026-08-14%2015%3A00%3A00&id=47E0415A&variable=CAUDAL&variable_opcion=C",
-      "http_status": null,
-      "error_type": "ConnectTimeout",
-      "error": "HTTPSConnectionPool(host='www.senamhi.gob.pe', port=443): Max retries exceeded with url: /mapas/mapa-monitoreohidro/include/mnt-grafica-new.php?fecha_hora=2026-08-14%2015%3A00%3A00&id=47E0415A&variable=CAUDAL&variable_opcion=C (Caused by ConnectTimeoutError(<HTTPSConnection(host='www.senamhi.gob.pe', port=443) at 0x7f00a8440560>, 'Connection to www.senamhi.gob.pe timed out. (connect timeout=35)'))"
+  "integration_mode": "TEST_ONLY",
+  "source": {
+    "agency": "SENAMHI",
+    "public_page": "https://www.senamhi.gob.pe/?p=monitoreo-informacion-diaria",
+    "endpoint": "https://www.senamhi.gob.pe/include/ajax-informacion-diaria-piura.php"
+  },
+  "query": {
+    "requested_observation_time": "2026-08-16T09:00:00-05:00",
+    "timezone": "America/Lima (UTC-05:00)",
+    "time_is_request_selector": true,
+    "response_echoes_observation_time": false
+  },
+  "status": "OFFICIAL_NUMERIC_RIVER_STATE_CANDIDATE_AVAILABLE",
+  "numeric_river_state_available": true,
+  "reading": {
+    "station_id": "47E0415A",
+    "station_name": "PUENTE ÑACARA",
+    "basin": "Cuenca Piura",
+    "department": "PIURA",
+    "variable": "CAUDAL",
+    "value": 2.544,
+    "unit": "m3/s",
+    "trend_code": "E",
+    "official_reference_red": 1100,
+    "official_reference_red_use": "SOURCE_METADATA_ONLY_NOT_IRFEN_THRESHOLD"
+  },
+  "rejection_reason": null,
+  "http": {
+    "endpoint": "https://www.senamhi.gob.pe/include/ajax-informacion-diaria-piura.php",
+    "method": "POST",
+    "request_fields": {
+      "fecha": "2026-08-16",
+      "hora": "09:00"
     },
-    {
-      "name": "piura_monitoring",
-      "url": "https://www.senamhi.gob.pe/servicios/main.php?dp=piura&p=monitoreo-piura",
-      "http_status": null,
-      "error_type": "ConnectTimeout",
-      "error": "HTTPSConnectionPool(host='www.senamhi.gob.pe', port=443): Max retries exceeded with url: /servicios/main.php?dp=piura&p=monitoreo-piura (Caused by ConnectTimeoutError(<HTTPSConnection(host='www.senamhi.gob.pe', port=443) at 0x7f00a8440bf0>, 'Connection to www.senamhi.gob.pe timed out. (connect timeout=35)'))"
-    },
-    {
-      "name": "daily_hydrology",
-      "url": "https://www.senamhi.gob.pe/servicios/main.php?dp=piura&p=monitoreo-informacion-diaria",
-      "http_status": null,
-      "error_type": "ConnectTimeout",
-      "error": "HTTPSConnectionPool(host='www.senamhi.gob.pe', port=443): Max retries exceeded with url: /servicios/main.php?dp=piura&p=monitoreo-informacion-diaria (Caused by ConnectTimeoutError(<HTTPSConnection(host='www.senamhi.gob.pe', port=443) at 0x7f00a83d5460>, 'Connection to www.senamhi.gob.pe timed out. (connect timeout=35)'))"
-    }
-  ],
+    "status": 200,
+    "content_type": "text/html; charset=UTF-8",
+    "bytes": 506,
+    "api_success": true,
+    "returned_station_count": 1
+  },
+  "channel_validation": {
+    "exact_station_code_required": "47E0415A",
+    "station_name_required": "PUENTE ÑACARA",
+    "flow_unit_required": "m3/s",
+    "missing_sentinels_rejected": [
+      -9999.0,
+      -999.0
+    ],
+    "request_time_stored": true,
+    "response_time_echo_pending": true
+  },
   "scientific_gate": {
-    "status": "AUTOMATIC_NUMERIC_ACCESS_UNRESOLVED",
-    "rule": "No marcar numeric_river_state_available=true hasta asociar de forma inequívoca valor, timestamp, estación y variable desde una respuesta oficial estable."
+    "status": "TEST_ONLY_NUMERIC_CHANNEL_FOUND",
+    "remaining_gap": "Acumular frescura y continuidad; validar tiempo de tránsito Ñácara-Bajo Piura y capacidad hidráulica. La hora es el selector de consulta pero no vuelve en la respuesta JSON.",
+    "prohibitions": [
+      "No usar como alerta operativa.",
+      "No trasladar el valor de Ñácara directamente a Catacaos.",
+      "No adoptar umbralRojo como umbral IRFEN sin contrato hidráulico.",
+      "No interpretar una lectura ausente como caudal cero o riesgo bajo."
+    ]
   }
 }
