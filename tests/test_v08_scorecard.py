@@ -23,6 +23,11 @@ def eligible_record():
     return {
         "snapshot_date_utc": "2026-08-15",
         "production_use": False,
+        "outcome_verification": {
+            "status": "REVIEWED_REAL_WORLD_OUTCOME",
+            "label": "NONE",
+            "reviewed_at": "2026-08-16T00:00:00Z",
+        },
         "zones": [
             {
                 "zone_id": zone_id,
@@ -70,6 +75,15 @@ class ShadowEligibilityTests(unittest.TestCase):
         self.assertFalse(result["eligible"])
         self.assertFalse(result["checks"]["imerg_early_available"])
         self.assertFalse(result["checks"]["imerg_latency_recorded"])
+
+    def test_review_before_day_close_is_not_eligible(self):
+        record = eligible_record()
+        record["outcome_verification"]["reviewed_at"] = "2026-08-15T23:59:59Z"
+
+        result = scorecard.shadow_record_eligibility(record, PILOTS, 30)
+
+        self.assertFalse(result["eligible"])
+        self.assertFalse(result["checks"]["outcome_review_after_utc_day_close"])
 
     def test_operational_recommendation_is_rejected(self):
         record = eligible_record()
