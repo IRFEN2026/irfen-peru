@@ -10,6 +10,7 @@ import json
 import sys
 
 from build_v08_scorecard import external_validation_gate, final_release_audit_gate, review_after_utc_day_close, target_window_gate
+from review_shadow_outcome import apply_review
 
 ROOT=Path(__file__).resolve().parents[1]
 SITE=ROOT/'site'
@@ -170,6 +171,39 @@ def main():
     check('closeout_shadow_rejects_review_before_utc_day_close',review_after_utc_day_close(premature_review) is False)
     premature_review['outcome_verification']['reviewed_at']='2026-08-15T00:00:00Z'
     check('closeout_shadow_accepts_review_at_utc_day_close',review_after_utc_day_close(premature_review) is True)
+    synthetic_archive={
+        'production_use':False,
+        'production_ready':False,
+        'records':[{
+            'snapshot_date_utc':'2026-08-14',
+            'production_use':False,
+            'outcome_verification':{'status':'PENDING_REAL_WORLD_OUTCOME_REVIEW'},
+        }],
+    }
+    review_args=(
+        synthetic_archive,
+        '2026-08-14',
+        'UNCERTAIN',
+        ['https://www.senamhi.gob.pe/main.php?p=aviso-24H'],
+        'Revisión sintética para comprobar trazabilidad.',
+    )
+    apply_review(*review_args,reviewed_at='2026-08-15T00:00:00Z')
+    silent_overwrite_rejected=False
+    try:
+        apply_review(*review_args,reviewed_at='2026-08-16T00:00:00Z')
+    except ValueError:
+        silent_overwrite_rejected=True
+    check('closeout_shadow_rejects_silent_review_overwrite',silent_overwrite_rejected)
+    apply_review(
+        *review_args,
+        reviewed_at='2026-08-16T00:00:00Z',
+        replace_existing_review=True,
+    )
+    synthetic_record=synthetic_archive['records'][0]
+    check(
+        'closeout_shadow_explicit_replacement_preserves_history',
+        len(synthetic_record.get('outcome_verification_history') or [])==1,
+    )
     check('closeout_final_audit_rejects_missing_shadow',final_release_audit_gate(False,True,True) is False)
     check('closeout_final_audit_rejects_scientific_blockers',final_release_audit_gate(True,False,True) is False)
     check('closeout_final_audit_rejects_incomplete_release',final_release_audit_gate(True,True,False) is False)
