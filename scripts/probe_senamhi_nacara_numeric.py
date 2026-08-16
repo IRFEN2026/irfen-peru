@@ -1,164 +1,178 @@
 #!/usr/bin/env python3
-"""Prueba acceso numérico oficial SENAMHI/PHISIS para Puente Ñácara.
+"""Prueba el canal numérico oficial SENAMHI para Puente Ñácara.
 
-No integra valores al modelo. Intenta únicamente descubrir si el HTML oficial
-de monitoreo expone series numéricas que puedan extraerse de forma estable
-desde GitHub Actions. Todo resultado se guarda como evidencia experimental.
+Consulta el reporte hidrológico diario público con una sola petición. El
+resultado permanece TEST_ONLY: descubrir un canal numérico no valida tiempos
+de tránsito, capacidad del cauce ni umbrales para Catacaos/Bajo Piura.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-import html
 import json
-import re
-
-import requests
+import math
+import unicodedata
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "site/data/hydrology/senamhi_nacara_numeric_probe.json"
 STATION_ID = "47E0415A"
-BASE = "https://www.senamhi.gob.pe"
+ENDPOINT = "https://www.senamhi.gob.pe/include/ajax-informacion-diaria-piura.php"
+PUBLIC_PAGE = "https://www.senamhi.gob.pe/?p=monitoreo-informacion-diaria"
+LIMA = timezone(timedelta(hours=-5))
+MISSING_SENTINELS = {-999.0, -9999.0}
 
 
-def get(url, timeout=35):
-    headers = {
-        "User-Agent": "IRFEN-v0.8-scientific-probe/1.0 (+https://github.com/IRFEN2026/irfen-peru)",
-        "Accept": "text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8",
-    }
-    r = requests.get(url, headers=headers, timeout=timeout, allow_redirects=True)
-    return r
+def normalized(value):
+    text = unicodedata.normalize("NFD", str(value or ""))
+    return "".join(ch for ch in text if unicodedata.category(ch) != "Mn").upper()
 
 
-def compact(text, n=1200):
-    text = html.unescape(text or "")
-    text = re.sub(r"\s+", " ", text).strip()
-    return text[:n]
+def rows_from_response(payload):
+    content = payload.get("content") if isinstance(payload, dict) else None
+    if isinstance(content, dict):
+        return list(content.values())
+    if isinstance(content, list):
+        return content
+    return []
 
 
-def extract_candidates(text):
-    """Extrae candidatos numéricos sin asumir cuál representa el caudal actual."""
-    decoded = html.unescape(text or "")
-    out = []
+def extract_station(payload, station_id=STATION_ID):
+    """Devuelve una lectura solo si estación, unidad y valor son inequívocos."""
+    if not isinstance(payload, dict) or payload.get("success") is not True:
+        return None, "API_RESPONSE_NOT_SUCCESSFUL"
+    matches = [row for row in rows_from_response(payload) if str(row.get("codEsta")) == station_id]
+    if len(matches) != 1:
+        return None, "STATION_NOT_UNIQUE"
+    row = matches[0]
+    if "PUENTE NACARA" not in normalized(row.get("nomEsta")):
+        return None, "STATION_NAME_MISMATCH"
+    unit = str(row.get("unidad") or "").replace("³", "3").replace(" ", "").lower()
+    if unit != "m3/s":
+        return None, "UNIT_NOT_FLOW"
+    try:
+        value = float(row.get("dato"))
+    except (TypeError, ValueError):
+        return None, "VALUE_NOT_NUMERIC"
+    if not math.isfinite(value) or value < 0 or value in MISSING_SENTINELS:
+        return None, "VALUE_MISSING_OR_INVALID"
+    return {
+        "station_id": station_id,
+        "station_name": row.get("nomEsta"),
+        "basin": row.get("nomCuenca"),
+        "department": row.get("nomDepa"),
+        "variable": "CAUDAL",
+        "value": value,
+        "unit": "m3/s",
+        "trend_code": row.get("tendencia"),
+        "official_reference_red": row.get("umbralRojo"),
+        "official_reference_red_use": "SOURCE_METADATA_ONLY_NOT_IRFEN_THRESHOLD",
+    }, None
 
-    # Frases explícitas con caudal y unidades.
-    patterns = [
-        r"(?:CAUDAL|Caudal|caudal)[^0-9]{0,80}([0-9]+(?:[\.,][0-9]+)?)\s*(?:m3/s|m³/s|m3\/s)",
-        r"([0-9]+(?:[\.,][0-9]+)?)\s*(?:m3/s|m³/s|m3\/s)[^<\n]{0,80}",
-    ]
-    for pat in patterns:
-        for m in re.finditer(pat, decoded, flags=re.I):
-            raw = m.group(1).replace(",", ".")
-            try:
-                value = float(raw)
-            except Exception:
-                continue
-            ctx = compact(decoded[max(0, m.start()-120):m.end()+120], 360)
-            out.append({"value": value, "unit": "m3/s", "context": ctx, "method": "explicit_unit_regex"})
 
-    # Estructuras JS típicas Highcharts / arrays de series.
-    for m in re.finditer(r"(?:data|series)\s*[:=]\s*(\[[^;]{20,5000}\])", decoded, flags=re.I|re.S):
-        chunk = m.group(1)
-        if "Date.UTC" in chunk or "timestamp" in chunk.lower() or "caudal" in decoded[max(0,m.start()-400):m.start()].lower():
-            out.append({"method": "javascript_series_fragment", "fragment": compact(chunk, 1400)})
-            if len(out) >= 25:
-                break
-
-    # Deduplicar valores explícitos.
-    seen = set(); dedup = []
-    for item in out:
-        key = (item.get("method"), item.get("value"), item.get("context"), item.get("fragment"))
-        if key in seen:
-            continue
-        seen.add(key); dedup.append(item)
-    return dedup[:30]
+def query_time(now=None):
+    current = (now or datetime.now(timezone.utc)).astimezone(LIMA)
+    # El tablero publica cortes horarios; nunca pedimos una hora futura.
+    return current.replace(minute=0, second=0, microsecond=0)
 
 
 def main():
-    now = datetime.now(timezone.utc)
-    local_guess = now - timedelta(hours=5)  # Perú UTC-5, solo para formar fecha de consulta.
-    fecha_hora = local_guess.strftime("%Y-%m-%d %H:00:00")
+    generated_at = datetime.now(timezone.utc)
+    requested_at = query_time(generated_at)
+    request_fields = {
+        "fecha": requested_at.strftime("%Y-%m-%d"),
+        "hora": requested_at.strftime("%H:00"),
+    }
+    headers = {
+        "User-Agent": "IRFEN-v0.8-scientific-probe/1.0 (+https://github.com/IRFEN2026/irfen-peru)",
+        "Accept": "application/json",
+        "Referer": PUBLIC_PAGE,
+    }
 
-    urls = [
-        (
-            "station_chart_current",
-            BASE + "/mapas/mapa-monitoreohidro/include/mnt-grafica-new.php"
-            + f"?fecha_hora={requests.utils.quote(fecha_hora)}&id={STATION_ID}&variable=CAUDAL&variable_opcion=C",
-        ),
-        (
-            "piura_monitoring",
-            BASE + "/servicios/main.php?dp=piura&p=monitoreo-piura",
-        ),
-        (
-            "daily_hydrology",
-            BASE + "/servicios/main.php?dp=piura&p=monitoreo-informacion-diaria",
-        ),
-    ]
-
-    probes = []
-    for name, url in urls:
-        row = {"name": name, "url": url}
-        try:
-            r = get(url)
-            row.update({
-                "http_status": r.status_code,
-                "final_url": r.url,
-                "content_type": r.headers.get("content-type"),
-                "content_length": len(r.content),
-                "contains_station_id": STATION_ID in r.text,
-                "contains_nacara": bool(re.search(r"[ÑNn]acara|[ÑNn]ácara", r.text, flags=re.I)),
-                "contains_caudal": "caudal" in r.text.lower(),
-                "candidate_count": len(extract_candidates(r.text)),
-                "candidates": extract_candidates(r.text),
-                "html_excerpt": compact(r.text, 1800),
+    http = {"endpoint": ENDPOINT, "method": "POST", "request_fields": request_fields}
+    reading = None
+    rejection_reason = None
+    try:
+        request = Request(
+            ENDPOINT,
+            data=urlencode(request_fields).encode("utf-8"),
+            headers=headers,
+            method="POST",
+        )
+        with urlopen(request, timeout=30) as response:
+            body = response.read()
+            http.update({
+                "status": response.status,
+                "content_type": response.headers.get("content-type"),
+                "bytes": len(body),
             })
-        except Exception as exc:
-            row.update({
-                "http_status": None,
-                "error_type": type(exc).__name__,
-                "error": str(exc),
-            })
-        probes.append(row)
+        payload = json.loads(body.decode("utf-8"))
+        reading, rejection_reason = extract_station(payload)
+        http["api_success"] = payload.get("success") is True
+        http["returned_station_count"] = len(rows_from_response(payload))
+    except Exception as exc:
+        rejection_reason = type(exc).__name__
+        http.update({"error_type": type(exc).__name__, "error": str(exc)[:800]})
 
-    explicit = []
-    for p in probes:
-        for c in p.get("candidates", []):
-            if c.get("method") == "explicit_unit_regex" and c.get("value") is not None:
-                explicit.append({"source_probe": p["name"], **c})
-
-    # Importante: no asumir que un valor hallado es el último caudal solo porque
-    # aparece en el HTML. Esa homologación requiere timestamp/serie inequívocos.
+    candidate_available = reading is not None
     result = {
         "version": "0.8-experimental",
-        "generated_at": now.isoformat(),
+        "generated_at": generated_at.isoformat(),
         "production_use": False,
         "production_ready": False,
-        "station": "Puente Ñácara",
-        "station_id": STATION_ID,
-        "river": "Río Piura",
-        "query_local_time_assumption": "UTC-5",
-        "query_fecha_hora": fecha_hora,
-        "status": "NUMERIC_CANDIDATES_FOUND_NEED_SEMANTIC_VALIDATION" if explicit else "NO_UNAMBIGUOUS_NUMERIC_VALUE_FOUND",
-        "numeric_river_state_available": False,
-        "explicit_numeric_candidates": explicit,
-        "probes": probes,
+        "integration_mode": "TEST_ONLY",
+        "source": {
+            "agency": "SENAMHI",
+            "public_page": PUBLIC_PAGE,
+            "endpoint": ENDPOINT,
+        },
+        "query": {
+            "requested_observation_time": requested_at.isoformat(),
+            "timezone": "America/Lima (UTC-05:00)",
+            "time_is_request_selector": True,
+            "response_echoes_observation_time": False,
+        },
+        "status": (
+            "OFFICIAL_NUMERIC_RIVER_STATE_CANDIDATE_AVAILABLE"
+            if candidate_available else "NO_VALID_NUMERIC_READING"
+        ),
+        "numeric_river_state_available": candidate_available,
+        "reading": reading,
+        "rejection_reason": rejection_reason,
+        "http": http,
+        "channel_validation": {
+            "exact_station_code_required": STATION_ID,
+            "station_name_required": "PUENTE ÑACARA",
+            "flow_unit_required": "m3/s",
+            "missing_sentinels_rejected": sorted(MISSING_SENTINELS),
+            "request_time_stored": True,
+            "response_time_echo_pending": True,
+        },
         "scientific_gate": {
-            "status": "AUTOMATIC_NUMERIC_ACCESS_UNRESOLVED",
-            "rule": "No marcar numeric_river_state_available=true hasta asociar de forma inequívoca valor, timestamp, estación y variable desde una respuesta oficial estable.",
+            "status": "TEST_ONLY_NUMERIC_CHANNEL_FOUND" if candidate_available else "AUTOMATIC_NUMERIC_ACCESS_UNRESOLVED",
+            "remaining_gap": (
+                "Acumular frescura y continuidad; validar tiempo de tránsito Ñácara-Bajo Piura y capacidad hidráulica. "
+                "La hora es el selector de consulta pero no vuelve en la respuesta JSON."
+            ),
+            "prohibitions": [
+                "No usar como alerta operativa.",
+                "No trasladar el valor de Ñácara directamente a Catacaos.",
+                "No adoptar umbralRojo como umbral IRFEN sin contrato hidráulico.",
+                "No interpretar una lectura ausente como caudal cero o riesgo bajo.",
+            ],
         },
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps({
         "status": result["status"],
-        "explicit_numeric_candidates": explicit[:8],
-        "probes": [
-            {k: p.get(k) for k in ("name","http_status","content_length","candidate_count","error_type")}
-            for p in probes
-        ],
+        "requested_observation_time": result["query"]["requested_observation_time"],
+        "reading": reading,
+        "rejection_reason": rejection_reason,
+        "http_status": http.get("status"),
     }, ensure_ascii=False, indent=2))
-    return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()

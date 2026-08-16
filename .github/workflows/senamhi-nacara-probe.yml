@@ -2,6 +2,8 @@ name: IRFEN - Probar SENAMHI Puente Nacara numerico v0.8
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "23 * * * *"
   push:
     branches:
       - main
@@ -11,6 +13,10 @@ on:
 
 permissions:
   contents: write
+
+concurrency:
+  group: "senamhi-nacara-numeric-probe"
+  cancel-in-progress: true
 
 jobs:
   probe:
@@ -26,9 +32,6 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Instalar requests
-        run: pip install requests
-
       - name: Probar acceso numerico SENAMHI PHISIS
         run: python scripts/probe_senamhi_nacara_numeric.py
 
@@ -42,8 +45,20 @@ jobs:
           p=json.loads(Path('site/data/hydrology/senamhi_nacara_numeric_probe.json').read_text())
           assert p.get('production_use') is False
           assert p.get('production_ready') is False
-          assert p.get('numeric_river_state_available') is False
-          assert (p.get('scientific_gate') or {}).get('status') == 'AUTOMATIC_NUMERIC_ACCESS_UNRESOLVED'
+          assert p.get('integration_mode') == 'TEST_ONLY'
+          assert (p.get('scientific_gate') or {}).get('status') in {
+              'TEST_ONLY_NUMERIC_CHANNEL_FOUND',
+              'AUTOMATIC_NUMERIC_ACCESS_UNRESOLVED',
+          }
+          if p.get('numeric_river_state_available'):
+              r=p.get('reading') or {}
+              assert r.get('station_id') == '47E0415A'
+              assert r.get('unit') == 'm3/s'
+              assert r.get('variable') == 'CAUDAL'
+              assert float(r.get('value')) >= 0
+              assert r.get('official_reference_red_use') == 'SOURCE_METADATA_ONLY_NOT_IRFEN_THRESHOLD'
+          else:
+              assert p.get('reading') is None
           print('Probe SENAMHI confinado correctamente a descubrimiento')
           PY
 
