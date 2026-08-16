@@ -9,7 +9,7 @@ from pathlib import Path
 import json
 import sys
 
-from build_v08_scorecard import external_validation_gate, final_release_audit_gate
+from build_v08_scorecard import external_validation_gate, final_release_audit_gate, target_window_gate
 
 ROOT=Path(__file__).resolve().parents[1]
 SITE=ROOT/'site'
@@ -160,12 +160,25 @@ def main():
     check('closeout_contract_shadow_requires_event_day',int(shadow_contract.get('minimum_verified_event_days',0))>=1)
     check('closeout_contract_shadow_requires_none_days',int(shadow_contract.get('minimum_verified_none_days',0))>=1)
     check('closeout_contract_release_completion_explicit',closeout_contract.get('release_completion_marker')=='Release status: COMPLETE')
+    check('closeout_contract_catacaos_supplemental_imerg_release_gate',(closeout_contract.get('imerg_early') or {}).get('supplemental_release_target_ids')==['catacaos'])
     check('closeout_shadow_review_protocol_present',(ROOT/'docs/SHADOW_OUTCOME_REVIEW_PROTOCOL.md').is_file())
     check('closeout_shadow_review_tool_present',(ROOT/'scripts/review_shadow_outcome.py').is_file())
     check('closeout_final_audit_rejects_missing_shadow',final_release_audit_gate(False,True,True) is False)
     check('closeout_final_audit_rejects_scientific_blockers',final_release_audit_gate(True,False,True) is False)
     check('closeout_final_audit_rejects_incomplete_release',final_release_audit_gate(True,True,False) is False)
     check('closeout_final_audit_accepts_all_prerequisites',final_release_audit_gate(True,True,True) is True)
+    synthetic_windows={
+        'catacaos':{
+            '3h':{'available':True,'continuous':True},
+            '6h':{'available':True,'continuous':True},
+            '24h':{'available':False,'continuous':False},
+        }
+    }
+    synthetic_passed,_=target_window_gate(synthetic_windows,['catacaos'],['3h','6h','24h'])
+    check('closeout_catacaos_supplemental_window_rejects_incomplete_24h',synthetic_passed is False)
+    synthetic_windows['catacaos']['24h']={'available':True,'continuous':True}
+    synthetic_passed,_=target_window_gate(synthetic_windows,['catacaos'],['3h','6h','24h'])
+    check('closeout_catacaos_supplemental_window_accepts_complete_3h_6h_24h',synthetic_passed is True)
     external_passed,external_detail=external_validation_gate(external_contract,external_ledger,['san_ildefonso','chosica','catacaos'])
     check('external_validation_contract_not_production',external_contract.get('production_use') is False)
     check('external_validation_ledger_not_production',external_ledger.get('production_use') is False)

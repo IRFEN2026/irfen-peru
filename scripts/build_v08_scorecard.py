@@ -46,6 +46,19 @@ def final_release_audit_gate(shadow_gate_passed: bool, scientific_gate_passed: b
     return bool(shadow_gate_passed and scientific_gate_passed and release_document_complete)
 
 
+def target_window_gate(rolling: dict, targets: list[str], windows: list[str]):
+    """Require every declared rolling window to be both available and continuous."""
+    evidence = {
+        target: {
+            window: bool((rolling.get(target) or {}).get(window, {}).get("available"))
+            and bool((rolling.get(target) or {}).get(window, {}).get("continuous"))
+            for window in windows
+        }
+        for target in targets
+    }
+    return bool(evidence) and all(all(values.values()) for values in evidence.values()), evidence
+
+
 def external_validation_gate(contract: dict, ledger: dict, pilots: list[str]):
     """Accept external evidence only when every required item is traceable and reviewed."""
     contract_by = {row.get("zone_id"): row for row in contract.get("pilots", [])}
@@ -168,14 +181,7 @@ def main():
     rolling = early.get("rolling_by_target") or {}
     targets = early_contract.get("target_ids") or []
     windows = early_contract.get("required_windows") or []
-    target_windows = {
-        target: {
-            window: bool((rolling.get(target) or {}).get(window, {}).get("available"))
-            and bool((rolling.get(target) or {}).get(window, {}).get("continuous"))
-            for window in windows
-        }
-        for target in targets
-    }
+    target_windows_passed, target_windows = target_window_gate(rolling, targets, windows)
     latency_fields = ("latency_median_hours", "latency_p90_hours", "latency_max_hours")
     checks50 = [
         item(
@@ -201,7 +207,7 @@ def main():
         ),
         item(
             "imerg_windows_3h_6h_24h_valid_for_all_targets",
-            bool(target_windows) and all(all(v.values()) for v in target_windows.values()),
+            target_windows_passed,
             target_windows,
         ),
     ]
@@ -268,6 +274,8 @@ def main():
     release_path = ROOT / str(contract.get("release_document", "docs/V08_RELEASE.md"))
     release_text = release_path.read_text(encoding="utf-8") if release_path.is_file() else ""
     release_marker = str(contract.get("release_completion_marker", "Release status: COMPLETE"))
+    supplemental_targets = early_contract.get("supplemental_release_target_ids") or []
+    supplemental_windows_passed, supplemental_windows = target_window_gate(rolling, supplemental_targets, windows)
     shadow_gate_passed = (
         len(reviewed) >= required_reviewed
         and int(reviewed_label_counts.get("EVENT", 0)) >= minimum_event_days
@@ -318,10 +326,16 @@ def main():
         ),
         item(
             "final_audit_and_release_documented",
-            final_release_audit_gate(shadow_gate_passed, scientific_gate_passed, release_document_complete),
+            final_release_audit_gate(
+                shadow_gate_passed,
+                scientific_gate_passed,
+                release_document_complete and supplemental_windows_passed,
+            ),
             {
                 "prerequisite_shadow_gate_passed": shadow_gate_passed,
                 "prerequisite_scientific_gate_passed": scientific_gate_passed,
+                "supplemental_imerg_release_gate_passed": supplemental_windows_passed,
+                "supplemental_imerg_windows": supplemental_windows,
                 "regression_status": test_report.get("status"),
                 "scientific_production_ready": scientific.get("production_ready"),
                 "release_document": str(release_path.relative_to(ROOT)),
