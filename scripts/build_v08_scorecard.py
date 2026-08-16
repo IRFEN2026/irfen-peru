@@ -7,7 +7,7 @@ en autorización de producción.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 import json
 
@@ -57,6 +57,17 @@ def target_window_gate(rolling: dict, targets: list[str], windows: list[str]):
         for target in targets
     }
     return bool(evidence) and all(all(values.values()) for values in evidence.values()), evidence
+
+
+def review_after_utc_day_close(record: dict):
+    try:
+        snapshot_day = date.fromisoformat(str(record.get("snapshot_date_utc")))
+        closed_at = datetime.combine(snapshot_day + timedelta(days=1), time.min, tzinfo=timezone.utc)
+        reviewed_at = str((record.get("outcome_verification") or {}).get("reviewed_at"))
+        reviewed = datetime.fromisoformat(reviewed_at.replace("Z", "+00:00"))
+        return reviewed.tzinfo is not None and reviewed.astimezone(timezone.utc) >= closed_at
+    except Exception:
+        return False
 
 
 def external_validation_gate(contract: dict, ledger: dict, pilots: list[str]):
@@ -114,6 +125,7 @@ def shadow_record_eligibility(record: dict, pilots: list[str], minimum_pairs_per
         "imerg_early_available": health.get("imerg_early_status") == "EARLY_HALFHOURLY_SOURCE_AVAILABLE",
         "imerg_latency_recorded": health.get("imerg_early_latency_hours") is not None,
         "regression_passed": health.get("regression_status") == "PASS",
+        "outcome_review_after_utc_day_close": review_after_utc_day_close(record),
     }
     return {"eligible": all(checks.values()), "checks": checks}
 
