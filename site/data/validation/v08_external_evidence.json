@@ -1,15 +1,26 @@
 {
   "version": "0.8-external-evidence-v1",
-  "generated_at": "2026-08-15T23:10:00Z",
+  "generated_at": "2026-08-16T06:15:00Z",
   "production_use": false,
   "status": "BLOCKED",
   "purpose": "Registro trazable de evidencia externa; los elementos faltantes mantienen el cierre bloqueado y nunca equivalen a bajo riesgo.",
+  "candidate_rule": "CANDIDATE_REVIEW y PARTIAL_CANDIDATE_REVIEW solo preparan la revisión humana; nunca equivalen a ACCEPTED ni cierran un bloqueo.",
   "pilots": [
     {
       "zone_id": "san_ildefonso",
       "status": "BLOCKED",
       "items": [
-        {"evidence_id": "current_integral_system_as_built_status", "status": "MISSING"},
+        {
+          "evidence_id": "current_integral_system_as_built_status",
+          "status": "PARTIAL_CANDIDATE_REVIEW",
+          "official_sources": [
+            "https://www.gob.pe/institucion/regionlalibertad/noticias/1395875-dique-definitivo-en-parte-alta-de-san-ildefonso-ya-esta-operativo-y-reducira-riesgo-de-huaicos-en-trujillo",
+            "https://www.gob.pe/institucion/anin/noticias/1029559-anin-conectan-tunel-de-trasvase-del-proyecto-san-idelfonso-y-san-carlos-que-permitira-desviar-aguas-ante-posibles-inundaciones",
+            "https://www.gob.pe/institucion/anin/noticias/1412454-anin-y-titular-de-pcm-supervisan-avance-de-las-defensas-riberenas-del-rio-moche"
+          ],
+          "preliminary_assessment": "Las fuentes oficiales documentan un dique operativo, el túnel conectado y obras todavía en ejecución; son evidencia de avance, no un expediente as-built integral aceptado.",
+          "remaining_gap": "Acta o expediente consolidado de recepción, configuración final y estado operativo de todos los componentes."
+        },
         {"evidence_id": "component_capacity_and_overflow_rules", "status": "MISSING"},
         {"evidence_id": "sediment_obstruction_and_maintenance_condition", "status": "MISSING"},
         {"evidence_id": "observed_events_with_current_system", "status": "MISSING"},
@@ -20,22 +31,99 @@
       "zone_id": "chosica",
       "status": "BLOCKED",
       "items": [
-        {"evidence_id": "huaycoloro_channel_as_built_capacity", "status": "MISSING"},
-        {"evidence_id": "overflow_restriction_and_maintenance_condition", "status": "MISSING"},
+        {
+          "evidence_id": "huaycoloro_channel_as_built_capacity",
+          "status": "PARTIAL_CANDIDATE_REVIEW",
+          "official_sources": [
+            "https://www.gob.pe/institucion/anin/noticias/1247801-huaycoloro-nunca-mas-obra-protegera-a-miles-de-habitantes-de-campoy-nieveria-huachipa-y-cajamarquilla",
+            "https://www.gob.pe/institucion/anin/noticias/1079672-anin-proyecto-quebrada-huaycoloro-presenta-98-de-ejecucion-fisica"
+          ],
+          "preliminary_assessment": "Las fuentes documentan el canal de 10.5 km y sus componentes, pero no aportan una capacidad hidráulica as-built revisable.",
+          "remaining_gap": "Memoria hidráulica as-built, capacidad por tramo y criterios de rebose."
+        },
+        {
+          "evidence_id": "overflow_restriction_and_maintenance_condition",
+          "status": "PARTIAL_CANDIDATE_REVIEW",
+          "official_sources": [
+            "https://www.gob.pe/institucion/anin/noticias/1423006-anin-articula-acciones-inmediatas-para-proteger-el-canal-huaycoloro-del-ingreso-ilegal-de-vehiculos"
+          ],
+          "preliminary_assessment": "La actuación oficial confirma una amenaza de acceso y obstrucción, pero no sustituye una inspección hidráulica del canal.",
+          "remaining_gap": "Inspección fechada de sedimentos, obstrucciones, restricciones y puntos de desborde."
+        },
         {"evidence_id": "observed_events_after_2025_inauguration", "status": "MISSING"},
         {"evidence_id": "rainfall_to_impact_hydraulic_review", "status": "MISSING"},
-        {"evidence_id": "pedregal_live_ground_signal_validation", "status": "MISSING"}
+        {
+          "evidence_id": "pedregal_live_ground_signal_validation",
+          "status": "PARTIAL_CANDIDATE_REVIEW",
+          "official_sources": [
+            "https://www.gob.pe/institucion/senamhi/noticias/1331936-plataforma-isaac-del-senamhi-monitorea-de-forma-continua-lluvias-que-puedan-activar-quebradas-en-chosica-y-chaclacayo"
+          ],
+          "internal_artifacts": [
+            "site/data/stations/isaac_access_probe.json",
+            "site/data/calibration/pedregal_ground_evidence_2015.json"
+          ],
+          "preliminary_assessment": "SENAMHI identifica Pedregal Koica en ISAAC y el control histórico muestra subcaptura satelital; todavía no existe una serie viva archivada y revisada.",
+          "remaining_gap": "Acumular observaciones ISAAC fechadas, controles sin impacto y revisión humana de correspondencia con IMERG."
+        }
       ]
     },
     {
       "zone_id": "catacaos",
       "status": "BLOCKED",
       "items": [
-        {"evidence_id": "official_numeric_river_state_channel", "status": "MISSING"},
-        {"evidence_id": "upstream_to_bajo_piura_location_harmonization", "status": "MISSING"},
-        {"evidence_id": "current_channel_capacity_and_critical_levels", "status": "MISSING"},
-        {"evidence_id": "current_floodplain_and_defense_condition", "status": "MISSING"},
-        {"evidence_id": "operational_vs_projected_urban_drainage", "status": "MISSING"},
+        {
+          "evidence_id": "official_numeric_river_state_channel",
+          "status": "PARTIAL_CANDIDATE_REVIEW",
+          "official_sources": [
+            "https://www.senamhi.gob.pe/?p=pronostico-caudales",
+            "https://servicios.regionpiura.gob.pe/datosh"
+          ],
+          "internal_artifacts": ["site/data/hydrology/piura_source_status.json"],
+          "preliminary_assessment": "Existen canales oficiales de SENAMHI y GORE Piura, pero no se ha resuelto una lectura numérica actual, automática y trazable desde Actions.",
+          "remaining_gap": "Canal documentado con nivel o caudal, estación, unidad, hora y control de frescura."
+        },
+        {
+          "evidence_id": "upstream_to_bajo_piura_location_harmonization",
+          "status": "PARTIAL_CANDIDATE_REVIEW",
+          "official_sources": [
+            "https://www.senamhi.gob.pe/servicios/?ca=28012&ce=47E0415A&p=avisos-detalle-hidrologicos"
+          ],
+          "internal_artifacts": ["site/data/hydrology/piura_source_status.json"],
+          "preliminary_assessment": "Puente Ñácara está identificado como referencia oficial aguas arriba, pero su relación temporal e hidráulica con Bajo Piura no está validada.",
+          "remaining_gap": "Tiempo de tránsito, correspondencia de estaciones y reglas de interpretación para Catacaos."
+        },
+        {
+          "evidence_id": "current_channel_capacity_and_critical_levels",
+          "status": "PARTIAL_CANDIDATE_REVIEW",
+          "official_sources": [
+            "https://sigrid.cenepred.gob.pe/sigridv3/documento/21411"
+          ],
+          "internal_artifacts": [
+            "site/data/hydrology/ana_piura_critical_points_2026.json",
+            "site/data/hydrology/ana_catacaos_critical_segments_2026_validation.json"
+          ],
+          "preliminary_assessment": "Las fichas ANA 2026 ubican puntos críticos de inundación y erosión, pero no demuestran la capacidad hidráulica actual del cauce.",
+          "remaining_gap": "Secciones, cotas críticas y capacidad actual verificadas para el tramo relevante de Bajo Piura."
+        },
+        {
+          "evidence_id": "current_floodplain_and_defense_condition",
+          "status": "PARTIAL_CANDIDATE_REVIEW",
+          "official_sources": [
+            "https://sigrid.cenepred.gob.pe/sigridv3/documento/21411",
+            "https://www.gob.pe/institucion/anin/noticias/1420553-anin-logra-destrabar-proyecto-de-proteccion-del-rio-piura-y-obtiene-su-viabilidad"
+          ],
+          "preliminary_assessment": "La evidencia oficial identifica puntos críticos y un proyecto integral viable; no acredita el estado actual completo de defensas y planicie.",
+          "remaining_gap": "Inspección vigente de defensas existentes y cartografía de inundación/cotas aceptada para operación."
+        },
+        {
+          "evidence_id": "operational_vs_projected_urban_drainage",
+          "status": "CANDIDATE_REVIEW",
+          "official_sources": [
+            "https://www.gob.pe/institucion/anin/noticias/1412429-anin-logra-viabilidad-de-proyecto-de-drenaje-pluvial-para-piura-castilla-veintiseis-de-octubre-y-catacaos"
+          ],
+          "preliminary_assessment": "La fuente oficial documenta viabilidad del proyecto en junio de 2026; por tanto, el sistema integral proyectado no debe tratarse como infraestructura ya operativa.",
+          "remaining_gap": "Revisión humana y contraste con los sistemas locales que sí estén operativos en Catacaos."
+        },
         {"evidence_id": "observed_river_state_to_impact_review", "status": "MISSING"}
       ]
     }

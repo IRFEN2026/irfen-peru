@@ -239,6 +239,15 @@ def main():
     check('external_validation_ledger_not_production',external_ledger.get('production_use') is False)
     check('external_validation_exact_pilots',set(external_detail)=={'san_ildefonso','chosica','catacaos'})
     check('external_validation_missing_evidence_stays_blocked',external_passed is False)
+    check('external_validation_candidates_prepared',sum(x.get('candidate_count',0) for x in external_detail.values())>=1)
+    check('external_validation_candidates_not_accepted',sum(x.get('accepted_count',0) for x in external_detail.values())==0)
+    candidate_items=[
+        item
+        for pilot in external_ledger.get('pilots',[])
+        for item in pilot.get('items',[])
+        if item.get('status') in {'CANDIDATE_REVIEW','PARTIAL_CANDIDATE_REVIEW'}
+    ]
+    check('external_validation_candidates_have_official_sources',bool(candidate_items) and all(item.get('official_sources') for item in candidate_items))
     check('external_validation_no_automatic_acceptance',(external_contract.get('acceptance_rules') or {}).get('automatic_acceptance_forbidden') is True)
     check('external_validation_no_threshold_promotion',(external_contract.get('acceptance_rules') or {}).get('threshold_or_hydraulic_factor_promotion')=='FORBIDDEN')
     if closeout_scorecard is not None:

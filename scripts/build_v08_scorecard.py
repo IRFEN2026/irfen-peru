@@ -86,10 +86,18 @@ def external_validation_gate(contract: dict, ledger: dict, pilots: list[str]):
             and (row.get("review") or {}).get("reviewed_at")
             and (row.get("review") or {}).get("automatic") is False
         }
+        candidates = {
+            row.get("evidence_id") for row in items
+            if row.get("status") in {"CANDIDATE_REVIEW", "PARTIAL_CANDIDATE_REVIEW"}
+            and row.get("official_sources")
+        }
         missing = sorted(required - accepted)
         evidence[zone_id] = {
             "required_count": len(required),
             "accepted_count": len(required & accepted),
+            "candidate_count": len(required & candidates),
+            "candidate_evidence_ids": sorted(required & candidates),
+            "missing_without_candidate_count": len(required - accepted - candidates),
             "missing_or_unaccepted_evidence_ids": missing,
             "passed": bool(required) and not missing,
         }
