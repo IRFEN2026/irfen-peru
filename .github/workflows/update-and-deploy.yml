@@ -50,7 +50,9 @@ permissions:
 
 concurrency:
   group: "pages"
-  cancel-in-progress: true
+  # El probe IMERG puede ordenar una publicación mientras esta validación corre.
+  # Ambas deben esperar turno: cancelar aquí omitiría pruebas antes de desplegar.
+  cancel-in-progress: false
 
 jobs:
   build:
