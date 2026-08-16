@@ -6,6 +6,7 @@ an existing pre-outcome snapshot with official evidence gathered later.
 """
 from __future__ import annotations
 
+from copy import deepcopy
 from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlparse
@@ -50,6 +51,7 @@ def apply_review(
     verified_event: str | None = None,
     comprehensive_none_coverage: bool = False,
     reviewed_at: str | None = None,
+    replace_existing_review: bool = False,
 ):
     if label not in ALLOWED_LABELS:
         raise ValueError(f"Etiqueta no permitida: {label}")
@@ -75,6 +77,20 @@ def apply_review(
     window_closed_at = review_window_closed_at(snapshot_date)
     if review_time < window_closed_at:
         raise ValueError("La jornada UTC aún no ha cerrado; no se permite revisar un resultado parcial")
+
+    previous_review = record.get("outcome_verification") or {}
+    previous_status = previous_review.get("status")
+    if previous_status and previous_status != "PENDING_REAL_WORLD_OUTCOME_REVIEW":
+        if not replace_existing_review:
+            raise ValueError(
+                "La fotografía ya tiene una revisión; use reemplazo explícito para corregirla"
+            )
+        previous_reviewed_at = previous_review.get("reviewed_at")
+        if previous_reviewed_at and review_time <= parse_utc_timestamp(previous_reviewed_at):
+            raise ValueError("La corrección debe tener un reviewed_at posterior a la revisión existente")
+        archived_review = deepcopy(previous_review)
+        archived_review["superseded_at"] = review_time.isoformat()
+        record.setdefault("outcome_verification_history", []).append(archived_review)
 
     record["outcome_verification"] = {
         "status": "REVIEWED_REAL_WORLD_OUTCOME",
@@ -102,6 +118,11 @@ def main():
     parser.add_argument("--notes", required=True)
     parser.add_argument("--verified-event")
     parser.add_argument("--comprehensive-none-coverage", action="store_true")
+    parser.add_argument(
+        "--replace-existing-review",
+        action="store_true",
+        help="Corrige una revisión previa y conserva su versión en el historial",
+    )
     parser.add_argument("--archive", type=Path, default=ARCHIVE)
     args = parser.parse_args()
 
@@ -114,6 +135,7 @@ def main():
         notes=args.notes,
         verified_event=args.verified_event,
         comprehensive_none_coverage=args.comprehensive_none_coverage,
+        replace_existing_review=args.replace_existing_review,
     )
     args.archive.write_text(json.dumps(archive, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps({"snapshot_date_utc": args.date, **review}, ensure_ascii=False, indent=2))
