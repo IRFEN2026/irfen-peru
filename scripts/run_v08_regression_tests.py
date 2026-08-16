@@ -51,6 +51,8 @@ def main():
     external_contract=load(ROOT/'config/v08_external_validation_contract.json')
     external_ledger=load(SITE/'data/validation/v08_external_evidence.json')
     closeout_scorecard=optional(SITE/'data/v08_scorecard.json')
+    publish_workflow=(ROOT/'.github/workflows/publish-committed-data.yml').read_text(encoding='utf-8')
+    smoke_workflow=(ROOT/'.github/workflows/live-smoke-test.yml').read_text(encoding='utf-8')
     glofas_current=optional(SITE/'data/hydrology/glofas_catacaos_current.json')
 
     # Contrato matemático v0.7.1: nunca cambia como efecto colateral de v0.8.
@@ -158,6 +160,15 @@ def main():
 
     # Scorecard de cierre: hitos discretos, acumulativos y sin efecto operativo.
     check('closeout_contract_not_production',closeout_contract.get('production_use') is False)
+    check(
+        'archived_publish_explicitly_dispatches_full_smoke',
+        'actions: write' in publish_workflow
+        and 'gh workflow run live-smoke-test.yml' in publish_workflow,
+    )
+    check(
+        'live_smoke_avoids_duplicate_archived_publish_trigger',
+        'IRFEN - Publicar datos experimentales archivados' not in smoke_workflow,
+    )
     check('closeout_contract_exact_pilots',closeout_contract.get('pilot_zone_ids')==['san_ildefonso','chosica','catacaos'])
     check('closeout_contract_fixed_milestones',closeout_contract.get('milestone_percentages')==[25,50,75,100])
     shadow_contract=closeout_contract.get('shadow_validation') or {}
