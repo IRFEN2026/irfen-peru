@@ -23,7 +23,9 @@ OFFICIAL_HOST_SUFFIXES = (
     "ana.gob.pe",
     "indeci.gob.pe",
     "cenepred.gob.pe",
+    "concytec.gob.pe",
     "igp.gob.pe",
+    "mef.gob.pe",
     "regionpiura.gob.pe",
     "gob.pe",
 )
