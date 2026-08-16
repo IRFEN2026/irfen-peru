@@ -288,8 +288,8 @@ def select_bounded_granules(
     selected_names = {indexed[-1][1]}
     candidates = (
         list(reversed(continuity_missing))
-        + list(bootstrap_missing)
         + list(reversed(target_incomplete))
+        + list(bootstrap_missing)
     )
     for row in candidates:
         if not row[1] or row[1] in selected_names:
@@ -460,8 +460,8 @@ def main():
         })
 
     # Always include the newest granule for latency. The remaining bounded
-    # slots repair the newest continuity gaps first; only spare capacity is
-    # used by the finite Catacaos event replay.
+    # slots repair the newest continuity and target-coverage gaps first; only
+    # spare capacity is used by the finite Catacaos event replay.
     selected = select_bounded_granules(
         indexed,
         repair_missing,
