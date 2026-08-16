@@ -142,6 +142,9 @@ def main():
         check('imerg_early_continuity_coverage_range',0<=float(summary.get('continuity_coverage_pct',0))<=100)
         check('imerg_early_missing_slots_nonnegative',int(summary.get('missing_half_hour_slots_within_span',-1))>=0)
         check('imerg_early_tail_not_longer_than_archive',int(summary.get('current_continuous_tail_samples',0))<=int(summary.get('observed_unique_timestamps',0)))
+        check('imerg_probe_cadence_count_nonnegative',int(summary.get('probe_interval_count',0))>=0)
+        cadence_gap=summary.get('probe_gap_max_hours')
+        check('imerg_probe_cadence_gap_nonnegative',cadence_gap is None or float(cadence_gap)>=0)
 
     # Expansión: preparación documental sin activar zonas ni inventar puntuaciones.
     check('phase2_inventory_not_production',phase2.get('production_use') is False)
