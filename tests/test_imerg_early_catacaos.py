@@ -177,6 +177,13 @@ class ImergPublishHandoffTests(unittest.TestCase):
         self.assertIn("published.get(freshness_key) == expected.get(freshness_key)", workflow)
         self.assertIn("published_probe == expected_probe", workflow)
 
+    def test_pull_request_validation_is_non_deploying(self):
+        workflow = (ROOT / ".github/workflows/pr-validation.yml").read_text(encoding="utf-8")
+        self.assertIn("pull_request:", workflow)
+        self.assertIn("python -m unittest discover -s tests -v", workflow)
+        self.assertIn("python scripts/run_v08_regression_tests.py", workflow)
+        self.assertNotIn("actions/deploy-pages", workflow)
+
 
 if __name__ == "__main__":
     unittest.main()
