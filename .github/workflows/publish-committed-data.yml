@@ -54,10 +54,35 @@ jobs:
       - name: Recalcular scorecard con la evidencia mas reciente
         run: python scripts/build_v08_scorecard.py
 
+      - name: Activar paneles científicos v0.8
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path=Path('site/index.html')
+          html=path.read_text(encoding='utf-8')
+          tags=[
+              '<script src="v08-experimental.js"></script>',
+              '<script src="v08-forecast.js"></script>',
+              '<script src="v08-simulator.js"></script>',
+              '<script src="v08-health.js"></script>',
+              '<script src="v08-readiness.js"></script>'
+          ]
+          for tag in tags:
+              if tag not in html:
+                  html=html.replace('</body>',tag+'\n</body>')
+          path.write_text(html,encoding='utf-8')
+          PY
+
       - name: Validar contrato antes de publicar
         shell: bash
         run: |
           test -s site/index.html
+          test -s site/v08-experimental.js
+          test -s site/v08-forecast.js
+          test -s site/v08-simulator.js
+          test -s site/v08-health.js
+          test -s site/v08-readiness.js
           test -s site/data/latest.json
           test -s site/data/experimental_state.json
           test -s site/data/test_report.json
@@ -83,6 +108,15 @@ jobs:
           assert score.get('production_use') is False
           assert score.get('production_ready') is False
           assert score.get('current_milestone_pct') in {0,25,50,75,100}
+          html=Path('site/index.html').read_text(encoding='utf-8')
+          for script in (
+              'v08-experimental.js',
+              'v08-forecast.js',
+              'v08-simulator.js',
+              'v08-health.js',
+              'v08-readiness.js',
+          ):
+              assert script in html, f'Falta {script} en index antes de publicar'
           PY
 
       - name: Configurar GitHub Pages
