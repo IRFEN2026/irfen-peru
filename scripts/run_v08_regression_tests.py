@@ -9,7 +9,7 @@ from pathlib import Path
 import json
 import sys
 
-from build_v08_scorecard import external_validation_gate, final_release_audit_gate, target_window_gate
+from build_v08_scorecard import external_validation_gate, final_release_audit_gate, review_after_utc_day_close, target_window_gate
 
 ROOT=Path(__file__).resolve().parents[1]
 SITE=ROOT/'site'
@@ -163,6 +163,13 @@ def main():
     check('closeout_contract_catacaos_supplemental_imerg_release_gate',(closeout_contract.get('imerg_early') or {}).get('supplemental_release_target_ids')==['catacaos'])
     check('closeout_shadow_review_protocol_present',(ROOT/'docs/SHADOW_OUTCOME_REVIEW_PROTOCOL.md').is_file())
     check('closeout_shadow_review_tool_present',(ROOT/'scripts/review_shadow_outcome.py').is_file())
+    premature_review={
+        'snapshot_date_utc':'2026-08-14',
+        'outcome_verification':{'reviewed_at':'2026-08-14T23:59:59+00:00'},
+    }
+    check('closeout_shadow_rejects_review_before_utc_day_close',review_after_utc_day_close(premature_review) is False)
+    premature_review['outcome_verification']['reviewed_at']='2026-08-15T00:00:00Z'
+    check('closeout_shadow_accepts_review_at_utc_day_close',review_after_utc_day_close(premature_review) is True)
     check('closeout_final_audit_rejects_missing_shadow',final_release_audit_gate(False,True,True) is False)
     check('closeout_final_audit_rejects_scientific_blockers',final_release_audit_gate(True,False,True) is False)
     check('closeout_final_audit_rejects_incomplete_release',final_release_audit_gate(True,True,False) is False)
