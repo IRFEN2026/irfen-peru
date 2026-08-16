@@ -75,6 +75,28 @@ class ReviewShadowOutcomeTests(unittest.TestCase):
                 "Fuente no oficial.",
             )
 
+    def test_review_before_utc_day_close_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "jornada UTC aún no ha cerrado"):
+            reviewer.apply_review(
+                archive(),
+                "2026-08-14",
+                "UNCERTAIN",
+                ["https://www.senamhi.gob.pe/main.php?p=aviso-24H"],
+                "La jornada todavía está en curso.",
+                reviewed_at="2026-08-14T23:59:59+00:00",
+            )
+
+    def test_review_at_utc_day_close_is_allowed(self):
+        result = reviewer.apply_review(
+            archive(),
+            "2026-08-14",
+            "UNCERTAIN",
+            ["https://www.senamhi.gob.pe/main.php?p=aviso-24H"],
+            "La jornada completa ya puede revisarse.",
+            reviewed_at="2026-08-15T00:00:00Z",
+        )
+        self.assertEqual(result["review_window_closed_utc"], "2026-08-15T00:00:00+00:00")
+
 
 if __name__ == "__main__":
     unittest.main()
