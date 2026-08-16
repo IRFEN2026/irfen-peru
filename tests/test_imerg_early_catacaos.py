@@ -132,5 +132,32 @@ class BoundedSelectionTests(unittest.TestCase):
         self.assertEqual(probe.select_bounded_granules([], [], [], limit=4), [])
 
 
+class ProbeCadenceTests(unittest.TestCase):
+    def test_reports_observed_probe_gaps_separately(self):
+        records = [
+            {"probe_generated_at": "2026-08-15T00:00:00Z"},
+            {"probe_generated_at": "2026-08-15T00:30:00Z"},
+            {"probe_generated_at": "2026-08-15T02:00:00Z"},
+        ]
+
+        result = archive.probe_cadence_summary(records)
+
+        self.assertEqual(result["probe_timestamp_count"], 3)
+        self.assertEqual(result["probe_interval_count"], 2)
+        self.assertEqual(result["probe_gap_median_hours"], 1.0)
+        self.assertEqual(result["probe_gap_max_hours"], 1.5)
+        self.assertIn("cadence", result["interpretation"].lower())
+
+    def test_invalid_probe_timestamps_do_not_create_false_intervals(self):
+        result = archive.probe_cadence_summary([
+            {"probe_generated_at": None},
+            {"probe_generated_at": "not-a-date"},
+        ])
+
+        self.assertEqual(result["probe_timestamp_count"], 0)
+        self.assertEqual(result["probe_interval_count"], 0)
+        self.assertIsNone(result["probe_gap_max_hours"])
+
+
 if __name__ == "__main__":
     unittest.main()
