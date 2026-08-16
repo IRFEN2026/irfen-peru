@@ -16,6 +16,10 @@ La unidad es un día UTC distinto ya conservado en
 retrospectivas para completar la muestra y no se reemplazan las entradas,
 pronósticos o recomendaciones después de observar el resultado real.
 
+La revisión solo puede comenzar después de las 00:00 UTC del día siguiente.
+Una etiqueta aplicada antes de cerrar la jornada sería parcial y no es válida,
+aunque exista ya una noticia o un aviso oficial durante el día.
+
 Un día solo es elegible si, en el momento de la fotografía:
 
 1. estaban presentes los tres pilotos;
@@ -59,7 +63,7 @@ incompletos permanecen en el archivo, pero no incrementan el hito.
 ## Registro de auditoría
 
 Cada revisión debe conservar: etiqueta, evento verificado, URL oficial, fecha
-de consulta y nota que explique cobertura temporal y espacial. Una corrección
+de consulta, instante de cierre de la ventana UTC y nota que explique cobertura temporal y espacial. Una corrección
 posterior debe mantener trazabilidad del valor anterior mediante commit y pull
 request.
 
