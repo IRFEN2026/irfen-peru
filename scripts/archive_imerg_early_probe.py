@@ -191,6 +191,30 @@ def continuity_summary(granules):
     }
 
 
+def probe_cadence_summary(records):
+    """Describe observed probe spacing without confusing it with data continuity."""
+    times = sorted({
+        timestamp
+        for timestamp in (parse_time(row.get("probe_generated_at")) for row in records)
+        if timestamp is not None
+    })
+    gaps = [
+        (observed - previous).total_seconds() / 3600.0
+        for previous, observed in zip(times, times[1:])
+    ]
+    return {
+        "probe_timestamp_count": len(times),
+        "probe_interval_count": len(gaps),
+        "latest_probe_generated_at": times[-1].isoformat() if times else None,
+        "probe_gap_median_hours": percentile(gaps, 0.5),
+        "probe_gap_p90_hours": percentile(gaps, 0.9),
+        "probe_gap_max_hours": round(max(gaps), 2) if gaps else None,
+        "interpretation": (
+            "Observed workflow cadence only; granule continuity is measured independently."
+        ),
+    }
+
+
 def build_event_replays(granules):
     replays = []
     for case in EVENT_CASES:
@@ -281,6 +305,7 @@ def main():
     granules = dedupe_granules(archive.get("granules") or [], samples)
     rolling = rolling_summary(granules)
     continuity = continuity_summary(granules)
+    probe_cadence = probe_cadence_summary(records)
     event_replays = build_event_replays(granules)
 
     latencies = [r.get("latency_hours") for r in records if r.get("latency_hours") is not None]
@@ -311,6 +336,7 @@ def main():
             "granule_time_min_utc": min(granule_times).isoformat() if granule_times else None,
             "granule_time_max_utc": max(granule_times).isoformat() if granule_times else None,
             **continuity,
+            **probe_cadence,
             "targets_with_continuous_24h": complete_24h_targets,
             "latency_min_hours": round(min(latencies), 2) if latencies else None,
             "latency_median_hours": percentile(latencies, 0.5),
