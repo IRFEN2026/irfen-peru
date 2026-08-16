@@ -22,6 +22,7 @@ on:
       - scripts/validate_scientific_assets.py
       - scripts/run_v08_regression_tests.py
       - scripts/build_v08_scorecard.py
+      - tests/**
       - scripts/fetch_glofas_catacaos_current.py
       - config/v08_closeout_contract.json
       - config/historical_events.json
@@ -234,6 +235,9 @@ jobs:
 
       - name: Ejecutar puertas científicas v0.8
         run: python scripts/validate_scientific_assets.py
+
+      - name: Ejecutar pruebas unitarias v0.8
+        run: python -m unittest discover -s tests -v
 
       - name: Ejecutar pruebas de regresión v0.8
         run: |
