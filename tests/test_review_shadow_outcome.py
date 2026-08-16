@@ -97,6 +97,81 @@ class ReviewShadowOutcomeTests(unittest.TestCase):
         )
         self.assertEqual(result["review_window_closed_utc"], "2026-08-15T00:00:00+00:00")
 
+    def test_existing_review_cannot_be_silently_overwritten(self):
+        data = archive()
+        reviewer.apply_review(
+            data,
+            "2026-08-14",
+            "UNCERTAIN",
+            ["https://www.senamhi.gob.pe/main.php?p=aviso-24H"],
+            "Primera revisión conservadora.",
+            reviewed_at="2026-08-15T00:00:00Z",
+        )
+        with self.assertRaisesRegex(ValueError, "reemplazo explícito"):
+            reviewer.apply_review(
+                data,
+                "2026-08-14",
+                "NONE",
+                ["https://portal.indeci.gob.pe/emergencias/"],
+                "Corrección con cobertura oficial completa.",
+                comprehensive_none_coverage=True,
+                reviewed_at="2026-08-16T00:00:00Z",
+            )
+        self.assertEqual(data["records"][0]["outcome_verification"]["label"], "UNCERTAIN")
+        self.assertNotIn("outcome_verification_history", data["records"][0])
+
+    def test_explicit_replacement_preserves_previous_review(self):
+        data = archive()
+        reviewer.apply_review(
+            data,
+            "2026-08-14",
+            "UNCERTAIN",
+            ["https://www.senamhi.gob.pe/main.php?p=aviso-24H"],
+            "Primera revisión conservadora.",
+            reviewed_at="2026-08-15T00:00:00Z",
+        )
+        reviewer.apply_review(
+            data,
+            "2026-08-14",
+            "NONE",
+            ["https://portal.indeci.gob.pe/emergencias/"],
+            "Corrección con cobertura oficial completa.",
+            comprehensive_none_coverage=True,
+            reviewed_at="2026-08-16T00:00:00Z",
+            replace_existing_review=True,
+        )
+        record = data["records"][0]
+        self.assertEqual(record["outcome_verification"]["label"], "NONE")
+        self.assertEqual(len(record["outcome_verification_history"]), 1)
+        self.assertEqual(record["outcome_verification_history"][0]["label"], "UNCERTAIN")
+        self.assertEqual(
+            record["outcome_verification_history"][0]["superseded_at"],
+            "2026-08-16T00:00:00+00:00",
+        )
+
+    def test_replacement_timestamp_must_be_later(self):
+        data = archive()
+        reviewer.apply_review(
+            data,
+            "2026-08-14",
+            "UNCERTAIN",
+            ["https://www.senamhi.gob.pe/main.php?p=aviso-24H"],
+            "Primera revisión conservadora.",
+            reviewed_at="2026-08-16T00:00:00Z",
+        )
+        with self.assertRaisesRegex(ValueError, "posterior"):
+            reviewer.apply_review(
+                data,
+                "2026-08-14",
+                "NONE",
+                ["https://portal.indeci.gob.pe/emergencias/"],
+                "Corrección con sello temporal inválido.",
+                comprehensive_none_coverage=True,
+                reviewed_at="2026-08-15T12:00:00Z",
+                replace_existing_review=True,
+            )
+        self.assertNotIn("outcome_verification_history", data["records"][0])
+
 
 if __name__ == "__main__":
     unittest.main()
