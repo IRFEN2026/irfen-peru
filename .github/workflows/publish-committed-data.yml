@@ -147,12 +147,37 @@ jobs:
       - name: Verificar activos publicados
         shell: bash
         run: |
+          set -euo pipefail
           sleep 10
           BASE="https://irfen2026.github.io/irfen-peru"
           curl -fsSL --retry 4 "$BASE/?t=${GITHUB_RUN_ID}" >/dev/null
-          curl -fsSL --retry 4 "$BASE/data/calibration/imerg_early_live_archive.json?t=${GITHUB_RUN_ID}" | python -m json.tool >/dev/null
-          curl -fsSL --retry 4 "$BASE/data/validation/shadow_runs.json?t=${GITHUB_RUN_ID}" | python -m json.tool >/dev/null
-          curl -fsSL --retry 4 "$BASE/data/v08_scorecard.json?t=${GITHUB_RUN_ID}" | python -m json.tool >/dev/null
+          mkdir -p /tmp/irfen-published
+          curl -fsSL --retry 4 "$BASE/data/calibration/imerg_early_live_archive.json?t=${GITHUB_RUN_ID}" -o /tmp/irfen-published/imerg.json
+          curl -fsSL --retry 4 "$BASE/data/validation/shadow_runs.json?t=${GITHUB_RUN_ID}" -o /tmp/irfen-published/shadow.json
+          curl -fsSL --retry 4 "$BASE/data/v08_scorecard.json?t=${GITHUB_RUN_ID}" -o /tmp/irfen-published/scorecard.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          pairs = (
+              ('site/data/calibration/imerg_early_live_archive.json', '/tmp/irfen-published/imerg.json', 'updated_at'),
+              ('site/data/validation/shadow_runs.json', '/tmp/irfen-published/shadow.json', 'updated_at'),
+              ('site/data/v08_scorecard.json', '/tmp/irfen-published/scorecard.json', 'generated_at'),
+          )
+          for expected_path, published_path, freshness_key in pairs:
+              expected = json.loads(Path(expected_path).read_text(encoding='utf-8'))
+              published = json.loads(Path(published_path).read_text(encoding='utf-8'))
+              assert published.get(freshness_key) == expected.get(freshness_key), (
+                  f'{published_path}: {freshness_key} publicado no corresponde al artefacto desplegado'
+              )
+
+          expected_imerg = json.loads(Path(pairs[0][0]).read_text(encoding='utf-8'))
+          published_imerg = json.loads(Path(pairs[0][1]).read_text(encoding='utf-8'))
+          expected_probe = (expected_imerg.get('summary') or {}).get('latest_probe_generated_at')
+          published_probe = (published_imerg.get('summary') or {}).get('latest_probe_generated_at')
+          assert published_probe == expected_probe, 'Pages sirve una corrida IMERG distinta de la desplegada'
+          print('PUBLICATION FRESHNESS OK')
+          PY
 
       - name: Ordenar smoke test completo
         env:

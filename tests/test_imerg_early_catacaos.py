@@ -171,6 +171,20 @@ class ImergPublishHandoffTests(unittest.TestCase):
         self.assertIn("ref: ${{ inputs.expected_sha || github.sha }}", workflow)
         self.assertIn('test "$(git rev-parse HEAD)" = "${{ inputs.expected_sha }}"', workflow)
 
+    def test_publisher_verifies_public_imerg_freshness(self):
+        workflow = (ROOT / ".github/workflows/publish-committed-data.yml").read_text(encoding="utf-8")
+        self.assertIn("/tmp/irfen-published/imerg.json", workflow)
+        self.assertIn("published.get(freshness_key) == expected.get(freshness_key)", workflow)
+        self.assertIn("published_probe == expected_probe", workflow)
+
+    def test_pull_request_validation_is_non_deploying(self):
+        workflow = (ROOT / ".github/workflows/pr-validation.yml").read_text(encoding="utf-8")
+        self.assertIn("pull_request:", workflow)
+        self.assertIn("Hidratar evidencia transitoria publicada", workflow)
+        self.assertIn("python -m unittest discover -s tests -v", workflow)
+        self.assertIn("python scripts/run_v08_regression_tests.py", workflow)
+        self.assertNotIn("actions/deploy-pages", workflow)
+
 
 if __name__ == "__main__":
     unittest.main()

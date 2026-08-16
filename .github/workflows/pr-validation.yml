@@ -1,0 +1,68 @@
+name: IRFEN - Validar pull request
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "pr-validation-${{ github.event.pull_request.number }}"
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Descargar pull request
+        uses: actions/checkout@v6
+
+      - name: Configurar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Hidratar evidencia transitoria publicada
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://irfen2026.github.io/irfen-peru/data"
+          files=(
+            "latest.json"
+            "experimental_state.json"
+            "test_report.json"
+            "forecast/verification.json"
+            "calibration/historical_replay.json"
+            "hydrology/piura_reference_model.json"
+            "hydrology/ana_catacaos_critical_segments_2026.geojson"
+            "hydrology/ana_catacaos_critical_segments_2026_validation.json"
+            "hydrology/glofas_catacaos_current.json"
+          )
+          for file in "${files[@]}"; do
+            mkdir -p "site/data/$(dirname "$file")"
+            curl -fsSL --connect-timeout 10 --max-time 35 --retry 3 --retry-all-errors \
+              "$BASE/$file?pr=${{ github.event.pull_request.number }}-${{ github.run_id }}" \
+              -o "site/data/$file"
+          done
+
+      - name: Ejecutar puertas científicas v0.8
+        run: python scripts/validate_scientific_assets.py
+
+      - name: Ejecutar pruebas unitarias v0.8
+        run: python -m unittest discover -s tests -v
+
+      - name: Ejecutar regresión y scorecard v0.8
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/run_v08_regression_tests.py
+          python scripts/build_v08_scorecard.py
+          python -m json.tool site/data/test_report.json >/dev/null
+          python -m json.tool site/data/v08_scorecard.json >/dev/null
