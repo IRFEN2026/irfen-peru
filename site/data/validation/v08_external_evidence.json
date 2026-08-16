@@ -120,11 +120,16 @@
           "status": "PARTIAL_CANDIDATE_REVIEW",
           "official_sources": [
             "https://www.senamhi.gob.pe/?p=pronostico-caudales",
+            "https://www.senamhi.gob.pe/?p=monitoreo-informacion-diaria",
+            "https://www.senamhi.gob.pe/?p=monitoreo-piura",
             "https://servicios.regionpiura.gob.pe/datosh"
           ],
-          "internal_artifacts": ["site/data/hydrology/piura_source_status.json"],
-          "preliminary_assessment": "Existen canales oficiales de SENAMHI y GORE Piura, pero no se ha resuelto una lectura numérica actual, automática y trazable desde Actions.",
-          "remaining_gap": "Canal documentado con nivel o caudal, estación, unidad, hora y control de frescura."
+          "internal_artifacts": [
+            "site/data/hydrology/piura_source_status.json",
+            "site/data/hydrology/senamhi_nacara_numeric_probe.json"
+          ],
+          "preliminary_assessment": "El reporte hidrológico diario de SENAMHI ofrece por POST una lectura de Puente Ñácara con código 47E0415A, caudal y unidad m3/s. El probe conserva la hora solicitada y rechaza sentinelas; la respuesta JSON no repite su timestamp.",
+          "remaining_gap": "Acumular frescura y continuidad del canal, confirmar la semántica temporal y validar el traslado hidráulico entre Ñácara y Bajo Piura."
         },
         {
           "evidence_id": "upstream_to_bajo_piura_location_harmonization",
