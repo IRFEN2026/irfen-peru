@@ -6,7 +6,7 @@ an existing pre-outcome snapshot with official evidence gathered later.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlparse
 import argparse
@@ -27,6 +27,18 @@ OFFICIAL_HOST_SUFFIXES = (
 def is_official_url(url: str):
     host = (urlparse(url).hostname or "").lower()
     return any(host == suffix or host.endswith(f".{suffix}") for suffix in OFFICIAL_HOST_SUFFIXES)
+
+
+def parse_utc_timestamp(value: str):
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        raise ValueError("reviewed_at requiere zona horaria explícita")
+    return parsed.astimezone(timezone.utc)
+
+
+def review_window_closed_at(snapshot_date: str):
+    day = date.fromisoformat(snapshot_date)
+    return datetime.combine(day + timedelta(days=1), time.min, tzinfo=timezone.utc)
 
 
 def apply_review(
@@ -59,13 +71,19 @@ def apply_review(
     if record.get("production_use") is not False:
         raise ValueError("La fotografía no conserva production_use=false")
 
+    review_time = parse_utc_timestamp(reviewed_at) if reviewed_at else datetime.now(timezone.utc)
+    window_closed_at = review_window_closed_at(snapshot_date)
+    if review_time < window_closed_at:
+        raise ValueError("La jornada UTC aún no ha cerrado; no se permite revisar un resultado parcial")
+
     record["outcome_verification"] = {
         "status": "REVIEWED_REAL_WORLD_OUTCOME",
         "label": label,
         "verified_event": verified_event,
         "official_source": official_sources,
         "notes": notes.strip(),
-        "reviewed_at": reviewed_at or datetime.now(timezone.utc).isoformat(),
+        "reviewed_at": review_time.isoformat(),
+        "review_window_closed_utc": window_closed_at.isoformat(),
         "review_method": "POST_SNAPSHOT_OFFICIAL_EVIDENCE_REVIEW",
         "counts_toward_closeout": label in {"NONE", "EVENT"},
     }
