@@ -63,9 +63,12 @@ incompletos permanecen en el archivo, pero no incrementan el hito.
 ## Registro de auditoría
 
 Cada revisión debe conservar: etiqueta, evento verificado, URL oficial, fecha
-de consulta, instante de cierre de la ventana UTC y nota que explique cobertura temporal y espacial. Una corrección
-posterior debe mantener trazabilidad del valor anterior mediante commit y pull
-request.
+de consulta, instante de cierre de la ventana UTC y nota que explique cobertura
+temporal y espacial. Una revisión existente no se sobrescribe por defecto. Toda
+corrección exige el indicador explícito `--replace-existing-review`, un
+`reviewed_at` posterior y conserva íntegramente la versión reemplazada en
+`outcome_verification_history`, además del commit y pull request que documenten
+el cambio.
 
 Las anotaciones se aplican con `scripts/review_shadow_outcome.py`. El comando
 rechaza fuentes fuera de dominios institucionales, exige evidencia positiva
