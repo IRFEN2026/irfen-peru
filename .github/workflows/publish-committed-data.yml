@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  actions: write
   pages: write
   id-token: write
 
@@ -140,3 +141,8 @@ jobs:
           curl -fsSL --retry 4 "$BASE/data/calibration/imerg_early_live_archive.json?t=${GITHUB_RUN_ID}" | python -m json.tool >/dev/null
           curl -fsSL --retry 4 "$BASE/data/validation/shadow_runs.json?t=${GITHUB_RUN_ID}" | python -m json.tool >/dev/null
           curl -fsSL --retry 4 "$BASE/data/v08_scorecard.json?t=${GITHUB_RUN_ID}" | python -m json.tool >/dev/null
+
+      - name: Ordenar smoke test completo
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run live-smoke-test.yml --repo "$GITHUB_REPOSITORY" --ref main
