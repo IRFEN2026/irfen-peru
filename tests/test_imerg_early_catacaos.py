@@ -159,5 +159,18 @@ class ProbeCadenceTests(unittest.TestCase):
         self.assertIsNone(result["probe_gap_max_hours"])
 
 
+class ImergPublishHandoffTests(unittest.TestCase):
+    def test_probe_dispatches_publisher_with_exact_main_sha(self):
+        workflow = (ROOT / ".github/workflows/imerg-early-probe.yml").read_text(encoding="utf-8")
+        self.assertIn('EXPECTED_SHA="$(git rev-parse origin/main)"', workflow)
+        self.assertIn('-f expected_sha="$EXPECTED_SHA"', workflow)
+
+    def test_publisher_checks_out_and_verifies_expected_sha(self):
+        workflow = (ROOT / ".github/workflows/publish-committed-data.yml").read_text(encoding="utf-8")
+        self.assertIn("expected_sha:", workflow)
+        self.assertIn("ref: ${{ inputs.expected_sha || github.sha }}", workflow)
+        self.assertIn('test "$(git rev-parse HEAD)" = "${{ inputs.expected_sha }}"', workflow)
+
+
 if __name__ == "__main__":
     unittest.main()
