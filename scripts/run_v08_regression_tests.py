@@ -250,6 +250,8 @@ def main():
     check('external_validation_candidates_have_official_sources',bool(candidate_items) and all(item.get('official_sources') for item in candidate_items))
     check('external_validation_no_automatic_acceptance',(external_contract.get('acceptance_rules') or {}).get('automatic_acceptance_forbidden') is True)
     check('external_validation_no_threshold_promotion',(external_contract.get('acceptance_rules') or {}).get('threshold_or_hydraulic_factor_promotion')=='FORBIDDEN')
+    check('external_validation_review_tool_exists',(ROOT/'scripts/review_v08_external_evidence.py').exists())
+    check('external_validation_review_protocol_exists',(ROOT/'docs/V08_EXTERNAL_EVIDENCE_REVIEW_PROTOCOL.md').exists())
     if closeout_scorecard is not None:
         milestones=closeout_scorecard.get('milestones') or []
         reached=[int(m.get('percentage',0)) for m in milestones if m.get('reached') is True]
