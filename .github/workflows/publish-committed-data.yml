@@ -2,6 +2,11 @@ name: IRFEN - Publicar datos experimentales archivados
 
 on:
   workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: "Commit exacto con la evidencia archivada que se debe publicar"
+        required: false
+        type: string
   push:
     branches:
       - main
@@ -29,6 +34,13 @@ jobs:
     steps:
       - name: Descargar repositorio actualizado
         uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.expected_sha || github.sha }}
+
+      - name: Verificar commit solicitado
+        if: ${{ inputs.expected_sha != '' }}
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ inputs.expected_sha }}"
 
       - name: Conservar activos transitorios del ultimo deployment
         shell: bash
