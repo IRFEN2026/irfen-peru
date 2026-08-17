@@ -47,6 +47,11 @@ SOURCES = (
 )
 SUPPLEMENTAL_SOURCES = (
     {
+        "source_id": "anin_san_ildefonso_news",
+        "url": "https://www.gob.pe/institucion/anin/noticias",
+        "scope": "San Ildefonso external manual outcome evidence",
+    },
+    {
         "source_id": "igp_cendehua_huaycoloro_monitor",
         "url": "https://www.igp.gob.pe/servicios/centro-monitoreo-deslizamientos-huaicos/inicio",
         "scope": "Huaycoloro/Chosica external manual outcome evidence",
