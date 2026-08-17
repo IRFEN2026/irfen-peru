@@ -9,6 +9,7 @@ on:
       - main
     paths:
       - scripts/probe_senamhi_nacara_numeric.py
+      - scripts/archive_senamhi_nacara_numeric_probe.py
       - .github/workflows/senamhi-nacara-probe.yml
 
 permissions:
@@ -35,10 +36,15 @@ jobs:
       - name: Probar acceso numerico SENAMHI PHISIS
         run: python scripts/probe_senamhi_nacara_numeric.py
 
+      - name: Archivar disponibilidad y lecturas TEST_ONLY
+        run: python scripts/archive_senamhi_nacara_numeric_probe.py
+
       - name: Validar seguridad cientifica
         run: |
           test -s site/data/hydrology/senamhi_nacara_numeric_probe.json
+          test -s site/data/hydrology/senamhi_nacara_numeric_archive.json
           python -m json.tool site/data/hydrology/senamhi_nacara_numeric_probe.json >/dev/null
+          python -m json.tool site/data/hydrology/senamhi_nacara_numeric_archive.json >/dev/null
           python - <<'PY'
           import json
           from pathlib import Path
@@ -59,6 +65,13 @@ jobs:
               assert r.get('official_reference_red_use') == 'SOURCE_METADATA_ONLY_NOT_IRFEN_THRESHOLD'
           else:
               assert p.get('reading') is None
+          a=json.loads(Path('site/data/hydrology/senamhi_nacara_numeric_archive.json').read_text())
+          assert a.get('production_use') is False
+          assert a.get('production_ready') is False
+          assert a.get('integration_mode') == 'TEST_ONLY'
+          assert (a.get('scientific_gate') or {}).get('hydraulic_transfer_to_catacaos_validated') is False
+          assert (a.get('scientific_gate') or {}).get('official_threshold_promoted_to_irfen') is False
+          assert 'never zero' in (a.get('scientific_gate') or {}).get('missing_data_rule','')
           print('Probe SENAMHI confinado correctamente a descubrimiento')
           PY
 
@@ -67,7 +80,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add site/data/hydrology/senamhi_nacara_numeric_probe.json
+          git add \
+            site/data/hydrology/senamhi_nacara_numeric_probe.json \
+            site/data/hydrology/senamhi_nacara_numeric_archive.json
           if git diff --cached --quiet; then
             echo "Sin cambios que guardar."
             exit 0
