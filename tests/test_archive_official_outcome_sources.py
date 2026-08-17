@@ -134,12 +134,22 @@ class OfficialOutcomeEvidenceTests(unittest.TestCase):
             "indeci_emergencies",
         }
 
-        self.assertTrue(core_ids.issubset(by_id))
-        self.assertIn("igp_cendehua_huaycoloro_monitor", by_id)
-        cendehua = collector.source_for_snapshot(
-            by_id["igp_cendehua_huaycoloro_monitor"], "2026-08-16"
+        self.assertEqual(core_ids, set(by_id))
+        supplemental_by_id = {
+            source["source_id"]: source
+            for source in collector.SUPPLEMENTAL_SOURCES
+        }
+        self.assertEqual(
+            set(supplemental_by_id),
+            {"igp_cendehua_huaycoloro_monitor"},
         )
-        self.assertEqual(cendehua, by_id["igp_cendehua_huaycoloro_monitor"])
+        cendehua = collector.source_for_snapshot(
+            supplemental_by_id["igp_cendehua_huaycoloro_monitor"], "2026-08-16"
+        )
+        self.assertEqual(
+            cendehua,
+            supplemental_by_id["igp_cendehua_huaycoloro_monitor"],
+        )
         self.assertIn("igp.gob.pe", cendehua["url"])
 
     def test_cendehua_terms_are_preserved_for_manual_review(self):
