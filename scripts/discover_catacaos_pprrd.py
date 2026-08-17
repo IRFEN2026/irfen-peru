@@ -9,12 +9,12 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
 import json
 import re
+import shutil
+import subprocess
 import tempfile
-
-import requests
-from pypdf import PdfReader
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "site/data/hydrology/catacaos_pprrd_2026_discovery.json"
@@ -38,7 +38,93 @@ def normalize(text):
     return re.sub(r"\s+", " ", text or " ").strip()
 
 
+def index_page_texts(page_texts):
+    """Build a bounded page index without persisting copyrighted page text."""
+    page_hits = {key: set() for key in TERMS}
+    match_counts = {key: 0 for key in TERMS}
+    numeric = []
+    extracted_chars = 0
+    for idx, raw_text in enumerate(page_texts, start=1):
+        text = normalize(raw_text)
+        extracted_chars += len(text)
+        if not text:
+            continue
+        low = text.lower()
+        for category, needles in TERMS.items():
+            hits = sum(low.count(needle.lower()) for needle in needles)
+            if hits:
+                page_hits[category].add(idx)
+                match_counts[category] += hits
+        for match in re.finditer(r"(\d{2,5}(?:[.,]\d+)?)\s*(?:m3/s|m³/s)", text, flags=re.I):
+            if len(numeric) >= 80:
+                break
+            numeric.append({
+                "page": idx,
+                "value_text": match.group(1),
+                "unit": "m3/s",
+                "validated_meaning": False,
+                "page_categories": sorted(
+                    key for key, pages in page_hits.items() if idx in pages
+                ),
+            })
+    page_index = {
+        category: {
+            "pages": sorted(pages)[:80],
+            "page_count": len(pages),
+            "match_count": match_counts[category],
+        }
+        for category, pages in page_hits.items() if pages
+    }
+    return page_index, numeric, extracted_chars
+
+
+def ocr_page(pdf: Path, page_number: int, workdir: Path, language: str):
+    prefix = workdir / f"page-{page_number:04d}"
+    image = prefix.with_suffix(".png")
+    subprocess.run(
+        [
+            "pdftoppm", "-f", str(page_number), "-l", str(page_number),
+            "-singlefile", "-r", "150", "-png", str(pdf), str(prefix),
+        ],
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        timeout=90,
+    )
+    try:
+        completed = subprocess.run(
+            ["tesseract", str(image), "stdout", "-l", language],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=90,
+        )
+        return completed.stdout
+    finally:
+        image.unlink(missing_ok=True)
+
+
+def ocr_image_only_pdf(pdf: Path, page_count: int, workdir: Path):
+    if not shutil.which("pdftoppm") or not shutil.which("tesseract"):
+        raise RuntimeError("Image-only PDF requires pdftoppm and tesseract")
+    languages = subprocess.run(
+        ["tesseract", "--list-langs"], capture_output=True, text=True, check=True
+    ).stdout.split()
+    language = "spa+eng" if "spa" in languages and "eng" in languages else (
+        "spa" if "spa" in languages else "eng"
+    )
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        texts = list(pool.map(
+            lambda page: ocr_page(pdf, page, workdir, language),
+            range(1, page_count + 1),
+        ))
+    return texts, language
+
+
 def main():
+    import requests
+    from pypdf import PdfReader
+
     headers = {"User-Agent": "Mozilla/5.0 IRFEN-research/0.8"}
     report = {
         "version": "0.8-experimental",
@@ -74,45 +160,26 @@ def main():
 
         reader = PdfReader(str(pdf))
         report["page_count"] = len(reader.pages)
-        page_hits = {k: set() for k in TERMS}
-        match_counts = {k: 0 for k in TERMS}
-        numeric = []
-
-        for idx, page in enumerate(reader.pages, start=1):
+        page_texts = []
+        for page in reader.pages:
             try:
-                text = normalize(page.extract_text() or "")
+                page_texts.append(page.extract_text() or "")
             except Exception:
-                continue
-            if not text:
-                continue
-            low = text.lower()
-            for category, needles in TERMS.items():
-                hits = sum(low.count(n.lower()) for n in needles)
-                if hits:
-                    page_hits[category].add(idx)
-                    match_counts[category] += hits
+                page_texts.append("")
+        page_index, numeric, extracted_chars = index_page_texts(page_texts)
+        report["embedded_text_chars"] = extracted_chars
+        report["extraction_method"] = "EMBEDDED_TEXT"
+        if extracted_chars < 1_000:
+            page_texts, language = ocr_image_only_pdf(
+                pdf, len(reader.pages), Path(td)
+            )
+            page_index, numeric, ocr_chars = index_page_texts(page_texts)
+            report["extraction_method"] = "OCR_IMAGE_ONLY_PDF"
+            report["ocr_language"] = language
+            report["ocr_pages_processed"] = len(page_texts)
+            report["ocr_text_chars"] = ocr_chars
 
-            # Candidatos numéricos de caudal: valor y página, sin copiar contexto.
-            for m in re.finditer(r"(\d{2,5}(?:[.,]\d+)?)\s*(?:m3/s|m³/s)", text, flags=re.I):
-                if len(numeric) >= 80:
-                    break
-                value_text = m.group(1)
-                numeric.append({
-                    "page": idx,
-                    "value_text": value_text,
-                    "unit": "m3/s",
-                    "validated_meaning": False,
-                    "page_categories": sorted(k for k, pages in page_hits.items() if idx in pages),
-                })
-
-        report["page_index"] = {
-            category: {
-                "pages": sorted(pages)[:80],
-                "page_count": len(pages),
-                "match_count": match_counts[category],
-            }
-            for category, pages in page_hits.items() if pages
-        }
+        report["page_index"] = page_index
         report["numeric_candidates"] = numeric
         report["status"] = "indexed_for_scientific_review"
         report["categories_found"] = sorted(report["page_index"].keys())
