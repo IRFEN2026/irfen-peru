@@ -55,6 +55,8 @@ def main():
     smoke_workflow=(ROOT/'.github/workflows/live-smoke-test.yml').read_text(encoding='utf-8')
     glofas_current=optional(SITE/'data/hydrology/glofas_catacaos_current.json')
     pprrd=optional(SITE/'data/hydrology/catacaos_pprrd_2026_discovery.json')
+    official_outcomes=optional(SITE/'data/validation/official_outcome_evidence.json')
+    shadow_runs=optional(SITE/'data/validation/shadow_runs.json')
 
     # Contrato matemático v0.7.1: nunca cambia como efecto colateral de v0.8.
     check('formula_zero_is_zero',operational_formula(0,0,0,10,20,30)==0)
@@ -186,6 +188,39 @@ def main():
             for item_id in mapped_ids
         ),
     )
+
+    # Evidencia diaria: se publica para auditoría, pero nunca se autoclasifica.
+    check('official_outcome_evidence_present',official_outcomes is not None)
+    if official_outcomes:
+        outcome_records=official_outcomes.get('records') or []
+        check('official_outcome_evidence_not_production',official_outcomes.get('production_use') is False)
+        check('official_outcome_evidence_not_ready',official_outcomes.get('production_ready') is False)
+        check('official_outcome_evidence_human_review_only',official_outcomes.get('decision_use')=='HUMAN_REVIEW_INPUT_ONLY')
+        check('official_outcome_evidence_count_matches',int(official_outcomes.get('record_count',-1))==len(outcome_records))
+        captures=[capture for record in outcome_records for capture in record.get('captures',[])]
+        check('official_outcome_evidence_has_captures',bool(captures))
+        check('official_outcome_evidence_never_auto_labels',all(capture.get('outcome_label') is None for capture in captures))
+        check('official_outcome_evidence_never_counts_directly',all(capture.get('counts_toward_closeout') is False for capture in captures))
+        sources=[source for capture in captures for source in capture.get('sources',[])]
+        check('official_outcome_evidence_three_sources_per_capture',all(len(capture.get('sources',[]))==3 for capture in captures))
+        check(
+            'official_outcome_missing_stays_unknown_not_zero',
+            all(source.get('unknown_not_zero') is True for source in sources if source.get('capture_status')!='CAPTURED'),
+        )
+    check('shadow_runs_present',shadow_runs is not None)
+    if shadow_runs:
+        shadow_records=shadow_runs.get('records') or []
+        check('shadow_runs_not_production',shadow_runs.get('production_use') is False)
+        check('shadow_runs_count_matches',int(shadow_runs.get('record_count',-1))==len(shadow_records))
+        uncertain_reviews=[
+            record.get('outcome_verification') or {}
+            for record in shadow_records
+            if (record.get('outcome_verification') or {}).get('label')=='UNCERTAIN'
+        ]
+        check(
+            'shadow_uncertain_never_counts_toward_closeout',
+            all(review.get('counts_toward_closeout') is False for review in uncertain_reviews),
+        )
 
     # Scorecard de cierre: hitos discretos, acumulativos y sin efecto operativo.
     check('closeout_contract_not_production',closeout_contract.get('production_use') is False)
