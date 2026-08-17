@@ -13,8 +13,11 @@ hidráulicos, recomendaciones ni la v0.7.1.
 
 La unidad es un día UTC distinto ya conservado en
 `site/data/validation/shadow_runs.json`. No se crean fotografías
-retrospectivas para completar la muestra y no se reemplazan las entradas,
-pronósticos o recomendaciones después de observar el resultado real.
+retrospectivas para completar la muestra. La primera fotografía archivada de
+cada día UTC es inmutable: una reejecución del workflow no reemplaza entradas,
+pronósticos o recomendaciones ni siquiera mientras la revisión está pendiente.
+Esto impide incorporar retrospectivamente información aparecida después de la
+captura original.
 
 La revisión solo puede comenzar después de las 00:00 UTC del día siguiente.
 Una etiqueta aplicada antes de cerrar la jornada sería parcial y no es válida,
