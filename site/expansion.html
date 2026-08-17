@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>IRFEN — Preparación territorial</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,sans-serif;color:#172033;background:#f4f7fb}
+    body{margin:0}.wrap{max-width:1180px;margin:auto;padding:28px 18px 50px}
+    h1{margin:.2rem 0}.lead{max-width:850px;line-height:1.55;color:#42506a}
+    .banner,.card{background:#fff;border:1px solid #dce3ed;border-radius:14px;padding:16px}
+    .banner{border-color:#e4c06b;background:#fffaf0;margin:20px 0}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px}
+    .meta,.small{font-size:.84rem;color:#607089;line-height:1.5}.badge{display:inline-block;padding:4px 8px;border-radius:99px;background:#e9f2ff;color:#194f82;font-size:.7rem;font-weight:750}
+    .gate{display:inline-block;margin:3px 4px 3px 0;padding:4px 7px;border-radius:8px;background:#edf1f6;font-size:.72rem}
+    a{color:#145ea8}footer{margin-top:24px}.blocked{color:#8a2530;font-weight:750}
+  </style>
+</head>
+<body><main class="wrap">
+  <div class="small"><a href="./">← Plataforma IRFEN</a></div>
+  <h1>Preparación territorial</h1>
+  <p class="lead">Fábrica de incorporación para futuras quebradas y sistemas fluviales. Esta vista documenta brechas; no activa alertas, no publica umbrales y no modifica los tres pilotos v0.8.</p>
+  <div id="summary" class="banner">Cargando catálogo…</div>
+  <section id="zones" class="grid"></section>
+  <footer class="small">La ausencia de datos significa riesgo desconocido, nunca riesgo bajo. Toda futura promoción exige validación específica de la zona.</footer>
+</main><script>
+const esc=v=>String(v??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+fetch(`data/phase2/catalog.json?t=${Date.now()}`).then(r=>r.ok?r.json():Promise.reject()).then(d=>{
+  if(d.production_use!==false||d.deployment_status!=='RESEARCH_ONLY')throw new Error();
+  const s=d.summary||{};
+  summary.innerHTML=`<span class="badge">RESEARCH_ONLY</span><h2>${esc(s.registered_candidates)} sistemas registrados; 0 nuevas zonas operativas</h2><div class="meta">${esc(s.contracts_present)} contratos · ${esc(s.outside_lima_metropolitana)} fuera de Lima Metropolitana · activación bloqueada por contrato.</div>`;
+  zones.innerHTML=(d.zones||[]).map(z=>`<article class="card"><div class="small">${esc(z.department)} · ${esc(z.province_or_corridor)}</div><h3>${esc(z.system_name)}</h3><div class="blocked">Activación: BLOQUEADA</div><p class="meta">Contrato ${esc(z.contract_status)} · mecanismo ${esc(z.mechanism_status)}</p><div>${Object.entries(z.asset_status||{}).map(([id,status])=>`<span class="gate">${esc(id)}: ${esc(status)}</span>`).join('')}</div><p class="meta">Pendiente: ${esc((z.blocking_items||[]).join(', '))}</p></article>`).join('');
+}).catch(()=>{summary.textContent='Catálogo no disponible. El estado permanece desconocido y no operativo.'});
+</script></body></html>
