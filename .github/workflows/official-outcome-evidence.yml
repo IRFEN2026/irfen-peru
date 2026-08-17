@@ -2,9 +2,15 @@ name: IRFEN - Archivar fuentes oficiales para revisión en sombra v0.8
 
 on:
   workflow_dispatch:
+    inputs:
+      snapshot_date:
+        description: "Jornada UTC ya cerrada que se debe recapturar (YYYY-MM-DD)"
+        required: false
+        type: string
   schedule:
-    # Después del cierre UTC, todavía antes de la medianoche peruana.
-    - cron: "25 0 * * *"
+    # Cuatro intentos acotados sobre la misma jornada UTC cerrada. El archivo
+    # conserva como máximo cinco capturas diarias y nunca clasifica el resultado.
+    - cron: "25 0,6,12,18 * * *"
   push:
     branches:
       - main
@@ -36,7 +42,17 @@ jobs:
           python-version: "3.12"
 
       - name: Capturar fuentes oficiales posteriores al cierre UTC
-        run: python scripts/archive_official_outcome_sources.py
+        shell: bash
+        env:
+          SNAPSHOT_DATE: ${{ inputs.snapshot_date }}
+        run: |
+          set -euo pipefail
+          args=()
+          if [[ -n "${SNAPSHOT_DATE:-}" ]]; then
+            [[ "$SNAPSHOT_DATE" =~ ^20[0-9]{2}-[0-9]{2}-[0-9]{2}$ ]]
+            args+=(--snapshot-date "$SNAPSHOT_DATE")
+          fi
+          python scripts/archive_official_outcome_sources.py "${args[@]}"
 
       - name: Validar contrato conservador
         run: |
