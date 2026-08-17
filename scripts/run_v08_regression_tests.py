@@ -54,6 +54,7 @@ def main():
     publish_workflow=(ROOT/'.github/workflows/publish-committed-data.yml').read_text(encoding='utf-8')
     smoke_workflow=(ROOT/'.github/workflows/live-smoke-test.yml').read_text(encoding='utf-8')
     glofas_current=optional(SITE/'data/hydrology/glofas_catacaos_current.json')
+    pprrd=optional(SITE/'data/hydrology/catacaos_pprrd_2026_discovery.json')
 
     # Contrato matemático v0.7.1: nunca cambia como efecto colateral de v0.8.
     check('formula_zero_is_zero',operational_formula(0,0,0,10,20,30)==0)
@@ -157,6 +158,34 @@ def main():
     check('phase2_inventory_no_numeric_scores',all(c.get('priority_score') is None for c in candidates))
     check('phase2_inventory_no_activation',all(c.get('deployment_status')=='RESEARCH_ONLY' for c in candidates))
     check('phase2_inventory_has_official_evidence',all(c.get('official_sources') for c in candidates))
+
+    # PPRRD Catacaos: evidencia documental trazable, nunca capacidad ni umbral.
+    check('catacaos_pprrd_present',pprrd is not None)
+    if pprrd:
+        check('catacaos_pprrd_not_production',pprrd.get('production_use') is False)
+        check(
+            'catacaos_pprrd_numeric_candidates_unvalidated',
+            all(row.get('validated_meaning') is False for row in pprrd.get('numeric_candidates',[])),
+        )
+    external_by_zone={row.get('zone_id'):row for row in external_ledger.get('pilots',[])}
+    catacaos_external={
+        row.get('evidence_id'):row
+        for row in (external_by_zone.get('catacaos') or {}).get('items',[])
+    }
+    pprrd_path='site/data/hydrology/catacaos_pprrd_2026_discovery.json'
+    mapped_ids={
+        'current_channel_capacity_and_critical_levels',
+        'current_floodplain_and_defense_condition',
+        'observed_river_state_to_impact_review',
+    }
+    check(
+        'catacaos_pprrd_mapped_without_acceptance',
+        all(
+            pprrd_path in (catacaos_external.get(item_id) or {}).get('internal_artifacts',[])
+            and (catacaos_external.get(item_id) or {}).get('status') != 'ACCEPTED'
+            for item_id in mapped_ids
+        ),
+    )
 
     # Scorecard de cierre: hitos discretos, acumulativos y sin efecto operativo.
     check('closeout_contract_not_production',closeout_contract.get('production_use') is False)
