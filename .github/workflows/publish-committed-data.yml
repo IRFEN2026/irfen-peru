@@ -101,11 +101,13 @@ jobs:
           test -s site/data/test_report.json
           test -s site/data/calibration/imerg_early_live_probe.json
           test -s site/data/calibration/imerg_early_live_archive.json
+          test -s site/data/hydrology/senamhi_nacara_numeric_archive.json
           test -s site/data/validation/shadow_runs.json
           test -s site/data/v08_scorecard.json
           python -m json.tool site/data/experimental_state.json >/dev/null
           python -m json.tool site/data/test_report.json >/dev/null
           python -m json.tool site/data/calibration/imerg_early_live_archive.json >/dev/null
+          python -m json.tool site/data/hydrology/senamhi_nacara_numeric_archive.json >/dev/null
           python -m json.tool site/data/validation/shadow_runs.json >/dev/null
           python -m json.tool site/data/v08_scorecard.json >/dev/null
           python - <<'PY'
@@ -114,6 +116,7 @@ jobs:
           state=json.loads(Path('site/data/experimental_state.json').read_text())
           tests=json.loads(Path('site/data/test_report.json').read_text())
           score=json.loads(Path('site/data/v08_scorecard.json').read_text())
+          nacara=json.loads(Path('site/data/hydrology/senamhi_nacara_numeric_archive.json').read_text())
           assert state.get('production_use') is False
           assert state.get('production_ready') is False
           assert tests.get('status') == 'PASS'
@@ -121,6 +124,13 @@ jobs:
           assert score.get('production_use') is False
           assert score.get('production_ready') is False
           assert score.get('current_milestone_pct') in {0,25,50,75,100}
+          assert nacara.get('production_use') is False
+          assert nacara.get('production_ready') is False
+          assert nacara.get('integration_mode') == 'TEST_ONLY'
+          assert nacara.get('station',{}).get('id') == '47E0415A'
+          assert nacara.get('scientific_gate',{}).get('hydraulic_transfer_to_catacaos_validated') is False
+          assert nacara.get('scientific_gate',{}).get('official_threshold_promoted_to_irfen') is False
+          assert 'never zero' in nacara.get('scientific_gate',{}).get('missing_data_rule','')
           html=Path('site/index.html').read_text(encoding='utf-8')
           for script in (
               'v08-experimental.js',
@@ -153,6 +163,7 @@ jobs:
           curl -fsSL --retry 4 "$BASE/?t=${GITHUB_RUN_ID}" >/dev/null
           mkdir -p /tmp/irfen-published
           curl -fsSL --retry 4 "$BASE/data/calibration/imerg_early_live_archive.json?t=${GITHUB_RUN_ID}" -o /tmp/irfen-published/imerg.json
+          curl -fsSL --retry 4 "$BASE/data/hydrology/senamhi_nacara_numeric_archive.json?t=${GITHUB_RUN_ID}" -o /tmp/irfen-published/nacara.json
           curl -fsSL --retry 4 "$BASE/data/validation/shadow_runs.json?t=${GITHUB_RUN_ID}" -o /tmp/irfen-published/shadow.json
           curl -fsSL --retry 4 "$BASE/data/v08_scorecard.json?t=${GITHUB_RUN_ID}" -o /tmp/irfen-published/scorecard.json
           python - <<'PY'
@@ -161,6 +172,7 @@ jobs:
 
           pairs = (
               ('site/data/calibration/imerg_early_live_archive.json', '/tmp/irfen-published/imerg.json', 'updated_at'),
+              ('site/data/hydrology/senamhi_nacara_numeric_archive.json', '/tmp/irfen-published/nacara.json', 'generated_at'),
               ('site/data/validation/shadow_runs.json', '/tmp/irfen-published/shadow.json', 'updated_at'),
               ('site/data/v08_scorecard.json', '/tmp/irfen-published/scorecard.json', 'generated_at'),
           )
@@ -176,6 +188,12 @@ jobs:
           expected_probe = (expected_imerg.get('summary') or {}).get('latest_probe_generated_at')
           published_probe = (published_imerg.get('summary') or {}).get('latest_probe_generated_at')
           assert published_probe == expected_probe, 'Pages sirve una corrida IMERG distinta de la desplegada'
+
+          expected_nacara = json.loads(Path(pairs[1][0]).read_text(encoding='utf-8'))
+          published_nacara = json.loads(Path(pairs[1][1]).read_text(encoding='utf-8'))
+          expected_nacara_probe = (expected_nacara.get('summary') or {}).get('latest_probe_generated_at')
+          published_nacara_probe = (published_nacara.get('summary') or {}).get('latest_probe_generated_at')
+          assert published_nacara_probe == expected_nacara_probe, 'Pages sirve un archivo SENAMHI distinto del desplegado'
           print('PUBLICATION FRESHNESS OK')
           PY
 
