@@ -1,5 +1,6 @@
 import importlib.util
 from datetime import datetime, timezone
+import json
 from pathlib import Path
 import unittest
 
@@ -56,6 +57,48 @@ class SenamhiNacaraNumericTests(unittest.TestCase):
     def test_query_never_selects_future_partial_hour(self):
         selected = MODULE.query_time(datetime(2026, 8, 16, 14, 59, tzinfo=timezone.utc))
         self.assertEqual(selected.isoformat(), "2026-08-16T09:00:00-05:00")
+
+    def test_same_selector_is_retried_after_transient_errors(self):
+        calls = []
+        delays = []
+        body = json.dumps(self.payload()).encode("utf-8")
+
+        class Response:
+            status = 200
+            headers = {"content-type": "application/json"}
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def read(self):
+                return body
+
+        def opener(request, timeout):
+            calls.append((request.data, timeout))
+            if len(calls) < 3:
+                raise TimeoutError("transient")
+            return Response()
+
+        fields = {"fecha": "2026-08-17", "hora": "05:00"}
+        payload, http, attempts, error = MODULE.fetch_payload(
+            fields,
+            {"Accept": "application/json"},
+            opener=opener,
+            sleeper=delays.append,
+        )
+
+        self.assertIsNone(error)
+        self.assertTrue(payload["success"])
+        self.assertEqual(http["status"], 200)
+        self.assertEqual(len(attempts), 3)
+        self.assertEqual(delays, [2, 5])
+        self.assertEqual(
+            {data for data, _timeout in calls},
+            {b"fecha=2026-08-17&hora=05%3A00"},
+        )
 
 
 if __name__ == "__main__":
