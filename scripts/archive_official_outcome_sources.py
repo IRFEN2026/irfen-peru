@@ -44,6 +44,8 @@ SOURCES = (
         "source_id": "indeci_emergencies",
         "url": "https://portal.indeci.gob.pe/emergencias/",
     },
+)
+SUPPLEMENTAL_SOURCES = (
     {
         "source_id": "igp_cendehua_huaycoloro_monitor",
         "url": "https://www.igp.gob.pe/servicios/centro-monitoreo-deslizamientos-huaicos/inicio",
@@ -299,6 +301,10 @@ def main():
             fetch_source(source, now, snapshot_day.isoformat())
             for source in SOURCES
         ],
+        "supplemental_sources": [
+            fetch_source(source, now, snapshot_day.isoformat())
+            for source in SUPPLEMENTAL_SOURCES
+        ],
     }
     archive = add_capture(load_archive(), snapshot_day.isoformat(), capture)
     OUT.parent.mkdir(parents=True, exist_ok=True)
@@ -306,7 +312,10 @@ def main():
     print(json.dumps({
         "snapshot_date_utc": snapshot_day.isoformat(),
         "captured_at": now.isoformat(),
-        "source_statuses": {row["source_id"]: row["capture_status"] for row in capture["sources"]},
+        "source_statuses": {
+            row["source_id"]: row["capture_status"]
+            for row in capture["sources"] + capture["supplemental_sources"]
+        },
         "counts_toward_closeout": False,
     }, ensure_ascii=False, indent=2))
     return 0
