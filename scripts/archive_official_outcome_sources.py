@@ -15,7 +15,7 @@ from html import unescape
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.error import HTTPError, URLError
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 from urllib.request import Request, urlopen
 import argparse
 import json
@@ -45,6 +45,7 @@ SOURCES = (
     {
         "source_id": "indeci_emergencies",
         "url": "https://portal.indeci.gob.pe/emergencias/",
+        "historical_search_parameter": "s",
     },
 )
 SUPPLEMENTAL_SOURCES = (
@@ -88,15 +89,95 @@ class TextExtractor(HTMLParser):
         self.parts.append(data)
 
 
-def normalized_text(raw: bytes, content_type: str | None = None):
+class LinkExtractor(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.links = []
+        self.current_href = None
+        self.current_parts = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag.lower() != "a":
+            return
+        self.current_href = dict(attrs).get("href")
+        self.current_parts = []
+
+    def handle_data(self, data):
+        if self.current_href is not None:
+            self.current_parts.append(data)
+
+    def handle_endtag(self, tag):
+        if tag.lower() != "a" or self.current_href is None:
+            return
+        self.links.append({
+            "href": self.current_href,
+            "title": re.sub(r"\s+", " ", unescape(" ".join(self.current_parts))).strip(),
+        })
+        self.current_href = None
+        self.current_parts = []
+
+
+def decoded_html(raw: bytes, content_type: str | None = None):
     charset = "utf-8"
     match = re.search(r"charset=([\w-]+)", content_type or "", re.I)
     if match:
         charset = match.group(1)
-    decoded = raw.decode(charset, errors="replace")
+    return raw.decode(charset, errors="replace")
+
+
+def normalized_text(raw: bytes, content_type: str | None = None):
+    decoded = decoded_html(raw, content_type)
     parser = TextExtractor()
     parser.feed(decoded)
     return re.sub(r"\s+", " ", unescape(" ".join(parser.parts))).strip()
+
+
+def indeci_report_links(
+    raw: bytes,
+    content_type: str | None,
+    source_url: str,
+    snapshot_date: str,
+):
+    """Extract dated INDECI result links without trusting the echoed search query."""
+    snapshot_day = date.fromisoformat(snapshot_date)
+    date_tokens = {
+        snapshot_day.isoformat(),
+        f"{snapshot_day.day}/{snapshot_day.month}/{snapshot_day.year}",
+        snapshot_day.strftime("%d/%m/%Y"),
+        f"{snapshot_day.day}-{snapshot_day.month}-{snapshot_day.year}",
+        snapshot_day.strftime("%d-%m-%Y"),
+        f"{snapshot_day.day}.{snapshot_day.month}.{snapshot_day.year}",
+        snapshot_day.strftime("%d.%m.%Y"),
+    }
+    parser = LinkExtractor()
+    parser.feed(decoded_html(raw, content_type))
+    reports = []
+    seen_urls = set()
+    for link in parser.links:
+        resolved_url = urljoin(source_url, link["href"])
+        parts = urlsplit(resolved_url)
+        if (
+            parts.netloc.lower() != "portal.indeci.gob.pe"
+            or not parts.path.startswith("/emergencias/")
+            or parts.path.rstrip("/") == "/emergencias"
+        ):
+            continue
+        searchable = f'{link["title"]} {resolved_url}'.lower()
+        if not any(token.lower() in searchable for token in date_tokens):
+            continue
+        canonical_url = urlunsplit((parts.scheme, parts.netloc, parts.path, parts.query, ""))
+        if canonical_url in seen_urls:
+            continue
+        seen_urls.add(canonical_url)
+        pilot_terms = [
+            term for term in PILOT_TERMS if re.search(re.escape(term), searchable, re.I)
+        ]
+        reports.append({
+            "title": link["title"],
+            "url": canonical_url,
+            "pilot_terms_found": pilot_terms,
+        })
+    return reports[:30]
 
 
 def excerpt_around(text: str, pattern: str, radius: int = 260):
@@ -132,6 +213,7 @@ def summarize_content(
     raw: bytes,
     content_type: str | None,
     snapshot_date: str | None = None,
+    source_url: str | None = None,
 ):
     text = normalized_text(raw, content_type)
     day_first_dates = re.findall(
@@ -169,23 +251,46 @@ def summarize_content(
         # Alignment must inspect the complete marker set.  The persisted list
         # remains bounded because SENAMHI pages also expose long archive tables.
         summary["snapshot_date_alignment"] = date_marker_alignment(dates, snapshot_date)
+    if source_id == "indeci_emergencies" and snapshot_date and source_url:
+        report_links = indeci_report_links(
+            raw, content_type, source_url, snapshot_date
+        )
+        pilot_links = [row for row in report_links if row["pilot_terms_found"]]
+        summary["official_report_links_for_snapshot_date"] = report_links
+        summary["pilot_report_links_for_snapshot_date"] = pilot_links
+        # The WordPress search page echoes the query date in its title.  Only a
+        # dated report anchor can prove that the returned page covers the day.
+        summary["snapshot_date_alignment"] = (
+            "TARGET_DATE_PRESENT" if report_links else "TARGET_DATE_NOT_PRESENT"
+        )
+        summary["interpretation"] = (
+            "Official dated report links captured for human review; a link is not an "
+            "automatic EVENT label and absence of a link is not evidence of NONE."
+        )
     return summary
 
 
 def source_for_snapshot(source: dict, snapshot_date: str):
-    """Return the exact historical SENAMHI page for the closed UTC day."""
-    parameter = source.get("historical_date_parameter")
+    """Return a date-specific official-source page for the closed UTC day."""
+    date_parameter = source.get("historical_date_parameter")
+    search_parameter = source.get("historical_search_parameter")
+    parameter = date_parameter or search_parameter
     if not parameter:
         return dict(source)
     snapshot_day = date.fromisoformat(snapshot_date)
     parts = urlsplit(source["url"])
     query = dict(parse_qsl(parts.query, keep_blank_values=True))
-    query[parameter] = snapshot_day.strftime("%d-%m-%Y")
+    query[parameter] = (
+        snapshot_day.strftime("%d-%m-%Y")
+        if date_parameter
+        else f"{snapshot_day.day}/{snapshot_day.month}/{snapshot_day.year}"
+    )
     resolved = dict(source)
     resolved["url"] = urlunsplit(
         (parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment)
     )
     resolved.pop("historical_date_parameter", None)
+    resolved.pop("historical_search_parameter", None)
     return resolved
 
 
@@ -195,7 +300,10 @@ def fetch_source(
     snapshot_date: str,
     sleep_fn=time.sleep,
 ):
-    requires_target_date_alignment = bool(source.get("historical_date_parameter"))
+    requires_target_date_alignment = bool(
+        source.get("historical_date_parameter")
+        or source.get("historical_search_parameter")
+    )
     source = source_for_snapshot(source, snapshot_date)
     attempts = []
     last_error = None
@@ -217,7 +325,7 @@ def fetch_source(
                     "error": None,
                 })
                 summary = summarize_content(
-                    source["source_id"], raw, content_type, snapshot_date
+                    source["source_id"], raw, content_type, snapshot_date, source["url"]
                 )
                 date_alignment = summary.get("snapshot_date_alignment")
                 date_aligned = (
