@@ -156,6 +156,67 @@ def shadow_record_eligibility(record: dict, pilots: list[str], minimum_pairs_per
     return {"eligible": all(checks.values()), "checks": checks}
 
 
+def shadow_outcome_review_queue(
+    shadow_records: list[dict],
+    official_outcome_evidence: dict,
+    pilots: list[str],
+    minimum_pairs_per_pilot: int,
+    accepted_labels: set[str],
+):
+    """Expose unresolved shadow days without inferring an outcome from missing evidence."""
+    evidence_by_date = {
+        row.get("snapshot_date_utc"): row
+        for row in official_outcome_evidence.get("records", [])
+    }
+    queue = []
+    for record in shadow_records:
+        outcome = record.get("outcome_verification") or {}
+        eligibility = shadow_record_eligibility(record, pilots, minimum_pairs_per_pilot)
+        accepted_outcome = outcome.get("label") in accepted_labels
+        if accepted_outcome and eligibility["eligible"]:
+            continue
+
+        evidence_record = evidence_by_date.get(record.get("snapshot_date_utc")) or {}
+        captures = evidence_record.get("captures") or []
+        latest_capture = max(
+            captures,
+            key=lambda row: str(row.get("captured_at") or ""),
+            default={},
+        )
+        pilot_links = []
+        for source in latest_capture.get("sources") or []:
+            summary = source.get("summary") or {}
+            pilot_links.extend(summary.get("pilot_report_links_for_snapshot_date") or [])
+        unique_pilot_links = {
+            row.get("url") for row in pilot_links if row.get("url")
+        }
+        failed_checks = sorted(
+            check_id for check_id, passed in eligibility["checks"].items() if not passed
+        )
+        if not accepted_outcome:
+            failed_checks.append("outcome_label_accepted")
+        if accepted_outcome:
+            action = "RESOLVE_ELIGIBILITY_FAILURES"
+        elif unique_pilot_links:
+            action = "HUMAN_REVIEW_REQUIRED"
+        else:
+            action = "WAIT_FOR_OFFICIAL_EVIDENCE"
+        queue.append({
+            "snapshot_date_utc": record.get("snapshot_date_utc"),
+            "review_status": outcome.get("status", "PENDING_REAL_WORLD_OUTCOME_REVIEW"),
+            "current_label": outcome.get("label"),
+            "failed_eligibility_check_ids": failed_checks,
+            "latest_evidence_capture_at": latest_capture.get("captured_at"),
+            "official_pilot_specific_link_count": len(unique_pilot_links),
+            "action": action,
+            "named_human_review_required": True,
+            "automatic_outcome_classification_forbidden": True,
+            "missing_evidence_is_not_none": True,
+            "counts_toward_closeout": False,
+        })
+    return queue
+
+
 def main():
     contract = load(CONTRACT_PATH, {}) or {}
     test_report = load(SITE / "data" / "test_report.json", {}) or {}
@@ -163,6 +224,9 @@ def main():
     early = load(SITE / "data" / "calibration" / "imerg_early_live_archive.json", {}) or {}
     verification = load(SITE / "data" / "forecast" / "verification.json", {}) or {}
     shadow = load(SITE / "data" / "validation" / "shadow_runs.json", {}) or {}
+    official_outcomes = load(
+        SITE / "data" / "validation" / "official_outcome_evidence.json", {}
+    ) or {}
     scientific = load(SITE / "data" / "scientific_status.json", {}) or {}
     external_contract = load(ROOT / "config" / "v08_external_validation_contract.json", {}) or {}
     external_ledger = load(SITE / "data" / "validation" / "v08_external_evidence.json", {}) or {}
@@ -322,6 +386,9 @@ def main():
         and int(reviewed_label_counts.get("EVENT", 0)) >= minimum_event_days
         and int(reviewed_label_counts.get("NONE", 0)) >= minimum_none_days
     )
+    shadow_review_queue = shadow_outcome_review_queue(
+        shadow_records, official_outcomes, pilots, min_pairs, accepted_labels
+    )
     external_evidence_passed, external_evidence = external_validation_gate(external_contract, external_ledger, pilots)
     scientific_gate_passed = (
         all(not values for values in unresolved.values())
@@ -353,6 +420,7 @@ def main():
                 "minimum_verified_none_days": minimum_none_days,
                 "archive_records": len(shadow_records),
                 "eligibility": shadow_eligibility,
+                "review_queue": shadow_review_queue,
             },
         ),
         item(
