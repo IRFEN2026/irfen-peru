@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -29,6 +30,7 @@ OCR_PAGE_RANGES = ((60, 140), (228, 240))
 # que `eng` procesa en segundos. Los términos incluyen variantes sin tilde, por
 # lo que se prioriza el modelo estable sin alterar las guardas científicas.
 OCR_LANGUAGE_PREFERENCE = ("eng", "spa")
+OCR_WORKERS = 2
 
 TERMS = {
     "river_flood": ["desborde del río piura", "desborde del rio piura", "inundación fluvial", "inundacion fluvial"],
@@ -87,11 +89,16 @@ def index_page_texts(page_texts):
 
 
 def ocr_page(image: Path, language: str):
+    env = os.environ.copy()
+    # Tesseract usa OpenMP internamente. Limitar cada proceso evita que varios
+    # OCR concurrentes saturen los dos núcleos del runner de GitHub Actions.
+    env["OMP_THREAD_LIMIT"] = "1"
     try:
         completed = subprocess.run(
             ["tesseract", str(image), "stdout", "-l", language],
             check=True,
             capture_output=True,
+            env=env,
             text=True,
             timeout=90,
         )
@@ -120,7 +127,7 @@ def ocr_image_only_pdf(pdf: Path, page_count: int, workdir: Path):
         subprocess.run(
             [
                 "pdftoppm", "-f", str(start), "-l", str(end),
-                "-r", "100", "-png", str(pdf), str(workdir / "page"),
+                "-r", "100", "-gray", "-png", str(pdf), str(workdir / "page"),
             ],
             check=True,
             stdout=subprocess.DEVNULL,
@@ -134,7 +141,7 @@ def ocr_image_only_pdf(pdf: Path, page_count: int, workdir: Path):
     )
     if len(images) != expected_pages:
         raise RuntimeError(f"Expected {expected_pages} OCR pages, found {len(images)}")
-    with ThreadPoolExecutor(max_workers=4) as pool:
+    with ThreadPoolExecutor(max_workers=OCR_WORKERS) as pool:
         extracted = list(pool.map(lambda image: ocr_page(image, language), images))
     texts = [""] * page_count
     for image, text in zip(images, extracted):

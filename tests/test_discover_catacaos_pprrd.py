@@ -46,6 +46,9 @@ class CatacaosPprrdIndexTests(unittest.TestCase):
     def test_ocr_prefers_runner_stable_english_model(self):
         self.assertEqual(MODULE.OCR_LANGUAGE_PREFERENCE, ("eng", "spa"))
 
+    def test_ocr_concurrency_is_bounded_for_two_core_runner(self):
+        self.assertLessEqual(MODULE.OCR_WORKERS, 2)
+
 
 if __name__ == "__main__":
     unittest.main()
