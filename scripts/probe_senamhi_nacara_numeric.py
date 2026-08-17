@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import json
 import math
+import time
 import unicodedata
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -22,6 +23,9 @@ ENDPOINT = "https://www.senamhi.gob.pe/include/ajax-informacion-diaria-piura.php
 PUBLIC_PAGE = "https://www.senamhi.gob.pe/?p=monitoreo-informacion-diaria"
 LIMA = timezone(timedelta(hours=-5))
 MISSING_SENTINELS = {-999.0, -9999.0}
+REQUEST_ATTEMPTS = 3
+RETRY_DELAYS_SECONDS = (2, 5)
+REQUEST_TIMEOUT_SECONDS = 30
 
 
 def normalized(value):
@@ -77,6 +81,39 @@ def query_time(now=None):
     return current.replace(minute=0, second=0, microsecond=0)
 
 
+def fetch_payload(request_fields, headers, opener=urlopen, sleeper=time.sleep):
+    """Retry the same selector; never substitute another observation time."""
+    attempts = []
+    for attempt_number in range(1, REQUEST_ATTEMPTS + 1):
+        try:
+            request = Request(
+                ENDPOINT,
+                data=urlencode(request_fields).encode("utf-8"),
+                headers=headers,
+                method="POST",
+            )
+            with opener(request, timeout=REQUEST_TIMEOUT_SECONDS) as response:
+                body = response.read()
+                response_http = {
+                    "status": response.status,
+                    "content_type": response.headers.get("content-type"),
+                    "bytes": len(body),
+                }
+            payload = json.loads(body.decode("utf-8"))
+            attempts.append({"attempt": attempt_number, "status": response_http["status"]})
+            return payload, response_http, attempts, None
+        except Exception as exc:
+            attempts.append({
+                "attempt": attempt_number,
+                "error_type": type(exc).__name__,
+                "error": str(exc)[:300],
+            })
+            if attempt_number < REQUEST_ATTEMPTS:
+                sleeper(RETRY_DELAYS_SECONDS[attempt_number - 1])
+            else:
+                return None, {}, attempts, exc
+
+
 def main():
     generated_at = datetime.now(timezone.utc)
     requested_at = query_time(generated_at)
@@ -94,20 +131,12 @@ def main():
     reading = None
     rejection_reason = None
     try:
-        request = Request(
-            ENDPOINT,
-            data=urlencode(request_fields).encode("utf-8"),
-            headers=headers,
-            method="POST",
-        )
-        with urlopen(request, timeout=30) as response:
-            body = response.read()
-            http.update({
-                "status": response.status,
-                "content_type": response.headers.get("content-type"),
-                "bytes": len(body),
-            })
-        payload = json.loads(body.decode("utf-8"))
+        payload, response_http, attempts, request_error = fetch_payload(request_fields, headers)
+        http.update(response_http)
+        http["attempt_count"] = len(attempts)
+        http["attempts"] = attempts
+        if request_error is not None:
+            raise request_error
         reading, rejection_reason = extract_station(payload)
         http["api_success"] = payload.get("success") is True
         http["returned_station_count"] = len(rows_from_response(payload))
