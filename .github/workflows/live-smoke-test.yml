@@ -45,6 +45,8 @@ jobs:
             "data/hydrology/ana_catacaos_critical_segments_2026.geojson"
             "data/hydrology/ana_catacaos_critical_segments_2026_validation.json"
             "data/hydrology/catacaos_pprrd_2026_discovery.json"
+            "data/validation/official_outcome_evidence.json"
+            "data/validation/shadow_runs.json"
             "data/experimental_state.json"
             "data/test_report.json"
             "data/v08_scorecard.json"
@@ -138,6 +140,32 @@ jobs:
               for candidate in pprrd.get('numeric_candidates',[])
           )
 
+          outcome=load('data/validation/official_outcome_evidence.json')
+          assert outcome.get('production_use') is False
+          assert outcome.get('production_ready') is False
+          assert outcome.get('decision_use') == 'HUMAN_REVIEW_INPUT_ONLY'
+          assert int(outcome.get('record_count',0)) == len(outcome.get('records',[]))
+          assert outcome.get('records')
+          for record in outcome.get('records',[]):
+              assert record.get('snapshot_date_utc')
+              assert record.get('captures')
+              for capture in record.get('captures',[]):
+                  assert capture.get('outcome_label') is None
+                  assert capture.get('counts_toward_closeout') is False
+                  assert capture.get('production_use') is False
+                  assert len(capture.get('sources',[])) == 3
+                  for source in capture.get('sources',[]):
+                      if source.get('capture_status') != 'CAPTURED':
+                          assert source.get('unknown_not_zero') is True
+
+          shadow=load('data/validation/shadow_runs.json')
+          assert shadow.get('production_use') is False
+          assert int(shadow.get('record_count',0)) == len(shadow.get('records',[]))
+          for record in shadow.get('records',[]):
+              review=record.get('outcome_verification') or {}
+              if review.get('label') == 'UNCERTAIN':
+                  assert review.get('counts_toward_closeout') is False
+
           tests=load('data/test_report.json')
           assert tests.get('status')=='PASS', tests
 
@@ -157,4 +185,6 @@ jobs:
           print('forecast verification pairs:',verification.get('total_pairs'))
           print('historical replay cases:',len(replay.get('cases',[])))
           print('ANA Catacaos segments:',len(ana.get('features',[])))
+          print('official outcome evidence days:',outcome.get('record_count'))
+          print('shadow archive days:',shadow.get('record_count'))
           PY
