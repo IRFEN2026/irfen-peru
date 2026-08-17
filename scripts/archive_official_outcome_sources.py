@@ -44,12 +44,19 @@ SOURCES = (
         "source_id": "indeci_emergencies",
         "url": "https://portal.indeci.gob.pe/emergencias/",
     },
+    {
+        "source_id": "igp_cendehua_huaycoloro_monitor",
+        "url": "https://www.igp.gob.pe/servicios/centro-monitoreo-deslizamientos-huaicos/inicio",
+        "scope": "Huaycoloro/Chosica external manual outcome evidence",
+    },
 )
 PILOT_TERMS = (
     "San Ildefonso",
     "San Idelfonso",
     "Huaycoloro",
     "Chosica",
+    "Río Seco",
+    "Rio Seco",
     "Catacaos",
     "Bajo Piura",
     "Piura",
