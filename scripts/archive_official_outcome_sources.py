@@ -78,6 +78,16 @@ PILOT_TERMS = (
     "La Libertad",
     "Lima",
 )
+PILOT_SPECIFIC_TERMS = (
+    "San Ildefonso",
+    "San Idelfonso",
+    "Huaycoloro",
+    "Chosica",
+    "Río Seco",
+    "Rio Seco",
+    "Catacaos",
+    "Bajo Piura",
+)
 
 
 class TextExtractor(HTMLParser):
@@ -170,7 +180,9 @@ def indeci_report_links(
             continue
         seen_urls.add(canonical_url)
         pilot_terms = [
-            term for term in PILOT_TERMS if re.search(re.escape(term), searchable, re.I)
+            term
+            for term in PILOT_SPECIFIC_TERMS
+            if re.search(re.escape(term), searchable, re.I)
         ]
         reports.append({
             "title": link["title"],

@@ -135,7 +135,7 @@ class OfficialOutcomeEvidenceTests(unittest.TestCase):
         raw = b"""
             <html><body>
               <a href="/emergencias/informe-de-emergencia-123/">
-                Informe de emergencia por lluvias en Piura al 16/8/2026
+                Informe de emergencia por lluvias en Catacaos al 16/8/2026
               </a>
               <a href="https://example.test/not-official">
                 Piura 16/8/2026
@@ -158,9 +158,41 @@ class OfficialOutcomeEvidenceTests(unittest.TestCase):
             report["url"],
             "https://portal.indeci.gob.pe/emergencias/informe-de-emergencia-123/",
         )
-        self.assertEqual(report["pilot_terms_found"], ["Piura"])
+        self.assertEqual(report["pilot_terms_found"], ["Catacaos"])
         self.assertNotIn("outcome_label", summary)
         self.assertIn("human review", summary["interpretation"])
+
+    def test_indeci_region_only_reports_are_not_promoted_as_pilot_matches(self):
+        raw = b"""
+            <html><body>
+              <a href="/emergencias/informe-lima/">
+                Informe de emergencia en Lima al 16/8/2026
+              </a>
+              <a href="/emergencias/informe-la-libertad/">
+                Informe de emergencia en La Libertad al 16/8/2026
+              </a>
+              <a href="/emergencias/informe-piura/">
+                Informe de emergencia en Piura al 16/8/2026
+              </a>
+            </body></html>
+        """
+
+        summary = collector.summarize_content(
+            "indeci_emergencies",
+            raw,
+            "text/html; charset=utf-8",
+            "2026-08-16",
+            "https://portal.indeci.gob.pe/emergencias/?s=16%2F8%2F2026",
+        )
+
+        self.assertEqual(summary["snapshot_date_alignment"], "TARGET_DATE_PRESENT")
+        self.assertEqual(len(summary["official_report_links_for_snapshot_date"]), 3)
+        self.assertEqual(summary["pilot_report_links_for_snapshot_date"], [])
+        self.assertTrue(all(
+            row["pilot_terms_found"] == []
+            for row in summary["official_report_links_for_snapshot_date"]
+        ))
+        self.assertNotIn("outcome_label", summary)
 
     def test_indeci_search_query_echo_does_not_verify_target_date(self):
         raw = b"""
