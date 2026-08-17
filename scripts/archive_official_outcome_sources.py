@@ -51,6 +51,11 @@ SUPPLEMENTAL_SOURCES = (
         "url": "https://www.igp.gob.pe/servicios/centro-monitoreo-deslizamientos-huaicos/inicio",
         "scope": "Huaycoloro/Chosica external manual outcome evidence",
     },
+    {
+        "source_id": "pechp_piura_news",
+        "url": "https://www.gob.pe/que/pechp",
+        "scope": "Catacaos/Bajo Piura external manual outcome evidence",
+    },
 )
 PILOT_TERMS = (
     "San Ildefonso",
@@ -129,6 +134,13 @@ def summarize_content(
     iso_dates = re.findall(r"\b20\d{2}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])\b", text)
     dates = sorted(set(day_first_dates + iso_dates))
     terms = [term for term in PILOT_TERMS if re.search(re.escape(term), text, re.I)]
+    term_excerpts = [
+        {
+            "term": term,
+            "excerpt": excerpt_around(text, re.escape(term)),
+        }
+        for term in terms
+    ]
     no_activation_excerpt = None
     if source_id == "senamhi_activation_quebradas":
         no_activation_excerpt = excerpt_around(
@@ -138,6 +150,7 @@ def summarize_content(
     summary = {
         "date_markers": dates[:30],
         "pilot_terms_found": terms,
+        "pilot_term_excerpts": term_excerpts,
         "explicit_no_activation_conditions_excerpt": no_activation_excerpt,
         "interpretation": (
             "Source text captured for later review; forecast wording alone does not prove a NONE outcome."
