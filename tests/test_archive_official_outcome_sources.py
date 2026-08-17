@@ -2,6 +2,8 @@ from datetime import datetime, timezone
 import importlib.util
 from pathlib import Path
 import unittest
+from unittest.mock import patch
+from urllib.error import URLError
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -14,6 +16,19 @@ SPEC.loader.exec_module(collector)
 
 
 class OfficialOutcomeEvidenceTests(unittest.TestCase):
+    class FakeResponse:
+        status = 200
+        headers = {"Content-Type": "text/html; charset=utf-8"}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def read(self, _size):
+            return b"<p>16/08/2026 Piura</p>"
+
     def test_snapshot_day_defaults_to_previous_closed_utc_day(self):
         now = datetime(2026, 8, 17, 12, tzinfo=timezone.utc)
 
@@ -127,6 +142,53 @@ class OfficialOutcomeEvidenceTests(unittest.TestCase):
         self.assertFalse(archive["production_use"])
         self.assertFalse(archive["production_ready"])
         self.assertEqual(archive["decision_use"], "HUMAN_REVIEW_INPUT_ONLY")
+
+    def test_fetch_retries_same_historical_url_then_preserves_success(self):
+        requested_urls = []
+        delays = []
+
+        def fake_urlopen(request, timeout):
+            self.assertEqual(timeout, 35)
+            requested_urls.append(request.full_url)
+            if len(requested_urls) < 3:
+                raise URLError("temporary timeout")
+            return self.FakeResponse()
+
+        with patch.object(collector, "urlopen", side_effect=fake_urlopen):
+            result = collector.fetch_source(
+                collector.SOURCES[1],
+                datetime(2026, 8, 17, 12, tzinfo=timezone.utc),
+                "2026-08-16",
+                sleep_fn=delays.append,
+            )
+
+        self.assertEqual(result["capture_status"], "CAPTURED")
+        self.assertFalse(result["unknown_not_zero"])
+        self.assertEqual(result["attempt_count"], 3)
+        self.assertEqual([row["status"] for row in result["attempts"]], [
+            "SOURCE_UNREACHABLE",
+            "SOURCE_UNREACHABLE",
+            "CAPTURED",
+        ])
+        self.assertEqual(delays, list(collector.RETRY_DELAYS_SECONDS))
+        self.assertEqual(len(set(requested_urls)), 1)
+        self.assertIn("f=16-08-2026", requested_urls[0])
+
+    def test_fetch_exhaustion_stays_unknown_not_zero(self):
+        delays = []
+        with patch.object(collector, "urlopen", side_effect=URLError("still unavailable")):
+            result = collector.fetch_source(
+                collector.SOURCES[0],
+                datetime(2026, 8, 17, 12, tzinfo=timezone.utc),
+                "2026-08-16",
+                sleep_fn=delays.append,
+            )
+
+        self.assertEqual(result["capture_status"], "SOURCE_UNREACHABLE")
+        self.assertTrue(result["unknown_not_zero"])
+        self.assertEqual(result["attempt_count"], collector.MAX_FETCH_ATTEMPTS)
+        self.assertEqual(len(result["attempts"]), collector.MAX_FETCH_ATTEMPTS)
+        self.assertEqual(delays, list(collector.RETRY_DELAYS_SECONDS))
 
 
 if __name__ == "__main__":

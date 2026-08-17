@@ -19,6 +19,7 @@ from urllib.request import Request, urlopen
 import argparse
 import json
 import re
+import time
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,6 +27,8 @@ OUT = ROOT / "site/data/validation/official_outcome_evidence.json"
 MAX_RECORDS = 400
 MAX_CAPTURES_PER_DAY = 5
 MAX_BYTES = 2_000_000
+MAX_FETCH_ATTEMPTS = 3
+RETRY_DELAYS_SECONDS = (2, 5)
 SOURCES = (
     {
         "source_id": "senamhi_activation_quebradas",
@@ -157,46 +160,73 @@ def source_for_snapshot(source: dict, snapshot_date: str):
     return resolved
 
 
-def fetch_source(source: dict, captured_at: datetime, snapshot_date: str):
+def fetch_source(
+    source: dict,
+    captured_at: datetime,
+    snapshot_date: str,
+    sleep_fn=time.sleep,
+):
     source = source_for_snapshot(source, snapshot_date)
-    request = Request(
-        source["url"],
-        headers={"User-Agent": "IRFEN-v0.8-shadow-evidence/1.0"},
-    )
-    try:
-        with urlopen(request, timeout=35) as response:
-            raw = response.read(MAX_BYTES + 1)
-            if len(raw) > MAX_BYTES:
-                raise ValueError(f"official response exceeds {MAX_BYTES} bytes")
-            content_type = response.headers.get("Content-Type")
-            summary = summarize_content(
-                source["source_id"], raw, content_type, snapshot_date
-            )
-            return {
-                **source,
-                "capture_status": "CAPTURED",
-                "http_status": response.status,
-                "captured_at": captured_at.isoformat(),
-                "content_type": content_type,
-                "content_length": len(raw),
-                "content_sha256": sha256(raw).hexdigest(),
-                "summary": summary,
-                "source_error": None,
-                "unknown_not_zero": False,
-            }
-    except (HTTPError, URLError, TimeoutError, OSError, ValueError) as exc:
-        return {
-            **source,
-            "capture_status": "SOURCE_UNREACHABLE",
-            "http_status": getattr(exc, "code", None),
-            "captured_at": captured_at.isoformat(),
-            "content_type": None,
-            "content_length": None,
-            "content_sha256": None,
-            "summary": None,
-            "source_error": {"type": type(exc).__name__, "message": str(exc)[:500]},
-            "unknown_not_zero": True,
-        }
+    attempts = []
+    last_error = None
+    for attempt_number in range(1, MAX_FETCH_ATTEMPTS + 1):
+        request = Request(
+            source["url"],
+            headers={"User-Agent": "IRFEN-v0.8-shadow-evidence/1.0"},
+        )
+        try:
+            with urlopen(request, timeout=35) as response:
+                raw = response.read(MAX_BYTES + 1)
+                if len(raw) > MAX_BYTES:
+                    raise ValueError(f"official response exceeds {MAX_BYTES} bytes")
+                content_type = response.headers.get("Content-Type")
+                attempts.append({
+                    "attempt": attempt_number,
+                    "status": "CAPTURED",
+                    "http_status": response.status,
+                    "error": None,
+                })
+                summary = summarize_content(
+                    source["source_id"], raw, content_type, snapshot_date
+                )
+                return {
+                    **source,
+                    "capture_status": "CAPTURED",
+                    "http_status": response.status,
+                    "captured_at": captured_at.isoformat(),
+                    "content_type": content_type,
+                    "content_length": len(raw),
+                    "content_sha256": sha256(raw).hexdigest(),
+                    "summary": summary,
+                    "source_error": None,
+                    "unknown_not_zero": False,
+                    "attempt_count": len(attempts),
+                    "attempts": attempts,
+                }
+        except (HTTPError, URLError, TimeoutError, OSError, ValueError) as exc:
+            last_error = {"type": type(exc).__name__, "message": str(exc)[:500]}
+            attempts.append({
+                "attempt": attempt_number,
+                "status": "SOURCE_UNREACHABLE",
+                "http_status": getattr(exc, "code", None),
+                "error": last_error,
+            })
+            if attempt_number < MAX_FETCH_ATTEMPTS:
+                sleep_fn(RETRY_DELAYS_SECONDS[attempt_number - 1])
+    return {
+        **source,
+        "capture_status": "SOURCE_UNREACHABLE",
+        "http_status": attempts[-1]["http_status"],
+        "captured_at": captured_at.isoformat(),
+        "content_type": None,
+        "content_length": None,
+        "content_sha256": None,
+        "summary": None,
+        "source_error": last_error,
+        "unknown_not_zero": True,
+        "attempt_count": len(attempts),
+        "attempts": attempts,
+    }
 
 
 def load_archive():
