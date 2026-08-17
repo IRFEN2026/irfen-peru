@@ -225,6 +225,16 @@ class ImergPublishHandoffTests(unittest.TestCase):
         self.assertIn("published.get(freshness_key) == expected.get(freshness_key)", workflow)
         self.assertIn("published_probe == expected_probe", workflow)
 
+    def test_publisher_reruns_use_unique_artifact_and_retry_smoke_dispatch(self):
+        workflow = (ROOT / ".github/workflows/publish-committed-data.yml").read_text(encoding="utf-8")
+        self.assertGreaterEqual(
+            workflow.count("github-pages-${{ github.run_attempt }}"),
+            2,
+        )
+        self.assertIn("artifact_name: github-pages-${{ github.run_attempt }}", workflow)
+        self.assertIn("for attempt in 1 2 3 4", workflow)
+        self.assertIn("sleep $((attempt * 5))", workflow)
+
     def test_pull_request_validation_is_non_deploying(self):
         workflow = (ROOT / ".github/workflows/pr-validation.yml").read_text(encoding="utf-8")
         self.assertIn("pull_request:", workflow)
