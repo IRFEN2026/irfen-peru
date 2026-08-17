@@ -14,6 +14,7 @@ from html import unescape
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.error import HTTPError, URLError
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from urllib.request import Request, urlopen
 import argparse
 import json
@@ -29,10 +30,12 @@ SOURCES = (
     {
         "source_id": "senamhi_activation_quebradas",
         "url": "https://www.senamhi.gob.pe/?p=aviso-activacion-quebrada",
+        "historical_date_parameter": "f",
     },
     {
         "source_id": "senamhi_piura_24h",
         "url": "https://www.senamhi.gob.pe/main.php?dp=piura&p=aviso-24H",
+        "historical_date_parameter": "f",
     },
     {
         "source_id": "indeci_emergencies",
@@ -86,8 +89,11 @@ def date_marker_alignment(date_markers: list[str], snapshot_date: str):
     parsed = []
     for marker in date_markers:
         try:
-            day, month, year = [int(part) for part in re.split(r"[/.-]", marker)]
-            parsed.append(date(year, month, day))
+            if re.fullmatch(r"20\d{2}-\d{2}-\d{2}", marker):
+                parsed.append(date.fromisoformat(marker))
+            else:
+                day, month, year = [int(part) for part in re.split(r"[/.-]", marker)]
+                parsed.append(date(year, month, day))
         except (TypeError, ValueError):
             continue
     if expected in parsed:
@@ -97,9 +103,19 @@ def date_marker_alignment(date_markers: list[str], snapshot_date: str):
     return "UNKNOWN_NO_DATE_MARKER"
 
 
-def summarize_content(source_id: str, raw: bytes, content_type: str | None):
+def summarize_content(
+    source_id: str,
+    raw: bytes,
+    content_type: str | None,
+    snapshot_date: str | None = None,
+):
     text = normalized_text(raw, content_type)
-    dates = sorted(set(re.findall(r"\b(?:0?[1-9]|[12]\d|3[01])[/.-](?:0?[1-9]|1[0-2])[/.-]20\d{2}\b", text)))
+    day_first_dates = re.findall(
+        r"\b(?:0?[1-9]|[12]\d|3[01])[/.-](?:0?[1-9]|1[0-2])[/.-]20\d{2}\b",
+        text,
+    )
+    iso_dates = re.findall(r"\b20\d{2}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])\b", text)
+    dates = sorted(set(day_first_dates + iso_dates))
     terms = [term for term in PILOT_TERMS if re.search(re.escape(term), text, re.I)]
     no_activation_excerpt = None
     if source_id == "senamhi_activation_quebradas":
@@ -107,7 +123,7 @@ def summarize_content(source_id: str, raw: bytes, content_type: str | None):
             text,
             r"no se consideran condiciones favorables.{0,220}activaci[oó]n de quebradas",
         )
-    return {
+    summary = {
         "date_markers": dates[:30],
         "pilot_terms_found": terms,
         "explicit_no_activation_conditions_excerpt": no_activation_excerpt,
@@ -117,9 +133,32 @@ def summarize_content(source_id: str, raw: bytes, content_type: str | None):
             else "Source text captured for later review; absence of pilot terms is not evidence of no event."
         ),
     }
+    if snapshot_date:
+        # Alignment must inspect the complete marker set.  The persisted list
+        # remains bounded because SENAMHI pages also expose long archive tables.
+        summary["snapshot_date_alignment"] = date_marker_alignment(dates, snapshot_date)
+    return summary
+
+
+def source_for_snapshot(source: dict, snapshot_date: str):
+    """Return the exact historical SENAMHI page for the closed UTC day."""
+    parameter = source.get("historical_date_parameter")
+    if not parameter:
+        return dict(source)
+    snapshot_day = date.fromisoformat(snapshot_date)
+    parts = urlsplit(source["url"])
+    query = dict(parse_qsl(parts.query, keep_blank_values=True))
+    query[parameter] = snapshot_day.strftime("%d-%m-%Y")
+    resolved = dict(source)
+    resolved["url"] = urlunsplit(
+        (parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment)
+    )
+    resolved.pop("historical_date_parameter", None)
+    return resolved
 
 
 def fetch_source(source: dict, captured_at: datetime, snapshot_date: str):
+    source = source_for_snapshot(source, snapshot_date)
     request = Request(
         source["url"],
         headers={"User-Agent": "IRFEN-v0.8-shadow-evidence/1.0"},
@@ -130,9 +169,8 @@ def fetch_source(source: dict, captured_at: datetime, snapshot_date: str):
             if len(raw) > MAX_BYTES:
                 raise ValueError(f"official response exceeds {MAX_BYTES} bytes")
             content_type = response.headers.get("Content-Type")
-            summary = summarize_content(source["source_id"], raw, content_type)
-            summary["snapshot_date_alignment"] = date_marker_alignment(
-                summary["date_markers"], snapshot_date
+            summary = summarize_content(
+                source["source_id"], raw, content_type, snapshot_date
             )
             return {
                 **source,
