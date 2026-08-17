@@ -95,6 +95,75 @@ class ShadowEligibilityTests(unittest.TestCase):
         self.assertFalse(result["checks"]["all_recommendations_test_only"])
 
 
+class ShadowOutcomeReviewQueueTests(unittest.TestCase):
+    def queue(self, records, evidence=None):
+        return scorecard.shadow_outcome_review_queue(
+            records,
+            evidence or {"records": []},
+            PILOTS,
+            30,
+            {"EVENT", "NONE"},
+        )
+
+    def test_pending_day_without_official_match_waits_without_auto_none(self):
+        record = eligible_record()
+        record["outcome_verification"] = {
+            "status": "PENDING_REAL_WORLD_OUTCOME_REVIEW",
+            "label": None,
+        }
+
+        queue = self.queue([record])
+
+        self.assertEqual(len(queue), 1)
+        self.assertEqual(queue[0]["action"], "WAIT_FOR_OFFICIAL_EVIDENCE")
+        self.assertEqual(queue[0]["official_pilot_specific_link_count"], 0)
+        self.assertIn("outcome_label_accepted", queue[0]["failed_eligibility_check_ids"])
+        self.assertTrue(queue[0]["automatic_outcome_classification_forbidden"])
+        self.assertTrue(queue[0]["missing_evidence_is_not_none"])
+        self.assertFalse(queue[0]["counts_toward_closeout"])
+
+    def test_uncertain_review_remains_queued(self):
+        record = eligible_record()
+        record["outcome_verification"]["label"] = "UNCERTAIN"
+
+        queue = self.queue([record])
+
+        self.assertEqual(len(queue), 1)
+        self.assertEqual(queue[0]["current_label"], "UNCERTAIN")
+        self.assertEqual(queue[0]["action"], "WAIT_FOR_OFFICIAL_EVIDENCE")
+
+    def test_exact_official_link_routes_to_human_review_only(self):
+        record = eligible_record()
+        record["outcome_verification"] = {
+            "status": "PENDING_REAL_WORLD_OUTCOME_REVIEW",
+            "label": None,
+        }
+        evidence = {
+            "records": [{
+                "snapshot_date_utc": "2026-08-15",
+                "captures": [{
+                    "captured_at": "2026-08-16T03:00:00Z",
+                    "sources": [{
+                        "summary": {
+                            "pilot_report_links_for_snapshot_date": [
+                                {"url": "https://portal.indeci.gob.pe/exact-pilot-report"}
+                            ]
+                        }
+                    }],
+                }],
+            }],
+        }
+
+        queue = self.queue([record], evidence)
+
+        self.assertEqual(queue[0]["official_pilot_specific_link_count"], 1)
+        self.assertEqual(queue[0]["action"], "HUMAN_REVIEW_REQUIRED")
+        self.assertTrue(queue[0]["automatic_outcome_classification_forbidden"])
+
+    def test_eligible_accepted_outcome_is_removed_from_queue(self):
+        self.assertEqual(self.queue([eligible_record()]), [])
+
+
 class ExternalEvidenceQueueTests(unittest.TestCase):
     def test_pending_evidence_is_exposed_without_automatic_acceptance(self):
         contract = {
