@@ -230,12 +230,27 @@ def add_capture(archive: dict, snapshot_date: str, capture: dict):
     return archive
 
 
+def resolve_snapshot_day(snapshot_date: str | None, now: datetime):
+    """Resolve a closed UTC day; current or future days are never reviewable."""
+    snapshot_day = (
+        date.fromisoformat(snapshot_date)
+        if snapshot_date
+        else now.date() - timedelta(days=1)
+    )
+    if snapshot_day >= now.date():
+        raise ValueError("snapshot date must be a closed UTC day before today")
+    return snapshot_day
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--snapshot-date", help="Closed UTC day, YYYY-MM-DD; defaults to yesterday UTC")
     args = parser.parse_args()
     now = datetime.now(timezone.utc)
-    snapshot_day = date.fromisoformat(args.snapshot_date) if args.snapshot_date else now.date() - timedelta(days=1)
+    try:
+        snapshot_day = resolve_snapshot_day(args.snapshot_date, now)
+    except ValueError as exc:
+        parser.error(str(exc))
     capture = {
         "captured_at": now.isoformat(),
         "capture_status": "EVIDENCE_CAPTURED_NOT_CLASSIFIED",

@@ -14,6 +14,31 @@ SPEC.loader.exec_module(collector)
 
 
 class OfficialOutcomeEvidenceTests(unittest.TestCase):
+    def test_snapshot_day_defaults_to_previous_closed_utc_day(self):
+        now = datetime(2026, 8, 17, 12, tzinfo=timezone.utc)
+
+        self.assertEqual(
+            collector.resolve_snapshot_day(None, now).isoformat(),
+            "2026-08-16",
+        )
+
+    def test_snapshot_day_rejects_current_and_future_utc_days(self):
+        now = datetime(2026, 8, 17, 12, tzinfo=timezone.utc)
+
+        for candidate in ("2026-08-17", "2026-08-18"):
+            with self.subTest(candidate=candidate):
+                with self.assertRaisesRegex(ValueError, "closed UTC day"):
+                    collector.resolve_snapshot_day(candidate, now)
+
+    def test_workflow_retries_closed_day_and_accepts_bounded_manual_date(self):
+        workflow = (ROOT / ".github/workflows/official-outcome-evidence.yml").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn('cron: "25 0,6,12,18 * * *"', workflow)
+        self.assertIn("SNAPSHOT_DATE: ${{ inputs.snapshot_date }}", workflow)
+        self.assertIn('args+=(--snapshot-date "$SNAPSHOT_DATE")', workflow)
+
     def test_extracts_explicit_no_activation_wording_without_classifying(self):
         raw = (
             b"<html><body>Aviso 228 - 2026 "
