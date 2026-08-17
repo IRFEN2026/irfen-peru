@@ -44,6 +44,23 @@ def ledger(status="CANDIDATE_REVIEW"):
 
 
 class ExternalEvidenceReviewTests(unittest.TestCase):
+    def test_cendehua_probe_is_mapped_without_accepting_chosica_event_evidence(self):
+        data = json.loads(
+            (ROOT / "site/data/validation/v08_external_evidence.json").read_text(encoding="utf-8")
+        )
+        chosica = next(pilot for pilot in data["pilots"] if pilot["zone_id"] == "chosica")
+        item = next(
+            row
+            for row in chosica["items"]
+            if row["evidence_id"] == "observed_events_after_2025_inauguration"
+        )
+        self.assertIn(
+            "site/data/stations/igp_cendehua_access_probe.json",
+            item.get("internal_artifacts", []),
+        )
+        self.assertNotEqual(item["status"], "ACCEPTED")
+        self.assertTrue(item.get("remaining_gap"))
+
     def test_every_current_ledger_source_is_allowed_as_official(self):
         data = json.loads(
             (ROOT / "site/data/validation/v08_external_evidence.json").read_text(encoding="utf-8")
