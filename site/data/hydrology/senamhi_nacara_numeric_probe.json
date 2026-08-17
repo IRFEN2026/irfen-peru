@@ -1,6 +1,6 @@
 {
   "version": "0.8-experimental",
-  "generated_at": "2026-08-17T08:26:04.870404+00:00",
+  "generated_at": "2026-08-17T09:14:08.139896+00:00",
   "production_use": false,
   "production_ready": false,
   "integration_mode": "TEST_ONLY",
@@ -10,24 +10,38 @@
     "endpoint": "https://www.senamhi.gob.pe/include/ajax-informacion-diaria-piura.php"
   },
   "query": {
-    "requested_observation_time": "2026-08-17T03:00:00-05:00",
+    "requested_observation_time": "2026-08-17T04:00:00-05:00",
     "timezone": "America/Lima (UTC-05:00)",
     "time_is_request_selector": true,
     "response_echoes_observation_time": false
   },
-  "status": "NO_VALID_NUMERIC_READING",
-  "numeric_river_state_available": false,
-  "reading": null,
-  "rejection_reason": "URLError",
+  "status": "OFFICIAL_NUMERIC_RIVER_STATE_CANDIDATE_AVAILABLE",
+  "numeric_river_state_available": true,
+  "reading": {
+    "station_id": "47E0415A",
+    "station_name": "PUENTE ÑACARA",
+    "basin": "Cuenca Piura",
+    "department": "PIURA",
+    "variable": "CAUDAL",
+    "value": 2.4644,
+    "unit": "m3/s",
+    "trend_code": "E",
+    "official_reference_red": 1100,
+    "official_reference_red_use": "SOURCE_METADATA_ONLY_NOT_IRFEN_THRESHOLD"
+  },
+  "rejection_reason": null,
   "http": {
     "endpoint": "https://www.senamhi.gob.pe/include/ajax-informacion-diaria-piura.php",
     "method": "POST",
     "request_fields": {
       "fecha": "2026-08-17",
-      "hora": "03:00"
+      "hora": "04:00"
     },
-    "error_type": "URLError",
-    "error": "<urlopen error timed out>"
+    "status": 200,
+    "content_type": "text/html; charset=UTF-8",
+    "bytes": 534,
+    "api_success": true,
+    "returned_station_count": 1
   },
   "channel_validation": {
     "exact_station_code_required": "47E0415A",
@@ -41,7 +55,7 @@
     "response_time_echo_pending": true
   },
   "scientific_gate": {
-    "status": "AUTOMATIC_NUMERIC_ACCESS_UNRESOLVED",
+    "status": "TEST_ONLY_NUMERIC_CHANNEL_FOUND",
     "remaining_gap": "Acumular frescura y continuidad; validar tiempo de tránsito Ñácara-Bajo Piura y capacidad hidráulica. La hora es el selector de consulta pero no vuelve en la respuesta JSON.",
     "prohibitions": [
       "No usar como alerta operativa.",
