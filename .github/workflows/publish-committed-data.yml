@@ -161,15 +161,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          sleep 10
           BASE="https://irfen2026.github.io/irfen-peru"
-          curl -fsSL --retry 4 "$BASE/?t=${GITHUB_RUN_ID}" >/dev/null
           mkdir -p /tmp/irfen-published
-          curl -fsSL --retry 4 "$BASE/data/calibration/imerg_early_live_archive.json?t=${GITHUB_RUN_ID}" -o /tmp/irfen-published/imerg.json
-          curl -fsSL --retry 4 "$BASE/data/hydrology/senamhi_nacara_numeric_archive.json?t=${GITHUB_RUN_ID}" -o /tmp/irfen-published/nacara.json
-          curl -fsSL --retry 4 "$BASE/data/validation/shadow_runs.json?t=${GITHUB_RUN_ID}" -o /tmp/irfen-published/shadow.json
-          curl -fsSL --retry 4 "$BASE/data/v08_scorecard.json?t=${GITHUB_RUN_ID}" -o /tmp/irfen-published/scorecard.json
-          python - <<'PY'
+          freshness_ok=false
+          for attempt in 1 2 3 4 5 6; do
+            query="t=${GITHUB_RUN_ID}&attempt=${attempt}"
+            if curl -fsSL --retry 3 "$BASE/?$query" >/dev/null \
+              && curl -fsSL --retry 3 "$BASE/data/calibration/imerg_early_live_archive.json?$query" -o /tmp/irfen-published/imerg.json \
+              && curl -fsSL --retry 3 "$BASE/data/hydrology/senamhi_nacara_numeric_archive.json?$query" -o /tmp/irfen-published/nacara.json \
+              && curl -fsSL --retry 3 "$BASE/data/validation/shadow_runs.json?$query" -o /tmp/irfen-published/shadow.json \
+              && curl -fsSL --retry 3 "$BASE/data/v08_scorecard.json?$query" -o /tmp/irfen-published/scorecard.json \
+              && python - <<'PY'
           import json
           from pathlib import Path
 
@@ -199,6 +201,17 @@ jobs:
           assert published_nacara_probe == expected_nacara_probe, 'Pages sirve un archivo SENAMHI distinto del desplegado'
           print('PUBLICATION FRESHNESS OK')
           PY
+            then
+              freshness_ok=true
+              break
+            fi
+            if [[ "$attempt" -eq 6 ]]; then
+              echo "GitHub Pages no sirvió el artefacto exacto tras $attempt verificaciones." >&2
+              exit 1
+            fi
+            sleep 10
+          done
+          test "$freshness_ok" = true
 
       - name: Ordenar smoke test completo
         env:
