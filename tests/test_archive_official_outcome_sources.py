@@ -141,7 +141,7 @@ class OfficialOutcomeEvidenceTests(unittest.TestCase):
         }
         self.assertEqual(
             set(supplemental_by_id),
-            {"igp_cendehua_huaycoloro_monitor"},
+            {"igp_cendehua_huaycoloro_monitor", "pechp_piura_news"},
         )
         cendehua = collector.source_for_snapshot(
             supplemental_by_id["igp_cendehua_huaycoloro_monitor"], "2026-08-16"
@@ -151,6 +151,9 @@ class OfficialOutcomeEvidenceTests(unittest.TestCase):
             supplemental_by_id["igp_cendehua_huaycoloro_monitor"],
         )
         self.assertIn("igp.gob.pe", cendehua["url"])
+        pechp = supplemental_by_id["pechp_piura_news"]
+        self.assertEqual(pechp["url"], "https://www.gob.pe/que/pechp")
+        self.assertIn("Catacaos/Bajo Piura", pechp["scope"])
 
     def test_cendehua_terms_are_preserved_for_manual_review(self):
         summary = collector.summarize_content(
@@ -165,6 +168,23 @@ class OfficialOutcomeEvidenceTests(unittest.TestCase):
             ["Huaycoloro", "Chosica", "Río Seco"],
         )
         self.assertEqual(summary["snapshot_date_alignment"], "UNKNOWN_NO_DATE_MARKER")
+        self.assertIn("not evidence", summary["interpretation"])
+
+    def test_pilot_excerpts_preserve_bounded_context_without_classifying(self):
+        summary = collector.summarize_content(
+            "pechp_piura_news",
+            (
+                "<p>Monitoreo preventivo oficial. Catacaos mantiene vigilancia "
+                "del río Piura durante la temporada de lluvias.</p>"
+            ).encode(),
+            "text/html; charset=utf-8",
+            "2026-08-16",
+        )
+
+        excerpts = {row["term"]: row["excerpt"] for row in summary["pilot_term_excerpts"]}
+        self.assertIn("Catacaos", excerpts)
+        self.assertIn("Piura", excerpts["Catacaos"])
+        self.assertNotIn("outcome_label", summary)
         self.assertIn("not evidence", summary["interpretation"])
 
     def test_repeated_capture_preserves_bounded_history_and_safety_guards(self):
