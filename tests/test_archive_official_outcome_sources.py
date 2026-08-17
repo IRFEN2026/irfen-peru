@@ -209,6 +209,27 @@ class OfficialOutcomeEvidenceTests(unittest.TestCase):
         self.assertNotIn("outcome_label", summary)
         self.assertIn("not evidence", summary["interpretation"])
 
+    def test_parallel_fetch_is_bounded_and_preserves_manifest_order(self):
+        sources = tuple(
+            {"source_id": f"source_{index}", "url": f"https://example.test/{index}"}
+            for index in range(5)
+        )
+        captured_at = datetime(2026, 8, 17, 12, tzinfo=timezone.utc)
+
+        def fake_fetch(source, captured, snapshot_date):
+            self.assertEqual(captured, captured_at)
+            self.assertEqual(snapshot_date, "2026-08-16")
+            return {"source_id": source["source_id"]}
+
+        with patch.object(collector, "fetch_source", side_effect=fake_fetch):
+            rows = collector.fetch_sources(sources, captured_at, "2026-08-16")
+
+        self.assertEqual(collector.MAX_FETCH_WORKERS, 3)
+        self.assertEqual(
+            [row["source_id"] for row in rows],
+            [source["source_id"] for source in sources],
+        )
+
     def test_repeated_capture_preserves_bounded_history_and_safety_guards(self):
         archive = collector.load_archive()
         archive["records"] = []
