@@ -40,6 +40,7 @@ jobs:
             "data/forecast/verification.json"
             "data/calibration/historical_replay.json"
             "data/hydrology/piura_reference_model.json"
+            "data/hydrology/senamhi_nacara_numeric_archive.json"
             "data/hydrology/catacaos_official_context.geojson"
             "data/hydrology/ana_catacaos_critical_segments_2026.geojson"
             "data/hydrology/ana_catacaos_critical_segments_2026_validation.json"
@@ -96,6 +97,15 @@ jobs:
 
           ref=load('data/hydrology/piura_reference_model.json')
           assert ref.get('production_use') is False
+
+          nacara=load('data/hydrology/senamhi_nacara_numeric_archive.json')
+          assert nacara.get('production_use') is False
+          assert nacara.get('production_ready') is False
+          assert nacara.get('integration_mode') == 'TEST_ONLY'
+          assert nacara.get('station',{}).get('id') == '47E0415A'
+          assert nacara.get('scientific_gate',{}).get('hydraulic_transfer_to_catacaos_validated') is False
+          assert nacara.get('scientific_gate',{}).get('official_threshold_promoted_to_irfen') is False
+          assert 'never zero' in nacara.get('scientific_gate',{}).get('missing_data_rule','')
 
           context=load('data/hydrology/catacaos_official_context.geojson')
           for f in context.get('features',[]):
