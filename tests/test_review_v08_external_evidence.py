@@ -65,6 +65,27 @@ class ExternalEvidenceReviewTests(unittest.TestCase):
         self.assertNotEqual(item["status"], "ACCEPTED")
         self.assertTrue(item.get("remaining_gap"))
 
+    def test_san_ildefonso_completed_cleaning_report_does_not_close_maintenance_gate(self):
+        data = json.loads(
+            (ROOT / "site/data/validation/v08_external_evidence.json").read_text(encoding="utf-8")
+        )
+        pilot = next(
+            row for row in data["pilots"] if row["zone_id"] == "san_ildefonso"
+        )
+        item = next(
+            row
+            for row in pilot["items"]
+            if row["evidence_id"] == "sediment_obstruction_and_maintenance_condition"
+        )
+
+        self.assertIn(
+            "https://www.gob.pe/institucion/regionlalibertad/noticias/1374054-gobierno-regional-supera-los-12-kilometros-de-limpieza-y-descolmatacion",
+            item["official_sources"],
+        )
+        self.assertIn("habían culminado", item["preliminary_assessment"])
+        self.assertNotEqual(item["status"], "ACCEPTED")
+        self.assertIn("condición vigente", item["remaining_gap"])
+
     def test_cendehua_probe_is_mapped_without_accepting_chosica_event_evidence(self):
         data = json.loads(
             (ROOT / "site/data/validation/v08_external_evidence.json").read_text(encoding="utf-8")
