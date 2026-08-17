@@ -211,10 +211,22 @@ def main():
             for capture in captures
             for source in capture.get('supplemental_sources',[])
         ]
+        allowed_supplemental_source_ids={
+            'igp_cendehua_huaycoloro_monitor',
+            'pechp_piura_news',
+        }
         check(
             'official_outcome_supplemental_sources_are_bounded',
             all(
-                source.get('source_id')=='igp_cendehua_huaycoloro_monitor'
+                len(capture.get('supplemental_sources',[]))<=len(allowed_supplemental_source_ids)
+                and {
+                    source.get('source_id')
+                    for source in capture.get('supplemental_sources',[])
+                }.issubset(allowed_supplemental_source_ids)
+                for capture in captures
+            )
+            and all(
+                source.get('source_id') in allowed_supplemental_source_ids
                 for source in supplemental_sources
             ),
         )

@@ -148,11 +148,14 @@ jobs:
       - name: Preparar sitio web
         uses: actions/upload-pages-artifact@v3
         with:
+          name: github-pages-${{ github.run_attempt }}
           path: site
 
       - name: Publicar IRFEN
         id: deployment
         uses: actions/deploy-pages@v5
+        with:
+          artifact_name: github-pages-${{ github.run_attempt }}
 
       - name: Verificar activos publicados
         shell: bash
@@ -200,4 +203,16 @@ jobs:
       - name: Ordenar smoke test completo
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run live-smoke-test.yml --repo "$GITHUB_REPOSITORY" --ref main
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4; do
+            if gh workflow run live-smoke-test.yml --repo "$GITHUB_REPOSITORY" --ref main; then
+              exit 0
+            fi
+            if [[ "$attempt" -eq 4 ]]; then
+              echo "No se pudo ordenar el smoke test tras $attempt intentos." >&2
+              exit 1
+            fi
+            sleep $((attempt * 5))
+          done
