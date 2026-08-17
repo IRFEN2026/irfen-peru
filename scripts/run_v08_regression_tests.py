@@ -169,6 +169,12 @@ def main():
         'live_smoke_avoids_duplicate_archived_publish_trigger',
         'IRFEN - Publicar datos experimentales archivados' not in smoke_workflow,
     )
+    check(
+        'live_smoke_requires_catacaos_pprrd_research_asset',
+        'data/hydrology/catacaos_pprrd_2026_discovery.json' in smoke_workflow
+        and "pprrd.get('production_use') is False" in smoke_workflow
+        and "candidate.get('validated_meaning') is False" in smoke_workflow,
+    )
     check('closeout_contract_exact_pilots',closeout_contract.get('pilot_zone_ids')==['san_ildefonso','chosica','catacaos'])
     check('closeout_contract_fixed_milestones',closeout_contract.get('milestone_percentages')==[25,50,75,100])
     shadow_contract=closeout_contract.get('shadow_validation') or {}
