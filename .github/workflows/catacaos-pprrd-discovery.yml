@@ -19,7 +19,7 @@ concurrency:
 jobs:
   discover:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 20
     steps:
       - name: Descargar repositorio
         uses: actions/checkout@v6
@@ -30,7 +30,10 @@ jobs:
           python-version: "3.12"
 
       - name: Instalar dependencias
-        run: pip install requests pypdf
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils tesseract-ocr tesseract-ocr-spa
+          pip install requests pypdf
 
       - name: Indexar PPRRD oficial Catacaos 2026-2030
         run: python scripts/discover_catacaos_pprrd.py
@@ -39,6 +42,15 @@ jobs:
         run: |
           test -s site/data/hydrology/catacaos_pprrd_2026_discovery.json
           python -m json.tool site/data/hydrology/catacaos_pprrd_2026_discovery.json >/dev/null
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data=json.loads(Path('site/data/hydrology/catacaos_pprrd_2026_discovery.json').read_text())
+          assert data.get('production_use') is False
+          assert data.get('extraction_method') in {'EMBEDDED_TEXT','OCR_IMAGE_ONLY_PDF'}
+          assert data.get('categories_found')
+          assert all(item.get('validated_meaning') is False for item in data.get('numeric_candidates',[]))
+          PY
 
       - name: Guardar índice científico
         run: |
