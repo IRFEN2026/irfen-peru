@@ -34,12 +34,12 @@ RETRY_DELAYS_SECONDS = (2, 5)
 SOURCES = (
     {
         "source_id": "senamhi_activation_quebradas",
-        "url": "https://www.senamhi.gob.pe/?p=aviso-activacion-quebrada",
+        "url": "https://www.senamhi.gob.pe/servicios/?p=aviso-activacion-quebrada",
         "historical_date_parameter": "f",
     },
     {
         "source_id": "senamhi_piura_24h",
-        "url": "https://www.senamhi.gob.pe/main.php?dp=piura&p=aviso-24H",
+        "url": "https://www.senamhi.gob.pe/servicios/main.php?dp=piura&p=aviso-24H",
         "historical_date_parameter": "f",
     },
     {
@@ -195,6 +195,7 @@ def fetch_source(
     snapshot_date: str,
     sleep_fn=time.sleep,
 ):
+    requires_target_date_alignment = bool(source.get("historical_date_parameter"))
     source = source_for_snapshot(source, snapshot_date)
     attempts = []
     last_error = None
@@ -218,9 +219,18 @@ def fetch_source(
                 summary = summarize_content(
                     source["source_id"], raw, content_type, snapshot_date
                 )
+                date_alignment = summary.get("snapshot_date_alignment")
+                date_aligned = (
+                    not requires_target_date_alignment
+                    or date_alignment == "TARGET_DATE_PRESENT"
+                )
                 return {
                     **source,
-                    "capture_status": "CAPTURED",
+                    "capture_status": (
+                        "CAPTURED"
+                        if date_aligned
+                        else "CAPTURED_TARGET_DATE_UNVERIFIED"
+                    ),
                     "http_status": response.status,
                     "captured_at": captured_at.isoformat(),
                     "content_type": content_type,
@@ -228,7 +238,7 @@ def fetch_source(
                     "content_sha256": sha256(raw).hexdigest(),
                     "summary": summary,
                     "source_error": None,
-                    "unknown_not_zero": False,
+                    "unknown_not_zero": not date_aligned,
                     "attempt_count": len(attempts),
                     "attempts": attempts,
                 }
