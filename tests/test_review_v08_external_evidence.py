@@ -44,6 +44,27 @@ def ledger(status="CANDIDATE_REVIEW"):
 
 
 class ExternalEvidenceReviewTests(unittest.TestCase):
+    def test_san_ildefonso_partial_operation_source_keeps_as_built_gate_blocked(self):
+        data = json.loads(
+            (ROOT / "site/data/validation/v08_external_evidence.json").read_text(encoding="utf-8")
+        )
+        pilot = next(
+            row for row in data["pilots"] if row["zone_id"] == "san_ildefonso"
+        )
+        item = next(
+            row
+            for row in pilot["items"]
+            if row["evidence_id"] == "current_integral_system_as_built_status"
+        )
+
+        self.assertIn(
+            "https://www.gob.pe/institucion/munitrujillo/noticias/1415786-mpt-trujillo-afrontara-mejor-posibles-lluvias-fuertes",
+            item["official_sources"],
+        )
+        self.assertIn("no está operativo al 100 %", item["preliminary_assessment"])
+        self.assertNotEqual(item["status"], "ACCEPTED")
+        self.assertTrue(item.get("remaining_gap"))
+
     def test_cendehua_probe_is_mapped_without_accepting_chosica_event_evidence(self):
         data = json.loads(
             (ROOT / "site/data/validation/v08_external_evidence.json").read_text(encoding="utf-8")
