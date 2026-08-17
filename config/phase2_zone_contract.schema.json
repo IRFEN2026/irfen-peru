@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://irfen2026.github.io/irfen-peru/schemas/phase2-zone-contract-v1.json",
+  "title": "IRFEN phase-2 zone onboarding contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "candidate_id",
+    "contract_status",
+    "deployment_status",
+    "production_use",
+    "alerting_enabled",
+    "decision_thresholds",
+    "hydraulic_factors",
+    "missing_data_rule",
+    "identity",
+    "hazard_model",
+    "official_source_ids",
+    "assets",
+    "validation",
+    "notes"
+  ],
+  "properties": {
+    "version": {"const": "phase2-zone-contract-v1"},
+    "candidate_id": {"type": "string", "pattern": "^[a-z0-9_]+$"},
+    "contract_status": {"enum": ["DRAFT", "IN_REVIEW", "APPROVED"]},
+    "deployment_status": {"const": "RESEARCH_ONLY"},
+    "production_use": {"const": false},
+    "alerting_enabled": {"const": false},
+    "decision_thresholds": {"type": "null"},
+    "hydraulic_factors": {"type": "null"},
+    "missing_data_rule": {"const": "UNKNOWN_NOT_LOW_RISK"},
+    "identity": {
+      "type": "object",
+      "required": ["system_name", "department", "province_or_corridor", "territorial_profile", "inside_lima_metropolitana"]
+    },
+    "hazard_model": {
+      "type": "object",
+      "required": ["mechanism_status", "mechanism_preliminary", "selected_model_family"],
+      "properties": {
+        "mechanism_status": {"enum": ["TO_BE_RESOLVED", "IN_REVIEW", "RESOLVED"]},
+        "mechanism_preliminary": {"type": ["string", "null"]},
+        "selected_model_family": {"type": ["string", "null"]}
+      }
+    },
+    "official_source_ids": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+    "assets": {
+      "type": "object",
+      "required": ["geometry", "exposure", "historical_events", "observations", "forecast", "hydraulic_context"],
+      "properties": {
+        "geometry": {"$ref": "#/$defs/asset"},
+        "exposure": {"$ref": "#/$defs/asset"},
+        "historical_events": {"$ref": "#/$defs/asset"},
+        "observations": {"$ref": "#/$defs/asset"},
+        "forecast": {"$ref": "#/$defs/asset"},
+        "hydraulic_context": {"$ref": "#/$defs/asset"}
+      }
+    },
+    "validation": {
+      "type": "object",
+      "required": ["activation_gate", "required_reviews", "promotion_requires_all_gates", "review_evidence"],
+      "properties": {
+        "activation_gate": {"const": "BLOCKED"},
+        "required_reviews": {"type": "array", "minItems": 3, "items": {"type": "string"}},
+        "promotion_requires_all_gates": {"const": true},
+        "review_evidence": {"type": "array", "items": {"type": "object"}}
+      }
+    },
+    "notes": {"type": "array", "items": {"type": "string"}}
+  },
+  "$defs": {
+    "asset": {
+      "type": "object",
+      "required": ["status", "path", "source_ids"],
+      "properties": {
+        "status": {"enum": ["MISSING", "CANDIDATE", "PARTIAL", "READY"]},
+        "path": {"type": ["string", "null"]},
+        "source_ids": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}
