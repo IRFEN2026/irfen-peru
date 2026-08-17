@@ -103,6 +103,25 @@ class ExternalEvidenceReviewTests(unittest.TestCase):
         self.assertNotEqual(item["status"], "ACCEPTED")
         self.assertTrue(item.get("remaining_gap"))
 
+    def test_catacaos_2026_aforo_is_documented_without_closing_capacity_gate(self):
+        data = json.loads(
+            (ROOT / "site/data/validation/v08_external_evidence.json").read_text(encoding="utf-8")
+        )
+        pilot = next(row for row in data["pilots"] if row["zone_id"] == "catacaos")
+        item = next(
+            row
+            for row in pilot["items"]
+            if row["evidence_id"] == "current_channel_capacity_and_critical_levels"
+        )
+
+        self.assertIn(
+            "https://www.gob.pe/institucion/pechp/noticias/1362212-pechp-y-senamhi-realizan-aforo-del-rio-piura-para-medir-la-capacidad-hidraulica",
+            item["official_sources"],
+        )
+        self.assertIn("no publica los valores", item["preliminary_assessment"])
+        self.assertNotEqual(item["status"], "ACCEPTED")
+        self.assertIn("Informe técnico y datos del aforo", item["remaining_gap"])
+
     def test_every_current_ledger_source_is_allowed_as_official(self):
         data = json.loads(
             (ROOT / "site/data/validation/v08_external_evidence.json").read_text(encoding="utf-8")
