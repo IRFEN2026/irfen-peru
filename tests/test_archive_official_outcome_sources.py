@@ -116,7 +116,7 @@ class OfficialOutcomeEvidenceTests(unittest.TestCase):
         self.assertNotIn("2026-08-16", summary["date_markers"])
         self.assertEqual(summary["snapshot_date_alignment"], "TARGET_DATE_PRESENT")
 
-    def test_resolves_date_specific_senamhi_url_without_changing_indeci(self):
+    def test_resolves_date_specific_senamhi_and_indeci_urls(self):
         senamhi = collector.source_for_snapshot(collector.SOURCES[1], "2026-08-16")
         indeci = collector.source_for_snapshot(collector.SOURCES[2], "2026-08-16")
 
@@ -125,7 +125,67 @@ class OfficialOutcomeEvidenceTests(unittest.TestCase):
         self.assertIn("dp=piura", senamhi["url"])
         self.assertIn("p=aviso-24H", senamhi["url"])
         self.assertNotIn("historical_date_parameter", senamhi)
-        self.assertEqual(indeci, collector.SOURCES[2])
+        self.assertEqual(
+            indeci["url"],
+            "https://portal.indeci.gob.pe/emergencias/?s=16%2F8%2F2026",
+        )
+        self.assertNotIn("historical_search_parameter", indeci)
+
+    def test_indeci_extracts_dated_official_report_links_for_human_review(self):
+        raw = b"""
+            <html><body>
+              <a href="/emergencias/informe-de-emergencia-123/">
+                Informe de emergencia por lluvias en Piura al 16/8/2026
+              </a>
+              <a href="https://example.test/not-official">
+                Piura 16/8/2026
+              </a>
+            </body></html>
+        """
+
+        summary = collector.summarize_content(
+            "indeci_emergencies",
+            raw,
+            "text/html; charset=utf-8",
+            "2026-08-16",
+            "https://portal.indeci.gob.pe/emergencias/?s=16%2F8%2F2026",
+        )
+
+        self.assertEqual(summary["snapshot_date_alignment"], "TARGET_DATE_PRESENT")
+        self.assertEqual(len(summary["official_report_links_for_snapshot_date"]), 1)
+        report = summary["pilot_report_links_for_snapshot_date"][0]
+        self.assertEqual(
+            report["url"],
+            "https://portal.indeci.gob.pe/emergencias/informe-de-emergencia-123/",
+        )
+        self.assertEqual(report["pilot_terms_found"], ["Piura"])
+        self.assertNotIn("outcome_label", summary)
+        self.assertIn("human review", summary["interpretation"])
+
+    def test_indeci_search_query_echo_does_not_verify_target_date(self):
+        raw = b"""
+            <html><head><title>You searched for 16/8/2026</title></head><body>
+              <a href="/emergencias/informe-de-emergencia-456/">
+                Informe por lluvias en Piura al 17/8/2026
+              </a>
+            </body></html>
+        """
+
+        summary = collector.summarize_content(
+            "indeci_emergencies",
+            raw,
+            "text/html; charset=utf-8",
+            "2026-08-16",
+            "https://portal.indeci.gob.pe/emergencias/?s=16%2F8%2F2026",
+        )
+
+        self.assertEqual(
+            summary["snapshot_date_alignment"],
+            "TARGET_DATE_NOT_PRESENT",
+        )
+        self.assertEqual(summary["official_report_links_for_snapshot_date"], [])
+        self.assertEqual(summary["pilot_report_links_for_snapshot_date"], [])
+        self.assertIn("not evidence of NONE", summary["interpretation"])
 
     def test_http_200_without_target_date_stays_unknown_not_zero(self):
         class MismatchedDateResponse(self.FakeResponse):
