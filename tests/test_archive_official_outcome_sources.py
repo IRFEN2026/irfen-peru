@@ -121,10 +121,32 @@ class OfficialOutcomeEvidenceTests(unittest.TestCase):
         indeci = collector.source_for_snapshot(collector.SOURCES[2], "2026-08-16")
 
         self.assertIn("f=16-08-2026", senamhi["url"])
+        self.assertIn("/servicios/main.php", senamhi["url"])
         self.assertIn("dp=piura", senamhi["url"])
         self.assertIn("p=aviso-24H", senamhi["url"])
         self.assertNotIn("historical_date_parameter", senamhi)
         self.assertEqual(indeci, collector.SOURCES[2])
+
+    def test_http_200_without_target_date_stays_unknown_not_zero(self):
+        class MismatchedDateResponse(self.FakeResponse):
+            def read(self, _size):
+                return b"<p>15/08/2026 Piura</p>"
+
+        with patch.object(collector, "urlopen", return_value=MismatchedDateResponse()):
+            result = collector.fetch_source(
+                collector.SOURCES[1],
+                datetime(2026, 8, 17, 12, tzinfo=timezone.utc),
+                "2026-08-16",
+                sleep_fn=lambda _seconds: None,
+            )
+
+        self.assertEqual(result["http_status"], 200)
+        self.assertEqual(result["capture_status"], "CAPTURED_TARGET_DATE_UNVERIFIED")
+        self.assertTrue(result["unknown_not_zero"])
+        self.assertEqual(
+            result["summary"]["snapshot_date_alignment"],
+            "TARGET_DATE_NOT_PRESENT",
+        )
 
     def test_source_manifest_covers_each_pilot_without_replacing_core_sources(self):
         by_id = {source["source_id"]: source for source in collector.SOURCES}
