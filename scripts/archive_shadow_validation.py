@@ -12,13 +12,13 @@ from pathlib import Path
 import argparse
 import json
 
-import requests
-
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "site/data/validation/shadow_runs.json"
 
 
 def fetch_json(base, path, required=True):
+    import requests
+
     url = f"{base.rstrip('/')}/{path.lstrip('/')}"
     try:
         r = requests.get(url, params={"t": int(datetime.now(timezone.utc).timestamp())}, timeout=(8, 30))
@@ -87,6 +87,30 @@ def compact_zone(z):
     }
 
 
+def append_immutable_daily_snapshot(archive, entry, now):
+    """Append the first snapshot for a UTC day and never rewrite it later.
+
+    A rerun may happen after the real-world outcome has started to become
+    visible. Replacing the same day's inputs at that point would contaminate
+    the pre-outcome evidence, even if the existing review annotation were
+    preserved. Keeping the first capture also makes workflow reruns
+    idempotent.
+    """
+    records = archive.get("records") or []
+    snapshot_date = entry.get("snapshot_date_utc")
+    if any(row.get("snapshot_date_utc") == snapshot_date for row in records):
+        return False
+
+    records.append(entry)
+    records.sort(key=lambda row: row.get("snapshot_date_utc", ""))
+    archive["records"] = records[-400:]
+    archive["updated_at"] = now.isoformat()
+    archive["record_count"] = len(archive["records"])
+    archive["production_use"] = False
+    archive["production_ready"] = False
+    return True
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--base-url", default="https://irfen2026.github.io/irfen-peru")
@@ -153,27 +177,15 @@ def main():
     }
 
     archive = load_archive()
-    records = archive.get("records") or []
-    previous_same_day = next((x for x in records if x.get("snapshot_date_utc") == entry["snapshot_date_utc"]), None)
-    if previous_same_day:
-        prev_outcome = previous_same_day.get("outcome_verification") or {}
-        if prev_outcome.get("status") != "PENDING_REAL_WORLD_OUTCOME_REVIEW":
-            entry["outcome_verification"] = prev_outcome
-        records = [x for x in records if x.get("snapshot_date_utc") != entry["snapshot_date_utc"]]
-    records.append(entry)
-    records.sort(key=lambda x: x.get("snapshot_date_utc", ""))
-    archive["records"] = records[-400:]
-    archive["updated_at"] = now.isoformat()
-    archive["record_count"] = len(archive["records"])
-    archive["production_use"] = False
-    archive["production_ready"] = False
-
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(archive, ensure_ascii=False, indent=2), encoding="utf-8")
+    created = append_immutable_daily_snapshot(archive, entry, now)
+    if created:
+        OUT.parent.mkdir(parents=True, exist_ok=True)
+        OUT.write_text(json.dumps(archive, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps({
         "status": archive["status"],
         "record_count": archive["record_count"],
         "snapshot_date_utc": entry["snapshot_date_utc"],
+        "snapshot_action": "CREATED" if created else "ALREADY_PRESENT_IMMUTABLE",
         "core": (state.get("core_test_status") or {}).get("code"),
         "recommendations": {z["zone_id"]: z["recommendation"]["code"] for z in entry["zones"]},
         "pedregal_shadow": entry["lima_east_local_shadow"],
