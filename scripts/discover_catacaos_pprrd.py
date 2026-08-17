@@ -21,6 +21,10 @@ OUT = ROOT / "site/data/hydrology/catacaos_pprrd_2026_discovery.json"
 URL = "https://sigrid.cenepred.gob.pe/sigridv3/documento/22172/descargar"
 PAGE_URL = "https://sigrid.cenepred.gob.pe/sigridv3/documento/22172"
 MAX_BYTES = 70 * 1024 * 1024
+# El PDF oficial es escaneado. Se acota el OCR a los capítulos de diagnóstico
+# hidráulico/riesgo y al anexo cartográfico de puntos críticos; no se necesita
+# transcribir las 264 páginas para localizar evidencia de los bloqueos v0.8.
+OCR_PAGE_RANGES = ((60, 140), (228, 240))
 
 TERMS = {
     "river_flood": ["desborde del río piura", "desborde del rio piura", "inundación fluvial", "inundacion fluvial"],
@@ -78,19 +82,7 @@ def index_page_texts(page_texts):
     return page_index, numeric, extracted_chars
 
 
-def ocr_page(pdf: Path, page_number: int, workdir: Path, language: str):
-    prefix = workdir / f"page-{page_number:04d}"
-    image = prefix.with_suffix(".png")
-    subprocess.run(
-        [
-            "pdftoppm", "-f", str(page_number), "-l", str(page_number),
-            "-singlefile", "-r", "150", "-png", str(pdf), str(prefix),
-        ],
-        check=True,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        timeout=90,
-    )
+def ocr_page(image: Path, language: str):
     try:
         completed = subprocess.run(
             ["tesseract", str(image), "stdout", "-l", language],
@@ -110,15 +102,36 @@ def ocr_image_only_pdf(pdf: Path, page_count: int, workdir: Path):
     languages = subprocess.run(
         ["tesseract", "--list-langs"], capture_output=True, text=True, check=True
     ).stdout.split()
-    language = "spa+eng" if "spa" in languages and "eng" in languages else (
-        "spa" if "spa" in languages else "eng"
+    language = "spa" if "spa" in languages else "eng"
+    for start, end in OCR_PAGE_RANGES:
+        start = max(1, start)
+        end = min(page_count, end)
+        if start > end:
+            continue
+        subprocess.run(
+            [
+                "pdftoppm", "-f", str(start), "-l", str(end),
+                "-r", "100", "-png", str(pdf), str(workdir / "page"),
+            ],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=300,
+        )
+    images = sorted(workdir.glob("page-*.png"))
+    expected_pages = sum(
+        max(0, min(page_count, end) - max(1, start) + 1)
+        for start, end in OCR_PAGE_RANGES
     )
+    if len(images) != expected_pages:
+        raise RuntimeError(f"Expected {expected_pages} OCR pages, found {len(images)}")
     with ThreadPoolExecutor(max_workers=4) as pool:
-        texts = list(pool.map(
-            lambda page: ocr_page(pdf, page, workdir, language),
-            range(1, page_count + 1),
-        ))
-    return texts, language
+        extracted = list(pool.map(lambda image: ocr_page(image, language), images))
+    texts = [""] * page_count
+    for image, text in zip(images, extracted):
+        page_number = int(image.stem.rsplit("-", 1)[1])
+        texts[page_number - 1] = text
+    return texts, language, len(images)
 
 
 def main():
@@ -170,13 +183,14 @@ def main():
         report["embedded_text_chars"] = extracted_chars
         report["extraction_method"] = "EMBEDDED_TEXT"
         if extracted_chars < 1_000:
-            page_texts, language = ocr_image_only_pdf(
+            page_texts, language, processed_pages = ocr_image_only_pdf(
                 pdf, len(reader.pages), Path(td)
             )
             page_index, numeric, ocr_chars = index_page_texts(page_texts)
             report["extraction_method"] = "OCR_IMAGE_ONLY_PDF"
             report["ocr_language"] = language
-            report["ocr_pages_processed"] = len(page_texts)
+            report["ocr_pages_processed"] = processed_pages
+            report["ocr_page_ranges"] = [list(row) for row in OCR_PAGE_RANGES]
             report["ocr_text_chars"] = ocr_chars
 
         report["page_index"] = page_index

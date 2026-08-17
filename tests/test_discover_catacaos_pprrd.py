@@ -31,6 +31,18 @@ class CatacaosPprrdIndexTests(unittest.TestCase):
         self.assertEqual(page_index, {})
         self.assertEqual(numeric, [])
 
+    def test_ocr_ranges_cover_known_hydraulic_review_pages(self):
+        pages = {
+            page
+            for start, end in MODULE.OCR_PAGE_RANGES
+            for page in range(start, end + 1)
+        }
+
+        self.assertIn(70, pages)
+        self.assertIn(80, pages)
+        self.assertIn(231, pages)
+        self.assertNotIn(1, pages)
+
 
 if __name__ == "__main__":
     unittest.main()
