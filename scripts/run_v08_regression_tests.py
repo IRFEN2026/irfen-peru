@@ -258,6 +258,13 @@ def main():
         and 'gh workflow run live-smoke-test.yml' in publish_workflow,
     )
     check(
+        'archived_publish_retries_pages_propagation_with_unique_queries',
+        'for attempt in 1 2 3 4 5 6' in publish_workflow
+        and 'attempt=${attempt}' in publish_workflow
+        and 'freshness_ok=false' in publish_workflow
+        and 'test "$freshness_ok" = true' in publish_workflow,
+    )
+    check(
         'live_smoke_avoids_duplicate_archived_publish_trigger',
         'IRFEN - Publicar datos experimentales archivados' not in smoke_workflow,
     )
