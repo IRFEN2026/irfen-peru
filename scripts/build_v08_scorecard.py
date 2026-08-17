@@ -199,9 +199,10 @@ def main():
     early_contract = contract.get("imerg_early") or {}
     early_summary = early.get("summary") or {}
     rolling = early.get("rolling_by_target") or {}
+    validated_windows = early.get("validated_windows_by_target") or rolling
     targets = early_contract.get("target_ids") or []
     windows = early_contract.get("required_windows") or []
-    target_windows_passed, target_windows = target_window_gate(rolling, targets, windows)
+    target_windows_passed, target_windows = target_window_gate(validated_windows, targets, windows)
     latency_fields = ("latency_median_hours", "latency_p90_hours", "latency_max_hours")
     checks50 = [
         item(
@@ -295,7 +296,9 @@ def main():
     release_text = release_path.read_text(encoding="utf-8") if release_path.is_file() else ""
     release_marker = str(contract.get("release_completion_marker", "Release status: COMPLETE"))
     supplemental_targets = early_contract.get("supplemental_release_target_ids") or []
-    supplemental_windows_passed, supplemental_windows = target_window_gate(rolling, supplemental_targets, windows)
+    supplemental_windows_passed, supplemental_windows = target_window_gate(
+        validated_windows, supplemental_targets, windows
+    )
     shadow_gate_passed = (
         len(reviewed) >= required_reviewed
         and int(reviewed_label_counts.get("EVENT", 0)) >= minimum_event_days
