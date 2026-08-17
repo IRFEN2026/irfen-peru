@@ -43,6 +43,9 @@ class CatacaosPprrdIndexTests(unittest.TestCase):
         self.assertIn(231, pages)
         self.assertNotIn(1, pages)
 
+    def test_ocr_prefers_runner_stable_english_model(self):
+        self.assertEqual(MODULE.OCR_LANGUAGE_PREFERENCE, ("eng", "spa"))
+
 
 if __name__ == "__main__":
     unittest.main()
