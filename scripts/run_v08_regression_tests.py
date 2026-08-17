@@ -202,7 +202,20 @@ def main():
         check('official_outcome_evidence_never_auto_labels',all(capture.get('outcome_label') is None for capture in captures))
         check('official_outcome_evidence_never_counts_directly',all(capture.get('counts_toward_closeout') is False for capture in captures))
         sources=[source for capture in captures for source in capture.get('sources',[])]
-        check('official_outcome_evidence_three_sources_per_capture',all(len(capture.get('sources',[]))==3 for capture in captures))
+        core_outcome_source_ids={
+            'senamhi_activation_quebradas',
+            'senamhi_piura_24h',
+            'indeci_emergencies',
+        }
+        check(
+            'official_outcome_evidence_core_sources_per_capture',
+            all(
+                core_outcome_source_ids.issubset(
+                    {source.get('source_id') for source in capture.get('sources',[])}
+                )
+                for capture in captures
+            ),
+        )
         check(
             'official_outcome_missing_stays_unknown_not_zero',
             all(source.get('unknown_not_zero') is True for source in sources if source.get('capture_status')!='CAPTURED'),
