@@ -126,6 +126,47 @@ class OfficialOutcomeEvidenceTests(unittest.TestCase):
         self.assertNotIn("historical_date_parameter", senamhi)
         self.assertEqual(indeci, collector.SOURCES[2])
 
+    def test_source_manifest_adds_cendehua_without_replacing_core_sources(self):
+        by_id = {source["source_id"]: source for source in collector.SOURCES}
+        core_ids = {
+            "senamhi_activation_quebradas",
+            "senamhi_piura_24h",
+            "indeci_emergencies",
+        }
+
+        self.assertEqual(core_ids, set(by_id))
+        supplemental_by_id = {
+            source["source_id"]: source
+            for source in collector.SUPPLEMENTAL_SOURCES
+        }
+        self.assertEqual(
+            set(supplemental_by_id),
+            {"igp_cendehua_huaycoloro_monitor"},
+        )
+        cendehua = collector.source_for_snapshot(
+            supplemental_by_id["igp_cendehua_huaycoloro_monitor"], "2026-08-16"
+        )
+        self.assertEqual(
+            cendehua,
+            supplemental_by_id["igp_cendehua_huaycoloro_monitor"],
+        )
+        self.assertIn("igp.gob.pe", cendehua["url"])
+
+    def test_cendehua_terms_are_preserved_for_manual_review(self):
+        summary = collector.summarize_content(
+            "igp_cendehua_huaycoloro_monitor",
+            "<p>Monitoreo Huaycoloro y Río Seco en Chosica</p>".encode(),
+            "text/html; charset=utf-8",
+            "2026-08-16",
+        )
+
+        self.assertEqual(
+            summary["pilot_terms_found"],
+            ["Huaycoloro", "Chosica", "Río Seco"],
+        )
+        self.assertEqual(summary["snapshot_date_alignment"], "UNKNOWN_NO_DATE_MARKER")
+        self.assertIn("not evidence", summary["interpretation"])
+
     def test_repeated_capture_preserves_bounded_history_and_safety_guards(self):
         archive = collector.load_archive()
         archive["records"] = []
