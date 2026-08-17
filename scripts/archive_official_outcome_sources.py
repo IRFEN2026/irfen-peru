@@ -8,6 +8,7 @@ Missing or unreachable sources remain UNKNOWN_NOT_ZERO.
 """
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
 from hashlib import sha256
 from html import unescape
@@ -28,6 +29,7 @@ MAX_RECORDS = 400
 MAX_CAPTURES_PER_DAY = 5
 MAX_BYTES = 2_000_000
 MAX_FETCH_ATTEMPTS = 3
+MAX_FETCH_WORKERS = 3
 RETRY_DELAYS_SECONDS = (2, 5)
 SOURCES = (
     {
@@ -256,6 +258,20 @@ def fetch_source(
     }
 
 
+def fetch_sources(sources: tuple[dict, ...], captured_at: datetime, snapshot_date: str):
+    """Fetch independent official sources concurrently, preserving manifest order."""
+    if not sources:
+        return []
+    worker_count = min(MAX_FETCH_WORKERS, len(sources))
+    with ThreadPoolExecutor(max_workers=worker_count) as executor:
+        return list(
+            executor.map(
+                lambda source: fetch_source(source, captured_at, snapshot_date),
+                sources,
+            )
+        )
+
+
 def load_archive():
     try:
         return json.loads(OUT.read_text(encoding="utf-8"))
@@ -315,14 +331,10 @@ def main():
         "counts_toward_closeout": False,
         "production_use": False,
         "safety_rule": "No automatic EVENT/NONE classification; missing evidence remains UNKNOWN_NOT_ZERO.",
-        "sources": [
-            fetch_source(source, now, snapshot_day.isoformat())
-            for source in SOURCES
-        ],
-        "supplemental_sources": [
-            fetch_source(source, now, snapshot_day.isoformat())
-            for source in SUPPLEMENTAL_SOURCES
-        ],
+        "sources": fetch_sources(SOURCES, now, snapshot_day.isoformat()),
+        "supplemental_sources": fetch_sources(
+            SUPPLEMENTAL_SOURCES, now, snapshot_day.isoformat()
+        ),
     }
     archive = add_capture(load_archive(), snapshot_day.isoformat(), capture)
     OUT.parent.mkdir(parents=True, exist_ok=True)
