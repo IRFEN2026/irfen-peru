@@ -86,6 +86,27 @@ class ExternalEvidenceReviewTests(unittest.TestCase):
         self.assertNotEqual(item["status"], "ACCEPTED")
         self.assertIn("condición vigente", item["remaining_gap"])
 
+    def test_san_ildefonso_2025_observed_event_is_partial_not_current_system_acceptance(self):
+        data = json.loads(
+            (ROOT / "site/data/validation/v08_external_evidence.json").read_text(encoding="utf-8")
+        )
+        pilot = next(
+            row for row in data["pilots"] if row["zone_id"] == "san_ildefonso"
+        )
+        item = next(
+            row
+            for row in pilot["items"]
+            if row["evidence_id"] == "observed_events_with_current_system"
+        )
+
+        self.assertIn(
+            "https://www.gob.pe/institucion/anin/noticias/1136295-emergencia-en-trujillo-anin-monitorea-quebradas-activadas-y-refuerza-acciones-de-contingencia",
+            item["official_sources"],
+        )
+        self.assertEqual(item["status"], "PARTIAL_CANDIDATE_REVIEW")
+        self.assertIn("antes de la configuración integral vigente", item["preliminary_assessment"])
+        self.assertIn("configuración as-built vigente", item["remaining_gap"])
+
     def test_cendehua_probe_is_mapped_without_accepting_chosica_event_evidence(self):
         data = json.loads(
             (ROOT / "site/data/validation/v08_external_evidence.json").read_text(encoding="utf-8")
