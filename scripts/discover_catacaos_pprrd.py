@@ -25,6 +25,10 @@ MAX_BYTES = 70 * 1024 * 1024
 # hidráulico/riesgo y al anexo cartográfico de puntos críticos; no se necesita
 # transcribir las 264 páginas para localizar evidencia de los bloqueos v0.8.
 OCR_PAGE_RANGES = ((60, 140), (228, 240))
+# En GitHub Actions el modelo `spa` agotó 90 s incluso a 100 dpi en páginas
+# que `eng` procesa en segundos. Los términos incluyen variantes sin tilde, por
+# lo que se prioriza el modelo estable sin alterar las guardas científicas.
+OCR_LANGUAGE_PREFERENCE = ("eng", "spa")
 
 TERMS = {
     "river_flood": ["desborde del río piura", "desborde del rio piura", "inundación fluvial", "inundacion fluvial"],
@@ -102,7 +106,12 @@ def ocr_image_only_pdf(pdf: Path, page_count: int, workdir: Path):
     languages = subprocess.run(
         ["tesseract", "--list-langs"], capture_output=True, text=True, check=True
     ).stdout.split()
-    language = "spa" if "spa" in languages else "eng"
+    language = next(
+        (candidate for candidate in OCR_LANGUAGE_PREFERENCE if candidate in languages),
+        None,
+    )
+    if language is None:
+        raise RuntimeError("Tesseract does not provide eng or spa language data")
     for start, end in OCR_PAGE_RANGES:
         start = max(1, start)
         end = min(page_count, end)
