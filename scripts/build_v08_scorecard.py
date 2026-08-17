@@ -76,8 +76,12 @@ def external_validation_gate(contract: dict, ledger: dict, pilots: list[str]):
     ledger_by = {row.get("zone_id"): row for row in ledger.get("pilots", [])}
     evidence = {}
     for zone_id in pilots:
-        required = set((contract_by.get(zone_id) or {}).get("required_evidence_ids") or [])
+        required_order = (
+            (contract_by.get(zone_id) or {}).get("required_evidence_ids") or []
+        )
+        required = set(required_order)
         items = (ledger_by.get(zone_id) or {}).get("items") or []
+        items_by_id = {row.get("evidence_id"): row for row in items}
         accepted = {
             row.get("evidence_id") for row in items
             if row.get("status") == "ACCEPTED"
@@ -92,6 +96,19 @@ def external_validation_gate(contract: dict, ledger: dict, pilots: list[str]):
             and row.get("official_sources")
         }
         missing = sorted(required - accepted)
+        review_queue = []
+        for evidence_id in required_order:
+            if evidence_id in accepted:
+                continue
+            row = items_by_id.get(evidence_id) or {}
+            review_queue.append({
+                "evidence_id": evidence_id,
+                "status": row.get("status", "MISSING"),
+                "official_source_count": len(row.get("official_sources") or []),
+                "remaining_gap": row.get("remaining_gap") or "No candidate evidence recorded.",
+                "named_human_review_required": True,
+                "automatic_acceptance_forbidden": True,
+            })
         evidence[zone_id] = {
             "required_count": len(required),
             "accepted_count": len(required & accepted),
@@ -99,6 +116,7 @@ def external_validation_gate(contract: dict, ledger: dict, pilots: list[str]):
             "candidate_evidence_ids": sorted(required & candidates),
             "missing_without_candidate_count": len(required - accepted - candidates),
             "missing_or_unaccepted_evidence_ids": missing,
+            "review_queue": review_queue,
             "passed": bool(required) and not missing,
         }
     passed = (
