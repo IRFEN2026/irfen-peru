@@ -159,6 +159,54 @@ class ProbeCadenceTests(unittest.TestCase):
         self.assertIsNone(result["probe_gap_max_hours"])
 
 
+class HistoricalWindowValidationTests(unittest.TestCase):
+    def granule(self, timestamp, value=0.1):
+        return {
+            "time_utc": timestamp.isoformat(),
+            "granule": f"test-{timestamp.isoformat()}",
+            "targets": [{
+                "target_id": "san_ildefonso",
+                "accum_30min_mm": value,
+            }],
+        }
+
+    def test_delayed_live_tail_does_not_erase_prior_24h_validation(self):
+        start = archive.parse_time("2026-08-15T00:00:00+00:00")
+        granules = [
+            self.granule(start + archive.timedelta(minutes=30 * index))
+            for index in range(48)
+        ]
+        granules.extend([
+            self.granule(start + archive.timedelta(hours=26)),
+            self.granule(start + archive.timedelta(hours=26, minutes=30)),
+        ])
+
+        rolling = archive.rolling_summary(granules)["san_ildefonso"]["24h"]
+        validated = archive.validated_windows_summary(granules)["san_ildefonso"]["24h"]
+
+        self.assertFalse(rolling["available"])
+        self.assertTrue(validated["available"])
+        self.assertTrue(validated["continuous"])
+        self.assertEqual(validated["start_utc"], start.isoformat())
+        self.assertEqual(
+            validated["end_utc"],
+            (start + archive.timedelta(minutes=30 * 47)).isoformat(),
+        )
+
+    def test_missing_target_sample_cannot_validate_24h_window(self):
+        start = archive.parse_time("2026-08-15T00:00:00+00:00")
+        granules = [
+            self.granule(start + archive.timedelta(minutes=30 * index))
+            for index in range(48)
+            if index != 20
+        ]
+
+        validated = archive.validated_windows_summary(granules)["san_ildefonso"]["24h"]
+
+        self.assertFalse(validated["available"])
+        self.assertFalse(validated["continuous"])
+
+
 class ImergPublishHandoffTests(unittest.TestCase):
     def test_probe_dispatches_publisher_with_exact_main_sha(self):
         workflow = (ROOT / ".github/workflows/imerg-early-probe.yml").read_text(encoding="utf-8")

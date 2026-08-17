@@ -144,6 +144,84 @@ def rolling_summary(granules):
     return out
 
 
+def validated_window_for_target(granules, target_id, n):
+    """Return the newest historically validated continuous window for a target.
+
+    Rolling availability can legitimately become false after a delayed probe or
+    a temporary upstream gap.  That must not erase an earlier, auditable
+    validation of the same window length.  This helper therefore searches the
+    retained archive for the newest complete window while keeping the live
+    rolling calculation separate.
+    """
+    by_time = {}
+    for granule in granules:
+        timestamp = parse_time(granule.get("time_utc"))
+        if timestamp is None:
+            continue
+        target = next(
+            (row for row in granule.get("targets", []) if row.get("target_id") == target_id),
+            None,
+        )
+        if not target or target.get("accum_30min_mm") is None:
+            continue
+        by_time[timestamp] = float(target["accum_30min_mm"])
+
+    series = sorted(by_time.items())
+    for end_index in range(len(series) - 1, n - 2, -1):
+        window = series[end_index - n + 1:end_index + 1]
+        gaps = [
+            (window[index][0] - window[index - 1][0]).total_seconds() / 60.0
+            for index in range(1, len(window))
+        ]
+        span_minutes = (window[-1][0] - window[0][0]).total_seconds() / 60.0
+        expected_span = (n - 1) * 30
+        continuous = (
+            all(20 <= gap <= 40 for gap in gaps)
+            and abs(span_minutes - expected_span) <= 10
+        )
+        if continuous:
+            return {
+                "available": True,
+                "required_samples": n,
+                "available_samples": n,
+                "continuous": True,
+                "start_utc": window[0][0].isoformat(),
+                "end_utc": window[-1][0].isoformat(),
+                "span_minutes": round(span_minutes, 1),
+                "accum_mm": round(sum(value for _, value in window), 3),
+                "evidence_basis": "retained_historical_continuous_window",
+            }
+
+    return {
+        "available": False,
+        "required_samples": n,
+        "available_samples": min(len(series), n),
+        "continuous": False,
+        "start_utc": None,
+        "end_utc": None,
+        "span_minutes": None,
+        "accum_mm": None,
+        "evidence_basis": "no_retained_historical_continuous_window",
+    }
+
+
+def validated_windows_summary(granules):
+    """Preserve cumulative window-validation evidence independently of live state."""
+    target_ids = []
+    for granule in granules:
+        for target in granule.get("targets", []):
+            target_id = target.get("target_id")
+            if target_id and target_id not in target_ids:
+                target_ids.append(target_id)
+    return {
+        target_id: {
+            name: validated_window_for_target(granules, target_id, count)
+            for name, count in WINDOWS.items()
+        }
+        for target_id in target_ids
+    }
+
+
 def continuity_summary(granules):
     """Resume huecos de la serie sin confundir cantidad con continuidad."""
     times = sorted({
@@ -304,6 +382,7 @@ def main():
 
     granules = dedupe_granules(archive.get("granules") or [], samples)
     rolling = rolling_summary(granules)
+    validated_windows = validated_windows_summary(granules)
     continuity = continuity_summary(granules)
     probe_cadence = probe_cadence_summary(records)
     event_replays = build_event_replays(granules)
@@ -327,6 +406,7 @@ def main():
         "records": records,
         "granules": granules,
         "rolling_by_target": rolling,
+        "validated_windows_by_target": validated_windows,
         "event_replays": event_replays,
         "summary": {
             "probe_record_count": len(records),
@@ -350,6 +430,7 @@ def main():
             "production_use": False,
             "rule": "No promover IMERG Early a entrada de decisión en vivo por disponibilidad técnica únicamente; primero revisar continuidad, latencia y representatividad espacial.",
             "rolling_windows_are_test_only": True,
+            "historical_window_validation_is_test_only": True,
             "event_replays_are_test_only": True,
             "local_rain_requires_official_or_ground_control": True,
         },
