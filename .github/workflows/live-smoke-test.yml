@@ -44,6 +44,7 @@ jobs:
             "data/hydrology/catacaos_official_context.geojson"
             "data/hydrology/ana_catacaos_critical_segments_2026.geojson"
             "data/hydrology/ana_catacaos_critical_segments_2026_validation.json"
+            "data/hydrology/catacaos_pprrd_2026_discovery.json"
             "data/experimental_state.json"
             "data/test_report.json"
             "data/v08_scorecard.json"
@@ -125,6 +126,17 @@ jobs:
               assert p.get('geometry_status') == 'PASS'
               assert p.get('is_flood_polygon') is False
               assert p.get('is_inundation_extent') is False
+
+          pprrd=load('data/hydrology/catacaos_pprrd_2026_discovery.json')
+          assert pprrd.get('production_use') is False
+          assert pprrd.get('status') == 'indexed_for_scientific_review'
+          assert pprrd.get('extraction_method') == 'OCR_IMAGE_ONLY_PDF'
+          assert int(pprrd.get('ocr_pages_processed',0)) > 0
+          assert pprrd.get('categories_found')
+          assert all(
+              candidate.get('validated_meaning') is False
+              for candidate in pprrd.get('numeric_candidates',[])
+          )
 
           tests=load('data/test_report.json')
           assert tests.get('status')=='PASS', tests
