@@ -1,0 +1,86 @@
+name: IRFEN - Archivar fuentes oficiales para revisión en sombra v0.8
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Después del cierre UTC, todavía antes de la medianoche peruana.
+    - cron: "25 0 * * *"
+  push:
+    branches:
+      - main
+    paths:
+      - scripts/archive_official_outcome_sources.py
+      - .github/workflows/official-outcome-evidence.yml
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: "official-outcome-evidence"
+  cancel-in-progress: false
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Capturar fuentes oficiales posteriores al cierre UTC
+        run: python scripts/archive_official_outcome_sources.py
+
+      - name: Validar contrato conservador
+        run: |
+          test -s site/data/validation/official_outcome_evidence.json
+          python -m json.tool site/data/validation/official_outcome_evidence.json >/dev/null
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('site/data/validation/official_outcome_evidence.json').read_text())
+          assert d.get('status') == 'OFFICIAL_SOURCE_SNAPSHOT_ARCHIVE'
+          assert d.get('production_use') is False
+          assert d.get('production_ready') is False
+          assert d.get('decision_use') == 'HUMAN_REVIEW_INPUT_ONLY'
+          assert d.get('records')
+          for record in d['records']:
+              for capture in record.get('captures',[]):
+                  assert capture.get('counts_toward_closeout') is False
+                  assert capture.get('outcome_label') is None
+                  assert capture.get('production_use') is False
+                  assert len(capture.get('sources',[])) == 3
+          print('Archivo oficial para revisión en sombra OK:', d.get('record_count'))
+          PY
+
+      - name: Guardar evidencia sin clasificar
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/validation/official_outcome_evidence.json
+          if git diff --cached --quiet; then
+            echo "Sin cambios."
+            exit 0
+          fi
+          git commit -m "IRFEN v0.8: archivar fuentes oficiales de resultado"
+          git pull --rebase origin main
+          git push origin HEAD:main
+
+      - name: Publicar el archivo actualizado
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git fetch origin main
+          EXPECTED_SHA="$(git rev-parse origin/main)"
+          gh workflow run publish-committed-data.yml \
+            --repo "$GITHUB_REPOSITORY" \
+            --ref main \
+            -f expected_sha="$EXPECTED_SHA"
