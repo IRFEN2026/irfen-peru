@@ -212,6 +212,7 @@ def main():
             for source in capture.get('supplemental_sources',[])
         ]
         allowed_supplemental_source_ids={
+            'anin_san_ildefonso_news',
             'igp_cendehua_huaycoloro_monitor',
             'pechp_piura_news',
         }
