@@ -279,6 +279,10 @@ def main():
     shadow_contract=closeout_contract.get('shadow_validation') or {}
     check('closeout_contract_shadow_requires_event_day',int(shadow_contract.get('minimum_verified_event_days',0))>=1)
     check('closeout_contract_shadow_requires_none_days',int(shadow_contract.get('minimum_verified_none_days',0))>=1)
+    shadow_acceptance=shadow_contract.get('acceptance_rules') or {}
+    check('closeout_shadow_requires_named_human_reviewer',shadow_acceptance.get('named_human_reviewer_required') is True)
+    check('closeout_shadow_forbids_automatic_classification',shadow_acceptance.get('automatic_classification_forbidden') is True)
+    check('closeout_shadow_none_requires_comprehensive_coverage',shadow_acceptance.get('none_requires_comprehensive_coverage') is True)
     check('closeout_contract_release_completion_explicit',closeout_contract.get('release_completion_marker')=='Release status: COMPLETE')
     check('closeout_contract_catacaos_supplemental_imerg_release_gate',(closeout_contract.get('imerg_early') or {}).get('supplemental_release_target_ids')==['catacaos'])
     check('closeout_shadow_review_protocol_present',(ROOT/'docs/SHADOW_OUTCOME_REVIEW_PROTOCOL.md').is_file())
