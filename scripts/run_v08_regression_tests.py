@@ -177,7 +177,7 @@ def main():
     check('phase2_inventory_not_production',phase2.get('production_use') is False)
     check('phase2_inventory_research_only',phase2.get('deployment_status')=='RESEARCH_ONLY')
     candidates=phase2.get('candidates') or []
-    check('phase2_inventory_first_wave_size',8<=len(candidates)<=12)
+    check('phase2_inventory_documented_scope_size',len(candidates)>=18)
     check('phase2_inventory_outside_lima_majority',sum(c.get('inside_lima_metropolitana') is False for c in candidates)>=len(candidates)/2)
     check('phase2_inventory_no_numeric_scores',all(c.get('priority_score') is None for c in candidates))
     check('phase2_inventory_no_activation',all(c.get('deployment_status')=='RESEARCH_ONLY' for c in candidates))
