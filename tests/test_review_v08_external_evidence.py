@@ -62,6 +62,11 @@ class ExternalEvidenceReviewTests(unittest.TestCase):
             item["official_sources"],
         )
         self.assertIn("no está operativo al 100 %", item["preliminary_assessment"])
+        self.assertIn("se paralizó temporalmente en agosto de 2025", item["preliminary_assessment"])
+        self.assertIn(
+            "https://www.gob.pe/institucion/regionlalibertad/noticias/1374038-ministra-del-midis-se-compromete-a-gestionar-solicitudes-del-gobierno-regional-por-fuertes-lluvias",
+            item["official_sources"],
+        )
         self.assertNotEqual(item["status"], "ACCEPTED")
         self.assertTrue(item.get("remaining_gap"))
 
@@ -83,6 +88,11 @@ class ExternalEvidenceReviewTests(unittest.TestCase):
             item["official_sources"],
         )
         self.assertIn("habían culminado", item["preliminary_assessment"])
+        self.assertIn("52,8 %", item["preliminary_assessment"])
+        self.assertIn(
+            "https://www.gob.pe/institucion/ana/noticias/1351159-la-libertad-ana-supervisa-avance-de-trabajos-de-limpieza-y-descolmatacion-en-la-quebrada-san-ildefonso",
+            item["official_sources"],
+        )
         self.assertNotEqual(item["status"], "ACCEPTED")
         self.assertIn("condición vigente", item["remaining_gap"])
 
