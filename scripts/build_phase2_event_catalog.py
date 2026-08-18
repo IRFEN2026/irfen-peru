@@ -107,6 +107,20 @@ def validate_event(row, path=None):
             require(analysis.get("status") == "BLOCKED_MISSING_ANALYSIS_GEOMETRY",
                     "reanálisis debe bloquearse sin geometría")
         else:
+            coordinates = _get(row, ("reported_location", "coordinates")) or {}
+            try:
+                lat = float(coordinates["lat"])
+                lon = float(coordinates["lon"])
+            except (KeyError, TypeError, ValueError) as exc:
+                raise EventIntakeError(f"{event_id}: coordenadas inválidas") from exc
+            require(-90 <= lat <= 90 and -180 <= lon <= 180, "coordenadas fuera de rango")
+            if coordinates.get("official_event_geometry") is not True:
+                require(coordinates.get("role") == "research_sampling_reference",
+                        "geometría no oficial solo puede seleccionar muestreo de investigación")
+                require(bool(coordinates.get("precision")),
+                        "geometría no oficial requiere precisión declarada")
+                require(str(coordinates.get("source_url") or "").startswith("https://"),
+                        "geometría no oficial requiere fuente reproducible")
             require(row.get("status") == "VERIFIED_EVENT_RESEARCH_ONLY",
                     "estado no refleja verificación completa")
             require(analysis.get("status") == "READY_FOR_REANALYSIS",

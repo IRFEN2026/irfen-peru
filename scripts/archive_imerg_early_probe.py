@@ -33,6 +33,35 @@ EVENT_CASES = [
 ]
 
 
+def phase2_event_cases():
+    cases = []
+    intake_dir = ROOT / "site/data/validation/phase2_event_intake"
+    for path in sorted(intake_dir.glob("*.json")):
+        row = json.loads(path.read_text(encoding="utf-8"))
+        if row.get("status") != "VERIFIED_EVENT_RESEARCH_ONLY":
+            continue
+        if (row.get("analysis") or {}).get("status") != "READY_FOR_REANALYSIS":
+            continue
+        occurrence = parse_time((row.get("reported_event") or {}).get("occurrence_time_local"))
+        if occurrence is None:
+            continue
+        occurrence = occurrence.astimezone(timezone.utc)
+        event_id = row["event_id"]
+        cases.append({
+            "case_id": event_id,
+            "zone_id": None,
+            "target_id": f"phase2_event:{event_id}",
+            "local_date": (row.get("reported_event") or {}).get("reported_date_local"),
+            "timezone": "America/Lima",
+            "start_utc": (occurrence - timedelta(hours=24)).isoformat(),
+            "end_utc": occurrence.isoformat(),
+            "purpose": "Reanalisis RESEARCH_ONLY de un impacto oficial; no activa zonas ni calibra umbrales.",
+            "deployment_status": "RESEARCH_ONLY",
+            "counts_toward_v08_closeout": False,
+        })
+    return cases
+
+
 def percentile(values, q):
     vals = sorted(float(v) for v in values if v is not None and math.isfinite(float(v)))
     if not vals:
@@ -293,9 +322,9 @@ def probe_cadence_summary(records):
     }
 
 
-def build_event_replays(granules):
+def build_event_replays(granules, cases=None):
     replays = []
-    for case in EVENT_CASES:
+    for case in (EVENT_CASES + phase2_event_cases() if cases is None else cases):
         start = parse_time(case["start_utc"])
         end = parse_time(case["end_utc"])
         expected_samples = int((end - start).total_seconds() / 1800)

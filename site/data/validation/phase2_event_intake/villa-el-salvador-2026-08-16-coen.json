@@ -1,7 +1,7 @@
 {
   "version": "phase2-event-intake-v1",
   "event_id": "villa-el-salvador-2026-08-16-coen",
-  "status": "VERIFIED_OUTCOME_PENDING_ANALYSIS_GEOMETRY",
+  "status": "VERIFIED_EVENT_RESEARCH_ONLY",
   "deployment_status": "RESEARCH_ONLY",
   "production_use": false,
   "alerting_enabled": false,
@@ -29,7 +29,16 @@
     "province": "Lima",
     "district": "Villa El Salvador",
     "feature_name": "Sector 1 - Grupo 1",
-    "coordinates": null,
+    "coordinates": {
+      "lat": -12.1873624,
+      "lon": -76.9471155,
+      "geometry_type": "POINT",
+      "role": "research_sampling_reference",
+      "precision": "neighbourhood_centroid_approximate",
+      "source": "OpenStreetMap Nominatim",
+      "source_url": "https://www.openstreetmap.org/?mlat=-12.1873624&mlon=-76.9471155#map=17/-12.1873624/-76.9471155",
+      "official_event_geometry": false
+    },
     "critical_points_named_by_source": [
       "Calle E con Calle 3, Sector 1 - Grupo 1",
       "Avenida Central con Calle 3 - IE Juan Pablo II"
@@ -48,13 +57,13 @@
   },
   "context_sources": [],
   "analysis": {
-    "status": "BLOCKED_MISSING_ANALYSIS_GEOMETRY",
+    "status": "READY_FOR_REANALYSIS",
     "imerg_windows_hours": [3, 6, 24],
     "geos_forecast_observation_pair_requested": true,
     "results": null,
     "threshold_inference_allowed": false,
     "hydraulic_transfer_allowed": false,
-    "purpose": "Control positivo de impacto para reanálisis oportunista; no calibra umbrales y no se muestrea hasta fijar una geometría reproducible con procedencia explícita."
+    "purpose": "Control positivo de impacto para reanálisis oportunista; la geometría aproximada solo selecciona la celda IMERG y no calibra umbrales ni representa una delimitación oficial."
   },
-  "missing_required_fields": ["coordinates"]
+  "missing_required_fields": []
 }
