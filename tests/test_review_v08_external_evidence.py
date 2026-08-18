@@ -226,6 +226,64 @@ class ExternalEvidenceReviewTests(unittest.TestCase):
         self.assertNotEqual(item["status"], "ACCEPTED")
         self.assertIn("conformidad", item["remaining_gap"])
 
+    def test_catacaos_historical_no_overflow_control_is_traceable_and_fail_closed(self):
+        data = json.loads(
+            (ROOT / "site/data/validation/v08_external_evidence.json").read_text(encoding="utf-8")
+        )
+        pilot = next(row for row in data["pilots"] if row["zone_id"] == "catacaos")
+        item = next(
+            row
+            for row in pilot["items"]
+            if row["evidence_id"] == "observed_river_state_to_impact_review"
+        )
+        artifact_path = "site/data/hydrology/piura_2023_bajo_control.json"
+        artifact = json.loads((ROOT / artifact_path).read_text(encoding="utf-8"))
+        events = json.loads((ROOT / "config/historical_events.json").read_text(encoding="utf-8"))
+        event = next(row for row in events["events"] if row["id"] == "PI-2023-03-13")
+
+        self.assertIn(artifact["source"]["url"], item["official_sources"])
+        self.assertIn(artifact_path, item["internal_artifacts"])
+        self.assertEqual(artifact["reported_values"]["flow_in_piura_city_m3_s"], 996.0)
+        self.assertGreater(
+            artifact["reported_values"]["freeboard_in_multiple_inspected_sections_m_more_than"],
+            1.99,
+        )
+        self.assertEqual(event["flow_m3s"], 996)
+        self.assertTrue(event["imerg"])
+        self.assertFalse(artifact["safety"]["counts_toward_shadow_closeout"])
+        self.assertFalse(artifact["safety"]["current_hydraulic_capacity_validated"])
+        self.assertFalse(artifact["safety"]["threshold_promotion_allowed"])
+        self.assertFalse(artifact["safety"]["hydraulic_factor_promotion_allowed"])
+        self.assertNotEqual(item["status"], "ACCEPTED")
+
+    def test_catacaos_multistation_snapshot_does_not_infer_transit(self):
+        data = json.loads(
+            (ROOT / "site/data/validation/v08_external_evidence.json").read_text(encoding="utf-8")
+        )
+        pilot = next(row for row in data["pilots"] if row["zone_id"] == "catacaos")
+        item = next(
+            row
+            for row in pilot["items"]
+            if row["evidence_id"] == "upstream_to_bajo_piura_location_harmonization"
+        )
+        artifact = json.loads(
+            (ROOT / "site/data/hydrology/piura_2026_field_evidence.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        snapshot = next(
+            row
+            for row in artifact["observations"]
+            if row["evidence_id"] == "pechp_piura_multistation_snapshot_2026_03_17"
+        )
+
+        self.assertEqual(snapshot["reported_values"]["chulucanas_flow_m3_s"], 334.0)
+        self.assertEqual(snapshot["reported_values"]["tambogrande_flow_m3_s"], 364.17)
+        self.assertEqual(snapshot["reported_values"]["puente_sanchez_cerro_flow_m3_s"], 332.0)
+        self.assertIn("un solo corte", item["preliminary_assessment"])
+        self.assertIn("Serie multifecha", item["remaining_gap"])
+        self.assertNotEqual(item["status"], "ACCEPTED")
+
     def test_every_current_ledger_source_is_allowed_as_official(self):
         data = json.loads(
             (ROOT / "site/data/validation/v08_external_evidence.json").read_text(encoding="utf-8")
