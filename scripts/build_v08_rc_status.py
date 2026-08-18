@@ -55,6 +55,7 @@ def build_status(
     )
     phase2_summary = phase2.get("summary") or {}
     phase2_guardrails = phase2.get("guardrails") or {}
+    analog_transfer = phase2.get("analog_transfer") or {}
     phase2_safe = (
         phase2.get("production_use") is False
         and phase2.get("production_ready") is False
@@ -68,8 +69,18 @@ def build_status(
                 "hydraulic_factors_withheld",
                 "missing_data_is_not_low_risk",
                 "activation_requires_zone_specific_validation",
+                "analog_transfer_is_research_only",
+                "analog_runs_are_not_local_validation",
             )
         )
+        and analog_transfer.get("mode") == "ANALOG_TRANSFER_TEST_ONLY"
+        and analog_transfer.get("production_use") is False
+        and analog_transfer.get("local_validation") is False
+        and analog_transfer.get("counts_toward_v08_closeout") is False
+        and analog_transfer.get("counts_toward_zone_activation") is False
+        and analog_transfer.get("operational_alert") is False
+        and analog_transfer.get("threshold_promotion") == "FORBIDDEN"
+        and analog_transfer.get("missing_data_rule") == "UNKNOWN_NOT_LOW_RISK"
         and all(
             zone.get("deployment_status") == "RESEARCH_ONLY"
             and zone.get("activation_gate") == "BLOCKED"
