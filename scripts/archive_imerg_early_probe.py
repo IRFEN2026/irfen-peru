@@ -251,6 +251,30 @@ def validated_windows_summary(granules):
     }
 
 
+def target_continuity_summary(rolling, validated_windows):
+    """Separate current-tail continuity from retained validation evidence."""
+    current = sorted(
+        target_id for target_id, windows in rolling.items()
+        if (windows.get("24h") or {}).get("available") is True
+    )
+    validated = sorted(
+        target_id for target_id, windows in validated_windows.items()
+        if (windows.get("24h") or {}).get("available") is True
+    )
+    return {
+        # Backward-compatible field: its broad name represents cumulative
+        # evidence, while the explicit current-tail field represents live state.
+        "targets_with_continuous_24h": validated,
+        "targets_with_current_continuous_24h": current,
+        "targets_with_validated_continuous_24h": validated,
+        "continuous_24h_summary_semantics": (
+            "targets_with_continuous_24h and targets_with_validated_continuous_24h "
+            "retain any audited historical 24 h window; "
+            "targets_with_current_continuous_24h describes only the latest rolling tail."
+        ),
+    }
+
+
 def continuity_summary(granules):
     """Resume huecos de la serie sin confundir cantidad con continuidad."""
     times = sorted({
@@ -421,10 +445,7 @@ def main():
     granule_times = [parse_time(g.get("time_utc")) for g in granules]
     granule_times = [t for t in granule_times if t is not None]
 
-    complete_24h_targets = [
-        tid for tid, values in rolling.items()
-        if (values.get("24h") or {}).get("available") is True
-    ]
+    target_continuity = target_continuity_summary(rolling, validated_windows)
 
     archive.update({
         "version": "0.8-experimental",
@@ -446,7 +467,7 @@ def main():
             "granule_time_max_utc": max(granule_times).isoformat() if granule_times else None,
             **continuity,
             **probe_cadence,
-            "targets_with_continuous_24h": complete_24h_targets,
+            **target_continuity,
             "latency_min_hours": round(min(latencies), 2) if latencies else None,
             "latency_median_hours": percentile(latencies, 0.5),
             "latency_p90_hours": percentile(latencies, 0.9),

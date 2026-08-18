@@ -270,6 +270,29 @@ class HistoricalWindowValidationTests(unittest.TestCase):
         self.assertFalse(validated["available"])
         self.assertFalse(validated["continuous"])
 
+    def test_summary_distinguishes_current_tail_from_retained_validation(self):
+        start = archive.parse_time("2026-08-15T00:00:00+00:00")
+        granules = [
+            self.granule(start + archive.timedelta(minutes=30 * index))
+            for index in range(48)
+        ]
+        granules.extend([
+            self.granule(start + archive.timedelta(hours=26)),
+            self.granule(start + archive.timedelta(hours=26, minutes=30)),
+        ])
+        rolling = archive.rolling_summary(granules)
+        validated = archive.validated_windows_summary(granules)
+
+        summary = archive.target_continuity_summary(rolling, validated)
+
+        self.assertEqual(summary["targets_with_current_continuous_24h"], [])
+        self.assertEqual(
+            summary["targets_with_validated_continuous_24h"],
+            ["san_ildefonso"],
+        )
+        self.assertEqual(summary["targets_with_continuous_24h"], ["san_ildefonso"])
+        self.assertIn("historical", summary["continuous_24h_summary_semantics"])
+
 
 class ImergPublishHandoffTests(unittest.TestCase):
     def test_probe_dispatches_publisher_with_exact_main_sha(self):
