@@ -191,6 +191,10 @@ jobs:
           html=(root/'index.html').read_text(encoding='utf-8')
           for script in ('v08-experimental.js','v08-forecast.js','v08-simulator.js','v08-health.js','v08-readiness.js'):
               assert script in html, f'Falta {script} en index publicado'
+          readiness=(root/'v08-readiness.js').read_text(encoding='utf-8')
+          assert 'data/v08_scorecard.json' in readiness
+          assert 'REVISIÓN HUMANA OBLIGATORIA' in readiness
+          assert 'Falta de evidencia' in readiness
 
           print('LIVE SMOKE TEST OK')
           print('operational_status:',latest.get('operational_status'))
