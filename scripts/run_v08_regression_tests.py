@@ -48,6 +48,8 @@ def main():
     open_data=optional(SITE/'data/stations/senamhi_open_data_catalog.json')
     imerg_early=optional(SITE/'data/calibration/imerg_early_live_archive.json')
     phase2=load(ROOT/'config/phase2_candidate_inventory_v0_1.json')
+    phase2_catalog=load(SITE/'data/phase2/catalog.json')
+    analog_transfer=load(ROOT/'config/phase2_analog_transfer_contract.json')
     phase2_events=load(SITE/'data/phase2/research_events.json')
     closeout_contract=load(ROOT/'config/v08_closeout_contract.json')
     external_contract=load(ROOT/'config/v08_external_validation_contract.json')
@@ -179,6 +181,17 @@ def main():
     check('phase2_inventory_no_numeric_scores',all(c.get('priority_score') is None for c in candidates))
     check('phase2_inventory_no_activation',all(c.get('deployment_status')=='RESEARCH_ONLY' for c in candidates))
     check('phase2_inventory_has_official_evidence',all(c.get('official_sources') for c in candidates))
+    analog_decision=analog_transfer.get('decision_use') or {}
+    analog_guardrails=phase2_catalog.get('guardrails') or {}
+    check('phase2_analog_not_production',analog_transfer.get('production_use') is False)
+    check('phase2_analog_research_only',analog_transfer.get('deployment_status')=='RESEARCH_ONLY')
+    check('phase2_analog_not_local_validation',analog_decision.get('local_validation') is False)
+    check('phase2_analog_cannot_activate',analog_decision.get('counts_toward_zone_activation') is False)
+    check('phase2_analog_cannot_close_v08',(analog_transfer.get('relationship_to_v08') or {}).get('counts_toward_v08_closeout') is False)
+    check('phase2_analog_no_alerts',analog_decision.get('operational_alerting') is False)
+    check('phase2_analog_no_threshold_promotion',analog_decision.get('threshold_promotion') is False)
+    check('phase2_analog_missing_not_low_risk',analog_transfer.get('missing_data_rule')=='UNKNOWN_NOT_LOW_RISK')
+    check('phase2_catalog_analog_guardrails',analog_guardrails.get('analog_transfer_is_research_only') is True and analog_guardrails.get('analog_runs_are_not_local_validation') is True)
 
     # Eventos de oportunidad: útiles para reanálisis, nunca para activar o cerrar v0.8.
     event_summary=phase2_events.get('summary') or {}
