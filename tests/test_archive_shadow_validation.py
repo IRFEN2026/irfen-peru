@@ -75,6 +75,14 @@ class ImmutableDailyShadowArchiveTests(unittest.TestCase):
 
     def test_pre_outcome_window_accepts_early_capture_and_rejects_late_run(self):
         self.assertTrue(MODULE.capture_is_within_pre_outcome_window(
+            datetime(2026, 8, 17, 12, 0, tzinfo=timezone.utc),
+            "2026-08-18",
+        ))
+        self.assertFalse(MODULE.capture_is_within_pre_outcome_window(
+            datetime(2026, 8, 17, 11, 59, 59, tzinfo=timezone.utc),
+            "2026-08-18",
+        ))
+        self.assertTrue(MODULE.capture_is_within_pre_outcome_window(
             datetime(2026, 8, 18, 0, 10, tzinfo=timezone.utc),
             "2026-08-18",
         ))
@@ -86,6 +94,33 @@ class ImmutableDailyShadowArchiveTests(unittest.TestCase):
             datetime(2026, 8, 18, 2, 0, 1, tzinfo=timezone.utc),
             "2026-08-18",
         ))
+
+    def test_capture_resolves_today_or_tomorrow_without_backdating(self):
+        self.assertEqual(
+            MODULE.resolve_snapshot_date(datetime(2026, 8, 18, 1, 30, tzinfo=timezone.utc)),
+            "2026-08-18",
+        )
+        self.assertIsNone(
+            MODULE.resolve_snapshot_date(datetime(2026, 8, 18, 8, 0, tzinfo=timezone.utc))
+        )
+        self.assertEqual(
+            MODULE.resolve_snapshot_date(datetime(2026, 8, 18, 12, 0, tzinfo=timezone.utc)),
+            "2026-08-19",
+        )
+
+    def test_forecast_must_cover_complete_target_day(self):
+        captured_at = datetime(2026, 8, 18, 12, 0, tzinfo=timezone.utc)
+        required = MODULE.required_forecast_hours_to_target_day_end(
+            captured_at, "2026-08-19"
+        )
+        self.assertEqual(required, 36.0)
+        complete = [
+            {"zone_id": zone_id, "forecast_mm": {"available_future_hours": 36}}
+            for zone_id in ("san_ildefonso", "chosica", "catacaos")
+        ]
+        self.assertTrue(MODULE.zones_cover_target_day(complete, required))
+        complete[0]["forecast_mm"]["available_future_hours"] = 35.5
+        self.assertFalse(MODULE.zones_cover_target_day(complete, required))
 
     def test_first_snapshot_is_preserved_on_same_day_rerun(self):
         original = {

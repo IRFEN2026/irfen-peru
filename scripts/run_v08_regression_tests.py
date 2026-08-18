@@ -339,9 +339,11 @@ def main():
     check('closeout_shadow_requires_named_human_reviewer',shadow_acceptance.get('named_human_reviewer_required') is True)
     check('closeout_shadow_forbids_automatic_classification',shadow_acceptance.get('automatic_classification_forbidden') is True)
     check('closeout_shadow_requires_pre_outcome_capture_window',shadow_acceptance.get('pre_outcome_capture_window_required') is True)
+    check('closeout_shadow_requires_target_day_forecast_coverage',shadow_acceptance.get('forecast_must_cover_target_day') is True)
+    check('closeout_shadow_capture_lead_is_bounded',0<int(shadow_capture.get('earliest_eligible_capture_lead_minutes',0))<=720)
     check('closeout_shadow_capture_delay_is_bounded',0<int(shadow_capture.get('latest_eligible_capture_delay_minutes',0))<=120)
     shadow_workflow=(ROOT/'.github/workflows/shadow-validation.yml').read_text(encoding='utf-8')
-    check('closeout_shadow_schedule_starts_near_utc_day_open','cron: "10 0 * * *"' in shadow_workflow)
+    check('closeout_shadow_schedule_covers_pre_day_window','cron: "10 0,12,14,16,18,20,22 * * *"' in shadow_workflow)
     retry_crons=shadow_capture.get('redundant_retry_crons_utc') or []
     check('closeout_shadow_redundant_capture_attempts_declared',retry_crons==['50 0 * * *','30 1 * * *'])
     check('closeout_shadow_redundant_capture_attempts_scheduled',all(f'cron: "{cron}"' in shadow_workflow for cron in retry_crons))
