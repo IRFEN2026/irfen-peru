@@ -84,7 +84,11 @@ def review_after_utc_day_close(record: dict):
         return False
 
 
-def snapshot_captured_within_pre_outcome_window(record: dict, latest_delay_minutes: int = 120):
+def snapshot_captured_within_pre_outcome_window(
+    record: dict,
+    earliest_lead_minutes: int = 720,
+    latest_delay_minutes: int = 120,
+):
     """Reject snapshots taken late enough to have observed the same day's result."""
     try:
         snapshot_day = date.fromisoformat(str(record.get("snapshot_date_utc")))
@@ -93,8 +97,31 @@ def snapshot_captured_within_pre_outcome_window(record: dict, latest_delay_minut
         if captured.tzinfo is None:
             return False
         captured_utc = captured.astimezone(timezone.utc)
-        return day_start <= captured_utc <= day_start + timedelta(minutes=latest_delay_minutes)
+        return (
+            day_start - timedelta(minutes=earliest_lead_minutes)
+            <= captured_utc
+            <= day_start + timedelta(minutes=latest_delay_minutes)
+        )
     except Exception:
+        return False
+
+
+def forecast_covers_target_day(record: dict, pilots: list[str]):
+    """Verify that every pilot forecast reaches the target UTC day's close."""
+    try:
+        snapshot_day = date.fromisoformat(str(record.get("snapshot_date_utc")))
+        target_end = datetime.combine(snapshot_day + timedelta(days=1), time.min, tzinfo=timezone.utc)
+        captured = datetime.fromisoformat(str(record.get("archived_at")).replace("Z", "+00:00"))
+        if captured.tzinfo is None:
+            return False
+        required_hours = (target_end - captured.astimezone(timezone.utc)).total_seconds() / 3600
+        zones_by_id = {zone.get("zone_id"): zone for zone in record.get("zones") or []}
+        return required_hours > 0 and all(
+            float(((zones_by_id.get(zone_id) or {}).get("forecast_mm") or {}).get("available_future_hours"))
+            >= required_hours
+            for zone_id in pilots
+        )
+    except (TypeError, ValueError):
         return False
 
 
@@ -172,6 +199,7 @@ def shadow_record_eligibility(
     pilots: list[str],
     minimum_pairs_per_pilot: int,
     accepted_labels: set[str] | None = None,
+    earliest_capture_lead_minutes: int = 720,
     latest_capture_delay_minutes: int = 120,
 ):
     """Return auditable gates for a reviewed shadow day to count toward closure."""
@@ -186,7 +214,7 @@ def shadow_record_eligibility(
     checks = {
         "snapshot_not_production": record.get("production_use") is False,
         "snapshot_captured_within_pre_outcome_window": snapshot_captured_within_pre_outcome_window(
-            record, latest_capture_delay_minutes
+            record, earliest_capture_lead_minutes, latest_capture_delay_minutes
         ),
         "all_pilots_present": set(zones_by_id) == set(pilots),
         "all_recommendations_test_only": all(
@@ -196,6 +224,7 @@ def shadow_record_eligibility(
             for zid in pilots
         ),
         "forecast_available": health.get("forecast_available") is True,
+        "forecast_covers_target_day": forecast_covers_target_day(record, pilots),
         "forecast_pairs_mature_at_snapshot": all(
             int(pair_counts.get(zid, 0)) >= minimum_pairs_per_pilot for zid in pilots
         ),
@@ -225,6 +254,7 @@ def shadow_outcome_review_queue(
     pilots: list[str],
     minimum_pairs_per_pilot: int,
     accepted_labels: set[str],
+    earliest_capture_lead_minutes: int = 720,
     latest_capture_delay_minutes: int = 120,
 ):
     """Expose unresolved shadow days without inferring an outcome from missing evidence."""
@@ -240,6 +270,7 @@ def shadow_outcome_review_queue(
             pilots,
             minimum_pairs_per_pilot,
             accepted_labels,
+            earliest_capture_lead_minutes,
             latest_capture_delay_minutes,
         )
         accepted_outcome = outcome.get("label") in accepted_labels
@@ -458,6 +489,11 @@ def main():
     m75 = milestone(75, m50["reached"], checks75)
 
     accepted_labels = set((contract.get("shadow_validation") or {}).get("accepted_outcome_labels") or [])
+    earliest_capture_lead_minutes = int(
+        ((contract.get("shadow_validation") or {}).get("snapshot_capture") or {}).get(
+            "earliest_eligible_capture_lead_minutes", 720
+        )
+    )
     latest_capture_delay_minutes = int(
         ((contract.get("shadow_validation") or {}).get("snapshot_capture") or {}).get(
             "latest_eligible_capture_delay_minutes", 120
@@ -482,6 +518,7 @@ def main():
                 pilots,
                 min_pairs,
                 accepted_labels,
+                earliest_capture_lead_minutes,
                 latest_capture_delay_minutes,
             ),
         }
@@ -514,6 +551,7 @@ def main():
         pilots,
         min_pairs,
         accepted_labels,
+        earliest_capture_lead_minutes,
         latest_capture_delay_minutes,
     )
     external_evidence_passed, external_evidence = external_validation_gate(external_contract, external_ledger, pilots)
