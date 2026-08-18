@@ -89,8 +89,21 @@ jobs:
             exit 0
           fi
           git commit -m "IRFEN v0.8: actualizar probe SENAMHI Puente Nacara"
-          git pull --rebase origin main
-          git push origin HEAD:main
+          for attempt in 1 2 3 4; do
+            git fetch origin main
+            if ! git rebase origin/main; then
+              git rebase --abort || true
+              echo "Conflicto real al rebasar evidencia SENAMHI; no se sobrescribe." >&2
+              exit 1
+            fi
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Colisión transitoria al publicar evidencia (intento $attempt/4)." >&2
+            sleep $((attempt * 3))
+          done
+          echo "No fue posible publicar evidencia SENAMHI tras 4 intentos." >&2
+          exit 1
 
       - name: Ordenar publicación del archivo actualizado
         env:

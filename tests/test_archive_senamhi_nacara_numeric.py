@@ -5,6 +5,7 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
+WORKFLOW = ROOT / ".github/workflows/senamhi-nacara-probe.yml"
 SPEC = importlib.util.spec_from_file_location(
     "archive_senamhi_nacara_numeric_probe",
     ROOT / "scripts/archive_senamhi_nacara_numeric_probe.py",
@@ -33,6 +34,14 @@ def sample(generated_at, requested_at, available, value=None, reason=None):
 
 
 class ArchiveSenamhiNacaraTests(unittest.TestCase):
+    def test_workflow_retries_transient_main_push_collisions(self):
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("for attempt in 1 2 3 4", workflow)
+        self.assertIn("git fetch origin main", workflow)
+        self.assertIn("git rebase origin/main", workflow)
+        self.assertIn("git rebase --abort || true", workflow)
+        self.assertIn("No fue posible publicar evidencia SENAMHI tras 4 intentos.", workflow)
+
     def test_failure_is_unknown_and_never_observation(self):
         archive = MODULE.build_archive([
             sample("2026-08-16T14:00:00+00:00", "2026-08-16T09:00:00-05:00", False, reason="URLError")
