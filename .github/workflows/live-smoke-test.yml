@@ -50,6 +50,7 @@ jobs:
             "data/experimental_state.json"
             "data/test_report.json"
             "data/v08_scorecard.json"
+            "data/v08_rc_status.json"
             "v08-experimental.js"
             "v08-forecast.js"
             "v08-simulator.js"
@@ -175,6 +176,18 @@ jobs:
           assert score.get('current_milestone_pct') in {25,50,75,100}
           assert [m.get('percentage') for m in score.get('milestones',[])] == [25,50,75,100]
 
+          rc=load('data/v08_rc_status.json')
+          assert rc.get('release_class') == 'RELEASE_CANDIDATE_TEST_ONLY'
+          assert rc.get('production_use') is False
+          assert rc.get('production_ready') is False
+          assert rc.get('operational_alerting_enabled') is False
+          assert (rc.get('phase2') or {}).get('operational_candidates') == 0
+          assert (rc.get('formal_closeout') or {}).get('current_milestone_pct') == score.get('current_milestone_pct')
+          if rc.get('status') == 'RC_AVAILABLE_TEST_ONLY':
+              assert rc.get('available_for_controlled_testing') is True
+              assert score.get('current_milestone_pct',0) >= 75
+              assert tests.get('status') == 'PASS'
+
           html=(root/'index.html').read_text(encoding='utf-8')
           for script in ('v08-experimental.js','v08-forecast.js','v08-simulator.js','v08-health.js','v08-readiness.js'):
               assert script in html, f'Falta {script} en index publicado'
@@ -187,4 +200,5 @@ jobs:
           print('ANA Catacaos segments:',len(ana.get('features',[])))
           print('official outcome evidence days:',outcome.get('record_count'))
           print('shadow archive days:',shadow.get('record_count'))
+          print('release candidate:',rc.get('status'))
           PY
