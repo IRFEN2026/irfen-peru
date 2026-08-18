@@ -38,6 +38,7 @@ def main():
     replay=load(SITE/'data/calibration/historical_replay.json')
     ana_geo=load(SITE/'data/hydrology/ana_catacaos_critical_segments_2026.geojson')
     ana_val=load(SITE/'data/hydrology/ana_catacaos_critical_segments_2026_validation.json')
+    piura_field=load(SITE/'data/hydrology/piura_2026_field_evidence.json')
     pedregal=optional(SITE/'data/calibration/pedregal_ana_validation.json')
     pedregal_hh=optional(SITE/'data/calibration/pedregal_2015_imerg_halfhour.json')
     pedregal_ground=optional(SITE/'data/calibration/pedregal_ground_evidence_2015.json')
@@ -104,6 +105,21 @@ def main():
             check('catacaos_glofas_has_no_unit',river.get('unit') is None)
             check('catacaos_glofas_role_is_categorical',river.get('proxy_class') in {'MODELLED_20Y_EXCEEDANCE','MODELLED_5Y_EXCEEDANCE','NO_MODELLED_RETURN_PERIOD_EXCEEDANCE'})
             check('catacaos_glofas_not_production',river.get('production_use') is False)
+
+    # Evidencia de campo 2026: contexto trazable, nunca capacidad ni bajo riesgo.
+    field_safety=piura_field.get('safety') or {}
+    field_observations=piura_field.get('observations') or []
+    check('piura_field_evidence_not_production',piura_field.get('production_use') is False and piura_field.get('production_ready') is False)
+    check('piura_field_evidence_candidate_only',piura_field.get('status')=='OFFICIAL_FIELD_EVIDENCE_CANDIDATE_REVIEW')
+    check('piura_field_evidence_has_dated_controls',len(field_observations)>=4 and all(row.get('observation_date') for row in field_observations))
+    check('piura_field_evidence_sources_are_official',all(str(row.get('source_url','')).startswith('https://www.gob.pe/institucion/') for row in field_observations))
+    check('piura_field_evidence_preserves_senamhi_peak',any(float((row.get('reported_values') or {}).get('reported_peak_at_19_40_m3_s',0))==854.66 for row in field_observations))
+    check('piura_field_evidence_never_validates_capacity',field_safety.get('hydraulic_capacity_validated') is False)
+    check('piura_field_evidence_never_validates_transfer',field_safety.get('hydraulic_transfer_to_catacaos_validated') is False)
+    check('piura_field_evidence_never_infers_no_impact',field_safety.get('absence_of_impact_validated') is False)
+    check('piura_field_evidence_never_promotes_thresholds',field_safety.get('threshold_promotion_allowed') is False and field_safety.get('hydraulic_factor_promotion_allowed') is False)
+    check('piura_field_evidence_missing_not_low_risk',field_safety.get('missing_data_is_low_risk') is False)
+    check('piura_field_evidence_does_not_close_gate',field_safety.get('counts_toward_closeout') is False and (piura_field.get('decision_gate') or {}).get('status')=='HUMAN_TECHNICAL_REVIEW_REQUIRED')
 
     # Infraestructura nunca atenúa numéricamente sin calibración.
     check('hydraulic_inventory_not_production',hydraulics.get('production_use') is False)
