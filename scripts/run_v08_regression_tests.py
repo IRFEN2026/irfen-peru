@@ -59,6 +59,8 @@ def main():
     pprrd=optional(SITE/'data/hydrology/catacaos_pprrd_2026_discovery.json')
     official_outcomes=optional(SITE/'data/validation/official_outcome_evidence.json')
     shadow_runs=optional(SITE/'data/validation/shadow_runs.json')
+    cendehua=optional(SITE/'data/stations/igp_cendehua_access_probe.json')
+    cendehua_archive=optional(SITE/'data/stations/igp_cendehua_huaycoloro_archive.json')
 
     # Contrato matemático v0.7.1: nunca cambia como efecto colateral de v0.8.
     check('formula_zero_is_zero',operational_formula(0,0,0,10,20,30)==0)
@@ -403,6 +405,18 @@ def main():
     check('external_validation_no_threshold_promotion',(external_contract.get('acceptance_rules') or {}).get('threshold_or_hydraulic_factor_promotion')=='FORBIDDEN')
     check('external_validation_review_tool_exists',(ROOT/'scripts/review_v08_external_evidence.py').exists())
     check('external_validation_review_protocol_exists',(ROOT/'docs/V08_EXTERNAL_EVIDENCE_REVIEW_PROTOCOL.md').exists())
+    check('cendehua_probe_present',cendehua is not None)
+    if cendehua:
+        signal=cendehua.get('huaycoloro_ground_signal') or {}
+        check('cendehua_probe_not_production',cendehua.get('production_use') is False and cendehua.get('production_ready') is False)
+        check('cendehua_never_auto_labels_outcome',signal.get('automatic_outcome_label') is None and signal.get('human_review_required') is True)
+        if int(signal.get('station_count',0))>0:
+            check('cendehua_archive_present_when_signal_found',cendehua_archive is not None)
+    if cendehua_archive:
+        gate=cendehua_archive.get('scientific_gate') or {}
+        check('cendehua_archive_test_only',cendehua_archive.get('integration_mode')=='TEST_ONLY' and cendehua_archive.get('production_use') is False)
+        check('cendehua_archive_never_maps_false_to_none',gate.get('absence_of_provider_activity_is_none') is False)
+        check('cendehua_archive_human_review_required',gate.get('automatic_event_or_none_classification') is False and gate.get('human_review_required') is True)
     if closeout_scorecard is not None:
         milestones=closeout_scorecard.get('milestones') or []
         reached=[int(m.get('percentage',0)) for m in milestones if m.get('reached') is True]
