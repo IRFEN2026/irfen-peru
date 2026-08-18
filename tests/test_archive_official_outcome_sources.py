@@ -121,9 +121,12 @@ class OfficialOutcomeEvidenceTests(unittest.TestCase):
         indeci = collector.source_for_snapshot(collector.SOURCES[2], "2026-08-16")
 
         self.assertIn("f=16-08-2026", senamhi["url"])
-        self.assertIn("/servicios/main.php", senamhi["url"])
+        self.assertIn("/main.php", senamhi["url"])
         self.assertIn("dp=piura", senamhi["url"])
         self.assertIn("p=aviso-24H", senamhi["url"])
+        self.assertEqual(len(senamhi["url_candidates"]), 2)
+        self.assertTrue(all("f=16-08-2026" in url for url in senamhi["url_candidates"]))
+        self.assertIn("/servicios/main.php", senamhi["url_candidates"][1])
         self.assertNotIn("historical_date_parameter", senamhi)
         self.assertEqual(
             indeci["url"],
@@ -389,8 +392,16 @@ class OfficialOutcomeEvidenceTests(unittest.TestCase):
             "CAPTURED",
         ])
         self.assertEqual(delays, list(collector.RETRY_DELAYS_SECONDS))
-        self.assertEqual(len(set(requested_urls)), 1)
+        self.assertEqual(len(set(requested_urls)), 2)
+        self.assertNotIn("/servicios/main.php", requested_urls[0])
+        self.assertIn("/servicios/main.php", requested_urls[1])
+        self.assertEqual(requested_urls[0], requested_urls[2])
         self.assertIn("f=16-08-2026", requested_urls[0])
+        self.assertEqual(result["fetched_url"], requested_urls[2])
+        self.assertEqual(
+            [row["url"] for row in result["attempts"]],
+            requested_urls,
+        )
 
     def test_fetch_exhaustion_stays_unknown_not_zero(self):
         delays = []
