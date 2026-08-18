@@ -23,8 +23,13 @@
     const shadow=(checks.find(c=>c.id==='shadow_outcomes_sufficient_and_reviewed')||{}).evidence||{};
     const scientific=(checks.find(c=>c.id==='scientific_and_hydraulic_blockers_resolved')||{}).evidence||{};
     const external=scientific.external_evidence_by_pilot||{};
+    const workflows=score.human_review_workflows||{};
+    const shadowQueue=shadow.review_queue||[];
     const pilotNames={san_ildefonso:'San Ildefonso',chosica:'Huaycoloro / Chosica',catacaos:'Catacaos / Bajo Piura'};
-    const externalRows=Object.entries(external).map(([id,e])=>`<tr><td><b>${esc(pilotNames[id]||id)}</b></td><td>${esc(e.accepted_count??0)} / ${esc(e.required_count??'—')}</td><td>${esc(e.candidate_count??0)}</td><td>${esc(e.missing_without_candidate_count??'—')}</td></tr>`).join('');
+    const externalRows=Object.entries(external).map(([id,e])=>{const next=(e.review_queue||[])[0]||{};return `<tr><td><b>${esc(pilotNames[id]||id)}</b></td><td>${esc(e.accepted_count??0)} / ${esc(e.required_count??'—')}</td><td>${esc(e.candidate_count??0)}</td><td>${esc(e.missing_without_candidate_count??'—')}</td><td>${esc(next.remaining_gap||'Sin brecha pendiente')}</td></tr>`;}).join('');
+    const actionableShadow=shadowQueue.filter(row=>row.action==='HUMAN_REVIEW_REQUIRED').length;
+    const waitingShadow=shadowQueue.filter(row=>row.action==='WAIT_FOR_OFFICIAL_EVIDENCE').length;
+    const safeWorkflowLink=(entry,label)=>entry&&String(entry.url||'').startsWith('https://github.com/IRFEN2026/irfen-peru/actions/workflows/')?`<a href="${esc(entry.url)}" target="_blank" rel="noopener noreferrer" style="font-weight:700">${esc(label)} ↗</a>`:'';
     const labels=shadow.eligible_label_counts||{};
     const closed=score.current_milestone_pct===100&&m100.reached===true;
     const milestoneBadges=milestones.map(m=>badge(`${esc(m.percentage)}% ${m.reached?'ALCANZADO':'BLOQUEADO'}`,m.reached?'ok':'warn')).join(' ');
@@ -32,7 +37,8 @@
       <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap"><div><div class="small">CIERRE CIENTÍFICO AUDITABLE</div><h3 style="margin:4px 0 6px">${esc(score.current_milestone_pct)}% formal · siguiente ${esc(score.next_milestone_pct??'—')}%</h3></div>${badge(closed?'CIERRE COMPLETO':'REVISIÓN HUMANA OBLIGATORIA',closed?'ok':'warn')}</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 12px">${milestoneBadges}</div>
       <div class="small" style="line-height:1.6"><b>Muestra en sombra elegible:</b> ${esc(shadow.eligible_reviewed_records??0)} / ${esc(shadow.required??'—')} días · <b>EVENT:</b> ${esc(labels.EVENT??0)} / ${esc(shadow.minimum_verified_event_days??'—')} · <b>NONE:</b> ${esc(labels.NONE??0)} / ${esc(shadow.minimum_verified_none_days??'—')} · <b>pendientes de revisión:</b> ${esc(shadow.pending_outcome_review??'—')}.</div>
-      <div class="tablepanel" style="margin:10px 0 0;overflow:auto"><table><thead><tr><th>Piloto</th><th>Evidencia aceptada</th><th>Candidatos oficiales</th><th>Sin candidato</th></tr></thead><tbody>${externalRows||'<tr><td colspan="4">Cola externa todavía no publicada.</td></tr>'}</tbody></table></div>
+      <div class="tablepanel" style="margin:10px 0 0;overflow:auto"><table><thead><tr><th>Piloto</th><th>Evidencia aceptada</th><th>Candidatos oficiales</th><th>Sin candidato</th><th>Primera brecha pendiente</th></tr></thead><tbody>${externalRows||'<tr><td colspan="5">Cola externa todavía no publicada.</td></tr>'}</tbody></table></div>
+      <div class="histnote" style="margin-top:10px"><b>Cola diaria:</b> ${esc(actionableShadow)} jornadas con evidencia específica para revisión · ${esc(waitingShadow)} esperando evidencia oficial.<br><span class="small">${safeWorkflowLink(workflows.shadow_outcomes,'Abrir revisión diaria')} ${safeWorkflowLink(workflows.external_evidence,'Abrir revisión científica/hidráulica')}</span></div>
       <div class="small" style="margin-top:10px;line-height:1.55"><b>Regla fail-closed:</b> las fuentes candidatas requieren una persona identificada y no se aceptan automáticamente. Falta de evidencia, cobertura parcial o datos ausentes mantienen el bloqueo.</div>
     </div>`;
   }
