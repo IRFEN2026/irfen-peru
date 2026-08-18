@@ -1,0 +1,169 @@
+name: IRFEN - Revisar resultado diario en sombra v0.8
+
+on:
+  workflow_dispatch:
+    inputs:
+      snapshot_date:
+        description: "Jornada UTC cerrada que se revisa (YYYY-MM-DD)"
+        required: true
+        type: string
+      label:
+        description: "Resultado humano conservador"
+        required: true
+        default: UNCERTAIN
+        type: choice
+        options:
+          - UNCERTAIN
+          - EVENT
+          - NONE
+      official_sources:
+        description: "Una URL oficial por línea (SENAMHI, ANA, INDECI o gob.pe)"
+        required: true
+        type: string
+      notes:
+        description: "Cobertura temporal y espacial revisada; no usar ausencia de datos como NONE"
+        required: true
+        type: string
+      verified_event:
+        description: "Descripción del evento oficial verificado; obligatoria para EVENT"
+        required: false
+        type: string
+      comprehensive_none_coverage:
+        description: "Confirmo cobertura oficial integral; obligatoria para NONE"
+        required: false
+        default: false
+        type: boolean
+      replace_existing_review:
+        description: "Corregir una revisión anterior conservando su historial"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: "shadow-outcome-review"
+  cancel-in-progress: false
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Aplicar revisión humana con guardas fail-closed
+        shell: bash
+        env:
+          REVIEW_DATE: ${{ inputs.snapshot_date }}
+          REVIEW_LABEL: ${{ inputs.label }}
+          REVIEW_SOURCES: ${{ inputs.official_sources }}
+          REVIEW_NOTES: ${{ inputs.notes }}
+          VERIFIED_EVENT: ${{ inputs.verified_event }}
+          REVIEWED_BY: ${{ github.actor }}
+          COMPREHENSIVE_NONE_COVERAGE: ${{ inputs.comprehensive_none_coverage }}
+          REPLACE_EXISTING_REVIEW: ${{ inputs.replace_existing_review }}
+        run: |
+          set -euo pipefail
+          [[ "$REVIEW_DATE" =~ ^20[0-9]{2}-[0-9]{2}-[0-9]{2}$ ]]
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          from scripts.review_shadow_outcome import apply_review
+
+          archive_path = Path("site/data/validation/shadow_runs.json")
+          archive = json.loads(archive_path.read_text(encoding="utf-8"))
+          sources = [line.strip() for line in os.environ["REVIEW_SOURCES"].splitlines() if line.strip()]
+          review = apply_review(
+              archive,
+              snapshot_date=os.environ["REVIEW_DATE"],
+              label=os.environ["REVIEW_LABEL"],
+              official_sources=sources,
+              notes=os.environ["REVIEW_NOTES"],
+              verified_event=os.environ.get("VERIFIED_EVENT") or None,
+              reviewed_by=os.environ["REVIEWED_BY"],
+              comprehensive_none_coverage=os.environ["COMPREHENSIVE_NONE_COVERAGE"].lower() == "true",
+              replace_existing_review=os.environ["REPLACE_EXISTING_REVIEW"].lower() == "true",
+          )
+          archive_path.write_text(
+              json.dumps(archive, ensure_ascii=False, indent=2),
+              encoding="utf-8",
+          )
+          print(json.dumps({"snapshot_date_utc": os.environ["REVIEW_DATE"], **review}, ensure_ascii=False, indent=2))
+          PY
+
+      - name: Validar revisión y contrato TEST_ONLY
+        shell: bash
+        env:
+          REVIEW_DATE: ${{ inputs.snapshot_date }}
+          REVIEW_LABEL: ${{ inputs.label }}
+          REVIEWED_BY: ${{ github.actor }}
+        run: |
+          python -m unittest tests.test_review_shadow_outcome tests.test_review_shadow_outcome_workflow
+          python -m json.tool site/data/validation/shadow_runs.json >/dev/null
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          archive = json.loads(Path("site/data/validation/shadow_runs.json").read_text(encoding="utf-8"))
+          assert archive.get("production_use") is False
+          assert archive.get("production_ready") is False
+          record = next(
+              row for row in archive.get("records", [])
+              if row.get("snapshot_date_utc") == os.environ["REVIEW_DATE"]
+          )
+          assert record.get("production_use") is False
+          review = record.get("outcome_verification") or {}
+          assert review.get("status") == "REVIEWED_REAL_WORLD_OUTCOME"
+          assert review.get("label") == os.environ["REVIEW_LABEL"]
+          assert review.get("reviewed_by") == os.environ["REVIEWED_BY"]
+          assert review.get("automatic") is False
+          if review.get("label") == "UNCERTAIN":
+              assert review.get("counts_toward_closeout") is False
+          elif review.get("label") == "EVENT":
+              assert review.get("verified_event")
+              assert review.get("counts_toward_closeout") is True
+          elif review.get("label") == "NONE":
+              assert review.get("comprehensive_none_coverage") is True
+              assert review.get("counts_toward_closeout") is True
+          PY
+
+      - name: Guardar revisión auditable
+        id: persist
+        shell: bash
+        env:
+          REVIEW_DATE: ${{ inputs.snapshot_date }}
+          REVIEW_LABEL: ${{ inputs.label }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/validation/shadow_runs.json
+          git diff --cached --quiet && { echo "La revisión no produjo cambios." >&2; exit 1; }
+          git commit -m "IRFEN v0.8: revisar sombra ${REVIEW_DATE} como ${REVIEW_LABEL}"
+          git pull --rebase origin main
+          git push origin HEAD:main
+          echo "commit_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Publicar revisión y scorecard recalculada
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_SHA: ${{ steps.persist.outputs.commit_sha }}
+        run: |
+          gh workflow run publish-committed-data.yml \
+            --repo "$GITHUB_REPOSITORY" \
+            --ref main \
+            -f expected_sha="$EXPECTED_SHA"

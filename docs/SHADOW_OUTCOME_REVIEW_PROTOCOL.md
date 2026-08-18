@@ -93,8 +93,18 @@ corrección exige el indicador explícito `--replace-existing-review`, un
 `outcome_verification_history`, además del commit y pull request que documenten
 el cambio.
 
-Las anotaciones se aplican con `scripts/review_shadow_outcome.py`. El comando
-rechaza fuentes fuera de dominios institucionales, exige evidencia positiva
+Las anotaciones se aplican con `scripts/review_shadow_outcome.py` o, de forma
+preferente para reducir errores manuales, con el workflow **IRFEN - Revisar
+resultado diario en sombra v0.8** (`review-shadow-outcome.yml`). En GitHub
+Actions se selecciona la jornada cerrada y una etiqueta conservadora; se pega
+una URL oficial por línea y se explica la cobertura temporal y espacial. El
+workflow identifica al revisor mediante su cuenta de GitHub, conserva
+`automatic=false`, publica el commit exacto y recalcula la scorecard. `EVENT`
+exige describir el evento verificado; `NONE` exige marcar explícitamente que la
+cobertura oficial fue integral. El valor predeterminado es `UNCERTAIN`.
+
+El comando y el workflow
+rechazan fuentes fuera de dominios institucionales, exigen evidencia positiva
 para `EVENT`, un revisor identificado y una confirmación explícita de cobertura
 para `NONE`. La scorecard vuelve a comprobar estos campos aunque el JSON se
 edite por fuera de la herramienta. Una
