@@ -131,6 +131,15 @@ class V08RcStatusTests(unittest.TestCase):
         self.assertIn("REVISIÓN HUMANA OBLIGATORIA", ui)
         self.assertIn("Falta de evidencia", ui)
 
+    def test_successful_history_build_triggers_validated_redeploy(self):
+        workflow = (ROOT / ".github/workflows/update-and-deploy.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("workflow_run:", workflow)
+        self.assertIn('"IRFEN — Construir histórico IMERG"', workflow)
+        self.assertIn("github.event.workflow_run.conclusion == 'success'", workflow)
+        self.assertIn("site/data/history.json", workflow)
+
 
 if __name__ == "__main__":
     unittest.main()

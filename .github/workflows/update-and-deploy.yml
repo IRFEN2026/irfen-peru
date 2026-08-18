@@ -2,6 +2,14 @@ name: IRFEN — Actualizar IMERG y publicar
 
 on:
   workflow_dispatch:
+  # Los commits creados con GITHUB_TOKEN no disparan otro workflow por `push`.
+  # Reejecutar la publicación al terminar el enriquecimiento histórico evita
+  # que history.json válido quede solamente en `main` y no llegue a Pages.
+  workflow_run:
+    workflows:
+      - "IRFEN — Construir histórico IMERG"
+    types:
+      - completed
   schedule:
     - cron: "20 16 * * *"
   push:
@@ -62,6 +70,7 @@ concurrency:
 
 jobs:
   build:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
