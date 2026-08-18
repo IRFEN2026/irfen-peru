@@ -1,0 +1,82 @@
+{
+  "version": "phase2-analog-transfer-v1",
+  "status": "RESEARCH_PROTOCOL_READY",
+  "deployment_status": "RESEARCH_ONLY",
+  "production_use": false,
+  "relationship_to_v08": {
+    "counts_toward_v08_closeout": false,
+    "changes_v08_pilots": false
+  },
+  "decision_use": {
+    "local_validation": false,
+    "counts_toward_zone_activation": false,
+    "operational_alerting": false,
+    "threshold_promotion": false
+  },
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "donor_selection": {
+    "geographic_proximity_alone_is_sufficient": false,
+    "requires_multiple_candidates": true,
+    "final_selection_requires_human_review": true,
+    "required_similarity_dimensions": [
+      "catchment_area_and_shape",
+      "elevation_slope_and_response_time",
+      "geology_soil_and_infiltration",
+      "land_cover_and_urbanization",
+      "drainage_density_and_channel_form",
+      "rainfall_climatology_and_orographic_exposure",
+      "hydraulic_works_obstructions_and_maintenance"
+    ]
+  },
+  "transferable_event_features": [
+    "peak_30min_or_1h_intensity",
+    "accumulation_3h",
+    "accumulation_6h",
+    "accumulation_24h",
+    "antecedent_accumulation_24h",
+    "antecedent_accumulation_72h",
+    "antecedent_accumulation_7d",
+    "hyetograph_shape_and_timing",
+    "antecedent_soil_moisture_class",
+    "verified_event_or_none_outcome"
+  ],
+  "normalization": {
+    "raw_millimetres_may_be_copied_as_validated_threshold": false,
+    "required": [
+      "local_climatology_or_percentile_context",
+      "target_catchment_geometry",
+      "target_antecedent_condition",
+      "satellite_or_gauge_representativeness"
+    ]
+  },
+  "mechanism_guards": {
+    "cross_mechanism_validation_allowed": false,
+    "river_valley_requires": [
+      "observed_or_official_river_level_or_flow",
+      "current_channel_and_floodplain_capacity",
+      "defences_obstructions_and_maintenance",
+      "routing_or_travel_time"
+    ],
+    "debris_flow_requires": [
+      "source_path_fan_and_outlet_geometry",
+      "sediment_and_slope_context",
+      "local_activation_or_impact_review"
+    ]
+  },
+  "outcome_guards": {
+    "absence_of_report_is_none": false,
+    "donor_outcome_is_target_outcome": false,
+    "local_event_required_for_local_validation": true
+  },
+  "required_output_labels": {
+    "mode": "ANALOG_TRANSFER_TEST_ONLY",
+    "local_validation": false,
+    "operational_alert": false,
+    "threshold_promotion": "FORBIDDEN"
+  },
+  "official_method_references": [
+    "https://wmo.int/es/media/magazine-article/descripcion-general-del-sistema-guia-para-crecidas-repentinas-con-cobertura-mundial-y-su-aplicacion",
+    "https://www.hec.usace.army.mil/confluence/hmsdocs/hmstrm/transform/applicability-and-limitations-of-transform-models",
+    "https://www.senamhi.gob.pe/ares/"
+  ]
+}
