@@ -32,6 +32,7 @@ SEARCH_WINDOW_HOURS = 12
 REPAIR_WINDOW_HOURS = 30
 REPAIR_SEARCH_COUNT = 80
 MAX_DOWNLOADS_PER_RUN = 4
+RESEARCH_EVENT_MIN_SLOTS = 2
 REQUIRED_TARGET_IDS = {
     "san_ildefonso",
     "huaycoloro_main_channel",
@@ -340,29 +341,36 @@ def select_bounded_granules(
     target_incomplete=(),
     limit=MAX_DOWNLOADS_PER_RUN,
 ):
-    """Keep latency current, then close recent continuity gaps before replay work.
+    """Keep latency current and guarantee bounded progress on event replay.
 
-    The live archive must acquire two new half-hourly granules per hour before
-    spending spare capacity on the finite event replay. Newest-first repair
-    grows a usable continuous tail while the hard download cap remains fixed.
+    The newest granule always measures latency. Up to two slots are reserved
+    for finite research-event backfill so recent repair cannot starve a
+    verified positive-control event. Remaining capacity repairs recent gaps;
+    the hard download cap remains unchanged.
     """
     if not indexed or limit <= 0:
         return []
 
     selected = [indexed[-1]]
     selected_names = {indexed[-1][1]}
-    candidates = (
-        list(reversed(continuity_missing))
-        + list(reversed(target_incomplete))
-        + list(bootstrap_missing)
-    )
-    for row in candidates:
+    event_slots = min(RESEARCH_EVENT_MIN_SLOTS, max(0, limit - len(selected)))
+    for row in list(bootstrap_missing):
+        if event_slots <= 0:
+            break
         if not row[1] or row[1] in selected_names:
             continue
         selected.append(row)
         selected_names.add(row[1])
+        event_slots -= 1
+
+    candidates = list(reversed(continuity_missing)) + list(reversed(target_incomplete))
+    for row in candidates:
         if len(selected) >= limit:
             break
+        if not row[1] or row[1] in selected_names:
+            continue
+        selected.append(row)
+        selected_names.add(row[1])
     selected.sort(key=lambda row: row[0])
     return selected
 

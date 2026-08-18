@@ -51,6 +51,7 @@ def main():
     phase2_catalog=load(SITE/'data/phase2/catalog.json')
     analog_transfer=load(ROOT/'config/phase2_analog_transfer_contract.json')
     phase2_events=load(SITE/'data/phase2/research_events.json')
+    phase2_event_reanalysis=load(SITE/'data/phase2/event_reanalysis.json')
     closeout_contract=load(ROOT/'config/v08_closeout_contract.json')
     external_contract=load(ROOT/'config/v08_external_validation_contract.json')
     external_ledger=load(SITE/'data/validation/v08_external_evidence.json')
@@ -206,6 +207,20 @@ def main():
     check('phase2_events_unverified_are_blocked',all(
         e.get('event_confirmed') is True or str(e.get('analysis_status','')).startswith('BLOCKED_')
         for e in research_events
+    ))
+
+    # Reanálisis Phase 2: cobertura explícita y acumulados solo con serie completa.
+    reanalysis_guards=phase2_event_reanalysis.get('guardrails') or {}
+    reanalysis_items=phase2_event_reanalysis.get('items') or []
+    check('phase2_reanalysis_not_production',phase2_event_reanalysis.get('production_use') is False)
+    check('phase2_reanalysis_research_only',phase2_event_reanalysis.get('deployment_status')=='RESEARCH_ONLY')
+    check('phase2_reanalysis_not_v08_closeout',(phase2_event_reanalysis.get('relationship_to_v08') or {}).get('counts_toward_v08_closeout') is False)
+    check('phase2_reanalysis_missing_not_low_risk',reanalysis_guards.get('missing_data_is_not_low_risk') is True)
+    check('phase2_reanalysis_no_activation',all(item.get('operational_zone_activation') is False for item in reanalysis_items))
+    check('phase2_reanalysis_incomplete_windows_hide_accumulation',all(
+        window.get('continuous') is True or window.get('accum_mm') is None
+        for item in reanalysis_items
+        for window in (item.get('windows') or {}).values()
     ))
 
     # PPRRD Catacaos: evidencia documental trazable, nunca capacidad ni umbral.

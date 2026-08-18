@@ -24,6 +24,7 @@ on:
       - scripts/build_v08_scorecard.py
       - scripts/build_v08_rc_status.py
       - scripts/build_phase2_catalog.py
+      - scripts/build_phase2_event_reanalysis.py
       - tests/**
       - scripts/fetch_glofas_catacaos_current.py
       - config/v08_closeout_contract.json
@@ -168,6 +169,9 @@ jobs:
       - name: Construir replay histórico de calibración
         run: python scripts/build_historical_replay.py
 
+      - name: Construir reanálisis fail-closed de eventos Phase 2
+        run: python scripts/build_phase2_event_reanalysis.py
+
       - name: Reconstruir descomposición científica Lima Este
         run: python scripts/build_lima_east_hazard_decomposition.py
 
@@ -224,6 +228,7 @@ jobs:
           test -s site/data/forecast/verification.json
           test -s site/data/calibration/historical_replay.json
           test -s site/data/experimental_state.json
+          test -s site/data/phase2/event_reanalysis.json
           python -m json.tool site/data/latest.json >/dev/null
           python -m json.tool site/data/history.json >/dev/null
           python -m json.tool site/data/scientific_status.json >/dev/null
@@ -236,6 +241,7 @@ jobs:
           python -m json.tool site/data/forecast/verification.json >/dev/null
           python -m json.tool site/data/calibration/historical_replay.json >/dev/null
           python -m json.tool site/data/experimental_state.json >/dev/null
+          python -m json.tool site/data/phase2/event_reanalysis.json >/dev/null
           if [ -s site/data/forecast/latest.json ]; then
             python -m json.tool site/data/forecast/latest.json >/dev/null
           fi

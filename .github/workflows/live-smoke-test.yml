@@ -51,6 +51,7 @@ jobs:
             "data/stations/igp_cendehua_access_probe.json"
             "data/stations/igp_cendehua_huaycoloro_archive.json"
             "data/experimental_state.json"
+            "data/phase2/event_reanalysis.json"
             "data/test_report.json"
             "data/v08_scorecard.json"
             "data/v08_rc_status.json"
@@ -101,6 +102,18 @@ jobs:
           cat=next(z for z in state['zones'] if z['zone_id']=='catacaos')
           if cat.get('river_state_available') is not True:
               assert 'numeric_river_state_required' in cat.get('blockers',[])
+
+          event_reanalysis=load('data/phase2/event_reanalysis.json')
+          assert event_reanalysis.get('production_use') is False
+          assert event_reanalysis.get('deployment_status') == 'RESEARCH_ONLY'
+          assert event_reanalysis.get('guardrails',{}).get('missing_data_is_not_low_risk') is True
+          assert event_reanalysis.get('relationship_to_v08',{}).get('counts_toward_v08_closeout') is False
+          assert int(event_reanalysis.get('summary',{}).get('operational_activations',-1)) == 0
+          for item in event_reanalysis.get('items',[]):
+              assert item.get('operational_zone_activation') is False
+              for window in (item.get('windows') or {}).values():
+                  if window.get('continuous') is not True:
+                      assert window.get('accum_mm') is None
 
           ref=load('data/hydrology/piura_reference_model.json')
           assert ref.get('production_use') is False
