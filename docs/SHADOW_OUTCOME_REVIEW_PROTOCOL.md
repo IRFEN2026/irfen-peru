@@ -66,8 +66,10 @@ incompletos permanecen en el archivo, pero no incrementan el hito.
 ## Registro de auditoría
 
 Cada revisión debe conservar: etiqueta, evento verificado, URL oficial, fecha
-de consulta, instante de cierre de la ventana UTC y nota que explique cobertura
-temporal y espacial. Una revisión existente no se sobrescribe por defecto. Toda
+de consulta, identidad del revisor humano, marca `automatic=false`, instante de
+cierre de la ventana UTC y nota que explique cobertura temporal y espacial.
+`NONE` conserva además la confirmación explícita de cobertura integral. Una
+revisión existente no se sobrescribe por defecto. Toda
 corrección exige el indicador explícito `--replace-existing-review`, un
 `reviewed_at` posterior y conserva íntegramente la versión reemplazada en
 `outcome_verification_history`, además del commit y pull request que documenten
@@ -75,7 +77,9 @@ el cambio.
 
 Las anotaciones se aplican con `scripts/review_shadow_outcome.py`. El comando
 rechaza fuentes fuera de dominios institucionales, exige evidencia positiva
-para `EVENT` y una confirmación explícita de cobertura para `NONE`. Una
+para `EVENT`, un revisor identificado y una confirmación explícita de cobertura
+para `NONE`. La scorecard vuelve a comprobar estos campos aunque el JSON se
+edite por fuera de la herramienta. Una
 revisión `UNCERTAIN` queda auditada, pero no cuenta para el cierre.
 
 ## Regla de promoción
