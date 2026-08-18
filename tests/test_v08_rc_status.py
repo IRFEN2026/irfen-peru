@@ -107,7 +107,10 @@ class V08RcStatusTests(unittest.TestCase):
             self.assertIn("build_v08_rc_status.py", workflows[name], name)
         ui = (ROOT / "site/v08-readiness.js").read_text(encoding="utf-8")
         self.assertIn("data/v08_rc_status.json", ui)
+        self.assertIn("data/v08_scorecard.json", ui)
         self.assertIn("RC1 DISPONIBLE · TEST_ONLY", ui)
+        self.assertIn("REVISIÓN HUMANA OBLIGATORIA", ui)
+        self.assertIn("Falta de evidencia", ui)
 
 
 if __name__ == "__main__":
