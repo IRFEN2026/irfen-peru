@@ -30,6 +30,20 @@ y se enlazan con `path` desde el contrato. Un activo solo puede marcarse
 `READY` si el archivo existe. `MISSING`, `CANDIDATE` y `PARTIAL` se publican
 como brechas, nunca como bajo riesgo.
 
+### Eventos de oportunidad todavía no verificados
+
+Un reporte reciente puede ser útil antes de que la zona forme parte del
+inventario. Se registra en `site/data/validation/phase2_event_intake/` sin
+suponer el nombre de la quebrada, las coordenadas ni la hora. El generador
+`scripts/build_phase2_event_catalog.py` bloquea el reanálisis hasta contar con
+identidad espacial y temporal y una fuente oficial específica del evento.
+
+Una vez verificado, el caso permite comparar IMERG 3/6/24 h y el forecast GEOS
+contra la observación. Sigue siendo `RESEARCH_ONLY`: no cuenta para el cierre
+v0.8, no activa una zona, no deriva umbrales y no transfiere factores
+hidráulicos. Las fuentes que solo describen el contexto territorial deben
+marcarse explícitamente como incapaces de confirmar el evento.
+
 ## Secuencia eficiente
 
 1. Registrar el candidato y sus fuentes oficiales en
@@ -45,6 +59,10 @@ como brechas, nunca como bajo riesgo.
 6. Abrir revisión científica, hidrológica/hidráulica y de resultado local.
 7. Mantener la puerta `BLOCKED` incluso con contrato completo. La futura
    activación exige un proceso de promoción separado y explícito.
+
+Para eventos de oportunidad, ejecutar
+`python scripts/build_phase2_event_catalog.py` después de actualizar su ficha.
+El catálogo resultante queda en `site/data/phase2/research_events.json`.
 
 ## Trabajo paralelo recomendado
 
