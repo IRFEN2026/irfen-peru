@@ -38,6 +38,7 @@ def eligible_record():
         "zones": [
             {
                 "zone_id": zone_id,
+                "forecast_mm": {"available_future_hours": 48},
                 "recommendation": {
                     "code": "TEST_MONITOR",
                     "mode": "TEST_ONLY",
@@ -80,6 +81,25 @@ class ShadowEligibilityTests(unittest.TestCase):
 
         self.assertFalse(result["eligible"])
         self.assertFalse(result["checks"]["snapshot_captured_within_pre_outcome_window"])
+
+    def test_previous_day_snapshot_is_eligible_when_forecast_covers_target(self):
+        record = eligible_record()
+        record["archived_at"] = "2026-08-14T12:00:00Z"
+
+        result = scorecard.shadow_record_eligibility(record, PILOTS, 30)
+
+        self.assertTrue(result["eligible"])
+        self.assertTrue(result["checks"]["forecast_covers_target_day"])
+
+    def test_previous_day_snapshot_requires_full_target_day_forecast(self):
+        record = eligible_record()
+        record["archived_at"] = "2026-08-14T12:00:00Z"
+        record["zones"][0]["forecast_mm"]["available_future_hours"] = 35.5
+
+        result = scorecard.shadow_record_eligibility(record, PILOTS, 30)
+
+        self.assertFalse(result["eligible"])
+        self.assertFalse(result["checks"]["forecast_covers_target_day"])
 
     def test_missing_data_is_not_an_eligible_dry_day(self):
         record = eligible_record()
