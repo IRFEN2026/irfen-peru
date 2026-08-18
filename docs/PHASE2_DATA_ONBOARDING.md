@@ -123,8 +123,9 @@ ni altera los pilotos v0.8. La vista pública independiente queda en
 
 ## Primera ola registrada
 
-El pipeline prepara contratos para los diez sistemas del inventario inicial:
-Lima norte (Huerta Vieja, Arahuay/Chillón y Lampián), Lima sur/Sur Chico
+El pipeline prepara contratos para los once sistemas del inventario inicial:
+Lima este/Huarochirí (Santa Eulalia–Rímac alto y quebradas asociadas), Lima
+norte (Huerta Vieja, Arahuay/Chillón y Lampián), Lima sur/Sur Chico
 (Malanche y Chilca–Pucusana), Ica/Pisco (Pisco–San Andrés y
 Palpa–Changuillo), Lambayeque (Chongoyape–Oyotún–Zaña y
 Motupe–La Leche–Pítipo) y Acarí/San Agustín en Arequipa.

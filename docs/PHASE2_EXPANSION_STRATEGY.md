@@ -36,6 +36,10 @@ no queda desplazada por una capital ni castigada porque mida menos.
 
 ## Cobertura territorial que debe investigarse
 
+- Lima este y Huarochirí: Cashahuacra/Shingolay, Santa Eulalia, Ricardo Palma,
+  Chaclacayo y Lurigancho-Chosica, separando quebradas locales, aporte del río
+  Santa Eulalia y nivel/capacidad del Rímac receptor.
+
 - Lima norte y cuencas costeras: Chillón/Canta, Chancay-Huaral,
   Huaura-Huacho-Sayán, Supe, Pativilca, Fortaleza y Barranca, con sus
   quebradas/localidades oficiales.
