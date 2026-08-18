@@ -28,7 +28,15 @@
     "minimum_reviewed_daily_records": 30,
     "minimum_verified_event_days": 1,
     "minimum_verified_none_days": 10,
-    "accepted_outcome_labels": ["NONE", "EVENT"]
+    "accepted_outcome_labels": ["NONE", "EVENT"],
+    "acceptance_rules": {
+      "named_human_reviewer_required": true,
+      "automatic_classification_forbidden": true,
+      "official_source_required": true,
+      "counts_toward_closeout_must_be_explicit": true,
+      "none_requires_comprehensive_coverage": true,
+      "event_requires_verified_event_description": true
+    }
   },
   "required_workflows": [
     ".github/workflows/update-and-deploy.yml",

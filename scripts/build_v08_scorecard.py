@@ -9,12 +9,19 @@ from __future__ import annotations
 
 from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
+from urllib.parse import urlparse
 import json
 
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "site"
 CONTRACT_PATH = ROOT / "config" / "v08_closeout_contract.json"
 OUT = SITE / "data" / "v08_scorecard.json"
+OFFICIAL_OUTCOME_HOST_SUFFIXES = (
+    "senamhi.gob.pe",
+    "ana.gob.pe",
+    "indeci.gob.pe",
+    "gob.pe",
+)
 
 
 def load(path: Path, default=None):
@@ -129,9 +136,26 @@ def external_validation_gate(contract: dict, ledger: dict, pilots: list[str]):
     return passed, evidence
 
 
-def shadow_record_eligibility(record: dict, pilots: list[str], minimum_pairs_per_pilot: int):
+def official_outcome_url(url: str):
+    host = (urlparse(str(url)).hostname or "").lower()
+    return any(
+        host == suffix or host.endswith(f".{suffix}")
+        for suffix in OFFICIAL_OUTCOME_HOST_SUFFIXES
+    )
+
+
+def shadow_record_eligibility(
+    record: dict,
+    pilots: list[str],
+    minimum_pairs_per_pilot: int,
+    accepted_labels: set[str] | None = None,
+):
     """Return auditable gates for a reviewed shadow day to count toward closure."""
+    accepted_labels = accepted_labels or {"EVENT", "NONE"}
     health = record.get("source_health") or {}
+    outcome = record.get("outcome_verification") or {}
+    outcome_label = outcome.get("label")
+    official_sources = outcome.get("official_source") or []
     zones = record.get("zones") or []
     zones_by_id = {zone.get("zone_id"): zone for zone in zones}
     pair_counts = health.get("forecast_verification_pairs_by_zone") or {}
@@ -151,6 +175,18 @@ def shadow_record_eligibility(record: dict, pilots: list[str], minimum_pairs_per
         "imerg_early_available": health.get("imerg_early_status") == "EARLY_HALFHOURLY_SOURCE_AVAILABLE",
         "imerg_latency_recorded": health.get("imerg_early_latency_hours") is not None,
         "regression_passed": health.get("regression_status") == "PASS",
+        "outcome_status_reviewed": outcome.get("status") == "REVIEWED_REAL_WORLD_OUTCOME",
+        "outcome_label_accepted": outcome_label in accepted_labels,
+        "outcome_official_sources_recorded": bool(official_sources)
+        and all(official_outcome_url(url) for url in official_sources),
+        "outcome_named_human_reviewer": bool(str(outcome.get("reviewed_by") or "").strip()),
+        "outcome_not_automatic": outcome.get("automatic") is False,
+        "outcome_counts_toward_closeout_explicit": outcome.get("counts_toward_closeout") is True,
+        "outcome_label_semantics_supported": (
+            outcome_label == "EVENT" and bool(str(outcome.get("verified_event") or "").strip())
+        ) or (
+            outcome_label == "NONE" and outcome.get("comprehensive_none_coverage") is True
+        ),
         "outcome_review_after_utc_day_close": review_after_utc_day_close(record),
     }
     return {"eligible": all(checks.values()), "checks": checks}
@@ -171,7 +207,9 @@ def shadow_outcome_review_queue(
     queue = []
     for record in shadow_records:
         outcome = record.get("outcome_verification") or {}
-        eligibility = shadow_record_eligibility(record, pilots, minimum_pairs_per_pilot)
+        eligibility = shadow_record_eligibility(
+            record, pilots, minimum_pairs_per_pilot, accepted_labels
+        )
         accepted_outcome = outcome.get("label") in accepted_labels
         if accepted_outcome and eligibility["eligible"]:
             continue
@@ -193,8 +231,6 @@ def shadow_outcome_review_queue(
         failed_checks = sorted(
             check_id for check_id, passed in eligibility["checks"].items() if not passed
         )
-        if not accepted_outcome:
-            failed_checks.append("outcome_label_accepted")
         if accepted_outcome:
             action = "RESOLVE_ELIGIBILITY_FAILURES"
         elif unique_pilot_links:
@@ -361,7 +397,7 @@ def main():
         {
             "snapshot_date_utc": record.get("snapshot_date_utc"),
             "label": (record.get("outcome_verification") or {}).get("label"),
-            **shadow_record_eligibility(record, pilots, min_pairs),
+            **shadow_record_eligibility(record, pilots, min_pairs, accepted_labels),
         }
         for record in reviewed_outcomes
     ]

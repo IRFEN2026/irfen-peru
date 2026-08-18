@@ -49,6 +49,7 @@ def apply_review(
     official_sources: list[str],
     notes: str,
     verified_event: str | None = None,
+    reviewed_by: str | None = None,
     comprehensive_none_coverage: bool = False,
     reviewed_at: str | None = None,
     replace_existing_review: bool = False,
@@ -63,6 +64,8 @@ def apply_review(
         raise ValueError("EVENT requiere describir el evento oficial verificado")
     if label == "NONE" and not comprehensive_none_coverage:
         raise ValueError("NONE requiere confirmar cobertura oficial suficiente; falta de datos no equivale a NONE")
+    if label in {"EVENT", "NONE"} and not (reviewed_by or "").strip():
+        raise ValueError("EVENT/NONE requiere identificar al revisor humano")
     if label == "UNCERTAIN":
         verified_event = None
 
@@ -99,8 +102,11 @@ def apply_review(
         "official_source": official_sources,
         "notes": notes.strip(),
         "reviewed_at": review_time.isoformat(),
+        "reviewed_by": (reviewed_by or "").strip() or None,
+        "automatic": False,
         "review_window_closed_utc": window_closed_at.isoformat(),
         "review_method": "POST_SNAPSHOT_OFFICIAL_EVIDENCE_REVIEW",
+        "comprehensive_none_coverage": label == "NONE" and comprehensive_none_coverage,
         "counts_toward_closeout": label in {"NONE", "EVENT"},
     }
     archive["updated_at"] = datetime.now(timezone.utc).isoformat()
@@ -117,6 +123,7 @@ def main():
     parser.add_argument("--source", action="append", required=True, help="URL oficial; se puede repetir")
     parser.add_argument("--notes", required=True)
     parser.add_argument("--verified-event")
+    parser.add_argument("--reviewed-by", required=True, help="Nombre o identificador del revisor humano")
     parser.add_argument("--comprehensive-none-coverage", action="store_true")
     parser.add_argument(
         "--replace-existing-review",
@@ -134,6 +141,7 @@ def main():
         official_sources=args.source,
         notes=args.notes,
         verified_event=args.verified_event,
+        reviewed_by=args.reviewed_by,
         comprehensive_none_coverage=args.comprehensive_none_coverage,
         replace_existing_review=args.replace_existing_review,
     )

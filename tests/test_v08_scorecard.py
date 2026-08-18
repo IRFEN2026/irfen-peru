@@ -26,7 +26,13 @@ def eligible_record():
         "outcome_verification": {
             "status": "REVIEWED_REAL_WORLD_OUTCOME",
             "label": "NONE",
+            "verified_event": None,
+            "official_source": ["https://portal.indeci.gob.pe/emergencias/"],
             "reviewed_at": "2026-08-16T00:00:00Z",
+            "reviewed_by": "Revisor humano identificado",
+            "automatic": False,
+            "comprehensive_none_coverage": True,
+            "counts_toward_closeout": True,
         },
         "zones": [
             {
@@ -93,6 +99,33 @@ class ShadowEligibilityTests(unittest.TestCase):
 
         self.assertFalse(result["eligible"])
         self.assertFalse(result["checks"]["all_recommendations_test_only"])
+
+    def test_accepted_label_without_named_reviewer_is_rejected(self):
+        record = eligible_record()
+        record["outcome_verification"]["reviewed_by"] = None
+
+        result = scorecard.shadow_record_eligibility(record, PILOTS, 30)
+
+        self.assertFalse(result["eligible"])
+        self.assertFalse(result["checks"]["outcome_named_human_reviewer"])
+
+    def test_none_requires_explicit_comprehensive_coverage(self):
+        record = eligible_record()
+        record["outcome_verification"]["comprehensive_none_coverage"] = False
+
+        result = scorecard.shadow_record_eligibility(record, PILOTS, 30)
+
+        self.assertFalse(result["eligible"])
+        self.assertFalse(result["checks"]["outcome_label_semantics_supported"])
+
+    def test_nonofficial_outcome_source_is_rejected(self):
+        record = eligible_record()
+        record["outcome_verification"]["official_source"] = ["https://example.com/report"]
+
+        result = scorecard.shadow_record_eligibility(record, PILOTS, 30)
+
+        self.assertFalse(result["eligible"])
+        self.assertFalse(result["checks"]["outcome_official_sources_recorded"])
 
 
 class ShadowOutcomeReviewQueueTests(unittest.TestCase):
