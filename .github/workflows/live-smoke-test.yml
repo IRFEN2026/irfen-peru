@@ -48,6 +48,8 @@ jobs:
             "data/hydrology/piura_2026_field_evidence.json"
             "data/validation/official_outcome_evidence.json"
             "data/validation/shadow_runs.json"
+            "data/stations/igp_cendehua_access_probe.json"
+            "data/stations/igp_cendehua_huaycoloro_archive.json"
             "data/experimental_state.json"
             "data/test_report.json"
             "data/v08_scorecard.json"
@@ -180,6 +182,25 @@ jobs:
               if review.get('label') == 'UNCERTAIN':
                   assert review.get('counts_toward_closeout') is False
 
+          cendehua=load('data/stations/igp_cendehua_access_probe.json')
+          assert cendehua.get('production_use') is False
+          assert cendehua.get('production_ready') is False
+          ground_signal=cendehua.get('huaycoloro_ground_signal') or {}
+          assert ground_signal.get('automatic_outcome_label') is None
+          assert ground_signal.get('human_review_required') is True
+
+          cendehua_archive=load('data/stations/igp_cendehua_huaycoloro_archive.json')
+          cendehua_gate=cendehua_archive.get('scientific_gate') or {}
+          captures=cendehua_archive.get('captures') or []
+          assert cendehua_archive.get('integration_mode') == 'TEST_ONLY'
+          assert cendehua_archive.get('production_use') is False
+          assert cendehua_archive.get('production_ready') is False
+          assert int(cendehua_archive.get('capture_count',-1)) == len(captures)
+          assert int(cendehua_archive.get('capture_count',0)) >= 1
+          assert cendehua_gate.get('automatic_event_or_none_classification') is False
+          assert cendehua_gate.get('absence_of_provider_activity_is_none') is False
+          assert cendehua_gate.get('human_review_required') is True
+
           tests=load('data/test_report.json')
           assert tests.get('status')=='PASS', tests
 
@@ -217,5 +238,6 @@ jobs:
           print('ANA Catacaos segments:',len(ana.get('features',[])))
           print('official outcome evidence days:',outcome.get('record_count'))
           print('shadow archive days:',shadow.get('record_count'))
+          print('CENDEHUA captures:',cendehua_archive.get('capture_count'))
           print('release candidate:',rc.get('status'))
           PY

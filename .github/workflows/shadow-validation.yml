@@ -67,6 +67,13 @@ jobs:
                   code=(z.get('recommendation') or {}).get('code','')
                   assert code.startswith('TEST_')
                   assert (z.get('recommendation') or {}).get('operational_alert') is False
+              cendehua=(rec.get('ground_signals') or {}).get('huaycoloro_cendehua')
+              if cendehua is not None:
+                  assert cendehua.get('automatic_outcome_label') is None
+                  assert cendehua.get('can_support_none_classification_by_itself') is False
+                  assert cendehua.get('human_review_required') is True
+                  for observation in cendehua.get('observations',[]):
+                      assert observation.get('irfen_outcome_label') is None
           print('Archivo de validación en sombra OK:', d.get('record_count'))
           PY
 

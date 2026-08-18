@@ -308,6 +308,14 @@ def main():
         and "pprrd.get('production_use') is False" in smoke_workflow
         and "candidate.get('validated_meaning') is False" in smoke_workflow,
     )
+    check(
+        'live_smoke_requires_cendehua_test_only_assets',
+        'data/stations/igp_cendehua_access_probe.json' in smoke_workflow
+        and 'data/stations/igp_cendehua_huaycoloro_archive.json' in smoke_workflow
+        and "ground_signal.get('automatic_outcome_label') is None" in smoke_workflow
+        and "cendehua_gate.get('absence_of_provider_activity_is_none') is False" in smoke_workflow
+        and "cendehua_gate.get('human_review_required') is True" in smoke_workflow,
+    )
     check('closeout_contract_exact_pilots',closeout_contract.get('pilot_zone_ids')==['san_ildefonso','chosica','catacaos'])
     check('closeout_contract_fixed_milestones',closeout_contract.get('milestone_percentages')==[25,50,75,100])
     shadow_contract=closeout_contract.get('shadow_validation') or {}
@@ -326,6 +334,12 @@ def main():
     check('closeout_shadow_redundant_capture_attempts_scheduled',all(f'cron: "{cron}"' in shadow_workflow for cron in retry_crons))
     check('closeout_shadow_capture_runs_are_serialized','cancel-in-progress: false' in shadow_workflow)
     check('closeout_shadow_publish_only_after_new_snapshot',"if: steps.persist.outputs.changed == 'true'" in shadow_workflow)
+    check(
+        'closeout_shadow_cendehua_signal_never_auto_classifies',
+        "cendehua.get('automatic_outcome_label') is None" in shadow_workflow
+        and "cendehua.get('can_support_none_classification_by_itself') is False" in shadow_workflow
+        and "observation.get('irfen_outcome_label') is None" in shadow_workflow,
+    )
     check('closeout_shadow_none_requires_comprehensive_coverage',shadow_acceptance.get('none_requires_comprehensive_coverage') is True)
     check('closeout_contract_release_completion_explicit',closeout_contract.get('release_completion_marker')=='Release status: COMPLETE')
     check('closeout_contract_catacaos_supplemental_imerg_release_gate',(closeout_contract.get('imerg_early') or {}).get('supplemental_release_target_ids')==['catacaos'])
