@@ -15,6 +15,9 @@ REQUIRED_IDENTITY_FIELDS = {
     "occurrence_time_local": ("reported_event", "occurrence_time_local"),
     "official_event_source": ("verification", "official_event_source"),
 }
+REQUIRED_CONFIRMATION_FIELDS = {
+    name: path for name, path in REQUIRED_IDENTITY_FIELDS.items() if name != "coordinates"
+}
 
 
 class EventIntakeError(ValueError):
@@ -55,6 +58,7 @@ def validate_event(row, path=None):
     require(bool(_get(row, ("reported_location", "province"))), "provincia requerida")
     require(row.get("status") in {
         "CANDIDATE_EVENT_PENDING_OFFICIAL_VERIFICATION",
+        "VERIFIED_OUTCOME_PENDING_ANALYSIS_GEOMETRY",
         "VERIFIED_EVENT_RESEARCH_ONLY",
     }, "status inválido")
     require(row.get("deployment_status") == "RESEARCH_ONLY", "debe ser RESEARCH_ONLY")
@@ -69,6 +73,10 @@ def validate_event(row, path=None):
 
     verification = row.get("verification") or {}
     confirmed = verification.get("event_confirmed") is True
+    missing_confirmation = sorted(
+        name for name, field_path in REQUIRED_CONFIRMATION_FIELDS.items()
+        if not _get(row, field_path)
+    )
     missing = sorted(
         name for name, field_path in REQUIRED_IDENTITY_FIELDS.items()
         if not _get(row, field_path)
@@ -83,7 +91,8 @@ def validate_event(row, path=None):
     require(analysis.get("results") is None, "resultados requieren un artefacto de reanálisis separado")
 
     if confirmed:
-        require(not missing, "evento confirmado requiere identidad espacial, temporal y fuente oficial")
+        require(not missing_confirmation,
+                "evento confirmado requiere lugar nombrado, tiempo y fuente oficial")
         require(str(verification.get("official_event_source") or "").startswith("https://"),
                 "fuente oficial del evento inválida")
         require(bool(verification.get("verified_by")), "evento confirmado requiere revisor identificado")
@@ -92,8 +101,16 @@ def validate_event(row, path=None):
                 "evento confirmado requiere identidad espacial revisada")
         require(verification.get("temporal_identity_confirmed") is True,
                 "evento confirmado requiere identidad temporal revisada")
-        require(row.get("status") == "VERIFIED_EVENT_RESEARCH_ONLY", "estado no refleja verificación")
-        require(analysis.get("status") == "READY_FOR_REANALYSIS", "evento verificado debe quedar listo")
+        if "coordinates" in missing:
+            require(row.get("status") == "VERIFIED_OUTCOME_PENDING_ANALYSIS_GEOMETRY",
+                    "evento confirmado sin coordenadas debe declarar geometría pendiente")
+            require(analysis.get("status") == "BLOCKED_MISSING_ANALYSIS_GEOMETRY",
+                    "reanálisis debe bloquearse sin geometría")
+        else:
+            require(row.get("status") == "VERIFIED_EVENT_RESEARCH_ONLY",
+                    "estado no refleja verificación completa")
+            require(analysis.get("status") == "READY_FOR_REANALYSIS",
+                    "evento con geometría revisada debe quedar listo")
     else:
         require(row.get("status") == "CANDIDATE_EVENT_PENDING_OFFICIAL_VERIFICATION",
                 "evento no confirmado debe quedar pendiente")
@@ -147,6 +164,9 @@ def build_catalog(rows):
         "summary": {
             "registered_events": len(items),
             "verified_events": sum(item["event_confirmed"] for item in items),
+            "verified_pending_geometry": sum(
+                item["status"] == "VERIFIED_OUTCOME_PENDING_ANALYSIS_GEOMETRY" for item in items
+            ),
             "ready_for_reanalysis": sum(item["analysis_status"] == "READY_FOR_REANALYSIS" for item in items),
             "operational_activations": 0,
         },
