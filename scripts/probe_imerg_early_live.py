@@ -32,7 +32,9 @@ SEARCH_WINDOW_HOURS = 12
 REPAIR_WINDOW_HOURS = 30
 REPAIR_SEARCH_COUNT = 80
 MAX_DOWNLOADS_PER_RUN = 4
+EVENT_BACKFILL_MAX_DOWNLOADS_PER_RUN = 8
 RESEARCH_EVENT_MIN_SLOTS = 2
+RESEARCH_EVENT_BACKFILL_SLOTS = 6
 REQUIRED_TARGET_IDS = {
     "san_ildefonso",
     "huaycoloro_main_channel",
@@ -340,20 +342,20 @@ def select_bounded_granules(
     bootstrap_missing,
     target_incomplete=(),
     limit=MAX_DOWNLOADS_PER_RUN,
+    event_slots=RESEARCH_EVENT_MIN_SLOTS,
 ):
     """Keep latency current and guarantee bounded progress on event replay.
 
-    The newest granule always measures latency. Up to two slots are reserved
-    for finite research-event backfill so recent repair cannot starve a
-    verified positive-control event. Remaining capacity repairs recent gaps;
-    the hard download cap remains unchanged.
+    The newest granule always measures latency. A caller-defined bounded number
+    of slots is reserved for finite research-event backfill so recent repair
+    cannot starve it. Remaining capacity repairs recent gaps.
     """
     if not indexed or limit <= 0:
         return []
 
     selected = [indexed[-1]]
     selected_names = {indexed[-1][1]}
-    event_slots = min(RESEARCH_EVENT_MIN_SLOTS, max(0, limit - len(selected)))
+    event_slots = min(event_slots, max(0, limit - len(selected)))
     for row in list(bootstrap_missing):
         if event_slots <= 0:
             break
@@ -373,6 +375,21 @@ def select_bounded_granules(
         selected_names.add(row[1])
     selected.sort(key=lambda row: row[0])
     return selected
+
+
+def download_policy(research_event_missing):
+    """Temporarily accelerate a finite verified-event replay, then self-revert."""
+    if research_event_missing:
+        return {
+            "mode": "VERIFIED_RESEARCH_EVENT_BACKFILL",
+            "limit": EVENT_BACKFILL_MAX_DOWNLOADS_PER_RUN,
+            "event_slots": RESEARCH_EVENT_BACKFILL_SLOTS,
+        }
+    return {
+        "mode": "NORMAL_CONTINUITY",
+        "limit": MAX_DOWNLOADS_PER_RUN,
+        "event_slots": RESEARCH_EVENT_MIN_SLOTS,
+    }
 
 
 def last_valid_summary(previous):
@@ -571,14 +588,18 @@ def main():
             })
         research_bootstraps.append(item)
 
-    # Always include the newest granule for latency. The remaining bounded
-    # slots repair the newest continuity and target-coverage gaps first; only
-    # spare capacity is used by the finite Catacaos event replay.
+    # Always include the newest granule for latency. While a verified
+    # meteorological reference event is incomplete, temporarily reserve six of
+    # eight bounded downloads for its finite replay. The policy automatically
+    # returns to four downloads after the backlog is complete.
+    policy = download_policy(research_bootstrap_missing)
     selected = select_bounded_granules(
         indexed,
         repair_missing,
         research_bootstrap_missing + bootstrap_missing,
         target_incomplete=repair_incomplete,
+        limit=policy["limit"],
+        event_slots=policy["event_slots"],
     )
     bootstrap["selected_for_run"] = sum(
         1 for row in selected if any(row[1] == candidate[1] for candidate in bootstrap_missing)
@@ -648,7 +669,9 @@ def main():
         "missing_granules_in_repair_window": len(repair_missing),
         "incomplete_target_granules_in_repair_window": len(repair_incomplete),
         "repair_source_error": repair_source_error,
-        "bounded_download_limit": MAX_DOWNLOADS_PER_RUN,
+        "download_mode": policy["mode"],
+        "bounded_download_limit": policy["limit"],
+        "research_event_reserved_slots": policy["event_slots"],
         "bootstrap_case": bootstrap,
         "phase2_research_bootstrap_cases": research_bootstraps,
         "latest_granule_time_utc": latest_time.isoformat() if latest_time else None,
@@ -666,6 +689,7 @@ def main():
             "catacaos_event_replay_is_test_only": True,
             "phase2_event_replays_are_research_only": True,
             "phase2_events_count_toward_v08_closeout": False,
+            "meteorological_reference_events_cannot_validate_huaicos_or_torrents": True,
         },
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)

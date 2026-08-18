@@ -81,7 +81,13 @@ jobs:
               assert p.get('scientific_gate',{}).get('last_valid_retained_for_archive') is True
           if p.get('status') == 'EARLY_HALFHOURLY_SOURCE_AVAILABLE':
               assert p.get('search_window_hours') == 12
-              assert 1 <= int(p.get('granules_downloaded',0)) <= 4
+              mode=p.get('download_mode')
+              limit=int(p.get('bounded_download_limit',0))
+              reserved=int(p.get('research_event_reserved_slots',0))
+              assert mode in {'NORMAL_CONTINUITY','VERIFIED_RESEARCH_EVENT_BACKFILL'}
+              assert limit == (8 if mode == 'VERIFIED_RESEARCH_EVENT_BACKFILL' else 4)
+              assert reserved == (6 if mode == 'VERIFIED_RESEARCH_EVENT_BACKFILL' else 2)
+              assert 1 <= int(p.get('granules_downloaded',0)) <= limit
               assert int(p.get('missing_granules_in_search_window',0)) >= 0
           assert a.get('production_use') is False
           assert a.get('production_ready') is False
@@ -90,6 +96,7 @@ jobs:
           assert r.get('production_use') is False
           assert r.get('deployment_status') == 'RESEARCH_ONLY'
           assert r.get('guardrails',{}).get('missing_data_is_not_low_risk') is True
+          assert r.get('guardrails',{}).get('meteorological_reference_is_not_hazard_model_validation') is True
           assert int(r.get('summary',{}).get('operational_activations',-1)) == 0
           print('Puertas de seguridad IMERG Early OK:', p.get('status'))
           PY

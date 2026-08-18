@@ -66,6 +66,11 @@ def validate_event(row, path=None):
     require(row.get("alerting_enabled") is False, "alertas deben permanecer desactivadas")
     require(row.get("counts_toward_v08_closeout") is False, "no puede contar para v0.8")
     require(row.get("operational_zone_activation") is False, "no puede activar una zona")
+    if row.get("research_role") == "METEOROLOGICAL_REFERENCE_EVENT":
+        require(row.get("is_huaico_or_torrent_event") is False,
+                "una referencia meteorológica no puede declararse huaico o torrente")
+        require(row.get("can_train_zone_activation_model") is False,
+                "una referencia meteorológica no puede entrenar activación territorial")
     require(row.get("decision_thresholds") is None, "umbrales no permitidos")
     require(row.get("hydraulic_factors") is None, "factores hidráulicos no permitidos")
     require(row.get("missing_data_rule") == "UNKNOWN_NOT_LOW_RISK", "dato ausente no es bajo riesgo")
@@ -89,6 +94,13 @@ def validate_event(row, path=None):
     require(analysis.get("threshold_inference_allowed") is False, "no puede inferir umbrales")
     require(analysis.get("hydraulic_transfer_allowed") is False, "no puede transferir hidráulica")
     require(analysis.get("results") is None, "resultados requieren un artefacto de reanálisis separado")
+    if row.get("research_role") == "METEOROLOGICAL_REFERENCE_EVENT":
+        require(analysis.get("validation_scope") == "METEOROLOGICAL_INGESTION_AND_ACCUMULATION_ONLY",
+                "alcance meteorológico inválido")
+        require(analysis.get("can_validate_hydrologic_or_hydraulic_response") is False,
+                "no puede validar respuesta hidrológica o hidráulica")
+        require(analysis.get("can_validate_huaico_or_torrent_model") is False,
+                "no puede validar un modelo de huaico o torrente")
 
     if confirmed:
         require(not missing_confirmation,
@@ -158,6 +170,9 @@ def build_catalog(rows):
             "missing_required_fields": row.get("missing_required_fields") or [],
             "counts_toward_v08_closeout": False,
             "operational_zone_activation": False,
+            "research_role": row.get("research_role"),
+            "is_huaico_or_torrent_event": row.get("is_huaico_or_torrent_event"),
+            "can_train_zone_activation_model": row.get("can_train_zone_activation_model"),
         })
     return {
         "version": "phase2-research-event-catalog-v1",
@@ -174,6 +189,7 @@ def build_catalog(rows):
             "threshold_inference_disabled": True,
             "hydraulic_transfer_disabled": True,
             "missing_data_is_not_low_risk": True,
+            "meteorological_reference_is_not_hazard_model_validation": True,
         },
         "summary": {
             "registered_events": len(items),

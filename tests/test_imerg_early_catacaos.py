@@ -1,4 +1,5 @@
 import importlib.util
+import json
 from pathlib import Path
 import sys
 import types
@@ -98,6 +99,14 @@ class CatacaosTargetTests(unittest.TestCase):
         self.assertEqual(case["start_utc"], "2026-08-15T10:00:00+00:00")
         self.assertEqual(case["end_utc"], "2026-08-16T10:00:00+00:00")
 
+        intake = json.loads(
+            (ROOT / "site/data/validation/phase2_event_intake/villa-el-salvador-2026-08-16-coen.json")
+            .read_text(encoding="utf-8")
+        )
+        self.assertEqual(intake["research_role"], "METEOROLOGICAL_REFERENCE_EVENT")
+        self.assertFalse(intake["is_huaico_or_torrent_event"])
+        self.assertFalse(intake["can_train_zone_activation_model"])
+
     def test_phase2_event_replay_remains_research_only(self):
         cases = archive.phase2_event_cases()
         case = next(row for row in cases if row["case_id"] == "villa-el-salvador-2026-08-16-coen")
@@ -159,6 +168,32 @@ class BoundedSelectionTests(unittest.TestCase):
 
     def test_empty_catalogue_is_safe(self):
         self.assertEqual(probe.select_bounded_granules([], [], [], limit=4), [])
+
+    def test_event_backfill_policy_reserves_six_of_eight_downloads(self):
+        live = [self.row(0, "newest")]
+        repairs = [self.row(-30 * index, f"repair-{index}") for index in range(1, 8)]
+        event = [self.row(-1440 + 30 * index, f"event-{index}") for index in range(8)]
+        policy = probe.download_policy(event)
+
+        selected = probe.select_bounded_granules(
+            live,
+            repairs,
+            event,
+            limit=policy["limit"],
+            event_slots=policy["event_slots"],
+        )
+
+        self.assertEqual(policy["mode"], "VERIFIED_RESEARCH_EVENT_BACKFILL")
+        self.assertEqual(len(selected), 8)
+        self.assertEqual(sum(row[1].startswith("event-") for row in selected), 6)
+        self.assertIn("newest", {row[1] for row in selected})
+
+    def test_download_policy_self_reverts_when_event_backfill_is_complete(self):
+        self.assertEqual(probe.download_policy([]), {
+            "mode": "NORMAL_CONTINUITY",
+            "limit": 4,
+            "event_slots": 2,
+        })
 
 
 class ProbeCadenceTests(unittest.TestCase):
