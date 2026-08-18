@@ -116,7 +116,72 @@ def load_targets():
             for area in catacaos.get("sampling_areas", [])
         ],
     })
+    targets.extend(load_phase2_event_targets())
     return targets
+
+
+def load_phase2_event_targets():
+    """Load verified research events without changing the fixed v0.8 target set."""
+    intake_dir = SITE / "data/validation/phase2_event_intake"
+    targets = []
+    for path in sorted(intake_dir.glob("*.json")):
+        row = load_json(path)
+        if row.get("status") != "VERIFIED_EVENT_RESEARCH_ONLY":
+            continue
+        if row.get("deployment_status") != "RESEARCH_ONLY":
+            continue
+        if row.get("counts_toward_v08_closeout") is not False:
+            continue
+        if row.get("operational_zone_activation") is not False:
+            continue
+        if row.get("decision_thresholds") is not None or row.get("hydraulic_factors") is not None:
+            continue
+        verification = row.get("verification") or {}
+        analysis = row.get("analysis") or {}
+        coordinates = (row.get("reported_location") or {}).get("coordinates") or {}
+        if verification.get("event_confirmed") is not True:
+            continue
+        if analysis.get("status") != "READY_FOR_REANALYSIS":
+            continue
+        try:
+            lat = float(coordinates["lat"])
+            lon = float(coordinates["lon"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        event_id = row["event_id"]
+        occurrence = (row.get("reported_event") or {}).get("occurrence_time_local")
+        occurrence_utc = datetime.fromisoformat(occurrence.replace("Z", "+00:00")).astimezone(timezone.utc)
+        targets.append({
+            "id": f"phase2_event:{event_id}",
+            "name": f"Phase 2 RESEARCH_ONLY: {event_id}",
+            # A 0.01° box is only a reproducible cell selector, never an official basin.
+            "geometry": box(lon - 0.005, lat - 0.005, lon + 0.005, lat + 0.005),
+            "phase2_event": {
+                "event_id": event_id,
+                "start_utc": (occurrence_utc - timedelta(hours=24)).isoformat(),
+                "end_utc": occurrence_utc.isoformat(),
+                "deployment_status": "RESEARCH_ONLY",
+                "counts_toward_v08_closeout": False,
+                "geometry_precision": coordinates.get("precision"),
+                "official_event_geometry": coordinates.get("official_event_geometry") is True,
+            },
+        })
+    return targets
+
+
+def phase2_event_bootstraps(targets):
+    return [
+        {
+            "case_id": target["phase2_event"]["event_id"],
+            "target_id": target["id"],
+            "start_utc": target["phase2_event"]["start_utc"],
+            "end_utc": target["phase2_event"]["end_utc"],
+            "deployment_status": "RESEARCH_ONLY",
+            "counts_toward_v08_closeout": False,
+        }
+        for target in targets
+        if target.get("phase2_event")
+    ]
 
 
 def find_dataset(group, names):
@@ -367,6 +432,7 @@ def main():
     previous = previous_probe()
     now = datetime.now(timezone.utc)
     targets = load_targets()
+    research_bootstrap_specs = phase2_event_bootstraps(targets)
 
     try:
         earthdata_preflight()
@@ -459,18 +525,62 @@ def main():
             "source_error": {"type": type(exc).__name__, "message": str(exc)[:500]},
         })
 
+    research_bootstraps = []
+    research_bootstrap_missing = []
+    for spec in research_bootstrap_specs:
+        item = {
+            **spec,
+            "status": "NOT_QUERIED",
+            "granules_found": 0,
+            "missing_target_samples_before_run": None,
+            "selected_for_run": 0,
+            "source_error": None,
+        }
+        try:
+            event_granules = earthaccess.search_data(
+                short_name="GPM_3IMERGHHE",
+                version="07",
+                temporal=(spec["start_utc"], spec["end_utc"]),
+                count=60,
+            )
+            event_indexed = filter_half_open_interval(
+                index_granules(event_granules), spec["start_utc"], spec["end_utc"]
+            )
+            missing_rows = [
+                row for row in event_indexed
+                if row[1] and spec["target_id"] not in archived.get(row[1], set())
+            ]
+            research_bootstrap_missing.extend(missing_rows)
+            item.update({
+                "status": "COMPLETE" if event_indexed and not missing_rows else "ACCUMULATING",
+                "granules_found": len(event_indexed),
+                "missing_target_samples_before_run": len(missing_rows),
+            })
+        except Exception as exc:
+            item.update({
+                "status": "SOURCE_TEMPORARILY_UNREACHABLE",
+                "source_error": {"type": type(exc).__name__, "message": str(exc)[:500]},
+            })
+        research_bootstraps.append(item)
+
     # Always include the newest granule for latency. The remaining bounded
     # slots repair the newest continuity and target-coverage gaps first; only
     # spare capacity is used by the finite Catacaos event replay.
     selected = select_bounded_granules(
         indexed,
         repair_missing,
-        bootstrap_missing,
+        research_bootstrap_missing + bootstrap_missing,
         target_incomplete=repair_incomplete,
     )
     bootstrap["selected_for_run"] = sum(
         1 for row in selected if any(row[1] == candidate[1] for candidate in bootstrap_missing)
     )
+    for item in research_bootstraps:
+        item["selected_for_run"] = sum(
+            1 for row in selected
+            if item["target_id"] not in archived.get(row[1], set())
+            and item["start_utc"] <= row[0].isoformat() < item["end_utc"]
+        )
 
     samples = []
     try:
@@ -532,6 +642,7 @@ def main():
         "repair_source_error": repair_source_error,
         "bounded_download_limit": MAX_DOWNLOADS_PER_RUN,
         "bootstrap_case": bootstrap,
+        "phase2_research_bootstrap_cases": research_bootstraps,
         "latest_granule_time_utc": latest_time.isoformat() if latest_time else None,
         "observed_latency_hours_at_probe": latency_hours,
         "samples": samples,
@@ -545,6 +656,8 @@ def main():
             "pedregal_next_gate": "compare live/historical signal against ground or higher-fidelity evidence before any decision threshold",
             "catacaos_next_gate": "compare the local-day satellite replay against official station or event evidence; never infer no rain from a basin mean alone",
             "catacaos_event_replay_is_test_only": True,
+            "phase2_event_replays_are_research_only": True,
+            "phase2_events_count_toward_v08_closeout": False,
         },
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)

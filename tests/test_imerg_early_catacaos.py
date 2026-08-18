@@ -45,7 +45,7 @@ class CatacaosTargetTests(unittest.TestCase):
 
     def test_required_targets_include_catacaos(self):
         targets = {target["id"]: target for target in probe.load_targets()}
-        self.assertEqual(set(targets), probe.REQUIRED_TARGET_IDS)
+        self.assertTrue(probe.REQUIRED_TARGET_IDS.issubset(set(targets)))
         self.assertEqual(
             [area["weight"] for area in targets["catacaos"]["sampling_areas"]],
             [0.35, 0.65],
@@ -84,6 +84,27 @@ class CatacaosTargetTests(unittest.TestCase):
         self.assertEqual(replay["status"], "COMPLETE")
         self.assertTrue(replay["continuous"])
         self.assertEqual(replay["complete_accum_mm"], 4.8)
+        self.assertEqual(replay["decision_use"], "TEST_ONLY")
+
+    def test_verified_phase2_event_is_sampled_without_joining_core_targets(self):
+        targets = {target["id"]: target for target in probe.load_targets()}
+        target_id = "phase2_event:villa-el-salvador-2026-08-16-coen"
+        self.assertIn(target_id, targets)
+        self.assertNotIn(target_id, probe.REQUIRED_TARGET_IDS)
+        case = probe.phase2_event_bootstraps(list(targets.values()))[0]
+        self.assertEqual(case["target_id"], target_id)
+        self.assertEqual(case["deployment_status"], "RESEARCH_ONLY")
+        self.assertFalse(case["counts_toward_v08_closeout"])
+        self.assertEqual(case["start_utc"], "2026-08-15T10:00:00+00:00")
+        self.assertEqual(case["end_utc"], "2026-08-16T10:00:00+00:00")
+
+    def test_phase2_event_replay_remains_research_only(self):
+        cases = archive.phase2_event_cases()
+        case = next(row for row in cases if row["case_id"] == "villa-el-salvador-2026-08-16-coen")
+        replay = archive.build_event_replays([], cases=[case])[0]
+        self.assertEqual(replay["status"], "ACCUMULATING")
+        self.assertEqual(replay["deployment_status"], "RESEARCH_ONLY")
+        self.assertFalse(replay["counts_toward_v08_closeout"])
         self.assertEqual(replay["decision_use"], "TEST_ONLY")
 
 
