@@ -29,6 +29,13 @@ class OfficialOutcomeEvidenceTests(unittest.TestCase):
         def read(self, _size):
             return b"<p>16/08/2026 Piura</p>"
 
+    class FakeResponseWithBody(FakeResponse):
+        def __init__(self, body):
+            self.body = body
+
+        def read(self, _size):
+            return self.body
+
     def test_snapshot_day_defaults_to_previous_closed_utc_day(self):
         now = datetime(2026, 8, 17, 12, tzinfo=timezone.utc)
 
@@ -221,6 +228,126 @@ class OfficialOutcomeEvidenceTests(unittest.TestCase):
         self.assertEqual(summary["official_report_links_for_snapshot_date"], [])
         self.assertEqual(summary["pilot_report_links_for_snapshot_date"], [])
         self.assertIn("not evidence of NONE", summary["interpretation"])
+
+    def test_indeci_pagination_follows_bounded_navigation_and_deduplicates(self):
+        page_one = b"""
+            <a href="/emergencias/reporte-uno-16-8-2026/">
+              Lluvias en Catacaos 16/8/2026
+            </a>
+            <a href="https://portal.indeci.gob.pe/emergencias/page/2/?s=16%2F8%2F2026">
+              2
+            </a>
+        """
+        page_two = b"""
+            <a href="/emergencias/reporte-uno-16-8-2026/">
+              Lluvias en Catacaos 16/8/2026
+            </a>
+            <a href="/emergencias/reporte-dos-16-8-2026/">
+              Huaico en Chosica 16/8/2026
+            </a>
+            <a href="https://portal.indeci.gob.pe/emergencias/page/3/?s=16%2F8%2F2026">
+              3
+            </a>
+        """
+        page_three = b"""
+            <a href="/emergencias/reporte-tres-16-8-2026/">
+              Lluvias en Huaycoloro 16/8/2026
+            </a>
+        """
+        primary = collector.summarize_content(
+            "indeci_emergencies",
+            page_one,
+            "text/html; charset=utf-8",
+            "2026-08-16",
+            "https://portal.indeci.gob.pe/emergencias/?s=16%2F8%2F2026",
+        )
+
+        with patch.object(
+            collector,
+            "urlopen",
+            side_effect=[
+                self.FakeResponseWithBody(page_two),
+                self.FakeResponseWithBody(page_three),
+            ],
+        ):
+            summary = collector.augment_indeci_pagination(
+                primary,
+                page_one,
+                "text/html; charset=utf-8",
+                "https://portal.indeci.gob.pe/emergencias/?s=16%2F8%2F2026",
+                "2026-08-16",
+            )
+
+        self.assertEqual(len(summary["official_report_links_for_snapshot_date"]), 3)
+        self.assertEqual(len(summary["pilot_report_links_for_snapshot_date"]), 3)
+        self.assertEqual(summary["pagination"]["captured_pages"], 3)
+        self.assertTrue(summary["pagination"]["navigation_exhausted"])
+        self.assertEqual(
+            summary["pagination"]["coverage_status"],
+            "COMPLETE_BOUNDED_NAVIGATION_CAPTURE",
+        )
+        self.assertFalse(summary["pagination"]["missing_match_is_none"])
+
+    def test_indeci_pagination_failure_stays_partial_unknown_not_zero(self):
+        page_one = b"""
+            <a href="https://portal.indeci.gob.pe/emergencias/page/2/?s=16%2F8%2F2026">
+              2
+            </a>
+        """
+        primary = collector.summarize_content(
+            "indeci_emergencies",
+            page_one,
+            "text/html; charset=utf-8",
+            "2026-08-16",
+            "https://portal.indeci.gob.pe/emergencias/?s=16%2F8%2F2026",
+        )
+
+        with patch.object(collector, "urlopen", side_effect=URLError("timeout")):
+            summary = collector.augment_indeci_pagination(
+                primary,
+                page_one,
+                "text/html; charset=utf-8",
+                "https://portal.indeci.gob.pe/emergencias/?s=16%2F8%2F2026",
+                "2026-08-16",
+            )
+
+        self.assertEqual(
+            summary["pagination"]["coverage_status"],
+            "PARTIAL_UNKNOWN_NOT_ZERO",
+        )
+        self.assertFalse(summary["pagination"]["navigation_exhausted"])
+        self.assertFalse(summary["pagination"]["missing_match_is_none"])
+
+    def test_indeci_partial_pagination_marks_the_source_unknown_not_zero(self):
+        page_one = b"""
+            <a href="/emergencias/reporte-uno-16-8-2026/">
+              Lluvias en Catacaos 16/8/2026
+            </a>
+            <a href="https://portal.indeci.gob.pe/emergencias/page/2/?s=16%2F8%2F2026">
+              2
+            </a>
+        """
+        with patch.object(
+            collector,
+            "urlopen",
+            side_effect=[self.FakeResponseWithBody(page_one), URLError("timeout")],
+        ):
+            result = collector.fetch_source(
+                collector.SOURCES[2],
+                datetime(2026, 8, 17, 12, tzinfo=timezone.utc),
+                "2026-08-16",
+                sleep_fn=lambda _seconds: None,
+            )
+
+        self.assertEqual(
+            result["capture_status"],
+            "CAPTURED_PARTIAL_UNKNOWN_NOT_ZERO",
+        )
+        self.assertTrue(result["unknown_not_zero"])
+        self.assertEqual(
+            result["summary"]["pagination"]["coverage_status"],
+            "PARTIAL_UNKNOWN_NOT_ZERO",
+        )
 
     def test_http_200_without_target_date_stays_unknown_not_zero(self):
         class MismatchedDateResponse(self.FakeResponse):

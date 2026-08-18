@@ -30,6 +30,8 @@ MAX_CAPTURES_PER_DAY = 5
 MAX_BYTES = 2_000_000
 MAX_FETCH_ATTEMPTS = 3
 MAX_FETCH_WORKERS = 3
+MAX_INDECI_PAGES = 5
+MAX_INDECI_REPORT_LINKS = 120
 RETRY_DELAYS_SECONDS = (2, 5)
 SOURCES = (
     {
@@ -198,6 +200,136 @@ def indeci_report_links(
     return reports[:30]
 
 
+def indeci_next_page_url(
+    raw: bytes,
+    content_type: str | None,
+    current_url: str,
+):
+    """Return the next bounded INDECI result page advertised by the current page."""
+    current_parts = urlsplit(current_url)
+    current_match = re.search(r"/emergencias/page/(\d+)/?", current_parts.path)
+    current_page = int(current_match.group(1)) if current_match else 1
+    parser = LinkExtractor()
+    parser.feed(decoded_html(raw, content_type))
+    candidates = []
+    for link in parser.links:
+        resolved_url = urljoin(current_url, link["href"])
+        parts = urlsplit(resolved_url)
+        match = re.fullmatch(r"/emergencias/page/(\d+)/?", parts.path)
+        if parts.netloc.lower() != "portal.indeci.gob.pe" or not match:
+            continue
+        page = int(match.group(1))
+        if current_page < page <= MAX_INDECI_PAGES:
+            candidates.append((page, resolved_url))
+    if not candidates:
+        return None
+    return min(candidates, key=lambda row: row[0])[1]
+
+
+def merge_report_links(*groups: list[dict]):
+    merged = []
+    seen_urls = set()
+    for group in groups:
+        for report in group:
+            url = report.get("url")
+            if not url or url in seen_urls:
+                continue
+            seen_urls.add(url)
+            merged.append(report)
+    return merged[:MAX_INDECI_REPORT_LINKS]
+
+
+def augment_indeci_pagination(
+    summary: dict,
+    raw: bytes,
+    content_type: str | None,
+    source_url: str,
+    snapshot_date: str,
+):
+    """Follow bounded result pagination and preserve coverage gaps for review."""
+    reports = list(summary.get("official_report_links_for_snapshot_date") or [])
+    pages = []
+    current_raw = raw
+    current_content_type = content_type
+    current_url = source_url
+    navigation_exhausted = False
+    visited_urls = {source_url}
+
+    while len(visited_urls) < MAX_INDECI_PAGES:
+        next_url = indeci_next_page_url(current_raw, current_content_type, current_url)
+        if not next_url:
+            navigation_exhausted = True
+            break
+        if next_url in visited_urls:
+            break
+        visited_urls.add(next_url)
+        request = Request(
+            next_url,
+            headers={
+                "User-Agent": "IRFEN-v0.8-shadow-evidence/1.0",
+                "Accept": "text/html,application/xhtml+xml",
+            },
+        )
+        try:
+            with urlopen(request, timeout=35) as response:
+                page_raw = response.read(MAX_BYTES + 1)
+                if len(page_raw) > MAX_BYTES:
+                    raise ValueError(f"official response exceeds {MAX_BYTES} bytes")
+                page_content_type = response.headers.get("Content-Type")
+                page_summary = summarize_content(
+                    "indeci_emergencies",
+                    page_raw,
+                    page_content_type,
+                    snapshot_date,
+                    next_url,
+                )
+                page_reports = page_summary.get(
+                    "official_report_links_for_snapshot_date"
+                ) or []
+                reports = merge_report_links(reports, page_reports)
+                pages.append({
+                    "url": next_url,
+                    "status": "CAPTURED",
+                    "http_status": response.status,
+                    "content_length": len(page_raw),
+                    "content_sha256": sha256(page_raw).hexdigest(),
+                    "target_date_report_links": len(page_reports),
+                    "error": None,
+                })
+                current_raw = page_raw
+                current_content_type = page_content_type
+                current_url = next_url
+        except (HTTPError, URLError, TimeoutError, OSError, ValueError) as exc:
+            pages.append({
+                "url": next_url,
+                "status": "SOURCE_UNREACHABLE",
+                "http_status": getattr(exc, "code", None),
+                "content_length": None,
+                "content_sha256": None,
+                "target_date_report_links": None,
+                "error": {"type": type(exc).__name__, "message": str(exc)[:500]},
+            })
+            break
+
+    summary["official_report_links_for_snapshot_date"] = reports
+    summary["pilot_report_links_for_snapshot_date"] = [
+        report for report in reports if report.get("pilot_terms_found")
+    ]
+    summary["pagination"] = {
+        "maximum_pages": MAX_INDECI_PAGES,
+        "captured_pages": 1 + sum(page["status"] == "CAPTURED" for page in pages),
+        "navigation_exhausted": navigation_exhausted,
+        "coverage_status": (
+            "COMPLETE_BOUNDED_NAVIGATION_CAPTURE"
+            if navigation_exhausted
+            else "PARTIAL_UNKNOWN_NOT_ZERO"
+        ),
+        "additional_pages": pages,
+        "missing_match_is_none": False,
+    }
+    return summary
+
+
 def excerpt_around(text: str, pattern: str, radius: int = 260):
     match = re.search(pattern, text, re.I)
     if not match:
@@ -362,17 +494,33 @@ def fetch_source(
                 summary = summarize_content(
                     source["source_id"], raw, content_type, snapshot_date, requested_url
                 )
+                if source["source_id"] == "indeci_emergencies":
+                    summary = augment_indeci_pagination(
+                        summary,
+                        raw,
+                        content_type,
+                        requested_url,
+                        snapshot_date,
+                    )
                 date_alignment = summary.get("snapshot_date_alignment")
                 date_aligned = (
                     not requires_target_date_alignment
                     or date_alignment == "TARGET_DATE_PRESENT"
                 )
+                pagination_complete = (
+                    source["source_id"] != "indeci_emergencies"
+                    or (summary.get("pagination") or {}).get("navigation_exhausted") is True
+                )
                 return {
                     **source,
                     "capture_status": (
-                        "CAPTURED"
-                        if date_aligned
-                        else "CAPTURED_TARGET_DATE_UNVERIFIED"
+                        "CAPTURED_TARGET_DATE_UNVERIFIED"
+                        if not date_aligned
+                        else (
+                            "CAPTURED"
+                            if pagination_complete
+                            else "CAPTURED_PARTIAL_UNKNOWN_NOT_ZERO"
+                        )
                     ),
                     "http_status": response.status,
                     "fetched_url": requested_url,
@@ -382,7 +530,7 @@ def fetch_source(
                     "content_sha256": sha256(raw).hexdigest(),
                     "summary": summary,
                     "source_error": None,
-                    "unknown_not_zero": not date_aligned,
+                    "unknown_not_zero": not date_aligned or not pagination_complete,
                     "attempt_count": len(attempts),
                     "attempts": attempts,
                 }
