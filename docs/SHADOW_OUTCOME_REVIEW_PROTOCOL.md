@@ -19,15 +19,18 @@ pronósticos o recomendaciones ni siquiera mientras la revisión está pendiente
 Esto impide incorporar retrospectivamente información aparecida después de la
 captura original.
 
-La fotografía elegible se toma al comienzo de la jornada. El workflow intenta
-capturarla a las 00:10 UTC y repite a las 00:50 y 01:30 UTC para cubrir demoras
-de GitHub Actions. Los intentos se serializan y solo el primero que logra crear
-la fotografía puede publicarla; los demás conservan el registro inmutable y no
-ordenan despliegues redundantes. La ventana admite como máximo dos horas de
-demora desde el comienzo del día. Una ejecución posterior se omite sin crear ni
-reemplazar el registro. Las capturas históricas realizadas fuera de esa ventana
-permanecen auditables, pero no cuentan para el cierre, aunque más tarde reciban
-una etiqueta `EVENT` o `NONE`.
+La fotografía elegible se toma dentro de una ventana estrictamente
+pre-resultado: desde las 12:00 UTC del día anterior hasta las 02:00 UTC de la
+jornada objetivo. El workflow intenta capturarla cada dos horas dentro del
+tramo previo y repite a las 00:50 y 01:30 UTC para cubrir demoras de GitHub
+Actions. Una captura anticipada solo se conserva si el forecast de cada piloto
+cubre hasta el cierre completo de la jornada objetivo. Los intentos se
+serializan y solo el primero que logra crear la fotografía puede publicarla;
+los demás conservan el registro inmutable y no ordenan despliegues redundantes.
+Una ejecución fuera de la ventana, o sin horizonte suficiente, se omite sin
+crear ni reemplazar el registro. Las capturas históricas realizadas fuera de
+esa ventana permanecen auditables, pero no cuentan para el cierre, aunque más
+tarde reciban una etiqueta `EVENT` o `NONE`.
 
 La revisión solo puede comenzar después de las 00:00 UTC del día siguiente.
 Una etiqueta aplicada antes de cerrar la jornada sería parcial y no es válida,
@@ -36,9 +39,11 @@ aunque exista ya una noticia o un aviso oficial durante el día.
 Un día solo es elegible si, en el momento de la fotografía:
 
 1. estaban presentes los tres pilotos;
-2. la fotografía se archivó dentro de la ventana pre-resultado de dos horas;
+2. la fotografía se archivó entre 12 horas antes y dos horas después del inicio
+   de la jornada objetivo;
 3. todas las recomendaciones eran `TEST_ONLY` y no operativas;
-4. GEOS estaba disponible y tenía al menos 30 pares por piloto;
+4. GEOS estaba disponible, tenía al menos 30 pares por piloto y cubría hasta el
+   cierre de la jornada objetivo;
 5. IMERG Early estaba disponible con latencia registrada;
 6. la regresión estaba en `PASS`;
 7. la entrada conservaba `production_use=false`.
