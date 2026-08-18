@@ -16,6 +16,13 @@ ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "site"
 CONTRACT_PATH = ROOT / "config" / "v08_closeout_contract.json"
 OUT = SITE / "data" / "v08_scorecard.json"
+REPOSITORY_URL = "https://github.com/IRFEN2026/irfen-peru"
+SHADOW_REVIEW_WORKFLOW_URL = (
+    f"{REPOSITORY_URL}/actions/workflows/review-shadow-outcome.yml"
+)
+EXTERNAL_REVIEW_WORKFLOW_URL = (
+    f"{REPOSITORY_URL}/actions/workflows/review-v08-external-evidence.yml"
+)
 OFFICIAL_OUTCOME_HOST_SUFFIXES = (
     "senamhi.gob.pe",
     "ana.gob.pe",
@@ -126,7 +133,9 @@ def external_validation_gate(contract: dict, ledger: dict, pilots: list[str]):
                 "evidence_id": evidence_id,
                 "status": row.get("status", "MISSING"),
                 "official_source_count": len(row.get("official_sources") or []),
+                "official_sources": (row.get("official_sources") or [])[:12],
                 "remaining_gap": row.get("remaining_gap") or "No candidate evidence recorded.",
+                "review_workflow_url": EXTERNAL_REVIEW_WORKFLOW_URL,
                 "named_human_review_required": True,
                 "automatic_acceptance_forbidden": True,
             })
@@ -260,6 +269,32 @@ def shadow_outcome_review_queue(
             action = "HUMAN_REVIEW_REQUIRED"
         else:
             action = "WAIT_FOR_OFFICIAL_EVIDENCE"
+        official_source_candidates = []
+        seen_candidate_urls = set()
+        for source in [
+            *(latest_capture.get("sources") or []),
+            *(latest_capture.get("supplemental_sources") or []),
+        ]:
+            url = (
+                source.get("fetched_url")
+                or source.get("last_requested_url")
+                or source.get("url")
+            )
+            if not url or url in seen_candidate_urls or not official_outcome_url(url):
+                continue
+            seen_candidate_urls.add(url)
+            summary = source.get("summary") or {}
+            official_source_candidates.append({
+                "source_id": source.get("source_id"),
+                "url": url,
+                "capture_status": source.get("capture_status"),
+                "snapshot_date_alignment": summary.get("snapshot_date_alignment"),
+                "unknown_not_zero": source.get("unknown_not_zero") is True,
+                "human_review_input_only": True,
+            })
+        ground = (
+            (record.get("ground_signals") or {}).get("huaycoloro_cendehua") or {}
+        )
         queue.append({
             "snapshot_date_utc": record.get("snapshot_date_utc"),
             "review_status": outcome.get("status", "PENDING_REAL_WORLD_OUTCOME_REVIEW"),
@@ -267,7 +302,24 @@ def shadow_outcome_review_queue(
             "failed_eligibility_check_ids": failed_checks,
             "latest_evidence_capture_at": latest_capture.get("captured_at"),
             "official_pilot_specific_link_count": len(unique_pilot_links),
+            "official_pilot_specific_reports": sorted(unique_pilot_links)[:12],
+            "official_source_candidates": official_source_candidates[:12],
+            "huaycoloro_ground_signal": {
+                "source_status": ground.get("source_status"),
+                "station_count": ground.get("station_count", 0),
+                "recent_station_count_at_shadow_capture": ground.get(
+                    "recent_station_count_at_shadow_capture", 0
+                ),
+                "provider_activity_flags_raw": [
+                    observation.get("provider_activity_flag_raw")
+                    for observation in ground.get("observations") or []
+                ],
+                "automatic_outcome_label": None,
+                "can_support_none_classification_by_itself": False,
+                "human_review_required": True,
+            },
             "action": action,
+            "review_workflow_url": SHADOW_REVIEW_WORKFLOW_URL,
             "named_human_review_required": True,
             "automatic_outcome_classification_forbidden": True,
             "missing_evidence_is_not_none": True,
@@ -545,6 +597,16 @@ def main():
         "next_milestone_pct": next_entry["percentage"] if next_entry else None,
         "milestones": milestones,
         "next_blocking_check_ids": next_entry["blocking_check_ids"] if next_entry else [],
+        "human_review_workflows": {
+            "shadow_outcomes": {
+                "url": SHADOW_REVIEW_WORKFLOW_URL,
+                "automatic_classification_forbidden": True,
+            },
+            "external_evidence": {
+                "url": EXTERNAL_REVIEW_WORKFLOW_URL,
+                "automatic_acceptance_forbidden": True,
+            },
+        },
         "evidence_timestamps": {
             "regression": test_report.get("generated_at"),
             "experimental_state": state.get("generated_at"),

@@ -160,6 +160,19 @@ class ShadowOutcomeReviewQueueTests(unittest.TestCase):
         self.assertEqual(len(queue), 1)
         self.assertEqual(queue[0]["action"], "WAIT_FOR_OFFICIAL_EVIDENCE")
         self.assertEqual(queue[0]["official_pilot_specific_link_count"], 0)
+        self.assertEqual(queue[0]["official_source_candidates"], [])
+        self.assertEqual(
+            queue[0]["review_workflow_url"],
+            scorecard.SHADOW_REVIEW_WORKFLOW_URL,
+        )
+        self.assertIsNone(
+            queue[0]["huaycoloro_ground_signal"]["automatic_outcome_label"]
+        )
+        self.assertFalse(
+            queue[0]["huaycoloro_ground_signal"][
+                "can_support_none_classification_by_itself"
+            ]
+        )
         self.assertIn("outcome_label_accepted", queue[0]["failed_eligibility_check_ids"])
         self.assertTrue(queue[0]["automatic_outcome_classification_forbidden"])
         self.assertTrue(queue[0]["missing_evidence_is_not_none"])
@@ -187,7 +200,12 @@ class ShadowOutcomeReviewQueueTests(unittest.TestCase):
                 "captures": [{
                     "captured_at": "2026-08-16T03:00:00Z",
                     "sources": [{
+                        "source_id": "indeci_emergencies",
+                        "fetched_url": "https://portal.indeci.gob.pe/emergencias/?s=15%2F8%2F2026",
+                        "capture_status": "CAPTURED",
+                        "unknown_not_zero": False,
                         "summary": {
+                            "snapshot_date_alignment": "TARGET_DATE_PRESENT",
                             "pilot_report_links_for_snapshot_date": [
                                 {"url": "https://portal.indeci.gob.pe/exact-pilot-report"}
                             ]
@@ -202,6 +220,14 @@ class ShadowOutcomeReviewQueueTests(unittest.TestCase):
         self.assertEqual(queue[0]["official_pilot_specific_link_count"], 1)
         self.assertEqual(queue[0]["action"], "HUMAN_REVIEW_REQUIRED")
         self.assertTrue(queue[0]["automatic_outcome_classification_forbidden"])
+        self.assertEqual(
+            queue[0]["official_pilot_specific_reports"],
+            ["https://portal.indeci.gob.pe/exact-pilot-report"],
+        )
+        candidate = queue[0]["official_source_candidates"][0]
+        self.assertEqual(candidate["source_id"], "indeci_emergencies")
+        self.assertEqual(candidate["snapshot_date_alignment"], "TARGET_DATE_PRESENT")
+        self.assertTrue(candidate["human_review_input_only"])
 
     def test_eligible_accepted_outcome_is_removed_from_queue(self):
         self.assertEqual(self.queue([eligible_record()]), [])
@@ -243,6 +269,11 @@ class ExternalEvidenceQueueTests(unittest.TestCase):
         queue = evidence["san_ildefonso"]["review_queue"]
         self.assertEqual([row["evidence_id"] for row in queue], ["capacity", "maintenance"])
         self.assertEqual(queue[0]["official_source_count"], 1)
+        self.assertEqual(queue[0]["official_sources"], ["https://www.gob.pe/example"])
+        self.assertEqual(
+            queue[0]["review_workflow_url"],
+            scorecard.EXTERNAL_REVIEW_WORKFLOW_URL,
+        )
         self.assertEqual(queue[0]["remaining_gap"], "Falta memoria as-built.")
         self.assertEqual(queue[1]["status"], "MISSING")
         self.assertTrue(all(row["named_human_review_required"] for row in queue))
