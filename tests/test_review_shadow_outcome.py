@@ -44,6 +44,18 @@ class ReviewShadowOutcomeTests(unittest.TestCase):
         self.assertEqual(result["status"], "REVIEWED_REAL_WORLD_OUTCOME")
         self.assertFalse(result["counts_toward_closeout"])
         self.assertIsNone(result["verified_event"])
+        self.assertFalse(result["automatic"])
+
+    def test_accepted_label_requires_named_human_reviewer(self):
+        with self.assertRaisesRegex(ValueError, "identificar al revisor humano"):
+            reviewer.apply_review(
+                archive(),
+                "2026-08-14",
+                "NONE",
+                ["https://portal.indeci.gob.pe/emergencias/"],
+                "Cobertura oficial integral confirmada.",
+                comprehensive_none_coverage=True,
+            )
 
     def test_none_rejects_absence_of_data(self):
         with self.assertRaisesRegex(ValueError, "falta de datos no equivale a NONE"):
@@ -114,6 +126,7 @@ class ReviewShadowOutcomeTests(unittest.TestCase):
                 "NONE",
                 ["https://portal.indeci.gob.pe/emergencias/"],
                 "Corrección con cobertura oficial completa.",
+                reviewed_by="Revisor humano identificado",
                 comprehensive_none_coverage=True,
                 reviewed_at="2026-08-16T00:00:00Z",
             )
@@ -136,6 +149,7 @@ class ReviewShadowOutcomeTests(unittest.TestCase):
             "NONE",
             ["https://portal.indeci.gob.pe/emergencias/"],
             "Corrección con cobertura oficial completa.",
+            reviewed_by="Revisor humano identificado",
             comprehensive_none_coverage=True,
             reviewed_at="2026-08-16T00:00:00Z",
             replace_existing_review=True,
@@ -166,6 +180,7 @@ class ReviewShadowOutcomeTests(unittest.TestCase):
                 "NONE",
                 ["https://portal.indeci.gob.pe/emergencias/"],
                 "Corrección con sello temporal inválido.",
+                reviewed_by="Revisor humano identificado",
                 comprehensive_none_coverage=True,
                 reviewed_at="2026-08-15T12:00:00Z",
                 replace_existing_review=True,
