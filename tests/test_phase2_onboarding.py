@@ -63,7 +63,7 @@ class Phase2OnboardingTests(unittest.TestCase):
             for c in self.inventory["candidates"]
         }
         catalog = phase2.build_catalog(self.inventory, contracts, self.analog_contract)
-        self.assertEqual(catalog["summary"]["registered_candidates"], 11)
+        self.assertEqual(catalog["summary"]["registered_candidates"], 18)
         self.assertEqual(catalog["summary"]["operational_candidates"], 0)
         self.assertTrue(catalog["guardrails"]["activation_requires_zone_specific_validation"])
         self.assertTrue(all(z["deployment_status"] == "RESEARCH_ONLY" for z in catalog["zones"]))
@@ -102,8 +102,32 @@ class Phase2OnboardingTests(unittest.TestCase):
 
     def test_public_generator_is_fail_closed_and_writable(self):
         catalog = phase2.generate_public_catalog(write=False)
-        self.assertEqual(catalog["summary"]["registered_candidates"], 11)
+        self.assertEqual(catalog["summary"]["registered_candidates"], 18)
         self.assertEqual(catalog["summary"]["operational_candidates"], 0)
+
+    def test_user_named_lima_corridors_have_individual_fail_closed_contracts(self):
+        required_ids = {
+            "lima_norte_chillon_bajo",
+            "lima_norte_chancay_huaral",
+            "lima_norte_huaura_huacho_sayan",
+            "lima_este_lurin_cieneguilla",
+            "lima_sur_mala",
+            "lima_sur_asia_omas",
+            "lima_sur_canete",
+        }
+        candidates = {row["candidate_id"]: row for row in self.inventory["candidates"]}
+        self.assertTrue(required_ids.issubset(candidates))
+        for candidate_id in required_ids:
+            path = phase2.CONTRACTS_DIR / f"{candidate_id}.json"
+            self.assertTrue(path.is_file(), candidate_id)
+            contract = json.loads(path.read_text(encoding="utf-8"))
+            phase2.validate_contract(contract, candidates[candidate_id], path)
+            self.assertEqual(contract["deployment_status"], "RESEARCH_ONLY")
+            self.assertEqual(contract["validation"]["activation_gate"], "BLOCKED")
+            self.assertFalse(contract["alerting_enabled"])
+            self.assertIsNone(contract["decision_thresholds"])
+            self.assertIsNone(contract["hydraulic_factors"])
+            self.assertEqual(contract["missing_data_rule"], "UNKNOWN_NOT_LOW_RISK")
 
     def test_santa_eulalia_rimac_contract_is_compound_and_fail_closed(self):
         candidate = next(
