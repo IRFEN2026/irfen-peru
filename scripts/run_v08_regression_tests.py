@@ -47,6 +47,7 @@ def main():
     open_data=optional(SITE/'data/stations/senamhi_open_data_catalog.json')
     imerg_early=optional(SITE/'data/calibration/imerg_early_live_archive.json')
     phase2=load(ROOT/'config/phase2_candidate_inventory_v0_1.json')
+    phase2_events=load(SITE/'data/phase2/research_events.json')
     closeout_contract=load(ROOT/'config/v08_closeout_contract.json')
     external_contract=load(ROOT/'config/v08_external_validation_contract.json')
     external_ledger=load(SITE/'data/validation/v08_external_evidence.json')
@@ -160,6 +161,21 @@ def main():
     check('phase2_inventory_no_numeric_scores',all(c.get('priority_score') is None for c in candidates))
     check('phase2_inventory_no_activation',all(c.get('deployment_status')=='RESEARCH_ONLY' for c in candidates))
     check('phase2_inventory_has_official_evidence',all(c.get('official_sources') for c in candidates))
+
+    # Eventos de oportunidad: útiles para reanálisis, nunca para activar o cerrar v0.8.
+    event_summary=phase2_events.get('summary') or {}
+    event_guards=phase2_events.get('guardrails') or {}
+    research_events=phase2_events.get('items') or []
+    check('phase2_events_not_production',phase2_events.get('production_use') is False)
+    check('phase2_events_research_only',phase2_events.get('deployment_status')=='RESEARCH_ONLY')
+    check('phase2_events_no_operational_activations',int(event_summary.get('operational_activations',-1))==0)
+    check('phase2_events_do_not_count_toward_v08',all(e.get('counts_toward_v08_closeout') is False for e in research_events))
+    check('phase2_events_cannot_activate_zones',all(e.get('operational_zone_activation') is False for e in research_events))
+    check('phase2_events_missing_not_low_risk',event_guards.get('missing_data_is_not_low_risk') is True)
+    check('phase2_events_unverified_are_blocked',all(
+        e.get('event_confirmed') is True or str(e.get('analysis_status','')).startswith('BLOCKED_')
+        for e in research_events
+    ))
 
     # PPRRD Catacaos: evidencia documental trazable, nunca capacidad ni umbral.
     check('catacaos_pprrd_present',pprrd is not None)
