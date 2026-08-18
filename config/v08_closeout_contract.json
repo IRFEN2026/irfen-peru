@@ -30,8 +30,9 @@
     "minimum_verified_none_days": 10,
     "accepted_outcome_labels": ["NONE", "EVENT"],
     "snapshot_capture": {
-      "scheduled_cron_utc": "10 0 * * *",
+      "scheduled_cron_utc": "10 0,12,14,16,18,20,22 * * *",
       "redundant_retry_crons_utc": ["50 0 * * *", "30 1 * * *"],
+      "earliest_eligible_capture_lead_minutes": 720,
       "latest_eligible_capture_delay_minutes": 120
     },
     "acceptance_rules": {
@@ -40,6 +41,7 @@
       "official_source_required": true,
       "counts_toward_closeout_must_be_explicit": true,
       "pre_outcome_capture_window_required": true,
+      "forecast_must_cover_target_day": true,
       "none_requires_comprehensive_coverage": true,
       "event_requires_verified_event_description": true
     }
