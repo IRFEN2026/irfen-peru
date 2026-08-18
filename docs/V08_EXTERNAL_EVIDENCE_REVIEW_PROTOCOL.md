@@ -16,6 +16,11 @@ persona identificada confirma que el requisito completo está satisfecho por
 fuentes oficiales trazables. Una brecha parcial, falta de acceso o ausencia de
 datos nunca equivale a evidencia favorable ni a bajo riesgo.
 
+Las publicaciones técnicas secundarias pueden conservarse en
+`secondary_sources_for_review` únicamente como pistas para localizar y
+contrastar el expediente primario. No cuentan como `official_sources`, no
+validan cifras operativas y no pueden cerrar por sí mismas ningún requisito.
+
 ## Decisiones permitidas
 
 - `ACCEPTED`: las fuentes cubren íntegramente el requisito exacto del contrato.

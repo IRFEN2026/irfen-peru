@@ -124,6 +124,27 @@ class ExternalEvidenceReviewTests(unittest.TestCase):
         self.assertNotEqual(item["status"], "ACCEPTED")
         self.assertTrue(item.get("remaining_gap"))
 
+    def test_huaycoloro_design_lead_is_separated_from_official_evidence(self):
+        data = json.loads(
+            (ROOT / "site/data/validation/v08_external_evidence.json").read_text(encoding="utf-8")
+        )
+        chosica = next(pilot for pilot in data["pilots"] if pilot["zone_id"] == "chosica")
+        item = next(
+            row
+            for row in chosica["items"]
+            if row["evidence_id"] == "huaycoloro_channel_as_built_capacity"
+        )
+
+        senace = "https://www.gob.pe/institucion/senace/normas-legales/6187378-00142-2024-senace-pe-dein"
+        secondary = "https://peruconstruye.net/2025/12/10/proyecto-quebrada-huaycoloro-prevencion-desbordes/"
+        self.assertIn(senace, item["official_sources"])
+        self.assertIn(secondary, item["secondary_sources_for_review"])
+        self.assertNotIn(secondary, item["official_sources"])
+        self.assertIn("no ha verificado todavía", item["preliminary_assessment"])
+        self.assertIn("194.6 m3/s", item["preliminary_assessment"])
+        self.assertNotEqual(item["status"], "ACCEPTED")
+        self.assertTrue(item.get("remaining_gap"))
+
     def test_catacaos_2026_aforo_is_documented_without_closing_capacity_gate(self):
         data = json.loads(
             (ROOT / "site/data/validation/v08_external_evidence.json").read_text(encoding="utf-8")
