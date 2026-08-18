@@ -44,6 +44,30 @@ v0.8, no activa una zona, no deriva umbrales y no transfiere factores
 hidráulicos. Las fuentes que solo describen el contexto territorial deben
 marcarse explícitamente como incapaces de confirmar el evento.
 
+### Corridas con cuencas análogas cuando falta historia local
+
+La falta de eventos históricos locales no detiene la preparación, pero tampoco
+autoriza a copiar un umbral. El contrato
+`config/phase2_analog_transfer_contract.json` permite únicamente escenarios y
+pruebas de sensibilidad en `RESEARCH_ONLY`:
+
+1. comparar más de una cuenca donante por geometría, pendiente y tiempo de
+   respuesta, geología/suelo, cobertura, drenaje, climatología y obras;
+2. transferir la firma completa de eventos verificados: intensidad, acumulados
+   3/6/24 h, lluvia antecedente 24/72 h y 7 días, forma del hietograma y estado
+   antecedente;
+3. normalizar contra la climatología, geometría y representatividad satelital o
+   pluviométrica del objetivo;
+4. conservar separados los mecanismos: una quebrada de flujo de detritos no
+   valida por sí sola el desborde de un río, que además requiere nivel/caudal,
+   capacidad actual, defensas, obstrucciones y tiempo de tránsito;
+5. etiquetar la salida `ANALOG_TRANSFER_TEST_ONLY`, con validación local,
+   alerta operacional y promoción de umbrales deshabilitadas.
+
+Una ausencia de reporte no se clasifica como día `NONE`. La validación local
+continúa bloqueada hasta contar con un evento u observación local revisada por
+una persona responsable.
+
 ## Secuencia eficiente
 
 1. Registrar el candidato y sus fuentes oficiales en
