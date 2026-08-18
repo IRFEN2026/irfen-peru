@@ -22,6 +22,7 @@ on:
       - scripts/validate_scientific_assets.py
       - scripts/run_v08_regression_tests.py
       - scripts/build_v08_scorecard.py
+      - scripts/build_v08_rc_status.py
       - tests/**
       - scripts/fetch_glofas_catacaos_current.py
       - config/v08_closeout_contract.json
@@ -36,6 +37,7 @@ on:
       - site/data/validation/**
       - site/data/calibration/**
       - site/data/v08_scorecard.json
+      - site/data/v08_rc_status.json
       - site/data/hazard_models/**
       - site/v08-experimental.js
       - site/v08-forecast.js
@@ -258,6 +260,24 @@ jobs:
           assert d.get('production_ready') is False
           assert d.get('current_milestone_pct') in {0,25,50,75,100}
           assert [m.get('percentage') for m in d.get('milestones',[])] == [25,50,75,100]
+          PY
+
+      - name: Construir contrato de disponibilidad v0.8-RC1
+        run: |
+          python scripts/build_v08_rc_status.py
+          test -s site/data/v08_rc_status.json
+          python -m json.tool site/data/v08_rc_status.json >/dev/null
+          python - <<'PY'
+          import json
+          d=json.load(open('site/data/v08_rc_status.json',encoding='utf-8'))
+          assert d.get('release_class') == 'RELEASE_CANDIDATE_TEST_ONLY'
+          assert d.get('production_use') is False
+          assert d.get('production_ready') is False
+          assert d.get('operational_alerting_enabled') is False
+          assert (d.get('phase2') or {}).get('operational_candidates') == 0
+          if d.get('status') == 'RC_AVAILABLE_TEST_ONLY':
+              assert d.get('available_for_controlled_testing') is True
+              assert int((d.get('formal_closeout') or {}).get('current_milestone_pct',0)) >= 75
           PY
 
       - name: Configurar GitHub Pages

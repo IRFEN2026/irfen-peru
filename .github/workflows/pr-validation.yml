@@ -64,5 +64,14 @@ jobs:
           set -euo pipefail
           python scripts/run_v08_regression_tests.py
           python scripts/build_v08_scorecard.py
+          python scripts/build_v08_rc_status.py
           python -m json.tool site/data/test_report.json >/dev/null
           python -m json.tool site/data/v08_scorecard.json >/dev/null
+          python -m json.tool site/data/v08_rc_status.json >/dev/null
+          python - <<'PY'
+          import json
+          d=json.load(open('site/data/v08_rc_status.json',encoding='utf-8'))
+          assert d.get('production_use') is False
+          assert d.get('operational_alerting_enabled') is False
+          assert (d.get('phase2') or {}).get('operational_candidates') == 0
+          PY

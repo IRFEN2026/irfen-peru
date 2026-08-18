@@ -65,7 +65,9 @@ jobs:
           done
 
       - name: Recalcular scorecard con la evidencia mas reciente
-        run: python scripts/build_v08_scorecard.py
+        run: |
+          python scripts/build_v08_scorecard.py
+          python scripts/build_v08_rc_status.py
 
       - name: Activar paneles científicos v0.8
         shell: bash
@@ -104,18 +106,21 @@ jobs:
           test -s site/data/hydrology/senamhi_nacara_numeric_archive.json
           test -s site/data/validation/shadow_runs.json
           test -s site/data/v08_scorecard.json
+          test -s site/data/v08_rc_status.json
           python -m json.tool site/data/experimental_state.json >/dev/null
           python -m json.tool site/data/test_report.json >/dev/null
           python -m json.tool site/data/calibration/imerg_early_live_archive.json >/dev/null
           python -m json.tool site/data/hydrology/senamhi_nacara_numeric_archive.json >/dev/null
           python -m json.tool site/data/validation/shadow_runs.json >/dev/null
           python -m json.tool site/data/v08_scorecard.json >/dev/null
+          python -m json.tool site/data/v08_rc_status.json >/dev/null
           python - <<'PY'
           import json
           from pathlib import Path
           state=json.loads(Path('site/data/experimental_state.json').read_text())
           tests=json.loads(Path('site/data/test_report.json').read_text())
           score=json.loads(Path('site/data/v08_scorecard.json').read_text())
+          rc=json.loads(Path('site/data/v08_rc_status.json').read_text())
           nacara=json.loads(Path('site/data/hydrology/senamhi_nacara_numeric_archive.json').read_text())
           assert state.get('production_use') is False
           assert state.get('production_ready') is False
@@ -124,6 +129,12 @@ jobs:
           assert score.get('production_use') is False
           assert score.get('production_ready') is False
           assert score.get('current_milestone_pct') in {0,25,50,75,100}
+          assert rc.get('release_class') == 'RELEASE_CANDIDATE_TEST_ONLY'
+          assert rc.get('production_use') is False
+          assert rc.get('production_ready') is False
+          assert rc.get('operational_alerting_enabled') is False
+          assert (rc.get('phase2') or {}).get('operational_candidates') == 0
+          assert (rc.get('formal_closeout') or {}).get('current_milestone_pct') == score.get('current_milestone_pct')
           assert nacara.get('production_use') is False
           assert nacara.get('production_ready') is False
           assert nacara.get('integration_mode') == 'TEST_ONLY'
@@ -171,6 +182,7 @@ jobs:
               && curl -fsSL --retry 3 "$BASE/data/hydrology/senamhi_nacara_numeric_archive.json?$query" -o /tmp/irfen-published/nacara.json \
               && curl -fsSL --retry 3 "$BASE/data/validation/shadow_runs.json?$query" -o /tmp/irfen-published/shadow.json \
               && curl -fsSL --retry 3 "$BASE/data/v08_scorecard.json?$query" -o /tmp/irfen-published/scorecard.json \
+              && curl -fsSL --retry 3 "$BASE/data/v08_rc_status.json?$query" -o /tmp/irfen-published/rc.json \
               && python - <<'PY'
           import json
           from pathlib import Path
@@ -180,6 +192,7 @@ jobs:
               ('site/data/hydrology/senamhi_nacara_numeric_archive.json', '/tmp/irfen-published/nacara.json', 'generated_at'),
               ('site/data/validation/shadow_runs.json', '/tmp/irfen-published/shadow.json', 'updated_at'),
               ('site/data/v08_scorecard.json', '/tmp/irfen-published/scorecard.json', 'generated_at'),
+              ('site/data/v08_rc_status.json', '/tmp/irfen-published/rc.json', 'generated_at'),
           )
           for expected_path, published_path, freshness_key in pairs:
               expected = json.loads(Path(expected_path).read_text(encoding='utf-8'))
