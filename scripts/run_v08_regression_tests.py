@@ -316,6 +316,19 @@ def main():
         and "cendehua_gate.get('absence_of_provider_activity_is_none') is False" in smoke_workflow
         and "cendehua_gate.get('human_review_required') is True" in smoke_workflow,
     )
+    check(
+        'live_smoke_requires_fail_closed_human_review_queue',
+        "shadow_review_workflow.get('automatic_classification_forbidden') is True" in smoke_workflow
+        and "external_review_workflow.get('automatic_acceptance_forbidden') is True" in smoke_workflow
+        and "ground.get('can_support_none_classification_by_itself') is False" in smoke_workflow,
+    )
+    readiness_js=(SITE/'v08-readiness.js').read_text(encoding='utf-8')
+    check(
+        'readiness_exposes_human_review_workflows_without_auto_decision',
+        'Abrir revisión diaria' in readiness_js
+        and 'Abrir revisión científica/hidráulica' in readiness_js
+        and 'human_review_workflows' in readiness_js,
+    )
     check('closeout_contract_exact_pilots',closeout_contract.get('pilot_zone_ids')==['san_ildefonso','chosica','catacaos'])
     check('closeout_contract_fixed_milestones',closeout_contract.get('milestone_percentages')==[25,50,75,100])
     shadow_contract=closeout_contract.get('shadow_validation') or {}
