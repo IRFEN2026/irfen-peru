@@ -209,6 +209,21 @@ jobs:
           assert score.get('production_ready') is False
           assert score.get('current_milestone_pct') in {25,50,75,100}
           assert [m.get('percentage') for m in score.get('milestones',[])] == [25,50,75,100]
+          review_workflows=score.get('human_review_workflows') or {}
+          shadow_review_workflow=review_workflows.get('shadow_outcomes') or {}
+          external_review_workflow=review_workflows.get('external_evidence') or {}
+          assert shadow_review_workflow.get('automatic_classification_forbidden') is True
+          assert external_review_workflow.get('automatic_acceptance_forbidden') is True
+          assert shadow_review_workflow.get('url','').endswith('/actions/workflows/review-shadow-outcome.yml')
+          assert external_review_workflow.get('url','').endswith('/actions/workflows/review-v08-external-evidence.yml')
+          final_checks=next(m for m in score.get('milestones',[]) if m.get('percentage') == 100).get('checks',[])
+          shadow_closeout=next(c for c in final_checks if c.get('id') == 'shadow_outcomes_sufficient_and_reviewed')
+          for queued in (shadow_closeout.get('evidence') or {}).get('review_queue',[]):
+              ground=queued.get('huaycoloro_ground_signal') or {}
+              assert ground.get('automatic_outcome_label') is None
+              assert ground.get('can_support_none_classification_by_itself') is False
+              assert ground.get('human_review_required') is True
+              assert queued.get('automatic_outcome_classification_forbidden') is True
 
           rc=load('data/v08_rc_status.json')
           assert rc.get('release_class') == 'RELEASE_CANDIDATE_TEST_ONLY'
