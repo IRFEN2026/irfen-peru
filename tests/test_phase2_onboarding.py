@@ -20,6 +20,7 @@ class Phase2OnboardingTests(unittest.TestCase):
             (ROOT / "config" / "phase2_candidate_inventory_v0_1.json").read_text(encoding="utf-8")
         )
         cls.candidate = cls.inventory["candidates"][0]
+        cls.analog_contract = json.loads(phase2.ANALOG_CONTRACT_PATH.read_text(encoding="utf-8"))
 
     def test_default_contract_is_blocked_and_non_operational(self):
         contract = phase2.default_contract(self.candidate)
@@ -61,13 +62,35 @@ class Phase2OnboardingTests(unittest.TestCase):
             c["candidate_id"]: phase2.default_contract(c)
             for c in self.inventory["candidates"]
         }
-        catalog = phase2.build_catalog(self.inventory, contracts)
+        catalog = phase2.build_catalog(self.inventory, contracts, self.analog_contract)
         self.assertEqual(catalog["summary"]["registered_candidates"], 10)
         self.assertEqual(catalog["summary"]["operational_candidates"], 0)
         self.assertTrue(catalog["guardrails"]["activation_requires_zone_specific_validation"])
         self.assertTrue(all(z["deployment_status"] == "RESEARCH_ONLY" for z in catalog["zones"]))
         self.assertTrue(all(z["activation_gate"] == "BLOCKED" for z in catalog["zones"]))
         self.assertTrue(all(z["priority_score"] is None for z in catalog["zones"]))
+        self.assertEqual(catalog["analog_transfer"]["mode"], "ANALOG_TRANSFER_TEST_ONLY")
+        self.assertFalse(catalog["analog_transfer"]["local_validation"])
+
+    def test_analog_transfer_contract_is_fail_closed(self):
+        phase2.validate_analog_transfer_contract(self.analog_contract)
+        unsafe_mutations = (
+            (("production_use",), True),
+            (("decision_use", "local_validation"), True),
+            (("decision_use", "threshold_promotion"), True),
+            (("donor_selection", "geographic_proximity_alone_is_sufficient"), True),
+            (("normalization", "raw_millimetres_may_be_copied_as_validated_threshold"), True),
+            (("mechanism_guards", "cross_mechanism_validation_allowed"), True),
+            (("outcome_guards", "absence_of_report_is_none"), True),
+        )
+        for path, value in unsafe_mutations:
+            contract = json.loads(json.dumps(self.analog_contract))
+            target = contract
+            for key in path[:-1]:
+                target = target[key]
+            target[path[-1]] = value
+            with self.subTest(path=path), self.assertRaises(phase2.ContractError):
+                phase2.validate_analog_transfer_contract(contract)
 
     def test_contracts_live_inside_existing_validation_trigger(self):
         self.assertEqual(

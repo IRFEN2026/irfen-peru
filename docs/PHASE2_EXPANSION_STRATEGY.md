@@ -36,10 +36,12 @@ no queda desplazada por una capital ni castigada porque mida menos.
 
 ## Cobertura territorial que debe investigarse
 
-- Lima norte y cuencas costeras: Chillón/Canta, Chancay-Huaral, Huaura y sus
+- Lima norte y cuencas costeras: Chillón/Canta, Chancay-Huaral,
+  Huaura-Huacho-Sayán, Supe, Pativilca, Fortaleza y Barranca, con sus
   quebradas/localidades oficiales.
 - Lima sur y Sur Chico: Lurín, Cieneguilla, Malanche/Punta Hermosa, Punta
-  Negra, San Bartolo, Pucusana y Chilca.
+  Negra, San Bartolo, Pucusana, Chilca, río Mala, quebradas de Asia y río
+  Cañete.
 - Ica, Chincha, Pisco, San Andrés, Santiago, Palpa, Changuillo y Nazca.
 - Lambayeque: Motupe, Chongoyape, Oyotún, Zaña, Cayaltí, Lagunas,
   Reque/La Puntilla, Yaipón y Chiriquipe/Juana Ríos.
@@ -67,3 +69,12 @@ por máquina para esta preparación. El inventario preliminar y auditable está
 en `config/phase2_candidate_inventory_v0_1.json`: sus candidatos permanecen
 en `RESEARCH_ONLY`, sin puntuación numérica ni activación, hasta resolver la
 geometría, el mecanismo y el contrato de validación de cada sistema.
+
+Cuando no exista una serie histórica local suficiente, se permiten corridas
+de escenario con eventos de cuencas análogas. La proximidad geográfica no
+basta: se comparan geometría, pendiente, geología/suelo, uso del suelo,
+respuesta, climatología y contexto hidráulico. Se transfieren firmas completas
+del evento (intensidad, 3/6/24 h, antecedente y resultado verificado), no un
+umbral en milímetros. Toda salida queda como `ANALOG_TRANSFER_TEST_ONLY`; no es
+validación local, no activa la zona y no cuenta para cerrar v0.8. El contrato
+auditable está en `config/phase2_analog_transfer_contract.json`.

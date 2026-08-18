@@ -7,11 +7,23 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 INVENTORY_PATH = ROOT / "config/phase2_candidate_inventory_v0_1.json"
+ANALOG_CONTRACT_PATH = ROOT / "config/phase2_analog_transfer_contract.json"
 CONTRACTS_DIR = ROOT / "site/data/validation/phase2_zone_contracts"
 OUT_PATH = ROOT / "site/data/phase2/catalog.json"
 ASSETS = ("geometry", "exposure", "historical_events", "observations", "forecast", "hydraulic_context")
 ASSET_STATUS = {"MISSING", "CANDIDATE", "PARTIAL", "READY"}
 CONTRACT_STATUS = {"DRAFT", "IN_REVIEW", "APPROVED"}
+ANALOG_SIMILARITY_DIMENSIONS = {
+    "catchment_area_and_shape", "elevation_slope_and_response_time",
+    "geology_soil_and_infiltration", "land_cover_and_urbanization",
+    "drainage_density_and_channel_form", "rainfall_climatology_and_orographic_exposure",
+    "hydraulic_works_obstructions_and_maintenance",
+}
+ANALOG_EVENT_FEATURES = {
+    "peak_30min_or_1h_intensity", "accumulation_3h", "accumulation_6h", "accumulation_24h",
+    "antecedent_accumulation_24h", "antecedent_accumulation_72h", "antecedent_accumulation_7d",
+    "hyetograph_shape_and_timing", "antecedent_soil_moisture_class", "verified_event_or_none_outcome",
+}
 
 
 class ContractError(ValueError):
@@ -90,7 +102,51 @@ def validate_contract(contract, candidate, contract_path=None):
     return []
 
 
-def build_catalog(inventory, contracts):
+def validate_analog_transfer_contract(contract):
+    def require(ok, message):
+        if not ok:
+            raise ContractError(f"analog_transfer: {message}")
+    require(contract.get("version") == "phase2-analog-transfer-v1", "versión inválida")
+    require(contract.get("deployment_status") == "RESEARCH_ONLY", "debe ser RESEARCH_ONLY")
+    require(contract.get("production_use") is False, "production_use debe ser false")
+    relation = contract.get("relationship_to_v08") or {}
+    require(relation.get("counts_toward_v08_closeout") is False, "no puede contar para v0.8")
+    require(relation.get("changes_v08_pilots") is False, "no puede cambiar los pilotos v0.8")
+    decision = contract.get("decision_use") or {}
+    for key in ("local_validation", "counts_toward_zone_activation", "operational_alerting", "threshold_promotion"):
+        require(decision.get(key) is False, f"{key} debe ser false")
+    require(contract.get("missing_data_rule") == "UNKNOWN_NOT_LOW_RISK", "dato ausente no es bajo riesgo")
+    donor = contract.get("donor_selection") or {}
+    require(donor.get("geographic_proximity_alone_is_sufficient") is False,
+            "la proximidad sola no selecciona una cuenca análoga")
+    require(donor.get("requires_multiple_candidates") is True, "se deben comparar múltiples donantes")
+    require(donor.get("final_selection_requires_human_review") is True, "la selección requiere revisión humana")
+    require(ANALOG_SIMILARITY_DIMENSIONS.issubset(set(donor.get("required_similarity_dimensions") or [])),
+            "faltan dimensiones de similitud")
+    require(ANALOG_EVENT_FEATURES.issubset(set(contract.get("transferable_event_features") or [])),
+            "faltan firmas completas del evento")
+    normalization = contract.get("normalization") or {}
+    require(normalization.get("raw_millimetres_may_be_copied_as_validated_threshold") is False,
+            "no se pueden copiar milímetros como umbral validado")
+    mechanism = contract.get("mechanism_guards") or {}
+    require(mechanism.get("cross_mechanism_validation_allowed") is False,
+            "no se permite validar cruzando mecanismos")
+    require(len(mechanism.get("river_valley_requires") or []) >= 4, "falta contrato fluvial")
+    require(len(mechanism.get("debris_flow_requires") or []) >= 3, "falta contrato de flujo de detritos")
+    outcomes = contract.get("outcome_guards") or {}
+    require(outcomes.get("absence_of_report_is_none") is False, "ausencia de reporte no es NONE")
+    require(outcomes.get("donor_outcome_is_target_outcome") is False, "resultado donante no es resultado local")
+    require(outcomes.get("local_event_required_for_local_validation") is True,
+            "la validación local requiere un evento local")
+    labels = contract.get("required_output_labels") or {}
+    require(labels == {"mode": "ANALOG_TRANSFER_TEST_ONLY", "local_validation": False,
+                       "operational_alert": False, "threshold_promotion": "FORBIDDEN"},
+            "etiquetas de salida inseguras o incompletas")
+    return []
+
+
+def build_catalog(inventory, contracts, analog_contract):
+    validate_analog_transfer_contract(analog_contract)
     zones = []
     for candidate in inventory.get("candidates") or []:
         cid = candidate["candidate_id"]; contract = contracts[cid]
@@ -115,7 +171,15 @@ def build_catalog(inventory, contracts):
             "phase2_candidates_are_operational": False},
         "guardrails": {"alerts_disabled": True, "thresholds_withheld": True,
             "hydraulic_factors_withheld": True, "missing_data_is_not_low_risk": True,
-            "activation_requires_zone_specific_validation": True},
+            "activation_requires_zone_specific_validation": True,
+            "analog_transfer_is_research_only": True,
+            "analog_runs_are_not_local_validation": True},
+        "analog_transfer": {"protocol": "config/phase2_analog_transfer_contract.json",
+            "status": analog_contract.get("status"), "mode": "ANALOG_TRANSFER_TEST_ONLY",
+            "production_use": False, "local_validation": False,
+            "counts_toward_v08_closeout": False, "counts_toward_zone_activation": False,
+            "operational_alert": False, "threshold_promotion": "FORBIDDEN",
+            "missing_data_rule": "UNKNOWN_NOT_LOW_RISK"},
         "summary": {"registered_candidates": len(zones), "contracts_present": len(contracts),
             "contracts_approved": sum(z["contract_status"] == "APPROVED" for z in zones),
             "validation_contracts_complete": sum(z["readiness_stage"].startswith("VALIDATION_CONTRACT") for z in zones),
@@ -143,7 +207,9 @@ def load_contracts(inventory, bootstrap=False):
 
 
 def generate_public_catalog(bootstrap=False, write=True):
-    inventory = load_json(INVENTORY_PATH); catalog = build_catalog(inventory, load_contracts(inventory, bootstrap))
+    inventory = load_json(INVENTORY_PATH)
+    analog_contract = load_json(ANALOG_CONTRACT_PATH)
+    catalog = build_catalog(inventory, load_contracts(inventory, bootstrap), analog_contract)
     if write: write_json(OUT_PATH, catalog)
     return catalog
 
