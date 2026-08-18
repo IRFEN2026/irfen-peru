@@ -10,6 +10,8 @@ on:
     paths:
       - scripts/probe_imerg_early_live.py
       - scripts/archive_imerg_early_probe.py
+      - scripts/build_phase2_event_reanalysis.py
+      - site/data/validation/phase2_event_intake/**
       - .github/workflows/imerg-early-probe.yml
 
 permissions:
@@ -47,17 +49,23 @@ jobs:
       - name: Archivar latencia, continuidad y ventanas
         run: python scripts/archive_imerg_early_probe.py
 
+      - name: Construir reanálisis fail-closed de eventos Phase 2
+        run: python scripts/build_phase2_event_reanalysis.py
+
       - name: Validar resultado
         run: |
           test -s site/data/calibration/imerg_early_live_probe.json
           test -s site/data/calibration/imerg_early_live_archive.json
+          test -s site/data/phase2/event_reanalysis.json
           python -m json.tool site/data/calibration/imerg_early_live_probe.json >/dev/null
           python -m json.tool site/data/calibration/imerg_early_live_archive.json >/dev/null
+          python -m json.tool site/data/phase2/event_reanalysis.json >/dev/null
           python - <<'PY'
           import json
           from pathlib import Path
           p=json.loads(Path('site/data/calibration/imerg_early_live_probe.json').read_text())
           a=json.loads(Path('site/data/calibration/imerg_early_live_archive.json').read_text())
+          r=json.loads(Path('site/data/phase2/event_reanalysis.json').read_text())
           assert p.get('production_use') is False
           assert p.get('production_ready') is False
           assert p.get('status') in {
@@ -79,6 +87,10 @@ jobs:
           assert a.get('production_ready') is False
           assert a.get('scientific_gate',{}).get('status') == 'ACCUMULATING_LATENCY_AND_CONTINUITY_EVIDENCE'
           assert a.get('scientific_gate',{}).get('rolling_windows_are_test_only') is True
+          assert r.get('production_use') is False
+          assert r.get('deployment_status') == 'RESEARCH_ONLY'
+          assert r.get('guardrails',{}).get('missing_data_is_not_low_risk') is True
+          assert int(r.get('summary',{}).get('operational_activations',-1)) == 0
           print('Puertas de seguridad IMERG Early OK:', p.get('status'))
           PY
 
@@ -89,7 +101,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add \
             site/data/calibration/imerg_early_live_probe.json \
-            site/data/calibration/imerg_early_live_archive.json
+            site/data/calibration/imerg_early_live_archive.json \
+            site/data/phase2/event_reanalysis.json
           if git diff --cached --quiet; then
             echo "Sin cambios que guardar."
             exit 0
