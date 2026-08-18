@@ -19,11 +19,15 @@ pronósticos o recomendaciones ni siquiera mientras la revisión está pendiente
 Esto impide incorporar retrospectivamente información aparecida después de la
 captura original.
 
-La fotografía elegible se toma al comienzo de la jornada: el workflow apunta a
-las 00:10 UTC y admite como máximo dos horas de demora. Una ejecución posterior
-se omite sin crear ni reemplazar el registro. Las capturas históricas realizadas
-fuera de esa ventana permanecen auditables, pero no cuentan para el cierre,
-aunque más tarde reciban una etiqueta `EVENT` o `NONE`.
+La fotografía elegible se toma al comienzo de la jornada. El workflow intenta
+capturarla a las 00:10 UTC y repite a las 00:50 y 01:30 UTC para cubrir demoras
+de GitHub Actions. Los intentos se serializan y solo el primero que logra crear
+la fotografía puede publicarla; los demás conservan el registro inmutable y no
+ordenan despliegues redundantes. La ventana admite como máximo dos horas de
+demora desde el comienzo del día. Una ejecución posterior se omite sin crear ni
+reemplazar el registro. Las capturas históricas realizadas fuera de esa ventana
+permanecen auditables, pero no cuentan para el cierre, aunque más tarde reciban
+una etiqueta `EVENT` o `NONE`.
 
 La revisión solo puede comenzar después de las 00:00 UTC del día siguiente.
 Una etiqueta aplicada antes de cerrar la jornada sería parcial y no es válida,
