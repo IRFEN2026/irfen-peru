@@ -44,6 +44,13 @@ v0.8, no activa una zona, no deriva umbrales y no transfiere factores
 hidráulicos. Las fuentes que solo describen el contexto territorial deben
 marcarse explícitamente como incapaces de confirmar el evento.
 
+Los eventos urbanos de lluvia que no correspondan a una quebrada, huaico o
+torrente se etiquetan `METEOROLOGICAL_REFERENCE_EVENT`. Sirven exclusivamente
+para validar ingestión, continuidad y acumulados de precipitación. No son
+evidencia de respuesta hidrológica o hidráulica, no entrenan activaciones y no
+se incorporan al inventario territorial. Villa El Salvador pertenece a este
+carril meteorológico de referencia.
+
 ### Corridas con cuencas análogas cuando falta historia local
 
 La falta de eventos históricos locales no detiene la preparación, pero tampoco

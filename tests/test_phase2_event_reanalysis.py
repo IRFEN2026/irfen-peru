@@ -49,6 +49,10 @@ class Phase2EventReanalysisTests(unittest.TestCase):
         self.assertEqual(item["windows"]["24h"]["accum_mm"], 24.0)
         self.assertFalse(item["local_validation"])
         self.assertFalse(item["threshold_inference_allowed"])
+        self.assertEqual(item["research_role"], "METEOROLOGICAL_REFERENCE_EVENT")
+        self.assertFalse(item["is_huaico_or_torrent_event"])
+        self.assertFalse(item["can_validate_huaico_or_torrent_model"])
+        self.assertFalse(item["can_train_zone_activation_model"])
 
     def test_partial_series_never_exposes_window_accumulation(self):
         item = rean.build_event(self.ves, self.synthetic_archive(sample_count=47))

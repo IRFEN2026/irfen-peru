@@ -88,6 +88,9 @@ def blocked_item(row, status, reason):
         "local_validation": False,
         "counts_toward_v08_closeout": False,
         "operational_zone_activation": False,
+        "research_role": row.get("research_role"),
+        "is_huaico_or_torrent_event": row.get("is_huaico_or_torrent_event"),
+        "can_train_zone_activation_model": row.get("can_train_zone_activation_model"),
         "reported_date_local": event.get("reported_date_local"),
         "feature_name": location.get("feature_name"),
         "windows": {},
@@ -123,6 +126,18 @@ def build_event(row, archive):
     location = row.get("reported_location") or {}
     event = row.get("reported_event") or {}
     coordinates = location.get("coordinates") or {}
+    if row.get("research_role") == "METEOROLOGICAL_REFERENCE_EVENT":
+        interpretation = (
+            "Referencia meteorológica para validar ingestión, continuidad y acumulados. "
+            f"{location.get('district') or location.get('feature_name') or row['event_id']} no "
+            "representa una quebrada ni valida huaicos, torrentes o respuesta hidrológica "
+            "local, incluso con 3/6/24 h completos."
+        )
+    else:
+        interpretation = (
+            "Control positivo de impacto para investigación. Incluso con 3/6/24 h completos, "
+            "una celda IMERG de referencia no constituye validación hidrológica local."
+        )
     return {
         "event_id": row["event_id"],
         "target_id": target_id,
@@ -135,6 +150,16 @@ def build_event(row, archive):
         "operational_zone_activation": False,
         "threshold_inference_allowed": False,
         "hydraulic_transfer_allowed": False,
+        "research_role": row.get("research_role"),
+        "is_huaico_or_torrent_event": row.get("is_huaico_or_torrent_event"),
+        "can_train_zone_activation_model": row.get("can_train_zone_activation_model"),
+        "validation_scope": analysis.get("validation_scope"),
+        "can_validate_hydrologic_or_hydraulic_response": analysis.get(
+            "can_validate_hydrologic_or_hydraulic_response"
+        ),
+        "can_validate_huaico_or_torrent_model": analysis.get(
+            "can_validate_huaico_or_torrent_model"
+        ),
         "reported_date_local": event.get("reported_date_local"),
         "occurrence_time_local": event.get("occurrence_time_local"),
         "occurrence_time_utc": occurrence.isoformat(),
@@ -156,10 +181,7 @@ def build_event(row, archive):
         "complete_window_count": complete_count,
         "blocker": blocker,
         "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
-        "interpretation": (
-            "Control positivo de impacto para investigación. Incluso con 3/6/24 h completos, "
-            "una celda IMERG de referencia no constituye validación hidrológica local."
-        ),
+        "interpretation": interpretation,
     }
 
 
@@ -183,6 +205,7 @@ def build_document(rows, archive, generated_at=None):
             "hydraulic_transfer_allowed": False,
             "missing_data_is_not_low_risk": True,
             "official_outcome_does_not_supply_rainfall_mm": True,
+            "meteorological_reference_is_not_hazard_model_validation": True,
         },
         "source": {
             "satellite": archive.get("source"),

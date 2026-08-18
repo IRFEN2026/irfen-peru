@@ -204,6 +204,14 @@ def main():
     check('phase2_events_do_not_count_toward_v08',all(e.get('counts_toward_v08_closeout') is False for e in research_events))
     check('phase2_events_cannot_activate_zones',all(e.get('operational_zone_activation') is False for e in research_events))
     check('phase2_events_missing_not_low_risk',event_guards.get('missing_data_is_not_low_risk') is True)
+    meteorological_references=[e for e in research_events if e.get('research_role')=='METEOROLOGICAL_REFERENCE_EVENT']
+    check('phase2_villa_el_salvador_is_meteorological_reference',any(
+        e.get('event_id')=='villa-el-salvador-2026-08-16-coen' for e in meteorological_references
+    ))
+    check('phase2_meteorological_references_not_hazard_events',all(
+        e.get('is_huaico_or_torrent_event') is False and e.get('can_train_zone_activation_model') is False
+        for e in meteorological_references
+    ))
     check('phase2_events_unverified_are_blocked',all(
         e.get('event_confirmed') is True or str(e.get('analysis_status','')).startswith('BLOCKED_')
         for e in research_events
@@ -216,6 +224,16 @@ def main():
     check('phase2_reanalysis_research_only',phase2_event_reanalysis.get('deployment_status')=='RESEARCH_ONLY')
     check('phase2_reanalysis_not_v08_closeout',(phase2_event_reanalysis.get('relationship_to_v08') or {}).get('counts_toward_v08_closeout') is False)
     check('phase2_reanalysis_missing_not_low_risk',reanalysis_guards.get('missing_data_is_not_low_risk') is True)
+    check('phase2_reanalysis_meteorological_reference_guard',reanalysis_guards.get('meteorological_reference_is_not_hazard_model_validation') is True)
+    check('phase2_reanalysis_reference_scope',all(
+        item.get('research_role')!='METEOROLOGICAL_REFERENCE_EVENT' or (
+            item.get('is_huaico_or_torrent_event') is False
+            and item.get('can_train_zone_activation_model') is False
+            and item.get('can_validate_hydrologic_or_hydraulic_response') is False
+            and item.get('can_validate_huaico_or_torrent_model') is False
+        )
+        for item in reanalysis_items
+    ))
     check('phase2_reanalysis_no_activation',all(item.get('operational_zone_activation') is False for item in reanalysis_items))
     check('phase2_reanalysis_incomplete_windows_hide_accumulation',all(
         window.get('continuous') is True or window.get('accum_mm') is None

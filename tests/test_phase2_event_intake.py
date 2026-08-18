@@ -68,6 +68,24 @@ class Phase2EventIntakeTests(unittest.TestCase):
         self.assertEqual(row["analysis"]["status"], "READY_FOR_REANALYSIS")
         self.assertFalse(row["reported_location"]["coordinates"]["official_event_geometry"])
         self.assertFalse(row["analysis"]["threshold_inference_allowed"])
+        self.assertEqual(row["research_role"], "METEOROLOGICAL_REFERENCE_EVENT")
+        self.assertFalse(row["is_huaico_or_torrent_event"])
+        self.assertFalse(row["can_train_zone_activation_model"])
+
+    def test_meteorological_reference_cannot_claim_hazard_validation(self):
+        path = ROOT / "site/data/validation/phase2_event_intake/villa-el-salvador-2026-08-16-coen.json"
+        row = json.loads(path.read_text(encoding="utf-8"))
+        for container, field in (
+            (row, "is_huaico_or_torrent_event"),
+            (row, "can_train_zone_activation_model"),
+            (row["analysis"], "can_validate_hydrologic_or_hydraulic_response"),
+            (row["analysis"], "can_validate_huaico_or_torrent_model"),
+        ):
+            changed = copy.deepcopy(row)
+            target = changed if container is row else changed["analysis"]
+            target[field] = True
+            with self.assertRaises(phase2_events.EventIntakeError):
+                phase2_events.validate_event(changed)
 
     def test_nonofficial_geometry_requires_research_provenance(self):
         path = ROOT / "site/data/validation/phase2_event_intake/villa-el-salvador-2026-08-16-coen.json"
