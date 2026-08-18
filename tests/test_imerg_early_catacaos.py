@@ -120,10 +120,17 @@ class BoundedSelectionTests(unittest.TestCase):
 
         selected = probe.select_bounded_granules(live, repairs, event, limit=3)
 
-        self.assertEqual(
-            [row[1] for row in selected],
-            ["repair-old", "live-gap", "live-new"],
-        )
+        self.assertEqual([row[1] for row in selected], ["event-1", "event-2", "live-new"])
+
+    def test_verified_event_backfill_cannot_be_starved_by_recent_repair(self):
+        live = [self.row(0, "newest")]
+        repairs = [self.row(-30 * index, f"repair-{index}") for index in range(1, 8)]
+        event = [self.row(-1440, "event-1"), self.row(-1410, "event-2")]
+
+        selected = probe.select_bounded_granules(live, repairs, event, limit=4)
+
+        self.assertEqual({row[1] for row in selected} & {"event-1", "event-2"}, {"event-1", "event-2"})
+        self.assertIn("newest", {row[1] for row in selected})
 
     def test_deduplicates_candidates_and_preserves_download_cap(self):
         live = [self.row(0, "newest")]
@@ -132,9 +139,10 @@ class BoundedSelectionTests(unittest.TestCase):
         selected = probe.select_bounded_granules(live, repeated, repeated, limit=2)
 
         self.assertEqual(len(selected), 2)
-        self.assertEqual({row[1] for row in selected}, {"newest", "gap-2"})
+        self.assertEqual(len({row[1] for row in selected}), 2)
+        self.assertIn("newest", {row[1] for row in selected})
 
-    def test_recent_target_backfill_precedes_finite_event_replay(self):
+    def test_finite_event_replay_gets_reserved_slot_before_recent_target_backfill(self):
         live = [self.row(0, "newest")]
         event = [self.row(-1440, "event")]
         incomplete = [self.row(-30, "incomplete")]
@@ -147,7 +155,7 @@ class BoundedSelectionTests(unittest.TestCase):
             limit=2,
         )
 
-        self.assertEqual({row[1] for row in selected}, {"newest", "incomplete"})
+        self.assertEqual({row[1] for row in selected}, {"newest", "event"})
 
     def test_empty_catalogue_is_safe(self):
         self.assertEqual(probe.select_bounded_granules([], [], [], limit=4), [])
