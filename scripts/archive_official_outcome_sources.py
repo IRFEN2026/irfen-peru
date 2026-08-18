@@ -34,12 +34,18 @@ RETRY_DELAYS_SECONDS = (2, 5)
 SOURCES = (
     {
         "source_id": "senamhi_activation_quebradas",
-        "url": "https://www.senamhi.gob.pe/servicios/?p=aviso-activacion-quebrada",
+        "url": "https://www.senamhi.gob.pe/?p=aviso-activacion-quebrada",
+        "alternate_urls": (
+            "https://www.senamhi.gob.pe/servicios/?p=aviso-activacion-quebrada",
+        ),
         "historical_date_parameter": "f",
     },
     {
         "source_id": "senamhi_piura_24h",
-        "url": "https://www.senamhi.gob.pe/servicios/main.php?dp=piura&p=aviso-24H",
+        "url": "https://www.senamhi.gob.pe/main.php?dp=piura&p=aviso-24H",
+        "alternate_urls": (
+            "https://www.senamhi.gob.pe/servicios/main.php?dp=piura&p=aviso-24H",
+        ),
         "historical_date_parameter": "f",
     },
     {
@@ -290,17 +296,27 @@ def source_for_snapshot(source: dict, snapshot_date: str):
     if not parameter:
         return dict(source)
     snapshot_day = date.fromisoformat(snapshot_date)
-    parts = urlsplit(source["url"])
-    query = dict(parse_qsl(parts.query, keep_blank_values=True))
-    query[parameter] = (
+    parameter_value = (
         snapshot_day.strftime("%d-%m-%Y")
         if date_parameter
         else f"{snapshot_day.day}/{snapshot_day.month}/{snapshot_day.year}"
     )
+
+    def dated_url(value: str):
+        parts = urlsplit(value)
+        query = dict(parse_qsl(parts.query, keep_blank_values=True))
+        query[parameter] = parameter_value
+        return urlunsplit(
+            (parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment)
+        )
+
     resolved = dict(source)
-    resolved["url"] = urlunsplit(
-        (parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment)
-    )
+    resolved["url"] = dated_url(source["url"])
+    resolved["url_candidates"] = [
+        resolved["url"],
+        *[dated_url(value) for value in source.get("alternate_urls") or ()],
+    ]
+    resolved.pop("alternate_urls", None)
     resolved.pop("historical_date_parameter", None)
     resolved.pop("historical_search_parameter", None)
     return resolved
@@ -317,12 +333,18 @@ def fetch_source(
         or source.get("historical_search_parameter")
     )
     source = source_for_snapshot(source, snapshot_date)
+    candidate_urls = source.get("url_candidates") or [source["url"]]
     attempts = []
     last_error = None
+    requested_url = source["url"]
     for attempt_number in range(1, MAX_FETCH_ATTEMPTS + 1):
+        requested_url = candidate_urls[(attempt_number - 1) % len(candidate_urls)]
         request = Request(
-            source["url"],
-            headers={"User-Agent": "IRFEN-v0.8-shadow-evidence/1.0"},
+            requested_url,
+            headers={
+                "User-Agent": "IRFEN-v0.8-shadow-evidence/1.0",
+                "Accept": "text/html,application/xhtml+xml",
+            },
         )
         try:
             with urlopen(request, timeout=35) as response:
@@ -332,12 +354,13 @@ def fetch_source(
                 content_type = response.headers.get("Content-Type")
                 attempts.append({
                     "attempt": attempt_number,
+                    "url": requested_url,
                     "status": "CAPTURED",
                     "http_status": response.status,
                     "error": None,
                 })
                 summary = summarize_content(
-                    source["source_id"], raw, content_type, snapshot_date, source["url"]
+                    source["source_id"], raw, content_type, snapshot_date, requested_url
                 )
                 date_alignment = summary.get("snapshot_date_alignment")
                 date_aligned = (
@@ -352,6 +375,7 @@ def fetch_source(
                         else "CAPTURED_TARGET_DATE_UNVERIFIED"
                     ),
                     "http_status": response.status,
+                    "fetched_url": requested_url,
                     "captured_at": captured_at.isoformat(),
                     "content_type": content_type,
                     "content_length": len(raw),
@@ -366,6 +390,7 @@ def fetch_source(
             last_error = {"type": type(exc).__name__, "message": str(exc)[:500]}
             attempts.append({
                 "attempt": attempt_number,
+                "url": requested_url,
                 "status": "SOURCE_UNREACHABLE",
                 "http_status": getattr(exc, "code", None),
                 "error": last_error,
@@ -376,6 +401,8 @@ def fetch_source(
         **source,
         "capture_status": "SOURCE_UNREACHABLE",
         "http_status": attempts[-1]["http_status"],
+        "fetched_url": None,
+        "last_requested_url": requested_url,
         "captured_at": captured_at.isoformat(),
         "content_type": None,
         "content_length": None,
