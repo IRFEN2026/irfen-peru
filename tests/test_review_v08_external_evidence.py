@@ -145,6 +145,36 @@ class ExternalEvidenceReviewTests(unittest.TestCase):
         self.assertNotEqual(item["status"], "ACCEPTED")
         self.assertTrue(item.get("remaining_gap"))
 
+    def test_huaycoloro_official_design_basis_is_traceable_and_fail_closed(self):
+        data = json.loads(
+            (ROOT / "site/data/validation/v08_external_evidence.json").read_text(encoding="utf-8")
+        )
+        chosica = next(pilot for pilot in data["pilots"] if pilot["zone_id"] == "chosica")
+        item = next(
+            row
+            for row in chosica["items"]
+            if row["evidence_id"] == "huaycoloro_channel_as_built_capacity"
+        )
+        artifact_path = "site/data/hydraulics/huaycoloro_senace_design_basis.json"
+        artifact = json.loads((ROOT / artifact_path).read_text(encoding="utf-8"))
+
+        self.assertIn(artifact_path, item["internal_artifacts"])
+        self.assertEqual(artifact["verified_design_basis"]["huaycoloro_channel_return_period_years"], 50)
+        self.assertEqual(artifact["official_document"]["pdf_page"], 81)
+        self.assertEqual(
+            artifact["official_document"]["report_sha256"],
+            "a1f8e7695d4fba4d31c2a1bd77aad865ccd4117bb7a5fbe4e4448c0d3f635c96",
+        )
+        self.assertIsNone(artifact["not_verified"]["as_built_discharge_capacity_m3_s"])
+        self.assertFalse(
+            artifact["not_verified"]["secondary_claim_194_6_m3_s_verified_against_official_report"]
+        )
+        self.assertFalse(artifact["safety"]["operational_alert"])
+        self.assertFalse(artifact["safety"]["threshold_promotion_allowed"])
+        self.assertFalse(artifact["safety"]["hydraulic_factor_promotion_allowed"])
+        self.assertNotEqual(item["status"], "ACCEPTED")
+        self.assertIn("capacidad numérica por tramo", item["remaining_gap"])
+
     def test_catacaos_2026_aforo_is_documented_without_closing_capacity_gate(self):
         data = json.loads(
             (ROOT / "site/data/validation/v08_external_evidence.json").read_text(encoding="utf-8")
