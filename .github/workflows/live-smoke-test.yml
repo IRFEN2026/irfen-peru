@@ -45,6 +45,7 @@ jobs:
             "data/hydrology/ana_catacaos_critical_segments_2026.geojson"
             "data/hydrology/ana_catacaos_critical_segments_2026_validation.json"
             "data/hydrology/catacaos_pprrd_2026_discovery.json"
+            "data/hydrology/piura_2026_field_evidence.json"
             "data/validation/official_outcome_evidence.json"
             "data/validation/shadow_runs.json"
             "data/experimental_state.json"
@@ -140,6 +141,18 @@ jobs:
               candidate.get('validated_meaning') is False
               for candidate in pprrd.get('numeric_candidates',[])
           )
+
+          field=load('data/hydrology/piura_2026_field_evidence.json')
+          safety=field.get('safety') or {}
+          assert field.get('production_use') is False
+          assert field.get('production_ready') is False
+          assert field.get('status') == 'OFFICIAL_FIELD_EVIDENCE_CANDIDATE_REVIEW'
+          assert safety.get('counts_toward_closeout') is False
+          assert safety.get('hydraulic_capacity_validated') is False
+          assert safety.get('hydraulic_transfer_to_catacaos_validated') is False
+          assert safety.get('absence_of_impact_validated') is False
+          assert safety.get('threshold_promotion_allowed') is False
+          assert safety.get('missing_data_is_low_risk') is False
 
           outcome=load('data/validation/official_outcome_evidence.json')
           assert outcome.get('production_use') is False
