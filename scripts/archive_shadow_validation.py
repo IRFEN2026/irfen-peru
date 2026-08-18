@@ -14,26 +14,75 @@ import json
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "site/data/validation/shadow_runs.json"
+EARLIEST_ELIGIBLE_CAPTURE_LEAD_MINUTES = 12 * 60
 LATEST_ELIGIBLE_CAPTURE_DELAY_MINUTES = 120
 CENDEHUA_MAX_AGE_SECONDS_AT_SHADOW_CAPTURE = 90 * 60
 
 
-def capture_window(snapshot_date: str, latest_delay_minutes: int = LATEST_ELIGIBLE_CAPTURE_DELAY_MINUTES):
+def capture_window(
+    snapshot_date: str,
+    earliest_lead_minutes: int = EARLIEST_ELIGIBLE_CAPTURE_LEAD_MINUTES,
+    latest_delay_minutes: int = LATEST_ELIGIBLE_CAPTURE_DELAY_MINUTES,
+):
     """Return the bounded UTC window for a genuinely pre-outcome snapshot."""
     day_start = datetime.combine(date.fromisoformat(snapshot_date), datetime.min.time(), tzinfo=timezone.utc)
-    return day_start, day_start + timedelta(minutes=latest_delay_minutes)
+    return (
+        day_start - timedelta(minutes=earliest_lead_minutes),
+        day_start + timedelta(minutes=latest_delay_minutes),
+    )
 
 
 def capture_is_within_pre_outcome_window(
     captured_at: datetime,
     snapshot_date: str,
+    earliest_lead_minutes: int = EARLIEST_ELIGIBLE_CAPTURE_LEAD_MINUTES,
     latest_delay_minutes: int = LATEST_ELIGIBLE_CAPTURE_DELAY_MINUTES,
 ):
     if captured_at.tzinfo is None:
         raise ValueError("captured_at requiere zona horaria explícita")
-    start, end = capture_window(snapshot_date, latest_delay_minutes)
+    start, end = capture_window(
+        snapshot_date,
+        earliest_lead_minutes,
+        latest_delay_minutes,
+    )
     captured_utc = captured_at.astimezone(timezone.utc)
     return start <= captured_utc <= end
+
+
+def resolve_snapshot_date(captured_at: datetime):
+    """Choose today or tomorrow only when capture time is genuinely pre-outcome."""
+    if captured_at.tzinfo is None:
+        raise ValueError("captured_at requiere zona horaria explícita")
+    captured_utc = captured_at.astimezone(timezone.utc)
+    for candidate in (captured_utc.date(), captured_utc.date() + timedelta(days=1)):
+        candidate_iso = candidate.isoformat()
+        if capture_is_within_pre_outcome_window(captured_utc, candidate_iso):
+            return candidate_iso
+    return None
+
+
+def required_forecast_hours_to_target_day_end(captured_at: datetime, snapshot_date: str):
+    """Return forecast horizon required to cover the complete target UTC day."""
+    target_end = datetime.combine(
+        date.fromisoformat(snapshot_date) + timedelta(days=1),
+        datetime.min.time(),
+        tzinfo=timezone.utc,
+    )
+    return max(0.0, (target_end - captured_at.astimezone(timezone.utc)).total_seconds() / 3600)
+
+
+def zones_cover_target_day(zones: list[dict], required_future_hours: float):
+    """Require every pilot forecast to extend through the target-day close."""
+    if not zones:
+        return False
+    for zone in zones:
+        available = (zone.get("forecast_mm") or {}).get("available_future_hours")
+        try:
+            if float(available) < required_future_hours:
+                return False
+        except (TypeError, ValueError):
+            return False
+    return True
 
 
 def fetch_json(base, path, required=True):
@@ -185,18 +234,24 @@ def main():
     args = ap.parse_args()
 
     now = datetime.now(timezone.utc)
-    snapshot_date = now.date().isoformat()
-    window_start, window_end = capture_window(snapshot_date)
-    if not capture_is_within_pre_outcome_window(now, snapshot_date):
+    snapshot_date = resolve_snapshot_date(now)
+    if snapshot_date is None:
         print(json.dumps({
             "status": "SKIPPED_OUTSIDE_PRE_OUTCOME_WINDOW",
-            "snapshot_date_utc": snapshot_date,
+            "snapshot_date_utc": None,
             "captured_at": now.isoformat(),
-            "eligible_window_start_utc": window_start.isoformat(),
-            "eligible_window_end_utc": window_end.isoformat(),
-            "safety_rule": "A late workflow run cannot create or replace a daily shadow snapshot.",
+            "eligible_windows": [
+                {
+                    "snapshot_date_utc": candidate.isoformat(),
+                    "start_utc": capture_window(candidate.isoformat())[0].isoformat(),
+                    "end_utc": capture_window(candidate.isoformat())[1].isoformat(),
+                }
+                for candidate in (now.date(), now.date() + timedelta(days=1))
+            ],
+            "safety_rule": "An out-of-window run cannot create or replace a daily shadow snapshot.",
         }, ensure_ascii=False, indent=2))
         return 0
+    window_start, window_end = capture_window(snapshot_date)
 
     state = fetch_json(args.base_url, "data/experimental_state.json")
     latest = fetch_json(args.base_url, "data/latest.json")
@@ -216,6 +271,22 @@ def main():
     lima = state.get("lima_east_submodels") or {}
     ped = lima.get("chosica_local_debris_flows") or {}
     iv = ped.get("official_manual_verification") or {}
+    zones = [compact_zone(z) for z in state.get("zones", [])]
+    required_forecast_hours = required_forecast_hours_to_target_day_end(now, snapshot_date)
+    if not zones_cover_target_day(zones, required_forecast_hours):
+        print(json.dumps({
+            "status": "SKIPPED_FORECAST_DOES_NOT_COVER_TARGET_DAY",
+            "snapshot_date_utc": snapshot_date,
+            "captured_at": now.isoformat(),
+            "required_future_hours": round(required_forecast_hours, 3),
+            "available_future_hours_by_zone": {
+                zone.get("zone_id"): (zone.get("forecast_mm") or {}).get("available_future_hours")
+                for zone in zones
+            },
+            "safety_rule": "An incomplete target-day forecast cannot become immutable shadow evidence.",
+        }, ensure_ascii=False, indent=2))
+        return 0
+
     entry = {
         "snapshot_date_utc": snapshot_date,
         "archived_at": now.isoformat(),
@@ -233,7 +304,7 @@ def main():
         },
         "operational_dataset_status": latest.get("operational_status") or "unknown",
         "core_test_status": state.get("core_test_status"),
-        "zones": [compact_zone(z) for z in state.get("zones", [])],
+        "zones": zones,
         "lima_east_local_shadow": {
             "status": ped.get("status"),
             "shadow_test_ready_with_manual_official_verification": ped.get("shadow_test_ready_with_manual_official_verification"),
@@ -250,6 +321,8 @@ def main():
         },
         "source_health": {
             "forecast_available": (forecast or {}).get("status") == "experimental_forecast_available",
+            "forecast_covers_target_day": True,
+            "required_forecast_hours_to_target_day_end": round(required_forecast_hours, 3),
             "forecast_verification_pairs": (verification or {}).get("total_pairs"),
             "forecast_verification_pairs_by_zone": {
                 zone_id: int(((verification or {}).get("by_zone") or {}).get(zone_id, {}).get("n", 0))
