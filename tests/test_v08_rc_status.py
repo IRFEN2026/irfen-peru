@@ -29,6 +29,18 @@ def fixtures(milestone=75, failed=0, operational_candidates=0):
             "hydraulic_factors_withheld": True,
             "missing_data_is_not_low_risk": True,
             "activation_requires_zone_specific_validation": True,
+            "analog_transfer_is_research_only": True,
+            "analog_runs_are_not_local_validation": True,
+        },
+        "analog_transfer": {
+            "mode": "ANALOG_TRANSFER_TEST_ONLY",
+            "production_use": False,
+            "local_validation": False,
+            "counts_toward_v08_closeout": False,
+            "counts_toward_zone_activation": False,
+            "operational_alert": False,
+            "threshold_promotion": "FORBIDDEN",
+            "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
         },
         "summary": {"registered_candidates": 1, "contracts_present": 1, "operational_candidates": operational_candidates},
         "zones": [{"deployment_status": "RESEARCH_ONLY", "activation_gate": "BLOCKED", "priority_score": None}],
@@ -84,6 +96,13 @@ class V08RcStatusTests(unittest.TestCase):
         phase2["guardrails"]["missing_data_is_not_low_risk"] = False
         status = rc.build_status(score, tests, phase2, contract)
         self.assertEqual(status["status"], "RC_BLOCKED")
+
+    def test_analog_transfer_cannot_be_misrepresented_as_validation(self):
+        score, tests, phase2, contract = fixtures()
+        phase2["analog_transfer"]["local_validation"] = True
+        status = rc.build_status(score, tests, phase2, contract)
+        self.assertEqual(status["status"], "RC_BLOCKED")
+        self.assertIn("phase2_onboarding_is_fail_closed", status["blocking_gate_ids"])
 
     def test_100_percent_marks_closeout_but_never_enables_production(self):
         status = rc.build_status(*fixtures(milestone=100))
