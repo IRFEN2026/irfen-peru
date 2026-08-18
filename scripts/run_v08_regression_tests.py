@@ -296,8 +296,13 @@ def main():
     check('closeout_contract_shadow_requires_event_day',int(shadow_contract.get('minimum_verified_event_days',0))>=1)
     check('closeout_contract_shadow_requires_none_days',int(shadow_contract.get('minimum_verified_none_days',0))>=1)
     shadow_acceptance=shadow_contract.get('acceptance_rules') or {}
+    shadow_capture=shadow_contract.get('snapshot_capture') or {}
     check('closeout_shadow_requires_named_human_reviewer',shadow_acceptance.get('named_human_reviewer_required') is True)
     check('closeout_shadow_forbids_automatic_classification',shadow_acceptance.get('automatic_classification_forbidden') is True)
+    check('closeout_shadow_requires_pre_outcome_capture_window',shadow_acceptance.get('pre_outcome_capture_window_required') is True)
+    check('closeout_shadow_capture_delay_is_bounded',0<int(shadow_capture.get('latest_eligible_capture_delay_minutes',0))<=120)
+    shadow_workflow=(ROOT/'.github/workflows/shadow-validation.yml').read_text(encoding='utf-8')
+    check('closeout_shadow_schedule_starts_near_utc_day_open','cron: "10 0 * * *"' in shadow_workflow)
     check('closeout_shadow_none_requires_comprehensive_coverage',shadow_acceptance.get('none_requires_comprehensive_coverage') is True)
     check('closeout_contract_release_completion_explicit',closeout_contract.get('release_completion_marker')=='Release status: COMPLETE')
     check('closeout_contract_catacaos_supplemental_imerg_release_gate',(closeout_contract.get('imerg_early') or {}).get('supplemental_release_target_ids')==['catacaos'])

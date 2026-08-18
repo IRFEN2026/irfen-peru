@@ -77,6 +77,20 @@ def review_after_utc_day_close(record: dict):
         return False
 
 
+def snapshot_captured_within_pre_outcome_window(record: dict, latest_delay_minutes: int = 120):
+    """Reject snapshots taken late enough to have observed the same day's result."""
+    try:
+        snapshot_day = date.fromisoformat(str(record.get("snapshot_date_utc")))
+        day_start = datetime.combine(snapshot_day, time.min, tzinfo=timezone.utc)
+        captured = datetime.fromisoformat(str(record.get("archived_at")).replace("Z", "+00:00"))
+        if captured.tzinfo is None:
+            return False
+        captured_utc = captured.astimezone(timezone.utc)
+        return day_start <= captured_utc <= day_start + timedelta(minutes=latest_delay_minutes)
+    except Exception:
+        return False
+
+
 def external_validation_gate(contract: dict, ledger: dict, pilots: list[str]):
     """Accept external evidence only when every required item is traceable and reviewed."""
     contract_by = {row.get("zone_id"): row for row in contract.get("pilots", [])}
@@ -149,6 +163,7 @@ def shadow_record_eligibility(
     pilots: list[str],
     minimum_pairs_per_pilot: int,
     accepted_labels: set[str] | None = None,
+    latest_capture_delay_minutes: int = 120,
 ):
     """Return auditable gates for a reviewed shadow day to count toward closure."""
     accepted_labels = accepted_labels or {"EVENT", "NONE"}
@@ -161,6 +176,9 @@ def shadow_record_eligibility(
     pair_counts = health.get("forecast_verification_pairs_by_zone") or {}
     checks = {
         "snapshot_not_production": record.get("production_use") is False,
+        "snapshot_captured_within_pre_outcome_window": snapshot_captured_within_pre_outcome_window(
+            record, latest_capture_delay_minutes
+        ),
         "all_pilots_present": set(zones_by_id) == set(pilots),
         "all_recommendations_test_only": all(
             str(((zones_by_id.get(zid) or {}).get("recommendation") or {}).get("code", "")).startswith("TEST_")
@@ -198,6 +216,7 @@ def shadow_outcome_review_queue(
     pilots: list[str],
     minimum_pairs_per_pilot: int,
     accepted_labels: set[str],
+    latest_capture_delay_minutes: int = 120,
 ):
     """Expose unresolved shadow days without inferring an outcome from missing evidence."""
     evidence_by_date = {
@@ -208,7 +227,11 @@ def shadow_outcome_review_queue(
     for record in shadow_records:
         outcome = record.get("outcome_verification") or {}
         eligibility = shadow_record_eligibility(
-            record, pilots, minimum_pairs_per_pilot, accepted_labels
+            record,
+            pilots,
+            minimum_pairs_per_pilot,
+            accepted_labels,
+            latest_capture_delay_minutes,
         )
         accepted_outcome = outcome.get("label") in accepted_labels
         if accepted_outcome and eligibility["eligible"]:
@@ -383,6 +406,11 @@ def main():
     m75 = milestone(75, m50["reached"], checks75)
 
     accepted_labels = set((contract.get("shadow_validation") or {}).get("accepted_outcome_labels") or [])
+    latest_capture_delay_minutes = int(
+        ((contract.get("shadow_validation") or {}).get("snapshot_capture") or {}).get(
+            "latest_eligible_capture_delay_minutes", 120
+        )
+    )
     shadow_records = shadow.get("records") or []
     reviewed_all = [
         r for r in shadow_records
@@ -397,7 +425,13 @@ def main():
         {
             "snapshot_date_utc": record.get("snapshot_date_utc"),
             "label": (record.get("outcome_verification") or {}).get("label"),
-            **shadow_record_eligibility(record, pilots, min_pairs, accepted_labels),
+            **shadow_record_eligibility(
+                record,
+                pilots,
+                min_pairs,
+                accepted_labels,
+                latest_capture_delay_minutes,
+            ),
         }
         for record in reviewed_outcomes
     ]
@@ -423,7 +457,12 @@ def main():
         and int(reviewed_label_counts.get("NONE", 0)) >= minimum_none_days
     )
     shadow_review_queue = shadow_outcome_review_queue(
-        shadow_records, official_outcomes, pilots, min_pairs, accepted_labels
+        shadow_records,
+        official_outcomes,
+        pilots,
+        min_pairs,
+        accepted_labels,
+        latest_capture_delay_minutes,
     )
     external_evidence_passed, external_evidence = external_validation_gate(external_contract, external_ledger, pilots)
     scientific_gate_passed = (

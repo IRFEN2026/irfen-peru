@@ -22,6 +22,7 @@ PILOTS = ["san_ildefonso", "chosica", "catacaos"]
 def eligible_record():
     return {
         "snapshot_date_utc": "2026-08-15",
+        "archived_at": "2026-08-15T00:10:00Z",
         "production_use": False,
         "outcome_verification": {
             "status": "REVIEWED_REAL_WORLD_OUTCOME",
@@ -70,6 +71,15 @@ class ShadowEligibilityTests(unittest.TestCase):
 
         self.assertFalse(result["eligible"])
         self.assertFalse(result["checks"]["forecast_pairs_mature_at_snapshot"])
+
+    def test_late_same_day_snapshot_is_not_eligible(self):
+        record = eligible_record()
+        record["archived_at"] = "2026-08-15T17:30:00Z"
+
+        result = scorecard.shadow_record_eligibility(record, PILOTS, 30)
+
+        self.assertFalse(result["eligible"])
+        self.assertFalse(result["checks"]["snapshot_captured_within_pre_outcome_window"])
 
     def test_missing_data_is_not_an_eligible_dry_day(self):
         record = eligible_record()

@@ -19,6 +19,12 @@ pronósticos o recomendaciones ni siquiera mientras la revisión está pendiente
 Esto impide incorporar retrospectivamente información aparecida después de la
 captura original.
 
+La fotografía elegible se toma al comienzo de la jornada: el workflow apunta a
+las 00:10 UTC y admite como máximo dos horas de demora. Una ejecución posterior
+se omite sin crear ni reemplazar el registro. Las capturas históricas realizadas
+fuera de esa ventana permanecen auditables, pero no cuentan para el cierre,
+aunque más tarde reciban una etiqueta `EVENT` o `NONE`.
+
 La revisión solo puede comenzar después de las 00:00 UTC del día siguiente.
 Una etiqueta aplicada antes de cerrar la jornada sería parcial y no es válida,
 aunque exista ya una noticia o un aviso oficial durante el día.
@@ -26,11 +32,12 @@ aunque exista ya una noticia o un aviso oficial durante el día.
 Un día solo es elegible si, en el momento de la fotografía:
 
 1. estaban presentes los tres pilotos;
-2. todas las recomendaciones eran `TEST_ONLY` y no operativas;
-3. GEOS estaba disponible y tenía al menos 30 pares por piloto;
-4. IMERG Early estaba disponible con latencia registrada;
-5. la regresión estaba en `PASS`;
-6. la entrada conservaba `production_use=false`.
+2. la fotografía se archivó dentro de la ventana pre-resultado de dos horas;
+3. todas las recomendaciones eran `TEST_ONLY` y no operativas;
+4. GEOS estaba disponible y tenía al menos 30 pares por piloto;
+5. IMERG Early estaba disponible con latencia registrada;
+6. la regresión estaba en `PASS`;
+7. la entrada conservaba `production_use=false`.
 
 ## Fuentes aceptables para el resultado
 

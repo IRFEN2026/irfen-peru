@@ -3,7 +3,9 @@ name: IRFEN - Archivar validación en sombra v0.8
 on:
   workflow_dispatch:
   schedule:
-    - cron: "30 17 * * *"
+    # Captura al comienzo de la jornada UTC. El script descarta ejecuciones
+    # demoradas más de dos horas para evitar incorporar resultados ya vistos.
+    - cron: "10 0 * * *"
   push:
     branches:
       - main

@@ -13,6 +13,20 @@ SPEC.loader.exec_module(MODULE)
 
 
 class ImmutableDailyShadowArchiveTests(unittest.TestCase):
+    def test_pre_outcome_window_accepts_early_capture_and_rejects_late_run(self):
+        self.assertTrue(MODULE.capture_is_within_pre_outcome_window(
+            datetime(2026, 8, 18, 0, 10, tzinfo=timezone.utc),
+            "2026-08-18",
+        ))
+        self.assertTrue(MODULE.capture_is_within_pre_outcome_window(
+            datetime(2026, 8, 18, 2, 0, tzinfo=timezone.utc),
+            "2026-08-18",
+        ))
+        self.assertFalse(MODULE.capture_is_within_pre_outcome_window(
+            datetime(2026, 8, 18, 2, 0, 1, tzinfo=timezone.utc),
+            "2026-08-18",
+        ))
+
     def test_first_snapshot_is_preserved_on_same_day_rerun(self):
         original = {
             "snapshot_date_utc": "2026-08-17",

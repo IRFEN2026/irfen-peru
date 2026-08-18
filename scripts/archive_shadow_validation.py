@@ -7,13 +7,32 @@ no modifica umbrales y no etiqueta automáticamente impactos reales.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 import argparse
 import json
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "site/data/validation/shadow_runs.json"
+LATEST_ELIGIBLE_CAPTURE_DELAY_MINUTES = 120
+
+
+def capture_window(snapshot_date: str, latest_delay_minutes: int = LATEST_ELIGIBLE_CAPTURE_DELAY_MINUTES):
+    """Return the bounded UTC window for a genuinely pre-outcome snapshot."""
+    day_start = datetime.combine(date.fromisoformat(snapshot_date), datetime.min.time(), tzinfo=timezone.utc)
+    return day_start, day_start + timedelta(minutes=latest_delay_minutes)
+
+
+def capture_is_within_pre_outcome_window(
+    captured_at: datetime,
+    snapshot_date: str,
+    latest_delay_minutes: int = LATEST_ELIGIBLE_CAPTURE_DELAY_MINUTES,
+):
+    if captured_at.tzinfo is None:
+        raise ValueError("captured_at requiere zona horaria explícita")
+    start, end = capture_window(snapshot_date, latest_delay_minutes)
+    captured_utc = captured_at.astimezone(timezone.utc)
+    return start <= captured_utc <= end
 
 
 def fetch_json(base, path, required=True):
@@ -117,6 +136,19 @@ def main():
     args = ap.parse_args()
 
     now = datetime.now(timezone.utc)
+    snapshot_date = now.date().isoformat()
+    window_start, window_end = capture_window(snapshot_date)
+    if not capture_is_within_pre_outcome_window(now, snapshot_date):
+        print(json.dumps({
+            "status": "SKIPPED_OUTSIDE_PRE_OUTCOME_WINDOW",
+            "snapshot_date_utc": snapshot_date,
+            "captured_at": now.isoformat(),
+            "eligible_window_start_utc": window_start.isoformat(),
+            "eligible_window_end_utc": window_end.isoformat(),
+            "safety_rule": "A late workflow run cannot create or replace a daily shadow snapshot.",
+        }, ensure_ascii=False, indent=2))
+        return 0
+
     state = fetch_json(args.base_url, "data/experimental_state.json")
     latest = fetch_json(args.base_url, "data/latest.json")
     forecast = fetch_json(args.base_url, "data/forecast/latest.json", required=False)
@@ -133,8 +165,13 @@ def main():
     ped = lima.get("chosica_local_debris_flows") or {}
     iv = ped.get("official_manual_verification") or {}
     entry = {
-        "snapshot_date_utc": now.date().isoformat(),
+        "snapshot_date_utc": snapshot_date,
         "archived_at": now.isoformat(),
+        "pre_outcome_capture_window": {
+            "start_utc": window_start.isoformat(),
+            "end_utc": window_end.isoformat(),
+            "captured_within_window": True,
+        },
         "source_timestamps": {
             "experimental_state": state.get("generated_at"),
             "latest_observation": latest.get("last_update_attempt") or latest.get("generated_at"),
