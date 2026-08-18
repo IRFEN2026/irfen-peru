@@ -52,6 +52,13 @@ La revisión debe enlazar evidencia oficial fechada y espacialmente pertinente:
 - INDECI/COEN para emergencias e impactos verificados;
 - entidades regionales o locales oficiales únicamente como corroboración.
 
+La captura de INDECI/COEN sigue, de forma acotada, la paginación oficial que
+la propia página anuncia para la fecha revisada. Los enlaces repetidos se
+deduplican y cada página adicional conserva URL, estado HTTP y huella de
+contenido. Una página que no responde deja la cobertura como
+`PARTIAL_UNKNOWN_NOT_ZERO`; nunca convierte la falta de coincidencias en
+`NONE`.
+
 Una noticia, una publicación social o un testimonio pueden abrir una revisión,
 pero no cierran por sí solos el resultado.
 

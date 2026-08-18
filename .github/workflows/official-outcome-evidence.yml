@@ -73,6 +73,22 @@ jobs:
                   assert capture.get('outcome_label') is None
                   assert capture.get('production_use') is False
                   assert len(capture.get('sources',[])) == 3
+                  indeci=next(
+                      source for source in capture.get('sources',[])
+                      if source.get('source_id') == 'indeci_emergencies'
+                  )
+                  pagination=(indeci.get('summary') or {}).get('pagination') or {}
+                  if (
+                      capture.get('captured_at') == d.get('updated_at')
+                      and indeci.get('capture_status') != 'SOURCE_UNREACHABLE'
+                  ):
+                      assert pagination.get('captured_pages',0) >= 1
+                  if pagination:
+                      assert pagination.get('coverage_status') in {
+                          'COMPLETE_BOUNDED_NAVIGATION_CAPTURE',
+                          'PARTIAL_UNKNOWN_NOT_ZERO',
+                      }
+                      assert pagination.get('missing_match_is_none') is False
           print('Archivo oficial para revisión en sombra OK:', d.get('record_count'))
           PY
 
