@@ -13,6 +13,66 @@ SPEC.loader.exec_module(MODULE)
 
 
 class ImmutableDailyShadowArchiveTests(unittest.TestCase):
+    def test_cendehua_raw_false_is_not_converted_to_none(self):
+        captured_at = datetime(2026, 8, 18, 1, 0, tzinfo=timezone.utc)
+        probe = {
+            "generated_at": "2026-08-18T00:55:00+00:00",
+            "status": "AVAILABLE_TEST_ONLY",
+            "huaycoloro_ground_signal": {
+                "observations": [{
+                    "station_id": "HUA-01",
+                    "last_alert_update": "2026-08-18T00:30:00+00:00",
+                    "last_image_update": "2026-08-18T00:31:00+00:00",
+                    "provider_activity_flag_raw": False,
+                }],
+            },
+        }
+
+        signal = MODULE.compact_cendehua_signal(probe, captured_at)
+
+        self.assertEqual(signal["station_count"], 1)
+        self.assertEqual(signal["recent_station_count_at_shadow_capture"], 1)
+        self.assertIs(signal["observations"][0]["provider_activity_flag_raw"], False)
+        self.assertIsNone(signal["observations"][0]["irfen_outcome_label"])
+        self.assertIsNone(signal["automatic_outcome_label"])
+        self.assertIs(signal["can_support_none_classification_by_itself"], False)
+        self.assertIs(signal["human_review_required"], True)
+
+    def test_cendehua_recency_is_recalculated_at_shadow_capture(self):
+        captured_at = datetime(2026, 8, 18, 1, 0, tzinfo=timezone.utc)
+        probe = {
+            "huaycoloro_ground_signal": {
+                "observations": [
+                    {
+                        "station_id": "RECENT",
+                        "last_alert_update": "2026-08-17T23:31:00+00:00",
+                    },
+                    {
+                        "station_id": "STALE",
+                        "last_alert_update": "2026-08-17T23:29:59+00:00",
+                    },
+                ],
+            },
+        }
+
+        signal = MODULE.compact_cendehua_signal(probe, captured_at)
+
+        self.assertIs(signal["observations"][0]["recent_at_shadow_capture"], True)
+        self.assertIs(signal["observations"][1]["recent_at_shadow_capture"], False)
+        self.assertEqual(signal["recent_station_count_at_shadow_capture"], 1)
+
+    def test_missing_cendehua_probe_stays_uncertain(self):
+        signal = MODULE.compact_cendehua_signal(
+            {}, datetime(2026, 8, 18, 1, 0, tzinfo=timezone.utc)
+        )
+
+        self.assertEqual(signal["station_count"], 0)
+        self.assertEqual(signal["recent_station_count_at_shadow_capture"], 0)
+        self.assertIsNone(signal["automatic_outcome_label"])
+        self.assertIs(signal["can_support_none_classification_by_itself"], False)
+        self.assertIs(signal["human_review_required"], True)
+        self.assertIn("UNCERTAIN", signal["missing_or_stale_data_rule"])
+
     def test_pre_outcome_window_accepts_early_capture_and_rejects_late_run(self):
         self.assertTrue(MODULE.capture_is_within_pre_outcome_window(
             datetime(2026, 8, 18, 0, 10, tzinfo=timezone.utc),
