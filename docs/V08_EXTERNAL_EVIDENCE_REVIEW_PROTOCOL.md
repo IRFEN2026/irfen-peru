@@ -31,7 +31,9 @@ oficial. La confirmación no debe utilizarse si queda cualquier brecha descrita.
 1. Verificar el `evidence_id` exacto en el contrato y revisar todas las fuentes.
 2. Confirmar vigencia, ámbito espacial, unidades, configuración de la obra y
    relación con el piloto, según corresponda.
-3. Registrar una decisión con `scripts/review_v08_external_evidence.py`.
+3. Registrar una decisión con `scripts/review_v08_external_evidence.py` o,
+   preferentemente, con el workflow **IRFEN - Revisar evidencia científica e
+   hidráulica v0.8** en GitHub Actions.
 4. Revisar el diff: solo debe cambiar el registro de evidencia externa.
 5. Ejecutar la suite completa y tramitar el cambio por rama y pull request.
 
@@ -50,6 +52,13 @@ python scripts/review_v08_external_evidence.py \
 Una revisión existente no se sobrescribe por defecto. Toda corrección exige
 `--replace-existing-review`, un instante posterior y conserva la revisión
 anterior en `review_history`.
+
+El workflow ofrece únicamente los tres pilotos y los identificadores exactos
+del contrato, identifica al revisor con su cuenta de GitHub y usa `REJECTED`
+como decisión predeterminada. Para `ACCEPTED` exige confirmar explícitamente
+que el requisito completo está satisfecho. Después conserva un commit
+auditable, publica ese commit exacto y recalcula la scorecard. Elegir un
+`evidence_id` que no pertenezca al piloto seleccionado se rechaza sin cambios.
 
 ## Límites
 

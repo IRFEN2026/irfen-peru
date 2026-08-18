@@ -1,0 +1,195 @@
+name: IRFEN - Revisar evidencia científica e hidráulica v0.8
+
+on:
+  workflow_dispatch:
+    inputs:
+      zone_id:
+        description: "Piloto cuyo requisito se revisa"
+        required: true
+        type: choice
+        options:
+          - san_ildefonso
+          - chosica
+          - catacaos
+      evidence_id:
+        description: "Identificador exacto del requisito contractual"
+        required: true
+        type: choice
+        options:
+          - current_integral_system_as_built_status
+          - component_capacity_and_overflow_rules
+          - sediment_obstruction_and_maintenance_condition
+          - observed_events_with_current_system
+          - rainfall_to_impact_hydraulic_review
+          - huaycoloro_channel_as_built_capacity
+          - overflow_restriction_and_maintenance_condition
+          - observed_events_after_2025_inauguration
+          - pedregal_live_ground_signal_validation
+          - official_numeric_river_state_channel
+          - upstream_to_bajo_piura_location_harmonization
+          - current_channel_capacity_and_critical_levels
+          - current_floodplain_and_defense_condition
+          - operational_vs_projected_urban_drainage
+          - observed_river_state_to_impact_review
+      decision:
+        description: "Decisión humana conservadora"
+        required: true
+        default: REJECTED
+        type: choice
+        options:
+          - REJECTED
+          - ACCEPTED
+      notes:
+        description: "Justificación técnica de cobertura, vigencia, unidades y ámbito"
+        required: true
+        type: string
+      additional_official_sources:
+        description: "URLs oficiales adicionales, una por línea (opcional)"
+        required: false
+        type: string
+      confirm_requirement_fully_satisfied:
+        description: "Confirmo que el requisito completo está satisfecho; obligatorio para ACCEPTED"
+        required: false
+        default: false
+        type: boolean
+      replace_existing_review:
+        description: "Corregir una revisión anterior conservando su historial"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: "v08-external-evidence-review"
+  cancel-in-progress: false
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Aplicar revisión humana con guardas fail-closed
+        shell: bash
+        env:
+          ZONE_ID: ${{ inputs.zone_id }}
+          EVIDENCE_ID: ${{ inputs.evidence_id }}
+          REVIEW_DECISION: ${{ inputs.decision }}
+          REVIEW_NOTES: ${{ inputs.notes }}
+          ADDITIONAL_OFFICIAL_SOURCES: ${{ inputs.additional_official_sources }}
+          REVIEWED_BY: ${{ github.actor }}
+          CONFIRM_REQUIREMENT_FULLY_SATISFIED: ${{ inputs.confirm_requirement_fully_satisfied }}
+          REPLACE_EXISTING_REVIEW: ${{ inputs.replace_existing_review }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          from scripts.review_v08_external_evidence import apply_review
+
+          contract_path = Path("config/v08_external_validation_contract.json")
+          ledger_path = Path("site/data/validation/v08_external_evidence.json")
+          contract = json.loads(contract_path.read_text(encoding="utf-8"))
+          ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+          additional_sources = [
+              line.strip()
+              for line in os.environ.get("ADDITIONAL_OFFICIAL_SOURCES", "").splitlines()
+              if line.strip()
+          ]
+          review = apply_review(
+              contract,
+              ledger,
+              zone_id=os.environ["ZONE_ID"],
+              evidence_id=os.environ["EVIDENCE_ID"],
+              decision=os.environ["REVIEW_DECISION"],
+              reviewer=os.environ["REVIEWED_BY"],
+              notes=os.environ["REVIEW_NOTES"],
+              official_sources=additional_sources,
+              confirm_requirement_fully_satisfied=(
+                  os.environ["CONFIRM_REQUIREMENT_FULLY_SATISFIED"].lower() == "true"
+              ),
+              replace_existing_review=os.environ["REPLACE_EXISTING_REVIEW"].lower() == "true",
+          )
+          ledger_path.write_text(
+              json.dumps(ledger, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps({
+              "zone_id": os.environ["ZONE_ID"],
+              "evidence_id": os.environ["EVIDENCE_ID"],
+              **review,
+          }, ensure_ascii=False, indent=2))
+          PY
+
+      - name: Validar decisión y contrato TEST_ONLY
+        shell: bash
+        env:
+          ZONE_ID: ${{ inputs.zone_id }}
+          EVIDENCE_ID: ${{ inputs.evidence_id }}
+          REVIEW_DECISION: ${{ inputs.decision }}
+          REVIEWED_BY: ${{ github.actor }}
+        run: |
+          python -m unittest tests.test_review_v08_external_evidence tests.test_review_v08_external_evidence_workflow
+          python -m json.tool site/data/validation/v08_external_evidence.json >/dev/null
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          ledger = json.loads(Path("site/data/validation/v08_external_evidence.json").read_text(encoding="utf-8"))
+          assert ledger.get("production_use") is False
+          pilot = next(row for row in ledger.get("pilots", []) if row.get("zone_id") == os.environ["ZONE_ID"])
+          item = next(row for row in pilot.get("items", []) if row.get("evidence_id") == os.environ["EVIDENCE_ID"])
+          review = item.get("review") or {}
+          assert item.get("status") == os.environ["REVIEW_DECISION"]
+          assert review.get("decision") == os.environ["REVIEW_DECISION"]
+          assert review.get("reviewed_by") == os.environ["REVIEWED_BY"]
+          assert review.get("automatic") is False
+          if item.get("status") == "ACCEPTED":
+              assert review.get("requirement_fully_satisfied") is True
+              assert not item.get("remaining_gap")
+          else:
+              assert pilot.get("status") == "BLOCKED"
+          PY
+
+      - name: Guardar revisión auditable
+        id: persist
+        shell: bash
+        env:
+          ZONE_ID: ${{ inputs.zone_id }}
+          EVIDENCE_ID: ${{ inputs.evidence_id }}
+          REVIEW_DECISION: ${{ inputs.decision }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/validation/v08_external_evidence.json
+          git diff --cached --quiet && { echo "La revisión no produjo cambios." >&2; exit 1; }
+          git commit -m "IRFEN v0.8: ${REVIEW_DECISION} ${ZONE_ID}/${EVIDENCE_ID}"
+          git pull --rebase origin main
+          git push origin HEAD:main
+          echo "commit_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Publicar revisión y scorecard recalculada
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_SHA: ${{ steps.persist.outputs.commit_sha }}
+        run: |
+          gh workflow run publish-committed-data.yml \
+            --repo "$GITHUB_REPOSITORY" \
+            --ref main \
+            -f expected_sha="$EXPECTED_SHA"

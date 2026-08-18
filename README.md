@@ -94,6 +94,7 @@ No se tratará como una microcuenca simple. La siguiente fase debe representar e
 - `docs/SHADOW_OUTCOME_REVIEW_PROTOCOL.md` — criterios auditables para que un resultado diario cuente en el cierre.
 - `scripts/review_shadow_outcome.py` — aplica una revisión posterior con URLs oficiales sin alterar la fotografía previa.
 - `.github/workflows/review-shadow-outcome.yml` — interfaz manual auditable para etiquetar una jornada cerrada; usa la cuenta GitHub del revisor y falla de forma cerrada para `EVENT`/`NONE`.
+- `.github/workflows/review-v08-external-evidence.yml` — revisión humana trazable de requisitos científicos e hidráulicos; `REJECTED` por defecto y confirmación explícita para `ACCEPTED`.
 - `site/data/v08_scorecard.json` — scorecard auditable de cierre (25/50/75/100), calculada solo con evidencia y sin porcentajes intermedios subjetivos.
 - `config/v08_closeout_contract.json` — condiciones fijas de cada hito, muestras mínimas y guardas de seguridad.
 - `site/data/watersheds/` — polígonos y reportes de validación.
