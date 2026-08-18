@@ -1,6 +1,6 @@
 {
   "version": "0.8-experimental",
-  "generated_at": "2026-08-17T14:06:37.995645+00:00",
+  "generated_at": "2026-08-18T11:02:25.628413+00:00",
   "production_use": false,
   "production_ready": false,
   "purpose": "Bounded check for a documented machine-readable IGP/CENDEHUA Huaycoloro monitoring channel.",
@@ -13,7 +13,7 @@
     "official_monitoring_news_url": "https://www.gob.pe/institucion/igp/noticias/1343594-igp-refuerza-vigilancia-del-sistema-de-monitoreo-de-huaicos-en-las-quebradas-huaycoloro-y-rio-seco",
     "claimed_scope": "official 24/7 monitoring and alerts; not an IRFEN event label"
   },
-  "status": "OFFICIAL_MONITOR_REACHED_NO_OBVIOUS_STRUCTURED_CHANNEL",
+  "status": "HUAYCOLORO_STRUCTURED_CHANNEL_FOUND",
   "attempts": [
     {
       "start_url": "https://www.igp.gob.pe/servicios/centro-monitoreo-deslizamientos-huaicos/inicio",
@@ -32,10 +32,75 @@
     "bytes_inspected": 3125
   },
   "references_inspected": 3,
-  "structured_candidates_found": [],
-  "candidate_probes": [],
-  "usable_structured_candidates": [],
-  "next_action": "Keep CENDEHUA as an authoritative external/manual outcome channel; stop endpoint exploration.",
-  "stop_rule": "Inspect only explicit page references; do not enumerate or guess undocumented endpoints.",
+  "structured_candidates_found": [
+    {
+      "url": "https://grd.igp.gob.pe/Lq5aA7wpZ77tSYiPg7YmjHi3VnkSJ9pE/medias",
+      "kind": "cendehua_station_media_api_candidate",
+      "discovered_in": "https://grd.igp.gob.pe/lahares-huaicos/assets/index-UhkG1XQI.js"
+    }
+  ],
+  "candidate_probes": [
+    {
+      "url": "https://grd.igp.gob.pe/Lq5aA7wpZ77tSYiPg7YmjHi3VnkSJ9pE/medias",
+      "kind": "cendehua_station_media_api_candidate",
+      "discovered_in": "https://grd.igp.gob.pe/lahares-huaicos/assets/index-UhkG1XQI.js",
+      "http_status": 200,
+      "content_type": "application/json",
+      "final_url": "https://grd.igp.gob.pe/Lq5aA7wpZ77tSYiPg7YmjHi3VnkSJ9pE/medias",
+      "structured_response": true,
+      "bytes": 9692,
+      "huaycoloro_station_count": 2
+    }
+  ],
+  "usable_structured_candidates": [
+    {
+      "url": "https://grd.igp.gob.pe/Lq5aA7wpZ77tSYiPg7YmjHi3VnkSJ9pE/medias",
+      "kind": "cendehua_station_media_api_candidate",
+      "discovered_in": "https://grd.igp.gob.pe/lahares-huaicos/assets/index-UhkG1XQI.js",
+      "http_status": 200,
+      "content_type": "application/json",
+      "final_url": "https://grd.igp.gob.pe/Lq5aA7wpZ77tSYiPg7YmjHi3VnkSJ9pE/medias",
+      "structured_response": true,
+      "bytes": 9692,
+      "huaycoloro_station_count": 2
+    }
+  ],
+  "huaycoloro_ground_signal": {
+    "status": "LIVE_STRUCTURED_SIGNAL_OBSERVED",
+    "station_count": 2,
+    "recent_station_count": 2,
+    "observations": [
+      {
+        "station_id": "Huaycoloro1",
+        "station_name": "Huaycoloro 1",
+        "group": "lima/huaycos",
+        "ravine": "Huaycoloro",
+        "last_alert_update": "2026-08-18T10:59:54.170612+00:00",
+        "last_image_update": "2026-08-18T11:00:22.083930+00:00",
+        "alert_age_seconds_at_capture": 151.458,
+        "recent_signal": true,
+        "provider_activity_flag_raw": false,
+        "irfen_outcome_label": null,
+        "human_review_required": true
+      },
+      {
+        "station_id": "Huaycoloro2",
+        "station_name": "Huaycoloro 2",
+        "group": "lima/huaycos",
+        "ravine": "Huaycoloro",
+        "last_alert_update": "2026-08-18T10:59:57.460625+00:00",
+        "last_image_update": "2026-08-18T11:00:02.776300+00:00",
+        "alert_age_seconds_at_capture": 148.168,
+        "recent_signal": true,
+        "provider_activity_flag_raw": false,
+        "irfen_outcome_label": null,
+        "human_review_required": true
+      }
+    ],
+    "automatic_outcome_label": null,
+    "human_review_required": true
+  },
+  "next_action": "Archive TEST_ONLY station snapshots and submit dated outcomes to human review; never infer NONE from the provider activity flag.",
+  "stop_rule": "Inspect only official page references and endpoint literals present in the official client; do not enumerate or guess undocumented endpoints.",
   "validation_guard": "This probe cannot classify an EVENT/NONE outcome or satisfy the Chosica validation contract by itself."
 }

@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from html import unescape
 from pathlib import Path
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 import json
 import re
 
@@ -19,6 +19,7 @@ import requests
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "site/data/stations/igp_cendehua_access_probe.json"
+ARCHIVE = ROOT / "site/data/stations/igp_cendehua_huaycoloro_archive.json"
 START_URLS = [
     "https://www.igp.gob.pe/servicios/centro-monitoreo-deslizamientos-huaicos/inicio",
     "https://grd.igp.gob.pe/lahares-huaicos/",
@@ -28,6 +29,10 @@ MAX_HTML_BYTES = 2_000_000
 MAX_REFERENCES = 120
 MAX_CANDIDATES = 25
 MAX_PROBES = 10
+MAX_SCRIPT_PROBES = 4
+MAX_SCRIPT_BYTES = 2_000_000
+MAX_ARCHIVE_CAPTURES = 1_000
+RECENT_SIGNAL_SECONDS = 60 * 60
 
 
 def safe_get(url: str):
@@ -50,6 +55,8 @@ def classify_candidate(url: str):
         return "csv_candidate"
     if any(token in low for token in ("featureserver", "mapserver", "geoserver", "/wfs")):
         return "gis_service_candidate"
+    if urlparse(url).hostname == "grd.igp.gob.pe" and low.rstrip("/").endswith("/medias"):
+        return "cendehua_station_media_api_candidate"
     return None
 
 
@@ -72,7 +79,124 @@ def extract_candidates(html: str, base_url: str):
     return references, candidates
 
 
+def extract_script_candidates(script: str, script_url: str):
+    """Extrae endpoints literales del cliente oficial, sin adivinar rutas."""
+    candidates = []
+    seen = set()
+    patterns = (
+        r"https://grd\.igp\.gob\.pe/[A-Za-z0-9_-]+/medias",
+        r"[\"'](/?[A-Za-z0-9_-]+/medias)[\"']",
+    )
+    for pattern in patterns:
+        for match in re.finditer(pattern, script):
+            raw = match.group(0).strip("\"'") if match.lastindex is None else match.group(1)
+            url = urljoin(script_url, raw)
+            if urlparse(url).hostname != "grd.igp.gob.pe" or url in seen:
+                continue
+            kind = classify_candidate(url)
+            if kind:
+                candidates.append({"url": url, "kind": kind, "discovered_in": script_url})
+                seen.add(url)
+            if len(candidates) >= MAX_CANDIDATES:
+                return candidates
+    return candidates
+
+
+def iso_from_epoch(value):
+    try:
+        timestamp = float(value)
+        if timestamp <= 0:
+            return None
+        return datetime.fromtimestamp(timestamp, timezone.utc).isoformat()
+    except (TypeError, ValueError, OSError, OverflowError):
+        return None
+
+
+def summarize_huaycoloro(payload, captured_at: datetime):
+    """Resume telemetria sin convertir un booleano del proveedor en EVENT/NONE."""
+    if not isinstance(payload, list):
+        return []
+    captured_epoch = captured_at.timestamp()
+    observations = []
+    for row in payload:
+        if not isinstance(row, dict):
+            continue
+        group = str(row.get("grupo") or "")
+        ravine = str(row.get("nombre_quebrada") or "")
+        if group != "lima/huaycos" or ravine.casefold() != "huaycoloro":
+            continue
+        alert = row.get("ultima_alerta") if isinstance(row.get("ultima_alerta"), dict) else {}
+        image = row.get("ultima_imagen") if isinstance(row.get("ultima_imagen"), dict) else {}
+        alert_epoch = alert.get("actualizado_a")
+        image_epoch = image.get("actualizado_a")
+        try:
+            age_seconds = round(captured_epoch - float(alert_epoch), 3)
+        except (TypeError, ValueError):
+            age_seconds = None
+        observations.append(
+            {
+                "station_id": row.get("id_estacion"),
+                "station_name": row.get("nombre_estacion"),
+                "group": group,
+                "ravine": ravine,
+                "last_alert_update": iso_from_epoch(alert_epoch),
+                "last_image_update": iso_from_epoch(image_epoch),
+                "alert_age_seconds_at_capture": age_seconds,
+                "recent_signal": age_seconds is not None
+                and -300 <= age_seconds <= RECENT_SIGNAL_SECONDS,
+                "provider_activity_flag_raw": alert.get("actividad_lahar")
+                if isinstance(alert.get("actividad_lahar"), bool)
+                else None,
+                "irfen_outcome_label": None,
+                "human_review_required": True,
+            }
+        )
+    return sorted(observations, key=lambda item: str(item.get("station_id") or ""))
+
+
+def build_archive(existing, capture):
+    archive = existing if isinstance(existing, dict) else {}
+    captures = archive.get("captures") if isinstance(archive.get("captures"), list) else []
+    key = (
+        capture.get("source_url"),
+        tuple(
+            (item.get("station_id"), item.get("last_alert_update"), item.get("last_image_update"))
+            for item in capture.get("observations", [])
+        ),
+    )
+    known = {
+        (
+            item.get("source_url"),
+            tuple(
+                (row.get("station_id"), row.get("last_alert_update"), row.get("last_image_update"))
+                for row in item.get("observations", [])
+            ),
+        )
+        for item in captures
+        if isinstance(item, dict)
+    }
+    if key not in known:
+        captures.append(capture)
+    captures = captures[-MAX_ARCHIVE_CAPTURES:]
+    return {
+        "version": "0.8-experimental",
+        "integration_mode": "TEST_ONLY",
+        "production_use": False,
+        "production_ready": False,
+        "purpose": "Archive official IGP/CENDEHUA Huaycoloro station snapshots for human shadow review.",
+        "capture_count": len(captures),
+        "captures": captures,
+        "scientific_gate": {
+            "automatic_event_or_none_classification": False,
+            "absence_of_provider_activity_is_none": False,
+            "human_review_required": True,
+            "missing_or_stale_data_rule": "UNCERTAIN; never low risk or NONE",
+        },
+    }
+
+
 def main():
+    captured_at = datetime.now(timezone.utc)
     attempts = []
     final = None
     for start_url in START_URLS:
@@ -110,13 +234,33 @@ def main():
         }
         references, candidates = extract_candidates(text, final.url)
 
+        script_urls = [
+            url
+            for url in references
+            if urlparse(url).hostname == "grd.igp.gob.pe"
+            and urlparse(url).path.lower().endswith(".js")
+        ][:MAX_SCRIPT_PROBES]
+        for script_url in script_urls:
+            try:
+                response = safe_get(script_url)
+                if not response.ok:
+                    continue
+                script = response.content[:MAX_SCRIPT_BYTES].decode(
+                    response.encoding or "utf-8", errors="ignore"
+                )
+                for item in extract_script_candidates(script, script_url):
+                    if not any(existing["url"] == item["url"] for existing in candidates):
+                        candidates.append(item)
+            except Exception:
+                continue
+
     probed = []
+    huaycoloro_observations = []
     for candidate in candidates[:MAX_PROBES]:
         try:
             response = safe_get(candidate["url"])
             content_type = (response.headers.get("content-type") or "").lower()
-            probed.append(
-                {
+            probe_row = {
                     **candidate,
                     "http_status": response.status_code,
                     "content_type": response.headers.get("content-type"),
@@ -126,7 +270,15 @@ def main():
                     ),
                     "bytes": len(response.content),
                 }
-            )
+            if response.ok and "json" in content_type:
+                try:
+                    observations = summarize_huaycoloro(response.json(), captured_at)
+                except (ValueError, TypeError):
+                    observations = []
+                if observations:
+                    huaycoloro_observations = observations
+                    probe_row["huaycoloro_station_count"] = len(observations)
+            probed.append(probe_row)
         except Exception as exc:
             probed.append(
                 {**candidate, "error": {"type": type(exc).__name__, "message": str(exc)[:300]}}
@@ -137,7 +289,14 @@ def main():
         for item in probed
         if item.get("http_status") == 200 and item.get("structured_response") is True
     ]
-    if usable:
+    recent_count = sum(item["recent_signal"] for item in huaycoloro_observations)
+    if huaycoloro_observations:
+        status = "HUAYCOLORO_STRUCTURED_CHANNEL_FOUND"
+        next_action = (
+            "Archive TEST_ONLY station snapshots and submit dated outcomes to human review; "
+            "never infer NONE from the provider activity flag."
+        )
+    elif usable:
         status = "STRUCTURED_CHANNEL_CANDIDATE_FOUND"
         next_action = (
             "Review schema, station identity and event semantics before adding any observation pair."
@@ -155,7 +314,7 @@ def main():
 
     result = {
         "version": "0.8-experimental",
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": captured_at.isoformat(),
         "production_use": False,
         "production_ready": False,
         "purpose": (
@@ -177,9 +336,20 @@ def main():
         "structured_candidates_found": candidates,
         "candidate_probes": probed,
         "usable_structured_candidates": usable,
+        "huaycoloro_ground_signal": {
+            "status": "LIVE_STRUCTURED_SIGNAL_OBSERVED"
+            if recent_count
+            else "NO_RECENT_STRUCTURED_SIGNAL_OBSERVED",
+            "station_count": len(huaycoloro_observations),
+            "recent_station_count": recent_count,
+            "observations": huaycoloro_observations,
+            "automatic_outcome_label": None,
+            "human_review_required": True,
+        },
         "next_action": next_action,
         "stop_rule": (
-            "Inspect only explicit page references; do not enumerate or guess undocumented endpoints."
+            "Inspect only official page references and endpoint literals present in the official client; "
+            "do not enumerate or guess undocumented endpoints."
         ),
         "validation_guard": (
             "This probe cannot classify an EVENT/NONE outcome or satisfy the Chosica validation contract by itself."
@@ -187,6 +357,31 @@ def main():
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    if huaycoloro_observations:
+        try:
+            existing_archive = json.loads(ARCHIVE.read_text(encoding="utf-8"))
+        except (FileNotFoundError, json.JSONDecodeError):
+            existing_archive = None
+        archive = build_archive(
+            existing_archive,
+            {
+                "captured_at": captured_at.isoformat(),
+                "source_url": next(
+                    (
+                        item["url"]
+                        for item in usable
+                        if item.get("huaycoloro_station_count")
+                    ),
+                    None,
+                ),
+                "station_count": len(huaycoloro_observations),
+                "recent_station_count": recent_count,
+                "observations": huaycoloro_observations,
+                "automatic_outcome_label": None,
+                "human_review_required": True,
+            },
+        )
+        ARCHIVE.write_text(json.dumps(archive, ensure_ascii=False, indent=2), encoding="utf-8")
     print(
         json.dumps(
             {
