@@ -59,6 +59,15 @@ class Phase2EventIntakeTests(unittest.TestCase):
         with self.assertRaises(phase2_events.EventIntakeError):
             phase2_events.validate_event(row)
 
+    def test_official_outcome_can_be_confirmed_while_geometry_blocks_analysis(self):
+        path = ROOT / "site/data/validation/phase2_event_intake/villa-el-salvador-2026-08-16-coen.json"
+        row = json.loads(path.read_text(encoding="utf-8"))
+        phase2_events.validate_event(row, path)
+        self.assertTrue(row["verification"]["event_confirmed"])
+        self.assertEqual(row["missing_required_fields"], ["coordinates"])
+        self.assertEqual(row["analysis"]["status"], "BLOCKED_MISSING_ANALYSIS_GEOMETRY")
+        self.assertFalse(row["analysis"]["threshold_inference_allowed"])
+
     def test_complete_identity_still_waits_for_official_review(self):
         row = copy.deepcopy(self.row)
         row["reported_location"]["feature_name"] = "Quebrada oficial"
@@ -72,8 +81,9 @@ class Phase2EventIntakeTests(unittest.TestCase):
 
     def test_public_catalog_is_fail_closed_and_committed(self):
         generated = phase2_events.generate_public_catalog(write=False)
-        self.assertEqual(generated["summary"]["registered_events"], 1)
-        self.assertEqual(generated["summary"]["verified_events"], 0)
+        self.assertEqual(generated["summary"]["registered_events"], 2)
+        self.assertEqual(generated["summary"]["verified_events"], 1)
+        self.assertEqual(generated["summary"]["verified_pending_geometry"], 1)
         self.assertEqual(generated["summary"]["operational_activations"], 0)
         self.assertTrue(generated["guardrails"]["unverified_events_block_reanalysis"])
         committed = json.loads(phase2_events.OUT_PATH.read_text(encoding="utf-8"))
