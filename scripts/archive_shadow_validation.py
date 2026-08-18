@@ -15,6 +15,7 @@ import json
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "site/data/validation/shadow_runs.json"
 LATEST_ELIGIBLE_CAPTURE_DELAY_MINUTES = 120
+CENDEHUA_MAX_AGE_SECONDS_AT_SHADOW_CAPTURE = 90 * 60
 
 
 def capture_window(snapshot_date: str, latest_delay_minutes: int = LATEST_ELIGIBLE_CAPTURE_DELAY_MINUTES):
@@ -106,6 +107,54 @@ def compact_zone(z):
     }
 
 
+def compact_cendehua_signal(probe, captured_at: datetime):
+    """Conserva la señal terrestre sin convertirla en resultado real."""
+    signal = probe.get("huaycoloro_ground_signal") if isinstance(probe, dict) else None
+    signal = signal if isinstance(signal, dict) else {}
+    observations = []
+    for row in signal.get("observations") or []:
+        if not isinstance(row, dict):
+            continue
+        try:
+            observed_at = datetime.fromisoformat(
+                str(row.get("last_alert_update")).replace("Z", "+00:00")
+            )
+            if observed_at.tzinfo is None:
+                raise ValueError("timestamp without timezone")
+            age_seconds = round(
+                (captured_at.astimezone(timezone.utc) - observed_at.astimezone(timezone.utc)).total_seconds(),
+                3,
+            )
+        except (TypeError, ValueError):
+            age_seconds = None
+        observations.append({
+            "station_id": row.get("station_id"),
+            "last_alert_update": row.get("last_alert_update"),
+            "last_image_update": row.get("last_image_update"),
+            "age_seconds_at_shadow_capture": age_seconds,
+            "recent_at_shadow_capture": age_seconds is not None
+            and -300 <= age_seconds <= CENDEHUA_MAX_AGE_SECONDS_AT_SHADOW_CAPTURE,
+            "provider_activity_flag_raw": row.get("provider_activity_flag_raw")
+            if isinstance(row.get("provider_activity_flag_raw"), bool)
+            else None,
+            "irfen_outcome_label": None,
+        })
+    recent_count = sum(row["recent_at_shadow_capture"] for row in observations)
+    return {
+        "provider": "IGP/CENDEHUA",
+        "pilot": "Huaycoloro/Chosica",
+        "source_generated_at": probe.get("generated_at") if isinstance(probe, dict) else None,
+        "source_status": probe.get("status") if isinstance(probe, dict) else "MISSING_OR_UNAVAILABLE",
+        "station_count": len(observations),
+        "recent_station_count_at_shadow_capture": recent_count,
+        "observations": observations,
+        "automatic_outcome_label": None,
+        "can_support_none_classification_by_itself": False,
+        "human_review_required": True,
+        "missing_or_stale_data_rule": "UNCERTAIN; never low risk or NONE",
+    }
+
+
 def append_immutable_daily_snapshot(archive, entry, now):
     """Append the first snapshot for a UTC day and never rewrite it later.
 
@@ -155,6 +204,9 @@ def main():
     verification = fetch_json(args.base_url, "data/forecast/verification.json", required=False)
     early = fetch_json(args.base_url, "data/calibration/imerg_early_live_probe.json", required=False)
     test_report = fetch_json(args.base_url, "data/test_report.json", required=False)
+    cendehua = fetch_json(
+        args.base_url, "data/stations/igp_cendehua_access_probe.json", required=False
+    )
 
     if state.get("production_use") is not False:
         raise RuntimeError("experimental_state no conserva production_use=false")
@@ -177,6 +229,7 @@ def main():
             "latest_observation": latest.get("last_update_attempt") or latest.get("generated_at"),
             "forecast": (forecast or {}).get("generated_at"),
             "imerg_early": (early or {}).get("generated_at"),
+            "igp_cendehua": (cendehua or {}).get("generated_at"),
         },
         "operational_dataset_status": latest.get("operational_status") or "unknown",
         "core_test_status": state.get("core_test_status"),
@@ -191,6 +244,9 @@ def main():
                 "machine_readable_channel": iv.get("machine_readable_channel"),
                 "role": iv.get("role"),
             },
+        },
+        "ground_signals": {
+            "huaycoloro_cendehua": compact_cendehua_signal(cendehua or {}, now),
         },
         "source_health": {
             "forecast_available": (forecast or {}).get("status") == "experimental_forecast_available",
