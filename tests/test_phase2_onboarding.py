@@ -63,7 +63,7 @@ class Phase2OnboardingTests(unittest.TestCase):
             for c in self.inventory["candidates"]
         }
         catalog = phase2.build_catalog(self.inventory, contracts, self.analog_contract)
-        self.assertEqual(catalog["summary"]["registered_candidates"], 10)
+        self.assertEqual(catalog["summary"]["registered_candidates"], 11)
         self.assertEqual(catalog["summary"]["operational_candidates"], 0)
         self.assertTrue(catalog["guardrails"]["activation_requires_zone_specific_validation"])
         self.assertTrue(all(z["deployment_status"] == "RESEARCH_ONLY" for z in catalog["zones"]))
@@ -102,8 +102,25 @@ class Phase2OnboardingTests(unittest.TestCase):
 
     def test_public_generator_is_fail_closed_and_writable(self):
         catalog = phase2.generate_public_catalog(write=False)
-        self.assertEqual(catalog["summary"]["registered_candidates"], 10)
+        self.assertEqual(catalog["summary"]["registered_candidates"], 11)
         self.assertEqual(catalog["summary"]["operational_candidates"], 0)
+
+    def test_santa_eulalia_rimac_contract_is_compound_and_fail_closed(self):
+        candidate = next(
+            c for c in self.inventory["candidates"]
+            if c["candidate_id"] == "lima_este_santa_eulalia_rimac"
+        )
+        contract = json.loads(
+            (phase2.CONTRACTS_DIR / "lima_este_santa_eulalia_rimac.json").read_text(encoding="utf-8")
+        )
+        phase2.validate_contract(contract, candidate)
+        self.assertIn("compound", contract["hazard_model"]["mechanism_preliminary"])
+        self.assertEqual(contract["validation"]["activation_gate"], "BLOCKED")
+        self.assertFalse(contract["alerting_enabled"])
+        self.assertIsNone(contract["decision_thresholds"])
+        self.assertIsNone(contract["hydraulic_factors"])
+        self.assertEqual(contract["assets"]["observations"]["status"], "MISSING")
+        self.assertIn("compound_hazard", contract["validation"]["required_reviews"])
 
     def test_committed_catalog_matches_contracts(self):
         generated = phase2.generate_public_catalog(write=False)
