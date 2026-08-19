@@ -35,12 +35,21 @@ jobs:
       - name: Descargar repositorio actualizado
         uses: actions/checkout@v6
         with:
-          ref: ${{ inputs.expected_sha || github.sha }}
+          # Cada publicador parte del estado mas reciente de main. Un workflow
+          # despachado tarde por un commit antiguo no puede volver a desplegar
+          # archivos anteriores de las otras fuentes concurrentes.
+          ref: main
+          fetch-depth: 0
 
-      - name: Verificar commit solicitado
+      - name: Verificar commit solicitado incluido en main
         if: ${{ inputs.expected_sha != '' }}
         shell: bash
-        run: test "$(git rev-parse HEAD)" = "${{ inputs.expected_sha }}"
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: |
+          set -euo pipefail
+          git cat-file -e "${EXPECTED_SHA}^{commit}"
+          git merge-base --is-ancestor "$EXPECTED_SHA" HEAD
 
       - name: Conservar activos transitorios del ultimo deployment
         shell: bash
