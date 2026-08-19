@@ -1,0 +1,59 @@
+{
+  "version": "phase2-source-assessment-v1",
+  "assessed_at": "2026-08-19T16:00:00Z",
+  "source_id": "GEOGPSPERU-HYDROGRAPHY-2023-MIRROR",
+  "deployment_status": "RESEARCH_ONLY",
+  "production_use": false,
+  "alerting_enabled": false,
+  "counts_toward_v08_closeout": false,
+  "counts_toward_zone_validation": false,
+  "source": {
+    "provider": "GEO GPS Peru",
+    "title": "Ríos y Quebradas del Perú (Red Hidrográfica)",
+    "page_url": "https://www.geogpsperu.com/2020/12/rios-y-quebradas-del-peru-red.html",
+    "claimed_primary_origin": "GEOANA / Autoridad Nacional del Agua, 2023",
+    "advertised_layers": [
+      "rivers_and_ravines",
+      "basin_boundaries",
+      "subbasin_boundaries"
+    ],
+    "distribution": "third_party_google_drive_mirror"
+  },
+  "assessment": {
+    "status": "USEFUL_AS_SECONDARY_GEOMETRY_LEAD",
+    "reason": "La red lineal puede ayudar a normalizar nombres, revisar conectividad y proponer outlets, pero la descarga no proviene de un endpoint oficial verificable y no demuestra por sí sola linaje, licencia, fecha, proyección ni topología.",
+    "allowed_uses": [
+      "normalize river and ravine names",
+      "cross-check candidate drainage lines",
+      "propose outlet-snapping candidates for DEM review",
+      "identify candidate basin and subbasin references"
+    ],
+    "forbidden_uses": [
+      "replace a DEM-delimited watershed",
+      "credit the mirror as verified ANA evidence",
+      "derive or promote rainfall or hydraulic thresholds",
+      "enable alerts or operational zones",
+      "treat missing features as absence of hazard"
+    ]
+  },
+  "verification_gate": {
+    "status": "BLOCKED",
+    "requirements": [
+      "obtain or identify the original ANA publication endpoint",
+      "record license and permitted reuse",
+      "record dataset vintage, CRS and schema",
+      "compute archive and component checksums",
+      "validate geometry and topology against an official ANA or CENEPRED reference",
+      "use DEM flow direction and accumulation to confirm each watershed and outlet"
+    ],
+    "missing_data_rule": "UNKNOWN_NOT_LOW_RISK"
+  },
+  "v08_scope": {
+    "unchanged": true,
+    "pilots": [
+      "san_ildefonso",
+      "chosica_huaycoloro",
+      "catacaos_bajo_piura"
+    ]
+  }
+}
