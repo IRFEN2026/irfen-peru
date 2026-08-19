@@ -32,6 +32,7 @@ on:
       - scripts/build_v08_scorecard.py
       - scripts/build_v08_rc_status.py
       - scripts/build_phase2_catalog.py
+      - scripts/build_map_layer_catalog.py
       - scripts/build_phase2_event_reanalysis.py
       - tests/**
       - scripts/fetch_glofas_catacaos_current.py
@@ -47,6 +48,7 @@ on:
       - site/data/stations/**
       - site/data/validation/**
       - site/data/phase2/**
+      - site/data/map_layers.json
       - site/data/calibration/**
       - site/data/v08_scorecard.json
       - site/data/v08_rc_status.json
@@ -56,6 +58,7 @@ on:
       - site/v08-simulator.js
       - site/v08-health.js
       - site/v08-readiness.js
+      - site/v08-expansion.js
 
 permissions:
   contents: read
@@ -181,6 +184,9 @@ jobs:
       - name: Construir reanálisis fail-closed de eventos Phase 2
         run: python scripts/build_phase2_event_reanalysis.py
 
+      - name: Reconstruir catálogo territorial RESEARCH_ONLY
+        run: python scripts/build_phase2_catalog.py
+
       - name: Reconstruir descomposición científica Lima Este
         run: python scripts/build_lima_east_hazard_decomposition.py
 
@@ -189,6 +195,9 @@ jobs:
 
       - name: Construir tramos críticos ANA Catacaos 2026
         run: python scripts/build_ana_catacaos_segments.py
+
+      - name: Construir catálogo trazable de capas
+        run: python scripts/build_map_layer_catalog.py
 
       - name: Obtener proxy fluvial GloFAS Catacaos
         run: python scripts/fetch_glofas_catacaos_current.py
@@ -208,7 +217,8 @@ jobs:
               '<script src="v08-forecast.js"></script>',
               '<script src="v08-simulator.js"></script>',
               '<script src="v08-health.js"></script>',
-              '<script src="v08-readiness.js"></script>'
+              '<script src="v08-readiness.js"></script>',
+              '<script src="v08-expansion.js"></script>'
           ]
           for tag in tags:
               if tag not in html:
@@ -225,6 +235,9 @@ jobs:
           test -s site/v08-simulator.js
           test -s site/v08-health.js
           test -s site/v08-readiness.js
+          test -s site/v08-expansion.js
+          test -s site/data/map_layers.json
+          test -s site/data/phase2/catalog.json
           test -s site/data/latest.json
           test -s site/data/history.json
           test -s site/data/scientific_status.json
@@ -251,6 +264,8 @@ jobs:
           python -m json.tool site/data/calibration/historical_replay.json >/dev/null
           python -m json.tool site/data/experimental_state.json >/dev/null
           python -m json.tool site/data/phase2/event_reanalysis.json >/dev/null
+          python -m json.tool site/data/phase2/catalog.json >/dev/null
+          python -m json.tool site/data/map_layers.json >/dev/null
           if [ -s site/data/forecast/latest.json ]; then
             python -m json.tool site/data/forecast/latest.json >/dev/null
           fi

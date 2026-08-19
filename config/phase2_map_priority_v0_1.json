@@ -1,0 +1,69 @@
+{
+  "version": "phase2-map-development-priority-v0.1",
+  "status": "RESEARCH_ONLY_DEVELOPMENT_QUEUE",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "priority_semantics": "Orden de trabajo para completar paquetes reproducibles; no representa amenaza, impacto, urgencia operativa ni validación científica.",
+  "scoring": {
+    "numeric_score_used": false,
+    "risk_score_used": false,
+    "basis": [
+      "especificidad de la fuente oficial disponible",
+      "posibilidad de resolver una geometría reproducible",
+      "claridad preliminar del mecanismo",
+      "equilibrio territorial entre costa norte, centro y sur",
+      "capacidad de producir controles EVENT y NONE sin copiar umbrales"
+    ]
+  },
+  "waves": [
+    {
+      "wave_id": "W1_GEOMETRY_NORMALIZATION",
+      "label": "Ola 1 · geometría y fuente focalizada",
+      "objective": "Convertir referencias oficiales relativamente focalizadas en archivos geométricos reproducibles, todavía RESEARCH_ONLY.",
+      "candidates": [
+        {"development_order": 1, "candidate_id": "lima_este_santa_eulalia_rimac", "reason": "Único contrato con geometría, exposición, eventos y contexto hidráulico ya marcados como CANDIDATE; falta materializar el archivo geométrico y separar mecanismos."},
+        {"development_order": 2, "candidate_id": "lima_norte_huerta_vieja", "reason": "Dispone de una delimitación oficial de faja marginal identificada para una quebrada concreta."},
+        {"development_order": 3, "candidate_id": "lima_sur_malanche", "reason": "Dispone de evaluación INGEMMET focalizada sobre una quebrada y mecanismo preliminar de flujo de detritos."},
+        {"development_order": 4, "candidate_id": "lambayeque_chongoyape_oyotun_zana", "reason": "Aporta equilibrio territorial norte y un inventario geológico de eventos que permite desagregar Juana Ríos y tributarias."},
+        {"development_order": 5, "candidate_id": "arequipa_acari_san_agustin", "reason": "Aporta costa sur y un PPRRD distrital desde el cual extraer San Agustín y separar quebrada de valle fluvial."}
+      ]
+    },
+    {
+      "wave_id": "W2_SYSTEM_DISAGGREGATION",
+      "label": "Ola 2 · desagregación de sistemas compuestos",
+      "objective": "Separar quebradas, tramos fluviales y exposición antes de delimitar o seleccionar modelos.",
+      "candidates": [
+        {"development_order": 6, "candidate_id": "lima_norte_arahuay_chillon", "reason": "Combina PPRRD y faja marginal oficial, pero exige separar quebradas y río Chillón."},
+        {"development_order": 7, "candidate_id": "lima_norte_lampian_ravines", "reason": "El PPRRD ya identifica varias quebradas nominales; cada una requiere geometría y outlet propios."},
+        {"development_order": 8, "candidate_id": "lima_sur_chilca_pucusana", "reason": "Existe evidencia de evento y corredor, pero deben resolverse quebradas nominales y mecanismos separados."},
+        {"development_order": 9, "candidate_id": "ica_pisco_san_andres", "reason": "El inventario oficial departamental permite bajar de corredor a puntos críticos y separar río de drenaje local."},
+        {"development_order": 10, "candidate_id": "ica_palpa_changuillo", "reason": "El inventario oficial permite identificar quebradas, accesos y aislamiento rural antes de probar representatividad satelital."},
+        {"development_order": 11, "candidate_id": "lambayeque_motupe_la_leche_pitipo", "reason": "Cuenta con EVAR e inventario nacional, pero Motupe, La Leche, Pítipo y aportes locales no pueden tratarse como una sola unidad."}
+      ]
+    },
+    {
+      "wave_id": "W3_CORRIDOR_EXTRACTION",
+      "label": "Ola 3 · extracción de corredores amplios",
+      "objective": "Descomponer corredores fluviales amplios en unidades cartográficas y mecanismos verificables.",
+      "candidates": [
+        {"development_order": 12, "candidate_id": "lima_este_lurin_cieneguilla", "reason": "Debe separar río Lurín, quebradas tributarias, comunidades y cruces antes de cualquier geometría de análisis."},
+        {"development_order": 13, "candidate_id": "lima_norte_chillon_bajo", "reason": "Debe separar inundación del río receptor de aportes de quebradas y normalizar puntos críticos."},
+        {"development_order": 14, "candidate_id": "lima_norte_chancay_huaral", "reason": "El corredor requiere extraer tramos y quebradas nominales y conservar exposición rural, agrícola y vial."},
+        {"development_order": 15, "candidate_id": "lima_norte_huaura_huacho_sayan", "reason": "El corredor requiere resolver tramos del Huaura, quebradas y conectividad entre Sayán y Huacho."},
+        {"development_order": 16, "candidate_id": "lima_sur_mala", "reason": "Debe separar tramos del río, tributarias, tiempo de tránsito y exposición de la Panamericana."},
+        {"development_order": 17, "candidate_id": "lima_sur_asia_omas", "reason": "Debe identificar quebradas y abanicos individuales y separar el comportamiento del río Omas."},
+        {"development_order": 18, "candidate_id": "lima_sur_canete", "reason": "Debe separar valle alto/bajo, tributarias, puentes, estaciones y capacidad receptora."}
+      ]
+    }
+  ],
+  "guardrails": {
+    "all_candidates_remain_research_only": true,
+    "new_operational_zones": 0,
+    "threshold_transfer_allowed": false,
+    "hydraulic_factor_transfer_allowed": false,
+    "map_display_requires_reproducible_geometry_file": true,
+    "missing_geometry_may_be_replaced_by_reference_point": false,
+    "promotion_from_this_queue_allowed": false
+  }
+}

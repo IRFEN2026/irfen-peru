@@ -42,11 +42,13 @@ jobs:
               assert p.get('production_use') is False
               assert p.get('official_outlet_validated') is False
           PY
+      - name: Actualizar catalogo trazable del mapa
+        run: python scripts/build_map_layer_catalog.py
       - name: Guardar candidatos
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add site/data/watersheds/chosica_local_candidate_sets.geojson site/data/watersheds/chosica_local_candidate_sets_validation.json
+          git add site/data/watersheds/chosica_local_candidate_sets.geojson site/data/watersheds/chosica_local_candidate_sets_validation.json site/data/map_layers.json
           git diff --cached --quiet || git commit -m "IRFEN v0.8: update REVIEW-only local Chosica DEM candidates"
           git pull --rebase origin main
           git push

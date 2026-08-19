@@ -2,6 +2,7 @@
   const fmt = value => value == null ? '—' : `${Number(value).toFixed(2)} mm`;
   const signed = value => value == null ? '—' : `${Number(value) >= 0 ? '+' : ''}${Number(value).toFixed(2)} mm`;
   const safeJson = async url => { try { const r=await fetch(`${url}?t=${Date.now()}`); return r.ok?await r.json():null; } catch(_){return null;} };
+  const esc = value => String(value??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
   function row(label, legacy, polygon, delta) { return `<tr><td><b>${label}</b></td><td>${fmt(legacy)}</td><td>${fmt(polygon)}</td><td><b>${signed(delta)}</b></td></tr>`; }
   function comparisonTable(title, legacy, polygon, delta, legacyLabel='Caja / operativo') {
@@ -26,24 +27,33 @@
 
   async function addMapOverlays(){
     if(typeof L==='undefined'||typeof map==='undefined')return;
+    const catalog=await safeJson('data/map_layers.json');
+    if(!catalog||catalog.production_use!==false||catalog.operational_alerting_enabled!==false)return;
     const overlays={};
-    for(const [label,url] of [['San Ildefonso · microcuenca v0.8','data/watersheds/san_ildefonso_watershed.geojson'],['Huaycoloro · subcuenca v0.8','data/watersheds/huaycoloro_watershed.geojson']]){
-      const geo=await safeJson(url);if(!geo)continue;
-      const lyr=L.geoJSON(geo,{style:{weight:2,fillOpacity:.08,dashArray:'6 5'}}),p=geo.properties||{};
-      lyr.bindPopup(`<b>${p.name||label}</b><br>Área DEM: ${p.delineated_area_km2??'—'} km²<br>Estado: ${p.validation_status||'experimental'}<br><b>No operativo</b>`);
-      overlays[label]=lyr;lyr.addTo(map);
-    }
-    const context=await safeJson('data/hydrology/catacaos_official_context.geojson');
-    if(context&&Array.isArray(context.features)){
-      const contextLayer=L.geoJSON(context,{style:{weight:1.5,fillOpacity:0,dashArray:'3 7'},onEachFeature:(f,l)=>{const p=f.properties||{};l.bindPopup(`<b>${p.name||'Ámbito documental'}</b><br>${p.document_type||''} · ${p.year||''}<br><b>Ámbito de visor/documento — NO es mapa de peligro ni inundación.</b>`);}});
-      overlays['Catacaos · ámbitos documentales oficiales (NO peligro)']=contextLayer;
-    }
-    const ana=await safeJson('data/hydrology/ana_catacaos_critical_segments_2026.geojson');
-    if(ana&&Array.isArray(ana.features)&&ana.features.length){
-      const anaLayer=L.geoJSON(ana,{style:{weight:4,dashArray:'8 4'},onEachFeature:(f,l)=>{const p=f.properties||{};l.bindPopup(`<b>ANA 2026 · ${p.sector||'Tramo crítico'}</b><br>${p.hazard_reference||'Peligro'} · nivel ${p.hazard_level_reference||'—'}<br>Longitud declarada: ${p.declared_length_km??'—'} km · control geométrico ${p.geometry_status||'—'}<br>Habitantes de referencia: ${p.inhabitants_reference??'—'} · viviendas: ${p.housing_reference??'—'}<br>${p.description||''}<br><b>Tramo crítico/intervención — NO es polígono de inundación.</b>`);}});
-      overlays['Catacaos · tramos críticos ANA 2026']=anaLayer;
+    for(const entry of catalog.technical_layers||[]){
+      if(!['TEST_ONLY','RESEARCH_ONLY'].includes(entry.deployment_status)||entry.map_eligible!==true||!entry.source_path)continue;
+      const geo=await safeJson(entry.source_path);if(!geo)continue;
+      const style=entry.style||{color:'#475569',weight:2,fillOpacity:0,dashArray:'5 5'};
+      const layerName=`${entry.title} · ${entry.deployment_status}`;
+      const technicalLayer=L.geoJSON(geo,{
+        style,
+        pointToLayer:(_feature,latlng)=>L.circleMarker(latlng,{radius:6,...style}),
+        onEachFeature:(feature,featureLayer)=>{
+          const p=feature.properties||{};
+          const featureName=p.name||p.sector||p.quebrada_search_name||entry.title;
+          featureLayer.bindPopup(`<b>${esc(featureName)}</b><br>${esc(entry.title)}<br><b>${esc(entry.deployment_status)} · sin alerta · sin puntuación de riesgo</b><br>${esc(entry.map_disclaimer)}<br><span style="font-size:11px">Fuente geométrica: ${esc(entry.source_path)} · confianza: ${esc(entry.confidence)}</span>`);
+        }
+      });
+      overlays[layerName]=technicalLayer;
+      if(entry.default_visibility===true)technicalLayer.addTo(map);
     }
     if(Object.keys(overlays).length)L.control.layers(null,overlays,{collapsed:true,position:'topright'}).addTo(map);
+    const mapNode=document.getElementById('map'),summary=catalog.summary||{};
+    if(mapNode&&!document.getElementById('mapLayerTrace')){
+      const note=document.createElement('div');note.id='mapLayerTrace';note.className='histnote';note.style.margin='0';note.style.borderRadius='0';
+      note.innerHTML=`<b>Capas técnicas no operativas:</b> ${esc(summary.technical_layers_registered)} registradas; ${esc(summary.technical_layers_visible_by_default)} visibles por defecto. <b>Expansión:</b> ${esc(summary.research_candidates_map_eligible)}/${esc(summary.research_candidates_registered)} zonas tienen geometría reproducible apta para mostrarse. Las restantes se retienen; no se sustituyen por puntos aproximados.`;
+      mapNode.insertAdjacentElement('afterend',note);
+    }
   }
   async function init(){const s=document.getElementById('histZone');if(s){s.addEventListener('change',renderForSelected);await renderForSelected();}await addMapOverlays();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,500));else setTimeout(init,500);
