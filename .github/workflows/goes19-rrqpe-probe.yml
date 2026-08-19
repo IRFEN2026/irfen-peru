@@ -1,0 +1,119 @@
+name: IRFEN - Probar GOES-19 RRQPE TEST ONLY
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 * * * *"
+  push:
+    branches:
+      - main
+    paths:
+      - scripts/probe_goes19_rrqpe.py
+      - .github/workflows/goes19-rrqpe-probe.yml
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: "goes19-rrqpe-test-only-probe"
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Instalar dependencias científicas existentes
+        run: pip install -r requirements.txt
+
+      - name: Probar RRQPE público NOAA GOES-19
+        run: python scripts/probe_goes19_rrqpe.py
+
+      - name: Validar aislamiento y datos faltantes
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s site/data/calibration/goes19_rrqpe_probe.json
+          test -s site/data/calibration/goes19_rrqpe_archive.json
+          python -m json.tool site/data/calibration/goes19_rrqpe_probe.json >/dev/null
+          python -m json.tool site/data/calibration/goes19_rrqpe_archive.json >/dev/null
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for path in (
+              'site/data/calibration/goes19_rrqpe_probe.json',
+              'site/data/calibration/goes19_rrqpe_archive.json',
+          ):
+              row=json.loads(Path(path).read_text(encoding='utf-8'))
+              assert row.get('production_use') is False
+              assert row.get('production_ready') is False
+              assert row.get('integration_mode') == 'GOES_TEST_ONLY'
+              assert row.get('counts_toward_v08_closeout') is False
+              gate=row.get('scientific_gate') or {}
+              assert gate.get('automatic_event_or_none_classification') is False
+              assert gate.get('threshold_promotion_allowed') is False
+              assert gate.get('hydraulic_factor_promotion_allowed') is False
+              assert gate.get('replaces_imerg') is False
+              assert gate.get('human_review_required') is True
+          probe=json.loads(Path('site/data/calibration/goes19_rrqpe_probe.json').read_text(encoding='utf-8'))
+          if probe.get('source_available'):
+              assert (probe.get('product_metadata') or {}).get('platform_id') == 'G19'
+              assert (probe.get('coverage') or {}).get('required_target_ids') == [
+                  'catacaos', 'huaycoloro_main_channel', 'san_ildefonso'
+              ]
+          else:
+              assert (probe.get('scientific_gate') or {}).get('missing_data_interpretation') == 'UNKNOWN_NOT_ZERO_OR_LOW_RISK'
+          print('GOES-19 confinado correctamente a GOES_TEST_ONLY')
+          PY
+
+      - name: Guardar evidencia TEST_ONLY
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            site/data/calibration/goes19_rrqpe_probe.json \
+            site/data/calibration/goes19_rrqpe_archive.json
+          if git diff --cached --quiet; then
+            echo "Sin cambios que guardar."
+            exit 0
+          fi
+          git commit -m "IRFEN v0.8: actualizar evidencia GOES-19 TEST_ONLY"
+          for attempt in 1 2 3 4; do
+            git fetch origin main
+            if ! git rebase origin/main; then
+              git rebase --abort || true
+              echo "Conflicto real al rebasar evidencia GOES-19; no se sobrescribe." >&2
+              exit 1
+            fi
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Colisión transitoria al publicar evidencia (intento $attempt/4)." >&2
+            sleep $((attempt * 3))
+          done
+          exit 1
+
+      - name: Ordenar publicación del archivo actualizado
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git fetch origin main
+          EXPECTED_SHA="$(git rev-parse origin/main)"
+          gh workflow run publish-committed-data.yml \
+            --repo "$GITHUB_REPOSITORY" \
+            --ref main \
+            -f expected_sha="$EXPECTED_SHA"

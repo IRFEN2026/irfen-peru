@@ -39,6 +39,8 @@ jobs:
             "data/forecast/latest.json"
             "data/forecast/verification.json"
             "data/calibration/historical_replay.json"
+            "data/calibration/goes19_rrqpe_probe.json"
+            "data/calibration/goes19_rrqpe_archive.json"
             "data/hydrology/piura_reference_model.json"
             "data/hydrology/senamhi_nacara_numeric_archive.json"
             "data/hydrology/catacaos_official_context.geojson"
@@ -92,6 +94,27 @@ jobs:
           assert replay.get('interpretation_gate',{}).get('status') == 'CALIBRATION_REQUIRED'
           replay_ids={c.get('event_id') for c in replay.get('cases',[])}
           assert {'SI-2017-03-15','CH-2015-03-23','PI-2017-03-27'}.issubset(replay_ids)
+
+          goes_probe=load('data/calibration/goes19_rrqpe_probe.json')
+          goes_archive=load('data/calibration/goes19_rrqpe_archive.json')
+          for goes in (goes_probe, goes_archive):
+              assert goes.get('production_use') is False
+              assert goes.get('production_ready') is False
+              assert goes.get('integration_mode') == 'GOES_TEST_ONLY'
+              assert goes.get('counts_toward_v08_closeout') is False
+              gate=goes.get('scientific_gate') or {}
+              assert gate.get('automatic_event_or_none_classification') is False
+              assert gate.get('threshold_promotion_allowed') is False
+              assert gate.get('hydraulic_factor_promotion_allowed') is False
+              assert gate.get('replaces_imerg') is False
+              assert gate.get('human_review_required') is True
+          if goes_probe.get('source_available'):
+              assert goes_probe.get('product_metadata',{}).get('platform_id') == 'G19'
+              assert goes_probe.get('coverage',{}).get('required_target_ids') == [
+                  'catacaos', 'huaycoloro_main_channel', 'san_ildefonso'
+              ]
+          else:
+              assert goes_probe.get('scientific_gate',{}).get('missing_data_interpretation') == 'UNKNOWN_NOT_ZERO_OR_LOW_RISK'
 
           hydraulics=load('data/hydraulics/current_infrastructure.json')
           assert hydraulics.get('production_use') is False
