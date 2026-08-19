@@ -44,7 +44,9 @@ Ica/Pisco, Lambayeque y otras zonas prioritarias de la costa norte, central y
 sur, incluidas comunidades pequeñas y rurales. Véanse
 `docs/PHASE2_EXPANSION_STRATEGY.md` y el inventario preliminar
 `config/phase2_candidate_inventory_v0_1.json` (solo investigación, sin zonas
-activadas).
+activadas). La trazabilidad del mapa y el orden de preparación se documentan en
+`docs/PHASE2_MAP_LAYER_MODEL.md`; una zona sin archivo geométrico reproducible
+no se representa mediante puntos aproximados.
 
 ## Estado científico v0.8
 

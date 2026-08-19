@@ -49,6 +49,7 @@ def main():
     imerg_early=optional(SITE/'data/calibration/imerg_early_live_archive.json')
     phase2=load(ROOT/'config/phase2_candidate_inventory_v0_1.json')
     phase2_catalog=load(SITE/'data/phase2/catalog.json')
+    map_layers=load(SITE/'data/map_layers.json')
     analog_transfer=load(ROOT/'config/phase2_analog_transfer_contract.json')
     phase2_events=load(SITE/'data/phase2/research_events.json')
     phase2_event_reanalysis=load(SITE/'data/phase2/event_reanalysis.json')
@@ -193,6 +194,36 @@ def main():
     check('phase2_analog_no_threshold_promotion',analog_decision.get('threshold_promotion') is False)
     check('phase2_analog_missing_not_low_risk',analog_transfer.get('missing_data_rule')=='UNKNOWN_NOT_LOW_RISK')
     check('phase2_catalog_analog_guardrails',analog_guardrails.get('analog_transfer_is_research_only') is True and analog_guardrails.get('analog_runs_are_not_local_validation') is True)
+
+    # Mapa: capas técnicas trazables y fase 2 retenida sin geometría reproducible.
+    map_summary=map_layers.get('summary') or {}
+    technical_layers=map_layers.get('technical_layers') or []
+    research_zones=map_layers.get('research_zones') or []
+    check('map_catalog_not_production',map_layers.get('production_use') is False)
+    check('map_catalog_not_production_ready',map_layers.get('production_ready') is False)
+    check('map_catalog_alerting_disabled',map_layers.get('operational_alerting_enabled') is False)
+    check('map_catalog_does_not_change_v071',(map_layers.get('relationship_to_v07_1') or {}).get('logic_unchanged') is True and (map_layers.get('relationship_to_v07_1') or {}).get('thresholds_unchanged') is True)
+    check('map_catalog_no_operational_zones',int(map_summary.get('new_operational_zones',-1))==0)
+    check('map_catalog_technical_layers_non_operational',all(
+        layer.get('deployment_status') in {'TEST_ONLY','RESEARCH_ONLY'}
+        and layer.get('loaded_into_operational_calculation') is False
+        and layer.get('carries_alert_values') is False
+        and layer.get('carries_risk_classification') is False
+        for layer in technical_layers
+    ))
+    check('map_catalog_research_inventory_complete',len(research_zones)==len(candidates)==18)
+    check('map_catalog_research_zones_blocked',all(
+        zone.get('deployment_status')=='RESEARCH_ONLY'
+        and zone.get('production_use') is False
+        and zone.get('alerting_enabled') is False
+        and (zone.get('validation') or {}).get('activation_gate')=='BLOCKED'
+        for zone in research_zones
+    ))
+    check('map_catalog_missing_geometry_not_approximated',all(
+        (zone.get('geometry') or {}).get('map_eligible') is True
+        or (zone.get('geometry') or {}).get('representation')=='NOT_MAPPED_NO_REPRODUCIBLE_FILE'
+        for zone in research_zones
+    ))
 
     # Eventos de oportunidad: útiles para reanálisis, nunca para activar o cerrar v0.8.
     event_summary=phase2_events.get('summary') or {}

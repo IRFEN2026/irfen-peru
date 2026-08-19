@@ -134,19 +134,21 @@ No se necesita un workflow privilegiado adicional. El flujo vigente queda así:
 3. La regresión v0.8 y sus guardas se ejecutan sin alterar el alcance de los pilotos.
 4. El publicador existente despliega el sitio completo y el smoke test conserva su cobertura.
 
+5. `python scripts/build_map_layer_catalog.py` reconstruye el manifiesto de
+   capas, hashes y trazabilidad. Una zona sin archivo geométrico reproducible
+   permanece fuera del mapa; no se sustituye por un punto aproximado.
+
 Un contrato inválido o un catálogo no regenerado detiene el pipeline. Un contrato
 válido únicamente actualiza la visibilidad de las brechas; nunca habilita alertas
 ni altera los pilotos v0.8. La vista pública independiente queda en
 `/irfen-peru/expansion.html`.
 
-## Primera ola registrada
+## Cola territorial registrada
 
-El pipeline prepara contratos para los once sistemas del inventario inicial:
-Lima este/Huarochirí (Santa Eulalia–Rímac alto y quebradas asociadas), Lima
-norte (Huerta Vieja, Arahuay/Chillón y Lampián), Lima sur/Sur Chico
-(Malanche y Chilca–Pucusana), Ica/Pisco (Pisco–San Andrés y
-Palpa–Changuillo), Lambayeque (Chongoyape–Oyotún–Zaña y
-Motupe–La Leche–Pítipo) y Acarí/San Agustín en Arequipa.
+El pipeline mantiene contratos para los 18 sistemas del inventario actual.
+La secuencia de desarrollo, sin puntaje de riesgo, está en
+`config/phase2_map_priority_v0_1.json`; el modelo cartográfico y la auditoría
+de incorporación están en `docs/PHASE2_MAP_LAYER_MODEL.md`.
 
 Esta lista es una cola de investigación equilibrada, no una declaración de
 prioridad definitiva. La puntuación permanece retenida hasta normalizar la

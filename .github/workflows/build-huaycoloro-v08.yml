@@ -48,6 +48,9 @@ jobs:
           python -m json.tool site/data/watersheds/huaycoloro_validation.json >/dev/null
           cat site/data/watersheds/huaycoloro_validation.json
 
+      - name: Actualizar catalogo trazable del mapa
+        run: python scripts/build_map_layer_catalog.py
+
       - name: Guardar resultados en repositorio
         shell: bash
         run: |
@@ -57,6 +60,7 @@ jobs:
           git add site/data/watersheds/huaycoloro_watershed.geojson
           git add site/data/watersheds/huaycoloro_validation.json
           git add site/data/watersheds/huaycoloro_validation_context.json
+          git add site/data/map_layers.json
           if git diff --cached --quiet; then
             echo "No hay cambios para guardar."
             exit 0

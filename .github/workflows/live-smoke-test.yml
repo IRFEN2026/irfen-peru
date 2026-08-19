@@ -54,6 +54,8 @@ jobs:
             "data/stations/igp_cendehua_huaycoloro_archive.json"
             "data/experimental_state.json"
             "data/phase2/event_reanalysis.json"
+            "data/phase2/catalog.json"
+            "data/map_layers.json"
             "data/test_report.json"
             "data/v08_scorecard.json"
             "data/v08_rc_status.json"
@@ -62,6 +64,7 @@ jobs:
             "v08-simulator.js"
             "v08-health.js"
             "v08-readiness.js"
+            "v08-expansion.js"
           )
           for path in "${files[@]}"; do
             echo "GET $path"
@@ -137,6 +140,20 @@ jobs:
               for window in (item.get('windows') or {}).values():
                   if window.get('continuous') is not True:
                       assert window.get('accum_mm') is None
+
+          phase2_catalog=load('data/phase2/catalog.json')
+          map_layers=load('data/map_layers.json')
+          assert phase2_catalog.get('production_use') is False
+          assert phase2_catalog.get('deployment_status') == 'RESEARCH_ONLY'
+          assert map_layers.get('production_use') is False
+          assert map_layers.get('production_ready') is False
+          assert map_layers.get('operational_alerting_enabled') is False
+          assert map_layers.get('summary',{}).get('new_operational_zones') == 0
+          assert map_layers.get('summary',{}).get('research_candidates_registered') == 18
+          assert all(layer.get('deployment_status') in {'TEST_ONLY','RESEARCH_ONLY'} for layer in map_layers.get('technical_layers',[]))
+          assert all(layer.get('loaded_into_operational_calculation') is False for layer in map_layers.get('technical_layers',[]))
+          assert all(zone.get('deployment_status') == 'RESEARCH_ONLY' for zone in map_layers.get('research_zones',[]))
+          assert all(zone.get('geometry',{}).get('map_eligible') is True or zone.get('geometry',{}).get('representation') == 'NOT_MAPPED_NO_REPRODUCIBLE_FILE' for zone in map_layers.get('research_zones',[]))
 
           ref=load('data/hydrology/piura_reference_model.json')
           assert ref.get('production_use') is False
@@ -274,7 +291,7 @@ jobs:
               assert tests.get('status') == 'PASS'
 
           html=(root/'index.html').read_text(encoding='utf-8')
-          for script in ('v08-experimental.js','v08-forecast.js','v08-simulator.js','v08-health.js','v08-readiness.js'):
+          for script in ('v08-experimental.js','v08-forecast.js','v08-simulator.js','v08-health.js','v08-readiness.js','v08-expansion.js'):
               assert script in html, f'Falta {script} en index publicado'
           readiness=(root/'v08-readiness.js').read_text(encoding='utf-8')
           assert 'data/v08_scorecard.json' in readiness

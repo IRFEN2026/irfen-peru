@@ -38,6 +38,9 @@ jobs:
         run: |
           cat site/data/watersheds/san_ildefonso_validation.json
 
+      - name: Actualizar catalogo trazable del mapa
+        run: python scripts/build_map_layer_catalog.py
+
       - name: Guardar resultados en repositorio
         run: |
           git config user.name "github-actions[bot]"
@@ -45,6 +48,7 @@ jobs:
 
           git add site/data/watersheds/san_ildefonso_watershed.geojson
           git add site/data/watersheds/san_ildefonso_validation.json
+          git add site/data/map_layers.json
 
           if git diff --cached --quiet; then
             echo "No hay cambios para guardar."
