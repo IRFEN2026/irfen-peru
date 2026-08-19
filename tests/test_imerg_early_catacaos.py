@@ -300,11 +300,15 @@ class ImergPublishHandoffTests(unittest.TestCase):
         self.assertIn('EXPECTED_SHA="$(git rev-parse origin/main)"', workflow)
         self.assertIn('-f expected_sha="$EXPECTED_SHA"', workflow)
 
-    def test_publisher_checks_out_and_verifies_expected_sha(self):
+    def test_publisher_checks_out_latest_main_and_requires_expected_sha_ancestor(self):
         workflow = (ROOT / ".github/workflows/publish-committed-data.yml").read_text(encoding="utf-8")
         self.assertIn("expected_sha:", workflow)
-        self.assertIn("ref: ${{ inputs.expected_sha || github.sha }}", workflow)
-        self.assertIn('test "$(git rev-parse HEAD)" = "${{ inputs.expected_sha }}"', workflow)
+        self.assertIn("ref: main", workflow)
+        self.assertIn("fetch-depth: 0", workflow)
+        self.assertIn("EXPECTED_SHA: ${{ inputs.expected_sha }}", workflow)
+        self.assertIn('git cat-file -e "${EXPECTED_SHA}^{commit}"', workflow)
+        self.assertIn('git merge-base --is-ancestor "$EXPECTED_SHA" HEAD', workflow)
+        self.assertNotIn("ref: ${{ inputs.expected_sha || github.sha }}", workflow)
 
     def test_publisher_verifies_public_imerg_freshness(self):
         workflow = (ROOT / ".github/workflows/publish-committed-data.yml").read_text(encoding="utf-8")
