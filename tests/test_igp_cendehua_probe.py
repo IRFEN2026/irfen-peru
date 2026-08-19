@@ -121,6 +121,59 @@ class IgpCendehuaProbeTests(unittest.TestCase):
         self.assertFalse(
             archive["scientific_gate"]["absence_of_provider_activity_is_none"]
         )
+        self.assertEqual(archive["summary"]["capture_count"], 1)
+        self.assertFalse(
+            archive["scientific_gate"]["continuity_metrics_are_outcome_labels"]
+        )
+
+    def test_archive_summary_measures_cadence_without_classifying_outcomes(self):
+        first = {
+            "captured_at": "2026-08-18T11:00:00+00:00",
+            "source_url": "https://grd.igp.gob.pe/token/medias",
+            "observations": [
+                {
+                    "station_id": "Huaycoloro1",
+                    "last_alert_update": "2026-08-18T10:59:00+00:00",
+                    "last_image_update": "2026-08-18T10:58:00+00:00",
+                    "recent_signal": True,
+                    "provider_activity_flag_raw": False,
+                    "irfen_outcome_label": None,
+                },
+                {
+                    "station_id": "Huaycoloro2",
+                    "last_alert_update": "2026-08-18T10:59:30+00:00",
+                    "last_image_update": "2026-08-18T10:58:30+00:00",
+                    "recent_signal": True,
+                    "provider_activity_flag_raw": False,
+                    "irfen_outcome_label": None,
+                },
+            ],
+        }
+        second = {
+            **first,
+            "captured_at": "2026-08-18T12:30:00+00:00",
+            "observations": [
+                {
+                    **row,
+                    "last_alert_update": row["last_alert_update"].replace(
+                        "10:59", "12:29"
+                    ),
+                }
+                for row in first["observations"]
+            ],
+        }
+        archive = probe.build_archive(None, first)
+        archive = probe.build_archive(archive, second)
+        summary = archive["summary"]
+        self.assertEqual(summary["capture_count"], 2)
+        self.assertEqual(
+            summary["distinct_station_ids"], ["Huaycoloro1", "Huaycoloro2"]
+        )
+        self.assertEqual(summary["observed_span_hours"], 1.5)
+        self.assertEqual(summary["median_interval_minutes"], 90.0)
+        self.assertEqual(summary["captures_with_all_reported_stations_recent"], 2)
+        self.assertEqual(summary["captures_with_any_provider_activity_true"], 0)
+        self.assertIn("never classify EVENT/NONE", summary["interpretation"])
 
 
 if __name__ == "__main__":
