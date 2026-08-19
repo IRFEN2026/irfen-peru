@@ -106,6 +106,24 @@ El catálogo resultante queda en `site/data/phase2/research_events.json`.
 El catálogo generado en `site/data/phase2/catalog.json` permite ver qué carril
 falta en cada zona sin convertir preparación documental en una alerta.
 
+### Cartografía secundaria de GEO GPS Peru
+
+La página de GEO GPS Peru sobre ríos y quebradas es útil como índice y espejo
+de capas que atribuye a GEOANA/ANA 2023. IRFEN la registra como
+`RESEARCH_ONLY_REFERENCE_PENDING_PRIMARY_VERIFICATION`, no como fuente oficial.
+La red lineal puede ayudar a normalizar nombres, revisar conectividad y proponer
+puntos de salida para una corrida DEM. Los límites publicados pueden servir
+como comparación de cuenca o subcuenca, pero no sustituyen una delimitación
+reproducible ni validan una microcuenca local.
+
+Antes de incorporar cualquier geometría se exige localizar el endpoint o
+publicación original de ANA, documentar licencia, fecha, CRS y esquema, calcular
+checksums, revisar topología y confirmar la cuenca y el outlet con dirección y
+acumulación de flujo del DEM. Mientras falte cualquiera de esos controles, la
+capa no cuenta para validación, no habilita mapas operativos y no permite crear
+umbrales o factores hidráulicos. La evaluación auditable está en
+`site/data/phase2/source_assessments/geogpsperu_hydrography.json`.
+
 ## Automatización reutilizada
 
 No se necesita un workflow privilegiado adicional. El flujo vigente queda así:
