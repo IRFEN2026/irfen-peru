@@ -146,6 +146,40 @@ class Phase2OnboardingTests(unittest.TestCase):
         self.assertEqual(contract["assets"]["observations"]["status"], "MISSING")
         self.assertIn("compound_hazard", contract["validation"]["required_reviews"])
 
+    def test_geogps_mirror_is_secondary_research_only_and_fail_closed(self):
+        scope = json.loads(
+            (ROOT / "config" / "phase2_expansion_scope.json").read_text(encoding="utf-8")
+        )
+        source = next(
+            row for row in scope["secondary_source_catalog"]
+            if row["source_id"] == "GEOGPSPERU-HYDROGRAPHY-2023-MIRROR"
+        )
+        assessment_path = ROOT / source["assessment_path"]
+        self.assertTrue(assessment_path.is_file())
+        assessment = json.loads(assessment_path.read_text(encoding="utf-8"))
+        self.assertFalse(source["official_source"])
+        self.assertFalse(source["counts_toward_validation"])
+        self.assertEqual(assessment["deployment_status"], "RESEARCH_ONLY")
+        self.assertFalse(assessment["production_use"])
+        self.assertFalse(assessment["alerting_enabled"])
+        self.assertFalse(assessment["counts_toward_v08_closeout"])
+        self.assertFalse(assessment["counts_toward_zone_validation"])
+        self.assertEqual(assessment["verification_gate"]["status"], "BLOCKED")
+        self.assertEqual(
+            assessment["verification_gate"]["missing_data_rule"],
+            "UNKNOWN_NOT_LOW_RISK",
+        )
+        self.assertIn(
+            "replace a DEM-delimited watershed",
+            assessment["assessment"]["forbidden_uses"],
+        )
+        all_contract_source_ids = {
+            source_id
+            for path in phase2.CONTRACTS_DIR.glob("*.json")
+            for source_id in json.loads(path.read_text(encoding="utf-8"))["official_source_ids"]
+        }
+        self.assertNotIn(source["source_id"], all_contract_source_ids)
+
     def test_committed_catalog_matches_contracts(self):
         generated = phase2.generate_public_catalog(write=False)
         committed = json.loads(phase2.OUT_PATH.read_text(encoding="utf-8"))
