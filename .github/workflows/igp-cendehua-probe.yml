@@ -46,8 +46,12 @@ jobs:
               assert archive_path.is_file()
               a=json.loads(archive_path.read_text())
               assert a.get('integration_mode') == 'TEST_ONLY'
+              summary=a.get('summary') or {}
+              assert int(summary.get('capture_count',-1)) == int(a.get('capture_count',-2))
+              assert summary.get('captures_with_any_provider_activity_true') is not None
               assert (a.get('scientific_gate') or {}).get('automatic_event_or_none_classification') is False
               assert (a.get('scientific_gate') or {}).get('absence_of_provider_activity_is_none') is False
+              assert (a.get('scientific_gate') or {}).get('continuity_metrics_are_outcome_labels') is False
           PY
       - name: Guardar resultado
         run: |

@@ -178,6 +178,7 @@ def build_archive(existing, capture):
     if key not in known:
         captures.append(capture)
     captures = captures[-MAX_ARCHIVE_CAPTURES:]
+    summary = summarize_archive(captures)
     return {
         "version": "0.8-experimental",
         "integration_mode": "TEST_ONLY",
@@ -185,13 +186,83 @@ def build_archive(existing, capture):
         "production_ready": False,
         "purpose": "Archive official IGP/CENDEHUA Huaycoloro station snapshots for human shadow review.",
         "capture_count": len(captures),
+        "summary": summary,
         "captures": captures,
         "scientific_gate": {
             "automatic_event_or_none_classification": False,
             "absence_of_provider_activity_is_none": False,
+            "continuity_metrics_are_outcome_labels": False,
             "human_review_required": True,
             "missing_or_stale_data_rule": "UNCERTAIN; never low risk or NONE",
         },
+    }
+
+
+def summarize_archive(captures):
+    """Describe signal continuity without assigning a hydrometeorological outcome."""
+    parsed = []
+    station_ids = set()
+    all_recent_count = 0
+    any_activity_true_count = 0
+    activity_unknown_count = 0
+    for capture in captures:
+        try:
+            captured_at = datetime.fromisoformat(
+                str(capture.get("captured_at")).replace("Z", "+00:00")
+            )
+            if captured_at.tzinfo is None:
+                raise ValueError("timestamp without timezone")
+            parsed.append(captured_at.astimezone(timezone.utc))
+        except (TypeError, ValueError):
+            pass
+
+        observations = [
+            row for row in capture.get("observations", []) if isinstance(row, dict)
+        ]
+        station_ids.update(
+            str(row.get("station_id")) for row in observations if row.get("station_id")
+        )
+        if observations and all(row.get("recent_signal") is True for row in observations):
+            all_recent_count += 1
+        flags = [row.get("provider_activity_flag_raw") for row in observations]
+        if any(flag is True for flag in flags):
+            any_activity_true_count += 1
+        if not flags or any(not isinstance(flag, bool) for flag in flags):
+            activity_unknown_count += 1
+
+    parsed.sort()
+    intervals_minutes = [
+        round((current - previous).total_seconds() / 60, 3)
+        for previous, current in zip(parsed, parsed[1:])
+        if current >= previous
+    ]
+    median_interval = None
+    if intervals_minutes:
+        ordered = sorted(intervals_minutes)
+        middle = len(ordered) // 2
+        median_interval = (
+            ordered[middle]
+            if len(ordered) % 2
+            else round((ordered[middle - 1] + ordered[middle]) / 2, 3)
+        )
+    return {
+        "capture_count": len(captures),
+        "distinct_station_ids": sorted(station_ids),
+        "first_capture_at": parsed[0].isoformat() if parsed else None,
+        "latest_capture_at": parsed[-1].isoformat() if parsed else None,
+        "observed_span_hours": round((parsed[-1] - parsed[0]).total_seconds() / 3600, 3)
+        if len(parsed) >= 2
+        else 0.0,
+        "valid_interval_count": len(intervals_minutes),
+        "median_interval_minutes": median_interval,
+        "max_interval_minutes": max(intervals_minutes) if intervals_minutes else None,
+        "captures_with_all_reported_stations_recent": all_recent_count,
+        "captures_with_any_provider_activity_true": any_activity_true_count,
+        "captures_with_provider_activity_unknown": activity_unknown_count,
+        "interpretation": (
+            "Metrics describe availability and cadence only. Raw provider activity flags require "
+            "named human review and never classify EVENT/NONE automatically."
+        ),
     }
 
 
