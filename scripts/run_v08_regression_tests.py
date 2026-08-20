@@ -486,7 +486,12 @@ def main():
         'imerg_history_persists_to_git_after_validation',
         'Persistir histórico científico en Git versionado' in deploy_workflow
         and 'git add -- "$path"' in deploy_workflow
-        and 'git push origin HEAD:main' in deploy_workflow,
+        and 'git push origin HEAD:main' in deploy_workflow
+        and 'for attempt in 1 2 3 4' in deploy_workflow
+        and 'git diff --quiet "$validated_main" origin/main -- "$path"' in deploy_workflow
+        and 'git worktree add --detach "$retry_dir" origin/main' in deploy_workflow
+        and 'git push --force' not in deploy_workflow
+        and 'git push -f' not in deploy_workflow,
     )
     check(
         'imerg_history_restores_without_pages',
