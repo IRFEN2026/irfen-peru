@@ -65,8 +65,35 @@ def check_forecast_verification():
     forbidden={'bias_correction_factor','operational_correction','calibrated_threshold','production_modifier'}
     if forbidden.intersection(data.keys()):ERRORS.append('forecast verification: contiene campos de corrección operativa prohibidos')
     if int(data.get('total_pairs',0))<0:ERRORS.append('forecast verification: total_pairs inválido')
+    if int(data.get('total_pairs',0))!=len(data.get('pairs',[])):ERRORS.append('forecast verification: total_pairs no coincide con evidencia persistida')
     for row in data.get('pairs',[]):
         if float(row.get('forecast_mm',0))<0 or float(row.get('observed_imerg_mm',0))<0:ERRORS.append('forecast verification: precipitación negativa')
+
+def check_observed_imerg_archive():
+    p=SITE/'data/forecast/observed_imerg_daily.json'
+    if not p.exists():ERRORS.append('observed IMERG archive: archivo acumulativo requerido no generado');return
+    data=load(p)
+    if not data:return
+    if data.get('production_use') is not False:ERRORS.append('observed IMERG archive: production_use debe ser false')
+    expected={
+        ('san_ildefonso','validated_dem_polygon'),
+        ('chosica','validated_dem_polygon'),
+        ('catacaos','provisional_weighted_operational_sampling_areas'),
+    }
+    seen=set()
+    for record in data.get('records',[]):
+        key=(record.get('zone_id'),record.get('sampling_method'))
+        if key not in expected:ERRORS.append(f'observed IMERG archive: contrato espacial inesperado {key}')
+        if key in seen:ERRORS.append(f'observed IMERG archive: registro duplicado {key}')
+        seen.add(key)
+        dates=set()
+        for row in record.get('series',[]):
+            day=row.get('date');rain=row.get('rain_mm')
+            if not day or rain is None:ERRORS.append(f'observed IMERG archive {key}: fecha o lluvia ausente');continue
+            if day in dates:ERRORS.append(f'observed IMERG archive {key}: fecha duplicada {day}')
+            dates.add(day)
+            if float(rain)<0:ERRORS.append(f'observed IMERG archive {key}: precipitación negativa')
+    if seen!=expected:ERRORS.append(f'observed IMERG archive: contratos faltantes {sorted(expected-seen)}')
 
 def check_forecast_historical_daily():
     p=SITE/'data/forecast/historical_daily.json'
@@ -212,7 +239,7 @@ def check_manifest():
 def main():
     check_watershed('san_ildefonso','san_ildefonso_watershed.geojson','san_ildefonso_validation.json')
     check_watershed('chosica','huaycoloro_watershed.geojson','huaycoloro_validation.json')
-    check_latest_contract();check_history_contract();check_forecast_contract();check_forecast_verification();check_forecast_historical_daily();check_hydraulic_inventory();check_piura_reference_model();check_catacaos_document_context();check_ana_catacaos_segments();check_historical_replay();check_senamhi_wis2_discovery();check_experimental_state();check_frontend_contract();check_manifest()
+    check_latest_contract();check_history_contract();check_forecast_contract();check_forecast_verification();check_observed_imerg_archive();check_forecast_historical_daily();check_hydraulic_inventory();check_piura_reference_model();check_catacaos_document_context();check_ana_catacaos_segments();check_historical_replay();check_senamhi_wis2_discovery();check_experimental_state();check_frontend_contract();check_manifest()
     for w in WARNINGS:print('WARNING:',w)
     if ERRORS:
         for e in ERRORS:print('ERROR:',e)

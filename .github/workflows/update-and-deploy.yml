@@ -104,6 +104,16 @@ jobs:
             echo "Usando latest.json del repositorio."
             cp site/data/latest.json .fallback/latest.json
           fi
+          OBS_URL="https://irfen2026.github.io/irfen-peru/data/forecast/observed_imerg_daily.json"
+          echo "Intentando conservar archivo acumulativo de observaciones: $OBS_URL"
+          if curl -fsSL --connect-timeout 15 --max-time 45 --retry 3 --retry-delay 5 "$OBS_URL" -o .fallback/observed_imerg_daily.json \
+            && python -m json.tool .fallback/observed_imerg_daily.json >/dev/null
+          then
+            cp .fallback/observed_imerg_daily.json site/data/forecast/observed_imerg_daily.json
+            echo "Archivo acumulativo IMERG restaurado desde Pages."
+          else
+            echo "Pages aún no contiene el archivo acumulativo; se conserva la semilla auditada del repositorio."
+          fi
           if [ -s site/data/history.json ]; then
             cp site/data/history.json .fallback/history.json
             echo "Catálogo histórico protegido."
@@ -248,11 +258,13 @@ jobs:
           test -s site/data/hydrology/ana_catacaos_critical_segments_2026_validation.json
           test -s site/data/hydrology/glofas_catacaos_current.json
           test -s site/data/forecast/verification.json
+          test -s site/data/forecast/observed_imerg_daily.json
           test -s site/data/calibration/historical_replay.json
           test -s site/data/experimental_state.json
           test -s site/data/phase2/event_reanalysis.json
           python -m json.tool site/data/latest.json >/dev/null
           python -m json.tool site/data/history.json >/dev/null
+          python -m json.tool site/data/forecast/observed_imerg_daily.json >/dev/null
           python -m json.tool site/data/scientific_status.json >/dev/null
           python -m json.tool site/data/hazard_models/lima_east_decomposition.json >/dev/null
           python -m json.tool site/data/hydraulics/current_infrastructure.json >/dev/null
