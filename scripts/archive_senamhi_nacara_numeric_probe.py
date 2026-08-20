@@ -7,7 +7,7 @@ convierten en caudal cero ni en evidencia de riesgo bajo.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import json
 import subprocess
@@ -65,11 +65,11 @@ def probe_record(probe):
     }
 
 
-def consecutive_metrics(observations):
+def consecutive_metrics(observations, latest_probe_record=None):
     times = sorted({parse_time(x.get("requested_observation_time")) for x in observations} - {None})
     if not times:
         return {"longest_consecutive_hours": 0, "current_consecutive_hours": 0}
-    longest = current = 1
+    longest = 1
     run = 1
     for previous, item in zip(times, times[1:]):
         if (item - previous).total_seconds() == 3600:
@@ -77,7 +77,23 @@ def consecutive_metrics(observations):
         else:
             run = 1
         longest = max(longest, run)
-    current = run
+    # "Current" must be anchored to the latest probe, not merely to the most
+    # recent successful observation retained in the archive. Otherwise an old
+    # isolated success remains reported as a live streak while newer probes
+    # are failing, which overstates channel continuity.
+    current = 0
+    if latest_probe_record and latest_probe_record.get("numeric_river_state_available") is True:
+        latest_requested = parse_time(latest_probe_record.get("requested_observation_time"))
+        if latest_requested in times:
+            current = 1
+            observed = set(times)
+            previous = latest_requested
+            while True:
+                candidate = previous - timedelta(hours=1)
+                if candidate not in observed:
+                    break
+                current += 1
+                previous = candidate
     return {"longest_consecutive_hours": longest, "current_consecutive_hours": current}
 
 
@@ -144,7 +160,7 @@ def build_archive(probes, generated_at=None):
             "first_probe_generated_at": records[0]["generated_at"] if records else None,
             "latest_probe_generated_at": records[-1]["generated_at"] if records else None,
             "latest_success_generated_at": latest_success["generated_at"] if latest_success else None,
-            **consecutive_metrics(observations),
+            **consecutive_metrics(observations, records[-1] if records else None),
         },
         "probe_records": records,
         "observations": observations,
