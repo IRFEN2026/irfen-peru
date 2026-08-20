@@ -68,7 +68,18 @@ class ArchiveSenamhiNacaraTests(unittest.TestCase):
         ])
         self.assertEqual(archive["status"], "INTERMITTENT_OFFICIAL_NUMERIC_CHANNEL")
         self.assertEqual(archive["summary"]["observation_count"], 1)
+        self.assertEqual(archive["summary"]["longest_consecutive_hours"], 1)
+        self.assertEqual(archive["summary"]["current_consecutive_hours"], 0)
         self.assertEqual(archive["probe_records"][-1]["value"], None)
+
+    def test_current_streak_is_anchored_to_latest_successful_probe(self):
+        archive = MODULE.build_archive([
+            sample("2026-08-16T14:00:00+00:00", "2026-08-16T09:00:00-05:00", True, 2.544),
+            sample("2026-08-16T15:00:00+00:00", "2026-08-16T10:00:00-05:00", True, 2.6),
+            sample("2026-08-16T16:00:00+00:00", "2026-08-16T11:00:00-05:00", True, 2.7),
+        ])
+        self.assertEqual(archive["summary"]["longest_consecutive_hours"], 3)
+        self.assertEqual(archive["summary"]["current_consecutive_hours"], 3)
 
 
 if __name__ == "__main__":
