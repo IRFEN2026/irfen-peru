@@ -61,17 +61,23 @@ SUPPLEMENTAL_SOURCES = (
         "source_id": "anin_san_ildefonso_news",
         "url": "https://www.gob.pe/institucion/anin/noticias",
         "scope": "San Ildefonso external manual outcome evidence",
+        "requires_target_date_alignment": True,
     },
     {
         "source_id": "igp_cendehua_huaycoloro_monitor",
         "url": "https://www.igp.gob.pe/servicios/centro-monitoreo-deslizamientos-huaicos/inicio",
         "scope": "Huaycoloro/Chosica external manual outcome evidence",
+        "requires_target_date_alignment": True,
     },
     {
         "source_id": "pechp_piura_news",
         "url": "https://www.gob.pe/que/pechp",
         "scope": "Catacaos/Bajo Piura external manual outcome evidence",
+        "requires_target_date_alignment": True,
     },
+)
+SUPPLEMENTAL_SOURCE_IDS = frozenset(
+    source["source_id"] for source in SUPPLEMENTAL_SOURCES
 )
 PILOT_TERMS = (
     "San Ildefonso",
@@ -463,6 +469,7 @@ def fetch_source(
     requires_target_date_alignment = bool(
         source.get("historical_date_parameter")
         or source.get("historical_search_parameter")
+        or source.get("requires_target_date_alignment")
     )
     source = source_for_snapshot(source, snapshot_date)
     candidate_urls = source.get("url_candidates") or [source["url"]]
@@ -591,7 +598,43 @@ def load_archive():
         }
 
 
+def normalize_legacy_supplemental_alignment(archive: dict):
+    """Repair legacy supplemental captures that overstated date coverage.
+
+    General institutional pages can be reachable while exposing no content for
+    the closed UTC day.  Those captures remain useful for human review, but
+    must stay UNKNOWN_NOT_ZERO until their target-date alignment is explicit.
+    """
+    repaired = 0
+    for record in archive.get("records") or []:
+        for capture in record.get("captures") or []:
+            for source in capture.get("supplemental_sources") or []:
+                if source.get("source_id") not in SUPPLEMENTAL_SOURCE_IDS:
+                    continue
+                alignment = (source.get("summary") or {}).get(
+                    "snapshot_date_alignment"
+                )
+                if alignment == "TARGET_DATE_PRESENT":
+                    continue
+                if source.get("unknown_not_zero") is not True:
+                    source["unknown_not_zero"] = True
+                    repaired += 1
+                if source.get("capture_status") == "CAPTURED":
+                    source["capture_status"] = "CAPTURED_TARGET_DATE_UNVERIFIED"
+    if repaired:
+        archive["contract_migration"] = {
+            "id": "supplemental_target_date_alignment_v1",
+            "repaired_source_captures": repaired,
+            "rule": (
+                "A reachable general institutional page without explicit target-day "
+                "alignment remains UNKNOWN_NOT_ZERO."
+            ),
+        }
+    return archive
+
+
 def add_capture(archive: dict, snapshot_date: str, capture: dict):
+    archive = normalize_legacy_supplemental_alignment(archive)
     records = archive.get("records") or []
     record = next((row for row in records if row.get("snapshot_date_utc") == snapshot_date), None)
     if record is None:
