@@ -10,6 +10,7 @@ import json
 import sys
 
 from build_v08_scorecard import external_validation_gate, final_release_audit_gate, review_after_utc_day_close, target_window_gate
+from archive_shadow_validation import validate_shadow_integrity
 from review_shadow_outcome import apply_review
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -407,6 +408,17 @@ def main():
         shadow_records=shadow_runs.get('records') or []
         check('shadow_runs_not_production',shadow_runs.get('production_use') is False)
         check('shadow_runs_count_matches',int(shadow_runs.get('record_count',-1))==len(shadow_records))
+        shadow_integrity_contract=shadow_runs.get('integrity_contract') or {}
+        check(
+            'shadow_integrity_contract_effective',
+            shadow_integrity_contract.get('effective_snapshot_date_utc')=='2026-08-21',
+        )
+        shadow_integrity=validate_shadow_integrity(shadow_records)
+        check(
+            'shadow_integrity_chain_valid',
+            shadow_integrity.get('valid') is True,
+            ', '.join(shadow_integrity.get('errors') or []),
+        )
         uncertain_reviews=[
             record.get('outcome_verification') or {}
             for record in shadow_records
