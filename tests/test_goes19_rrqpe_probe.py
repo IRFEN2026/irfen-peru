@@ -62,6 +62,44 @@ class Goes19ProbeTests(unittest.TestCase):
         self.assertFalse(archive["retention_decision"]["technical_review_sample_complete"])
         self.assertEqual(archive["summary"]["capture_delay_p90_minutes"], None)
         self.assertEqual(archive["summary"]["all_pilots_covered_pct"], 0.0)
+        self.assertEqual(
+            archive["discard_contract"]["minimum_distinct_source_objects_before_availability_review"],
+            72,
+        )
+
+    def test_technical_review_rejects_repeated_source_objects(self):
+        start = datetime(2026, 8, 16, tzinfo=timezone.utc)
+        records = [
+            {
+                "generated_at": (start + timedelta(minutes=10 * index)).isoformat(),
+                "status": "KEEP_FOR_SHADOW_EVALUATION",
+                "source_available": True,
+                "source_object_key": "same-satellite-scan",
+                "source_scan_end": start.isoformat(),
+                "capture_delay_minutes": 10.0,
+                "all_v08_pilots_covered": True,
+                "missing_data_interpretation": None,
+            }
+            for index in range(71)
+        ]
+        probe = MODULE.base_probe(start + timedelta(minutes=710))
+        probe.update({
+            "status": "KEEP_FOR_SHADOW_EVALUATION",
+            "source_available": True,
+            "latest_object": {
+                "key": "same-satellite-scan",
+                "scan_end": start.isoformat(),
+            },
+            "freshness": {"capture_delay_minutes": 10.0},
+            "coverage": {"all_v08_pilots_covered": True},
+        })
+        archive = MODULE.archive_result(
+            {"records": records}, probe, start + timedelta(minutes=710)
+        )
+        self.assertEqual(archive["summary"]["probe_record_count"], 72)
+        self.assertEqual(archive["summary"]["distinct_source_object_count"], 1)
+        self.assertFalse(archive["retention_decision"]["technical_review_sample_complete"])
+        self.assertFalse(archive["retention_decision"]["technical_access_gate_pass"])
 
     def test_technical_gate_rejects_sparse_all_pilot_coverage(self):
         start = datetime(2026, 8, 16, tzinfo=timezone.utc)
@@ -137,6 +175,7 @@ class Goes19ProbeTests(unittest.TestCase):
         self.assertIn("threshold_promotion_allowed", text)
         self.assertIn("all_pilots_covered_pct", text)
         self.assertIn("discard_if_all_pilots_coverage_below_pct", text)
+        self.assertIn("minimum_distinct_source_objects_before_availability_review", text)
         self.assertIn("git rebase origin/main", text)
 
     def test_publish_and_live_smoke_require_goes_guardrails(self):
@@ -149,6 +188,7 @@ class Goes19ProbeTests(unittest.TestCase):
             self.assertIn("replaces_imerg", text)
             self.assertIn("all_pilots_covered_pct", text)
             self.assertIn("discard_if_all_pilots_coverage_below_pct", text)
+            self.assertIn("minimum_distinct_source_objects_before_availability_review", text)
 
 
 if __name__ == "__main__":

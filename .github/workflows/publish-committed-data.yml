@@ -175,6 +175,10 @@ jobs:
           goes_decision=goes.get('retention_decision') or {}
           assert 0 <= float(goes_summary.get('all_pilots_covered_pct', -1)) <= 100
           assert goes_contract.get('discard_if_all_pilots_coverage_below_pct') == 80
+          assert goes_contract.get('minimum_distinct_source_objects_before_availability_review') == 72
+          if goes_decision.get('technical_review_sample_complete'):
+              assert int(goes_summary.get('probe_record_count', 0)) >= 72
+              assert int(goes_summary.get('distinct_source_object_count', 0)) >= 72
           if goes_decision.get('technical_access_gate_pass'):
               assert goes_decision.get('technical_review_sample_complete') is True
               assert float(goes_summary.get('source_availability_pct', 0)) >= 80
