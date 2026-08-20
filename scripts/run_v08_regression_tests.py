@@ -35,6 +35,7 @@ def main():
     state=load(SITE/'data/experimental_state.json')
     forecast=optional(SITE/'data/forecast/latest.json')
     verification=optional(SITE/'data/forecast/verification.json')
+    observed_imerg=optional(SITE/'data/forecast/observed_imerg_daily.json')
     hydraulics=load(SITE/'data/hydraulics/current_infrastructure.json')
     replay=load(SITE/'data/calibration/historical_replay.json')
     ana_geo=load(SITE/'data/hydrology/ana_catacaos_critical_segments_2026.geojson')
@@ -150,6 +151,25 @@ def main():
         check('forecast_verification_not_production',verification.get('production_use') is False)
         check('forecast_verification_pairs_nonnegative',int(verification.get('total_pairs',0))>=0)
         check('forecast_verification_min_sample_gate',int(verification.get('minimum_samples_for_initial_review',0))>=30)
+    check('observed_imerg_archive_present',observed_imerg is not None)
+    if observed_imerg:
+        records=observed_imerg.get('records') or []
+        observed_keys=[
+            (record.get('zone_id'),record.get('sampling_method'),row.get('date'))
+            for record in records for row in (record.get('series') or [])
+        ]
+        pinned=[
+            row for row in (observed_imerg.get('seed_provenance') or [])
+            if row.get('artifact_sha256')=='88c0cd15ebbde7a9b789cacf4720c81e946e31d46f60546275fcac1dad851d9b'
+        ]
+        check('observed_imerg_archive_not_production',observed_imerg.get('production_use') is False)
+        check('observed_imerg_archive_append_only_contract',observed_imerg.get('retention_contract')=='append_only_by_zone_method_valid_date; first_audited_value_wins; conflicting_revisions_are_logged_without_overwrite')
+        check('observed_imerg_archive_record_count',int(observed_imerg.get('record_count',-1))==len(records))
+        check('observed_imerg_archive_unique_keys',len(observed_keys)==len(set(observed_keys)))
+        check('observed_imerg_archive_values_nonnegative',all(float(row.get('rain_mm',-1))>=0 for record in records for row in (record.get('series') or [])))
+        check('observed_imerg_run170_provenance_unique',len(pinned)==1)
+        check('observed_imerg_run170_verification_hash',len(pinned)==1 and pinned[0].get('verification_sha256')=='f4a79332710e8531e588b1f56222933e710439f38627c28a988ee7d11970ae1b')
+        check('observed_imerg_revision_candidates_fail_closed',all(row.get('production_use') is False and row.get('disposition')=='LOGGED_NOT_OVERWRITTEN_PENDING_SCIENTIFIC_REVIEW' for row in (observed_imerg.get('revision_candidates') or [])))
 
     # GloFAS es secundario: una caída remota debe bloquear la señal actual sin
     # derribar la publicación ni convertir la ausencia de datos en bajo riesgo.

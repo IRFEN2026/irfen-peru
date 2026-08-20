@@ -41,6 +41,7 @@ jobs:
             "data/hydraulics/current_infrastructure.json"
             "data/forecast/latest.json"
             "data/forecast/verification.json"
+            "data/forecast/observed_imerg_daily.json"
             "data/calibration/historical_replay.json"
             "data/calibration/goes19_rrqpe_probe.json"
             "data/calibration/goes19_rrqpe_archive.json"
@@ -95,6 +96,22 @@ jobs:
           verification=load('data/forecast/verification.json')
           assert verification.get('production_use') is False
           assert int(verification.get('total_pairs',0)) >= 0
+          observed=load('data/forecast/observed_imerg_daily.json')
+          assert observed.get('production_use') is False
+          assert observed.get('retention_contract') == 'append_only_by_zone_method_valid_date; first_audited_value_wins; conflicting_revisions_are_logged_without_overwrite'
+          assert int(observed.get('record_count',-1)) == len(observed.get('records',[]))
+          pinned=[row for row in observed.get('seed_provenance',[]) if row.get('artifact_sha256') == '88c0cd15ebbde7a9b789cacf4720c81e946e31d46f60546275fcac1dad851d9b']
+          assert len(pinned) == 1
+          assert pinned[0].get('verification_sha256') == 'f4a79332710e8531e588b1f56222933e710439f38627c28a988ee7d11970ae1b'
+          observed_keys=[]
+          for record in observed.get('records',[]):
+              for row in record.get('series',[]):
+                  observed_keys.append((record.get('zone_id'),record.get('sampling_method'),row.get('date')))
+                  assert float(row.get('rain_mm',-1)) >= 0
+          assert len(observed_keys) == len(set(observed_keys))
+          for row in observed.get('revision_candidates',[]):
+              assert row.get('production_use') is False
+              assert row.get('disposition') == 'LOGGED_NOT_OVERWRITTEN_PENDING_SCIENTIFIC_REVIEW'
 
           replay=load('data/calibration/historical_replay.json')
           assert replay.get('production_use') is False

@@ -75,12 +75,24 @@ def check_observed_imerg_archive():
     data=load(p)
     if not data:return
     if data.get('production_use') is not False:ERRORS.append('observed IMERG archive: production_use debe ser false')
+    expected_contract=(
+        'append_only_by_zone_method_valid_date; first_audited_value_wins; '
+        'conflicting_revisions_are_logged_without_overwrite'
+    )
+    if data.get('retention_contract')!=expected_contract:ERRORS.append('observed IMERG archive: contrato append-only inválido')
+    if int(data.get('record_count',-1))!=len(data.get('records',[])):ERRORS.append('observed IMERG archive: record_count inconsistente')
+    run170_artifact='88c0cd15ebbde7a9b789cacf4720c81e946e31d46f60546275fcac1dad851d9b'
+    run170_verification='f4a79332710e8531e588b1f56222933e710439f38627c28a988ee7d11970ae1b'
+    pinned=[row for row in data.get('seed_provenance',[]) if row.get('artifact_sha256')==run170_artifact]
+    if len(pinned)!=1:ERRORS.append('observed IMERG archive: procedencia única del artefacto #170 ausente')
+    elif pinned[0].get('verification_sha256')!=run170_verification:ERRORS.append('observed IMERG archive: hash de verification #170 inválido')
     expected={
         ('san_ildefonso','validated_dem_polygon'),
         ('chosica','validated_dem_polygon'),
         ('catacaos','provisional_weighted_operational_sampling_areas'),
     }
     seen=set()
+    observation_keys=set()
     for record in data.get('records',[]):
         key=(record.get('zone_id'),record.get('sampling_method'))
         if key not in expected:ERRORS.append(f'observed IMERG archive: contrato espacial inesperado {key}')
@@ -92,8 +104,16 @@ def check_observed_imerg_archive():
             if not day or rain is None:ERRORS.append(f'observed IMERG archive {key}: fecha o lluvia ausente');continue
             if day in dates:ERRORS.append(f'observed IMERG archive {key}: fecha duplicada {day}')
             dates.add(day)
+            observation_key=(*key,day)
+            if observation_key in observation_keys:ERRORS.append(f'observed IMERG archive: clave duplicada {observation_key}')
+            observation_keys.add(observation_key)
             if float(rain)<0:ERRORS.append(f'observed IMERG archive {key}: precipitación negativa')
     if seen!=expected:ERRORS.append(f'observed IMERG archive: contratos faltantes {sorted(expected-seen)}')
+    for row in data.get('revision_candidates',[]):
+        key=(row.get('zone_id'),row.get('sampling_method'))
+        if key not in expected:ERRORS.append(f'observed IMERG archive: revisión con contrato inesperado {key}')
+        if row.get('disposition')!='LOGGED_NOT_OVERWRITTEN_PENDING_SCIENTIFIC_REVIEW':ERRORS.append('observed IMERG archive: revisión sin disposición fail-closed')
+        if row.get('production_use') is not False:ERRORS.append('observed IMERG archive: revisión no puede ser productiva')
 
 def check_forecast_historical_daily():
     p=SITE/'data/forecast/historical_daily.json'

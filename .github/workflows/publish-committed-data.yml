@@ -61,6 +61,7 @@ jobs:
             "experimental_state.json"
             "test_report.json"
             "forecast/verification.json"
+            "forecast/observed_imerg_daily.json"
             "calibration/historical_replay.json"
             "hydrology/piura_reference_model.json"
             "hydrology/ana_catacaos_critical_segments_2026.geojson"
@@ -116,6 +117,7 @@ jobs:
           test -s site/data/latest.json
           test -s site/data/experimental_state.json
           test -s site/data/test_report.json
+          test -s site/data/forecast/observed_imerg_daily.json
           test -s site/data/calibration/imerg_early_live_probe.json
           test -s site/data/calibration/imerg_early_live_archive.json
           test -s site/data/calibration/goes19_rrqpe_probe.json
@@ -126,6 +128,7 @@ jobs:
           test -s site/data/v08_rc_status.json
           python -m json.tool site/data/experimental_state.json >/dev/null
           python -m json.tool site/data/test_report.json >/dev/null
+          python -m json.tool site/data/forecast/observed_imerg_daily.json >/dev/null
           python -m json.tool site/data/calibration/imerg_early_live_archive.json >/dev/null
           python -m json.tool site/data/calibration/goes19_rrqpe_probe.json >/dev/null
           python -m json.tool site/data/calibration/goes19_rrqpe_archive.json >/dev/null
@@ -143,6 +146,7 @@ jobs:
           rc=json.loads(Path('site/data/v08_rc_status.json').read_text())
           nacara=json.loads(Path('site/data/hydrology/senamhi_nacara_numeric_archive.json').read_text())
           goes=json.loads(Path('site/data/calibration/goes19_rrqpe_archive.json').read_text())
+          observed=json.loads(Path('site/data/forecast/observed_imerg_daily.json').read_text())
           assert state.get('production_use') is False
           assert state.get('production_ready') is False
           assert tests.get('status') == 'PASS'
@@ -167,6 +171,12 @@ jobs:
           assert goes.get('production_ready') is False
           assert goes.get('integration_mode') == 'GOES_TEST_ONLY'
           assert goes.get('counts_toward_v08_closeout') is False
+          assert observed.get('production_use') is False
+          assert observed.get('retention_contract') == 'append_only_by_zone_method_valid_date; first_audited_value_wins; conflicting_revisions_are_logged_without_overwrite'
+          assert int(observed.get('record_count',-1)) == len(observed.get('records',[]))
+          pinned=[row for row in observed.get('seed_provenance',[]) if row.get('artifact_sha256') == '88c0cd15ebbde7a9b789cacf4720c81e946e31d46f60546275fcac1dad851d9b']
+          assert len(pinned) == 1
+          assert pinned[0].get('verification_sha256') == 'f4a79332710e8531e588b1f56222933e710439f38627c28a988ee7d11970ae1b'
           assert goes.get('scientific_gate',{}).get('automatic_event_or_none_classification') is False
           assert goes.get('scientific_gate',{}).get('threshold_promotion_allowed') is False
           assert goes.get('scientific_gate',{}).get('replaces_imerg') is False
@@ -222,6 +232,7 @@ jobs:
             query="t=${GITHUB_RUN_ID}&attempt=${attempt}"
             if curl -fsSL --retry 3 "$BASE/?$query" >/dev/null \
               && curl -fsSL --retry 3 "$BASE/data/calibration/imerg_early_live_archive.json?$query" -o /tmp/irfen-published/imerg.json \
+              && curl -fsSL --retry 3 "$BASE/data/forecast/observed_imerg_daily.json?$query" -o /tmp/irfen-published/observed-imerg.json \
               && curl -fsSL --retry 3 "$BASE/data/calibration/goes19_rrqpe_archive.json?$query" -o /tmp/irfen-published/goes.json \
               && curl -fsSL --retry 3 "$BASE/data/hydrology/senamhi_nacara_numeric_archive.json?$query" -o /tmp/irfen-published/nacara.json \
               && curl -fsSL --retry 3 "$BASE/data/validation/shadow_runs.json?$query" -o /tmp/irfen-published/shadow.json \
@@ -233,6 +244,7 @@ jobs:
 
           pairs = (
               ('site/data/calibration/imerg_early_live_archive.json', '/tmp/irfen-published/imerg.json', 'updated_at'),
+              ('site/data/forecast/observed_imerg_daily.json', '/tmp/irfen-published/observed-imerg.json', 'generated_at'),
               ('site/data/calibration/goes19_rrqpe_archive.json', '/tmp/irfen-published/goes.json', 'generated_at'),
               ('site/data/hydrology/senamhi_nacara_numeric_archive.json', '/tmp/irfen-published/nacara.json', 'generated_at'),
               ('site/data/validation/shadow_runs.json', '/tmp/irfen-published/shadow.json', 'updated_at'),
@@ -252,8 +264,8 @@ jobs:
           published_probe = (published_imerg.get('summary') or {}).get('latest_probe_generated_at')
           assert published_probe == expected_probe, 'Pages sirve una corrida IMERG distinta de la desplegada'
 
-          expected_nacara = json.loads(Path(pairs[2][0]).read_text(encoding='utf-8'))
-          published_nacara = json.loads(Path(pairs[2][1]).read_text(encoding='utf-8'))
+          expected_nacara = json.loads(Path(pairs[3][0]).read_text(encoding='utf-8'))
+          published_nacara = json.loads(Path(pairs[3][1]).read_text(encoding='utf-8'))
           expected_nacara_probe = (expected_nacara.get('summary') or {}).get('latest_probe_generated_at')
           published_nacara_probe = (published_nacara.get('summary') or {}).get('latest_probe_generated_at')
           assert published_nacara_probe == expected_nacara_probe, 'Pages sirve un archivo SENAMHI distinto del desplegado'
