@@ -3,7 +3,8 @@
   "generated_at": "2026-08-20T03:57:30.428698+00:00",
   "production_use": false,
   "observation_source": "NASA GPM IMERG Late Daily",
-  "retention_contract": "append_by_zone_method_date; current observation replaces same-date prior value",
+  "record_count": 3,
+  "retention_contract": "append_only_by_zone_method_valid_date; first_audited_value_wins; conflicting_revisions_are_logged_without_overwrite",
   "missing_data_policy": "missing dates remain absent and are never interpreted as zero rain or low risk",
   "records": [
     {
@@ -169,6 +170,7 @@
       ]
     }
   ],
+  "revision_candidates": [],
   "seed_provenance": [
     {
       "source": "site/data/latest.json",
@@ -183,6 +185,22 @@
       "product": "GPM_3IMERGDL",
       "operational_status": "updated",
       "sha256": "7f3b69b6f8c1c346423f0c518490ea07a89a42a7bfc7960cf859ad6354ec7b27"
+    },
+    {
+      "source": "GitHub Actions update-and-deploy run #170 Pages artifact",
+      "workflow_run_id": 32300707086,
+      "workflow_run_url": "https://github.com/IRFEN2026/irfen-peru/actions/runs/32300707086",
+      "artifact_id": 9382914636,
+      "artifact_name": "github-pages",
+      "artifact_sha256": "88c0cd15ebbde7a9b789cacf4720c81e946e31d46f60546275fcac1dad851d9b",
+      "verification_path": "data/forecast/verification.json",
+      "verification_sha256": "f4a79332710e8531e588b1f56222933e710439f38627c28a988ee7d11970ae1b",
+      "latest_path": "data/latest.json",
+      "latest_sha256": "47a78c7e5e98f225f1e391e53d6d01c6188450c918e15bc71da8226509959d46",
+      "matched_observation_keys": 33,
+      "missing_observation_keys": 0,
+      "conflicting_observation_keys": 0,
+      "role": "AUDITED_BACKFILL_SOURCE"
     }
   ]
 }

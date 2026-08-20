@@ -21,6 +21,26 @@ LATEST = SITE / "data" / "latest.json"
 OUT = SITE / "data" / "forecast" / "verification.json"
 OBSERVED_ARCHIVE = SITE / "data" / "forecast" / "observed_imerg_daily.json"
 MIN_SAMPLES = 30
+OBSERVED_ARCHIVE_RETENTION_CONTRACT = (
+    "append_only_by_zone_method_valid_date; first_audited_value_wins; "
+    "conflicting_revisions_are_logged_without_overwrite"
+)
+RUN170_SEED_PROVENANCE = {
+    "source": "GitHub Actions update-and-deploy run #170 Pages artifact",
+    "workflow_run_id": 32300707086,
+    "workflow_run_url": "https://github.com/IRFEN2026/irfen-peru/actions/runs/32300707086",
+    "artifact_id": 9382914636,
+    "artifact_name": "github-pages",
+    "artifact_sha256": "88c0cd15ebbde7a9b789cacf4720c81e946e31d46f60546275fcac1dad851d9b",
+    "verification_path": "data/forecast/verification.json",
+    "verification_sha256": "f4a79332710e8531e588b1f56222933e710439f38627c28a988ee7d11970ae1b",
+    "latest_path": "data/latest.json",
+    "latest_sha256": "47a78c7e5e98f225f1e391e53d6d01c6188450c918e15bc71da8226509959d46",
+    "matched_observation_keys": 33,
+    "missing_observation_keys": 0,
+    "conflicting_observation_keys": 0,
+    "role": "AUDITED_BACKFILL_SOURCE",
+}
 
 
 def load(path, default):
@@ -69,16 +89,35 @@ def merge_observed_archive(zones, prior, required_methods, generated_at=None):
         raise ValueError("observed_imerg_daily.json debe declarar production_use=false")
 
     merged = {}
+    revision_candidates = list((prior or {}).get("revision_candidates") or [])
+    revision_keys = {
+        (
+            row.get("zone_id"),
+            row.get("sampling_method"),
+            row.get("valid_date_utc"),
+            row.get("candidate_rain_mm"),
+        )
+        for row in revision_candidates
+    }
     for record in (prior or {}).get("records", []):
         key = (record.get("zone_id"), record.get("sampling_method"))
         if None in key:
             continue
         for row in record.get("series", []):
             if row.get("date") and row.get("rain_mm") is not None:
-                merged[(key, row["date"])] = {
+                archive_key = (key, row["date"])
+                candidate = {
                     "date": row["date"],
                     "rain_mm": round(float(row["rain_mm"]), 3),
                 }
+                if archive_key not in merged:
+                    merged[archive_key] = candidate
+                    continue
+                if merged[archive_key]["rain_mm"] != candidate["rain_mm"]:
+                    raise ValueError(
+                        "observed_imerg_daily.json contiene valores archivados "
+                        f"conflictivos para {key} {row['date']}"
+                    )
 
     for zid, method in sorted(required_methods):
         zone = zones.get(zid)
@@ -86,10 +125,29 @@ def merge_observed_archive(zones, prior, required_methods, generated_at=None):
             continue
         for row in observed_series(zone, method):
             if row.get("date") and row.get("rain_mm") is not None:
-                merged[((zid, method), row["date"])] = {
+                key = ((zid, method), row["date"])
+                candidate = {
                     "date": row["date"],
                     "rain_mm": round(float(row["rain_mm"]), 3),
                 }
+                if key not in merged:
+                    merged[key] = candidate
+                    continue
+                if merged[key]["rain_mm"] == candidate["rain_mm"]:
+                    continue
+                revision_key = (zid, method, row["date"], candidate["rain_mm"])
+                if revision_key not in revision_keys:
+                    revision_candidates.append({
+                        "zone_id": zid,
+                        "sampling_method": method,
+                        "valid_date_utc": row["date"],
+                        "archived_rain_mm": merged[key]["rain_mm"],
+                        "candidate_rain_mm": candidate["rain_mm"],
+                        "first_seen_at": generated_at or datetime.now(timezone.utc).isoformat(),
+                        "disposition": "LOGGED_NOT_OVERWRITTEN_PENDING_SCIENTIFIC_REVIEW",
+                        "production_use": False,
+                    })
+                    revision_keys.add(revision_key)
 
     records = []
     for zid, method in sorted(required_methods):
@@ -110,12 +168,27 @@ def merge_observed_archive(zones, prior, required_methods, generated_at=None):
         "generated_at": generated_at or datetime.now(timezone.utc).isoformat(),
         "production_use": False,
         "observation_source": "NASA GPM IMERG Late Daily",
-        "retention_contract": "append_by_zone_method_date; current observation replaces same-date prior value",
+        "record_count": len(records),
+        "retention_contract": OBSERVED_ARCHIVE_RETENTION_CONTRACT,
         "missing_data_policy": "missing dates remain absent and are never interpreted as zero rain or low risk",
         "records": records,
+        "revision_candidates": sorted(
+            revision_candidates,
+            key=lambda row: (
+                row.get("valid_date_utc") or "",
+                row.get("zone_id") or "",
+                row.get("sampling_method") or "",
+                row.get("candidate_rain_mm") if row.get("candidate_rain_mm") is not None else -1,
+            ),
+        ),
     }
-    if (prior or {}).get("seed_provenance"):
-        archive["seed_provenance"] = prior["seed_provenance"]
+    provenance = list((prior or {}).get("seed_provenance") or [])
+    if not any(
+        row.get("artifact_sha256") == RUN170_SEED_PROVENANCE["artifact_sha256"]
+        for row in provenance
+    ):
+        provenance.append(dict(RUN170_SEED_PROVENANCE))
+    archive["seed_provenance"] = provenance
     return archive
 
 
