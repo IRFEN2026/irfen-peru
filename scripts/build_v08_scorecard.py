@@ -8,6 +8,8 @@ en autorización de producción.
 from __future__ import annotations
 
 from datetime import date, datetime, time, timedelta, timezone
+import hashlib
+import json
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -15,7 +17,6 @@ try:
     from archive_shadow_validation import validate_shadow_integrity
 except ImportError:  # Imported as scripts.build_v08_scorecard in unit tests.
     from scripts.archive_shadow_validation import validate_shadow_integrity
-import json
 
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "site"
@@ -41,6 +42,14 @@ def load(path: Path, default=None):
         return json.loads(path.read_text(encoding="utf-8"))
     except Exception:
         return default
+
+
+def sha256_file(path: Path):
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def item(item_id: str, passed: bool, evidence):
@@ -369,7 +378,8 @@ def main():
     test_report = load(SITE / "data" / "test_report.json", {}) or {}
     state = load(SITE / "data" / "experimental_state.json", {}) or {}
     early = load(SITE / "data" / "calibration" / "imerg_early_live_archive.json", {}) or {}
-    verification = load(SITE / "data" / "forecast" / "verification.json", {}) or {}
+    verification_path = SITE / "data" / "forecast" / "verification.json"
+    verification = load(verification_path, {}) or {}
     shadow = load(SITE / "data" / "validation" / "shadow_runs.json", {}) or {}
     official_outcomes = load(
         SITE / "data" / "validation" / "official_outcome_evidence.json", {}
@@ -666,6 +676,16 @@ def main():
             "imerg_early": early.get("updated_at"),
             "forecast_verification": verification.get("generated_at"),
             "shadow_validation": shadow.get("updated_at"),
+        },
+        "evidence_chain": {
+            "upstream": "verification.json",
+            "verification": {
+                "path": "site/data/forecast/verification.json",
+                "sha256": sha256_file(verification_path),
+                "generated_at": verification.get("generated_at"),
+                "total_pairs": verification.get("total_pairs"),
+            },
+            "chain_rule": "scorecard hashes the complete verification.json bytes",
         },
         "safety_rules": contract.get("safety_rules") or [],
     }

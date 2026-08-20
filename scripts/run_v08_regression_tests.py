@@ -35,7 +35,7 @@ def main():
     state=load(SITE/'data/experimental_state.json')
     forecast=optional(SITE/'data/forecast/latest.json')
     verification=optional(SITE/'data/forecast/verification.json')
-    observed_imerg=optional(SITE/'data/forecast/observed_imerg_daily.json')
+    imerg_verification_history=optional(SITE/'data/forecast/imerg_verification_history.json')
     hydraulics=load(SITE/'data/hydraulics/current_infrastructure.json')
     replay=load(SITE/'data/calibration/historical_replay.json')
     ana_geo=load(SITE/'data/hydrology/ana_catacaos_critical_segments_2026.geojson')
@@ -62,6 +62,8 @@ def main():
     closeout_scorecard=optional(SITE/'data/v08_scorecard.json')
     publish_workflow=(ROOT/'.github/workflows/publish-committed-data.yml').read_text(encoding='utf-8')
     smoke_workflow=(ROOT/'.github/workflows/live-smoke-test.yml').read_text(encoding='utf-8')
+    deploy_workflow=(ROOT/'.github/workflows/update-and-deploy.yml').read_text(encoding='utf-8')
+    pr_workflow=(ROOT/'.github/workflows/pr-validation.yml').read_text(encoding='utf-8')
     glofas_current=optional(SITE/'data/hydrology/glofas_catacaos_current.json')
     pprrd=optional(SITE/'data/hydrology/catacaos_pprrd_2026_discovery.json')
     official_outcomes=optional(SITE/'data/validation/official_outcome_evidence.json')
@@ -151,25 +153,28 @@ def main():
         check('forecast_verification_not_production',verification.get('production_use') is False)
         check('forecast_verification_pairs_nonnegative',int(verification.get('total_pairs',0))>=0)
         check('forecast_verification_min_sample_gate',int(verification.get('minimum_samples_for_initial_review',0))>=30)
-    check('observed_imerg_archive_present',observed_imerg is not None)
-    if observed_imerg:
-        records=observed_imerg.get('records') or []
-        observed_keys=[
-            (record.get('zone_id'),record.get('sampling_method'),row.get('date'))
-            for record in records for row in (record.get('series') or [])
-        ]
-        pinned=[
-            row for row in (observed_imerg.get('seed_provenance') or [])
-            if row.get('artifact_sha256')=='88c0cd15ebbde7a9b789cacf4720c81e946e31d46f60546275fcac1dad851d9b'
-        ]
-        check('observed_imerg_archive_not_production',observed_imerg.get('production_use') is False)
-        check('observed_imerg_archive_append_only_contract',observed_imerg.get('retention_contract')=='append_only_by_zone_method_valid_date; first_audited_value_wins; conflicting_revisions_are_logged_without_overwrite')
-        check('observed_imerg_archive_record_count',int(observed_imerg.get('record_count',-1))==len(records))
-        check('observed_imerg_archive_unique_keys',len(observed_keys)==len(set(observed_keys)))
-        check('observed_imerg_archive_values_nonnegative',all(float(row.get('rain_mm',-1))>=0 for record in records for row in (record.get('series') or [])))
-        check('observed_imerg_run170_provenance_unique',len(pinned)==1)
-        check('observed_imerg_run170_verification_hash',len(pinned)==1 and pinned[0].get('verification_sha256')=='f4a79332710e8531e588b1f56222933e710439f38627c28a988ee7d11970ae1b')
-        check('observed_imerg_revision_candidates_fail_closed',all(row.get('production_use') is False and row.get('disposition')=='LOGGED_NOT_OVERWRITTEN_PENDING_SCIENTIFIC_REVIEW' for row in (observed_imerg.get('revision_candidates') or [])))
+        expected_pilots={'san_ildefonso','chosica','catacaos'}
+        by_zone=verification.get('by_zone') or {}
+        check('forecast_verification_exact_three_pilots',set(by_zone)==expected_pilots and set(verification.get('pilot_zone_ids') or [])==expected_pilots)
+        check('forecast_verification_total_matches_rows',int(verification.get('total_pairs',-1))==len(verification.get('pairs') or []))
+        check('forecast_verification_total_matches_zone_sum',int(verification.get('total_pairs',-1))==sum(int((by_zone.get(z) or {}).get('n',0)) for z in expected_pilots))
+        provenance=verification.get('provenance') or {}
+        check('forecast_verification_uses_history_only','HISTORY_ONLY' in str(provenance.get('acquisition_mode','')))
+        check('forecast_verification_never_uses_fallback',provenance.get('fallback_used') is False)
+        check('forecast_verification_forbids_silent_decrease',(verification.get('monotonicity') or {}).get('silent_decrease_forbidden') is True)
+    check('imerg_verification_history_present',imerg_verification_history is not None)
+    if imerg_verification_history:
+        retention=imerg_verification_history.get('retention_policy') or {}
+        observations=imerg_verification_history.get('observations') or []
+        observation_keys=[(row.get('zone_id'),row.get('sampling_method'),row.get('valid_date_utc')) for row in observations]
+        check('imerg_verification_history_not_production',imerg_verification_history.get('production_use') is False and imerg_verification_history.get('production_ready') is False)
+        check('imerg_verification_history_append_only',retention.get('mode')=='APPEND_ONLY')
+        check('imerg_verification_history_required_dedup_key',retention.get('deduplication_key')==['zone_id','sampling_method','valid_date_utc'])
+        check('imerg_verification_history_git_is_durable_source',(imerg_verification_history.get('durable_store') or {}).get('mode')=='GIT_VERSIONED_REPOSITORY')
+        check('imerg_verification_history_pages_is_replica_only',(imerg_verification_history.get('durable_store') or {}).get('pages_role')=='OPTIONAL_PUBLISHED_REPLICA_NOT_SOURCE_OF_TRUTH')
+        check('imerg_verification_history_manual_tombstones_only',retention.get('tombstone_creation_policy')=='MANUAL_REVIEWED_COMMIT_ONLY' and retention.get('automatic_tombstone_creation') is False)
+        check('imerg_verification_history_unique',len(observation_keys)==len(set(observation_keys)))
+        check('imerg_verification_history_preserves_august_7',{row.get('zone_id') for row in observations if row.get('valid_date_utc')=='2026-08-07'}=={'san_ildefonso','chosica','catacaos'})
 
     # GloFAS es secundario: una caída remota debe bloquear la señal actual sin
     # derribar la publicación ni convertir la ausencia de datos en bajo riesgo.
@@ -466,6 +471,36 @@ def main():
     check(
         'live_smoke_avoids_duplicate_archived_publish_trigger',
         'IRFEN - Publicar datos experimentales archivados' not in smoke_workflow,
+    )
+    check(
+        'live_smoke_isolated_per_upstream_and_never_cancelled',
+        'github.event.workflow_run.id' in smoke_workflow
+        and 'cancel-in-progress: false' in smoke_workflow,
+    )
+    check(
+        'live_smoke_enforces_verification_hash_chain',
+        "sha256('data/forecast/verification.json')" in smoke_workflow
+        and "sha256('data/v08_scorecard.json')" in smoke_workflow,
+    )
+    check(
+        'imerg_history_persists_to_git_after_validation',
+        'Persistir histórico científico en Git versionado' in deploy_workflow
+        and 'git add -- "$path"' in deploy_workflow
+        and 'git push origin HEAD:main' in deploy_workflow,
+    )
+    check(
+        'imerg_history_restores_without_pages',
+        'GIT_VERSIONED_DURABLE_RESTORE' in pr_workflow
+        and 'pages-intentionally-unavailable.json' in pr_workflow
+        and all(
+            'restore_imerg_verification_history.py' in workflow
+            for workflow in (deploy_workflow, publish_workflow, pr_workflow)
+        ),
+    )
+    check(
+        'imerg_demo_latest_is_rejected_remotely',
+        'Demostrar rechazo atómico de latest.json DEMO' in pr_workflow
+        and 'DEMO_REJECTED_WITHOUT_MUTATION' in pr_workflow,
     )
     check(
         'live_smoke_requires_catacaos_pprrd_research_asset',

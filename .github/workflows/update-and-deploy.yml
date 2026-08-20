@@ -21,6 +21,8 @@ on:
       - scripts/fetch_imerg.py
       - scripts/update_polygon_imerg.py
       - scripts/verify_geos_against_imerg.py
+      - scripts/update_imerg_verification_history.py
+      - scripts/restore_imerg_verification_history.py
       - scripts/build_historical_replay.py
       - scripts/build_lima_east_hazard_decomposition.py
       - scripts/build_ana_catacaos_segments.py
@@ -61,7 +63,7 @@ on:
       - site/v08-expansion.js
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -80,6 +82,9 @@ jobs:
     steps:
       - name: Descargar repositorio
         uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
 
       - name: Configurar Python
         uses: actions/setup-python@v6
@@ -104,16 +109,21 @@ jobs:
             echo "Usando latest.json del repositorio."
             cp site/data/latest.json .fallback/latest.json
           fi
-          OBS_URL="https://irfen2026.github.io/irfen-peru/data/forecast/observed_imerg_daily.json"
-          echo "Intentando conservar archivo acumulativo de observaciones: $OBS_URL"
-          if curl -fsSL --connect-timeout 15 --max-time 45 --retry 3 --retry-delay 5 "$OBS_URL" -o .fallback/observed_imerg_daily.json \
-            && python -m json.tool .fallback/observed_imerg_daily.json >/dev/null
-          then
-            cp .fallback/observed_imerg_daily.json site/data/forecast/observed_imerg_daily.json
-            echo "Archivo acumulativo IMERG restaurado desde Pages."
-          else
-            echo "Pages aún no contiene el archivo acumulativo; se conserva la semilla auditada del repositorio."
-          fi
+          cp site/data/forecast/imerg_verification_history.json \
+            .fallback/imerg_verification_history.git-versioned.json
+          HISTORY_URL="https://irfen2026.github.io/irfen-peru/data/forecast/imerg_verification_history.json"
+          echo "Consultando réplica opcional de Pages: $HISTORY_URL"
+          curl -fsSL --connect-timeout 15 --max-time 45 --retry 3 --retry-delay 5 \
+            "$HISTORY_URL" -o .fallback/imerg_verification_history.pages-candidate.json || true
+          python scripts/restore_imerg_verification_history.py \
+            --durable .fallback/imerg_verification_history.git-versioned.json \
+            --pages-candidate .fallback/imerg_verification_history.pages-candidate.json \
+            --destination site/data/forecast/imerg_verification_history.json \
+            --receipt .fallback/imerg_verification_history.restore-receipt.json
+          PREVIOUS_VERIFICATION_URL="https://irfen2026.github.io/irfen-peru/data/forecast/verification.json"
+          curl -fsSL --connect-timeout 15 --max-time 45 --retry 3 --retry-delay 5 \
+            "$PREVIOUS_VERIFICATION_URL" -o .fallback/verification.json
+          python -m json.tool .fallback/verification.json >/dev/null
           if [ -s site/data/history.json ]; then
             cp site/data/history.json .fallback/history.json
             echo "Catálogo histórico protegido."
@@ -168,6 +178,10 @@ jobs:
           EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
         run: timeout --signal=TERM --kill-after=10s 180s python scripts/update_polygon_imerg.py
 
+      - name: Añadir adquisición directa al histórico científico IMERG
+        if: env.IRFEN_NASA_OK == 'true'
+        run: python scripts/update_imerg_verification_history.py
+
       - name: Marcar estado operativo del dataset
         shell: bash
         run: |
@@ -186,7 +200,7 @@ jobs:
           PY
 
       - name: Verificar forecast GEOS maduro contra IMERG
-        run: python scripts/verify_geos_against_imerg.py
+        run: python scripts/verify_geos_against_imerg.py --previous-verification .fallback/verification.json
 
       - name: Construir replay histórico de calibración
         run: python scripts/build_historical_replay.py
@@ -258,13 +272,13 @@ jobs:
           test -s site/data/hydrology/ana_catacaos_critical_segments_2026_validation.json
           test -s site/data/hydrology/glofas_catacaos_current.json
           test -s site/data/forecast/verification.json
-          test -s site/data/forecast/observed_imerg_daily.json
+          test -s site/data/forecast/imerg_verification_history.json
           test -s site/data/calibration/historical_replay.json
           test -s site/data/experimental_state.json
           test -s site/data/phase2/event_reanalysis.json
           python -m json.tool site/data/latest.json >/dev/null
           python -m json.tool site/data/history.json >/dev/null
-          python -m json.tool site/data/forecast/observed_imerg_daily.json >/dev/null
+          python -m json.tool site/data/forecast/imerg_verification_history.json >/dev/null
           python -m json.tool site/data/scientific_status.json >/dev/null
           python -m json.tool site/data/hazard_models/lima_east_decomposition.json >/dev/null
           python -m json.tool site/data/hydraulics/current_infrastructure.json >/dev/null
@@ -324,6 +338,25 @@ jobs:
               assert d.get('available_for_controlled_testing') is True
               assert int((d.get('formal_closeout') or {}).get('current_milestone_pct',0)) >= 75
           PY
+
+      - name: Persistir histórico científico en Git versionado
+        if: env.IRFEN_NASA_OK == 'true' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          path="site/data/forecast/imerg_verification_history.json"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- "$path"
+          if git diff --cached --quiet; then
+            echo "El histórico durable ya coincide con la versión de main."
+            exit 0
+          fi
+          git commit -m "IRFEN v0.8: persistir histórico científico IMERG run ${GITHUB_RUN_ID}"
+          # Fast-forward only: si main avanzó concurrentemente, falla antes de
+          # desplegar y nunca incorpora cambios remotos no validados en este job.
+          git push origin HEAD:main
+          echo "Histórico IMERG persistido como commit Git independiente de Pages."
 
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v6

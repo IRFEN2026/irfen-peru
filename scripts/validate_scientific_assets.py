@@ -5,6 +5,11 @@ import json
 import sys
 from shapely.geometry import shape
 
+try:
+    from verify_geos_against_imerg import canonical_sha256
+except ImportError:
+    from scripts.verify_geos_against_imerg import canonical_sha256
+
 ROOT=Path(__file__).resolve().parents[1]; SITE=ROOT/'site'; ERRORS=[]; WARNINGS=[]
 
 def load(path):
@@ -66,54 +71,60 @@ def check_forecast_verification():
     if forbidden.intersection(data.keys()):ERRORS.append('forecast verification: contiene campos de corrección operativa prohibidos')
     if int(data.get('total_pairs',0))<0:ERRORS.append('forecast verification: total_pairs inválido')
     if int(data.get('total_pairs',0))!=len(data.get('pairs',[])):ERRORS.append('forecast verification: total_pairs no coincide con evidencia persistida')
+    expected={'san_ildefonso','chosica','catacaos'}
+    if set(data.get('pilot_zone_ids') or [])!=expected:ERRORS.append('forecast verification: deben existir exactamente los tres pilotos')
+    by_zone=data.get('by_zone') or {}
+    if set(by_zone)!=expected:ERRORS.append('forecast verification: by_zone no coincide con los tres pilotos')
+    if int(data.get('total_pairs',0))!=sum(int((by_zone.get(z) or {}).get('n',0)) for z in expected):ERRORS.append('forecast verification: total no coincide con suma por piloto')
+    provenance=data.get('provenance') or {}
+    if provenance.get('fallback_used') is not False:ERRORS.append('forecast verification: fallback científico prohibido')
+    if 'HISTORY_ONLY' not in str(provenance.get('acquisition_mode','')):ERRORS.append('forecast verification: no usa exclusivamente el histórico dedicado')
+    if (data.get('monotonicity') or {}).get('silent_decrease_forbidden') is not True:ERRORS.append('forecast verification: falta guarda contra disminuciones silenciosas')
+    pair_keys=set()
     for row in data.get('pairs',[]):
         if float(row.get('forecast_mm',0))<0 or float(row.get('observed_imerg_mm',0))<0:ERRORS.append('forecast verification: precipitación negativa')
+        key=(row.get('zone_id'),row.get('sampling_method'),row.get('snapshot_generated_at'),row.get('valid_date_utc'),row.get('forecast_record_kind'))
+        if key in pair_keys:ERRORS.append(f'forecast verification: par duplicado {key}')
+        pair_keys.add(key)
 
-def check_observed_imerg_archive():
-    p=SITE/'data/forecast/observed_imerg_daily.json'
-    if not p.exists():ERRORS.append('observed IMERG archive: archivo acumulativo requerido no generado');return
+def check_imerg_verification_history():
+    p=SITE/'data/forecast/imerg_verification_history.json'
+    if not p.exists():ERRORS.append('IMERG verification history: archivo dedicado requerido no generado');return
     data=load(p)
     if not data:return
-    if data.get('production_use') is not False:ERRORS.append('observed IMERG archive: production_use debe ser false')
-    expected_contract=(
-        'append_only_by_zone_method_valid_date; first_audited_value_wins; '
-        'conflicting_revisions_are_logged_without_overwrite'
-    )
-    if data.get('retention_contract')!=expected_contract:ERRORS.append('observed IMERG archive: contrato append-only inválido')
-    if int(data.get('record_count',-1))!=len(data.get('records',[])):ERRORS.append('observed IMERG archive: record_count inconsistente')
-    run170_artifact='88c0cd15ebbde7a9b789cacf4720c81e946e31d46f60546275fcac1dad851d9b'
-    run170_verification='f4a79332710e8531e588b1f56222933e710439f38627c28a988ee7d11970ae1b'
-    pinned=[row for row in data.get('seed_provenance',[]) if row.get('artifact_sha256')==run170_artifact]
-    if len(pinned)!=1:ERRORS.append('observed IMERG archive: procedencia única del artefacto #170 ausente')
-    elif pinned[0].get('verification_sha256')!=run170_verification:ERRORS.append('observed IMERG archive: hash de verification #170 inválido')
+    if data.get('production_use') is not False or data.get('production_ready') is not False:ERRORS.append('IMERG verification history: guardas TEST_ONLY inválidas')
+    retention=data.get('retention_policy') or {}
+    if retention.get('mode')!='APPEND_ONLY':ERRORS.append('IMERG verification history: retención no es APPEND_ONLY')
+    if retention.get('deduplication_key')!=['zone_id','sampling_method','valid_date_utc']:ERRORS.append('IMERG verification history: clave de deduplicación inválida')
+    if retention.get('tombstone_creation_policy')!='MANUAL_REVIEWED_COMMIT_ONLY':ERRORS.append('IMERG verification history: tombstones no están limitados a commits manuales revisados')
+    if retention.get('automatic_tombstone_creation') is not False:ERRORS.append('IMERG verification history: creación automática de tombstones debe estar prohibida')
+    durable=data.get('durable_store') or {}
+    if durable.get('mode')!='GIT_VERSIONED_REPOSITORY':ERRORS.append('IMERG verification history: falta persistencia durable versionada en Git')
+    if durable.get('pages_role')!='OPTIONAL_PUBLISHED_REPLICA_NOT_SOURCE_OF_TRUTH':ERRORS.append('IMERG verification history: Pages no puede ser fuente durable')
     expected={
         ('san_ildefonso','validated_dem_polygon'),
         ('chosica','validated_dem_polygon'),
         ('catacaos','provisional_weighted_operational_sampling_areas'),
     }
-    seen=set()
-    observation_keys=set()
-    for record in data.get('records',[]):
-        key=(record.get('zone_id'),record.get('sampling_method'))
-        if key not in expected:ERRORS.append(f'observed IMERG archive: contrato espacial inesperado {key}')
-        if key in seen:ERRORS.append(f'observed IMERG archive: registro duplicado {key}')
+    seen=set();contracts=set();evidence_by_id={row.get('evidence_id'):row for row in data.get('source_evidence',[])}
+    for row in data.get('observations',[]):
+        contract=(row.get('zone_id'),row.get('sampling_method'));key=(*contract,row.get('valid_date_utc'))
+        contracts.add(contract)
+        if contract not in expected:ERRORS.append(f'IMERG verification history: contrato espacial inesperado {contract}')
+        if key in seen:ERRORS.append(f'IMERG verification history: observación duplicada {key}')
         seen.add(key)
-        dates=set()
-        for row in record.get('series',[]):
-            day=row.get('date');rain=row.get('rain_mm')
-            if not day or rain is None:ERRORS.append(f'observed IMERG archive {key}: fecha o lluvia ausente');continue
-            if day in dates:ERRORS.append(f'observed IMERG archive {key}: fecha duplicada {day}')
-            dates.add(day)
-            observation_key=(*key,day)
-            if observation_key in observation_keys:ERRORS.append(f'observed IMERG archive: clave duplicada {observation_key}')
-            observation_keys.add(observation_key)
-            if float(rain)<0:ERRORS.append(f'observed IMERG archive {key}: precipitación negativa')
-    if seen!=expected:ERRORS.append(f'observed IMERG archive: contratos faltantes {sorted(expected-seen)}')
-    for row in data.get('revision_candidates',[]):
-        key=(row.get('zone_id'),row.get('sampling_method'))
-        if key not in expected:ERRORS.append(f'observed IMERG archive: revisión con contrato inesperado {key}')
-        if row.get('disposition')!='LOGGED_NOT_OVERWRITTEN_PENDING_SCIENTIFIC_REVIEW':ERRORS.append('observed IMERG archive: revisión sin disposición fail-closed')
-        if row.get('production_use') is not False:ERRORS.append('observed IMERG archive: revisión no puede ser productiva')
+        if not key[2] or row.get('observed_imerg_mm') is None or float(row.get('observed_imerg_mm',-1))<0:ERRORS.append(f'IMERG verification history: observación inválida {key}')
+        if row.get('provenance_evidence_id') not in evidence_by_id:ERRORS.append(f'IMERG verification history: procedencia ausente {key}')
+    if contracts!=expected:ERRORS.append(f'IMERG verification history: contratos faltantes {sorted(expected-contracts)}')
+    for row in data.get('withdrawals',[]):
+        key=(row.get('zone_id'),row.get('sampling_method'),row.get('valid_date_utc'))
+        observation=next((item for item in data.get('observations',[]) if (item.get('zone_id'),item.get('sampling_method'),item.get('valid_date_utc'))==key),None)
+        evidence=evidence_by_id.get((observation or {}).get('provenance_evidence_id'))
+        required=(row.get('withdrawal_id'),row.get('reason'),row.get('approval_reference'),row.get('approved_by'),row.get('approved_at'),row.get('recorded_at'),row.get('observation_sha256'),row.get('evidence_sha256'))
+        if row.get('status')!='APPROVED' or not all(required):ERRORS.append('IMERG verification history: retirada no explícita/aprobada')
+        if row.get('creation_mode')!='MANUAL_REVIEWED_COMMIT' or row.get('automatic_creation') is not False:ERRORS.append('IMERG verification history: tombstone automático o no revisado')
+        if observation is None or row.get('observation_sha256')!=canonical_sha256(observation):ERRORS.append(f'IMERG verification history: hash de observación inválido en retirada {key}')
+        if evidence is None or row.get('evidence_sha256')!=canonical_sha256(evidence):ERRORS.append(f'IMERG verification history: hash de evidencia inválido en retirada {key}')
 
 def check_forecast_historical_daily():
     p=SITE/'data/forecast/historical_daily.json'
@@ -259,7 +270,7 @@ def check_manifest():
 def main():
     check_watershed('san_ildefonso','san_ildefonso_watershed.geojson','san_ildefonso_validation.json')
     check_watershed('chosica','huaycoloro_watershed.geojson','huaycoloro_validation.json')
-    check_latest_contract();check_history_contract();check_forecast_contract();check_forecast_verification();check_observed_imerg_archive();check_forecast_historical_daily();check_hydraulic_inventory();check_piura_reference_model();check_catacaos_document_context();check_ana_catacaos_segments();check_historical_replay();check_senamhi_wis2_discovery();check_experimental_state();check_frontend_contract();check_manifest()
+    check_latest_contract();check_history_contract();check_forecast_contract();check_forecast_verification();check_imerg_verification_history();check_forecast_historical_daily();check_hydraulic_inventory();check_piura_reference_model();check_catacaos_document_context();check_ana_catacaos_segments();check_historical_replay();check_senamhi_wis2_discovery();check_experimental_state();check_frontend_contract();check_manifest()
     for w in WARNINGS:print('WARNING:',w)
     if ERRORS:
         for e in ERRORS:print('ERROR:',e)

@@ -12,8 +12,10 @@ permissions:
   contents: read
 
 concurrency:
-  group: live-smoke-test
-  cancel-in-progress: true
+  # Cada despliegue conserva su propio smoke. Un dispatch u otro upstream no
+  # puede cancelar la verificación de un deployment exitoso anterior.
+  group: "live-smoke-test-${{ github.event_name == 'workflow_run' && github.event.workflow_run.id || github.run_id }}"
+  cancel-in-progress: false
 
 jobs:
   smoke:
@@ -40,8 +42,10 @@ jobs:
             "data/scientific_status.json"
             "data/hydraulics/current_infrastructure.json"
             "data/forecast/latest.json"
+            "data/forecast/archive.json"
+            "data/forecast/historical_daily.json"
             "data/forecast/verification.json"
-            "data/forecast/observed_imerg_daily.json"
+            "data/forecast/imerg_verification_history.json"
             "data/calibration/historical_replay.json"
             "data/calibration/goes19_rrqpe_probe.json"
             "data/calibration/goes19_rrqpe_archive.json"
@@ -82,10 +86,15 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import hashlib
           import json
           from scripts.archive_shadow_validation import validate_shadow_integrity
           root=Path('/tmp/irfen-live')
           def load(path): return json.loads((root/path).read_text(encoding='utf-8'))
+          def sha256(path): return hashlib.sha256((root/path).read_bytes()).hexdigest()
+          def canonical_sha256(value):
+              payload=json.dumps(value,ensure_ascii=False,sort_keys=True,separators=(',',':')).encode('utf-8')
+              return hashlib.sha256(payload).hexdigest()
 
           latest=load('data/latest.json')
           assert latest.get('operational_status') in {'updated','stale'}, latest.get('operational_status')
@@ -95,23 +104,78 @@ jobs:
           assert forecast.get('production_use') is False
           verification=load('data/forecast/verification.json')
           assert verification.get('production_use') is False
-          assert int(verification.get('total_pairs',0)) >= 0
-          observed=load('data/forecast/observed_imerg_daily.json')
-          assert observed.get('production_use') is False
-          assert observed.get('retention_contract') == 'append_only_by_zone_method_valid_date; first_audited_value_wins; conflicting_revisions_are_logged_without_overwrite'
-          assert int(observed.get('record_count',-1)) == len(observed.get('records',[]))
-          pinned=[row for row in observed.get('seed_provenance',[]) if row.get('artifact_sha256') == '88c0cd15ebbde7a9b789cacf4720c81e946e31d46f60546275fcac1dad851d9b']
-          assert len(pinned) == 1
-          assert pinned[0].get('verification_sha256') == 'f4a79332710e8531e588b1f56222933e710439f38627c28a988ee7d11970ae1b'
-          observed_keys=[]
-          for record in observed.get('records',[]):
-              for row in record.get('series',[]):
-                  observed_keys.append((record.get('zone_id'),record.get('sampling_method'),row.get('date')))
-                  assert float(row.get('rain_mm',-1)) >= 0
-          assert len(observed_keys) == len(set(observed_keys))
-          for row in observed.get('revision_candidates',[]):
-              assert row.get('production_use') is False
-              assert row.get('disposition') == 'LOGGED_NOT_OVERWRITTEN_PENDING_SCIENTIFIC_REVIEW'
+          assert verification.get('production_ready') is False
+          assert verification.get('operational_alerting_enabled') is False
+          expected_pilots={'san_ildefonso','chosica','catacaos'}
+          assert set(verification.get('pilot_zone_ids') or []) == expected_pilots
+          by_zone=verification.get('by_zone') or {}
+          assert set(by_zone) == expected_pilots
+          assert all(int((by_zone.get(zone_id) or {}).get('n',0)) >= 30 for zone_id in expected_pilots)
+          pairs=verification.get('pairs') or []
+          assert int(verification.get('total_pairs',-1)) == len(pairs)
+          assert len(pairs) == sum(int((by_zone.get(zone_id) or {}).get('n',0)) for zone_id in expected_pilots)
+          pair_keys=[(
+              row.get('zone_id'),row.get('sampling_method'),row.get('snapshot_generated_at'),
+              row.get('valid_date_utc'),row.get('forecast_record_kind')
+          ) for row in pairs]
+          assert len(pair_keys) == len(set(pair_keys))
+          provenance=verification.get('provenance') or {}
+          assert provenance.get('workflow_name')
+          assert provenance.get('workflow_run_id')
+          assert provenance.get('workflow_run_number')
+          assert len(str(provenance.get('main_commit') or '')) == 40
+          assert provenance.get('fallback_used') is False
+          assert provenance.get('acquisition_mode') == 'DEDICATED_APPEND_ONLY_IMERG_VERIFICATION_HISTORY_ONLY'
+          assert provenance.get('minimum_valid_date_utc')
+          assert provenance.get('maximum_valid_date_utc')
+          assert verification.get('generated_at')
+          for item in provenance.get('inputs') or []:
+              assert len(item.get('sha256','')) == 64
+              local_path=str(item.get('path','')).removeprefix('site/')
+              assert sha256(local_path) == item.get('sha256')
+          monotonicity=verification.get('monotonicity') or {}
+          assert monotonicity.get('silent_decrease_forbidden') is True
+          assert monotonicity.get('status') in {'NO_DECREASE','EXPLICIT_WITHDRAWAL_RECORDED'}
+          assert 'DEMO' not in json.dumps(verification,ensure_ascii=False).upper()
+          assert 'STATIC_FALLBACK' not in json.dumps(verification,ensure_ascii=False).upper()
+
+          history=load('data/forecast/imerg_verification_history.json')
+          assert history.get('production_use') is False
+          assert history.get('production_ready') is False
+          retention=history.get('retention_policy') or {}
+          assert retention.get('mode') == 'APPEND_ONLY'
+          assert retention.get('deduplication_key') == ['zone_id','sampling_method','valid_date_utc']
+          assert retention.get('tombstone_creation_policy') == 'MANUAL_REVIEWED_COMMIT_ONLY'
+          assert retention.get('automatic_tombstone_creation') is False
+          durable=history.get('durable_store') or {}
+          assert durable.get('mode') == 'GIT_VERSIONED_REPOSITORY'
+          assert durable.get('pages_role') == 'OPTIONAL_PUBLISHED_REPLICA_NOT_SOURCE_OF_TRUTH'
+          observations=history.get('observations',[])
+          observation_keys=[(
+              row.get('zone_id'),row.get('sampling_method'),row.get('valid_date_utc')
+          ) for row in observations]
+          assert len(observation_keys) == len(set(observation_keys))
+          assert {(key[0],key[1]) for key in observation_keys} == {
+              ('san_ildefonso','validated_dem_polygon'),
+              ('chosica','validated_dem_polygon'),
+              ('catacaos','provisional_weighted_operational_sampling_areas'),
+          }
+          evidence_by_id={row.get('evidence_id'):row for row in history.get('source_evidence',[])}
+          assert all(source.get('fallback_used') is False for source in evidence_by_id.values())
+          observation_by_key={
+              (row.get('zone_id'),row.get('sampling_method'),row.get('valid_date_utc')):row
+              for row in observations
+          }
+          for tombstone in history.get('withdrawals',[]):
+              key=(tombstone.get('zone_id'),tombstone.get('sampling_method'),tombstone.get('valid_date_utc'))
+              observation=observation_by_key[key]
+              evidence=evidence_by_id[observation.get('provenance_evidence_id')]
+              assert tombstone.get('status') == 'APPROVED'
+              assert tombstone.get('approval_reference')
+              assert tombstone.get('creation_mode') == 'MANUAL_REVIEWED_COMMIT'
+              assert tombstone.get('automatic_creation') is False
+              assert tombstone.get('observation_sha256') == canonical_sha256(observation)
+              assert tombstone.get('evidence_sha256') == canonical_sha256(evidence)
 
           replay=load('data/calibration/historical_replay.json')
           assert replay.get('production_use') is False
@@ -305,6 +369,8 @@ jobs:
           assert score.get('production_ready') is False
           assert score.get('current_milestone_pct') in {25,50,75,100}
           assert [m.get('percentage') for m in score.get('milestones',[])] == [25,50,75,100]
+          score_chain=score.get('evidence_chain') or {}
+          assert (score_chain.get('verification') or {}).get('sha256') == sha256('data/forecast/verification.json')
           review_workflows=score.get('human_review_workflows') or {}
           shadow_review_workflow=review_workflows.get('shadow_outcomes') or {}
           external_review_workflow=review_workflows.get('external_evidence') or {}
@@ -328,6 +394,9 @@ jobs:
           assert rc.get('operational_alerting_enabled') is False
           assert (rc.get('phase2') or {}).get('operational_candidates') == 0
           assert (rc.get('formal_closeout') or {}).get('current_milestone_pct') == score.get('current_milestone_pct')
+          rc_chain=rc.get('evidence_chain') or {}
+          assert (rc_chain.get('verification') or {}).get('sha256') == sha256('data/forecast/verification.json')
+          assert (rc_chain.get('scorecard') or {}).get('sha256') == sha256('data/v08_scorecard.json')
           if rc.get('status') == 'RC_AVAILABLE_TEST_ONLY':
               assert rc.get('available_for_controlled_testing') is True
               assert score.get('current_milestone_pct',0) >= 75
