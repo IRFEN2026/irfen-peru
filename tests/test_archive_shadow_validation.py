@@ -1,5 +1,5 @@
 import importlib.util
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import unittest
 
@@ -155,16 +155,14 @@ class ImmutableDailyShadowArchiveTests(unittest.TestCase):
 
     def test_new_day_is_appended_and_archive_is_bounded(self):
         records = [
-            {"snapshot_date_utc": f"2025-01-{day:02d}", "production_use": False}
-            for day in range(1, 32)
+            {
+                "snapshot_date_utc": (
+                    datetime(2025, 1, 1, tzinfo=timezone.utc) + timedelta(days=index)
+                ).date().isoformat(),
+                "production_use": False,
+            }
+            for index in range(400)
         ]
-        records.extend(
-            {"snapshot_date_utc": f"2025-{month:02d}-01", "production_use": False}
-            for month in range(2, 13)
-        )
-        while len(records) < 400:
-            index = len(records)
-            records.append({"snapshot_date_utc": f"2026-{index // 28 + 1:02d}-{index % 28 + 1:02d}"})
         archive = {"status": "SHADOW_VALIDATION_ARCHIVE", "records": records}
         entry = {"snapshot_date_utc": "2099-12-31", "production_use": False}
         now = datetime(2099, 12, 31, 17, 30, tzinfo=timezone.utc)
@@ -178,6 +176,58 @@ class ImmutableDailyShadowArchiveTests(unittest.TestCase):
         self.assertEqual(archive["updated_at"], now.isoformat())
         self.assertIs(archive["production_use"], False)
         self.assertIs(archive["production_ready"], False)
+
+    def test_effective_day_snapshot_is_sealed_and_chained(self):
+        archive = {"status": "SHADOW_VALIDATION_ARCHIVE", "records": []}
+        first = {
+            "snapshot_date_utc": "2026-08-21",
+            "archived_at": "2026-08-21T00:10:00+00:00",
+            "zones": [{"zone_id": "catacaos", "observed_mm": {"rain24": 4.0}}],
+            "outcome_verification": {"status": "PENDING_REAL_WORLD_OUTCOME_REVIEW"},
+            "production_use": False,
+        }
+        second = {
+            **first,
+            "snapshot_date_utc": "2026-08-22",
+            "archived_at": "2026-08-22T00:10:00+00:00",
+        }
+
+        MODULE.append_immutable_daily_snapshot(
+            archive, first, datetime(2026, 8, 21, 0, 10, tzinfo=timezone.utc)
+        )
+        MODULE.append_immutable_daily_snapshot(
+            archive, second, datetime(2026, 8, 22, 0, 10, tzinfo=timezone.utc)
+        )
+
+        validation = MODULE.validate_shadow_integrity(archive["records"])
+        self.assertTrue(validation["valid"])
+        self.assertEqual(validation["sealed_record_count"], 2)
+        self.assertIsNone(first["integrity"]["previous_chain_sha256"])
+        self.assertEqual(
+            second["integrity"]["previous_chain_sha256"],
+            first["integrity"]["chain_sha256"],
+        )
+
+    def test_review_annotation_is_mutable_but_snapshot_payload_is_not(self):
+        record = {
+            "snapshot_date_utc": "2026-08-21",
+            "archived_at": "2026-08-21T00:10:00+00:00",
+            "zones": [{"zone_id": "catacaos", "observed_mm": {"rain24": 4.0}}],
+            "outcome_verification": {"status": "PENDING_REAL_WORLD_OUTCOME_REVIEW"},
+            "production_use": False,
+        }
+        MODULE.seal_snapshot_integrity(record, None)
+
+        record["outcome_verification"] = {
+            "status": "REVIEWED_REAL_WORLD_OUTCOME",
+            "label": "UNCERTAIN",
+        }
+        self.assertTrue(MODULE.validate_shadow_integrity([record])["valid"])
+
+        record["zones"][0]["observed_mm"]["rain24"] = 40.0
+        validation = MODULE.validate_shadow_integrity([record])
+        self.assertFalse(validation["valid"])
+        self.assertIn("2026-08-21:payload_hash_mismatch", validation["errors"])
 
 
 if __name__ == "__main__":
