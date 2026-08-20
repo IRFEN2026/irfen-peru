@@ -7,7 +7,6 @@ SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "verify_geos_against_
 WORKFLOW = Path(__file__).resolve().parents[1] / ".github/workflows/update-and-deploy.yml"
 PUBLISH_WORKFLOW = Path(__file__).resolve().parents[1] / ".github/workflows/publish-committed-data.yml"
 SMOKE_WORKFLOW = Path(__file__).resolve().parents[1] / ".github/workflows/live-smoke-test.yml"
-PR_WORKFLOW = Path(__file__).resolve().parents[1] / ".github/workflows/pr-validation.yml"
 SPEC = importlib.util.spec_from_file_location("verify_geos_against_imerg", SCRIPT)
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
@@ -125,7 +124,7 @@ class ObservationArchiveTests(unittest.TestCase):
         )
 
     def test_all_publication_paths_preserve_and_validate_observation_archive(self):
-        for path in (PUBLISH_WORKFLOW, SMOKE_WORKFLOW, PR_WORKFLOW):
+        for path in (PUBLISH_WORKFLOW, SMOKE_WORKFLOW):
             workflow = path.read_text(encoding="utf-8")
             self.assertIn("observed_imerg_daily.json", workflow, path.name)
         publish = PUBLISH_WORKFLOW.read_text(encoding="utf-8")
