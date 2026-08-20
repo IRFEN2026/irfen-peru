@@ -11,7 +11,7 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 4
     steps:
       - name: Hash official W1 source documents
         shell: bash
@@ -21,7 +21,7 @@ jobs:
             id="$1"
             url="$2"
             out="/tmp/${id}.pdf"
-            if curl -fL --connect-timeout 15 --max-time 90 --retry 2 --retry-all-errors "$url" -o "$out"; then
+            if curl -fL --connect-timeout 8 --max-time 25 "$url" -o "$out"; then
               printf 'W1_SOURCE|%s|OK|%s|%s|%s\n' "$id" "$(stat -c%s "$out")" "$(sha256sum "$out" | cut -d' ' -f1)" "$url"
             else
               printf 'W1_SOURCE|%s|NOT_REPRODUCIBLY_RETRIEVED|||%s\n' "$id" "$url"
