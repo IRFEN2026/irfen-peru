@@ -16,7 +16,11 @@
   },
   "retention_policy": {
     "mode": "APPEND_ONLY",
-    "deduplication_key": ["zone_id", "sampling_method", "valid_date_utc"],
+    "deduplication_key": [
+      "zone_id",
+      "sampling_method",
+      "valid_date_utc"
+    ],
     "duplicate_policy": "IDENTICAL_VALUE_DEDUPLICATED",
     "conflict_policy": "REJECT_RUN_AND_RECORD_NOTHING",
     "withdrawal_policy": "EXPLICIT_APPROVED_TOMBSTONE_ONLY",
@@ -38,9 +42,18 @@
     "missing_data_policy": "ABSENT_IS_UNKNOWN_NEVER_ZERO_OR_LOW_RISK"
   },
   "pilot_contracts": [
-    {"zone_id": "san_ildefonso", "sampling_method": "validated_dem_polygon"},
-    {"zone_id": "chosica", "sampling_method": "validated_dem_polygon"},
-    {"zone_id": "catacaos", "sampling_method": "provisional_weighted_operational_sampling_areas"}
+    {
+      "zone_id": "san_ildefonso",
+      "sampling_method": "validated_dem_polygon"
+    },
+    {
+      "zone_id": "chosica",
+      "sampling_method": "validated_dem_polygon"
+    },
+    {
+      "zone_id": "catacaos",
+      "sampling_method": "provisional_weighted_operational_sampling_areas"
+    }
   ],
   "source_evidence": [
     {
@@ -75,45 +88,297 @@
       "acquisition_mode": "BACKFILL_FROM_HASH_PINNED_PAGES_ARTIFACT",
       "fallback_used": false,
       "recorded_at": "2026-08-20T04:10:00+00:00"
+    },
+    {
+      "evidence_id": "direct-imerg-32387046105",
+      "source_kind": "DIRECT_NASA_IMERG_LATE_ACQUISITION",
+      "input_path": "site/data/latest.json",
+      "input_sha256": "c4675076dd1294f3683a32c55ec6d14f5f4bc2cb9661cc3fef56ebed0fa18cb6",
+      "dataset": "GPM_3IMERGDL",
+      "source_generated_at": "2026-08-20T15:36:56.794990+00:00",
+      "workflow_name": "IRFEN — Actualizar IMERG y publicar",
+      "workflow_run_id": "32387046105",
+      "workflow_run_number": "182",
+      "main_commit": "4c54d873424bc7a4f31dcf46bc88ab0d3dc0cb19",
+      "acquisition_mode": "DIRECT_NASA_EARTHDATA",
+      "fallback_used": false,
+      "recorded_at": "2026-08-20T15:37:04.895350+00:00"
     }
   ],
   "observations": [
-    {"zone_id":"catacaos","sampling_method":"provisional_weighted_operational_sampling_areas","valid_date_utc":"2026-08-06","observed_imerg_mm":0.0,"provenance_evidence_id":"legacy-pr111-aug06"},
-    {"zone_id":"chosica","sampling_method":"validated_dem_polygon","valid_date_utc":"2026-08-06","observed_imerg_mm":0.0,"provenance_evidence_id":"legacy-pr111-aug06"},
-    {"zone_id":"san_ildefonso","sampling_method":"validated_dem_polygon","valid_date_utc":"2026-08-06","observed_imerg_mm":0.0,"provenance_evidence_id":"legacy-pr111-aug06"},
-    {"zone_id":"catacaos","sampling_method":"provisional_weighted_operational_sampling_areas","valid_date_utc":"2026-08-07","observed_imerg_mm":0.0,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"chosica","sampling_method":"validated_dem_polygon","valid_date_utc":"2026-08-07","observed_imerg_mm":0.0,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"san_ildefonso","sampling_method":"validated_dem_polygon","valid_date_utc":"2026-08-07","observed_imerg_mm":0.0,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"catacaos","sampling_method":"provisional_weighted_operational_sampling_areas","valid_date_utc":"2026-08-08","observed_imerg_mm":0.0,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"chosica","sampling_method":"validated_dem_polygon","valid_date_utc":"2026-08-08","observed_imerg_mm":0.0,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"san_ildefonso","sampling_method":"validated_dem_polygon","valid_date_utc":"2026-08-08","observed_imerg_mm":0.0,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"catacaos","sampling_method":"provisional_weighted_operational_sampling_areas","valid_date_utc":"2026-08-09","observed_imerg_mm":0.01,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"chosica","sampling_method":"validated_dem_polygon","valid_date_utc":"2026-08-09","observed_imerg_mm":0.17,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"san_ildefonso","sampling_method":"validated_dem_polygon","valid_date_utc":"2026-08-09","observed_imerg_mm":0.0,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"catacaos","sampling_method":"provisional_weighted_operational_sampling_areas","valid_date_utc":"2026-08-11","observed_imerg_mm":0.0,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"chosica","sampling_method":"validated_dem_polygon","valid_date_utc":"2026-08-11","observed_imerg_mm":0.0,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"san_ildefonso","sampling_method":"validated_dem_polygon","valid_date_utc":"2026-08-11","observed_imerg_mm":0.0,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"catacaos","sampling_method":"provisional_weighted_operational_sampling_areas","valid_date_utc":"2026-08-12","observed_imerg_mm":0.0,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"chosica","sampling_method":"validated_dem_polygon","valid_date_utc":"2026-08-12","observed_imerg_mm":0.0,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"san_ildefonso","sampling_method":"validated_dem_polygon","valid_date_utc":"2026-08-12","observed_imerg_mm":0.0,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"catacaos","sampling_method":"provisional_weighted_operational_sampling_areas","valid_date_utc":"2026-08-13","observed_imerg_mm":0.0,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"chosica","sampling_method":"validated_dem_polygon","valid_date_utc":"2026-08-13","observed_imerg_mm":0.0,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"san_ildefonso","sampling_method":"validated_dem_polygon","valid_date_utc":"2026-08-13","observed_imerg_mm":0.0,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"catacaos","sampling_method":"provisional_weighted_operational_sampling_areas","valid_date_utc":"2026-08-14","observed_imerg_mm":0.01,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"chosica","sampling_method":"validated_dem_polygon","valid_date_utc":"2026-08-14","observed_imerg_mm":0.02,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"san_ildefonso","sampling_method":"validated_dem_polygon","valid_date_utc":"2026-08-14","observed_imerg_mm":0.0,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"catacaos","sampling_method":"provisional_weighted_operational_sampling_areas","valid_date_utc":"2026-08-15","observed_imerg_mm":0.0,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"chosica","sampling_method":"validated_dem_polygon","valid_date_utc":"2026-08-15","observed_imerg_mm":0.0,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"san_ildefonso","sampling_method":"validated_dem_polygon","valid_date_utc":"2026-08-15","observed_imerg_mm":0.0,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"catacaos","sampling_method":"provisional_weighted_operational_sampling_areas","valid_date_utc":"2026-08-16","observed_imerg_mm":0.67,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"chosica","sampling_method":"validated_dem_polygon","valid_date_utc":"2026-08-16","observed_imerg_mm":0.03,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"san_ildefonso","sampling_method":"validated_dem_polygon","valid_date_utc":"2026-08-16","observed_imerg_mm":0.88,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"catacaos","sampling_method":"provisional_weighted_operational_sampling_areas","valid_date_utc":"2026-08-17","observed_imerg_mm":0.0,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"chosica","sampling_method":"validated_dem_polygon","valid_date_utc":"2026-08-17","observed_imerg_mm":0.0,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"san_ildefonso","sampling_method":"validated_dem_polygon","valid_date_utc":"2026-08-17","observed_imerg_mm":0.66,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"catacaos","sampling_method":"provisional_weighted_operational_sampling_areas","valid_date_utc":"2026-08-18","observed_imerg_mm":0.0,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"chosica","sampling_method":"validated_dem_polygon","valid_date_utc":"2026-08-18","observed_imerg_mm":0.0,"provenance_evidence_id":"pages-run-170-verification"},
-    {"zone_id":"san_ildefonso","sampling_method":"validated_dem_polygon","valid_date_utc":"2026-08-18","observed_imerg_mm":0.0,"provenance_evidence_id":"pages-run-170-verification"}
+    {
+      "zone_id": "catacaos",
+      "sampling_method": "provisional_weighted_operational_sampling_areas",
+      "valid_date_utc": "2026-08-06",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "legacy-pr111-aug06"
+    },
+    {
+      "zone_id": "chosica",
+      "sampling_method": "validated_dem_polygon",
+      "valid_date_utc": "2026-08-06",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "legacy-pr111-aug06"
+    },
+    {
+      "zone_id": "san_ildefonso",
+      "sampling_method": "validated_dem_polygon",
+      "valid_date_utc": "2026-08-06",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "legacy-pr111-aug06"
+    },
+    {
+      "zone_id": "catacaos",
+      "sampling_method": "provisional_weighted_operational_sampling_areas",
+      "valid_date_utc": "2026-08-07",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "chosica",
+      "sampling_method": "validated_dem_polygon",
+      "valid_date_utc": "2026-08-07",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "san_ildefonso",
+      "sampling_method": "validated_dem_polygon",
+      "valid_date_utc": "2026-08-07",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "catacaos",
+      "sampling_method": "provisional_weighted_operational_sampling_areas",
+      "valid_date_utc": "2026-08-08",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "chosica",
+      "sampling_method": "validated_dem_polygon",
+      "valid_date_utc": "2026-08-08",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "san_ildefonso",
+      "sampling_method": "validated_dem_polygon",
+      "valid_date_utc": "2026-08-08",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "catacaos",
+      "sampling_method": "provisional_weighted_operational_sampling_areas",
+      "valid_date_utc": "2026-08-09",
+      "observed_imerg_mm": 0.01,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "chosica",
+      "sampling_method": "validated_dem_polygon",
+      "valid_date_utc": "2026-08-09",
+      "observed_imerg_mm": 0.17,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "san_ildefonso",
+      "sampling_method": "validated_dem_polygon",
+      "valid_date_utc": "2026-08-09",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "catacaos",
+      "sampling_method": "provisional_weighted_operational_sampling_areas",
+      "valid_date_utc": "2026-08-11",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "chosica",
+      "sampling_method": "validated_dem_polygon",
+      "valid_date_utc": "2026-08-11",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "san_ildefonso",
+      "sampling_method": "validated_dem_polygon",
+      "valid_date_utc": "2026-08-11",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "catacaos",
+      "sampling_method": "provisional_weighted_operational_sampling_areas",
+      "valid_date_utc": "2026-08-12",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "chosica",
+      "sampling_method": "validated_dem_polygon",
+      "valid_date_utc": "2026-08-12",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "san_ildefonso",
+      "sampling_method": "validated_dem_polygon",
+      "valid_date_utc": "2026-08-12",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "catacaos",
+      "sampling_method": "provisional_weighted_operational_sampling_areas",
+      "valid_date_utc": "2026-08-13",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "chosica",
+      "sampling_method": "validated_dem_polygon",
+      "valid_date_utc": "2026-08-13",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "san_ildefonso",
+      "sampling_method": "validated_dem_polygon",
+      "valid_date_utc": "2026-08-13",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "catacaos",
+      "sampling_method": "provisional_weighted_operational_sampling_areas",
+      "valid_date_utc": "2026-08-14",
+      "observed_imerg_mm": 0.01,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "chosica",
+      "sampling_method": "validated_dem_polygon",
+      "valid_date_utc": "2026-08-14",
+      "observed_imerg_mm": 0.02,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "san_ildefonso",
+      "sampling_method": "validated_dem_polygon",
+      "valid_date_utc": "2026-08-14",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "catacaos",
+      "sampling_method": "provisional_weighted_operational_sampling_areas",
+      "valid_date_utc": "2026-08-15",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "chosica",
+      "sampling_method": "validated_dem_polygon",
+      "valid_date_utc": "2026-08-15",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "san_ildefonso",
+      "sampling_method": "validated_dem_polygon",
+      "valid_date_utc": "2026-08-15",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "catacaos",
+      "sampling_method": "provisional_weighted_operational_sampling_areas",
+      "valid_date_utc": "2026-08-16",
+      "observed_imerg_mm": 0.67,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "chosica",
+      "sampling_method": "validated_dem_polygon",
+      "valid_date_utc": "2026-08-16",
+      "observed_imerg_mm": 0.03,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "san_ildefonso",
+      "sampling_method": "validated_dem_polygon",
+      "valid_date_utc": "2026-08-16",
+      "observed_imerg_mm": 0.88,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "catacaos",
+      "sampling_method": "provisional_weighted_operational_sampling_areas",
+      "valid_date_utc": "2026-08-17",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "chosica",
+      "sampling_method": "validated_dem_polygon",
+      "valid_date_utc": "2026-08-17",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "san_ildefonso",
+      "sampling_method": "validated_dem_polygon",
+      "valid_date_utc": "2026-08-17",
+      "observed_imerg_mm": 0.66,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "catacaos",
+      "sampling_method": "provisional_weighted_operational_sampling_areas",
+      "valid_date_utc": "2026-08-18",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "chosica",
+      "sampling_method": "validated_dem_polygon",
+      "valid_date_utc": "2026-08-18",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "san_ildefonso",
+      "sampling_method": "validated_dem_polygon",
+      "valid_date_utc": "2026-08-18",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "pages-run-170-verification"
+    },
+    {
+      "zone_id": "catacaos",
+      "sampling_method": "provisional_weighted_operational_sampling_areas",
+      "valid_date_utc": "2026-08-19",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "direct-imerg-32387046105"
+    },
+    {
+      "zone_id": "chosica",
+      "sampling_method": "validated_dem_polygon",
+      "valid_date_utc": "2026-08-19",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "direct-imerg-32387046105"
+    },
+    {
+      "zone_id": "san_ildefonso",
+      "sampling_method": "validated_dem_polygon",
+      "valid_date_utc": "2026-08-19",
+      "observed_imerg_mm": 0.0,
+      "provenance_evidence_id": "direct-imerg-32387046105"
+    }
   ],
   "withdrawals": [],
   "change_log": [
@@ -129,23 +394,43 @@
       "identical_observations_deduplicated": 30,
       "observations_added": 3,
       "observations_after": 36,
-      "recovered_valid_dates_utc": ["2026-08-07"],
+      "recovered_valid_dates_utc": [
+        "2026-08-07"
+      ],
       "mature_pairs_before": 144,
       "mature_pairs_added": 12,
       "mature_pairs_after": 156,
-      "pairs_added_by_zone": {"san_ildefonso": 4, "chosica": 4, "catacaos": 4},
+      "pairs_added_by_zone": {
+        "san_ildefonso": 4,
+        "chosica": 4,
+        "catacaos": 4
+      },
       "minimum_valid_date_utc": "2026-08-06",
       "maximum_valid_date_utc": "2026-08-18",
       "fallback_used": false,
       "note": "Counts document this pinned backfill outcome; runtime gates do not hard-code 156."
+    },
+    {
+      "event_id": "append-direct-imerg-32387046105",
+      "event_type": "APPEND_FROM_DIRECT_IMERG_ACQUISITION",
+      "recorded_at": "2026-08-20T15:37:04.895350+00:00",
+      "evidence_id": "direct-imerg-32387046105",
+      "observations_before": 36,
+      "candidate_observations": 33,
+      "identical_observations_deduplicated": 30,
+      "observations_added": 3,
+      "observations_after": 39,
+      "minimum_valid_date_utc": "2026-08-06",
+      "maximum_valid_date_utc": "2026-08-19",
+      "fallback_used": false
     }
   ],
-  "last_updated_at": "2026-08-20T04:10:00+00:00",
+  "last_updated_at": "2026-08-20T15:37:04.895350+00:00",
   "summary": {
-    "observation_count": 36,
+    "observation_count": 39,
     "pilot_count": 3,
     "withdrawal_count": 0,
     "minimum_valid_date_utc": "2026-08-06",
-    "maximum_valid_date_utc": "2026-08-18"
+    "maximum_valid_date_utc": "2026-08-19"
   }
 }
