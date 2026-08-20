@@ -14,7 +14,7 @@ los umbrales, las guardas de producción ni la fase 2 operativa.
   incorporada al selector de capas.
 - Los 18 contratos fase 2 existían en `RESEARCH_ONLY`. Santa Eulalia–Rímac
   tenía metadatos de geometría `CANDIDATE`, pero ningún contrato tenía un
-  archivo geométrico reproducible enlazado. Por tanto, 0/18 eran cartografiables.
+  archivo geométrico reproducible enlazado. Ese era el punto de partida 0/18.
 - No se encontraron otras geometrías históricas eliminadas: el historial
   reciente contiene los mismos cuatro GeoJSON persistentes del repositorio.
 
@@ -34,6 +34,51 @@ La primera entrega recomendada es materializar, por separado, la geometría de
 Cashahuacra/Shingolay y los tramos Santa Eulalia–Rímac citados por el contrato.
 El sistema compuesto no debe convertirse en una sola cuenca ni mezclarse con
 el piloto v0.8 Chosica/Huaycoloro.
+
+## W1 materializada · Santa Eulalia–Rímac
+
+`site/data/phase2/geometries/w1_santa_eulalia_rimac.geojson` contiene cinco
+unidades separadas, todas `RESEARCH_ONLY` y `REVIEW_ONLY`:
+
+| Unidad | Representación | Confianza geométrica | Limitación dominante |
+|---|---|---|---|
+| Cashahuacra | Cuenca candidata Copernicus GLO-30 + D8; 15.088 km² derivados del DEM | `MEDIUM_CANDIDATE` | Outlet y área no aprobados oficialmente; no es el área del ortomosaico CENEPRED |
+| Shingolay | Cuenca candidata Copernicus GLO-30 + D8; 0.243 km² derivados del DEM | `LOW_CANDIDATE` | RPAS identifica el conjunto; no es el área del ortomosaico y no existe outlet oficial |
+| Santa Eulalia | Polígono oficial de faja marginal, tramo 6.08 km | `HIGH_SOURCE_GEOMETRY_MEDIUM_CURRENTNESS` | Resolución 2004; vigencia material por confirmar |
+| Rímac | Polígono oficial de faja marginal, 58.30 km | `HIGH_SOURCE_GEOMETRY_MEDIUM_CURRENTNESS` | La modificación 2022 no se fusiona automáticamente |
+| Rímac 2022 | `MultiLineString` de 20 hitos oficiales de margen izquierda | `HIGH_SOURCE_GEOMETRY_PARTIAL_COVERAGE` | Dos partes: 39+950–40+050 y 44+200–46+900; sin enlace entre ellas |
+
+Los 15.088 km² de Cashahuacra y 0.243 km² de Shingolay son áreas de
+microcuenca derivadas mediante Copernicus GLO-30, D8 y recorrido explícito de
+celdas aguas arriba. No son áreas oficiales de cuenca ni áreas de cobertura de
+los ortomosaicos CENEPRED. Esos polígonos documentales se usan únicamente para
+restringir la búsqueda del outlet. En Shingolay se selecciona el máximo de
+acumulación D8 dentro del pequeño ámbito RPAS y de la banda reproducible
+0.05–1.0 km². El resultado de 0.243 km² es sensible a la resolución del DSM y
+al drenaje urbano; al no existir confirmación oficial de outlet o área,
+permanece `LOW_CANDIDATE` y `REVIEW_ONLY`.
+
+La RD N.° 0058-2022-ANA-AAA.CF se reconcilia como 15 hitos principales más
+cinco intermedios, 20 filas de coordenadas en total. El primer componente
+contiene MI-185, MI-185-A y MI-185-B (39+950–40+050); el segundo contiene
+MI-204 a MI-221, incluidos MI-208-A, MI-215-A y MI-220-A
+(44+200–46+900). Las menciones `MI-2016` y `MI-2015-A` del texto son erratas
+por `MI-216` y `MI-215-A`. Para códigos y coordenadas prevalecen el cuadro
+oficial de la página 5 y el Mapa N.° 1 del anexo cartográfico de la página 7.
+La geometría no contiene el segmento artificial MI-185-B–MI-204 y no altera
+ninguna coordenada oficial.
+
+El snapshot de fuentes conserva URL, institución, año, método, WKT o hitos,
+hashes y fecha de recuperación. El DEM está fijado por SHA-256. Los controles
+confirman geometrías válidas, coordenadas WGS84 dentro del ámbito esperado,
+0 solapamiento entre Cashahuacra y Shingolay, coincidencia exacta entre celdas
+de acumulación y recorrido aguas arriba, y conexión de ambas salidas con la
+faja Santa Eulalia. También exigen exactamente 20 códigos/coordenadas Rímac,
+dos componentes y ausencia expresa del segmento MI-185-B–MI-204. Esto no
+valida la hidráulica, el área oficial ni un umbral.
+
+El catálogo pasa a 1/18 sistemas con archivo cartografiable; los otros 17
+siguen retenidos sin puntos aproximados. La capa W1 está apagada por defecto.
 
 ## Modelo mínimo reproducible por zona
 

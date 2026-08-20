@@ -1,0 +1,87 @@
+{
+  "version": "irfen-w1-geometry-validation-v1",
+  "generated_at": "2026-08-20T02:59:10.615896+00:00",
+  "deployment_status": "RESEARCH_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "feature_count": 5,
+  "unit_ids": [
+    "cashahuacra",
+    "shingolay",
+    "santa_eulalia_faja_2004",
+    "rimac_faja_2020",
+    "rimac_left_margin_update_2022"
+  ],
+  "checks": {
+    "all_geometries_valid": true,
+    "coordinates_within_peru_envelope": true,
+    "cashahuacra_shingolay_overlap_km2": 0.0,
+    "local_units_do_not_overlap": true,
+    "cashahuacra": {
+      "unit_id": "cashahuacra",
+      "geometry_valid": true,
+      "geometry_empty": false,
+      "area_km2": 15.088,
+      "outlet": {
+        "lon": -76.6630556,
+        "lat": -11.9136111,
+        "selection": "maximum D8 accumulation inside official source scope and configured area band",
+        "selection_area_band_km2": [
+          5.0,
+          25.0
+        ],
+        "accumulation_cells": 16225,
+        "accumulation_area_km2": 15.078,
+        "distance_to_source_scope_boundary_m": 13.7,
+        "official_confirmation": false
+      },
+      "outlet_inside_source_scope": true,
+      "accumulation_area_km2": 15.078,
+      "catchment_cells": 16225,
+      "accumulation_cells": 16225,
+      "topology_relative_cell_error_pct": 0.0,
+      "downstream_reaches_santa_eulalia_faja": true,
+      "confidence": "MEDIUM_CANDIDATE"
+    },
+    "shingolay": {
+      "unit_id": "shingolay",
+      "geometry_valid": true,
+      "geometry_empty": false,
+      "area_km2": 0.243,
+      "outlet": {
+        "lon": -76.6625,
+        "lat": -11.8991667,
+        "selection": "maximum D8 accumulation inside official source scope and configured area band",
+        "selection_area_band_km2": [
+          0.05,
+          1.0
+        ],
+        "accumulation_cells": 261,
+        "accumulation_area_km2": 0.243,
+        "distance_to_source_scope_boundary_m": 2.05,
+        "official_confirmation": false
+      },
+      "outlet_inside_source_scope": true,
+      "accumulation_area_km2": 0.243,
+      "catchment_cells": 261,
+      "accumulation_cells": 261,
+      "topology_relative_cell_error_pct": 0.0,
+      "downstream_reaches_santa_eulalia_faja": true,
+      "confidence": "LOW_CANDIDATE"
+    },
+    "santa_eulalia_rimac_intersection_expected_at_confluence": true,
+    "rimac_2022_update_distance_to_2020_faja_deg": 0.0,
+    "rimac_2022_official_coordinates_exact": true,
+    "rimac_2022_component_count": 2,
+    "rimac_2022_artificial_mi_185_b_to_mi_204_segment_absent": true
+  },
+  "scientific_decision": "REVIEW_ONLY_GEOMETRIES_MATERIALIZED",
+  "limitations": [
+    "Cashahuacra y Shingolay no tienen outlet ni área de cuenca oficialmente aprobados en las fuentes revisadas.",
+    "Shingolay es especialmente sensible a resolución DEM y drenaje urbano; confianza baja.",
+    "La faja Santa Eulalia 2004 requiere confirmación de vigencia y modificaciones posteriores.",
+    "La actualización Rímac 2022 cubre solo la margen izquierda en dos subtramos separados (39+950–40+050 y 44+200–46+900); no se fusiona automáticamente con 2020.",
+    "Las fajas marginales no representan manchas de inundación, capacidad hidráulica ni umbrales de desborde."
+  ]
+}

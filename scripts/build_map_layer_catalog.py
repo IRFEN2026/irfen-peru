@@ -55,10 +55,35 @@ def geojson_summary(path: Path) -> dict:
     })
     if not geometry_types or not set(geometry_types).issubset(ALLOWED_GEOMETRIES):
         raise MapCatalogError(f"Geometría vacía o no soportada: {path}")
+    properties = data.get("properties") or {}
+    feature_safety = all(
+        (feature.get("properties") or {}).get("production_use") is False
+        and (feature.get("properties") or {}).get("production_ready") is False
+        and (feature.get("properties") or {}).get("alerting_enabled") is False
+        and (feature.get("properties") or {}).get("deployment_status") == "RESEARCH_ONLY"
+        for feature in features
+    ) if features else False
     return {
         "feature_count": len(features),
         "geometry_types": geometry_types,
         "sha256": digest(path),
+        "feature_ids": [
+            (feature.get("properties") or {}).get("unit_id")
+            for feature in features
+            if (feature.get("properties") or {}).get("unit_id")
+        ],
+        "confidence_levels": sorted({
+            (feature.get("properties") or {}).get("confidence")
+            for feature in features
+            if (feature.get("properties") or {}).get("confidence")
+        }),
+        "research_only_guard": (
+            properties.get("production_use") is False
+            and properties.get("production_ready") is False
+            and properties.get("operational_alerting_enabled") is False
+            and properties.get("deployment_status") == "RESEARCH_ONLY"
+            and feature_safety
+        ) if data.get("type") == "FeatureCollection" else None,
     }
 
 
@@ -222,6 +247,9 @@ def build_research_zones(inventory: dict, phase2_catalog: dict, priority: dict) 
             and absolute_path.is_file()
             and absolute_path.suffix.lower() in {".geojson", ".json"}
         )
+        metadata = geojson_summary(absolute_path) if map_eligible else None
+        if map_eligible and metadata.get("research_only_guard") is not True:
+            raise MapCatalogError(f"geometría fase 2 sin guardas RESEARCH_ONLY: {absolute_path}")
         variables = [
             {"variable": name, "status": asset.get("status")}
             for name, asset in (contract.get("assets") or {}).items()
@@ -246,21 +274,27 @@ def build_research_zones(inventory: dict, phase2_catalog: dict, priority: dict) 
             "geometry": {
                 "status": geometry.get("status", "MISSING"),
                 "path": raw_path,
+                "source_path": raw_path.removeprefix("site/") if raw_path else None,
                 "source_ids": geometry.get("source_ids") or [],
                 "map_eligible": map_eligible,
                 "representation": "REPRODUCIBLE_FILE" if map_eligible else "NOT_MAPPED_NO_REPRODUCIBLE_FILE",
+                "source_metadata": metadata,
+                "default_visibility": False,
+                "style": {"color": "#0f766e", "weight": 2, "fillColor": "#5eead4", "fillOpacity": 0.035, "dashArray": "5 5"},
+                "map_disclaimer": "Geometrías W1 RESEARCH_ONLY/REVIEW_ONLY; no son alertas, riesgo, capacidad hidráulica ni manchas de inundación." if map_eligible else None,
             },
             "sources": {
                 "official_source_ids": contract.get("official_source_ids") or [],
                 "contract_path": contract_path.relative_to(ROOT).as_posix(),
             },
             "confidence": {
-                "geometry": "CANDIDATE_NOT_VALIDATED" if map_eligible else "UNASSESSED_NO_REPRODUCIBLE_FILE",
+                "geometry": "REVIEW_ONLY_MIXED_CONFIDENCE" if map_eligible else "UNASSESSED_NO_REPRODUCIBLE_FILE",
+                "levels": metadata.get("confidence_levels") if metadata else [],
                 "overall": "NOT_VALIDATED",
             },
             "coverage": {
                 "territorial_scope": candidate.get("province_or_corridor"),
-                "geometry_coverage": "FILE_AVAILABLE" if map_eligible else "UNKNOWN_OR_METADATA_ONLY",
+                "geometry_coverage": f"{metadata['feature_count']}_SEPARATE_FEATURES" if metadata else "UNKNOWN_OR_METADATA_ONLY",
                 "temporal_coverage": "UNASSESSED",
             },
             "variables_available": variables,
