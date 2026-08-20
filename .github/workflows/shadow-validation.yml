@@ -56,11 +56,16 @@ jobs:
           python - <<'PY'
           import json
           from pathlib import Path
+          from scripts.archive_shadow_validation import validate_shadow_integrity
           d=json.loads(Path('site/data/validation/shadow_runs.json').read_text())
           assert d.get('status') == 'SHADOW_VALIDATION_ARCHIVE'
           assert d.get('production_use') is False
           assert d.get('production_ready') is False
           assert int(d.get('record_count',0)) >= 1
+          integrity_contract=d.get('integrity_contract') or {}
+          assert integrity_contract.get('effective_snapshot_date_utc') == '2026-08-21'
+          integrity=validate_shadow_integrity(d.get('records') or [])
+          assert integrity['valid'], integrity['errors']
           for rec in d.get('records',[]):
               assert rec.get('production_use') is False
               for z in rec.get('zones',[]):

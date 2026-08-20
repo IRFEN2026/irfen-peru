@@ -79,6 +79,7 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import json
+          from scripts.archive_shadow_validation import validate_shadow_integrity
           root=Path('/tmp/irfen-live')
           def load(path): return json.loads((root/path).read_text(encoding='utf-8'))
 
@@ -248,6 +249,10 @@ jobs:
           shadow=load('data/validation/shadow_runs.json')
           assert shadow.get('production_use') is False
           assert int(shadow.get('record_count',0)) == len(shadow.get('records',[]))
+          shadow_integrity_contract=shadow.get('integrity_contract') or {}
+          assert shadow_integrity_contract.get('effective_snapshot_date_utc') == '2026-08-21'
+          shadow_integrity=validate_shadow_integrity(shadow.get('records') or [])
+          assert shadow_integrity['valid'], shadow_integrity['errors']
           for record in shadow.get('records',[]):
               review=record.get('outcome_verification') or {}
               if review.get('label') == 'UNCERTAIN':

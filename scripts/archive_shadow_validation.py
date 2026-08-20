@@ -10,6 +10,7 @@ from __future__ import annotations
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 import argparse
+import hashlib
 import json
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -17,6 +18,97 @@ OUT = ROOT / "site/data/validation/shadow_runs.json"
 EARLIEST_ELIGIBLE_CAPTURE_LEAD_MINUTES = 12 * 60
 LATEST_ELIGIBLE_CAPTURE_DELAY_MINUTES = 120
 CENDEHUA_MAX_AGE_SECONDS_AT_SHADOW_CAPTURE = 90 * 60
+SHADOW_INTEGRITY_EFFECTIVE_DATE = "2026-08-21"
+MUTABLE_REVIEW_FIELDS = {
+    "outcome_verification",
+    "outcome_verification_history",
+    "integrity",
+}
+
+
+def immutable_snapshot_payload(record: dict):
+    """Return only the pre-outcome evidence that later reviews may not alter."""
+    return {
+        key: value
+        for key, value in record.items()
+        if key not in MUTABLE_REVIEW_FIELDS
+    }
+
+
+def snapshot_payload_sha256(record: dict):
+    canonical = json.dumps(
+        immutable_snapshot_payload(record),
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
+
+
+def integrity_chain_sha256(payload_sha256: str, previous_chain_sha256: str | None):
+    canonical = json.dumps(
+        {
+            "previous_chain_sha256": previous_chain_sha256,
+            "snapshot_payload_sha256": payload_sha256,
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
+
+
+def seal_snapshot_integrity(record: dict, previous_chain_sha256: str | None):
+    payload_sha256 = snapshot_payload_sha256(record)
+    record["integrity"] = {
+        "algorithm": "SHA-256",
+        "canonicalization": "JSON_SORT_KEYS_UTF8_COMPACT",
+        "scope": "PRE_OUTCOME_SNAPSHOT_EXCLUDING_HUMAN_REVIEW_ANNOTATIONS",
+        "snapshot_payload_sha256": payload_sha256,
+        "previous_chain_sha256": previous_chain_sha256,
+        "chain_sha256": integrity_chain_sha256(payload_sha256, previous_chain_sha256),
+    }
+    return record["integrity"]
+
+
+def validate_shadow_integrity(records: list[dict]):
+    """Validate the prospective hash chain while leaving legacy records untouched."""
+    errors = []
+    previous_chain_sha256 = None
+    sealed_record_count = 0
+    dates = [str(record.get("snapshot_date_utc") or "") for record in records]
+    if dates != sorted(dates) or len(dates) != len(set(dates)):
+        errors.append("snapshot_dates_must_be_unique_and_sorted")
+    for record in records:
+        snapshot_date = str(record.get("snapshot_date_utc") or "")
+        integrity = record.get("integrity") or {}
+        if snapshot_date < SHADOW_INTEGRITY_EFFECTIVE_DATE:
+            if integrity:
+                errors.append(f"{snapshot_date}:legacy_record_must_remain_unsealed")
+            continue
+        if not integrity:
+            errors.append(f"{snapshot_date}:missing_integrity")
+            continue
+        sealed_record_count += 1
+        payload_sha256 = snapshot_payload_sha256(record)
+        expected_chain_sha256 = integrity_chain_sha256(
+            payload_sha256, previous_chain_sha256
+        )
+        if integrity.get("algorithm") != "SHA-256":
+            errors.append(f"{snapshot_date}:invalid_algorithm")
+        if integrity.get("snapshot_payload_sha256") != payload_sha256:
+            errors.append(f"{snapshot_date}:payload_hash_mismatch")
+        if integrity.get("previous_chain_sha256") != previous_chain_sha256:
+            errors.append(f"{snapshot_date}:previous_chain_mismatch")
+        if integrity.get("chain_sha256") != expected_chain_sha256:
+            errors.append(f"{snapshot_date}:chain_hash_mismatch")
+        previous_chain_sha256 = integrity.get("chain_sha256")
+    return {
+        "valid": not errors,
+        "effective_snapshot_date_utc": SHADOW_INTEGRITY_EFFECTIVE_DATE,
+        "sealed_record_count": sealed_record_count,
+        "last_chain_sha256": previous_chain_sha256,
+        "errors": errors,
+    }
 
 
 def capture_window(
@@ -113,6 +205,12 @@ def load_archive():
                 "NONE": "No verified relevant impact/event",
                 "EVENT": "Verified relevant hydrometeorological event/impact",
                 "UNCERTAIN": "Evidence insufficient or conflicting"
+            },
+            "integrity_contract": {
+                "effective_snapshot_date_utc": SHADOW_INTEGRITY_EFFECTIVE_DATE,
+                "algorithm": "SHA-256",
+                "scope": "PRE_OUTCOME_SNAPSHOT_EXCLUDING_HUMAN_REVIEW_ANNOTATIONS",
+                "legacy_records_preserved_unmodified": True,
             },
             "records": [],
         }
@@ -214,10 +312,18 @@ def append_immutable_daily_snapshot(archive, entry, now):
     idempotent.
     """
     records = archive.get("records") or []
+    integrity_before = validate_shadow_integrity(records)
+    if not integrity_before["valid"]:
+        raise ValueError(
+            "El archivo en sombra incumple su cadena de integridad: "
+            + ", ".join(integrity_before["errors"])
+        )
     snapshot_date = entry.get("snapshot_date_utc")
     if any(row.get("snapshot_date_utc") == snapshot_date for row in records):
         return False
 
+    if str(snapshot_date) >= SHADOW_INTEGRITY_EFFECTIVE_DATE:
+        seal_snapshot_integrity(entry, integrity_before.get("last_chain_sha256"))
     records.append(entry)
     records.sort(key=lambda row: row.get("snapshot_date_utc", ""))
     archive["records"] = records[-400:]
@@ -225,6 +331,18 @@ def append_immutable_daily_snapshot(archive, entry, now):
     archive["record_count"] = len(archive["records"])
     archive["production_use"] = False
     archive["production_ready"] = False
+    archive["integrity_contract"] = {
+        "effective_snapshot_date_utc": SHADOW_INTEGRITY_EFFECTIVE_DATE,
+        "algorithm": "SHA-256",
+        "scope": "PRE_OUTCOME_SNAPSHOT_EXCLUDING_HUMAN_REVIEW_ANNOTATIONS",
+        "legacy_records_preserved_unmodified": True,
+    }
+    integrity_after = validate_shadow_integrity(archive["records"])
+    if not integrity_after["valid"]:
+        raise ValueError(
+            "La nueva fotografía no cerró una cadena de integridad válida: "
+            + ", ".join(integrity_after["errors"])
+        )
     return True
 
 

@@ -80,6 +80,7 @@ jobs:
           import json
           import os
           from pathlib import Path
+          from scripts.archive_shadow_validation import validate_shadow_integrity
 
           from scripts.review_shadow_outcome import apply_review
 
@@ -121,6 +122,8 @@ jobs:
           archive = json.loads(Path("site/data/validation/shadow_runs.json").read_text(encoding="utf-8"))
           assert archive.get("production_use") is False
           assert archive.get("production_ready") is False
+          integrity = validate_shadow_integrity(archive.get("records") or [])
+          assert integrity["valid"], integrity["errors"]
           record = next(
               row for row in archive.get("records", [])
               if row.get("snapshot_date_utc") == os.environ["REVIEW_DATE"]

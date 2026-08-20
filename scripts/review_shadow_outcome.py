@@ -13,6 +13,11 @@ from urllib.parse import urlparse
 import argparse
 import json
 
+try:
+    from archive_shadow_validation import validate_shadow_integrity
+except ImportError:  # Imported as scripts.review_shadow_outcome in unit tests.
+    from scripts.archive_shadow_validation import validate_shadow_integrity
+
 
 ROOT = Path(__file__).resolve().parents[1]
 ARCHIVE = ROOT / "site/data/validation/shadow_runs.json"
@@ -54,6 +59,12 @@ def apply_review(
     reviewed_at: str | None = None,
     replace_existing_review: bool = False,
 ):
+    integrity_before = validate_shadow_integrity(archive.get("records") or [])
+    if not integrity_before["valid"]:
+        raise ValueError(
+            "La revisión se bloquea porque la evidencia previa no conserva integridad: "
+            + ", ".join(integrity_before["errors"])
+        )
     if label not in ALLOWED_LABELS:
         raise ValueError(f"Etiqueta no permitida: {label}")
     if not official_sources or not all(is_official_url(url) for url in official_sources):
@@ -113,6 +124,12 @@ def apply_review(
     archive["record_count"] = len(records)
     archive["production_use"] = False
     archive["production_ready"] = False
+    integrity_after = validate_shadow_integrity(records)
+    if not integrity_after["valid"]:
+        raise ValueError(
+            "La revisión alteró evidencia previa protegida: "
+            + ", ".join(integrity_after["errors"])
+        )
     return record["outcome_verification"]
 
 
