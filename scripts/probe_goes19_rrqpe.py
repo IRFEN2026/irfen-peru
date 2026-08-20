@@ -243,7 +243,10 @@ def archive_result(previous, probe, generated_at):
     p90_delay = round(delays[p90_index], 2) if p90_index is not None else None
     availability = round(successes * 100 / len(records), 1) if records else 0.0
     coverage = round(covered * 100 / len(records), 1) if records else 0.0
-    review_ready = len(records) >= 72
+    distinct_source_objects = len(
+        {item.get("source_object_key") for item in records if item.get("source_object_key")}
+    )
+    review_ready = len(records) >= 72 and distinct_source_objects >= 72
     technical_pass = bool(
         review_ready
         and availability >= 80
@@ -267,7 +270,7 @@ def archive_result(previous, probe, generated_at):
             "all_pilots_covered_count": covered,
             "all_pilots_covered_pct": coverage,
             "latest_probe_generated_at": records[-1]["generated_at"] if records else None,
-            "distinct_source_object_count": len({item.get("source_object_key") for item in records if item.get("source_object_key")}),
+            "distinct_source_object_count": distinct_source_objects,
         },
         "records": records,
         "retention_decision": {
@@ -285,6 +288,7 @@ def archive_result(previous, probe, generated_at):
         },
         "discard_contract": {
             "minimum_probe_records_before_availability_review": 72,
+            "minimum_distinct_source_objects_before_availability_review": 72,
             "discard_if_source_availability_below_pct": 80,
             "discard_if_all_pilots_coverage_below_pct": 80,
             "discard_if_p90_capture_delay_exceeds_minutes": 30,
