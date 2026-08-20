@@ -226,6 +226,10 @@ jobs:
                   for source in capture.get('sources',[]):
                       if source.get('capture_status') != 'CAPTURED':
                           assert source.get('unknown_not_zero') is True
+                  for source in capture.get('supplemental_sources',[]):
+                      alignment=(source.get('summary') or {}).get('snapshot_date_alignment')
+                      if alignment != 'TARGET_DATE_PRESENT':
+                          assert source.get('unknown_not_zero') is True
 
           shadow=load('data/validation/shadow_runs.json')
           assert shadow.get('production_use') is False
