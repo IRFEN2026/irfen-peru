@@ -47,6 +47,27 @@
       overlays[layerName]=technicalLayer;
       if(entry.default_visibility===true)technicalLayer.addTo(map);
     }
+    for(const zone of catalog.research_zones||[]){
+      const geometry=zone.geometry||{};
+      if(zone.deployment_status!=='RESEARCH_ONLY'||zone.production_use!==false||zone.alerting_enabled!==false||geometry.map_eligible!==true||!geometry.source_path)continue;
+      const geo=await safeJson(geometry.source_path);if(!geo)continue;
+      const baseStyle=geometry.style||{color:'#0f766e',weight:2,fillOpacity:.03,dashArray:'5 5'};
+      const layerName=`${zone.system_name} · RESEARCH_ONLY`;
+      const researchLayer=L.geoJSON(geo,{
+        style:feature=>{
+          const role=(feature.properties||{}).hydrologic_role||'';
+          if(role.includes('updated_faja'))return {...baseStyle,color:'#0891b2',weight:3,fillOpacity:0,dashArray:'3 5'};
+          if(role.includes('faja_marginal'))return {...baseStyle,color:'#0f766e',weight:3,fillOpacity:0,dashArray:'7 4'};
+          return baseStyle;
+        },
+        onEachFeature:(feature,featureLayer)=>{
+          const p=feature.properties||{};
+          featureLayer.bindPopup(`<b>${esc(p.name||p.unit_id||zone.system_name)}</b><br><b>RESEARCH_ONLY · REVIEW_ONLY · sin alerta · sin puntuación de riesgo</b><br>${esc(p.map_disclaimer||geometry.map_disclaimer)}<br><span style="font-size:11px">Unidad: ${esc(p.unit_id)} · confianza: ${esc(p.confidence)} · hash: ${esc((p.geometry_sha256||'').slice(0,12))}…</span>`);
+        }
+      });
+      overlays[layerName]=researchLayer;
+      if(geometry.default_visibility===true)researchLayer.addTo(map);
+    }
     if(Object.keys(overlays).length)L.control.layers(null,overlays,{collapsed:true,position:'topright'}).addTo(map);
     const mapNode=document.getElementById('map'),summary=catalog.summary||{};
     if(mapNode&&!document.getElementById('mapLayerTrace')){

@@ -50,6 +50,7 @@ def main():
     phase2=load(ROOT/'config/phase2_candidate_inventory_v0_1.json')
     phase2_catalog=load(SITE/'data/phase2/catalog.json')
     map_layers=load(SITE/'data/map_layers.json')
+    w1_geometry=load(SITE/'data/phase2/geometries/w1_santa_eulalia_rimac.geojson')
     analog_transfer=load(ROOT/'config/phase2_analog_transfer_contract.json')
     phase2_events=load(SITE/'data/phase2/research_events.json')
     phase2_event_reanalysis=load(SITE/'data/phase2/event_reanalysis.json')
@@ -224,6 +225,52 @@ def main():
         or (zone.get('geometry') or {}).get('representation')=='NOT_MAPPED_NO_REPRODUCIBLE_FILE'
         for zone in research_zones
     ))
+    w1_zone=next((zone for zone in research_zones if zone.get('candidate_id')=='lima_este_santa_eulalia_rimac'),None)
+    check('map_catalog_w1_geometry_materialized',
+          w1_zone is not None
+          and (w1_zone.get('geometry') or {}).get('map_eligible') is True
+          and (w1_zone.get('geometry') or {}).get('status')=='PARTIAL')
+    if w1_zone:
+        w1_meta=(w1_zone.get('geometry') or {}).get('source_metadata') or {}
+        check('map_catalog_w1_units_separate',set(w1_meta.get('feature_ids') or [])=={
+            'cashahuacra','shingolay','santa_eulalia_faja_2004',
+            'rimac_faja_2020','rimac_left_margin_update_2022'})
+        check('map_catalog_w1_research_guard',w1_meta.get('research_only_guard') is True)
+        check('map_catalog_w1_not_validated',(w1_zone.get('confidence') or {}).get('overall')=='NOT_VALIDATED')
+    w1_features={
+        (feature.get('properties') or {}).get('unit_id'):feature
+        for feature in w1_geometry.get('features',[])
+    }
+    w1_rimac=w1_features.get('rimac_left_margin_update_2022') or {}
+    w1_rimac_props=w1_rimac.get('properties') or {}
+    w1_rimac_geometry=w1_rimac.get('geometry') or {}
+    w1_rimac_components=w1_rimac_geometry.get('coordinates') or []
+    check('w1_rimac_2022_multiline_two_components',
+          w1_rimac_geometry.get('type')=='MultiLineString'
+          and [len(component) for component in w1_rimac_components]==[3,17])
+    check('w1_rimac_2022_exact_point_codes',w1_rimac_props.get('point_codes')==[
+        'MI-185','MI-185-A','MI-185-B','MI-204','MI-205','MI-208','MI-208-A',
+        'MI-209','MI-210','MI-212','MI-213','MI-214','MI-215','MI-215-A',
+        'MI-216','MI-218','MI-219','MI-220','MI-220-A','MI-221'])
+    forbidden_bridge=(
+        tuple(w1_rimac_components[0][-1]),tuple(w1_rimac_components[1][0])
+    ) if len(w1_rimac_components)==2 else None
+    w1_rimac_segments={
+        (tuple(component[index]),tuple(component[index+1]))
+        for component in w1_rimac_components
+        for index in range(len(component)-1)
+    }
+    check('w1_rimac_2022_no_mi_185_b_to_mi_204_bridge',
+          forbidden_bridge is not None and forbidden_bridge not in w1_rimac_segments)
+    check('w1_dem_catchment_areas_not_orthomosaic_coverage',all(
+        ((w1_features.get(unit_id) or {}).get('properties') or {}).get('coverage',{}).get('area_semantics')
+        =='DEM_DERIVED_D8_CATCHMENT_NOT_CENEPRED_ORTHOMOSAIC_COVERAGE'
+        and ((w1_features.get(unit_id) or {}).get('properties') or {}).get('coverage',{}).get('cenepred_orthomosaic_area_used_as_catchment_area') is False
+        for unit_id in ('cashahuacra','shingolay')
+    ))
+    check('w1_shingolay_remains_low_review_only',
+          (w1_features.get('shingolay') or {}).get('properties',{}).get('confidence')=='LOW_CANDIDATE'
+          and (w1_features.get('shingolay') or {}).get('properties',{}).get('candidate_status')=='REVIEW_ONLY')
 
     # Eventos de oportunidad: útiles para reanálisis, nunca para activar o cerrar v0.8.
     event_summary=phase2_events.get('summary') or {}

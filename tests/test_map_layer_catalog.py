@@ -75,11 +75,30 @@ class MapLayerCatalogTests(unittest.TestCase):
 
     def test_missing_geometry_is_not_replaced_by_reference_points(self):
         zones = self.catalog["research_zones"]
-        self.assertEqual(self.catalog["summary"]["research_candidates_map_eligible"], 0)
+        self.assertEqual(self.catalog["summary"]["research_candidates_map_eligible"], 1)
         for zone in zones:
-            self.assertFalse(zone["geometry"]["map_eligible"])
-            self.assertEqual(zone["geometry"]["representation"], "NOT_MAPPED_NO_REPRODUCIBLE_FILE")
+            if zone["candidate_id"] == "lima_este_santa_eulalia_rimac":
+                self.assertTrue(zone["geometry"]["map_eligible"])
+                self.assertEqual(zone["geometry"]["representation"], "REPRODUCIBLE_FILE")
+            else:
+                self.assertFalse(zone["geometry"]["map_eligible"])
+                self.assertEqual(zone["geometry"]["representation"], "NOT_MAPPED_NO_REPRODUCIBLE_FILE")
         self.assertTrue(self.catalog["guardrails"]["reference_points_for_missing_geometry_forbidden"])
+
+    def test_w1_santa_eulalia_geometry_is_review_only_and_traceable(self):
+        zone = next(row for row in self.catalog["research_zones"]
+                    if row["candidate_id"] == "lima_este_santa_eulalia_rimac")
+        geometry = zone["geometry"]
+        self.assertEqual(geometry["status"], "PARTIAL")
+        self.assertFalse(geometry["default_visibility"])
+        self.assertEqual(geometry["source_metadata"]["feature_count"], 5)
+        self.assertTrue(geometry["source_metadata"]["research_only_guard"])
+        self.assertEqual(set(geometry["source_metadata"]["feature_ids"]), {
+            "cashahuacra", "shingolay", "santa_eulalia_faja_2004",
+            "rimac_faja_2020", "rimac_left_margin_update_2022",
+        })
+        self.assertEqual(len(geometry["source_metadata"]["sha256"]), 64)
+        self.assertEqual(zone["confidence"]["overall"], "NOT_VALIDATED")
 
     def test_development_queue_is_complete_and_not_a_risk_score(self):
         rows = [item for wave in self.priority["waves"] for item in wave["candidates"]]
