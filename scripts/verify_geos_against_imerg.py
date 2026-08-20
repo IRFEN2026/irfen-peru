@@ -19,6 +19,7 @@ ARCHIVE = SITE / "data" / "forecast" / "archive.json"
 HISTORICAL_DAILY = SITE / "data" / "forecast" / "historical_daily.json"
 LATEST = SITE / "data" / "latest.json"
 OUT = SITE / "data" / "forecast" / "verification.json"
+OBSERVED_ARCHIVE = SITE / "data" / "forecast" / "observed_imerg_daily.json"
 MIN_SAMPLES = 30
 
 
@@ -57,6 +58,67 @@ def observed_series(zone, sampling_method):
     return zone.get("series") or []
 
 
+def merge_observed_archive(zones, prior, required_methods, generated_at=None):
+    """Acumula observaciones diarias sin perder días al rotar latest.json.
+
+    ``latest.json`` conserva una ventana móvil. El archivo acumulativo mantiene
+    únicamente fecha, lluvia y contrato espacial; no convierte la ausencia de
+    datos en cero ni habilita uso operativo.
+    """
+    if prior and prior.get("production_use") is not False:
+        raise ValueError("observed_imerg_daily.json debe declarar production_use=false")
+
+    merged = {}
+    for record in (prior or {}).get("records", []):
+        key = (record.get("zone_id"), record.get("sampling_method"))
+        if None in key:
+            continue
+        for row in record.get("series", []):
+            if row.get("date") and row.get("rain_mm") is not None:
+                merged[(key, row["date"])] = {
+                    "date": row["date"],
+                    "rain_mm": round(float(row["rain_mm"]), 3),
+                }
+
+    for zid, method in sorted(required_methods):
+        zone = zones.get(zid)
+        if not zone:
+            continue
+        for row in observed_series(zone, method):
+            if row.get("date") and row.get("rain_mm") is not None:
+                merged[((zid, method), row["date"])] = {
+                    "date": row["date"],
+                    "rain_mm": round(float(row["rain_mm"]), 3),
+                }
+
+    records = []
+    for zid, method in sorted(required_methods):
+        series = [
+            row for ((key, _), row) in merged.items()
+            if key == (zid, method)
+        ]
+        series.sort(key=lambda row: row["date"])
+        if series:
+            records.append({
+                "zone_id": zid,
+                "sampling_method": method,
+                "series": series,
+            })
+
+    archive = {
+        "version": "0.8-experimental",
+        "generated_at": generated_at or datetime.now(timezone.utc).isoformat(),
+        "production_use": False,
+        "observation_source": "NASA GPM IMERG Late Daily",
+        "retention_contract": "append_by_zone_method_date; current observation replaces same-date prior value",
+        "missing_data_policy": "missing dates remain absent and are never interpreted as zero rain or low risk",
+        "records": records,
+    }
+    if (prior or {}).get("seed_provenance"):
+        archive["seed_provenance"] = prior["seed_provenance"]
+    return archive
+
+
 def lead_bucket(hours):
     if hours is None:
         return "unknown"
@@ -88,6 +150,33 @@ def main():
     historical = load(HISTORICAL_DAILY, {"records": []})
     latest = load(LATEST, {"zones": []})
     zones = {z.get("id"): z for z in latest.get("zones", [])}
+    required_methods = {
+        (fz.get("zone_id"), fz.get("sampling_method"))
+        for snap in archive.get("snapshots", [])
+        for fz in snap.get("zones", [])
+        if fz.get("zone_id") and fz.get("sampling_method")
+    }
+    required_methods.update({
+        (record.get("zone_id"), record.get("sampling_method"))
+        for record in historical.get("records", [])
+        if record.get("zone_id") and record.get("sampling_method")
+    })
+    observed_archive = merge_observed_archive(
+        zones,
+        load(OBSERVED_ARCHIVE, {}),
+        required_methods,
+    )
+    OBSERVED_ARCHIVE.parent.mkdir(parents=True, exist_ok=True)
+    OBSERVED_ARCHIVE.write_text(
+        json.dumps(observed_archive, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    archived_observations = {
+        (record["zone_id"], record["sampling_method"]): {
+            row["date"]: row["rain_mm"] for row in record.get("series", [])
+        }
+        for record in observed_archive.get("records", [])
+    }
     pairs = []
 
     for snap in archive.get("snapshots", []):
@@ -98,11 +187,7 @@ def main():
             if not zone:
                 continue
             method = fz.get("sampling_method")
-            obs = {
-                x.get("date"): x.get("rain_mm")
-                for x in observed_series(zone, method)
-                if x.get("date") and x.get("rain_mm") is not None
-            }
+            obs = archived_observations.get((zid, method), {})
             if not obs:
                 continue
 
@@ -151,11 +236,7 @@ def main():
             issued = dt(record.get("issue_time"))
             if not zone or not day or issued is None or int(record.get("hour_count", 0)) != 24:
                 continue
-            obs = {
-                row.get("date"): row.get("rain_mm")
-                for row in observed_series(zone, method)
-                if row.get("date") and row.get("rain_mm") is not None
-            }
+            obs = archived_observations.get((zid, method), {})
             if day not in obs:
                 continue
             day_start = datetime.fromisoformat(day).replace(tzinfo=timezone.utc)
@@ -219,11 +300,16 @@ def main():
             "historical_daily_pairs_used": sum(
                 row.get("forecast_record_kind") == "historical_daily_backfill" for row in pairs
             ),
+            "observed_daily_archive_records": sum(
+                len(record.get("series", []))
+                for record in observed_archive.get("records", [])
+            ),
+            "observed_daily_archive_generated_at": observed_archive.get("generated_at"),
         },
         "total_pairs": len(pairs),
         "overall_metrics": metrics(pairs),
         "by_zone": by_zone,
-        "pairs": pairs[-500:],
+        "pairs": pairs,
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
