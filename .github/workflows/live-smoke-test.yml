@@ -118,6 +118,16 @@ jobs:
               ]
           else:
               assert goes_probe.get('scientific_gate',{}).get('missing_data_interpretation') == 'UNKNOWN_NOT_ZERO_OR_LOW_RISK'
+          goes_summary=goes_archive.get('summary') or {}
+          goes_contract=goes_archive.get('discard_contract') or {}
+          goes_decision=goes_archive.get('retention_decision') or {}
+          assert 0 <= float(goes_summary.get('all_pilots_covered_pct', -1)) <= 100
+          assert goes_contract.get('discard_if_all_pilots_coverage_below_pct') == 80
+          if goes_decision.get('technical_access_gate_pass'):
+              assert goes_decision.get('technical_review_sample_complete') is True
+              assert float(goes_summary.get('source_availability_pct', 0)) >= 80
+              assert float(goes_summary.get('all_pilots_covered_pct', 0)) >= 80
+              assert float(goes_summary.get('capture_delay_p90_minutes', 9999)) <= 30
 
           hydraulics=load('data/hydraulics/current_infrastructure.json')
           assert hydraulics.get('production_use') is False
