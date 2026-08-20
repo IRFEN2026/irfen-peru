@@ -10,6 +10,11 @@ from __future__ import annotations
 from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlparse
+
+try:
+    from archive_shadow_validation import validate_shadow_integrity
+except ImportError:  # Imported as scripts.build_v08_scorecard in unit tests.
+    from scripts.archive_shadow_validation import validate_shadow_integrity
 import json
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -500,6 +505,7 @@ def main():
         )
     )
     shadow_records = shadow.get("records") or []
+    shadow_integrity = validate_shadow_integrity(shadow_records)
     reviewed_all = [
         r for r in shadow_records
         if (r.get("outcome_verification") or {}).get("status") != "PENDING_REAL_WORLD_OUTCOME_REVIEW"
@@ -541,7 +547,8 @@ def main():
         validated_windows, supplemental_targets, windows
     )
     shadow_gate_passed = (
-        len(reviewed) >= required_reviewed
+        shadow_integrity["valid"]
+        and len(reviewed) >= required_reviewed
         and int(reviewed_label_counts.get("EVENT", 0)) >= minimum_event_days
         and int(reviewed_label_counts.get("NONE", 0)) >= minimum_none_days
     )
@@ -584,6 +591,14 @@ def main():
                 "minimum_verified_event_days": minimum_event_days,
                 "minimum_verified_none_days": minimum_none_days,
                 "archive_records": len(shadow_records),
+                "integrity_valid": shadow_integrity["valid"],
+                "integrity_effective_snapshot_date_utc": shadow_integrity[
+                    "effective_snapshot_date_utc"
+                ],
+                "integrity_sealed_record_count": shadow_integrity[
+                    "sealed_record_count"
+                ],
+                "integrity_errors": shadow_integrity["errors"],
                 "eligibility": shadow_eligibility,
                 "review_queue": shadow_review_queue,
             },
