@@ -359,6 +359,14 @@ class ObservationHistoryTests(unittest.TestCase):
         self.assertIn("contents: write", deploy)
         self.assertIn("git add -- \"$path\"", deploy)
         self.assertIn("git push origin HEAD:main", deploy)
+        self.assertIn("for attempt in 1 2 3 4", deploy)
+        self.assertIn(
+            'git diff --quiet "$validated_main" origin/main -- "$path"', deploy,
+        )
+        self.assertIn('git worktree add --detach "$retry_dir" origin/main', deploy)
+        self.assertIn("no se sobrescribe", deploy)
+        self.assertNotIn("git push --force", deploy)
+        self.assertNotIn("git push -f", deploy)
         self.assertIn("Persistir histórico científico en Git versionado", deploy)
         self.assertIn("Demostrar rechazo atómico de latest.json DEMO", pr)
         self.assertIn("Demostrar restauración durable sin GitHub Pages", pr)

@@ -345,18 +345,70 @@ jobs:
         run: |
           set -euo pipefail
           path="site/data/forecast/imerg_verification_history.json"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- "$path"
-          if git diff --cached --quiet; then
+          candidate="$(mktemp)"
+          retry_dir=""
+          cleanup() {
+            if [ -n "$retry_dir" ]; then
+              git worktree remove --force "$retry_dir" >/dev/null 2>&1 || true
+            fi
+            rm -f -- "$candidate"
+          }
+          trap cleanup EXIT
+          cp -- "$path" "$candidate"
+          candidate_sha="$(sha256sum "$candidate" | awk '{print $1}')"
+          validated_main="$(git rev-parse HEAD)"
+          commit_message="IRFEN v0.8: persistir histórico científico IMERG run ${GITHUB_RUN_ID}"
+
+          if git diff --quiet "$validated_main" -- "$path"; then
             echo "El histórico durable ya coincide con la versión de main."
             exit 0
           fi
-          git commit -m "IRFEN v0.8: persistir histórico científico IMERG run ${GITHUB_RUN_ID}"
-          # Fast-forward only: si main avanzó concurrentemente, falla antes de
-          # desplegar y nunca incorpora cambios remotos no validados en este job.
-          git push origin HEAD:main
-          echo "Histórico IMERG persistido como commit Git independiente de Pages."
+
+          # El commit se crea sobre el main remoto más reciente en un worktree
+          # aislado. Se reintentan únicamente carreras con commits que no hayan
+          # tocado el ledger validado; una modificación concurrente del ledger
+          # detiene el despliegue para no sobrescribir evidencia científica.
+          for attempt in 1 2 3 4; do
+            git fetch --no-tags origin main
+            if ! git diff --quiet "$validated_main" origin/main -- "$path"; then
+              remote_sha="$(git show "origin/main:$path" | sha256sum | awk '{print $1}')"
+              if [ "$remote_sha" = "$candidate_sha" ]; then
+                echo "El ledger candidato ya fue persistido por otra ejecución."
+                exit 0
+              fi
+              echo "ERROR: el ledger remoto cambió después de la validación; no se sobrescribe." >&2
+              exit 1
+            fi
+
+            retry_dir="$(mktemp -d)"
+            git worktree add --detach "$retry_dir" origin/main
+            cp -- "$candidate" "$retry_dir/$path"
+            if (
+              cd "$retry_dir"
+              git config user.name "github-actions[bot]"
+              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+              git add -- "$path"
+              if git diff --cached --quiet; then
+                exit 0
+              fi
+              git commit -m "$commit_message"
+              git push origin HEAD:main
+            ); then
+              git worktree remove --force "$retry_dir"
+              retry_dir=""
+              echo "Histórico IMERG persistido como commit Git independiente de Pages."
+              exit 0
+            fi
+
+            git worktree remove --force "$retry_dir"
+            retry_dir=""
+            if [ "$attempt" -eq 4 ]; then
+              echo "ERROR: main siguió avanzando durante cuatro intentos acotados." >&2
+              exit 1
+            fi
+            echo "Carrera de fast-forward en intento ${attempt}/4; se reintentará sin force-push."
+            sleep "$((attempt * 2))"
+          done
 
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v6
