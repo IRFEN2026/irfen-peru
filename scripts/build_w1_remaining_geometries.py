@@ -1,0 +1,29 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+import argparse,json,math
+from hashlib import sha256
+from pathlib import Path
+from pyproj import Transformer
+from shapely.geometry import LineString
+ROOT=Path(__file__).resolve().parents[1]; SOURCE_SNAPSHOT=ROOT/'site/data/phase2/sources/w1_remaining_geometry_source_snapshot.json'; OUT=ROOT/'site/data/phase2/geometries/w1_huerta_vieja_faja_margin_review_only.geojson'; VALIDATION=ROOT/'site/data/phase2/geometries/w1_huerta_vieja_faja_margin_review_only_validation.json'
+SOURCE_CRS='EPSG:32718'; OUTPUT_CRS='EPSG:4326'
+HUERTA_HITOS=(("P5 MI",300596.,8706636.),("P4 MI",300633.,8706553.),("P3 MI",300654.,8706452.),("P2 MI",300663.,8706419.),("P1 MI",300657.,8706370.),("HI-8",300653.,8706336.),("HI-9",300603.,8706197.),("HI-10",300575.,8706134.),("HI-11",300538.,8706064.),("HI-12",300540.,8705985.),("HI-13",300552.,8705916.),("HI-14",300576.,8705852.),("HI-15",300573.,8705785.),("HI-16",300546.,8705693.),("HI-17",300493.,8705560.),("HI-18",300452.,8705420.),("HI-19",300411.,8705312.),("HI-20",300361.,8705198.))
+def canonical_json(v): return (json.dumps(v,ensure_ascii=False,sort_keys=True,separators=(',',':'))+'\n').encode()
+def digest_bytes(v): return sha256(v).hexdigest()
+def digest_file(p): return digest_bytes(canonical_json(json.loads(p.read_text(encoding='utf-8'))))
+def coordinate_payload(): return {'crs':SOURCE_CRS,'points':[{'id':i,'easting':e,'northing':n} for i,e,n in HUERTA_HITOS]}
+def build_geojson(snapshot_sha):
+ t=Transformer.from_crs(SOURCE_CRS,OUTPUT_CRS,always_xy=True); c=[[round(t.transform(e,n)[0],8),round(t.transform(e,n)[1],8)] for _,e,n in HUERTA_HITOS]
+ return {'type':'FeatureCollection','name':'w1_huerta_vieja_faja_margin_review_only','properties':{'candidate_id':'lima_norte_huerta_vieja','deployment_status':'RESEARCH_ONLY','review_status':'REVIEW_ONLY','production_use':False,'production_ready':False,'operational_alerting_enabled':False,'source_snapshot':SOURCE_SNAPSHOT.relative_to(ROOT).as_posix(),'source_snapshot_sha256':snapshot_sha,'coordinate_payload_sha256':digest_bytes(canonical_json(coordinate_payload())),'source_crs':SOURCE_CRS,'output_crs':OUTPUT_CRS,'entity_type':'FAJA_MARGINAL_HITO_SEQUENCE','not_a_watershed':True,'not_a_hazard_extent':True,'not_an_inundation_polygon':True},'features':[{'type':'Feature','properties':{'unit_id':'huerta_vieja_faja_hitos_18_review_only','candidate_id':'lima_norte_huerta_vieja','entity_type':'FAJA_MARGINAL_HITO_SEQUENCE','bank_label':'WITHHELD_DUE_TO_SOURCE_LABEL_INCONSISTENCY','source_hito_count':18,'source_id':'ANA-IT-016-2024-ALACHRL','source_act':'ANA-RD-0690-2025-AAACF','source_crs':SOURCE_CRS,'output_crs':OUTPUT_CRS,'confidence':'HIGH_COORDINATE_PROVENANCE_PARTIAL_ENTITY_COVERAGE','deployment_status':'RESEARCH_ONLY','review_status':'REVIEW_ONLY','production_use':False,'production_ready':False,'alerting_enabled':False,'artificial_links':False,'closed_ring':False,'not_a_watershed':True,'not_a_faja_polygon':True,'not_a_hazard_extent':True,'not_an_inundation_polygon':True,'source_hitos':[i for i,_,_ in HUERTA_HITOS],'source_utm':[[e,n] for _,e,n in HUERTA_HITOS]},'geometry':{'type':'LineString','coordinates':c}}]}
+def build_validation(g,b,s):
+ c=g['features'][0]['geometry']['coordinates']; line=LineString(c); inv=Transformer.from_crs(OUTPUT_CRS,SOURCE_CRS,always_xy=True); errs=[math.hypot(inv.transform(lon,lat)[0]-e,inv.transform(lon,lat)[1]-n) for (_,e,n),(lon,lat) in zip(HUERTA_HITOS,c)]
+ return {'schema_version':'1.0.0','candidate_id':'lima_norte_huerta_vieja','geometry_path':OUT.relative_to(ROOT).as_posix(),'geometry_sha256':digest_bytes(b),'source_snapshot_path':SOURCE_SNAPSHOT.relative_to(ROOT).as_posix(),'source_snapshot_sha256':s,'coordinate_payload_sha256':digest_bytes(canonical_json(coordinate_payload())),'status':'PASS_GEOMETRY_REVIEW_ONLY','deployment_status':'RESEARCH_ONLY','production_use':False,'production_ready':False,'operational_alerting_enabled':False,'activation_permitted':False,'entity_checks':{'entity_type':'FAJA_MARGINAL_HITO_SEQUENCE','not_a_watershed':True,'not_a_faja_polygon':True,'not_a_hazard_extent':True,'not_an_inundation_polygon':True,'artificial_links':False},'crs_checks':{'source_crs':SOURCE_CRS,'output_crs':OUTPUT_CRS,'point_count':18,'max_roundtrip_error_m':round(max(errs),6),'within_expected_peru_bounds':all(-82<lon<-68 and -19<lat<1 for lon,lat in c)},'topology_checks':{'geometry_type':'LineString','is_simple':line.is_simple,'is_empty':line.is_empty,'closed_ring':line.is_ring,'duplicate_consecutive_points':any(a==b for a,b in zip(c,c[1:]))},'coverage_checks':{'published_final_hitos_total':39,'materialized_unambiguous_hitos':18,'coverage_kind':'PARTIAL_ONE_UNAMBIGUOUS_PUBLISHED_SEQUENCE','study_reach_km':2.0,'full_faja_polygon_available':False},'limitations':['Geometry is deliberately partial and REVIEW_ONLY.','The accessible text of the second bank contains an ambiguous/damaged northing; it is not materialized.','No polygon is inferred from the two banks and no watershed is inferred from faja-marginal controls.']}
+def materialize(write=True):
+ s=digest_file(SOURCE_SNAPSHOT); g=build_geojson(s); b=(json.dumps(g,ensure_ascii=False,indent=2)+'\n').encode(); v=build_validation(g,b,s)
+ if write: OUT.write_bytes(b); VALIDATION.write_text(json.dumps(v,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+ return g,v
+def main():
+ p=argparse.ArgumentParser(); p.add_argument('--check-only',action='store_true'); a=p.parse_args(); g,v=materialize(not a.check_only)
+ if a.check_only and (json.loads(OUT.read_text())!=g or json.loads(VALIDATION.read_text())!=v): raise SystemExit('W1 outputs do not match reproducible source coordinates')
+ print(json.dumps({'candidate_id':'lima_norte_huerta_vieja','status':v['status'],'point_count':18,'activation_permitted':False},sort_keys=True))
+if __name__=='__main__': main()
