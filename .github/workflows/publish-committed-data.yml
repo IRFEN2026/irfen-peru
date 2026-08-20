@@ -170,6 +170,16 @@ jobs:
           assert goes.get('scientific_gate',{}).get('automatic_event_or_none_classification') is False
           assert goes.get('scientific_gate',{}).get('threshold_promotion_allowed') is False
           assert goes.get('scientific_gate',{}).get('replaces_imerg') is False
+          goes_summary=goes.get('summary') or {}
+          goes_contract=goes.get('discard_contract') or {}
+          goes_decision=goes.get('retention_decision') or {}
+          assert 0 <= float(goes_summary.get('all_pilots_covered_pct', -1)) <= 100
+          assert goes_contract.get('discard_if_all_pilots_coverage_below_pct') == 80
+          if goes_decision.get('technical_access_gate_pass'):
+              assert goes_decision.get('technical_review_sample_complete') is True
+              assert float(goes_summary.get('source_availability_pct', 0)) >= 80
+              assert float(goes_summary.get('all_pilots_covered_pct', 0)) >= 80
+              assert float(goes_summary.get('capture_delay_p90_minutes', 9999)) <= 30
           html=Path('site/index.html').read_text(encoding='utf-8')
           for script in (
               'v08-experimental.js',

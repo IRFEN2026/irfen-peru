@@ -75,6 +75,17 @@ jobs:
               ]
           else:
               assert (probe.get('scientific_gate') or {}).get('missing_data_interpretation') == 'UNKNOWN_NOT_ZERO_OR_LOW_RISK'
+          archive=json.loads(Path('site/data/calibration/goes19_rrqpe_archive.json').read_text(encoding='utf-8'))
+          summary=archive.get('summary') or {}
+          contract=archive.get('discard_contract') or {}
+          decision=archive.get('retention_decision') or {}
+          assert 0 <= float(summary.get('all_pilots_covered_pct', -1)) <= 100
+          assert contract.get('discard_if_all_pilots_coverage_below_pct') == 80
+          if decision.get('technical_access_gate_pass'):
+              assert decision.get('technical_review_sample_complete') is True
+              assert float(summary.get('source_availability_pct', 0)) >= 80
+              assert float(summary.get('all_pilots_covered_pct', 0)) >= 80
+              assert float(summary.get('capture_delay_p90_minutes', 9999)) <= 30
           print('GOES-19 confinado correctamente a GOES_TEST_ONLY')
           PY
 

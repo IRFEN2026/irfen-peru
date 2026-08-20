@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import importlib.util
 from pathlib import Path
 import unittest
@@ -61,12 +61,82 @@ class Goes19ProbeTests(unittest.TestCase):
         self.assertFalse(archive["scientific_gate"]["missing_data_is_low_risk"])
         self.assertFalse(archive["retention_decision"]["technical_review_sample_complete"])
         self.assertEqual(archive["summary"]["capture_delay_p90_minutes"], None)
+        self.assertEqual(archive["summary"]["all_pilots_covered_pct"], 0.0)
+
+    def test_technical_gate_rejects_sparse_all_pilot_coverage(self):
+        start = datetime(2026, 8, 16, tzinfo=timezone.utc)
+        records = [
+            {
+                "generated_at": (start + timedelta(hours=index)).isoformat(),
+                "status": "TECHNICAL_REVIEW_REQUIRED",
+                "source_available": True,
+                "source_object_key": f"object-{index}",
+                "source_scan_end": (start + timedelta(hours=index)).isoformat(),
+                "capture_delay_minutes": 10.0,
+                "all_v08_pilots_covered": index == 0,
+                "missing_data_interpretation": None,
+            }
+            for index in range(71)
+        ]
+        probe = MODULE.base_probe(start + timedelta(hours=71))
+        probe.update({
+            "status": "TECHNICAL_REVIEW_REQUIRED",
+            "source_available": True,
+            "latest_object": {
+                "key": "object-71",
+                "scan_end": (start + timedelta(hours=71)).isoformat(),
+            },
+            "freshness": {"capture_delay_minutes": 10.0},
+            "coverage": {"all_v08_pilots_covered": False},
+        })
+        archive = MODULE.archive_result(
+            {"records": records}, probe, start + timedelta(hours=71)
+        )
+        self.assertTrue(archive["retention_decision"]["technical_review_sample_complete"])
+        self.assertEqual(archive["summary"]["source_availability_pct"], 100.0)
+        self.assertEqual(archive["summary"]["all_pilots_covered_count"], 1)
+        self.assertEqual(archive["summary"]["all_pilots_covered_pct"], 1.4)
+        self.assertFalse(archive["retention_decision"]["technical_access_gate_pass"])
+
+    def test_technical_gate_requires_reliable_coverage_and_freshness(self):
+        start = datetime(2026, 8, 16, tzinfo=timezone.utc)
+        records = [
+            {
+                "generated_at": (start + timedelta(hours=index)).isoformat(),
+                "status": "KEEP_FOR_SHADOW_EVALUATION",
+                "source_available": True,
+                "source_object_key": f"object-{index}",
+                "source_scan_end": (start + timedelta(hours=index)).isoformat(),
+                "capture_delay_minutes": 10.0,
+                "all_v08_pilots_covered": index < 57,
+                "missing_data_interpretation": None,
+            }
+            for index in range(71)
+        ]
+        probe = MODULE.base_probe(start + timedelta(hours=71))
+        probe.update({
+            "status": "KEEP_FOR_SHADOW_EVALUATION",
+            "source_available": True,
+            "latest_object": {
+                "key": "object-71",
+                "scan_end": (start + timedelta(hours=71)).isoformat(),
+            },
+            "freshness": {"capture_delay_minutes": 10.0},
+            "coverage": {"all_v08_pilots_covered": True},
+        })
+        archive = MODULE.archive_result(
+            {"records": records}, probe, start + timedelta(hours=71)
+        )
+        self.assertEqual(archive["summary"]["all_pilots_covered_pct"], 80.6)
+        self.assertTrue(archive["retention_decision"]["technical_access_gate_pass"])
 
     def test_workflow_keeps_explicit_goes_test_only_guards(self):
         text = (ROOT / ".github/workflows/goes19-rrqpe-probe.yml").read_text(encoding="utf-8")
         self.assertIn("GOES_TEST_ONLY", text)
         self.assertIn("counts_toward_v08_closeout", text)
         self.assertIn("threshold_promotion_allowed", text)
+        self.assertIn("all_pilots_covered_pct", text)
+        self.assertIn("discard_if_all_pilots_coverage_below_pct", text)
         self.assertIn("git rebase origin/main", text)
 
     def test_publish_and_live_smoke_require_goes_guardrails(self):
@@ -77,6 +147,8 @@ class Goes19ProbeTests(unittest.TestCase):
             self.assertIn("GOES_TEST_ONLY", text)
             self.assertIn("counts_toward_v08_closeout", text)
             self.assertIn("replaces_imerg", text)
+            self.assertIn("all_pilots_covered_pct", text)
+            self.assertIn("discard_if_all_pilots_coverage_below_pct", text)
 
 
 if __name__ == "__main__":
