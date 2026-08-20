@@ -29,6 +29,40 @@ jobs:
       - name: Instalar dependencias
         run: pip install -r requirements.txt
 
+      - name: Demostrar rechazo atómico de latest.json DEMO
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp site/data/forecast/imerg_verification_history.json /tmp/demo-history.json
+          cp /tmp/demo-history.json /tmp/demo-history.before.json
+          if python scripts/update_imerg_verification_history.py \
+            --source site/data/latest.json --history /tmp/demo-history.json
+          then
+            echo "ERROR: latest.json DEMO fue aceptado como evidencia científica" >&2
+            exit 1
+          fi
+          cmp /tmp/demo-history.before.json /tmp/demo-history.json
+          echo "DEMO_REJECTED_WITHOUT_MUTATION"
+
+      - name: Demostrar restauración durable sin GitHub Pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/restore_imerg_verification_history.py \
+            --durable site/data/forecast/imerg_verification_history.json \
+            --pages-candidate /tmp/pages-intentionally-unavailable.json \
+            --destination /tmp/restored-from-git.json \
+            --receipt /tmp/restored-from-git.receipt.json
+          cmp site/data/forecast/imerg_verification_history.json /tmp/restored-from-git.json
+          python - <<'PY'
+          import json
+          receipt=json.load(open('/tmp/restored-from-git.receipt.json',encoding='utf-8'))
+          assert receipt['restoration_mode']=='GIT_VERSIONED_DURABLE_RESTORE'
+          assert receipt['pages_candidate']['status']=='UNAVAILABLE'
+          assert receipt['scientific_fallback_used'] is False
+          print('GIT_DURABLE_RESTORE_OK')
+          PY
+
       - name: Hidratar evidencia transitoria publicada
         shell: bash
         run: |
@@ -38,6 +72,8 @@ jobs:
             "latest.json"
             "experimental_state.json"
             "test_report.json"
+            "forecast/archive.json"
+            "forecast/historical_daily.json"
             "forecast/verification.json"
             "calibration/historical_replay.json"
             "hydrology/piura_reference_model.json"
@@ -51,6 +87,25 @@ jobs:
               "$BASE/$file?pr=${{ github.event.pull_request.number }}-${{ github.run_id }}" \
               -o "site/data/$file"
           done
+          cp site/data/forecast/verification.json /tmp/previous-verification.json
+          history="forecast/imerg_verification_history.json"
+          cp "site/data/$history" /tmp/imerg_verification_history.git-versioned.json
+          if curl -fsSL --connect-timeout 10 --max-time 35 --retry 3 --retry-all-errors \
+            "$BASE/$history?pr=${{ github.event.pull_request.number }}-${{ github.run_id }}" \
+            -o "/tmp/imerg_verification_history.pages-candidate.json"
+          then
+            echo "Réplica Pages descargada; debe preservar todo el ledger durable."
+          else
+            echo "Pages no disponible; se restaurará el histórico versionado en Git."
+          fi
+          python scripts/restore_imerg_verification_history.py \
+            --durable /tmp/imerg_verification_history.git-versioned.json \
+            --pages-candidate /tmp/imerg_verification_history.pages-candidate.json \
+            --destination "site/data/$history" \
+            --receipt /tmp/imerg_verification_history.restore-receipt.json
+
+      - name: Reconstruir verificación desde el histórico científico dedicado
+        run: python scripts/verify_geos_against_imerg.py --previous-verification /tmp/previous-verification.json
 
       - name: Ejecutar puertas científicas v0.8
         run: |

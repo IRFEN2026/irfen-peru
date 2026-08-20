@@ -1,53 +1,68 @@
 #!/usr/bin/env python3
-"""Verifica pronósticos GEOS-CF archivados contra IMERG observado.
+"""Verifica GEOS-CF exclusivamente contra el histórico IMERG científico.
 
-Compara únicamente días UTC completos (24 valores horarios GEOS) para los que ya
-existe una observación IMERG compatible espacialmente. No ajusta el forecast,
-no genera umbrales y no interviene en la operación v0.7.1.
+El histórico es independiente de la ventana operativa móvil. Este módulo no
+lee ni hidrata ``latest.json`` y falla cerrado ante duplicados, conflictos o
+disminuciones de pares que no tengan una retirada explícita y aprobada.
 """
 from __future__ import annotations
 
+import argparse
 from collections import defaultdict
 from datetime import datetime, timezone
-from pathlib import Path
+import hashlib
 import json
 import math
+import os
+from pathlib import Path
+import subprocess
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "site"
 ARCHIVE = SITE / "data" / "forecast" / "archive.json"
 HISTORICAL_DAILY = SITE / "data" / "forecast" / "historical_daily.json"
-LATEST = SITE / "data" / "latest.json"
+OBSERVATION_HISTORY = SITE / "data" / "forecast" / "imerg_verification_history.json"
 OUT = SITE / "data" / "forecast" / "verification.json"
-OBSERVED_ARCHIVE = SITE / "data" / "forecast" / "observed_imerg_daily.json"
-MIN_SAMPLES = 30
-OBSERVED_ARCHIVE_RETENTION_CONTRACT = (
-    "append_only_by_zone_method_valid_date; first_audited_value_wins; "
-    "conflicting_revisions_are_logged_without_overwrite"
-)
-RUN170_SEED_PROVENANCE = {
-    "source": "GitHub Actions update-and-deploy run #170 Pages artifact",
-    "workflow_run_id": 32300707086,
-    "workflow_run_url": "https://github.com/IRFEN2026/irfen-peru/actions/runs/32300707086",
-    "artifact_id": 9382914636,
-    "artifact_name": "github-pages",
-    "artifact_sha256": "88c0cd15ebbde7a9b789cacf4720c81e946e31d46f60546275fcac1dad851d9b",
-    "verification_path": "data/forecast/verification.json",
-    "verification_sha256": "f4a79332710e8531e588b1f56222933e710439f38627c28a988ee7d11970ae1b",
-    "latest_path": "data/latest.json",
-    "latest_sha256": "47a78c7e5e98f225f1e391e53d6d01c6188450c918e15bc71da8226509959d46",
-    "matched_observation_keys": 33,
-    "missing_observation_keys": 0,
-    "conflicting_observation_keys": 0,
-    "role": "AUDITED_BACKFILL_SOURCE",
+PILOT_METHODS = {
+    "san_ildefonso": "validated_dem_polygon",
+    "chosica": "validated_dem_polygon",
+    "catacaos": "provisional_weighted_operational_sampling_areas",
 }
+MIN_SAMPLES = 30
 
 
-def load(path, default):
+class VerificationError(ValueError):
+    pass
+
+
+def canonical_sha256(value):
+    payload = json.dumps(
+        value, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def load_required(path: Path):
     try:
         return json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        return default
+    except Exception as exc:
+        raise VerificationError(f"No se pudo leer {path}: {exc}") from exc
+
+
+def sha256_file(path: Path):
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def relative(path: Path):
+    try:
+        return str(path.resolve().relative_to(ROOT.resolve()))
+    except ValueError:
+        return str(path)
 
 
 def dt(value):
@@ -57,7 +72,6 @@ def dt(value):
     try:
         return datetime.fromisoformat(text).astimezone(timezone.utc)
     except Exception:
-        # Tolerar precisión nanosegundo de algunos metadatos NumPy.
         if "." in text:
             head, rest = text.split(".", 1)
             suffix = "+00:00" if "+" not in rest and "-" not in rest[1:] else ""
@@ -69,127 +83,91 @@ def dt(value):
         return None
 
 
-def observed_series(zone, sampling_method):
-    if sampling_method == "validated_dem_polygon":
-        exp = zone.get("experimental_polygon") or {}
-        if exp.get("production_use") is False:
-            return exp.get("series") or []
-        return []
-    return zone.get("series") or []
+def history_key(row):
+    return (
+        row.get("zone_id"),
+        row.get("sampling_method"),
+        row.get("valid_date_utc"),
+    )
 
 
-def merge_observed_archive(zones, prior, required_methods, generated_at=None):
-    """Acumula observaciones diarias sin perder días al rotar latest.json.
+def validate_history(history):
+    if history.get("production_use") is not False:
+        raise VerificationError("El histórico IMERG debe declarar production_use=false")
+    if history.get("production_ready") is not False:
+        raise VerificationError("El histórico IMERG debe declarar production_ready=false")
+    retention = history.get("retention_policy") or {}
+    if retention.get("mode") != "APPEND_ONLY":
+        raise VerificationError("La retención del histórico IMERG debe ser APPEND_ONLY")
+    if retention.get("deduplication_key") != [
+        "zone_id", "sampling_method", "valid_date_utc"
+    ]:
+        raise VerificationError("Clave de deduplicación IMERG inesperada")
+    if retention.get("tombstone_creation_policy") != "MANUAL_REVIEWED_COMMIT_ONLY":
+        raise VerificationError("La creación de tombstones debe ser manual y revisada")
+    if retention.get("automatic_tombstone_creation") is not False:
+        raise VerificationError("La creación automática de tombstones está prohibida")
 
-    ``latest.json`` conserva una ventana móvil. El archivo acumulativo mantiene
-    únicamente fecha, lluvia y contrato espacial; no convierte la ausencia de
-    datos en cero ni habilita uso operativo.
-    """
-    if prior and prior.get("production_use") is not False:
-        raise ValueError("observed_imerg_daily.json debe declarar production_use=false")
+    evidence_by_id = {}
+    for evidence in history.get("source_evidence") or []:
+        evidence_id = evidence.get("evidence_id")
+        if not evidence_id or evidence_id in evidence_by_id:
+            raise VerificationError(f"Evidencia de procedencia duplicada o sin ID: {evidence_id}")
+        evidence_by_id[evidence_id] = evidence
 
-    merged = {}
-    revision_candidates = list((prior or {}).get("revision_candidates") or [])
-    revision_keys = {
-        (
-            row.get("zone_id"),
-            row.get("sampling_method"),
-            row.get("valid_date_utc"),
-            row.get("candidate_rain_mm"),
+    observations = history.get("observations") or []
+    seen = {}
+    for row in observations:
+        key = history_key(row)
+        if key in seen:
+            raise VerificationError(f"Observación histórica duplicada: {key}")
+        if key[0] not in PILOT_METHODS or PILOT_METHODS.get(key[0]) != key[1]:
+            raise VerificationError(f"Contrato espacial histórico inesperado: {key[:2]}")
+        if not key[2] or row.get("observed_imerg_mm") is None:
+            raise VerificationError(f"Observación incompleta: {key}")
+        if float(row["observed_imerg_mm"]) < 0:
+            raise VerificationError(f"Precipitación histórica negativa: {key}")
+        if row.get("provenance_evidence_id") not in evidence_by_id:
+            raise VerificationError(f"Observación sin procedencia: {key}")
+        seen[key] = row
+
+    withdrawals = history.get("withdrawals") or []
+    withdrawn = set()
+    for row in withdrawals:
+        key = (
+            row.get("zone_id"), row.get("sampling_method"), row.get("valid_date_utc")
         )
-        for row in revision_candidates
-    }
-    for record in (prior or {}).get("records", []):
-        key = (record.get("zone_id"), record.get("sampling_method"))
-        if None in key:
-            continue
-        for row in record.get("series", []):
-            if row.get("date") and row.get("rain_mm") is not None:
-                archive_key = (key, row["date"])
-                candidate = {
-                    "date": row["date"],
-                    "rain_mm": round(float(row["rain_mm"]), 3),
-                }
-                if archive_key not in merged:
-                    merged[archive_key] = candidate
-                    continue
-                if merged[archive_key]["rain_mm"] != candidate["rain_mm"]:
-                    raise ValueError(
-                        "observed_imerg_daily.json contiene valores archivados "
-                        f"conflictivos para {key} {row['date']}"
-                    )
+        required = (
+            row.get("withdrawal_id"), row.get("reason"),
+            row.get("approval_reference"), row.get("approved_by"),
+            row.get("approved_at"), row.get("recorded_at"),
+            row.get("observation_sha256"), row.get("evidence_sha256"),
+        )
+        if row.get("status") != "APPROVED" or not all(required):
+            raise VerificationError(f"Retirada no explícita o no aprobada: {key}")
+        if row.get("creation_mode") != "MANUAL_REVIEWED_COMMIT":
+            raise VerificationError(f"Tombstone no creado mediante commit manual revisado: {key}")
+        if row.get("automatic_creation") is not False:
+            raise VerificationError(f"Tombstone automático prohibido: {key}")
+        if key not in seen:
+            raise VerificationError(f"Retirada sin observación histórica: {key}")
+        if key in withdrawn:
+            raise VerificationError(f"Retirada duplicada: {key}")
+        observation = seen[key]
+        evidence = evidence_by_id[observation["provenance_evidence_id"]]
+        if row["observation_sha256"] != canonical_sha256(observation):
+            raise VerificationError(f"Hash de observación inválido en tombstone: {key}")
+        if row["evidence_sha256"] != canonical_sha256(evidence):
+            raise VerificationError(f"Hash de evidencia inválido en tombstone: {key}")
+        withdrawn.add(key)
 
-    for zid, method in sorted(required_methods):
-        zone = zones.get(zid)
-        if not zone:
-            continue
-        for row in observed_series(zone, method):
-            if row.get("date") and row.get("rain_mm") is not None:
-                key = ((zid, method), row["date"])
-                candidate = {
-                    "date": row["date"],
-                    "rain_mm": round(float(row["rain_mm"]), 3),
-                }
-                if key not in merged:
-                    merged[key] = candidate
-                    continue
-                if merged[key]["rain_mm"] == candidate["rain_mm"]:
-                    continue
-                revision_key = (zid, method, row["date"], candidate["rain_mm"])
-                if revision_key not in revision_keys:
-                    revision_candidates.append({
-                        "zone_id": zid,
-                        "sampling_method": method,
-                        "valid_date_utc": row["date"],
-                        "archived_rain_mm": merged[key]["rain_mm"],
-                        "candidate_rain_mm": candidate["rain_mm"],
-                        "first_seen_at": generated_at or datetime.now(timezone.utc).isoformat(),
-                        "disposition": "LOGGED_NOT_OVERWRITTEN_PENDING_SCIENTIFIC_REVIEW",
-                        "production_use": False,
-                    })
-                    revision_keys.add(revision_key)
-
-    records = []
-    for zid, method in sorted(required_methods):
-        series = [
-            row for ((key, _), row) in merged.items()
-            if key == (zid, method)
-        ]
-        series.sort(key=lambda row: row["date"])
-        if series:
-            records.append({
-                "zone_id": zid,
-                "sampling_method": method,
-                "series": series,
-            })
-
-    archive = {
-        "version": "0.8-experimental",
-        "generated_at": generated_at or datetime.now(timezone.utc).isoformat(),
-        "production_use": False,
-        "observation_source": "NASA GPM IMERG Late Daily",
-        "record_count": len(records),
-        "retention_contract": OBSERVED_ARCHIVE_RETENTION_CONTRACT,
-        "missing_data_policy": "missing dates remain absent and are never interpreted as zero rain or low risk",
-        "records": records,
-        "revision_candidates": sorted(
-            revision_candidates,
-            key=lambda row: (
-                row.get("valid_date_utc") or "",
-                row.get("zone_id") or "",
-                row.get("sampling_method") or "",
-                row.get("candidate_rain_mm") if row.get("candidate_rain_mm") is not None else -1,
-            ),
-        ),
-    }
-    provenance = list((prior or {}).get("seed_provenance") or [])
-    if not any(
-        row.get("artifact_sha256") == RUN170_SEED_PROVENANCE["artifact_sha256"]
-        for row in provenance
-    ):
-        provenance.append(dict(RUN170_SEED_PROVENANCE))
-    archive["seed_provenance"] = provenance
-    return archive
+    expected_contracts = set(PILOT_METHODS.items())
+    actual_contracts = {(key[0], key[1]) for key in seen}
+    if actual_contracts != expected_contracts:
+        raise VerificationError(
+            f"Pilotos/contratos del histórico no coinciden: {sorted(actual_contracts)}"
+        )
+    return seen, withdrawn
 
 
 def lead_bucket(hours):
@@ -209,188 +187,305 @@ def lead_bucket(hours):
 def metrics(rows):
     if not rows:
         return {"n": 0, "mae_mm": None, "rmse_mm": None, "bias_mm": None}
-    errs = [float(r["error_mm"]) for r in rows]
+    errors = [float(row["error_mm"]) for row in rows]
     return {
         "n": len(rows),
-        "mae_mm": round(sum(abs(e) for e in errs) / len(errs), 3),
-        "rmse_mm": round(math.sqrt(sum(e * e for e in errs) / len(errs)), 3),
-        "bias_mm": round(sum(errs) / len(errs), 3),
+        "mae_mm": round(sum(abs(value) for value in errors) / len(errors), 3),
+        "rmse_mm": round(math.sqrt(sum(value * value for value in errors) / len(errors)), 3),
+        "bias_mm": round(sum(errors) / len(errors), 3),
     }
 
 
-def main():
-    archive = load(ARCHIVE, {"snapshots": []})
-    historical = load(HISTORICAL_DAILY, {"records": []})
-    latest = load(LATEST, {"zones": []})
-    zones = {z.get("id"): z for z in latest.get("zones", [])}
-    required_methods = {
-        (fz.get("zone_id"), fz.get("sampling_method"))
-        for snap in archive.get("snapshots", [])
-        for fz in snap.get("zones", [])
-        if fz.get("zone_id") and fz.get("sampling_method")
-    }
-    required_methods.update({
-        (record.get("zone_id"), record.get("sampling_method"))
-        for record in historical.get("records", [])
-        if record.get("zone_id") and record.get("sampling_method")
-    })
-    observed_archive = merge_observed_archive(
-        zones,
-        load(OBSERVED_ARCHIVE, {}),
-        required_methods,
-    )
-    OBSERVED_ARCHIVE.parent.mkdir(parents=True, exist_ok=True)
-    OBSERVED_ARCHIVE.write_text(
-        json.dumps(observed_archive, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
-    archived_observations = {
-        (record["zone_id"], record["sampling_method"]): {
-            row["date"]: row["rain_mm"] for row in record.get("series", [])
-        }
-        for record in observed_archive.get("records", [])
-    }
+def observation_index(history):
+    seen, withdrawn = validate_history(history)
+    return {key: row for key, row in seen.items() if key not in withdrawn}
+
+
+def build_pairs(archive, historical, history):
+    observations = observation_index(history)
     pairs = []
 
-    for snap in archive.get("snapshots", []):
-        issued = dt(snap.get("generated_at"))
-        for fz in snap.get("zones", []):
-            zid = fz.get("zone_id")
-            zone = zones.get(zid)
-            if not zone:
+    for snapshot in archive.get("snapshots") or []:
+        issued = dt(snapshot.get("generated_at"))
+        for forecast_zone in snapshot.get("zones") or []:
+            zone_id = forecast_zone.get("zone_id")
+            method = forecast_zone.get("sampling_method")
+            if PILOT_METHODS.get(zone_id) != method:
                 continue
-            method = fz.get("sampling_method")
-            obs = archived_observations.get((zid, method), {})
-            if not obs:
-                continue
-
             by_day = defaultdict(list)
-            for h in fz.get("hourly", []):
-                when = dt(h.get("valid_time"))
-                val = h.get("precip_mm")
-                if when is None or val is None:
-                    continue
-                by_day[when.date().isoformat()].append((when, float(val)))
-
+            for hour in forecast_zone.get("hourly") or []:
+                when = dt(hour.get("valid_time"))
+                value = hour.get("precip_mm")
+                if when is not None and value is not None:
+                    by_day[when.date().isoformat()].append((when, float(value)))
             for day, values in sorted(by_day.items()):
-                # Un día comparable debe contener exactamente las 24 horas únicas.
-                unique = {v[0].isoformat(): v[1] for v in values}
-                if len(unique) != 24 or day not in obs:
+                observation = observations.get((zone_id, method, day))
+                unique = {value[0].isoformat(): value[1] for value in values}
+                if observation is None or len(unique) != 24:
                     continue
                 day_start = datetime.fromisoformat(day).replace(tzinfo=timezone.utc)
-                lead_h = None if issued is None else (day_start - issued).total_seconds() / 3600
-                # Evitar usar un "forecast" de un día ya iniciado antes de emitirse.
-                if lead_h is not None and lead_h < 0:
+                lead_hours = None if issued is None else (
+                    day_start - issued
+                ).total_seconds() / 3600
+                if lead_hours is not None and lead_hours < 0:
                     continue
-                forecast_mm = round(sum(unique.values()), 3)
-                observed_mm = round(float(obs[day]), 3)
-                error = round(forecast_mm - observed_mm, 3)
-                pairs.append({
-                    "zone_id": zid,
-                    "sampling_method": method,
-                    "snapshot_generated_at": snap.get("generated_at"),
-                    "valid_date_utc": day,
-                    "lead_hours_to_day_start": None if lead_h is None else round(lead_h, 2),
-                    "lead_bucket": lead_bucket(lead_h),
-                    "forecast_mm": forecast_mm,
-                    "observed_imerg_mm": observed_mm,
-                    "error_mm": error,
-                    "absolute_error_mm": round(abs(error), 3),
-                })
+                pairs.append(make_pair(
+                    zone_id, method, snapshot.get("generated_at"), day,
+                    lead_hours, sum(unique.values()), observation,
+                    forecast_record_kind="hourly_archive_snapshot",
+                ))
 
-    # Backfill compacto: pronósticos realmente emitidos ya agregados a días UTC
-    # completos. Se mantiene separado del archive horario para no inflar el sitio.
     if historical.get("production_use") is False:
-        for record in historical.get("records", []):
-            zid = record.get("zone_id")
-            zone = zones.get(zid)
-            day = record.get("valid_date_utc")
+        for record in historical.get("records") or []:
+            zone_id = record.get("zone_id")
             method = record.get("sampling_method")
+            day = record.get("valid_date_utc")
             issued = dt(record.get("issue_time"))
-            if not zone or not day or issued is None or int(record.get("hour_count", 0)) != 24:
-                continue
-            obs = archived_observations.get((zid, method), {})
-            if day not in obs:
+            observation = observations.get((zone_id, method, day))
+            if (
+                PILOT_METHODS.get(zone_id) != method or not day or issued is None
+                or int(record.get("hour_count", 0)) != 24 or observation is None
+                or record.get("forecast_mm") is None
+            ):
                 continue
             day_start = datetime.fromisoformat(day).replace(tzinfo=timezone.utc)
-            lead_h = (day_start - issued).total_seconds() / 3600
-            if lead_h < 0 or record.get("forecast_mm") is None:
+            lead_hours = (day_start - issued).total_seconds() / 3600
+            if lead_hours < 0:
                 continue
-            forecast_mm = round(float(record["forecast_mm"]), 3)
-            observed_mm = round(float(obs[day]), 3)
-            error = round(forecast_mm - observed_mm, 3)
-            pairs.append({
-                "zone_id": zid,
-                "sampling_method": method,
-                "snapshot_generated_at": record.get("issue_time"),
-                "valid_date_utc": day,
-                "lead_hours_to_day_start": round(lead_h, 2),
-                "lead_bucket": lead_bucket(lead_h),
-                "forecast_mm": forecast_mm,
-                "observed_imerg_mm": observed_mm,
-                "error_mm": error,
-                "absolute_error_mm": round(abs(error), 3),
-                "forecast_record_kind": "historical_daily_backfill",
-                "source_dataset": record.get("source_dataset"),
-            })
+            pair = make_pair(
+                zone_id, method, record.get("issue_time"), day, lead_hours,
+                float(record["forecast_mm"]), observation,
+                forecast_record_kind="historical_daily_backfill",
+            )
+            pair["source_dataset"] = record.get("source_dataset")
+            pairs.append(pair)
 
-    # Eliminar duplicados exactos si el archivo de snapshots fue regenerado.
-    dedup = {}
+    deduplicated = {}
     for row in pairs:
-        key = (row["zone_id"], row["snapshot_generated_at"], row["valid_date_utc"])
-        dedup[key] = row
-    pairs = sorted(dedup.values(), key=lambda r: (r["valid_date_utc"], r["zone_id"], r["snapshot_generated_at"] or ""))
+        key = (
+            row["zone_id"], row["sampling_method"], row["snapshot_generated_at"],
+            row["valid_date_utc"], row["forecast_record_kind"],
+        )
+        deduplicated[key] = row
+    return sorted(
+        deduplicated.values(),
+        key=lambda row: (
+            row["valid_date_utc"], row["zone_id"],
+            row["snapshot_generated_at"] or "", row["forecast_record_kind"],
+        ),
+    )
 
+
+def make_pair(
+    zone_id, method, issued_at, day, lead_hours, forecast_mm, observation,
+    forecast_record_kind,
+):
+    forecast_value = round(float(forecast_mm), 3)
+    observed_value = round(float(observation["observed_imerg_mm"]), 3)
+    error = round(forecast_value - observed_value, 3)
+    return {
+        "zone_id": zone_id,
+        "sampling_method": method,
+        "snapshot_generated_at": issued_at,
+        "valid_date_utc": day,
+        "lead_hours_to_day_start": None if lead_hours is None else round(lead_hours, 2),
+        "lead_bucket": lead_bucket(lead_hours),
+        "forecast_mm": forecast_value,
+        "observed_imerg_mm": observed_value,
+        "error_mm": error,
+        "absolute_error_mm": round(abs(error), 3),
+        "forecast_record_kind": forecast_record_kind,
+        "observation_evidence_id": observation["provenance_evidence_id"],
+    }
+
+
+def current_commit():
+    if os.environ.get("GITHUB_SHA"):
+        return os.environ["GITHUB_SHA"]
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
+        ).strip()
+    except Exception:
+        return "UNKNOWN"
+
+
+def monotonicity_evidence(previous, pairs, by_zone, history):
+    if previous is None:
+        return {
+            "status": "BASELINE_NOT_COMPARED",
+            "silent_decrease_forbidden": True,
+            "previous_verification_sha256": None,
+        }
+    previous_by_zone = previous.get("by_zone") or {}
+    decreases = []
+    if len(pairs) < int(previous.get("total_pairs", 0)):
+        decreases.append({
+            "scope": "total", "before": int(previous.get("total_pairs", 0)),
+            "after": len(pairs),
+        })
+    for zone_id in PILOT_METHODS:
+        before = int((previous_by_zone.get(zone_id) or {}).get("n", 0))
+        after = int((by_zone.get(zone_id) or {}).get("n", 0))
+        if after < before:
+            decreases.append({"scope": zone_id, "before": before, "after": after})
+    # La identidad estable omite ``forecast_record_kind`` porque la verificación
+    # v1 publicada no lo declaraba. Exigimos unicidad con estos cuatro campos en
+    # ambos lados; una futura colisión entre clases fallará cerrada.
+    pair_fields = (
+        "zone_id", "sampling_method", "snapshot_generated_at",
+        "valid_date_utc",
+    )
+
+    def pair_key(row):
+        return tuple(row.get(field) for field in pair_fields)
+
+    previous_pairs = previous.get("pairs") or []
+    previous_total = int(previous.get("total_pairs", 0))
+    if previous_total != len(previous_pairs):
+        raise VerificationError(
+            "La verificación previa no permite auditar monotonicidad por identidad de par: "
+            f"total_pairs={previous_total}, pairs={len(previous_pairs)}"
+        )
+    previous_keys = [pair_key(row) for row in previous_pairs]
+    current_keys = [pair_key(row) for row in pairs]
+    if len(previous_keys) != len(set(previous_keys)):
+        raise VerificationError("La verificación previa contiene identidades de par duplicadas")
+    if len(current_keys) != len(set(current_keys)):
+        raise VerificationError("La verificación actual contiene identidades de par duplicadas")
+
+    removed_keys = sorted(set(previous_keys) - set(current_keys))
+    withdrawals = history.get("withdrawals") or []
+    withdrawals_by_observation = {
+        (row.get("zone_id"), row.get("sampling_method"), row.get("valid_date_utc")): row
+        for row in withdrawals
+    }
+    unauthorized_removed = [
+        key for key in removed_keys
+        if (key[0], key[1], key[3]) not in withdrawals_by_observation
+    ]
+    if unauthorized_removed:
+        raise VerificationError(
+            "Pares históricos desaparecieron sin una retirada aprobada para su observación: "
+            f"{unauthorized_removed}"
+        )
+    if decreases and not removed_keys:
+        raise VerificationError(
+            f"Disminución agregada sin identidades de par retiradas: {decreases}"
+        )
+    relevant_withdrawals = {
+        withdrawals_by_observation[(key[0], key[1], key[3])]["withdrawal_id"]
+        for key in removed_keys
+    }
+    return {
+        "status": "EXPLICIT_WITHDRAWAL_RECORDED" if removed_keys else "NO_DECREASE",
+        "silent_decrease_forbidden": True,
+        "previous_total_pairs": previous_total,
+        "current_total_pairs": len(pairs),
+        "decreases": decreases,
+        "removed_pair_count": len(removed_keys),
+        "removed_pair_keys": [dict(zip(pair_fields, key)) for key in removed_keys],
+        "authorized_withdrawal_ids": sorted(relevant_withdrawals),
+    }
+
+
+def build_report(archive, historical, history, previous=None, generated_at=None):
+    pairs = build_pairs(archive, historical, history)
     by_zone = {}
-    for zid in ("san_ildefonso", "chosica", "catacaos"):
-        rows = [r for r in pairs if r["zone_id"] == zid]
+    for zone_id in PILOT_METHODS:
+        rows = [row for row in pairs if row["zone_id"] == zone_id]
         zone_metrics = metrics(rows)
-        zone_metrics["assessment"] = "sample_accumulation" if len(rows) < MIN_SAMPLES else "enough_samples_for_initial_bias_review"
+        zone_metrics["assessment"] = (
+            "sample_accumulation" if len(rows) < MIN_SAMPLES
+            else "enough_samples_for_initial_bias_review"
+        )
         zone_metrics["minimum_samples_for_initial_review"] = MIN_SAMPLES
         zone_metrics["by_lead"] = {
-            bucket: metrics([r for r in rows if r["lead_bucket"] == bucket])
+            bucket: metrics([row for row in rows if row["lead_bucket"] == bucket])
             for bucket in ("D+1", "D+2", "D+3", "D+4", "D+5")
         }
-        by_zone[zid] = zone_metrics
+        by_zone[zone_id] = zone_metrics
 
-    report = {
-        "version": "0.8-experimental",
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+    observations, withdrawn = validate_history(history)
+    dates = sorted(key[2] for key in observations if key not in withdrawn)
+    monotonicity = monotonicity_evidence(previous, pairs, by_zone, history)
+    return {
+        "version": "0.8-experimental-verification-v2",
+        "generated_at": generated_at or datetime.now(timezone.utc).isoformat(),
         "production_use": False,
+        "production_ready": False,
+        "operational_alerting_enabled": False,
         "status": "verification_available" if pairs else "awaiting_mature_forecasts",
         "forecast_source": "NASA GMAO GEOS-CF v2",
         "observation_source": "NASA GPM IMERG Late Daily",
         "comparison_unit": "UTC calendar day with 24 complete GEOS hourly values",
+        "minimum_samples_for_initial_review": MIN_SAMPLES,
+        "pilot_zone_ids": list(PILOT_METHODS),
+        "provenance": {
+            "workflow_name": os.environ.get("GITHUB_WORKFLOW", "LOCAL_REPRODUCIBLE_BUILD"),
+            "workflow_run_id": os.environ.get("GITHUB_RUN_ID"),
+            "workflow_run_number": os.environ.get("GITHUB_RUN_NUMBER"),
+            "main_commit": current_commit(),
+            "acquisition_mode": "DEDICATED_APPEND_ONLY_IMERG_VERIFICATION_HISTORY_ONLY",
+            "fallback_used": False,
+            "retention_policy": history.get("retention_policy"),
+            "minimum_valid_date_utc": dates[0] if dates else None,
+            "maximum_valid_date_utc": dates[-1] if dates else None,
+            "observation_count": len(observations) - len(withdrawn),
+            "withdrawal_count": len(withdrawn),
+            "inputs": [],
+        },
+        "monotonicity": monotonicity,
         "scientific_limitations": [
             "GEOS-CF e IMERG tienen resoluciones y errores propios; esta comparación mide consistencia, no verdad de terreno.",
             "San Ildefonso y Huaycoloro usan sus polígonos DEM; Catacaos conserva muestreo espacial provisional.",
             "No se corrige sesgo ni se cambia ningún umbral hasta acumular suficientes casos lluviosos y secos.",
         ],
-        "minimum_samples_for_initial_review": MIN_SAMPLES,
         "forecast_inputs": {
-            "live_archive_snapshots": len(archive.get("snapshots", [])),
-            "historical_daily_records_available": len(historical.get("records", [])),
+            "live_archive_snapshots": len(archive.get("snapshots") or []),
+            "historical_daily_records_available": len(historical.get("records") or []),
             "historical_daily_pairs_used": sum(
-                row.get("forecast_record_kind") == "historical_daily_backfill" for row in pairs
+                row["forecast_record_kind"] == "historical_daily_backfill" for row in pairs
             ),
-            "observed_daily_archive_records": sum(
-                len(record.get("series", []))
-                for record in observed_archive.get("records", [])
-            ),
-            "observed_daily_archive_generated_at": observed_archive.get("generated_at"),
+            "observed_history_records": len(observations) - len(withdrawn),
         },
         "total_pairs": len(pairs),
         "overall_metrics": metrics(pairs),
         "by_zone": by_zone,
         "pairs": pairs,
     }
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--previous-verification", type=Path)
+    return parser.parse_args()
+
+
+def main():
+    args = parse_args()
+    archive = load_required(ARCHIVE)
+    historical = load_required(HISTORICAL_DAILY)
+    history = load_required(OBSERVATION_HISTORY)
+    previous = load_required(args.previous_verification) if args.previous_verification else None
+    report = build_report(archive, historical, history, previous=previous)
+    report["provenance"]["inputs"] = [
+        {"path": relative(path), "sha256": sha256_file(path)}
+        for path in (ARCHIVE, HISTORICAL_DAILY, OBSERVATION_HISTORY)
+    ]
+    if args.previous_verification:
+        report["monotonicity"]["previous_verification_path"] = relative(
+            args.previous_verification
+        )
+        report["monotonicity"]["previous_verification_sha256"] = sha256_file(
+            args.previous_verification
+        )
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    OUT.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({
-        "status": report["status"],
-        "total_pairs": report["total_pairs"],
-        "overall_metrics": report["overall_metrics"],
-        "by_zone": report["by_zone"],
+        "status": report["status"], "total_pairs": report["total_pairs"],
+        "by_zone": {zone_id: row["n"] for zone_id, row in report["by_zone"].items()},
+        "monotonicity": report["monotonicity"]["status"],
     }, ensure_ascii=False, indent=2))
     return 0
 

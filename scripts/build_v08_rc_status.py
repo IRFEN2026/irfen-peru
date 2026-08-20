@@ -7,6 +7,7 @@ habilita alertas, uso productivo, umbrales ni factores hidráulicos.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import hashlib
 import json
 from pathlib import Path
 
@@ -17,6 +18,7 @@ TEST_REPORT_PATH = ROOT / "site/data/test_report.json"
 PHASE2_PATH = ROOT / "site/data/phase2/catalog.json"
 CONTRACT_PATH = ROOT / "config/v08_closeout_contract.json"
 OUT_PATH = ROOT / "site/data/v08_rc_status.json"
+VERIFICATION_PATH = ROOT / "site/data/forecast/verification.json"
 PILOTS = ("san_ildefonso", "chosica", "catacaos")
 
 
@@ -31,6 +33,14 @@ def load_json(path: Path):
         raise RcStatusError(f"No se pudo leer {path.relative_to(ROOT)}: {exc}") from exc
 
 
+def sha256_file(path: Path):
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def gate(gate_id: str, passed: bool, evidence):
     return {"id": gate_id, "passed": bool(passed), "evidence": evidence}
 
@@ -41,6 +51,7 @@ def build_status(
     phase2: dict,
     contract: dict,
     generated_at: str | None = None,
+    evidence_chain: dict | None = None,
 ):
     milestone = scorecard.get("current_milestone_pct")
     scorecard_safe = (
@@ -169,15 +180,38 @@ def build_status(
             "Disponibilidad técnica para pruebas controladas; no equivale al cierre científico "
             "v0.8 ni autoriza operación o alertas."
         ),
+        "evidence_chain": evidence_chain or {},
     }
 
 
 def generate(write: bool = True):
+    scorecard = load_json(SCORECARD_PATH)
+    score_chain = scorecard.get("evidence_chain") or {}
+    declared_verification = (score_chain.get("verification") or {}).get("sha256")
+    actual_verification = sha256_file(VERIFICATION_PATH)
+    if declared_verification != actual_verification:
+        raise RcStatusError(
+            "La scorecard no referencia el hash actual de verification.json"
+        )
+    scorecard_hash = sha256_file(SCORECARD_PATH)
     status = build_status(
-        load_json(SCORECARD_PATH),
+        scorecard,
         load_json(TEST_REPORT_PATH),
         load_json(PHASE2_PATH),
         load_json(CONTRACT_PATH),
+        evidence_chain={
+            "upstream": "scorecard",
+            "verification": {
+                "path": "site/data/forecast/verification.json",
+                "sha256": actual_verification,
+            },
+            "scorecard": {
+                "path": "site/data/v08_scorecard.json",
+                "sha256": scorecard_hash,
+                "generated_at": scorecard.get("generated_at"),
+            },
+            "chain_rule": "RC hashes the complete scorecard bytes and preserves its verification hash",
+        },
     )
     if write:
         OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
