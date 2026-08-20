@@ -64,6 +64,7 @@ def main():
     smoke_workflow=(ROOT/'.github/workflows/live-smoke-test.yml').read_text(encoding='utf-8')
     deploy_workflow=(ROOT/'.github/workflows/update-and-deploy.yml').read_text(encoding='utf-8')
     pr_workflow=(ROOT/'.github/workflows/pr-validation.yml').read_text(encoding='utf-8')
+    official_outcome_workflow=(ROOT/'.github/workflows/official-outcome-evidence.yml').read_text(encoding='utf-8')
     glofas_current=optional(SITE/'data/hydrology/glofas_catacaos_current.json')
     pprrd=optional(SITE/'data/hydrology/catacaos_pprrd_2026_discovery.json')
     official_outcomes=optional(SITE/'data/validation/official_outcome_evidence.json')
@@ -375,6 +376,15 @@ def main():
 
     # Evidencia diaria: se publica para auditoría, pero nunca se autoclasifica.
     check('official_outcome_evidence_present',official_outcomes is not None)
+    check(
+        'official_outcome_archive_concurrency_is_fail_closed',
+        'for attempt in 1 2 3 4' in official_outcome_workflow
+        and 'git diff --quiet "$validated_main" origin/main -- "$path"' in official_outcome_workflow
+        and 'git worktree add --detach "$retry_dir" origin/main' in official_outcome_workflow
+        and 'git pull --rebase origin main' not in official_outcome_workflow
+        and 'git push --force' not in official_outcome_workflow
+        and 'git push -f' not in official_outcome_workflow,
+    )
     if official_outcomes:
         outcome_records=official_outcomes.get('records') or []
         check('official_outcome_evidence_not_production',official_outcomes.get('production_use') is False)

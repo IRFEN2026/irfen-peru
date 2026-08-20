@@ -61,6 +61,21 @@ class OfficialOutcomeEvidenceTests(unittest.TestCase):
         self.assertIn("SNAPSHOT_DATE: ${{ inputs.snapshot_date }}", workflow)
         self.assertIn('args+=(--snapshot-date "$SNAPSHOT_DATE")', workflow)
 
+    def test_workflow_retries_only_unrelated_main_writes_fail_closed(self):
+        workflow = (ROOT / ".github/workflows/official-outcome-evidence.yml").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("for attempt in 1 2 3 4", workflow)
+        self.assertIn(
+            'git diff --quiet "$validated_main" origin/main -- "$path"', workflow
+        )
+        self.assertIn('git worktree add --detach "$retry_dir" origin/main', workflow)
+        self.assertIn("no se sobrescribe", workflow)
+        self.assertNotIn("git pull --rebase origin main", workflow)
+        self.assertNotIn("git push --force", workflow)
+        self.assertNotIn("git push -f", workflow)
+
     def test_extracts_explicit_no_activation_wording_without_classifying(self):
         raw = (
             b"<html><body>Aviso 228 - 2026 "

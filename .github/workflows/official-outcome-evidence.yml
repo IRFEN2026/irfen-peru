@@ -99,16 +99,67 @@ jobs:
       - name: Guardar evidencia sin clasificar
         shell: bash
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add site/data/validation/official_outcome_evidence.json
-          if git diff --cached --quiet; then
+          set -euo pipefail
+          path="site/data/validation/official_outcome_evidence.json"
+          candidate="$(mktemp)"
+          retry_dir=""
+          cleanup() {
+            if [ -n "$retry_dir" ]; then
+              git worktree remove --force "$retry_dir" >/dev/null 2>&1 || true
+            fi
+            rm -f -- "$candidate"
+          }
+          trap cleanup EXIT
+          cp -- "$path" "$candidate"
+          candidate_sha="$(sha256sum "$candidate" | awk '{print $1}')"
+          validated_main="$(git rev-parse HEAD)"
+
+          if git diff --quiet "$validated_main" -- "$path"; then
             echo "Sin cambios."
             exit 0
           fi
-          git commit -m "IRFEN v0.8: archivar fuentes oficiales de resultado"
-          git pull --rebase origin main
-          git push origin HEAD:main
+
+          # Reintentar solo si main avanzó en archivos ajenos al archivo
+          # validado. Un cambio concurrente del mismo archivo aborta sin
+          # sobrescribir capturas científicas ni usar force-push.
+          for attempt in 1 2 3 4; do
+            git fetch --no-tags origin main
+            if ! git diff --quiet "$validated_main" origin/main -- "$path"; then
+              remote_sha="$(git show "origin/main:$path" | sha256sum | awk '{print $1}')"
+              if [ "$remote_sha" = "$candidate_sha" ]; then
+                echo "La evidencia candidata ya fue persistida por otra ejecución."
+                exit 0
+              fi
+              echo "ERROR: la evidencia remota cambió después de la validación; no se sobrescribe." >&2
+              exit 1
+            fi
+
+            retry_dir="$(mktemp -d)"
+            git worktree add --detach "$retry_dir" origin/main
+            cp -- "$candidate" "$retry_dir/$path"
+            if (
+              cd "$retry_dir"
+              git config user.name "github-actions[bot]"
+              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+              git add -- "$path"
+              git commit -m "IRFEN v0.8: archivar fuentes oficiales de resultado"
+              git push origin HEAD:main
+            ); then
+              git worktree remove --force "$retry_dir"
+              retry_dir=""
+              echo "Evidencia oficial persistida sin sobrescritura concurrente."
+              exit 0
+            fi
+
+            git worktree remove --force "$retry_dir"
+            retry_dir=""
+            if [ "$attempt" -eq 4 ]; then
+              echo "ERROR: main siguió avanzando durante cuatro intentos acotados." >&2
+              exit 1
+            fi
+            echo "Carrera de fast-forward en intento ${attempt}/4; reintento sin force-push."
+            sleep "$((attempt * 2))"
+          done
 
       - name: Publicar el archivo actualizado
         env:
