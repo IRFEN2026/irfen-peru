@@ -393,6 +393,15 @@ def main():
             'official_outcome_missing_stays_unknown_not_zero',
             all(source.get('unknown_not_zero') is True for source in sources if source.get('capture_status')!='CAPTURED'),
         )
+        check(
+            'official_outcome_supplemental_unaligned_stays_unknown_not_zero',
+            all(
+                source.get('unknown_not_zero') is True
+                for source in supplemental_sources
+                if (source.get('summary') or {}).get('snapshot_date_alignment')
+                != 'TARGET_DATE_PRESENT'
+            ),
+        )
     check('shadow_runs_present',shadow_runs is not None)
     if shadow_runs:
         shadow_records=shadow_runs.get('records') or []

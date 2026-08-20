@@ -394,6 +394,7 @@ class OfficialOutcomeEvidenceTests(unittest.TestCase):
         anin = supplemental_by_id["anin_san_ildefonso_news"]
         self.assertEqual(anin["url"], "https://www.gob.pe/institucion/anin/noticias")
         self.assertIn("San Ildefonso", anin["scope"])
+        self.assertTrue(anin["requires_target_date_alignment"])
         cendehua = collector.source_for_snapshot(
             supplemental_by_id["igp_cendehua_huaycoloro_monitor"], "2026-08-16"
         )
@@ -402,9 +403,65 @@ class OfficialOutcomeEvidenceTests(unittest.TestCase):
             supplemental_by_id["igp_cendehua_huaycoloro_monitor"],
         )
         self.assertIn("igp.gob.pe", cendehua["url"])
+        self.assertTrue(cendehua["requires_target_date_alignment"])
         pechp = supplemental_by_id["pechp_piura_news"]
         self.assertEqual(pechp["url"], "https://www.gob.pe/que/pechp")
         self.assertIn("Catacaos/Bajo Piura", pechp["scope"])
+        self.assertTrue(pechp["requires_target_date_alignment"])
+
+    def test_reachable_supplemental_page_without_target_date_stays_unknown(self):
+        class GeneralPageResponse(self.FakeResponse):
+            def read(self, _size):
+                return b"<p>Noticias institucionales sin fecha del dia evaluado</p>"
+
+        with patch.object(collector, "urlopen", return_value=GeneralPageResponse()):
+            result = collector.fetch_source(
+                collector.SUPPLEMENTAL_SOURCES[0],
+                datetime(2026, 8, 17, 12, tzinfo=timezone.utc),
+                "2026-08-16",
+                sleep_fn=lambda _seconds: None,
+            )
+
+        self.assertEqual(result["http_status"], 200)
+        self.assertEqual(
+            result["capture_status"], "CAPTURED_TARGET_DATE_UNVERIFIED"
+        )
+        self.assertTrue(result["unknown_not_zero"])
+        self.assertEqual(
+            result["summary"]["snapshot_date_alignment"],
+            "UNKNOWN_NO_DATE_MARKER",
+        )
+
+    def test_legacy_supplemental_capture_is_migrated_fail_closed(self):
+        archive = {
+            "records": [{
+                "snapshot_date_utc": "2026-08-16",
+                "captures": [{
+                    "supplemental_sources": [{
+                        "source_id": "anin_san_ildefonso_news",
+                        "capture_status": "CAPTURED",
+                        "unknown_not_zero": False,
+                        "summary": {
+                            "snapshot_date_alignment": "UNKNOWN_NO_DATE_MARKER"
+                        },
+                    }],
+                }],
+            }],
+        }
+
+        normalized = collector.normalize_legacy_supplemental_alignment(archive)
+        source = normalized["records"][0]["captures"][0][
+            "supplemental_sources"
+        ][0]
+
+        self.assertTrue(source["unknown_not_zero"])
+        self.assertEqual(
+            source["capture_status"], "CAPTURED_TARGET_DATE_UNVERIFIED"
+        )
+        self.assertEqual(
+            normalized["contract_migration"]["id"],
+            "supplemental_target_date_alignment_v1",
+        )
 
     def test_cendehua_terms_are_preserved_for_manual_review(self):
         summary = collector.summarize_content(

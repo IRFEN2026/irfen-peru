@@ -89,6 +89,10 @@ jobs:
                           'PARTIAL_UNKNOWN_NOT_ZERO',
                       }
                       assert pagination.get('missing_match_is_none') is False
+                  for source in capture.get('supplemental_sources',[]):
+                      alignment=(source.get('summary') or {}).get('snapshot_date_alignment')
+                      if alignment != 'TARGET_DATE_PRESENT':
+                          assert source.get('unknown_not_zero') is True
           print('Archivo oficial para revisión en sombra OK:', d.get('record_count'))
           PY
 
