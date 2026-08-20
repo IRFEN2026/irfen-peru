@@ -1,0 +1,35 @@
+name: IRFEN - W1 source hash probe
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Hash official W1 source documents
+        shell: bash
+        run: |
+          set -u
+          capture() {
+            id="$1"
+            url="$2"
+            out="/tmp/${id}.pdf"
+            if curl -fL --connect-timeout 15 --max-time 90 --retry 2 --retry-all-errors "$url" -o "$out"; then
+              printf 'W1_SOURCE|%s|OK|%s|%s|%s\n' "$id" "$(stat -c%s "$out")" "$(sha256sum "$out" | cut -d' ' -f1)" "$url"
+            else
+              printf 'W1_SOURCE|%s|NOT_REPRODUCIBLY_RETRIEVED|||%s\n' "$id" "$url"
+            fi
+          }
+          capture ANA_IT016 'https://www.ana.gob.pe/sites/default/files/normatividad/files/IT%20N%C2%B0%20016-2024-P_ALACHRL_30-JEAC.pdf'
+          capture ANA_RD0690 'https://www.ana.gob.pe/sites/default/files/normatividad/files/III-RD-0690-2025-06.pdf'
+          capture ANA_RD0623 'https://sigrid4.cenepred.gob.pe/sigridv4/biblioteca/documento/17728/descargar'
+          capture ANA_RD0637 'https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/22321_resolucion-directoral-n0-0637-2026-ana-aaacf-autoriza-la-monumentacion-de-la-faja-marginal-margen-izquierda-de-la-quebrada-rio-seco-malanche-desde-el-.pdf'
+          capture INGEMMET_A6766 'https://repositorio.ingemmet.gob.pe/bitstream/20.500.12544/817/1/A6766-Evaluacion_geologica_Ni%C3%B1o_Costero_2017_regiones_Lambayeque-Cajamarca.pdf'
+          capture MD_ACARI_PPRRD 'https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/22157_plan-de-prevencion-y-reduccion-del-riesgo-del-distrito-de-acari-provincia-de-caraveli-departamento-de-arequipa-2025-2030.pdf'
