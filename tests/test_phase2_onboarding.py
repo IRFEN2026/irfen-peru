@@ -17,10 +17,11 @@ class Phase2OnboardingTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.inventory = json.loads(
-            (ROOT / "config" / "phase2_candidate_inventory_v0_1.json").read_text(encoding="utf-8")
+            (ROOT / "config" / "phase2_candidate_inventory_v0_2.json").read_text(encoding="utf-8")
         )
         cls.candidate = cls.inventory["candidates"][0]
         cls.analog_contract = json.loads(phase2.ANALOG_CONTRACT_PATH.read_text(encoding="utf-8"))
+        cls.child_contracts = phase2.load_child_contracts(cls.inventory)
 
     def test_default_contract_is_blocked_and_non_operational(self):
         contract = phase2.default_contract(self.candidate)
@@ -62,15 +63,21 @@ class Phase2OnboardingTests(unittest.TestCase):
             c["candidate_id"]: phase2.default_contract(c)
             for c in self.inventory["candidates"]
         }
-        catalog = phase2.build_catalog(self.inventory, contracts, self.analog_contract)
+        catalog = phase2.build_catalog(
+            self.inventory, contracts, self.analog_contract, self.child_contracts
+        )
         self.assertEqual(catalog["summary"]["registered_candidates"], 18)
         self.assertEqual(catalog["summary"]["operational_candidates"], 0)
+        self.assertEqual(catalog["summary"]["hydrologic_children_reported_separately"], 2)
+        self.assertEqual(catalog["summary"]["hydrologic_children_counted_as_additional_candidates"], 0)
         self.assertTrue(catalog["guardrails"]["activation_requires_zone_specific_validation"])
         self.assertTrue(all(z["deployment_status"] == "RESEARCH_ONLY" for z in catalog["zones"]))
         self.assertTrue(all(z["activation_gate"] == "BLOCKED" for z in catalog["zones"]))
         self.assertTrue(all(z["priority_score"] is None for z in catalog["zones"]))
         self.assertEqual(catalog["analog_transfer"]["mode"], "ANALOG_TRANSFER_TEST_ONLY")
         self.assertFalse(catalog["analog_transfer"]["local_validation"])
+        self.assertEqual(catalog["version"], "phase2-onboarding-catalog-v2")
+        self.assertTrue(all(c["activation_gate"] == "BLOCKED" for c in catalog["hydrologic_child_units"]))
 
     def test_analog_transfer_contract_is_fail_closed(self):
         phase2.validate_analog_transfer_contract(self.analog_contract)
@@ -97,13 +104,28 @@ class Phase2OnboardingTests(unittest.TestCase):
             phase2.CONTRACTS_DIR.relative_to(ROOT).as_posix(),
             "site/data/validation/phase2_zone_contracts",
         )
+        self.assertEqual(
+            phase2.CHILD_CONTRACTS_DIR.relative_to(ROOT).as_posix(),
+            "site/data/validation/phase2_hydrologic_child_contracts",
+        )
         workflow = (ROOT / ".github" / "workflows" / "update-and-deploy.yml").read_text(encoding="utf-8")
         self.assertIn("site/data/validation/**", workflow)
+        for workflow_path in (
+            ROOT / ".github" / "workflows" / "pr-validation.yml",
+            ROOT / ".github" / "workflows" / "publish-committed-data.yml",
+            ROOT / ".github" / "workflows" / "update-and-deploy.yml",
+        ):
+            self.assertIn(
+                "build_lambayeque_hydrologic_units.py",
+                workflow_path.read_text(encoding="utf-8"),
+            )
 
     def test_public_generator_is_fail_closed_and_writable(self):
         catalog = phase2.generate_public_catalog(write=False)
         self.assertEqual(catalog["summary"]["registered_candidates"], 18)
         self.assertEqual(catalog["summary"]["operational_candidates"], 0)
+        self.assertEqual(catalog["count_contract"]["legacy_registered_candidate_count_before"], 18)
+        self.assertEqual(catalog["count_contract"]["legacy_registered_candidate_count_after"], 18)
 
     def test_user_named_lima_corridors_have_individual_fail_closed_contracts(self):
         required_ids = {

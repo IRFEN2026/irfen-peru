@@ -16,7 +16,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "site"
-INVENTORY_PATH = ROOT / "config/phase2_candidate_inventory_v0_1.json"
+INVENTORY_PATH = ROOT / "config/phase2_candidate_inventory_v0_2.json"
 PRIORITY_PATH = ROOT / "config/phase2_map_priority_v0_1.json"
 PHASE2_CATALOG_PATH = SITE / "data/phase2/catalog.json"
 CONTRACTS_DIR = SITE / "data/validation/phase2_zone_contracts"
