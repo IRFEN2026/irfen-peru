@@ -91,6 +91,7 @@ jobs:
       - name: Recalcular scorecard con la evidencia mas reciente
         run: |
           python scripts/verify_geos_against_imerg.py --previous-verification /tmp/previous-verification.json
+          python scripts/build_lambayeque_hydrologic_units.py --check-only
           python scripts/build_phase2_catalog.py
           python scripts/build_map_layer_catalog.py
           python scripts/build_v08_scorecard.py

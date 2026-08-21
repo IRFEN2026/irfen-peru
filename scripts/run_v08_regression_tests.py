@@ -49,7 +49,7 @@ def main():
     idesep=optional(SITE/'data/stations/senamhi_idesep_discovery.json')
     open_data=optional(SITE/'data/stations/senamhi_open_data_catalog.json')
     imerg_early=optional(SITE/'data/calibration/imerg_early_live_archive.json')
-    phase2=load(ROOT/'config/phase2_candidate_inventory_v0_1.json')
+    phase2=load(ROOT/'config/phase2_candidate_inventory_v0_2.json')
     phase2_catalog=load(SITE/'data/phase2/catalog.json')
     map_layers=load(SITE/'data/map_layers.json')
     w1_geometry=load(SITE/'data/phase2/geometries/w1_santa_eulalia_rimac.geojson')

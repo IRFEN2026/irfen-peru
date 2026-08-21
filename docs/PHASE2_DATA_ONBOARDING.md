@@ -78,7 +78,7 @@ una persona responsable.
 ## Secuencia eficiente
 
 1. Registrar el candidato y sus fuentes oficiales en
-   `config/phase2_candidate_inventory_v0_1.json`.
+   `config/phase2_candidate_inventory_v0_2.json`.
 2. Generar el contrato bloqueado con:
    `python scripts/build_phase2_catalog.py --bootstrap`.
 3. Cargar los seis activos por carriles independientes; no es necesario esperar

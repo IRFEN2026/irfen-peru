@@ -1,6 +1,7 @@
 {
   "version": "phase2-zone-contract-v1",
   "candidate_id": "lambayeque_chongoyape_oyotun_zana",
+  "entity_role": "HISTORICAL_NON_ACTIVABLE_GROUPER",
   "contract_status": "DRAFT",
   "deployment_status": "RESEARCH_ONLY",
   "production_use": false,
@@ -9,7 +10,7 @@
   "hydraulic_factors": null,
   "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
   "identity": {
-    "system_name": "Sistema Chongoyape-Oyotún-Zaña",
+    "system_name": "Agrupador histórico Chongoyape-Oyotún-Zaña (no activable)",
     "department": "Lambayeque",
     "province_or_corridor": "Chiclayo / Zaña interior",
     "territorial_profile": "small_agricultural_settlements_and_valleys",
@@ -62,6 +63,7 @@
   },
   "validation": {
     "activation_gate": "BLOCKED",
+    "permanent_composite_activation_exclusion": true,
     "required_reviews": [
       "scientific",
       "hydrological_or_hydraulic",
@@ -70,10 +72,23 @@
     "promotion_requires_all_gates": true,
     "review_evidence": []
   },
+  "hydrologic_migration": {
+    "version": "chongoyape-oyotun-zana-hydrologic-migration-v1",
+    "migration_strategy": "PRESERVE_LEGACY_ID_AS_HISTORICAL_NON_ACTIVABLE_GROUPER",
+    "composite_geometry_allowed": false,
+    "artificial_connector_allowed": false,
+    "children_counted_as_additional_phase2_candidates": false,
+    "child_candidate_ids": [
+      "lambayeque_chancay_lambayeque_chongoyape",
+      "lambayeque_zana_oyotun"
+    ],
+    "source_inventory": "site/data/phase2/sources/lambayeque_hydrologic_migration/source_inventory.json",
+    "validation_report": "site/data/phase2/geometries/lambayeque_hydrologic_migration_validation.json"
+  },
   "notes": [
-    "disaggregate Juana Ríos and tributary ravines",
-    "normalize settlements and irrigation exposure",
-    "resolve observation network",
-    "define separate hydraulic and rainfall contracts"
+    "retain this identifier only for historical counting and traceability",
+    "review each hydrologic child independently before any future catalog-count migration",
+    "resolve tributary catchments, exposure, observations, events and hydraulic context per child",
+    "never dissolve or connect Chancay-Lambayeque and Zaña geometries"
   ]
 }

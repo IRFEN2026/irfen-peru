@@ -34,6 +34,7 @@ on:
       - scripts/build_v08_scorecard.py
       - scripts/build_v08_rc_status.py
       - scripts/build_phase2_catalog.py
+      - scripts/build_lambayeque_hydrologic_units.py
       - scripts/build_map_layer_catalog.py
       - scripts/build_phase2_event_reanalysis.py
       - tests/**
@@ -209,7 +210,9 @@ jobs:
         run: python scripts/build_phase2_event_reanalysis.py
 
       - name: Reconstruir catálogo territorial RESEARCH_ONLY
-        run: python scripts/build_phase2_catalog.py
+        run: |
+          python scripts/build_lambayeque_hydrologic_units.py
+          python scripts/build_phase2_catalog.py
 
       - name: Reconstruir descomposición científica Lima Este
         run: python scripts/build_lima_east_hazard_decomposition.py

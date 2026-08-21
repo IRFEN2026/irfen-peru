@@ -6,9 +6,10 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-INVENTORY_PATH = ROOT / "config/phase2_candidate_inventory_v0_1.json"
+INVENTORY_PATH = ROOT / "config/phase2_candidate_inventory_v0_2.json"
 ANALOG_CONTRACT_PATH = ROOT / "config/phase2_analog_transfer_contract.json"
 CONTRACTS_DIR = ROOT / "site/data/validation/phase2_zone_contracts"
+CHILD_CONTRACTS_DIR = ROOT / "site/data/validation/phase2_hydrologic_child_contracts"
 OUT_PATH = ROOT / "site/data/phase2/catalog.json"
 ASSETS = ("geometry", "exposure", "historical_events", "observations", "forecast", "hydraulic_context")
 ASSET_STATUS = {"MISSING", "CANDIDATE", "PARTIAL", "READY"}
@@ -102,6 +103,54 @@ def validate_contract(contract, candidate, contract_path=None):
     return []
 
 
+def validate_child_contract(contract, candidate, contract_path=None):
+    cid = candidate.get("candidate_id")
+    def require(ok, message):
+        if not ok:
+            raise ContractError(f"{cid}: {message}")
+    require(contract.get("version") == "phase2-hydrologic-child-contract-v1", "versión hija inválida")
+    require(contract.get("candidate_id") == cid, "candidate_id hijo no coincide")
+    require(contract.get("parent_candidate_id") == candidate.get("parent_candidate_id"), "parent_candidate_id no coincide")
+    require(not contract_path or contract_path.stem == cid, "nombre de contrato hijo inválido")
+    require(contract.get("entity_role") == "INDEPENDENT_HYDROLOGIC_CHILD", "rol hidrológico inválido")
+    require(contract.get("deployment_status") == "RESEARCH_ONLY", "hijo debe ser RESEARCH_ONLY")
+    require(contract.get("review_status") == "REVIEW_ONLY", "hijo debe ser REVIEW_ONLY")
+    require(contract.get("production_use") is False, "production_use debe ser false")
+    require(contract.get("production_ready") is False, "production_ready debe ser false")
+    require(contract.get("operational_alerting_enabled") is False, "alertas deben estar deshabilitadas")
+    require(contract.get("decision_thresholds") is None, "umbrales retenidos")
+    require(contract.get("hydraulic_factors") is None, "factores hidráulicos retenidos")
+    require(contract.get("missing_data_rule") == "UNKNOWN_NOT_LOW_RISK", "dato ausente no es bajo riesgo")
+    identity = contract.get("identity") or {}
+    require(identity.get("hydrologic_system") == candidate.get("hydrologic_system"), "sistema hidrográfico no coincide")
+    require(str(identity.get("official_hydrologic_unit_code")) == str(candidate.get("official_hydrologic_unit_code")), "código ANA no coincide")
+    require(identity.get("municipal_boundary_is_unit_boundary") is False, "un límite distrital no puede ser límite de cuenca")
+    geometry = contract.get("geometry") or {}
+    require(geometry.get("status") == "READY_FOR_RESEARCH_REVIEW", "geometría hija no está lista para revisión")
+    require(geometry.get("method") == "OFFICIAL_ANA_IDEP_FEATURE_QUERY_NO_DEM", "método geométrico inesperado")
+    require(geometry.get("output_crs") == "EPSG:4326", "CRS de salida inválido")
+    require(geometry.get("district_boundary_used") is False, "se prohíben límites distritales")
+    require(geometry.get("dem_used") is False, "esta migración no usa DEM")
+    require(geometry.get("artificial_connector_used") is False, "se prohíbe conector artificial")
+    require((ROOT / str(geometry.get("path"))).is_file(), "archivo geométrico hijo inexistente")
+    outlet = contract.get("outlet") or {}
+    require(outlet.get("used") is False and outlet.get("coordinates") is None, "outlet no aplica sin DEM")
+    require(outlet.get("required") is False, "outlet no debe ser requerido sin DEM")
+    source = contract.get("source_and_confidence") or {}
+    require(set(source.get("official_source_ids") or []) == set(candidate.get("official_sources") or []),
+            "fuentes oficiales hijas no coinciden")
+    require(bool(source.get("confidence")), "falta confianza")
+    require(bool(contract.get("coverage")), "falta cobertura")
+    require(bool(contract.get("limitations")), "faltan limitaciones")
+    validation = contract.get("validation") or {}
+    require(validation.get("activation_gate") == "BLOCKED", "activación hija debe estar bloqueada")
+    require(validation.get("promotion_allowed") is False, "promoción hija debe estar prohibida")
+    require(validation.get("counts_as_operational_candidate") is False, "hijo no puede ser operativo")
+    require(validation.get("counts_toward_v08_closeout") is False, "hijo no cuenta para cierre v0.8")
+    require(candidate.get("counts_as_additional_phase2_candidate") is False, "hijo no puede alterar silenciosamente el conteo")
+    return []
+
+
 def validate_analog_transfer_contract(contract):
     def require(ok, message):
         if not ok:
@@ -145,8 +194,9 @@ def validate_analog_transfer_contract(contract):
     return []
 
 
-def build_catalog(inventory, contracts, analog_contract):
+def build_catalog(inventory, contracts, analog_contract, child_contracts=None):
     validate_analog_transfer_contract(analog_contract)
+    child_contracts = child_contracts or {}
     zones = []
     for candidate in inventory.get("candidates") or []:
         cid = candidate["candidate_id"]; contract = contracts[cid]
@@ -164,7 +214,37 @@ def build_catalog(inventory, contracts, analog_contract):
             "blocking_items": [k for k, v in statuses.items() if v != "READY"] +
                 ([] if hazard.get("mechanism_status") == "RESOLVED" else ["mechanism_resolution"]),
             "missing_data_rule": contract.get("missing_data_rule")})
-    return {"version": "phase2-onboarding-catalog-v1", "generated_at": datetime.now(timezone.utc).isoformat(),
+    children = []
+    for candidate in inventory.get("hydrologic_child_units") or []:
+        contract = child_contracts[candidate["candidate_id"]]
+        children.append({
+            "candidate_id": candidate["candidate_id"],
+            "parent_candidate_id": candidate["parent_candidate_id"],
+            "system_name": candidate["system_name"],
+            "hydrologic_system": candidate["hydrologic_system"],
+            "official_hydrologic_unit_name": candidate["official_hydrologic_unit_name"],
+            "official_hydrologic_unit_code": candidate["official_hydrologic_unit_code"],
+            "geometry": contract["geometry"],
+            "outlet": contract["outlet"],
+            "source_and_confidence": contract["source_and_confidence"],
+            "coverage": contract["coverage"],
+            "limitations": contract["limitations"],
+            "deployment_status": "RESEARCH_ONLY",
+            "review_status": "REVIEW_ONLY",
+            "activation_gate": "BLOCKED",
+            "counts_as_additional_phase2_candidate": False,
+            "counts_as_operational_candidate": False,
+            "production_use": False,
+            "default_visibility": False,
+        })
+    migration = inventory.get("migration") or {}
+    if migration.get("legacy_registered_candidate_count_before") != len(zones):
+        raise ContractError("la migración no preserva el conteo histórico declarado")
+    if migration.get("legacy_registered_candidate_count_after") != len(zones):
+        raise ContractError("el conteo Phase 2 cambió silenciosamente")
+    if migration.get("hydrologic_child_count") != len(children):
+        raise ContractError("conteo de unidades hijas inconsistente")
+    return {"version": "phase2-onboarding-catalog-v2", "generated_at": datetime.now(timezone.utc).isoformat(),
         "production_use": False, "production_ready": False, "deployment_status": "RESEARCH_ONLY",
         "relationship_to_v08": {"v08_scope_unchanged": True,
             "operational_pilots": ["san_ildefonso", "chosica_huaycoloro", "catacaos_bajo_piura"],
@@ -184,8 +264,14 @@ def build_catalog(inventory, contracts, analog_contract):
             "contracts_approved": sum(z["contract_status"] == "APPROVED" for z in zones),
             "validation_contracts_complete": sum(z["readiness_stage"].startswith("VALIDATION_CONTRACT") for z in zones),
             "operational_candidates": 0,
+            "historical_non_activable_groupers": sum(z["candidate_id"] == migration.get("legacy_candidate_id") for z in zones),
+            "hydrologic_children_reported_separately": len(children),
+            "hydrologic_children_counted_as_additional_candidates": 0,
             "outside_lima_metropolitana": sum(z["inside_lima_metropolitana"] is False for z in zones)},
-        "contract_directory": "site/data/validation/phase2_zone_contracts", "zones": zones}
+        "count_contract": migration,
+        "contract_directory": "site/data/validation/phase2_zone_contracts",
+        "hydrologic_child_contract_directory": "site/data/validation/phase2_hydrologic_child_contracts",
+        "zones": zones, "hydrologic_child_units": children}
 
 
 def load_contracts(inventory, bootstrap=False):
@@ -206,10 +292,35 @@ def load_contracts(inventory, bootstrap=False):
     return contracts
 
 
+def load_child_contracts(inventory):
+    candidates = inventory.get("hydrologic_child_units") or []
+    by_id = {candidate.get("candidate_id"): candidate for candidate in candidates}
+    if None in by_id or len(by_id) != len(candidates):
+        raise ContractError("candidate_id hijo ausente o duplicado")
+    files = sorted(CHILD_CONTRACTS_DIR.glob("*.json"))
+    extra = [path.stem for path in files if path.stem not in by_id]
+    if extra:
+        raise ContractError("contratos hijos no inventariados: " + ", ".join(extra))
+    contracts = {}
+    for path in files:
+        contract = load_json(path)
+        validate_child_contract(contract, by_id[path.stem], path)
+        contracts[path.stem] = contract
+    missing = sorted(set(by_id) - set(contracts))
+    if missing:
+        raise ContractError("faltan contratos hijos: " + ", ".join(missing))
+    return contracts
+
+
 def generate_public_catalog(bootstrap=False, write=True):
     inventory = load_json(INVENTORY_PATH)
     analog_contract = load_json(ANALOG_CONTRACT_PATH)
-    catalog = build_catalog(inventory, load_contracts(inventory, bootstrap), analog_contract)
+    catalog = build_catalog(
+        inventory,
+        load_contracts(inventory, bootstrap),
+        analog_contract,
+        load_child_contracts(inventory),
+    )
     if write: write_json(OUT_PATH, catalog)
     return catalog
 
