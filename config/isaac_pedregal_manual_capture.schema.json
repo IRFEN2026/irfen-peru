@@ -1,0 +1,213 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://irfen.local/schemas/isaac_pedregal_manual_capture_v0_1.json",
+  "title": "IRFEN ISAAC Pedregal Koica manual capture manifest v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "capture",
+    "source",
+    "station",
+    "observation",
+    "filters",
+    "quality",
+    "export",
+    "scientific_use"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "isaac-pedregal-manual-capture-v0.1"
+    },
+    "capture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capture_session_id",
+        "captured_at_utc",
+        "captured_at_local",
+        "capture_timezone",
+        "operator",
+        "reviewer",
+        "original_filename",
+        "mime_type",
+        "file_size_bytes",
+        "width_px",
+        "height_px",
+        "sha256"
+      ],
+      "properties": {
+        "capture_session_id": {"type": "string", "minLength": 1},
+        "captured_at_utc": {"type": "string", "minLength": 1},
+        "captured_at_local": {"type": "string", "minLength": 1},
+        "capture_timezone": {"type": "string", "minLength": 1},
+        "operator": {"type": "string", "minLength": 1},
+        "reviewer": {"type": ["string", "null"]},
+        "original_filename": {"type": "string", "minLength": 1},
+        "mime_type": {"const": "image/png"},
+        "file_size_bytes": {"type": "integer", "minimum": 1},
+        "width_px": {"type": "integer", "minimum": 1},
+        "height_px": {"type": "integer", "minimum": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["institution", "platform", "report_url", "report_page", "visual_title"],
+      "properties": {
+        "institution": {"const": "SENAMHI"},
+        "platform": {"const": "ISAAC"},
+        "report_url": {"type": "string", "minLength": 1},
+        "report_page": {"type": ["string", "null"]},
+        "visual_title": {"type": "string", "minLength": 1}
+      }
+    },
+    "station": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "displayed_name",
+        "displayed_code",
+        "selected",
+        "selection_evidence",
+        "station_status",
+        "operational_status"
+      ],
+      "properties": {
+        "displayed_name": {"const": "Pedregal Koica"},
+        "displayed_code": {"type": ["string", "null"]},
+        "selected": {"type": "boolean"},
+        "selection_evidence": {"$ref": "#/$defs/evidence_or_null"},
+        "station_status": {"type": ["string", "null"]},
+        "operational_status": {"type": ["string", "null"]}
+      }
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "displayed_timestamp_raw",
+        "displayed_timezone",
+        "metric_label_raw",
+        "value_raw",
+        "value_numeric",
+        "unit",
+        "unit_evidence",
+        "period",
+        "period_evidence",
+        "exact_window_semantics",
+        "aggregation_scope"
+      ],
+      "properties": {
+        "displayed_timestamp_raw": {"type": ["string", "null"]},
+        "displayed_timezone": {"type": ["string", "null"]},
+        "metric_label_raw": {"type": ["string", "null"]},
+        "value_raw": {"type": ["string", "null"]},
+        "value_numeric": {"type": ["number", "null"]},
+        "unit": {"type": ["string", "null"]},
+        "unit_evidence": {"$ref": "#/$defs/evidence_or_null"},
+        "period": {"type": ["string", "null"]},
+        "period_evidence": {"$ref": "#/$defs/evidence_or_null"},
+        "exact_window_semantics": {"type": ["string", "null"]},
+        "aggregation_scope": {"type": ["string", "null"]}
+      }
+    },
+    "filters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["station", "temporal_selector", "start_date", "end_date", "other_filters"],
+      "properties": {
+        "station": {"type": ["string", "null"]},
+        "temporal_selector": {"type": ["string", "null"]},
+        "start_date": {"type": ["string", "null"]},
+        "end_date": {"type": ["string", "null"]},
+        "other_filters": {"type": ["object", "null"]}
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "displayed_qc_flag",
+        "qc_evidence",
+        "missing_data_indicator",
+        "completeness",
+        "ambiguities"
+      ],
+      "properties": {
+        "displayed_qc_flag": {"type": ["string", "null"]},
+        "qc_evidence": {"$ref": "#/$defs/evidence_or_null"},
+        "missing_data_indicator": {"type": ["string", "null"]},
+        "completeness": {"enum": ["PARTIAL", "COMPLETE", "FAILED_OR_UNVERIFIABLE"]},
+        "ambiguities": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "export": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["checked", "available", "check_method"],
+      "properties": {
+        "checked": {"type": "boolean"},
+        "available": {"type": ["boolean", "null"]},
+        "check_method": {"type": ["string", "null"]}
+      }
+    },
+    "scientific_use": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rainfall_candidate",
+        "scientific_observation_accepted",
+        "outcome_label",
+        "automatic_outcome_classification",
+        "automatic_bias_correction",
+        "bias_correction_applied",
+        "threshold_changes",
+        "production_use",
+        "production_ready",
+        "operational_alerting_enabled",
+        "missing_data_rule"
+      ],
+      "properties": {
+        "rainfall_candidate": {"type": "boolean"},
+        "scientific_observation_accepted": {"const": false},
+        "outcome_label": {"type": "null"},
+        "automatic_outcome_classification": {"const": false},
+        "automatic_bias_correction": {"const": false},
+        "bias_correction_applied": {"const": false},
+        "threshold_changes": {"const": false},
+        "production_use": {"const": false},
+        "production_ready": {"const": false},
+        "operational_alerting_enabled": {"const": false},
+        "missing_data_rule": {"const": "UNKNOWN_NOT_ZERO"}
+      }
+    }
+  },
+  "$defs": {
+    "evidence_or_null": {
+      "anyOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["source", "detail"],
+          "properties": {
+            "source": {
+              "enum": [
+                "TOOLTIP",
+                "AXIS",
+                "CHART_TITLE",
+                "CHART_NOTE",
+                "VISIBLE_FILTER",
+                "OPERATOR_ANNOTATION",
+                "INSTITUTIONAL_METADATA"
+              ]
+            },
+            "detail": {"type": "string", "minLength": 1}
+          }
+        }
+      ]
+    }
+  }
+}
