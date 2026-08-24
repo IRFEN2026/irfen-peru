@@ -97,10 +97,17 @@ jobs:
           git commit -m "IRFEN v0.8: archivar validación en sombra diaria"
           git pull --rebase origin main
           git push origin HEAD:main
+          git fetch origin main
+          echo "persisted_sha=$(git rev-parse origin/main)" >> "$GITHUB_OUTPUT"
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
       - name: Ordenar publicación del registro en sombra
         if: steps.persist.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run publish-committed-data.yml --repo "$GITHUB_REPOSITORY" --ref main
+          EXPECTED_SHA: ${{ steps.persist.outputs.persisted_sha }}
+        run: |
+          gh workflow run publish-committed-data.yml \
+            --repo "$GITHUB_REPOSITORY" \
+            --ref main \
+            -f expected_sha="$EXPECTED_SHA"
