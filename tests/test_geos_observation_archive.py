@@ -371,6 +371,13 @@ class ObservationHistoryTests(unittest.TestCase):
         self.assertIn("Demostrar rechazo atómico de latest.json DEMO", pr)
         self.assertIn("Demostrar restauración durable sin GitHub Pages", pr)
 
+    def test_geos_dispatches_publisher_with_exact_persisted_main_sha(self):
+        workflow = (ROOT / ".github/workflows/geos-forecast.yml").read_text(encoding="utf-8")
+
+        self.assertIn('EXPECTED_SHA="$(git rev-parse origin/main)"', workflow)
+        self.assertIn("gh workflow run publish-committed-data.yml", workflow)
+        self.assertIn('-f expected_sha="$EXPECTED_SHA"', workflow)
+
 
 if __name__ == "__main__":
     unittest.main()
