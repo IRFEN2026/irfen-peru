@@ -13,6 +13,20 @@ SPEC.loader.exec_module(MODULE)
 
 
 class ImmutableDailyShadowArchiveTests(unittest.TestCase):
+    def test_workflow_dispatches_publisher_with_exact_persisted_main_sha(self):
+        workflow = (
+            ROOT / ".github" / "workflows" / "shadow-validation.yml"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn(
+            'echo "persisted_sha=$(git rev-parse origin/main)" >> "$GITHUB_OUTPUT"',
+            workflow,
+        )
+        self.assertIn(
+            "EXPECTED_SHA: ${{ steps.persist.outputs.persisted_sha }}", workflow
+        )
+        self.assertIn('-f expected_sha="$EXPECTED_SHA"', workflow)
+
     def test_cendehua_raw_false_is_not_converted_to_none(self):
         captured_at = datetime(2026, 8, 18, 1, 0, tzinfo=timezone.utc)
         probe = {
