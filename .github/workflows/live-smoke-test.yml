@@ -34,7 +34,6 @@ jobs:
         run: |
           set -euo pipefail
           BASE="https://irfen2026.github.io/irfen-peru"
-          mkdir -p /tmp/irfen-live
           files=(
             "index.html"
             "data/latest.json"
@@ -74,12 +73,48 @@ jobs:
             "v08-readiness.js"
             "v08-expansion.js"
           )
-          for path in "${files[@]}"; do
-            echo "GET $path"
-            mkdir -p "/tmp/irfen-live/$(dirname "$path")"
-            curl -fsSL --retry 4 --retry-all-errors --retry-delay 3 --max-time 35 "$BASE/$path?smoke=$(date +%s)" -o "/tmp/irfen-live/$path"
-            test -s "/tmp/irfen-live/$path"
+          snapshot_consistent=false
+          for attempt in 1 2 3 4; do
+            echo "Descargando instantánea pública (intento $attempt/4)"
+            rm -rf /tmp/irfen-live
+            mkdir -p /tmp/irfen-live
+            nonce="$(date +%s%N)"
+            for path in "${files[@]}"; do
+              echo "GET $path"
+              mkdir -p "/tmp/irfen-live/$(dirname "$path")"
+              curl -fsSL --retry 4 --retry-all-errors --retry-delay 3 --max-time 35 "$BASE/$path?smoke=$nonce" -o "/tmp/irfen-live/$path"
+              test -s "/tmp/irfen-live/$path"
+            done
+
+            read -r expected_verification_sha expected_scorecard_sha < <(
+              python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path('/tmp/irfen-live')
+          score = json.loads((root / 'data/v08_scorecard.json').read_text(encoding='utf-8'))
+          rc = json.loads((root / 'data/v08_rc_status.json').read_text(encoding='utf-8'))
+          print(
+              (score.get('evidence_chain') or {}).get('verification', {}).get('sha256', ''),
+              (rc.get('evidence_chain') or {}).get('scorecard', {}).get('sha256', ''),
+          )
+          PY
+            )
+            actual_verification_sha="$(sha256sum /tmp/irfen-live/data/forecast/verification.json | cut -d' ' -f1)"
+            actual_scorecard_sha="$(sha256sum /tmp/irfen-live/data/v08_scorecard.json | cut -d' ' -f1)"
+            if [[ -n "$expected_verification_sha" \
+              && -n "$expected_scorecard_sha" \
+              && "$actual_verification_sha" == "$expected_verification_sha" \
+              && "$actual_scorecard_sha" == "$expected_scorecard_sha" ]]; then
+              snapshot_consistent=true
+              echo "Instantánea pública coherente con la cadena de evidencia."
+              break
+            fi
+
+            echo "GitHub Pages cambió durante la descarga; se reintentará la instantánea completa."
+            sleep $((attempt * 8))
           done
+          test "$snapshot_consistent" = true
 
       - name: Validar contrato publicado
         shell: bash

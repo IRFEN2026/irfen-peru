@@ -326,6 +326,16 @@ class ImergPublishHandoffTests(unittest.TestCase):
         self.assertIn("for attempt in 1 2 3 4", workflow)
         self.assertIn("sleep $((attempt * 5))", workflow)
 
+    def test_live_smoke_retries_until_evidence_chain_snapshot_is_consistent(self):
+        workflow = (ROOT / ".github/workflows/live-smoke-test.yml").read_text(encoding="utf-8")
+        self.assertIn("snapshot_consistent=false", workflow)
+        self.assertIn("for attempt in 1 2 3 4", workflow)
+        self.assertIn("expected_verification_sha", workflow)
+        self.assertIn("expected_scorecard_sha", workflow)
+        self.assertIn("actual_verification_sha", workflow)
+        self.assertIn("actual_scorecard_sha", workflow)
+        self.assertIn('test "$snapshot_consistent" = true', workflow)
+
     def test_pull_request_validation_is_non_deploying(self):
         workflow = (ROOT / ".github/workflows/pr-validation.yml").read_text(encoding="utf-8")
         self.assertIn("pull_request:", workflow)
