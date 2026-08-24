@@ -19,13 +19,30 @@ class ImmutableDailyShadowArchiveTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
 
         self.assertIn(
-            'echo "persisted_sha=$(git rev-parse origin/main)" >> "$GITHUB_OUTPUT"',
+            'echo "persisted_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"',
             workflow,
         )
         self.assertIn(
             "EXPECTED_SHA: ${{ steps.persist.outputs.persisted_sha }}", workflow
         )
         self.assertIn('-f expected_sha="$EXPECTED_SHA"', workflow)
+
+    def test_workflow_retries_only_unrelated_main_writes_fail_closed(self):
+        workflow = (
+            ROOT / ".github" / "workflows" / "shadow-validation.yml"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("for attempt in 1 2 3 4", workflow)
+        self.assertIn(
+            'git diff --quiet "$validated_main" origin/main -- "$path"', workflow
+        )
+        self.assertIn(
+            "el archivo remoto cambió después de la validación; no se sobrescribe",
+            workflow,
+        )
+        self.assertIn('git worktree add --detach "$retry_dir" origin/main', workflow)
+        self.assertNotIn("git pull --rebase origin main", workflow)
+        self.assertNotIn("git push --force", workflow)
 
     def test_cendehua_raw_false_is_not_converted_to_none(self):
         captured_at = datetime(2026, 8, 18, 1, 0, tzinfo=timezone.utc)

@@ -86,20 +86,70 @@ jobs:
         id: persist
         shell: bash
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add site/data/validation/shadow_runs.json
-          if git diff --cached --quiet; then
+          path="site/data/validation/shadow_runs.json"
+          candidate="$(mktemp)"
+          retry_dir=""
+          cleanup() {
+            if [ -n "$retry_dir" ]; then
+              git worktree remove --force "$retry_dir" >/dev/null 2>&1 || true
+            fi
+            rm -f -- "$candidate"
+          }
+          trap cleanup EXIT
+          cp -- "$path" "$candidate"
+          candidate_sha="$(sha256sum "$candidate" | awk '{print $1}')"
+          validated_main="$(git rev-parse HEAD)"
+
+          if git diff --quiet "$validated_main" -- "$path"; then
             echo "Sin cambios."
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          git commit -m "IRFEN v0.8: archivar validación en sombra diaria"
-          git pull --rebase origin main
-          git push origin HEAD:main
-          git fetch origin main
-          echo "persisted_sha=$(git rev-parse origin/main)" >> "$GITHUB_OUTPUT"
-          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+          # Reintentar solo si main avanzó en archivos ajenos al archivo
+          # validado. Una revisión humana o captura concurrente del mismo
+          # archivo nunca se sobrescribe ni se resuelve con force-push.
+          for attempt in 1 2 3 4; do
+            git fetch --no-tags origin main
+            if ! git diff --quiet "$validated_main" origin/main -- "$path"; then
+              remote_sha="$(git show "origin/main:$path" | sha256sum | awk '{print $1}')"
+              if [ "$remote_sha" = "$candidate_sha" ]; then
+                echo "El snapshot candidato ya fue persistido por otra ejecución."
+                echo "changed=false" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+              echo "ERROR: el archivo remoto cambió después de la validación; no se sobrescribe." >&2
+              exit 1
+            fi
+
+            retry_dir="$(mktemp -d)"
+            git worktree add --detach "$retry_dir" origin/main
+            cp -- "$candidate" "$retry_dir/$path"
+            if (
+              cd "$retry_dir"
+              git config user.name "github-actions[bot]"
+              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+              git add -- "$path"
+              git commit -m "IRFEN v0.8: archivar validación en sombra diaria"
+              git push origin HEAD:main
+              echo "persisted_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+            ); then
+              git worktree remove --force "$retry_dir"
+              retry_dir=""
+              echo "Snapshot diario persistido sin sobrescritura concurrente."
+              exit 0
+            fi
+
+            git worktree remove --force "$retry_dir"
+            retry_dir=""
+            if [ "$attempt" -eq 4 ]; then
+              echo "ERROR: main siguió avanzando durante cuatro intentos acotados." >&2
+              exit 1
+            fi
+            echo "Carrera de fast-forward en intento ${attempt}/4; reintento sin force-push."
+            sleep "$((attempt * 2))"
+          done
 
       - name: Ordenar publicación del registro en sombra
         if: steps.persist.outputs.changed == 'true'
