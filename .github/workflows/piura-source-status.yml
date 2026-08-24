@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: piura-source-status
@@ -52,3 +53,14 @@ jobs:
           git commit -m "IRFEN v0.8: actualizar frescura fuentes hidrológicas Piura"
           git pull --rebase origin main
           git push origin HEAD:main
+
+      - name: Ordenar publicación del estado actualizado
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git fetch origin main
+          EXPECTED_SHA="$(git rev-parse origin/main)"
+          gh workflow run publish-committed-data.yml \
+            --repo "$GITHUB_REPOSITORY" \
+            --ref main \
+            -f expected_sha="$EXPECTED_SHA"
