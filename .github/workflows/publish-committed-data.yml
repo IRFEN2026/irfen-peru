@@ -41,6 +41,15 @@ jobs:
           ref: main
           fetch-depth: 0
 
+      - name: Configurar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Instalar dependencias geoespaciales de publicación
+        run: python -m pip install "shapely>=2.0,<3" "pyproj>=3.6,<4"
+
       - name: Verificar commit solicitado incluido en main
         if: ${{ inputs.expected_sha != '' }}
         shell: bash

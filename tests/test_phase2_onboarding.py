@@ -120,6 +120,20 @@ class Phase2OnboardingTests(unittest.TestCase):
                 workflow_path.read_text(encoding="utf-8"),
             )
 
+    def test_publisher_installs_hydrologic_runtime_dependencies_first(self):
+        workflow = (
+            ROOT / ".github" / "workflows" / "publish-committed-data.yml"
+        ).read_text(encoding="utf-8")
+        setup = workflow.index("uses: actions/setup-python@v6")
+        shapely = workflow.index('"shapely>=2.0,<3"')
+        pyproj = workflow.index('"pyproj>=3.6,<4"')
+        hydrologic_check = workflow.index(
+            "python scripts/build_lambayeque_hydrologic_units.py --check-only"
+        )
+        self.assertLess(setup, shapely)
+        self.assertLess(shapely, hydrologic_check)
+        self.assertLess(pyproj, hydrologic_check)
+
     def test_public_generator_is_fail_closed_and_writable(self):
         catalog = phase2.generate_public_catalog(write=False)
         self.assertEqual(catalog["summary"]["registered_candidates"], 18)
