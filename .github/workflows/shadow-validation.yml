@@ -13,6 +13,8 @@ on:
       - main
     paths:
       - scripts/archive_shadow_validation.py
+      - scripts/build_shadow_review_queue.py
+      - config/shadow_review_queue.schema.v1.json
       - .github/workflows/shadow-validation.yml
 
 permissions:
@@ -49,15 +51,25 @@ jobs:
       - name: Archivar estado de prueba publicado
         run: python scripts/archive_shadow_validation.py
 
-      - name: Validar contrato del archivo
+      - name: Construir cola canónica de revisión
+        run: python scripts/build_shadow_review_queue.py
+
+      - name: Validar contrato del archivo y de la cola
         run: |
           test -s site/data/validation/shadow_runs.json
+          test -s site/data/validation/shadow_review_queue.json
           python -m json.tool site/data/validation/shadow_runs.json >/dev/null
+          python -m json.tool site/data/validation/shadow_review_queue.json >/dev/null
+          python scripts/build_shadow_review_queue.py --check
           python - <<'PY'
           import json
           from pathlib import Path
           from scripts.archive_shadow_validation import validate_shadow_integrity
+          from scripts.build_shadow_review_queue import artifact_refresh_required
+          from datetime import datetime, timezone
+
           d=json.loads(Path('site/data/validation/shadow_runs.json').read_text())
+          q=json.loads(Path('site/data/validation/shadow_review_queue.json').read_text())
           assert d.get('status') == 'SHADOW_VALIDATION_ARCHIVE'
           assert d.get('production_use') is False
           assert d.get('production_ready') is False
@@ -79,65 +91,109 @@ jobs:
                   assert cendehua.get('human_review_required') is True
                   for observation in cendehua.get('observations',[]):
                       assert observation.get('irfen_outcome_label') is None
-          print('Archivo de validación en sombra OK:', d.get('record_count'))
+          guards=q.get('guards') or {}
+          assert guards.get('production_use') is False
+          assert guards.get('production_ready') is False
+          assert guards.get('operational_alerting_enabled') is False
+          assert guards.get('automatic_event_none_classification_enabled') is False
+          assert guards.get('operational_dataset_status_is_gate') is False
+          assert guards.get('stale_is_gate') is False
+          refresh_required,reasons=artifact_refresh_required(q, datetime.now(timezone.utc))
+          assert not refresh_required, reasons
+          print('Archivo y cola de validación en sombra OK:', d.get('record_count'))
           PY
 
-      - name: Guardar snapshot diario
+      - name: Guardar snapshot diario y cola derivada como paquete atómico
         id: persist
         shell: bash
         run: |
-          path="site/data/validation/shadow_runs.json"
-          candidate="$(mktemp)"
+          set -euo pipefail
+          paths=(
+            "site/data/validation/shadow_runs.json"
+            "site/data/validation/shadow_review_queue.json"
+          )
+          candidate_dir="$(mktemp -d)"
           retry_dir=""
+          remote_dir=""
           cleanup() {
             if [ -n "$retry_dir" ]; then
               git worktree remove --force "$retry_dir" >/dev/null 2>&1 || true
             fi
-            rm -f -- "$candidate"
+            rm -rf -- "$candidate_dir" "$remote_dir"
           }
           trap cleanup EXIT
-          cp -- "$path" "$candidate"
-          candidate_sha="$(sha256sum "$candidate" | awk '{print $1}')"
+
+          package_sha() {
+            local root="$1"
+            (
+              cd "$root"
+              for path in "${paths[@]}"; do
+                sha256sum "$path"
+              done
+            ) | sha256sum | awk '{print $1}'
+          }
+
+          for path in "${paths[@]}"; do
+            mkdir -p "$candidate_dir/$(dirname "$path")"
+            cp -- "$path" "$candidate_dir/$path"
+          done
+          candidate_sha="$(package_sha "$candidate_dir")"
           validated_main="$(git rev-parse HEAD)"
 
-          if git diff --quiet "$validated_main" -- "$path"; then
-            echo "Sin cambios."
+          if git diff --quiet "$validated_main" -- "${paths[@]}"; then
+            echo "Sin cambios materiales en el paquete de sombra."
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          # Reintentar solo si main avanzó en archivos ajenos al archivo
-          # validado. Una revisión humana o captura concurrente del mismo
-          # archivo nunca se sobrescribe ni se resuelve con force-push.
+          # Conserva el contrato de PR #133: cuatro reintentos acotados,
+          # sin force-push y aborto si cambia concurrentemente cualquier
+          # miembro del paquete canónico validado.
           for attempt in 1 2 3 4; do
             git fetch --no-tags origin main
-            if ! git diff --quiet "$validated_main" origin/main -- "$path"; then
-              remote_sha="$(git show "origin/main:$path" | sha256sum | awk '{print $1}')"
+            concurrent_change=false
+            for path in "${paths[@]}"; do
+              if ! git diff --quiet "$validated_main" origin/main -- "$path"; then
+                concurrent_change=true
+              fi
+            done
+            if [ "$concurrent_change" = true ]; then
+              remote_dir="$(mktemp -d)"
+              for path in "${paths[@]}"; do
+                mkdir -p "$remote_dir/$(dirname "$path")"
+                git show "origin/main:$path" > "$remote_dir/$path"
+              done
+              remote_sha="$(package_sha "$remote_dir")"
+              rm -rf -- "$remote_dir"
+              remote_dir=""
               if [ "$remote_sha" = "$candidate_sha" ]; then
-                echo "El snapshot candidato ya fue persistido por otra ejecución."
+                echo "El paquete candidato ya fue persistido por otra ejecución."
                 echo "changed=false" >> "$GITHUB_OUTPUT"
                 exit 0
               fi
-              echo "ERROR: el archivo remoto cambió después de la validación; no se sobrescribe." >&2
+              echo "ERROR: cambió concurrentemente el paquete; el archivo remoto cambió después de la validación; no se sobrescribe." >&2
               exit 1
             fi
 
             retry_dir="$(mktemp -d)"
             git worktree add --detach "$retry_dir" origin/main
-            cp -- "$candidate" "$retry_dir/$path"
+            for path in "${paths[@]}"; do
+              mkdir -p "$retry_dir/$(dirname "$path")"
+              cp -- "$candidate_dir/$path" "$retry_dir/$path"
+            done
             if (
               cd "$retry_dir"
               git config user.name "github-actions[bot]"
               git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-              git add -- "$path"
-              git commit -m "IRFEN v0.8: archivar validación en sombra diaria"
+              git add -- "${paths[@]}"
+              git commit -m "IRFEN v0.8: archivar validación en sombra y cola canónica"
               git push origin HEAD:main
               echo "persisted_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
               echo "changed=true" >> "$GITHUB_OUTPUT"
             ); then
               git worktree remove --force "$retry_dir"
               retry_dir=""
-              echo "Snapshot diario persistido sin sobrescritura concurrente."
+              echo "Paquete de sombra persistido sin sobrescritura concurrente."
               exit 0
             fi
 
