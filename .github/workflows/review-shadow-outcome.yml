@@ -81,7 +81,6 @@ jobs:
           import os
           from pathlib import Path
           from scripts.archive_shadow_validation import validate_shadow_integrity
-
           from scripts.review_shadow_outcome import apply_review
 
           archive_path = Path("site/data/validation/shadow_runs.json")
@@ -105,21 +104,28 @@ jobs:
           print(json.dumps({"snapshot_date_utc": os.environ["REVIEW_DATE"], **review}, ensure_ascii=False, indent=2))
           PY
 
-      - name: Validar revisión y contrato TEST_ONLY
+      - name: Reconstruir cola canónica tras la revisión
+        run: python scripts/build_shadow_review_queue.py
+
+      - name: Validar revisión, cola y contrato TEST_ONLY
         shell: bash
         env:
           REVIEW_DATE: ${{ inputs.snapshot_date }}
           REVIEW_LABEL: ${{ inputs.label }}
           REVIEWED_BY: ${{ github.actor }}
         run: |
-          python -m unittest tests.test_review_shadow_outcome tests.test_review_shadow_outcome_workflow
+          python -m unittest             tests.test_review_shadow_outcome             tests.test_review_shadow_outcome_workflow             tests.test_build_shadow_review_queue
           python -m json.tool site/data/validation/shadow_runs.json >/dev/null
+          python -m json.tool site/data/validation/shadow_review_queue.json >/dev/null
+          python scripts/build_shadow_review_queue.py --check
           python - <<'PY'
           import json
           import os
           from pathlib import Path
+          from scripts.archive_shadow_validation import validate_shadow_integrity
 
           archive = json.loads(Path("site/data/validation/shadow_runs.json").read_text(encoding="utf-8"))
+          queue = json.loads(Path("site/data/validation/shadow_review_queue.json").read_text(encoding="utf-8"))
           assert archive.get("production_use") is False
           assert archive.get("production_ready") is False
           integrity = validate_shadow_integrity(archive.get("records") or [])
@@ -142,9 +148,17 @@ jobs:
           elif review.get("label") == "NONE":
               assert review.get("comprehensive_none_coverage") is True
               assert review.get("counts_toward_closeout") is True
+          queue_day = next(
+              row for row in queue.get("days", [])
+              if row.get("snapshot_date_utc") == os.environ["REVIEW_DATE"]
+          )
+          assert (queue_day.get("human_review") or {}).get("stored_label") == os.environ["REVIEW_LABEL"]
+          assert queue_day.get("closeout_eligible") is (queue_day.get("scorecard_eligibility") or {}).get("eligible")
+          assert (queue.get("guards") or {}).get("automatic_event_none_classification_enabled") is False
+          assert (queue.get("guards") or {}).get("operational_alerting_enabled") is False
           PY
 
-      - name: Guardar revisión auditable
+      - name: Guardar revisión y cola como paquete atómico
         id: persist
         shell: bash
         env:
@@ -152,21 +166,106 @@ jobs:
           REVIEW_LABEL: ${{ inputs.label }}
         run: |
           set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add site/data/validation/shadow_runs.json
-          git diff --cached --quiet && { echo "La revisión no produjo cambios." >&2; exit 1; }
-          git commit -m "IRFEN v0.8: revisar sombra ${REVIEW_DATE} como ${REVIEW_LABEL}"
-          git pull --rebase origin main
-          git push origin HEAD:main
-          echo "commit_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          paths=(
+            "site/data/validation/shadow_runs.json"
+            "site/data/validation/shadow_review_queue.json"
+          )
+          candidate_dir="$(mktemp -d)"
+          retry_dir=""
+          remote_dir=""
+          cleanup() {
+            if [ -n "$retry_dir" ]; then
+              git worktree remove --force "$retry_dir" >/dev/null 2>&1 || true
+            fi
+            rm -rf -- "$candidate_dir" "$remote_dir"
+          }
+          trap cleanup EXIT
+
+          package_sha() {
+            local root="$1"
+            (
+              cd "$root"
+              for path in "${paths[@]}"; do
+                sha256sum "$path"
+              done
+            ) | sha256sum | awk '{print $1}'
+          }
+
+          for path in "${paths[@]}"; do
+            mkdir -p "$candidate_dir/$(dirname "$path")"
+            cp -- "$path" "$candidate_dir/$path"
+          done
+          candidate_sha="$(package_sha "$candidate_dir")"
+          validated_main="$(git rev-parse HEAD)"
+
+          git diff --quiet "$validated_main" -- "${paths[@]}" && {
+            echo "La revisión no produjo cambios materiales." >&2
+            exit 1
+          }
+
+          for attempt in 1 2 3 4; do
+            git fetch --no-tags origin main
+            concurrent_change=false
+            for path in "${paths[@]}"; do
+              if ! git diff --quiet "$validated_main" origin/main -- "$path"; then
+                concurrent_change=true
+              fi
+            done
+            if [ "$concurrent_change" = true ]; then
+              remote_dir="$(mktemp -d)"
+              for path in "${paths[@]}"; do
+                mkdir -p "$remote_dir/$(dirname "$path")"
+                git show "origin/main:$path" > "$remote_dir/$path"
+              done
+              remote_sha="$(package_sha "$remote_dir")"
+              rm -rf -- "$remote_dir"
+              remote_dir=""
+              if [ "$remote_sha" = "$candidate_sha" ]; then
+                echo "La revisión y la cola ya fueron persistidas por otra ejecución."
+                echo "changed=false" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+              echo "ERROR: cambió concurrentemente el paquete; el archivo remoto cambió después de la validación; no se sobrescribe." >&2
+              exit 1
+            fi
+
+            retry_dir="$(mktemp -d)"
+            git worktree add --detach "$retry_dir" origin/main
+            for path in "${paths[@]}"; do
+              mkdir -p "$retry_dir/$(dirname "$path")"
+              cp -- "$candidate_dir/$path" "$retry_dir/$path"
+            done
+            if (
+              cd "$retry_dir"
+              git config user.name "github-actions[bot]"
+              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+              git add -- "${paths[@]}"
+              git commit -m "IRFEN v0.8: revisar sombra ${REVIEW_DATE} como ${REVIEW_LABEL}"
+              git push origin HEAD:main
+              echo "persisted_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+              echo "commit_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+            ); then
+              git worktree remove --force "$retry_dir"
+              retry_dir=""
+              echo "Revisión y cola persistidas sin sobrescritura concurrente."
+              exit 0
+            fi
+
+            git worktree remove --force "$retry_dir"
+            retry_dir=""
+            if [ "$attempt" -eq 4 ]; then
+              echo "ERROR: main siguió avanzando durante cuatro intentos acotados." >&2
+              exit 1
+            fi
+            echo "Carrera de fast-forward en intento ${attempt}/4; reintento sin force-push."
+            sleep "$((attempt * 2))"
+          done
 
       - name: Publicar revisión y scorecard recalculada
+        if: steps.persist.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           EXPECTED_SHA: ${{ steps.persist.outputs.commit_sha }}
         run: |
-          gh workflow run publish-committed-data.yml \
-            --repo "$GITHUB_REPOSITORY" \
-            --ref main \
-            -f expected_sha="$EXPECTED_SHA"
+          gh workflow run publish-committed-data.yml             --repo "$GITHUB_REPOSITORY"             --ref main             -f expected_sha="$EXPECTED_SHA"

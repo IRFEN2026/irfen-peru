@@ -1,0 +1,4561 @@
+{
+  "schema_version": "1.0.0",
+  "artifact_type": "IRFEN_SHADOW_REVIEW_QUEUE",
+  "generated_at": "2026-08-25T14:29:43.058459Z",
+  "evaluation_as_of_utc": "2026-08-25T14:29:43.058459Z",
+  "freshness": {
+    "status_at_generation": "CURRENT",
+    "basis": "SOURCE_UPDATE_OR_UTC_DAY_CLOSE",
+    "next_transition_at_utc": "2026-08-26T00:00:00Z",
+    "refresh_required_at_generation": false
+  },
+  "status": "INCONSISTENCIES_DETECTED",
+  "source": {
+    "archive_path": "site/data/validation/shadow_runs.json",
+    "archive_version": "0.8-experimental",
+    "archive_updated_at": "2026-08-25T14:29:43.058459+00:00",
+    "archive_record_count_declared": 12,
+    "archive_record_count_actual": 12,
+    "archive_contract_projection_sha256": "d04ba7514e9d80ec97b9e4c7d29a2a4d9f4b33eca0fa1b1f1559aa0544d5e1bb",
+    "archive_last_integrity_chain_sha256": "1c7ff41367d5669668a74252fb72e1adca82e6c9b6b789e9896fbc4c8b545dd2",
+    "closeout_contract_path": "config/v08_closeout_contract.json",
+    "closeout_contract_projection_sha256": "52203d17578ddd725a40024cfb47209b51042d5dd573a61564d7014ed6412143",
+    "schema_path": "config/shadow_review_queue.schema.v1.json",
+    "schema_sha256": "599af5110c51a1ae6636b806f2a480ecb3e188f265a53fc92e99d429d45f1a3a",
+    "methodology": "CANONICAL_ARCHIVE_PLUS_VERSIONED_CLOSEOUT_CONTRACT_AND_SCORECARD_PARITY"
+  },
+  "guards": {
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false,
+    "automatic_event_none_classification_enabled": false,
+    "missing_evidence_interpretation": "UNKNOWN_OR_UNCERTAIN",
+    "operational_dataset_status_is_gate": false,
+    "stale_is_gate": false,
+    "stored_human_label_is_authoritative": true
+  },
+  "contract": {
+    "flow_states": [
+      "DAY_NOT_CLOSED",
+      "READY_FOR_HUMAN_REVIEW",
+      "TECHNICALLY_INELIGIBLE",
+      "REVIEWED_UNCERTAIN",
+      "ELIGIBLE_EVENT",
+      "ELIGIBLE_NONE"
+    ],
+    "pilot_zone_ids": [
+      "san_ildefonso",
+      "chosica",
+      "catacaos"
+    ],
+    "minimum_mature_pairs_per_pilot": 30,
+    "accepted_closeout_labels": [
+      "NONE",
+      "EVENT"
+    ],
+    "snapshot_capture": {
+      "earliest_eligible_capture_lead_minutes": 720,
+      "latest_eligible_capture_delay_minutes": 120
+    },
+    "acceptance_rules": {
+      "named_human_reviewer_required": true,
+      "automatic_classification_forbidden": true,
+      "official_source_required": true,
+      "counts_toward_closeout_must_be_explicit": true,
+      "pre_outcome_capture_window_required": true,
+      "forecast_must_cover_target_day": true,
+      "none_requires_comprehensive_coverage": true,
+      "event_requires_verified_event_description": true
+    }
+  },
+  "summary": {
+    "record_count_declared": 12,
+    "record_count_actual": 12,
+    "label_counts": {
+      "EVENT": 0,
+      "NONE": 0,
+      "UNCERTAIN": 5,
+      "PENDING": 7
+    },
+    "review_state_counts": {
+      "REVIEWED": 5,
+      "PENDING": 7,
+      "UNKNOWN": 0
+    },
+    "flow_state_counts": {
+      "DAY_NOT_CLOSED": 2,
+      "READY_FOR_HUMAN_REVIEW": 4,
+      "TECHNICALLY_INELIGIBLE": 1,
+      "REVIEWED_UNCERTAIN": 5,
+      "ELIGIBLE_EVENT": 0,
+      "ELIGIBLE_NONE": 0
+    },
+    "closeout_eligible_total": 0,
+    "closeout_eligible_event": 0,
+    "closeout_eligible_none": 0,
+    "source_counts_toward_closeout_true": 0,
+    "inconsistency_count": 8
+  },
+  "inconsistencies": [
+    {
+      "code": "REVIEWED_WITHOUT_IDENTIFIED_REVIEWER",
+      "severity": "ERROR",
+      "message": "La revisión humana no identifica al revisor requerido por el contrato vigente.",
+      "snapshot_date_utc": "2026-08-14"
+    },
+    {
+      "code": "REVIEWED_WITHOUT_EXPLICIT_AUTOMATIC_FALSE",
+      "severity": "ERROR",
+      "message": "La revisión no conserva automatic=false de forma explícita.",
+      "snapshot_date_utc": "2026-08-14"
+    },
+    {
+      "code": "REVIEWED_WITHOUT_IDENTIFIED_REVIEWER",
+      "severity": "ERROR",
+      "message": "La revisión humana no identifica al revisor requerido por el contrato vigente.",
+      "snapshot_date_utc": "2026-08-15"
+    },
+    {
+      "code": "REVIEWED_WITHOUT_EXPLICIT_AUTOMATIC_FALSE",
+      "severity": "ERROR",
+      "message": "La revisión no conserva automatic=false de forma explícita.",
+      "snapshot_date_utc": "2026-08-15"
+    },
+    {
+      "code": "REVIEWED_WITHOUT_IDENTIFIED_REVIEWER",
+      "severity": "ERROR",
+      "message": "La revisión humana no identifica al revisor requerido por el contrato vigente.",
+      "snapshot_date_utc": "2026-08-16"
+    },
+    {
+      "code": "REVIEWED_WITHOUT_EXPLICIT_AUTOMATIC_FALSE",
+      "severity": "ERROR",
+      "message": "La revisión no conserva automatic=false de forma explícita.",
+      "snapshot_date_utc": "2026-08-16"
+    },
+    {
+      "code": "REVIEWED_WITHOUT_IDENTIFIED_REVIEWER",
+      "severity": "ERROR",
+      "message": "La revisión humana no identifica al revisor requerido por el contrato vigente.",
+      "snapshot_date_utc": "2026-08-17"
+    },
+    {
+      "code": "REVIEWED_WITHOUT_IDENTIFIED_REVIEWER",
+      "severity": "ERROR",
+      "message": "La revisión humana no identifica al revisor requerido por el contrato vigente.",
+      "snapshot_date_utc": "2026-08-19"
+    }
+  ],
+  "days": [
+    {
+      "snapshot_date_utc": "2026-08-14",
+      "target_day_close_utc": "2026-08-15T00:00:00Z",
+      "day_closed_utc": true,
+      "capture_window": {
+        "stored_start_utc": null,
+        "stored_end_utc": null,
+        "stored_captured_within_window": null,
+        "computed_start_utc": "2026-08-13T12:00:00Z",
+        "computed_end_utc": "2026-08-14T02:00:00Z",
+        "computed_captured_within_window": false,
+        "captured_within_window": false,
+        "calculation_available": true,
+        "evidence_state": "CALCULATED"
+      },
+      "pilots": {
+        "expected": [
+          "san_ildefonso",
+          "chosica",
+          "catacaos"
+        ],
+        "present": [
+          "san_ildefonso",
+          "chosica",
+          "catacaos"
+        ],
+        "missing": [],
+        "unexpected": [],
+        "all_present": true,
+        "test_only_recommendations": {
+          "san_ildefonso": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          },
+          "chosica": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          },
+          "catacaos": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          }
+        },
+        "all_test_only": true,
+        "all_non_operational": true
+      },
+      "forecast": {
+        "available": true,
+        "stored_covers_target_day": null,
+        "computed_covers_target_day": true,
+        "covers_target_day": true,
+        "required_future_hours": 2.8684082280555554,
+        "available_future_hours_by_pilot": {
+          "san_ildefonso": 85,
+          "chosica": 85,
+          "catacaos": 85
+        },
+        "mature_pairs_by_pilot": {
+          "san_ildefonso": null,
+          "chosica": null,
+          "catacaos": null
+        },
+        "minimum_mature_pairs_per_pilot": 30
+      },
+      "imerg_early": {
+        "status": "EARLY_HALFHOURLY_SOURCE_AVAILABLE",
+        "available": true,
+        "latency_hours": 5.39
+      },
+      "regression_status": "PASS",
+      "operational_dataset_status": {
+        "value": "updated",
+        "role": "ANNOTATION_ONLY",
+        "is_eligibility_gate": false
+      },
+      "human_review": {
+        "raw_status": "REVIEWED_REAL_WORLD_OUTCOME",
+        "state": "REVIEWED",
+        "reviewed_at": "2026-08-15T21:05:50.622642+00:00",
+        "review_after_utc_day_close": true,
+        "reviewer": null,
+        "reviewer_identified": false,
+        "automatic": null,
+        "official_sources": [
+          "https://www.senamhi.gob.pe/main.php?dp=piura&p=aviso-24H",
+          "https://www.senamhi.gob.pe/main.php?dp=piura&p=reportes-nowcasting"
+        ],
+        "official_sources_valid": true,
+        "invalid_official_sources": [],
+        "stored_label": "UNCERTAIN",
+        "evidence_state": "UNCERTAIN",
+        "verified_event": null,
+        "comprehensive_none_coverage": null,
+        "counts_toward_closeout": false
+      },
+      "scorecard_eligibility": {
+        "eligible": false,
+        "checks": {
+          "snapshot_not_production": true,
+          "snapshot_captured_within_pre_outcome_window": false,
+          "all_pilots_present": true,
+          "all_recommendations_test_only": true,
+          "forecast_available": true,
+          "forecast_covers_target_day": true,
+          "forecast_pairs_mature_at_snapshot": false,
+          "imerg_early_available": true,
+          "imerg_latency_recorded": true,
+          "regression_passed": true,
+          "outcome_status_reviewed": true,
+          "outcome_label_accepted": false,
+          "outcome_official_sources_recorded": true,
+          "outcome_named_human_reviewer": false,
+          "outcome_not_automatic": false,
+          "outcome_counts_toward_closeout_explicit": false,
+          "outcome_label_semantics_supported": false,
+          "outcome_review_after_utc_day_close": true
+        }
+      },
+      "technical_eligibility": false,
+      "review_eligibility": false,
+      "closeout_eligible": false,
+      "flow_state": "REVIEWED_UNCERTAIN",
+      "failed_gates": [
+        "PRE_OUTCOME_CAPTURE_WINDOW_STORED",
+        "CAPTURED_WITHIN_WINDOW",
+        "MATURE_PAIRS_PER_PILOT",
+        "STORED_LABEL_ACCEPTED_FOR_CLOSEOUT",
+        "HUMAN_REVIEWER_IDENTIFIED",
+        "AUTOMATIC_CLASSIFICATION_FALSE",
+        "COUNTS_TOWARD_CLOSEOUT_EXPLICIT_TRUE",
+        "OUTCOME_LABEL_SEMANTICS_SUPPORTED"
+      ],
+      "gates": [
+        {
+          "id": "DAY_CLOSED_UTC",
+          "category": "TEMPORAL",
+          "passed": true,
+          "evidence": {
+            "evaluation_as_of_utc": "2026-08-25T14:29:43.058459Z",
+            "target_day_close_utc": "2026-08-15T00:00:00Z"
+          }
+        },
+        {
+          "id": "PRE_OUTCOME_CAPTURE_WINDOW_STORED",
+          "category": "TECHNICAL",
+          "passed": false,
+          "evidence": {
+            "start_utc": null,
+            "end_utc": null,
+            "stored_captured_within_window": null
+          },
+          "contract_reference": "diagnostic_only"
+        },
+        {
+          "id": "CAPTURED_WITHIN_WINDOW",
+          "category": "TECHNICAL",
+          "passed": false,
+          "evidence": {
+            "stored": null,
+            "computed": false,
+            "archived_at": "2026-08-14T21:07:53.730379+00:00",
+            "computed_start_utc": "2026-08-13T12:00:00Z",
+            "computed_end_utc": "2026-08-14T02:00:00Z"
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.snapshot_captured_within_pre_outcome_window"
+        },
+        {
+          "id": "ALL_PILOTS_PRESENT",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "expected": [
+              "san_ildefonso",
+              "chosica",
+              "catacaos"
+            ],
+            "present": [
+              "san_ildefonso",
+              "chosica",
+              "catacaos"
+            ],
+            "missing": [],
+            "unexpected": []
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.all_pilots_present"
+        },
+        {
+          "id": "ALL_RECOMMENDATIONS_TEST_ONLY",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "san_ildefonso": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "chosica": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "catacaos": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.all_recommendations_test_only"
+        },
+        {
+          "id": "NO_OPERATIONAL_ALERTS",
+          "category": "SAFETY",
+          "passed": true,
+          "evidence": {
+            "san_ildefonso": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "chosica": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "catacaos": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            }
+          },
+          "contract_reference": "diagnostic_redundant_with_all_recommendations_test_only"
+        },
+        {
+          "id": "FORECAST_AVAILABLE",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": true,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_available"
+        },
+        {
+          "id": "FORECAST_COVERS_TARGET_DAY",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "stored": null,
+            "computed": true,
+            "required_future_hours": 2.8684082280555554,
+            "available_future_hours_by_pilot": {
+              "san_ildefonso": 85,
+              "chosica": 85,
+              "catacaos": 85
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_covers_target_day"
+        },
+        {
+          "id": "MATURE_PAIRS_PER_PILOT",
+          "category": "TECHNICAL",
+          "passed": false,
+          "evidence": {
+            "minimum_required": 30,
+            "by_pilot": {
+              "san_ildefonso": null,
+              "chosica": null,
+              "catacaos": null
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_pairs_mature_at_snapshot"
+        },
+        {
+          "id": "IMERG_EARLY_AVAILABLE",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": "EARLY_HALFHOURLY_SOURCE_AVAILABLE",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.imerg_early_available"
+        },
+        {
+          "id": "IMERG_EARLY_LATENCY_RECORDED",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": 5.39,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.imerg_latency_recorded"
+        },
+        {
+          "id": "REGRESSION_PASS",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": "PASS",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.regression_passed"
+        },
+        {
+          "id": "PRODUCTION_USE_FALSE",
+          "category": "SAFETY",
+          "passed": true,
+          "evidence": false,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.snapshot_not_production"
+        },
+        {
+          "id": "HUMAN_REVIEW_COMPLETED",
+          "category": "HUMAN_REVIEW",
+          "passed": true,
+          "evidence": "REVIEWED_REAL_WORLD_OUTCOME",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_status_reviewed"
+        },
+        {
+          "id": "STORED_LABEL_ACCEPTED_FOR_CLOSEOUT",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": "UNCERTAIN",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_label_accepted"
+        },
+        {
+          "id": "OFFICIAL_SOURCES_VALID",
+          "category": "HUMAN_REVIEW",
+          "passed": true,
+          "evidence": {
+            "sources": [
+              "https://www.senamhi.gob.pe/main.php?dp=piura&p=aviso-24H",
+              "https://www.senamhi.gob.pe/main.php?dp=piura&p=reportes-nowcasting"
+            ],
+            "invalid_sources": []
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_official_sources_recorded"
+        },
+        {
+          "id": "HUMAN_REVIEWER_IDENTIFIED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_named_human_reviewer"
+        },
+        {
+          "id": "AUTOMATIC_CLASSIFICATION_FALSE",
+          "category": "SAFETY",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_not_automatic"
+        },
+        {
+          "id": "COUNTS_TOWARD_CLOSEOUT_EXPLICIT_TRUE",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": false,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_counts_toward_closeout_explicit"
+        },
+        {
+          "id": "OUTCOME_LABEL_SEMANTICS_SUPPORTED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": {
+            "stored_label": "UNCERTAIN",
+            "verified_event": null,
+            "comprehensive_none_coverage": null
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_label_semantics_supported"
+        },
+        {
+          "id": "REVIEW_AFTER_UTC_DAY_CLOSE",
+          "category": "TEMPORAL",
+          "passed": true,
+          "evidence": {
+            "reviewed_at": "2026-08-15T21:05:50.622642+00:00",
+            "target_day_close_utc": "2026-08-15T00:00:00Z"
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_review_after_utc_day_close"
+        }
+      ]
+    },
+    {
+      "snapshot_date_utc": "2026-08-15",
+      "target_day_close_utc": "2026-08-16T00:00:00Z",
+      "day_closed_utc": true,
+      "capture_window": {
+        "stored_start_utc": null,
+        "stored_end_utc": null,
+        "stored_captured_within_window": null,
+        "computed_start_utc": "2026-08-14T12:00:00Z",
+        "computed_end_utc": "2026-08-15T02:00:00Z",
+        "computed_captured_within_window": false,
+        "captured_within_window": false,
+        "calculation_available": true,
+        "evidence_state": "CALCULATED"
+      },
+      "pilots": {
+        "expected": [
+          "san_ildefonso",
+          "chosica",
+          "catacaos"
+        ],
+        "present": [
+          "san_ildefonso",
+          "chosica",
+          "catacaos"
+        ],
+        "missing": [],
+        "unexpected": [],
+        "all_present": true,
+        "test_only_recommendations": {
+          "san_ildefonso": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          },
+          "chosica": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          },
+          "catacaos": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          }
+        },
+        "all_test_only": true,
+        "all_non_operational": true
+      },
+      "forecast": {
+        "available": true,
+        "stored_covers_target_day": null,
+        "computed_covers_target_day": true,
+        "covers_target_day": true,
+        "required_future_hours": 3.900485458611111,
+        "available_future_hours_by_pilot": {
+          "san_ildefonso": 85,
+          "chosica": 85,
+          "catacaos": 85
+        },
+        "mature_pairs_by_pilot": {
+          "san_ildefonso": 40,
+          "chosica": 40,
+          "catacaos": 40
+        },
+        "minimum_mature_pairs_per_pilot": 30
+      },
+      "imerg_early": {
+        "status": "EARLY_HALFHOURLY_SOURCE_AVAILABLE",
+        "available": true,
+        "latency_hours": 5.35
+      },
+      "regression_status": "PASS",
+      "operational_dataset_status": {
+        "value": "updated",
+        "role": "ANNOTATION_ONLY",
+        "is_eligibility_gate": false
+      },
+      "human_review": {
+        "raw_status": "REVIEWED_REAL_WORLD_OUTCOME",
+        "state": "REVIEWED",
+        "reviewed_at": "2026-08-16T04:11:31.605302+00:00",
+        "review_after_utc_day_close": true,
+        "reviewer": null,
+        "reviewer_identified": false,
+        "automatic": null,
+        "official_sources": [
+          "https://www.senamhi.gob.pe/main.php?dp=piura&p=aviso-24H",
+          "https://www.senamhi.gob.pe/?p=aviso-activacion-quebrada",
+          "https://portal.indeci.gob.pe/wp-content/uploads/2026/08/BOLET%C3%8DN-INFORMATIVO-MONITOREO-DE-PELIGROS-Y-PERSPECTIVAS-N%C2%B0226-del-14-08-2026.pdf"
+        ],
+        "official_sources_valid": true,
+        "invalid_official_sources": [],
+        "stored_label": "UNCERTAIN",
+        "evidence_state": "UNCERTAIN",
+        "verified_event": null,
+        "comprehensive_none_coverage": null,
+        "counts_toward_closeout": false
+      },
+      "scorecard_eligibility": {
+        "eligible": false,
+        "checks": {
+          "snapshot_not_production": true,
+          "snapshot_captured_within_pre_outcome_window": false,
+          "all_pilots_present": true,
+          "all_recommendations_test_only": true,
+          "forecast_available": true,
+          "forecast_covers_target_day": true,
+          "forecast_pairs_mature_at_snapshot": true,
+          "imerg_early_available": true,
+          "imerg_latency_recorded": true,
+          "regression_passed": true,
+          "outcome_status_reviewed": true,
+          "outcome_label_accepted": false,
+          "outcome_official_sources_recorded": true,
+          "outcome_named_human_reviewer": false,
+          "outcome_not_automatic": false,
+          "outcome_counts_toward_closeout_explicit": false,
+          "outcome_label_semantics_supported": false,
+          "outcome_review_after_utc_day_close": true
+        }
+      },
+      "technical_eligibility": false,
+      "review_eligibility": false,
+      "closeout_eligible": false,
+      "flow_state": "REVIEWED_UNCERTAIN",
+      "failed_gates": [
+        "PRE_OUTCOME_CAPTURE_WINDOW_STORED",
+        "CAPTURED_WITHIN_WINDOW",
+        "STORED_LABEL_ACCEPTED_FOR_CLOSEOUT",
+        "HUMAN_REVIEWER_IDENTIFIED",
+        "AUTOMATIC_CLASSIFICATION_FALSE",
+        "COUNTS_TOWARD_CLOSEOUT_EXPLICIT_TRUE",
+        "OUTCOME_LABEL_SEMANTICS_SUPPORTED"
+      ],
+      "gates": [
+        {
+          "id": "DAY_CLOSED_UTC",
+          "category": "TEMPORAL",
+          "passed": true,
+          "evidence": {
+            "evaluation_as_of_utc": "2026-08-25T14:29:43.058459Z",
+            "target_day_close_utc": "2026-08-16T00:00:00Z"
+          }
+        },
+        {
+          "id": "PRE_OUTCOME_CAPTURE_WINDOW_STORED",
+          "category": "TECHNICAL",
+          "passed": false,
+          "evidence": {
+            "start_utc": null,
+            "end_utc": null,
+            "stored_captured_within_window": null
+          },
+          "contract_reference": "diagnostic_only"
+        },
+        {
+          "id": "CAPTURED_WITHIN_WINDOW",
+          "category": "TECHNICAL",
+          "passed": false,
+          "evidence": {
+            "stored": null,
+            "computed": false,
+            "archived_at": "2026-08-15T20:05:58.252349+00:00",
+            "computed_start_utc": "2026-08-14T12:00:00Z",
+            "computed_end_utc": "2026-08-15T02:00:00Z"
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.snapshot_captured_within_pre_outcome_window"
+        },
+        {
+          "id": "ALL_PILOTS_PRESENT",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "expected": [
+              "san_ildefonso",
+              "chosica",
+              "catacaos"
+            ],
+            "present": [
+              "san_ildefonso",
+              "chosica",
+              "catacaos"
+            ],
+            "missing": [],
+            "unexpected": []
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.all_pilots_present"
+        },
+        {
+          "id": "ALL_RECOMMENDATIONS_TEST_ONLY",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "san_ildefonso": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "chosica": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "catacaos": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.all_recommendations_test_only"
+        },
+        {
+          "id": "NO_OPERATIONAL_ALERTS",
+          "category": "SAFETY",
+          "passed": true,
+          "evidence": {
+            "san_ildefonso": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "chosica": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "catacaos": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            }
+          },
+          "contract_reference": "diagnostic_redundant_with_all_recommendations_test_only"
+        },
+        {
+          "id": "FORECAST_AVAILABLE",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": true,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_available"
+        },
+        {
+          "id": "FORECAST_COVERS_TARGET_DAY",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "stored": null,
+            "computed": true,
+            "required_future_hours": 3.900485458611111,
+            "available_future_hours_by_pilot": {
+              "san_ildefonso": 85,
+              "chosica": 85,
+              "catacaos": 85
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_covers_target_day"
+        },
+        {
+          "id": "MATURE_PAIRS_PER_PILOT",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "minimum_required": 30,
+            "by_pilot": {
+              "san_ildefonso": 40,
+              "chosica": 40,
+              "catacaos": 40
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_pairs_mature_at_snapshot"
+        },
+        {
+          "id": "IMERG_EARLY_AVAILABLE",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": "EARLY_HALFHOURLY_SOURCE_AVAILABLE",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.imerg_early_available"
+        },
+        {
+          "id": "IMERG_EARLY_LATENCY_RECORDED",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": 5.35,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.imerg_latency_recorded"
+        },
+        {
+          "id": "REGRESSION_PASS",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": "PASS",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.regression_passed"
+        },
+        {
+          "id": "PRODUCTION_USE_FALSE",
+          "category": "SAFETY",
+          "passed": true,
+          "evidence": false,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.snapshot_not_production"
+        },
+        {
+          "id": "HUMAN_REVIEW_COMPLETED",
+          "category": "HUMAN_REVIEW",
+          "passed": true,
+          "evidence": "REVIEWED_REAL_WORLD_OUTCOME",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_status_reviewed"
+        },
+        {
+          "id": "STORED_LABEL_ACCEPTED_FOR_CLOSEOUT",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": "UNCERTAIN",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_label_accepted"
+        },
+        {
+          "id": "OFFICIAL_SOURCES_VALID",
+          "category": "HUMAN_REVIEW",
+          "passed": true,
+          "evidence": {
+            "sources": [
+              "https://www.senamhi.gob.pe/main.php?dp=piura&p=aviso-24H",
+              "https://www.senamhi.gob.pe/?p=aviso-activacion-quebrada",
+              "https://portal.indeci.gob.pe/wp-content/uploads/2026/08/BOLET%C3%8DN-INFORMATIVO-MONITOREO-DE-PELIGROS-Y-PERSPECTIVAS-N%C2%B0226-del-14-08-2026.pdf"
+            ],
+            "invalid_sources": []
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_official_sources_recorded"
+        },
+        {
+          "id": "HUMAN_REVIEWER_IDENTIFIED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_named_human_reviewer"
+        },
+        {
+          "id": "AUTOMATIC_CLASSIFICATION_FALSE",
+          "category": "SAFETY",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_not_automatic"
+        },
+        {
+          "id": "COUNTS_TOWARD_CLOSEOUT_EXPLICIT_TRUE",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": false,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_counts_toward_closeout_explicit"
+        },
+        {
+          "id": "OUTCOME_LABEL_SEMANTICS_SUPPORTED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": {
+            "stored_label": "UNCERTAIN",
+            "verified_event": null,
+            "comprehensive_none_coverage": null
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_label_semantics_supported"
+        },
+        {
+          "id": "REVIEW_AFTER_UTC_DAY_CLOSE",
+          "category": "TEMPORAL",
+          "passed": true,
+          "evidence": {
+            "reviewed_at": "2026-08-16T04:11:31.605302+00:00",
+            "target_day_close_utc": "2026-08-16T00:00:00Z"
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_review_after_utc_day_close"
+        }
+      ]
+    },
+    {
+      "snapshot_date_utc": "2026-08-16",
+      "target_day_close_utc": "2026-08-17T00:00:00Z",
+      "day_closed_utc": true,
+      "capture_window": {
+        "stored_start_utc": null,
+        "stored_end_utc": null,
+        "stored_captured_within_window": null,
+        "computed_start_utc": "2026-08-15T12:00:00Z",
+        "computed_end_utc": "2026-08-16T02:00:00Z",
+        "computed_captured_within_window": false,
+        "captured_within_window": false,
+        "calculation_available": true,
+        "evidence_state": "CALCULATED"
+      },
+      "pilots": {
+        "expected": [
+          "san_ildefonso",
+          "chosica",
+          "catacaos"
+        ],
+        "present": [
+          "san_ildefonso",
+          "chosica",
+          "catacaos"
+        ],
+        "missing": [],
+        "unexpected": [],
+        "all_present": true,
+        "test_only_recommendations": {
+          "san_ildefonso": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          },
+          "chosica": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          },
+          "catacaos": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          }
+        },
+        "all_test_only": true,
+        "all_non_operational": true
+      },
+      "forecast": {
+        "available": true,
+        "stored_covers_target_day": null,
+        "computed_covers_target_day": true,
+        "covers_target_day": true,
+        "required_future_hours": 6.065500080277777,
+        "available_future_hours_by_pilot": {
+          "san_ildefonso": 85,
+          "chosica": 85,
+          "catacaos": 85
+        },
+        "mature_pairs_by_pilot": {
+          "san_ildefonso": 46,
+          "chosica": 46,
+          "catacaos": 46
+        },
+        "minimum_mature_pairs_per_pilot": 30
+      },
+      "imerg_early": {
+        "status": "EARLY_HALFHOURLY_SOURCE_AVAILABLE",
+        "available": true,
+        "latency_hours": 5.39
+      },
+      "regression_status": "PASS",
+      "operational_dataset_status": {
+        "value": "updated",
+        "role": "ANNOTATION_ONLY",
+        "is_eligibility_gate": false
+      },
+      "human_review": {
+        "raw_status": "REVIEWED_REAL_WORLD_OUTCOME",
+        "state": "REVIEWED",
+        "reviewed_at": "2026-08-17T03:12:50.762311+00:00",
+        "review_after_utc_day_close": true,
+        "reviewer": null,
+        "reviewer_identified": false,
+        "automatic": null,
+        "official_sources": [
+          "https://www.senamhi.gob.pe/main.php?dp=piura&p=aviso-24H",
+          "https://www.senamhi.gob.pe/?p=aviso-activacion-quebrada",
+          "https://portal.indeci.gob.pe/emergencias/"
+        ],
+        "official_sources_valid": true,
+        "invalid_official_sources": [],
+        "stored_label": "UNCERTAIN",
+        "evidence_state": "UNCERTAIN",
+        "verified_event": null,
+        "comprehensive_none_coverage": null,
+        "counts_toward_closeout": false
+      },
+      "scorecard_eligibility": {
+        "eligible": false,
+        "checks": {
+          "snapshot_not_production": true,
+          "snapshot_captured_within_pre_outcome_window": false,
+          "all_pilots_present": true,
+          "all_recommendations_test_only": true,
+          "forecast_available": true,
+          "forecast_covers_target_day": true,
+          "forecast_pairs_mature_at_snapshot": true,
+          "imerg_early_available": true,
+          "imerg_latency_recorded": true,
+          "regression_passed": true,
+          "outcome_status_reviewed": true,
+          "outcome_label_accepted": false,
+          "outcome_official_sources_recorded": true,
+          "outcome_named_human_reviewer": false,
+          "outcome_not_automatic": false,
+          "outcome_counts_toward_closeout_explicit": false,
+          "outcome_label_semantics_supported": false,
+          "outcome_review_after_utc_day_close": true
+        }
+      },
+      "technical_eligibility": false,
+      "review_eligibility": false,
+      "closeout_eligible": false,
+      "flow_state": "REVIEWED_UNCERTAIN",
+      "failed_gates": [
+        "PRE_OUTCOME_CAPTURE_WINDOW_STORED",
+        "CAPTURED_WITHIN_WINDOW",
+        "STORED_LABEL_ACCEPTED_FOR_CLOSEOUT",
+        "HUMAN_REVIEWER_IDENTIFIED",
+        "AUTOMATIC_CLASSIFICATION_FALSE",
+        "COUNTS_TOWARD_CLOSEOUT_EXPLICIT_TRUE",
+        "OUTCOME_LABEL_SEMANTICS_SUPPORTED"
+      ],
+      "gates": [
+        {
+          "id": "DAY_CLOSED_UTC",
+          "category": "TEMPORAL",
+          "passed": true,
+          "evidence": {
+            "evaluation_as_of_utc": "2026-08-25T14:29:43.058459Z",
+            "target_day_close_utc": "2026-08-17T00:00:00Z"
+          }
+        },
+        {
+          "id": "PRE_OUTCOME_CAPTURE_WINDOW_STORED",
+          "category": "TECHNICAL",
+          "passed": false,
+          "evidence": {
+            "start_utc": null,
+            "end_utc": null,
+            "stored_captured_within_window": null
+          },
+          "contract_reference": "diagnostic_only"
+        },
+        {
+          "id": "CAPTURED_WITHIN_WINDOW",
+          "category": "TECHNICAL",
+          "passed": false,
+          "evidence": {
+            "stored": null,
+            "computed": false,
+            "archived_at": "2026-08-16T17:56:04.199711+00:00",
+            "computed_start_utc": "2026-08-15T12:00:00Z",
+            "computed_end_utc": "2026-08-16T02:00:00Z"
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.snapshot_captured_within_pre_outcome_window"
+        },
+        {
+          "id": "ALL_PILOTS_PRESENT",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "expected": [
+              "san_ildefonso",
+              "chosica",
+              "catacaos"
+            ],
+            "present": [
+              "san_ildefonso",
+              "chosica",
+              "catacaos"
+            ],
+            "missing": [],
+            "unexpected": []
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.all_pilots_present"
+        },
+        {
+          "id": "ALL_RECOMMENDATIONS_TEST_ONLY",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "san_ildefonso": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "chosica": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "catacaos": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.all_recommendations_test_only"
+        },
+        {
+          "id": "NO_OPERATIONAL_ALERTS",
+          "category": "SAFETY",
+          "passed": true,
+          "evidence": {
+            "san_ildefonso": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "chosica": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "catacaos": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            }
+          },
+          "contract_reference": "diagnostic_redundant_with_all_recommendations_test_only"
+        },
+        {
+          "id": "FORECAST_AVAILABLE",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": true,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_available"
+        },
+        {
+          "id": "FORECAST_COVERS_TARGET_DAY",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "stored": null,
+            "computed": true,
+            "required_future_hours": 6.065500080277777,
+            "available_future_hours_by_pilot": {
+              "san_ildefonso": 85,
+              "chosica": 85,
+              "catacaos": 85
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_covers_target_day"
+        },
+        {
+          "id": "MATURE_PAIRS_PER_PILOT",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "minimum_required": 30,
+            "by_pilot": {
+              "san_ildefonso": 46,
+              "chosica": 46,
+              "catacaos": 46
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_pairs_mature_at_snapshot"
+        },
+        {
+          "id": "IMERG_EARLY_AVAILABLE",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": "EARLY_HALFHOURLY_SOURCE_AVAILABLE",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.imerg_early_available"
+        },
+        {
+          "id": "IMERG_EARLY_LATENCY_RECORDED",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": 5.39,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.imerg_latency_recorded"
+        },
+        {
+          "id": "REGRESSION_PASS",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": "PASS",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.regression_passed"
+        },
+        {
+          "id": "PRODUCTION_USE_FALSE",
+          "category": "SAFETY",
+          "passed": true,
+          "evidence": false,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.snapshot_not_production"
+        },
+        {
+          "id": "HUMAN_REVIEW_COMPLETED",
+          "category": "HUMAN_REVIEW",
+          "passed": true,
+          "evidence": "REVIEWED_REAL_WORLD_OUTCOME",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_status_reviewed"
+        },
+        {
+          "id": "STORED_LABEL_ACCEPTED_FOR_CLOSEOUT",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": "UNCERTAIN",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_label_accepted"
+        },
+        {
+          "id": "OFFICIAL_SOURCES_VALID",
+          "category": "HUMAN_REVIEW",
+          "passed": true,
+          "evidence": {
+            "sources": [
+              "https://www.senamhi.gob.pe/main.php?dp=piura&p=aviso-24H",
+              "https://www.senamhi.gob.pe/?p=aviso-activacion-quebrada",
+              "https://portal.indeci.gob.pe/emergencias/"
+            ],
+            "invalid_sources": []
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_official_sources_recorded"
+        },
+        {
+          "id": "HUMAN_REVIEWER_IDENTIFIED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_named_human_reviewer"
+        },
+        {
+          "id": "AUTOMATIC_CLASSIFICATION_FALSE",
+          "category": "SAFETY",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_not_automatic"
+        },
+        {
+          "id": "COUNTS_TOWARD_CLOSEOUT_EXPLICIT_TRUE",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": false,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_counts_toward_closeout_explicit"
+        },
+        {
+          "id": "OUTCOME_LABEL_SEMANTICS_SUPPORTED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": {
+            "stored_label": "UNCERTAIN",
+            "verified_event": null,
+            "comprehensive_none_coverage": null
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_label_semantics_supported"
+        },
+        {
+          "id": "REVIEW_AFTER_UTC_DAY_CLOSE",
+          "category": "TEMPORAL",
+          "passed": true,
+          "evidence": {
+            "reviewed_at": "2026-08-17T03:12:50.762311+00:00",
+            "target_day_close_utc": "2026-08-17T00:00:00Z"
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_review_after_utc_day_close"
+        }
+      ]
+    },
+    {
+      "snapshot_date_utc": "2026-08-17",
+      "target_day_close_utc": "2026-08-18T00:00:00Z",
+      "day_closed_utc": true,
+      "capture_window": {
+        "stored_start_utc": null,
+        "stored_end_utc": null,
+        "stored_captured_within_window": null,
+        "computed_start_utc": "2026-08-16T12:00:00Z",
+        "computed_end_utc": "2026-08-17T02:00:00Z",
+        "computed_captured_within_window": false,
+        "captured_within_window": false,
+        "calculation_available": true,
+        "evidence_state": "CALCULATED"
+      },
+      "pilots": {
+        "expected": [
+          "san_ildefonso",
+          "chosica",
+          "catacaos"
+        ],
+        "present": [
+          "san_ildefonso",
+          "chosica",
+          "catacaos"
+        ],
+        "missing": [],
+        "unexpected": [],
+        "all_present": true,
+        "test_only_recommendations": {
+          "san_ildefonso": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          },
+          "chosica": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          },
+          "catacaos": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          }
+        },
+        "all_test_only": true,
+        "all_non_operational": true
+      },
+      "forecast": {
+        "available": true,
+        "stored_covers_target_day": null,
+        "computed_covers_target_day": true,
+        "covers_target_day": true,
+        "required_future_hours": 4.732486185555556,
+        "available_future_hours_by_pilot": {
+          "san_ildefonso": 85,
+          "chosica": 85,
+          "catacaos": 85
+        },
+        "mature_pairs_by_pilot": {
+          "san_ildefonso": 49,
+          "chosica": 49,
+          "catacaos": 49
+        },
+        "minimum_mature_pairs_per_pilot": 30
+      },
+      "imerg_early": {
+        "status": "EARLY_HALFHOURLY_SOURCE_AVAILABLE",
+        "available": true,
+        "latency_hours": 5.33
+      },
+      "regression_status": "PASS",
+      "operational_dataset_status": {
+        "value": "updated",
+        "role": "ANNOTATION_ONLY",
+        "is_eligibility_gate": false
+      },
+      "human_review": {
+        "raw_status": "REVIEWED_REAL_WORLD_OUTCOME",
+        "state": "REVIEWED",
+        "reviewed_at": "2026-08-20T11:15:44.314275+00:00",
+        "review_after_utc_day_close": true,
+        "reviewer": null,
+        "reviewer_identified": false,
+        "automatic": false,
+        "official_sources": [
+          "https://portal.indeci.gob.pe/emergencias/?s=17%2F8%2F2026",
+          "https://www.senamhi.gob.pe/?p=aviso-activacion-quebrada&f=17-08-2026"
+        ],
+        "official_sources_valid": true,
+        "invalid_official_sources": [],
+        "stored_label": "UNCERTAIN",
+        "evidence_state": "UNCERTAIN",
+        "verified_event": null,
+        "comprehensive_none_coverage": false,
+        "counts_toward_closeout": false
+      },
+      "scorecard_eligibility": {
+        "eligible": false,
+        "checks": {
+          "snapshot_not_production": true,
+          "snapshot_captured_within_pre_outcome_window": false,
+          "all_pilots_present": true,
+          "all_recommendations_test_only": true,
+          "forecast_available": true,
+          "forecast_covers_target_day": true,
+          "forecast_pairs_mature_at_snapshot": true,
+          "imerg_early_available": true,
+          "imerg_latency_recorded": true,
+          "regression_passed": true,
+          "outcome_status_reviewed": true,
+          "outcome_label_accepted": false,
+          "outcome_official_sources_recorded": true,
+          "outcome_named_human_reviewer": false,
+          "outcome_not_automatic": true,
+          "outcome_counts_toward_closeout_explicit": false,
+          "outcome_label_semantics_supported": false,
+          "outcome_review_after_utc_day_close": true
+        }
+      },
+      "technical_eligibility": false,
+      "review_eligibility": false,
+      "closeout_eligible": false,
+      "flow_state": "REVIEWED_UNCERTAIN",
+      "failed_gates": [
+        "PRE_OUTCOME_CAPTURE_WINDOW_STORED",
+        "CAPTURED_WITHIN_WINDOW",
+        "STORED_LABEL_ACCEPTED_FOR_CLOSEOUT",
+        "HUMAN_REVIEWER_IDENTIFIED",
+        "COUNTS_TOWARD_CLOSEOUT_EXPLICIT_TRUE",
+        "OUTCOME_LABEL_SEMANTICS_SUPPORTED"
+      ],
+      "gates": [
+        {
+          "id": "DAY_CLOSED_UTC",
+          "category": "TEMPORAL",
+          "passed": true,
+          "evidence": {
+            "evaluation_as_of_utc": "2026-08-25T14:29:43.058459Z",
+            "target_day_close_utc": "2026-08-18T00:00:00Z"
+          }
+        },
+        {
+          "id": "PRE_OUTCOME_CAPTURE_WINDOW_STORED",
+          "category": "TECHNICAL",
+          "passed": false,
+          "evidence": {
+            "start_utc": null,
+            "end_utc": null,
+            "stored_captured_within_window": null
+          },
+          "contract_reference": "diagnostic_only"
+        },
+        {
+          "id": "CAPTURED_WITHIN_WINDOW",
+          "category": "TECHNICAL",
+          "passed": false,
+          "evidence": {
+            "stored": null,
+            "computed": false,
+            "archived_at": "2026-08-17T19:16:03.049732+00:00",
+            "computed_start_utc": "2026-08-16T12:00:00Z",
+            "computed_end_utc": "2026-08-17T02:00:00Z"
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.snapshot_captured_within_pre_outcome_window"
+        },
+        {
+          "id": "ALL_PILOTS_PRESENT",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "expected": [
+              "san_ildefonso",
+              "chosica",
+              "catacaos"
+            ],
+            "present": [
+              "san_ildefonso",
+              "chosica",
+              "catacaos"
+            ],
+            "missing": [],
+            "unexpected": []
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.all_pilots_present"
+        },
+        {
+          "id": "ALL_RECOMMENDATIONS_TEST_ONLY",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "san_ildefonso": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "chosica": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "catacaos": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.all_recommendations_test_only"
+        },
+        {
+          "id": "NO_OPERATIONAL_ALERTS",
+          "category": "SAFETY",
+          "passed": true,
+          "evidence": {
+            "san_ildefonso": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "chosica": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "catacaos": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            }
+          },
+          "contract_reference": "diagnostic_redundant_with_all_recommendations_test_only"
+        },
+        {
+          "id": "FORECAST_AVAILABLE",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": true,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_available"
+        },
+        {
+          "id": "FORECAST_COVERS_TARGET_DAY",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "stored": null,
+            "computed": true,
+            "required_future_hours": 4.732486185555556,
+            "available_future_hours_by_pilot": {
+              "san_ildefonso": 85,
+              "chosica": 85,
+              "catacaos": 85
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_covers_target_day"
+        },
+        {
+          "id": "MATURE_PAIRS_PER_PILOT",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "minimum_required": 30,
+            "by_pilot": {
+              "san_ildefonso": 49,
+              "chosica": 49,
+              "catacaos": 49
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_pairs_mature_at_snapshot"
+        },
+        {
+          "id": "IMERG_EARLY_AVAILABLE",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": "EARLY_HALFHOURLY_SOURCE_AVAILABLE",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.imerg_early_available"
+        },
+        {
+          "id": "IMERG_EARLY_LATENCY_RECORDED",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": 5.33,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.imerg_latency_recorded"
+        },
+        {
+          "id": "REGRESSION_PASS",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": "PASS",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.regression_passed"
+        },
+        {
+          "id": "PRODUCTION_USE_FALSE",
+          "category": "SAFETY",
+          "passed": true,
+          "evidence": false,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.snapshot_not_production"
+        },
+        {
+          "id": "HUMAN_REVIEW_COMPLETED",
+          "category": "HUMAN_REVIEW",
+          "passed": true,
+          "evidence": "REVIEWED_REAL_WORLD_OUTCOME",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_status_reviewed"
+        },
+        {
+          "id": "STORED_LABEL_ACCEPTED_FOR_CLOSEOUT",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": "UNCERTAIN",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_label_accepted"
+        },
+        {
+          "id": "OFFICIAL_SOURCES_VALID",
+          "category": "HUMAN_REVIEW",
+          "passed": true,
+          "evidence": {
+            "sources": [
+              "https://portal.indeci.gob.pe/emergencias/?s=17%2F8%2F2026",
+              "https://www.senamhi.gob.pe/?p=aviso-activacion-quebrada&f=17-08-2026"
+            ],
+            "invalid_sources": []
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_official_sources_recorded"
+        },
+        {
+          "id": "HUMAN_REVIEWER_IDENTIFIED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_named_human_reviewer"
+        },
+        {
+          "id": "AUTOMATIC_CLASSIFICATION_FALSE",
+          "category": "SAFETY",
+          "passed": true,
+          "evidence": false,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_not_automatic"
+        },
+        {
+          "id": "COUNTS_TOWARD_CLOSEOUT_EXPLICIT_TRUE",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": false,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_counts_toward_closeout_explicit"
+        },
+        {
+          "id": "OUTCOME_LABEL_SEMANTICS_SUPPORTED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": {
+            "stored_label": "UNCERTAIN",
+            "verified_event": null,
+            "comprehensive_none_coverage": false
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_label_semantics_supported"
+        },
+        {
+          "id": "REVIEW_AFTER_UTC_DAY_CLOSE",
+          "category": "TEMPORAL",
+          "passed": true,
+          "evidence": {
+            "reviewed_at": "2026-08-20T11:15:44.314275+00:00",
+            "target_day_close_utc": "2026-08-18T00:00:00Z"
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_review_after_utc_day_close"
+        }
+      ]
+    },
+    {
+      "snapshot_date_utc": "2026-08-19",
+      "target_day_close_utc": "2026-08-20T00:00:00Z",
+      "day_closed_utc": true,
+      "capture_window": {
+        "stored_start_utc": "2026-08-18T12:00:00+00:00",
+        "stored_end_utc": "2026-08-19T02:00:00+00:00",
+        "stored_captured_within_window": true,
+        "computed_start_utc": "2026-08-18T12:00:00Z",
+        "computed_end_utc": "2026-08-19T02:00:00Z",
+        "computed_captured_within_window": true,
+        "captured_within_window": true,
+        "calculation_available": true,
+        "evidence_state": "STORED_AND_CALCULATED"
+      },
+      "pilots": {
+        "expected": [
+          "san_ildefonso",
+          "chosica",
+          "catacaos"
+        ],
+        "present": [
+          "san_ildefonso",
+          "chosica",
+          "catacaos"
+        ],
+        "missing": [],
+        "unexpected": [],
+        "all_present": true,
+        "test_only_recommendations": {
+          "san_ildefonso": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          },
+          "chosica": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          },
+          "catacaos": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          }
+        },
+        "all_test_only": true,
+        "all_non_operational": true
+      },
+      "forecast": {
+        "available": true,
+        "stored_covers_target_day": true,
+        "computed_covers_target_day": true,
+        "covers_target_day": true,
+        "required_future_hours": 33.75715839555556,
+        "available_future_hours_by_pilot": {
+          "san_ildefonso": 85,
+          "chosica": 85,
+          "catacaos": 85
+        },
+        "mature_pairs_by_pilot": {
+          "san_ildefonso": 45,
+          "chosica": 45,
+          "catacaos": 45
+        },
+        "minimum_mature_pairs_per_pilot": 30
+      },
+      "imerg_early": {
+        "status": "EARLY_HALFHOURLY_SOURCE_AVAILABLE",
+        "available": true,
+        "latency_hours": 5.54
+      },
+      "regression_status": "PASS",
+      "operational_dataset_status": {
+        "value": "updated",
+        "role": "ANNOTATION_ONLY",
+        "is_eligibility_gate": false
+      },
+      "human_review": {
+        "raw_status": "REVIEWED_REAL_WORLD_OUTCOME",
+        "state": "REVIEWED",
+        "reviewed_at": "2026-08-20T11:15:44.343531+00:00",
+        "review_after_utc_day_close": true,
+        "reviewer": null,
+        "reviewer_identified": false,
+        "automatic": false,
+        "official_sources": [
+          "https://portal.indeci.gob.pe/emergencias/?s=19%2F8%2F2026",
+          "https://www.senamhi.gob.pe/?p=aviso-activacion-quebrada&f=19-08-2026"
+        ],
+        "official_sources_valid": true,
+        "invalid_official_sources": [],
+        "stored_label": "UNCERTAIN",
+        "evidence_state": "UNCERTAIN",
+        "verified_event": null,
+        "comprehensive_none_coverage": false,
+        "counts_toward_closeout": false
+      },
+      "scorecard_eligibility": {
+        "eligible": false,
+        "checks": {
+          "snapshot_not_production": true,
+          "snapshot_captured_within_pre_outcome_window": true,
+          "all_pilots_present": true,
+          "all_recommendations_test_only": true,
+          "forecast_available": true,
+          "forecast_covers_target_day": true,
+          "forecast_pairs_mature_at_snapshot": true,
+          "imerg_early_available": true,
+          "imerg_latency_recorded": true,
+          "regression_passed": true,
+          "outcome_status_reviewed": true,
+          "outcome_label_accepted": false,
+          "outcome_official_sources_recorded": true,
+          "outcome_named_human_reviewer": false,
+          "outcome_not_automatic": true,
+          "outcome_counts_toward_closeout_explicit": false,
+          "outcome_label_semantics_supported": false,
+          "outcome_review_after_utc_day_close": true
+        }
+      },
+      "technical_eligibility": true,
+      "review_eligibility": false,
+      "closeout_eligible": false,
+      "flow_state": "REVIEWED_UNCERTAIN",
+      "failed_gates": [
+        "STORED_LABEL_ACCEPTED_FOR_CLOSEOUT",
+        "HUMAN_REVIEWER_IDENTIFIED",
+        "COUNTS_TOWARD_CLOSEOUT_EXPLICIT_TRUE",
+        "OUTCOME_LABEL_SEMANTICS_SUPPORTED"
+      ],
+      "gates": [
+        {
+          "id": "DAY_CLOSED_UTC",
+          "category": "TEMPORAL",
+          "passed": true,
+          "evidence": {
+            "evaluation_as_of_utc": "2026-08-25T14:29:43.058459Z",
+            "target_day_close_utc": "2026-08-20T00:00:00Z"
+          }
+        },
+        {
+          "id": "PRE_OUTCOME_CAPTURE_WINDOW_STORED",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "start_utc": "2026-08-18T12:00:00+00:00",
+            "end_utc": "2026-08-19T02:00:00+00:00",
+            "stored_captured_within_window": true
+          },
+          "contract_reference": "diagnostic_only"
+        },
+        {
+          "id": "CAPTURED_WITHIN_WINDOW",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "stored": true,
+            "computed": true,
+            "archived_at": "2026-08-18T14:14:34.229776+00:00",
+            "computed_start_utc": "2026-08-18T12:00:00Z",
+            "computed_end_utc": "2026-08-19T02:00:00Z"
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.snapshot_captured_within_pre_outcome_window"
+        },
+        {
+          "id": "ALL_PILOTS_PRESENT",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "expected": [
+              "san_ildefonso",
+              "chosica",
+              "catacaos"
+            ],
+            "present": [
+              "san_ildefonso",
+              "chosica",
+              "catacaos"
+            ],
+            "missing": [],
+            "unexpected": []
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.all_pilots_present"
+        },
+        {
+          "id": "ALL_RECOMMENDATIONS_TEST_ONLY",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "san_ildefonso": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "chosica": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "catacaos": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.all_recommendations_test_only"
+        },
+        {
+          "id": "NO_OPERATIONAL_ALERTS",
+          "category": "SAFETY",
+          "passed": true,
+          "evidence": {
+            "san_ildefonso": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "chosica": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "catacaos": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            }
+          },
+          "contract_reference": "diagnostic_redundant_with_all_recommendations_test_only"
+        },
+        {
+          "id": "FORECAST_AVAILABLE",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": true,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_available"
+        },
+        {
+          "id": "FORECAST_COVERS_TARGET_DAY",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "stored": true,
+            "computed": true,
+            "required_future_hours": 33.75715839555556,
+            "available_future_hours_by_pilot": {
+              "san_ildefonso": 85,
+              "chosica": 85,
+              "catacaos": 85
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_covers_target_day"
+        },
+        {
+          "id": "MATURE_PAIRS_PER_PILOT",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "minimum_required": 30,
+            "by_pilot": {
+              "san_ildefonso": 45,
+              "chosica": 45,
+              "catacaos": 45
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_pairs_mature_at_snapshot"
+        },
+        {
+          "id": "IMERG_EARLY_AVAILABLE",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": "EARLY_HALFHOURLY_SOURCE_AVAILABLE",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.imerg_early_available"
+        },
+        {
+          "id": "IMERG_EARLY_LATENCY_RECORDED",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": 5.54,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.imerg_latency_recorded"
+        },
+        {
+          "id": "REGRESSION_PASS",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": "PASS",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.regression_passed"
+        },
+        {
+          "id": "PRODUCTION_USE_FALSE",
+          "category": "SAFETY",
+          "passed": true,
+          "evidence": false,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.snapshot_not_production"
+        },
+        {
+          "id": "HUMAN_REVIEW_COMPLETED",
+          "category": "HUMAN_REVIEW",
+          "passed": true,
+          "evidence": "REVIEWED_REAL_WORLD_OUTCOME",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_status_reviewed"
+        },
+        {
+          "id": "STORED_LABEL_ACCEPTED_FOR_CLOSEOUT",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": "UNCERTAIN",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_label_accepted"
+        },
+        {
+          "id": "OFFICIAL_SOURCES_VALID",
+          "category": "HUMAN_REVIEW",
+          "passed": true,
+          "evidence": {
+            "sources": [
+              "https://portal.indeci.gob.pe/emergencias/?s=19%2F8%2F2026",
+              "https://www.senamhi.gob.pe/?p=aviso-activacion-quebrada&f=19-08-2026"
+            ],
+            "invalid_sources": []
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_official_sources_recorded"
+        },
+        {
+          "id": "HUMAN_REVIEWER_IDENTIFIED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_named_human_reviewer"
+        },
+        {
+          "id": "AUTOMATIC_CLASSIFICATION_FALSE",
+          "category": "SAFETY",
+          "passed": true,
+          "evidence": false,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_not_automatic"
+        },
+        {
+          "id": "COUNTS_TOWARD_CLOSEOUT_EXPLICIT_TRUE",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": false,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_counts_toward_closeout_explicit"
+        },
+        {
+          "id": "OUTCOME_LABEL_SEMANTICS_SUPPORTED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": {
+            "stored_label": "UNCERTAIN",
+            "verified_event": null,
+            "comprehensive_none_coverage": false
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_label_semantics_supported"
+        },
+        {
+          "id": "REVIEW_AFTER_UTC_DAY_CLOSE",
+          "category": "TEMPORAL",
+          "passed": true,
+          "evidence": {
+            "reviewed_at": "2026-08-20T11:15:44.343531+00:00",
+            "target_day_close_utc": "2026-08-20T00:00:00Z"
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_review_after_utc_day_close"
+        }
+      ]
+    },
+    {
+      "snapshot_date_utc": "2026-08-20",
+      "target_day_close_utc": "2026-08-21T00:00:00Z",
+      "day_closed_utc": true,
+      "capture_window": {
+        "stored_start_utc": "2026-08-19T12:00:00+00:00",
+        "stored_end_utc": "2026-08-20T02:00:00+00:00",
+        "stored_captured_within_window": true,
+        "computed_start_utc": "2026-08-19T12:00:00Z",
+        "computed_end_utc": "2026-08-20T02:00:00Z",
+        "computed_captured_within_window": true,
+        "captured_within_window": true,
+        "calculation_available": true,
+        "evidence_state": "STORED_AND_CALCULATED"
+      },
+      "pilots": {
+        "expected": [
+          "san_ildefonso",
+          "chosica",
+          "catacaos"
+        ],
+        "present": [
+          "san_ildefonso",
+          "chosica",
+          "catacaos"
+        ],
+        "missing": [],
+        "unexpected": [],
+        "all_present": true,
+        "test_only_recommendations": {
+          "san_ildefonso": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          },
+          "chosica": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          },
+          "catacaos": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          }
+        },
+        "all_test_only": true,
+        "all_non_operational": true
+      },
+      "forecast": {
+        "available": true,
+        "stored_covers_target_day": true,
+        "computed_covers_target_day": true,
+        "covers_target_day": true,
+        "required_future_hours": 33.84744029861111,
+        "available_future_hours_by_pilot": {
+          "san_ildefonso": 85,
+          "chosica": 85,
+          "catacaos": 85
+        },
+        "mature_pairs_by_pilot": {
+          "san_ildefonso": 48,
+          "chosica": 48,
+          "catacaos": 48
+        },
+        "minimum_mature_pairs_per_pilot": 30
+      },
+      "imerg_early": {
+        "status": "EARLY_HALFHOURLY_SOURCE_AVAILABLE",
+        "available": true,
+        "latency_hours": 5.52
+      },
+      "regression_status": "PASS",
+      "operational_dataset_status": {
+        "value": "updated",
+        "role": "ANNOTATION_ONLY",
+        "is_eligibility_gate": false
+      },
+      "human_review": {
+        "raw_status": "PENDING_REAL_WORLD_OUTCOME_REVIEW",
+        "state": "PENDING",
+        "reviewed_at": null,
+        "review_after_utc_day_close": false,
+        "reviewer": null,
+        "reviewer_identified": false,
+        "automatic": null,
+        "official_sources": [],
+        "official_sources_valid": false,
+        "invalid_official_sources": [],
+        "stored_label": null,
+        "evidence_state": "UNKNOWN",
+        "verified_event": null,
+        "comprehensive_none_coverage": null,
+        "counts_toward_closeout": null
+      },
+      "scorecard_eligibility": {
+        "eligible": false,
+        "checks": {
+          "snapshot_not_production": true,
+          "snapshot_captured_within_pre_outcome_window": true,
+          "all_pilots_present": true,
+          "all_recommendations_test_only": true,
+          "forecast_available": true,
+          "forecast_covers_target_day": true,
+          "forecast_pairs_mature_at_snapshot": true,
+          "imerg_early_available": true,
+          "imerg_latency_recorded": true,
+          "regression_passed": true,
+          "outcome_status_reviewed": false,
+          "outcome_label_accepted": false,
+          "outcome_official_sources_recorded": false,
+          "outcome_named_human_reviewer": false,
+          "outcome_not_automatic": false,
+          "outcome_counts_toward_closeout_explicit": false,
+          "outcome_label_semantics_supported": false,
+          "outcome_review_after_utc_day_close": false
+        }
+      },
+      "technical_eligibility": true,
+      "review_eligibility": false,
+      "closeout_eligible": false,
+      "flow_state": "READY_FOR_HUMAN_REVIEW",
+      "failed_gates": [
+        "HUMAN_REVIEW_COMPLETED",
+        "STORED_LABEL_ACCEPTED_FOR_CLOSEOUT",
+        "OFFICIAL_SOURCES_VALID",
+        "HUMAN_REVIEWER_IDENTIFIED",
+        "AUTOMATIC_CLASSIFICATION_FALSE",
+        "COUNTS_TOWARD_CLOSEOUT_EXPLICIT_TRUE",
+        "OUTCOME_LABEL_SEMANTICS_SUPPORTED",
+        "REVIEW_AFTER_UTC_DAY_CLOSE"
+      ],
+      "gates": [
+        {
+          "id": "DAY_CLOSED_UTC",
+          "category": "TEMPORAL",
+          "passed": true,
+          "evidence": {
+            "evaluation_as_of_utc": "2026-08-25T14:29:43.058459Z",
+            "target_day_close_utc": "2026-08-21T00:00:00Z"
+          }
+        },
+        {
+          "id": "PRE_OUTCOME_CAPTURE_WINDOW_STORED",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "start_utc": "2026-08-19T12:00:00+00:00",
+            "end_utc": "2026-08-20T02:00:00+00:00",
+            "stored_captured_within_window": true
+          },
+          "contract_reference": "diagnostic_only"
+        },
+        {
+          "id": "CAPTURED_WITHIN_WINDOW",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "stored": true,
+            "computed": true,
+            "archived_at": "2026-08-19T14:09:09.214925+00:00",
+            "computed_start_utc": "2026-08-19T12:00:00Z",
+            "computed_end_utc": "2026-08-20T02:00:00Z"
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.snapshot_captured_within_pre_outcome_window"
+        },
+        {
+          "id": "ALL_PILOTS_PRESENT",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "expected": [
+              "san_ildefonso",
+              "chosica",
+              "catacaos"
+            ],
+            "present": [
+              "san_ildefonso",
+              "chosica",
+              "catacaos"
+            ],
+            "missing": [],
+            "unexpected": []
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.all_pilots_present"
+        },
+        {
+          "id": "ALL_RECOMMENDATIONS_TEST_ONLY",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "san_ildefonso": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "chosica": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "catacaos": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.all_recommendations_test_only"
+        },
+        {
+          "id": "NO_OPERATIONAL_ALERTS",
+          "category": "SAFETY",
+          "passed": true,
+          "evidence": {
+            "san_ildefonso": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "chosica": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "catacaos": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            }
+          },
+          "contract_reference": "diagnostic_redundant_with_all_recommendations_test_only"
+        },
+        {
+          "id": "FORECAST_AVAILABLE",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": true,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_available"
+        },
+        {
+          "id": "FORECAST_COVERS_TARGET_DAY",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "stored": true,
+            "computed": true,
+            "required_future_hours": 33.84744029861111,
+            "available_future_hours_by_pilot": {
+              "san_ildefonso": 85,
+              "chosica": 85,
+              "catacaos": 85
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_covers_target_day"
+        },
+        {
+          "id": "MATURE_PAIRS_PER_PILOT",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "minimum_required": 30,
+            "by_pilot": {
+              "san_ildefonso": 48,
+              "chosica": 48,
+              "catacaos": 48
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_pairs_mature_at_snapshot"
+        },
+        {
+          "id": "IMERG_EARLY_AVAILABLE",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": "EARLY_HALFHOURLY_SOURCE_AVAILABLE",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.imerg_early_available"
+        },
+        {
+          "id": "IMERG_EARLY_LATENCY_RECORDED",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": 5.52,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.imerg_latency_recorded"
+        },
+        {
+          "id": "REGRESSION_PASS",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": "PASS",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.regression_passed"
+        },
+        {
+          "id": "PRODUCTION_USE_FALSE",
+          "category": "SAFETY",
+          "passed": true,
+          "evidence": false,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.snapshot_not_production"
+        },
+        {
+          "id": "HUMAN_REVIEW_COMPLETED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": "PENDING_REAL_WORLD_OUTCOME_REVIEW",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_status_reviewed"
+        },
+        {
+          "id": "STORED_LABEL_ACCEPTED_FOR_CLOSEOUT",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_label_accepted"
+        },
+        {
+          "id": "OFFICIAL_SOURCES_VALID",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": {
+            "sources": [],
+            "invalid_sources": []
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_official_sources_recorded"
+        },
+        {
+          "id": "HUMAN_REVIEWER_IDENTIFIED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_named_human_reviewer"
+        },
+        {
+          "id": "AUTOMATIC_CLASSIFICATION_FALSE",
+          "category": "SAFETY",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_not_automatic"
+        },
+        {
+          "id": "COUNTS_TOWARD_CLOSEOUT_EXPLICIT_TRUE",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_counts_toward_closeout_explicit"
+        },
+        {
+          "id": "OUTCOME_LABEL_SEMANTICS_SUPPORTED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": {
+            "stored_label": null,
+            "verified_event": null,
+            "comprehensive_none_coverage": null
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_label_semantics_supported"
+        },
+        {
+          "id": "REVIEW_AFTER_UTC_DAY_CLOSE",
+          "category": "TEMPORAL",
+          "passed": false,
+          "evidence": {
+            "reviewed_at": null,
+            "target_day_close_utc": "2026-08-21T00:00:00Z"
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_review_after_utc_day_close"
+        }
+      ]
+    },
+    {
+      "snapshot_date_utc": "2026-08-21",
+      "target_day_close_utc": "2026-08-22T00:00:00Z",
+      "day_closed_utc": true,
+      "capture_window": {
+        "stored_start_utc": "2026-08-20T12:00:00+00:00",
+        "stored_end_utc": "2026-08-21T02:00:00+00:00",
+        "stored_captured_within_window": true,
+        "computed_start_utc": "2026-08-20T12:00:00Z",
+        "computed_end_utc": "2026-08-21T02:00:00Z",
+        "computed_captured_within_window": true,
+        "captured_within_window": true,
+        "calculation_available": true,
+        "evidence_state": "STORED_AND_CALCULATED"
+      },
+      "pilots": {
+        "expected": [
+          "san_ildefonso",
+          "chosica",
+          "catacaos"
+        ],
+        "present": [
+          "san_ildefonso",
+          "chosica",
+          "catacaos"
+        ],
+        "missing": [],
+        "unexpected": [],
+        "all_present": true,
+        "test_only_recommendations": {
+          "san_ildefonso": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          },
+          "chosica": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          },
+          "catacaos": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          }
+        },
+        "all_test_only": true,
+        "all_non_operational": true
+      },
+      "forecast": {
+        "available": true,
+        "stored_covers_target_day": true,
+        "computed_covers_target_day": true,
+        "covers_target_day": true,
+        "required_future_hours": 33.67556650861111,
+        "available_future_hours_by_pilot": {
+          "san_ildefonso": 85,
+          "chosica": 85,
+          "catacaos": 85
+        },
+        "mature_pairs_by_pilot": {
+          "san_ildefonso": 56,
+          "chosica": 56,
+          "catacaos": 56
+        },
+        "minimum_mature_pairs_per_pilot": 30
+      },
+      "imerg_early": {
+        "status": "SOURCE_TEMPORARILY_UNREACHABLE",
+        "available": false,
+        "latency_hours": null
+      },
+      "regression_status": "PASS",
+      "operational_dataset_status": {
+        "value": "stale",
+        "role": "ANNOTATION_ONLY",
+        "is_eligibility_gate": false
+      },
+      "human_review": {
+        "raw_status": "PENDING_REAL_WORLD_OUTCOME_REVIEW",
+        "state": "PENDING",
+        "reviewed_at": null,
+        "review_after_utc_day_close": false,
+        "reviewer": null,
+        "reviewer_identified": false,
+        "automatic": null,
+        "official_sources": [],
+        "official_sources_valid": false,
+        "invalid_official_sources": [],
+        "stored_label": null,
+        "evidence_state": "UNKNOWN",
+        "verified_event": null,
+        "comprehensive_none_coverage": null,
+        "counts_toward_closeout": null
+      },
+      "scorecard_eligibility": {
+        "eligible": false,
+        "checks": {
+          "snapshot_not_production": true,
+          "snapshot_captured_within_pre_outcome_window": true,
+          "all_pilots_present": true,
+          "all_recommendations_test_only": true,
+          "forecast_available": true,
+          "forecast_covers_target_day": true,
+          "forecast_pairs_mature_at_snapshot": true,
+          "imerg_early_available": false,
+          "imerg_latency_recorded": false,
+          "regression_passed": true,
+          "outcome_status_reviewed": false,
+          "outcome_label_accepted": false,
+          "outcome_official_sources_recorded": false,
+          "outcome_named_human_reviewer": false,
+          "outcome_not_automatic": false,
+          "outcome_counts_toward_closeout_explicit": false,
+          "outcome_label_semantics_supported": false,
+          "outcome_review_after_utc_day_close": false
+        }
+      },
+      "technical_eligibility": false,
+      "review_eligibility": false,
+      "closeout_eligible": false,
+      "flow_state": "TECHNICALLY_INELIGIBLE",
+      "failed_gates": [
+        "IMERG_EARLY_AVAILABLE",
+        "IMERG_EARLY_LATENCY_RECORDED",
+        "HUMAN_REVIEW_COMPLETED",
+        "STORED_LABEL_ACCEPTED_FOR_CLOSEOUT",
+        "OFFICIAL_SOURCES_VALID",
+        "HUMAN_REVIEWER_IDENTIFIED",
+        "AUTOMATIC_CLASSIFICATION_FALSE",
+        "COUNTS_TOWARD_CLOSEOUT_EXPLICIT_TRUE",
+        "OUTCOME_LABEL_SEMANTICS_SUPPORTED",
+        "REVIEW_AFTER_UTC_DAY_CLOSE"
+      ],
+      "gates": [
+        {
+          "id": "DAY_CLOSED_UTC",
+          "category": "TEMPORAL",
+          "passed": true,
+          "evidence": {
+            "evaluation_as_of_utc": "2026-08-25T14:29:43.058459Z",
+            "target_day_close_utc": "2026-08-22T00:00:00Z"
+          }
+        },
+        {
+          "id": "PRE_OUTCOME_CAPTURE_WINDOW_STORED",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "start_utc": "2026-08-20T12:00:00+00:00",
+            "end_utc": "2026-08-21T02:00:00+00:00",
+            "stored_captured_within_window": true
+          },
+          "contract_reference": "diagnostic_only"
+        },
+        {
+          "id": "CAPTURED_WITHIN_WINDOW",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "stored": true,
+            "computed": true,
+            "archived_at": "2026-08-20T14:19:27.960569+00:00",
+            "computed_start_utc": "2026-08-20T12:00:00Z",
+            "computed_end_utc": "2026-08-21T02:00:00Z"
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.snapshot_captured_within_pre_outcome_window"
+        },
+        {
+          "id": "ALL_PILOTS_PRESENT",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "expected": [
+              "san_ildefonso",
+              "chosica",
+              "catacaos"
+            ],
+            "present": [
+              "san_ildefonso",
+              "chosica",
+              "catacaos"
+            ],
+            "missing": [],
+            "unexpected": []
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.all_pilots_present"
+        },
+        {
+          "id": "ALL_RECOMMENDATIONS_TEST_ONLY",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "san_ildefonso": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "chosica": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "catacaos": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.all_recommendations_test_only"
+        },
+        {
+          "id": "NO_OPERATIONAL_ALERTS",
+          "category": "SAFETY",
+          "passed": true,
+          "evidence": {
+            "san_ildefonso": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "chosica": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "catacaos": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            }
+          },
+          "contract_reference": "diagnostic_redundant_with_all_recommendations_test_only"
+        },
+        {
+          "id": "FORECAST_AVAILABLE",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": true,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_available"
+        },
+        {
+          "id": "FORECAST_COVERS_TARGET_DAY",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "stored": true,
+            "computed": true,
+            "required_future_hours": 33.67556650861111,
+            "available_future_hours_by_pilot": {
+              "san_ildefonso": 85,
+              "chosica": 85,
+              "catacaos": 85
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_covers_target_day"
+        },
+        {
+          "id": "MATURE_PAIRS_PER_PILOT",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "minimum_required": 30,
+            "by_pilot": {
+              "san_ildefonso": 56,
+              "chosica": 56,
+              "catacaos": 56
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_pairs_mature_at_snapshot"
+        },
+        {
+          "id": "IMERG_EARLY_AVAILABLE",
+          "category": "TECHNICAL",
+          "passed": false,
+          "evidence": "SOURCE_TEMPORARILY_UNREACHABLE",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.imerg_early_available"
+        },
+        {
+          "id": "IMERG_EARLY_LATENCY_RECORDED",
+          "category": "TECHNICAL",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.imerg_latency_recorded"
+        },
+        {
+          "id": "REGRESSION_PASS",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": "PASS",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.regression_passed"
+        },
+        {
+          "id": "PRODUCTION_USE_FALSE",
+          "category": "SAFETY",
+          "passed": true,
+          "evidence": false,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.snapshot_not_production"
+        },
+        {
+          "id": "HUMAN_REVIEW_COMPLETED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": "PENDING_REAL_WORLD_OUTCOME_REVIEW",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_status_reviewed"
+        },
+        {
+          "id": "STORED_LABEL_ACCEPTED_FOR_CLOSEOUT",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_label_accepted"
+        },
+        {
+          "id": "OFFICIAL_SOURCES_VALID",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": {
+            "sources": [],
+            "invalid_sources": []
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_official_sources_recorded"
+        },
+        {
+          "id": "HUMAN_REVIEWER_IDENTIFIED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_named_human_reviewer"
+        },
+        {
+          "id": "AUTOMATIC_CLASSIFICATION_FALSE",
+          "category": "SAFETY",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_not_automatic"
+        },
+        {
+          "id": "COUNTS_TOWARD_CLOSEOUT_EXPLICIT_TRUE",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_counts_toward_closeout_explicit"
+        },
+        {
+          "id": "OUTCOME_LABEL_SEMANTICS_SUPPORTED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": {
+            "stored_label": null,
+            "verified_event": null,
+            "comprehensive_none_coverage": null
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_label_semantics_supported"
+        },
+        {
+          "id": "REVIEW_AFTER_UTC_DAY_CLOSE",
+          "category": "TEMPORAL",
+          "passed": false,
+          "evidence": {
+            "reviewed_at": null,
+            "target_day_close_utc": "2026-08-22T00:00:00Z"
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_review_after_utc_day_close"
+        }
+      ]
+    },
+    {
+      "snapshot_date_utc": "2026-08-22",
+      "target_day_close_utc": "2026-08-23T00:00:00Z",
+      "day_closed_utc": true,
+      "capture_window": {
+        "stored_start_utc": "2026-08-21T12:00:00+00:00",
+        "stored_end_utc": "2026-08-22T02:00:00+00:00",
+        "stored_captured_within_window": true,
+        "computed_start_utc": "2026-08-21T12:00:00Z",
+        "computed_end_utc": "2026-08-22T02:00:00Z",
+        "computed_captured_within_window": true,
+        "captured_within_window": true,
+        "calculation_available": true,
+        "evidence_state": "STORED_AND_CALCULATED"
+      },
+      "pilots": {
+        "expected": [
+          "san_ildefonso",
+          "chosica",
+          "catacaos"
+        ],
+        "present": [
+          "san_ildefonso",
+          "chosica",
+          "catacaos"
+        ],
+        "missing": [],
+        "unexpected": [],
+        "all_present": true,
+        "test_only_recommendations": {
+          "san_ildefonso": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          },
+          "chosica": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          },
+          "catacaos": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          }
+        },
+        "all_test_only": true,
+        "all_non_operational": true
+      },
+      "forecast": {
+        "available": true,
+        "stored_covers_target_day": true,
+        "computed_covers_target_day": true,
+        "covers_target_day": true,
+        "required_future_hours": 33.854778350277776,
+        "available_future_hours_by_pilot": {
+          "san_ildefonso": 85,
+          "chosica": 85,
+          "catacaos": 85
+        },
+        "mature_pairs_by_pilot": {
+          "san_ildefonso": 59,
+          "chosica": 59,
+          "catacaos": 59
+        },
+        "minimum_mature_pairs_per_pilot": 30
+      },
+      "imerg_early": {
+        "status": "EARLY_HALFHOURLY_SOURCE_AVAILABLE",
+        "available": true,
+        "latency_hours": 5.51
+      },
+      "regression_status": "PASS",
+      "operational_dataset_status": {
+        "value": "updated",
+        "role": "ANNOTATION_ONLY",
+        "is_eligibility_gate": false
+      },
+      "human_review": {
+        "raw_status": "PENDING_REAL_WORLD_OUTCOME_REVIEW",
+        "state": "PENDING",
+        "reviewed_at": null,
+        "review_after_utc_day_close": false,
+        "reviewer": null,
+        "reviewer_identified": false,
+        "automatic": null,
+        "official_sources": [],
+        "official_sources_valid": false,
+        "invalid_official_sources": [],
+        "stored_label": null,
+        "evidence_state": "UNKNOWN",
+        "verified_event": null,
+        "comprehensive_none_coverage": null,
+        "counts_toward_closeout": null
+      },
+      "scorecard_eligibility": {
+        "eligible": false,
+        "checks": {
+          "snapshot_not_production": true,
+          "snapshot_captured_within_pre_outcome_window": true,
+          "all_pilots_present": true,
+          "all_recommendations_test_only": true,
+          "forecast_available": true,
+          "forecast_covers_target_day": true,
+          "forecast_pairs_mature_at_snapshot": true,
+          "imerg_early_available": true,
+          "imerg_latency_recorded": true,
+          "regression_passed": true,
+          "outcome_status_reviewed": false,
+          "outcome_label_accepted": false,
+          "outcome_official_sources_recorded": false,
+          "outcome_named_human_reviewer": false,
+          "outcome_not_automatic": false,
+          "outcome_counts_toward_closeout_explicit": false,
+          "outcome_label_semantics_supported": false,
+          "outcome_review_after_utc_day_close": false
+        }
+      },
+      "technical_eligibility": true,
+      "review_eligibility": false,
+      "closeout_eligible": false,
+      "flow_state": "READY_FOR_HUMAN_REVIEW",
+      "failed_gates": [
+        "HUMAN_REVIEW_COMPLETED",
+        "STORED_LABEL_ACCEPTED_FOR_CLOSEOUT",
+        "OFFICIAL_SOURCES_VALID",
+        "HUMAN_REVIEWER_IDENTIFIED",
+        "AUTOMATIC_CLASSIFICATION_FALSE",
+        "COUNTS_TOWARD_CLOSEOUT_EXPLICIT_TRUE",
+        "OUTCOME_LABEL_SEMANTICS_SUPPORTED",
+        "REVIEW_AFTER_UTC_DAY_CLOSE"
+      ],
+      "gates": [
+        {
+          "id": "DAY_CLOSED_UTC",
+          "category": "TEMPORAL",
+          "passed": true,
+          "evidence": {
+            "evaluation_as_of_utc": "2026-08-25T14:29:43.058459Z",
+            "target_day_close_utc": "2026-08-23T00:00:00Z"
+          }
+        },
+        {
+          "id": "PRE_OUTCOME_CAPTURE_WINDOW_STORED",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "start_utc": "2026-08-21T12:00:00+00:00",
+            "end_utc": "2026-08-22T02:00:00+00:00",
+            "stored_captured_within_window": true
+          },
+          "contract_reference": "diagnostic_only"
+        },
+        {
+          "id": "CAPTURED_WITHIN_WINDOW",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "stored": true,
+            "computed": true,
+            "archived_at": "2026-08-21T14:08:42.797939+00:00",
+            "computed_start_utc": "2026-08-21T12:00:00Z",
+            "computed_end_utc": "2026-08-22T02:00:00Z"
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.snapshot_captured_within_pre_outcome_window"
+        },
+        {
+          "id": "ALL_PILOTS_PRESENT",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "expected": [
+              "san_ildefonso",
+              "chosica",
+              "catacaos"
+            ],
+            "present": [
+              "san_ildefonso",
+              "chosica",
+              "catacaos"
+            ],
+            "missing": [],
+            "unexpected": []
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.all_pilots_present"
+        },
+        {
+          "id": "ALL_RECOMMENDATIONS_TEST_ONLY",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "san_ildefonso": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "chosica": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "catacaos": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.all_recommendations_test_only"
+        },
+        {
+          "id": "NO_OPERATIONAL_ALERTS",
+          "category": "SAFETY",
+          "passed": true,
+          "evidence": {
+            "san_ildefonso": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "chosica": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "catacaos": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            }
+          },
+          "contract_reference": "diagnostic_redundant_with_all_recommendations_test_only"
+        },
+        {
+          "id": "FORECAST_AVAILABLE",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": true,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_available"
+        },
+        {
+          "id": "FORECAST_COVERS_TARGET_DAY",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "stored": true,
+            "computed": true,
+            "required_future_hours": 33.854778350277776,
+            "available_future_hours_by_pilot": {
+              "san_ildefonso": 85,
+              "chosica": 85,
+              "catacaos": 85
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_covers_target_day"
+        },
+        {
+          "id": "MATURE_PAIRS_PER_PILOT",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "minimum_required": 30,
+            "by_pilot": {
+              "san_ildefonso": 59,
+              "chosica": 59,
+              "catacaos": 59
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_pairs_mature_at_snapshot"
+        },
+        {
+          "id": "IMERG_EARLY_AVAILABLE",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": "EARLY_HALFHOURLY_SOURCE_AVAILABLE",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.imerg_early_available"
+        },
+        {
+          "id": "IMERG_EARLY_LATENCY_RECORDED",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": 5.51,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.imerg_latency_recorded"
+        },
+        {
+          "id": "REGRESSION_PASS",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": "PASS",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.regression_passed"
+        },
+        {
+          "id": "PRODUCTION_USE_FALSE",
+          "category": "SAFETY",
+          "passed": true,
+          "evidence": false,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.snapshot_not_production"
+        },
+        {
+          "id": "HUMAN_REVIEW_COMPLETED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": "PENDING_REAL_WORLD_OUTCOME_REVIEW",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_status_reviewed"
+        },
+        {
+          "id": "STORED_LABEL_ACCEPTED_FOR_CLOSEOUT",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_label_accepted"
+        },
+        {
+          "id": "OFFICIAL_SOURCES_VALID",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": {
+            "sources": [],
+            "invalid_sources": []
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_official_sources_recorded"
+        },
+        {
+          "id": "HUMAN_REVIEWER_IDENTIFIED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_named_human_reviewer"
+        },
+        {
+          "id": "AUTOMATIC_CLASSIFICATION_FALSE",
+          "category": "SAFETY",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_not_automatic"
+        },
+        {
+          "id": "COUNTS_TOWARD_CLOSEOUT_EXPLICIT_TRUE",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_counts_toward_closeout_explicit"
+        },
+        {
+          "id": "OUTCOME_LABEL_SEMANTICS_SUPPORTED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": {
+            "stored_label": null,
+            "verified_event": null,
+            "comprehensive_none_coverage": null
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_label_semantics_supported"
+        },
+        {
+          "id": "REVIEW_AFTER_UTC_DAY_CLOSE",
+          "category": "TEMPORAL",
+          "passed": false,
+          "evidence": {
+            "reviewed_at": null,
+            "target_day_close_utc": "2026-08-23T00:00:00Z"
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_review_after_utc_day_close"
+        }
+      ]
+    },
+    {
+      "snapshot_date_utc": "2026-08-23",
+      "target_day_close_utc": "2026-08-24T00:00:00Z",
+      "day_closed_utc": true,
+      "capture_window": {
+        "stored_start_utc": "2026-08-22T12:00:00+00:00",
+        "stored_end_utc": "2026-08-23T02:00:00+00:00",
+        "stored_captured_within_window": true,
+        "computed_start_utc": "2026-08-22T12:00:00Z",
+        "computed_end_utc": "2026-08-23T02:00:00Z",
+        "computed_captured_within_window": true,
+        "captured_within_window": true,
+        "calculation_available": true,
+        "evidence_state": "STORED_AND_CALCULATED"
+      },
+      "pilots": {
+        "expected": [
+          "san_ildefonso",
+          "chosica",
+          "catacaos"
+        ],
+        "present": [
+          "san_ildefonso",
+          "chosica",
+          "catacaos"
+        ],
+        "missing": [],
+        "unexpected": [],
+        "all_present": true,
+        "test_only_recommendations": {
+          "san_ildefonso": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          },
+          "chosica": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          },
+          "catacaos": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          }
+        },
+        "all_test_only": true,
+        "all_non_operational": true
+      },
+      "forecast": {
+        "available": true,
+        "stored_covers_target_day": true,
+        "computed_covers_target_day": true,
+        "covers_target_day": true,
+        "required_future_hours": 34.241253300833336,
+        "available_future_hours_by_pilot": {
+          "san_ildefonso": 85,
+          "chosica": 85,
+          "catacaos": 85
+        },
+        "mature_pairs_by_pilot": {
+          "san_ildefonso": 62,
+          "chosica": 62,
+          "catacaos": 62
+        },
+        "minimum_mature_pairs_per_pilot": 30
+      },
+      "imerg_early": {
+        "status": "EARLY_HALFHOURLY_SOURCE_AVAILABLE",
+        "available": true,
+        "latency_hours": 5.94
+      },
+      "regression_status": "PASS",
+      "operational_dataset_status": {
+        "value": "updated",
+        "role": "ANNOTATION_ONLY",
+        "is_eligibility_gate": false
+      },
+      "human_review": {
+        "raw_status": "PENDING_REAL_WORLD_OUTCOME_REVIEW",
+        "state": "PENDING",
+        "reviewed_at": null,
+        "review_after_utc_day_close": false,
+        "reviewer": null,
+        "reviewer_identified": false,
+        "automatic": null,
+        "official_sources": [],
+        "official_sources_valid": false,
+        "invalid_official_sources": [],
+        "stored_label": null,
+        "evidence_state": "UNKNOWN",
+        "verified_event": null,
+        "comprehensive_none_coverage": null,
+        "counts_toward_closeout": null
+      },
+      "scorecard_eligibility": {
+        "eligible": false,
+        "checks": {
+          "snapshot_not_production": true,
+          "snapshot_captured_within_pre_outcome_window": true,
+          "all_pilots_present": true,
+          "all_recommendations_test_only": true,
+          "forecast_available": true,
+          "forecast_covers_target_day": true,
+          "forecast_pairs_mature_at_snapshot": true,
+          "imerg_early_available": true,
+          "imerg_latency_recorded": true,
+          "regression_passed": true,
+          "outcome_status_reviewed": false,
+          "outcome_label_accepted": false,
+          "outcome_official_sources_recorded": false,
+          "outcome_named_human_reviewer": false,
+          "outcome_not_automatic": false,
+          "outcome_counts_toward_closeout_explicit": false,
+          "outcome_label_semantics_supported": false,
+          "outcome_review_after_utc_day_close": false
+        }
+      },
+      "technical_eligibility": true,
+      "review_eligibility": false,
+      "closeout_eligible": false,
+      "flow_state": "READY_FOR_HUMAN_REVIEW",
+      "failed_gates": [
+        "HUMAN_REVIEW_COMPLETED",
+        "STORED_LABEL_ACCEPTED_FOR_CLOSEOUT",
+        "OFFICIAL_SOURCES_VALID",
+        "HUMAN_REVIEWER_IDENTIFIED",
+        "AUTOMATIC_CLASSIFICATION_FALSE",
+        "COUNTS_TOWARD_CLOSEOUT_EXPLICIT_TRUE",
+        "OUTCOME_LABEL_SEMANTICS_SUPPORTED",
+        "REVIEW_AFTER_UTC_DAY_CLOSE"
+      ],
+      "gates": [
+        {
+          "id": "DAY_CLOSED_UTC",
+          "category": "TEMPORAL",
+          "passed": true,
+          "evidence": {
+            "evaluation_as_of_utc": "2026-08-25T14:29:43.058459Z",
+            "target_day_close_utc": "2026-08-24T00:00:00Z"
+          }
+        },
+        {
+          "id": "PRE_OUTCOME_CAPTURE_WINDOW_STORED",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "start_utc": "2026-08-22T12:00:00+00:00",
+            "end_utc": "2026-08-23T02:00:00+00:00",
+            "stored_captured_within_window": true
+          },
+          "contract_reference": "diagnostic_only"
+        },
+        {
+          "id": "CAPTURED_WITHIN_WINDOW",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "stored": true,
+            "computed": true,
+            "archived_at": "2026-08-22T13:45:31.488117+00:00",
+            "computed_start_utc": "2026-08-22T12:00:00Z",
+            "computed_end_utc": "2026-08-23T02:00:00Z"
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.snapshot_captured_within_pre_outcome_window"
+        },
+        {
+          "id": "ALL_PILOTS_PRESENT",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "expected": [
+              "san_ildefonso",
+              "chosica",
+              "catacaos"
+            ],
+            "present": [
+              "san_ildefonso",
+              "chosica",
+              "catacaos"
+            ],
+            "missing": [],
+            "unexpected": []
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.all_pilots_present"
+        },
+        {
+          "id": "ALL_RECOMMENDATIONS_TEST_ONLY",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "san_ildefonso": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "chosica": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "catacaos": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.all_recommendations_test_only"
+        },
+        {
+          "id": "NO_OPERATIONAL_ALERTS",
+          "category": "SAFETY",
+          "passed": true,
+          "evidence": {
+            "san_ildefonso": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "chosica": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "catacaos": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            }
+          },
+          "contract_reference": "diagnostic_redundant_with_all_recommendations_test_only"
+        },
+        {
+          "id": "FORECAST_AVAILABLE",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": true,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_available"
+        },
+        {
+          "id": "FORECAST_COVERS_TARGET_DAY",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "stored": true,
+            "computed": true,
+            "required_future_hours": 34.241253300833336,
+            "available_future_hours_by_pilot": {
+              "san_ildefonso": 85,
+              "chosica": 85,
+              "catacaos": 85
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_covers_target_day"
+        },
+        {
+          "id": "MATURE_PAIRS_PER_PILOT",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "minimum_required": 30,
+            "by_pilot": {
+              "san_ildefonso": 62,
+              "chosica": 62,
+              "catacaos": 62
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_pairs_mature_at_snapshot"
+        },
+        {
+          "id": "IMERG_EARLY_AVAILABLE",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": "EARLY_HALFHOURLY_SOURCE_AVAILABLE",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.imerg_early_available"
+        },
+        {
+          "id": "IMERG_EARLY_LATENCY_RECORDED",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": 5.94,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.imerg_latency_recorded"
+        },
+        {
+          "id": "REGRESSION_PASS",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": "PASS",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.regression_passed"
+        },
+        {
+          "id": "PRODUCTION_USE_FALSE",
+          "category": "SAFETY",
+          "passed": true,
+          "evidence": false,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.snapshot_not_production"
+        },
+        {
+          "id": "HUMAN_REVIEW_COMPLETED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": "PENDING_REAL_WORLD_OUTCOME_REVIEW",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_status_reviewed"
+        },
+        {
+          "id": "STORED_LABEL_ACCEPTED_FOR_CLOSEOUT",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_label_accepted"
+        },
+        {
+          "id": "OFFICIAL_SOURCES_VALID",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": {
+            "sources": [],
+            "invalid_sources": []
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_official_sources_recorded"
+        },
+        {
+          "id": "HUMAN_REVIEWER_IDENTIFIED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_named_human_reviewer"
+        },
+        {
+          "id": "AUTOMATIC_CLASSIFICATION_FALSE",
+          "category": "SAFETY",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_not_automatic"
+        },
+        {
+          "id": "COUNTS_TOWARD_CLOSEOUT_EXPLICIT_TRUE",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_counts_toward_closeout_explicit"
+        },
+        {
+          "id": "OUTCOME_LABEL_SEMANTICS_SUPPORTED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": {
+            "stored_label": null,
+            "verified_event": null,
+            "comprehensive_none_coverage": null
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_label_semantics_supported"
+        },
+        {
+          "id": "REVIEW_AFTER_UTC_DAY_CLOSE",
+          "category": "TEMPORAL",
+          "passed": false,
+          "evidence": {
+            "reviewed_at": null,
+            "target_day_close_utc": "2026-08-24T00:00:00Z"
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_review_after_utc_day_close"
+        }
+      ]
+    },
+    {
+      "snapshot_date_utc": "2026-08-24",
+      "target_day_close_utc": "2026-08-25T00:00:00Z",
+      "day_closed_utc": true,
+      "capture_window": {
+        "stored_start_utc": "2026-08-23T12:00:00+00:00",
+        "stored_end_utc": "2026-08-24T02:00:00+00:00",
+        "stored_captured_within_window": true,
+        "computed_start_utc": "2026-08-23T12:00:00Z",
+        "computed_end_utc": "2026-08-24T02:00:00Z",
+        "computed_captured_within_window": true,
+        "captured_within_window": true,
+        "calculation_available": true,
+        "evidence_state": "STORED_AND_CALCULATED"
+      },
+      "pilots": {
+        "expected": [
+          "san_ildefonso",
+          "chosica",
+          "catacaos"
+        ],
+        "present": [
+          "san_ildefonso",
+          "chosica",
+          "catacaos"
+        ],
+        "missing": [],
+        "unexpected": [],
+        "all_present": true,
+        "test_only_recommendations": {
+          "san_ildefonso": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          },
+          "chosica": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          },
+          "catacaos": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          }
+        },
+        "all_test_only": true,
+        "all_non_operational": true
+      },
+      "forecast": {
+        "available": true,
+        "stored_covers_target_day": true,
+        "computed_covers_target_day": true,
+        "covers_target_day": true,
+        "required_future_hours": 34.21765533166667,
+        "available_future_hours_by_pilot": {
+          "san_ildefonso": 85,
+          "chosica": 85,
+          "catacaos": 85
+        },
+        "mature_pairs_by_pilot": {
+          "san_ildefonso": 62,
+          "chosica": 62,
+          "catacaos": 62
+        },
+        "minimum_mature_pairs_per_pilot": 30
+      },
+      "imerg_early": {
+        "status": "EARLY_HALFHOURLY_SOURCE_AVAILABLE",
+        "available": true,
+        "latency_hours": 5.44
+      },
+      "regression_status": "PASS",
+      "operational_dataset_status": {
+        "value": "stale",
+        "role": "ANNOTATION_ONLY",
+        "is_eligibility_gate": false
+      },
+      "human_review": {
+        "raw_status": "PENDING_REAL_WORLD_OUTCOME_REVIEW",
+        "state": "PENDING",
+        "reviewed_at": null,
+        "review_after_utc_day_close": false,
+        "reviewer": null,
+        "reviewer_identified": false,
+        "automatic": null,
+        "official_sources": [],
+        "official_sources_valid": false,
+        "invalid_official_sources": [],
+        "stored_label": null,
+        "evidence_state": "UNKNOWN",
+        "verified_event": null,
+        "comprehensive_none_coverage": null,
+        "counts_toward_closeout": null
+      },
+      "scorecard_eligibility": {
+        "eligible": false,
+        "checks": {
+          "snapshot_not_production": true,
+          "snapshot_captured_within_pre_outcome_window": true,
+          "all_pilots_present": true,
+          "all_recommendations_test_only": true,
+          "forecast_available": true,
+          "forecast_covers_target_day": true,
+          "forecast_pairs_mature_at_snapshot": true,
+          "imerg_early_available": true,
+          "imerg_latency_recorded": true,
+          "regression_passed": true,
+          "outcome_status_reviewed": false,
+          "outcome_label_accepted": false,
+          "outcome_official_sources_recorded": false,
+          "outcome_named_human_reviewer": false,
+          "outcome_not_automatic": false,
+          "outcome_counts_toward_closeout_explicit": false,
+          "outcome_label_semantics_supported": false,
+          "outcome_review_after_utc_day_close": false
+        }
+      },
+      "technical_eligibility": true,
+      "review_eligibility": false,
+      "closeout_eligible": false,
+      "flow_state": "READY_FOR_HUMAN_REVIEW",
+      "failed_gates": [
+        "HUMAN_REVIEW_COMPLETED",
+        "STORED_LABEL_ACCEPTED_FOR_CLOSEOUT",
+        "OFFICIAL_SOURCES_VALID",
+        "HUMAN_REVIEWER_IDENTIFIED",
+        "AUTOMATIC_CLASSIFICATION_FALSE",
+        "COUNTS_TOWARD_CLOSEOUT_EXPLICIT_TRUE",
+        "OUTCOME_LABEL_SEMANTICS_SUPPORTED",
+        "REVIEW_AFTER_UTC_DAY_CLOSE"
+      ],
+      "gates": [
+        {
+          "id": "DAY_CLOSED_UTC",
+          "category": "TEMPORAL",
+          "passed": true,
+          "evidence": {
+            "evaluation_as_of_utc": "2026-08-25T14:29:43.058459Z",
+            "target_day_close_utc": "2026-08-25T00:00:00Z"
+          }
+        },
+        {
+          "id": "PRE_OUTCOME_CAPTURE_WINDOW_STORED",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "start_utc": "2026-08-23T12:00:00+00:00",
+            "end_utc": "2026-08-24T02:00:00+00:00",
+            "stored_captured_within_window": true
+          },
+          "contract_reference": "diagnostic_only"
+        },
+        {
+          "id": "CAPTURED_WITHIN_WINDOW",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "stored": true,
+            "computed": true,
+            "archived_at": "2026-08-23T13:46:56.440806+00:00",
+            "computed_start_utc": "2026-08-23T12:00:00Z",
+            "computed_end_utc": "2026-08-24T02:00:00Z"
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.snapshot_captured_within_pre_outcome_window"
+        },
+        {
+          "id": "ALL_PILOTS_PRESENT",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "expected": [
+              "san_ildefonso",
+              "chosica",
+              "catacaos"
+            ],
+            "present": [
+              "san_ildefonso",
+              "chosica",
+              "catacaos"
+            ],
+            "missing": [],
+            "unexpected": []
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.all_pilots_present"
+        },
+        {
+          "id": "ALL_RECOMMENDATIONS_TEST_ONLY",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "san_ildefonso": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "chosica": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "catacaos": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.all_recommendations_test_only"
+        },
+        {
+          "id": "NO_OPERATIONAL_ALERTS",
+          "category": "SAFETY",
+          "passed": true,
+          "evidence": {
+            "san_ildefonso": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "chosica": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "catacaos": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            }
+          },
+          "contract_reference": "diagnostic_redundant_with_all_recommendations_test_only"
+        },
+        {
+          "id": "FORECAST_AVAILABLE",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": true,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_available"
+        },
+        {
+          "id": "FORECAST_COVERS_TARGET_DAY",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "stored": true,
+            "computed": true,
+            "required_future_hours": 34.21765533166667,
+            "available_future_hours_by_pilot": {
+              "san_ildefonso": 85,
+              "chosica": 85,
+              "catacaos": 85
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_covers_target_day"
+        },
+        {
+          "id": "MATURE_PAIRS_PER_PILOT",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "minimum_required": 30,
+            "by_pilot": {
+              "san_ildefonso": 62,
+              "chosica": 62,
+              "catacaos": 62
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_pairs_mature_at_snapshot"
+        },
+        {
+          "id": "IMERG_EARLY_AVAILABLE",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": "EARLY_HALFHOURLY_SOURCE_AVAILABLE",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.imerg_early_available"
+        },
+        {
+          "id": "IMERG_EARLY_LATENCY_RECORDED",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": 5.44,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.imerg_latency_recorded"
+        },
+        {
+          "id": "REGRESSION_PASS",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": "PASS",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.regression_passed"
+        },
+        {
+          "id": "PRODUCTION_USE_FALSE",
+          "category": "SAFETY",
+          "passed": true,
+          "evidence": false,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.snapshot_not_production"
+        },
+        {
+          "id": "HUMAN_REVIEW_COMPLETED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": "PENDING_REAL_WORLD_OUTCOME_REVIEW",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_status_reviewed"
+        },
+        {
+          "id": "STORED_LABEL_ACCEPTED_FOR_CLOSEOUT",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_label_accepted"
+        },
+        {
+          "id": "OFFICIAL_SOURCES_VALID",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": {
+            "sources": [],
+            "invalid_sources": []
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_official_sources_recorded"
+        },
+        {
+          "id": "HUMAN_REVIEWER_IDENTIFIED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_named_human_reviewer"
+        },
+        {
+          "id": "AUTOMATIC_CLASSIFICATION_FALSE",
+          "category": "SAFETY",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_not_automatic"
+        },
+        {
+          "id": "COUNTS_TOWARD_CLOSEOUT_EXPLICIT_TRUE",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_counts_toward_closeout_explicit"
+        },
+        {
+          "id": "OUTCOME_LABEL_SEMANTICS_SUPPORTED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": {
+            "stored_label": null,
+            "verified_event": null,
+            "comprehensive_none_coverage": null
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_label_semantics_supported"
+        },
+        {
+          "id": "REVIEW_AFTER_UTC_DAY_CLOSE",
+          "category": "TEMPORAL",
+          "passed": false,
+          "evidence": {
+            "reviewed_at": null,
+            "target_day_close_utc": "2026-08-25T00:00:00Z"
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_review_after_utc_day_close"
+        }
+      ]
+    },
+    {
+      "snapshot_date_utc": "2026-08-25",
+      "target_day_close_utc": "2026-08-26T00:00:00Z",
+      "day_closed_utc": false,
+      "capture_window": {
+        "stored_start_utc": "2026-08-24T12:00:00+00:00",
+        "stored_end_utc": "2026-08-25T02:00:00+00:00",
+        "stored_captured_within_window": true,
+        "computed_start_utc": "2026-08-24T12:00:00Z",
+        "computed_end_utc": "2026-08-25T02:00:00Z",
+        "computed_captured_within_window": true,
+        "captured_within_window": true,
+        "calculation_available": true,
+        "evidence_state": "STORED_AND_CALCULATED"
+      },
+      "pilots": {
+        "expected": [
+          "san_ildefonso",
+          "chosica",
+          "catacaos"
+        ],
+        "present": [
+          "san_ildefonso",
+          "chosica",
+          "catacaos"
+        ],
+        "missing": [],
+        "unexpected": [],
+        "all_present": true,
+        "test_only_recommendations": {
+          "san_ildefonso": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          },
+          "chosica": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          },
+          "catacaos": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          }
+        },
+        "all_test_only": true,
+        "all_non_operational": true
+      },
+      "forecast": {
+        "available": true,
+        "stored_covers_target_day": true,
+        "computed_covers_target_day": true,
+        "covers_target_day": true,
+        "required_future_hours": 33.54437700027778,
+        "available_future_hours_by_pilot": {
+          "san_ildefonso": 85,
+          "chosica": 85,
+          "catacaos": 85
+        },
+        "mature_pairs_by_pilot": {
+          "san_ildefonso": 68,
+          "chosica": 68,
+          "catacaos": 68
+        },
+        "minimum_mature_pairs_per_pilot": 30
+      },
+      "imerg_early": {
+        "status": "EARLY_HALFHOURLY_SOURCE_AVAILABLE",
+        "available": true,
+        "latency_hours": 5.57
+      },
+      "regression_status": "PASS",
+      "operational_dataset_status": {
+        "value": "updated",
+        "role": "ANNOTATION_ONLY",
+        "is_eligibility_gate": false
+      },
+      "human_review": {
+        "raw_status": "PENDING_REAL_WORLD_OUTCOME_REVIEW",
+        "state": "PENDING",
+        "reviewed_at": null,
+        "review_after_utc_day_close": false,
+        "reviewer": null,
+        "reviewer_identified": false,
+        "automatic": null,
+        "official_sources": [],
+        "official_sources_valid": false,
+        "invalid_official_sources": [],
+        "stored_label": null,
+        "evidence_state": "UNKNOWN",
+        "verified_event": null,
+        "comprehensive_none_coverage": null,
+        "counts_toward_closeout": null
+      },
+      "scorecard_eligibility": {
+        "eligible": false,
+        "checks": {
+          "snapshot_not_production": true,
+          "snapshot_captured_within_pre_outcome_window": true,
+          "all_pilots_present": true,
+          "all_recommendations_test_only": true,
+          "forecast_available": true,
+          "forecast_covers_target_day": true,
+          "forecast_pairs_mature_at_snapshot": true,
+          "imerg_early_available": true,
+          "imerg_latency_recorded": true,
+          "regression_passed": true,
+          "outcome_status_reviewed": false,
+          "outcome_label_accepted": false,
+          "outcome_official_sources_recorded": false,
+          "outcome_named_human_reviewer": false,
+          "outcome_not_automatic": false,
+          "outcome_counts_toward_closeout_explicit": false,
+          "outcome_label_semantics_supported": false,
+          "outcome_review_after_utc_day_close": false
+        }
+      },
+      "technical_eligibility": false,
+      "review_eligibility": false,
+      "closeout_eligible": false,
+      "flow_state": "DAY_NOT_CLOSED",
+      "failed_gates": [
+        "DAY_CLOSED_UTC",
+        "HUMAN_REVIEW_COMPLETED",
+        "STORED_LABEL_ACCEPTED_FOR_CLOSEOUT",
+        "OFFICIAL_SOURCES_VALID",
+        "HUMAN_REVIEWER_IDENTIFIED",
+        "AUTOMATIC_CLASSIFICATION_FALSE",
+        "COUNTS_TOWARD_CLOSEOUT_EXPLICIT_TRUE",
+        "OUTCOME_LABEL_SEMANTICS_SUPPORTED",
+        "REVIEW_AFTER_UTC_DAY_CLOSE"
+      ],
+      "gates": [
+        {
+          "id": "DAY_CLOSED_UTC",
+          "category": "TEMPORAL",
+          "passed": false,
+          "evidence": {
+            "evaluation_as_of_utc": "2026-08-25T14:29:43.058459Z",
+            "target_day_close_utc": "2026-08-26T00:00:00Z"
+          }
+        },
+        {
+          "id": "PRE_OUTCOME_CAPTURE_WINDOW_STORED",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "start_utc": "2026-08-24T12:00:00+00:00",
+            "end_utc": "2026-08-25T02:00:00+00:00",
+            "stored_captured_within_window": true
+          },
+          "contract_reference": "diagnostic_only"
+        },
+        {
+          "id": "CAPTURED_WITHIN_WINDOW",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "stored": true,
+            "computed": true,
+            "archived_at": "2026-08-24T14:27:20.242799+00:00",
+            "computed_start_utc": "2026-08-24T12:00:00Z",
+            "computed_end_utc": "2026-08-25T02:00:00Z"
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.snapshot_captured_within_pre_outcome_window"
+        },
+        {
+          "id": "ALL_PILOTS_PRESENT",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "expected": [
+              "san_ildefonso",
+              "chosica",
+              "catacaos"
+            ],
+            "present": [
+              "san_ildefonso",
+              "chosica",
+              "catacaos"
+            ],
+            "missing": [],
+            "unexpected": []
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.all_pilots_present"
+        },
+        {
+          "id": "ALL_RECOMMENDATIONS_TEST_ONLY",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "san_ildefonso": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "chosica": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "catacaos": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.all_recommendations_test_only"
+        },
+        {
+          "id": "NO_OPERATIONAL_ALERTS",
+          "category": "SAFETY",
+          "passed": true,
+          "evidence": {
+            "san_ildefonso": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "chosica": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "catacaos": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            }
+          },
+          "contract_reference": "diagnostic_redundant_with_all_recommendations_test_only"
+        },
+        {
+          "id": "FORECAST_AVAILABLE",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": true,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_available"
+        },
+        {
+          "id": "FORECAST_COVERS_TARGET_DAY",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "stored": true,
+            "computed": true,
+            "required_future_hours": 33.54437700027778,
+            "available_future_hours_by_pilot": {
+              "san_ildefonso": 85,
+              "chosica": 85,
+              "catacaos": 85
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_covers_target_day"
+        },
+        {
+          "id": "MATURE_PAIRS_PER_PILOT",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "minimum_required": 30,
+            "by_pilot": {
+              "san_ildefonso": 68,
+              "chosica": 68,
+              "catacaos": 68
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_pairs_mature_at_snapshot"
+        },
+        {
+          "id": "IMERG_EARLY_AVAILABLE",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": "EARLY_HALFHOURLY_SOURCE_AVAILABLE",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.imerg_early_available"
+        },
+        {
+          "id": "IMERG_EARLY_LATENCY_RECORDED",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": 5.57,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.imerg_latency_recorded"
+        },
+        {
+          "id": "REGRESSION_PASS",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": "PASS",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.regression_passed"
+        },
+        {
+          "id": "PRODUCTION_USE_FALSE",
+          "category": "SAFETY",
+          "passed": true,
+          "evidence": false,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.snapshot_not_production"
+        },
+        {
+          "id": "HUMAN_REVIEW_COMPLETED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": "PENDING_REAL_WORLD_OUTCOME_REVIEW",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_status_reviewed"
+        },
+        {
+          "id": "STORED_LABEL_ACCEPTED_FOR_CLOSEOUT",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_label_accepted"
+        },
+        {
+          "id": "OFFICIAL_SOURCES_VALID",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": {
+            "sources": [],
+            "invalid_sources": []
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_official_sources_recorded"
+        },
+        {
+          "id": "HUMAN_REVIEWER_IDENTIFIED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_named_human_reviewer"
+        },
+        {
+          "id": "AUTOMATIC_CLASSIFICATION_FALSE",
+          "category": "SAFETY",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_not_automatic"
+        },
+        {
+          "id": "COUNTS_TOWARD_CLOSEOUT_EXPLICIT_TRUE",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_counts_toward_closeout_explicit"
+        },
+        {
+          "id": "OUTCOME_LABEL_SEMANTICS_SUPPORTED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": {
+            "stored_label": null,
+            "verified_event": null,
+            "comprehensive_none_coverage": null
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_label_semantics_supported"
+        },
+        {
+          "id": "REVIEW_AFTER_UTC_DAY_CLOSE",
+          "category": "TEMPORAL",
+          "passed": false,
+          "evidence": {
+            "reviewed_at": null,
+            "target_day_close_utc": "2026-08-26T00:00:00Z"
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_review_after_utc_day_close"
+        }
+      ]
+    },
+    {
+      "snapshot_date_utc": "2026-08-26",
+      "target_day_close_utc": "2026-08-27T00:00:00Z",
+      "day_closed_utc": false,
+      "capture_window": {
+        "stored_start_utc": "2026-08-25T12:00:00+00:00",
+        "stored_end_utc": "2026-08-26T02:00:00+00:00",
+        "stored_captured_within_window": true,
+        "computed_start_utc": "2026-08-25T12:00:00Z",
+        "computed_end_utc": "2026-08-26T02:00:00Z",
+        "computed_captured_within_window": true,
+        "captured_within_window": true,
+        "calculation_available": true,
+        "evidence_state": "STORED_AND_CALCULATED"
+      },
+      "pilots": {
+        "expected": [
+          "san_ildefonso",
+          "chosica",
+          "catacaos"
+        ],
+        "present": [
+          "san_ildefonso",
+          "chosica",
+          "catacaos"
+        ],
+        "missing": [],
+        "unexpected": [],
+        "all_present": true,
+        "test_only_recommendations": {
+          "san_ildefonso": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          },
+          "chosica": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          },
+          "catacaos": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          }
+        },
+        "all_test_only": true,
+        "all_non_operational": true
+      },
+      "forecast": {
+        "available": true,
+        "stored_covers_target_day": true,
+        "computed_covers_target_day": true,
+        "covers_target_day": true,
+        "required_future_hours": 33.50470598361111,
+        "available_future_hours_by_pilot": {
+          "san_ildefonso": 85,
+          "chosica": 85,
+          "catacaos": 85
+        },
+        "mature_pairs_by_pilot": {
+          "san_ildefonso": 71,
+          "chosica": 71,
+          "catacaos": 71
+        },
+        "minimum_mature_pairs_per_pilot": 30
+      },
+      "imerg_early": {
+        "status": "EARLY_HALFHOURLY_SOURCE_AVAILABLE",
+        "available": true,
+        "latency_hours": 6.31
+      },
+      "regression_status": "PASS",
+      "operational_dataset_status": {
+        "value": "updated",
+        "role": "ANNOTATION_ONLY",
+        "is_eligibility_gate": false
+      },
+      "human_review": {
+        "raw_status": "PENDING_REAL_WORLD_OUTCOME_REVIEW",
+        "state": "PENDING",
+        "reviewed_at": null,
+        "review_after_utc_day_close": false,
+        "reviewer": null,
+        "reviewer_identified": false,
+        "automatic": null,
+        "official_sources": [],
+        "official_sources_valid": false,
+        "invalid_official_sources": [],
+        "stored_label": null,
+        "evidence_state": "UNKNOWN",
+        "verified_event": null,
+        "comprehensive_none_coverage": null,
+        "counts_toward_closeout": null
+      },
+      "scorecard_eligibility": {
+        "eligible": false,
+        "checks": {
+          "snapshot_not_production": true,
+          "snapshot_captured_within_pre_outcome_window": true,
+          "all_pilots_present": true,
+          "all_recommendations_test_only": true,
+          "forecast_available": true,
+          "forecast_covers_target_day": true,
+          "forecast_pairs_mature_at_snapshot": true,
+          "imerg_early_available": true,
+          "imerg_latency_recorded": true,
+          "regression_passed": true,
+          "outcome_status_reviewed": false,
+          "outcome_label_accepted": false,
+          "outcome_official_sources_recorded": false,
+          "outcome_named_human_reviewer": false,
+          "outcome_not_automatic": false,
+          "outcome_counts_toward_closeout_explicit": false,
+          "outcome_label_semantics_supported": false,
+          "outcome_review_after_utc_day_close": false
+        }
+      },
+      "technical_eligibility": false,
+      "review_eligibility": false,
+      "closeout_eligible": false,
+      "flow_state": "DAY_NOT_CLOSED",
+      "failed_gates": [
+        "DAY_CLOSED_UTC",
+        "HUMAN_REVIEW_COMPLETED",
+        "STORED_LABEL_ACCEPTED_FOR_CLOSEOUT",
+        "OFFICIAL_SOURCES_VALID",
+        "HUMAN_REVIEWER_IDENTIFIED",
+        "AUTOMATIC_CLASSIFICATION_FALSE",
+        "COUNTS_TOWARD_CLOSEOUT_EXPLICIT_TRUE",
+        "OUTCOME_LABEL_SEMANTICS_SUPPORTED",
+        "REVIEW_AFTER_UTC_DAY_CLOSE"
+      ],
+      "gates": [
+        {
+          "id": "DAY_CLOSED_UTC",
+          "category": "TEMPORAL",
+          "passed": false,
+          "evidence": {
+            "evaluation_as_of_utc": "2026-08-25T14:29:43.058459Z",
+            "target_day_close_utc": "2026-08-27T00:00:00Z"
+          }
+        },
+        {
+          "id": "PRE_OUTCOME_CAPTURE_WINDOW_STORED",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "start_utc": "2026-08-25T12:00:00+00:00",
+            "end_utc": "2026-08-26T02:00:00+00:00",
+            "stored_captured_within_window": true
+          },
+          "contract_reference": "diagnostic_only"
+        },
+        {
+          "id": "CAPTURED_WITHIN_WINDOW",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "stored": true,
+            "computed": true,
+            "archived_at": "2026-08-25T14:29:43.058459+00:00",
+            "computed_start_utc": "2026-08-25T12:00:00Z",
+            "computed_end_utc": "2026-08-26T02:00:00Z"
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.snapshot_captured_within_pre_outcome_window"
+        },
+        {
+          "id": "ALL_PILOTS_PRESENT",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "expected": [
+              "san_ildefonso",
+              "chosica",
+              "catacaos"
+            ],
+            "present": [
+              "san_ildefonso",
+              "chosica",
+              "catacaos"
+            ],
+            "missing": [],
+            "unexpected": []
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.all_pilots_present"
+        },
+        {
+          "id": "ALL_RECOMMENDATIONS_TEST_ONLY",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "san_ildefonso": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "chosica": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "catacaos": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.all_recommendations_test_only"
+        },
+        {
+          "id": "NO_OPERATIONAL_ALERTS",
+          "category": "SAFETY",
+          "passed": true,
+          "evidence": {
+            "san_ildefonso": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "chosica": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            },
+            "catacaos": {
+              "code": "TEST_NO_TRIGGER",
+              "mode": "TEST_ONLY",
+              "operational_alert": false
+            }
+          },
+          "contract_reference": "diagnostic_redundant_with_all_recommendations_test_only"
+        },
+        {
+          "id": "FORECAST_AVAILABLE",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": true,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_available"
+        },
+        {
+          "id": "FORECAST_COVERS_TARGET_DAY",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "stored": true,
+            "computed": true,
+            "required_future_hours": 33.50470598361111,
+            "available_future_hours_by_pilot": {
+              "san_ildefonso": 85,
+              "chosica": 85,
+              "catacaos": 85
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_covers_target_day"
+        },
+        {
+          "id": "MATURE_PAIRS_PER_PILOT",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": {
+            "minimum_required": 30,
+            "by_pilot": {
+              "san_ildefonso": 71,
+              "chosica": 71,
+              "catacaos": 71
+            }
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.forecast_pairs_mature_at_snapshot"
+        },
+        {
+          "id": "IMERG_EARLY_AVAILABLE",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": "EARLY_HALFHOURLY_SOURCE_AVAILABLE",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.imerg_early_available"
+        },
+        {
+          "id": "IMERG_EARLY_LATENCY_RECORDED",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": 6.31,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.imerg_latency_recorded"
+        },
+        {
+          "id": "REGRESSION_PASS",
+          "category": "TECHNICAL",
+          "passed": true,
+          "evidence": "PASS",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.regression_passed"
+        },
+        {
+          "id": "PRODUCTION_USE_FALSE",
+          "category": "SAFETY",
+          "passed": true,
+          "evidence": false,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.snapshot_not_production"
+        },
+        {
+          "id": "HUMAN_REVIEW_COMPLETED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": "PENDING_REAL_WORLD_OUTCOME_REVIEW",
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_status_reviewed"
+        },
+        {
+          "id": "STORED_LABEL_ACCEPTED_FOR_CLOSEOUT",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_label_accepted"
+        },
+        {
+          "id": "OFFICIAL_SOURCES_VALID",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": {
+            "sources": [],
+            "invalid_sources": []
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_official_sources_recorded"
+        },
+        {
+          "id": "HUMAN_REVIEWER_IDENTIFIED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_named_human_reviewer"
+        },
+        {
+          "id": "AUTOMATIC_CLASSIFICATION_FALSE",
+          "category": "SAFETY",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_not_automatic"
+        },
+        {
+          "id": "COUNTS_TOWARD_CLOSEOUT_EXPLICIT_TRUE",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": null,
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_counts_toward_closeout_explicit"
+        },
+        {
+          "id": "OUTCOME_LABEL_SEMANTICS_SUPPORTED",
+          "category": "HUMAN_REVIEW",
+          "passed": false,
+          "evidence": {
+            "stored_label": null,
+            "verified_event": null,
+            "comprehensive_none_coverage": null
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_label_semantics_supported"
+        },
+        {
+          "id": "REVIEW_AFTER_UTC_DAY_CLOSE",
+          "category": "TEMPORAL",
+          "passed": false,
+          "evidence": {
+            "reviewed_at": null,
+            "target_day_close_utc": "2026-08-27T00:00:00Z"
+          },
+          "contract_reference": "build_v08_scorecard.shadow_record_eligibility.outcome_review_after_utc_day_close"
+        }
+      ]
+    }
+  ]
+}

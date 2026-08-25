@@ -1,0 +1,990 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://irfen2026.github.io/irfen-peru/schemas/shadow_review_queue.schema.v1.json",
+  "title": "IRFEN v0.8 canonical shadow review queue",
+  "description": "Artefacto derivado y auditable. Describe el flujo de revisión; nunca crea ni sustituye etiquetas humanas EVENT/NONE.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_type",
+    "generated_at",
+    "evaluation_as_of_utc",
+    "freshness",
+    "status",
+    "source",
+    "guards",
+    "contract",
+    "summary",
+    "inconsistencies",
+    "days"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "artifact_type": {
+      "const": "IRFEN_SHADOW_REVIEW_QUEUE"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "evaluation_as_of_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "enum": [
+        "CONSISTENT",
+        "INCONSISTENCIES_DETECTED"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "archive_path",
+        "archive_version",
+        "archive_updated_at",
+        "archive_record_count_declared",
+        "archive_record_count_actual",
+        "archive_contract_projection_sha256",
+        "archive_last_integrity_chain_sha256",
+        "closeout_contract_path",
+        "closeout_contract_projection_sha256",
+        "schema_path",
+        "schema_sha256",
+        "methodology"
+      ],
+      "properties": {
+        "archive_path": {
+          "type": "string"
+        },
+        "archive_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "archive_updated_at": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "archive_record_count_declared": {
+          "type": [
+            "integer",
+            "number",
+            "null"
+          ]
+        },
+        "archive_record_count_actual": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "archive_contract_projection_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "archive_last_integrity_chain_sha256": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "closeout_contract_path": {
+          "type": "string"
+        },
+        "closeout_contract_projection_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "schema_path": {
+          "type": "string"
+        },
+        "schema_sha256": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "methodology": {
+          "const": "CANONICAL_ARCHIVE_PLUS_VERSIONED_CLOSEOUT_CONTRACT_AND_SCORECARD_PARITY"
+        }
+      }
+    },
+    "guards": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "production_use",
+        "production_ready",
+        "operational_alerting_enabled",
+        "automatic_event_none_classification_enabled",
+        "missing_evidence_interpretation",
+        "operational_dataset_status_is_gate",
+        "stale_is_gate",
+        "stored_human_label_is_authoritative"
+      ],
+      "properties": {
+        "production_use": {
+          "const": false
+        },
+        "production_ready": {
+          "const": false
+        },
+        "operational_alerting_enabled": {
+          "const": false
+        },
+        "automatic_event_none_classification_enabled": {
+          "const": false
+        },
+        "missing_evidence_interpretation": {
+          "const": "UNKNOWN_OR_UNCERTAIN"
+        },
+        "operational_dataset_status_is_gate": {
+          "const": false
+        },
+        "stale_is_gate": {
+          "const": false
+        },
+        "stored_human_label_is_authoritative": {
+          "const": true
+        }
+      }
+    },
+    "contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "flow_states",
+        "pilot_zone_ids",
+        "minimum_mature_pairs_per_pilot",
+        "accepted_closeout_labels",
+        "snapshot_capture",
+        "acceptance_rules"
+      ],
+      "properties": {
+        "flow_states": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/flowState"
+          }
+        },
+        "pilot_zone_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "minimum_mature_pairs_per_pilot": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "accepted_closeout_labels": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "EVENT",
+              "NONE"
+            ]
+          }
+        },
+        "acceptance_rules": {
+          "type": "object"
+        },
+        "snapshot_capture": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "earliest_eligible_capture_lead_minutes",
+            "latest_eligible_capture_delay_minutes"
+          ],
+          "properties": {
+            "earliest_eligible_capture_lead_minutes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "latest_eligible_capture_delay_minutes": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_count_declared",
+        "record_count_actual",
+        "label_counts",
+        "review_state_counts",
+        "flow_state_counts",
+        "closeout_eligible_total",
+        "closeout_eligible_event",
+        "closeout_eligible_none",
+        "source_counts_toward_closeout_true",
+        "inconsistency_count"
+      ],
+      "properties": {
+        "record_count_declared": {
+          "type": [
+            "integer",
+            "number",
+            "null"
+          ]
+        },
+        "record_count_actual": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "label_counts": {
+          "$ref": "#/$defs/countMap"
+        },
+        "review_state_counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "REVIEWED",
+            "PENDING",
+            "UNKNOWN"
+          ],
+          "properties": {
+            "REVIEWED": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "PENDING": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "UNKNOWN": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "flow_state_counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "DAY_NOT_CLOSED",
+            "READY_FOR_HUMAN_REVIEW",
+            "TECHNICALLY_INELIGIBLE",
+            "REVIEWED_UNCERTAIN",
+            "ELIGIBLE_EVENT",
+            "ELIGIBLE_NONE"
+          ],
+          "properties": {
+            "DAY_NOT_CLOSED": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "READY_FOR_HUMAN_REVIEW": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "TECHNICALLY_INELIGIBLE": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "REVIEWED_UNCERTAIN": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "ELIGIBLE_EVENT": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "ELIGIBLE_NONE": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "closeout_eligible_total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "closeout_eligible_event": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "closeout_eligible_none": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "source_counts_toward_closeout_true": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "inconsistency_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "inconsistencies": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/inconsistency"
+      }
+    },
+    "days": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/day"
+      }
+    },
+    "freshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status_at_generation",
+        "basis",
+        "next_transition_at_utc",
+        "refresh_required_at_generation"
+      ],
+      "properties": {
+        "status_at_generation": {
+          "const": "CURRENT"
+        },
+        "basis": {
+          "const": "SOURCE_UPDATE_OR_UTC_DAY_CLOSE"
+        },
+        "next_transition_at_utc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "refresh_required_at_generation": {
+          "const": false
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "flowState": {
+      "enum": [
+        "DAY_NOT_CLOSED",
+        "READY_FOR_HUMAN_REVIEW",
+        "TECHNICALLY_INELIGIBLE",
+        "REVIEWED_UNCERTAIN",
+        "ELIGIBLE_EVENT",
+        "ELIGIBLE_NONE"
+      ]
+    },
+    "countMap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "EVENT",
+        "NONE",
+        "UNCERTAIN",
+        "PENDING"
+      ],
+      "properties": {
+        "EVENT": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "NONE": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "UNCERTAIN": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "PENDING": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "inconsistency": {
+      "type": "object",
+      "required": [
+        "code",
+        "severity",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "ERROR",
+            "WARNING"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "snapshot_date_utc": {
+          "type": "string"
+        },
+        "evidence": {}
+      }
+    },
+    "gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "category",
+        "passed",
+        "evidence"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "category": {
+          "enum": [
+            "TEMPORAL",
+            "TECHNICAL",
+            "SAFETY",
+            "HUMAN_REVIEW"
+          ]
+        },
+        "passed": {
+          "type": "boolean"
+        },
+        "evidence": {},
+        "contract_reference": {
+          "type": "string"
+        }
+      }
+    },
+    "day": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "snapshot_date_utc",
+        "target_day_close_utc",
+        "day_closed_utc",
+        "capture_window",
+        "pilots",
+        "forecast",
+        "imerg_early",
+        "regression_status",
+        "operational_dataset_status",
+        "human_review",
+        "scorecard_eligibility",
+        "technical_eligibility",
+        "review_eligibility",
+        "closeout_eligible",
+        "flow_state",
+        "failed_gates",
+        "gates"
+      ],
+      "properties": {
+        "snapshot_date_utc": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "target_day_close_utc": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "day_closed_utc": {
+          "type": "boolean"
+        },
+        "capture_window": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "stored_start_utc",
+            "stored_end_utc",
+            "stored_captured_within_window",
+            "computed_start_utc",
+            "computed_end_utc",
+            "computed_captured_within_window",
+            "captured_within_window",
+            "calculation_available",
+            "evidence_state"
+          ],
+          "properties": {
+            "stored_start_utc": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date-time"
+            },
+            "stored_end_utc": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date-time"
+            },
+            "stored_captured_within_window": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "computed_start_utc": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date-time"
+            },
+            "computed_end_utc": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date-time"
+            },
+            "computed_captured_within_window": {
+              "type": "boolean"
+            },
+            "captured_within_window": {
+              "type": "boolean"
+            },
+            "calculation_available": {
+              "type": "boolean"
+            },
+            "evidence_state": {
+              "enum": [
+                "STORED_AND_CALCULATED",
+                "STORED_ONLY",
+                "CALCULATED",
+                "UNKNOWN"
+              ]
+            }
+          }
+        },
+        "pilots": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "expected",
+            "present",
+            "missing",
+            "unexpected",
+            "all_present",
+            "test_only_recommendations",
+            "all_test_only",
+            "all_non_operational"
+          ],
+          "properties": {
+            "expected": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "present": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "missing": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "unexpected": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "all_present": {
+              "type": "boolean"
+            },
+            "test_only_recommendations": {
+              "type": "object"
+            },
+            "all_test_only": {
+              "type": "boolean"
+            },
+            "all_non_operational": {
+              "type": "boolean"
+            }
+          }
+        },
+        "forecast": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "available",
+            "stored_covers_target_day",
+            "computed_covers_target_day",
+            "covers_target_day",
+            "required_future_hours",
+            "available_future_hours_by_pilot",
+            "mature_pairs_by_pilot",
+            "minimum_mature_pairs_per_pilot"
+          ],
+          "properties": {
+            "available": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "stored_covers_target_day": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "computed_covers_target_day": {
+              "type": "boolean"
+            },
+            "covers_target_day": {
+              "type": "boolean"
+            },
+            "required_future_hours": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "available_future_hours_by_pilot": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "mature_pairs_by_pilot": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "minimum_mature_pairs_per_pilot": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "imerg_early": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "available",
+            "latency_hours"
+          ],
+          "properties": {
+            "status": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "available": {
+              "type": "boolean"
+            },
+            "latency_hours": {
+              "type": [
+                "integer",
+                "number",
+                "null"
+              ]
+            }
+          }
+        },
+        "regression_status": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "operational_dataset_status": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "value",
+            "role",
+            "is_eligibility_gate"
+          ],
+          "properties": {
+            "value": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "role": {
+              "const": "ANNOTATION_ONLY"
+            },
+            "is_eligibility_gate": {
+              "const": false
+            }
+          }
+        },
+        "human_review": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "raw_status",
+            "state",
+            "reviewed_at",
+            "review_after_utc_day_close",
+            "reviewer",
+            "reviewer_identified",
+            "automatic",
+            "official_sources",
+            "official_sources_valid",
+            "invalid_official_sources",
+            "stored_label",
+            "evidence_state",
+            "verified_event",
+            "comprehensive_none_coverage",
+            "counts_toward_closeout"
+          ],
+          "properties": {
+            "raw_status": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "state": {
+              "enum": [
+                "PENDING",
+                "REVIEWED",
+                "UNKNOWN"
+              ]
+            },
+            "reviewed_at": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "reviewer": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "reviewer_identified": {
+              "type": "boolean"
+            },
+            "automatic": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "official_sources": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "stored_label": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                "EVENT",
+                "NONE",
+                "UNCERTAIN",
+                null
+              ]
+            },
+            "evidence_state": {
+              "enum": [
+                "EVENT",
+                "NONE",
+                "UNCERTAIN",
+                "UNKNOWN"
+              ]
+            },
+            "verified_event": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "comprehensive_none_coverage": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "counts_toward_closeout": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "review_after_utc_day_close": {
+              "type": "boolean"
+            },
+            "official_sources_valid": {
+              "type": "boolean"
+            },
+            "invalid_official_sources": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "technical_eligibility": {
+          "type": "boolean"
+        },
+        "review_eligibility": {
+          "type": "boolean"
+        },
+        "closeout_eligible": {
+          "type": "boolean"
+        },
+        "flow_state": {
+          "$ref": "#/$defs/flowState"
+        },
+        "failed_gates": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "gates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/gate"
+          }
+        },
+        "scorecard_eligibility": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "eligible",
+            "checks"
+          ],
+          "properties": {
+            "eligible": {
+              "type": "boolean"
+            },
+            "checks": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "snapshot_not_production",
+                "snapshot_captured_within_pre_outcome_window",
+                "all_pilots_present",
+                "all_recommendations_test_only",
+                "forecast_available",
+                "forecast_covers_target_day",
+                "forecast_pairs_mature_at_snapshot",
+                "imerg_early_available",
+                "imerg_latency_recorded",
+                "regression_passed",
+                "outcome_status_reviewed",
+                "outcome_label_accepted",
+                "outcome_official_sources_recorded",
+                "outcome_named_human_reviewer",
+                "outcome_not_automatic",
+                "outcome_counts_toward_closeout_explicit",
+                "outcome_label_semantics_supported",
+                "outcome_review_after_utc_day_close"
+              ],
+              "properties": {
+                "snapshot_not_production": {
+                  "type": "boolean"
+                },
+                "snapshot_captured_within_pre_outcome_window": {
+                  "type": "boolean"
+                },
+                "all_pilots_present": {
+                  "type": "boolean"
+                },
+                "all_recommendations_test_only": {
+                  "type": "boolean"
+                },
+                "forecast_available": {
+                  "type": "boolean"
+                },
+                "forecast_covers_target_day": {
+                  "type": "boolean"
+                },
+                "forecast_pairs_mature_at_snapshot": {
+                  "type": "boolean"
+                },
+                "imerg_early_available": {
+                  "type": "boolean"
+                },
+                "imerg_latency_recorded": {
+                  "type": "boolean"
+                },
+                "regression_passed": {
+                  "type": "boolean"
+                },
+                "outcome_status_reviewed": {
+                  "type": "boolean"
+                },
+                "outcome_label_accepted": {
+                  "type": "boolean"
+                },
+                "outcome_official_sources_recorded": {
+                  "type": "boolean"
+                },
+                "outcome_named_human_reviewer": {
+                  "type": "boolean"
+                },
+                "outcome_not_automatic": {
+                  "type": "boolean"
+                },
+                "outcome_counts_toward_closeout_explicit": {
+                  "type": "boolean"
+                },
+                "outcome_label_semantics_supported": {
+                  "type": "boolean"
+                },
+                "outcome_review_after_utc_day_close": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
