@@ -8,6 +8,7 @@ from scripts.validate_external_evidence_package import canonical_accepted_item
 
 def contract():
     return {
+        "version": "0.8",
         "production_use": False,
         "pilots": [{"zone_id": "catacaos", "required_evidence_ids": ["river_state"]}],
     }
