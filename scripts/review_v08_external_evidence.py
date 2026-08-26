@@ -80,13 +80,6 @@ def apply_review(
     if not notes.strip():
         raise ValueError("La revisión requiere una justificación técnica")
 
-    package_id = normalize_package_id(source_evidence_package_id)
-    if decision == "ACCEPTED" and not package_id:
-        raise ValueError(
-            "ACCEPTED requiere source_evidence_package_id para enlazar la decisión humana "
-            "con el paquete de intake"
-        )
-
     required = required_items_by_zone(contract)
     if evidence_id not in required.get(zone_id, set()):
         raise ValueError("El elemento no pertenece al contrato del piloto indicado")
@@ -112,6 +105,15 @@ def apply_review(
         previous_reviewed_at = previous_review.get("reviewed_at")
         if previous_reviewed_at and review_time <= parse_utc_timestamp(previous_reviewed_at):
             raise ValueError("La corrección debe tener un reviewed_at posterior a la revisión existente")
+
+    package_id = normalize_package_id(source_evidence_package_id)
+    if decision == "ACCEPTED" and not package_id:
+        raise ValueError(
+            "ACCEPTED requiere source_evidence_package_id para enlazar la decisión humana "
+            "con el paquete de intake"
+        )
+
+    if previous_review:
         archived = deepcopy(previous_review)
         archived["superseded_at"] = review_time.isoformat()
         archived["superseded_status"] = item.get("status")
