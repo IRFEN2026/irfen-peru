@@ -107,18 +107,17 @@ def apply_review(
             raise ValueError("La corrección debe tener un reviewed_at posterior a la revisión existente")
 
     package_id = normalize_package_id(source_evidence_package_id)
+    if decision == "ACCEPTED" and contract.get("version") == "0.8" and not package_id:
+        raise ValueError(
+            "ACCEPTED requiere source_evidence_package_id para enlazar la decisión humana "
+            "con el paquete de intake"
+        )
 
     if previous_review:
         archived = deepcopy(previous_review)
         archived["superseded_at"] = review_time.isoformat()
         archived["superseded_status"] = item.get("status")
         item.setdefault("review_history", []).append(archived)
-
-    if decision == "ACCEPTED" and not package_id:
-        raise ValueError(
-            "ACCEPTED requiere source_evidence_package_id para enlazar la decisión humana "
-            "con el paquete de intake"
-        )
 
     item["official_sources"] = sources
     item["status"] = decision
@@ -171,7 +170,7 @@ def main():
     parser.add_argument("--reviewed-at", help="Instante ISO-8601 con zona horaria")
     parser.add_argument(
         "--source-evidence-package-id",
-        help="ID exacto del paquete de intake; obligatorio para ACCEPTED",
+        help="ID exacto del paquete de intake; obligatorio para ACCEPTED bajo contrato v0.8",
     )
     parser.add_argument(
         "--confirm-requirement-fully-satisfied",
