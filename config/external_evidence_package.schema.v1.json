@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://irfen2026.github.io/irfen-peru/schemas/external_evidence_package.schema.v1.json",
+  "title": "IRFEN external evidence package manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_version",
+    "evidence_package_id",
+    "received_at",
+    "receipt_channel",
+    "ingested_by",
+    "package_validation",
+    "scientific_disposition",
+    "provenance",
+    "technical_coverage",
+    "files",
+    "package_sha256",
+    "review",
+    "version_relation"
+  ],
+  "properties": {
+    "manifest_version": {"const": "external-evidence-package-v1"},
+    "evidence_package_id": {"type": "string", "minLength": 3},
+    "received_at": {"type": "string", "format": "date-time"},
+    "receipt_channel": {"type": ["string", "null"]},
+    "ingested_by": {"type": "string", "minLength": 1},
+    "package_validation": {"enum": ["VALID", "INVALID"]},
+    "scientific_disposition": {"enum": ["RECEIVED_UNREVIEWED", "CANDIDATE", "PARTIAL", "ACCEPTED", "REJECTED"]},
+    "package_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "duplicate_status": {
+      "type": "array",
+      "items": {"enum": ["EXACT_CONTENT_DUPLICATE", "SAME_NAME_DIFFERENT_BYTES", "DECLARED_NEW_VERSION", "UNDECLARED_REPLACEMENT"]},
+      "uniqueItems": true
+    },
+    "version_relation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["relation", "previous_package_id"],
+      "properties": {
+        "relation": {"enum": ["NONE", "NEW_VERSION", "SUPERSEDES", "RELATED"]},
+        "previous_package_id": {"type": ["string", "null"]}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["institution", "responsible_unit", "custodian", "sender", "origin_record", "use_conditions", "license_or_restriction", "chain_of_custody"],
+      "properties": {
+        "institution": {"type": ["string", "null"]},
+        "responsible_unit": {"type": ["string", "null"]},
+        "custodian": {"type": ["string", "null"]},
+        "sender": {"type": ["string", "null"]},
+        "origin_record": {"type": ["string", "null"]},
+        "use_conditions": {"type": ["string", "null"]},
+        "license_or_restriction": {"type": ["string", "null"]},
+        "chain_of_custody": {"type": "array", "items": {"type": "object"}}
+      }
+    },
+    "technical_coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pilot_ids", "requirement_ids", "variable", "unit", "start_at", "end_at", "timezone", "frequency", "spatial_coverage", "coordinates", "crs", "datum", "elevation", "instrument", "field_dictionary", "qa_qc", "gaps", "missing_values", "document_version", "prepared_at"],
+      "properties": {
+        "pilot_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "requirement_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "variable": {"type": ["string", "null"]},
+        "unit": {"type": ["string", "null"]},
+        "start_at": {"type": ["string", "null"]},
+        "end_at": {"type": ["string", "null"]},
+        "timezone": {"type": ["string", "null"]},
+        "frequency": {"type": ["string", "null"]},
+        "spatial_coverage": {"type": ["string", "object", "null"]},
+        "coordinates": {"type": ["array", "object", "null"]},
+        "crs": {"type": ["string", "null"]},
+        "datum": {"type": ["string", "null"]},
+        "elevation": {"type": ["number", "string", "null"]},
+        "instrument": {"type": ["string", "null"]},
+        "field_dictionary": {"type": ["object", "null"]},
+        "qa_qc": {"type": ["object", "string", "null"]},
+        "gaps": {"type": ["array", "string", "null"]},
+        "missing_values": {"type": ["array", "object", "string", "null"]},
+        "document_version": {"type": ["string", "null"]},
+        "prepared_at": {"type": ["string", "null"]},
+        "metadata_state": {
+          "type": "object",
+          "additionalProperties": {"enum": ["provided", "not_provided", "not_applicable", "unknown"]}
+        }
+      }
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "original_name", "path", "mime", "size_bytes", "sha256", "is_original"],
+        "properties": {
+          "role": {"type": "string"},
+          "original_name": {"type": "string", "minLength": 1},
+          "path": {"type": "string", "minLength": 1},
+          "mime": {"type": "string", "minLength": 1},
+          "size_bytes": {"type": "integer", "minimum": 0},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "is_original": {"type": "boolean"},
+          "transformation": {
+            "type": ["object", "null"],
+            "properties": {
+              "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "method": {"type": "string", "minLength": 1},
+              "operator": {"type": "string", "minLength": 1},
+              "transformed_at": {"type": "string", "format": "date-time"}
+            },
+            "required": ["source_sha256", "method", "operator", "transformed_at"]
+          }
+        }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["automatic", "reviewer", "reviewed_at", "decision", "justification", "requirements_may_unlock", "requirements_not_unlocked", "limitations", "conflicts", "second_review_required", "requirement_fully_satisfied"],
+      "properties": {
+        "automatic": {"type": "boolean"},
+        "reviewer": {"type": ["string", "null"]},
+        "reviewed_at": {"type": ["string", "null"]},
+        "decision": {"type": ["string", "null"]},
+        "justification": {"type": ["string", "null"]},
+        "requirements_may_unlock": {"type": "array", "items": {"type": "string"}},
+        "requirements_not_unlocked": {"type": "array", "items": {"type": "string"}},
+        "limitations": {"type": ["array", "string", "null"]},
+        "conflicts": {"type": ["array", "string", "null"]},
+        "second_review_required": {"type": ["boolean", "null"]},
+        "requirement_fully_satisfied": {"type": "boolean"},
+        "ledger_reference": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["zone_id", "evidence_id", "reviewed_at", "reviewed_by"],
+          "properties": {
+            "zone_id": {"type": "string", "minLength": 1},
+            "evidence_id": {"type": "string", "minLength": 1},
+            "reviewed_at": {"type": "string", "format": "date-time"},
+            "reviewed_by": {"type": "string", "minLength": 1}
+          }
+        }
+      }
+    }
+  }
+}

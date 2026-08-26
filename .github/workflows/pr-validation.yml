@@ -107,6 +107,13 @@ jobs:
       - name: Reconstruir verificación desde el histórico científico dedicado
         run: python scripts/verify_geos_against_imerg.py --previous-verification /tmp/previous-verification.json
 
+      - name: Ejecutar pruebas focalizadas de intake externo
+        run: |
+          python -m unittest discover -s tests -p 'test_external_evidence_intake.py' -v
+          python scripts/build_external_evidence_intake_index.py --check
+          python -m json.tool config/external_evidence_package.schema.v1.json >/dev/null
+          python -m json.tool site/data/validation/external_evidence_intake_index.json >/dev/null
+
       - name: Ejecutar puertas científicas v0.8
         run: |
           python scripts/build_lambayeque_hydrologic_units.py --check-only
