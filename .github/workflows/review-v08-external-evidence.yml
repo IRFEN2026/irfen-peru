@@ -39,6 +39,10 @@ on:
         options:
           - REJECTED
           - ACCEPTED
+      source_evidence_package_id:
+        description: "ID exacto del paquete de intake; obligatorio para ACCEPTED"
+        required: false
+        type: string
       notes:
         description: "Justificación técnica de cobertura, vigencia, unidades y ámbito"
         required: true
@@ -87,6 +91,7 @@ jobs:
           ZONE_ID: ${{ inputs.zone_id }}
           EVIDENCE_ID: ${{ inputs.evidence_id }}
           REVIEW_DECISION: ${{ inputs.decision }}
+          SOURCE_EVIDENCE_PACKAGE_ID: ${{ inputs.source_evidence_package_id }}
           REVIEW_NOTES: ${{ inputs.notes }}
           ADDITIONAL_OFFICIAL_SOURCES: ${{ inputs.additional_official_sources }}
           REVIEWED_BY: ${{ github.actor }}
@@ -110,6 +115,7 @@ jobs:
               for line in os.environ.get("ADDITIONAL_OFFICIAL_SOURCES", "").splitlines()
               if line.strip()
           ]
+          package_id = os.environ.get("SOURCE_EVIDENCE_PACKAGE_ID", "").strip() or None
           review = apply_review(
               contract,
               ledger,
@@ -123,6 +129,7 @@ jobs:
                   os.environ["CONFIRM_REQUIREMENT_FULLY_SATISFIED"].lower() == "true"
               ),
               replace_existing_review=os.environ["REPLACE_EXISTING_REVIEW"].lower() == "true",
+              source_evidence_package_id=package_id,
           )
           ledger_path.write_text(
               json.dumps(ledger, ensure_ascii=False, indent=2) + "\n",
@@ -141,9 +148,10 @@ jobs:
           ZONE_ID: ${{ inputs.zone_id }}
           EVIDENCE_ID: ${{ inputs.evidence_id }}
           REVIEW_DECISION: ${{ inputs.decision }}
+          SOURCE_EVIDENCE_PACKAGE_ID: ${{ inputs.source_evidence_package_id }}
           REVIEWED_BY: ${{ github.actor }}
         run: |
-          python -m unittest tests.test_review_v08_external_evidence tests.test_review_v08_external_evidence_workflow
+          python -m unittest tests.test_review_v08_external_evidence tests.test_review_v08_external_evidence_workflow tests.test_external_evidence_human_ledger_traceability
           python -m json.tool site/data/validation/v08_external_evidence.json >/dev/null
           python - <<'PY'
           import json
@@ -160,6 +168,9 @@ jobs:
           assert review.get("reviewed_by") == os.environ["REVIEWED_BY"]
           assert review.get("automatic") is False
           if item.get("status") == "ACCEPTED":
+              package_id = os.environ.get("SOURCE_EVIDENCE_PACKAGE_ID", "").strip()
+              assert package_id
+              assert review.get("source_evidence_package_id") == package_id
               assert review.get("requirement_fully_satisfied") is True
               assert not item.get("remaining_gap")
           else:

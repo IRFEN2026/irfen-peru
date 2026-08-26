@@ -313,6 +313,7 @@ class ExternalEvidenceReviewTests(unittest.TestCase):
             "Especialista ANA", "La evidencia cubre íntegramente estación, unidad y frescura.",
             reviewed_at="2026-08-16T06:00:00Z",
             confirm_requirement_fully_satisfied=True,
+            source_evidence_package_id="pkg-catacaos-river-state-001",
         )
         item = data["pilots"][0]["items"][0]
         self.assertFalse(result["automatic"])
@@ -368,6 +369,7 @@ class ExternalEvidenceReviewTests(unittest.TestCase):
             reviewed_at="2026-08-17T06:00:00Z",
             confirm_requirement_fully_satisfied=True,
             replace_existing_review=True,
+            source_evidence_package_id="pkg-catacaos-river-state-002",
         )
         item = data["pilots"][0]["items"][0]
         self.assertEqual(len(item["review_history"]), 1)
