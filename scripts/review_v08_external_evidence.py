@@ -50,6 +50,13 @@ def required_items_by_zone(contract: dict):
     }
 
 
+def normalize_package_id(value: str | None) -> str | None:
+    if value is None:
+        return None
+    normalized = value.strip()
+    return normalized or None
+
+
 def apply_review(
     contract: dict,
     ledger: dict,
@@ -62,6 +69,7 @@ def apply_review(
     reviewed_at: str | None = None,
     confirm_requirement_fully_satisfied: bool = False,
     replace_existing_review: bool = False,
+    source_evidence_package_id: str | None = None,
 ):
     if decision not in ALLOWED_DECISIONS:
         raise ValueError(f"Decisión no permitida: {decision}")
@@ -71,6 +79,13 @@ def apply_review(
         raise ValueError("La revisión requiere el nombre o identificador del revisor humano")
     if not notes.strip():
         raise ValueError("La revisión requiere una justificación técnica")
+
+    package_id = normalize_package_id(source_evidence_package_id)
+    if decision == "ACCEPTED" and not package_id:
+        raise ValueError(
+            "ACCEPTED requiere source_evidence_package_id para enlazar la decisión humana "
+            "con el paquete de intake"
+        )
 
     required = required_items_by_zone(contract)
     if evidence_id not in required.get(zone_id, set()):
@@ -104,7 +119,7 @@ def apply_review(
 
     item["official_sources"] = sources
     item["status"] = decision
-    item["review"] = {
+    review_record = {
         "reviewed_by": reviewer.strip(),
         "reviewed_at": review_time.isoformat(),
         "automatic": False,
@@ -112,6 +127,10 @@ def apply_review(
         "notes": notes.strip(),
         "requirement_fully_satisfied": decision == "ACCEPTED",
     }
+    if package_id:
+        review_record["source_evidence_package_id"] = package_id
+    item["review"] = review_record
+
     if decision == "ACCEPTED":
         previous_gap = item.pop("remaining_gap", None)
         if previous_gap:
@@ -148,6 +167,10 @@ def main():
     parser.add_argument("--source", action="append", help="URL oficial adicional; se puede repetir")
     parser.add_argument("--reviewed-at", help="Instante ISO-8601 con zona horaria")
     parser.add_argument(
+        "--source-evidence-package-id",
+        help="ID exacto del paquete de intake; obligatorio para ACCEPTED",
+    )
+    parser.add_argument(
         "--confirm-requirement-fully-satisfied",
         action="store_true",
         help="Confirmación humana obligatoria para ACCEPTED",
@@ -171,6 +194,7 @@ def main():
         reviewed_at=args.reviewed_at,
         confirm_requirement_fully_satisfied=args.confirm_requirement_fully_satisfied,
         replace_existing_review=args.replace_existing_review,
+        source_evidence_package_id=args.source_evidence_package_id,
     )
     args.ledger.write_text(json.dumps(ledger, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"zone_id": args.zone_id, "evidence_id": args.evidence_id, **review}, ensure_ascii=False, indent=2))
