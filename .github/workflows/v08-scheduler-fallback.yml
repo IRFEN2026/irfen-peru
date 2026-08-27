@@ -1,0 +1,109 @@
+name: IRFEN - Respaldo controlado del planificador v0.8
+
+on:
+  workflow_dispatch:
+  issues:
+    types: [opened, edited, reopened]
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: v08-scheduler-fallback
+  cancel-in-progress: false
+
+jobs:
+  dispatch-stale-collectors:
+    if: >-
+      ${{
+        github.event_name == 'workflow_dispatch' ||
+        (
+          github.actor == 'IRFEN2026' &&
+          github.event.issue.title == '[automation] IRFEN v0.8 evidence sweep' &&
+          startsWith(github.event.issue.body, 'IRFEN_V08_EVIDENCE_SWEEP')
+        )
+      }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Descargar main
+        uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - name: Verificar guardas científicas antes del respaldo
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          contract = json.loads(Path("config/v08_closeout_contract.json").read_text())
+          assert contract.get("production_use") is False
+          assert contract.get("pilot_zone_ids") == ["san_ildefonso", "chosica", "catacaos"]
+          rules = contract.get("safety_rules") or []
+          assert "all v0.8 recommendations remain TEST_ONLY" in rules
+          assert "phase-2 candidates remain RESEARCH_ONLY until their validation contracts close" in rules
+          PY
+
+      - name: Comprobar inactividad del planificador y despachar colectores vencidos
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          now_epoch="$(date -u +%s)"
+          latest_schedule="$(
+            gh api "/repos/${GITHUB_REPOSITORY}/actions/runs?event=schedule&per_page=1" \
+              --jq '.workflow_runs[0].created_at // empty'
+          )"
+
+          if [[ -n "$latest_schedule" ]]; then
+            schedule_age_seconds=$((now_epoch - $(date -u -d "$latest_schedule" +%s)))
+            if (( schedule_age_seconds < 14400 )); then
+              echo "El planificador emitió un evento hace menos de 4 h; no se usa el respaldo."
+              exit 0
+            fi
+          fi
+
+          # Cada entrada es workflow:enfriamiento mínimo en segundos. Los
+          # enfriamientos consideran la cadencia normal y evitan despachos
+          # repetidos mientras el scheduler de GitHub se recupera.
+          targets=(
+            "igp-cendehua-probe.yml:5400"
+            "goes19-rrqpe-probe.yml:5400"
+            "senamhi-nacara-probe.yml:5400"
+            "imerg-early-probe.yml:5400"
+            "shadow-validation.yml:7200"
+            "official-outcome-evidence.yml:25200"
+            "piura-source-status.yml:90000"
+            "update-and-deploy.yml:90000"
+            "geos-forecast.yml:90000"
+          )
+
+          dispatched=0
+          for target in "${targets[@]}"; do
+            workflow="${target%%:*}"
+            cooldown="${target##*:}"
+            latest_run="$(
+              gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/${workflow}/runs?per_page=1" \
+                --jq '.workflow_runs[0].created_at // empty'
+            )"
+
+            if [[ -n "$latest_run" ]]; then
+              age_seconds=$((now_epoch - $(date -u -d "$latest_run" +%s)))
+              if (( age_seconds < cooldown )); then
+                echo "$workflow aún está dentro de su enfriamiento (${age_seconds}s < ${cooldown}s)."
+                continue
+              fi
+            fi
+
+            gh workflow run "$workflow" \
+              --repo "$GITHUB_REPOSITORY" \
+              --ref main
+            echo "Despachado: $workflow"
+            dispatched=$((dispatched + 1))
+          done
+
+          echo "Colectores despachados por respaldo: $dispatched"
