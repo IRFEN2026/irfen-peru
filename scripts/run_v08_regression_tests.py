@@ -558,9 +558,9 @@ def main():
     check('closeout_shadow_capture_lead_is_bounded',0<int(shadow_capture.get('earliest_eligible_capture_lead_minutes',0))<=720)
     check('closeout_shadow_capture_delay_is_bounded',0<int(shadow_capture.get('latest_eligible_capture_delay_minutes',0))<=120)
     shadow_workflow=(ROOT/'.github/workflows/shadow-validation.yml').read_text(encoding='utf-8')
-    check('closeout_shadow_schedule_covers_pre_day_window','cron: "10 0,12,14,16,18,20,22 * * *"' in shadow_workflow)
+    check('closeout_shadow_schedule_covers_pre_day_window','cron: "12 0,12,14,16,18,20,22 * * *"' in shadow_workflow)
     retry_crons=shadow_capture.get('redundant_retry_crons_utc') or []
-    check('closeout_shadow_redundant_capture_attempts_declared',retry_crons==['50 0 * * *','30 1 * * *'])
+    check('closeout_shadow_redundant_capture_attempts_declared',retry_crons==['52 0 * * *','32 1 * * *'])
     check('closeout_shadow_redundant_capture_attempts_scheduled',all(f'cron: "{cron}"' in shadow_workflow for cron in retry_crons))
     check('closeout_shadow_capture_runs_are_serialized','cancel-in-progress: false' in shadow_workflow)
     check('closeout_shadow_publish_only_after_new_snapshot',"if: steps.persist.outputs.changed == 'true'" in shadow_workflow)

@@ -57,7 +57,7 @@ class OfficialOutcomeEvidenceTests(unittest.TestCase):
             encoding="utf-8"
         )
 
-        self.assertIn('cron: "25 0,6,12,18 * * *"', workflow)
+        self.assertIn('cron: "27 0,6,12,18 * * *"', workflow)
         self.assertIn("SNAPSHOT_DATE: ${{ inputs.snapshot_date }}", workflow)
         self.assertIn('args+=(--snapshot-date "$SNAPSHOT_DATE")', workflow)
 
