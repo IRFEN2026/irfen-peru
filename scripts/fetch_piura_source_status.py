@@ -151,14 +151,65 @@ def inspect_bulletin(entry, headers):
     return result
 
 
+def carry_forward_verified_bulletin(current, previous, now, reason):
+    """Conserva evidencia verificada como obsoleta ante fallas transitorias.
+
+    Solo se arrastra un boletín si el JSON anterior contiene una comprobación
+    explícita que coincide con su fecha y URL. Nunca se convierte en estado
+    numérico actual ni se presenta como una observación fresca.
+    """
+    previous = previous or {}
+    bulletin_date = previous.get('latest_forecast_bulletin_date')
+    bulletin_url = previous.get('latest_verified_forecast_bulletin_url')
+    checks = previous.get('forecast_catalog_document_checks') or []
+    proof = any(
+        row.get('document_status') == 'VERIFIED_HYDROLOGICAL_BULLETIN'
+        and row.get('catalog_date') == bulletin_date
+        and row.get('url') == bulletin_url
+        for row in checks
+    )
+    if not bulletin_date or not bulletin_url or not proof:
+        current.update({
+            'forecast_bulletin_status':f'{reason}_no_verified_bulletin',
+            'forecast_bulletin_stale':True,
+        })
+        return False
+
+    parsed_date = date.fromisoformat(bulletin_date)
+    for key in (
+        'latest_forecast_catalog_date',
+        'latest_forecast_catalog_url',
+        'latest_forecast_bulletin_date',
+        'latest_verified_forecast_bulletin_url',
+        'forecast_catalog_document_checks',
+        'forecast_catalog_integrity_warning',
+        'forecast_catalog_last_verified_at',
+    ):
+        if key in previous:
+            current[key] = previous[key]
+    current.update({
+        'latest_forecast_bulletin_age_days':(now.date()-parsed_date).days,
+        'forecast_bulletin_status':f'{reason}_last_verified_bulletin_stale',
+        'forecast_bulletin_stale':True,
+    })
+    return True
+
+
 def main():
     peru = timezone(timedelta(hours=-5))
     now = datetime.now(peru)
     url = f'{BASE}/datosh/data/{now.year}/{now.month:02d}'
     headers={'User-Agent':'Mozilla/5.0 IRFEN-research/0.8','Accept':'text/html,application/json,*/*'}
 
+    generated_at=datetime.now(timezone.utc).isoformat()
+    try:
+        previous_status=json.loads(OUT.read_text(encoding='utf-8'))
+    except Exception:
+        previous_status={}
+    previous_senamhi=previous_status.get('senamhi') or {}
+
     status={
-        'generated_at':datetime.now(timezone.utc).isoformat(),
+        'generated_at':generated_at,
         'zone_id':'catacaos',
         'production_use':False,
         'purpose':'Frescura y referencias oficiales; no representa por sí solo caudal ni nivel actual del río.',
@@ -204,6 +255,7 @@ def main():
 
     try:
         r=requests.get(SEN_FORECAST,timeout=25,headers=headers)
+        r.raise_for_status()
         entries = parse_piura_forecast_entries(r.text)
         catalog_latest = entries[0] if entries else None
 
@@ -246,6 +298,8 @@ def main():
             'latest_forecast_bulletin_age_days':(now.date()-latest_date).days if latest_date else None,
             'latest_verified_forecast_bulletin_url':latest_verified['url'] if latest_verified else None,
             'forecast_bulletin_status':bulletin_status,
+            'forecast_bulletin_stale':False,
+            'forecast_catalog_last_verified_at':generated_at if latest_verified else None,
             'forecast_catalog_document_checks':checks,
             'forecast_catalog_integrity_warning':(
                 'Una o más entradas del catálogo enlazan documentos no hidrológicos; '
@@ -253,12 +307,30 @@ def main():
                 if mismatches else None
             ),
         })
+        verification_errors = [
+            check for check in checks
+            if check.get('document_status') == 'DOCUMENT_VERIFICATION_ERROR'
+        ]
+        if not latest_verified and verification_errors:
+            status['senamhi']['forecast_catalog_current_document_checks'] = checks
+            carry_forward_verified_bulletin(
+                status['senamhi'],
+                previous_senamhi,
+                now,
+                'document_verification_error',
+            )
     except Exception as exc:
         status['senamhi'].update({
             'forecast_page_access_status':'access_error',
             'forecast_page_error_type':type(exc).__name__,
             'forecast_page_error':str(exc),
         })
+        carry_forward_verified_bulletin(
+            status['senamhi'],
+            previous_senamhi,
+            now,
+            'source_unreachable',
+        )
 
     OUT.parent.mkdir(parents=True,exist_ok=True)
     OUT.write_text(json.dumps(status,ensure_ascii=False,indent=2),encoding='utf-8')

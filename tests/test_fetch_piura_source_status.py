@@ -1,5 +1,6 @@
 import importlib.util
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -60,6 +61,56 @@ class PiuraForecastCatalogTests(unittest.TestCase):
         self.assertEqual(
             "DOCUMENT_MISMATCH_UNVERIFIED_CONTENT",
             MODULE.classify_bulletin_text("Pronóstico hidrológico de otra cuenca"),
+        )
+
+    def test_verified_bulletin_is_retained_as_stale_on_source_outage(self):
+        previous = {
+            "latest_forecast_catalog_date": "2026-08-25",
+            "latest_forecast_catalog_url": "https://example.test/mismatch.pdf",
+            "latest_forecast_bulletin_date": "2025-03-21",
+            "latest_verified_forecast_bulletin_url": "https://example.test/verified.pdf",
+            "forecast_catalog_last_verified_at": "2026-08-28T04:17:35+00:00",
+            "forecast_catalog_document_checks": [{
+                "catalog_date": "2025-03-21",
+                "url": "https://example.test/verified.pdf",
+                "document_status": "VERIFIED_HYDROLOGICAL_BULLETIN",
+            }],
+        }
+        current = {}
+
+        retained = MODULE.carry_forward_verified_bulletin(
+            current,
+            previous,
+            datetime(2026, 8, 28, tzinfo=timezone.utc),
+            "source_unreachable",
+        )
+
+        self.assertTrue(retained)
+        self.assertEqual("2025-03-21", current["latest_forecast_bulletin_date"])
+        self.assertTrue(current["forecast_bulletin_stale"])
+        self.assertEqual(
+            "source_unreachable_last_verified_bulletin_stale",
+            current["forecast_bulletin_status"],
+        )
+
+    def test_unproved_previous_date_is_not_carried_forward(self):
+        current = {}
+
+        retained = MODULE.carry_forward_verified_bulletin(
+            current,
+            {
+                "latest_forecast_bulletin_date": "2025-03-21",
+                "latest_verified_forecast_bulletin_url": "https://example.test/unproved.pdf",
+            },
+            datetime(2026, 8, 28, tzinfo=timezone.utc),
+            "source_unreachable",
+        )
+
+        self.assertFalse(retained)
+        self.assertNotIn("latest_forecast_bulletin_date", current)
+        self.assertEqual(
+            "source_unreachable_no_verified_bulletin",
+            current["forecast_bulletin_status"],
         )
 
 
