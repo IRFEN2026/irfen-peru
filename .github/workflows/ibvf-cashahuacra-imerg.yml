@@ -1,0 +1,56 @@
+name: IBVF - Cashahuacra IMERG Final V07 inventory
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ibvf_imerg_inventory.py'
+      - '.github/workflows/ibvf-cashahuacra-imerg.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check 'requests>=2.31,<3'
+      - name: Verify CMR granule slots
+        run: |
+          mkdir -p artifacts/ibvf
+          python scripts/ibvf_imerg_inventory.py \
+            --start 2015-03-16 \
+            --end 2015-03-24 \
+            --event-date 2015-03-23 \
+            --output artifacts/ibvf/cashahuacra_imerg_inventory.json \
+            --raw-metadata-output artifacts/ibvf/cashahuacra_imerg_cmr_raw.json
+      - name: Scientific guards and slot contract
+        run: |
+          python - <<'PY'
+          import json
+          p='artifacts/ibvf/cashahuacra_imerg_inventory.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY'
+          assert d['test_only'] is True
+          assert d['production_use'] is False
+          assert d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False
+          assert d['expected_total_slots']==432
+          assert d['event_day_48_slots_verified'] is True
+          assert d['window_all_slots_verified'] is True
+          print({'resolved':d['resolved_granule_count'],'event48':d['event_day_48_slots_verified'],'window432':d['window_all_slots_verified'],'cmr_sha256':d['source']['cmr_response_sha256']})
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ibvf-cashahuacra-imerg-${{ github.sha }}
+          path: |
+            artifacts/ibvf/cashahuacra_imerg_inventory.json
+            artifacts/ibvf/cashahuacra_imerg_cmr_raw.json
+          if-no-files-found: error
+          retention-days: 30
