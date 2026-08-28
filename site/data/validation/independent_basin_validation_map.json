@@ -1,6 +1,6 @@
 {
-  "version": "irfen-independent-basin-validation-map-v0.6",
-  "generated_at": "2026-08-28T21:57:00Z",
+  "version": "irfen-independent-basin-validation-map-v0.7",
+  "generated_at": "2026-08-28T22:00:00Z",
   "framework": "IRFEN Independent Basin Validation Framework",
   "deployment_status": "RESEARCH_ONLY",
   "test_only": true,
@@ -15,6 +15,7 @@
     "stac_root": "https://earth-search.aws.element84.com/v1",
     "inventory_script": "scripts/ibvf_stac_inventory.py",
     "landsat_aoi_qa_script": "scripts/ibvf_landsat_aoi_qa.py",
+    "dem_snap_script": "scripts/ibvf_cashahuacra_dem_snap.py",
     "collections": ["sentinel-1-grd", "landsat-c2-l2", "cop-dem-glo-30"],
     "transport_failure_is_missing_data": false,
     "global_landsat_cloud_cover_is_acceptance_criterion": false,
@@ -25,7 +26,8 @@
       "sentinel_pair_rule_unit_check": "PASS",
       "local_network_probe": "TRANSPORT_BLOCKED_DNS",
       "github_actions_stac_probe": "SUCCESS",
-      "github_actions_landsat_aoi_qa": "SUCCESS"
+      "github_actions_landsat_aoi_qa": "SUCCESS",
+      "github_actions_dem_freeze_snap": "SUCCESS"
     }
   },
   "guardrails": {
@@ -52,10 +54,15 @@
       "name": "Quebrada Cashahuacra",
       "blind_window": "2015-03-23",
       "framework_stage": "A1.2/A1.3",
-      "geometry_status": "REFERENCE_GEOMETRY_REVIEW_ONLY_REDELINEATION_PENDING",
+      "geometry_status": "DEM_FROZEN_SNAP_UNSTABLE_IBVF_BASIN_NOT_FROZEN",
       "geometry_path": "data/phase2/geometries/w1_santa_eulalia_rimac.geojson",
       "geometry_selector": {"property": "unit_id", "value": "cashahuacra"},
-      "geometry_semantics": "EXISTING_CANDIDATE_ONLY_NOT_FROZEN_FOR_IBVF",
+      "geometry_semantics": "DISPLAYED_GEOMETRY_IS_PREEXISTING_REVIEW_ONLY_REFERENCE_NOT_IBVF_FINAL",
+      "dem_snap_path": "data/validation/cashahuacra_dem_snap.json",
+      "dem_raw_sha256": "d9f8d410da66bfb85c73b957401aea73043f8618cccdb7d1fc76082d30a31130",
+      "snap_status": "UNSTABLE_REVIEW_REQUIRED",
+      "snap_max_cluster_distance_m": 323.836,
+      "morphometry_status": "BLOCKED_UNSTABLE_SNAP",
       "imerg_status": "CATALOG_CONTINUITY_CONFIRMED_RAW_SHA256_PENDING",
       "remote_sensing_status": "S1_PAIR_YES_LANDSAT_QA_MEASURED_REFERENCE_AOI_CONDITIONAL",
       "stac_probe_path": "data/validation/cashahuacra_stac_probe.json",
