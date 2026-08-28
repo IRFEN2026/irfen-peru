@@ -72,7 +72,7 @@ function popup(c,feature){
 
 function normalizeGeo(g){return g?.type==='FeatureCollection'?(g.features||[]):g?.type==='Feature'?[g]:[];}
 function matchFeature(f,selector){if(!selector)return true;return f?.properties?.[selector.property]===selector.value;}
-function styleFor(c){const multiple=c.geometry_status==='MULTIPLE_REVIEW_ONLY_CANDIDATE_SETS';return {color:'#0f766e',weight:multiple?1.5:2.5,fillColor:'#5eead4',fillOpacity:multiple?.025:.055,dashArray:multiple?'2 7':'7 5'};}
+function styleFor(c){const multiple=c.geometry_status==='MULTIPLE_REVIEW_ONLY_CANDIDATE_SETS';return {color:'#0f766e',weight:multiple?1.5:2.5,fillColor:'#5eead4',fillOpacity:multiple?0.025:0.055,dashArray:multiple?'2 7':'7 5'};}
 
 async function renderIbvf(manifest){
   if(manifest.production_use!==false||manifest.production_ready!==false||manifest.operational_alerting_enabled!==false||manifest.uses_operational_event_none_labels!==false)throw new Error('IBVF guardrail violation');
