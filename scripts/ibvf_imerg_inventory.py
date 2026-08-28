@@ -58,8 +58,11 @@ def expected_slot_codes() -> list[str]:
 
 def fetch_cmr(start: date, end: date) -> tuple[dict[str, Any], bytes, str]:
     start_iso=f"{start.isoformat()}T00:00:00Z"
-    end_exclusive=end + timedelta(days=1)
-    end_iso=f"{end_exclusive.isoformat()}T00:00:00Z"
+    # CMR temporal overlap semantics include a granule that begins exactly at an
+    # interval endpoint. Use the final microsecond of the requested inclusive day
+    # rather than the next day's 00:00 boundary, which otherwise adds slot 0000
+    # of the following day (433 results for a 9-day / 432-slot window).
+    end_iso=f"{end.isoformat()}T23:59:59.999999Z"
     params={
         "collection_concept_id": COLLECTION_CONCEPT_ID,
         "temporal": f"{start_iso},{end_iso}",
