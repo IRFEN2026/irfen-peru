@@ -13,7 +13,6 @@ import json
 import re
 import unicodedata
 import requests
-from pypdf import PdfReader
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'site/data/hydrology/piura_source_status.json'
@@ -121,6 +120,8 @@ def classify_bulletin_text(text):
 
 def inspect_bulletin(entry, headers):
     """Descarga y verifica el contenido real del documento del catálogo."""
+    from pypdf import PdfReader
+
     result = {
         'catalog_date': entry['catalog_date'].isoformat(),
         'url': entry['url'],
