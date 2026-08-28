@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-27T14:22:24.047270+00:00",
+  "generated_at": "2026-08-28T04:17:35.836363+00:00",
   "zone_id": "catacaos",
   "production_use": false,
   "purpose": "Frescura y referencias oficiales; no representa por sí solo caudal ni nivel actual del río.",
@@ -30,8 +30,36 @@
     "reference_red_threshold_m3s": 1100,
     "reference_threshold_date": "2023-04-17",
     "reference_threshold_note": "Umbral rojo publicado por SENAMHI en aviso histórico de Puente Ñácara; no es caudal actual ni umbral de Catacaos.",
-    "forecast_page_access_status": "access_error",
-    "forecast_page_error_type": "ConnectTimeout",
-    "forecast_page_error": "HTTPSConnectionPool(host='www.senamhi.gob.pe', port=443): Max retries exceeded with url: /?p=pronostico-caudales (Caused by ConnectTimeoutError(<HTTPSConnection(host='www.senamhi.gob.pe', port=443) at 0x7f7612adce60>, 'Connection to www.senamhi.gob.pe timed out. (connect timeout=25)'))"
+    "forecast_page_http_status": 200,
+    "forecast_page_access_status": "available",
+    "latest_forecast_catalog_date": "2026-08-25",
+    "latest_forecast_catalog_url": "https://www.senamhi.gob.pe/load/file/03524SENA-34.pdf",
+    "latest_forecast_bulletin_date": "2025-03-21",
+    "latest_forecast_bulletin_age_days": 524,
+    "latest_verified_forecast_bulletin_url": "https://www.senamhi.gob.pe/load/file/03525SENA-170.pdf",
+    "forecast_bulletin_status": "catalog_document_mismatch_with_verified_fallback",
+    "forecast_catalog_document_checks": [
+      {
+        "catalog_date": "2026-08-25",
+        "url": "https://www.senamhi.gob.pe/load/file/03524SENA-34.pdf",
+        "cadence": "daily",
+        "catalog_title": "Pronóstico diario de caudal para la cuenca del Río Piura - Puente Ñácara (Pronóstico solo en avenida)",
+        "http_status": 200,
+        "document_status": "DOCUMENT_MISMATCH_FIRE_WEATHER",
+        "pdf_page_count": 1,
+        "extracted_text_characters": 2639
+      },
+      {
+        "catalog_date": "2025-03-21",
+        "url": "https://www.senamhi.gob.pe/load/file/03525SENA-170.pdf",
+        "cadence": "hourly",
+        "catalog_title": "Pronóstico horario de caudal para la cuenca del Río Piura - Puente Ñácara (Pronóstico solo en avenida)",
+        "http_status": 200,
+        "document_status": "VERIFIED_HYDROLOGICAL_BULLETIN",
+        "pdf_page_count": 1,
+        "extracted_text_characters": 1677
+      }
+    ],
+    "forecast_catalog_integrity_warning": "Una o más entradas del catálogo enlazan documentos no hidrológicos; sus fechas no se aceptan como evidencia de frescura."
   }
 }
