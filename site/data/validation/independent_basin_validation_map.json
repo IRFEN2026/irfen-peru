@@ -1,6 +1,6 @@
 {
-  "version": "irfen-independent-basin-validation-map-v0.5",
-  "generated_at": "2026-08-28T21:52:00Z",
+  "version": "irfen-independent-basin-validation-map-v0.6",
+  "generated_at": "2026-08-28T21:57:00Z",
   "framework": "IRFEN Independent Basin Validation Framework",
   "deployment_status": "RESEARCH_ONLY",
   "test_only": true,
@@ -18,12 +18,14 @@
     "collections": ["sentinel-1-grd", "landsat-c2-l2", "cop-dem-glo-30"],
     "transport_failure_is_missing_data": false,
     "global_landsat_cloud_cover_is_acceptance_criterion": false,
+    "landsat_byte_transport_fallback": "PLANETARY_COMPUTER_SIGNED_MIRROR_SAME_EARTH_SEARCH_ITEM_ID_ONLY",
     "local_validation": {
       "python_compile": "PASS",
       "dry_run_query_generation": "PASS",
       "sentinel_pair_rule_unit_check": "PASS",
       "local_network_probe": "TRANSPORT_BLOCKED_DNS",
-      "github_actions_stac_probe": "SUCCESS"
+      "github_actions_stac_probe": "SUCCESS",
+      "github_actions_landsat_aoi_qa": "SUCCESS"
     }
   },
   "guardrails": {
@@ -55,7 +57,7 @@
       "geometry_selector": {"property": "unit_id", "value": "cashahuacra"},
       "geometry_semantics": "EXISTING_CANDIDATE_ONLY_NOT_FROZEN_FOR_IBVF",
       "imerg_status": "CATALOG_CONTINUITY_CONFIRMED_RAW_SHA256_PENDING",
-      "remote_sensing_status": "S1_PAIR_YES_LANDSAT_007068_RESOLVED_AOI_QA_RUNNING",
+      "remote_sensing_status": "S1_PAIR_YES_LANDSAT_QA_MEASURED_REFERENCE_AOI_CONDITIONAL",
       "stac_probe_path": "data/validation/cashahuacra_stac_probe.json",
       "sentinel1_compatible_pair": "YES",
       "sentinel1_preferred_pair": [
@@ -67,7 +69,8 @@
         "LC08_L2SP_007068_20150318_02_T1",
         "LC08_L2SP_007068_20150419_02_T1"
       ],
-      "landsat_aoi_qa_status": "RUNNING_REFERENCE_AOI_NOT_FINAL_BASIN",
+      "landsat_aoi_qa_path": "data/validation/cashahuacra_landsat_aoi_qa.json",
+      "landsat_aoi_qa_status": "MEASURED_REFERENCE_AOI_PRE_CLEAR_30.142_POST_CLEAR_99.982_AEROSOL_QA_LIMITING",
       "smap_status": "MISSING_FOR_EVENT_WINDOW",
       "blind_status": "TERRITORIAL_EVIDENCE_SEALED",
       "production_use": false,
