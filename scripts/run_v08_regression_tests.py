@@ -155,8 +155,15 @@ def main():
     ))
     if senamhi_source.get('latest_forecast_catalog_date') != senamhi_source.get('latest_forecast_bulletin_date'):
         check('piura_source_catalog_mismatch_is_explicit',
-              bool(mismatch_checks) and 'mismatch' in str(senamhi_source.get('forecast_bulletin_status','')))
+              bool(mismatch_checks) and (
+                  'mismatch' in str(senamhi_source.get('forecast_bulletin_status',''))
+                  or senamhi_source.get('forecast_bulletin_stale') is True
+              ))
         check('piura_source_catalog_mismatch_warns_fail_closed',bool(senamhi_source.get('forecast_catalog_integrity_warning')))
+    if senamhi_source.get('forecast_page_access_status')=='access_error' and senamhi_source.get('latest_forecast_bulletin_date'):
+        check('piura_source_access_error_marks_retained_bulletin_stale',
+              senamhi_source.get('forecast_bulletin_stale') is True
+              and 'stale' in str(senamhi_source.get('forecast_bulletin_status','')))
 
     # Infraestructura nunca atenúa numéricamente sin calibración.
     check('hydraulic_inventory_not_production',hydraulics.get('production_use') is False)
