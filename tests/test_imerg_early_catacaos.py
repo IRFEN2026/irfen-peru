@@ -295,6 +295,18 @@ class HistoricalWindowValidationTests(unittest.TestCase):
 
 
 class ImergPublishHandoffTests(unittest.TestCase):
+    def test_probe_retries_bounded_push_races_without_overwriting_main(self):
+        workflow = (ROOT / ".github/workflows/imerg-early-probe.yml").read_text(encoding="utf-8")
+
+        self.assertIn("for attempt in 1 2 3 4", workflow)
+        self.assertIn("git fetch origin main", workflow)
+        self.assertIn("git rebase origin/main", workflow)
+        self.assertIn("git rebase --abort || true", workflow)
+        self.assertIn("if git push origin HEAD:main; then", workflow)
+        self.assertIn("sleep $((attempt * 3))", workflow)
+        self.assertIn("No fue posible publicar evidencia IMERG Early tras 4 intentos.", workflow)
+        self.assertNotIn("git push --force", workflow)
+
     def test_probe_dispatches_publisher_with_exact_main_sha(self):
         workflow = (ROOT / ".github/workflows/imerg-early-probe.yml").read_text(encoding="utf-8")
         self.assertIn('EXPECTED_SHA="$(git rev-parse origin/main)"', workflow)
