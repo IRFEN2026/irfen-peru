@@ -1,0 +1,56 @@
+name: IBVF - Cashahuacra STAC research
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ibvf_stac_inventory.py'
+      - 'site/data/validation/cashahuacra_stac_probe.json'
+      - 'site/data/validation/independent_basin_validation_map.json'
+      - '.github/workflows/ibvf-cashahuacra-stac.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cashahuacra-stac:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate inventory script
+        run: python -m py_compile scripts/ibvf_stac_inventory.py
+      - name: Query Earth Search STAC
+        run: |
+          mkdir -p artifacts/ibvf
+          python scripts/ibvf_stac_inventory.py \
+            --case-id cashahuacra_2015-03-23 \
+            --bbox=-76.70,-11.95,-76.64,-11.84 \
+            --start 2015-02-15T00:00:00Z \
+            --end 2015-05-15T23:59:59Z \
+            --event-date 2015-03-23 \
+            --limit 500 \
+            --output artifacts/ibvf/cashahuacra_stac_inventory.json
+      - name: Guardrails
+        run: |
+          python - <<'PY'
+          import json
+          p='artifacts/ibvf/cashahuacra_stac_inventory.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY'
+          assert d['test_only'] is True
+          assert d['production_use'] is False
+          assert d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False
+          print([(x['collection'],x.get('transport_status'),x.get('item_count')) for x in d['collections']])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ibvf-cashahuacra-stac-${{ github.sha }}
+          path: artifacts/ibvf/cashahuacra_stac_inventory.json
+          if-no-files-found: error
+          retention-days: 30
