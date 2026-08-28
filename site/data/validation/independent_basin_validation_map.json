@@ -1,6 +1,6 @@
 {
-  "version": "irfen-independent-basin-validation-map-v0.7",
-  "generated_at": "2026-08-28T22:00:00Z",
+  "version": "irfen-independent-basin-validation-map-v0.8",
+  "generated_at": "2026-08-28T22:04:00Z",
   "framework": "IRFEN Independent Basin Validation Framework",
   "deployment_status": "RESEARCH_ONLY",
   "test_only": true,
@@ -16,6 +16,7 @@
     "inventory_script": "scripts/ibvf_stac_inventory.py",
     "landsat_aoi_qa_script": "scripts/ibvf_landsat_aoi_qa.py",
     "dem_snap_script": "scripts/ibvf_cashahuacra_dem_snap.py",
+    "imerg_inventory_script": "scripts/ibvf_imerg_inventory.py",
     "collections": ["sentinel-1-grd", "landsat-c2-l2", "cop-dem-glo-30"],
     "transport_failure_is_missing_data": false,
     "global_landsat_cloud_cover_is_acceptance_criterion": false,
@@ -27,7 +28,8 @@
       "local_network_probe": "TRANSPORT_BLOCKED_DNS",
       "github_actions_stac_probe": "SUCCESS",
       "github_actions_landsat_aoi_qa": "SUCCESS",
-      "github_actions_dem_freeze_snap": "SUCCESS"
+      "github_actions_dem_freeze_snap": "SUCCESS",
+      "github_actions_imerg_slot_inventory": "SUCCESS_48_EVENT_432_WINDOW"
     }
   },
   "guardrails": {
@@ -63,7 +65,10 @@
       "snap_status": "UNSTABLE_REVIEW_REQUIRED",
       "snap_max_cluster_distance_m": 323.836,
       "morphometry_status": "BLOCKED_UNSTABLE_SNAP",
-      "imerg_status": "CATALOG_CONTINUITY_CONFIRMED_RAW_SHA256_PENDING",
+      "imerg_status": "CMR_48_EVENT_432_WINDOW_VERIFIED_RAW_HDF5_SHA256_PENDING",
+      "imerg_inventory_path": "data/validation/cashahuacra_imerg_inventory.json",
+      "imerg_event_slots_verified": 48,
+      "imerg_window_slots_verified": 432,
       "remote_sensing_status": "S1_PAIR_YES_LANDSAT_QA_MEASURED_REFERENCE_AOI_CONDITIONAL",
       "stac_probe_path": "data/validation/cashahuacra_stac_probe.json",
       "sentinel1_compatible_pair": "YES",
