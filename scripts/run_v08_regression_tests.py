@@ -41,6 +41,7 @@ def main():
     ana_geo=load(SITE/'data/hydrology/ana_catacaos_critical_segments_2026.geojson')
     ana_val=load(SITE/'data/hydrology/ana_catacaos_critical_segments_2026_validation.json')
     piura_field=load(SITE/'data/hydrology/piura_2026_field_evidence.json')
+    piura_source=load(SITE/'data/hydrology/piura_source_status.json')
     pedregal=optional(SITE/'data/calibration/pedregal_ana_validation.json')
     pedregal_hh=optional(SITE/'data/calibration/pedregal_2015_imerg_halfhour.json')
     pedregal_ground=optional(SITE/'data/calibration/pedregal_ground_evidence_2015.json')
@@ -132,6 +133,30 @@ def main():
     check('piura_field_evidence_never_promotes_thresholds',field_safety.get('threshold_promotion_allowed') is False and field_safety.get('hydraulic_factor_promotion_allowed') is False)
     check('piura_field_evidence_missing_not_low_risk',field_safety.get('missing_data_is_low_risk') is False)
     check('piura_field_evidence_does_not_close_gate',field_safety.get('counts_toward_closeout') is False and (piura_field.get('decision_gate') or {}).get('status')=='HUMAN_TECHNICAL_REVIEW_REQUIRED')
+
+    # La fecha del catálogo SENAMHI solo cuenta como frescura si el documento
+    # enlazado demuestra ser un boletín hidrológico de Piura/Ñácara.
+    senamhi_source=piura_source.get('senamhi') or {}
+    document_checks=senamhi_source.get('forecast_catalog_document_checks') or []
+    verified_checks=[
+        row for row in document_checks
+        if row.get('document_status')=='VERIFIED_HYDROLOGICAL_BULLETIN'
+    ]
+    mismatch_checks=[
+        row for row in document_checks
+        if str(row.get('document_status','')).startswith('DOCUMENT_MISMATCH')
+    ]
+    check('piura_source_status_not_production',piura_source.get('production_use') is False)
+    check('piura_source_missing_numeric_state_stays_unavailable',senamhi_source.get('numeric_river_state_available') is False)
+    check('piura_source_verified_bulletin_has_document_proof',not senamhi_source.get('latest_forecast_bulletin_date') or any(
+        row.get('catalog_date')==senamhi_source.get('latest_forecast_bulletin_date')
+        and row.get('url')==senamhi_source.get('latest_verified_forecast_bulletin_url')
+        for row in verified_checks
+    ))
+    if senamhi_source.get('latest_forecast_catalog_date') != senamhi_source.get('latest_forecast_bulletin_date'):
+        check('piura_source_catalog_mismatch_is_explicit',
+              bool(mismatch_checks) and 'mismatch' in str(senamhi_source.get('forecast_bulletin_status','')))
+        check('piura_source_catalog_mismatch_warns_fail_closed',bool(senamhi_source.get('forecast_catalog_integrity_warning')))
 
     # Infraestructura nunca atenúa numéricamente sin calibración.
     check('hydraulic_inventory_not_production',hydraulics.get('production_use') is False)
