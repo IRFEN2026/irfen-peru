@@ -1,6 +1,6 @@
 {
-  "version": "irfen-independent-basin-validation-map-v0.4",
-  "generated_at": "2026-08-28T19:00:00Z",
+  "version": "irfen-independent-basin-validation-map-v0.5",
+  "generated_at": "2026-08-28T21:52:00Z",
   "framework": "IRFEN Independent Basin Validation Framework",
   "deployment_status": "RESEARCH_ONLY",
   "test_only": true,
@@ -14,6 +14,7 @@
     "earth_search_priority": true,
     "stac_root": "https://earth-search.aws.element84.com/v1",
     "inventory_script": "scripts/ibvf_stac_inventory.py",
+    "landsat_aoi_qa_script": "scripts/ibvf_landsat_aoi_qa.py",
     "collections": ["sentinel-1-grd", "landsat-c2-l2", "cop-dem-glo-30"],
     "transport_failure_is_missing_data": false,
     "global_landsat_cloud_cover_is_acceptance_criterion": false,
@@ -21,7 +22,8 @@
       "python_compile": "PASS",
       "dry_run_query_generation": "PASS",
       "sentinel_pair_rule_unit_check": "PASS",
-      "network_probe": "TRANSPORT_BLOCKED_DNS"
+      "local_network_probe": "TRANSPORT_BLOCKED_DNS",
+      "github_actions_stac_probe": "SUCCESS"
     }
   },
   "guardrails": {
@@ -53,10 +55,19 @@
       "geometry_selector": {"property": "unit_id", "value": "cashahuacra"},
       "geometry_semantics": "EXISTING_CANDIDATE_ONLY_NOT_FROZEN_FOR_IBVF",
       "imerg_status": "CATALOG_CONTINUITY_CONFIRMED_RAW_SHA256_PENDING",
-      "remote_sensing_status": "STAC_QUERY_CONTRACT_READY_TRANSPORT_BLOCKED_IDS_UNKNOWN",
+      "remote_sensing_status": "S1_PAIR_YES_LANDSAT_007068_RESOLVED_AOI_QA_RUNNING",
       "stac_probe_path": "data/validation/cashahuacra_stac_probe.json",
-      "sentinel1_compatible_pair": "UNKNOWN",
-      "landsat_aoi_qa_status": "NOT_RUN_NO_ITEM_ASSETS_ACQUIRED",
+      "sentinel1_compatible_pair": "YES",
+      "sentinel1_preferred_pair": [
+        "S1A_IW_GRDH_1SSV_20150310T103859_20150310T103924_004968_006380",
+        "S1A_IW_GRDH_1SSV_20150403T103859_20150403T103924_005318_006BBE"
+      ],
+      "landsat_wrs": "007/068",
+      "landsat_target_items": [
+        "LC08_L2SP_007068_20150318_02_T1",
+        "LC08_L2SP_007068_20150419_02_T1"
+      ],
+      "landsat_aoi_qa_status": "RUNNING_REFERENCE_AOI_NOT_FINAL_BASIN",
       "smap_status": "MISSING_FOR_EVENT_WINDOW",
       "blind_status": "TERRITORIAL_EVIDENCE_SEALED",
       "production_use": false,
