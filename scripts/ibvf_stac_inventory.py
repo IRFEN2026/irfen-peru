@@ -101,12 +101,14 @@ def summarize(item: dict[str, Any]) -> dict[str, Any]:
             "product_type": p.get("sar:product_type"),
         })
     if collection == "landsat-c2-l2":
+        asset_keys = set(item.get("assets") or {})
         out.update({
             "wrs_path": p.get("landsat:wrs_path"),
             "wrs_row": p.get("landsat:wrs_row"),
             "scene_id": p.get("landsat:scene_id"),
             "cloud_cover_global_pct": p.get("eo:cloud_cover"),
-            "qa_assets_present": sorted(k for k in (item.get("assets") or {}) if k.upper() in {"QA_PIXEL", "QA_RADSAT", "SR_QA_AEROSOL"}),
+            "qa_assets_present": sorted(asset_keys.intersection({"qa_pixel", "qa_radsat", "qa_aerosol"})),
+            "qa_asset_product_names": {"qa_pixel": "QA_PIXEL", "qa_radsat": "QA_RADSAT", "qa_aerosol": "SR_QA_AEROSOL"},
             "qa_acceptance_note": "Global cloud cover is metadata only; AOI-level QA is required before acceptance.",
         })
     return out
