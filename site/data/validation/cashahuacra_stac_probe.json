@@ -1,6 +1,6 @@
 {
-  "schema_version": "irfen-ibvf-stac-probe-v0.1",
-  "generated_at": "2026-08-28T18:55:40Z",
+  "schema_version": "irfen-ibvf-stac-probe-v0.2",
+  "generated_at": "2026-08-28T21:50:00Z",
   "case_id": "cashahuacra_2015-03-23",
   "deployment_status": "RESEARCH_ONLY",
   "test_only": true,
@@ -12,32 +12,79 @@
   "query_bbox": [-76.70, -11.95, -76.64, -11.84],
   "query_bbox_semantics": "PROVISIONAL_SEARCH_ENVELOPE_AROUND_EXISTING_REVIEW_ONLY_CASHAHUACRA_CANDIDATE_NOT_FINAL_IBVF_AOI",
   "datetime_window": "2015-02-15T00:00:00Z/2015-05-15T23:59:59Z",
+  "execution_evidence": {
+    "workflow_run_id": 33213906796,
+    "workflow_conclusion": "success",
+    "artifact_id": 9702621271,
+    "artifact_digest_sha256": "83573fb1f8ce0dad1aba0580f7300bf370a1522fb5b0914592ae5d88e34fed62",
+    "inventory_manifest_sha256": "048cbf15d04bc537ea70990910f25179b9272246c8c1afd68502ddbf4f2c7c2c"
+  },
   "collections": [
     {
       "collection": "sentinel-1-grd",
-      "query_url": "https://earth-search.aws.element84.com/v1/search?collections=sentinel-1-grd&bbox=-76.7%2C-11.95%2C-76.64%2C-11.84&limit=500&datetime=2015-02-15T00%3A00%3A00Z%2F2015-05-15T23%3A59%3A59Z",
-      "transport_status": "TRANSPORT_BLOCKED",
-      "transport_detail": "DNS_NAME_RESOLUTION_FAILURE_IN_EXECUTION_ENVIRONMENT",
-      "scientific_data_status": "UNKNOWN_NOT_MISSING",
-      "compatible_pair": "UNKNOWN"
+      "transport_status": "SUCCESS",
+      "http_status": 200,
+      "query_response_sha256": "e96a4354d908caf731a331f08b7109967fe9d2b2b52811633a7ab7031290623e",
+      "item_count": 5,
+      "scientific_data_status": "PRESENT",
+      "all_items_cover_query_bbox_pct": 100.0,
+      "compatible_pair": "YES",
+      "compatible_pairs_found": 3,
+      "preferred_followup_pair": {
+        "pre_id": "S1A_IW_GRDH_1SSV_20150310T103859_20150310T103924_004968_006380",
+        "post_id": "S1A_IW_GRDH_1SSV_20150403T103859_20150403T103924_005318_006BBE",
+        "relative_orbit": 171,
+        "orbit_state": "descending",
+        "instrument_mode": "IW",
+        "polarizations": ["VV"],
+        "pre_days_from_event": -13,
+        "post_days_from_event": 11,
+        "pixel_comparison_status": "NOT_RUN"
+      }
     },
     {
       "collection": "landsat-c2-l2",
-      "query_url": "https://earth-search.aws.element84.com/v1/search?collections=landsat-c2-l2&bbox=-76.7%2C-11.95%2C-76.64%2C-11.84&limit=500&datetime=2015-02-15T00%3A00%3A00Z%2F2015-05-15T23%3A59%3A59Z",
-      "transport_status": "TRANSPORT_BLOCKED",
-      "transport_detail": "DNS_NAME_RESOLUTION_FAILURE_IN_EXECUTION_ENVIRONMENT",
-      "scientific_data_status": "UNKNOWN_NOT_MISSING",
-      "aoi_qa_status": "NOT_RUN_NO_ITEM_ASSETS_ACQUIRED"
+      "transport_status": "SUCCESS",
+      "http_status": 200,
+      "query_response_sha256": "0ae117acbb5debefd264f1e74b628f7550b1f6865aa25d3a2e1f567b71761bc9",
+      "item_count": 10,
+      "scientific_data_status": "PRESENT",
+      "resolved_wrs_path": "007",
+      "resolved_wrs_row": "068",
+      "previous_007_069_hypothesis": "REJECTED_BY_DIRECT_EARTH_SEARCH_STAC_AOI_QUERY",
+      "target_scenes": [
+        {
+          "item_id": "LC08_L2SP_007068_20150318_02_T1",
+          "scene_id": "LC80070682015077LGN01",
+          "datetime": "2015-03-18T15:10:32.193691Z",
+          "global_cloud_cover_pct_metadata_only": 66.75,
+          "query_bbox_coverage_pct": 100.0,
+          "qa_assets": ["qa_pixel", "qa_radsat", "qa_aerosol"]
+        },
+        {
+          "item_id": "LC08_L2SP_007068_20150419_02_T1",
+          "scene_id": "LC80070682015109LGN01",
+          "datetime": "2015-04-19T15:10:19.599342Z",
+          "global_cloud_cover_pct_metadata_only": 27.28,
+          "query_bbox_coverage_pct": 100.0,
+          "qa_assets": ["qa_pixel", "qa_radsat", "qa_aerosol"]
+        }
+      ],
+      "global_cloud_cover_is_acceptance_criterion": false,
+      "aoi_qa_status": "MEASUREMENT_WORKFLOW_CREATED_PENDING_RESULT"
     },
     {
       "collection": "cop-dem-glo-30",
-      "query_url": "https://earth-search.aws.element84.com/v1/search?collections=cop-dem-glo-30&bbox=-76.7%2C-11.95%2C-76.64%2C-11.84&limit=500",
-      "transport_status": "TRANSPORT_BLOCKED",
-      "transport_detail": "DNS_NAME_RESOLUTION_FAILURE_IN_EXECUTION_ENVIRONMENT",
-      "scientific_data_status": "UNKNOWN_NOT_MISSING",
-      "raw_asset_sha256_status": "PENDING"
+      "transport_status": "SUCCESS",
+      "http_status": 200,
+      "query_response_sha256": "a99b88489e14ec52a9e98e8b31459f5652cdd998369b3a5ca5f54af1d2a10313",
+      "item_count": 1,
+      "scientific_data_status": "PRESENT",
+      "item_id": "Copernicus_DSM_COG_10_S12_00_W077_00_DEM",
+      "raw_asset_sha256_status": "PENDING_DOWNLOAD"
     }
   ],
-  "interpretation": "Transport failure is explicitly not evidence of missing Sentinel-1, Landsat or DEM data. No scientific absence is asserted from this probe.",
-  "next_action": "RETRY_IDENTICAL_QUERIES_WHEN_TRANSPORT_AVAILABLE_THEN_FREEZE_RAW_RESPONSES_AND_ASSETS_BY_SHA256"
+  "scientific_change": "Sentinel-1 compatible_pair changes from UNKNOWN to YES. Landsat WRS 007/068 is directly resolved and supersedes the prior 007/069 hypothesis. The exact GLO-30 item is resolved. No activation outcome is inferred.",
+  "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
+  "next_action": "MEASURE_LANDSAT_QA_IN_REFERENCE_AOI_THEN_FREEZE_DEM_BYTES_AND_RUN_STABLE_HYDROLOGIC_SNAP"
 }
