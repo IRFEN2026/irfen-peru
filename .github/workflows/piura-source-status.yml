@@ -29,7 +29,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - run: pip install requests
+      - run: pip install requests pypdf
       - name: Actualizar frescura de fuentes Piura
         run: python scripts/fetch_piura_source_status.py
       - name: Validar reporte
@@ -40,6 +40,8 @@ jobs:
           import json
           d=json.load(open('site/data/hydrology/piura_source_status.json',encoding='utf-8'))
           assert d.get('production_use') is False
+          assert d['senamhi'].get('numeric_river_state_available') is False
+          assert d['senamhi'].get('forecast_bulletin_status') != 'seasonal_or_event_driven_product'
           print(d['gore_piura'].get('latest_report_date'), d['gore_piura'].get('catalog_status'))
           PY
       - name: Guardar estado de fuente
