@@ -5,6 +5,7 @@ on:
     paths:
       - 'scripts/ibvf_stac_inventory.py'
       - 'scripts/ibvf_landsat_aoi_qa.py'
+      - 'scripts/ibvf_cashahuacra_dem_snap.py'
       - 'site/data/validation/cashahuacra_stac_probe.json'
       - 'site/data/validation/independent_basin_validation_map.json'
       - '.github/workflows/ibvf-cashahuacra-stac.yml'
@@ -16,16 +17,16 @@ permissions:
 jobs:
   cashahuacra-stac:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Install scientific QA dependencies
-        run: python -m pip install --disable-pip-version-check 'numpy>=1.26,<2' 'rasterio>=1.3,<2' 'pystac-client>=0.8,<1' 'planetary-computer>=1,<2'
+        run: python -m pip install --disable-pip-version-check 'numpy>=1.26,<2' 'rasterio>=1.3,<2' 'pystac-client>=0.8,<1' 'planetary-computer>=1,<2' 'requests>=2.31,<3' 'pysheds>=0.4,<0.5' 'shapely>=2,<3' 'pyproj>=3.6,<4'
       - name: Validate research scripts
-        run: python -m py_compile scripts/ibvf_stac_inventory.py scripts/ibvf_landsat_aoi_qa.py
+        run: python -m py_compile scripts/ibvf_stac_inventory.py scripts/ibvf_landsat_aoi_qa.py scripts/ibvf_cashahuacra_dem_snap.py
       - name: Query Earth Search STAC
         run: |
           mkdir -p artifacts/ibvf
@@ -43,39 +44,24 @@ jobs:
           import copy, json
           import planetary_computer
           import pystac_client
-
           src='artifacts/ibvf/cashahuacra_stac_inventory.json'
           dst='artifacts/ibvf/cashahuacra_stac_inventory_transport.json'
-          d=json.load(open(src,encoding='utf-8'))
-          out=copy.deepcopy(d)
+          d=json.load(open(src,encoding='utf-8')); out=copy.deepcopy(d)
           coll=next(c for c in out['collections'] if c['collection']=='landsat-c2-l2')
           target_dates={'2015-03-18','2015-04-19'}
-          catalog=pystac_client.Client.open(
-              'https://planetarycomputer.microsoft.com/api/stac/v1',
-              modifier=planetary_computer.sign_inplace,
-          )
+          catalog=pystac_client.Client.open('https://planetarycomputer.microsoft.com/api/stac/v1',modifier=planetary_computer.sign_inplace)
           resolved=[]
           for item in coll.get('items',[]):
-              if str(item.get('datetime',''))[:10] not in target_dates:
-                  continue
-              pc_items=list(catalog.search(collections=['landsat-c2-l2'], ids=[item['id']]).items())
-              if len(pc_items)!=1:
-                  raise RuntimeError(f"Planetary Computer mirror lookup {item['id']} returned {len(pc_items)} items")
+              if str(item.get('datetime',''))[:10] not in target_dates: continue
+              pc_items=list(catalog.search(collections=['landsat-c2-l2'],ids=[item['id']]).items())
+              if len(pc_items)!=1: raise RuntimeError(f"Planetary Computer mirror lookup {item['id']} returned {len(pc_items)} items")
               pc=pc_items[0]
               for key in ('qa_pixel','qa_radsat','qa_aerosol'):
-                  if key not in pc.assets:
-                      raise RuntimeError(f"Mirror missing {key} for {item['id']}")
+                  if key not in pc.assets: raise RuntimeError(f"Mirror missing {key} for {item['id']}")
                   item['assets'][key]['href']=pc.assets[key].href
                   item['assets'][key]['byte_transport']='PLANETARY_COMPUTER_SIGNED_MIRROR'
               resolved.append(item['id'])
-          out['byte_transport_overlay']={
-              'identity_catalog':'EARTH_SEARCH_STAC',
-              'fallback_host':'MICROSOFT_PLANETARY_COMPUTER',
-              'reason':'USGS_AWS_DIRECT_S3_HTTPS_RETURNED_403_WITHOUT_REQUESTER_PAYS_CREDENTIALS',
-              'same_landsat_collection2_item_ids_required':True,
-              'resolved_item_ids':sorted(resolved),
-              'scientific_identity_changed':False,
-          }
+          out['byte_transport_overlay']={'identity_catalog':'EARTH_SEARCH_STAC','fallback_host':'MICROSOFT_PLANETARY_COMPUTER','reason':'USGS_AWS_DIRECT_S3_HTTPS_RETURNED_403_WITHOUT_REQUESTER_PAYS_CREDENTIALS','same_landsat_collection2_item_ids_required':True,'resolved_item_ids':sorted(resolved),'scientific_identity_changed':False}
           json.dump(out,open(dst,'w',encoding='utf-8'),indent=2,ensure_ascii=False)
           print(out['byte_transport_overlay'])
           PY
@@ -90,11 +76,17 @@ jobs:
             --date 2015-04-19 \
             --download-dir artifacts/ibvf/landsat-qa-raw \
             --output artifacts/ibvf/cashahuacra_landsat_aoi_qa.json
+      - name: Freeze Copernicus DEM and test hydrologic snap stability
+        run: |
+          python scripts/ibvf_cashahuacra_dem_snap.py \
+            --output artifacts/ibvf/cashahuacra_dem_snap.json \
+            --basin-output artifacts/ibvf/cashahuacra_stable_basin.geojson
       - name: Guardrails
         run: |
           python - <<'PY'
           import json
-          for p in ['artifacts/ibvf/cashahuacra_stac_inventory.json','artifacts/ibvf/cashahuacra_landsat_aoi_qa.json']:
+          paths=['artifacts/ibvf/cashahuacra_stac_inventory.json','artifacts/ibvf/cashahuacra_landsat_aoi_qa.json','artifacts/ibvf/cashahuacra_dem_snap.json']
+          for p in paths:
               d=json.load(open(p,encoding='utf-8'))
               assert d['deployment_status']=='RESEARCH_ONLY'
               assert d['test_only'] is True
@@ -102,19 +94,21 @@ jobs:
               assert d['production_ready'] is False
               assert d['operational_alerting_enabled'] is False
               assert d['uses_operational_event_none_labels'] is False
-          inv=json.load(open('artifacts/ibvf/cashahuacra_stac_inventory.json',encoding='utf-8'))
+          inv=json.load(open(paths[0],encoding='utf-8'))
+          qa=json.load(open(paths[1],encoding='utf-8'))
+          dem=json.load(open(paths[2],encoding='utf-8'))
           print([(x['collection'],x.get('transport_status'),x.get('item_count')) for x in inv['collections']])
-          qa=json.load(open('artifacts/ibvf/cashahuacra_landsat_aoi_qa.json',encoding='utf-8'))
-          print(qa['completeness_status'])
-          for s in qa['scenes']:
-              print(s['item_id'], s['metrics'] if 'metrics' in s else s['qa_status'])
+          print('LANDSAT',qa['completeness_status'])
+          print('DEM_SNAP',dem['snap_status'],dem.get('max_selected_outlet_cluster_distance_m'),dem.get('selected_outlet'),dem.get('post_stability_geometry'))
           PY
       - uses: actions/upload-artifact@v4
         with:
-          name: ibvf-cashahuacra-stac-qa-${{ github.sha }}
+          name: ibvf-cashahuacra-a13-${{ github.sha }}
           path: |
             artifacts/ibvf/cashahuacra_stac_inventory.json
             artifacts/ibvf/cashahuacra_stac_inventory_transport.json
             artifacts/ibvf/cashahuacra_landsat_aoi_qa.json
-          if-no-files-found: error
+            artifacts/ibvf/cashahuacra_dem_snap.json
+            artifacts/ibvf/cashahuacra_stable_basin.geojson
+          if-no-files-found: warn
           retention-days: 30
