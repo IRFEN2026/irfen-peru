@@ -1,6 +1,6 @@
 {
-  "version": "irfen-independent-basin-validation-map-v0.1",
-  "generated_at": "2026-08-28T15:45:00Z",
+  "version": "irfen-independent-basin-validation-map-v0.2",
+  "generated_at": "2026-08-28T18:55:00Z",
   "framework": "IRFEN Independent Basin Validation Framework",
   "deployment_status": "RESEARCH_ONLY",
   "test_only": true,
@@ -9,6 +9,7 @@
   "operational_alerting_enabled": false,
   "uses_operational_event_none_labels": false,
   "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
   "guardrails": {
     "no_risk_colors": true,
     "no_operational_thresholds": true,
@@ -16,7 +17,8 @@
     "missing_is_never_zero": true,
     "unknown_is_preserved": true,
     "geometry_must_be_reproducible_to_map": true,
-    "map_does_not_enter_operational_calculation": true
+    "map_does_not_enter_operational_calculation": true,
+    "case_role_is_not_inferred_from_territorial_outcome": true
   },
   "indicators_exposed": [
     "framework_stage",
@@ -90,6 +92,24 @@
       "geometry_path": "data/watersheds/chosica_local_candidate_sets.geojson",
       "geometry_selector": {"property": "quebrada_search_name", "value": "pedregal"},
       "geometry_semantics": "CANDIDATE_SET_NOT_A_VALIDATED_BASIN",
+      "imerg_status": "NOT_STARTED",
+      "remote_sensing_status": "NOT_STARTED",
+      "smap_status": "NOT_ASSESSED",
+      "blind_status": "TERRITORIAL_EVIDENCE_SEALED",
+      "production_use": false,
+      "production_ready": false,
+      "operational_alerting_enabled": false
+    },
+    {
+      "case_id": "huaycoloro_parallel_intake",
+      "unit_id": "huaycoloro",
+      "name": "Quebrada Huaycoloro",
+      "blind_window": "NOT_YET_FROZEN",
+      "framework_stage": "PARALLEL_INTAKE",
+      "geometry_status": "EXISTING_TEST_ONLY_WATERSHED_CANDIDATE",
+      "geometry_path": "data/watersheds/huaycoloro_watershed.geojson",
+      "geometry_selector": {"property": "id", "value": "chosica"},
+      "geometry_semantics": "EXISTING_DEM_D8_CANDIDATE_REQUIRES_IBVF_FREEZE",
       "imerg_status": "NOT_STARTED",
       "remote_sensing_status": "NOT_STARTED",
       "smap_status": "NOT_ASSESSED",
