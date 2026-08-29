@@ -1,6 +1,6 @@
 {
-  "schema_version": "irfen-ibvf-parallel-a0-pool-v0.1",
-  "generated_at": "2026-08-29T14:24:00Z",
+  "schema_version": "irfen-ibvf-parallel-a0-pool-v0.2",
+  "generated_at": "2026-08-29T14:27:00Z",
   "deployment_status": "RESEARCH_ONLY",
   "test_only": true,
   "production_use": false,
@@ -13,14 +13,20 @@
   "pool_role": "UNASSIGNED_BLIND_WINDOW",
   "case_control_assignment_allowed": false,
   "study_interval_rule": {
-    "basis": "All complete September-April hydrometeorological seasons intersecting the Sentinel-1A era through the latest completed season at freeze time; sensor availability does not delete calendar days.",
+    "basis": "All complete September-April hydrometeorological seasons intersecting the Sentinel-1A era through the latest completed season at freeze time; Lima tracks and San Ildefonso each have independent SENAMHI support for the same calendar boundary; sensor availability does not delete calendar days.",
     "first_season": "2014-2015",
     "last_season": "2025-2026",
     "selection_uses_remote_magnitude": false,
     "selection_uses_territorial_outcome": false,
     "selection_uses_known_event_dates": false
   },
-  "tracks": ["shingolay", "pedregal", "huaycoloro"],
+  "tracks": ["shingolay", "pedregal", "huaycoloro", "san_ildefonso"],
+  "track_season_basis": {
+    "shingolay": "SENAMHI_CHILLON_RIMAC_LURIN_SEPTEMBER_APRIL",
+    "pedregal": "SENAMHI_CHILLON_RIMAC_LURIN_SEPTEMBER_APRIL",
+    "huaycoloro": "SENAMHI_CHILLON_RIMAC_LURIN_SEPTEMBER_APRIL",
+    "san_ildefonso": "SENAMHI_NATIONAL_NORTHERN_REGION_INCLUDING_LA_LIBERTAD_SEPTEMBER_APRIL"
+  },
   "encoding": "RANGE_ENCODED_EXHAUSTIVE_EVERY_LOCAL_CALENDAR_DAY_NO_GAPS_WITHIN_EACH_SEASON",
   "timezone": "America/Lima",
   "seasons": [
@@ -40,8 +46,8 @@
   "summary": {
     "season_count": 12,
     "unique_calendar_days_per_track": 2907,
-    "track_count": 3,
-    "track_day_windows": 8721,
+    "track_count": 4,
+    "track_day_windows": 11628,
     "days_removed_for_sensor_missing": 0,
     "days_removed_for_outcome": 0,
     "cashahuacra_anchor_date_present_in_exhaustive_calendar": true,
@@ -49,6 +55,6 @@
     "canonical_unique_date_sequence_sha256": "c5a14ee0e40f2a9074d63c1ae3ab9e35d58fe79f37aa89593d104681e12b6018"
   },
   "meteorological_ranking_status": "NOT_YET_FROZEN_NO_WINDOW_SELECTED",
-  "san_ildefonso_status": "NOT_INCLUDED_REGION_SPECIFIC_OFFICIAL_SEASON_BASIS_STILL_REQUIRED",
+  "san_ildefonso_status": "INCLUDED_WITH_INDEPENDENT_SENAMHI_NATIONAL_NORTHERN_REGION_CLIMATOLOGICAL_BASIS",
   "next_gate": "FREEZE_METEOROLOGICAL_RANKING_RULE_WITHOUT_CASHAHUACRA_MAGNITUDES_OR_TERRITORIAL_OUTCOMES"
 }
