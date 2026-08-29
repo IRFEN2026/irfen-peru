@@ -1,0 +1,63 @@
+name: IBVF - Cashahuacra Sentinel-1 freeze
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ibvf_sentinel1_freeze.py'
+      - '.github/workflows/ibvf-cashahuacra-s1-freeze.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check 'requests>=2.31,<3'
+      - name: Query exact Earth Search inventory
+        run: |
+          mkdir -p artifacts/ibvf
+          python scripts/ibvf_stac_inventory.py \
+            --case-id cashahuacra_2015-03-23 \
+            --bbox=-76.70,-11.95,-76.64,-11.84 \
+            --start 2015-02-15T00:00:00Z \
+            --end 2015-05-15T23:59:59Z \
+            --event-date 2015-03-23 \
+            --limit 500 \
+            --output artifacts/ibvf/cashahuacra_stac_inventory.json
+      - name: Stream and hash preferred compatible Sentinel-1 pair
+        run: |
+          python scripts/ibvf_sentinel1_freeze.py \
+            --inventory artifacts/ibvf/cashahuacra_stac_inventory.json \
+            --pre-id S1A_IW_GRDH_1SSV_20150310T103859_20150310T103924_004968_006380 \
+            --post-id S1A_IW_GRDH_1SSV_20150403T103859_20150403T103924_005318_006BBE \
+            --output artifacts/ibvf/cashahuacra_sentinel1_freeze.json
+      - name: Guardrails
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/ibvf/cashahuacra_sentinel1_freeze.json',encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY'
+          assert d['test_only'] is True
+          assert d['production_use'] is False
+          assert d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False
+          assert d['compatible_pair']=='YES'
+          assert d['pre']['relative_orbit']==171 and d['post']['relative_orbit']==171
+          assert d['pre']['orbit_state']=='descending' and d['post']['orbit_state']=='descending'
+          assert d['pre']['polarizations']==['VV'] and d['post']['polarizations']==['VV']
+          print(d['freeze_status'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ibvf-cashahuacra-s1-freeze-${{ github.sha }}
+          path: artifacts/ibvf/cashahuacra_sentinel1_freeze.json
+          if-no-files-found: error
+          retention-days: 30
