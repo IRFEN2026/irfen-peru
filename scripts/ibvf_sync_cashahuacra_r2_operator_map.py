@@ -39,13 +39,15 @@ def main() -> int:
     cash=[c for c in m['cases'] if c.get('unit_id')=='cashahuacra']
     assert len(cash)==1
     c=cash[0]
+    pending='PENDING_COMPILE_AND_FROZEN_LOCAL_AUX_POEORB_STAGING_VERIFICATION'
     c['framework_stage']='A4_R1_COMPLETE_R2_RUNTIME_AND_OPERATOR_SCHEMAS_PASS_EXACT_GRAPH_COMPILE_PENDING'
     c['remote_sensing_status']='S1_A4_R1_COMPLETE_R2_RUNTIME_AND_OPERATOR_SCHEMAS_PASS_EXACT_GRAPH_AND_FROZEN_ORBIT_STAGING_PENDING_NO_PREPOST_DIFFERENCE'
+    c['sentinel1_r2_status']='RUNTIME_AND_OPERATOR_SCHEMAS_PASS_EXACT_GRAPH_AND_FROZEN_LOCAL_AUX_POEORB_STAGING_PENDING_NO_DIFFERENCE'
     c['sentinel1_r2_operator_schema_path']='data/validation/cashahuacra_sentinel1_r2_operator_schema.json'
     c['sentinel1_r2_operator_schema_gate']='PASS_THERMAL_NOISE_CALIBRATION_TERRAIN_FLATTENING_TERRAIN_CORRECTION'
     c['sentinel1_r2_orbit_operator_schema_path']='data/validation/cashahuacra_sentinel1_r2_orbit_operator_schema.json'
     c['sentinel1_r2_orbit_operator_schema_gate']='PASS_APPLY_ORBIT_FILE_OPERATOR_AVAILABLE'
-    c['sentinel1_r2_exact_graph_status']='PENDING_COMPILE_AND_FROZEN_LOCAL_AUX_POEORB_STAGING_VERIFICATION'
+    c['sentinel1_r2_exact_graph_status']=pending
     c['sentinel1_r2_execution_gate']='BLOCKED_METHOD_FINALIZATION_NOT_MISSING_EXACT_GRAPH_AND_LOCAL_FROZEN_ORBIT_STAGING_PENDING'
     c['sentinel1_prepost_difference_computed']=False
     assert c['smap_status']=='MISSING_FOR_EVENT_WINDOW'
@@ -56,10 +58,10 @@ def main() -> int:
     acq=m.setdefault('acquisition_contract',{})
     acq['sentinel1_r2_operator_schema_report']='site/data/validation/cashahuacra_sentinel1_r2_operator_schema.json'
     acq['sentinel1_r2_orbit_operator_schema_report']='site/data/validation/cashahuacra_sentinel1_r2_orbit_operator_schema.json'
-    acq['sentinel1_r2_exact_graph_status']='PENDING_COMPILE_AND_FROZEN_LOCAL_AUX_POEORB_STAGING_VERIFICATION'
+    acq['sentinel1_r2_exact_graph_status']=pending
 
     Path(args.output).write_text(json.dumps(m,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
-    print(json.dumps({'version':m['version'],'framework_stage':c['framework_stage'],'execution_gate':c['sentinel1_r2_execution_gate'],'prepost_difference':c['sentinel1_prepost_difference_computed']},indent=2))
+    print(json.dumps({'version':m['version'],'framework_stage':c['framework_stage'],'r2_status':c['sentinel1_r2_status'],'execution_gate':c['sentinel1_r2_execution_gate'],'prepost_difference':c['sentinel1_prepost_difference_computed']},indent=2))
     return 0
 
 if __name__=='__main__':
