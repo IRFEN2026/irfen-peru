@@ -1,0 +1,54 @@
+name: IBVF - Sync Cashahuacra R2 operator map
+
+on:
+  push:
+    branches:
+      - agent/independent-basin-validation-map
+    paths:
+      - 'scripts/ibvf_sync_cashahuacra_r2_operator_map.py'
+      - 'site/data/validation/cashahuacra_sentinel1_r2_operator_schema.json'
+      - 'site/data/validation/cashahuacra_sentinel1_r2_orbit_operator_schema.json'
+      - '.github/workflows/ibvf-sync-cashahuacra-r2-operator-map.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-map:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile synchronizer and guardrail validator
+        run: python -m py_compile scripts/ibvf_sync_cashahuacra_r2_operator_map.py scripts/ibvf_validate_case_manifest.py
+      - name: Project fail-closed R2 operator state
+        run: |
+          python scripts/ibvf_sync_cashahuacra_r2_operator_map.py \
+            --map site/data/validation/independent_basin_validation_map.json \
+            --operators site/data/validation/cashahuacra_sentinel1_r2_operator_schema.json \
+            --orbit-operator site/data/validation/cashahuacra_sentinel1_r2_orbit_operator_schema.json \
+            --output /tmp/independent_basin_validation_map.json
+      - name: Revalidate scientific non-operational manifest
+        run: python scripts/ibvf_validate_case_manifest.py /tmp/independent_basin_validation_map.json
+      - name: Archive map projection on research branch
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          cp /tmp/independent_basin_validation_map.json site/data/validation/independent_basin_validation_map.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add site/data/validation/independent_basin_validation_map.json
+          if git diff --cached --quiet; then
+            echo 'No R2 operator map change.'
+          else
+            git commit -m 'IBVF: publish fail-closed Cashahuacra R2 operator state'
+            git fetch origin "$BRANCH"
+            git rebase "origin/$BRANCH"
+            git push origin HEAD:"$BRANCH"
+          fi
