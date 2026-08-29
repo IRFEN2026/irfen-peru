@@ -1,6 +1,6 @@
 {
-  "schema_version": "irfen-ibvf-sentinel1-a4-r2-contract-v0.1",
-  "generated_at": "2026-08-29T14:01:00Z",
+  "schema_version": "irfen-ibvf-sentinel1-a4-r2-contract-v0.2",
+  "generated_at": "2026-08-29T14:36:00Z",
   "case_id": "cashahuacra_2015-03-23",
   "deployment_status": "RESEARCH_ONLY",
   "test_only": true,
@@ -16,27 +16,39 @@
   "source_basin_geometry": "site/data/watersheds/cashahuacra_ibvf_two_point_v03.geojson",
   "source_dem_item": "Copernicus_DSM_COG_10_S12_00_W077_00_DEM",
   "source_dem_sha256": "d9f8d410da66bfb85c73b957401aea73043f8618cccdb7d1fc76082d30a31130",
+  "source_r2_prerequisite_report": "site/data/validation/cashahuacra_sentinel1_r2_prerequisites.json",
+  "source_ellipsoidal_dem_report": "site/data/validation/cashahuacra_r2_ellipsoidal_dem.json",
   "r2_objective": "Produce terrain-normalized, geocoded Sentinel-1 VV backscatter on one deterministic grid for each date without inspecting or interpreting the pre/post response.",
   "vertical_datum_gate": {
     "source_dem_horizontal_crs": "EPSG:4326_WGS84_G1150",
     "source_dem_vertical_crs": "EPSG:3855_EGM2008_ORTHOMETRIC_HEIGHT",
-    "snap_terrain_flattening_external_dem_requirement": "EXTERNAL_DEM_HEIGHTS_MUST_BE_CONSISTENT_WITH_THE_PROCESSOR_EXPECTATION; DO_NOT_SILENTLY_TREAT_EGM2008_ORTHOMETRIC_HEIGHT_AS_WGS84_ELLIPSOIDAL_HEIGHT",
     "built_in_snap_copernicus_dem_allowed": false,
-    "reason": "The Copernicus DEM Product Handbook specifies EGM2008 vertical datum. A current SNAP 13 implementation report indicates the built-in Copernicus DEM path may apply EGM96 rather than EGM2008. The IBVF therefore requires an explicit, independently verifiable EGM2008-to-WGS84-ellipsoidal conversion before external-DEM terrain processing.",
-    "required_before_r2_execution": [
-      "freeze_exact_EGM2008_geoid_grid_or_equivalent_vertical_transform_resource_by_SHA256",
-      "record_PROJ_GDAL_versions_and_full_vertical_transform_command",
-      "convert_frozen_GLO30_to_WGS84_ellipsoidal_height_without_case_specific_adjustment",
-      "freeze_converted_DEM_by_SHA256",
-      "verify_horizontal_extent_and_no_data_semantics"
-    ],
-    "status": "BLOCKED_UNTIL_VERTICAL_TRANSFORM_IS_FROZEN"
+    "vertical_grid_sha256": "4191d471eefebf24091b56dbc604353cb3b8cf8cc70e448bb9ae56a272bef17a",
+    "vertical_grid_bytes": 80585622,
+    "vertical_transform": "EPSG:9518_TO_EPSG:4979_INVERSE_WGS84_TO_EGM2008_HEIGHT_1_USING_FROZEN_GRID",
+    "ellipsoidal_dem_sha256": "00e3305219f0400ceca1fa39708de3e2ed31708e0a37c29b96a87d88e119aab2",
+    "ellipsoidal_dem_shape": [433,361],
+    "ellipsoidal_dem_valid_pixels": 155880,
+    "ellipsoidal_dem_geoid_correction_min_m": 28.648234621683855,
+    "ellipsoidal_dem_geoid_correction_max_m": 30.573878121948383,
+    "ellipsoidal_dem_horizontal_max_abs_delta_degrees": 1.4210854715202004e-14,
+    "case_specific_height_adjustment_used": false,
+    "status": "PASS_EXPLICIT_EGM2008_TO_WGS84_ELLIPSOIDAL_DEM_FROZEN"
   },
   "orbit_gate": {
-    "rule": "Use the same orbit-quality class for both Sentinel-1 dates. Prefer precise orbit ephemerides when available. Exact auxiliary orbit files must be recorded and SHA256-frozen before accepting R2 output.",
+    "rule": "Use the same orbit-quality class for both Sentinel-1 dates; exact auxiliary orbit files must be SHA256-frozen before R2.",
+    "quality_class": "AUX_POEORB",
+    "pre_filename": "S1A_OPER_AUX_POEORB_OPOD_20210306T054130_V20150309T225944_20150311T005944.EOF.zip",
+    "pre_zip_sha256": "7ec4f38164acbd14bcbecbf6c663241aaeef128281ea2ea66ea416fc713cf5c2",
+    "pre_inner_eof_sha256": "4605dc9153b84e4b1c03f5ea35cf4933c0e9f3a240765afbe3e8b4fd94da09a8",
+    "post_filename": "S1A_OPER_AUX_POEORB_OPOD_20210306T133136_V20150402T225944_20150404T005944.EOF.zip",
+    "post_zip_sha256": "ff712d931a88941060394dfa6b4554917e67fc1c36e22ee07f082d60ad284745",
+    "post_inner_eof_sha256": "f65d0cc51500220704b5087fd7be5b2cf81b6530995bb786e000984881c9753e",
+    "both_validity_intervals_cover_acquisitions": true,
     "automatic_auxiliary_file_identity_without_hash_allowed": false,
-    "status": "PENDING_EXACT_AUX_ORBIT_FREEZE"
+    "status": "PASS_EXACT_AUX_POEORB_BOTH_DATES_FROZEN"
   },
+  "r2_execution_gate": "PASS_PREREQUISITES_ONLY_EXECUTION_NOW_ALLOWED_WITH_IDENTICAL_GRAPH",
   "processing_sequence": [
     "READ_EXACT_FROZEN_SENTINEL1_GRD",
     "THERMAL_NOISE_REMOVAL_FROM_PRODUCT_LUT",
@@ -48,43 +60,10 @@
     "ONLY_THEN_BUILD_R3_COMMON_VALID_SUPPORT"
   ],
   "snap_operator_contract": {
-    "thermal_noise_removal": {
-      "operator": "ThermalNoiseRemoval",
-      "polarization": "VV",
-      "remove_thermal_noise": true,
-      "reintroduce_thermal_noise": false,
-      "negative_or_invalid_values": "MASK_AS_INVALID_NEVER_ZERO_FOR_ANALYSIS"
-    },
-    "calibration": {
-      "operator": "Calibration",
-      "output": "BETA0_LINEAR",
-      "polarization": "VV",
-      "r1_crosscheck_required": "Native-window calibrated distributions must be consistent with the independently implemented R1 calculation before proceeding; this is an implementation check, not a pre/post response comparison."
-    },
-    "terrain_flattening": {
-      "operator": "Terrain-Flattening",
-      "input": "CALIBRATED_BETA0",
-      "output": "GAMMA0_LINEAR",
-      "dem": "EXTERNAL_FROZEN_GLO30_CONVERTED_TO_WGS84_ELLIPSOIDAL_HEIGHT",
-      "dem_resampling": "BILINEAR_INTERPOLATION",
-      "additional_overlap": 0.1,
-      "oversampling_multiple": 1.0,
-      "speckle_filter": "NONE"
-    },
-    "terrain_correction": {
-      "operator": "Terrain-Correction",
-      "method": "RANGE_DOPPLER",
-      "dem": "SAME_EXTERNAL_FROZEN_ELLIPSOIDAL_GLO30",
-      "dem_resampling": "BILINEAR_INTERPOLATION",
-      "image_resampling": "BILINEAR_INTERPOLATION",
-      "target_crs": "EPSG:32718",
-      "pixel_spacing_m": 10.0,
-      "align_to_standard_grid": true,
-      "standard_grid_origin_x": 0.0,
-      "standard_grid_origin_y": 0.0,
-      "apply_additional_radiometric_normalization": false,
-      "reason_no_second_normalization": "Radiometric terrain flattening already produces terrain-normalized Gamma0; Range-Doppler step is used for geocoding/alignment."
-    }
+    "thermal_noise_removal": {"operator":"ThermalNoiseRemoval","polarization":"VV","remove_thermal_noise":true,"reintroduce_thermal_noise":false,"negative_or_invalid_values":"MASK_AS_INVALID_NEVER_ZERO_FOR_ANALYSIS"},
+    "calibration": {"operator":"Calibration","output":"BETA0_LINEAR","polarization":"VV","r1_crosscheck_required":"Native-window calibrated distributions must be consistent with independently implemented R1 before proceeding; implementation check only, not pre/post response comparison."},
+    "terrain_flattening": {"operator":"Terrain-Flattening","input":"CALIBRATED_BETA0","output":"GAMMA0_LINEAR","dem":"EXTERNAL_FROZEN_GLO30_WGS84_ELLIPSOIDAL_SHA256_00e3305219f0400ceca1fa39708de3e2ed31708e0a37c29b96a87d88e119aab2","dem_resampling":"BILINEAR_INTERPOLATION","additional_overlap":0.1,"oversampling_multiple":1.0,"speckle_filter":"NONE"},
+    "terrain_correction": {"operator":"Terrain-Correction","method":"RANGE_DOPPLER","dem":"SAME_EXTERNAL_FROZEN_ELLIPSOIDAL_GLO30","dem_resampling":"BILINEAR_INTERPOLATION","image_resampling":"BILINEAR_INTERPOLATION","target_crs":"EPSG:32718","pixel_spacing_m":10.0,"align_to_standard_grid":true,"standard_grid_origin_x":0.0,"standard_grid_origin_y":0.0,"apply_additional_radiometric_normalization":false}
   },
   "r3_common_support_rule_frozen_now": {
     "support": "INTERSECTION_OF_PIXELS_VALID_IN_BOTH_DATES_AND_INSIDE_FROZEN_BASIN_GEOMETRY",
@@ -96,13 +75,7 @@
     "below_minimum_rule": "A4_RESPONSE_REMAINS_UNKNOWN_INSUFFICIENT_COMMON_SUPPORT"
   },
   "r4_difference_gate": {
-    "allowed_only_after": [
-      "R2_PRE_AND_POST_SUCCESS",
-      "VERTICAL_DATUM_GATE_PASS",
-      "ORBIT_GATE_PASS",
-      "R1_IMPLEMENTATION_CROSSCHECK_PASS",
-      "R3_COMMON_SUPPORT_FRACTION_GTE_0_95"
-    ],
+    "allowed_only_after": ["R2_PRE_AND_POST_SUCCESS","VERTICAL_DATUM_GATE_PASS","ORBIT_GATE_PASS","R1_IMPLEMENTATION_CROSSCHECK_PASS","R3_COMMON_SUPPORT_FRACTION_GTE_0_95"],
     "pre_post_difference_computed_at_contract_time": false,
     "activation_inference_allowed": false
   },
@@ -116,24 +89,6 @@
     "EVENT_NONE_OR_ANY_OPERATIONAL_LABEL",
     "RISK_ALERT_OR_PRIORITY_CLASSIFICATION"
   ],
-  "reference_basis": [
-    {
-      "id": "COPERNICUS_DEM_PRODUCT_HANDBOOK_5_0",
-      "fact": "GLO-30 horizontal WGS84-G1150 / vertical EGM2008"
-    },
-    {
-      "id": "ESA_SNAP_TERRAIN_FLATTENING_HELP",
-      "fact": "Terrain Flattening uses calibrated beta0 and produces terrain-flattened gamma0 using a DEM"
-    },
-    {
-      "id": "ESA_SNAP_SENTINEL1_TIME_SERIES_TUTORIAL",
-      "fact": "Standard GRD preparation includes thermal-noise removal, orbit application, calibration and terrain correction"
-    },
-    {
-      "id": "STEP_SNAP13_COPERNICUS_VERTICAL_DATUM_REPORT_2026_08_21",
-      "fact": "Implementation-risk report indicates built-in Copernicus DEM conversion may use EGM96; IBVF treats this as a reproducibility blocker until independently resolved"
-    }
-  ],
-  "status": "PREREGISTERED_R2_BLOCKED_ON_VERTICAL_DATUM_AND_ORBIT_AUX_IDENTITY",
-  "next_action": "FREEZE_VERTICAL_TRANSFORM_RESOURCE_AND_EXACT_ORBIT_AUXILIARY_FILES_THEN_EXECUTE_IDENTICAL_R2_GRAPH_FOR_PRE_AND_POST"
+  "status": "PREREGISTERED_R2_PREREQUISITES_PASS_EXECUTION_ALLOWED_NO_DIFFERENCE_YET",
+  "next_action": "EXECUTE_IDENTICAL_R2_GRAPH_FOR_PRE_AND_POST_WITH_FROZEN_ORBITS_AND_ELLIPSOIDAL_DEM_THEN_BUILD_R3_COMMON_SUPPORT_BEFORE_ANY_DIFFERENCE"
 }
