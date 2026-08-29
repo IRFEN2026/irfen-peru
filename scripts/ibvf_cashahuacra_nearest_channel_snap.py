@@ -84,7 +84,7 @@ def channel_from_anchor(
     downstream = base.trace_downstream_cells(fdir, anchor)
     cells: list[tuple[int, int]] = []
     seen: set[tuple[int, int]] = set()
-    for cell in reversed(upstream[1:]) + downstream:
+    for cell in list(reversed(upstream[1:])) + downstream:
         if cell not in seen:
             cells.append(cell)
             seen.add(cell)
