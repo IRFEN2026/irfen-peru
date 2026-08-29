@@ -1,0 +1,72 @@
+{
+  "schema_version": "irfen-ibvf-cashahuacra-two-point-sensitivity-v0.2",
+  "generated_at": "2026-08-29T06:50:37.389052Z",
+  "case_id": "cashahuacra_2015-03-23",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
+  "artifact_provenance": {
+    "workflow_run_id": 33239382014,
+    "artifact_id": 9710898963,
+    "artifact_digest_sha256": "f473edefe7a0b708456bff78468a50751e02c6502ec2655f7f66f53321a9632b",
+    "raw_sensitivity_report_sha256": "f7a0d2ad88e91d7280b97620159dc3b24ed97bbd9c0813498497f1291e1ba349"
+  },
+  "contract": {
+    "purpose": "POSITIONAL_GATE_PLUS_SEPARATE_CONDITIONING_STRESS_DIAGNOSTIC",
+    "nominal_dem_pixel_step_m": 30.0,
+    "upstream_anchor_offsets_east_m": [-30.0, 0.0, 30.0],
+    "upstream_anchor_offsets_north_m": [-30.0, 0.0, 30.0],
+    "upstream_anchor_radius_m": 120.0,
+    "standard_conditioning_variant": "FILL_PITS_FILL_DEPRESSIONS_RESOLVE_FLATS",
+    "conditioning_stress_variant": "FILL_PITS_RESOLVE_FLATS_NO_MULTICELL_DEPRESSION_FILL",
+    "conditioning_stress_is_diagnostic_not_freeze_gate": true,
+    "downstream_seed_offsets_east_m": [-30.0, 0.0, 30.0],
+    "downstream_seed_offsets_north_m": [-30.0, 0.0, 30.0],
+    "downstream_seed_max_distance_m": 360.0,
+    "positional_pass_requires_same_outlet_row_col_all_standard_scenarios": true,
+    "positional_pass_requires_same_catchment_cell_count_all_standard_scenarios": true,
+    "positional_pass_requires_each_standard_catchment_cells_equal_outlet_accumulation": true,
+    "target_basin_area_used": false,
+    "published_basin_length_used": false,
+    "published_elevation_envelope_used": false,
+    "territorial_activation_evidence_used": false,
+    "operational_threshold_used": false,
+    "event_none_label_used": false
+  },
+  "dem": {
+    "collection": "cop-dem-glo-30",
+    "item_id": "Copernicus_DSM_COG_10_S12_00_W077_00_DEM",
+    "raw_sha256": "d9f8d410da66bfb85c73b957401aea73043f8618cccdb7d1fc76082d30a31130",
+    "crop_sha256": "ba527e9d0e6386d01d421107e2542245403dcd6f36a8cbfe0d422f18aaf9dd0b"
+  },
+  "standard_positional_gate": {
+    "expected_scenarios": 9,
+    "successful_selected_scenarios": 9,
+    "all_scenarios_selected": true,
+    "unique_outlet_cells": [{"row": 337, "col": 205}],
+    "exact_outlet_cell_agreement": true,
+    "outlet_accumulation_cells": 16225,
+    "all_downstream_seed_grid_distances_within_gate": true,
+    "maximum_reported_distance_to_perturbed_downstream_seed_m": 237.91,
+    "all_catchments_match_outlet_accumulation": true,
+    "unique_catchment_cell_counts": [16225],
+    "same_catchment_cell_count": true
+  },
+  "conditioning_stress_diagnostic": {
+    "expected_scenarios": 9,
+    "successful_selected_scenarios": 0,
+    "common_status": "NO_LARGER_BRANCH_CONFLUENCE_FOUND",
+    "conditioning_stress_exactly_agrees_with_standard": false,
+    "interpretation": "Removing multi-cell depression filling changes downstream topology enough that the pre-confluence criterion is not reached. This is recorded as method-conditioning sensitivity, not as failure of the predeclared positional gate and not as evidence of activation/non-activation."
+  },
+  "sensitivity_status": "PASS_POSITIONAL_30M_STANDARD_PREPROCESSING",
+  "morphometry_disposition": "CANDIDATE_MORPHOMETRY_SUPPORTED_BY_POSITIONAL_SENSITIVITY_NOT_OPERATIONAL",
+  "conditioning_stress_status": "DIFFERS_FROM_STANDARD_DIAGNOSTIC_ONLY",
+  "scientific_interpretation": "Under the frozen standard preprocessing, all nine one-pixel positional perturbations of the ANA upstream anchor converge to the same pre-confluence outlet and the same 16225-cell catchment. Hydrologic identity is therefore positionally stable at the tested scale. The strong dependence on depression filling remains an explicit methodological sensitivity and prevents treating the geometry as conditioning-independent truth.",
+  "scientific_data_status": "PRESENT"
+}
