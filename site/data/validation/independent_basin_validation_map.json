@@ -1,6 +1,6 @@
 {
   "version": "irfen-independent-basin-validation-map-v1.9",
-  "generated_at": "2026-08-29T14:35:25.528473Z",
+  "generated_at": "2026-08-29T14:35:53.482278Z",
   "framework": "IRFEN Independent Basin Validation Framework",
   "deployment_status": "RESEARCH_ONLY",
   "test_only": true,
@@ -60,7 +60,8 @@
       "sentinel1_a4_r2_prerequisite_freezer": "IMPLEMENTED_EXECUTION_PENDING",
       "meteorological_ranking_contract": "PREREGISTERED_6_FIXED_PERCENTILE_STRATA_PER_TRACK_SEASON_NO_EXECUTION",
       "sentinel1_a4_r2_prerequisites": "PASS_VERTICAL_GRID_AND_BOTH_AUX_POEORB_SHA256_FROZEN",
-      "sentinel1_a4_r2_ellipsoidal_dem": "PASS_SHA256_00E33052_NO_SAR_RESPONSE_READ"
+      "sentinel1_a4_r2_ellipsoidal_dem": "PASS_SHA256_00E33052_NO_SAR_RESPONSE_READ",
+      "sentinel1_a4_r2_snap14_published_checksum": "PASS_786CE26A_INSTALLER_BYTES_PENDING"
     },
     "imerg_basin_features_script": "scripts/ibvf_imerg_basin_features_v02.py",
     "imerg_timebasis_audit_script": "scripts/ibvf_imerg_timebasis_audit.py",
@@ -73,7 +74,9 @@
     "sentinel1_r2_prerequisites_script": "scripts/ibvf_sentinel1_r2_freeze_prerequisites.py",
     "meteorological_ranking_contract": "site/data/validation/ibvf_meteorological_ranking_contract.json",
     "sentinel1_r2_prerequisites_report": "site/data/validation/cashahuacra_sentinel1_r2_prerequisites.json",
-    "sentinel1_r2_ellipsoidal_dem_report": "site/data/validation/cashahuacra_r2_ellipsoidal_dem.json"
+    "sentinel1_r2_ellipsoidal_dem_report": "site/data/validation/cashahuacra_r2_ellipsoidal_dem.json",
+    "sentinel1_r2_runtime_contract": "site/data/validation/cashahuacra_sentinel1_r2_runtime_contract.json",
+    "sentinel1_r2_runtime_checksum": "site/data/validation/cashahuacra_sentinel1_r2_runtime_checksum.json"
   },
   "guardrails": {
     "no_risk_colors": true,
@@ -99,7 +102,7 @@
       "unit_id": "cashahuacra",
       "name": "Quebrada Cashahuacra",
       "blind_window": "2015-03-23",
-      "framework_stage": "A4_R1_COMPLETE_R2_PREREQUISITES_PASS_EXECUTION_ALLOWED_NO_DIFFERENCE",
+      "framework_stage": "A4_R1_COMPLETE_R2_RESOURCE_GATES_PASS_RUNTIME_INSTALLER_BYTES_PENDING_NO_DIFFERENCE",
       "geometry_status": "TWO_POINT_POSITIONAL_PASS_CONDITIONING_SENSITIVE_RESEARCH_CANDIDATE",
       "geometry_path": "data/watersheds/cashahuacra_ibvf_two_point_v03.geojson",
       "geometry_selector": {
@@ -144,7 +147,7 @@
       "imerg_first_raw_granule_id": "3B-HHR.MS.MRG.3IMERG.20150323-S000000-E002959.0000.V07B.HDF5",
       "imerg_first_raw_bytes": 7539194,
       "imerg_first_raw_sha256": "84aae585c7fda5a55c915cc0b82b60987fd7c850f798fed608dbacf03e58182c",
-      "remote_sensing_status": "S1_A4_R1_COMPLETE_R2_RESOURCE_GATES_PASS_EXECUTION_ALLOWED_NO_PREPOST_DIFFERENCE_LANDSAT_QA_DIAGNOSTIC_ONLY",
+      "remote_sensing_status": "S1_A4_R1_COMPLETE_R2_VERTICAL_ORBIT_ELLIPSOIDAL_DEM_PASS_SNAP14_PUBLISHED_SHA_PASS_INSTALLER_BYTES_PENDING_NO_PREPOST_DIFFERENCE",
       "stac_probe_path": "data/validation/cashahuacra_stac_probe.json",
       "sentinel1_compatible_pair": "YES",
       "sentinel1_preferred_pair": [
@@ -206,8 +209,13 @@
       "sentinel1_r2_prerequisites_path": "data/validation/cashahuacra_sentinel1_r2_prerequisites.json",
       "sentinel1_r2_ellipsoidal_dem_path": "data/validation/cashahuacra_r2_ellipsoidal_dem.json",
       "sentinel1_r2_ellipsoidal_dem_sha256": "00e3305219f0400ceca1fa39708de3e2ed31708e0a37c29b96a87d88e119aab2",
-      "sentinel1_r2_execution_gate": "PASS_PREREQUISITES_ONLY_EXECUTION_NOW_ALLOWED_WITH_IDENTICAL_GRAPH",
-      "sentinel1_prepost_difference_computed": false
+      "sentinel1_r2_execution_gate": "RESOURCE_PREREQUISITES_PASS_RUNTIME_GATE_PENDING",
+      "sentinel1_prepost_difference_computed": false,
+      "sentinel1_r2_runtime_contract_path": "data/validation/cashahuacra_sentinel1_r2_runtime_contract.json",
+      "sentinel1_r2_runtime_checksum_path": "data/validation/cashahuacra_sentinel1_r2_runtime_checksum.json",
+      "sentinel1_r2_runtime_published_sha256": "786ce26a464ce32aef133af25b81281ad1b0af320e3614c0b465939fffbb4ee6",
+      "sentinel1_r2_runtime_installer_byte_verified": false,
+      "sentinel1_r2_runtime_gate": "BLOCKED_UNTIL_INSTALLER_BYTES_MATCH_PUBLISHED_SHA256"
     },
     {
       "case_id": "shingolay_parallel_intake",
