@@ -1,0 +1,70 @@
+name: IBVF - Sync frozen scientific metrics
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ibvf_sync_manifest_metrics.py'
+      - '.github/workflows/ibvf-sync-manifest-metrics.yml'
+      - 'site/data/validation/cashahuacra_imerg_basin_features.json'
+      - 'site/data/validation/cashahuacra_imerg_timebasis_audit.json'
+      - 'site/data/validation/ibvf_blind_sampling_contract.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Sync only verified blind observational metrics
+        run: |
+          python scripts/ibvf_sync_manifest_metrics.py \
+            --manifest site/data/validation/independent_basin_validation_map.json \
+            --features site/data/validation/cashahuacra_imerg_basin_features.json \
+            --timebasis site/data/validation/cashahuacra_imerg_timebasis_audit.json \
+            --sampling-contract site/data/validation/ibvf_blind_sampling_contract.json
+      - name: Validate multipista manifest guardrails
+        run: python scripts/ibvf_validate_case_manifest.py site/data/validation/independent_basin_validation_map.json
+      - name: Additional A3 guards
+        run: |
+          python - <<'PY'
+          import json
+          p='site/data/validation/independent_basin_validation_map.json'
+          d=json.load(open(p,encoding='utf-8'))
+          c=next(x for x in d['cases'] if x['unit_id']=='cashahuacra')
+          assert d['deployment_status']=='RESEARCH_ONLY' and d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False and d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False
+          assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
+          assert c['framework_stage']=='A3_PRECIPITATION_FROZEN_A4_PENDING'
+          assert c['smap_status']=='MISSING_FOR_EVENT_WINDOW'
+          assert c['geometry_area_km2']==15.088
+          assert c['imerg_observational_metrics']['time_basis']=='PERU_LOCAL_CALENDAR_DAY_UTC_MINUS_5'
+          assert c['imerg_timebasis_sensitivity']['event_time_used'] is False
+          assert c['blind_status']=='TERRITORIAL_EVIDENCE_SEALED'
+          print(json.dumps({'version':d['version'],'case':c['case_id'],'stage':c['framework_stage'],'imerg':c['imerg_status'],'gate':d['serious_modeling_gate']},indent=2))
+          PY
+      - name: Commit manifest only to research branch
+        if: github.event_name == 'pull_request'
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add site/data/validation/independent_basin_validation_map.json
+          if git diff --cached --quiet; then
+            echo 'No manifest change.'
+          else
+            git commit -m 'IBVF: publish frozen Cashahuacra A3 metrics in research map manifest'
+            git fetch origin "$BRANCH"
+            git rebase "origin/$BRANCH"
+            git push origin HEAD:"$BRANCH"
+          fi
