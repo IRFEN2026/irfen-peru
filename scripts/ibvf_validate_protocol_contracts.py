@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Validate IBVF preregistered protocol contracts without outcome knowledge."""
+"""Validate evolved IBVF preregistered protocol contracts without outcome knowledge.
+
+The validator follows legitimate gate progression (resource gates may move from
+BLOCKED to PASS) but never relaxes the frozen scientific design: no outcome
+knowledge, no operational labels, no adaptive R3 support, and no pre/post
+response difference before the declared gates are satisfied.
+"""
 from __future__ import annotations
 import argparse, json
 from pathlib import Path
@@ -18,24 +24,32 @@ def load(path: Path):
     return d
 
 def validate_r2(d, path):
-    if d.get("status") != "PREREGISTERED_R2_BLOCKED_ON_VERTICAL_DATUM_AND_ORBIT_AUX_IDENTITY":
-        raise ValueError(f"{path}: unexpected R2 status")
-    if d.get("vertical_datum_gate",{}).get("status") != "BLOCKED_UNTIL_VERTICAL_TRANSFORM_IS_FROZEN":
-        raise ValueError(f"{path}: vertical datum gate must remain blocked")
-    if d.get("orbit_gate",{}).get("status") != "PENDING_EXACT_AUX_ORBIT_FREEZE":
-        raise ValueError(f"{path}: orbit gate must remain pending exact identity")
+    # The original preregistration has legitimately progressed through the
+    # frozen vertical-datum and exact-orbit resource gates. Accept only the
+    # current explicit PASS state; do not accept arbitrary status drift.
+    if d.get("status") != "PREREGISTERED_R2_PREREQUISITES_PASS_EXECUTION_ALLOWED_NO_DIFFERENCE_YET":
+        raise ValueError(f"{path}: unexpected evolved R2 status")
+    if d.get("vertical_datum_gate",{}).get("status") != "PASS_EXPLICIT_EGM2008_TO_WGS84_ELLIPSOIDAL_DEM_FROZEN":
+        raise ValueError(f"{path}: vertical datum gate must be the exact frozen PASS state")
+    if d.get("orbit_gate",{}).get("status") != "PASS_EXACT_AUX_POEORB_BOTH_DATES_FROZEN":
+        raise ValueError(f"{path}: orbit gate must be the exact AUX_POEORB frozen PASS state")
+    if d.get("r2_execution_gate") != "PASS_PREREQUISITES_ONLY_EXECUTION_NOW_ALLOWED_WITH_IDENTICAL_GRAPH":
+        raise ValueError(f"{path}: resource execution gate drift")
     r4=d.get("r4_difference_gate",{})
     if r4.get("pre_post_difference_computed_at_contract_time") is not False:
         raise ValueError(f"{path}: no pre/post difference may exist at preregistration")
     if r4.get("activation_inference_allowed") is not False:
         raise ValueError(f"{path}: activation inference must be forbidden")
-    if d.get("snap_operator_contract",{}).get("terrain_correction",{}).get("target_crs") != "EPSG:32718":
-        raise ValueError(f"{path}: target CRS drift")
+    tc=d.get("snap_operator_contract",{}).get("terrain_correction",{})
+    if tc.get("target_crs") != "EPSG:32718" or float(tc.get("pixel_spacing_m",0)) != 10.0:
+        raise ValueError(f"{path}: target grid drift")
     support=d.get("r3_common_support_rule_frozen_now",{})
     if support.get("adaptive_support_changes_after_response_inspection") is not False:
         raise ValueError(f"{path}: adaptive support changes forbidden")
     if float(support.get("minimum_common_support_fraction",0)) != 0.95:
         raise ValueError(f"{path}: common support gate drift")
+    if support.get("missing_or_invalid") != "MASK_NEVER_ZERO":
+        raise ValueError(f"{path}: invalid/missing values must remain masked, never zero-filled")
 
 def validate_pool(d, path):
     rel=d.get("relationship_to_anchor",{})
@@ -57,12 +71,16 @@ def validate_pool(d, path):
         raise ValueError(f"{path}: Lima A0 season boundary not frozen")
     if lima.get("season_start_local") != "09-01T00:00:00-05:00" or lima.get("season_end_local_inclusive") != "04-30T23:59:59-05:00":
         raise ValueError(f"{path}: Lima season boundary drift")
-    san=d.get("season_rules",{}).get("san_ildefonso",{})
-    if san.get("fallback_to_lima_rule_allowed") is not False or san.get("status") != "PENDING_REGION_SPECIFIC_OFFICIAL_CLIMATOLOGICAL_BASIS":
-        raise ValueError(f"{path}: San Ildefonso must not inherit Lima climatology")
+    san=d.get("season_rules",{}).get("san_ildefonso_northern_track",{})
+    if san.get("status") != "FROZEN_A0_SEASON_BOUNDARY_INDEPENDENT_OFFICIAL_BASIS":
+        raise ValueError(f"{path}: San Ildefonso independent official season basis must be frozen")
+    if san.get("lima_rule_inherited") is not False or san.get("basis_is_outcome_evidence") is not False:
+        raise ValueError(f"{path}: San Ildefonso must not inherit Lima climatology or outcome evidence")
+    if san.get("season_start_local") != "09-01T00:00:00-05:00" or san.get("season_end_local_inclusive") != "04-30T23:59:59-05:00":
+        raise ValueError(f"{path}: San Ildefonso season boundary drift")
     rank=d.get("meteorological_ranking",{})
     if rank.get("status") != "NOT_YET_FROZEN_DO_NOT_SELECT_WET_OR_BACKGROUND_WINDOWS":
-        raise ValueError(f"{path}: ranking must remain unfrozen until versioned")
+        raise ValueError(f"{path}: pool contract must still defer ranking to the separately versioned ranking contract")
     if rank.get("cashahuacra_remote_magnitudes_may_be_used_to_choose_rank_thresholds") is not False or rank.get("territorial_outcomes_may_be_used_to_choose_rank_thresholds") is not False:
         raise ValueError(f"{path}: ranking leakage guard failure")
 
