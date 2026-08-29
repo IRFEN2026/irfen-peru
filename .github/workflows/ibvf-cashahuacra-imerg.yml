@@ -5,6 +5,7 @@ on:
     paths:
       - 'scripts/ibvf_imerg_inventory.py'
       - 'scripts/ibvf_imerg_auth_probe.py'
+      - 'scripts/ibvf_imerg_hash_freeze.py'
       - '.github/workflows/ibvf-cashahuacra-imerg.yml'
   workflow_dispatch:
 
@@ -14,7 +15,7 @@ permissions:
 jobs:
   inventory:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -22,7 +23,7 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install --disable-pip-version-check 'requests>=2.31,<3'
       - name: Validate IMERG research scripts
-        run: python -m py_compile scripts/ibvf_imerg_inventory.py scripts/ibvf_imerg_auth_probe.py
+        run: python -m py_compile scripts/ibvf_imerg_inventory.py scripts/ibvf_imerg_auth_probe.py scripts/ibvf_imerg_hash_freeze.py
       - name: Verify CMR granule slots
         run: |
           mkdir -p artifacts/ibvf
@@ -41,7 +42,16 @@ jobs:
             --event-date 2015-03-23 \
             --work-dir artifacts/ibvf/imerg-probe-raw \
             --output artifacts/ibvf/cashahuacra_imerg_auth_probe.json
-      - name: Scientific guards and slot contract
+      - name: Stream and SHA-256 freeze all 432 raw HDF5 granules
+        env:
+          EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
+        run: |
+          python scripts/ibvf_imerg_hash_freeze.py \
+            --inventory artifacts/ibvf/cashahuacra_imerg_inventory.json \
+            --event-date 2015-03-23 \
+            --workers 8 \
+            --output artifacts/ibvf/cashahuacra_imerg_raw_hash_freeze.json
+      - name: Scientific guards and slot/hash contract
         run: |
           python - <<'PY'
           import json
@@ -65,7 +75,16 @@ jobs:
           assert a['uses_operational_event_none_labels'] is False
           if a.get('probe_status') != 'SUCCESS':
               assert a.get('scientific_data_status') != 'MISSING'
-          print({'resolved':d['resolved_granule_count'],'event48':d['event_day_48_slots_verified'],'window432':d['window_all_slots_verified'],'cmr_sha256':d['source']['cmr_response_sha256'],'raw_probe_status':a.get('probe_status'),'raw_probe_scientific_status':a.get('scientific_data_status'),'raw_probe_sha256':(a.get('raw_byte_probe') or {}).get('sha256')})
+          f=json.load(open('artifacts/ibvf/cashahuacra_imerg_raw_hash_freeze.json',encoding='utf-8'))
+          assert f['deployment_status']=='RESEARCH_ONLY'
+          assert f['test_only'] is True
+          assert f['production_use'] is False
+          assert f['production_ready'] is False
+          assert f['operational_alerting_enabled'] is False
+          assert f['uses_operational_event_none_labels'] is False
+          assert f['inventory_432_verified'] is True
+          assert all(x.get('scientific_data_status') != 'MISSING' for x in f.get('failures',[]))
+          print({'resolved':d['resolved_granule_count'],'event48_meta':d['event_day_48_slots_verified'],'window432_meta':d['window_all_slots_verified'],'cmr_sha256':d['source']['cmr_response_sha256'],'raw_probe_status':a.get('probe_status'),'raw_probe_sha256':(a.get('raw_byte_probe') or {}).get('sha256'),'event48_raw':f['event_48_raw_sha256_frozen'],'window432_raw':f['window_432_raw_sha256_frozen'],'successful_hashes':f['successful_hashes'],'failed_hashes':f['failed_or_blocked_hashes'],'raw_manifest_sha256':f.get('ordered_raw_manifest_sha256'),'event_manifest_sha256':f.get('event_ordered_raw_manifest_sha256'),'total_bytes_hashed':f.get('total_bytes_hashed')})
           PY
       - uses: actions/upload-artifact@v4
         with:
@@ -74,5 +93,6 @@ jobs:
             artifacts/ibvf/cashahuacra_imerg_inventory.json
             artifacts/ibvf/cashahuacra_imerg_cmr_raw.json
             artifacts/ibvf/cashahuacra_imerg_auth_probe.json
+            artifacts/ibvf/cashahuacra_imerg_raw_hash_freeze.json
           if-no-files-found: error
           retention-days: 30
