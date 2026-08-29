@@ -1,0 +1,56 @@
+{
+  "schema_version": "irfen-ibvf-cashahuacra-r2-ellipsoidal-dem-contract-v0.1",
+  "generated_at": "2026-08-29T14:31:00Z",
+  "case_id": "cashahuacra_2015-03-23",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
+  "prerequisite_report": "site/data/validation/cashahuacra_sentinel1_r2_prerequisites.json",
+  "input_dem": {
+    "item_id": "Copernicus_DSM_COG_10_S12_00_W077_00_DEM",
+    "url": "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_S12_00_W077_00_DEM/Copernicus_DSM_COG_10_S12_00_W077_00_DEM.tif",
+    "expected_sha256": "d9f8d410da66bfb85c73b957401aea73043f8618cccdb7d1fc76082d30a31130",
+    "horizontal_crs": "EPSG:4326",
+    "vertical_semantics": "EPSG:3855_EGM2008_ORTHOMETRIC_HEIGHT"
+  },
+  "vertical_grid": {
+    "url": "https://cdn.proj.org/us_nga_egm08_25.tif",
+    "expected_sha256": "4191d471eefebf24091b56dbc604353cb3b8cf8cc70e448bb9ae56a272bef17a",
+    "expected_bytes": 80585622
+  },
+  "process_bbox_wgs84": [-76.72, -11.94, -76.62, -11.82],
+  "process_bbox_origin": "PREEXISTING_CASHAHUACRA_DEM_PROCESS_BOUNDS_USED_BEFORE_A4_RESPONSE_INSPECTION",
+  "conversion": {
+    "source_compound_crs": "EPSG:9518",
+    "target_3d_crs": "EPSG:4979",
+    "pipeline_semantics": "INVERSE_WGS84_TO_EGM2008_HEIGHT_USING_FROZEN_GRID_MULTIPLIER_PLUS_1",
+    "horizontal_coordinates": "SOURCE_PIXEL_CENTERS_UNCHANGED",
+    "output_horizontal_crs_metadata": "EPSG:4326",
+    "output_vertical_semantics": "WGS84_ELLIPSOIDAL_HEIGHT",
+    "resampling_of_dem_values": "NONE_VERTICAL_TRANSFORM_AT_ORIGINAL_CROPPED_PIXEL_CENTERS",
+    "output_dtype": "float32",
+    "output_nodata": -9999.0,
+    "network_grid_access_allowed": false,
+    "case_specific_height_adjustment_allowed": false
+  },
+  "acceptance": [
+    "raw_dem_sha256_matches",
+    "vertical_grid_sha256_matches",
+    "prerequisite_gate_is_PASS",
+    "input_and_output_valid_pixel_counts_equal",
+    "output_transform_equals_cropped_input_transform",
+    "output_width_height_equal_cropped_input_width_height",
+    "all_output_valid_heights_finite",
+    "geoid_correction_finite_and_within_plus_minus_150m_broad_physical_sanity_range",
+    "output_geotiff_sha256_recorded"
+  ],
+  "pre_post_sar_values_read": false,
+  "pre_post_difference_allowed": false,
+  "activation_inference_allowed": false,
+  "status": "PREREGISTERED_CONVERSION_NOT_YET_EXECUTED"
+}
