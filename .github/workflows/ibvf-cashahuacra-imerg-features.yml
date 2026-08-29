@@ -1,11 +1,15 @@
 name: IBVF - Cashahuacra IMERG basin features
 
+# Heavy scientific workflow: use push+paths so an unrelated commit in a long-lived
+# research PR does not rerun the complete 432-slot acquisition merely because the
+# relevant files exist somewhere in the cumulative PR diff.
 on:
-  pull_request:
+  push:
+    branches:
+      - agent/independent-basin-validation-map
     paths:
       - 'scripts/ibvf_imerg_basin_features.py'
       - 'scripts/ibvf_imerg_basin_features_v02.py'
-      - '.github/workflows/ibvf-cashahuacra-imerg-features.yml'
       - 'site/data/watersheds/cashahuacra_ibvf_two_point_v03.geojson'
   workflow_dispatch:
 
@@ -19,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          ref: ${{ github.ref_name }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -75,9 +79,9 @@ jobs:
           if-no-files-found: error
           retention-days: 30
       - name: Archive verified result on research branch
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'push'
         env:
-          BRANCH: ${{ github.event.pull_request.head.ref }}
+          BRANCH: ${{ github.ref_name }}
         run: |
           cp artifacts/ibvf/cashahuacra_imerg_basin_features.json site/data/validation/cashahuacra_imerg_basin_features.json
           git config user.name 'github-actions[bot]'
