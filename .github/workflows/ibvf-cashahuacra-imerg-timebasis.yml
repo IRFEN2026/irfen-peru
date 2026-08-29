@@ -1,0 +1,70 @@
+name: IBVF - Cashahuacra IMERG time-basis audit
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ibvf_imerg_timebasis_audit.py'
+      - '.github/workflows/ibvf-cashahuacra-imerg-timebasis.yml'
+      - 'site/data/validation/cashahuacra_imerg_basin_features.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check 'numpy>=1.26,<2'
+      - run: python -m py_compile scripts/ibvf_imerg_timebasis_audit.py
+      - name: Compute blind UTC versus Peru-local calendar audit
+        run: |
+          mkdir -p artifacts/ibvf
+          python scripts/ibvf_imerg_timebasis_audit.py \
+            --source site/data/validation/cashahuacra_imerg_basin_features.json \
+            --local-date 2015-03-23 \
+            --output artifacts/ibvf/cashahuacra_imerg_timebasis_audit.json
+      - name: Guardrails
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/ibvf/cashahuacra_imerg_timebasis_audit.json',encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY' and d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False and d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False and d['territorial_activation_evidence_blinded'] is True
+          assert d['event_time_used'] is False
+          assert d['source_raw_identity']['match'] is True
+          assert d['peru_local_calendar_features']['slots']==48
+          assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
+          print(json.dumps(d['comparison'],indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ibvf-cashahuacra-imerg-timebasis-${{ github.sha }}
+          path: artifacts/ibvf/cashahuacra_imerg_timebasis_audit.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Archive verified audit on research branch
+        if: github.event_name == 'pull_request'
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          cp artifacts/ibvf/cashahuacra_imerg_timebasis_audit.json site/data/validation/cashahuacra_imerg_timebasis_audit.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add site/data/validation/cashahuacra_imerg_timebasis_audit.json
+          if git diff --cached --quiet; then
+            echo 'No result change to archive.'
+          else
+            git commit -m 'IBVF: archive Cashahuacra IMERG time-basis audit'
+            git fetch origin "$BRANCH"
+            git rebase "origin/$BRANCH"
+            git push origin HEAD:"$BRANCH"
+          fi
