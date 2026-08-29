@@ -1,0 +1,77 @@
+{
+  "schema_version": "irfen-ibvf-blind-sampling-contract-v0.1",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "purpose": "Prevent retrospective case-specific window selection and preserve an auditable separation between remote feature construction and independent territorial outcome assessment.",
+  "scope": [
+    "cashahuacra",
+    "shingolay",
+    "san_ildefonso",
+    "pedregal",
+    "huaycoloro",
+    "future_comparable_windows"
+  ],
+  "roles": {
+    "window_curator": "May construct candidate time windows only from time, basin geometry, season definition, globally reproducible meteorological data and sensor availability. Territorial outcome evidence is forbidden at this stage.",
+    "feature_builder": "Receives only frozen window identifiers, geometry and remote/global inputs. Builds A1-A5 features without territorial outcome evidence.",
+    "outcome_unblinder": "May inspect the sealed independent territorial evidence only after the corresponding feature vector and provenance hashes are frozen."
+  },
+  "window_selection": {
+    "cashahuacra_anchor_exception": {
+      "status": "PREDECLARED_USER_SUPPLIED_ANCHOR",
+      "date": "2015-03-23",
+      "rule": "Retained as the methodological anchor because it was fixed before this sampling contract. It must not be used to tune rules for later windows."
+    },
+    "new_windows": {
+      "territorial_outcome_may_be_used_for_selection": false,
+      "allowed_inputs": [
+        "calendar_time",
+        "frozen_basin_geometry",
+        "IMERG_Final_V07",
+        "sensor_catalog_availability",
+        "predeclared_season_boundaries"
+      ],
+      "forbidden_inputs": [
+        "territorial_damage_reports",
+        "news_or_social_reports_of_flow",
+        "local_activation_logs",
+        "outcome_labels",
+        "post_hoc_thresholds_chosen_from_known_results"
+      ],
+      "candidate_pool_rule": "For each basin and predeclared study season, enumerate every temporally complete IMERG window first. Derive meteorological candidate windows and background windows algorithmically without inspecting territorial outcomes. Preserve the full eligible pool and selection ranks by hash.",
+      "independence_rule": "Overlapping candidate windows must be grouped into one episode before sampling so one storm is not counted as multiple independent observations.",
+      "sensor_rule": "Sensor absence is recorded as MISSING/UNKNOWN and may not be used to discard a window after its outcome is known. A sensor-completeness eligibility rule, if needed, must be frozen before unblinding the window.",
+      "control_rule": "A window may become a scientific control only after its remote feature vector is frozen and independent territorial evidence is unblinded. The absence of a retrieved report is not sufficient evidence of no physical activation.",
+      "missing_rule": "No missing remote value is imputed as zero. Transport/authentication failures remain UNKNOWN_NOT_MISSING."
+    }
+  },
+  "pipeline": [
+    "A0_FREEZE_WINDOW_WITHOUT_TERRITORIAL_OUTCOME",
+    "A1_FREEZE_SENSOR_INVENTORY",
+    "A2_FREEZE_GEOMETRY_AND_MORPHOMETRY_WITH_QUALIFIERS",
+    "A3_FREEZE_PRECIPITATION_FEATURES",
+    "A4_FREEZE_SAR_OPTICAL_FEATURES_OR_EXPLICIT_MISSING",
+    "A5_HASH_FEATURE_VECTOR",
+    "UNBLIND_INDEPENDENT_TERRITORIAL_OUTCOME",
+    "ONLY_THEN_ASSIGN_ANALYTIC_CASE_CONTROL_ROLE"
+  ],
+  "anti_leakage_guards": {
+    "same_feature_code_for_all_roles": true,
+    "same_sensor_qa_rules_for_all_roles": true,
+    "no_rule_changes_after_first_unblind_without_new_protocol_version": true,
+    "all_protocol_changes_require_versioned_reason_before_reprocessing": true,
+    "remote_features_do_not_include_territorial_outcome_fields": true,
+    "map_does_not_display_unblinded_outcome_during_blind_assessment": true
+  },
+  "modeling_gate": {
+    "status": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
+    "reason": "Cashahuacra is still the only anchor with a substantially frozen remote input package. Discrimination cannot be estimated from one anchor.",
+    "next_gate": "Build multiple frozen, independently sampled windows across multiple basins plus independently substantiated controls before any serious predictive modeling."
+  }
+}
