@@ -1,7 +1,7 @@
 name: IBVF Cashahuacra Sentinel-1 R2 runtime
 
-# Push-scoped to the research branch so unrelated long-lived PR changes do not
-# rerun this heavy runtime gate. Transport/install blockers remain explicit
+# Push-scoped to the research branch so unrelated changes do not rerun this
+# heavy runtime gate. Transport/install/operator blockers remain explicit
 # UNKNOWN/BLOCKED states rather than synthetic missing science data.
 on:
   push:
@@ -55,18 +55,77 @@ jobs:
             --work-dir /tmp/ibvf-snap14-runtime/work \
             --output /tmp/ibvf-snap14-runtime/cashahuacra_sentinel1_r2_runtime_install.json \
             | tee /tmp/ibvf-snap14-runtime/summary.log
-      - name: Enforce non-operational fail-closed runtime semantics
+      - name: Freeze exact R2 operator schemas before reading SAR response
+        env:
+          GPT: /tmp/ibvf-snap14-runtime/work/snap14/bin/gpt
+        run: |
+          python - <<'PY'
+          import datetime as dt, hashlib, json, os, pathlib, re, subprocess
+          outdir=pathlib.Path('/tmp/ibvf-snap14-runtime/operator-help')
+          outdir.mkdir(parents=True,exist_ok=True)
+          runtime=json.load(open('/tmp/ibvf-snap14-runtime/cashahuacra_sentinel1_r2_runtime_install.json',encoding='utf-8'))
+          operators=['ThermalNoiseRemoval','Calibration','Terrain-Flattening','Terrain-Correction']
+          records={}
+          for op in operators:
+              p=subprocess.run([os.environ['GPT'],op,'-h'],text=True,capture_output=True,timeout=120)
+              text=(p.stdout or '') + ('\n'+p.stderr if p.stderr else '')
+              path=outdir/(op.replace('/','_')+'.txt')
+              path.write_text(text,encoding='utf-8')
+              params=sorted(set(re.findall(r'-P([A-Za-z][A-Za-z0-9_]*)',text)))
+              records[op]={
+                  'returncode':p.returncode,
+                  'help_bytes':len(text.encode('utf-8')),
+                  'help_sha256':hashlib.sha256(text.encode('utf-8')).hexdigest(),
+                  'parameter_names':params,
+                  'operator_help_nonempty':bool(text.strip())
+              }
+          all_ok=all(v['returncode']==0 and v['operator_help_nonempty'] for v in records.values())
+          report={
+              'schema_version':'irfen-ibvf-snap-r2-operator-schema-freeze-v0.1',
+              'generated_at':dt.datetime.now(dt.timezone.utc).isoformat(),
+              'case_id':'cashahuacra_2015-03-23',
+              'deployment_status':'RESEARCH_ONLY',
+              'test_only':True,
+              'production_use':False,
+              'production_ready':False,
+              'operational_alerting_enabled':False,
+              'uses_operational_event_none_labels':False,
+              'territorial_activation_evidence_blinded':True,
+              'serious_modeling_gate':'CLOSED_MINIMUM_DATASET_NOT_REACHED',
+              'snap_release_version':runtime.get('gpt_release_version'),
+              'runtime_manifest_sha256':runtime.get('installed_jar_manifest_sha256'),
+              'pre_post_sar_values_read':False,
+              'comparison_performed':False,
+              'r2_processing_executed':False,
+              'r3_common_support_built':False,
+              'r4_difference_computed':False,
+              'activation_inference_allowed':False,
+              'operators':records,
+              'all_required_operators_available':all_ok,
+              'r2_operator_schema_gate':'PASS' if all_ok else 'BLOCKED_UNKNOWN_NOT_MISSING',
+              'r2_execution_allowed_by_operator_schema_gate':all_ok,
+              'scientific_semantics':'Runtime capability gate only. No pre/post SAR response is read, compared, classified, or interpreted.',
+              'next_gate':'COMPILE_EXACT_FROZEN_R2_GRAPH_FROM_ARCHIVED_OPERATOR_PARAMETER_NAMES' if all_ok else 'RESOLVE_OPERATOR_AVAILABILITY_WITHOUT_IMPUTING_MISSING_SCIENCE'
+          }
+          json.dump(report,open('/tmp/ibvf-snap14-runtime/cashahuacra_sentinel1_r2_operator_schema.json','w',encoding='utf-8'),indent=2,ensure_ascii=False)
+          print(json.dumps({'all_required_operators_available':all_ok,'operators':{k:{'returncode':v['returncode'],'parameter_count':len(v['parameter_names']),'help_sha256':v['help_sha256']} for k,v in records.items()}},indent=2))
+          PY
+      - name: Enforce non-operational fail-closed runtime and operator semantics
         run: |
           python - <<'PY'
           import json
           d=json.load(open('/tmp/ibvf-snap14-runtime/cashahuacra_sentinel1_r2_runtime_install.json',encoding='utf-8'))
-          assert d['deployment_status']=='RESEARCH_ONLY' and d['test_only'] is True
-          assert d['production_use'] is False and d['production_ready'] is False and d['operational_alerting_enabled'] is False
-          assert d['uses_operational_event_none_labels'] is False and d['territorial_activation_evidence_blinded'] is True
+          o=json.load(open('/tmp/ibvf-snap14-runtime/cashahuacra_sentinel1_r2_operator_schema.json',encoding='utf-8'))
+          for x in (d,o):
+              assert x['deployment_status']=='RESEARCH_ONLY' and x['test_only'] is True
+              assert x['production_use'] is False and x['production_ready'] is False and x['operational_alerting_enabled'] is False
+              assert x['uses_operational_event_none_labels'] is False and x['territorial_activation_evidence_blinded'] is True
+              assert x['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
           assert d['pre_post_sar_values_read'] is False and d['comparison_performed'] is False and d['activation_inference_allowed'] is False
           assert d['r2_processing_executed'] is False and d['r3_common_support_built'] is False and d['r4_difference_computed'] is False
           assert d['automatic_update_invoked'] is False
-          assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
+          assert o['pre_post_sar_values_read'] is False and o['comparison_performed'] is False and o['activation_inference_allowed'] is False
+          assert o['r2_processing_executed'] is False and o['r3_common_support_built'] is False and o['r4_difference_computed'] is False
           if d['status']=='SNAP_RUNTIME_METADATA_FROZEN_R2_EXECUTION_GATE_PASS':
               assert d['download_integrity_gate']=='PASS_REVERIFIED_IMMEDIATELY_BEFORE_INSTALL'
               assert d['installation_runtime_metadata_gate']=='PASS'
@@ -79,32 +138,37 @@ jobs:
               assert d['status'] in {'TRANSPORT_BLOCKED_UNKNOWN_NOT_MISSING','INSTALLATION_BLOCKED_UNKNOWN_NOT_MISSING','RUNTIME_METADATA_GATE_FAIL_CLOSED','CHECKSUM_MISMATCH_FAIL_CLOSED'}
               assert d['r2_execution_allowed_by_runtime_gate'] is False
               print('Runtime gate remains blocked without converting blocker to missing science:',d['status'])
+          assert o['r2_operator_schema_gate'] in {'PASS','BLOCKED_UNKNOWN_NOT_MISSING'}
+          print('R2 operator schema gate:',o['r2_operator_schema_gate'])
           PY
       - uses: actions/upload-artifact@v4
         with:
           name: cashahuacra-sentinel1-r2-installed-runtime-${{ github.sha }}
           path: |
             /tmp/ibvf-snap14-runtime/cashahuacra_sentinel1_r2_runtime_install.json
+            /tmp/ibvf-snap14-runtime/cashahuacra_sentinel1_r2_operator_schema.json
+            /tmp/ibvf-snap14-runtime/operator-help/*.txt
             /tmp/ibvf-snap14-runtime/summary.log
           if-no-files-found: error
           retention-days: 30
-      - name: Archive only an installed-runtime PASS on research branch
+      - name: Archive installed-runtime and operator-schema evidence on research branch
         env:
           BRANCH: ${{ github.ref_name }}
         run: |
-          STATUS=$(python -c "import json; print(json.load(open('/tmp/ibvf-snap14-runtime/cashahuacra_sentinel1_r2_runtime_install.json'))['status'])")
-          if [ "$STATUS" != "SNAP_RUNTIME_METADATA_FROZEN_R2_EXECUTION_GATE_PASS" ]; then
-            echo "No persistent archive for blocked runtime state: $STATUS"
-            exit 0
+          RUNTIME_STATUS=$(python -c "import json; print(json.load(open('/tmp/ibvf-snap14-runtime/cashahuacra_sentinel1_r2_runtime_install.json'))['status'])")
+          if [ "$RUNTIME_STATUS" = "SNAP_RUNTIME_METADATA_FROZEN_R2_EXECUTION_GATE_PASS" ]; then
+            cp /tmp/ibvf-snap14-runtime/cashahuacra_sentinel1_r2_runtime_install.json site/data/validation/cashahuacra_sentinel1_r2_runtime_install.json
+          else
+            echo "Runtime remains explicit blocker: $RUNTIME_STATUS"
           fi
-          cp /tmp/ibvf-snap14-runtime/cashahuacra_sentinel1_r2_runtime_install.json site/data/validation/cashahuacra_sentinel1_r2_runtime_install.json
+          cp /tmp/ibvf-snap14-runtime/cashahuacra_sentinel1_r2_operator_schema.json site/data/validation/cashahuacra_sentinel1_r2_operator_schema.json
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add site/data/validation/cashahuacra_sentinel1_r2_runtime_install.json
+          git add site/data/validation/cashahuacra_sentinel1_r2_runtime_install.json site/data/validation/cashahuacra_sentinel1_r2_operator_schema.json
           if git diff --cached --quiet; then
-            echo 'No installed-runtime report change.'
+            echo 'No runtime/operator schema report change.'
           else
-            git commit -m 'IBVF: freeze installed SNAP 14 runtime metadata'
+            git commit -m 'IBVF: freeze SNAP 14 R2 operator schemas'
             git fetch origin "$BRANCH"
             git rebase "origin/$BRANCH"
             git push origin HEAD:"$BRANCH"
