@@ -1,6 +1,6 @@
 {
-  "schema_version": "irfen-ibvf-parallel-a1-stac-preflight-v0.1",
-  "generated_at": "2026-08-29T21:47:47.664067+00:00",
+  "schema_version": "irfen-ibvf-parallel-a1-stac-preflight-v0.2",
+  "generated_at": "2026-08-29T21:49:42.182819+00:00",
   "deployment_status": "RESEARCH_ONLY",
   "test_only": true,
   "production_use": false,
@@ -12,9 +12,60 @@
   "source_map": "site/data/validation/independent_basin_validation_map.json",
   "source_map_sha256": "c3cb98f9607aaffe071ae62aa4254565429351893825c96e57cafd3d879f9311",
   "source_a0_pool": "site/data/validation/ibvf_parallel_a0_pool_inventory.json",
+  "source_a0_pool_sha256": "53a28ef1c676c1ea4539514bead9f3322a287a84bff344f699c4900013be9b59",
   "stac_root": "https://earth-search.aws.element84.com/v1",
-  "study_datetime_envelope": "2014-09-01T00:00:00Z/2026-05-01T04:59:59Z",
-  "study_datetime_semantics": "UTC envelope covering the full frozen 2014-2015 through 2025-2026 local September-April pool; no window is selected by this preflight.",
+  "query_partition_contract": "ALL_TRACKS_USE_IDENTICAL_12_FROZEN_SEASON_QUERIES_FOR_TEMPORAL_COLLECTIONS; COP_DEM_STATIC_SINGLE_QUERY",
+  "season_count": 12,
+  "season_intervals_utc": [
+    {
+      "season_id": "2014-2015",
+      "datetime": "2014-09-01T05:00:00Z/2015-05-01T04:59:59Z"
+    },
+    {
+      "season_id": "2015-2016",
+      "datetime": "2015-09-01T05:00:00Z/2016-05-01T04:59:59Z"
+    },
+    {
+      "season_id": "2016-2017",
+      "datetime": "2016-09-01T05:00:00Z/2017-05-01T04:59:59Z"
+    },
+    {
+      "season_id": "2017-2018",
+      "datetime": "2017-09-01T05:00:00Z/2018-05-01T04:59:59Z"
+    },
+    {
+      "season_id": "2018-2019",
+      "datetime": "2018-09-01T05:00:00Z/2019-05-01T04:59:59Z"
+    },
+    {
+      "season_id": "2019-2020",
+      "datetime": "2019-09-01T05:00:00Z/2020-05-01T04:59:59Z"
+    },
+    {
+      "season_id": "2020-2021",
+      "datetime": "2020-09-01T05:00:00Z/2021-05-01T04:59:59Z"
+    },
+    {
+      "season_id": "2021-2022",
+      "datetime": "2021-09-01T05:00:00Z/2022-05-01T04:59:59Z"
+    },
+    {
+      "season_id": "2022-2023",
+      "datetime": "2022-09-01T05:00:00Z/2023-05-01T04:59:59Z"
+    },
+    {
+      "season_id": "2023-2024",
+      "datetime": "2023-09-01T05:00:00Z/2024-05-01T04:59:59Z"
+    },
+    {
+      "season_id": "2024-2025",
+      "datetime": "2024-09-01T05:00:00Z/2025-05-01T04:59:59Z"
+    },
+    {
+      "season_id": "2025-2026",
+      "datetime": "2025-09-01T05:00:00Z/2026-05-01T04:59:59Z"
+    }
+  ],
   "collections": [
     "sentinel-1-grd",
     "landsat-c2-l2",
@@ -50,23 +101,157 @@
       "collections": [
         {
           "collection": "sentinel-1-grd",
-          "http_status": 200,
-          "response_sha256": "1b674a16586e6b8311c20f8dad41583b1c5988a8ebec73001c34b2048a43a239",
-          "response_bytes": 4910075,
-          "request_payload_sha256": "b7e8df1df51da13ee79f2bcee9e3205bf9cd8721c8703227afdf0dc23a0fb253",
+          "query_partition_rule": "EACH_FROZEN_A0_SEASON_IDENTICALLY",
+          "query_count": 12,
+          "successful_query_count": 12,
+          "transport_blocked_query_count": 0,
           "transport_status": "SUCCESS",
-          "returned_item_count": 653,
-          "catalog_result_truncated": true,
-          "count_semantics": "LOWER_BOUND_LIMIT_1000",
           "scientific_data_status": "PRESENT_CATALOG",
+          "unique_returned_item_count": 452,
+          "any_catalog_page_truncated": true,
+          "count_semantics": "LOWER_BOUND_IF_ANY_PAGE_TRUNCATED",
+          "query_records": [
+            {
+              "season_id": "2014-2015",
+              "datetime": "2014-09-01T05:00:00Z/2015-05-01T04:59:59Z",
+              "request_payload_sha256": "1f7938fa0052166eedf2779a02c71ffbe3157c77178d6d0db0935c2c897678b8",
+              "http_status": 200,
+              "response_sha256": "62eefffc8269b12fe15c2ed7bde482117370bbae9696155c0fa2a9162d5b1812",
+              "response_bytes": 91969,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 15,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2015-2016",
+              "datetime": "2015-09-01T05:00:00Z/2016-05-01T04:59:59Z",
+              "request_payload_sha256": "dd7965d0a7c75c367380e4d488db83447c13c3a0968aebb41f3f4772a382c9cc",
+              "http_status": 200,
+              "response_sha256": "874507e5c8ab26a3f922bc969566eb67d88d118bd9a00674b4ad18d33daed03b",
+              "response_bytes": 99531,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 16,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2016-2017",
+              "datetime": "2016-09-01T05:00:00Z/2017-05-01T04:59:59Z",
+              "request_payload_sha256": "696f43513204bc947c7c9dc637517ec9e3060cbadf8e1f41a7d74d25265f11c5",
+              "http_status": 200,
+              "response_sha256": "268b05f776acadf4da07ae01113d6acc8b98e0a1b540a62e3174a846aa3bd9ad",
+              "response_bytes": 179353,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 27,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2017-2018",
+              "datetime": "2017-09-01T05:00:00Z/2018-05-01T04:59:59Z",
+              "request_payload_sha256": "c6d7093688a76ec8ba4316ad91b7b651086758fe3fe6ef13cf0d5959fcf5ec57",
+              "http_status": 200,
+              "response_sha256": "0053bc2f7a81fde2ed79cc66d1ae7e9d55b5f05f1a942f5d49cf17cb87103080",
+              "response_bytes": 299784,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 39,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2018-2019",
+              "datetime": "2018-09-01T05:00:00Z/2019-05-01T04:59:59Z",
+              "request_payload_sha256": "5ba8f71763dc16b90eb44fc69f8a0a50193aeaf78e0a50eb3fb3c43ef6f4b755",
+              "http_status": 200,
+              "response_sha256": "8a8c5d2958ebe0a3747a3f618f73c97846312740fa9aa914b6cc8e9347a5d62a",
+              "response_bytes": 252920,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 33,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2019-2020",
+              "datetime": "2019-09-01T05:00:00Z/2020-05-01T04:59:59Z",
+              "request_payload_sha256": "364de2893ab79c757c8b71c0fbb22a967daf211bc9076cfe3f599f0a445e4c00",
+              "http_status": 200,
+              "response_sha256": "f8a74a9bfe55dd1ab3311c6acfbd15d632c28f335d6fd0a396a56f4118951b9b",
+              "response_bytes": 313726,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 41,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2020-2021",
+              "datetime": "2020-09-01T05:00:00Z/2021-05-01T04:59:59Z",
+              "request_payload_sha256": "28a52039b76bbf02175088c652c4b0c65db3a45e0e246a992b156c8277b0fa0f",
+              "http_status": 200,
+              "response_sha256": "c47a9ea91140f791b1742b0dd134d4810e6aff4514ca0d79cc256d89583d00f5",
+              "response_bytes": 298426,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 39,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2021-2022",
+              "datetime": "2021-09-01T05:00:00Z/2022-05-01T04:59:59Z",
+              "request_payload_sha256": "23ee0099c82116c8142287ca1ee961fc017eaaa456294d5a931c514597d293a1",
+              "http_status": 200,
+              "response_sha256": "f4a5423d63e5bde9d077c83ff860aadbd24121fb59277d99265e4e62efa8d6e5",
+              "response_bytes": 230798,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 30,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2022-2023",
+              "datetime": "2022-09-01T05:00:00Z/2023-05-01T04:59:59Z",
+              "request_payload_sha256": "140c63751d01758dd1fee0e2775e02bf7c6a17ac91b14e17e3e017f1d95bc4f4",
+              "http_status": 200,
+              "response_sha256": "72020be89c0597bfb0e00d7864e958ceb747af379fe55d4ed89db9223beed66d",
+              "response_bytes": 308412,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 40,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2023-2024",
+              "datetime": "2023-09-01T05:00:00Z/2024-05-01T04:59:59Z",
+              "request_payload_sha256": "b0d3fc4401d73a205e0816052b9fba0401b04799aef5d7cab418595d417a2b15",
+              "http_status": 200,
+              "response_sha256": "d6dc3e70ff32c93ce6c1b8f8f28ff4a1a7e0b5674d04c05ecfe9c5395d1f0aee",
+              "response_bytes": 314536,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 41,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2024-2025",
+              "datetime": "2024-09-01T05:00:00Z/2025-05-01T04:59:59Z",
+              "request_payload_sha256": "1cb99433613aa71f60efd3cd8747c19c05d97924b5247a3d26787e8b5cd4d03f",
+              "http_status": 200,
+              "response_sha256": "670fb2d6402b659759b7df9f617215a54e5194a5d86f8e39e5a608c9f525a341",
+              "response_bytes": 370262,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 47,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2025-2026",
+              "datetime": "2025-09-01T05:00:00Z/2026-05-01T04:59:59Z",
+              "request_payload_sha256": "defc1e0498ac1e11906ac5793112ec0f1e3bc3d400c8a8b1f2a2358a8d2501a6",
+              "http_status": 200,
+              "response_sha256": "1cc4af181c06ac0c2bb4ead7195d11240ef63c6c700fe43b2c2473f56fb3271e",
+              "response_bytes": 642992,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 84,
+              "catalog_result_truncated": true
+            }
+          ],
           "first_returned_datetime": "2014-10-06T23:33:51.810452Z",
           "last_returned_datetime": "2026-04-30T23:34:27.705099Z",
           "returned_item_ids_sample": [
-            "S1A_IW_GRDH_1SDV_20260430T233415_20260430T233440_064315_081909",
-            "S1A_IW_GRDH_1SDV_20260429T103926_20260429T103951_064293_081834",
-            "S1D_IW_GRDH_1SDV_20260425T233322_20260425T233347_002509_004266",
-            "S1C_IW_GRDH_1SDV_20260424T233312_20260424T233337_007364_00EF0D",
-            "S1D_IW_GRDH_1SDV_20260424T103852_20260424T103917_002487_0041AF"
+            "S1A_IW_GRDH_1SSV_20150428T233338_20150428T233403_005690_0074D8",
+            "S1A_IW_GRDH_1SSV_20150427T103901_20150427T103926_005668_007456",
+            "S1A_IW_GRDH_1SSV_20150403T103859_20150403T103924_005318_006BBE",
+            "S1A_IW_GRDH_1SSV_20150311T233336_20150311T233401_004990_00640A",
+            "S1A_IW_GRDH_1SSV_20150310T103859_20150310T103924_004968_006380"
           ],
           "asset_keys_union": [
             "hh",
@@ -118,24 +303,225 @@
         },
         {
           "collection": "landsat-c2-l2",
-          "http_status": 502,
-          "response_sha256": "660f19c09a36ca1620054261590b73df388b95892469ff17c1caf4e50376aa02",
-          "response_bytes": 36,
-          "request_payload_sha256": "8ad954817780847e17dbc0928a6a00859ed14c615791848baaefd0024416d06e",
-          "transport_status": "TRANSPORT_BLOCKED_HTTP",
-          "scientific_data_status": "UNKNOWN_TRANSPORT_BLOCKED_NOT_MISSING"
+          "query_partition_rule": "EACH_FROZEN_A0_SEASON_IDENTICALLY",
+          "query_count": 12,
+          "successful_query_count": 12,
+          "transport_blocked_query_count": 0,
+          "transport_status": "SUCCESS",
+          "scientific_data_status": "PRESENT_CATALOG",
+          "unique_returned_item_count": 393,
+          "any_catalog_page_truncated": true,
+          "count_semantics": "LOWER_BOUND_IF_ANY_PAGE_TRUNCATED",
+          "query_records": [
+            {
+              "season_id": "2014-2015",
+              "datetime": "2014-09-01T05:00:00Z/2015-05-01T04:59:59Z",
+              "request_payload_sha256": "bc1165988c199e961a85e359d2b08003415ae4b311fe50b3117340430a385327",
+              "http_status": 200,
+              "response_sha256": "557cc3a05d65079d3f06bd90223b3d55ae91406b9d8ce6ddb6641a75d915db1b",
+              "response_bytes": 714433,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 29,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2015-2016",
+              "datetime": "2015-09-01T05:00:00Z/2016-05-01T04:59:59Z",
+              "request_payload_sha256": "be2efa22b63c84818e698350bd1520148f9a95c37252ece33dea99aad4fda2d7",
+              "http_status": 200,
+              "response_sha256": "54b49d849bc918c311e78f1252dc9a92652cd3b5678505c21d09a4c56cf41714",
+              "response_bytes": 763661,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 31,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2016-2017",
+              "datetime": "2016-09-01T05:00:00Z/2017-05-01T04:59:59Z",
+              "request_payload_sha256": "753bb5bb582d0b8e2f4dfa03769d0cab1074871f009929429fab74e3bb40c2f5",
+              "http_status": 200,
+              "response_sha256": "b9db84d0a93d976b3de48b726e6d236ca3730c09b111942b23f069d63ba9f34a",
+              "response_bytes": 715217,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 29,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2017-2018",
+              "datetime": "2017-09-01T05:00:00Z/2018-05-01T04:59:59Z",
+              "request_payload_sha256": "ae89180ccbc46e50823d33695df884fd92e37a31bcedba9f4ed47739215b15e4",
+              "http_status": 200,
+              "response_sha256": "56341439779742ecd6cc6e332603985cda8f07b4aac2a97be058f5ed0d28e255",
+              "response_bytes": 739444,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 30,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2018-2019",
+              "datetime": "2018-09-01T05:00:00Z/2019-05-01T04:59:59Z",
+              "request_payload_sha256": "0f251b8bf0cb486cf560c58829b2c1e806646a6dd733e795d552e999bd5db825",
+              "http_status": 200,
+              "response_sha256": "52ed5cd9cca30e2a4aebf4a301ada79a2cb546e276062b88dc039053ae705dfd",
+              "response_bytes": 764471,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 31,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2019-2020",
+              "datetime": "2019-09-01T05:00:00Z/2020-05-01T04:59:59Z",
+              "request_payload_sha256": "960952fbe193c9c07d1aa48fe6e219e88c5dbf7e58bd732d382078f98dc1708a",
+              "http_status": 200,
+              "response_sha256": "7d11f121527e6c6ede5fd86558b13be8b493e5ea561525238f4f2a22d8e8424e",
+              "response_bytes": 739444,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 30,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2020-2021",
+              "datetime": "2020-09-01T05:00:00Z/2021-05-01T04:59:59Z",
+              "request_payload_sha256": "bdee41ecf4087c2414c5e4fe5e38e60e100236f0d5900e2ab478b9255643d6bc",
+              "http_status": 200,
+              "response_sha256": "ef25df7b0f194cb96f7269af412db8bc694650df1762e835848781d2d54c2b1b",
+              "response_bytes": 739436,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 30,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2021-2022",
+              "datetime": "2021-09-01T05:00:00Z/2022-05-01T04:59:59Z",
+              "request_payload_sha256": "9b76539d5087e905fe5ec653009c61b3348924a64fcaea34004343061663ab28",
+              "http_status": 200,
+              "response_sha256": "b247a057f78e5fdba56ae37586aef212504f7852ed4f7bc9b56201e7fbafffdf",
+              "response_bytes": 891701,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 36,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2022-2023",
+              "datetime": "2022-09-01T05:00:00Z/2023-05-01T04:59:59Z",
+              "request_payload_sha256": "45d07023ad4f4b3ea3ae0860ba445c8429c02932c7f0498f8310b54398263d6c",
+              "http_status": 200,
+              "response_sha256": "2a883457ed216e20344de67bef3f01fee4e1949777ae7c74e7bc6a8237c2a622",
+              "response_bytes": 1139697,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 46,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2023-2024",
+              "datetime": "2023-09-01T05:00:00Z/2024-05-01T04:59:59Z",
+              "request_payload_sha256": "d8d1a6b6271544bfbb4957a66d02c4072ddff569689779edff9c3238b4df70fc",
+              "http_status": 200,
+              "response_sha256": "3cb5cfc2502a1625fe110cbb0b20e57172982cc442609a563d95c4d62706bb9e",
+              "response_bytes": 994326,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 40,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2024-2025",
+              "datetime": "2024-09-01T05:00:00Z/2025-05-01T04:59:59Z",
+              "request_payload_sha256": "2343d487f668350b3351bd0446f3ee0cefb0bacf071bc7b90284b5872af0f76f",
+              "http_status": 200,
+              "response_sha256": "9ab50bc127c18afbf69881559d33f3838d584702ff7a121897ee1913a9385eb0",
+              "response_bytes": 776141,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 31,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2025-2026",
+              "datetime": "2025-09-01T05:00:00Z/2026-05-01T04:59:59Z",
+              "request_payload_sha256": "4b6b131e1b8e873d39e647ad9b2ba375caf9c74bd5eb63f906c1ac09ffad5df9",
+              "http_status": 200,
+              "response_sha256": "2cd1de69f0b92dcf1662f235f5a21c8744ea252e38e8fc213e72158011caa8ac",
+              "response_bytes": 751140,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 30,
+              "catalog_result_truncated": true
+            }
+          ],
+          "first_returned_datetime": "2014-09-07T15:11:05.419703Z",
+          "last_returned_datetime": "2026-04-25T15:10:41.561242Z",
+          "returned_item_ids_sample": [
+            "LE07_L2SP_007068_20150427_02_T1",
+            "LC08_L2SP_007068_20150419_02_T1",
+            "LE07_L2SP_007068_20150411_02_T1",
+            "LC08_L2SP_007068_20150403_02_T1",
+            "LE07_L2SP_007068_20150326_02_T1"
+          ],
+          "asset_keys_union": [
+            "ang",
+            "atmos_opacity",
+            "atran",
+            "blue",
+            "cdist",
+            "cloud_qa",
+            "coastal",
+            "drad",
+            "emis",
+            "emsd",
+            "green",
+            "lwir",
+            "lwir11",
+            "mtl.json",
+            "mtl.txt",
+            "mtl.xml",
+            "nir08",
+            "qa",
+            "qa_aerosol",
+            "qa_pixel",
+            "qa_radsat",
+            "red",
+            "reduced_resolution_browse",
+            "swir16",
+            "swir22",
+            "thumbnail",
+            "trad",
+            "urad"
+          ],
+          "wrs_paths": [
+            "007",
+            "008"
+          ],
+          "wrs_rows": [
+            "068"
+          ],
+          "platforms": [
+            "landsat-7",
+            "landsat-8",
+            "landsat-9"
+          ]
         },
         {
           "collection": "cop-dem-glo-30",
-          "http_status": 200,
-          "response_sha256": "06cb57db122f8f47274538570c79c04916556e0e11cf514a5f5a23b711c2ad0d",
-          "response_bytes": 3495,
-          "request_payload_sha256": "bec26609b2225067cce9223d528694f2debb5efb3cca4d5e34dcb2c5dd848417",
+          "query_partition_rule": "STATIC_SINGLE_QUERY",
+          "query_count": 1,
+          "successful_query_count": 1,
+          "transport_blocked_query_count": 0,
           "transport_status": "SUCCESS",
-          "returned_item_count": 1,
-          "catalog_result_truncated": true,
-          "count_semantics": "LOWER_BOUND_LIMIT_1000",
           "scientific_data_status": "PRESENT_CATALOG",
+          "unique_returned_item_count": 1,
+          "any_catalog_page_truncated": true,
+          "count_semantics": "LOWER_BOUND_IF_ANY_PAGE_TRUNCATED",
+          "query_records": [
+            {
+              "season_id": null,
+              "datetime": null,
+              "request_payload_sha256": "bec26609b2225067cce9223d528694f2debb5efb3cca4d5e34dcb2c5dd848417",
+              "http_status": 200,
+              "response_sha256": "06cb57db122f8f47274538570c79c04916556e0e11cf514a5f5a23b711c2ad0d",
+              "response_bytes": 3495,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 1,
+              "catalog_result_truncated": true
+            }
+          ],
           "first_returned_datetime": "2021-04-22T00:00:00Z",
           "last_returned_datetime": "2021-04-22T00:00:00Z",
           "returned_item_ids_sample": [
@@ -171,23 +557,157 @@
       "collections": [
         {
           "collection": "sentinel-1-grd",
-          "http_status": 200,
-          "response_sha256": "2a7bc3137f368b134c554f8c7c87082a5518dc6c9f01bbfac78df6c99d235c23",
-          "response_bytes": 4923952,
-          "request_payload_sha256": "d737f708048d21435d2ae8ed5b1ef9bb37fc9796dd5d934a819af96cc6e8b7f4",
+          "query_partition_rule": "EACH_FROZEN_A0_SEASON_IDENTICALLY",
+          "query_count": 12,
+          "successful_query_count": 12,
+          "transport_blocked_query_count": 0,
           "transport_status": "SUCCESS",
-          "returned_item_count": 655,
-          "catalog_result_truncated": true,
-          "count_semantics": "LOWER_BOUND_LIMIT_1000",
           "scientific_data_status": "PRESENT_CATALOG",
+          "unique_returned_item_count": 454,
+          "any_catalog_page_truncated": true,
+          "count_semantics": "LOWER_BOUND_IF_ANY_PAGE_TRUNCATED",
+          "query_records": [
+            {
+              "season_id": "2014-2015",
+              "datetime": "2014-09-01T05:00:00Z/2015-05-01T04:59:59Z",
+              "request_payload_sha256": "964af98dd9c07bfee1ea94e41151ed44de0912184dcaba14c821fe45261d81f7",
+              "http_status": 200,
+              "response_sha256": "bc6ae138c6f61fd5749cfbb74d23dd31509aceb53c71eba1c4791cec9d4fe668",
+              "response_bytes": 98116,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 16,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2015-2016",
+              "datetime": "2015-09-01T05:00:00Z/2016-05-01T04:59:59Z",
+              "request_payload_sha256": "b2a2dd2f95393f0f40538f682f92d01ad853624406452fa318f11856cd46f108",
+              "http_status": 200,
+              "response_sha256": "c73231423df036fd7bff2d8cc53b3d27904e288fccdf548e38fbb8125530aef0",
+              "response_bytes": 99531,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 16,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2016-2017",
+              "datetime": "2016-09-01T05:00:00Z/2017-05-01T04:59:59Z",
+              "request_payload_sha256": "cfc19877cac89255b963ce61f1fc6e881c8d44886d594c4ce27bcadf9d310265",
+              "http_status": 200,
+              "response_sha256": "3879d95711e5ae29330e8fbfa7472d0ae14dbb304ae2dd1c059836ac223908cb",
+              "response_bytes": 179351,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 27,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2017-2018",
+              "datetime": "2017-09-01T05:00:00Z/2018-05-01T04:59:59Z",
+              "request_payload_sha256": "aabb20e5d04556267be49f3e7454f744321db9888c76ab3170cb4c6a0a2c0c15",
+              "http_status": 200,
+              "response_sha256": "c3ae57891fd7b4912d6078f09068de87d4200aaf4a22066f42b36eb421b38c85",
+              "response_bytes": 299784,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 39,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2018-2019",
+              "datetime": "2018-09-01T05:00:00Z/2019-05-01T04:59:59Z",
+              "request_payload_sha256": "5fb9affdd5834264f7f7f20eda1c5fc451dbf0df15f47d7beb13fe36857caf64",
+              "http_status": 200,
+              "response_sha256": "df55c674058698d7483b05f1251e86f6fc4fe397f20b35d6ef69fee59856c08f",
+              "response_bytes": 252920,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 33,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2019-2020",
+              "datetime": "2019-09-01T05:00:00Z/2020-05-01T04:59:59Z",
+              "request_payload_sha256": "0ed12ce63f2d51ff2fe2355182276048bca347d4565004761e86ff32f03a9929",
+              "http_status": 200,
+              "response_sha256": "d6a59cbf0588ccb3ac219f155bbbb969f92f6c141babc555039ec7956f8bf124",
+              "response_bytes": 313726,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 41,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2020-2021",
+              "datetime": "2020-09-01T05:00:00Z/2021-05-01T04:59:59Z",
+              "request_payload_sha256": "d9174739be05d0b3ba5cccd9ba6ed3cf29686c02766a4b49bd7df987d2763f86",
+              "http_status": 200,
+              "response_sha256": "41d15e65393c613b6a6b7f18182c3d587776ebfbde31095a3ade3ab661c6411a",
+              "response_bytes": 298426,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 39,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2021-2022",
+              "datetime": "2021-09-01T05:00:00Z/2022-05-01T04:59:59Z",
+              "request_payload_sha256": "c396e3f64a781e78442524c1cadeff169821f03addbd7f399559ba521b485c83",
+              "http_status": 200,
+              "response_sha256": "8671e6aebf8696616724cd193f3647579bbb8f731244b7a865482e3862626154",
+              "response_bytes": 238521,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 31,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2022-2023",
+              "datetime": "2022-09-01T05:00:00Z/2023-05-01T04:59:59Z",
+              "request_payload_sha256": "ffce0d116beae5fc21d1c9299dcd9b0573c9fa1a807010b9455c3bc0c9f5797f",
+              "http_status": 200,
+              "response_sha256": "47c0fd29f8d6b8048299e001c8d8a904e18fd3fc31e59bf741091653809694ed",
+              "response_bytes": 308412,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 40,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2023-2024",
+              "datetime": "2023-09-01T05:00:00Z/2024-05-01T04:59:59Z",
+              "request_payload_sha256": "dfb1144931d852b242fcacac099c034c86496c59ee37864ea860893c748997a0",
+              "http_status": 200,
+              "response_sha256": "4eb2e034e4fa409f666337ad7836edc0552b43acc9b99a734dfc8e0550738c69",
+              "response_bytes": 314536,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 41,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2024-2025",
+              "datetime": "2024-09-01T05:00:00Z/2025-05-01T04:59:59Z",
+              "request_payload_sha256": "925e2f35a8fbcb8d71fe0feca84920773df8e6e7755d379c122ebdf01b9d96a2",
+              "http_status": 200,
+              "response_sha256": "1fe731859c1734f70aa62cef21b719b8e61dadd086f40f71d345b84ab664ea6d",
+              "response_bytes": 370262,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 47,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2025-2026",
+              "datetime": "2025-09-01T05:00:00Z/2026-05-01T04:59:59Z",
+              "request_payload_sha256": "9e45bde9621b1fa99569e199557652ba555aca5ac2a923629aca82c66ab73959",
+              "http_status": 200,
+              "response_sha256": "b0d6a081b8017f4eef7ed456dd7fa8f996ba2121d43d777c818942847fa89c59",
+              "response_bytes": 642992,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 84,
+              "catalog_result_truncated": true
+            }
+          ],
           "first_returned_datetime": "2014-10-06T23:33:51.810452Z",
           "last_returned_datetime": "2026-04-30T23:34:27.705099Z",
           "returned_item_ids_sample": [
-            "S1A_IW_GRDH_1SDV_20260430T233415_20260430T233440_064315_081909",
-            "S1A_IW_GRDH_1SDV_20260429T103926_20260429T103951_064293_081834",
-            "S1D_IW_GRDH_1SDV_20260425T233322_20260425T233347_002509_004266",
-            "S1C_IW_GRDH_1SDV_20260424T233312_20260424T233337_007364_00EF0D",
-            "S1D_IW_GRDH_1SDV_20260424T103852_20260424T103917_002487_0041AF"
+            "S1A_IW_GRDH_1SSV_20150428T233338_20150428T233403_005690_0074D8",
+            "S1A_IW_GRDH_1SSV_20150427T103901_20150427T103926_005668_007456",
+            "S1A_IW_GRDH_1SSV_20150404T233312_20150404T233346_005340_006C5B",
+            "S1A_IW_GRDH_1SSV_20150403T103859_20150403T103924_005318_006BBE",
+            "S1A_IW_GRDH_1SSV_20150311T233336_20150311T233401_004990_00640A"
           ],
           "asset_keys_union": [
             "hh",
@@ -239,24 +759,225 @@
         },
         {
           "collection": "landsat-c2-l2",
-          "http_status": 502,
-          "response_sha256": "660f19c09a36ca1620054261590b73df388b95892469ff17c1caf4e50376aa02",
-          "response_bytes": 36,
-          "request_payload_sha256": "b4611eae829e0e2ec4f67856c35e82f364b8ba4018f3ad2f73efc93607211863",
-          "transport_status": "TRANSPORT_BLOCKED_HTTP",
-          "scientific_data_status": "UNKNOWN_TRANSPORT_BLOCKED_NOT_MISSING"
+          "query_partition_rule": "EACH_FROZEN_A0_SEASON_IDENTICALLY",
+          "query_count": 12,
+          "successful_query_count": 12,
+          "transport_blocked_query_count": 0,
+          "transport_status": "SUCCESS",
+          "scientific_data_status": "PRESENT_CATALOG",
+          "unique_returned_item_count": 394,
+          "any_catalog_page_truncated": true,
+          "count_semantics": "LOWER_BOUND_IF_ANY_PAGE_TRUNCATED",
+          "query_records": [
+            {
+              "season_id": "2014-2015",
+              "datetime": "2014-09-01T05:00:00Z/2015-05-01T04:59:59Z",
+              "request_payload_sha256": "934e4c7fb0a31450ca68e224b42e92adb0334b684f6ce95a3b87ad51a0541f7f",
+              "http_status": 200,
+              "response_sha256": "b3a7c8e8f28abcc1d6aa972b041ef29691e34507f9cf0b53254d49a5ffe1fa2d",
+              "response_bytes": 714433,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 29,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2015-2016",
+              "datetime": "2015-09-01T05:00:00Z/2016-05-01T04:59:59Z",
+              "request_payload_sha256": "8cbf6b3f227c2b06735ca929ff7ae8c01c64e134b0af8884b510cec0a7ac433f",
+              "http_status": 200,
+              "response_sha256": "21d49d46dee6a5ec53940133bbb4e2d4fd74c78edda46ecbce5192844c3c35c0",
+              "response_bytes": 763661,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 31,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2016-2017",
+              "datetime": "2016-09-01T05:00:00Z/2017-05-01T04:59:59Z",
+              "request_payload_sha256": "3504db3ade1e5ad408564d42b8826475c8c6ada67e9368d3f2c8d3d8615add1f",
+              "http_status": 200,
+              "response_sha256": "2b7f7b017fe256a167593aeae15e97a69677358def248044b5781801bf454a68",
+              "response_bytes": 715217,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 29,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2017-2018",
+              "datetime": "2017-09-01T05:00:00Z/2018-05-01T04:59:59Z",
+              "request_payload_sha256": "9284e52f7f167caf78063cf08ae4d961f136495beedb8910663aa959e7e55c8f",
+              "http_status": 200,
+              "response_sha256": "06d300698becd73f0f5383fba8847ad809ce5c5bd194f39c214430ca9a1aac22",
+              "response_bytes": 739444,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 30,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2018-2019",
+              "datetime": "2018-09-01T05:00:00Z/2019-05-01T04:59:59Z",
+              "request_payload_sha256": "6a83f695352aab0a38c66c421bc17e68c19ba1d01d7ffb043c84c7611b03f20f",
+              "http_status": 200,
+              "response_sha256": "d673be1d4416dec39df700172c8e7b1cc9fa03ff579c30532f095bb788566762",
+              "response_bytes": 764471,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 31,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2019-2020",
+              "datetime": "2019-09-01T05:00:00Z/2020-05-01T04:59:59Z",
+              "request_payload_sha256": "9424670e23a7f110d78dad8a215c997aa891800089799efc3ee86cc7588c968c",
+              "http_status": 200,
+              "response_sha256": "3f5fcf7a8c065aa3d6438be40acc02fc65056b24d1bdd7f2d5a45e94f76910aa",
+              "response_bytes": 739444,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 30,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2020-2021",
+              "datetime": "2020-09-01T05:00:00Z/2021-05-01T04:59:59Z",
+              "request_payload_sha256": "f6eae0ecaec7c316ba2096b7c23648995e43f0834fff06fef71910be0c2c339f",
+              "http_status": 200,
+              "response_sha256": "f593d689db795f35bf34187349d8327941184e251e92156b222958992b24a41e",
+              "response_bytes": 739436,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 30,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2021-2022",
+              "datetime": "2021-09-01T05:00:00Z/2022-05-01T04:59:59Z",
+              "request_payload_sha256": "c7cb6cbaa4c2e0087330e90c266296655e3e5114e61c9ea0585ca6733adc06fd",
+              "http_status": 200,
+              "response_sha256": "0f9ca012b553622e8cf14841f0c1ca135992d692a1ad2210259e486784c09872",
+              "response_bytes": 891701,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 36,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2022-2023",
+              "datetime": "2022-09-01T05:00:00Z/2023-05-01T04:59:59Z",
+              "request_payload_sha256": "31dfafb55d3dda63b20e753cb3f32107fa27e71321a3ce3fe5fc1730ac6839a6",
+              "http_status": 200,
+              "response_sha256": "0f4fff1c1945e9d31453ebf336e193688cdd430efe3677cc3e7b09d03871c873",
+              "response_bytes": 1164001,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 47,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2023-2024",
+              "datetime": "2023-09-01T05:00:00Z/2024-05-01T04:59:59Z",
+              "request_payload_sha256": "f7191bff757811cf67e3c852bd17e228b7b5a0b409e0007b4e26018c585b4dc2",
+              "http_status": 200,
+              "response_sha256": "055026352178ca7fdef99c198c119bd4b50cb88dc7b57e9d20f4adcc8517ca24",
+              "response_bytes": 994326,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 40,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2024-2025",
+              "datetime": "2024-09-01T05:00:00Z/2025-05-01T04:59:59Z",
+              "request_payload_sha256": "7295af55f7cef01d719cd963521cc23b5842f11e9c10ec80a00e56cc9f85d76e",
+              "http_status": 200,
+              "response_sha256": "cd4ab6e1478aa0e268cdb52dc0a9f7a1de2e6900f5719071ee1eb53963789683",
+              "response_bytes": 776141,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 31,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2025-2026",
+              "datetime": "2025-09-01T05:00:00Z/2026-05-01T04:59:59Z",
+              "request_payload_sha256": "14fb392fcf954bba0ce611f2268c7195e450d09b704a1dd7e260475c6397926b",
+              "http_status": 200,
+              "response_sha256": "c0ce74115e55d9c3a9449ab15c840aef9930be1cca703a66f15ebc5d0a8cabcc",
+              "response_bytes": 751140,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 30,
+              "catalog_result_truncated": true
+            }
+          ],
+          "first_returned_datetime": "2014-09-07T15:11:05.419703Z",
+          "last_returned_datetime": "2026-04-25T15:10:41.561242Z",
+          "returned_item_ids_sample": [
+            "LE07_L2SP_007068_20150427_02_T1",
+            "LC08_L2SP_007068_20150419_02_T1",
+            "LE07_L2SP_007068_20150411_02_T1",
+            "LC08_L2SP_007068_20150403_02_T1",
+            "LE07_L2SP_007068_20150326_02_T1"
+          ],
+          "asset_keys_union": [
+            "ang",
+            "atmos_opacity",
+            "atran",
+            "blue",
+            "cdist",
+            "cloud_qa",
+            "coastal",
+            "drad",
+            "emis",
+            "emsd",
+            "green",
+            "lwir",
+            "lwir11",
+            "mtl.json",
+            "mtl.txt",
+            "mtl.xml",
+            "nir08",
+            "qa",
+            "qa_aerosol",
+            "qa_pixel",
+            "qa_radsat",
+            "red",
+            "reduced_resolution_browse",
+            "swir16",
+            "swir22",
+            "thumbnail",
+            "trad",
+            "urad"
+          ],
+          "wrs_paths": [
+            "007",
+            "008"
+          ],
+          "wrs_rows": [
+            "068"
+          ],
+          "platforms": [
+            "landsat-7",
+            "landsat-8",
+            "landsat-9"
+          ]
         },
         {
           "collection": "cop-dem-glo-30",
-          "http_status": 200,
-          "response_sha256": "9a137d264f4026f2f3439b7148c291a26a4cdf500c3df4ef6351cc62be9b3fa9",
-          "response_bytes": 3495,
-          "request_payload_sha256": "6fda2c0225f4c8b7d27922486a92a8c2210a16c067c9010158e5b56e6aac888d",
+          "query_partition_rule": "STATIC_SINGLE_QUERY",
+          "query_count": 1,
+          "successful_query_count": 1,
+          "transport_blocked_query_count": 0,
           "transport_status": "SUCCESS",
-          "returned_item_count": 1,
-          "catalog_result_truncated": true,
-          "count_semantics": "LOWER_BOUND_LIMIT_1000",
           "scientific_data_status": "PRESENT_CATALOG",
+          "unique_returned_item_count": 1,
+          "any_catalog_page_truncated": true,
+          "count_semantics": "LOWER_BOUND_IF_ANY_PAGE_TRUNCATED",
+          "query_records": [
+            {
+              "season_id": null,
+              "datetime": null,
+              "request_payload_sha256": "6fda2c0225f4c8b7d27922486a92a8c2210a16c067c9010158e5b56e6aac888d",
+              "http_status": 200,
+              "response_sha256": "9a137d264f4026f2f3439b7148c291a26a4cdf500c3df4ef6351cc62be9b3fa9",
+              "response_bytes": 3495,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 1,
+              "catalog_result_truncated": true
+            }
+          ],
           "first_returned_datetime": "2021-04-22T00:00:00Z",
           "last_returned_datetime": "2021-04-22T00:00:00Z",
           "returned_item_ids_sample": [
@@ -292,33 +1013,429 @@
       "collections": [
         {
           "collection": "sentinel-1-grd",
-          "http_status": 502,
-          "response_sha256": "660f19c09a36ca1620054261590b73df388b95892469ff17c1caf4e50376aa02",
-          "response_bytes": 36,
-          "request_payload_sha256": "8efc1158ebd69f78e3c049567f673818419ef99c698fe857810dd674db26d7ac",
-          "transport_status": "TRANSPORT_BLOCKED_HTTP",
-          "scientific_data_status": "UNKNOWN_TRANSPORT_BLOCKED_NOT_MISSING"
+          "query_partition_rule": "EACH_FROZEN_A0_SEASON_IDENTICALLY",
+          "query_count": 12,
+          "successful_query_count": 12,
+          "transport_blocked_query_count": 0,
+          "transport_status": "SUCCESS",
+          "scientific_data_status": "PRESENT_CATALOG",
+          "unique_returned_item_count": 739,
+          "any_catalog_page_truncated": true,
+          "count_semantics": "LOWER_BOUND_IF_ANY_PAGE_TRUNCATED",
+          "query_records": [
+            {
+              "season_id": "2014-2015",
+              "datetime": "2014-09-01T05:00:00Z/2015-05-01T04:59:59Z",
+              "request_payload_sha256": "a46ee1a420387c268cf9c343fe598c820f2fe1fe2e64ef196c72d149e4d9255d",
+              "http_status": 200,
+              "response_sha256": "b1486c1db69ab6a4756903e4bf4ca6eda231a6e324937c2d3cd876aacec446e5",
+              "response_bytes": 146965,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 24,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2015-2016",
+              "datetime": "2015-09-01T05:00:00Z/2016-05-01T04:59:59Z",
+              "request_payload_sha256": "209b7818fee05d6b9aa2058cda72c28c8a47951df2a16d983ffa454b75f64805",
+              "http_status": 200,
+              "response_sha256": "354b2efaaaac31e7a8ab3c98bbec024357187fbeac3459823d02e663760ba8b6",
+              "response_bytes": 186550,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 30,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2016-2017",
+              "datetime": "2016-09-01T05:00:00Z/2017-05-01T04:59:59Z",
+              "request_payload_sha256": "6d2b6ff9daf6729012fc6c45ce0e52789bddc60cce9bfe8e3138fdc0db94b177",
+              "http_status": 200,
+              "response_sha256": "58e9588f8e23aaa1d58b449ef6c5dc7924e041da00a8c4bab82b9a317365e82f",
+              "response_bytes": 265326,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 39,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2017-2018",
+              "datetime": "2017-09-01T05:00:00Z/2018-05-01T04:59:59Z",
+              "request_payload_sha256": "cb9794e7c81749359077d8c51185fe41fc47addcc0b162c902fd9db3224b43ab",
+              "http_status": 200,
+              "response_sha256": "e5f48b7c59fdd3ad61b203f67c98d6cb8f05353878a0e5507adbb858df499e41",
+              "response_bytes": 453347,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 59,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2018-2019",
+              "datetime": "2018-09-01T05:00:00Z/2019-05-01T04:59:59Z",
+              "request_payload_sha256": "7d7744c001dec522b22ba112cc0d3952926ba59045abbcf7ba75ad3f58c1d9db",
+              "http_status": 200,
+              "response_sha256": "39d59792252d7472ce2f0c6db85e901c040d351057e00c8c6c3e18a4bfe36871",
+              "response_bytes": 475368,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 62,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2019-2020",
+              "datetime": "2019-09-01T05:00:00Z/2020-05-01T04:59:59Z",
+              "request_payload_sha256": "2d6ac7173512a037db3f5c52887b50a9933c84c9f76ac775be32bedb17303ca6",
+              "http_status": 200,
+              "response_sha256": "a2b68debbf10fbc688342e7fa4cfad35ad9d60048aa52c57009fcd1da9eb3421",
+              "response_bytes": 620543,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 81,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2020-2021",
+              "datetime": "2020-09-01T05:00:00Z/2021-05-01T04:59:59Z",
+              "request_payload_sha256": "6edec0144a4e67615430aa254c7afa5356c04a39e3f64d6ccfaedd6c72a7a984",
+              "http_status": 200,
+              "response_sha256": "15db4903bb3ece477a1008fe0c1d94ac7476f3a6b899355519cd557fd8c98cd3",
+              "response_bytes": 605258,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 79,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2021-2022",
+              "datetime": "2021-09-01T05:00:00Z/2022-05-01T04:59:59Z",
+              "request_payload_sha256": "f207badccd143affac6986c86f52247e8a512b48a8b53ac495f9b471cf4c9bc7",
+              "http_status": 200,
+              "response_sha256": "6fa29f57a1a55463d5e4cdc63c62c7e3d06a5a40766ad2b610f4b15c889e4ba5",
+              "response_bytes": 430879,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 56,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2022-2023",
+              "datetime": "2022-09-01T05:00:00Z/2023-05-01T04:59:59Z",
+              "request_payload_sha256": "fe438feefc6d47b26a135e33305a9338a0a405522991fe8207f3fdd14867da72",
+              "http_status": 200,
+              "response_sha256": "f96858af5f140c0a5fef55e90d989eb9745ce02b348365534961b6f767b363b8",
+              "response_bytes": 439954,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 57,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2023-2024",
+              "datetime": "2023-09-01T05:00:00Z/2024-05-01T04:59:59Z",
+              "request_payload_sha256": "d55a4685a459bb5df456f8b94eabec7437814e2c5f233196a1d61be9c5b59c34",
+              "http_status": 200,
+              "response_sha256": "6029c4cce4ccbcf3d57bef02d04ed3b3467bd42afc8b7cdd431b71f8bdfa39c1",
+              "response_bytes": 469420,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 61,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2024-2025",
+              "datetime": "2024-09-01T05:00:00Z/2025-05-01T04:59:59Z",
+              "request_payload_sha256": "f15b10361a37b09a4e8bfc111e74a063c123133e86726d1a04f09f0af046aeae",
+              "http_status": 200,
+              "response_sha256": "88b60feec2bfa82a2ecafa04303957e9290b3af3f4432b49e85fa1799a8151c1",
+              "response_bytes": 540463,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 69,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2025-2026",
+              "datetime": "2025-09-01T05:00:00Z/2026-05-01T04:59:59Z",
+              "request_payload_sha256": "a4287cb15b950787d61f9e50169c064e73b829b3e2e735c57c9e7a631d64313e",
+              "http_status": 200,
+              "response_sha256": "761b3dd14f084614e034e11533807bac4ea5628a177510a97f08defde756ba30",
+              "response_bytes": 938134,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 122,
+              "catalog_result_truncated": true
+            }
+          ],
+          "first_returned_datetime": "2014-10-06T23:33:51.810452Z",
+          "last_returned_datetime": "2026-04-30T23:34:27.705099Z",
+          "returned_item_ids_sample": [
+            "S1A_IW_GRDH_1SSV_20150428T233338_20150428T233403_005690_0074D8",
+            "S1A_IW_GRDH_1SSV_20150427T103901_20150427T103926_005668_007456",
+            "S1A_IW_GRDH_1SSV_20150420T104659_20150420T104726_005566_0071F5",
+            "S1A_IW_GRDH_1SSV_20150404T233312_20150404T233346_005340_006C5B",
+            "S1A_IW_GRDH_1SSV_20150403T103859_20150403T103924_005318_006BBE"
+          ],
+          "asset_keys_union": [
+            "hh",
+            "hv",
+            "safe-manifest",
+            "schema-calibration-hh",
+            "schema-calibration-hv",
+            "schema-calibration-vh",
+            "schema-calibration-vv",
+            "schema-noise-hh",
+            "schema-noise-hv",
+            "schema-noise-vh",
+            "schema-noise-vv",
+            "schema-product-hh",
+            "schema-product-hv",
+            "schema-product-vh",
+            "schema-product-vv",
+            "thumbnail",
+            "vh",
+            "vv"
+          ],
+          "platforms": [
+            "sentinel-1a",
+            "sentinel-1b",
+            "sentinel-1c",
+            "sentinel-1d"
+          ],
+          "orbit_states": [
+            "ascending",
+            "descending"
+          ],
+          "relative_orbits": [
+            18,
+            20,
+            69,
+            97,
+            141,
+            171
+          ],
+          "polarizations": [
+            "HH",
+            "HV",
+            "VH",
+            "VV"
+          ],
+          "instrument_modes": [
+            "EW",
+            "IW"
+          ]
         },
         {
           "collection": "landsat-c2-l2",
-          "http_status": 502,
-          "response_sha256": "660f19c09a36ca1620054261590b73df388b95892469ff17c1caf4e50376aa02",
-          "response_bytes": 36,
-          "request_payload_sha256": "a7689588435cf3d04c4680adf2f5ee0ed61035f0c69287f6bb824ddf8046b164",
-          "transport_status": "TRANSPORT_BLOCKED_HTTP",
-          "scientific_data_status": "UNKNOWN_TRANSPORT_BLOCKED_NOT_MISSING"
+          "query_partition_rule": "EACH_FROZEN_A0_SEASON_IDENTICALLY",
+          "query_count": 12,
+          "successful_query_count": 12,
+          "transport_blocked_query_count": 0,
+          "transport_status": "SUCCESS",
+          "scientific_data_status": "PRESENT_CATALOG",
+          "unique_returned_item_count": 420,
+          "any_catalog_page_truncated": true,
+          "count_semantics": "LOWER_BOUND_IF_ANY_PAGE_TRUNCATED",
+          "query_records": [
+            {
+              "season_id": "2014-2015",
+              "datetime": "2014-09-01T05:00:00Z/2015-05-01T04:59:59Z",
+              "request_payload_sha256": "850e7b00e515ab2096813892312c90e82282def20e4a44b91eba0ef27ce186fc",
+              "http_status": 200,
+              "response_sha256": "88e2db3601cb79070501f11e020d3a094e803ffa7303bb4bdb97ed2af4e1478f",
+              "response_bytes": 714424,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 29,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2015-2016",
+              "datetime": "2015-09-01T05:00:00Z/2016-05-01T04:59:59Z",
+              "request_payload_sha256": "abec234455d97227b28fe7c8c7a8f20bd78acbd1cfc4ddbb9c8656c39292fc37",
+              "http_status": 200,
+              "response_sha256": "b99ff9e22cde099fce2dd458b2d86682791ec9b1d86101dedf6a26b5a06a2546",
+              "response_bytes": 763652,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 31,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2016-2017",
+              "datetime": "2016-09-01T05:00:00Z/2017-05-01T04:59:59Z",
+              "request_payload_sha256": "82cb57c57b85bf2a8b5d75844f964764c2393dc6c7f0cc7ebe53474286b284c3",
+              "http_status": 200,
+              "response_sha256": "a73dab24286e815c3c2d633f4bc61e2b7cc02b68a0375c1196c965f7163061af",
+              "response_bytes": 715208,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 29,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2017-2018",
+              "datetime": "2017-09-01T05:00:00Z/2018-05-01T04:59:59Z",
+              "request_payload_sha256": "535f831692d94b40213088b7788eb94e964de9ce39358c6d4bb74ae0386c3445",
+              "http_status": 200,
+              "response_sha256": "2659b160816176b66fee51f14f81cbe83b7780aac4e2ded30bb62d202ad572cd",
+              "response_bytes": 739435,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 30,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2018-2019",
+              "datetime": "2018-09-01T05:00:00Z/2019-05-01T04:59:59Z",
+              "request_payload_sha256": "34989bfbeb0fb56c0f727a93e5f1dba370dbc8ee20c9625227136cfcbca74ff0",
+              "http_status": 200,
+              "response_sha256": "8311717c269ddec90953ee4f1d1e9249a59958d37ac53ac0b08114486f48337e",
+              "response_bytes": 764462,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 31,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2019-2020",
+              "datetime": "2019-09-01T05:00:00Z/2020-05-01T04:59:59Z",
+              "request_payload_sha256": "b89f881b360d9681f2eb926e1996ee551c01ed2b0c420eced33b8fd5439853d8",
+              "http_status": 200,
+              "response_sha256": "58216ecb6b26a05516b727dfb25b2a75d150dd5343f19c67b3b991a90add765d",
+              "response_bytes": 787881,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 32,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2020-2021",
+              "datetime": "2020-09-01T05:00:00Z/2021-05-01T04:59:59Z",
+              "request_payload_sha256": "57e634c65ac5fe01f0aecaab6bfa1707504d71b5f6502f36616375c0b91c7615",
+              "http_status": 200,
+              "response_sha256": "348ef648207a4346101fa40e808bb72904e67cd98eef09dadc6c49c6504c3976",
+              "response_bytes": 884760,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 36,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2021-2022",
+              "datetime": "2021-09-01T05:00:00Z/2022-05-01T04:59:59Z",
+              "request_payload_sha256": "3898ca9a99519ea108f679646456f404d50c75a2d175b6661aa26022faa4dd13",
+              "http_status": 200,
+              "response_sha256": "bf7d100c6e7ab39f86a89ed29d5a3fc73cae8a00fe33167589fd3aeb3a8e5350",
+              "response_bytes": 1232306,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 50,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2022-2023",
+              "datetime": "2022-09-01T05:00:00Z/2023-05-01T04:59:59Z",
+              "request_payload_sha256": "0c12db2aeea6520d0f1f831f09b8b7092d6c01b0e6808ba3276370648b1be3bc",
+              "http_status": 200,
+              "response_sha256": "469708ed0108026aa71092ed00e87f5d7a763c43fc899db68d0c9666142d05ad",
+              "response_bytes": 1212560,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 49,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2023-2024",
+              "datetime": "2023-09-01T05:00:00Z/2024-05-01T04:59:59Z",
+              "request_payload_sha256": "fe49ff9b59dc65ccf66ca9fcf985df5bce4742a024e4240048f41cf2cce06dd4",
+              "http_status": 200,
+              "response_sha256": "cc2cef5646905dc0177ccba23bfd583aad31bbdbd81123edae2f6ae81d297c65",
+              "response_bytes": 1042906,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 42,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2024-2025",
+              "datetime": "2024-09-01T05:00:00Z/2025-05-01T04:59:59Z",
+              "request_payload_sha256": "395e09fcb2064f01327e3b1d1142ecf3b2d329d7bde8c60c1d3e48c050afa321",
+              "http_status": 200,
+              "response_sha256": "75e919de62d5ba835824d7d2754eaf2f6eade712915034cf0c9a7869942f8390",
+              "response_bytes": 776132,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 31,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2025-2026",
+              "datetime": "2025-09-01T05:00:00Z/2026-05-01T04:59:59Z",
+              "request_payload_sha256": "1c8e0a8b234127b74f36f0d82e6c7198e9a9180cfa4c5c577d338633f0150747",
+              "http_status": 200,
+              "response_sha256": "5d9879d9db82b5275b1858cec07ab2312ec5fa9fb9f6d1eb9fde5fd7bdee0443",
+              "response_bytes": 751131,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 30,
+              "catalog_result_truncated": true
+            }
+          ],
+          "first_returned_datetime": "2014-09-07T15:11:05.419703Z",
+          "last_returned_datetime": "2026-04-25T15:10:41.561242Z",
+          "returned_item_ids_sample": [
+            "LE07_L2SP_007068_20150427_02_T1",
+            "LC08_L2SP_007068_20150419_02_T1",
+            "LE07_L2SP_007068_20150411_02_T1",
+            "LC08_L2SP_007068_20150403_02_T1",
+            "LE07_L2SP_007068_20150326_02_T1"
+          ],
+          "asset_keys_union": [
+            "ang",
+            "atmos_opacity",
+            "atran",
+            "blue",
+            "cdist",
+            "cloud_qa",
+            "coastal",
+            "drad",
+            "emis",
+            "emsd",
+            "green",
+            "lwir",
+            "lwir11",
+            "mtl.json",
+            "mtl.txt",
+            "mtl.xml",
+            "nir08",
+            "qa",
+            "qa_aerosol",
+            "qa_pixel",
+            "qa_radsat",
+            "red",
+            "reduced_resolution_browse",
+            "swir16",
+            "swir22",
+            "thumbnail",
+            "trad",
+            "urad"
+          ],
+          "wrs_paths": [
+            "007",
+            "008"
+          ],
+          "wrs_rows": [
+            "068",
+            "069"
+          ],
+          "platforms": [
+            "landsat-7",
+            "landsat-8",
+            "landsat-9"
+          ]
         },
         {
           "collection": "cop-dem-glo-30",
-          "http_status": 200,
-          "response_sha256": "fb032a635efdc0dc367d6a612dc397c8ada725051b495d5c3a4d039170eea7b9",
-          "response_bytes": 6318,
-          "request_payload_sha256": "c1f6afa7d85dbaf0e1bda4975fdee339d4b9e36064a0901dbeb7805b8e293d4f",
+          "query_partition_rule": "STATIC_SINGLE_QUERY",
+          "query_count": 1,
+          "successful_query_count": 1,
+          "transport_blocked_query_count": 0,
           "transport_status": "SUCCESS",
-          "returned_item_count": 2,
-          "catalog_result_truncated": true,
-          "count_semantics": "LOWER_BOUND_LIMIT_1000",
           "scientific_data_status": "PRESENT_CATALOG",
+          "unique_returned_item_count": 2,
+          "any_catalog_page_truncated": true,
+          "count_semantics": "LOWER_BOUND_IF_ANY_PAGE_TRUNCATED",
+          "query_records": [
+            {
+              "season_id": null,
+              "datetime": null,
+              "request_payload_sha256": "c1f6afa7d85dbaf0e1bda4975fdee339d4b9e36064a0901dbeb7805b8e293d4f",
+              "http_status": 200,
+              "response_sha256": "fb032a635efdc0dc367d6a612dc397c8ada725051b495d5c3a4d039170eea7b9",
+              "response_bytes": 6318,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 2,
+              "catalog_result_truncated": true
+            }
+          ],
           "first_returned_datetime": "2021-04-22T00:00:00Z",
           "last_returned_datetime": "2021-04-22T00:00:00Z",
           "returned_item_ids_sample": [
@@ -355,33 +1472,428 @@
       "collections": [
         {
           "collection": "sentinel-1-grd",
-          "http_status": 502,
-          "response_sha256": "660f19c09a36ca1620054261590b73df388b95892469ff17c1caf4e50376aa02",
-          "response_bytes": 36,
-          "request_payload_sha256": "634225cbb1afb77abee24cd523db202c6d93b4e5c90495383cf03f88ec6b2bb3",
-          "transport_status": "TRANSPORT_BLOCKED_HTTP",
-          "scientific_data_status": "UNKNOWN_TRANSPORT_BLOCKED_NOT_MISSING"
+          "query_partition_rule": "EACH_FROZEN_A0_SEASON_IDENTICALLY",
+          "query_count": 12,
+          "successful_query_count": 12,
+          "transport_blocked_query_count": 0,
+          "transport_status": "SUCCESS",
+          "scientific_data_status": "PRESENT_CATALOG",
+          "unique_returned_item_count": 780,
+          "any_catalog_page_truncated": true,
+          "count_semantics": "LOWER_BOUND_IF_ANY_PAGE_TRUNCATED",
+          "query_records": [
+            {
+              "season_id": "2014-2015",
+              "datetime": "2014-09-01T05:00:00Z/2015-05-01T04:59:59Z",
+              "request_payload_sha256": "f7cf712301582216f11eebf9bd2f7f0343edc8a74bba8e41644825569af40525",
+              "http_status": 200,
+              "response_sha256": "808a4fa13ada13c622feadc24f7e109b00b4d93b6ac00fc83c307946a104ff7c",
+              "response_bytes": 140887,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 23,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2015-2016",
+              "datetime": "2015-09-01T05:00:00Z/2016-05-01T04:59:59Z",
+              "request_payload_sha256": "d818d8c32535f69c5fa1416188c3aabf51b17742b35d49e149dfeb115b9321bb",
+              "http_status": 200,
+              "response_sha256": "720d1ef80382de35a30339f59600c8e15909b461a4bc4a2b07e44aa238638274",
+              "response_bytes": 160594,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 26,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2016-2017",
+              "datetime": "2016-09-01T05:00:00Z/2017-05-01T04:59:59Z",
+              "request_payload_sha256": "0bac248803eaeb325a7b0b8acc0b760de8ed083752610f7dd40bbef0d9f86fa9",
+              "http_status": 200,
+              "response_sha256": "d3e55d2a7bccc3074d029d49da82fb1056493d18d9d2e018244133e4b6611561",
+              "response_bytes": 419286,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 62,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2017-2018",
+              "datetime": "2017-09-01T05:00:00Z/2018-05-01T04:59:59Z",
+              "request_payload_sha256": "5508dc37e6d1b6e8d86193f102e0a50f898ff1bdaa7a1be0748e17e7e905dbe0",
+              "http_status": 200,
+              "response_sha256": "822650e75bc8e2caf290f3637b9d21dac2f89bca8d42665f5d311bf5b200ecf1",
+              "response_bytes": 550064,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 72,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2018-2019",
+              "datetime": "2018-09-01T05:00:00Z/2019-05-01T04:59:59Z",
+              "request_payload_sha256": "fa31785f050ae79ae2add5ebd3d7371d2a43c477be745be351bd3cda0aeb64d6",
+              "http_status": 200,
+              "response_sha256": "f179bbff2b1a97af9396436f233322b51710f5bd169057fa4256249dde1b5a1d",
+              "response_bytes": 451757,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 59,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2019-2020",
+              "datetime": "2019-09-01T05:00:00Z/2020-05-01T04:59:59Z",
+              "request_payload_sha256": "8f1cdd7f2bb7f3c805c502168f51d17bb6897fd1a945aa0f5d148dd48e5ebffb",
+              "http_status": 200,
+              "response_sha256": "9ba735c54deb4dc615afd23a1e3f8a72f4517c24b5c0f85e062740e9bd2ea3d4",
+              "response_bytes": 467182,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 61,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2020-2021",
+              "datetime": "2020-09-01T05:00:00Z/2021-05-01T04:59:59Z",
+              "request_payload_sha256": "de6c0fdea2b1f668012e88e27bbd31ff08e57b6f464fe5d6e897c0db43b8882d",
+              "http_status": 200,
+              "response_sha256": "3d1fed6eefa3305e2c34959d9f2beaef3c1c4d2ac99716ebd7478aadf47eaf36",
+              "response_bytes": 359153,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 47,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2021-2022",
+              "datetime": "2021-09-01T05:00:00Z/2022-05-01T04:59:59Z",
+              "request_payload_sha256": "53152c308d7d4e71dace723b4a86ef5fd91504520c779c2dda2e0a6909197c7d",
+              "http_status": 200,
+              "response_sha256": "ca273054a367691b59ee4313543074e180b20aa0d124c3cdcf57f5c3db6a86ad",
+              "response_bytes": 267482,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 35,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2022-2023",
+              "datetime": "2022-09-01T05:00:00Z/2023-05-01T04:59:59Z",
+              "request_payload_sha256": "7fa69c091e6cafafb69bac6a4749613c4d3c33a89f589cb80a66ca96e12474bd",
+              "http_status": 200,
+              "response_sha256": "40a6881f098edc187b83ea2a510ff3c2ebde255ad5da1616c7f4624372cf9f24",
+              "response_bytes": 473458,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 62,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2023-2024",
+              "datetime": "2023-09-01T05:00:00Z/2024-05-01T04:59:59Z",
+              "request_payload_sha256": "4283c5a4f52b0f7dea1d01e8a445b382373b653163fd3d76db8d86722c7a7025",
+              "http_status": 200,
+              "response_sha256": "d34e3857a0199fb78ea9f0d6bc378011215d901d2db5c5ffff2872895dd35847",
+              "response_bytes": 626267,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 82,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2024-2025",
+              "datetime": "2024-09-01T05:00:00Z/2025-05-01T04:59:59Z",
+              "request_payload_sha256": "cf2ecc122f2f5055eaedfe8fbcf14cf50c4d1ee5ecb46218aff86504357078ab",
+              "http_status": 200,
+              "response_sha256": "5bbb2a4189f11ae054d60738815fa8a346a747c47ba448054a3af857b691c381",
+              "response_bytes": 668021,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 87,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2025-2026",
+              "datetime": "2025-09-01T05:00:00Z/2026-05-01T04:59:59Z",
+              "request_payload_sha256": "f970dd50595e352c5fcdc84bd8cfe1d59378d0db7bf89538227488254f65b88c",
+              "http_status": 200,
+              "response_sha256": "83fd9b26687e26054b964b5556359cf2fc2d4e99536632bcdf04e928c04a3163",
+              "response_bytes": 1253912,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 164,
+              "catalog_result_truncated": true
+            }
+          ],
+          "first_returned_datetime": "2014-10-06T23:35:06.810253Z",
+          "last_returned_datetime": "2026-04-30T23:43:01.135830Z",
+          "returned_item_ids_sample": [
+            "S1A_IW_GRDH_1SSV_20150428T233453_20150428T233518_005690_0074D8",
+            "S1A_IW_GRDH_1SSV_20150425T105410_20150425T105435_005639_00739F",
+            "S1A_IW_GRDH_1SSV_20150409T234234_20150409T234303_005413_006E37",
+            "S1A_IW_GRDH_1SSV_20150401T105409_20150401T105434_005289_006B0A",
+            "S1A_IW_GRDH_1SSV_20150316T234233_20150316T234302_005063_0065C1"
+          ],
+          "asset_keys_union": [
+            "hh",
+            "hv",
+            "safe-manifest",
+            "schema-calibration-hh",
+            "schema-calibration-hv",
+            "schema-calibration-vh",
+            "schema-calibration-vv",
+            "schema-noise-hh",
+            "schema-noise-hv",
+            "schema-noise-vh",
+            "schema-noise-vv",
+            "schema-product-hh",
+            "schema-product-hv",
+            "schema-product-vh",
+            "schema-product-vv",
+            "thumbnail",
+            "vh",
+            "vv"
+          ],
+          "platforms": [
+            "sentinel-1a",
+            "sentinel-1b",
+            "sentinel-1c",
+            "sentinel-1d"
+          ],
+          "orbit_states": [
+            "ascending",
+            "descending"
+          ],
+          "relative_orbits": [
+            18,
+            20,
+            91,
+            142,
+            171
+          ],
+          "polarizations": [
+            "HH",
+            "HV",
+            "VH",
+            "VV"
+          ],
+          "instrument_modes": [
+            "EW",
+            "IW"
+          ]
         },
         {
           "collection": "landsat-c2-l2",
-          "http_status": 502,
-          "response_sha256": "660f19c09a36ca1620054261590b73df388b95892469ff17c1caf4e50376aa02",
-          "response_bytes": 36,
-          "request_payload_sha256": "6a2ee66a04dfb1cbe2b72f4eed694c2448f0f2b2030644435135c66f6f30b962",
-          "transport_status": "TRANSPORT_BLOCKED_HTTP",
-          "scientific_data_status": "UNKNOWN_TRANSPORT_BLOCKED_NOT_MISSING"
+          "query_partition_rule": "EACH_FROZEN_A0_SEASON_IDENTICALLY",
+          "query_count": 12,
+          "successful_query_count": 12,
+          "transport_blocked_query_count": 0,
+          "transport_status": "SUCCESS",
+          "scientific_data_status": "PRESENT_CATALOG",
+          "unique_returned_item_count": 640,
+          "any_catalog_page_truncated": true,
+          "count_semantics": "LOWER_BOUND_IF_ANY_PAGE_TRUNCATED",
+          "query_records": [
+            {
+              "season_id": "2014-2015",
+              "datetime": "2014-09-01T05:00:00Z/2015-05-01T04:59:59Z",
+              "request_payload_sha256": "eb80cf604e6d13c434f1fbb8b90cca6a8462dedd0641ff4eb001073525c39a1f",
+              "http_status": 200,
+              "response_sha256": "c835f680f0d880407849c78caf04f0fc9fd961baafbf42fe2280494e0ef9d8e8",
+              "response_bytes": 1090205,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 44,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2015-2016",
+              "datetime": "2015-09-01T05:00:00Z/2016-05-01T04:59:59Z",
+              "request_payload_sha256": "35fb528b1504513faf9dad5e401aa70ba0c8d271fef65ed75450f488f0feb10a",
+              "http_status": 200,
+              "response_sha256": "51a87758c844441547707d02185d89a4a12f4e8c23b1abd68d8446d9e367f980",
+              "response_bytes": 1114429,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 45,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2016-2017",
+              "datetime": "2016-09-01T05:00:00Z/2017-05-01T04:59:59Z",
+              "request_payload_sha256": "b00f2773b595726b01585fbdf389ecae73d117e71a67b6da6b94722ad0f2f9c9",
+              "http_status": 200,
+              "response_sha256": "3a8aa7759b420f7bbe91b9b5d8c9aedcc653386ed8ba15e990375fce12b1b616",
+              "response_bytes": 1114430,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 45,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2017-2018",
+              "datetime": "2017-09-01T05:00:00Z/2018-05-01T04:59:59Z",
+              "request_payload_sha256": "992505d6e003567f85d25fe78e2f5875be1d5c18e4d1074ad49dba245b54c63e",
+              "http_status": 200,
+              "response_sha256": "652ea80cc5f24e7fa2f2846caece7b44d04e6197bbf7a79059f48dd1fbc6d1c4",
+              "response_bytes": 1114410,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 45,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2018-2019",
+              "datetime": "2018-09-01T05:00:00Z/2019-05-01T04:59:59Z",
+              "request_payload_sha256": "9c6aed5d83d7133c048c4b9dc3cf42226e85a1770bb2ebad12779a3dad0778e9",
+              "http_status": 200,
+              "response_sha256": "f213f5fef39df83376816dc3e4612a531c946af8b54e39e95637231dd8460fef",
+              "response_bytes": 1114434,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 45,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2019-2020",
+              "datetime": "2019-09-01T05:00:00Z/2020-05-01T04:59:59Z",
+              "request_payload_sha256": "7a90dddcaf6af089e93e10a26cb93d09c97ffa952ce68dbc377864d751f55347",
+              "http_status": 200,
+              "response_sha256": "ede896f192df936818ea7bb8d31d94ee752fe231232c9f91de46f5eb6e2fc372",
+              "response_bytes": 1164438,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 47,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2020-2021",
+              "datetime": "2020-09-01T05:00:00Z/2021-05-01T04:59:59Z",
+              "request_payload_sha256": "c9324df882ed1cd988122d748b34a3617108cf522e7cfa809f5d8f2e36c93c27",
+              "http_status": 200,
+              "response_sha256": "1e219dd5cfc69304f6f61eec1dd63716cce6b9bc705f7f6b1674dfcfdb104ad3",
+              "response_bytes": 1064378,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 43,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2021-2022",
+              "datetime": "2021-09-01T05:00:00Z/2022-05-01T04:59:59Z",
+              "request_payload_sha256": "991aa960f8be03cd548baae9b5c95b906d572df62b11777aa3b534c37049134a",
+              "http_status": 200,
+              "response_sha256": "30962c01722f36d77ff96191e2e168aadf7a0e985b9edab5b4df850848ac9c6c",
+              "response_bytes": 1292719,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 52,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2022-2023",
+              "datetime": "2022-09-01T05:00:00Z/2023-05-01T04:59:59Z",
+              "request_payload_sha256": "90f7ae46f9d56d10500e98d4df8da5f2101a26607f3dae54cf4c52c3c6f75a52",
+              "http_status": 200,
+              "response_sha256": "d4194827e209947e5d528378072a0788c9ffd36c7ee83bbfa3c832121fcaa6b1",
+              "response_bytes": 2058928,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 83,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2023-2024",
+              "datetime": "2023-09-01T05:00:00Z/2024-05-01T04:59:59Z",
+              "request_payload_sha256": "9e9a5b0fcadb38170a38056b229c03265a17150e509011d671186ef7a076cb03",
+              "http_status": 200,
+              "response_sha256": "6cb63095527d99d3d1348fa055f70865e250519b372c579b17fb3e53f67097bf",
+              "response_bytes": 1766937,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 71,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2024-2025",
+              "datetime": "2024-09-01T05:00:00Z/2025-05-01T04:59:59Z",
+              "request_payload_sha256": "503c51dbaeea48a46f5921c3c5c661eb9aebbc6776062d37947e0326f20693c0",
+              "http_status": 200,
+              "response_sha256": "9b1fb7147ff896cafcd019db6cdb4a38f4951c3f49b853aa37076fc743437bce",
+              "response_bytes": 1501023,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 60,
+              "catalog_result_truncated": true
+            },
+            {
+              "season_id": "2025-2026",
+              "datetime": "2025-09-01T05:00:00Z/2026-05-01T04:59:59Z",
+              "request_payload_sha256": "01fc994f60010327e158755e75b4b138c514c12d2fab6f0a1fd68ef11f68e55b",
+              "http_status": 200,
+              "response_sha256": "998c5e7d6a865f6487c5ab8f2ce068e88d38825c4e463660d94239c0ed034dde",
+              "response_bytes": 1501029,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 60,
+              "catalog_result_truncated": true
+            }
+          ],
+          "first_returned_datetime": "2014-09-05T15:22:14.729353Z",
+          "last_returned_datetime": "2026-04-23T15:22:16.144724Z",
+          "returned_item_ids_sample": [
+            "LE07_L2SP_009066_20150425_02_T1",
+            "LC08_L2SP_009066_20150417_02_T1",
+            "LC08_L2SP_009065_20150417_02_T1",
+            "LE07_L2SP_009066_20150409_02_T1",
+            "LC08_L2SP_009066_20150401_02_T1"
+          ],
+          "asset_keys_union": [
+            "ang",
+            "atmos_opacity",
+            "atran",
+            "blue",
+            "cdist",
+            "cloud_qa",
+            "coastal",
+            "drad",
+            "emis",
+            "emsd",
+            "green",
+            "lwir",
+            "lwir11",
+            "mtl.json",
+            "mtl.txt",
+            "mtl.xml",
+            "nir08",
+            "qa",
+            "qa_aerosol",
+            "qa_pixel",
+            "qa_radsat",
+            "red",
+            "reduced_resolution_browse",
+            "swir16",
+            "swir22",
+            "thumbnail",
+            "trad",
+            "urad"
+          ],
+          "wrs_paths": [
+            "009",
+            "010"
+          ],
+          "wrs_rows": [
+            "065",
+            "066"
+          ],
+          "platforms": [
+            "landsat-7",
+            "landsat-8",
+            "landsat-9"
+          ]
         },
         {
           "collection": "cop-dem-glo-30",
-          "http_status": 200,
-          "response_sha256": "05befed71b197b76e58e279fd3fce7c43caaf3a37337484c316f83b0abba0fc2",
-          "response_bytes": 6321,
-          "request_payload_sha256": "c582375b915f8cb6ceaccd748055266e113b54d51510963cbf2bfe6e3a1febfd",
+          "query_partition_rule": "STATIC_SINGLE_QUERY",
+          "query_count": 1,
+          "successful_query_count": 1,
+          "transport_blocked_query_count": 0,
           "transport_status": "SUCCESS",
-          "returned_item_count": 2,
-          "catalog_result_truncated": true,
-          "count_semantics": "LOWER_BOUND_LIMIT_1000",
           "scientific_data_status": "PRESENT_CATALOG",
+          "unique_returned_item_count": 2,
+          "any_catalog_page_truncated": true,
+          "count_semantics": "LOWER_BOUND_IF_ANY_PAGE_TRUNCATED",
+          "query_records": [
+            {
+              "season_id": null,
+              "datetime": null,
+              "request_payload_sha256": "c582375b915f8cb6ceaccd748055266e113b54d51510963cbf2bfe6e3a1febfd",
+              "http_status": 200,
+              "response_sha256": "05befed71b197b76e58e279fd3fce7c43caaf3a37337484c316f83b0abba0fc2",
+              "response_bytes": 6321,
+              "transport_status": "SUCCESS",
+              "returned_item_count": 2,
+              "catalog_result_truncated": true
+            }
+          ],
           "first_returned_datetime": "2021-04-22T00:00:00Z",
           "last_returned_datetime": "2021-04-22T00:00:00Z",
           "returned_item_ids_sample": [
@@ -397,11 +1909,12 @@
   ],
   "summary": {
     "track_count": 4,
-    "collection_queries_expected": 12,
-    "collection_queries_executed": 12,
-    "catalog_present_results": 6,
-    "transport_blocked_results": 6
+    "aggregate_collection_results": 12,
+    "fixed_stac_requests_executed": 100,
+    "catalog_present_aggregate_results": 12,
+    "transport_blocked_aggregate_results": 0,
+    "transport_blocked_fixed_requests": 0
   },
-  "status": "A1_SENSOR_CATALOG_PREFLIGHT_PARTIAL_TRANSPORT_BLOCKED_NOT_MISSING",
+  "status": "A1_SENSOR_CATALOG_PREFLIGHT_COMPLETE_NO_WINDOW_SELECTED",
   "next_gate": "FREEZE_PER_TRACK_A1_SENSOR_RULES_THEN_GENERATE_A3_FEATURES_FOR_THE_FROZEN_CALENDAR_WITHOUT_OUTCOME_FIELDS"
 }
