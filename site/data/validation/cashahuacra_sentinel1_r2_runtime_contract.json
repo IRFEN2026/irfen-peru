@@ -1,6 +1,6 @@
 {
-  "schema_version": "irfen-ibvf-sentinel1-r2-runtime-contract-v0.1",
-  "generated_at": "2026-08-29T14:39:00Z",
+  "schema_version": "irfen-ibvf-sentinel1-r2-runtime-contract-v0.2",
+  "generated_at": "2026-08-29T14:35:00Z",
   "case_id": "cashahuacra_2015-03-23",
   "deployment_status": "RESEARCH_ONLY",
   "test_only": true,
@@ -21,11 +21,17 @@
     "installer_filename": "esa-snap_sentinel_linux-14.0.0.sh",
     "toolbox_scope": "SENTINEL_TOOLBOXES_INCLUDING_MICROWAVE_TOOLBOX"
   },
+  "published_checksum_freeze": {
+    "report_path": "site/data/validation/cashahuacra_sentinel1_r2_runtime_checksum.json",
+    "sha256sums_source_bytes": 1308,
+    "sha256sums_source_sha256": "8ab69c031be77e09a915e435c4b4d1e1a3cfb84cdc9acfc1de53e457a8c94a68",
+    "published_installer_sha256": "786ce26a464ce32aef133af25b81281ad1b0af320e3614c0b465939fffbb4ee6",
+    "unique_filename_match": true,
+    "workflow_run_id": 33257891856,
+    "status": "PASS_PUBLISHED_SHA256_FROZEN"
+  },
   "freeze_sequence": [
-    "DOWNLOAD_OFFICIAL_SHA256SUMS_SMALL_FILE",
-    "RECORD_SHA256_OF_SHA256SUMS_FILE",
-    "PARSE_EXACT_INSTALLER_FILENAME_ONCE_AND_REQUIRE_UNIQUE_MATCH",
-    "RECORD_PUBLISHED_INSTALLER_SHA256",
+    "PUBLISHED_SHA256_FROZEN_COMPLETE",
     "BEFORE_R2_EXECUTION_DOWNLOAD_INSTALLER_AND_REQUIRE_BYTE_SHA256_EQUALS_PUBLISHED_VALUE",
     "INSTALL_NONINTERACTIVELY_IN_EPHEMERAL_RUNNER",
     "RECORD_GPT_VERSION_OUTPUT_AND_INSTALLED_MODULE_METADATA",
@@ -34,8 +40,10 @@
   "version_floating_allowed": false,
   "automatic_update_during_r2_allowed": false,
   "published_checksum_without_installer_byte_verification_sufficient_for_r2_execution": false,
+  "installer_byte_verified": false,
+  "r2_execution_allowed_by_runtime_gate": false,
   "pre_post_sar_values_read": false,
   "comparison_performed": false,
   "activation_inference_allowed": false,
-  "status": "PREREGISTERED_PUBLISHED_CHECKSUM_FREEZE_PENDING_INSTALLER_BYTE_FREEZE_REQUIRED_BEFORE_R2"
+  "status": "PUBLISHED_SHA256_PASS_INSTALLER_BYTE_FREEZE_PENDING_R2_RUNTIME_BLOCKED"
 }
