@@ -1,0 +1,83 @@
+{
+  "schema_version": "irfen-ibvf-sentinel1-a4-contract-v0.1",
+  "case_id": "cashahuacra_2015-03-23",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "status": "PREREGISTERED_BEFORE_PIXEL_RESPONSE_EXTRACTION",
+  "inputs": {
+    "sentinel1_freeze": "site/data/validation/cashahuacra_sentinel1_freeze.json",
+    "pre_item_id": "S1A_IW_GRDH_1SSV_20150310T103859_20150310T103924_004968_006380",
+    "post_item_id": "S1A_IW_GRDH_1SSV_20150403T103859_20150403T103924_005318_006BBE",
+    "relative_orbit": 171,
+    "orbit_state": "descending",
+    "instrument_mode": "IW",
+    "polarization": "VV",
+    "pre_measurement_sha256": "a3453214e6e48609f3d832141145c540922d8434a901cff85da4ea580f261859",
+    "post_measurement_sha256": "7a73aaf87a3f1f38abe4460180dcf1e6dca4d733b68336b7dfd95d2940a10368",
+    "basin": "site/data/watersheds/cashahuacra_ibvf_two_point_v03.geojson",
+    "dem_sha256": "d9f8d410da66bfb85c73b957401aea73043f8618cccdb7d1fc76082d30a31130"
+  },
+  "official_algorithm_basis": {
+    "product_specification": "https://sentiwiki.copernicus.eu/__attachments/1673968/S1-RS-MDA-52-7441%20-%20Sentinel-1%20Product%20Specification%202025%20-%203.16.1.pdf",
+    "processing_reference": "https://sentiwiki.copernicus.eu/web/s1-processing",
+    "calibration_rule": "For calibration LUT A_sigma at pixel i, sigma0_i = DN_i^2 / A_sigma_i^2; LUT values are interpolated between annotation points according to the product specification.",
+    "noise_rule": "Thermal noise LUT eta must be placed in the same calibrated domain and subtracted before log conversion. Pixels for which the linear noise-corrected power is non-positive are INVALID_NOT_ZERO, never clipped to an arbitrary positive floor for feature construction.",
+    "db_rule": "sigma0_dB = 10*log10(sigma0_linear) only for strictly positive, valid linear power after the declared corrections."
+  },
+  "processing_stages": [
+    {
+      "stage": "A4_R1_NATIVE_RADIOMETRIC",
+      "rule": "Verify all input SHA-256 values; parse calibration, noise and product annotation; compute calibrated/noise-corrected linear sigma0 in native GRD image geometry. Do not compare pre/post as a basin response feature yet."
+    },
+    {
+      "stage": "A4_R2_GEOMETRY_AND_TERRAIN",
+      "rule": "Use annotation geolocation and the same frozen Copernicus GLO-30 to produce a common map grid. Terrain correction/flattening method, interpolation kernel, output resolution and layover/shadow handling must be versioned and frozen before inspecting pre/post differences."
+    },
+    {
+      "stage": "A4_R3_COMMON_SUPPORT",
+      "rule": "Intersect the frozen basin with pixels valid in BOTH dates after R2. No date-specific valid mask may enlarge the support of one image relative to the other. Report common valid area fraction; do not impute invalid pixels."
+    },
+    {
+      "stage": "A4_R4_BLIND_RESPONSE_FEATURES",
+      "rule": "Only after R1-R3 pass, compute preregistered distributional differences over common support. These are observational SAR response features, not an activation label."
+    }
+  ],
+  "preregistered_features_after_r3": {
+    "linear_domain": [
+      "median_sigma0_pre",
+      "median_sigma0_post",
+      "median_linear_ratio_post_over_pre"
+    ],
+    "db_domain": [
+      "median_delta_sigma0_db_post_minus_pre",
+      "q25_delta_sigma0_db",
+      "q75_delta_sigma0_db",
+      "fraction_common_pixels_abs_delta_ge_1db",
+      "fraction_common_pixels_abs_delta_ge_2db",
+      "fraction_common_pixels_abs_delta_ge_3db"
+    ],
+    "quality": [
+      "common_valid_area_fraction",
+      "invalid_noise_corrected_fraction_pre",
+      "invalid_noise_corrected_fraction_post",
+      "terrain_layover_shadow_or_unresolved_fraction"
+    ],
+    "threshold_semantics": "The 1/2/3 dB values are descriptive effect-size bins only and are not activation thresholds."
+  },
+  "forbidden_shortcuts": [
+    "compare_raw_DN_between_dates",
+    "compare_calibrated_pixels_before_common_geometric_support",
+    "replace_non_positive_noise_corrected_power_with_zero",
+    "replace_missing_or_invalid_pixels_with_zero",
+    "choose_speckle_filter_or_kernel_after_viewing_territorial_outcome",
+    "derive_activation_or_operational_label_from_SAR_response"
+  ],
+  "speckle_policy": "Primary frozen features are computed without an adaptive speckle filter beyond the multilooking inherent in GRD. Any filtered sensitivity analysis must be separately versioned and may not replace the primary result after outcome unblinding.",
+  "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
+  "scientific_interpretation": "METHOD_CONTRACT_ONLY_NO_PIXEL_RESPONSE_YET"
+}
