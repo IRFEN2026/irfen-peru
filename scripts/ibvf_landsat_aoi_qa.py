@@ -4,6 +4,13 @@
 RESEARCH_ONLY / TEST_ONLY. This tool reports diagnostic QA coverage inside an
 explicit AOI. It does not classify activation, risk, priority, or operational
 status and it does not use global scene cloud cover as an acceptance rule.
+
+SR_QA_AEROSOL is decoded according to the Landsat 8-9 Collection 2 contract:
+bit 1 = valid aerosol retrieval, bit 5 = interpolated aerosol, bits 6-7 =
+aerosol level (climatology/low/medium/high). Aerosol-level distributions are
+reported over the full non-fill AOI domain, while retrieval validity and
+interpolation are reported separately. This prevents invalid retrieval from
+being silently treated as either acceptable or missing.
 """
 from __future__ import annotations
 
@@ -66,7 +73,7 @@ def s3_to_https(uri: str) -> str:
 def download(uri: str, destination: Path, timeout: int = 120) -> dict[str, Any]:
     destination.parent.mkdir(parents=True, exist_ok=True)
     url = s3_to_https(uri)
-    req = Request(url, headers={"User-Agent": "IRFEN-IBVF/0.1 RESEARCH_ONLY TEST_ONLY"})
+    req = Request(url, headers={"User-Agent": "IRFEN-IBVF/0.2 RESEARCH_ONLY TEST_ONLY"})
     try:
         with urlopen(req, timeout=timeout) as r, destination.open("wb") as f:
             shutil.copyfileobj(r, f, length=1024 * 1024)
@@ -170,12 +177,23 @@ def analyze_scene(item: dict[str, Any], geom: dict[str, Any], download_dir: Path
     water = data_domain & ((pixel & (1 << 7)) != 0)
     radsat_nonzero = data_domain & (radsat != 0)
 
+    # Landsat 8-9 C2 SR_QA_AEROSOL: bit 1 valid retrieval, bit 5
+    # interpolated aerosol, bits 6-7 qualitative aerosol level.
     aerosol_valid = data_domain & ((aerosol & (1 << 1)) != 0)
+    aerosol_interpolated = data_domain & ((aerosol & (1 << 5)) != 0)
     aerosol_level = (aerosol >> 6) & 0b11
-    aerosol_high = aerosol_valid & (aerosol_level == 3)
-    aerosol_medium = aerosol_valid & (aerosol_level == 2)
-    aerosol_low_or_clim = aerosol_valid & (aerosol_level <= 1)
-    combined_proxy = strict_clear & (radsat == 0) & aerosol_valid & (aerosol_level <= 2)
+    aerosol_climatology = data_domain & (aerosol_level == 0)
+    aerosol_low = data_domain & (aerosol_level == 1)
+    aerosol_medium = data_domain & (aerosol_level == 2)
+    aerosol_high = data_domain & (aerosol_level == 3)
+    aerosol_invalid_high = data_domain & ~aerosol_valid & (aerosol_level == 3)
+    aerosol_valid_high = aerosol_valid & (aerosol_level == 3)
+
+    # Two diagnostic proxies are deliberately separate. The first follows the
+    # USGS caution against high aerosol irrespective of valid-retrieval bit;
+    # the second is stricter and additionally requires a valid retrieval.
+    non_high_proxy = strict_clear & (radsat == 0) & (aerosol_level <= 2)
+    valid_non_high_proxy = non_high_proxy & aerosol_valid
 
     metrics = {
         "aoi_pixels": aoi_pixels,
@@ -185,11 +203,16 @@ def analyze_scene(item: dict[str, Any], geom: dict[str, Any], download_dir: Path
         "strict_clear_pct_of_data": pct(int(strict_clear.sum()), data_pixels),
         "water_pct_of_data": pct(int(water.sum()), data_pixels),
         "radsat_nonzero_pct_of_data": pct(int(radsat_nonzero.sum()), data_pixels),
-        "aerosol_valid_pct_of_data": pct(int(aerosol_valid.sum()), data_pixels),
-        "aerosol_high_pct_of_data": pct(int(aerosol_high.sum()), data_pixels),
+        "aerosol_valid_retrieval_pct_of_data": pct(int(aerosol_valid.sum()), data_pixels),
+        "aerosol_interpolated_pct_of_data": pct(int(aerosol_interpolated.sum()), data_pixels),
+        "aerosol_climatology_pct_of_data": pct(int(aerosol_climatology.sum()), data_pixels),
+        "aerosol_low_pct_of_data": pct(int(aerosol_low.sum()), data_pixels),
         "aerosol_medium_pct_of_data": pct(int(aerosol_medium.sum()), data_pixels),
-        "aerosol_low_or_climatology_pct_of_data": pct(int(aerosol_low_or_clim.sum()), data_pixels),
-        "combined_qa_usable_proxy_pct_of_data": pct(int(combined_proxy.sum()), data_pixels),
+        "aerosol_high_pct_of_data": pct(int(aerosol_high.sum()), data_pixels),
+        "aerosol_valid_high_pct_of_data": pct(int(aerosol_valid_high.sum()), data_pixels),
+        "aerosol_invalid_high_pct_of_data": pct(int(aerosol_invalid_high.sum()), data_pixels),
+        "strict_clear_non_saturated_non_high_aerosol_pct_of_data": pct(int(non_high_proxy.sum()), data_pixels),
+        "strict_clear_non_saturated_valid_retrieval_non_high_aerosol_pct_of_data": pct(int(valid_non_high_proxy.sum()), data_pixels),
     }
     return {
         **base,
@@ -197,7 +220,13 @@ def analyze_scene(item: dict[str, Any], geom: dict[str, Any], download_dir: Path
         "qa_rule": {
             "global_cloud_cover_used_for_acceptance": False,
             "strict_clear_excludes_qa_pixel_bits": [0, 1, 2, 3, 4, 5],
-            "combined_proxy_is_acceptance_threshold": False,
+            "sr_qa_aerosol_contract": {
+                "bit_1": "VALID_AEROSOL_RETRIEVAL",
+                "bit_5": "INTERPOLATED_AEROSOL",
+                "bits_6_7": "AEROSOL_LEVEL_CLIMATOLOGY_LOW_MEDIUM_HIGH",
+            },
+            "high_aerosol_is_caution_flag": True,
+            "diagnostic_proxies_are_acceptance_thresholds": False,
             "note": "Metrics are diagnostics only until the final IBVF basin/AOI and acceptance rule are frozen.",
         },
         "metrics": metrics,
@@ -221,7 +250,7 @@ def main() -> int:
     items = find_landsat_items(inventory, dates)
 
     report = {
-        "schema_version": "irfen-ibvf-landsat-aoi-qa-v0.1",
+        "schema_version": "irfen-ibvf-landsat-aoi-qa-v0.2",
         "generated_at": utc_now(),
         "deployment_status": "RESEARCH_ONLY",
         "test_only": True,
