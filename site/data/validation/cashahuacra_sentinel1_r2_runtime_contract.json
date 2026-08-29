@@ -1,0 +1,41 @@
+{
+  "schema_version": "irfen-ibvf-sentinel1-r2-runtime-contract-v0.1",
+  "generated_at": "2026-08-29T14:39:00Z",
+  "case_id": "cashahuacra_2015-03-23",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
+  "purpose": "Pin the exact ESA SNAP runtime before any R2 processing or pre/post SAR difference.",
+  "official_release": {
+    "authority": "ESA STEP",
+    "version": "14.0.0",
+    "release_timestamp_utc": "2026-08-18T15:15:00Z",
+    "release_page": "https://step.esa.int/main/download/snap-download/",
+    "linux_sentinel_toolboxes_installer_url": "https://download.esa.int/step/snap/14.0/installers/esa-snap_sentinel_linux-14.0.0.sh",
+    "official_sha256sums_url": "https://step.esa.int/downloads/14.0/installers/sha256sums",
+    "installer_filename": "esa-snap_sentinel_linux-14.0.0.sh",
+    "toolbox_scope": "SENTINEL_TOOLBOXES_INCLUDING_MICROWAVE_TOOLBOX"
+  },
+  "freeze_sequence": [
+    "DOWNLOAD_OFFICIAL_SHA256SUMS_SMALL_FILE",
+    "RECORD_SHA256_OF_SHA256SUMS_FILE",
+    "PARSE_EXACT_INSTALLER_FILENAME_ONCE_AND_REQUIRE_UNIQUE_MATCH",
+    "RECORD_PUBLISHED_INSTALLER_SHA256",
+    "BEFORE_R2_EXECUTION_DOWNLOAD_INSTALLER_AND_REQUIRE_BYTE_SHA256_EQUALS_PUBLISHED_VALUE",
+    "INSTALL_NONINTERACTIVELY_IN_EPHEMERAL_RUNNER",
+    "RECORD_GPT_VERSION_OUTPUT_AND_INSTALLED_MODULE_METADATA",
+    "DISABLE_OR_AVOID_AUTO_DOWNLOADED_DEM_AND_ORBIT_RESOURCES"
+  ],
+  "version_floating_allowed": false,
+  "automatic_update_during_r2_allowed": false,
+  "published_checksum_without_installer_byte_verification_sufficient_for_r2_execution": false,
+  "pre_post_sar_values_read": false,
+  "comparison_performed": false,
+  "activation_inference_allowed": false,
+  "status": "PREREGISTERED_PUBLISHED_CHECKSUM_FREEZE_PENDING_INSTALLER_BYTE_FREEZE_REQUIRED_BEFORE_R2"
+}
