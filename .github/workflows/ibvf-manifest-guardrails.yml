@@ -1,7 +1,12 @@
 name: IBVF - Multipista manifest guardrails
 
+# Evaluate the files touched by each research-branch push, not the cumulative
+# diff of the long-lived PR. This prevents unrelated scientific commits from
+# re-running this guardrail on every PR synchronize event.
 on:
-  pull_request:
+  push:
+    branches:
+      - agent/independent-basin-validation-map
     paths:
       - 'site/data/validation/independent_basin_validation_map.json'
       - 'site/data/validation/cashahuacra_sentinel1_r2_contract.json'
@@ -9,7 +14,6 @@ on:
       - 'site/expansion.html'
       - 'scripts/ibvf_validate_case_manifest.py'
       - 'scripts/ibvf_validate_protocol_contracts.py'
-      - '.github/workflows/ibvf-manifest-guardrails.yml'
   workflow_dispatch:
 
 permissions:
@@ -21,6 +25,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
