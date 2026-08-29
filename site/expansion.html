@@ -30,7 +30,7 @@
   <section class="mapbox">
     <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">
       <div><span class="badge researchbadge">RESEARCH_ONLY · TEST_ONLY</span><h2 style="margin:7px 0 3px">Independent Basin Validation Framework</h2><div class="meta">La evidencia territorial de activación permanece sellada durante el blind remote assessment.</div></div>
-      <div class="meta"><b>Indicadores visibles:</b><br>etapa · geometría · IMERG · SAR/óptico · blind status</div>
+      <div class="meta"><b>Indicadores visibles:</b><br>etapa · geometría/área · IMERG · SAR/óptico · blind status</div>
     </div>
     <div id="researchMap"></div>
     <div class="maplegend"><span><i class="sample"></i>Geometría científica / candidata</span><span class="small">Sin colores de riesgo · sin valores de alerta · ausencia de dato ≠ riesgo bajo</span></div>
@@ -54,20 +54,27 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,att
 const ibvfLayer=L.layerGroup().addTo(researchMap);
 L.control.layers(null,{'Validación independiente · RESEARCH_ONLY':ibvfLayer},{collapsed:false}).addTo(researchMap);
 
+function areaLine(c){return c.geometry_area_km2!=null?`<br><b>Área DEM:</b> ${esc(c.geometry_area_km2)} km²`:'';}
+function sensitivityLine(c){
+  const p=c.positional_sensitivity_status||c.secondary_sensitivity_status;
+  const d=c.conditioning_sensitivity_status;
+  if(!p&&!d)return '';
+  return `<br><b>Sensibilidad:</b> ${esc(p||'—')}${d?` · DEM: ${esc(d)}`:''}`;
+}
 function caseCard(c){
   return `<article class="card ibvf-card">
     <div class="small">${esc(c.case_id)}</div><h3>${esc(c.name)}</h3>
     <span class="badge researchbadge">${esc(c.framework_stage)}</span>
-    <p class="meta"><b>Ventana ciega:</b> ${esc(c.blind_window)}<br><b>Geometría:</b> ${esc(c.geometry_status)}<br><b>IMERG:</b> ${esc(c.imerg_status)}<br><b>SAR/óptico:</b> ${esc(c.remote_sensing_status)}<br><b>SMAP:</b> ${esc(c.smap_status)}<br><b>Blind:</b> ${esc(c.blind_status)}</p>
+    <p class="meta"><b>Ventana ciega:</b> ${esc(c.blind_window)}<br><b>Geometría:</b> ${esc(c.geometry_status)}${areaLine(c)}${sensitivityLine(c)}<br><b>IMERG:</b> ${esc(c.imerg_status)}<br><b>SAR/óptico:</b> ${esc(c.remote_sensing_status)}<br><b>SMAP:</b> ${esc(c.smap_status)}<br><b>Blind:</b> ${esc(c.blind_status)}</p>
     <div class="blocked">Producción: BLOQUEADA · alertamiento: DESHABILITADO</div>
   </article>`;
 }
 
 function popup(c,feature){
   const p=feature?.properties||{};
-  const area=p.coverage?.delineated_area_km2??p.delineated_area_km2??p.accumulation_area_approx_km2;
+  const area=p.coverage?.delineated_area_km2??p.delineated_area_km2??p.area_km2??p.accumulation_area_approx_km2??c.geometry_area_km2;
   return `<div style="min-width:250px"><b>${esc(c.name)}</b><br><span style="color:#0f766e;font-weight:700">RESEARCH_ONLY · TEST_ONLY</span><hr style="border:0;border-top:1px solid #ddd">
-    <b>Etapa:</b> ${esc(c.framework_stage)}<br><b>Ventana:</b> ${esc(c.blind_window)}<br><b>Geometría:</b> ${esc(c.geometry_status)}${area!=null?`<br><b>Área geométrica:</b> ${esc(area)} km²`:''}<br><b>IMERG:</b> ${esc(c.imerg_status)}<br><b>SAR/óptico:</b> ${esc(c.remote_sensing_status)}<br><b>Blind:</b> ${esc(c.blind_status)}<br><br><span style="font-size:11px;color:#607089">No representa riesgo, alerta, capacidad hidráulica ni clasificación operativa.</span></div>`;
+    <b>Etapa:</b> ${esc(c.framework_stage)}<br><b>Ventana:</b> ${esc(c.blind_window)}<br><b>Geometría:</b> ${esc(c.geometry_status)}${area!=null?`<br><b>Área DEM:</b> ${esc(area)} km²`:''}${sensitivityLine(c)}<br><b>IMERG:</b> ${esc(c.imerg_status)}<br><b>SAR/óptico:</b> ${esc(c.remote_sensing_status)}<br><b>Blind:</b> ${esc(c.blind_status)}<br><br><span style="font-size:11px;color:#607089">No representa riesgo, alerta, capacidad hidráulica ni clasificación operativa.</span></div>`;
 }
 
 function normalizeGeo(g){return g?.type==='FeatureCollection'?(g.features||[]):g?.type==='Feature'?[g]:[];}
