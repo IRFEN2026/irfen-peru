@@ -1,23 +1,22 @@
 #!/usr/bin/env python3
-"""Cashahuacra ANA two-point channel-identity snap for IRFEN IBVF.
+"""Cashahuacra ANA two-point / pre-confluence snap for IRFEN IBVF.
 
 RESEARCH_ONLY / TEST_ONLY.
 
-This method is predeclared after the v0.3 nearest-channel experiment proved
-numerically repeatable but failed a separate static geometry identity audit.
-It uses only the two ANA RD 1634-2015 Cashahuacra faja-marginal progressive
-coordinates to identify the tributary: 2+180 is an upstream channel anchor and
-0+000 is the downstream snap seed. No target basin area, published catchment
-length, territorial activation outcome, operational threshold, or EVENT/NONE
-label is used for selection.
+The v0.1 two-point experiment still reached the same 69.423 km² downstream
+cell because the Cashahuacra D8 path had already merged into a larger drainage
+before reaching ANA 0+000. Version 0.2 therefore keeps the same upstream ANA
+2+180 anchor sensitivity, but defines the tributary outlet topologically as the
+last tracked Cashahuacra cell immediately before the first downstream
+confluence where a competing upstream branch has greater D8 accumulation than
+the tracked branch. This is a channel-network rule, not an area-fitting rule.
 
-For four fixed radii around ANA 2+180, the maximum D8-accumulation cell is used
-as an upstream anchor. Each anchor is traced downstream through the conditioned
-GLO-30 D8 network. The selected outlet is the traced cell nearest ANA 0+000.
-Freeze requires all four independently anchored paths to choose the exact same
-outlet cell and that cell to lie within two GLO-30 pixels (60 m) of ANA 0+000.
-Morphometry is computed only after those gates pass. Published historical area
-may be compared later as a post-hoc identity diagnostic, never as a selector.
+No target basin area, published catchment length, territorial activation
+outcome, operational threshold, or EVENT/NONE label is used for selection.
+Freeze requires all four independently anchored paths to identify exactly the
+same pre-confluence cell and that cell to remain within the predeclared 360 m
+search neighborhood of ANA 0+000. Morphometry is computed only after freeze.
+Published historical geometry is reserved for post-hoc identity diagnostics.
 """
 from __future__ import annotations
 
@@ -34,6 +33,7 @@ from rasterio.transform import xy
 from shapely.geometry import shape
 
 import ibvf_cashahuacra_dem_snap as base
+import ibvf_cashahuacra_nearest_channel_snap as nearest
 
 ANA_UPSTREAM_UTM18S = {
     "easting_m": 317437.0,
@@ -42,7 +42,7 @@ ANA_UPSTREAM_UTM18S = {
     "progressive": "2+180",
 }
 UPSTREAM_ANCHOR_RADII_M = [60.0, 120.0, 240.0, 360.0]
-DOWNSTREAM_SEED_MAX_DISTANCE_M = 60.0
+DOWNSTREAM_SEED_MAX_DISTANCE_M = 360.0
 
 
 def utm_to_lonlat(p: dict[str, Any]) -> tuple[float, float]:
@@ -50,33 +50,46 @@ def utm_to_lonlat(p: dict[str, Any]) -> tuple[float, float]:
     return tr.transform(float(p["easting_m"]), float(p["northing_m"]))
 
 
-def nearest_on_path(
+def pre_larger_branch_confluence(
     path: list[tuple[int, int]],
+    fdir: np.ndarray,
     acc: np.ndarray,
     transform: Any,
     seed_lon: float,
     seed_lat: float,
 ) -> dict[str, Any]:
-    best = None
-    for r, c in path:
-        lon, lat = xy(transform, r, c, offset="center")
-        d = base.distance_m(seed_lon, seed_lat, float(lon), float(lat))
-        value = float(acc[r, c])
-        candidate = (d, -value, int(r), int(c), float(lon), float(lat))
-        if best is None or candidate < best:
-            best = candidate
-    if best is None:
-        return {"status": "NO_DOWNSTREAM_PATH_CELL"}
-    d, neg_acc, r, c, lon, lat = best
-    return {
-        "status": "SELECTED",
-        "row": r,
-        "col": c,
-        "lon": lon,
-        "lat": lat,
-        "distance_to_ana_0plus000_m": round(float(d), 3),
-        "accumulation_cells": round(float(-neg_acc), 3),
-    }
+    """Return last tracked cell before joining a larger competing branch."""
+    for idx in range(len(path) - 1):
+        current = path[idx]
+        nxt = path[idx + 1]
+        current_acc = float(acc[current[0], current[1]])
+        competitors = [x for x in nearest.upstream_neighbors(fdir, acc, nxt) if (x[1], x[2]) != current]
+        larger = [x for x in competitors if float(x[0]) > current_acc]
+        if not larger:
+            continue
+        larger.sort(key=lambda x: (-x[0], x[1], x[2]))
+        comp_acc, comp_r, comp_c = larger[0]
+        lon, lat = xy(transform, current[0], current[1], offset="center")
+        next_lon, next_lat = xy(transform, nxt[0], nxt[1], offset="center")
+        return {
+            "status": "SELECTED_PRE_LARGER_BRANCH_CONFLUENCE",
+            "row": int(current[0]),
+            "col": int(current[1]),
+            "lon": float(lon),
+            "lat": float(lat),
+            "distance_to_ana_0plus000_m": round(base.distance_m(seed_lon, seed_lat, float(lon), float(lat)), 3),
+            "accumulation_cells": round(current_acc, 3),
+            "confluence_next_row": int(nxt[0]),
+            "confluence_next_col": int(nxt[1]),
+            "confluence_next_lon": float(next_lon),
+            "confluence_next_lat": float(next_lat),
+            "competing_branch_row": int(comp_r),
+            "competing_branch_col": int(comp_c),
+            "competing_branch_accumulation_cells": round(float(comp_acc), 3),
+            "tracked_to_competing_accumulation_ratio": round(current_acc / float(comp_acc), 6),
+            "path_index": idx,
+        }
+    return {"status": "NO_LARGER_BRANCH_CONFLUENCE_FOUND"}
 
 
 def basic_morphometry(grid: Any, fdir: Any, selected: dict[str, Any], dem: np.ndarray) -> dict[str, Any]:
@@ -107,7 +120,7 @@ def main() -> int:
     down_lon, down_lat = base.seed_lonlat()
     up_lon, up_lat = utm_to_lonlat(ANA_UPSTREAM_UTM18S)
     report: dict[str, Any] = {
-        "schema_version": "irfen-ibvf-cashahuacra-ana-two-point-snap-v0.1",
+        "schema_version": "irfen-ibvf-cashahuacra-ana-two-point-preconfluence-snap-v0.2",
         "generated_at": base.now(),
         "case_id": "cashahuacra_2015-03-23",
         "deployment_status": "RESEARCH_ONLY",
@@ -119,14 +132,14 @@ def main() -> int:
         "territorial_activation_evidence_blinded": True,
         "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
         "ana_geometry": {
-            "downstream_0plus000": {**base.ANA_SEED_UTM18S, "lon": down_lon, "lat": down_lat, "role": "DOWNSTREAM_SNAP_SEED_ONLY"},
+            "downstream_0plus000": {**base.ANA_SEED_UTM18S, "lon": down_lon, "lat": down_lat, "role": "DOWNSTREAM_SPATIAL_SANITY_SEED_ONLY"},
             "upstream_2plus180": {**ANA_UPSTREAM_UTM18S, "lon": up_lon, "lat": up_lat, "role": "UPSTREAM_CHANNEL_IDENTITY_ANCHOR_ONLY"},
         },
         "contract": {
             "upstream_anchor_radii_m": UPSTREAM_ANCHOR_RADII_M,
             "upstream_selection": "MAXIMUM_D8_FLOW_ACCUMULATION_WITHIN_RADIUS_AROUND_ANA_2PLUS180",
-            "downstream_selection": "NEAREST_CELL_TO_ANA_0PLUS000_ALONG_D8_PATH_FROM_UPSTREAM_ANCHOR",
-            "freeze_gate_exact_same_downstream_cell_all_anchor_radii": True,
+            "outlet_selection": "LAST_TRACKED_CELL_BEFORE_FIRST_CONFLUENCE_WITH_A_LARGER_COMPETING_UPSTREAM_BRANCH",
+            "freeze_gate_exact_same_preconfluence_cell_all_anchor_radii": True,
             "freeze_gate_downstream_seed_max_distance_m": DOWNSTREAM_SEED_MAX_DISTANCE_M,
             "target_basin_area_used": False,
             "published_basin_length_used": False,
@@ -172,7 +185,7 @@ def main() -> int:
                     results.append({"anchor_radius_m": radius, "status": "UPSTREAM_ANCHOR_UNAVAILABLE"})
                     continue
                 path = base.trace_downstream_cells(fdir_arr, (anchor["row"], anchor["col"]))
-                selected = nearest_on_path(path, acc_arr, transform, down_lon, down_lat)
+                selected = pre_larger_branch_confluence(path, fdir_arr, acc_arr, transform, down_lon, down_lat)
                 selected.update({
                     "anchor_radius_m": radius,
                     "upstream_anchor_row": anchor["row"],
@@ -183,12 +196,12 @@ def main() -> int:
                 })
                 results.append(selected)
 
-            good = [x for x in results if x.get("status") == "SELECTED"]
+            good = [x for x in results if x.get("status") == "SELECTED_PRE_LARGER_BRANCH_CONFLUENCE"]
             cells = {(x["row"], x["col"]) for x in good}
             exact = len(good) == len(UPSTREAM_ANCHOR_RADII_M) and len(cells) == 1
             within_seed = exact and all(float(x["distance_to_ana_0plus000_m"]) <= DOWNSTREAM_SEED_MAX_DISTANCE_M for x in good)
             report["upstream_anchors"] = anchors
-            report["downstream_from_upstream_anchor"] = {
+            report["preconfluence_results"] = {
                 "results": results,
                 "exact_cell_agreement": exact,
                 "all_within_downstream_seed_gate": within_seed,
@@ -197,7 +210,7 @@ def main() -> int:
 
             if exact and within_seed:
                 chosen = good[0]
-                report["snap_status"] = "STABLE_TWO_POINT_CHANNEL_IDENTITY_GATE_PASSED"
+                report["snap_status"] = "STABLE_PRE_LARGER_BRANCH_CONFLUENCE_GATE_PASSED"
                 report["selected_outlet"] = chosen
                 basin = base.delineate_if_stable(grid, fdir, transform, chosen)
                 metrics = basic_morphometry(grid, fdir, chosen, dem)
@@ -206,20 +219,20 @@ def main() -> int:
                 metrics.update({
                     "area_km2": round(abs(float(area_m2)) / 1e6, 3),
                     "perimeter_km": round(abs(float(perimeter_m)) / 1000.0, 3),
-                    "morphometry_scope": "BASIC_DEM_DERIVED_AFTER_TWO_POINT_IDENTITY_FREEZE_ONLY",
+                    "morphometry_scope": "BASIC_DEM_DERIVED_AFTER_PRECONFLUENCE_IDENTITY_FREEZE_ONLY",
                 })
                 basin["properties"].update(metrics)
-                basin["properties"]["geometry_status"] = "DELINEATED_AFTER_ANA_TWO_POINT_CHANNEL_IDENTITY_SNAP"
-                report["morphometry_status"] = "BASIC_MORPHOMETRY_COMPUTED_AFTER_TWO_POINT_FREEZE"
+                basin["properties"]["geometry_status"] = "DELINEATED_AFTER_ANA_TWO_POINT_PRECONFLUENCE_SNAP"
+                report["morphometry_status"] = "BASIC_MORPHOMETRY_COMPUTED_AFTER_PRECONFLUENCE_FREEZE"
                 report["morphometry"] = metrics
                 if args.basin_output:
                     args.basin_output.parent.mkdir(parents=True, exist_ok=True)
                     args.basin_output.write_text(json.dumps(basin, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
             elif exact:
-                report["snap_status"] = "EXACT_CELL_BUT_TOO_FAR_FROM_ANA_0PLUS000_NOT_FROZEN"
+                report["snap_status"] = "EXACT_PRECONFLUENCE_CELL_BUT_TOO_FAR_FROM_ANA_0PLUS000_NOT_FROZEN"
                 report["morphometry_status"] = "BLOCKED_DOWNSTREAM_SEED_GATE"
             else:
-                report["snap_status"] = "UNSTABLE_TWO_POINT_CHANNEL_IDENTITY_REVIEW_REQUIRED"
+                report["snap_status"] = "UNSTABLE_PRECONFLUENCE_CHANNEL_IDENTITY_REVIEW_REQUIRED"
                 report["morphometry_status"] = "BLOCKED_EXACT_CELL_GATE_NOT_PASSED"
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
