@@ -51,7 +51,7 @@ jobs:
             --event-date 2015-03-23 \
             --workers 8 \
             --output artifacts/ibvf/cashahuacra_imerg_raw_hash_freeze.json
-      - name: Scientific guards and slot/hash contract
+      - name: Scientific guards and slot/hash/HDF5 contract
         run: |
           python - <<'PY'
           import json
@@ -83,8 +83,14 @@ jobs:
           assert f['operational_alerting_enabled'] is False
           assert f['uses_operational_event_none_labels'] is False
           assert f['inventory_432_verified'] is True
+          assert f['successful_hashes']==432
+          assert f['hdf5_signatures_verified']==432
+          assert f['failed_or_blocked_hashes']==0
+          assert f['event_48_raw_sha256_frozen'] is True
+          assert f['window_432_raw_sha256_frozen'] is True
+          assert all(x.get('hdf5_signature_verified') is True for x in f.get('granules',[]))
           assert all(x.get('scientific_data_status') != 'MISSING' for x in f.get('failures',[]))
-          print({'resolved':d['resolved_granule_count'],'event48_meta':d['event_day_48_slots_verified'],'window432_meta':d['window_all_slots_verified'],'cmr_sha256':d['source']['cmr_response_sha256'],'raw_probe_status':a.get('probe_status'),'raw_probe_sha256':(a.get('raw_byte_probe') or {}).get('sha256'),'event48_raw':f['event_48_raw_sha256_frozen'],'window432_raw':f['window_432_raw_sha256_frozen'],'successful_hashes':f['successful_hashes'],'failed_hashes':f['failed_or_blocked_hashes'],'raw_manifest_sha256':f.get('ordered_raw_manifest_sha256'),'event_manifest_sha256':f.get('event_ordered_raw_manifest_sha256'),'total_bytes_hashed':f.get('total_bytes_hashed')})
+          print({'resolved':d['resolved_granule_count'],'event48_meta':d['event_day_48_slots_verified'],'window432_meta':d['window_all_slots_verified'],'cmr_sha256':d['source']['cmr_response_sha256'],'raw_probe_status':a.get('probe_status'),'raw_probe_sha256':(a.get('raw_byte_probe') or {}).get('sha256'),'event48_raw':f['event_48_raw_sha256_frozen'],'window432_raw':f['window_432_raw_sha256_frozen'],'successful_hashes':f['successful_hashes'],'hdf5_signatures':f['hdf5_signatures_verified'],'failed_hashes':f['failed_or_blocked_hashes'],'raw_manifest_sha256':f.get('ordered_raw_manifest_sha256'),'event_manifest_sha256':f.get('event_ordered_raw_manifest_sha256'),'total_bytes_hashed':f.get('total_bytes_hashed')})
           PY
       - uses: actions/upload-artifact@v4
         with:
