@@ -1,6 +1,6 @@
 {
-  "version": "irfen-independent-basin-validation-map-v1.6",
-  "generated_at": "2026-08-29T14:15:03.057998Z",
+  "version": "irfen-independent-basin-validation-map-v1.7",
+  "generated_at": "2026-08-29T14:18:52.994290Z",
   "framework": "IRFEN Independent Basin Validation Framework",
   "deployment_status": "RESEARCH_ONLY",
   "test_only": true,
@@ -55,14 +55,19 @@
       "github_actions_imerg_timebasis_audit": "SUCCESS_UTC_AND_PERU_LOCAL_NO_EVENT_TIME_USED",
       "blind_sampling_contract": "PREREGISTERED_BEFORE_PARALLEL_WINDOW_UNBLINDING",
       "github_actions_sentinel1_a4_r1": "SUCCESS_BOTH_DATES_NATIVE_RADIOMETRIC_NO_COMPARISON",
-      "sentinel1_a4_r2_contract": "PREREGISTERED_BLOCKED_VERTICAL_DATUM_AND_ORBIT_AUX_IDENTITY"
+      "sentinel1_a4_r2_contract": "PREREGISTERED_BLOCKED_VERTICAL_DATUM_AND_ORBIT_AUX_IDENTITY",
+      "parallel_a0_pool": "FROZEN_2907_DAYS_PER_LIMA_TRACK_8721_TRACK_DAY_WINDOWS_NO_SELECTION",
+      "sentinel1_a4_r2_prerequisite_freezer": "IMPLEMENTED_EXECUTION_PENDING"
     },
     "imerg_basin_features_script": "scripts/ibvf_imerg_basin_features_v02.py",
     "imerg_timebasis_audit_script": "scripts/ibvf_imerg_timebasis_audit.py",
     "blind_sampling_contract": "site/data/validation/ibvf_blind_sampling_contract.json",
     "sentinel1_r1_script": "scripts/ibvf_sentinel1_r1_radiometric.py",
     "sentinel1_r1_report": "site/data/validation/cashahuacra_sentinel1_r1.json",
-    "sentinel1_r2_contract": "site/data/validation/cashahuacra_sentinel1_r2_contract.json"
+    "sentinel1_r2_contract": "site/data/validation/cashahuacra_sentinel1_r2_contract.json",
+    "parallel_a0_pool": "site/data/validation/ibvf_parallel_a0_pool_inventory.json",
+    "sentinel1_r2_prerequisites_contract": "site/data/validation/cashahuacra_sentinel1_r2_prerequisites_contract.json",
+    "sentinel1_r2_prerequisites_script": "scripts/ibvf_sentinel1_r2_freeze_prerequisites.py"
   },
   "guardrails": {
     "no_risk_colors": true,
@@ -88,7 +93,7 @@
       "unit_id": "cashahuacra",
       "name": "Quebrada Cashahuacra",
       "blind_window": "2015-03-23",
-      "framework_stage": "A4_R1_NATIVE_RADIOMETRIC_COMPLETE_R2_PREREGISTERED_BLOCKED_AUX_IDENTITY",
+      "framework_stage": "A4_R1_COMPLETE_R2_PREREQUISITE_FREEZER_IMPLEMENTED_GATE_PENDING",
       "geometry_status": "TWO_POINT_POSITIONAL_PASS_CONDITIONING_SENSITIVE_RESEARCH_CANDIDATE",
       "geometry_path": "data/watersheds/cashahuacra_ibvf_two_point_v03.geojson",
       "geometry_selector": {
@@ -133,7 +138,7 @@
       "imerg_first_raw_granule_id": "3B-HHR.MS.MRG.3IMERG.20150323-S000000-E002959.0000.V07B.HDF5",
       "imerg_first_raw_bytes": 7539194,
       "imerg_first_raw_sha256": "84aae585c7fda5a55c915cc0b82b60987fd7c850f798fed608dbacf03e58182c",
-      "remote_sensing_status": "S1_A4_R1_COMPLETE_R2_PREREGISTERED_BLOCKED_VERTICAL_DATUM_ORBIT_AUX_LANDSAT_QA_DIAGNOSTIC_ONLY",
+      "remote_sensing_status": "S1_A4_R1_COMPLETE_R2_PREREQUISITE_RESOURCE_FREEZE_PENDING_LANDSAT_QA_DIAGNOSTIC_ONLY",
       "stac_probe_path": "data/validation/cashahuacra_stac_probe.json",
       "sentinel1_compatible_pair": "YES",
       "sentinel1_preferred_pair": [
@@ -189,14 +194,16 @@
       "sentinel1_r2_contract_path": "data/validation/cashahuacra_sentinel1_r2_contract.json",
       "sentinel1_r2_status": "PREREGISTERED_R2_BLOCKED_ON_VERTICAL_DATUM_AND_ORBIT_AUX_IDENTITY",
       "sentinel1_r2_vertical_datum_gate": "BLOCKED_UNTIL_VERTICAL_TRANSFORM_IS_FROZEN",
-      "sentinel1_r2_orbit_gate": "PENDING_EXACT_AUX_ORBIT_FREEZE"
+      "sentinel1_r2_orbit_gate": "PENDING_EXACT_AUX_ORBIT_FREEZE",
+      "sentinel1_r2_prerequisites_contract_path": "data/validation/cashahuacra_sentinel1_r2_prerequisites_contract.json",
+      "sentinel1_r2_prerequisites_status": "PREREGISTERED_EXECUTABLE_PREREQUISITE_FREEZE_PENDING"
     },
     {
       "case_id": "shingolay_parallel_intake",
       "unit_id": "shingolay",
       "name": "Quebrada Shingolay",
-      "blind_window": "NOT_YET_FROZEN",
-      "framework_stage": "PARALLEL_INTAKE",
+      "blind_window": "NOT_YET_SELECTED_FROM_FROZEN_POOL",
+      "framework_stage": "A0_EXHAUSTIVE_POOL_FROZEN_NO_WINDOW_SELECTED",
       "geometry_status": "EXISTING_REVIEW_ONLY_CANDIDATE",
       "geometry_path": "data/phase2/geometries/w1_santa_eulalia_rimac.geojson",
       "geometry_selector": {
@@ -210,7 +217,10 @@
       "blind_status": "TERRITORIAL_EVIDENCE_SEALED",
       "production_use": false,
       "production_ready": false,
-      "operational_alerting_enabled": false
+      "operational_alerting_enabled": false,
+      "a0_pool_status": "FROZEN_2907_UNASSIGNED_LOCAL_DAYS",
+      "a0_pool_path": "data/validation/ibvf_parallel_a0_pool_inventory.json",
+      "a0_case_control_role": "UNASSIGNED"
     },
     {
       "case_id": "san_ildefonso_parallel_intake",
@@ -237,8 +247,8 @@
       "case_id": "pedregal_parallel_geometry",
       "unit_id": "pedregal",
       "name": "Quebrada Pedregal",
-      "blind_window": "NOT_YET_FROZEN",
-      "framework_stage": "PARALLEL_GEOMETRY_RESOLUTION",
+      "blind_window": "NOT_YET_SELECTED_FROM_FROZEN_POOL",
+      "framework_stage": "A0_EXHAUSTIVE_POOL_FROZEN_NO_WINDOW_SELECTED",
       "geometry_status": "MULTIPLE_REVIEW_ONLY_CANDIDATE_SETS",
       "geometry_path": "data/watersheds/chosica_local_candidate_sets.geojson",
       "geometry_selector": {
@@ -252,14 +262,17 @@
       "blind_status": "TERRITORIAL_EVIDENCE_SEALED",
       "production_use": false,
       "production_ready": false,
-      "operational_alerting_enabled": false
+      "operational_alerting_enabled": false,
+      "a0_pool_status": "FROZEN_2907_UNASSIGNED_LOCAL_DAYS",
+      "a0_pool_path": "data/validation/ibvf_parallel_a0_pool_inventory.json",
+      "a0_case_control_role": "UNASSIGNED"
     },
     {
       "case_id": "huaycoloro_parallel_intake",
       "unit_id": "huaycoloro",
       "name": "Quebrada Huaycoloro",
-      "blind_window": "NOT_YET_FROZEN",
-      "framework_stage": "PARALLEL_INTAKE",
+      "blind_window": "NOT_YET_SELECTED_FROM_FROZEN_POOL",
+      "framework_stage": "A0_EXHAUSTIVE_POOL_FROZEN_NO_WINDOW_SELECTED",
       "geometry_status": "EXISTING_TEST_ONLY_WATERSHED_CANDIDATE",
       "geometry_path": "data/watersheds/huaycoloro_watershed.geojson",
       "geometry_selector": {
@@ -273,8 +286,25 @@
       "blind_status": "TERRITORIAL_EVIDENCE_SEALED",
       "production_use": false,
       "production_ready": false,
-      "operational_alerting_enabled": false
+      "operational_alerting_enabled": false,
+      "a0_pool_status": "FROZEN_2907_UNASSIGNED_LOCAL_DAYS",
+      "a0_pool_path": "data/validation/ibvf_parallel_a0_pool_inventory.json",
+      "a0_case_control_role": "UNASSIGNED"
     }
   ],
-  "blind_sampling_contract_path": "data/validation/ibvf_blind_sampling_contract.json"
+  "blind_sampling_contract_path": "data/validation/ibvf_blind_sampling_contract.json",
+  "parallel_a0_pool_path": "data/validation/ibvf_parallel_a0_pool_inventory.json",
+  "parallel_a0_pool_status": "FROZEN_EXHAUSTIVE_CALENDAR_NO_WINDOW_SELECTED",
+  "parallel_a0_pool_summary": {
+    "tracks": [
+      "shingolay",
+      "pedregal",
+      "huaycoloro"
+    ],
+    "season_count": 12,
+    "unique_calendar_days_per_track": 2907,
+    "track_day_windows": 8721,
+    "case_control_assignment_allowed": false,
+    "meteorological_ranking_status": "NOT_YET_FROZEN_NO_WINDOW_SELECTED"
+  }
 }
