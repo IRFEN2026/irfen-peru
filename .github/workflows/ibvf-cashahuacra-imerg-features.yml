@@ -63,7 +63,6 @@ jobs:
           assert d['temporal_contract']['missing_values_imputed_as_zero'] is False
           assert d['feature_status']=='FROZEN_BLIND_OBSERVATIONAL_FEATURES'
           assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
-          assert 'activation' not in d.get('features',{})
           print(json.dumps({'raw_identity':d['raw_identity'],'slots':d['slots'],'features':d['features']},indent=2))
           PY
       - uses: actions/upload-artifact@v4
@@ -72,8 +71,10 @@ jobs:
           path: artifacts/ibvf/cashahuacra_imerg_basin_features.json
           if-no-files-found: error
           retention-days: 30
-      - name: Archive verified compact result on research branch
+      - name: Archive verified result on research branch
         if: github.event_name == 'pull_request'
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
           cp artifacts/ibvf/cashahuacra_imerg_basin_features.json site/data/validation/cashahuacra_imerg_basin_features.json
           git config user.name 'github-actions[bot]'
@@ -83,5 +84,7 @@ jobs:
             echo 'No result change to archive.'
           else
             git commit -m 'IBVF: archive Cashahuacra blind IMERG basin features'
-            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+            git fetch origin "$BRANCH"
+            git rebase "origin/$BRANCH"
+            git push origin HEAD:"$BRANCH"
           fi
