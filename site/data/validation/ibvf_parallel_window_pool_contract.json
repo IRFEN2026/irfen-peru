@@ -1,0 +1,98 @@
+{
+  "schema_version": "irfen-ibvf-parallel-window-pool-contract-v0.1",
+  "generated_at": "2026-08-29T14:08:00Z",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
+  "purpose": "Freeze A0 calendar/window-pool rules before selecting any parallel remote-sensing window or inspecting territorial outcomes.",
+  "relationship_to_anchor": {
+    "cashahuacra_2015_03_23": "EXCLUDED_FROM_POOL_SELECTION_RULE_TUNING_PREDECLARED_USER_SUPPLIED_ANCHOR",
+    "anchor_remote_values_may_set_parallel_selection_thresholds": false,
+    "anchor_territorial_outcome_may_be_used": false
+  },
+  "time_basis": {
+    "timezone": "America/Lima",
+    "utc_offset_for_historical_windows": "UTC-05:00",
+    "anchor_unit": "LOCAL_CALENDAR_DAY",
+    "window_for_each_anchor_day": "D_MINUS_7_LOCAL_00_TO_D_PLUS_2_LOCAL_00_EXCLUSIVE",
+    "window_semantics": "Nine local calendar days D-7 through D+1; supports antecedent seven-day context, anchor-day features, and a one-day post-anchor sensor/context buffer without using an outcome time."
+  },
+  "season_rules": {
+    "lima_rimac_related_tracks": {
+      "applies_to": [
+        "shingolay",
+        "pedregal",
+        "huaycoloro"
+      ],
+      "season_start_local": "09-01T00:00:00-05:00",
+      "season_end_local_inclusive": "04-30T23:59:59-05:00",
+      "basis": "SENAMHI climatology for Chillón-Rímac-Lurín: rainy period begins in September and ends in April; largest accumulations December-March.",
+      "basis_is_outcome_evidence": false,
+      "status": "FROZEN_A0_SEASON_BOUNDARY"
+    },
+    "san_ildefonso": {
+      "applies_to": ["san_ildefonso"],
+      "season_start_local": null,
+      "season_end_local_inclusive": null,
+      "status": "PENDING_REGION_SPECIFIC_OFFICIAL_CLIMATOLOGICAL_BASIS",
+      "fallback_to_lima_rule_allowed": false
+    }
+  },
+  "pool_enumeration": {
+    "first_step": "ENUMERATE_EVERY_LOCAL_CALENDAR_DAY_IN_EACH_FROZEN_STUDY_SEASON",
+    "retain_full_pool": true,
+    "territorial_outcome_fields_allowed": false,
+    "sensor_availability_may_remove_day": false,
+    "missing_sensor_semantics": "RETAIN_DAY_AND_RECORD_MISSING_OR_UNKNOWN",
+    "imerg_transport_failure_semantics": "UNKNOWN_NOT_MISSING",
+    "minimum_imerg_identity_before_feature_build": "ALL_REQUIRED_HALF_HOURLY_GRANULE_IDENTITIES_FOR_D_MINUS_7_THROUGH_D_PLUS_1_RESOLVED_OR_EXPLICITLY_UNKNOWN",
+    "role_at_A0": "UNASSIGNED_BLIND_WINDOW",
+    "case_control_role_allowed_at_A0": false
+  },
+  "meteorological_ranking": {
+    "status": "NOT_YET_FROZEN_DO_NOT_SELECT_WET_OR_BACKGROUND_WINDOWS",
+    "reason": "The first A0 action is exhaustive enumeration. A meteorological episode-ranking rule will be versioned before any windows are selected and without using Cashahuacra remote magnitudes or territorial outcomes.",
+    "cashahuacra_remote_magnitudes_may_be_used_to_choose_rank_thresholds": false,
+    "territorial_outcomes_may_be_used_to_choose_rank_thresholds": false
+  },
+  "anti_leakage": {
+    "forbidden_inputs": [
+      "damage_reports",
+      "news_or_social_activation_reports",
+      "local_incident_logs",
+      "known_event_dates_other_than_the_predeclared_cashahuacra_anchor",
+      "EVENT_NONE_or_equivalent_operational_labels",
+      "post_hoc_sensor_completeness_filters_based_on_known_outcome"
+    ],
+    "forbidden_actions": [
+      "select_only_known_storm_or_activation_dates",
+      "discard_windows_after_learning_territorial_outcome",
+      "inherit_Lima_season_boundary_into_San_Ildefonso_without_regional_basis",
+      "assign_control_role_before_A1_to_A5_freeze_and_independent_outcome_unblind"
+    ]
+  },
+  "map_rule": {
+    "individual_A0_windows_are_not_map_layers": true,
+    "basin_track_may_show_A0_POOL_CONTRACT_READY": true,
+    "risk_or_result_symbolization_forbidden": true
+  },
+  "reference_basis": [
+    {
+      "authority": "SENAMHI",
+      "scope": "Chillón-Rímac-Lurín",
+      "statement": "Rainy period September-April, highest accumulations December-March",
+      "used_for": "Lima-track A0 study-season boundary only"
+    }
+  ],
+  "next_actions": [
+    "ENUMERATE_LIMA_TRACK_DAILY_A0_POOLS_WITHOUT_OUTCOME_FIELDS",
+    "OBTAIN_REGION_SPECIFIC_OFFICIAL_CLIMATOLOGICAL_BASIS_FOR_SAN_ILDEFONSO",
+    "FREEZE_METEOROLOGICAL_EPISODE_RANKING_RULE_BEFORE_SELECTING_ANY_PARALLEL_WINDOWS"
+  ]
+}
