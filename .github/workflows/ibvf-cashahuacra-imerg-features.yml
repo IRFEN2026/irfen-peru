@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'scripts/ibvf_imerg_basin_features.py'
+      - 'scripts/ibvf_imerg_basin_features_v02.py'
       - '.github/workflows/ibvf-cashahuacra-imerg-features.yml'
       - 'site/data/watersheds/cashahuacra_ibvf_two_point_v03.geojson'
   workflow_dispatch:
@@ -24,7 +25,7 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install --disable-pip-version-check 'requests>=2.31,<3' 'h5py>=3.10' 'numpy>=1.26,<2' 'shapely>=2,<3' 'pyproj>=3.6,<4'
       - name: Compile research extractor
-        run: python -m py_compile scripts/ibvf_imerg_inventory.py scripts/ibvf_imerg_auth_probe.py scripts/ibvf_imerg_basin_features.py
+        run: python -m py_compile scripts/ibvf_imerg_inventory.py scripts/ibvf_imerg_auth_probe.py scripts/ibvf_imerg_basin_features.py scripts/ibvf_imerg_basin_features_v02.py
       - name: Resolve the exact 432-slot Final V07 inventory
         run: |
           mkdir -p artifacts/ibvf
@@ -37,7 +38,7 @@ jobs:
         env:
           EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
         run: |
-          python scripts/ibvf_imerg_basin_features.py \
+          python scripts/ibvf_imerg_basin_features_v02.py \
             --inventory artifacts/ibvf/cashahuacra_imerg_inventory.json \
             --basin site/data/watersheds/cashahuacra_ibvf_two_point_v03.geojson \
             --event-date 2015-03-23 \
@@ -61,9 +62,11 @@ jobs:
           assert d['slots']['valid_basin_rates']==432
           assert d['temporal_contract']['event_time_used'] is False
           assert d['temporal_contract']['missing_values_imputed_as_zero'] is False
+          assert d['spatial_contract']['grid']['raw_overlap_fraction_sum'] >= 0.99995
+          assert abs(d['spatial_contract']['grid']['normalized_weight_sum']-1.0) < 1e-12
           assert d['feature_status']=='FROZEN_BLIND_OBSERVATIONAL_FEATURES'
           assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
-          print(json.dumps({'raw_identity':d['raw_identity'],'slots':d['slots'],'features':d['features']},indent=2))
+          print(json.dumps({'raw_identity':d['raw_identity'],'slots':d['slots'],'grid':d['spatial_contract']['grid'],'features':d['features']},indent=2))
           PY
       - uses: actions/upload-artifact@v4
         with:
