@@ -1,0 +1,52 @@
+name: IBVF - Sync parallel A1 STAC map
+
+on:
+  push:
+    branches:
+      - agent/independent-basin-validation-map
+    paths:
+      - 'scripts/ibvf_sync_parallel_stac_map.py'
+      - 'site/data/validation/ibvf_parallel_stac_preflight.json'
+      - '.github/workflows/ibvf-sync-parallel-stac-map.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-map:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile map synchronizer
+        run: python -m py_compile scripts/ibvf_sync_parallel_stac_map.py scripts/ibvf_validate_case_manifest.py
+      - name: Project A1 preflight into scientific manifest
+        run: |
+          python scripts/ibvf_sync_parallel_stac_map.py \
+            --map site/data/validation/independent_basin_validation_map.json \
+            --preflight site/data/validation/ibvf_parallel_stac_preflight.json \
+            --output /tmp/independent_basin_validation_map.json
+      - name: Revalidate non-operational manifest
+        run: python scripts/ibvf_validate_case_manifest.py /tmp/independent_basin_validation_map.json
+      - name: Archive only the scientific map projection
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          cp /tmp/independent_basin_validation_map.json site/data/validation/independent_basin_validation_map.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add site/data/validation/independent_basin_validation_map.json
+          if git diff --cached --quiet; then
+            echo 'No map projection change.'
+          else
+            git commit -m 'IBVF: publish blind multipista A1 STAC status in research map'
+            git fetch origin "$BRANCH"
+            git rebase "origin/$BRANCH"
+            git push origin HEAD:"$BRANCH"
+          fi
