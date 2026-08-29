@@ -1,0 +1,77 @@
+name: IBVF - Sync R2 runtime gate to research map
+
+on:
+  pull_request:
+    paths:
+      - 'site/data/validation/cashahuacra_sentinel1_r2_runtime_contract.json'
+      - 'site/data/validation/cashahuacra_sentinel1_r2_runtime_checksum.json'
+      - '.github/workflows/ibvf-sync-runtime-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-runtime-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Sync runtime gate without opening SAR comparison
+        run: |
+          python - <<'PY'
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+          mp=Path('site/data/validation/independent_basin_validation_map.json')
+          rp=Path('site/data/validation/cashahuacra_sentinel1_r2_runtime_contract.json')
+          cp=Path('site/data/validation/cashahuacra_sentinel1_r2_runtime_checksum.json')
+          m=json.loads(mp.read_text(encoding='utf-8')); r=json.loads(rp.read_text(encoding='utf-8')); csum=json.loads(cp.read_text(encoding='utf-8'))
+          for d in (m,r,csum):
+              assert d['production_use'] is False and d['production_ready'] is False and d['operational_alerting_enabled'] is False
+              assert d['uses_operational_event_none_labels'] is False
+          assert r['territorial_activation_evidence_blinded'] is True and csum['territorial_activation_evidence_blinded'] is True
+          assert r['status']=='PUBLISHED_SHA256_PASS_INSTALLER_BYTE_FREEZE_PENDING_R2_RUNTIME_BLOCKED'
+          assert r['published_checksum_freeze']['status']=='PASS_PUBLISHED_SHA256_FROZEN'
+          assert r['installer_byte_verified'] is False and r['r2_execution_allowed_by_runtime_gate'] is False
+          assert csum['published_installer_sha256']==r['published_checksum_freeze']['published_installer_sha256']
+          assert csum['comparison_performed'] is False and csum['pre_post_sar_values_read'] is False
+          assert m['version']=='irfen-independent-basin-validation-map-v1.9'
+          assert m['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
+          x=next(v for v in m['cases'] if v['unit_id']=='cashahuacra')
+          assert x['sentinel1_prepost_difference_computed'] is False
+          x['framework_stage']='A4_R1_COMPLETE_R2_RESOURCE_GATES_PASS_RUNTIME_INSTALLER_BYTES_PENDING_NO_DIFFERENCE'
+          x['remote_sensing_status']='S1_A4_R1_COMPLETE_R2_VERTICAL_ORBIT_ELLIPSOIDAL_DEM_PASS_SNAP14_PUBLISHED_SHA_PASS_INSTALLER_BYTES_PENDING_NO_PREPOST_DIFFERENCE'
+          x['sentinel1_r2_runtime_contract_path']='data/validation/cashahuacra_sentinel1_r2_runtime_contract.json'
+          x['sentinel1_r2_runtime_checksum_path']='data/validation/cashahuacra_sentinel1_r2_runtime_checksum.json'
+          x['sentinel1_r2_runtime_published_sha256']=r['published_checksum_freeze']['published_installer_sha256']
+          x['sentinel1_r2_runtime_installer_byte_verified']=False
+          x['sentinel1_r2_runtime_gate']='BLOCKED_UNTIL_INSTALLER_BYTES_MATCH_PUBLISHED_SHA256'
+          x['sentinel1_r2_execution_gate']='RESOURCE_PREREQUISITES_PASS_RUNTIME_GATE_PENDING'
+          m['generated_at']=datetime.now(timezone.utc).isoformat().replace('+00:00','Z')
+          m.setdefault('acquisition_contract',{})['sentinel1_r2_runtime_contract']='site/data/validation/cashahuacra_sentinel1_r2_runtime_contract.json'
+          m['acquisition_contract']['sentinel1_r2_runtime_checksum']='site/data/validation/cashahuacra_sentinel1_r2_runtime_checksum.json'
+          m['acquisition_contract'].setdefault('local_validation',{})['sentinel1_a4_r2_snap14_published_checksum']='PASS_786CE26A_INSTALLER_BYTES_PENDING'
+          mp.write_text(json.dumps(m,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          print(json.dumps({'version':m['version'],'stage':x['framework_stage'],'runtime_gate':x['sentinel1_r2_runtime_gate'],'prepost_difference':x['sentinel1_prepost_difference_computed'],'serious_modeling_gate':m['serious_modeling_gate']},indent=2))
+          PY
+      - name: Revalidate complete multipista guardrails
+        run: python scripts/ibvf_validate_case_manifest.py site/data/validation/independent_basin_validation_map.json
+      - name: Commit only coherent research manifest
+        if: github.event_name == 'pull_request'
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add site/data/validation/independent_basin_validation_map.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'IBVF: reflect SNAP runtime byte gate in research map manifest'
+          git fetch origin "$BRANCH"
+          git rebase "origin/$BRANCH"
+          git push origin HEAD:"$BRANCH"
