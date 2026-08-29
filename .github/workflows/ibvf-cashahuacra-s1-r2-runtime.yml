@@ -1,50 +1,108 @@
 name: IBVF Cashahuacra Sentinel-1 R2 runtime
 
+# Run only when the research-branch push actually touches this runtime gate.
+# A transport outage is archived as UNKNOWN in the artifact and does not fail CI;
+# only a hard checksum mismatch fails closed.
 on:
-  workflow_dispatch:
-  pull_request:
+  push:
+    branches:
+      - agent/independent-basin-validation-map
     paths:
+      - 'scripts/ibvf_snap_runtime_byte_verify.py'
       - 'scripts/ibvf_snap_runtime_checksum_freeze.py'
       - 'site/data/validation/cashahuacra_sentinel1_r2_runtime_contract.json'
       - '.github/workflows/ibvf-cashahuacra-s1-r2-runtime.yml'
+  workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  freeze-published-checksum:
+  verify-installer-bytes:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m pip install 'requests>=2.31,<3'
-      - name: Freeze official published SHA256 without downloading installer
+      - run: python -m pip install --disable-pip-version-check 'requests>=2.31,<3'
+      - name: Static runtime gate guards
         run: |
-          python -m py_compile scripts/ibvf_snap_runtime_checksum_freeze.py
-          mkdir -p /tmp/ibvf-snap-runtime
-          python scripts/ibvf_snap_runtime_checksum_freeze.py \
+          python -m py_compile scripts/ibvf_snap_runtime_checksum_freeze.py scripts/ibvf_snap_runtime_byte_verify.py
+          python - <<'PY'
+          import json
+          c=json.load(open('site/data/validation/cashahuacra_sentinel1_r2_runtime_contract.json',encoding='utf-8'))
+          assert c['deployment_status']=='RESEARCH_ONLY' and c['test_only'] is True
+          assert c['production_use'] is False and c['production_ready'] is False and c['operational_alerting_enabled'] is False
+          assert c['uses_operational_event_none_labels'] is False and c['territorial_activation_evidence_blinded'] is True
+          assert c['published_checksum_freeze']['status']=='PASS_PUBLISHED_SHA256_FROZEN'
+          assert len(c['published_checksum_freeze']['published_installer_sha256'])==64
+          assert c['published_checksum_without_installer_byte_verification_sufficient_for_r2_execution'] is False
+          assert c['comparison_performed'] is False and c['activation_inference_allowed'] is False
+          print('SNAP runtime preregistration guards: PASS')
+          PY
+      - name: Download exact installer and verify complete byte SHA-256
+        run: |
+          mkdir -p /tmp/ibvf-snap-runtime/download
+          python scripts/ibvf_snap_runtime_byte_verify.py \
             --contract site/data/validation/cashahuacra_sentinel1_r2_runtime_contract.json \
-            --output /tmp/ibvf-snap-runtime/cashahuacra_sentinel1_r2_runtime_checksum.json \
+            --download-dir /tmp/ibvf-snap-runtime/download \
+            --output /tmp/ibvf-snap-runtime/cashahuacra_sentinel1_r2_runtime_bytes.json \
             | tee /tmp/ibvf-snap-runtime/summary.log
-      - name: Require blind non-operational checksum-only state
+      - name: Preserve UNKNOWN on transport failure and fail closed on integrity mismatch
         run: |
           python - <<'PY'
           import json
-          d=json.load(open('/tmp/ibvf-snap-runtime/cashahuacra_sentinel1_r2_runtime_checksum.json',encoding='utf-8'))
-          assert d['status']=='PUBLISHED_CHECKSUM_FROZEN_INSTALLER_BYTES_NOT_YET_VERIFIED'
-          assert len(d['published_installer_sha256'])==64
-          assert d['installer_byte_verified'] is False
-          assert d['r2_execution_allowed'] is False
-          assert d['pre_post_sar_values_read'] is False and d['comparison_performed'] is False and d['activation_inference_allowed'] is False
+          p='/tmp/ibvf-snap-runtime/cashahuacra_sentinel1_r2_runtime_bytes.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY' and d['test_only'] is True
           assert d['production_use'] is False and d['production_ready'] is False and d['operational_alerting_enabled'] is False
-          print('SNAP runtime published checksum freeze: PASS')
+          assert d['uses_operational_event_none_labels'] is False and d['territorial_activation_evidence_blinded'] is True
+          assert d['pre_post_sar_values_read'] is False and d['comparison_performed'] is False and d['activation_inference_allowed'] is False
+          assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
+          if d['status']=='TRANSPORT_BLOCKED_UNKNOWN_NOT_MISSING':
+              assert d['download_integrity_gate']=='UNKNOWN_TRANSPORT_BLOCKED'
+              assert d['installer_byte_verified'] is False
+              assert d['r2_execution_allowed'] is False
+              print('SNAP installer transport blocked: UNKNOWN preserved, workflow remains non-failing')
+          else:
+              assert d['status']=='INSTALLER_BYTES_VERIFIED_INSTALLATION_METADATA_PENDING'
+              assert d['download_integrity_gate']=='PASS'
+              assert d['installer_byte_verified'] is True
+              assert d['sha256_match'] is True
+              assert d['actual_installer_sha256']==d['expected_published_sha256']
+              assert d['r2_execution_allowed'] is False
+              print('SNAP installer complete byte freeze: PASS; installation metadata gate remains pending')
           PY
       - uses: actions/upload-artifact@v4
         with:
-          name: cashahuacra-sentinel1-r2-runtime-checksum
-          path: /tmp/ibvf-snap-runtime/
+          name: cashahuacra-sentinel1-r2-runtime-byte-gate-${{ github.sha }}
+          path: |
+            /tmp/ibvf-snap-runtime/cashahuacra_sentinel1_r2_runtime_bytes.json
+            /tmp/ibvf-snap-runtime/summary.log
           if-no-files-found: error
           retention-days: 30
+      - name: Archive only a verified complete-byte PASS on research branch
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          STATUS=$(python -c "import json; print(json.load(open('/tmp/ibvf-snap-runtime/cashahuacra_sentinel1_r2_runtime_bytes.json'))['status'])")
+          if [ "$STATUS" != "INSTALLER_BYTES_VERIFIED_INSTALLATION_METADATA_PENDING" ]; then
+            echo "No persistent archive for transient transport status: $STATUS"
+            exit 0
+          fi
+          cp /tmp/ibvf-snap-runtime/cashahuacra_sentinel1_r2_runtime_bytes.json site/data/validation/cashahuacra_sentinel1_r2_runtime_bytes.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add site/data/validation/cashahuacra_sentinel1_r2_runtime_bytes.json
+          if git diff --cached --quiet; then
+            echo 'No verified runtime-byte result change.'
+          else
+            git commit -m 'IBVF: freeze verified SNAP 14 installer bytes'
+            git fetch origin "$BRANCH"
+            git rebase "origin/$BRANCH"
+            git push origin HEAD:"$BRANCH"
+          fi
