@@ -12,6 +12,7 @@ on:
       - 'site/data/validation/cashahuacra_sentinel1_r2_prerequisites_contract.json'
       - 'site/data/validation/ibvf_blind_sampling_contract.json'
       - 'site/data/validation/ibvf_parallel_a0_pool_inventory.json'
+      - 'site/data/validation/ibvf_meteorological_ranking_contract.json'
   workflow_dispatch:
 
 permissions:
@@ -38,10 +39,11 @@ jobs:
             --sentinel-r1 site/data/validation/cashahuacra_sentinel1_r1.json \
             --sentinel-r2-contract site/data/validation/cashahuacra_sentinel1_r2_contract.json \
             --sentinel-r2-prereq-contract site/data/validation/cashahuacra_sentinel1_r2_prerequisites_contract.json \
-            --parallel-a0-pool site/data/validation/ibvf_parallel_a0_pool_inventory.json
+            --parallel-a0-pool site/data/validation/ibvf_parallel_a0_pool_inventory.json \
+            --meteorological-ranking-contract site/data/validation/ibvf_meteorological_ranking_contract.json
       - name: Validate multipista manifest guardrails
         run: python scripts/ibvf_validate_case_manifest.py site/data/validation/independent_basin_validation_map.json
-      - name: Additional A4 R2 and A0 pool guards
+      - name: Additional A4 R2 and A0/ranking guards
         run: |
           python - <<'PY'
           import json
@@ -58,19 +60,20 @@ jobs:
           assert c['sentinel1_r1_common_support_established'] is False
           assert c['sentinel1_r2_status']=='PREREGISTERED_R2_BLOCKED_ON_VERTICAL_DATUM_AND_ORBIT_AUX_IDENTITY'
           assert c['sentinel1_r2_prerequisites_status']=='PREREGISTERED_EXECUTABLE_PREREQUISITE_FREEZE_PENDING'
-          assert c['sentinel1_r2_vertical_datum_gate']=='BLOCKED_UNTIL_VERTICAL_TRANSFORM_IS_FROZEN'
-          assert c['sentinel1_r2_orbit_gate']=='PENDING_EXACT_AUX_ORBIT_FREEZE'
           assert c['smap_status']=='MISSING_FOR_EVENT_WINDOW'
           assert c['blind_status']=='TERRITORIAL_EVIDENCE_SEALED'
-          assert d['parallel_a0_pool_status']=='FROZEN_EXHAUSTIVE_CALENDAR_NO_WINDOW_SELECTED'
-          assert d['parallel_a0_pool_summary']['track_day_windows']==8721
+          assert d['parallel_a0_pool_status']=='FROZEN_EXHAUSTIVE_FOUR_TRACK_CALENDAR_NO_WINDOW_SELECTED'
+          assert d['parallel_a0_pool_summary']['track_day_windows']==11628
           assert d['parallel_a0_pool_summary']['case_control_assignment_allowed'] is False
-          for unit in ('shingolay','pedregal','huaycoloro'):
+          assert d['parallel_a0_pool_summary']['maximum_primary_stratified_windows']==288
+          assert d['meteorological_ranking_status']=='PREREGISTERED_NOT_EXECUTED_NO_WINDOW_SELECTED'
+          for unit in ('shingolay','pedregal','huaycoloro','san_ildefonso'):
               x=next(v for v in d['cases'] if v['unit_id']==unit)
-              assert x['framework_stage']=='A0_EXHAUSTIVE_POOL_FROZEN_NO_WINDOW_SELECTED'
+              assert x['framework_stage']=='A0_EXHAUSTIVE_POOL_AND_RANKING_CONTRACT_FROZEN_NO_WINDOW_SELECTED'
               assert x['a0_case_control_role']=='UNASSIGNED'
+              assert x['meteorological_ranking_status']=='PREREGISTERED_NOT_EXECUTED'
               assert x['blind_status']=='TERRITORIAL_EVIDENCE_SEALED'
-          print(json.dumps({'version':d['version'],'cashahuacra_stage':c['framework_stage'],'parallel_pool':d['parallel_a0_pool_status'],'gate':d['serious_modeling_gate']},indent=2))
+          print(json.dumps({'version':d['version'],'cashahuacra_stage':c['framework_stage'],'parallel_pool':d['parallel_a0_pool_status'],'ranking':d['meteorological_ranking_status'],'gate':d['serious_modeling_gate']},indent=2))
           PY
       - name: Commit manifest only to research branch
         if: github.event_name == 'pull_request'
@@ -83,7 +86,7 @@ jobs:
           if git diff --cached --quiet; then
             echo 'No manifest change.'
           else
-            git commit -m 'IBVF: publish R2 prerequisite and blind A0 pool status in research map manifest'
+            git commit -m 'IBVF: publish four-track A0 pool and preregistered ranking in research map manifest'
             git fetch origin "$BRANCH"
             git rebase "origin/$BRANCH"
             git push origin HEAD:"$BRANCH"
