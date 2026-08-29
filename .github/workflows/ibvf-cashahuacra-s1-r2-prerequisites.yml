@@ -1,0 +1,76 @@
+name: IBVF Cashahuacra Sentinel-1 A4 R2 prerequisites
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/ibvf_sentinel1_r2_freeze_prerequisites.py'
+      - 'site/data/validation/cashahuacra_sentinel1_r2_prerequisites_contract.json'
+      - 'site/data/validation/cashahuacra_sentinel1_r2_contract.json'
+      - '.github/workflows/ibvf-cashahuacra-s1-r2-prerequisites.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  freeze-r2-prerequisites:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install runtime
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install 'requests>=2.31,<3'
+          sudo apt-get update
+          sudo apt-get install -y proj-bin proj-data
+      - name: Static scientific guards
+        run: |
+          python -m py_compile scripts/ibvf_sentinel1_r2_freeze_prerequisites.py
+          python - <<'PY'
+          import json
+          p='site/data/validation/cashahuacra_sentinel1_r2_prerequisites_contract.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['production_use'] is False
+          assert d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          assert d['pre_post_difference_allowed'] is False
+          assert d['activation_inference_allowed'] is False
+          assert d['vertical_transform']['network_grid_download_during_transform_allowed'] is False
+          print('R2 prerequisite contract: PASS')
+          PY
+      - name: Freeze exact vertical grid and precise orbit resources
+        run: |
+          mkdir -p /tmp/ibvf-r2-prereq
+          python scripts/ibvf_sentinel1_r2_freeze_prerequisites.py \
+            --contract site/data/validation/cashahuacra_sentinel1_r2_prerequisites_contract.json \
+            --output /tmp/ibvf-r2-prereq/cashahuacra_sentinel1_r2_prerequisites.json \
+            | tee /tmp/ibvf-r2-prereq/summary.log
+      - name: Verify response remains blinded and non-operational
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('/tmp/ibvf-r2-prereq/cashahuacra_sentinel1_r2_prerequisites.json',encoding='utf-8'))
+          assert d['production_use'] is False
+          assert d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          assert d['comparison_performed'] is False
+          assert d['pre_post_response_inspected'] is False
+          assert d['activation_inference_allowed'] is False
+          assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
+          print('R2 prerequisite separation: PASS; gate=',d['r2_prerequisite_gate'])
+          PY
+      - name: Upload exact prerequisite freeze report
+        uses: actions/upload-artifact@v4
+        with:
+          name: cashahuacra-sentinel1-a4-r2-prerequisites
+          path: /tmp/ibvf-r2-prereq/
+          if-no-files-found: error
+          retention-days: 30
