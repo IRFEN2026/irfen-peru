@@ -1,0 +1,27 @@
+name: IBVF - Multipista manifest guardrails
+
+on:
+  pull_request:
+    paths:
+      - 'site/data/validation/independent_basin_validation_map.json'
+      - 'site/expansion.html'
+      - 'scripts/ibvf_validate_case_manifest.py'
+      - '.github/workflows/ibvf-manifest-guardrails.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-manifest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile validator
+        run: python -m py_compile scripts/ibvf_validate_case_manifest.py
+      - name: Enforce scientific/non-operational contract
+        run: python scripts/ibvf_validate_case_manifest.py site/data/validation/independent_basin_validation_map.json
