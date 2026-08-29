@@ -1,6 +1,6 @@
 {
-  "version": "irfen-independent-basin-validation-map-v1.8",
-  "generated_at": "2026-08-29T14:27:24.989684Z",
+  "version": "irfen-independent-basin-validation-map-v1.9",
+  "generated_at": "2026-08-29T14:31:08.976545Z",
   "framework": "IRFEN Independent Basin Validation Framework",
   "deployment_status": "RESEARCH_ONLY",
   "test_only": true,
@@ -58,7 +58,9 @@
       "sentinel1_a4_r2_contract": "PREREGISTERED_BLOCKED_VERTICAL_DATUM_AND_ORBIT_AUX_IDENTITY",
       "parallel_a0_pool": "FROZEN_2907_DAYS_PER_TRACK_4_TRACKS_11628_TRACK_DAY_WINDOWS_NO_SELECTION",
       "sentinel1_a4_r2_prerequisite_freezer": "IMPLEMENTED_EXECUTION_PENDING",
-      "meteorological_ranking_contract": "PREREGISTERED_6_FIXED_PERCENTILE_STRATA_PER_TRACK_SEASON_NO_EXECUTION"
+      "meteorological_ranking_contract": "PREREGISTERED_6_FIXED_PERCENTILE_STRATA_PER_TRACK_SEASON_NO_EXECUTION",
+      "sentinel1_a4_r2_prerequisites": "PASS_VERTICAL_GRID_AND_BOTH_AUX_POEORB_SHA256_FROZEN",
+      "sentinel1_a4_r2_ellipsoidal_dem": "PASS_SHA256_00E33052_NO_SAR_RESPONSE_READ"
     },
     "imerg_basin_features_script": "scripts/ibvf_imerg_basin_features_v02.py",
     "imerg_timebasis_audit_script": "scripts/ibvf_imerg_timebasis_audit.py",
@@ -69,7 +71,9 @@
     "parallel_a0_pool": "site/data/validation/ibvf_parallel_a0_pool_inventory.json",
     "sentinel1_r2_prerequisites_contract": "site/data/validation/cashahuacra_sentinel1_r2_prerequisites_contract.json",
     "sentinel1_r2_prerequisites_script": "scripts/ibvf_sentinel1_r2_freeze_prerequisites.py",
-    "meteorological_ranking_contract": "site/data/validation/ibvf_meteorological_ranking_contract.json"
+    "meteorological_ranking_contract": "site/data/validation/ibvf_meteorological_ranking_contract.json",
+    "sentinel1_r2_prerequisites_report": "site/data/validation/cashahuacra_sentinel1_r2_prerequisites.json",
+    "sentinel1_r2_ellipsoidal_dem_report": "site/data/validation/cashahuacra_r2_ellipsoidal_dem.json"
   },
   "guardrails": {
     "no_risk_colors": true,
@@ -95,7 +99,7 @@
       "unit_id": "cashahuacra",
       "name": "Quebrada Cashahuacra",
       "blind_window": "2015-03-23",
-      "framework_stage": "A4_R1_COMPLETE_R2_PREREQUISITE_FREEZER_IMPLEMENTED_GATE_PENDING",
+      "framework_stage": "A4_R1_COMPLETE_R2_PREREQUISITES_PASS_EXECUTION_ALLOWED_NO_DIFFERENCE",
       "geometry_status": "TWO_POINT_POSITIONAL_PASS_CONDITIONING_SENSITIVE_RESEARCH_CANDIDATE",
       "geometry_path": "data/watersheds/cashahuacra_ibvf_two_point_v03.geojson",
       "geometry_selector": {
@@ -140,7 +144,7 @@
       "imerg_first_raw_granule_id": "3B-HHR.MS.MRG.3IMERG.20150323-S000000-E002959.0000.V07B.HDF5",
       "imerg_first_raw_bytes": 7539194,
       "imerg_first_raw_sha256": "84aae585c7fda5a55c915cc0b82b60987fd7c850f798fed608dbacf03e58182c",
-      "remote_sensing_status": "S1_A4_R1_COMPLETE_R2_PREREQUISITE_RESOURCE_FREEZE_PENDING_LANDSAT_QA_DIAGNOSTIC_ONLY",
+      "remote_sensing_status": "S1_A4_R1_COMPLETE_R2_RESOURCE_GATES_PASS_EXECUTION_ALLOWED_NO_PREPOST_DIFFERENCE_LANDSAT_QA_DIAGNOSTIC_ONLY",
       "stac_probe_path": "data/validation/cashahuacra_stac_probe.json",
       "sentinel1_compatible_pair": "YES",
       "sentinel1_preferred_pair": [
@@ -194,11 +198,16 @@
       "sentinel1_r1_artifact_id": 9715881909,
       "sentinel1_r1_artifact_digest_sha256": "2d56f0505335243852cff1bc2a9b70991ec4681705463c04a9f7fc4094b454c4",
       "sentinel1_r2_contract_path": "data/validation/cashahuacra_sentinel1_r2_contract.json",
-      "sentinel1_r2_status": "PREREGISTERED_R2_BLOCKED_ON_VERTICAL_DATUM_AND_ORBIT_AUX_IDENTITY",
-      "sentinel1_r2_vertical_datum_gate": "BLOCKED_UNTIL_VERTICAL_TRANSFORM_IS_FROZEN",
-      "sentinel1_r2_orbit_gate": "PENDING_EXACT_AUX_ORBIT_FREEZE",
+      "sentinel1_r2_status": "PREREGISTERED_R2_PREREQUISITES_PASS_EXECUTION_ALLOWED_NO_DIFFERENCE_YET",
+      "sentinel1_r2_vertical_datum_gate": "PASS_EXPLICIT_EGM2008_TO_WGS84_ELLIPSOIDAL_DEM_FROZEN",
+      "sentinel1_r2_orbit_gate": "PASS_EXACT_AUX_POEORB_BOTH_DATES_FROZEN",
       "sentinel1_r2_prerequisites_contract_path": "data/validation/cashahuacra_sentinel1_r2_prerequisites_contract.json",
-      "sentinel1_r2_prerequisites_status": "PREREGISTERED_EXECUTABLE_PREREQUISITE_FREEZE_PENDING"
+      "sentinel1_r2_prerequisites_status": "PASS",
+      "sentinel1_r2_prerequisites_path": "data/validation/cashahuacra_sentinel1_r2_prerequisites.json",
+      "sentinel1_r2_ellipsoidal_dem_path": "data/validation/cashahuacra_r2_ellipsoidal_dem.json",
+      "sentinel1_r2_ellipsoidal_dem_sha256": "00e3305219f0400ceca1fa39708de3e2ed31708e0a37c29b96a87d88e119aab2",
+      "sentinel1_r2_execution_gate": "PASS_PREREQUISITES_ONLY_EXECUTION_NOW_ALLOWED_WITH_IDENTICAL_GRAPH",
+      "sentinel1_prepost_difference_computed": false
     },
     {
       "case_id": "shingolay_parallel_intake",
