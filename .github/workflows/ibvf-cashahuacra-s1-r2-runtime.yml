@@ -1,0 +1,50 @@
+name: IBVF Cashahuacra Sentinel-1 R2 runtime
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/ibvf_snap_runtime_checksum_freeze.py'
+      - 'site/data/validation/cashahuacra_sentinel1_r2_runtime_contract.json'
+      - '.github/workflows/ibvf-cashahuacra-s1-r2-runtime.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  freeze-published-checksum:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'requests>=2.31,<3'
+      - name: Freeze official published SHA256 without downloading installer
+        run: |
+          python -m py_compile scripts/ibvf_snap_runtime_checksum_freeze.py
+          mkdir -p /tmp/ibvf-snap-runtime
+          python scripts/ibvf_snap_runtime_checksum_freeze.py \
+            --contract site/data/validation/cashahuacra_sentinel1_r2_runtime_contract.json \
+            --output /tmp/ibvf-snap-runtime/cashahuacra_sentinel1_r2_runtime_checksum.json \
+            | tee /tmp/ibvf-snap-runtime/summary.log
+      - name: Require blind non-operational checksum-only state
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('/tmp/ibvf-snap-runtime/cashahuacra_sentinel1_r2_runtime_checksum.json',encoding='utf-8'))
+          assert d['status']=='PUBLISHED_CHECKSUM_FROZEN_INSTALLER_BYTES_NOT_YET_VERIFIED'
+          assert len(d['published_installer_sha256'])==64
+          assert d['installer_byte_verified'] is False
+          assert d['r2_execution_allowed'] is False
+          assert d['pre_post_sar_values_read'] is False and d['comparison_performed'] is False and d['activation_inference_allowed'] is False
+          assert d['production_use'] is False and d['production_ready'] is False and d['operational_alerting_enabled'] is False
+          print('SNAP runtime published checksum freeze: PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cashahuacra-sentinel1-r2-runtime-checksum
+          path: /tmp/ibvf-snap-runtime/
+          if-no-files-found: error
+          retention-days: 30
