@@ -10,6 +10,8 @@ on:
       - 'site/data/validation/cashahuacra_sentinel1_r1.json'
       - 'site/data/validation/cashahuacra_sentinel1_r2_contract.json'
       - 'site/data/validation/cashahuacra_sentinel1_r2_prerequisites_contract.json'
+      - 'site/data/validation/cashahuacra_sentinel1_r2_prerequisites.json'
+      - 'site/data/validation/cashahuacra_r2_ellipsoidal_dem.json'
       - 'site/data/validation/ibvf_blind_sampling_contract.json'
       - 'site/data/validation/ibvf_parallel_a0_pool_inventory.json'
       - 'site/data/validation/ibvf_meteorological_ranking_contract.json'
@@ -39,6 +41,8 @@ jobs:
             --sentinel-r1 site/data/validation/cashahuacra_sentinel1_r1.json \
             --sentinel-r2-contract site/data/validation/cashahuacra_sentinel1_r2_contract.json \
             --sentinel-r2-prereq-contract site/data/validation/cashahuacra_sentinel1_r2_prerequisites_contract.json \
+            --sentinel-r2-prereq-report site/data/validation/cashahuacra_sentinel1_r2_prerequisites.json \
+            --ellipsoidal-dem-report site/data/validation/cashahuacra_r2_ellipsoidal_dem.json \
             --parallel-a0-pool site/data/validation/ibvf_parallel_a0_pool_inventory.json \
             --meteorological-ranking-contract site/data/validation/ibvf_meteorological_ranking_contract.json
       - name: Validate multipista manifest guardrails
@@ -47,21 +51,23 @@ jobs:
         run: |
           python - <<'PY'
           import json
-          p='site/data/validation/independent_basin_validation_map.json'
-          d=json.load(open(p,encoding='utf-8'))
+          d=json.load(open('site/data/validation/independent_basin_validation_map.json',encoding='utf-8'))
           c=next(x for x in d['cases'] if x['unit_id']=='cashahuacra')
           assert d['deployment_status']=='RESEARCH_ONLY' and d['test_only'] is True
           assert d['production_use'] is False and d['production_ready'] is False and d['operational_alerting_enabled'] is False
           assert d['uses_operational_event_none_labels'] is False
           assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
-          assert c['framework_stage']=='A4_R1_COMPLETE_R2_PREREQUISITE_FREEZER_IMPLEMENTED_GATE_PENDING'
+          assert c['framework_stage']=='A4_R1_COMPLETE_R2_PREREQUISITES_PASS_EXECUTION_ALLOWED_NO_DIFFERENCE'
           assert c['sentinel1_r1_status']=='COMPLETE_BOTH_DATES_NO_COMPARISON'
-          assert c['sentinel1_r1_comparison_performed'] is False
-          assert c['sentinel1_r1_common_support_established'] is False
-          assert c['sentinel1_r2_status']=='PREREGISTERED_R2_BLOCKED_ON_VERTICAL_DATUM_AND_ORBIT_AUX_IDENTITY'
-          assert c['sentinel1_r2_prerequisites_status']=='PREREGISTERED_EXECUTABLE_PREREQUISITE_FREEZE_PENDING'
-          assert c['smap_status']=='MISSING_FOR_EVENT_WINDOW'
-          assert c['blind_status']=='TERRITORIAL_EVIDENCE_SEALED'
+          assert c['sentinel1_r1_comparison_performed'] is False and c['sentinel1_r1_common_support_established'] is False
+          assert c['sentinel1_r2_status']=='PREREGISTERED_R2_PREREQUISITES_PASS_EXECUTION_ALLOWED_NO_DIFFERENCE_YET'
+          assert c['sentinel1_r2_prerequisites_status']=='PASS'
+          assert c['sentinel1_r2_vertical_datum_gate']=='PASS_EXPLICIT_EGM2008_TO_WGS84_ELLIPSOIDAL_DEM_FROZEN'
+          assert c['sentinel1_r2_orbit_gate']=='PASS_EXACT_AUX_POEORB_BOTH_DATES_FROZEN'
+          assert c['sentinel1_r2_execution_gate']=='PASS_PREREQUISITES_ONLY_EXECUTION_NOW_ALLOWED_WITH_IDENTICAL_GRAPH'
+          assert c['sentinel1_prepost_difference_computed'] is False
+          assert c['sentinel1_r2_ellipsoidal_dem_sha256']=='00e3305219f0400ceca1fa39708de3e2ed31708e0a37c29b96a87d88e119aab2'
+          assert c['smap_status']=='MISSING_FOR_EVENT_WINDOW' and c['blind_status']=='TERRITORIAL_EVIDENCE_SEALED'
           assert d['parallel_a0_pool_status']=='FROZEN_EXHAUSTIVE_FOUR_TRACK_CALENDAR_NO_WINDOW_SELECTED'
           assert d['parallel_a0_pool_summary']['track_day_windows']==11628
           assert d['parallel_a0_pool_summary']['case_control_assignment_allowed'] is False
@@ -70,10 +76,9 @@ jobs:
           for unit in ('shingolay','pedregal','huaycoloro','san_ildefonso'):
               x=next(v for v in d['cases'] if v['unit_id']==unit)
               assert x['framework_stage']=='A0_EXHAUSTIVE_POOL_AND_RANKING_CONTRACT_FROZEN_NO_WINDOW_SELECTED'
-              assert x['a0_case_control_role']=='UNASSIGNED'
-              assert x['meteorological_ranking_status']=='PREREGISTERED_NOT_EXECUTED'
+              assert x['a0_case_control_role']=='UNASSIGNED' and x['meteorological_ranking_status']=='PREREGISTERED_NOT_EXECUTED'
               assert x['blind_status']=='TERRITORIAL_EVIDENCE_SEALED'
-          print(json.dumps({'version':d['version'],'cashahuacra_stage':c['framework_stage'],'parallel_pool':d['parallel_a0_pool_status'],'ranking':d['meteorological_ranking_status'],'gate':d['serious_modeling_gate']},indent=2))
+          print(json.dumps({'version':d['version'],'cashahuacra_stage':c['framework_stage'],'r2_execution_gate':c['sentinel1_r2_execution_gate'],'track_day_windows':d['parallel_a0_pool_summary']['track_day_windows'],'ranking':d['meteorological_ranking_status'],'gate':d['serious_modeling_gate']},indent=2))
           PY
       - name: Commit manifest only to research branch
         if: github.event_name == 'pull_request'
@@ -86,7 +91,7 @@ jobs:
           if git diff --cached --quiet; then
             echo 'No manifest change.'
           else
-            git commit -m 'IBVF: publish four-track A0 pool and preregistered ranking in research map manifest'
+            git commit -m 'IBVF: publish passed R2 gates and four-track blind pool in research map manifest'
             git fetch origin "$BRANCH"
             git rebase "origin/$BRANCH"
             git push origin HEAD:"$BRANCH"
