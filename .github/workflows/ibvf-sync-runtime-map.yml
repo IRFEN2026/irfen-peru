@@ -1,0 +1,51 @@
+name: IBVF - Sync frozen SNAP runtime into research map
+
+on:
+  push:
+    branches:
+      - agent/independent-basin-validation-map
+    paths:
+      - 'scripts/ibvf_sync_runtime_map.py'
+      - 'site/data/validation/cashahuacra_sentinel1_r2_runtime_bytes.json'
+      - 'site/data/validation/cashahuacra_sentinel1_r2_runtime_install.json'
+      - '.github/workflows/ibvf-sync-runtime-map.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-runtime-map:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Project only frozen runtime evidence into RESEARCH_ONLY map
+        run: |
+          python -m py_compile scripts/ibvf_sync_runtime_map.py scripts/ibvf_validate_case_manifest.py
+          python scripts/ibvf_sync_runtime_map.py \
+            --manifest site/data/validation/independent_basin_validation_map.json \
+            --byte-report site/data/validation/cashahuacra_sentinel1_r2_runtime_bytes.json \
+            --runtime-report site/data/validation/cashahuacra_sentinel1_r2_runtime_install.json
+      - name: Revalidate map guardrails
+        run: python scripts/ibvf_validate_case_manifest.py site/data/validation/independent_basin_validation_map.json
+      - name: Commit only map projection
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add site/data/validation/independent_basin_validation_map.json
+          if git diff --cached --quiet; then
+            echo 'No research map projection change.'
+          else
+            git commit -m 'IBVF: publish frozen SNAP runtime gate in research map'
+            git fetch origin "$BRANCH"
+            git rebase "origin/$BRANCH"
+            git push origin HEAD:"$BRANCH"
+          fi
