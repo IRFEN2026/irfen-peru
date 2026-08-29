@@ -46,7 +46,7 @@ def write_report(path: Path, report: dict) -> None:
 
 def base(c: dict) -> dict:
     return {
-        "schema_version": "irfen-ibvf-snap-runtime-install-freeze-v0.1",
+        "schema_version": "irfen-ibvf-snap-runtime-install-freeze-v0.2",
         "generated_at": now(),
         "case_id": c["case_id"],
         "deployment_status": "RESEARCH_ONLY",
@@ -199,6 +199,18 @@ def main() -> int:
     report["modules_list_line_count"] = len(modules_out.splitlines())
     report["modules_list_tail"] = modules_out[-8000:]
 
+    # SNAP 14 renamed the on-disk Sentinel-1 toolbox family from the historical
+    # s1tbx naming to microwavetbx. Require both the installed directory and the
+    # enabled kit module instead of depending on an obsolete directory label.
+    microwave_dirs = [x for x in ("microwavetbx", "s1tbx") if (install_dir / x).is_dir()]
+    microwave_module_pattern = re.compile(r"^eu\.esa\.microwavetbx\.microwavetbx\.kit\s+14\.0\.0\s+Enabled\s*$", re.MULTILINE)
+    microwave_module_enabled = bool(microwave_module_pattern.search(modules_out))
+    report["microwave_toolbox_directory_names_present"] = microwave_dirs
+    report["microwave_toolbox_directory_present"] = bool(microwave_dirs)
+    report["microwave_toolbox_kit_module"] = "eu.esa.microwavetbx.microwavetbx.kit"
+    report["microwave_toolbox_kit_module_version"] = "14.0.0"
+    report["microwave_toolbox_kit_module_enabled"] = microwave_module_enabled
+
     jars = sorted(install_dir.rglob("*.jar"))
     mh = hashlib.sha256(); total_jar_bytes = 0
     for jar in jars:
@@ -209,7 +221,6 @@ def main() -> int:
     report["installed_jar_total_bytes"] = total_jar_bytes
     report["installed_jar_manifest_sha256"] = mh.hexdigest()
     report["top_level_entries"] = sorted(x.name for x in install_dir.iterdir()) if install_dir.exists() else []
-    report["microwave_toolbox_directory_present"] = (install_dir / "s1tbx").exists()
     report["gpt_launcher_sha256"], report["gpt_launcher_bytes"] = sha256_file(gpt)
 
     expected_version = rel["version"]
@@ -217,6 +228,7 @@ def main() -> int:
         diag.returncode == 0
         and release == expected_version
         and report["microwave_toolbox_directory_present"] is True
+        and report["microwave_toolbox_kit_module_enabled"] is True
         and report["installed_jar_count"] > 0
     )
     if runtime_pass:
@@ -242,7 +254,8 @@ def main() -> int:
         "release": release,
         "jar_count": report["installed_jar_count"],
         "jar_manifest_sha256": report["installed_jar_manifest_sha256"],
-        "microwave_toolbox": report["microwave_toolbox_directory_present"],
+        "microwave_directories": microwave_dirs,
+        "microwave_kit_enabled": microwave_module_enabled,
     }, sort_keys=True))
     return 0
 
