@@ -1,0 +1,61 @@
+{
+  "schema_version": "irfen-ibvf-cashahuacra-r2-ellipsoidal-dem-v0.1",
+  "generated_at": "2026-08-29T14:27:09.215273Z",
+  "case_id": "cashahuacra_2015-03-23",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
+  "input_dem": {
+    "item_id": "Copernicus_DSM_COG_10_S12_00_W077_00_DEM",
+    "sha256": "d9f8d410da66bfb85c73b957401aea73043f8618cccdb7d1fc76082d30a31130",
+    "bytes": 40184982,
+    "source_nodata": null,
+    "cropped_shape": [433, 361],
+    "cropped_transform": [0.0002777777777777778, 0.0, -76.72013888888888, 0.0, -0.0002777777777777778, -11.819861111111111],
+    "valid_pixel_count": 155880,
+    "nodata_pixel_count": 433
+  },
+  "vertical_grid": {
+    "sha256": "4191d471eefebf24091b56dbc604353cb3b8cf8cc70e448bb9ae56a272bef17a",
+    "bytes": 80585622,
+    "url": "https://cdn.proj.org/us_nga_egm08_25.tif"
+  },
+  "conversion": {
+    "pipeline": "+proj=pipeline +step +proj=unitconvert +xy_in=deg +xy_out=rad +step +proj=vgridshift +grids=us_nga_egm08_25.tif +multiplier=1 +step +proj=unitconvert +xy_in=rad +xy_out=deg",
+    "pyproj_version": "3.7.2",
+    "proj_version": "9.5.1",
+    "network_enabled": false,
+    "horizontal_max_abs_delta_degrees": 1.4210854715202004e-14,
+    "geoid_correction_min_m": 28.648234621683855,
+    "geoid_correction_max_m": 30.573878121948383,
+    "geoid_correction_mean_m": 29.647866486172433,
+    "case_specific_height_adjustment_used": false
+  },
+  "output_dem": {
+    "sha256": "00e3305219f0400ceca1fa39708de3e2ed31708e0a37c29b96a87d88e119aab2",
+    "bytes": 394421,
+    "shape": [433, 361],
+    "transform": [0.0002777777777777778, 0.0, -76.72013888888888, 0.0, -0.0002777777777777778, -11.819861111111111],
+    "horizontal_crs": "EPSG:4326",
+    "vertical_semantics": "WGS84_ELLIPSOIDAL_HEIGHT",
+    "valid_pixel_count": 155880,
+    "nodata_value": -9999.0
+  },
+  "ellipsoidal_dem_gate": "PASS",
+  "pre_post_sar_values_read": false,
+  "comparison_performed": false,
+  "activation_inference_allowed": false,
+  "execution_evidence": {
+    "workflow_run_id": 33257604982,
+    "workflow_conclusion": "success",
+    "artifact_id": 9716289158,
+    "artifact_digest_sha256": "b341ff19951718e913ad26cde48e76c29f5a2acedfbc8374336034ad7b80f6b4",
+    "raw_report_sha256": "5aa8d0793bd7a686b94ba52f81b3a4b07391e18b290978c4019f7c7327d73919",
+    "converted_dem_sha256": "00e3305219f0400ceca1fa39708de3e2ed31708e0a37c29b96a87d88e119aab2"
+  }
+}
