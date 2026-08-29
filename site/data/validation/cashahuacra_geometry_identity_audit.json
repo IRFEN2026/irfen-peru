@@ -1,0 +1,71 @@
+{
+  "schema_version": "irfen-ibvf-cashahuacra-geometry-identity-audit-v0.1",
+  "generated_at": "2026-08-29T06:13:13Z",
+  "case_id": "cashahuacra_2015-03-23",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
+  "audit_scope": "GEOMETRIC_AND_HYDROLOGIC_IDENTITY_ONLY_NOT_ACTIVATION_OUTCOME",
+  "candidate_under_audit": {
+    "source_report": "site/data/validation/cashahuacra_nearest_channel_snap.json",
+    "canonical_geometry_sha256": "410938abf108588335bcb2995757b2c14d712d0c8c932f14705d68d11e736fff",
+    "snap_status_reported": "STABLE_EXACT_CELL_AGREEMENT",
+    "outlet_lon": -76.66333333333333,
+    "outlet_lat": -11.915277777777778,
+    "area_km2": 69.423,
+    "bbox_wgs84": [-76.70541666666666, -11.915694444444444, -76.62013888888889, -11.820138888888888],
+    "centroid_wgs84": [-76.65734018168003, -11.868869527909137]
+  },
+  "static_geometry_controls": [
+    {
+      "source_id": "ANA-RD-1634-2015-AAA-CF",
+      "source_role": "STATIC_CHANNEL_GEOMETRY_ONLY",
+      "activation_outcome_used": false,
+      "cashahuacra_faja_segment": {
+        "progressive": "0+000_TO_2+180",
+        "downstream_utm18s": [318847.0, 8682257.0],
+        "upstream_utm18s": [317437.0, 8683757.0],
+        "downstream_wgs84": [-76.66337328710895, -11.915410922094027],
+        "upstream_wgs84": [-76.6762331062582, -11.901774876923458],
+        "endpoint_distance_m": 2058.646,
+        "axis_azimuth_deg_from_downstream": -42.885
+      }
+    },
+    {
+      "source_id": "INDECI-PNUD-PER-02-051-SANTA-EULALIA-2005",
+      "source_role": "PRE_EVENT_GEOMORPHOLOGIC_REFERENCE_ONLY",
+      "activation_outcome_used": false,
+      "published_cashahuacra_length_m": 6600,
+      "published_cashahuacra_area_km2": 15.1,
+      "published_elevation_max_m": 2600,
+      "published_elevation_min_m": 980
+    }
+  ],
+  "diagnostics": {
+    "candidate_area_to_pre_event_reference_ratio": 4.5989,
+    "candidate_area_absolute_difference_km2": 54.323,
+    "candidate_centroid_azimuth_deg_from_ana_0plus000": 7.276,
+    "ana_faja_axis_azimuth_deg_from_0plus000": -42.885,
+    "azimuth_difference_deg": 50.161,
+    "interpretation": "Exact-cell agreement demonstrates numerical repeatability of the v0.3 selection rule, but does not establish channel identity. The delineated drainage is grossly inconsistent with an independent pre-event Cashahuacra geomorphologic reference and its basin footprint trends predominantly north/east while the ANA Cashahuacra faja segment runs northwest from 0+000. The v0.3 algorithm likely locked onto a higher-accumulation neighboring/mainstem drainage rather than the Cashahuacra tributary."
+  },
+  "scientific_disposition": "REJECT_AS_CASHAHUACRA_BASIN_WRONG_CHANNEL_IDENTITY",
+  "v03_numeric_snap_reproducible": true,
+  "v03_hydrologic_identity_validated": false,
+  "v03_geometry_may_be_used_for_cashahuacra_features": false,
+  "v03_morphometry_may_be_used_for_cashahuacra_features": false,
+  "next_method_predeclared": {
+    "name": "ANA_TWO_POINT_UPSTREAM_ANCHORED_D8_CHANNEL_SNAP",
+    "selection_principle": "Use ANA 2+180 only to identify the Cashahuacra tributary upstream, trace that D8 channel downstream, then select the traced channel cell nearest ANA 0+000.",
+    "target_basin_area_used_for_selection": false,
+    "published_length_used_for_selection": false,
+    "territorial_activation_evidence_used": false,
+    "freeze_gate": "UPSTREAM_ANCHOR_SENSITIVITY_MUST_CONVERGE_TO_SAME_DOWNSTREAM_CHANNEL_CELL_AND_POST_HOC_STATIC_GEOMETRY_IDENTITY_AUDIT_MUST_NOT_CONTRADICT_CHANNEL_IDENTITY",
+    "morphometry_before_identity_gate_forbidden": true
+  }
+}
