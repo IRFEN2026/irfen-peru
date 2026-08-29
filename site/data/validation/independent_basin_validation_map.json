@@ -1,6 +1,6 @@
 {
-  "version": "irfen-independent-basin-validation-map-v2.0",
-  "generated_at": "2026-08-29T17:55:52.744245Z",
+  "version": "irfen-independent-basin-validation-map-v2.1",
+  "generated_at": "2026-08-29T21:51:08.432130+00:00",
   "framework": "IRFEN Independent Basin Validation Framework",
   "deployment_status": "RESEARCH_ONLY",
   "test_only": true,
@@ -80,7 +80,11 @@
     "sentinel1_r2_runtime_contract": "site/data/validation/cashahuacra_sentinel1_r2_runtime_contract.json",
     "sentinel1_r2_runtime_checksum": "site/data/validation/cashahuacra_sentinel1_r2_runtime_checksum.json",
     "sentinel1_r2_runtime_bytes_report": "site/data/validation/cashahuacra_sentinel1_r2_runtime_bytes.json",
-    "sentinel1_r2_runtime_install_report": "site/data/validation/cashahuacra_sentinel1_r2_runtime_install.json"
+    "sentinel1_r2_runtime_install_report": "site/data/validation/cashahuacra_sentinel1_r2_runtime_install.json",
+    "parallel_a1_stac_preflight_script": "scripts/ibvf_parallel_stac_preflight.py",
+    "parallel_a1_stac_preflight_report": "site/data/validation/ibvf_parallel_stac_preflight.json",
+    "parallel_a1_stac_preflight_status": "A1_SENSOR_CATALOG_PREFLIGHT_COMPLETE_NO_WINDOW_SELECTED",
+    "parallel_a1_stac_fixed_requests": 100
   },
   "guardrails": {
     "no_risk_colors": true,
@@ -236,7 +240,7 @@
       "unit_id": "shingolay",
       "name": "Quebrada Shingolay",
       "blind_window": "NOT_YET_SELECTED_FROM_FROZEN_POOL",
-      "framework_stage": "A0_EXHAUSTIVE_POOL_AND_RANKING_CONTRACT_FROZEN_NO_WINDOW_SELECTED",
+      "framework_stage": "A1_SENSOR_CATALOG_PREFLIGHT_COMPLETE_A0_POOL_FROZEN_NO_WINDOW_SELECTED",
       "geometry_status": "EXISTING_REVIEW_ONLY_CANDIDATE",
       "geometry_path": "data/phase2/geometries/w1_santa_eulalia_rimac.geojson",
       "geometry_selector": {
@@ -245,7 +249,7 @@
       },
       "geometry_semantics": "EXISTING_CANDIDATE_ONLY_NOT_IBVF_FINAL",
       "imerg_status": "NOT_STARTED",
-      "remote_sensing_status": "STAC_CONTRACT_READY_WINDOW_NOT_FROZEN",
+      "remote_sensing_status": "A1_STAC_CATALOG_PRESENT_S1_LANDSAT_COPDEM_WINDOW_NOT_SELECTED",
       "smap_status": "NOT_ASSESSED",
       "blind_status": "TERRITORIAL_EVIDENCE_SEALED",
       "production_use": false,
@@ -254,14 +258,22 @@
       "a0_pool_status": "FROZEN_2907_UNASSIGNED_LOCAL_DAYS",
       "a0_pool_path": "data/validation/ibvf_parallel_a0_pool_inventory.json",
       "a0_case_control_role": "UNASSIGNED",
-      "meteorological_ranking_status": "PREREGISTERED_NOT_EXECUTED"
+      "meteorological_ranking_status": "PREREGISTERED_NOT_EXECUTED",
+      "a1_stac_preflight_path": "data/validation/ibvf_parallel_stac_preflight.json",
+      "a1_stac_preflight_status": "A1_SENSOR_CATALOG_PREFLIGHT_COMPLETE_NO_WINDOW_SELECTED",
+      "a1_stac_catalog": {
+        "sentinel1": "PRESENT_CATALOG",
+        "landsat": "PRESENT_CATALOG",
+        "cop_dem_glo30": "PRESENT_CATALOG",
+        "count_semantics": "CATALOG_PRESENCE_CONFIRMED_COUNTS_MAY_BE_LOWER_BOUNDS_WHERE_STAC_NEXT_LINK_PRESENT"
+      }
     },
     {
       "case_id": "san_ildefonso_parallel_intake",
       "unit_id": "san_ildefonso",
       "name": "Quebrada San Ildefonso",
       "blind_window": "NOT_YET_SELECTED_FROM_FROZEN_POOL",
-      "framework_stage": "A0_EXHAUSTIVE_POOL_AND_RANKING_CONTRACT_FROZEN_NO_WINDOW_SELECTED",
+      "framework_stage": "A1_SENSOR_CATALOG_PREFLIGHT_COMPLETE_A0_POOL_FROZEN_NO_WINDOW_SELECTED",
       "geometry_status": "EXISTING_TEST_ONLY_WATERSHED_CANDIDATE",
       "geometry_path": "data/watersheds/san_ildefonso_watershed.geojson",
       "geometry_selector": {
@@ -270,7 +282,7 @@
       },
       "geometry_semantics": "EXISTING_DEM_D8_CANDIDATE_REQUIRES_IBVF_FREEZE",
       "imerg_status": "NOT_STARTED",
-      "remote_sensing_status": "STAC_CONTRACT_READY_WINDOW_NOT_FROZEN",
+      "remote_sensing_status": "A1_STAC_CATALOG_PRESENT_S1_LANDSAT_COPDEM_WINDOW_NOT_SELECTED",
       "smap_status": "NOT_ASSESSED",
       "blind_status": "TERRITORIAL_EVIDENCE_SEALED",
       "production_use": false,
@@ -279,14 +291,22 @@
       "a0_pool_status": "FROZEN_2907_UNASSIGNED_LOCAL_DAYS",
       "a0_pool_path": "data/validation/ibvf_parallel_a0_pool_inventory.json",
       "a0_case_control_role": "UNASSIGNED",
-      "meteorological_ranking_status": "PREREGISTERED_NOT_EXECUTED"
+      "meteorological_ranking_status": "PREREGISTERED_NOT_EXECUTED",
+      "a1_stac_preflight_path": "data/validation/ibvf_parallel_stac_preflight.json",
+      "a1_stac_preflight_status": "A1_SENSOR_CATALOG_PREFLIGHT_COMPLETE_NO_WINDOW_SELECTED",
+      "a1_stac_catalog": {
+        "sentinel1": "PRESENT_CATALOG",
+        "landsat": "PRESENT_CATALOG",
+        "cop_dem_glo30": "PRESENT_CATALOG",
+        "count_semantics": "CATALOG_PRESENCE_CONFIRMED_COUNTS_MAY_BE_LOWER_BOUNDS_WHERE_STAC_NEXT_LINK_PRESENT"
+      }
     },
     {
       "case_id": "pedregal_parallel_geometry",
       "unit_id": "pedregal",
       "name": "Quebrada Pedregal",
       "blind_window": "NOT_YET_SELECTED_FROM_FROZEN_POOL",
-      "framework_stage": "A0_EXHAUSTIVE_POOL_AND_RANKING_CONTRACT_FROZEN_NO_WINDOW_SELECTED",
+      "framework_stage": "A1_SENSOR_CATALOG_PREFLIGHT_COMPLETE_A0_POOL_FROZEN_NO_WINDOW_SELECTED",
       "geometry_status": "MULTIPLE_REVIEW_ONLY_CANDIDATE_SETS",
       "geometry_path": "data/watersheds/chosica_local_candidate_sets.geojson",
       "geometry_selector": {
@@ -295,7 +315,7 @@
       },
       "geometry_semantics": "CANDIDATE_SET_NOT_A_VALIDATED_BASIN",
       "imerg_status": "NOT_STARTED",
-      "remote_sensing_status": "STAC_CONTRACT_READY_WINDOW_NOT_FROZEN",
+      "remote_sensing_status": "A1_STAC_CATALOG_PRESENT_S1_LANDSAT_COPDEM_WINDOW_NOT_SELECTED",
       "smap_status": "NOT_ASSESSED",
       "blind_status": "TERRITORIAL_EVIDENCE_SEALED",
       "production_use": false,
@@ -304,14 +324,22 @@
       "a0_pool_status": "FROZEN_2907_UNASSIGNED_LOCAL_DAYS",
       "a0_pool_path": "data/validation/ibvf_parallel_a0_pool_inventory.json",
       "a0_case_control_role": "UNASSIGNED",
-      "meteorological_ranking_status": "PREREGISTERED_NOT_EXECUTED"
+      "meteorological_ranking_status": "PREREGISTERED_NOT_EXECUTED",
+      "a1_stac_preflight_path": "data/validation/ibvf_parallel_stac_preflight.json",
+      "a1_stac_preflight_status": "A1_SENSOR_CATALOG_PREFLIGHT_COMPLETE_NO_WINDOW_SELECTED",
+      "a1_stac_catalog": {
+        "sentinel1": "PRESENT_CATALOG",
+        "landsat": "PRESENT_CATALOG",
+        "cop_dem_glo30": "PRESENT_CATALOG",
+        "count_semantics": "CATALOG_PRESENCE_CONFIRMED_COUNTS_MAY_BE_LOWER_BOUNDS_WHERE_STAC_NEXT_LINK_PRESENT"
+      }
     },
     {
       "case_id": "huaycoloro_parallel_intake",
       "unit_id": "huaycoloro",
       "name": "Quebrada Huaycoloro",
       "blind_window": "NOT_YET_SELECTED_FROM_FROZEN_POOL",
-      "framework_stage": "A0_EXHAUSTIVE_POOL_AND_RANKING_CONTRACT_FROZEN_NO_WINDOW_SELECTED",
+      "framework_stage": "A1_SENSOR_CATALOG_PREFLIGHT_COMPLETE_A0_POOL_FROZEN_NO_WINDOW_SELECTED",
       "geometry_status": "EXISTING_TEST_ONLY_WATERSHED_CANDIDATE",
       "geometry_path": "data/watersheds/huaycoloro_watershed.geojson",
       "geometry_selector": {
@@ -320,7 +348,7 @@
       },
       "geometry_semantics": "EXISTING_DEM_D8_CANDIDATE_REQUIRES_IBVF_FREEZE",
       "imerg_status": "NOT_STARTED",
-      "remote_sensing_status": "STAC_CONTRACT_READY_WINDOW_NOT_FROZEN",
+      "remote_sensing_status": "A1_STAC_CATALOG_PRESENT_S1_LANDSAT_COPDEM_WINDOW_NOT_SELECTED",
       "smap_status": "NOT_ASSESSED",
       "blind_status": "TERRITORIAL_EVIDENCE_SEALED",
       "production_use": false,
@@ -329,7 +357,15 @@
       "a0_pool_status": "FROZEN_2907_UNASSIGNED_LOCAL_DAYS",
       "a0_pool_path": "data/validation/ibvf_parallel_a0_pool_inventory.json",
       "a0_case_control_role": "UNASSIGNED",
-      "meteorological_ranking_status": "PREREGISTERED_NOT_EXECUTED"
+      "meteorological_ranking_status": "PREREGISTERED_NOT_EXECUTED",
+      "a1_stac_preflight_path": "data/validation/ibvf_parallel_stac_preflight.json",
+      "a1_stac_preflight_status": "A1_SENSOR_CATALOG_PREFLIGHT_COMPLETE_NO_WINDOW_SELECTED",
+      "a1_stac_catalog": {
+        "sentinel1": "PRESENT_CATALOG",
+        "landsat": "PRESENT_CATALOG",
+        "cop_dem_glo30": "PRESENT_CATALOG",
+        "count_semantics": "CATALOG_PRESENCE_CONFIRMED_COUNTS_MAY_BE_LOWER_BOUNDS_WHERE_STAC_NEXT_LINK_PRESENT"
+      }
     }
   ],
   "blind_sampling_contract_path": "data/validation/ibvf_blind_sampling_contract.json",
