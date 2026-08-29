@@ -1,6 +1,6 @@
 {
-  "schema_version": "irfen-ibvf-parallel-window-pool-contract-v0.1",
-  "generated_at": "2026-08-29T14:08:00Z",
+  "schema_version": "irfen-ibvf-parallel-window-pool-contract-v0.2",
+  "generated_at": "2026-08-29T14:23:00Z",
   "framework": "IRFEN Independent Basin Validation Framework",
   "deployment_status": "RESEARCH_ONLY",
   "test_only": true,
@@ -25,23 +25,23 @@
   },
   "season_rules": {
     "lima_rimac_related_tracks": {
-      "applies_to": [
-        "shingolay",
-        "pedregal",
-        "huaycoloro"
-      ],
+      "applies_to": ["shingolay", "pedregal", "huaycoloro"],
       "season_start_local": "09-01T00:00:00-05:00",
       "season_end_local_inclusive": "04-30T23:59:59-05:00",
       "basis": "SENAMHI climatology for Chillón-Rímac-Lurín: rainy period begins in September and ends in April; largest accumulations December-March.",
       "basis_is_outcome_evidence": false,
       "status": "FROZEN_A0_SEASON_BOUNDARY"
     },
-    "san_ildefonso": {
+    "san_ildefonso_northern_track": {
       "applies_to": ["san_ildefonso"],
-      "season_start_local": null,
-      "season_end_local_inclusive": null,
-      "status": "PENDING_REGION_SPECIFIC_OFFICIAL_CLIMATOLOGICAL_BASIS",
-      "fallback_to_lima_rule_allowed": false
+      "season_start_local": "09-01T00:00:00-05:00",
+      "season_end_local_inclusive": "04-30T23:59:59-05:00",
+      "basis": "SENAMHI national precipitation-cycle study states Peru rainy period starts in September and ends in April, with greatest precipitation December-March; its northern-region discussion explicitly includes La Libertad.",
+      "basis_url": "https://www.senamhi.gob.pe/load/file/01401SENA-34.pdf",
+      "basis_scope": "PERU_NATIONAL_WITH_NORTHERN_REGION_INCLUDING_LA_LIBERTAD",
+      "basis_is_outcome_evidence": false,
+      "lima_rule_inherited": false,
+      "status": "FROZEN_A0_SEASON_BOUNDARY_INDEPENDENT_OFFICIAL_BASIS"
     }
   },
   "pool_enumeration": {
@@ -57,7 +57,7 @@
   },
   "meteorological_ranking": {
     "status": "NOT_YET_FROZEN_DO_NOT_SELECT_WET_OR_BACKGROUND_WINDOWS",
-    "reason": "The first A0 action is exhaustive enumeration. A meteorological episode-ranking rule will be versioned before any windows are selected and without using Cashahuacra remote magnitudes or territorial outcomes.",
+    "reason": "Exhaustive enumeration precedes ranking. The ranking rule is versioned separately before any windows are selected and cannot use Cashahuacra remote magnitudes or territorial outcomes.",
     "cashahuacra_remote_magnitudes_may_be_used_to_choose_rank_thresholds": false,
     "territorial_outcomes_may_be_used_to_choose_rank_thresholds": false
   },
@@ -73,7 +73,6 @@
     "forbidden_actions": [
       "select_only_known_storm_or_activation_dates",
       "discard_windows_after_learning_territorial_outcome",
-      "inherit_Lima_season_boundary_into_San_Ildefonso_without_regional_basis",
       "assign_control_role_before_A1_to_A5_freeze_and_independent_outcome_unblind"
     ]
   },
@@ -88,11 +87,17 @@
       "scope": "Chillón-Rímac-Lurín",
       "statement": "Rainy period September-April, highest accumulations December-March",
       "used_for": "Lima-track A0 study-season boundary only"
+    },
+    {
+      "authority": "SENAMHI",
+      "scope": "Peru national precipitation cycles; northern region explicitly includes La Libertad",
+      "url": "https://www.senamhi.gob.pe/load/file/01401SENA-34.pdf",
+      "statement": "Rainy period September-April, greatest precipitation December-March",
+      "used_for": "San Ildefonso A0 study-season boundary independently of the Lima climatology"
     }
   ],
   "next_actions": [
-    "ENUMERATE_LIMA_TRACK_DAILY_A0_POOLS_WITHOUT_OUTCOME_FIELDS",
-    "OBTAIN_REGION_SPECIFIC_OFFICIAL_CLIMATOLOGICAL_BASIS_FOR_SAN_ILDEFONSO",
+    "ENUMERATE_ALL_FOUR_TRACK_DAILY_A0_POOLS_WITHOUT_OUTCOME_FIELDS",
     "FREEZE_METEOROLOGICAL_EPISODE_RANKING_RULE_BEFORE_SELECTING_ANY_PARALLEL_WINDOWS"
   ]
 }
