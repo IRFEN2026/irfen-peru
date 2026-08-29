@@ -1,6 +1,6 @@
 {
-  "version": "irfen-independent-basin-validation-map-v1.3",
-  "generated_at": "2026-08-29T06:55:00Z",
+  "version": "irfen-independent-basin-validation-map-v1.4",
+  "generated_at": "2026-08-29T09:57:11.762559Z",
   "framework": "IRFEN Independent Basin Validation Framework",
   "deployment_status": "RESEARCH_ONLY",
   "test_only": true,
@@ -25,7 +25,11 @@
     "imerg_auth_probe_script": "scripts/ibvf_imerg_auth_probe.py",
     "imerg_hash_freeze_script": "scripts/ibvf_imerg_hash_freeze.py",
     "manifest_guardrail_script": "scripts/ibvf_validate_case_manifest.py",
-    "collections": ["sentinel-1-grd", "landsat-c2-l2", "cop-dem-glo-30"],
+    "collections": [
+      "sentinel-1-grd",
+      "landsat-c2-l2",
+      "cop-dem-glo-30"
+    ],
     "transport_failure_is_missing_data": false,
     "global_landsat_cloud_cover_is_acceptance_criterion": false,
     "landsat_byte_transport_fallback": "PLANETARY_COMPUTER_SIGNED_MIRROR_SAME_EARTH_SEARCH_ITEM_ID_ONLY",
@@ -46,8 +50,14 @@
       "github_actions_imerg_slot_inventory": "SUCCESS_48_EVENT_432_WINDOW",
       "github_actions_imerg_authenticated_hdf5_probe": "SUCCESS_ONE_RAW_HDF5_SHA256_FROZEN",
       "github_actions_imerg_432_hash_freeze": "SUCCESS_432_OF_432_HDF5_SIGNATURE_AND_SHA256",
-      "github_actions_snap_positional_sensitivity": "SUPERSEDED_FOR_CASHAHUACRA_IDENTITY_BY_TWO_POINT_METHOD"
-    }
+      "github_actions_snap_positional_sensitivity": "SUPERSEDED_FOR_CASHAHUACRA_IDENTITY_BY_TWO_POINT_METHOD",
+      "github_actions_imerg_basin_features": "SUCCESS_432_OF_432_RAW_IDENTITY_MATCH_AREA_WEIGHTED",
+      "github_actions_imerg_timebasis_audit": "SUCCESS_UTC_AND_PERU_LOCAL_NO_EVENT_TIME_USED",
+      "blind_sampling_contract": "PREREGISTERED_BEFORE_PARALLEL_WINDOW_UNBLINDING"
+    },
+    "imerg_basin_features_script": "scripts/ibvf_imerg_basin_features_v02.py",
+    "imerg_timebasis_audit_script": "scripts/ibvf_imerg_timebasis_audit.py",
+    "blind_sampling_contract": "site/data/validation/ibvf_blind_sampling_contract.json"
   },
   "guardrails": {
     "no_risk_colors": true,
@@ -60,17 +70,26 @@
     "case_role_is_not_inferred_from_territorial_outcome": true,
     "numerical_snap_stability_does_not_equal_hydrologic_identity": true
   },
-  "indicators_exposed": ["framework_stage", "geometry_status", "imerg_status", "remote_sensing_status", "blind_status"],
+  "indicators_exposed": [
+    "framework_stage",
+    "geometry_status",
+    "imerg_status",
+    "remote_sensing_status",
+    "blind_status"
+  ],
   "cases": [
     {
       "case_id": "cashahuacra_2015-03-23",
       "unit_id": "cashahuacra",
       "name": "Quebrada Cashahuacra",
       "blind_window": "2015-03-23",
-      "framework_stage": "A1.2/A1.3",
+      "framework_stage": "A3_PRECIPITATION_FROZEN_A4_PENDING",
       "geometry_status": "TWO_POINT_POSITIONAL_PASS_CONDITIONING_SENSITIVE_RESEARCH_CANDIDATE",
       "geometry_path": "data/watersheds/cashahuacra_ibvf_two_point_v03.geojson",
-      "geometry_selector": {"property": "unit_id", "value": "cashahuacra"},
+      "geometry_selector": {
+        "property": "unit_id",
+        "value": "cashahuacra"
+      },
       "geometry_semantics": "IBVF_RESEARCH_CANDIDATE_POSITIONALLY_STABLE_UNDER_FROZEN_STANDARD_PREPROCESSING_NOT_CONDITIONING_INDEPENDENT_NOT_OPERATIONAL",
       "rejected_v03_geometry_sha256": "410938abf108588335bcb2995757b2c14d712d0c8c932f14705d68d11e736fff",
       "rejected_v03_geometry_area_km2": 69.423,
@@ -93,7 +112,7 @@
       "dem_raw_sha256": "d9f8d410da66bfb85c73b957401aea73043f8618cccdb7d1fc76082d30a31130",
       "snap_status": "STABLE_PRECONFLUENCE_CATCHMENT_CONSISTENCY_AND_30M_POSITIONAL_GATES_PASSED",
       "morphometry_status": "RESEARCH_CANDIDATE_SUPPORTED_BY_POSITIONAL_SENSITIVITY_CONDITIONING_DEPENDENCE_FLAGGED_NOT_OPERATIONAL",
-      "imerg_status": "RAW_432_OF_432_SHA256_AND_HDF5_SIGNATURE_FROZEN",
+      "imerg_status": "FROZEN_LOCAL_P3H_4.98_P24H_10.26_ANT7D_15.82_MM",
       "imerg_inventory_path": "data/validation/cashahuacra_imerg_inventory.json",
       "imerg_event_slots_verified": 48,
       "imerg_window_slots_verified": 432,
@@ -112,19 +131,47 @@
       "remote_sensing_status": "S1_PAIR_YES_RAW_ASSETS_SHA256_FROZEN_LANDSAT_QA_V0.2_DIAGNOSTIC_ONLY",
       "stac_probe_path": "data/validation/cashahuacra_stac_probe.json",
       "sentinel1_compatible_pair": "YES",
-      "sentinel1_preferred_pair": ["S1A_IW_GRDH_1SSV_20150310T103859_20150310T103924_004968_006380", "S1A_IW_GRDH_1SSV_20150403T103859_20150403T103924_005318_006BBE"],
+      "sentinel1_preferred_pair": [
+        "S1A_IW_GRDH_1SSV_20150310T103859_20150310T103924_004968_006380",
+        "S1A_IW_GRDH_1SSV_20150403T103859_20150403T103924_005318_006BBE"
+      ],
       "sentinel1_freeze_path": "data/validation/cashahuacra_sentinel1_freeze.json",
       "sentinel1_pre_vv_sha256": "a3453214e6e48609f3d832141145c540922d8434a901cff85da4ea580f261859",
       "sentinel1_post_vv_sha256": "7a73aaf87a3f1f38abe4460180dcf1e6dca4d733b68336b7dfd95d2940a10368",
       "landsat_wrs": "007/068",
-      "landsat_target_items": ["LC08_L2SP_007068_20150318_02_T1", "LC08_L2SP_007068_20150419_02_T1"],
+      "landsat_target_items": [
+        "LC08_L2SP_007068_20150318_02_T1",
+        "LC08_L2SP_007068_20150419_02_T1"
+      ],
       "landsat_aoi_qa_path": "data/validation/cashahuacra_landsat_aoi_qa.json",
       "landsat_aoi_qa_status": "MEASURED_REFERENCE_AOI_PRE_CLEAR_30.142_POST_CLEAR_99.982_HIGH_AEROSOL_LEVEL_DOMINANT_DIAGNOSTIC_ONLY_ACCEPTANCE_NOT_FROZEN",
       "smap_status": "MISSING_FOR_EVENT_WINDOW",
       "blind_status": "TERRITORIAL_EVIDENCE_SEALED",
       "production_use": false,
       "production_ready": false,
-      "operational_alerting_enabled": false
+      "operational_alerting_enabled": false,
+      "geometry_area_km2": 15.088,
+      "imerg_basin_features_path": "data/validation/cashahuacra_imerg_basin_features.json",
+      "imerg_timebasis_audit_path": "data/validation/cashahuacra_imerg_timebasis_audit.json",
+      "imerg_observational_metrics": {
+        "time_basis": "PERU_LOCAL_CALENDAR_DAY_UTC_MINUS_5",
+        "p30m_max_mm": 1.4483280877343536,
+        "p1h_max_mm": 2.6744470472633655,
+        "p3h_max_mm": 4.981368829420068,
+        "p6h_max_mm": 7.232571583853858,
+        "p12h_max_mm": 9.690093528051499,
+        "p24h_mm": 10.263046294685738,
+        "antecedent_24h_mm": 1.2677040066061407,
+        "antecedent_72h_mm": 6.4769186758269806,
+        "antecedent_7d_mm": 15.81533524920914
+      },
+      "imerg_timebasis_sensitivity": {
+        "utc_p24h_mm": 7.371450027981688,
+        "peru_local_p24h_mm": 10.263046294685738,
+        "local_minus_utc_mm": 2.89159626670405,
+        "event_time_used": false
+      },
+      "blind_sampling_contract_status": "PREREGISTERED_FOR_PARALLEL_WINDOWS"
     },
     {
       "case_id": "shingolay_parallel_intake",
@@ -134,7 +181,10 @@
       "framework_stage": "PARALLEL_INTAKE",
       "geometry_status": "EXISTING_REVIEW_ONLY_CANDIDATE",
       "geometry_path": "data/phase2/geometries/w1_santa_eulalia_rimac.geojson",
-      "geometry_selector": {"property": "unit_id", "value": "shingolay"},
+      "geometry_selector": {
+        "property": "unit_id",
+        "value": "shingolay"
+      },
       "geometry_semantics": "EXISTING_CANDIDATE_ONLY_NOT_IBVF_FINAL",
       "imerg_status": "NOT_STARTED",
       "remote_sensing_status": "STAC_CONTRACT_READY_WINDOW_NOT_FROZEN",
@@ -152,7 +202,10 @@
       "framework_stage": "PARALLEL_INTAKE",
       "geometry_status": "EXISTING_TEST_ONLY_WATERSHED_CANDIDATE",
       "geometry_path": "data/watersheds/san_ildefonso_watershed.geojson",
-      "geometry_selector": {"property": "id", "value": "san_ildefonso"},
+      "geometry_selector": {
+        "property": "id",
+        "value": "san_ildefonso"
+      },
       "geometry_semantics": "EXISTING_DEM_D8_CANDIDATE_REQUIRES_IBVF_FREEZE",
       "imerg_status": "NOT_STARTED",
       "remote_sensing_status": "STAC_CONTRACT_READY_WINDOW_NOT_FROZEN",
@@ -170,7 +223,10 @@
       "framework_stage": "PARALLEL_GEOMETRY_RESOLUTION",
       "geometry_status": "MULTIPLE_REVIEW_ONLY_CANDIDATE_SETS",
       "geometry_path": "data/watersheds/chosica_local_candidate_sets.geojson",
-      "geometry_selector": {"property": "quebrada_search_name", "value": "pedregal"},
+      "geometry_selector": {
+        "property": "quebrada_search_name",
+        "value": "pedregal"
+      },
       "geometry_semantics": "CANDIDATE_SET_NOT_A_VALIDATED_BASIN",
       "imerg_status": "NOT_STARTED",
       "remote_sensing_status": "STAC_CONTRACT_READY_WINDOW_NOT_FROZEN",
@@ -188,7 +244,10 @@
       "framework_stage": "PARALLEL_INTAKE",
       "geometry_status": "EXISTING_TEST_ONLY_WATERSHED_CANDIDATE",
       "geometry_path": "data/watersheds/huaycoloro_watershed.geojson",
-      "geometry_selector": {"property": "id", "value": "chosica"},
+      "geometry_selector": {
+        "property": "id",
+        "value": "chosica"
+      },
       "geometry_semantics": "EXISTING_DEM_D8_CANDIDATE_REQUIRES_IBVF_FREEZE",
       "imerg_status": "NOT_STARTED",
       "remote_sensing_status": "STAC_CONTRACT_READY_WINDOW_NOT_FROZEN",
@@ -198,5 +257,6 @@
       "production_ready": false,
       "operational_alerting_enabled": false
     }
-  ]
+  ],
+  "blind_sampling_contract_path": "data/validation/ibvf_blind_sampling_contract.json"
 }
