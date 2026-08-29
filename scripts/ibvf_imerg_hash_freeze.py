@@ -5,6 +5,10 @@ RESEARCH_ONLY / TEST_ONLY. Streams each CMR-resolved HDF5 through SHA-256 and
 discards bytes immediately; raw files are never committed or retained. The
 scientific presence contract comes from successful CMR inventory. Any auth or
 transport failure is BLOCKED/UNKNOWN_NOT_MISSING, never scientific MISSING.
+
+Version 0.2 requires an actual HDF5 file signature in the returned bytes before
+a granule can be counted as SUCCESS. HTTP status, size, extension, or MIME type
+alone are insufficient.
 """
 from __future__ import annotations
 
@@ -23,6 +27,22 @@ import requests
 import ibvf_imerg_inventory as inv
 from ibvf_imerg_auth_probe import select_raw_hdf5_url
 
+HDF5_MAGIC = b"\x89HDF\r\n\x1a\n"
+HDF5_PREFIX_BYTES = 65536
+
+
+def hdf5_signature_offset(prefix: bytes) -> int | None:
+    """Return a valid HDF5 signature offset, including allowed user-block offsets."""
+    offsets = [0]
+    value = 512
+    while value + len(HDF5_MAGIC) <= len(prefix):
+        offsets.append(value)
+        value *= 2
+    for offset in offsets:
+        if prefix[offset : offset + len(HDF5_MAGIC)] == HDF5_MAGIC:
+            return offset
+    return None
+
 
 def stream_hash(url: str, token: str | None, attempts: int = 3) -> dict[str, Any]:
     if not token:
@@ -33,7 +53,7 @@ def stream_hash(url: str, token: str | None, attempts: int = 3) -> dict[str, Any
         }
     headers = {
         "Authorization": f"Bearer {token}",
-        "User-Agent": "IRFEN-IBVF/0.3 RESEARCH_ONLY TEST_ONLY",
+        "User-Agent": "IRFEN-IBVF/0.4 RESEARCH_ONLY TEST_ONLY",
     }
     last: dict[str, Any] | None = None
     for attempt in range(1, attempts + 1):
@@ -59,9 +79,13 @@ def stream_hash(url: str, token: str | None, attempts: int = 3) -> dict[str, Any
                     }
                 h = hashlib.sha256()
                 n = 0
+                prefix = bytearray()
                 for chunk in r.iter_content(1024 * 1024):
                     if not chunk:
                         continue
+                    if len(prefix) < HDF5_PREFIX_BYTES:
+                        needed = HDF5_PREFIX_BYTES - len(prefix)
+                        prefix.extend(chunk[:needed])
                     h.update(chunk)
                     n += len(chunk)
                 if n <= 0:
@@ -71,15 +95,28 @@ def stream_hash(url: str, token: str | None, attempts: int = 3) -> dict[str, Any
                         "url": url,
                         "attempt": attempt,
                     }
-                else:
+                    continue
+                sig_offset = hdf5_signature_offset(bytes(prefix))
+                if sig_offset is None:
                     return {
-                        "status": "SUCCESS",
+                        "status": "NON_HDF5_PAYLOAD_SIGNATURE_MISSING",
                         "bytes": n,
                         "sha256": h.hexdigest(),
+                        "content_type": ctype or None,
+                        "scientific_data_status": "UNKNOWN_NOT_MISSING",
                         "url": url,
                         "attempt": attempt,
-                        "content_type": ctype or None,
                     }
+                return {
+                    "status": "SUCCESS",
+                    "bytes": n,
+                    "sha256": h.hexdigest(),
+                    "url": url,
+                    "attempt": attempt,
+                    "content_type": ctype or None,
+                    "hdf5_signature_verified": True,
+                    "hdf5_signature_offset": sig_offset,
+                }
         except Exception as exc:
             last = {
                 "status": "TRANSPORT_BLOCKED",
@@ -101,7 +138,7 @@ def freeze_row(row: dict[str, Any], token: str | None) -> dict[str, Any]:
     gid = str(row.get("producer_granule_id") or "")
     links = row.get("data_links") or []
     url, selection = select_raw_hdf5_url(links)
-    base = {
+    base_row = {
         "producer_granule_id": gid,
         "date": row.get("date"),
         "start_hhmmss": row.get("start_hhmmss"),
@@ -110,18 +147,18 @@ def freeze_row(row: dict[str, Any], token: str | None) -> dict[str, Any]:
     }
     if not url:
         return {
-            **base,
+            **base_row,
             "status": "NO_HDF5_OBJECT_URL_IN_CMR_METADATA",
             "scientific_data_status": "PRESENT_METADATA_RAW_LINK_UNRESOLVED",
         }
     if url.startswith("s3://"):
         return {
-            **base,
+            **base_row,
             "url": url,
             "status": "S3_ONLY_CREDENTIAL_FLOW_NOT_IMPLEMENTED",
             "scientific_data_status": "UNKNOWN_NOT_MISSING",
         }
-    return {**base, **stream_hash(url, token)}
+    return {**base_row, **stream_hash(url, token)}
 
 
 def manifest_sha256(rows: list[dict[str, Any]]) -> str | None:
@@ -175,11 +212,12 @@ def main() -> int:
 
     expected_total = int(source.get("expected_total_slots") or len(rows))
     inventory_complete = bool(source.get("window_all_slots_verified")) and len(rows) == expected_total
-    raw_complete = inventory_complete and len(results) == expected_total and len(success) == expected_total
-    event_complete = len(event) == 48 and len(event_success) == 48
+    signature_complete = len(success) == expected_total and all(x.get("hdf5_signature_verified") is True for x in success)
+    raw_complete = inventory_complete and len(results) == expected_total and signature_complete
+    event_complete = len(event) == 48 and len(event_success) == 48 and all(x.get("hdf5_signature_verified") is True for x in event_success)
 
     report = {
-        "schema_version": "irfen-ibvf-imerg-raw-hash-freeze-v0.1",
+        "schema_version": "irfen-ibvf-imerg-raw-hash-freeze-v0.2",
         "generated_at": inv.now(),
         "case_id": "cashahuacra_2015-03-23",
         "deployment_status": "RESEARCH_ONLY",
@@ -197,17 +235,18 @@ def main() -> int:
         "expected_event_granules": 48,
         "attempted_granules": len(results),
         "successful_hashes": len(success),
+        "hdf5_signatures_verified": sum(1 for x in success if x.get("hdf5_signature_verified") is True),
         "failed_or_blocked_hashes": len(failures),
         "event_successful_hashes": len(event_success),
         "event_48_raw_sha256_frozen": event_complete,
         "window_432_raw_sha256_frozen": raw_complete,
         "raw_byte_status": (
-            "COMPLETE_432_SHA256_FROZEN"
+            "COMPLETE_432_SHA256_AND_HDF5_SIGNATURE_FROZEN"
             if raw_complete
             else "BLOCKED_OR_INCOMPLETE_NOT_MISSING"
         ),
         "scientific_data_status": (
-            "PRESENT_RAW_BYTES_432_FROZEN"
+            "PRESENT_RAW_HDF5_BYTES_432_FROZEN"
             if raw_complete
             else "PRESENT_METADATA_RAW_BYTES_PARTIAL_OR_BLOCKED_NOT_MISSING"
         ),
@@ -221,7 +260,8 @@ def main() -> int:
         "failures": failures,
         "granules": results,
         "raw_files_retained": False,
-        "missing_data_rule": "AUTH_OR_TRANSPORT_FAILURE_IS_UNKNOWN_NOT_MISSING",
+        "hdf5_signature_rule": "MAGIC_89HDF0D0A1A0A_AT_OFFSET_0_OR_ALLOWED_POWER_OF_TWO_USER_BLOCK",
+        "missing_data_rule": "AUTH_OR_TRANSPORT_OR_PAYLOAD_VALIDATION_FAILURE_IS_UNKNOWN_NOT_MISSING",
         "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
     }
 
@@ -231,6 +271,7 @@ def main() -> int:
         "inventory_432": inventory_complete,
         "attempted": len(results),
         "success": len(success),
+        "hdf5_signatures": report["hdf5_signatures_verified"],
         "event48": event_complete,
         "window432": raw_complete,
         "bytes": report["total_bytes_hashed"],
