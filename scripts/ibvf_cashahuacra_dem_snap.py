@@ -8,8 +8,14 @@ threshold, or operational EVENT/NONE label is used to choose the outlet.
 The script freezes the exact Copernicus DEM GLO-30 tile by SHA-256, derives a
 conditioned D8 flow field, and independently selects the maximum-flow-
 accumulation cell inside four predeclared metric radii around the ANA seed.
-The outlet is considered stable only if all four selected cells cluster within
-45 m. Basin delineation is performed only after that stability gate passes.
+
+Version 0.2 adds a topology audit. A nested-radius maximum-accumulation search
+has an inherent downstream bias: as radius grows, the maximum can move farther
+down the same channel even when the channel itself is unambiguous. Therefore
+cluster distance remains a conservative freeze gate, but D8 connectivity is
+reported separately so radial objective drift is not misreported as evidence
+of multiple competing channels. Basin delineation remains blocked unless the
+predeclared cluster gate passes; the topology audit does not relax that gate.
 """
 from __future__ import annotations
 
@@ -27,9 +33,9 @@ import rasterio
 import requests
 from pyproj import Geod, Transformer
 from pysheds.grid import Grid
+from rasterio.features import shapes
 from rasterio.mask import mask as rio_mask
 from rasterio.transform import rowcol, xy
-from rasterio.features import shapes
 from shapely.geometry import box, mapping, shape
 from shapely.ops import unary_union
 
@@ -38,9 +44,18 @@ TILE_URL = f"https://copernicus-dem-30m.s3.amazonaws.com/{TILE_ID}/{TILE_ID}.tif
 ANA_SEED_UTM18S = {"easting_m": 318847.0, "northing_m": 8682257.0, "epsg": 32718}
 SNAP_RADII_M = [60.0, 120.0, 240.0, 360.0]
 STABILITY_MAX_CLUSTER_M = 45.0
-# Fixed processing window, declared before looking at the resulting outlet.
 PROCESS_BOUNDS_WGS84 = [-76.72, -11.94, -76.62, -11.82]
 DIRMAP = (64, 128, 1, 2, 4, 8, 16, 32)
+D8_OFFSETS = {
+    64: (-1, 0),
+    128: (-1, 1),
+    1: (0, 1),
+    2: (1, 1),
+    4: (1, 0),
+    8: (1, -1),
+    16: (0, -1),
+    32: (-1, -1),
+}
 GEOD = Geod(ellps="WGS84")
 
 
@@ -59,7 +74,7 @@ def sha256_file(path: Path, chunk: int = 1024 * 1024) -> str:
 def download(url: str, path: Path) -> dict[str, Any]:
     path.parent.mkdir(parents=True, exist_ok=True)
     try:
-        with requests.get(url, stream=True, timeout=180, headers={"User-Agent": "IRFEN-IBVF/0.1 RESEARCH_ONLY TEST_ONLY"}) as r:
+        with requests.get(url, stream=True, timeout=180, headers={"User-Agent": "IRFEN-IBVF/0.2 RESEARCH_ONLY TEST_ONLY"}) as r:
             r.raise_for_status()
             with path.open("wb") as f:
                 for chunk in r.iter_content(1024 * 1024):
@@ -105,7 +120,6 @@ def distance_m(lon1: float, lat1: float, lon2: float, lat2: float) -> float:
 
 def select_max_acc_within_radius(acc: np.ndarray, transform: Any, seed_lon: float, seed_lat: float, radius_m: float) -> dict[str, Any]:
     rr, cc = rowcol(transform, seed_lon, seed_lat)
-    # ~30 m GLO-30 cells; use generous pixel bound and exact geodesic filtering.
     pixel_radius = max(3, int(math.ceil(radius_m / 20.0)) + 2)
     best = None
     for r in range(max(0, rr - pixel_radius), min(acc.shape[0], rr + pixel_radius + 1)):
@@ -144,6 +158,72 @@ def cluster_max_distance(selections: list[dict[str, Any]]) -> float | None:
         for b in good[i + 1:]:
             mx = max(mx, distance_m(a["lon"], a["lat"], b["lon"], b["lat"]))
     return mx
+
+
+def trace_downstream_cells(fdir: np.ndarray, start: tuple[int, int], max_steps: int = 10000) -> list[tuple[int, int]]:
+    r, c = start
+    visited: list[tuple[int, int]] = []
+    seen: set[tuple[int, int]] = set()
+    for _ in range(max_steps):
+        cell = (int(r), int(c))
+        if cell in seen:
+            break
+        if not (0 <= r < fdir.shape[0] and 0 <= c < fdir.shape[1]):
+            break
+        visited.append(cell)
+        seen.add(cell)
+        try:
+            code = int(fdir[r, c])
+        except (TypeError, ValueError, OverflowError):
+            break
+        offset = D8_OFFSETS.get(code)
+        if offset is None:
+            break
+        r += offset[0]
+        c += offset[1]
+    return visited
+
+
+def topology_audit(selections: list[dict[str, Any]], fdir: np.ndarray) -> dict[str, Any]:
+    good = [s for s in selections if s.get("status") == "SELECTED"]
+    if len(good) != len(SNAP_RADII_M):
+        return {
+            "status": "UNKNOWN_INCOMPLETE_SELECTIONS",
+            "same_d8_channel_downstream_order": None,
+            "accumulation_monotonic_non_decreasing": None,
+        }
+
+    ordered = sorted(good, key=lambda x: float(x["radius_m"]))
+    pair_checks = []
+    all_downstream = True
+    for a, b in zip(ordered, ordered[1:]):
+        path = set(trace_downstream_cells(fdir, (a["row"], a["col"])))
+        b_cell = (b["row"], b["col"])
+        is_downstream = b_cell in path
+        all_downstream = all_downstream and is_downstream
+        pair_checks.append({
+            "from_radius_m": a["radius_m"],
+            "to_radius_m": b["radius_m"],
+            "to_cell_is_on_downstream_d8_path": is_downstream,
+        })
+
+    acc_values = [float(s["accumulation_cells"]) for s in ordered]
+    monotonic = all(b >= a for a, b in zip(acc_values, acc_values[1:]))
+    if all_downstream and monotonic:
+        status = "SAME_D8_CHANNEL_DOWNSTREAM_RADIAL_DRIFT"
+    elif all_downstream:
+        status = "SAME_D8_CHANNEL_NONMONOTONIC_ACCUMULATION_REVIEW_REQUIRED"
+    else:
+        status = "MULTICHANNEL_OR_TOPOLOGY_AMBIGUITY_REVIEW_REQUIRED"
+    return {
+        "status": status,
+        "same_d8_channel_downstream_order": all_downstream,
+        "accumulation_monotonic_non_decreasing": monotonic,
+        "pair_checks": pair_checks,
+        "interpretation": (
+            "Nested-radius maximum accumulation can drift downstream by construction; topology is reported separately and does not relax the coordinate-cluster freeze gate."
+        ),
+    }
 
 
 def geodesic_area_km2(geom: Any) -> float:
@@ -185,7 +265,7 @@ def main() -> int:
 
     seed_lon, seed_lat = seed_lonlat()
     report: dict[str, Any] = {
-        "schema_version": "irfen-ibvf-cashahuacra-dem-snap-v0.1",
+        "schema_version": "irfen-ibvf-cashahuacra-dem-snap-v0.2",
         "generated_at": now(),
         "case_id": "cashahuacra_2015-03-23",
         "deployment_status": "RESEARCH_ONLY",
@@ -202,6 +282,7 @@ def main() -> int:
             "radii_m": SNAP_RADII_M,
             "selection": "MAXIMUM_D8_FLOW_ACCUMULATION_WITHIN_RADIUS_NO_TARGET_AREA_USED",
             "stable_if_all_four_selected_cells_cluster_within_m": STABILITY_MAX_CLUSTER_M,
+            "topology_audit_relaxes_cluster_gate": False,
             "morphometry_before_stable_snap_forbidden": True,
         },
     }
@@ -226,19 +307,26 @@ def main() -> int:
             conditioned = grid.resolve_flats(conditioned)
             fdir = grid.flowdir(conditioned, dirmap=DIRMAP)
             acc = grid.accumulation(fdir, dirmap=DIRMAP)
+            fdir_arr = np.asarray(fdir)
             with rasterio.open(cropped) as src:
                 transform = src.transform
 
             selections = [select_max_acc_within_radius(np.asarray(acc), transform, seed_lon, seed_lat, r) for r in SNAP_RADII_M]
             max_cluster = cluster_max_distance(selections)
             stable = max_cluster is not None and max_cluster <= STABILITY_MAX_CLUSTER_M
+            topo = topology_audit(selections, fdir_arr)
             report["snap_sensitivity"] = selections
             report["max_selected_outlet_cluster_distance_m"] = None if max_cluster is None else round(max_cluster, 3)
-            report["snap_status"] = "STABLE" if stable else "UNSTABLE_REVIEW_REQUIRED"
+            report["topology_audit"] = topo
+            if stable:
+                report["snap_status"] = "STABLE_CLUSTER"
+            elif topo.get("status") == "SAME_D8_CHANNEL_DOWNSTREAM_RADIAL_DRIFT":
+                report["snap_status"] = "UNSTABLE_CLUSTER_SAME_CHANNEL_RADIAL_OBJECTIVE_DRIFT"
+            else:
+                report["snap_status"] = "UNSTABLE_REVIEW_REQUIRED"
             report["scientific_data_status"] = "PRESENT"
 
             if stable:
-                # Use the smallest-radius selection, since all selections are required to converge.
                 chosen = selections[0]
                 report["selected_outlet"] = chosen
                 basin = delineate_if_stable(grid, fdir, transform, chosen)
@@ -251,11 +339,22 @@ def main() -> int:
                     args.basin_output.parent.mkdir(parents=True, exist_ok=True)
                     args.basin_output.write_text(json.dumps(basin, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
             else:
-                report["post_stability_geometry"] = {"delineated": False, "morphometry_status": "BLOCKED_UNSTABLE_SNAP"}
+                report["post_stability_geometry"] = {
+                    "delineated": False,
+                    "morphometry_status": "BLOCKED_CLUSTER_GATE_NOT_PASSED",
+                    "next_methodological_step": "PREDECLARE_AND_TEST_NEAREST_SAME_CHANNEL_SNAP_RULE_WITHOUT_TARGET_AREA",
+                }
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(json.dumps({"dem": report["dem"].get("acquisition"), "snap_status": report.get("snap_status"), "cluster_m": report.get("max_selected_outlet_cluster_distance_m"), "selected": report.get("selected_outlet"), "post": report.get("post_stability_geometry")}, indent=2))
+    print(json.dumps({
+        "dem": report["dem"].get("acquisition"),
+        "snap_status": report.get("snap_status"),
+        "cluster_m": report.get("max_selected_outlet_cluster_distance_m"),
+        "topology": report.get("topology_audit"),
+        "selected": report.get("selected_outlet"),
+        "post": report.get("post_stability_geometry"),
+    }, indent=2))
     return 0
 
 
