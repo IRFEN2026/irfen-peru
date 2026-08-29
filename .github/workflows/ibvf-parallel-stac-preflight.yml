@@ -1,0 +1,79 @@
+name: IBVF - Parallel A1 STAC preflight
+
+on:
+  push:
+    branches:
+      - agent/independent-basin-validation-map
+    paths:
+      - 'scripts/ibvf_parallel_stac_preflight.py'
+      - '.github/workflows/ibvf-parallel-stac-preflight.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  blind-a1-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check 'requests>=2.31,<3'
+      - name: Compile blind preflight
+        run: python -m py_compile scripts/ibvf_parallel_stac_preflight.py
+      - name: Query Earth Search without selecting windows or reading outcomes
+        run: |
+          mkdir -p artifacts/ibvf
+          python scripts/ibvf_parallel_stac_preflight.py \
+            --map site/data/validation/independent_basin_validation_map.json \
+            --output artifacts/ibvf/ibvf_parallel_stac_preflight.json
+      - name: Enforce research-only blind semantics
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/ibvf/ibvf_parallel_stac_preflight.json',encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY' and d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False and d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False and d['territorial_activation_evidence_blinded'] is True
+          assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
+          assert d['blind_window_selection_performed'] is False
+          assert d['case_control_assignment_performed'] is False
+          assert d['sensor_availability_deletes_calendar_days'] is False
+          assert d['territorial_outcome_fields_read'] is False
+          assert d['transport_failure_is_missing_data'] is False
+          assert d['summary']['track_count']==4
+          assert d['status'] in {'A1_SENSOR_CATALOG_PREFLIGHT_COMPLETE_NO_WINDOW_SELECTED','A1_SENSOR_CATALOG_PREFLIGHT_PARTIAL_TRANSPORT_BLOCKED_NOT_MISSING'}
+          for track in d['tracks']:
+              assert track.get('a0_case_control_role') in {None,'UNASSIGNED'}
+              assert track.get('blind_window')=='NOT_YET_SELECTED_FROM_FROZEN_POOL'
+              for c in track.get('collections',[]):
+                  assert c['scientific_data_status'] in {'PRESENT_CATALOG','NO_CATALOG_ITEM_IN_QUERY_WINDOW_NOT_IMPUTED','UNKNOWN_TRANSPORT_BLOCKED_NOT_MISSING'}
+          print(json.dumps(d['summary'],indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ibvf-parallel-a1-stac-preflight-${{ github.sha }}
+          path: artifacts/ibvf/ibvf_parallel_stac_preflight.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Archive preflight on research branch
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          cp artifacts/ibvf/ibvf_parallel_stac_preflight.json site/data/validation/ibvf_parallel_stac_preflight.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add site/data/validation/ibvf_parallel_stac_preflight.json
+          if git diff --cached --quiet; then
+            echo 'No preflight report change.'
+          else
+            git commit -m 'IBVF: archive blind multipista A1 STAC preflight'
+            git fetch origin "$BRANCH"
+            git rebase "origin/$BRANCH"
+            git push origin HEAD:"$BRANCH"
+          fi
