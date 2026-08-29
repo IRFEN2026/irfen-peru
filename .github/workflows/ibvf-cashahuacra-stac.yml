@@ -6,6 +6,7 @@ on:
       - 'scripts/ibvf_stac_inventory.py'
       - 'scripts/ibvf_landsat_aoi_qa.py'
       - 'scripts/ibvf_cashahuacra_dem_snap.py'
+      - 'scripts/ibvf_cashahuacra_nearest_channel_snap.py'
       - 'site/data/validation/cashahuacra_stac_probe.json'
       - 'site/data/validation/independent_basin_validation_map.json'
       - '.github/workflows/ibvf-cashahuacra-stac.yml'
@@ -26,7 +27,7 @@ jobs:
       - name: Install scientific QA dependencies
         run: python -m pip install --disable-pip-version-check 'numpy>=1.26,<2' 'rasterio>=1.3,<2' 'pystac-client>=0.8,<1' 'planetary-computer>=1,<2' 'requests>=2.31,<3' 'pysheds>=0.4,<0.5' 'shapely>=2,<3' 'pyproj>=3.6,<4'
       - name: Validate research scripts
-        run: python -m py_compile scripts/ibvf_stac_inventory.py scripts/ibvf_landsat_aoi_qa.py scripts/ibvf_cashahuacra_dem_snap.py
+        run: python -m py_compile scripts/ibvf_stac_inventory.py scripts/ibvf_landsat_aoi_qa.py scripts/ibvf_cashahuacra_dem_snap.py scripts/ibvf_cashahuacra_nearest_channel_snap.py
       - name: Query Earth Search STAC
         run: |
           mkdir -p artifacts/ibvf
@@ -76,16 +77,21 @@ jobs:
             --date 2015-04-19 \
             --download-dir artifacts/ibvf/landsat-qa-raw \
             --output artifacts/ibvf/cashahuacra_landsat_aoi_qa.json
-      - name: Freeze Copernicus DEM and test hydrologic snap stability
+      - name: Retain original radial DEM snap audit
         run: |
           python scripts/ibvf_cashahuacra_dem_snap.py \
             --output artifacts/ibvf/cashahuacra_dem_snap.json \
-            --basin-output artifacts/ibvf/cashahuacra_stable_basin.geojson
+            --basin-output artifacts/ibvf/cashahuacra_stable_basin_legacy_gate.geojson
+      - name: Test predeclared nearest-same-channel snap rule
+        run: |
+          python scripts/ibvf_cashahuacra_nearest_channel_snap.py \
+            --output artifacts/ibvf/cashahuacra_nearest_channel_snap.json \
+            --basin-output artifacts/ibvf/cashahuacra_stable_basin_v03.geojson
       - name: Guardrails
         run: |
           python - <<'PY'
           import json
-          paths=['artifacts/ibvf/cashahuacra_stac_inventory.json','artifacts/ibvf/cashahuacra_landsat_aoi_qa.json','artifacts/ibvf/cashahuacra_dem_snap.json']
+          paths=['artifacts/ibvf/cashahuacra_stac_inventory.json','artifacts/ibvf/cashahuacra_landsat_aoi_qa.json','artifacts/ibvf/cashahuacra_dem_snap.json','artifacts/ibvf/cashahuacra_nearest_channel_snap.json']
           for p in paths:
               d=json.load(open(p,encoding='utf-8'))
               assert d['deployment_status']=='RESEARCH_ONLY'
@@ -97,9 +103,13 @@ jobs:
           inv=json.load(open(paths[0],encoding='utf-8'))
           qa=json.load(open(paths[1],encoding='utf-8'))
           dem=json.load(open(paths[2],encoding='utf-8'))
+          near=json.load(open(paths[3],encoding='utf-8'))
+          assert near['contract']['target_basin_area_used'] is False
+          assert near['contract']['territorial_activation_evidence_used'] is False
           print([(x['collection'],x.get('transport_status'),x.get('item_count')) for x in inv['collections']])
           print('LANDSAT',qa['completeness_status'])
-          print('DEM_SNAP',dem['snap_status'],dem.get('max_selected_outlet_cluster_distance_m'),dem.get('selected_outlet'),dem.get('post_stability_geometry'))
+          print('DEM_RADIAL',dem['snap_status'],dem.get('max_selected_outlet_cluster_distance_m'))
+          print('DEM_NEAREST',near['snap_status'],near.get('nearest_same_channel'),near.get('selected_outlet'),near.get('morphometry_status'),near.get('morphometry'))
           PY
       - uses: actions/upload-artifact@v4
         with:
@@ -109,6 +119,8 @@ jobs:
             artifacts/ibvf/cashahuacra_stac_inventory_transport.json
             artifacts/ibvf/cashahuacra_landsat_aoi_qa.json
             artifacts/ibvf/cashahuacra_dem_snap.json
-            artifacts/ibvf/cashahuacra_stable_basin.geojson
+            artifacts/ibvf/cashahuacra_nearest_channel_snap.json
+            artifacts/ibvf/cashahuacra_stable_basin_legacy_gate.geojson
+            artifacts/ibvf/cashahuacra_stable_basin_v03.geojson
           if-no-files-found: warn
           retention-days: 30
