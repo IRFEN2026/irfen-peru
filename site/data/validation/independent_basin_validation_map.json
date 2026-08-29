@@ -1,6 +1,6 @@
 {
-  "version": "irfen-independent-basin-validation-map-v1.7",
-  "generated_at": "2026-08-29T14:21:27.118009Z",
+  "version": "irfen-independent-basin-validation-map-v1.8",
+  "generated_at": "2026-08-29T14:23:54.088757Z",
   "framework": "IRFEN Independent Basin Validation Framework",
   "deployment_status": "RESEARCH_ONLY",
   "test_only": true,
@@ -56,8 +56,9 @@
       "blind_sampling_contract": "PREREGISTERED_BEFORE_PARALLEL_WINDOW_UNBLINDING",
       "github_actions_sentinel1_a4_r1": "SUCCESS_BOTH_DATES_NATIVE_RADIOMETRIC_NO_COMPARISON",
       "sentinel1_a4_r2_contract": "PREREGISTERED_BLOCKED_VERTICAL_DATUM_AND_ORBIT_AUX_IDENTITY",
-      "parallel_a0_pool": "FROZEN_2907_DAYS_PER_LIMA_TRACK_8721_TRACK_DAY_WINDOWS_NO_SELECTION",
-      "sentinel1_a4_r2_prerequisite_freezer": "IMPLEMENTED_EXECUTION_PENDING"
+      "parallel_a0_pool": "FROZEN_2907_DAYS_PER_TRACK_4_TRACKS_11628_TRACK_DAY_WINDOWS_NO_SELECTION",
+      "sentinel1_a4_r2_prerequisite_freezer": "IMPLEMENTED_EXECUTION_PENDING",
+      "meteorological_ranking_contract": "PREREGISTERED_6_FIXED_PERCENTILE_STRATA_PER_TRACK_SEASON_NO_EXECUTION"
     },
     "imerg_basin_features_script": "scripts/ibvf_imerg_basin_features_v02.py",
     "imerg_timebasis_audit_script": "scripts/ibvf_imerg_timebasis_audit.py",
@@ -67,7 +68,8 @@
     "sentinel1_r2_contract": "site/data/validation/cashahuacra_sentinel1_r2_contract.json",
     "parallel_a0_pool": "site/data/validation/ibvf_parallel_a0_pool_inventory.json",
     "sentinel1_r2_prerequisites_contract": "site/data/validation/cashahuacra_sentinel1_r2_prerequisites_contract.json",
-    "sentinel1_r2_prerequisites_script": "scripts/ibvf_sentinel1_r2_freeze_prerequisites.py"
+    "sentinel1_r2_prerequisites_script": "scripts/ibvf_sentinel1_r2_freeze_prerequisites.py",
+    "meteorological_ranking_contract": "site/data/validation/ibvf_meteorological_ranking_contract.json"
   },
   "guardrails": {
     "no_risk_colors": true,
@@ -203,7 +205,7 @@
       "unit_id": "shingolay",
       "name": "Quebrada Shingolay",
       "blind_window": "NOT_YET_SELECTED_FROM_FROZEN_POOL",
-      "framework_stage": "A0_EXHAUSTIVE_POOL_FROZEN_NO_WINDOW_SELECTED",
+      "framework_stage": "A0_EXHAUSTIVE_POOL_AND_RANKING_CONTRACT_FROZEN_NO_WINDOW_SELECTED",
       "geometry_status": "EXISTING_REVIEW_ONLY_CANDIDATE",
       "geometry_path": "data/phase2/geometries/w1_santa_eulalia_rimac.geojson",
       "geometry_selector": {
@@ -220,14 +222,15 @@
       "operational_alerting_enabled": false,
       "a0_pool_status": "FROZEN_2907_UNASSIGNED_LOCAL_DAYS",
       "a0_pool_path": "data/validation/ibvf_parallel_a0_pool_inventory.json",
-      "a0_case_control_role": "UNASSIGNED"
+      "a0_case_control_role": "UNASSIGNED",
+      "meteorological_ranking_status": "PREREGISTERED_NOT_EXECUTED"
     },
     {
       "case_id": "san_ildefonso_parallel_intake",
       "unit_id": "san_ildefonso",
       "name": "Quebrada San Ildefonso",
-      "blind_window": "NOT_YET_FROZEN",
-      "framework_stage": "PARALLEL_INTAKE",
+      "blind_window": "NOT_YET_SELECTED_FROM_FROZEN_POOL",
+      "framework_stage": "A0_EXHAUSTIVE_POOL_AND_RANKING_CONTRACT_FROZEN_NO_WINDOW_SELECTED",
       "geometry_status": "EXISTING_TEST_ONLY_WATERSHED_CANDIDATE",
       "geometry_path": "data/watersheds/san_ildefonso_watershed.geojson",
       "geometry_selector": {
@@ -241,14 +244,18 @@
       "blind_status": "TERRITORIAL_EVIDENCE_SEALED",
       "production_use": false,
       "production_ready": false,
-      "operational_alerting_enabled": false
+      "operational_alerting_enabled": false,
+      "a0_pool_status": "FROZEN_2907_UNASSIGNED_LOCAL_DAYS",
+      "a0_pool_path": "data/validation/ibvf_parallel_a0_pool_inventory.json",
+      "a0_case_control_role": "UNASSIGNED",
+      "meteorological_ranking_status": "PREREGISTERED_NOT_EXECUTED"
     },
     {
       "case_id": "pedregal_parallel_geometry",
       "unit_id": "pedregal",
       "name": "Quebrada Pedregal",
       "blind_window": "NOT_YET_SELECTED_FROM_FROZEN_POOL",
-      "framework_stage": "A0_EXHAUSTIVE_POOL_FROZEN_NO_WINDOW_SELECTED",
+      "framework_stage": "A0_EXHAUSTIVE_POOL_AND_RANKING_CONTRACT_FROZEN_NO_WINDOW_SELECTED",
       "geometry_status": "MULTIPLE_REVIEW_ONLY_CANDIDATE_SETS",
       "geometry_path": "data/watersheds/chosica_local_candidate_sets.geojson",
       "geometry_selector": {
@@ -265,14 +272,15 @@
       "operational_alerting_enabled": false,
       "a0_pool_status": "FROZEN_2907_UNASSIGNED_LOCAL_DAYS",
       "a0_pool_path": "data/validation/ibvf_parallel_a0_pool_inventory.json",
-      "a0_case_control_role": "UNASSIGNED"
+      "a0_case_control_role": "UNASSIGNED",
+      "meteorological_ranking_status": "PREREGISTERED_NOT_EXECUTED"
     },
     {
       "case_id": "huaycoloro_parallel_intake",
       "unit_id": "huaycoloro",
       "name": "Quebrada Huaycoloro",
       "blind_window": "NOT_YET_SELECTED_FROM_FROZEN_POOL",
-      "framework_stage": "A0_EXHAUSTIVE_POOL_FROZEN_NO_WINDOW_SELECTED",
+      "framework_stage": "A0_EXHAUSTIVE_POOL_AND_RANKING_CONTRACT_FROZEN_NO_WINDOW_SELECTED",
       "geometry_status": "EXISTING_TEST_ONLY_WATERSHED_CANDIDATE",
       "geometry_path": "data/watersheds/huaycoloro_watershed.geojson",
       "geometry_selector": {
@@ -289,22 +297,27 @@
       "operational_alerting_enabled": false,
       "a0_pool_status": "FROZEN_2907_UNASSIGNED_LOCAL_DAYS",
       "a0_pool_path": "data/validation/ibvf_parallel_a0_pool_inventory.json",
-      "a0_case_control_role": "UNASSIGNED"
+      "a0_case_control_role": "UNASSIGNED",
+      "meteorological_ranking_status": "PREREGISTERED_NOT_EXECUTED"
     }
   ],
   "blind_sampling_contract_path": "data/validation/ibvf_blind_sampling_contract.json",
   "parallel_a0_pool_path": "data/validation/ibvf_parallel_a0_pool_inventory.json",
-  "parallel_a0_pool_status": "FROZEN_EXHAUSTIVE_CALENDAR_NO_WINDOW_SELECTED",
+  "parallel_a0_pool_status": "FROZEN_EXHAUSTIVE_FOUR_TRACK_CALENDAR_NO_WINDOW_SELECTED",
   "parallel_a0_pool_summary": {
     "tracks": [
       "shingolay",
       "pedregal",
-      "huaycoloro"
+      "huaycoloro",
+      "san_ildefonso"
     ],
     "season_count": 12,
     "unique_calendar_days_per_track": 2907,
-    "track_day_windows": 8721,
+    "track_day_windows": 11628,
     "case_control_assignment_allowed": false,
-    "meteorological_ranking_status": "NOT_YET_FROZEN_NO_WINDOW_SELECTED"
-  }
+    "meteorological_ranking_status": "PREREGISTERED_NOT_EXECUTED_NO_WINDOW_SELECTED",
+    "maximum_primary_stratified_windows": 288
+  },
+  "meteorological_ranking_contract_path": "data/validation/ibvf_meteorological_ranking_contract.json",
+  "meteorological_ranking_status": "PREREGISTERED_NOT_EXECUTED_NO_WINDOW_SELECTED"
 }
