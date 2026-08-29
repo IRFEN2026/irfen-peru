@@ -1,0 +1,85 @@
+{
+  "schema_version": "irfen-ibvf-meteorological-ranking-v0.1",
+  "generated_at": "2026-08-29T14:29:00Z",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
+  "source_pool_contract": "site/data/validation/ibvf_parallel_window_pool_contract.json",
+  "source_pool_inventory": "site/data/validation/ibvf_parallel_a0_pool_inventory.json",
+  "purpose": "Pre-register deterministic meteorological stratification before computing rankings or selecting any parallel window, without Cashahuacra magnitudes or territorial outcomes.",
+  "inputs_allowed": {
+    "geometry": "FROZEN_OR_EXPLICIT_REVIEW_ONLY_TRACK_GEOMETRY_ONLY",
+    "IMERG_Final_V07": true,
+    "local_calendar": "America/Lima",
+    "sensor_availability": "MAY_BE_RECORDED_BUT_DOES_NOT_CHANGE_PRIMARY_METEOROLOGICAL_SELECTION",
+    "cashahuacra_remote_magnitudes": false,
+    "territorial_outcomes": false,
+    "known_event_dates": false,
+    "damage_or_incident_reports": false
+  },
+  "daily_features": [
+    {
+      "id": "P3H_MAX",
+      "definition": "maximum rolling 3-hour IMERG depth within local calendar day D",
+      "reason": "short-duration rainfall intensity proxy"
+    },
+    {
+      "id": "P24H_LOCAL",
+      "definition": "IMERG total from local 00:00 through 24:00 on D",
+      "reason": "anchor-day rainfall accumulation"
+    },
+    {
+      "id": "ANTECEDENT_7D",
+      "definition": "IMERG total during seven full local days ending at local 00:00 at start of D",
+      "reason": "antecedent wetness proxy without using outcome time"
+    }
+  ],
+  "normalization": {
+    "scope": "WITHIN_TRACK_WITHIN_SEASON",
+    "method": "EMPIRICAL_MIDRANK_PERCENTILE",
+    "ties": "AVERAGE_RANK",
+    "missing_feature": "WINDOW_RETAINED_RANK_UNKNOWN_NO_IMPUTATION",
+    "cross_track_absolute_thresholds": false
+  },
+  "composite_score": {
+    "formula": "MEAN(PCT_P3H_MAX,PCT_P24H_LOCAL,PCT_ANTECEDENT_7D)",
+    "weights": [0.3333333333333333,0.3333333333333333,0.3333333333333333],
+    "weights_tuned_on_cashahuacra": false,
+    "score_semantics": "METEOROLOGICAL_STRATIFICATION_ONLY_NOT_RISK_NOT_ACTIVATION_PROBABILITY"
+  },
+  "primary_selection": {
+    "target_empirical_percentiles": [0.0,0.2,0.4,0.6,0.8,1.0],
+    "targets_per_track_season": 6,
+    "target_order": [1.0,0.0,0.8,0.2,0.6,0.4],
+    "selection_rule": "For each target, among still-unselected days with known composite score and anchor distance >=9 local calendar days from all already-selected anchors in the same track-season, choose the day whose composite percentile is closest to the target.",
+    "tie_break_1": "SMALLEST_ABSOLUTE_PERCENTILE_DISTANCE",
+    "tie_break_2": "EARLIEST_LOCAL_CALENDAR_DATE",
+    "minimum_anchor_separation_days": 9,
+    "reason_for_separation": "Nine-day D-7 through D+1 scientific windows must not overlap in the primary stratified cohort.",
+    "no_eligible_day": "STRATUM_UNAVAILABLE_NO_REPLACEMENT_FROM_OTHER_SEASON",
+    "maximum_primary_windows": 288,
+    "expected_maximum_if_all_strata_available": "4 tracks x 12 seasons x 6 targets",
+    "sensor_missing_after_selection": "RETAIN_SELECTED_WINDOW_AND_RECORD_MISSING_OR_UNKNOWN"
+  },
+  "role_semantics": {
+    "selected_window_role": "BLIND_METEOROLOGICAL_STRATUM",
+    "case_control_assignment_after_selection": false,
+    "case_control_assignment_after_A1_A5_freeze": false,
+    "case_control_assignment_only_after_independent_territorial_unblind": true
+  },
+  "forbidden_post_hoc_actions": [
+    "change feature set after inspecting selected dates",
+    "change percentile targets after inspecting selected dates",
+    "replace selected window because Sentinel-1 or Landsat is missing",
+    "replace selected window because territorial evidence is inconvenient",
+    "tune weights using Cashahuacra feature magnitudes",
+    "interpret score as risk or activation probability"
+  ],
+  "execution_status": "PREREGISTERED_NOT_YET_EXECUTED",
+  "serious_modeling_allowed": false
+}
