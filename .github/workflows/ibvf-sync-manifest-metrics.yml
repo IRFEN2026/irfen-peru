@@ -9,7 +9,9 @@ on:
       - 'site/data/validation/cashahuacra_imerg_timebasis_audit.json'
       - 'site/data/validation/cashahuacra_sentinel1_r1.json'
       - 'site/data/validation/cashahuacra_sentinel1_r2_contract.json'
+      - 'site/data/validation/cashahuacra_sentinel1_r2_prerequisites_contract.json'
       - 'site/data/validation/ibvf_blind_sampling_contract.json'
+      - 'site/data/validation/ibvf_parallel_a0_pool_inventory.json'
   workflow_dispatch:
 
 permissions:
@@ -26,7 +28,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Sync only verified blind observational metrics
+      - name: Sync only verified blind scientific state
         run: |
           python scripts/ibvf_sync_manifest_metrics.py \
             --manifest site/data/validation/independent_basin_validation_map.json \
@@ -34,10 +36,12 @@ jobs:
             --timebasis site/data/validation/cashahuacra_imerg_timebasis_audit.json \
             --sampling-contract site/data/validation/ibvf_blind_sampling_contract.json \
             --sentinel-r1 site/data/validation/cashahuacra_sentinel1_r1.json \
-            --sentinel-r2-contract site/data/validation/cashahuacra_sentinel1_r2_contract.json
+            --sentinel-r2-contract site/data/validation/cashahuacra_sentinel1_r2_contract.json \
+            --sentinel-r2-prereq-contract site/data/validation/cashahuacra_sentinel1_r2_prerequisites_contract.json \
+            --parallel-a0-pool site/data/validation/ibvf_parallel_a0_pool_inventory.json
       - name: Validate multipista manifest guardrails
         run: python scripts/ibvf_validate_case_manifest.py site/data/validation/independent_basin_validation_map.json
-      - name: Additional A4 R2 guards
+      - name: Additional A4 R2 and A0 pool guards
         run: |
           python - <<'PY'
           import json
@@ -48,16 +52,25 @@ jobs:
           assert d['production_use'] is False and d['production_ready'] is False and d['operational_alerting_enabled'] is False
           assert d['uses_operational_event_none_labels'] is False
           assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
-          assert c['framework_stage']=='A4_R1_NATIVE_RADIOMETRIC_COMPLETE_R2_PREREGISTERED_BLOCKED_AUX_IDENTITY'
+          assert c['framework_stage']=='A4_R1_COMPLETE_R2_PREREQUISITE_FREEZER_IMPLEMENTED_GATE_PENDING'
           assert c['sentinel1_r1_status']=='COMPLETE_BOTH_DATES_NO_COMPARISON'
           assert c['sentinel1_r1_comparison_performed'] is False
           assert c['sentinel1_r1_common_support_established'] is False
           assert c['sentinel1_r2_status']=='PREREGISTERED_R2_BLOCKED_ON_VERTICAL_DATUM_AND_ORBIT_AUX_IDENTITY'
+          assert c['sentinel1_r2_prerequisites_status']=='PREREGISTERED_EXECUTABLE_PREREQUISITE_FREEZE_PENDING'
           assert c['sentinel1_r2_vertical_datum_gate']=='BLOCKED_UNTIL_VERTICAL_TRANSFORM_IS_FROZEN'
           assert c['sentinel1_r2_orbit_gate']=='PENDING_EXACT_AUX_ORBIT_FREEZE'
           assert c['smap_status']=='MISSING_FOR_EVENT_WINDOW'
           assert c['blind_status']=='TERRITORIAL_EVIDENCE_SEALED'
-          print(json.dumps({'version':d['version'],'case':c['case_id'],'stage':c['framework_stage'],'s1_r2':c['sentinel1_r2_status'],'gate':d['serious_modeling_gate']},indent=2))
+          assert d['parallel_a0_pool_status']=='FROZEN_EXHAUSTIVE_CALENDAR_NO_WINDOW_SELECTED'
+          assert d['parallel_a0_pool_summary']['track_day_windows']==8721
+          assert d['parallel_a0_pool_summary']['case_control_assignment_allowed'] is False
+          for unit in ('shingolay','pedregal','huaycoloro'):
+              x=next(v for v in d['cases'] if v['unit_id']==unit)
+              assert x['framework_stage']=='A0_EXHAUSTIVE_POOL_FROZEN_NO_WINDOW_SELECTED'
+              assert x['a0_case_control_role']=='UNASSIGNED'
+              assert x['blind_status']=='TERRITORIAL_EVIDENCE_SEALED'
+          print(json.dumps({'version':d['version'],'cashahuacra_stage':c['framework_stage'],'parallel_pool':d['parallel_a0_pool_status'],'gate':d['serious_modeling_gate']},indent=2))
           PY
       - name: Commit manifest only to research branch
         if: github.event_name == 'pull_request'
@@ -70,7 +83,7 @@ jobs:
           if git diff --cached --quiet; then
             echo 'No manifest change.'
           else
-            git commit -m 'IBVF: publish preregistered Cashahuacra A4 R2 gate in research map manifest'
+            git commit -m 'IBVF: publish R2 prerequisite and blind A0 pool status in research map manifest'
             git fetch origin "$BRANCH"
             git rebase "origin/$BRANCH"
             git push origin HEAD:"$BRANCH"
