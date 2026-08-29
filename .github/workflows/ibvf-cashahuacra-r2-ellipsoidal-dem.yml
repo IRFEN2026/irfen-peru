@@ -1,0 +1,71 @@
+name: IBVF Cashahuacra R2 ellipsoidal DEM
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/ibvf_cashahuacra_r2_ellipsoidal_dem.py'
+      - 'site/data/validation/cashahuacra_r2_ellipsoidal_dem_contract.json'
+      - 'site/data/validation/cashahuacra_sentinel1_r2_prerequisites.json'
+      - '.github/workflows/ibvf-cashahuacra-r2-ellipsoidal-dem.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  convert-and-freeze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install exact runtime families
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install 'requests>=2.31,<3' 'numpy>=1.26,<2' 'rasterio>=1.3,<2' 'pyproj>=3.6,<4' 'shapely>=2,<3'
+      - name: Static blinded guards
+        run: |
+          python -m py_compile scripts/ibvf_cashahuacra_r2_ellipsoidal_dem.py
+          python - <<'PY'
+          import json
+          c=json.load(open('site/data/validation/cashahuacra_r2_ellipsoidal_dem_contract.json',encoding='utf-8'))
+          p=json.load(open('site/data/validation/cashahuacra_sentinel1_r2_prerequisites.json',encoding='utf-8'))
+          for d in (c,p):
+              assert d['production_use'] is False and d['production_ready'] is False and d['operational_alerting_enabled'] is False
+              assert d['uses_operational_event_none_labels'] is False
+              assert d['territorial_activation_evidence_blinded'] is True
+          assert p['r2_prerequisite_gate']=='PASS'
+          assert c['pre_post_sar_values_read'] is False and c['pre_post_difference_allowed'] is False and c['activation_inference_allowed'] is False
+          print('ellipsoidal DEM contract guards: PASS')
+          PY
+      - name: Convert exact GLO-30 crop to WGS84 ellipsoidal heights
+        run: |
+          mkdir -p /tmp/ibvf-ellipsoid-dem
+          python scripts/ibvf_cashahuacra_r2_ellipsoidal_dem.py \
+            --contract site/data/validation/cashahuacra_r2_ellipsoidal_dem_contract.json \
+            --prerequisites site/data/validation/cashahuacra_sentinel1_r2_prerequisites.json \
+            --output-dem /tmp/ibvf-ellipsoid-dem/cashahuacra_glo30_wgs84_ellipsoidal.tif \
+            --output-report /tmp/ibvf-ellipsoid-dem/cashahuacra_r2_ellipsoidal_dem.json \
+            | tee /tmp/ibvf-ellipsoid-dem/summary.log
+      - name: Require vertical conversion gate and no SAR response access
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('/tmp/ibvf-ellipsoid-dem/cashahuacra_r2_ellipsoidal_dem.json',encoding='utf-8'))
+          assert d['ellipsoidal_dem_gate']=='PASS'
+          assert d['pre_post_sar_values_read'] is False and d['comparison_performed'] is False and d['activation_inference_allowed'] is False
+          assert d['production_use'] is False and d['production_ready'] is False and d['operational_alerting_enabled'] is False
+          assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
+          assert d['input_dem']['valid_pixel_count']==d['output_dem']['valid_pixel_count']
+          assert abs(d['conversion']['horizontal_max_abs_delta_degrees']) <= 1e-10
+          print('ellipsoidal DEM freeze: PASS',d['output_dem']['sha256'])
+          PY
+      - name: Upload converted DEM and report
+        uses: actions/upload-artifact@v4
+        with:
+          name: cashahuacra-r2-ellipsoidal-dem
+          path: /tmp/ibvf-ellipsoid-dem/
+          if-no-files-found: error
+          retention-days: 30
