@@ -1,0 +1,125 @@
+name: IBVF - Parallel A3 first blind day pilot
+
+on:
+  push:
+    branches:
+      - agent/independent-basin-validation-map
+    paths:
+      - 'scripts/ibvf_parallel_a3_first_day_pilot.py'
+      - 'site/data/validation/ibvf_parallel_a3_first_day_pilot_contract.json'
+      - '.github/workflows/ibvf-parallel-a3-first-day-pilot.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install constrained scientific dependencies
+        run: python -m pip install --disable-pip-version-check 'requests>=2.31,<3' 'shapely>=2,<3' 'pyproj>=3.6,<4'
+      - name: Compile pilot implementation
+        run: python -m py_compile scripts/ibvf_parallel_a3_first_day_pilot.py scripts/ibvf_parallel_a3_opendap_preflight.py scripts/ibvf_parallel_a3_opendap_earthdata_adapter.py
+      - name: Execute chronologically first A0 day only
+        env:
+          EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
+        run: |
+          mkdir -p artifacts/ibvf
+          python scripts/ibvf_parallel_a3_first_day_pilot.py \
+            --repo-root . \
+            --workers 4 \
+            --output artifacts/ibvf/ibvf_parallel_a3_first_day_pilot.json
+      - name: Scientific fail-closed guards
+        run: |
+          python - <<'PY'
+          import json
+          p='artifacts/ibvf/ibvf_parallel_a3_first_day_pilot.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY'
+          assert d['test_only'] is True
+          assert d['production_use'] is False
+          assert d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
+          assert d['target_date_local']=='2014-09-01'
+          assert d['selection_rule']=='CHRONOLOGICALLY_FIRST_A0_LOCAL_CALENDAR_DAY_ONLY'
+          assert d['precipitation_values_used_for_date_selection'] is False
+          assert d['territorial_outcome_fields_read'] is False
+          assert d['known_event_dates_read'] is False
+          assert d['cashahuacra_magnitudes_read'] is False
+          assert d['window_selection_performed'] is False
+          assert d['meteorological_ranking_performed'] is False
+          assert d['case_control_assignment_performed'] is False
+          assert d['bulk_a3_complete'] is False
+          assert d['modeling_allowed'] is False
+          status=d['pilot_status']
+          if status.startswith('PASS_'):
+            assert d['cmr']['exact_selected_count']==384
+            assert d['subset_summary']['pass_slots']==384
+            assert len(d['canonical_rows'])==4
+            ped=next(x for x in d['canonical_rows'] if x['unit_id']=='pedregal')
+            assert ped['P3H_MAX'] is None and ped['P24H_LOCAL'] is None and ped['ANTECEDENT_7D'] is None
+            assert len(d['pedregal_candidate_sidecars'])==3
+            for unit in ['shingolay','huaycoloro','san_ildefonso']:
+              r=next(x for x in d['canonical_rows'] if x['unit_id']==unit)
+              assert all(r[k] is not None for k in ['P3H_MAX','P24H_LOCAL','ANTECEDENT_7D'])
+            assert min(d['valid_area_fraction_min'].values()) >= 0.999999
+          else:
+            assert 'REPLAC' not in status
+          print({'pilot_status':status,'subset_summary':d.get('subset_summary'),'target_date':d['target_date_local']})
+          PY
+      - name: Freeze pilot result and synchronize map stage
+        run: |
+          cp artifacts/ibvf/ibvf_parallel_a3_first_day_pilot.json site/data/validation/ibvf_parallel_a3_first_day_pilot.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          rp=Path('site/data/validation/ibvf_parallel_a3_first_day_pilot.json')
+          r=json.loads(rp.read_text(encoding='utf-8'))
+          mp=Path('site/data/validation/independent_basin_validation_map.json')
+          d=json.loads(mp.read_text(encoding='utf-8'))
+          assert d['production_use'] is False and d['production_ready'] is False and d['operational_alerting_enabled'] is False
+          assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
+          ac=d.setdefault('acquisition_contract',{})
+          ac['parallel_a3_first_day_pilot_contract']='site/data/validation/ibvf_parallel_a3_first_day_pilot_contract.json'
+          ac['parallel_a3_first_day_pilot_report']='site/data/validation/ibvf_parallel_a3_first_day_pilot.json'
+          ac['parallel_a3_first_day_pilot_status']=r['pilot_status']
+          ac['parallel_a3_bulk_complete']=False
+          status=r['pilot_status']
+          for c in d.get('cases',[]):
+            u=c.get('unit_id')
+            if u in {'shingolay','huaycoloro','san_ildefonso'}:
+              c['imerg_status']=('A3_FIRST_CHRONOLOGICAL_DAY_PASS_BULK_11628_NOT_COMPLETE' if status.startswith('PASS_') else f'A3_FIRST_DAY_{status}')
+              c['a3_bulk_complete']=False
+            elif u=='pedregal':
+              c['imerg_status']=('A3_CANDIDATE_SIDECAR_FIRST_DAY_PASS_CANONICAL_UNKNOWN_GEOMETRY_UNRESOLVED' if status.startswith('PASS_') else f'A3_FIRST_DAY_{status}_CANONICAL_UNKNOWN_GEOMETRY_UNRESOLVED')
+              c['a3_bulk_complete']=False
+              c['a3_numeric_ranking_allowed']=False
+          mp.write_text(json.dumps(d,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add site/data/validation/ibvf_parallel_a3_first_day_pilot.json site/data/validation/independent_basin_validation_map.json
+          if git diff --cached --quiet; then
+            echo 'No pilot/map change to commit.'
+          else
+            git commit -m 'IBVF: freeze first blind A3 day pilot'
+            git push origin HEAD:agent/independent-basin-validation-map
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ibvf-parallel-a3-first-day-pilot-${{ github.sha }}
+          path: artifacts/ibvf/ibvf_parallel_a3_first_day_pilot.json
+          if-no-files-found: error
+          retention-days: 30
