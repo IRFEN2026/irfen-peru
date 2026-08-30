@@ -1,6 +1,8 @@
 {
-  "schema_version": "irfen-ibvf-cashahuacra-sentinel1-r3-contract-v0.1",
+  "schema_version": "irfen-ibvf-cashahuacra-sentinel1-r3-contract-v0.2",
   "generated_at": "2026-08-30T05:55:00Z",
+  "amended_at": "2026-08-30T05:57:00Z",
+  "amendment_reason": "Storage/provenance-only amendment before any R3 or R4 radiometric change metric: preserve exact target-grid basin-window crops because full-scene R2 GeoTIFFs are multi-gigabyte. The crop window depends only on frozen basin geometry and frozen R2 grid; no signal value, outcome, threshold, support gate or pairing rule changed.",
   "case_id": "cashahuacra_2015-03-23",
   "deployment_status": "RESEARCH_ONLY",
   "test_only": true,
@@ -28,8 +30,20 @@
     "transform_absolute_tolerance": 1e-9,
     "grid_mismatch": "R3_BLOCKED_GRID_MISMATCH_NO_RESAMPLING_ALLOWED_POST_HOC"
   },
+  "basin_window_preservation": {
+    "rule": "Derive the smallest integer target-grid window whose extent covers the frozen basin geometry, read the exact source pixels from each R2 GeoTIFF, and write them without resampling or radiometric transformation.",
+    "window_depends_on_signal_values": false,
+    "window_depends_on_outcome": false,
+    "resampling_allowed": false,
+    "radiometric_conversion_allowed": false,
+    "pre_and_post_window_must_be_identical": true,
+    "preserve_dtype": true,
+    "preserve_pixel_values": true,
+    "outputs_must_be_sha256_frozen": true,
+    "full_scene_r2_may_be_discarded_after_verified_crop_and_r3_evidence_are_archived": true
+  },
   "basin_pixelization": {
-    "rule": "Rasterize the frozen basin geometry on the already-frozen R2 target grid using pixel-center semantics.",
+    "rule": "Rasterize the frozen basin geometry on the frozen R2 target grid within the deterministic basin window using pixel-center semantics.",
     "all_touched": false,
     "denominator": "all target-grid pixel centers inside the frozen basin polygon",
     "geometry_may_be_buffered_or_eroded_after_R2": false
@@ -49,6 +63,8 @@
   },
   "allowed_outputs": [
     "grid metadata equality audit",
+    "deterministic basin-window row/column offsets and dimensions",
+    "lossless pre and post basin-window GeoTIFFs and SHA-256",
     "basin pixel count",
     "pre valid pixel count and fraction",
     "post valid pixel count and fraction",
@@ -66,5 +82,5 @@
   ],
   "r4_difference_allowed_before_r3_pass": false,
   "activation_inference_allowed": false,
-  "execution_status": "PREREGISTERED_BEFORE_R2_EXECUTION_RESULT_OBSERVED"
+  "execution_status": "PREREGISTERED_BEFORE_R3_EXECUTION_AND_BEFORE_ANY_R4_CHANGE_METRIC"
 }
