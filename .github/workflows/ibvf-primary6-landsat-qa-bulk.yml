@@ -6,6 +6,11 @@ on:
       - agent/independent-basin-validation-map
     paths:
       - 'site/data/validation/ibvf_primary6_landsat_qa_preflight.json'
+      - 'site/data/validation/ibvf_primary6_landsat_qa_contract.json'
+      - 'scripts/ibvf_primary6_landsat_qa_preflight.py'
+      - 'scripts/ibvf_primary6_landsat_qa_track.py'
+      - 'scripts/ibvf_primary6_landsat_qa_merge.py'
+      - '.github/workflows/ibvf-primary6-landsat-qa-bulk.yml'
   workflow_dispatch:
 
 concurrency:
@@ -49,7 +54,7 @@ jobs:
       - name: Track scientific guards
         run: |
           python - <<'PY'
-          import json,os
+          import json
           u='${{ matrix.unit_id }}'
           p=f'artifacts/ibvf/results/ibvf_primary6_landsat_qa_{u}.json'
           d=json.load(open(p,encoding='utf-8'))
