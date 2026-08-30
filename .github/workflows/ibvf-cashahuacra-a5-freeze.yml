@@ -1,0 +1,100 @@
+name: IBVF - Cashahuacra A5 blind feature freeze
+
+on:
+  push:
+    branches:
+      - agent/independent-basin-validation-map
+    paths:
+      - 'scripts/ibvf_cashahuacra_a5_freeze.py'
+      - 'site/data/validation/ibvf_a5_feature_vector_contract.json'
+      - '.github/workflows/ibvf-cashahuacra-a5-freeze.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ibvf-cashahuacra-a5-freeze
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  a5:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile A5 freezer
+        run: python -m py_compile scripts/ibvf_cashahuacra_a5_freeze.py
+      - name: Freeze blind A5 vector
+        run: |
+          mkdir -p artifacts/ibvf
+          python scripts/ibvf_cashahuacra_a5_freeze.py \
+            --repo-root . \
+            --output artifacts/ibvf/cashahuacra_a5_feature_vector.json
+      - name: Scientific fail-closed guards
+        run: |
+          python - <<'PY'
+          import json
+          p='artifacts/ibvf/cashahuacra_a5_feature_vector.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY'
+          assert d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
+          assert d['a5_status']=='PASS_A5_BLIND_FEATURE_VECTOR_HASHED_WITH_EXPLICIT_MISSING_NO_UNBLIND_NO_MODELING'
+          assert d['numeric_feature_count']==15
+          assert d['explicit_missing_or_unknown_feature_count']==2
+          assert len(d['feature_entries'])==17
+          assert all(x['status']=='PASS_FROZEN' and x['value'] is not None for x in d['feature_entries'][:15])
+          assert d['feature_entries'][15]['id']=='A4_OPTICAL_CHANGE_PRIMARY'
+          assert d['feature_entries'][15]['value'] is None
+          assert d['feature_entries'][15]['status']=='UNKNOWN_OPTICAL_PRIMARY_NOT_FROZEN'
+          assert d['feature_entries'][16]['id']=='SMAP_SOIL_MOISTURE_PRIMARY'
+          assert d['feature_entries'][16]['value'] is None
+          assert d['feature_entries'][16]['status']=='MISSING_FOR_EVENT_WINDOW_NO_IMPUTATION'
+          assert d['quality_metadata']['sentinel1_common_support_fraction']>=0.95
+          assert d['quality_metadata']['imerg_valid_slot_fraction']==1.0
+          assert d['feature_selection_used_observed_magnitude'] is False
+          assert d['territorial_outcome_fields_read'] is False
+          assert d['known_event_outcome_read'] is False
+          assert d['case_control_role_assigned'] is False
+          assert d['activation_inference_allowed'] is False
+          assert d['risk_classification_computed'] is False
+          assert d['alert_value_computed'] is False
+          assert d['modeling_allowed'] is False
+          forbidden=('EVENT','NONE','risk','alert','priority','activation_inference')
+          raw=json.dumps(d,ensure_ascii=False)
+          assert '"event_label"' not in raw
+          assert '"case_control_role"' not in raw
+          print({'status':d['a5_status'],'sha256':d['feature_vector_sha256'],'features':len(d['feature_entries'])})
+          PY
+      - name: Freeze A5 evidence on research branch only
+        run: |
+          cp artifacts/ibvf/cashahuacra_a5_feature_vector.json site/data/validation/cashahuacra_a5_feature_vector.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git pull --rebase origin agent/independent-basin-validation-map
+          git add site/data/validation/cashahuacra_a5_feature_vector.json
+          if git diff --cached --quiet; then
+            echo 'No A5 evidence change to commit.'
+          else
+            git commit -m 'IBVF: freeze Cashahuacra blind A5 feature vector'
+            git push origin HEAD:agent/independent-basin-validation-map
+          fi
+      - name: Upload A5 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ibvf-cashahuacra-a5-${{ github.sha }}
+          path: artifacts/ibvf/cashahuacra_a5_feature_vector.json
+          if-no-files-found: error
+          retention-days: 30
