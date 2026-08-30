@@ -1,0 +1,81 @@
+{
+  "schema_version": "irfen-ibvf-primary6-selected-a1-contract-v0.1",
+  "generated_at": "2026-08-30T17:46:00Z",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
+  "cohort_id": "PRIMARY6_CHRONOLOGICAL",
+  "purpose": "Bind the already-preregistered parallel A1 sensor rules to every blind meteorological window selected by the frozen PRIMARY6 ranking, without replacing windows for sensor availability and without reading territorial outcomes.",
+  "sources": {
+    "ranking": "site/data/validation/ibvf_primary6_meteorological_ranking.json",
+    "dataset_gate_amendment": "site/data/validation/ibvf_dataset_gate_amendment_v02.json",
+    "sensor_rules": "site/data/validation/ibvf_parallel_a1_sensor_rules.json",
+    "research_map": "site/data/validation/independent_basin_validation_map.json"
+  },
+  "anti_leakage": {
+    "selected_dates_may_be_read_from_frozen_primary6_ranking": true,
+    "meteorological_values_may_not_change_sensor_rules": true,
+    "territorial_outcomes_read": false,
+    "known_event_dates_read": false,
+    "cashahuacra_feature_magnitudes_used": false,
+    "case_control_assignment_allowed": false,
+    "activation_inference_allowed": false,
+    "sensor_availability_may_replace_selected_window": false,
+    "missing_sensor_data_may_delete_selected_window": false,
+    "transport_failure_is_missing_science": false
+  },
+  "selected_window_identity": {
+    "source": "rows with selected=true in frozen PRIMARY6 ranking",
+    "required_role": "UNASSIGNED",
+    "identity_fields": ["unit_id", "season_id", "date_local", "selected_target_order", "selected_target_percentile"],
+    "duplicate_identity_forbidden": true,
+    "pedregal_selection_allowed_while_canonical_geometry_unresolved": false,
+    "reason": "Pedregal canonical A3 features are UNKNOWN while geometry has three unresolved REVIEW_ONLY alternatives, so no meteorological strata can be selected from canonical track-level A3."
+  },
+  "sentinel_1_grd": {
+    "inherit_exactly_from": "site/data/validation/ibvf_parallel_a1_sensor_rules.json#sentinel_1_grd",
+    "catalog_actions_now_allowed": [
+      "query fixed D-36..D-1 and D+1..D+36 envelopes",
+      "freeze request payload hashes and raw response hashes",
+      "freeze candidate item IDs and compatibility metadata",
+      "deterministically select compatible bracketing pair when catalog queries are complete"
+    ],
+    "sar_feature_extraction_at_this_gate": false
+  },
+  "landsat_c2_l2": {
+    "inherit_exactly_from": "site/data/validation/ibvf_parallel_a1_sensor_rules.json#landsat_c2_l2",
+    "catalog_actions_now_allowed": [
+      "query fixed D-48..D-1 and D+1..D+48 envelopes",
+      "freeze request payload hashes and raw response hashes",
+      "freeze candidate item IDs and same-platform/WRS compatibility metadata"
+    ],
+    "pair_choice_before_AOI_QA": false,
+    "next_required_gate": "QA_PIXEL strict-clear fraction inside frozen basin AOI for every compatible catalog candidate before deterministic pair choice",
+    "optical_difference_at_this_gate": false
+  },
+  "copernicus_dem_glo30": {
+    "inherit_exactly_from": "site/data/validation/ibvf_parallel_a1_sensor_rules.json#copernicus_dem_glo30",
+    "catalog_query_once_per_selected_track_geometry": true,
+    "byte_hash_freeze_reserved_for_A2": true
+  },
+  "smap": {
+    "inherit_exactly_from": "site/data/validation/ibvf_parallel_a1_sensor_rules.json#smap",
+    "no_imputation": true
+  },
+  "output_requirements": {
+    "every_selected_primary6_window_retained": true,
+    "every_catalog_request_hashed": true,
+    "every_successful_catalog_response_hashed": true,
+    "truncated_catalog_page_is_complete_inventory": false,
+    "transport_blocked_status": "UNKNOWN_TRANSPORT_BLOCKED_NOT_MISSING",
+    "no_catalog_item_status": "MISSING_COMPATIBLE_PAIR_ONLY_IF_COMPLETE_FIXED_QUERY_RETURN_PROVES_NONE",
+    "all_roles_remain": "UNASSIGNED",
+    "modeling_allowed": false
+  }
+}
