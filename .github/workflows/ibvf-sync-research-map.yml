@@ -1,0 +1,75 @@
+name: IBVF - Synchronize scientific research map
+
+on:
+  push:
+    branches:
+      - agent/independent-basin-validation-map
+    paths:
+      - 'scripts/ibvf_sync_research_map.py'
+      - 'site/data/validation/cashahuacra_sentinel1_r4.json'
+      - 'site/data/validation/ibvf_parallel_a3_opendap_contract.json'
+      - '.github/workflows/ibvf-sync-research-map.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-scientific-map:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Synchronize traceability fields from frozen reports
+        run: |
+          python -m py_compile scripts/ibvf_sync_research_map.py
+          python scripts/ibvf_sync_research_map.py \
+            --map site/data/validation/independent_basin_validation_map.json \
+            --r2 site/data/validation/cashahuacra_sentinel1_r2_execution.json \
+            --r3 site/data/validation/cashahuacra_sentinel1_r3.json \
+            --r4 site/data/validation/cashahuacra_sentinel1_r4.json \
+            --parallel-a3-contract site/data/validation/ibvf_parallel_a3_opendap_contract.json
+      - name: Validate scientific-only state
+        run: |
+          python - <<'PY'
+          import json
+          p='site/data/validation/independent_basin_validation_map.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['version']=='irfen-independent-basin-validation-map-v2.4'
+          assert d['production_use'] is False and d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
+          a=next(x for x in d['cases'] if x['case_id']=='cashahuacra_2015-03-23')
+          assert a['framework_stage']=='A4_R4_BLIND_SAR_FEATURES_FROZEN_A5_PENDING'
+          assert a['sentinel1_r2_orbit_consumption_verified'] is True
+          assert a['sentinel1_r2_processing_executed'] is True
+          assert a['sentinel1_r3_common_support_built'] is True
+          assert a['sentinel1_r4_difference_computed'] is True
+          assert a['sentinel1_r4_activation_inference_allowed'] is False
+          assert a['sentinel1_r4_status']=='PASS_R4_BLIND_SAR_FEATURE_VECTOR_FROZEN_NO_INFERENCE'
+          for c in d['cases']:
+              assert c.get('production_use') is False
+              assert c.get('production_ready') is False
+              assert c.get('operational_alerting_enabled') is False
+          print('Scientific research map guardrails: PASS')
+          PY
+      - name: Archive map-only traceability update
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add site/data/validation/independent_basin_validation_map.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'IBVF: synchronize R4 and parallel A3 research map state'
+            git fetch origin "$BRANCH"
+            git rebase "origin/$BRANCH"
+            git push origin HEAD:"$BRANCH"
+          fi
