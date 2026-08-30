@@ -1,0 +1,131 @@
+{
+  "schema_version": "irfen-ibvf-cashahuacra-sentinel1-r4-contract-v0.1",
+  "generated_at": "2026-08-30T06:34:00Z",
+  "case_id": "cashahuacra_2015-03-23",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
+  "purpose": "Pre-register a compact Sentinel-1 R4 blind surface-change feature vector after R3 spatial support passed and before any pre/post radiometric difference is read or computed.",
+  "preregistration_timing": {
+    "r3_report_available": true,
+    "r3_common_support_gate_passed": true,
+    "r3_common_support_fraction": 0.9954081632653061,
+    "r4_difference_previously_computed": false,
+    "pre_post_gamma0_summary_previously_computed": false,
+    "territorial_outcome_read": false,
+    "case_control_role_assigned": false
+  },
+  "frozen_inputs": {
+    "r3_report_path": "site/data/validation/cashahuacra_sentinel1_r3.json",
+    "r3_report_sha256": "c148cb67be50dd3f8a72c2e94cacda093549e490",
+    "pre_lossless_crop_sha256": "df7c4f197f703c9838b8fda3a2363a1266e40a1a4e3574476f258dd78f0fb176",
+    "post_lossless_crop_sha256": "839392420b366ec3b7126afd82c9c56e9b284e040559304ec6c17e1d08f42abf",
+    "common_support_mask_sha256": "1afc5e44f70db95679d9e3033851cc86b6d3fc58d00ed9b15bb1ab20d7685252",
+    "common_support_pixel_count": 150227,
+    "crs": "EPSG:32718",
+    "pixel_size_m": 10.0,
+    "resampling_between_pre_and_post": false,
+    "speckle_filtering": false,
+    "radiometric_quantity": "linear_Gamma0_from_frozen_R2_graph"
+  },
+  "pixelwise_change_definition": {
+    "name": "DELTA_GAMMA0_DB",
+    "formula": "10*log10(post_Gamma0/pre_Gamma0)",
+    "domain": "R3 common-support pixels only",
+    "pre_and_post_must_be_finite_positive": true,
+    "clipping_allowed": false,
+    "imputation_allowed": false,
+    "smoothing_allowed": false,
+    "additional_resampling_allowed": false,
+    "terrain_or_landcover_posthoc_masking_allowed": false,
+    "sign_semantics": "positive means larger post Gamma0; negative means smaller post Gamma0; neither sign is assigned an activation meaning at R4"
+  },
+  "factor_two_threshold": {
+    "absolute_db": 3.010299956639812,
+    "derivation": "10*log10(2)",
+    "reason": "Fixed scale-invariant physical ratio threshold representing doubling or halving of linear Gamma0; not tuned on Cashahuacra values or outcomes.",
+    "increase_rule": "DELTA_GAMMA0_DB >= +3.010299956639812",
+    "decrease_rule": "DELTA_GAMMA0_DB <= -3.010299956639812",
+    "absolute_change_rule": "abs(DELTA_GAMMA0_DB) >= 3.010299956639812"
+  },
+  "primary_r4_feature_vector": [
+    {
+      "id": "MEDIAN_DELTA_DB",
+      "definition": "median DELTA_GAMMA0_DB over all R3 common-support pixels"
+    },
+    {
+      "id": "IQR_DELTA_DB",
+      "definition": "75th percentile minus 25th percentile of DELTA_GAMMA0_DB over all R3 common-support pixels"
+    },
+    {
+      "id": "DECREASE_FACTOR2_FRACTION",
+      "definition": "fraction of R3 common-support pixels with DELTA_GAMMA0_DB <= -10*log10(2)"
+    },
+    {
+      "id": "INCREASE_FACTOR2_FRACTION",
+      "definition": "fraction of R3 common-support pixels with DELTA_GAMMA0_DB >= +10*log10(2)"
+    },
+    {
+      "id": "LARGEST_FACTOR2_CLUSTER_FRACTION",
+      "definition": "largest 8-connected component of pixels satisfying abs(DELTA_GAMMA0_DB)>=10*log10(2), divided by total R3 common-support pixel count"
+    }
+  ],
+  "fixed_diagnostics_not_primary_features": [
+    "P05_DELTA_DB",
+    "P10_DELTA_DB",
+    "P25_DELTA_DB",
+    "P50_DELTA_DB",
+    "P75_DELTA_DB",
+    "P90_DELTA_DB",
+    "P95_DELTA_DB",
+    "ABS_FACTOR2_FRACTION",
+    "LARGEST_FACTOR2_CLUSTER_PIXEL_COUNT",
+    "NUMBER_OF_FACTOR2_CLUSTERS"
+  ],
+  "cluster_contract": {
+    "connectivity": 8,
+    "threshold": "abs(DELTA_GAMMA0_DB)>=10*log10(2)",
+    "domain": "R3 common-support mask",
+    "minimum_cluster_size_filter": 0,
+    "morphological_cleanup": false,
+    "edge_exclusion": false,
+    "denominator": "all R3 common-support pixels",
+    "pixel_area_m2": 100.0
+  },
+  "output_artifacts": {
+    "delta_db_geotiff_allowed": true,
+    "delta_db_geotiff_must_be_masked_outside_r3_common_support": true,
+    "delta_db_geotiff_sha256_required": true,
+    "factor2_binary_mask_allowed": true,
+    "factor2_binary_mask_sha256_required": true,
+    "json_report_sha256_identity_of_all_inputs_required": true,
+    "map_may_show_only_compact_observational_metrics_after_freeze": true,
+    "map_risk_color_or_activation_symbolization_allowed": false
+  },
+  "forbidden_outputs": [
+    "activation probability",
+    "activation/non-activation classification",
+    "EVENT/NONE or equivalent label",
+    "risk class",
+    "alert level",
+    "operational priority",
+    "threshold tuned from Cashahuacra outcome",
+    "date reselection based on R4 values",
+    "pair reselection based on R4 values",
+    "post-hoc masking based on apparent change pattern"
+  ],
+  "post_r4_gate": {
+    "r4_pass_fail_threshold_on_feature_magnitude": null,
+    "r4_is_observational_not_decisional": true,
+    "next_stage_if_execution_integrity_passes": "A5_FREEZE_CASHAHUACRA_BLIND_FEATURE_VECTOR_WITHOUT_TERRITORIAL_UNBLIND",
+    "serious_modeling_allowed_after_cashahuacra_r4_alone": false,
+    "parallel_controls_still_required": true
+  },
+  "execution_status": "PREREGISTERED_NOT_EXECUTED_NO_RADIOMETRIC_DIFFERENCE_READ",
+  "activation_inference_allowed": false
+}
