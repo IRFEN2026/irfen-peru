@@ -1,0 +1,113 @@
+name: IBVF - Parallel A3 geometry semantics audit
+
+on:
+  push:
+    branches:
+      - agent/independent-basin-validation-map
+    paths:
+      - 'scripts/ibvf_parallel_a3_geometry_audit.py'
+      - 'site/data/validation/ibvf_parallel_a3_geometry_semantics_contract.json'
+      - '.github/workflows/ibvf-parallel-a3-geometry-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile audit
+        run: python -m py_compile scripts/ibvf_parallel_a3_geometry_audit.py
+      - name: Execute fail-closed geometry audit without precipitation
+        run: |
+          mkdir -p artifacts/ibvf
+          python scripts/ibvf_parallel_a3_geometry_audit.py \
+            --repo-root . \
+            --output artifacts/ibvf/ibvf_parallel_a3_geometry_audit.json
+      - name: Scientific guardrails
+        run: |
+          python - <<'PY'
+          import json
+          p='artifacts/ibvf/ibvf_parallel_a3_geometry_audit.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY'
+          assert d['test_only'] is True
+          assert d['production_use'] is False
+          assert d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
+          assert d['precipitation_values_read'] is False
+          assert d['territorial_outcome_fields_read'] is False
+          assert d['window_selection_performed'] is False
+          assert d['meteorological_ranking_performed'] is False
+          assert d['case_control_assignment_performed'] is False
+          assert d['union_of_alternative_candidates_used_for_canonical_weighting'] is False
+          assert d['expected_canonical_track_day_rows']==11628
+          s=d['summary']
+          assert s['single_geometry_tracks_ready_for_canonical_a3']==3
+          assert s['multiple_alternative_geometry_tracks']==1
+          assert s['pedregal_track_level_status']=='UNKNOWN_GEOMETRY_UNRESOLVED'
+          assert s['pedregal_candidate_union_forbidden'] is True
+          assert s['ranking_can_treat_pedregal_as_numeric_before_geometry_resolution'] is False
+          ped=next(x for x in d['tracks'] if x['unit_id']=='pedregal')
+          assert ped['selected_feature_ids']==['pedregal_0.5_3','pedregal_3_8','pedregal_8_20']
+          assert ped['canonical_track_weighting_allowed'] is False
+          for unit in ['shingolay','huaycoloro','san_ildefonso']:
+            t=next(x for x in d['tracks'] if x['unit_id']==unit)
+            assert t['selected_feature_count']==1
+            assert t['canonical_track_weighting_allowed'] is True
+          print(s)
+          PY
+      - name: Freeze audit and synchronize scientific map manifest
+        run: |
+          cp artifacts/ibvf/ibvf_parallel_a3_geometry_audit.json site/data/validation/ibvf_parallel_a3_geometry_audit.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('site/data/validation/independent_basin_validation_map.json')
+          d=json.loads(p.read_text(encoding='utf-8'))
+          assert d['production_use'] is False
+          assert d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
+          ac=d.setdefault('acquisition_contract',{})
+          ac['parallel_a3_geometry_semantics_contract']='site/data/validation/ibvf_parallel_a3_geometry_semantics_contract.json'
+          ac['parallel_a3_geometry_audit']='site/data/validation/ibvf_parallel_a3_geometry_audit.json'
+          ac['parallel_a3_geometry_gate']='PASS_FAIL_CLOSED_THREE_SINGLE_GEOMETRY_TRACKS_PEDREGAL_MULTIPLE_ALTERNATIVES_NOT_UNIONED'
+          for c in d.get('cases',[]):
+            if c.get('unit_id')=='pedregal':
+              c['imerg_status']='A3_PREFLIGHT_PASS_CANONICAL_WEIGHTING_UNKNOWN_GEOMETRY_UNRESOLVED_CANDIDATE_SIDECARS_ALLOWED'
+              c['a3_geometry_weighting_status']='UNKNOWN_GEOMETRY_UNRESOLVED'
+              c['a3_candidate_union_used']=False
+              c['a3_candidate_ids']=['pedregal_0.5_3','pedregal_3_8','pedregal_8_20']
+              c['a3_numeric_ranking_allowed']=False
+            elif c.get('unit_id') in {'shingolay','huaycoloro','san_ildefonso'}:
+              c['a3_geometry_weighting_status']='PASS_SINGLE_SELECTED_FEATURE'
+          p.write_text(json.dumps(d,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add site/data/validation/ibvf_parallel_a3_geometry_audit.json site/data/validation/independent_basin_validation_map.json
+          if git diff --cached --quiet; then
+            echo 'No scientific manifest change to commit.'
+          else
+            git commit -m 'IBVF: freeze A3 geometry ambiguity audit'
+            git push origin HEAD:agent/independent-basin-validation-map
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ibvf-parallel-a3-geometry-audit-${{ github.sha }}
+          path: artifacts/ibvf/ibvf_parallel_a3_geometry_audit.json
+          if-no-files-found: error
+          retention-days: 30
