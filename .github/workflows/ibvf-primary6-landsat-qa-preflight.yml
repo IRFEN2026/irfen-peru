@@ -64,11 +64,20 @@ jobs:
           assert d['modeling_allowed'] is False
           assert d['transport_failure_is_missing_science'] is False
           assert d['status'] in {
-            'PASS_QA_PIXEL_NATIVE_AOI_MECHANICS_PREFLIGHT_NO_PAIR_CHOICE',
+            'PASS_QA_PIXEL_NATIVE_AOI_MECHANICS_PREFLIGHT_IDENTITY_PRESERVED_NO_PAIR_CHOICE',
             'TRANSPORT_BLOCKED_QA_PIXEL_PREFLIGHT_RETAIN_UNKNOWN_NOT_MISSING'
           }
           if d['status'].startswith('PASS_'):
             assert d['qa_pixel_acquisition']['transport_status']=='SUCCESS'
+            assert d['qa_pixel_acquisition']['route_used'] in {
+              'EARTH_SEARCH_ASSET_DIRECT_HTTPS',
+              'PLANETARY_COMPUTER_SIGNED_MIRROR_SAME_EARTH_SEARCH_ITEM_ID_ONLY'
+            }
+            if d['qa_pixel_acquisition']['route_used'].startswith('PLANETARY_'):
+              f=d['qa_pixel_acquisition']['fallback_attempt']
+              assert f['identity_validation']['earth_search_item_id']==f['identity_validation']['planetary_computer_item_id']
+              assert all(f['identity_validation'][k] is True for k in ('platform_match','wrs_path_match','wrs_row_match','datetime_match'))
+              assert f['signed_sas_query_token_persisted'] is False
             assert d['metrics']['aoi_nonfill_valid_pixels']>0
             assert 0.0 <= d['metrics']['strict_clear_fraction'] <= 1.0
             assert d['metrics']['resampling_performed'] is False
@@ -76,7 +85,7 @@ jobs:
           else:
             assert d['qa_pixel_acquisition']['transport_status']=='TRANSPORT_BLOCKED'
             assert d['metrics'] is None
-          print({'status':d['status'],'unit_id':d['unit_id'],'scene':d['scene_identity']['item_id']})
+          print({'status':d['status'],'unit_id':d['unit_id'],'scene':d['scene_identity']['item_id'],'route':d['qa_pixel_acquisition'].get('route_used')})
           PY
       - name: Freeze preflight and synchronize scientific map
         run: |
@@ -106,6 +115,7 @@ jobs:
           ac['primary6_landsat_qa_contract']='site/data/validation/ibvf_primary6_landsat_qa_contract.json'
           ac['primary6_landsat_qa_preflight']='site/data/validation/ibvf_primary6_landsat_qa_preflight.json'
           ac['primary6_landsat_qa_preflight_status']=r['status']
+          ac['primary6_landsat_qa_preflight_transport_route']=r['qa_pixel_acquisition'].get('route_used')
           ac['primary6_landsat_pair_choice_performed']=False
           ac['primary6_landsat_qa_bulk_complete']=False
           ac['primary6_selected_windows_replaced_for_sensor_availability']=False
