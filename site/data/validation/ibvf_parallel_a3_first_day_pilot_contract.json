@@ -1,0 +1,80 @@
+{
+  "schema_version": "irfen-ibvf-parallel-a3-first-day-pilot-v0.1",
+  "generated_at": "2026-08-30T09:55:00Z",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
+  "purpose": "Validate the full A3 transport, native-grid weighting and daily-feature implementation on the chronologically first A0 day before exhaustive bulk execution.",
+  "source_a3_contract": "site/data/validation/ibvf_parallel_a3_opendap_contract.json",
+  "source_a3_preflight": "site/data/validation/ibvf_parallel_a3_opendap_preflight.json",
+  "source_geometry_semantics": "site/data/validation/ibvf_parallel_a3_geometry_semantics_contract.json",
+  "source_geometry_audit": "site/data/validation/ibvf_parallel_a3_geometry_audit.json",
+  "source_a0_pool": "site/data/validation/ibvf_parallel_a0_pool_inventory.json",
+  "selection_rule": "CHRONOLOGICALLY_FIRST_A0_LOCAL_CALENDAR_DAY_ONLY",
+  "selection_uses_rainfall": false,
+  "selection_uses_outcome": false,
+  "selection_uses_known_event_date": false,
+  "selection_uses_sensor_availability": false,
+  "selection_uses_cashahuacra_magnitudes": false,
+  "target_date_local": "2014-09-01",
+  "timezone": "America/Lima",
+  "required_input_start_local": "2014-08-25T00:00:00-05:00",
+  "required_input_end_exclusive_local": "2014-09-02T00:00:00-05:00",
+  "expected_half_hour_slots": 384,
+  "expected_canonical_rows": 4,
+  "canonical_numeric_tracks": [
+    "shingolay",
+    "huaycoloro",
+    "san_ildefonso"
+  ],
+  "pedregal_canonical_rule": "P3H_MAX_P24H_LOCAL_ANTECEDENT_7D_NULL_UNKNOWN_GEOMETRY_UNRESOLVED",
+  "pedregal_candidate_sidecars": [
+    "pedregal_0.5_3",
+    "pedregal_3_8",
+    "pedregal_8_20"
+  ],
+  "native_subset": {
+    "lon_index_bounds": [1009, 1033],
+    "lat_index_bounds": [779, 820],
+    "expected_lon_count": 25,
+    "expected_lat_count": 42,
+    "no_interpolation": true,
+    "no_resampling": true,
+    "minimum_valid_area_fraction_per_slot": 0.999999
+  },
+  "daily_features": {
+    "P3H_MAX": "maximum six consecutive half-hour basin-depth slots on 2014-09-01 local time",
+    "P24H_LOCAL": "sum of 48 basin-depth slots on 2014-09-01 local time",
+    "ANTECEDENT_7D": "sum of 336 basin-depth slots from 2014-08-25 through 2014-08-31 local time",
+    "half_hour_depth": "nonnegative valid basin-weighted precipitation rate mm/h multiplied by 0.5 h"
+  },
+  "fail_closed": {
+    "cmr_slot_identity_not_exact": "UNKNOWN_GRANULE_IDENTITY_NO_IMPUTATION",
+    "opendap_transport_or_auth_failure": "UNKNOWN_TRANSPORT_OR_AUTH_NOT_MISSING",
+    "native_matrix_shape_ambiguous": "UNKNOWN_SCHEMA_BLOCKED_NOT_ZERO",
+    "valid_area_below_gate": "UNKNOWN_GRID_VALUE_MISSING_NOT_ZERO",
+    "negative_or_fill_precipitation": "INVALID_NOT_ZERO",
+    "replace_failed_date": false
+  },
+  "success_gate": {
+    "cmr_exact_slots": 384,
+    "native_subset_success_slots": 384,
+    "coordinate_hashes_must_match_frozen_preflight": true,
+    "three_single_geometry_weight_sums_within_1e-5_of_one": true,
+    "pedregal_alternatives_weighted_separately": true,
+    "four_canonical_rows_present": true,
+    "pedregal_canonical_values_null": true,
+    "window_selection_performed": false,
+    "meteorological_ranking_performed": false,
+    "case_control_assignment_performed": false
+  },
+  "pilot_success_does_not_authorize_ranking": true,
+  "pilot_success_does_not_satisfy_bulk_a3": true,
+  "modeling_allowed": false
+}
