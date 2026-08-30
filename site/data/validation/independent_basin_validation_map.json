@@ -1,6 +1,6 @@
 {
-  "version": "irfen-independent-basin-validation-map-v2.4",
-  "generated_at": "2026-08-30T06:33:16.914674Z",
+  "version": "irfen-independent-basin-validation-map-v2.5",
+  "generated_at": "2026-08-30T06:50:39.160747Z",
   "framework": "IRFEN Independent Basin Validation Framework",
   "deployment_status": "RESEARCH_ONLY",
   "test_only": true,
@@ -67,7 +67,11 @@
       "sentinel1_a4_r2_execution": "PASS_EXACT_GRAPH_BOTH_DATES_EXACT_POEORB_CONSUMPTION_VERIFIED",
       "sentinel1_a4_r3_common_support": "PASS_0.995408_ZERO_RESAMPLING",
       "sentinel1_a4_r4_blind_features": "PASS_FIVE_PREREGISTERED_METRICS_NO_INFERENCE",
-      "parallel_a3_extraction_contract": "PREREGISTERED_PREFLIGHT_PENDING_NO_WINDOW_SELECTED"
+      "parallel_a3_extraction_contract": "PREREGISTERED_PREFLIGHT_PENDING_NO_WINDOW_SELECTED",
+      "github_actions_parallel_a3_opendap_preflight": "PASS_A3_OPENDAP_PREFLIGHT_BULK_EXTRACTION_ALLOWED_NO_WINDOW_SELECTED",
+      "parallel_a3_neutral_granule": "3B-HHR.MS.MRG.3IMERG.20140825-S050000-E052959.0300.V07B.HDF5",
+      "parallel_a3_native_grid": "PASS_3600x1800_0.1DEG_NATIVE_NO_RESAMPLING",
+      "parallel_a3_native_subset_probe": "PASS_HTTP_200_PARSED_NATIVE_VALUES"
     },
     "imerg_basin_features_script": "scripts/ibvf_imerg_basin_features_v02.py",
     "imerg_timebasis_audit_script": "scripts/ibvf_imerg_timebasis_audit.py",
@@ -105,7 +109,11 @@
     "sentinel1_r3_status": "PASS_R3_COMMON_SUPPORT_R4_ALLOWED_BY_SPATIAL_SUPPORT_ONLY",
     "sentinel1_r3_common_support_fraction": 0.9954081632653061,
     "parallel_a3_contract": "site/data/validation/ibvf_parallel_a3_opendap_contract.json",
-    "parallel_a3_status": "PREREGISTERED_PREFLIGHT_NOT_YET_EXECUTED"
+    "parallel_a3_status": "PREREGISTERED_PREFLIGHT_NOT_YET_EXECUTED",
+    "parallel_a3_opendap_preflight_report": "site/data/validation/ibvf_parallel_a3_opendap_preflight.json",
+    "parallel_a3_opendap_preflight_status": "PASS_A3_OPENDAP_PREFLIGHT_BULK_EXTRACTION_ALLOWED_NO_WINDOW_SELECTED",
+    "parallel_a3_bulk_extraction_allowed": true,
+    "parallel_a3_bulk_extraction_executed": false
   },
   "guardrails": {
     "no_risk_colors": true,
@@ -290,7 +298,7 @@
       "unit_id": "shingolay",
       "name": "Quebrada Shingolay",
       "blind_window": "NOT_YET_SELECTED_FROM_FROZEN_POOL",
-      "framework_stage": "A1_SENSOR_CATALOG_PREFLIGHT_COMPLETE_A3_EXTRACTION_CONTRACT_PREREGISTERED_NO_WINDOW_SELECTED",
+      "framework_stage": "A1_SENSOR_CATALOG_PREFLIGHT_COMPLETE_A3_OPENDAP_PREFLIGHT_PASS_BULK_EXTRACTION_ALLOWED_NO_WINDOW_SELECTED",
       "geometry_status": "EXISTING_REVIEW_ONLY_CANDIDATE",
       "geometry_path": "data/phase2/geometries/w1_santa_eulalia_rimac.geojson",
       "geometry_selector": {
@@ -298,7 +306,7 @@
         "value": "shingolay"
       },
       "geometry_semantics": "EXISTING_CANDIDATE_ONLY_NOT_IBVF_FINAL",
-      "imerg_status": "A3_OPENDAP_EXTRACTION_CONTRACT_PREREGISTERED_PREFLIGHT_PENDING",
+      "imerg_status": "A3_OPENDAP_PREFLIGHT_PASS_BULK_EXTRACTION_ALLOWED_NO_WINDOW_SELECTED",
       "remote_sensing_status": "A1_STAC_CATALOG_PRESENT_S1_LANDSAT_COPDEM_WINDOW_NOT_SELECTED",
       "smap_status": "NOT_ASSESSED",
       "blind_status": "TERRITORIAL_EVIDENCE_SEALED",
@@ -321,14 +329,17 @@
       "a3_status": "PREREGISTERED_PREFLIGHT_NOT_YET_EXECUTED",
       "a3_expected_track_day_rows_total": 11628,
       "a3_window_selection_performed": false,
-      "a3_case_control_assignment_performed": false
+      "a3_case_control_assignment_performed": false,
+      "a3_opendap_preflight_status": "PASS_A3_OPENDAP_PREFLIGHT_BULK_EXTRACTION_ALLOWED_NO_WINDOW_SELECTED",
+      "a3_bulk_extraction_allowed": true,
+      "a3_bulk_extraction_executed": false
     },
     {
       "case_id": "san_ildefonso_parallel_intake",
       "unit_id": "san_ildefonso",
       "name": "Quebrada San Ildefonso",
       "blind_window": "NOT_YET_SELECTED_FROM_FROZEN_POOL",
-      "framework_stage": "A1_SENSOR_CATALOG_PREFLIGHT_COMPLETE_A3_EXTRACTION_CONTRACT_PREREGISTERED_NO_WINDOW_SELECTED",
+      "framework_stage": "A1_SENSOR_CATALOG_PREFLIGHT_COMPLETE_A3_OPENDAP_PREFLIGHT_PASS_BULK_EXTRACTION_ALLOWED_NO_WINDOW_SELECTED",
       "geometry_status": "EXISTING_TEST_ONLY_WATERSHED_CANDIDATE",
       "geometry_path": "data/watersheds/san_ildefonso_watershed.geojson",
       "geometry_selector": {
@@ -336,7 +347,7 @@
         "value": "san_ildefonso"
       },
       "geometry_semantics": "EXISTING_DEM_D8_CANDIDATE_REQUIRES_IBVF_FREEZE",
-      "imerg_status": "A3_OPENDAP_EXTRACTION_CONTRACT_PREREGISTERED_PREFLIGHT_PENDING",
+      "imerg_status": "A3_OPENDAP_PREFLIGHT_PASS_BULK_EXTRACTION_ALLOWED_NO_WINDOW_SELECTED",
       "remote_sensing_status": "A1_STAC_CATALOG_PRESENT_S1_LANDSAT_COPDEM_WINDOW_NOT_SELECTED",
       "smap_status": "NOT_ASSESSED",
       "blind_status": "TERRITORIAL_EVIDENCE_SEALED",
@@ -359,14 +370,17 @@
       "a3_status": "PREREGISTERED_PREFLIGHT_NOT_YET_EXECUTED",
       "a3_expected_track_day_rows_total": 11628,
       "a3_window_selection_performed": false,
-      "a3_case_control_assignment_performed": false
+      "a3_case_control_assignment_performed": false,
+      "a3_opendap_preflight_status": "PASS_A3_OPENDAP_PREFLIGHT_BULK_EXTRACTION_ALLOWED_NO_WINDOW_SELECTED",
+      "a3_bulk_extraction_allowed": true,
+      "a3_bulk_extraction_executed": false
     },
     {
       "case_id": "pedregal_parallel_geometry",
       "unit_id": "pedregal",
       "name": "Quebrada Pedregal",
       "blind_window": "NOT_YET_SELECTED_FROM_FROZEN_POOL",
-      "framework_stage": "A1_SENSOR_CATALOG_PREFLIGHT_COMPLETE_A3_EXTRACTION_CONTRACT_PREREGISTERED_NO_WINDOW_SELECTED",
+      "framework_stage": "A1_SENSOR_CATALOG_PREFLIGHT_COMPLETE_A3_OPENDAP_PREFLIGHT_PASS_BULK_EXTRACTION_ALLOWED_NO_WINDOW_SELECTED",
       "geometry_status": "MULTIPLE_REVIEW_ONLY_CANDIDATE_SETS",
       "geometry_path": "data/watersheds/chosica_local_candidate_sets.geojson",
       "geometry_selector": {
@@ -374,7 +388,7 @@
         "value": "pedregal"
       },
       "geometry_semantics": "CANDIDATE_SET_NOT_A_VALIDATED_BASIN",
-      "imerg_status": "A3_OPENDAP_EXTRACTION_CONTRACT_PREREGISTERED_PREFLIGHT_PENDING",
+      "imerg_status": "A3_OPENDAP_PREFLIGHT_PASS_BULK_EXTRACTION_ALLOWED_NO_WINDOW_SELECTED",
       "remote_sensing_status": "A1_STAC_CATALOG_PRESENT_S1_LANDSAT_COPDEM_WINDOW_NOT_SELECTED",
       "smap_status": "NOT_ASSESSED",
       "blind_status": "TERRITORIAL_EVIDENCE_SEALED",
@@ -397,14 +411,17 @@
       "a3_status": "PREREGISTERED_PREFLIGHT_NOT_YET_EXECUTED",
       "a3_expected_track_day_rows_total": 11628,
       "a3_window_selection_performed": false,
-      "a3_case_control_assignment_performed": false
+      "a3_case_control_assignment_performed": false,
+      "a3_opendap_preflight_status": "PASS_A3_OPENDAP_PREFLIGHT_BULK_EXTRACTION_ALLOWED_NO_WINDOW_SELECTED",
+      "a3_bulk_extraction_allowed": true,
+      "a3_bulk_extraction_executed": false
     },
     {
       "case_id": "huaycoloro_parallel_intake",
       "unit_id": "huaycoloro",
       "name": "Quebrada Huaycoloro",
       "blind_window": "NOT_YET_SELECTED_FROM_FROZEN_POOL",
-      "framework_stage": "A1_SENSOR_CATALOG_PREFLIGHT_COMPLETE_A3_EXTRACTION_CONTRACT_PREREGISTERED_NO_WINDOW_SELECTED",
+      "framework_stage": "A1_SENSOR_CATALOG_PREFLIGHT_COMPLETE_A3_OPENDAP_PREFLIGHT_PASS_BULK_EXTRACTION_ALLOWED_NO_WINDOW_SELECTED",
       "geometry_status": "EXISTING_TEST_ONLY_WATERSHED_CANDIDATE",
       "geometry_path": "data/watersheds/huaycoloro_watershed.geojson",
       "geometry_selector": {
@@ -412,7 +429,7 @@
         "value": "chosica"
       },
       "geometry_semantics": "EXISTING_DEM_D8_CANDIDATE_REQUIRES_IBVF_FREEZE",
-      "imerg_status": "A3_OPENDAP_EXTRACTION_CONTRACT_PREREGISTERED_PREFLIGHT_PENDING",
+      "imerg_status": "A3_OPENDAP_PREFLIGHT_PASS_BULK_EXTRACTION_ALLOWED_NO_WINDOW_SELECTED",
       "remote_sensing_status": "A1_STAC_CATALOG_PRESENT_S1_LANDSAT_COPDEM_WINDOW_NOT_SELECTED",
       "smap_status": "NOT_ASSESSED",
       "blind_status": "TERRITORIAL_EVIDENCE_SEALED",
@@ -435,7 +452,10 @@
       "a3_status": "PREREGISTERED_PREFLIGHT_NOT_YET_EXECUTED",
       "a3_expected_track_day_rows_total": 11628,
       "a3_window_selection_performed": false,
-      "a3_case_control_assignment_performed": false
+      "a3_case_control_assignment_performed": false,
+      "a3_opendap_preflight_status": "PASS_A3_OPENDAP_PREFLIGHT_BULK_EXTRACTION_ALLOWED_NO_WINDOW_SELECTED",
+      "a3_bulk_extraction_allowed": true,
+      "a3_bulk_extraction_executed": false
     }
   ],
   "blind_sampling_contract_path": "data/validation/ibvf_blind_sampling_contract.json",
