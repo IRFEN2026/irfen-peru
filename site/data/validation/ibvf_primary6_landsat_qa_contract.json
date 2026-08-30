@@ -1,6 +1,6 @@
 {
-  "schema_version": "irfen-ibvf-primary6-landsat-aoi-qa-contract-v0.1",
-  "generated_at": "2026-08-30T21:48:00Z",
+  "schema_version": "irfen-ibvf-primary6-landsat-aoi-qa-contract-v0.2",
+  "generated_at": "2026-08-30T21:51:00Z",
   "framework": "IRFEN Independent Basin Validation Framework",
   "deployment_status": "RESEARCH_ONLY",
   "test_only": true,
@@ -36,6 +36,29 @@
     ],
     "missing_complete_catalog_window_behavior": "RETAIN_MISSING_COMPATIBLE_PAIR",
     "unknown_catalog_window_behavior": "RETAIN_UNKNOWN_NO_QA"
+  },
+  "byte_transport": {
+    "primary_reference": "Earth Search frozen qa_pixel asset href",
+    "earth_search_s3_direct_https_may_require_requester_pays_credentials": true,
+    "fallback_allowed": "PLANETARY_COMPUTER_SIGNED_MIRROR_SAME_EARTH_SEARCH_ITEM_ID_ONLY",
+    "fallback_trigger": "primary QA_PIXEL byte transport blocked",
+    "fallback_collection": "landsat-c2-l2",
+    "fallback_identity_requirements": [
+      "Planetary Computer STAC item id exactly equals frozen Earth Search item id",
+      "platform matches frozen Earth Search candidate",
+      "WRS path matches frozen Earth Search candidate",
+      "WRS row matches frozen Earth Search candidate",
+      "acquisition datetime matches frozen Earth Search candidate when both are present"
+    ],
+    "fallback_asset": "qa_pixel",
+    "planetary_computer_unsigned_item_response_hashed": true,
+    "planetary_computer_sign_response_hashed": true,
+    "signed_SAS_query_token_persisted": false,
+    "successful_QA_PIXEL_bytes_hashed": true,
+    "fallback_changes_scene_identity": false,
+    "fallback_changes_pair_ordering": false,
+    "fallback_changes_selected_window": false,
+    "fallback_failure_behavior": "RETAIN_UNKNOWN_NOT_MISSING_NO_REPLACEMENT"
   },
   "qa_pixel_rule": {
     "asset": "qa_pixel",
