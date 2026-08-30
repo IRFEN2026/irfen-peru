@@ -1,0 +1,90 @@
+name: IBVF - Parallel A3 OPeNDAP preflight
+
+on:
+  push:
+    branches:
+      - agent/independent-basin-validation-map
+    paths:
+      - 'scripts/ibvf_parallel_a3_opendap_preflight.py'
+      - 'site/data/validation/ibvf_parallel_a3_opendap_contract.json'
+      - 'site/data/validation/ibvf_parallel_a0_pool_inventory.json'
+      - 'site/data/validation/independent_basin_validation_map.json'
+      - '.github/workflows/ibvf-parallel-a3-opendap-preflight.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install constrained preflight dependencies
+        run: python -m pip install --disable-pip-version-check 'requests>=2.31,<3' 'shapely>=2,<3'
+      - name: Compile preflight script
+        run: python -m py_compile scripts/ibvf_parallel_a3_opendap_preflight.py
+      - name: Execute only the preregistered neutral A3 preflight
+        env:
+          EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
+        run: |
+          mkdir -p artifacts/ibvf
+          python scripts/ibvf_parallel_a3_opendap_preflight.py \
+            --repo-root . \
+            --output artifacts/ibvf/ibvf_parallel_a3_opendap_preflight.json
+      - name: Scientific fail-closed guards
+        run: |
+          python - <<'PY'
+          import json
+          p='artifacts/ibvf/ibvf_parallel_a3_opendap_preflight.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY'
+          assert d['test_only'] is True
+          assert d['production_use'] is False
+          assert d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
+          assert d['expected_track_day_rows']==11628
+          assert d['tracks']==['shingolay','pedregal','huaycoloro','san_ildefonso']
+          assert d['window_selection_performed'] is False
+          assert d['meteorological_ranking_performed'] is False
+          assert d['case_control_assignment_performed'] is False
+          assert d['territorial_outcome_fields_read'] is False
+          assert d['cashahuacra_remote_magnitudes_read'] is False
+          assert d['bulk_a3_executed'] is False
+          assert d['neutral_slot']['padding_start_local_date']=='2014-08-25'
+          assert d['neutral_slot']['local_start'].startswith('2014-08-25T00:00:00-05:00')
+          assert d['neutral_slot']['utc_start']=='2014-08-25T05:00:00Z'
+          status=d['preflight_status']
+          allowed={
+            'PASS_A3_OPENDAP_PREFLIGHT_BULK_EXTRACTION_ALLOWED_NO_WINDOW_SELECTED',
+            'UNKNOWN_TRANSPORT_BLOCKED_NOT_MISSING',
+            'UNKNOWN_AUTH_BLOCKED_NOT_MISSING',
+            'UNKNOWN_SCHEMA_BLOCKED_NOT_ZERO',
+            'UNKNOWN_SCHEMA_OR_TRANSPORT_BLOCKED_NOT_ZERO',
+          }
+          assert status in allowed, status
+          if status.startswith('PASS_'):
+            assert d['bulk_a3_allowed'] is True
+            assert d['cmr']['status']=='PASS_CMR_EXACT_V07_GRANULE_IDENTITY'
+            assert d['dds']['status']=='PASS_DDS_SCHEMA_RESOLVED'
+            assert 0.099 <= d['coordinates']['lon_spacing_deg'] <= 0.101
+            assert 0.099 <= d['coordinates']['lat_spacing_deg'] <= 0.101
+            assert d['native_subset_probe']['success']['numeric_value_count'] > 0
+          else:
+            assert d['bulk_a3_allowed'] is False
+            assert 'MISSING' not in status or status.endswith('NOT_MISSING')
+          print({'preflight_status':status,'bulk_a3_allowed':d['bulk_a3_allowed'],'neutral_slot':d['neutral_slot']['utc_start'],'cmr_granule':(d.get('cmr') or {}).get('producer_granule_id')})
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ibvf-parallel-a3-opendap-preflight-${{ github.sha }}
+          path: artifacts/ibvf/ibvf_parallel_a3_opendap_preflight.json
+          if-no-files-found: error
+          retention-days: 30
