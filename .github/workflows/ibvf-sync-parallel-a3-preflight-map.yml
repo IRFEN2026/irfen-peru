@@ -1,0 +1,67 @@
+name: IBVF - Sync parallel A3 preflight to research map
+
+on:
+  push:
+    branches:
+      - agent/independent-basin-validation-map
+    paths:
+      - 'site/data/validation/ibvf_parallel_a3_opendap_preflight.json'
+      - 'scripts/ibvf_sync_parallel_a3_preflight_map.py'
+      - '.github/workflows/ibvf-sync-parallel-a3-preflight-map.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile and synchronize scientific map only
+        run: |
+          python -m py_compile scripts/ibvf_sync_parallel_a3_preflight_map.py
+          python scripts/ibvf_sync_parallel_a3_preflight_map.py
+      - name: Validate immutable scientific guards
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('site/data/validation/independent_basin_validation_map.json',encoding='utf-8'))
+          assert d['version']=='irfen-independent-basin-validation-map-v2.5'
+          assert d['deployment_status']=='RESEARCH_ONLY'
+          assert d['test_only'] is True
+          assert d['production_use'] is False
+          assert d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
+          assert d['acquisition_contract']['parallel_a3_bulk_extraction_allowed'] is True
+          assert d['acquisition_contract']['parallel_a3_bulk_extraction_executed'] is False
+          for c in d['cases']:
+              if c.get('unit_id') in {'shingolay','pedregal','huaycoloro','san_ildefonso'}:
+                  assert c['blind_status']=='TERRITORIAL_EVIDENCE_SEALED'
+                  assert c['a0_case_control_role']=='UNASSIGNED'
+                  assert c['a3_bulk_extraction_executed'] is False
+                  assert c['production_use'] is False
+                  assert c['production_ready'] is False
+                  assert c['operational_alerting_enabled'] is False
+          print({'version':d['version'],'gate':d['serious_modeling_gate'],'parallel_a3':d['acquisition_contract']['parallel_a3_opendap_preflight_status']})
+          PY
+      - name: Commit only the synchronized research manifest
+        run: |
+          if git diff --quiet -- site/data/validation/independent_basin_validation_map.json; then
+            echo 'No manifest change required.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add site/data/validation/independent_basin_validation_map.json
+          git commit -m 'IBVF: reflect parallel A3 preflight PASS in research map'
+          git push origin HEAD:agent/independent-basin-validation-map
