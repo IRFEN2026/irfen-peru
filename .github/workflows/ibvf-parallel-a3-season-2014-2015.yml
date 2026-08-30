@@ -1,0 +1,165 @@
+name: IBVF - Parallel A3 frozen season 2014-2015
+
+on:
+  push:
+    branches:
+      - agent/independent-basin-validation-map
+    paths:
+      - 'scripts/ibvf_parallel_a3_season_partition.py'
+      - 'site/data/validation/ibvf_parallel_a3_bulk_execution_plan.json'
+      - '.github/workflows/ibvf-parallel-a3-season-2014-2015.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ibvf-parallel-a3-season-2014-2015
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  season:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install constrained scientific dependencies
+        run: python -m pip install --disable-pip-version-check 'requests>=2.31,<3' 'shapely>=2,<3' 'pyproj>=3.6,<4'
+      - name: Compile frozen season implementation
+        run: python -m py_compile scripts/ibvf_parallel_a3_season_partition.py scripts/ibvf_parallel_a3_first_day_pilot.py scripts/ibvf_parallel_a3_opendap_preflight.py scripts/ibvf_parallel_a3_opendap_earthdata_adapter.py
+      - name: Execute frozen chronological partition 2014-2015
+        env:
+          EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
+        run: |
+          mkdir -p artifacts/ibvf/checkpoint
+          python scripts/ibvf_parallel_a3_season_partition.py \
+            --repo-root . \
+            --partition-id 2014-2015 \
+            --workers 4 \
+            --checkpoint artifacts/ibvf/checkpoint/2014-2015.jsonl \
+            --output artifacts/ibvf/ibvf_parallel_a3_2014_2015.json
+      - name: Scientific fail-closed guards
+        run: |
+          python - <<'PY'
+          import json
+          p='artifacts/ibvf/ibvf_parallel_a3_2014_2015.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY'
+          assert d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
+          assert d['partition_id']=='2014-2015'
+          assert d['partition_selection_uses_rainfall'] is False
+          assert d['partition_selection_uses_outcome'] is False
+          assert d['known_event_dates_read'] is False
+          assert d['territorial_outcome_fields_read'] is False
+          assert d['cashahuacra_magnitudes_read'] is False
+          assert d['sensor_availability_deletes_calendar_days'] is False
+          assert d['window_selection_performed'] is False
+          assert d['meteorological_ranking_performed'] is False
+          assert d['case_control_assignment_performed'] is False
+          assert d['modeling_allowed'] is False
+          status=d['partition_status']
+          if status.startswith('PASS_'):
+            assert d['cmr']['exact_selected_count']==11952
+            assert d['subset_summary']['requested_slots']==11952
+            assert d['subset_summary']['pass_slots']==11952
+            assert d['subset_summary']['bounded_parallelism_max_workers']<=4
+            s=d['canonical_row_summary']
+            assert s['actual_rows']==s['expected_rows']==968
+            assert s['numeric_single_geometry_rows_complete']==726
+            assert s['pedregal_unknown_rows']==242
+            assert s['pedregal_unknown_rows_retained'] is True
+            assert s['pedregal_sidecar_rows']==726
+            assert s['ranking_performed'] is False
+            assert len(d['canonical_rows'])==968
+            assert len(d['pedregal_candidate_sidecars'])==726
+            forbidden={'outcome','event','activation','damage','incident','case_control_role','label','risk','alert','priority','sensor_availability'}
+            required={'unit_id','season_id','date_local','P3H_MAX','P24H_LOCAL','ANTECEDENT_7D'}
+            for r in d['canonical_rows']:
+              assert set(r)==required
+              assert not (set(r)&forbidden)
+            ped=[r for r in d['canonical_rows'] if r['unit_id']=='pedregal']
+            assert len(ped)==242
+            assert all(r['P3H_MAX'] is None and r['P24H_LOCAL'] is None and r['ANTECEDENT_7D'] is None for r in ped)
+            assert min(v['minimum_valid_area_fraction_observed'] for v in d['spatial_support_quality'].values())>=0.999999
+            x=d.get('first_day_crosscheck',{})
+            assert x.get('canonical_rows_match_frozen_pilot') is True
+            assert x.get('pedregal_sidecars_match_frozen_pilot') is True
+          else:
+            assert 'REPLAC' not in status
+          print({'partition_status':status,'subset':d.get('subset_summary'),'rows':d.get('canonical_row_summary')})
+          PY
+      - name: Freeze partition report and synchronize scientific map stage
+        run: |
+          cp artifacts/ibvf/ibvf_parallel_a3_2014_2015.json site/data/validation/ibvf_parallel_a3_2014_2015.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git pull --rebase origin agent/independent-basin-validation-map
+          python - <<'PY'
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+          rp=Path('site/data/validation/ibvf_parallel_a3_2014_2015.json')
+          r=json.loads(rp.read_text(encoding='utf-8'))
+          mp=Path('site/data/validation/independent_basin_validation_map.json')
+          d=json.loads(mp.read_text(encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY'
+          assert d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
+          d['version']='irfen-independent-basin-validation-map-v2.7'
+          d['generated_at']=datetime.now(timezone.utc).isoformat().replace('+00:00','Z')
+          ac=d.setdefault('acquisition_contract',{})
+          ac['parallel_a3_bulk_execution_plan']='site/data/validation/ibvf_parallel_a3_bulk_execution_plan.json'
+          ac['parallel_a3_season_extractor_script']='scripts/ibvf_parallel_a3_season_partition.py'
+          ac['parallel_a3_partition_2014_2015_report']='site/data/validation/ibvf_parallel_a3_2014_2015.json'
+          ac['parallel_a3_partition_2014_2015_status']=r['partition_status']
+          ac['parallel_a3_bulk_complete']=False
+          ac['parallel_a3_canonical_rows_frozen']=968 if r['partition_status'].startswith('PASS_') else 0
+          ac['parallel_a3_canonical_rows_target']=11628
+          ac['parallel_a3_ranking_executed']=False
+          if r['partition_status'].startswith('PASS_'):
+            ac['parallel_a3_partitions_complete']=['2014-2015']
+          else:
+            ac['parallel_a3_partitions_complete']=[]
+          for c in d.get('cases',[]):
+            u=c.get('unit_id')
+            if u in {'shingolay','huaycoloro','san_ildefonso'}:
+              c['imerg_status']=('A3_2014_2015_PARTITION_PASS_1_OF_12_BULK_INCOMPLETE_NO_RANKING' if r['partition_status'].startswith('PASS_') else f'A3_2014_2015_{r["partition_status"]}_ROWS_RETAINED_NO_IMPUTATION')
+              c['a3_bulk_complete']=False
+            elif u=='pedregal':
+              c['imerg_status']=('A3_2014_2015_CANDIDATE_SIDECARS_PASS_CANONICAL_UNKNOWN_GEOMETRY_UNRESOLVED' if r['partition_status'].startswith('PASS_') else f'A3_2014_2015_{r["partition_status"]}_CANONICAL_UNKNOWN_GEOMETRY_UNRESOLVED')
+              c['a3_bulk_complete']=False
+              c['a3_numeric_ranking_allowed']=False
+          mp.write_text(json.dumps(d,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          PY
+          git add site/data/validation/ibvf_parallel_a3_2014_2015.json site/data/validation/independent_basin_validation_map.json
+          if git diff --cached --quiet; then
+            echo 'No partition/map change to commit.'
+          else
+            git commit -m 'IBVF: freeze blind A3 season 2014-2015'
+            git push origin HEAD:agent/independent-basin-validation-map
+          fi
+      - name: Upload partition evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ibvf-parallel-a3-2014-2015-${{ github.sha }}
+          path: |
+            artifacts/ibvf/ibvf_parallel_a3_2014_2015.json
+            artifacts/ibvf/checkpoint/2014-2015.jsonl
+          if-no-files-found: warn
+          retention-days: 30
