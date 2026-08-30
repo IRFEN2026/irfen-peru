@@ -1,0 +1,170 @@
+name: IBVF - PRIMARY6 Landsat AOI QA bulk freeze
+
+on:
+  push:
+    branches:
+      - agent/independent-basin-validation-map
+    paths:
+      - 'site/data/validation/ibvf_primary6_landsat_qa_preflight.json'
+  workflow_dispatch:
+
+concurrency:
+  group: ibvf-primary6-landsat-qa-bulk
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  measure:
+    if: github.ref == 'refs/heads/agent/independent-basin-validation-map'
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        unit_id: [huaycoloro, san_ildefonso, shingolay]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install constrained scientific dependencies
+        run: python -m pip install --disable-pip-version-check 'numpy>=1.26,<2' 'rasterio>=1.3,<2'
+      - name: Compile frozen QA implementation
+        run: python -m py_compile scripts/ibvf_primary6_landsat_qa_preflight.py scripts/ibvf_primary6_landsat_qa_track.py
+      - name: Measure all frozen Landsat candidates for track
+        run: |
+          mkdir -p artifacts/ibvf/downloads/${{ matrix.unit_id }} artifacts/ibvf/results
+          python scripts/ibvf_primary6_landsat_qa_track.py \
+            --repo-root . \
+            --unit-id '${{ matrix.unit_id }}' \
+            --workers 6 \
+            --download-dir artifacts/ibvf/downloads/${{ matrix.unit_id }} \
+            --output artifacts/ibvf/results/ibvf_primary6_landsat_qa_${{ matrix.unit_id }}.json
+      - name: Track scientific guards
+        run: |
+          python - <<'PY'
+          import json,os
+          u='${{ matrix.unit_id }}'
+          p=f'artifacts/ibvf/results/ibvf_primary6_landsat_qa_{u}.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY' and d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False and d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
+          assert d['cohort_id']=='PRIMARY6_CHRONOLOGICAL' and d['unit_id']==u
+          assert d['selected_window_count']==36
+          assert d['qa_measured_scene_count']+d['qa_unknown_scene_count']==d['required_unique_scene_count']
+          assert d['pair_choice_performed'] is False and d['selected_window_replaced'] is False
+          assert d['case_control_assignment_performed'] is False and d['territorial_outcome_fields_read'] is False
+          assert d['known_event_dates_read'] is False and d['activation_inference_allowed'] is False and d['modeling_allowed'] is False
+          assert d['transport_failure_is_missing_science'] is False
+          assert d['status'] in {'PASS_TRACK_ALL_REQUIRED_QA_MEASURED_NO_PAIR_CHOICE','PARTIAL_TRACK_QA_UNKNOWN_PRESERVED_NO_PAIR_CHOICE'}
+          print({'unit_id':u,'status':d['status'],'required':d['required_unique_scene_count'],'measured':d['qa_measured_scene_count'],'unknown':d['qa_unknown_scene_count']})
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ibvf-primary6-lqa-${{ matrix.unit_id }}-${{ github.sha }}
+          path: artifacts/ibvf/results/ibvf_primary6_landsat_qa_${{ matrix.unit_id }}.json
+          if-no-files-found: error
+          retention-days: 30
+
+  freeze:
+    needs: measure
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ibvf-primary6-lqa-*-${{ github.sha }}
+          path: artifacts/ibvf/track-results
+          merge-multiple: true
+      - name: Compile and merge global QA completeness
+        run: |
+          python -m py_compile scripts/ibvf_primary6_landsat_qa_merge.py
+          python scripts/ibvf_primary6_landsat_qa_merge.py \
+            --repo-root . \
+            --input-dir artifacts/ibvf/track-results \
+            --output artifacts/ibvf/ibvf_primary6_landsat_qa_global.json
+      - name: Global scientific guards
+        run: |
+          python - <<'PY'
+          import json
+          p='artifacts/ibvf/ibvf_primary6_landsat_qa_global.json';d=json.load(open(p,encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY' and d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False and d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True and d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
+          assert d['cohort_id']=='PRIMARY6_CHRONOLOGICAL' and d['track_count']==3 and d['selected_window_count']==108
+          assert d['qa_measured_unit_scene_count']+d['qa_unknown_unit_scene_count']==d['required_unique_unit_scene_count']
+          assert d['pair_choice_performed'] is False and d['selected_window_replaced'] is False
+          assert d['case_control_assignment_performed'] is False and d['territorial_outcome_fields_read'] is False and d['known_event_dates_read'] is False
+          assert d['activation_inference_allowed'] is False and d['modeling_allowed'] is False and d['transport_failure_is_missing_science'] is False
+          assert d['status'] in {'PASS_ALL_PRIMARY6_REQUIRED_LANDSAT_QA_MEASURED_PAIR_CHOICE_NOT_YET_EXECUTED','PARTIAL_PRIMARY6_LANDSAT_QA_UNKNOWN_PRESERVED_PAIR_CHOICE_BLOCKED'}
+          if d['global_qa_complete']:
+            assert d['qa_unknown_unit_scene_count']==0 and d['pair_choice_allowed_by_qa_completeness'] is True
+          else:
+            assert d['qa_unknown_unit_scene_count']>0 and d['pair_choice_allowed_by_qa_completeness'] is False
+          print({k:d[k] for k in ('status','required_unique_unit_scene_count','qa_measured_unit_scene_count','qa_unknown_unit_scene_count','global_qa_complete')})
+          PY
+      - name: Freeze QA evidence and synchronize research map
+        run: |
+          cp artifacts/ibvf/track-results/ibvf_primary6_landsat_qa_*.json site/data/validation/
+          cp artifacts/ibvf/ibvf_primary6_landsat_qa_global.json site/data/validation/ibvf_primary6_landsat_qa_global.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add site/data/validation/ibvf_primary6_landsat_qa_*.json
+          if ! git diff --cached --quiet; then git commit -m 'IBVF: freeze PRIMARY6 Landsat AOI QA evidence'; fi
+          git pull --rebase origin agent/independent-basin-validation-map
+          python - <<'PY'
+          import json
+          from datetime import datetime,timezone
+          from pathlib import Path
+          gp=Path('site/data/validation/ibvf_primary6_landsat_qa_global.json');g=json.loads(gp.read_text(encoding='utf-8'))
+          mp=Path('site/data/validation/independent_basin_validation_map.json');d=json.loads(mp.read_text(encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY' and d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False and d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False and d['territorial_activation_evidence_blinded'] is True
+          assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
+          d['version']='irfen-independent-basin-validation-map-v3.1';d['generated_at']=datetime.now(timezone.utc).isoformat().replace('+00:00','Z')
+          ac=d.setdefault('acquisition_contract',{})
+          ac['primary6_landsat_qa_global_report']='site/data/validation/ibvf_primary6_landsat_qa_global.json'
+          ac['primary6_landsat_qa_global_status']=g['status']
+          ac['primary6_landsat_required_unique_unit_scene_count']=g['required_unique_unit_scene_count']
+          ac['primary6_landsat_qa_measured_unit_scene_count']=g['qa_measured_unit_scene_count']
+          ac['primary6_landsat_qa_unknown_unit_scene_count']=g['qa_unknown_unit_scene_count']
+          ac['primary6_landsat_qa_bulk_complete']=g['global_qa_complete']
+          ac['primary6_landsat_pair_choice_performed']=False
+          by={x['unit_id']:x for x in g['track_reports']}
+          for c in d.get('cases',[]):
+            u=c.get('unit_id')
+            if u in by:
+              x=by[u]
+              c['landsat_qa_stage']=f"QA_MEASURED_{x['qa_measured_scene_count']}_UNKNOWN_{x['qa_unknown_scene_count']}_PAIR_CHOICE_NOT_EXECUTED"
+              c['blind_status']='TERRITORIAL_EVIDENCE_SEALED';c['case_control_role']='UNASSIGNED'
+          mp.write_text(json.dumps(d,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          PY
+          git add site/data/validation/independent_basin_validation_map.json
+          if ! git diff --cached --quiet; then git commit -m 'IBVF: sync PRIMARY6 Landsat QA completeness to research map'; fi
+          git push origin HEAD:agent/independent-basin-validation-map
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ibvf-primary6-lqa-global-${{ github.sha }}
+          path: |
+            artifacts/ibvf/track-results/*.json
+            artifacts/ibvf/ibvf_primary6_landsat_qa_global.json
+          if-no-files-found: error
+          retention-days: 30
