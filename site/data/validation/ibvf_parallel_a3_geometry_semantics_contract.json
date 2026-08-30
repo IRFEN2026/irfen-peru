@@ -1,0 +1,79 @@
+{
+  "schema_version": "irfen-ibvf-parallel-a3-geometry-semantics-v0.1",
+  "generated_at": "2026-08-30T09:50:00Z",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
+  "purpose": "Freeze how A3 basin weighting handles geometry multiplicity before bulk precipitation values are inspected or meteorological ranking is executed.",
+  "source_a3_contract": "site/data/validation/ibvf_parallel_a3_opendap_contract.json",
+  "source_manifest": "site/data/validation/independent_basin_validation_map.json",
+  "source_a0_pool": "site/data/validation/ibvf_parallel_a0_pool_inventory.json",
+  "tracks": [
+    "shingolay",
+    "pedregal",
+    "huaycoloro",
+    "san_ildefonso"
+  ],
+  "anti_leakage": {
+    "rainfall_values_may_choose_geometry": false,
+    "territorial_outcome_may_choose_geometry": false,
+    "known_event_dates_may_choose_geometry": false,
+    "sensor_availability_may_choose_geometry": false,
+    "cashahuacra_feature_magnitudes_may_choose_geometry": false,
+    "geometry_resolution_must_be_independent_of_a3_magnitudes": true
+  },
+  "single_selected_feature_rule": {
+    "canonical_track_weighting_allowed": true,
+    "method": "Use exactly the single feature selected by the frozen manifest geometry_path + geometry_selector; do not replace, buffer, simplify, union with unrelated features, or tune by precipitation."
+  },
+  "multiple_selected_features_rule": {
+    "canonical_track_weighting_allowed": false,
+    "union_as_single_basin_forbidden": true,
+    "choose_candidate_by_rainfall_forbidden": true,
+    "candidate_specific_sidecar_a3_allowed": true,
+    "candidate_order": "lexicographic stable feature id",
+    "canonical_track_daily_features": "JSON_NULL_UNTIL_GEOMETRY_RESOLVED_INDEPENDENTLY",
+    "canonical_track_unknown_semantics": "UNKNOWN_GEOMETRY_UNRESOLVED_NOT_ZERO_NOT_MISSING_RAIN",
+    "window_retained_in_a0_pool": true,
+    "replacement_window_forbidden": true,
+    "ranking_numeric_value_allowed_while_geometry_unresolved": false
+  },
+  "pedregal_specific_freeze": {
+    "selector_property": "quebrada_search_name",
+    "selector_value": "pedregal",
+    "expected_alternative_candidate_ids": [
+      "pedregal_0.5_3",
+      "pedregal_3_8",
+      "pedregal_8_20"
+    ],
+    "expected_candidate_count": 3,
+    "candidate_status_required": "REVIEW_ONLY",
+    "official_outlet_validated_required": false,
+    "official_area_validated_required": false,
+    "track_level_geometry_status": "UNRESOLVED_MULTIPLE_ALTERNATIVE_CANDIDATES",
+    "track_level_a3_status_until_resolution": "UNKNOWN_GEOMETRY_UNRESOLVED",
+    "candidate_sidecars_do_not_assign_case_control_role": true
+  },
+  "bulk_a3_rule": {
+    "expected_canonical_track_day_rows_remains": 11628,
+    "shingolay_numeric_weighting_allowed": true,
+    "huaycoloro_numeric_weighting_allowed": true,
+    "san_ildefonso_numeric_weighting_allowed": true,
+    "pedregal_canonical_numeric_weighting_allowed": false,
+    "pedregal_canonical_rows_must_still_be_present": true,
+    "pedregal_candidate_sidecar_rows_may_be_generated": true,
+    "ranking_may_not_drop_or_replace_pedregal_unknown_rows": true
+  },
+  "map_rule": {
+    "pedregal_must_display_geometry_as_multiple_review_only_candidates": true,
+    "pedregal_a3_must_display_unknown_until_independent_geometry_resolution": true,
+    "risk_or_result_symbolization_forbidden": true
+  },
+  "modeling_allowed": false
+}
