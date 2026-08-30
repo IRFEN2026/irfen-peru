@@ -30,7 +30,7 @@ jobs:
       - name: Enforce frozen scientific prerequisites before reading SAR response
         run: |
           python - <<'PY'
-          import hashlib,json,pathlib
+          import json
           files=[
             'site/data/validation/cashahuacra_sentinel1_freeze.json',
             'site/data/validation/cashahuacra_sentinel1_r2_graph_compile.json',
@@ -82,7 +82,7 @@ jobs:
             --output-report /tmp/ibvf-r2-exec/ellipsoidal-dem.json \
             | tee /tmp/ibvf-r2-exec/dem-summary.log
           python - <<'PY'
-          import hashlib,json
+          import json
           d=json.load(open('/tmp/ibvf-r2-exec/ellipsoidal-dem.json',encoding='utf-8'))
           assert d['ellipsoidal_dem_gate']=='PASS'
           assert d['output_dem']['sha256']=='00e3305219f0400ceca1fa39708de3e2ed31708e0a37c29b96a87d88e119aab2'
@@ -102,7 +102,7 @@ jobs:
             --stage-orbits-dir /tmp/ibvf-r2-exec/home/.snap/auxdata \
             | tee /tmp/ibvf-r2-exec/graph-summary.log
           python - <<'PY'
-          import hashlib,json,pathlib
+          import hashlib,pathlib
           new=pathlib.Path('/tmp/ibvf-r2-exec/graph/cashahuacra_sentinel1_r2_graph.xml')
           archived=pathlib.Path('site/data/validation/cashahuacra_sentinel1_r2_graph.xml')
           nh=hashlib.sha256(new.read_bytes()).hexdigest(); ah=hashlib.sha256(archived.read_bytes()).hexdigest()
@@ -166,19 +166,28 @@ jobs:
           else
             echo 'No R2 execution report was produced; nothing scientific is imputed.'
           fi
-      - name: Upload complete R2 execution evidence
+      - name: Upload bounded R2 execution evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: cashahuacra-sentinel1-r2-execution-${{ github.sha }}
-          path: /tmp/ibvf-r2-exec/
+          path: |
+            /tmp/ibvf-r2-exec/cashahuacra_sentinel1_r2_execution.json
+            /tmp/ibvf-r2-exec/execution-summary.log
+            /tmp/ibvf-r2-exec/runtime-install.json
+            /tmp/ibvf-r2-exec/ellipsoidal-dem.json
+            /tmp/ibvf-r2-exec/graph/cashahuacra_sentinel1_r2_graph_compile.json
+            /tmp/ibvf-r2-exec/execution/pre_gpt.log
+            /tmp/ibvf-r2-exec/execution/post_gpt.log
+            /tmp/ibvf-r2-exec/execution/cashahuacra_pre_r2_gamma0_tc.tif
+            /tmp/ibvf-r2-exec/execution/cashahuacra_post_r2_gamma0_tc.tif
           if-no-files-found: warn
           retention-days: 30
       - name: Fail closed unless R2 and both precise-orbit consumptions are verified
         if: always()
         run: |
           python - <<'PY'
-          import json,pathlib,sys
+          import json,pathlib
           p=pathlib.Path('/tmp/ibvf-r2-exec/cashahuacra_sentinel1_r2_execution.json')
           if not p.exists():
               raise SystemExit('R2 report absent: UNKNOWN/BLOCKED, never MISSING')
