@@ -1,6 +1,17 @@
 {
-  "schema_version": "irfen-ibvf-cashahuacra-sentinel1-r4-contract-v0.1",
+  "schema_version": "irfen-ibvf-cashahuacra-sentinel1-r4-contract-v0.2",
   "generated_at": "2026-08-30T06:34:00Z",
+  "amended_at": "2026-08-30T06:31:30Z",
+  "identity_amendment": {
+    "reason": "The v0.1 contract accidentally stored the GitHub Git blob SHA of the versioned R3 JSON in a field explicitly named r3_report_sha256. The first R4 workflow run failed closed at that identity check before any pre/post radiometric difference or R4 feature was read or computed. This v0.2 amendment replaces only that identifier with the actual SHA-256 of the R3 JSON file content. No dates, SAR pair, basin, R3 mask/crop hashes, factor-two threshold, metric definitions, diagnostics, cluster rules, or scientific gates are changed.",
+    "failed_workflow_run_id": 33296923990,
+    "failed_check_run_id": 99218091765,
+    "failed_run_reached_delta_computation": false,
+    "failed_run_r4_metrics_computed": false,
+    "incorrect_git_blob_sha": "c148cb67be50dd3f8a72c2e94cacda093549e490",
+    "correct_r3_content_sha256": "8a525d4da77c1164df07aa2a31b37d9aec4819a609fca513f5c2cb3247e60371",
+    "scientific_specification_changed": false
+  },
   "case_id": "cashahuacra_2015-03-23",
   "deployment_status": "RESEARCH_ONLY",
   "test_only": true,
@@ -22,7 +33,7 @@
   },
   "frozen_inputs": {
     "r3_report_path": "site/data/validation/cashahuacra_sentinel1_r3.json",
-    "r3_report_sha256": "c148cb67be50dd3f8a72c2e94cacda093549e490",
+    "r3_report_sha256": "8a525d4da77c1164df07aa2a31b37d9aec4819a609fca513f5c2cb3247e60371",
     "pre_lossless_crop_sha256": "df7c4f197f703c9838b8fda3a2363a1266e40a1a4e3574476f258dd78f0fb176",
     "post_lossless_crop_sha256": "839392420b366ec3b7126afd82c9c56e9b284e040559304ec6c17e1d08f42abf",
     "common_support_mask_sha256": "1afc5e44f70db95679d9e3033851cc86b6d3fc58d00ed9b15bb1ab20d7685252",
