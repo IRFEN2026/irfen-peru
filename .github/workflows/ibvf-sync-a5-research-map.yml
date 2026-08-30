@@ -54,11 +54,11 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git pull --rebase origin agent/independent-basin-validation-map
           git add site/data/validation/independent_basin_validation_map.json
           if git diff --cached --quiet; then
             echo 'No map mirror change.'
           else
             git commit -m 'IBVF: mirror frozen Cashahuacra A5 status to research map'
+            git pull --rebase origin agent/independent-basin-validation-map
             git push origin HEAD:agent/independent-basin-validation-map
           fi
