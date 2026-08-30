@@ -1,0 +1,117 @@
+{
+  "schema_version": "irfen-ibvf-dataset-gate-amendment-v0.2",
+  "generated_at": "2026-08-30T15:55:20Z",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
+  "amendment_scope": "DATASET_COMPLETION_AND_RANKING_GATE_ONLY",
+  "supersedes_original_scientific_rules": false,
+  "preserves_original_12_season_plan_as_robustness_extension": true,
+  "source_bulk_execution_plan": "site/data/validation/ibvf_parallel_a3_bulk_execution_plan.json",
+  "source_bulk_execution_plan_git_blob_sha": "4c857f5d3a095d8cde61a2b933693dee888ddea0",
+  "source_ranking_contract": "site/data/validation/ibvf_meteorological_ranking_contract.json",
+  "source_ranking_contract_git_blob_sha": "860efb54fd992e53f5ae3bcfa6673e621ada7e5e",
+  "decision_timing": {
+    "made_before_primary_meteorological_ranking": true,
+    "made_before_case_control_assignment": true,
+    "made_before_territorial_unblind": true,
+    "made_after_completed_partition_ids": ["2014-2015"],
+    "completed_partition_count_when_amended": 1,
+    "amendment_uses_partition_meteorological_values": false,
+    "amendment_uses_cashahuacra_feature_magnitudes": false,
+    "amendment_uses_sensor_availability_to_choose_seasons": false,
+    "amendment_uses_known_event_dates": false,
+    "amendment_uses_territorial_outcomes": false,
+    "rationale": "Reduce computational latency while preserving chronological, outcome-blind sampling. The first six frozen seasons are fixed a priori as the primary minimum cohort; all twelve remain the robustness extension."
+  },
+  "primary_minimum_dataset": {
+    "cohort_id": "PRIMARY6_CHRONOLOGICAL",
+    "season_ids": [
+      "2014-2015",
+      "2015-2016",
+      "2016-2017",
+      "2017-2018",
+      "2018-2019",
+      "2019-2020"
+    ],
+    "season_selection_rule": "FIRST_SIX_CHRONOLOGICAL_SEASONS_FROM_FROZEN_A0_POOL_NO_SUBSTITUTION",
+    "season_count": 6,
+    "output_days_per_track": 1454,
+    "canonical_track_day_rows": 5816,
+    "numeric_single_geometry_rows_expected_if_transport_and_grid_complete": 4362,
+    "pedregal_unknown_canonical_rows": 1454,
+    "pedregal_candidate_sidecar_rows": 4362,
+    "unique_half_hour_slots": 71808,
+    "maximum_primary_ranked_windows": 144,
+    "maximum_primary_ranked_windows_semantics": "4 tracks x 6 seasons x 6 preregistered percentile targets; Pedregal may yield unavailable strata while canonical geometry remains unresolved",
+    "completion_requirements": {
+      "all_six_partition_reports_present": true,
+      "each_partition_status_must_pass": true,
+      "all_expected_canonical_rows_present": true,
+      "duplicate_track_season_date_keys_forbidden": true,
+      "unknown_transport_or_data_states_retained_no_imputation": true,
+      "pedregal_canonical_features_remain_null_until_independent_geometry_resolution": true,
+      "no_calendar_day_deleted_for_sensor_availability": true,
+      "no_outcome_or_known_event_date_read": true
+    },
+    "after_gate_allowed": [
+      "execute preregistered meteorological ranking on PRIMARY6_CHRONOLOGICAL only",
+      "freeze selected blind meteorological windows with roles UNASSIGNED",
+      "continue A1-A5 remote feature acquisition for selected windows",
+      "perform blind dataset sufficiency diagnostics that do not use territorial outcomes"
+    ],
+    "after_gate_still_forbidden": [
+      "serious case-control modeling",
+      "activation inference",
+      "territorial outcome unblind before selected A1-A5 features are frozen",
+      "changing feature weights or percentile targets after seeing selected dates",
+      "replacing selected windows because remote sensors are missing"
+    ]
+  },
+  "full_robustness_dataset": {
+    "cohort_id": "FULL12_ROBUSTNESS",
+    "season_ids": [
+      "2014-2015",
+      "2015-2016",
+      "2016-2017",
+      "2017-2018",
+      "2018-2019",
+      "2019-2020",
+      "2020-2021",
+      "2021-2022",
+      "2022-2023",
+      "2023-2024",
+      "2024-2025",
+      "2025-2026"
+    ],
+    "season_count": 12,
+    "canonical_track_day_rows": 11628,
+    "unique_half_hour_slots": 143568,
+    "maximum_ranked_windows": 288,
+    "purpose": "ROBUSTNESS_EXTENSION_AND_TEMPORAL_STABILITY_CHECK_NOT_REQUIRED_TO_BEGIN_PRIMARY_BLIND_WINDOW_CHARACTERIZATION"
+  },
+  "parallel_execution": {
+    "season_partitions_may_run_concurrently": true,
+    "scientific_equivalence_requirement": "EVERY_PARTITION_USES_IDENTICAL_FROZEN_EXTRACTOR_AND_CONTRACT",
+    "execution_order_has_no_scientific_semantics": true,
+    "result_commit_must_preserve_partition_identity_and_hashes": true,
+    "concurrency_must_not_change_requested_dates_or_replace_failed_slots": true
+  },
+  "ranking_contract": {
+    "feature_set_unchanged": ["P3H_MAX", "P24H_LOCAL", "ANTECEDENT_7D"],
+    "normalization_unchanged": "WITHIN_TRACK_WITHIN_SEASON_EMPIRICAL_MIDRANK_PERCENTILE",
+    "weights_unchanged": [0.3333333333333333, 0.3333333333333333, 0.3333333333333333],
+    "target_percentiles_unchanged": [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+    "target_order_unchanged": [1.0, 0.0, 0.8, 0.2, 0.6, 0.4],
+    "minimum_anchor_separation_days_unchanged": 9,
+    "case_control_role_after_ranking": "UNASSIGNED"
+  },
+  "modeling_allowed": false,
+  "activation_inference_allowed": false
+}
