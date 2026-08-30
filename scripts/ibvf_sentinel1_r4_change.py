@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
-"""Compute pre-registered Sentinel-1 R4 observational change features.
+"""Compute preregistered Cashahuacra Sentinel-1 R4 blind change metrics.
 
-RESEARCH_ONLY / TEST_ONLY. This script may run only after the frozen R3 common
-support gate passes. It computes the exact feature set in
-``ibvf_sentinel1_r4_change_contract.json`` on the R3 common-support mask. It
-never assigns activation, risk, alert, or case/control role.
+RESEARCH_ONLY / TEST_ONLY. Reads only the frozen, lossless R3 pre/post Gamma0
+crops and the frozen R3 common-support mask after verifying their SHA-256
+identities. Computes exactly the R4 metrics preregistered before any radiometric
+difference was inspected. It never reads territorial outcomes, assigns a
+case/control role, or emits an activation/risk/alert classification.
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import math
 from collections import deque
 from datetime import datetime, timezone
 from pathlib import Path
@@ -32,138 +34,187 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
-def canonical_json_sha256(path: Path) -> str:
-    obj = json.loads(path.read_text(encoding="utf-8"))
-    raw = json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
-    return hashlib.sha256(raw).hexdigest()
+def assert_guards(d: dict[str, Any]) -> None:
+    assert d["deployment_status"] == "RESEARCH_ONLY"
+    assert d["production_use"] is False
+    assert d["production_ready"] is False
+    assert d["operational_alerting_enabled"] is False
+    assert d["uses_operational_event_none_labels"] is False
+    assert d["territorial_activation_evidence_blinded"] is True
+    assert d["serious_modeling_gate"] == "CLOSED_MINIMUM_DATASET_NOT_REACHED"
 
 
-def same_grid(a: rasterio.DatasetReader, b: rasterio.DatasetReader, tol: float = 1e-9) -> bool:
+def raster_identity(a: rasterio.DatasetReader, b: rasterio.DatasetReader) -> bool:
     return (
         a.crs == b.crs
         and a.width == b.width
         and a.height == b.height
-        and all(abs(float(x) - float(y)) <= tol for x, y in zip(tuple(a.transform), tuple(b.transform)))
+        and tuple(a.transform) == tuple(b.transform)
     )
 
 
-def largest_8connected(mask: np.ndarray) -> int:
-    """Return largest 8-connected True component size without morphology."""
+def largest_cluster(mask: np.ndarray) -> tuple[int, int]:
+    """Return largest 8-connected true component size and component count."""
+    if mask.ndim != 2:
+        raise ValueError("cluster mask must be 2-D")
     h, w = mask.shape
-    visited = np.zeros(mask.shape, dtype=np.uint8)
+    seen = np.zeros(mask.shape, dtype=bool)
     largest = 0
-    rows, cols = np.nonzero(mask)
-    for r0, c0 in zip(rows.tolist(), cols.tolist()):
-        if visited[r0, c0]:
+    n_components = 0
+    offsets = ((-1,-1),(-1,0),(-1,1),(0,-1),(0,1),(1,-1),(1,0),(1,1))
+    ys, xs = np.nonzero(mask)
+    for y0, x0 in zip(ys.tolist(), xs.tolist()):
+        if seen[y0, x0]:
             continue
-        visited[r0, c0] = 1
-        q: deque[tuple[int, int]] = deque([(r0, c0)])
+        n_components += 1
+        seen[y0, x0] = True
+        q: deque[tuple[int,int]] = deque([(y0, x0)])
         size = 0
         while q:
-            r, c = q.popleft()
+            y, x = q.pop()
             size += 1
-            rmin, rmax = max(0, r - 1), min(h - 1, r + 1)
-            cmin, cmax = max(0, c - 1), min(w - 1, c + 1)
-            for rr in range(rmin, rmax + 1):
-                for cc in range(cmin, cmax + 1):
-                    if rr == r and cc == c:
-                        continue
-                    if mask[rr, cc] and not visited[rr, cc]:
-                        visited[rr, cc] = 1
-                        q.append((rr, cc))
-        if size > largest:
-            largest = size
-    return largest
+            for dy, dx in offsets:
+                yy, xx = y + dy, x + dx
+                if yy < 0 or yy >= h or xx < 0 or xx >= w:
+                    continue
+                if mask[yy, xx] and not seen[yy, xx]:
+                    seen[yy, xx] = True
+                    q.append((yy, xx))
+        largest = max(largest, size)
+    return largest, n_components
+
+
+def write_delta(src: rasterio.DatasetReader, delta: np.ndarray, common: np.ndarray, path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    out = np.full(delta.shape, np.nan, dtype="float32")
+    out[common] = delta[common].astype("float32")
+    profile = src.profile.copy()
+    profile.update(driver="GTiff", dtype="float32", count=1, nodata=np.nan, compress="deflate")
+    with rasterio.Env(GDAL_TIFF_INTERNAL_MASK=True):
+        with rasterio.open(path, "w", **profile) as dst:
+            dst.write(out, 1)
+            dst.write_mask((common.astype("uint8") * 255))
+
+
+def write_factor2(src: rasterio.DatasetReader, changed: np.ndarray, common: np.ndarray, path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    out = np.full(changed.shape, 255, dtype="uint8")
+    out[common] = changed[common].astype("uint8")
+    profile = src.profile.copy()
+    profile.update(driver="GTiff", dtype="uint8", count=1, nodata=255, compress="deflate")
+    with rasterio.Env(GDAL_TIFF_INTERNAL_MASK=True):
+        with rasterio.open(path, "w", **profile) as dst:
+            dst.write(out, 1)
+            dst.write_mask((common.astype("uint8") * 255))
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--contract", type=Path, required=True)
     ap.add_argument("--r3-report", type=Path, required=True)
-    ap.add_argument("--pre-crop", type=Path, required=True)
-    ap.add_argument("--post-crop", type=Path, required=True)
-    ap.add_argument("--support-mask", type=Path, required=True)
-    ap.add_argument("--output", type=Path, required=True)
+    ap.add_argument("--pre", type=Path, required=True)
+    ap.add_argument("--post", type=Path, required=True)
+    ap.add_argument("--common-mask", type=Path, required=True)
+    ap.add_argument("--delta-output", type=Path, required=True)
+    ap.add_argument("--factor2-mask-output", type=Path, required=True)
+    ap.add_argument("--report-output", type=Path, required=True)
     args = ap.parse_args()
 
     contract = json.loads(args.contract.read_text(encoding="utf-8"))
     r3 = json.loads(args.r3_report.read_text(encoding="utf-8"))
-    for d in (contract, r3):
-        assert d["deployment_status"] == "RESEARCH_ONLY"
-        assert d["production_use"] is False and d["production_ready"] is False and d["operational_alerting_enabled"] is False
-        assert d["uses_operational_event_none_labels"] is False and d["territorial_activation_evidence_blinded"] is True
-        assert d["serious_modeling_gate"] == "CLOSED_MINIMUM_DATASET_NOT_REACHED"
-    assert contract["execution_status"] == "PREREGISTERED_BEFORE_R3_RESULT_AND_BEFORE_ANY_R4_CHANGE_VALUE"
-    assert contract["fixed_change_threshold_db"]["threshold_tuned_on_data"] is False
-    required_r3 = "PASS_R3_COMMON_SUPPORT_R4_ALLOWED_BY_SPATIAL_SUPPORT_ONLY"
-    if r3.get("status") != required_r3 or not r3.get("common_support_gate_pass") or float(r3.get("common_support_fraction", 0)) < float(contract["execution_prerequisites"]["minimum_common_support_fraction"]):
-        raise SystemExit("R4 blocked: preregistered R3 common-support gate has not passed")
+    assert_guards(contract)
+    assert_guards(r3)
+
+    if contract["execution_status"] != "PREREGISTERED_NOT_EXECUTED_NO_RADIOMETRIC_DIFFERENCE_READ":
+        raise SystemExit("R4 contract is not in preregistered/unexecuted state")
+    if r3["status"] != "PASS_R3_COMMON_SUPPORT_R4_ALLOWED_BY_SPATIAL_SUPPORT_ONLY":
+        raise SystemExit("R4 blocked: R3 spatial support gate has not passed")
+    if not r3["r3_common_support_built"] or not r3["common_support_gate_pass"]:
+        raise SystemExit("R4 blocked: R3 common-support evidence incomplete")
+    if float(r3["common_support_fraction"]) < 0.95:
+        raise SystemExit("R4 blocked: common support below frozen 0.95 gate")
     assert r3["radiometric_difference_statistics_computed"] is False
+    assert r3["comparison_performed"] is False
     assert r3["r4_difference_computed"] is False
+    assert r3["case_control_role_assigned"] is False
     assert r3["activation_inference_allowed"] is False
 
-    expected_pre = r3["lossless_basin_crops"]["pre"]["sha256"]
-    expected_post = r3["lossless_basin_crops"]["post"]["sha256"]
-    expected_mask = r3["common_support_mask"]["sha256"]
-    actual_pre = sha256_file(args.pre_crop)
-    actual_post = sha256_file(args.post_crop)
-    actual_mask = sha256_file(args.support_mask)
-    if (actual_pre, actual_post, actual_mask) != (expected_pre, expected_post, expected_mask):
-        raise ValueError("R4 input hashes do not match frozen R3 evidence")
-
-    with rasterio.open(args.pre_crop) as pre_ds, rasterio.open(args.post_crop) as post_ds, rasterio.open(args.support_mask) as mask_ds:
-        if not same_grid(pre_ds, post_ds) or not same_grid(pre_ds, mask_ds):
-            raise ValueError("R4 input grids differ; post-hoc resampling is forbidden")
-        pre = pre_ds.read(1, masked=False).astype("float64", copy=False)
-        post = post_ds.read(1, masked=False).astype("float64", copy=False)
-        support = mask_ds.read(1, masked=False) == 1
-
-    n = int(support.sum())
-    if n != int(r3["common_valid_pixel_count"]):
-        raise ValueError(f"support mask count {n} differs from R3 common_valid_pixel_count {r3['common_valid_pixel_count']}")
-    if n <= 0:
-        raise ValueError("common support is empty")
-    pre_v = pre[support]
-    post_v = post[support]
-    if not (np.all(np.isfinite(pre_v)) and np.all(np.isfinite(post_v)) and np.all(pre_v > 0) and np.all(post_v > 0)):
-        raise ValueError("R4 support contains invalid/non-positive linear Gamma0 despite R3")
-
-    pre_db = 10.0 * np.log10(pre_v)
-    post_db = 10.0 * np.log10(post_v)
-    delta = post_db - pre_db
-    abs_delta = np.abs(delta)
-    threshold = float(contract["fixed_change_threshold_db"]["absolute_value"])
-    changed = abs_delta >= threshold
-    negative = delta <= -threshold
-    positive = delta >= threshold
-
-    # Reconstruct changed mask strictly on the frozen R3 support grid for the
-    # fixed 8-connected component metric. No opening/closing or size filtering.
-    changed_grid = np.zeros(support.shape, dtype=bool)
-    changed_grid[support] = changed
-    largest = largest_8connected(changed_grid)
-
-    dq = [float(x) for x in contract["fixed_diagnostic_quantiles"]["delta_db"]]
-    aq = [float(x) for x in contract["fixed_diagnostic_quantiles"]["absolute_delta_db"]]
-    delta_quantiles = {str(q): float(np.quantile(delta, q)) for q in dq}
-    abs_quantiles = {str(q): float(np.quantile(abs_delta, q)) for q in aq}
-
-    features = {
-        "S1_DELTA_DB_MEDIAN": float(np.median(delta)),
-        "S1_ABS_DELTA_DB_MEDIAN": float(np.median(abs_delta)),
-        "S1_ABS_DELTA_GE_3DB_FRACTION": float(changed.sum() / n),
-        "S1_DELTA_LE_MINUS3DB_FRACTION": float(negative.sum() / n),
-        "S1_DELTA_GE_PLUS3DB_FRACTION": float(positive.sum() / n),
-        "S1_ABS_DELTA_GE_3DB_LARGEST_8CONNECTED_FRACTION": float(largest / n),
+    frozen = contract["frozen_inputs"]
+    identities = {
+        "r3_report_sha256": sha256_file(args.r3_report),
+        "pre_lossless_crop_sha256": sha256_file(args.pre),
+        "post_lossless_crop_sha256": sha256_file(args.post),
+        "common_support_mask_sha256": sha256_file(args.common_mask),
     }
-    expected_ids = [x["id"] for x in contract["primary_features"]]
-    if list(features) != expected_ids:
-        raise ValueError("implemented R4 feature ordering/identity differs from frozen contract")
+    for key, actual in identities.items():
+        expected = frozen[key]
+        if actual != expected:
+            raise SystemExit(f"R4 blocked: frozen input hash mismatch {key}: {actual} != {expected}")
 
-    report: dict[str, Any] = {
-        "schema_version": "irfen-ibvf-sentinel1-r4-change-v0.1",
+    with rasterio.open(args.pre) as pre_ds, rasterio.open(args.post) as post_ds, rasterio.open(args.common_mask) as mask_ds:
+        if not raster_identity(pre_ds, post_ds) or not raster_identity(pre_ds, mask_ds):
+            raise SystemExit("R4 blocked: R3 crops/mask do not share exact grid identity")
+        if str(pre_ds.crs) != frozen["crs"]:
+            raise SystemExit("R4 blocked: CRS differs from preregistered input")
+        if abs(float(pre_ds.transform.a) - float(frozen["pixel_size_m"])) > 1e-9 or abs(float(pre_ds.transform.e) + float(frozen["pixel_size_m"])) > 1e-9:
+            raise SystemExit("R4 blocked: pixel size differs from preregistered input")
+
+        pre = pre_ds.read(1, masked=False).astype("float64")
+        post = post_ds.read(1, masked=False).astype("float64")
+        mask_raw = mask_ds.read(1, masked=False)
+        common = mask_raw == 1
+        common_count = int(common.sum())
+        if common_count != int(frozen["common_support_pixel_count"]):
+            raise SystemExit(f"R4 blocked: common support count changed {common_count}")
+        if not np.all(np.isfinite(pre[common])) or not np.all(np.isfinite(post[common])):
+            raise SystemExit("R4 blocked: non-finite Gamma0 inside frozen common support")
+        if not np.all(pre[common] > 0) or not np.all(post[common] > 0):
+            raise SystemExit("R4 blocked: non-positive Gamma0 inside frozen common support")
+
+        delta = np.full(pre.shape, np.nan, dtype="float64")
+        delta[common] = 10.0 * np.log10(post[common] / pre[common])
+        values = delta[common]
+        if values.size != common_count or not np.all(np.isfinite(values)):
+            raise SystemExit("R4 blocked: invalid delta values on frozen support")
+
+        qs = np.quantile(values, [0.05,0.10,0.25,0.50,0.75,0.90,0.95], method="linear")
+        p05,p10,p25,p50,p75,p90,p95 = [float(x) for x in qs]
+        threshold = float(contract["factor_two_threshold"]["absolute_db"])
+        decreased = common & (delta <= -threshold)
+        increased = common & (delta >= threshold)
+        factor2 = common & (np.abs(delta) >= threshold)
+        dec_count = int(decreased.sum())
+        inc_count = int(increased.sum())
+        factor_count = int(factor2.sum())
+        largest, component_count = largest_cluster(factor2)
+
+        metrics = {
+            "MEDIAN_DELTA_DB": p50,
+            "IQR_DELTA_DB": p75 - p25,
+            "DECREASE_FACTOR2_FRACTION": dec_count / common_count,
+            "INCREASE_FACTOR2_FRACTION": inc_count / common_count,
+            "LARGEST_FACTOR2_CLUSTER_FRACTION": largest / common_count,
+        }
+        diagnostics = {
+            "P05_DELTA_DB": p05,
+            "P10_DELTA_DB": p10,
+            "P25_DELTA_DB": p25,
+            "P50_DELTA_DB": p50,
+            "P75_DELTA_DB": p75,
+            "P90_DELTA_DB": p90,
+            "P95_DELTA_DB": p95,
+            "ABS_FACTOR2_FRACTION": factor_count / common_count,
+            "LARGEST_FACTOR2_CLUSTER_PIXEL_COUNT": largest,
+            "NUMBER_OF_FACTOR2_CLUSTERS": component_count,
+        }
+
+        write_delta(pre_ds, delta, common, args.delta_output)
+        write_factor2(pre_ds, factor2, common, args.factor2_mask_output)
+
+    report = {
+        "schema_version": "irfen-ibvf-cashahuacra-sentinel1-r4-v0.1",
         "generated_at": now(),
-        "case_id": r3["case_id"],
+        "case_id": "cashahuacra_2015-03-23",
         "deployment_status": "RESEARCH_ONLY",
         "test_only": True,
         "production_use": False,
@@ -172,40 +223,54 @@ def main() -> int:
         "uses_operational_event_none_labels": False,
         "territorial_activation_evidence_blinded": True,
         "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
-        "semantics": contract["r4_output_semantics"],
-        "inputs": {
-            "pre_crop_sha256": actual_pre,
-            "post_crop_sha256": actual_post,
-            "common_support_mask_sha256": actual_mask,
-            "r3_report_sha256": sha256_file(args.r3_report),
-            "metric_contract_sha256": canonical_json_sha256(args.contract),
-            "common_support_pixel_count": n,
-            "common_support_fraction": float(r3["common_support_fraction"]),
+        "contract_path": str(args.contract),
+        "contract_sha256": sha256_file(args.contract),
+        "input_identities": identities,
+        "r3_status": r3["status"],
+        "common_support_fraction": float(r3["common_support_fraction"]),
+        "common_support_pixel_count": common_count,
+        "delta_definition": contract["pixelwise_change_definition"]["formula"],
+        "factor_two_threshold_db": threshold,
+        "quantile_method": "numpy_quantile_linear",
+        "primary_r4_feature_vector": metrics,
+        "fixed_diagnostics": diagnostics,
+        "delta_db_geotiff": {
+            "path": str(args.delta_output),
+            "bytes": args.delta_output.stat().st_size,
+            "sha256": sha256_file(args.delta_output),
+            "masked_outside_common_support": True,
         },
-        "radiometric_domain": "DB_FROM_LINEAR_TERRAIN_FLATTENED_GAMMA0",
-        "delta_definition": "POST_DB_MINUS_PRE_DB",
-        "fixed_absolute_change_threshold_db": threshold,
-        "primary_features": features,
-        "diagnostic_quantiles": {
-            "delta_db": delta_quantiles,
-            "absolute_delta_db": abs_quantiles,
+        "factor2_binary_mask": {
+            "path": str(args.factor2_mask_output),
+            "bytes": args.factor2_mask_output.stat().st_size,
+            "sha256": sha256_file(args.factor2_mask_output),
+            "masked_outside_common_support": True,
+            "connectivity_for_cluster_metric": 8,
+            "morphological_cleanup_performed": False,
         },
-        "largest_8connected_changed_pixel_count": int(largest),
-        "smoothing_applied": False,
-        "speckle_filter_applied_after_r2": False,
-        "morphological_filter_applied": False,
-        "post_hoc_resampling_applied": False,
+        "clipping_performed": False,
+        "smoothing_performed": False,
+        "additional_resampling_performed": False,
+        "posthoc_terrain_or_landcover_masking_performed": False,
         "r4_difference_computed": True,
-        "feature_vector_frozen": False,
+        "r4_is_observational_not_decisional": True,
+        "r4_feature_magnitude_pass_fail_threshold": None,
         "case_control_role_assigned": False,
+        "territorial_outcome_fields_read": False,
         "activation_inference_allowed": False,
-        "risk_or_alert_generated": False,
-        "status": "PASS_R4_PREREGISTERED_REMOTE_OBSERVATIONAL_FEATURES_FROZEN_NO_OUTCOME_INTERPRETATION",
-        "next_gate": "A5_HASH_REMOTE_FEATURE_VECTOR_THEN_ONLY_LATER_INDEPENDENT_TERRITORIAL_UNBLIND_PER_PROTOCOL"
+        "risk_classification_computed": False,
+        "alert_value_computed": False,
+        "status": "PASS_R4_BLIND_SAR_FEATURE_VECTOR_FROZEN_NO_INFERENCE",
+        "next_gate": "A5_FREEZE_CASHAHUACRA_BLIND_FEATURE_VECTOR_WITH_GEOMETRY_IMERG_LANDSAT_AND_R4_WITHOUT_TERRITORIAL_UNBLIND; SERIOUS_MODELING_REMAINS_BLOCKED_PENDING_PARALLEL_CONTROLS",
     }
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(json.dumps({"status": report["status"], "common_support_pixel_count": n, "primary_features": features}, indent=2))
+    args.report_output.parent.mkdir(parents=True, exist_ok=True)
+    args.report_output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(json.dumps({
+        "status": report["status"],
+        "common_support_pixel_count": common_count,
+        "primary_r4_feature_vector": metrics,
+        "activation_inference_allowed": False,
+    }, indent=2))
     return 0
 
 
