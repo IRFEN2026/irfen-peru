@@ -1,0 +1,142 @@
+name: IBVF - PRIMARY6 selected-window A1 catalog freeze
+
+on:
+  push:
+    branches:
+      - agent/independent-basin-validation-map
+    paths:
+      - 'scripts/ibvf_primary6_selected_a1_catalog.py'
+      - 'site/data/validation/ibvf_primary6_selected_a1_contract.json'
+      - '.github/workflows/ibvf-primary6-selected-a1-catalog.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ibvf-primary6-selected-a1-catalog
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  selected-a1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install constrained transport dependency
+        run: python -m pip install --disable-pip-version-check 'requests>=2.31,<3'
+      - name: Compile selected-window A1 implementation
+        run: python -m py_compile scripts/ibvf_primary6_selected_a1_catalog.py
+      - name: Execute fixed A1 catalog rules on frozen PRIMARY6 selected windows
+        run: |
+          mkdir -p artifacts/ibvf
+          python scripts/ibvf_primary6_selected_a1_catalog.py \
+            --repo-root . \
+            --output artifacts/ibvf/ibvf_primary6_selected_a1_catalog.json
+      - name: Scientific fail-closed guards
+        run: |
+          python - <<'PY'
+          import json
+          p='artifacts/ibvf/ibvf_primary6_selected_a1_catalog.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY'
+          assert d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
+          assert d['cohort_id']=='PRIMARY6_CHRONOLOGICAL'
+          assert d['case_control_assignment_performed'] is False
+          assert d['territorial_outcome_fields_read'] is False
+          assert d['known_event_dates_read'] is False
+          assert d['selected_windows_replaced_for_sensor_availability'] is False
+          assert d['activation_inference_allowed'] is False and d['modeling_allowed'] is False
+          s=d['summary']
+          assert 0 < s['selected_window_count'] <= 108
+          assert s['pedregal_selected_count']==0
+          assert s['fixed_stac_request_count']==4*s['selected_window_count']+s['selected_track_count']
+          assert all(w['case_control_role']=='UNASSIGNED' for w in d['windows'])
+          assert all(w['landsat']['pair_choice_performed'] is False for w in d['windows'])
+          assert len({(w['unit_id'],w['season_id'],w['date_local'],w['selected_target_order']) for w in d['windows']})==s['selected_window_count']
+          print({'status':d['status'],**s})
+          PY
+      - name: Freeze report and synchronize research map
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git pull --rebase origin agent/independent-basin-validation-map
+          cp artifacts/ibvf/ibvf_primary6_selected_a1_catalog.json site/data/validation/ibvf_primary6_selected_a1_catalog.json
+          python - <<'PY'
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+          rp=Path('site/data/validation/ibvf_primary6_selected_a1_catalog.json')
+          r=json.loads(rp.read_text(encoding='utf-8'))
+          mp=Path('site/data/validation/independent_basin_validation_map.json')
+          d=json.loads(mp.read_text(encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY' and d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
+          d['version']='irfen-independent-basin-validation-map-v2.9'
+          d['generated_at']=datetime.now(timezone.utc).isoformat().replace('+00:00','Z')
+          ac=d.setdefault('acquisition_contract',{})
+          ac['primary6_selected_a1_contract']='site/data/validation/ibvf_primary6_selected_a1_contract.json'
+          ac['primary6_selected_a1_catalog_report']='site/data/validation/ibvf_primary6_selected_a1_catalog.json'
+          ac['primary6_selected_a1_catalog_status']=r['status']
+          ac['primary6_selected_window_count']=r['summary']['selected_window_count']
+          ac['primary6_sentinel1_pair_selected_count']=r['summary']['sentinel1_pair_selected_count']
+          ac['primary6_sentinel1_missing_compatible_pair_count']=r['summary']['sentinel1_missing_compatible_pair_count']
+          ac['primary6_sentinel1_unknown_count']=r['summary']['sentinel1_unknown_count']
+          ac['primary6_landsat_candidates_pending_aoi_qa_count']=r['summary']['landsat_compatible_candidates_pending_aoi_qa_count']
+          ac['primary6_landsat_missing_compatible_pair_count']=r['summary']['landsat_missing_compatible_pair_count']
+          ac['primary6_landsat_unknown_count']=r['summary']['landsat_unknown_count']
+          by={}
+          for w in r['windows']:
+            x=by.setdefault(w['unit_id'],{'n':0,'s1_yes':0,'s1_missing':0,'s1_unknown':0,'ls_pending':0,'ls_missing':0,'ls_unknown':0})
+            x['n']+=1
+            if w['sentinel1']['status'].startswith('COMPATIBLE_'):x['s1_yes']+=1
+            elif w['sentinel1']['status'].startswith('MISSING_'):x['s1_missing']+=1
+            else:x['s1_unknown']+=1
+            if w['landsat']['status'].startswith('COMPATIBLE_'):x['ls_pending']+=1
+            elif w['landsat']['status'].startswith('MISSING_'):x['ls_missing']+=1
+            else:x['ls_unknown']+=1
+          for c in d.get('cases',[]):
+            u=c.get('unit_id')
+            if u in by:
+              x=by[u]
+              c['framework_stage']='PRIMARY6_SELECTED_WINDOWS_A1_CATALOG_FROZEN_A1_A5_FREEZE_IN_PROGRESS'
+              c['remote_sensing_status']=f"A1_SELECTED_{x['n']}_S1_PAIR_{x['s1_yes']}_MISSING_{x['s1_missing']}_UNKNOWN_{x['s1_unknown']}_LANDSAT_AOI_QA_PENDING_{x['ls_pending']}_MISSING_{x['ls_missing']}_UNKNOWN_{x['ls_unknown']}"
+              c['blind_status']='TERRITORIAL_EVIDENCE_SEALED'
+              c['case_control_role']='UNASSIGNED'
+            elif u=='pedregal':
+              c['framework_stage']='A3_PRIMARY6_RANKING_COMPLETE_NO_CANONICAL_WINDOW_SELECTED_GEOMETRY_UNRESOLVED'
+              c['remote_sensing_status']='A1_SELECTED_WINDOW_FREEZE_NOT_APPLICABLE_NO_CANONICAL_PRIMARY6_SELECTION_GEOMETRY_UNRESOLVED'
+              c['blind_status']='TERRITORIAL_EVIDENCE_SEALED'
+              c['case_control_role']='UNASSIGNED'
+          mp.write_text(json.dumps(d,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          PY
+          git add site/data/validation/ibvf_primary6_selected_a1_catalog.json site/data/validation/independent_basin_validation_map.json
+          if git diff --cached --quiet; then
+            echo 'No selected-window A1/map change to commit.'
+          else
+            git commit -m 'IBVF: freeze PRIMARY6 selected-window A1 catalog evidence'
+            git push origin HEAD:agent/independent-basin-validation-map
+          fi
+      - name: Upload selected-window A1 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ibvf-primary6-selected-a1-${{ github.sha }}
+          path: artifacts/ibvf/ibvf_primary6_selected_a1_catalog.json
+          if-no-files-found: warn
+          retention-days: 30
