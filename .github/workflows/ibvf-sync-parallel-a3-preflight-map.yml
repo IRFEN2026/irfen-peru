@@ -28,12 +28,12 @@ jobs:
         run: |
           python -m py_compile scripts/ibvf_sync_parallel_a3_preflight_map.py
           python scripts/ibvf_sync_parallel_a3_preflight_map.py
-      - name: Validate immutable scientific guards
+      - name: Validate immutable scientific guards and reconciled status
         run: |
           python - <<'PY'
           import json
           d=json.load(open('site/data/validation/independent_basin_validation_map.json',encoding='utf-8'))
-          assert d['version']=='irfen-independent-basin-validation-map-v2.5'
+          assert d['version']=='irfen-independent-basin-validation-map-v2.6'
           assert d['deployment_status']=='RESEARCH_ONLY'
           assert d['test_only'] is True
           assert d['production_use'] is False
@@ -42,17 +42,30 @@ jobs:
           assert d['uses_operational_event_none_labels'] is False
           assert d['territorial_activation_evidence_blinded'] is True
           assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
-          assert d['acquisition_contract']['parallel_a3_bulk_extraction_allowed'] is True
-          assert d['acquisition_contract']['parallel_a3_bulk_extraction_executed'] is False
+          acq=d['acquisition_contract']
+          assert acq['parallel_a3_status']=='PREFLIGHT_PASS_BULK_EXTRACTION_ALLOWED_NO_WINDOW_SELECTED'
+          assert acq['parallel_a3_bulk_extraction_allowed'] is True
+          assert acq['parallel_a3_bulk_extraction_executed'] is False
+          assert acq['sentinel1_r2_exact_graph_status']=='PASS_GRAPH_COMPILED_IDENTICAL_PRE_POST_AND_R2_EXECUTED'
+          assert acq['sentinel1_r2_next_gate']=='R2_R3_R4_COMPLETE_A5_FEATURE_VECTOR_PENDING'
+          cash=next(c for c in d['cases'] if c.get('unit_id')=='cashahuacra')
+          assert cash['sentinel1_r2_processing_executed'] is True
+          assert cash['sentinel1_r2_orbit_consumption_verified'] is True
+          assert cash['sentinel1_r3_common_support_built'] is True
+          assert cash['sentinel1_r3_common_support_fraction'] >= 0.95
+          assert cash['sentinel1_r4_difference_computed'] is True
+          assert cash['sentinel1_r4_activation_inference_allowed'] is False
+          assert cash['sentinel1_r2_status']=='PASS_R2_EXECUTED_EXACT_GRAPH_AND_POEORB_CONSUMPTION_VERIFIED'
           for c in d['cases']:
               if c.get('unit_id') in {'shingolay','pedregal','huaycoloro','san_ildefonso'}:
                   assert c['blind_status']=='TERRITORIAL_EVIDENCE_SEALED'
                   assert c['a0_case_control_role']=='UNASSIGNED'
+                  assert c['a3_bulk_extraction_allowed'] is True
                   assert c['a3_bulk_extraction_executed'] is False
                   assert c['production_use'] is False
                   assert c['production_ready'] is False
                   assert c['operational_alerting_enabled'] is False
-          print({'version':d['version'],'gate':d['serious_modeling_gate'],'parallel_a3':d['acquisition_contract']['parallel_a3_opendap_preflight_status']})
+          print({'version':d['version'],'gate':d['serious_modeling_gate'],'parallel_a3':acq['parallel_a3_opendap_preflight_status'],'cash_r4':cash['sentinel1_r4_status']})
           PY
       - name: Commit only the synchronized research manifest
         run: |
@@ -63,5 +76,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add site/data/validation/independent_basin_validation_map.json
-          git commit -m 'IBVF: reflect parallel A3 preflight PASS in research map'
+          git commit -m 'IBVF: reconcile parallel A3 and completed SAR research map state'
           git push origin HEAD:agent/independent-basin-validation-map
