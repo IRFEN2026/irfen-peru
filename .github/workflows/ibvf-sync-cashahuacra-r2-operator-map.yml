@@ -1,4 +1,4 @@
-name: IBVF - Sync Cashahuacra R2 operator map
+name: IBVF - Sync Cashahuacra R2 method map
 
 on:
   push:
@@ -8,6 +8,8 @@ on:
       - 'scripts/ibvf_sync_cashahuacra_r2_operator_map.py'
       - 'site/data/validation/cashahuacra_sentinel1_r2_operator_schema.json'
       - 'site/data/validation/cashahuacra_sentinel1_r2_orbit_operator_schema.json'
+      - 'site/data/validation/cashahuacra_sentinel1_r2_graph_compile.json'
+      - 'site/data/validation/cashahuacra_sentinel1_r2_graph.xml'
       - '.github/workflows/ibvf-sync-cashahuacra-r2-operator-map.yml'
   workflow_dispatch:
 
@@ -27,15 +29,33 @@ jobs:
           python-version: '3.12'
       - name: Compile synchronizer and guardrail validator
         run: python -m py_compile scripts/ibvf_sync_cashahuacra_r2_operator_map.py scripts/ibvf_validate_case_manifest.py
-      - name: Project fail-closed R2 operator state
+      - name: Project fail-closed frozen R2 method state
         run: |
           python scripts/ibvf_sync_cashahuacra_r2_operator_map.py \
             --map site/data/validation/independent_basin_validation_map.json \
             --operators site/data/validation/cashahuacra_sentinel1_r2_operator_schema.json \
             --orbit-operator site/data/validation/cashahuacra_sentinel1_r2_orbit_operator_schema.json \
+            --graph-compile site/data/validation/cashahuacra_sentinel1_r2_graph_compile.json \
             --output /tmp/independent_basin_validation_map.json
       - name: Revalidate scientific non-operational manifest
         run: python scripts/ibvf_validate_case_manifest.py /tmp/independent_basin_validation_map.json
+      - name: Explicitly preserve R2/R3/R4 fail-closed state
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('/tmp/independent_basin_validation_map.json',encoding='utf-8'))
+          c=[x for x in d['cases'] if x.get('unit_id')=='cashahuacra'][0]
+          assert d['version']=='irfen-independent-basin-validation-map-v2.3'
+          assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
+          assert c['sentinel1_r2_exact_graph_status']=='PASS_GRAPH_COMPILED_IDENTICAL_PRE_POST_CONTRACT_FROZEN'
+          assert c['sentinel1_r2_orbit_consumption_verified'] is False
+          assert c['sentinel1_r2_processing_executed'] is False
+          assert c['sentinel1_r3_common_support_built'] is False
+          assert c['sentinel1_r4_difference_computed'] is False
+          assert c['sentinel1_prepost_difference_computed'] is False
+          assert c['smap_status']=='MISSING_FOR_EVENT_WINDOW'
+          assert c['blind_status']=='TERRITORIAL_EVIDENCE_SEALED'
+          PY
       - name: Archive map projection on research branch
         env:
           BRANCH: ${{ github.ref_name }}
@@ -45,9 +65,9 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add site/data/validation/independent_basin_validation_map.json
           if git diff --cached --quiet; then
-            echo 'No R2 operator map change.'
+            echo 'No R2 method map change.'
           else
-            git commit -m 'IBVF: publish fail-closed Cashahuacra R2 operator state'
+            git commit -m 'IBVF: publish frozen Cashahuacra R2 graph gate'
             git fetch origin "$BRANCH"
             git rebase "origin/$BRANCH"
             git push origin HEAD:"$BRANCH"
