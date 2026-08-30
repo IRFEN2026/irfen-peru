@@ -6,6 +6,7 @@ on:
       - agent/independent-basin-validation-map
     paths:
       - 'scripts/ibvf_parallel_a3_opendap_preflight.py'
+      - 'scripts/ibvf_parallel_a3_opendap_earthdata_adapter.py'
       - 'site/data/validation/ibvf_parallel_a3_opendap_contract.json'
       - 'site/data/validation/ibvf_parallel_a0_pool_inventory.json'
       - 'site/data/validation/independent_basin_validation_map.json'
@@ -26,14 +27,14 @@ jobs:
           python-version: '3.12'
       - name: Install constrained preflight dependencies
         run: python -m pip install --disable-pip-version-check 'requests>=2.31,<3' 'shapely>=2,<3'
-      - name: Compile preflight script
-        run: python -m py_compile scripts/ibvf_parallel_a3_opendap_preflight.py
+      - name: Compile preflight implementation and transport adapter
+        run: python -m py_compile scripts/ibvf_parallel_a3_opendap_preflight.py scripts/ibvf_parallel_a3_opendap_earthdata_adapter.py
       - name: Execute only the preregistered neutral A3 preflight
         env:
           EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
         run: |
           mkdir -p artifacts/ibvf
-          python scripts/ibvf_parallel_a3_opendap_preflight.py \
+          python scripts/ibvf_parallel_a3_opendap_earthdata_adapter.py \
             --repo-root . \
             --output artifacts/ibvf/ibvf_parallel_a3_opendap_preflight.json
       - name: Scientific fail-closed guards
