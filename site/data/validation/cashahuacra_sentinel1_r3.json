@@ -1,6 +1,6 @@
 {
-  "schema_version": "irfen-ibvf-cashahuacra-sentinel1-r3-v0.2",
-  "generated_at": "2026-08-30T06:03:57.382033Z",
+  "schema_version": "irfen-ibvf-cashahuacra-sentinel1-r3-v0.3",
+  "generated_at": "2026-08-30T06:21:10.876999Z",
   "case_id": "cashahuacra_2015-03-23",
   "deployment_status": "RESEARCH_ONLY",
   "test_only": true,
@@ -10,10 +10,104 @@
   "uses_operational_event_none_labels": false,
   "territorial_activation_evidence_blinded": true,
   "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
-  "status": "R3_BLOCKED_GRID_MISMATCH_NO_RESAMPLING_ALLOWED_POST_HOC",
-  "grid_identity_pass": false,
-  "r3_common_support_built": false,
+  "r2_status_required": "PASS_R2_PRE_POST_EXECUTED_EXACT_GRAPH_AND_POEORB_CONSUMPTION_VERIFIED_R3_ALLOWED",
+  "r2_status_observed": "PASS_R2_PRE_POST_EXECUTED_EXACT_GRAPH_AND_POEORB_CONSUMPTION_VERIFIED_R3_ALLOWED",
+  "full_scene_grid_identity_pass": false,
+  "target_pixel_lattice_pass": true,
+  "target_pixel_lattice": {
+    "crs": "EPSG:32718",
+    "pixel_size_x": 10.0,
+    "pixel_size_y": -10.0,
+    "no_rotation": true,
+    "pre_to_post_column_phase_pixels": 110.0,
+    "pre_to_post_row_phase_pixels": -77.0,
+    "integer_column_phase_pixels": 110,
+    "integer_row_phase_pixels": -77,
+    "integer_phase_gate_pass": true,
+    "zero_resampling": true
+  },
+  "deterministic_basin_window": {
+    "common_bounds": [
+      314245.0,
+      8682435.0,
+      318905.0,
+      8688605.0
+    ],
+    "width": 466,
+    "height": 617,
+    "transform": [
+      10.0,
+      0.0,
+      314245.0,
+      0.0,
+      -10.0,
+      8688605.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "pre_source_window": {
+      "column_offset": 7637,
+      "row_offset": 6167,
+      "width": 466,
+      "height": 617
+    },
+    "post_source_window": {
+      "column_offset": 7747,
+      "row_offset": 6090,
+      "width": 466,
+      "height": 617
+    },
+    "output_transform_identical": true,
+    "output_shape_identical": true,
+    "depends_on_signal_values": false,
+    "depends_on_outcome": false,
+    "resampling_performed": false
+  },
+  "lossless_basin_crops": {
+    "pre": {
+      "path": "/tmp/ibvf-r2-exec/r3/cashahuacra_pre_r2_basin_crop.tif",
+      "bytes": 1022897,
+      "sha256": "df7c4f197f703c9838b8fda3a2363a1266e40a1a4e3574476f258dd78f0fb176",
+      "dtype": "float32",
+      "nodata": null,
+      "pixel_identity_check": "PASS_EXACT_ARRAY_EQUAL",
+      "mask_identity_check": "PASS_EXACT_ARRAY_EQUAL",
+      "resampling_performed": false,
+      "radiometric_transformation_performed": false
+    },
+    "post": {
+      "path": "/tmp/ibvf-r2-exec/r3/cashahuacra_post_r2_basin_crop.tif",
+      "bytes": 1021635,
+      "sha256": "839392420b366ec3b7126afd82c9c56e9b284e040559304ec6c17e1d08f42abf",
+      "dtype": "float32",
+      "nodata": null,
+      "pixel_identity_check": "PASS_EXACT_ARRAY_EQUAL",
+      "mask_identity_check": "PASS_EXACT_ARRAY_EQUAL",
+      "resampling_performed": false,
+      "radiometric_transformation_performed": false
+    }
+  },
+  "basin_pixel_count": 150920,
+  "pre_valid_pixel_count": 150350,
+  "pre_valid_fraction": 0.9962231645905115,
+  "post_valid_pixel_count": 150352,
+  "post_valid_fraction": 0.99623641664458,
+  "common_valid_pixel_count": 150227,
+  "common_support_fraction": 0.9954081632653061,
+  "minimum_common_support_fraction": 0.95,
+  "common_support_gate_pass": true,
+  "common_support_mask": {
+    "path": "/tmp/ibvf-r2-exec/r3/cashahuacra_r3_common_support_mask.tif",
+    "bytes": 2679,
+    "sha256": "1afc5e44f70db95679d9e3033851cc86b6d3fc58d00ed9b15bb1ab20d7685252"
+  },
+  "radiometric_difference_statistics_computed": false,
+  "comparison_performed": false,
+  "r3_common_support_built": true,
   "r4_difference_computed": false,
   "case_control_role_assigned": false,
-  "activation_inference_allowed": false
+  "activation_inference_allowed": false,
+  "status": "PASS_R3_COMMON_SUPPORT_R4_ALLOWED_BY_SPATIAL_SUPPORT_ONLY",
+  "next_gate": "R4_MAY_BE_EXECUTED_ONLY_FROM_THE_FROZEN_LOSSLESS_CROPS_AND_COMMON_SUPPORT_MASK_USING_THE_SEPARATELY_PREREGISTERED_CHANGE_METRIC_CONTRACT"
 }
