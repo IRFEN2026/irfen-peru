@@ -1,0 +1,112 @@
+<graph id="IBVF_Cashahuacra_S1_R2_v0_1">
+  <version>1.0</version>
+  <node id="Read">
+    <operator>Read</operator>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <file>${inputFile}</file>
+    </parameters>
+  </node>
+  <node id="ThermalNoiseRemoval">
+    <operator>ThermalNoiseRemoval</operator>
+    <sources>
+      <sourceProduct refid="Read" />
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <selectedPolarisations>VV</selectedPolarisations>
+      <removeThermalNoise>true</removeThermalNoise>
+      <reIntroduceThermalNoise>false</reIntroduceThermalNoise>
+      <outputNoise>false</outputNoise>
+      <clipNegativeValues>true</clipNegativeValues>
+    </parameters>
+  </node>
+  <node id="ApplyOrbitFile">
+    <operator>Apply-Orbit-File</operator>
+    <sources>
+      <sourceProduct refid="ThermalNoiseRemoval" />
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <orbitType>Sentinel Precise (Auto Download)</orbitType>
+      <polyDegree>3</polyDegree>
+      <continueOnFail>false</continueOnFail>
+    </parameters>
+  </node>
+  <node id="Calibration">
+    <operator>Calibration</operator>
+    <sources>
+      <sourceProduct refid="ApplyOrbitFile" />
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <auxFile>Latest Auxiliary File</auxFile>
+      <outputImageInComplex>false</outputImageInComplex>
+      <outputImageScaleInDb>false</outputImageScaleInDb>
+      <createGammaBand>false</createGammaBand>
+      <createBetaBand>false</createBetaBand>
+      <outputGammaBand>false</outputGammaBand>
+      <outputBetaBand>true</outputBetaBand>
+      <outputSigmaBand>false</outputSigmaBand>
+      <selectedPolarisations>VV</selectedPolarisations>
+    </parameters>
+  </node>
+  <node id="TerrainFlattening">
+    <operator>Terrain-Flattening</operator>
+    <sources>
+      <sourceProduct refid="Calibration" />
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <sourceBands>Beta0_VV</sourceBands>
+      <demName>External DEM</demName>
+      <externalDEMFile>${externalDEMFile}</externalDEMFile>
+      <externalDEMNoDataValue>-9999.0</externalDEMNoDataValue>
+      <externalDEMApplyEGM>false</externalDEMApplyEGM>
+      <demResamplingMethod>BILINEAR_INTERPOLATION</demResamplingMethod>
+      <additionalOverlap>0.1</additionalOverlap>
+      <oversamplingMultiple>1.0</oversamplingMultiple>
+      <outputSigma0>false</outputSigma0>
+      <outputSimulatedImage>false</outputSimulatedImage>
+      <nodataValueAtSea>true</nodataValueAtSea>
+    </parameters>
+  </node>
+  <node id="TerrainCorrection">
+    <operator>Terrain-Correction</operator>
+    <sources>
+      <sourceProduct refid="TerrainFlattening" />
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <sourceBands>Gamma0_VV</sourceBands>
+      <demName>External DEM</demName>
+      <externalDEMFile>${externalDEMFile}</externalDEMFile>
+      <externalDEMNoDataValue>-9999.0</externalDEMNoDataValue>
+      <externalDEMApplyEGM>false</externalDEMApplyEGM>
+      <demResamplingMethod>BILINEAR_INTERPOLATION</demResamplingMethod>
+      <imgResamplingMethod>BILINEAR_INTERPOLATION</imgResamplingMethod>
+      <mapProjection>EPSG:32718</mapProjection>
+      <pixelSpacingInMeter>10.0</pixelSpacingInMeter>
+      <alignToStandardGrid>true</alignToStandardGrid>
+      <standardGridOriginX>0.0</standardGridOriginX>
+      <standardGridOriginY>0.0</standardGridOriginY>
+      <applyRadiometricNormalization>false</applyRadiometricNormalization>
+      <saveSelectedSourceBand>true</saveSelectedSourceBand>
+      <saveDEM>false</saveDEM>
+      <saveLatLon>false</saveLatLon>
+      <saveLayoverShadowMask>false</saveLayoverShadowMask>
+      <saveLocalIncidenceAngle>false</saveLocalIncidenceAngle>
+      <saveProjectedLocalIncidenceAngle>false</saveProjectedLocalIncidenceAngle>
+      <saveIncidenceAngleFromEllipsoid>false</saveIncidenceAngleFromEllipsoid>
+      <saveGammaNought>false</saveGammaNought>
+      <saveSigmaNought>false</saveSigmaNought>
+      <saveBetaNought>false</saveBetaNought>
+      <outputComplex>false</outputComplex>
+      <nodataValueAtSea>true</nodataValueAtSea>
+    </parameters>
+  </node>
+  <node id="Write">
+    <operator>Write</operator>
+    <sources>
+      <sourceProduct refid="TerrainCorrection" />
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <file>${outputFile}</file>
+      <formatName>GeoTIFF</formatName>
+    </parameters>
+  </node>
+</graph>
