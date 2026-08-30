@@ -24,7 +24,11 @@ def main():
     m=load(args.map); a5=load(args.a5); guard(m); guard(a5)
     assert a5['case_id']=='cashahuacra_2015-03-23'
     assert a5['a5_status']=='PASS_A5_BLIND_FEATURE_VECTOR_HASHED_WITH_EXPLICIT_MISSING_NO_UNBLIND_NO_MODELING'
+    assert a5['feature_selection_used_observed_magnitude'] is False
+    assert a5['territorial_outcome_fields_read'] is False and a5['known_event_outcome_read'] is False
     assert a5['case_control_role_assigned'] is False and a5['activation_inference_allowed'] is False and a5['modeling_allowed'] is False
+    assert a5['quality_metadata']['landsat_primary_optical_feature_status']=='UNKNOWN_NOT_FROZEN_NO_IMPUTATION'
+    assert a5['quality_metadata']['smap_status']=='MISSING_FOR_EVENT_WINDOW_NO_IMPUTATION'
     cases=[c for c in m['cases'] if c.get('case_id')==a5['case_id']]; assert len(cases)==1; c=cases[0]
     assert c['blind_status']=='TERRITORIAL_EVIDENCE_SEALED'
     ac=m.setdefault('acquisition_contract',{})
@@ -35,8 +39,17 @@ def main():
     ac['cashahuacra_a5_numeric_feature_count']=a5['numeric_feature_count']
     ac['cashahuacra_a5_explicit_missing_or_unknown_feature_count']=a5['explicit_missing_or_unknown_feature_count']
     c['framework_stage']='A5_BLIND_FEATURE_VECTOR_FROZEN_NO_UNBLIND_SERIOUS_MODELING_BLOCKED'
-    c['a5_status']=a5['a5_status']; c['a5_feature_vector_path']='data/validation/cashahuacra_a5_feature_vector.json'; c['a5_feature_vector_sha256']=a5['feature_vector_sha256']; c['a5_numeric_feature_count']=a5['numeric_feature_count']; c['a5_explicit_missing_or_unknown_feature_count']=a5['explicit_missing_or_unknown_feature_count']; c['case_control_role']='UNASSIGNED_BLIND'; c['activation_inference_allowed']=False; c['modeling_allowed']=False
+    c['a5_status']=a5['a5_status']
+    c['a5_feature_vector_path']='data/validation/cashahuacra_a5_feature_vector.json'
+    c['a5_feature_vector_sha256']=a5['feature_vector_sha256']
+    c['a5_numeric_feature_count']=a5['numeric_feature_count']
+    c['a5_explicit_missing_or_unknown_feature_count']=a5['explicit_missing_or_unknown_feature_count']
+    c['case_control_role']='UNASSIGNED_BLIND'
+    c['activation_inference_allowed']=False
+    c['modeling_allowed']=False
+    c['remote_sensing_status']='A5_FROZEN_S1_R4_PASS_OPTICAL_PRIMARY_UNKNOWN_NO_UNBLIND'
+    c['smap_status']='MISSING_FOR_EVENT_WINDOW'
     m['generated_at']=datetime.now(timezone.utc).isoformat().replace('+00:00','Z')
     guard(m); args.map.write_text(json.dumps(m,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
-    print({'case_id':c['case_id'],'framework_stage':c['framework_stage'],'a5_sha256':c['a5_feature_vector_sha256'],'serious_modeling_gate':m['serious_modeling_gate']})
+    print({'case_id':c['case_id'],'framework_stage':c['framework_stage'],'a5_sha256':c['a5_feature_vector_sha256'],'remote_sensing_status':c['remote_sensing_status'],'serious_modeling_gate':m['serious_modeling_gate']})
 if __name__=='__main__': main()
