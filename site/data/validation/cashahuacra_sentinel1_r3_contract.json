@@ -1,8 +1,12 @@
 {
-  "schema_version": "irfen-ibvf-cashahuacra-sentinel1-r3-contract-v0.2",
+  "schema_version": "irfen-ibvf-cashahuacra-sentinel1-r3-contract-v0.3",
   "generated_at": "2026-08-30T05:55:00Z",
-  "amended_at": "2026-08-30T05:57:00Z",
-  "amendment_reason": "Storage/provenance-only amendment before any R3 or R4 radiometric change metric: preserve exact target-grid basin-window crops because full-scene R2 GeoTIFFs are multi-gigabyte. The crop window depends only on frozen basin geometry and frozen R2 grid; no signal value, outcome, threshold, support gate or pairing rule changed.",
+  "amended_at": "2026-08-30T06:14:00Z",
+  "amendment_reason": "Signal-blind metadata-only amendment after R2 completed and the first R3 attempt blocked before reading SAR radiometric values because the full-scene R2 rasters had different extents. The archived metadata audit proved the products share the same unrotated EPSG:32718 10 m target-pixel lattice with an exact integer-pixel origin phase. R3 may therefore use exact native-pixel co-windows on that common lattice without resampling. No R3 validity/support pixels, R4 change metric, outcome field, case/control role, threshold, date, pair, basin, or radiometric value was inspected or changed to motivate this amendment.",
+  "prior_contract_schema": "irfen-ibvf-cashahuacra-sentinel1-r3-contract-v0.2",
+  "prior_r3_status": "R3_BLOCKED_GRID_MISMATCH_NO_RESAMPLING_ALLOWED_POST_HOC",
+  "prior_r3_common_support_built": false,
+  "prior_r4_difference_computed": false,
   "case_id": "cashahuacra_2015-03-23",
   "deployment_status": "RESEARCH_ONLY",
   "test_only": true,
@@ -12,40 +16,62 @@
   "uses_operational_event_none_labels": false,
   "territorial_activation_evidence_blinded": true,
   "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
-  "purpose": "Pre-register common spatial support construction before any Cashahuacra Sentinel-1 pre/post difference or change metric is computed.",
+  "purpose": "Pre-register zero-resampling common spatial support construction before any Cashahuacra Sentinel-1 pre/post difference or change metric is computed.",
   "r2_prerequisite_status_required": "PASS_R2_PRE_POST_EXECUTED_EXACT_GRAPH_AND_POEORB_CONSUMPTION_VERIFIED_R3_ALLOWED",
+  "r2_grid_metadata_audit": {
+    "path": "site/data/validation/cashahuacra_sentinel1_r2_grid_audit.json",
+    "status_required": "PASS_COMMON_TARGET_PIXEL_LATTICE_DIFFERENT_FULL_EXTENTS_METADATA_ONLY",
+    "diagnostic_scope_required": "GRID_METADATA_ONLY_NO_SAR_PIXEL_VALUES_READ",
+    "same_target_pixel_lattice_required": true,
+    "observed_pre_to_post_column_phase_pixels": -110.0,
+    "observed_pre_to_post_row_phase_pixels": -77.0,
+    "audit_does_not_authorize_radiometric_comparison": true
+  },
   "basin_geometry": {
     "path": "site/data/watersheds/cashahuacra_ibvf_two_point_v03.geojson",
     "selector_property": "unit_id",
     "selector_value": "cashahuacra",
     "semantics": "RESEARCH_CANDIDATE_POSITIONALLY_STABLE_UNDER_FROZEN_STANDARD_PREPROCESSING_CONDITIONING_DEPENDENCE_FLAGGED_NOT_OPERATIONAL"
   },
-  "grid_identity_gate": {
+  "target_pixel_lattice_gate": {
+    "canonical_lattice_reference": "PRE_R2_TARGET_LATTICE",
+    "full_scene_extent_and_shape_may_differ": true,
     "required_equal": [
       "CRS",
-      "width",
-      "height",
-      "Affine transform"
+      "pixel size X",
+      "pixel size Y",
+      "zero rotation/shear"
     ],
-    "transform_absolute_tolerance": 1e-9,
-    "grid_mismatch": "R3_BLOCKED_GRID_MISMATCH_NO_RESAMPLING_ALLOWED_POST_HOC"
+    "origin_phase_rule": "Differences in target-grid origins divided by the corresponding pixel vector must be exact integers within tolerance.",
+    "absolute_coordinate_tolerance": 1e-09,
+    "integer_phase_tolerance_pixels": 1e-09,
+    "resampling_allowed": false,
+    "interpolation_allowed": false,
+    "lattice_mismatch_status": "R3_BLOCKED_TARGET_PIXEL_LATTICE_MISMATCH_NO_RESAMPLING_ALLOWED",
+    "noninteger_phase_status": "R3_BLOCKED_NONINTEGER_PIXEL_PHASE_NO_RESAMPLING_ALLOWED",
+    "noninteger_window_mapping_status": "R3_BLOCKED_NONINTEGER_COWINDOW_MAPPING_NO_RESAMPLING_ALLOWED",
+    "co_window_mismatch_status": "R3_BLOCKED_COWINDOW_TRANSFORM_OR_SHAPE_MISMATCH",
+    "scientific_rationale": "A common integer-pixel lattice permits exact native-pixel intersection despite different full-scene extents; it is not a post-hoc resampling operation."
   },
   "basin_window_preservation": {
-    "rule": "Derive the smallest integer target-grid window whose extent covers the frozen basin geometry, read the exact source pixels from each R2 GeoTIFF, and write them without resampling or radiometric transformation.",
+    "rule": "Derive the smallest integer window on the frozen pre R2 target lattice whose extent covers the frozen basin geometry. Map exactly those geospatial bounds to the post R2 raster and require an integer native-pixel window with identical output affine transform and shape. Read each native source window directly and write without resampling or radiometric transformation.",
+    "pre_and_post_source_offsets_may_differ_by_integer_lattice_phase": true,
+    "pre_and_post_output_transform_must_be_identical": true,
+    "pre_and_post_output_shape_must_be_identical": true,
     "window_depends_on_signal_values": false,
     "window_depends_on_outcome": false,
     "resampling_allowed": false,
     "radiometric_conversion_allowed": false,
-    "pre_and_post_window_must_be_identical": true,
     "preserve_dtype": true,
     "preserve_pixel_values": true,
     "outputs_must_be_sha256_frozen": true,
+    "window_outside_status": "R3_BLOCKED_FROZEN_BASIN_WINDOW_NOT_CONTAINED_IN_BOTH_R2_PRODUCTS",
     "full_scene_r2_may_be_discarded_after_verified_crop_and_r3_evidence_are_archived": true
   },
   "basin_pixelization": {
-    "rule": "Rasterize the frozen basin geometry on the frozen R2 target grid within the deterministic basin window using pixel-center semantics.",
+    "rule": "Rasterize the frozen basin geometry once on the common frozen target-grid co-window using pixel-center semantics.",
     "all_touched": false,
-    "denominator": "all target-grid pixel centers inside the frozen basin polygon",
+    "denominator": "all common-target-grid pixel centers inside the frozen basin polygon",
     "geometry_may_be_buffered_or_eroded_after_R2": false
   },
   "per_date_validity": {
@@ -54,7 +80,7 @@
     "nodata_imputed": false
   },
   "common_support": {
-    "definition": "basin_mask AND pre_valid_mask AND post_valid_mask",
+    "definition": "basin_mask AND pre_valid_mask AND post_valid_mask on the exact zero-resampling common target-pixel co-window",
     "common_support_fraction": "common_valid_pixel_count / basin_pixel_count",
     "minimum_fraction": 0.95,
     "gate_operator": ">=",
@@ -62,8 +88,10 @@
     "above_gate_status": "PASS_R3_COMMON_SUPPORT_R4_ALLOWED_BY_SPATIAL_SUPPORT_ONLY"
   },
   "allowed_outputs": [
-    "grid metadata equality audit",
-    "deterministic basin-window row/column offsets and dimensions",
+    "full-scene grid metadata and target-lattice identity audit",
+    "integer pre/post lattice phase offsets",
+    "deterministic common geospatial basin bounds and separate native source row/column windows",
+    "identical output co-window affine transform and dimensions",
     "lossless pre and post basin-window GeoTIFFs and SHA-256",
     "basin pixel count",
     "pre valid pixel count and fraction",
@@ -82,5 +110,5 @@
   ],
   "r4_difference_allowed_before_r3_pass": false,
   "activation_inference_allowed": false,
-  "execution_status": "PREREGISTERED_BEFORE_R3_EXECUTION_AND_BEFORE_ANY_R4_CHANGE_METRIC"
+  "execution_status": "AMENDED_SIGNAL_BLIND_BEFORE_ANY_R3_VALIDITY_SUPPORT_PIXEL_READ_AND_BEFORE_ANY_R4_CHANGE_METRIC"
 }
