@@ -1,0 +1,195 @@
+name: IBVF - Parallel A3 primary six-season gate
+
+on:
+  push:
+    branches:
+      - agent/independent-basin-validation-map
+    paths:
+      - '.github/workflows/ibvf-parallel-a3-primary6.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ibvf-parallel-a3-primary6
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  extract:
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        season:
+          - '2015-2016'
+          - '2016-2017'
+          - '2017-2018'
+          - '2018-2019'
+          - '2019-2020'
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install constrained scientific dependencies
+        run: python -m pip install --disable-pip-version-check 'requests>=2.31,<3' 'shapely>=2,<3' 'pyproj>=3.6,<4'
+      - name: Compile frozen extraction implementation
+        run: python -m py_compile scripts/ibvf_parallel_a3_season_partition.py scripts/ibvf_parallel_a3_first_day_pilot.py scripts/ibvf_parallel_a3_opendap_preflight.py scripts/ibvf_parallel_a3_opendap_earthdata_adapter.py
+      - name: Execute frozen chronological season partition
+        env:
+          EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
+          SEASON: ${{ matrix.season }}
+        run: |
+          safe="${SEASON//-/_}"
+          mkdir -p artifacts/ibvf/checkpoint artifacts/ibvf/reports
+          python scripts/ibvf_parallel_a3_season_partition.py \
+            --repo-root . \
+            --partition-id "$SEASON" \
+            --workers 4 \
+            --checkpoint "artifacts/ibvf/checkpoint/${SEASON}.jsonl" \
+            --output "artifacts/ibvf/reports/ibvf_parallel_a3_${safe}.json"
+      - name: Scientific fail-closed partition guards
+        env:
+          SEASON: ${{ matrix.season }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          sid=os.environ['SEASON']; safe=sid.replace('-','_')
+          plan=json.load(open('site/data/validation/ibvf_parallel_a3_bulk_execution_plan.json',encoding='utf-8'))
+          part=next(p for p in plan['partitions'] if p['partition_id']==sid)
+          p=Path(f'artifacts/ibvf/reports/ibvf_parallel_a3_{safe}.json'); d=json.load(open(p,encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY' and d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False and d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False and d['territorial_activation_evidence_blinded'] is True
+          assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
+          assert d['partition_id']==sid and d['partition_status']=='PASS_SEASON_PARTITION_COMPLETE_NO_RANKING_NO_UNBLINDING'
+          assert d['partition_selection_uses_rainfall'] is False and d['partition_selection_uses_outcome'] is False
+          assert d['known_event_dates_read'] is False and d['territorial_outcome_fields_read'] is False and d['cashahuacra_magnitudes_read'] is False
+          assert d['sensor_availability_deletes_calendar_days'] is False and d['window_selection_performed'] is False
+          assert d['meteorological_ranking_performed'] is False and d['case_control_assignment_performed'] is False and d['modeling_allowed'] is False
+          slots=int(part['expected_half_hour_slots']); rows=int(part['expected_canonical_rows']); days=int(part['output_days'])
+          assert d['cmr']['exact_selected_count']==slots and d['subset_summary']['requested_slots']==slots and d['subset_summary']['pass_slots']==slots
+          assert d['subset_summary']['failed_or_unknown_slots']==0 and d['subset_summary']['bounded_parallelism_max_workers']<=4
+          s=d['canonical_row_summary']; assert s['actual_rows']==s['expected_rows']==rows
+          assert s['numeric_single_geometry_rows_complete']==days*3 and s['pedregal_unknown_rows']==days and s['pedregal_sidecar_rows']==days*3
+          required={'unit_id','season_id','date_local','P3H_MAX','P24H_LOCAL','ANTECEDENT_7D'}
+          for r in d['canonical_rows']: assert set(r)==required
+          ped=[r for r in d['canonical_rows'] if r['unit_id']=='pedregal']; assert len(ped)==days
+          assert all(r['P3H_MAX'] is None and r['P24H_LOCAL'] is None and r['ANTECEDENT_7D'] is None for r in ped)
+          assert min(v['minimum_valid_area_fraction_observed'] for v in d['spatial_support_quality'].values())>=0.999999
+          print({'season':sid,'slots':slots,'rows':rows,'status':d['partition_status']})
+          PY
+      - name: Upload frozen season report
+        uses: actions/upload-artifact@v4
+        with:
+          name: ibvf-primary6-${{ matrix.season }}-${{ github.sha }}
+          path: artifacts/ibvf/reports/*.json
+          if-no-files-found: error
+          retention-days: 30
+
+  freeze-primary6:
+    needs: extract
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download all five season reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ibvf-primary6-*-${{ github.sha }}
+          path: artifacts/ibvf/primary6
+          merge-multiple: true
+      - name: Compile gate, aggregator, ranking and map sync
+        run: python -m py_compile scripts/ibvf_parallel_a3_aggregate_v02.py scripts/ibvf_meteorological_rank_select_v02.py scripts/ibvf_sync_dataset_gate_map.py
+      - name: Rebase branch before freezing generated evidence
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git pull --rebase origin agent/independent-basin-validation-map
+      - name: Install frozen partition reports
+        run: cp artifacts/ibvf/primary6/ibvf_parallel_a3_*.json site/data/validation/
+      - name: Aggregate exactly the first six chronological seasons
+        run: |
+          python scripts/ibvf_parallel_a3_aggregate_v02.py \
+            --repo-root . \
+            --cohort primary6 \
+            --output site/data/validation/ibvf_primary6_a3_daily.json
+      - name: Primary six-season gate guards
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('site/data/validation/ibvf_primary6_a3_daily.json',encoding='utf-8'))
+          assert d['cohort_id']=='PRIMARY6_CHRONOLOGICAL'
+          assert d['primary_minimum_complete'] is True and d['full_robustness_complete'] is False
+          assert d['partition_count']==d['expected_partition_count']==6
+          assert d['input_track_day_count']==d['expected_track_day_count']==5816
+          assert d['pedregal_canonical_rows']==1454 and d['numeric_single_geometry_rows']==4362
+          assert d['pedregal_candidate_sidecar_rows']==4362
+          assert d['ranking_input_gate']=='PASS_PRIMARY6_5816_ROWS_RANKING_ALLOWED_NO_UNBLIND_NO_MODELING'
+          assert d['territorial_outcome_fields_read'] is False and d['known_event_dates_read'] is False
+          assert d['modeling_allowed'] is False and d['activation_inference_allowed'] is False
+          PY
+      - name: Execute preregistered blind ranking on PRIMARY6 only
+        run: |
+          python scripts/ibvf_meteorological_rank_select_v02.py \
+            --a0-pool site/data/validation/ibvf_parallel_a0_pool_inventory.json \
+            --ranking-contract site/data/validation/ibvf_meteorological_ranking_contract.json \
+            --gate-amendment site/data/validation/ibvf_dataset_gate_amendment_v02.json \
+            --a3-cohort site/data/validation/ibvf_primary6_a3_daily.json \
+            --output site/data/validation/ibvf_primary6_meteorological_ranking.json
+      - name: Blind ranking guards
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('site/data/validation/ibvf_primary6_meteorological_ranking.json',encoding='utf-8'))
+          assert d['cohort_id']=='PRIMARY6_CHRONOLOGICAL'
+          assert d['input_track_day_count']==5816
+          assert d['selected_primary_window_count']<=144
+          assert d['sensor_fields_read'] is False and d['territorial_outcome_fields_read'] is False
+          assert d['case_control_assignment_performed'] is False
+          assert d['all_selected_roles']=='UNASSIGNED_BLIND_METEOROLOGICAL_STRATUM'
+          assert d['modeling_allowed'] is False and d['activation_inference_allowed'] is False
+          assert d['status']=='PRIMARY6_BLIND_METEOROLOGICAL_RANKING_EXECUTED_NO_OUTCOME_NO_CASE_CONTROL_NO_MODELING'
+          PY
+      - name: Synchronize research-only map with primary gate
+        run: python scripts/ibvf_sync_dataset_gate_map.py --repo-root .
+      - name: Final guardrails before commit
+        run: |
+          python - <<'PY'
+          import json
+          m=json.load(open('site/data/validation/independent_basin_validation_map.json',encoding='utf-8'))
+          assert m['deployment_status']=='RESEARCH_ONLY' and m['test_only'] is True
+          assert m['production_use'] is False and m['production_ready'] is False and m['operational_alerting_enabled'] is False
+          assert m['uses_operational_event_none_labels'] is False and m['territorial_activation_evidence_blinded'] is True
+          assert m['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
+          ac=m['acquisition_contract']; assert ac['primary_dataset_season_target']==6 and ac['primary_dataset_seasons_complete']==6
+          assert ac['full_robustness_season_target']==12 and ac['primary6_meteorological_ranking_executed'] is True
+          assert ac['serious_modeling_after_primary6_ranking_allowed'] is False
+          PY
+      - name: Freeze primary-six evidence on research branch only
+        run: |
+          git add \
+            site/data/validation/ibvf_parallel_a3_2015_2016.json \
+            site/data/validation/ibvf_parallel_a3_2016_2017.json \
+            site/data/validation/ibvf_parallel_a3_2017_2018.json \
+            site/data/validation/ibvf_parallel_a3_2018_2019.json \
+            site/data/validation/ibvf_parallel_a3_2019_2020.json \
+            site/data/validation/ibvf_primary6_a3_daily.json \
+            site/data/validation/ibvf_primary6_meteorological_ranking.json \
+            site/data/validation/independent_basin_validation_map.json
+          git commit -m 'IBVF: freeze primary six-season blind cohort and ranking'
+          git pull --rebase origin agent/independent-basin-validation-map
+          git push origin HEAD:agent/independent-basin-validation-map
