@@ -1,0 +1,62 @@
+name: IBVF Cashahuacra R2 target-grid metadata audit
+
+on:
+  push:
+    branches:
+      - agent/independent-basin-validation-map
+    paths:
+      - 'scripts/ibvf_sentinel1_r2_grid_audit.py'
+      - '.github/workflows/ibvf-cashahuacra-r2-grid-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  grid-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile and audit metadata only
+        run: |
+          python -m py_compile scripts/ibvf_sentinel1_r2_grid_audit.py
+          python scripts/ibvf_sentinel1_r2_grid_audit.py \
+            --r2-report site/data/validation/cashahuacra_sentinel1_r2_execution.json \
+            --output site/data/validation/cashahuacra_sentinel1_r2_grid_audit.json \
+            | tee /tmp/ibvf-r2-grid-audit.log
+      - name: Verify no radiometric comparison and archive
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          python - <<'PY'
+          import json
+          p='site/data/validation/cashahuacra_sentinel1_r2_grid_audit.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY'
+          assert d['production_use'] is False and d['production_ready'] is False and d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False and d['territorial_activation_evidence_blinded'] is True
+          assert d['diagnostic_scope']=='GRID_METADATA_ONLY_NO_SAR_PIXEL_VALUES_READ'
+          assert d['r3_common_support_computed'] is False and d['r4_difference_computed'] is False and d['activation_inference_allowed'] is False
+          print('Metadata-only guardrails PASS:',d['status'])
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add site/data/validation/cashahuacra_sentinel1_r2_grid_audit.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'IBVF: archive Cashahuacra R2 target-grid metadata audit'
+            git fetch origin "$BRANCH"
+            git rebase "origin/$BRANCH"
+            git push origin HEAD:"$BRANCH"
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cashahuacra-r2-grid-audit-${{ github.sha }}
+          path: |
+            site/data/validation/cashahuacra_sentinel1_r2_grid_audit.json
+            /tmp/ibvf-r2-grid-audit.log
+          retention-days: 30
