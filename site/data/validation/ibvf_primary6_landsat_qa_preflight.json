@@ -1,6 +1,6 @@
 {
-  "schema_version": "irfen-ibvf-primary6-landsat-qa-preflight-v0.1",
-  "generated_at": "2026-08-30T21:50:47.763919Z",
+  "schema_version": "irfen-ibvf-primary6-landsat-qa-preflight-v0.2",
+  "generated_at": "2026-08-30T21:52:02.543970Z",
   "framework": "IRFEN Independent Basin Validation Framework",
   "deployment_status": "RESEARCH_ONLY",
   "test_only": true,
@@ -36,13 +36,67 @@
     "feature_sha256": "b73821b172f00a5de2b530cb52043693823f882b5305cf9672738bf3dbaf486e"
   },
   "qa_pixel_acquisition": {
-    "transport_status": "TRANSPORT_BLOCKED",
-    "source_uri": "s3://usgs-landsat/collection02/level-2/standard/oli-tirs/2014/007/068/LC08_L2SP_007068_20140721_20200911_02_T1/LC08_L2SP_007068_20140721_20200911_02_T1_QA_PIXEL.TIF",
-    "resolved_url": "https://usgs-landsat.s3.amazonaws.com/collection02/level-2/standard/oli-tirs/2014/007/068/LC08_L2SP_007068_20140721_20200911_02_T1/LC08_L2SP_007068_20140721_20200911_02_T1_QA_PIXEL.TIF",
-    "error_class": "HTTPError",
-    "error": "<HTTPError 403: 'Forbidden'>"
+    "transport_status": "SUCCESS",
+    "route_used": "PLANETARY_COMPUTER_SIGNED_MIRROR_SAME_EARTH_SEARCH_ITEM_ID_ONLY",
+    "primary_attempt": {
+      "transport_status": "TRANSPORT_BLOCKED",
+      "transport_route": "EARTH_SEARCH_ASSET_DIRECT_HTTPS",
+      "source_uri": "s3://usgs-landsat/collection02/level-2/standard/oli-tirs/2014/007/068/LC08_L2SP_007068_20140721_20200911_02_T1/LC08_L2SP_007068_20140721_20200911_02_T1_QA_PIXEL.TIF",
+      "resolved_url_without_query": "https://usgs-landsat.s3.amazonaws.com/collection02/level-2/standard/oli-tirs/2014/007/068/LC08_L2SP_007068_20140721_20200911_02_T1/LC08_L2SP_007068_20140721_20200911_02_T1_QA_PIXEL.TIF",
+      "error_class": "HTTPError",
+      "error": "<HTTPError 403: 'Forbidden'>"
+    },
+    "fallback_attempt": {
+      "transport_status": "SUCCESS",
+      "transport_route": "PLANETARY_COMPUTER_SIGNED_MIRROR_SAME_EARTH_SEARCH_ITEM_ID_ONLY",
+      "source_uri": "https://landsateuwest.blob.core.windows.net/landsat-c2/level-2/standard/oli-tirs/2014/007/068/LC08_L2SP_007068_20140721_20200911_02_T1/LC08_L2SP_007068_20140721_20200911_02_T1_QA_PIXEL.TIF",
+      "resolved_url_without_query": "https://landsateuwest.blob.core.windows.net/landsat-c2/level-2/standard/oli-tirs/2014/007/068/LC08_L2SP_007068_20140721_20200911_02_T1/LC08_L2SP_007068_20140721_20200911_02_T1_QA_PIXEL.TIF",
+      "bytes": 4321239,
+      "sha256": "a196a75592752f291e22c3ef432273b0acf990bb12c100dce06058537f6453a3",
+      "identity_validation": {
+        "earth_search_item_id": "LC08_L2SP_007068_20140721_02_T1",
+        "planetary_computer_item_id": "LC08_L2SP_007068_20140721_02_T1",
+        "platform_match": true,
+        "wrs_path_match": true,
+        "wrs_row_match": true,
+        "datetime_match": true
+      },
+      "planetary_computer_item_response": {
+        "url_without_query": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/landsat-c2-l2/items/LC08_L2SP_007068_20140721_02_T1",
+        "http_status": 200,
+        "raw_bytes": 23029,
+        "raw_sha256": "85d264bf64f028064f61b8b8fdfbb2c5f87c2e5ed0de1d62b7e37c64c88d7b8a"
+      },
+      "planetary_computer_sign_response": {
+        "url_without_query": "https://planetarycomputer.microsoft.com/api/sas/v1/sign",
+        "http_status": 200,
+        "raw_bytes": 533,
+        "raw_sha256": "dac23c39a46f8a70dd35d63083b0459dbcefdc95511c27cdd58916b394da1fe7"
+      },
+      "signed_sas_query_token_persisted": false
+    },
+    "bytes": 4321239,
+    "sha256": "a196a75592752f291e22c3ef432273b0acf990bb12c100dce06058537f6453a3"
   },
-  "metrics": null,
+  "metrics": {
+    "crs": "EPSG:32618",
+    "dtype": "uint16",
+    "aoi_inside_pixels": 537972,
+    "aoi_nonfill_valid_pixels": 537972,
+    "strict_clear_pixels": 536077,
+    "strict_clear_fraction": 0.9964775118407649,
+    "strict_clear_pct": 99.6477511840765,
+    "qa_pixel_fill_bit": 0,
+    "strict_clear_requires_zero_bits": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "resampling_performed": false,
+    "interpolation_performed": false
+  },
   "pair_choice_performed": false,
   "selected_window_replaced": false,
   "case_control_assignment_performed": false,
@@ -51,6 +105,6 @@
   "activation_inference_allowed": false,
   "modeling_allowed": false,
   "transport_failure_is_missing_science": false,
-  "status": "TRANSPORT_BLOCKED_QA_PIXEL_PREFLIGHT_RETAIN_UNKNOWN_NOT_MISSING",
-  "next_gate": "RESOLVE_BYTE_TRANSPORT_WITH_IDENTITY_PRESERVING_FALLBACK_BEFORE_BULK_QA"
+  "status": "PASS_QA_PIXEL_NATIVE_AOI_MECHANICS_PREFLIGHT_IDENTITY_PRESERVED_NO_PAIR_CHOICE",
+  "next_gate": "BULK_UNIQUE_SCENE_QA_PIXEL_MEASUREMENT_WITH_FROZEN_PAIR_ORDERING_ONLY_AFTER_ALL_REQUIRED_QA_COMPLETE"
 }
