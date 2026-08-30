@@ -1,0 +1,92 @@
+{
+  "schema_version": "irfen-ibvf-primary6-landsat-aoi-qa-contract-v0.1",
+  "generated_at": "2026-08-30T21:48:00Z",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
+  "cohort_id": "PRIMARY6_CHRONOLOGICAL",
+  "purpose": "Measure QA_PIXEL strict-clear fraction inside each frozen selected-track AOI for Landsat candidates already identified by the complete PRIMARY6 A1 catalog, before any optical pair is chosen and without reading territorial outcomes.",
+  "sources": {
+    "sensor_rules": "site/data/validation/ibvf_parallel_a1_sensor_rules.json",
+    "selected_a1_contract": "site/data/validation/ibvf_primary6_selected_a1_contract.json",
+    "selected_a1_catalog": "site/data/validation/ibvf_primary6_selected_a1_catalog.json",
+    "research_map": "site/data/validation/independent_basin_validation_map.json"
+  },
+  "anti_leakage": {
+    "territorial_outcomes_read": false,
+    "known_event_dates_read": false,
+    "case_control_assignment_allowed": false,
+    "activation_inference_allowed": false,
+    "global_scene_cloud_cover_used_for_acceptance_or_pair_choice": false,
+    "selected_window_replacement_allowed": false,
+    "candidate_scene_replacement_on_transport_failure_allowed": false,
+    "transport_failure_is_missing_science": false
+  },
+  "catalog_gate": {
+    "required_selected_a1_status": "PASS_SELECTED_PRIMARY6_A1_COMPLETE_PAGINATED_CATALOG_FREEZE_NO_OUTCOME_NO_REPLACEMENT",
+    "catalog_incomplete_behavior": "BLOCK_QA_AND_RETAIN_UNKNOWN",
+    "landsat_statuses_eligible_for_qa": [
+      "COMPATIBLE_CANDIDATES_FROZEN_PAIR_CHOICE_PENDING_AOI_QA"
+    ],
+    "missing_complete_catalog_window_behavior": "RETAIN_MISSING_COMPATIBLE_PAIR",
+    "unknown_catalog_window_behavior": "RETAIN_UNKNOWN_NO_QA"
+  },
+  "qa_pixel_rule": {
+    "asset": "qa_pixel",
+    "aoi": "exact geometry bound to selected unit_id in frozen research map",
+    "fill_bit": 0,
+    "strict_clear_requires_bits_zero": [1, 2, 3, 4, 5],
+    "bit_semantics": {
+      "1": "dilated_cloud",
+      "2": "cirrus",
+      "3": "cloud",
+      "4": "cloud_shadow",
+      "5": "snow"
+    },
+    "strict_clear_fraction_denominator": "inside_AOI_non_fill_pixels",
+    "resampling": false,
+    "interpolation": false,
+    "global_eo_cloud_cover_used": false,
+    "minimum_clear_threshold": null,
+    "reason_no_minimum_threshold": "A1 deterministically ranks compatible pairs by measured clear fractions; any A4 common-clear-support acceptance threshold must be separately preregistered before optical difference metrics are computed."
+  },
+  "deduplication": {
+    "measure_each_unique_scene_once_per_unit_id": true,
+    "unique_key": ["unit_id", "item_id"],
+    "reuse_same_scene_qa_across_selected_windows_for_same_unit": true,
+    "candidate_must_appear_in_at_least_one_frozen_compatible_pair_identity": true
+  },
+  "pair_choice_after_qa": {
+    "inherit_exactly_from": "site/data/validation/ibvf_parallel_a1_sensor_rules.json#landsat_c2_l2.strict_clear_pair_ordering",
+    "ordering": [
+      "largest minimum of pre and post AOI strict-clear fraction",
+      "largest mean AOI strict-clear fraction",
+      "smallest total absolute temporal distance to local date D",
+      "earliest pre acquisition datetime",
+      "earliest post acquisition datetime",
+      "lexicographically smallest concatenated item IDs"
+    ],
+    "pair_choice_before_all_required_candidate_qa_complete": false,
+    "window_with_qa_transport_block": "RETAIN_WINDOW_PAIR_STATUS_UNKNOWN_NO_REPLACEMENT"
+  },
+  "preflight": {
+    "allowed_before_bulk": true,
+    "scene_selection": "lexicographically earliest (unit_id, item_id) among unique scenes required by frozen compatible-pair identities",
+    "purpose": "validate byte/raster transport and AOI QA mechanics only",
+    "preflight_scene_result_may_change_pair_or_window_selection": false
+  },
+  "output_requirements": {
+    "every_successful_QA_PIXEL_byte_source_recorded": true,
+    "every_successful_QA_PIXEL_response_or_local_file_identity_hashed": true,
+    "every_measured_scene_records_AOI_pixel_counts": true,
+    "UNKNOWN_and_MISSING_preserved": true,
+    "all_roles_remain": "UNASSIGNED",
+    "modeling_allowed": false
+  }
+}
