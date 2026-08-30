@@ -15,7 +15,7 @@ on:
 
 concurrency:
   group: ibvf-primary6-landsat-qa-bulk
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -27,7 +27,7 @@ jobs:
     timeout-minutes: 330
     strategy:
       fail-fast: false
-      max-parallel: 3
+      max-parallel: 1
       matrix:
         unit_id: [huaycoloro, san_ildefonso, shingolay]
     steps:
@@ -48,7 +48,7 @@ jobs:
           python scripts/ibvf_primary6_landsat_qa_track.py \
             --repo-root . \
             --unit-id '${{ matrix.unit_id }}' \
-            --workers 6 \
+            --workers 1 \
             --download-dir artifacts/ibvf/downloads/${{ matrix.unit_id }} \
             --output artifacts/ibvf/results/ibvf_primary6_landsat_qa_${{ matrix.unit_id }}.json
       - name: Track scientific guards
