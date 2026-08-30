@@ -1,0 +1,113 @@
+{
+  "schema_version": "irfen-ibvf-parallel-a1-sensor-rules-v0.1",
+  "generated_at": "2026-08-30T05:53:00Z",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
+  "purpose": "Freeze deterministic sensor search and pairing rules for all parallel blind windows before meteorological ranking is executed or any parallel window is selected.",
+  "scope_tracks": [
+    "shingolay",
+    "san_ildefonso",
+    "pedregal",
+    "huaycoloro"
+  ],
+  "source_contracts": [
+    "site/data/validation/ibvf_blind_sampling_contract.json",
+    "site/data/validation/ibvf_meteorological_ranking_contract.json",
+    "site/data/validation/ibvf_parallel_a0_pool_inventory.json",
+    "site/data/validation/ibvf_parallel_stac_preflight.json"
+  ],
+  "anti_leakage": {
+    "cashahuacra_dates_or_feature_magnitudes_used_to_choose_these_rules": false,
+    "territorial_outcomes_used": false,
+    "known_parallel_event_dates_used": false,
+    "sensor_availability_may_replace_a_selected_meteorological_window": false,
+    "sensor_availability_may_delete_a0_calendar_days": false,
+    "transport_failure_is_missing_science": false,
+    "global_landsat_cloud_cover_is_acceptance_criterion": false,
+    "rules_may_change_after_first_parallel_unblind_without_new_protocol_version": false
+  },
+  "anchor_time_semantics": {
+    "anchor": "blind meteorological local calendar date D selected only by the separately preregistered meteorological ranking contract",
+    "timezone": "America/Lima",
+    "outcome_time_within_D_used": false,
+    "known_flow_time_used": false
+  },
+  "sentinel_1_grd": {
+    "collection": "sentinel-1-grd",
+    "catalog_search_envelope_local_days": 36,
+    "reason_for_envelope": "Three nominal 12-day same-satellite repeat cycles provide fixed redundancy without using Cashahuacra timing or any outcome.",
+    "pre_interval": "D-36 through D-1 local calendar days",
+    "post_interval": "D+1 through D+36 local calendar days",
+    "compatibility_fields_required_equal": [
+      "platform",
+      "sar:instrument_mode",
+      "sat:orbit_state",
+      "sat:relative_orbit"
+    ],
+    "polarization_rule": "VV must be present in both acquisitions; additional polarizations do not invalidate a pair.",
+    "pair_ordering": [
+      "smallest total absolute temporal distance to local date D",
+      "smallest maximum side-specific temporal distance",
+      "earliest pre acquisition datetime",
+      "earliest post acquisition datetime",
+      "lexicographically smallest concatenated item IDs"
+    ],
+    "no_compatible_bracketing_pair": "RETAIN_WINDOW_AND_RECORD_MISSING_COMPATIBLE_PAIR_IF_CATALOG_QUERY_COMPLETE_OR_UNKNOWN_TRANSPORT_BLOCKED_IF_NOT_COMPLETE",
+    "availability_changes_primary_window_selection": false,
+    "sar_feature_extraction_allowed_at_A1": false
+  },
+  "landsat_c2_l2": {
+    "collection": "landsat-c2-l2",
+    "catalog_search_envelope_local_days": 48,
+    "reason_for_envelope": "Three nominal 16-day Landsat repeat cycles provide a fixed cloud-robust search envelope without using known outcomes.",
+    "pre_interval": "D-48 through D-1 local calendar days",
+    "post_interval": "D+1 through D+48 local calendar days",
+    "compatibility_fields_required_equal": [
+      "platform",
+      "landsat:wrs_path",
+      "landsat:wrs_row"
+    ],
+    "qa_rule": "Compute QA_PIXEL strict-clear fraction inside the frozen basin AOI for every catalog candidate before pair choice; aerosol is diagnostic only.",
+    "global_eo_cloud_cover_used": false,
+    "strict_clear_pair_ordering": [
+      "largest minimum of pre and post AOI strict-clear fraction",
+      "largest mean AOI strict-clear fraction",
+      "smallest total absolute temporal distance to local date D",
+      "earliest pre acquisition datetime",
+      "earliest post acquisition datetime",
+      "lexicographically smallest concatenated item IDs"
+    ],
+    "minimum_clear_threshold_frozen_here": false,
+    "reason_no_threshold_here": "A1 records availability and deterministically chooses the best same-platform/WRS bracketing pair; any A4 minimum common-clear-support gate must be separately preregistered before optical differences are computed.",
+    "no_compatible_bracketing_pair": "RETAIN_WINDOW_AND_RECORD_MISSING_COMPATIBLE_PAIR_IF_CATALOG_QUERY_COMPLETE_OR_UNKNOWN_TRANSPORT_BLOCKED_IF_NOT_COMPLETE",
+    "availability_changes_primary_window_selection": false,
+    "optical_difference_allowed_at_A1": false
+  },
+  "copernicus_dem_glo30": {
+    "collection": "cop-dem-glo-30",
+    "temporal_pairing": false,
+    "rule": "Freeze every exact tile intersecting the frozen basin geometry by byte count and SHA-256 before A2; transport failures remain UNKNOWN_NOT_MISSING.",
+    "geometry_may_be_changed_to_improve_sensor_coverage": false
+  },
+  "smap": {
+    "rule": "Assess temporal product availability independently after the blind date is selected. Before mission coverage or when no scientifically usable product exists, record explicit MISSING_FOR_WINDOW; authentication/transport failures remain UNKNOWN_NOT_MISSING; never impute zero or climatology.",
+    "cashahuacra_status_unchanged": "MISSING_FOR_EVENT_WINDOW"
+  },
+  "window_retention": {
+    "selected_meteorological_window_is_retained_if_sentinel1_missing": true,
+    "selected_meteorological_window_is_retained_if_landsat_missing_or_cloudy": true,
+    "selected_meteorological_window_is_retained_if_smap_missing": true,
+    "selected_meteorological_window_is_retained_if_any_transport_blocked": true,
+    "missingness_is_itself_not_a_case_control_label": true
+  },
+  "execution_status": "PREREGISTERED_BEFORE_PARALLEL_METEOROLOGICAL_RANKING_EXECUTION",
+  "case_control_assignment_allowed": false,
+  "activation_inference_allowed": false
+}
