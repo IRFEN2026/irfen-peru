@@ -1,0 +1,70 @@
+{
+  "schema_version": "irfen-ibvf-cashahuacra-sentinel1-r3-contract-v0.1",
+  "generated_at": "2026-08-30T05:55:00Z",
+  "case_id": "cashahuacra_2015-03-23",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
+  "purpose": "Pre-register common spatial support construction before any Cashahuacra Sentinel-1 pre/post difference or change metric is computed.",
+  "r2_prerequisite_status_required": "PASS_R2_PRE_POST_EXECUTED_EXACT_GRAPH_AND_POEORB_CONSUMPTION_VERIFIED_R3_ALLOWED",
+  "basin_geometry": {
+    "path": "site/data/watersheds/cashahuacra_ibvf_two_point_v03.geojson",
+    "selector_property": "unit_id",
+    "selector_value": "cashahuacra",
+    "semantics": "RESEARCH_CANDIDATE_POSITIONALLY_STABLE_UNDER_FROZEN_STANDARD_PREPROCESSING_CONDITIONING_DEPENDENCE_FLAGGED_NOT_OPERATIONAL"
+  },
+  "grid_identity_gate": {
+    "required_equal": [
+      "CRS",
+      "width",
+      "height",
+      "Affine transform"
+    ],
+    "transform_absolute_tolerance": 1e-9,
+    "grid_mismatch": "R3_BLOCKED_GRID_MISMATCH_NO_RESAMPLING_ALLOWED_POST_HOC"
+  },
+  "basin_pixelization": {
+    "rule": "Rasterize the frozen basin geometry on the already-frozen R2 target grid using pixel-center semantics.",
+    "all_touched": false,
+    "denominator": "all target-grid pixel centers inside the frozen basin polygon",
+    "geometry_may_be_buffered_or_eroded_after_R2": false
+  },
+  "per_date_validity": {
+    "rule": "A basin pixel is valid for a date only when the raster dataset mask is valid, the Gamma0 value is finite, and the linear Gamma0 value is strictly greater than zero.",
+    "radiometric_value_used_beyond_validity": false,
+    "nodata_imputed": false
+  },
+  "common_support": {
+    "definition": "basin_mask AND pre_valid_mask AND post_valid_mask",
+    "common_support_fraction": "common_valid_pixel_count / basin_pixel_count",
+    "minimum_fraction": 0.95,
+    "gate_operator": ">=",
+    "below_gate_status": "UNKNOWN_INSUFFICIENT_COMMON_SUPPORT",
+    "above_gate_status": "PASS_R3_COMMON_SUPPORT_R4_ALLOWED_BY_SPATIAL_SUPPORT_ONLY"
+  },
+  "allowed_outputs": [
+    "grid metadata equality audit",
+    "basin pixel count",
+    "pre valid pixel count and fraction",
+    "post valid pixel count and fraction",
+    "common valid pixel count and fraction",
+    "binary common-support mask GeoTIFF and SHA-256"
+  ],
+  "forbidden_outputs": [
+    "pre/post Gamma0 mean or median",
+    "Delta Gamma0",
+    "dB change",
+    "changed pixel fraction",
+    "spatial cluster statistics",
+    "activation inference",
+    "case/control assignment"
+  ],
+  "r4_difference_allowed_before_r3_pass": false,
+  "activation_inference_allowed": false,
+  "execution_status": "PREREGISTERED_BEFORE_R2_EXECUTION_RESULT_OBSERVED"
+}
