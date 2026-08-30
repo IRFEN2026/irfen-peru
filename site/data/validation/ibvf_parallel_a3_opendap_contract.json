@@ -1,0 +1,148 @@
+{
+  "schema_version": "irfen-ibvf-parallel-a3-opendap-contract-v0.1",
+  "generated_at": "2026-08-30T06:28:00Z",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
+  "purpose": "Pre-register an efficient, reproducible A3 IMERG Final V07 extraction route for the exhaustive blind parallel pool before meteorological ranking or window selection. This contract does not select dates and does not read territorial outcomes.",
+  "source_a0_pool": "site/data/validation/ibvf_parallel_a0_pool_inventory.json",
+  "source_a1_preflight": "site/data/validation/ibvf_parallel_stac_preflight.json",
+  "source_ranking_contract": "site/data/validation/ibvf_meteorological_ranking_contract.json",
+  "tracks": ["shingolay", "pedregal", "huaycoloro", "san_ildefonso"],
+  "expected_track_day_rows": 11628,
+  "product_identity": {
+    "short_name": "GPM_3IMERGHH",
+    "version": "07",
+    "collection_concept_id": "C2723754847-GES_DISC",
+    "processing_level": "Final",
+    "temporal_resolution_minutes": 30,
+    "granule_identity_source_of_truth": "NASA_CMR",
+    "cmr_endpoint": "https://cmr.earthdata.nasa.gov/search/granules.json",
+    "opendap_service": "NASA_GES_DISC_HYRAX",
+    "opendap_root": "https://gpm1.gesdisc.eosdis.nasa.gov/opendap/GPM_L3/GPM_3IMERGHH.07/",
+    "opendap_role": "SPATIAL_SUBSETTING_TRANSPORT_ONLY_NOT_GRANULE_IDENTITY_AUTHORITY",
+    "raw_hdf5_variable_semantics_reference": "/Grid/precipitation",
+    "opendap_variable_name_must_be_resolved_from_dds_before_full_extraction": true,
+    "floating_product_version_forbidden": true
+  },
+  "anti_leakage": {
+    "window_selection_before_a3_complete": false,
+    "territorial_outcome_fields_allowed": false,
+    "known_event_dates_allowed": false,
+    "cashahuacra_remote_magnitudes_allowed": false,
+    "sensor_availability_may_remove_a0_day": false,
+    "case_control_assignment_allowed": false,
+    "risk_or_alert_fields_allowed": false
+  },
+  "temporal_contract": {
+    "timezone": "America/Lima",
+    "local_day_utc_offset": "UTC-05:00",
+    "p3h_max": "maximum six consecutive half-hour depth slots whose slot starts lie within local calendar day D",
+    "p24h_local": "sum of the 48 half-hour depth slots from local D 00:00 inclusive to D+1 00:00 exclusive",
+    "antecedent_7d": "sum of seven complete local calendar days from D-7 00:00 inclusive to D 00:00 exclusive",
+    "half_hour_depth": "valid precipitation rate mm/h multiplied by 0.5 h",
+    "season_extraction_padding": "Each frozen season is acquired from seven full local days before its first A0 day through the final local A0 day inclusive, so every A0 row can be built without outcome-time information.",
+    "event_time_or_activation_time_used": false
+  },
+  "spatial_subset_contract": {
+    "native_grid_expected_spacing_deg": 0.1,
+    "geometry_sources": "FROZEN_OR_EXPLICIT_REVIEW_ONLY_TRACK_GEOMETRIES_ALREADY_REFERENCED_BY_THE_A1_PREFLIGHT",
+    "request_envelope": "Deterministic union bounding box of the four frozen track geometries, padded outward by exactly one native IMERG cell after DDS coordinate vectors are resolved.",
+    "request_envelope_depends_on_rainfall": false,
+    "request_envelope_depends_on_outcome": false,
+    "one_opendap_spatial_subset_per_unique_half_hour_granule": true,
+    "same_subset_serves_all_four_tracks": true,
+    "coordinate_vectors_must_be_frozen_before_bulk_extraction": true,
+    "subset_index_bounds_must_be_frozen_before_bulk_extraction": true,
+    "no_interpolation_or_resampling": true,
+    "native_values_only": true
+  },
+  "basin_weighting_contract": {
+    "cell_geometry": "native lon/lat cell boundaries derived from frozen coordinate vectors and median native spacing",
+    "intersection": "exact geometry intersection between native IMERG cells and each frozen track geometry",
+    "area_method": "project each track and intersecting native cells to its deterministic WGS84 UTM zone selected from the track centroid longitude; southern EPSG 327xx",
+    "utm_zone_rule": "zone=floor((centroid_lon+180)/6)+1; EPSG=32700+zone",
+    "cashahuacra_method_compatibility": "This deterministic rule yields EPSG:32718 for Cashahuacra/Lima and preserves the same area-weighted method class used by the anchor; San Ildefonso resolves independently to its own UTM zone.",
+    "weight": "cell_basin_intersection_area / basin_area",
+    "overlap_weight_sum_required": "within 1e-5 of 1.0",
+    "minimum_valid_area_fraction_per_slot": 0.999999,
+    "fill_or_invalid_value_imputed_as_zero": false,
+    "negative_precipitation_imputed_as_zero": false
+  },
+  "identity_and_reproducibility": {
+    "cmr_query_partition": "one frozen study season at a time, with exact UTC endpoints derived from frozen local season plus antecedent padding",
+    "cmr_raw_response_sha256_required": true,
+    "ordered_granule_id_manifest_sha256_required": true,
+    "expected_half_hour_slot_count_must_be_explicit_per_partition": true,
+    "opendap_dds_sha256_required_for_preflight": true,
+    "opendap_subset_raw_response_sha256_required": true,
+    "parsed_native_subset_canonical_sha256_required": true,
+    "per_partition_feature_rows_canonical_sha256_required": true,
+    "final_11628_row_manifest_sha256_required": true,
+    "raw_full_global_hdf5_required_for_parallel_a3": false,
+    "reason_full_hdf5_not_required": "The scientific quantity is the native precipitation field over the frozen basin cells; official OPeNDAP spatial subsetting can transfer those native values without interpolation while CMR independently freezes granule identity. Cashahuacra raw-HDF5 freeze remains the anchor audit and is not weakened."
+  },
+  "missing_and_transport_semantics": {
+    "successful_cmr_query_with_expected_slot_absent": "MISSING_GRANULE_IDENTITY",
+    "cmr_transport_failure": "UNKNOWN_TRANSPORT_BLOCKED_NOT_MISSING",
+    "opendap_auth_failure": "UNKNOWN_AUTH_BLOCKED_NOT_MISSING",
+    "opendap_transport_failure": "UNKNOWN_TRANSPORT_BLOCKED_NOT_MISSING",
+    "dds_or_variable_schema_mismatch": "UNKNOWN_SCHEMA_BLOCKED_NOT_ZERO",
+    "slot_valid_area_below_gate": "UNKNOWN_GRID_VALUE_MISSING_NOT_ZERO",
+    "a0_row_with_any_required_feature_unknown": "WINDOW_RETAINED_RANK_UNKNOWN_NO_IMPUTATION",
+    "replace_unknown_window_with_another_date": false
+  },
+  "required_daily_output_fields_only": [
+    "unit_id",
+    "season_id",
+    "date_local",
+    "P3H_MAX",
+    "P24H_LOCAL",
+    "ANTECEDENT_7D"
+  ],
+  "forbidden_daily_output_fields": [
+    "outcome",
+    "event",
+    "activation",
+    "damage",
+    "incident",
+    "case_control_role",
+    "label",
+    "risk",
+    "alert",
+    "priority",
+    "sensor_availability"
+  ],
+  "preflight_gate": {
+    "fixed_neutral_time_rule": "Use the chronologically first half-hour granule required by the frozen A0 pool plus antecedent padding; do not choose a date by rainfall or outcome.",
+    "must_verify": [
+      "CMR exact V07 granule identity",
+      "official GES DISC OPeNDAP endpoint reachable or explicitly UNKNOWN transport/auth",
+      "DDS exposes coordinate vectors and the precipitation variable corresponding to raw /Grid/precipitation",
+      "native grid spacing approximately 0.1 degree",
+      "deterministic four-track request envelope maps to integer native indices",
+      "a small constrained native-value response can be parsed without resampling"
+    ],
+    "bulk_a3_allowed_before_preflight_pass": false
+  },
+  "ranking_gate": {
+    "meteorological_ranking_execution_allowed_before_all_11628_rows_present": false,
+    "meteorological_ranking_execution_allowed_if_rows_present_with_explicit_unknown_features": true,
+    "unknown_rows_retained": true,
+    "selection_contract_may_change_after_inspecting_a3_values": false,
+    "case_control_assignment_performed": false
+  },
+  "map_rule": {
+    "individual_a3_days_are_map_layers": false,
+    "track_may_show_a3_stage_and_completeness_only": true,
+    "risk_or_result_symbolization_forbidden": true
+  },
+  "execution_status": "PREREGISTERED_PREFLIGHT_NOT_YET_EXECUTED",
+  "serious_modeling_allowed": false
+}
