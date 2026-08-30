@@ -1,6 +1,6 @@
 {
-  "version": "irfen-independent-basin-validation-map-v2.8",
-  "generated_at": "2026-08-30T17:15:01.769580Z",
+  "version": "irfen-independent-basin-validation-map-v2.9",
+  "generated_at": "2026-08-30T17:51:07.346935Z",
   "framework": "IRFEN Independent Basin Validation Framework",
   "deployment_status": "RESEARCH_ONLY",
   "test_only": true,
@@ -165,7 +165,17 @@
     "primary6_meteorological_ranking_executed": true,
     "serious_modeling_after_primary6_ranking_allowed": false,
     "territorial_unblind_after_primary6_ranking_allowed_only_after_selected_A1_A5_freeze": true,
-    "primary6_meteorological_ranking_report": "site/data/validation/ibvf_primary6_meteorological_ranking.json"
+    "primary6_meteorological_ranking_report": "site/data/validation/ibvf_primary6_meteorological_ranking.json",
+    "primary6_selected_a1_contract": "site/data/validation/ibvf_primary6_selected_a1_contract.json",
+    "primary6_selected_a1_catalog_report": "site/data/validation/ibvf_primary6_selected_a1_catalog.json",
+    "primary6_selected_a1_catalog_status": "PARTIAL_SELECTED_PRIMARY6_A1_CATALOG_UNKNOWN_TRANSPORT_OR_TRUNCATION_RETAINED",
+    "primary6_selected_window_count": 108,
+    "primary6_sentinel1_pair_selected_count": 0,
+    "primary6_sentinel1_missing_compatible_pair_count": 0,
+    "primary6_sentinel1_unknown_count": 108,
+    "primary6_landsat_candidates_pending_aoi_qa_count": 0,
+    "primary6_landsat_missing_compatible_pair_count": 0,
+    "primary6_landsat_unknown_count": 108
   },
   "guardrails": {
     "no_risk_colors": true,
@@ -358,7 +368,7 @@
       "unit_id": "shingolay",
       "name": "Quebrada Shingolay",
       "blind_window": "NOT_YET_SELECTED_FROM_FROZEN_POOL",
-      "framework_stage": "A1_SENSOR_CATALOG_PREFLIGHT_COMPLETE_A3_OPENDAP_PREFLIGHT_PASS_BULK_EXTRACTION_ALLOWED_NO_WINDOW_SELECTED",
+      "framework_stage": "PRIMARY6_SELECTED_WINDOWS_A1_CATALOG_FROZEN_A1_A5_FREEZE_IN_PROGRESS",
       "geometry_status": "EXISTING_REVIEW_ONLY_CANDIDATE",
       "geometry_path": "data/phase2/geometries/w1_santa_eulalia_rimac.geojson",
       "geometry_selector": {
@@ -367,7 +377,7 @@
       },
       "geometry_semantics": "EXISTING_CANDIDATE_ONLY_NOT_IBVF_FINAL",
       "imerg_status": "A3_PRIMARY6_6_OF_6_PARTITIONS_PASS_BLIND_RANKING_FROZEN_NO_UNBLIND",
-      "remote_sensing_status": "A1_STAC_CATALOG_PRESENT_S1_LANDSAT_COPDEM_WINDOW_NOT_SELECTED",
+      "remote_sensing_status": "A1_SELECTED_36_S1_PAIR_0_MISSING_0_UNKNOWN_36_LANDSAT_AOI_QA_PENDING_0_MISSING_0_UNKNOWN_36",
       "smap_status": "NOT_ASSESSED",
       "blind_status": "TERRITORIAL_EVIDENCE_SEALED",
       "production_use": false,
@@ -398,14 +408,15 @@
       "primary_dataset_gate_seasons_complete": 6,
       "primary_dataset_gate_seasons_target": 6,
       "full_robustness_seasons_complete": 6,
-      "full_robustness_seasons_target": 12
+      "full_robustness_seasons_target": 12,
+      "case_control_role": "UNASSIGNED"
     },
     {
       "case_id": "san_ildefonso_parallel_intake",
       "unit_id": "san_ildefonso",
       "name": "Quebrada San Ildefonso",
       "blind_window": "NOT_YET_SELECTED_FROM_FROZEN_POOL",
-      "framework_stage": "A1_SENSOR_CATALOG_PREFLIGHT_COMPLETE_A3_OPENDAP_PREFLIGHT_PASS_BULK_EXTRACTION_ALLOWED_NO_WINDOW_SELECTED",
+      "framework_stage": "PRIMARY6_SELECTED_WINDOWS_A1_CATALOG_FROZEN_A1_A5_FREEZE_IN_PROGRESS",
       "geometry_status": "EXISTING_TEST_ONLY_WATERSHED_CANDIDATE",
       "geometry_path": "data/watersheds/san_ildefonso_watershed.geojson",
       "geometry_selector": {
@@ -414,7 +425,7 @@
       },
       "geometry_semantics": "EXISTING_DEM_D8_CANDIDATE_REQUIRES_IBVF_FREEZE",
       "imerg_status": "A3_PRIMARY6_6_OF_6_PARTITIONS_PASS_BLIND_RANKING_FROZEN_NO_UNBLIND",
-      "remote_sensing_status": "A1_STAC_CATALOG_PRESENT_S1_LANDSAT_COPDEM_WINDOW_NOT_SELECTED",
+      "remote_sensing_status": "A1_SELECTED_36_S1_PAIR_0_MISSING_0_UNKNOWN_36_LANDSAT_AOI_QA_PENDING_0_MISSING_0_UNKNOWN_36",
       "smap_status": "NOT_ASSESSED",
       "blind_status": "TERRITORIAL_EVIDENCE_SEALED",
       "production_use": false,
@@ -445,14 +456,15 @@
       "primary_dataset_gate_seasons_complete": 6,
       "primary_dataset_gate_seasons_target": 6,
       "full_robustness_seasons_complete": 6,
-      "full_robustness_seasons_target": 12
+      "full_robustness_seasons_target": 12,
+      "case_control_role": "UNASSIGNED"
     },
     {
       "case_id": "pedregal_parallel_geometry",
       "unit_id": "pedregal",
       "name": "Quebrada Pedregal",
       "blind_window": "NOT_YET_SELECTED_FROM_FROZEN_POOL",
-      "framework_stage": "A1_SENSOR_CATALOG_PREFLIGHT_COMPLETE_A3_OPENDAP_PREFLIGHT_PASS_BULK_EXTRACTION_ALLOWED_NO_WINDOW_SELECTED",
+      "framework_stage": "A3_PRIMARY6_RANKING_COMPLETE_NO_CANONICAL_WINDOW_SELECTED_GEOMETRY_UNRESOLVED",
       "geometry_status": "MULTIPLE_REVIEW_ONLY_CANDIDATE_SETS",
       "geometry_path": "data/watersheds/chosica_local_candidate_sets.geojson",
       "geometry_selector": {
@@ -461,7 +473,7 @@
       },
       "geometry_semantics": "CANDIDATE_SET_NOT_A_VALIDATED_BASIN",
       "imerg_status": "A3_PRIMARY6_6_OF_6_CANDIDATE_SIDECARS_CANONICAL_UNKNOWN_GEOMETRY_UNRESOLVED",
-      "remote_sensing_status": "A1_STAC_CATALOG_PRESENT_S1_LANDSAT_COPDEM_WINDOW_NOT_SELECTED",
+      "remote_sensing_status": "A1_SELECTED_WINDOW_FREEZE_NOT_APPLICABLE_NO_CANONICAL_PRIMARY6_SELECTION_GEOMETRY_UNRESOLVED",
       "smap_status": "NOT_ASSESSED",
       "blind_status": "TERRITORIAL_EVIDENCE_SEALED",
       "production_use": false,
@@ -497,14 +509,15 @@
       "a3_numeric_ranking_allowed": false,
       "a3_bulk_complete": false,
       "primary_dataset_gate_seasons_complete": 6,
-      "primary_dataset_gate_seasons_target": 6
+      "primary_dataset_gate_seasons_target": 6,
+      "case_control_role": "UNASSIGNED"
     },
     {
       "case_id": "huaycoloro_parallel_intake",
       "unit_id": "huaycoloro",
       "name": "Quebrada Huaycoloro",
       "blind_window": "NOT_YET_SELECTED_FROM_FROZEN_POOL",
-      "framework_stage": "A1_SENSOR_CATALOG_PREFLIGHT_COMPLETE_A3_OPENDAP_PREFLIGHT_PASS_BULK_EXTRACTION_ALLOWED_NO_WINDOW_SELECTED",
+      "framework_stage": "PRIMARY6_SELECTED_WINDOWS_A1_CATALOG_FROZEN_A1_A5_FREEZE_IN_PROGRESS",
       "geometry_status": "EXISTING_TEST_ONLY_WATERSHED_CANDIDATE",
       "geometry_path": "data/watersheds/huaycoloro_watershed.geojson",
       "geometry_selector": {
@@ -513,7 +526,7 @@
       },
       "geometry_semantics": "EXISTING_DEM_D8_CANDIDATE_REQUIRES_IBVF_FREEZE",
       "imerg_status": "A3_PRIMARY6_6_OF_6_PARTITIONS_PASS_BLIND_RANKING_FROZEN_NO_UNBLIND",
-      "remote_sensing_status": "A1_STAC_CATALOG_PRESENT_S1_LANDSAT_COPDEM_WINDOW_NOT_SELECTED",
+      "remote_sensing_status": "A1_SELECTED_36_S1_PAIR_0_MISSING_0_UNKNOWN_36_LANDSAT_AOI_QA_PENDING_0_MISSING_0_UNKNOWN_36",
       "smap_status": "NOT_ASSESSED",
       "blind_status": "TERRITORIAL_EVIDENCE_SEALED",
       "production_use": false,
@@ -544,7 +557,8 @@
       "primary_dataset_gate_seasons_complete": 6,
       "primary_dataset_gate_seasons_target": 6,
       "full_robustness_seasons_complete": 6,
-      "full_robustness_seasons_target": 12
+      "full_robustness_seasons_target": 12,
+      "case_control_role": "UNASSIGNED"
     }
   ],
   "blind_sampling_contract_path": "data/validation/ibvf_blind_sampling_contract.json",
