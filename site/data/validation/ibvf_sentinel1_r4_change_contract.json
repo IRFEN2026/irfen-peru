@@ -1,0 +1,111 @@
+{
+  "schema_version": "irfen-ibvf-sentinel1-r4-change-contract-v0.1",
+  "generated_at": "2026-08-30T06:01:00Z",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
+  "purpose": "Freeze one common Sentinel-1 change-feature definition before Cashahuacra R3 support is known and before any SAR pre/post change value is inspected, so later parallel windows use exactly the same feature code and metrics.",
+  "scope": [
+    "cashahuacra",
+    "shingolay",
+    "san_ildefonso",
+    "pedregal",
+    "huaycoloro",
+    "future_blind_windows_with_compatible_sentinel1_pair"
+  ],
+  "anti_leakage": {
+    "cashahuacra_r2_or_r3_signal_values_used_to_choose_metrics": false,
+    "territorial_outcome_used": false,
+    "known_parallel_event_dates_used": false,
+    "metric_set_may_be_changed_after_first_r4_without_new_protocol_version": false,
+    "same_feature_code_required_for_future_case_and_control_roles": true
+  },
+  "execution_prerequisites": {
+    "r2": "exact same frozen processing graph applied independently to pre and post with compatible acquisition pair and verified precise-orbit consumption",
+    "r3": "PASS_R3_COMMON_SUPPORT_R4_ALLOWED_BY_SPATIAL_SUPPORT_ONLY",
+    "minimum_common_support_fraction": 0.95,
+    "input_crops": "lossless identical-grid basin-window crops frozen by SHA-256",
+    "support_mask": "binary R3 common-support mask frozen by SHA-256"
+  },
+  "radiometric_domain": {
+    "input": "linear terrain-flattened Gamma0",
+    "validity": "strictly positive finite values only and R3 common-support mask=1",
+    "transform": "10 * log10(Gamma0)",
+    "delta_definition": "post_dB - pre_dB",
+    "smoothing_after_r2": false,
+    "speckle_filter_after_r2": false,
+    "resampling_after_r3": false,
+    "sign_assumption": "NONE; positive and negative changes are reported separately and no direction is assumed to imply activation"
+  },
+  "fixed_change_threshold_db": {
+    "absolute_value": 3.0,
+    "physical_reason": "A 3 dB absolute change corresponds approximately to a factor-of-two change in radar power and is fixed for interpretability, not estimated from Cashahuacra or outcomes.",
+    "threshold_tuned_on_data": false
+  },
+  "primary_features": [
+    {
+      "id": "S1_DELTA_DB_MEDIAN",
+      "definition": "median(post_dB - pre_dB) over R3 common support"
+    },
+    {
+      "id": "S1_ABS_DELTA_DB_MEDIAN",
+      "definition": "median(abs(post_dB - pre_dB)) over R3 common support"
+    },
+    {
+      "id": "S1_ABS_DELTA_GE_3DB_FRACTION",
+      "definition": "fraction of R3 common-support pixels with abs(delta_dB) >= 3.0"
+    },
+    {
+      "id": "S1_DELTA_LE_MINUS3DB_FRACTION",
+      "definition": "fraction of R3 common-support pixels with delta_dB <= -3.0"
+    },
+    {
+      "id": "S1_DELTA_GE_PLUS3DB_FRACTION",
+      "definition": "fraction of R3 common-support pixels with delta_dB >= +3.0"
+    },
+    {
+      "id": "S1_ABS_DELTA_GE_3DB_LARGEST_8CONNECTED_FRACTION",
+      "definition": "size of largest 8-connected component satisfying abs(delta_dB) >= 3.0 divided by common-support pixel count"
+    }
+  ],
+  "fixed_diagnostic_quantiles": {
+    "delta_db": [0.1, 0.25, 0.5, 0.75, 0.9],
+    "absolute_delta_db": [0.5, 0.9],
+    "selection_after_inspection_allowed": false,
+    "semantics": "diagnostic distribution descriptors retained for all windows; not an activation classification"
+  },
+  "spatial_component_rule": {
+    "connectivity": 8,
+    "outside_common_support": "excluded",
+    "component_threshold": "abs(delta_dB) >= 3.0",
+    "morphological_opening_or_closing": false,
+    "minimum_component_size_filter": false
+  },
+  "required_provenance": [
+    "pre_crop_sha256",
+    "post_crop_sha256",
+    "common_support_mask_sha256",
+    "r3_report_sha256",
+    "common_support_pixel_count",
+    "metric_contract_sha256",
+    "code_sha256"
+  ],
+  "forbidden_actions": [
+    "choose only positive or only negative change after inspecting Cashahuacra",
+    "change 3 dB threshold after inspecting Cashahuacra or controls",
+    "apply post-hoc spatial smoothing to improve coherence",
+    "discard selected blind windows because SAR change is weak or inconvenient",
+    "interpret any R4 metric as activation before independent territorial unblind",
+    "assign case/control role from SAR magnitude"
+  ],
+  "r4_output_semantics": "REMOTE_OBSERVATIONAL_FEATURES_ONLY_NOT_RISK_NOT_ALERT_NOT_ACTIVATION",
+  "case_control_assignment_allowed": false,
+  "activation_inference_allowed": false,
+  "execution_status": "PREREGISTERED_BEFORE_R3_RESULT_AND_BEFORE_ANY_R4_CHANGE_VALUE"
+}
