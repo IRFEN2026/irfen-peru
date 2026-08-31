@@ -1,0 +1,2127 @@
+{
+  "schema_version": "irfen-ibvf-primary6-sentinel1-bulk-execution-manifest-v0.1",
+  "generated_at": "2026-08-31T17:48:48.429955Z",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_UNTIL_PRIMARY6_A5_FREEZE_AND_ANTI_LEAKAGE_AUDIT",
+  "cohort_id": "PRIMARY6_CHRONOLOGICAL",
+  "purpose": "Bind all frozen PRIMARY6 Sentinel-1 selected-window identities to the pre-outcome R1-R4 execution contract before bulk science-pixel processing.",
+  "source_catalog": "site/data/validation/ibvf_primary6_selected_a1_catalog.json",
+  "source_catalog_sha256": "6cfdc655e6f033d17a4f317d1825a3b6cbefaf8f72a273009656b54984dae29f",
+  "source_selected_window_identity_sha256": "a97aea27aa151ac489ec9ef5b688653600284b46c6b4860ff2dc87c64c61327c",
+  "source_a4_contract": "site/data/validation/ibvf_primary6_sentinel1_a4_contract_v01.json",
+  "source_a4_contract_sha256": "3f8a605e2a0b1bff59715fa319b02fdaddc5b3f070618c033834dfde63915e24",
+  "source_reconciliation": "site/data/validation/ibvf_primary6_sentinel1_contract_reconciliation_v02.json",
+  "source_reconciliation_sha256": "dda01692e664d385cba7c974df83b99043b17ad147a4eee933167a2ca7fb32e0",
+  "source_projection_amendment": "site/data/validation/ibvf_primary6_sentinel1_r2_projection_amendment_v01.json",
+  "source_projection_amendment_sha256": "7d7323ee3d3ac5c3a7f4be6ed6b60454bb021568e14bc08e54e0bf5fd9b40aac",
+  "source_graph_family_audit": "site/data/validation/ibvf_primary6_s1_r2_graph_family_audit_v01.json",
+  "source_graph_family_audit_sha256": "9c297367b25ac12b6da7d84f2f4c4ad117655df4bf463055da376411ad227a54",
+  "selected_window_count": 108,
+  "compatible_pair_count": 104,
+  "missing_compatible_pair_count": 4,
+  "unknown_pair_count": 0,
+  "track_window_counts": {
+    "huaycoloro": 36,
+    "san_ildefonso": 36,
+    "shingolay": 36
+  },
+  "track_compatible_pair_counts": {
+    "huaycoloro": 34,
+    "san_ildefonso": 34,
+    "shingolay": 36
+  },
+  "track_missing_pair_counts": {
+    "huaycoloro": 2,
+    "san_ildefonso": 2,
+    "shingolay": 0
+  },
+  "track_projection": {
+    "huaycoloro": "EPSG:32718",
+    "shingolay": "EPSG:32718",
+    "san_ildefonso": "EPSG:32717"
+  },
+  "operator_chain": [
+    "ThermalNoiseRemoval",
+    "Apply-Orbit-File",
+    "Calibration_Beta0_VV",
+    "Terrain-Flattening_Gamma0_VV",
+    "Range-Doppler_Terrain-Correction"
+  ],
+  "r3_minimum_common_support": "same common-support logic with minimum support fraction 0.95 and no post-R3 resampling",
+  "canonical_r4_features": [
+    {
+      "a5_slot": "A4_S1_MEDIAN_DELTA_DB",
+      "r4_id": "MEDIAN_DELTA_DB"
+    },
+    {
+      "a5_slot": "A4_S1_IQR_DELTA_DB",
+      "r4_id": "IQR_DELTA_DB"
+    },
+    {
+      "a5_slot": "A4_S1_DECREASE_FACTOR2_FRACTION",
+      "r4_id": "DECREASE_FACTOR2_FRACTION"
+    },
+    {
+      "a5_slot": "A4_S1_INCREASE_FACTOR2_FRACTION",
+      "r4_id": "INCREASE_FACTOR2_FRACTION"
+    },
+    {
+      "a5_slot": "A4_S1_LARGEST_FACTOR2_CLUSTER_FRACTION",
+      "r4_id": "LARGEST_FACTOR2_CLUSTER_FRACTION"
+    }
+  ],
+  "selected_window_replacement_allowed": false,
+  "compatible_pair_reselection_allowed": false,
+  "missing_pair_imputation_allowed": false,
+  "science_pixels_read": false,
+  "rainfall_values_read": false,
+  "sar_change_values_read": false,
+  "territorial_outcomes_read": false,
+  "known_event_dates_read": false,
+  "case_control_assignment_performed": false,
+  "activation_inference_allowed": false,
+  "modeling_allowed": false,
+  "execution_identity_sha256": "57f4bfa801b599b400ec155ca6f26abffc05a1b2303a1c052e65c94ae2543c86",
+  "windows": [
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2014-2015",
+      "date_local": "2014-09-02",
+      "selected_target_order": 4,
+      "selected_target_percentile": 0.2,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "MISSING_COMPATIBLE_BRACKETING_PAIR_COMPLETE_FIXED_QUERY",
+      "sar_execution_status": "MISSING_COMPATIBLE_PAIR_RETAIN_WINDOW_NO_REPLACEMENT_NO_IMPUTATION",
+      "pre_item_id": null,
+      "post_item_id": null,
+      "pair_identity": null
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2014-2015",
+      "date_local": "2014-11-25",
+      "selected_target_order": 2,
+      "selected_target_percentile": 0.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20141115T104700_20141115T104728_003291_003CFE",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20141209T104659_20141209T104727_003641_004503",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 69
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2014-2015",
+      "date_local": "2014-12-21",
+      "selected_target_order": 6,
+      "selected_target_percentile": 0.4,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20141217T233338_20141217T233403_003765_0047E2",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20150110T233337_20150110T233402_004115_004FC8",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2014-2015",
+      "date_local": "2015-01-10",
+      "selected_target_order": 5,
+      "selected_target_percentile": 0.6,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20141228T103900_20141228T103925_003918_004B51",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20150121T103859_20150121T103924_004268_005311",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 171
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2014-2015",
+      "date_local": "2015-03-02",
+      "selected_target_order": 3,
+      "selected_target_percentile": 0.8,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20150219T104658_20150219T104725_004691_005CC2",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20150303T104658_20150303T104725_004866_006103",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 69
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2014-2015",
+      "date_local": "2015-03-23",
+      "selected_target_order": 1,
+      "selected_target_percentile": 1.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20150311T233336_20150311T233401_004990_00640A",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20150404T233312_20150404T233346_005340_006C5B",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2015-2016",
+      "date_local": "2015-09-10",
+      "selected_target_order": 2,
+      "selected_target_percentile": 0.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20150825T103912_20150825T103937_007418_00A364",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20150918T103848_20150918T103913_007768_00ACD4",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 171
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2015-2016",
+      "date_local": "2015-10-25",
+      "selected_target_order": 5,
+      "selected_target_percentile": 0.6,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20151012T103913_20151012T103938_008118_00B62F",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20151105T103848_20151105T103913_008468_00BF8F",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 171
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2015-2016",
+      "date_local": "2015-11-09",
+      "selected_target_order": 3,
+      "selected_target_percentile": 0.8,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20151106T233356_20151106T233421_008490_00C032",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20151130T233350_20151130T233415_008840_00CA04",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2015-2016",
+      "date_local": "2015-12-25",
+      "selected_target_order": 1,
+      "selected_target_percentile": 1.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20151223T103906_20151223T103931_009168_00D326",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20160116T103906_20160116T103931_009518_00DD22",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 171
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2015-2016",
+      "date_local": "2016-01-18",
+      "selected_target_order": 4,
+      "selected_target_percentile": 0.2,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20160109T104659_20160109T104726_009416_00DA47",
+      "post_item_id": "S1A_IW_GRDH_1SDV_20160202T104659_20160202T104731_009766_00E46D",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 69
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2015-2016",
+      "date_local": "2016-03-30",
+      "selected_target_order": 6,
+      "selected_target_percentile": 0.4,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20160328T103906_20160328T103931_010568_00FB68",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20160421T103906_20160421T103931_010918_0105E2",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 171
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2016-2017",
+      "date_local": "2016-09-03",
+      "selected_target_order": 2,
+      "selected_target_percentile": 0.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20160820T233359_20160820T233424_012690_013F1F",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20160913T233335_20160913T233400_013040_014AA3",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2016-2017",
+      "date_local": "2016-09-21",
+      "selected_target_order": 6,
+      "selected_target_percentile": 0.4,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "MISSING_COMPATIBLE_BRACKETING_PAIR_COMPLETE_FIXED_QUERY",
+      "sar_execution_status": "MISSING_COMPATIBLE_PAIR_RETAIN_WINDOW_NO_REPLACEMENT_NO_IMPUTATION",
+      "pre_item_id": null,
+      "post_item_id": null,
+      "pair_identity": null
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2016-2017",
+      "date_local": "2016-10-09",
+      "selected_target_order": 4,
+      "selected_target_percentile": 0.2,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SSV_20160930T103827_20160930T103852_002297_003E27",
+      "post_item_id": "S1B_IW_GRDH_1SSV_20161012T103827_20161012T103852_002472_0042BE",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 171
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2016-2017",
+      "date_local": "2016-11-06",
+      "selected_target_order": 5,
+      "selected_target_percentile": 0.6,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SSV_20161029T104629_20161029T104656_002720_0049B4",
+      "post_item_id": "S1B_IW_GRDH_1SSV_20161122T104628_20161122T104655_003070_00538C",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 69
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2016-2017",
+      "date_local": "2017-01-19",
+      "selected_target_order": 3,
+      "selected_target_percentile": 0.8,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20170109T104626_20170109T104653_003770_0067B3",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20170202T104625_20170202T104652_004120_00720D",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 69
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2016-2017",
+      "date_local": "2017-03-14",
+      "selected_target_order": 1,
+      "selected_target_percentile": 1.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SSV_20170306T233304_20170306T233333_004594_008026",
+      "post_item_id": "S1B_IW_GRDH_1SSV_20170318T233304_20170318T233333_004769_00854D",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2017-2018",
+      "date_local": "2017-09-10",
+      "selected_target_order": 2,
+      "selected_target_percentile": 0.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20170906T104649_20170906T104706_007270_00CD25",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20170918T104649_20170918T104707_007445_00D249",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 69
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2017-2018",
+      "date_local": "2017-10-08",
+      "selected_target_order": 6,
+      "selected_target_percentile": 0.4,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20170930T104650_20170930T104707_007620_00D74F",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20171012T104650_20171012T104707_007795_00DC4C",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 69
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2017-2018",
+      "date_local": "2017-12-17",
+      "selected_target_order": 5,
+      "selected_target_percentile": 0.6,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20171211T104649_20171211T104706_008670_00F691",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20171223T104649_20171223T104706_008845_00FC24",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 69
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2017-2018",
+      "date_local": "2018-01-22",
+      "selected_target_order": 1,
+      "selected_target_percentile": 1.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20180111T103835_20180111T103900_009122_010525",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20180123T103835_20180123T103900_009297_010AD9",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 171
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2017-2018",
+      "date_local": "2018-02-08",
+      "selected_target_order": 4,
+      "selected_target_percentile": 0.2,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20180128T104647_20180128T104705_009370_010D3E",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20180209T104647_20180209T104704_009545_011301",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 69
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2017-2018",
+      "date_local": "2018-03-09",
+      "selected_target_order": 3,
+      "selected_target_percentile": 0.8,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20180228T103834_20180228T103859_009822_011C25",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20180312T103834_20180312T103859_009997_012205",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 171
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2018-2019",
+      "date_local": "2018-10-03",
+      "selected_target_order": 3,
+      "selected_target_percentile": 0.8,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20180921T233320_20180921T233349_012819_017AAA",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20181027T233309_20181027T233334_013344_018ACE",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2018-2019",
+      "date_local": "2018-10-18",
+      "selected_target_order": 5,
+      "selected_target_percentile": 0.6,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20181003T233321_20181003T233350_012994_018004",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20181027T233309_20181027T233334_013344_018ACE",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2018-2019",
+      "date_local": "2018-11-24",
+      "selected_target_order": 4,
+      "selected_target_percentile": 0.2,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20181120T233334_20181120T233359_013694_0195D2",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20181202T233308_20181202T233333_013869_019B6C",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2018-2019",
+      "date_local": "2018-12-04",
+      "selected_target_order": 2,
+      "selected_target_percentile": 0.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20181202T233333_20181202T233358_013869_019B6C",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20181214T233308_20181214T233333_014044_01A121",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2018-2019",
+      "date_local": "2019-01-21",
+      "selected_target_order": 1,
+      "selected_target_percentile": 1.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20190119T233332_20190119T233357_014569_01B247",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20190131T233306_20190131T233331_014744_01B7E5",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2018-2019",
+      "date_local": "2019-03-18",
+      "selected_target_order": 6,
+      "selected_target_percentile": 0.4,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20190308T233331_20190308T233356_015269_01C928",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20190320T233306_20190320T233331_015444_01CED5",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2019-2020",
+      "date_local": "2019-09-12",
+      "selected_target_order": 2,
+      "selected_target_percentile": 0.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20190904T233339_20190904T233404_017894_021AD1",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20190916T233315_20190916T233340_018069_022045",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2019-2020",
+      "date_local": "2019-10-25",
+      "selected_target_order": 6,
+      "selected_target_percentile": 0.4,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20191022T233340_20191022T233405_018594_023085",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20191103T233315_20191103T233340_018769_02360B",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2019-2020",
+      "date_local": "2020-02-10",
+      "selected_target_order": 3,
+      "selected_target_percentile": 0.8,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20200207T233337_20200207T233402_020169_0262E0",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20200219T233312_20200219T233337_020344_02687D",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2019-2020",
+      "date_local": "2020-02-19",
+      "selected_target_order": 1,
+      "selected_target_percentile": 1.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20200218T103847_20200218T103912_020322_0267D4",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20200301T103847_20200301T103912_020497_026D72",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 171
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2019-2020",
+      "date_local": "2020-03-20",
+      "selected_target_order": 5,
+      "selected_target_percentile": 0.6,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20200314T233337_20200314T233402_020694_0273A9",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20200326T233312_20200326T233337_020869_02792B",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "huaycoloro",
+      "season_id": "2019-2020",
+      "date_local": "2020-04-14",
+      "selected_target_order": 4,
+      "selected_target_percentile": 0.2,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20200407T233337_20200407T233402_021044_027EBA",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20200419T233313_20200419T233338_021219_02843E",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2014-2015",
+      "date_local": "2014-11-19",
+      "selected_target_order": 6,
+      "selected_target_percentile": 0.4,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20141110T103901_20141110T103926_003218_003B71",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20141204T103901_20141204T103926_003568_00435B",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 171
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2014-2015",
+      "date_local": "2014-12-24",
+      "selected_target_order": 2,
+      "selected_target_percentile": 0.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20141217T233338_20141217T233403_003765_0047E2",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20150110T233337_20150110T233402_004115_004FC8",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2014-2015",
+      "date_local": "2015-01-30",
+      "selected_target_order": 4,
+      "selected_target_percentile": 0.2,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20150121T103859_20150121T103924_004268_005311",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20150214T103858_20150214T103923_004618_005B10",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 171
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2014-2015",
+      "date_local": "2015-02-12",
+      "selected_target_order": 5,
+      "selected_target_percentile": 0.6,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20150121T103859_20150121T103924_004268_005311",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20150214T103858_20150214T103923_004618_005B10",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 171
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2014-2015",
+      "date_local": "2015-02-28",
+      "selected_target_order": 3,
+      "selected_target_percentile": 0.8,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20150214T103858_20150214T103923_004618_005B10",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20150310T103859_20150310T103924_004968_006380",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 171
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2014-2015",
+      "date_local": "2015-03-24",
+      "selected_target_order": 1,
+      "selected_target_percentile": 1.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20150310T103859_20150310T103924_004968_006380",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20150403T103859_20150403T103924_005318_006BBE",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 171
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2015-2016",
+      "date_local": "2015-09-04",
+      "selected_target_order": 2,
+      "selected_target_percentile": 0.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20150825T103912_20150825T103937_007418_00A364",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20150918T103913_20150918T103938_007768_00ACD4",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 171
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2015-2016",
+      "date_local": "2015-10-05",
+      "selected_target_order": 3,
+      "selected_target_percentile": 0.8,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20150918T103913_20150918T103938_007768_00ACD4",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20151012T103913_20151012T103938_008118_00B62F",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 171
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2015-2016",
+      "date_local": "2015-12-24",
+      "selected_target_order": 1,
+      "selected_target_percentile": 1.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20151223T103906_20151223T103931_009168_00D326",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20160116T103906_20160116T103931_009518_00DD22",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 171
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2015-2016",
+      "date_local": "2016-02-15",
+      "selected_target_order": 5,
+      "selected_target_percentile": 0.6,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20160117T233348_20160117T233413_009540_00DDD3",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20160305T233348_20160305T233413_010240_00F21B",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2015-2016",
+      "date_local": "2016-04-08",
+      "selected_target_order": 4,
+      "selected_target_percentile": 0.2,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20160328T103906_20160328T103931_010568_00FB68",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20160421T103906_20160421T103931_010918_0105E2",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 171
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2015-2016",
+      "date_local": "2016-04-26",
+      "selected_target_order": 6,
+      "selected_target_percentile": 0.4,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20160422T233349_20160422T233414_010940_010698",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20160516T233353_20160516T233418_011290_0111BB",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2016-2017",
+      "date_local": "2016-09-01",
+      "selected_target_order": 2,
+      "selected_target_percentile": 0.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20160819T103916_20160819T103941_012668_013E5C",
+      "post_item_id": "S1A_IW_GRDH_1SDV_20160912T103911_20160912T103936_013018_0149E6",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 171
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2016-2017",
+      "date_local": "2016-12-21",
+      "selected_target_order": 5,
+      "selected_target_percentile": 0.6,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SSV_20161129T103826_20161129T103851_003172_00565D",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20161223T103826_20161223T103851_003522_00605B",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 171
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2016-2017",
+      "date_local": "2017-02-14",
+      "selected_target_order": 3,
+      "selected_target_percentile": 0.8,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SSV_20170210T233304_20170210T233333_004244_0075C4",
+      "post_item_id": "S1B_IW_GRDH_1SSV_20170222T233304_20170222T233333_004419_007B0B",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2016-2017",
+      "date_local": "2017-03-16",
+      "selected_target_order": 1,
+      "selected_target_percentile": 1.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SSV_20170306T233304_20170306T233333_004594_008026",
+      "post_item_id": "S1B_IW_GRDH_1SSV_20170318T233304_20170318T233333_004769_00854D",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2016-2017",
+      "date_local": "2017-04-09",
+      "selected_target_order": 6,
+      "selected_target_percentile": 0.4,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SSV_20170330T233305_20170330T233334_004944_008A53",
+      "post_item_id": "S1B_IW_GRDH_1SSV_20170411T233305_20170411T233334_005119_008F57",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2016-2017",
+      "date_local": "2017-04-18",
+      "selected_target_order": 4,
+      "selected_target_percentile": 0.2,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20170410T103824_20170410T103849_005097_008EBB",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20170422T103825_20170422T103850_005272_0093C8",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 171
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2017-2018",
+      "date_local": "2017-09-11",
+      "selected_target_order": 2,
+      "selected_target_percentile": 0.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20170901T103836_20170901T103901_007197_00CB02",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20170925T103837_20170925T103902_007547_00D533",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 171
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2017-2018",
+      "date_local": "2017-11-15",
+      "selected_target_order": 4,
+      "selected_target_percentile": 0.2,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20171112T103837_20171112T103902_008247_00E964",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20171124T103837_20171124T103902_008422_00EEAE",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 171
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2017-2018",
+      "date_local": "2017-11-30",
+      "selected_target_order": 5,
+      "selected_target_percentile": 0.6,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20171125T233314_20171125T233343_008444_00EF60",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20171207T233313_20171207T233342_008619_00F4EE",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2017-2018",
+      "date_local": "2017-12-09",
+      "selected_target_order": 3,
+      "selected_target_percentile": 0.8,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20171206T103837_20171206T103902_008597_00F43F",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20171218T103836_20171218T103901_008772_00F9D3",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 171
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2017-2018",
+      "date_local": "2018-01-13",
+      "selected_target_order": 6,
+      "selected_target_percentile": 0.4,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20180111T103835_20180111T103900_009122_010525",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20180123T103835_20180123T103900_009297_010AD9",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 171
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2017-2018",
+      "date_local": "2018-01-22",
+      "selected_target_order": 1,
+      "selected_target_percentile": 1.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20180111T103835_20180111T103900_009122_010525",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20180123T103835_20180123T103900_009297_010AD9",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 171
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2018-2019",
+      "date_local": "2018-09-01",
+      "selected_target_order": 2,
+      "selected_target_percentile": 0.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20180828T233319_20180828T233348_012469_016FED",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20180909T233320_20180909T233349_012644_017551",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2018-2019",
+      "date_local": "2018-09-24",
+      "selected_target_order": 6,
+      "selected_target_percentile": 0.4,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20180921T233320_20180921T233349_012819_017AAA",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20181003T233321_20181003T233350_012994_018004",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2018-2019",
+      "date_local": "2018-11-18",
+      "selected_target_order": 4,
+      "selected_target_percentile": 0.2,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20181108T233309_20181108T233334_013519_019048",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20181120T233309_20181120T233334_013694_0195D2",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2018-2019",
+      "date_local": "2018-12-15",
+      "selected_target_order": 5,
+      "selected_target_percentile": 0.6,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20181214T233308_20181214T233333_014044_01A121",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20181226T233307_20181226T233332_014219_01A6F0",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2018-2019",
+      "date_local": "2019-01-28",
+      "selected_target_order": 3,
+      "selected_target_percentile": 0.8,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20190119T233307_20190119T233332_014569_01B247",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20190131T233306_20190131T233331_014744_01B7E5",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2018-2019",
+      "date_local": "2019-02-24",
+      "selected_target_order": 1,
+      "selected_target_percentile": 1.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20190223T103841_20190223T103906_015072_01C2AC",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20190307T103841_20190307T103906_015247_01C875",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 171
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2019-2020",
+      "date_local": "2019-10-05",
+      "selected_target_order": 2,
+      "selected_target_percentile": 0.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20190927T103851_20190927T103916_018222_0224FD",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20191009T103851_20191009T103916_018397_022A82",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 171
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2019-2020",
+      "date_local": "2019-11-19",
+      "selected_target_order": 5,
+      "selected_target_percentile": 0.6,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20191115T233315_20191115T233340_018944_023BBE",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20191127T233315_20191127T233340_019119_024158",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2019-2020",
+      "date_local": "2020-01-03",
+      "selected_target_order": 4,
+      "selected_target_percentile": 0.2,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20200102T233313_20200102T233338_019644_025203",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20200114T233313_20200114T233338_019819_025798",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2019-2020",
+      "date_local": "2020-01-20",
+      "selected_target_order": 3,
+      "selected_target_percentile": 0.8,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20200113T103848_20200113T103913_019797_0256E7",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20200125T103848_20200125T103913_019972_025C7C",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 171
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2019-2020",
+      "date_local": "2020-02-18",
+      "selected_target_order": 1,
+      "selected_target_percentile": 1.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20200207T233312_20200207T233337_020169_0262E0",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20200219T233312_20200219T233337_020344_02687D",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "shingolay",
+      "season_id": "2019-2020",
+      "date_local": "2020-04-05",
+      "selected_target_order": 6,
+      "selected_target_percentile": 0.4,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32718",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20200326T233312_20200326T233337_020869_02792B",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20200407T233312_20200407T233337_021044_027EBA",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2014-2015",
+      "date_local": "2014-10-06",
+      "selected_target_order": 2,
+      "selected_target_percentile": 0.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "MISSING_COMPATIBLE_BRACKETING_PAIR_COMPLETE_FIXED_QUERY",
+      "sar_execution_status": "MISSING_COMPATIBLE_PAIR_RETAIN_WINDOW_NO_REPLACEMENT_NO_IMPUTATION",
+      "pre_item_id": null,
+      "post_item_id": null,
+      "pair_identity": null
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2014-2015",
+      "date_local": "2014-10-19",
+      "selected_target_order": 4,
+      "selected_target_percentile": 0.2,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20141015T105411_20141015T105436_002839_00333E",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20141108T105411_20141108T105436_003189_003AC4",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 142
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2014-2015",
+      "date_local": "2014-11-16",
+      "selected_target_order": 6,
+      "selected_target_percentile": 0.4,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20141104T234236_20141104T234305_003138_0039B6",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20141128T234235_20141128T234304_003488_00417B",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 91
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2014-2015",
+      "date_local": "2015-02-01",
+      "selected_target_order": 1,
+      "selected_target_percentile": 1.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20150119T105409_20150119T105434_004239_00527E",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20150212T105408_20150212T105433_004589_005A5F",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 142
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2014-2015",
+      "date_local": "2015-02-25",
+      "selected_target_order": 3,
+      "selected_target_percentile": 0.8,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20150212T105408_20150212T105433_004589_005A5F",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20150308T105408_20150308T105433_004939_0062C3",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 142
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2014-2015",
+      "date_local": "2015-03-24",
+      "selected_target_order": 5,
+      "selected_target_percentile": 0.6,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20150316T234233_20150316T234302_005063_0065C1",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20150409T234234_20150409T234303_005413_006E37",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 91
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2015-2016",
+      "date_local": "2015-09-01",
+      "selected_target_order": 2,
+      "selected_target_percentile": 0.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20150823T105422_20150823T105447_007389_00A298",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20150916T105422_20150916T105447_007739_00AC10",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 142
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2015-2016",
+      "date_local": "2015-11-01",
+      "selected_target_order": 6,
+      "selected_target_percentile": 0.4,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20151010T105423_20151010T105448_008089_00B570",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20151103T105423_20151103T105448_008439_00BED8",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 142
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2015-2016",
+      "date_local": "2015-11-13",
+      "selected_target_order": 5,
+      "selected_target_percentile": 0.6,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20151103T105423_20151103T105448_008439_00BED8",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20151127T105417_20151127T105442_008789_00C88B",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 142
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2015-2016",
+      "date_local": "2015-12-28",
+      "selected_target_order": 3,
+      "selected_target_percentile": 0.8,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20151205T234303_20151205T234332_008913_00CC1E",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20151229T234302_20151229T234331_009263_00D5EB",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 91
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2015-2016",
+      "date_local": "2016-01-14",
+      "selected_target_order": 4,
+      "selected_target_percentile": 0.2,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20151229T234302_20151229T234331_009263_00D5EB",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20160122T234302_20160122T234331_009613_00E001",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 91
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2015-2016",
+      "date_local": "2016-02-10",
+      "selected_target_order": 1,
+      "selected_target_percentile": 1.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20160122T234302_20160122T234331_009613_00E001",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20160215T234301_20160215T234330_009963_00EA32",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 91
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2016-2017",
+      "date_local": "2016-09-14",
+      "selected_target_order": 2,
+      "selected_target_percentile": 0.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1A_IW_GRDH_1SSV_20160825T234312_20160825T234341_012763_0141AA",
+      "post_item_id": "S1A_IW_GRDH_1SSV_20160918T234313_20160918T234342_013113_014D1C",
+      "pair_identity": {
+        "platform": "sentinel-1a",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 91
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2016-2017",
+      "date_local": "2016-09-23",
+      "selected_target_order": 6,
+      "selected_target_percentile": 0.4,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "MISSING_COMPATIBLE_BRACKETING_PAIR_COMPLETE_FIXED_QUERY",
+      "sar_execution_status": "MISSING_COMPATIBLE_PAIR_RETAIN_WINDOW_NO_REPLACEMENT_NO_IMPUTATION",
+      "pre_item_id": null,
+      "post_item_id": null,
+      "pair_identity": null
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2016-2017",
+      "date_local": "2016-10-15",
+      "selected_target_order": 5,
+      "selected_target_percentile": 0.6,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SSV_20161013T233427_20161013T233452_002494_004357",
+      "post_item_id": "S1B_IW_GRDH_1SSV_20161106T233402_20161106T233427_002844_004D16",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2016-2017",
+      "date_local": "2016-12-01",
+      "selected_target_order": 4,
+      "selected_target_percentile": 0.2,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SSV_20161127T105401_20161127T105426_003143_005589",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20161221T105335_20161221T105400_003493_005F89",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 142
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2016-2017",
+      "date_local": "2017-03-05",
+      "selected_target_order": 3,
+      "selected_target_percentile": 0.8,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SSV_20170222T233423_20170222T233448_004419_007B0B",
+      "post_item_id": "S1B_IW_GRDH_1SSV_20170306T233358_20170306T233423_004594_008026",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2016-2017",
+      "date_local": "2017-03-19",
+      "selected_target_order": 1,
+      "selected_target_percentile": 1.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20170315T105357_20170315T105423_004718_0083C9",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20170327T105333_20170327T105358_004893_0088CB",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 142
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2017-2018",
+      "date_local": "2017-09-06",
+      "selected_target_order": 2,
+      "selected_target_percentile": 0.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20170826T234225_20170826T234254_007117_00C8B9",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20170907T234225_20170907T234254_007292_00CDD0",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 91
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2017-2018",
+      "date_local": "2017-09-29",
+      "selected_target_order": 5,
+      "selected_target_percentile": 0.6,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20170926T233433_20170926T233458_007569_00D5D3",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20171008T233408_20171008T233433_007744_00DAD9",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2017-2018",
+      "date_local": "2017-12-27",
+      "selected_target_order": 6,
+      "selected_target_percentile": 0.4,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20171224T234225_20171224T234254_008867_00FCDF",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20180105T234224_20180105T234253_009042_01028F",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 91
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2017-2018",
+      "date_local": "2018-02-02",
+      "selected_target_order": 4,
+      "selected_target_percentile": 0.2,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20180124T233430_20180124T233455_009319_010B95",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20180205T233405_20180205T233430_009494_011151",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2017-2018",
+      "date_local": "2018-02-25",
+      "selected_target_order": 3,
+      "selected_target_percentile": 0.8,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20180217T233430_20180217T233455_009669_011712",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20180301T233405_20180301T233430_009844_011CDD",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2017-2018",
+      "date_local": "2018-04-08",
+      "selected_target_order": 1,
+      "selected_target_percentile": 1.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20180406T233431_20180406T233456_010369_012E17",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20180418T233406_20180418T233431_010544_0133AB",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2018-2019",
+      "date_local": "2018-09-01",
+      "selected_target_order": 2,
+      "selected_target_percentile": 0.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20180828T233438_20180828T233503_012469_016FED",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20180909T233414_20180909T233439_012644_017551",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2018-2019",
+      "date_local": "2018-10-12",
+      "selected_target_order": 5,
+      "selected_target_percentile": 0.6,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20181008T234233_20181008T234302_013067_01824B",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20181020T234233_20181020T234302_013242_0187B5",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 91
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2018-2019",
+      "date_local": "2018-11-01",
+      "selected_target_order": 3,
+      "selected_target_percentile": 0.8,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20181027T233424_20181027T233449_013344_018ACE",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20181108T233424_20181108T233449_013519_019048",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2018-2019",
+      "date_local": "2018-11-30",
+      "selected_target_order": 4,
+      "selected_target_percentile": 0.2,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20181129T105350_20181129T105415_013818_0199CB",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20181211T105349_20181211T105414_013993_019F75",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 142
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2018-2019",
+      "date_local": "2019-03-18",
+      "selected_target_order": 1,
+      "selected_target_percentile": 1.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20190308T233421_20190308T233446_015269_01C928",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20190320T233421_20190320T233446_015444_01CED5",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2018-2019",
+      "date_local": "2019-04-09",
+      "selected_target_order": 6,
+      "selected_target_percentile": 0.4,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20190329T105347_20190329T105412_015568_01D2E4",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20190410T105348_20190410T105413_015743_01D8B7",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 142
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2019-2020",
+      "date_local": "2019-09-01",
+      "selected_target_order": 2,
+      "selected_target_percentile": 0.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20190823T233429_20190823T233454_017719_021566",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20190904T233429_20190904T233454_017894_021AD1",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2019-2020",
+      "date_local": "2019-10-23",
+      "selected_target_order": 3,
+      "selected_target_percentile": 0.8,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20191019T105357_20191019T105422_018543_022F07",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20191031T105357_20191031T105422_018718_02347D",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 142
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2019-2020",
+      "date_local": "2020-02-13",
+      "selected_target_order": 6,
+      "selected_target_percentile": 0.4,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20200204T105354_20200204T105419_020118_026145",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20200216T105354_20200216T105419_020293_0266E6",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "descending",
+        "relative_orbit": 142
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2019-2020",
+      "date_local": "2020-03-06",
+      "selected_target_order": 5,
+      "selected_target_percentile": 0.6,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20200224T234236_20200224T234305_020417_026AF2",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20200307T234236_20200307T234305_020592_027085",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 91
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2019-2020",
+      "date_local": "2020-04-06",
+      "selected_target_order": 1,
+      "selected_target_percentile": 1.0,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20200326T233427_20200326T233452_020869_02792B",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20200407T233427_20200407T233452_021044_027EBA",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 18
+      }
+    },
+    {
+      "unit_id": "san_ildefonso",
+      "season_id": "2019-2020",
+      "date_local": "2020-04-20",
+      "selected_target_order": 4,
+      "selected_target_percentile": 0.2,
+      "case_control_role": "UNASSIGNED",
+      "projection": "EPSG:32717",
+      "source_sentinel1_catalog_status": "COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE",
+      "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20200412T234237_20200412T234306_021117_028126",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20200424T234237_20200424T234306_021292_0286AA",
+      "pair_identity": {
+        "platform": "sentinel-1b",
+        "instrument_mode": "IW",
+        "orbit_state": "ascending",
+        "relative_orbit": 91
+      }
+    }
+  ],
+  "status": "PASS_108_WINDOWS_BOUND_104_COMPATIBLE_4_MISSING_NO_RESELECTION_NO_OUTCOME"
+}
