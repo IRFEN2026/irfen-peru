@@ -1,0 +1,232 @@
+name: IBVF - PRIMARY6 Sentinel-1 R1 cross-track pilots
+
+on:
+  push:
+    branches: [agent/independent-basin-validation-map]
+    paths:
+      - '.github/workflows/ibvf-primary6-sentinel1-r1-cross-track.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ibvf-primary6-sentinel1-r1-cross-track
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  r1:
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        unit: [shingolay, san_ildefonso]
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install frozen R1 dependencies
+        run: python -m pip install --disable-pip-version-check 'numpy>=1.26,<2' 'requests>=2.31,<3' 'rasterio>=1.3,<2'
+      - name: Compile unchanged freeze and R1 processors
+        run: python -m py_compile scripts/ibvf_primary6_sentinel1_freeze_selected.py scripts/ibvf_sentinel1_r1_radiometric.py
+      - name: Materialize exact frozen track geometry feature
+        env:
+          UNIT: ${{ matrix.unit }}
+        run: |
+          mkdir -p artifacts/ibvf
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+
+          unit=os.environ['UNIT']
+          cat=json.load(open('site/data/validation/ibvf_primary6_selected_a1_catalog.json',encoding='utf-8'))
+          assert cat['deployment_status']=='RESEARCH_ONLY'
+          assert cat['test_only'] is True
+          assert cat['production_use'] is False and cat['production_ready'] is False
+          assert cat['operational_alerting_enabled'] is False
+          assert cat['uses_operational_event_none_labels'] is False
+          assert cat['territorial_activation_evidence_blinded'] is True
+          assert cat['case_control_assignment_performed'] is False
+          assert cat['territorial_outcome_fields_read'] is False
+          g=cat['geometries'][unit]
+          assert g['status']=='PASS_UNIQUE_FROZEN_OR_EXPLICIT_CANDIDATE_GEOMETRY'
+          src=Path('site')/g['path']
+          obj=json.loads(src.read_text(encoding='utf-8'))
+          sel=g['selector']
+          if obj.get('type')=='FeatureCollection':
+              hits=[f for f in obj.get('features',[]) if (f.get('properties') or {}).get(sel['property'])==sel['value']]
+              assert len(hits)==1, (unit,len(hits))
+              feat=hits[0]
+          elif obj.get('type')=='Feature':
+              assert (obj.get('properties') or {}).get(sel['property'])==sel['value']
+              feat=obj
+          else:
+              raise AssertionError(f'Unsupported geometry container: {obj.get("type")}')
+
+          pts=[]
+          def walk(x):
+              if isinstance(x,list):
+                  if len(x)>=2 and isinstance(x[0],(int,float)) and isinstance(x[1],(int,float)):
+                      pts.append((float(x[0]),float(x[1])))
+                  else:
+                      for y in x: walk(y)
+          walk(feat['geometry']['coordinates'])
+          assert pts
+          bbox=[min(x for x,y in pts),min(y for x,y in pts),max(x for x,y in pts),max(y for x,y in pts)]
+          expected=[float(x) for x in g['bbox']]
+          assert all(abs(a-b)<1e-10 for a,b in zip(bbox,expected)), (unit,bbox,expected)
+          out=Path(f'artifacts/ibvf/ibvf_primary6_{unit}_r1_basin_feature_v01.geojson')
+          out.write_text(json.dumps(feat,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          print({'unit':unit,'source':str(src),'selector':sel,'bbox':bbox,'feature_sha256_from_frozen_catalog':g['feature_sha256']})
+          PY
+      - name: Freeze earliest already-selected compatible pair for track
+        env:
+          UNIT: ${{ matrix.unit }}
+        run: |
+          python scripts/ibvf_primary6_sentinel1_freeze_selected.py \
+            --catalog site/data/validation/ibvf_primary6_selected_a1_catalog.json \
+            --a4-contract site/data/validation/ibvf_primary6_sentinel1_a4_contract_v01.json \
+            --unit "$UNIT" \
+            --output "artifacts/ibvf/ibvf_primary6_${UNIT}_s1_r1_pilot_freeze_v01.json"
+      - name: Execute unchanged R1 radiometric processor
+        env:
+          UNIT: ${{ matrix.unit }}
+        run: |
+          python scripts/ibvf_sentinel1_r1_radiometric.py \
+            --freeze "artifacts/ibvf/ibvf_primary6_${UNIT}_s1_r1_pilot_freeze_v01.json" \
+            --basin "artifacts/ibvf/ibvf_primary6_${UNIT}_r1_basin_feature_v01.geojson" \
+            --output "artifacts/ibvf/ibvf_primary6_${UNIT}_s1_r1_pilot_v01.json"
+      - name: Fail-closed blind R1 guards
+        env:
+          UNIT: ${{ matrix.unit }}
+        run: |
+          python - <<'PY'
+          import json, os
+          unit=os.environ['UNIT']
+          f=json.load(open(f'artifacts/ibvf/ibvf_primary6_{unit}_s1_r1_pilot_freeze_v01.json',encoding='utf-8'))
+          r=json.load(open(f'artifacts/ibvf/ibvf_primary6_{unit}_s1_r1_pilot_v01.json',encoding='utf-8'))
+          for d in (f,r):
+              assert d['deployment_status']=='RESEARCH_ONLY'
+              assert d['test_only'] is True
+              assert d['production_use'] is False and d['production_ready'] is False
+              assert d['operational_alerting_enabled'] is False
+              assert d['uses_operational_event_none_labels'] is False
+              assert d['territorial_activation_evidence_blinded'] is True
+          assert f['unit_id']==unit
+          assert f['freeze_status']=='ALL_REQUESTED_ASSETS_SHA256_FROZEN'
+          assert f['engineering_pilot_only'] is True
+          assert f['engineering_pilot_selection_changes_scientific_window_set'] is False
+          assert f['rainfall_values_read_for_pilot_selection'] is False
+          assert f['sar_change_values_read_for_pilot_selection'] is False
+          assert f['territorial_outcomes_read'] is False
+          assert f['known_event_dates_read'] is False
+          assert f['case_control_role_assigned'] is False
+          assert r['r1_status']=='COMPLETE_BOTH_DATES_NO_COMPARISON'
+          assert r['comparison_performed'] is False
+          assert r['terrain_correction_performed'] is False
+          assert r['common_support_established'] is False
+          assert r['interpretation_forbidden'] is True
+          print({'unit':unit,'case_id':f['case_id'],'freeze_status':f['freeze_status'],'r1_status':r['r1_status']})
+          PY
+      - name: Upload per-track R1 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ibvf-primary6-s1-r1-${{ matrix.unit }}-${{ github.sha }}
+          path: artifacts/ibvf/*
+          if-no-files-found: warn
+          retention-days: 30
+
+  freeze:
+    needs: r1
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - name: Download both successful track artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ibvf-primary6-s1-r1-*-${{ github.sha }}
+          path: artifacts/ibvf
+          merge-multiple: true
+      - name: Verify both tracks before branch freeze
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for unit in ('shingolay','san_ildefonso'):
+              f=Path(f'artifacts/ibvf/ibvf_primary6_{unit}_s1_r1_pilot_freeze_v01.json')
+              r=Path(f'artifacts/ibvf/ibvf_primary6_{unit}_s1_r1_pilot_v01.json')
+              g=Path(f'artifacts/ibvf/ibvf_primary6_{unit}_r1_basin_feature_v01.geojson')
+              assert f.exists() and r.exists() and g.exists()
+              fj=json.loads(f.read_text(encoding='utf-8'))
+              rj=json.loads(r.read_text(encoding='utf-8'))
+              assert fj['freeze_status']=='ALL_REQUESTED_ASSETS_SHA256_FROZEN'
+              assert rj['r1_status']=='COMPLETE_BOTH_DATES_NO_COMPARISON'
+          print('PASS_BOTH_TRACKS_R1_NO_COMPARISON')
+          PY
+      - name: Freeze cross-track R1 evidence and synchronize research map
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git pull --rebase origin agent/independent-basin-validation-map
+          for unit in shingolay san_ildefonso; do
+            cp "artifacts/ibvf/ibvf_primary6_${unit}_s1_r1_pilot_freeze_v01.json" "site/data/validation/ibvf_primary6_${unit}_s1_r1_pilot_freeze_v01.json"
+            cp "artifacts/ibvf/ibvf_primary6_${unit}_s1_r1_pilot_v01.json" "site/data/validation/ibvf_primary6_${unit}_s1_r1_pilot_v01.json"
+            cp "artifacts/ibvf/ibvf_primary6_${unit}_r1_basin_feature_v01.geojson" "site/data/validation/ibvf_primary6_${unit}_r1_basin_feature_v01.geojson"
+          done
+          python - <<'PY'
+          import json
+          from datetime import datetime,timezone
+          from pathlib import Path
+          p=Path('site/data/validation/independent_basin_validation_map.json')
+          d=json.loads(p.read_text(encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY' and d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False and d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          d['version']='irfen-independent-basin-validation-map-v3.10'
+          d['generated_at']=datetime.now(timezone.utc).isoformat().replace('+00:00','Z')
+          ac=d.setdefault('acquisition_contract',{})
+          ac['primary6_sentinel1_r1_cross_track_pilots']={}
+          for unit in ('shingolay','san_ildefonso'):
+              f=json.load(open(f'site/data/validation/ibvf_primary6_{unit}_s1_r1_pilot_freeze_v01.json',encoding='utf-8'))
+              r=json.load(open(f'site/data/validation/ibvf_primary6_{unit}_s1_r1_pilot_v01.json',encoding='utf-8'))
+              ac['primary6_sentinel1_r1_cross_track_pilots'][unit]={
+                  'case_id':f['case_id'],
+                  'freeze_status':f['freeze_status'],
+                  'r1_status':r['r1_status'],
+                  'comparison_performed':r['comparison_performed'],
+              }
+          ac['primary6_sentinel1_r1_engineering_tracks_passed']=3
+          ac['primary6_sentinel1_r1_engineering_tracks_target']=3
+          ac['primary6_sentinel1_bulk_r1_complete']=False
+          ac.setdefault('local_validation',{})['github_actions_primary6_sentinel1_r1_cross_track']='PASS_SHINGOLAY_AND_SAN_ILDEFONSO_R1_NO_COMPARISON; HUAYCOLORO_PILOT_PREVIOUSLY_PASS'
+          for c in d.get('cases',[]):
+              if c.get('unit_id') in ('shingolay','san_ildefonso'):
+                  c['remote_sensing_status']='S1_PRIMARY6_ENGINEERING_PILOT_R1_PASS_BULK_R1_R4_PENDING_NO_OUTCOME'
+                  c['blind_status']='TERRITORIAL_EVIDENCE_SEALED'
+          p.write_text(json.dumps(d,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          PY
+          git add site/data/validation/ibvf_primary6_shingolay_s1_r1_pilot_freeze_v01.json \
+                  site/data/validation/ibvf_primary6_shingolay_s1_r1_pilot_v01.json \
+                  site/data/validation/ibvf_primary6_shingolay_r1_basin_feature_v01.geojson \
+                  site/data/validation/ibvf_primary6_san_ildefonso_s1_r1_pilot_freeze_v01.json \
+                  site/data/validation/ibvf_primary6_san_ildefonso_s1_r1_pilot_v01.json \
+                  site/data/validation/ibvf_primary6_san_ildefonso_r1_basin_feature_v01.geojson \
+                  site/data/validation/independent_basin_validation_map.json
+          if git diff --cached --quiet; then
+            echo 'No scientific freeze change.'
+          else
+            git commit -m 'IBVF: freeze PRIMARY6 cross-track Sentinel-1 R1 pilots'
+            git push origin HEAD:agent/independent-basin-validation-map
+          fi
