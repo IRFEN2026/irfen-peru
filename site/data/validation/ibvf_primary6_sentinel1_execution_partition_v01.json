@@ -1,0 +1,1638 @@
+{
+  "schema_version": "irfen-ibvf-primary6-sentinel1-execution-partition-v0.1",
+  "generated_at": "2026-08-31T21:44:05.760738Z",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_UNTIL_PRIMARY6_A5_FREEZE_AND_ANTI_LEAKAGE_AUDIT",
+  "cohort_id": "PRIMARY6_CHRONOLOGICAL",
+  "purpose": "Freeze purely computational track-by-season R1-R4 execution shards without changing scientific selection, pair identity, missingness, or blind state.",
+  "source_manifest": "site/data/validation/ibvf_primary6_sentinel1_bulk_manifest_v01.json",
+  "source_manifest_sha256": "a8df71c97760567a2042600f70d44d5fe0451692ffb0c5936789c6c264acf749",
+  "source_execution_identity_sha256": "57f4bfa801b599b400ec155ca6f26abffc05a1b2303a1c052e65c94ae2543c86",
+  "source_selected_window_identity_sha256": "a97aea27aa151ac489ec9ef5b688653600284b46c6b4860ff2dc87c64c61327c",
+  "partition_rule": "EXACT_TRACK_X_PRIMARY6_SEASON",
+  "partition_assignment_fields": [
+    "unit_id",
+    "season_id"
+  ],
+  "partition_assignment_uses_scientific_magnitude": false,
+  "partition_assignment_uses_selected_rank_or_percentile": false,
+  "partition_assignment_uses_sensor_response": false,
+  "partition_assignment_uses_known_event_dates": false,
+  "partition_assignment_uses_territorial_outcomes": false,
+  "partition_assignment_uses_case_control_role": false,
+  "partition_count": 18,
+  "track_count": 3,
+  "season_count": 6,
+  "seasons": [
+    "2014-2015",
+    "2015-2016",
+    "2016-2017",
+    "2017-2018",
+    "2018-2019",
+    "2019-2020"
+  ],
+  "selected_window_count": 108,
+  "compatible_pair_window_count": 104,
+  "missing_compatible_pair_count": 4,
+  "all_selected_windows_covered_exactly_once": true,
+  "all_compatible_pair_windows_covered_exactly_once": true,
+  "missing_windows_preserved_in_original_shards": true,
+  "selected_window_replacement_allowed": false,
+  "compatible_pair_reselection_allowed": false,
+  "missing_pair_imputation_allowed": false,
+  "science_pixels_read": false,
+  "rainfall_values_read": false,
+  "sar_change_values_read": false,
+  "territorial_outcomes_read": false,
+  "known_event_dates_read": false,
+  "case_control_assignment_performed": false,
+  "activation_inference_allowed": false,
+  "modeling_allowed": false,
+  "track_compatible_pair_counts": {
+    "huaycoloro": 34,
+    "shingolay": 36,
+    "san_ildefonso": 34
+  },
+  "track_missing_pair_counts": {
+    "huaycoloro": 2,
+    "shingolay": 0,
+    "san_ildefonso": 2
+  },
+  "partition_identity_sha256": "e608e85265fe0dab1649cbdc23511725a8b7e19f4651e95abd766e28a0d78405",
+  "shards": [
+    {
+      "shard_id": "huaycoloro__2014_2015",
+      "unit_id": "huaycoloro",
+      "season_id": "2014-2015",
+      "projection": "EPSG:32718",
+      "selected_window_count": 6,
+      "compatible_pair_window_count": 5,
+      "missing_compatible_pair_count": 1,
+      "execution_order": "DATE_LOCAL_ASCENDING_FOR_STABLE_COMPUTE_ONLY_NO_SCIENTIFIC_PRIORITY",
+      "partition_assignment_fields": [
+        "unit_id",
+        "season_id"
+      ],
+      "partition_uses_selected_rank_or_percentile": false,
+      "partition_uses_rainfall_magnitude": false,
+      "partition_uses_sar_response": false,
+      "partition_uses_outcome_or_event_date": false,
+      "shard_identity_sha256": "db9423f419eae4171387cc5a6f9169d76f323d0a6717f60e9a52664f93fa9427",
+      "windows": [
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2014-2015",
+          "date_local": "2014-09-02",
+          "sar_execution_status": "MISSING_COMPATIBLE_PAIR_RETAIN_WINDOW_NO_REPLACEMENT_NO_IMPUTATION",
+          "pre_item_id": null,
+          "post_item_id": null,
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "038f64be77b546cedfd3bb6b5a7ba8973a384adc621ca00c464569c4fbfba5b4",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2014-2015",
+          "date_local": "2014-11-25",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20141115T104700_20141115T104728_003291_003CFE",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20141209T104659_20141209T104727_003641_004503",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "3b2e3f7ed4b83a6c74e4767c54dee5f9caad5fb942df974eef61fcbff189bdb8",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2014-2015",
+          "date_local": "2014-12-21",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20141217T233338_20141217T233403_003765_0047E2",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20150110T233337_20150110T233402_004115_004FC8",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "112803ef146800be589960a857af3415e365a59b97e1f6ecf417ff3d14b8953d",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2014-2015",
+          "date_local": "2015-01-10",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20141228T103900_20141228T103925_003918_004B51",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20150121T103859_20150121T103924_004268_005311",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "2407ce07915b90e5a9cc73cbc8320fb90a6f72598b56cc197628c88157bd559a",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2014-2015",
+          "date_local": "2015-03-02",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20150219T104658_20150219T104725_004691_005CC2",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20150303T104658_20150303T104725_004866_006103",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "0a3a4c9e74a20acf05374921edd8af8bef1d76bcbc30d36369913458f4863c4a",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2014-2015",
+          "date_local": "2015-03-23",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20150311T233336_20150311T233401_004990_00640A",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20150404T233312_20150404T233346_005340_006C5B",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "ea3f44468ac1bdd3230101b7b42cb6cef88e49a538fb28448aaf8398bc0d7b9d",
+          "case_control_role": "UNASSIGNED"
+        }
+      ]
+    },
+    {
+      "shard_id": "huaycoloro__2015_2016",
+      "unit_id": "huaycoloro",
+      "season_id": "2015-2016",
+      "projection": "EPSG:32718",
+      "selected_window_count": 6,
+      "compatible_pair_window_count": 6,
+      "missing_compatible_pair_count": 0,
+      "execution_order": "DATE_LOCAL_ASCENDING_FOR_STABLE_COMPUTE_ONLY_NO_SCIENTIFIC_PRIORITY",
+      "partition_assignment_fields": [
+        "unit_id",
+        "season_id"
+      ],
+      "partition_uses_selected_rank_or_percentile": false,
+      "partition_uses_rainfall_magnitude": false,
+      "partition_uses_sar_response": false,
+      "partition_uses_outcome_or_event_date": false,
+      "shard_identity_sha256": "152d1bfa5d737ed8716a720b148117382436b980be35917b3051f67d9e2f8ba9",
+      "windows": [
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2015-2016",
+          "date_local": "2015-09-10",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20150825T103912_20150825T103937_007418_00A364",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20150918T103848_20150918T103913_007768_00ACD4",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "ee736cc41682e6a449470f468501fc7bde1a8028028ce963cd4440204a3f8618",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2015-2016",
+          "date_local": "2015-10-25",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20151012T103913_20151012T103938_008118_00B62F",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20151105T103848_20151105T103913_008468_00BF8F",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "5ca1298d73835431caf63bd01de338ff2d2a439033cd2a917dc7071e46d0b163",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2015-2016",
+          "date_local": "2015-11-09",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20151106T233356_20151106T233421_008490_00C032",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20151130T233350_20151130T233415_008840_00CA04",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "5eaf68471b1a3a9588fd9ecf4032191ca42017210940f181043895909b7adb6e",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2015-2016",
+          "date_local": "2015-12-25",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20151223T103906_20151223T103931_009168_00D326",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20160116T103906_20160116T103931_009518_00DD22",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "9051f9d6258c5b52e59736136b31dba9f08bb20aa268dffa7f62d93b3a319390",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2015-2016",
+          "date_local": "2016-01-18",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20160109T104659_20160109T104726_009416_00DA47",
+          "post_item_id": "S1A_IW_GRDH_1SDV_20160202T104659_20160202T104731_009766_00E46D",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "d65e3c935b875c10c3a89611d4d994d0d1d990c31d59607b1d10695e4fc8af52",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2015-2016",
+          "date_local": "2016-03-30",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20160328T103906_20160328T103931_010568_00FB68",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20160421T103906_20160421T103931_010918_0105E2",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "d5b7691ca47cfed9738656ede8f7ace217c476d70d17c7529f2c826742cf613d",
+          "case_control_role": "UNASSIGNED"
+        }
+      ]
+    },
+    {
+      "shard_id": "huaycoloro__2016_2017",
+      "unit_id": "huaycoloro",
+      "season_id": "2016-2017",
+      "projection": "EPSG:32718",
+      "selected_window_count": 6,
+      "compatible_pair_window_count": 5,
+      "missing_compatible_pair_count": 1,
+      "execution_order": "DATE_LOCAL_ASCENDING_FOR_STABLE_COMPUTE_ONLY_NO_SCIENTIFIC_PRIORITY",
+      "partition_assignment_fields": [
+        "unit_id",
+        "season_id"
+      ],
+      "partition_uses_selected_rank_or_percentile": false,
+      "partition_uses_rainfall_magnitude": false,
+      "partition_uses_sar_response": false,
+      "partition_uses_outcome_or_event_date": false,
+      "shard_identity_sha256": "259ab996375f82c8aa6067b1542fcb71e02f9237484cd59bb80c8ae046ff26cf",
+      "windows": [
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2016-2017",
+          "date_local": "2016-09-03",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20160820T233359_20160820T233424_012690_013F1F",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20160913T233335_20160913T233400_013040_014AA3",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "b8680019326af34bdc77b4de0a503fedf284a803771edbcfab427fcb7e8aa845",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2016-2017",
+          "date_local": "2016-09-21",
+          "sar_execution_status": "MISSING_COMPATIBLE_PAIR_RETAIN_WINDOW_NO_REPLACEMENT_NO_IMPUTATION",
+          "pre_item_id": null,
+          "post_item_id": null,
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "b5f337f79d460dd125d44e665d1617bc255a2b9d157981ab80c76af7ed7780f6",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2016-2017",
+          "date_local": "2016-10-09",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SSV_20160930T103827_20160930T103852_002297_003E27",
+          "post_item_id": "S1B_IW_GRDH_1SSV_20161012T103827_20161012T103852_002472_0042BE",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "8ce914ef62cd2addcd2f998f3a1399aaf54b12493762370de7ed8bdb23f296a2",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2016-2017",
+          "date_local": "2016-11-06",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SSV_20161029T104629_20161029T104656_002720_0049B4",
+          "post_item_id": "S1B_IW_GRDH_1SSV_20161122T104628_20161122T104655_003070_00538C",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "8abb8b4d05e3cbec4a8963c789ee191378e728bf5221c5bd42b25592486412bf",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2016-2017",
+          "date_local": "2017-01-19",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20170109T104626_20170109T104653_003770_0067B3",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20170202T104625_20170202T104652_004120_00720D",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "7bf8a85b850c2477d5842724a01dda4653254422d5c3ac3cb3182319e6264033",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2016-2017",
+          "date_local": "2017-03-14",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SSV_20170306T233304_20170306T233333_004594_008026",
+          "post_item_id": "S1B_IW_GRDH_1SSV_20170318T233304_20170318T233333_004769_00854D",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "2bc994b93e82265972c814d93d4189c783899fc97a32657b2beabaceb6c4c6f5",
+          "case_control_role": "UNASSIGNED"
+        }
+      ]
+    },
+    {
+      "shard_id": "huaycoloro__2017_2018",
+      "unit_id": "huaycoloro",
+      "season_id": "2017-2018",
+      "projection": "EPSG:32718",
+      "selected_window_count": 6,
+      "compatible_pair_window_count": 6,
+      "missing_compatible_pair_count": 0,
+      "execution_order": "DATE_LOCAL_ASCENDING_FOR_STABLE_COMPUTE_ONLY_NO_SCIENTIFIC_PRIORITY",
+      "partition_assignment_fields": [
+        "unit_id",
+        "season_id"
+      ],
+      "partition_uses_selected_rank_or_percentile": false,
+      "partition_uses_rainfall_magnitude": false,
+      "partition_uses_sar_response": false,
+      "partition_uses_outcome_or_event_date": false,
+      "shard_identity_sha256": "5dff9098f8194bc9617005d42857ba3e419666fa4f5d9a312d97ea106275b7f9",
+      "windows": [
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2017-2018",
+          "date_local": "2017-09-10",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20170906T104649_20170906T104706_007270_00CD25",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20170918T104649_20170918T104707_007445_00D249",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "01e4ac0789cf4435849e829bc2591699a53fc9bf0e52aa436cd87cb94a775530",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2017-2018",
+          "date_local": "2017-10-08",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20170930T104650_20170930T104707_007620_00D74F",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20171012T104650_20171012T104707_007795_00DC4C",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "14fd9a48d62ea73ce049746a6722f0ead631eb4a12f2af16703d09fd26ce8367",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2017-2018",
+          "date_local": "2017-12-17",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20171211T104649_20171211T104706_008670_00F691",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20171223T104649_20171223T104706_008845_00FC24",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "50a5cdbc07ce8e12a916489e2467d30a84a71df8a820211d84dc2f32c0fccf82",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2017-2018",
+          "date_local": "2018-01-22",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20180111T103835_20180111T103900_009122_010525",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20180123T103835_20180123T103900_009297_010AD9",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "461fcee9868cc12679a89a0476bdf87b66f14f64d12051dacdfde39b6cbffdd0",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2017-2018",
+          "date_local": "2018-02-08",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20180128T104647_20180128T104705_009370_010D3E",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20180209T104647_20180209T104704_009545_011301",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "b69e8cca53a99ae61621824908139b78797dca5a1a19a9176f3218b0261a7878",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2017-2018",
+          "date_local": "2018-03-09",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20180228T103834_20180228T103859_009822_011C25",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20180312T103834_20180312T103859_009997_012205",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "8cc4a39b130778cf877ef7dbee314ff1b838d526142cbd1748f00d440415cce1",
+          "case_control_role": "UNASSIGNED"
+        }
+      ]
+    },
+    {
+      "shard_id": "huaycoloro__2018_2019",
+      "unit_id": "huaycoloro",
+      "season_id": "2018-2019",
+      "projection": "EPSG:32718",
+      "selected_window_count": 6,
+      "compatible_pair_window_count": 6,
+      "missing_compatible_pair_count": 0,
+      "execution_order": "DATE_LOCAL_ASCENDING_FOR_STABLE_COMPUTE_ONLY_NO_SCIENTIFIC_PRIORITY",
+      "partition_assignment_fields": [
+        "unit_id",
+        "season_id"
+      ],
+      "partition_uses_selected_rank_or_percentile": false,
+      "partition_uses_rainfall_magnitude": false,
+      "partition_uses_sar_response": false,
+      "partition_uses_outcome_or_event_date": false,
+      "shard_identity_sha256": "ac01c2622ee775594460e653f22fa4b94ce2c060221a7400be7e410412091708",
+      "windows": [
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2018-2019",
+          "date_local": "2018-10-03",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20180921T233320_20180921T233349_012819_017AAA",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20181027T233309_20181027T233334_013344_018ACE",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "1fcf1f625cbf710bcf49c2017f12c7208f2b8b6a33098651ecb6e6c1b19111c3",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2018-2019",
+          "date_local": "2018-10-18",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20181003T233321_20181003T233350_012994_018004",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20181027T233309_20181027T233334_013344_018ACE",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "7fcb70e9dec1a62bab9d1adefca9508106b7ec6142110e4eb59e445ee5be5a53",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2018-2019",
+          "date_local": "2018-11-24",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20181120T233334_20181120T233359_013694_0195D2",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20181202T233308_20181202T233333_013869_019B6C",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "923dc67d5366a0bce4d29b0971ff770d30748328fcc5d46ac87f08734819143b",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2018-2019",
+          "date_local": "2018-12-04",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20181202T233333_20181202T233358_013869_019B6C",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20181214T233308_20181214T233333_014044_01A121",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "38d4a9eb0b4c35efd0aec95e07b555d5e3866893a5aed91093eba0a995d82e7d",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2018-2019",
+          "date_local": "2019-01-21",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20190119T233332_20190119T233357_014569_01B247",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20190131T233306_20190131T233331_014744_01B7E5",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "80356a655e526de6e254aa0946127fccdaa7ae7981cba6b25379194a3e8e822a",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2018-2019",
+          "date_local": "2019-03-18",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20190308T233331_20190308T233356_015269_01C928",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20190320T233306_20190320T233331_015444_01CED5",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "40cb08007bde12c501c13373f97dc998c4037cc3e6e35e1bc9154a87f6ef3b60",
+          "case_control_role": "UNASSIGNED"
+        }
+      ]
+    },
+    {
+      "shard_id": "huaycoloro__2019_2020",
+      "unit_id": "huaycoloro",
+      "season_id": "2019-2020",
+      "projection": "EPSG:32718",
+      "selected_window_count": 6,
+      "compatible_pair_window_count": 6,
+      "missing_compatible_pair_count": 0,
+      "execution_order": "DATE_LOCAL_ASCENDING_FOR_STABLE_COMPUTE_ONLY_NO_SCIENTIFIC_PRIORITY",
+      "partition_assignment_fields": [
+        "unit_id",
+        "season_id"
+      ],
+      "partition_uses_selected_rank_or_percentile": false,
+      "partition_uses_rainfall_magnitude": false,
+      "partition_uses_sar_response": false,
+      "partition_uses_outcome_or_event_date": false,
+      "shard_identity_sha256": "5189a0bce780b2b064e298b4aa7076e09a3687ea43dcff782f7dd47bc3b50c8b",
+      "windows": [
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2019-2020",
+          "date_local": "2019-09-12",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20190904T233339_20190904T233404_017894_021AD1",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20190916T233315_20190916T233340_018069_022045",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "81a9efb432e45c27b9c0f392234f8646c43863305602ec232e569bc89928285e",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2019-2020",
+          "date_local": "2019-10-25",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20191022T233340_20191022T233405_018594_023085",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20191103T233315_20191103T233340_018769_02360B",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "4dd6baab8682f92a4fd1fde3af0e727c54e38fd39f649107040d275bc66d2080",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2019-2020",
+          "date_local": "2020-02-10",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20200207T233337_20200207T233402_020169_0262E0",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20200219T233312_20200219T233337_020344_02687D",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "31726b4d9bce95c8516af016877b0400e0f9754430b6b3516da15690c2935743",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2019-2020",
+          "date_local": "2020-02-19",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20200218T103847_20200218T103912_020322_0267D4",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20200301T103847_20200301T103912_020497_026D72",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "5f7387cbbac896bb5e5604db5d826c96b4098d34f0f6831f81f404d54f6df111",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2019-2020",
+          "date_local": "2020-03-20",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20200314T233337_20200314T233402_020694_0273A9",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20200326T233312_20200326T233337_020869_02792B",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "b9045ccd9285c788378a4973bb13f305b8f8ff72fb57f837bcdf24c47508743d",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "huaycoloro",
+          "season_id": "2019-2020",
+          "date_local": "2020-04-14",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20200407T233337_20200407T233402_021044_027EBA",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20200419T233313_20200419T233338_021219_02843E",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "7c12c6a5dec59db890ed9cf8c6b0a383eb4d0b2904fdee2a48769b06c0d73119",
+          "case_control_role": "UNASSIGNED"
+        }
+      ]
+    },
+    {
+      "shard_id": "shingolay__2014_2015",
+      "unit_id": "shingolay",
+      "season_id": "2014-2015",
+      "projection": "EPSG:32718",
+      "selected_window_count": 6,
+      "compatible_pair_window_count": 6,
+      "missing_compatible_pair_count": 0,
+      "execution_order": "DATE_LOCAL_ASCENDING_FOR_STABLE_COMPUTE_ONLY_NO_SCIENTIFIC_PRIORITY",
+      "partition_assignment_fields": [
+        "unit_id",
+        "season_id"
+      ],
+      "partition_uses_selected_rank_or_percentile": false,
+      "partition_uses_rainfall_magnitude": false,
+      "partition_uses_sar_response": false,
+      "partition_uses_outcome_or_event_date": false,
+      "shard_identity_sha256": "d345192c6eacb9e03061717b11a9797cb16fdba887aa280f4e6cebf087c1d5cf",
+      "windows": [
+        {
+          "unit_id": "shingolay",
+          "season_id": "2014-2015",
+          "date_local": "2014-11-19",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20141110T103901_20141110T103926_003218_003B71",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20141204T103901_20141204T103926_003568_00435B",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "666958cf2dda9d17f974e24e333d4a9df3727ee646bc1ee273367e5adf39ee6a",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2014-2015",
+          "date_local": "2014-12-24",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20141217T233338_20141217T233403_003765_0047E2",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20150110T233337_20150110T233402_004115_004FC8",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "ae039942bb2b18e7f4ee4b40bb15c36a0946fd38c11201ec0f33f20b71a312fc",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2014-2015",
+          "date_local": "2015-01-30",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20150121T103859_20150121T103924_004268_005311",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20150214T103858_20150214T103923_004618_005B10",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "c0a97e8deccc89a24723f70a89dda1fe1603de766b2852944a257fbbdb72ea66",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2014-2015",
+          "date_local": "2015-02-12",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20150121T103859_20150121T103924_004268_005311",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20150214T103858_20150214T103923_004618_005B10",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "19b89b4cd07f79e5ed3241aaa786aa272052bdb516df73832bc63ba4a2208f02",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2014-2015",
+          "date_local": "2015-02-28",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20150214T103858_20150214T103923_004618_005B10",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20150310T103859_20150310T103924_004968_006380",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "3e2693a587d092b69f5d0d6267f8868804fdbff081299244c4d748f6cced2690",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2014-2015",
+          "date_local": "2015-03-24",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20150310T103859_20150310T103924_004968_006380",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20150403T103859_20150403T103924_005318_006BBE",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "28ef1351f8838f6775a8fa6b1adf8f7a0f56d49dd0a4e05ba9b1e2c485fbfdd5",
+          "case_control_role": "UNASSIGNED"
+        }
+      ]
+    },
+    {
+      "shard_id": "shingolay__2015_2016",
+      "unit_id": "shingolay",
+      "season_id": "2015-2016",
+      "projection": "EPSG:32718",
+      "selected_window_count": 6,
+      "compatible_pair_window_count": 6,
+      "missing_compatible_pair_count": 0,
+      "execution_order": "DATE_LOCAL_ASCENDING_FOR_STABLE_COMPUTE_ONLY_NO_SCIENTIFIC_PRIORITY",
+      "partition_assignment_fields": [
+        "unit_id",
+        "season_id"
+      ],
+      "partition_uses_selected_rank_or_percentile": false,
+      "partition_uses_rainfall_magnitude": false,
+      "partition_uses_sar_response": false,
+      "partition_uses_outcome_or_event_date": false,
+      "shard_identity_sha256": "b4bc6dfc8f149322ecf0969fe861bc2e5d80860cb28953b2574c0cdf0bc91f2e",
+      "windows": [
+        {
+          "unit_id": "shingolay",
+          "season_id": "2015-2016",
+          "date_local": "2015-09-04",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20150825T103912_20150825T103937_007418_00A364",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20150918T103913_20150918T103938_007768_00ACD4",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "2ba62a4856f46dd72ead4cc952c5dc4fbfd2c393d34674f79e8fed89bb3f9ac4",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2015-2016",
+          "date_local": "2015-10-05",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20150918T103913_20150918T103938_007768_00ACD4",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20151012T103913_20151012T103938_008118_00B62F",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "1e948b33bf1c5a0df842de9d0e287161f899b8813c295248ac421e4b767fce11",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2015-2016",
+          "date_local": "2015-12-24",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20151223T103906_20151223T103931_009168_00D326",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20160116T103906_20160116T103931_009518_00DD22",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "eda231afb01cdc22c857ce67cfa7465c17651d446f02bdab2099df9a4caf0cfe",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2015-2016",
+          "date_local": "2016-02-15",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20160117T233348_20160117T233413_009540_00DDD3",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20160305T233348_20160305T233413_010240_00F21B",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "ad38172ad329c2ce2f4dba1ce63b2510812268e3b4f6551e087e3548f3c69bf1",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2015-2016",
+          "date_local": "2016-04-08",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20160328T103906_20160328T103931_010568_00FB68",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20160421T103906_20160421T103931_010918_0105E2",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "c7929f62504d297f07802e980486a88b0dc201535a537c62c9110e2a089dad52",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2015-2016",
+          "date_local": "2016-04-26",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20160422T233349_20160422T233414_010940_010698",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20160516T233353_20160516T233418_011290_0111BB",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "8ec741b0ac004ac97f845c3388abacff786b13b6b7f648b7e292d5d6644517ae",
+          "case_control_role": "UNASSIGNED"
+        }
+      ]
+    },
+    {
+      "shard_id": "shingolay__2016_2017",
+      "unit_id": "shingolay",
+      "season_id": "2016-2017",
+      "projection": "EPSG:32718",
+      "selected_window_count": 6,
+      "compatible_pair_window_count": 6,
+      "missing_compatible_pair_count": 0,
+      "execution_order": "DATE_LOCAL_ASCENDING_FOR_STABLE_COMPUTE_ONLY_NO_SCIENTIFIC_PRIORITY",
+      "partition_assignment_fields": [
+        "unit_id",
+        "season_id"
+      ],
+      "partition_uses_selected_rank_or_percentile": false,
+      "partition_uses_rainfall_magnitude": false,
+      "partition_uses_sar_response": false,
+      "partition_uses_outcome_or_event_date": false,
+      "shard_identity_sha256": "f922092f7c58433a566ef575c07d5c2c4a34449ebf706da2b65b34a3ba1a2a82",
+      "windows": [
+        {
+          "unit_id": "shingolay",
+          "season_id": "2016-2017",
+          "date_local": "2016-09-01",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20160819T103916_20160819T103941_012668_013E5C",
+          "post_item_id": "S1A_IW_GRDH_1SDV_20160912T103911_20160912T103936_013018_0149E6",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "3a90ed4baf6b5cac3f953e2557f3dd4a43a84008b1d4235753ce73d48092d30e",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2016-2017",
+          "date_local": "2016-12-21",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SSV_20161129T103826_20161129T103851_003172_00565D",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20161223T103826_20161223T103851_003522_00605B",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "081907d18a7ab98d9d7d190d19d4151ba9294e7ecebbfb0014c6eac227a479fa",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2016-2017",
+          "date_local": "2017-02-14",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SSV_20170210T233304_20170210T233333_004244_0075C4",
+          "post_item_id": "S1B_IW_GRDH_1SSV_20170222T233304_20170222T233333_004419_007B0B",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "de75e305a8e554bc406b6102a40744d45300aac7acea65d77394713e3589ad36",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2016-2017",
+          "date_local": "2017-03-16",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SSV_20170306T233304_20170306T233333_004594_008026",
+          "post_item_id": "S1B_IW_GRDH_1SSV_20170318T233304_20170318T233333_004769_00854D",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "5fa548191bfef9f9f00647bcec56de0df7f51dda2ffc5e2df72bbaf845a87555",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2016-2017",
+          "date_local": "2017-04-09",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SSV_20170330T233305_20170330T233334_004944_008A53",
+          "post_item_id": "S1B_IW_GRDH_1SSV_20170411T233305_20170411T233334_005119_008F57",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "3e41a3af8e8a5fc607ec6ecef85c570c9f5df40ecb67ba8588b3434bbddc2b39",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2016-2017",
+          "date_local": "2017-04-18",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20170410T103824_20170410T103849_005097_008EBB",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20170422T103825_20170422T103850_005272_0093C8",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "c29076d1b687e967dd28445bba0791f4a17a9567b86865ae5d6ad9686e55f38e",
+          "case_control_role": "UNASSIGNED"
+        }
+      ]
+    },
+    {
+      "shard_id": "shingolay__2017_2018",
+      "unit_id": "shingolay",
+      "season_id": "2017-2018",
+      "projection": "EPSG:32718",
+      "selected_window_count": 6,
+      "compatible_pair_window_count": 6,
+      "missing_compatible_pair_count": 0,
+      "execution_order": "DATE_LOCAL_ASCENDING_FOR_STABLE_COMPUTE_ONLY_NO_SCIENTIFIC_PRIORITY",
+      "partition_assignment_fields": [
+        "unit_id",
+        "season_id"
+      ],
+      "partition_uses_selected_rank_or_percentile": false,
+      "partition_uses_rainfall_magnitude": false,
+      "partition_uses_sar_response": false,
+      "partition_uses_outcome_or_event_date": false,
+      "shard_identity_sha256": "f93d0e9cefc7f5897217f9af0ee9a0ca81ac8ce6169bf36bbb027f5dd4b8f3f3",
+      "windows": [
+        {
+          "unit_id": "shingolay",
+          "season_id": "2017-2018",
+          "date_local": "2017-09-11",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20170901T103836_20170901T103901_007197_00CB02",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20170925T103837_20170925T103902_007547_00D533",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "1ec8a9dedb9245316fc44b5b1b13d2457f7c8bad36560770366160cb96c74852",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2017-2018",
+          "date_local": "2017-11-15",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20171112T103837_20171112T103902_008247_00E964",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20171124T103837_20171124T103902_008422_00EEAE",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "7b28ae5458badc3e7f98dcd3f4cc312545225281ed1351976c1b7578cef348b5",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2017-2018",
+          "date_local": "2017-11-30",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20171125T233314_20171125T233343_008444_00EF60",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20171207T233313_20171207T233342_008619_00F4EE",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "ab4c2f55b67584c6be9ec6cf964351aa0821e6ca6ab4f30969b8c745fd02e190",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2017-2018",
+          "date_local": "2017-12-09",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20171206T103837_20171206T103902_008597_00F43F",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20171218T103836_20171218T103901_008772_00F9D3",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "daa4bf9bd61fd2b897430516b0a69732937d2f4a3c6219515ca06bb78da63d97",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2017-2018",
+          "date_local": "2018-01-13",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20180111T103835_20180111T103900_009122_010525",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20180123T103835_20180123T103900_009297_010AD9",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "bd6c603178e0d02b2a5acf91205abf32f620f31b32dab4ad921321388c60ee12",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2017-2018",
+          "date_local": "2018-01-22",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20180111T103835_20180111T103900_009122_010525",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20180123T103835_20180123T103900_009297_010AD9",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "6cc8fef4a1fa076d97aa530f62261321e0959b8fee2ee07991c5c66855e729ad",
+          "case_control_role": "UNASSIGNED"
+        }
+      ]
+    },
+    {
+      "shard_id": "shingolay__2018_2019",
+      "unit_id": "shingolay",
+      "season_id": "2018-2019",
+      "projection": "EPSG:32718",
+      "selected_window_count": 6,
+      "compatible_pair_window_count": 6,
+      "missing_compatible_pair_count": 0,
+      "execution_order": "DATE_LOCAL_ASCENDING_FOR_STABLE_COMPUTE_ONLY_NO_SCIENTIFIC_PRIORITY",
+      "partition_assignment_fields": [
+        "unit_id",
+        "season_id"
+      ],
+      "partition_uses_selected_rank_or_percentile": false,
+      "partition_uses_rainfall_magnitude": false,
+      "partition_uses_sar_response": false,
+      "partition_uses_outcome_or_event_date": false,
+      "shard_identity_sha256": "55238e020e34b1d61ed53e7cf79980505b3228beb52554f35347f484b6bcef0b",
+      "windows": [
+        {
+          "unit_id": "shingolay",
+          "season_id": "2018-2019",
+          "date_local": "2018-09-01",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20180828T233319_20180828T233348_012469_016FED",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20180909T233320_20180909T233349_012644_017551",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "f0b3a086a6faa85da279d023646d70c3afc04c3a46845d0849ddd149bfea832e",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2018-2019",
+          "date_local": "2018-09-24",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20180921T233320_20180921T233349_012819_017AAA",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20181003T233321_20181003T233350_012994_018004",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "0ca6bd8ff36bb8a8c697fe81622e85e720bd66042c9cbd64b73d0dc7a701b39d",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2018-2019",
+          "date_local": "2018-11-18",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20181108T233309_20181108T233334_013519_019048",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20181120T233309_20181120T233334_013694_0195D2",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "5d0d7ad9ccbeeceb49e01f90bed6a63ea08d01fbdfe48ee5004587b872348842",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2018-2019",
+          "date_local": "2018-12-15",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20181214T233308_20181214T233333_014044_01A121",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20181226T233307_20181226T233332_014219_01A6F0",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "25c0f8c8c57ee3f22dd93be4403f939447f2b1211f2a5132ef775d9673798620",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2018-2019",
+          "date_local": "2019-01-28",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20190119T233307_20190119T233332_014569_01B247",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20190131T233306_20190131T233331_014744_01B7E5",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "9f9d89a2e0e22a9bdd4be92185bb81fa354bb913ae4ced425a03d5c0645f735b",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2018-2019",
+          "date_local": "2019-02-24",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20190223T103841_20190223T103906_015072_01C2AC",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20190307T103841_20190307T103906_015247_01C875",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "977ef643a5afa5c9dbdd115b253cbcb8ddc364a79c0edd6ee35c7a38f6cde9af",
+          "case_control_role": "UNASSIGNED"
+        }
+      ]
+    },
+    {
+      "shard_id": "shingolay__2019_2020",
+      "unit_id": "shingolay",
+      "season_id": "2019-2020",
+      "projection": "EPSG:32718",
+      "selected_window_count": 6,
+      "compatible_pair_window_count": 6,
+      "missing_compatible_pair_count": 0,
+      "execution_order": "DATE_LOCAL_ASCENDING_FOR_STABLE_COMPUTE_ONLY_NO_SCIENTIFIC_PRIORITY",
+      "partition_assignment_fields": [
+        "unit_id",
+        "season_id"
+      ],
+      "partition_uses_selected_rank_or_percentile": false,
+      "partition_uses_rainfall_magnitude": false,
+      "partition_uses_sar_response": false,
+      "partition_uses_outcome_or_event_date": false,
+      "shard_identity_sha256": "b1e5e2248390eed4208f3f52d56d0acf431d174fd71e268e2f94287db4d4084c",
+      "windows": [
+        {
+          "unit_id": "shingolay",
+          "season_id": "2019-2020",
+          "date_local": "2019-10-05",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20190927T103851_20190927T103916_018222_0224FD",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20191009T103851_20191009T103916_018397_022A82",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "b720f6613e4cf9c8b2cd7cb59b45dacea74aaaf4bcc6238eced38f1a1f930811",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2019-2020",
+          "date_local": "2019-11-19",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20191115T233315_20191115T233340_018944_023BBE",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20191127T233315_20191127T233340_019119_024158",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "26a0315306366606eadb366ea4a4360481194b7d384e1060f9212b1246c1f1e4",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2019-2020",
+          "date_local": "2020-01-03",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20200102T233313_20200102T233338_019644_025203",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20200114T233313_20200114T233338_019819_025798",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "e29fe6711e58d41835d214d0bf0e4dee7aad60fc803a755a0eb3962805838e3b",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2019-2020",
+          "date_local": "2020-01-20",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20200113T103848_20200113T103913_019797_0256E7",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20200125T103848_20200125T103913_019972_025C7C",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "dcb390a5506e6b7a9ab88a2f87ed65a47cc586dfce62bb048f1eb4293f380fad",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2019-2020",
+          "date_local": "2020-02-18",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20200207T233312_20200207T233337_020169_0262E0",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20200219T233312_20200219T233337_020344_02687D",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "fbf927feeee5f7133627cc406de4658ec9399a11b554ce25360d1b1e2cb7b2ab",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "shingolay",
+          "season_id": "2019-2020",
+          "date_local": "2020-04-05",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20200326T233312_20200326T233337_020869_02792B",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20200407T233312_20200407T233337_021044_027EBA",
+          "projection": "EPSG:32718",
+          "window_execution_identity_sha256": "f0b3fb3f1baed5fc0c8ab7a54aff72eb41e0c8e0756e0547e06a8112007efe45",
+          "case_control_role": "UNASSIGNED"
+        }
+      ]
+    },
+    {
+      "shard_id": "san_ildefonso__2014_2015",
+      "unit_id": "san_ildefonso",
+      "season_id": "2014-2015",
+      "projection": "EPSG:32717",
+      "selected_window_count": 6,
+      "compatible_pair_window_count": 5,
+      "missing_compatible_pair_count": 1,
+      "execution_order": "DATE_LOCAL_ASCENDING_FOR_STABLE_COMPUTE_ONLY_NO_SCIENTIFIC_PRIORITY",
+      "partition_assignment_fields": [
+        "unit_id",
+        "season_id"
+      ],
+      "partition_uses_selected_rank_or_percentile": false,
+      "partition_uses_rainfall_magnitude": false,
+      "partition_uses_sar_response": false,
+      "partition_uses_outcome_or_event_date": false,
+      "shard_identity_sha256": "cb49f3de0fe585112a32ef3423827709424f8db25b18d5d63e2014345f4286bc",
+      "windows": [
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2014-2015",
+          "date_local": "2014-10-06",
+          "sar_execution_status": "MISSING_COMPATIBLE_PAIR_RETAIN_WINDOW_NO_REPLACEMENT_NO_IMPUTATION",
+          "pre_item_id": null,
+          "post_item_id": null,
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "fe3dc5672f8f1dd14c636b84bdbcff50d0d1bbf076884c0973a8acda227fb8d3",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2014-2015",
+          "date_local": "2014-10-19",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20141015T105411_20141015T105436_002839_00333E",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20141108T105411_20141108T105436_003189_003AC4",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "c531a02b6825a9bd3ad930cbcd5997d6b9e5f3f1753a57ed093d76d768ed9817",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2014-2015",
+          "date_local": "2014-11-16",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20141104T234236_20141104T234305_003138_0039B6",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20141128T234235_20141128T234304_003488_00417B",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "a7b624b6d72f5688c0431c05deb26faab82cbab66c79632dd57f13744f2a2100",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2014-2015",
+          "date_local": "2015-02-01",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20150119T105409_20150119T105434_004239_00527E",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20150212T105408_20150212T105433_004589_005A5F",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "71bf088ca8befcf1dfa147d6442de259345d07c0fb2b2abebe66f329006ec613",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2014-2015",
+          "date_local": "2015-02-25",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20150212T105408_20150212T105433_004589_005A5F",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20150308T105408_20150308T105433_004939_0062C3",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "57ebd996b3cf05b8f81bfb81f51b981f596bcd06514acebe1b5c4321a1efc67d",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2014-2015",
+          "date_local": "2015-03-24",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20150316T234233_20150316T234302_005063_0065C1",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20150409T234234_20150409T234303_005413_006E37",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "0a543bf69717857a4e17502b55229d2bd690767bb94fa29d62c9c11b2edc17f1",
+          "case_control_role": "UNASSIGNED"
+        }
+      ]
+    },
+    {
+      "shard_id": "san_ildefonso__2015_2016",
+      "unit_id": "san_ildefonso",
+      "season_id": "2015-2016",
+      "projection": "EPSG:32717",
+      "selected_window_count": 6,
+      "compatible_pair_window_count": 6,
+      "missing_compatible_pair_count": 0,
+      "execution_order": "DATE_LOCAL_ASCENDING_FOR_STABLE_COMPUTE_ONLY_NO_SCIENTIFIC_PRIORITY",
+      "partition_assignment_fields": [
+        "unit_id",
+        "season_id"
+      ],
+      "partition_uses_selected_rank_or_percentile": false,
+      "partition_uses_rainfall_magnitude": false,
+      "partition_uses_sar_response": false,
+      "partition_uses_outcome_or_event_date": false,
+      "shard_identity_sha256": "e97a15afad1ed0033353a5c00e7d2574328237aae428a59fa4cee335606f4e4a",
+      "windows": [
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2015-2016",
+          "date_local": "2015-09-01",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20150823T105422_20150823T105447_007389_00A298",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20150916T105422_20150916T105447_007739_00AC10",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "f7bdb07f32d4dea4caeca8f479f75257c94a957487589c41ccd01a68e3f624f6",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2015-2016",
+          "date_local": "2015-11-01",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20151010T105423_20151010T105448_008089_00B570",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20151103T105423_20151103T105448_008439_00BED8",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "44c97775516450169d5d5664097264179ae6047cd30815b33e15814f61e60b7c",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2015-2016",
+          "date_local": "2015-11-13",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20151103T105423_20151103T105448_008439_00BED8",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20151127T105417_20151127T105442_008789_00C88B",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "e3ad0266bd52f44dacaf21bb68d417ffe77fe4aad96cd0f9e61d7fdfcfc9f14e",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2015-2016",
+          "date_local": "2015-12-28",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20151205T234303_20151205T234332_008913_00CC1E",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20151229T234302_20151229T234331_009263_00D5EB",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "ae41bd735d9eed9804389482d360f76a22213be600052b06f4728efea263e423",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2015-2016",
+          "date_local": "2016-01-14",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20151229T234302_20151229T234331_009263_00D5EB",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20160122T234302_20160122T234331_009613_00E001",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "604cb573a0936a743c0070ee66540281c23eac492496fd40dfb4d4b0f97f4335",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2015-2016",
+          "date_local": "2016-02-10",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20160122T234302_20160122T234331_009613_00E001",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20160215T234301_20160215T234330_009963_00EA32",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "dc115feb14956387e89c1a6ebcda2fa48720a8993109a1237db87bc4eef74790",
+          "case_control_role": "UNASSIGNED"
+        }
+      ]
+    },
+    {
+      "shard_id": "san_ildefonso__2016_2017",
+      "unit_id": "san_ildefonso",
+      "season_id": "2016-2017",
+      "projection": "EPSG:32717",
+      "selected_window_count": 6,
+      "compatible_pair_window_count": 5,
+      "missing_compatible_pair_count": 1,
+      "execution_order": "DATE_LOCAL_ASCENDING_FOR_STABLE_COMPUTE_ONLY_NO_SCIENTIFIC_PRIORITY",
+      "partition_assignment_fields": [
+        "unit_id",
+        "season_id"
+      ],
+      "partition_uses_selected_rank_or_percentile": false,
+      "partition_uses_rainfall_magnitude": false,
+      "partition_uses_sar_response": false,
+      "partition_uses_outcome_or_event_date": false,
+      "shard_identity_sha256": "5054a3010e090d890ac3548c9b7c9078c0d713f9b12eb0458456abc5a81829a0",
+      "windows": [
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2016-2017",
+          "date_local": "2016-09-14",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1A_IW_GRDH_1SSV_20160825T234312_20160825T234341_012763_0141AA",
+          "post_item_id": "S1A_IW_GRDH_1SSV_20160918T234313_20160918T234342_013113_014D1C",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "2ed629e870a38aff8c0e51b8de30e7a300368de689f434fa7c8e1f08913396d0",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2016-2017",
+          "date_local": "2016-09-23",
+          "sar_execution_status": "MISSING_COMPATIBLE_PAIR_RETAIN_WINDOW_NO_REPLACEMENT_NO_IMPUTATION",
+          "pre_item_id": null,
+          "post_item_id": null,
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "831790db1a7b8330d6bf1360bd8d5bd206d7e782ccfff4eb35476a7b219ba407",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2016-2017",
+          "date_local": "2016-10-15",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SSV_20161013T233427_20161013T233452_002494_004357",
+          "post_item_id": "S1B_IW_GRDH_1SSV_20161106T233402_20161106T233427_002844_004D16",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "9734b7265b1ab23d2fc6c6474a357439256f1b3e1e70ddcb489ca7c7b844f10f",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2016-2017",
+          "date_local": "2016-12-01",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SSV_20161127T105401_20161127T105426_003143_005589",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20161221T105335_20161221T105400_003493_005F89",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "e1d526d2f3dc7c736100ea1e67be10d012baad6cf54a6fbf2bbfb8003ce01c25",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2016-2017",
+          "date_local": "2017-03-05",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SSV_20170222T233423_20170222T233448_004419_007B0B",
+          "post_item_id": "S1B_IW_GRDH_1SSV_20170306T233358_20170306T233423_004594_008026",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "920af6c652059a6187e33dfd0374959f7a06f2d2bfec33c5ad2367d958377466",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2016-2017",
+          "date_local": "2017-03-19",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20170315T105357_20170315T105423_004718_0083C9",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20170327T105333_20170327T105358_004893_0088CB",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "1ef2cc71da2059bdfc55573ce5107ac448b31e1ef340fe6cb4604f24926f48d8",
+          "case_control_role": "UNASSIGNED"
+        }
+      ]
+    },
+    {
+      "shard_id": "san_ildefonso__2017_2018",
+      "unit_id": "san_ildefonso",
+      "season_id": "2017-2018",
+      "projection": "EPSG:32717",
+      "selected_window_count": 6,
+      "compatible_pair_window_count": 6,
+      "missing_compatible_pair_count": 0,
+      "execution_order": "DATE_LOCAL_ASCENDING_FOR_STABLE_COMPUTE_ONLY_NO_SCIENTIFIC_PRIORITY",
+      "partition_assignment_fields": [
+        "unit_id",
+        "season_id"
+      ],
+      "partition_uses_selected_rank_or_percentile": false,
+      "partition_uses_rainfall_magnitude": false,
+      "partition_uses_sar_response": false,
+      "partition_uses_outcome_or_event_date": false,
+      "shard_identity_sha256": "03f0cccff7abfb18e813a1af6b706e23e6481f09ac82a9505de9aaa512268d19",
+      "windows": [
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2017-2018",
+          "date_local": "2017-09-06",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20170826T234225_20170826T234254_007117_00C8B9",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20170907T234225_20170907T234254_007292_00CDD0",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "244ce6f68a6a4c140f4fdda08da16862351311c8de281290effca0aad649c254",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2017-2018",
+          "date_local": "2017-09-29",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20170926T233433_20170926T233458_007569_00D5D3",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20171008T233408_20171008T233433_007744_00DAD9",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "58c4b8ec6c0e9cdb7d5bc22c603534581b014eb88a09cab828aa201838f44ff4",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2017-2018",
+          "date_local": "2017-12-27",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20171224T234225_20171224T234254_008867_00FCDF",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20180105T234224_20180105T234253_009042_01028F",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "9003fe23da1e67445b961a98a6a9e625edfd1400557b2507ac62be973445d3a6",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2017-2018",
+          "date_local": "2018-02-02",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20180124T233430_20180124T233455_009319_010B95",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20180205T233405_20180205T233430_009494_011151",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "59db3f6f20fbe1a29caef37030155ab29abc448e930662c1b2d1a8f63f6a943e",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2017-2018",
+          "date_local": "2018-02-25",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20180217T233430_20180217T233455_009669_011712",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20180301T233405_20180301T233430_009844_011CDD",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "e057687e59d6366865b5e62cc949b6527ba6ae525cf84351c7904110422efccc",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2017-2018",
+          "date_local": "2018-04-08",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20180406T233431_20180406T233456_010369_012E17",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20180418T233406_20180418T233431_010544_0133AB",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "2ef1e6e419f530b5c54e4b5e8ca0800c9205a4b2f4b3fcf65f29f5ca275b9b8f",
+          "case_control_role": "UNASSIGNED"
+        }
+      ]
+    },
+    {
+      "shard_id": "san_ildefonso__2018_2019",
+      "unit_id": "san_ildefonso",
+      "season_id": "2018-2019",
+      "projection": "EPSG:32717",
+      "selected_window_count": 6,
+      "compatible_pair_window_count": 6,
+      "missing_compatible_pair_count": 0,
+      "execution_order": "DATE_LOCAL_ASCENDING_FOR_STABLE_COMPUTE_ONLY_NO_SCIENTIFIC_PRIORITY",
+      "partition_assignment_fields": [
+        "unit_id",
+        "season_id"
+      ],
+      "partition_uses_selected_rank_or_percentile": false,
+      "partition_uses_rainfall_magnitude": false,
+      "partition_uses_sar_response": false,
+      "partition_uses_outcome_or_event_date": false,
+      "shard_identity_sha256": "e0c2aa4714b7c4cecf42193deead4c8608bd700d689dfec09e4fa49a54a8d620",
+      "windows": [
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2018-2019",
+          "date_local": "2018-09-01",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20180828T233438_20180828T233503_012469_016FED",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20180909T233414_20180909T233439_012644_017551",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "6d461af976abec9141d73487d227cd43948faf367956a7dd851b730a0e2934d0",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2018-2019",
+          "date_local": "2018-10-12",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20181008T234233_20181008T234302_013067_01824B",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20181020T234233_20181020T234302_013242_0187B5",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "7255127b897b8654054a6f3b326505bd550ea2646faf49141a28cafba4f4a93c",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2018-2019",
+          "date_local": "2018-11-01",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20181027T233424_20181027T233449_013344_018ACE",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20181108T233424_20181108T233449_013519_019048",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "af1bdb64539f1652f2daa89c56841077c5ba039957007e9c6d850c01f0a688c5",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2018-2019",
+          "date_local": "2018-11-30",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20181129T105350_20181129T105415_013818_0199CB",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20181211T105349_20181211T105414_013993_019F75",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "953d5bbb96d727b4c8db51ee1c581210859262b4da533de69a854759e8f52167",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2018-2019",
+          "date_local": "2019-03-18",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20190308T233421_20190308T233446_015269_01C928",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20190320T233421_20190320T233446_015444_01CED5",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "a53dca9d5298650420e06918c2c590f52aa938e2bb631a7dfaf2271a9d210e59",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2018-2019",
+          "date_local": "2019-04-09",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20190329T105347_20190329T105412_015568_01D2E4",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20190410T105348_20190410T105413_015743_01D8B7",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "d03fea58b7613ac2926a719aa368c8f635067ea8e95b2abbdf5ca5e6f0a8aa1c",
+          "case_control_role": "UNASSIGNED"
+        }
+      ]
+    },
+    {
+      "shard_id": "san_ildefonso__2019_2020",
+      "unit_id": "san_ildefonso",
+      "season_id": "2019-2020",
+      "projection": "EPSG:32717",
+      "selected_window_count": 6,
+      "compatible_pair_window_count": 6,
+      "missing_compatible_pair_count": 0,
+      "execution_order": "DATE_LOCAL_ASCENDING_FOR_STABLE_COMPUTE_ONLY_NO_SCIENTIFIC_PRIORITY",
+      "partition_assignment_fields": [
+        "unit_id",
+        "season_id"
+      ],
+      "partition_uses_selected_rank_or_percentile": false,
+      "partition_uses_rainfall_magnitude": false,
+      "partition_uses_sar_response": false,
+      "partition_uses_outcome_or_event_date": false,
+      "shard_identity_sha256": "86d512d0f6f5403426f6fa3c652540c36a60e1926da81b7c5bc42ab884351d2b",
+      "windows": [
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2019-2020",
+          "date_local": "2019-09-01",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20190823T233429_20190823T233454_017719_021566",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20190904T233429_20190904T233454_017894_021AD1",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "a117968fc2641523351e9eadee6e15ffc4e24d9a6a749cc30edc1243737b0a95",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2019-2020",
+          "date_local": "2019-10-23",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20191019T105357_20191019T105422_018543_022F07",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20191031T105357_20191031T105422_018718_02347D",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "8e23b694928085bb6727bf53e4cea98ea14de45edc400dacf9fe88ea6da293ca",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2019-2020",
+          "date_local": "2020-02-13",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20200204T105354_20200204T105419_020118_026145",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20200216T105354_20200216T105419_020293_0266E6",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "5d43cf3ef960f9bd1dc618f8120050adfcfbd88c0ed032b83ade27b3dd47e4e5",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2019-2020",
+          "date_local": "2020-03-06",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20200224T234236_20200224T234305_020417_026AF2",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20200307T234236_20200307T234305_020592_027085",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "00533825f66de4bd56d5091d4a664ab3a54e167dc9fe3add49749bdd37c76688",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2019-2020",
+          "date_local": "2020-04-06",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20200326T233427_20200326T233452_020869_02792B",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20200407T233427_20200407T233452_021044_027EBA",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "7396c16877fd221605331beef05b51ec9fb69b77ded6e905cff82f5dd04e044e",
+          "case_control_role": "UNASSIGNED"
+        },
+        {
+          "unit_id": "san_ildefonso",
+          "season_id": "2019-2020",
+          "date_local": "2020-04-20",
+          "sar_execution_status": "COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4",
+          "pre_item_id": "S1B_IW_GRDH_1SDV_20200412T234237_20200412T234306_021117_028126",
+          "post_item_id": "S1B_IW_GRDH_1SDV_20200424T234237_20200424T234306_021292_0286AA",
+          "projection": "EPSG:32717",
+          "window_execution_identity_sha256": "0aa767ce239cd2a91af865fbcec803762a59cd68327dc34c0123b52c0a0ff055",
+          "case_control_role": "UNASSIGNED"
+        }
+      ]
+    }
+  ],
+  "status": "PASS_18_TRACK_SEASON_SHARDS_108_WINDOWS_104_COMPATIBLE_4_MISSING_EXACT_COVERAGE_NO_OUTCOME"
+}
