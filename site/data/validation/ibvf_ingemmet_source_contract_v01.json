@@ -1,0 +1,53 @@
+{
+  "schema_version": "irfen-ibvf-ingemmet-source-contract-v0.1",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "purpose": "Use INGEMMET-hosted scientific material only where it accelerates static geomorphic identity or later independent territorial validation without contaminating blind A1-A5 assessment.",
+  "pre_unblind_allowed_classes": [
+    "STATIC_GEOLOGY",
+    "STATIC_GEOMORPHOLOGY",
+    "STATIC_TOPOGRAPHY",
+    "STATIC_DRAINAGE_TOPOLOGY",
+    "STATIC_CATCHMENT_BOUNDARY",
+    "STATIC_CHANNEL_ALIGNMENT",
+    "STATIC_DEPOSIT_AND_LANDFORM_DESCRIPTION",
+    "STATIC_COORDINATES_AND_ELEVATION"
+  ],
+  "pre_unblind_forbidden_classes": [
+    "EVENT_DATE",
+    "EVENT_OCCURRENCE_OR_NON_OCCURRENCE",
+    "DAMAGE",
+    "CASUALTIES",
+    "TERRITORIAL_ACTIVATION_LABEL",
+    "EVENT_SPECIFIC_RAINFALL",
+    "EVENT_SPECIFIC_FLOW_MAGNITUDE",
+    "RISK_OR_ALERT_CLASS",
+    "POST_HOC_RAINFALL_THRESHOLD",
+    "CASE_CONTROL_ROLE"
+  ],
+  "mixed_document_rule": "Only explicitly whitelisted static sections or extracted static fields may enter blind geometry review. Event/outcome sections remain excluded from all A1-A5 inputs.",
+  "sealed_outcome_rule": "Outcome-bearing INGEMMET material may be inventoried only as opaque future-unblind provenance and must not be consumed by blind feature-generation scripts.",
+  "pedregal_rule": {
+    "objective": "Resolve full-basin geometric identity independently of precipitation, selected windows, sensor availability, or territorial outcome.",
+    "area_reference_use": "SEARCH_CONSTRAINT_ONLY_NOT_VALIDATION_BY_AREA_FITTING",
+    "candidate_selection_by_event_fit_forbidden": true,
+    "candidate_selection_by_rainfall_fit_forbidden": true,
+    "candidate_union_forbidden": true,
+    "required_final_checks": [
+      "FULL_UPSTREAM_BASIN_POLYGON_FROM_FROZEN_DEM",
+      "STATIC_CHANNEL_ALIGNMENT_COMPATIBLE",
+      "STATIC_CATCHMENT_BOUNDARY_COMPATIBLE",
+      "DRAINAGE_TOPOLOGY_PLAUSIBLE",
+      "POSITIONAL_SENSITIVITY_REPORTED",
+      "NO_OUTCOME_FIELDS_READ"
+    ]
+  },
+  "modeling_allowed": false,
+  "unblind_allowed": false
+}
