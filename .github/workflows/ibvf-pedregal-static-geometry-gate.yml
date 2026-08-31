@@ -1,0 +1,129 @@
+name: IBVF - Pedregal static INGEMMET geometry gate
+
+on:
+  push:
+    branches:
+      - agent/independent-basin-validation-map
+    paths:
+      - 'scripts/ibvf_pedregal_static_geometry_gate.py'
+      - 'site/data/validation/ibvf_ingemmet_source_contract_v01.json'
+      - 'site/data/validation/ibvf_ingemmet_static_allowed_inventory_v01.json'
+      - 'site/data/validation/ibvf_parallel_a3_geometry_audit.json'
+      - '.github/workflows/ibvf-pedregal-static-geometry-gate.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ibvf-pedregal-static-ingemmet-geometry-gate
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile static geometry gate
+        run: python -m py_compile scripts/ibvf_pedregal_static_geometry_gate.py
+      - name: Execute static-only Pedregal gate
+        run: |
+          mkdir -p artifacts/ibvf
+          python scripts/ibvf_pedregal_static_geometry_gate.py \
+            --geometry-audit site/data/validation/ibvf_parallel_a3_geometry_audit.json \
+            --static-inventory site/data/validation/ibvf_ingemmet_static_allowed_inventory_v01.json \
+            --source-contract site/data/validation/ibvf_ingemmet_source_contract_v01.json \
+            --output artifacts/ibvf/ibvf_pedregal_static_geometry_gate.json
+      - name: Scientific fail-closed checks
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/ibvf/ibvf_pedregal_static_geometry_gate.json',encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY'
+          assert d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          assert d['rainfall_values_read'] is False
+          assert d['selected_window_dates_read'] is False
+          assert d['sensor_availability_read'] is False
+          assert d['territorial_outcome_fields_read'] is False
+          assert d['event_dates_read'] is False
+          assert d['damage_fields_read'] is False
+          assert d['case_control_assignment_performed'] is False
+          assert d['static_reference_area_km2']==10.0
+          assert d['existing_candidate_count']==3
+          assert d['all_existing_polygons_rejected_as_full_basin_identity'] is True
+          assert d['preferred_reconstruction_seed_feature_id']=='pedregal_8_20'
+          assert abs(d['preferred_seed_upstream_accumulation_area_approx_km2']-9.904)<1e-9
+          assert d['canonical_pedregal_geometry_status']=='UNKNOWN_RECONSTRUCTION_REQUIRED'
+          assert d['canonical_a3_numeric_allowed'] is False
+          assert d['modeling_allowed'] is False
+          assert d['unblind_allowed'] is False
+          print({'status':d['canonical_pedregal_geometry_status'],'seed':d['preferred_reconstruction_seed_feature_id'],'accum_km2':d['preferred_seed_upstream_accumulation_area_approx_km2']})
+          PY
+      - name: Freeze report and synchronize research map
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git pull --rebase origin agent/independent-basin-validation-map
+          cp artifacts/ibvf/ibvf_pedregal_static_geometry_gate.json site/data/validation/ibvf_pedregal_static_geometry_gate.json
+          python - <<'PY'
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+          rp=Path('site/data/validation/ibvf_pedregal_static_geometry_gate.json')
+          r=json.loads(rp.read_text(encoding='utf-8'))
+          mp=Path('site/data/validation/independent_basin_validation_map.json')
+          d=json.loads(mp.read_text(encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY'
+          assert d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          d['version']='irfen-independent-basin-validation-map-v3.6'
+          d['generated_at']=datetime.now(timezone.utc).isoformat().replace('+00:00','Z')
+          ac=d.setdefault('acquisition_contract',{})
+          ac['ingemmet_source_contract']='site/data/validation/ibvf_ingemmet_source_contract_v01.json'
+          ac['ingemmet_static_allowed_inventory']='site/data/validation/ibvf_ingemmet_static_allowed_inventory_v01.json'
+          ac['pedregal_static_geometry_gate_report']='site/data/validation/ibvf_pedregal_static_geometry_gate.json'
+          ac['pedregal_static_geometry_gate_status']=r['canonical_pedregal_geometry_status']
+          ac['pedregal_existing_full_basin_polygons_rejected']=r['all_existing_polygons_rejected_as_full_basin_identity']
+          ac['pedregal_preferred_reconstruction_search_seed']=r['preferred_reconstruction_seed_feature_id']
+          ac['pedregal_preferred_seed_upstream_accumulation_area_approx_km2']=r['preferred_seed_upstream_accumulation_area_approx_km2']
+          ac['pedregal_static_reference_area_km2']=r['static_reference_area_km2']
+          ac['pedregal_area_reference_semantics']=r['static_reference_semantics']
+          for c in d.get('cases',[]):
+            if c.get('unit_id')=='pedregal':
+              c['framework_stage']='A2_STATIC_FULL_BASIN_RECONSTRUCTION_PENDING_A3_CANDIDATE_SIDECARS_ONLY'
+              c['geometry_status']='STATIC_INGEMMET_REVIEW_REJECTS_EXISTING_THREE_POLYGONS_AS_FULL_BASIN_PEDREGAL_8_20_SEARCH_SEED_REDELINEATION_PENDING'
+              c['geometry_semantics']='EXISTING_THREE_REVIEW_ONLY_POLYGONS_NOT_FULL_PEDREGAL_BASIN; PEDREGAL_8_20_SEED_ONLY_SUPPORTED_FOR_RECONSTRUCTION_SEARCH_BY_STATIC_AREA_CONSISTENCY_NOT_VALIDATED_OUTLET'
+              c['blind_status']='TERRITORIAL_EVIDENCE_SEALED_STATIC_GEOMORPHIC_REVIEW_ONLY'
+              c['production_use']=False
+              c['production_ready']=False
+              c['operational_alerting_enabled']=False
+          mp.write_text(json.dumps(d,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          PY
+          git add site/data/validation/ibvf_pedregal_static_geometry_gate.json site/data/validation/independent_basin_validation_map.json
+          if git diff --cached --quiet; then
+            echo 'No report/map change.'
+          else
+            git commit -m 'IBVF: freeze Pedregal static INGEMMET geometry gate'
+            git push origin HEAD:agent/independent-basin-validation-map
+          fi
+      - name: Upload static geometry evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ibvf-pedregal-static-ingemmet-${{ github.sha }}
+          path: artifacts/ibvf/ibvf_pedregal_static_geometry_gate.json
+          if-no-files-found: error
+          retention-days: 30
