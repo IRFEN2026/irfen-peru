@@ -1,0 +1,93 @@
+name: IBVF - Pedregal full-basin static reconstruction
+
+on:
+  push:
+    branches:
+      - agent/independent-basin-validation-map
+    paths:
+      - 'scripts/ibvf_pedregal_full_basin_reconstruct.py'
+      - 'site/data/watersheds/chosica_local_candidate_sets.geojson'
+      - 'site/data/validation/ibvf_ingemmet_static_allowed_inventory_v01.json'
+      - '.github/workflows/ibvf-pedregal-full-basin-reconstruct.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ibvf-pedregal-full-basin-static-reconstruct
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  reconstruct:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install constrained scientific dependencies
+        run: python -m pip install --disable-pip-version-check 'numpy>=1.26,<3' 'rasterio>=1.3,<2' 'shapely>=2,<3' 'pyproj>=3.6,<4' 'requests>=2.31,<3' 'pysheds>=0.4,<0.5'
+      - name: Compile reconstruction diagnostic
+        run: python -m py_compile scripts/ibvf_pedregal_full_basin_reconstruct.py
+      - name: Reconstruct full upstream basin without outcome inputs
+        run: |
+          mkdir -p artifacts/ibvf
+          python scripts/ibvf_pedregal_full_basin_reconstruct.py \
+            --candidate-geojson site/data/watersheds/chosica_local_candidate_sets.geojson \
+            --static-inventory site/data/validation/ibvf_ingemmet_static_allowed_inventory_v01.json \
+            --output-report artifacts/ibvf/ibvf_pedregal_full_basin_reconstruction.json \
+            --output-geojson artifacts/ibvf/pedregal_ibvf_reverse_d8_v01.geojson
+      - name: Scientific fail-closed checks
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/ibvf/ibvf_pedregal_full_basin_reconstruction.json',encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY' and d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          assert d['rainfall_values_read'] is False
+          assert d['selected_window_dates_read'] is False
+          assert d['sensor_availability_read'] is False
+          assert d['territorial_outcome_fields_read'] is False
+          assert d['event_dates_read'] is False
+          assert d['damage_fields_read'] is False
+          assert d['case_control_assignment_performed'] is False
+          assert d['search_seed_feature_id']=='pedregal_8_20'
+          assert d['static_reference_area_km2']==10.0
+          assert d['canonical_geometry_promoted'] is False
+          assert d['modeling_allowed'] is False and d['unblind_allowed'] is False
+          assert d['reverse_d8_catchment']['cell_count']>1
+          assert d['reverse_d8_catchment']['geodesic_area_km2']>0
+          print({'status':d['reconstruction_status'],'reverse_area_km2':d['reverse_d8_catchment']['geodesic_area_km2'],'legacy_area_km2':d['legacy_coordinate_catchment']['geodesic_area_km2'],'ratio':d['reverse_vs_legacy_cell_ratio']})
+          PY
+      - name: Freeze diagnostic artifacts only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git pull --rebase origin agent/independent-basin-validation-map
+          cp artifacts/ibvf/ibvf_pedregal_full_basin_reconstruction.json site/data/validation/ibvf_pedregal_full_basin_reconstruction.json
+          cp artifacts/ibvf/pedregal_ibvf_reverse_d8_v01.geojson site/data/watersheds/pedregal_ibvf_reverse_d8_v01.geojson
+          git add site/data/validation/ibvf_pedregal_full_basin_reconstruction.json site/data/watersheds/pedregal_ibvf_reverse_d8_v01.geojson
+          if git diff --cached --quiet; then
+            echo 'No reconstruction artifact change.'
+          else
+            git commit -m 'IBVF: freeze Pedregal static full-basin reconstruction diagnostic'
+            git push origin HEAD:agent/independent-basin-validation-map
+          fi
+      - name: Upload reconstruction evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ibvf-pedregal-full-basin-${{ github.sha }}
+          path: |
+            artifacts/ibvf/ibvf_pedregal_full_basin_reconstruction.json
+            artifacts/ibvf/pedregal_ibvf_reverse_d8_v01.geojson
+          if-no-files-found: warn
+          retention-days: 30
