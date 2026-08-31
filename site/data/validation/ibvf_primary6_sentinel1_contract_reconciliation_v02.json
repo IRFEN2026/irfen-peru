@@ -1,0 +1,72 @@
+{
+  "schema_version": "irfen-ibvf-primary6-sentinel1-contract-reconciliation-v0.2",
+  "generated_at": "2026-08-31T10:01:00Z",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
+  "purpose": "Resolve two pre-outcome Sentinel-1 R4 preregistrations into one explicit PRIMARY6 execution source of truth before any selected parallel-window SAR R4 value is computed. This reconciliation is provenance-driven, not performance-driven.",
+  "discovered_inconsistency": {
+    "earlier_common_contract": "site/data/validation/ibvf_sentinel1_r4_change_contract.json",
+    "earlier_common_contract_commit": "ca07b8b7331a244e305e2dda83c98a76ec27352d",
+    "earlier_common_contract_commit_time_utc": "2026-08-30T06:00:15Z",
+    "later_cashahuacra_specific_contract": "site/data/validation/cashahuacra_sentinel1_r4_contract.json",
+    "later_cashahuacra_preregistration_commit": "26755124d11149988af9596a812f2329d4c55cee",
+    "later_cashahuacra_preregistration_commit_time_utc": "2026-08-30T06:23:50Z",
+    "later_cashahuacra_identity_only_amendment_commit": "489fe31d096ef3fcee0e08e808cd442aae47200b",
+    "later_cashahuacra_identity_only_amendment_commit_time_utc": "2026-08-30T06:30:15Z",
+    "both_metric_contracts_existed_before_successful_cashahuacra_r4_feature_execution": true,
+    "territorial_outcome_was_sealed_for_both": true,
+    "difference": "The earlier common contract lists six R4 primary metrics with a rounded 3.0 dB threshold; the later Cashahuacra-specific preregistration uses five primary metrics with the exact physical factor-two threshold 10*log10(2), including IQR_DELTA_DB. The frozen Cashahuacra A5 schema subsequently uses those five specific metrics."
+  },
+  "resolution_rule": {
+    "basis": "CONSISTENCY_WITH_THE_ACTUALLY_FROZEN_ANCHOR_A5_AND_THE_MORE_SPECIFIC_PRE_R4_CONTRACT_NOT_OBSERVED_MAGNITUDE",
+    "primary6_execution_contract": "site/data/validation/cashahuacra_sentinel1_r4_contract.json",
+    "earlier_common_contract_status": "HISTORICAL_PREREGISTRATION_SUPERSEDED_FOR_PRIMARY6_EXECUTION_BY_THIS_RECONCILIATION_NOT_DELETED",
+    "why_not_choose_by_metric_performance": "No selected PRIMARY6 parallel SAR R4 magnitudes or territorial outcomes are read by this reconciliation. The choice is made solely to guarantee one schema identical to the frozen anchor A5 and because the later specific contract was itself committed before Cashahuacra R4 feature computation.",
+    "cashahuacra_historical_a5_modified": false,
+    "future_selected_windows_use_same_five_sar_slots_as_cashahuacra_a5": true,
+    "threshold": 3.010299956639812,
+    "threshold_semantics": "10*log10(2), exact factor-of-two radar power change"
+  },
+  "canonical_primary6_sar_features": [
+    {"a5_slot": "A4_S1_MEDIAN_DELTA_DB", "r4_id": "MEDIAN_DELTA_DB"},
+    {"a5_slot": "A4_S1_IQR_DELTA_DB", "r4_id": "IQR_DELTA_DB"},
+    {"a5_slot": "A4_S1_DECREASE_FACTOR2_FRACTION", "r4_id": "DECREASE_FACTOR2_FRACTION"},
+    {"a5_slot": "A4_S1_INCREASE_FACTOR2_FRACTION", "r4_id": "INCREASE_FACTOR2_FRACTION"},
+    {"a5_slot": "A4_S1_LARGEST_FACTOR2_CLUSTER_FRACTION", "r4_id": "LARGEST_FACTOR2_CLUSTER_FRACTION"}
+  ],
+  "required_processing_identity": {
+    "r2": "same frozen SNAP graph and precise-orbit consumption rules used for the anchor, applied independently to each compatible pre/post pair",
+    "r3": "same common-support logic with minimum support fraction 0.95 and no post-R3 resampling",
+    "r4": "same five metrics, exact factor-two threshold, 8-connected cluster rule, no smoothing or post-hoc terrain/landcover masking",
+    "selected_window_replacement_allowed": false,
+    "compatible_pair_reselection_allowed": false,
+    "missing_compatible_pair_rule": "retain explicit MISSING_COMPATIBLE_PAIR_COMPLETE_FIXED_QUERY",
+    "transport_failure_rule": "retain UNKNOWN_TRANSPORT_NOT_MISSING"
+  },
+  "anti_leakage": {
+    "cashahuacra_r4_numeric_values_used_to_choose_resolution": false,
+    "parallel_sar_r4_numeric_values_read": false,
+    "territorial_outcomes_read": false,
+    "known_event_dates_read": false,
+    "case_control_roles_assigned": false,
+    "feature_set_may_change_after_primary6_parallel_sar_execution": false
+  },
+  "execution_gate": {
+    "parallel_sentinel1_r2_r4_allowed_after_reconciliation": true,
+    "compatible_pair_window_count": 104,
+    "missing_pair_window_count": 4,
+    "all_108_selected_windows_must_remain_in_a5": true,
+    "four_missing_pairs_must_retain_five_null_sar_slots": true,
+    "unblind_before_selected_a5_freeze_allowed": false,
+    "serious_modeling_allowed": false
+  },
+  "activation_inference_allowed": false,
+  "modeling_allowed": false
+}
