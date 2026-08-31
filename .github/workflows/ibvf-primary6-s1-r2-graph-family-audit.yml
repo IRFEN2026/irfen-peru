@@ -1,0 +1,47 @@
+name: IBVF - PRIMARY6 S1 R2 graph family audit
+
+on:
+  push:
+    branches: [agent/independent-basin-validation-map]
+    paths:
+      - 'site/data/validation/ibvf_primary6_s1_r2_graph_utm17s.xml'
+      - 'scripts/ibvf_primary6_s1_r2_graph_family_audit.py'
+      - '.github/workflows/ibvf-primary6-s1-r2-graph-family-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Audit graph family
+        run: |
+          mkdir -p artifacts/ibvf
+          python scripts/ibvf_primary6_s1_r2_graph_family_audit.py \
+            --zone18 site/data/validation/cashahuacra_sentinel1_r2_graph.xml \
+            --zone17 site/data/validation/ibvf_primary6_s1_r2_graph_utm17s.xml \
+            --output artifacts/ibvf/ibvf_primary6_s1_r2_graph_family_audit_v01.json
+      - name: Freeze audit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git pull --rebase origin agent/independent-basin-validation-map
+          cp artifacts/ibvf/ibvf_primary6_s1_r2_graph_family_audit_v01.json site/data/validation/ibvf_primary6_s1_r2_graph_family_audit_v01.json
+          git add site/data/validation/ibvf_primary6_s1_r2_graph_family_audit_v01.json
+          if git diff --cached --quiet; then echo 'No change'; else git commit -m 'IBVF: freeze PRIMARY6 S1 R2 graph family audit'; git push origin HEAD:agent/independent-basin-validation-map; fi
+      - name: Upload audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ibvf-primary6-s1-r2-graph-family-${{ github.sha }}
+          path: artifacts/ibvf/*
+          if-no-files-found: warn
+          retention-days: 30
