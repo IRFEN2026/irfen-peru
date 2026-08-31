@@ -1,0 +1,99 @@
+{
+  "schema_version": "irfen-ibvf-ingemmet-a6789-sealed-evidence-v0.1",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "case_control_assignment_performed": false,
+  "activation_inference_allowed": false,
+  "modeling_allowed": false,
+  "scientific_role": "SEALED_TERRITORIAL_EVIDENCE",
+  "pre_unblind_access_policy": "METADATA_AND_BIBLIOGRAPHIC_DISCOVERY_ONLY",
+  "pre_unblind_prohibitions": [
+    "do_not_extract_or_use_2017_activation_locations_as_A1_A5_inputs",
+    "do_not_use_2017_affected_point_coordinates_to_choose_or_move_basin_outlets",
+    "do_not_use_damage_or_activation_statements_for_meteorological_ranking",
+    "do_not_use_post_event_geomorphic_descriptions_to_tune_predictors_or_thresholds",
+    "do_not_treat_absence_from_report_or_map_as_a_negative_control"
+  ],
+  "sources": [
+    {
+      "source_id": "ingemmet_a6789_dec2017",
+      "title": "Peligros geologicos y geohidrogeologicos detonados por el evento del Nino Costero 2017 en la Region Lima y parte de Ica",
+      "institution": "INGEMMET",
+      "document_type": "Informe Tecnico",
+      "report_number": "A6789",
+      "date": "2017-12",
+      "page_count": 169,
+      "local_attachment_sha256": "3e2a7d747fec0978bcdf04bc2effb5e7be697b21282be78f0b964406dcc3d890",
+      "local_attachment_bytes": 15371364,
+      "scientific_classification": "OUTCOME_EVIDENCE_SEALED_POST_EVENT_FIELD_VALIDATION",
+      "independent_evidence_unit": true,
+      "notes": [
+        "The report states that it is a second deliverable for Lima and part of Ica and inventories 413 geological control points.",
+        "It explicitly contains 2017 affected-area, activation, damage and rehabilitation information, so its substantive territorial content remains sealed until the blind A1-A5 feature vectors are frozen and the anti-leakage gate passes.",
+        "It cites Luque and Rosado 2014 and INGEMMET Boletin 59 as earlier sources; those earlier sources remain the preferred lane for pre-unblind static geomorphic support when section-level masking is possible.",
+        "Pedregal is mentioned in the report conclusions but no Pedregal control-point coordinate was identified in this review; therefore this source does not resolve the current Pedregal A2 geometry gate.",
+        "Huaycoloro/Campoy and other Lima-East sectors are represented in the 2017 field evidence and are potentially valuable after unblind as spatially explicit territorial validation."
+      ]
+    },
+    {
+      "source_id": "ingemmet_2017_control_points_map2_companion",
+      "title": "Puntos de control geologico - Mapa No. 2",
+      "institution": "INGEMMET",
+      "document_type": "companion_map_or_derived_spatial_index",
+      "map_metadata": {
+        "displayed_title": "Evaluacion geologica de las zonas afectadas por el Nino Costero 2017 en las regiones Lima-Ica",
+        "datum_crs_text": "UTM WGS84 Zona 18 Sur",
+        "scale": "1:500000",
+        "digital_version_year": 2018,
+        "printed": "2018-01"
+      },
+      "local_attachment_sha256": "57f358dcd202eff4f319c53409bb3fb894eac08b7a36b6621dfbc0cee898b171",
+      "local_attachment_bytes": 13472536,
+      "scientific_classification": "SEALED_OUTCOME_SPATIAL_INDEX",
+      "independent_evidence_unit": false,
+      "provenance_relation": "COMPANION_OR_DERIVED_FROM_SAME_2017_INGEMMET_FIELD_EVIDENCE;_DO_NOT_DOUBLE_COUNT",
+      "post_unblind_value": [
+        "links_2017_control_codes_to_exact_UTM_coordinates",
+        "supports_spatial_matching_of_remote_windows_to_field_control_points",
+        "supports_location_audit_for_San_Idelfonso_6B_194_Quirio_6C_013_and_Huaycoloro_related_Campoy_Media_Luna_points"
+      ],
+      "pre_unblind_use": "PROHIBITED_FOR_OUTLET_SELECTION_OR_FEATURE_ENGINEERING"
+    }
+  ],
+  "track_disposition": {
+    "pedregal": {
+      "current_effect": "NO_A2_PROMOTION",
+      "reason": "post-event source; Pedregal mentioned but no direct Pedregal control-point coordinate identified; current preregistered static geometry gate remains unchanged"
+    },
+    "huaycoloro": {
+      "current_effect": "NO_A1_A5_CHANGE",
+      "future_effect": "HIGH_VALUE_POST_UNBLIND_SPATIAL_VALIDATION"
+    },
+    "san_ildefonso": {
+      "current_effect": "NO_A1_A5_CHANGE",
+      "future_effect": "HIGH_VALUE_POST_UNBLIND_POINT_LEVEL_VALIDATION"
+    },
+    "shingolay": {
+      "current_effect": "NO_CHANGE",
+      "note": "no explicit literal match identified in the report review"
+    },
+    "cashahuacra": {
+      "current_effect": "NO_CHANGE",
+      "note": "no explicit literal Cashahuacra match identified in the report review"
+    }
+  },
+  "unblind_gate": {
+    "required_before_substantive_extraction": [
+      "PRIMARY6 selected windows have frozen A1-A5 feature vectors or explicit MISSING/UNKNOWN slots",
+      "anti-leakage audit passes",
+      "case-control assignments are still determined independently of these outcome sources until the formal territorial unblind step"
+    ]
+  },
+  "status": "REGISTERED_SEALED_NO_CURRENT_PREDICTOR_OR_GEOMETRY_CHANGE"
+}
