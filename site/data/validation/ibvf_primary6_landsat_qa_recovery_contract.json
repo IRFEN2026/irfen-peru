@@ -1,0 +1,50 @@
+{
+  "schema_version": "irfen-ibvf-primary6-landsat-qa-recovery-v0.1",
+  "generated_at": "2026-08-31T01:43:00Z",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
+  "cohort_id": "PRIMARY6_CHRONOLOGICAL",
+  "purpose": "Recover transport-only Landsat QA_PIXEL UNKNOWN states after the frozen candidate inventory and first serialized QA pass, without changing any selected window, scene identity, pair identity, ranking rule, or scientific feature.",
+  "baseline_workflow_run_id": 33337857203,
+  "baseline_head_sha": "1bdf33e9d228aec8dd475fd543d741bb1aaeb22c",
+  "baseline_artifacts": {
+    "huaycoloro": {"artifact_id": 9739766327, "artifact_digest_sha256": "42b12dfe363aab02816103a692cb954ba6c3ed2841c96d6b1ba5b8cf44159355", "required_scenes": 214, "measured": 173, "unknown": 41},
+    "san_ildefonso": {"artifact_id": 9740041804, "artifact_digest_sha256": "e0ca40eb499ab00f5c99625b545a0e294de393c4c4182ec75cd33df490adc7ef", "required_scenes": 321, "measured": 287, "unknown": 34},
+    "shingolay": {"artifact_id": 9740178983, "artifact_digest_sha256": "d6def0ca35eb1c3ae3a18c89ef3ddac7f9a27d3d0b69f0adcd668297b84737b6", "required_scenes": 202, "measured": 198, "unknown": 4}
+  },
+  "baseline_unknown_total": 79,
+  "baseline_unknown_reason": "PLANETARY_COMPUTER_HTTP_429_TRANSPORT_BLOCKED_AFTER_PRIMARY_EARTH_SEARCH_S3_HTTP_403",
+  "recovery_scope": "ONLY_BASELINE_SCENES_WITH_QA_STATUS_UNKNOWN_AND_FALLBACK_HTTP_429",
+  "successful_baseline_measurements_are_reused_without_remeasurement": true,
+  "scene_identity_may_change": false,
+  "selected_window_may_change": false,
+  "compatible_pair_identity_set_may_change": false,
+  "meteorological_ranking_may_change": false,
+  "case_control_assignment_allowed": false,
+  "territorial_outcome_read_allowed": false,
+  "known_event_dates_read_allowed": false,
+  "transport_failure_is_scientific_missing": false,
+  "retry_policy": {
+    "route": "PLANETARY_COMPUTER_SIGNED_MIRROR_SAME_EARTH_SEARCH_ITEM_ID_ONLY",
+    "maximum_attempts_per_unknown_scene": 5,
+    "deterministic_wait_seconds_before_attempts": [0, 8, 20, 45, 90],
+    "inter_scene_pause_seconds": 1,
+    "retry_only_http_429": true,
+    "signed_sas_query_token_persisted": false
+  },
+  "completion_gate": {
+    "required_unique_unit_scene_count": 737,
+    "qa_unknown_unit_scene_count_required": 0,
+    "all_three_track_identity_sets_unchanged": true,
+    "pair_choice_still_not_executed": true,
+    "case_control_role_still_unassigned": true
+  },
+  "next_gate_after_pass": "FREEZE_GLOBAL_QA_COMPLETENESS_THEN_APPLY_PREREGISTERED_LANDSAT_PAIR_ORDERING_NO_OUTCOME"
+}
