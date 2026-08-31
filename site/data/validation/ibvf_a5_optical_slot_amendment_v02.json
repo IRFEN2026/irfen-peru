@@ -1,0 +1,40 @@
+{
+  "schema_version": "irfen-ibvf-a5-optical-slot-amendment-v0.2",
+  "generated_at": "2026-08-31T09:53:00Z",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
+  "base_a5_contract": "site/data/validation/ibvf_a5_feature_vector_contract.json",
+  "optical_a4_contract": "site/data/validation/ibvf_primary6_landsat_a4_optical_contract.json",
+  "amendment_scope": "Resolve only the previously reserved A4_OPTICAL_CHANGE_PRIMARY slot. All other A5 feature IDs, order, missing rules and anti-leakage guards remain unchanged.",
+  "timing": {
+    "created_before_selected_surface_reflectance_feature_execution": true,
+    "created_before_territorial_unblind": true,
+    "created_before_case_control_assignment": true,
+    "created_before_serious_modeling": true
+  },
+  "slot_resolution": {
+    "slot_id": "A4_OPTICAL_CHANGE_PRIMARY",
+    "resolved_feature_semantics": "A4_OPTICAL_CVA_MEDIAN_MAGNITUDE_SR",
+    "unit": "surface_reflectance_l2_norm",
+    "value_rule": "median per-pixel six-band Euclidean surface-reflectance change magnitude over strict common valid pre/post support",
+    "missing_rule": "value=null with explicit MISSING or UNKNOWN status if frozen acquisition/QA/grid contract cannot yield a valid primary feature; never impute zero",
+    "transport_rule": "TRANSPORT_BLOCKED remains UNKNOWN_NOT_MISSING",
+    "no_threshold": true,
+    "no_direction_class": true
+  },
+  "feature_order_changed": false,
+  "other_feature_semantics_changed": false,
+  "cashahuacra_existing_a5_recomputed": false,
+  "cashahuacra_existing_optical_null_is_preserved_historically": true,
+  "future_primary6_a5_uses_resolved_optical_slot": true,
+  "territorial_outcomes_read": false,
+  "activation_inference_allowed": false,
+  "modeling_allowed": false
+}
