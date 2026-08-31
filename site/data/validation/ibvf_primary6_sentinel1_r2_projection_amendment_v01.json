@@ -1,0 +1,63 @@
+{
+  "schema_version": "irfen-ibvf-primary6-sentinel1-r2-projection-amendment-v0.1",
+  "registered_at": "2026-08-31T16:28:00Z",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
+  "purpose": "Resolve before any PRIMARY6 parallel R2/R4 pixel values are computed that the Cashahuacra R2 graph hard-codes EPSG:32718 while San Ildefonso lies in UTM zone 17S. Preserve one processing algorithm and one 10 m standard-grid rule while pre-registering only the geographically necessary CRS parameter by frozen track geometry.",
+  "trigger": {
+    "cashahuacra_graph": "site/data/validation/cashahuacra_sentinel1_r2_graph.xml",
+    "hard_coded_projection": "EPSG:32718",
+    "cashahuacra_shingolay_huaycoloro_zone": "UTM_18S",
+    "san_ildefonso_frozen_bbox_lon": [-79.03333333333333, -78.95333333333333],
+    "san_ildefonso_zone": "UTM_17S",
+    "parallel_primary6_r2_values_already_computed": false,
+    "parallel_primary6_r4_values_already_computed": false,
+    "territorial_outcomes_read": false
+  },
+  "resolution": {
+    "projection_is_a_geodetic_coordinate_system_choice_not_a_fitted_scientific_parameter": true,
+    "projection_selection_uses_only_frozen_geometry_longitude": true,
+    "projection_selection_uses_rainfall": false,
+    "projection_selection_uses_sar_change_magnitude": false,
+    "projection_selection_uses_outcome": false,
+    "operator_chain_identical": [
+      "ThermalNoiseRemoval",
+      "Apply-Orbit-File",
+      "Calibration_Beta0_VV",
+      "Terrain-Flattening_Gamma0_VV",
+      "Range-Doppler_Terrain-Correction"
+    ],
+    "pixel_spacing_m": 10.0,
+    "align_to_standard_grid": true,
+    "standard_grid_origin_x": 0.0,
+    "standard_grid_origin_y": 0.0,
+    "speckle_filter": "NONE",
+    "track_projection": {
+      "huaycoloro": "EPSG:32718",
+      "shingolay": "EPSG:32718",
+      "san_ildefonso": "EPSG:32717"
+    },
+    "per_window_projection_tuning_allowed": false,
+    "per_window_parameter_tuning_allowed": false,
+    "outcome_aware_parameter_tuning_allowed": false
+  },
+  "relationship_to_reconciliation_v02": {
+    "parent": "site/data/validation/ibvf_primary6_sentinel1_contract_reconciliation_v02.json",
+    "status": "NARROW_PRE_EXECUTION_GEODETIC_AMENDMENT",
+    "five_r4_feature_schema_unchanged": true,
+    "r3_minimum_common_support_unchanged": 0.95,
+    "compatible_pair_reselection_allowed": false,
+    "selected_window_replacement_allowed": false,
+    "missing_pair_semantics_unchanged": true
+  },
+  "activation_inference_allowed": false,
+  "case_control_assignment_performed": false,
+  "modeling_allowed": false
+}
