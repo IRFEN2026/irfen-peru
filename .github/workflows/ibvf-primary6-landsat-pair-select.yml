@@ -1,0 +1,126 @@
+name: IBVF - PRIMARY6 blind Landsat pair selection
+
+on:
+  push:
+    branches:
+      - agent/independent-basin-validation-map
+    paths:
+      - 'site/data/validation/ibvf_primary6_landsat_pair_selection_contract.json'
+      - 'scripts/ibvf_primary6_landsat_pair_select.py'
+      - '.github/workflows/ibvf-primary6-landsat-pair-select.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ibvf-primary6-landsat-pair-select
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  select:
+    if: github.ref == 'refs/heads/agent/independent-basin-validation-map'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile blind pair selector
+        run: python -m py_compile scripts/ibvf_primary6_landsat_pair_select.py
+      - name: Execute preregistered pair ordering
+        run: |
+          mkdir -p artifacts/ibvf
+          python scripts/ibvf_primary6_landsat_pair_select.py \
+            --repo-root . \
+            --output artifacts/ibvf/ibvf_primary6_landsat_pair_selection.json
+      - name: Scientific fail-closed guards
+        run: |
+          python - <<'PY'
+          import json
+          p='artifacts/ibvf/ibvf_primary6_landsat_pair_selection.json'; d=json.load(open(p,encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY' and d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False and d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
+          assert d['cohort_id']=='PRIMARY6_CHRONOLOGICAL'
+          assert d['selected_window_count']==108 and d['landsat_pair_selected_count']==108
+          assert d['pair_choice_performed'] is True
+          assert d['pair_choice_rule']=='FROZEN_QA_ORDERING_V0_1'
+          assert d['selected_window_replaced'] is False
+          assert d['case_control_assignment_performed'] is False and d['all_case_control_roles']=='UNASSIGNED'
+          assert d['territorial_outcome_fields_read'] is False and d['known_event_dates_read'] is False
+          assert d['cashahuacra_feature_magnitudes_read'] is False
+          assert d['activation_inference_allowed'] is False and d['modeling_allowed'] is False
+          assert len(d['windows'])==108
+          assert all(x['case_control_role']=='UNASSIGNED' and x['territorial_evidence']=='SEALED' for x in d['windows'])
+          assert all(x['selected_window_replaced'] is False and x['eligible_pair_count']>=1 for x in d['windows'])
+          by={x['unit_id']:x for x in d['track_summary']}
+          assert set(by)=={'huaycoloro','san_ildefonso','shingolay'}
+          assert all(x['selected_window_count']==36 and x['landsat_pair_selected_count']==36 for x in by.values())
+          print({'status':d['status'],'pairs':d['landsat_pair_selected_count'],'sha256':d['selected_pairs_canonical_sha256']})
+          PY
+      - name: Freeze pair evidence and synchronize scientific map
+        run: |
+          cp artifacts/ibvf/ibvf_primary6_landsat_pair_selection.json site/data/validation/ibvf_primary6_landsat_pair_selection.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add site/data/validation/ibvf_primary6_landsat_pair_selection.json
+          if ! git diff --cached --quiet; then git commit -m 'IBVF: freeze blind PRIMARY6 Landsat pairs'; fi
+          git pull --rebase origin agent/independent-basin-validation-map
+          python - <<'PY'
+          import json
+          from datetime import datetime,timezone
+          from pathlib import Path
+          pp=Path('site/data/validation/ibvf_primary6_landsat_pair_selection.json'); p=json.loads(pp.read_text(encoding='utf-8'))
+          ap=Path('site/data/validation/ibvf_primary6_selected_a1_catalog.json'); a=json.loads(ap.read_text(encoding='utf-8'))
+          mp=Path('site/data/validation/independent_basin_validation_map.json'); d=json.loads(mp.read_text(encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY' and d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False and d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          assert d['serious_modeling_gate']=='CLOSED_MINIMUM_DATASET_NOT_REACHED'
+          assert p['landsat_pair_selected_count']==108 and p['case_control_assignment_performed'] is False
+          d['version']='irfen-independent-basin-validation-map-v3.3'
+          d['generated_at']=datetime.now(timezone.utc).isoformat().replace('+00:00','Z')
+          ac=d.setdefault('acquisition_contract',{})
+          ac['primary6_landsat_pair_selection_contract']='site/data/validation/ibvf_primary6_landsat_pair_selection_contract.json'
+          ac['primary6_landsat_pair_selection_report']='site/data/validation/ibvf_primary6_landsat_pair_selection.json'
+          ac['primary6_landsat_pair_selection_status']=p['status']
+          ac['primary6_landsat_pair_selected_count']=108
+          ac['primary6_landsat_pair_selection_sha256']=p['selected_pairs_canonical_sha256']
+          ac['primary6_landsat_selected_window_replaced']=False
+          ac['primary6_landsat_case_control_assignment_performed']=False
+          # Summarize S1 availability from the already-frozen complete A1 catalog per track.
+          s1={}
+          for u in ('huaycoloro','san_ildefonso','shingolay'):
+            ws=[w for w in a['windows'] if w['unit_id']==u]
+            s1[u]={
+              'compatible':sum((w.get('sentinel1') or {}).get('status')=='COMPATIBLE_BRACKETING_PAIR_SELECTED_BY_FROZEN_RULE' for w in ws),
+              'missing':sum((w.get('sentinel1') or {}).get('status')=='MISSING_COMPATIBLE_BRACKETING_PAIR_COMPLETE_FIXED_QUERY' for w in ws),
+              'unknown':sum((w.get('sentinel1') or {}).get('status')=='UNKNOWN_CATALOG_INCOMPLETE_OR_TRANSPORT_BLOCKED' for w in ws),
+            }
+          for c in d.get('cases',[]):
+            u=c.get('unit_id')
+            if u in s1:
+              x=s1[u]
+              c['remote_sensing_status']=f"PRIMARY6_BLIND_A1_S1_COMPATIBLE_{x['compatible']}_MISSING_{x['missing']}_UNKNOWN_{x['unknown']}; LANDSAT_QA_COMPLETE_PAIR_SELECTED_36_OF_36_NO_OUTCOME"
+              c['landsat_qa_stage']='QA_COMPLETE_PAIR_SELECTED_BY_FROZEN_ORDER_36_OF_36'
+              c['blind_status']='TERRITORIAL_EVIDENCE_SEALED'
+              c['case_control_role']='UNASSIGNED'
+          mp.write_text(json.dumps(d,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          PY
+          git add site/data/validation/independent_basin_validation_map.json
+          if ! git diff --cached --quiet; then git commit -m 'IBVF: sync blind Landsat pair freeze to research map'; fi
+          git push origin HEAD:agent/independent-basin-validation-map
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ibvf-primary6-landsat-pair-selection-${{ github.sha }}
+          path: artifacts/ibvf/ibvf_primary6_landsat_pair_selection.json
+          if-no-files-found: error
+          retention-days: 30
