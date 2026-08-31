@@ -1,0 +1,72 @@
+{
+  "schema_version": "irfen-ibvf-ingemmet-static-geomorphic-contract-v0.1",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "purpose": "Use only static geomorphic information from mixed INGEMMET-hosted documents to resolve pre-existing geometry ambiguity without reading or importing territorial outcomes into A0-A5.",
+  "source_policy": {
+    "allowed": [
+      "basin area",
+      "basin length",
+      "mean slope",
+      "drainage pattern",
+      "bedrock/lithology",
+      "weathering products",
+      "static elevation bounds",
+      "channel/tributary geometry"
+    ],
+    "sealed_until_post_A5_unblind": [
+      "event dates",
+      "event occurrence statements",
+      "damage",
+      "casualties",
+      "inundation extent tied to an event",
+      "historical activation chronology",
+      "event-specific rainfall",
+      "event-specific discharge"
+    ],
+    "mixed_document_rule": "Only explicitly whitelisted characterization sections may be used before unblind. Adjacent event-analysis subsections are forbidden inputs.",
+    "no_outlet_optimization_against_area": true,
+    "validation_only_of_preexisting_candidate_outlet": true
+  },
+  "sources": [
+    {
+      "source_id": "INGEMMET_HOSTED_RIIGEO_PEDREGAL_CHARACTERIZATION",
+      "url": "https://app.ingemmet.gob.pe/biblioteca/pdf/RFIGMMG-29-3.pdf",
+      "document_title": "Caracterizacion y analisis de los huaycos de Chosica-Lima",
+      "allowed_section": "6.2.2 QUEBRADA PEDREGAL - Caracterizacion only",
+      "allowed_pdf_page_zero_based": 10,
+      "allowed_extracted_line_range": "567-578",
+      "sealed_from_line": 579,
+      "static_constraints": {
+        "bank_of_rimac": "RIGHT",
+        "basin_length_km": 5.0,
+        "basin_area_km2": 10.0,
+        "mean_slope_percent": 30.0,
+        "general_bearing": "N-S",
+        "headwater_elevation_m_approx": 2000,
+        "drainage_pattern": "DENDRITIC",
+        "bedrock_family": "GRANODIORITE-GRANITE_INTRUSIVE",
+        "weathering_products": "BLOCKS_BOULDERS_ROCK_FRAGMENTS_GRAVEL_SAND_ANGULAR_TO_SUBANGULAR"
+      },
+      "outcome_fields_imported": false
+    }
+  ],
+  "pedregal_test_rule": {
+    "candidate_source": "site/data/watersheds/chosica_local_candidate_sets.geojson",
+    "candidate_id": "pedregal_8_20",
+    "reason_candidate_fixed_before_ingemmet_test": "This pre-existing candidate has accumulation_area_approx_km2=9.904 and seed_to_snap_km=0.029; the outlet is not moved or optimized using INGEMMET.",
+    "reference_area_km2": 10.0,
+    "max_absolute_area_relative_error": 0.20,
+    "accumulation_vs_catchment_cell_count_relative_tolerance": 0.05,
+    "pass_semantics": "RESEARCH_CANDIDATE_STATIC_GEOMORPHIC_SUPPORT_NOT_OFFICIAL_VALIDATION_NOT_OPERATIONAL",
+    "failure_semantics": "UNKNOWN_GEOMETRY_UNRESOLVED"
+  },
+  "case_control_assignment_allowed": false,
+  "modeling_allowed": false
+}
