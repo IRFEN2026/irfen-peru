@@ -1,0 +1,112 @@
+{
+  "schema_version": "irfen-ibvf-primary6-landsat-pair-selection-contract-v0.1",
+  "generated_at": "2026-08-31T05:46:00Z",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
+  "cohort_id": "PRIMARY6_CHRONOLOGICAL",
+  "purpose": "Pre-register the exact deterministic Landsat pre/post pair choice after all required AOI QA_PIXEL measurements are frozen, without using territorial outcomes, case/control roles, risk, alerts, or Cashahuacra magnitudes.",
+  "required_inputs": {
+    "selected_a1_catalog": "site/data/validation/ibvf_primary6_selected_a1_catalog.json",
+    "global_landsat_qa": "site/data/validation/ibvf_primary6_landsat_qa_global.json",
+    "track_qa_reports": [
+      "site/data/validation/ibvf_primary6_landsat_qa_huaycoloro.json",
+      "site/data/validation/ibvf_primary6_landsat_qa_san_ildefonso.json",
+      "site/data/validation/ibvf_primary6_landsat_qa_shingolay.json"
+    ],
+    "required_selected_window_count": 108,
+    "required_qa_measured_unit_scene_count": 737,
+    "required_qa_unknown_unit_scene_count": 0,
+    "required_global_qa_complete": true,
+    "required_pair_choice_allowed_by_qa_completeness": true,
+    "required_existing_pair_choice_performed": false
+  },
+  "eligible_pairs": {
+    "source": "ONLY_COMPATIBLE_PAIR_IDENTITIES_ALREADY_FROZEN_IN_SELECTED_A1_CATALOG",
+    "same_platform_wrs_path_row_already_enforced_upstream": true,
+    "may_add_scene_not_in_frozen_a1_catalog": false,
+    "may_change_selected_meteorological_window": false,
+    "may_replace_window_for_sensor_availability": false,
+    "both_scene_qa_status_required": "PASS_QA_PIXEL_AOI_MEASURED_IDENTITY_PRESERVED",
+    "both_scene_strict_clear_fraction_required_finite": true,
+    "unknown_qa_policy": "FAIL_CLOSED_NO_PAIR_CHOICE_FOR_WINDOW_NO_IMPUTATION_NO_REPLACEMENT"
+  },
+  "quality_metric": {
+    "source": "QA_PIXEL_INSIDE_FROZEN_AOI",
+    "metric": "strict_clear_fraction",
+    "definition": "fraction of AOI non-fill valid pixels with QA_PIXEL adverse bits 1,2,3,4,5 all zero",
+    "resampling_allowed": false,
+    "interpolation_allowed": false
+  },
+  "deterministic_ordering": [
+    {
+      "priority": 1,
+      "criterion": "MAXIMIZE_MINIMUM_PRE_POST_STRICT_CLEAR_FRACTION",
+      "sort": "descending"
+    },
+    {
+      "priority": 2,
+      "criterion": "MAXIMIZE_MEAN_PRE_POST_STRICT_CLEAR_FRACTION",
+      "sort": "descending"
+    },
+    {
+      "priority": 3,
+      "criterion": "MINIMIZE_TOTAL_ABSOLUTE_TEMPORAL_DISTANCE_FROM_ANCHOR_LOCAL_MIDNIGHT",
+      "sort": "ascending",
+      "anchor_timezone": "America/Lima"
+    },
+    {
+      "priority": 4,
+      "criterion": "MINIMIZE_MAXIMUM_SIDE_TEMPORAL_DISTANCE_FROM_ANCHOR",
+      "sort": "ascending"
+    },
+    {
+      "priority": 5,
+      "criterion": "EARLIEST_PRE_DATETIME",
+      "sort": "ascending"
+    },
+    {
+      "priority": 6,
+      "criterion": "EARLIEST_POST_DATETIME",
+      "sort": "ascending"
+    },
+    {
+      "priority": 7,
+      "criterion": "LEXICOGRAPHIC_PRE_ITEM_ID",
+      "sort": "ascending"
+    },
+    {
+      "priority": 8,
+      "criterion": "LEXICOGRAPHIC_POST_ITEM_ID",
+      "sort": "ascending"
+    }
+  ],
+  "anti_leakage": {
+    "territorial_outcomes_allowed": false,
+    "known_event_dates_allowed": false,
+    "case_control_roles_allowed": false,
+    "damage_incident_reports_allowed": false,
+    "risk_alert_priority_fields_allowed": false,
+    "cashahuacra_feature_magnitudes_allowed": false,
+    "pair_choice_may_change_meteorological_ranking": false,
+    "pair_choice_may_enable_activation_inference": false,
+    "pair_choice_may_enable_serious_modeling": false
+  },
+  "output_requirements": {
+    "case_control_role": "UNASSIGNED",
+    "territorial_evidence": "SEALED",
+    "activation_inference_allowed": false,
+    "modeling_allowed": false,
+    "selected_window_replaced": false,
+    "retain_pair_quality_metrics": true,
+    "retain_all_ordering_components_for_audit": true,
+    "retain_source_hashes": true
+  },
+  "execution_status": "PREREGISTERED_BEFORE_PAIR_CHOICE_EXECUTION"
+}
