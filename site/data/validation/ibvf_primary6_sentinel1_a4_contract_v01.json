@@ -1,0 +1,75 @@
+{
+  "schema_version": "irfen-ibvf-primary6-sentinel1-a4-contract-v0.1",
+  "generated_at": "2026-08-31T14:12:00Z",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
+  "purpose": "Apply the already-demonstrated Cashahuacra Sentinel-1 R1-R4 blind processing contract without retrospective per-window tuning to the frozen PRIMARY6 selected windows.",
+  "source_selected_a1_catalog": "site/data/validation/ibvf_primary6_selected_a1_catalog.json",
+  "methodological_parent": "site/data/validation/cashahuacra_sentinel1_a4_contract.json",
+  "r2_parent_contract": "site/data/validation/cashahuacra_sentinel1_r2_contract.json",
+  "r3_parent_contract": "site/data/validation/cashahuacra_sentinel1_r3_contract.json",
+  "r4_parent_contract": "site/data/validation/cashahuacra_sentinel1_r4_contract.json",
+  "selected_window_count": 108,
+  "compatible_pair_count": 104,
+  "missing_compatible_pair_count": 4,
+  "unknown_pair_count": 0,
+  "missing_pair_semantics": "MISSING_COMPATIBLE_PAIR_RETAIN_WINDOW_NO_REPLACEMENT_NO_IMPUTATION",
+  "replacement_of_selected_window_for_sar_availability": false,
+  "processing_sequence": [
+    "A4_R1_NATIVE_RADIOMETRIC",
+    "A4_R2_GEOMETRY_AND_TERRAIN",
+    "A4_R3_COMMON_SUPPORT",
+    "A4_R4_BLIND_RESPONSE_FEATURES"
+  ],
+  "frozen_method_rules": {
+    "polarization": "VV_AS_SELECTED_BY_FROZEN_A1_RULES",
+    "raw_dn_comparison_forbidden": true,
+    "same_platform_mode_orbit_direction_relative_orbit_required": true,
+    "noise_corrected_nonpositive_is_invalid_not_zero": true,
+    "same_frozen_copernicus_glo30_terrain_basis": true,
+    "common_support_required_before_change_features": true,
+    "date_specific_mask_expansion_forbidden": true,
+    "missing_or_invalid_pixel_imputation": false,
+    "adaptive_speckle_filter_primary": false,
+    "per_window_parameter_tuning": false,
+    "outcome_aware_parameter_tuning": false
+  },
+  "r3_gate": {
+    "minimum_common_valid_area_fraction": 0.95,
+    "failure_semantics": "A4_SAR_UNKNOWN_INSUFFICIENT_COMMON_SUPPORT_RETAIN_WINDOW",
+    "failed_window_replacement": false
+  },
+  "primary_r4_features": [
+    "median_delta_sigma0_db_post_minus_pre",
+    "q25_delta_sigma0_db",
+    "q75_delta_sigma0_db",
+    "fraction_common_pixels_abs_delta_ge_1db",
+    "fraction_common_pixels_abs_delta_ge_2db",
+    "fraction_common_pixels_abs_delta_ge_3db"
+  ],
+  "quality_features": [
+    "common_valid_area_fraction",
+    "invalid_noise_corrected_fraction_pre",
+    "invalid_noise_corrected_fraction_post",
+    "terrain_layover_shadow_or_unresolved_fraction"
+  ],
+  "descriptive_db_bins_are_not_activation_thresholds": true,
+  "batching": {
+    "unit": "TRACK",
+    "tracks": ["shingolay", "huaycoloro", "san_ildefonso"],
+    "parallel_track_execution_allowed": true,
+    "maximum_parallel_tracks": 2,
+    "reason": "Accelerate compute while keeping each frozen window independently reproducible and avoiding resource contention in SNAP."
+  },
+  "a5_assembly_rule": "A5 may consume SAR R4 values only after the corresponding window has passed R1-R3; MISSING/UNKNOWN remains explicit and may not be imputed.",
+  "territorial_outcomes_read": false,
+  "case_control_assignment_performed": false,
+  "modeling_allowed": false
+}
