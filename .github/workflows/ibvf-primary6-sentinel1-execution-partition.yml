@@ -1,0 +1,187 @@
+name: IBVF - PRIMARY6 Sentinel-1 deterministic execution partition
+
+on:
+  push:
+    branches: [agent/independent-basin-validation-map]
+    paths:
+      - '.github/workflows/ibvf-primary6-sentinel1-execution-partition.yml'
+      - 'scripts/ibvf_primary6_sentinel1_execution_partition.py'
+  workflow_dispatch:
+
+concurrency:
+  group: ibvf-primary6-sentinel1-execution-partition
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  freeze-partition:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Compile deterministic partition freezer
+        run: python -m py_compile scripts/ibvf_primary6_sentinel1_execution_partition.py
+
+      - name: Freeze 18 track-by-season compute shards
+        run: |
+          mkdir -p artifacts/ibvf
+          python scripts/ibvf_primary6_sentinel1_execution_partition.py \
+            --manifest site/data/validation/ibvf_primary6_sentinel1_bulk_manifest_v01.json \
+            --output artifacts/ibvf/ibvf_primary6_sentinel1_execution_partition_v01.json
+
+      - name: Fail-closed partition and blind guards
+        run: |
+          python - <<'PY'
+          import json
+          p='artifacts/ibvf/ibvf_primary6_sentinel1_execution_partition_v01.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY'
+          assert d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          assert d['cohort_id']=='PRIMARY6_CHRONOLOGICAL'
+          assert d['source_execution_identity_sha256']=='57f4bfa801b599b400ec155ca6f26abffc05a1b2303a1c052e65c94ae2543c86'
+          assert d['partition_rule']=='EXACT_TRACK_X_PRIMARY6_SEASON'
+          assert d['partition_assignment_fields']==['unit_id','season_id']
+          assert d['partition_assignment_uses_scientific_magnitude'] is False
+          assert d['partition_assignment_uses_selected_rank_or_percentile'] is False
+          assert d['partition_assignment_uses_sensor_response'] is False
+          assert d['partition_assignment_uses_known_event_dates'] is False
+          assert d['partition_assignment_uses_territorial_outcomes'] is False
+          assert d['partition_assignment_uses_case_control_role'] is False
+          assert d['partition_count']==18 and d['track_count']==3 and d['season_count']==6
+          assert d['selected_window_count']==108
+          assert d['compatible_pair_window_count']==104
+          assert d['missing_compatible_pair_count']==4
+          assert d['all_selected_windows_covered_exactly_once'] is True
+          assert d['all_compatible_pair_windows_covered_exactly_once'] is True
+          assert d['missing_windows_preserved_in_original_shards'] is True
+          assert d['selected_window_replacement_allowed'] is False
+          assert d['compatible_pair_reselection_allowed'] is False
+          assert d['missing_pair_imputation_allowed'] is False
+          assert d['science_pixels_read'] is False
+          assert d['rainfall_values_read'] is False
+          assert d['sar_change_values_read'] is False
+          assert d['territorial_outcomes_read'] is False
+          assert d['known_event_dates_read'] is False
+          assert d['case_control_assignment_performed'] is False
+          assert d['activation_inference_allowed'] is False
+          assert d['modeling_allowed'] is False
+          assert d['track_compatible_pair_counts']=={'huaycoloro':34,'shingolay':36,'san_ildefonso':34}
+          assert d['track_missing_pair_counts']=={'huaycoloro':2,'shingolay':0,'san_ildefonso':2}
+          assert all(s['selected_window_count']==6 for s in d['shards'])
+          assert sum(s['compatible_pair_window_count'] for s in d['shards'])==104
+          assert sum(s['missing_compatible_pair_count'] for s in d['shards'])==4
+          print({
+            'status':d['status'],
+            'partition_identity_sha256':d['partition_identity_sha256'],
+            'partition_count':d['partition_count'],
+            'compatible':d['compatible_pair_window_count'],
+            'missing':d['missing_compatible_pair_count'],
+          })
+          PY
+
+      - name: Freeze report and synchronize scientific map/UI
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git pull --rebase origin agent/independent-basin-validation-map
+          cp artifacts/ibvf/ibvf_primary6_sentinel1_execution_partition_v01.json \
+             site/data/validation/ibvf_primary6_sentinel1_execution_partition_v01.json
+
+          python - <<'PY'
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          report_path=Path('site/data/validation/ibvf_primary6_sentinel1_execution_partition_v01.json')
+          report=json.loads(report_path.read_text(encoding='utf-8'))
+          assert report['status']=='PASS_18_TRACK_SEASON_SHARDS_108_WINDOWS_104_COMPATIBLE_4_MISSING_EXACT_COVERAGE_NO_OUTCOME'
+
+          p=Path('site/data/validation/independent_basin_validation_map.json')
+          d=json.loads(p.read_text(encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY' and d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          ac=d.setdefault('acquisition_contract',{})
+          assert ac['primary_dataset_season_target']==6
+          assert ac['primary_dataset_seasons_complete']==6
+          assert ac['primary_dataset_canonical_rows_target']==5816
+          assert ac['primary_dataset_canonical_rows_frozen']==5816
+          assert ac['full_robustness_season_target']==12
+          assert ac['full_robustness_seasons_complete']==6
+          assert ac['primary6_meteorological_ranking_executed'] is True
+          assert ac['serious_modeling_after_primary6_ranking_allowed'] is False
+
+          d['version']='irfen-independent-basin-validation-map-v3.11'
+          d['generated_at']=datetime.now(timezone.utc).isoformat().replace('+00:00','Z')
+          ac['primary6_sentinel1_execution_partition_report']=str(report_path).replace('site/','')
+          ac['primary6_sentinel1_execution_partition_status']=report['status']
+          ac['primary6_sentinel1_execution_partition_rule']=report['partition_rule']
+          ac['primary6_sentinel1_execution_partition_count']=report['partition_count']
+          ac['primary6_sentinel1_execution_partition_identity_sha256']=report['partition_identity_sha256']
+          ac['primary6_sentinel1_execution_partition_selected_windows']=report['selected_window_count']
+          ac['primary6_sentinel1_execution_partition_compatible_pair_windows']=report['compatible_pair_window_count']
+          ac['primary6_sentinel1_execution_partition_missing_windows']=report['missing_compatible_pair_count']
+          ac['primary6_sentinel1_execution_partition_exact_coverage']=True
+          ac['primary6_sentinel1_bulk_r1_complete']=False
+          ac['primary6_sentinel1_bulk_r2_complete']=False
+          ac['primary6_sentinel1_bulk_r3_complete']=False
+          ac['primary6_sentinel1_bulk_r4_complete']=False
+          ac.setdefault('local_validation',{})['github_actions_primary6_sentinel1_execution_partition']=report['status']
+          p.write_text(json.dumps(d,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+
+          # Keep the research UI explicit about the primary gate versus robustness.
+          h=Path('site/expansion.html')
+          text=h.read_text(encoding='utf-8')
+          old="const s=d.summary||{},ms=mapCatalog.summary||{},trace=Object.fromEntries((mapCatalog.research_zones||[]).map(z=>[z.candidate_id,z]));"
+          new="const s=d.summary||{},ms=mapCatalog.summary||{},ac=ibvf.acquisition_contract||{},p6Done=ac.primary_dataset_seasons_complete??'—',p6Target=ac.primary_dataset_season_target??6,f12Done=ac.full_robustness_seasons_complete??'—',f12Target=ac.full_robustness_season_target??12,trace=Object.fromEntries((mapCatalog.research_zones||[]).map(z=>[z.candidate_id,z]));"
+          if old in text:
+              text=text.replace(old,new,1)
+          elif new not in text:
+              raise AssertionError('Unexpected expansion.html summary variable block')
+
+          old_summary="summary.innerHTML=`<span class=\"badge\">RESEARCH_ONLY</span><h2>${esc(s.registered_candidates)} sistemas registrados; 0 nuevas zonas operativas</h2><div class=\"meta\">${esc(s.contracts_present)} contratos · ${esc(s.outside_lima_metropolitana)} fuera de Lima Metropolitana · ${esc(ms.research_candidates_map_eligible)}/${esc(ms.research_candidates_registered)} geometrías reproducibles aptas para mapa · ${esc((ibvf.cases||[]).length)} casos iniciales en validación independiente multipista.</div>`;"
+          new_summary="summary.innerHTML=`<span class=\"badge\">RESEARCH_ONLY</span><h2>${esc(s.registered_candidates)} sistemas registrados; 0 nuevas zonas operativas</h2><div class=\"meta\">${esc(s.contracts_present)} contratos · ${esc(s.outside_lima_metropolitana)} fuera de Lima Metropolitana · ${esc(ms.research_candidates_map_eligible)}/${esc(ms.research_candidates_registered)} geometrías reproducibles aptas para mapa · ${esc((ibvf.cases||[]).length)} casos iniciales en validación independiente multipista.</div><div class=\"meta\" style=\"margin-top:7px\"><b>Dataset IBVF:</b> PRIMARY6 ${esc(p6Done)}/${esc(p6Target)} · gate ciego primario completo · FULL12 ${esc(f12Done)}/${esc(f12Target)} · robustez temporal, no requisito del gate primario.</div>`;"
+          if old_summary in text:
+              text=text.replace(old_summary,new_summary,1)
+          elif new_summary not in text:
+              raise AssertionError('Unexpected expansion.html summary renderer')
+          assert 'PRIMARY6 ${esc(p6Done)}/${esc(p6Target)}' in text
+          assert 'FULL12 ${esc(f12Done)}/${esc(f12Target)}' in text
+          assert 'no requisito del gate primario' in text
+          h.write_text(text,encoding='utf-8')
+          PY
+
+          git add site/data/validation/ibvf_primary6_sentinel1_execution_partition_v01.json \
+                  site/data/validation/independent_basin_validation_map.json \
+                  site/expansion.html
+          if git diff --cached --quiet; then
+            echo 'No scientific freeze change.'
+          else
+            git commit -m 'IBVF: freeze PRIMARY6 Sentinel-1 execution partitions'
+            git push origin HEAD:agent/independent-basin-validation-map
+          fi
+
+      - name: Upload partition evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ibvf-primary6-s1-execution-partition-${{ github.sha }}
+          path: artifacts/ibvf/ibvf_primary6_sentinel1_execution_partition_v01.json
+          if-no-files-found: warn
+          retention-days: 30
