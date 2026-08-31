@@ -1,0 +1,99 @@
+{
+  "schema_version": "irfen-ibvf-pedregal-ingemmet-seed-contract-v0.1",
+  "registered_at": "2026-08-31T16:10:00Z",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "purpose": "Resolve Pedregal A2 geometry using a fixed INGEMMET catalog coordinate and the already-frozen GLO-30 D8 snap contract, without rainfall, event dates, territorial outcomes, damage, or area-based outlet optimization.",
+  "sources": [
+    {
+      "source_id": "INGEMMET_LIMA_ZONAS_CRITICAS_REPORT_NOMINAL_2014",
+      "document_title": "Zonas críticas por peligros geológicos en la región Lima - Primer reporte",
+      "nominal_report_date": "2014-07",
+      "authors": [
+        "Griselda Luque Poma",
+        "Milena Rosado Seminario"
+      ],
+      "user_provided_pdf_sha256": "be4be2f54ea390e8e77c5a31b7055ff77244b5e46a4245c1a2bc560345fc0c63",
+      "pdf_metadata_creation_date_observed": "2017-02-03T14:06:26Z",
+      "provenance_note": "The PDF nominally reports July 2014 but its container metadata indicates later generation. Only the static catalog identity and coordinate tuple are admitted here; event chronology/damage text is sealed.",
+      "allowed_static_extract": {
+        "catalog_entry": "Quebrada Pedregal (Lurigancho)",
+        "hazard_type_descriptor": "Flujos de detritos",
+        "easting_m": 314819.0,
+        "northing_m": 8680688.0
+      },
+      "outcome_fields_imported": false
+    },
+    {
+      "source_id": "INGEMMET_CENEPRED_REGION_LIMA_ZONAS_CRITICAS_MAP_2015",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/5472_informe-tecnico-zonas-criticas-por-peligros-geologicos-en-la-region-lima.pdf",
+      "allowed_static_extract": {
+        "catalog_entry": "Quebrada Pedregal (Lurigancho-Chosica)",
+        "easting_m": 314819.0,
+        "northing_m": 8680688.0,
+        "map_datum": "UTM WGS 84, Zona 18 Sur",
+        "epsg": 32718
+      },
+      "crs_role": "CRS_CORROBORATION_FOR_IDENTICAL_CATALOG_COORDINATE_ONLY",
+      "outcome_fields_imported": false
+    },
+    {
+      "source_id": "INGEMMET_HOSTED_RIIGEO_PEDREGAL_CHARACTERIZATION",
+      "url": "https://app.ingemmet.gob.pe/biblioteca/pdf/RFIGMMG-29-3.pdf",
+      "allowed_static_extract": {
+        "reference_area_km2": 10.0,
+        "basin_length_km": 5.0,
+        "mean_slope_percent": 30.0,
+        "drainage_pattern": "DENDRITIC"
+      },
+      "role": "POST_SNAP_STATIC_GEOMORPHIC_VALIDATION_ONLY",
+      "outcome_fields_imported": false
+    }
+  ],
+  "seed": {
+    "authority": "INGEMMET_STATIC_ZONE_CRITICAL_CATALOG",
+    "easting_m": 314819.0,
+    "northing_m": 8680688.0,
+    "epsg": 32718,
+    "role": "SNAP_SEARCH_SEED_ONLY_NOT_FORCED_OUTLET"
+  },
+  "snap_contract": {
+    "inherit_algorithm_from": "Cashahuacra nearest-same-channel v0.3",
+    "radii_m": [
+      60.0,
+      120.0,
+      240.0,
+      360.0
+    ],
+    "anchor_selection": "MAXIMUM_D8_FLOW_ACCUMULATION_WITHIN_RADIUS",
+    "channel_definition": "HIGHEST_ACCUMULATION_UPSTREAM_MAINSTEM_PLUS_D8_DOWNSTREAM_PATH",
+    "final_selection": "NEAREST_CHANNEL_CELL_TO_INGEMMET_SEED",
+    "freeze_gate": "EXACT_SAME_CELL_FROM_ALL_FOUR_ANCHOR_DERIVED_CHANNELS",
+    "cluster_45m_is_diagnostic_only": true,
+    "target_basin_area_used_for_selection": false,
+    "territorial_outcome_used_for_selection": false
+  },
+  "post_freeze_validation": {
+    "reference_area_km2": 10.0,
+    "max_absolute_area_relative_error": 0.2,
+    "area_can_move_outlet": false,
+    "area_role": "VALIDATION_ONLY_AFTER_OUTLET_FREEZE"
+  },
+  "sealed_until_post_A5_unblind": [
+    "event dates",
+    "activation statements",
+    "damage",
+    "casualties",
+    "event-specific rainfall",
+    "event-specific discharge",
+    "case/control role"
+  ],
+  "case_control_assignment_allowed": false,
+  "modeling_allowed": false
+}

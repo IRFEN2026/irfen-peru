@@ -1,0 +1,152 @@
+name: IBVF - Pedregal INGEMMET seed snap
+
+on:
+  push:
+    branches:
+      - agent/independent-basin-validation-map
+    paths:
+      - 'site/data/validation/ibvf_pedregal_ingemmet_seed_contract_v01.json'
+      - 'scripts/ibvf_pedregal_ingemmet_seed_snap.py'
+      - '.github/workflows/ibvf-pedregal-ingemmet-seed-snap.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ibvf-pedregal-ingemmet-seed-snap
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install constrained geospatial dependencies
+        run: python -m pip install --disable-pip-version-check 'numpy>=1.26,<2' 'requests>=2.31,<3' 'rasterio>=1.3,<2' 'shapely>=2,<3' 'pyproj>=3.6,<4' 'pysheds>=0.3,<0.5'
+      - name: Compile blind static reconstruction
+        run: |
+          python -m py_compile \
+            scripts/ibvf_pedregal_ingemmet_seed_snap.py \
+            scripts/ibvf_cashahuacra_dem_snap.py \
+            scripts/ibvf_cashahuacra_nearest_channel_snap.py
+      - name: Execute fixed INGEMMET seed reconstruction
+        run: |
+          mkdir -p artifacts/ibvf
+          python scripts/ibvf_pedregal_ingemmet_seed_snap.py \
+            --repo-root . \
+            --output artifacts/ibvf/ibvf_pedregal_ingemmet_seed_snap_v01.json \
+            --geojson-output artifacts/ibvf/pedregal_ingemmet_seed_candidate_v01.geojson
+      - name: Fail-closed scientific guards
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/ibvf/ibvf_pedregal_ingemmet_seed_snap_v01.json',encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY'
+          assert d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          assert d['rainfall_read'] is False
+          assert d['known_event_dates_read'] is False
+          assert d['territorial_outcomes_read'] is False
+          assert d['damage_fields_read'] is False
+          assert d['case_control_assignment_performed'] is False
+          assert d['target_area_used_for_outlet_selection'] is False
+          assert d['outlet_optimized_against_reference_area'] is False
+          assert d['source_outcome_fields_imported'] is False
+          assert d['ingemmet_seed']['epsg']==32718
+          assert abs(d['ingemmet_seed']['easting_m']-314819.0)<1e-9
+          assert abs(d['ingemmet_seed']['northing_m']-8680688.0)<1e-9
+          assert d['modeling_allowed'] is False
+          print({
+            'status':d.get('status'),
+            'snap_status':d.get('snap_status'),
+            'selected_outlet':d.get('selected_outlet'),
+            'morphometry':d.get('morphometry'),
+            'area_validation':d.get('post_freeze_static_area_validation')
+          })
+          PY
+      - name: Freeze research evidence and synchronize scientific map
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git pull --rebase origin agent/independent-basin-validation-map
+          cp artifacts/ibvf/ibvf_pedregal_ingemmet_seed_snap_v01.json site/data/validation/ibvf_pedregal_ingemmet_seed_snap_v01.json
+          cp artifacts/ibvf/pedregal_ingemmet_seed_candidate_v01.geojson site/data/watersheds/pedregal_ingemmet_seed_candidate_v01.geojson
+          python - <<'PY'
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          rp=Path('site/data/validation/ibvf_pedregal_ingemmet_seed_snap_v01.json')
+          r=json.loads(rp.read_text(encoding='utf-8'))
+          mp=Path('site/data/validation/independent_basin_validation_map.json')
+          d=json.loads(mp.read_text(encoding='utf-8'))
+
+          assert d['deployment_status']=='RESEARCH_ONLY'
+          assert d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+
+          d['version']='irfen-independent-basin-validation-map-v3.7'
+          d['generated_at']=datetime.now(timezone.utc).isoformat().replace('+00:00','Z')
+          ac=d.setdefault('acquisition_contract',{})
+          ac['pedregal_ingemmet_seed_contract']='site/data/validation/ibvf_pedregal_ingemmet_seed_contract_v01.json'
+          ac['pedregal_ingemmet_seed_snap']='site/data/validation/ibvf_pedregal_ingemmet_seed_snap_v01.json'
+          ac['pedregal_ingemmet_seed_status']=r['status']
+          ac['pedregal_ingemmet_seed_epsg']=r['ingemmet_seed']['epsg']
+          ac['pedregal_ingemmet_seed_easting_m']=r['ingemmet_seed']['easting_m']
+          ac['pedregal_ingemmet_seed_northing_m']=r['ingemmet_seed']['northing_m']
+          ac['pedregal_outcome_fields_imported']=False
+
+          for c in d.get('cases',[]):
+            if c.get('unit_id')!='pedregal':
+              continue
+            c['blind_status']='TERRITORIAL_EVIDENCE_SEALED'
+            c['ingemmet_seed_status']=r['status']
+            c['ingemmet_seed_source']='INGEMMET_STATIC_ZONE_CRITICAL_CATALOG'
+            c['ingemmet_seed_epsg']=32718
+            c['ingemmet_seed_easting_m']=314819.0
+            c['ingemmet_seed_northing_m']=8680688.0
+            c['ingemmet_seed_candidate_geometry_path']='data/watersheds/pedregal_ingemmet_seed_candidate_v01.geojson'
+            if r['status'].startswith('PASS_'):
+              c['framework_stage']='A2_STATIC_RESEARCH_CANDIDATE_INGEMMET_SEED_SNAP_PASS_INDEPENDENT_REVIEW_PENDING'
+              c['geometry_status']='RESEARCH_CANDIDATE_STATIC_INGEMMET_SEED_SNAP_PASS_NOT_OFFICIAL'
+              c['geometry_semantics']='RESEARCH_CANDIDATE_STATIC_GEOMORPHIC_SUPPORT_NOT_OFFICIAL_VALIDATION_NOT_OPERATIONAL'
+              c['geometry_path']='data/watersheds/pedregal_ingemmet_seed_candidate_v01.geojson'
+              c['geometry_selector']={'property':'candidate_id','value':'pedregal_ingemmet_seed_v01'}
+              c['area_km2']=r.get('morphometry',{}).get('area_km2')
+            else:
+              c['framework_stage']='A2_STATIC_INGEMMET_SEED_SNAP_REVIEW_REQUIRED_A3_CANDIDATE_SIDECARS_ONLY'
+              c['geometry_status']='UNKNOWN_GEOMETRY_UNRESOLVED_INGEMMET_SEED_TEST_FAILED'
+          mp.write_text(json.dumps(d,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          PY
+          git add \
+            site/data/validation/ibvf_pedregal_ingemmet_seed_snap_v01.json \
+            site/data/watersheds/pedregal_ingemmet_seed_candidate_v01.geojson \
+            site/data/validation/independent_basin_validation_map.json
+          if git diff --cached --quiet; then
+            echo 'No scientific freeze change.'
+          else
+            git commit -m 'IBVF: freeze Pedregal INGEMMET seed snap'
+            git push origin HEAD:agent/independent-basin-validation-map
+          fi
+      - name: Upload diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ibvf-pedregal-ingemmet-seed-${{ github.sha }}
+          path: artifacts/ibvf/*
+          if-no-files-found: warn
+          retention-days: 30
