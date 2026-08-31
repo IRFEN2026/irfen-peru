@@ -1,0 +1,199 @@
+{
+  "schema_version": "irfen-ibvf-pedregal-ingemmet-seed-snap-v0.1",
+  "generated_at": "2026-08-31T16:16:02.628843Z",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "unit_id": "pedregal",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_MINIMUM_DATASET_NOT_REACHED",
+  "rainfall_read": false,
+  "known_event_dates_read": false,
+  "territorial_outcomes_read": false,
+  "damage_fields_read": false,
+  "case_control_assignment_performed": false,
+  "target_area_used_for_outlet_selection": false,
+  "outlet_optimized_against_reference_area": false,
+  "ingemmet_seed": {
+    "easting_m": 314819.0,
+    "northing_m": 8680688.0,
+    "epsg": 32718,
+    "lon": -76.70043603458049,
+    "lat": -11.929373049871497,
+    "role": "SNAP_SEARCH_SEED_ONLY_NOT_FORCED_OUTLET"
+  },
+  "snap_contract": {
+    "inherit_algorithm_from": "Cashahuacra nearest-same-channel v0.3",
+    "radii_m": [
+      60.0,
+      120.0,
+      240.0,
+      360.0
+    ],
+    "anchor_selection": "MAXIMUM_D8_FLOW_ACCUMULATION_WITHIN_RADIUS",
+    "channel_definition": "HIGHEST_ACCUMULATION_UPSTREAM_MAINSTEM_PLUS_D8_DOWNSTREAM_PATH",
+    "final_selection": "NEAREST_CHANNEL_CELL_TO_INGEMMET_SEED",
+    "freeze_gate": "EXACT_SAME_CELL_FROM_ALL_FOUR_ANCHOR_DERIVED_CHANNELS",
+    "cluster_45m_is_diagnostic_only": true,
+    "target_basin_area_used_for_selection": false,
+    "territorial_outcome_used_for_selection": false
+  },
+  "post_freeze_validation_contract": {
+    "reference_area_km2": 10.0,
+    "max_absolute_area_relative_error": 0.2,
+    "area_can_move_outlet": false,
+    "area_role": "VALIDATION_ONLY_AFTER_OUTLET_FREEZE"
+  },
+  "source_outcome_fields_imported": false,
+  "dem": {
+    "collection": "cop-dem-glo-30",
+    "item_id": "Copernicus_DSM_COG_10_S12_00_W077_00_DEM",
+    "url": "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_S12_00_W077_00_DEM/Copernicus_DSM_COG_10_S12_00_W077_00_DEM.tif",
+    "conditioning": "fill_pits->fill_depressions->resolve_flats->D8",
+    "acquisition": {
+      "transport_status": "SUCCESS",
+      "bytes": 40184982,
+      "sha256": "d9f8d410da66bfb85c73b957401aea73043f8618cccdb7d1fc76082d30a31130"
+    },
+    "crop_sha256": "ba527e9d0e6386d01d421107e2542245403dcd6f36a8cbfe0d422f18aaf9dd0b"
+  },
+  "legacy_candidate_comparison": {
+    "candidate_id": "pedregal_8_20",
+    "snapped_lon": -76.702326,
+    "snapped_lat": -11.9423206,
+    "distance_from_ingemmet_seed_m": 1447.001,
+    "role": "DIAGNOSTIC_ONLY_NOT_SELECTION"
+  },
+  "anchors": [
+    {
+      "radius_m": 60.0,
+      "status": "SELECTED",
+      "row": 393,
+      "col": 69,
+      "lon": -76.70083333333332,
+      "lat": -11.929166666666667,
+      "seed_distance_m": 48.931,
+      "accumulation_cells": 9.0
+    },
+    {
+      "radius_m": 120.0,
+      "status": "SELECTED",
+      "row": 395,
+      "col": 67,
+      "lon": -76.70138888888889,
+      "lat": -11.929722222222223,
+      "seed_distance_m": 110.749,
+      "accumulation_cells": 9544.0
+    },
+    {
+      "radius_m": 240.0,
+      "status": "SELECTED",
+      "row": 400,
+      "col": 66,
+      "lon": -76.70166666666665,
+      "lat": -11.931111111111111,
+      "seed_distance_m": 234.387,
+      "accumulation_cells": 9601.0
+    },
+    {
+      "radius_m": 360.0,
+      "status": "SELECTED",
+      "row": 403,
+      "col": 65,
+      "lon": -76.70194444444444,
+      "lat": -11.931944444444444,
+      "seed_distance_m": 328.499,
+      "accumulation_cells": 9744.0
+    }
+  ],
+  "anchor_topology": {
+    "status": "SAME_D8_CHANNEL_DOWNSTREAM_RADIAL_DRIFT",
+    "same_d8_channel_downstream_order": true,
+    "accumulation_monotonic_non_decreasing": true,
+    "pair_checks": [
+      {
+        "from_radius_m": 60.0,
+        "to_radius_m": 120.0,
+        "to_cell_is_on_downstream_d8_path": true
+      },
+      {
+        "from_radius_m": 120.0,
+        "to_radius_m": 240.0,
+        "to_cell_is_on_downstream_d8_path": true
+      },
+      {
+        "from_radius_m": 240.0,
+        "to_radius_m": 360.0,
+        "to_cell_is_on_downstream_d8_path": true
+      }
+    ],
+    "interpretation": "Nested-radius maximum accumulation can drift downstream by construction; topology is reported separately and does not relax the coordinate-cluster freeze gate."
+  },
+  "nearest_same_channel": {
+    "anchor_results": [
+      {
+        "status": "SELECTED",
+        "row": 393,
+        "col": 70,
+        "lon": -76.70055555555555,
+        "lat": -11.929166666666667,
+        "seed_distance_m": 26.282,
+        "accumulation_cells": 8.0,
+        "anchor_radius_m": 60.0,
+        "anchor_row": 393,
+        "anchor_col": 69,
+        "channel_cell_count": 49
+      },
+      {
+        "status": "SELECTED",
+        "row": 394,
+        "col": 68,
+        "lon": -76.7011111111111,
+        "lat": -11.929444444444444,
+        "seed_distance_m": 73.96,
+        "accumulation_cells": 9542.0,
+        "anchor_radius_m": 120.0,
+        "anchor_row": 395,
+        "anchor_col": 67,
+        "channel_cell_count": 178
+      },
+      {
+        "status": "SELECTED",
+        "row": 394,
+        "col": 68,
+        "lon": -76.7011111111111,
+        "lat": -11.929444444444444,
+        "seed_distance_m": 73.96,
+        "accumulation_cells": 9542.0,
+        "anchor_radius_m": 240.0,
+        "anchor_row": 400,
+        "anchor_col": 66,
+        "channel_cell_count": 178
+      },
+      {
+        "status": "SELECTED",
+        "row": 394,
+        "col": 68,
+        "lon": -76.7011111111111,
+        "lat": -11.929444444444444,
+        "seed_distance_m": 73.96,
+        "accumulation_cells": 9542.0,
+        "anchor_radius_m": 360.0,
+        "anchor_row": 403,
+        "anchor_col": 65,
+        "channel_cell_count": 178
+      }
+    ],
+    "exact_cell_agreement": false,
+    "max_cluster_distance_m": 67.872
+  },
+  "scientific_data_status": "PRESENT",
+  "snap_status": "UNSTABLE_NEAREST_SAME_CHANNEL_REVIEW_REQUIRED",
+  "status": "FAIL_UNKNOWN_GEOMETRY_SNAP_UNRESOLVED",
+  "geometry_semantics": "UNKNOWN_GEOMETRY_UNRESOLVED",
+  "modeling_allowed": false
+}
