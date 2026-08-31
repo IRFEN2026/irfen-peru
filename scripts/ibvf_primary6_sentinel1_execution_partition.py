@@ -6,9 +6,9 @@ RESEARCH_ONLY / TEST_ONLY.
 This is a computational scheduling layer only. It consumes the already-frozen
 PRIMARY6 Sentinel-1 bulk execution manifest and assigns all 108 selected windows
 to exactly 18 immutable shards defined ONLY by (unit_id, season_id): three
-tracks x six chronological PRIMARY6 seasons. Compatible pairs remain eligible
-for R1-R4 execution; the four MISSING_COMPATIBLE_PAIR windows remain explicit
-inside their original shards and are never replaced or imputed.
+tracks x six chronological PRIMARY6 seasons. Compatible pair *windows* remain
+eligible for R1-R4 execution; the four MISSING_COMPATIBLE_PAIR windows remain
+explicit inside their original shards and are never replaced or imputed.
 
 Partition membership does not use rainfall magnitudes, SAR response values,
 selected percentile/rank, known event dates, territorial outcomes, or
@@ -94,7 +94,7 @@ def main() -> int:
     if src.get("selected_window_count") != 108:
         raise ValueError("Expected exactly 108 frozen selected windows")
     if src.get("compatible_pair_count") != 104 or src.get("missing_compatible_pair_count") != 4:
-        raise ValueError("Expected exactly 104 compatible pairs + 4 explicit missing windows")
+        raise ValueError("Expected exactly 104 compatible pair windows + 4 explicit missing windows")
     if src.get("selected_window_replacement_allowed") is not False:
         raise ValueError("Selected-window replacement must remain forbidden")
     if src.get("compatible_pair_reselection_allowed") is not False:
@@ -112,7 +112,6 @@ def main() -> int:
 
     buckets: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     selected_seen: set[tuple[str, str, str]] = set()
-    compatible_seen: set[tuple[str, str]] = set()
     status_counter = Counter()
     track_compatible = Counter()
     track_missing = Counter()
@@ -142,10 +141,6 @@ def main() -> int:
             pre, post = w.get("pre_item_id"), w.get("post_item_id")
             if not isinstance(pre, str) or not pre or not isinstance(post, str) or not post:
                 raise ValueError(f"Compatible window lacks immutable pair IDs: {selected_key}")
-            pair_key = (pre, post)
-            if pair_key in compatible_seen:
-                raise ValueError(f"Duplicate frozen compatible pair: {pair_key}")
-            compatible_seen.add(pair_key)
             track_compatible[unit] += 1
         else:
             if w.get("pre_item_id") is not None or w.get("post_item_id") is not None:
@@ -157,8 +152,8 @@ def main() -> int:
 
     if set(buckets) != {(u, s) for u in TRACKS for s in SEASONS}:
         raise ValueError("Expected exactly all 18 track x season shards")
-    if len(selected_seen) != 108 or len(compatible_seen) != 104:
-        raise ValueError("Coverage mismatch before partition freeze")
+    if len(selected_seen) != 108:
+        raise ValueError("Selected-window coverage mismatch before partition freeze")
     if status_counter[COMPATIBLE] != 104 or status_counter[MISSING] != 4:
         raise ValueError("Frozen compatible/missing counts changed")
     expected_track = src.get("track_compatible_pair_counts") or {}
@@ -166,12 +161,15 @@ def main() -> int:
         raise ValueError("Per-track compatible counts changed")
 
     shards: list[dict[str, Any]] = []
-    compatible_ids_across_shards: list[str] = []
+    compatible_window_ids_across_shards: list[str] = []
     selected_ids_across_shards: list[str] = []
 
     for unit in TRACKS:
         for season in SEASONS:
-            rows = sorted(buckets[(unit, season)], key=lambda w: (w["date_local"], str(w.get("pre_item_id") or ""), str(w.get("post_item_id") or "")))
+            rows = sorted(
+                buckets[(unit, season)],
+                key=lambda w: (w["date_local"], str(w.get("pre_item_id") or ""), str(w.get("post_item_id") or "")),
+            )
             if len(rows) != 6:
                 raise ValueError(f"Expected six frozen selected windows in {unit}/{season}, got {len(rows)}")
 
@@ -190,7 +188,7 @@ def main() -> int:
                 selected_ids_across_shards.append(window_sha)
                 if w["sar_execution_status"] == COMPATIBLE:
                     compatible_count += 1
-                    compatible_ids_across_shards.append(window_sha)
+                    compatible_window_ids_across_shards.append(window_sha)
                 else:
                     missing_count += 1
 
@@ -208,7 +206,7 @@ def main() -> int:
                 "season_id": season,
                 "projection": rows[0]["projection"],
                 "selected_window_count": len(rows),
-                "compatible_pair_count": compatible_count,
+                "compatible_pair_window_count": compatible_count,
                 "missing_compatible_pair_count": missing_count,
                 "execution_order": "DATE_LOCAL_ASCENDING_FOR_STABLE_COMPUTE_ONLY_NO_SCIENTIFIC_PRIORITY",
                 "partition_assignment_fields": ["unit_id", "season_id"],
@@ -224,14 +222,14 @@ def main() -> int:
         raise ValueError(f"Expected 18 shards, got {len(shards)}")
     if len(selected_ids_across_shards) != 108 or len(set(selected_ids_across_shards)) != 108:
         raise ValueError("Every selected window must appear exactly once across shards")
-    if len(compatible_ids_across_shards) != 104 or len(set(compatible_ids_across_shards)) != 104:
-        raise ValueError("Every compatible pair window must appear exactly once across shards")
+    if len(compatible_window_ids_across_shards) != 104 or len(set(compatible_window_ids_across_shards)) != 104:
+        raise ValueError("Every compatible-pair window must appear exactly once across shards")
 
     partition_identity_payload = [{
         "shard_id": s["shard_id"],
         "shard_identity_sha256": s["shard_identity_sha256"],
         "selected_window_count": s["selected_window_count"],
-        "compatible_pair_count": s["compatible_pair_count"],
+        "compatible_pair_window_count": s["compatible_pair_window_count"],
         "missing_compatible_pair_count": s["missing_compatible_pair_count"],
     } for s in shards]
 
@@ -266,7 +264,7 @@ def main() -> int:
         "season_count": len(SEASONS),
         "seasons": list(SEASONS),
         "selected_window_count": 108,
-        "compatible_pair_count": 104,
+        "compatible_pair_window_count": 104,
         "missing_compatible_pair_count": 4,
         "all_selected_windows_covered_exactly_once": True,
         "all_compatible_pair_windows_covered_exactly_once": True,
@@ -295,7 +293,7 @@ def main() -> int:
         "status": report["status"],
         "partition_count": report["partition_count"],
         "selected_window_count": report["selected_window_count"],
-        "compatible_pair_count": report["compatible_pair_count"],
+        "compatible_pair_window_count": report["compatible_pair_window_count"],
         "missing_compatible_pair_count": report["missing_compatible_pair_count"],
         "track_compatible_pair_counts": report["track_compatible_pair_counts"],
         "track_missing_pair_counts": report["track_missing_pair_counts"],
