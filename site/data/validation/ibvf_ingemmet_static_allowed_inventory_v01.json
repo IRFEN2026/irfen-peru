@@ -1,0 +1,103 @@
+{
+  "schema_version": "irfen-ibvf-ingemmet-static-allowed-inventory-v0.1",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "source_contract": "site/data/validation/ibvf_ingemmet_source_contract_v01.json",
+  "outcome_fields_persisted": false,
+  "event_dates_persisted": false,
+  "damage_fields_persisted": false,
+  "documents": [
+    {
+      "source_id": "INGEMMET_HOSTED_MPR_VOL3_STATIC_PEDREGAL",
+      "unit_id": "pedregal",
+      "url": "https://app.ingemmet.gob.pe/biblioteca/pdf/MPR_Vol_3-Supporting_Report_I.pdf",
+      "source_role": "STATIC_GEOMORPHIC_SEARCH_CONSTRAINT",
+      "document_semantics": "MIXED_DOCUMENT_STATIC_FIELDS_ONLY",
+      "allowed_sections": [
+        "Qda. Pedregal - Geological Condition",
+        "Qda. Pedregal - static basin/topographic descriptors only"
+      ],
+      "allowed_static_fields": {
+        "reference_catchment_area_km2": 10.0,
+        "reference_elevation_high_m": 2300,
+        "reference_elevation_low_m": 850,
+        "rock_domain": "PLUTONIC_ROCKS_MULTIPLE_FACIES",
+        "weathering": "REMARKABLE_UNSTABLE_ROCK_BLOCKS_WIDESPREAD"
+      },
+      "use_restriction": "AREA_AND_TOPOGRAPHY_ARE_SEARCH_CONSTRAINTS_NOT_STANDALONE_VALIDATION"
+    },
+    {
+      "source_id": "INGEMMET_HOSTED_MPR_VOL2_PEDREGAL_LAYOUT",
+      "unit_id": "pedregal",
+      "url": "https://app.ingemmet.gob.pe/biblioteca/pdf/MPR_Vol_2-Main_Report.pdf",
+      "source_role": "STATIC_CHANNEL_AND_CATCHMENT_ALIGNMENT",
+      "document_semantics": "MIXED_DOCUMENT_STATIC_FIGURE_ONLY",
+      "allowed_sections": [
+        "Fig. IV-5-9 Alignment of Channel and General Layout of Structures in Qda Pedregal"
+      ],
+      "allowed_static_fields": {
+        "contains_catchment_boundary": true,
+        "contains_channel_alignment": true,
+        "contains_contours": true,
+        "contains_rimac_connection": true
+      },
+      "use_restriction": "FIGURE_GEOMETRY_MAY_VALIDATE_ALIGNMENT_ONLY_AFTER_REPRODUCIBLE_GEOREFERENCE_OR_INDEPENDENT_COORDINATE_CHECK"
+    },
+    {
+      "source_id": "INGEMMET_HOSTED_MPR_VOL3_STATIC_CASHAHUACRA",
+      "unit_id": "cashahuacra",
+      "url": "https://app.ingemmet.gob.pe/biblioteca/pdf/MPR_Vol_3-Supporting_Report_I.pdf",
+      "source_role": "STATIC_ANCHOR_GEOMORPHIC_CROSSCHECK",
+      "document_semantics": "MIXED_DOCUMENT_STATIC_SECTION_ONLY",
+      "allowed_sections": [
+        "3.8 Qda. Cashahuacra - Geological Condition",
+        "3.8 Qda. Cashahuacra - Topographic Condition"
+      ],
+      "allowed_static_fields": {
+        "reference_catchment_area_km2": 15.1,
+        "reference_elevation_high_m": 2600,
+        "reference_elevation_low_m": 980,
+        "old_debris_flow_deposit_present": true,
+        "fan_deposit_present": true
+      },
+      "use_restriction": "STATIC_CROSSCHECK_ONLY_NO_EVENT_INTERPRETATION"
+    },
+    {
+      "source_id": "INGEMMET_HOSTED_JICAMARCA_HUAYCOLORO_GEOLOGY",
+      "unit_id": "huaycoloro",
+      "url": "https://app.ingemmet.gob.pe/biblioteca/pdf/RFIGMMG-38-47.pdf",
+      "source_role": "STATIC_GEOLOGY_GEOMORPHOLOGY_CONTEXT",
+      "document_semantics": "MIXED_DOCUMENT_STATIC_SECTIONS_ONLY",
+      "allowed_sections": [
+        "1.1 Area de estudio",
+        "2.1 Metodologia",
+        "3.2 Geomorfologia de la zona",
+        "3.3 Geologia"
+      ],
+      "allowed_static_fields": {
+        "local_mapping_scale": "1:10000",
+        "huaycoloro_included_as_subbasin": true,
+        "field_campaigns_for_huaycoloro": 2,
+        "dominant_regional_rock": "GRANODIORITIC_AND_TONALITIC_BATHOLITH",
+        "alluvial_fan_landforms_present": true
+      },
+      "use_restriction": "NO_EVENT_HISTORY_OR_EVENT_MAGNITUDE_FIELDS_IMPORTED"
+    }
+  ],
+  "coverage": {
+    "pedregal": "PRIMARY_STATIC_CONSTRAINTS_AVAILABLE",
+    "cashahuacra": "PRIMARY_STATIC_CROSSCHECK_AVAILABLE",
+    "huaycoloro": "PRIMARY_STATIC_CONTEXT_AVAILABLE",
+    "shingolay": "NO_PRIMARY_INGEMMET_STATIC_DOCUMENT_FROZEN_YET",
+    "san_ildefonso": "NO_PRIMARY_INGEMMET_REPOSITORY_DOCUMENT_FROZEN_YET"
+  },
+  "next_action": "RUN_PEDREGAL_STATIC_GEOMETRY_GATE_THEN_RECONSTRUCT_FULL_UPSTREAM_BASIN_FROM_EXISTING_FROZEN_DEM_WITHOUT_OUTCOME_INPUTS",
+  "modeling_allowed": false,
+  "unblind_allowed": false
+}
