@@ -1,0 +1,81 @@
+name: IBVF - PRIMARY6 Sentinel-1 R2 entry freeze 2015-2016
+
+on:
+  push:
+    branches: [agent/independent-basin-validation-map]
+    paths:
+      - '.github/workflows/ibvf-primary6-sentinel1-r2-entry-2015-2016.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ibvf-primary6-sentinel1-r2-entry-2015-2016
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  freeze-r2-entry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile metadata-only R2 entry freezer
+        run: python -m py_compile scripts/ibvf_primary6_sentinel1_r2_entry_freeze.py
+      - name: Freeze exact 2015-2016 R1 to R2 handoff
+        run: |
+          mkdir -p artifacts/ibvf
+          python scripts/ibvf_primary6_sentinel1_r2_entry_freeze.py \
+            --partition site/data/validation/ibvf_primary6_sentinel1_execution_partition_v01.json \
+            --handoff-contract site/data/validation/ibvf_primary6_sentinel1_r2_handoff_contract_v01.json \
+            --validation-root site/data/validation \
+            --season-id 2015-2016 \
+            --output artifacts/ibvf/ibvf_primary6_sentinel1_r2_entry_2015_2016_v01.json
+      - name: Fail-closed scientific guards
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/ibvf/ibvf_primary6_sentinel1_r2_entry_2015_2016_v01.json',encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY' and d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False and d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          assert d['season_id']=='2015-2016'
+          assert d['compatible_windows_expected']==18 and d['compatible_windows_r2_entry_ready']==18
+          assert d['modern_exact_partition_bindings']==18 and d['legacy_pilot_bridges']==0
+          assert d['missing_windows_expected']==0 and d['missing_windows_preserved']==0
+          assert d['all_compatible_r1_identities_match_partition_or_prepartition_blind_bridge'] is True
+          assert d['r2_execution_performed'] is False and d['r2_science_pixels_read'] is False
+          assert d['r3_common_support_computed'] is False and d['r4_features_computed'] is False
+          assert d['territorial_outcomes_read'] is False and d['known_event_dates_read'] is False
+          assert d['case_control_assignment_performed'] is False
+          assert d['activation_inference_allowed'] is False and d['modeling_allowed'] is False
+          assert d['status']=='PASS_ALL_COMPATIBLE_R1_WINDOWS_BOUND_TO_FROZEN_R2_GRAPH_FAMILY_EXECUTION_NOT_RUN'
+          statuses=[x['r2_entry_status'] for x in d['entries']]
+          assert statuses.count('PASS_R2_ENTRY_IDENTITY_FROZEN_EXECUTION_NOT_RUN')==18
+          bindings=[x.get('r1_partition_binding_mode') for x in d['entries']]
+          assert bindings.count('MODERN_EXACT_PARTITION_AND_WINDOW_HASH_BINDING')==18
+          print({'status':d['status'],'ready':18,'modern':18,'legacy_bridge':0,'missing':0,'identity':d['r2_entry_identity_sha256']})
+          PY
+      - name: Archive frozen R2 entry manifest only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git pull --rebase origin agent/independent-basin-validation-map
+          cp artifacts/ibvf/ibvf_primary6_sentinel1_r2_entry_2015_2016_v01.json site/data/validation/ibvf_primary6_sentinel1_r2_entry_2015_2016_v01.json
+          git add site/data/validation/ibvf_primary6_sentinel1_r2_entry_2015_2016_v01.json
+          git commit -m 'IBVF: archive 2015-2016 PRIMARY6 R2 entry freeze'
+          git push origin HEAD:agent/independent-basin-validation-map
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ibvf-primary6-sentinel1-r2-entry-2015-2016-${{ github.sha }}
+          path: artifacts/ibvf/ibvf_primary6_sentinel1_r2_entry_2015_2016_v01.json
+          if-no-files-found: warn
+          retention-days: 30
