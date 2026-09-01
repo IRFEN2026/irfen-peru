@@ -230,12 +230,14 @@ def main() -> int:
     identity = frozen_util.compatible_identity(pre_item, post_item)
     if identity.get("compatible") is not True:
         raise ValueError("preassigned compatible pair failed independent identity check")
-    pident = pw.get("pair_identity") or {}
+    pident = pw.get("pair_identity")
     pp = pre_item.get("properties") or {}
-    assert pident.get("platform") == pp.get("platform")
-    assert pident.get("instrument_mode") == pp.get("sar:instrument_mode")
-    assert pident.get("orbit_state") == pp.get("sat:orbit_state")
-    assert pident.get("relative_orbit") == pp.get("sat:relative_orbit")
+    partition_pair_identity_metadata_present = isinstance(pident, dict) and bool(pident)
+    if partition_pair_identity_metadata_present:
+        assert pident.get("platform") == pp.get("platform")
+        assert pident.get("instrument_mode") == pp.get("sar:instrument_mode")
+        assert pident.get("orbit_state") == pp.get("sat:orbit_state")
+        assert pident.get("relative_orbit") == pp.get("sat:relative_orbit")
 
     bbox = r1.basin_bbox(args.basin)
     case_id = f"primary6_{args.unit}_{args.date_local}"
@@ -270,6 +272,8 @@ def main() -> int:
             "selected_target_order": cw.get("selected_target_order"),
             "pair_rule": pair,
             "independent_pair_identity_check": identity,
+            "partition_pair_identity_metadata_present": partition_pair_identity_metadata_present,
+            "pair_identity_validation_basis": "EXACT_PRE_POST_ITEM_IDS_PLUS_SELECTED_A1_PAIR_RULE_PLUS_INDEPENDENT_STAC_COMPATIBILITY; PARTITION_METADATA_CHECKED_IF_PRESENT",
             "asset_keys_frozen": ALL_ASSET_KEYS,
             "all_assets_downloaded_at_most_once": True,
             "cached_bytes_reused_for_r1": True,
