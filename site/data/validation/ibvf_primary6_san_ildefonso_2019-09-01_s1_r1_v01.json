@@ -1,0 +1,218 @@
+{
+  "schema_version": "irfen-ibvf-sentinel1-a4-r1-v0.1",
+  "generated_at": "2026-09-01T14:20:25.081716Z",
+  "case_id": "primary6_san_ildefonso_2019-09-01",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_UNTIL_PRIMARY6_A5_FREEZE_AND_ANTI_LEAKAGE_AUDIT",
+  "stage": "A4_R1_NATIVE_RADIOMETRIC",
+  "source_freeze_sha256": "acb357583c64c5b119610fe78801ddc001956d69af29eee9768e6c6f2c266c61",
+  "source_partition_identity_sha256": "e608e85265fe0dab1649cbdc23511725a8b7e19f4651e95abd766e28a0d78405",
+  "source_window_execution_identity_sha256": "a117968fc2641523351e9eadee6e15ffc4e24d9a6a749cc30edc1243737b0a95",
+  "basin_geometry_sha256": "2401658d19ba0f5bc99572a3f94f739ad8fa13acf876d09eb348ecf7f5213e23",
+  "basin_bbox_lonlat": [
+    -79.03333333333333,
+    -8.0925,
+    -78.95333333333333,
+    -8.014166666666666
+  ],
+  "radiometric_equation": "sigma0_linear=(DN^2-noise_range_lut)/(sigmaNought_calibration_lut^2)",
+  "invalid_signal_rule": "DN^2-noise<=0 -> INVALID_NAN_NEVER_ZERO",
+  "single_download_cache_mode": true,
+  "comparison_performed": false,
+  "terrain_correction_performed": false,
+  "common_support_established": false,
+  "interpretation_forbidden": true,
+  "pre": {
+    "side": "pre",
+    "item_id": "S1B_IW_GRDH_1SDV_20190823T233429_20190823T233454_017719_021566",
+    "datetime": "2019-08-23T23:34:41.626780Z",
+    "platform": "sentinel-1b",
+    "relative_orbit": 18,
+    "orbit_state": "ascending",
+    "instrument_mode": "IW",
+    "polarizations": [
+      "VV",
+      "VH"
+    ],
+    "status": "R1_NATIVE_RADIOMETRIC_COMPLETE",
+    "assets_verified": {
+      "schema-calibration-vv": {
+        "transport_status": "SUCCESS",
+        "bytes": 1017967,
+        "sha256": "e6fb390cb14361bef2b19833e6a3838327d773ae666cdf5b918e1ca16aefa48c",
+        "resolved_url": "https://sentinel-s1-l1c.s3.amazonaws.com/GRD/2019/8/23/IW/DV/S1B_IW_GRDH_1SDV_20190823T233429_20190823T233454_017719_021566_A33F/annotation/calibration/calibration-iw-vv.xml",
+        "download_count": 1,
+        "cache_reused_for_r1": true
+      },
+      "schema-noise-vv": {
+        "transport_status": "SUCCESS",
+        "bytes": 415601,
+        "sha256": "b672c308b4f506ff899f0c7979f871f306149a276f8a99f6a35f54f3d5b67b70",
+        "resolved_url": "https://sentinel-s1-l1c.s3.amazonaws.com/GRD/2019/8/23/IW/DV/S1B_IW_GRDH_1SDV_20190823T233429_20190823T233454_017719_021566_A33F/annotation/calibration/noise-iw-vv.xml",
+        "download_count": 1,
+        "cache_reused_for_r1": true
+      },
+      "schema-product-vv": {
+        "transport_status": "SUCCESS",
+        "bytes": 1690087,
+        "sha256": "a6e8cadaa35f2289937da00d61af9332b4a43fde67ea3a9425cfb858cbc380db",
+        "resolved_url": "https://sentinel-s1-l1c.s3.amazonaws.com/GRD/2019/8/23/IW/DV/S1B_IW_GRDH_1SDV_20190823T233429_20190823T233454_017719_021566_A33F/annotation/iw-vv.xml",
+        "download_count": 1,
+        "cache_reused_for_r1": true
+      },
+      "vv": {
+        "transport_status": "SUCCESS",
+        "bytes": 720499140,
+        "sha256": "8e7d8bd963774b0e05ff566ee5e6bb8cf869abebba8546dbe13c0d7724f85864",
+        "resolved_url": "https://sentinel-s1-l1c.s3.amazonaws.com/GRD/2019/8/23/IW/DV/S1B_IW_GRDH_1SDV_20190823T233429_20190823T233454_017719_021566_A33F/measurement/iw-vv.tiff",
+        "download_count": 1,
+        "cache_reused_for_r1": true
+      }
+    },
+    "diagnostics": {
+      "native_measurement_shape": {
+        "height": 16838,
+        "width": 25904,
+        "dtype": "uint16"
+      },
+      "native_window": {
+        "rule": "NEAREST_GEOLOCATION_POINT_TO_BBOX_CORNERS_AND_CENTER_FALLBACK",
+        "margin_deg": 0.03,
+        "padding_px": 512,
+        "geolocation_points_used": 5,
+        "col_off": 0,
+        "row_off": 9593,
+        "width": 1809,
+        "height": 3046
+      },
+      "noise_schema": "noiseRangeVector",
+      "calibration_vector_count": 27,
+      "noise_vector_count": 26,
+      "pixel_count_total": 5510214,
+      "pixel_count_valid_sigma0": 4841379,
+      "valid_sigma0_fraction": 0.8786190518190401,
+      "zero_dn_fraction": 0.120896212016448,
+      "nonpositive_noise_corrected_signal_fraction": 0.12138094818095994,
+      "sigma0_linear_quantiles": {
+        "p05": 0.013534905761480332,
+        "p25": 0.04057422839105129,
+        "median": 0.08146560192108154,
+        "p75": 0.16241534799337387,
+        "p95": 0.6590001463890061
+      },
+      "sigma0_db_quantiles": {
+        "p05": -18.685447637140587,
+        "p25": -13.91749730496062,
+        "median": -10.890257292885167,
+        "p75": -7.8937293301431355,
+        "p95": -1.811144889333903
+      },
+      "diagnostic_semantics": "NATIVE_GEOMETRY_SINGLE_DATE_DIAGNOSTIC_NOT_PRE_POST_COMPARABLE",
+      "common_support_established": false,
+      "terrain_correction_performed": false
+    }
+  },
+  "post": {
+    "side": "post",
+    "item_id": "S1B_IW_GRDH_1SDV_20190904T233429_20190904T233454_017894_021AD1",
+    "datetime": "2019-09-04T23:34:42.260961Z",
+    "platform": "sentinel-1b",
+    "relative_orbit": 18,
+    "orbit_state": "ascending",
+    "instrument_mode": "IW",
+    "polarizations": [
+      "VV",
+      "VH"
+    ],
+    "status": "R1_NATIVE_RADIOMETRIC_COMPLETE",
+    "assets_verified": {
+      "schema-calibration-vv": {
+        "transport_status": "SUCCESS",
+        "bytes": 1017967,
+        "sha256": "39572011112317b94aa44d4399397f6c8cd2361e3971f96665766bef580e989e",
+        "resolved_url": "https://sentinel-s1-l1c.s3.amazonaws.com/GRD/2019/9/4/IW/DV/S1B_IW_GRDH_1SDV_20190904T233429_20190904T233454_017894_021AD1_2EEC/annotation/calibration/calibration-iw-vv.xml",
+        "download_count": 1,
+        "cache_reused_for_r1": true
+      },
+      "schema-noise-vv": {
+        "transport_status": "SUCCESS",
+        "bytes": 415618,
+        "sha256": "131a153c5a3d2e4b16cce032d3e02e67e95c929c61bb076cb7c5b14f6c0dbc77",
+        "resolved_url": "https://sentinel-s1-l1c.s3.amazonaws.com/GRD/2019/9/4/IW/DV/S1B_IW_GRDH_1SDV_20190904T233429_20190904T233454_017894_021AD1_2EEC/annotation/calibration/noise-iw-vv.xml",
+        "download_count": 1,
+        "cache_reused_for_r1": true
+      },
+      "schema-product-vv": {
+        "transport_status": "SUCCESS",
+        "bytes": 1690002,
+        "sha256": "6b55c7d0a867f05c6d820dfb7f039e94dec4c83902ee9b3b79919910fd402536",
+        "resolved_url": "https://sentinel-s1-l1c.s3.amazonaws.com/GRD/2019/9/4/IW/DV/S1B_IW_GRDH_1SDV_20190904T233429_20190904T233454_017894_021AD1_2EEC/annotation/iw-vv.xml",
+        "download_count": 1,
+        "cache_reused_for_r1": true
+      },
+      "vv": {
+        "transport_status": "SUCCESS",
+        "bytes": 720470957,
+        "sha256": "6195098335a434e9d33ec84ed0ee48b8c9a1b2ce5e72767c3b074a9a81e57ea6",
+        "resolved_url": "https://sentinel-s1-l1c.s3.amazonaws.com/GRD/2019/9/4/IW/DV/S1B_IW_GRDH_1SDV_20190904T233429_20190904T233454_017894_021AD1_2EEC/measurement/iw-vv.tiff",
+        "download_count": 1,
+        "cache_reused_for_r1": true
+      }
+    },
+    "diagnostics": {
+      "native_measurement_shape": {
+        "height": 16838,
+        "width": 25904,
+        "dtype": "uint16"
+      },
+      "native_window": {
+        "rule": "NEAREST_GEOLOCATION_POINT_TO_BBOX_CORNERS_AND_CENTER_FALLBACK",
+        "margin_deg": 0.03,
+        "padding_px": 512,
+        "geolocation_points_used": 5,
+        "col_off": 0,
+        "row_off": 9593,
+        "width": 1809,
+        "height": 3046
+      },
+      "noise_schema": "noiseRangeVector",
+      "calibration_vector_count": 27,
+      "noise_vector_count": 26,
+      "pixel_count_total": 5510214,
+      "pixel_count_valid_sigma0": 4839909,
+      "valid_sigma0_fraction": 0.8783522745214614,
+      "zero_dn_fraction": 0.12091526753770361,
+      "nonpositive_noise_corrected_signal_fraction": 0.12164772547853858,
+      "sigma0_linear_quantiles": {
+        "p05": 0.012838483601808549,
+        "p25": 0.039524588733911514,
+        "median": 0.07991787791252136,
+        "p75": 0.16010111570358276,
+        "p95": 0.6511536717414846
+      },
+      "sigma0_db_quantiles": {
+        "p05": -18.91486269277914,
+        "p25": -14.031326403463433,
+        "median": -10.973560566028688,
+        "p75": -7.9560564158337925,
+        "p95": -1.863165061890188
+      },
+      "diagnostic_semantics": "NATIVE_GEOMETRY_SINGLE_DATE_DIAGNOSTIC_NOT_PRE_POST_COMPARABLE",
+      "common_support_established": false,
+      "terrain_correction_performed": false
+    }
+  },
+  "r1_status": "COMPLETE_BOTH_DATES_NO_COMPARISON",
+  "next_stage": "A4_R2_TERRAIN_GEOMETRIC_CORRECTION_COMMON_GRID_PREREGISTERED_BEFORE_DIFFERENCES",
+  "territorial_outcomes_read": false,
+  "known_event_dates_read": false,
+  "case_control_assignment_performed": false,
+  "activation_inference_allowed": false,
+  "modeling_allowed": false
+}
