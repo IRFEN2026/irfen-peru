@@ -1,0 +1,80 @@
+{
+  "schema_version": "irfen-ibvf-primary6-sentinel1-r2-handoff-contract-v0.1",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "purpose": "Freeze the fail-closed handoff from exact PRIMARY6 R1 windows into the already-audited R2 terrain-correction graph family before bulk R2 science values are computed.",
+  "decision_timing": {
+    "registered_before_primary6_bulk_r2_values": true,
+    "registered_before_primary6_bulk_r4_values": true,
+    "registered_before_a5_primary6_freeze": true,
+    "registered_before_territorial_unblind": true,
+    "territorial_outcomes_read": false,
+    "known_event_dates_read": false,
+    "sar_change_magnitude_read_for_contract": false,
+    "rainfall_values_read_for_contract": false
+  },
+  "source_execution_partition": "site/data/validation/ibvf_primary6_sentinel1_execution_partition_v01.json",
+  "source_partition_identity_sha256": "e608e85265fe0dab1649cbdc23511725a8b7e19f4651e95abd766e28a0d78405",
+  "source_projection_amendment": "site/data/validation/ibvf_primary6_sentinel1_r2_projection_amendment_v01.json",
+  "source_projection_amendment_git_blob_sha": "b337189764083a9599ee7242980c2037ee9b078c",
+  "source_graph_family_audit": "site/data/validation/ibvf_primary6_s1_r2_graph_family_audit_v01.json",
+  "source_graph_family_audit_git_blob_sha": "4fe3b73570bed7a39442fb2ead1de1141c15c0c3",
+  "r2_entry_gate": {
+    "window_must_exist_in_execution_partition": true,
+    "window_must_be_compatible_pair": true,
+    "r1_artifact_must_exist": true,
+    "r1_status_required": "COMPLETE_BOTH_DATES_NO_COMPARISON",
+    "r1_comparison_performed_required": false,
+    "selected_window_identity_must_match_partition": true,
+    "pre_post_item_ids_must_match_partition": true,
+    "missing_compatible_pair_windows_execute_r2": false,
+    "missing_compatible_pair_windows_remain_missing": true,
+    "replacement_window_allowed": false,
+    "compatible_pair_reselection_allowed": false,
+    "missing_pair_imputation_allowed": false
+  },
+  "r2_graph_family": {
+    "zone18_graph": "site/data/validation/cashahuacra_sentinel1_r2_graph.xml",
+    "zone18_graph_sha256": "529491a9e7e431788bda202e2e1f87a342835d6f1d3d3ec1dd88ec01f400b8e2",
+    "zone17_graph": "site/data/validation/ibvf_primary6_s1_r2_graph_utm17s.xml",
+    "zone17_graph_sha256": "9bc7cf581efdc9c0be29fbc3b789604c37d548fb95dd3288d1477b68d53b5a96",
+    "normalized_graphs_identical": true,
+    "allowed_difference": "GRAPH_ID_AND_MAP_PROJECTION_ONLY",
+    "track_projection": {
+      "huaycoloro": "EPSG:32718",
+      "shingolay": "EPSG:32718",
+      "san_ildefonso": "EPSG:32717"
+    },
+    "operator_chain": [
+      "ThermalNoiseRemoval",
+      "Apply-Orbit-File",
+      "Calibration_Beta0_VV",
+      "Terrain-Flattening_Gamma0_VV",
+      "Range-Doppler_Terrain-Correction"
+    ],
+    "pixel_spacing_m": 10.0,
+    "align_to_standard_grid": true,
+    "standard_grid_origin_x": 0.0,
+    "standard_grid_origin_y": 0.0,
+    "speckle_filter": "NONE",
+    "per_window_projection_tuning_allowed": false,
+    "per_window_parameter_tuning_allowed": false,
+    "outcome_aware_parameter_tuning_allowed": false
+  },
+  "post_r2_gate": {
+    "r3_required_before_r4": true,
+    "r3_minimum_common_support": 0.95,
+    "r4_only_on_common_support_pass": true,
+    "r4_feature_schema_may_not_change_after_r2": true
+  },
+  "science_pixels_read_to_create_contract": false,
+  "case_control_assignment_performed": false,
+  "activation_inference_allowed": false,
+  "modeling_allowed": false
+}
