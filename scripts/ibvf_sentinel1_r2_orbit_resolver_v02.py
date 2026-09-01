@@ -7,6 +7,7 @@ known event dates, territorial outcomes, or case/control roles are read.
 """
 from __future__ import annotations
 
+import hashlib
 import re
 import zipfile
 from datetime import datetime, timezone
@@ -115,11 +116,21 @@ def freeze_orbit(root: str, acquisition: str, side: str, tmp: Path) -> dict:
 
     try:
         with zipfile.ZipFile(zpath) as z:
-            members = [n for n in z.namelist() if n.upper().endswith(".EOF")]
-            if len(members) != 1:
-                raise ValueError(f"expected one EOF member, got {members}")
+            members = sorted(n for n in z.namelist() if n.upper().endswith(".EOF"))
+            if not members:
+                raise ValueError("expected at least one EOF member, got none")
+            payloads = [(n, z.read(n)) for n in members]
+            payload_hashes = {hashlib.sha256(b).hexdigest() for _, b in payloads}
+            if len(payload_hashes) != 1:
+                raise ValueError(f"multiple EOF members differ by payload hash: {members}")
+            # STEP may duplicate the same EOF bytes at ZIP root and under a web-root path.
+            # Treat that strictly as archive layout only: identical bytes are accepted;
+            # differing bytes remain an integrity block. A deterministic member is recorded.
+            root_members = [n for n, _ in payloads if "/" not in n]
+            chosen_member = sorted(root_members or members)[0]
+            chosen_payload = next(b for n, b in payloads if n == chosen_member)
             eof_path = tmp / f"{side}.EOF"
-            eof_path.write_bytes(z.read(members[0]))
+            eof_path.write_bytes(chosen_payload)
         eof_sha, eof_bytes = sha_file(eof_path)
         text = eof_path.read_text(encoding="utf-8", errors="replace")
         product_ok = "AUX_POEORB" in text or "AUX_POEORB" in chosen["name"]
@@ -136,7 +147,9 @@ def freeze_orbit(root: str, acquisition: str, side: str, tmp: Path) -> dict:
             "validity_stop": iv[1].isoformat(),
             "zip_sha256": dl["sha256"],
             "zip_bytes": dl["bytes"],
-            "inner_eof_member": members[0],
+            "inner_eof_member": chosen_member,
+            "inner_eof_member_count": len(members),
+            "inner_eof_duplicate_payloads_identical": len(members) > 1,
             "inner_eof_sha256": eof_sha,
             "inner_eof_bytes": eof_bytes,
             "product_class_aux_poeorb_confirmed": product_ok,
