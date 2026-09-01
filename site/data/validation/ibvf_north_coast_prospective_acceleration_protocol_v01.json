@@ -1,0 +1,119 @@
+{
+  "schema_version": "irfen-ibvf-north-coast-prospective-acceleration-v0.1",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "status": "FROZEN_BEFORE_TERRITORIAL_UNBLIND_AND_BEFORE_2026_2027_RAINY_SEASON",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "purpose": "Maximize readiness before the 2026-2027 north-coast rainy season by parallelizing and deferring non-critical work without weakening blind scientific validity.",
+  "primary6_contract_unchanged": true,
+  "primary6_must_complete_before_first_territorial_unblind": true,
+  "full12_robustness_deferred_from_critical_path": true,
+  "serious_modeling_deferred": true,
+  "machine_learning_deferred": true,
+  "smAP_required_for_readiness": false,
+  "missing_data_rule": "MISSING_OR_UNKNOWN_NEVER_ZERO_NEVER_IMPUTED_FOR_READINESS",
+  "optical_policy": {
+    "landsat_remains_in_framework": true,
+    "clean_numeric_optical_feature_required_for_every_window": false,
+    "if_preregistered_optical_pair_or_feature_is_unavailable": "RETAIN_EXPLICIT_UNKNOWN_AND_CONTINUE_OTHER_MODALITIES",
+    "no_replacement_by_outcome_or_sensor_response": true
+  },
+  "geometry_policy": {
+    "a2_required_for_scientific_track_entry": true,
+    "preferred_sources": [
+      "official_or_institutional_basin_or_channel_geometry",
+      "preexisting_reproducible_dem_d8_geometry",
+      "pre-event_static_institutional_coordinates_with_reproducible_delineation"
+    ],
+    "ambiguous_geometry_action": "KEEP_UNKNOWN_AND_DO_NOT_BLOCK_OTHER_BASINS",
+    "outcome_based_outlet_optimization_forbidden": true,
+    "historical_damage_or_activation_evidence_cannot_select_geometry": true
+  },
+  "readiness_rings": {
+    "RING1_NOVEMBER_READY": {
+      "target_count_range": [10, 15],
+      "geographic_priority": "NORTH_COAST_FIRST",
+      "required_before_prospective_freeze": [
+        "A2_GEOMETRY_DEFENSIBLE_OR_FROZEN_RESEARCH_CANDIDATE",
+        "A3_REMOTE_METEOROLOGY_PIPELINE_READY",
+        "A1_SENSOR_AVAILABILITY_CONTRACT_READY",
+        "A4_REMOTE_SENSING_PIPELINE_READY_WITH_EXPLICIT_MISSINGNESS",
+        "A5_FEATURE_SCHEMA_FROZEN",
+        "ANTI_LEAKAGE_AUDIT_PASS"
+      ],
+      "operational_alerting_allowed": false,
+      "prospective_shadow_monitoring_allowed": true
+    },
+    "RING2_SHADOW_INSTRUMENTED": {
+      "target_cumulative_count": 40,
+      "required_before_rainy_season": [
+        "A2_GEOMETRY_DEFENSIBLE_OR_EXPLICIT_UNKNOWN",
+        "IMERG_PIPELINE_CONFIGURED",
+        "SENTINEL1_AND_LANDSAT_AVAILABILITY_DISCOVERY_CONFIGURED",
+        "OUTCOME_EVIDENCE_SEALED",
+        "NO_OPERATIONAL_ALERTING"
+      ],
+      "prospective_shadow_monitoring_allowed": true,
+      "scientific_activation_claim_allowed": false
+    },
+    "RING3_NATIONAL_CANDIDATE_POOL": {
+      "purpose": "Maintain broader coastal candidate inventory without delaying Ring 1 or Ring 2.",
+      "entry_does_not_imply_validation": true
+    }
+  },
+  "prospective_campaign": {
+    "campaign_id": "IBVF_NORTH_COAST_PROSPECTIVE_2026_2027",
+    "goal": "Freeze basin set, geometries, predictors, missingness handling, and decision rules before prospective rainy-season observation.",
+    "algorithm_changes_after_campaign_freeze": "FORBIDDEN_EXCEPT_DOCUMENTED_PURELY_TECHNICAL_FIXES_WITH_NO_SCIENTIFIC_RULE_CHANGE",
+    "territorial_outcomes_during_monitoring": "SEALED_FROM_PREDICTOR_PIPELINE_UNTIL_EVALUATION_CHECKPOINT",
+    "prospective_evaluation_targets": [
+      "true_positive_behavior",
+      "false_positive_behavior",
+      "false_negative_behavior",
+      "unknown_or_missing_behavior",
+      "cross-basin_transferability"
+    ]
+  },
+  "prioritization_contract_to_freeze_before_selecting_40": {
+    "allowed_dimensions": [
+      "human_exposure",
+      "population_or_asset_exposure",
+      "documented_historical_recurrence_as_priority_only_not_label",
+      "geometry_readiness",
+      "remote_sensor_availability",
+      "geographic_diversity"
+    ],
+    "forbidden_dimensions": [
+      "current_2026_2027_outcome",
+      "known_future_activation",
+      "post-selection_sensor_response",
+      "post-selection_rainfall_magnitude"
+    ],
+    "selection_must_be_frozen_before_prospective_outcomes": true
+  },
+  "critical_path": [
+    "COMPLETE_PRIMARY6_SENTINEL1_R1_R4",
+    "ASSEMBLE_PRIMARY6_A5",
+    "RUN_PRIMARY6_ANTI_LEAKAGE_AUDIT",
+    "FIRST_TERRITORIAL_UNBLIND_AND_HYPOTHESIS_TEST",
+    "FREEZE_40_BASIN_PRIORITY_COHORT_WITH_RING_ASSIGNMENT",
+    "BULK_A2_A1_PIPELINE_CONFIGURATION",
+    "FREEZE_PROSPECTIVE_CAMPAIGN_BEFORE_RAINY_SEASON"
+  ],
+  "explicitly_not_on_critical_path": [
+    "FULL12_ROBUSTNESS",
+    "SMAP_COMPLETENESS",
+    "PERFECT_OPTICAL_COVERAGE_FOR_EVERY_WINDOW",
+    "PEDREGAL_RESOLUTION_IF_STILL_AMBIGUOUS",
+    "MACHINE_LEARNING_OR_COMPLEX_MODEL_OPTIMIZATION",
+    "INSTITUTIONAL_PRODUCTION_APPROVAL"
+  ],
+  "activation_inference_allowed_now": false,
+  "modeling_allowed_now": false,
+  "production_promotion_allowed": false
+}
