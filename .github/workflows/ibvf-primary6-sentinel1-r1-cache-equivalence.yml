@@ -5,6 +5,7 @@ on:
     branches: [agent/independent-basin-validation-map]
     paths:
       - 'scripts/ibvf_sentinel1_r1_cache_equivalence.py'
+      - 'scripts/ibvf_sentinel1_r1_cache_numeric_audit.py'
       - '.github/workflows/ibvf-primary6-sentinel1-r1-cache-equivalence.yml'
   workflow_dispatch:
 
@@ -29,12 +30,12 @@ jobs:
           python-version: '3.12'
       - name: Install frozen R1 dependencies
         run: python -m pip install --disable-pip-version-check 'numpy>=1.26,<2' 'requests>=2.31,<3' 'rasterio>=1.3,<2'
-      - name: Compile unchanged R1 and cache-equivalence audit
-        run: python -m py_compile scripts/ibvf_sentinel1_r1_radiometric.py scripts/ibvf_sentinel1_r1_cache_equivalence.py
-      - name: Execute Huaycoloro frozen-pilot single-download equivalence
+      - name: Compile unchanged R1 and cache audits
+        run: python -m py_compile scripts/ibvf_sentinel1_r1_radiometric.py scripts/ibvf_sentinel1_r1_cache_equivalence.py scripts/ibvf_sentinel1_r1_cache_numeric_audit.py
+      - name: Execute Huaycoloro frozen-pilot single-download numeric audit
         run: |
           mkdir -p artifacts/ibvf/cache
-          python scripts/ibvf_sentinel1_r1_cache_equivalence.py \
+          python scripts/ibvf_sentinel1_r1_cache_numeric_audit.py \
             --freeze site/data/validation/ibvf_primary6_huaycoloro_s1_pilot_freeze_v01.json \
             --basin site/data/watersheds/huaycoloro_watershed.geojson \
             --reference-r1 site/data/validation/ibvf_primary6_huaycoloro_s1_r1_pilot_v01.json \
@@ -52,8 +53,9 @@ jobs:
           assert d['operational_alerting_enabled'] is False
           assert d['uses_operational_event_none_labels'] is False
           assert d['territorial_activation_evidence_blinded'] is True
-          assert d['equivalence_status']=='PASS_SINGLE_DOWNLOAD_CACHE_SCIENTIFICALLY_IDENTICAL_R1'
-          assert d['scientific_views_exactly_equal'] is True
+          assert d['equivalence_status']=='PASS_STRICT_NUMERIC_EQUIVALENCE'
+          assert d['difference_count_beyond_tolerance']==0
+          assert d['absolute_tolerance']==1e-10 and d['relative_tolerance']==1e-10
           assert d['assets_downloaded_once_per_side_and_key'] is True
           assert d['selected_window_changed'] is False
           assert d['compatible_pair_changed'] is False
@@ -67,7 +69,7 @@ jobs:
           assert d['case_control_assignment_performed'] is False
           assert d['activation_inference_allowed'] is False
           assert d['modeling_allowed'] is False
-          print('PASS_R1_SINGLE_DOWNLOAD_CACHE_EQUIVALENCE')
+          print('PASS_R1_SINGLE_DOWNLOAD_CACHE_STRICT_NUMERIC_EQUIVALENCE')
           PY
       - name: Upload audit evidence
         if: always()
@@ -102,18 +104,24 @@ jobs:
           ac['primary6_sentinel1_r1_cache_equivalence']={
               'status':eq['equivalence_status'],
               'case_id':eq['case_id'],
-              'scientific_view_sha256':eq['cached_scientific_view_sha256'],
+              'reference_scientific_view_sha256':eq['reference_scientific_view_sha256'],
+              'cached_scientific_view_sha256':eq['cached_scientific_view_sha256'],
+              'bitwise_json_equal':eq['scientific_views_bitwise_json_equal'],
+              'absolute_tolerance':eq['absolute_tolerance'],
+              'relative_tolerance':eq['relative_tolerance'],
+              'max_absolute_float_difference':eq['max_absolute_float_difference'],
+              'max_relative_float_difference':eq['max_relative_float_difference'],
+              'difference_count_beyond_tolerance':eq['difference_count_beyond_tolerance'],
               'assets_downloaded_once_per_side_and_key':eq['assets_downloaded_once_per_side_and_key'],
-              'scientific_views_exactly_equal':eq['scientific_views_exactly_equal'],
           }
-          ac['primary6_sentinel1_bulk_r1_execution_mode']='SINGLE_DOWNLOAD_SHA256_CACHE_VALIDATED_ON_FROZEN_HUAYCOLORO_PILOT; BULK_SHARDS_PENDING'
-          ac.setdefault('local_validation',{})['github_actions_primary6_sentinel1_r1_cache_equivalence']='PASS_SCIENTIFIC_DIAGNOSTICS_EXACTLY_EQUAL'
+          ac['primary6_sentinel1_bulk_r1_execution_mode']='SINGLE_DOWNLOAD_SHA256_CACHE_VALIDATED_WITH_FIXED_1E-10_MACHINE_NUMERIC_TOLERANCE_ON_FROZEN_HUAYCOLORO_PILOT; BULK_SHARDS_PENDING'
+          ac.setdefault('local_validation',{})['github_actions_primary6_sentinel1_r1_cache_equivalence']='PASS_STRICT_NUMERIC_EQUIVALENCE_NONNUMERIC_AND_INTEGER_EXACT'
           p.write_text(json.dumps(d,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
           PY
           git add site/data/validation/ibvf_primary6_sentinel1_r1_cache_equivalence_v01.json site/data/validation/independent_basin_validation_map.json
           if git diff --cached --quiet; then
             echo 'No branch freeze changes'
           else
-            git commit -m 'IBVF: freeze Sentinel-1 R1 cache equivalence'
+            git commit -m 'IBVF: freeze Sentinel-1 R1 cache numeric equivalence'
             git push origin HEAD:agent/independent-basin-validation-map
           fi
