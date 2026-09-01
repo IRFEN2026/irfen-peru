@@ -1,0 +1,81 @@
+{
+  "schema_version": "irfen-ibvf-primary6-sentinel1-poeorb-directory-scope-amendment-v0.1",
+  "generated_at": "2026-09-01T18:00:00Z",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_UNTIL_PRIMARY6_A5_FREEZE_AND_ANTI_LEAKAGE_AUDIT",
+  "scope": "PRIMARY6_SENTINEL1_R2_AUX_POEORB_DIRECTORY_INVENTORY_COMPLETENESS_ONLY",
+  "decision_timing": {
+    "made_before_primary6_bulk_r2_execution": true,
+    "made_before_primary6_r2_science_pixels_read": true,
+    "made_before_r3_common_support": true,
+    "made_before_r4_feature_computation": true,
+    "made_before_a5_freeze": true,
+    "made_before_territorial_unblind": true,
+    "sar_pre_post_response_read": false,
+    "rainfall_magnitudes_used": false,
+    "known_event_dates_used": false,
+    "territorial_outcomes_used": false,
+    "case_control_roles_used": false
+  },
+  "observed_metadata_only_failure": {
+    "acquisition_utc": "2017-09-01T10:38:49.332557Z",
+    "platform": "S1B",
+    "current_month_inventory": "2017/09",
+    "current_month_covering_candidate_count": 0,
+    "scientific_interpretation": "DIRECTORY_PARTITION_RETRIEVAL_SCOPE_MAY_BE_INCOMPLETE_AT_MONTH_BOUNDARY; NOT SAR MISSINGNESS AND NOT TERRITORIAL EVIDENCE"
+  },
+  "frozen_inventory_rule": {
+    "orbit_product_class": "AUX_POEORB",
+    "platform_must_match_frozen_scene": true,
+    "directory_month_offsets_from_acquisition_month": [-1, 0, 1],
+    "all_three_directory_inventories_required_successful": true,
+    "candidate_deduplication_key": "AUX_POEORB_FILENAME",
+    "candidate_requirement": "VALIDITY_START_LE_ACQUISITION_UTC_LE_VALIDITY_STOP",
+    "selection_rule_unchanged": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+    "download_selected_candidate_only": true,
+    "selected_zip_sha256_required": true,
+    "selected_inner_eof_sha256_required": true,
+    "same_rule_for_all_primary6_units_seasons_and_windows": true,
+    "per_case_tuning_allowed": false,
+    "replacement_window_allowed": false,
+    "sentinel_pair_reselection_allowed": false,
+    "missing_pair_imputation_allowed": false,
+    "if_any_directory_inventory_transport_fails": "BLOCK_R2_UNKNOWN_NOT_MISSING",
+    "if_zero_covering_candidates_after_complete_three_directory_inventory": "MISSING_PRECISE_ORBIT_RESOURCE"
+  },
+  "archive_layout_rule": {
+    "duplicate_eof_members_allowed_only_if_payload_sha256_identical": true,
+    "if_duplicate_eof_payloads_differ": "INTEGRITY_BLOCK_R2",
+    "scientific_interpretation": "ZIP_INTERNAL_PATH_DUPLICATION_IS_ARCHIVE_LAYOUT_ONLY_AND DOES_NOT ALTER SELECTED_ORBIT_BYTES"
+  },
+  "required_backward_identity_audit": {
+    "seasons": ["2015-2016", "2016-2017"],
+    "already_archived_compatible_windows": 34,
+    "require_selected_filename_exact": true,
+    "require_selected_creation_timestamp_exact": true,
+    "require_zip_sha256_exact": true,
+    "require_inner_eof_sha256_exact": true,
+    "if_identity_changes": "BLOCK_AND_REVIEW_GLOBAL_METADATA_ONLY_CORRECTION_BEFORE_ANY_R2_SCIENCE"
+  },
+  "supersedes": {
+    "directory_inventory_scope_only": "ACQUISITION_CALENDAR_MONTH_ONLY",
+    "poeorb_selection_rule_unchanged": true,
+    "all_other_r2_contract_elements_unchanged": true,
+    "r1_results_unchanged": true,
+    "selected_windows_unchanged": true,
+    "sentinel1_pairs_unchanged": true,
+    "r2_graphs_and_crs_unchanged": true,
+    "r3_support_threshold_unchanged": true,
+    "r4_feature_contract_unchanged": true
+  },
+  "activation_inference_allowed": false,
+  "modeling_allowed": false,
+  "status": "FROZEN_BEFORE_R2_SCIENCE_VALUES_GLOBAL_METADATA_ONLY_RETRIEVAL_SCOPE_CORRECTION"
+}
