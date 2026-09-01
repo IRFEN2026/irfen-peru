@@ -1,0 +1,102 @@
+name: IBVF - PRIMARY6 Sentinel-1 R2 prerequisites 2014-2015
+
+on:
+  push:
+    branches: [agent/independent-basin-validation-map]
+    paths:
+      - '.github/workflows/ibvf-primary6-sentinel1-r2-prerequisites-2014-2015.yml'
+      - 'site/data/validation/ibvf_primary6_sentinel1_r2_entry_2014_2015_v01.json'
+      - 'scripts/ibvf_sentinel1_r2_orbit_resolver_v02.py'
+      - 'site/data/validation/ibvf_primary6_sentinel1_poeorb_directory_scope_amendment_v01.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install metadata-only prerequisite runtime
+        run: |
+          python -m pip install --disable-pip-version-check 'requests>=2.31,<3'
+          sudo apt-get update
+          sudo apt-get install -y proj-bin proj-data
+          python -m py_compile scripts/ibvf_sentinel1_r2_freeze_prerequisites.py scripts/ibvf_sentinel1_r2_orbit_resolver_v02.py scripts/ibvf_primary6_sentinel1_r2_prerequisites.py scripts/ibvf_primary6_sentinel1_r2_prerequisites_v02.py
+      - name: Verify frozen first-season R2 entry and global directory-scope rule
+        run: |
+          python - <<'PY'
+          import json
+          e=json.load(open('site/data/validation/ibvf_primary6_sentinel1_r2_entry_2014_2015_v01.json',encoding='utf-8'))
+          assert e['deployment_status']=='RESEARCH_ONLY' and e['test_only'] is True
+          assert e['production_use'] is False and e['production_ready'] is False
+          assert e['operational_alerting_enabled'] is False and e['uses_operational_event_none_labels'] is False
+          assert e['territorial_activation_evidence_blinded'] is True
+          assert e['compatible_windows_expected']==16 and e['compatible_windows_r2_entry_ready']==16
+          assert e['missing_windows_expected']==2 and e['missing_windows_preserved']==2
+          assert e['modern_exact_partition_bindings']==13 and e['legacy_pilot_bridges']==3
+          assert e['legacy_pilot_bridge_created_before_r2_science_values'] is True
+          assert e['legacy_pilot_bridge_uses_sar_response'] is False
+          assert e['legacy_pilot_bridge_uses_territorial_outcomes'] is False
+          assert e['legacy_pilot_bridge_changes_selected_windows_or_pairs'] is False
+          assert e['r2_execution_performed'] is False and e['r2_science_pixels_read'] is False
+          a=json.load(open('site/data/validation/ibvf_primary6_sentinel1_poeorb_directory_scope_amendment_v01.json',encoding='utf-8'))
+          assert a['frozen_inventory_rule']['directory_month_offsets_from_acquisition_month']==[-1,0,1]
+          assert a['frozen_inventory_rule']['same_rule_for_all_primary6_units_seasons_and_windows'] is True
+          assert a['decision_timing']['made_before_primary6_r2_science_pixels_read'] is True
+          assert a['decision_timing']['territorial_outcomes_used'] is False
+          PY
+      - name: Freeze exact vertical and AUX_POEORB prerequisites
+        run: |
+          mkdir -p artifacts/ibvf
+          python scripts/ibvf_primary6_sentinel1_r2_prerequisites_v02.py \
+            --r2-entry site/data/validation/ibvf_primary6_sentinel1_r2_entry_2014_2015_v01.json \
+            --base-prereq-contract site/data/validation/cashahuacra_sentinel1_r2_prerequisites_contract.json \
+            --output artifacts/ibvf/ibvf_primary6_sentinel1_r2_prerequisites_2014_2015_v01.json
+      - name: Enforce blind fail-closed guards
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/ibvf/ibvf_primary6_sentinel1_r2_prerequisites_2014_2015_v01.json',encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY' and d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False and d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          assert d['season_id']=='2014-2015'
+          assert d['compatible_windows_expected']==16 and d['compatible_windows_prerequisites_pass']==16
+          assert d['missing_windows_expected']==2 and d['missing_windows_preserved']==2
+          assert d['vertical_transform_resource']['status']=='PASS'
+          assert d['same_orbit_quality_class']=='AUX_POEORB'
+          assert d['automatic_unhashed_orbit_download_allowed'] is False
+          assert all(x['status']=='PASS_EXACT_AUX_POEORB_BOTH_DATES_SHA256_FROZEN' for x in d['entries'])
+          assert d['r2_execution_performed'] is False and d['r2_science_pixels_read'] is False
+          assert d['r3_common_support_computed'] is False and d['r4_features_computed'] is False
+          assert d['territorial_outcomes_read'] is False and d['known_event_dates_read'] is False
+          assert d['case_control_assignment_performed'] is False
+          assert d['activation_inference_allowed'] is False and d['modeling_allowed'] is False
+          assert d['status']=='PASS_ALL_R2_PREREQUISITES_FROZEN_NO_SCIENCE_VALUES'
+          PY
+      - name: Archive first-season prerequisite manifest only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git pull --rebase origin agent/independent-basin-validation-map
+          cp artifacts/ibvf/ibvf_primary6_sentinel1_r2_prerequisites_2014_2015_v01.json site/data/validation/
+          git add site/data/validation/ibvf_primary6_sentinel1_r2_prerequisites_2014_2015_v01.json
+          git commit -m 'IBVF: archive 2014-2015 PRIMARY6 R2 prerequisites'
+          git push origin HEAD:agent/independent-basin-validation-map
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ibvf-primary6-r2-prereq-2014-2015-${{ github.sha }}
+          path: artifacts/ibvf/*.json
+          if-no-files-found: warn
+          retention-days: 30
