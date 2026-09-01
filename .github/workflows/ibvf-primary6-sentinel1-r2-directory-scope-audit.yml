@@ -1,0 +1,135 @@
+name: IBVF - PRIMARY6 Sentinel-1 R2 POEORB directory scope audit
+
+on:
+  push:
+    branches: [agent/independent-basin-validation-map]
+    paths:
+      - '.github/workflows/ibvf-primary6-sentinel1-r2-directory-scope-audit.yml'
+      - 'scripts/ibvf_sentinel1_r2_orbit_resolver_v02.py'
+      - 'site/data/validation/ibvf_primary6_sentinel1_poeorb_directory_scope_amendment_v01.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install metadata-only prerequisite runtime
+        run: |
+          python -m pip install --disable-pip-version-check 'requests>=2.31,<3'
+          sudo apt-get update
+          sudo apt-get install -y proj-bin proj-data
+          python -m py_compile scripts/ibvf_sentinel1_r2_freeze_prerequisites.py scripts/ibvf_sentinel1_r2_orbit_resolver_v02.py scripts/ibvf_primary6_sentinel1_r2_prerequisites.py scripts/ibvf_primary6_sentinel1_r2_prerequisites_v02.py
+      - name: Verify blind directory-scope amendment
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('site/data/validation/ibvf_primary6_sentinel1_poeorb_directory_scope_amendment_v01.json',encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY' and d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False and d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          assert d['decision_timing']['made_before_primary6_r2_science_pixels_read'] is True
+          assert d['decision_timing']['sar_pre_post_response_read'] is False
+          assert d['decision_timing']['territorial_outcomes_used'] is False
+          assert d['frozen_inventory_rule']['directory_month_offsets_from_acquisition_month']==[-1,0,1]
+          assert d['frozen_inventory_rule']['same_rule_for_all_primary6_units_seasons_and_windows'] is True
+          assert d['frozen_inventory_rule']['per_case_tuning_allowed'] is False
+          assert d['archive_layout_rule']['duplicate_eof_members_allowed_only_if_payload_sha256_identical'] is True
+          PY
+      - name: Recompute archived 2015-2017 prerequisites under adjacent-month inventory
+        run: |
+          mkdir -p artifacts/ibvf
+          for spec in '2015_2016 2015-2016' '2016_2017 2016-2017'; do
+            set -- $spec; file=$1; season=$2
+            python scripts/ibvf_primary6_sentinel1_r2_prerequisites_v02.py \
+              --r2-entry "site/data/validation/ibvf_primary6_sentinel1_r2_entry_${file}_v01.json" \
+              --base-prereq-contract site/data/validation/cashahuacra_sentinel1_r2_prerequisites_contract.json \
+              --output "artifacts/ibvf/recomputed_${file}.json"
+          done
+      - name: Compare exact frozen orbit identities
+        run: |
+          python - <<'PY'
+          import hashlib,json
+          from datetime import datetime,timezone
+          from pathlib import Path
+          changes=[]; compared=0; missing_preserved=0
+          for file in ('2015_2016','2016_2017'):
+              old=json.load(open(f'site/data/validation/ibvf_primary6_sentinel1_r2_prerequisites_{file}_v01.json',encoding='utf-8'))
+              new=json.load(open(f'artifacts/ibvf/recomputed_{file}.json',encoding='utf-8'))
+              oldrows={x['case_id']:x for x in old['entries']}
+              newrows={x['case_id']:x for x in new['entries']}
+              assert set(oldrows)==set(newrows)
+              for case_id in sorted(oldrows):
+                  for side in ('pre','post'):
+                      a=oldrows[case_id]['precise_orbits'][side]; b=newrows[case_id]['precise_orbits'][side]
+                      compared+=1
+                      fields=('selected_filename','selected_creation_utc','zip_sha256','inner_eof_sha256')
+                      delta={k:{'old':a.get(k),'new':b.get(k)} for k in fields if a.get(k)!=b.get(k)}
+                      if delta: changes.append({'case_id':case_id,'side':side,'delta':delta})
+              assert len(old.get('missing_entries',[]))==len(new.get('missing_entries',[]))
+              missing_preserved += len(new.get('missing_entries',[]))
+          stable={'compared_orbit_sides':compared,'identity_changes':changes,'missing_entries_preserved':missing_preserved}
+          identity=hashlib.sha256(json.dumps(stable,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+          out={
+              'schema_version':'irfen-ibvf-primary6-sentinel1-r2-directory-scope-backward-identity-audit-v0.1',
+              'generated_at':datetime.now(timezone.utc).isoformat().replace('+00:00','Z'),
+              'framework':'IRFEN Independent Basin Validation Framework',
+              'deployment_status':'RESEARCH_ONLY','test_only':True,'production_use':False,'production_ready':False,
+              'operational_alerting_enabled':False,'uses_operational_event_none_labels':False,
+              'territorial_activation_evidence_blinded':True,
+              'seasons':['2015-2016','2016-2017'],
+              'compatible_windows_recomputed':34,'orbit_sides_compared':compared,
+              'missing_windows_preserved':missing_preserved,
+              'identity_changes':changes,
+              'sar_response_read':False,'rainfall_read':False,'territorial_outcomes_read':False,'known_event_dates_read':False,
+              'case_control_assignment_performed':False,'activation_inference_allowed':False,'modeling_allowed':False,
+              'audit_identity_sha256':identity,
+              'status':'PASS_BACKWARD_ORBIT_IDENTITY_PRESERVED' if not changes else 'BLOCK_BACKWARD_ORBIT_IDENTITY_CHANGED_REVIEW_REQUIRED'
+          }
+          Path('artifacts/ibvf/ibvf_primary6_sentinel1_r2_directory_scope_backward_identity_audit_v01.json').write_text(json.dumps(out,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          print(json.dumps({'status':out['status'],'orbit_sides_compared':compared,'identity_change_count':len(changes),'missing_preserved':missing_preserved,'identity':identity},indent=2))
+          PY
+      - name: Enforce backward identity preservation
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/ibvf/ibvf_primary6_sentinel1_r2_directory_scope_backward_identity_audit_v01.json',encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY' and d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False and d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          assert d['compatible_windows_recomputed']==34 and d['orbit_sides_compared']==68
+          assert d['missing_windows_preserved']==2
+          assert d['identity_changes']==[]
+          assert d['territorial_outcomes_read'] is False and d['known_event_dates_read'] is False
+          assert d['case_control_assignment_performed'] is False
+          assert d['activation_inference_allowed'] is False and d['modeling_allowed'] is False
+          assert d['status']=='PASS_BACKWARD_ORBIT_IDENTITY_PRESERVED'
+          PY
+      - name: Archive audit only after exact preservation
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git pull --rebase origin agent/independent-basin-validation-map
+          cp artifacts/ibvf/ibvf_primary6_sentinel1_r2_directory_scope_backward_identity_audit_v01.json site/data/validation/
+          git add site/data/validation/ibvf_primary6_sentinel1_r2_directory_scope_backward_identity_audit_v01.json
+          git commit -m 'IBVF: archive POEORB directory-scope backward identity audit'
+          git push origin HEAD:agent/independent-basin-validation-map
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ibvf-primary6-r2-directory-scope-audit-${{ github.sha }}
+          path: artifacts/ibvf/*.json
+          if-no-files-found: warn
+          retention-days: 30
