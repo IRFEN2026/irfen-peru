@@ -5,6 +5,7 @@ on:
     branches: [agent/independent-basin-validation-map]
     paths:
       - '.github/workflows/ibvf-primary6-sentinel1-r2-entry-2014-2015.yml'
+      - 'scripts/ibvf_primary6_sentinel1_r2_entry_freeze.py'
   workflow_dispatch:
 
 concurrency:
@@ -50,8 +51,16 @@ jobs:
           assert d['season_id']=='2014-2015'
           assert d['compatible_windows_expected']==16
           assert d['compatible_windows_r2_entry_ready']==16
+          assert d['modern_exact_partition_bindings']==13
+          assert d['legacy_pilot_bridges']==3
+          assert d['legacy_pilot_bridge_created_before_r2_science_values'] is True
+          assert d['legacy_pilot_bridge_uses_rainfall_magnitude'] is False
+          assert d['legacy_pilot_bridge_uses_sar_response'] is False
+          assert d['legacy_pilot_bridge_uses_known_event_dates'] is False
+          assert d['legacy_pilot_bridge_uses_territorial_outcomes'] is False
+          assert d['legacy_pilot_bridge_changes_selected_windows_or_pairs'] is False
           assert d['missing_windows_expected']==2 and d['missing_windows_preserved']==2
-          assert d['all_compatible_r1_identities_match_partition'] is True
+          assert d['all_compatible_r1_identities_match_partition_or_prepartition_blind_bridge'] is True
           assert d['r2_execution_performed'] is False and d['r2_science_pixels_read'] is False
           assert d['r3_common_support_computed'] is False and d['r4_features_computed'] is False
           assert d['territorial_outcomes_read'] is False and d['known_event_dates_read'] is False
@@ -61,7 +70,10 @@ jobs:
           statuses=[x['r2_entry_status'] for x in d['entries']]
           assert statuses.count('PASS_R2_ENTRY_IDENTITY_FROZEN_EXECUTION_NOT_RUN')==16
           assert statuses.count('MISSING_COMPATIBLE_PAIR_RETAINED_NO_R2_EXECUTION')==2
-          print({'status':d['status'],'ready':16,'missing':2,'identity':d['r2_entry_identity_sha256']})
+          bindings=[x.get('r1_partition_binding_mode') for x in d['entries'] if x['r2_entry_status'].startswith('PASS_')]
+          assert bindings.count('MODERN_EXACT_PARTITION_AND_WINDOW_HASH_BINDING')==13
+          assert bindings.count('LEGACY_PILOT_EXACT_CASE_PAIR_AND_SELECTED_WINDOW_IDENTITY_BRIDGE_BEFORE_R2_VALUES')==3
+          print({'status':d['status'],'ready':16,'modern':13,'legacy_bridge':3,'missing':2,'identity':d['r2_entry_identity_sha256']})
           PY
       - name: Archive frozen R2 entry manifest only
         run: |
