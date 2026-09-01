@@ -41,12 +41,49 @@ jobs:
           assert d['frozen_selection_rule']['per_case_tuning_allowed'] is False
           PY
       - name: Freeze exact vertical and AUX_POEORB prerequisites
+        continue-on-error: true
         run: |
           mkdir -p artifacts/ibvf
           python scripts/ibvf_primary6_sentinel1_r2_prerequisites_v02.py \
             --r2-entry site/data/validation/ibvf_primary6_sentinel1_r2_entry_2017_2018_v01.json \
             --base-prereq-contract site/data/validation/cashahuacra_sentinel1_r2_prerequisites_contract.json \
             --output artifacts/ibvf/ibvf_primary6_sentinel1_r2_prerequisites_2017_2018_v01.json
+      - name: Diagnose blocked prerequisites without relaxing gate
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('artifacts/ibvf/ibvf_primary6_sentinel1_r2_prerequisites_2017_2018_v01.json')
+          if not p.exists():
+              raise SystemExit('diagnostic manifest was not produced')
+          d=json.loads(p.read_text(encoding='utf-8'))
+          blocked=[]
+          for row in d.get('entries',[]):
+              for side in ('pre','post'):
+                  o=row['precise_orbits'][side]
+                  if o.get('status')!='PASS':
+                      blocked.append({
+                          'case_id':row['case_id'],
+                          'side':side,
+                          'acquisition_utc':o.get('acquisition_utc'),
+                          'status':o.get('status'),
+                          'scientific_data_status':o.get('scientific_data_status'),
+                          'directory_url':o.get('directory_url'),
+                          'covering_count':o.get('covering_count'),
+                          'covering_files':o.get('covering_files'),
+                          'covering_creation_utc':o.get('covering_creation_utc'),
+                          'selected_filename':o.get('selected_filename'),
+                          'selected_creation_utc':o.get('selected_creation_utc'),
+                          'error':o.get('error'),
+                      })
+          print(json.dumps({
+              'manifest_status':d.get('status'),
+              'compatible_windows_expected':d.get('compatible_windows_expected'),
+              'compatible_windows_prerequisites_pass':d.get('compatible_windows_prerequisites_pass'),
+              'blocked_orbit_sides':blocked,
+          },indent=2,ensure_ascii=False))
+          PY
       - name: Enforce blind fail-closed guards
         run: |
           python - <<'PY'
