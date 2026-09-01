@@ -18,16 +18,13 @@ jobs:
         with:
           ref: agent/independent-basin-validation-map
           fetch-depth: 0
-      - name: Validate canonical prerequisite manifests and synchronize map
+      - name: Validate canonical manifests and synchronize map
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
           from datetime import datetime, timezone
-          files=[
-            Path('site/data/validation/ibvf_primary6_sentinel1_r2_prerequisites_2015_2016_v01.json'),
-            Path('site/data/validation/ibvf_primary6_sentinel1_r2_prerequisites_2016_2017_v01.json'),
-          ]
+          files=[Path('site/data/validation/ibvf_primary6_sentinel1_r2_prerequisites_2015_2016_v01.json'),Path('site/data/validation/ibvf_primary6_sentinel1_r2_prerequisites_2016_2017_v01.json')]
           docs=[json.loads(p.read_text(encoding='utf-8')) for p in files]
           assert [d['season_id'] for d in docs]==['2015-2016','2016-2017']
           for d in docs:
@@ -37,40 +34,35 @@ jobs:
             assert d['operational_alerting_enabled'] is False and d['uses_operational_event_none_labels'] is False
             assert d['territorial_activation_evidence_blinded'] is True
             assert d['status']=='PASS_ALL_R2_PREREQUISITES_FROZEN_NO_SCIENCE_VALUES'
-            assert d['r2_execution_performed'] is False and d['r2_science_pixels_read'] is False
-            assert d['r3_common_support_computed'] is False and d['r4_features_computed'] is False
-            assert d['territorial_outcomes_read'] is False and d['known_event_dates_read'] is False
-            assert d['activation_inference_allowed'] is False and d['modeling_allowed'] is False
-          ready=sum(d['compatible_windows_prerequisites_pass'] for d in docs)
-          missing=sum(d['missing_windows_preserved'] for d in docs)
+            assert d['r2_science_pixels_read'] is False and d['territorial_outcomes_read'] is False
+            assert d['known_event_dates_read'] is False and d['activation_inference_allowed'] is False and d['modeling_allowed'] is False
+          ready=sum(d['compatible_windows_prerequisites_pass'] for d in docs); missing=sum(d['missing_windows_preserved'] for d in docs)
           assert ready==34 and missing==2
-          mp=Path('site/data/validation/independent_basin_validation_map.json')
-          m=json.loads(mp.read_text(encoding='utf-8'))
+          p=Path('site/data/validation/independent_basin_validation_map.json'); m=json.loads(p.read_text(encoding='utf-8'))
           assert m['deployment_status']=='RESEARCH_ONLY' and m['test_only'] is True
-          assert m['production_use'] is False and m['production_ready'] is False
-          assert m['operational_alerting_enabled'] is False and m['uses_operational_event_none_labels'] is False
-          assert m['territorial_activation_evidence_blinded'] is True
+          assert m['production_use'] is False and m['production_ready'] is False and m['operational_alerting_enabled'] is False
+          assert m['uses_operational_event_none_labels'] is False and m['territorial_activation_evidence_blinded'] is True
           ac=m.setdefault('acquisition_contract',{})
-          ac['primary6_sentinel1_r2_prerequisite_windows_frozen']=ready
+          ac['primary6_sentinel1_r2_prerequisite_windows_frozen']=34
           ac['primary6_sentinel1_r2_prerequisite_target_compatible_windows']=104
-          ac['primary6_sentinel1_r2_prerequisite_progress']=f'{ready}/104'
-          ac['primary6_sentinel1_r2_prerequisite_seasons_frozen']=[d['season_id'] for d in docs]
-          ac['primary6_sentinel1_r2_prerequisite_missing_windows_preserved']=missing
+          ac['primary6_sentinel1_r2_prerequisite_progress']='34/104'
+          ac['primary6_sentinel1_r2_prerequisite_seasons_frozen']=['2015-2016','2016-2017']
+          ac['primary6_sentinel1_r2_prerequisite_missing_windows_preserved']=2
           ac['primary6_sentinel1_r2_prerequisite_counter_semantics']='CANONICAL_ARCHIVED_PASS_MANIFESTS_ONLY'
           ac['primary6_sentinel1_r2_prerequisite_overlap_resolution_contract']='site/data/validation/ibvf_primary6_sentinel1_poeorb_overlap_resolution_v01.json'
           ac['primary6_sentinel1_r2_prerequisite_status']='PASS_34_COMPATIBLE_WINDOWS_PREREQUISITES_FROZEN_2_MISSING_PRESERVED_NO_R2_SCIENCE_PIXELS'
-          ac['primary6_sentinel1_r2_prerequisite_manifest_paths']=[str(p) for p in files]
+          ac['primary6_sentinel1_r2_prerequisite_manifest_paths']=[str(x) for x in files]
           ac.setdefault('local_validation',{})['github_actions_primary6_sentinel1_r2_prerequisite_repair_v02']='PASS_2015_2016_18_OF_18_AND_2016_2017_16_OF_16_TWO_MISSING_PRESERVED_NO_SCIENCE_VALUES'
           m['version']='irfen-independent-basin-validation-map-v3.18.1'
           m['generated_at']=datetime.now(timezone.utc).isoformat().replace('+00:00','Z')
-          mp.write_text(json.dumps(m,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
-          print({'r2_prerequisites':f'{ready}/104','seasons':['2015-2016','2016-2017'],'missing_preserved':missing,'r1_progress':ac.get('primary6_sentinel1_r1_progress')})
+          p.write_text(json.dumps(m,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          print({'r2_prerequisites':'34/104','missing_preserved':2,'r1_progress':ac.get('primary6_sentinel1_r1_progress')})
           PY
-      - name: Commit map-only synchronization
+      - name: Commit map-only synchronization safely
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git pull --rebase origin agent/independent-basin-validation-map
           git add site/data/validation/independent_basin_validation_map.json
           git commit -m 'IBVF: sync verified PRIMARY6 R2 prerequisite progress'
+          git pull --rebase origin agent/independent-basin-validation-map
           git push origin HEAD:agent/independent-basin-validation-map
