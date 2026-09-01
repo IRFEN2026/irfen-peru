@@ -56,12 +56,40 @@ def load_exact_freeze(path: Path, entry: dict[str,Any]) -> dict[str,Any]:
     d=json.loads(path.read_text(encoding='utf-8'))
     guards(d)
     assert d['case_id']==entry['case_id']
-    assert d['unit_id']==entry['unit_id']
-    assert d['season_id']==entry['season_id']
-    assert d['date_local']==entry['date_local']
-    assert d['territorial_outcomes_read'] is False and d['known_event_dates_read'] is False
-    assert d['replacement_window_allowed'] is False and d['pair_reselection_allowed'] is False
+    assert d.get('unit_id', entry['unit_id'])==entry['unit_id']
     assert d['pre']['item_id']==entry['pre_item_id'] and d['post']['item_id']==entry['post_item_id']
+
+    legacy=bool(entry.get('legacy_pilot_r1_predates_execution_partition'))
+    if legacy:
+        # These three engineering pilots predate season/date fields in the later
+        # exact-window freeze schema. Their admissibility was already frozen by
+        # ibvf_primary6_sentinel1_r2_entry_freeze.py before R2 science values.
+        # Re-assert that bridge here instead of inventing missing provenance.
+        assert entry.get('r1_partition_binding_mode')=='LEGACY_PILOT_EXACT_CASE_PAIR_AND_SELECTED_WINDOW_IDENTITY_BRIDGE_BEFORE_R2_VALUES'
+        assert entry.get('legacy_bridge_source_freeze_sha256_verified') is True
+        assert entry.get('legacy_bridge_selected_window_identity_verified') is True
+        assert entry.get('legacy_bridge_uses_rainfall_magnitude') is False
+        assert entry.get('legacy_bridge_uses_sar_response') is False
+        assert entry.get('legacy_bridge_uses_known_event_dates') is False
+        assert entry.get('legacy_bridge_uses_territorial_outcomes') is False
+        assert entry.get('legacy_bridge_changes_selected_window') is False
+        assert entry.get('legacy_bridge_changes_compatible_pair') is False
+        assert d.get('engineering_pilot_only') is True
+        assert d.get('engineering_pilot_selection_changes_scientific_window_set') is False
+        assert d.get('all_104_compatible_pairs_remain_required') is True
+        assert d.get('rainfall_values_read_for_pilot_selection') is False
+        assert d.get('sar_change_values_read_for_pilot_selection') is False
+        assert d.get('territorial_outcomes_read') is False
+        assert d.get('known_event_dates_read') is False
+        assert d.get('case_control_role_assigned') is False
+        assert d.get('activation_inference_allowed') is False
+        assert d.get('modeling_allowed') is False
+        assert d.get('freeze_status')=='ALL_REQUESTED_ASSETS_SHA256_FROZEN'
+    else:
+        assert d['season_id']==entry['season_id']
+        assert d['date_local']==entry['date_local']
+        assert d['territorial_outcomes_read'] is False and d['known_event_dates_read'] is False
+        assert d['replacement_window_allowed'] is False and d['pair_reselection_allowed'] is False
     return d
 
 
@@ -107,6 +135,8 @@ def main() -> int:
                 'case_id':e['case_id'],'unit_id':e['unit_id'],'season_id':e['season_id'],
                 'date_local':e['date_local'],'source_window_execution_identity_sha256':e['source_window_execution_identity_sha256'],
                 'projection':e['projection'],'r1_freeze_path':str(fp),'r1_freeze_sha256':e['r1_freeze_sha256'],
+                'r1_partition_binding_mode':e.get('r1_partition_binding_mode'),
+                'legacy_pilot_r1_predates_execution_partition':bool(e.get('legacy_pilot_r1_predates_execution_partition')),
                 'pre_item_id':e['pre_item_id'],'post_item_id':e['post_item_id'],
                 'replacement_allowed':False,'reselection_allowed':False,'imputation_allowed':False,
                 'precise_orbits':{},
