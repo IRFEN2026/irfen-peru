@@ -25,6 +25,7 @@ from ibvf_sentinel1_r2_freeze_prerequisites import (
 
 CREATION_RE = re.compile(r"_OPOD_(\d{8}T\d{6})_V", re.I)
 RULE = "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC"
+DIRECTORY_SCOPE_OFFSETS = (-1, 0, 1)
 
 
 def parse_creation(name: str) -> datetime | None:
@@ -34,34 +35,68 @@ def parse_creation(name: str) -> datetime | None:
     return datetime.strptime(m.group(1), "%Y%m%dT%H%M%S").replace(tzinfo=timezone.utc)
 
 
+def month_url(root: str, t: datetime, offset: int) -> str:
+    serial = t.year * 12 + (t.month - 1) + offset
+    year, month0 = divmod(serial, 12)
+    return f"{root.rstrip('/')}/{year:04d}/{month0 + 1:02d}/"
+
+
 def freeze_orbit(root: str, acquisition: str, side: str, tmp: Path) -> dict:
     t = parse_utc(acquisition)
-    month_url = f"{root.rstrip('/')}/{t.year:04d}/{t.month:02d}/"
-    try:
-        html = get(month_url).text
-    except Exception as exc:
-        return {
-            "side": side,
-            "acquisition_utc": acquisition,
-            "directory_url": month_url,
-            "status": "TRANSPORT_BLOCKED",
-            "scientific_data_status": "UNKNOWN_NOT_MISSING",
-            "selection_rule": RULE,
-            "error": repr(exc),
-        }
+    acquisition_month_url = month_url(root, t, 0)
+    directory_urls = [month_url(root, t, x) for x in DIRECTORY_SCOPE_OFFSETS]
+    inventories = []
+    candidate_by_name = {}
+    for directory_url in directory_urls:
+        try:
+            html = get(directory_url).text
+        except Exception as exc:
+            return {
+                "side": side,
+                "acquisition_utc": acquisition,
+                "directory_url": acquisition_month_url,
+                "directory_urls_inventory_scope": directory_urls,
+                "directory_inventory_success": False,
+                "directory_inventory_results": inventories,
+                "status": "TRANSPORT_BLOCKED",
+                "scientific_data_status": "UNKNOWN_NOT_MISSING",
+                "selection_rule": RULE,
+                "selection_uses_science_values": False,
+                "selection_uses_outcomes": False,
+                "selection_uses_known_event_dates": False,
+                "error": repr(exc),
+            }
+        hrefs = sorted(set(HREF_RE.findall(html)))
+        inventories.append({
+            "directory_url": directory_url,
+            "directory_inventory_success": True,
+            "aux_poeorb_zip_count": len(hrefs),
+        })
+        for href in hrefs:
+            name = Path(href).name
+            prior = candidate_by_name.get(name)
+            candidate = {"href": href, "name": name, "source_directory_url": directory_url}
+            if prior is None or (directory_url, href) < (prior["source_directory_url"], prior["href"]):
+                candidate_by_name[name] = candidate
 
-    names = sorted(set(HREF_RE.findall(html)))
+    candidates = [candidate_by_name[x] for x in sorted(candidate_by_name)]
     covering = []
-    for href in names:
-        name = Path(href).name
-        iv = filename_interval(name)
+    for candidate in candidates:
+        iv = filename_interval(candidate["name"])
         if iv and iv[0] <= t <= iv[1]:
-            covering.append({"href": href, "name": name, "interval": iv, "creation": parse_creation(name)})
+            covering.append({
+                **candidate,
+                "interval": iv,
+                "creation": parse_creation(candidate["name"]),
+            })
 
     inventory = {
-        "directory_url": month_url,
+        "directory_url": acquisition_month_url,
+        "directory_urls_inventory_scope": directory_urls,
+        "directory_month_offsets": list(DIRECTORY_SCOPE_OFFSETS),
         "directory_inventory_success": True,
-        "aux_poeorb_zip_count": len(names),
+        "directory_inventory_results": inventories,
+        "aux_poeorb_zip_count": len(candidates),
         "covering_count": len(covering),
         "covering_files": [x["name"] for x in covering],
         "covering_creation_utc": [x["creation"].isoformat() if x["creation"] else None for x in covering],
@@ -75,7 +110,7 @@ def freeze_orbit(root: str, acquisition: str, side: str, tmp: Path) -> dict:
             "side": side,
             "acquisition_utc": acquisition,
             "status": "MISSING",
-            "scientific_data_status": "MISSING_PRECISE_ORBIT_RESOURCE_AFTER_SUCCESSFUL_DIRECTORY_INVENTORY",
+            "scientific_data_status": "MISSING_PRECISE_ORBIT_RESOURCE_AFTER_SUCCESSFUL_ADJACENT_MONTH_DIRECTORY_INVENTORY",
             **inventory,
         }
     if any(x["creation"] is None for x in covering):
@@ -101,7 +136,8 @@ def freeze_orbit(root: str, acquisition: str, side: str, tmp: Path) -> dict:
     chosen = winners[0]
     href = chosen["href"]
     iv = chosen["interval"]
-    url = urljoin(month_url, href)
+    source_directory_url = chosen["source_directory_url"]
+    url = urljoin(source_directory_url, href)
     zpath = tmp / f"{side}.EOF.zip"
     dl = download(url, zpath)
     if dl["status"] != "SUCCESS":
@@ -110,6 +146,7 @@ def freeze_orbit(root: str, acquisition: str, side: str, tmp: Path) -> dict:
             "acquisition_utc": acquisition,
             "selected_filename": chosen["name"],
             "selected_creation_utc": latest.isoformat(),
+            "selected_source_directory_url": source_directory_url,
             **inventory,
             **dl,
         }
@@ -142,6 +179,7 @@ def freeze_orbit(root: str, acquisition: str, side: str, tmp: Path) -> dict:
             **inventory,
             "selected_filename": chosen["name"],
             "selected_creation_utc": latest.isoformat(),
+            "selected_source_directory_url": source_directory_url,
             "url": url,
             "validity_start": iv[0].isoformat(),
             "validity_stop": iv[1].isoformat(),
@@ -163,6 +201,7 @@ def freeze_orbit(root: str, acquisition: str, side: str, tmp: Path) -> dict:
             **inventory,
             "selected_filename": chosen["name"],
             "selected_creation_utc": latest.isoformat(),
+            "selected_source_directory_url": source_directory_url,
             "url": url,
             "zip_sha256": dl.get("sha256"),
             "error": repr(exc),
