@@ -88,14 +88,25 @@ def freeze_orbit(root: str, acquisition: str, side: str, tmp: Path) -> dict:
     if dl["status"] != "SUCCESS": return {"side":side,"acquisition_utc":acquisition,**inventory,**dl}
     try:
         with zipfile.ZipFile(zpath) as z:
-            members = [n for n in z.namelist() if n.upper().endswith(".EOF")]
-            if len(members) != 1: raise ValueError(f"expected one EOF member, got {members}")
-            eof_path = tmp / f"{side}.EOF"; eof_path.write_bytes(z.read(members[0]))
+            members = sorted(n for n in z.namelist() if n.upper().endswith(".EOF"))
+            if not members:
+                raise ValueError("expected at least one EOF member, got none")
+            payloads = [(n, z.read(n)) for n in members]
+            payload_hashes = {hashlib.sha256(b).hexdigest() for _, b in payloads}
+            if len(payload_hashes) != 1:
+                raise ValueError(f"multiple EOF members differ by payload hash: {members}")
+            # STEP archives sometimes contain the same EOF bytes twice under a web-root
+            # path and at ZIP root. This is an archive-layout duplication only. Accept it
+            # iff bytes are identical; choose a deterministic representative for provenance.
+            root_members = [n for n, _ in payloads if "/" not in n]
+            chosen_member = sorted(root_members or members)[0]
+            chosen_payload = next(b for n, b in payloads if n == chosen_member)
+            eof_path = tmp / f"{side}.EOF"; eof_path.write_bytes(chosen_payload)
         eof_sha, eof_bytes = sha_file(eof_path)
         text = eof_path.read_text(encoding="utf-8", errors="replace")
         product_ok = "AUX_POEORB" in text or "AUX_POEORB" in Path(href).name
         validity_ok = iv[0] <= t <= iv[1]
-        return {"side":side,"acquisition_utc":acquisition,"status":"PASS" if product_ok and validity_ok else "INTEGRITY_BLOCK_R2",**inventory,"filename":Path(href).name,"url":url,"validity_start":iv[0].isoformat(),"validity_stop":iv[1].isoformat(),"zip_sha256":dl["sha256"],"zip_bytes":dl["bytes"],"inner_eof_member":members[0],"inner_eof_sha256":eof_sha,"inner_eof_bytes":eof_bytes,"product_class_aux_poeorb_confirmed":product_ok,"validity_covers_acquisition":validity_ok}
+        return {"side":side,"acquisition_utc":acquisition,"status":"PASS" if product_ok and validity_ok else "INTEGRITY_BLOCK_R2",**inventory,"filename":Path(href).name,"url":url,"validity_start":iv[0].isoformat(),"validity_stop":iv[1].isoformat(),"zip_sha256":dl["sha256"],"zip_bytes":dl["bytes"],"inner_eof_member":chosen_member,"inner_eof_member_count":len(members),"inner_eof_duplicate_payloads_identical":len(members)>1,"inner_eof_sha256":eof_sha,"inner_eof_bytes":eof_bytes,"product_class_aux_poeorb_confirmed":product_ok,"validity_covers_acquisition":validity_ok}
     except Exception as exc:
         return {"side":side,"acquisition_utc":acquisition,"status":"INTEGRITY_BLOCK_R2",**inventory,"url":url,"zip_sha256":dl.get("sha256"),"error":repr(exc)}
 
