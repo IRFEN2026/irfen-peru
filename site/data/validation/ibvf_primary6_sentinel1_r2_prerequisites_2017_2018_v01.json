@@ -1,0 +1,2693 @@
+{
+  "schema_version": "irfen-ibvf-primary6-sentinel1-r2-prerequisites-v0.2",
+  "generated_at": "2026-09-01T18:01:01.127444Z",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_UNTIL_PRIMARY6_A5_FREEZE_AND_ANTI_LEAKAGE_AUDIT",
+  "cohort_id": "PRIMARY6_CHRONOLOGICAL",
+  "season_id": "2017-2018",
+  "source_r2_entry": "site/data/validation/ibvf_primary6_sentinel1_r2_entry_2017_2018_v01.json",
+  "source_r2_entry_sha256": "9a06d75e1a75c77bfee2f376dd6f3a8b72622ec990c337fa9c84d4ac311e5664",
+  "source_r2_entry_identity_sha256": "949ea6cfa12de103b3be9fe96b8a49738379ee6d5c6ecb9f5c85b5f0e039a6bf",
+  "source_base_prereq_contract": "site/data/validation/cashahuacra_sentinel1_r2_prerequisites_contract.json",
+  "source_base_prereq_contract_sha256": "d24146c671ca25f1bcf92a854d8be04626f9ce4ff9d54705c56fd5d1ea129ea0",
+  "vertical_transform_resource": {
+    "status": "PASS",
+    "url": "https://cdn.proj.org/us_nga_egm08_25.tif",
+    "sha256": "4191d471eefebf24091b56dbc604353cb3b8cf8cc70e448bb9ae56a272bef17a",
+    "bytes": 80585622,
+    "tiff_signature_valid": true,
+    "proj_version_output": "Rel. 9.4.0, March 1st, 2024",
+    "proj_system_searchpaths": [
+      "/usr/share/proj"
+    ],
+    "proj_data_searchpath_used": [
+      "/tmp/ibvf-primary6-r2-prereq-waudwfr2",
+      "/usr/share/proj"
+    ],
+    "source_compound_crs": "EPSG:9518_WGS84_PLUS_EGM2008_HEIGHT",
+    "target_3d_crs": "EPSG:4979_WGS84_ELLIPSOIDAL_HEIGHT",
+    "projinfo_command": "projinfo -s EPSG:9518 -t EPSG:4979 --spatial-test intersects --grid-check discard_missing --hide-ballpark -o PROJ",
+    "projinfo_returncode": 0,
+    "selected_operation_mentions_frozen_grid": true,
+    "selected_operation_has_expected_vgridshift_inverse": true,
+    "database_context_valid": true,
+    "projinfo_output": "Candidate operations found: 1\n-------------------------------------\nOperation No. 1:\n\nunknown id, Inverse of WGS 84 to EGM2008 height (1), 1 m, World.\n\nPROJ string:\n+proj=pipeline\n  +step +proj=axisswap +order=2,1\n  +step +proj=unitconvert +xy_in=deg +xy_out=rad\n  +step +proj=vgridshift +grids=us_nga_egm08_25.tif +multiplier=1\n  +step +proj=unitconvert +xy_in=rad +xy_out=deg\n  +step +proj=axisswap +order=2,1"
+  },
+  "compatible_windows_expected": 18,
+  "compatible_windows_prerequisites_pass": 18,
+  "missing_windows_expected": 0,
+  "missing_windows_preserved": 0,
+  "unique_acquisition_orbit_resources_checked": 32,
+  "same_orbit_quality_class": "AUX_POEORB",
+  "automatic_unhashed_orbit_download_allowed": false,
+  "r2_execution_performed": false,
+  "r2_science_pixels_read": false,
+  "r3_common_support_computed": false,
+  "r4_features_computed": false,
+  "territorial_outcomes_read": false,
+  "known_event_dates_read": false,
+  "case_control_assignment_performed": false,
+  "activation_inference_allowed": false,
+  "modeling_allowed": false,
+  "r2_prerequisite_identity_sha256": "a1031c4ed8ab6e76dc925a838d5330a1d183fd25505f8e2c8a926938e0ced0c0",
+  "entries": [
+    {
+      "case_id": "primary6_huaycoloro_2017-09-10",
+      "unit_id": "huaycoloro",
+      "season_id": "2017-2018",
+      "date_local": "2017-09-10",
+      "source_window_execution_identity_sha256": "01e4ac0789cf4435849e829bc2591699a53fc9bf0e52aa436cd87cb94a775530",
+      "projection": "EPSG:32718",
+      "r1_freeze_path": "site/data/validation/ibvf_primary6_huaycoloro_2017-09-10_s1_r1_freeze_v01.json",
+      "r1_freeze_sha256": "47ce7d250ccde183249187ea56d016d388853dd6dc9403c97eb5207479c398a2",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20170906T104649_20170906T104706_007270_00CD25",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20170918T104649_20170918T104707_007445_00D249",
+      "replacement_allowed": false,
+      "reselection_allowed": false,
+      "imputation_allowed": false,
+      "precise_orbits": {
+        "pre": {
+          "side": "pre",
+          "acquisition_utc": "2017-09-06T10:46:58.029343Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/08/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/08/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 30
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            }
+          ],
+          "aux_poeorb_zip_count": 92,
+          "covering_count": 1,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210309T153007_V20170905T225942_20170907T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-09T15:30:07+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210309T153007_V20170905T225942_20170907T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-09T15:30:07+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/S1B_OPER_AUX_POEORB_OPOD_20210309T153007_V20170905T225942_20170907T005942.EOF.zip",
+          "validity_start": "2017-09-05T22:59:42+00:00",
+          "validity_stop": "2017-09-07T00:59:42+00:00",
+          "zip_sha256": "62e0622072939f610f57789407f0cdb77f2b4202b2e065fdcf4e99a34bf27d92",
+          "zip_bytes": 599268,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210309T153007_V20170905T225942_20170907T005942.EOF",
+          "inner_eof_member_count": 1,
+          "inner_eof_duplicate_payloads_identical": false,
+          "inner_eof_sha256": "a194ba3b51014137934ff64b1eb0fe550539aefb43acf6da2605ea425e59914b",
+          "inner_eof_bytes": 4410509,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        },
+        "post": {
+          "side": "post",
+          "acquisition_utc": "2017-09-18T10:46:58.685184Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/08/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/08/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 30
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            }
+          ],
+          "aux_poeorb_zip_count": 92,
+          "covering_count": 1,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210309T202221_V20170917T225942_20170919T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-09T20:22:21+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210309T202221_V20170917T225942_20170919T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-09T20:22:21+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/S1B_OPER_AUX_POEORB_OPOD_20210309T202221_V20170917T225942_20170919T005942.EOF.zip",
+          "validity_start": "2017-09-17T22:59:42+00:00",
+          "validity_stop": "2017-09-19T00:59:42+00:00",
+          "zip_sha256": "ec58a4ccbc2189b67f2e4f4a3c48761fcef2eef11df2f4062f7230617daad411",
+          "zip_bytes": 602533,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210309T202221_V20170917T225942_20170919T005942.EOF",
+          "inner_eof_member_count": 1,
+          "inner_eof_duplicate_payloads_identical": false,
+          "inner_eof_sha256": "30afedc1c4429cf93dc0be57362ede5d188f3fbf7b2147e125f00a01fe2123d4",
+          "inner_eof_bytes": 4409841,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        }
+      },
+      "status": "PASS_EXACT_AUX_POEORB_BOTH_DATES_SHA256_FROZEN"
+    },
+    {
+      "case_id": "primary6_huaycoloro_2017-10-08",
+      "unit_id": "huaycoloro",
+      "season_id": "2017-2018",
+      "date_local": "2017-10-08",
+      "source_window_execution_identity_sha256": "14fd9a48d62ea73ce049746a6722f0ead631eb4a12f2af16703d09fd26ce8367",
+      "projection": "EPSG:32718",
+      "r1_freeze_path": "site/data/validation/ibvf_primary6_huaycoloro_2017-10-08_s1_r1_freeze_v01.json",
+      "r1_freeze_sha256": "716846f93ca4ec66c9e4fd981a6b9d460b4612c70cefcda23824f00aa39a02cb",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20170930T104650_20170930T104707_007620_00D74F",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20171012T104650_20171012T104707_007795_00DC4C",
+      "replacement_allowed": false,
+      "reselection_allowed": false,
+      "imputation_allowed": false,
+      "precise_orbits": {
+        "pre": {
+          "side": "pre",
+          "acquisition_utc": "2017-09-30T10:46:58.989345Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/08/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/08/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 30
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            }
+          ],
+          "aux_poeorb_zip_count": 92,
+          "covering_count": 1,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210310T011157_V20170929T225942_20171001T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-10T01:11:57+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210310T011157_V20170929T225942_20171001T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-10T01:11:57+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/S1B_OPER_AUX_POEORB_OPOD_20210310T011157_V20170929T225942_20171001T005942.EOF.zip",
+          "validity_start": "2017-09-29T22:59:42+00:00",
+          "validity_stop": "2017-10-01T00:59:42+00:00",
+          "zip_sha256": "273ed1e1dcd0593deb3b49197ceb967d4c100aa9d492603a515a4313532d3f17",
+          "zip_bytes": 597862,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210310T011157_V20170929T225942_20171001T005942.EOF",
+          "inner_eof_member_count": 1,
+          "inner_eof_duplicate_payloads_identical": false,
+          "inner_eof_sha256": "fcde99151414f81fdfd483fd490564500c6b90e0630d59ab0b8634ce602bc744",
+          "inner_eof_bytes": 4409849,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        },
+        "post": {
+          "side": "post",
+          "acquisition_utc": "2017-10-12T10:46:59.121599Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 30
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 30
+            }
+          ],
+          "aux_poeorb_zip_count": 91,
+          "covering_count": 1,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210310T060335_V20171011T225942_20171013T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-10T06:03:35+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210310T060335_V20171011T225942_20171013T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-10T06:03:35+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/S1B_OPER_AUX_POEORB_OPOD_20210310T060335_V20171011T225942_20171013T005942.EOF.zip",
+          "validity_start": "2017-10-11T22:59:42+00:00",
+          "validity_stop": "2017-10-13T00:59:42+00:00",
+          "zip_sha256": "3eecb47056b5e81a48c096b4ebaf4b0338b1f6795a90a3497ebb9f5257c18e33",
+          "zip_bytes": 599390,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210310T060335_V20171011T225942_20171013T005942.EOF",
+          "inner_eof_member_count": 1,
+          "inner_eof_duplicate_payloads_identical": false,
+          "inner_eof_sha256": "37ff6e35eb7d2843cce60c37705f5e32be0c5bd8319dcd462db608ab818042b7",
+          "inner_eof_bytes": 4409852,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        }
+      },
+      "status": "PASS_EXACT_AUX_POEORB_BOTH_DATES_SHA256_FROZEN"
+    },
+    {
+      "case_id": "primary6_huaycoloro_2017-12-17",
+      "unit_id": "huaycoloro",
+      "season_id": "2017-2018",
+      "date_local": "2017-12-17",
+      "source_window_execution_identity_sha256": "50a5cdbc07ce8e12a916489e2467d30a84a71df8a820211d84dc2f32c0fccf82",
+      "projection": "EPSG:32718",
+      "r1_freeze_path": "site/data/validation/ibvf_primary6_huaycoloro_2017-12-17_s1_r1_freeze_v01.json",
+      "r1_freeze_sha256": "a1136695a58df97af20d5d54cf2ebed9b470a40f87ea994f1b94fa267f77475a",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20171211T104649_20171211T104706_008670_00F691",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20171223T104649_20171223T104706_008845_00FC24",
+      "replacement_allowed": false,
+      "reselection_allowed": false,
+      "imputation_allowed": false,
+      "precise_orbits": {
+        "pre": {
+          "side": "pre",
+          "acquisition_utc": "2017-12-11T10:46:58.242113Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 30
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            }
+          ],
+          "aux_poeorb_zip_count": 92,
+          "covering_count": 1,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210311T063709_V20171210T225942_20171212T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-11T06:37:09+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210311T063709_V20171210T225942_20171212T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-11T06:37:09+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/S1B_OPER_AUX_POEORB_OPOD_20210311T063709_V20171210T225942_20171212T005942.EOF.zip",
+          "validity_start": "2017-12-10T22:59:42+00:00",
+          "validity_stop": "2017-12-12T00:59:42+00:00",
+          "zip_sha256": "07a358e43aba154af232484dca8a71db0ca2dee7d0ced5ff23da5322434030f3",
+          "zip_bytes": 605740,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210311T063709_V20171210T225942_20171212T005942.EOF",
+          "inner_eof_member_count": 1,
+          "inner_eof_duplicate_payloads_identical": false,
+          "inner_eof_sha256": "b43834c261c950698d16c91dde8d2dfd80677fd636efd166876584f18d536fcb",
+          "inner_eof_bytes": 4409860,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        },
+        "post": {
+          "side": "post",
+          "acquisition_utc": "2017-12-23T10:46:57.748604Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 30
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            }
+          ],
+          "aux_poeorb_zip_count": 92,
+          "covering_count": 1,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210311T112856_V20171222T225942_20171224T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-11T11:28:56+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210311T112856_V20171222T225942_20171224T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-11T11:28:56+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/S1B_OPER_AUX_POEORB_OPOD_20210311T112856_V20171222T225942_20171224T005942.EOF.zip",
+          "validity_start": "2017-12-22T22:59:42+00:00",
+          "validity_stop": "2017-12-24T00:59:42+00:00",
+          "zip_sha256": "652fc9a175f1c8c48fdaccad9c4ae84d0bdede4554e09bc3ad4faa44fb062929",
+          "zip_bytes": 599099,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210311T112856_V20171222T225942_20171224T005942.EOF",
+          "inner_eof_member_count": 1,
+          "inner_eof_duplicate_payloads_identical": false,
+          "inner_eof_sha256": "43ccafff66bc44efa23a92f3b1a0005f37989f1ec88f952dfdd7cad587fa7685",
+          "inner_eof_bytes": 4409846,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        }
+      },
+      "status": "PASS_EXACT_AUX_POEORB_BOTH_DATES_SHA256_FROZEN"
+    },
+    {
+      "case_id": "primary6_huaycoloro_2018-01-22",
+      "unit_id": "huaycoloro",
+      "season_id": "2017-2018",
+      "date_local": "2018-01-22",
+      "source_window_execution_identity_sha256": "461fcee9868cc12679a89a0476bdf87b66f14f64d12051dacdfde39b6cbffdd0",
+      "projection": "EPSG:32718",
+      "r1_freeze_path": "site/data/validation/ibvf_primary6_huaycoloro_2018-01-22_s1_r1_freeze_v01.json",
+      "r1_freeze_sha256": "01f0f9b34899eecac2debc317d4cf805760e39c9fb5feac7bb7af290995013a3",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20180111T103835_20180111T103900_009122_010525",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20180123T103835_20180123T103900_009297_010AD9",
+      "replacement_allowed": false,
+      "reselection_allowed": false,
+      "imputation_allowed": false,
+      "precise_orbits": {
+        "pre": {
+          "side": "pre",
+          "acquisition_utc": "2018-01-11T10:38:48.425093Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 28
+            }
+          ],
+          "aux_poeorb_zip_count": 90,
+          "covering_count": 1,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210311T182240_V20180110T225942_20180112T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-11T18:22:40+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210311T182240_V20180110T225942_20180112T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-11T18:22:40+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/S1B_OPER_AUX_POEORB_OPOD_20210311T182240_V20180110T225942_20180112T005942.EOF.zip",
+          "validity_start": "2018-01-10T22:59:42+00:00",
+          "validity_stop": "2018-01-12T00:59:42+00:00",
+          "zip_sha256": "3d6027de1b6ce10b1e7f7fdf525d0b586f195783896903f9c4cf609738b2cb21",
+          "zip_bytes": 1190248,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210311T182240_V20180110T225942_20180112T005942.EOF",
+          "inner_eof_member_count": 2,
+          "inner_eof_duplicate_payloads_identical": true,
+          "inner_eof_sha256": "abc19ab0b93c1968a3e1f8f91659134b859d8835ee4d61a122ac03b38d3bdec1",
+          "inner_eof_bytes": 4409840,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        },
+        "post": {
+          "side": "post",
+          "acquisition_utc": "2018-01-23T10:38:47.904351Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 28
+            }
+          ],
+          "aux_poeorb_zip_count": 90,
+          "covering_count": 1,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210311T214256_V20180122T225942_20180124T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-11T21:42:56+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210311T214256_V20180122T225942_20180124T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-11T21:42:56+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/S1B_OPER_AUX_POEORB_OPOD_20210311T214256_V20180122T225942_20180124T005942.EOF.zip",
+          "validity_start": "2018-01-22T22:59:42+00:00",
+          "validity_stop": "2018-01-24T00:59:42+00:00",
+          "zip_sha256": "ce362a91d4e1169639db1fbb9f5972aa9b334bd7d3c1789fd32eb505ec88fa5b",
+          "zip_bytes": 1201740,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210311T214256_V20180122T225942_20180124T005942.EOF",
+          "inner_eof_member_count": 2,
+          "inner_eof_duplicate_payloads_identical": true,
+          "inner_eof_sha256": "d720553fbb40133d1b227d18c9bbe37f43e6e63ab6bb3bff2f5001bfd56718fb",
+          "inner_eof_bytes": 4409827,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        }
+      },
+      "status": "PASS_EXACT_AUX_POEORB_BOTH_DATES_SHA256_FROZEN"
+    },
+    {
+      "case_id": "primary6_huaycoloro_2018-02-08",
+      "unit_id": "huaycoloro",
+      "season_id": "2017-2018",
+      "date_local": "2018-02-08",
+      "source_window_execution_identity_sha256": "b69e8cca53a99ae61621824908139b78797dca5a1a19a9176f3218b0261a7878",
+      "projection": "EPSG:32718",
+      "r1_freeze_path": "site/data/validation/ibvf_primary6_huaycoloro_2018-02-08_s1_r1_freeze_v01.json",
+      "r1_freeze_sha256": "1c7552bebe5f951bfae6e158f1905923bb893d8fef0c7dd54c6a371134b153b1",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20180128T104647_20180128T104705_009370_010D3E",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20180209T104647_20180209T104704_009545_011301",
+      "replacement_allowed": false,
+      "reselection_allowed": false,
+      "imputation_allowed": false,
+      "precise_orbits": {
+        "pre": {
+          "side": "pre",
+          "acquisition_utc": "2018-01-28T10:46:56.374473Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 28
+            }
+          ],
+          "aux_poeorb_zip_count": 90,
+          "covering_count": 1,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210311T230454_V20180127T225942_20180129T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-11T23:04:54+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210311T230454_V20180127T225942_20180129T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-11T23:04:54+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/S1B_OPER_AUX_POEORB_OPOD_20210311T230454_V20180127T225942_20180129T005942.EOF.zip",
+          "validity_start": "2018-01-27T22:59:42+00:00",
+          "validity_stop": "2018-01-29T00:59:42+00:00",
+          "zip_sha256": "c38d2c8fd227df7d34d174e4aa91d326413f7c92d49a1e9c557e57a57677b610",
+          "zip_bytes": 1200918,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210311T230454_V20180127T225942_20180129T005942.EOF",
+          "inner_eof_member_count": 2,
+          "inner_eof_duplicate_payloads_identical": true,
+          "inner_eof_sha256": "88f1440cf179b3834fcbca3719ac909f9d399efbf44e73db3b5811cfc6aa683e",
+          "inner_eof_bytes": 4409836,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        },
+        "post": {
+          "side": "post",
+          "acquisition_utc": "2018-02-09T10:46:56.136485Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/03/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 28
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/03/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            }
+          ],
+          "aux_poeorb_zip_count": 90,
+          "covering_count": 1,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210312T023017_V20180208T225942_20180210T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-12T02:30:17+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210312T023017_V20180208T225942_20180210T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-12T02:30:17+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/S1B_OPER_AUX_POEORB_OPOD_20210312T023017_V20180208T225942_20180210T005942.EOF.zip",
+          "validity_start": "2018-02-08T22:59:42+00:00",
+          "validity_stop": "2018-02-10T00:59:42+00:00",
+          "zip_sha256": "268cfa8d692d394102fc8d1535960aa7aef55a4ec642d87f443ab90c967c3ebe",
+          "zip_bytes": 1202404,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210312T023017_V20180208T225942_20180210T005942.EOF",
+          "inner_eof_member_count": 2,
+          "inner_eof_duplicate_payloads_identical": true,
+          "inner_eof_sha256": "422c0f78fa2c990e1d275b7d2ce1973afb74816d6c3a1af74bd1a31e8fe95d57",
+          "inner_eof_bytes": 4413146,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        }
+      },
+      "status": "PASS_EXACT_AUX_POEORB_BOTH_DATES_SHA256_FROZEN"
+    },
+    {
+      "case_id": "primary6_huaycoloro_2018-03-09",
+      "unit_id": "huaycoloro",
+      "season_id": "2017-2018",
+      "date_local": "2018-03-09",
+      "source_window_execution_identity_sha256": "8cc4a39b130778cf877ef7dbee314ff1b838d526142cbd1748f00d440415cce1",
+      "projection": "EPSG:32718",
+      "r1_freeze_path": "site/data/validation/ibvf_primary6_huaycoloro_2018-03-09_s1_r1_freeze_v01.json",
+      "r1_freeze_sha256": "c163fd50a7b6691eb77bfb1326644c9ea6c806c1dd883b3ab0781d1a2f6d3692",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20180228T103834_20180228T103859_009822_011C25",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20180312T103834_20180312T103859_009997_012205",
+      "replacement_allowed": false,
+      "reselection_allowed": false,
+      "imputation_allowed": false,
+      "precise_orbits": {
+        "pre": {
+          "side": "pre",
+          "acquisition_utc": "2018-02-28T10:38:47.380033Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/03/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 28
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/03/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            }
+          ],
+          "aux_poeorb_zip_count": 90,
+          "covering_count": 1,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210312T074917_V20180227T225942_20180301T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-12T07:49:17+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210312T074917_V20180227T225942_20180301T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-12T07:49:17+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/S1B_OPER_AUX_POEORB_OPOD_20210312T074917_V20180227T225942_20180301T005942.EOF.zip",
+          "validity_start": "2018-02-27T22:59:42+00:00",
+          "validity_stop": "2018-03-01T00:59:42+00:00",
+          "zip_sha256": "56fc15376d8ff0855d172f9e460d44b2862b6ce84366c089a8ce1628c5db6350",
+          "zip_bytes": 1202846,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210312T074917_V20180227T225942_20180301T005942.EOF",
+          "inner_eof_member_count": 2,
+          "inner_eof_duplicate_payloads_identical": true,
+          "inner_eof_sha256": "f0b50aaa2206b65a6735a6efabde08b865b9c58fd8895b2d6813d3cb680850a1",
+          "inner_eof_bytes": 4409829,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        },
+        "post": {
+          "side": "post",
+          "acquisition_utc": "2018-03-12T10:38:47.450030Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/03/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/03/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/04/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 28
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/03/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/04/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 30
+            }
+          ],
+          "aux_poeorb_zip_count": 89,
+          "covering_count": 1,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210312T110949_V20180311T225942_20180313T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-12T11:09:49+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210312T110949_V20180311T225942_20180313T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-12T11:09:49+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/03/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/03/S1B_OPER_AUX_POEORB_OPOD_20210312T110949_V20180311T225942_20180313T005942.EOF.zip",
+          "validity_start": "2018-03-11T22:59:42+00:00",
+          "validity_stop": "2018-03-13T00:59:42+00:00",
+          "zip_sha256": "fa2c0cf82c27b5d12713122eab3da625f45ae0d2e8a509f0767ddce7876b1e76",
+          "zip_bytes": 1199120,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210312T110949_V20180311T225942_20180313T005942.EOF",
+          "inner_eof_member_count": 2,
+          "inner_eof_duplicate_payloads_identical": true,
+          "inner_eof_sha256": "ee7a04599f1a2dc1e906cac9c7ed216bcce0ce0ec564fec4cf54a07583b0f3fe",
+          "inner_eof_bytes": 4409829,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        }
+      },
+      "status": "PASS_EXACT_AUX_POEORB_BOTH_DATES_SHA256_FROZEN"
+    },
+    {
+      "case_id": "primary6_san_ildefonso_2017-09-06",
+      "unit_id": "san_ildefonso",
+      "season_id": "2017-2018",
+      "date_local": "2017-09-06",
+      "source_window_execution_identity_sha256": "244ce6f68a6a4c140f4fdda08da16862351311c8de281290effca0aad649c254",
+      "projection": "EPSG:32717",
+      "r1_freeze_path": "site/data/validation/ibvf_primary6_san_ildefonso_2017-09-06_s1_r1_freeze_v01.json",
+      "r1_freeze_sha256": "877333db30960b3708a22269c8cac0a53ab7d324a22215adf457322d3647b5e9",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20170826T234225_20170826T234254_007117_00C8B9",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20170907T234225_20170907T234254_007292_00CDD0",
+      "replacement_allowed": false,
+      "reselection_allowed": false,
+      "imputation_allowed": false,
+      "precise_orbits": {
+        "pre": {
+          "side": "pre",
+          "acquisition_utc": "2017-08-26T23:42:40.014909Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/08/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/07/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/08/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/07/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/08/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 30
+            }
+          ],
+          "aux_poeorb_zip_count": 92,
+          "covering_count": 2,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210309T105436_V20170825T225942_20170827T005942.EOF.zip",
+            "S1B_OPER_AUX_POEORB_OPOD_20210309T111918_V20170826T225942_20170828T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-09T10:54:36+00:00",
+            "2021-03-09T11:19:18+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210309T111918_V20170826T225942_20170828T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-09T11:19:18+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/08/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/08/S1B_OPER_AUX_POEORB_OPOD_20210309T111918_V20170826T225942_20170828T005942.EOF.zip",
+          "validity_start": "2017-08-26T22:59:42+00:00",
+          "validity_stop": "2017-08-28T00:59:42+00:00",
+          "zip_sha256": "76a4295bbcfce70119d1a8244ad396a1fc7ed1fb97518ba38dd20dbd52872c89",
+          "zip_bytes": 594278,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210309T111918_V20170826T225942_20170828T005942.EOF",
+          "inner_eof_member_count": 1,
+          "inner_eof_duplicate_payloads_identical": false,
+          "inner_eof_sha256": "d1fc119bd7a08aaee01c6a531be8ca0fafde8967d413fc5e667fb642809ab6f9",
+          "inner_eof_bytes": 4409755,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        },
+        "post": {
+          "side": "post",
+          "acquisition_utc": "2017-09-07T23:42:40.356142Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/08/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/08/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 30
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            }
+          ],
+          "aux_poeorb_zip_count": 92,
+          "covering_count": 2,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210309T155440_V20170906T225942_20170908T005942.EOF.zip",
+            "S1B_OPER_AUX_POEORB_OPOD_20210309T161926_V20170907T225942_20170909T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-09T15:54:40+00:00",
+            "2021-03-09T16:19:26+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210309T161926_V20170907T225942_20170909T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-09T16:19:26+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/S1B_OPER_AUX_POEORB_OPOD_20210309T161926_V20170907T225942_20170909T005942.EOF.zip",
+          "validity_start": "2017-09-07T22:59:42+00:00",
+          "validity_stop": "2017-09-09T00:59:42+00:00",
+          "zip_sha256": "b8b9421bbb235ebe30b1db4a2ecb86a567b967ef83374726068de12949d89683",
+          "zip_bytes": 601104,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210309T161926_V20170907T225942_20170909T005942.EOF",
+          "inner_eof_member_count": 1,
+          "inner_eof_duplicate_payloads_identical": false,
+          "inner_eof_sha256": "fdd85f20a4edc565426c54a39dcf7121dbf0a3e23333e7633c569a61766a2d41",
+          "inner_eof_bytes": 4409757,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        }
+      },
+      "status": "PASS_EXACT_AUX_POEORB_BOTH_DATES_SHA256_FROZEN"
+    },
+    {
+      "case_id": "primary6_san_ildefonso_2017-09-29",
+      "unit_id": "san_ildefonso",
+      "season_id": "2017-2018",
+      "date_local": "2017-09-29",
+      "source_window_execution_identity_sha256": "58c4b8ec6c0e9cdb7d5bc22c603534581b014eb88a09cab828aa201838f44ff4",
+      "projection": "EPSG:32717",
+      "r1_freeze_path": "site/data/validation/ibvf_primary6_san_ildefonso_2017-09-29_s1_r1_freeze_v01.json",
+      "r1_freeze_sha256": "cf2f4c9a091e5f3973ba521004029e8bd2190f9bf4862cb11833586bbd7bb6df",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20170926T233433_20170926T233458_007569_00D5D3",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20171008T233408_20171008T233433_007744_00DAD9",
+      "replacement_allowed": false,
+      "reselection_allowed": false,
+      "imputation_allowed": false,
+      "precise_orbits": {
+        "pre": {
+          "side": "pre",
+          "acquisition_utc": "2017-09-26T23:34:45.761698Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/08/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/08/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 30
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            }
+          ],
+          "aux_poeorb_zip_count": 92,
+          "covering_count": 2,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210309T233206_V20170925T225942_20170927T005942.EOF.zip",
+            "S1B_OPER_AUX_POEORB_OPOD_20210309T235644_V20170926T225942_20170928T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-09T23:32:06+00:00",
+            "2021-03-09T23:56:44+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210309T235644_V20170926T225942_20170928T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-09T23:56:44+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/S1B_OPER_AUX_POEORB_OPOD_20210309T235644_V20170926T225942_20170928T005942.EOF.zip",
+          "validity_start": "2017-09-26T22:59:42+00:00",
+          "validity_stop": "2017-09-28T00:59:42+00:00",
+          "zip_sha256": "282d4cce9d64e44d0c69803fb8893ed11092f4ea69550ef4c3eb34eb91bce3f4",
+          "zip_bytes": 596695,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210309T235644_V20170926T225942_20170928T005942.EOF",
+          "inner_eof_member_count": 1,
+          "inner_eof_duplicate_payloads_identical": false,
+          "inner_eof_sha256": "2574ae1126fff6b7c216e91b389381e8c6e4b94d87673a5aabf878dbbfb45a65",
+          "inner_eof_bytes": 4410249,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        },
+        "post": {
+          "side": "post",
+          "acquisition_utc": "2017-10-08T23:34:20.929082Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 30
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 30
+            }
+          ],
+          "aux_poeorb_zip_count": 91,
+          "covering_count": 2,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210310T042452_V20171007T225942_20171009T005942.EOF.zip",
+            "S1B_OPER_AUX_POEORB_OPOD_20210310T045007_V20171008T225942_20171010T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-10T04:24:52+00:00",
+            "2021-03-10T04:50:07+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210310T045007_V20171008T225942_20171010T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-10T04:50:07+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/S1B_OPER_AUX_POEORB_OPOD_20210310T045007_V20171008T225942_20171010T005942.EOF.zip",
+          "validity_start": "2017-10-08T22:59:42+00:00",
+          "validity_stop": "2017-10-10T00:59:42+00:00",
+          "zip_sha256": "88fc32668bae694454ed558bd10727699d23b61eb439933972334c27c1e64765",
+          "zip_bytes": 600664,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210310T045007_V20171008T225942_20171010T005942.EOF",
+          "inner_eof_member_count": 1,
+          "inner_eof_duplicate_payloads_identical": false,
+          "inner_eof_sha256": "f05b4d1610cc298c94577b47b8365ff1db8ad294778f35955023ad7caa617927",
+          "inner_eof_bytes": 4409587,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        }
+      },
+      "status": "PASS_EXACT_AUX_POEORB_BOTH_DATES_SHA256_FROZEN"
+    },
+    {
+      "case_id": "primary6_san_ildefonso_2017-12-27",
+      "unit_id": "san_ildefonso",
+      "season_id": "2017-2018",
+      "date_local": "2017-12-27",
+      "source_window_execution_identity_sha256": "9003fe23da1e67445b961a98a6a9e625edfd1400557b2507ac62be973445d3a6",
+      "projection": "EPSG:32717",
+      "r1_freeze_path": "site/data/validation/ibvf_primary6_san_ildefonso_2017-12-27_s1_r1_freeze_v01.json",
+      "r1_freeze_sha256": "5dd87c832eb908aa427d2f2a5020f80e070125865c609621cecb4fd82f545f22",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20171224T234225_20171224T234254_008867_00FCDF",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20180105T234224_20180105T234253_009042_01028F",
+      "replacement_allowed": false,
+      "reselection_allowed": false,
+      "imputation_allowed": false,
+      "precise_orbits": {
+        "pre": {
+          "side": "pre",
+          "acquisition_utc": "2017-12-24T23:42:39.917359Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 30
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            }
+          ],
+          "aux_poeorb_zip_count": 92,
+          "covering_count": 2,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210311T115158_V20171223T225942_20171225T005942.EOF.zip",
+            "S1B_OPER_AUX_POEORB_OPOD_20210311T121741_V20171224T225942_20171226T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-11T11:51:58+00:00",
+            "2021-03-11T12:17:41+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210311T121741_V20171224T225942_20171226T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-11T12:17:41+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/S1B_OPER_AUX_POEORB_OPOD_20210311T121741_V20171224T225942_20171226T005942.EOF.zip",
+          "validity_start": "2017-12-24T22:59:42+00:00",
+          "validity_stop": "2017-12-26T00:59:42+00:00",
+          "zip_sha256": "40bb9f42919862d4b5703b266728c5bf6db96ad3cd9e59e1c575e893d1380d34",
+          "zip_bytes": 601197,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210311T121741_V20171224T225942_20171226T005942.EOF",
+          "inner_eof_member_count": 1,
+          "inner_eof_duplicate_payloads_identical": false,
+          "inner_eof_sha256": "421502b7a52d95629af3d489ca7c81b6c3167c3101b2ce4d0c1e92baa2be7f09",
+          "inner_eof_bytes": 4409761,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        },
+        "post": {
+          "side": "post",
+          "acquisition_utc": "2018-01-05T23:42:39.337107Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 28
+            }
+          ],
+          "aux_poeorb_zip_count": 90,
+          "covering_count": 2,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210311T163659_V20180104T225942_20180106T005942.EOF.zip",
+            "S1B_OPER_AUX_POEORB_OPOD_20210311T165747_V20180105T225942_20180107T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-11T16:36:59+00:00",
+            "2021-03-11T16:57:47+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210311T165747_V20180105T225942_20180107T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-11T16:57:47+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/S1B_OPER_AUX_POEORB_OPOD_20210311T165747_V20180105T225942_20180107T005942.EOF.zip",
+          "validity_start": "2018-01-05T22:59:42+00:00",
+          "validity_stop": "2018-01-07T00:59:42+00:00",
+          "zip_sha256": "55d4282411dc49450a71fe283dfa576a0fb9734b0278dbf99a901506e657501a",
+          "zip_bytes": 1201266,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210311T165747_V20180105T225942_20180107T005942.EOF",
+          "inner_eof_member_count": 2,
+          "inner_eof_duplicate_payloads_identical": true,
+          "inner_eof_sha256": "578bdbb51944cc922db546407f0651eee02f80b0aa107165f7e90e1e87facf44",
+          "inner_eof_bytes": 4409755,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        }
+      },
+      "status": "PASS_EXACT_AUX_POEORB_BOTH_DATES_SHA256_FROZEN"
+    },
+    {
+      "case_id": "primary6_san_ildefonso_2018-02-02",
+      "unit_id": "san_ildefonso",
+      "season_id": "2017-2018",
+      "date_local": "2018-02-02",
+      "source_window_execution_identity_sha256": "59db3f6f20fbe1a29caef37030155ab29abc448e930662c1b2d1a8f63f6a943e",
+      "projection": "EPSG:32717",
+      "r1_freeze_path": "site/data/validation/ibvf_primary6_san_ildefonso_2018-02-02_s1_r1_freeze_v01.json",
+      "r1_freeze_sha256": "8eabe28c60d8e52e5e7de7cbf790f98db613d02b9d40b7b5aab71863f40d6859",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20180124T233430_20180124T233455_009319_010B95",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20180205T233405_20180205T233430_009494_011151",
+      "replacement_allowed": false,
+      "reselection_allowed": false,
+      "imputation_allowed": false,
+      "precise_orbits": {
+        "pre": {
+          "side": "pre",
+          "acquisition_utc": "2018-01-24T23:34:43.284276Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 28
+            }
+          ],
+          "aux_poeorb_zip_count": 90,
+          "covering_count": 2,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210311T215955_V20180123T225942_20180125T005942.EOF.zip",
+            "S1B_OPER_AUX_POEORB_OPOD_20210311T221659_V20180124T225942_20180126T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-11T21:59:55+00:00",
+            "2021-03-11T22:16:59+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210311T221659_V20180124T225942_20180126T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-11T22:16:59+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/S1B_OPER_AUX_POEORB_OPOD_20210311T221659_V20180124T225942_20180126T005942.EOF.zip",
+          "validity_start": "2018-01-24T22:59:42+00:00",
+          "validity_stop": "2018-01-26T00:59:42+00:00",
+          "zip_sha256": "c7330b3f20f2da7a455ef7ca5d92f5a22a48d9d1104e603357ec449a7acfec86",
+          "zip_bytes": 1203620,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210311T221659_V20180124T225942_20180126T005942.EOF",
+          "inner_eof_member_count": 2,
+          "inner_eof_duplicate_payloads_identical": true,
+          "inner_eof_sha256": "33caa2cdd5b9c4c995d9b17a89abbf93c2d8a0464fee28b93ae17d1139be88b5",
+          "inner_eof_bytes": 4409592,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        },
+        "post": {
+          "side": "post",
+          "acquisition_utc": "2018-02-05T23:34:18.026742Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/03/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 28
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/03/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            }
+          ],
+          "aux_poeorb_zip_count": 90,
+          "covering_count": 2,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210312T012114_V20180204T225942_20180206T005942.EOF.zip",
+            "S1B_OPER_AUX_POEORB_OPOD_20210312T013800_V20180205T225942_20180207T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-12T01:21:14+00:00",
+            "2021-03-12T01:38:00+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210312T013800_V20180205T225942_20180207T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-12T01:38:00+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/S1B_OPER_AUX_POEORB_OPOD_20210312T013800_V20180205T225942_20180207T005942.EOF.zip",
+          "validity_start": "2018-02-05T22:59:42+00:00",
+          "validity_stop": "2018-02-07T00:59:42+00:00",
+          "zip_sha256": "0ad53eb9f825d2fb563615e7f55bd43ec4f214316735b64620443f1b77d4ded2",
+          "zip_bytes": 1210992,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210312T013800_V20180205T225942_20180207T005942.EOF",
+          "inner_eof_member_count": 2,
+          "inner_eof_duplicate_payloads_identical": true,
+          "inner_eof_sha256": "9b1a191e490ff767fd30268bd91b05c8822d4b87da855516f17c81c42a87da87",
+          "inner_eof_bytes": 4409597,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        }
+      },
+      "status": "PASS_EXACT_AUX_POEORB_BOTH_DATES_SHA256_FROZEN"
+    },
+    {
+      "case_id": "primary6_san_ildefonso_2018-02-25",
+      "unit_id": "san_ildefonso",
+      "season_id": "2017-2018",
+      "date_local": "2018-02-25",
+      "source_window_execution_identity_sha256": "e057687e59d6366865b5e62cc949b6527ba6ae525cf84351c7904110422efccc",
+      "projection": "EPSG:32717",
+      "r1_freeze_path": "site/data/validation/ibvf_primary6_san_ildefonso_2018-02-25_s1_r1_freeze_v01.json",
+      "r1_freeze_sha256": "5056c2ac369f329cb35dbc5840affe0602e163113d96e35bc72eef0e720985b7",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20180217T233430_20180217T233455_009669_011712",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20180301T233405_20180301T233430_009844_011CDD",
+      "replacement_allowed": false,
+      "reselection_allowed": false,
+      "imputation_allowed": false,
+      "precise_orbits": {
+        "pre": {
+          "side": "pre",
+          "acquisition_utc": "2018-02-17T23:34:42.821218Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/03/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 28
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/03/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            }
+          ],
+          "aux_poeorb_zip_count": 90,
+          "covering_count": 2,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210312T044626_V20180216T225942_20180218T005942.EOF.zip",
+            "S1B_OPER_AUX_POEORB_OPOD_20210312T050258_V20180217T225942_20180219T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-12T04:46:26+00:00",
+            "2021-03-12T05:02:58+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210312T050258_V20180217T225942_20180219T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-12T05:02:58+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/S1B_OPER_AUX_POEORB_OPOD_20210312T050258_V20180217T225942_20180219T005942.EOF.zip",
+          "validity_start": "2018-02-17T22:59:42+00:00",
+          "validity_stop": "2018-02-19T00:59:42+00:00",
+          "zip_sha256": "fe54aa73fb452a093431264a40120edb048082700ea73921bdd78429a152d6e9",
+          "zip_bytes": 1206782,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210312T050258_V20180217T225942_20180219T005942.EOF",
+          "inner_eof_member_count": 2,
+          "inner_eof_duplicate_payloads_identical": true,
+          "inner_eof_sha256": "fc0dd72bdfc777c3ebdb537fc094ca259b4d49842dab187bd8ba820594d53742",
+          "inner_eof_bytes": 4409594,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        },
+        "post": {
+          "side": "post",
+          "acquisition_utc": "2018-03-01T23:34:17.838693Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/03/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/03/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/04/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 28
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/03/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/04/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 30
+            }
+          ],
+          "aux_poeorb_zip_count": 89,
+          "covering_count": 2,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210312T080429_V20180228T225942_20180302T005942.EOF.zip",
+            "S1B_OPER_AUX_POEORB_OPOD_20210312T082116_V20180301T225942_20180303T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-12T08:04:29+00:00",
+            "2021-03-12T08:21:16+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210312T082116_V20180301T225942_20180303T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-12T08:21:16+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/03/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/03/S1B_OPER_AUX_POEORB_OPOD_20210312T082116_V20180301T225942_20180303T005942.EOF.zip",
+          "validity_start": "2018-03-01T22:59:42+00:00",
+          "validity_stop": "2018-03-03T00:59:42+00:00",
+          "zip_sha256": "2d78c4c3c9a377966d40503829a5555045b37a51d0165db3643071829550a37b",
+          "zip_bytes": 1208794,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210312T082116_V20180301T225942_20180303T005942.EOF",
+          "inner_eof_member_count": 2,
+          "inner_eof_duplicate_payloads_identical": true,
+          "inner_eof_sha256": "29c8ed964dc72e45c3f55a8a8b081b1bb7bc26f44550093b4182ca0d11ea6272",
+          "inner_eof_bytes": 4409595,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        }
+      },
+      "status": "PASS_EXACT_AUX_POEORB_BOTH_DATES_SHA256_FROZEN"
+    },
+    {
+      "case_id": "primary6_san_ildefonso_2018-04-08",
+      "unit_id": "san_ildefonso",
+      "season_id": "2017-2018",
+      "date_local": "2018-04-08",
+      "source_window_execution_identity_sha256": "2ef1e6e419f530b5c54e4b5e8ca0800c9205a4b2f4b3fcf65f29f5ca275b9b8f",
+      "projection": "EPSG:32717",
+      "r1_freeze_path": "site/data/validation/ibvf_primary6_san_ildefonso_2018-04-08_s1_r1_freeze_v01.json",
+      "r1_freeze_sha256": "382f41080a5c29b89a8f4c886423209fa79821adaf1ecc9ac5eabec5ed7f98aa",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20180406T233431_20180406T233456_010369_012E17",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20180418T233406_20180418T233431_010544_0133AB",
+      "replacement_allowed": false,
+      "reselection_allowed": false,
+      "imputation_allowed": false,
+      "precise_orbits": {
+        "pre": {
+          "side": "pre",
+          "acquisition_utc": "2018-04-06T23:34:43.621034Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/04/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/03/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/04/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/05/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/03/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/04/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 30
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/05/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            }
+          ],
+          "aux_poeorb_zip_count": 92,
+          "covering_count": 2,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210312T180549_V20180405T225942_20180407T005942.EOF.zip",
+            "S1B_OPER_AUX_POEORB_OPOD_20210312T182253_V20180406T225942_20180408T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-12T18:05:49+00:00",
+            "2021-03-12T18:22:53+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210312T182253_V20180406T225942_20180408T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-12T18:22:53+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/04/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/04/S1B_OPER_AUX_POEORB_OPOD_20210312T182253_V20180406T225942_20180408T005942.EOF.zip",
+          "validity_start": "2018-04-06T22:59:42+00:00",
+          "validity_stop": "2018-04-08T00:59:42+00:00",
+          "zip_sha256": "f68226345663abadd02180012adbf99a4c5efd026a6aa3b17d74260ce27ee3b7",
+          "zip_bytes": 1196112,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210312T182253_V20180406T225942_20180408T005942.EOF",
+          "inner_eof_member_count": 2,
+          "inner_eof_duplicate_payloads_identical": true,
+          "inner_eof_sha256": "f9f6ac4b9c1c28740fae5c0bf3902b96072bf4b237e3fdb7485bee4da112170a",
+          "inner_eof_bytes": 4409601,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        },
+        "post": {
+          "side": "post",
+          "acquisition_utc": "2018-04-18T23:34:18.737417Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/04/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/03/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/04/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/05/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/03/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/04/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 30
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/05/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            }
+          ],
+          "aux_poeorb_zip_count": 92,
+          "covering_count": 2,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210312T212755_V20180417T225942_20180419T005942.EOF.zip",
+            "S1B_OPER_AUX_POEORB_OPOD_20210312T214458_V20180418T225942_20180420T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-12T21:27:55+00:00",
+            "2021-03-12T21:44:58+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210312T214458_V20180418T225942_20180420T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-12T21:44:58+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/04/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/04/S1B_OPER_AUX_POEORB_OPOD_20210312T214458_V20180418T225942_20180420T005942.EOF.zip",
+          "validity_start": "2018-04-18T22:59:42+00:00",
+          "validity_stop": "2018-04-20T00:59:42+00:00",
+          "zip_sha256": "9776086a9986884740b66cfb16dc76333762444fa5cd4bf5b0af7124930d3d76",
+          "zip_bytes": 1204074,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210312T214458_V20180418T225942_20180420T005942.EOF",
+          "inner_eof_member_count": 2,
+          "inner_eof_duplicate_payloads_identical": true,
+          "inner_eof_sha256": "7be8feaa6a9d4847b36d85ba49dbd1649862b20cffc19abec14eb1235800b5aa",
+          "inner_eof_bytes": 4409602,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        }
+      },
+      "status": "PASS_EXACT_AUX_POEORB_BOTH_DATES_SHA256_FROZEN"
+    },
+    {
+      "case_id": "primary6_shingolay_2017-09-11",
+      "unit_id": "shingolay",
+      "season_id": "2017-2018",
+      "date_local": "2017-09-11",
+      "source_window_execution_identity_sha256": "1ec8a9dedb9245316fc44b5b1b13d2457f7c8bad36560770366160cb96c74852",
+      "projection": "EPSG:32718",
+      "r1_freeze_path": "site/data/validation/ibvf_primary6_shingolay_2017-09-11_s1_r1_freeze_v01.json",
+      "r1_freeze_sha256": "03abc90e4402da433e799d6bd6f163fbb64a31ef87953b8d663968d8efaafe21",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20170901T103836_20170901T103901_007197_00CB02",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20170925T103837_20170925T103902_007547_00D533",
+      "replacement_allowed": false,
+      "reselection_allowed": false,
+      "imputation_allowed": false,
+      "precise_orbits": {
+        "pre": {
+          "side": "pre",
+          "acquisition_utc": "2017-09-01T10:38:49.332557Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/08/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/08/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 30
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            }
+          ],
+          "aux_poeorb_zip_count": 92,
+          "covering_count": 1,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210309T132629_V20170831T225942_20170902T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-09T13:26:29+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210309T132629_V20170831T225942_20170902T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-09T13:26:29+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/08/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/08/S1B_OPER_AUX_POEORB_OPOD_20210309T132629_V20170831T225942_20170902T005942.EOF.zip",
+          "validity_start": "2017-08-31T22:59:42+00:00",
+          "validity_stop": "2017-09-02T00:59:42+00:00",
+          "zip_sha256": "76d25611683f44acb964b090c2e76f13f7ca03552214795c4c48029b6b5a9685",
+          "zip_bytes": 593210,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210309T132629_V20170831T225942_20170902T005942.EOF",
+          "inner_eof_member_count": 1,
+          "inner_eof_duplicate_payloads_identical": false,
+          "inner_eof_sha256": "df221912c651deab5b92ab2604abaa8c60d5d4615d6fbae5247164d8c40da663",
+          "inner_eof_bytes": 4409829,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        },
+        "post": {
+          "side": "post",
+          "acquisition_utc": "2017-09-25T10:38:50.246019Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/08/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/08/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 30
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            }
+          ],
+          "aux_poeorb_zip_count": 92,
+          "covering_count": 1,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210309T230735_V20170924T225942_20170926T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-09T23:07:35+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210309T230735_V20170924T225942_20170926T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-09T23:07:35+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/09/S1B_OPER_AUX_POEORB_OPOD_20210309T230735_V20170924T225942_20170926T005942.EOF.zip",
+          "validity_start": "2017-09-24T22:59:42+00:00",
+          "validity_stop": "2017-09-26T00:59:42+00:00",
+          "zip_sha256": "c6abc0a482a111d93ec4ef90d253e15ca2bf828e59a0885fb207eaa3bcd24e05",
+          "zip_bytes": 597169,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210309T230735_V20170924T225942_20170926T005942.EOF",
+          "inner_eof_member_count": 1,
+          "inner_eof_duplicate_payloads_identical": false,
+          "inner_eof_sha256": "038416f9620078eb3d45d645c9fdff8dbef65091c603104e47c0d79bc0129696",
+          "inner_eof_bytes": 4409839,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        }
+      },
+      "status": "PASS_EXACT_AUX_POEORB_BOTH_DATES_SHA256_FROZEN"
+    },
+    {
+      "case_id": "primary6_shingolay_2017-11-15",
+      "unit_id": "shingolay",
+      "season_id": "2017-2018",
+      "date_local": "2017-11-15",
+      "source_window_execution_identity_sha256": "7b28ae5458badc3e7f98dcd3f4cc312545225281ed1351976c1b7578cef348b5",
+      "projection": "EPSG:32718",
+      "r1_freeze_path": "site/data/validation/ibvf_primary6_shingolay_2017-11-15_s1_r1_freeze_v01.json",
+      "r1_freeze_sha256": "b57edeee502d07cff89358d9b35768db0428af28113f807c351b72a433201f60",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20171112T103837_20171112T103902_008247_00E964",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20171124T103837_20171124T103902_008422_00EEAE",
+      "replacement_allowed": false,
+      "reselection_allowed": false,
+      "imputation_allowed": false,
+      "precise_orbits": {
+        "pre": {
+          "side": "pre",
+          "acquisition_utc": "2017-11-12T10:38:50.340153Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 30
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            }
+          ],
+          "aux_poeorb_zip_count": 92,
+          "covering_count": 1,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210310T185556_V20171111T225942_20171113T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-10T18:55:56+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210310T185556_V20171111T225942_20171113T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-10T18:55:56+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/S1B_OPER_AUX_POEORB_OPOD_20210310T185556_V20171111T225942_20171113T005942.EOF.zip",
+          "validity_start": "2017-11-11T22:59:42+00:00",
+          "validity_stop": "2017-11-13T00:59:42+00:00",
+          "zip_sha256": "a39eb6aa57e27e8647ddd2146f1e440799bb994f4802570f22bc06bb30ea318d",
+          "zip_bytes": 605464,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210310T185556_V20171111T225942_20171113T005942.EOF",
+          "inner_eof_member_count": 1,
+          "inner_eof_duplicate_payloads_identical": false,
+          "inner_eof_sha256": "4ec6cd344266465d097e3bee26bc23f1ca08a35641d857a9730f680888d33066",
+          "inner_eof_bytes": 4409836,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        },
+        "post": {
+          "side": "post",
+          "acquisition_utc": "2017-11-24T10:38:50.133513Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 30
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            }
+          ],
+          "aux_poeorb_zip_count": 92,
+          "covering_count": 1,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210310T234446_V20171123T225942_20171125T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-10T23:44:46+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210310T234446_V20171123T225942_20171125T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-10T23:44:46+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/S1B_OPER_AUX_POEORB_OPOD_20210310T234446_V20171123T225942_20171125T005942.EOF.zip",
+          "validity_start": "2017-11-23T22:59:42+00:00",
+          "validity_stop": "2017-11-25T00:59:42+00:00",
+          "zip_sha256": "150d0bbbce03060a608a30266bdc61f0356f4f8f71d5f89d2d00f41e48300f4a",
+          "zip_bytes": 598777,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210310T234446_V20171123T225942_20171125T005942.EOF",
+          "inner_eof_member_count": 1,
+          "inner_eof_duplicate_payloads_identical": false,
+          "inner_eof_sha256": "27a34c4dcf1aadc90a8c57cdf56369559ad31ee40cecca3f17b849c5a9725413",
+          "inner_eof_bytes": 4409844,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        }
+      },
+      "status": "PASS_EXACT_AUX_POEORB_BOTH_DATES_SHA256_FROZEN"
+    },
+    {
+      "case_id": "primary6_shingolay_2017-11-30",
+      "unit_id": "shingolay",
+      "season_id": "2017-2018",
+      "date_local": "2017-11-30",
+      "source_window_execution_identity_sha256": "ab4c2f55b67584c6be9ec6cf964351aa0821e6ca6ab4f30969b8c745fd02e190",
+      "projection": "EPSG:32718",
+      "r1_freeze_path": "site/data/validation/ibvf_primary6_shingolay_2017-11-30_s1_r1_freeze_v01.json",
+      "r1_freeze_sha256": "9a37b570c48fe1b0bcba728289d9b83380f703b53bd6991eded94e3b11ffaa0c",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20171125T233314_20171125T233343_008444_00EF60",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20171207T233313_20171207T233342_008619_00F4EE",
+      "replacement_allowed": false,
+      "reselection_allowed": false,
+      "imputation_allowed": false,
+      "precise_orbits": {
+        "pre": {
+          "side": "pre",
+          "acquisition_utc": "2017-11-25T23:33:28.568089Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/10/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 30
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            }
+          ],
+          "aux_poeorb_zip_count": 92,
+          "covering_count": 2,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210311T000837_V20171124T225942_20171126T005942.EOF.zip",
+            "S1B_OPER_AUX_POEORB_OPOD_20210311T003424_V20171125T225942_20171127T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-11T00:08:37+00:00",
+            "2021-03-11T00:34:24+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210311T003424_V20171125T225942_20171127T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-11T00:34:24+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/S1B_OPER_AUX_POEORB_OPOD_20210311T003424_V20171125T225942_20171127T005942.EOF.zip",
+          "validity_start": "2017-11-25T22:59:42+00:00",
+          "validity_stop": "2017-11-27T00:59:42+00:00",
+          "zip_sha256": "e396276cdb687e96c462b54f77e2c86b69ed162692090d22ed1195d3813a1500",
+          "zip_bytes": 601190,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210311T003424_V20171125T225942_20171127T005942.EOF",
+          "inner_eof_member_count": 1,
+          "inner_eof_duplicate_payloads_identical": false,
+          "inner_eof_sha256": "7848d7d1238ab2ac68794d4799f412a45f4f849f929ef475a36e6ba1edfd54ae",
+          "inner_eof_bytes": 4409587,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        },
+        "post": {
+          "side": "post",
+          "acquisition_utc": "2017-12-07T23:33:28.048772Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 30
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            }
+          ],
+          "aux_poeorb_zip_count": 92,
+          "covering_count": 2,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210311T045715_V20171206T225942_20171208T005942.EOF.zip",
+            "S1B_OPER_AUX_POEORB_OPOD_20210311T052128_V20171207T225942_20171209T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-11T04:57:15+00:00",
+            "2021-03-11T05:21:28+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210311T052128_V20171207T225942_20171209T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-11T05:21:28+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/S1B_OPER_AUX_POEORB_OPOD_20210311T052128_V20171207T225942_20171209T005942.EOF.zip",
+          "validity_start": "2017-12-07T22:59:42+00:00",
+          "validity_stop": "2017-12-09T00:59:42+00:00",
+          "zip_sha256": "c49880b2c5b0413712e99980d5af547a7858b28647ee761a46c5dc238a59e2d2",
+          "zip_bytes": 604892,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210311T052128_V20171207T225942_20171209T005942.EOF",
+          "inner_eof_member_count": 1,
+          "inner_eof_duplicate_payloads_identical": false,
+          "inner_eof_sha256": "797621e4f61513fefe743a8f567ba8daf95c16948914fd5fb057e5538b42c3de",
+          "inner_eof_bytes": 4409597,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        }
+      },
+      "status": "PASS_EXACT_AUX_POEORB_BOTH_DATES_SHA256_FROZEN"
+    },
+    {
+      "case_id": "primary6_shingolay_2017-12-09",
+      "unit_id": "shingolay",
+      "season_id": "2017-2018",
+      "date_local": "2017-12-09",
+      "source_window_execution_identity_sha256": "daa4bf9bd61fd2b897430516b0a69732937d2f4a3c6219515ca06bb78da63d97",
+      "projection": "EPSG:32718",
+      "r1_freeze_path": "site/data/validation/ibvf_primary6_shingolay_2017-12-09_s1_r1_freeze_v01.json",
+      "r1_freeze_sha256": "992267970657187aa5de1c59bccee8219fb822b0f0427ab86ea03618f4fa21c3",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20171206T103837_20171206T103902_008597_00F43F",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20171218T103836_20171218T103901_008772_00F9D3",
+      "replacement_allowed": false,
+      "reselection_allowed": false,
+      "imputation_allowed": false,
+      "precise_orbits": {
+        "pre": {
+          "side": "pre",
+          "acquisition_utc": "2017-12-06T10:38:49.657233Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 30
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            }
+          ],
+          "aux_poeorb_zip_count": 92,
+          "covering_count": 1,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210311T043222_V20171205T225942_20171207T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-11T04:32:22+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210311T043222_V20171205T225942_20171207T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-11T04:32:22+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/S1B_OPER_AUX_POEORB_OPOD_20210311T043222_V20171205T225942_20171207T005942.EOF.zip",
+          "validity_start": "2017-12-05T22:59:42+00:00",
+          "validity_stop": "2017-12-07T00:59:42+00:00",
+          "zip_sha256": "69306b33d6c28de4fa9508877072a501d2dee5e328600a17898ac0944ad502e7",
+          "zip_bytes": 603846,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210311T043222_V20171205T225942_20171207T005942.EOF",
+          "inner_eof_member_count": 1,
+          "inner_eof_duplicate_payloads_identical": false,
+          "inner_eof_sha256": "bb7ba3069ff562a350c043ba12581c8b00242a94f3d529da2a9fbf24b9942626",
+          "inner_eof_bytes": 4409837,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        },
+        "post": {
+          "side": "post",
+          "acquisition_utc": "2017-12-18T10:38:49.345524Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/11/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 30
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            }
+          ],
+          "aux_poeorb_zip_count": 92,
+          "covering_count": 1,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210311T092757_V20171217T225942_20171219T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-11T09:27:57+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210311T092757_V20171217T225942_20171219T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-11T09:27:57+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/S1B_OPER_AUX_POEORB_OPOD_20210311T092757_V20171217T225942_20171219T005942.EOF.zip",
+          "validity_start": "2017-12-17T22:59:42+00:00",
+          "validity_stop": "2017-12-19T00:59:42+00:00",
+          "zip_sha256": "87d2098fb797fc11d1084b384eb719889d26152be37135e972869639f9b8277d",
+          "zip_bytes": 596834,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210311T092757_V20171217T225942_20171219T005942.EOF",
+          "inner_eof_member_count": 1,
+          "inner_eof_duplicate_payloads_identical": false,
+          "inner_eof_sha256": "19f5f4b2a567608f12b2d71768f30a21c4ef943d9ae3f415b30c2b04da8d8d3f",
+          "inner_eof_bytes": 4409827,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        }
+      },
+      "status": "PASS_EXACT_AUX_POEORB_BOTH_DATES_SHA256_FROZEN"
+    },
+    {
+      "case_id": "primary6_shingolay_2018-01-13",
+      "unit_id": "shingolay",
+      "season_id": "2017-2018",
+      "date_local": "2018-01-13",
+      "source_window_execution_identity_sha256": "bd6c603178e0d02b2a5acf91205abf32f620f31b32dab4ad921321388c60ee12",
+      "projection": "EPSG:32718",
+      "r1_freeze_path": "site/data/validation/ibvf_primary6_shingolay_2018-01-13_s1_r1_freeze_v01.json",
+      "r1_freeze_sha256": "c3b7e0d819396efdf575f27cb9af92e6c2a6805fb3afa1ae7d53f55e222513c0",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20180111T103835_20180111T103900_009122_010525",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20180123T103835_20180123T103900_009297_010AD9",
+      "replacement_allowed": false,
+      "reselection_allowed": false,
+      "imputation_allowed": false,
+      "precise_orbits": {
+        "pre": {
+          "side": "pre",
+          "acquisition_utc": "2018-01-11T10:38:48.425093Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 28
+            }
+          ],
+          "aux_poeorb_zip_count": 90,
+          "covering_count": 1,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210311T182240_V20180110T225942_20180112T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-11T18:22:40+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210311T182240_V20180110T225942_20180112T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-11T18:22:40+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/S1B_OPER_AUX_POEORB_OPOD_20210311T182240_V20180110T225942_20180112T005942.EOF.zip",
+          "validity_start": "2018-01-10T22:59:42+00:00",
+          "validity_stop": "2018-01-12T00:59:42+00:00",
+          "zip_sha256": "3d6027de1b6ce10b1e7f7fdf525d0b586f195783896903f9c4cf609738b2cb21",
+          "zip_bytes": 1190248,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210311T182240_V20180110T225942_20180112T005942.EOF",
+          "inner_eof_member_count": 2,
+          "inner_eof_duplicate_payloads_identical": true,
+          "inner_eof_sha256": "abc19ab0b93c1968a3e1f8f91659134b859d8835ee4d61a122ac03b38d3bdec1",
+          "inner_eof_bytes": 4409840,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        },
+        "post": {
+          "side": "post",
+          "acquisition_utc": "2018-01-23T10:38:47.904351Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 28
+            }
+          ],
+          "aux_poeorb_zip_count": 90,
+          "covering_count": 1,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210311T214256_V20180122T225942_20180124T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-11T21:42:56+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210311T214256_V20180122T225942_20180124T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-11T21:42:56+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/S1B_OPER_AUX_POEORB_OPOD_20210311T214256_V20180122T225942_20180124T005942.EOF.zip",
+          "validity_start": "2018-01-22T22:59:42+00:00",
+          "validity_stop": "2018-01-24T00:59:42+00:00",
+          "zip_sha256": "ce362a91d4e1169639db1fbb9f5972aa9b334bd7d3c1789fd32eb505ec88fa5b",
+          "zip_bytes": 1201740,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210311T214256_V20180122T225942_20180124T005942.EOF",
+          "inner_eof_member_count": 2,
+          "inner_eof_duplicate_payloads_identical": true,
+          "inner_eof_sha256": "d720553fbb40133d1b227d18c9bbe37f43e6e63ab6bb3bff2f5001bfd56718fb",
+          "inner_eof_bytes": 4409827,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        }
+      },
+      "status": "PASS_EXACT_AUX_POEORB_BOTH_DATES_SHA256_FROZEN"
+    },
+    {
+      "case_id": "primary6_shingolay_2018-01-22",
+      "unit_id": "shingolay",
+      "season_id": "2017-2018",
+      "date_local": "2018-01-22",
+      "source_window_execution_identity_sha256": "6cc8fef4a1fa076d97aa530f62261321e0959b8fee2ee07991c5c66855e729ad",
+      "projection": "EPSG:32718",
+      "r1_freeze_path": "site/data/validation/ibvf_primary6_shingolay_2018-01-22_s1_r1_freeze_v01.json",
+      "r1_freeze_sha256": "0159aeda02016227752b942b04fe1e113002adebdd2ae72eb736f1b4ad3d7477",
+      "pre_item_id": "S1B_IW_GRDH_1SDV_20180111T103835_20180111T103900_009122_010525",
+      "post_item_id": "S1B_IW_GRDH_1SDV_20180123T103835_20180123T103900_009297_010AD9",
+      "replacement_allowed": false,
+      "reselection_allowed": false,
+      "imputation_allowed": false,
+      "precise_orbits": {
+        "pre": {
+          "side": "pre",
+          "acquisition_utc": "2018-01-11T10:38:48.425093Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 28
+            }
+          ],
+          "aux_poeorb_zip_count": 90,
+          "covering_count": 1,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210311T182240_V20180110T225942_20180112T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-11T18:22:40+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210311T182240_V20180110T225942_20180112T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-11T18:22:40+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/S1B_OPER_AUX_POEORB_OPOD_20210311T182240_V20180110T225942_20180112T005942.EOF.zip",
+          "validity_start": "2018-01-10T22:59:42+00:00",
+          "validity_stop": "2018-01-12T00:59:42+00:00",
+          "zip_sha256": "3d6027de1b6ce10b1e7f7fdf525d0b586f195783896903f9c4cf609738b2cb21",
+          "zip_bytes": 1190248,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210311T182240_V20180110T225942_20180112T005942.EOF",
+          "inner_eof_member_count": 2,
+          "inner_eof_duplicate_payloads_identical": true,
+          "inner_eof_sha256": "abc19ab0b93c1968a3e1f8f91659134b859d8835ee4d61a122ac03b38d3bdec1",
+          "inner_eof_bytes": 4409840,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        },
+        "post": {
+          "side": "post",
+          "acquisition_utc": "2018-01-23T10:38:47.904351Z",
+          "status": "PASS",
+          "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+          "directory_urls_inventory_scope": [
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+            "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/"
+          ],
+          "directory_month_offsets": [
+            -1,
+            0,
+            1
+          ],
+          "directory_inventory_success": true,
+          "directory_inventory_results": [
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2017/12/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 31
+            },
+            {
+              "directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/02/",
+              "directory_inventory_success": true,
+              "aux_poeorb_zip_count": 28
+            }
+          ],
+          "aux_poeorb_zip_count": 90,
+          "covering_count": 1,
+          "covering_files": [
+            "S1B_OPER_AUX_POEORB_OPOD_20210311T214256_V20180122T225942_20180124T005942.EOF.zip"
+          ],
+          "covering_creation_utc": [
+            "2021-03-11T21:42:56+00:00"
+          ],
+          "selection_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+          "selection_uses_science_values": false,
+          "selection_uses_outcomes": false,
+          "selection_uses_known_event_dates": false,
+          "selected_filename": "S1B_OPER_AUX_POEORB_OPOD_20210311T214256_V20180122T225942_20180124T005942.EOF.zip",
+          "selected_creation_utc": "2021-03-11T21:42:56+00:00",
+          "selected_source_directory_url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/",
+          "url": "https://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/01/S1B_OPER_AUX_POEORB_OPOD_20210311T214256_V20180122T225942_20180124T005942.EOF.zip",
+          "validity_start": "2018-01-22T22:59:42+00:00",
+          "validity_stop": "2018-01-24T00:59:42+00:00",
+          "zip_sha256": "ce362a91d4e1169639db1fbb9f5972aa9b334bd7d3c1789fd32eb505ec88fa5b",
+          "zip_bytes": 1201740,
+          "inner_eof_member": "S1B_OPER_AUX_POEORB_OPOD_20210311T214256_V20180122T225942_20180124T005942.EOF",
+          "inner_eof_member_count": 2,
+          "inner_eof_duplicate_payloads_identical": true,
+          "inner_eof_sha256": "d720553fbb40133d1b227d18c9bbe37f43e6e63ab6bb3bff2f5001bfd56718fb",
+          "inner_eof_bytes": 4409827,
+          "product_class_aux_poeorb_confirmed": true,
+          "validity_covers_acquisition": true,
+          "platform_code": "S1B",
+          "legacy_assembler_selection_rule_label_corrected": true
+        }
+      },
+      "status": "PASS_EXACT_AUX_POEORB_BOTH_DATES_SHA256_FROZEN"
+    }
+  ],
+  "missing_entries": [],
+  "status": "PASS_ALL_R2_PREREQUISITES_FROZEN_NO_SCIENCE_VALUES",
+  "source_poeorb_overlap_resolution_contract": "site/data/validation/ibvf_primary6_sentinel1_poeorb_overlap_resolution_v01.json",
+  "source_poeorb_overlap_resolution_contract_sha256": "01feffbd0276e86a9e36986516d7749933687387fc471ebcf1daa0c5abdaee47",
+  "poeorb_overlap_resolution_rule": "LATEST_CREATION_TIMESTAMP_AMONG_AUX_POEORB_FILES_WHOSE_VALIDITY_COVERS_FROZEN_ACQUISITION_UTC",
+  "poeorb_overlap_resolution_is_global_metadata_only": true,
+  "poeorb_overlap_resolution_uses_sar_response": false,
+  "poeorb_overlap_resolution_uses_rainfall": false,
+  "poeorb_overlap_resolution_uses_known_event_dates": false,
+  "poeorb_overlap_resolution_uses_territorial_outcomes": false,
+  "poeorb_overlap_resolution_uses_case_control_roles": false
+}
