@@ -1,0 +1,119 @@
+name: IBVF - PRIMARY6 Sentinel-1 R1 cache equivalence
+
+on:
+  push:
+    branches: [agent/independent-basin-validation-map]
+    paths:
+      - 'scripts/ibvf_sentinel1_r1_cache_equivalence.py'
+      - '.github/workflows/ibvf-primary6-sentinel1-r1-cache-equivalence.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ibvf-primary6-sentinel1-r1-cache-equivalence
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  equivalence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install frozen R1 dependencies
+        run: python -m pip install --disable-pip-version-check 'numpy>=1.26,<2' 'requests>=2.31,<3' 'rasterio>=1.3,<2'
+      - name: Compile unchanged R1 and cache-equivalence audit
+        run: python -m py_compile scripts/ibvf_sentinel1_r1_radiometric.py scripts/ibvf_sentinel1_r1_cache_equivalence.py
+      - name: Execute Huaycoloro frozen-pilot single-download equivalence
+        run: |
+          mkdir -p artifacts/ibvf/cache
+          python scripts/ibvf_sentinel1_r1_cache_equivalence.py \
+            --freeze site/data/validation/ibvf_primary6_huaycoloro_s1_r1_pilot_freeze_v01.json \
+            --basin site/data/validation/ibvf_primary6_huaycoloro_r1_basin_feature_v01.geojson \
+            --reference-r1 site/data/validation/ibvf_primary6_huaycoloro_s1_r1_pilot_v01.json \
+            --cache-dir artifacts/ibvf/cache \
+            --output artifacts/ibvf/ibvf_primary6_sentinel1_r1_cache_equivalence_v01.json
+      - name: Fail-closed equivalence guards
+        run: |
+          python - <<'PY'
+          import json
+          p='artifacts/ibvf/ibvf_primary6_sentinel1_r1_cache_equivalence_v01.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY'
+          assert d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          assert d['equivalence_status']=='PASS_SINGLE_DOWNLOAD_CACHE_SCIENTIFICALLY_IDENTICAL_R1'
+          assert d['scientific_views_exactly_equal'] is True
+          assert d['assets_downloaded_once_per_side_and_key'] is True
+          assert d['selected_window_changed'] is False
+          assert d['compatible_pair_changed'] is False
+          assert d['radiometric_equation_changed'] is False
+          assert d['geometry_changed'] is False
+          assert d['comparison_performed'] is False
+          assert d['terrain_correction_performed'] is False
+          assert d['common_support_established'] is False
+          assert d['territorial_outcomes_read'] is False
+          assert d['known_event_dates_read'] is False
+          assert d['case_control_assignment_performed'] is False
+          assert d['activation_inference_allowed'] is False
+          assert d['modeling_allowed'] is False
+          print('PASS_R1_SINGLE_DOWNLOAD_CACHE_EQUIVALENCE')
+          PY
+      - name: Upload audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ibvf-primary6-s1-r1-cache-equivalence-${{ github.sha }}
+          path: artifacts/ibvf/ibvf_primary6_sentinel1_r1_cache_equivalence_v01.json
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Freeze equivalence evidence and synchronize research map
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git pull --rebase origin agent/independent-basin-validation-map
+          cp artifacts/ibvf/ibvf_primary6_sentinel1_r1_cache_equivalence_v01.json site/data/validation/ibvf_primary6_sentinel1_r1_cache_equivalence_v01.json
+          python - <<'PY'
+          import json
+          from datetime import datetime,timezone
+          from pathlib import Path
+          p=Path('site/data/validation/independent_basin_validation_map.json')
+          d=json.loads(p.read_text(encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY'
+          assert d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          d['version']='irfen-independent-basin-validation-map-v3.12'
+          d['generated_at']=datetime.now(timezone.utc).isoformat().replace('+00:00','Z')
+          eq=json.load(open('site/data/validation/ibvf_primary6_sentinel1_r1_cache_equivalence_v01.json',encoding='utf-8'))
+          ac=d.setdefault('acquisition_contract',{})
+          ac['primary6_sentinel1_r1_cache_equivalence']={
+              'status':eq['equivalence_status'],
+              'case_id':eq['case_id'],
+              'scientific_view_sha256':eq['cached_scientific_view_sha256'],
+              'assets_downloaded_once_per_side_and_key':eq['assets_downloaded_once_per_side_and_key'],
+              'scientific_views_exactly_equal':eq['scientific_views_exactly_equal'],
+          }
+          ac['primary6_sentinel1_bulk_r1_execution_mode']='SINGLE_DOWNLOAD_SHA256_CACHE_VALIDATED_ON_FROZEN_HUAYCOLORO_PILOT; BULK_SHARDS_PENDING'
+          ac.setdefault('local_validation',{})['github_actions_primary6_sentinel1_r1_cache_equivalence']='PASS_SCIENTIFIC_DIAGNOSTICS_EXACTLY_EQUAL'
+          p.write_text(json.dumps(d,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          PY
+          git add site/data/validation/ibvf_primary6_sentinel1_r1_cache_equivalence_v01.json site/data/validation/independent_basin_validation_map.json
+          if git diff --cached --quiet; then
+            echo 'No branch freeze changes'
+          else
+            git commit -m 'IBVF: freeze Sentinel-1 R1 cache equivalence'
+            git push origin HEAD:agent/independent-basin-validation-map
+          fi
