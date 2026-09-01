@@ -1,0 +1,246 @@
+name: IBVF - PRIMARY6 Sentinel-1 R1 2016-2017 deterministic wave
+
+on:
+  push:
+    branches: [agent/independent-basin-validation-map]
+    paths:
+      - '.github/workflows/ibvf-primary6-sentinel1-r1-2016-2017-batch.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ibvf-primary6-sentinel1-r1-2016-2017-batch
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      compatible_count: ${{ steps.plan.outputs.compatible_count }}
+      missing_count: ${{ steps.plan.outputs.missing_count }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+      - id: plan
+        name: Derive exact 2016-2017 matrix from frozen partition only
+        run: |
+          python - <<'PY'
+          import json, os
+          p=json.load(open('site/data/validation/ibvf_primary6_sentinel1_execution_partition_v01.json',encoding='utf-8'))
+          assert p['deployment_status']=='RESEARCH_ONLY' and p['test_only'] is True
+          assert p['production_use'] is False and p['production_ready'] is False
+          assert p['operational_alerting_enabled'] is False and p['uses_operational_event_none_labels'] is False
+          assert p['territorial_activation_evidence_blinded'] is True
+          assert p['partition_identity_sha256']=='e608e85265fe0dab1649cbdc23511725a8b7e19f4651e95abd766e28a0d78405'
+          assert p['selected_window_replacement_allowed'] is False
+          assert p['compatible_pair_reselection_allowed'] is False
+          assert p['missing_pair_imputation_allowed'] is False
+          assert p['territorial_outcomes_read'] is False and p['known_event_dates_read'] is False
+          basins={
+            'huaycoloro':'site/data/watersheds/huaycoloro_watershed.geojson',
+            'shingolay':'site/data/validation/ibvf_primary6_shingolay_r1_basin_feature_v01.geojson',
+            'san_ildefonso':'site/data/validation/ibvf_primary6_san_ildefonso_r1_basin_feature_v01.geojson',
+          }
+          rows=[]; missing=[]
+          shards=[s for s in p['shards'] if s['season_id']=='2016-2017']
+          assert {s['unit_id'] for s in shards}==set(basins)
+          for s in shards:
+            for w in s['windows']:
+              if w['sar_execution_status']=='COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4':
+                rows.append({'unit':s['unit_id'],'date_local':w['date_local'],'basin':basins[s['unit_id']]})
+              elif w['sar_execution_status'].startswith('MISSING_COMPATIBLE_PAIR'):
+                missing.append({'unit':s['unit_id'],'date_local':w['date_local']})
+              else:
+                raise AssertionError((s['unit_id'],w['date_local'],w['sar_execution_status']))
+          assert len(rows)==sum(s['compatible_pair_window_count'] for s in shards)
+          assert len(missing)==sum(s['missing_compatible_pair_count'] for s in shards)
+          matrix=json.dumps({'include':rows},separators=(',',':'))
+          with open(os.environ['GITHUB_OUTPUT'],'a',encoding='utf-8') as f:
+            f.write('matrix='+matrix+'\n')
+            f.write('compatible_count='+str(len(rows))+'\n')
+            f.write('missing_count='+str(len(missing))+'\n')
+          print({'season':'2016-2017','compatible':len(rows),'missing':len(missing),'matrix':rows})
+          PY
+
+  r1:
+    needs: plan
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install frozen R1 dependencies
+        run: python -m pip install --disable-pip-version-check 'numpy>=1.26,<2' 'requests>=2.31,<3' 'rasterio>=1.3,<2'
+      - name: Compile unchanged exact-window R1 path
+        run: python -m py_compile scripts/ibvf_primary6_sentinel1_r1_exact_window.py scripts/ibvf_primary6_sentinel1_freeze_selected.py scripts/ibvf_sentinel1_r1_radiometric.py
+      - name: Execute exact preassigned 2016-2017 window
+        env:
+          UNIT: ${{ matrix.unit }}
+          DATE_LOCAL: ${{ matrix.date_local }}
+          BASIN: ${{ matrix.basin }}
+        run: |
+          mkdir -p artifacts/ibvf
+          python scripts/ibvf_primary6_sentinel1_r1_exact_window.py \
+            --catalog site/data/validation/ibvf_primary6_selected_a1_catalog.json \
+            --partition site/data/validation/ibvf_primary6_sentinel1_execution_partition_v01.json \
+            --a4-contract site/data/validation/ibvf_primary6_sentinel1_a4_contract_v01.json \
+            --unit "$UNIT" \
+            --date-local "$DATE_LOCAL" \
+            --basin "$BASIN" \
+            --output-freeze "artifacts/ibvf/ibvf_primary6_${UNIT}_${DATE_LOCAL}_s1_r1_freeze_v01.json" \
+            --output-r1 "artifacts/ibvf/ibvf_primary6_${UNIT}_${DATE_LOCAL}_s1_r1_v01.json"
+      - name: Fail-closed per-window guards
+        env:
+          UNIT: ${{ matrix.unit }}
+          DATE_LOCAL: ${{ matrix.date_local }}
+        run: |
+          python - <<'PY'
+          import json, os
+          u=os.environ['UNIT']; d=os.environ['DATE_LOCAL']
+          f=json.load(open(f'artifacts/ibvf/ibvf_primary6_{u}_{d}_s1_r1_freeze_v01.json',encoding='utf-8'))
+          r=json.load(open(f'artifacts/ibvf/ibvf_primary6_{u}_{d}_s1_r1_v01.json',encoding='utf-8'))
+          for x in (f,r):
+            assert x['deployment_status']=='RESEARCH_ONLY' and x['test_only'] is True
+            assert x['production_use'] is False and x['production_ready'] is False
+            assert x['operational_alerting_enabled'] is False and x['uses_operational_event_none_labels'] is False
+            assert x['territorial_activation_evidence_blinded'] is True
+            assert x['territorial_outcomes_read'] is False and x['known_event_dates_read'] is False
+            assert x['activation_inference_allowed'] is False and x['modeling_allowed'] is False
+          assert f['season_id']=='2016-2017'
+          assert f['freeze_status']=='ALL_REQUESTED_ASSETS_SHA256_FROZEN'
+          assert f['all_assets_downloaded_at_most_once'] is True and f['cached_bytes_reused_for_r1'] is True
+          assert f['selected_window_changed'] is False and f['compatible_pair_changed'] is False
+          assert f['replacement_window_allowed'] is False and f['pair_reselection_allowed'] is False
+          assert r['r1_status']=='COMPLETE_BOTH_DATES_NO_COMPARISON'
+          assert r['comparison_performed'] is False and r['terrain_correction_performed'] is False
+          assert r['common_support_established'] is False and r['interpretation_forbidden'] is True
+          print({'unit':u,'date':d,'r1':r['r1_status']})
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ibvf-primary6-r1-2016-2017-${{ matrix.unit }}-${{ matrix.date_local }}-${{ github.sha }}
+          path: artifacts/ibvf/*.json
+          if-no-files-found: warn
+          retention-days: 30
+
+  freeze:
+    needs: [plan, r1]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ibvf-primary6-r1-2016-2017-*-${{ github.sha }}
+          path: artifacts/ibvf
+          merge-multiple: true
+      - name: Verify exact season completion before branch freeze
+        env:
+          EXPECTED_COMPATIBLE: ${{ needs.plan.outputs.compatible_count }}
+          EXPECTED_MISSING: ${{ needs.plan.outputs.missing_count }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p=json.load(open('site/data/validation/ibvf_primary6_sentinel1_execution_partition_v01.json',encoding='utf-8'))
+          shards=[s for s in p['shards'] if s['season_id']=='2016-2017']
+          expected=[]; missing=[]
+          for s in shards:
+            for w in s['windows']:
+              if w['sar_execution_status']=='COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4': expected.append((s['unit_id'],w['date_local']))
+              elif w['sar_execution_status'].startswith('MISSING_COMPATIBLE_PAIR'): missing.append((s['unit_id'],w['date_local']))
+          assert len(expected)==int(os.environ['EXPECTED_COMPATIBLE'])
+          assert len(missing)==int(os.environ['EXPECTED_MISSING'])
+          for u,d in expected:
+            fp=Path(f'artifacts/ibvf/ibvf_primary6_{u}_{d}_s1_r1_freeze_v01.json')
+            rp=Path(f'artifacts/ibvf/ibvf_primary6_{u}_{d}_s1_r1_v01.json')
+            assert fp.exists() and rp.exists(), (u,d)
+            f=json.loads(fp.read_text(encoding='utf-8')); r=json.loads(rp.read_text(encoding='utf-8'))
+            assert f['season_id']=='2016-2017' and f['freeze_status']=='ALL_REQUESTED_ASSETS_SHA256_FROZEN'
+            assert r['r1_status']=='COMPLETE_BOTH_DATES_NO_COMPARISON' and r['comparison_performed'] is False
+          assert p['selected_window_replacement_allowed'] is False
+          assert p['compatible_pair_reselection_allowed'] is False
+          assert p['missing_pair_imputation_allowed'] is False
+          assert p['territorial_outcomes_read'] is False
+          print({'status':'PASS_2016_2017_ALL_COMPATIBLE_R1','compatible':len(expected),'missing_preserved':len(missing)})
+          PY
+      - name: Freeze season evidence and synchronize research map
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git pull --rebase origin agent/independent-basin-validation-map
+          python - <<'PY'
+          import json, shutil
+          from datetime import datetime,timezone
+          from pathlib import Path
+          part=json.load(open('site/data/validation/ibvf_primary6_sentinel1_execution_partition_v01.json',encoding='utf-8'))
+          shards=[s for s in part['shards'] if s['season_id']=='2016-2017']
+          expected=[]; missing=[]; by_unit={}
+          for s in shards:
+            comp=[w for w in s['windows'] if w['sar_execution_status']=='COMPATIBLE_PAIR_FROZEN_PENDING_R1_R4']
+            miss=[w for w in s['windows'] if w['sar_execution_status'].startswith('MISSING_COMPATIBLE_PAIR')]
+            by_unit[s['unit_id']]=(len(comp),len(miss))
+            expected += [(s['unit_id'],w['date_local']) for w in comp]
+            missing += [(s['unit_id'],w['date_local']) for w in miss]
+          for u,d in expected:
+            for suffix in ('s1_r1_freeze_v01.json','s1_r1_v01.json'):
+              src=Path(f'artifacts/ibvf/ibvf_primary6_{u}_{d}_{suffix}')
+              dst=Path(f'site/data/validation/ibvf_primary6_{u}_{d}_{suffix}')
+              shutil.copy2(src,dst)
+          mp=Path('site/data/validation/independent_basin_validation_map.json')
+          m=json.loads(mp.read_text(encoding='utf-8'))
+          assert m['deployment_status']=='RESEARCH_ONLY' and m['test_only'] is True
+          assert m['production_use'] is False and m['production_ready'] is False
+          assert m['operational_alerting_enabled'] is False and m['uses_operational_event_none_labels'] is False
+          assert m['territorial_activation_evidence_blinded'] is True
+          ac=m.setdefault('acquisition_contract',{})
+          prior=ac.get('primary6_sentinel1_r1_completed_window_ids') or []
+          assert len(prior)==34 and ac.get('primary6_sentinel1_r1_completed_compatible_windows')==34
+          new=[f'primary6_{u}_{d}' for u,d in expected]
+          assert not set(new).intersection(prior)
+          completed=list(dict.fromkeys(prior+new))
+          m['version']='irfen-independent-basin-validation-map-v3.17'
+          m['generated_at']=datetime.now(timezone.utc).isoformat().replace('+00:00','Z')
+          ac['primary6_sentinel1_r1_completed_window_ids']=completed
+          ac['primary6_sentinel1_r1_completed_compatible_windows']=len(completed)
+          ac['primary6_sentinel1_r1_target_compatible_windows']=104
+          ac['primary6_sentinel1_r1_progress']=f'{len(completed)}/104'
+          ac['primary6_sentinel1_bulk_r1_complete']=len(completed)==104
+          ac['primary6_sentinel1_completed_full_r1_shards']=9
+          ac['primary6_sentinel1_target_r1_shards']=18
+          for u,(n,miss) in by_unit.items():
+            key=f'primary6_sentinel1_{u}_r1_completed_compatible_windows'
+            old=int(ac.get(key,0))
+            ac[key]=old+n
+            ac[f'primary6_sentinel1_{u}_2016_2017_r1_status']=f'PASS_ALL_{n}_COMPATIBLE_WINDOWS_R1_COMPLETE_{miss}_MISSING_PRESERVED_NO_REPLACEMENT'
+          ac['primary6_sentinel1_next_r1_wave']='2017-2018 deterministic shards; R2/R3 proceed concurrently on completed earlier shards'
+          ac.setdefault('local_validation',{})['github_actions_primary6_sentinel1_r1_2016_2017_batch']=f'PASS_{len(expected)}_COMPATIBLE_R1_{len(missing)}_MISSING_PRESERVED_NO_OUTCOME'
+          for c in m.get('cases',[]):
+            u=c.get('unit_id')
+            if u in by_unit:
+              done=ac[f'primary6_sentinel1_{u}_r1_completed_compatible_windows']
+              target=ac.get(f'primary6_sentinel1_{u}_r1_target_compatible_windows')
+              c['remote_sensing_status']=f'S1_PRIMARY6_R1_{done}_OF_{target}_COMPATIBLE_WINDOWS_COMPLETE_THREE_SEASONS_R2_R4_PENDING_NO_OUTCOME'
+              c['blind_status']='TERRITORIAL_EVIDENCE_SEALED'
+          mp.write_text(json.dumps(m,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          PY
+          git add site/data/validation/ibvf_primary6_*_*_s1_r1_freeze_v01.json site/data/validation/ibvf_primary6_*_*_s1_r1_v01.json site/data/validation/independent_basin_validation_map.json
+          git commit -m 'IBVF: freeze PRIMARY6 2016-2017 Sentinel-1 R1 shards'
+          git push origin HEAD:agent/independent-basin-validation-map
