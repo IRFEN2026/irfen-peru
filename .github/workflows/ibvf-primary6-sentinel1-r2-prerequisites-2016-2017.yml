@@ -1,0 +1,83 @@
+name: IBVF - PRIMARY6 Sentinel-1 R2 prerequisites 2016-2017
+
+on:
+  push:
+    branches: [agent/independent-basin-validation-map]
+    paths:
+      - '.github/workflows/ibvf-primary6-sentinel1-r2-prerequisites-2016-2017.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ibvf-primary6-sentinel1-r2-prerequisites-2016-2017
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  freeze-prerequisites:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install metadata prerequisite runtime
+        run: |
+          python -m pip install --disable-pip-version-check 'requests>=2.31,<3'
+          sudo apt-get update
+          sudo apt-get install -y proj-bin proj-data
+          python -m py_compile scripts/ibvf_sentinel1_r2_freeze_prerequisites.py scripts/ibvf_primary6_sentinel1_r2_prerequisites.py
+      - name: Freeze exact vertical and AUX_POEORB prerequisites
+        run: |
+          mkdir -p artifacts/ibvf
+          python scripts/ibvf_primary6_sentinel1_r2_prerequisites.py \
+            --r2-entry site/data/validation/ibvf_primary6_sentinel1_r2_entry_2016_2017_v01.json \
+            --base-prereq-contract site/data/validation/cashahuacra_sentinel1_r2_prerequisites_contract.json \
+            --output artifacts/ibvf/ibvf_primary6_sentinel1_r2_prerequisites_2016_2017_v01.json
+      - name: Fail-closed scientific guards
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/ibvf/ibvf_primary6_sentinel1_r2_prerequisites_2016_2017_v01.json',encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY' and d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False and d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          assert d['season_id']=='2016-2017'
+          assert d['compatible_windows_expected']==16
+          assert d['compatible_windows_prerequisites_pass']==16
+          assert d['missing_windows_expected']==2 and d['missing_windows_preserved']==2
+          assert d['vertical_transform_resource']['status']=='PASS'
+          assert d['same_orbit_quality_class']=='AUX_POEORB'
+          assert d['automatic_unhashed_orbit_download_allowed'] is False
+          assert all(x['status']=='PASS_EXACT_AUX_POEORB_BOTH_DATES_SHA256_FROZEN' for x in d['entries'])
+          assert all(x['status']=='MISSING_COMPATIBLE_PAIR_RETAINED_NO_R2_EXECUTION' for x in d['missing_entries'])
+          assert d['r2_execution_performed'] is False and d['r2_science_pixels_read'] is False
+          assert d['r3_common_support_computed'] is False and d['r4_features_computed'] is False
+          assert d['territorial_outcomes_read'] is False and d['known_event_dates_read'] is False
+          assert d['case_control_assignment_performed'] is False
+          assert d['activation_inference_allowed'] is False and d['modeling_allowed'] is False
+          assert d['status']=='PASS_ALL_R2_PREREQUISITES_FROZEN_NO_SCIENCE_VALUES'
+          print({'status':d['status'],'windows':16,'missing':2,'unique_orbits':d['unique_acquisition_orbit_resources_checked'],'identity':d['r2_prerequisite_identity_sha256']})
+          PY
+      - name: Archive prerequisite manifest only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git pull --rebase origin agent/independent-basin-validation-map
+          cp artifacts/ibvf/ibvf_primary6_sentinel1_r2_prerequisites_2016_2017_v01.json site/data/validation/ibvf_primary6_sentinel1_r2_prerequisites_2016_2017_v01.json
+          git add site/data/validation/ibvf_primary6_sentinel1_r2_prerequisites_2016_2017_v01.json
+          git commit -m 'IBVF: archive 2016-2017 PRIMARY6 R2 prerequisites'
+          git push origin HEAD:agent/independent-basin-validation-map
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ibvf-primary6-sentinel1-r2-prerequisites-2016-2017-${{ github.sha }}
+          path: artifacts/ibvf/ibvf_primary6_sentinel1_r2_prerequisites_2016_2017_v01.json
+          if-no-files-found: warn
+          retention-days: 30
