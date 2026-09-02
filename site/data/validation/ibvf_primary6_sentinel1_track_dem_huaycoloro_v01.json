@@ -1,0 +1,95 @@
+{
+  "schema_version": "irfen-ibvf-primary6-sentinel1-track-dem-v0.1",
+  "generated_at": "2026-09-02T03:28:44.426469Z",
+  "unit_id": "huaycoloro",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_UNTIL_PRIMARY6_A5_FREEZE_AND_ANTI_LEAKAGE_AUDIT",
+  "execution_contract_path": "site/data/validation/ibvf_primary6_sentinel1_r2r4_execution_contract_v01.json",
+  "execution_contract_sha256": "5b8378311e9b0e263e6a303e729db91b1e3b525ed0f279d34ef06c349b9c7f4c",
+  "geometry_path": "site/data/watersheds/huaycoloro_watershed.geojson",
+  "geometry_file_sha256": "ae7c6bae0dfdd2560929d43e9b5cd252a8cce5e021d9c995a640ad4a8c33c401",
+  "geometry_file_bytes": 229865,
+  "geometry_selector": null,
+  "selected_geometry_feature_count": 1,
+  "target_projection": "EPSG:32718",
+  "buffer_m": 1500.0,
+  "buffered_bbox_wgs84": [
+    -76.98127105110905,
+    -12.02855754339082,
+    -76.65012547719847,
+    -11.716162985756032
+  ],
+  "glo30_tile_selection_rule": "EVERY_ONE_DEGREE_TILE_INTERSECTING_GEOMETRY_BUFFERED_BBOX_WGS84",
+  "glo30_tiles": [
+    {
+      "item_id": "Copernicus_DSM_COG_10_S13_00_W077_00_DEM",
+      "url": "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_S13_00_W077_00_DEM/Copernicus_DSM_COG_10_S13_00_W077_00_DEM.tif",
+      "lat_floor": -13,
+      "lon_floor": -77,
+      "status": "SUCCESS",
+      "sha256": "ebd98f2dd44e09e90d36f8fd77bc462a60c151eb42d11ea85c0d74e66cfa4c96",
+      "bytes": 33858406
+    },
+    {
+      "item_id": "Copernicus_DSM_COG_10_S12_00_W077_00_DEM",
+      "url": "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_S12_00_W077_00_DEM/Copernicus_DSM_COG_10_S12_00_W077_00_DEM.tif",
+      "lat_floor": -12,
+      "lon_floor": -77,
+      "status": "SUCCESS",
+      "sha256": "d9f8d410da66bfb85c73b957401aea73043f8618cccdb7d1fc76082d30a31130",
+      "bytes": 40184982
+    }
+  ],
+  "vertical_grid": {
+    "url": "https://cdn.proj.org/us_nga_egm08_25.tif",
+    "sha256": "4191d471eefebf24091b56dbc604353cb3b8cf8cc70e448bb9ae56a272bef17a",
+    "bytes": 80585622
+  },
+  "conversion": {
+    "pipeline": "+proj=pipeline +step +proj=unitconvert +xy_in=deg +xy_out=rad +step +proj=vgridshift +grids=us_nga_egm08_25.tif +multiplier=1 +step +proj=unitconvert +xy_in=rad +xy_out=deg",
+    "pyproj_version": "3.7.2",
+    "proj_version": "9.5.1",
+    "network_enabled": false,
+    "horizontal_max_abs_delta_degrees": 1.4210854715202004e-14,
+    "geoid_correction_min_m": 24.70903060144167,
+    "geoid_correction_max_m": 30.65076550813319,
+    "geoid_correction_mean_m": 27.973090661256737,
+    "case_specific_height_adjustment_used": false,
+    "horizontal_resampling_for_vertical_conversion": false
+  },
+  "output_dem": {
+    "sha256": "6c2a587fda3190ae3f259e807cd6ccbc00b8bb1e5b345cb4eaa04bf45e3a03e2",
+    "bytes": 3351981,
+    "shape": [
+      1125,
+      1192
+    ],
+    "transform": [
+      0.0002777777777777778,
+      0.0,
+      -76.98127105110905,
+      0.0,
+      -0.0002777777777777778,
+      -11.716162985756032
+    ],
+    "horizontal_crs": "EPSG:4326",
+    "vertical_semantics": "WGS84_ELLIPSOIDAL_HEIGHT",
+    "valid_pixel_count": 1341000,
+    "nodata_value": -9999.0
+  },
+  "r2_science_pixels_read": false,
+  "sar_response_used_for_dem_choice": false,
+  "rainfall_magnitude_used_for_dem_choice": false,
+  "territorial_outcomes_read": false,
+  "known_event_dates_read": false,
+  "case_control_role_assigned": false,
+  "activation_inference_allowed": false,
+  "modeling_allowed": false,
+  "status": "PASS_TRACK_DEM_FROZEN_NO_R2_SCIENCE_VALUES"
+}
