@@ -261,7 +261,7 @@ def main() -> int:
         "posthoc_terrain_or_landcover_masking_performed": False,
         "r4_difference_computed": True,
         "r4_is_observational_not_decisional": True,
-        "r4_feature_magnitude_pass_fail_threshold": null,
+        "r4_feature_magnitude_pass_fail_threshold": None,
         "territorial_outcomes_read": False,
         "known_event_dates_read": False,
         "case_control_role_assigned": False,
