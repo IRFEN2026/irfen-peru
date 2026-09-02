@@ -1,0 +1,252 @@
+name: IBVF - PRIMARY6 Sentinel-1 blind R2-R4 bulk v0.2
+
+on:
+  push:
+    branches: [agent/independent-basin-validation-map]
+    paths:
+      - '.github/workflows/ibvf-primary6-s1-r2-r4-bulk-v02.yml'
+      - 'scripts/ibvf_primary6_sentinel1_r2r4_bulk_shard_v02.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bulk-shard:
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        unit: [huaycoloro, shingolay, san_ildefonso]
+        season: [2014_2015, 2015_2016, 2016_2017, 2017_2018, 2018_2019, 2019_2020]
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      UNIT: ${{ matrix.unit }}
+      SEASON_TAG: ${{ matrix.season }}
+      ROOT: /tmp/ibvf-primary6-r2r4-bulk/${{ matrix.unit }}__${{ matrix.season }}
+      GLOBAL_CONTRACT: site/data/validation/ibvf_primary6_sentinel1_r2r4_execution_contract_v01.json
+      PARTITION: site/data/validation/ibvf_primary6_sentinel1_execution_partition_v01.json
+      PILOT_R4: site/data/validation/ibvf_primary6_huaycoloro_2014-12-21_s1_r4_v02.json
+      ORBIT_AMENDMENT: site/data/validation/ibvf_primary6_sentinel1_r2_orbit_consumption_amendment_v02.json
+      SELECTOR_VALIDATION: site/data/validation/ibvf_primary6_sentinel1_r2_orbit_selector_v02_validation.json
+      ANCHOR_R3: site/data/validation/cashahuacra_sentinel1_r3_contract.json
+      ANCHOR_R4: site/data/validation/cashahuacra_sentinel1_r4_contract.json
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install frozen scientific runtime dependencies
+        run: |
+          python -m pip install --disable-pip-version-check \
+            'requests>=2.31,<3' 'numpy>=1.26,<2' 'rasterio>=1.3,<2' 'pyproj>=3.6,<4' 'shapely>=2,<3'
+          python -m py_compile \
+            scripts/ibvf_primary6_sentinel1_track_dem_freeze.py \
+            scripts/ibvf_primary6_sentinel1_r2_execute_v02.py \
+            scripts/ibvf_primary6_sentinel1_r2v02_r3_adapter.py \
+            scripts/ibvf_primary6_sentinel1_r3_common_support.py \
+            scripts/ibvf_primary6_sentinel1_r3_tiled_storage_wrapper.py \
+            scripts/ibvf_primary6_sentinel1_r4_blind_features.py \
+            scripts/ibvf_primary6_sentinel1_r2r4_bulk_shard_v02.py \
+            scripts/ibvf_snap_runtime_install_freeze.py
+
+      - name: Resolve frozen shard resources
+        run: |
+          set -euo pipefail
+          SEASON_ID="${SEASON_TAG//_/-}"
+          echo "SEASON_ID=$SEASON_ID" >> "$GITHUB_ENV"
+          echo "R2_ENTRY=site/data/validation/ibvf_primary6_sentinel1_r2_entry_${SEASON_TAG}_v01.json" >> "$GITHUB_ENV"
+          echo "R2_PREREQ=site/data/validation/ibvf_primary6_sentinel1_r2_prerequisites_${SEASON_TAG}_v02.json" >> "$GITHUB_ENV"
+          echo "DEM_FREEZE=site/data/validation/ibvf_primary6_sentinel1_track_dem_${UNIT}_v01.json" >> "$GITHUB_ENV"
+          echo "SHARD_ID=${UNIT}__${SEASON_TAG}" >> "$GITHUB_ENV"
+          mkdir -p "$ROOT/runtime-work" "$ROOT/archive/${UNIT}__${SEASON_TAG}/results"
+
+      - name: Enforce pre-bulk blind and pilot admission gates
+        run: |
+          python - <<'PY'
+          import json, os
+          g=json.load(open(os.environ['GLOBAL_CONTRACT'],encoding='utf-8'))
+          p=json.load(open(os.environ['PARTITION'],encoding='utf-8'))
+          r4=json.load(open(os.environ['PILOT_R4'],encoding='utf-8'))
+          for d in (g,p,r4):
+              assert d['deployment_status']=='RESEARCH_ONLY' and d['test_only'] is True
+              assert d['production_use'] is False and d['production_ready'] is False
+              assert d['operational_alerting_enabled'] is False and d['uses_operational_event_none_labels'] is False
+              assert d['territorial_activation_evidence_blinded'] is True
+          assert g['primary6']['selected_windows']==108
+          assert g['primary6']['sentinel1_compatible_pairs']==104
+          assert g['primary6']['sentinel1_missing_compatible_pair_slots']==4
+          assert g['bulk_gate']['pilot_implementation_integrity_must_pass_before_bulk'] is True
+          assert g['bulk_gate']['bulk_rules_locked_to_this_contract'] is True
+          assert g['pilot_selection']['pilot_result_may_change_bulk_rules'] is False
+          assert r4['case_id']==g['pilot_selection']['selected_case_id']
+          assert r4['status']=='PASS_R4_BLIND_SAR_FEATURE_VECTOR_FROZEN_NO_INFERENCE'
+          assert r4['territorial_outcomes_read'] is False and r4['known_event_dates_read'] is False
+          assert r4['activation_inference_allowed'] is False and r4['modeling_allowed'] is False
+          assert p['partition_rule']=='EXACT_TRACK_X_PRIMARY6_SEASON'
+          assert p['partition_count']==18 and p['selected_window_count']==108
+          assert p['compatible_pair_window_count']==104 and p['missing_compatible_pair_count']==4
+          assert p['partition_assignment_uses_scientific_magnitude'] is False
+          assert p['partition_assignment_uses_sensor_response'] is False
+          assert p['partition_assignment_uses_known_event_dates'] is False
+          assert p['partition_assignment_uses_territorial_outcomes'] is False
+          print({'pilot_admission':'PASS_BLIND_R2_R3_R4','bulk_partition':'18_SHARDS_108_104_PLUS_4','outcomes_read':False})
+          PY
+
+      - name: Recreate verified SNAP 14 runtime once for shard
+        run: |
+          python scripts/ibvf_snap_runtime_install_freeze.py \
+            --contract site/data/validation/cashahuacra_sentinel1_r2_runtime_contract.json \
+            --byte-report site/data/validation/cashahuacra_sentinel1_r2_runtime_bytes.json \
+            --work-dir "$ROOT/runtime-work" \
+            --output "$ROOT/runtime-install.json"
+          python - <<'PY'
+          import json, os
+          d=json.load(open(os.environ['ROOT']+'/runtime-install.json',encoding='utf-8'))
+          assert d['status']=='SNAP_RUNTIME_METADATA_FROZEN_R2_EXECUTION_GATE_PASS'
+          assert d['gpt_release_version']=='14.0.0' and d['automatic_update_invoked'] is False
+          PY
+
+      - name: Reproduce frozen geometry-only track DEM exactly
+        run: |
+          python scripts/ibvf_primary6_sentinel1_track_dem_freeze.py \
+            --contract "$GLOBAL_CONTRACT" \
+            --unit-id "$UNIT" \
+            --expected-report "$DEM_FREEZE" \
+            --output-dem "$ROOT/${UNIT}_glo30_wgs84_ellipsoidal.tif" \
+            --output-report "$ROOT/dem-reproduction.json"
+          python - <<'PY'
+          import json, os
+          d=json.load(open(os.environ['ROOT']+'/dem-reproduction.json',encoding='utf-8'))
+          assert d['status']=='PASS_TRACK_DEM_REPRODUCED_EXACTLY_R2_EXECUTION_ALLOWED_FOR_UNIT'
+          assert d['r2_science_pixels_read'] is False and d['territorial_outcomes_read'] is False
+          PY
+
+      - name: Execute frozen blind R2-R4 shard and preserve compact reports
+        run: |
+          set -euo pipefail
+          python scripts/ibvf_primary6_sentinel1_r2r4_bulk_shard_v02.py \
+            --partition "$PARTITION" \
+            --global-contract "$GLOBAL_CONTRACT" \
+            --pilot-r4 "$PILOT_R4" \
+            --orbit-amendment "$ORBIT_AMENDMENT" \
+            --selector-validation "$SELECTOR_VALIDATION" \
+            --anchor-r3 "$ANCHOR_R3" \
+            --anchor-r4 "$ANCHOR_R4" \
+            --unit-id "$UNIT" \
+            --season-id "$SEASON_ID" \
+            --r2-entry "$R2_ENTRY" \
+            --prerequisites "$R2_PREREQ" \
+            --dem-freeze "$DEM_FREEZE" \
+            --gpt "$ROOT/runtime-work/snap14/bin/gpt" \
+            --dem "$ROOT/${UNIT}_glo30_wgs84_ellipsoidal.tif" \
+            --dem-report "$ROOT/dem-reproduction.json" \
+            --work-dir "$ROOT/cases" \
+            --output-dir "$ROOT/archive/$SHARD_ID/results" \
+            --summary "$ROOT/archive/$SHARD_ID/shard-summary.json" \
+            | tee "$ROOT/archive/$SHARD_ID/shard-execution.log"
+
+      - name: Verify no unblind or operational promotion occurred
+        run: |
+          python - <<'PY'
+          import json, os, pathlib
+          p=pathlib.Path(os.environ['ROOT'])/'archive'/os.environ['SHARD_ID']/'shard-summary.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['status']=='PASS_SHARD_ALL_SIX_WINDOWS_ACCOUNTED_BLIND_R2_R4'
+          assert d['selected_windows_accounted']==6
+          assert d['compatible_windows_accounted']==d['compatible_windows_expected']
+          assert d['missing_windows_preserved']==d['missing_windows_expected']
+          assert d['territorial_activation_evidence_blinded'] is True
+          assert d['territorial_outcomes_read'] is False and d['known_event_dates_read'] is False
+          assert d['case_control_assignment_performed'] is False
+          assert d['activation_inference_allowed'] is False and d['modeling_allowed'] is False
+          assert d['production_use'] is False and d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          print({'shard':d['shard_id'],'status':d['status'],'compatible_accounted':d['compatible_windows_accounted'],'missing_preserved':d['missing_windows_preserved']})
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ibvf-primary6-r2r4-shard-${{ matrix.unit }}-${{ matrix.season }}-${{ github.sha }}
+          path: /tmp/ibvf-primary6-r2r4-bulk/${{ matrix.unit }}__${{ matrix.season }}/archive
+          if-no-files-found: warn
+          retention-days: 30
+
+  aggregate-blind-accounting:
+    needs: bulk-shard
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ibvf-primary6-r2r4-shard-*-${{ github.sha }}
+          path: /tmp/ibvf-primary6-r2r4-aggregate
+          merge-multiple: true
+
+      - name: Require exact 108 = 104 + 4 blind accounting
+        run: |
+          python - <<'PY'
+          import json, pathlib
+          root=pathlib.Path('/tmp/ibvf-primary6-r2r4-aggregate')
+          files=sorted(root.glob('*/shard-summary.json'))
+          if len(files)!=18:
+              raise SystemExit(f'bulk incomplete: expected 18 shard summaries, found {len(files)}')
+          docs=[json.load(open(p,encoding='utf-8')) for p in files]
+          assert len({d['shard_id'] for d in docs})==18
+          for d in docs:
+              assert d['status']=='PASS_SHARD_ALL_SIX_WINDOWS_ACCOUNTED_BLIND_R2_R4'
+              assert d['deployment_status']=='RESEARCH_ONLY' and d['test_only'] is True
+              assert d['production_use'] is False and d['production_ready'] is False
+              assert d['operational_alerting_enabled'] is False
+              assert d['territorial_activation_evidence_blinded'] is True
+              assert d['territorial_outcomes_read'] is False and d['known_event_dates_read'] is False
+              assert d['case_control_assignment_performed'] is False
+              assert d['activation_inference_allowed'] is False and d['modeling_allowed'] is False
+              assert d['r4_feature_magnitudes_used_for_execution_decisions'] is False
+          selected=sum(d['selected_windows_accounted'] for d in docs)
+          compatible=sum(d['compatible_windows_expected'] for d in docs)
+          missing=sum(d['missing_windows_expected'] for d in docs)
+          r2=sum(d['r2_pass'] for d in docs)
+          r3_pass=sum(d['r3_pass'] for d in docs)
+          r3_unknown=sum(d['r3_explicit_unknown'] for d in docs)
+          r4=sum(d['r4_pass'] for d in docs)
+          accounted=sum(d['compatible_windows_accounted'] for d in docs)
+          missing_preserved=sum(d['missing_windows_preserved'] for d in docs)
+          assert (selected,compatible,missing)==(108,104,4),(selected,compatible,missing)
+          assert r2==104 and accounted==104 and missing_preserved==4
+          assert r3_pass+r3_unknown==104 and r4+r3_unknown==104
+          summary={
+              'schema_version':'irfen-ibvf-primary6-sentinel1-r2r4-bulk-v0.2',
+              'deployment_status':'RESEARCH_ONLY','test_only':True,
+              'production_use':False,'production_ready':False,'operational_alerting_enabled':False,
+              'uses_operational_event_none_labels':False,'territorial_activation_evidence_blinded':True,
+              'shards_accounted':18,'selected_windows_accounted':108,
+              'compatible_windows_accounted':104,'structural_missing_windows_preserved':4,
+              'r2_pass':r2,'r3_pass':r3_pass,'r3_explicit_unknown':r3_unknown,'r4_pass':r4,
+              'selected_window_replacement_performed':False,
+              'compatible_pair_reselection_performed':False,'missing_pair_imputation_performed':False,
+              'r4_feature_magnitudes_used_for_execution_decisions':False,
+              'territorial_outcomes_read':False,'known_event_dates_read':False,
+              'case_control_assignment_performed':False,'activation_inference_allowed':False,'modeling_allowed':False,
+              'status':'PASS_PRIMARY6_R1_R4_ALL_108_WINDOWS_ACCOUNTED_BLIND',
+              'next_gate':'ASSEMBLE_A5_FOR_ALL_108_SELECTED_WINDOWS_BEFORE_ANTI_LEAKAGE_AUDIT_AND_UNBLIND'
+          }
+          out=root/'bulk-summary.json'
+          out.write_text(json.dumps(summary,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          print(json.dumps(summary,indent=2))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ibvf-primary6-r2r4-bulk-complete-${{ github.sha }}
+          path: /tmp/ibvf-primary6-r2r4-aggregate
+          if-no-files-found: error
+          retention-days: 30
