@@ -1,0 +1,76 @@
+name: IBVF - PRIMARY6 canonical R2 v0.2 map sync
+
+on:
+  push:
+    branches: [agent/independent-basin-validation-map]
+    paths:
+      - '.github/workflows/ibvf-primary6-r2-v02-map-sync.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify canonical v0.2 prerequisite accounting and sync map
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          seasons=['2014_2015','2015_2016','2016_2017','2017_2018','2018_2019','2019_2020']
+          paths=[Path(f'site/data/validation/ibvf_primary6_sentinel1_r2_prerequisites_{s}_v02.json') for s in seasons]
+          ready=missing=0; ids=[]
+          for p in paths:
+              d=json.loads(p.read_text(encoding='utf-8'))
+              assert d['status']=='PASS_ALL_SNAP14_CANONICAL_R2_PREREQUISITES_V02_FROZEN_NO_SCIENCE_VALUES'
+              assert d['selector_version']=='SNAP14_POEORB_V02'
+              assert d['r2_science_pixels_read'] is False and d['territorial_outcomes_read'] is False
+              ready+=d['compatible_windows_prerequisites_pass']; missing+=d['missing_windows_preserved']; ids.append(d['season_id'])
+          assert ready==104 and missing==4
+          mpath=Path('site/data/validation/independent_basin_validation_map.json')
+          m=json.loads(mpath.read_text(encoding='utf-8'))
+          assert m['deployment_status']=='RESEARCH_ONLY' and m['production_use'] is False and m['production_ready'] is False
+          assert m['operational_alerting_enabled'] is False and m['territorial_activation_evidence_blinded'] is True
+          a=m['acquisition_contract']
+          assert a['primary_dataset_seasons_complete']==6 and a['primary_dataset_season_target']==6
+          assert a['primary_dataset_canonical_rows_frozen']==5816
+          assert a['full_robustness_seasons_complete']==6 and a['full_robustness_season_target']==12
+          assert a['primary6_sentinel1_r1_progress']=='104/104'
+          a['primary6_sentinel1_r2_prerequisite_v01_status']='SUPERSEDED_FOR_EXECUTION_RETAINED_FOR_AUDIT_AFTER_SNAP14_CONSUMPTION_MISMATCH'
+          a['primary6_sentinel1_r2_prerequisite_v02_selector']='SNAP14_POEORB_V02'
+          a['primary6_sentinel1_r2_prerequisite_v02_windows_frozen']=104
+          a['primary6_sentinel1_r2_prerequisite_v02_progress']='104/104'
+          a['primary6_sentinel1_r2_prerequisite_v02_missing_preserved']=4
+          a['primary6_sentinel1_r2_prerequisite_v02_seasons_frozen']=ids
+          a['primary6_sentinel1_r2_prerequisite_v02_manifest_paths']=[str(p) for p in paths]
+          a['primary6_sentinel1_r2_prerequisite_status']='PASS_SNAP14_CANONICAL_V02_ALL_104_COMPATIBLE_WINDOWS_FROZEN_4_MISSING_PRESERVED_BEFORE_ACCEPTED_R2'
+          a['primary6_sentinel1_r2_prerequisite_progress']='104/104'
+          a['primary6_sentinel1_r2_execution_progress']='0/104'
+          a['primary6_sentinel1_r3_pass_progress']='0/104'
+          a['primary6_sentinel1_r4_feature_progress']='0/104'
+          a['primary6_sentinel1_next_gate']='SAME_FROZEN_PILOT_R2_V02_THEN_R3_SUPPORT_THEN_R4_IF_SUPPORT_PASSES'
+          a['primary6_sentinel1_orbit_consumption_amendment']='site/data/validation/ibvf_primary6_sentinel1_r2_orbit_consumption_amendment_v02.json'
+          a['primary6_sentinel1_orbit_selector_validation']='site/data/validation/ibvf_primary6_sentinel1_r2_orbit_selector_v02_validation.json'
+          assert a['primary6_sentinel1_bulk_r1_r4_executed'] is False
+          mpath.write_text(json.dumps(m,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          print({'PRIMARY6':'6/6','FULL12':'6/12 robustness only','R1':'104/104','R2_prereq_v02':'104/104','R2_accepted':'0/104','MISSING':4})
+          PY
+      - name: Commit map-only canonical v0.2 synchronization
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add site/data/validation/independent_basin_validation_map.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'IBVF: sync canonical R2 v0.2 prerequisites 104 of 104 to map'
+            git pull --rebase origin agent/independent-basin-validation-map
+            git push origin HEAD:agent/independent-basin-validation-map
+          fi
