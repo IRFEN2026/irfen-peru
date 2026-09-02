@@ -1,0 +1,126 @@
+name: IBVF - PRIMARY6 Sentinel-1 R2 prerequisites v0.2 freeze
+
+on:
+  push:
+    branches: [agent/independent-basin-validation-map]
+    paths:
+      - '.github/workflows/ibvf-primary6-s1-r2-prerequisites-v02-freeze.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  freeze-season:
+    strategy:
+      fail-fast: false
+      matrix:
+        season: ['2014_2015','2015_2016','2016_2017','2017_2018','2018_2019','2019_2020']
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install metadata-only prerequisite runtime
+        run: |
+          python -m pip install --disable-pip-version-check 'requests>=2.31,<3'
+          sudo apt-get update
+          sudo apt-get install -y proj-bin proj-data
+          python -m py_compile \
+            scripts/ibvf_sentinel1_r2_freeze_prerequisites.py \
+            scripts/ibvf_primary6_sentinel1_r2_prerequisites.py \
+            scripts/ibvf_primary6_sentinel1_r2_freeze_prerequisites_v02.py
+      - name: Enforce selector validation and freeze season v0.2
+        env:
+          SEASON: ${{ matrix.season }}
+        run: |
+          python - <<'PY'
+          import json
+          a=json.load(open('site/data/validation/ibvf_primary6_sentinel1_r2_orbit_consumption_amendment_v02.json',encoding='utf-8'))
+          v=json.load(open('site/data/validation/ibvf_primary6_sentinel1_r2_orbit_selector_v02_validation.json',encoding='utf-8'))
+          assert a['status']=='FROZEN_PRE_ACCEPTED_R2_VALUES_POEORB_SELECTOR_V02_MUST_VALIDATE_AGAINST_PILOT_AND_ANCHOR_BEFORE_BULK'
+          assert v['status']=='PASS_SELECTOR_MATCHES_FIRST_GENERIC_PILOT_SNAP14_AND_CASHAHUACRA_ANCHOR_BEFORE_ACCEPTED_PRIMARY6_R2'
+          assert v['selection_rule']==a['v02_selector']['selection_rule']
+          assert v['sar_response_values_read'] is False and v['territorial_outcomes_read'] is False
+          PY
+          mkdir -p /tmp/ibvf-r2-prereq-v02
+          python scripts/ibvf_primary6_sentinel1_r2_freeze_prerequisites_v02.py \
+            --r2-entry "site/data/validation/ibvf_primary6_sentinel1_r2_entry_${SEASON}_v01.json" \
+            --base-prereq-contract site/data/validation/cashahuacra_sentinel1_r2_prerequisites_contract.json \
+            --amendment site/data/validation/ibvf_primary6_sentinel1_r2_orbit_consumption_amendment_v02.json \
+            --output "/tmp/ibvf-r2-prereq-v02/ibvf_primary6_sentinel1_r2_prerequisites_${SEASON}_v02.json"
+      - name: Enforce blind fail-closed v0.2 guards
+        env:
+          SEASON: ${{ matrix.season }}
+        run: |
+          python - <<'PY'
+          import json,os
+          p=f"/tmp/ibvf-r2-prereq-v02/ibvf_primary6_sentinel1_r2_prerequisites_{os.environ['SEASON']}_v02.json"
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['schema_version']=='irfen-ibvf-primary6-sentinel1-r2-prerequisites-v0.2'
+          assert d['deployment_status']=='RESEARCH_ONLY' and d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False and d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          assert d['v01_prerequisites_superseded_for_execution'] is True
+          assert d['selector_version']=='SNAP14_POEORB_V02'
+          assert d['status']=='PASS_ALL_SNAP14_CANONICAL_R2_PREREQUISITES_V02_FROZEN_NO_SCIENCE_VALUES'
+          assert d['compatible_windows_prerequisites_pass']==d['compatible_windows_expected']
+          assert d['missing_windows_preserved']==d['missing_windows_expected']
+          assert all(x['status']=='PASS_SNAP14_CANONICAL_AUX_POEORB_BOTH_DATES_SHA256_FROZEN' for x in d['entries'])
+          assert d['r2_execution_performed'] is False and d['r2_science_pixels_read'] is False
+          assert d['r3_common_support_computed'] is False and d['r4_features_computed'] is False
+          assert d['territorial_outcomes_read'] is False and d['known_event_dates_read'] is False
+          assert d['case_control_assignment_performed'] is False
+          assert d['activation_inference_allowed'] is False and d['modeling_allowed'] is False
+          print({'season':d['season_id'],'ready':d['compatible_windows_prerequisites_pass'],'missing':d['missing_windows_preserved'],'identity':d['r2_prerequisite_identity_sha256']})
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ibvf-r2-prereq-v02-${{ matrix.season }}
+          path: /tmp/ibvf-r2-prereq-v02/*.json
+          if-no-files-found: error
+          retention-days: 30
+
+  aggregate-freeze:
+    needs: freeze-season
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ibvf-r2-prereq-v02-*
+          path: /tmp/ibvf-r2-prereq-v02-all
+          merge-multiple: true
+      - name: Verify complete 104+4 accounting before archive
+        run: |
+          python - <<'PY'
+          import glob,json
+          files=sorted(glob.glob('/tmp/ibvf-r2-prereq-v02-all/*.json'))
+          assert len(files)==6,files
+          ready=missing=0; seasons=[]
+          for p in files:
+            d=json.load(open(p,encoding='utf-8'))
+            assert d['status']=='PASS_ALL_SNAP14_CANONICAL_R2_PREREQUISITES_V02_FROZEN_NO_SCIENCE_VALUES'
+            ready+=d['compatible_windows_prerequisites_pass']; missing+=d['missing_windows_preserved']; seasons.append(d['season_id'])
+            assert d['territorial_outcomes_read'] is False and d['r2_science_pixels_read'] is False
+          assert ready==104 and missing==4,(ready,missing)
+          assert sorted(seasons)==['2014-2015','2015-2016','2016-2017','2017-2018','2018-2019','2019-2020']
+          print({'SNAP14_canonical_v02':'104/104','missing_preserved':4,'seasons':6})
+          PY
+      - name: Archive six immutable v0.2 manifests in one commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git pull --rebase origin agent/independent-basin-validation-map
+          cp /tmp/ibvf-r2-prereq-v02-all/*.json site/data/validation/
+          git add site/data/validation/ibvf_primary6_sentinel1_r2_prerequisites_*_v02.json
+          git commit -m 'IBVF: freeze SNAP14-canonical PRIMARY6 R2 prerequisites v0.2 104 of 104'
+          git push origin HEAD:agent/independent-basin-validation-map
