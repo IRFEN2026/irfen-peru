@@ -1,0 +1,234 @@
+{
+  "schema_version": "irfen-ibvf-primary6-sentinel1-r2r4-execution-contract-v0.1",
+  "generated_at": "2026-09-02T03:24:00Z",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_UNTIL_PRIMARY6_A5_FREEZE_AND_ANTI_LEAKAGE_AUDIT",
+  "cohort_id": "PRIMARY6_CHRONOLOGICAL",
+  "primary6": {
+    "seasons": [
+      "2014-2015",
+      "2015-2016",
+      "2016-2017",
+      "2017-2018",
+      "2018-2019",
+      "2019-2020"
+    ],
+    "canonical_rows": 5816,
+    "selected_windows": 108,
+    "sentinel1_compatible_pairs": 104,
+    "sentinel1_missing_compatible_pair_slots": 4,
+    "missing_slots_must_remain_explicit": true,
+    "replacement_allowed": false,
+    "reselection_allowed": false,
+    "imputation_allowed": false,
+    "full12_can_change_primary_rules": false
+  },
+  "decision_timing": {
+    "made_before_primary6_r2_science_pixels_read": true,
+    "made_before_primary6_r3_common_support_values": true,
+    "made_before_primary6_r4_change_values": true,
+    "made_before_territorial_unblind": true,
+    "sar_response_used": false,
+    "rainfall_magnitude_used_for_execution_choice": false,
+    "territorial_outcomes_used": false,
+    "known_event_dates_used": false,
+    "case_control_roles_used": false
+  },
+  "inheritance": {
+    "cashahuacra_anchor_r2_graph_algorithm_changed": false,
+    "cashahuacra_anchor_r3_common_support_algorithm_changed": false,
+    "cashahuacra_anchor_r4_feature_definitions_changed": false,
+    "allowed_generalization_only": [
+      "case_id_and_output_paths",
+      "unit_geometry_path_and_selector",
+      "frozen_unit_projection_from_r2_entry",
+      "exact_window_specific_r1_freeze",
+      "exact_window_specific_AUX_POEORB_bytes_from_archived_primary6_prerequisites",
+      "one_geometry_derived_external_dem_per_unit"
+    ],
+    "forbidden_generalization": [
+      "window_specific_scientific_thresholds",
+      "pair_reselection",
+      "response_based_parameter_changes",
+      "outcome_based_parameter_changes",
+      "posthoc_masks",
+      "case_specific_feature definitions"
+    ]
+  },
+  "pilot_selection": {
+    "purpose": "Engineering equivalence test of the generic PRIMARY6 R2-R3 path before bulk execution; not a hypothesis test.",
+    "fixed_unit_order": [
+      "huaycoloro",
+      "shingolay",
+      "san_ildefonso"
+    ],
+    "fixed_season_order": [
+      "2014-2015",
+      "2015-2016",
+      "2016-2017",
+      "2017-2018",
+      "2018-2019",
+      "2019-2020"
+    ],
+    "within_unit_season_order": "date_local_ascending",
+    "eligibility": [
+      "r2_entry_status=PASS_R2_ENTRY_IDENTITY_FROZEN_EXECUTION_NOT_RUN",
+      "r1_partition_binding_mode=MODERN_EXACT_PARTITION_AND_WINDOW_HASH_BINDING",
+      "legacy_pilot_r1_predates_execution_partition=false",
+      "exact_R2_prerequisites_status=PASS_EXACT_AUX_POEORB_BOTH_DATES_SHA256_FROZEN"
+    ],
+    "legacy_bridge_exclusion_reason": "Use the first modern exact partition binding to test the generic path directly. Exclusion is based only on provenance schema established before R2 values, never on SAR response or territorial outcome.",
+    "selected_case_id": "primary6_huaycoloro_2014-12-21",
+    "selected_unit_id": "huaycoloro",
+    "selected_season_id": "2014-2015",
+    "selected_date_local": "2014-12-21",
+    "selected_window_execution_identity_sha256": "112803ef146800be589960a857af3415e365a59b97e1f6ecf417ff3d14b8953d",
+    "selection_is_frozen": true,
+    "pilot_result_may_change_bulk_rules": false,
+    "pilot_failure_handling": "FAIL_CLOSED_FIX_ONLY_IMPLEMENTATION_OR_TRANSPORT_DEFECTS_WITHOUT_CHANGING_FROZEN_SCIENTIFIC_RULES"
+  },
+  "unit_geometry_and_projection": {
+    "huaycoloro": {
+      "geometry_path": "site/data/watersheds/huaycoloro_watershed.geojson",
+      "geometry_selector": null,
+      "target_projection": "EPSG:32718",
+      "r2_graph_path": "site/data/validation/cashahuacra_sentinel1_r2_graph.xml",
+      "r2_graph_sha256": "529491a9e7e431788bda202e2e1f87a342835d6f1d3d3ec1dd88ec01f400b8e2"
+    },
+    "shingolay": {
+      "geometry_path": "site/data/phase2/geometries/w1_santa_eulalia_rimac.geojson",
+      "geometry_selector": {
+        "property": "unit_id",
+        "value": "shingolay"
+      },
+      "target_projection": "EPSG:32718",
+      "r2_graph_path": "site/data/validation/cashahuacra_sentinel1_r2_graph.xml",
+      "r2_graph_sha256": "529491a9e7e431788bda202e2e1f87a342835d6f1d3d3ec1dd88ec01f400b8e2"
+    },
+    "san_ildefonso": {
+      "geometry_path": "site/data/watersheds/san_ildefonso_watershed.geojson",
+      "geometry_selector": {
+        "property": "id",
+        "value": "san_ildefonso"
+      },
+      "target_projection": "EPSG:32717",
+      "r2_graph_path": "site/data/validation/ibvf_primary6_s1_r2_graph_utm17s.xml",
+      "r2_graph_sha256": "9bc7cf581efdc9c0be29fbc3b789604c37d548fb95dd3288d1477b68d53b5a96"
+    }
+  },
+  "track_dem_rule": {
+    "same_rule_for_all_three_units": true,
+    "geometry_only": true,
+    "buffer_m": 1500.0,
+    "buffer_crs": "unit_target_projection",
+    "bbox_rule": "buffer frozen geometry by 1500 m in the unit target UTM projection, transform the buffered geometry envelope to EPSG:4326, then include every intersecting Copernicus GLO-30 one-degree tile",
+    "glo30_source": "Copernicus DEM GLO-30 COG public S3",
+    "glo30_horizontal_crs": "EPSG:4326",
+    "glo30_vertical_semantics": "EPSG:3855_EGM2008_ORTHOMETRIC_HEIGHT",
+    "vertical_grid": {
+      "url": "https://cdn.proj.org/us_nga_egm08_25.tif",
+      "sha256": "4191d471eefebf24091b56dbc604353cb3b8cf8cc70e448bb9ae56a272bef17a",
+      "bytes": 80585622
+    },
+    "height_transform": "WGS84_ELLIPSOIDAL_HEIGHT = EGM2008_ORTHOMETRIC_HEIGHT + EGM2008_GEOID_UNDULATION via frozen vgridshift",
+    "horizontal_resampling_for_vertical_conversion": false,
+    "case_specific_height_adjustment_allowed": false,
+    "tile_or_dem_choice_may_use_sar_response": false,
+    "tile_or_dem_choice_may_use_outcomes": false,
+    "first_freeze_must_archive": [
+      "geometry_file_sha256",
+      "geometry_selected_feature_identity",
+      "buffered_bbox_wgs84",
+      "every_GLO30_tile_url_sha256_bytes",
+      "vertical_grid_sha256_bytes",
+      "output_dem_sha256_bytes_grid_identity"
+    ],
+    "r2_execution_requires_reproduction_of_archived_dem_sha256": true
+  },
+  "r2_rule": {
+    "pre_and_post_processed_independently": true,
+    "same_graph_sha256_required": true,
+    "only_window_specific_differences_allowed": [
+      "input SAFE exact bytes",
+      "pre/post exact AUX_POEORB bytes selected before R2",
+      "output filename"
+    ],
+    "snap_release": "14.0.0",
+    "polarization": "VV",
+    "thermal_noise_removal": true,
+    "precise_orbit_quality": "AUX_POEORB",
+    "calibration_intermediate": "Beta0_VV",
+    "terrain_flattening_output": "Gamma0_VV",
+    "external_dem_apply_egm": false,
+    "dem_resampling_method": "BILINEAR_INTERPOLATION",
+    "image_resampling_method": "BILINEAR_INTERPOLATION",
+    "pixel_spacing_m": 10.0,
+    "align_to_standard_grid": true,
+    "standard_grid_origin_xy": [
+      0.0,
+      0.0
+    ],
+    "speckle_filtering": false,
+    "pre_post_comparison_allowed_at_r2": false,
+    "r2_pass_requires_expected_aux_poeorb_filename_logged_for_both_dates": true
+  },
+  "r3_rule": {
+    "minimum_common_support_fraction": 0.95,
+    "basin_geometry": "frozen unit geometry from unit_geometry_and_projection",
+    "support_definition": "basin AND pre_dataset_mask AND post_dataset_mask AND finite_positive_pre_gamma0 AND finite_positive_post_gamma0",
+    "lossless_integer_grid_co_window_only": true,
+    "resampling_between_pre_and_post_allowed": false,
+    "radiometric_difference_allowed_before_r3_pass": false,
+    "below_gate_semantics": "INSUFFICIENT_SPATIAL_SUPPORT_R4_BLOCKED_UNKNOWN_NOT_LOW"
+  },
+  "r4_rule": {
+    "delta_definition": "10*log10(post_Gamma0/pre_Gamma0)",
+    "domain": "R3 common-support pixels only",
+    "factor_two_absolute_db": 3.010299956639812,
+    "primary_features": [
+      "MEDIAN_DELTA_DB",
+      "IQR_DELTA_DB",
+      "DECREASE_FACTOR2_FRACTION",
+      "INCREASE_FACTOR2_FRACTION",
+      "LARGEST_FACTOR2_CLUSTER_FRACTION"
+    ],
+    "cluster_connectivity": 8,
+    "minimum_cluster_size_filter": 0,
+    "morphological_cleanup": false,
+    "clipping_allowed": false,
+    "imputation_allowed": false,
+    "smoothing_allowed": false,
+    "additional_resampling_allowed": false,
+    "posthoc_terrain_or_landcover_masking_allowed": false,
+    "feature_magnitude_pass_fail_threshold": null,
+    "r4_is_observational_not_decisional": true
+  },
+  "bulk_gate": {
+    "pilot_r2_r3_must_pass_implementation_integrity_before_bulk": true,
+    "pilot_r4_can_be_computed_only_after_r3_spatial_gate": true,
+    "bulk_rules_locked_to_this_contract": true,
+    "all_104_compatible_slots_must_be_accounted_for": true,
+    "all_4_missing_slots_must_remain_explicit": true,
+    "a5_requires_all_108_selected_slots_accounted_for": true,
+    "territorial_unblind_before_a5_freeze": false,
+    "territorial_unblind_before_anti_leakage_audit": false
+  },
+  "forbidden_outputs_before_permitted_unblind": [
+    "activation/non-activation label",
+    "EVENT/NONE or equivalent",
+    "activation probability",
+    "risk class",
+    "alert level",
+    "operational priority",
+    "outcome-informed threshold",
+    "outcome-informed basin prioritization"
+  ],
+  "status": "FROZEN_BEFORE_PRIMARY6_R2_SCIENCE_VALUES_GENERIC_EXECUTION_ALLOWED_ONLY_UNDER_THIS_CONTRACT"
+}
