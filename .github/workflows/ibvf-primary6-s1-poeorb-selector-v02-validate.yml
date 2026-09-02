@@ -1,0 +1,106 @@
+name: IBVF - validate SNAP14 POEORB selector v0.2
+
+on:
+  push:
+    branches: [agent/independent-basin-validation-map]
+    paths:
+      - '.github/workflows/ibvf-primary6-s1-poeorb-selector-v02-validate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install metadata-only dependencies
+        run: |
+          python -m pip install --disable-pip-version-check 'requests>=2.31,<3'
+          sudo apt-get update
+          sudo apt-get install -y proj-bin proj-data
+          python -m py_compile scripts/ibvf_primary6_sentinel1_r2_freeze_prerequisites_v02.py
+      - name: Validate v0.2 selector against first generic pilot and frozen Cashahuacra anchor
+        run: |
+          mkdir -p /tmp/ibvf-orbit-selector-v02
+          PYTHONPATH=scripts python - <<'PY'
+          import hashlib,json,tempfile
+          from pathlib import Path
+          from ibvf_primary6_sentinel1_r2_freeze_prerequisites_v02 import freeze_orbit_v02
+          from ibvf_primary6_sentinel1_r2_prerequisites import archive_for
+
+          def sha(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+          amend_p=Path('site/data/validation/ibvf_primary6_sentinel1_r2_orbit_consumption_amendment_v02.json')
+          amend=json.loads(amend_p.read_text(encoding='utf-8'))
+          assert amend['deployment_status']=='RESEARCH_ONLY' and amend['test_only'] is True
+          assert amend['production_use'] is False and amend['production_ready'] is False
+          assert amend['operational_alerting_enabled'] is False and amend['territorial_activation_evidence_blinded'] is True
+          assert amend['scientific_integrity']['amendment_based_on_signal_values'] is False
+          assert amend['scientific_integrity']['amendment_based_on_outcomes'] is False
+          base=json.load(open('site/data/validation/cashahuacra_sentinel1_r2_prerequisites_contract.json',encoding='utf-8'))
+          base_root=base['precise_orbits']['archive_root']
+          pilot=json.load(open('site/data/validation/ibvf_primary6_sentinel1_r2_prerequisites_2014_2015_v01.json',encoding='utf-8'))
+          row=next(x for x in pilot['entries'] if x['case_id']=='primary6_huaycoloro_2014-12-21')
+          cash=json.load(open('site/data/validation/cashahuacra_sentinel1_r2_prerequisites.json',encoding='utf-8'))
+          tests=[
+            ('pilot_pre','S1A',row['precise_orbits']['pre']['acquisition_utc'],amend['v02_selector']['validation_before_bulk']['must_match_first_generic_pilot_snap14_pre_filename']),
+            ('pilot_post','S1A',row['precise_orbits']['post']['acquisition_utc'],amend['v02_selector']['validation_before_bulk']['must_match_first_generic_pilot_snap14_post_filename']),
+            ('cashahuacra_pre','S1A',cash['precise_orbits']['pre']['acquisition_utc'],amend['v02_selector']['validation_before_bulk']['must_match_cashahuacra_anchor_pre_filename']),
+            ('cashahuacra_post','S1A',cash['precise_orbits']['post']['acquisition_utc'],amend['v02_selector']['validation_before_bulk']['must_match_cashahuacra_anchor_post_filename']),
+          ]
+          rows=[]
+          with tempfile.TemporaryDirectory(prefix='ibvf-poeorb-v02-audit-') as td:
+            for i,(label,platform,acq,expected_eof) in enumerate(tests):
+              root=archive_for(base_root,platform)
+              rec=freeze_orbit_v02(root,acq,f't{i}',Path(td))
+              assert rec['status']=='PASS', (label,rec)
+              selected=rec['filename'][:-4] if rec['filename'].endswith('.zip') else rec['filename']
+              assert selected==expected_eof, (label,selected,expected_eof,rec.get('covering_files'))
+              rows.append({
+                'label':label,'platform':platform,'acquisition_utc':acq,
+                'expected_eof':expected_eof,'selected_eof':selected,
+                'covering_count':rec['covering_count'],'covering_files':rec['covering_files'],
+                'zip_sha256':rec['zip_sha256'],'inner_eof_sha256':rec['inner_eof_sha256'],
+                'status':'PASS_EXACT_EXPECTED_SNAP14_FILENAME_AND_HASH_FROZEN'
+              })
+          out={
+            'schema_version':'irfen-ibvf-primary6-sentinel1-r2-orbit-selector-v02-validation-v0.1',
+            'deployment_status':'RESEARCH_ONLY','test_only':True,
+            'production_use':False,'production_ready':False,'operational_alerting_enabled':False,
+            'uses_operational_event_none_labels':False,'territorial_activation_evidence_blinded':True,
+            'serious_modeling_gate':'CLOSED_UNTIL_PRIMARY6_A5_FREEZE_AND_ANTI_LEAKAGE_AUDIT',
+            'amendment_path':str(amend_p),'amendment_sha256':sha(amend_p),
+            'selection_rule':amend['v02_selector']['selection_rule'],
+            'validation_inputs_are_metadata_only':True,'sar_response_values_read':False,
+            'rainfall_magnitudes_read':False,'territorial_outcomes_read':False,
+            'known_event_dates_read':False,'case_control_roles_read':False,
+            'validation_cases':rows,
+            'status':'PASS_SELECTOR_MATCHES_FIRST_GENERIC_PILOT_SNAP14_AND_CASHAHUACRA_ANCHOR_BEFORE_ACCEPTED_PRIMARY6_R2'
+          }
+          Path('/tmp/ibvf-orbit-selector-v02/ibvf_primary6_sentinel1_r2_orbit_selector_v02_validation.json').write_text(json.dumps(out,indent=2)+'\n')
+          print(json.dumps({'status':out['status'],'cases':[(x['label'],x['covering_count'],x['selected_eof']) for x in rows]},indent=2))
+          PY
+      - name: Archive selector validation
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git pull --rebase origin agent/independent-basin-validation-map
+          cp /tmp/ibvf-orbit-selector-v02/ibvf_primary6_sentinel1_r2_orbit_selector_v02_validation.json site/data/validation/
+          git add site/data/validation/ibvf_primary6_sentinel1_r2_orbit_selector_v02_validation.json
+          git commit -m 'IBVF: validate SNAP14 POEORB selector v0.2 against pilot and anchor'
+          git push origin HEAD:agent/independent-basin-validation-map
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ibvf-primary6-poeorb-selector-v02-${{ github.sha }}
+          path: /tmp/ibvf-orbit-selector-v02/*.json
+          if-no-files-found: warn
+          retention-days: 30
