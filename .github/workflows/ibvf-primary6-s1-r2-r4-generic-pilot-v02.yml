@@ -1,0 +1,272 @@
+name: IBVF - PRIMARY6 Sentinel-1 generic R2-R4 blind pilot v0.2
+
+on:
+  push:
+    branches: [agent/independent-basin-validation-map]
+    paths:
+      - '.github/workflows/ibvf-primary6-s1-r2-r4-generic-pilot-v02.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  pilot-v02:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      CASE_ID: primary6_huaycoloro_2014-12-21
+      ROOT: /tmp/ibvf-primary6-r2r4-pilot-v02
+      GLOBAL_CONTRACT: site/data/validation/ibvf_primary6_sentinel1_r2r4_execution_contract_v01.json
+      ORBIT_AMENDMENT: site/data/validation/ibvf_primary6_sentinel1_r2_orbit_consumption_amendment_v02.json
+      SELECTOR_VALIDATION: site/data/validation/ibvf_primary6_sentinel1_r2_orbit_selector_v02_validation.json
+      R2_ENTRY: site/data/validation/ibvf_primary6_sentinel1_r2_entry_2014_2015_v01.json
+      R2_PREREQ: site/data/validation/ibvf_primary6_sentinel1_r2_prerequisites_2014_2015_v02.json
+      DEM_FREEZE: site/data/validation/ibvf_primary6_sentinel1_track_dem_huaycoloro_v01.json
+      ANCHOR_R3: site/data/validation/cashahuacra_sentinel1_r3_contract.json
+      ANCHOR_R4: site/data/validation/cashahuacra_sentinel1_r4_contract.json
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install frozen scientific runtime dependencies
+        run: |
+          python -m pip install --disable-pip-version-check 'requests>=2.31,<3' 'numpy>=1.26,<2' 'rasterio>=1.3,<2' 'pyproj>=3.6,<4' 'shapely>=2,<3'
+          python -m py_compile \
+            scripts/ibvf_primary6_sentinel1_track_dem_freeze.py \
+            scripts/ibvf_primary6_sentinel1_r2_execute_v02.py \
+            scripts/ibvf_primary6_sentinel1_r2v02_r3_adapter.py \
+            scripts/ibvf_primary6_sentinel1_r3_common_support.py \
+            scripts/ibvf_primary6_sentinel1_r4_blind_features.py \
+            scripts/ibvf_snap_runtime_install_freeze.py
+
+      - name: Enforce immutable pilot, v0.2 selector, and blind gates
+        run: |
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          def h(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+          g=json.load(open('site/data/validation/ibvf_primary6_sentinel1_r2r4_execution_contract_v01.json',encoding='utf-8'))
+          a=json.load(open('site/data/validation/ibvf_primary6_sentinel1_r2_orbit_consumption_amendment_v02.json',encoding='utf-8'))
+          v=json.load(open('site/data/validation/ibvf_primary6_sentinel1_r2_orbit_selector_v02_validation.json',encoding='utf-8'))
+          e=json.load(open('site/data/validation/ibvf_primary6_sentinel1_r2_entry_2014_2015_v01.json',encoding='utf-8'))
+          p=json.load(open('site/data/validation/ibvf_primary6_sentinel1_r2_prerequisites_2014_2015_v02.json',encoding='utf-8'))
+          d=json.load(open('site/data/validation/ibvf_primary6_sentinel1_track_dem_huaycoloro_v01.json',encoding='utf-8'))
+          for x in (g,a,v,e,p,d):
+              assert x['deployment_status']=='RESEARCH_ONLY' and x['test_only'] is True
+              assert x['production_use'] is False and x['production_ready'] is False
+              assert x['operational_alerting_enabled'] is False and x['uses_operational_event_none_labels'] is False
+              assert x['territorial_activation_evidence_blinded'] is True
+          assert g['primary6']['canonical_rows']==5816 and g['primary6']['selected_windows']==108
+          assert g['primary6']['sentinel1_compatible_pairs']==104 and g['primary6']['sentinel1_missing_compatible_pair_slots']==4
+          assert g['pilot_selection']['selected_case_id']=='primary6_huaycoloro_2014-12-21'
+          assert g['pilot_selection']['selected_window_execution_identity_sha256']=='112803ef146800be589960a857af3415e365a59b97e1f6ecf417ff3d14b8953d'
+          assert g['pilot_selection']['pilot_result_may_change_bulk_rules'] is False
+          assert a['scientific_integrity']['amendment_based_on_signal_values'] is False
+          assert a['scientific_integrity']['amendment_based_on_outcomes'] is False
+          assert a['scientific_integrity']['amendment_changes_selected_windows'] is False
+          assert a['scientific_integrity']['amendment_changes_sentinel1_pairs'] is False
+          assert a['runtime_consumption_gate']['noncanonical_pre_amendment_outputs_must_not_be_reused'] is True
+          assert v['status']=='PASS_SELECTOR_MATCHES_FIRST_GENERIC_PILOT_SNAP14_AND_CASHAHUACRA_ANCHOR_BEFORE_ACCEPTED_PRIMARY6_R2'
+          assert v['sar_response_values_read'] is False and v['territorial_outcomes_read'] is False
+          assert p['schema_version']=='irfen-ibvf-primary6-sentinel1-r2-prerequisites-v0.2'
+          assert p['status']=='PASS_ALL_SNAP14_CANONICAL_R2_PREREQUISITES_V02_FROZEN_NO_SCIENCE_VALUES'
+          assert p['compatible_windows_prerequisites_pass']==16 and p['missing_windows_preserved']==2
+          assert p['source_orbit_consumption_amendment_sha256']==h('site/data/validation/ibvf_primary6_sentinel1_r2_orbit_consumption_amendment_v02.json')
+          rows=[x for x in e['entries'] if x.get('case_id')==g['pilot_selection']['selected_case_id']]
+          req=[x for x in p['entries'] if x.get('case_id')==g['pilot_selection']['selected_case_id']]
+          assert len(rows)==len(req)==1
+          r,q=rows[0],req[0]
+          assert r['r1_partition_binding_mode']=='MODERN_EXACT_PARTITION_AND_WINDOW_HASH_BINDING'
+          assert r['legacy_pilot_r1_predates_execution_partition'] is False
+          assert r['r2_entry_status']=='PASS_R2_ENTRY_IDENTITY_FROZEN_EXECUTION_NOT_RUN'
+          assert q['status']=='PASS_SNAP14_CANONICAL_AUX_POEORB_BOTH_DATES_SHA256_FROZEN'
+          assert r['case_control_role']=='UNASSIGNED'
+          assert d['status']=='PASS_TRACK_DEM_FROZEN_NO_R2_SCIENCE_VALUES'
+          assert d['r2_science_pixels_read'] is False and d['territorial_outcomes_read'] is False
+          print('Frozen v0.2 pilot identity + blind gates: PASS')
+          PY
+
+      - name: Recreate verified SNAP 14 runtime
+        run: |
+          rm -rf "$ROOT"
+          mkdir -p "$ROOT/runtime-work" "$ROOT/r3" "$ROOT/r4"
+          python scripts/ibvf_snap_runtime_install_freeze.py \
+            --contract site/data/validation/cashahuacra_sentinel1_r2_runtime_contract.json \
+            --byte-report site/data/validation/cashahuacra_sentinel1_r2_runtime_bytes.json \
+            --work-dir "$ROOT/runtime-work" \
+            --output "$ROOT/runtime-install.json" \
+            | tee "$ROOT/runtime-summary.log"
+          python - <<'PY'
+          import json,os
+          d=json.load(open(os.environ['ROOT']+'/runtime-install.json',encoding='utf-8'))
+          assert d['status']=='SNAP_RUNTIME_METADATA_FROZEN_R2_EXECUTION_GATE_PASS'
+          assert d['gpt_release_version']=='14.0.0' and d['automatic_update_invoked'] is False
+          print('SNAP 14 exact runtime: PASS')
+          PY
+
+      - name: Reproduce Huaycoloro frozen track DEM exactly
+        run: |
+          python scripts/ibvf_primary6_sentinel1_track_dem_freeze.py \
+            --contract "$GLOBAL_CONTRACT" \
+            --unit-id huaycoloro \
+            --expected-report "$DEM_FREEZE" \
+            --output-dem "$ROOT/huaycoloro_glo30_wgs84_ellipsoidal.tif" \
+            --output-report "$ROOT/dem-reproduction.json"
+          python - <<'PY'
+          import json,os
+          d=json.load(open(os.environ['ROOT']+'/dem-reproduction.json',encoding='utf-8'))
+          assert d['status']=='PASS_TRACK_DEM_REPRODUCED_EXACTLY_R2_EXECUTION_ALLOWED_FOR_UNIT'
+          assert d['output_dem']['sha256']=='6c2a587fda3190ae3f259e807cd6ccbc00b8bb1e5b345cb4eaa04bf45e3a03e2'
+          assert d['r2_science_pixels_read'] is False and d['territorial_outcomes_read'] is False
+          PY
+
+      - name: Execute canonical R2 v0.2 pre and post independently
+        id: r2
+        continue-on-error: true
+        run: |
+          python scripts/ibvf_primary6_sentinel1_r2_execute_v02.py \
+            --contract "$GLOBAL_CONTRACT" \
+            --orbit-amendment "$ORBIT_AMENDMENT" \
+            --selector-validation "$SELECTOR_VALIDATION" \
+            --r2-entry "$R2_ENTRY" \
+            --prerequisites "$R2_PREREQ" \
+            --case-id "$CASE_ID" \
+            --gpt "$ROOT/runtime-work/snap14/bin/gpt" \
+            --dem "$ROOT/huaycoloro_glo30_wgs84_ellipsoidal.tif" \
+            --dem-report "$ROOT/dem-reproduction.json" \
+            --work-dir "$ROOT/execution-v02" \
+            --output "$ROOT/r2-v02.json" \
+            | tee "$ROOT/r2-v02-summary.log"
+
+      - name: Build explicit metadata-only R2v0.2 to frozen-R3 interface
+        id: adapter
+        continue-on-error: true
+        run: |
+          python scripts/ibvf_primary6_sentinel1_r2v02_r3_adapter.py \
+            --r2-v02 "$ROOT/r2-v02.json" \
+            --output "$ROOT/r2-r3-interface.json"
+
+      - name: Execute inherited R3 zero-resampling support gate
+        id: r3
+        continue-on-error: true
+        run: |
+          python scripts/ibvf_primary6_sentinel1_r3_common_support.py \
+            --global-contract "$GLOBAL_CONTRACT" \
+            --anchor-r3-contract "$ANCHOR_R3" \
+            --r2-report "$ROOT/r2-r3-interface.json" \
+            --case-id "$CASE_ID" \
+            --pre "$ROOT/execution-v02/${CASE_ID}_pre_r2_gamma0_tc.tif" \
+            --post "$ROOT/execution-v02/${CASE_ID}_post_r2_gamma0_tc.tif" \
+            --basin site/data/watersheds/huaycoloro_watershed.geojson \
+            --pre-crop-output "$ROOT/r3/${CASE_ID}_pre_r2_basin_crop.tif" \
+            --post-crop-output "$ROOT/r3/${CASE_ID}_post_r2_basin_crop.tif" \
+            --mask-output "$ROOT/r3/${CASE_ID}_r3_common_support_mask.tif" \
+            --report-output "$ROOT/r3/r3-v02.json" \
+            | tee "$ROOT/r3-v02-summary.log"
+
+      - name: Execute frozen five-feature R4 only after natural R3 pass
+        id: r4
+        continue-on-error: true
+        run: |
+          python - <<'PY'
+          import json,os,sys
+          p=os.environ['ROOT']+'/r3/r3-v02.json'
+          try: d=json.load(open(p,encoding='utf-8'))
+          except FileNotFoundError: sys.exit(3)
+          if d['status']=='UNKNOWN_INSUFFICIENT_COMMON_SUPPORT':
+              print('R4 remains explicitly UNKNOWN/BLOCKED under frozen >=0.95 support rule')
+              sys.exit(0)
+          if d['status']!='PASS_R3_COMMON_SUPPORT_R4_ALLOWED_BY_SPATIAL_SUPPORT_ONLY':
+              print('R4 blocked by non-scientific/non-support R3 blocker:',d['status'])
+              sys.exit(4)
+          PY
+          python - <<'PY'
+          import json,os,sys
+          d=json.load(open(os.environ['ROOT']+'/r3/r3-v02.json',encoding='utf-8'))
+          if d['status']=='UNKNOWN_INSUFFICIENT_COMMON_SUPPORT': sys.exit(0)
+          sys.exit(10)
+          PY
+          rc=$?
+          if [ "$rc" -eq 0 ]; then exit 0; fi
+          if [ "$rc" -ne 10 ]; then exit "$rc"; fi
+          python scripts/ibvf_primary6_sentinel1_r4_blind_features.py \
+            --global-contract "$GLOBAL_CONTRACT" \
+            --anchor-r4-contract "$ANCHOR_R4" \
+            --r3-report "$ROOT/r3/r3-v02.json" \
+            --case-id "$CASE_ID" \
+            --pre "$ROOT/r3/${CASE_ID}_pre_r2_basin_crop.tif" \
+            --post "$ROOT/r3/${CASE_ID}_post_r2_basin_crop.tif" \
+            --common-mask "$ROOT/r3/${CASE_ID}_r3_common_support_mask.tif" \
+            --delta-output "$ROOT/r4/${CASE_ID}_delta_gamma0_db.tif" \
+            --factor2-mask-output "$ROOT/r4/${CASE_ID}_factor2_mask.tif" \
+            --report-output "$ROOT/r4/r4-v02.json" \
+            | tee "$ROOT/r4-v02-summary.log"
+
+      - name: Validate pilot science-state without interpreting feature magnitudes
+        run: |
+          python - <<'PY'
+          import json,os,pathlib
+          root=pathlib.Path(os.environ['ROOT'])
+          r2=json.load(open(root/'r2-v02.json',encoding='utf-8'))
+          assert r2['status']=='PASS_R2_V02_PRE_POST_INDEPENDENT_SNAP14_CANONICAL_POEORB_VERIFIED_NO_COMPARISON'
+          assert r2['r2_processing_executed'] is True and r2['poeorb_consumption_verified_both_dates'] is True
+          assert r2['pre']['requested_exact_v02_frozen_resource'] is True and r2['post']['requested_exact_v02_frozen_resource'] is True
+          assert r2['comparison_performed'] is False and r2['territorial_outcomes_read'] is False
+          r3p=root/'r3/r3-v02.json'
+          if not r3p.exists(): raise SystemExit('R3 report absent after accepted R2 v0.2')
+          r3=json.load(open(r3p,encoding='utf-8'))
+          assert r3['radiometric_difference_statistics_computed'] is False and r3['territorial_outcomes_read'] is False
+          if r3['status']=='PASS_R3_COMMON_SUPPORT_R4_ALLOWED_BY_SPATIAL_SUPPORT_ONLY':
+              assert r3['common_support_fraction']>=0.95
+              r4p=root/'r4/r4-v02.json'
+              if not r4p.exists(): raise SystemExit('R4 absent despite natural R3 pass')
+              r4=json.load(open(r4p,encoding='utf-8'))
+              assert r4['status']=='PASS_R4_BLIND_SAR_FEATURE_VECTOR_FROZEN_NO_INFERENCE'
+              assert set(r4['primary_r4_feature_vector'])=={'MEDIAN_DELTA_DB','IQR_DELTA_DB','DECREASE_FACTOR2_FRACTION','INCREASE_FACTOR2_FRACTION','LARGEST_FACTOR2_CLUSTER_FRACTION'}
+              assert r4['territorial_outcomes_read'] is False and r4['activation_inference_allowed'] is False
+              print({'pilot':'PASS_R2_R3_R4_BLIND_V02','support_gate':'PASS','common_support_fraction':r3['common_support_fraction'],'feature_count':5})
+          elif r3['status']=='UNKNOWN_INSUFFICIENT_COMMON_SUPPORT':
+              assert r3['common_support_fraction']<0.95
+              assert not (root/'r4/r4-v02.json').exists()
+              print({'pilot':'PASS_R2_R3_ACCOUNTED_R4_EXPLICIT_UNKNOWN','support_gate':'BELOW_0.95','common_support_fraction':r3['common_support_fraction']})
+          else:
+              raise SystemExit('R3 implementation/grid blocker: '+r3['status'])
+          PY
+
+      - name: Archive bounded accepted blind pilot JSON evidence
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          cp "$ROOT/r2-v02.json" "site/data/validation/ibvf_${CASE_ID}_s1_r2_v02.json"
+          cp "$ROOT/r2-r3-interface.json" "site/data/validation/ibvf_${CASE_ID}_s1_r2v02_r3_interface_v01.json"
+          cp "$ROOT/r3/r3-v02.json" "site/data/validation/ibvf_${CASE_ID}_s1_r3_v02.json"
+          if [ -f "$ROOT/r4/r4-v02.json" ]; then cp "$ROOT/r4/r4-v02.json" "site/data/validation/ibvf_${CASE_ID}_s1_r4_v02.json"; fi
+          git add site/data/validation/ibvf_${CASE_ID}_s1_r2_v02.json site/data/validation/ibvf_${CASE_ID}_s1_r2v02_r3_interface_v01.json site/data/validation/ibvf_${CASE_ID}_s1_r3_v02.json
+          if [ -f "site/data/validation/ibvf_${CASE_ID}_s1_r4_v02.json" ]; then git add "site/data/validation/ibvf_${CASE_ID}_s1_r4_v02.json"; fi
+          git commit -m 'IBVF: archive accepted generic PRIMARY6 R2-R4 blind pilot v0.2'
+          git pull --rebase origin agent/independent-basin-validation-map
+          git push origin HEAD:agent/independent-basin-validation-map
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ibvf-primary6-r2r4-generic-pilot-v02-${{ github.sha }}
+          path: |
+            /tmp/ibvf-primary6-r2r4-pilot-v02/r2-v02.json
+            /tmp/ibvf-primary6-r2r4-pilot-v02/r2-r3-interface.json
+            /tmp/ibvf-primary6-r2r4-pilot-v02/execution-v02/pre_gpt.log
+            /tmp/ibvf-primary6-r2r4-pilot-v02/execution-v02/post_gpt.log
+            /tmp/ibvf-primary6-r2r4-pilot-v02/r3/r3-v02.json
+            /tmp/ibvf-primary6-r2r4-pilot-v02/r3/*.tif
+            /tmp/ibvf-primary6-r2r4-pilot-v02/r4/r4-v02.json
+            /tmp/ibvf-primary6-r2r4-pilot-v02/r4/*.tif
+            /tmp/ibvf-primary6-r2r4-pilot-v02/dem-reproduction.json
+            /tmp/ibvf-primary6-r2r4-pilot-v02/runtime-install.json
+          if-no-files-found: warn
+          retention-days: 14
