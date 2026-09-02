@@ -187,6 +187,7 @@ jobs:
               print('R4 blocked by non-scientific/non-support R3 blocker:',d['status'])
               sys.exit(4)
           PY
+          set +e
           python - <<'PY'
           import json,os,sys
           d=json.load(open(os.environ['ROOT']+'/r3/r3-v02.json',encoding='utf-8'))
@@ -194,6 +195,7 @@ jobs:
           sys.exit(10)
           PY
           rc=$?
+          set -e
           if [ "$rc" -eq 0 ]; then exit 0; fi
           if [ "$rc" -ne 10 ]; then exit "$rc"; fi
           python scripts/ibvf_primary6_sentinel1_r4_blind_features.py \
