@@ -92,6 +92,27 @@ jobs:
             --output-dir "$ROOT/archive/$SHARD_ID/results" \
             --summary "$ROOT/archive/$SHARD_ID/shard-summary.json" \
             | tee "$ROOT/archive/$SHARD_ID/shard-execution.log"
+      - name: Preserve blinded blocker diagnostics
+        if: always()
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          import pathlib
+          import shutil
+
+          root = pathlib.Path(os.environ['ROOT'])
+          cases = root / 'cases'
+          diag = root / 'archive' / os.environ['SHARD_ID'] / 'diagnostics'
+          allowed = {'r2-v02.json', 'r2-r3-interface.json', 'r3-v02.json', 'pre_gpt.log', 'post_gpt.log'}
+          if cases.is_dir():
+              for src in cases.rglob('*'):
+                  if src.is_file() and src.name in allowed:
+                      dst = diag / src.relative_to(cases)
+                      dst.parent.mkdir(parents=True, exist_ok=True)
+                      shutil.copy2(src, dst)
+          print('BLINDED_DIAGNOSTICS_PRESERVED_NO_R4_VALUES_NO_OUTCOMES')
+          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
