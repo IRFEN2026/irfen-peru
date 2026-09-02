@@ -76,9 +76,9 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git pull --rebase origin agent/independent-basin-validation-map
           git add site/data/validation/independent_basin_validation_map.json
           if ! git diff --cached --quiet; then
             git commit -m 'IBVF: sync PRIMARY6 R2 prerequisites to 104 of 104'
+            git pull --rebase origin agent/independent-basin-validation-map
             git push origin HEAD:agent/independent-basin-validation-map
           fi
