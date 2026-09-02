@@ -1,0 +1,87 @@
+name: IBVF - PRIMARY6 R2 prerequisite map sync v0.2
+
+on:
+  push:
+    branches: [agent/independent-basin-validation-map]
+    paths:
+      - '.github/workflows/ibvf-primary6-r2-prerequisite-map-sync-v02.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify six archived prerequisite manifests and update map counters
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          seasons=['2014_2015','2015_2016','2016_2017','2017_2018','2018_2019','2019_2020']
+          paths=[Path(f'site/data/validation/ibvf_primary6_sentinel1_r2_prerequisites_{s}_v01.json') for s in seasons]
+          total=missing=0
+          season_ids=[]
+          for p in paths:
+              d=json.loads(p.read_text(encoding='utf-8'))
+              assert d['deployment_status']=='RESEARCH_ONLY' and d['test_only'] is True
+              assert d['production_use'] is False and d['production_ready'] is False
+              assert d['operational_alerting_enabled'] is False and d['uses_operational_event_none_labels'] is False
+              assert d['territorial_activation_evidence_blinded'] is True
+              assert d['r2_execution_performed'] is False and d['r2_science_pixels_read'] is False
+              assert d['territorial_outcomes_read'] is False and d['case_control_assignment_performed'] is False
+              assert d['activation_inference_allowed'] is False and d['modeling_allowed'] is False
+              assert d['compatible_windows_prerequisites_pass']==d['compatible_windows_expected']
+              assert d['missing_windows_preserved']==d['missing_windows_expected']
+              total += d['compatible_windows_prerequisites_pass']
+              missing += d['missing_windows_preserved']
+              season_ids.append(d['season_id'])
+          assert total==104 and missing==4
+          assert season_ids==['2014-2015','2015-2016','2016-2017','2017-2018','2018-2019','2019-2020']
+          mp=Path('site/data/validation/independent_basin_validation_map.json')
+          m=json.loads(mp.read_text(encoding='utf-8'))
+          assert m['deployment_status']=='RESEARCH_ONLY'
+          assert m['production_use'] is False and m['production_ready'] is False and m['operational_alerting_enabled'] is False
+          assert m['territorial_activation_evidence_blinded'] is True
+          a=m['acquisition_contract']
+          assert a['primary6_sentinel1_bulk_compatible_pair_count']==104
+          assert a['primary6_sentinel1_bulk_missing_pair_count']==4
+          assert a['primary6_sentinel1_r1_progress']=='104/104'
+          a['primary6_sentinel1_r2_prerequisite_windows_frozen']=104
+          a['primary6_sentinel1_r2_prerequisite_target_compatible_windows']=104
+          a['primary6_sentinel1_r2_prerequisite_progress']='104/104'
+          a['primary6_sentinel1_r2_prerequisite_seasons_frozen']=season_ids
+          a['primary6_sentinel1_r2_prerequisite_manifest_paths']=[str(p) for p in paths]
+          a['primary6_sentinel1_r2_prerequisite_status']='PASS_ALL_104_COMPATIBLE_WINDOWS_EXACT_POEORB_AND_VERTICAL_RESOURCE_FROZEN_BEFORE_R2_PIXELS_4_MISSING_PRESERVED'
+          a['primary6_sentinel1_r2_execution_progress']='0/104'
+          a['primary6_sentinel1_r3_pass_progress']='0/104'
+          a['primary6_sentinel1_r4_feature_progress']='0/104'
+          a['primary6_sentinel1_next_gate']='GENERIC_R2_R3_R4_BLIND_PILOT_THEN_BULK_SAME_FROZEN_RULES'
+          assert a['primary6_sentinel1_bulk_r1_r4_executed'] is False
+          # PRIMARY6 remains the gate; FULL12 is robustness only.
+          assert m['dataset_gate']['primary_gate']['completed_seasons']==6
+          assert m['dataset_gate']['primary_gate']['target_seasons']==6
+          assert m['dataset_gate']['full_robustness']['completed_seasons']==6
+          assert m['dataset_gate']['full_robustness']['target_seasons']==12
+          assert m['dataset_gate']['full_robustness']['required_for_primary_ranking'] is False
+          mp.write_text(json.dumps(m,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          print({'r2_prerequisites':'104/104','missing_preserved':4,'primary6':'6/6','full12':'6/12'})
+          PY
+      - name: Commit map-only synchronization
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git pull --rebase origin agent/independent-basin-validation-map
+          git add site/data/validation/independent_basin_validation_map.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'IBVF: sync PRIMARY6 R2 prerequisites to 104 of 104'
+            git push origin HEAD:agent/independent-basin-validation-map
+          fi
