@@ -42,6 +42,7 @@ jobs:
             scripts/ibvf_primary6_sentinel1_r2_execute_v02.py \
             scripts/ibvf_primary6_sentinel1_r2v02_r3_adapter.py \
             scripts/ibvf_primary6_sentinel1_r3_common_support.py \
+            scripts/ibvf_primary6_sentinel1_r3_tiled_storage_wrapper.py \
             scripts/ibvf_primary6_sentinel1_r4_blind_features.py \
             scripts/ibvf_snap_runtime_install_freeze.py
 
@@ -156,7 +157,7 @@ jobs:
         id: r3
         continue-on-error: true
         run: |
-          python scripts/ibvf_primary6_sentinel1_r3_common_support.py \
+          python scripts/ibvf_primary6_sentinel1_r3_tiled_storage_wrapper.py \
             --global-contract "$GLOBAL_CONTRACT" \
             --anchor-r3-contract "$ANCHOR_R3" \
             --r2-report "$ROOT/r2-r3-interface.json" \
