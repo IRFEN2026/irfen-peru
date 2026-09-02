@@ -1,0 +1,113 @@
+{
+  "schema_version": "irfen-ibvf-primary6-sentinel1-r2-orbit-consumption-amendment-v0.2",
+  "generated_at": "2026-09-02T03:48:00Z",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_UNTIL_PRIMARY6_A5_FREEZE_AND_ANTI_LEAKAGE_AUDIT",
+  "scope": "PRIMARY6_SENTINEL1_R2_POEORB_RESOURCE_SELECTION_AND_CONSUMPTION_VERIFICATION_ONLY",
+  "trigger": {
+    "case_id": "primary6_huaycoloro_2014-12-21",
+    "first_generic_primary6_r2_attempt_run_id": 33587617553,
+    "r2_outputs_created": true,
+    "r2_outputs_accepted_for_science": false,
+    "r3_executed": false,
+    "r4_executed": false,
+    "paired_pre_post_pixel_values_read_or_compared": false,
+    "r2_feature_magnitudes_read": false,
+    "territorial_outcomes_read": false,
+    "known_event_dates_read": false,
+    "case_control_roles_read_or_assigned": false,
+    "rainfall_magnitudes_used": false,
+    "observed_metadata_only": [
+      "SNAP Apply-Orbit-File log requested URL/filename",
+      "R2 process return code",
+      "R2 output existence/hash/grid metadata"
+    ],
+    "observed_mismatch": {
+      "pre_v01_frozen_eof": "S1A_OPER_AUX_POEORB_OPOD_20210305T035058_V20141217T225944_20141219T005944.EOF",
+      "pre_snap14_requested_eof": "S1A_OPER_AUX_POEORB_OPOD_20210305T033127_V20141216T225944_20141218T005944.EOF",
+      "post_v01_frozen_eof": "S1A_OPER_AUX_POEORB_OPOD_20210305T113428_V20150110T225944_20150112T005944.EOF",
+      "post_snap14_requested_eof": "S1A_OPER_AUX_POEORB_OPOD_20210305T111456_V20150109T225944_20150111T005944.EOF"
+    },
+    "conclusion": "V01 prerequisite inventory was not identical to SNAP 14 Apply-Orbit-File Auto Download resolution for overlapping adjacent AUX_POEORB validity intervals. The generated R2 rasters are noncanonical and rejected before R3/R4 or any signal interpretation."
+  },
+  "scientific_integrity": {
+    "amendment_made_after_first_r2_processing_attempt": true,
+    "amendment_made_before_any_primary6_r2_output_accepted": true,
+    "amendment_made_before_any_primary6_r3_value": true,
+    "amendment_made_before_any_primary6_r4_value": true,
+    "amendment_made_before_primary6_a5_freeze": true,
+    "amendment_made_before_anti_leakage_audit": true,
+    "amendment_made_before_territorial_unblind": true,
+    "amendment_based_on_signal_values": false,
+    "amendment_based_on_outcomes": false,
+    "amendment_based_on_event_dates": false,
+    "amendment_changes_selected_windows": false,
+    "amendment_changes_sentinel1_pairs": false,
+    "amendment_changes_r1": false,
+    "amendment_changes_dem_rule": false,
+    "amendment_changes_r2_graph_operators_or_numeric_parameters": false,
+    "amendment_changes_r3_threshold": false,
+    "amendment_changes_r4_features_or_thresholds": false,
+    "amendment_changes_meteorological_ranking": false
+  },
+  "v01_status": {
+    "v01_prerequisite_manifests_remain_immutable_for_audit": true,
+    "v01_prerequisite_manifests_superseded_for_primary6_r2_execution": true,
+    "v01_104_of_104_count_is_not_sufficient_for_r2_execution_after_this_amendment": true,
+    "reason": "Resource identity must match the frozen SNAP 14 operator's deterministic orbit resolver, not merely be a valid AUX_POEORB interval covering the acquisition."
+  },
+  "v02_selector": {
+    "resource_class": "AUX_POEORB",
+    "snap_release": "14.0.0",
+    "operator": "Apply-Orbit-File",
+    "orbit_type": "Sentinel Precise (Auto Download)",
+    "continue_on_fail": false,
+    "inventory_months_relative_to_acquisition": [-1, 0, 1],
+    "candidate_requirement": "validity_start <= frozen_acquisition_utc <= validity_stop",
+    "selection_rule": "EARLIEST_VALIDITY_START_AMONG_ALL_COVERING_AUX_POEORB_CANDIDATES_THEN_FILENAME_ASCENDING_TIEBREAK",
+    "selection_inputs": [
+      "frozen Sentinel-1 acquisition UTC",
+      "platform S1A/S1B",
+      "STEP AUX_POEORB archive filename validity metadata"
+    ],
+    "selection_forbidden_inputs": [
+      "SAR response pixels or derived change",
+      "rainfall magnitude",
+      "territorial activation evidence",
+      "known event dates",
+      "case/control roles",
+      "future outcomes"
+    ],
+    "validation_before_bulk": {
+      "must_match_first_generic_pilot_snap14_pre_filename": "S1A_OPER_AUX_POEORB_OPOD_20210305T033127_V20141216T225944_20141218T005944.EOF",
+      "must_match_first_generic_pilot_snap14_post_filename": "S1A_OPER_AUX_POEORB_OPOD_20210305T111456_V20150109T225944_20150111T005944.EOF",
+      "must_match_cashahuacra_anchor_pre_filename": "S1A_OPER_AUX_POEORB_OPOD_20210306T054130_V20150309T225944_20150311T005944.EOF",
+      "must_match_cashahuacra_anchor_post_filename": "S1A_OPER_AUX_POEORB_OPOD_20210306T133136_V20150402T225944_20150404T005944.EOF",
+      "failure_semantics": "BLOCK_R2_AND_DO_NOT_CHANGE_SELECTOR_POSTHOC"
+    }
+  },
+  "runtime_consumption_gate": {
+    "r2_side_pass_requires_snap_returncode_zero": true,
+    "r2_side_pass_requires_output_exists": true,
+    "r2_side_pass_requires_snap_log_requested_filename_equals_v02_frozen_filename": true,
+    "r2_side_pass_requires_requested_url_resource_bytes_verified_against_v02_frozen_zip_and_inner_eof_sha256": true,
+    "automatic_download_without_posthoc_exact_hash_verification_allowed": false,
+    "r3_remains_blocked_if_any_consumption_check_fails": true,
+    "noncanonical_pre_amendment_outputs_must_not_be_reused": true
+  },
+  "primary6_accounting": {
+    "selected_windows": 108,
+    "sentinel1_compatible_pairs": 104,
+    "sentinel1_missing_compatible_pair_slots": 4,
+    "missing_slots_preserved_without_substitution": true,
+    "v02_prerequisites_required_before_bulk_r2": "104/104 compatible pairs"
+  },
+  "status": "FROZEN_PRE_ACCEPTED_R2_VALUES_POEORB_SELECTOR_V02_MUST_VALIDATE_AGAINST_PILOT_AND_ANCHOR_BEFORE_BULK"
+}
