@@ -1,0 +1,92 @@
+name: IBVF - PRIMARY6 remaining track DEM freeze
+
+on:
+  push:
+    branches: [agent/independent-basin-validation-map]
+    paths:
+      - '.github/workflows/ibvf-primary6-s1-track-dem-remaining-freeze.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install static DEM dependencies
+        run: |
+          python -m pip install --disable-pip-version-check 'requests>=2.31,<3' 'numpy>=1.26,<2' 'rasterio>=1.3,<2' 'pyproj>=3.6,<4' 'shapely>=2,<3'
+          python -m py_compile scripts/ibvf_primary6_sentinel1_track_dem_freeze.py
+      - name: Verify outcome-free unit identities
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('site/data/validation/ibvf_primary6_sentinel1_r2r4_execution_contract_v01.json',encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY' and d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False and d['operational_alerting_enabled'] is False
+          assert d['territorial_activation_evidence_blinded'] is True and d['decision_timing']['territorial_outcomes_used'] is False
+          assert d['track_dem_rule']['same_rule_for_all_three_units'] is True and d['track_dem_rule']['buffer_m']==1500.0
+          assert d['unit_geometry_and_projection']['shingolay']['target_projection']=='EPSG:32718'
+          assert d['unit_geometry_and_projection']['san_ildefonso']['target_projection']=='EPSG:32717'
+          print('Remaining track DEM identities: PASS')
+          PY
+      - name: Freeze Shingolay DEM
+        run: |
+          mkdir -p /tmp/ibvf-primary6-track-dems
+          python scripts/ibvf_primary6_sentinel1_track_dem_freeze.py \
+            --contract site/data/validation/ibvf_primary6_sentinel1_r2r4_execution_contract_v01.json \
+            --unit-id shingolay \
+            --output-dem /tmp/ibvf-primary6-track-dems/shingolay_glo30_wgs84_ellipsoidal.tif \
+            --output-report /tmp/ibvf-primary6-track-dems/ibvf_primary6_sentinel1_track_dem_shingolay_v01.json
+      - name: Freeze San Ildefonso DEM
+        run: |
+          python scripts/ibvf_primary6_sentinel1_track_dem_freeze.py \
+            --contract site/data/validation/ibvf_primary6_sentinel1_r2r4_execution_contract_v01.json \
+            --unit-id san_ildefonso \
+            --output-dem /tmp/ibvf-primary6-track-dems/san_ildefonso_glo30_wgs84_ellipsoidal.tif \
+            --output-report /tmp/ibvf-primary6-track-dems/ibvf_primary6_sentinel1_track_dem_san_ildefonso_v01.json
+      - name: Enforce no-science DEM guards
+        run: |
+          python - <<'PY'
+          import json
+          for u,epsg in [('shingolay','EPSG:32718'),('san_ildefonso','EPSG:32717')]:
+              p=f'/tmp/ibvf-primary6-track-dems/ibvf_primary6_sentinel1_track_dem_{u}_v01.json'
+              d=json.load(open(p,encoding='utf-8'))
+              assert d['status']=='PASS_TRACK_DEM_FROZEN_NO_R2_SCIENCE_VALUES'
+              assert d['unit_id']==u and d['target_projection']==epsg and d['buffer_m']==1500.0
+              assert d['r2_science_pixels_read'] is False and d['sar_response_used_for_dem_choice'] is False
+              assert d['rainfall_magnitude_used_for_dem_choice'] is False and d['territorial_outcomes_read'] is False
+              assert d['known_event_dates_read'] is False and d['case_control_role_assigned'] is False
+              assert d['activation_inference_allowed'] is False and d['modeling_allowed'] is False
+              assert d['vertical_grid']['sha256']=='4191d471eefebf24091b56dbc604353cb3b8cf8cc70e448bb9ae56a272bef17a'
+              assert len(d['glo30_tiles'])>=1 and all(x['status']=='SUCCESS' for x in d['glo30_tiles'])
+              print(u,d['output_dem']['sha256'],d['buffered_bbox_wgs84'])
+          PY
+      - name: Archive remaining DEM identity manifests
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git pull --rebase origin agent/independent-basin-validation-map
+          cp /tmp/ibvf-primary6-track-dems/ibvf_primary6_sentinel1_track_dem_shingolay_v01.json site/data/validation/
+          cp /tmp/ibvf-primary6-track-dems/ibvf_primary6_sentinel1_track_dem_san_ildefonso_v01.json site/data/validation/
+          git add site/data/validation/ibvf_primary6_sentinel1_track_dem_shingolay_v01.json site/data/validation/ibvf_primary6_sentinel1_track_dem_san_ildefonso_v01.json
+          git commit -m 'IBVF: freeze remaining PRIMARY6 track DEM identities'
+          git push origin HEAD:agent/independent-basin-validation-map
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ibvf-primary6-remaining-track-dems-${{ github.sha }}
+          path: |
+            /tmp/ibvf-primary6-track-dems/*.json
+            /tmp/ibvf-primary6-track-dems/*.tif
+          if-no-files-found: warn
+          retention-days: 14
