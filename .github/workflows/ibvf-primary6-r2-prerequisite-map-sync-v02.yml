@@ -52,6 +52,9 @@ jobs:
           assert m['production_use'] is False and m['production_ready'] is False and m['operational_alerting_enabled'] is False
           assert m['territorial_activation_evidence_blinded'] is True
           a=m['acquisition_contract']
+          assert a['primary_dataset_gate_seasons_complete']==6 and a['primary_dataset_gate_seasons_target']==6
+          assert a['primary_dataset_canonical_rows_frozen']==5816 and a['primary_dataset_canonical_rows_target']==5816
+          assert a['full_robustness_seasons_complete']==6 and a['full_robustness_season_target']==12
           assert a['primary6_sentinel1_bulk_compatible_pair_count']==104
           assert a['primary6_sentinel1_bulk_missing_pair_count']==4
           assert a['primary6_sentinel1_r1_progress']=='104/104'
@@ -66,12 +69,6 @@ jobs:
           a['primary6_sentinel1_r4_feature_progress']='0/104'
           a['primary6_sentinel1_next_gate']='GENERIC_R2_R3_R4_BLIND_PILOT_THEN_BULK_SAME_FROZEN_RULES'
           assert a['primary6_sentinel1_bulk_r1_r4_executed'] is False
-          # PRIMARY6 remains the gate; FULL12 is robustness only.
-          assert m['dataset_gate']['primary_gate']['completed_seasons']==6
-          assert m['dataset_gate']['primary_gate']['target_seasons']==6
-          assert m['dataset_gate']['full_robustness']['completed_seasons']==6
-          assert m['dataset_gate']['full_robustness']['target_seasons']==12
-          assert m['dataset_gate']['full_robustness']['required_for_primary_ranking'] is False
           mp.write_text(json.dumps(m,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
           print({'r2_prerequisites':'104/104','missing_preserved':4,'primary6':'6/6','full12':'6/12'})
           PY
