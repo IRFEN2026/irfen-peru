@@ -1,0 +1,103 @@
+name: IBVF - PRIMARY6 Huaycoloro track DEM freeze
+
+on:
+  push:
+    branches: [agent/independent-basin-validation-map]
+    paths:
+      - '.github/workflows/ibvf-primary6-s1-track-dem-huaycoloro-freeze.yml'
+      - 'scripts/ibvf_primary6_sentinel1_track_dem_freeze.py'
+      - 'site/data/validation/ibvf_primary6_sentinel1_r2r4_execution_contract_v01.json'
+      - 'site/data/watersheds/huaycoloro_watershed.geojson'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  freeze-huaycoloro-dem:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/independent-basin-validation-map
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install static DEM dependencies
+        run: |
+          python -m pip install --disable-pip-version-check 'requests>=2.31,<3' 'numpy>=1.26,<2' 'rasterio>=1.3,<2' 'pyproj>=3.6,<4' 'shapely>=2,<3'
+          python -m py_compile scripts/ibvf_primary6_sentinel1_track_dem_freeze.py
+      - name: Enforce frozen blind execution contract
+        run: |
+          python - <<'PY'
+          import json
+          p='site/data/validation/ibvf_primary6_sentinel1_r2r4_execution_contract_v01.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY' and d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False and d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          assert d['decision_timing']['made_before_primary6_r2_science_pixels_read'] is True
+          assert d['decision_timing']['sar_response_used'] is False and d['decision_timing']['territorial_outcomes_used'] is False
+          assert d['primary6']['canonical_rows']==5816 and d['primary6']['selected_windows']==108
+          assert d['primary6']['sentinel1_compatible_pairs']==104 and d['primary6']['sentinel1_missing_compatible_pair_slots']==4
+          assert d['pilot_selection']['selected_case_id']=='primary6_huaycoloro_2014-12-21'
+          assert d['pilot_selection']['pilot_result_may_change_bulk_rules'] is False
+          assert d['track_dem_rule']['geometry_only'] is True and d['track_dem_rule']['buffer_m']==1500.0
+          assert d['track_dem_rule']['tile_or_dem_choice_may_use_sar_response'] is False
+          assert d['track_dem_rule']['tile_or_dem_choice_may_use_outcomes'] is False
+          print('Frozen execution/DEM contract: PASS')
+          PY
+      - name: Freeze Huaycoloro geometry-derived ellipsoidal DEM identities
+        run: |
+          mkdir -p /tmp/ibvf-primary6-huaycoloro-dem
+          python scripts/ibvf_primary6_sentinel1_track_dem_freeze.py \
+            --contract site/data/validation/ibvf_primary6_sentinel1_r2r4_execution_contract_v01.json \
+            --unit-id huaycoloro \
+            --output-dem /tmp/ibvf-primary6-huaycoloro-dem/huaycoloro_glo30_wgs84_ellipsoidal.tif \
+            --output-report /tmp/ibvf-primary6-huaycoloro-dem/ibvf_primary6_sentinel1_track_dem_huaycoloro_v01.json \
+            | tee /tmp/ibvf-primary6-huaycoloro-dem/summary.log
+      - name: Enforce no-science DEM freeze guards
+        run: |
+          python - <<'PY'
+          import json
+          p='/tmp/ibvf-primary6-huaycoloro-dem/ibvf_primary6_sentinel1_track_dem_huaycoloro_v01.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['unit_id']=='huaycoloro'
+          assert d['status']=='PASS_TRACK_DEM_FROZEN_NO_R2_SCIENCE_VALUES'
+          assert d['deployment_status']=='RESEARCH_ONLY' and d['test_only'] is True
+          assert d['production_use'] is False and d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False and d['uses_operational_event_none_labels'] is False
+          assert d['territorial_activation_evidence_blinded'] is True
+          assert d['buffer_m']==1500.0 and d['target_projection']=='EPSG:32718'
+          assert d['r2_science_pixels_read'] is False
+          assert d['sar_response_used_for_dem_choice'] is False
+          assert d['rainfall_magnitude_used_for_dem_choice'] is False
+          assert d['territorial_outcomes_read'] is False and d['known_event_dates_read'] is False
+          assert d['case_control_role_assigned'] is False and d['activation_inference_allowed'] is False
+          assert d['output_dem']['vertical_semantics']=='WGS84_ELLIPSOIDAL_HEIGHT'
+          assert d['vertical_grid']['sha256']=='4191d471eefebf24091b56dbc604353cb3b8cf8cc70e448bb9ae56a272bef17a'
+          assert len(d['glo30_tiles'])>=1 and all(x['status']=='SUCCESS' for x in d['glo30_tiles'])
+          print({'status':d['status'],'bbox':d['buffered_bbox_wgs84'],'tiles':[x['item_id'] for x in d['glo30_tiles']],'dem_sha256':d['output_dem']['sha256']})
+          PY
+      - name: Archive DEM identity manifest only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git pull --rebase origin agent/independent-basin-validation-map
+          cp /tmp/ibvf-primary6-huaycoloro-dem/ibvf_primary6_sentinel1_track_dem_huaycoloro_v01.json site/data/validation/
+          git add site/data/validation/ibvf_primary6_sentinel1_track_dem_huaycoloro_v01.json
+          git commit -m 'IBVF: freeze Huaycoloro PRIMARY6 track DEM identities'
+          git push origin HEAD:agent/independent-basin-validation-map
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ibvf-primary6-huaycoloro-track-dem-${{ github.sha }}
+          path: |
+            /tmp/ibvf-primary6-huaycoloro-dem/ibvf_primary6_sentinel1_track_dem_huaycoloro_v01.json
+            /tmp/ibvf-primary6-huaycoloro-dem/summary.log
+            /tmp/ibvf-primary6-huaycoloro-dem/huaycoloro_glo30_wgs84_ellipsoidal.tif
+          if-no-files-found: warn
+          retention-days: 14
