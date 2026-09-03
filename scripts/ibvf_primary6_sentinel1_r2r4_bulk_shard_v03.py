@@ -1,42 +1,33 @@
 #!/usr/bin/env python3
-"""Compatibility entry point for frozen PRIMARY6 blind R2-R4 bulk shard v0.2.
+"""Compatibility entry point for PRIMARY6 blind R2-R4 bulk execution.
 
-RESEARCH_ONLY / TEST_ONLY. The first bulk orchestration draft used an obsolete
-metadata key name for the pre-bulk pilot-integrity gate. The canonical frozen
-contract uses `pilot_r2_r3_must_pass_implementation_integrity_before_bulk`.
-This entry point verifies that canonical key and exposes the old name only to
-the v0.2 orchestration guard in memory. It does not modify the contract file,
-its hash, any R1-R4 science rule, any selected window, or any outcome state.
+RESEARCH_ONLY / TEST_ONLY. The historical v0.3 workflow remains the validated
+workflow shell, but execution now delegates to the preregistered v0.4
+blocker-only wrapper. The amendment path is fixed in-repository and was frozen
+before any repair rerun, R4-magnitude review, territorial outcome read, or
+case/control assignment.
+
+No selected window, Sentinel-1 pair, R3 threshold, basin geometry, imputation
+rule, production flag, or territorial evidence gate is changed here.
 """
 from __future__ import annotations
 
-import copy
-from pathlib import Path
-from typing import Any
+import sys
 
-import ibvf_primary6_sentinel1_r2r4_bulk_shard_v02 as core
+import ibvf_primary6_sentinel1_r2r4_bulk_shard_v04 as amended
 
-_original_load = core.load
-
-
-def load_with_canonical_bulk_gate_alias(path: Path) -> dict[str, Any]:
-    doc = _original_load(path)
-    if doc.get("schema_version") == "irfen-ibvf-primary6-sentinel1-r2r4-execution-contract-v0.1":
-        gate = doc.get("bulk_gate") or {}
-        canonical = "pilot_r2_r3_must_pass_implementation_integrity_before_bulk"
-        obsolete = "pilot_implementation_integrity_must_pass_before_bulk"
-        if gate.get(canonical) is not True:
-            raise ValueError("canonical frozen pre-bulk pilot-integrity gate is absent or false")
-        if obsolete in gate:
-            raise ValueError("unexpected obsolete pre-bulk gate key already present in frozen contract")
-        doc = copy.deepcopy(doc)
-        doc["bulk_gate"][obsolete] = True
-    return doc
+BLOCKER_AMENDMENT = "site/data/validation/ibvf_primary6_blinded_blocker_amendment_v01.json"
 
 
 def main() -> int:
-    core.load = load_with_canonical_bulk_gate_alias
-    return core.main()
+    if "--blocker-amendment" in sys.argv[1:]:
+        raise SystemExit("v0.3 compatibility entry requires the frozen in-repository blocker amendment path")
+    original_argv = sys.argv
+    sys.argv = [original_argv[0], "--blocker-amendment", BLOCKER_AMENDMENT, *original_argv[1:]]
+    try:
+        return amended.main()
+    finally:
+        sys.argv = original_argv
 
 
 if __name__ == "__main__":
