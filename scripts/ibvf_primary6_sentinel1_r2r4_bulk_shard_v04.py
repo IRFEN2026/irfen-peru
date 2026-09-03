@@ -2,11 +2,13 @@
 """PRIMARY6 blind R2-R4 shard v0.4 with preregistered blocker-only repairs.
 
 All normal paths remain the v0.2/v0.3 frozen orchestration. This wrapper routes
-R2 through the exact preidentified POEORB amendment plus transport-only local
-cache repair, and R3 through the already-frozen general rectangular-window
-blocker rule. Neither route may consult R4 magnitudes or territorial outcomes
-to decide whether it applies. No window, pair, threshold, geometry, imputation
-rule, or activation-evidence gate is changed.
+R2 through the exact preidentified POEORB amendment, transport-only local cache
+repair, and the separately frozen signal-blind cache-consumption proof; R3 goes
+through the already-frozen general rectangular-window blocker rule.
+
+Neither route may consult R4 magnitudes or territorial outcomes to decide
+whether it applies. No window, pair, threshold, geometry, imputation rule, or
+activation-evidence gate is changed.
 """
 from __future__ import annotations
 
@@ -19,6 +21,7 @@ from typing import Any
 import ibvf_primary6_sentinel1_r2r4_bulk_shard_v02 as core
 
 AMENDMENT_STATUS = "FROZEN_SIGNAL_BLIND_BLOCKER_AMENDMENT_BEFORE_REPAIR_RERUN_NO_OUTCOMES_NO_R4_MAGNITUDES"
+LOCAL_CACHE_PROOF = "site/data/validation/ibvf_primary6_sentinel1_r2_local_cache_consumption_proof_v01.json"
 
 
 def extract_pair(argv: list[str], name: str) -> tuple[list[str], str]:
@@ -40,6 +43,8 @@ def main() -> int:
         raise SystemExit("blinded blocker amendment blindness guard failed")
     if amendment.get("r4_values_read_during_amendment_design") is not False or amendment.get("territorial_outcomes_read_during_amendment_design") is not False:
         raise SystemExit("blinded blocker amendment was not designed signal/outcome blind")
+    if not Path(LOCAL_CACHE_PROOF).is_file():
+        raise SystemExit("frozen local-cache consumption proof missing")
 
     original_load = core.load
     original_run = core.run
@@ -62,8 +67,11 @@ def main() -> int:
         routed = list(cmd)
         if "scripts/ibvf_primary6_sentinel1_r2_execute_v02.py" in routed:
             i = routed.index("scripts/ibvf_primary6_sentinel1_r2_execute_v02.py")
-            routed[i] = "scripts/ibvf_primary6_sentinel1_r2_execute_v04.py"
-            routed.extend(["--blocker-amendment", str(amendment_path)])
+            routed[i] = "scripts/ibvf_primary6_sentinel1_r2_execute_v05.py"
+            routed.extend([
+                "--blocker-amendment", str(amendment_path),
+                "--local-cache-proof-amendment", LOCAL_CACHE_PROOF,
+            ])
         elif "scripts/ibvf_primary6_sentinel1_r3_tiled_storage_wrapper.py" in routed:
             i = routed.index("scripts/ibvf_primary6_sentinel1_r3_tiled_storage_wrapper.py")
             routed[i] = "scripts/ibvf_primary6_sentinel1_r3_blinded_amendment_wrapper_v02.py"
