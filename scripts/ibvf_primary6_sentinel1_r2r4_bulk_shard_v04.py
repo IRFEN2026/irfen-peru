@@ -21,7 +21,7 @@ from typing import Any
 import ibvf_primary6_sentinel1_r2r4_bulk_shard_v02 as core
 
 AMENDMENT_STATUS = "FROZEN_SIGNAL_BLIND_BLOCKER_AMENDMENT_BEFORE_REPAIR_RERUN_NO_OUTCOMES_NO_R4_MAGNITUDES"
-LOCAL_CACHE_PROOF = "site/data/validation/ibvf_primary6_sentinel1_r2_local_cache_consumption_proof_v01.json"
+LOCAL_CACHE_PROOF = "site/data/validation/ibvf_primary6_sentinel1_r2_local_cache_consumption_proof_v02.json"
 
 
 def extract_pair(argv: list[str], name: str) -> tuple[list[str], str]:
@@ -67,7 +67,7 @@ def main() -> int:
         routed = list(cmd)
         if "scripts/ibvf_primary6_sentinel1_r2_execute_v02.py" in routed:
             i = routed.index("scripts/ibvf_primary6_sentinel1_r2_execute_v02.py")
-            routed[i] = "scripts/ibvf_primary6_sentinel1_r2_execute_v05.py"
+            routed[i] = "scripts/ibvf_primary6_sentinel1_r2_execute_v06.py"
             routed.extend([
                 "--blocker-amendment", str(amendment_path),
                 "--local-cache-proof-amendment", LOCAL_CACHE_PROOF,
