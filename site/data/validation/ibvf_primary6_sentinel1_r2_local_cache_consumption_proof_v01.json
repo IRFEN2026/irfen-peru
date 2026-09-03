@@ -1,0 +1,64 @@
+{
+  "schema_version": "irfen-ibvf-primary6-sentinel1-r2-local-cache-consumption-proof-v0.1",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "territorial_activation_evidence_blinded": true,
+  "status": "FROZEN_SIGNAL_BLIND_LOCAL_POEORB_CONSUMPTION_PROOF_AMENDMENT_BEFORE_RERUN",
+  "scope": "R2 implementation verification only; no scientific selector, orbit bytes, graph, DEM, R3/R4 rule, window, pair, or territorial rule changes",
+  "triggering_blind_run": {
+    "workflow_run_id": 33741315922,
+    "head_sha": "2510d8870dba8f5900751ac5dcf3b3ccf1ee536e",
+    "first_executable_cases_reached_r2": 18,
+    "r2_pre_post_outputs_exist": 18,
+    "r2_consumption_verification_blocked": 18,
+    "r3_outputs_created": 0,
+    "r4_outputs_created": 0,
+    "diagnosis": "exact frozen POEORB ZIPs were preseeded into a clean SNAP14 user.home; successful GPT runs commonly emitted no AUX_POEORB filename in stdout/stderr, so the legacy log-request proof became observationally incompatible with local-cache transport repair"
+  },
+  "frozen_graph": {
+    "path": "site/data/validation/cashahuacra_sentinel1_r2_graph.xml",
+    "sha256": "529491a9e7e431788bda202e2e1f87a342835d6f1d3d3ec1dd88ec01f400b8e2",
+    "orbit_type": "Sentinel Precise (Auto Download)",
+    "continueOnFail": false
+  },
+  "allowed_consumption_proof": {
+    "name": "CLEAN_USER_HOME_EXACT_POEORB_CACHE_EXCLUSIVITY_AND_HARD_APPLY_ORBIT_GATE",
+    "requirements_all_mandatory": [
+      "user.home is initially empty before the R2 pair",
+      "the side-specific POEORB ZIP is independently downloaded and SHA-256/byte-count/inner-EOF verified against the frozen v0.2 prerequisite before preseed",
+      "before each side, the exact verified ZIP is copied to the deterministic SNAP14 POEORB cache path and its SHA-256 is reverified",
+      "before GPT, no other AUX_POEORB resource for the relevant Sentinel platform is present anywhere under the clean user.home orbit cache except exact resources already preregistered for earlier side(s) of the same pair",
+      "GPT returns zero and the side output exists",
+      "after GPT, every AUX_POEORB file present anywhere under the clean user.home orbit cache is either the exact side resource or an exact preregistered resource already introduced by this wrapper for the same pair; no unapproved AUX_POEORB filename may appear",
+      "the exact side ZIP remains byte-identical after GPT",
+      "stdout/stderr must contain no AUX_POEORB filename different from the exact frozen side resource",
+      "the frozen graph hash, orbitType and continueOnFail=false are rechecked at runtime"
+    ],
+    "pass_semantics": "when all requirements pass, exact canonical POEORB consumption is accepted as implementation-verified even if SNAP14 emits no orbit filename because the resource was satisfied from its local cache",
+    "fail_semantics": "any ambiguity, extra POEORB resource, changed hash, nonzero GPT exit, missing output, graph mismatch, or alternative filename remains BLOCKED; absence of a log filename alone is never sufficient for PASS",
+    "legacy_log_request_rule": "if SNAP14 explicitly logs exactly the frozen resource, that remains valid positive evidence; the local-cache proof is an additional preregistered implementation proof route, not a scientific selector change"
+  },
+  "prohibited_changes": {
+    "window_reselection": true,
+    "sentinel1_pair_substitution": true,
+    "poeorb_selector_change": true,
+    "poeorb_resource_identity_change": true,
+    "r3_threshold_change": true,
+    "r4_feature_change": true,
+    "imputation": true,
+    "territorial_outcome_use": true,
+    "case_control_assignment_before_unblind": true
+  },
+  "blindness_attestation": {
+    "r4_values_read_during_amendment_design": false,
+    "territorial_outcomes_read_during_amendment_design": false,
+    "known_event_dates_read_during_amendment_design": false,
+    "case_control_roles_used_during_amendment_design": false,
+    "only_metadata_logs_and_r2_status_fields_used": true
+  },
+  "next_gate": "IMPLEMENT_PROOF_ROUTE_THEN_RERUN_PRIMARY6_R2_R4_BLIND; A5_AND_UNBLIND_REMAIN_CLOSED"
+}
