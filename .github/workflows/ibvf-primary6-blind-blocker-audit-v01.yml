@@ -1,0 +1,186 @@
+name: IBVF - PRIMARY6 blinded blocker audit v0.1
+
+on:
+  push:
+    branches: [agent/independent-basin-validation-map]
+    paths:
+      - '.github/workflows/ibvf-primary6-blind-blocker-audit-v01.yml'
+      - 'scripts/ibvf_primary6_geometry_footprint_audit_v01.py'
+      - 'scripts/ibvf_primary6_orbit_resource_audit_v01.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SOURCE_RUN_ID: '33687203563'
+      SOURCE_HEAD_SHA: 'f3c5677fec8da5ab09934e473ea77bea79015a85'
+      HUAY_2016_ARTIFACT_ID: '9868813934'
+      HUAY_2017_ARTIFACT_ID: '9868937204'
+      SAN_2017_ARTIFACT_ID: '9871876246'
+      GLOBAL_CONTRACT: site/data/validation/ibvf_primary6_sentinel1_r2r4_execution_contract_v01.json
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install metadata-only audit dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check 'requests>=2.31,<3' 'pyproj>=3.6,<4' 'shapely>=2,<3'
+          python -m py_compile \
+            scripts/ibvf_primary6_geometry_footprint_audit_v01.py \
+            scripts/ibvf_primary6_orbit_resource_audit_v01.py
+
+      - name: Verify frozen source artifacts and extract diagnostics only
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/ibvf-source /tmp/ibvf-zips /tmp/ibvf-audit
+          python - <<'PY'
+          import json, os, pathlib, subprocess, zipfile
+
+          repo = os.environ['GITHUB_REPOSITORY']
+          expected_sha = os.environ['SOURCE_HEAD_SHA']
+          ids = [
+              int(os.environ['HUAY_2016_ARTIFACT_ID']),
+              int(os.environ['HUAY_2017_ARTIFACT_ID']),
+              int(os.environ['SAN_2017_ARTIFACT_ID']),
+          ]
+          source = pathlib.Path('/tmp/ibvf-source')
+          zips = pathlib.Path('/tmp/ibvf-zips')
+          allowed = {'r2-v02.json', 'r3-v02.json', 'r2-r3-interface.json', 'pre_gpt.log', 'post_gpt.log'}
+          manifest = []
+          for artifact_id in ids:
+              meta_text = subprocess.check_output(['gh','api',f'repos/{repo}/actions/artifacts/{artifact_id}'], text=True)
+              meta = json.loads(meta_text)
+              run = meta.get('workflow_run') or {}
+              if run.get('id') != int(os.environ['SOURCE_RUN_ID']):
+                  raise SystemExit(f'artifact {artifact_id} source run mismatch')
+              if run.get('head_sha') != expected_sha:
+                  raise SystemExit(f'artifact {artifact_id} head SHA mismatch')
+              if meta.get('expired') is not False:
+                  raise SystemExit(f'artifact {artifact_id} expired')
+              zip_path = zips / f'{artifact_id}.zip'
+              with zip_path.open('wb') as fh:
+                  subprocess.run(['gh','api',f'repos/{repo}/actions/artifacts/{artifact_id}/zip'], check=True, stdout=fh)
+              extracted = []
+              rejected_content_entries = []
+              with zipfile.ZipFile(zip_path) as zf:
+                  for info in zf.infolist():
+                      if info.is_dir():
+                          continue
+                      name = pathlib.PurePosixPath(info.filename)
+                      if 'diagnostics' not in name.parts:
+                          rejected_content_entries.append(info.filename)
+                          continue
+                      if name.name not in allowed:
+                          raise SystemExit(f'unexpected file inside diagnostics whitelist: {info.filename}')
+                      target = source / name
+                      target.parent.mkdir(parents=True, exist_ok=True)
+                      with zf.open(info) as src, target.open('wb') as dst:
+                          dst.write(src.read())
+                      extracted.append(info.filename)
+              if any('/r4' in x.lower() or pathlib.PurePosixPath(x).name.startswith('r4') for x in extracted):
+                  raise SystemExit('R4 content was extracted unexpectedly')
+              manifest.append({
+                  'artifact_id': artifact_id,
+                  'artifact_name': meta['name'],
+                  'artifact_digest': meta.get('digest'),
+                  'source_run_id': run.get('id'),
+                  'source_head_sha': run.get('head_sha'),
+                  'files_extracted': extracted,
+                  'non_diagnostic_archive_entries_not_extracted': len(rejected_content_entries),
+                  'r4_content_extracted': False,
+              })
+          out = {
+              'schema_version':'irfen-ibvf-primary6-blinded-source-extraction-v0.1',
+              'deployment_status':'RESEARCH_ONLY','test_only':True,'production_use':False,'production_ready':False,
+              'operational_alerting_enabled':False,'territorial_activation_evidence_blinded':True,
+              'source_run_id':int(os.environ['SOURCE_RUN_ID']),'source_head_sha':expected_sha,
+              'diagnostics_only_extraction':True,'r4_content_extracted':False,'territorial_outcomes_read':False,
+              'artifacts':manifest,'status':'PASS_EXACT_FAILED_SHARD_DIAGNOSTICS_ONLY_EXTRACTED'
+          }
+          pathlib.Path('/tmp/ibvf-audit/source-extraction.json').write_text(json.dumps(out,indent=2)+'\n')
+          print(json.dumps(out,indent=2))
+          PY
+
+      - name: Audit Huaycoloro geometry coverage without raster reads
+        run: |
+          python scripts/ibvf_primary6_geometry_footprint_audit_v01.py \
+            --artifact-root /tmp/ibvf-source \
+            --global-contract "$GLOBAL_CONTRACT" \
+            --repo-root . \
+            --output /tmp/ibvf-audit/geometry-footprint-audit-v01.json
+
+      - name: Fingerprint SNAP-requested POEORB bytes without SAR reads
+        run: |
+          python scripts/ibvf_primary6_orbit_resource_audit_v01.py \
+            --artifact-root /tmp/ibvf-source \
+            --output /tmp/ibvf-audit/orbit-resource-audit-v01.json
+
+      - name: Enforce blinded diagnostic contract and derive next gate
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, pathlib
+          root=pathlib.Path('/tmp/ibvf-audit')
+          g=json.loads((root/'geometry-footprint-audit-v01.json').read_text())
+          o=json.loads((root/'orbit-resource-audit-v01.json').read_text())
+          s=json.loads((root/'source-extraction.json').read_text())
+          assert s['status']=='PASS_EXACT_FAILED_SHARD_DIAGNOSTICS_ONLY_EXTRACTED'
+          assert s['r4_content_extracted'] is False and s['territorial_outcomes_read'] is False
+          assert g['blocked_cases_audited']==2
+          assert {x['case_id'] for x in g['cases']}=={'primary6_huaycoloro_2016-09-03','primary6_huaycoloro_2017-09-10'}
+          assert o['mismatches_fingerprinted']==1
+          assert {(x['case_id'],x['side']) for x in o['audits']}=={('primary6_san_ildefonso_2018-02-25','post')}
+          for d in (g,o):
+              assert d['deployment_status']=='RESEARCH_ONLY' and d['test_only'] is True
+              assert d['production_use'] is False and d['production_ready'] is False
+              assert d['operational_alerting_enabled'] is False
+              assert d['territorial_activation_evidence_blinded'] is True
+              assert d['raster_files_opened'] is False and d['raster_pixels_read'] is False
+              assert d['radiometric_values_read'] is False and d['r4_values_read'] is False
+              assert d['territorial_outcomes_read'] is False and d['case_control_role_assigned'] is False
+              assert d['activation_inference_allowed'] is False and d['modeling_allowed'] is False
+          geo_ge_095=g['all_joint_geometry_footprint_coverage_ge_frozen_r3_reference']
+          orbit_cross_month=o['all_are_cross_catalog_month_overlap_diagnostic']
+          if geo_ge_095 and orbit_cross_month:
+              next_gate='PREREGISTER_SIGNAL_BLIND_R3_POLYGON_FOOTPRINT_AND_POEORB_CATALOG_MONTH_AMENDMENTS_BEFORE_ANY_RERUN'
+          elif not geo_ge_095:
+              next_gate='PRESERVE_HUAYCOLORO_AS_EXPLICIT_SPATIAL_INSUFFICIENCY_NO_REPLACEMENT_AND_REVIEW_POEORB_METADATA'
+          else:
+              next_gate='POEORB_SELECTOR_REQUIRES_ADDITIONAL_METADATA_ONLY_REVIEW_BEFORE_ANY_RERUN'
+          out={
+              'schema_version':'irfen-ibvf-primary6-blinded-blocker-audit-gate-v0.1',
+              'deployment_status':'RESEARCH_ONLY','test_only':True,'production_use':False,'production_ready':False,
+              'operational_alerting_enabled':False,'territorial_activation_evidence_blinded':True,
+              'huaycoloro_all_joint_geometry_footprint_coverage_ge_0_95_reference':geo_ge_095,
+              'poeorb_all_mismatches_cross_acquisition_catalog_month_diagnostic':orbit_cross_month,
+              'scientific_contract_changed':False,'r3_threshold_changed':False,'window_selection_changed':False,
+              'replacement_or_imputation_performed':False,'r4_values_read':False,'territorial_outcomes_read':False,
+              'activation_inference_allowed':False,'modeling_allowed':False,
+              'next_gate':next_gate,
+              'status':'PASS_SIGNAL_BLIND_BLOCKER_DIAGNOSTICS_COMPLETE_NO_SCIENTIFIC_AMENDMENT_APPLIED'
+          }
+          (root/'audit-gate-v01.json').write_text(json.dumps(out,indent=2)+'\n')
+          print(json.dumps(out,indent=2))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ibvf-primary6-blinded-blocker-audit-v01-${{ github.sha }}
+          path: /tmp/ibvf-audit
+          if-no-files-found: error
+          retention-days: 30
