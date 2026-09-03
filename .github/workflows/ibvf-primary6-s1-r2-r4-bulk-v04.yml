@@ -1,0 +1,179 @@
+name: IBVF - PRIMARY6 Sentinel-1 blind R2-R4 bulk v0.4
+
+on:
+  push:
+    branches: [agent/independent-basin-validation-map]
+    paths:
+      - '.github/workflows/ibvf-primary6-s1-r2-r4-bulk-v04.yml'
+      - 'scripts/ibvf_primary6_sentinel1_r2r4_bulk_shard_v04.py'
+      - 'scripts/ibvf_primary6_sentinel1_r2_execute_v03.py'
+      - 'scripts/ibvf_primary6_sentinel1_r3_blinded_amendment_wrapper_v01.py'
+      - 'site/data/validation/ibvf_primary6_blinded_blocker_amendment_v01.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  shard:
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        unit: [huaycoloro, shingolay, san_ildefonso]
+        season: [2014_2015, 2015_2016, 2016_2017, 2017_2018, 2018_2019, 2019_2020]
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      UNIT: ${{ matrix.unit }}
+      SEASON_TAG: ${{ matrix.season }}
+      ROOT: /tmp/ibvf-primary6-r2r4/${{ matrix.unit }}__${{ matrix.season }}
+      CONTRACT: site/data/validation/ibvf_primary6_sentinel1_r2r4_execution_contract_v01.json
+      PARTITION: site/data/validation/ibvf_primary6_sentinel1_execution_partition_v01.json
+      PILOT_R4: site/data/validation/ibvf_primary6_huaycoloro_2014-12-21_s1_r4_v02.json
+      ORBIT: site/data/validation/ibvf_primary6_sentinel1_r2_orbit_consumption_amendment_v02.json
+      SELECTOR: site/data/validation/ibvf_primary6_sentinel1_r2_orbit_selector_v02_validation.json
+      ANCHOR_R3: site/data/validation/cashahuacra_sentinel1_r3_contract.json
+      ANCHOR_R4: site/data/validation/cashahuacra_sentinel1_r4_contract.json
+      BLOCKER_AMENDMENT: site/data/validation/ibvf_primary6_blinded_blocker_amendment_v01.json
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install frozen runtime dependencies
+        run: |
+          python -m pip install --disable-pip-version-check \
+            'requests>=2.31,<3' 'numpy>=1.26,<2' 'rasterio>=1.3,<2' 'pyproj>=3.6,<4' 'shapely>=2,<3'
+          python -m py_compile \
+            scripts/ibvf_primary6_sentinel1_track_dem_freeze.py \
+            scripts/ibvf_primary6_sentinel1_r2_execute_v02.py \
+            scripts/ibvf_primary6_sentinel1_r2_execute_v03.py \
+            scripts/ibvf_primary6_sentinel1_r2v02_r3_adapter.py \
+            scripts/ibvf_primary6_sentinel1_r3_common_support.py \
+            scripts/ibvf_primary6_sentinel1_r3_tiled_storage_wrapper.py \
+            scripts/ibvf_primary6_sentinel1_r3_blinded_amendment_wrapper_v01.py \
+            scripts/ibvf_primary6_sentinel1_r4_blind_features.py \
+            scripts/ibvf_primary6_sentinel1_r2r4_bulk_shard_v02.py \
+            scripts/ibvf_primary6_sentinel1_r2r4_bulk_shard_v04.py \
+            scripts/ibvf_snap_runtime_install_freeze.py
+      - name: Resolve immutable shard inputs
+        run: |
+          set -euo pipefail
+          SEASON_ID="${SEASON_TAG//_/-}"
+          SHARD_ID="${UNIT}__${SEASON_TAG}"
+          echo "SEASON_ID=$SEASON_ID" >> "$GITHUB_ENV"
+          echo "SHARD_ID=$SHARD_ID" >> "$GITHUB_ENV"
+          echo "R2_ENTRY=site/data/validation/ibvf_primary6_sentinel1_r2_entry_${SEASON_TAG}_v01.json" >> "$GITHUB_ENV"
+          echo "R2_PREREQ=site/data/validation/ibvf_primary6_sentinel1_r2_prerequisites_${SEASON_TAG}_v02.json" >> "$GITHUB_ENV"
+          echo "DEM_FREEZE=site/data/validation/ibvf_primary6_sentinel1_track_dem_${UNIT}_v01.json" >> "$GITHUB_ENV"
+          mkdir -p "$ROOT/runtime-work" "$ROOT/archive/$SHARD_ID/results"
+      - name: Recreate exact SNAP 14 runtime
+        run: |
+          python scripts/ibvf_snap_runtime_install_freeze.py \
+            --contract site/data/validation/cashahuacra_sentinel1_r2_runtime_contract.json \
+            --byte-report site/data/validation/cashahuacra_sentinel1_r2_runtime_bytes.json \
+            --work-dir "$ROOT/runtime-work" \
+            --output "$ROOT/runtime-install.json"
+      - name: Reproduce frozen geometry-only track DEM
+        run: |
+          python scripts/ibvf_primary6_sentinel1_track_dem_freeze.py \
+            --contract "$CONTRACT" --unit-id "$UNIT" --expected-report "$DEM_FREEZE" \
+            --output-dem "$ROOT/${UNIT}_glo30_wgs84_ellipsoidal.tif" \
+            --output-report "$ROOT/dem-reproduction.json"
+      - name: Execute frozen blind shard with preregistered blocker-only amendments
+        run: |
+          set -euo pipefail
+          python scripts/ibvf_primary6_sentinel1_r2r4_bulk_shard_v04.py \
+            --blocker-amendment "$BLOCKER_AMENDMENT" \
+            --partition "$PARTITION" --global-contract "$CONTRACT" --pilot-r4 "$PILOT_R4" \
+            --orbit-amendment "$ORBIT" --selector-validation "$SELECTOR" \
+            --anchor-r3 "$ANCHOR_R3" --anchor-r4 "$ANCHOR_R4" \
+            --unit-id "$UNIT" --season-id "$SEASON_ID" \
+            --r2-entry "$R2_ENTRY" --prerequisites "$R2_PREREQ" --dem-freeze "$DEM_FREEZE" \
+            --gpt "$ROOT/runtime-work/snap14/bin/gpt" --dem "$ROOT/${UNIT}_glo30_wgs84_ellipsoidal.tif" \
+            --dem-report "$ROOT/dem-reproduction.json" --work-dir "$ROOT/cases" \
+            --output-dir "$ROOT/archive/$SHARD_ID/results" \
+            --summary "$ROOT/archive/$SHARD_ID/shard-summary.json" \
+            | tee "$ROOT/archive/$SHARD_ID/shard-execution.log"
+      - name: Preserve blinded blocker diagnostics
+        if: always()
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          import pathlib
+          import shutil
+
+          root = pathlib.Path(os.environ['ROOT'])
+          cases = root / 'cases'
+          diag = root / 'archive' / os.environ['SHARD_ID'] / 'diagnostics'
+          allowed = {'r2-v02.json', 'r3-v02.json', 'r2-r3-interface.json', 'pre_gpt.log', 'post_gpt.log'}
+          if cases.is_dir():
+              for src in cases.rglob('*'):
+                  if src.is_file() and src.name in allowed:
+                      dst = diag / src.relative_to(cases)
+                      dst.parent.mkdir(parents=True, exist_ok=True)
+                      shutil.copy2(src, dst)
+          print('BLINDED_DIAGNOSTICS_PRESERVED_NO_R4_VALUES_NO_OUTCOMES')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ibvf-primary6-r2r4-v04-${{ matrix.unit }}-${{ matrix.season }}-${{ github.sha }}
+          path: /tmp/ibvf-primary6-r2r4/${{ matrix.unit }}__${{ matrix.season }}/archive
+          if-no-files-found: warn
+          retention-days: 30
+
+  aggregate:
+    needs: shard
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ibvf-primary6-r2r4-v04-*-${{ github.sha }}
+          path: /tmp/ibvf-primary6-r2r4-aggregate
+          merge-multiple: true
+      - name: Enforce complete blinded PRIMARY6 accounting
+        run: |
+          python - <<'PY'
+          import json, pathlib
+          root=pathlib.Path('/tmp/ibvf-primary6-r2r4-aggregate')
+          files=sorted(root.glob('*/shard-summary.json'))
+          if len(files)!=18: raise SystemExit(f'expected 18 shard summaries; found {len(files)}')
+          d=[json.load(open(p,encoding='utf-8')) for p in files]
+          assert len({x['shard_id'] for x in d})==18
+          assert all(x['status']=='PASS_SHARD_ALL_SIX_WINDOWS_ACCOUNTED_BLIND_R2_R4' for x in d)
+          assert all(x['territorial_activation_evidence_blinded'] is True and x['territorial_outcomes_read'] is False for x in d)
+          selected=sum(x['selected_windows_accounted'] for x in d)
+          compatible=sum(x['compatible_windows_accounted'] for x in d)
+          missing=sum(x['missing_windows_preserved'] for x in d)
+          r2=sum(x['r2_pass'] for x in d); r3u=sum(x['r3_explicit_unknown'] for x in d); r4=sum(x['r4_pass'] for x in d)
+          assert (selected,compatible,missing,r2)==(108,104,4,104)
+          assert r4+r3u==104
+          out={
+            'schema_version':'irfen-ibvf-primary6-sentinel1-r2r4-bulk-v0.4',
+            'deployment_status':'RESEARCH_ONLY','test_only':True,'production_use':False,'production_ready':False,
+            'operational_alerting_enabled':False,'territorial_activation_evidence_blinded':True,
+            'blinded_blocker_amendment_applied':True,
+            'shards_accounted':18,'selected_windows_accounted':108,'compatible_windows_accounted':104,
+            'structural_missing_windows_preserved':4,'r2_pass':104,'r4_pass':r4,'r3_explicit_unknown':r3u,
+            'territorial_outcomes_read':False,'case_control_assignment_performed':False,
+            'activation_inference_allowed':False,'modeling_allowed':False,
+            'status':'PASS_PRIMARY6_R1_R4_ALL_108_WINDOWS_ACCOUNTED_BLIND',
+            'next_gate':'ASSEMBLE_A5_ALL_108_THEN_ANTI_LEAKAGE_AUDIT_BEFORE_UNBLIND'
+          }
+          (root/'bulk-summary.json').write_text(json.dumps(out,indent=2)+'\n',encoding='utf-8')
+          print(json.dumps(out,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ibvf-primary6-r2r4-v04-complete-${{ github.sha }}
+          path: /tmp/ibvf-primary6-r2r4-aggregate
+          if-no-files-found: error
+          retention-days: 30
