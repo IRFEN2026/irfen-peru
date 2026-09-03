@@ -81,6 +81,7 @@ def fingerprint_url(url: str) -> dict[str, Any]:
     target_eof_basename = zip_filename[:-4] if zip_filename.endswith(".zip") else zip_filename
     eof_inventory: list[dict[str, Any]] = []
     selected: dict[str, Any] | None = None
+    duplicate_matches_byte_identical = False
     with zipfile.ZipFile(io.BytesIO(data)) as zf:
         members = [x for x in zf.infolist() if not x.is_dir()]
         eof_members = [x for x in members if x.filename.endswith(".EOF")]
@@ -98,12 +99,17 @@ def fingerprint_url(url: str) -> dict[str, Any]:
             }
             eof_inventory.append(item)
         matches = [x for x in eof_inventory if x["exact_zip_stem_basename_match"]]
-        if len(matches) != 1:
+        if not matches:
             raise ValueError(
-                f"expected exactly one EOF member whose basename matches ZIP stem {target_eof_basename}; found {len(matches)}; "
-                f"inventory={[x['member'] for x in eof_inventory]}"
+                f"no EOF member basename matches ZIP stem {target_eof_basename}; inventory={[x['member'] for x in eof_inventory]}"
             )
-        selected = matches[0]
+        identities = {(x["sha256"], x["bytes"], x["crc32_zip_metadata"]) for x in matches}
+        if len(identities) != 1:
+            raise ValueError(
+                f"multiple basename-matching EOF members are not byte-identical; inventory={matches}"
+            )
+        duplicate_matches_byte_identical = len(matches) > 1
+        selected = sorted(matches, key=lambda x: (x["member"].count("/"), x["member"]))[0]
     assert selected is not None
     return {
         "requested_url": url,
@@ -113,7 +119,9 @@ def fingerprint_url(url: str) -> dict[str, Any]:
         "zip_bytes": len(data),
         "eof_member_count": len(eof_inventory),
         "eof_member_inventory": eof_inventory,
-        "selected_inner_eof_member_rule": "EXACT_BASENAME_MATCH_TO_REQUESTED_ZIP_STEM",
+        "matching_eof_member_count": len([x for x in eof_inventory if x["exact_zip_stem_basename_match"]]),
+        "duplicate_matching_eof_members_byte_identical": duplicate_matches_byte_identical,
+        "selected_inner_eof_member_rule": "EXACT_BASENAME_MATCH_TO_REQUESTED_ZIP_STEM; IF_DUPLICATED_REQUIRE_BYTE_IDENTITY_THEN_SHORTEST_PATH_LEXICAL",
         "inner_eof_member": selected["member"],
         "inner_eof_sha256": selected["sha256"],
         "inner_eof_bytes": selected["bytes"],
