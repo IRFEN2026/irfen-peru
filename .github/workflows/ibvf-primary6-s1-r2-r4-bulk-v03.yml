@@ -6,6 +6,10 @@ on:
     paths:
       - '.github/workflows/ibvf-primary6-s1-r2-r4-bulk-v03.yml'
       - 'scripts/ibvf_primary6_sentinel1_r2r4_bulk_shard_v03.py'
+      - 'scripts/ibvf_primary6_sentinel1_r2r4_bulk_shard_v04.py'
+      - 'scripts/ibvf_primary6_sentinel1_r2_execute_v06.py'
+      - 'scripts/ibvf_snap_runtime_install_freeze.py'
+      - 'site/data/validation/ibvf_primary6_sentinel1_r2_local_cache_consumption_proof_v02.json'
   workflow_dispatch:
 
 permissions:
@@ -47,12 +51,15 @@ jobs:
           python -m py_compile \
             scripts/ibvf_primary6_sentinel1_track_dem_freeze.py \
             scripts/ibvf_primary6_sentinel1_r2_execute_v02.py \
+            scripts/ibvf_primary6_sentinel1_r2_execute_v04.py \
+            scripts/ibvf_primary6_sentinel1_r2_execute_v06.py \
             scripts/ibvf_primary6_sentinel1_r2v02_r3_adapter.py \
             scripts/ibvf_primary6_sentinel1_r3_common_support.py \
             scripts/ibvf_primary6_sentinel1_r3_tiled_storage_wrapper.py \
             scripts/ibvf_primary6_sentinel1_r4_blind_features.py \
             scripts/ibvf_primary6_sentinel1_r2r4_bulk_shard_v02.py \
             scripts/ibvf_primary6_sentinel1_r2r4_bulk_shard_v03.py \
+            scripts/ibvf_primary6_sentinel1_r2r4_bulk_shard_v04.py \
             scripts/ibvf_snap_runtime_install_freeze.py
       - name: Resolve immutable shard inputs
         run: |
@@ -65,13 +72,35 @@ jobs:
           echo "R2_PREREQ=site/data/validation/ibvf_primary6_sentinel1_r2_prerequisites_${SEASON_TAG}_v02.json" >> "$GITHUB_ENV"
           echo "DEM_FREEZE=site/data/validation/ibvf_primary6_sentinel1_track_dem_${UNIT}_v01.json" >> "$GITHUB_ENV"
           mkdir -p "$ROOT/runtime-work" "$ROOT/archive/$SHARD_ID/results"
-      - name: Recreate exact SNAP 14 runtime
+      - name: Recreate exact SNAP 14 runtime and enforce frozen gate
         run: |
+          set -euo pipefail
           python scripts/ibvf_snap_runtime_install_freeze.py \
             --contract site/data/validation/cashahuacra_sentinel1_r2_runtime_contract.json \
             --byte-report site/data/validation/cashahuacra_sentinel1_r2_runtime_bytes.json \
             --work-dir "$ROOT/runtime-work" \
             --output "$ROOT/runtime-install.json"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          report = json.loads((Path(os.environ['ROOT']) / 'runtime-install.json').read_text(encoding='utf-8'))
+          expected = 'SNAP_RUNTIME_METADATA_FROZEN_R2_EXECUTION_GATE_PASS'
+          if report.get('status') != expected:
+              raise SystemExit(f"SNAP14 runtime gate is not PASS: {report.get('status')}")
+          if report.get('installation_runtime_metadata_gate') != 'PASS':
+              raise SystemExit('SNAP14 installation runtime metadata gate is not PASS')
+          if report.get('r2_execution_allowed_by_runtime_gate') is not True or report.get('r2_execution_allowed') is not True:
+              raise SystemExit('SNAP14 runtime report does not explicitly allow R2 execution')
+          if report.get('deployment_status') != 'RESEARCH_ONLY' or report.get('test_only') is not True:
+              raise SystemExit('SNAP14 runtime report research/test guard failed')
+          if report.get('production_use') is not False or report.get('production_ready') is not False:
+              raise SystemExit('SNAP14 runtime report production guard failed')
+          if report.get('operational_alerting_enabled') is not False or report.get('territorial_activation_evidence_blinded') is not True:
+              raise SystemExit('SNAP14 runtime report operational/blindness guard failed')
+          print('PASS_RUNTIME_INSTALL_REPORT_ENFORCED_BEFORE_R2')
+          PY
       - name: Reproduce frozen geometry-only track DEM
         run: |
           python scripts/ibvf_primary6_sentinel1_track_dem_freeze.py \
