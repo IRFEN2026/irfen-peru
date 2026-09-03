@@ -14,7 +14,7 @@ import json
 import re
 import zipfile
 from datetime import datetime, timezone
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 from urllib.parse import urlparse
 
@@ -77,23 +77,47 @@ def fingerprint_url(url: str) -> dict[str, Any]:
     r = requests.get(url, timeout=180, headers={"User-Agent": "IRFEN-IBVF-RESEARCH-ONLY/0.1"})
     r.raise_for_status()
     data = r.content
+    zip_filename = Path(urlparse(url).path).name
+    target_eof_basename = zip_filename[:-4] if zip_filename.endswith(".zip") else zip_filename
+    eof_inventory: list[dict[str, Any]] = []
+    selected: dict[str, Any] | None = None
     with zipfile.ZipFile(io.BytesIO(data)) as zf:
         members = [x for x in zf.infolist() if not x.is_dir()]
         eof_members = [x for x in members if x.filename.endswith(".EOF")]
-        if len(eof_members) != 1:
-            raise ValueError(f"expected exactly one EOF member; found {len(eof_members)}")
-        member = eof_members[0]
-        eof = zf.read(member)
+        if not eof_members:
+            raise ValueError("POEORB ZIP contains no EOF members")
+        for member in eof_members:
+            eof = zf.read(member)
+            item = {
+                "member": member.filename,
+                "member_basename": PurePosixPath(member.filename).name,
+                "sha256": sha256(eof),
+                "bytes": len(eof),
+                "crc32_zip_metadata": f"{member.CRC:08x}",
+                "exact_zip_stem_basename_match": PurePosixPath(member.filename).name == target_eof_basename,
+            }
+            eof_inventory.append(item)
+        matches = [x for x in eof_inventory if x["exact_zip_stem_basename_match"]]
+        if len(matches) != 1:
+            raise ValueError(
+                f"expected exactly one EOF member whose basename matches ZIP stem {target_eof_basename}; found {len(matches)}; "
+                f"inventory={[x['member'] for x in eof_inventory]}"
+            )
+        selected = matches[0]
+    assert selected is not None
     return {
         "requested_url": url,
         "resolved_url": r.url,
-        "zip_filename": Path(urlparse(url).path).name,
+        "zip_filename": zip_filename,
         "zip_sha256": sha256(data),
         "zip_bytes": len(data),
-        "inner_eof_member": member.filename,
-        "inner_eof_sha256": sha256(eof),
-        "inner_eof_bytes": len(eof),
-        "inner_eof_crc32_zip_metadata": f"{member.CRC:08x}",
+        "eof_member_count": len(eof_inventory),
+        "eof_member_inventory": eof_inventory,
+        "selected_inner_eof_member_rule": "EXACT_BASENAME_MATCH_TO_REQUESTED_ZIP_STEM",
+        "inner_eof_member": selected["member"],
+        "inner_eof_sha256": selected["sha256"],
+        "inner_eof_bytes": selected["bytes"],
+        "inner_eof_crc32_zip_metadata": selected["crc32_zip_metadata"],
         "catalog_month_from_url": path_catalog_month(url),
     }
 
