@@ -3,13 +3,13 @@
 
 RESEARCH_ONLY / TEST_ONLY. The historical v0.3 workflow remains the validated
 workflow shell, while execution delegates to the blocker-only v0.4 wrapper.
-The same amendment was frozen before repair reruns and remains the scientific
-source of truth. The current implementation revision only (a) pre-seeds SNAP14
-with already frozen, SHA-verified POEORB bytes to remove transport dependence,
-(b) corrects one preidentified acquisition-timestamp transcription from the
-immutable prerequisite, and (c) applies the amendment's already-frozen general
-R3 footprint rule to every exact legacy containment blocker rather than treating
-two diagnostic examples as an exhaustive whitelist.
+Scientific selection remains frozen. The implementation path now combines:
+(a) exact SHA-verified local POEORB preseed to remove transport dependence,
+(b) the separately preregistered signal-blind cache-exclusivity proof required
+    when SNAP14 satisfies Apply-Orbit-File silently from local cache,
+(c) the preidentified San Ildefonso timestamp transcription erratum, and
+(d) the already-frozen general R3 footprint rule for exact legacy rectangular
+    containment blockers.
 
 No selected window, Sentinel-1 pair, R3 threshold, basin geometry, imputation
 rule, production flag, R4 rule, or territorial evidence gate is changed here.
@@ -23,7 +23,7 @@ import sys
 import ibvf_primary6_sentinel1_r2r4_bulk_shard_v04 as amended
 
 BLOCKER_AMENDMENT = "site/data/validation/ibvf_primary6_blinded_blocker_amendment_v01.json"
-IMPLEMENTATION_REPAIR_REVISION = "blind-transport-and-general-scope-v01"
+IMPLEMENTATION_REPAIR_REVISION = "blind-transport-cache-proof-and-general-r3-scope-v02"
 
 
 def main() -> int:
