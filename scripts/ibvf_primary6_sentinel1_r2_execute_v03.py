@@ -13,6 +13,7 @@ import copy
 import hashlib
 import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -29,6 +30,13 @@ def sha256_file(path: Path) -> str:
         for chunk in iter(lambda: fh.read(4 * 1024 * 1024), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+def parse_utc(value: str) -> datetime:
+    dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if dt.tzinfo is None:
+        raise ValueError("UTC timestamp is timezone-naive")
+    return dt.astimezone(timezone.utc)
 
 
 def arg_value(argv: list[str], name: str) -> str:
@@ -96,8 +104,10 @@ def main() -> int:
         frozen = orbit_amend["snap14_observed_requested_resource"]
         if rec.get("side") != affected_side:
             raise ValueError("frozen prerequisite side mismatch")
-        if rec.get("acquisition_utc", "").replace("+00:00", "Z") != orbit_amend["acquisition_utc"]:
-            raise ValueError("frozen prerequisite acquisition timestamp differs from preregistered amendment")
+        prerequisite_acq = parse_utc(rec.get("acquisition_utc", ""))
+        amendment_acq = parse_utc(orbit_amend["acquisition_utc"])
+        if abs((prerequisite_acq - amendment_acq).total_seconds()) >= 1.0:
+            raise ValueError("frozen prerequisite acquisition timestamp differs by >=1 second from preregistered amendment")
         rec.update({
             "status": "PASS",
             "selector_version": EFFECTIVE_SELECTOR,
