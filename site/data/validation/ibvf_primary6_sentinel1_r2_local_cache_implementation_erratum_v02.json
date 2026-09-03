@@ -1,0 +1,67 @@
+{
+  "schema_version": "irfen-ibvf-primary6-sentinel1-r2-local-cache-implementation-erratum-v0.2",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "territorial_activation_evidence_blinded": true,
+  "status": "FROZEN_SIGNAL_BLIND_IMPLEMENTATION_ERRATUM_AFTER_RUN_33763565143_BEFORE_RERUN",
+  "scope": "Implementation-proof corrections only for PRIMARY6 R2 local POEORB cache verification; no scientific selection, signal rule, or outcome use.",
+  "triggering_blind_run": {
+    "workflow_run_id": 33763565143,
+    "head_sha": "47763c75400385dfbf40c733c418cc0d4651eacf",
+    "workflow_conclusion": "failure",
+    "successful_shards": 10,
+    "failed_shards": 8,
+    "diagnosis_inputs": [
+      "workflow job status",
+      "R2/R3 metadata-only logs",
+      "frozen execution contract",
+      "implementation source code"
+    ],
+    "r4_magnitudes_read": false,
+    "territorial_outcomes_read": false,
+    "known_event_dates_read": false,
+    "case_control_roles_used": false
+  },
+  "graph_identity_erratum": {
+    "observed_defect": "local-cache proof v0.1 hard-coded the Cashahuacra/UTM18 R2 graph SHA for every unit, while the earlier frozen global execution contract defines and independently validates a unit-specific R2 graph identity",
+    "frozen_contract_path": "site/data/validation/ibvf_primary6_sentinel1_r2r4_execution_contract_v01.json",
+    "allowed_rule": "runtime graph path and SHA256 must equal both the selected case R2-entry graph identity and that case unit's graph identity in the frozen global execution contract; orbitType and continueOnFail=false remain mandatory",
+    "scientific_graph_algorithm_change_allowed": false,
+    "unit_specific_threshold_change_allowed": false
+  },
+  "cache_inventory_erratum": {
+    "observed_defect": "the proof implementation treated two filesystem copies with the same approved AUX_POEORB basename as two distinct resources and failed before comparing their bytes",
+    "allowed_rule": "inventory AUX_POEORB by approved basename; one or more filesystem copies of an approved basename are allowed only when every copy is byte-identical to the preregistered expected SHA256; any unapproved basename, hash conflict, missing mandatory preseed ZIP, alternative logged basename, nonzero GPT exit, or missing output remains fail-closed",
+    "poeorb_selector_change_allowed": false,
+    "poeorb_resource_identity_change_allowed": false,
+    "alternative_filename_allowed": false
+  },
+  "runtime_gate_note": {
+    "observed": "one failed shard reported RUNTIME_METADATA_GATE_FAIL_CLOSED before later shard execution",
+    "required_followup": "workflow must explicitly enforce r2_execution_allowed_by_runtime_gate=true before DEM/R2 execution",
+    "scientific_runtime_relaxation_allowed": false
+  },
+  "prohibited_changes": {
+    "window_reselection": true,
+    "sentinel1_pair_substitution": true,
+    "poeorb_selector_change": true,
+    "poeorb_resource_identity_change": true,
+    "r3_threshold_change": true,
+    "r4_feature_change": true,
+    "imputation": true,
+    "territorial_outcome_use": true,
+    "case_control_assignment_before_unblind": true
+  },
+  "blindness_attestation": {
+    "r4_values_read_during_erratum_design": false,
+    "territorial_outcomes_read_during_erratum_design": false,
+    "known_event_dates_read_during_erratum_design": false,
+    "case_control_roles_used_during_erratum_design": false,
+    "only_metadata_logs_contracts_and_implementation_code_used": true
+  },
+  "next_gate": "IMPLEMENT_ERRATUM_FAIL_CLOSED_THEN_RERUN_PRIMARY6_R2_R4_BLIND; A5_AND_UNBLIND_REMAIN_CLOSED"
+}
