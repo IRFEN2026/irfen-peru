@@ -1,0 +1,150 @@
+{
+  "schema_version": "irfen-ibvf-primary6-blinded-blocker-amendment-v0.1",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded": true,
+  "serious_modeling_gate": "CLOSED_UNTIL_PRIMARY6_A5_FREEZE_AND_ANTI_LEAKAGE_AUDIT",
+  "freeze_moment": "AFTER_SIGNAL_BLIND_METADATA_ONLY_BLOCKER_AUDIT_BEFORE_ANY_REPAIR_RERUN_OR_TERRITORIAL_UNBLIND",
+  "source_failed_bulk_run": {
+    "run_id": 33687203563,
+    "head_sha": "f3c5677fec8da5ab09934e473ea77bea79015a85",
+    "failed_shard_artifacts": [
+      {
+        "shard_id": "huaycoloro__2016_2017",
+        "artifact_id": 9868813934,
+        "artifact_digest": "sha256:dbd2a3fdf2ccc8acb64812fdcef5e2f87b8a2c403a8ec245dc938c89f5cc17e2"
+      },
+      {
+        "shard_id": "huaycoloro__2017_2018",
+        "artifact_id": 9868937204,
+        "artifact_digest": "sha256:c021ca22914afc86512003eb12d101e0bb752274f9460011b47b3dbac525f53e"
+      },
+      {
+        "shard_id": "san_ildefonso__2017_2018",
+        "artifact_id": 9871876246,
+        "artifact_digest": "sha256:af1864d0ec82aec8672928d9e8f8c8fc8297ce064d86df3954e540216de1e24d"
+      }
+    ]
+  },
+  "source_blinded_blocker_audit": {
+    "workflow_run_id": 33721081544,
+    "head_sha": "e7d8de7da97bf1fb9a2203e06570af7be359df41",
+    "artifact_id": 9880247079,
+    "artifact_digest": "sha256:8d77095cabb2b2abb6d8b740949b62c2ce8798d2dc339cbcae986d30e0fb3771",
+    "status": "PASS_SIGNAL_BLIND_BLOCKER_DIAGNOSTICS_COMPLETE_NO_SCIENTIFIC_AMENDMENT_APPLIED",
+    "diagnostics_only_extraction": true,
+    "raster_files_opened": false,
+    "raster_pixels_read": false,
+    "radiometric_values_read": false,
+    "r4_values_read": false,
+    "territorial_outcomes_read": false,
+    "known_event_dates_read": false,
+    "case_control_role_assigned": false
+  },
+  "r3_spatial_footprint_amendment": {
+    "amendment_scope": "ONLY_CASES_THAT_HIT_LEGACY_RECTANGULAR_FROZEN_BASIN_WINDOW_CONTAINMENT_BLOCKER",
+    "legacy_blocker": "R3_BLOCKED_FROZEN_BASIN_WINDOW_NOT_CONTAINED_IN_BOTH_R2_PRODUCTS",
+    "minimum_common_support_fraction": 0.95,
+    "threshold_changed": false,
+    "basin_geometry_changed": false,
+    "selected_windows_changed": false,
+    "sentinel1_pair_changed": false,
+    "replacement_allowed": false,
+    "reselection_allowed": false,
+    "imputation_allowed": false,
+    "resampling_allowed": false,
+    "all_touched": false,
+    "new_signal_blind_precheck": "JOINT_R2_METADATA_FOOTPRINT_INTERSECTION_WITH_FROZEN_BASIN_POLYGON_DIVIDED_BY_FULL_FROZEN_BASIN_POLYGON_AREA",
+    "precheck_denominator": "FULL_FROZEN_BASIN_POLYGON",
+    "precheck_rule": {
+      "if_joint_geometry_footprint_fraction_lt_0_95": "R3_UNKNOWN_INSUFFICIENT_SPATIAL_FOOTPRINT_NO_R4",
+      "if_joint_geometry_footprint_fraction_ge_0_95": "ALLOW_R3_VALID_PIXEL_SUPPORT_COMPUTATION_ON_ZERO_RESAMPLED_COMMON_LATTICE_CLIPPED_TO_AVAILABLE_INTERSECTION_WITH_FULL_FROZEN_BASIN_DENOMINATOR",
+      "missing_footprint_pixels_count_as_supported": false,
+      "r4_allowed_only_if_final_common_valid_support_fraction_ge_0_95": true,
+      "if_final_common_valid_support_fraction_lt_0_95": "UNKNOWN_INSUFFICIENT_COMMON_SUPPORT_NO_R4"
+    },
+    "diagnostic_cases_frozen_before_amendment": [
+      {
+        "case_id": "primary6_huaycoloro_2016-09-03",
+        "joint_geometry_footprint_coverage_fraction": 0.999990071804956,
+        "joint_geometry_footprint_coverage_pct": 99.99900718,
+        "joint_missing_geometry_area_km2": 0.004807214,
+        "preregistered_next_status": "ELIGIBLE_FOR_AMENDED_R3_VALID_PIXEL_SUPPORT_COMPUTATION_NOT_YET_PASS_OR_UNKNOWN"
+      },
+      {
+        "case_id": "primary6_huaycoloro_2017-09-10",
+        "joint_geometry_footprint_coverage_fraction": 0.8090705331107785,
+        "joint_geometry_footprint_coverage_pct": 80.90705331,
+        "joint_missing_geometry_area_km2": 92.447708432,
+        "preregistered_next_status": "R3_UNKNOWN_INSUFFICIENT_SPATIAL_FOOTPRINT_NO_R4"
+      }
+    ],
+    "interpretation_guard": "GEOMETRY_FOOTPRINT_COVERAGE_IS_ONLY_AN_UPPER_BOUND_ON_POSSIBLE_R3_SUPPORT_AND_IS_NOT_A_RADIOMETRIC_RESULT"
+  },
+  "poeorb_catalog_scope_amendment": {
+    "amendment_scope": "EXACT_POEORB_RESOURCE_VERIFICATION_FOR_THE_OBSERVED_SNAP14_MONTH_BOUNDARY_MISMATCH_WITH_NO_SAR_VALUE_READS",
+    "affected_case_id": "primary6_san_ildefonso_2018-02-25",
+    "affected_side": "post",
+    "acquisition_utc": "2018-03-01T23:34:05Z",
+    "legacy_selector_version": "SNAP14_POEORB_V02",
+    "legacy_selector_rule": "EARLIEST_VALIDITY_START_AMONG_ALL_COVERING_AUX_POEORB_CANDIDATES_THEN_FILENAME_ASCENDING_TIEBREAK",
+    "legacy_expected_resource": {
+      "catalog_month": "2018-02",
+      "filename": "S1B_OPER_AUX_POEORB_OPOD_20210312T080429_V20180228T225942_20180302T005942.EOF.zip",
+      "zip_sha256": "19154f770e5308bc2dd92deec0e79e51c89c80b2491af4bbf12704e87c6a2cb3",
+      "validity_start_utc": "2018-02-28T22:59:42Z",
+      "validity_end_utc": "2018-03-02T00:59:42Z",
+      "covers_acquisition": true
+    },
+    "snap14_observed_requested_resource": {
+      "catalog_month": "2018-03",
+      "url": "http://step.esa.int/auxdata/orbits/Sentinel-1/POEORB/S1B/2018/03/S1B_OPER_AUX_POEORB_OPOD_20210312T082116_V20180301T225942_20180303T005942.EOF.zip",
+      "filename": "S1B_OPER_AUX_POEORB_OPOD_20210312T082116_V20180301T225942_20180303T005942.EOF.zip",
+      "zip_sha256": "2d78c4c3c9a377966d40503829a5555045b37a51d0165db3643071829550a37b",
+      "zip_bytes": 1208794,
+      "inner_eof_sha256": "29c8ed964dc72e45c3f55a8a8b081b1bb7bc26f44550093b4182ca0d11ea6272",
+      "inner_eof_bytes": 4409595,
+      "inner_eof_crc32": "4289b658",
+      "duplicate_matching_eof_members": 2,
+      "duplicate_matching_eof_members_byte_identical": true,
+      "validity_start_utc": "2018-03-01T22:59:42Z",
+      "validity_end_utc": "2018-03-03T00:59:42Z",
+      "covers_acquisition": true
+    },
+    "scientific_rule": "FOR_THIS_PREIDENTIFIED_MONTH_BOUNDARY_CASE_ONLY_FREEZE_THE_EXACT_SNAP14_REQUESTED_AUX_POEORB_RESOURCE_AND_REQUIRE_EXACT_FILENAME_AND_SHA256_CONSUMPTION_VERIFICATION",
+    "generalized_snap_internal_selection_algorithm_inferred": false,
+    "selector_rule_changed_globally": false,
+    "orbit_quality_class_changed": false,
+    "allowed_orbit_quality_class": "AUX_POEORB",
+    "automatic_unhashed_orbit_download_allowed": false,
+    "future_month_boundary_cases": "FAIL_CLOSED_AND_REQUIRE_SEPARATE_SIGNAL_BLIND_METADATA_ONLY_REVIEW_BEFORE_ANY_SCIENCE_VALUE_ACCEPTANCE"
+  },
+  "inheritance_for_unaffected_cases": {
+    "previously_passed_r2_r3_r4_cases_may_be_reused_without_recomputation": true,
+    "justification": "AMENDMENTS_ARE_CONDITIONAL_ONLY_ON_THE_PREIDENTIFIED_BLOCKER_PATHS_AND_DO_NOT_CHANGE_ANY_EXECUTION_OR_DECISION_RULE_FOR_PREVIOUSLY_PASSING_CASES",
+    "previous_r4_magnitudes_may_be_read_to_DECIDE_reuse": false,
+    "reuse_gate": "IDENTITY_HASH_AND_PASS_STATUS_ONLY"
+  },
+  "prohibited_actions_before_primary6_accounting_closes": [
+    "READ_TERRITORIAL_ACTIVATION_EVIDENCE",
+    "ASSIGN_CASE_CONTROL_ROLES",
+    "CHANGE_PRIMARY6_WINDOWS",
+    "RESELECT_SENTINEL1_PAIRS",
+    "IMPUTE_MISSING_SENTINEL1_PAIRS",
+    "CHANGE_R3_0_95_THRESHOLD",
+    "USE_R4_MAGNITUDES_TO_ALTER_EXECUTION",
+    "RUN_TERRITORIAL_HYPOTHESIS_TEST"
+  ],
+  "r4_values_read_during_amendment_design": false,
+  "territorial_outcomes_read_during_amendment_design": false,
+  "known_event_dates_read_during_amendment_design": false,
+  "case_control_role_assigned_during_amendment_design": false,
+  "activation_inference_allowed": false,
+  "modeling_allowed": false,
+  "status": "FROZEN_SIGNAL_BLIND_BLOCKER_AMENDMENT_BEFORE_REPAIR_RERUN_NO_OUTCOMES_NO_R4_MAGNITUDES"
+}
