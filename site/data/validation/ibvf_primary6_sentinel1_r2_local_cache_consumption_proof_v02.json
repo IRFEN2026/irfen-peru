@@ -1,0 +1,95 @@
+{
+  "schema_version": "irfen-ibvf-primary6-sentinel1-r2-local-cache-consumption-proof-v0.2",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "territorial_activation_evidence_blinded": true,
+  "status": "FROZEN_SIGNAL_BLIND_LOCAL_POEORB_CONSUMPTION_PROOF_V02_BEFORE_RERUN",
+  "scope": "R2 implementation verification only; no scientific selector, orbit bytes, R2 graph semantics, DEM, R3/R4 rule, window, pair, imputation, or territorial rule changes",
+  "triggering_blind_run": {
+    "workflow_run_id": 33763565143,
+    "head_sha": "47763c75400385dfbf40c733c418cc0d4651eacf",
+    "completed_conclusion": "failure",
+    "successful_shards": 10,
+    "failed_shards": 8,
+    "diagnostic_sources_allowed": [
+      "GitHub Actions job conclusions",
+      "R2 metadata/status fields",
+      "SNAP runtime metadata",
+      "POEORB filenames, paths and hashes",
+      "frozen execution contract graph paths and hashes"
+    ],
+    "diagnosis": [
+      "the v0.1 cache proof incorrectly pinned one UTM18 R2 graph although the pre-existing execution contract freezes a distinct UTM17 graph for san_ildefonso",
+      "the v0.1 cache scanner treated two path instances of the same approved basename as two resources even when byte-identical, so exact SNAP cache materialization could fail the proof",
+      "one shard exposed that the runtime installer can report RUNTIME_METADATA_GATE_FAIL_CLOSED while returning process code zero; the workflow must enforce the report status before R2"
+    ]
+  },
+  "frozen_r2_graphs": [
+    {
+      "path": "site/data/validation/cashahuacra_sentinel1_r2_graph.xml",
+      "sha256": "529491a9e7e431788bda202e2e1f87a342835d6f1d3d3ec1dd88ec01f400b8e2",
+      "units": [
+        "huaycoloro",
+        "shingolay"
+      ],
+      "target_projection": "EPSG:32718",
+      "orbit_type": "Sentinel Precise (Auto Download)",
+      "continueOnFail": false
+    },
+    {
+      "path": "site/data/validation/ibvf_primary6_s1_r2_graph_utm17s.xml",
+      "sha256": "9bc7cf581efdc9c0be29fbc3b789604c37d548fb95dd3288d1477b68d53b5a96",
+      "units": [
+        "san_ildefonso"
+      ],
+      "target_projection": "EPSG:32717",
+      "orbit_type": "Sentinel Precise (Auto Download)",
+      "continueOnFail": false
+    }
+  ],
+  "allowed_consumption_proof": {
+    "name": "CLEAN_USER_HOME_EXACT_POEORB_CACHE_IDENTITY_EXCLUSIVITY_AND_HARD_APPLY_ORBIT_GATE_V02",
+    "requirements_all_mandatory": [
+      "the runtime graph path and SHA-256 must match exactly one graph already frozen for the unit in the pre-existing PRIMARY6 execution contract",
+      "the side-specific POEORB ZIP is independently downloaded and SHA-256/byte-count/inner-EOF verified against the frozen v0.2 prerequisite before preseed",
+      "before each side, the exact verified ZIP is copied to the deterministic SNAP14 POEORB cache path and its SHA-256 is reverified",
+      "every AUX_POEORB basename anywhere under the clean user.home orbit cache must be an approved exact resource for the current or already introduced side of the same pair",
+      "multiple filesystem paths with the same approved AUX_POEORB basename are allowed only when every copy is byte-identical to the single frozen SHA-256 for that basename",
+      "the same basename appearing with different bytes is an immediate failure",
+      "GPT returns zero and the side output exists",
+      "after GPT, no unapproved AUX_POEORB basename may exist anywhere under the clean user.home orbit cache",
+      "the exact side ZIP remains byte-identical after GPT",
+      "stdout/stderr must contain no AUX_POEORB filename different from an exact frozen side resource",
+      "the selected frozen graph must retain orbitType=Sentinel Precise (Auto Download) and continueOnFail=false",
+      "the workflow runtime-install report must independently be PASS before R2 execution"
+    ],
+    "identity_semantics": "resource identity is basename plus frozen SHA-256; duplicate path instances of one byte-identical approved resource do not constitute an alternative orbit resource",
+    "pass_semantics": "when all requirements pass, exact canonical POEORB consumption is implementation-verified even if SNAP14 emits no orbit filename because the resource was satisfied from its local cache",
+    "fail_semantics": "any unapproved basename, differing hash for an approved basename, missing exact ZIP, nonzero GPT exit, missing output, graph not frozen for PRIMARY6, graph semantic change, or runtime-install non-PASS remains BLOCKED",
+    "legacy_log_request_rule": "an exact filename explicitly logged by SNAP14 remains valid positive evidence; local-cache identity proof is an additional implementation proof route, not a scientific selector change"
+  },
+  "prohibited_changes": {
+    "window_reselection": true,
+    "sentinel1_pair_substitution": true,
+    "poeorb_selector_change": true,
+    "poeorb_resource_identity_change": true,
+    "r2_scientific_graph_change": true,
+    "r3_threshold_change": true,
+    "r4_feature_change": true,
+    "imputation": true,
+    "territorial_outcome_use": true,
+    "case_control_assignment_before_unblind": true
+  },
+  "blindness_attestation": {
+    "r4_values_read_during_amendment_design": false,
+    "territorial_outcomes_read_during_amendment_design": false,
+    "known_event_dates_read_during_amendment_design": false,
+    "case_control_roles_used_during_amendment_design": false,
+    "only_metadata_logs_r2_status_runtime_status_and_preexisting_contract_fields_used": true
+  },
+  "next_gate": "IMPLEMENT_V02_PROOF_AND_RUNTIME_FAIL_CLOSED_GATE_THEN_RERUN_PRIMARY6_R2_R4_BLIND; A5_AND_UNBLIND_REMAIN_CLOSED"
+}
