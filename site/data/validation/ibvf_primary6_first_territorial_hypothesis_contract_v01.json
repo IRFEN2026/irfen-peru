@@ -1,0 +1,126 @@
+{
+  "schema_version": "irfen-ibvf-primary6-first-territorial-hypothesis-v0.1",
+  "framework": "IRFEN Independent Basin Validation Framework",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "uses_operational_event_none_labels": false,
+  "territorial_activation_evidence_blinded_at_preregistration": true,
+  "preregistered_before_first_territorial_unblind": true,
+  "purpose": "Freeze one primary, outcome-blind territorial hypothesis test after PRIMARY6 A5 and anti-leakage PASS and before opening any territorial activation evidence.",
+  "upstream_frozen_identity": {
+    "primary6_sentinel1_run_id": 33787782181,
+    "primary6_sentinel1_head_sha": "24bb339b8c7c20f00140ec6a610bd069059702db",
+    "primary6_a5_run_id": 33842158823,
+    "a5_file_sha256": "605474a8067ff468ebfb840aa9c92d632d9c06240f6a0db38db3c7997f811231",
+    "a5_rows_canonical_sha256": "49c63921317c421e6e9bb3c7dfb5811f04ae1e9b6c71fd25a216fedc0a43148f",
+    "anti_leakage_audit_file_sha256": "492d8691015804d312a5ee7dabfc4eeb150f30399c5fee8f84740704ac00ae9c",
+    "a5_status": "PASS_PRIMARY6_A5_ALL_108_FROZEN_WITH_EXPLICIT_UNKNOWN_NO_UNBLIND_NO_MODELING",
+    "anti_leakage_status": "PASS_ANTI_LEAKAGE_AUDIT_TERRITORIAL_UNBLIND_PERMITTED"
+  },
+  "source_contracts": {
+    "blind_sampling_contract_path": "site/data/validation/ibvf_blind_sampling_contract.json",
+    "blind_sampling_contract_git_blob_sha": "75f71477415a45b84be80b093aee72e2b4f007a7",
+    "dataset_gate_amendment_path": "site/data/validation/ibvf_dataset_gate_amendment_v02.json",
+    "dataset_gate_amendment_git_blob_sha": "fdaa069ce4df6a3140d257eff75e5f135927c465"
+  },
+  "eligible_windows": {
+    "cohort_id": "PRIMARY6_CHRONOLOGICAL",
+    "window_count": 108,
+    "units": ["huaycoloro", "san_ildefonso", "shingolay"],
+    "replacement_allowed": false,
+    "reselection_allowed": false,
+    "sensor_missingness_may_remove_window": false,
+    "unknown_remote_values_must_remain_null": true
+  },
+  "territorial_label_contract": {
+    "assignment_timing": "ONLY_AFTER_THIS_CONTRACT_IS_COMMITTED_AND_A5_PLUS_ANTI_LEAKAGE_HAVE_PASSED",
+    "CASE": "An independently accepted physical territorial activation whose timing falls within the frozen event-date annotation window for a selected meteorological date.",
+    "CONTROL": "Independent documentary, sensor, or field evidence sufficiently covers the same frozen territorial unit and date annotation window and supports no physical activation.",
+    "UNKNOWN": "Activation timing is ambiguous, evidence conflicts, evidence coverage is insufficient, or a reliable positive/negative territorial outcome cannot be independently established.",
+    "absence_of_retrieved_report_is_control": false,
+    "accepted_positive_evidence_required_for_case": true,
+    "independent_negative_coverage_required_for_control": true,
+    "unknown_is_permitted_and_must_not_be_imputed": true,
+    "labels_may_not_change_window_selection_or_feature_values": true
+  },
+  "primary_score": {
+    "name": "A3_COMPOSITE_SELECTED6",
+    "allowed_a5_slots_only": ["A3_P3H_MAX_MM", "A3_P24H_LOCAL_MM", "A3_ANTECEDENT_7D_MM"],
+    "stratum": "unit_id x season_id",
+    "windows_per_stratum": 6,
+    "per_feature_transform": "Within each six-window stratum, rank the six frozen numeric A3 values ascending using deterministic average midranks for ties; convert rank r to percentile (r-1)/(n-1), n=6.",
+    "composite": "Arithmetic mean of the three within-stratum A3 percentiles.",
+    "direction": "Higher values represent greater frozen meteorological extremeness.",
+    "missing_rule": "If any required A3 slot is nonnumeric/null, the score is UNKNOWN for that window and that window cannot enter the inferential CASE/CONTROL set; it remains reported as UNKNOWN_SCORE without replacement or imputation."
+  },
+  "primary_hypothesis": {
+    "null": "Within unit-season strata and among reliably labeled CASE/CONTROL windows, CASE assignment is not associated with larger A3_COMPOSITE_SELECTED6 than CONTROL assignment.",
+    "alternative": "Within unit-season strata and among reliably labeled CASE/CONTROL windows, CASE windows have larger A3_COMPOSITE_SELECTED6 values than CONTROL windows.",
+    "direction": "ONE_SIDED_GREATER"
+  },
+  "test": {
+    "name": "STRATIFIED_CONDITIONAL_CASE_SCORE_PERMUTATION",
+    "statistic": "T = sum over informative strata of the sum of A3_COMPOSITE_SELECTED6 for windows labeled CASE.",
+    "conditioning": "Condition on each informative stratum's observed number of CASE labels; permute CASE labels only among known CASE+CONTROL windows within the same stratum. UNKNOWN labels and UNKNOWN_SCORE windows are excluded from inference and never relabeled.",
+    "informative_stratum": "At least one CASE and at least one CONTROL with numeric A3_COMPOSITE_SELECTED6.",
+    "exact_enumeration_if_total_assignments_lte": 1000000,
+    "monte_carlo_permutations_if_larger": 100000,
+    "monte_carlo_seed": 1237727521,
+    "monte_carlo_seed_derivation": "Integer value of first 8 hexadecimal characters of the frozen A5 rows SHA-256 49c63921.",
+    "exact_p_value": "number of conditional assignments with T_perm >= T_observed divided by total conditional assignments",
+    "monte_carlo_p_value": "(1 + number of sampled assignments with T_perm >= T_observed) / (1 + B)",
+    "alpha": 0.05,
+    "decision_if_p_lte_alpha": "REJECT_NULL_FIRST_TERRITORIAL_TEST",
+    "decision_if_p_gt_alpha": "FAIL_TO_REJECT_NULL_FIRST_TERRITORIAL_TEST",
+    "insufficient_evidence_terminal_rule": "If there are zero informative strata or the conditional permutation space has no variation, return INCONCLUSIVE_OUTCOME_EVIDENCE_INSUFFICIENT_FOR_PREREGISTERED_TEST. Do not change labels, thresholds, score, statistic, windows, or evidence rules to obtain a testable result."
+  },
+  "descriptive_outputs_only": [
+    "N_CASE",
+    "N_CONTROL",
+    "N_UNKNOWN",
+    "N_UNKNOWN_SCORE",
+    "informative_strata",
+    "observed_T",
+    "conditional_permutation_space_size",
+    "overall_mean_A3_composite_CASE_minus_CONTROL"
+  ],
+  "explicitly_not_part_of_first_primary_inference": [
+    "Sentinel-1 A4 feature magnitudes",
+    "optical A4 feature magnitude",
+    "SMAP",
+    "FULL12",
+    "Pedregal",
+    "complex modeling",
+    "risk-classification thresholds",
+    "operational alert values"
+  ],
+  "anti_adaptation_guards": {
+    "no_feature_weight_changes_after_unblind": true,
+    "no_threshold_changes_after_unblind": true,
+    "no_window_replacement_after_unblind": true,
+    "no_sensor_based_case_exclusion_after_unblind": true,
+    "no_alternative_primary_test_after_observing_labels": true,
+    "no_model_fitting_in_first_test": true,
+    "no_operational_inference": true
+  },
+  "post_test_sequence": {
+    "freeze_40_basin_cohort_only_after_terminal_first_test_result": true,
+    "cohort_size": 40,
+    "north_coast_ring1_count_min": 10,
+    "north_coast_ring1_count_max": 15,
+    "allowed_priority_dimensions_only": [
+      "north_coast_ring_membership",
+      "hydrogeomorphic_similarity_to_primary6",
+      "exposure_relevance",
+      "coastal_distribution",
+      "data_feasibility/readiness"
+    ],
+    "current_or_future_outcomes_allowed_for_cohort_selection": false,
+    "non_ring1_basins_posture": "SHADOW_INSTRUMENTED",
+    "operational_alerting_remains_disabled": true
+  },
+  "status": "FROZEN_BEFORE_FIRST_TERRITORIAL_UNBLIND"
+}
