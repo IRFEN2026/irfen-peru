@@ -1,0 +1,77 @@
+name: IBVF - PRIMARY6 A5 and anti-leakage v0.1
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - agent/independent-basin-validation-map
+    paths:
+      - .github/workflows/ibvf-primary6-a5-antileakage-v01.yml
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  assemble-and-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout frozen research branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install signal-blind A2/A5 dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install numpy rasterio shapely pyproj
+
+      - name: Retrieve completed blinded PRIMARY6 Sentinel-1 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ibvf-primary6-r2r4-v04-complete-24bb339b8c7c20f00140ec6a610bd069059702db
+          run-id: 33787782181
+          github-token: ${{ github.token }}
+          repository: IRFEN2026/irfen-peru
+          path: _primary6_s1
+
+      - name: Assemble exact 17-slot A5 for all 108 selected windows
+        run: |
+          mkdir -p _primary6_a5
+          python scripts/ibvf_primary6_a5_assemble_v01.py \
+            --repo-root . \
+            --s1-root _primary6_s1 \
+            --out _primary6_a5/ibvf_primary6_a5_v01.json
+
+      - name: Run fail-closed anti-leakage audit before any territorial unblind
+        run: |
+          python scripts/ibvf_primary6_a5_antileakage_audit_v01.py \
+            --a5 _primary6_a5/ibvf_primary6_a5_v01.json \
+            --out _primary6_a5/ibvf_primary6_a5_antileakage_audit_v01.json
+
+      - name: Enforce A5 and anti-leakage gates
+        run: |
+          python - <<'PY'
+          import json
+          a5=json.load(open('_primary6_a5/ibvf_primary6_a5_v01.json'))
+          audit=json.load(open('_primary6_a5/ibvf_primary6_a5_antileakage_audit_v01.json'))
+          assert a5['status']=='PASS_PRIMARY6_A5_ALL_108_FROZEN_WITH_EXPLICIT_UNKNOWN_NO_UNBLIND_NO_MODELING'
+          assert audit['status']=='PASS_ANTI_LEAKAGE_AUDIT_TERRITORIAL_UNBLIND_PERMITTED'
+          assert a5['selected_window_count']==108
+          assert a5['availability_counts']=={'s1_numeric':71,'s1_r3_unknown':33,'s1_structural_missing':4,'optical_numeric':106,'optical_unknown':2,'smap_deferred':108}
+          assert a5['territorial_outcome_fields_read'] is False
+          assert audit['territorial_outcome_fields_read'] is False
+          print('PASS_PRIMARY6_A5_AND_ANTI_LEAKAGE_BEFORE_UNBLIND')
+          PY
+
+      - name: Upload frozen blind A5 and anti-leakage evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ibvf-primary6-a5-antileakage-${{ github.sha }}
+          path: _primary6_a5/
+          if-no-files-found: error
+          retention-days: 90
