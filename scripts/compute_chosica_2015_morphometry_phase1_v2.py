@@ -4,9 +4,10 @@
 This wrapper preserves the frozen morphometry formulas from revision 0.1 and changes only
 raster-grid alignment. Frozen geometry diagnostics store their WGS84 bboxes rounded to
 8 decimals; reconstructing directly from those rounded values can shift a projected 30 m
-grid by millimetres. Revision 0.2 recovers the canonical grid origin from the already-frozen
-outlet row/column and diagnostic cell-center coordinates. No A6680 numeric reference,
-observed 2015 outcome, or post-anchor predictor is read.
+grid by millimetres. Revision 0.2 recovers the canonical grid origin from an already-frozen
+outlet row/column and cell-center coordinates recorded in the geometry diagnostic or, for
+the legacy Cashahuacra diagnostic that predates that field, the frozen outlet registry.
+No A6680 numeric reference, observed 2015 outcome, or post-anchor predictor is read.
 """
 from __future__ import annotations
 
@@ -39,10 +40,10 @@ def sha256_path(path: Path) -> str:
     return h.hexdigest()
 
 
-def _chosen_attempt(report: dict) -> dict:
+def _chosen_attempt(report: dict) -> dict | None:
     chosen = report.get("chosen_margin_degrees")
     if chosen is None:
-        raise RuntimeError("FAIL_CLOSED_ALIGNMENT_NO_CHOSEN_MARGIN")
+        return None
     attempts = [
         a for a in report.get("attempts", [])
         if abs(float(a.get("margin_degrees", 1e99)) - float(chosen)) < 1e-12
@@ -52,28 +53,52 @@ def _chosen_attempt(report: dict) -> dict:
     return attempts[0]
 
 
-def _report_anchor(report: dict) -> dict:
+def _report_anchor(report: dict, frozen_target: dict) -> dict:
     anchor = report.get("outlet_grid_cell")
+    source = "GEOMETRY_DIAGNOSTIC_TOP_LEVEL"
     if anchor is None:
-        anchor = _chosen_attempt(report).get("outlet_grid_cell")
+        chosen_attempt = _chosen_attempt(report)
+        if chosen_attempt is not None:
+            anchor = chosen_attempt.get("outlet_grid_cell")
+            source = "GEOMETRY_DIAGNOSTIC_CHOSEN_ATTEMPT"
+    if anchor is None:
+        accepted = frozen_target.get("accepted_outlet")
+        if isinstance(accepted, dict) and all(k in accepted for k in ("row", "col", "x_m", "y_m")):
+            anchor = {
+                "row": accepted["row"],
+                "col": accepted["col"],
+                "center_x_m": accepted["x_m"],
+                "center_y_m": accepted["y_m"],
+            }
+            source = "FROZEN_OUTLET_REGISTRY_ACCEPTED_CELL"
     if not isinstance(anchor, dict):
-        raise RuntimeError("FAIL_CLOSED_ALIGNMENT_NO_OUTLET_GRID_CELL")
+        raise RuntimeError("FAIL_CLOSED_ALIGNMENT_NO_FROZEN_OUTLET_CELL")
     required = ("row", "col", "center_x_m", "center_y_m")
     if any(k not in anchor for k in required):
         raise RuntimeError("FAIL_CLOSED_ALIGNMENT_INCOMPLETE_OUTLET_GRID_CELL")
-    return anchor
+    return {
+        "row": int(anchor["row"]),
+        "col": int(anchor["col"]),
+        "center_x_m": float(anchor["center_x_m"]),
+        "center_y_m": float(anchor["center_y_m"]),
+        "source": source,
+    }
 
 
 def _alignment_index() -> dict[tuple[float, float, float, float], dict]:
     registry = base.load_json(base.REGISTRY)
     out: dict[tuple[float, float, float, float], dict] = {}
     for key in base.TARGET_KEYS:
-        gfreeze = registry["targets"][key]["geometry_freeze"]
+        frozen_target = registry["targets"][key]
+        gfreeze = frozen_target["geometry_freeze"]
         report = base.load_json(ROOT / gfreeze["diagnostic_path"])
         bbox = tuple(float(v) for v in base.geometry_bbox_from_report(report))
         if bbox in out:
             raise RuntimeError("FAIL_CLOSED_ALIGNMENT_DUPLICATE_BBOX")
-        out[bbox] = {"target_id": key, "anchor": _report_anchor(report)}
+        out[bbox] = {
+            "target_id": key,
+            "anchor": _report_anchor(report, frozen_target),
+        }
     return out
 
 
@@ -169,7 +194,7 @@ def build_canonical_geometry_dem(td: Path, cache: Path, bbox, expected):
             ds.write(out_arr, 1)
 
         ALIGNMENT_AUDIT[target_id] = {
-            "source": "FROZEN_GEOMETRY_DIAGNOSTIC_OUTLET_CELL",
+            "source": anchor["source"],
             "anchor_row": row,
             "anchor_col": col,
             "anchor_center_x_m": center_x,
