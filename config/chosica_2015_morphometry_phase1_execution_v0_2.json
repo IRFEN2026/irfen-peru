@@ -32,7 +32,7 @@
     "outcome_evidence_read": false,
     "post_anchor_predictor_read": false,
     "selection_or_tuning_from_metric_values": false,
-    "reason": "Frozen geometry diagnostics serialize WGS84 DEM bboxes to 8 decimals. Reusing those rounded bboxes can shift the reconstructed projected grid by millimetres, enough for a frozen outlet cell center to fall on the wrong side of the exact polygon mask. Revision 0.2 changes only deterministic raster alignment: it recovers the canonical 30 m grid origin from the already-frozen diagnostic outlet row/column and its recorded cell-center coordinates. No basin polygon, outlet, DEM source tile, morphometry formula, D8 rule, slope rule or channel threshold is changed."
+    "reason": "Frozen geometry diagnostics serialize WGS84 DEM bboxes to 8 decimals. Reusing those rounded bboxes can shift the reconstructed projected grid by millimetres, enough for a frozen outlet cell center to fall on the wrong side of the exact polygon mask. Revision 0.2 changes only deterministic raster alignment: it recovers the canonical 30 m grid origin from already-frozen outlet-cell row/column and center coordinates. The preferred source is the frozen geometry diagnostic; if a legacy diagnostic predates outlet_grid_cell, the already-frozen accepted_outlet registry cell is used. No basin polygon, outlet, DEM source tile, morphometry formula, D8 rule, slope rule or channel threshold is changed."
   },
   "required_gate": {
     "frozen_outlet_count": 6,
@@ -53,7 +53,12 @@
     "resolution_m": 30.0,
     "resampling": "bilinear",
     "canonical_grid_alignment": {
-      "anchor": "the frozen geometry diagnostic outlet_grid_cell row/col and center_x_m/center_y_m",
+      "anchor_source_order": [
+        "frozen geometry diagnostic outlet_grid_cell",
+        "frozen chosen COMPLETE attempt outlet_grid_cell",
+        "legacy fallback: frozen outlet registry accepted_outlet cell"
+      ],
+      "anchor": "frozen row/col and projected cell-center x/y for the already-selected outlet cell",
       "origin_x": "center_x_m - (col + 0.5) * 30",
       "origin_y": "center_y_m + (row + 0.5) * 30",
       "max_allowed_origin_adjustment_m": 0.1,
