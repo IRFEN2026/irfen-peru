@@ -1,0 +1,67 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "target_id": "rayos_de_sol",
+  "drainage_id": "corrales",
+  "status": "FROZEN_PREEXECUTION_METHOD",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "sealed_during_resolution": [
+    "2015 activation/non-activation labels",
+    "2015 damage/severity",
+    "A6680 numeric morphometry",
+    "post-anchor precipitation or response"
+  ],
+  "static_sources": {
+    "corrales_anchor": {
+      "source": "MML Informe 048-2013/MML/SGDC/RHQM",
+      "date": "2013-06-20",
+      "crs": "UTM WGS84 Zona 18S",
+      "easting_m": 316959,
+      "northing_m": 8681421,
+      "elevation_m": 947,
+      "role": "CORRALES_CHANNEL_UPSTREAM_ANCHOR"
+    },
+    "rimac_downstream_anchor": {
+      "source": "MML Informe 048-2013/MML/SGDC/RHQM Punto 4",
+      "easting_m": 315681,
+      "northing_m": 8680063,
+      "elevation_m": 874,
+      "role": "RIMAC_MAINSTEM_DOWNSTREAM_BRACKET"
+    },
+    "rimac_upstream_trace_origin": {
+      "source": "Frozen Cashahuacra outlet in CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+      "registry_path": "config/chosica_2015_outlet_freeze_registry_v0_1.json",
+      "required_status": "FROZEN",
+      "role": "EVENT_INDEPENDENT_UPSTREAM_D8_TRACE_ORIGIN"
+    }
+  },
+  "dem": {
+    "source": "Copernicus DEM GLO-30 Public",
+    "analysis_crs": "EPSG:32718",
+    "target_resolution_m": 30,
+    "conditioning": ["fill pits", "fill depressions", "resolve flats"],
+    "flow_direction": "D8"
+  },
+  "predeclared_resolution_method": {
+    "name": "FROZEN_CASHAHUACRA_TO_MML_R4_RIMAC_D8_FIRST_INTERSECTION_WITH_CORRALES_R5",
+    "step_1": "Build a DEM domain containing the frozen Cashahuacra outlet, MML R5 Corrales and MML R4 Rímac coordinates with a fixed 0.05 degree margin.",
+    "step_2": "Map the frozen Cashahuacra outlet spatial coordinate to the 30 m grid and trace D8 downstream. Require the trace to progress toward and pass within two DEM-cell diagonals of MML R4; truncate at the nearest accepted R4 cell. This is the event-independent Rímac path candidate.",
+    "step_3": "Enumerate grid ambiguity for MML R5 and trace D8 downstream from every admissible R5 cell.",
+    "step_4": "Select the first intersection of each R5 trace with the accepted Cashahuacra-to-R4 path.",
+    "step_5": "Require all admissible R5 cells to converge to exactly one first-intersection cell; otherwise remain PENDING_REVIEW.",
+    "step_6": "Only after convergence may the cell be proposed as the Corrales outlet for the Rayos de Sol target; geometry freezing remains a separate step.",
+    "identity_tolerance": "two DEM-cell diagonals",
+    "selection_used_basin_area": false,
+    "selection_used_channel_length": false,
+    "selection_used_rainfall": false,
+    "selection_used_activation_or_damage": false,
+    "selection_used_a6680_numeric_morphometry": false,
+    "fail_closed": true
+  }
+}
