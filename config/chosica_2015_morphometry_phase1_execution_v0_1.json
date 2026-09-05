@@ -1,0 +1,70 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PREEXECUTION_IMPLEMENTATION",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "inherits_method_contract": "config/chosica_2015_dem_morphometry_contract_v0_1.json",
+  "required_gate": {
+    "frozen_outlet_count": 6,
+    "frozen_geometry_count": 6,
+    "batch_morphometry_allowed": true,
+    "unblind_allowed": false
+  },
+  "frozen_geometry_input": {
+    "source": "exact GitHub Actions geometry artifacts referenced by the outlet-freeze registry",
+    "verification": "SHA256 of each downloaded GeoJSON must exactly equal geometry_geojson_sha256 in the frozen registry",
+    "no_geometry_refit": true
+  },
+  "dem_reconstruction": {
+    "source": "Copernicus DEM GLO-30 Public",
+    "source_tile_integrity": "every tile must already have an identical SHA256 in at least one preregistered outlet candidate; conflicting or unknown tiles fail closed",
+    "bbox": "reuse the exact WGS84 DEM bbox of the frozen geometry diagnostic selected for each target",
+    "merge": "rasterio.merge over source COG tiles with exact frozen geometry bbox",
+    "analysis_crs": "EPSG:32718",
+    "resolution_m": 30.0,
+    "resampling": "bilinear",
+    "integrity_gate": "reconstructed GeoTIFF SHA256 must exactly equal dem_utm_sha256 in the frozen geometry registry before any metric is emitted"
+  },
+  "cell_inclusion": {
+    "polygon_metrics": "project exact frozen polygon to EPSG:32718",
+    "raster_metrics": "cell center inside polygon; rasterio all_touched=false",
+    "nodata": "exclude non-finite or DEM nodata cells"
+  },
+  "slope": {
+    "algorithm": "Horn 3x3",
+    "formula": "standard 8-neighbor weighted dz/dx and dz/dy on the reconstructed 30 m projected DEM",
+    "validity": "center cell is reported only with a complete valid 3x3 neighborhood",
+    "units": "degrees"
+  },
+  "hydrology": {
+    "conditioning": ["fill pits", "fill depressions", "resolve flats"],
+    "flow_direction": "D8",
+    "frozen_outlet_mapping": "map frozen EPSG:32718 outlet coordinates to reconstructed DEM containing cell; require center distance <= one cell diagonal",
+    "main_channel_length": "maximum D8 cell-center path length among frozen-polygon center cells that route to the frozen outlet",
+    "routing_integrity": "at least 99.5 percent of frozen-polygon center cells must route to the frozen outlet on the exact reconstructed geometry DEM; otherwise fail closed",
+    "accumulation_cell_area_m2": 900.0,
+    "drainage_density_threshold": "contributing area >= 0.01 * exact frozen polygon planar area",
+    "channel_length": "sum each qualifying in-basin cell's downstream D8 link once when the downstream cell is also in the frozen polygon",
+    "normalization": "channel_length_km / polygon_area_km2"
+  },
+  "phase_1_output": {
+    "a6680_numeric_reference_read": false,
+    "outcome_evidence_read": false,
+    "post_anchor_predictor_read": false,
+    "required_target_count": 6,
+    "freeze_before_compare": true,
+    "comparison_allowed_in_same_execution": false
+  },
+  "forbidden": [
+    "read A6680 numeric morphometry before phase-1 output hash is frozen",
+    "move an outlet or alter a basin polygon",
+    "change source tiles, DEM reconstruction, raster alignment, slope algorithm, D8 method or channel threshold based on resulting values",
+    "discard a target because of unexpected morphometry"
+  ]
+}
