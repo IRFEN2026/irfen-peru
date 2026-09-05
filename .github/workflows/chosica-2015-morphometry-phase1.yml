@@ -7,8 +7,10 @@ on:
       - config/chosica_2015_dem_morphometry_contract_v0_1.json
       - config/chosica_2015_morphometry_phase1_execution_v0_1.json
       - config/chosica_2015_morphometry_phase1_execution_v0_2.json
+      - config/chosica_2015_morphometry_phase1_execution_v0_3.json
       - scripts/compute_chosica_2015_morphometry_phase1.py
       - scripts/compute_chosica_2015_morphometry_phase1_v2.py
+      - scripts/compute_chosica_2015_morphometry_phase1_v3.py
       - .github/workflows/chosica-2015-morphometry-phase1.yml
   workflow_dispatch:
 
@@ -59,7 +61,7 @@ jobs:
       - name: Compute phase-1 morphometry without A6680
         run: |
           mkdir -p artifacts
-          python scripts/compute_chosica_2015_morphometry_phase1_v2.py \
+          python scripts/compute_chosica_2015_morphometry_phase1_v3.py \
             --geometry-root frozen_geometry \
             --report artifacts/chosica_2015_morphometry_phase1.json
       - name: Enforce phase-1 scientific guards
@@ -69,25 +71,34 @@ jobs:
           d=json.load(open('artifacts/chosica_2015_morphometry_phase1.json',encoding='utf-8'))
           assert d['status']=='PASS_CHOSICA_2015_PHASE1_MORPHOMETRY'
           assert d['phase']=='PHASE_1_PREUNBLIND_DEM_MORPHOMETRY'
-          assert d['execution_revision']=='0.2_CANONICAL_GRID_ALIGNMENT_ONLY'
+          assert d['execution_revision']=='0.3_FROZEN_POURPOINT_ROUTING_SEMANTICS'
           assert d['target_count']==6
           assert d['a6680_numeric_reference_read'] is False
           assert d['outcome_evidence_read'] is False
           assert d['post_anchor_predictor_read'] is False
-          assert d['alignment_revision_guards']=={
+          assert d['revision_guards']=={
               'a6680_numeric_reference_read':False,
               'outcome_evidence_read':False,
               'post_anchor_predictor_read':False,
               'selection_or_tuning_from_metric_values':False,
+              'frozen_polygon_mask_modified':False,
           }
-          assert set(d['alignment_audit'])=={
-              'cashahuacra','quirio','pedregal_san_antonio','la_libertad','carossio','rayos_de_sol'
-          }
+          expected={'cashahuacra','quirio','pedregal_san_antonio','la_libertad','carossio','rayos_de_sol'}
+          assert set(d['alignment_audit'])==expected
+          assert set(d['pourpoint_semantics_audit'])==expected
           assert d['guards']=={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
           for t in d['targets']:
               assert t['routing_coverage_fraction'] >= 0.995
               assert t['area_km2'] > 0
               assert t['main_channel_length_m'] >= 0
+              assert t['frozen_polygon_mask_modified'] is False
+              assert t['routing_coverage_denominator_is_frozen_polygon_cells_only'] is True
+              assert t['drainage_density_rule_changed'] is False
+              if t['outlet_cell_in_frozen_geometry_mask']:
+                  assert t['pourpoint_excluded_geometry_semantics_applied'] is False
+              else:
+                  assert t['pourpoint_excluded_geometry_semantics_applied'] is True
+                  assert t['pourpoint_direct_in_basin_predecessor_count'] >= 1
           for a in d['alignment_audit'].values():
               assert a['origin_adjustment_m'] <= a['max_allowed_origin_adjustment_m']
               assert a['center_recovery_error_m'] <= 1e-6
