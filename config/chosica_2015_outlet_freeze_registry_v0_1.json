@@ -1,0 +1,84 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "PREUNBLIND_OUTLET_FREEZE_REGISTRY",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "anti_leakage": {
+    "outcome_evidence_read": false,
+    "a6680_numeric_reference_read": false,
+    "post_anchor_predictor_read": false,
+    "selection_used_basin_area": false,
+    "selection_used_channel_length": false,
+    "selection_used_rainfall": false,
+    "selection_used_activation_or_damage": false
+  },
+  "method_contract": {
+    "path": "config/chosica_2015_outlet_resolution_contract_v0_1.json",
+    "git_blob_sha": "d1011cae6780e95db3ece491f6c35099d1079806",
+    "method": "ANA_TWO_POINT_UPSTREAM_ANCHORED_D8_CHANNEL_SNAP",
+    "dem": "Copernicus DEM GLO-30 Public",
+    "analysis_crs": "EPSG:32718",
+    "flow_direction": "D8",
+    "target_resolution_m": 30.0
+  },
+  "targets": {
+    "cashahuacra": {
+      "outlet_status": "FROZEN",
+      "geometry_status": "FROZEN_BY_REPRODUCIBLE_D8_HASH",
+      "source_anchor_id": "ANA-RD-1634-2015-AAA-CF",
+      "source_role": "STATIC_CHANNEL_GEOMETRY_ONLY",
+      "candidate_path": "site/data/validation/chosica_2015_cashahuacra_outlet_candidate.json",
+      "candidate_git_blob_sha": "4650261355ea6c283663643d876cae1d69deab67",
+      "resolver_git_blob_sha": "e7e6568e21dcf3d80f7f268f4f5533df08b29701",
+      "admissible_upstream_source_cell_count": 1,
+      "source_cell_ambiguity": false,
+      "convergence_requirement": "SATISFIED_TRIVIALLY_ONE_ADMISSIBLE_SOURCE_CELL",
+      "d8_trace_cells": 468,
+      "accepted_outlet": {
+        "row": 346,
+        "col": 339,
+        "x_m": 318850.753,
+        "y_m": 8682270.582,
+        "lon": -76.66333809,
+        "lat": -11.91528835
+      },
+      "distance_to_ana_0_000_m": 14.091,
+      "identity_tolerance_m": 84.852814,
+      "trace_progresses_toward_downstream_anchor": true,
+      "independent_static_geometry_contradiction_found": false,
+      "freeze_basis": "The preregistered resolver enumerates coordinate-to-grid source-cell ambiguity, traces D8 from every admissible upstream source cell and fails closed on non-convergence. The ANA 2+180 anchor maps to one admissible 30 m cell, its D8 trace approaches the ANA 0+000 anchor, and the selected named-channel cell is 14.091 m from 0+000, below the preregistered 84.852814 m identity tolerance. No forbidden outcome, A6680 numeric morphometry, rainfall or post-anchor predictor signal was read for selection.",
+      "geometry_freeze": {
+        "delineator_git_blob_sha": "8b72787b93aafe6c42ed03b3b8af19b01c075658",
+        "diagnostic_path": "site/data/validation/chosica_2015_cashahuacra_catchment_report.json",
+        "diagnostic_git_blob_sha": "a8035df3e45a137b844e7a075e3eb8dc38d8adb9",
+        "workflow_run_id": 33975675626,
+        "workflow_artifact_digest": "sha256:f3e368efa198cf1ecba9f59462b53e42deb2fa1f3b4abada83218fb07d43056b",
+        "geometry_geojson_sha256": "69ed1203127c556ea92cdf2f5060f1946a51bb57f09a61ffc8ba27d382236d5b",
+        "dem_utm_sha256": "5ffe129612da763217c72a753771b75fa1ca6b83567a41a7c4e657364ac00d9c",
+        "catchment_touches_dem_boundary": false,
+        "morphometry_computed": false,
+        "regeneration_rule": "Regenerate with the frozen outlet, exact DEM reconstruction and delineator; accept only exact geometry_geojson_sha256 match before any downstream use."
+      }
+    },
+    "quirio": {"outlet_status": "PENDING_SOURCE_AND_D8_IDENTITY"},
+    "pedregal_san_antonio": {"outlet_status": "PENDING_SOURCE_AND_D8_IDENTITY"},
+    "la_libertad": {"outlet_status": "PENDING_SOURCE_AND_D8_IDENTITY"},
+    "carossio": {"outlet_status": "PENDING_SOURCE_AND_D8_IDENTITY"},
+    "rayos_de_sol": {"outlet_status": "PENDING_CORRALES_OUTLET_SOURCE_AND_D8_IDENTITY"}
+  },
+  "batch_gate": {
+    "frozen_outlet_count": 1,
+    "frozen_geometry_count": 1,
+    "required_frozen_outlet_count": 6,
+    "required_frozen_geometry_count": 6,
+    "batch_morphometry_allowed": false,
+    "basin_weighted_imerg_allowed": false,
+    "unblind_allowed": false
+  }
+}
