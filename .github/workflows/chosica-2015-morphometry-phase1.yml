@@ -10,11 +10,13 @@ on:
       - config/chosica_2015_morphometry_phase1_execution_v0_3.json
       - config/chosica_2015_morphometry_phase1_execution_v0_4.json
       - config/chosica_2015_morphometry_phase1_execution_v0_5.json
+      - config/chosica_2015_morphometry_phase1_execution_v0_6.json
       - scripts/compute_chosica_2015_morphometry_phase1.py
       - scripts/compute_chosica_2015_morphometry_phase1_v2.py
       - scripts/compute_chosica_2015_morphometry_phase1_v3.py
       - scripts/compute_chosica_2015_morphometry_phase1_v4.py
       - scripts/compute_chosica_2015_morphometry_phase1_v5.py
+      - scripts/compute_chosica_2015_morphometry_phase1_v6.py
       - .github/workflows/chosica-2015-morphometry-phase1.yml
   workflow_dispatch:
 
@@ -65,17 +67,17 @@ jobs:
       - name: Compute phase-1 morphometry without A6680
         run: |
           mkdir -p artifacts
-          python scripts/compute_chosica_2015_morphometry_phase1_v5.py \
+          python scripts/compute_chosica_2015_morphometry_phase1_v6.py \
             --geometry-root frozen_geometry \
             --report artifacts/chosica_2015_morphometry_phase1.json
       - name: Enforce phase-1 scientific guards
         run: |
           python - <<'PY'
-          import json
+          import json, math
           d=json.load(open('artifacts/chosica_2015_morphometry_phase1.json',encoding='utf-8'))
           assert d['status']=='PASS_CHOSICA_2015_PHASE1_MORPHOMETRY'
           assert d['phase']=='PHASE_1_PREUNBLIND_DEM_MORPHOMETRY'
-          assert d['execution_revision']=='0.5_CANONICAL_D8_ROUNDTRIP_BOUNDARY_BRIDGE'
+          assert d['execution_revision']=='0.6_EXACT_GEOMETRY_POURPOINT_REPLAY'
           assert d['target_count']==6
           assert d['a6680_numeric_reference_read'] is False
           assert d['outcome_evidence_read'] is False
@@ -90,32 +92,30 @@ jobs:
           }
           expected={'cashahuacra','quirio','pedregal_san_antonio','la_libertad','carossio','rayos_de_sol'}
           assert set(d['exact_geometry_dem_audit'])==expected
-          assert set(d['pourpoint_semantics_audit'])==expected
-          assert set(d['roundtrip_routing_audit'])==expected
+          assert set(d['original_geometry_pourpoint_replay_audit'])==expected
+          assert d.get('pourpoint_semantics_audit',{})=={}
           assert d['guards']=={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
           for target_id,a in d['exact_geometry_dem_audit'].items():
               assert a['exact_binary_hash_match'] is True, target_id
               assert a['regenerated_dem_geotiff_sha256']==a['frozen_geometry_dem_geotiff_sha256']
               assert a['geometry_or_outlet_modified'] is False
+          for target_id,a in d['original_geometry_pourpoint_replay_audit'].items():
+              assert a['replay_method']=='EXACT_ORIGINAL_PYSHEDS_GEOMETRY_POURPOINT_SEMANTICS'
+              assert a['replay_polygon_coverage_fraction'] >= 0.995, target_id
+              assert a['replay_polygon_jaccard'] >= 0.995, target_id
+              assert a['pysheds_internal_cell_distance_to_frozen_outlet_m'] <= math.hypot(30.0,30.0)+1e-6
+              assert a['manual_reverse_d8_used'] is False
+              assert a['frozen_polygon_mask_modified'] is False
+              assert a['frozen_outlet_modified'] is False
+              assert a['drainage_density_rule_changed'] is False
           for t in d['targets']:
               assert t['routing_coverage_fraction'] >= 0.995
               assert t['area_km2'] > 0
               assert t['main_channel_length_m'] >= 0
               assert t['frozen_polygon_mask_modified'] is False
               assert t['frozen_outlet_modified'] is False
-              assert t['routing_coverage_denominator_is_frozen_polygon_cells_only'] is True
               assert t['drainage_density_rule_changed'] is False
-              if t['outlet_cell_in_frozen_geometry_mask']:
-                  assert t['pourpoint_excluded_geometry_semantics_applied'] is False
-                  assert t['canonical_d8_roundtrip_boundary_bridge_applied'] is False
-              else:
-                  assert t['pourpoint_excluded_geometry_semantics_applied'] is True
-                  if t['pourpoint_direct_in_basin_predecessor_count'] >= 1:
-                      assert t['canonical_d8_roundtrip_boundary_bridge_applied'] is False
-                  else:
-                      assert t['canonical_d8_roundtrip_boundary_bridge_applied'] is True
-                      assert t['bridge_entry_from_polygon_count'] >= 1
-                      assert t['canonical_d8_unexpected_nonboundary_extra_cell_count'] == 0
+              assert t['manual_reverse_d8_used'] is False
           PY
       - uses: actions/upload-artifact@v4
         with:
