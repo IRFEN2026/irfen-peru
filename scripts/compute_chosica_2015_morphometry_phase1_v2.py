@@ -6,7 +6,7 @@ raster-grid alignment. Frozen geometry diagnostics store their WGS84 bboxes roun
 8 decimals; reconstructing directly from those rounded values can shift a projected 30 m
 grid by millimetres. Revision 0.2 recovers the canonical grid origin from an already-frozen
 outlet row/column and cell-center coordinates recorded in the geometry diagnostic or, for
-the legacy Cashahuacra diagnostic that predates that field, the frozen outlet registry.
+a legacy diagnostic that predates that field, the frozen outlet registry.
 No A6680 numeric reference, observed 2015 outcome, or post-anchor predictor is read.
 """
 from __future__ import annotations
@@ -30,6 +30,7 @@ EXECUTION_V2 = ROOT / "config/chosica_2015_morphometry_phase1_execution_v0_2.jso
 BASE_IMPLEMENTATION = ROOT / "scripts/compute_chosica_2015_morphometry_phase1.py"
 MAX_ORIGIN_ADJUSTMENT_M = 0.1
 ALIGNMENT_AUDIT: dict[str, dict] = {}
+CURRENT_TARGET: str | None = None
 
 
 def sha256_path(path: Path) -> str:
@@ -85,18 +86,16 @@ def _report_anchor(report: dict, frozen_target: dict) -> dict:
     }
 
 
-def _alignment_index() -> dict[tuple[float, float, float, float], dict]:
+def _alignment_index() -> dict[str, dict]:
     registry = base.load_json(base.REGISTRY)
-    out: dict[tuple[float, float, float, float], dict] = {}
+    out: dict[str, dict] = {}
     for key in base.TARGET_KEYS:
         frozen_target = registry["targets"][key]
         gfreeze = frozen_target["geometry_freeze"]
         report = base.load_json(ROOT / gfreeze["diagnostic_path"])
-        bbox = tuple(float(v) for v in base.geometry_bbox_from_report(report))
-        if bbox in out:
-            raise RuntimeError("FAIL_CLOSED_ALIGNMENT_DUPLICATE_BBOX")
-        out[bbox] = {
+        out[key] = {
             "target_id": key,
+            "bbox": tuple(float(v) for v in base.geometry_bbox_from_report(report)),
             "anchor": _report_anchor(report, frozen_target),
         }
     return out
@@ -106,11 +105,14 @@ ALIGNMENT_INDEX = _alignment_index()
 
 
 def build_canonical_geometry_dem(td: Path, cache: Path, bbox, expected):
-    key = tuple(float(v) for v in bbox)
-    entry = ALIGNMENT_INDEX.get(key)
-    if entry is None:
-        raise RuntimeError("FAIL_CLOSED_ALIGNMENT_UNKNOWN_BBOX")
-    target_id = entry["target_id"]
+    target_id = CURRENT_TARGET
+    if target_id is None or target_id not in ALIGNMENT_INDEX:
+        raise RuntimeError("FAIL_CLOSED_ALIGNMENT_TARGET_CONTEXT")
+    entry = ALIGNMENT_INDEX[target_id]
+    expected_bbox = entry["bbox"]
+    supplied_bbox = tuple(float(v) for v in bbox)
+    if supplied_bbox != expected_bbox:
+        raise RuntimeError(f"FAIL_CLOSED_ALIGNMENT_BBOX_CONTEXT {target_id}")
     anchor = entry["anchor"]
 
     srcs = []
@@ -218,6 +220,17 @@ def build_canonical_geometry_dem(td: Path, cache: Path, bbox, expected):
                 pass
 
 
+def target_metrics_with_context(key, geom_path, registry, expected_tiles, cache, work):
+    global CURRENT_TARGET
+    if CURRENT_TARGET is not None:
+        raise RuntimeError("FAIL_CLOSED_ALIGNMENT_NESTED_TARGET_CONTEXT")
+    CURRENT_TARGET = key
+    try:
+        return ORIGINAL_TARGET_METRICS(key, geom_path, registry, expected_tiles, cache, work)
+    finally:
+        CURRENT_TARGET = None
+
+
 def _annotate_report(report_path: Path) -> None:
     if not report_path.exists():
         return
@@ -237,9 +250,13 @@ def _annotate_report(report_path: Path) -> None:
     )
 
 
+ORIGINAL_TARGET_METRICS = base.target_metrics
+
+
 def main() -> int:
     base.EXECUTION = EXECUTION_V2
     base.build_exact_geometry_dem = build_canonical_geometry_dem
+    base.target_metrics = target_metrics_with_context
     base.__file__ = str(Path(__file__).resolve())
 
     import sys
