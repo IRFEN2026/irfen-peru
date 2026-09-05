@@ -1,0 +1,79 @@
+{
+  "schema_version": "0.7",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PREUNBLIND_EXECUTION_REV7_GEOMETRY_PROVENANCE_AWARE_ROUTING",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "inherits_method_contract": "config/chosica_2015_dem_morphometry_contract_v0_1.json",
+  "supersedes_execution_contract": "config/chosica_2015_morphometry_phase1_execution_v0_6.json",
+  "revision_basis": {
+    "v0_6_run_id": 33993477543,
+    "v0_6_status": "FAIL_CLOSED_PHASE1_MORPHOMETRY",
+    "v0_6_structural_error": "FAIL_CLOSED_REPLAY_POLYGON_COVERAGE cashahuacra 0.000000000",
+    "v0_6_target_count": 0,
+    "v0_6_metric_values_observed": false,
+    "selection_or_tuning_from_metric_values": false,
+    "outcome_evidence_read": false,
+    "a6680_numeric_reference_read": false,
+    "post_anchor_predictor_read": false,
+    "diagnosis": "Cashahuacra was not generated with Pysheds catchment pour-point semantics. Its frozen delineator (git blob 8b72787b93aafe6c42ed03b3b8af19b01c075658) explicitly built an upstream_mask by reverse traversal of the D8 flow-direction array from the already-frozen outlet row/col. Revision 0.6 incorrectly applied the generic Pysheds replay to Cashahuacra. This revision dispatches routing replay by the immutable geometry-generation provenance recorded in the freeze registry; no morphometric result is used to choose the dispatch."
+  },
+  "required_gate": {
+    "frozen_outlet_count": 6,
+    "frozen_geometry_count": 6,
+    "batch_morphometry_allowed": true,
+    "unblind_allowed": false
+  },
+  "exact_geometry_dem_reconstruction": {
+    "contract": "config/chosica_2015_morphometry_phase1_execution_v0_4.json",
+    "status": "RETAINED_UNCHANGED",
+    "hard_integrity_gate": "regenerated DEM GeoTIFF SHA256 must exactly equal geometry_freeze.dem_utm_sha256 for every target before morphometry is accepted",
+    "fallback": "none"
+  },
+  "routing_replay_dispatch": {
+    "cashahuacra": {
+      "geometry_delineator_git_blob_sha": "8b72787b93aafe6c42ed03b3b8af19b01c075658",
+      "frozen_generation_method": "MANUAL_REVERSE_D8_UPSTREAM_MASK_FROM_FROZEN_ROW_COL",
+      "morphometry_routing_method": "reverse D8 distances from the unchanged frozen outlet row/col on the binary-identical geometry-generation DEM; require >=0.995 frozen-polygon routing coverage",
+      "pysheds_catchment_replay": false
+    },
+    "quirio": {
+      "geometry_delineator_git_blob_sha": "400c8309bf09e86ff7890ef40d4b758dc919ad2f",
+      "frozen_generation_method": "PYSHEDS_CATCHMENT_FROM_RASTERIO_CONTAINING_CELL_CENTER_COORDINATE",
+      "pysheds_catchment_replay": true
+    },
+    "pedregal_san_antonio": {"frozen_generation_method": "PYSHEDS_CATCHMENT_FROM_RASTERIO_CONTAINING_CELL_CENTER_COORDINATE", "pysheds_catchment_replay": true},
+    "la_libertad": {"frozen_generation_method": "PYSHEDS_CATCHMENT_FROM_RASTERIO_CONTAINING_CELL_CENTER_COORDINATE", "pysheds_catchment_replay": true},
+    "carossio": {"frozen_generation_method": "PYSHEDS_CATCHMENT_FROM_RASTERIO_CONTAINING_CELL_CENTER_COORDINATE", "pysheds_catchment_replay": true},
+    "rayos_de_sol": {"frozen_generation_method": "PYSHEDS_CATCHMENT_FROM_RASTERIO_CONTAINING_CELL_CENTER_COORDINATE", "pysheds_catchment_replay": true}
+  },
+  "unchanged_metric_semantics": {
+    "polygon_area_and_perimeter": "exact frozen polygon projected to EPSG:32718",
+    "elevation_and_slope_mask": "unchanged frozen-polygon cell-center mask",
+    "drainage_density": "unchanged threshold and link rule; only qualifying links whose upstream and downstream cells are both inside the frozen-polygon cell-center mask count",
+    "outlet_coordinate": "unchanged frozen accepted outlet",
+    "geometry": "unchanged frozen GeoJSON",
+    "a6680_numeric_reference_read": false
+  },
+  "phase_1_output": {
+    "required_target_count": 6,
+    "freeze_before_compare": true,
+    "comparison_allowed_in_same_execution": false,
+    "record_exact_geometry_dem_hash_audit_per_target": true,
+    "record_geometry_generation_routing_replay_audit_per_target": true
+  },
+  "forbidden": [
+    "read A6680 numeric morphometry before phase-1 output is frozen by hash",
+    "use metric values observed in failed runs to select or tune routing semantics",
+    "move an outlet or alter/expand a frozen basin polygon",
+    "substitute one target's geometry-generation routing semantics for another target's provenance",
+    "change DEM conditioning, slope algorithm, channel threshold or metric inclusion rule to improve a result",
+    "accept a regenerated DEM whose binary GeoTIFF SHA256 differs from the frozen geometry-generation DEM hash",
+    "discard a target because of unexpected morphometry"
+  ]
+}
