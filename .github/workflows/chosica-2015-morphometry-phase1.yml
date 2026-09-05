@@ -1,0 +1,84 @@
+name: IRFEN - Chosica 2015 phase-1 morphometry
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_outlet_freeze_registry_v0_1.json
+      - config/chosica_2015_dem_morphometry_contract_v0_1.json
+      - config/chosica_2015_morphometry_phase1_execution_v0_1.json
+      - scripts/compute_chosica_2015_morphometry_phase1.py
+      - .github/workflows/chosica-2015-morphometry-phase1.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  phase1-morphometry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install scientific dependencies
+        run: pip install -r requirements.txt
+      - name: Download exact frozen geometry artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          mkdir -p frozen_geometry
+          python - <<'PY' > /tmp/frozen_geometry.tsv
+          import json
+          r=json.load(open('config/chosica_2015_outlet_freeze_registry_v0_1.json',encoding='utf-8'))
+          names={
+            'cashahuacra':'chosica-2015-cashahuacra-catchment-candidate',
+            'quirio':'chosica-2015-quirio-catchment-candidate',
+            'pedregal_san_antonio':'chosica-2015-pedregal-catchment-candidate',
+            'la_libertad':'chosica-2015-la-libertad-catchment-candidate',
+            'carossio':'chosica-2015-carossio-catchment-candidate',
+            'rayos_de_sol':'chosica-2015-corrales-catchment-candidate',
+          }
+          for key,name in names.items():
+              t=r['targets'][key]
+              assert t['outlet_status']=='FROZEN'
+              assert t['geometry_status']=='FROZEN_BY_REPRODUCIBLE_D8_HASH'
+              print(f"{key}\t{t['geometry_freeze']['workflow_run_id']}\t{name}")
+          PY
+          while IFS=$'\t' read -r key run name; do
+            mkdir -p "frozen_geometry/$key"
+            gh run download "$run" --repo "$GH_REPO" --name "$name" --dir "frozen_geometry/$key"
+          done < /tmp/frozen_geometry.tsv
+      - name: Compute phase-1 morphometry without A6680
+        run: |
+          mkdir -p artifacts
+          python scripts/compute_chosica_2015_morphometry_phase1.py \
+            --geometry-root frozen_geometry \
+            --report artifacts/chosica_2015_morphometry_phase1.json
+      - name: Enforce phase-1 scientific guards
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/chosica_2015_morphometry_phase1.json',encoding='utf-8'))
+          assert d['status']=='PASS_CHOSICA_2015_PHASE1_MORPHOMETRY'
+          assert d['phase']=='PHASE_1_PREUNBLIND_DEM_MORPHOMETRY'
+          assert d['target_count']==6
+          assert d['a6680_numeric_reference_read'] is False
+          assert d['outcome_evidence_read'] is False
+          assert d['post_anchor_predictor_read'] is False
+          assert d['guards']=={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          for t in d['targets']:
+              assert t['routing_coverage_fraction'] >= 0.995
+              assert t['area_km2'] > 0
+              assert t['main_channel_length_m'] >= 0
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-morphometry-phase1
+          path: artifacts/chosica_2015_morphometry_phase1.json
+          if-no-files-found: error
