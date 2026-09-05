@@ -66,14 +66,44 @@
         "regeneration_rule": "Regenerate with the frozen outlet, exact DEM reconstruction and delineator; accept only exact geometry_geojson_sha256 match before any downstream use."
       }
     },
-    "quirio": {"outlet_status": "PENDING_SOURCE_AND_D8_IDENTITY"},
+    "quirio": {
+      "outlet_status": "FROZEN",
+      "geometry_status": "PENDING_DELINEATION",
+      "source_anchor_id": "MML-SGDC-RIMAC-MONITORING-2013",
+      "source_role": "R4_R9_EVENT_INDEPENDENT_RIMAC_MAINSTEM_BRACKETS_PLUS_R8_QUIRIO_CHANNEL_ANCHOR",
+      "method_contract_path": "config/chosica_2015_quirio_outlet_resolution_contract_v0_1.json",
+      "method_contract_git_blob_sha": "7e9fd713f3ee45fa32ad8b427b339244f9d5a6e9",
+      "candidate_path": "site/data/validation/chosica_2015_quirio_outlet_candidate.json",
+      "candidate_git_blob_sha": "d9ad64cd915a77423a21262ea6e6996e6286da6b",
+      "resolver_git_blob_sha": "6ad9fb342a6564b184e93286eb802e6203b6cd1f",
+      "method": "MML_R4_R9_RIMAC_D8_FIRST_INTERSECTION_WITH_QUIRIO_R8",
+      "r4_source_cell_count": 1,
+      "r8_source_cell_count": 1,
+      "source_cell_ambiguity": false,
+      "rimac_trace_cells": 343,
+      "distance_to_r9_m": 11.478,
+      "identity_tolerance_m": 84.852814,
+      "first_intersection_unique": true,
+      "accepted_outlet": {
+        "row": 224,
+        "col": 247,
+        "x_m": 313961.809,
+        "y_m": 8678939.96,
+        "lon": -76.7084038,
+        "lat": -11.94512659
+      },
+      "workflow_run_id": 33985701094,
+      "workflow_artifact_digest": "sha256:3a574f1190a933ebac3c0a2adc2d7faa9a0a34b9a1c50c697bd70a8adf252ea8",
+      "known_admissible_static_geometry_contradiction_found": false,
+      "freeze_basis": "The method was frozen before execution. MML 2013 R4 and R9 define an event-independent Rimac reach and R8 fixes Quirio channel identity. The single admissible R4 D8 trace approached R9 to 11.478 m, below the preregistered 84.852814 m tolerance; the single admissible R8 trace had one reproducible first intersection with that mainstem path at row 224/col 247. No observed 2015 outcome, A6680 numeric morphometry, rainfall, post-anchor predictor or basin-area/length target was used. Basin geometry remains separately gated."
+    },
     "pedregal_san_antonio": {"outlet_status": "PENDING_SOURCE_AND_D8_IDENTITY"},
     "la_libertad": {"outlet_status": "PENDING_SOURCE_AND_D8_IDENTITY"},
     "carossio": {"outlet_status": "PENDING_SOURCE_AND_D8_IDENTITY"},
     "rayos_de_sol": {"outlet_status": "PENDING_CORRALES_OUTLET_SOURCE_AND_D8_IDENTITY"}
   },
   "batch_gate": {
-    "frozen_outlet_count": 1,
+    "frozen_outlet_count": 2,
     "frozen_geometry_count": 1,
     "required_frozen_outlet_count": 6,
     "required_frozen_geometry_count": 6,
