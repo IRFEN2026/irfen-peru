@@ -8,9 +8,11 @@ on:
       - config/chosica_2015_morphometry_phase1_execution_v0_1.json
       - config/chosica_2015_morphometry_phase1_execution_v0_2.json
       - config/chosica_2015_morphometry_phase1_execution_v0_3.json
+      - config/chosica_2015_morphometry_phase1_execution_v0_4.json
       - scripts/compute_chosica_2015_morphometry_phase1.py
       - scripts/compute_chosica_2015_morphometry_phase1_v2.py
       - scripts/compute_chosica_2015_morphometry_phase1_v3.py
+      - scripts/compute_chosica_2015_morphometry_phase1_v4.py
       - .github/workflows/chosica-2015-morphometry-phase1.yml
   workflow_dispatch:
 
@@ -61,7 +63,7 @@ jobs:
       - name: Compute phase-1 morphometry without A6680
         run: |
           mkdir -p artifacts
-          python scripts/compute_chosica_2015_morphometry_phase1_v3.py \
+          python scripts/compute_chosica_2015_morphometry_phase1_v4.py \
             --geometry-root frozen_geometry \
             --report artifacts/chosica_2015_morphometry_phase1.json
       - name: Enforce phase-1 scientific guards
@@ -71,7 +73,7 @@ jobs:
           d=json.load(open('artifacts/chosica_2015_morphometry_phase1.json',encoding='utf-8'))
           assert d['status']=='PASS_CHOSICA_2015_PHASE1_MORPHOMETRY'
           assert d['phase']=='PHASE_1_PREUNBLIND_DEM_MORPHOMETRY'
-          assert d['execution_revision']=='0.3_FROZEN_POURPOINT_ROUTING_SEMANTICS'
+          assert d['execution_revision']=='0.4_EXACT_FROZEN_GEOMETRY_DEM_REGENERATION'
           assert d['target_count']==6
           assert d['a6680_numeric_reference_read'] is False
           assert d['outcome_evidence_read'] is False
@@ -82,11 +84,16 @@ jobs:
               'post_anchor_predictor_read':False,
               'selection_or_tuning_from_metric_values':False,
               'frozen_polygon_mask_modified':False,
+              'frozen_outlet_modified':False,
           }
           expected={'cashahuacra','quirio','pedregal_san_antonio','la_libertad','carossio','rayos_de_sol'}
-          assert set(d['alignment_audit'])==expected
+          assert set(d['exact_geometry_dem_audit'])==expected
           assert set(d['pourpoint_semantics_audit'])==expected
           assert d['guards']=={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          for target_id,a in d['exact_geometry_dem_audit'].items():
+              assert a['exact_binary_hash_match'] is True, target_id
+              assert a['regenerated_dem_geotiff_sha256']==a['frozen_geometry_dem_geotiff_sha256']
+              assert a['geometry_or_outlet_modified'] is False
           for t in d['targets']:
               assert t['routing_coverage_fraction'] >= 0.995
               assert t['area_km2'] > 0
@@ -99,9 +106,6 @@ jobs:
               else:
                   assert t['pourpoint_excluded_geometry_semantics_applied'] is True
                   assert t['pourpoint_direct_in_basin_predecessor_count'] >= 1
-          for a in d['alignment_audit'].values():
-              assert a['origin_adjustment_m'] <= a['max_allowed_origin_adjustment_m']
-              assert a['center_recovery_error_m'] <= 1e-6
           PY
       - uses: actions/upload-artifact@v4
         with:
