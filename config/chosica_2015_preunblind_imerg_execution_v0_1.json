@@ -1,0 +1,81 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PREUNBLIND_IMERG_EXECUTION",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "inherits_time_plan": "config/chosica_2015_preunblind_predictor_time_plan_v0_1.json",
+  "required_geometry_gate": {
+    "frozen_outlet_count": 6,
+    "frozen_geometry_count": 6,
+    "basin_weighted_imerg_allowed": true,
+    "unblind_allowed": false
+  },
+  "source": {
+    "institution": "NASA GES DISC / GPM IMERG",
+    "product": "GPM_3IMERGHH Final V07",
+    "service": "https://gis.earthdata.nasa.gov/image/rest/services/GESDISC/GPM_3IMERGHH/ImageServer/getSamples",
+    "temporal_resolution_minutes": 30,
+    "spatial_resolution_deg": 0.1,
+    "input_units": "mm/hr",
+    "slot_accumulation_rule": "area_weighted_rate_mm_hr * 0.5 h"
+  },
+  "geometry": {
+    "source": "exact GitHub Actions GeoJSON artifacts referenced by config/chosica_2015_outlet_freeze_registry_v0_1.json",
+    "hash_gate": "exact downloaded GeoJSON SHA256 must equal geometry_freeze.geometry_geojson_sha256 for every target",
+    "target_count": 6,
+    "no_geometry_refit": true,
+    "no_outlet_change": true
+  },
+  "spatial_aggregation": {
+    "imerg_cell_definition": "0.1 degree cells centered on -179.95 + 0.1*i longitude and -89.95 + 0.1*j latitude",
+    "intersection_weighting": "area of frozen basin polygon intersection with each IMERG cell measured in EPSG:6933; normalize positive intersections to unit sum independently per basin",
+    "cell_selection": "include every 0.1 degree cell with positive projected intersection area with the exact frozen polygon",
+    "slot_validity": "basin slot is valid only when every positively weighted intersecting cell has a nonnegative finite sample for that exact half-hour timestamp",
+    "partial_cell_missingness": "UNKNOWN/null for entire basin slot; do not renormalize to available cells",
+    "negative_or_nonfinite_sample": "missing; never coerce to zero"
+  },
+  "temporal_aggregation": {
+    "grid": "exact 720-slot grid inherited from frozen predictor time plan",
+    "anchor_exclusive": true,
+    "window_rule": "for each frozen window, sum slot accumulations only if every expected slot is valid; otherwise window value is null",
+    "rolling_or_shifted_maxima": false,
+    "basin_specific_windows": false,
+    "zero_imputation": false
+  },
+  "retrieval": {
+    "request_geometry": "unique multipoint set of all IMERG cell centers required by the six frozen polygons",
+    "block_hours": 8,
+    "maximum_halfhour_slices_per_block": 16,
+    "retry_count": 3,
+    "user_agent": "IRFEN-research/0.8",
+    "authentication_required": false,
+    "fail_closed_on_service_error": true
+  },
+  "output": {
+    "required_target_count": 6,
+    "required_slot_count_per_target": 720,
+    "retain_full_series": true,
+    "retain_spatial_weights": true,
+    "retain_request_and_missingness_audit": true,
+    "outcome_evidence_read": false,
+    "a6680_numeric_reference_read": false,
+    "post_anchor_predictor_read": false
+  },
+  "forbidden": [
+    "read or infer observed 2015 activation labels during predictor extraction",
+    "read INGEMMET A6680 numeric morphometry during predictor extraction",
+    "query or retain any timestamp at or after 2015-03-23T19:30:00Z",
+    "shift windows to rainfall peaks",
+    "use different temporal windows by basin",
+    "renormalize spatial weights when an intersecting IMERG cell is missing",
+    "zero-impute missing precipitation",
+    "move outlets or alter frozen polygons based on rainfall",
+    "derive or change operational thresholds from this retrospective extraction"
+  ]
+}
