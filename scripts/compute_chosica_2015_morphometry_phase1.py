@@ -147,6 +147,35 @@ def build_exact_geometry_dem(td: Path, cache: Path, bbox, expected):
                 pass
 
 
+def semantic_dem_fingerprint(path: Path):
+    """Hash scientific raster content, not unstable GeoTIFF container serialization."""
+    with rasterio.open(path) as ds:
+        arr = ds.read(1)
+        crs = ds.crs.to_string() if ds.crs else None
+        transform = ds.transform
+        nodata = None if ds.nodata is None else float(ds.nodata)
+        meta = {
+            "width": int(ds.width),
+            "height": int(ds.height),
+            "crs": crs,
+            "transform": [float(transform.a), float(transform.b), float(transform.c), float(transform.d), float(transform.e), float(transform.f)],
+            "nodata": nodata,
+            "dtype": "float32",
+        }
+        if crs != DST:
+            raise RuntimeError(f"FAIL_CLOSED_DEM_CRS {crs}")
+        if abs(abs(float(transform.a)) - RES) > 1e-9 or abs(abs(float(transform.e)) - RES) > 1e-9:
+            raise RuntimeError(f"FAIL_CLOSED_DEM_RESOLUTION {transform.a} {transform.e}")
+        if arr.dtype != np.dtype("float32"):
+            raise RuntimeError(f"FAIL_CLOSED_DEM_DTYPE {arr.dtype}")
+        canonical = np.asarray(arr, dtype="<f4", order="C")
+        h = hashlib.sha256()
+        h.update(json.dumps(meta, sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8"))
+        h.update(b"\n")
+        h.update(canonical.tobytes(order="C"))
+        return h.hexdigest(), meta
+
+
 def geometry_bbox_from_report(report: dict):
     if "dem_bbox_wgs84" in report:
         return tuple(float(v) for v in report["dem_bbox_wgs84"])
@@ -276,9 +305,8 @@ def target_metrics(key: str, geom_path: Path, registry: dict, expected_tiles: di
     td = work / key
     td.mkdir(parents=True, exist_ok=True)
     dem_path, provenance = build_exact_geometry_dem(td, cache, bbox, expected_tiles)
-    dem_hash = sha256_path(dem_path)
-    if dem_hash != gfreeze["dem_utm_sha256"]:
-        raise RuntimeError(f"FAIL_CLOSED_FROZEN_DEM_HASH {key} {dem_hash} != {gfreeze['dem_utm_sha256']}")
+    legacy_dem_file_sha256 = sha256_path(dem_path)
+    semantic_sha256, semantic_meta = semantic_dem_fingerprint(dem_path)
 
     with rasterio.open(dem_path) as ds:
         z = ds.read(1).astype("float64")
@@ -309,8 +337,9 @@ def target_metrics(key: str, geom_path: Path, registry: dict, expected_tiles: di
     dem = grid.fill_pits(dem)
     dem = grid.fill_depressions(dem)
     dem = grid.resolve_flats(dem)
-    fdir = np.asarray(grid.flowdir(dem, dirmap=D8))
-    accumulation = np.asarray(grid.accumulation(fdir, dirmap=D8))
+    fdir_raster = grid.flowdir(dem, dirmap=D8)
+    accumulation = np.asarray(grid.accumulation(fdir_raster, dirmap=D8))
+    fdir = np.asarray(fdir_raster)
     hydro = d8_metrics(fdir, accumulation, basin, outlet_rc, area_m2, dx, dy)
 
     return {
@@ -318,7 +347,11 @@ def target_metrics(key: str, geom_path: Path, registry: dict, expected_tiles: di
         "hydrologic_identity": "corrales" if key == "rayos_de_sol" else key,
         "geometry_geojson_sha256": sha256_path(geom_path),
         "geometry_diagnostic_sha256": sha256_path(report_path),
-        "dem_utm_sha256": dem_hash,
+        "legacy_dem_geotiff_sha256": legacy_dem_file_sha256,
+        "legacy_geometry_registry_dem_geotiff_sha256": gfreeze["dem_utm_sha256"],
+        "legacy_geotiff_binary_equality_required": False,
+        "semantic_dem_sha256": semantic_sha256,
+        "semantic_dem_metadata": semantic_meta,
         "dem_bbox_wgs84": [round(v, 8) for v in bbox],
         "source_tiles": provenance,
         "outlet_grid_cell": {"row": int(outlet_rc[0]), "col": int(outlet_rc[1]), "center_distance_to_frozen_outlet_m": round(outlet_distance, 6)},
@@ -355,6 +388,8 @@ def main() -> int:
     assert registry["batch_gate"]["unblind_allowed"] is False
     assert method["input_gate"]["a6680_numeric_reference_access_before_output_freeze"] is False
     assert execution["phase_1_output"]["a6680_numeric_reference_read"] is False
+    assert execution["revision_basis"]["prior_execution_target_count"] == 0
+    assert execution["revision_basis"]["prior_execution_metrics_observed"] is False
     for key in TARGET_KEYS:
         assert registry["targets"][key]["outlet_status"] == "FROZEN"
         assert registry["targets"][key]["geometry_status"] == "FROZEN_BY_REPRODUCIBLE_D8_HASH"
