@@ -11,12 +11,14 @@ on:
       - config/chosica_2015_morphometry_phase1_execution_v0_4.json
       - config/chosica_2015_morphometry_phase1_execution_v0_5.json
       - config/chosica_2015_morphometry_phase1_execution_v0_6.json
+      - config/chosica_2015_morphometry_phase1_execution_v0_7.json
       - scripts/compute_chosica_2015_morphometry_phase1.py
       - scripts/compute_chosica_2015_morphometry_phase1_v2.py
       - scripts/compute_chosica_2015_morphometry_phase1_v3.py
       - scripts/compute_chosica_2015_morphometry_phase1_v4.py
       - scripts/compute_chosica_2015_morphometry_phase1_v5.py
       - scripts/compute_chosica_2015_morphometry_phase1_v6.py
+      - scripts/compute_chosica_2015_morphometry_phase1_v7.py
       - .github/workflows/chosica-2015-morphometry-phase1.yml
   workflow_dispatch:
 
@@ -67,7 +69,7 @@ jobs:
       - name: Compute phase-1 morphometry without A6680
         run: |
           mkdir -p artifacts
-          python scripts/compute_chosica_2015_morphometry_phase1_v6.py \
+          python scripts/compute_chosica_2015_morphometry_phase1_v7.py \
             --geometry-root frozen_geometry \
             --report artifacts/chosica_2015_morphometry_phase1.json
       - name: Enforce phase-1 scientific guards
@@ -77,7 +79,7 @@ jobs:
           d=json.load(open('artifacts/chosica_2015_morphometry_phase1.json',encoding='utf-8'))
           assert d['status']=='PASS_CHOSICA_2015_PHASE1_MORPHOMETRY'
           assert d['phase']=='PHASE_1_PREUNBLIND_DEM_MORPHOMETRY'
-          assert d['execution_revision']=='0.6_EXACT_GEOMETRY_POURPOINT_REPLAY'
+          assert d['execution_revision']=='0.7_GEOMETRY_PROVENANCE_AWARE_ROUTING_REPLAY'
           assert d['target_count']==6
           assert d['a6680_numeric_reference_read'] is False
           assert d['outcome_evidence_read'] is False
@@ -91,15 +93,32 @@ jobs:
               'frozen_outlet_modified':False,
           }
           expected={'cashahuacra','quirio','pedregal_san_antonio','la_libertad','carossio','rayos_de_sol'}
+          pysheds_expected=expected-{'cashahuacra'}
           assert set(d['exact_geometry_dem_audit'])==expected
-          assert set(d['original_geometry_pourpoint_replay_audit'])==expected
-          assert d.get('pourpoint_semantics_audit',{})=={}
+          assert set(d['geometry_generation_routing_replay_audit'])==expected
+          assert set(d['pysheds_geometry_replay_audit'])==pysheds_expected
+          assert set(d.get('pourpoint_semantics_audit',{}))=={'cashahuacra'}
           assert d['guards']=={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
           for target_id,a in d['exact_geometry_dem_audit'].items():
               assert a['exact_binary_hash_match'] is True, target_id
               assert a['regenerated_dem_geotiff_sha256']==a['frozen_geometry_dem_geotiff_sha256']
               assert a['geometry_or_outlet_modified'] is False
-          for target_id,a in d['original_geometry_pourpoint_replay_audit'].items():
+          for target_id,a in d['geometry_generation_routing_replay_audit'].items():
+              assert a['routing_coverage_fraction'] >= 0.995, target_id
+              assert a['frozen_polygon_mask_modified'] is False
+              assert a['frozen_outlet_modified'] is False
+              assert a['drainage_density_rule_changed'] is False
+              if target_id=='cashahuacra':
+                  assert a['routing_replay_method']=='FROZEN_GENERATOR_MANUAL_REVERSE_D8_FROM_FROZEN_ROW_COL'
+                  assert a['manual_reverse_d8_used'] is True
+                  assert a['pysheds_catchment_replay_used'] is False
+              else:
+                  assert a['routing_replay_method']=='FROZEN_GENERATOR_PYSHEDS_CATCHMENT_FROM_CONTAINING_CELL_CENTER'
+                  assert a['manual_reverse_d8_used'] is False
+                  assert a['pysheds_catchment_replay_used'] is True
+                  assert a['replay_polygon_coverage_fraction'] >= 0.995
+                  assert a['replay_polygon_jaccard'] >= 0.995
+          for target_id,a in d['pysheds_geometry_replay_audit'].items():
               assert a['replay_method']=='EXACT_ORIGINAL_PYSHEDS_GEOMETRY_POURPOINT_SEMANTICS'
               assert a['replay_polygon_coverage_fraction'] >= 0.995, target_id
               assert a['replay_polygon_jaccard'] >= 0.995, target_id
@@ -115,7 +134,6 @@ jobs:
               assert t['frozen_polygon_mask_modified'] is False
               assert t['frozen_outlet_modified'] is False
               assert t['drainage_density_rule_changed'] is False
-              assert t['manual_reverse_d8_used'] is False
           PY
       - uses: actions/upload-artifact@v4
         with:
