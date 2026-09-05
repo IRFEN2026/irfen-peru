@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Delineate the frozen Quirio outlet catchment without reading sealed outcomes.
 
-Geometry-only step. It reconstructs the exact DEM used by the frozen outlet diagnostic,
-fails closed on DEM/grid mismatch or clipped upstream area, and does not compute morphometry.
+Geometry-only step. It reconstructs the exact DEM used by the frozen outlet diagnostic
+from the frozen MML anchor coordinates (not the rounded report bbox), fails closed on
+DEM/grid mismatch or clipped upstream area, and does not compute morphometry.
 """
 from __future__ import annotations
 
@@ -28,6 +29,7 @@ from shapely.geometry import mapping, shape
 from shapely.ops import transform as shp_transform, unary_union
 
 ROOT = Path(__file__).resolve().parents[1]
+CONTRACT = ROOT / "config/chosica_2015_quirio_outlet_resolution_contract_v0_1.json"
 REGISTRY = ROOT / "config/chosica_2015_outlet_freeze_registry_v0_1.json"
 CANDIDATE = ROOT / "site/data/validation/chosica_2015_quirio_outlet_candidate.json"
 DEFAULT_REPORT = ROOT / "artifacts/chosica_2015_quirio_catchment_report.json"
@@ -75,16 +77,29 @@ def download_dem_crop(td: Path, bbox: tuple[float, float, float, float]) -> Path
         mosaic, src_transform = merge(srcs, bounds=bbox)
         src_profile = srcs[0].profile.copy()
         src_crs = srcs[0].crs
+        for src in srcs:
+            src.close()
         src_h, src_w = mosaic.shape[1], mosaic.shape[2]
         left, bottom, right, top = array_bounds(src_h, src_w, src_transform)
-        dst_transform, dst_w, dst_h = calculate_default_transform(src_crs, DST_CRS, src_w, src_h, left, bottom, right, top, resolution=TARGET_RESOLUTION_M)
+        dst_transform, dst_w, dst_h = calculate_default_transform(
+            src_crs, DST_CRS, src_w, src_h, left, bottom, right, top,
+            resolution=TARGET_RESOLUTION_M,
+        )
         src_nodata = src_profile.get("nodata")
         dst_nodata = -9999.0 if src_nodata is None else float(src_nodata)
         dst = np.full((dst_h, dst_w), dst_nodata, dtype="float32")
-        reproject(source=mosaic[0], destination=dst, src_transform=src_transform, src_crs=src_crs, src_nodata=src_nodata, dst_transform=dst_transform, dst_crs=DST_CRS, dst_nodata=dst_nodata, resampling=Resampling.bilinear)
+        reproject(
+            source=mosaic[0], destination=dst,
+            src_transform=src_transform, src_crs=src_crs, src_nodata=src_nodata,
+            dst_transform=dst_transform, dst_crs=DST_CRS, dst_nodata=dst_nodata,
+            resampling=Resampling.bilinear,
+        )
         out = td / "chosica_quirio_rimac_dem_utm18s_30m.tif"
         profile = src_profile.copy()
-        profile.update(driver="GTiff", width=dst_w, height=dst_h, count=1, dtype="float32", crs=DST_CRS, transform=dst_transform, nodata=dst_nodata, compress="deflate")
+        profile.update(
+            driver="GTiff", width=dst_w, height=dst_h, count=1, dtype="float32",
+            crs=DST_CRS, transform=dst_transform, nodata=dst_nodata, compress="deflate",
+        )
         with rasterio.open(out, "w", **profile) as ds:
             ds.write(dst, 1)
         return out
@@ -121,6 +136,21 @@ def upstream_mask(fdir: np.ndarray, outlet: tuple[int, int]) -> np.ndarray:
     return seen.reshape((rows, cols))
 
 
+def exact_frozen_bbox(contract: dict) -> tuple[float, float, float, float]:
+    pts = contract["static_source"]["points"]
+    xy = [
+        (float(pts["rimac_upstream_bridge_r4"]["easting_m"]), float(pts["rimac_upstream_bridge_r4"]["northing_m"])),
+        (float(pts["quirio_r8"]["easting_m"]), float(pts["quirio_r8"]["northing_m"])),
+        (float(pts["rimac_downstream_bridge_r9"]["easting_m"]), float(pts["rimac_downstream_bridge_r9"]["northing_m"])),
+    ]
+    to_geo = Transformer.from_crs(DST_CRS, "EPSG:4326", always_xy=True)
+    ll = [to_geo.transform(x, y) for x, y in xy]
+    lons = [p[0] for p in ll]
+    lats = [p[1] for p in ll]
+    margin_deg = 0.05
+    return (min(lons) - margin_deg, min(lats) - margin_deg, max(lons) + margin_deg, max(lats) + margin_deg)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--report", type=Path, default=DEFAULT_REPORT)
@@ -129,6 +159,7 @@ def main() -> int:
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.geojson.parent.mkdir(parents=True, exist_ok=True)
 
+    contract = json.loads(CONTRACT.read_text(encoding="utf-8"))
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     candidate = json.loads(CANDIDATE.read_text(encoding="utf-8"))
     guards = registry["guards"]
@@ -141,8 +172,13 @@ def main() -> int:
     assert candidate["a6680_numeric_reference_read"] is False
     assert candidate["post_anchor_predictor_read"] is False
     assert candidate["freeze_eligible"] is True
+    assert candidate["contract_sha256"] == sha256_path(CONTRACT)
 
-    bbox = tuple(float(v) for v in candidate["dem_bbox_wgs84"])
+    bbox = exact_frozen_bbox(contract)
+    rounded_bbox = [round(v, 8) for v in bbox]
+    if rounded_bbox != candidate["dem_bbox_wgs84"]:
+        raise RuntimeError("Frozen-anchor bbox no longer agrees with persisted candidate locator")
+
     report = {
         "schema_version": "0.1",
         "batch_id": registry["batch_id"],
@@ -156,10 +192,12 @@ def main() -> int:
         "post_anchor_predictor_read": False,
         "outlet_registry_sha256": sha256_path(REGISTRY),
         "candidate_sha256": sha256_path(CANDIDATE),
+        "method_contract_sha256": sha256_path(CONTRACT),
         "delineator_sha256": sha256_path(Path(__file__)),
         "analysis_crs": DST_CRS,
         "target_resolution_m": TARGET_RESOLUTION_M,
-        "dem_bbox_wgs84": [round(v, 8) for v in bbox],
+        "dem_bbox_wgs84": rounded_bbox,
+        "dem_bbox_reconstruction": "EXACT_FROM_FROZEN_MML_UTM_ANCHORS_PLUS_0.05_DEG_MARGIN",
     }
 
     with tempfile.TemporaryDirectory(prefix="irfen_quirio_catchment_") as raw_td:
