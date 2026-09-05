@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>IRFEN — Validación independiente de cuencas</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    :root{font-family:system-ui,-apple-system,sans-serif;color:#172033;background:#f4f7fb}
+    body{margin:0}.wrap{max-width:1240px;margin:auto;padding:24px 18px 48px}a{color:#145ea8}
+    .banner,.panel,.card{background:#fff;border:1px solid #dce3ed;border-radius:14px}.banner{padding:14px;margin:16px 0;border-color:#9eb8d0;background:#f5f9fd}
+    .badge{display:inline-block;padding:4px 8px;border-radius:99px;background:#e9f2ff;color:#194f82;font-size:.7rem;font-weight:800}.small{font-size:.82rem;color:#607089;line-height:1.5}
+    .layout{display:grid;grid-template-columns:1.55fr .85fr;gap:14px}.panel{overflow:hidden}#map{height:620px}.cards{padding:12px;display:grid;gap:10px}.card{padding:12px}
+    h1{margin:.2rem 0}.lead{max-width:900px;line-height:1.55;color:#42506a}.indicator{display:flex;justify-content:space-between;gap:10px;border-top:1px solid #edf1f5;padding:5px 0;font-size:.78rem}.indicator:first-of-type{border-top:0}
+    @media(max-width:900px){.layout{grid-template-columns:1fr}#map{height:520px}}
+  </style>
+</head>
+<body><main class="wrap">
+  <div class="small"><a href="./">← Plataforma IRFEN</a> · <a href="expansion.html">Preparación territorial</a></div>
+  <h1>Validación independiente de cuencas</h1>
+  <p class="lead">Mapa científico de trazabilidad para el Independent Basin Validation Framework. La simbología representa etapa de investigación, no nivel de peligro. La evidencia territorial de resultado permanece sellada durante la evaluación ciega.</p>
+  <div id="summary" class="banner">Cargando registro científico…</div>
+  <div class="layout"><section class="panel"><div id="map"></div></section><aside class="panel"><div id="cards" class="cards"></div></aside></div>
+</main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const esc=v=>String(v??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const map=L.map('map').setView([-11.91,-76.66],12);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
+const researchLayer=L.layerGroup().addTo(map);
+const styleFor=stage=>({A1_2_A1_3:{color:'#315d86',fillColor:'#cfe0f0'},A0_A1_INTAKE:{color:'#596773',fillColor:'#dce3e8'}}[stage]||{color:'#596773',fillColor:'#e5eaee'});
+const readJson=async url=>{const r=await fetch(`${url}?t=${Date.now()}`);if(!r.ok)throw new Error(`${url} HTTP ${r.status}`);return r.json()};
+const safe=d=>d&&d.deployment_status==='RESEARCH_ONLY'&&d.test_status==='TEST_ONLY'&&d.production_use===false&&d.production_ready===false&&d.operational_alerting_enabled===false&&d.operational_labels_allowed===false&&d.blind_outcome_evidence==='SEALED';
+const popup=b=>`<b>${esc(b.basin_name)}</b><br><span style="font-size:11px">RESEARCH_ONLY · ${esc(b.research_stage)}</span><hr>${(b.public_indicators||[]).slice(0,6).map(i=>`${esc(i.label)}: <b>${esc(i.value)}</b>`).join('<br>')}<hr><span style="font-size:10px">Sin uso operativo ni alertamiento.</span>`;
+(async()=>{
+  try{
+    const d=await readJson('data/independent_validation/basins.json');
+    if(!safe(d)||!(d.basins||[]).every(b=>b.production_use===false&&b.production_ready===false&&b.operational_alerting_enabled===false))throw new Error('Safety contract');
+    summary.innerHTML=`<span class="badge">RESEARCH_ONLY · TEST_ONLY</span> <b>${d.basins.length} cuencas cartografiables en el carril independiente</b><div class="small">Producción: false · alertamiento operativo: false · evidencia de resultado: SEALED. Los casos en cola no aparecen hasta disponer de geometría reproducible y ventana científica congelada.</div>`;
+    const sources=[...new Set(d.basins.map(b=>b.geometry&&b.geometry.source_path).filter(Boolean))];
+    const geometries={};for(const src of sources)geometries[src]=await readJson(src);
+    const bounds=[];
+    cards.innerHTML=d.basins.map(b=>`<article class="card"><span class="badge">${esc(b.research_stage)}</span><h3>${esc(b.basin_name)}</h3>${(b.public_indicators||[]).slice(0,6).map(i=>`<div class="indicator"><span>${esc(i.label)}</span><b>${esc(i.value)}</b></div>`).join('')}<div class="small" style="margin-top:7px">Geometría: ${esc(b.geometry&&b.geometry.status)} · confianza ${esc(b.geometry&&b.geometry.confidence)}</div></article>`).join('');
+    for(const b of d.basins){const g=b.geometry||{},fc=geometries[g.source_path];if(!fc)continue;const f=(fc.features||[]).find(x=>x.properties&&x.properties[g.feature_property]===g.feature_value);if(!f)continue;const s=styleFor(b.research_stage);const lyr=L.geoJSON(f,{style:{color:s.color,fillColor:s.fillColor,weight:2,fillOpacity:.22,dashArray:'6 4'}}).bindPopup(popup(b)).addTo(researchLayer);const lb=lyr.getBounds();if(lb.isValid())bounds.push(lb)}
+    if(bounds.length){const all=bounds.reduce((a,b)=>a.extend(b),bounds[0]);map.fitBounds(all.pad(.15))}
+  }catch(err){summary.textContent='Registro científico no disponible o contrato de seguridad inválido. No se representa ninguna inferencia.';console.warn(err)}
+})();
+</script></body></html>
