@@ -30,7 +30,7 @@
   "targets": {
     "cashahuacra": {
       "outlet_status": "FROZEN",
-      "geometry_status": "PENDING_D8_CATCHMENT_DELINEATION",
+      "geometry_status": "FROZEN_BY_REPRODUCIBLE_D8_HASH",
       "source_anchor_id": "ANA-RD-1634-2015-AAA-CF",
       "source_role": "STATIC_CHANNEL_GEOMETRY_ONLY",
       "candidate_path": "site/data/validation/chosica_2015_cashahuacra_outlet_candidate.json",
@@ -52,7 +52,19 @@
       "identity_tolerance_m": 84.852814,
       "trace_progresses_toward_downstream_anchor": true,
       "independent_static_geometry_contradiction_found": false,
-      "freeze_basis": "The preregistered resolver enumerates coordinate-to-grid source-cell ambiguity, traces D8 from every admissible upstream source cell and fails closed on non-convergence. The ANA 2+180 anchor maps to one admissible 30 m cell, its D8 trace approaches the ANA 0+000 anchor, and the selected named-channel cell is 14.091 m from 0+000, below the preregistered 84.852814 m identity tolerance. No forbidden outcome, A6680 numeric morphometry, rainfall or post-anchor predictor signal was read for selection."
+      "freeze_basis": "The preregistered resolver enumerates coordinate-to-grid source-cell ambiguity, traces D8 from every admissible upstream source cell and fails closed on non-convergence. The ANA 2+180 anchor maps to one admissible 30 m cell, its D8 trace approaches the ANA 0+000 anchor, and the selected named-channel cell is 14.091 m from 0+000, below the preregistered 84.852814 m identity tolerance. No forbidden outcome, A6680 numeric morphometry, rainfall or post-anchor predictor signal was read for selection.",
+      "geometry_freeze": {
+        "delineator_git_blob_sha": "8b72787b93aafe6c42ed03b3b8af19b01c075658",
+        "diagnostic_path": "site/data/validation/chosica_2015_cashahuacra_catchment_report.json",
+        "diagnostic_git_blob_sha": "a8035df3e45a137b844e7a075e3eb8dc38d8adb9",
+        "workflow_run_id": 33975675626,
+        "workflow_artifact_digest": "sha256:f3e368efa198cf1ecba9f59462b53e42deb2fa1f3b4abada83218fb07d43056b",
+        "geometry_geojson_sha256": "69ed1203127c556ea92cdf2f5060f1946a51bb57f09a61ffc8ba27d382236d5b",
+        "dem_utm_sha256": "5ffe129612da763217c72a753771b75fa1ca6b83567a41a7c4e657364ac00d9c",
+        "catchment_touches_dem_boundary": false,
+        "morphometry_computed": false,
+        "regeneration_rule": "Regenerate with the frozen outlet, exact DEM reconstruction and delineator; accept only exact geometry_geojson_sha256 match before any downstream use."
+      }
     },
     "quirio": {"outlet_status": "PENDING_SOURCE_AND_D8_IDENTITY"},
     "pedregal_san_antonio": {"outlet_status": "PENDING_SOURCE_AND_D8_IDENTITY"},
@@ -62,7 +74,9 @@
   },
   "batch_gate": {
     "frozen_outlet_count": 1,
+    "frozen_geometry_count": 1,
     "required_frozen_outlet_count": 6,
+    "required_frozen_geometry_count": 6,
     "batch_morphometry_allowed": false,
     "basin_weighted_imerg_allowed": false,
     "unblind_allowed": false
