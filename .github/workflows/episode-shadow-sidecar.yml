@@ -61,12 +61,14 @@ jobs:
           latest=json.loads((root/'latest.json').read_text(encoding='utf-8'))
           assert experimental.get('production_use') is False
           assert experimental.get('production_ready') is False
-          assert latest.get('operational_status') in {'updated','stale'}
+          assert latest.get('source') == 'NASA GPM IMERG Late Daily'
+          assert latest.get('product') == 'GPM_3IMERGDL'
+          assert latest.get('product_version') not in {None, '', '—', 'DEMO'}
           experimental_at=datetime.fromisoformat(
               experimental['generated_at'].replace('Z','+00:00')
           ).astimezone(timezone.utc)
-          attempt_at=datetime.fromisoformat(
-              latest['last_update_attempt'].replace('Z','+00:00')
+          latest_at=datetime.fromisoformat(
+              latest['generated_at'].replace('Z','+00:00')
           ).astimezone(timezone.utc)
           upstream=os.environ.get('UPSTREAM_STARTED_AT','')
           if upstream:
@@ -77,11 +79,11 @@ jobs:
                   f'experimental_state aún es anterior al workflow upstream: '
                   f'{experimental_at.isoformat()} < {upstream_at.isoformat()}'
               )
-              assert attempt_at >= upstream_at, (
+              assert latest_at >= upstream_at, (
                   f'latest.json aún es anterior al workflow upstream: '
-                  f'{attempt_at.isoformat()} < {upstream_at.isoformat()}'
+                  f'{latest_at.isoformat()} < {upstream_at.isoformat()}'
               )
-          print('EPISODE_SOURCE_FRESH', experimental_at.isoformat(), attempt_at.isoformat())
+          print('EPISODE_SOURCE_FRESH', experimental_at.isoformat(), latest_at.isoformat())
           PY
             then
               fresh=true
