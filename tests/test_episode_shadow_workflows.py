@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 import unittest
 
@@ -9,6 +10,7 @@ UPDATE = WORKFLOWS / "update-and-deploy.yml"
 PUBLISH = WORKFLOWS / "publish-committed-data.yml"
 RUNNER = ROOT / "scripts" / "run_episode_shadow_sidecar.py"
 FETCH_IMERG = ROOT / "scripts" / "fetch_imerg.py"
+CONTRACT = ROOT / "config" / "episode_continuity_contract_v01.json"
 
 
 class EpisodeShadowWorkflowContractTests(unittest.TestCase):
@@ -20,6 +22,7 @@ class EpisodeShadowWorkflowContractTests(unittest.TestCase):
         cls.publish = PUBLISH.read_text(encoding="utf-8")
         cls.runner = RUNNER.read_text(encoding="utf-8")
         cls.fetch_imerg = FETCH_IMERG.read_text(encoding="utf-8")
+        cls.contract = json.loads(CONTRACT.read_text(encoding="utf-8"))
 
     def test_sidecar_has_one_canonical_upstream_and_serialized_writer(self):
         self.assertIn('"IRFEN — Actualizar IMERG y publicar"', self.sidecar)
@@ -82,6 +85,34 @@ class EpisodeShadowWorkflowContractTests(unittest.TestCase):
             "receipt['dataset_freshness_status'] in {'FRESH','STALE'}",
             self.sidecar,
         )
+
+    def test_runtime_contract_preregisters_shadow_coupling_without_time_claims(self):
+        runtime = self.contract["runtime_coupling"]
+        dataset = self.contract["sources"]["dataset_status"]
+        self.assertEqual(
+            runtime["canonical_upstream_workflow"],
+            "IRFEN — Actualizar IMERG y publicar",
+        )
+        self.assertEqual(
+            runtime["canonical_sidecar_workflow"],
+            "IRFEN - Actualizar continuidad de episodios en sombra",
+        )
+        self.assertEqual(
+            runtime["published_smoke_workflow"],
+            "IRFEN - Verificar continuidad de episodios publicada",
+        )
+        self.assertEqual(
+            runtime["cycle_unit"],
+            "ONE_DISTINCT_PUBLISHED_SOURCE_ENVELOPE",
+        )
+        self.assertFalse(runtime["cycle_to_elapsed_time_calibrated"])
+        self.assertFalse(runtime["subdaily_cadence_validated"])
+        self.assertFalse(runtime["scientific_gate_receives_controller_output"])
+        self.assertEqual(
+            dataset["stale_policy"],
+            "BLOCK_AND_RETAIN_PREVIOUS_STATE_NOT_CLEAR_SIGNAL",
+        )
+        self.assertTrue(dataset["demo_input_forbidden"])
 
     def test_sidecar_persists_only_three_shadow_runtime_files(self):
         expected = (
