@@ -18,10 +18,45 @@
       "path": "site/data/experimental_state.json",
       "required_production_use": false
     },
+    "dataset_status": {
+      "path": "site/data/latest.json",
+      "required_source": "NASA GPM IMERG Late Daily",
+      "required_product": "GPM_3IMERGDL",
+      "allowed_operational_status": [
+        "updated",
+        "stale"
+      ],
+      "stale_policy": "BLOCK_AND_RETAIN_PREVIOUS_STATE_NOT_CLEAR_SIGNAL",
+      "demo_input_forbidden": true
+    },
     "previous_controller_state": {
       "path": "site/data/episodes/continuity/shadow/latest.json",
       "optional_on_first_cycle": true
+    },
+    "durable_history": {
+      "path": "site/data/episodes/continuity/shadow/history.json",
+      "mode": "APPEND_ONLY",
+      "main_is_source_of_truth": true,
+      "pages_is_replica_only": true
     }
+  },
+  "runtime_coupling": {
+    "canonical_upstream_workflow": "IRFEN — Actualizar IMERG y publicar",
+    "canonical_sidecar_workflow": "IRFEN - Actualizar continuidad de episodios en sombra",
+    "published_smoke_workflow": "IRFEN - Verificar continuidad de episodios publicada",
+    "source_envelope_components": [
+      "site/data/experimental_state.json",
+      "site/data/latest.json"
+    ],
+    "cycle_unit": "ONE_DISTINCT_PUBLISHED_SOURCE_ENVELOPE",
+    "exact_duplicate_policy": "NOOP_NO_COUNTER_INCREMENT_NO_COMMIT_NO_PUBLICATION",
+    "source_rewind_policy": "FAIL_CLOSED_NO_STATE_MUTATION",
+    "routine_schedule_reference": ".github/workflows/update-and-deploy.yml",
+    "workflow_triggered_not_fixed_elapsed_time": true,
+    "cycle_to_elapsed_time_calibrated": false,
+    "subdaily_cadence_validated": false,
+    "first_durable_checkpoint_requires_merge_and_successful_upstream_run": true,
+    "scientific_gate_receives_controller_output": false
   },
   "pilot_zone_ids": [
     "san_ildefonso",
@@ -174,6 +209,7 @@
     "coordination_cluster_is_not_shared_hydrologic_event": true,
     "recovery_is_hysteresis_not_clearance": true,
     "missing_data_is_not_no_event": true,
+    "stale_dataset_is_blocked_not_clear": true,
     "no_messages_are_sent": true,
     "no_scientific_candidate_forwarding": true,
     "fail_closed": true
