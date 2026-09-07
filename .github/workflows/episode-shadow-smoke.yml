@@ -19,7 +19,7 @@ jobs:
   smoke:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - name: Descargar main durable
         uses: actions/checkout@v6
@@ -56,7 +56,7 @@ jobs:
           mkdir -p /tmp/irfen-episode-live/shadow
           mkdir -p /tmp/irfen-episode-live/continuity/shadow
           parity=false
-          for attempt in 1 2 3 4 5 6; do
+          for attempt in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18; do
             nonce="${GITHUB_RUN_ID}-${attempt}-$(date +%s%N)"
             if curl -fsSL --retry 3 --retry-all-errors --max-time 35 \
                 "$base/shadow/latest.json?smoke=$nonce" \
@@ -77,11 +77,11 @@ jobs:
               parity=true
               break
             fi
-            if [[ "$attempt" -eq 6 ]]; then
+            if [[ "$attempt" -eq 18 ]]; then
               echo "Pages no publicó el checkpoint exacto de main." >&2
               exit 1
             fi
-            sleep $((attempt * 8))
+            sleep 10
           done
           test "$parity" = true
 
