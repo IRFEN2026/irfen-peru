@@ -117,6 +117,23 @@ jobs:
           assert potential['public_social_publishing'] is False
           assert potential['summary']['alerts_created']==0
           assert potential['summary']['publications_created']==0
+          source=potential['source']
+          assert source['source_type']=='EXPERIMENTAL_STATE_WITH_DATASET_STATUS_ENVELOPE'
+          assert len(source['experimental_state_sha256'])==64
+          assert len(source['dataset_status_sha256'])==64
+          assert source['dataset_operational_status'] in {'updated','stale'}
+          assert source['dataset_freshness_status'] in {'FRESH','STALE'}
+          expected_freshness={
+              'updated':'FRESH',
+              'stale':'STALE',
+          }[source['dataset_operational_status']]
+          assert source['dataset_freshness_status']==expected_freshness
+          datetime.fromisoformat(
+              source['dataset_generated_at'].replace('Z','+00:00')
+          ).astimezone(timezone.utc)
+          datetime.fromisoformat(
+              source['dataset_last_update_attempt'].replace('Z','+00:00')
+          ).astimezone(timezone.utc)
 
           for label,value in (('continuity',continuity),('history',history)):
               assert value['mode']=='SHADOW_ONLY', label
@@ -163,6 +180,13 @@ jobs:
               if previous_at is not None:
                   assert current_at > previous_at
               previous_at=current_at
+              assert len(row['experimental_state_sha256'])==64
+              assert len(row['dataset_status_sha256'])==64
+              assert row['dataset_operational_status'] in {'updated','stale'}
+              assert row['dataset_freshness_status']=={
+                  'updated':'FRESH',
+                  'stale':'STALE',
+              }[row['dataset_operational_status']]
               assert row['production_use'] is False
               assert row['production_ready'] is False
               assert row['operational_alerting_enabled'] is False
@@ -185,6 +209,19 @@ jobs:
           assert potential_key==continuity_key==history_key
           assert last['potential_output_sha256']==canonical(potential)
           assert last['continuity_output_sha256']==canonical(continuity)
+          assert last['experimental_state_sha256']==source['experimental_state_sha256']
+          assert last['dataset_status_sha256']==source['dataset_status_sha256']
+          assert last['dataset_operational_status']==source['dataset_operational_status']
+          assert last['dataset_freshness_status']==source['dataset_freshness_status']
+
+          if source['dataset_freshness_status']=='STALE':
+              for row in continuity['zones']:
+                  assert row['transition']=='BLOCKED_RETAIN_PREVIOUS'
+                  assert row['clear_streak']==0
+              for zone_input in last['zone_inputs'].values():
+                  assert 'explicit_stale_input' in zone_input[
+                      'upstream_input_gate_blockers'
+                  ]
 
           forbidden={
               'alert',
@@ -211,6 +248,7 @@ jobs:
           print(
               'EPISODE SHADOW SMOKE OK',
               history['record_count'],
+              source['dataset_freshness_status'],
               continuity['global_saturation']['level'],
           )
           PY
