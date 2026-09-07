@@ -8,6 +8,7 @@ SMOKE = WORKFLOWS / "episode-shadow-smoke.yml"
 UPDATE = WORKFLOWS / "update-and-deploy.yml"
 PUBLISH = WORKFLOWS / "publish-committed-data.yml"
 RUNNER = ROOT / "scripts" / "run_episode_shadow_sidecar.py"
+FETCH_IMERG = ROOT / "scripts" / "fetch_imerg.py"
 
 
 class EpisodeShadowWorkflowContractTests(unittest.TestCase):
@@ -18,6 +19,7 @@ class EpisodeShadowWorkflowContractTests(unittest.TestCase):
         cls.update = UPDATE.read_text(encoding="utf-8")
         cls.publish = PUBLISH.read_text(encoding="utf-8")
         cls.runner = RUNNER.read_text(encoding="utf-8")
+        cls.fetch_imerg = FETCH_IMERG.read_text(encoding="utf-8")
 
     def test_sidecar_has_one_canonical_upstream_and_serialized_writer(self):
         self.assertIn('"IRFEN — Actualizar IMERG y publicar"', self.sidecar)
@@ -37,6 +39,19 @@ class EpisodeShadowWorkflowContractTests(unittest.TestCase):
         self.assertNotIn("id-token: write", self.sidecar)
         self.assertNotIn("actions/deploy-pages", self.sidecar)
         self.assertNotIn("actions/upload-pages-artifact", self.sidecar)
+
+    def test_sidecar_freshness_gate_matches_real_imerg_latest_schema(self):
+        self.assertIn("'generated_at':datetime.now(timezone.utc).isoformat()", self.fetch_imerg)
+        self.assertIn("'source':'NASA GPM IMERG Late Daily'", self.fetch_imerg)
+        self.assertIn("'product':'GPM_3IMERGDL'", self.fetch_imerg)
+        self.assertIn(
+            "latest.get('source') == 'NASA GPM IMERG Late Daily'",
+            self.sidecar
+        )
+        self.assertIn("latest.get('product') == 'GPM_3IMERGDL'", self.sidecar)
+        self.assertIn("latest['generated_at']", self.sidecar)
+        self.assertNotIn("latest['last_update_attempt']", self.sidecar)
+        self.assertNotIn("latest.get('operational_status')", self.sidecar)
 
     def test_sidecar_persists_only_three_shadow_runtime_files(self):
         expected = (
