@@ -27,7 +27,7 @@ class EpisodeShadowWorkflowContractTests(unittest.TestCase):
         self.assertIn("cancel-in-progress: false", self.sidecar)
         self.assertEqual(
             self.sidecar.count("python scripts/run_episode_shadow_sidecar.py"),
-            1
+            1,
         )
         self.assertNotIn("run_episode_shadow_sidecar.py", self.update)
         self.assertNotIn("run_episode_shadow_sidecar.py", self.publish)
@@ -40,29 +40,66 @@ class EpisodeShadowWorkflowContractTests(unittest.TestCase):
         self.assertNotIn("actions/deploy-pages", self.sidecar)
         self.assertNotIn("actions/upload-pages-artifact", self.sidecar)
 
-    def test_sidecar_freshness_gate_matches_real_imerg_latest_schema(self):
-        self.assertIn("'generated_at':datetime.now(timezone.utc).isoformat()", self.fetch_imerg)
-        self.assertIn("'source':'NASA GPM IMERG Late Daily'", self.fetch_imerg)
+    def test_sidecar_freshness_gate_matches_real_imerg_publication_schema(self):
+        self.assertIn(
+            "'generated_at':datetime.now(timezone.utc).isoformat()",
+            self.fetch_imerg,
+        )
+        self.assertIn(
+            "'source':'NASA GPM IMERG Late Daily'",
+            self.fetch_imerg,
+        )
         self.assertIn("'product':'GPM_3IMERGDL'", self.fetch_imerg)
+        self.assertIn("data['operational_status']='updated'", self.update)
+        self.assertIn("data['operational_status']='stale'", self.update)
+        self.assertIn("data['last_update_attempt']", self.update)
         self.assertIn(
             "latest.get('source') == 'NASA GPM IMERG Late Daily'",
-            self.sidecar
+            self.sidecar,
         )
         self.assertIn("latest.get('product') == 'GPM_3IMERGDL'", self.sidecar)
         self.assertIn("latest['generated_at']", self.sidecar)
-        self.assertNotIn("latest['last_update_attempt']", self.sidecar)
-        self.assertNotIn("latest.get('operational_status')", self.sidecar)
+        self.assertIn("latest['last_update_attempt']", self.sidecar)
+        self.assertIn("status in {'updated','stale'}", self.sidecar)
+        self.assertIn("if status == 'updated':", self.sidecar)
+        self.assertIn(
+            "--dataset-status site/data/latest.json",
+            self.sidecar,
+        )
+
+    def test_stale_dataset_is_an_explicit_blocked_source_not_a_clear_cycle(self):
+        self.assertIn(
+            'DATASET_STATUSES = {"updated": "FRESH", "stale": "STALE"}',
+            self.runner,
+        )
+        self.assertIn("sidecar_dataset_freshness_status", self.runner)
+        self.assertIn("dataset_freshness_status", self.runner)
+        self.assertIn(
+            "receipt['dataset_operational_status'] in {'updated','stale'}",
+            self.sidecar,
+        )
+        self.assertIn(
+            "receipt['dataset_freshness_status'] in {'FRESH','STALE'}",
+            self.sidecar,
+        )
 
     def test_sidecar_persists_only_three_shadow_runtime_files(self):
         expected = (
             "site/data/episodes/shadow/latest.json",
             "site/data/episodes/continuity/shadow/latest.json",
-            "site/data/episodes/continuity/shadow/history.json"
+            "site/data/episodes/continuity/shadow/history.json",
         )
         for path in expected:
             self.assertIn(f'"{path}"', self.sidecar)
         self.assertIn('git add -- "${paths[@]}"', self.sidecar)
-        self.assertNotIn("site/data/experimental_state.json\" \"$retry_dir", self.sidecar)
+        self.assertNotIn(
+            'site/data/experimental_state.json" "$retry_dir',
+            self.sidecar,
+        )
+        self.assertNotIn(
+            'site/data/latest.json" "$retry_dir',
+            self.sidecar,
+        )
         self.assertNotIn("git push --force", self.sidecar)
         self.assertNotIn("git push -f", self.sidecar)
 
@@ -72,14 +109,14 @@ class EpisodeShadowWorkflowContractTests(unittest.TestCase):
             "PUBLISHED_REPLICA_ONLY",
             "APPEND_ONLY",
             "automatic_deletion",
-            "automatic_tombstones"
+            "automatic_tombstones",
         ):
             self.assertIn(marker, self.runner)
         self.assertIn("git fetch --no-tags origin main", self.sidecar)
         self.assertIn("git worktree add --detach", self.sidecar)
         self.assertIn(
             "el estado durable de episodios cambió concurrentemente",
-            self.sidecar
+            self.sidecar,
         )
 
     def test_duplicate_and_out_of_order_sources_cannot_advance_state(self):
@@ -89,16 +126,22 @@ class EpisodeShadowWorkflowContractTests(unittest.TestCase):
         self.assertIn("NOOP_DUPLICATE_SOURCE", self.sidecar)
         self.assertIn(
             "no se crea commit ni se ordena publicación",
-            self.sidecar
+            self.sidecar,
         )
 
     def test_sidecar_never_forwards_to_scientific_gate_or_messages(self):
-        self.assertNotIn("evaluate_scientific_episode_gate.py", self.sidecar)
+        self.assertNotIn(
+            "evaluate_scientific_episode_gate.py",
+            self.sidecar,
+        )
         self.assertNotIn("scientific/shadow", self.sidecar)
-        self.assertIn("scientific_candidate_forwarding_enabled", self.sidecar)
+        self.assertIn(
+            "scientific_candidate_forwarding_enabled",
+            self.sidecar,
+        )
         self.assertIn(
             "receipt['scientific_candidate_forwarding_enabled'] is False",
-            self.sidecar
+            self.sidecar,
         )
         self.assertIn("receipt['alerts_created']==0", self.sidecar)
         self.assertIn("receipt['publications_created']==0", self.sidecar)
@@ -107,34 +150,43 @@ class EpisodeShadowWorkflowContractTests(unittest.TestCase):
     def test_sidecar_dispatches_commit_pinned_existing_publisher_only_after_append(self):
         self.assertIn(
             "if: steps.sidecar.outputs.action == 'APPENDED'",
-            self.sidecar
+            self.sidecar,
         )
-        self.assertIn("gh workflow run publish-committed-data.yml", self.sidecar)
+        self.assertIn(
+            "gh workflow run publish-committed-data.yml",
+            self.sidecar,
+        )
         self.assertIn('-f expected_sha="$PERSISTED_SHA"', self.sidecar)
         self.assertIn('test -n "$PERSISTED_SHA"', self.sidecar)
 
     def test_published_smoke_requires_exact_main_parity_and_hash_chain(self):
         self.assertIn(
             '"IRFEN - Publicar datos experimentales archivados"',
-            self.smoke
+            self.smoke,
         )
-        self.assertEqual(self.smoke.count("cmp site/data/episodes/"), 3)
+        self.assertEqual(
+            self.smoke.count("cmp site/data/episodes/"),
+            3,
+        )
         self.assertIn(
             "last['potential_output_sha256']==canonical(potential)",
-            self.smoke
+            self.smoke,
         )
         self.assertIn(
             "last['continuity_output_sha256']==canonical(continuity)",
-            self.smoke
+            self.smoke,
         )
-        self.assertIn("potential_key==continuity_key==history_key", self.smoke)
+        self.assertIn(
+            "potential_key==continuity_key==history_key",
+            self.smoke,
+        )
         self.assertIn(
             "policy['main_role']=='DURABLE_SOURCE_OF_TRUTH'",
-            self.smoke
+            self.smoke,
         )
         self.assertIn(
             "policy['pages_role']=='PUBLISHED_REPLICA_ONLY'",
-            self.smoke
+            self.smoke,
         )
 
     def test_smoke_preserves_all_non_operational_guards(self):
@@ -143,7 +195,7 @@ class EpisodeShadowWorkflowContractTests(unittest.TestCase):
             "production_ready",
             "operational_alerting_enabled",
             "public_social_publishing",
-            "scientific_candidate_forwarding_enabled"
+            "scientific_candidate_forwarding_enabled",
         ):
             self.assertIn(f"value['{key}'] is False", self.smoke)
         self.assertIn("preview['messages_created']==0", self.smoke)
