@@ -1,0 +1,296 @@
+name: IRFEN - Actualizar continuidad de episodios en sombra
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - "IRFEN — Actualizar IMERG y publicar"
+    types:
+      - completed
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: "episode-shadow-sidecar"
+  cancel-in-progress: false
+
+jobs:
+  update:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Descargar main durable
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Configurar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Recuperar estado experimental recién publicado
+        shell: bash
+        env:
+          UPSTREAM_STARTED_AT: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.run_started_at || '' }}
+        run: |
+          set -euo pipefail
+          base="https://irfen2026.github.io/irfen-peru/data"
+          mkdir -p /tmp/irfen-episode-source site/data
+          fresh=false
+          for attempt in 1 2 3 4 5 6 7 8; do
+            nonce="${GITHUB_RUN_ID}-${attempt}-$(date +%s%N)"
+            if curl -fsSL --retry 3 --retry-all-errors --max-time 35 \
+                "$base/experimental_state.json?episode=$nonce" \
+                -o /tmp/irfen-episode-source/experimental_state.json \
+              && curl -fsSL --retry 3 --retry-all-errors --max-time 35 \
+                "$base/latest.json?episode=$nonce" \
+                -o /tmp/irfen-episode-source/latest.json \
+              && python - <<'PY'
+          from datetime import datetime, timezone
+          import json
+          import os
+          from pathlib import Path
+
+          root=Path('/tmp/irfen-episode-source')
+          experimental=json.loads((root/'experimental_state.json').read_text(encoding='utf-8'))
+          latest=json.loads((root/'latest.json').read_text(encoding='utf-8'))
+          assert experimental.get('production_use') is False
+          assert experimental.get('production_ready') is False
+          assert latest.get('operational_status') in {'updated','stale'}
+          experimental_at=datetime.fromisoformat(
+              experimental['generated_at'].replace('Z','+00:00')
+          ).astimezone(timezone.utc)
+          attempt_at=datetime.fromisoformat(
+              latest['last_update_attempt'].replace('Z','+00:00')
+          ).astimezone(timezone.utc)
+          upstream=os.environ.get('UPSTREAM_STARTED_AT','')
+          if upstream:
+              upstream_at=datetime.fromisoformat(
+                  upstream.replace('Z','+00:00')
+              ).astimezone(timezone.utc)
+              assert experimental_at >= upstream_at, (
+                  f'experimental_state aún es anterior al workflow upstream: '
+                  f'{experimental_at.isoformat()} < {upstream_at.isoformat()}'
+              )
+              assert attempt_at >= upstream_at, (
+                  f'latest.json aún es anterior al workflow upstream: '
+                  f'{attempt_at.isoformat()} < {upstream_at.isoformat()}'
+              )
+          print('EPISODE_SOURCE_FRESH', experimental_at.isoformat(), attempt_at.isoformat())
+          PY
+            then
+              fresh=true
+              break
+            fi
+            if [[ "$attempt" -eq 8 ]]; then
+              echo "No se obtuvo una instantánea experimental posterior al update-and-deploy." >&2
+              exit 1
+            fi
+            sleep $((attempt * 5))
+          done
+          test "$fresh" = true
+          cp /tmp/irfen-episode-source/experimental_state.json \
+            site/data/experimental_state.json
+
+      - name: Ejecutar sidecar canónico de episodios
+        id: sidecar
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/run_episode_shadow_sidecar.py \
+            --experimental site/data/experimental_state.json \
+            --receipt /tmp/episode-shadow-receipt.json
+          python -m json.tool /tmp/episode-shadow-receipt.json >/dev/null
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          receipt=json.load(open('/tmp/episode-shadow-receipt.json',encoding='utf-8'))
+          assert receipt['mode']=='SHADOW_ONLY'
+          assert receipt['test_mode']=='TEST_ONLY'
+          assert receipt['production_use'] is False
+          assert receipt['production_ready'] is False
+          assert receipt['operational_alerting_enabled'] is False
+          assert receipt['public_social_publishing'] is False
+          assert receipt['scientific_candidate_forwarding_enabled'] is False
+          assert receipt['alerts_created']==0
+          assert receipt['publications_created']==0
+          assert receipt['messages_created']==0
+          assert receipt['action'] in {'APPENDED','NOOP_DUPLICATE_SOURCE'}
+          print(f"action={receipt['action']}")
+          print(f"source_key={receipt['potential_source_sha256']}|{receipt['source_generated_at']}")
+          PY
+
+      - name: Validar paquete durable candidato
+        if: steps.sidecar.outputs.action == 'APPENDED'
+        shell: bash
+        run: |
+          set -euo pipefail
+          paths=(
+            "site/data/episodes/shadow/latest.json"
+            "site/data/episodes/continuity/shadow/latest.json"
+            "site/data/episodes/continuity/shadow/history.json"
+          )
+          for path in "${paths[@]}"; do
+            test -s "$path"
+            python -m json.tool "$path" >/dev/null
+          done
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          root=Path('site/data/episodes')
+          potential=json.loads((root/'shadow/latest.json').read_text(encoding='utf-8'))
+          continuity=json.loads((root/'continuity/shadow/latest.json').read_text(encoding='utf-8'))
+          history=json.loads((root/'continuity/shadow/history.json').read_text(encoding='utf-8'))
+          def canonical(value):
+              payload=json.dumps(value,ensure_ascii=False,sort_keys=True,separators=(',',':'))
+              return hashlib.sha256(payload.encode('utf-8')).hexdigest()
+          for value in (continuity, history):
+              assert value['mode']=='SHADOW_ONLY'
+              assert value['test_mode']=='TEST_ONLY'
+              assert value['production_use'] is False
+              assert value['production_ready'] is False
+              assert value['operational_alerting_enabled'] is False
+              assert value['public_social_publishing'] is False
+              assert value['scientific_candidate_forwarding_enabled'] is False
+          assert potential['mode']=='SHADOW_ONLY'
+          assert potential['production_use'] is False
+          assert potential['production_ready'] is False
+          assert potential['operational_alert'] is False
+          assert potential['public_social_publishing'] is False
+          assert history['retention_policy']['mode']=='APPEND_ONLY'
+          assert history['retention_policy']['main_role']=='DURABLE_SOURCE_OF_TRUTH'
+          assert history['retention_policy']['pages_role']=='PUBLISHED_REPLICA_ONLY'
+          assert history['record_count']==len(history['records'])
+          assert history['records']
+          last=history['records'][-1]
+          assert last['potential_output_sha256']==canonical(potential)
+          assert last['continuity_output_sha256']==canonical(continuity)
+          assert (
+              last['potential_source_sha256'],
+              last['source_generated_at'],
+          ) == (
+              continuity['source']['potential_source_sha256'],
+              continuity['source']['source_generated_at'],
+          )
+          assert continuity['summary']['alerts_created']==0
+          assert continuity['summary']['publications_created']==0
+          assert continuity['notification_preview']['messages_created']==0
+          PY
+
+      - name: Persistir sólo el estado sidecar en main
+        if: steps.sidecar.outputs.action == 'APPENDED'
+        id: persist
+        shell: bash
+        env:
+          CANDIDATE_SOURCE_KEY: ${{ steps.sidecar.outputs.source_key }}
+        run: |
+          set -euo pipefail
+          paths=(
+            "site/data/episodes/shadow/latest.json"
+            "site/data/episodes/continuity/shadow/latest.json"
+            "site/data/episodes/continuity/shadow/history.json"
+          )
+          candidate_dir="$(mktemp -d)"
+          retry_dir=""
+          cleanup() {
+            if [[ -n "$retry_dir" ]]; then
+              git worktree remove --force "$retry_dir" >/dev/null 2>&1 || true
+            fi
+            rm -rf "$candidate_dir"
+          }
+          trap cleanup EXIT
+          for path in "${paths[@]}"; do
+            mkdir -p "$candidate_dir/$(dirname "$path")"
+            cp -- "$path" "$candidate_dir/$path"
+          done
+          validated_main="$(git rev-parse HEAD)"
+          commit_message="IRFEN: persistir continuidad SHADOW_ONLY run ${GITHUB_RUN_ID}"
+
+          for attempt in 1 2 3 4; do
+            git fetch --no-tags origin main
+            if ! git diff --quiet "$validated_main" origin/main -- "${paths[@]}"; then
+              remote_key="$(
+                git show origin/main:site/data/episodes/continuity/shadow/latest.json \
+                  2>/dev/null \
+                | python -c "import json,sys; d=json.load(sys.stdin); s=d.get('source') or {}; print(str(s.get('potential_source_sha256') or '')+'|'+str(s.get('source_generated_at') or ''))" \
+                  2>/dev/null || true
+              )"
+              if [[ "$remote_key" == "$CANDIDATE_SOURCE_KEY" ]]; then
+                persisted_sha="$(git rev-parse origin/main)"
+                echo "La misma fuente ya fue persistida por otra ejecución."
+                echo "persisted_sha=$persisted_sha" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+              echo "ERROR: el estado durable de episodios cambió concurrentemente; no se sobrescribe." >&2
+              exit 1
+            fi
+
+            retry_dir="$(mktemp -d)"
+            git worktree add --detach "$retry_dir" origin/main
+            for path in "${paths[@]}"; do
+              mkdir -p "$retry_dir/$(dirname "$path")"
+              cp -- "$candidate_dir/$path" "$retry_dir/$path"
+            done
+            if (
+              cd "$retry_dir"
+              git config user.name "github-actions[bot]"
+              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+              git add -- "${paths[@]}"
+              if git diff --cached --quiet; then
+                exit 0
+              fi
+              git commit -m "$commit_message"
+              git push origin HEAD:main
+            ); then
+              persisted_sha="$(git -C "$retry_dir" rev-parse HEAD)"
+              git worktree remove --force "$retry_dir"
+              retry_dir=""
+              echo "persisted_sha=$persisted_sha" >> "$GITHUB_OUTPUT"
+              echo "Estado de episodios persistido sin force-push."
+              exit 0
+            fi
+
+            git worktree remove --force "$retry_dir"
+            retry_dir=""
+            if [[ "$attempt" -eq 4 ]]; then
+              echo "ERROR: main avanzó durante cuatro reintentos acotados." >&2
+              exit 1
+            fi
+            echo "Carrera de fast-forward ${attempt}/4; reintento sin sobrescritura."
+            sleep $((attempt * 2))
+          done
+
+      - name: Ordenar publicación commit-pinned
+        if: steps.sidecar.outputs.action == 'APPENDED'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PERSISTED_SHA: ${{ steps.persist.outputs.persisted_sha }}
+        run: |
+          set -euo pipefail
+          test -n "$PERSISTED_SHA"
+          for attempt in 1 2 3 4; do
+            if gh workflow run publish-committed-data.yml \
+              --repo "$GITHUB_REPOSITORY" \
+              --ref main \
+              -f expected_sha="$PERSISTED_SHA"
+            then
+              echo "Publicación solicitada para $PERSISTED_SHA"
+              exit 0
+            fi
+            if [[ "$attempt" -eq 4 ]]; then
+              echo "No se pudo ordenar la publicación commit-pinned." >&2
+              exit 1
+            fi
+            sleep $((attempt * 5))
+          done
+
+      - name: Confirmar no-op idempotente
+        if: steps.sidecar.outputs.action == 'NOOP_DUPLICATE_SOURCE'
+        run: echo "Snapshot ya contabilizado; no se crea commit ni se ordena publicación."
