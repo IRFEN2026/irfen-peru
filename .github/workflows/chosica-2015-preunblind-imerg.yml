@@ -1,0 +1,104 @@
+name: IRFEN - Chosica 2015 pre-unblind IMERG
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_outlet_freeze_registry_v0_1.json
+      - config/chosica_2015_preunblind_predictor_time_plan_v0_1.json
+      - config/chosica_2015_preunblind_imerg_execution_v0_1.json
+      - scripts/extract_chosica_2015_preunblind_imerg.py
+      - .github/workflows/chosica-2015-preunblind-imerg.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  preunblind-imerg:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install scientific dependencies
+        run: pip install -r requirements.txt
+      - name: Download exact frozen geometry artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          mkdir -p frozen_geometry
+          python - <<'PY' > /tmp/frozen_geometry.tsv
+          import json
+          r=json.load(open('config/chosica_2015_outlet_freeze_registry_v0_1.json',encoding='utf-8'))
+          names={
+            'cashahuacra':'chosica-2015-cashahuacra-catchment-candidate',
+            'quirio':'chosica-2015-quirio-catchment-candidate',
+            'pedregal_san_antonio':'chosica-2015-pedregal-catchment-candidate',
+            'la_libertad':'chosica-2015-la-libertad-catchment-candidate',
+            'carossio':'chosica-2015-carossio-catchment-candidate',
+            'rayos_de_sol':'chosica-2015-corrales-catchment-candidate',
+          }
+          for key,name in names.items():
+              t=r['targets'][key]
+              assert t['outlet_status']=='FROZEN'
+              assert t['geometry_status']=='FROZEN_BY_REPRODUCIBLE_D8_HASH'
+              print(f"{key}\t{t['geometry_freeze']['workflow_run_id']}\t{name}")
+          assert r['batch_gate']['frozen_outlet_count']==6
+          assert r['batch_gate']['frozen_geometry_count']==6
+          assert r['batch_gate']['basin_weighted_imerg_allowed'] is True
+          assert r['batch_gate']['unblind_allowed'] is False
+          PY
+          while IFS=$'\t' read -r key run name; do
+            mkdir -p "frozen_geometry/$key"
+            gh run download "$run" --repo "$GH_REPO" --name "$name" --dir "frozen_geometry/$key"
+          done < /tmp/frozen_geometry.tsv
+      - name: Extract frozen pre-anchor IMERG predictors
+        run: |
+          mkdir -p artifacts
+          python scripts/extract_chosica_2015_preunblind_imerg.py \
+            --geometry-root frozen_geometry \
+            --report artifacts/chosica_2015_preunblind_imerg.json
+      - name: Enforce predictor anti-leakage and completeness guards
+        run: |
+          python - <<'PY'
+          import json, math
+          d=json.load(open('artifacts/chosica_2015_preunblind_imerg.json',encoding='utf-8'))
+          assert d['status']=='PASS_CHOSICA_2015_PREUNBLIND_IMERG_EXTRACTION'
+          assert d['phase']=='PREUNBLIND_PREDICTOR_RECONSTRUCTION'
+          assert d['target_count']==6
+          assert d['time_grid']['slot_count']==720
+          assert d['time_grid']['slot_minutes']==30
+          assert d['anchor_utc']=='2015-03-23T19:30:00Z'
+          assert d['outcome_evidence_read'] is False
+          assert d['a6680_numeric_reference_read'] is False
+          assert d['post_anchor_predictor_read'] is False
+          assert d['geometry_or_outlet_modified'] is False
+          assert d['window_shifted'] is False
+          assert d['zero_imputation_used'] is False
+          assert d['guards']=={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          expected={'cashahuacra','quirio','pedregal_san_antonio','la_libertad','carossio','rayos_de_sol'}
+          assert {t['target_id'] for t in d['targets']}==expected
+          assert d['unique_imerg_cell_count'] > 0
+          assert d['request_count'] > 0
+          for t in d['targets']:
+              assert t['slot_count']==720, t['target_id']
+              assert t['valid_slot_count']==720, t['target_id']
+              assert math.isclose(t['coverage_fraction'],1.0,abs_tol=1e-12), t['target_id']
+              assert t['intersecting_imerg_cell_count'] > 0
+              assert math.isclose(sum(c['weight'] for c in t['spatial_weights']),1.0,abs_tol=1e-9)
+              assert all(r['time_utc'] < d['anchor_utc'] for r in t['series'])
+              assert all(r['accum_mm'] is not None for r in t['series'])
+              assert all(r['all_weighted_cells_present'] is True for r in t['series'])
+              assert all(w['complete'] is True and w['accum_mm'] is not None for w in t['windows'].values())
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-preunblind-imerg
+          path: artifacts/chosica_2015_preunblind_imerg.json
+          if-no-files-found: error

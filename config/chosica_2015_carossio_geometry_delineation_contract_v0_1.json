@@ -1,0 +1,25 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "target_id": "carossio",
+  "registry_target_key": "carossio",
+  "status": "FROZEN_PREEXECUTION_METHOD",
+  "guards": {"RESEARCH_ONLY": true, "TEST_ONLY": true, "production_use": false, "production_ready": false, "operational_alerting_enabled": false},
+  "registry_path": "config/chosica_2015_outlet_freeze_registry_v0_1.json",
+  "candidate_path": "site/data/validation/chosica_2015_carossio_outlet_candidate.json",
+  "base_extent_points_utm18s": [
+    {"id":"mml_r4_rimac","x_m":315681,"y_m":8680063},
+    {"id":"mml_r6_carossio","x_m":316220,"y_m":8681251},
+    {"id":"frozen_cashahuacra_outlet","x_m":318850.753,"y_m":8682270.582}
+  ],
+  "margin_sequence_degrees": [0.05,0.10,0.20,0.40],
+  "selection_rule": "Use the first frozen margin whose D8 upstream catchment from the frozen Carossio hydrologic pour point does not touch the DEM crop boundary.",
+  "outlet_mapping_rule": "Map the frozen accepted hydrologic pour-point coordinate to the containing 30 m grid cell at each margin and require cell-center distance <= one DEM-cell diagonal.",
+  "source_integrity_rule": "Any Copernicus tile shared with the outlet diagnostic must reproduce its persisted SHA256 exactly.",
+  "dem_processing": {"source":"Copernicus DEM GLO-30 Public","analysis_crs":"EPSG:32718","resolution_m":30,"reprojection_resampling":"bilinear","conditioning":["fill pits","fill depressions","resolve flats"],"flow_direction":"D8"},
+  "surface_connection_caution": "The frozen outlet is a terrain-derived hydrologic pour point, not evidence of an unobstructed 2013 surface confluence. The basin polygon may be used for terrain catchment geometry only; do not infer lower-channel openness from it.",
+  "forbidden_inputs": ["2015 activation/non-activation labels","2015 damage/severity","A6680 numeric morphometry","rainfall or remote-sensing response","target basin area/length/relief/slope"],
+  "morphometry_allowed": false,
+  "unblind_allowed": false,
+  "pass_status": "PASS_CAROSSIO_EXPANDED_D8_CATCHMENT_CANDIDATE"
+}

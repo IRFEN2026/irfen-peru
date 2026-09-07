@@ -1,0 +1,91 @@
+name: IRFEN - Chosica 2015 Cashahuacra catchment
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_outlet_resolution_contract_v0_1.json
+      - config/chosica_2015_outlet_freeze_registry_v0_1.json
+      - site/data/validation/chosica_2015_cashahuacra_outlet_candidate.json
+      - scripts/delineate_chosica_2015_cashahuacra_catchment.py
+      - .github/workflows/chosica-2015-cashahuacra-catchment.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  delineate-cashahuacra-catchment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Inspect batch gate
+        id: gate
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          d=json.load(open('config/chosica_2015_outlet_freeze_registry_v0_1.json',encoding='utf-8'))
+          print('morphometry_open=' + ('true' if d['batch_gate']['batch_morphometry_allowed'] else 'false'))
+          PY
+      - name: Install scientific dependencies
+        if: steps.gate.outputs.morphometry_open != 'true'
+        run: pip install -r requirements.txt
+      - name: Delineate frozen-outlet D8 catchment candidate
+        if: steps.gate.outputs.morphometry_open != 'true'
+        run: |
+          mkdir -p artifacts
+          python scripts/delineate_chosica_2015_cashahuacra_catchment.py \
+            --report artifacts/chosica_2015_cashahuacra_catchment_report.json \
+            --geojson artifacts/chosica_2015_cashahuacra_catchment.geojson
+      - name: Enforce geometry-only anti-leakage guards
+        if: steps.gate.outputs.morphometry_open != 'true'
+        run: |
+          python - <<'PY'
+          import json
+          p='artifacts/chosica_2015_cashahuacra_catchment_report.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['status'] == 'PASS_CASHAHUACRA_D8_CATCHMENT_CANDIDATE'
+          assert d['geometry_only'] is True
+          assert d['morphometry_computed'] is False
+          assert d['outcome_evidence_read'] is False
+          assert d['a6680_numeric_reference_read'] is False
+          assert d['post_anchor_predictor_read'] is False
+          assert d['catchment_touches_dem_boundary'] is False
+          assert d['freeze_eligible'] is True
+          assert d['guards']['RESEARCH_ONLY'] is True
+          assert d['guards']['TEST_ONLY'] is True
+          assert d['guards']['production_use'] is False
+          assert d['guards']['production_ready'] is False
+          assert d['guards']['operational_alerting_enabled'] is False
+          PY
+      - name: Verify immutable frozen geometry after batch gate opens
+        if: steps.gate.outputs.morphometry_open == 'true'
+        run: |
+          python - <<'PY'
+          import json
+          r=json.load(open('config/chosica_2015_outlet_freeze_registry_v0_1.json',encoding='utf-8'))
+          t=r['targets']['cashahuacra']
+          assert r['guards']=={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          assert r['anti_leakage']['outcome_evidence_read'] is False
+          assert r['anti_leakage']['a6680_numeric_reference_read'] is False
+          assert r['anti_leakage']['post_anchor_predictor_read'] is False
+          assert r['batch_gate']['unblind_allowed'] is False
+          assert t['outlet_status']=='FROZEN'
+          assert t['geometry_status']=='FROZEN_BY_REPRODUCIBLE_D8_HASH'
+          g=t['geometry_freeze']
+          assert g['geometry_geojson_sha256']=='69ed1203127c556ea92cdf2f5060f1946a51bb57f09a61ffc8ba27d382236d5b'
+          assert g['morphometry_computed'] is False
+          assert g['catchment_touches_dem_boundary'] is False
+          PY
+      - uses: actions/upload-artifact@v4
+        if: steps.gate.outputs.morphometry_open != 'true'
+        with:
+          name: chosica-2015-cashahuacra-catchment-candidate
+          path: |
+            artifacts/chosica_2015_cashahuacra_catchment_report.json
+            artifacts/chosica_2015_cashahuacra_catchment.geojson
+          if-no-files-found: error
