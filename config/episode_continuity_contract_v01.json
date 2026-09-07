@@ -1,0 +1,181 @@
+{
+  "version": "0.1",
+  "name": "IRFEN Episode Continuity and Regional Saturation Controller",
+  "mode": "SHADOW_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "public_social_publishing": false,
+  "scientific_candidate_forwarding_enabled": false,
+  "purpose": "Probar continuidad temporal, histéresis, deduplicación de episodios y saturación regional sin crear alertas, prioridades operativas ni umbrales científicos.",
+  "sources": {
+    "potential_episode": {
+      "path": "site/data/episodes/shadow/latest.json",
+      "required_mode": "SHADOW_ONLY"
+    },
+    "experimental_state": {
+      "path": "site/data/experimental_state.json",
+      "required_production_use": false
+    },
+    "previous_controller_state": {
+      "path": "site/data/episodes/continuity/shadow/latest.json",
+      "optional_on_first_cycle": true
+    }
+  },
+  "pilot_zone_ids": [
+    "san_ildefonso",
+    "chosica",
+    "catacaos"
+  ],
+  "lifecycle_states": [
+    "NORMAL",
+    "WATCH",
+    "ACTIVE",
+    "PERSISTENT",
+    "RECOVERY"
+  ],
+  "active_like_states": [
+    "ACTIVE",
+    "PERSISTENT",
+    "RECOVERY"
+  ],
+  "temporal_control": {
+    "persistent_after_consecutive_candidates": 3,
+    "recovery_after_consecutive_clear": 1,
+    "close_after_consecutive_clear": 3,
+    "same_event_reactivation_max_clear_cycles": 2,
+    "duplicate_source_policy": "IDEMPOTENT_NO_COUNTER_INCREMENT",
+    "out_of_order_policy": "BLOCK_AND_RETAIN_PREVIOUS_STATE",
+    "blocked_input_policy": "RETAIN_PREVIOUS_STATE_NOT_CLEAR_SIGNAL",
+    "parameters_are_test_mechanics_not_scientific_thresholds": true
+  },
+  "temporal_evidence": {
+    "window_paths": {
+      "rain1h": [
+        "observation.rain1h",
+        "observation.rain1h_mm",
+        "observation.temporal_windows_mm.rain1h",
+        "temporal_features.rain1h_mm"
+      ],
+      "rain3h": [
+        "observation.rain3h",
+        "observation.rain3h_mm",
+        "observation.temporal_windows_mm.rain3h",
+        "temporal_features.rain3h_mm"
+      ],
+      "rain6h": [
+        "observation.rain6h",
+        "observation.rain6h_mm",
+        "observation.temporal_windows_mm.rain6h",
+        "temporal_features.rain6h_mm"
+      ],
+      "rain24": [
+        "observation.rain24",
+        "observation.rain24_mm",
+        "temporal_features.rain24_mm"
+      ],
+      "rain72": [
+        "observation.rain72",
+        "observation.rain72_mm",
+        "temporal_features.rain72_mm"
+      ],
+      "rain7d": [
+        "observation.rain7d",
+        "observation.rain7d_mm",
+        "temporal_features.rain7d_mm"
+      ]
+    },
+    "context_paths": {
+      "wet_streak_days": [
+        "temporal_features.wet_streak_days",
+        "observation.wet_streak_days"
+      ],
+      "antecedent_moisture": [
+        "temporal_features.antecedent_moisture",
+        "observation.antecedent_moisture"
+      ],
+      "response_rate": [
+        "temporal_features.response_rate",
+        "river_state.response_rate",
+        "observation.response_rate"
+      ],
+      "data_confidence": [
+        "temporal_features.data_confidence",
+        "observation.data_confidence"
+      ]
+    },
+    "missing_policy": "MISSING_NOT_ZERO_NOT_INFERRED",
+    "no_interpolation": true,
+    "no_threshold_creation": true,
+    "completeness_is_not_risk_or_confidence": true
+  },
+  "coordination_groups": [
+    {
+      "group_id": "north_coast_test_coordination",
+      "zone_ids": [
+        "san_ildefonso",
+        "catacaos"
+      ],
+      "relationship": "REGIONAL_COORDINATION_ONLY",
+      "shared_hydrologic_event": false,
+      "minimum_active_zones_for_saturation": 2,
+      "minimum_active_fraction_for_saturation": 1.0
+    },
+    {
+      "group_id": "lima_east_test_coordination",
+      "zone_ids": [
+        "chosica"
+      ],
+      "relationship": "REGIONAL_COORDINATION_ONLY",
+      "shared_hydrologic_event": false,
+      "minimum_active_zones_for_saturation": 2,
+      "minimum_active_fraction_for_saturation": 1.0
+    }
+  ],
+  "global_saturation_control": {
+    "minimum_active_zones_for_saturation": 2,
+    "minimum_active_fraction_for_saturation": 0.66,
+    "count_recovery_as_active_like_to_avoid_flicker": true,
+    "levels": [
+      "NORMAL_LOAD",
+      "LOCALIZED_ACTIVITY",
+      "ELEVATED_CONCURRENCY",
+      "REGIONAL_SATURATION_TEST"
+    ],
+    "regional_digest_preview_only": true,
+    "no_operational_priority_ranking": true
+  },
+  "validation_modes": {
+    "ordinary": "single-zone opening, persistence, recovery and closure",
+    "extreme": "simultaneous multi-zone opening, persistent activity and regional saturation",
+    "required_metrics": [
+      "events_opened",
+      "events_closed",
+      "same_event_reactivations",
+      "persistent_transitions",
+      "upstream_candidate_id_churn_absorbed",
+      "maximum_concurrent_open_zones",
+      "regional_saturation_cycles"
+    ]
+  },
+  "forbidden_output_fields": [
+    "alert",
+    "alert_level",
+    "risk_level",
+    "final_alert",
+    "operational_priority",
+    "publish",
+    "published",
+    "meta_post_id"
+  ],
+  "rules": {
+    "continuity_episode_is_not_scientific_event": true,
+    "coordination_cluster_is_not_shared_hydrologic_event": true,
+    "recovery_is_hysteresis_not_clearance": true,
+    "missing_data_is_not_no_event": true,
+    "no_messages_are_sent": true,
+    "no_scientific_candidate_forwarding": true,
+    "fail_closed": true
+  }
+}
