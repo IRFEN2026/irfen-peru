@@ -122,7 +122,7 @@ Si falta uno de los tres archivos, no coinciden los hashes o se rompe la secuenc
 
 ### Escritura concurrente
 
-Antes de persistir se compara el estado sidecar validado con el `main` remoto más reciente. Una escritura ajena en otros archivos puede reintentarse; una modificación concurrente de los tres archivos de episodios detiene el proceso, salvo que corresponda exactamente a la misma fuente ya persistida.
+Antes de persistir se compara el estado sidecar validado con el `main` remoto más reciente. Una escritura ajena en otros archivos puede reintentarse. Cualquier modificación concurrente de uno de los tres archivos de episodios detiene el proceso sin adoptar, fusionar ni sobrescribir ese cambio. Como el escritor canónico está serializado, una modificación de este tipo se trata como una anomalía que exige revisión.
 
 ## Semántica temporal
 
