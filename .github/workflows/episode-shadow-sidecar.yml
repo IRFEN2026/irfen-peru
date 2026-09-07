@@ -64,12 +64,21 @@ jobs:
           assert latest.get('source') == 'NASA GPM IMERG Late Daily'
           assert latest.get('product') == 'GPM_3IMERGDL'
           assert latest.get('product_version') not in {None, '', '—', 'DEMO'}
+          status=latest.get('operational_status')
+          assert status in {'updated','stale'}
           experimental_at=datetime.fromisoformat(
               experimental['generated_at'].replace('Z','+00:00')
           ).astimezone(timezone.utc)
           latest_at=datetime.fromisoformat(
               latest['generated_at'].replace('Z','+00:00')
           ).astimezone(timezone.utc)
+          attempt_at=datetime.fromisoformat(
+              latest['last_update_attempt'].replace('Z','+00:00')
+          ).astimezone(timezone.utc)
+          assert experimental_at >= attempt_at, (
+              f'experimental_state es anterior al intento publicado: '
+              f'{experimental_at.isoformat()} < {attempt_at.isoformat()}'
+          )
           upstream=os.environ.get('UPSTREAM_STARTED_AT','')
           if upstream:
               upstream_at=datetime.fromisoformat(
@@ -79,18 +88,29 @@ jobs:
                   f'experimental_state aún es anterior al workflow upstream: '
                   f'{experimental_at.isoformat()} < {upstream_at.isoformat()}'
               )
-              assert latest_at >= upstream_at, (
-                  f'latest.json aún es anterior al workflow upstream: '
-                  f'{latest_at.isoformat()} < {upstream_at.isoformat()}'
+              assert attempt_at >= upstream_at, (
+                  f'last_update_attempt aún es anterior al workflow upstream: '
+                  f'{attempt_at.isoformat()} < {upstream_at.isoformat()}'
               )
-          print('EPISODE_SOURCE_FRESH', experimental_at.isoformat(), latest_at.isoformat())
+              if status == 'updated':
+                  assert latest_at >= upstream_at, (
+                      f'latest.json actualizado aún es anterior al workflow upstream: '
+                      f'{latest_at.isoformat()} < {upstream_at.isoformat()}'
+                  )
+          print(
+              'EPISODE_SOURCE_FRESH',
+              status,
+              experimental_at.isoformat(),
+              latest_at.isoformat(),
+              attempt_at.isoformat(),
+          )
           PY
             then
               fresh=true
               break
             fi
             if [[ "$attempt" -eq 8 ]]; then
-              echo "No se obtuvo una instantánea experimental posterior al update-and-deploy." >&2
+              echo "No se obtuvo una instantánea experimental atribuible al update-and-deploy." >&2
               exit 1
             fi
             sleep $((attempt * 5))
@@ -98,6 +118,8 @@ jobs:
           test "$fresh" = true
           cp /tmp/irfen-episode-source/experimental_state.json \
             site/data/experimental_state.json
+          cp /tmp/irfen-episode-source/latest.json \
+            site/data/latest.json
 
       - name: Ejecutar sidecar canónico de episodios
         id: sidecar
@@ -106,6 +128,7 @@ jobs:
           set -euo pipefail
           python scripts/run_episode_shadow_sidecar.py \
             --experimental site/data/experimental_state.json \
+            --dataset-status site/data/latest.json \
             --receipt /tmp/episode-shadow-receipt.json
           python -m json.tool /tmp/episode-shadow-receipt.json >/dev/null
           python - <<'PY' >> "$GITHUB_OUTPUT"
@@ -118,6 +141,8 @@ jobs:
           assert receipt['operational_alerting_enabled'] is False
           assert receipt['public_social_publishing'] is False
           assert receipt['scientific_candidate_forwarding_enabled'] is False
+          assert receipt['dataset_operational_status'] in {'updated','stale'}
+          assert receipt['dataset_freshness_status'] in {'FRESH','STALE'}
           assert receipt['alerts_created']==0
           assert receipt['publications_created']==0
           assert receipt['messages_created']==0
@@ -165,6 +190,12 @@ jobs:
           assert potential['production_ready'] is False
           assert potential['operational_alert'] is False
           assert potential['public_social_publishing'] is False
+          source=potential['source']
+          assert source['source_type']=='EXPERIMENTAL_STATE_WITH_DATASET_STATUS_ENVELOPE'
+          assert len(source['experimental_state_sha256'])==64
+          assert len(source['dataset_status_sha256'])==64
+          assert source['dataset_operational_status'] in {'updated','stale'}
+          assert source['dataset_freshness_status'] in {'FRESH','STALE'}
           assert history['retention_policy']['mode']=='APPEND_ONLY'
           assert history['retention_policy']['main_role']=='DURABLE_SOURCE_OF_TRUTH'
           assert history['retention_policy']['pages_role']=='PUBLISHED_REPLICA_ONLY'
@@ -173,6 +204,10 @@ jobs:
           last=history['records'][-1]
           assert last['potential_output_sha256']==canonical(potential)
           assert last['continuity_output_sha256']==canonical(continuity)
+          assert last['experimental_state_sha256']==source['experimental_state_sha256']
+          assert last['dataset_status_sha256']==source['dataset_status_sha256']
+          assert last['dataset_operational_status']==source['dataset_operational_status']
+          assert last['dataset_freshness_status']==source['dataset_freshness_status']
           assert (
               last['potential_source_sha256'],
               last['source_generated_at'],
@@ -261,7 +296,7 @@ jobs:
             git worktree remove --force "$retry_dir"
             retry_dir=""
             if [[ "$attempt" -eq 4 ]]; then
-              echo "ERROR: main avanzó durante cuatro reintentos acotados." >&2
+              echo "ERROR: main siguió avanzando durante cuatro intentos acotados." >&2
               exit 1
             fi
             echo "Carrera de fast-forward ${attempt}/4; reintento sin sobrescritura."
