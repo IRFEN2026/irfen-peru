@@ -5,8 +5,10 @@
   "supersedes_transport_contract": "config/chosica_2015_preunblind_imerg_execution_v0_1.json",
   "protocol_amendment": {
     "scope": "TRANSPORT_ONLY",
-    "reason": "The frozen v0.1 NASA GIS getSamples transport failed deterministically before producing predictor data on workflow run 34290079389 and its failed-job rerun. The failure occurred while decoding a non-JSON response for the first 8-hour request block. This amendment reduces request duration only; it does not change the product, grid, basin geometry, time grid, aggregation, missingness, windows, labels, thresholds, or unblind gate.",
+    "reason": "The frozen v0.1 NASA GIS endpoint under /image/rest/services/ failed deterministically before producing predictor data. A diagnostic rerun with bounded response capture (workflow run 34291484042) established HTTP 404 from nginx. NASA Earthdata's GPM_3IMERGHH portal item states that, following the planned 2026-08-31 EGIS downtime, this service URL changed to /portal/rest/services/GESDISC/GPM_3IMERGHH/ImageServer. This amendment changes only that service path and preserves the original v0.1 request partitioning. It does not change the product, grid, basin geometry, time grid, aggregation, missingness, windows, labels, thresholds, or unblind gate.",
     "failed_workflow_run_id": 34290079389,
+    "diagnostic_workflow_run_id": 34291484042,
+    "service_migration_notice": "https://gis.earthdata.nasa.gov/portal/home/item.html?id=cfa9a890b89b49d884871567844e9080",
     "scientific_inputs_changed": false,
     "outcomes_read_to_make_amendment": false,
     "a6680_numeric_reference_read_to_make_amendment": false,
@@ -29,7 +31,7 @@
   "source": {
     "institution": "NASA GES DISC / GPM IMERG",
     "product": "GPM_3IMERGHH Final V07",
-    "service": "https://gis.earthdata.nasa.gov/image/rest/services/GESDISC/GPM_3IMERGHH/ImageServer/getSamples",
+    "service": "https://gis.earthdata.nasa.gov/portal/rest/services/GESDISC/GPM_3IMERGHH/ImageServer/getSamples",
     "temporal_resolution_minutes": 30,
     "spatial_resolution_deg": 0.1,
     "input_units": "mm/hr",
@@ -60,8 +62,8 @@
   },
   "retrieval": {
     "request_geometry": "unique multipoint set of all IMERG cell centers required by the six frozen polygons",
-    "block_hours": 1,
-    "maximum_halfhour_slices_per_block": 2,
+    "block_hours": 8,
+    "maximum_halfhour_slices_per_block": 16,
     "retry_count": 3,
     "user_agent": "IRFEN-research/0.8",
     "authentication_required": false,
