@@ -1,0 +1,48 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "BLINDING_INCIDENT_FAIL_CLOSED",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "incident": {
+    "date_utc": "2026-09-08T23:00:00Z",
+    "stage": "AFTER_PHASE1_AND_IMERG_FREEZE_VALIDATION_BEFORE_NEGATIVE_CONTROL_POOL_FREEZE_OR_OUTCOME_UNBLIND",
+    "cause": "While locating the A6680 document for the now-permitted post-freeze numeric morphometry comparison, a broad file-library search returned snippets containing prohibited 2015 outcome narrative in addition to document metadata. The search result itself exposed the current agent context to sealed outcome information.",
+    "intentional_outcome_read": false,
+    "sealed_outcome_file_read": false,
+    "official_outcome_evidence_json_read": false,
+    "a6680_full_document_read": false,
+    "exposure_scope": "SEARCH_RESULT_SNIPPETS_ONLY",
+    "scientific_artifacts_modified_after_exposure": false
+  },
+  "pre_exposure_frozen_assets": {
+    "morphometry_freeze_record": "config/chosica_2015_morphometry_phase1_freeze_record_v0_1.json",
+    "morphometry_report_sha256": "b45de91491d610bdb847340ab0dcfe96f7c884096caa36e03ca0c41341557676",
+    "imerg_freeze_record": "config/chosica_2015_preunblind_imerg_freeze_record_v0_1.json",
+    "imerg_report_sha256": "0fb330d1422a13dda0a1869b910841166614549f773893bc62c7b288ce733430",
+    "freeze_validation_workflow_run_id": 34292768754,
+    "freeze_validation_conclusion": "success"
+  },
+  "integrity_assessment": {
+    "frozen_geometry_compromised": false,
+    "frozen_morphometry_compromised": false,
+    "frozen_pre_anchor_imerg_compromised": false,
+    "current_agent_blindness_compromised": true,
+    "negative_control_candidate_pool_compromised": false,
+    "reason_negative_control_pool_not_compromised": "No negative-control candidate pool had yet been selected or frozen after the exposure.",
+    "retrospective_artifacts_remain_usable": true
+  },
+  "fail_closed_actions": {
+    "current_agent_must_not_select_negative_controls": true,
+    "current_agent_must_not_tune_or_reselect_geometry": true,
+    "current_agent_must_not_fit_thresholds_or interpret_outcomes": true,
+    "sealed_outcome_unblind_allowed": false,
+    "recommended_recovery": "Continue the preregistered negative-control candidate generation and A6680 numeric morphometry comparison in a fresh blind reviewer/process that is given only the frozen contracts, hashes and permitted pre-unblind inputs, not this contaminated conversation context. Preserve the frozen pre-exposure artifacts unchanged."
+  },
+  "user_decision_required": "Choose whether to preserve strict blind-validation semantics by moving remaining blind-sensitive work to a fresh context/process, or explicitly downgrade the protocol to a non-blind retrospective analysis. No downgrade is assumed automatically."
+}
