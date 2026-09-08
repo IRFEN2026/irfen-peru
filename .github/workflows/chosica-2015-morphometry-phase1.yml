@@ -12,6 +12,7 @@ on:
       - config/chosica_2015_morphometry_phase1_execution_v0_5.json
       - config/chosica_2015_morphometry_phase1_execution_v0_6.json
       - config/chosica_2015_morphometry_phase1_execution_v0_7.json
+      - config/chosica_2015_morphometry_phase1_execution_v0_8.json
       - scripts/compute_chosica_2015_morphometry_phase1.py
       - scripts/compute_chosica_2015_morphometry_phase1_v2.py
       - scripts/compute_chosica_2015_morphometry_phase1_v3.py
@@ -19,6 +20,7 @@ on:
       - scripts/compute_chosica_2015_morphometry_phase1_v5.py
       - scripts/compute_chosica_2015_morphometry_phase1_v6.py
       - scripts/compute_chosica_2015_morphometry_phase1_v7.py
+      - scripts/compute_chosica_2015_morphometry_phase1_v8.py
       - .github/workflows/chosica-2015-morphometry-phase1.yml
   workflow_dispatch:
 
@@ -67,9 +69,11 @@ jobs:
             gh run download "$run" --repo "$GH_REPO" --name "$name" --dir "frozen_geometry/$key"
           done < /tmp/frozen_geometry.tsv
       - name: Compute phase-1 morphometry without A6680
+        id: compute
+        continue-on-error: true
         run: |
           mkdir -p artifacts
-          python scripts/compute_chosica_2015_morphometry_phase1_v7.py \
+          python scripts/compute_chosica_2015_morphometry_phase1_v8.py \
             --geometry-root frozen_geometry \
             --report artifacts/chosica_2015_morphometry_phase1.json
       - name: Enforce phase-1 scientific guards
@@ -77,9 +81,9 @@ jobs:
           python - <<'PY'
           import json, math
           d=json.load(open('artifacts/chosica_2015_morphometry_phase1.json',encoding='utf-8'))
-          assert d['status']=='PASS_CHOSICA_2015_PHASE1_MORPHOMETRY'
+          assert d['status']=='PASS_CHOSICA_2015_PHASE1_MORPHOMETRY', (d.get('error'), d.get('failed_worker_target'), d.get('worker_stderr_tail'))
           assert d['phase']=='PHASE_1_PREUNBLIND_DEM_MORPHOMETRY'
-          assert d['execution_revision']=='0.7_GEOMETRY_PROVENANCE_AWARE_ROUTING_REPLAY'
+          assert d['execution_revision']=='0.8_TARGET_PROCESS_ISOLATION_ONLY'
           assert d['target_count']==6
           assert d['a6680_numeric_reference_read'] is False
           assert d['outcome_evidence_read'] is False
@@ -91,14 +95,22 @@ jobs:
               'selection_or_tuning_from_metric_values':False,
               'frozen_polygon_mask_modified':False,
               'frozen_outlet_modified':False,
+              'scientific_semantics_changed_from_v0_7':False,
+              'one_target_per_fresh_python_process':True,
           }
           expected={'cashahuacra','quirio','pedregal_san_antonio','la_libertad','carossio','rayos_de_sol'}
           pysheds_expected=expected-{'cashahuacra'}
+          assert set(d['worker_execution_audit'])==expected
           assert set(d['exact_geometry_dem_audit'])==expected
           assert set(d['geometry_generation_routing_replay_audit'])==expected
           assert set(d['pysheds_geometry_replay_audit'])==pysheds_expected
           assert set(d.get('pourpoint_semantics_audit',{}))=={'cashahuacra'}
           assert d['guards']=={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          for target_id,a in d['worker_execution_audit'].items():
+              assert a['return_code']==0, target_id
+              assert a['fresh_python_process'] is True
+              assert a['scientific_functions']=='UNCHANGED_REVISION_0_7_TARGET_FUNCTIONS'
+              assert a['worker_report_persisted'] is True
           for target_id,a in d['exact_geometry_dem_audit'].items():
               assert a['exact_binary_hash_match'] is True, target_id
               assert a['regenerated_dem_geotiff_sha256']==a['frozen_geometry_dem_geotiff_sha256']
@@ -136,6 +148,7 @@ jobs:
               assert t['drainage_density_rule_changed'] is False
           PY
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: chosica-2015-morphometry-phase1
           path: artifacts/chosica_2015_morphometry_phase1.json
