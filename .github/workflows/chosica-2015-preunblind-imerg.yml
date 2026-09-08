@@ -6,6 +6,7 @@ on:
       - config/chosica_2015_outlet_freeze_registry_v0_1.json
       - config/chosica_2015_preunblind_predictor_time_plan_v0_1.json
       - config/chosica_2015_preunblind_imerg_execution_v0_1.json
+      - config/chosica_2015_preunblind_imerg_execution_v0_2.json
       - scripts/extract_chosica_2015_preunblind_imerg.py
       - .github/workflows/chosica-2015-preunblind-imerg.yml
   workflow_dispatch:
@@ -75,6 +76,8 @@ jobs:
           assert d['time_grid']['slot_count']==720
           assert d['time_grid']['slot_minutes']==30
           assert d['anchor_utc']=='2015-03-23T19:30:00Z'
+          assert d['execution_contract']=='config/chosica_2015_preunblind_imerg_execution_v0_2.json'
+          assert d['transport_amendment_scope']=='TRANSPORT_ONLY'
           assert d['outcome_evidence_read'] is False
           assert d['a6680_numeric_reference_read'] is False
           assert d['post_anchor_predictor_read'] is False
