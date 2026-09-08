@@ -1,0 +1,44 @@
+{
+  "schema_version": "0.2",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PREUNBLIND_PHASE1_MORPHOMETRY_FREEZE_CONTRACT_V0_2",
+  "supersedes": "config/chosica_2015_morphometry_phase1_freeze_contract_v0_1.json",
+  "revision_basis": {
+    "reason": "The original freeze contract predated execution revisions 0.7-0.10. Those revisions were fail-closed implementation corrections made without A6680 numeric morphometry, outcome evidence, post-anchor predictors, or metric-based tuning. Revision 0.10 is the first successful six-target execution under the unchanged scientific method contract and frozen outlet/geometry registry.",
+    "scientific_quantity_changed": false,
+    "selection_or_tuning_from_metric_values": false,
+    "a6680_numeric_reference_read": false,
+    "outcome_evidence_read": false,
+    "post_anchor_predictor_read": false
+  },
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "required_execution_contract": "config/chosica_2015_morphometry_phase1_execution_v0_10.json",
+  "required_execution_revision": "0.10_SINGLE_GRID_EXACT_PYSHEDS_CATCHMENT",
+  "required_implementation": "scripts/compute_chosica_2015_morphometry_phase1_v10.py",
+  "required_target_count": 6,
+  "required_status": "PASS_CHOSICA_2015_PHASE1_MORPHOMETRY",
+  "freeze_rule": "Freeze the exact successful report bytes by SHA256 before reading any A6680 numeric morphometry. The freeze record must identify the immutable workflow run, artifact, report SHA256, report byte size, execution contract blob SHA and implementation blob SHA.",
+  "comparison_gate": {
+    "a6680_numeric_morphometry_allowed_only_after": [
+      "successful six-target phase-1 workflow",
+      "exact report SHA256 recorded",
+      "freeze record committed with phase1_frozen=true",
+      "freeze validator succeeds against the exact workflow artifact",
+      "all anti-data-leakage guards remain false for A6680 numeric reference, outcome evidence and post-anchor predictors"
+    ],
+    "outcome_unblind_allowed": false
+  },
+  "forbidden": [
+    "change frozen outlets, polygons, DEM reconstruction, slope algorithm, channel threshold or metric inclusion semantics after viewing phase-1 metrics",
+    "read A6680 numeric morphometry before this gate passes",
+    "read sealed activation outcomes before the separate unblind gate",
+    "select, drop, rerun or tune targets based on agreement with A6680 or observed outcomes",
+    "treat a missing or mismatched artifact as scientifically frozen"
+  ]
+}
