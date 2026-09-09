@@ -28,11 +28,19 @@
     {"target_id":"rayos_de_sol","outlet_x_m":316951.065,"outlet_y_m":8681248.592,"area_km2":0.0027,"relief_m":13.158386,"mean_basin_slope_deg":10.779436535}
   ],
   "candidate_geometry_rule": {
-    "pour_point": "frozen feeder_cell center from candidate pool",
+    "pour_point": "frozen feeder_cell row/col from candidate pool on the exact candidate-pool DEM grid",
     "dem": "same canonical DEM reconstruction and D8 semantics used to freeze candidate pool",
+    "catchment_algorithm": "deterministic reverse D8 traversal from the frozen feeder cell on the exact conditioned flow-direction array",
+    "d8_dirmap": [64,128,1,2,4,8,16,32],
+    "dem_conditioning": ["fill pits","fill depressions","resolve flats"],
     "reject_if_catchment_touches_dem_boundary": true,
     "reject_if_catchment_contains_any_frozen_target_outlet_cell": true,
     "minimum_catchment_cells": 2
+  },
+  "candidate_morphometry": {
+    "area": "catchment cell count times exact projected cell area",
+    "relief": "max minus min elevation over valid catchment cells",
+    "mean_slope": "same Horn slope implementation used by Chosica phase-1 target morphometry"
   },
   "matching_metrics": {
     "distance": "Euclidean distance in EPSG:32718 from candidate mainstem confluence cell center to target frozen outlet",
