@@ -55,14 +55,15 @@ def main():
     co=json.loads(a.contract.read_text(encoding='utf-8'))
     poolp=ROOT/co['candidate_pool_path']; recp=ROOT/co['candidate_pool_freeze_record']; morprecp=ROOT/co['target_morphometry_source']['freeze_record']
     pool=json.loads(poolp.read_text(encoding='utf-8')); rec=json.loads(recp.read_text(encoding='utf-8')); morprec=json.loads(morprecp.read_text(encoding='utf-8'))
+    genconp=ROOT/rec['generation_contract_path']; gencon=json.loads(genconp.read_text(encoding='utf-8'))
     guards=co['guards']
     rep={'schema_version':'0.1','batch_id':co['batch_id'],'status':'PENDING','guards':guards,
          'phase':'PREUNBLIND_NEGATIVE_CONTROL_DEM_MATCHING','outcome_evidence_read':False,'candidate_outcome_evidence_read':False,
          'a6680_numeric_reference_read':False,'post_anchor_predictor_read':False,'control_outcome_adjudication_performed':False,
          'matching_contract_sha256':sha256(a.contract),'candidate_pool_sha256':sha256(poolp),'candidate_pool_freeze_record_sha256':sha256(recp),
-         'target_morphometry_freeze_record_sha256':sha256(morprecp),'shortlist_frozen':False}
+         'candidate_generation_contract_sha256':sha256(genconp),'target_morphometry_freeze_record_sha256':sha256(morprecp),'shortlist_frozen':False}
     try:
-        assert pool['guards']==rec['guards']==morprec['guards']==guards
+        assert pool['guards']==rec['guards']==morprec['guards']==gencon['guards']==guards
         assert sha256(poolp)==co['candidate_pool_sha256']==rec['candidate_pool_sha256']
         assert pool['candidate_pool_frozen'] is True and pool['candidate_count']==29
         assert rec['next_gate']['candidate_geometry_and_dem_morphometry_allowed'] is True
@@ -74,7 +75,7 @@ def main():
         assert co['target_morphometry_source']['post_anchor_predictor_read'] is False
         with tempfile.TemporaryDirectory(prefix='chosica_negctrl_match_') as raw:
             td=Path(raw)
-            dp,prov=gen.build_dem(td,co['candidate_pool_path'] and [-76.77617513,-12.00374994,-76.64255814,-11.88463456],pool['dem_tiles'])
+            dp,prov=gen.build_dem(td,gencon['corridor']['dem_bbox_wgs84'],pool['dem_tiles'])
             rebuilt=sha256(dp)
             if rebuilt!=pool['dem_utm_sha256']:
                 raise RuntimeError(f'FAIL_CLOSED_CANDIDATE_POOL_DEM_HASH {rebuilt}')
