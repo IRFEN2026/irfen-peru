@@ -1,0 +1,65 @@
+name: IRFEN - Chosica 2015 negative-control matching freeze
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_negative_control_matching_contract_v0_1.json
+      - config/chosica_2015_negative_control_matching_freeze_record_v0_1.json
+      - config/chosica_2015_blinding_recovery_handoff_v0_1.json
+      - config/chosica_2015_negative_control_candidate_pool_freeze_record_v0_1.json
+      - site/data/validation/chosica_2015_negative_control_candidate_pool.json
+      - .github/workflows/chosica-2015-negative-control-matching-freeze.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-matching-freeze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Validate frozen ranked shortlists and recovery guards
+        run: |
+          python - <<'PY'
+          import hashlib,json,pathlib
+          def load(p): return json.loads(pathlib.Path(p).read_text(encoding='utf-8'))
+          def sha(p): return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+          freeze=load('config/chosica_2015_negative_control_matching_freeze_record_v0_1.json')
+          contract=load('config/chosica_2015_negative_control_matching_contract_v0_1.json')
+          poolrec=load('config/chosica_2015_negative_control_candidate_pool_freeze_record_v0_1.json')
+          pool=load('site/data/validation/chosica_2015_negative_control_candidate_pool.json')
+          handoff=load('config/chosica_2015_blinding_recovery_handoff_v0_1.json')
+          guards={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          assert freeze['guards']==contract['guards']==poolrec['guards']==pool['guards']==handoff['guards']==guards
+          assert freeze['matching_contract_sha256']==sha('config/chosica_2015_negative_control_matching_contract_v0_1.json')
+          assert freeze['candidate_pool_sha256']==sha('site/data/validation/chosica_2015_negative_control_candidate_pool.json')
+          assert freeze['candidate_pool_sha256']==poolrec['candidate_pool_sha256']==contract['candidate_pool_sha256']
+          assert freeze['workflow_provenance']['report_sha256']=='0e08e612b2244b00b4bcbd7baa2cfef2f562835ca08848f2e0f4bf0251d83f92'
+          assert freeze['execution_result']['candidate_count']==29
+          assert freeze['execution_result']['eligible_candidate_count']==29
+          assert freeze['execution_result']['shortlist_per_target']==3
+          target_ids={'cashahuacra','quirio','pedregal_san_antonio','la_libertad','carossio','rayos_de_sol'}
+          assert set(freeze['execution_result']['shortlists'])==target_ids
+          assert all(len(v)==3 for v in freeze['execution_result']['shortlists'].values())
+          for target,rows in freeze['execution_result']['shortlists'].items():
+              assert rows==sorted(rows,key=lambda x:(x['score'],x['distance_m'],x['candidate_id']))
+              assert all(r['candidate_id'] in {c['candidate_id'] for c in pool['candidates']} for r in rows)
+          assert freeze['anti_leakage']=={
+            'outcome_evidence_read':False,
+            'candidate_outcome_evidence_read':False,
+            'a6680_numeric_reference_read':False,
+            'post_anchor_predictor_read':False,
+            'control_outcome_adjudication_performed':False,
+            'matching_weights_changed_after_outcome_observation':False,
+            'candidate_replacement_after_outcome_observation':False}
+          assert handoff['process_separation']['fresh_process_outcome_evidence_read'] is False
+          assert handoff['process_separation']['fresh_process_candidate_outcome_evidence_read'] is False
+          assert handoff['current_gate']['sealed_target_outcome_unblind_allowed'] is False
+          assert freeze['next_gate']['post_adjudication_candidate_replacement_allowed'] is False
+          assert freeze['next_gate']['sealed_target_outcome_unblind_allowed'] is False
+          print('PASS_NEGATIVE_CONTROL_MATCHING_FREEZE')
+          PY
