@@ -1,0 +1,49 @@
+name: IRFEN - Chosica 2015 blind control adjudication
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_negative_control_outcome_adjudication_contract_v0_1.json
+      - site/data/validation/chosica_2015_negative_control_outcome_adjudication.json
+      - scripts/validate_chosica_2015_negative_control_outcome_adjudication.py
+      - .github/workflows/chosica-2015-negative-control-outcome-adjudication.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-blind-adjudication:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Validate candidate-only outcome adjudication
+        run: |
+          mkdir -p artifacts
+          python scripts/validate_chosica_2015_negative_control_outcome_adjudication.py \
+            --contract config/chosica_2015_negative_control_outcome_adjudication_contract_v0_1.json \
+            --input site/data/validation/chosica_2015_negative_control_outcome_adjudication.json \
+            --output artifacts/chosica_2015_negative_control_outcome_adjudication_validation.json
+      - name: Enforce target outcomes remain sealed
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/chosica_2015_negative_control_outcome_adjudication_validation.json',encoding='utf-8'))
+          assert d['status'] in {
+            'PASS_BLIND_CONTROL_ADJUDICATION_PENDING_AFFIRMATIVE_CONTROL',
+            'PASS_BLIND_CONTROL_ADJUDICATION_READY_FOR_SEPARATE_UNBLIND_DECISION'}
+          assert d['sealed_target_outcomes_read'] is False
+          assert d['target_names_read_for_candidate_adjudication'] is False
+          assert d['a6680_target_outcome_narrative_read'] is False
+          assert d['sealed_target_unblind_allowed_by_this_validator'] is False
+          assert d['checks']['target_outcomes_remain_sealed'] is True
+          assert d['guards']=={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-blind-control-adjudication-validation
+          path: artifacts/chosica_2015_negative_control_outcome_adjudication_validation.json
+          if-no-files-found: error
