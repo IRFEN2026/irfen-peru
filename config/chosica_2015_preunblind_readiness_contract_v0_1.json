@@ -16,6 +16,7 @@
     "imerg_freeze": "config/chosica_2015_preunblind_imerg_freeze_record_v0_1.json",
     "negative_control_pool_freeze": "config/chosica_2015_negative_control_candidate_pool_freeze_record_v0_1.json",
     "negative_control_matching_freeze": "config/chosica_2015_negative_control_matching_freeze_record_v0_1.json",
+    "negative_control_shortlist_geometry_freeze": "config/chosica_2015_negative_control_shortlist_geometry_freeze_record_v0_1.json",
     "blinding_recovery_handoff": "config/chosica_2015_blinding_recovery_handoff_v0_1.json"
   },
   "hard_gates": [
@@ -25,13 +26,14 @@
     "pre-anchor IMERG predictors frozen by exact report hash with complete coverage",
     "negative-control candidate pool frozen before any control outcome adjudication",
     "negative-control matching and three-candidate shortlist per target frozen before any control outcome adjudication",
+    "exact catchment geometries for the union of shortlisted control candidates frozen by report and GeoJSON SHA256 before any control outcome adjudication",
     "fresh-process blinding recovery handoff active",
     "all target outcomes remain SEALED",
     "no production or operational alerting guard may be relaxed"
   ],
   "control_gate": {
     "required_before_target_unblind": true,
-    "rule": "Adjudicate only the already-frozen ranked candidate shortlists. A candidate may be CONTROL only with affirmative independent evidence of no activation in the frozen 2015 event window; documentary silence remains OUTCOME_UNKNOWN.",
+    "rule": "Adjudicate only the already-frozen ranked candidate shortlists and their exact frozen catchment geometries. A candidate may be CONTROL only with affirmative independent evidence of no activation in the frozen 2015 event window; documentary silence remains OUTCOME_UNKNOWN.",
     "post_adjudication_candidate_replacement_allowed": false,
     "ranking_or_geometry_changes_after_control_outcome_read": false
   },
