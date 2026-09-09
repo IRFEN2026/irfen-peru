@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - config/chosica_2015_negative_control_preunblind_imerg_execution_v0_1.json
+      - config/chosica_2015_negative_control_preunblind_imerg_freeze_record_v0_1.json
       - config/chosica_2015_negative_control_shortlist_geometry_freeze_record_v0_1.json
       - config/chosica_2015_negative_control_shortlist_geometry_contract_v0_1.json
       - config/chosica_2015_negative_control_matching_freeze_record_v0_1.json
@@ -61,13 +62,19 @@ jobs:
           python scripts/extract_chosica_2015_negative_control_preunblind_imerg.py \
             --geojson artifacts/chosica_2015_negative_control_shortlist.geojson \
             --report artifacts/chosica_2015_negative_control_preunblind_imerg.json
-      - name: Enforce complete blind predictor output
+      - name: Enforce complete blind predictor output and exact freeze hash
         run: |
           python - <<'PY'
-          import json
+          import hashlib,json
+          def sha(p):
+              h=hashlib.sha256()
+              with open(p,'rb') as f:
+                  for c in iter(lambda:f.read(1<<20),b''): h.update(c)
+              return h.hexdigest()
           d=json.load(open('artifacts/chosica_2015_negative_control_preunblind_imerg.json',encoding='utf-8'))
+          fr=json.load(open('config/chosica_2015_negative_control_preunblind_imerg_freeze_record_v0_1.json',encoding='utf-8'))
           assert d['status']=='PASS_CHOSICA_2015_NEGATIVE_CONTROL_PREUNBLIND_IMERG'
-          assert d['candidate_count']==7
+          assert d['candidate_count']==fr['expected_report']['candidate_count']==7
           assert d['outcome_evidence_read'] is False
           assert d['candidate_outcome_evidence_read'] is False
           assert d['a6680_numeric_reference_read'] is False
@@ -80,7 +87,9 @@ jobs:
           assert d['zero_imputation_used'] is False
           assert all(c['slot_count']==720 and c['valid_slot_count']==720 and c['coverage_fraction']==1.0 for c in d['candidates'])
           assert all(all(w['complete'] and w['valid_slot_count']==w['expected_slot_count'] for w in c['windows'].values()) for c in d['candidates'])
-          assert d['guards']=={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          assert d['geometry_geojson_sha256']==fr['expected_report']['geometry_geojson_sha256']
+          assert sha('artifacts/chosica_2015_negative_control_preunblind_imerg.json')==fr['provenance']['report_sha256']
+          assert d['guards']==fr['guards']=={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
           PY
       - uses: actions/upload-artifact@v4
         with:
