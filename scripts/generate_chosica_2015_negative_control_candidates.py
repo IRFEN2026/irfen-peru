@@ -89,7 +89,7 @@ def main():
         with tempfile.TemporaryDirectory(prefix='chosica_negctrl_') as raw:
             td=Path(raw); dp,prov=build_dem(td,co['corridor']['dem_bbox_wgs84'],co['inputs']['dem_tiles'])
             grid=Grid.from_raster(str(dp)); dem=grid.read_raster(str(dp)); dem=grid.fill_pits(dem); dem=grid.fill_depressions(dem); dem=grid.resolve_flats(dem)
-            fd=np.asarray(grid.flowdir(dem,dirmap=D8)); acc=np.asarray(grid.accumulation(fd,dirmap=D8))
+            fdir_raster=grid.flowdir(dem,dirmap=D8); fd=np.asarray(fdir_raster); acc=np.asarray(grid.accumulation(fdir_raster,dirmap=D8))
             with rasterio.open(dp) as ds:
                 tr=ds.transform
                 s=reg['targets']['cashahuacra']['accepted_outlet']; sr,sc=ds.index(float(s['x_m']),float(s['y_m']))
@@ -126,7 +126,7 @@ def main():
                         'candidate_pool_frozen':True})
     except Exception as e:
         rep['status']='FAIL_CLOSED_NEGATIVE_CONTROL_CANDIDATE_GENERATION'; rep['error']=str(e)
-        a.output.write_text(json.dumps(rep,ensure_ascii=False,indent=2)+'\n',encoding='utf-8'); return 2
+        a.output.write_text(json.dumps(rep,ensure_ascii=False,indent=2)+'\n',encoding='utf-8'); print(json.dumps(rep,ensure_ascii=False,indent=2)); return 2
     a.output.write_text(json.dumps(rep,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     print(json.dumps(rep,ensure_ascii=False,indent=2)); return 0
 
