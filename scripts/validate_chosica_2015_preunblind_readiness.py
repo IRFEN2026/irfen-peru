@@ -21,15 +21,9 @@ def main():
         if co['guards']!=GUARDS: raise RuntimeError('FAIL_CLOSED_CONTRACT_GUARDS')
         paths={k:ROOT/v for k,v in co['required_records'].items()}
         docs={k:load(p) for k,p in paths.items()}
-        val=docs['validation_set']; reg=docs['outlet_geometry_freeze']; morph=docs['morphometry_freeze']; imerg=docs['imerg_freeze']; pool=docs['negative_control_pool_freeze']; match=docs['negative_control_matching_freeze']; hand=docs['blinding_recovery_handoff']
+        val=docs['validation_set']; reg=docs['outlet_geometry_freeze']; morph=docs['morphometry_freeze']; imerg=docs['imerg_freeze']; pool=docs['negative_control_pool_freeze']; match=docs['negative_control_matching_freeze']; geom=docs['negative_control_shortlist_geometry_freeze']; hand=docs['blinding_recovery_handoff']
         for name,d in docs.items():
-            g=d.get('guards',{})
-            if name=='validation_set':
-                if g!=GUARDS: raise RuntimeError(f'FAIL_CLOSED_GUARDS {name}')
-            elif name=='outlet_geometry_freeze':
-                if g!=GUARDS: raise RuntimeError(f'FAIL_CLOSED_GUARDS {name}')
-            elif name in {'morphometry_freeze','imerg_freeze','negative_control_pool_freeze','negative_control_matching_freeze','blinding_recovery_handoff'}:
-                if g!=GUARDS: raise RuntimeError(f'FAIL_CLOSED_GUARDS {name}')
+            if d.get('guards',{})!=GUARDS: raise RuntimeError(f'FAIL_CLOSED_GUARDS {name}')
         gate=reg['batch_gate']
         if gate['frozen_outlet_count']!=6 or gate['required_frozen_outlet_count']!=6: raise RuntimeError('FAIL_CLOSED_OUTLET_COUNT')
         if gate['frozen_geometry_count']!=6 or gate['required_frozen_geometry_count']!=6: raise RuntimeError('FAIL_CLOSED_GEOMETRY_COUNT')
@@ -45,6 +39,14 @@ def main():
         if set(match['execution_result']['shortlists'])!={'cashahuacra','quirio','pedregal_san_antonio','la_libertad','carossio','rayos_de_sol'}: raise RuntimeError('FAIL_CLOSED_SHORTLIST_TARGETS')
         if not all(len(v)==3 for v in match['execution_result']['shortlists'].values()): raise RuntimeError('FAIL_CLOSED_SHORTLIST_LENGTH')
         if any(match['anti_leakage'].values()): raise RuntimeError('FAIL_CLOSED_CONTROL_MATCH_LEAKAGE')
+        if geom['status']!='NEGATIVE_CONTROL_SHORTLIST_GEOMETRY_FROZEN_BY_EXACT_HASH': raise RuntimeError('FAIL_CLOSED_CONTROL_GEOMETRY_FREEZE')
+        if geom['frozen_outputs']['candidate_count']!=7 or geom['frozen_outputs']['catchment_touches_dem_boundary'] is not False: raise RuntimeError('FAIL_CLOSED_CONTROL_GEOMETRY_COUNTS')
+        if set(geom['frozen_inputs']['shortlisted_candidate_ids'])!={'NC_001','NC_007','NC_017','NC_019','NC_023','NC_024','NC_027'}: raise RuntimeError('FAIL_CLOSED_CONTROL_GEOMETRY_IDS')
+        if geom['frozen_inputs']['candidate_pool_sha256']!=match['candidate_pool_sha256']: raise RuntimeError('FAIL_CLOSED_CONTROL_GEOMETRY_POOL_HASH')
+        if geom['frozen_inputs']['matching_freeze_record_sha256']!=sha(paths['negative_control_matching_freeze']): raise RuntimeError('FAIL_CLOSED_CONTROL_GEOMETRY_MATCH_HASH')
+        if any(geom['anti_leakage'].values()): raise RuntimeError('FAIL_CLOSED_CONTROL_GEOMETRY_LEAKAGE')
+        geom_contract=ROOT/geom['contract']['path']
+        if sha(geom_contract)!=geom['contract']['sha256']: raise RuntimeError('FAIL_CLOSED_CONTROL_GEOMETRY_CONTRACT_HASH')
         if hand['status']!='BLINDING_RECOVERY_HANDOFF_ACTIVE' or hand['recovery_decision']['choice']!='PRESERVE_STRICT_BLIND_VALIDATION_SEMANTICS_WITH_FRESH_PROCESS': raise RuntimeError('FAIL_CLOSED_RECOVERY_HANDOFF')
         if hand['process_separation']['fresh_process_outcome_evidence_read'] is not False or hand['process_separation']['fresh_process_candidate_outcome_evidence_read'] is not False: raise RuntimeError('FAIL_CLOSED_RECOVERY_LEAKAGE')
         if hand['current_gate']['sealed_target_outcome_unblind_allowed'] is not False: raise RuntimeError('FAIL_CLOSED_RECOVERY_UNBLIND_OPEN')
@@ -53,7 +55,8 @@ def main():
         hashes={k:sha(p) for k,p in paths.items()}
         rep['checks']={'outlets_frozen':6,'geometries_frozen':6,'morphometry_frozen':True,'imerg_frozen':True,'imerg_coverage_fraction':1.0,
                        'negative_control_candidate_pool_frozen':True,'negative_control_candidate_count':29,'negative_control_matching_frozen':True,
-                       'shortlist_per_target':3,'fresh_blind_recovery_active':True,'target_outcomes_sealed':True,'record_sha256':hashes}
+                       'shortlist_per_target':3,'negative_control_shortlist_geometry_frozen':True,'negative_control_shortlist_geometry_count':7,
+                       'fresh_blind_recovery_active':True,'target_outcomes_sealed':True,'record_sha256':hashes}
         rep['status']='PASS_PREUNBLIND_CORE_FREEZES_PENDING_CONTROL_OUTCOME_ADJUDICATION'
         rep['next_gate']='CONTROL_OUTCOME_ADJUDICATION_ON_FROZEN_SHORTLIST_ONLY'
         rep['sealed_target_outcome_unblind_allowed']=False
