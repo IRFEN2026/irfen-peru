@@ -1,0 +1,41 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PREUNBLIND_NEGATIVE_CONTROL_SHORTLIST_GEOMETRY_CONTRACT",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "candidate_pool_path": "site/data/validation/chosica_2015_negative_control_candidate_pool.json",
+  "candidate_pool_sha256": "bd0e0f8e1fa0dfdb5ded676373e4a54590e3f8acc540e3171bde5f1adc075fcf",
+  "matching_freeze_record": "config/chosica_2015_negative_control_matching_freeze_record_v0_1.json",
+  "shortlisted_candidate_ids": ["NC_001","NC_007","NC_017","NC_019","NC_023","NC_024","NC_027"],
+  "candidate_geometry_rule": {
+    "pour_point": "exact frozen feeder_cell row/col from candidate pool",
+    "dem_reconstruction_contract": "config/chosica_2015_negative_control_candidate_generation_v0_1.json",
+    "required_dem_utm_sha256": "1f69c09540cd3d1d69fd93fc2a75c23308baa0fba0e6ad12d6cf3181e3cc9dbd",
+    "dem_conditioning": ["fill pits","fill depressions","resolve flats"],
+    "flow_direction": "D8",
+    "d8_dirmap": [64,128,1,2,4,8,16,32],
+    "catchment_algorithm": "deterministic reverse D8 traversal",
+    "polygonization": "union of exact contributing DEM cells",
+    "output_crs": "EPSG:4326",
+    "reject_if_catchment_touches_dem_boundary": true
+  },
+  "allowed_use": [
+    "candidate drainage identity lookup after ranked shortlist freeze",
+    "candidate-specific control outcome adjudication under the frozen no-activation evidence rule",
+    "reproducible map visualization of shortlisted candidate catchments"
+  ],
+  "forbidden": [
+    "read sealed target outcomes during geometry generation",
+    "read candidate outcomes during geometry generation",
+    "read A6680 numeric morphometry during geometry generation",
+    "read post-anchor predictors during geometry generation",
+    "move a candidate pour point after outcome evidence",
+    "drop or replace a shortlisted candidate based on outcome evidence"
+  ]
+}
