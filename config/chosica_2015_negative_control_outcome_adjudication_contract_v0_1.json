@@ -1,0 +1,128 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_BLIND_NEGATIVE_CONTROL_OUTCOME_ADJUDICATION_CONTRACT",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "dependency": {
+    "base_branch": "agent/chosica-2015-multibasin-v0.1",
+    "required_parent_head_sha": "82a79faa48415ff706d4096d3ac930e8c986986e",
+    "control_geometry_freeze": "config/chosica_2015_negative_control_shortlist_geometry_freeze_record_v0_1.json",
+    "control_predictor_freeze": "config/chosica_2015_negative_control_preunblind_imerg_freeze_record_v0_1.json",
+    "matching_freeze": "config/chosica_2015_negative_control_matching_freeze_record_v0_1.json"
+  },
+  "reviewer_blinding": {
+    "candidate_ids": ["NC_001","NC_007","NC_017","NC_019","NC_023","NC_024","NC_027"],
+    "target_names_visible_to_reviewer": false,
+    "target_outcomes_visible_to_reviewer": false,
+    "target_matching_ranks_visible_to_reviewer": false,
+    "target_predictor_values_visible_to_reviewer": false,
+    "a6680_outcome_narrative_visible_to_reviewer": false,
+    "allowed_candidate_context": [
+      "candidate_id",
+      "exact frozen candidate catchment geometry",
+      "frozen event date and event anchor time",
+      "candidate location descriptors derived independently from geography/cartography solely for identity resolution"
+    ]
+  },
+  "event_window": {
+    "timezone": "America/Lima",
+    "start_local_inclusive": "2015-03-23T00:00:00-05:00",
+    "anchor_local": "2015-03-23T14:30:00-05:00",
+    "end_local_exclusive": "2015-03-24T00:00:00-05:00",
+    "freeze_basis": "Use the full local calendar day containing the preregistered 14:30 event anchor. This conservative day-level window is frozen before candidate outcome evidence is read and may not be shortened, shifted, or candidate-specific."
+  },
+  "allowed_dispositions": [
+    "CONTROL_AFFIRMATIVE_NO_ACTIVATION",
+    "NOT_CONTROL_AFFIRMATIVE_ACTIVATION",
+    "OUTCOME_UNKNOWN"
+  ],
+  "control_rule": {
+    "CONTROL_AFFIRMATIVE_NO_ACTIVATION": {
+      "requires": [
+        "at least one independent source with affirmative evidence that the frozen candidate drainage did not activate during the frozen event window",
+        "source identity and stable locator",
+        "source publication/observation date or explicit temporal coverage",
+        "spatial linkage to the exact frozen candidate catchment or an independently resolved drainage identity",
+        "reviewer rationale explaining why the evidence is affirmative rather than silence"
+      ],
+      "forbidden_as_sufficient_evidence": [
+        "candidate absent from a non-exhaustive incident list",
+        "candidate absent from a map whose coverage/completeness is not explicitly established",
+        "no search results",
+        "no news report",
+        "documentary silence",
+        "lack of damage report"
+      ]
+    },
+    "NOT_CONTROL_AFFIRMATIVE_ACTIVATION": {
+      "requires": [
+        "at least one independent source affirmatively documenting activation/flow/overflow/debris-flow response in the frozen candidate drainage during the frozen event window",
+        "source identity and stable locator",
+        "temporal linkage to the frozen event window",
+        "spatial linkage to the exact frozen candidate catchment or independently resolved drainage identity"
+      ]
+    },
+    "OUTCOME_UNKNOWN": {
+      "required_when": [
+        "available sources are silent",
+        "temporal linkage is ambiguous",
+        "spatial linkage is ambiguous",
+        "sources conflict without a defensible resolution",
+        "only inferential or non-independent evidence is available"
+      ]
+    }
+  },
+  "source_independence": {
+    "preferred": [
+      "contemporaneous or retrospective institutional field/inspection records",
+      "official emergency/municipal/technical records with explicit spatial and temporal coverage",
+      "peer-reviewed or institutional studies with explicit event observations",
+      "georeferenced remote-sensing or imagery interpretation produced independently of IRFEN predictors and target labels"
+    ],
+    "not_independent": [
+      "IRFEN target outcome files",
+      "IRFEN predictor outputs",
+      "IRFEN matching scores",
+      "A6680 target-outcome narrative used as a target label source"
+    ]
+  },
+  "evidence_record_requirements": {
+    "fields_per_source": [
+      "source_id",
+      "institution_or_author",
+      "title_or_description",
+      "locator",
+      "publication_or_observation_date",
+      "evidence_type",
+      "temporal_coverage",
+      "spatial_linkage",
+      "affirmative_statement_class",
+      "source_sha256_or_archival_id_if_available"
+    ],
+    "verbatim_quote_required": false,
+    "long_source_text_storage_forbidden": true
+  },
+  "frozen_post_review_policy": {
+    "candidate_replacement_allowed": false,
+    "candidate_reranking_allowed": false,
+    "geometry_change_allowed": false,
+    "predictor_reselection_allowed": false,
+    "event_window_change_allowed": false,
+    "threshold_fitting_allowed": false,
+    "sealed_target_unblind_allowed_by_this_contract": false
+  },
+  "minimum_sufficiency_for_next_gate": {
+    "automatic_target_unblind": false,
+    "require_at_least_one_affirmative_control": true,
+    "if_zero_affirmative_controls": "STOP_AT_CONTROL_GATE_NO_TARGET_UNBLIND",
+    "unknown_candidates_may_remain": true,
+    "not_control_candidates_may_remain": true,
+    "note": "One affirmative control is the minimum to permit a separate explicit unblind decision record; it is not sufficient to estimate false-alarm rate or production performance."
+  }
+}
