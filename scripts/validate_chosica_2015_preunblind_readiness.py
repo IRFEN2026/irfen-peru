@@ -6,6 +6,7 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 GUARDS={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+CONTROL_IDS={'NC_001','NC_007','NC_017','NC_019','NC_023','NC_024','NC_027'}
 
 def load(p): return json.loads(p.read_text(encoding='utf-8'))
 def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest()
@@ -21,7 +22,7 @@ def main():
         if co['guards']!=GUARDS: raise RuntimeError('FAIL_CLOSED_CONTRACT_GUARDS')
         paths={k:ROOT/v for k,v in co['required_records'].items()}
         docs={k:load(p) for k,p in paths.items()}
-        val=docs['validation_set']; reg=docs['outlet_geometry_freeze']; morph=docs['morphometry_freeze']; imerg=docs['imerg_freeze']; pool=docs['negative_control_pool_freeze']; match=docs['negative_control_matching_freeze']; geom=docs['negative_control_shortlist_geometry_freeze']; hand=docs['blinding_recovery_handoff']
+        val=docs['validation_set']; reg=docs['outlet_geometry_freeze']; morph=docs['morphometry_freeze']; imerg=docs['imerg_freeze']; pool=docs['negative_control_pool_freeze']; match=docs['negative_control_matching_freeze']; geom=docs['negative_control_shortlist_geometry_freeze']; ctrl_imerg=docs['negative_control_imerg_freeze']; hand=docs['blinding_recovery_handoff']
         for name,d in docs.items():
             if d.get('guards',{})!=GUARDS: raise RuntimeError(f'FAIL_CLOSED_GUARDS {name}')
         gate=reg['batch_gate']
@@ -41,12 +42,20 @@ def main():
         if any(match['anti_leakage'].values()): raise RuntimeError('FAIL_CLOSED_CONTROL_MATCH_LEAKAGE')
         if geom['status']!='NEGATIVE_CONTROL_SHORTLIST_GEOMETRY_FROZEN_BY_EXACT_HASH': raise RuntimeError('FAIL_CLOSED_CONTROL_GEOMETRY_FREEZE')
         if geom['frozen_outputs']['candidate_count']!=7 or geom['frozen_outputs']['catchment_touches_dem_boundary'] is not False: raise RuntimeError('FAIL_CLOSED_CONTROL_GEOMETRY_COUNTS')
-        if set(geom['frozen_inputs']['shortlisted_candidate_ids'])!={'NC_001','NC_007','NC_017','NC_019','NC_023','NC_024','NC_027'}: raise RuntimeError('FAIL_CLOSED_CONTROL_GEOMETRY_IDS')
+        if set(geom['frozen_inputs']['shortlisted_candidate_ids'])!=CONTROL_IDS: raise RuntimeError('FAIL_CLOSED_CONTROL_GEOMETRY_IDS')
         if geom['frozen_inputs']['candidate_pool_sha256']!=match['candidate_pool_sha256']: raise RuntimeError('FAIL_CLOSED_CONTROL_GEOMETRY_POOL_HASH')
         if geom['frozen_inputs']['matching_freeze_record_sha256']!=sha(paths['negative_control_matching_freeze']): raise RuntimeError('FAIL_CLOSED_CONTROL_GEOMETRY_MATCH_HASH')
         if any(geom['anti_leakage'].values()): raise RuntimeError('FAIL_CLOSED_CONTROL_GEOMETRY_LEAKAGE')
         geom_contract=ROOT/geom['contract']['path']
         if sha(geom_contract)!=geom['contract']['sha256']: raise RuntimeError('FAIL_CLOSED_CONTROL_GEOMETRY_CONTRACT_HASH')
+        if ctrl_imerg['status']!='NEGATIVE_CONTROL_PREUNBLIND_IMERG_FROZEN_BY_EXACT_REPORT_HASH' or ctrl_imerg['predictors_frozen'] is not True: raise RuntimeError('FAIL_CLOSED_CONTROL_IMERG_FREEZE')
+        e=ctrl_imerg['expected_report']
+        if e['candidate_count']!=7 or set(e['candidate_ids'])!=CONTROL_IDS or e['slot_count_per_candidate']!=720 or e['valid_slot_count_per_candidate']!=720 or e['coverage_fraction_per_candidate']!=1.0: raise RuntimeError('FAIL_CLOSED_CONTROL_IMERG_DIMENSIONS')
+        if e['geometry_geojson_sha256']!=geom['frozen_outputs']['geojson_sha256']: raise RuntimeError('FAIL_CLOSED_CONTROL_IMERG_GEOMETRY_HASH')
+        for key in ('outcome_evidence_read','candidate_outcome_evidence_read','a6680_numeric_reference_read','post_anchor_predictor_read','sealed_target_unblind_performed','control_outcome_adjudication_performed','geometry_or_pour_point_modified','candidate_replaced','window_shifted','zero_imputation_used'):
+            if e[key] is not False: raise RuntimeError(f'FAIL_CLOSED_CONTROL_IMERG_FLAG {key}')
+        ctrl_exec=ROOT/ctrl_imerg['provenance']['execution_contract_path']
+        if ctrl_imerg['provenance']['execution_contract_blob_sha'] is None or not ctrl_exec.exists(): raise RuntimeError('FAIL_CLOSED_CONTROL_IMERG_EXECUTION_PROVENANCE')
         if hand['status']!='BLINDING_RECOVERY_HANDOFF_ACTIVE' or hand['recovery_decision']['choice']!='PRESERVE_STRICT_BLIND_VALIDATION_SEMANTICS_WITH_FRESH_PROCESS': raise RuntimeError('FAIL_CLOSED_RECOVERY_HANDOFF')
         if hand['process_separation']['fresh_process_outcome_evidence_read'] is not False or hand['process_separation']['fresh_process_candidate_outcome_evidence_read'] is not False: raise RuntimeError('FAIL_CLOSED_RECOVERY_LEAKAGE')
         if hand['current_gate']['sealed_target_outcome_unblind_allowed'] is not False: raise RuntimeError('FAIL_CLOSED_RECOVERY_UNBLIND_OPEN')
@@ -56,6 +65,7 @@ def main():
         rep['checks']={'outlets_frozen':6,'geometries_frozen':6,'morphometry_frozen':True,'imerg_frozen':True,'imerg_coverage_fraction':1.0,
                        'negative_control_candidate_pool_frozen':True,'negative_control_candidate_count':29,'negative_control_matching_frozen':True,
                        'shortlist_per_target':3,'negative_control_shortlist_geometry_frozen':True,'negative_control_shortlist_geometry_count':7,
+                       'negative_control_imerg_frozen':True,'negative_control_imerg_count':7,'negative_control_imerg_coverage_fraction':1.0,
                        'fresh_blind_recovery_active':True,'target_outcomes_sealed':True,'record_sha256':hashes}
         rep['status']='PASS_PREUNBLIND_CORE_FREEZES_PENDING_CONTROL_OUTCOME_ADJUDICATION'
         rep['next_gate']='CONTROL_OUTCOME_ADJUDICATION_ON_FROZEN_SHORTLIST_ONLY'
