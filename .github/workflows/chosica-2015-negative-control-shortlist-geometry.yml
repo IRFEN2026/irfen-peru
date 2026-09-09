@@ -1,0 +1,58 @@
+name: IRFEN - Chosica 2015 negative-control shortlist geometry
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_negative_control_shortlist_geometry_contract_v0_1.json
+      - config/chosica_2015_negative_control_matching_freeze_record_v0_1.json
+      - config/chosica_2015_negative_control_candidate_generation_v0_1.json
+      - site/data/validation/chosica_2015_negative_control_candidate_pool.json
+      - scripts/generate_chosica_2015_negative_control_candidates.py
+      - scripts/match_chosica_2015_negative_control_candidates.py
+      - scripts/delineate_chosica_2015_negative_control_shortlist.py
+      - .github/workflows/chosica-2015-negative-control-shortlist-geometry.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  delineate-shortlist:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install scientific dependencies
+        run: pip install -r requirements.txt
+      - name: Delineate exact shortlisted candidate catchments
+        run: |
+          mkdir -p artifacts
+          python scripts/delineate_chosica_2015_negative_control_shortlist.py \
+            --contract config/chosica_2015_negative_control_shortlist_geometry_contract_v0_1.json \
+            --report artifacts/chosica_2015_negative_control_shortlist_geometry_report.json \
+            --geojson artifacts/chosica_2015_negative_control_shortlist.geojson
+      - name: Enforce blind geometry guards
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/chosica_2015_negative_control_shortlist_geometry_report.json',encoding='utf-8'))
+          assert d['status']=='PASS_PREUNBLIND_NEGATIVE_CONTROL_SHORTLIST_GEOMETRY'
+          assert d['candidate_count']==7
+          assert d['outcome_evidence_read'] is False
+          assert d['candidate_outcome_evidence_read'] is False
+          assert d['a6680_numeric_reference_read'] is False
+          assert d['post_anchor_predictor_read'] is False
+          assert all(x['catchment_touches_dem_boundary'] is False for x in d['candidate_audit'])
+          assert d['guards']=={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-negative-control-shortlist-geometry
+          path: |
+            artifacts/chosica_2015_negative_control_shortlist_geometry_report.json
+            artifacts/chosica_2015_negative_control_shortlist.geojson
+          if-no-files-found: error
