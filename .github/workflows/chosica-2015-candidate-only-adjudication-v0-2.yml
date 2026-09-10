@@ -1,0 +1,70 @@
+name: IRFEN - Chosica 2015 candidate adjudication v0.2
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_candidate_only_territorial_adjudication_ingest_contract_v0_2.json
+      - config/chosica_2015_candidate_only_review_v0_2_contract.json
+      - config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+      - config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json
+      - site/data/validation/chosica_2015_candidate_only_reviewer_bundle_v0_2.json
+      - site/data/validation/chosica_2015_candidate_only_territorial_adjudication_template_v0_2.json
+      - site/data/validation/chosica_2015_candidate_only_territorial_adjudication_v0_2.json
+      - scripts/validate_chosica_2015_candidate_only_adjudication_v0_2.py
+      - .github/workflows/chosica-2015-candidate-only-adjudication-v0-2.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-adjudication-boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Validate independent-review return or waiting template
+        run: |
+          mkdir -p artifacts
+          if test -f site/data/validation/chosica_2015_candidate_only_territorial_adjudication_v0_2.json; then
+            INPUT=site/data/validation/chosica_2015_candidate_only_territorial_adjudication_v0_2.json
+            MODE=adjudication
+          else
+            INPUT=site/data/validation/chosica_2015_candidate_only_territorial_adjudication_template_v0_2.json
+            MODE=template
+          fi
+          python scripts/validate_chosica_2015_candidate_only_adjudication_v0_2.py \
+            --contract config/chosica_2015_candidate_only_territorial_adjudication_ingest_contract_v0_2.json \
+            --contamination config/chosica_2015_control_adjudication_contamination_registry_v0_1.json \
+            --cleanroom-freeze config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json \
+            --review-contract config/chosica_2015_candidate_only_review_v0_2_contract.json \
+            --bundle site/data/validation/chosica_2015_candidate_only_reviewer_bundle_v0_2.json \
+            --input "$INPUT" --mode "$MODE" \
+            --output artifacts/chosica_2015_candidate_only_adjudication_v0_2_gate.json
+      - name: Enforce fail-closed state
+        run: |
+          python - <<'PY'
+          import json
+          p='artifacts/chosica_2015_candidate_only_adjudication_v0_2_gate.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['guards']=={
+            'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,
+            'production_ready':False,'operational_alerting_enabled':False}
+          assert d['target_unblind_allowed'] is False
+          assert d['status'] in {
+            'PASS_CANDIDATE_ONLY_ADJUDICATION_TEMPLATE_V0_2',
+            'PASS_CANDIDATE_ONLY_ADJUDICATION_V0_2_FREEZE'}
+          if d['status']=='PASS_CANDIDATE_ONLY_ADJUDICATION_TEMPLATE_V0_2':
+            assert d['candidate_review_pending'] is True
+            assert d['scientific_use_allowed'] is False
+          else:
+            assert d['scientific_use_allowed'] is True
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-candidate-only-adjudication-v0-2-gate
+          path: artifacts/chosica_2015_candidate_only_adjudication_v0_2_gate.json
+          if-no-files-found: error
