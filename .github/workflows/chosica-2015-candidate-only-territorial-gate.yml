@@ -20,6 +20,23 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            .github/workflows/chosica-2015-candidate-only-territorial-gate.yml
+            config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json
+            config/chosica_2015_candidate_only_territorial_unblind_contract_v0_1.json
+            config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+            site/data/validation/chosica_2015_cleanroom_candidate_review_packet_v0_1.json
+            scripts/validate_chosica_2015_candidate_only_territorial_gate.py
+      - name: Prove target outcome and incident sources are absent from workspace
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09_b.json
+          test ! -e config/chosica_2015_outlet_freeze_registry_v0_1.json
+          echo PASS_CANDIDATE_ONLY_TERRITORIAL_GATE_SPARSE_WORKSPACE
       - name: Validate frozen candidate-only review boundary
         run: |
           set -euo pipefail
