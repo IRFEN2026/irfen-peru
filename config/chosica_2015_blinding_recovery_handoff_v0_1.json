@@ -1,7 +1,8 @@
 {
   "schema_version": "0.1",
   "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
-  "status": "BLINDING_RECOVERY_HANDOFF_CLEANROOM_V0_2_ACTIVE",
+  "status": "BLINDING_RECOVERY_HANDOFF_ACTIVE",
+  "recovery_phase": "CLEANROOM_V0_2_WAITING_ISOLATED_CANDIDATE_ONLY_ADJUDICATION",
   "guards": {
     "RESEARCH_ONLY": true,
     "TEST_ONLY": true,
@@ -9,6 +10,7 @@
     "production_ready": false,
     "operational_alerting_enabled": false
   },
+  "incident_record": "config/chosica_2015_blinding_incident_2026_09_09.json",
   "incident_records": [
     "config/chosica_2015_blinding_incident_2026_09_09.json",
     "config/chosica_2015_blinding_incident_2026_09_09_b.json"
@@ -16,23 +18,46 @@
   "contamination_registry": "config/chosica_2015_control_adjudication_contamination_registry_v0_1.json",
   "recovery_decision": {
     "date": "2026-09-09",
-    "choice": "PRESERVE_STRICT_BLIND_VALIDATION_SEMANTICS_WITH_ISOLATED_CANDIDATE_ONLY_REVIEW",
+    "choice": "PRESERVE_STRICT_BLIND_VALIDATION_SEMANTICS_WITH_FRESH_PROCESS",
+    "current_implementation": "ISOLATED_CANDIDATE_ONLY_REVIEW_V0_2",
+    "incident_record_remains_immutable": true,
     "incident_records_remain_immutable": true,
     "downgrade_to_nonblind_retrospective_analysis": false,
     "contaminated_adjudication_reuse_allowed": false
   },
+  "process_separation": {
+    "contaminated_process_must_not_select_or_rank_negative_controls": true,
+    "contaminated_process_must_not_tune_or_reselect_geometry": true,
+    "contaminated_process_must_not_fit_thresholds_or_interpret_outcomes": true,
+    "fresh_process_outcome_evidence_read": false,
+    "fresh_process_candidate_outcome_evidence_read": false,
+    "fresh_process_a6680_numeric_morphometry_read": false,
+    "fresh_process_post_anchor_predictor_read": false,
+    "fresh_process_input_policy": "Only frozen contracts, hashes, static pre-event geography, Copernicus DEM, frozen phase-1 morphometry, frozen pre-anchor IMERG metadata/outputs, and other explicitly pre-unblind-safe inputs are admissible."
+  },
+  "preserved_pre_exposure_assets": {
+    "morphometry_freeze_record": "config/chosica_2015_morphometry_phase1_freeze_record_v0_1.json",
+    "morphometry_report_sha256": "b45de91491d610bdb847340ab0dcfe96f7c884096caa36e03ca0c41341557676",
+    "imerg_freeze_record": "config/chosica_2015_preunblind_imerg_freeze_record_v0_1.json",
+    "imerg_report_sha256": "0fb330d1422a13dda0a1869b910841166614549f773893bc62c7b288ce733430",
+    "geometry_or_outlet_reselected_after_incident": false,
+    "scientific_threshold_modified_after_incident": false
+  },
   "preserved_preincident_assets": {
     "outlet_geometry_freeze": "config/chosica_2015_outlet_freeze_registry_v0_1.json",
     "morphometry_freeze_record": "config/chosica_2015_morphometry_phase1_freeze_record_v0_1.json",
-    "morphometry_report_sha256": "b45de91491d610bdb847340ab0dcfe96f7c884096caa36e03ca0c41341557676",
     "target_imerg_freeze_record": "config/chosica_2015_preunblind_imerg_freeze_record_v0_1.json",
-    "target_imerg_report_sha256": "0fb330d1422a13dda0a1869b910841166614549f773893bc62c7b288ce733430",
     "negative_control_candidate_pool_freeze": "config/chosica_2015_negative_control_candidate_pool_freeze_record_v0_1.json",
     "negative_control_matching_freeze": "config/chosica_2015_negative_control_matching_freeze_record_v0_1.json",
     "negative_control_shortlist_geometry_freeze": "config/chosica_2015_negative_control_shortlist_geometry_freeze_record_v0_1.json",
-    "negative_control_preanchor_imerg_freeze": "config/chosica_2015_negative_control_preunblind_imerg_freeze_record_v0_1.json",
-    "geometry_or_outlet_reselected_after_incident": false,
-    "scientific_threshold_modified_after_incident": false
+    "negative_control_preanchor_imerg_freeze": "config/chosica_2015_negative_control_preunblind_imerg_freeze_record_v0_1.json"
+  },
+  "fresh_process_progress": {
+    "negative_control_candidate_generation_contract": "config/chosica_2015_negative_control_candidate_generation_v0_1.json",
+    "negative_control_candidate_pool_freeze_record": "config/chosica_2015_negative_control_candidate_pool_freeze_record_v0_1.json",
+    "negative_control_matching_contract": "config/chosica_2015_negative_control_matching_contract_v0_1.json",
+    "candidate_pool_selected_or_ranked_using_2015_outcomes": false,
+    "sealed_target_outcome_unblind_performed": false
   },
   "cleanroom_recovery": {
     "contract": "config/chosica_2015_cleanroom_recovery_contract_v0_1.json",
@@ -62,12 +87,14 @@
     "documentary_silence_means_control": false
   },
   "current_gate": {
+    "sealed_target_outcome_unblind_allowed": false,
+    "control_outcome_adjudication_allowed_only_after_exact_ranked_shortlist_freeze": true,
+    "a6680_numeric_morphometry_comparison_may_not_modify_frozen_geometry_or_matching": true,
+    "fail_closed_on_any_new_blinding_violation": true,
     "status": "WAITING_FOR_INDEPENDENT_CANDIDATE_ONLY_CONTROL_SET_V0_2",
     "next_gate": "COMMIT_VALIDATED_V0_2_CONTROL_SET_FREEZE_FROM_ISOLATED_REVIEW",
-    "sealed_target_outcome_unblind_allowed": false,
     "a6680_numeric_morphometry_unblind_allowed": false,
     "automatic_adjudication_by_contaminated_executor_allowed": false,
-    "safe_automation_behavior": "Revalidate frozen clean-room hashes and candidate-only boundary; do not perform territorial adjudication in this process. Resume automatically only after the v0.2 adjudication return is present and passes the isolated ingest validator.",
-    "fail_closed_on_any_new_blinding_violation": true
+    "safe_automation_behavior": "Revalidate frozen clean-room hashes and candidate-only boundary; do not perform territorial adjudication in this process. Resume only after the v0.2 adjudication return is present and passes the isolated ingest validator."
   }
 }
