@@ -1,7 +1,7 @@
 {
   "schema_version": "0.1",
   "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
-  "status": "BLINDING_RECOVERY_HANDOFF_ACTIVE",
+  "status": "BLINDING_RECOVERY_HANDOFF_CLEANROOM_V0_2_ACTIVE",
   "guards": {
     "RESEARCH_ONLY": true,
     "TEST_ONLY": true,
@@ -9,42 +9,65 @@
     "production_ready": false,
     "operational_alerting_enabled": false
   },
-  "incident_record": "config/chosica_2015_blinding_incident_2026_09_09.json",
+  "incident_records": [
+    "config/chosica_2015_blinding_incident_2026_09_09.json",
+    "config/chosica_2015_blinding_incident_2026_09_09_b.json"
+  ],
+  "contamination_registry": "config/chosica_2015_control_adjudication_contamination_registry_v0_1.json",
   "recovery_decision": {
     "date": "2026-09-09",
-    "choice": "PRESERVE_STRICT_BLIND_VALIDATION_SEMANTICS_WITH_FRESH_PROCESS",
-    "incident_record_remains_immutable": true,
-    "downgrade_to_nonblind_retrospective_analysis": false
+    "choice": "PRESERVE_STRICT_BLIND_VALIDATION_SEMANTICS_WITH_ISOLATED_CANDIDATE_ONLY_REVIEW",
+    "incident_records_remain_immutable": true,
+    "downgrade_to_nonblind_retrospective_analysis": false,
+    "contaminated_adjudication_reuse_allowed": false
   },
-  "process_separation": {
-    "contaminated_process_must_not_select_or_rank_negative_controls": true,
-    "contaminated_process_must_not_tune_or_reselect_geometry": true,
-    "contaminated_process_must_not_fit_thresholds_or_interpret_outcomes": true,
-    "fresh_process_outcome_evidence_read": false,
-    "fresh_process_candidate_outcome_evidence_read": false,
-    "fresh_process_a6680_numeric_morphometry_read": false,
-    "fresh_process_post_anchor_predictor_read": false,
-    "fresh_process_input_policy": "Only frozen contracts, hashes, static pre-event geography, Copernicus DEM, frozen phase-1 morphometry, frozen pre-anchor IMERG metadata/outputs, and other explicitly pre-unblind-safe inputs are admissible."
-  },
-  "preserved_pre_exposure_assets": {
+  "preserved_preincident_assets": {
+    "outlet_geometry_freeze": "config/chosica_2015_outlet_freeze_registry_v0_1.json",
     "morphometry_freeze_record": "config/chosica_2015_morphometry_phase1_freeze_record_v0_1.json",
     "morphometry_report_sha256": "b45de91491d610bdb847340ab0dcfe96f7c884096caa36e03ca0c41341557676",
-    "imerg_freeze_record": "config/chosica_2015_preunblind_imerg_freeze_record_v0_1.json",
-    "imerg_report_sha256": "0fb330d1422a13dda0a1869b910841166614549f773893bc62c7b288ce733430",
+    "target_imerg_freeze_record": "config/chosica_2015_preunblind_imerg_freeze_record_v0_1.json",
+    "target_imerg_report_sha256": "0fb330d1422a13dda0a1869b910841166614549f773893bc62c7b288ce733430",
+    "negative_control_candidate_pool_freeze": "config/chosica_2015_negative_control_candidate_pool_freeze_record_v0_1.json",
+    "negative_control_matching_freeze": "config/chosica_2015_negative_control_matching_freeze_record_v0_1.json",
+    "negative_control_shortlist_geometry_freeze": "config/chosica_2015_negative_control_shortlist_geometry_freeze_record_v0_1.json",
+    "negative_control_preanchor_imerg_freeze": "config/chosica_2015_negative_control_preunblind_imerg_freeze_record_v0_1.json",
     "geometry_or_outlet_reselected_after_incident": false,
     "scientific_threshold_modified_after_incident": false
   },
-  "fresh_process_progress": {
-    "negative_control_candidate_generation_contract": "config/chosica_2015_negative_control_candidate_generation_v0_1.json",
-    "negative_control_candidate_pool_freeze_record": "config/chosica_2015_negative_control_candidate_pool_freeze_record_v0_1.json",
-    "negative_control_matching_contract": "config/chosica_2015_negative_control_matching_contract_v0_1.json",
-    "candidate_pool_selected_or_ranked_using_2015_outcomes": false,
-    "sealed_target_outcome_unblind_performed": false
+  "cleanroom_recovery": {
+    "contract": "config/chosica_2015_cleanroom_recovery_contract_v0_1.json",
+    "freeze_record": "config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json",
+    "status": "CLEANROOM_RECOVERY_FROZEN_BY_EXACT_HASH",
+    "cleanroom_input_sha256": "724efd398d23e0431c4490a40a78af23e9ebf1f2642db3e87f1f0ecc0f3a22ac",
+    "cleanroom_matching_sha256": "7fa4d488de385832f8b213b8fd314bcade01fda5495df2987d32be35a90ee5e2",
+    "cleanroom_validation_sha256": "07eebbe943ccaadf68c97a61255246a223df974cc934192055b56952a3a9125f",
+    "selected_candidate_count": 7,
+    "outcomes_used_for_matching": false,
+    "precipitation_used_for_matching": false,
+    "free_web_search_used_for_matching": false,
+    "contaminated_adjudication_excluded": true
+  },
+  "candidate_only_review": {
+    "review_contract": "config/chosica_2015_candidate_only_review_v0_2_contract.json",
+    "reviewer_bundle": "site/data/validation/chosica_2015_candidate_only_reviewer_bundle_v0_2.json",
+    "reviewer_bundle_sha256": "c4f62777d31a223f77de049ea368c321f5c299114d6a14f407899c772e911f15",
+    "candidate_count": 7,
+    "candidate_membership_sha256": "5738c0e2bcddf95be0e1cc9c77660d030355602f39920b3873c6ec65b0f26bc1",
+    "adjudication_return_path": "site/data/validation/chosica_2015_candidate_only_territorial_adjudication_v0_2.json",
+    "adjudication_return_present": false,
+    "review_must_be_isolated_from_target_outcomes": true,
+    "candidate_replacement_allowed": false,
+    "matching_recalculation_after_review_allowed": false,
+    "selection_feedback_allowed": false,
+    "documentary_silence_means_control": false
   },
   "current_gate": {
+    "status": "WAITING_FOR_INDEPENDENT_CANDIDATE_ONLY_CONTROL_SET_V0_2",
+    "next_gate": "COMMIT_VALIDATED_V0_2_CONTROL_SET_FREEZE_FROM_ISOLATED_REVIEW",
     "sealed_target_outcome_unblind_allowed": false,
-    "control_outcome_adjudication_allowed_only_after_exact_ranked_shortlist_freeze": true,
-    "a6680_numeric_morphometry_comparison_may_not_modify_frozen_geometry_or_matching": true,
+    "a6680_numeric_morphometry_unblind_allowed": false,
+    "automatic_adjudication_by_contaminated_executor_allowed": false,
+    "safe_automation_behavior": "Revalidate frozen clean-room hashes and candidate-only boundary; do not perform territorial adjudication in this process. Resume automatically only after the v0.2 adjudication return is present and passes the isolated ingest validator.",
     "fail_closed_on_any_new_blinding_violation": true
   }
 }
