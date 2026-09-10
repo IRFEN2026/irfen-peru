@@ -27,6 +27,7 @@ def main():
         pool=docs['negative_control_pool_freeze']; oldmatch=docs['negative_control_matching_freeze_preincident']
         geom=docs['negative_control_shortlist_geometry_freeze']; ctrl_imerg=docs['negative_control_imerg_freeze']; hand=docs['blinding_recovery_handoff']
         contam=docs['contamination_registry']; clean=docs['cleanroom_recovery_freeze']; territorial=docs['candidate_only_territorial_contract']; packet=docs['candidate_only_review_packet']
+        ingest=docs['candidate_only_adjudication_ingest_contract']; target_ready=docs['target_unblind_readiness_contract']
         for name,d in docs.items():
             if d.get('guards',{})!=GUARDS: raise RuntimeError(f'FAIL_CLOSED_GUARDS {name}')
 
@@ -91,6 +92,18 @@ def main():
         if any(x['adjudication'] is not None for x in packet['candidates']): raise RuntimeError('FAIL_CLOSED_REVIEW_PACKET_PREMATURE_ADJUDICATION')
         if packet['sealed_target_outcomes_allowed'] is not False or packet['selection_feedback_allowed'] is not False or packet['candidate_replacement_allowed'] is not False or packet['a6680_allowed'] is not False: raise RuntimeError('FAIL_CLOSED_REVIEW_PACKET_POLICY')
 
+        if ingest['status']!='FROZEN_CANDIDATE_ONLY_ADJUDICATION_INGEST_CONTRACT': raise RuntimeError('FAIL_CLOSED_ADJUDICATION_INGEST_CONTRACT')
+        if ingest['prerequisites']['candidate_review_packet_sha256']!=territorial['review_packet_sha256'] or ingest['prerequisites']['cleanroom_matching_sha256']!=auth['matching_sha256']: raise RuntimeError('FAIL_CLOSED_ADJUDICATION_INGEST_HASH_LINK')
+        if ingest['selected_candidate_codes']!=packet_codes: raise RuntimeError('FAIL_CLOSED_ADJUDICATION_INGEST_MEMBERSHIP')
+        ria=ingest['review_attestation']
+        if ria['candidate_replacement_allowed'] is not False or ria['matching_recalculation_allowed'] is not False or ria['selection_feedback_allowed'] is not False or ria['target_unblind_allowed'] is not False or ria['a6680_allowed'] is not False or ria['post_event_target_evidence_allowed'] is not False: raise RuntimeError('FAIL_CLOSED_ADJUDICATION_INGEST_POLICY')
+
+        if target_ready['status']!='FROZEN_TARGET_UNBLIND_READINESS_CONTRACT': raise RuntimeError('FAIL_CLOSED_TARGET_READINESS_CONTRACT')
+        if target_ready['prerequisites']['cleanroom_matching_sha256']!=auth['matching_sha256']: raise RuntimeError('FAIL_CLOSED_TARGET_READINESS_MATCH_HASH')
+        if target_ready['eligibility_rule']['automatic_target_outcome_unblind'] is not False or target_ready['eligibility_rule']['candidate_replacement_allowed'] is not False or target_ready['eligibility_rule']['matching_recalculation_allowed'] is not False or target_ready['eligibility_rule']['selection_feedback_allowed'] is not False: raise RuntimeError('FAIL_CLOSED_TARGET_READINESS_POLICY')
+        if len(target_ready['frozen_target_shortlists'])!=6 or any(len(v)!=3 for v in target_ready['frozen_target_shortlists'].values()): raise RuntimeError('FAIL_CLOSED_TARGET_READINESS_SHORTLISTS')
+        if set(c for v in target_ready['frozen_target_shortlists'].values() for c in v)!=clean_codes: raise RuntimeError('FAIL_CLOSED_TARGET_READINESS_CANDIDATE_SET')
+
         targets=val['targets']
         if len(targets)!=6 or any(t['outcome_label']!='SEALED' for t in targets): raise RuntimeError('FAIL_CLOSED_TARGET_OUTCOMES_NOT_SEALED')
         hashes={k:sha(p) for k,p in paths.items()}
@@ -100,6 +113,7 @@ def main():
                        'negative_control_imerg_frozen':True,'negative_control_imerg_count':7,'negative_control_imerg_coverage_fraction':1.0,
                        'contaminated_adjudication_tombstoned':True,'cleanroom_matching_frozen':True,'cleanroom_selected_candidate_count':7,
                        'cleanroom_matches_preserved_candidate_geometry_set':True,'candidate_only_review_packet_frozen':True,
+                       'candidate_only_adjudication_ingest_contract_frozen':True,'target_unblind_readiness_contract_frozen':True,
                        'fresh_blind_recovery_active':True,'target_outcomes_sealed':True,'record_sha256':hashes}
         rep['status']='PASS_PREUNBLIND_CORE_FREEZES_CLEANROOM_RECOVERED_PENDING_CANDIDATE_ONLY_TERRITORIAL_ADJUDICATION'
         rep['next_gate']='INDEPENDENT_CANDIDATE_ONLY_TERRITORIAL_ADJUDICATION'
