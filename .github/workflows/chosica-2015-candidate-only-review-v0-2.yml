@@ -1,0 +1,57 @@
+name: IRFEN - Chosica 2015 candidate-only review v0.2
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_candidate_only_geometry_fingerprint_freeze_v0_1.json
+      - config/chosica_2015_candidate_only_review_v0_2_contract.json
+      - site/data/validation/chosica_2015_candidate_only_reviewer_bundle_v0_2.json
+      - scripts/validate_chosica_2015_candidate_only_review_v0_2.py
+      - .github/workflows/chosica-2015-candidate-only-review-v0-2.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-isolated-handoff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Validate frozen candidate-only handoff
+        run: |
+          mkdir -p artifacts
+          python scripts/validate_chosica_2015_candidate_only_review_v0_2.py \
+            --contract config/chosica_2015_candidate_only_review_v0_2_contract.json \
+            --fingerprints config/chosica_2015_candidate_only_geometry_fingerprint_freeze_v0_1.json \
+            --bundle site/data/validation/chosica_2015_candidate_only_reviewer_bundle_v0_2.json \
+            --output artifacts/chosica_2015_candidate_only_review_v0_2_validation.json
+      - name: Enforce scientific guards
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/chosica_2015_candidate_only_review_v0_2_validation.json',encoding='utf-8'))
+          assert d['status']=='PASS_CANDIDATE_ONLY_REVIEW_V0_2_HANDOFF'
+          assert d['candidate_review_allowed'] is True
+          assert d['candidate_count']==7
+          assert d['candidate_replacement_allowed'] is False
+          assert d['matching_recalculation_allowed'] is False
+          assert d['selection_feedback_allowed'] is False
+          assert d['target_unblind_allowed'] is False
+          assert d['guards']=={
+            'RESEARCH_ONLY':True,
+            'TEST_ONLY':True,
+            'production_use':False,
+            'production_ready':False,
+            'operational_alerting_enabled':False
+          }
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-candidate-only-review-v0-2-validation
+          path: artifacts/chosica_2015_candidate_only_review_v0_2_validation.json
+          if-no-files-found: error
