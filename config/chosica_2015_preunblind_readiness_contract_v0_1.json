@@ -22,7 +22,9 @@
     "contamination_registry": "config/chosica_2015_control_adjudication_contamination_registry_v0_1.json",
     "cleanroom_recovery_freeze": "config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json",
     "candidate_only_territorial_contract": "config/chosica_2015_candidate_only_territorial_unblind_contract_v0_1.json",
-    "candidate_only_review_packet": "site/data/validation/chosica_2015_cleanroom_candidate_review_packet_v0_1.json"
+    "candidate_only_review_packet": "site/data/validation/chosica_2015_cleanroom_candidate_review_packet_v0_1.json",
+    "candidate_only_adjudication_ingest_contract": "config/chosica_2015_candidate_only_territorial_adjudication_ingest_contract_v0_1.json",
+    "target_unblind_readiness_contract": "config/chosica_2015_target_unblind_readiness_contract_v0_1.json"
   },
   "authoritative_postincident_matching": {
     "record": "config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json",
@@ -36,7 +38,7 @@
       "C_c767e4cea74e",
       "C_d0274c1c4240"
     ],
-    "preincident_matching_use_after_incident": "PROVENANCE_ONLY_TO_VERIFY_ALREADY_FROZEN_GEOMETRY_AND_PREDICTORS; NOT AUTHORITATIVE_FOR_SELECTION_OR_ADJUDICATION"
+    "preincident_matching_use_after_incident": "PROVENANCE_ONLY_TO_VERIFY_ALREADY_FROZEN_GEOMETRY_AND_PREDICTORS; NOT_AUTHORITATIVE_FOR_SELECTION_OR_ADJUDICATION"
   },
   "hard_gates": [
     "six target outlets frozen",
@@ -50,7 +52,9 @@
     "exact catchment geometries for those seven candidates remain frozen by report and GeoJSON SHA256",
     "pre-anchor IMERG predictors for those seven candidates remain frozen by exact report hash with complete coverage",
     "candidate-only territorial review packet frozen before any new outcome adjudication",
+    "candidate-only adjudication ingest contract frozen before any independent review result is accepted",
     "territorial review cannot change candidate membership, rerun matching, reveal target outcomes or use A6680",
+    "post-control target readiness is evaluated only against anonymous frozen target codes and frozen shortlists",
     "all target outcomes remain SEALED",
     "no production or operational alerting guard may be relaxed"
   ],
@@ -68,7 +72,7 @@
     "candidate_only_territorial_review_may_proceed_after_gate": true,
     "target_outcome_file_may_be_read_by_readiness_validator": false,
     "a6680_outcome_narrative_may_be_read_by_readiness_validator": false,
-    "unblind_requires_separate_explicit_record_after candidate-only control adjudication": true,
+    "unblind_requires_separate_explicit_record_after_candidate_only_control_adjudication": true,
     "sealed_target_outcome_unblind_allowed_now": false
   }
 }
