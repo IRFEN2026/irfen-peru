@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Query fixed candidate-only Sentinel-1 metadata windows without reading pixel data or outcomes."""
 from __future__ import annotations
-import argparse, hashlib, json, urllib.parse
+import argparse, hashlib, json, re, urllib.parse
 from pathlib import Path
 import requests
 from shapely.geometry import shape
 
 FORBIDDEN = ("a6680","official_outcome_evidence","pedregal","quirio","carossio","carosio","rayos de sol","cashahuacra","la libertad")
+CODE_RE = re.compile(r"^C_[0-9a-f]{12}$")
 
 def sha_bytes(b: bytes) -> str: return hashlib.sha256(b).hexdigest()
 def sha_file(p: Path) -> str: return sha_bytes(p.read_bytes())
@@ -52,7 +53,7 @@ def main():
     windows=co["fixed_windows"]; rows=[]
     for f in sorted(feats,key=lambda z:str((z.get("properties") or {}).get("candidate_code",""))):
         props=f.get("properties") or {}; code=props.get("candidate_code")
-        if not code or not str(code).startswith("C") or not str(code)[1:].isdigit(): raise SystemExit("FAIL_CLOSED_CANDIDATE_CODE")
+        if not isinstance(code,str) or CODE_RE.fullmatch(code) is None: raise SystemExit("FAIL_CLOSED_CANDIDATE_CODE")
         wkt=shape(f["geometry"]).wkt
         cand={"candidate_code":code,"windows":{}}
         for wn in ("pre","post"):
