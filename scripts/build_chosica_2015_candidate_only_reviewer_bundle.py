@@ -92,6 +92,7 @@ def main() -> int:
         "allowed_adjudication_values": template["allowed_adjudication_values"],
         "evidence_rules": contract["evidence_rules"],
         "reviewer_attestation_requirements": contract["reviewer_attestation_requirements"],
+        "review_return_schema": contract["review_return_schema"],
         "selection_feedback_allowed": False,
         "candidate_replacement_allowed": False,
         "target_unblind_allowed": False,
