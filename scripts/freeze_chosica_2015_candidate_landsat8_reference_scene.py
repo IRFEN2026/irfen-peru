@@ -29,7 +29,9 @@ def main():
         for x in avmap[code]['windows']['pre']['items']:
             xd=dt(stime(x))
             if xd>=selected_dt or wrs(x)!=selected_wrs: continue
-            cv=cloud(x); candidates.append(((selected_dt-xd).total_seconds(),0 if cv is not None else 1,float('inf') if cv is None else cv,str(x.get('item_id') or '')),x)
+            cv=cloud(x)
+            key=((selected_dt-xd).total_seconds(),0 if cv is not None else 1,float('inf') if cv is None else cv,str(x.get('item_id') or ''))
+            candidates.append((key,x))
         if not candidates: raise SystemExit('FAIL_CLOSED_NO_EARLIER_REFERENCE_'+code)
         candidates.sort(key=lambda z:z[0]); key,x=candidates[0]
         outrows.append({'candidate_code':code,'reference':slim(x),'frozen_pre_item_id':selected_pre['item_id'],'selection_key':{'seconds_before_frozen_pre':key[0],'cloud_metadata_missing_rank':key[1],'scene_cloud_cover':None if key[1] else key[2]},'eligible_reference_count':len(candidates)})
