@@ -13,7 +13,7 @@
   "source_template": "site/data/validation/chosica_2015_candidate_only_territorial_adjudication_template_v0_1.json",
   "expected_candidate_count": 7,
   "expected_candidate_membership_sha256": "5738c0e2bcddf95be0e1cc9c77660d030355602f39920b3873c6ec65b0f26bc1",
-  "expected_bundle_sha256": "21aafeb7eb60c37d7eddb0867a57ab9bce991b99bb1adecdef4d2a0794557219",
+  "expected_bundle_sha256": "ea57553e6235bf9dfb7a145e7cbf7f729ca7417e2b77753e53d7f8cc13c4f65d",
   "allowed_bundle_fields": [
     "schema_version",
     "status",
@@ -25,6 +25,7 @@
     "allowed_adjudication_values",
     "evidence_rules",
     "reviewer_attestation_requirements",
+    "review_return_schema",
     "selection_feedback_allowed",
     "candidate_replacement_allowed",
     "target_unblind_allowed"
@@ -46,6 +47,32 @@
     "no_target_dossier_access": true,
     "candidate_membership_fixed_before_review": true,
     "no_external_reference_morphometry_access": true
+  },
+  "review_return_schema": {
+    "status_required": "INDEPENDENT_CANDIDATE_ONLY_TERRITORIAL_ADJUDICATION_COMPLETE",
+    "review_attestation_required": {
+      "review_process_isolated_from_target_outcomes": true,
+      "candidate_membership_fixed_before_review": true,
+      "candidate_replacement_performed": false,
+      "matching_recalculated_after_review": false,
+      "selection_feedback_used": false,
+      "target_outcomes_accessed": false,
+      "external_reference_morphometry_accessed": false,
+      "contaminated_stage_material_accessed": false
+    },
+    "candidate_record_required_fields": [
+      "candidate_code",
+      "adjudication",
+      "source_locator",
+      "source_date_if_known",
+      "retrieved_at_utc",
+      "evidence_sha256_or_stable_source_identifier",
+      "evidence_basis",
+      "reviewer_attestation_no_target_outcome_access"
+    ],
+    "record_attestation_required": true,
+    "candidate_order": "exactly the order in candidates",
+    "documentary_silence_rule": "OUTCOME_UNKNOWN"
   },
   "forbidden_tokens_case_insensitive": [
     "cashahuacra",
