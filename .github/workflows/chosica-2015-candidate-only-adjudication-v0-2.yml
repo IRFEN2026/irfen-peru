@@ -32,10 +32,14 @@ jobs:
           if test -f site/data/validation/chosica_2015_candidate_only_territorial_adjudication_v0_2.json; then
             INPUT=site/data/validation/chosica_2015_candidate_only_territorial_adjudication_v0_2.json
             MODE=adjudication
+            OUTPUT=artifacts/chosica_2015_candidate_only_control_set_freeze_v0_2.json
           else
             INPUT=site/data/validation/chosica_2015_candidate_only_territorial_adjudication_template_v0_2.json
             MODE=template
+            OUTPUT=artifacts/chosica_2015_candidate_only_adjudication_v0_2_gate.json
           fi
+          echo "mode=$MODE" >> "$GITHUB_ENV"
+          echo "output=$OUTPUT" >> "$GITHUB_ENV"
           python scripts/validate_chosica_2015_candidate_only_adjudication_v0_2.py \
             --contract config/chosica_2015_candidate_only_territorial_adjudication_ingest_contract_v0_2.json \
             --contamination config/chosica_2015_control_adjudication_contamination_registry_v0_1.json \
@@ -43,28 +47,40 @@ jobs:
             --review-contract config/chosica_2015_candidate_only_review_v0_2_contract.json \
             --bundle site/data/validation/chosica_2015_candidate_only_reviewer_bundle_v0_2.json \
             --input "$INPUT" --mode "$MODE" \
-            --output artifacts/chosica_2015_candidate_only_adjudication_v0_2_gate.json
+            --output "$OUTPUT"
       - name: Enforce fail-closed state
         run: |
           python - <<'PY'
-          import json
-          p='artifacts/chosica_2015_candidate_only_adjudication_v0_2_gate.json'
+          import json, os
+          p=os.environ['output']
           d=json.load(open(p,encoding='utf-8'))
-          assert d['guards']=={
+          guards={
             'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,
             'production_ready':False,'operational_alerting_enabled':False}
+          assert d['guards']==guards
           assert d['target_unblind_allowed'] is False
-          assert d['status'] in {
-            'PASS_CANDIDATE_ONLY_ADJUDICATION_TEMPLATE_V0_2',
-            'PASS_CANDIDATE_ONLY_ADJUDICATION_V0_2_FREEZE'}
-          if d['status']=='PASS_CANDIDATE_ONLY_ADJUDICATION_TEMPLATE_V0_2':
+          mode=os.environ['mode']
+          if mode=='template':
+            assert d['status']=='PASS_CANDIDATE_ONLY_ADJUDICATION_TEMPLATE_V0_2'
             assert d['candidate_review_pending'] is True
             assert d['scientific_use_allowed'] is False
           else:
-            assert d['scientific_use_allowed'] is True
+            assert d['status']=='CANDIDATE_ONLY_CONTROL_SET_V0_2_FROZEN_BY_ADJUDICATION_SHA256'
+            assert d['candidate_count']==7
+            assert d['candidate_replacement_performed'] is False
+            assert d['matching_recalculated_after_review'] is False
+            assert d['selection_feedback_used'] is False
+            assert d['contaminated_adjudication_reused'] is False
+            assert d['target_outcomes_accessed'] is False
+            assert d['external_reference_morphometry_accessed'] is False
+            partition=(set(d['confirmed_control_codes']) | set(d['excluded_activated_codes']) | set(d['outcome_unknown_codes']))
+            assert len(partition)==7
+            assert not (set(d['confirmed_control_codes']) & set(d['excluded_activated_codes']))
+            assert not (set(d['confirmed_control_codes']) & set(d['outcome_unknown_codes']))
+            assert not (set(d['excluded_activated_codes']) & set(d['outcome_unknown_codes']))
           PY
       - uses: actions/upload-artifact@v4
         with:
-          name: chosica-2015-candidate-only-adjudication-v0-2-gate
-          path: artifacts/chosica_2015_candidate_only_adjudication_v0_2_gate.json
+          name: chosica-2015-candidate-only-adjudication-v0-2
+          path: artifacts/*.json
           if-no-files-found: error
