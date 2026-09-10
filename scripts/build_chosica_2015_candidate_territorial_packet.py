@@ -67,7 +67,7 @@ def main() -> int:
         'selection_is_immutable':True,
         'candidate_count':len(packet_candidates),
         'candidates':packet_candidates,
-        'event_window':co['event_window'],
+        'anchor_utc':co['event_window']['anchor_utc'],
         'source_allowlisting_required_before_read':True,
         'free_web_search_allowed':False,
         'target_outcome_sources_allowed':False,
