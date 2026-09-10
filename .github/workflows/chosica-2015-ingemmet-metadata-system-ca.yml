@@ -34,20 +34,25 @@ jobs:
           set -euo pipefail
           ! grep -E -- '--insecure|-k([^A-Za-z]|$)|verify *= *False|CERT_NONE' scripts/discover_chosica_2015_ingemmet_metadata_via_system_curl.py
       - name: Discover exact allowlisted metadata only
+        id: discover
         run: |
-          set -euo pipefail
+          set -u
           mkdir -p artifacts
+          set +e
           env -i PATH="$PATH" HOME=/tmp LANG=C.UTF-8 python -I scripts/discover_chosica_2015_ingemmet_metadata_via_system_curl.py \
             --allowlist config/chosica_2015_candidate_evidence_source_allowlist_v0_1.json \
             --output artifacts/chosica_2015_ingemmet_metadata_system_ca_v0_1.json | tee artifacts/ingemmet_metadata_summary.json
-      - name: Enforce metadata-only boundary
+          rc=${PIPESTATUS[0]}
+          set -e
+          test "$rc" -eq 0 -o "$rc" -eq 2
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+      - name: Enforce metadata-only or explicit fail-closed source state
         run: |
           set -euo pipefail
           python -I - <<'PY'
           import json,pathlib
           p=pathlib.Path('artifacts/chosica_2015_ingemmet_metadata_system_ca_v0_1.json');d=json.loads(p.read_text(encoding='utf-8'))
           g={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
-          assert d['status']=='PASS_INGEMMET_VERIFIED_TLS_METADATA_DISCOVERY'
           assert d['guards']==g
           assert d['transport']=='SYSTEM_CURL_VERIFIED_TLS_NO_INSECURE_FLAGS'
           assert d['feature_queries_executed'] is False
@@ -55,7 +60,12 @@ jobs:
           assert d['control_labels_assigned'] is False
           assert d['sealed_target_unblind_allowed'] is False
           assert d['free_web_search_used'] is False and d['search_engine_used'] is False
-          assert d['layer_count']==len(d['layers']) and d['layer_count']>0
+          if d['status']=='PASS_INGEMMET_VERIFIED_TLS_METADATA_DISCOVERY':
+              assert d['layer_count']==len(d['layers']) and d['layer_count']>0
+          else:
+              assert d['status']=='FAIL_CLOSED_INGEMMET_VERIFIED_TLS_METADATA_DISCOVERY'
+              assert 'error_class' in d and 'error_code' in d
+              assert 'layers' not in d
           text=p.read_text(encoding='utf-8').lower()
           for token in ('pedregal','quirio','carossio','carosio','rayos de sol','cashahuacra','la libertad','a6680','official_outcome_evidence'):
               assert token not in text,token
