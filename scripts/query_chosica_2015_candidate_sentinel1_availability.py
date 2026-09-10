@@ -49,6 +49,7 @@ def main():
     endpoint=co["source"]["search_endpoint"]
     u=urllib.parse.urlparse(endpoint)
     if u.scheme!="https" or u.hostname!=co["source"]["endpoint_host"]: raise SystemExit("FAIL_CLOSED_ENDPOINT")
+    if co["source"].get("http_method")!="POST": raise SystemExit("FAIL_CLOSED_TRANSPORT_METHOD")
     session=requests.Session(); session.headers.update({"User-Agent":"IRFEN-research-cleanroom/0.1"})
     windows=co["fixed_windows"]; rows=[]
     for f in sorted(feats,key=lambda z:str((z.get("properties") or {}).get("candidate_code",""))):
@@ -59,7 +60,7 @@ def main():
         for wn in ("pre","post"):
             w=windows[wn]
             params={"platform":co["query"]["platform"],"beamMode":co["query"]["beam_mode"],"processingLevel":co["query"]["processing_level"],"intersectsWith":wkt,"start":w["start"],"end":w["end"],"output":co["query"]["output"],"maxResults":str(co["query"]["max_results_per_candidate_window"])}
-            r=session.get(endpoint,params=params,timeout=(20,120),allow_redirects=False)
+            r=session.post(endpoint,data=params,timeout=(20,120),allow_redirects=False)
             if r.is_redirect or r.is_permanent_redirect: raise SystemExit("FAIL_CLOSED_REDIRECT")
             if r.status_code!=200: raise SystemExit(f"FAIL_CLOSED_HTTP_{r.status_code}")
             rb=r.content; digest=sha_bytes(rb)
@@ -74,7 +75,7 @@ def main():
         compatible=sorted({sig(x) for x in pre if x.get("relative_orbit") is not None} & {sig(x) for x in post if x.get("relative_orbit") is not None})
         cand["compatible_metadata_signatures"]=[{"relative_orbit":x[0],"flight_direction":x[1],"polarization":x[2]} for x in compatible]
         cand["same_orbit_bracketing_available"]=bool(compatible); rows.append(cand)
-    out={"schema_version":"0.1","batch_id":co["batch_id"],"status":"PASS_CANDIDATE_ONLY_SENTINEL1_AVAILABILITY_FROZEN_INPUTS","guards":co["guards"],"contract_sha256":sha_file(a.contract),"candidate_geometry_sha256":sha_file(a.geometry),"event_anchor_utc":co["event_anchor_utc"],"fixed_windows":windows,"candidate_count":len(rows),"candidates":rows,"pixel_data_downloaded":False,"outcome_evidence_read":False,"target_names_or_ids_read":False,"a6680_read":False,"contaminated_adjudication_used":False,"candidate_selection_modified":False,"candidate_ranking_modified":False,"free_web_search_used":False,"sealed_target_unblind_allowed":False}
+    out={"schema_version":"0.2","batch_id":co["batch_id"],"status":"PASS_CANDIDATE_ONLY_SENTINEL1_AVAILABILITY_FROZEN_INPUTS","guards":co["guards"],"contract_sha256":sha_file(a.contract),"candidate_geometry_sha256":sha_file(a.geometry),"event_anchor_utc":co["event_anchor_utc"],"fixed_windows":windows,"candidate_count":len(rows),"candidates":rows,"pixel_data_downloaded":False,"outcome_evidence_read":False,"target_names_or_ids_read":False,"a6680_read":False,"contaminated_adjudication_used":False,"candidate_selection_modified":False,"candidate_ranking_modified":False,"free_web_search_used":False,"sealed_target_unblind_allowed":False}
     a.output.parent.mkdir(parents=True,exist_ok=True); a.output.write_text(json.dumps(out,ensure_ascii=False,sort_keys=True,separators=(",",":"))+"\n")
     print(json.dumps({"status":out["status"],"candidate_count":len(rows),"with_same_orbit_pairing":sum(x["same_orbit_bracketing_available"] for x in rows)},sort_keys=True))
 if __name__=="__main__": main()
