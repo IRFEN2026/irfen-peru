@@ -8,7 +8,7 @@ GUARDS={"RESEARCH_ONLY":True,"TEST_ONLY":True,"production_use":False,"production
 REVEALING_VALUES=("cashahuacra","quirio","pedregal","san_antonio","san antonio","la_libertad","la libertad","carossio","carosio","rayos_de_sol","rayos de sol","corrales","a6680","ingemmet","official_outcome_evidence","damage","severity","post_event")
 FORBIDDEN_KEY_TOKENS=("target_id","target_name","activation","severity","damage","a6680","post_anchor","official_outcome_evidence")
 SAFE_FALSE_KEYS={
-    "package_contains_outcome_labels","control_outcome_adjudication_performed","outcomes_used_for_matching",
+    "package_contains_target_names","package_contains_outcome_labels","control_outcome_adjudication_performed","outcomes_used_for_matching",
     "sealed_target_unblind_allowed","package_contains_post_anchor_predictors","sealed_target_unblind_performed",
     "target_names_read","free_web_search_used","precipitation_used_for_matching"
 }
