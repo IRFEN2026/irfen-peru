@@ -1,0 +1,87 @@
+name: IRFEN - Chosica 2015 candidate Sentinel-1 availability
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_candidate_sentinel1_availability_contract_v0_1.json
+      - config/chosica_2015_cleanroom_candidate_geometry_freeze_record_v0_1.json
+      - scripts/query_chosica_2015_candidate_sentinel1_availability.py
+      - .github/workflows/chosica-2015-candidate-sentinel1-availability.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  query-fixed-metadata-windows:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_candidate_sentinel1_availability_contract_v0_1.json
+            config/chosica_2015_cleanroom_candidate_geometry_freeze_record_v0_1.json
+            scripts/query_chosica_2015_candidate_sentinel1_availability.py
+            requirements.txt
+            .github/workflows/chosica-2015-candidate-sentinel1-availability.yml
+      - name: Assert forbidden scientific paths absent
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_multibasin_validation_set_v0_1.json
+          test ! -e config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+          ! find . -type f -print0 | xargs -0 grep -Eil 'INGEMMET A6680|CONTROL_CONFIRMED|EXCLUDED_ACTIVE' || false
+      - name: Download exact pseudonymized candidate geometry
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p sources artifacts
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/10171108859/zip" > /tmp/geom.zip
+          unzip -q /tmp/geom.zip -d sources
+          test "$(sha256sum sources/chosica_2015_cleanroom_candidate_geometries_v0_1.geojson | cut -d' ' -f1)" = "9a23644c191c88fb66722b368773251051b4098ddd74e4d5861c3a37dbfbb1ca"
+          ! grep -Eiq 'NC_|pedregal|quirio|carossio|carosio|rayos de sol|cashahuacra|la libertad|a6680|official_outcome_evidence' sources/chosica_2015_cleanroom_candidate_geometries_v0_1.geojson
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install minimal dependencies
+        run: pip install 'requests>=2.31,<3' 'shapely>=2.0,<3'
+      - name: Query exact ASF metadata endpoint only
+        run: |
+          set -euo pipefail
+          env -i PATH="$PATH" HOME=/tmp LANG=C.UTF-8 python -I scripts/query_chosica_2015_candidate_sentinel1_availability.py \
+            --contract config/chosica_2015_candidate_sentinel1_availability_contract_v0_1.json \
+            --geometry sources/chosica_2015_cleanroom_candidate_geometries_v0_1.geojson \
+            --output artifacts/chosica_2015_candidate_sentinel1_availability_v0_1.json \
+            | tee artifacts/summary.json
+      - name: Enforce no-outcome/no-pixel boundary
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/chosica_2015_candidate_sentinel1_availability_v0_1.json'))
+          assert d['status']=='PASS_CANDIDATE_ONLY_SENTINEL1_AVAILABILITY_FROZEN_INPUTS'
+          assert d['candidate_count']==7
+          assert d['pixel_data_downloaded'] is False
+          assert d['outcome_evidence_read'] is False
+          assert d['target_names_or_ids_read'] is False
+          assert d['a6680_read'] is False
+          assert d['contaminated_adjudication_used'] is False
+          assert d['candidate_selection_modified'] is False
+          assert d['candidate_ranking_modified'] is False
+          assert d['free_web_search_used'] is False
+          assert d['sealed_target_unblind_allowed'] is False
+          assert d['guards']=={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          PY
+          ! grep -Eiq 'pedregal|quirio|carossio|carosio|rayos de sol|cashahuacra|la libertad|a6680|official_outcome_evidence|CONTROL_CONFIRMED|EXCLUDED_ACTIVE' artifacts/chosica_2015_candidate_sentinel1_availability_v0_1.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-candidate-sentinel1-availability
+          path: |
+            artifacts/chosica_2015_candidate_sentinel1_availability_v0_1.json
+            artifacts/summary.json
+          if-no-files-found: error
