@@ -23,6 +23,42 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            .github/workflows/chosica-2015-candidate-only-adjudication-v0-2.yml
+            config/chosica_2015_candidate_only_territorial_adjudication_ingest_contract_v0_2.json
+            config/chosica_2015_candidate_only_review_v0_2_contract.json
+            config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+            config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json
+            site/data/validation/chosica_2015_candidate_only_reviewer_bundle_v0_2.json
+            site/data/validation/chosica_2015_candidate_only_territorial_adjudication_template_v0_2.json
+            site/data/validation/chosica_2015_candidate_only_territorial_adjudication_v0_2.json
+            scripts/validate_chosica_2015_candidate_only_adjudication_v0_2.py
+      - name: Prove sealed outcome and incident sources are absent
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09_b.json
+          python - <<'PY'
+          from pathlib import Path
+          allowed={
+            '.github/workflows/chosica-2015-candidate-only-adjudication-v0-2.yml',
+            'config/chosica_2015_candidate_only_territorial_adjudication_ingest_contract_v0_2.json',
+            'config/chosica_2015_candidate_only_review_v0_2_contract.json',
+            'config/chosica_2015_control_adjudication_contamination_registry_v0_1.json',
+            'config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json',
+            'site/data/validation/chosica_2015_candidate_only_reviewer_bundle_v0_2.json',
+            'site/data/validation/chosica_2015_candidate_only_territorial_adjudication_template_v0_2.json',
+            'site/data/validation/chosica_2015_candidate_only_territorial_adjudication_v0_2.json',
+            'scripts/validate_chosica_2015_candidate_only_adjudication_v0_2.py',
+          }
+          present={str(p) for p in Path('.').rglob('*') if p.is_file() and '.git/' not in str(p) and not str(p).startswith('.git/')}
+          extra=sorted(present-allowed)
+          assert not extra, f'FAIL_CLOSED_UNEXPECTED_ADJUDICATION_INGEST_FILES:{extra}'
+          print('PASS_CANDIDATE_ONLY_ADJUDICATION_V0_2_SPARSE_WORKSPACE')
+          PY
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
