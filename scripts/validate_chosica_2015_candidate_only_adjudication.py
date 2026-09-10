@@ -5,7 +5,7 @@ This process MUST NOT discover evidence. It only validates a pre-existing isolat
 against the frozen candidate membership and scientific guardrails.
 """
 from __future__ import annotations
-import argparse, hashlib, json, re
+import argparse, hashlib, json
 from pathlib import Path
 
 GUARDS={"RESEARCH_ONLY":True,"TEST_ONLY":True,"production_use":False,"production_ready":False,"operational_alerting_enabled":False}
@@ -15,8 +15,14 @@ def load(p:Path): return json.loads(p.read_text(encoding="utf-8"))
 def sha(p:Path): return hashlib.sha256(p.read_bytes()).hexdigest()
 def membership_sha(codes:list[str])->str:
     b=("\n".join(codes)+"\n").encode(); return hashlib.sha256(b).hexdigest()
-
 def nonempty(v): return isinstance(v,str) and bool(v.strip())
+def string_values(obj):
+    if isinstance(obj,str):
+        yield obj
+    elif isinstance(obj,dict):
+        for v in obj.values(): yield from string_values(v)
+    elif isinstance(obj,list):
+        for v in obj: yield from string_values(v)
 
 def main():
     ap=argparse.ArgumentParser()
@@ -77,10 +83,10 @@ def main():
                 weak=("no result","not found","no report","silence","absence from","search failed","no mention")
                 if any(w in basis for w in weak): raise RuntimeError(f"FAIL_CLOSED_CONTROL_FROM_SILENCE {r.get('candidate_code')}")
             out.append({k:r.get(k) for k in co["required_record_fields"]})
-        raw=a.adjudication.read_text(encoding="utf-8").lower()
-        bad=[t for t in co["forbidden_content_tokens_case_insensitive"] if t.lower() in raw]
+        value_text="\n".join(string_values(adj)).lower()
+        bad=[t for t in co["forbidden_content_tokens_case_insensitive"] if t.lower() in value_text]
         if bad: raise RuntimeError(f"FAIL_CLOSED_FORBIDDEN_CONTENT {bad}")
-        if any(x in raw for x in ("blinding_incident_2026_09_09","official_outcome_evidence")): raise RuntimeError("FAIL_CLOSED_CONTAMINATED_OR_TARGET_PROVENANCE")
+        if any(x in value_text for x in ("blinding_incident_2026_09_09","official_outcome_evidence")): raise RuntimeError("FAIL_CLOSED_CONTAMINATED_OR_TARGET_PROVENANCE")
         control_codes=[r["candidate_code"] for r in out if r["adjudication"]=="CONFIRMED_CONTROL"]
         excluded_codes=[r["candidate_code"] for r in out if r["adjudication"]=="EXCLUDE_ACTIVATED"]
         unknown_codes=[r["candidate_code"] for r in out if r["adjudication"]=="OUTCOME_UNKNOWN"]
