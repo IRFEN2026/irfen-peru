@@ -15,8 +15,27 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_candidate_only_territorial_adjudication_ingest_contract_v0_1.json
+            config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json
+            config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+            config/chosica_2015_candidate_only_territorial_unblind_contract_v0_1.json
+            site/data/validation/chosica_2015_cleanroom_candidate_review_packet_v0_1.json
+            site/data/validation/chosica_2015_candidate_only_territorial_adjudication_v0_1.json
+            scripts/validate_chosica_2015_candidate_only_adjudication.py
       - name: Fail closed if independent adjudication artifact is absent
         run: test -f site/data/validation/chosica_2015_candidate_only_territorial_adjudication_v0_1.json
+      - name: Prove sealed target sources and contaminated incident records are absent
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09_b.json
+          test ! -e config/chosica_2015_outlet_freeze_registry_v0_1.json
+          test ! -e config/chosica_2015_multibasin_validation_set_v0_1.json
+          echo PASS_CANDIDATE_ADJUDICATION_SPARSE_WORKSPACE
       - name: Validate isolated adjudication and freeze control set
         run: |
           mkdir -p artifacts
