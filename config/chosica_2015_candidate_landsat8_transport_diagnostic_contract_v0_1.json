@@ -1,0 +1,44 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_TRANSPORT_ONLY_DIAGNOSTIC_NO_PIXEL_READ",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "input": {
+    "asset_inventory_artifact_id": 10172288298,
+    "asset_inventory_file": "chosica_2015_candidate_landsat8_asset_inventory_v0_1.json",
+    "asset_inventory_sha256": "524e298aa313dffc0df2445e4f44cf7769c2fc0730d49bba7ff64cc8848b0659",
+    "asset_key": "qa_pixel",
+    "expected_origin_host": "landsatlook.usgs.gov"
+  },
+  "network_semantics": {
+    "method": "HTTPS GET with stream=true and allow_redirects=false; inspect response headers only; do not iterate response body",
+    "maximum_requests": 3,
+    "free_web_search_allowed": false,
+    "search_engine_queries_allowed": false,
+    "unrestricted_url_following_allowed": false,
+    "redirect_following_allowed": false,
+    "response_body_read_allowed": false,
+    "record_full_location_header": false,
+    "record_location_sha256": true,
+    "record_location_components": ["scheme", "hostname", "path", "query_present"]
+  },
+  "scientific_semantics": {
+    "scene_selection_modified": false,
+    "candidate_selection_modified": false,
+    "candidate_ranking_modified": false,
+    "qa_bits_or_thresholds_modified": false,
+    "outcome_evidence_read": false,
+    "target_names_or_ids_read": false,
+    "a6680_read": false,
+    "contaminated_adjudication_used": false,
+    "control_labels_assigned": false,
+    "sealed_target_unblind_allowed": false
+  },
+  "purpose": "Resolve the observed HTTP redirect as a transport-layer issue before any QA_PIXEL bytes are read. A later transport revision may follow only an exact redirect pattern frozen by this diagnostic and must still verify the original STAC full-file SHA-512 before raster access."
+}
