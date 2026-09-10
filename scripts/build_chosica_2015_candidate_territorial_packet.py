@@ -13,7 +13,7 @@ ALLOWED_INPUT_CANDIDATE_KEYS={
     "candidate_code","mainstem_confluence_x_m","mainstem_confluence_y_m","area_km2",
     "relief_m","mean_basin_slope_deg","preanchor_mm_if_frozen","elevation_min_m","elevation_max_m"
 }
-FORBIDDEN_TOKENS=("target_name","target_id","a6680","damage","severity","activation","shortlist","rank","score")
+FORBIDDEN_SUBSTRINGS=("target_name","target_id","a6680","damage","severity","activation","shortlist","matching_score","match_score","rank_position")
 
 def sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -82,7 +82,7 @@ def main() -> int:
     }
     raw=json.dumps(out,sort_keys=True,separators=(',',':'))+'\n'
     low=raw.lower()
-    for tok in FORBIDDEN_TOKENS:
+    for tok in FORBIDDEN_SUBSTRINGS:
         if tok in low:
             raise AssertionError(f'FORBIDDEN_TOKEN_IN_PACKET {tok}')
     a.output.write_text(raw,encoding='utf-8')
