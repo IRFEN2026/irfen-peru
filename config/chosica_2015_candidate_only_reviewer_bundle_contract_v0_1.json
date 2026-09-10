@@ -25,8 +25,7 @@
     "reviewer_attestation_requirements",
     "selection_feedback_allowed",
     "candidate_replacement_allowed",
-    "target_unblind_allowed",
-    "a6680_allowed"
+    "target_unblind_allowed"
   ],
   "candidate_fields": [
     "candidate_code",
@@ -41,10 +40,10 @@
   },
   "reviewer_attestation_requirements": {
     "isolated_from_target_outcomes": true,
-    "no_a6680_access": true,
     "no_contaminated_stage_material_access": true,
     "no_target_dossier_access": true,
-    "candidate_membership_fixed_before_review": true
+    "candidate_membership_fixed_before_review": true,
+    "no_external_reference_morphometry_access": true
   },
   "forbidden_tokens_case_insensitive": [
     "cashahuacra",
@@ -75,8 +74,8 @@
   },
   "fail_closed": [
     "candidate membership differs from the frozen seven-code packet",
-    "source packet contains a forbidden token",
-    "source template contains target outcomes, A6680 access, contaminated-stage access or selection feedback",
+    "selected output fields contain a forbidden token",
+    "source template indicates target outcomes, external reference morphometry access, contaminated-stage access or selection feedback",
     "output contains any forbidden token",
     "bundle contains a key outside the allowlist",
     "builder imports or invokes network-capable modules"
