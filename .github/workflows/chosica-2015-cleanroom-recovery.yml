@@ -51,6 +51,18 @@ jobs:
           gh run download 34374629591 -R "$GITHUB_REPOSITORY" -n chosica-2015-negative-control-matching -D sources/candidate_dem_metrics
           gh run download 34377084449 -R "$GITHUB_REPOSITORY" -n chosica-2015-negative-control-preunblind-imerg -D sources/candidate_preanchor_imerg
 
+      - name: Assert source inventory contains only four allowlisted files
+        run: |
+          set -euo pipefail
+          find sources -type f -printf '%P\n' | sort > /tmp/observed_sources.txt
+          cat > /tmp/expected_sources.txt <<'EOF'
+          candidate_dem_metrics/chosica_2015_negative_control_matching.json
+          candidate_preanchor_imerg/chosica_2015_negative_control_preunblind_imerg.json
+          target_morphometry/chosica_2015_morphometry_phase1.json
+          target_preanchor_imerg/chosica_2015_preunblind_imerg.json
+          EOF
+          diff -u /tmp/expected_sources.txt /tmp/observed_sources.txt
+
       - name: Build minimal blinded package
         run: |
           set -euo pipefail
@@ -82,6 +94,7 @@ jobs:
             --package /tmp/irfen-cleanroom/input.json \
             --matching /tmp/irfen-cleanroom/matching.json \
             --matcher scripts/match_chosica_2015_cleanroom_controls.py \
+            --builder scripts/build_chosica_2015_cleanroom_input.py \
             --output artifacts/cleanroom_validation.json
 
       - name: Emit freeze-ready manifest
