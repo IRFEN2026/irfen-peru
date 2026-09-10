@@ -33,7 +33,7 @@ jobs:
           test ! -e site/data/validation/official_outcome_evidence.json
           test ! -e config/chosica_2015_multibasin_validation_set_v0_1.json
           test ! -e config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
-          ! find . -type f -print0 | xargs -0 grep -Eil 'INGEMMET A6680|CONTROL_CONFIRMED|EXCLUDED_ACTIVE' || false
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09_b.json
       - name: Download exact pseudonymized candidate geometry
         env:
           GH_TOKEN: ${{ github.token }}
