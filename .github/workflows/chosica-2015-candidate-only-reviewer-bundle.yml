@@ -19,6 +19,35 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            .github/workflows/chosica-2015-candidate-only-reviewer-bundle.yml
+            config/chosica_2015_candidate_only_reviewer_bundle_contract_v0_1.json
+            site/data/validation/chosica_2015_cleanroom_candidate_review_packet_v0_1.json
+            site/data/validation/chosica_2015_candidate_only_territorial_adjudication_template_v0_1.json
+            scripts/build_chosica_2015_candidate_only_reviewer_bundle.py
+      - name: Prove target and contaminated sources are absent from workspace
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09_b.json
+          test ! -e config/chosica_2015_outlet_freeze_registry_v0_1.json
+          python - <<'PY'
+          from pathlib import Path
+          allowed={
+            '.github/workflows/chosica-2015-candidate-only-reviewer-bundle.yml',
+            'config/chosica_2015_candidate_only_reviewer_bundle_contract_v0_1.json',
+            'site/data/validation/chosica_2015_cleanroom_candidate_review_packet_v0_1.json',
+            'site/data/validation/chosica_2015_candidate_only_territorial_adjudication_template_v0_1.json',
+            'scripts/build_chosica_2015_candidate_only_reviewer_bundle.py',
+          }
+          present={str(p) for p in Path('.').rglob('*') if p.is_file() and '.git/' not in str(p) and not str(p).startswith('.git/')}
+          extra=sorted(present-allowed)
+          assert not extra, f'FAIL_CLOSED_UNEXPECTED_REVIEWER_BUNDLE_WORKSPACE_FILES:{extra}'
+          print('PASS_CANDIDATE_ONLY_REVIEWER_BUNDLE_SPARSE_WORKSPACE')
+          PY
       - name: Enforce network-free builder source
         run: |
           python - <<'PY'
