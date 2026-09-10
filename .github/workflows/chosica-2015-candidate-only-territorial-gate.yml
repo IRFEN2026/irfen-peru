@@ -1,0 +1,52 @@
+name: IRFEN - Chosica 2015 candidate-only territorial gate
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json
+      - config/chosica_2015_candidate_only_territorial_unblind_contract_v0_1.json
+      - config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+      - site/data/validation/chosica_2015_cleanroom_candidate_review_packet_v0_1.json
+      - scripts/validate_chosica_2015_candidate_only_territorial_gate.py
+      - .github/workflows/chosica-2015-candidate-only-territorial-gate.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  authorize-candidate-only-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - name: Validate frozen candidate-only review boundary
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          python scripts/validate_chosica_2015_candidate_only_territorial_gate.py \
+            --contract config/chosica_2015_candidate_only_territorial_unblind_contract_v0_1.json \
+            --cleanroom-freeze config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json \
+            --contamination config/chosica_2015_control_adjudication_contamination_registry_v0_1.json \
+            --packet site/data/validation/chosica_2015_cleanroom_candidate_review_packet_v0_1.json \
+            --output artifacts/chosica_2015_candidate_only_territorial_gate.json
+      - name: Enforce no target unblind or feedback
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/chosica_2015_candidate_only_territorial_gate.json',encoding='utf-8'))
+          assert d['status']=='PASS_CANDIDATE_ONLY_TERRITORIAL_REVIEW_GATE'
+          assert d['candidate_review_allowed'] is True
+          assert d['candidate_count']==7
+          assert d['selection_feedback_allowed'] is False
+          assert d['candidate_replacement_allowed'] is False
+          assert d['matching_recalculation_allowed'] is False
+          assert d['target_unblind_allowed'] is False
+          assert d['a6680_allowed'] is False
+          assert d['guards']=={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-candidate-only-territorial-gate
+          path: artifacts/chosica_2015_candidate_only_territorial_gate.json
+          if-no-files-found: error
