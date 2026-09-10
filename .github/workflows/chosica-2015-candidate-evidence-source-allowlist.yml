@@ -1,0 +1,76 @@
+name: IRFEN - Chosica 2015 candidate evidence source allowlist
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_candidate_evidence_source_allowlist_v0_1.json
+      - config/chosica_2015_candidate_territorial_packet_freeze_record_v0_1.json
+      - .github/workflows/chosica-2015-candidate-evidence-source-allowlist.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-source-allowlist:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Sparse checkout allowlist gate only
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_candidate_evidence_source_allowlist_v0_1.json
+            config/chosica_2015_candidate_territorial_packet_freeze_record_v0_1.json
+            .github/workflows/chosica-2015-candidate-evidence-source-allowlist.yml
+
+      - name: Validate fail-closed policy without reading evidence
+        run: |
+          set -euo pipefail
+          python -I - <<'PY'
+          import hashlib,json,pathlib
+          a=json.load(open('config/chosica_2015_candidate_evidence_source_allowlist_v0_1.json',encoding='utf-8'))
+          f=json.load(open('config/chosica_2015_candidate_territorial_packet_freeze_record_v0_1.json',encoding='utf-8'))
+          guards={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          assert a['status']=='FROZEN_PRE_READ_CANDIDATE_EVIDENCE_SOURCE_ALLOWLIST'
+          assert a['guards']==f['guards']==guards
+          assert f['status']=='FROZEN_CANDIDATE_ONLY_TERRITORIAL_PACKET'
+          assert f['gates']['candidate_packet_frozen'] is True
+          assert f['gates']['candidate_territorial_unblind_allowed'] is True
+          assert f['gates']['source_allowlist_required_before_evidence_read'] is True
+          assert f['gates']['sealed_target_unblind_allowed'] is False
+          assert a['prerequisite']['required_packet_sha256']==f['source']['packet_sha256']=='dbf02fc9ba1b436754cef72741fff129892a0107eed57362552041d6657cf782'
+          assert a['prerequisite']['required_candidate_count']==f['scientific_state']['candidate_count']==7
+          assert a['prerequisite']['candidate_territorial_evidence_read_before_allowlist_freeze'] is False
+          n=a['network_policy']
+          assert n['free_web_search_allowed'] is False
+          assert n['search_engine_queries_allowed'] is False
+          assert n['unrestricted_url_following_allowed'] is False
+          assert n['only_exact_allowlisted_service_roots'] is True
+          assert n['candidate_bounded_spatial_queries_required'] is True
+          assert n['raw_responses_must_not_be_logged'] is True
+          assert n['response_bytes_sha256_required'] is True
+          assert n['candidate_replacement_allowed'] is False
+          assert n['candidate_reranking_allowed'] is False
+          assert n['feedback_to_matching_allowed'] is False
+          roots=[s['service_root'] for s in a['sources']]
+          assert roots==[
+            'https://geocatmin.ingemmet.gob.pe/arcgis/rest/services/SERV_PELIGROS_GEOLOGICOS/MapServer',
+            'https://sigrid.cenepred.gob.pe/sigridv3/'
+          ]
+          assert 'INGEMMET A6680' in a['globally_forbidden']
+          assert 'documentary silence interpreted as CONTROL' in a['globally_forbidden']
+          out={
+            'schema_version':'0.1',
+            'status':'PASS_FROZEN_CANDIDATE_EVIDENCE_SOURCE_ALLOWLIST',
+            'guards':guards,
+            'allowlist_sha256':hashlib.sha256(pathlib.Path('config/chosica_2015_candidate_evidence_source_allowlist_v0_1.json').read_bytes()).hexdigest(),
+            'candidate_packet_sha256':f['source']['packet_sha256'],
+            'candidate_territorial_evidence_read':False,
+            'sealed_target_unblind_allowed':False,
+            'next_gate':'ALLOWLISTED_SERVICE_METADATA_DISCOVERY_ONLY'
+          }
+          pathlib.Path('/tmp/allowlist_verification.json').write_text(json.dumps(out,sort_keys=True,separators=(',',':'))+'\n',encoding='utf-8')
+          print(json.dumps(out,sort_keys=True))
+          PY
