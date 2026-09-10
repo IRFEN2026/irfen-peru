@@ -5,12 +5,12 @@ import argparse, hashlib, json, math
 from pathlib import Path
 
 GUARDS={"RESEARCH_ONLY":True,"TEST_ONLY":True,"production_use":False,"production_ready":False,"operational_alerting_enabled":False}
-FORBIDDEN=("cashahuacra","quirio","pedregal","san_antonio","san antonio","la_libertad","la libertad","carossio","carosio","rayos_de_sol","rayos de sol","corrales","a6680","ingemmet","official_outcome_evidence","outcome_label","damage","severity","post_event","web_search")
 
 def load(p:Path): return json.loads(p.read_text(encoding="utf-8"))
 def sha(p:Path): return hashlib.sha256(p.read_bytes()).hexdigest()
 def pseudonym(prefix:str,value:str): return prefix+hashlib.sha256(value.encode("utf-8")).hexdigest()[:12]
 def finite(x): return isinstance(x,(int,float)) and math.isfinite(float(x))
+
 def blind_flags(d,candidate=False):
     if d.get("guards")!=GUARDS: raise RuntimeError("FAIL_CLOSED_GUARDS")
     for k in ("outcome_evidence_read","a6680_numeric_reference_read","post_anchor_predictor_read"):
@@ -18,12 +18,15 @@ def blind_flags(d,candidate=False):
     if candidate:
         for k in ("candidate_outcome_evidence_read","control_outcome_adjudication_performed"):
             if d.get(k) is not False: raise RuntimeError(f"FAIL_CLOSED_SOURCE_FLAG_{k}")
+
 def outlet_center(m):
     tr=m["semantic_dem_metadata"]["transform"]; row=m["outlet_grid_cell"]["row"]; col=m["outlet_grid_cell"]["col"]
     if len(tr)!=6: raise RuntimeError("FAIL_CLOSED_BAD_AFFINE")
     x=float(tr[2])+float(tr[0])*(float(col)+0.5)+float(tr[1])*(float(row)+0.5)
     y=float(tr[5])+float(tr[3])*(float(col)+0.5)+float(tr[4])*(float(row)+0.5)
+    if not finite(x) or not finite(y): raise RuntimeError("FAIL_CLOSED_BAD_OUTLET_CENTER")
     return round(x,6),round(y,6)
+
 def window_vector(rec):
     if rec.get("coverage_fraction")!=1.0 or rec.get("valid_slot_count")!=rec.get("slot_count"): raise RuntimeError("FAIL_CLOSED_PRECIP_COVERAGE")
     w=rec["windows"]; required={"trigger_0_5h","trigger_1h","trigger_3h","trigger_6h","trigger_24h","antecedent_72h","antecedent_168h","antecedent_360h"}
@@ -35,11 +38,31 @@ def window_vector(rec):
         out[k]=float(x["accum_mm"])
     return out
 
+def validate_blind_structure(obj, rules, path="$"):
+    value_tokens=tuple(str(x).lower() for x in rules["forbidden_string_value_tokens"])
+    key_tokens=tuple(str(x).lower() for x in rules["forbidden_data_key_tokens"])
+    safe_false=set(rules["safe_false_attestation_keys"])
+    if isinstance(obj,dict):
+        for k,v in obj.items():
+            kl=str(k).lower()
+            if k in safe_false:
+                if v is not False: raise RuntimeError(f"FAIL_CLOSED_SAFETY_ATTESTATION_NOT_FALSE {path}.{k}")
+            elif any(tok in kl for tok in key_tokens):
+                raise RuntimeError(f"FAIL_CLOSED_FORBIDDEN_DATA_KEY {path}.{k}")
+            validate_blind_structure(v,rules,f"{path}.{k}")
+    elif isinstance(obj,list):
+        for i,v in enumerate(obj): validate_blind_structure(v,rules,f"{path}[{i}]")
+    elif isinstance(obj,str):
+        low=obj.lower(); bad=[tok for tok in value_tokens if tok in low]
+        if bad: raise RuntimeError(f"FAIL_CLOSED_REVEALING_STRING_VALUE {path} {bad}")
+
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument("--contract",type=Path,required=True); ap.add_argument("--contamination",type=Path,required=True); ap.add_argument("--artifact-root",type=Path,required=True); ap.add_argument("--output",type=Path,required=True)
     a=ap.parse_args(); a.output.parent.mkdir(parents=True,exist_ok=True)
     co=load(a.contract); contam=load(a.contamination)
     if co.get("guards")!=GUARDS or contam.get("guards")!=GUARDS or contam.get("status")!="CONTAMINATED_DO_NOT_USE": raise SystemExit("FAIL_CLOSED_RECOVERY_POLICY")
+    rev=co.get("guard_revision") or {}
+    if rev.get("scientific_inputs_changed") is not False or rev.get("matching_semantics_changed") is not False or any(rev.get(k) is not False for k in ("outcome_information_used","a6680_information_used","post_anchor_information_used")): raise SystemExit("FAIL_CLOSED_UNSAFE_GUARD_REVISION")
     for k in ("eligible_for_matching","eligible_for_calibration","eligible_for_validation","eligible_for_control_label","eligible_for_unblind_gate"):
         if contam["disposition"].get(k) is not False: raise SystemExit("FAIL_CLOSED_CONTAMINATION_ELIGIBLE")
     art={}
@@ -68,11 +91,12 @@ def main():
         if m.get("eligible_for_matching") is not True or m.get("contains_frozen_target_outlet_ids") not in ([],None): raise SystemExit("FAIL_CLOSED_CANDIDATE_ELIGIBILITY")
         vals={k:float(m[k]) for k in ("area_km2","elevation_min_m","elevation_max_m","relief_m","mean_basin_slope_deg","mainstem_confluence_x_m","mainstem_confluence_y_m")}
         if not all(finite(v) for v in vals.values()): raise SystemExit("FAIL_CLOSED_CANDIDATE_NONFINITE")
-        row={"candidate_code":pseudonym("C_",cid),**vals,"preanchor_mm_if_frozen":window_vector(cprecip[cid]) if cid in cprecip else None}
-        candidates.append(row)
-    package={"schema_version":"0.1","status":"PASS_CLEANROOM_INPUT_PACKAGE","phase":"CLEANROOM_PREUNBLIND_RECOVERY","guards":GUARDS,"sealed_target_unblind_allowed":False,"control_outcome_adjudication_performed":False,"package_contains_target_names":False,"package_contains_outcome_labels":False,"package_contains_post_anchor_predictors":False,"anchor_utc":art["target_preanchor_imerg"]["anchor_utc"],"source_integrity":{"contract_sha256":sha(a.contract),"target_morphometry_sha256":co["trusted_frozen_artifacts"]["target_morphometry"]["sha256"],"target_preanchor_imerg_sha256":co["trusted_frozen_artifacts"]["target_preanchor_imerg"]["sha256"],"candidate_dem_metrics_sha256":co["trusted_frozen_artifacts"]["candidate_dem_metrics"]["sha256"],"candidate_preanchor_imerg_sha256":co["trusted_frozen_artifacts"]["candidate_preanchor_imerg"]["sha256"]},"matching_spec":co["matching"],"targets":targets,"candidates":candidates}
-    text=json.dumps(package,ensure_ascii=False,sort_keys=True,separators=(",",":"))+"\n"; low=text.lower()
-    bad=[x for x in FORBIDDEN if x in low]
-    if bad: raise SystemExit(f"FAIL_CLOSED_FORBIDDEN_PACKAGE_TEXT_{bad}")
-    a.output.write_text(text,encoding="utf-8"); print(json.dumps({"status":"PASS_CLEANROOM_INPUT_PACKAGE","sha256":sha(a.output),"target_count":6,"candidate_count":29,"candidate_predictor_count":7},sort_keys=True)); return 0
+        candidates.append({"candidate_code":pseudonym("C_",cid),**vals,"preanchor_mm_if_frozen":window_vector(cprecip[cid]) if cid in cprecip else None})
+    ms=co["matching"]
+    matching_spec={"shortlist_per_target":ms["shortlist_per_target"],"formula":ms["formula"],"tie_break":ms["tie_break"],"precipitation_used_for_matching":ms["precipitation_used_for_matching"],"outcomes_used_for_matching":ms["outcomes_used_for_matching"]}
+    package={"schema_version":"0.1","status":"PASS_CLEANROOM_INPUT_PACKAGE","phase":"CLEANROOM_PREUNBLIND_RECOVERY","guards":GUARDS,"sealed_target_unblind_allowed":False,"control_outcome_adjudication_performed":False,"package_contains_target_names":False,"package_contains_outcome_labels":False,"package_contains_post_anchor_predictors":False,"anchor_utc":art["target_preanchor_imerg"]["anchor_utc"],"source_integrity":{"contract_sha256":sha(a.contract),"target_morphometry_sha256":co["trusted_frozen_artifacts"]["target_morphometry"]["sha256"],"target_preanchor_imerg_sha256":co["trusted_frozen_artifacts"]["target_preanchor_imerg"]["sha256"],"candidate_dem_metrics_sha256":co["trusted_frozen_artifacts"]["candidate_dem_metrics"]["sha256"],"candidate_preanchor_imerg_sha256":co["trusted_frozen_artifacts"]["candidate_preanchor_imerg"]["sha256"]},"matching_spec":matching_spec,"targets":targets,"candidates":candidates}
+    try: validate_blind_structure(package,co["hard_fail_closed"])
+    except RuntimeError as e: raise SystemExit(str(e))
+    a.output.write_text(json.dumps(package,ensure_ascii=False,sort_keys=True,separators=(",",":"))+"\n",encoding="utf-8")
+    print(json.dumps({"status":"PASS_CLEANROOM_INPUT_PACKAGE","sha256":sha(a.output),"target_count":6,"candidate_count":29,"candidate_predictor_count":7},sort_keys=True)); return 0
 if __name__=="__main__": raise SystemExit(main())
