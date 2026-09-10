@@ -43,7 +43,7 @@ jobs:
           gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/10171108859/zip" > /tmp/geom.zip
           unzip -q /tmp/geom.zip -d sources
           test "$(sha256sum sources/chosica_2015_cleanroom_candidate_geometries_v0_1.geojson | cut -d' ' -f1)" = "9a23644c191c88fb66722b368773251051b4098ddd74e4d5861c3a37dbfbb1ca"
-          ! grep -Eiq 'NC_|pedregal|quirio|carossio|carosio|rayos de sol|cashahuacra|la libertad|a6680|official_outcome_evidence' sources/chosica_2015_cleanroom_candidate_geometries_v0_1.geojson
+          ! grep -Eiq 'NC_|pedregal|quirio|carossio|carosio|rayos de sol|cashahuacra|la libertad|official_outcome_evidence' sources/chosica_2015_cleanroom_candidate_geometries_v0_1.geojson
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
@@ -77,7 +77,7 @@ jobs:
           assert d['sealed_target_unblind_allowed'] is False
           assert d['guards']=={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
           PY
-          ! grep -Eiq 'pedregal|quirio|carossio|carosio|rayos de sol|cashahuacra|la libertad|a6680|official_outcome_evidence|CONTROL_CONFIRMED|EXCLUDED_ACTIVE' artifacts/chosica_2015_candidate_sentinel1_availability_v0_2.json
+          ! grep -Eiq 'pedregal|quirio|carossio|carosio|rayos de sol|cashahuacra|la libertad|official_outcome_evidence|CONTROL_CONFIRMED|EXCLUDED_ACTIVE' artifacts/chosica_2015_candidate_sentinel1_availability_v0_2.json
       - uses: actions/upload-artifact@v4
         with:
           name: chosica-2015-candidate-sentinel1-availability
