@@ -1,0 +1,68 @@
+name: IRFEN - Chosica 2015 INGEMMET trust recovery
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_ingemmet_tls_trust_recovery_contract_v0_1.json
+      - scripts/recover_chosica_2015_ingemmet_verified_metadata.py
+      - .github/workflows/chosica-2015-ingemmet-trust-recovery.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  recover-verified-metadata-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_ingemmet_tls_trust_recovery_contract_v0_1.json
+            scripts/recover_chosica_2015_ingemmet_verified_metadata.py
+            .github/workflows/chosica-2015-ingemmet-trust-recovery.yml
+      - name: Assert forbidden scientific files absent
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+          test ! -e config/chosica_2015_multibasin_validation_set_v0_1.json
+      - name: Enforce no insecure TLS implementation
+        run: |
+          set -euo pipefail
+          ! grep -E -- '--insecure|-k([^A-Za-z]|$)|verify *= *False|CERT_NONE' scripts/recover_chosica_2015_ingemmet_verified_metadata.py
+      - name: Recover verified service schema through cryptographic intermediate gate
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          env -i PATH="$PATH" HOME=/tmp LANG=C.UTF-8 python -I scripts/recover_chosica_2015_ingemmet_verified_metadata.py \
+            --contract config/chosica_2015_ingemmet_tls_trust_recovery_contract_v0_1.json \
+            --output artifacts/chosica_2015_ingemmet_verified_metadata_v0_1.json \
+            | tee artifacts/ingemmet_trust_recovery_summary.json
+      - name: Enforce metadata-only clean-room boundary
+        run: |
+          set -euo pipefail
+          python -I - <<'PY'
+          import json,pathlib
+          p=pathlib.Path('artifacts/chosica_2015_ingemmet_verified_metadata_v0_1.json');d=json.loads(p.read_text(encoding='utf-8'))
+          g={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          assert d['status']=='PASS_INGEMMET_METADATA_VIA_CRYPTOGRAPHIC_TRUST_RECOVERY' and d['guards']==g
+          assert d['classification']=='INFRASTRUCTURE_ONLY_NOT_TERRITORIAL_EVIDENCE'
+          assert d['system_chain_verification_passed'] is True and d['leaf_hostname_verification_passed'] is True
+          assert d['metadata_https_verified_with_repaired_chain'] is True and d['tls_verification_disabled'] is False
+          assert d['feature_queries_executed'] is False and d['candidate_territorial_evidence_read'] is False
+          assert d['control_labels_assigned'] is False and d['sealed_target_unblind_allowed'] is False
+          assert d['layer_count']==len(d['layers']) and d['layer_count']>0
+          text=p.read_text(encoding='utf-8').lower()
+          for token in ('pedregal','quirio','carossio','carosio','rayos de sol','cashahuacra','la libertad','a6680','official_outcome_evidence'):
+              assert token not in text,token
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-ingemmet-verified-metadata
+          path: |
+            artifacts/chosica_2015_ingemmet_verified_metadata_v0_1.json
+            artifacts/ingemmet_trust_recovery_summary.json
+          if-no-files-found: error
