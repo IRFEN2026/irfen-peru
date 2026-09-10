@@ -1,0 +1,85 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_CANDIDATE_ONLY_REVIEWER_BUNDLE_CONTRACT",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "source_packet": "site/data/validation/chosica_2015_cleanroom_candidate_review_packet_v0_1.json",
+  "source_template": "site/data/validation/chosica_2015_candidate_only_territorial_adjudication_template_v0_1.json",
+  "expected_candidate_count": 7,
+  "allowed_bundle_fields": [
+    "schema_version",
+    "status",
+    "guards",
+    "frozen_event_anchor",
+    "candidate_membership_sha256",
+    "candidate_count",
+    "candidates",
+    "allowed_adjudication_values",
+    "evidence_rules",
+    "reviewer_attestation_requirements",
+    "selection_feedback_allowed",
+    "candidate_replacement_allowed",
+    "target_unblind_allowed",
+    "a6680_allowed"
+  ],
+  "candidate_fields": [
+    "candidate_code",
+    "confluence_x_m",
+    "confluence_y_m",
+    "crs"
+  ],
+  "evidence_rules": {
+    "CONFIRMED_CONTROL": "requires affirmative independent evidence specifically supporting no activation or impact at the candidate during the frozen event window",
+    "EXCLUDE_ACTIVATED": "requires affirmative independent evidence of activation or impact at the candidate during the frozen event window",
+    "OUTCOME_UNKNOWN": "required when affirmative evidence is insufficient, ambiguous, absent, or documentary silence is the only basis"
+  },
+  "reviewer_attestation_requirements": {
+    "isolated_from_target_outcomes": true,
+    "no_a6680_access": true,
+    "no_contaminated_stage_material_access": true,
+    "no_target_dossier_access": true,
+    "candidate_membership_fixed_before_review": true
+  },
+  "forbidden_tokens_case_insensitive": [
+    "cashahuacra",
+    "quirio",
+    "pedregal",
+    "san antonio",
+    "san_antonio",
+    "la libertad",
+    "la_libertad",
+    "carossio",
+    "carosio",
+    "rayos de sol",
+    "rayos_de_sol",
+    "corrales",
+    "official_outcome_evidence",
+    "a6680",
+    "damage",
+    "severity",
+    "post_event"
+  ],
+  "network_policy": "The bundle builder performs no network access. The independent reviewer may use external evidence only after receiving this frozen bundle, and queries must be derived solely from candidate coordinates/candidate code plus the frozen event date.",
+  "output": {
+    "artifact_name": "chosica-2015-candidate-only-reviewer-bundle",
+    "bundle_file": "chosica_2015_candidate_only_reviewer_bundle.json",
+    "manifest_file": "chosica_2015_candidate_only_reviewer_bundle_manifest.json",
+    "deterministic_json": "UTF-8, sort_keys=true, separators=(',',':'), trailing newline",
+    "manifest_records_sha256": true
+  },
+  "fail_closed": [
+    "candidate membership differs from the frozen seven-code packet",
+    "source packet contains a forbidden token",
+    "source template contains target outcomes, A6680 access, contaminated-stage access or selection feedback",
+    "output contains any forbidden token",
+    "bundle contains a key outside the allowlist",
+    "builder imports or invokes network-capable modules"
+  ],
+  "next_gate": "INDEPENDENT_REVIEWER_RECEIVES_ONLY_FROZEN_BUNDLE_AND_RETURNS_CANDIDATE_ONLY_ADJUDICATION"
+}
