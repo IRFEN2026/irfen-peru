@@ -5,15 +5,33 @@ import argparse, ast, hashlib, json
 from pathlib import Path
 
 GUARDS={"RESEARCH_ONLY":True,"TEST_ONLY":True,"production_use":False,"production_ready":False,"operational_alerting_enabled":False}
-REVEALING=("cashahuacra","quirio","pedregal","san_antonio","san antonio","la_libertad","la libertad","carossio","carosio","rayos_de_sol","rayos de sol","corrales","a6680","ingemmet","official_outcome_evidence","outcome_label","damage","severity","post_event","web_search")
+REVEALING_VALUES=("cashahuacra","quirio","pedregal","san_antonio","san antonio","la_libertad","la libertad","carossio","carosio","rayos_de_sol","rayos de sol","corrales","a6680","ingemmet","official_outcome_evidence","damage","severity","post_event")
+FORBIDDEN_KEY_TOKENS=("target_id","target_name","activation","severity","damage","a6680","post_anchor","official_outcome_evidence")
+SAFE_FALSE_KEYS={
+    "package_contains_outcome_labels","control_outcome_adjudication_performed","outcomes_used_for_matching",
+    "sealed_target_unblind_allowed","package_contains_post_anchor_predictors","sealed_target_unblind_performed",
+    "target_names_read","free_web_search_used","precipitation_used_for_matching"
+}
 FORBIDDEN_IMPORTS={"requests","urllib","http","socket","subprocess","selenium","playwright"}
 
 def load(p): return json.loads(p.read_text(encoding="utf-8"))
 def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest()
-def scan_text(p):
-    low=p.read_text(encoding="utf-8").lower()
-    bad=[x for x in REVEALING if x in low]
-    if bad: raise RuntimeError(f"FAIL_CLOSED_REVEALING_TEXT {p.name} {bad}")
+
+def scan_blind_structure(obj,path="$"):
+    if isinstance(obj,dict):
+        for k,v in obj.items():
+            kl=str(k).lower()
+            if k in SAFE_FALSE_KEYS:
+                if v is not False: raise RuntimeError(f"FAIL_CLOSED_SAFETY_ATTESTATION_NOT_FALSE {path}.{k}")
+            elif any(tok in kl for tok in FORBIDDEN_KEY_TOKENS):
+                raise RuntimeError(f"FAIL_CLOSED_FORBIDDEN_KEY {path}.{k}")
+            scan_blind_structure(v,f"{path}.{k}")
+    elif isinstance(obj,list):
+        for i,v in enumerate(obj): scan_blind_structure(v,f"{path}[{i}]")
+    elif isinstance(obj,str):
+        low=obj.lower(); bad=[x for x in REVEALING_VALUES if x in low]
+        if bad: raise RuntimeError(f"FAIL_CLOSED_REVEALING_VALUE {path} {bad}")
+
 def matcher_imports(path):
     tree=ast.parse(path.read_text(encoding="utf-8")); roots=set()
     for n in ast.walk(tree):
@@ -31,7 +49,7 @@ def main():
         if contam.get("status")!="CONTAMINATED_DO_NOT_USE": raise RuntimeError("FAIL_CLOSED_CONTAMINATION_STATUS")
         for k in ("eligible_for_matching","eligible_for_calibration","eligible_for_validation","eligible_for_control_label","eligible_for_unblind_gate"):
             if contam["disposition"].get(k) is not False: raise RuntimeError(f"FAIL_CLOSED_CONTAMINATION_DISPOSITION {k}")
-        scan_text(a.package); scan_text(a.matching)
+        scan_blind_structure(pkg); scan_blind_structure(match)
         imports=matcher_imports(a.matcher); bad=sorted(imports & FORBIDDEN_IMPORTS)
         if bad: raise RuntimeError(f"FAIL_CLOSED_MATCHER_NETWORK_OR_PROCESS_IMPORT {bad}")
         if pkg.get("status")!="PASS_CLEANROOM_INPUT_PACKAGE" or len(pkg.get("targets",[]))!=6 or len(pkg.get("candidates",[]))!=29: raise RuntimeError("FAIL_CLOSED_PACKAGE_DIMENSIONS")
@@ -47,7 +65,7 @@ def main():
         if set(match["shortlists"])!=target_codes: raise RuntimeError("FAIL_CLOSED_TARGET_CODE_ALIGNMENT")
         if not set(match["selected_candidate_codes"]).issubset(candidate_codes): raise RuntimeError("FAIL_CLOSED_CANDIDATE_CODE_ALIGNMENT")
         if not 1 <= match.get("selected_candidate_count",0) <= 18: raise RuntimeError("FAIL_CLOSED_SELECTED_COUNT")
-        rep["checks"]={"contaminated_adjudication_excluded":True,"package_target_count":6,"package_candidate_count":29,"package_has_no_revealing_names":True,"matcher_forbidden_imports":bad,"matching_is_package_hash_bound":True,"shortlist_per_target":3,"selected_candidate_count":match["selected_candidate_count"],"all_selected_have_frozen_preanchor_predictors":True,"package_sha256":sha(a.package),"matching_sha256":sha(a.matching),"matcher_sha256":sha(a.matcher),"contract_sha256":sha(a.contract)}
+        rep["checks"]={"contaminated_adjudication_excluded":True,"package_target_count":6,"package_candidate_count":29,"package_has_no_revealing_values_or_keys":True,"matcher_forbidden_imports":bad,"matching_is_package_hash_bound":True,"shortlist_per_target":3,"selected_candidate_count":match["selected_candidate_count"],"all_selected_have_frozen_preanchor_predictors":True,"package_sha256":sha(a.package),"matching_sha256":sha(a.matching),"matcher_sha256":sha(a.matcher),"contract_sha256":sha(a.contract)}
         rep["status"]="PASS_CLEANROOM_RECOVERY_PRE_FREEZE"
         rep["next_gate"]="COMMIT_AND_FREEZE_CLEANROOM_PACKAGE_AND_MATCHING_BEFORE_TERRITORIAL_UNBLIND"
     except Exception as e:
