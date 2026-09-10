@@ -1,0 +1,94 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PREUNBLIND_POSTUNBLIND_EVALUATION_PLAN",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "purpose": "Freeze the retrospective scientific evaluation before candidate-control outcomes and sealed target outcomes are read, preventing feature fishing, threshold fitting, candidate replacement, or post-hoc metric selection.",
+  "required_frozen_inputs": {
+    "target_morphometry_report_sha256": "b45de91491d610bdb847340ab0dcfe96f7c884096caa36e03ca0c41341557676",
+    "target_imerg_report_sha256": "0fb330d1422a13dda0a1869b910841166614549f773893bc62c7b288ce733430",
+    "control_candidate_pool_sha256": "bd0e0f8e1fa0dfdb5ded676373e4a54590e3f8acc540e3171bde5f1adc075fcf",
+    "control_geometry_geojson_sha256": "7fc3db40f7163a7b8019640ffbaa4564e54e09fc769b9de0c4554bcec382c412",
+    "control_imerg_report_sha256": "88a75f9e21cd725bc8dd442066551454f4a3eda14930cd3ebf127e2344e04db6",
+    "control_adjudication_contract": "config/chosica_2015_negative_control_outcome_adjudication_contract_v0_1.json"
+  },
+  "analysis_population": {
+    "target_units": "each of the six frozen target drainage units exactly once after separate permitted target unblind",
+    "control_candidate_units": "each of the seven frozen shortlisted candidate drainage units exactly once",
+    "control_disposition_use": {
+      "CONTROL_AFFIRMATIVE_NO_ACTIVATION": "negative class",
+      "NOT_CONTROL_AFFIRMATIVE_ACTIVATION": "supplementary positive class because selection was outcome-blind",
+      "OUTCOME_UNKNOWN": "excluded from outcome-discrimination calculations without replacement"
+    },
+    "duplicate_shortlist_membership": "A candidate appearing in multiple target shortlists remains one unique analysis unit and is never duplicated or weighted by shortlist frequency."
+  },
+  "common_preunblind_features": {
+    "rainfall_mm": [
+      "trigger_0_5h",
+      "trigger_1h",
+      "trigger_3h",
+      "trigger_6h",
+      "trigger_24h",
+      "antecedent_72h",
+      "antecedent_168h",
+      "antecedent_360h"
+    ],
+    "common_dem_morphology_for_context_not_primary_univariate_activation_direction": [
+      "area_km2",
+      "relief_m",
+      "mean_basin_slope_deg"
+    ],
+    "feature_policy": "Report every frozen rainfall feature. Do not select a preferred duration/window because it separates outcomes better. Morphology is retained for susceptibility/context and matching diagnostics; no monotonic activation direction is asserted for morphology in this single-event evaluation."
+  },
+  "primary_outcome_blind_hypothesis": {
+    "direction": "Higher frozen pre-anchor rainfall accumulation is hypothesized to be associated with activation, evaluated separately for each of the eight fixed windows.",
+    "no_peak_search": true,
+    "no_window_shift": true,
+    "no_basin_specific_window": true
+  },
+  "postunblind_statistics": {
+    "always_report": [
+      "raw frozen feature values by unique analysis unit",
+      "class counts and OUTCOME_UNKNOWN count",
+      "for each rainfall window: activated-class median, negative-class median, median difference activated minus negative",
+      "for each rainfall window: complete rank ordering with ties retained"
+    ],
+    "conditional_if_at_least_two_activated_and_two_negative_units": [
+      "ROC AUC for each of the eight rainfall windows with higher rainfall fixed as the positive direction"
+    ],
+    "if_class_count_condition_not_met": "Do not calculate inferential/discrimination statistics that require both classes; mark the metric INDETERMINATE_SMALL_N and retain descriptive values only.",
+    "multiplicity_policy": "All eight rainfall windows are co-primary descriptive tests; do not choose, hide, or relabel windows based on outcome separation.",
+    "model_fitting": "FORBIDDEN_IN_THIS_PROTOCOL"
+  },
+  "paired_matching_use": {
+    "role": "sensitivity/context analysis only",
+    "rule": "For each target, report the frozen three-candidate shortlist and available adjudicated dispositions without replacing unknown or activated candidates. Do not select the best surviving CONTROL after outcomes are known as though it were the preregistered match.",
+    "primary_analysis_uses_unique_units": true
+  },
+  "interpretation_limits": {
+    "single_event_calibration": false,
+    "operational_threshold_derivation": false,
+    "false_alarm_rate_claim": false,
+    "sensitivity_claim": false,
+    "production_readiness_claim": false,
+    "allowed_conclusion": "The case may provide reproducible retrospective evidence for or against rainfall-feature separation under the frozen design, with explicit small-sample and evidence limitations. Any fitted multivariable model, threshold, operational score, or production promotion requires a new preregistered protocol and independent events."
+  },
+  "forbidden_after_outcome_read": [
+    "change candidate pool or shortlist",
+    "change candidate or target geometry",
+    "change predictor windows or anchor",
+    "recompute predictors using post-anchor data",
+    "select a rainfall duration because it performs best and present it as preregistered primary",
+    "fit or tune an activation threshold",
+    "fit a multivariable classifier",
+    "drop affirmative activated candidate-controls from the record",
+    "replace OUTCOME_UNKNOWN candidates",
+    "promote any result to production or operational alerting"
+  ]
+}
