@@ -5,14 +5,11 @@ import argparse, ast, hashlib, json
 from pathlib import Path
 
 GUARDS={"RESEARCH_ONLY":True,"TEST_ONLY":True,"production_use":False,"production_ready":False,"operational_alerting_enabled":False}
-FORBIDDEN=("cashahuacra","quirio","pedregal","san_antonio","san antonio","la_libertad","la libertad","carossio","carosio","rayos_de_sol","rayos de sol","corrales","a6680","ingemmet","official_outcome_evidence","outcome_label","damage","severity","post_event","web_search")
 FORBIDDEN_IMPORTS={"requests","urllib","http","socket","subprocess","selenium","playwright"}
 
 def load(p): return json.loads(p.read_text(encoding="utf-8"))
 def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest()
-def scan(p):
-    low=p.read_text(encoding="utf-8").lower(); bad=[x for x in FORBIDDEN if x in low]
-    if bad: raise RuntimeError(f"FAIL_CLOSED_REVEALING_TEXT_{p.name}_{bad}")
+
 def imports(path):
     tree=ast.parse(path.read_text(encoding="utf-8")); out=set()
     for n in ast.walk(tree):
@@ -20,31 +17,61 @@ def imports(path):
         elif isinstance(n,ast.ImportFrom) and n.module: out.add(n.module.split('.')[0])
     return out
 
+def scan_blind_structure(obj,rules,path="$"):
+    value_tokens=tuple(str(x).lower() for x in rules["forbidden_string_value_tokens"])
+    key_tokens=tuple(str(x).lower() for x in rules["forbidden_data_key_tokens"])
+    safe_false=set(rules["safe_false_attestation_keys"])
+    if isinstance(obj,dict):
+        for k,v in obj.items():
+            kl=str(k).lower()
+            if k in safe_false:
+                if v is not False: raise RuntimeError(f"FAIL_CLOSED_SAFETY_ATTESTATION_NOT_FALSE {path}.{k}")
+            elif any(tok in kl for tok in key_tokens):
+                raise RuntimeError(f"FAIL_CLOSED_FORBIDDEN_DATA_KEY {path}.{k}")
+            scan_blind_structure(v,rules,f"{path}.{k}")
+    elif isinstance(obj,list):
+        for i,v in enumerate(obj): scan_blind_structure(v,rules,f"{path}[{i}]")
+    elif isinstance(obj,str):
+        low=obj.lower(); bad=[tok for tok in value_tokens if tok in low]
+        if bad: raise RuntimeError(f"FAIL_CLOSED_REVEALING_STRING_VALUE {path} {bad}")
+
 def main():
-    ap=argparse.ArgumentParser(); ap.add_argument("--contract",type=Path,required=True); ap.add_argument("--contamination",type=Path,required=True); ap.add_argument("--package",type=Path,required=True); ap.add_argument("--matching",type=Path,required=True); ap.add_argument("--matcher",type=Path,required=True); ap.add_argument("--output",type=Path,required=True)
+    ap=argparse.ArgumentParser(); ap.add_argument("--contract",type=Path,required=True); ap.add_argument("--contamination",type=Path,required=True); ap.add_argument("--package",type=Path,required=True); ap.add_argument("--matching",type=Path,required=True); ap.add_argument("--matcher",type=Path,required=True); ap.add_argument("--builder",type=Path,required=True); ap.add_argument("--output",type=Path,required=True)
     a=ap.parse_args(); a.output.parent.mkdir(parents=True,exist_ok=True)
     rep={"schema_version":"0.1","status":"PENDING","guards":GUARDS,"sealed_target_unblind_allowed":False,"control_outcome_adjudication_performed":False}
     try:
         co=load(a.contract); contam=load(a.contamination); pkg=load(a.package); match=load(a.matching)
         if any(d.get("guards")!=GUARDS for d in (co,contam,pkg,match)): raise RuntimeError("FAIL_CLOSED_GUARDS")
+        rev=co.get("guard_revision") or {}
+        if rev.get("scientific_inputs_changed") is not False or rev.get("matching_semantics_changed") is not False or any(rev.get(k) is not False for k in ("outcome_information_used","a6680_information_used","post_anchor_information_used")): raise RuntimeError("FAIL_CLOSED_UNSAFE_GUARD_REVISION")
         if contam.get("status")!="CONTAMINATED_DO_NOT_USE": raise RuntimeError("FAIL_CLOSED_CONTAMINATION_TOMBSTONE")
         for k in ("eligible_for_matching","eligible_for_calibration","eligible_for_validation","eligible_for_control_label","eligible_for_unblind_gate"):
-            if contam["disposition"].get(k) is not False: raise RuntimeError("FAIL_CLOSED_CONTAMINATION_DISPOSITION")
-        scan(a.package); scan(a.matching)
-        bad_imports=sorted(imports(a.matcher)&FORBIDDEN_IMPORTS)
-        if bad_imports: raise RuntimeError(f"FAIL_CLOSED_FORBIDDEN_MATCHER_IMPORTS_{bad_imports}")
+            if contam["disposition"].get(k) is not False: raise RuntimeError(f"FAIL_CLOSED_CONTAMINATION_DISPOSITION_{k}")
+        scan_blind_structure(pkg,co["hard_fail_closed"]); scan_blind_structure(match,co["hard_fail_closed"])
+        bad_matcher=sorted(imports(a.matcher)&FORBIDDEN_IMPORTS); bad_builder=sorted(imports(a.builder)&FORBIDDEN_IMPORTS)
+        if bad_matcher: raise RuntimeError(f"FAIL_CLOSED_FORBIDDEN_MATCHER_IMPORTS_{bad_matcher}")
+        if bad_builder: raise RuntimeError(f"FAIL_CLOSED_FORBIDDEN_BUILDER_IMPORTS_{bad_builder}")
         if pkg.get("status")!="PASS_CLEANROOM_INPUT_PACKAGE" or len(pkg.get("targets",[]))!=6 or len(pkg.get("candidates",[]))!=29: raise RuntimeError("FAIL_CLOSED_PACKAGE")
         if pkg.get("sealed_target_unblind_allowed") is not False or pkg.get("control_outcome_adjudication_performed") is not False: raise RuntimeError("FAIL_CLOSED_PACKAGE_UNBLIND")
         if pkg.get("package_contains_target_names") is not False or pkg.get("package_contains_outcome_labels") is not False or pkg.get("package_contains_post_anchor_predictors") is not False: raise RuntimeError("FAIL_CLOSED_PACKAGE_DISCLOSURE")
+        expected_source={k:v["sha256"] for k,v in co["trusted_frozen_artifacts"].items()}
+        observed_source={
+            "target_morphometry":pkg["source_integrity"].get("target_morphometry_sha256"),
+            "target_preanchor_imerg":pkg["source_integrity"].get("target_preanchor_imerg_sha256"),
+            "candidate_dem_metrics":pkg["source_integrity"].get("candidate_dem_metrics_sha256"),
+            "candidate_preanchor_imerg":pkg["source_integrity"].get("candidate_preanchor_imerg_sha256")}
+        if observed_source!=expected_source: raise RuntimeError("FAIL_CLOSED_PACKAGE_SOURCE_HASHES")
+        ms=pkg.get("matching_spec",{})
+        if ms.get("formula")!=co["matching"]["formula"] or ms.get("shortlist_per_target")!=3 or ms.get("tie_break")!=["score","candidate_code"] or ms.get("precipitation_used_for_matching") is not False or ms.get("outcomes_used_for_matching") is not False: raise RuntimeError("FAIL_CLOSED_PACKAGE_MATCHING_SPEC")
         if match.get("status")!="PASS_CLEANROOM_MATCHING" or match.get("cleanroom_input_sha256")!=sha(a.package): raise RuntimeError("FAIL_CLOSED_MATCHING")
         for k in ("precipitation_used_for_matching","outcomes_used_for_matching","target_names_read","free_web_search_used","control_outcome_adjudication_performed","sealed_target_unblind_performed"):
             if match.get(k) is not False: raise RuntimeError(f"FAIL_CLOSED_MATCH_FLAG_{k}")
         if match.get("selected_without_frozen_preanchor_predictors")!=[]: raise RuntimeError("FAIL_CLOSED_SELECTED_PREDICTOR_GAP")
         if len(match.get("shortlists",{}))!=6 or any(len(v)!=3 for v in match["shortlists"].values()): raise RuntimeError("FAIL_CLOSED_SHORTLIST_DIMENSIONS")
         tc={x["target_code"] for x in pkg["targets"]}; cc={x["candidate_code"] for x in pkg["candidates"]}
-        if set(match["shortlists"])!=tc or not set(match["selected_candidate_codes"]).issubset(cc): raise RuntimeError("FAIL_CLOSED_CODE_ALIGNMENT")
-        if match.get("selected_candidate_count")!=len(set(match["selected_candidate_codes"])): raise RuntimeError("FAIL_CLOSED_SELECTED_COUNT")
-        rep.update({"status":"PASS_CLEANROOM_RECOVERY_PRE_FREEZE","checks":{"contaminated_adjudication_excluded":True,"sparse_package_no_revealing_text":True,"matcher_forbidden_imports":bad_imports,"matcher_input_hash_bound":True,"target_count":6,"candidate_count":29,"shortlist_per_target":3,"selected_candidate_count":match["selected_candidate_count"],"all_selected_have_frozen_preanchor_predictors":True,"package_sha256":sha(a.package),"matching_sha256":sha(a.matching),"matcher_sha256":sha(a.matcher),"contract_sha256":sha(a.contract)},"next_gate":"COMMIT_AND_FREEZE_PACKAGE_AND_MATCHING_BEFORE_TERRITORIAL_UNBLIND"})
+        if len(tc)!=6 or len(cc)!=29 or set(match["shortlists"])!=tc or not set(match["selected_candidate_codes"]).issubset(cc): raise RuntimeError("FAIL_CLOSED_CODE_ALIGNMENT")
+        if match.get("selected_candidate_count")!=len(set(match["selected_candidate_codes"])) or not 1<=match.get("selected_candidate_count",0)<=18: raise RuntimeError("FAIL_CLOSED_SELECTED_COUNT")
+        rep.update({"status":"PASS_CLEANROOM_RECOVERY_PRE_FREEZE","checks":{"contaminated_adjudication_excluded":True,"blinded_package_structurally_clean":True,"builder_forbidden_imports":bad_builder,"matcher_forbidden_imports":bad_matcher,"package_bound_to_four_exact_preincident_hashes":True,"matcher_input_hash_bound":True,"target_count":6,"candidate_count":29,"shortlist_per_target":3,"selected_candidate_count":match["selected_candidate_count"],"all_selected_have_frozen_preanchor_predictors":True,"package_sha256":sha(a.package),"matching_sha256":sha(a.matching),"matcher_sha256":sha(a.matcher),"builder_sha256":sha(a.builder),"contract_sha256":sha(a.contract)},"next_gate":"COMMIT_AND_FREEZE_PACKAGE_AND_MATCHING_BEFORE_TERRITORIAL_UNBLIND"})
     except Exception as e:
         rep.update({"status":"FAIL_CLOSED_CLEANROOM_RECOVERY","error":str(e),"next_gate":"STOP_NO_UNBLIND"}); a.output.write_text(json.dumps(rep,sort_keys=True,separators=(",",":"))+"\n",encoding="utf-8"); print(json.dumps(rep)); return 2
     a.output.write_text(json.dumps(rep,sort_keys=True,separators=(",",":"))+"\n",encoding="utf-8"); print(json.dumps(rep)); return 0
