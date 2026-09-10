@@ -1,0 +1,75 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_CLEANROOM_RECOVERY_CONTRACT",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "source_pr": 146,
+  "contamination_registry": "config/chosica_2015_control_adjudication_contamination_registry_v0_1.json",
+  "trusted_frozen_artifacts": {
+    "target_morphometry": {
+      "run_id": 34291741232,
+      "artifact_id": 10081668976,
+      "artifact_name": "chosica-2015-morphometry-phase1",
+      "file_name": "chosica_2015_morphometry_phase1.json",
+      "sha256": "b45de91491d610bdb847340ab0dcfe96f7c884096caa36e03ca0c41341557676"
+    },
+    "target_preanchor_imerg": {
+      "run_id": 34291741336,
+      "artifact_id": 10081695174,
+      "artifact_name": "chosica-2015-preunblind-imerg",
+      "file_name": "chosica_2015_preunblind_imerg.json",
+      "sha256": "0fb330d1422a13dda0a1869b910841166614549f773893bc62c7b288ce733430"
+    },
+    "candidate_dem_metrics": {
+      "run_id": 34374629591,
+      "artifact_id": 10113409182,
+      "artifact_name": "chosica-2015-negative-control-matching",
+      "file_name": "chosica_2015_negative_control_matching.json",
+      "sha256": "0e08e612b2244b00b4bcbd7baa2cfef2f562835ca08848f2e0f4bf0251d83f92",
+      "use_restriction": "candidate_metrics only; prior rankings, shortlists and target-keyed sections are ignored"
+    },
+    "candidate_preanchor_imerg": {
+      "run_id": 34377084449,
+      "artifact_id": 10114482315,
+      "artifact_name": "chosica-2015-negative-control-preunblind-imerg",
+      "file_name": "chosica_2015_negative_control_preunblind_imerg.json",
+      "sha256": "88a75f9e21cd725bc8dd442066551454f4a3eda14930cd3ebf127e2344e04db6"
+    }
+  },
+  "cleanroom_package": {
+    "target_code_rule": "T_ + first 12 hex characters of SHA256(frozen geometry GeoJSON SHA256)",
+    "candidate_code_rule": "C_ + first 12 hex characters of SHA256(candidate_id)",
+    "target_outlet_rule": "derive the exact frozen outlet-cell center from phase-1 morphometry semantic DEM affine transform and outlet row/column",
+    "precipitation_representation": "fixed preregistered window accumulation in mm only, with record-level complete coverage gate",
+    "excluded": [
+      "target names and target IDs", "candidate source IDs", "A6680 content", "event dossiers", "outcome labels",
+      "activation, severity or damage fields", "post-event territorial evidence", "prior matching rankings", "prior shortlists",
+      "free web-search results", "post-anchor predictors", "named repository scientific data files"
+    ]
+  },
+  "matching": {
+    "shortlist_per_target": 3,
+    "formula": "distance_m/10000 + abs(log(area_ratio)) + abs(log(relief_ratio)) + abs(mean_slope_candidate_deg-mean_slope_target_deg)/45",
+    "distance_basis": "candidate mainstem confluence to exact frozen target outlet-cell center in EPSG:32718",
+    "candidate_eligibility": "all 29 preincident DEM-only candidate metric rows with eligible_for_matching=true and no frozen target outlet inside candidate geometry",
+    "tie_break": ["score", "candidate_code"],
+    "precipitation_used_for_matching": false,
+    "outcomes_used_for_matching": false
+  },
+  "hard_fail_closed": {
+    "forbidden_package_tokens": ["cashahuacra", "quirio", "pedregal", "san_antonio", "san antonio", "la_libertad", "la libertad", "carossio", "carosio", "rayos_de_sol", "rayos de sol", "corrales", "a6680", "ingemmet", "official_outcome_evidence", "outcome_label", "damage", "severity", "post_event", "web_search"],
+    "forbidden_matcher_imports": ["requests", "urllib", "http", "socket", "subprocess", "selenium", "playwright"],
+    "matcher_must_read_only_blinded_package": true,
+    "workflow_checkout_must_be_sparse_recovery_files_only": true,
+    "workflow_token_removed_before_matcher_execution": true,
+    "contaminated_stage_may_be_read": false,
+    "sealed_target_unblind_allowed": false
+  },
+  "next_gate": "FREEZE_CLEANROOM_PACKAGE_AND_REGENERATED_MATCHING_BEFORE_ANY_TERRITORIAL_UNBLIND"
+}
