@@ -1,0 +1,96 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_CLEANROOM_RECOVERY_CONTRACT",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "contamination_registry": "config/chosica_2015_control_adjudication_contamination_registry_v0_1.json",
+  "trusted_repo_inputs": {
+    "outlet_freeze_registry": {
+      "path": "config/chosica_2015_outlet_freeze_registry_v0_1.json",
+      "sha256": "6c7d4ee65c7dd9838e051890f179a0bc452e2a17a395baac98e5ce5fffe50633"
+    },
+    "candidate_pool": {
+      "path": "site/data/validation/chosica_2015_negative_control_candidate_pool.json",
+      "sha256": "bd0e0f8e1fa0dfdb5ded676373e4a54590e3f8acc540e3171bde5f1adc075fcf"
+    }
+  },
+  "trusted_frozen_artifacts": {
+    "target_morphometry": {
+      "run_id": 34291741232,
+      "artifact_id": 10081668976,
+      "artifact_name": "chosica-2015-morphometry-phase1",
+      "file_name": "chosica_2015_morphometry_phase1.json",
+      "sha256": "b45de91491d610bdb847340ab0dcfe96f7c884096caa36e03ca0c41341557676"
+    },
+    "target_preanchor_imerg": {
+      "run_id": 34291741336,
+      "artifact_id": 10081695174,
+      "artifact_name": "chosica-2015-preunblind-imerg",
+      "file_name": "chosica_2015_preunblind_imerg.json",
+      "sha256": "0fb330d1422a13dda0a1869b910841166614549f773893bc62c7b288ce733430"
+    },
+    "candidate_dem_metrics": {
+      "run_id": 34374629591,
+      "artifact_id": 10113409182,
+      "artifact_name": "chosica-2015-negative-control-matching",
+      "file_name": "chosica_2015_negative_control_matching.json",
+      "sha256": "0e08e612b2244b00b4bcbd7baa2cfef2f562835ca08848f2e0f4bf0251d83f92",
+      "use_restriction": "candidate_metrics only; prior rankings and shortlists are not clean-room inputs"
+    },
+    "candidate_preanchor_imerg": {
+      "run_id": 34377084449,
+      "artifact_id": 10114482315,
+      "artifact_name": "chosica-2015-negative-control-preunblind-imerg",
+      "file_name": "chosica_2015_negative_control_preunblind_imerg.json",
+      "sha256": "88a75f9e21cd725bc8dd442066551454f4a3eda14930cd3ebf127e2344e04db6"
+    }
+  },
+  "cleanroom_package": {
+    "target_code_rule": "T_ + first 12 hex characters of SHA256(frozen geometry GeoJSON SHA256)",
+    "candidate_code_rule": "C_ + first 12 hex characters of SHA256(candidate_id)",
+    "target_fields": [
+      "target_code", "geometry_sha256", "outlet_x_m", "outlet_y_m",
+      "area_km2", "perimeter_km", "elevation_min_m", "elevation_max_m", "relief_m",
+      "main_channel_length_m", "mean_basin_slope_deg", "median_basin_slope_deg",
+      "p90_basin_slope_deg", "drainage_density_km_per_km2", "preanchor_windows", "coverage_fraction"
+    ],
+    "candidate_fields": [
+      "candidate_code", "feeder_x_m", "feeder_y_m", "mainstem_confluence_x_m", "mainstem_confluence_y_m",
+      "area_km2", "elevation_min_m", "elevation_max_m", "relief_m", "mean_basin_slope_deg",
+      "preanchor_windows_if_frozen", "coverage_fraction_if_frozen"
+    ],
+    "excluded": [
+      "target names and target IDs", "candidate source IDs", "A6680 content or references beyond contamination policy metadata",
+      "event dossiers", "outcome labels", "activation or severity fields", "post-event territorial evidence",
+      "prior matching rankings", "prior shortlists", "free web-search results", "post-anchor predictors"
+    ]
+  },
+  "matching": {
+    "shortlist_per_target": 3,
+    "formula": "distance_m/10000 + abs(log(area_ratio)) + abs(log(relief_ratio)) + abs(mean_slope_candidate_deg-mean_slope_target_deg)/45",
+    "distance_basis": "candidate mainstem confluence to frozen target outlet in EPSG:32718",
+    "candidate_eligibility": "all 29 preincident DEM-only candidates with complete finite area, relief and mean-slope metrics; no outcome-based exclusion",
+    "tie_break": ["score", "candidate_code"],
+    "precipitation_used_for_matching": false,
+    "outcomes_used_for_matching": false
+  },
+  "hard_fail_closed": {
+    "forbidden_repo_paths": [
+      "site/data/validation/official_outcome_evidence.json",
+      "config/chosica_2015_blinding_incident_2026_09_09.json",
+      "config/chosica_2015_blinding_incident_2026_09_09_b.json"
+    ],
+    "forbidden_input_path_fragments": ["outcome", "adjudication", "a6680", "damage", "severity", "post_event", "web_search"],
+    "forbidden_package_keys": ["target_id", "target_name", "outcome", "activation", "severity", "damage", "a6680", "post_anchor"],
+    "forbidden_matcher_imports": ["requests", "urllib", "http", "socket", "subprocess", "selenium", "playwright"],
+    "contaminated_stage_may_be_read": false,
+    "sealed_target_unblind_allowed": false
+  },
+  "next_gate": "COMMIT_AND_FREEZE_CLEANROOM_PACKAGE_AND_REGENERATED_MATCHING_BEFORE_ANY_TERRITORIAL_UNBLIND"
+}
