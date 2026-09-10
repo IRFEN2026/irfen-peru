@@ -53,7 +53,6 @@ def main() -> int:
         "operational_alerting_enabled": False,
     }
 
-    # Fail closed on any indication that the template already contains reviewer decisions/access.
     att = template["review_attestation"]
     assert att["candidate_membership_fixed_before_review"] is True
     assert att["candidate_replacement_performed"] is False
@@ -79,6 +78,8 @@ def main() -> int:
 
     membership_material = canonical_bytes([x["candidate_code"] for x in candidates])
     membership_sha256 = sha256_bytes(membership_material)
+    if membership_sha256 != contract["expected_candidate_membership_sha256"]:
+        raise RuntimeError("FAIL_CLOSED_CANDIDATE_MEMBERSHIP_HASH_MISMATCH")
 
     bundle = {
         "schema_version": "0.1",
@@ -101,12 +102,15 @@ def main() -> int:
         assert set(c) == set(contract["candidate_fields"])
 
     payload = canonical_bytes(bundle)
+    bundle_sha256 = sha256_bytes(payload)
+    if bundle_sha256 != contract["expected_bundle_sha256"]:
+        raise RuntimeError("FAIL_CLOSED_REVIEWER_BUNDLE_HASH_MISMATCH")
+
     lower = payload.decode("utf-8").lower()
     for token in contract["forbidden_tokens_case_insensitive"]:
         if token.lower() in lower:
             raise RuntimeError(f"FORBIDDEN_TOKEN_IN_REVIEWER_BUNDLE:{token}")
 
-    # Also fail closed if unexpected identifier-like keys appear in the emitted bundle.
     emitted_keys = {k.lower() for k in walk_keys(bundle)}
     forbidden_key_fragments = ("target_id", "target_name", "outcome_label", "activation", "severity", "damage", "post_anchor")
     for key in emitted_keys:
@@ -124,7 +128,7 @@ def main() -> int:
         "contract_sha256": sha256_file(args.contract),
         "source_packet_sha256": sha256_file(args.packet),
         "source_template_sha256": sha256_file(args.template),
-        "bundle_sha256": sha256_file(args.bundle),
+        "bundle_sha256": bundle_sha256,
         "candidate_membership_sha256": membership_sha256,
         "candidate_count": len(candidates),
         "contains_forbidden_token": False,
