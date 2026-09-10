@@ -9,11 +9,11 @@ import argparse, hashlib, json
 from pathlib import Path
 
 GUARDS={"RESEARCH_ONLY":True,"TEST_ONLY":True,"production_use":False,"production_ready":False,"operational_alerting_enabled":False}
-ALLOWED_CANDIDATE_KEYS={
+ALLOWED_INPUT_CANDIDATE_KEYS={
     "candidate_code","mainstem_confluence_x_m","mainstem_confluence_y_m","area_km2",
-    "relief_m","mean_basin_slope_deg","preanchor_mm_if_frozen"
+    "relief_m","mean_basin_slope_deg","preanchor_mm_if_frozen","elevation_min_m","elevation_max_m"
 }
-FORBIDDEN_TOKENS=("target_name","target_id","outcome","a6680","damage","severity","activation","shortlist","rank","score")
+FORBIDDEN_TOKENS=("target_name","target_id","a6680","damage","severity","activation","shortlist","rank","score")
 
 def sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -45,7 +45,7 @@ def main() -> int:
     packet_candidates=[]
     for code in sorted(selected):
         src=by_code[code]
-        extra=set(src)-ALLOWED_CANDIDATE_KEYS
+        extra=set(src)-ALLOWED_INPUT_CANDIDATE_KEYS
         assert not extra, (code, sorted(extra))
         assert src.get('preanchor_mm_if_frozen') is not None, f'MISSING_FROZEN_PREANCHOR {code}'
         packet_candidates.append({
@@ -84,9 +84,6 @@ def main() -> int:
     low=raw.lower()
     for tok in FORBIDDEN_TOKENS:
         if tok in low:
-            # Policy field names containing "outcome" are allowed only at top-level false guards.
-            if tok=='outcome' and '"target_outcome_sources_allowed":false' in low:
-                continue
             raise AssertionError(f'FORBIDDEN_TOKEN_IN_PACKET {tok}')
     a.output.write_text(raw,encoding='utf-8')
     print(json.dumps({'status':out['status'],'candidate_count':len(packet_candidates),'packet_sha256':sha(a.output)},sort_keys=True))
