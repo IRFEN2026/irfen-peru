@@ -59,11 +59,18 @@ def main():
           "matching_recalculated_after_review":False,
           "selection_feedback_used":False,
           "target_outcomes_accessed":False,
-          "a6680_accessed":False,
           "contaminated_stage_material_accessed":False
         }
         for k,v in required_att.items():
             if att.get(k) is not v: raise RuntimeError(f"FAIL_CLOSED_REVIEW_ATTESTATION {k}")
+        # Clean-room reviewer bundle uses a neutral attestation key so the reviewer never receives
+        # the name of the prohibited external morphometry source. Legacy key is accepted only if false.
+        neutral_ref=att.get("external_reference_morphometry_accessed")
+        legacy_ref=att.get("a6680_accessed")
+        if neutral_ref is not False and legacy_ref is not False:
+            raise RuntimeError("FAIL_CLOSED_REVIEW_ATTESTATION external_reference_morphometry_accessed")
+        if neutral_ref is True or legacy_ref is True:
+            raise RuntimeError("FAIL_CLOSED_EXTERNAL_REFERENCE_MORPHOMETRY_ACCESSED")
         records=adj.get("candidates")
         if not isinstance(records,list) or len(records)!=len(expected): raise RuntimeError("FAIL_CLOSED_RECORD_COUNT")
         got=[r.get("candidate_code") for r in records]
