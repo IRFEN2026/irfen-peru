@@ -1,0 +1,56 @@
+name: IRFEN - Chosica 2015 target unblind readiness v0.2
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_target_unblind_readiness_v0_2_contract.json
+      - config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json
+      - config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+      - config/chosica_2015_candidate_only_territorial_adjudication_ingest_contract_v0_2.json
+      - config/chosica_2015_candidate_only_control_set_freeze_v0_2.json
+      - scripts/evaluate_chosica_2015_target_unblind_readiness_v0_2.py
+      - .github/workflows/chosica-2015-target-unblind-readiness-v0-2.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evaluate-anonymous-target-readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - name: Evaluate clean-room v0.2 readiness or explicit waiting state
+        run: |
+          mkdir -p artifacts
+          python scripts/evaluate_chosica_2015_target_unblind_readiness_v0_2.py \
+            --contract config/chosica_2015_target_unblind_readiness_v0_2_contract.json \
+            --cleanroom-freeze config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json \
+            --contamination config/chosica_2015_control_adjudication_contamination_registry_v0_1.json \
+            --ingest-contract config/chosica_2015_candidate_only_territorial_adjudication_ingest_contract_v0_2.json \
+            --control-set-freeze config/chosica_2015_candidate_only_control_set_freeze_v0_2.json \
+            --output artifacts/chosica_2015_target_unblind_readiness_v0_2.json
+      - name: Enforce no automatic unblind
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/chosica_2015_target_unblind_readiness_v0_2.json',encoding='utf-8'))
+          assert d['guards']=={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          assert d['target_unblind_allowed'] is False
+          assert d['automatic_unblind_performed'] is False
+          assert d['target_outcomes_read'] is False
+          assert d['a6680_read'] is False
+          assert d['status'] in {'WAITING_FOR_INDEPENDENT_CANDIDATE_ONLY_CONTROL_SET_V0_2','PASS_TARGET_UNBLIND_READINESS_V0_2'}
+          if d['status'].startswith('WAITING_'):
+              assert d['scientific_use_allowed'] is False
+              assert d['eligible_target_count']==0
+          else:
+              assert d['scientific_use_allowed'] is True
+              assert d['target_code_count']==6
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-target-unblind-readiness-v0-2
+          path: artifacts/chosica_2015_target_unblind_readiness_v0_2.json
+          if-no-files-found: error
