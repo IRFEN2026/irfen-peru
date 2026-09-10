@@ -20,7 +20,9 @@ def main():
     assert sha(a.input)==fi['cleanroom_input_sha256'] and sha(a.matching)==fi['cleanroom_matching_sha256']
     assert sha(a.candidate_pool)==ps['candidate_pool_raw_sha256'] and sha(a.source_report)==ps['shortlist_geometry_report_sha256'] and sha(a.source_geojson)==ps['shortlist_geometry_geojson_sha256']
     assert rep['status']=='PASS_PREUNBLIND_NEGATIVE_CONTROL_SHORTLIST_GEOMETRY' and rep['guards']==GUARDS
-    for k,v in ps['source_anti_leakage_required'].items(): assert rep[k] is v
+    for k,v in ps['source_anti_leakage_required'].items():
+        source = pool if k=='control_outcome_adjudication_performed' else rep
+        assert source[k] is v
     assert pool['outcome_evidence_read'] is False and pool['control_outcome_adjudication_performed'] is False
     selected=sorted(mat['selected_candidate_codes']); assert len(selected)==fi['selected_candidate_count']==7 and len(selected)==len(set(selected))
     bycode={x['candidate_code']:x for x in inp['candidates']}; assert set(selected)<=set(bycode)
