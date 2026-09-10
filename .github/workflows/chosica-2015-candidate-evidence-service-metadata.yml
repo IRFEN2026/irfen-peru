@@ -57,7 +57,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p artifacts
-          env -i PATH="$PATH" SSL_CERT_FILE="${SSL_CERT_FILE:-}" python -I scripts/discover_chosica_2015_candidate_evidence_service_metadata.py \
+          env -i PATH="$PATH" HOME=/tmp LANG=C.UTF-8 python -I scripts/discover_chosica_2015_candidate_evidence_service_metadata.py \
             --allowlist config/chosica_2015_candidate_evidence_source_allowlist_v0_1.json \
             --output artifacts/chosica_2015_candidate_evidence_service_metadata_v0_1.json | tee artifacts/metadata_discovery_summary.json
 
