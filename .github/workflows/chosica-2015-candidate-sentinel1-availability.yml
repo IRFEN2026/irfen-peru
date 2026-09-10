@@ -3,7 +3,7 @@ name: IRFEN - Chosica 2015 candidate Sentinel-1 availability
 on:
   pull_request:
     paths:
-      - config/chosica_2015_candidate_sentinel1_availability_contract_v0_1.json
+      - config/chosica_2015_candidate_sentinel1_availability_contract_v0_2.json
       - config/chosica_2015_cleanroom_candidate_geometry_freeze_record_v0_1.json
       - scripts/query_chosica_2015_candidate_sentinel1_availability.py
       - .github/workflows/chosica-2015-candidate-sentinel1-availability.yml
@@ -22,7 +22,7 @@ jobs:
         with:
           sparse-checkout-cone-mode: false
           sparse-checkout: |
-            config/chosica_2015_candidate_sentinel1_availability_contract_v0_1.json
+            config/chosica_2015_candidate_sentinel1_availability_contract_v0_2.json
             config/chosica_2015_cleanroom_candidate_geometry_freeze_record_v0_1.json
             scripts/query_chosica_2015_candidate_sentinel1_availability.py
             requirements.txt
@@ -54,16 +54,16 @@ jobs:
         run: |
           set -euo pipefail
           env -i PATH="$PATH" HOME=/tmp LANG=C.UTF-8 python -I scripts/query_chosica_2015_candidate_sentinel1_availability.py \
-            --contract config/chosica_2015_candidate_sentinel1_availability_contract_v0_1.json \
+            --contract config/chosica_2015_candidate_sentinel1_availability_contract_v0_2.json \
             --geometry sources/chosica_2015_cleanroom_candidate_geometries_v0_1.geojson \
-            --output artifacts/chosica_2015_candidate_sentinel1_availability_v0_1.json \
+            --output artifacts/chosica_2015_candidate_sentinel1_availability_v0_2.json \
             | tee artifacts/summary.json
       - name: Enforce no-outcome/no-pixel boundary
         run: |
           set -euo pipefail
           python - <<'PY'
           import json
-          d=json.load(open('artifacts/chosica_2015_candidate_sentinel1_availability_v0_1.json'))
+          d=json.load(open('artifacts/chosica_2015_candidate_sentinel1_availability_v0_2.json'))
           assert d['status']=='PASS_CANDIDATE_ONLY_SENTINEL1_AVAILABILITY_FROZEN_INPUTS'
           assert d['candidate_count']==7
           assert d['pixel_data_downloaded'] is False
@@ -77,11 +77,11 @@ jobs:
           assert d['sealed_target_unblind_allowed'] is False
           assert d['guards']=={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
           PY
-          ! grep -Eiq 'pedregal|quirio|carossio|carosio|rayos de sol|cashahuacra|la libertad|a6680|official_outcome_evidence|CONTROL_CONFIRMED|EXCLUDED_ACTIVE' artifacts/chosica_2015_candidate_sentinel1_availability_v0_1.json
+          ! grep -Eiq 'pedregal|quirio|carossio|carosio|rayos de sol|cashahuacra|la libertad|a6680|official_outcome_evidence|CONTROL_CONFIRMED|EXCLUDED_ACTIVE' artifacts/chosica_2015_candidate_sentinel1_availability_v0_2.json
       - uses: actions/upload-artifact@v4
         with:
           name: chosica-2015-candidate-sentinel1-availability
           path: |
-            artifacts/chosica_2015_candidate_sentinel1_availability_v0_1.json
+            artifacts/chosica_2015_candidate_sentinel1_availability_v0_2.json
             artifacts/summary.json
           if-no-files-found: error
