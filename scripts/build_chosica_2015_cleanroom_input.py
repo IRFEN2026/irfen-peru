@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a minimal blinded Chosica-2015 clean-room package from allowlisted frozen inputs only."""
+"""Build a minimal blinded Chosica-2015 clean-room package from allowlisted frozen artifacts only."""
 from __future__ import annotations
 import argparse, hashlib, json, math
 from pathlib import Path
@@ -20,6 +20,15 @@ def require_blind_flags(d, candidate=False):
         for k in ("candidate_outcome_evidence_read","control_outcome_adjudication_performed"):
             if d.get(k) is not False: raise RuntimeError(f"FAIL_CLOSED_SOURCE_FLAG {k}")
 
+def outlet_center(m):
+    tr=m["semantic_dem_metadata"]["transform"]
+    if len(tr)!=6: raise RuntimeError("FAIL_CLOSED_BAD_AFFINE")
+    row=m["outlet_grid_cell"]["row"]; col=m["outlet_grid_cell"]["col"]
+    x=float(tr[2])+float(tr[0])*(float(col)+0.5)+float(tr[1])*(float(row)+0.5)
+    y=float(tr[5])+float(tr[3])*(float(col)+0.5)+float(tr[4])*(float(row)+0.5)
+    if not finite(x) or not finite(y): raise RuntimeError("FAIL_CLOSED_BAD_OUTLET_CENTER")
+    return round(x,6),round(y,6)
+
 def main():
     ap=argparse.ArgumentParser()
     ap.add_argument("--contract",type=Path,required=True)
@@ -31,17 +40,7 @@ def main():
     if co.get("guards")!=GUARDS: raise SystemExit("FAIL_CLOSED_CONTRACT_GUARDS")
     contamination=load(a.repo_root/co["contamination_registry"])
     if contamination.get("status")!="CONTAMINATED_DO_NOT_USE" or contamination.get("guards")!=GUARDS: raise SystemExit("FAIL_CLOSED_CONTAMINATION_TOMBSTONE")
-    if contamination["disposition"].get("eligible_for_matching") is not False: raise SystemExit("FAIL_CLOSED_CONTAMINATION_ELIGIBLE")
-
-    repo_docs={}
-    for key,spec in co["trusted_repo_inputs"].items():
-        p=a.repo_root/spec["path"]
-        if sha(p)!=spec["sha256"]: raise SystemExit(f"FAIL_CLOSED_REPO_HASH {key}")
-        repo_docs[key]=load(p)
-    reg=repo_docs["outlet_freeze_registry"]; pool=repo_docs["candidate_pool"]
-    if reg.get("guards")!=GUARDS or reg["batch_gate"].get("unblind_allowed") is not False: raise SystemExit("FAIL_CLOSED_REGISTRY")
-    if reg["anti_leakage"].get("outcome_evidence_read") is not False or reg["anti_leakage"].get("a6680_numeric_reference_read") is not False or reg["anti_leakage"].get("post_anchor_predictor_read") is not False: raise SystemExit("FAIL_CLOSED_REGISTRY_LEAKAGE")
-    if pool.get("guards")!=GUARDS or pool.get("candidate_pool_frozen") is not True or pool.get("control_outcome_adjudication_performed") is not False or pool.get("candidate_selection_used_observed_2015_response") is not False: raise SystemExit("FAIL_CLOSED_POOL")
+    if any(contamination["disposition"].get(k) is not False for k in ("eligible_for_matching","eligible_for_calibration","eligible_for_validation","eligible_for_control_label","eligible_for_unblind_gate")): raise SystemExit("FAIL_CLOSED_CONTAMINATION_ELIGIBLE")
 
     art={}
     for key,spec in co["trusted_frozen_artifacts"].items():
@@ -61,32 +60,28 @@ def main():
     morph={x["target_id"]:x for x in art["target_morphometry"]["targets"]}
     precip={x["target_id"]:x for x in art["target_preanchor_imerg"]["targets"]}
     if set(morph)!=set(precip) or len(morph)!=6: raise SystemExit("FAIL_CLOSED_TARGET_ALIGNMENT")
-    reg_targets=reg["targets"]
-    if set(morph)!=set(reg_targets): raise SystemExit("FAIL_CLOSED_TARGET_REGISTRY_ALIGNMENT")
-
     targets=[]
     for tid in sorted(morph):
-        m=morph[tid]; p=precip[tid]; r=reg_targets[tid]
+        m=morph[tid]; p=precip[tid]
         vals={k:m[k] for k in ("area_km2","perimeter_km","elevation_min_m","elevation_max_m","relief_m","main_channel_length_m","mean_basin_slope_deg","median_basin_slope_deg","p90_basin_slope_deg","drainage_density_km_per_km2")}
         if not all(finite(v) for v in vals.values()): raise SystemExit("FAIL_CLOSED_TARGET_NONFINITE")
         if p.get("coverage_fraction")!=1.0 or p.get("valid_slot_count")!=p.get("slot_count"): raise SystemExit("FAIL_CLOSED_TARGET_PRECIP_COVERAGE")
-        geom=m["geometry_geojson_sha256"]; outlet=r["accepted_outlet"]
-        targets.append({"target_code":code("T_",geom),"geometry_sha256":geom,"outlet_x_m":outlet["x_m"],"outlet_y_m":outlet["y_m"],**vals,
+        geom=m["geometry_geojson_sha256"]; ox,oy=outlet_center(m)
+        targets.append({"target_code":code("T_",geom),"geometry_sha256":geom,"outlet_x_m":ox,"outlet_y_m":oy,**vals,
                         "preanchor_windows":p["windows"],"coverage_fraction":p["coverage_fraction"]})
 
-    pool_by_id={x["candidate_id"]:x for x in pool["candidates"]}
     metrics={x["candidate_id"]:x for x in art["candidate_dem_metrics"]["candidate_metrics"]}
-    if set(pool_by_id)!=set(metrics) or len(metrics)!=29: raise SystemExit("FAIL_CLOSED_CANDIDATE_ALIGNMENT")
+    if len(metrics)!=29: raise SystemExit("FAIL_CLOSED_CANDIDATE_COUNT")
     frozen_precip={x["candidate_id"]:x for x in art["candidate_preanchor_imerg"]["candidates"]}
-    if len(frozen_precip)!=7: raise SystemExit("FAIL_CLOSED_FROZEN_CANDIDATE_PRECIP_COUNT")
+    if len(frozen_precip)!=7 or not set(frozen_precip).issubset(metrics): raise SystemExit("FAIL_CLOSED_FROZEN_CANDIDATE_PRECIP_COUNT")
     candidates=[]
     for cid in sorted(metrics):
-        m=metrics[cid]; q=pool_by_id[cid]
+        m=metrics[cid]
         if m.get("eligible_for_matching") is not True: raise SystemExit("FAIL_CLOSED_PREINCIDENT_INELIGIBLE_CANDIDATE")
+        if m.get("contains_frozen_target_outlet_ids") not in ([],None): raise SystemExit("FAIL_CLOSED_CANDIDATE_CONTAINS_TARGET_OUTLET")
         vals={k:m[k] for k in ("area_km2","elevation_min_m","elevation_max_m","relief_m","mean_basin_slope_deg","mainstem_confluence_x_m","mainstem_confluence_y_m")}
         if not all(finite(v) for v in vals.values()): raise SystemExit("FAIL_CLOSED_CANDIDATE_NONFINITE")
-        fp=q["feeder_cell"]
-        out={"candidate_code":code("C_",cid),"feeder_x_m":fp["x_m"],"feeder_y_m":fp["y_m"],**vals}
+        out={"candidate_code":code("C_",cid),**vals}
         if cid in frozen_precip:
             pp=frozen_precip[cid]
             if pp.get("coverage_fraction")!=1.0 or pp.get("valid_slot_count")!=pp.get("slot_count"): raise SystemExit("FAIL_CLOSED_CANDIDATE_PRECIP_COVERAGE")
@@ -102,8 +97,6 @@ def main():
       "anchor_utc":art["target_preanchor_imerg"]["anchor_utc"],
       "source_integrity":{
         "contract_sha256":sha(a.contract),
-        "outlet_registry_sha256":co["trusted_repo_inputs"]["outlet_freeze_registry"]["sha256"],
-        "candidate_pool_sha256":co["trusted_repo_inputs"]["candidate_pool"]["sha256"],
         "target_morphometry_sha256":co["trusted_frozen_artifacts"]["target_morphometry"]["sha256"],
         "target_preanchor_imerg_sha256":co["trusted_frozen_artifacts"]["target_preanchor_imerg"]["sha256"],
         "candidate_dem_metrics_sha256":co["trusted_frozen_artifacts"]["candidate_dem_metrics"]["sha256"],
