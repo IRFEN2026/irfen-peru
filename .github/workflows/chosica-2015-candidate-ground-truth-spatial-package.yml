@@ -1,0 +1,57 @@
+name: IRFEN - Chosica 2015 candidate ground-truth spatial package
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_candidate_ground_truth_spatial_package_contract_v0_1.json
+      - scripts/build_chosica_2015_candidate_ground_truth_spatial_package.py
+      - .github/workflows/chosica-2015-candidate-ground-truth-spatial-package.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_candidate_ground_truth_spatial_package_contract_v0_1.json
+            scripts/build_chosica_2015_candidate_ground_truth_spatial_package.py
+            .github/workflows/chosica-2015-candidate-ground-truth-spatial-package.yml
+      - name: Assert forbidden paths absent
+        run: |
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_multibasin_validation_set_v0_1.json
+          test ! -e config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+      - name: Download exact frozen candidate geometry and v2 request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p sources/g sources/r artifacts
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/10171108859/zip" > /tmp/g.zip
+          unzip -q /tmp/g.zip -d sources/g
+          test "$(sha256sum sources/g/chosica_2015_cleanroom_candidate_geometries_v0_1.geojson | cut -d' ' -f1)" = "9a23644c191c88fb66722b368773251051b4098ddd74e4d5861c3a37dbfbb1ca"
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/10181145658/zip" > /tmp/r.zip
+          unzip -q /tmp/r.zip -d sources/r
+          test "$(sha256sum sources/r/chosica_2015_candidate_ground_truth_request_packet_v0_2.json | cut -d' ' -f1)" = "7278cc3d9961f666b415976f4ea7cb28cd710803cd213b97203e983cadaae114"
+      - uses: actions/setup-python@v6
+        with: {python-version: "3.12"}
+      - run: pip install 'shapely>=2,<3'
+      - name: Build candidate-only spatial handoff package
+        run: |
+          python -I scripts/build_chosica_2015_candidate_ground_truth_spatial_package.py --contract config/chosica_2015_candidate_ground_truth_spatial_package_contract_v0_1.json --geometry sources/g/chosica_2015_cleanroom_candidate_geometries_v0_1.geojson --request sources/r/chosica_2015_candidate_ground_truth_request_packet_v0_2.json --outdir artifacts/package
+      - name: Enforce no-target no-send guards
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/package/package_manifest.json'));assert d['status']=='PASS_CANDIDATE_ONLY_GROUND_TRUTH_SPATIAL_PACKAGE' and d['candidate_count']==7
+          for k in ('target_names_or_outcomes_included','a6680_included','contaminated_adjudication_included','external_message_sent','sealed_target_unblind_allowed'):assert d[k] is False,k
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-candidate-ground-truth-spatial-package
+          path: artifacts/package/*
+          if-no-files-found: error
