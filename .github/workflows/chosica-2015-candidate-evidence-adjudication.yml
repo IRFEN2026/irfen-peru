@@ -1,0 +1,63 @@
+name: IRFEN - Chosica 2015 candidate evidence adjudication
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_candidate_landsat7_change_freeze_record_v0_1.json
+      - config/chosica_2015_candidate_evidence_adjudication_contract_v0_1.json
+      - scripts/adjudicate_chosica_2015_candidate_evidence_v0_1.py
+      - .github/workflows/chosica-2015-candidate-evidence-adjudication.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  adjudicate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_candidate_evidence_adjudication_contract_v0_1.json
+            config/chosica_2015_candidate_landsat7_change_freeze_record_v0_1.json
+            config/chosica_2015_ingemmet_candidate_event_day_freeze_record_v0_1.json
+            config/chosica_2015_candidate_sentinel1_availability_freeze_record_v0_1.json
+            config/chosica_2015_candidate_landsat8_qa_failure_freeze_record_v0_1.json
+            site/data/validation/cleanroom/chosica_2015_cleanroom_matching_v0_1.json
+            scripts/adjudicate_chosica_2015_candidate_evidence_v0_1.py
+            .github/workflows/chosica-2015-candidate-evidence-adjudication.yml
+      - name: Assert forbidden paths absent
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_multibasin_validation_set_v0_1.json
+          test ! -e config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09_b.json
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Adjudicate from frozen allowed records only
+        run: |
+          mkdir -p artifacts
+          env -i PATH="$PATH" HOME=/tmp LANG=C.UTF-8 python -I scripts/adjudicate_chosica_2015_candidate_evidence_v0_1.py \
+            --contract config/chosica_2015_candidate_evidence_adjudication_contract_v0_1.json \
+            --root . --output artifacts/chosica_2015_candidate_evidence_adjudication_v0_1.json
+      - name: Enforce all-unknown fail-closed disposition
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/chosica_2015_candidate_evidence_adjudication_v0_1.json'))
+          assert d['status']=='PASS_CANDIDATE_ONLY_ADJUDICATION_ALL_UNKNOWN'
+          assert d['candidate_count']==7 and len(d['outcome_unknown'])==7
+          assert d['confirmed_controls']==[] and d['excluded_active']==[]
+          for k in ('candidate_selection_modified','candidate_ranking_modified','matching_recalculated','selection_feedback_performed','target_names_or_ids_read','target_outcomes_read','a6680_read','contaminated_adjudication_used','free_web_search_used','sealed_target_unblind_allowed'):
+              assert d[k] is False, k
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-candidate-evidence-adjudication
+          path: artifacts/chosica_2015_candidate_evidence_adjudication_v0_1.json
+          if-no-files-found: error
