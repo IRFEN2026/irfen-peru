@@ -1,0 +1,54 @@
+name: IRFEN - Chosica 2015 ground-truth intake v2 guards
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_candidate_ground_truth_response_intake_contract_v0_2.json
+      - scripts/validate_chosica_2015_candidate_ground_truth_response_intake_v2.py
+      - .github/workflows/chosica-2015-candidate-ground-truth-intake-v2-guards.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  guard-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_candidate_ground_truth_response_intake_contract_v0_2.json
+            scripts/validate_chosica_2015_candidate_ground_truth_response_intake_v2.py
+            .github/workflows/chosica-2015-candidate-ground-truth-intake-v2-guards.yml
+      - name: Assert target-aware paths absent
+        run: |
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_multibasin_validation_set_v0_1.json
+          test ! -e config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+      - uses: actions/setup-python@v6
+        with: {python-version: "3.12"}
+      - name: Unknown remains unknown
+        run: |
+          mkdir -p /tmp/t artifacts
+          printf '%s\n' '{"responses":[{"candidate_code":"C_15cbc5db136d","institution_id":"ANA","evidence_disposition":"UNABLE_TO_DETERMINE"}]}' > /tmp/t/u.json
+          python -I scripts/validate_chosica_2015_candidate_ground_truth_response_intake_v2.py --contract config/chosica_2015_candidate_ground_truth_response_intake_contract_v0_2.json --responses /tmp/t/u.json --output artifacts/u.json
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/u.json'));assert d['control_confirmed']==[] and d['responses'][0]['intake_state']=='OUTCOME_UNKNOWN' and d['attachment_bytes_read'] is False
+          PY
+      - name: Complete affirmative is pending only
+        run: |
+          printf '%s\n' '{"responses":[{"candidate_code":"C_19f0c525214f","institution_id":"INGEMMET","evidence_disposition":"AFFIRMATIVE_NONACTIVATION_RECORD","source_reference":"DOC-001","source_date":"2015-03-24","candidate_polygon_explicitly_covered":true,"event_date_explicitly_covered":true,"institution_attests_disposition":true,"attachment_sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]}' > /tmp/t/p.json
+          python -I scripts/validate_chosica_2015_candidate_ground_truth_response_intake_v2.py --contract config/chosica_2015_candidate_ground_truth_response_intake_contract_v0_2.json --responses /tmp/t/p.json --output artifacts/p.json
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/p.json'));assert d['responses'][0]['intake_state']=='PENDING_INDEPENDENT_SOURCE_VERIFICATION_NONACTIVATION';assert d['control_confirmed']==[] and d['affirmative_claim_promoted_without_verification'] is False and d['free_text_response_fields_read'] is False
+          PY
+      - name: Reject narrative or target-like extra fields
+        run: |
+          printf '%s\n' '{"responses":[{"candidate_code":"C_15cbc5db136d","institution_id":"ANA","evidence_disposition":"UNABLE_TO_DETERMINE","description":"forbidden free text"}]}' > /tmp/t/x.json
+          if python -I scripts/validate_chosica_2015_candidate_ground_truth_response_intake_v2.py --contract config/chosica_2015_candidate_ground_truth_response_intake_contract_v0_2.json --responses /tmp/t/x.json --output artifacts/x.json; then exit 1; fi
+      - name: Reject unsupported affirmative without sealed attachment hash
+        run: |
+          printf '%s\n' '{"responses":[{"candidate_code":"C_51061f9f6857","institution_id":"CENEPRED_SIGRID","evidence_disposition":"AFFIRMATIVE_ACTIVATION_RECORD","source_reference":"DOC-002","source_date":"2015-03-24","candidate_polygon_explicitly_covered":true,"event_date_explicitly_covered":true,"institution_attests_disposition":true}]}' > /tmp/t/b.json
+          if python -I scripts/validate_chosica_2015_candidate_ground_truth_response_intake_v2.py --contract config/chosica_2015_candidate_ground_truth_response_intake_contract_v0_2.json --responses /tmp/t/b.json --output artifacts/b.json; then exit 1; fi
