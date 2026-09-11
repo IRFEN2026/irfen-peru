@@ -1,0 +1,100 @@
+name: IRFEN - Chosica 2015 ground-truth intake guards
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_candidate_ground_truth_request_freeze_record_v0_1.json
+      - config/chosica_2015_candidate_ground_truth_response_intake_contract_v0_1.json
+      - scripts/validate_chosica_2015_candidate_ground_truth_response_intake.py
+      - .github/workflows/chosica-2015-candidate-ground-truth-intake-guards.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  guard-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_candidate_ground_truth_response_intake_contract_v0_1.json
+            scripts/validate_chosica_2015_candidate_ground_truth_response_intake.py
+            .github/workflows/chosica-2015-candidate-ground-truth-intake-guards.yml
+      - name: Assert forbidden repository paths absent
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_multibasin_validation_set_v0_1.json
+          test ! -e config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+      - name: Download exact frozen request packet
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p sources/request artifacts tests
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/10180973513/zip" > /tmp/r.zip
+          unzip -q /tmp/r.zip -d sources/request
+          test "$(sha256sum sources/request/chosica_2015_candidate_ground_truth_request_packet_v0_1.json | cut -d' ' -f1)" = "dc41bf82a1fd3b46c1fb7ad43d90c01d618e43250476bca96763cbdf7c5c37d0"
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Accept explicit unable-to-determine without creating a label
+        run: |
+          cat > tests/unable.json <<'JSON'
+          {"responses":[{"candidate_code":"C_15cbc5db136d","evidence_disposition":"UNABLE_TO_DETERMINE","institution":"TEST_FIXTURE_NOT_EVIDENCE"}]}
+          JSON
+          python -I scripts/validate_chosica_2015_candidate_ground_truth_response_intake.py \
+            --contract config/chosica_2015_candidate_ground_truth_response_intake_contract_v0_1.json \
+            --request sources/request/chosica_2015_candidate_ground_truth_request_packet_v0_1.json \
+            --responses tests/unable.json --output artifacts/unable.json
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/unable.json'))
+          assert d['control_confirmed']==[] and d['excluded_active']==[]
+          assert d['responses'][0]['intake_state']=='OUTCOME_UNKNOWN'
+          assert d['sealed_target_unblind_allowed'] is False
+          PY
+      - name: Reject unsupported affirmative claim
+        run: |
+          cat > tests/bad_affirmative.json <<'JSON'
+          {"responses":[{"candidate_code":"C_15cbc5db136d","evidence_disposition":"AFFIRMATIVE_NONACTIVATION_RECORD","institution":"TEST_FIXTURE_NOT_EVIDENCE"}]}
+          JSON
+          if python -I scripts/validate_chosica_2015_candidate_ground_truth_response_intake.py \
+            --contract config/chosica_2015_candidate_ground_truth_response_intake_contract_v0_1.json \
+            --request sources/request/chosica_2015_candidate_ground_truth_request_packet_v0_1.json \
+            --responses tests/bad_affirmative.json --output artifacts/bad.json; then
+            echo 'Malformed affirmative unexpectedly accepted' >&2; exit 1
+          fi
+      - name: Accept structurally complete affirmative only as pending verification
+        run: |
+          cat > tests/pending.json <<'JSON'
+          {"responses":[{"candidate_code":"C_19f0c525214f","evidence_disposition":"AFFIRMATIVE_NONACTIVATION_RECORD","institution":"TEST_FIXTURE_NOT_EVIDENCE","source_reference":"FIXTURE-001","spatial_scope_statement":"Fixture explicitly covers the candidate polygon.","event_scope_statement":"Fixture explicitly covers 2015-03-23.","verbatim_or_structured_statement":"Fixture nonactivation statement; not real evidence.","provenance_url_or_archive_locator":"fixture://not-real"}]}
+          JSON
+          python -I scripts/validate_chosica_2015_candidate_ground_truth_response_intake.py \
+            --contract config/chosica_2015_candidate_ground_truth_response_intake_contract_v0_1.json \
+            --request sources/request/chosica_2015_candidate_ground_truth_request_packet_v0_1.json \
+            --responses tests/pending.json --output artifacts/pending.json
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/pending.json'))
+          assert d['responses'][0]['intake_state']=='PENDING_INDEPENDENT_SOURCE_VERIFICATION_NONACTIVATION'
+          assert d['control_confirmed']==[] and d['excluded_active']==[]
+          assert d['affirmative_claim_promoted_without_verification'] is False
+          assert d['sealed_target_unblind_allowed'] is False
+          PY
+      - name: Reject target/outcome leakage fields
+        run: |
+          cat > tests/leak.json <<'JSON'
+          {"responses":[{"candidate_code":"C_15cbc5db136d","evidence_disposition":"UNABLE_TO_DETERMINE","target_id":"forbidden"}]}
+          JSON
+          if python -I scripts/validate_chosica_2015_candidate_ground_truth_response_intake.py \
+            --contract config/chosica_2015_candidate_ground_truth_response_intake_contract_v0_1.json \
+            --request sources/request/chosica_2015_candidate_ground_truth_request_packet_v0_1.json \
+            --responses tests/leak.json --output artifacts/leak.json; then
+            echo 'Leakage field unexpectedly accepted' >&2; exit 1
+          fi
