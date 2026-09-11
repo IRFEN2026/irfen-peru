@@ -1,0 +1,145 @@
+{
+  "version": "independent-basin-validation-case-v0.1",
+  "case_id": "san_ildefonso_2017_2025",
+  "zone_id": "san_ildefonso",
+  "case_status": "CLOSED_RESEARCH_VALIDATION_CASE",
+  "deployment_status": "RESEARCH_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "decision_thresholds": null,
+  "activation_gate": "BLOCKED",
+  "closure_scope": "historical and research validation only; no production promotion",
+  "evidence_summary": {
+    "geometry": {
+      "status": "READY_FOR_RESEARCH_VALIDATION",
+      "primary_repository_evidence": "site/data/watersheds/san_ildefonso_validation.json",
+      "dem_dataset": "Copernicus DEM GLO-30 Public",
+      "delineated_area_km2": 28.34,
+      "relative_area_error_pct": 1.94,
+      "external_spatial_context": "CONSISTENT",
+      "note": "Published academic morphometry varies by study extent and method; repository DEM geometry remains the independent spatial unit for validation."
+    },
+    "rainfall": {
+      "status": "READY_FOR_RESEARCH_VALIDATION",
+      "repository_evidence": [
+        "site/data/calibration/san_ildefonso_imerg_halfhour_events.json",
+        "site/data/calibration/san_ildefonso_test_rule.json"
+      ],
+      "idesep_transect": {
+        "points": 3,
+        "effective_idf_zones": 1,
+        "interpretation": "No spatial gradient resolved across the three sampled points at IDESEP product resolution."
+      },
+      "limitations": [
+        "IMERG 0.1 degree samples only a small number of grid cells over the catchment.",
+        "No direct sub-hourly gauge series for the 2017 and 2023 impact events is available in the repository."
+      ]
+    },
+    "historical_cases": [
+      {
+        "case_id": "SI-2017-03-15",
+        "outcome": "urban_debris_flow_impact",
+        "infrastructure_phase": "pre_integral_solution",
+        "rainfall_test_rule": "TRIGGERED_3_OF_3_WINDOWS",
+        "evidence_role": "POSITIVE_CONTROL"
+      },
+      {
+        "case_id": "SI-2023-03-10",
+        "outcome": "urban_debris_flow_impact",
+        "infrastructure_phase": "before_completion_of_35_dikes",
+        "rainfall_test_rule": "TRIGGERED_3_OF_3_WINDOWS",
+        "evidence_role": "POSITIVE_CONTROL",
+        "official_outcome_context": "INDECI/SINPAD/COEP evidence reproduced in 2023 academic thesis records activation at approximately 21:30 local time with documented urban damage."
+      },
+      {
+        "case_id": "SI-2025-03-29",
+        "outcome": "activation_controlled_no_san_ildefonso_urban_huaico",
+        "infrastructure_phase": "post_dike_system_pre_full_integral_completion",
+        "rainfall_test_rule": "NOT_TRIGGERED_0_OF_3_WINDOWS",
+        "evidence_role": "NEGATIVE_CONTROL"
+      }
+    ],
+    "hydrologic_hydraulic_context": {
+      "status": "READY_WITH_LIMITATIONS",
+      "sources": [
+        {
+          "source_id": "UPAO-AHUMADA-ESPINO-2023",
+          "citation": "Ahumada Zavala, D. C.; Espino Aparcana, L. C. (2023). Análisis del comportamiento hidráulico de las estructuras de retención de sólidos en la cabecera de la cuenca de la quebrada San Idelfonso. UPAO.",
+          "evidence_type": "ACADEMIC_HYDROLOGIC_HYDRAULIC_MODEL",
+          "use": [
+            "HEC-HMS hydrologic response",
+            "HEC-RAS 2D scenario comparison",
+            "retention-structure plausibility",
+            "published basin and rainfall context"
+          ],
+          "forbidden_use": [
+            "treat modelled discharge as observed gauge truth",
+            "infer operational alert thresholds",
+            "assume proposed 12-dike configuration equals current built infrastructure"
+          ]
+        },
+        {
+          "source_id": "UPN-LOYOLA-2019",
+          "citation": "Loyola Luna Victoria, J. L. (2019). Mitigación de las máximas avenidas en la quebrada San Idelfonso. Universidad Privada del Norte.",
+          "evidence_type": "ACADEMIC_HYDROLOGIC_DEBRIS_FLOW_REFERENCE",
+          "published_model_context": {
+            "liquid_design_discharge_m3s": 30.0,
+            "debris_flow_discharge_m3s": 78.0,
+            "sediment_volume_concentration": 0.40,
+            "modelled_velocity_ms": 4.53
+          },
+          "use": [
+            "rainfall-to-runoff-to-debris-flow physical plausibility",
+            "2017 multi-activation historical context",
+            "published basin geomorphology as independent comparison"
+          ],
+          "forbidden_use": [
+            "treat derived values as observed measurements",
+            "use proposed sabo dams as current infrastructure evidence",
+            "promote model values to production thresholds"
+          ]
+        },
+        {
+          "source_id": "UCV-REBAZA-2023",
+          "citation": "Rebaza Reyes, A. S. (2023). Gestión de riesgo y el impacto por activación de quebrada San Idelfonso en el contexto urbano Trujillo – 2023. Universidad César Vallejo.",
+          "evidence_type": "ACADEMIC_REPRODUCTION_OF_OFFICIAL_IMPACT_DATA",
+          "use": [
+            "2023 positive outcome confirmation",
+            "urban exposure and damage context",
+            "traceability to INDECI/SINPAD/COEP documentation"
+          ],
+          "forbidden_use": [
+            "hydraulic calibration",
+            "rainfall threshold derivation"
+          ]
+        }
+      ],
+      "current_infrastructure_uncertainty": true,
+      "current_infrastructure_note": "Repository context reports 2026 retention, capture and diversion works as operational, but detailed as-built hydraulic capacity and overflow behaviour are not independently validated here."
+    }
+  },
+  "historical_separation": {
+    "status": "DEMONSTRATED_TEST_ONLY",
+    "positive_cases_triggered": 2,
+    "negative_controls_not_triggered": 1,
+    "source": "site/data/calibration/san_ildefonso_test_rule.json",
+    "interpretation": "Useful discriminant evidence for research replay; three cases are insufficient to estimate operational sensitivity, false-alarm rate or seasonal robustness."
+  },
+  "closure_decision": {
+    "research_validation_closed": true,
+    "reason": "Geometry, rainfall context, positive historical outcomes, one negative control, debris-flow mechanism and urban impact chain are sufficiently documented for a bounded research validation case. Remaining uncertainty is explicitly carried rather than fabricated.",
+    "does_not_authorize": [
+      "production use",
+      "operational alerting",
+      "threshold promotion",
+      "assumption that historical rainfall-impact relationships remain unchanged under 2026 infrastructure"
+    ],
+    "future_evidence_that_can_improve_confidence": [
+      "as-built hydraulic capacity and overflow behaviour of current infrastructure",
+      "additional post-2026 rainy non-impact controls",
+      "post-2026 activation events",
+      "direct sub-hourly gauge observations"
+    ]
+  }
+}
