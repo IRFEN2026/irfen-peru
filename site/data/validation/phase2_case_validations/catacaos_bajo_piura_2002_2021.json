@@ -1,0 +1,122 @@
+{
+  "version": "independent-basin-validation-case-v0.1",
+  "case_id": "catacaos_bajo_piura_2002_2021",
+  "zone_id": "catacaos_bajo_piura",
+  "case_status": "CLOSED_RESEARCH_VALIDATION_CASE",
+  "deployment_status": "RESEARCH_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "decision_thresholds": null,
+  "activation_gate": "BLOCKED",
+  "scope": "Historical research validation of rainfall/river-flow/flood-impact behavior in Catacaos and Bajo Piura. This closeout does not authorize operational thresholds or live alerting.",
+  "historical_cases": [
+    {
+      "case_id": "CATACAOS-2002-04-06",
+      "date": "2002-04-06",
+      "classification": "POSITIVE_IMPACT",
+      "outcome": "Piura River overflow affecting Catacaos; SENAMHI inventory reports 11700 affected/damnified persons in Catacaos and additional impacts in Cura Mori and El Tallan.",
+      "evidence_role": "independent historical positive",
+      "counts_toward_v08_closeout": false
+    },
+    {
+      "case_id": "CATACAOS-2012-03",
+      "date_range": "2012-02-13/2012-03-31",
+      "classification": "INTERMEDIATE_FLOW_IMPACT_CONTEXT",
+      "outcome": "SENAMHI inventory records Piura River flow around 1500 m3/s at Catacaos on 25 and 31 March 2012 and agricultural impacts during the season.",
+      "interpretation": "intermediate historical reference; not a verified negative control",
+      "counts_toward_v08_closeout": false
+    },
+    {
+      "case_id": "CATACAOS-2017-03-27",
+      "date": "2017-03-27",
+      "classification": "SEVERE_POSITIVE",
+      "outcome": "Catastrophic Piura River overflow affecting Piura, Castilla, Catacaos, Cura Mori and Bajo Piura.",
+      "primary_context": [
+        "PECHP operational records as reproduced in UDEP engineering studies",
+        "CENEPRED Catacaos 2017 risk evaluation",
+        "SENAMHI 2022 national flood-event inventory"
+      ],
+      "discharge_note": "Use primary/traceable PECHP-UDEP values when available. Rounded secondary values in inventories are corroborative only.",
+      "counts_toward_v08_closeout": false
+    },
+    {
+      "case_id": "PIURA-2019-03-27",
+      "date": "2019-03-27",
+      "classification": "LOW_FLOW_HYDRAULIC_REFERENCE",
+      "flow_m3s": 83,
+      "impact_status": "NOT_ESTABLISHED_BY_REFERENCE",
+      "counts_as_negative_control": false
+    },
+    {
+      "case_id": "PIURA-2021-03-09",
+      "date": "2021-03-09",
+      "classification": "LOW_FLOW_HYDRAULIC_REFERENCE",
+      "flow_m3s": 111,
+      "impact_status": "NOT_ESTABLISHED_BY_REFERENCE",
+      "counts_as_negative_control": false
+    },
+    {
+      "case_id": "PIURA-2021-03-12",
+      "date": "2021-03-12",
+      "classification": "INTERMEDIATE_FLOW_HYDRAULIC_REFERENCE",
+      "flow_m3s": 422,
+      "measured_surface_velocity_m_s": 1.14,
+      "measured_travel_time_four_urban_segments_min_approx": 28.9,
+      "impact_status": "NOT_ESTABLISHED_BY_REFERENCE",
+      "counts_as_negative_control": false
+    }
+  ],
+  "mechanism_chain": {
+    "status": "SUPPORTED_FOR_RESEARCH",
+    "chain": "upstream rainfall -> basin runoff -> Piura River discharge -> river travel/velocity -> overtopping/breach/drainage interaction -> Catacaos/Bajo Piura impact",
+    "evidence": [
+      "UDEP hydraulic analysis Los Ejidos-Puente Independencia using observed 2017 levels/topography and HEC-RAS",
+      "UDEP/PECHP operational-flow reconstruction around the 2017 peak",
+      "CENEPRED 2017 hazard, vulnerability, exposure and risk mapping for Catacaos",
+      "SENAMHI historical flood inventory 1981-2021",
+      "Pena-Caceres et al. 2025 empirical travel-time/surface-velocity measurements for 83, 111 and 422 m3/s"
+    ]
+  },
+  "exposure_context": {
+    "status": "SUPPORTED",
+    "source": "CENEPRED Catacaos risk evaluation, July 2017",
+    "reported_population_exposed": 51238,
+    "reported_dwellings_exposed": 10671,
+    "note": "Exposure figures are contextual to the 2017 evaluation footprint and must not be treated as current 2026 population counts."
+  },
+  "hydraulic_state_change": {
+    "status": "MATERIAL_CONFOUNDER",
+    "note": "River defenses, channel sedimentation, drainage condition and other works change through time; equal discharge does not imply equal impact across 1998, 2002, 2012, 2017, 2021 or later configurations."
+  },
+  "negative_control_status": {
+    "status": "INSUFFICIENT_CONFIRMED_NEGATIVES",
+    "note": "2019 and 2021 measurements are hydraulic reference cases only. They are not labelled NO_IMPACT without independent outcome verification. This limitation is carried explicitly and does not block research closeout."
+  },
+  "allowed_uses": [
+    "historical replay",
+    "event severity ordering for research",
+    "independent comparison of rainfall and discharge products",
+    "travel-time and hydraulic plausibility checks",
+    "exposure and consequence context"
+  ],
+  "forbidden_uses": [
+    "derive or deploy operational flood thresholds",
+    "treat 2019 or 2021 as negative controls without outcome verification",
+    "transfer one historical discharge-impact relationship to a different infrastructure/channel state",
+    "override primary gauge or PECHP records with rounded secondary values",
+    "enable operational alerting"
+  ],
+  "closure": {
+    "status": "CLOSED_WITH_EXPLICIT_LIMITATIONS",
+    "research_validation_closed": true,
+    "production_blocked": true,
+    "remaining_before_any_production_consideration": [
+      "confirmed negative/non-impact controls with rainfall and river state",
+      "current hydraulic-defense/drainage configuration",
+      "validated live rainfall and river-data latency/continuity",
+      "false-alarm and missed-event evaluation",
+      "independent review of any proposed operational thresholds"
+    ]
+  }
+}
