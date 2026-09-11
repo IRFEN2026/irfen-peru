@@ -33,6 +33,17 @@ def main():
     assert bcodes==tcodes
     assert sorted(bcodes)==sorted(gcodes)
     assert bundle['candidate_membership_sha256']==co['inputs']['candidate_membership_sha256']
+
+    # The contract may name forbidden sources so the builder can enforce them, but the
+    # detached capsule itself must not reproduce those names. Export only the positive
+    # allowlist and generic deny-by-default policy. This prevents target/source-name
+    # leakage through policy metadata while preserving the frozen review boundary.
+    allowed_query_inputs=list(co['review_scope']['allowed_query_inputs'])
+    forbidden=[x.lower() for x in co['forbidden_tokens_case_insensitive']]
+    for item in allowed_query_inputs:
+        low=item.lower()
+        assert not any(token in low for token in forbidden), f'FAIL_CLOSED_ALLOWLIST_CONTAINS_FORBIDDEN_TOKEN:{item}'
+
     a.output_dir.mkdir(parents=True,exist_ok=True)
     mapping={
       'review_bundle.json':a.bundle,
@@ -49,7 +60,14 @@ def main():
       'candidate_membership_sha256':co['inputs']['candidate_membership_sha256'],
       'event_anchor_utc':bundle['frozen_event_anchor']['utc'],
       'files':{name:sha(a.output_dir/name) for name in mapping},
-      'review_scope':co['review_scope'],
+      'review_scope':{
+        'allowed_query_inputs':allowed_query_inputs,
+        'deny_unspecified_query_inputs':True,
+        'candidate_replacement_allowed':False,
+        'matching_recalculation_allowed':False,
+        'selection_feedback_allowed':False,
+        'target_unblind_allowed':False
+      },
       'return_rule':co['return_rule'],
       'repository_access_required':False,
       'target_identifiers_included':False,
