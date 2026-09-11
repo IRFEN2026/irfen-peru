@@ -1,0 +1,27 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_CANDIDATE_ONLY_EXTERNAL_GROUND_TRUTH_REQUEST_PACKET",
+  "guards": {"RESEARCH_ONLY": true, "TEST_ONLY": true, "production_use": false, "production_ready": false, "operational_alerting_enabled": false},
+  "purpose": "Prepare a machine-readable, target-blind request for affirmative candidate-local evidence of activation or nonactivation on the frozen event date, without sending any message and without changing the frozen candidate pool or matching.",
+  "candidate_geometry": {"artifact_id": 10171108859, "file": "chosica_2015_cleanroom_candidate_geometries_v0_1.geojson", "sha256": "9a23644c191c88fb66722b368773251051b4098ddd74e4d5861c3a37dbfbb1ca", "candidate_count": 7},
+  "event_scope": {"event_date_local": "2015-03-23", "event_anchor_local": "2015-03-23T14:30:00-05:00", "event_anchor_utc": "2015-03-23T19:30:00Z", "request_scope": "Records sufficient to affirm activation, affirm nonactivation, or explicitly state that the institution cannot determine the status for the candidate polygon on the event date."},
+  "eligible_evidence_holders": ["INGEMMET", "CENEPRED/SIGRID", "INDECI/COEN", "Autoridad Nacional del Agua", "Municipalidad Distrital de Lurigancho-Chosica or predecessor competent authority"],
+  "requested_evidence_classes": ["field inspection or patrol log", "incident/emergency log with spatial coverage", "event-day or immediate post-event georeferenced imagery", "technical report with explicit spatial coverage", "orthophoto/UAV record", "official geospatial inventory declared complete for the relevant corridor/event window"],
+  "response_schema": {
+    "candidate_code": "exact C_<12hex> code",
+    "institution": "required",
+    "source_reference": "document/log/image/inventory identifier required for affirmative answers",
+    "source_date": "required when available",
+    "spatial_scope_statement": "required; must explicitly cover the candidate polygon or contain an unambiguous geometry intersecting it",
+    "event_scope_statement": "required; must explicitly concern 2015-03-23 or a defined interval that includes it",
+    "evidence_disposition": ["AFFIRMATIVE_NONACTIVATION_RECORD", "AFFIRMATIVE_ACTIVATION_RECORD", "UNABLE_TO_DETERMINE"],
+    "verbatim_or_structured_statement": "required for affirmative dispositions",
+    "attachment_sha256": "required if an attachment is supplied",
+    "provenance_url_or_archive_locator": "required when available"
+  },
+  "acceptance_policy": {"documentary_silence_is_unable_to_determine": true, "no_database_hit_is_unable_to_determine": true, "remote_sensing_no_change_alone_is_unable_to_determine": true, "affirmative_nonactivation_must_be_explicit": true, "affirmative_activation_must_be_explicit": true, "candidate_replacement_allowed": false, "matching_feedback_allowed": false},
+  "forbidden": ["include target names or target outcomes", "include A6680", "include contaminated adjudication", "rank requests by target matching", "drop a candidate", "send email or external message from this workflow", "convert no response into CONTROL_CONFIRMED"],
+  "sealed_target_unblind_allowed": false,
+  "next_gate": "FREEZE_REQUEST_PACKET_BY_EXACT_HASH;_ONLY_A_SEPARATELY_INGESTED_AFFIRMATIVE_RESPONSE_MAY_CHANGE_A_CANDIDATE_FROM_OUTCOME_UNKNOWN"
+}
