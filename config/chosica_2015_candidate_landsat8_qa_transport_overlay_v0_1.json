@@ -1,0 +1,74 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_QA_TRANSPORT_OVERLAY_NO_SCIENTIFIC_CHANGE",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "scientific_contract": {
+    "path": "config/chosica_2015_candidate_landsat8_qa_contract_v0_1.json",
+    "sha256": "09f520240cad71663057166e4ada7ee972b1e094",
+    "scientific_semantics_unchanged": true,
+    "qa_bits_unchanged": true,
+    "quality_thresholds_unchanged": true,
+    "scene_ids_unchanged": true,
+    "alignment_unchanged": true,
+    "candidate_geometries_unchanged": true
+  },
+  "transport_mirror": {
+    "freeze_record": "config/chosica_2015_candidate_landsat8_transport_mirror_freeze_record_v0_1.json",
+    "artifact_id": 10178934551,
+    "artifact_file": "chosica_2015_candidate_landsat8_transport_mirror_v0_3.json",
+    "artifact_file_sha256": "db4a7a1f8bbb4a90c69d17dabdf0e1d6a1f4355e0b939724747a0a96a41ea4d1",
+    "provider": "Microsoft Planetary Computer",
+    "role": "TRANSPORT_ONLY_NOT_SCIENTIFIC_SOURCE",
+    "allowed_host": "landsateuwest.blob.core.windows.net",
+    "tls_verify": true,
+    "redirects_allowed": false
+  },
+  "canonical_integrity_source": {
+    "artifact_id": 10172288298,
+    "file": "chosica_2015_candidate_landsat8_asset_inventory_v0_1.json",
+    "sha256": "524e298aa313dffc0df2445e4f44cf7769c2fc0730d49bba7ff64cc8848b0659",
+    "checksum_field": "file:checksum",
+    "required_multihash_prefix": "1340",
+    "algorithm": "SHA-512",
+    "rule": "The entire mirror-delivered QA_PIXEL file must hash to the exact canonical USGS STAC SHA-512 before rasterio may open it."
+  },
+  "asset_policy": {
+    "allowed_asset_key": "qa_pixel",
+    "full_file_download_required": true,
+    "all_other_asset_keys_forbidden_in_this_gate": true,
+    "mirror_asset_basename_must_equal_canonical_usgs_asset_basename": true,
+    "checksum_before_raster_read": true,
+    "delete_downloaded_asset_after_gate": true
+  },
+  "fail_closed": [
+    "mirror manifest hash mismatch",
+    "canonical inventory hash mismatch",
+    "mirror item identity mismatch",
+    "asset key cardinality mismatch",
+    "asset host mismatch",
+    "asset basename mismatch",
+    "redirect",
+    "non-200 response",
+    "SHA-512 mismatch",
+    "raster read attempted before checksum match"
+  ],
+  "forbidden": [
+    "read reflectance bands",
+    "replace or reselect a scene",
+    "read target outcomes or target names",
+    "read A6680",
+    "read contaminated adjudication",
+    "change candidate selection or ranking",
+    "change QA bits or quality thresholds",
+    "interpret QA as a control outcome",
+    "free web search"
+  ],
+  "sealed_target_unblind_allowed": false
+}
