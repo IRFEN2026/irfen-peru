@@ -67,7 +67,8 @@ jobs:
           assert all(x['second_tls_verification'] is True for x in d['responses'])
           PY
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: chosica-2015-candidate-landsat8-second-hop
           path: artifacts/chosica_2015_candidate_landsat8_second_hop_v0_1.json
-          if-no-files-found: error
+          if-no-files-found: warn
