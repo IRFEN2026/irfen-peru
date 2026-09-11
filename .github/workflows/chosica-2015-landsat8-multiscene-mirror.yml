@@ -1,0 +1,56 @@
+name: IRFEN - Chosica 2015 Landsat 8 multiscene mirror metadata
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_landsat8_multiscene_mirror_contract_v0_1.json
+      - scripts/inventory_chosica_2015_landsat8_multiscene_mirror.py
+      - .github/workflows/chosica-2015-landsat8-multiscene-mirror.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_landsat8_multiscene_mirror_contract_v0_1.json
+            scripts/inventory_chosica_2015_landsat8_multiscene_mirror.py
+            .github/workflows/chosica-2015-landsat8-multiscene-mirror.yml
+      - name: Assert forbidden paths absent
+        run: |
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_multibasin_validation_set_v0_1.json
+          test ! -e config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+      - name: Download exact frozen Landsat 8 availability
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p sources/availability artifacts
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/10172034215/zip" > /tmp/a.zip
+          unzip -q /tmp/a.zip -d sources/availability
+          test "$(sha256sum sources/availability/chosica_2015_candidate_landsat8_availability_v0_1.json | cut -d' ' -f1)" = "f909c2d79d9422cae3290275fd8b582b49404e52a6c040e26b9380cc965ca4c3"
+      - uses: actions/setup-python@v6
+        with: {python-version: "3.12"}
+      - run: pip install 'requests>=2.31,<3'
+      - name: Inventory all fixed-window mirror items metadata only
+        run: |
+          env -i PATH="$PATH" HOME=/tmp LANG=C.UTF-8 python -I scripts/inventory_chosica_2015_landsat8_multiscene_mirror.py --contract config/chosica_2015_landsat8_multiscene_mirror_contract_v0_1.json --availability sources/availability/chosica_2015_candidate_landsat8_availability_v0_1.json --output artifacts/chosica_2015_landsat8_multiscene_mirror_v0_1.json
+      - name: Enforce metadata-only guards
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/chosica_2015_landsat8_multiscene_mirror_v0_1.json'))
+          assert d['status']=='PASS_LANDSAT8_ALL_FROZEN_WINDOW_SCENE_MIRROR_METADATA' and d['item_count']==5 and d['pre_scene_count']==2 and d['post_scene_count']==3
+          for k in ('pixel_bytes_read','asset_href_requested','surface_signal_observed','outcome_evidence_read','target_names_or_ids_read','a6680_read','contaminated_adjudication_used','scene_selection_modified','candidate_selection_modified','candidate_ranking_modified','free_web_search_used','control_labels_assigned','sealed_target_unblind_allowed'): assert d[k] is False,k
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-landsat8-multiscene-mirror-metadata
+          path: artifacts/chosica_2015_landsat8_multiscene_mirror_v0_1.json
+          if-no-files-found: error
