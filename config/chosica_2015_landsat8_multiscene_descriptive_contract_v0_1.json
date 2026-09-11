@@ -1,0 +1,21 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PRE_PIXEL_LANDSAT8_ALL_SCENE_THRESHOLD_FREE_DESCRIPTIVE_COMPOSITE",
+  "guards": {"RESEARCH_ONLY": true, "TEST_ONLY": true, "production_use": false, "production_ready": false, "operational_alerting_enabled": false},
+  "inputs": {
+    "inventory": {"artifact_id": 10180828990, "file": "chosica_2015_landsat8_multiscene_mirror_v0_1.json", "sha256": "9530e2179171db8b6f9e1908ab2d33678a3d9340f92cfe0ae5097484ab1f3556", "required_status": "PASS_LANDSAT8_ALL_FROZEN_WINDOW_SCENE_MIRROR_METADATA"},
+    "candidate_geometry": {"artifact_id": 10171108859, "file": "chosica_2015_cleanroom_candidate_geometries_v0_1.geojson", "sha256": "9a23644c191c88fb66722b368773251051b4098ddd74e4d5861c3a37dbfbb1ca", "candidate_count": 7}
+  },
+  "scientific_role": "Post-QA supplemental descriptive sensitivity using every Landsat 8 scene already frozen by the original availability windows. It does not replace the failed frozen three-scene QA gate, has no candidate-level pass threshold, and is not label-capable.",
+  "scene_policy": {"use_all_two_pre_scenes": true, "use_all_three_post_scenes": true, "scene_dropping_allowed": false, "scene_replacement_allowed": false, "surface_signal_used_for_scene_selection": false},
+  "transport": {"provider": "Microsoft Planetary Computer", "role": "TRANSPORT_ONLY_NOT_SCIENTIFIC_SOURCE", "unsigned_asset_host": "landsateuwest.blob.core.windows.net", "ephemeral_signing_library": "planetary-computer", "signed_url_may_be_persisted": false, "signed_url_may_be_logged": false, "redirects_allowed": false, "full_file_sha512_before_raster_read": true, "canonical_usgs_byte_checksum_available_for_all_five_items": false},
+  "qa_pixel": {"invalid_bits": [0,1,2,3,4,5,7], "valid_rule": "all invalid bits zero"},
+  "reflectance": {"asset_keys": ["red","nir08","swir22"], "landsat_collection2_level2_scale": 0.0000275, "landsat_collection2_level2_offset": -0.2, "raw_zero_invalid": true, "composite": "per-pixel median of every QA-valid observation in each frozen period", "minimum_valid_observations_per_period_for_a_pixel": 1, "no_candidate_level_coverage_threshold": true},
+  "indices": {"NDVI": "(nir08-red)/(nir08+red)", "NBR": "(nir08-swir22)/(nir08+swir22)", "denominator_absolute_minimum": 0.000001},
+  "reported_statistics": ["candidate_pixel_count","pre_composite_pixel_count","post_composite_pixel_count","common_composite_pixel_count","common_composite_fraction","median_valid_observation_count_pre_on_common_pixels","median_valid_observation_count_post_on_common_pixels","pre_median","post_median","delta_median","delta_p10","delta_p25","delta_p75","delta_p90"],
+  "interpretation_policy": {"descriptive_support_only": true, "classification_thresholds": null, "no_change_can_confirm_control": false, "large_change_can_confirm_activation": false, "candidate_reranking_allowed": false, "candidate_replacement_allowed": false, "feedback_to_matching_allowed": false},
+  "forbidden": ["drop a scene using QA or surface response", "change the one-valid-observation pixel inclusion rule after reading reflectance", "invent a candidate-level coverage pass threshold", "assign CONTROL_CONFIRMED or EXCLUDED_ACTIVE", "read target names or outcomes", "read A6680", "read contaminated adjudication", "modify candidate matching or ranking", "free web search"],
+  "sealed_target_unblind_allowed": false,
+  "next_gate": "FREEZE_DESCRIPTIVE_OUTPUT_BY_EXACT_HASH;_USE_ONLY_AS_CANDIDATE_ONLY_SUPPORTING_EVIDENCE_WITH_NO_MATCHING_FEEDBACK"
+}

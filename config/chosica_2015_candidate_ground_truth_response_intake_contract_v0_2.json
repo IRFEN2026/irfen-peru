@@ -1,0 +1,18 @@
+{
+  "schema_version": "0.2",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_SANITIZED_CANDIDATE_GROUND_TRUTH_RESPONSE_INTAKE",
+  "guards": {"RESEARCH_ONLY": true, "TEST_ONLY": true, "production_use": false, "production_ready": false, "operational_alerting_enabled": false},
+  "request_contract": "config/chosica_2015_candidate_ground_truth_request_contract_v0_2.json",
+  "allowed_candidate_codes": ["C_15cbc5db136d","C_19f0c525214f","C_51061f9f6857","C_636da855a58d","C_b903bae5d9c9","C_c767e4cea74e","C_d0274c1c4240"],
+  "allowed_institution_ids": ["INGEMMET","CENEPRED_SIGRID","INDECI_COEN","ANA","MUNICIPAL_AUTHORITY"],
+  "allowed_dispositions": ["AFFIRMATIVE_NONACTIVATION_RECORD","AFFIRMATIVE_ACTIVATION_RECORD","UNABLE_TO_DETERMINE"],
+  "allowed_response_fields": ["candidate_code","institution_id","evidence_disposition","source_reference","source_date","candidate_polygon_explicitly_covered","event_date_explicitly_covered","institution_attests_disposition","attachment_sha256"],
+  "patterns": {"candidate_code":"^C_[0-9a-f]{12}$","source_reference":"^[A-Za-z0-9._:/-]{1,160}$","source_date":"^[0-9]{4}-[0-9]{2}-[0-9]{2}$","attachment_sha256":"^[0-9a-f]{64}$"},
+  "affirmative_gate": {"candidate_polygon_explicitly_covered": true, "event_date_explicitly_covered": true, "institution_attests_disposition": true, "source_reference_required": true, "source_date_required": true, "attachment_sha256_required": true, "attachment_bytes_read_by_intake": false, "source_verification_required_before_outcome_change": true},
+  "unable_policy": {"remains_outcome_unknown": true, "missing_candidate_response_remains_outcome_unknown": true},
+  "output_states": {"AFFIRMATIVE_NONACTIVATION_RECORD":"PENDING_INDEPENDENT_SOURCE_VERIFICATION_NONACTIVATION","AFFIRMATIVE_ACTIVATION_RECORD":"PENDING_INDEPENDENT_SOURCE_VERIFICATION_ACTIVATION","UNABLE_TO_DETERMINE":"OUTCOME_UNKNOWN"},
+  "forbidden": ["unknown response fields","free-text narrative fields","target names or IDs","target outcomes","A6680","contaminated adjudication","attachment byte read","automatic scientific verification","candidate replacement","matching or ranking feedback","automatic target unblind","free web search"],
+  "sealed_target_unblind_allowed": false,
+  "next_gate": "INDEPENDENTLY_VERIFY_A_PENDING_AFFIRMATIVE_ATTACHMENT_OUTSIDE_TARGET_AWARE_CONTEXT;_STRUCTURAL_INTAKE_ALONE_NEVER_CHANGES_OUTCOME_STATE"
+}

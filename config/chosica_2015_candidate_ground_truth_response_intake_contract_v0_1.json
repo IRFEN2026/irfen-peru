@@ -1,0 +1,58 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_CANDIDATE_ONLY_GROUND_TRUTH_RESPONSE_INTAKE",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "request_packet": {
+    "artifact_id": 10180973513,
+    "file": "chosica_2015_candidate_ground_truth_request_packet_v0_1.json",
+    "sha256": "dc41bf82a1fd3b46c1fb7ad43d90c01d618e43250476bca96763cbdf7c5c37d0",
+    "candidate_codes": [
+      "C_15cbc5db136d", "C_19f0c525214f", "C_51061f9f6857", "C_636da855a58d",
+      "C_b903bae5d9c9", "C_c767e4cea74e", "C_d0274c1c4240"
+    ]
+  },
+  "allowed_dispositions": [
+    "AFFIRMATIVE_NONACTIVATION_RECORD",
+    "AFFIRMATIVE_ACTIVATION_RECORD",
+    "UNABLE_TO_DETERMINE"
+  ],
+  "affirmative_requirements": {
+    "required_nonempty_fields": [
+      "institution", "source_reference", "spatial_scope_statement", "event_scope_statement",
+      "verbatim_or_structured_statement"
+    ],
+    "require_at_least_one_provenance_field": ["attachment_sha256", "provenance_url_or_archive_locator"],
+    "attachment_sha256_pattern": "^[0-9a-f]{64}$",
+    "source_verification_required_before_outcome_change": true
+  },
+  "unable_to_determine_policy": {
+    "may_omit_affirmative_provenance": true,
+    "candidate_remains_outcome_unknown": true
+  },
+  "output_states": {
+    "AFFIRMATIVE_NONACTIVATION_RECORD": "PENDING_INDEPENDENT_SOURCE_VERIFICATION_NONACTIVATION",
+    "AFFIRMATIVE_ACTIVATION_RECORD": "PENDING_INDEPENDENT_SOURCE_VERIFICATION_ACTIVATION",
+    "UNABLE_TO_DETERMINE": "OUTCOME_UNKNOWN"
+  },
+  "forbidden": [
+    "accept candidate code outside the frozen request packet",
+    "read or include target names, target IDs, or target outcomes",
+    "read or include A6680",
+    "read or include contaminated adjudication",
+    "treat a claimed affirmative disposition as verified without independent source verification",
+    "treat no response or documentary silence as nonactivation",
+    "change candidate pool, matching, ranking, or target shortlists",
+    "feed intake status back into matching",
+    "automatically unblind target outcomes",
+    "free web search"
+  ],
+  "sealed_target_unblind_allowed": false,
+  "next_gate": "INDEPENDENTLY_VERIFY_EACH_PENDING_AFFIRMATIVE_SOURCE_USING_ONLY_THE_FROZEN_CANDIDATE_CODE_AND_DECLARED_SOURCE;_ONLY_THEN_MAY_A_CANDIDATE_BECOME_CONTROL_CONFIRMED_OR_EXCLUDED_ACTIVE"
+}

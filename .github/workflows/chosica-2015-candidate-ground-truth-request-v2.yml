@@ -1,0 +1,58 @@
+name: IRFEN - Chosica 2015 candidate ground-truth request v2
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_candidate_ground_truth_request_contract_v0_2.json
+      - scripts/build_chosica_2015_candidate_ground_truth_request_packet_v2.py
+      - .github/workflows/chosica-2015-candidate-ground-truth-request-v2.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  build-sanitized-request:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_candidate_ground_truth_request_contract_v0_2.json
+            scripts/build_chosica_2015_candidate_ground_truth_request_packet_v2.py
+            .github/workflows/chosica-2015-candidate-ground-truth-request-v2.yml
+      - name: Assert forbidden paths absent
+        run: |
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_multibasin_validation_set_v0_1.json
+          test ! -e config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+      - name: Download exact frozen candidate geometry
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p sources/geometry artifacts
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/10171108859/zip" > /tmp/g.zip
+          unzip -q /tmp/g.zip -d sources/geometry
+          test "$(sha256sum sources/geometry/chosica_2015_cleanroom_candidate_geometries_v0_1.geojson | cut -d' ' -f1)" = "9a23644c191c88fb66722b368773251051b4098ddd74e4d5861c3a37dbfbb1ca"
+      - uses: actions/setup-python@v6
+        with: {python-version: "3.12"}
+      - run: pip install 'shapely>=2,<3'
+      - name: Build sanitized no-send request packet
+        run: |
+          env -i PATH="$PATH" HOME=/tmp LANG=C.UTF-8 python -I scripts/build_chosica_2015_candidate_ground_truth_request_packet_v2.py --contract config/chosica_2015_candidate_ground_truth_request_contract_v0_2.json --geometry sources/geometry/chosica_2015_cleanroom_candidate_geometries_v0_1.geojson --json-output artifacts/chosica_2015_candidate_ground_truth_request_packet_v0_2.json --md-output artifacts/chosica_2015_candidate_ground_truth_request_packet_v0_2.md
+      - name: Enforce sanitized target-blind no-send guards
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/chosica_2015_candidate_ground_truth_request_packet_v0_2.json'))
+          assert d['status']=='FROZEN_CANDIDATE_ONLY_EXTERNAL_GROUND_TRUTH_REQUEST_SANITIZED_ENVELOPE' and d['candidate_count']==7
+          for k in ('target_names_or_ids_included','target_outcomes_included','a6680_included','contaminated_adjudication_included','free_text_response_fields_requested','candidate_selection_modified','candidate_ranking_used_for_request','external_message_sent','sealed_target_unblind_allowed'): assert d[k] is False,k
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-candidate-ground-truth-request-v2
+          path: |
+            artifacts/chosica_2015_candidate_ground_truth_request_packet_v0_2.json
+            artifacts/chosica_2015_candidate_ground_truth_request_packet_v0_2.md
+          if-no-files-found: error

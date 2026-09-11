@@ -1,0 +1,21 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PRE_EXECUTION_LANDSAT8_ALL_FROZEN_WINDOW_SCENE_MIRROR_METADATA",
+  "guards": {"RESEARCH_ONLY": true, "TEST_ONLY": true, "production_use": false, "production_ready": false, "operational_alerting_enabled": false},
+  "scientific_role": "Supplemental candidate-only quality mosaic. It does not replace the frozen three-scene Landsat 8 QA failure and cannot assign outcome labels.",
+  "availability_input": {"artifact_id": 10172034215, "file": "chosica_2015_candidate_landsat8_availability_v0_1.json", "sha256": "f909c2d79d9422cae3290275fd8b582b49404e52a6c040e26b9380cc965ca4c3", "required_status": "PASS_CANDIDATE_ONLY_LANDSAT8_AVAILABILITY_FROZEN_INPUTS", "expected_unique_pre_scene_count": 2, "expected_unique_post_scene_count": 3},
+  "transport_mirror": {"provider": "Microsoft Planetary Computer", "role": "TRANSPORT_ONLY_NOT_SCIENTIFIC_SOURCE", "item_endpoint_template": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/landsat-c2-l2/items/{mirror_item_id}", "endpoint_host": "planetarycomputer.microsoft.com", "collection": "landsat-c2-l2", "tls_verify": true, "redirects_allowed": false, "free_web_search_allowed": false},
+  "identity_map": [
+    {"window":"pre","usgs_item_id":"LC08_L2SP_007068_20150214_20200910_02_T1_SR","mirror_item_id":"LC08_L2SP_007068_20150214_02_T1","date":"2015-02-14","wrs_path":7,"wrs_row":68},
+    {"window":"pre","usgs_item_id":"LC08_L2SP_007068_20150318_20200909_02_T1_SR","mirror_item_id":"LC08_L2SP_007068_20150318_02_T1","date":"2015-03-18","wrs_path":7,"wrs_row":68},
+    {"window":"post","usgs_item_id":"LC08_L2SP_007068_20150403_20200909_02_T1_SR","mirror_item_id":"LC08_L2SP_007068_20150403_02_T1","date":"2015-04-03","wrs_path":7,"wrs_row":68},
+    {"window":"post","usgs_item_id":"LC08_L2SP_007068_20150419_20200909_02_T1_SR","mirror_item_id":"LC08_L2SP_007068_20150419_02_T1","date":"2015-04-19","wrs_path":7,"wrs_row":68},
+    {"window":"post","usgs_item_id":"LC08_L2SP_007068_20150505_20200909_02_T1_SR","mirror_item_id":"LC08_L2SP_007068_20150505_02_T1","date":"2015-05-05","wrs_path":7,"wrs_row":68}
+  ],
+  "required_asset_keys": ["qa_pixel", "red", "nir08", "swir22"],
+  "identity_rule": {"exact_mirror_item_id": true, "exact_acquisition_date": true, "exact_wrs_path_row": true, "all_required_assets_present": true, "pixel_bytes_allowed": false, "scene_selection_modified": false},
+  "forbidden": ["read asset bytes", "change or drop any of the five frozen-window scenes", "read target names or outcomes", "read A6680", "read contaminated adjudication", "change candidate matching or ranking", "free web search", "assign control labels"],
+  "sealed_target_unblind_allowed": false,
+  "next_gate": "FREEZE_MIRROR_METADATA_BY_EXACT_HASH_THEN_EXECUTE_PRECOMMITTED_ALL_SCENE_QA_MOSAIC"
+}
