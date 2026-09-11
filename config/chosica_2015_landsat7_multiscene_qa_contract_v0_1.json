@@ -1,0 +1,68 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PRE_PIXEL_LANDSAT7_ALL_SCENE_REDUNDANT_QA",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "inputs": {
+    "inventory": {
+      "artifact_id": 10180569647,
+      "file": "chosica_2015_landsat7_multiscene_asset_inventory_v0_1.json",
+      "sha256": "b0e96d0d4267de03771975edeeb56dee0e9ead4e6e25e60180734e6c693d465e",
+      "required_status": "FROZEN_LANDSAT7_ALL_FIXED_WINDOW_SCENE_ASSET_METADATA"
+    },
+    "candidate_geometry": {
+      "artifact_id": 10171108859,
+      "file": "chosica_2015_cleanroom_candidate_geometries_v0_1.geojson",
+      "sha256": "9a23644c191c88fb66722b368773251051b4098ddd74e4d5861c3a37dbfbb1ca",
+      "candidate_count": 7
+    }
+  },
+  "scientific_role": "Supplemental fixed-window Landsat 7 SLC-off/cloud quality recovery. This does not replace or retroactively change the frozen single-pair QA result. All three pre and all four post scenes frozen before this stage are used; no scene is selected or dropped from observed quality or surface response.",
+  "transport": {
+    "unsigned_asset_host": "landsateuwest.blob.core.windows.net",
+    "ephemeral_signing_library": "planetary-computer",
+    "signed_url_may_be_persisted": false,
+    "signed_url_may_be_logged": false,
+    "redirects_allowed": false,
+    "full_file_sha512_before_raster_read": true
+  },
+  "allowed_asset_keys": ["qa_pixel", "qa_radsat"],
+  "qa_pixel_invalid_bits": [0, 1, 3, 4, 5, 7],
+  "qa_radsat_valid_rule": "value_equals_zero",
+  "composite_quality_rule": {
+    "reference_grid": "chronologically earliest frozen pre-scene qa_pixel grid",
+    "all_other_masks_resampling": "nearest",
+    "candidate_polygon_rasterization": "pixel-center inclusion; all_touched=false",
+    "minimum_candidate_pixels": 100,
+    "minimum_valid_observations_per_pixel_pre": 2,
+    "minimum_valid_observations_per_pixel_post": 2,
+    "minimum_fraction_with_required_pre_redundancy": 0.50,
+    "minimum_fraction_with_required_post_redundancy": 0.50,
+    "minimum_fraction_with_required_redundancy_both_periods": 0.40,
+    "scene_replacement_allowed": false,
+    "scene_dropping_allowed": false,
+    "slc_off_gap_imputation_allowed": false
+  },
+  "candidate_status_if_pass": "QA_USABLE_FOR_ALL_SCENE_MEDIAN_COMPOSITE",
+  "candidate_status_if_fail": "QA_INSUFFICIENT_ALL_SCENE_NO_TUNING",
+  "minimum_usable_candidates_to_continue": 1,
+  "forbidden": [
+    "read reflectance assets in this QA stage",
+    "drop or replace a scene after QA",
+    "change redundancy thresholds after seeing QA",
+    "read target names or outcomes",
+    "read A6680",
+    "read contaminated adjudication",
+    "change matching or candidate ranking",
+    "interpret QA pass/fail as a control or activation outcome",
+    "free web search"
+  ],
+  "sealed_target_unblind_allowed": false,
+  "next_gate": "IF_AT_LEAST_ONE_CANDIDATE_PASSES_FREEZE_ALL_SCENE_QA_BY_EXACT_HASH_THEN_PREREGISTER_MEDIAN_REFLECTANCE_COMPOSITE_WITHOUT_OUTCOME_THRESHOLDS"
+}
