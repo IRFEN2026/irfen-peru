@@ -1,0 +1,67 @@
+{
+  "schema_version": "0.2",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_TRANSPORT_MIRROR_EXACT_ITEM_METADATA_ONLY",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "revision_basis": {
+    "supersedes": "config/chosica_2015_candidate_landsat8_transport_mirror_contract_v0_1.json",
+    "failed_workflow_run_id": 34545459887,
+    "failure": "Planetary Computer search query on landsat:product_id returned zero matches for the first frozen USGS scene; no pixel bytes or scientific response values were read.",
+    "scene_selection_modified": false,
+    "candidate_selection_modified": false,
+    "outcome_evidence_read": false
+  },
+  "scientific_source": {
+    "institution": "U.S. Geological Survey",
+    "product_family": "Landsat Collection 2 Level-2 Surface Reflectance",
+    "scene_identity_remains_usgs_canonical": true
+  },
+  "transport_mirror": {
+    "provider": "Microsoft Planetary Computer",
+    "role": "transport only; not an independent scientific evidence source",
+    "item_endpoint_template": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/landsat-c2-l2/items/{mirror_item_id}",
+    "endpoint_host": "planetarycomputer.microsoft.com",
+    "collection": "landsat-c2-l2",
+    "http_method": "GET",
+    "tls_verify": true,
+    "redirects_allowed": false,
+    "free_web_search_allowed": false
+  },
+  "frozen_identity_map": [
+    {
+      "usgs_item_id": "LC08_L2SP_007068_20150214_20200910_02_T1_SR",
+      "usgs_product_id": "LC08_L2SP_007068_20150214_20200910_02_T1",
+      "mirror_item_id": "LC08_L2SP_007068_20150214_02_T1",
+      "date": "2015-02-14"
+    },
+    {
+      "usgs_item_id": "LC08_L2SP_007068_20150318_20200909_02_T1_SR",
+      "usgs_product_id": "LC08_L2SP_007068_20150318_20200909_02_T1",
+      "mirror_item_id": "LC08_L2SP_007068_20150318_02_T1",
+      "date": "2015-03-18"
+    },
+    {
+      "usgs_item_id": "LC08_L2SP_007068_20150403_20200909_02_T1_SR",
+      "usgs_product_id": "LC08_L2SP_007068_20150403_20200909_02_T1",
+      "mirror_item_id": "LC08_L2SP_007068_20150403_02_T1",
+      "date": "2015-04-03"
+    }
+  ],
+  "required_asset_keys": ["qa_pixel", "red", "nir08", "swir16", "swir22"],
+  "acceptance_rule": {
+    "metadata_only": true,
+    "exact_mirror_item_id_required": true,
+    "returned_landsat_product_id_must_equal_frozen_usgs_product_id": true,
+    "asset_bytes_may_not_be_read": true,
+    "later_asset_acceptance_requires_exact_usgs_file_sha512": true,
+    "scene_reselection_allowed": false
+  },
+  "forbidden": ["free web search","target outcomes or target names","A6680","contaminated adjudication","candidate reranking or replacement","scene reselection","pixel asset read","control-label assignment"],
+  "sealed_target_unblind_allowed": false
+}
