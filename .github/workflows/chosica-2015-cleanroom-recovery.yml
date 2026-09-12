@@ -1,0 +1,118 @@
+name: IRFEN - Chosica 2015 clean-room recovery
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+      - config/chosica_2015_cleanroom_recovery_contract_v0_1.json
+      - scripts/build_chosica_2015_cleanroom_input.py
+      - scripts/match_chosica_2015_cleanroom_controls.py
+      - scripts/validate_chosica_2015_cleanroom_recovery.py
+      - .github/workflows/chosica-2015-cleanroom-recovery.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  cleanroom-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Sparse checkout recovery code only
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+            config/chosica_2015_cleanroom_recovery_contract_v0_1.json
+            scripts/build_chosica_2015_cleanroom_input.py
+            scripts/match_chosica_2015_cleanroom_controls.py
+            scripts/validate_chosica_2015_cleanroom_recovery.py
+            .github/workflows/chosica-2015-cleanroom-recovery.yml
+
+      - name: Assert forbidden scientific paths are absent from worktree
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09_b.json
+          test ! -e config/chosica_2015_multibasin_validation_set_v0_1.json
+
+      - name: Download exact allowlisted preincident artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p sources/{target_morphometry,target_preanchor_imerg,candidate_dem_metrics,candidate_preanchor_imerg}
+          gh run download 34291741232 -R "$GITHUB_REPOSITORY" -n chosica-2015-morphometry-phase1 -D sources/target_morphometry
+          gh run download 34291741336 -R "$GITHUB_REPOSITORY" -n chosica-2015-preunblind-imerg -D sources/target_preanchor_imerg
+          gh run download 34374629591 -R "$GITHUB_REPOSITORY" -n chosica-2015-negative-control-matching -D sources/candidate_dem_metrics
+          gh run download 34377084449 -R "$GITHUB_REPOSITORY" -n chosica-2015-negative-control-preunblind-imerg -D sources/candidate_preanchor_imerg
+
+      - name: Assert source inventory contains only four allowlisted files
+        run: |
+          set -euo pipefail
+          find sources -type f -printf '%P\n' | sort > /tmp/observed_sources.txt
+          cat > /tmp/expected_sources.txt <<'EOF'
+          candidate_dem_metrics/chosica_2015_negative_control_matching.json
+          candidate_preanchor_imerg/chosica_2015_negative_control_preunblind_imerg.json
+          target_morphometry/chosica_2015_morphometry_phase1.json
+          target_preanchor_imerg/chosica_2015_preunblind_imerg.json
+          EOF
+          diff -u /tmp/expected_sources.txt /tmp/observed_sources.txt
+
+      - name: Build minimal blinded package
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/irfen-cleanroom artifacts
+          python -I scripts/build_chosica_2015_cleanroom_input.py \
+            --contract config/chosica_2015_cleanroom_recovery_contract_v0_1.json \
+            --contamination config/chosica_2015_control_adjudication_contamination_registry_v0_1.json \
+            --artifact-root "$PWD/sources" \
+            --output /tmp/irfen-cleanroom/input.json
+          chmod 0444 /tmp/irfen-cleanroom/input.json
+
+      - name: Execute matcher with stripped environment and no repository input
+        run: |
+          set -euo pipefail
+          cp scripts/match_chosica_2015_cleanroom_controls.py /tmp/irfen-cleanroom/matcher.py
+          chmod 0444 /tmp/irfen-cleanroom/matcher.py
+          cd /tmp/irfen-cleanroom
+          env -i PATH="$PATH" PYTHONHASHSEED=0 python -I matcher.py --input input.json --output matching_a.json
+          env -i PATH="$PATH" PYTHONHASHSEED=0 python -I matcher.py --input input.json --output matching_b.json
+          cmp matching_a.json matching_b.json
+          cp matching_a.json matching.json
+
+      - name: Validate clean-room boundary and deterministic output
+        run: |
+          set -euo pipefail
+          python -I scripts/validate_chosica_2015_cleanroom_recovery.py \
+            --contract config/chosica_2015_cleanroom_recovery_contract_v0_1.json \
+            --contamination config/chosica_2015_control_adjudication_contamination_registry_v0_1.json \
+            --package /tmp/irfen-cleanroom/input.json \
+            --matching /tmp/irfen-cleanroom/matching.json \
+            --matcher scripts/match_chosica_2015_cleanroom_controls.py \
+            --builder scripts/build_chosica_2015_cleanroom_input.py \
+            --output artifacts/cleanroom_validation.json
+
+      - name: Emit freeze-ready manifest
+        run: |
+          set -euo pipefail
+          cp /tmp/irfen-cleanroom/input.json artifacts/cleanroom_input.json
+          cp /tmp/irfen-cleanroom/matching.json artifacts/cleanroom_matching.json
+          python - <<'PY'
+          import hashlib,json,pathlib
+          p=pathlib.Path('artifacts')
+          def sha(x): return hashlib.sha256((p/x).read_bytes()).hexdigest()
+          files={x:sha(x) for x in ('cleanroom_input.json','cleanroom_matching.json','cleanroom_validation.json')}
+          d={'schema_version':'0.1','status':'PASS_CLEANROOM_RECOVERY_READY_FOR_COMMITTED_FREEZE','guards':{'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False},'sealed_target_unblind_allowed':False,'files':files}
+          (p/'cleanroom_manifest.json').write_text(json.dumps(d,sort_keys=True,separators=(',',':'))+'\n',encoding='utf-8')
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-cleanroom-recovery
+          path: artifacts/
+          if-no-files-found: error

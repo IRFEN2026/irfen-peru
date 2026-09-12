@@ -1,0 +1,67 @@
+name: IRFEN - Chosica 2015 SIGRID static script discovery
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_portal_endpoint_discovery_contract_v0_1.json
+      - scripts/discover_chosica_2015_sigrid_static_scripts.py
+      - .github/workflows/chosica-2015-sigrid-static-script-discovery.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  discover-static-script-urls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_portal_endpoint_discovery_contract_v0_1.json
+            scripts/discover_chosica_2015_sigrid_static_scripts.py
+            .github/workflows/chosica-2015-sigrid-static-script-discovery.yml
+      - name: Assert forbidden files absent
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+          test ! -e config/chosica_2015_multibasin_validation_set_v0_1.json
+      - name: Read exact root infrastructure only
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          env -i PATH="$PATH" HOME=/tmp LANG=C.UTF-8 python -I scripts/discover_chosica_2015_sigrid_static_scripts.py \
+            --contract config/chosica_2015_portal_endpoint_discovery_contract_v0_1.json \
+            --output artifacts/chosica_2015_sigrid_static_scripts_v0_1.json | tee artifacts/sigrid_script_discovery_summary.json
+      - name: Enforce stage boundary
+        run: |
+          set -euo pipefail
+          python -I - <<'PY'
+          import json,pathlib
+          p=pathlib.Path('artifacts/chosica_2015_sigrid_static_scripts_v0_1.json')
+          d=json.loads(p.read_text(encoding='utf-8'))
+          guards={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          assert d['status']=='PASS_INFRASTRUCTURE_ONLY_SIGRID_SCRIPT_URL_DISCOVERY'
+          assert d['guards']==guards
+          assert d['classification']=='INFRASTRUCTURE_ONLY_NOT_TERRITORIAL_EVIDENCE'
+          assert d['root_url']=='https://sigrid.cenepred.gob.pe/sigridv3/'
+          assert d['script_bytes_read'] is False
+          assert d['candidate_territorial_evidence_read'] is False
+          assert d['control_labels_assigned'] is False
+          assert d['sealed_target_unblind_allowed'] is False
+          assert d['same_host_javascript_urls']==sorted(set(d['same_host_javascript_urls']))
+          assert all(x.startswith('https://sigrid.cenepred.gob.pe/') and x.split('?',1)[0].lower().endswith('.js') for x in d['same_host_javascript_urls'])
+          text=p.read_text(encoding='utf-8').lower()
+          for token in ('pedregal','quirio','carossio','rayos de sol','cashahuacra','la libertad','a6680','official_outcome_evidence'):
+              assert token not in text, token
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-sigrid-static-script-urls
+          path: |
+            artifacts/chosica_2015_sigrid_static_scripts_v0_1.json
+            artifacts/sigrid_script_discovery_summary.json
+          if-no-files-found: error

@@ -1,0 +1,43 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_TRANSPORT_SECOND_HOP_HEADERS_ONLY",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "inputs": {
+    "asset_inventory_artifact_id": 10172288298,
+    "asset_inventory_sha256": "524e298aa313dffc0df2445e4f44cf7769c2fc0730d49bba7ff64cc8848b0659",
+    "first_hop_freeze_record": "config/chosica_2015_candidate_landsat8_transport_redirect_freeze_record_v0_1.json",
+    "asset_key": "qa_pixel"
+  },
+  "transport": {
+    "origin": {"scheme":"https","host":"landsatlook.usgs.gov","tls_verify":false,"allow_redirects":false,"read_body":false},
+    "required_first_hop": {"scheme":"https","host":"ers.cr.usgs.gov","path":"/","query_present":true},
+    "second_request": {"tls_verify":true,"allow_redirects":false,"read_body":false},
+    "maximum_origin_requests": 3,
+    "maximum_second_hop_requests": 3,
+    "free_web_search_allowed": false,
+    "record_full_location_header": false,
+    "record_location_sha256": true,
+    "record_location_components": ["scheme","hostname","path","query_present"]
+  },
+  "integrity": {
+    "pixel_bytes_read": false,
+    "outcome_evidence_read": false,
+    "target_names_or_ids_read": false,
+    "a6680_read": false,
+    "contaminated_adjudication_used": false,
+    "scene_selection_modified": false,
+    "candidate_selection_modified": false,
+    "candidate_ranking_modified": false,
+    "qa_bits_or_thresholds_modified": false,
+    "control_labels_assigned": false,
+    "sealed_target_unblind_allowed": false,
+    "asset_acceptance_authorized": false
+  }
+}

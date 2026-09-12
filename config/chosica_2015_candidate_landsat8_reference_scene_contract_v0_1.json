@@ -1,0 +1,45 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PRE_EXECUTION_LANDSAT8_PRE_EVENT_REFERENCE_SELECTION",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "availability_input": {
+    "artifact_id": 10172034215,
+    "file": "chosica_2015_candidate_landsat8_availability_v0_1.json",
+    "sha256": "f909c2d79d9422cae3290275fd8b582b49404e52a6c040e26b9380cc965ca4c3"
+  },
+  "pair_input": {
+    "artifact_id": 10172114404,
+    "file": "chosica_2015_candidate_landsat8_pairs_v0_1.json",
+    "sha256": "2d34dd68266d805f992f6f0d8e6084a38fd81cef26379ce9b37ad6b55ead66f6"
+  },
+  "selection": {
+    "purpose": "Choose one earlier pre-event reference acquisition before the already-frozen immediate-pre scene, enabling a pre/pre radiometric-stability comparison before event-change interpretation.",
+    "same_wrs_path_as_pair": true,
+    "same_wrs_row_as_pair": true,
+    "reference_datetime_strictly_before_frozen_pre_datetime": true,
+    "primary_key": "minimum temporal distance to frozen pre scene",
+    "secondary_key": "lower scene-level cloud cover when present; complete cloud metadata ranks before missing",
+    "final_key": "lexical item_id",
+    "surface_pixels_allowed_for_selection": false,
+    "replacement_after_pixel_read": false
+  },
+  "expected_candidate_count": 7,
+  "forbidden": [
+    "read Landsat pixel assets before reference manifest freeze",
+    "read target outcomes or names",
+    "read A6680",
+    "read contaminated adjudication",
+    "use surface response or event evidence to choose the reference scene",
+    "replace a candidate or scene after pixel inspection",
+    "free web search"
+  ],
+  "sealed_target_unblind_allowed": false,
+  "next_gate": "FREEZE_REFERENCE_MANIFEST_BY_EXACT_SHA256_THEN_RESOLVE_ASSET_METADATA_FOR_THE_THREE_FROZEN_ACQUISITIONS_ONLY"
+}

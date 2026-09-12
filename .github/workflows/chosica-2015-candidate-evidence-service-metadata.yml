@@ -1,0 +1,92 @@
+name: IRFEN - Chosica 2015 candidate evidence service metadata
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_candidate_evidence_source_allowlist_v0_1.json
+      - config/chosica_2015_candidate_territorial_packet_freeze_record_v0_1.json
+      - scripts/discover_chosica_2015_candidate_evidence_service_metadata.py
+      - .github/workflows/chosica-2015-candidate-evidence-service-metadata.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  discover-schema-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Sparse checkout allowlist discovery surface only
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_candidate_evidence_source_allowlist_v0_1.json
+            config/chosica_2015_candidate_territorial_packet_freeze_record_v0_1.json
+            scripts/discover_chosica_2015_candidate_evidence_service_metadata.py
+            .github/workflows/chosica-2015-candidate-evidence-service-metadata.yml
+
+      - name: Assert forbidden scientific files absent
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09_b.json
+          test ! -e config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+          test ! -e config/chosica_2015_multibasin_validation_set_v0_1.json
+
+      - name: Verify frozen packet prerequisite before network metadata access
+        run: |
+          set -euo pipefail
+          python -I - <<'PY'
+          import json
+          a=json.load(open('config/chosica_2015_candidate_evidence_source_allowlist_v0_1.json',encoding='utf-8'))
+          f=json.load(open('config/chosica_2015_candidate_territorial_packet_freeze_record_v0_1.json',encoding='utf-8'))
+          assert f['status']=='FROZEN_CANDIDATE_ONLY_TERRITORIAL_PACKET'
+          assert f['source']['packet_sha256']==a['prerequisite']['required_packet_sha256']=='dbf02fc9ba1b436754cef72741fff129892a0107eed57362552041d6657cf782'
+          assert f['scientific_state']['candidate_count']==a['prerequisite']['required_candidate_count']==7
+          assert f['scientific_state']['candidate_territorial_evidence_read'] is False
+          assert f['gates']['sealed_target_unblind_allowed'] is False
+          assert a['network_policy']['only_exact_allowlisted_service_roots'] is True
+          assert a['network_policy']['free_web_search_allowed'] is False
+          assert a['network_policy']['search_engine_queries_allowed'] is False
+          PY
+
+      - name: Discover exact allowlisted service metadata only
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          env -i PATH="$PATH" HOME=/tmp LANG=C.UTF-8 python -I scripts/discover_chosica_2015_candidate_evidence_service_metadata.py \
+            --allowlist config/chosica_2015_candidate_evidence_source_allowlist_v0_1.json \
+            --output artifacts/chosica_2015_candidate_evidence_service_metadata_v0_1.json | tee artifacts/metadata_discovery_summary.json
+
+      - name: Enforce no evidence read and no feature queries
+        run: |
+          set -euo pipefail
+          python -I - <<'PY'
+          import json,pathlib
+          p=pathlib.Path('artifacts/chosica_2015_candidate_evidence_service_metadata_v0_1.json')
+          d=json.loads(p.read_text(encoding='utf-8'))
+          guards={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          assert d['status']=='PASS_ALLOWLISTED_SERVICE_METADATA_DISCOVERY'
+          assert d['guards']==guards
+          assert d['free_web_search_used'] is False
+          assert d['search_engine_used'] is False
+          assert d['candidate_feature_queries_executed'] is False
+          assert d['candidate_territorial_evidence_read'] is False
+          assert d['control_labels_assigned'] is False
+          assert d['sealed_target_unblind_allowed'] is False
+          assert len(d['sources'])==2
+          text=p.read_text(encoding='utf-8').lower()
+          for token in ('pedregal','quirio','carossio','rayos de sol','cashahuacra','la libertad','official_outcome_evidence','a6680'):
+              assert token not in text, token
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-candidate-evidence-service-metadata
+          path: |
+            artifacts/chosica_2015_candidate_evidence_service_metadata_v0_1.json
+            artifacts/metadata_discovery_summary.json
+          if-no-files-found: error
