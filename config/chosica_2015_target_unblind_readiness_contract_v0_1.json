@@ -1,0 +1,49 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_TARGET_UNBLIND_READINESS_CONTRACT",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "prerequisites": {
+    "cleanroom_recovery_freeze": "config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json",
+    "contamination_registry": "config/chosica_2015_control_adjudication_contamination_registry_v0_1.json",
+    "candidate_only_adjudication_ingest_contract": "config/chosica_2015_candidate_only_territorial_adjudication_ingest_contract_v0_1.json",
+    "candidate_only_control_set_freeze_record": "config/chosica_2015_candidate_only_control_set_freeze_record_v0_1.json",
+    "cleanroom_matching_sha256": "7fa4d488de385832f8b213b8fd314bcade01fda5495df2987d32be35a90ee5e2",
+    "candidate_membership_sha256": "ec44d96ad94f711060b7eb39421816d71f940c7543e5de873e23320f654f051f"
+  },
+  "frozen_target_shortlists": {
+    "T_36513c04aab0": ["C_b903bae5d9c9","C_19f0c525214f","C_c767e4cea74e"],
+    "T_3fb336154d15": ["C_b903bae5d9c9","C_19f0c525214f","C_c767e4cea74e"],
+    "T_83ac197c8afe": ["C_15cbc5db136d","C_d0274c1c4240","C_636da855a58d"],
+    "T_94dd5cad2137": ["C_15cbc5db136d","C_636da855a58d","C_51061f9f6857"],
+    "T_b6fc01d6ae79": ["C_15cbc5db136d","C_d0274c1c4240","C_636da855a58d"],
+    "T_bc79705ecc05": ["C_15cbc5db136d","C_d0274c1c4240","C_636da855a58d"]
+  },
+  "eligibility_rule": {
+    "target_specific": true,
+    "minimum_confirmed_controls_within_frozen_shortlist": 1,
+    "unknown_candidate_is_not_control": true,
+    "excluded_activated_candidate_is_not_control": true,
+    "candidate_replacement_allowed": false,
+    "matching_recalculation_allowed": false,
+    "selection_feedback_allowed": false,
+    "automatic_target_outcome_unblind": false,
+    "meaning": "This gate can only declare a neutral target_code eligible for a separate explicit unblind record; it never reads or reveals target outcomes itself."
+  },
+  "fail_closed": [
+    "control-set freeze record absent or hash linkage invalid",
+    "candidate membership differs from the clean-room frozen membership",
+    "contaminated adjudication reused",
+    "any target shortlist changes after candidate outcome review",
+    "a target has no affirmative CONFIRMED_CONTROL in its frozen shortlist",
+    "target names, target outcome labels, A6680 content, or post-event target evidence are supplied to this gate",
+    "production or operational guard changes"
+  ],
+  "next_gate": "FOR_ELIGIBLE_TARGET_CODES_ONLY_CREATE_SEPARATE_EXPLICIT_TARGET_UNBLIND_RECORD_WITH_NO_FEEDBACK_TO_MATCHING"
+}

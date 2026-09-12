@@ -1,0 +1,61 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PREUNBLIND_NEGATIVE_CONTROL_CANDIDATE_GENERATION",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "purpose": "Freeze a geography/DEM-only candidate pool before any 2015 control-outcome adjudication.",
+  "inputs": {
+    "outlet_freeze_registry": "config/chosica_2015_outlet_freeze_registry_v0_1.json",
+    "static_anchor_registry": "config/chosica_2015_mml_2013_static_anchor_registry_v0_1.json",
+    "dem": "Copernicus DEM GLO-30 Public",
+    "analysis_crs": "EPSG:32718",
+    "resolution_m": 30.0,
+    "flow_direction": "D8",
+    "dem_tiles": [
+      {
+        "url": "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_S13_00_W077_00_DEM/Copernicus_DSM_COG_10_S13_00_W077_00_DEM.tif",
+        "sha256": "ebd98f2dd44e09e90d36f8fd77bc462a60c151eb42d11ea85c0d74e66cfa4c96"
+      },
+      {
+        "url": "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_S12_00_W077_00_DEM/Copernicus_DSM_COG_10_S12_00_W077_00_DEM.tif",
+        "sha256": "d9f8d410da66bfb85c73b957401aea73043f8618cccdb7d1fc76082d30a31130"
+      }
+    ]
+  },
+  "corridor": {
+    "upstream_start": "frozen Cashahuacra outlet",
+    "downstream_end": "MML 2013 R9 Puente California mainstem anchor",
+    "dem_bbox_wgs84": [-76.77617513, -12.00374994, -76.64255814, -11.88463456],
+    "downstream_identity_tolerance_m": 84.852814
+  },
+  "candidate_rule": {
+    "definition": "A candidate is the strongest non-mainstem D8 feeder entering each traversed Rímac mainstem cell between the frozen upstream and downstream corridor anchors.",
+    "minimum_feeder_accumulation_cells": 100,
+    "one_candidate_per_mainstem_cell": true,
+    "selection_within_mainstem_cell": "maximum D8 accumulation; ties resolved by row then column",
+    "exclude_within_m_of_any_frozen_target_outlet": 90.0,
+    "candidate_pool_order": ["mainstem_path_index", "feeder_row", "feeder_col"]
+  },
+  "allowed_for_generation": [
+    "frozen target outlet coordinates",
+    "event-independent MML 2013 mainstem coordinates",
+    "Copernicus DEM elevation and D8 topology",
+    "geographic distance"
+  ],
+  "forbidden": [
+    "read site/data/validation/official_outcome_evidence.json",
+    "read per-basin 2015 activation or severity labels",
+    "read post-event damage or severity descriptions",
+    "read A6680 numeric morphometry",
+    "read post-anchor precipitation or remote-sensing response",
+    "drop or replace a candidate using observed 2015 response",
+    "tune the feeder accumulation floor against target or control outcomes"
+  ],
+  "freeze_rule": "The complete generated candidate pool and its SHA256 must be committed before any control-outcome adjudication. Documentary silence can never be converted to CONTROL."
+}

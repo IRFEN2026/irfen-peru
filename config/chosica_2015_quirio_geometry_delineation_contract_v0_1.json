@@ -1,0 +1,42 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "target_id": "quirio",
+  "status": "FROZEN_PREEXECUTION_AFTER_TECHNICAL_CLIPPING_DIAGNOSTIC",
+  "reason": "The initial 0.05-degree DEM crop reproduced the frozen outlet grid exactly but the upstream D8 catchment touched the crop boundary. This contract fixes an outcome-blind expansion rule before any larger-domain delineation is executed.",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "forbidden_inputs": [
+    "2015 activation/non-activation labels",
+    "2015 damage or severity",
+    "A6680 numeric morphometry",
+    "rainfall or remote-sensing response",
+    "target basin area, perimeter, channel length, relief or slope"
+  ],
+  "base_extent_rule": "Compute min/max WGS84 longitude/latitude of frozen MML R4, R8 and R9 anchors.",
+  "margin_sequence_degrees": [0.05, 0.10, 0.20, 0.40],
+  "selection_rule": "Use the first margin in the frozen sequence whose D8 upstream mask from the frozen outlet spatial coordinate does not touch any DEM crop boundary.",
+  "outlet_mapping_rule": "For each expanded grid, map the frozen accepted outlet EPSG:32718 x/y coordinate to the containing 30 m cell and require its cell-center distance to the frozen coordinate to be no greater than one DEM-cell diagonal.",
+  "source_integrity_rule": "Hash every downloaded Copernicus GLO-30 source tile and fail closed if any source tile shared with the frozen outlet diagnostic differs from its persisted SHA256.",
+  "dem_processing": {
+    "source": "Copernicus DEM GLO-30 Public",
+    "analysis_crs": "EPSG:32718",
+    "resolution_m": 30.0,
+    "reprojection_resampling": "bilinear",
+    "conditioning": ["fill pits", "fill depressions", "resolve flats"],
+    "flow_direction": "D8"
+  },
+  "fail_closed_conditions": [
+    "source tile hash mismatch",
+    "frozen outlet coordinate cannot be mapped within one cell diagonal",
+    "all frozen margins still clip the upstream catchment",
+    "no polygon geometry produced"
+  ],
+  "morphometry_allowed": false,
+  "unblind_allowed": false
+}

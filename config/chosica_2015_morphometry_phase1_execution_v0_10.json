@@ -1,0 +1,93 @@
+{
+  "schema_version": "0.10",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PREUNBLIND_EXECUTION_REV10_SINGLE_GRID_EXACT_PYSHEDS_CATCHMENT",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "inherits_method_contract": "config/chosica_2015_dem_morphometry_contract_v0_1.json",
+  "supersedes_execution_contract": "config/chosica_2015_morphometry_phase1_execution_v0_9.json",
+  "revision_basis": {
+    "v0_9_run_id": 34289371417,
+    "v0_9_status": "FAIL_CLOSED_PHASE1_MORPHOMETRY",
+    "v0_9_failed_worker_target": "quirio",
+    "v0_9_structural_error": "FAIL_CLOSED_TOPOLOGY_REPLAY_POLYGON_JACCARD quirio 0.857958816",
+    "prior_execution_target_count": 0,
+    "prior_execution_metrics_observed": false,
+    "selection_or_tuning_from_metric_values": false,
+    "outcome_evidence_read": false,
+    "a6680_numeric_reference_read": false,
+    "post_anchor_predictor_read": false,
+    "diagnosis": "Revision 0.9 falsified the assumption that generic reverse traversal of the first-pass D8 array exactly reproduces the frozen Pysheds catchment semantics for Quirio. The pre-registered >=0.995 Jaccard gate correctly failed and is not relaxed. Revision 0.10 returns to the exact Pysheds catchment call used by the frozen geometry generator, but performs it on the single already-created Grid/fdir instance instead of constructing and conditioning a redundant second native Grid. Weighted main-channel distance is then computed deterministically on the exact validated Pysheds catchment topology as the sum of unchanged 30 m orthogonal and sqrt(2)*30 m diagonal D8 links; this is mathematically the same weighted D8 path quantity and avoids invoking a second native distance kernel. No morphometric value was used to select or tune this correction."
+  },
+  "required_gate": {
+    "frozen_outlet_count": 6,
+    "frozen_geometry_count": 6,
+    "batch_morphometry_allowed": true,
+    "unblind_allowed": false
+  },
+  "exact_geometry_dem_reconstruction": {
+    "contract": "config/chosica_2015_morphometry_phase1_execution_v0_4.json",
+    "status": "RETAINED_UNCHANGED",
+    "hard_integrity_gate": "regenerated DEM GeoTIFF SHA256 must exactly equal geometry_freeze.dem_utm_sha256 for every target"
+  },
+  "routing_semantics": {
+    "cashahuacra": "unchanged frozen-generator manual reverse-D8 semantics",
+    "other_five": "exact Pysheds grid.catchment(x=containing-cell-center-x,y=containing-cell-center-y,fdir=same_grid_fdir,dirmap=(64,128,1,2,4,8,16,32),xytype='coordinate') on the binary-identical frozen geometry-generation DEM",
+    "single_grid_rule": "DEM conditioning, flowdir and exact Pysheds catchment use one Grid instance per target; no second Grid, no second DEM conditioning and no second flowdir computation",
+    "alignment_gate": "Jaccard(exact Pysheds catchment, frozen-polygon cell-center mask) >= 0.995 and frozen-polygon coverage >= 0.995",
+    "frozen_polygon_is_metric_mask": true,
+    "outlet_modified": false,
+    "geometry_modified": false
+  },
+  "main_channel_distance": {
+    "topology": "exact Pysheds catchment validated above",
+    "distance_algorithm": "deterministic reverse traversal on the same immutable D8 fdir restricted to the exact Pysheds catchment",
+    "link_weights": "30 m for orthogonal D8 links and sqrt(2)*30 m for diagonal D8 links, derived from the exact projected DEM transform",
+    "selection": "maximum finite distance among unchanged frozen-polygon center cells that are also in the exact Pysheds catchment",
+    "minimum_routing_coverage": 0.995,
+    "pysheds_distance_to_outlet_invoked": false,
+    "scientific_quantity_changed": false
+  },
+  "unchanged_metric_semantics": {
+    "polygon_area_and_perimeter": "exact frozen polygon projected to EPSG:32718",
+    "elevation_and_slope_mask": "unchanged frozen-polygon cell-center mask",
+    "drainage_density": "unchanged contributing-area threshold and in-polygon D8 link rule",
+    "dem_conditioning": ["fill pits", "fill depressions", "resolve flats"],
+    "flow_direction": "D8",
+    "slope_algorithm_changed": false,
+    "channel_threshold_changed": false
+  },
+  "execution_isolation": {
+    "one_target_per_fresh_python_process": true,
+    "parallel_workers": false,
+    "worker_failure_policy": "FAIL_CLOSED_NO_PARTIAL_BATCH_FREEZE",
+    "coordinator_observes_metric_values_only_after_all_six_workers_succeed": true
+  },
+  "phase_1_output": {
+    "a6680_numeric_reference_read": false,
+    "outcome_evidence_read": false,
+    "post_anchor_predictor_read": false,
+    "required_target_count": 6,
+    "freeze_before_compare": true,
+    "comparison_allowed_in_same_execution": false,
+    "record_exact_geometry_dem_hash_audit_per_target": true,
+    "record_exact_pysheds_catchment_audit_per_target": true,
+    "record_worker_return_code_per_target": true
+  },
+  "forbidden": [
+    "read A6680 numeric morphometry before phase-1 output is frozen by hash",
+    "read sealed outcomes before the allowed unblind",
+    "use metric values from a failed worker to select, tune, drop or rerun a target under different scientific semantics",
+    "relax the 0.995 catchment coverage or Jaccard gates",
+    "substitute generic reverse-D8 catchment membership for the exact Pysheds catchment semantics",
+    "move an outlet or alter/expand a frozen basin polygon",
+    "change DEM conditioning, slope algorithm, channel threshold or metric inclusion rule",
+    "accept a regenerated DEM whose binary GeoTIFF SHA256 differs from the frozen geometry-generation DEM hash",
+    "treat a worker crash, missing artifact or routing mismatch as zero, dry, inactive or scientifically usable"
+  ]
+}

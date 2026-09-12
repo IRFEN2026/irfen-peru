@@ -1,0 +1,122 @@
+name: IRFEN - Chosica 2015 candidate adjudication v0.2
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_candidate_only_territorial_adjudication_ingest_contract_v0_2.json
+      - config/chosica_2015_candidate_only_review_v0_2_contract.json
+      - config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+      - config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json
+      - site/data/validation/chosica_2015_candidate_only_reviewer_bundle_v0_2.json
+      - site/data/validation/chosica_2015_candidate_only_territorial_adjudication_template_v0_2.json
+      - site/data/validation/chosica_2015_candidate_only_territorial_adjudication_v0_2.json
+      - scripts/validate_chosica_2015_candidate_only_adjudication_v0_2.py
+      - .github/workflows/chosica-2015-candidate-only-adjudication-v0-2.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-adjudication-boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            .github/workflows/chosica-2015-candidate-only-adjudication-v0-2.yml
+            config/chosica_2015_candidate_only_territorial_adjudication_ingest_contract_v0_2.json
+            config/chosica_2015_candidate_only_review_v0_2_contract.json
+            config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+            config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json
+            site/data/validation/chosica_2015_candidate_only_reviewer_bundle_v0_2.json
+            site/data/validation/chosica_2015_candidate_only_territorial_adjudication_template_v0_2.json
+            site/data/validation/chosica_2015_candidate_only_territorial_adjudication_v0_2.json
+            scripts/validate_chosica_2015_candidate_only_adjudication_v0_2.py
+      - name: Prove sealed outcome and incident sources are absent
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09_b.json
+          python - <<'PY'
+          from pathlib import Path
+          allowed={
+            '.github/workflows/chosica-2015-candidate-only-adjudication-v0-2.yml',
+            'config/chosica_2015_candidate_only_territorial_adjudication_ingest_contract_v0_2.json',
+            'config/chosica_2015_candidate_only_review_v0_2_contract.json',
+            'config/chosica_2015_control_adjudication_contamination_registry_v0_1.json',
+            'config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json',
+            'site/data/validation/chosica_2015_candidate_only_reviewer_bundle_v0_2.json',
+            'site/data/validation/chosica_2015_candidate_only_territorial_adjudication_template_v0_2.json',
+            'site/data/validation/chosica_2015_candidate_only_territorial_adjudication_v0_2.json',
+            'scripts/validate_chosica_2015_candidate_only_adjudication_v0_2.py',
+          }
+          present={str(p) for p in Path('.').rglob('*') if p.is_file() and '.git/' not in str(p) and not str(p).startswith('.git/')}
+          extra=sorted(present-allowed)
+          assert not extra, f'FAIL_CLOSED_UNEXPECTED_ADJUDICATION_INGEST_FILES:{extra}'
+          print('PASS_CANDIDATE_ONLY_ADJUDICATION_V0_2_SPARSE_WORKSPACE')
+          PY
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Validate independent-review return or waiting template
+        run: |
+          mkdir -p artifacts
+          if test -f site/data/validation/chosica_2015_candidate_only_territorial_adjudication_v0_2.json; then
+            INPUT=site/data/validation/chosica_2015_candidate_only_territorial_adjudication_v0_2.json
+            MODE=adjudication
+            OUTPUT=artifacts/chosica_2015_candidate_only_control_set_freeze_v0_2.json
+          else
+            INPUT=site/data/validation/chosica_2015_candidate_only_territorial_adjudication_template_v0_2.json
+            MODE=template
+            OUTPUT=artifacts/chosica_2015_candidate_only_adjudication_v0_2_gate.json
+          fi
+          echo "mode=$MODE" >> "$GITHUB_ENV"
+          echo "output=$OUTPUT" >> "$GITHUB_ENV"
+          python scripts/validate_chosica_2015_candidate_only_adjudication_v0_2.py \
+            --contract config/chosica_2015_candidate_only_territorial_adjudication_ingest_contract_v0_2.json \
+            --contamination config/chosica_2015_control_adjudication_contamination_registry_v0_1.json \
+            --cleanroom-freeze config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json \
+            --review-contract config/chosica_2015_candidate_only_review_v0_2_contract.json \
+            --bundle site/data/validation/chosica_2015_candidate_only_reviewer_bundle_v0_2.json \
+            --input "$INPUT" --mode "$MODE" \
+            --output "$OUTPUT"
+      - name: Enforce fail-closed state
+        run: |
+          python - <<'PY'
+          import json, os
+          p=os.environ['output']
+          d=json.load(open(p,encoding='utf-8'))
+          guards={
+            'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,
+            'production_ready':False,'operational_alerting_enabled':False}
+          assert d['guards']==guards
+          assert d['target_unblind_allowed'] is False
+          mode=os.environ['mode']
+          if mode=='template':
+            assert d['status']=='PASS_CANDIDATE_ONLY_ADJUDICATION_TEMPLATE_V0_2'
+            assert d['candidate_review_pending'] is True
+            assert d['scientific_use_allowed'] is False
+          else:
+            assert d['status']=='CANDIDATE_ONLY_CONTROL_SET_V0_2_FROZEN_BY_ADJUDICATION_SHA256'
+            assert d['candidate_count']==7
+            assert d['candidate_replacement_performed'] is False
+            assert d['matching_recalculated_after_review'] is False
+            assert d['selection_feedback_used'] is False
+            assert d['contaminated_adjudication_reused'] is False
+            assert d['target_outcomes_accessed'] is False
+            assert d['external_reference_morphometry_accessed'] is False
+            partition=(set(d['confirmed_control_codes']) | set(d['excluded_activated_codes']) | set(d['outcome_unknown_codes']))
+            assert len(partition)==7
+            assert not (set(d['confirmed_control_codes']) & set(d['excluded_activated_codes']))
+            assert not (set(d['confirmed_control_codes']) & set(d['outcome_unknown_codes']))
+            assert not (set(d['excluded_activated_codes']) & set(d['outcome_unknown_codes']))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-candidate-only-adjudication-v0-2
+          path: artifacts/*.json
+          if-no-files-found: error

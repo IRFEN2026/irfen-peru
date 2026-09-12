@@ -1,0 +1,84 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "target_id": "la_libertad",
+  "status": "FROZEN_PREEXECUTION_METHOD",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "purpose": "Resolve La Libertad outlet identity reproducibly from authoritative static ANA faja-marginal channel geometry plus D8, without reading the sealed 2015-03-23 territorial outcome or using morphometry/rainfall as a fitting signal.",
+  "source_admissibility": {
+    "source_id": "ANA-RD-2059-2015-AAA-CF",
+    "title": "Resolución Directoral N° 2059-2015-ANA-AAA-CAÑETE-FORTALEZA",
+    "institution": "Autoridad Nacional del Agua",
+    "resolution_date": "2015-12-16",
+    "sigrid_locator": "https://sigrid.cenepred.gob.pe/sigridv3/documento/1557",
+    "document_locator": "https://sigrid.cenepred.gob.pe/docs/PARA%20PUBLICAR/ANA/RD2059%20FAJA%20QDA.%20LIBERTAD.pdf",
+    "source_role": "AUTHORITATIVE_STATIC_CHANNEL_BANK_GEOMETRY_ONLY",
+    "activation_outcome_encoded_in_coordinates": false,
+    "vulnerability_inventory_used": false,
+    "admissibility_basis": "The resolution demarcates the hydraulic public-domain faja marginal of the named Quebrada Libertad. ANA records show the 2015 faja-marginal work program was established in the 2015 institutional operating plan; this method uses only paired static bank coordinates/progressives, not 2015 activation, damage, vulnerability, rainfall, or morphometric agreement.",
+    "caution": "The final survey/resolution postdates 23-03-2015; therefore it is admitted only as static channel geometry. Any independent evidence that the surveyed course was relocated by the 2015 event forces PENDING_REVIEW rather than reinterpretation."
+  },
+  "static_channel_anchors": {
+    "crs": "EPSG:32718",
+    "datum": "WGS84 / UTM zone 18S",
+    "downstream_progressive": "0+000",
+    "downstream_right_bank": {"easting_m":315666.0,"northing_m":8680038.0},
+    "downstream_left_bank": {"easting_m":315694.0,"northing_m":8680134.0},
+    "downstream_centerline_midpoint": {"easting_m":315680.0,"northing_m":8680086.0},
+    "upstream_progressive": "0+825",
+    "upstream_right_bank": {"easting_m":315340.0,"northing_m":8680801.0},
+    "upstream_left_bank": {"easting_m":315362.0,"northing_m":8680800.0},
+    "upstream_centerline_midpoint": {"easting_m":315351.0,"northing_m":8680800.5},
+    "midpoint_rule": "For each matched progressive, use the arithmetic midpoint of the published right/left bank coordinates. This rule is frozen before DEM execution."
+  },
+  "independent_pre2015_identity_support": {
+    "source_id": "UNMSM-RIIGEO-2012-GUADALUPE-CARRILLO",
+    "publication_year": 2012,
+    "doi": "10.15381/iigeo.v15i29.2206",
+    "role": "NAMED_DRAINAGE_IDENTITY_AND_RELATIVE_LOCATION_ONLY",
+    "statement_used": "La Libertad is a distinct right-bank Rímac quebrada near/above the Plaza de Armas de Chosica.",
+    "published_length_used_for_selection": false,
+    "published_slope_used_for_selection": false,
+    "published_source_elevation_used_for_selection": false,
+    "2012_activation_description_used_for_selection": false
+  },
+  "dem": {
+    "source": "Copernicus DEM GLO-30 Public",
+    "analysis_crs": "EPSG:32718",
+    "target_resolution_m": 30,
+    "reprojection_resampling": "bilinear",
+    "conditioning": ["fill pits","fill depressions","resolve flats"],
+    "flow_direction": "D8"
+  },
+  "predeclared_resolution_method": {
+    "name": "ANA_RD2059_TWO_BANK_MIDPOINT_UPSTREAM_ANCHORED_D8_CHANNEL_SNAP",
+    "step_1": "Map the frozen 0+825 centerline midpoint to the 30 m DEM grid and enumerate only immediate coordinate-to-grid ambiguity cells.",
+    "step_2": "Trace D8 downstream from every admissible upstream source cell without using basin area, channel length, slope, rainfall, response, or outcome information.",
+    "step_3": "For each trace select the traced named-channel cell nearest the frozen 0+000 centerline midpoint.",
+    "step_4": "Require every admissible upstream source-cell trace to converge to exactly the same selected downstream cell and to progress toward 0+000.",
+    "step_5": "Require the selected cell to lie within two 30 m DEM-cell diagonals of the frozen 0+000 centerline midpoint; otherwise remain PENDING_REVIEW.",
+    "step_6": "Only after PASS may the selected cell be frozen as the La Libertad outlet; basin delineation remains a separate frozen pre-unblind step.",
+    "identity_tolerance": "two DEM-cell diagonals",
+    "target_basin_area_used_for_selection": false,
+    "published_channel_length_used_for_selection": false,
+    "published_slope_used_for_selection": false,
+    "published_source_elevation_used_for_selection": false,
+    "rainfall_used_for_selection": false,
+    "territorial_activation_evidence_used": false,
+    "a6680_numeric_morphometry_used": false,
+    "fail_closed": true
+  },
+  "sealed_inputs": [
+    "2015-03-23 activation/non-activation label",
+    "2015-03-23 damage or severity",
+    "A6680 numeric morphometry",
+    "post-anchor precipitation and remote-sensing response",
+    "post-event vulnerability-conditioned inventories"
+  ]
+}
