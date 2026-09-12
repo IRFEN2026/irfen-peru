@@ -1,0 +1,70 @@
+{
+  "version": "0.1",
+  "name": "IRFEN Potential Episode Shadow Contract",
+  "mode": "SHADOW_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alert": false,
+  "public_social_publishing": false,
+  "thresholds_modified": false,
+  "scientific_acceptance_modified": false,
+  "purpose": "Detectar señales experimentales que merecen evaluación científica posterior sin convertirlas en alertas, niveles de riesgo ni decisiones operativas.",
+  "source": {
+    "path": "site/data/experimental_state.json",
+    "recommendation_required_mode": "TEST_ONLY",
+    "required_production_use": false
+  },
+  "pilot_zone_ids": [
+    "san_ildefonso",
+    "chosica",
+    "catacaos"
+  ],
+  "states": [
+    "NO_EPISODE",
+    "POTENTIAL_EPISODE"
+  ],
+  "recommendation_mapping": {
+    "TEST_NO_TRIGGER": "NO_EPISODE",
+    "TEST_WATCH": "NO_EPISODE",
+    "TEST_FORECAST_REVIEW": "POTENTIAL_EPISODE",
+    "TEST_OBSERVED_THRESHOLD_CROSSING": "POTENTIAL_EPISODE",
+    "TEST_STRONG_OBSERVED_SIGNAL": "POTENTIAL_EPISODE",
+    "TEST_RIVER_MODEL_SIGNAL": "POTENTIAL_EPISODE"
+  },
+  "watch_only_codes": [
+    "TEST_WATCH"
+  ],
+  "candidate_input_gate": {
+    "require_zone_test_ready": true,
+    "require_zone_production_use_false": true,
+    "require_recommendation_mode_test_only": true,
+    "require_operational_alert_false": true,
+    "require_thresholds_modified_false": true,
+    "block_on_explicit_stale_status": true,
+    "unknown_recommendation_fail_closed": true
+  },
+  "explicit_stale_markers": [
+    "STALE",
+    "EXPIRED",
+    "OUTDATED"
+  ],
+  "forbidden_output_fields": [
+    "alert",
+    "alert_level",
+    "risk_level",
+    "final_alert",
+    "publish",
+    "published",
+    "meta_post_id"
+  ],
+  "rules": {
+    "potential_episode_is_not_alert": true,
+    "scientific_pass_not_implemented_here": true,
+    "no_new_thresholds": true,
+    "no_risk_levels": true,
+    "no_meta_calls": true,
+    "no_publication_path": true,
+    "fail_closed": true,
+    "preserve_upstream_provenance": true
+  }
+}
