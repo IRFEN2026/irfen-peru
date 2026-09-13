@@ -1,0 +1,97 @@
+name: IRFEN - Normalizar COES Santa Eulalia RESEARCH_ONLY
+
+on:
+  push:
+    branches:
+      - agent/santa-eulalia-coes-monthly-context-v0.1
+
+permissions:
+  contents: write
+
+concurrency:
+  group: santa-eulalia-coes-normalize-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - run: pip install -r requirements.txt
+
+      - name: Alinear fuentes oficiales upstream
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('config/phase2_candidate_inventory_v0_1.json')
+          d=json.loads(p.read_text(encoding='utf-8'))
+          matches=[c for c in d.get('candidates',[]) if c.get('candidate_id')=='lima_este_santa_eulalia_rimac']
+          assert len(matches)==1
+          c=matches[0]
+          src=list(c.get('official_sources') or [])
+          for source_id in ('COES-SHEQUE-MONTHLY-FLOW-2003','COES-SHEQUE-MONTHLY-FLOW-2007'):
+              if source_id not in src:
+                  src.append(source_id)
+          c['official_sources']=src
+          p.write_text(json.dumps(d,ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf-8')
+          PY
+
+      - name: Regenerar derivados canónicos
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/build_lambayeque_hydrologic_units.py
+          python scripts/build_phase2_catalog.py
+          python scripts/build_map_layer_catalog.py
+
+      - name: Verificar reproducibilidad y guardrails focalizados
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/build_lambayeque_hydrologic_units.py --check-only
+          python scripts/build_phase2_catalog.py --check-only
+          python scripts/build_map_layer_catalog.py --check-only
+          python -m unittest tests.test_santa_eulalia_coes_monthly_context -v
+          python -m unittest discover -s tests -p 'test_phase2_onboarding.py' -v
+          python -m unittest discover -s tests -p 'test_map_layer_catalog.py' -v
+          python - <<'PY'
+          import json
+          ids={'COES-SHEQUE-MONTHLY-FLOW-2003','COES-SHEQUE-MONTHLY-FLOW-2007'}
+          for path in ('config/phase2_candidate_inventory_v0_1.json','config/phase2_candidate_inventory_v0_2.json'):
+              d=json.load(open(path,encoding='utf-8'))
+              c=next(x for x in d['candidates'] if x['candidate_id']=='lima_este_santa_eulalia_rimac')
+              assert ids.issubset(set(c['official_sources']))
+          c=json.load(open('site/data/validation/phase2_zone_contracts/lima_este_santa_eulalia_rimac.json',encoding='utf-8'))
+          assert set(c['official_source_ids'])==set(next(x for x in json.load(open('config/phase2_candidate_inventory_v0_2.json',encoding='utf-8'))['candidates'] if x['candidate_id']=='lima_este_santa_eulalia_rimac')['official_sources'])
+          assert c['contract_status']=='DRAFT'
+          assert c['validation']['activation_gate']=='BLOCKED'
+          assert c['decision_thresholds'] is None
+          assert c['assets']['hydraulic_context']['status']=='PARTIAL'
+          assert c['assets']['observations']['status']=='PARTIAL'
+          assert c['hazard_model']['mechanism_status']=='TO_BE_RESOLVED'
+          PY
+
+      - name: Guardar derivados y retirar workflow temporal
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/tmp-santa-eulalia-coes-normalize.yml
+          git config user.name "IRFEN research automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add config/phase2_candidate_inventory_v0_1.json config/phase2_candidate_inventory_v0_2.json site/data/phase2/catalog.json site/data/map_layers.json .github/workflows/tmp-santa-eulalia-coes-normalize.yml
+          if git diff --cached --quiet; then
+            echo "No hay cambios por confirmar"
+            exit 0
+          fi
+          git commit -m "Normalize COES Santa Eulalia sources and canonical catalogs"
+          git push origin HEAD:${{ github.ref_name }}
