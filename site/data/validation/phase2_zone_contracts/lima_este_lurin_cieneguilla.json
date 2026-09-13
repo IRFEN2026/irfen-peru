@@ -1,1 +1,93 @@
-{"version":"phase2-zone-contract-v1","candidate_id":"lima_este_lurin_cieneguilla","contract_status":"DRAFT","deployment_status":"RESEARCH_ONLY","production_use":false,"alerting_enabled":false,"decision_thresholds":null,"hydraulic_factors":null,"missing_data_rule":"UNKNOWN_NOT_LOW_RISK","identity":{"system_name":"Río Lurín–Cieneguilla y quebradas tributarias","department":"Lima","province_or_corridor":"Huarochirí / Cieneguilla–Pachacámac–Lurín","territorial_profile":"metropolitan_huarochiri_river_and_ravine_interface","inside_lima_metropolitana":true},"hazard_model":{"mechanism_status":"TO_BE_RESOLVED","mechanism_preliminary":"river_flood_and_local_debris_flows_compound_system","selected_model_family":null},"official_source_ids":["ANA-CENEPRED-CRITICAL-POINTS-2025","INDECI-LIMA-2017-EVENT-REPORT"],"assets":{"geometry":{"status":"MISSING","path":null,"source_ids":[]},"exposure":{"status":"MISSING","path":null,"source_ids":[]},"historical_events":{"status":"MISSING","path":null,"source_ids":[],"minimum_verified_event_days":1,"minimum_verified_none_days":10},"observations":{"status":"MISSING","path":null,"source_ids":[]},"forecast":{"status":"CANDIDATE","path":null,"source_ids":["NASA-GEOS-CF"]},"hydraulic_context":{"status":"MISSING","path":null,"source_ids":[]}},"validation":{"activation_gate":"BLOCKED","required_reviews":["scientific","hydrological_or_hydraulic","local_outcome"],"promotion_requires_all_gates":true,"review_evidence":[]},"notes":["separate tributary ravines from Lurín river reaches","extract official basin and fan geometries","map exposed communities, roads and crossings","compile synchronized rainfall, activation and river-state controls"]}
+{
+  "version": "phase2-zone-contract-v1",
+  "candidate_id": "lima_este_lurin_cieneguilla",
+  "contract_status": "DRAFT",
+  "deployment_status": "RESEARCH_ONLY",
+  "production_use": false,
+  "alerting_enabled": false,
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "identity": {
+    "system_name": "Río Lurín–Cieneguilla y quebradas tributarias",
+    "department": "Lima",
+    "province_or_corridor": "Huarochirí / Cieneguilla–Pachacámac–Lurín",
+    "territorial_profile": "metropolitan_huarochiri_river_and_ravine_interface",
+    "inside_lima_metropolitana": true
+  },
+  "hazard_model": {
+    "mechanism_status": "TO_BE_RESOLVED",
+    "mechanism_preliminary": "river_flood_and_local_debris_flows_compound_system",
+    "selected_model_family": null
+  },
+  "official_source_ids": [
+    "ANA-CENEPRED-CRITICAL-POINTS-2025",
+    "INDECI-LIMA-2017-EVENT-REPORT",
+    "SENAMHI-SARDON-LAVADO-FELIPE-2022-FLOOD-INVENTORY",
+    "SENAMHI-LURIN-ANTAPUCRO-2017-03-14",
+    "ANA-LURIN-HYDROLOGY-2019"
+  ],
+  "assets": {
+    "geometry": {
+      "status": "MISSING",
+      "path": null,
+      "source_ids": []
+    },
+    "exposure": {
+      "status": "MISSING",
+      "path": null,
+      "source_ids": []
+    },
+    "historical_events": {
+      "status": "PARTIAL",
+      "path": "site/data/validation/phase2_research_evidence/senamhi_lurin_antapucro_2017.json",
+      "source_ids": [
+        "SENAMHI-SARDON-LAVADO-FELIPE-2022-FLOOD-INVENTORY",
+        "SENAMHI-LURIN-ANTAPUCRO-2017-03-14"
+      ],
+      "minimum_verified_event_days": 1,
+      "minimum_verified_none_days": 10
+    },
+    "observations": {
+      "status": "PARTIAL",
+      "path": "site/data/validation/phase2_research_evidence/senamhi_lurin_antapucro_2017.json",
+      "source_ids": [
+        "SENAMHI-LURIN-ANTAPUCRO-2017-03-14"
+      ]
+    },
+    "forecast": {
+      "status": "CANDIDATE",
+      "path": null,
+      "source_ids": [
+        "NASA-GEOS-CF"
+      ]
+    },
+    "hydraulic_context": {
+      "status": "PARTIAL",
+      "path": "site/data/validation/phase2_research_evidence/ana_lurin_hydraulic_context_2019.json",
+      "source_ids": [
+        "ANA-LURIN-HYDROLOGY-2019"
+      ]
+    }
+  },
+  "validation": {
+    "activation_gate": "BLOCKED",
+    "required_reviews": [
+      "scientific",
+      "hydrological_or_hydraulic",
+      "local_outcome"
+    ],
+    "promotion_requires_all_gates": true,
+    "review_evidence": []
+  },
+  "notes": [
+    "Separate tributary ravines from Lurin river reaches before resolving the hazard mechanism.",
+    "SENAMHI Lu-An N° 024-17 reports 77.23 m3/s at Puente Antapucro at 14:00 on 14/03/2017 with an anomaly of 251% above its historical mean; this is official event-day station context and is not automatically the flow, level or inundation state at Pachacamac, Cieneguilla or lower Lurin impact reaches.",
+    "The SENAMHI inventory records a positive impact candidate at Pachacamac on 14/03/2017. Temporal coincidence with the Antapucro flow strengthens event research context but station-to-impact hydraulic transfer remains unvalidated.",
+    "The 06/03/2017 Cieneguilla no-damage record remains an UNADJUDICATED_NO_DAMAGE_CONTROL_CANDIDATE, not a verified hydrologic negative; same-day river-state and rainfall evidence are still missing.",
+    "ANA 2019 documents a hydraulically managed basin with intake/diversion infrastructure and agricultural demand; use it as hydraulic-system context and a transfer confounder, not as event-day abstraction evidence.",
+    "Historical alert lines and 24/48/72 h forecasts shown in the 2017 bulletin are not IRFEN operational thresholds and forecasts are not observations.",
+    "Geometry and exposure remain MISSING in this contract until machine-readable official geometry and normalized exposure evidence are integrated.",
+    "Activation remains BLOCKED; decision thresholds remain null and operational alerting remains disabled."
+  ]
+}
