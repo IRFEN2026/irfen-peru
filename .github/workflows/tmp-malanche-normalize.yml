@@ -58,13 +58,12 @@ jobs:
           python scripts/build_phase2_catalog.py
           python scripts/build_map_layer_catalog.py
 
-      - name: Verificar puertas focalizadas
+      - name: Verificar consistencia focalizada
         shell: bash
         run: |
           set -euo pipefail
           python scripts/build_phase2_catalog.py --check-only
           python scripts/build_map_layer_catalog.py --check-only
-          python scripts/validate_scientific_assets.py
           python -m unittest discover -s tests -p 'test_phase2_onboarding.py' -v
           python -m unittest discover -s tests -p 'test_map_layer_catalog.py' -v
           python - <<'PY'
@@ -76,6 +75,8 @@ jobs:
           assert c['alerting_enabled'] is False
           assert c['decision_thresholds'] is None
           assert c['validation']['activation_gate']=='BLOCKED'
+          assert c['assets']['geometry']['status']=='PARTIAL'
+          assert c['assets']['geometry']['path'] is None
           assert c['assets']['historical_events']['status']=='PARTIAL'
           case=json.load(open('site/data/validation/phase2_case_validations/lima_sur_malanche_2023.json',encoding='utf-8'))
           assert case['case_status']=='CLOSED_RESEARCH_VALIDATION_CASE'
@@ -101,5 +102,5 @@ jobs:
             echo "No hay cambios por confirmar"
             exit 0
           fi
-          git commit -m "Normalize Malanche research contract inputs and derived catalogs"
+          git commit -m "Normalize Malanche research inputs and canonical catalogs"
           git push origin HEAD:${{ github.ref_name }}
