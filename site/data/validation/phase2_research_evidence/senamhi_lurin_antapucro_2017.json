@@ -1,0 +1,88 @@
+{
+  "version": "phase2-research-evidence-v0.1",
+  "evidence_id": "SENAMHI-LURIN-ANTAPUCRO-2017-03-14",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "decision_thresholds": null,
+  "system": "Rio Lurin - Cieneguilla - Pachacamac - Lurin",
+  "source": {
+    "source_id": "SENAMHI-LURIN-ANTAPUCRO-2017-03-14",
+    "institution": "SENAMHI",
+    "title": "Pronostico Hidrologico 2016-17 Lu-An N° 024-17",
+    "publication_date": "2017-03-14",
+    "station": "Puente Antapucro",
+    "river": "Lurin",
+    "source_url": "https://www.senamhi.gob.pe/load/file/03817SENA-18.pdf",
+    "source_lineage": "SENAMHI-PSI",
+    "variable": "caudal_m3s"
+  },
+  "event_day_hydrologic_context": {
+    "date_local": "2017-03-14",
+    "report_time_local": "14:00",
+    "reported_flow_m3s": 77.23,
+    "reported_anomaly_percent_above_historical_mean": 251,
+    "reported_trend": "ASCENDING",
+    "evidence_class": "OFFICIAL_EVENT_DAY_STATION_FLOW_REPORT",
+    "station_scope": "ANTAPUCRO_NOT_LOCAL_IMPACT_REACH",
+    "transfer_to_pachacamac_impact_reach_validated": false,
+    "travel_time_validated": false,
+    "receiving_channel_capacity_validated": false,
+    "interpretation": "Official event-day hydrologic context at Antapucro. It corroborates a high-flow state in the Lurin system on the positive-outcome date but does not by itself establish discharge, level, inundation depth or hydraulic capacity at Pachacamac/Cieneguilla/Lurin downstream reaches."
+  },
+  "model_forecast_separated_from_observation": {
+    "forecast_horizon_hours": [24, 48, 72],
+    "forecast_range_m3s": [[73.90, 80.10], [68.90, 75.00], [54.00, 60.00]],
+    "evidence_class": "MODEL_FORECAST_NOT_OBSERVED",
+    "use": "HISTORICAL_FORECAST_CONTEXT_ONLY",
+    "forbidden_use": "DO_NOT_RECLASSIFY_AS_OBSERVED_FLOW_OR_OPERATIONAL_THRESHOLD"
+  },
+  "outcome_links": [
+    {
+      "case_id": "pachacamac_2017_03_14",
+      "outcome_source_id": "SENAMHI-SARDON-LAVADO-FELIPE-2022-FLOOD-INVENTORY",
+      "outcome_summary": "Crecida del rio Lurin; 6 viviendas afectadas y 4 familias afectadas.",
+      "role": "POSITIVE_OUTCOME_CANDIDATE_WITH_EVENT_DAY_UPSTREAM_HYDROLOGIC_CONTEXT",
+      "positive_outcome_status": "CORROBORATED_AT_OUTCOME_LEVEL_NOT_HYDRAULICALLY_TRANSFERRED",
+      "hydraulic_link_to_antapucro_validated": false
+    },
+    {
+      "case_id": "cieneguilla_2017_03_06",
+      "outcome_source_id": "SENAMHI-SARDON-LAVADO-FELIPE-2022-FLOOD-INVENTORY",
+      "outcome_summary": "Crecida del rio Lurin sin afectados ni damnificados reportados en la zona.",
+      "role": "UNADJUDICATED_NO_DAMAGE_CONTROL_CANDIDATE",
+      "verified_negative_control": false,
+      "same_day_hydrologic_context_available_here": false,
+      "reason_not_negative": "Absence of reported damage does not demonstrate absence of hydrologic activation, inundation, bank erosion or threshold exceedance. Same-day river-state and rainfall evidence are still missing."
+    }
+  ],
+  "historical_alert_line_policy": {
+    "chart_contains_historical_alert_lines": true,
+    "alert_line_values_ingested_as_thresholds": false,
+    "decision_thresholds_derived": false,
+    "policy": "Historical chart alert lines are source-display context only and are excluded from IRFEN threshold derivation or operational promotion."
+  },
+  "accepted_research_uses": [
+    "event_day_hydrologic_context",
+    "positive_event_temporal_corroboration",
+    "station_to_outcome_transfer_hypothesis_testing",
+    "historical_forecast_observation_separation"
+  ],
+  "remaining_gates": [
+    "verify travel time and hydraulic connectivity between Antapucro and downstream Pachacamac/Cieneguilla/Lurin impact reaches",
+    "obtain local or downstream level/discharge observations where available",
+    "compile event rainfall and antecedent 24h/72h moisture context",
+    "find same-day hydrologic evidence for the 2017-03-06 Cieneguilla no-damage candidate",
+    "separate river flooding from local debris-flow tributary mechanisms"
+  ],
+  "forbidden_uses": [
+    "operational_threshold_derivation",
+    "automatic_negative_control_promotion",
+    "automatic_transfer_of_antapucro_flow_to_downstream_impact_reaches",
+    "reclassification_of_model_forecast_as_observation",
+    "production_promotion",
+    "live_alerting"
+  ]
+}
