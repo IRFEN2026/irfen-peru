@@ -1,0 +1,29 @@
+name: IRFEN - Temporary map catalog generation
+
+on:
+  push:
+    branches:
+      - agent/ingemmet-chosica-santa-eulalia-2015-v0.1
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  generate-map-catalog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Regenerate canonical map catalog
+        run: python scripts/build_map_layer_catalog.py
+      - name: Upload generated catalog
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-map-layers
+          path: site/data/map_layers.json
+          if-no-files-found: error
