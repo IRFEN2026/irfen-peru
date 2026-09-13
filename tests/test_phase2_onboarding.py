@@ -179,7 +179,10 @@ class Phase2OnboardingTests(unittest.TestCase):
         self.assertFalse(contract["alerting_enabled"])
         self.assertIsNone(contract["decision_thresholds"])
         self.assertIsNone(contract["hydraulic_factors"])
-        self.assertEqual(contract["assets"]["observations"]["status"], "MISSING")
+        self.assertEqual(contract["assets"]["observations"]["status"], "PARTIAL")
+        self.assertEqual(contract["assets"]["historical_events"]["status"], "READY")
+        self.assertEqual(contract["contract_status"], "DRAFT")
+        self.assertEqual(contract["hazard_model"]["mechanism_status"], "TO_BE_RESOLVED")
         self.assertIn("compound_hazard", contract["validation"]["required_reviews"])
 
     def test_geogps_mirror_is_secondary_research_only_and_fail_closed(self):
