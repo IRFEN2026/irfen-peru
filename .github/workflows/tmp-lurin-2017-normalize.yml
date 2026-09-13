@@ -1,0 +1,114 @@
+name: IRFEN - Normalizar Lurin 2017 RESEARCH_ONLY
+
+on:
+  push:
+    branches:
+      - agent/lurin-cieneguilla-2017-hydrologic-evidence-v0.1
+
+permissions:
+  contents: write
+
+concurrency:
+  group: lurin-2017-normalize-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - run: pip install -r requirements.txt
+
+      - name: Alinear fuentes oficiales upstream
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('config/phase2_candidate_inventory_v0_1.json')
+          d=json.loads(p.read_text(encoding='utf-8'))
+          matches=[c for c in d.get('candidates',[]) if c.get('candidate_id')=='lima_este_lurin_cieneguilla']
+          assert len(matches)==1
+          c=matches[0]
+          src=list(c.get('official_sources') or [])
+          for source_id in (
+              'SENAMHI-SARDON-LAVADO-FELIPE-2022-FLOOD-INVENTORY',
+              'SENAMHI-LURIN-ANTAPUCRO-2017-03-14',
+              'ANA-LURIN-HYDROLOGY-2019',
+          ):
+              if source_id not in src:
+                  src.append(source_id)
+          c['official_sources']=src
+          p.write_text(json.dumps(d,ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf-8')
+          PY
+
+      - name: Regenerar derivados canonicos
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/build_lambayeque_hydrologic_units.py
+          python scripts/build_phase2_catalog.py
+          python scripts/build_map_layer_catalog.py
+
+      - name: Verificar reproducibilidad y guardrails focalizados
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/build_lambayeque_hydrologic_units.py --check-only
+          python scripts/build_phase2_catalog.py --check-only
+          python scripts/build_map_layer_catalog.py --check-only
+          python -m unittest tests.test_lurin_cieneguilla_2017_research_evidence -v
+          python -m unittest discover -s tests -p 'test_phase2_onboarding.py' -v
+          python -m unittest discover -s tests -p 'test_map_layer_catalog.py' -v
+          python - <<'PY'
+          import json
+          required={
+              'SENAMHI-SARDON-LAVADO-FELIPE-2022-FLOOD-INVENTORY',
+              'SENAMHI-LURIN-ANTAPUCRO-2017-03-14',
+              'ANA-LURIN-HYDROLOGY-2019',
+          }
+          for path in ('config/phase2_candidate_inventory_v0_1.json','config/phase2_candidate_inventory_v0_2.json'):
+              d=json.load(open(path,encoding='utf-8'))
+              c=next(x for x in d['candidates'] if x['candidate_id']=='lima_este_lurin_cieneguilla')
+              assert required.issubset(set(c['official_sources']))
+          inv=json.load(open('config/phase2_candidate_inventory_v0_2.json',encoding='utf-8'))
+          candidate=next(x for x in inv['candidates'] if x['candidate_id']=='lima_este_lurin_cieneguilla')
+          c=json.load(open('site/data/validation/phase2_zone_contracts/lima_este_lurin_cieneguilla.json',encoding='utf-8'))
+          assert set(c['official_source_ids'])==set(candidate['official_sources'])
+          assert c['contract_status']=='DRAFT'
+          assert c['validation']['activation_gate']=='BLOCKED'
+          assert c['decision_thresholds'] is None
+          assert c['hazard_model']['mechanism_status']=='TO_BE_RESOLVED'
+          assert c['assets']['historical_events']['status']=='PARTIAL'
+          assert c['assets']['observations']['status']=='PARTIAL'
+          assert c['assets']['hydraulic_context']['status']=='PARTIAL'
+          assert c['assets']['geometry']['status']=='MISSING'
+          assert c['assets']['exposure']['status']=='MISSING'
+          event=json.load(open('site/data/validation/phase2_research_evidence/senamhi_lurin_antapucro_2017.json',encoding='utf-8'))
+          assert event['event_day_hydrologic_context']['reported_flow_m3s']==77.23
+          control=next(x for x in event['outcome_links'] if x['case_id']=='cieneguilla_2017_03_06')
+          assert control['verified_negative_control'] is False
+          PY
+
+      - name: Guardar derivados y retirar workflow temporal
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/tmp-lurin-2017-normalize.yml
+          git config user.name "IRFEN research automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add config/phase2_candidate_inventory_v0_1.json config/phase2_candidate_inventory_v0_2.json site/data/phase2/catalog.json site/data/map_layers.json .github/workflows/tmp-lurin-2017-normalize.yml
+          if git diff --cached --quiet; then
+            echo "No hay cambios por confirmar"
+            exit 0
+          fi
+          git commit -m "Normalize Lurin 2017 sources and canonical catalogs"
+          git push origin HEAD:${{ github.ref_name }}
