@@ -6,7 +6,7 @@ on:
       - agent/ingemmet-chosica-santa-eulalia-2015-v0.1
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -16,14 +16,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: agent/ingemmet-chosica-santa-eulalia-2015-v0.1
+          fetch-depth: 0
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - name: Regenerate canonical map catalog
         run: python scripts/build_map_layer_catalog.py
-      - name: Upload generated catalog
-        uses: actions/upload-artifact@v4
-        with:
-          name: generated-map-layers
-          path: site/data/map_layers.json
-          if-no-files-found: error
+      - name: Commit generated catalog and remove temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/map_layers.json
+          git rm .github/workflows/irfen-temp-map-catalog.yml
+          git commit -m "Regenerate canonical map layer catalog"
+          git push origin HEAD:agent/ingemmet-chosica-santa-eulalia-2015-v0.1
