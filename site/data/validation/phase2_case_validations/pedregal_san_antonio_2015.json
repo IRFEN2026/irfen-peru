@@ -1,0 +1,132 @@
+{
+  "version": "independent-basin-validation-case-v0.1",
+  "case_id": "pedregal_san_antonio_2015",
+  "candidate_id": "pedregal_san_antonio",
+  "case_status": "IN_REVIEW_RESEARCH_VALIDATION_CASE",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "decision_thresholds": null,
+  "activation_gate": "BLOCKED",
+  "source_evidence": [
+    {
+      "source_id": "UCV-AGUILAR-MAMANI-2019",
+      "title": "Modelamiento hidraulico de la quebrada San Antonio de Pedregal para estimar zonas de inundacion ante huaycos, Lurigancho Lima 2019",
+      "source_type": "ACADEMIC_ENGINEERING_THESIS",
+      "institution": "Universidad Cesar Vallejo",
+      "year": 2019,
+      "evidence_role": "HIGH_VALUE_HYDROLOGIC_HYDRAULIC_REFERENCE"
+    }
+  ],
+  "hydraulic_evidence": {
+    "topography": {
+      "field_survey": true,
+      "drone_mapping": true,
+      "xyz_points_reported": 5484,
+      "coordinate_reference": "UTM_WGS84",
+      "dem_used_for_2d_model": true,
+      "raw_project_files_available_to_irfen": false,
+      "use": "PUBLISHED_METHOD_AND_RESULTS_REFERENCE_ONLY"
+    },
+    "hydrology": {
+      "rainfall_inputs_include": [
+        "pluviometric_stations",
+        "maximum_24h_precipitation",
+        "consistency_analysis",
+        "probability_distributions",
+        "subdaily_design_precipitation",
+        "IDF_curve",
+        "time_of_concentration"
+      ],
+      "peak_discharge_method": "RATIONAL_METHOD_MODEL_DERIVED",
+      "peak_discharge_m3s_by_return_period": {
+        "50": 63.05,
+        "75": 75.60,
+        "100": 85.99,
+        "150": 103.10,
+        "200": 117.26,
+        "500": 129.09
+      },
+      "observed_gauge_discharge": false
+    },
+    "hydraulic_model": {
+      "model_family": "GEO_HECRAS_2D",
+      "outputs_reported": [
+        "maximum_depths",
+        "flood_extent",
+        "affected_population",
+        "affected_housing",
+        "dike_scenario",
+        "retaining_wall_scenario"
+      ],
+      "flood_area_m2": {
+        "baseline": 101680.57,
+        "with_dikes": 54392.00,
+        "with_retaining_walls": 4392.00
+      },
+      "interpretation": "MODEL_DERIVED_NOT_OBSERVED_EVENT_FOOTPRINT"
+    },
+    "field_infrastructure_context": {
+      "reported_conditions": [
+        "existing dikes colmated or destroyed",
+        "destroyed dike documented during field survey",
+        "retaining wall repair observed",
+        "existing dikes measured",
+        "population exposed near lower ravine and Rimac outlet"
+      ],
+      "proposed_design": {
+        "energy_dissipation_dikes": 7,
+        "retaining_walls": 4,
+        "status": "PROPOSAL_OR_MODEL_SCENARIO_NOT_AS_BUILT"
+      }
+    }
+  },
+  "scientific_use": {
+    "accepted": [
+      "independent hydraulic plausibility reference for Pedregal/San Antonio",
+      "published topographic and geomorphic context",
+      "published design-rainfall and hydrologic context",
+      "comparison of modeled flood extent with and without mitigation",
+      "field evidence of degraded or damaged control structures"
+    ],
+    "forbidden": [
+      "treat model-derived discharges as observed gauge values",
+      "treat modeled flood extents as observed 2015 outcome footprints",
+      "treat proposed dikes or retaining walls as verified as-built infrastructure",
+      "derive or transfer operational alert thresholds",
+      "use this source to unblind target outcomes or negative controls",
+      "use outcome evidence to rerank or replace preregistered controls"
+    ]
+  },
+  "relationship_to_chosica_2015_clean_room": {
+    "existing_workflows": [
+      "PR-146 preregistered multibasin validation",
+      "PR-150 clean-room recovery",
+      "PR-151 clean-room next-stage evidence"
+    ],
+    "outcome_data_read_by_this_evidence_intake": false,
+    "a6680_data_read_by_this_evidence_intake": false,
+    "candidate_reranking_allowed": false,
+    "negative_control_labels_assigned": false,
+    "target_unblind_allowed": false
+  },
+  "single_remaining_research_closeout_gate": {
+    "gate_id": "PEDREGAL_CLEAN_ROOM_CONTROL_ADJUDICATION_AND_SAFE_UNBLIND",
+    "status": "BLOCKED_PENDING_CLEAN_ROOM_COMPLETION",
+    "requirement": "Complete and freeze the clean-room negative-control adjudication package and its independent safe-unblind step without outcome leakage, candidate reranking, or reuse of contaminated adjudication evidence.",
+    "why_this_is_the_remaining_gate": "Hydraulic mechanism, topographic context, rainfall-frequency context and modeled flood response are now sufficiently supported for research validation. The remaining scientific weakness is outcome discrimination against independently adjudicated non-impact controls under the preregistered Chosica 2015 design.",
+    "not_required_for_research_closeout": [
+      "operational threshold calibration",
+      "production deployment",
+      "live alerting",
+      "as-built verification of every modeled mitigation structure"
+    ]
+  },
+  "closeout_decision": {
+    "research_closeout_ready_now": false,
+    "closeout_after_gate_pass": "CLOSED_RESEARCH_VALIDATION_CASE_WITH_EXPLICIT_LIMITATIONS",
+    "production_authorized": false
+  }
+}
