@@ -16,35 +16,44 @@
     "inside_lima_metropolitana": true
   },
   "hazard_model": {
-    "mechanism_status": "TO_BE_RESOLVED",
+    "mechanism_status": "RESOLVED",
     "mechanism_preliminary": "debris_flow",
-    "selected_model_family": null
+    "selected_model_family": "rainfall_triggered_debris_flow_hydrologic_hydraulic_reological_reference"
   },
   "official_source_ids": [
-    "INGEMMET-A7743"
+    "INGEMMET-A7743",
+    "SENAMHI-MALANCHE-2024"
   ],
   "assets": {
     "geometry": {
-      "status": "MISSING",
+      "status": "PARTIAL",
       "path": null,
-      "source_ids": []
+      "source_ids": [
+        "SENAMHI-MALANCHE-2024"
+      ]
     },
     "exposure": {
-      "status": "MISSING",
-      "path": null,
-      "source_ids": []
+      "status": "READY",
+      "path": "site/data/validation/phase2_case_validations/lima_sur_malanche_2023.json",
+      "source_ids": [
+        "SENAMHI-MALANCHE-2024"
+      ]
     },
     "historical_events": {
-      "status": "MISSING",
-      "path": null,
-      "source_ids": [],
+      "status": "PARTIAL",
+      "path": "site/data/validation/phase2_case_validations/lima_sur_malanche_2023.json",
+      "source_ids": [
+        "SENAMHI-MALANCHE-2024"
+      ],
       "minimum_verified_event_days": 1,
       "minimum_verified_none_days": 10
     },
     "observations": {
-      "status": "MISSING",
-      "path": null,
-      "source_ids": []
+      "status": "PARTIAL",
+      "path": "site/data/validation/phase2_case_validations/lima_sur_malanche_2023.json",
+      "source_ids": [
+        "SENAMHI-MALANCHE-2024"
+      ]
     },
     "forecast": {
       "status": "CANDIDATE",
@@ -54,9 +63,11 @@
       ]
     },
     "hydraulic_context": {
-      "status": "MISSING",
-      "path": null,
-      "source_ids": []
+      "status": "READY",
+      "path": "site/data/validation/phase2_case_validations/lima_sur_malanche_2023.json",
+      "source_ids": [
+        "SENAMHI-MALANCHE-2024"
+      ]
     }
   },
   "validation": {
@@ -67,12 +78,37 @@
       "local_outcome"
     ],
     "promotion_requires_all_gates": true,
-    "review_evidence": []
+    "review_evidence": [
+      {
+        "review_type": "scientific",
+        "status": "CLOSED_RESEARCH_CASE",
+        "evidence_path": "site/data/validation/phase2_case_validations/lima_sur_malanche_2023.json",
+        "source_id": "SENAMHI-MALANCHE-2024"
+      },
+      {
+        "review_type": "hydrological_or_hydraulic",
+        "status": "CLOSED_REPORT_BASED_WITH_LIMITATIONS",
+        "evidence_path": "site/data/validation/phase2_case_validations/lima_sur_malanche_2023.json",
+        "source_id": "SENAMHI-MALANCHE-2024",
+        "limitation": "HEC-HMS and HEC-RAS results are accepted as official research reference; direct flow and sediment validation was not available in the source study."
+      },
+      {
+        "review_type": "local_outcome",
+        "status": "CLOSED_2023_EVENT_REFERENCE",
+        "evidence_path": "site/data/validation/phase2_case_validations/lima_sur_malanche_2023.json",
+        "source_id": "SENAMHI-MALANCHE-2024",
+        "limitation": "The 2023 peak discharge is a modelled reconstruction and must not be treated as an observed gauged discharge."
+      }
+    ]
   },
   "notes": [
-    "extract fan and outlet geometry",
-    "normalize exposed sectors",
-    "compile rainfall-event controls",
-    "define local validation contract"
+    "The Malanche 2023 case is closed as a RESEARCH_ONLY validation reference case using the 2024 SENAMHI report as the canonical available baseline; the zone contract itself remains DRAFT.",
+    "Original DTM, DSM, orthophoto and model project files are unavailable; published cartography and numeric references are accepted without claiming raw-data reprocessing.",
+    "Published basin morphometry is an independent comparison target and must not be used to tune IRFEN geometry.",
+    "The report-derived geometry is PARTIAL and has no machine-readable polygon in IRFEN; the geometry asset therefore has no map path and is not map-eligible.",
+    "Antioquia is retained as the representative rainfall reference selected by SENAMHI, not as a local Malanche gauge.",
+    "The 2023 reconstructed peak discharge is modelled, not observed.",
+    "Historical-event evidence remains PARTIAL because verified non-event controls have not been compiled to the contract minimum.",
+    "This research contract remains DRAFT while geometry, observations, verified non-event controls and forecast evidence are incomplete; activation remains BLOCKED, decision thresholds remain null and operational alerting remains disabled."
   ]
 }
