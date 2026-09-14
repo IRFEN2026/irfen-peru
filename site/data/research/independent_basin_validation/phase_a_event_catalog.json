@@ -1,0 +1,70 @@
+{
+  "version": "independent-basin-validation-phase-a-catalog-v1",
+  "generated_at": "2026-08-26T21:30:00Z",
+  "status": "RESEARCH_ONLY",
+  "production_use": false,
+  "repository_provenance": {
+    "base_commit": "eade2833c927de9897d22422d4ca8c7b72888da5",
+    "geometry_blob_sha": "17a5d83fc94b6ba0f00deaae656ccae884b073c0",
+    "historical_events_blob_sha": "aa5c641c85a84d89276fef050b850cd5bd3dff20",
+    "san_ildefonso_test_rule_blob_sha": "55f7048c45564dd99a5c554848a72d290e08b950"
+  },
+  "records": [
+    {
+      "id": "CASHAHUACRA-2015-03-23",
+      "unit_id": "cashahuacra",
+      "date": "2015-03-23",
+      "phenomenon": "debris_flow_huayco",
+      "research_state": "REMOTE_EVENT_CANDIDATE",
+      "training_target": null,
+      "territorial_evidence": {
+        "positive": true,
+        "source": "Presidencia del Consejo de Ministros / SPIJ",
+        "url": "https://spij.minjus.gob.pe/Normas/textos/260315T.pdf",
+        "document": "Decreto Supremo N° 019-2015-PCM",
+        "location_quality": "HIGH",
+        "temporal_quality": "HIGH",
+        "claim": "Intense rainfall on 2015-03-23 activated quebrada Cashahuacra and caused huaicos affecting homes and roads.",
+        "sha256": null,
+        "sha256_status": "NOT_DOWNLOADED_IN_PHASE_A_MINIMAL_COMMIT"
+      },
+      "geometry": {"path": "site/data/phase2/geometries/w1_santa_eulalia_rimac.geojson", "feature_id": "cashahuacra", "confidence": "MEDIUM_CANDIDATE", "official_outlet_confirmed": false},
+      "layers": {"rainfall": false, "basin_susceptibility": false, "antecedent_moisture": false, "post_event_remote_sensing": false, "independent_territorial_evidence": true},
+      "highest_contiguous_evidence_level": null,
+      "limitations": ["Remote layers not yet acquired in this minimal Phase A commit; therefore this row is excluded from model fitting.", "Candidate basin outlet/area are not officially confirmed."]
+    },
+    {
+      "id": "SHINGOLAY-2015-CONTEXT",
+      "unit_id": "shingolay",
+      "date": null,
+      "phenomenon": "debris_flow_context",
+      "research_state": "INSUFFICIENT_EVIDENCE",
+      "training_target": null,
+      "territorial_evidence": {
+        "positive": false,
+        "source": "CENEPRED/SIGRID",
+        "url": "https://sigrid.cenepred.gob.pe/",
+        "document": "Ortomosaico Qda. Cashahuacra y Shingolay 1",
+        "location_quality": "MEDIUM",
+        "temporal_quality": "LOW",
+        "claim": "Official RPAS/orthomosaic context does not by itself establish an exact-date activation.",
+        "sha256": null,
+        "sha256_status": "NOT_DOWNLOADED_IN_PHASE_A_MINIMAL_COMMIT"
+      },
+      "geometry": {"path": "site/data/phase2/geometries/w1_santa_eulalia_rimac.geojson", "feature_id": "shingolay", "confidence": "LOW_CANDIDATE"},
+      "layers": {"rainfall": false, "basin_susceptibility": false, "antecedent_moisture": false, "post_event_remote_sensing": true, "independent_territorial_evidence": false},
+      "highest_contiguous_evidence_level": null,
+      "limitations": ["No exact event date established from the currently verified source.", "Geometry remains LOW_CANDIDATE/REVIEW_ONLY; no scientific label is assigned."]
+    }
+  ],
+  "reference_experiment": {
+    "purpose": "Pipeline smoke experiment only; does not calibrate target basins or alter v0.8 decisions.",
+    "source_paths": ["config/historical_events.json", "site/data/calibration/san_ildefonso_test_rule.json"],
+    "samples": [
+      {"id": "SI-2017-03-15", "unit_id": "san_ildefonso", "research_target": 1, "max_3h_mm": 10.188, "max_6h_mm": 18.543, "max_24h_mm": 33.02},
+      {"id": "SI-2023-03-10", "unit_id": "san_ildefonso", "research_target": 1, "max_3h_mm": 6.164, "max_6h_mm": 9.296, "max_24h_mm": 19.397},
+      {"id": "SI-2025-03-29", "unit_id": "san_ildefonso", "research_target": 0, "max_3h_mm": 3.23, "max_6h_mm": 4.136, "max_24h_mm": 9.177}
+    ],
+    "warning": "research_target is an internal binary target for a plumbing experiment only; it is not a canonical EVENT/NONE label."
+  }
+}
