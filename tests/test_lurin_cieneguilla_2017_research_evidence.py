@@ -50,7 +50,7 @@ class LurinCieneguilla2017ResearchEvidenceTest(unittest.TestCase):
         self.assertFalse(candidate["verified_negative_control"])
         self.assertFalse(candidate["same_day_hydrologic_context_available_here"])
 
-    def test_contract_progress_is_partial_only(self):
+    def test_contract_remains_fail_closed_while_research_case_can_close(self):
         c = self.contract
         self.assertEqual(c["contract_status"], "DRAFT")
         self.assertEqual(c["deployment_status"], "RESEARCH_ONLY")
@@ -59,7 +59,8 @@ class LurinCieneguilla2017ResearchEvidenceTest(unittest.TestCase):
         self.assertIsNone(c["decision_thresholds"])
         self.assertEqual(c["validation"]["activation_gate"], "BLOCKED")
         self.assertEqual(c["hazard_model"]["mechanism_status"], "TO_BE_RESOLVED")
-        self.assertEqual(c["assets"]["geometry"]["status"], "PARTIAL")
+        self.assertEqual(c["assets"]["geometry"]["status"], "MISSING")
+        self.assertIsNone(c["assets"]["geometry"]["path"])
         self.assertEqual(c["assets"]["exposure"]["status"], "MISSING")
         self.assertEqual(c["assets"]["historical_events"]["status"], "PARTIAL")
         self.assertEqual(c["assets"]["observations"]["status"], "PARTIAL")
