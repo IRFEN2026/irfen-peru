@@ -1,0 +1,141 @@
+{
+  "version": "independent-basin-validation-case-v0.1",
+  "case_id": "lurin_cieneguilla_pachacamac_2017",
+  "zone_id": "lima_este_lurin_cieneguilla",
+  "case_status": "CLOSED_RESEARCH_VALIDATION_CASE",
+  "deployment_status": "RESEARCH_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "decision_thresholds": null,
+  "activation_gate": "BLOCKED",
+  "scope": "Historical research validation of the 2017 Lurin river flood sequence across Antapucro, Cieneguilla, Pachacamac and lower Lurin. Closeout is bounded to research evidence and does not authorize operational thresholds or live alerting.",
+  "historical_cases": [
+    {
+      "case_id": "LURIN-CIENEGUILLA-2017-03-06",
+      "date": "2017-03-06",
+      "classification": "UNADJUDICATED_NO_DAMAGE_CONTROL_CANDIDATE",
+      "outcome_context": "SENAMHI historical inventory reports river-rise context without recorded damage in the referenced entry.",
+      "counts_as_negative_control": false,
+      "reason": "Same-day rainfall and local river-state evidence are insufficient to verify a hydrologic negative."
+    },
+    {
+      "case_id": "LURIN-ANTAPUCRO-2017-03-14",
+      "date": "2017-03-14",
+      "classification": "OFFICIAL_EVENT_DAY_UPSTREAM_HYDROLOGIC_CONTEXT",
+      "station": "Puente Antapucro",
+      "reported_time_local": "14:00",
+      "reported_flow_m3s": 77.23,
+      "reported_anomaly_pct_above_historical_mean": 251,
+      "trend": "ASCENDING",
+      "source_id": "SENAMHI-LURIN-ANTAPUCRO-2017-03-14",
+      "station_to_impact_transfer_validated": false
+    },
+    {
+      "case_id": "LURIN-PACHACAMAC-2017-03-15",
+      "date": "2017-03-15",
+      "classification": "CONFIRMED_POSITIVE_OUTCOME",
+      "outcome": "Observed Lurin River overflow affecting Pampa Flores, Lote B and Picapiedra/Pachacamac with agricultural and transport impacts in official emergency reporting.",
+      "source_context": [
+        "INDECI/COEN emergency reporting",
+        "SENAMHI historical flood inventory"
+      ],
+      "counts_as_positive_control": true
+    },
+    {
+      "case_id": "LURIN-CIENEGUILLA-2017-03-17",
+      "date": "2017-03-17",
+      "classification": "CONFIRMED_POSITIVE_OUTCOME",
+      "outcome": "Observed Lurin River overflow in Cieneguilla with housing and road impacts in official emergency reporting.",
+      "source_context": [
+        "INDECI/COEN emergency reporting"
+      ],
+      "counts_as_positive_control": true
+    }
+  ],
+  "rainfall_context": {
+    "status": "SUPPORTED_WITH_LIMITATIONS",
+    "evidence": [
+      "SENAMHI historical/official meteorological advisories confirm strong-rain context during the March 2017 event window.",
+      "Academic ground-validation work over CHIRILU supports use of gauge observations to assess IMERG bias and shows event-day rainfall context for 14 March 2017."
+    ],
+    "limitations": [
+      "No repository-grade daily or hourly gauge series has been recovered for Cieneguilla on 06 March 2017.",
+      "No exact basin-wide 24/48/72 h rainfall total is promoted as a verified event threshold.",
+      "Reported secondary claims such as 25-30 mm/day or 35-45 mm/48h are not treated as verified IRFEN facts unless traced to primary tables."
+    ]
+  },
+  "mechanism_chain": {
+    "status": "SUPPORTED_FOR_RESEARCH_WITH_TRANSFER_LIMITATION",
+    "chain": "upper/middle-basin rainfall -> basin runoff -> Antapucro river response -> downstream routing and local hydraulic controls -> overflow -> impact in Pachacamac/Cieneguilla",
+    "supported": [
+      "event-day upstream hydrologic response at Antapucro",
+      "official downstream overflow and damage outcomes",
+      "ANA basin/hydraulic-system context",
+      "regulatory/hydraulic geometry and critical-sector/exposure context"
+    ],
+    "not_demonstrated": [
+      "event-specific travel time from Antapucro to each impact reach",
+      "event-day abstraction/diversion state",
+      "receiving-channel capacity at each impact reach",
+      "a unique rainfall or discharge threshold that guarantees overflow"
+    ]
+  },
+  "geometry_context": {
+    "status": "PARTIAL_OFFICIAL_RESEARCH_GEOMETRY",
+    "source_id": "ANA-RD-0271-2025-AAA-CF",
+    "asset": "site/data/validation/phase2_research_evidence/ana_lurin_faja_marginal_antioquia_2025.geojson",
+    "note": "Official regulatory/hydraulic boundary geometry for a 5.35 km Antioquia reach. It is not an observed 2017 flood footprint."
+  },
+  "exposure_context": {
+    "status": "SUPPORTED_CONTEXT_NOT_FULLY_NORMALIZED",
+    "evidence": [
+      "MML critical-sector monitoring identifies georeferenced exposed sectors and channel-condition problems in Cieneguilla, Pachacamac and lower Lurin.",
+      "INDECI/COEN documents 2017 impacts.",
+      "Academic hydraulic/risk studies provide lower-Lurin parcel, road, agricultural and housing exposure context."
+    ],
+    "note": "Exposure evidence is sufficient for bounded research interpretation but has not been normalized into a complete machine-readable current-exposure asset."
+  },
+  "negative_control_status": {
+    "status": "NO_CONFIRMED_NEGATIVE_CONTROL",
+    "candidate": "LURIN-CIENEGUILLA-2017-03-06",
+    "note": "Absence of reported damage is not treated as hydrologic non-activation. This limitation is carried explicitly and does not block research closeout."
+  },
+  "threshold_policy": {
+    "decision_thresholds": null,
+    "forbidden_promotions": [
+      "historical SENAMHI alert bands",
+      "HEC-HMS/HEC-RAS design discharges",
+      "ANA return-period model values",
+      "academic rainfall values or RIDW-corrected estimates",
+      "secondary claims that 25-30 mm/day or 70-75 m3/s necessarily causes overflow"
+    ]
+  },
+  "allowed_uses": [
+    "historical replay",
+    "positive-event validation",
+    "rainfall-product bias research",
+    "hydrologic/hydraulic plausibility checks",
+    "geometry, exposure and consequence context"
+  ],
+  "forbidden_uses": [
+    "derive or deploy operational rainfall thresholds",
+    "derive or deploy operational discharge thresholds",
+    "treat 06 March 2017 as a verified negative control",
+    "transfer Antapucro flow directly to downstream impact reaches",
+    "treat regulatory/modelled flood geometry as an observed event footprint",
+    "enable operational alerting"
+  ],
+  "closure": {
+    "status": "CLOSED_WITH_EXPLICIT_LIMITATIONS",
+    "research_validation_closed": true,
+    "production_blocked": true,
+    "reason": "The positive 2017 flood sequence has convergent official hydrologic, outcome, hydraulic-system, geometry and exposure evidence. Remaining uncertainty is explicitly carried rather than fabricated; further rainfall searching is not required for bounded research closeout.",
+    "future_evidence_that_can_improve_confidence": [
+      "daily/hourly 2017 rainfall gauges with station metadata",
+      "event-specific routing/travel-time validation",
+      "current normalized exposure layers",
+      "verified non-impact controls"
+    ]
+  }
+}
