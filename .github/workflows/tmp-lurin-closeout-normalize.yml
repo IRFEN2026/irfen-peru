@@ -1,0 +1,92 @@
+name: TEMP Lurin closeout normalize
+
+on:
+  push:
+    branches:
+      - agent/lurin-research-closeout-v0.1
+
+permissions:
+  contents: write
+
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: agent/lurin-research-closeout-v0.1
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Normalize canonical Lurin source and geometry guards
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          inv_path = Path('config/phase2_candidate_inventory_v0_1.json')
+          inv = json.loads(inv_path.read_text(encoding='utf-8'))
+          for c in inv['candidates']:
+              if c['candidate_id'] == 'lima_este_lurin_cieneguilla':
+                  if 'ANA-RD-0271-2025-AAA-CF' not in c['official_sources']:
+                      c['official_sources'].append('ANA-RD-0271-2025-AAA-CF')
+                  break
+          else:
+              raise SystemExit('Lurin candidate not found')
+          inv_path.write_text(json.dumps(inv, ensure_ascii=False, separators=(',', ':')) + '\n', encoding='utf-8')
+
+          contract_path = Path('site/data/validation/phase2_zone_contracts/lima_este_lurin_cieneguilla.json')
+          contract = json.loads(contract_path.read_text(encoding='utf-8'))
+          if 'ANA-RD-0271-2025-AAA-CF' not in contract['official_source_ids']:
+              contract['official_source_ids'].append('ANA-RD-0271-2025-AAA-CF')
+          contract_path.write_text(json.dumps(contract, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+          geo_path = Path('site/data/validation/phase2_research_evidence/ana_lurin_faja_marginal_antioquia_2025.geojson')
+          geo = json.loads(geo_path.read_text(encoding='utf-8'))
+          props = geo.setdefault('properties', {})
+          props.update({
+              'version': 'ana-lurin-antioquia-faja-2025-research-v0.1',
+              'deployment_status': 'RESEARCH_ONLY',
+              'production_use': False,
+              'production_ready': False,
+              'operational_alerting_enabled': False,
+              'decision_thresholds': None,
+              'evidence_class': 'OFFICIAL_REGULATORY_HYDRAULIC_BOUNDARY_GEOMETRY',
+              'observed_event_footprint': False,
+              'warning': 'RESEARCH_ONLY regulatory/hydraulic geometry; not an observed event footprint and not an IRFEN threshold.'
+          })
+          for f in geo.get('features', []):
+              fp = f.setdefault('properties', {})
+              fp.update({
+                  'deployment_status': 'RESEARCH_ONLY',
+                  'production_use': False,
+                  'production_ready': False,
+                  'alerting_enabled': False,
+                  'decision_thresholds': None,
+                  'loaded_into_operational_calculation': False,
+                  'carries_alert_values': False,
+                  'carries_risk_classification': False
+              })
+          geo_path.write_text(json.dumps(geo, ensure_ascii=False, separators=(',', ':')) + '\n', encoding='utf-8')
+          PY
+      - name: Regenerate canonical phase-2 products
+        run: |
+          python scripts/build_lambayeque_hydrologic_units.py
+          python scripts/build_phase2_catalog.py
+          python scripts/build_map_layer_catalog.py
+      - name: Run Lurin focused tests
+        run: |
+          python -m unittest tests.test_lurin_cieneguilla_2017_research_evidence tests.test_lurin_research_closeout -v
+      - name: Remove temporary workflow and commit normalization
+        run: |
+          rm .github/workflows/tmp-lurin-closeout-normalize.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No changes to commit'
+          else
+            git commit -m 'Lurín: normalize canonical source parity and research geometry guards'
+            git push origin HEAD:agent/lurin-research-closeout-v0.1
+          fi
