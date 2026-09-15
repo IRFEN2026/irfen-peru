@@ -75,9 +75,13 @@ class MapLayerCatalogTests(unittest.TestCase):
 
     def test_missing_geometry_is_not_replaced_by_reference_points(self):
         zones = self.catalog["research_zones"]
-        self.assertEqual(self.catalog["summary"]["research_candidates_map_eligible"], 1)
+        eligible = {
+            "lima_este_santa_eulalia_rimac",
+            "lima_este_lurin_cieneguilla",
+        }
+        self.assertEqual(self.catalog["summary"]["research_candidates_map_eligible"], len(eligible))
         for zone in zones:
-            if zone["candidate_id"] == "lima_este_santa_eulalia_rimac":
+            if zone["candidate_id"] in eligible:
                 self.assertTrue(zone["geometry"]["map_eligible"])
                 self.assertEqual(zone["geometry"]["representation"], "REPRODUCIBLE_FILE")
             else:
