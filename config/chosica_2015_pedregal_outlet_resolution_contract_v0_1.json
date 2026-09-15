@@ -1,0 +1,73 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "target_id": "pedregal_san_antonio",
+  "status": "FROZEN_PREEXECUTION_METHOD",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "sealed_during_resolution": [
+    "territorial activation/non-activation labels for 2015-03-23",
+    "post-event damage or severity descriptions",
+    "A6680 numeric basin area, length, relief or slope values",
+    "post-anchor precipitation and remote-sensing response"
+  ],
+  "static_source": {
+    "source_id": "MML-SGDC-RIMAC-MONITORING-2013",
+    "institution": "Municipalidad Metropolitana de Lima - Subgerencia de Defensa Civil",
+    "document_date": "2013-06-20",
+    "document_title": "Monitoreo de la Cuenca Hidrografica del Rio Rimac en el Ambito del Gobierno Metropolitano y la Reduccion de Riesgos",
+    "source_url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/442/descargar",
+    "reported_crs": "UTM WGS84 Zona 18S",
+    "points": {
+      "rimac_upstream_bridge_r4": {
+        "label": "Sector Puente Colgante",
+        "easting_m": 315681,
+        "northing_m": 8680063,
+        "elevation_m": 874,
+        "role": "EVENT_INDEPENDENT_RIMAC_MAINSTEM_UPSTREAM_ANCHOR"
+      },
+      "pedregal_r7": {
+        "label": "Quebrada Pedregal o San Antonio - parte alta",
+        "easting_m": 314551,
+        "northing_m": 8681534,
+        "elevation_m": 1108,
+        "role": "EVENT_INDEPENDENT_PEDREGAL_CHANNEL_UPSTREAM_ANCHOR"
+      },
+      "rimac_downstream_bridge_r9": {
+        "label": "Puente Peatonal California",
+        "easting_m": 312032,
+        "northing_m": 8677974,
+        "elevation_m": 771,
+        "role": "EVENT_INDEPENDENT_RIMAC_MAINSTEM_DOWNSTREAM_ANCHOR"
+      }
+    }
+  },
+  "dem": {
+    "source": "Copernicus DEM GLO-30 Public",
+    "analysis_crs": "EPSG:32718",
+    "target_resolution_m": 30.0,
+    "conditioning": ["fill pits", "fill depressions", "resolve flats"],
+    "flow_direction": "D8"
+  },
+  "predeclared_resolution_method": {
+    "name": "MML_R4_R9_RIMAC_D8_FIRST_INTERSECTION_WITH_PEDREGAL_R7",
+    "step_1": "Map MML R4, R7 and R9 coordinates to the frozen 30 m analysis grid; enumerate coordinate-to-grid ambiguity for R4 and R7 only.",
+    "step_2": "Trace D8 downstream from every admissible R4 cell. For each trace identify the cell nearest R9 and require that the trace progresses toward R9 and reaches within two DEM-cell diagonals of R9.",
+    "step_3": "Treat each R4 trace from its source through its accepted nearest-R9 cell as an admissible event-independent Rimac mainstem path candidate.",
+    "step_4": "Trace D8 downstream from every admissible Pedregal R7 cell and select the first downstream cell that intersects each admissible Rimac path candidate.",
+    "step_5": "Require every R7 x R4 ambiguity combination to yield the same first-intersection cell. Any missing or non-convergent intersection remains PENDING_REVIEW.",
+    "step_6": "Only after convergence may that first-intersection cell be proposed as the Pedregal/San Antonio outlet candidate; basin geometry freezing is a separate downstream step.",
+    "identity_tolerance": "two DEM-cell diagonals",
+    "selection_used_basin_area": false,
+    "selection_used_channel_length": false,
+    "selection_used_rainfall": false,
+    "selection_used_activation_or_damage": false,
+    "selection_used_a6680_numeric_morphometry": false,
+    "fail_closed": true
+  }
+}

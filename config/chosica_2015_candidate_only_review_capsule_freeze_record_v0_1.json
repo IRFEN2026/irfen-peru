@@ -1,0 +1,57 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "CANDIDATE_ONLY_REVIEW_CAPSULE_FROZEN_BY_EXACT_HASH",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "prerequisites": {
+    "cleanroom_recovery_freeze": "config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json",
+    "reviewer_geometry_freeze": "config/chosica_2015_candidate_only_reviewer_geometry_freeze_record_v0_1.json",
+    "review_capsule_contract": "config/chosica_2015_candidate_only_review_capsule_contract_v0_1.json",
+    "review_capsule_contract_blob_sha": "1ff337264ca0d24d9b088172aaf0151e55382381",
+    "reviewer_bundle_sha256": "c4f62777d31a223f77de049ea368c321f5c299114d6a14f407899c772e911f15",
+    "candidate_membership_sha256": "5738c0e2bcddf95be0e1cc9c77660d030355602f39920b3873c6ec65b0f26bc1"
+  },
+  "provenance": {
+    "workflow_run_id": 34550366576,
+    "workflow_head_sha": "d9229f527cbb38e9dbaac11782d4795077251e13",
+    "artifact_id": 10180559835,
+    "artifact_name": "irfen-candidate-only-review-capsule-v0-1",
+    "artifact_zip_sha256": "d06281244c1bfcfccf17267007229f2b3222936dbe7b01b46c4469ef05428de6",
+    "builder_path": "scripts/build_chosica_2015_candidate_only_review_capsule.py",
+    "builder_blob_sha": "ad8f24bf124752d64c8948a4e803c40df5a380ef"
+  },
+  "frozen_files": {
+    "review_bundle.json": "c4f62777d31a223f77de049ea368c321f5c299114d6a14f407899c772e911f15",
+    "candidate_geometry.geojson": "d99358577996c4c2dbe2fe9dc11b804679f10b397e667ed98d6b65a94635df14",
+    "adjudication_template.json": "2d802d501aa96c03b11ae1d20233cf6350a318d090725893c606800de67d921a",
+    "capsule_manifest.json": "ed6b9117a885bfe6c2c4f80e1ec8b623450a903241867e17d6c833208bbf5caf"
+  },
+  "isolation_attestation": {
+    "candidate_count": 7,
+    "repository_access_required_by_reviewer": false,
+    "target_identifiers_included": false,
+    "target_outcomes_included": false,
+    "contaminated_stage_material_included": false,
+    "external_reference_morphometry_included": false,
+    "matching_feedback_included": false,
+    "candidate_replacement_allowed": false,
+    "matching_recalculation_allowed": false,
+    "selection_feedback_allowed": false,
+    "target_unblind_allowed": false
+  },
+  "immutability_rule": "Any reviewer input must reproduce all four frozen file SHA-256 values exactly. Any mismatch fails closed and the returned adjudication is ineligible for scientific use.",
+  "review_gate": {
+    "allowed": "independent candidate-only territorial adjudication using only this exact detached capsule",
+    "candidate_replacement_after_review_allowed": false,
+    "matching_recalculation_after_review_allowed": false,
+    "selection_feedback_after_review_allowed": false,
+    "target_unblind_allowed": false
+  },
+  "next_gate": "INDEPENDENT_REVIEW_OF_EXACT_FROZEN_CAPSULE_THEN_VALIDATE_RETURNED_V0_2_ADJUDICATION"
+}

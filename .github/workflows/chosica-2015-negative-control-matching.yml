@@ -1,0 +1,63 @@
+name: IRFEN - Chosica 2015 negative-control matching
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_negative_control_matching_contract_v0_1.json
+      - config/chosica_2015_negative_control_candidate_pool_freeze_record_v0_1.json
+      - config/chosica_2015_negative_control_candidate_generation_v0_1.json
+      - config/chosica_2015_morphometry_phase1_freeze_record_v0_1.json
+      - site/data/validation/chosica_2015_negative_control_candidate_pool.json
+      - scripts/generate_chosica_2015_negative_control_candidates.py
+      - scripts/match_chosica_2015_negative_control_candidates.py
+      - scripts/compute_chosica_2015_morphometry_phase1.py
+      - .github/workflows/chosica-2015-negative-control-matching.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dem-match-controls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install scientific dependencies
+        run: pip install -r requirements.txt
+      - name: Compute DEM-only candidate morphometry and shortlist
+        run: |
+          mkdir -p artifacts
+          python scripts/match_chosica_2015_negative_control_candidates.py \
+            --contract config/chosica_2015_negative_control_matching_contract_v0_1.json \
+            --output artifacts/chosica_2015_negative_control_matching.json
+      - name: Enforce pre-unblind matching guards
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/chosica_2015_negative_control_matching.json',encoding='utf-8'))
+          assert d['status']=='PASS_PREUNBLIND_NEGATIVE_CONTROL_DEM_MATCHING'
+          assert d['shortlist_frozen'] is True
+          assert d['candidate_count']==29
+          assert d['eligible_candidate_count'] >= 3
+          assert d['outcome_evidence_read'] is False
+          assert d['candidate_outcome_evidence_read'] is False
+          assert d['a6680_numeric_reference_read'] is False
+          assert d['post_anchor_predictor_read'] is False
+          assert d['control_outcome_adjudication_performed'] is False
+          assert d['guards']=={
+            'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,
+            'production_ready':False,'operational_alerting_enabled':False}
+          assert set(d['shortlists'])=={'cashahuacra','quirio','pedregal_san_antonio','la_libertad','carossio','rayos_de_sol'}
+          assert all(len(v)==3 for v in d['shortlists'].values())
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: chosica-2015-negative-control-matching
+          path: artifacts/chosica_2015_negative_control_matching.json
+          if-no-files-found: warn

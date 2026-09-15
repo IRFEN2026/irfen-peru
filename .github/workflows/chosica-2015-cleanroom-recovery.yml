@@ -1,0 +1,161 @@
+name: IRFEN - Chosica 2015 clean-room recovery
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+      - config/chosica_2015_cleanroom_recovery_contract_v0_1.json
+      - config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json
+      - config/chosica_2015_outlet_freeze_registry_v0_1.json
+      - site/data/validation/chosica_2015_negative_control_candidate_pool.json
+      - scripts/build_chosica_2015_cleanroom_input.py
+      - scripts/match_chosica_2015_cleanroom_controls.py
+      - scripts/validate_chosica_2015_cleanroom_recovery.py
+      - .github/workflows/chosica-2015-cleanroom-recovery.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  cleanroom-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            .github/workflows/chosica-2015-cleanroom-recovery.yml
+            config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+            config/chosica_2015_cleanroom_recovery_contract_v0_1.json
+            config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json
+            scripts/build_chosica_2015_cleanroom_input.py
+            scripts/match_chosica_2015_cleanroom_controls.py
+            scripts/validate_chosica_2015_cleanroom_recovery.py
+
+      - name: Prove forbidden repository sources are absent from workspace
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09_b.json
+          python - <<'PY'
+          from pathlib import Path
+          allowed={
+            '.github/workflows/chosica-2015-cleanroom-recovery.yml',
+            'config/chosica_2015_control_adjudication_contamination_registry_v0_1.json',
+            'config/chosica_2015_cleanroom_recovery_contract_v0_1.json',
+            'config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json',
+            'scripts/build_chosica_2015_cleanroom_input.py',
+            'scripts/match_chosica_2015_cleanroom_controls.py',
+            'scripts/validate_chosica_2015_cleanroom_recovery.py',
+          }
+          present={str(p) for p in Path('.').rglob('*') if p.is_file() and '.git/' not in str(p) and not str(p).startswith('.git/')}
+          extra=sorted(present-allowed)
+          assert not extra, f'FAIL_CLOSED_UNEXPECTED_WORKSPACE_FILES {extra}'
+          print('PASS_CLEANROOM_SPARSE_WORKSPACE')
+          PY
+
+      - name: Download only allowlisted preincident frozen artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p cleanroom_sources/{target_morphometry,target_preanchor_imerg,candidate_dem_metrics,candidate_preanchor_imerg}
+          gh run download 34291741232 -n chosica-2015-morphometry-phase1 -D cleanroom_sources/target_morphometry
+          gh run download 34291741336 -n chosica-2015-preunblind-imerg -D cleanroom_sources/target_preanchor_imerg
+          gh run download 34374629591 -n chosica-2015-negative-control-matching -D cleanroom_sources/candidate_dem_metrics
+          gh run download 34377084449 -n chosica-2015-negative-control-preunblind-imerg -D cleanroom_sources/candidate_preanchor_imerg
+
+      - name: Build minimal blinded clean-room input
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/irfen-cleanroom artifacts
+          python scripts/build_chosica_2015_cleanroom_input.py \
+            --contract config/chosica_2015_cleanroom_recovery_contract_v0_1.json \
+            --repo-root "$PWD" \
+            --artifact-root "$PWD/cleanroom_sources" \
+            --output /tmp/irfen-cleanroom/cleanroom_input.json
+
+      - name: Execute package-only matcher twice under stripped environment
+        run: |
+          set -euo pipefail
+          cp scripts/match_chosica_2015_cleanroom_controls.py /tmp/irfen-cleanroom/matcher.py
+          cd /tmp/irfen-cleanroom
+          env -i PATH="$PATH" PYTHONHASHSEED=0 python matcher.py --input cleanroom_input.json --output cleanroom_matching_a.json
+          env -i PATH="$PATH" PYTHONHASHSEED=0 python matcher.py --input cleanroom_input.json --output cleanroom_matching_b.json
+          cmp cleanroom_matching_a.json cleanroom_matching_b.json
+          cp cleanroom_matching_a.json cleanroom_matching.json
+
+      - name: Validate fail-closed clean-room boundary
+        run: |
+          set -euo pipefail
+          python scripts/validate_chosica_2015_cleanroom_recovery.py \
+            --contract config/chosica_2015_cleanroom_recovery_contract_v0_1.json \
+            --contamination config/chosica_2015_control_adjudication_contamination_registry_v0_1.json \
+            --package /tmp/irfen-cleanroom/cleanroom_input.json \
+            --matching /tmp/irfen-cleanroom/cleanroom_matching.json \
+            --matcher scripts/match_chosica_2015_cleanroom_controls.py \
+            --output artifacts/chosica_2015_cleanroom_recovery_validation.json
+
+      - name: Freeze precommit hashes in workflow artifact
+        run: |
+          set -euo pipefail
+          cp /tmp/irfen-cleanroom/cleanroom_input.json artifacts/chosica_2015_cleanroom_input.json
+          cp /tmp/irfen-cleanroom/cleanroom_matching.json artifacts/chosica_2015_cleanroom_matching.json
+          python - <<'PY'
+          import hashlib,json,pathlib
+          root=pathlib.Path('artifacts')
+          def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest()
+          files={n:sha(root/n) for n in [
+            'chosica_2015_cleanroom_input.json',
+            'chosica_2015_cleanroom_matching.json',
+            'chosica_2015_cleanroom_recovery_validation.json']}
+          out={
+            'schema_version':'0.1',
+            'status':'PASS_CLEANROOM_RECOVERY_READY_FOR_COMMITTED_FREEZE',
+            'guards':{'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False},
+            'sealed_target_unblind_allowed':False,
+            'files':files}
+          (root/'chosica_2015_cleanroom_precommit_manifest.json').write_text(json.dumps(out,sort_keys=True,separators=(',',':'))+'\n',encoding='utf-8')
+          PY
+
+      - name: Enforce committed clean-room freeze by exact SHA-256 replay
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json,pathlib
+          freeze=json.load(open('config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json',encoding='utf-8'))
+          assert freeze['status']=='CLEANROOM_RECOVERY_FROZEN_BY_EXACT_HASH'
+          assert freeze['guards']=={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          assert freeze['contaminated_adjudication_excluded'] is True
+          assert freeze['territorial_unblind_policy']['selection_feedback_allowed'] is False
+          assert freeze['territorial_unblind_policy']['candidate_replacement_after_outcome_review_allowed'] is False
+          assert freeze['territorial_unblind_policy']['target_outcomes_allowed'] is False
+          root=pathlib.Path('artifacts')
+          def sha(name): return hashlib.sha256((root/name).read_bytes()).hexdigest()
+          expected=freeze['frozen_outputs']
+          assert sha(expected['cleanroom_input']['file_name'])==expected['cleanroom_input']['sha256']
+          assert sha(expected['cleanroom_matching']['file_name'])==expected['cleanroom_matching']['sha256']
+          assert sha(expected['validation']['file_name'])==expected['validation']['sha256']
+          matching=json.load(open(root/expected['cleanroom_matching']['file_name'],encoding='utf-8'))
+          assert matching['selected_candidate_count']==expected['cleanroom_matching']['selected_candidate_count']==7
+          assert matching['selected_without_frozen_preanchor_predictors']==[]
+          assert matching['outcomes_used_for_matching'] is False
+          assert matching['precipitation_used_for_matching'] is False
+          assert matching['control_outcome_adjudication_performed'] is False
+          assert matching['sealed_target_unblind_performed'] is False
+          print('PASS_CLEANROOM_EXACT_REPLAY_FREEZE')
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-cleanroom-recovery
+          path: |
+            artifacts/chosica_2015_cleanroom_input.json
+            artifacts/chosica_2015_cleanroom_matching.json
+            artifacts/chosica_2015_cleanroom_recovery_validation.json
+            artifacts/chosica_2015_cleanroom_precommit_manifest.json
+          if-no-files-found: error
