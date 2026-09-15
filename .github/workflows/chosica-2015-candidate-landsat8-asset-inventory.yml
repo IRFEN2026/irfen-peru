@@ -1,0 +1,65 @@
+name: IRFEN - Chosica 2015 candidate Landsat 8 asset inventory
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_candidate_landsat8_asset_inventory_contract_v0_1.json
+      - scripts/inventory_chosica_2015_candidate_landsat8_assets.py
+      - .github/workflows/chosica-2015-candidate-landsat8-asset-inventory.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inventory-assets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_candidate_landsat8_asset_inventory_contract_v0_1.json
+            scripts/inventory_chosica_2015_candidate_landsat8_assets.py
+            .github/workflows/chosica-2015-candidate-landsat8-asset-inventory.yml
+      - name: Assert forbidden scientific paths absent
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_multibasin_validation_set_v0_1.json
+          test ! -e config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09_b.json
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install minimal dependency
+        run: pip install 'requests>=2.31,<3'
+      - name: Inventory exact frozen USGS item metadata only
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          env -i PATH="$PATH" HOME=/tmp LANG=C.UTF-8 python -I scripts/inventory_chosica_2015_candidate_landsat8_assets.py \
+            --contract config/chosica_2015_candidate_landsat8_asset_inventory_contract_v0_1.json \
+            --output artifacts/chosica_2015_candidate_landsat8_asset_inventory_v0_1.json \
+            | tee artifacts/summary.json
+      - name: Enforce no-pixel clean-room boundary
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/chosica_2015_candidate_landsat8_asset_inventory_v0_1.json'))
+          assert d['status']=='FROZEN_LANDSAT8_FROZEN_ITEM_ASSET_METADATA_INVENTORY'
+          assert d['item_count']==3
+          for k in ['asset_href_requested','pixel_bytes_read','outcome_evidence_read','target_names_or_ids_read','a6680_read','contaminated_adjudication_used','scene_selection_modified','free_web_search_used','sealed_target_unblind_allowed']:
+            assert d[k] is False,(k,d[k])
+          assert all(x['asset_count']>0 for x in d['items'])
+          PY
+          ! grep -Eiq 'pedregal|quirio|carossio|carosio|rayos de sol|cashahuacra|la libertad|official_outcome_evidence|CONTROL_CONFIRMED|EXCLUDED_ACTIVE' artifacts/chosica_2015_candidate_landsat8_asset_inventory_v0_1.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-candidate-landsat8-asset-inventory
+          path: |
+            artifacts/chosica_2015_candidate_landsat8_asset_inventory_v0_1.json
+            artifacts/summary.json
+          if-no-files-found: error

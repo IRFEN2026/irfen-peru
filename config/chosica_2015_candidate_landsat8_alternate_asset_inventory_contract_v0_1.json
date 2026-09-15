@@ -1,0 +1,43 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PRE_EXECUTION_ALTERNATE_ASSET_METADATA_INVENTORY",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "source": {
+    "institution": "U.S. Geological Survey",
+    "collection": "landsat-c2l2-sr",
+    "item_endpoint_template": "https://landsatlook.usgs.gov/stac-server/collections/landsat-c2l2-sr/items/{item_id}",
+    "endpoint_host": "landsatlook.usgs.gov",
+    "tls_verify": false,
+    "tls_exception_basis": "origin certificate expired in GitHub Actions run 34544631012",
+    "response_integrity_rule": "Before JSON parsing, SHA-256 of each response body must exactly equal the previously frozen item_metadata_response_sha256 from artifact 10172288298.",
+    "redirects_allowed": false,
+    "free_web_search_allowed": false
+  },
+  "input": {
+    "asset_inventory_artifact_id": 10172288298,
+    "asset_inventory_sha256": "524e298aa313dffc0df2445e4f44cf7769c2fc0730d49bba7ff64cc8848b0659"
+  },
+  "retention": {
+    "asset_keys": ["qa_pixel", "red", "nir08", "swir16", "swir22"],
+    "fields": ["asset_key", "canonical_href", "file:checksum", "alternate"],
+    "alternate_subfields": ["href", "storage:platform", "storage:region", "storage:requester_pays"],
+    "pixel_bytes_allowed": false
+  },
+  "forbidden": [
+    "request any asset href",
+    "parse a metadata response whose exact SHA-256 differs from the prior frozen response hash",
+    "read target outcomes or names",
+    "read A6680",
+    "read contaminated adjudication",
+    "change frozen scene IDs",
+    "free web search"
+  ],
+  "sealed_target_unblind_allowed": false
+}

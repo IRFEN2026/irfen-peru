@@ -1,0 +1,88 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PRE_EXECUTION_CANDIDATE_ONLY_SENTINEL1_AVAILABILITY",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "scientific_role": "Candidate-only independent event-bracketing SAR availability. This stage selects no controls and reads no target outcomes.",
+  "source": {
+    "institution": "NASA Alaska Satellite Facility Distributed Active Archive Center",
+    "mission": "Copernicus Sentinel-1",
+    "search_endpoint": "https://api.daac.asf.alaska.edu/services/search/param",
+    "endpoint_host": "api.daac.asf.alaska.edu",
+    "free_web_search_allowed": false,
+    "search_engine_allowed": false,
+    "redirects_allowed": false
+  },
+  "candidate_geometry": {
+    "workflow_run_id": 34524860992,
+    "artifact_id": 10171108859,
+    "artifact_digest": "sha256:6290b2018770acf1332f7a6680d85d9a5b179d82c2e9f95155ef628d8b445c61",
+    "file": "chosica_2015_cleanroom_candidate_geometries_v0_1.geojson",
+    "sha256": "9a23644c191c88fb66722b368773251051b4098ddd74e4d5861c3a37dbfbb1ca",
+    "candidate_count": 7
+  },
+  "event_anchor_utc": "2015-03-23T19:30:00Z",
+  "fixed_windows": {
+    "pre": {
+      "start": "2015-02-20T00:00:00Z",
+      "end": "2015-03-23T19:29:59Z"
+    },
+    "post": {
+      "start": "2015-03-23T19:30:00Z",
+      "end": "2015-04-25T23:59:59Z"
+    },
+    "window_shift_allowed": false
+  },
+  "query": {
+    "platform": "SENTINEL-1A",
+    "beam_mode": "IW",
+    "processing_level": "GRD_HD",
+    "output": "geojson",
+    "max_results_per_candidate_window": 250,
+    "spatial_filter": "exact candidate polygon WKT",
+    "one_query_per_candidate_per_window": true
+  },
+  "metadata_retention": [
+    "candidate_code",
+    "window",
+    "granule_name",
+    "start_time",
+    "stop_time",
+    "relative_orbit",
+    "path_number",
+    "frame_number",
+    "flight_direction",
+    "polarization",
+    "beam_mode",
+    "processing_level",
+    "scene_center_lon",
+    "scene_center_lat",
+    "metadata_response_sha256"
+  ],
+  "selection_policy": {
+    "pairing_deferred_until_availability_is_frozen": true,
+    "same_relative_orbit_required_for_change_pair": true,
+    "same_flight_direction_required_for_change_pair": true,
+    "same_polarization_required_for_change_pair": true,
+    "pre_scene_must_end_before_anchor": true,
+    "post_scene_must_start_at_or_after_anchor": true,
+    "no_scene_selected_from_surface_change_signal": true
+  },
+  "forbidden": [
+    "read or download SAR pixel data in this stage",
+    "read target outcomes or names",
+    "read A6680",
+    "read contaminated adjudication",
+    "modify candidate shortlist or matching",
+    "use event response to select scene",
+    "free web search"
+  ],
+  "sealed_target_unblind_allowed": false,
+  "next_gate": "IF_SAME_ORBIT_BRACKETING_SCENES_EXIST_FREEZE_DETERMINISTIC_SCENE_PAIRS_BEFORE_PIXEL_DOWNLOAD_OR_CHANGE_ANALYSIS"
+}
