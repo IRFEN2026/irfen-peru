@@ -1,0 +1,56 @@
+name: tmp-lurin-geojson-guards
+
+on:
+  push:
+    branches:
+      - agent/lurin-research-closeout-v0.2
+
+permissions:
+  contents: write
+
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: agent/lurin-research-closeout-v0.2
+          fetch-depth: 0
+      - name: Add fail-closed research guards and self-remove
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('site/data/validation/phase2_research_evidence/ana_lurin_faja_marginal_antioquia_2025.geojson')
+          data = json.loads(p.read_text(encoding='utf-8'))
+          guard = {
+              'deployment_status': 'RESEARCH_ONLY',
+              'production_use': False,
+              'production_ready': False,
+              'alerting_enabled': False,
+              'operational_alerting_enabled': False,
+              'decision_thresholds': None,
+              'activation_gate': 'BLOCKED',
+          }
+          props = data.setdefault('properties', {})
+          props.update(guard)
+          props['evidence_class'] = 'OFFICIAL_REGULATORY_HYDRAULIC_BOUNDARY_GEOMETRY'
+          props['observed_event_footprint'] = False
+          props['map_role'] = 'RESEARCH_CONTEXT_ONLY'
+          for f in data.get('features', []):
+              fp = f.setdefault('properties', {})
+              fp.update({
+                  'deployment_status': 'RESEARCH_ONLY',
+                  'production_use': False,
+                  'production_ready': False,
+                  'alerting_enabled': False,
+                  'operational_alerting_enabled': False,
+              })
+          p.write_text(json.dumps(data, ensure_ascii=False, separators=(',', ':')) + '\n', encoding='utf-8')
+          PY
+          rm .github/workflows/tmp-lurin-geojson-guards.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add site/data/validation/phase2_research_evidence/ana_lurin_faja_marginal_antioquia_2025.geojson .github/workflows/tmp-lurin-geojson-guards.yml
+          git commit -m 'Lurín: add RESEARCH_ONLY guards to ANA geometry'
+          git push origin HEAD:agent/lurin-research-closeout-v0.2
