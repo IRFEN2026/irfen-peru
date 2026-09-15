@@ -1,0 +1,254 @@
+name: IRFEN - Verificar continuidad de episodios publicada
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - "IRFEN - Publicar datos experimentales archivados"
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "episode-shadow-smoke-${{ github.event_name == 'workflow_run' && github.event.workflow_run.id || github.run_id }}"
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Descargar main durable
+        uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - name: Comprobar inicialización del sidecar
+        id: initialized
+        shell: bash
+        run: |
+          set -euo pipefail
+          paths=(
+            "site/data/episodes/shadow/latest.json"
+            "site/data/episodes/continuity/shadow/latest.json"
+            "site/data/episodes/continuity/shadow/history.json"
+          )
+          initialized=true
+          for path in "${paths[@]}"; do
+            if [[ ! -s "$path" ]]; then
+              initialized=false
+            fi
+          done
+          echo "initialized=$initialized" >> "$GITHUB_OUTPUT"
+          if [[ "$initialized" != true ]]; then
+            echo "El sidecar aún no tiene su primer checkpoint durable; smoke diferido."
+          fi
+
+      - name: Descargar réplica Pages y exigir paridad exacta
+        if: steps.initialized.outputs.initialized == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://irfen2026.github.io/irfen-peru/data/episodes"
+          mkdir -p /tmp/irfen-episode-live/shadow
+          mkdir -p /tmp/irfen-episode-live/continuity/shadow
+          parity=false
+          for attempt in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18; do
+            nonce="${GITHUB_RUN_ID}-${attempt}-$(date +%s%N)"
+            if curl -fsSL --retry 3 --retry-all-errors --max-time 35 \
+                "$base/shadow/latest.json?smoke=$nonce" \
+                -o /tmp/irfen-episode-live/shadow/latest.json \
+              && curl -fsSL --retry 3 --retry-all-errors --max-time 35 \
+                "$base/continuity/shadow/latest.json?smoke=$nonce" \
+                -o /tmp/irfen-episode-live/continuity/shadow/latest.json \
+              && curl -fsSL --retry 3 --retry-all-errors --max-time 35 \
+                "$base/continuity/shadow/history.json?smoke=$nonce" \
+                -o /tmp/irfen-episode-live/continuity/shadow/history.json \
+              && cmp site/data/episodes/shadow/latest.json \
+                /tmp/irfen-episode-live/shadow/latest.json \
+              && cmp site/data/episodes/continuity/shadow/latest.json \
+                /tmp/irfen-episode-live/continuity/shadow/latest.json \
+              && cmp site/data/episodes/continuity/shadow/history.json \
+                /tmp/irfen-episode-live/continuity/shadow/history.json
+            then
+              parity=true
+              break
+            fi
+            if [[ "$attempt" -eq 18 ]]; then
+              echo "Pages no publicó el checkpoint exacto de main." >&2
+              exit 1
+            fi
+            sleep 10
+          done
+          test "$parity" = true
+
+      - name: Validar contrato sidecar publicado
+        if: steps.initialized.outputs.initialized == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from datetime import datetime, timezone
+          import hashlib
+          import json
+          from pathlib import Path
+
+          root=Path('/tmp/irfen-episode-live')
+          potential=json.loads((root/'shadow/latest.json').read_text(encoding='utf-8'))
+          continuity=json.loads((root/'continuity/shadow/latest.json').read_text(encoding='utf-8'))
+          history=json.loads((root/'continuity/shadow/history.json').read_text(encoding='utf-8'))
+
+          def canonical(value):
+              payload=json.dumps(
+                  value,
+                  ensure_ascii=False,
+                  sort_keys=True,
+                  separators=(',',':'),
+              ).encode('utf-8')
+              return hashlib.sha256(payload).hexdigest()
+
+          assert potential['mode']=='SHADOW_ONLY'
+          assert potential['production_use'] is False
+          assert potential['production_ready'] is False
+          assert potential['operational_alert'] is False
+          assert potential['public_social_publishing'] is False
+          assert potential['summary']['alerts_created']==0
+          assert potential['summary']['publications_created']==0
+          source=potential['source']
+          assert source['source_type']=='EXPERIMENTAL_STATE_WITH_DATASET_STATUS_ENVELOPE'
+          assert len(source['experimental_state_sha256'])==64
+          assert len(source['dataset_status_sha256'])==64
+          assert source['dataset_operational_status'] in {'updated','stale'}
+          assert source['dataset_freshness_status'] in {'FRESH','STALE'}
+          expected_freshness={
+              'updated':'FRESH',
+              'stale':'STALE',
+          }[source['dataset_operational_status']]
+          assert source['dataset_freshness_status']==expected_freshness
+          datetime.fromisoformat(
+              source['dataset_generated_at'].replace('Z','+00:00')
+          ).astimezone(timezone.utc)
+          datetime.fromisoformat(
+              source['dataset_last_update_attempt'].replace('Z','+00:00')
+          ).astimezone(timezone.utc)
+
+          for label,value in (('continuity',continuity),('history',history)):
+              assert value['mode']=='SHADOW_ONLY', label
+              assert value['test_mode']=='TEST_ONLY', label
+              assert value['production_use'] is False, label
+              assert value['production_ready'] is False, label
+              assert value['operational_alerting_enabled'] is False, label
+              assert value['public_social_publishing'] is False, label
+              assert value['scientific_candidate_forwarding_enabled'] is False, label
+
+          assert continuity['summary']['alerts_created']==0
+          assert continuity['summary']['publications_created']==0
+          preview=continuity['notification_preview']
+          assert preview['messages_created']==0
+          assert preview['alerts_created']==0
+          assert preview['publications_created']==0
+          assert preview['email_sent'] is False
+          assert preview['preview_only'] is True
+
+          policy=history['retention_policy']
+          assert policy['mode']=='APPEND_ONLY'
+          assert policy['deduplication_key']==[
+              'potential_source_sha256',
+              'source_generated_at',
+          ]
+          assert policy['automatic_deletion'] is False
+          assert policy['automatic_tombstones'] is False
+          assert policy['main_role']=='DURABLE_SOURCE_OF_TRUTH'
+          assert policy['pages_role']=='PUBLISHED_REPLICA_ONLY'
+          records=history['records']
+          assert history['record_count']==len(records)
+          assert records
+
+          seen=set()
+          previous_at=None
+          for index,row in enumerate(records):
+              assert row['sequence']==index+1
+              key=(row['potential_source_sha256'],row['source_generated_at'])
+              assert key not in seen
+              seen.add(key)
+              current_at=datetime.fromisoformat(
+                  row['source_generated_at'].replace('Z','+00:00')
+              ).astimezone(timezone.utc)
+              if previous_at is not None:
+                  assert current_at > previous_at
+              previous_at=current_at
+              assert len(row['experimental_state_sha256'])==64
+              assert len(row['dataset_status_sha256'])==64
+              assert row['dataset_operational_status'] in {'updated','stale'}
+              assert row['dataset_freshness_status']=={
+                  'updated':'FRESH',
+                  'stale':'STALE',
+              }[row['dataset_operational_status']]
+              assert row['production_use'] is False
+              assert row['production_ready'] is False
+              assert row['operational_alerting_enabled'] is False
+              assert row['public_social_publishing'] is False
+              assert row['scientific_candidate_forwarding_enabled'] is False
+
+          last=records[-1]
+          potential_key=(
+              potential['source']['sha256'],
+              potential['source']['generated_at'],
+          )
+          continuity_key=(
+              continuity['source']['potential_source_sha256'],
+              continuity['source']['source_generated_at'],
+          )
+          history_key=(
+              last['potential_source_sha256'],
+              last['source_generated_at'],
+          )
+          assert potential_key==continuity_key==history_key
+          assert last['potential_output_sha256']==canonical(potential)
+          assert last['continuity_output_sha256']==canonical(continuity)
+          assert last['experimental_state_sha256']==source['experimental_state_sha256']
+          assert last['dataset_status_sha256']==source['dataset_status_sha256']
+          assert last['dataset_operational_status']==source['dataset_operational_status']
+          assert last['dataset_freshness_status']==source['dataset_freshness_status']
+
+          if source['dataset_freshness_status']=='STALE':
+              for row in continuity['zones']:
+                  assert row['transition']=='BLOCKED_RETAIN_PREVIOUS'
+                  assert row['clear_streak']==0
+              for zone_input in last['zone_inputs'].values():
+                  assert 'explicit_stale_input' in zone_input[
+                      'upstream_input_gate_blockers'
+                  ]
+
+          forbidden={
+              'alert',
+              'alert_level',
+              'risk_level',
+              'final_alert',
+              'operational_priority',
+              'publish',
+              'published',
+              'meta_post_id',
+          }
+          def walk(value):
+              if isinstance(value,dict):
+                  overlap=forbidden.intersection(value)
+                  assert not overlap, f'forbidden sidecar fields: {sorted(overlap)}'
+                  for child in value.values():
+                      walk(child)
+              elif isinstance(value,list):
+                  for child in value:
+                      walk(child)
+          walk(potential)
+          walk(continuity)
+          walk(history)
+          print(
+              'EPISODE SHADOW SMOKE OK',
+              history['record_count'],
+              source['dataset_freshness_status'],
+              continuity['global_saturation']['level'],
+          )
+          PY
