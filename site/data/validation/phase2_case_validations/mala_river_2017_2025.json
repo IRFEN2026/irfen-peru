@@ -1,0 +1,108 @@
+{
+  "version": "independent-basin-validation-case-v0.1",
+  "case_id": "mala_river_2017_2025",
+  "zone_id": "lima_sur_mala",
+  "case_status": "CLOSED_RESEARCH_VALIDATION_CASE",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "decision_thresholds": null,
+  "activation_gate": "BLOCKED",
+  "closure_scope": "Bounded historical positive-outcome validation of Rio Mala overflow behavior from 2017 through 2025, with independent official station-monitoring and spatial context. This does not approve or activate the Phase-2 zone contract and does not close tributary debris-flow mechanisms.",
+  "evidence_asset": "site/data/validation/phase2_research_evidence/mala_official_outcome_hydrologic_context_2017_2026.json",
+  "positive_controls": [
+    {
+      "case_id": "MALA-2017-03-08",
+      "classification": "CONFIRMED_POSITIVE_OUTCOME",
+      "mechanism": "RIVER_OVERFLOW",
+      "source_type": "OFFICIAL_FLOOD_EVENT_INVENTORY"
+    },
+    {
+      "case_id": "MALA-2021-01-05",
+      "classification": "CONFIRMED_POSITIVE_OUTCOME",
+      "mechanism": "RIVER_OVERFLOW",
+      "source_type": "OFFICIAL_EMERGENCY_OUTCOME_REPORT"
+    },
+    {
+      "case_id": "MALA-2024-01-03",
+      "classification": "CONFIRMED_POSITIVE_OUTCOME",
+      "mechanism": "RIVER_OVERFLOW_AFTER_INTENSE_RAINFALL",
+      "source_type": "OFFICIAL_EMERGENCY_OUTCOME_REPORT"
+    },
+    {
+      "case_id": "MALA-2025-02-23",
+      "classification": "CONFIRMED_POSITIVE_OUTCOME",
+      "mechanism": "RIVER_OVERFLOW_AFTER_INTENSE_RAINFALL",
+      "source_type": "OFFICIAL_EMERGENCY_OUTCOME_REPORT"
+    }
+  ],
+  "compound_event_context": {
+    "case_id": "MALA-2023-02-17",
+    "classification": "CONFIRMED_COMPOUND_HUAICO_RIVER_OVERFLOW_OUTCOME",
+    "role": "POSITIVE_CONTEXT_NOT_GENERALIZED_MECHANISM",
+    "note": "The official report describes a huaico increasing Rio Mala flow before overflow. It supports compound-system plausibility but is not generalized into a universal tributary activation rule."
+  },
+  "hydrologic_monitoring_context": {
+    "station": "La Capilla",
+    "status": "OFFICIAL_OBSERVED_STATION_CONTEXT_WITHOUT_EVENT_REACH_TRANSFER",
+    "observations": [
+      {"date": "2022-03-15", "discharge_m3s": 85.42, "provider_classification": "AMARILLO"},
+      {"date": "2024-03-26", "discharge_m3s": 80.87, "provider_classification": "AMARILLO", "provider_red_band_m3s": 110},
+      {"date": "2026-02-26", "discharge_m3s": 106.51, "provider_classification": "NARANJA", "provider_red_band_m3s": 130}
+    ],
+    "event_specific_transfer_validated": false,
+    "note": "These official station observations demonstrate hydrologic monitoring context. They are not paired event-day discharges for the historical positive outcomes and are not transferred to impact reaches."
+  },
+  "spatial_context": {
+    "status": "PARTIAL_OFFICIAL_CONTEXT_NOT_NORMALIZED_BASIN_GEOMETRY",
+    "river_margin_source": "ANA-RD-074-2016-MALA-FAJA",
+    "river_margin_length_km": 6.65,
+    "river_margin_extent": "Puente San Antonio to sector Azpitia",
+    "critical_sector_source": "ANA-MALA-CRITICAL-POINTS-2023",
+    "critical_sector": "Santa Clorinda",
+    "observed_event_footprint_available": false,
+    "complete_machine_readable_basin_geometry_available": false,
+    "note": "Official river-margin and critical-sector evidence constrain the corridor and exposure context but are neither an observed inundation footprint nor a complete normalized basin polygon."
+  },
+  "mechanism_separation": {
+    "river_overflow_recurrence_supported": true,
+    "tributary_debris_flow_system_resolved": false,
+    "compound_huaico_to_river_pathway_supported_for_2023_only": true,
+    "universal_hydraulic_routing_validated": false,
+    "receiving_channel_capacity_validated": false,
+    "zone_contract_may_be_promoted": false
+  },
+  "negative_control_status": {
+    "status": "NO_CONFIRMED_NEGATIVE_CONTROL",
+    "verified_negative_control": false,
+    "note": "No absence-of-damage or no-report record is promoted into a hydrologic negative. This bounded research closeout is based on multiple independently documented positive outcomes."
+  },
+  "threshold_policy": {
+    "decision_thresholds": null,
+    "provider_alert_bands_are_irfen_thresholds": false,
+    "historical_provider_bands_temporally_invariant": false,
+    "forbidden_promotions": [
+      "La Capilla station values into unmeasured impact-reach discharge",
+      "SENAMHI provider alert bands into IRFEN thresholds",
+      "2016 ANA river-margin geometry into observed flood footprint",
+      "2026 hydrologic observations into historical event-day truth",
+      "2023 compound huaico-river sequence into a universal tributary rule"
+    ]
+  },
+  "closure": {
+    "status": "CLOSED_WITH_EXPLICIT_LIMITATIONS",
+    "research_validation_closed": true,
+    "production_blocked": true,
+    "reason": "Multiple official sources independently document recurrent Rio Mala overflow impacts across 2017, 2021, 2024 and 2025; official SENAMHI station observations demonstrate a traceable hydrologic monitoring lane; and ANA material supplies bounded river-margin and critical-sector context. The absence of event-paired station flow, a confirmed negative control and complete basin/hydraulic geometry is retained explicitly rather than fabricated.",
+    "does_not_authorize": [
+      "approval of the lima_sur_mala Phase-2 zone contract",
+      "operational alerting",
+      "threshold promotion",
+      "station-to-impact-reach hydraulic transfer",
+      "closing tributary ravines as validated components",
+      "claiming current channel capacity from historical outcomes"
+    ]
+  }
+}
