@@ -1,15 +1,40 @@
 {
   "version": "0.8-experimental",
-  "updated_at": "2026-08-14T21:00:00Z",
+  "updated_at": "2026-09-16T17:12:00Z",
   "production_use": false,
   "production_ready": false,
   "objective_reference": "config/v08_objective.json",
-  "principle": "Cerrar tres pilotos con datos observados, previsión, contexto hidrológico/hidráulico trazable y pruebas end-to-end antes de ampliar el ámbito. Ningún resultado experimental modifica la lógica v0.7.1.",
+  "principle": "Cerrar tres pilotos con datos observados, previsión, contexto hidrológico/hidráulico trazable y pruebas end-to-end antes de ampliar el ámbito operativo. Ningún resultado experimental modifica la lógica v0.7.1.",
   "core_release_status": {
     "status": "FUNCTIONAL_TEST_MODE_PARTIAL",
     "reason": "San Ildefonso y Huaycoloro ya disponen de observación por cuenca y forecast; Catacaos dispone de un proxy fluvial categórico secundario válido para pruebas. El submodelo local de Chosica/Pedregal sigue sin una señal terrestre o de mayor fidelidad espacial suficiente para una prueba viva de decisión.",
     "production_ready": false,
-    "stop_rule": "No añadir Lurín, Cieneguilla ni nuevas quebradas hasta cerrar las brechas del núcleo actual y completar un periodo de validación operacional."
+    "stop_rule": "No ampliar el ámbito operativo más allá de los tres pilotos hasta cerrar las brechas del núcleo actual y completar un periodo de validación operacional. Los cierres Phase-2 RESEARCH_ONLY pueden avanzar en paralelo y no cuentan como expansión operativa, activación ni progreso del scorecard de liberación v0.8."
+  },
+  "research_validation_portfolio": {
+    "master_state": "data/validation/phase2_master_state_v08.json",
+    "deployment_status": "RESEARCH_ONLY",
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false,
+    "decision_thresholds": null,
+    "activation_gate": "BLOCKED",
+    "closed_research_validation_cases": 5,
+    "in_review_research_validation_cases": 1,
+    "phase2_registered_candidates": 18,
+    "phase2_contracts_approved": 0,
+    "phase2_operational_candidates": 0,
+    "closed_cases": [
+      "san_ildefonso_2017_2025",
+      "catacaos_bajo_piura_2002_2021",
+      "lima_sur_malanche_2023",
+      "lurin_cieneguilla_pachacamac_2017",
+      "cashahuacra_santa_eulalia_2015"
+    ],
+    "in_review_cases": [
+      "pedregal_san_antonio_2015"
+    ],
+    "interpretation": "Case-level research closure is separate from zone-contract approval, production readiness and operational activation."
   },
   "components": {
     "operational_observation": "stable_v0.7.1",
@@ -20,7 +45,8 @@
     "scenario_simulator": "available_non_persistent",
     "hydraulic_infrastructure_inventory": "available_no_numeric_modifiers",
     "hydraulic_response": "calibration_required_before_production",
-    "catacaos_river_state": "secondary_categorical_proxy_test_only_primary_senamhi_numeric_pending"
+    "catacaos_river_state": "secondary_categorical_proxy_test_only_primary_senamhi_numeric_pending",
+    "research_validation_master_state": "data/validation/phase2_master_state_v08.json"
   },
   "forecast_lane": {
     "source": "NASA GMAO GEOS-CF v2",
