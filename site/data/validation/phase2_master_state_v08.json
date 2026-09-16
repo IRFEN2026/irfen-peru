@@ -1,0 +1,147 @@
+{
+  "version": "phase2-master-state-v0.1",
+  "as_of_main_commit": "fc31e25d3ac937f2cacc148caf04daf7197ea93e",
+  "as_of_utc": "2026-09-15T22:23:43Z",
+  "deployment_status": "RESEARCH_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "decision_thresholds": null,
+  "activation_gate": "BLOCKED",
+  "purpose": "Consolidated research-validation portfolio state for IRFEN v0.8 and Phase-2 preparation. This artifact does not alter the three-pilot v0.8 operational scope, release scorecard, thresholds, alerts or production logic.",
+  "v08_scope": {
+    "objective_reference": "config/v08_objective.json",
+    "operational_baseline": "v0.7.1 remains unchanged until explicit promotion",
+    "operational_pilots": [
+      "san_ildefonso",
+      "chosica_huaycoloro",
+      "catacaos_bajo_piura"
+    ],
+    "scope_unchanged": true,
+    "phase2_closeouts_are_operational_promotions": false,
+    "phase2_closeouts_count_toward_v08_release_scorecard": false
+  },
+  "portfolio_summary": {
+    "case_validation_files": 6,
+    "closed_research_validation_cases": 5,
+    "in_review_research_validation_cases": 1,
+    "phase2_registered_candidates": 18,
+    "phase2_contracts_approved": 0,
+    "phase2_operational_candidates": 0,
+    "note": "Case-level research closure is distinct from zone-contract approval or operational activation."
+  },
+  "cases": [
+    {
+      "case_id": "san_ildefonso_2017_2025",
+      "zone_id": "san_ildefonso",
+      "case_status": "CLOSED_RESEARCH_VALIDATION_CASE",
+      "scope": "Historical/research validation case; production remains blocked.",
+      "positive_controls": ["SI-2017-03-15", "SI-2023-03-10"],
+      "negative_controls": ["SI-2025-03-29"],
+      "primary_limitation": "Current hydraulic response after recent works still requires validation before production consideration.",
+      "path": "site/data/validation/phase2_case_validations/san_ildefonso_2017_2025.json"
+    },
+    {
+      "case_id": "catacaos_bajo_piura_2002_2021",
+      "zone_id": "catacaos_bajo_piura",
+      "case_status": "CLOSED_RESEARCH_VALIDATION_CASE",
+      "scope": "Historical research validation of rainfall, river-flow and flood-impact behavior.",
+      "positive_controls": ["CATACAOS-2002-04-06", "CATACAOS-2017-03-27"],
+      "negative_controls": [],
+      "primary_limitation": "No confirmed negative control; current channel/floodplain capacity and primary numeric river-state automation remain production gates.",
+      "path": "site/data/validation/phase2_case_validations/catacaos_bajo_piura_2002_2021.json"
+    },
+    {
+      "case_id": "lima_sur_malanche_2023",
+      "zone_id": "lima_sur_malanche",
+      "case_status": "CLOSED_RESEARCH_VALIDATION_CASE",
+      "scope": "2023 Malanche event research baseline based on SENAMHI report and reproducible references.",
+      "positive_controls": ["2023-03-14"],
+      "negative_controls": [],
+      "primary_limitation": "Event discharge is modelled reconstruction, not observed gauge truth; raw terrain/model products are unavailable to IRFEN.",
+      "path": "site/data/validation/phase2_case_validations/lima_sur_malanche_2023.json"
+    },
+    {
+      "case_id": "lurin_cieneguilla_pachacamac_2017",
+      "zone_id": "lima_este_lurin_cieneguilla",
+      "case_status": "CLOSED_RESEARCH_VALIDATION_CASE",
+      "scope": "Bounded historical validation of the 2017 Lurin river flood sequence.",
+      "positive_controls": ["LURIN-PACHACAMAC-2017-03-15", "LURIN-CIENEGUILLA-2017-03-17"],
+      "negative_controls": [],
+      "unadjudicated_controls": ["LURIN-CIENEGUILLA-2017-03-06"],
+      "primary_limitation": "No confirmed negative control and no validated event-specific hydraulic transfer from Antapucro to downstream impact reaches.",
+      "path": "site/data/validation/phase2_case_validations/lurin_cieneguilla_pachacamac_2017.json"
+    },
+    {
+      "case_id": "cashahuacra_santa_eulalia_2015",
+      "zone_id": "lima_este_santa_eulalia_rimac",
+      "component_id": "cashahuacra",
+      "case_status": "CLOSED_RESEARCH_VALIDATION_CASE",
+      "scope": "Cashahuacra local debris-flow positive component only.",
+      "positive_controls": ["2015-03-23"],
+      "negative_controls": [],
+      "primary_limitation": "Does not resolve Santa Eulalia river state, Rimac receiving capacity or compound synchronization; candidate DEM catchment is not an official watershed boundary.",
+      "path": "site/data/validation/phase2_case_validations/cashahuacra_santa_eulalia_2015.json"
+    },
+    {
+      "case_id": "pedregal_san_antonio_2015",
+      "zone_id": "pedregal_san_antonio",
+      "case_status": "IN_REVIEW_RESEARCH_VALIDATION_CASE",
+      "scope": "Independent clean-room validation remains open.",
+      "positive_controls": [],
+      "negative_controls": [],
+      "primary_limitation": "Clean-room control adjudication and safe-unblind are incomplete; outcome-bearing INGEMMET evidence remains sealed from matching and reranking.",
+      "path": "site/data/validation/phase2_case_validations/pedregal_san_antonio_2015.json"
+    }
+  ],
+  "system_level_open_items": [
+    {
+      "system_id": "lima_este_santa_eulalia_rimac",
+      "status": "DRAFT_BLOCKED",
+      "closed_components": ["cashahuacra_2015_positive_case"],
+      "open_components": ["shingolay", "santa_eulalia_river_state", "rimac_receiving_capacity", "compound_synchronization"],
+      "rule": "A closed local component cannot promote the compound system contract."
+    },
+    {
+      "system_id": "lima_este_lurin_cieneguilla",
+      "status": "DRAFT_BLOCKED",
+      "closed_components": ["2017_historical_positive_sequence"],
+      "open_components": ["verified_negative_control", "event_specific_routing", "current_exposure_normalization", "mechanism_resolution"],
+      "rule": "Historical case closeout does not activate the Phase-2 zone contract."
+    },
+    {
+      "system_id": "pedregal_san_antonio",
+      "status": "IN_REVIEW_BLOCKED",
+      "closed_components": [],
+      "open_components": ["clean_room_control_adjudication", "safe_unblind"],
+      "rule": "Do not use sealed outcome evidence before safe-unblind."
+    }
+  ],
+  "next_research_queue": [
+    {
+      "item": "shingolay",
+      "action": "ASSESS_FOR_BOUNDED_COMPONENT_CLOSEOUT",
+      "promotion_allowed": false
+    },
+    {
+      "item": "santa_eulalia_river_component",
+      "action": "CONSOLIDATE_EVENT_DAY_HYDROLOGIC_CONTEXT_WITHOUT_INFERRING_NEGATIVES",
+      "promotion_allowed": false
+    },
+    {
+      "item": "phase2_portfolio",
+      "action": "PRIORITIZE_EXISTING_HIGH_EVIDENCE_CASES_BEFORE_OPENING_NEW_DATA_SEARCHES",
+      "promotion_allowed": false
+    }
+  ],
+  "guardrails": {
+    "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+    "no_negative_from_absence_of_report": true,
+    "no_station_transfer_without_hydraulic_validation": true,
+    "no_modelled_value_as_observed_truth": true,
+    "no_historical_or_design_value_as_irfen_operational_threshold": true,
+    "pedregal_clean_room_sealed_until_safe_unblind": true,
+    "phase2_activation_requires_zone_specific_validation": true,
+    "all_zone_activation_gates_remain_blocked": true
+  }
+}
