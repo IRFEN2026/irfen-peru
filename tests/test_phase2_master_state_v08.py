@@ -59,9 +59,9 @@ class Phase2MasterStateV08Tests(unittest.TestCase):
 
     def test_portfolio_counts_are_derived_from_case_status(self):
         statuses = [row["case_status"] for row in self.case_rows.values()]
-        self.assertEqual(statuses.count("CLOSED_RESEARCH_VALIDATION_CASE"), 5)
+        self.assertEqual(statuses.count("CLOSED_RESEARCH_VALIDATION_CASE"), 6)
         self.assertEqual(statuses.count("IN_REVIEW_RESEARCH_VALIDATION_CASE"), 1)
-        self.assertEqual(self.master["portfolio_summary"]["closed_research_validation_cases"], 5)
+        self.assertEqual(self.master["portfolio_summary"]["closed_research_validation_cases"], 6)
         self.assertEqual(self.master["portfolio_summary"]["in_review_research_validation_cases"], 1)
 
     def test_phase2_contracts_remain_non_operational(self):
