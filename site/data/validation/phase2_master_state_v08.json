@@ -1,7 +1,7 @@
 {
   "version": "phase2-master-state-v0.1",
-  "as_of_main_commit": "032b447753d692a09cd985b6871c07027bc45b86",
-  "as_of_utc": "2026-09-17T13:40:27Z",
+  "as_of_main_commit": "d9745ecd95d80cc392b6e08f90ec8f4b16ab6495",
+  "as_of_utc": "2026-09-17T14:16:00Z",
   "deployment_status": "RESEARCH_ONLY",
   "production_use": false,
   "production_ready": false,
@@ -18,8 +18,8 @@
     "phase2_closeouts_count_toward_v08_release_scorecard": false
   },
   "portfolio_summary": {
-    "case_validation_files": 9,
-    "closed_research_validation_cases": 8,
+    "case_validation_files": 10,
+    "closed_research_validation_cases": 9,
     "in_review_research_validation_cases": 1,
     "phase2_registered_candidates": 18,
     "phase2_contracts_approved": 0,
@@ -112,6 +112,17 @@
       "path": "site/data/validation/phase2_case_validations/la_leche_pacora_pitipo_1998_2025.json"
     },
     {
+      "case_id": "chancay_lambayeque_chongoyape_2021_2026",
+      "zone_id": "lambayeque_chancay_lambayeque_chongoyape",
+      "parent_candidate_id": "lambayeque_chongoyape_oyotun_zana",
+      "case_status": "CLOSED_RESEARCH_VALIDATION_CASE",
+      "scope": "Bounded historical positive-outcome validation for Chongoyape within Cuenca Chancay-Lambayeque, with Rio Chancay, Rio Yaipon and local quebradas kept mechanism-separated.",
+      "positive_controls": ["CHONGOYAPE-CHANCAY-2021-03-10", "CHONGOYAPE-YAIPON-2026-02-15", "CHONGOYAPE-JUANA-RIOS-2026-02-18", "CHONGOYAPE-YAIPON-2026-02-21"],
+      "negative_controls": [],
+      "primary_limitation": "No confirmed negative control or event-paired primary rainfall/discharge series; cross-component routing and current channel capacity remain unvalidated, and source-reported 2025 flows are context only.",
+      "path": "site/data/validation/phase2_case_validations/chancay_lambayeque_chongoyape_2021_2026.json"
+    },
+    {
       "case_id": "pedregal_san_antonio_2015",
       "zone_id": "pedregal_san_antonio",
       "case_status": "IN_REVIEW_RESEARCH_VALIDATION_CASE",
@@ -159,6 +170,13 @@
       "rule": "The bounded La Leche historical closeout does not approve the compound Motupe-La Leche-Pitipo contract or authorize current hydraulic assumptions."
     },
     {
+      "system_id": "lambayeque_chancay_lambayeque_chongoyape",
+      "status": "IN_REVIEW_BLOCKED",
+      "closed_components": ["chongoyape_2021_2026_positive_outcomes"],
+      "open_components": ["verified_negative_control", "event_paired_hydrometeorology", "cross_component_routing", "current_channel_capacity", "source_currentness_review"],
+      "rule": "The bounded Chongoyape historical closeout does not approve the hydrologic child contract; Rio Chancay, Rio Yaipon and local quebradas remain distinct components without validated cross-routing."
+    },
+    {
       "system_id": "pedregal_san_antonio",
       "status": "IN_REVIEW_BLOCKED",
       "closed_components": [],
@@ -167,8 +185,8 @@
     }
   ],
   "next_research_queue": [
-    {"item": "lambayeque_chancay_lambayeque_chongoyape", "action": "ASSESS_OFFICIAL_GEOMETRY_AND_HISTORICAL_OUTCOME_EVIDENCE_FOR_BOUNDED_CLOSEOUT", "promotion_allowed": false},
     {"item": "ica_pisco_san_andres", "action": "ASSESS_EXISTING_OFFICIAL_CRITICAL_POINT_AND_EVENT_EVIDENCE_FOR_BOUNDED_CLOSEOUT", "promotion_allowed": false},
+    {"item": "ica_palpa_changuillo", "action": "ASSESS_RURAL_EVENT_AND_CRITICAL_REACH_EVIDENCE_FOR_BOUNDED_CLOSEOUT", "promotion_allowed": false},
     {"item": "santa_eulalia_river_component", "action": "CONSOLIDATE_EVENT_DAY_HYDROLOGIC_CONTEXT_WITHOUT_INFERRING_NEGATIVES", "promotion_allowed": false}
   ],
   "guardrails": {
