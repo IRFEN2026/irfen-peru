@@ -1,0 +1,120 @@
+{
+  "version": "independent-basin-validation-case-v0.1",
+  "case_id": "chancay_lambayeque_chongoyape_2021_2026",
+  "candidate_id": "lambayeque_chancay_lambayeque_chongoyape",
+  "parent_candidate_id": "lambayeque_chongoyape_oyotun_zana",
+  "case_status": "CLOSED_RESEARCH_VALIDATION_CASE",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "decision_thresholds": null,
+  "activation_gate": "BLOCKED",
+  "scope": "Bounded historical research validation of confirmed flood and local-ravine outcomes in Chongoyape during 2021 and 2026, using the official ANA Cuenca Chancay-Lambayeque geometry as the research spatial unit without treating it as an event footprint.",
+  "source_evidence": [
+    {
+      "source_id": "CHANCAY-LAMBAYEQUE-CHONGOYAPE-OFFICIAL-CONTEXT-2021-2026",
+      "path": "site/data/validation/phase2_research_evidence/chancay_lambayeque_chongoyape_official_context_2021_2026.json",
+      "evidence_role": "PRIMARY_CLOSEOUT_EVIDENCE_PACKAGE"
+    },
+    {
+      "source_id": "ANA-IDEP-UH-MAPSERVER-8-QUERY-20260820",
+      "path": "site/data/phase2/geometries/lambayeque_chancay_lambayeque_chongoyape.geojson",
+      "evidence_role": "OFFICIAL_HYDROLOGIC_UNIT_GEOMETRY"
+    }
+  ],
+  "hydrologic_identity": {
+    "official_hydrologic_unit_code": "13776",
+    "official_hydrologic_unit_name": "Cuenca Chancay-Lambayeque",
+    "municipal_reference": "Chongoyape",
+    "municipal_boundary_is_unit_boundary": false,
+    "official_geometry_path": "site/data/phase2/geometries/lambayeque_chancay_lambayeque_chongoyape.geojson",
+    "geometry_is_event_footprint": false,
+    "geometry_is_hydraulic_capacity_model": false
+  },
+  "positive_controls": [
+    {
+      "control_id": "CHONGOYAPE-CHANCAY-2021-03-10",
+      "date_local": "2021-03-10",
+      "status": "CONFIRMED_COMPOUND_POSITIVE_OUTCOME",
+      "components": ["quebrada_juana_rio_la_monteria", "rio_chancay"],
+      "evidence": "COEN-INDECI official emergency report"
+    },
+    {
+      "control_id": "CHONGOYAPE-YAIPON-2026-02-15",
+      "date_local": "2026-02-15",
+      "status": "CONFIRMED_POSITIVE_RIVER_OVERFLOW_OUTCOME",
+      "components": ["rio_yaipon"],
+      "evidence": "COEN-INDECI official emergency report"
+    },
+    {
+      "control_id": "CHONGOYAPE-JUANA-RIOS-2026-02-18",
+      "date_local": "2026-02-18",
+      "status": "CONFIRMED_POSITIVE_LOCAL_RAVINE_OUTCOME",
+      "components": ["local_quebradas_juana_rios"],
+      "evidence": "COEN-INDECI official emergency report"
+    },
+    {
+      "control_id": "CHONGOYAPE-YAIPON-2026-02-21",
+      "date_local": "2026-02-21",
+      "status": "CONFIRMED_POSITIVE_RIVER_OVERFLOW_OUTCOME",
+      "components": ["rio_yaipon"],
+      "evidence": "COEN-INDECI official river-overflow report"
+    }
+  ],
+  "negative_control_status": {
+    "status": "NO_CONFIRMED_NEGATIVE_CONTROL",
+    "verified_negative_controls": [],
+    "reason": "No independently adjudicated non-impact day with sufficient rainfall/river-state and outcome evidence is included."
+  },
+  "mechanism_separation": {
+    "rio_chancay_resolved_as_distinct_component": true,
+    "rio_yaipon_resolved_as_distinct_component": true,
+    "local_quebradas_resolved_as_distinct_component": true,
+    "cross_component_routing_validated": false,
+    "universal_activation_rule_supported": false,
+    "current_channel_capacity_validated": false,
+    "hydrologic_child_contract_approved": false
+  },
+  "current_hydraulic_context": {
+    "peot_2025_source_values_are_context_only": true,
+    "reported_90_m3s_is_irfen_threshold": false,
+    "reported_400_600_m3s_range_is_irfen_threshold": false,
+    "reported_620_m3s_narrative_max_is_irfen_threshold": false,
+    "source_values_validate_overflow_capacity": false,
+    "historical_backcast_allowed": false
+  },
+  "asset_readiness_for_bounded_case": {
+    "geometry": "READY_OFFICIAL_HYDROLOGIC_UNIT_RESEARCH_GEOMETRY",
+    "historical_events": "READY",
+    "exposure": "PARTIAL",
+    "observations": "MISSING_EVENT_PAIRED_PRIMARY_NUMERIC_SERIES",
+    "hydraulic_context": "PARTIAL",
+    "forecast": "NOT_REQUIRED_FOR_HISTORICAL_RESEARCH_CLOSEOUT"
+  },
+  "scientific_use": {
+    "accepted": [
+      "bounded historical positive-outcome validation for Chongoyape",
+      "mechanism-separated event chronology",
+      "official ANA hydrologic-unit geometry for research spatial context",
+      "current official critical-reach and protection context"
+    ],
+    "forbidden": [
+      "infer operational rainfall or discharge thresholds",
+      "infer negative controls from missing reports",
+      "transfer Rio Chancay state to Rio Yaipon or local quebradas",
+      "transfer local quebrada activation into a universal river-overflow rule",
+      "treat current PEOT works or source-reported flows as historical capacity",
+      "treat the whole ANA basin polygon as observed event footprint",
+      "approve or activate the hydrologic child contract"
+    ]
+  },
+  "closeout_decision": {
+    "research_closeout_ready_now": true,
+    "case_status": "CLOSED_RESEARCH_VALIDATION_CASE",
+    "why": "Official outcome evidence confirms multiple dated positive impacts across independent 2021 and 2026 events, while the official ANA unit supplies reproducible basin identity and geometry. Remaining negative-control, event-paired hydrometeorology, component-routing and capacity gaps are explicitly retained outside the bounded research closeout.",
+    "production_authorized": false,
+    "hydrologic_child_contract_promotion_authorized": false
+  }
+}
