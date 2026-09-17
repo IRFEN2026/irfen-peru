@@ -1,7 +1,7 @@
 {
   "version": "phase2-master-state-v0.1",
-  "as_of_main_commit": "a74d0afa7c03c0f223806bb86b0b1eb12311780e",
-  "as_of_utc": "2026-09-16T17:31:00Z",
+  "as_of_main_commit": "032b447753d692a09cd985b6871c07027bc45b86",
+  "as_of_utc": "2026-09-17T13:40:27Z",
   "deployment_status": "RESEARCH_ONLY",
   "production_use": false,
   "production_ready": false,
@@ -18,8 +18,8 @@
     "phase2_closeouts_count_toward_v08_release_scorecard": false
   },
   "portfolio_summary": {
-    "case_validation_files": 8,
-    "closed_research_validation_cases": 7,
+    "case_validation_files": 9,
+    "closed_research_validation_cases": 8,
     "in_review_research_validation_cases": 1,
     "phase2_registered_candidates": 18,
     "phase2_contracts_approved": 0,
@@ -101,6 +101,17 @@
       "path": "site/data/validation/phase2_case_validations/zana_oyotun_2008_2009.json"
     },
     {
+      "case_id": "la_leche_pacora_pitipo_1998_2025",
+      "zone_id": "lambayeque_motupe_la_leche_pitipo",
+      "component_id": "la_leche_river_pacora_pitipo",
+      "case_status": "CLOSED_RESEARCH_VALIDATION_CASE",
+      "scope": "Bounded historical positive-outcome validation for recurrent Rio La Leche flooding in Pacora and Pitipo.",
+      "positive_controls": ["LA-LECHE-PACORA-1998-01-25", "LA-LECHE-PACORA-2015-03-23", "LA-LECHE-PACORA-2015-03-31", "LA-LECHE-PITIPO-2025-02-11"],
+      "negative_controls": [],
+      "primary_limitation": "No confirmed negative control, no event-paired primary rainfall/discharge series, no normalized machine-readable basin geometry, and Rio Motupe/local-ravine/current-capacity components remain unresolved.",
+      "path": "site/data/validation/phase2_case_validations/la_leche_pacora_pitipo_1998_2025.json"
+    },
+    {
       "case_id": "pedregal_san_antonio_2015",
       "zone_id": "pedregal_san_antonio",
       "case_status": "IN_REVIEW_RESEARCH_VALIDATION_CASE",
@@ -141,6 +152,13 @@
       "rule": "A bounded historical case closeout does not approve the hydrologic child contract; the official whole-basin geometry cannot substitute for event-specific routing evidence."
     },
     {
+      "system_id": "lambayeque_motupe_la_leche_pitipo",
+      "status": "DRAFT_BLOCKED",
+      "closed_components": ["la_leche_pacora_pitipo_1998_2025_positive_outcomes"],
+      "open_components": ["rio_motupe_component", "verified_negative_control", "event_paired_hydrometeorology", "machine_readable_geometry", "local_ravine_contributions", "current_channel_capacity"],
+      "rule": "The bounded La Leche historical closeout does not approve the compound Motupe-La Leche-Pitipo contract or authorize current hydraulic assumptions."
+    },
+    {
       "system_id": "pedregal_san_antonio",
       "status": "IN_REVIEW_BLOCKED",
       "closed_components": [],
@@ -149,9 +167,9 @@
     }
   ],
   "next_research_queue": [
-    {"item": "lambayeque_motupe_la_leche_pitipo", "action": "ASSESS_EXISTING_OFFICIAL_OUTCOME_AND_GEOMETRY_EVIDENCE_FOR_BOUNDED_CLOSEOUT", "promotion_allowed": false},
-    {"item": "santa_eulalia_river_component", "action": "CONSOLIDATE_EVENT_DAY_HYDROLOGIC_CONTEXT_WITHOUT_INFERRING_NEGATIVES", "promotion_allowed": false},
-    {"item": "phase2_portfolio", "action": "PRIORITIZE_EXISTING_HIGH_EVIDENCE_CASES_BEFORE_OPENING_NEW_DATA_SEARCHES", "promotion_allowed": false}
+    {"item": "lambayeque_chancay_lambayeque_chongoyape", "action": "ASSESS_OFFICIAL_GEOMETRY_AND_HISTORICAL_OUTCOME_EVIDENCE_FOR_BOUNDED_CLOSEOUT", "promotion_allowed": false},
+    {"item": "ica_pisco_san_andres", "action": "ASSESS_EXISTING_OFFICIAL_CRITICAL_POINT_AND_EVENT_EVIDENCE_FOR_BOUNDED_CLOSEOUT", "promotion_allowed": false},
+    {"item": "santa_eulalia_river_component", "action": "CONSOLIDATE_EVENT_DAY_HYDROLOGIC_CONTEXT_WITHOUT_INFERRING_NEGATIVES", "promotion_allowed": false}
   ],
   "guardrails": {
     "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
