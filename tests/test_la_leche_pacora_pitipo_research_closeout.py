@@ -71,7 +71,7 @@ class LaLechePacoraPitipoResearchCloseoutTests(unittest.TestCase):
         self.assertFalse(case_context["historical_backcast_allowed"])
         self.assertFalse(case_context["hydraulic_capacity_inference_allowed"])
 
-    def test_contract_remains_draft_blocked_and_incomplete(self):
+    def test_contract_remains_draft_blocked_and_unpromoted(self):
         c = self.contract
         self.assertEqual(c["contract_status"], "DRAFT")
         self.assertEqual(c["deployment_status"], "RESEARCH_ONLY")
@@ -82,9 +82,13 @@ class LaLechePacoraPitipoResearchCloseoutTests(unittest.TestCase):
         self.assertEqual(c["hazard_model"]["mechanism_status"], "TO_BE_RESOLVED")
         self.assertEqual(c["assets"]["geometry"]["status"], "MISSING")
         self.assertEqual(c["assets"]["observations"]["status"], "MISSING")
-        self.assertEqual(c["assets"]["historical_events"]["status"], "READY")
-        self.assertEqual(c["assets"]["exposure"]["status"], "PARTIAL")
-        self.assertEqual(c["assets"]["hydraulic_context"]["status"], "PARTIAL")
+        self.assertEqual(c["assets"]["historical_events"]["status"], "MISSING")
+        self.assertEqual(c["assets"]["exposure"]["status"], "MISSING")
+        self.assertEqual(c["assets"]["hydraulic_context"]["status"], "MISSING")
+        self.assertEqual(c["official_source_ids"], [
+            "CENEPRED-EVAR-PITIPO-SECTOR-1",
+            "ANA-CENEPRED-CRITICAL-POINTS-2025",
+        ])
 
     def test_no_threshold_or_numeric_hydraulic_promotion(self):
         self.assertIsNone(self.evidence["decision_thresholds"])
