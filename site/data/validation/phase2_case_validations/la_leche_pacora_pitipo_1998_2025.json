@@ -1,0 +1,128 @@
+{
+  "version": "independent-basin-validation-case-v0.1",
+  "case_id": "la_leche_pacora_pitipo_1998_2025",
+  "candidate_id": "lambayeque_motupe_la_leche_pitipo",
+  "component_id": "la_leche_river_pacora_pitipo",
+  "case_status": "CLOSED_RESEARCH_VALIDATION_CASE",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "decision_thresholds": null,
+  "activation_gate": "BLOCKED",
+  "scope": "Bounded historical research validation of recurrent Rio La Leche overflow impacts in Pacora and Pitipo from 1998 through 2025. This closes only the La Leche river positive-outcome component for research; it does not approve the full Motupe-La Leche-Pitipo Phase-2 contract.",
+  "source_evidence": [
+    {
+      "source_id": "LA-LECHE-OFFICIAL-OUTCOME-HYDROLOGIC-CONTEXT-1998-2025",
+      "path": "site/data/validation/phase2_research_evidence/la_leche_pacora_pitipo_official_context_1998_2025.json",
+      "evidence_role": "PRIMARY_CLOSEOUT_EVIDENCE_PACKAGE"
+    },
+    {
+      "source_id": "SENAMHI-SARDON-LAVADO-FELIPE-2022-FLOOD-INVENTORY",
+      "path": "site/data/validation/reference_sources/senamhi_flood_inventory_1981_2021_irfen_extract.json",
+      "evidence_role": "OFFICIAL_EVENT_INVENTORY_CORROBORATION"
+    }
+  ],
+  "hydrologic_identity": {
+    "ana_hydrologic_unit_code": "137772",
+    "ana_hydrologic_unit_name": "Cuenca Motupe",
+    "la_leche_watercourse_code": "1377722",
+    "la_leche_watercourse_name": "Rio La Leche",
+    "whole_unit_geometry_is_event_footprint": false,
+    "machine_readable_geometry_normalized_in_irfen": false
+  },
+  "positive_controls": [
+    {
+      "control_id": "LA-LECHE-PACORA-1998-01-25",
+      "date_local": "1998-01-25",
+      "location": "Pacora",
+      "status": "CONFIRMED_POSITIVE_OUTCOME",
+      "evidence": "INDECI official emergency record"
+    },
+    {
+      "control_id": "LA-LECHE-PACORA-2015-03-23",
+      "date_local": "2015-03-23",
+      "location": "Pacora",
+      "status": "CONFIRMED_POSITIVE_OUTCOME_HIGH_VALUE",
+      "evidence": "SENAMHI national flood inventory"
+    },
+    {
+      "control_id": "LA-LECHE-PACORA-2015-03-31",
+      "date_local": "2015-03-31",
+      "location": "Valle La Leche / Pacora-Illimo",
+      "status": "CONFIRMED_POSITIVE_OUTCOME",
+      "evidence": "Gobierno Regional de Lambayeque official event report"
+    },
+    {
+      "control_id": "LA-LECHE-PITIPO-2025-02-11",
+      "date_local": "2025-02-11",
+      "location": "San Luis, Pitipo",
+      "status": "CONFIRMED_POSITIVE_OUTCOME",
+      "evidence": "COEN-INDECI official emergency report"
+    }
+  ],
+  "supporting_positive_context": [
+    {
+      "period": "2017-03",
+      "status": "OFFICIAL_POSITIVE_OVERFLOW_CONTEXT_MONTH_LEVEL",
+      "use": "CORROBORATION_ONLY_NOT_EVENT_DAY_CONTROL"
+    },
+    {
+      "date_local": "2024-01-16",
+      "status": "OFFICIAL_HIGH_FLOW_IMPACT_CONTEXT",
+      "use": "HYDROLOGIC_RESPONSE_CONTEXT_NOT_OVERFLOW_CONTROL"
+    }
+  ],
+  "negative_control_status": {
+    "status": "NO_CONFIRMED_NEGATIVE_CONTROL",
+    "verified_negative_controls": [],
+    "reason": "No independently adjudicated non-impact day with sufficient rainfall/river-state and outcome evidence is available in the closeout package."
+  },
+  "component_separation": {
+    "la_leche_river_component_closed_for_research": true,
+    "motupe_river_component_resolved": false,
+    "local_ravine_contributions_resolved": false,
+    "event_specific_hydraulic_routing_validated": false,
+    "current_channel_capacity_validated": false,
+    "full_phase2_contract_approved": false
+  },
+  "asset_readiness_for_bounded_case": {
+    "historical_events": "READY",
+    "exposure": "PARTIAL",
+    "hydraulic_context": "PARTIAL",
+    "geometry": "MISSING_MACHINE_READABLE_NORMALIZATION",
+    "observations": "MISSING_EVENT_PAIRED_PRIMARY_NUMERIC_SERIES",
+    "forecast": "NOT_REQUIRED_FOR_HISTORICAL_RESEARCH_CLOSEOUT"
+  },
+  "current_mitigation_context": {
+    "project": "Creacion del Servicio de Proteccion ante el peligro de inundaciones en el rio La Leche en 53 localidades",
+    "districts_named_in_current_project": ["Pacora", "Illimo", "Jayanca", "Pitipo", "Incahuasi"],
+    "role": "CURRENT_CONTEXT_ONLY",
+    "historical_backcast_allowed": false,
+    "hydraulic_capacity_inference_allowed": false
+  },
+  "scientific_use": {
+    "accepted": [
+      "bounded historical positive-outcome validation for Rio La Leche",
+      "recurrent flood-impact chronology across independent time slices",
+      "official hydrologic identity context",
+      "current exposure/mitigation context with explicit temporal separation"
+    ],
+    "forbidden": [
+      "infer operational rainfall or discharge thresholds",
+      "infer a negative control from missing reports",
+      "transfer basin-wide or current-project hydraulic assumptions into historical events",
+      "treat ANA basin identity as observed inundation geometry",
+      "close Rio Motupe or the full compound Phase-2 candidate",
+      "enable production or live alerting"
+    ]
+  },
+  "closeout_decision": {
+    "research_closeout_ready_now": true,
+    "case_status": "CLOSED_RESEARCH_VALIDATION_CASE",
+    "why": "Multiple official positive Rio La Leche outcomes are independently documented across 1998, 2015 and 2025, with official basin identity and current exposure context sufficient for a bounded historical research closeout while explicitly retaining unresolved hydraulic, negative-control, geometry and compound-system gates.",
+    "production_authorized": false,
+    "phase2_contract_promotion_authorized": false
+  }
+}
