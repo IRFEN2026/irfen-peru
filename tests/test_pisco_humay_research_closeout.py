@@ -107,3 +107,5 @@ class PiscoHumayResearchCloseoutTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+# Catalog regeneration marker: Phase2 and map catalogs regenerated from current contract.
