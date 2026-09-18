@@ -1,0 +1,34 @@
+name: Temporary regenerate Pisco catalogs
+
+on:
+  push:
+    branches:
+      - agent/pisco-san-andres-2023-2024-research-closeout-v0.1
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v6
+        with:
+          ref: agent/pisco-san-andres-2023-2024-research-closeout-v0.1
+      - name: Regenerate Phase-2 catalog
+        run: python scripts/build_phase2_catalog.py
+      - name: Regenerate map catalog
+        run: python scripts/build_map_layer_catalog.py
+      - name: Validate catalogs
+        run: |
+          python scripts/build_phase2_catalog.py --check-only
+          python scripts/build_map_layer_catalog.py --check-only
+      - name: Commit generated catalogs and remove temporary workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/phase2/catalog.json site/data/map_layers.json
+          git rm .github/workflows/temp-regenerate-pisco-catalogs.yml
+          git commit -m "IRFEN v0.8: regenerate Pisco Phase-2 and map catalogs"
+          git push origin HEAD:agent/pisco-san-andres-2023-2024-research-closeout-v0.1
