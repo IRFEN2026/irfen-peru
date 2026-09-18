@@ -9,6 +9,7 @@ CONTRACT = ROOT / "site/data/validation/phase2_zone_contracts/ica_pisco_san_andr
 MAP_CATALOG = ROOT / "site/data/map_layers.json"
 
 
+# Generated catalog parity is enforced by the global onboarding tests.
 class PiscoHumayResearchCloseoutTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
