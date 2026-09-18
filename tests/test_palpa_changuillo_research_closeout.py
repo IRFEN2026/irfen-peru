@@ -67,8 +67,12 @@ class PalpaChanguilloResearchCloseoutTests(unittest.TestCase):
 
     def test_critical_points_are_context_not_event_footprints(self):
         for row in self.evidence["critical_reach_context"].values():
-            self.assertIn("CONTEXT", row["role"])
-            self.assertNotIn("EVENT_FOOTPRINT", row["role"])
+            role = row["role"]
+            self.assertIn("CONTEXT", role)
+            self.assertTrue(
+                "NOT_EVENT_FOOTPRINT" in role or "NOT_HISTORICAL_CAPACITY_TRUTH" in role,
+                role,
+            )
 
     def test_contract_remains_draft_blocked_and_unpromoted(self):
         c = self.contract
