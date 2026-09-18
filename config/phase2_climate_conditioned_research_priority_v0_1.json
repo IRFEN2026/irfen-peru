@@ -1,0 +1,245 @@
+{
+  "version": "phase2-climate-conditioned-research-priority-v0.1",
+  "status": "RESEARCH_ONLY_SCENARIO_OVERLAY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "decision_thresholds": null,
+  "activation_gate": "BLOCKED",
+  "purpose": "Prioritize IRFEN research and validation effort according to climate-regime plausibility, historical activation behavior, episodic response, demographic exposure and critical-connectivity consequences without converting research priority into operational risk or alerts.",
+  "relationship_to_phase2": {
+    "registered_candidate_count_unchanged": 18,
+    "changes_candidate_count": false,
+    "changes_operational_scope": false,
+    "changes_thresholds": false,
+    "changes_hydraulic_factors": false,
+    "changes_activation_gates": false,
+    "base_development_queue": "config/phase2_map_priority_v0_1.json",
+    "base_queue_is_not_risk_ranking": true,
+    "overlay_may_resequence_research_effort": true
+  },
+  "scientific_principles": {
+    "seasonal_mean_does_not_equal_zero_activation_probability": true,
+    "missing_instrumentation_is_not_low_risk": true,
+    "no_negative_from_absence_of_report": true,
+    "historical_activation_requires_event_level_verification": true,
+    "current_climate_regime_is_context_not_event_truth": true,
+    "local_extreme_episode_can_matter_despite_normal_or_dry_seasonal_background": true,
+    "river_flood_debris_flow_local_drainage_and_coastal_processes_must_be_separated": true,
+    "no_station_transfer_without_hydraulic_validation": true,
+    "no_numeric_probability_without_validated_model": true
+  },
+  "research_dimensions": [
+    {
+      "id": "climate_regime_alignment",
+      "allowed": [
+        "HIGH",
+        "MEDIUM",
+        "LOW",
+        "UNKNOWN"
+      ],
+      "meaning": "Qualitative compatibility of the candidate mechanism with the current/target climate regime. Must be source-supported and scenario-dated."
+    },
+    {
+      "id": "historical_activation_recurrence",
+      "allowed": [
+        "HIGH",
+        "MEDIUM",
+        "LOW",
+        "UNKNOWN"
+      ],
+      "meaning": "Strength and recurrence of verified activation/impact evidence across comparable historical regimes."
+    },
+    {
+      "id": "episodic_activation_sensitivity",
+      "allowed": [
+        "HIGH",
+        "MEDIUM",
+        "LOW",
+        "UNKNOWN"
+      ],
+      "meaning": "Evidence that an arid or normally dry catchment can respond strongly to isolated intense episodes."
+    },
+    {
+      "id": "demographic_exposure",
+      "allowed": [
+        "HIGH",
+        "MEDIUM",
+        "LOW",
+        "UNKNOWN"
+      ],
+      "meaning": "Direct population exposure; never used alone to rank physical activation."
+    },
+    {
+      "id": "critical_connectivity_exposure",
+      "allowed": [
+        "HIGH",
+        "MEDIUM",
+        "LOW",
+        "UNKNOWN"
+      ],
+      "meaning": "Potential to cut highways, bridges, water systems, irrigation, schools, health access or isolate settlements."
+    },
+    {
+      "id": "evidence_readiness",
+      "allowed": [
+        "HIGH",
+        "MEDIUM",
+        "LOW",
+        "UNKNOWN"
+      ],
+      "meaning": "Availability of official geometry, event outcomes, observations and reproducible sources."
+    },
+    {
+      "id": "uncertainty",
+      "allowed": [
+        "HIGH",
+        "MEDIUM",
+        "LOW",
+        "UNKNOWN"
+      ],
+      "meaning": "Unresolved uncertainty. High uncertainty does not mean low hazard and may justify targeted research."
+    }
+  ],
+  "historical_regime_windows_to_reconstruct": [
+    {
+      "label": "1982-1983 strong El Nino",
+      "role": "historical climate-regime comparison; verify local event evidence before assigning candidate behavior"
+    },
+    {
+      "label": "1997-1998 strong El Nino",
+      "role": "historical climate-regime comparison; verify local event evidence before assigning candidate behavior"
+    },
+    {
+      "label": "2017 coastal El Nino",
+      "role": "high-value recent historical comparison for north/central coast and selected south-coast episodic responses"
+    },
+    {
+      "label": "2023 coastal warm event",
+      "role": "recent comparison for basin-specific activation and non-activation evidence"
+    },
+    {
+      "label": "2024-2026 recent local extremes",
+      "role": "recent episodic-response evidence, especially for Ica-Nazca, coastal Arequipa and Moquegua-Ilo"
+    }
+  ],
+  "impact_balance_policy": {
+    "principle": "Physical activation potential and consequence are evaluated separately, then combined only for research prioritization.",
+    "demographic_exposure_required": false,
+    "zero_or_low_local_population_does_not_remove_candidate": true,
+    "connectivity_and_isolation_can_raise_priority": true,
+    "examples_of_critical_consequences": [
+      "Panamericana or other strategic road interruption",
+      "bridge loss",
+      "single-access settlement isolation",
+      "potable-water network damage",
+      "irrigation-system damage",
+      "health or education access interruption"
+    ]
+  },
+  "scenario_corridors": [
+    {
+      "corridor_id": "PACIFIC_NORTH_CENTRAL_WARM_EVENT",
+      "research_priority": "HIGH",
+      "rationale": "Warm coastal/central Pacific regimes can strongly increase rainfall and flood/debris-flow opportunity over north and central Pacific-facing basins, subject to event-specific verification.",
+      "current_registered_focus": [
+        "lambayeque_chancay_lambayeque_chongoyape",
+        "lambayeque_zana_oyotun",
+        "lambayeque_motupe_la_leche_pitipo",
+        "lima_este_santa_eulalia_rimac",
+        "lima_norte_huerta_vieja",
+        "lima_norte_arahuay_chillon",
+        "lima_norte_lampian_ravines",
+        "lima_norte_chillon_bajo",
+        "lima_norte_chancay_huaral",
+        "lima_norte_huaura_huacho_sayan",
+        "lima_este_lurin_cieneguilla",
+        "lima_sur_mala",
+        "lima_sur_chilca_pucusana",
+        "lima_sur_asia_omas",
+        "lima_sur_canete"
+      ],
+      "discovery_gaps": [
+        "La Libertad candidate systems",
+        "Ancash coastal and western-slope ravines"
+      ],
+      "promotion_allowed": false
+    },
+    {
+      "corridor_id": "SOUTH_COAST_EPISODIC_CONNECTIVITY",
+      "research_priority": "HIGH",
+      "rationale": "Arid south-coast catchments can produce high-impact episodic debris flows or floods even when seasonal rainfall background is not broadly wet; recent activation and connectivity consequences justify a separate high-priority lane.",
+      "current_registered_focus": [
+        "ica_pisco_san_andres",
+        "ica_palpa_changuillo",
+        "arequipa_acari_san_agustin"
+      ],
+      "discovery_corridors": [
+        {
+          "corridor": "Nazca-Ingenio-Changuillo-Palpa",
+          "status": "DISCOVERY_REQUIRED",
+          "focus": [
+            "named ravines",
+            "Rio Ingenio and tributary interactions",
+            "road and bridge crossings",
+            "settlement isolation"
+          ],
+          "register_only_after_reproducible_evidence": true
+        },
+        {
+          "corridor": "coastal Arequipa: Chala-Atico-Caraveli-Huanuhuanu-Camana/Vitor",
+          "status": "DISCOVERY_REQUIRED",
+          "focus": [
+            "short-response ravines",
+            "recent huaico recurrence",
+            "Panamericana and local-road crossings",
+            "water and irrigation infrastructure"
+          ],
+          "register_only_after_reproducible_evidence": true
+        },
+        {
+          "corridor": "Moquegua-Ilo coastal ravines",
+          "status": "DISCOVERY_REQUIRED",
+          "focus": [
+            "ravines crossing Costanera and access roads",
+            "bridge/culvert bottlenecks",
+            "settlement isolation",
+            "episodic convective rainfall response"
+          ],
+          "register_only_after_reproducible_evidence": true
+        }
+      ],
+      "promotion_allowed": false
+    }
+  ],
+  "candidate_evaluation_contract": {
+    "required_before_high_priority_deep_dive": [
+      "named hydrologic/geodynamic unit or reproducible discovery geometry",
+      "at least one official or otherwise admissible event/outcome source OR explicit UNKNOWN if studying physical susceptibility only",
+      "mechanism separation",
+      "historical-regime comparison plan",
+      "demographic exposure classification",
+      "critical-connectivity exposure classification",
+      "explicit uncertainty statement"
+    ],
+    "required_before_research_closeout": [
+      "bounded case definition",
+      "verified positive or independently adjudicated control evidence",
+      "no fabricated negative controls",
+      "no operational thresholds promoted",
+      "all production and alerting guards fail closed"
+    ]
+  },
+  "dynamic_reprioritization": {
+    "enabled_for_research_queue": true,
+    "operational_reprioritization": false,
+    "triggers": [
+      "new ENFEN/SENAMHI climate-regime evidence",
+      "new official activation or impact report",
+      "new verified geometry or exposure evidence",
+      "new infrastructure or road/bridge vulnerability evidence",
+      "new observed non-impact control with adequate hydrometeorology"
+    ],
+    "rule": "A scenario update may raise or lower research effort, but cannot itself activate a zone, classify an event, create a negative control, or change an operational threshold."
+  }
+}
