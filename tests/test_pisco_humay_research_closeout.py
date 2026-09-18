@@ -6,6 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CASE = ROOT / "site/data/validation/phase2_case_validations/pisco_humay_2023_2024.json"
 EVIDENCE = ROOT / "site/data/validation/phase2_research_evidence/pisco_humay_official_context_2023_2025.json"
 CONTRACT = ROOT / "site/data/validation/phase2_zone_contracts/ica_pisco_san_andres.json"
+MAP_CATALOG = ROOT / "site/data/map_layers.json"
 
 
 class PiscoHumayResearchCloseoutTests(unittest.TestCase):
@@ -14,6 +15,7 @@ class PiscoHumayResearchCloseoutTests(unittest.TestCase):
         cls.case = json.loads(CASE.read_text(encoding="utf-8"))
         cls.evidence = json.loads(EVIDENCE.read_text(encoding="utf-8"))
         cls.contract = json.loads(CONTRACT.read_text(encoding="utf-8"))
+        cls.map_catalog = json.loads(MAP_CATALOG.read_text(encoding="utf-8"))
 
     def test_closeout_is_research_only_and_non_operational(self):
         c = self.case
@@ -85,6 +87,16 @@ class PiscoHumayResearchCloseoutTests(unittest.TestCase):
         self.assertEqual(c["assets"]["observations"]["status"], "PARTIAL")
         self.assertEqual(c["assets"]["exposure"]["status"], "PARTIAL")
         self.assertEqual(c["assets"]["hydraulic_context"]["status"], "PARTIAL")
+
+
+    def test_missing_pisco_geometry_remains_withheld_from_map(self):
+        row = next(
+            z for z in self.map_catalog["research_zones"]
+            if z["candidate_id"] == "ica_pisco_san_andres"
+        )
+        self.assertEqual(row["geometry"]["status"], "MISSING")
+        self.assertFalse(row["geometry"]["map_eligible"])
+        self.assertEqual(row["geometry"]["representation"], "NOT_MAPPED_NO_REPRODUCIBLE_FILE")
 
     def test_no_threshold_or_hydraulic_promotion(self):
         self.assertIsNone(self.evidence["decision_thresholds"])
