@@ -1,0 +1,217 @@
+{
+  "version": "phase2-climate-conditioned-activation-priority-v0.1",
+  "status": "RESEARCH_ONLY_STRATEGY_CONTRACT",
+  "deployment_status": "RESEARCH_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "decision_thresholds": null,
+  "activation_gate": "BLOCKED",
+  "purpose": "Prioritize IRFEN research and candidate discovery by climate-regime plausibility, historical activation behavior, episodic response sensitivity and real-world exposure, without attempting exhaustive national validation at equal intensity.",
+  "relationship_to_v08": {
+    "operational_scope_unchanged": true,
+    "operational_pilots": [
+      "san_ildefonso",
+      "chosica_huaycoloro",
+      "catacaos_bajo_piura"
+    ],
+    "phase2_candidate_count_unchanged": true,
+    "discovery_corridors_are_not_operational_zones": true,
+    "counts_toward_v08_release_scorecard": false
+  },
+  "principles": {
+    "exhaustive_peru_first_forbidden": true,
+    "seasonal_mean_rainfall_is_not_zero_activation_risk": true,
+    "low_station_density_is_not_low_risk": true,
+    "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+    "population_count_is_not_the_only_impact_measure": true,
+    "physical_activation_without_population_impact_can_still_validate_mechanism": true,
+    "operational_priority_requires_exposure_and_consequence_context": true,
+    "regional_priority_is_dynamic_and_may_change_with_official_climate_context": true
+  },
+  "climate_context_contract": {
+    "accepted_primary_context_sources": [
+      "ENFEN",
+      "SENAMHI"
+    ],
+    "current_regime_must_be_dated": true,
+    "current_regime_is_research_prioritization_context_only": true,
+    "forecast_or_scenario_does_not_create_event_truth": true,
+    "climate_context_does_not_create_operational_thresholds": true,
+    "no_permanent_regional_exclusion_from_seasonal_average": true,
+    "update_rule": "Refresh research priority when official climate-regime guidance materially changes; preserve historical candidate inventory and evidence."
+  },
+  "historical_behavior_matrix": {
+    "objective": "Characterize each basin/ravine response across comparable historical regimes instead of assuming uniform El Nino behavior nationwide.",
+    "required_axes": [
+      "strong_or_extraordinary_coastal_el_nino",
+      "central_pacific_el_nino",
+      "neutral_wet_episode",
+      "la_nina_or_cool_coast_context",
+      "isolated_convective_or_episodic_extreme"
+    ],
+    "per_unit_fields": [
+      "verified_activation_dates",
+      "verified_non_activation_controls_when_available",
+      "mechanism",
+      "rainfall_or_river_context_quality",
+      "impact_type",
+      "population_exposed",
+      "critical_infrastructure_exposed",
+      "isolation_potential",
+      "evidence_confidence"
+    ],
+    "allowed_response_classes": [
+      "HIGH",
+      "MEDIUM",
+      "LOW",
+      "UNKNOWN"
+    ],
+    "numeric_probability_required": false,
+    "no_negative_from_absence_of_report": true
+  },
+  "prioritization_dimensions": [
+    {
+      "id": "climate_regime_fit",
+      "type": "CATEGORICAL",
+      "meaning": "How plausible activation is under the dated official climate regime, informed by historical analogs rather than geography alone."
+    },
+    {
+      "id": "episodic_activation_sensitivity",
+      "type": "CATEGORICAL",
+      "meaning": "Sensitivity of dry or short-response catchments to isolated intense events even when seasonal rainfall is normal or below normal."
+    },
+    {
+      "id": "historical_activation_recurrence",
+      "type": "CATEGORICAL",
+      "meaning": "Strength and recurrence of verified activation evidence across independent events."
+    },
+    {
+      "id": "critical_exposure",
+      "type": "CATEGORICAL",
+      "meaning": "People, settlements, roads, bridges, water systems, irrigation, health, education and other critical assets potentially affected."
+    },
+    {
+      "id": "isolation_potential",
+      "type": "CATEGORICAL",
+      "meaning": "Potential for road/bridge failure or blocked access to isolate nearby or downstream populations."
+    },
+    {
+      "id": "evidence_readiness",
+      "type": "CATEGORICAL",
+      "meaning": "Availability of official geometry, event outcomes, hydrometeorology and mechanism evidence sufficient for reproducible research."
+    }
+  ],
+  "impact_balance": {
+    "rule": "Do not equate impact with population count alone.",
+    "population_weighting": "Population matters, but cannot dominate critical connectivity, lifeline infrastructure or isolation potential.",
+    "no_population_case": "A verified activation with little or no population impact remains scientifically useful for physical mechanism validation, but normally receives lower deployment priority than a comparable activation threatening people or critical infrastructure.",
+    "small_population_case": "A small settlement may receive high research priority when one road, bridge, water system or evacuation route is a single point of failure."
+  },
+  "dynamic_research_lanes": [
+    {
+      "lane_id": "PACIFIC_NORTH_CENTRAL_CLIMATE_FAVORED",
+      "role": "PRIMARY_CLIMATE_CONDITIONED_RESEARCH_LANE",
+      "geographic_focus": [
+        "Piura",
+        "Lambayeque",
+        "La Libertad",
+        "Ancash",
+        "Lima"
+      ],
+      "rationale": "Use official climate context plus historical activation evidence to prioritize Pacific north/central catchments when wet-regime plausibility is elevated.",
+      "candidate_examples": [
+        "lambayeque_chancay_lambayeque_chongoyape",
+        "lambayeque_zana_oyotun",
+        "lambayeque_motupe_la_leche_pitipo",
+        "lima_este_santa_eulalia_rimac",
+        "lima_norte_huerta_vieja",
+        "lima_norte_arahuay_chillon",
+        "lima_norte_lampian_ravines",
+        "lima_norte_chillon_bajo",
+        "lima_norte_chancay_huaral",
+        "lima_norte_huaura_huacho_sayan",
+        "lima_este_lurin_cieneguilla",
+        "lima_sur_mala",
+        "lima_sur_asia_omas",
+        "lima_sur_canete"
+      ],
+      "permanent_priority": false
+    },
+    {
+      "lane_id": "SOUTH_COAST_EPISODIC_HIGH_IMPACT",
+      "role": "PARALLEL_EPISODIC_ACTIVATION_RESEARCH_LANE",
+      "geographic_focus": [
+        "Ica",
+        "Nazca",
+        "Palpa",
+        "coastal Arequipa",
+        "Moquegua",
+        "Ilo"
+      ],
+      "rationale": "Preserve high priority for arid short-response catchments with verified recent activation or strong connectivity exposure even when seasonal mean precipitation is not regionally favored.",
+      "registered_candidate_examples": [
+        "ica_pisco_san_andres",
+        "ica_palpa_changuillo",
+        "arequipa_acari_san_agustin"
+      ],
+      "discovery_only_corridors": [
+        "nazca_ingenio_changuillo_local_ravines",
+        "arequipa_coast_caraveli_chala_atico_huanuhuanu",
+        "moquegua_ilo_coastal_ravines"
+      ],
+      "discovery_only_corridors_count_as_phase2_candidates": false,
+      "permanent_priority": false
+    },
+    {
+      "lane_id": "CONDITIONAL_NATIONAL_WATCH",
+      "role": "LIGHTWEIGHT_DISCOVERY_AND_WATCH_LANE",
+      "geographic_focus": [
+        "other Peru regions not in the two active lanes"
+      ],
+      "rationale": "Retain candidate discovery and historical evidence without spending equal validation effort unless climate context, new activation evidence or critical exposure increases priority.",
+      "permanent_deprioritization": false
+    }
+  ],
+  "research_selection_rule": {
+    "numeric_score_used": false,
+    "deterministic_winner_forbidden": true,
+    "selection_basis": [
+      "dated official climate context",
+      "historical regime-response evidence",
+      "episodic activation sensitivity",
+      "critical exposure and isolation potential",
+      "evidence readiness"
+    ],
+    "selection_output": [
+      "VALIDATE_NOW",
+      "CHARACTERIZE_AND_WATCH",
+      "DISCOVERY_ONLY",
+      "HOLD_FOR_REGIME_CHANGE",
+      "UNKNOWN_NEEDS_EVIDENCE"
+    ],
+    "selection_output_is_operational_alert": false
+  },
+  "south_coast_specific_guardrails": {
+    "do_not_use_seasonal_below_normal_as_no_activation": true,
+    "require_event_level_evidence_for_activation_truth": true,
+    "roads_bridges_and_isolation_are_explicit_exposure_fields": true,
+    "short_response_arid_ravines_may_be_prioritized_from_verified_activation_history": true,
+    "no_threshold_transfer_from_north_or_central_coast": true
+  },
+  "implementation_sequence": [
+    "finish already-near-closeout bounded cases such as Pisco-Humay without changing operational scope",
+    "build historical climate-regime response matrix for validated and high-evidence candidates",
+    "run Palpa-Changuillo as the first south-coast episodic validation package after Pisco",
+    "open lightweight discovery packages for coastal Arequipa and Ilo without counting them as operational zones",
+    "reorder deep-validation effort dynamically as official climate context and new observed events change"
+  ],
+  "guardrails": {
+    "no_operational_promotion_from_priority_framework": true,
+    "no_threshold_transfer": true,
+    "no_hydraulic_factor_transfer": true,
+    "no_negative_from_missing_reports": true,
+    "no_station_transfer_without_hydraulic_validation": true,
+    "all_activation_gates_remain_blocked": true
+  }
+}
