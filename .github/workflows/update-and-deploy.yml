@@ -46,6 +46,9 @@ on:
       - scripts/build_phase2_climate_evidence.py
       - scripts/validate_phase2_climate_evidence.py
       - config/phase2_climate_evidence_normalization.schema.json
+      - scripts/build_phase2_spatial_observation_contracts.py
+      - scripts/validate_phase2_spatial_observation_contracts.py
+      - config/phase2_spatial_observation_contracts.schema.json
       - scripts/build_lambayeque_hydrologic_units.py
       - scripts/build_map_layer_catalog.py
       - scripts/build_phase2_event_reanalysis.py
@@ -226,6 +229,9 @@ jobs:
           python scripts/build_lambayeque_hydrologic_units.py
           python scripts/build_phase2_catalog.py
 
+      - name: Construir contratos espaciales Phase-2 (RESEARCH_ONLY/TEST_ONLY)
+        run: python scripts/build_phase2_spatial_observation_contracts.py
+
       - name: Normalizar evidencia climática Phase-2 (RESEARCH_ONLY/TEST_ONLY)
         run: python scripts/build_phase2_climate_evidence.py
 
@@ -285,6 +291,7 @@ jobs:
           test -s site/data/phase2/catalog.json
           test -s site/data/phase2/climate_conditioned_activation_matrix_v0_1.json
           test -s site/data/phase2/climate_evidence_normalized_v0_1.json
+          test -s site/data/phase2/spatial_observation_contracts_v0_1.json
           test -s site/data/latest.json
           test -s site/data/history.json
           test -s site/data/scientific_status.json
@@ -316,6 +323,7 @@ jobs:
           python -m json.tool site/data/phase2/catalog.json >/dev/null
           python -m json.tool site/data/phase2/climate_conditioned_activation_matrix_v0_1.json >/dev/null
           python -m json.tool site/data/phase2/climate_evidence_normalized_v0_1.json >/dev/null
+          python -m json.tool site/data/phase2/spatial_observation_contracts_v0_1.json >/dev/null
           python -m json.tool site/data/map_layers.json >/dev/null
           if [ -s site/data/forecast/latest.json ]; then
             python -m json.tool site/data/forecast/latest.json >/dev/null
@@ -326,6 +334,9 @@ jobs:
 
       - name: Validar clean room de Pedregal
         run: python scripts/validate_pedregal_clean_room.py
+
+      - name: Validar contratos espaciales Phase-2
+        run: python scripts/validate_phase2_spatial_observation_contracts.py
 
       - name: Validar evidencia climática normalizada Phase-2
         run: python scripts/validate_phase2_climate_evidence.py
