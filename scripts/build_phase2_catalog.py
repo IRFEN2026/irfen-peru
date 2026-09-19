@@ -10,6 +10,7 @@ INVENTORY_PATH = ROOT / "config/phase2_candidate_inventory_v0_2.json"
 ANALOG_CONTRACT_PATH = ROOT / "config/phase2_analog_transfer_contract.json"
 CONTRACTS_DIR = ROOT / "site/data/validation/phase2_zone_contracts"
 CHILD_CONTRACTS_DIR = ROOT / "site/data/validation/phase2_hydrologic_child_contracts"
+CASE_VALIDATIONS_DIR = ROOT / "site/data/validation/phase2_case_validations"
 OUT_PATH = ROOT / "site/data/phase2/catalog.json"
 ASSETS = ("geometry", "exposure", "historical_events", "observations", "forecast", "hydraulic_context")
 ASSET_STATUS = {"MISSING", "CANDIDATE", "PARTIAL", "READY"}
@@ -194,15 +195,215 @@ def validate_analog_transfer_contract(contract):
     return []
 
 
-def build_catalog(inventory, contracts, analog_contract, child_contracts=None):
+def data_presence(path):
+    """PRESENT/MISSING/UNKNOWN derived strictly from `path` + real file existence.
+
+    Never inferred from an asset's own `status` field: a contract can declare
+    `status: READY` while the referenced file is absent or was never checked,
+    which is exactly the presentation gap this projection exists to remove.
+    """
+    if not path:
+        return "MISSING"
+    raw = Path(str(path))
+    if raw.is_absolute():
+        return "UNKNOWN"
+    try:
+        resolved = (ROOT / raw).resolve()
+        resolved.relative_to(ROOT.resolve())
+        exists = resolved.is_file()
+    except (OSError, ValueError):
+        return "UNKNOWN"
+    return "PRESENT" if exists else "MISSING"
+
+
+def load_case_validations():
+    """Read-only survey of site/data/validation/phase2_case_validations/*.json.
+
+    Returns (by_zone_id, by_relpath):
+      - by_zone_id: exact `zone_id` string -> case dict (first file wins on a
+        duplicate zone_id; none of the 12 current files collide).
+      - by_relpath: the case-validation file's own ROOT-relative posix path ->
+        case dict, so a zone contract asset whose `path` points directly at a
+        case-validation file (e.g. ica_pisco_san_andres, lima_sur_malanche)
+        can also be linked without relying on zone_id.
+
+    This function never mutates or moves the source files; it only builds an
+    in-memory lookup for mechanical, exact-match linkage.
+    """
+    by_zone_id, by_relpath = {}, {}
+    if not CASE_VALIDATIONS_DIR.is_dir():
+        return by_zone_id, by_relpath
+    for path in sorted(CASE_VALIDATIONS_DIR.glob("*.json")):
+        case = load_json(path)
+        by_relpath[path.relative_to(ROOT).as_posix()] = case
+        zone_id = case.get("zone_id")
+        if zone_id and zone_id not in by_zone_id:
+            by_zone_id[zone_id] = case
+    return by_zone_id, by_relpath
+
+
+def resolve_linked_case_validation(candidate_id, asset, by_zone_id, by_relpath):
+    """Purely mechanical linkage: exact `zone_id` match, else exact `path` match.
+
+    Never a free-text or fuzzy match. Returns (case_or_None, link_method_or_None).
+    """
+    if candidate_id in by_zone_id:
+        return by_zone_id[candidate_id], "zone_id_exact_match"
+    path = asset.get("path")
+    if path and path in by_relpath:
+        return by_relpath[path], "asset_path_exact_match"
+    return None, None
+
+
+def evaluate_negative_control_leg(case):
+    """False only on the single unambiguous literal signal; None otherwise.
+
+    site/data/validation/phase2_case_validations/*.json uses at least five
+    different shapes for a "no confirmed negative control" signal across its
+    12 files (`{'status','note'}`, `{'status','verified_negative_controls',
+    'reason'}`, `{'status','candidate','note'}`, `{'status',
+    'verified_negative_control','note'}`, or the key absent entirely). Only
+    the literal string `negative_control_status.status ==
+    "NO_CONFIRMED_NEGATIVE_CONTROL"` is treated as a deterministic signal
+    that the `minimum_verified_none_days` requirement is NOT satisfied.
+    Every other value (including the differently-worded
+    `INSUFFICIENT_CONFIRMED_NEGATIVES` seen in catacaos_bajo_piura, or the
+    field's absence) is left as None rather than guessed at.
+    """
+    status = ((case or {}).get("negative_control_status") or {}).get("status")
+    if status == "NO_CONFIRMED_NEGATIVE_CONTROL":
+        return False
+    return None
+
+
+def evaluate_positive_event_leg(case):
+    """Always None: no cross-file-consistent field exists for this leg.
+
+    A verified-positive-event-day confirmation would need a field that is
+    both present and identically shaped across all 12 case-validation files.
+    No such field exists: the files variously carry `positive_controls`,
+    `historical_cases`, `evidence_summary`, `event`, `event_reference` and
+    `closure_decision`, none of them a shared enum. Deriving a `True`/`False`
+    here would require free-text interpretation of heterogeneous evidence,
+    which is exactly what UNKNOWN_NOT_LOW_RISK and the "no free-text
+    extraction" rule forbid. This leg therefore always evaluates to None
+    until a dedicated, explicitly-contracted normalized projection for
+    verified positive event-days is introduced as its own change.
+    """
+    return None
+
+
+def compute_historical_events_gate(candidate_id, asset, by_zone_id, by_relpath):
+    """Fail-closed minimum-sample determination for the historical_events asset.
+
+    Returns (minimum_sample_gate_met, gate_evidence_status, gate_basis):
+      - (None, "NOT_APPLICABLE", None) when no minimum is declared at all.
+      - (None, "NO_LINKED_CASE_EVIDENCE", None) when no case validation can be
+        mechanically linked to this zone.
+      - (False, "CASE_EVIDENCE_CONTRADICTS_MINIMUM", basis) when the linked
+        case gives a deterministic negative on either leg.
+      - (True, "CASE_EVIDENCE_CONFIRMS_MINIMUM", basis) only if every declared
+        leg is deterministically confirmed (not reachable with the current
+        12 files, since the positive-event leg is always None, but kept
+        generic rather than hard-coded to False).
+      - (None, "CASE_EVIDENCE_INCONCLUSIVE", basis) otherwise: a case was
+        found but does not deterministically confirm or contradict the
+        minimum. UNKNOWN never collapses into False here.
+    """
+    min_event = asset.get("minimum_verified_event_days")
+    min_none = asset.get("minimum_verified_none_days")
+    if min_event is None and min_none is None:
+        return None, "NOT_APPLICABLE", None
+    case, link_method = resolve_linked_case_validation(candidate_id, asset, by_zone_id, by_relpath)
+    if case is None:
+        return None, "NO_LINKED_CASE_EVIDENCE", None
+    none_ok = evaluate_negative_control_leg(case) if min_none is not None else None
+    event_ok = evaluate_positive_event_leg(case) if min_event is not None else None
+    basis = {"linked_case_validation": case.get("case_id"), "link_method": link_method,
+        "minimum_verified_event_days": min_event, "minimum_verified_none_days": min_none,
+        "event_leg_result": event_ok, "none_leg_result": none_ok}
+    if none_ok is False or event_ok is False:
+        return False, "CASE_EVIDENCE_CONTRADICTS_MINIMUM", basis
+    event_leg_satisfied = event_ok is True or min_event is None
+    none_leg_satisfied = none_ok is True or min_none is None
+    if event_leg_satisfied and none_leg_satisfied:
+        return True, "CASE_EVIDENCE_CONFIRMS_MINIMUM", basis
+    return None, "CASE_EVIDENCE_INCONCLUSIVE", basis
+
+
+def compute_asset_readiness(candidate_id, contract, by_zone_id, by_relpath):
+    """Per-asset `asset_readiness` projection, additive alongside `asset_status`."""
+    readiness = {}
+    for name in ASSETS:
+        asset = contract["assets"][name]
+        if name == "historical_events":
+            gate_met, gate_status, gate_basis = compute_historical_events_gate(
+                candidate_id, asset, by_zone_id, by_relpath)
+        else:
+            gate_met, gate_status, gate_basis = None, "NOT_APPLICABLE", None
+        readiness[name] = {
+            "status": asset.get("status"),
+            "data_presence": data_presence(asset.get("path")),
+            "minimum_sample_gate_met": gate_met,
+            "gate_evidence_status": gate_status,
+            "gate_basis": gate_basis,
+        }
+    return readiness
+
+
+def compute_promotion_gate(contract, asset_readiness):
+    """Contract-level (never per-asset) research-contract promotion gate.
+
+    `promotion_gate_met=True` means: every verifiable prerequisite for
+    submitting/approving this *research contract* is currently satisfied. It
+    does NOT mean operational activation, production use, or alerting -
+    `activation_gate` stays `BLOCKED` regardless of this value. Fail-closed:
+    any unverifiable or unmet necessary prerequisite forces False, and an
+    applicable-but-undetermined (None) minimum-sample gate blocks exactly
+    like an explicit False.
+    """
+    blocking = []
+    for name in ASSETS:
+        ar = asset_readiness[name]
+        if ar["status"] != "READY":
+            blocking.append(f"asset_status_not_ready:{name}")
+        if ar["data_presence"] != "PRESENT":
+            blocking.append(f"asset_not_present:{name}")
+        if ar["gate_evidence_status"] != "NOT_APPLICABLE" and ar["minimum_sample_gate_met"] is not True:
+            blocking.append(f"minimum_sample_gate_not_met:{name}")
+    hazard = contract.get("hazard_model") or {}
+    if hazard.get("mechanism_status") != "RESOLVED":
+        blocking.append("mechanism_not_resolved")
+    validation = contract.get("validation") or {}
+    required_reviews = sorted(set(validation.get("required_reviews") or []))
+    # review_evidence entries are not uniformly shaped across the 18 contracts
+    # (e.g. ica_pisco_san_andres carries bare path strings instead of
+    # {"review_type": ...} objects); only a dict entry with an explicit
+    # review_type is ever counted as evidencing that review, mechanically.
+    evidenced_reviews = {
+        entry.get("review_type") for entry in (validation.get("review_evidence") or [])
+        if isinstance(entry, dict)
+    }
+    missing_reviews = [r for r in required_reviews if r not in evidenced_reviews]
+    if missing_reviews:
+        blocking.append("missing_required_reviews:" + ",".join(missing_reviews))
+    if validation.get("promotion_requires_all_gates") is not True:
+        blocking.append("promotion_requires_all_gates_not_confirmed")
+    return {"promotion_gate_met": len(blocking) == 0, "promotion_blocking_items": blocking}
+
+
+def build_catalog(inventory, contracts, analog_contract, child_contracts=None, case_validations=None):
     validate_analog_transfer_contract(analog_contract)
     child_contracts = child_contracts or {}
+    by_zone_id, by_relpath = case_validations or ({}, {})
     zones = []
     for candidate in inventory.get("candidates") or []:
         cid = candidate["candidate_id"]; contract = contracts[cid]
         statuses = {name: contract["assets"][name]["status"] for name in ASSETS}
         hazard = contract.get("hazard_model") or {}
         complete = all(v == "READY" for v in statuses.values()) and hazard.get("mechanism_status") == "RESOLVED"
+        asset_readiness = compute_asset_readiness(cid, contract, by_zone_id, by_relpath)
+        promotion_gate = compute_promotion_gate(contract, asset_readiness)
         zones.append({"candidate_id": cid, "system_name": candidate.get("system_name"),
             "department": candidate.get("department"), "province_or_corridor": candidate.get("province_or_corridor"),
             "territorial_profile": candidate.get("territorial_profile"),
@@ -213,7 +414,8 @@ def build_catalog(inventory, contracts, analog_contract, child_contracts=None):
             "mechanism_status": hazard.get("mechanism_status"), "asset_status": statuses,
             "blocking_items": [k for k, v in statuses.items() if v != "READY"] +
                 ([] if hazard.get("mechanism_status") == "RESOLVED" else ["mechanism_resolution"]),
-            "missing_data_rule": contract.get("missing_data_rule")})
+            "missing_data_rule": contract.get("missing_data_rule"),
+            "asset_readiness": asset_readiness, "promotion_gate": promotion_gate})
     children = []
     for candidate in inventory.get("hydrologic_child_units") or []:
         contract = child_contracts[candidate["candidate_id"]]
@@ -320,6 +522,7 @@ def generate_public_catalog(bootstrap=False, write=True):
         load_contracts(inventory, bootstrap),
         analog_contract,
         load_child_contracts(inventory),
+        case_validations=load_case_validations(),
     )
     if write: write_json(OUT_PATH, catalog)
     return catalog

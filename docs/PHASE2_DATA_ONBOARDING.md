@@ -27,8 +27,11 @@ referencia seis activos independientes:
 
 Los archivos de evidencia se guardan bajo `site/data/phase2/zones/<candidate_id>/`
 y se enlazan con `path` desde el contrato. Un activo solo puede marcarse
-`READY` si el archivo existe. `MISSING`, `CANDIDATE` y `PARTIAL` se publican
-como brechas, nunca como bajo riesgo.
+`READY` si el archivo existe. **READY es un estado legacy de disponibilidad/madurez
+del activo y no demuestra por sí solo que una muestra mínima, revisión científica
+o puerta de promoción esté satisfecha.** El catálogo publica por separado
+`data_presence`, `minimum_sample_gate_met` y la puerta contractual de promoción.
+`MISSING`, `CANDIDATE` y `PARTIAL` se publican como brechas, nunca como bajo riesgo.
 
 ### Eventos de oportunidad todavía no verificados
 

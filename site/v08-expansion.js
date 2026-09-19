@@ -13,8 +13,16 @@
   }
 
   function gate(g){
-    const kind=g.status==='READY'?'ok':g.status==='PARTIAL'?'warn':'exp';
-    return `<span title="${esc(g.path||'Evidencia pendiente')}" style="display:inline-flex;gap:4px;align-items:center;margin:3px 4px 3px 0">${badge(labels[g.id]||g.id,kind)}<span style="font-size:10px">${esc(g.status)}</span></span>`;
+    // Nota: 'status' es el estado legacy del activo (MISSING/CANDIDATE/PARTIAL/READY).
+    // READY exige un archivo existente, pero NO implica por sí solo que la muestra
+    // mínima esté confirmada ni que el contrato sea elegible para promoción.
+    // Esas son proyecciones separadas
+    // (ver 'archivo'/'muestra mínima' abajo y el indicador de contrato en la tarjeta).
+    const kind=g.status==='PARTIAL'?'warn':'exp';
+    const sampleNote=(g.gate_evidence_status&&g.gate_evidence_status!=='NOT_APPLICABLE')
+      ?` · muestra mínima: ${g.minimum_sample_gate_met===true?'confirmada':g.minimum_sample_gate_met===false?'no confirmada':'indeterminada'}`
+      :'';
+    return `<span title="${esc(g.path||'Evidencia pendiente')}" style="display:inline-flex;gap:4px;align-items:center;margin:3px 4px 3px 0">${badge(labels[g.id]||g.id,kind)}<span style="font-size:10px">${esc(g.status)} · archivo: ${esc(g.data_presence||'—')}${sampleNote}</span></span>`;
   }
 
   function zoneCard(z,trace){
@@ -29,9 +37,9 @@
         <div><div class="small">${esc(z.department)} · ${esc(z.province_or_corridor)}</div><h3 style="margin:3px 0">${esc(z.system_name)}</h3></div>
         ${badge('RESEARCH_ONLY','exp')}
       </div>
-      <div class="small" style="line-height:1.55;margin-top:8px"><b>Contrato:</b> ${esc(z.contract_status)} · <b>activación:</b> BLOQUEADA<br><b>Mecanismo:</b> ${esc(z.mechanism_status)}</div>
+      <div class="small" style="line-height:1.55;margin-top:8px"><b>Contrato:</b> ${esc(z.contract_status)} · <b>activación:</b> BLOQUEADA<br><b>Mecanismo:</b> ${esc(z.mechanism_status)}<br><b>Prerrequisitos de promoción del contrato de investigación:</b> ${z.promotion_gate&&z.promotion_gate.promotion_gate_met?'completos':'pendientes'} <span class="small" style="opacity:.75">(promoción del contrato ≠ activación operativa; la activación permanece bloqueada)</span></div>
       <div class="small" style="line-height:1.55;margin-top:8px"><b>Orden de desarrollo:</b> ${esc(priority.development_order)} · ${esc(priority.wave_label)} <b>(no es prioridad de riesgo)</b><br><b>Geometría:</b> ${esc(geometry.status)} · ${geometry.map_eligible?'archivo reproducible disponible':'retenida: no hay archivo reproducible'}<br><b>Confianza geométrica:</b> ${esc(confidence.geometry)} · <b>cobertura:</b> ${esc(coverage.geometry_coverage)}<br><b>Variables:</b> ${variables}</div>
-      <div style="margin-top:9px">${Object.entries(z.asset_status||{}).map(([id,status])=>gate({id,status})).join('')}</div>
+      <div style="margin-top:9px">${Object.entries(z.asset_status||{}).map(([id,status])=>{const ar=(z.asset_readiness||{})[id]||{};return gate({id,status,data_presence:ar.data_presence,minimum_sample_gate_met:ar.minimum_sample_gate_met,gate_evidence_status:ar.gate_evidence_status});}).join('')}</div>
       <div class="small" style="line-height:1.55;margin-top:8px"><b>Fuentes oficiales:</b> ${sources}<br><b>Criterio territorial:</b> ${esc(z.equity_reason)}<br><b>Regla de dato ausente:</b> riesgo desconocido, nunca riesgo bajo.</div>
     </div>`;
   }
