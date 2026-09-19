@@ -1,0 +1,24 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "target_id": "pedregal_san_antonio",
+  "registry_target_key": "pedregal_san_antonio",
+  "status": "FROZEN_PREEXECUTION_METHOD",
+  "guards": {"RESEARCH_ONLY": true, "TEST_ONLY": true, "production_use": false, "production_ready": false, "operational_alerting_enabled": false},
+  "registry_path": "config/chosica_2015_outlet_freeze_registry_v0_1.json",
+  "candidate_path": "site/data/validation/chosica_2015_pedregal_outlet_candidate.json",
+  "base_extent_points_utm18s": [
+    {"id":"mml_r4","x_m":315681,"y_m":8680063},
+    {"id":"mml_r7_pedregal","x_m":314551,"y_m":8681534},
+    {"id":"mml_r9","x_m":312032,"y_m":8677974}
+  ],
+  "margin_sequence_degrees": [0.05,0.10,0.20,0.40],
+  "selection_rule": "Use the first frozen margin whose D8 upstream catchment from the frozen outlet does not touch the DEM crop boundary.",
+  "outlet_mapping_rule": "Map the frozen accepted outlet spatial coordinate to the containing 30 m grid cell at each margin and require cell-center distance <= one DEM-cell diagonal.",
+  "source_integrity_rule": "Any Copernicus tile shared with the outlet diagnostic must reproduce its persisted SHA256 exactly.",
+  "dem_processing": {"source":"Copernicus DEM GLO-30 Public","analysis_crs":"EPSG:32718","resolution_m":30,"reprojection_resampling":"bilinear","conditioning":["fill pits","fill depressions","resolve flats"],"flow_direction":"D8"},
+  "forbidden_inputs": ["2015 activation/non-activation labels","2015 damage/severity","A6680 numeric morphometry","rainfall or remote-sensing response","target basin area/length/relief/slope"],
+  "morphometry_allowed": false,
+  "unblind_allowed": false,
+  "pass_status": "PASS_PEDREGAL_EXPANDED_D8_CATCHMENT_CANDIDATE"
+}

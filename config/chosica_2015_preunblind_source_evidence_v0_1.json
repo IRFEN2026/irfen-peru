@@ -1,0 +1,115 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "PREUNBLIND_SOURCE_EVIDENCE_REGISTERED",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false,
+    "territorial_outcome_evidence_read_for_selection": false,
+    "post_anchor_predictor_evidence_used": false,
+    "a6680_numeric_morphometry_used_for_selection": false
+  },
+  "purpose": "Register admissible pre-2015 or event-independent source evidence for hydrologic identity and outlet-resolution preparation without freezing an outlet cell or basin geometry from cartographic labels alone.",
+  "sources": [
+    {
+      "source_id": "PREDES-CHOSICA-EMERGENCY-2009",
+      "institution": "PREDES",
+      "publication_date": "2009-02-17",
+      "url": "https://predes.org.pe/wp-content/uploads/2017/12/evaluacion_emergencia_chosica.pdf",
+      "admissibility": "ADMISSIBLE_PREUNBLIND_FOR_IDENTITY_ONLY",
+      "evidence": [
+        "The report names San Antonio de Pedregal and Quirio as separate quebradas in Chosica.",
+        "Its pre-2015 satellite figure labels Quebrada Quirio and Quebrada Pedregal separately."
+      ],
+      "supports_targets": ["quirio", "pedregal_san_antonio"],
+      "may_freeze_outlet_cell": false,
+      "may_freeze_hydrologic_identity": true,
+      "selection_outcome_used": false
+    },
+    {
+      "source_id": "IGP-CHOSICA-2012-FIG17-20-27",
+      "institution": "Instituto Geofisico del Peru",
+      "publication_year": 2012,
+      "title": "Zonificacion Sismica-Geotecnica del Area Urbana de Chosica",
+      "url": "https://sigrid.cenepred.gob.pe/docs/PARA%20PUBLICAR/IGP/informe_chosica_2012f.pdf",
+      "admissibility": "ADMISSIBLE_PREUNBLIND_FOR_DRAINAGE_IDENTITY",
+      "evidence": [
+        "The report identifies Quirio, Pedregal, Corrales, Libertad and Carosio as major quebradas on the right bank of the Rimac in the study area.",
+        "Figure 17 describes Quebrada Corrales crossing the Carretera Central near km 32 and reaching the Rimac River.",
+        "The pre-2015 cartography distinguishes Corrales from Carosio; Rayos de Sol is therefore not treated as an automatically independent drainage unit without contradictory pre-unblind evidence."
+      ],
+      "supports_targets": ["quirio", "pedregal_san_antonio", "la_libertad", "carossio", "rayos_de_sol"],
+      "may_freeze_outlet_cell": false,
+      "may_freeze_hydrologic_identity": true,
+      "selection_outcome_used": false
+    },
+    {
+      "source_id": "UNMSM-IIGEO-CAROSSIO-2014",
+      "institution": "Universidad Nacional Mayor de San Marcos - IIGEO",
+      "publication_year": 2014,
+      "title": "Flujos de detritos y dispersores de energia en la torrentera Juan Carossio Chosica - Lima",
+      "url": "https://alicia.concytec.gob.pe/vufind/Record/1682-3087_66b783be27e05dac6e3b6760b1e37b29",
+      "admissibility": "ADMISSIBLE_PREUNBLIND_FOR_DRAINAGE_IDENTITY_ONLY",
+      "evidence": [
+        "The pre-event article identifies Juan Carossio as a distinct torrent/drainage and states that its lower limit delivers to the Rimac River."
+      ],
+      "supports_targets": ["carossio"],
+      "numeric_morphometry_present_in_source": true,
+      "numeric_morphometry_quarantined_until_phase_1_morphometry_freeze": true,
+      "may_freeze_outlet_cell": false,
+      "may_freeze_hydrologic_identity": true,
+      "selection_outcome_used": false
+    },
+    {
+      "source_id": "PREDES-PEDREGAL-REPOSITORY",
+      "institution": "PREDES",
+      "title": "Estudio de riesgo de la quebrada Pedregal - Chosica",
+      "url": "https://predes.org.pe/publicaciones/estudio-de-riesgo-de-la-quebrada-pedregal-chosica/",
+      "admissibility": "LOCATOR_REGISTERED_DATE_NOT_ESTABLISHED_FROM_REPOSITORY_PAGE",
+      "evidence": [
+        "The institutional repository confirms a dedicated Pedregal risk study exists and exposes a downloadable document locator."
+      ],
+      "supports_targets": ["pedregal_san_antonio"],
+      "may_freeze_outlet_cell": false,
+      "may_freeze_hydrologic_identity": false,
+      "selection_outcome_used": false,
+      "note": "Do not upgrade to pre-2015 admissible evidence until publication date/version is independently established from the document itself or archival metadata."
+    }
+  ],
+  "target_identity_state": [
+    {
+      "id": "quirio",
+      "identity_status": "PRE2015_NAMED_RIGHT_BANK_RIMAC_DRAINAGE_SUPPORTED",
+      "outlet_status": "PENDING_SOURCE_AND_D8_IDENTITY"
+    },
+    {
+      "id": "pedregal_san_antonio",
+      "identity_status": "PRE2015_NAMED_RIGHT_BANK_RIMAC_DRAINAGE_SUPPORTED",
+      "outlet_status": "PENDING_SOURCE_AND_D8_IDENTITY"
+    },
+    {
+      "id": "la_libertad",
+      "identity_status": "PRE2015_NAMED_RIGHT_BANK_RIMAC_DRAINAGE_SUPPORTED",
+      "outlet_status": "PENDING_SOURCE_AND_D8_IDENTITY"
+    },
+    {
+      "id": "carossio",
+      "identity_status": "PRE2015_DISTINCT_DRAINAGE_TO_RIMAC_SUPPORTED_BY_TWO_SOURCE_CLASSES",
+      "outlet_status": "PENDING_SOURCE_AND_D8_IDENTITY"
+    },
+    {
+      "id": "rayos_de_sol",
+      "identity_status": "PRE2015_CORRALES_DRAINAGE_IDENTITY_SUPPORTED_STANDALONE_RAYOS_BASIN_NOT_JUSTIFIED",
+      "outlet_status": "PENDING_CORRALES_OUTLET_SOURCE_AND_D8_IDENTITY"
+    },
+    {
+      "id": "cashahuacra",
+      "identity_status": "EVENT_INDEPENDENT_ANA_TWO_POINT_STATIC_CHANNEL_ANCHOR_ALREADY_REGISTERED_IN_OUTLET_CONTRACT",
+      "outlet_status": "PENDING_TWO_POINT_D8_IDENTITY"
+    }
+  ],
+  "conclusion": "Hydrologic identity ambiguity is reduced for the five Chosica-side targets without consulting the sealed 2015 territorial outcome. No outlet cell or basin polygon is frozen by this evidence register; D8/source-cell resolution remains mandatory before morphometry and basin-weighted IMERG extraction."
+}

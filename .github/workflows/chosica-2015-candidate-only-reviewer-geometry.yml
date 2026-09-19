@@ -1,0 +1,107 @@
+name: IRFEN - Chosica 2015 candidate-only reviewer geometry
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_candidate_only_reviewer_geometry_contract_v0_1.json
+      - config/chosica_2015_candidate_only_geometry_fingerprint_freeze_v0_1.json
+      - site/data/validation/chosica_2015_candidate_only_reviewer_bundle_v0_2.json
+      - scripts/build_chosica_2015_candidate_only_reviewer_geometry.py
+      - .github/workflows/chosica-2015-candidate-only-reviewer-geometry.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  build-anonymized-geometry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            .github/workflows/chosica-2015-candidate-only-reviewer-geometry.yml
+            config/chosica_2015_candidate_only_reviewer_geometry_contract_v0_1.json
+            config/chosica_2015_candidate_only_geometry_fingerprint_freeze_v0_1.json
+            site/data/validation/chosica_2015_candidate_only_reviewer_bundle_v0_2.json
+            scripts/build_chosica_2015_candidate_only_reviewer_geometry.py
+
+      - name: Prove target and contaminated sources are absent
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09_b.json
+          test ! -e config/chosica_2015_multibasin_validation_set_v0_1.json
+          python - <<'PY'
+          from pathlib import Path
+          allowed={
+            '.github/workflows/chosica-2015-candidate-only-reviewer-geometry.yml',
+            'config/chosica_2015_candidate_only_reviewer_geometry_contract_v0_1.json',
+            'config/chosica_2015_candidate_only_geometry_fingerprint_freeze_v0_1.json',
+            'site/data/validation/chosica_2015_candidate_only_reviewer_bundle_v0_2.json',
+            'scripts/build_chosica_2015_candidate_only_reviewer_geometry.py',
+          }
+          present={str(p) for p in Path('.').rglob('*') if p.is_file() and '.git/' not in str(p) and not str(p).startswith('.git/')}
+          extra=sorted(present-allowed)
+          assert not extra, f'FAIL_CLOSED_UNEXPECTED_REVIEW_GEOMETRY_FILES:{extra}'
+          print('PASS_CANDIDATE_ONLY_REVIEWER_GEOMETRY_SPARSE_WORKSPACE')
+          PY
+
+      - name: Download exact frozen preincident candidate geometry only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p source artifacts
+          gh run download 34375704757 -n chosica-2015-negative-control-shortlist-geometry -D source
+          test -f source/chosica_2015_negative_control_shortlist.geojson
+          python - <<'PY'
+          import hashlib, pathlib
+          p=pathlib.Path('source/chosica_2015_negative_control_shortlist.geojson')
+          got=hashlib.sha256(p.read_bytes()).hexdigest()
+          assert got=='7fc3db40f7163a7b8019640ffbaa4564e54e09fc769b9de0c4554bcec382c412', got
+          print('PASS_FROZEN_PREINCIDENT_GEOMETRY_HASH')
+          PY
+
+      - name: Build exact anonymized reviewer geometry offline
+        run: |
+          set -euo pipefail
+          env -i PATH="$PATH" PYTHONHASHSEED=0 python scripts/build_chosica_2015_candidate_only_reviewer_geometry.py \
+            --contract config/chosica_2015_candidate_only_reviewer_geometry_contract_v0_1.json \
+            --fingerprints config/chosica_2015_candidate_only_geometry_fingerprint_freeze_v0_1.json \
+            --bundle site/data/validation/chosica_2015_candidate_only_reviewer_bundle_v0_2.json \
+            --source-geojson source/chosica_2015_negative_control_shortlist.geojson \
+            --output-geojson artifacts/chosica_2015_candidate_only_reviewer_geometry_v0_1.geojson \
+            --manifest artifacts/chosica_2015_candidate_only_reviewer_geometry_manifest_v0_1.json
+
+      - name: Enforce anonymous geometry boundary
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          m=json.load(open('artifacts/chosica_2015_candidate_only_reviewer_geometry_manifest_v0_1.json',encoding='utf-8'))
+          assert m['status']=='PASS_CANDIDATE_ONLY_REVIEWER_GEOMETRY_BUILD'
+          assert m['candidate_count']==7
+          assert m['target_identifiers_included'] is False
+          assert m['target_outcomes_accessed'] is False
+          assert m['candidate_outcomes_accessed'] is False
+          assert m['a6680_accessed'] is False
+          assert m['post_anchor_predictors_accessed'] is False
+          assert m['selection_feedback_used'] is False
+          assert m['candidate_replacement_performed'] is False
+          assert m['target_unblind_allowed'] is False
+          assert m['guards']=={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-candidate-only-reviewer-geometry
+          path: |
+            artifacts/chosica_2015_candidate_only_reviewer_geometry_v0_1.geojson
+            artifacts/chosica_2015_candidate_only_reviewer_geometry_manifest_v0_1.json
+          if-no-files-found: error

@@ -1,0 +1,106 @@
+{
+  "schema_version": "0.2",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_CANDIDATE_ONLY_ADJUDICATION_INGEST_V0_2_CONTRACT",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "prerequisites": {
+    "contamination_registry": "config/chosica_2015_control_adjudication_contamination_registry_v0_1.json",
+    "cleanroom_freeze": "config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json",
+    "review_v0_2_contract": "config/chosica_2015_candidate_only_review_v0_2_contract.json",
+    "reviewer_bundle": "site/data/validation/chosica_2015_candidate_only_reviewer_bundle_v0_2.json",
+    "reviewer_bundle_sha256": "c4f62777d31a223f77de049ea368c321f5c299114d6a14f407899c772e911f15",
+    "candidate_membership_sha256": "5738c0e2bcddf95be0e1cc9c77660d030355602f39920b3873c6ec65b0f26bc1"
+  },
+  "selected_candidate_codes": [
+    "C_15cbc5db136d",
+    "C_19f0c525214f",
+    "C_51061f9f6857",
+    "C_636da855a58d",
+    "C_b903bae5d9c9",
+    "C_c767e4cea74e",
+    "C_d0274c1c4240"
+  ],
+  "input_artifact": "site/data/validation/chosica_2015_candidate_only_territorial_adjudication_v0_2.json",
+  "template_artifact": "site/data/validation/chosica_2015_candidate_only_territorial_adjudication_template_v0_2.json",
+  "required_status": "INDEPENDENT_CANDIDATE_ONLY_TERRITORIAL_ADJUDICATION_COMPLETE_V0_2",
+  "allowed_adjudications": ["CONFIRMED_CONTROL", "EXCLUDE_ACTIVATED", "OUTCOME_UNKNOWN"],
+  "allowed_evidence_resolution": ["CANDIDATE_SPECIFIC", "JURISDICTION_ONLY", "AMBIGUOUS_OR_UNRESOLVED"],
+  "allowed_source_classes": [
+    "DIRECT_GEOREFERENCED_EVENT_RECORD",
+    "INDEPENDENT_CANDIDATE_SPECIFIC_DOCUMENT",
+    "AUTHORITATIVE_CANDIDATE_SPECIFIC_MAP",
+    "JURISDICTION_LEVEL_INCIDENT_RECORD",
+    "OTHER_INDEPENDENT_SOURCE"
+  ],
+  "required_record_fields": [
+    "candidate_code",
+    "adjudication",
+    "evidence_resolution",
+    "source_class",
+    "source_locator",
+    "source_date_if_known",
+    "retrieved_at_utc",
+    "evidence_sha256_or_stable_source_identifier",
+    "evidence_basis",
+    "source_location_caveat_acknowledged",
+    "reviewer_attestation_no_target_outcome_access"
+  ],
+  "decisive_evidence_gate": {
+    "decisive_adjudications": ["CONFIRMED_CONTROL", "EXCLUDE_ACTIVATED"],
+    "required_evidence_resolution": "CANDIDATE_SPECIFIC",
+    "forbidden_source_class_as_sole_basis": "JURISDICTION_LEVEL_INCIDENT_RECORD",
+    "source_location_caveat_acknowledged": true,
+    "documentary_silence_allowed": false
+  },
+  "unknown_policy": {
+    "documentary_silence": "OUTCOME_UNKNOWN",
+    "jurisdiction_only_without_candidate_specific_corroboration": "OUTCOME_UNKNOWN",
+    "ambiguous_or_unresolved": "OUTCOME_UNKNOWN",
+    "failed_search": "OUTCOME_UNKNOWN"
+  },
+  "review_attestation_required": {
+    "review_process_isolated_from_target_outcomes": true,
+    "candidate_membership_fixed_before_review": true,
+    "candidate_replacement_performed": false,
+    "matching_recalculated_after_review": false,
+    "selection_feedback_used": false,
+    "target_outcomes_accessed": false,
+    "external_reference_morphometry_accessed": false,
+    "contaminated_stage_material_accessed": false,
+    "free_text_queries_include_target_identifiers": false
+  },
+  "forbidden_content_tokens_case_insensitive": [
+    "cashahuacra", "quirio", "pedregal", "san antonio", "san_antonio",
+    "la libertad", "la_libertad", "carossio", "carosio", "rayos de sol",
+    "rayos_de_sol", "corrales", "official_outcome_evidence", "a6680"
+  ],
+  "output_freeze": {
+    "file_name": "chosica_2015_candidate_only_control_set_freeze_v0_2.json",
+    "must_record_input_sha256": true,
+    "must_record_reviewer_bundle_sha256": true,
+    "must_record_candidate_membership_sha256": true,
+    "candidate_replacement_after_freeze": false,
+    "matching_recalculation_after_freeze": false,
+    "selection_feedback_after_freeze": false,
+    "target_unblind_allowed": false
+  },
+  "fail_closed": [
+    "candidate membership differs from the frozen seven codes",
+    "reviewer bundle SHA-256 differs from the frozen v0.2 value",
+    "review attestation is missing or inconsistent",
+    "forbidden target or external-reference token appears in adjudication",
+    "decisive label lacks candidate-specific evidence",
+    "jurisdiction-level incident record is used alone for a decisive label",
+    "documentary silence or failed search is converted to CONFIRMED_CONTROL",
+    "contaminated adjudication or target outcome evidence is reused",
+    "candidate set, matching, or shortlist is modified after review",
+    "production or operational guards change"
+  ],
+  "next_gate": "FREEZE_V0_2_CONTROL_SET_THEN_EVALUATE_TARGET_CODE_READINESS_WITH_NO_FEEDBACK_TO_MATCHING"
+}

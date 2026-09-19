@@ -1,0 +1,96 @@
+{
+  "schema_version": "0.6",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PREUNBLIND_EXECUTION_REV6_EXACT_GEOMETRY_POURPOINT_REPLAY",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "inherits_method_contract": "config/chosica_2015_dem_morphometry_contract_v0_1.json",
+  "supersedes_execution_contract": "config/chosica_2015_morphometry_phase1_execution_v0_5.json",
+  "revision_basis": {
+    "prior_execution_run_id": 33989300433,
+    "prior_execution_status": "FAIL_CLOSED_PHASE1_MORPHOMETRY",
+    "prior_execution_target_count": 0,
+    "prior_execution_metrics_observed": false,
+    "outcome_evidence_read": false,
+    "a6680_numeric_reference_read": false,
+    "post_anchor_predictor_read": false,
+    "reason": "Compatibility provenance retained for the original fail-closed phase-1 implementation."
+  },
+  "revision_history": {
+    "v0_5_run_id": 33993143432,
+    "v0_5_status": "FAIL_CLOSED_PHASE1_MORPHOMETRY",
+    "v0_5_structural_error": "FAIL_CLOSED_CANONICAL_D8_POLYGON_COVERAGE la_libertad 0.000000000",
+    "v0_5_completed_metric_sets_before_failure": ["cashahuacra", "quirio", "pedregal_san_antonio"],
+    "v0_5_metric_values_observed": true,
+    "selection_or_tuning_from_metric_values": false,
+    "outcome_evidence_read": false,
+    "a6680_numeric_reference_read": false,
+    "post_anchor_predictor_read": false,
+    "diagnosis": "The generic manual reverse-D8 bridge in revision 0.5 is rejected. The frozen geometry was originally created by the project-standard Pysheds catchment call from the containing-cell center coordinate. Morphometry must replay that exact frozen geometry-generation pour-point semantics rather than infer an alternative outlet-cell topology."
+  },
+  "required_gate": {
+    "frozen_outlet_count": 6,
+    "frozen_geometry_count": 6,
+    "batch_morphometry_allowed": true,
+    "unblind_allowed": false
+  },
+  "frozen_geometry_input": {
+    "source": "exact GitHub Actions geometry artifacts referenced by the outlet-freeze registry",
+    "verification": "SHA256 of each downloaded GeoJSON must exactly equal geometry_geojson_sha256 in the frozen registry",
+    "no_geometry_refit": true,
+    "no_mask_expansion": true
+  },
+  "exact_geometry_dem_reconstruction": {
+    "contract": "config/chosica_2015_morphometry_phase1_execution_v0_4.json",
+    "status": "RETAINED_UNCHANGED",
+    "hard_integrity_gate": "regenerated DEM GeoTIFF SHA256 must exactly equal geometry_freeze.dem_utm_sha256 for every target before morphometry is accepted",
+    "fallback": "none; any hash mismatch fails closed"
+  },
+  "exact_geometry_pourpoint_replay": {
+    "activation": "all six targets",
+    "coordinate_rule": "map the unchanged frozen accepted outlet coordinate to the containing exact-DEM cell using rasterio; use that cell center x/y as the coordinate passed to Pysheds, exactly as in the frozen geometry delineator",
+    "pysheds_call": "grid.catchment(x=cell_center_x,y=cell_center_y,fdir=fdir,dirmap=(64,128,1,2,4,8,16,32),xytype='coordinate')",
+    "pysheds_internal_cell_audit": "record grid.nearest_cell(cell_center_x,cell_center_y) and its center distance to the unchanged frozen accepted outlet; require <= one 30 m cell diagonal",
+    "canonical_mask_rule": "the replayed Pysheds catchment is routing provenance only; the frozen polygon cell-center mask remains the metric inclusion mask",
+    "alignment_gate": "Jaccard(replayed Pysheds catchment, frozen-polygon cell-center mask) >= 0.995 and at least 99.5 percent of frozen-polygon center cells belong to the replayed catchment",
+    "failure": "fail closed; do not move the outlet, alter geometry, widen masks, or tune a tolerance from morphometry values"
+  },
+  "main_channel_distance": {
+    "method": "Pysheds distance_to_outlet replayed from the exact same cell-center coordinate used for frozen geometry generation",
+    "weights": "Pysheds cell_distances(fdir,dirmap) on the exact projected 30 m DEM, so orthogonal and diagonal D8 cell-center link lengths are measured in metres",
+    "selection": "maximum finite weighted distance among cells selected by the unchanged frozen-polygon center mask that also belong to the replayed canonical catchment",
+    "minimum_routing_coverage": 0.995
+  },
+  "unchanged_metric_semantics": {
+    "polygon_area_and_perimeter": "exact frozen polygon projected to EPSG:32718",
+    "elevation_and_slope_mask": "unchanged frozen-polygon cell-center mask",
+    "drainage_density": "unchanged threshold and link rule; only qualifying links whose upstream and downstream cells are both inside the frozen-polygon cell-center mask count",
+    "outlet_coordinate": "unchanged frozen accepted outlet",
+    "geometry": "unchanged frozen GeoJSON"
+  },
+  "phase_1_output": {
+    "a6680_numeric_reference_read": false,
+    "outcome_evidence_read": false,
+    "post_anchor_predictor_read": false,
+    "required_target_count": 6,
+    "freeze_before_compare": true,
+    "comparison_allowed_in_same_execution": false,
+    "record_exact_geometry_dem_hash_audit_per_target": true,
+    "record_original_geometry_pourpoint_replay_audit_per_target": true
+  },
+  "forbidden": [
+    "read A6680 numeric morphometry before phase-1 output hash is frozen",
+    "use metric values observed in failed phase-1 runs to tune a method",
+    "move an outlet or alter/expand a frozen basin polygon",
+    "change DEM conditioning, slope algorithm, D8 method, channel threshold or cell-inclusion rule to improve agreement",
+    "accept a regenerated DEM whose GeoTIFF SHA256 differs from the frozen geometry-generation DEM hash",
+    "substitute a manual reverse-D8 topology for the exact Pysheds geometry-generation semantics",
+    "include replay-only catchment cells in polygon, elevation, slope or drainage-density masks",
+    "discard a target because of unexpected morphometry"
+  ]
+}

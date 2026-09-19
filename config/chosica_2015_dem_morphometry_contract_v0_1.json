@@ -1,0 +1,74 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_METHOD_PENDING_SIX_OUTLETS",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "input_gate": {
+    "required_target_count": 6,
+    "required_geometry_status": "FROZEN",
+    "required_outlet_status": "FROZEN",
+    "fail_closed_if_any_target_missing": true,
+    "a6680_numeric_reference_access_before_output_freeze": false
+  },
+  "dem": {
+    "source": "Copernicus DEM GLO-30 Public",
+    "analysis_crs": "EPSG:32718",
+    "target_resolution_m": 30,
+    "reprojection_resampling": "bilinear",
+    "nodata_policy": "metric UNKNOWN if any required neighborhood cannot be resolved; no synthetic elevation fill across basin boundary"
+  },
+  "polygon_metrics": {
+    "area_km2": "project frozen basin polygon to EPSG:32718; planar area / 1e6",
+    "perimeter_km": "project frozen basin polygon to EPSG:32718; exterior plus interior ring lengths / 1000"
+  },
+  "elevation_metrics": {
+    "mask_rule": "include DEM cells whose centers fall inside frozen basin polygon",
+    "elevation_min_m": "minimum valid masked DEM elevation",
+    "elevation_max_m": "maximum valid masked DEM elevation",
+    "relief_m": "elevation_max_m - elevation_min_m"
+  },
+  "slope_metrics": {
+    "algorithm": "Horn 3x3 finite-difference slope on 30 m projected DEM",
+    "units": "degrees",
+    "mask_rule": "report only cells whose centers fall inside frozen basin polygon and have complete valid 3x3 DEM neighborhood",
+    "outputs": [
+      "mean_basin_slope_deg",
+      "median_basin_slope_deg",
+      "p90_basin_slope_deg"
+    ]
+  },
+  "hydrology_metrics": {
+    "conditioning": [
+      "fill pits",
+      "fill depressions",
+      "resolve flats"
+    ],
+    "flow_direction": "D8",
+    "main_channel_length_m": "longest flow-path distance from any in-basin cell to the frozen outlet, measured along D8 cell-center links; no channel-threshold tuning",
+    "drainage_density_km_per_km2": {
+      "channel_definition": "D8 cells with contributing area >= 1 percent of the frozen basin polygon area",
+      "length_measurement": "sum downstream D8 link lengths for qualifying in-basin channel cells, counting each directed link once",
+      "normalization": "channel_length_km / polygon_area_km2",
+      "sensitivity_status": "METHOD_SPECIFIC; any alternative threshold belongs to a later sensitivity analysis and cannot replace this frozen primary value"
+    }
+  },
+  "freeze_and_compare": {
+    "phase_1": "compute all DEM-derived values and input/code hashes; write immutable morphometry output with A6680 reference unread",
+    "phase_2": "hash and freeze phase_1 output",
+    "phase_3": "only then read the sealed A6680 numeric reference and compute signed difference, absolute difference and percent difference where denominator is nonzero",
+    "forbidden": [
+      "move outlet to improve agreement with A6680",
+      "change DEM conditioning to improve agreement",
+      "change slope algorithm after comparison",
+      "change channel definition after comparison",
+      "discard a target because agreement is poor"
+    ]
+  },
+  "comparison_interpretation": "Differences quantify method/data disagreement; A6680 is an external reference, not a calibration target or geometry-selection oracle."
+}

@@ -1,0 +1,86 @@
+{
+  "schema_version": "0.8",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PREUNBLIND_EXECUTION_REV8_TARGET_PROCESS_ISOLATION_ONLY",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "inherits_method_contract": "config/chosica_2015_dem_morphometry_contract_v0_1.json",
+  "supersedes_execution_contract": "config/chosica_2015_morphometry_phase1_execution_v0_7.json",
+  "revision_basis": {
+    "prior_execution_target_count": 0,
+    "prior_execution_metrics_observed": false,
+    "v0_7_run_id": 33993995925,
+    "v0_7_status": "PROCESS_ABORT_BEFORE_REPORT",
+    "v0_7_process_error": "double free or corruption (out); exit code 134",
+    "v0_7_failed_step": "Compute phase-1 morphometry without A6680",
+    "v0_7_report_persisted": false,
+    "selection_or_tuning_from_metric_values": false,
+    "outcome_evidence_read": false,
+    "a6680_numeric_reference_read": false,
+    "post_anchor_predictor_read": false,
+    "diagnosis_scope": "Native-process abort occurred after the frozen geometry artifacts were downloaded and before any phase-1 report was persisted. Revision 0.8 changes execution isolation only: each target is computed in a fresh Python process using the unchanged revision-0.7 target metric, exact DEM, routing replay and scientific guard functions. No metric formula, geometry, outlet, routing semantic, DEM reconstruction rule, threshold or target selection is changed."
+  },
+  "required_gate": {
+    "frozen_outlet_count": 6,
+    "frozen_geometry_count": 6,
+    "batch_morphometry_allowed": true,
+    "unblind_allowed": false
+  },
+  "execution_isolation": {
+    "coordinator_process_reads_outcomes": false,
+    "worker_process_count": 6,
+    "worker_order": [
+      "cashahuacra",
+      "quirio",
+      "pedregal_san_antonio",
+      "la_libertad",
+      "carossio",
+      "rayos_de_sol"
+    ],
+    "one_target_per_fresh_python_process": true,
+    "workers_execute_revision_0_7_target_functions_unchanged": true,
+    "shared_source_tile_cache_allowed": true,
+    "parallel_workers": false,
+    "reason_parallel_workers_disabled": "Avoid concurrent writes to the shared exact-source-tile cache and keep failure attribution deterministic; this is an execution-integrity choice, not a scientific selection rule.",
+    "worker_failure_policy": "FAIL_CLOSED_NO_PARTIAL_BATCH_FREEZE",
+    "native_abort_is_not_interpreted_as_missing_or_zero": true
+  },
+  "retained_scientific_contracts": {
+    "exact_geometry_dem_reconstruction": "config/chosica_2015_morphometry_phase1_execution_v0_4.json",
+    "geometry_provenance_aware_routing": "config/chosica_2015_morphometry_phase1_execution_v0_7.json",
+    "cashahuacra_routing_method": "FROZEN_GENERATOR_MANUAL_REVERSE_D8_FROM_FROZEN_ROW_COL",
+    "other_five_routing_method": "FROZEN_GENERATOR_PYSHEDS_CATCHMENT_FROM_CONTAINING_CELL_CENTER",
+    "frozen_polygon_is_metric_mask": true,
+    "frozen_outlet_modified": false,
+    "frozen_polygon_modified": false,
+    "dem_conditioning_changed": false,
+    "slope_algorithm_changed": false,
+    "channel_threshold_changed": false,
+    "drainage_density_rule_changed": false
+  },
+  "phase_1_output": {
+    "a6680_numeric_reference_read": false,
+    "outcome_evidence_read": false,
+    "post_anchor_predictor_read": false,
+    "required_target_count": 6,
+    "freeze_before_compare": true,
+    "comparison_allowed_in_same_execution": false,
+    "record_exact_geometry_dem_hash_audit_per_target": true,
+    "record_geometry_generation_routing_replay_audit_per_target": true,
+    "record_worker_return_code_per_target": true
+  },
+  "forbidden": [
+    "read A6680 numeric morphometry before phase-1 output is frozen by hash",
+    "read sealed outcomes before the allowed unblind",
+    "use any metric value from a worker to select, tune, drop or rerun a target under different scientific semantics",
+    "move an outlet or alter/expand a frozen basin polygon",
+    "change DEM conditioning, slope algorithm, channel threshold or metric inclusion rule",
+    "accept a regenerated DEM whose binary GeoTIFF SHA256 differs from the frozen geometry-generation DEM hash",
+    "treat a worker crash, missing artifact or native-process failure as zero, dry, inactive or scientifically usable"
+  ]
+}
