@@ -1,0 +1,549 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://irfen.example/schema/phase2_spatial_observation_contracts.schema.json",
+  "title": "IRFEN Phase-2 Spatial Observation Contracts v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "generated_at",
+    "deployment_status",
+    "test_mode",
+    "production_use",
+    "production_ready",
+    "operational_alerting_enabled",
+    "decision_thresholds",
+    "activation_gate",
+    "relationship_to_phase2",
+    "guardrails",
+    "candidate_records",
+    "summary"
+  ],
+  "properties": {
+    "version": {
+      "const": "phase2-spatial-observation-contracts-v0.1"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "deployment_status": {
+      "const": "RESEARCH_ONLY"
+    },
+    "test_mode": {
+      "const": true
+    },
+    "production_use": {
+      "const": false
+    },
+    "production_ready": {
+      "const": false
+    },
+    "operational_alerting_enabled": {
+      "const": false
+    },
+    "decision_thresholds": {
+      "const": null
+    },
+    "activation_gate": {
+      "const": "BLOCKED"
+    },
+    "relationship_to_phase2": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "registered_candidate_count",
+        "changes_candidate_count",
+        "changes_activation_gates",
+        "changes_promotion_gates",
+        "changes_v08_scope"
+      ],
+      "properties": {
+        "registered_candidate_count": {
+          "const": 18
+        },
+        "changes_candidate_count": {
+          "const": false
+        },
+        "changes_activation_gates": {
+          "const": false
+        },
+        "changes_promotion_gates": {
+          "const": false
+        },
+        "changes_v08_scope": {
+          "const": false
+        }
+      }
+    },
+    "guardrails": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "regulatory_corridor_is_not_catchment",
+        "river_margin_is_not_catchment",
+        "line_geometry_is_not_area_sampling_geometry",
+        "subunit_contract_does_not_complete_parent_candidate",
+        "cross_candidate_spatial_transfer_forbidden",
+        "sampling_contract_is_not_activation_validation",
+        "missing_geometry_is_blocked_not_low_risk"
+      ],
+      "properties": {
+        "regulatory_corridor_is_not_catchment": {
+          "const": true
+        },
+        "river_margin_is_not_catchment": {
+          "const": true
+        },
+        "line_geometry_is_not_area_sampling_geometry": {
+          "const": true
+        },
+        "subunit_contract_does_not_complete_parent_candidate": {
+          "const": true
+        },
+        "cross_candidate_spatial_transfer_forbidden": {
+          "const": true
+        },
+        "sampling_contract_is_not_activation_validation": {
+          "const": true
+        },
+        "missing_geometry_is_blocked_not_low_risk": {
+          "const": true
+        }
+      }
+    },
+    "candidate_records": {
+      "type": "array",
+      "minItems": 18,
+      "maxItems": 18,
+      "items": {
+        "$ref": "#/$defs/candidate_record"
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_count",
+        "candidate_wide_ready_count",
+        "subunit_research_only_candidate_count",
+        "non_catchment_geometry_only_count",
+        "blocked_missing_geometry_count",
+        "research_subunit_contract_count",
+        "operational_spatial_contract_count"
+      ],
+      "properties": {
+        "candidate_count": {
+          "const": 18
+        },
+        "candidate_wide_ready_count": {
+          "const": 0
+        },
+        "subunit_research_only_candidate_count": {
+          "const": 1
+        },
+        "non_catchment_geometry_only_count": {
+          "const": 1
+        },
+        "blocked_missing_geometry_count": {
+          "const": 16
+        },
+        "research_subunit_contract_count": {
+          "const": 2
+        },
+        "operational_spatial_contract_count": {
+          "const": 0
+        }
+      }
+    }
+  },
+  "$defs": {
+    "excluded_feature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "feature_id",
+        "role",
+        "geometry_type",
+        "classification",
+        "reason"
+      ],
+      "properties": {
+        "feature_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "role": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "geometry_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "classification": {
+          "type": "string"
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "subunit_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_id",
+        "candidate_id",
+        "subunit_id",
+        "contract_scope",
+        "contract_status",
+        "deployment_status",
+        "production_use",
+        "production_ready",
+        "operational_alerting_enabled",
+        "activation_gate",
+        "counts_as_candidate_wide_geometry",
+        "counts_as_operational_geometry",
+        "geometry_ref",
+        "outlet_status",
+        "sampling_contract",
+        "scientific_limitations"
+      ],
+      "properties": {
+        "contract_id": {
+          "type": "string"
+        },
+        "candidate_id": {
+          "const": "lima_este_santa_eulalia_rimac"
+        },
+        "subunit_id": {
+          "enum": [
+            "cashahuacra",
+            "shingolay"
+          ]
+        },
+        "contract_scope": {
+          "const": "HYDROLOGIC_SUBUNIT_RESEARCH_ONLY"
+        },
+        "contract_status": {
+          "const": "RESEARCH_SAMPLING_ELIGIBLE"
+        },
+        "deployment_status": {
+          "const": "RESEARCH_ONLY"
+        },
+        "production_use": {
+          "const": false
+        },
+        "production_ready": {
+          "const": false
+        },
+        "operational_alerting_enabled": {
+          "const": false
+        },
+        "activation_gate": {
+          "const": "BLOCKED"
+        },
+        "counts_as_candidate_wide_geometry": {
+          "const": false
+        },
+        "counts_as_operational_geometry": {
+          "const": false
+        },
+        "geometry_ref": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "path",
+            "feature_selector",
+            "geometry_type",
+            "geometry_sha256",
+            "representation",
+            "hydrologic_role",
+            "declared_area_km2",
+            "area_semantics",
+            "confidence",
+            "candidate_status"
+          ],
+          "properties": {
+            "path": {
+              "const": "site/data/phase2/geometries/w1_santa_eulalia_rimac.geojson"
+            },
+            "feature_selector": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "property",
+                "value"
+              ],
+              "properties": {
+                "property": {
+                  "const": "unit_id"
+                },
+                "value": {
+                  "enum": [
+                    "cashahuacra",
+                    "shingolay"
+                  ]
+                }
+              }
+            },
+            "geometry_type": {
+              "enum": [
+                "Polygon",
+                "MultiPolygon"
+              ]
+            },
+            "geometry_sha256": {
+              "type": "string",
+              "minLength": 64,
+              "maxLength": 64
+            },
+            "representation": {
+              "type": "string"
+            },
+            "hydrologic_role": {
+              "const": "local_debris_flow_catchment_candidate"
+            },
+            "declared_area_km2": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "area_semantics": {
+              "type": "string"
+            },
+            "confidence": {
+              "type": "string"
+            },
+            "candidate_status": {
+              "const": "REVIEW_ONLY"
+            }
+          }
+        },
+        "outlet_status": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "official_confirmation",
+            "lon",
+            "lat",
+            "selection"
+          ],
+          "properties": {
+            "official_confirmation": {
+              "type": "boolean"
+            },
+            "lon": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "lat": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "selection": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "sampling_contract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "method",
+            "geometry_crs",
+            "spatial_transfer_allowed",
+            "cross_candidate_transfer_allowed",
+            "minimum_coverage_pct",
+            "coverage_threshold_status",
+            "missing_grid_cells_policy",
+            "partial_coverage_interpretation",
+            "supported_source_families",
+            "source_use_policy"
+          ],
+          "properties": {
+            "method": {
+              "const": "AREA_WEIGHTED_GRID_CELL_INTERSECTION"
+            },
+            "geometry_crs": {
+              "const": "EPSG:4326"
+            },
+            "spatial_transfer_allowed": {
+              "const": false
+            },
+            "cross_candidate_transfer_allowed": {
+              "const": false
+            },
+            "minimum_coverage_pct": {
+              "const": null
+            },
+            "coverage_threshold_status": {
+              "const": "UNRESOLVED_NO_ARBITRARY_THRESHOLD"
+            },
+            "missing_grid_cells_policy": {
+              "const": "PRESERVE_COVERAGE_AND_FAIL_CLOSED"
+            },
+            "partial_coverage_interpretation": {
+              "const": "INSUFFICIENT_EVIDENCE_UNLESS_SOURCE_SPECIFIC_METHOD_APPROVED"
+            },
+            "supported_source_families": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": {
+                "enum": [
+                  "IMERG",
+                  "GOES_RRQPE",
+                  "GEOS_CF"
+                ]
+              }
+            },
+            "source_use_policy": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "IMERG",
+                "GOES_RRQPE",
+                "GEOS_CF"
+              ],
+              "properties": {
+                "IMERG": {
+                  "type": "string"
+                },
+                "GOES_RRQPE": {
+                  "type": "string"
+                },
+                "GEOS_CF": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "scientific_limitations": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "candidate_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_id",
+        "system_name",
+        "geometry_asset_status",
+        "geometry_data_presence",
+        "geometry_path",
+        "candidate_wide_sampling_ready",
+        "candidate_wide_contract",
+        "subunit_contracts",
+        "excluded_geometry_features",
+        "deployment_status",
+        "production_use",
+        "production_ready",
+        "activation_gate",
+        "spatial_contract_status",
+        "blocker"
+      ],
+      "properties": {
+        "candidate_id": {
+          "type": "string"
+        },
+        "system_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "geometry_asset_status": {
+          "enum": [
+            "MISSING",
+            "CANDIDATE",
+            "PARTIAL",
+            "READY"
+          ]
+        },
+        "geometry_data_presence": {
+          "enum": [
+            "PRESENT",
+            "MISSING",
+            "UNKNOWN"
+          ]
+        },
+        "geometry_path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "candidate_wide_sampling_ready": {
+          "type": "boolean"
+        },
+        "candidate_wide_contract": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "subunit_contracts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/subunit_contract"
+          }
+        },
+        "excluded_geometry_features": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/excluded_feature"
+          }
+        },
+        "deployment_status": {
+          "const": "RESEARCH_ONLY"
+        },
+        "production_use": {
+          "const": false
+        },
+        "production_ready": {
+          "const": false
+        },
+        "activation_gate": {
+          "const": "BLOCKED"
+        },
+        "spatial_contract_status": {
+          "enum": [
+            "BLOCKED_MISSING_GEOMETRY",
+            "SUBUNIT_RESEARCH_ONLY",
+            "NON_CATCHMENT_GEOMETRY_ONLY",
+            "CANDIDATE_WIDE_RESEARCH_READY"
+          ]
+        },
+        "blocker": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}
