@@ -45,7 +45,7 @@ def hdist(lon1,lat1,lon2,lat2):
  r=6371.0088;p1,p2=math.radians(lat1),math.radians(lat2);dp=math.radians(lat2-lat1);dl=math.radians(lon2-lon1);a=math.sin(dp/2)**2+math.cos(p1)*math.cos(p2)*math.sin(dl/2)**2;return 2*r*math.asin(math.sqrt(a))
 def num(v):
  try:return float(str(v).replace(',','.'))
- except:return None
+ except ValueError:return None
 def first(row,aliases):
  normalized={keynorm(k):v for k,v in row.items()}
  for a in aliases:
@@ -63,18 +63,18 @@ def download():
 def decode(data):
  for enc in ('utf-8-sig','utf-8','latin-1'):
   try:return data.decode(enc),enc
-  except:pass
+  except UnicodeDecodeError:pass
  raise UnicodeDecodeError('unknown',b'',0,1,'sin codificación compatible')
 def main():
  report={'version':'0.8-experimental','generated_at':datetime.now(timezone.utc).isoformat(),'production_use':False,'source':{'title':'Variables meteorológicas de las estaciones automáticas de intercambio internacional','publisher':'SENAMHI','catalog':'Plataforma Nacional de Datos Abiertos / Repositorio SENAMHI','resource_vintage':'actualizado hasta junio de 2024','use':'station_catalog_and_historical_control_only'},'status':'starting','warning':'Recurso histórico abierto; NO representa observación actual ni reemplaza IMERG.'}
  try:data,attempts=download()
- except Exception as exc:
+ except RuntimeError as exc:
   report.update({'status':'download_unavailable_from_github_actions','error_type':type(exc).__name__,'error':str(exc)});OUT.parent.mkdir(parents=True,exist_ok=True);OUT.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8');print(json.dumps(report,ensure_ascii=False,indent=2));return 0
  report['download_attempts']=attempts;report['bytes']=len(data);report['md5']=hashlib.md5(data).hexdigest();report['published_checksum_reference']=EXPECTED_CHECKSUM;report['checksum_matches_published_reference']=report['md5'].lower()==EXPECTED_CHECKSUM.lower()
  text,enc=decode(data);report['encoding']=enc
  sample=text[:10000];dialect=None
  try:dialect=csv.Sniffer().sniff(sample,delimiters=',;\t|')
- except:pass
+ except csv.Error:pass
  delimiter=dialect.delimiter if dialect else ';' if sample.count(';')>sample.count(',') else ',';report['delimiter']=delimiter
  reader=csv.DictReader(io.StringIO(text),delimiter=delimiter);report['columns']=reader.fieldnames or []
  stations={};dates=[];precip_nonempty=0;rows=0

@@ -53,7 +53,7 @@ def millis(v):
     s=str(v or '').strip()
     if s.isdigit(): return int(s)
     try:return int(datetime.fromisoformat(s.replace('Z','+00:00')).timestamp()*1000)
-    except:return None
+    except ValueError:return None  # PARSE_INPUT_INVALID: timestamp no reconocido
 
 
 def sample(cells,start,end,session):
@@ -84,7 +84,7 @@ def rolling(rows,n):
 def analyze_event(meta,cells,session):
     d=datetime.fromisoformat(meta['date']).replace(tzinfo=timezone.utc)
     start=d-timedelta(hours=24); end=d+timedelta(hours=48)
-    obs={}; cursor=start; requests_count=0; raw_samples=0; samples_with_time=0
+    obs={}; cursor=start; requests_count=0; raw_samples=0; samples_with_time=0; missing_value_samples=0; invalid_value_samples=0
     while cursor<end:
         block_end=min(end-timedelta(minutes=30),cursor+timedelta(hours=BLOCK_HOURS)-timedelta(minutes=30))
         batch=sample(cells,cursor,block_end,session); raw_samples+=len(batch)
@@ -95,8 +95,14 @@ def analyze_event(meta,cells,session):
             samples_with_time+=1
             loc=s.get('location') or {}; x=float(loc.get('x',0)); y=float(loc.get('y',0))
             idx=min(range(len(cells)),key=lambda i:(cells[i]['lon']-x)**2+(cells[i]['lat']-y)**2)
-            try:v=float(s.get('value'))
-            except:continue
+            raw_value=s.get('value')
+            if raw_value is None or (isinstance(raw_value,str) and not raw_value.strip()):
+                missing_value_samples+=1  # SOURCE_DATA_MISSING
+                continue
+            try:v=float(raw_value)
+            except (TypeError,ValueError):
+                invalid_value_samples+=1  # PARSE_INPUT_INVALID
+                continue
             if v>=0: obs.setdefault(tm,{})[idx]=v
         requests_count+=1; cursor+=timedelta(hours=BLOCK_HOURS)
     rows=[]; dt=start
@@ -110,7 +116,7 @@ def analyze_event(meta,cells,session):
         dt+=timedelta(minutes=30)
     valid=[x for x in rows if x['accum_mm'] is not None]
     peak=max(valid,key=lambda x:x['rate_mm_hr']) if valid else None
-    return {**meta,'window_utc':{'start':start.isoformat(),'end_exclusive':end.isoformat()},'coverage_pct':round(100*len(valid)/len(rows),2),'batch_requests':requests_count,'raw_sample_count':raw_samples,'samples_with_time':samples_with_time,'peak_rate_mm_hr':None if not peak else peak['rate_mm_hr'],'peak_time_utc':None if not peak else peak['time_utc'],'max_30min':rolling(rows,1),'max_1h':rolling(rows,2),'max_3h':rolling(rows,6),'max_6h':rolling(rows,12),'max_24h':rolling(rows,48)}
+    return {**meta,'window_utc':{'start':start.isoformat(),'end_exclusive':end.isoformat()},'coverage_pct':round(100*len(valid)/len(rows),2),'batch_requests':requests_count,'raw_sample_count':raw_samples,'samples_with_time':samples_with_time,'sample_value_quality':{'missing_value_samples':missing_value_samples,'invalid_value_samples':invalid_value_samples},'peak_rate_mm_hr':None if not peak else peak['rate_mm_hr'],'peak_time_utc':None if not peak else peak['time_utc'],'max_30min':rolling(rows,1),'max_1h':rolling(rows,2),'max_3h':rolling(rows,6),'max_6h':rolling(rows,12),'max_24h':rolling(rows,48)}
 
 
 def main():

@@ -29,7 +29,7 @@ def inside(lon,lat):
 
 def area_km2(item):
     try:v=float(str(item.get('value_text')).replace(',','.'))
-    except:return None
+    except ValueError:return None
     u=str(item.get('unit_text','')).lower()
     if 'ha' in u or 'hect' in u:v/=100.0
     return v if 0.01<=v<=500 else None
@@ -38,6 +38,7 @@ def main():
     src=load(SRC)
     controls={k:[] for k in TARGETS}
     observations=[]
+    schema_change_events=[]
     for file_index,f in enumerate(src.get('files',[])):
         for rec in f.get('geometry_reference_candidates',[]):
             tags=[x for x in rec.get('quebrada_tags',[]) if x in TARGETS]
@@ -47,12 +48,18 @@ def main():
             coords=[]
             for x in rec.get('geographic_candidates',[]):
                 try:lon,lat=float(x['lon']),float(x['lat'])
-                except:continue
+                except KeyError as exc:
+                    schema_change_events.append({'file_index':file_index,'page':rec.get('page'),'context':'geographic_candidates','missing_key':str(exc)})
+                    continue
+                except (ValueError,TypeError):continue
                 if inside(lon,lat):coords.append({'lon':round(lon,7),'lat':round(lat,7),'source_coordinate_type':'geographic_text'})
             if crs18:
                 for x in rec.get('utm_candidates',[]):
                     try:lon,lat=TRANS.transform(float(x['easting']),float(x['northing']))
-                    except:continue
+                    except KeyError as exc:
+                        schema_change_events.append({'file_index':file_index,'page':rec.get('page'),'context':'utm_candidates','missing_key':str(exc)})
+                        continue
+                    except (ValueError,TypeError):continue
                     if inside(lon,lat):coords.append({'lon':round(lon,7),'lat':round(lat,7),'source_coordinate_type':'UTM18S_converted','source_easting':x['easting'],'source_northing':x['northing']})
             ded=[];seen=set()
             for c in coords:
@@ -71,7 +78,7 @@ def main():
         area_values=sorted({a for r in rows for a in r.get('area_candidates_km2',[])})
         summary[q]={'control_page_count':len(rows),'coordinate_candidate_count':coord_count,'area_candidates_km2':area_values,'ready_for_outlet_selection':False,'ready_for_dem_delineation':False,'next_gate':'identify explicit outlet/confluence or independently trace named drainage to Rímac'}
 
-    report={'version':'0.8-experimental','generated_at':datetime.now(timezone.utc).isoformat(),'production_use':False,'status':'SPATIAL_CONTROLS_AVAILABLE_OUTLET_UNRESOLVED' if any(x['coordinate_candidate_count'] for x in summary.values()) else 'OFFICIAL_DOCUMENT_HAS_NO_USABLE_TEXT_COORDINATES','source_index':'data/calibration/chosica_local_catchment_references.json','search_bbox_wgs84':{'xmin':BBOX[0],'ymin':BBOX[1],'xmax':BBOX[2],'ymax':BBOX[3]},'principle':'Las coordenadas se usan como controles de búsqueda; ninguna se considera outlet sin evidencia explícita o trazado independiente del drenaje.','summary':summary,'controls':controls,'all_tagged_observations':observations,'next_step':'Use a separate drainage-name source/search seed, then snap candidate outlet to high-flow-accumulation cells and validate spatially against these official controls.'}
+    report={'version':'0.8-experimental','generated_at':datetime.now(timezone.utc).isoformat(),'production_use':False,'status':'SPATIAL_CONTROLS_AVAILABLE_OUTLET_UNRESOLVED' if any(x['coordinate_candidate_count'] for x in summary.values()) else 'OFFICIAL_DOCUMENT_HAS_NO_USABLE_TEXT_COORDINATES','source_index':'data/calibration/chosica_local_catchment_references.json','search_bbox_wgs84':{'xmin':BBOX[0],'ymin':BBOX[1],'xmax':BBOX[2],'ymax':BBOX[3]},'principle':'Las coordenadas se usan como controles de búsqueda; ninguna se considera outlet sin evidencia explícita o trazado independiente del drenaje.','summary':summary,'controls':controls,'all_tagged_observations':observations,'schema_change_events':schema_change_events,'source_schema_status':'SOURCE_SCHEMA_CHANGED_SOME_RECORDS' if schema_change_events else 'SOURCE_SCHEMA_STABLE','next_step':'Use a separate drainage-name source/search seed, then snap candidate outlet to high-flow-accumulation cells and validate spatially against these official controls.'}
     OUT.parent.mkdir(parents=True,exist_ok=True);OUT.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
-    print(json.dumps({'status':report['status'],'summary':summary},ensure_ascii=False,indent=2));return 0
+    print(json.dumps({'status':report['status'],'summary':summary,'schema_change_events':schema_change_events},ensure_ascii=False,indent=2));return 0
 if __name__=='__main__':raise SystemExit(main())

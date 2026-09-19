@@ -13,6 +13,7 @@ from io import BytesIO
 import json,re,tempfile,zipfile
 import requests
 from pypdf import PdfReader
+from pypdf.errors import PdfReadError
 
 ROOT=Path(__file__).resolve().parents[1]
 OUT=ROOT/'site/data/calibration/chosica_local_catchment_references.json'
@@ -53,7 +54,7 @@ def utm_pairs(text):
  for pat in patterns:
   for m in re.finditer(pat,text,re.S):
    try:e=float(m.group(1).replace(',','.'));n=float(m.group(2).replace(',','.'))
-   except:continue
+   except ValueError:continue
    if 100000<=e<=900000 and 8000000<=n<=10000000:out.append({'easting':e,'northing':n})
  ded=[];seen=set()
  for x in out:
@@ -69,7 +70,7 @@ def lonlat_pairs(text):
  for pat in pats:
   for m in re.finditer(pat,text,re.S):
    try:a=float(m.group(1).replace(',','.'));b=float(m.group(2).replace(',','.'))
-   except:continue
+   except ValueError:continue
    lat,lon=(a,b) if -20<a<0 and -90<b<-60 else (b,a)
    if -20<lat<0 and -90<lon<-60:out.append({'lon':lon,'lat':lat})
  return out[:100]
@@ -84,10 +85,11 @@ def crs_tokens(text):
   if re.search(pat,text):vals.append(label)
  return vals
 def process_pdf(pdf):
- reader=PdfReader(str(pdf));pages={k:[] for k in QUEBRADAS};records=[];text_pages=0
+ reader=PdfReader(str(pdf));pages={k:[] for k in QUEBRADAS};records=[];text_pages=0;extraction_errors=[]
  for pageno,page in enumerate(reader.pages,start=1):
   try:raw=page.extract_text() or ''
-  except:raw=''
+  except Exception as exc:
+   raw='';extraction_errors.append({'page':pageno,'error_type':type(exc).__name__,'error':str(exc)})
   if not raw.strip():continue
   text_pages+=1;low=raw.lower();hits=[]
   for k,needles in QUEBRADAS.items():
@@ -95,7 +97,7 @@ def process_pdf(pdf):
   if not hits:continue
   record={'page':pageno,'quebrada_tags':sorted(hits),'utm_candidates':utm_pairs(raw),'geographic_candidates':lonlat_pairs(raw),'area_candidates':area_tokens(raw),'crs_tokens':crs_tokens(raw),'production_use':False}
   if record['utm_candidates'] or record['geographic_candidates'] or record['area_candidates'] or record['crs_tokens']:records.append(record)
- return {'page_count':len(reader.pages),'text_layer_pages':text_pages,'page_index':{k:v for k,v in pages.items() if v},'geometry_reference_candidates':records}
+ return {'page_count':len(reader.pages),'text_layer_pages':text_pages,'page_index':{k:v for k,v in pages.items() if v},'geometry_reference_candidates':records,'page_extraction_status':'PARTIAL_EXTRACTION_FAILURES' if extraction_errors else 'ALL_PAGES_EXTRACTED','extraction_errors':extraction_errors}
 def main():
  report={'version':'0.8-experimental','generated_at':datetime.now(timezone.utc).isoformat(),'production_use':False,'source':{'document_id':DOC_ID,'publisher':'INGEMMET / SIGRID-CENEPRED','document_page':f'https://sigrid4.cenepred.gob.pe/sigridv4/documento/{DOC_ID}'},'status':'starting','purpose':'Obtener controles geométricos para delinear microcuencas locales de Chosica sin confundirlas con Huaycoloro.','warning':'Coordenadas/áreas son candidatos por página y no se consideran outlets ni áreas de cuenca hasta revisar su significado.'}
  try:
@@ -110,9 +112,11 @@ def main():
    report['files']=[]
    for p in pdfs:
     try:report['files'].append(process_pdf(p))
-    except Exception as exc:report['files'].append({'error_type':type(exc).__name__,'error':str(exc)})
-  report['status']='indexed_for_catchment_review' if any(f.get('text_layer_pages',0)>0 for f in report['files']) else 'downloaded_without_text_layer'
- except Exception as exc:report.update({'status':'download_or_parse_error','error_type':type(exc).__name__,'error':str(exc)})
+    except (PdfReadError,OSError) as exc:report['files'].append({'source_file_error':True,'error_type':type(exc).__name__,'error':str(exc)})
+  any_text=any(f.get('text_layer_pages',0)>0 for f in report['files'])
+  any_extraction_failure=any(f.get('extraction_errors') or f.get('source_file_error') for f in report['files'])
+  report['status']='indexed_for_catchment_review' if any_text else 'pdf_text_extraction_failures' if any_extraction_failure else 'downloaded_without_text_layer'
+ except (RuntimeError,zipfile.BadZipFile,OSError) as exc:report.update({'status':'download_or_parse_error','error_type':type(exc).__name__,'error':str(exc)})
  OUT.parent.mkdir(parents=True,exist_ok=True);OUT.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
  print(json.dumps(report,ensure_ascii=False,indent=2));return 0
 if __name__=='__main__':raise SystemExit(main())

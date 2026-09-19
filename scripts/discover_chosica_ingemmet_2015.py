@@ -15,6 +15,7 @@ import tempfile
 
 import requests
 from pypdf import PdfReader
+from pypdf.errors import PdfReadError
 
 ROOT=Path(__file__).resolve().parents[1]
 OUT=ROOT/'site/data/calibration/chosica_ingemmet_2015_index.json'
@@ -55,7 +56,7 @@ def download(headers):
  r.raise_for_status();return r
 
 def main():
- report={'version':'0.8-experimental','generated_at':datetime.now(timezone.utc).isoformat(),'production_use':False,'source':{'title':'Evaluación geodinámica de los flujos de detritos del 23 de marzo del 2015 en Chosica','publisher':'INGEMMET','year':2015,'download_url':URL},'purpose':'Buscar evidencia pluviométrica terrestre del evento usado en el replay de Chosica.','status':'starting','page_index':{},'measurement_candidates':[],'event_pages':[],'warning':'Tokens numéricos requieren validar estación, periodo y unidad antes de compararlos con IMERG.'}
+ report={'version':'0.8-experimental','generated_at':datetime.now(timezone.utc).isoformat(),'production_use':False,'source':{'title':'Evaluación geodinámica de los flujos de detritos del 23 de marzo del 2015 en Chosica','publisher':'INGEMMET','year':2015,'download_url':URL},'purpose':'Buscar evidencia pluviométrica terrestre del evento usado en el replay de Chosica.','status':'starting','page_index':{},'measurement_candidates':[],'event_pages':[],'extraction_errors':[],'warning':'Tokens numéricos requieren validar estación, periodo y unidad antes de compararlos con IMERG.'}
  try:
   headers={'User-Agent':'Mozilla/5.0 IRFEN-research/0.8'};r=download(headers)
   with tempfile.TemporaryDirectory(prefix='irfen_ingemmet_chosica_') as td:
@@ -66,10 +67,11 @@ def main():
      total+=len(chunk)
      if total>MAX_BYTES:raise RuntimeError('PDF excede límite seguro')
      f.write(chunk)
-   report['download_bytes']=total;reader=PdfReader(str(pdf));report['page_count']=len(reader.pages);hits={k:[] for k in CATEGORIES};measures=[];event_pages=[];text_pages=0
+   report['download_bytes']=total;reader=PdfReader(str(pdf));report['page_count']=len(reader.pages);hits={k:[] for k in CATEGORIES};measures=[];event_pages=[];text_pages=0;extraction_errors=[]
    for pageno,page in enumerate(reader.pages,start=1):
     try:raw=page.extract_text() or ''
-    except:raw=''
+    except Exception as exc:
+     raw='';extraction_errors.append({'page':pageno,'error_type':type(exc).__name__,'error':str(exc)})
     if not raw.strip():continue
     text_pages+=1;low=raw.lower();cats=[]
     for key,needles in CATEGORIES.items():
@@ -79,8 +81,10 @@ def main():
    report['text_layer_pages']=text_pages;report['page_index']={k:{'pages':v,'page_count':len(v)} for k,v in hits.items() if v};report['event_pages']=sorted(set(event_pages));report['measurement_candidates']=measures[:250]
    report['event_pages_with_station_and_rainfall']=sorted(set(hits.get('event_date',[])) & set(hits.get('station',[])) & set(hits.get('rainfall',[])))
    report['event_pages_with_mm_tokens']=sorted({m['page'] for m in measures} & set(event_pages))
-   report['status']='indexed_for_calibration_review' if text_pages else 'downloaded_without_text_layer'
- except Exception as exc:
+   report['extraction_errors']=extraction_errors
+   report['page_extraction_status']='PARTIAL_EXTRACTION_FAILURES' if extraction_errors else 'ALL_PAGES_EXTRACTED'
+   report['status']='indexed_for_calibration_review' if text_pages else 'pdf_text_extraction_failures' if extraction_errors else 'downloaded_without_text_layer'
+ except (requests.RequestException,OSError,RuntimeError,PdfReadError) as exc:
   report.update({'status':'download_or_parse_error','error_type':type(exc).__name__,'error':str(exc)})
  OUT.parent.mkdir(parents=True,exist_ok=True);OUT.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
  print(json.dumps({'status':report['status'],'download_bytes':report.get('download_bytes'),'page_count':report.get('page_count'),'event_pages':report.get('event_pages'),'event_pages_with_station_and_rainfall':report.get('event_pages_with_station_and_rainfall'),'event_pages_with_mm_tokens':report.get('event_pages_with_mm_tokens'),'measurement_candidates':report.get('measurement_candidates')},ensure_ascii=False,indent=2));return 0
