@@ -15,20 +15,21 @@ repositorio — de eso no se protege. Lo que se protege es que ningún proceso d
 matching, reranking, selección de control o adjudicación pueda leer ese
 subárbol sin pasar por una autorización canónica, verificable y trazable.
 
-## Estado actual — esqueleto vacío, intencional
+## Estado actual — fuente sellada registrada, sin safe-unblind
 
-- `manifest.json` tiene `entries: []` y `safe_unblind_authorized: false`.
-- **No se ha migrado ningún dato sellado real a este directorio.** El
-  contenido sigue físicamente donde está hoy; el manifiesto solo registrará,
-  en una PR futura y separada, un puntero (`source_path` +
-  `source_key_path` + hash de integridad) hacia él — nunca el contenido en
-  sí.
+- `manifest.json` registra un único puntero al subárbol `pedregal` del archivo
+  INGEMMET compartido mediante `source_path` + `source_key_path` + hash SHA-256,
+  y mantiene `safe_unblind_authorized: false`.
+- **No se ha movido, copiado ni abierto a consumidores ningún dato sellado real.**
+  El contenido sigue físicamente en el archivo compartido original; el manifiesto
+  sólo registra dónde aplica el sello y su hash de integridad.
 - `config/pedregal_clean_room_authorized_consumers.json` tiene `consumers: []`.
   Hoy, ningún script está autorizado a leer evidencia sellada.
 
-Esto es deliberado: la construcción de la infraestructura (manifiesto, lista
-de consumidores, loader fail-closed, validador estático) se aprueba y se
-fusiona antes de mover o registrar cualquier dato real.
+Esto es deliberado: la infraestructura se fusionó primero y la fuente real se
+registra ahora sin habilitar lectura. La fecha `sealed_since` del manifiesto
+corresponde al inicio del enforcement técnico versionado; la política clean-room
+ya existía documentalmente antes de este registro.
 
 ## Cómo se autoriza un safe-unblind (cuando corresponda)
 
