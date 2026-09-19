@@ -8,6 +8,7 @@ EVIDENCE = ROOT / "site/data/validation/phase2_research_evidence/palpa_changuill
 CONTRACT = ROOT / "site/data/validation/phase2_zone_contracts/ica_palpa_changuillo.json"
 
 
+# Revalidated against advancing main before merge.
 class PalpaChanguilloResearchCloseoutTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
