@@ -182,13 +182,16 @@ def build_subunit_contract(candidate_id, geometry_path, feature):
     }
 
 
-def build_candidate_entry(candidate, zone, contract):
+def build_candidate_entry(candidate, zone):
     candidate_id = candidate["candidate_id"]
-    geometry_asset = (contract.get("assets") or {}).get("geometry") or {}
-    asset_status = geometry_asset.get("status")
-    geometry_path = geometry_asset.get("path")
+    asset_status = (zone.get("asset_status") or {}).get("geometry")
     readiness = ((zone.get("asset_readiness") or {}).get("geometry") or {})
     presence = readiness.get("data_presence")
+    geometry_path = None
+    if presence == "PRESENT":
+        contract = load_contract(candidate_id)
+        geometry_asset = (contract.get("assets") or {}).get("geometry") or {}
+        geometry_path = geometry_asset.get("path")
 
     base = {
         "candidate_id": candidate_id,
@@ -295,7 +298,7 @@ def build():
         if cid not in zones:
             raise SpatialContractError(f"candidate missing from catalog: {cid}")
         records.append(
-            build_candidate_entry(candidate, zones[cid], load_contract(cid))
+            build_candidate_entry(candidate, zones[cid])
         )
 
     counts = {}
