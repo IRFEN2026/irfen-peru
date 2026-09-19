@@ -40,6 +40,9 @@ on:
       - scripts/build_v08_scorecard.py
       - scripts/build_v08_rc_status.py
       - scripts/build_phase2_catalog.py
+      - scripts/build_phase2_climate_matrix.py
+      - scripts/validate_phase2_climate_matrix.py
+      - config/phase2_climate_conditioned_activation_matrix.schema.json
       - scripts/build_lambayeque_hydrologic_units.py
       - scripts/build_map_layer_catalog.py
       - scripts/build_phase2_event_reanalysis.py
@@ -220,6 +223,9 @@ jobs:
           python scripts/build_lambayeque_hydrologic_units.py
           python scripts/build_phase2_catalog.py
 
+      - name: Construir matriz climática condicionada Phase-2 (RESEARCH_ONLY/TEST_ONLY)
+        run: python scripts/build_phase2_climate_matrix.py
+
       - name: Reconstruir descomposición científica Lima Este
         run: python scripts/build_lima_east_hazard_decomposition.py
 
@@ -271,6 +277,7 @@ jobs:
           test -s site/v08-expansion.js
           test -s site/data/map_layers.json
           test -s site/data/phase2/catalog.json
+          test -s site/data/phase2/climate_conditioned_activation_matrix_v0_1.json
           test -s site/data/latest.json
           test -s site/data/history.json
           test -s site/data/scientific_status.json
@@ -300,6 +307,7 @@ jobs:
           python -m json.tool site/data/experimental_state.json >/dev/null
           python -m json.tool site/data/phase2/event_reanalysis.json >/dev/null
           python -m json.tool site/data/phase2/catalog.json >/dev/null
+          python -m json.tool site/data/phase2/climate_conditioned_activation_matrix_v0_1.json >/dev/null
           python -m json.tool site/data/map_layers.json >/dev/null
           if [ -s site/data/forecast/latest.json ]; then
             python -m json.tool site/data/forecast/latest.json >/dev/null
@@ -310,6 +318,9 @@ jobs:
 
       - name: Validar clean room de Pedregal
         run: python scripts/validate_pedregal_clean_room.py
+
+      - name: Validar matriz climática condicionada Phase-2
+        run: python scripts/validate_phase2_climate_matrix.py
 
       - name: Ejecutar pruebas unitarias v0.8
         run: python -m unittest discover -s tests -v

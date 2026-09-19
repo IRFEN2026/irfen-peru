@@ -1,0 +1,412 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://irfen.example/schema/phase2_climate_conditioned_activation_matrix.schema.json",
+  "title": "IRFEN Phase-2 Climate-Conditioned Activation Matrix v0.1",
+  "description": "RESEARCH_ONLY / TEST_ONLY structure expressing physical-response plausibility under conditioning climate/hydrometeorological states per Phase-2 candidate. Never an operational activation, alert, or production decision artifact.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version", "generated_at", "deployment_status", "test_mode", "production_use",
+    "production_ready", "operational_alerting_enabled", "decision_thresholds",
+    "activation_gate", "scientific_disposition", "operational_boundary",
+    "relationship_to_phase2", "guardrails", "methodology", "records",
+    "hydrologic_child_units_reference", "summary"
+  ],
+  "properties": {
+    "version": { "const": "phase2-climate-conditioned-activation-matrix-v0.1" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "deployment_status": { "const": "RESEARCH_ONLY" },
+    "test_mode": { "const": true },
+    "production_use": { "const": false },
+    "production_ready": { "const": false },
+    "operational_alerting_enabled": { "const": false },
+    "decision_thresholds": { "const": null },
+    "activation_gate": { "const": "BLOCKED" },
+    "scientific_disposition": { "const": "RESEARCH_ONLY_TEST_ONLY_NOT_OPERATIONAL" },
+    "operational_boundary": {
+      "const": "Climate-Conditioned Activation Matrix is a research framework and must not be interpreted as an operational activation, warning, emergency trigger, or production decision system."
+    },
+    "relationship_to_phase2": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "registered_candidate_count_unchanged", "candidate_count", "changes_candidate_count",
+        "changes_operational_scope", "changes_thresholds", "changes_activation_gates",
+        "changes_promotion_gates", "changes_v08_scope", "hydrologic_child_units_reported_separately"
+      ],
+      "properties": {
+        "registered_candidate_count_unchanged": { "const": true },
+        "candidate_count": { "const": 18 },
+        "changes_candidate_count": { "const": false },
+        "changes_operational_scope": { "const": false },
+        "changes_thresholds": { "const": false },
+        "changes_activation_gates": { "const": false },
+        "changes_promotion_gates": { "const": false },
+        "changes_v08_scope": { "const": false },
+        "hydrologic_child_units_reported_separately": { "const": 2 }
+      }
+    },
+    "guardrails": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "no_single_national_threshold", "conditioning_is_zone_specific",
+        "absence_of_evidence_is_not_evidence_of_absence",
+        "enso_alone_is_never_a_trigger", "no_numeric_probability_without_validated_model",
+        "confirmed_no_activation_requires_reinforced_validation",
+        "physical_plausibility_is_not_operational_activation"
+      ],
+      "properties": {
+        "no_single_national_threshold": { "const": true },
+        "conditioning_is_zone_specific": { "const": true },
+        "absence_of_evidence_is_not_evidence_of_absence": { "const": true },
+        "enso_alone_is_never_a_trigger": { "const": true },
+        "no_numeric_probability_without_validated_model": { "const": true },
+        "confirmed_no_activation_requires_reinforced_validation": { "const": true },
+        "physical_plausibility_is_not_operational_activation": { "const": true }
+      }
+    },
+    "methodology": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "plausibility_rule_version", "classification_method_status", "case_validation_linkage_reused_from"],
+      "properties": {
+        "ref": { "type": "string" },
+        "plausibility_rule_version": { "type": "string" },
+        "classification_method_status": { "$ref": "#/$defs/classification_method_status" },
+        "case_validation_linkage_reused_from": { "type": "string" }
+      }
+    },
+    "records": { "type": "array", "minItems": 18, "maxItems": 18, "items": { "$ref": "#/$defs/candidate_record" } },
+    "hydrologic_child_units_reference": { "$ref": "#/$defs/hydrologic_child_units_reference" },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_count", "insufficient_evidence_count", "differentiated_plausibility_count",
+        "operational_candidate_count", "any_activation_gate_open", "any_promotion_gate_true_due_to_matrix"
+      ],
+      "properties": {
+        "candidate_count": { "const": 18 },
+        "insufficient_evidence_count": { "type": "integer", "minimum": 0, "maximum": 18 },
+        "differentiated_plausibility_count": { "type": "integer", "minimum": 0, "maximum": 18 },
+        "operational_candidate_count": { "const": 0 },
+        "any_activation_gate_open": { "const": false },
+        "any_promotion_gate_true_due_to_matrix": { "const": false }
+      }
+    }
+  },
+  "$defs": {
+    "evidence_status": {
+      "type": "string",
+      "enum": ["INSUFFICIENT_EVIDENCE", "HISTORICAL_EVIDENCE_ONLY", "OBSERVED_LIVE_OR_NEAR_REAL_TIME"]
+    },
+    "confidence_tier": {
+      "type": "string",
+      "enum": ["HIGH_CONFIDENCE", "MEDIUM_CONFIDENCE", "LOW_CONFIDENCE", "INSUFFICIENT_EVIDENCE"]
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "station", "observation_type", "spatial_relation", "event_pairing", "transfer_validated", "value", "unit", "note"],
+      "properties": {
+        "source": { "type": "string" },
+        "station": { "type": ["string", "null"] },
+        "observation_type": {
+          "type": "string",
+          "enum": ["GAUGE", "SATELLITE_IMERG", "SATELLITE_GOES", "MODEL_GEOS", "REPORT_DERIVED", "OTHER"]
+        },
+        "spatial_relation": {
+          "type": "string",
+          "enum": ["IN_BASIN", "NEAR_BASIN", "REGIONAL_PROXY", "TRANSFERRED_FROM_ANALOG"]
+        },
+        "event_pairing": { "type": ["string", "null"] },
+        "transfer_validated": { "type": "boolean" },
+        "value": { "type": ["number", "null"] },
+        "unit": { "type": ["string", "null"] },
+        "note": { "type": ["string", "null"] }
+      }
+    },
+    "rainfall_window": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "window_id", "evidence_status", "accumulated_mm", "max_mm", "intensity_mm_per_hr",
+        "climatological_percentile", "anomaly_mm", "observations"
+      ],
+      "properties": {
+        "window_id": {
+          "type": "string",
+          "enum": ["1h", "3h", "6h", "12h", "24h", "48h", "72h", "7d"]
+        },
+        "evidence_status": { "$ref": "#/$defs/evidence_status" },
+        "accumulated_mm": { "type": ["number", "null"], "minimum": 0 },
+        "max_mm": { "type": ["number", "null"], "minimum": 0 },
+        "intensity_mm_per_hr": { "type": ["number", "null"], "minimum": 0 },
+        "climatological_percentile": { "type": ["number", "null"], "minimum": 0, "maximum": 100 },
+        "anomaly_mm": { "type": ["number", "null"] },
+        "observations": { "type": "array", "items": { "$ref": "#/$defs/observation" } }
+      }
+    },
+    "antecedent_moisture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "evidence_status", "methodology_note", "basis"],
+      "properties": {
+        "state": { "type": "string", "enum": ["DRY", "NORMAL", "WET", "VERY_WET", "UNKNOWN"] },
+        "evidence_status": { "$ref": "#/$defs/evidence_status" },
+        "methodology_note": { "type": "string" },
+        "basis": { "type": ["string", "null"] }
+      }
+    },
+    "persistence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "evidence_status", "definition_note"],
+      "properties": {
+        "state": { "type": "string", "enum": ["NONE", "SHORT", "MODERATE", "PROLONGED", "UNKNOWN"] },
+        "evidence_status": { "$ref": "#/$defs/evidence_status" },
+        "definition_note": { "type": "string" }
+      }
+    },
+    "season_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "evidence_status", "climatology_basis", "applies_to_date_local", "date_precision"],
+      "properties": {
+        "state": { "type": "string", "enum": ["DRY_SEASON", "TRANSITION", "WET_SEASON", "UNKNOWN"] },
+        "evidence_status": { "$ref": "#/$defs/evidence_status" },
+        "climatology_basis": { "type": ["string", "null"] },
+        "applies_to_date_local": { "type": ["string", "null"], "format": "date" },
+        "date_precision": {
+          "type": ["string", "null"],
+          "enum": ["EXACT_DAY", "MONTH_ONLY", "SEASON_ONLY", "APPROXIMATE_RANGE", null]
+        }
+      }
+    },
+    "large_scale_climate_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enso_phase", "evidence_status", "source", "note", "is_trigger_alone"],
+      "properties": {
+        "enso_phase": {
+          "type": "string",
+          "enum": [
+            "NEUTRAL", "WARM_EL_NINO_WEAK", "WARM_EL_NINO_MODERATE", "WARM_EL_NINO_STRONG",
+            "COLD_LA_NINA_WEAK", "COLD_LA_NINA_MODERATE", "COLD_LA_NINA_STRONG", "UNKNOWN"
+          ]
+        },
+        "evidence_status": { "$ref": "#/$defs/evidence_status" },
+        "source": { "type": ["string", "null"] },
+        "note": { "type": ["string", "null"] },
+        "is_trigger_alone": { "const": false }
+      }
+    },
+    "physical_factors": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "drainage_area_km2", "slope_class", "concentration_time_class", "drainage_density_class",
+        "soil_type", "land_cover", "imperviousness_class", "geomorphology",
+        "known_susceptibility_note", "ephemeral_channels_present", "source_asset_ref", "data_gaps"
+      ],
+      "properties": {
+        "drainage_area_km2": { "type": ["number", "null"], "minimum": 0 },
+        "slope_class": { "type": ["string", "null"] },
+        "concentration_time_class": { "type": ["string", "null"] },
+        "drainage_density_class": { "type": ["string", "null"] },
+        "soil_type": { "type": ["string", "null"] },
+        "land_cover": { "type": ["string", "null"] },
+        "imperviousness_class": { "type": ["string", "null"] },
+        "geomorphology": { "type": ["string", "null"] },
+        "known_susceptibility_note": { "type": ["string", "null"] },
+        "ephemeral_channels_present": { "type": ["boolean", "null"] },
+        "source_asset_ref": { "type": ["string", "null"] },
+        "data_gaps": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "documented_historical_realization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event_date_local", "date_precision", "classification", "primary_source_id", "rainfall_evidence_available", "rainfall_evidence_field_ref", "note"],
+      "properties": {
+        "event_date_local": { "type": ["string", "null"] },
+        "date_precision": {
+          "type": ["string", "null"],
+          "enum": ["EXACT_DAY", "MONTH_ONLY", "SEASON_ONLY", "APPROXIMATE_RANGE", null]
+        },
+        "classification": { "type": ["string", "null"] },
+        "primary_source_id": { "type": ["string", "null"] },
+        "rainfall_evidence_available": { "type": "boolean" },
+        "rainfall_evidence_field_ref": { "type": ["string", "null"] },
+        "note": { "type": ["string", "null"] }
+      }
+    },
+    "historical_evidence_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["linked_case_validation", "link_method", "documented_realizations"],
+      "properties": {
+        "linked_case_validation": { "type": ["string", "null"] },
+        "link_method": {
+          "type": ["string", "null"],
+          "enum": ["zone_id_exact_match", "asset_path_exact_match", null]
+        },
+        "documented_realizations": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/documented_historical_realization" }
+        }
+      }
+    },
+    "uncertainty": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "confidence_tier", "temporal_coverage_status", "spatial_resolution_status",
+        "source_agreement_status", "historical_observation_availability_status",
+        "geometry_quality_status", "meteorological_data_quality_status", "note"
+      ],
+      "properties": {
+        "confidence_tier": { "$ref": "#/$defs/confidence_tier" },
+        "temporal_coverage_status": { "$ref": "#/$defs/evidence_status" },
+        "spatial_resolution_status": { "$ref": "#/$defs/evidence_status" },
+        "source_agreement_status": { "$ref": "#/$defs/evidence_status" },
+        "historical_observation_availability_status": { "$ref": "#/$defs/evidence_status" },
+        "geometry_quality_status": { "$ref": "#/$defs/evidence_status" },
+        "meteorological_data_quality_status": { "$ref": "#/$defs/evidence_status" },
+        "note": { "type": ["string", "null"] }
+      }
+    },
+    "classification_method_status": {
+      "type": "string",
+      "enum": ["NOT_YET_CALIBRATED", "CALIBRATED_PENDING_INDEPENDENT_REVIEW", "CALIBRATED"],
+      "description": "NOT_YET_CALIBRATED is the only value this v0.1 generator ever emits: no numeric weight, percentile bucket, or category breakpoint here is validated against real IRFEN historical event/non-event evidence. The other two enum values are reserved for a future, separately reviewed calibration stage and must not be produced by this version."
+    },
+    "physical_plausibility_assessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "category", "methodology_ref", "classification_method_status",
+        "physical_response_plausibility_score", "score_components", "rationale",
+        "is_operational_activation"
+      ],
+      "properties": {
+        "category": {
+          "type": "string",
+          "enum": [
+            "VERY_LOW_PLAUSIBILITY", "LOW_PLAUSIBILITY", "MODERATE_PLAUSIBILITY",
+            "HIGH_PLAUSIBILITY", "VERY_HIGH_PLAUSIBILITY", "INSUFFICIENT_EVIDENCE"
+          ]
+        },
+        "methodology_ref": { "type": "string" },
+        "classification_method_status": { "$ref": "#/$defs/classification_method_status" },
+        "physical_response_plausibility_score": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "score_components": { "type": ["object", "null"] },
+        "rationale": { "type": "array", "items": { "type": "string" } },
+        "is_operational_activation": { "const": false }
+      },
+      "if": {
+        "properties": { "classification_method_status": { "const": "NOT_YET_CALIBRATED" } }
+      },
+      "then": {
+        "properties": {
+          "category": { "const": "INSUFFICIENT_EVIDENCE" },
+          "physical_response_plausibility_score": { "const": null },
+          "score_components": { "const": null }
+        }
+      }
+    },
+    "hydrologic_child_unit_reference_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_id", "official_hydrologic_unit_code", "official_hydrologic_unit_name",
+        "hydrologic_system", "parent_candidate_id", "activation_gate",
+        "counts_as_additional_phase2_candidate", "counts_as_operational_candidate",
+        "authoritative_source_refs"
+      ],
+      "properties": {
+        "candidate_id": { "type": "string" },
+        "official_hydrologic_unit_code": { "type": "string" },
+        "official_hydrologic_unit_name": { "type": ["string", "null"] },
+        "hydrologic_system": { "type": ["string", "null"] },
+        "parent_candidate_id": { "const": "lambayeque_chongoyape_oyotun_zana" },
+        "activation_gate": { "const": "BLOCKED" },
+        "counts_as_additional_phase2_candidate": { "const": false },
+        "counts_as_operational_candidate": { "const": false },
+        "authoritative_source_refs": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+      }
+    },
+    "hydrologic_child_units_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parent_grouper", "children", "children_counted_as_additional_phase2_candidates", "note"],
+      "properties": {
+        "parent_grouper": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["candidate_id", "entity_role", "geometry_policy", "activation_gate"],
+          "properties": {
+            "candidate_id": { "const": "lambayeque_chongoyape_oyotun_zana" },
+            "entity_role": { "const": "HISTORICAL_NON_ACTIVABLE_GROUPER" },
+            "geometry_policy": { "const": "NO_COMPOSITE_GEOMETRY_NO_ARTIFICIAL_CONNECTOR" },
+            "activation_gate": { "const": "BLOCKED" }
+          }
+        },
+        "children": {
+          "type": "array", "minItems": 2, "maxItems": 2,
+          "items": { "$ref": "#/$defs/hydrologic_child_unit_reference_entry" }
+        },
+        "children_counted_as_additional_phase2_candidates": { "const": false },
+        "note": { "type": "string" }
+      }
+    },
+    "candidate_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_id", "entity_role", "system_name", "department", "province_or_corridor",
+        "mechanism_preliminary", "official_source_ids", "deployment_status", "production_use",
+        "production_ready", "activation_gate", "rainfall", "antecedent_moisture", "persistence",
+        "season_context", "large_scale_climate_context", "physical_factors",
+        "historical_evidence_summary", "uncertainty", "physical_plausibility_assessment"
+      ],
+      "properties": {
+        "candidate_id": { "type": "string" },
+        "entity_role": { "type": ["string", "null"], "enum": ["HISTORICAL_NON_ACTIVABLE_GROUPER", null] },
+        "system_name": { "type": ["string", "null"] },
+        "department": { "type": ["string", "null"] },
+        "province_or_corridor": { "type": ["string", "null"] },
+        "mechanism_preliminary": { "type": ["string", "null"] },
+        "official_source_ids": { "type": "array", "items": { "type": "string" } },
+        "deployment_status": { "const": "RESEARCH_ONLY" },
+        "production_use": { "const": false },
+        "production_ready": { "const": false },
+        "activation_gate": { "const": "BLOCKED" },
+        "rainfall": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["1h", "3h", "6h", "12h", "24h", "48h", "72h", "7d"],
+          "properties": {
+            "1h": { "$ref": "#/$defs/rainfall_window" },
+            "3h": { "$ref": "#/$defs/rainfall_window" },
+            "6h": { "$ref": "#/$defs/rainfall_window" },
+            "12h": { "$ref": "#/$defs/rainfall_window" },
+            "24h": { "$ref": "#/$defs/rainfall_window" },
+            "48h": { "$ref": "#/$defs/rainfall_window" },
+            "72h": { "$ref": "#/$defs/rainfall_window" },
+            "7d": { "$ref": "#/$defs/rainfall_window" }
+          }
+        },
+        "antecedent_moisture": { "$ref": "#/$defs/antecedent_moisture" },
+        "persistence": { "$ref": "#/$defs/persistence" },
+        "season_context": { "$ref": "#/$defs/season_context" },
+        "large_scale_climate_context": { "$ref": "#/$defs/large_scale_climate_context" },
+        "physical_factors": { "$ref": "#/$defs/physical_factors" },
+        "historical_evidence_summary": { "$ref": "#/$defs/historical_evidence_summary" },
+        "uncertainty": { "$ref": "#/$defs/uncertainty" },
+        "physical_plausibility_assessment": { "$ref": "#/$defs/physical_plausibility_assessment" }
+      }
+    }
+  }
+}
