@@ -9,6 +9,7 @@ CONTRACT = ROOT / "site/data/validation/phase2_zone_contracts/ica_palpa_changuil
 
 
 # Revalidated against advancing main before merge.
+# Revalidated after Pedregal clean-room PR #176 merge.
 class PalpaChanguilloResearchCloseoutTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
