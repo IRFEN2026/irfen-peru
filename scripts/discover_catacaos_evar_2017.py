@@ -11,6 +11,7 @@ from pathlib import Path
 import json,re,tempfile,zipfile
 import requests
 from pypdf import PdfReader
+from pypdf.errors import PdfReadError
 
 ROOT=Path(__file__).resolve().parents[1]
 OUT=ROOT/'site/data/hydrology/catacaos_evar_2017_discovery.json'
@@ -33,33 +34,36 @@ CATEGORIES={
 
 def norm(x):return re.sub(r'\s+',' ',x or ' ').strip()
 def classify_pages(reader):
- pages={k:[] for k in CATEGORIES};texts=[]
+ pages={k:[] for k in CATEGORIES};texts=[];extraction_errors=[]
  for i,p in enumerate(reader.pages,start=1):
   try:raw=p.extract_text() or ''
-  except:raw=''
+  except Exception as exc:
+   raw='';extraction_errors.append({'page':i,'error_type':type(exc).__name__,'error':str(exc)})
   texts.append(raw);low=raw.lower()
   for k,needles in CATEGORIES.items():
    if any(n in low for n in needles):pages[k].append(i)
- return {k:v for k,v in pages.items() if v},texts
+ return {k:v for k,v in pages.items() if v},texts,extraction_errors
 def numeric_near(text,labels,maxv=10000000):
  low=norm(text).lower();out=[]
  for label in labels:
   for m in re.finditer(rf'{label}.{{0,100}}?(\d{{1,8}}(?:[.,]\d+)?)',low,re.I):
    try:v=float(m.group(1).replace(',','.'))
-   except:continue
+   except ValueError:continue
    if 0<v<maxv:out.append(v)
  return sorted(set(out))[:30]
 def process(pdf):
- reader=PdfReader(str(pdf));page_index,texts=classify_pages(reader);alltext='\n'.join(texts);flat=norm(alltext)
+ reader=PdfReader(str(pdf));page_index,texts,extraction_errors=classify_pages(reader);alltext='\n'.join(texts);flat=norm(alltext)
  flows=[]
  for m in re.finditer(r'(\d{1,5}(?:[.,]\d+)?)\s*(?:m3/s|m³/s)',flat,re.I):
   try:v=float(m.group(1).replace(',','.'))
-  except:continue
+  except ValueError:continue
   if 0<v<20000:flows.append(v)
  return {
   'page_count':len(reader.pages),
   'text_layer_available':any(t.strip() for t in texts),
   'page_index':page_index,
+  'page_extraction_status':'PARTIAL_EXTRACTION_FAILURES' if extraction_errors else 'ALL_PAGES_EXTRACTED',
+  'extraction_errors':extraction_errors,
   'numeric_candidates':{
    'population':numeric_near(alltext,['población expuesta','poblacion expuesta','población en riesgo','poblacion en riesgo']),
    'housing':numeric_near(alltext,['viviendas expuestas','viviendas en riesgo','viviendas']),
@@ -86,9 +90,11 @@ def main():
   report['files']=[]
   for name,p in pdfs:
    try:index=process(p)
-   except Exception as exc:index={'error_type':type(exc).__name__,'error':str(exc)}
+   except (PdfReadError,OSError) as exc:index={'source_file_error':True,'error_type':type(exc).__name__,'error':str(exc)}
    report['files'].append({'file_name':name.replace('\\','/').split('/')[-1],**index})
- report['status']='indexed_for_exposure_review' if any(f.get('text_layer_available') for f in report['files']) else 'downloaded_without_text_layer'
+ any_text=any(f.get('text_layer_available') for f in report['files'])
+ any_extraction_failure=any(f.get('extraction_errors') or f.get('source_file_error') for f in report['files'])
+ report['status']='indexed_for_exposure_review' if any_text else 'pdf_text_extraction_failures' if any_extraction_failure else 'downloaded_without_text_layer'
  OUT.parent.mkdir(parents=True,exist_ok=True);OUT.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
  print(json.dumps({'status':report['status'],'download_bytes':report['download_bytes'],'files':report['files']},ensure_ascii=False,indent=2));return 0
 if __name__=='__main__':raise SystemExit(main())
