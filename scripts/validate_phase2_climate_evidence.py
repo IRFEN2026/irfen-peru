@@ -214,6 +214,8 @@ def walk_forbidden(node, path="root"):
 
 
 def _first_difference(left, right, path="root"):
+    if isinstance(left, (int, float)) and isinstance(right, (int, float)) and left == right:
+        return None
     if type(left) is not type(right):
         return f"{path}: type {type(left).__name__} != {type(right).__name__}"
     if isinstance(left, dict):
