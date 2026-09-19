@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://irfen2026.github.io/irfen-peru/schemas/pedregal-sealed-evidence-manifest-v1.json",
+  "title": "IRFEN Pedregal sealed evidence manifest",
+  "description": "Registry of outcome-bearing Pedregal evidence sealed from candidate matching, reranking, control selection and adjudication. The manifest never carries the sealed content itself, only pointers, integrity hashes and the authorization state. This clean room protects the INTEGRITY of the research process (that sealed outcomes cannot silently leak into decisions that must be blind to them), not the CONFIDENTIALITY of the data — the underlying evidence file already exists elsewhere in the repository under normal access.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "clean_room_policy",
+    "safe_unblind_authorized",
+    "canonical_unblind_decision",
+    "authorized_consumers_ref",
+    "entries"
+  ],
+  "properties": {
+    "version": { "const": "pedregal-sealed-evidence-manifest-v1" },
+    "clean_room_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "outcome_bearing",
+        "sealed_from_candidate_matching_and_reranking",
+        "protects",
+        "missing_data_rule",
+        "requires_canonical_decision_for_unblind"
+      ],
+      "properties": {
+        "outcome_bearing": { "const": true },
+        "sealed_from_candidate_matching_and_reranking": { "const": true },
+        "protects": { "const": "PROCESS_INTEGRITY_NOT_CONFIDENTIALITY" },
+        "missing_data_rule": { "const": "UNKNOWN_NOT_LOW_RISK" },
+        "requires_canonical_decision_for_unblind": {
+          "const": true,
+          "description": "safe_unblind_authorized may only be true when canonical_unblind_decision references a verifiable human decision record. A log entry alone (e.g. an 'unblind_log' line) is never sufficient."
+        }
+      }
+    },
+    "safe_unblind_authorized": {
+      "type": "boolean",
+      "description": "Defaults to false. Flipping this to true without a valid canonical_unblind_decision is a validator error, not just a warning."
+    },
+    "canonical_unblind_decision": {
+      "description": "Null while no unblind has been authorized. Once populated, it must point to a decision record that a third party can independently verify (a reviewed PR/issue, a signed governance minute, a published protocol amendment) — never a bare internal log line.",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "decision_id",
+            "decision_type",
+            "decided_by_role",
+            "decision_date",
+            "decision_record_ref",
+            "verifiable"
+          ],
+          "properties": {
+            "decision_id": { "type": "string", "pattern": "^[a-z0-9_-]+$" },
+            "decision_type": { "const": "SAFE_UNBLIND_AUTHORIZATION" },
+            "decided_by_role": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Role/body that made the decision, not a personal name (e.g. 'irfen_scientific_review_board')."
+            },
+            "decision_date": { "type": "string", "format": "date" },
+            "decision_record_ref": {
+              "type": "string",
+              "minLength": 1,
+              "description": "A repository-relative path to a committed decision record, or an https:// URL to an external, independently reviewable record. Never a reference to a private/unauditable log."
+            },
+            "verifiable": {
+              "const": true,
+              "description": "Declares that decision_record_ref is independently checkable (exists in version control or is a public URL), not merely asserted."
+            }
+          }
+        }
+      ]
+    },
+    "authorized_consumers_ref": {
+      "type": "string",
+      "const": "config/pedregal_clean_room_authorized_consumers.json"
+    },
+    "entries": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/entry" }
+    }
+  },
+  "if": {
+    "properties": { "safe_unblind_authorized": { "const": true } },
+    "required": ["safe_unblind_authorized"]
+  },
+  "then": {
+    "properties": {
+      "canonical_unblind_decision": { "type": "object" }
+    }
+  },
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_id",
+        "source_path",
+        "source_key_path",
+        "sha256",
+        "sealed_since",
+        "outcome_bearing",
+        "sealed_from_candidate_matching_and_reranking"
+      ],
+      "properties": {
+        "evidence_id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+        "source_path": {
+          "type": "string",
+          "description": "Repository-relative path to the file that physically holds the sealed subtree today. The manifest does not require moving the file — it registers where the seal applies."
+        },
+        "source_key_path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Dotted JSON key path within source_path locating the sealed, outcome-bearing subtree (e.g. 'pedregal')."
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "Integrity hash of the canonical JSON serialization of the sealed subtree, used to detect silent tampering or drift — never used to reconstruct or expose the content."
+        },
+        "sealed_since": { "type": "string", "format": "date" },
+        "outcome_bearing": { "const": true },
+        "sealed_from_candidate_matching_and_reranking": { "const": true }
+      }
+    }
+  }
+}

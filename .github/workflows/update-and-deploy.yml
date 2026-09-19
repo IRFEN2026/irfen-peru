@@ -30,6 +30,12 @@ on:
       - scripts/build_experimental_state.py
       - scripts/build_piura_reference_model.py
       - scripts/validate_scientific_assets.py
+      - scripts/validate_pedregal_clean_room.py
+      - scripts/pedregal_clean_room_loader.py
+      - config/pedregal_sealed_evidence_manifest.schema.json
+      - config/pedregal_clean_room_authorized_consumers.schema.json
+      - config/pedregal_clean_room_authorized_consumers.json
+      - site/data/validation/phase2_sealed_evidence/**
       - scripts/run_v08_regression_tests.py
       - scripts/build_v08_scorecard.py
       - scripts/build_v08_rc_status.py
@@ -301,6 +307,9 @@ jobs:
 
       - name: Ejecutar puertas científicas v0.8
         run: python scripts/validate_scientific_assets.py
+
+      - name: Validar clean room de Pedregal
+        run: python scripts/validate_pedregal_clean_room.py
 
       - name: Ejecutar pruebas unitarias v0.8
         run: python -m unittest discover -s tests -v
