@@ -1,0 +1,47 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PRE_EXECUTION_LANDSAT7_ALL_FIXED_WINDOW_SCENE_ASSET_METADATA",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "availability_input": {
+    "artifact_id": 10180090979,
+    "file": "chosica_2015_candidate_landsat7_availability_mirror_v0_2.json",
+    "sha256": "32659a5d9201f793fb5fbb49af16d05580a8107124152b37cfe658ced1d6ea75",
+    "required_status": "PASS_CANDIDATE_ONLY_LANDSAT7_AVAILABILITY_TRANSPORT_MIRROR_METADATA_ONLY"
+  },
+  "scene_policy": {
+    "use_every_unique_landsat7_item_returned_in_the_frozen_pre_and_post_windows": true,
+    "expected_unique_pre_scene_count": 3,
+    "expected_unique_post_scene_count": 4,
+    "scene_selection_from_quality_or_surface_signal": false,
+    "scene_replacement_allowed": false
+  },
+  "transport_mirror": {
+    "provider": "Microsoft Planetary Computer",
+    "role": "TRANSPORT_ONLY_NOT_SCIENTIFIC_SOURCE",
+    "item_endpoint_template": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/landsat-c2-l2/items/{item_id}",
+    "endpoint_host": "planetarycomputer.microsoft.com",
+    "collection": "landsat-c2-l2",
+    "tls_verify": true,
+    "redirects_allowed": false
+  },
+  "required_asset_keys": ["qa_pixel", "qa_radsat", "red", "nir08", "swir22"],
+  "forbidden": [
+    "request asset bytes in this inventory stage",
+    "drop a fixed-window scene based on cloud, SLC gap, or surface signal",
+    "read target names or outcomes",
+    "read A6680",
+    "read contaminated adjudication",
+    "change candidate matching or ranking",
+    "free web search",
+    "assign control labels"
+  ],
+  "sealed_target_unblind_allowed": false,
+  "next_gate": "PREREGISTER_ALL_SCENE_QA_COMPOSITE_USING_ALL_FROZEN_WINDOW_SCENES_BEFORE_ANY_ADDITIONAL_LANDSAT7_PIXEL_READ"
+}

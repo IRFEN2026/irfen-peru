@@ -1,0 +1,84 @@
+name: IRFEN - Chosica 2015 INGEMMET candidate event day
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_ingemmet_candidate_query_manifest_v0_1.json
+      - config/chosica_2015_cleanroom_candidate_geometry_freeze_record_v0_1.json
+      - scripts/query_chosica_2015_ingemmet_candidate_event_day.py
+      - .github/workflows/chosica-2015-ingemmet-candidate-event-day.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  candidate-only-event-day:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_ingemmet_candidate_query_manifest_v0_1.json
+            config/chosica_2015_cleanroom_candidate_geometry_freeze_record_v0_1.json
+            scripts/query_chosica_2015_ingemmet_candidate_event_day.py
+            .github/workflows/chosica-2015-ingemmet-candidate-event-day.yml
+      - name: Assert forbidden scientific paths absent
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+          test ! -e config/chosica_2015_multibasin_validation_set_v0_1.json
+      - name: Download exact frozen clean-room candidate geometry
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p sources/geometry artifacts
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/10171108859/zip" > /tmp/geometry.zip
+          unzip -q /tmp/geometry.zip -d sources/geometry
+          test "$(sha256sum sources/geometry/chosica_2015_cleanroom_candidate_geometries_v0_1.geojson | cut -d' ' -f1)" = "9a23644c191c88fb66722b368773251051b4098ddd74e4d5861c3a37dbfbb1ca"
+          ! grep -Eiq 'NC_|pedregal|quirio|carossio|carosio|rayos de sol|cashahuacra|la libertad|a6680|official_outcome_evidence' sources/geometry/chosica_2015_cleanroom_candidate_geometries_v0_1.geojson
+      - name: Enforce no insecure TLS implementation
+        run: |
+          set -euo pipefail
+          ! grep -E -- '--insecure|-k([^A-Za-z]|$)|verify *= *False|CERT_NONE' scripts/query_chosica_2015_ingemmet_candidate_event_day.py
+      - name: Execute frozen candidate-polygon manifest
+        run: |
+          set -euo pipefail
+          env -i PATH="$PATH" HOME=/tmp LANG=C.UTF-8 python -I scripts/query_chosica_2015_ingemmet_candidate_event_day.py \
+            --manifest config/chosica_2015_ingemmet_candidate_query_manifest_v0_1.json \
+            --geometry sources/geometry/chosica_2015_cleanroom_candidate_geometries_v0_1.geojson \
+            --output artifacts/chosica_2015_ingemmet_candidate_event_day_v0_1.json \
+            | tee artifacts/candidate_event_day_summary.json
+      - name: Enforce candidate-only conservative interpretation
+        run: |
+          set -euo pipefail
+          python -I - <<'PY'
+          import json,pathlib
+          p=pathlib.Path('artifacts/chosica_2015_ingemmet_candidate_event_day_v0_1.json');d=json.loads(p.read_text(encoding='utf-8'))
+          g={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          assert d['status']=='PASS_CANDIDATE_ONLY_INGEMMET_EVENT_DAY_QUERY' and d['guards']==g
+          assert d['candidate_count']==len(d['results'])==7
+          assert d['candidate_selection_modified'] is False and d['candidate_reranking_performed'] is False and d['feedback_to_matching_performed'] is False
+          assert d['free_web_search_used'] is False and d['search_engine_used'] is False and d['a6680_read'] is False and d['target_outcome_read'] is False and d['contaminated_artifact_read'] is False
+          assert d['sealed_target_unblind_allowed'] is False and d['absence_can_confirm_control'] is False and d['control_confirmed_by_this_source_alone'] is False
+          for x in d['results']:
+              if x['candidate_local_exact_day_record_count']==0: assert x['disposition']=='OUTCOME_UNKNOWN_NOT_CONTROL'
+              else: assert x['disposition']=='EXCLUDE_FROM_CLEAN_NEGATIVE_CONTROL'
+          text=p.read_text(encoding='utf-8').lower()
+          # A literal a6680_read=false guard flag is required and therefore is checked structurally above,
+          # rather than rejected by this content scan.
+          for token in ('nc_','pedregal','quirio','carossio','carosio','rayos de sol','cashahuacra','la libertad','official_outcome_evidence'):
+              assert token not in text,token
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-ingemmet-candidate-event-day
+          path: |
+            artifacts/chosica_2015_ingemmet_candidate_event_day_v0_1.json
+            artifacts/candidate_event_day_summary.json
+          if-no-files-found: error

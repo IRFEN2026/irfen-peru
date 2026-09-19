@@ -1,0 +1,70 @@
+name: IRFEN - Chosica 2015 clean-room target readiness
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_candidate_evidence_adjudication_freeze_record_v0_1.json
+      - config/chosica_2015_cleanroom_target_readiness_contract_v0_1.json
+      - scripts/evaluate_chosica_2015_cleanroom_target_readiness.py
+      - .github/workflows/chosica-2015-cleanroom-target-readiness.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_cleanroom_target_readiness_contract_v0_1.json
+            site/data/validation/cleanroom/chosica_2015_cleanroom_matching_v0_1.json
+            scripts/evaluate_chosica_2015_cleanroom_target_readiness.py
+            .github/workflows/chosica-2015-cleanroom-target-readiness.yml
+      - name: Assert forbidden paths absent
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_multibasin_validation_set_v0_1.json
+          test ! -e config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09_b.json
+      - name: Download exact candidate adjudication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p sources/adjudication artifacts
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/10180559828/zip" > /tmp/adjudication.zip
+          unzip -q /tmp/adjudication.zip -d sources/adjudication
+          test "$(sha256sum sources/adjudication/chosica_2015_candidate_evidence_adjudication_v0_1.json | cut -d' ' -f1)" = "9f36611e13972a0400cc28850598a7f523ff30cdeb130e32fb4f3086b7b556d8"
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Evaluate pseudonymous readiness only
+        run: |
+          env -i PATH="$PATH" HOME=/tmp LANG=C.UTF-8 python -I scripts/evaluate_chosica_2015_cleanroom_target_readiness.py \
+            --contract config/chosica_2015_cleanroom_target_readiness_contract_v0_1.json \
+            --matching site/data/validation/cleanroom/chosica_2015_cleanroom_matching_v0_1.json \
+            --adjudication sources/adjudication/chosica_2015_candidate_evidence_adjudication_v0_1.json \
+            --output artifacts/chosica_2015_cleanroom_target_readiness_v0_1.json
+      - name: Enforce target outcomes remain sealed
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/chosica_2015_cleanroom_target_readiness_v0_1.json'))
+          assert d['status']=='PASS_CLEANROOM_TARGET_READINESS_EVALUATION'
+          assert d['target_count']==6 and d['eligible_target_count']==0
+          assert all(x['target_unblind_allowed'] is False for x in d['targets'])
+          for k in ('target_names_read','target_outcomes_read','a6680_read','contaminated_adjudication_used','matching_recalculated','candidate_replacement_performed','selection_feedback_performed','automatic_target_outcome_unblind_performed','sealed_target_unblind_allowed'):
+              assert d[k] is False, k
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-cleanroom-target-readiness
+          path: artifacts/chosica_2015_cleanroom_target_readiness_v0_1.json
+          if-no-files-found: error

@@ -1,0 +1,67 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "CLEANROOM_CANDIDATE_EVIDENCE_DISCOVERY_CHECKPOINT",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "completed_safe_gates": [
+    {
+      "gate": "CLEANROOM_PACKAGE_AND_MATCHING",
+      "status": "FROZEN",
+      "selected_candidate_count": 7,
+      "sealed_target_unblind_allowed": false
+    },
+    {
+      "gate": "CLEANROOM_CANDIDATE_GEOMETRIES",
+      "status": "FROZEN_BY_EXACT_HASH",
+      "geojson_sha256": "9a23644c191c88fb66722b368773251051b4098ddd74e4d5861c3a37dbfbb1ca",
+      "candidate_count": 7
+    },
+    {
+      "gate": "INGEMMET_TLS_TRUST_RECOVERY",
+      "status": "PASS_CRYPTOGRAPHIC_CHAIN_VERIFICATION",
+      "verified_metadata_output_sha256": "a22bcf7e5aed85fd05c40bba9578606bfb9e340829282c2962228771a6262613"
+    },
+    {
+      "gate": "INGEMMET_CANDIDATE_EVENT_DAY",
+      "status": "FROZEN_BY_EXACT_HASH",
+      "output_sha256": "4c5da50f43305100ea97605b7bc04511f8f40216472e7bbbc5b2f25803fe5d41",
+      "candidate_local_record_count": 0,
+      "candidate_excluded_count": 0,
+      "candidate_outcome_unknown_count": 7,
+      "absence_can_confirm_control": false
+    }
+  ],
+  "closed_or_nonproductive_routes": [
+    {
+      "source": "CENEPRED_SIGRID_BIBLIOTECA",
+      "classification": "KEYWORD_SEARCH_ONLY_NOT_CANDIDATE_COORDINATE_BOUNDED",
+      "candidate_territorial_use_allowed": false,
+      "reason": "The frozen form schema exposes free-text GET control c; submitting target/event terms would violate the clean-room candidate-bounded source policy."
+    },
+    {
+      "source": "CENEPRED_SIGRID_STATIC_MAIN_JS",
+      "classification": "NO_CANDIDATE_QUERY_ENDPOINT_DISCOVERED",
+      "candidate_territorial_use_allowed": false,
+      "reason": "Frozen script route extraction found zero same-host endpoint-like routes; no route was followed."
+    },
+    {
+      "source": "INGEMMET_EVENT_INVENTORY_LAYERS_0_1",
+      "classification": "USEFUL_FOR_EXCLUSION_ONLY_IN_THIS_PROTOCOL",
+      "candidate_territorial_use_allowed": true,
+      "reason": "Exact event-day polygon queries can exclude a candidate if a local geological-hazard record exists, but zero records are documentary silence and remain OUTCOME_UNKNOWN."
+    }
+  ],
+  "critical_path": {
+    "current_bottleneck": "AFFIRMATIVE_INDEPENDENT_CANDIDATE_LOCAL_NONACTIVATION_EVIDENCE",
+    "required_property": "Evidence must be candidate-bounded, independent of target outcomes and contaminated adjudication, frozen before read, and capable of supporting a positive no-activation observation rather than inference from silence.",
+    "candidate_labels_assigned": false,
+    "target_unblind_allowed": false
+  },
+  "next_safe_front": "PREREGISTER_CANDIDATE_ONLY_EVENT_BRACKETING_REMOTE_SENSING_AVAILABILITY_AND_CHANGE_EVIDENCE_WITH_FIXED_WINDOWS_AND_NO_FEEDBACK_TO_MATCHING"
+}

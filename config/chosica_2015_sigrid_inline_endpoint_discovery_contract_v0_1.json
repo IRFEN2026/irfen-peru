@@ -1,0 +1,62 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_INFRASTRUCTURE_ONLY_INLINE_ENDPOINT_DISCOVERY",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "revision_basis": {
+    "infrastructure_schema_run_id": 34513102395,
+    "infrastructure_schema_output_sha256": "bb7fc7b7a2d2d2c48830d5e3865400ecec2f73fd0094eff685ed612d31e9b176",
+    "observed_safe_structure": {
+      "biblioteca_get_form_fields": ["c"],
+      "mapa_candidate_query_form_present": false,
+      "free_text_query_use_forbidden": true
+    },
+    "candidate_territorial_evidence_read": false,
+    "control_labels_assigned": false,
+    "candidate_selection_modified": false
+  },
+  "endpoints": [
+    "https://sigrid.cenepred.gob.pe/sigridv3/documento/biblioteca",
+    "https://sigrid.cenepred.gob.pe/sigridv3/mapa"
+  ],
+  "allowed_operation": "GET_EXACT_ENDPOINT_PARSE_INLINE_SCRIPT_URL_OR_ROUTE_LITERALS_ONLY",
+  "classification": "INFRASTRUCTURE_ONLY_NOT_TERRITORIAL_EVIDENCE",
+  "extraction_policy": {
+    "inline_script_only": true,
+    "external_script_bytes_read": false,
+    "raw_html_written": false,
+    "raw_inline_script_written": false,
+    "raw_inline_script_logged": false,
+    "emit_only_https_or_normalized_same_host_route_like_literals": true,
+    "same_host_or_cenepred_gob_pe_host_only": true,
+    "strip_query_strings": true,
+    "exclude_numeric_document_routes": true,
+    "follow_extracted_routes": false,
+    "maximum_html_bytes": 5000000
+  },
+  "route_markers": ["api", "ajax", "map", "query", "service", "servicio", "document", "biblioteca", "consulta", "search", "buscar", "geo", "layer"],
+  "forbidden": [
+    "free web search",
+    "search-engine queries",
+    "submit biblioteca field c",
+    "read linked document bytes",
+    "follow extracted endpoints in same stage",
+    "emit arbitrary inline-script strings",
+    "target names or IDs",
+    "candidate names",
+    "event keywords",
+    "A6680",
+    "contaminated adjudication",
+    "control labels",
+    "candidate replacement or reranking"
+  ],
+  "candidate_territorial_evidence_read": false,
+  "sealed_target_unblind_allowed": false,
+  "next_gate": "FREEZE_GENERIC_SPATIAL_ENDPOINTS_BEFORE_ANY_CANDIDATE_BOUNDED_QUERY"
+}
