@@ -1,0 +1,622 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://irfen.example/schema/phase2_climate_evidence_normalization.schema.json",
+  "title": "IRFEN Phase-2 Climate Evidence and Normalization Layer v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "generated_at",
+    "deployment_status",
+    "test_mode",
+    "production_use",
+    "production_ready",
+    "operational_alerting_enabled",
+    "decision_thresholds",
+    "activation_gate",
+    "decision_use",
+    "relationship_to_climate_matrix",
+    "guardrails",
+    "normalization_contract",
+    "source_registry",
+    "phase2_event_evidence",
+    "candidate_evidence",
+    "summary"
+  ],
+  "properties": {
+    "version": {
+      "const": "phase2-climate-evidence-normalization-v0.1"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "deployment_status": {
+      "const": "RESEARCH_ONLY"
+    },
+    "test_mode": {
+      "const": true
+    },
+    "production_use": {
+      "const": false
+    },
+    "production_ready": {
+      "const": false
+    },
+    "operational_alerting_enabled": {
+      "const": false
+    },
+    "decision_thresholds": {
+      "const": null
+    },
+    "activation_gate": {
+      "const": "BLOCKED"
+    },
+    "decision_use": {
+      "const": "TEST_ONLY"
+    },
+    "relationship_to_climate_matrix": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "matrix_path",
+        "writes_or_changes_plausibility",
+        "writes_or_changes_classification_method",
+        "required_current_classification_method_status",
+        "matrix_candidate_count"
+      ],
+      "properties": {
+        "matrix_path": {
+          "const": "site/data/phase2/climate_conditioned_activation_matrix_v0_1.json"
+        },
+        "writes_or_changes_plausibility": {
+          "const": false
+        },
+        "writes_or_changes_classification_method": {
+          "const": false
+        },
+        "required_current_classification_method_status": {
+          "const": "NOT_YET_CALIBRATED"
+        },
+        "matrix_candidate_count": {
+          "const": 18
+        }
+      }
+    },
+    "guardrails": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "missing_data_is_unknown_never_zero",
+        "cross_zone_transfer_forbidden",
+        "daily_data_cannot_create_subdaily_windows",
+        "forecast_is_not_observation",
+        "source_availability_is_not_precipitation",
+        "candidate_linkage_requires_exact_id",
+        "climatological_percentiles_require_cited_baseline",
+        "antecedent_state_thresholds_unresolved"
+      ],
+      "properties": {
+        "missing_data_is_unknown_never_zero": {
+          "const": true
+        },
+        "cross_zone_transfer_forbidden": {
+          "const": true
+        },
+        "daily_data_cannot_create_subdaily_windows": {
+          "const": true
+        },
+        "forecast_is_not_observation": {
+          "const": true
+        },
+        "source_availability_is_not_precipitation": {
+          "const": true
+        },
+        "candidate_linkage_requires_exact_id": {
+          "const": true
+        },
+        "climatological_percentiles_require_cited_baseline": {
+          "const": true
+        },
+        "antecedent_state_thresholds_unresolved": {
+          "const": true
+        }
+      }
+    },
+    "normalization_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "time_reference",
+        "precipitation_accumulation_unit",
+        "precipitation_rate_unit",
+        "supported_candidate_windows",
+        "complete_interval_policy",
+        "partial_interval_policy",
+        "assessment_context_policy"
+      ],
+      "properties": {
+        "time_reference": {
+          "const": "UTC"
+        },
+        "precipitation_accumulation_unit": {
+          "const": "mm"
+        },
+        "precipitation_rate_unit": {
+          "const": "mm/h"
+        },
+        "supported_candidate_windows": {
+          "type": "array",
+          "minItems": 8,
+          "maxItems": 8,
+          "items": {
+            "enum": [
+              "1h",
+              "3h",
+              "6h",
+              "12h",
+              "24h",
+              "48h",
+              "72h",
+              "7d"
+            ]
+          }
+        },
+        "complete_interval_policy": {
+          "const": "ALL_REQUIRED_INTERVALS_PRESENT"
+        },
+        "partial_interval_policy": {
+          "const": "PRESERVE_COVERAGE_BUT_NORMALIZED_ACCUMULATION_IS_NULL"
+        },
+        "assessment_context_policy": {
+          "const": "EXPLICIT_CONTEXT_REQUIRED_BEFORE_CANDIDATE_WINDOW_POPULATION"
+        }
+      }
+    },
+    "source_registry": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "$ref": "#/$defs/source_contract"
+      }
+    },
+    "phase2_event_evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/event_evidence"
+      }
+    },
+    "candidate_evidence": {
+      "type": "array",
+      "minItems": 18,
+      "maxItems": 18,
+      "items": {
+        "$ref": "#/$defs/candidate_evidence"
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_count",
+        "source_contract_count",
+        "phase2_event_record_count",
+        "exact_candidate_linked_event_count",
+        "complete_exact_candidate_event_window_count",
+        "candidates_with_current_normalized_rainfall",
+        "classification_outputs_created",
+        "operational_activations",
+        "authoritative_phase2_registered_candidates"
+      ],
+      "properties": {
+        "candidate_count": {
+          "const": 18
+        },
+        "source_contract_count": {
+          "const": 4
+        },
+        "phase2_event_record_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "exact_candidate_linked_event_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "complete_exact_candidate_event_window_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "candidates_with_current_normalized_rainfall": {
+          "const": 0
+        },
+        "classification_outputs_created": {
+          "const": 0
+        },
+        "operational_activations": {
+          "const": 0
+        },
+        "authoritative_phase2_registered_candidates": {
+          "const": 18
+        }
+      }
+    }
+  },
+  "$defs": {
+    "window": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "window_id",
+        "evidence_status",
+        "accumulated_mm",
+        "coverage_pct",
+        "complete",
+        "source_refs",
+        "note"
+      ],
+      "properties": {
+        "window_id": {
+          "enum": [
+            "1h",
+            "3h",
+            "6h",
+            "12h",
+            "24h",
+            "48h",
+            "72h",
+            "7d"
+          ]
+        },
+        "evidence_status": {
+          "enum": [
+            "INSUFFICIENT_EVIDENCE",
+            "HISTORICAL_EVIDENCE_ONLY",
+            "OBSERVED_LIVE_OR_NEAR_REAL_TIME"
+          ]
+        },
+        "accumulated_mm": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "coverage_pct": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "complete": {
+          "type": "boolean"
+        },
+        "source_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "source_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "path",
+        "source_kind",
+        "record_count",
+        "temporal_resolution",
+        "spatial_scope",
+        "supports_windows",
+        "phase2_candidate_use",
+        "cross_zone_transfer_allowed",
+        "forecast_as_observation",
+        "precipitation_values_archived",
+        "note"
+      ],
+      "properties": {
+        "source_id": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "source_kind": {
+          "enum": [
+            "OBSERVATION_REANALYSIS",
+            "OBSERVATION_DAILY",
+            "SOURCE_AVAILABILITY_METADATA",
+            "FORECAST"
+          ]
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "temporal_resolution": {
+          "type": "string"
+        },
+        "spatial_scope": {
+          "type": "string"
+        },
+        "supports_windows": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "1h",
+              "3h",
+              "6h",
+              "12h",
+              "24h",
+              "48h",
+              "72h",
+              "7d"
+            ]
+          }
+        },
+        "phase2_candidate_use": {
+          "type": "string"
+        },
+        "cross_zone_transfer_allowed": {
+          "const": false
+        },
+        "forecast_as_observation": {
+          "const": false
+        },
+        "precipitation_values_archived": {
+          "type": "boolean"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "event_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_id",
+        "target_zone_id",
+        "linkage_status",
+        "source_status",
+        "research_role",
+        "occurrence_time_utc",
+        "windows",
+        "can_populate_candidate_context",
+        "operational_use",
+        "threshold_inference_allowed"
+      ],
+      "properties": {
+        "event_id": {
+          "type": "string"
+        },
+        "target_zone_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "linkage_status": {
+          "enum": [
+            "EXACT_REGISTERED_PHASE2_CANDIDATE",
+            "UNLINKED_TO_REGISTERED_PHASE2_CANDIDATE"
+          ]
+        },
+        "source_status": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "research_role": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "occurrence_time_utc": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "windows": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "3h",
+            "6h",
+            "24h"
+          ],
+          "properties": {
+            "3h": {
+              "$ref": "#/$defs/window"
+            },
+            "6h": {
+              "$ref": "#/$defs/window"
+            },
+            "24h": {
+              "$ref": "#/$defs/window"
+            }
+          }
+        },
+        "can_populate_candidate_context": {
+          "type": "boolean"
+        },
+        "operational_use": {
+          "const": false
+        },
+        "threshold_inference_allowed": {
+          "const": false
+        }
+      }
+    },
+    "candidate_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_id",
+        "deployment_status",
+        "production_use",
+        "production_ready",
+        "activation_gate",
+        "assessment_context",
+        "rainfall_windows",
+        "antecedent_accumulations",
+        "climatology",
+        "linked_historical_event_evidence_ids"
+      ],
+      "properties": {
+        "candidate_id": {
+          "type": "string"
+        },
+        "deployment_status": {
+          "const": "RESEARCH_ONLY"
+        },
+        "production_use": {
+          "const": false
+        },
+        "production_ready": {
+          "const": false
+        },
+        "activation_gate": {
+          "const": "BLOCKED"
+        },
+        "assessment_context": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "as_of_utc",
+            "note"
+          ],
+          "properties": {
+            "status": {
+              "const": "NO_ASSESSMENT_CONTEXT"
+            },
+            "as_of_utc": {
+              "const": null
+            },
+            "note": {
+              "type": "string"
+            }
+          }
+        },
+        "rainfall_windows": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "1h",
+            "3h",
+            "6h",
+            "12h",
+            "24h",
+            "48h",
+            "72h",
+            "7d"
+          ],
+          "properties": {
+            "1h": {
+              "$ref": "#/$defs/window"
+            },
+            "3h": {
+              "$ref": "#/$defs/window"
+            },
+            "6h": {
+              "$ref": "#/$defs/window"
+            },
+            "12h": {
+              "$ref": "#/$defs/window"
+            },
+            "24h": {
+              "$ref": "#/$defs/window"
+            },
+            "48h": {
+              "$ref": "#/$defs/window"
+            },
+            "72h": {
+              "$ref": "#/$defs/window"
+            },
+            "7d": {
+              "$ref": "#/$defs/window"
+            }
+          }
+        },
+        "antecedent_accumulations": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "24h_mm",
+            "72h_mm",
+            "7d_mm",
+            "state",
+            "state_methodology_status",
+            "evidence_status"
+          ],
+          "properties": {
+            "24h_mm": {
+              "const": null
+            },
+            "72h_mm": {
+              "const": null
+            },
+            "7d_mm": {
+              "const": null
+            },
+            "state": {
+              "const": "UNKNOWN"
+            },
+            "state_methodology_status": {
+              "const": "UNRESOLVED_THRESHOLDS"
+            },
+            "evidence_status": {
+              "const": "INSUFFICIENT_EVIDENCE"
+            }
+          }
+        },
+        "climatology": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "percentile",
+            "anomaly_mm",
+            "baseline_ref",
+            "note"
+          ],
+          "properties": {
+            "status": {
+              "const": "NOT_AVAILABLE_FOR_PHASE2_CANDIDATE"
+            },
+            "percentile": {
+              "const": null
+            },
+            "anomaly_mm": {
+              "const": null
+            },
+            "baseline_ref": {
+              "const": null
+            },
+            "note": {
+              "type": "string"
+            }
+          }
+        },
+        "linked_historical_event_evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
