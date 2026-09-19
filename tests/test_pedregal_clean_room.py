@@ -1,7 +1,9 @@
 """Tests del clean room de Pedregal: loader fail-closed + validador estático.
 
-Todas las fixtures son sintéticas (`tests/fixtures/pedregal_clean_room/`).
-Ningún test lee, imprime ni depende del contenido sellado real de Pedregal.
+Todas las fixtures funcionales son sintéticas (`tests/fixtures/pedregal_clean_room/`).
+Los tests nunca imprimen ni dependen semánticamente del contenido sellado real;
+el validador de repositorio sí calcula su hash de integridad cuando el manifiesto
+registra una fuente real.
 """
 import hashlib
 import importlib.util
@@ -283,6 +285,18 @@ class ValidatorTests(unittest.TestCase):
         rc = self.mod.main()
         self.assertEqual(rc, 0, msg="\n".join(self.mod.ERRORS))
         self.assertEqual(self.mod.ERRORS, [])
+
+    def test_repo_manifest_registers_real_source_but_keeps_unblind_off(self):
+        manifest_path = ROOT / "site/data/validation/phase2_sealed_evidence/pedregal/manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        self.assertFalse(manifest["safe_unblind_authorized"])
+        self.assertIsNone(manifest["canonical_unblind_decision"])
+        self.assertEqual(len(manifest["entries"]), 1)
+        entry = manifest["entries"][0]
+        self.assertEqual(entry["evidence_id"], "pedregal_ingemmet_2015_outcome_subtree")
+        self.assertEqual(entry["source_key_path"], "pedregal")
+        self.assertTrue(entry["outcome_bearing"])
+        self.assertTrue(entry["sealed_from_candidate_matching_and_reranking"])
 
     def test_check_manifest_shape_flags_wrong_policy_constants(self):
         mod = validator_module()
