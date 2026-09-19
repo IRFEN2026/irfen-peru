@@ -213,6 +213,30 @@ def walk_forbidden(node, path="root"):
             walk_forbidden(value, f"{path}[{index}]")
 
 
+def _first_difference(left, right, path="root"):
+    if type(left) is not type(right):
+        return f"{path}: type {type(left).__name__} != {type(right).__name__}"
+    if isinstance(left, dict):
+        if set(left) != set(right):
+            return f"{path}: keys {sorted(set(left) ^ set(right))}"
+        for key in sorted(left):
+            diff = _first_difference(left[key], right[key], path + "." + str(key))
+            if diff:
+                return diff
+        return None
+    if isinstance(left, list):
+        if len(left) != len(right):
+            return f"{path}: list length {len(left)} != {len(right)}"
+        for index, (a, b) in enumerate(zip(left, right)):
+            diff = _first_difference(a, b, f"{path}[{index}]")
+            if diff:
+                return diff
+        return None
+    if left != right:
+        return f"{path}: {left!r} != {right!r}"
+    return None
+
+
 def check_determinism(layer):
     sys.path.insert(0, str(ROOT / "scripts"))
     import build_phase2_climate_evidence as builder
@@ -224,7 +248,8 @@ def check_determinism(layer):
     right.pop("generated_at", None)
     if left != right:
         ERRORS.append(
-            "committed normalized evidence does not match deterministic regeneration"
+            "committed normalized evidence does not match deterministic regeneration: "
+            + (_first_difference(left, right) or "unknown difference")
         )
 
 
