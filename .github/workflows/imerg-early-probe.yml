@@ -10,7 +10,12 @@ on:
     paths:
       - scripts/probe_imerg_early_live.py
       - scripts/archive_imerg_early_probe.py
+      - scripts/phase2_subunit_sampling.py
+      - scripts/update_phase2_subunit_imerg_late.py
+      - scripts/build_phase2_subunit_rainfall_evidence.py
+      - scripts/validate_phase2_subunit_rainfall_evidence.py
       - scripts/build_phase2_event_reanalysis.py
+      - site/data/phase2/spatial_observation_contracts_v0_1.json
       - site/data/validation/phase2_event_intake/**
       - .github/workflows/imerg-early-probe.yml
 
@@ -25,7 +30,7 @@ concurrency:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Descargar repositorio
         uses: actions/checkout@v6
@@ -49,17 +54,32 @@ jobs:
       - name: Archivar latencia, continuidad y ventanas
         run: python scripts/archive_imerg_early_probe.py
 
+      - name: Actualizar IMERG Late diario de subunidades Phase-2
+        env:
+          EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
+        run: timeout --signal=TERM --kill-after=10s 240s python scripts/update_phase2_subunit_imerg_late.py --days 12
+
+      - name: Consolidar lluvia observada de subunidades Phase-2
+        run: python scripts/build_phase2_subunit_rainfall_evidence.py
+
       - name: Construir reanálisis fail-closed de eventos Phase 2
         run: python scripts/build_phase2_event_reanalysis.py
+
+      - name: Validar lluvia observada de subunidades Phase-2
+        run: python scripts/validate_phase2_subunit_rainfall_evidence.py
 
       - name: Validar resultado
         run: |
           test -s site/data/calibration/imerg_early_live_probe.json
           test -s site/data/calibration/imerg_early_live_archive.json
           test -s site/data/phase2/event_reanalysis.json
+          test -s site/data/phase2/subunit_imerg_late_v0_1.json
+          test -s site/data/phase2/subunit_rainfall_evidence_v0_1.json
           python -m json.tool site/data/calibration/imerg_early_live_probe.json >/dev/null
           python -m json.tool site/data/calibration/imerg_early_live_archive.json >/dev/null
           python -m json.tool site/data/phase2/event_reanalysis.json >/dev/null
+          python -m json.tool site/data/phase2/subunit_imerg_late_v0_1.json >/dev/null
+          python -m json.tool site/data/phase2/subunit_rainfall_evidence_v0_1.json >/dev/null
           python - <<'PY'
           import json
           from pathlib import Path
@@ -84,9 +104,20 @@ jobs:
               mode=p.get('download_mode')
               limit=int(p.get('bounded_download_limit',0))
               reserved=int(p.get('research_event_reserved_slots',0))
-              assert mode in {'NORMAL_CONTINUITY','VERIFIED_RESEARCH_EVENT_BACKFILL'}
-              assert limit == (8 if mode == 'VERIFIED_RESEARCH_EVENT_BACKFILL' else 4)
-              assert reserved == (6 if mode == 'VERIFIED_RESEARCH_EVENT_BACKFILL' else 2)
+              assert mode in {
+                  'NORMAL_CONTINUITY',
+                  'VERIFIED_RESEARCH_EVENT_BACKFILL',
+                  'PHASE2_SUBUNIT_CONTINUITY_BACKFILL',
+              }
+              if mode == 'VERIFIED_RESEARCH_EVENT_BACKFILL':
+                  assert limit == 8
+                  assert reserved == 6
+              elif mode == 'PHASE2_SUBUNIT_CONTINUITY_BACKFILL':
+                  assert limit == 8
+                  assert reserved == 0
+              else:
+                  assert limit == 4
+                  assert reserved == 2
               assert 1 <= int(p.get('granules_downloaded',0)) <= limit
               assert int(p.get('missing_granules_in_search_window',0)) >= 0
           assert a.get('production_use') is False
@@ -98,7 +129,17 @@ jobs:
           assert r.get('guardrails',{}).get('missing_data_is_not_low_risk') is True
           assert r.get('guardrails',{}).get('meteorological_reference_is_not_hazard_model_validation') is True
           assert int(r.get('summary',{}).get('operational_activations',-1)) == 0
-          print('Puertas de seguridad IMERG Early OK:', p.get('status'))
+          s=json.loads(Path('site/data/phase2/subunit_rainfall_evidence_v0_1.json').read_text())
+          assert s.get('deployment_status') == 'RESEARCH_ONLY'
+          assert s.get('production_use') is False
+          assert s.get('production_ready') is False
+          assert s.get('operational_alerting_enabled') is False
+          assert s.get('activation_gate') == 'BLOCKED'
+          assert s.get('decision_thresholds') is None
+          assert int((s.get('summary') or {}).get('research_subunit_count',-1)) == 2
+          assert int((s.get('summary') or {}).get('candidate_wide_rainfall_outputs',-1)) == 0
+          assert int((s.get('summary') or {}).get('operational_activations',-1)) == 0
+          print('Puertas de seguridad IMERG Early + Phase-2 subunits OK:', p.get('status'))
           PY
 
       - name: Guardar evidencia del probe
@@ -109,7 +150,9 @@ jobs:
           git add \
             site/data/calibration/imerg_early_live_probe.json \
             site/data/calibration/imerg_early_live_archive.json \
-            site/data/phase2/event_reanalysis.json
+            site/data/phase2/event_reanalysis.json \
+            site/data/phase2/subunit_imerg_late_v0_1.json \
+            site/data/phase2/subunit_rainfall_evidence_v0_1.json
           if git diff --cached --quiet; then
             echo "Sin cambios que guardar."
             exit 0

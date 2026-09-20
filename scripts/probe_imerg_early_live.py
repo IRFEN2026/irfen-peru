@@ -24,6 +24,8 @@ import numpy as np
 import requests
 from shapely.geometry import box, shape
 
+from phase2_subunit_sampling import load_research_subunit_targets
+
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "site"
 OUT = SITE / "data" / "calibration" / "imerg_early_live_probe.json"
@@ -119,6 +121,7 @@ def load_targets():
             for area in catacaos.get("sampling_areas", [])
         ],
     })
+    targets.extend(load_research_subunit_targets())
     targets.extend(load_phase2_event_targets())
     return targets
 
@@ -170,6 +173,17 @@ def load_phase2_event_targets():
             },
         })
     return targets
+
+
+def required_target_ids_for_run(targets):
+    """Core v0.8 targets plus current Claude-F research subunits.
+
+    Phase-2 research subunits become required for continuity repair in the
+    current run, but they do not join the fixed v0.8 core target contract.
+    """
+    return REQUIRED_TARGET_IDS | {
+        target["id"] for target in targets if target.get("phase2_subunit")
+    }
 
 
 def phase2_event_bootstraps(targets):
@@ -377,13 +391,19 @@ def select_bounded_granules(
     return selected
 
 
-def download_policy(research_event_missing):
-    """Temporarily accelerate a finite verified-event replay, then self-revert."""
+def download_policy(research_event_missing, research_subunit_missing=False):
+    """Bounded acceleration for finite research-event and new subunit backfill."""
     if research_event_missing:
         return {
             "mode": "VERIFIED_RESEARCH_EVENT_BACKFILL",
             "limit": EVENT_BACKFILL_MAX_DOWNLOADS_PER_RUN,
             "event_slots": RESEARCH_EVENT_BACKFILL_SLOTS,
+        }
+    if research_subunit_missing:
+        return {
+            "mode": "PHASE2_SUBUNIT_CONTINUITY_BACKFILL",
+            "limit": EVENT_BACKFILL_MAX_DOWNLOADS_PER_RUN,
+            "event_slots": 0,
         }
     return {
         "mode": "NORMAL_CONTINUITY",
@@ -457,6 +477,10 @@ def main():
     previous = previous_probe()
     now = datetime.now(timezone.utc)
     targets = load_targets()
+    required_target_ids = required_target_ids_for_run(targets)
+    research_subunit_ids = sorted(
+        target["id"] for target in targets if target.get("phase2_subunit")
+    )
     research_bootstrap_specs = phase2_event_bootstraps(targets)
 
     try:
@@ -479,7 +503,7 @@ def main():
     archived = archived_granule_targets()
     missing = [
         row for row in indexed
-        if row[1] and not REQUIRED_TARGET_IDS.issubset(archived.get(row[1], set()))
+        if row[1] and not required_target_ids.issubset(archived.get(row[1], set()))
     ]
 
     # La ventana primaria de 12 h conserva la medición de actualidad ya
@@ -508,7 +532,7 @@ def main():
         row for row in repair_indexed
         if row[1]
         and row[1] in archived
-        and not REQUIRED_TARGET_IDS.issubset(archived[row[1]])
+        and not required_target_ids.issubset(archived[row[1]])
     ]
 
     # Caso diagnóstico finito solicitado tras la lluvia local observada en
@@ -592,7 +616,16 @@ def main():
     # meteorological reference event is incomplete, temporarily reserve six of
     # eight bounded downloads for its finite replay. The policy automatically
     # returns to four downloads after the backlog is complete.
-    policy = download_policy(research_bootstrap_missing)
+    research_subunit_missing = any(
+        row[1]
+        and row[1] in archived
+        and any(target_id not in archived[row[1]] for target_id in research_subunit_ids)
+        for row in repair_indexed
+    )
+    policy = download_policy(
+        research_bootstrap_missing,
+        research_subunit_missing=research_subunit_missing,
+    )
     selected = select_bounded_granules(
         indexed,
         repair_missing,
@@ -672,6 +705,8 @@ def main():
         "download_mode": policy["mode"],
         "bounded_download_limit": policy["limit"],
         "research_event_reserved_slots": policy["event_slots"],
+        "phase2_research_subunit_target_ids": research_subunit_ids,
+        "required_target_ids_for_run": sorted(required_target_ids),
         "bootstrap_case": bootstrap,
         "phase2_research_bootstrap_cases": research_bootstraps,
         "latest_granule_time_utc": latest_time.isoformat() if latest_time else None,
