@@ -8,6 +8,9 @@ from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
+SCRIPTS = ROOT / "scripts"
+if str(SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS))
 
 # Las pruebas son puramente geométricas y de archivo; no autentican ni llaman
 # Earthdata. El workflow instala earthaccess antes de ejecutarlas, mientras que
