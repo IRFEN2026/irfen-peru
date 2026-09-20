@@ -492,8 +492,14 @@ def main():
             temporal=((now - timedelta(hours=SEARCH_WINDOW_HOURS)).isoformat(), now.isoformat()),
             count=30,
         )
-    except (requests.RequestException, OSError, ConnectionError, TimeoutError) as exc:
-        return write_contingency(now, previous, "SOURCE_TEMPORARILY_UNREACHABLE", error=exc, search_window_hours=SEARCH_WINDOW_HOURS)
+    except (requests.RequestException, OSError, ConnectionError, TimeoutError, RuntimeError) as exc:
+        return write_contingency(
+            now,
+            previous,
+            "SOURCE_TEMPORARILY_UNREACHABLE",
+            error=exc,
+            search_window_hours=SEARCH_WINDOW_HOURS,
+        )
 
     search_window_hours = SEARCH_WINDOW_HOURS
     if not granules:
@@ -678,8 +684,14 @@ def main():
                     "units": units,
                     "targets": target_rows,
                 })
-    except (requests.RequestException, OSError, ConnectionError, TimeoutError) as exc:
-        return write_contingency(now, previous, "SOURCE_TEMPORARILY_UNREACHABLE", error=exc, search_window_hours=search_window_hours)
+    except (requests.RequestException, OSError, ConnectionError, TimeoutError, RuntimeError) as exc:
+        return write_contingency(
+            now,
+            previous,
+            "SOURCE_TEMPORARILY_UNREACHABLE",
+            error=exc,
+            search_window_hours=search_window_hours,
+        )
 
     valid_times = [datetime.fromisoformat(x["time_utc"]) for x in samples if x.get("time_utc")]
     latest_time = max(valid_times) if valid_times else None
