@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import sys
 import types
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -118,6 +119,36 @@ class CatacaosTargetTests(unittest.TestCase):
         self.assertEqual(replay["deployment_status"], "RESEARCH_ONLY")
         self.assertFalse(replay["counts_toward_v08_closeout"])
         self.assertEqual(replay["decision_use"], "TEST_ONLY")
+
+
+class EarthdataFailureTests(unittest.TestCase):
+    def test_expired_token_is_fail_closed_source_unavailability(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "probe.json"
+            with (
+                patch.object(probe, "OUT", out),
+                patch.object(probe, "previous_probe", return_value={}),
+                patch.object(probe, "load_targets", return_value=[]),
+                patch.object(probe, "earthdata_preflight", return_value=401),
+                patch.object(probe.earthaccess, "login"),
+                patch.object(
+                    probe.earthaccess,
+                    "search_data",
+                    side_effect=RuntimeError("Token has expired"),
+                ),
+                patch.object(probe.os, "getenv", return_value="test-token"),
+            ):
+                result = probe.main()
+
+            self.assertEqual(result, 0)
+            payload = json.loads(out.read_text(encoding="utf-8"))
+            self.assertEqual(payload["status"], "SOURCE_TEMPORARILY_UNREACHABLE")
+            self.assertTrue(payload["stale"])
+            self.assertEqual(
+                payload["scientific_gate"]["status"],
+                "SOURCE_TEMPORARILY_UNAVAILABLE",
+            )
+            self.assertIn("expired", payload["source_error"]["message"].lower())
 
 
 class BoundedSelectionTests(unittest.TestCase):
