@@ -29,13 +29,28 @@ builder = load_script("build_phase2_subunit_rainfall_evidence_g", "scripts/build
 
 
 class SubunitResolverTests(unittest.TestCase):
-    def test_exact_two_research_subunits(self):
+    def test_exact_four_research_subunits(self):
         targets = sampling.load_research_subunit_targets()
-        self.assertEqual(len(targets), 2)
+        self.assertEqual(len(targets), 4)
         ids = {target["subunit_id"] for target in targets}
-        self.assertEqual(ids, {"cashahuacra", "shingolay"})
+        self.assertEqual(
+            ids,
+            {
+                "cashahuacra",
+                "shingolay",
+                "lambayeque_chancay_lambayeque_chongoyape",
+                "lambayeque_zana_oyotun",
+            },
+        )
+        parents = {target["candidate_id"] for target in targets}
+        self.assertEqual(
+            parents,
+            {
+                "lima_este_santa_eulalia_rimac",
+                "lambayeque_chongoyape_oyotun_zana",
+            },
+        )
         for target in targets:
-            self.assertEqual(target["candidate_id"], "lima_este_santa_eulalia_rimac")
             self.assertTrue(target["id"].startswith("phase2_subunit:"))
             self.assertGreater(target["geometry"].area, 0)
             self.assertFalse(
@@ -119,10 +134,10 @@ class LateDailyWindowTests(unittest.TestCase):
 
 
 class ConsolidatedEvidenceTests(unittest.TestCase):
-    def test_builder_has_only_two_research_subunits(self):
+    def test_builder_has_four_research_subunits(self):
         result = builder.generate(write=False)
-        self.assertEqual(result["summary"]["research_subunit_count"], 2)
-        self.assertEqual(len(result["targets"]), 2)
+        self.assertEqual(result["summary"]["research_subunit_count"], 4)
+        self.assertEqual(len(result["targets"]), 4)
         for row in result["targets"]:
             self.assertFalse(row["counts_as_candidate_wide_rainfall"])
             self.assertFalse(row["counts_as_operational_evidence"])

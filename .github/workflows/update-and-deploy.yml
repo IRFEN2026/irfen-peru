@@ -390,6 +390,7 @@ jobs:
         run: |
           set -euo pipefail
           path="site/data/forecast/imerg_verification_history.json"
+          derived="site/data/phase2/climate_evidence_normalized_v0_1.json"
           candidate="$(mktemp)"
           retry_dir=""
           cleanup() {
@@ -404,36 +405,37 @@ jobs:
           validated_main="$(git rev-parse HEAD)"
           commit_message="IRFEN v0.8: persistir histórico científico IMERG run ${GITHUB_RUN_ID}"
 
-          if git diff --quiet "$validated_main" -- "$path"; then
-            echo "El histórico durable ya coincide con la versión de main."
-            exit 0
-          fi
-
-          # El commit se crea sobre el main remoto más reciente en un worktree
-          # aislado. Se reintentan únicamente carreras con commits que no hayan
-          # tocado el ledger validado; una modificación concurrente del ledger
-          # detiene el despliegue para no sobrescribir evidencia científica.
+          # El commit se construye sobre el main remoto más reciente. Incluso si
+          # otra ejecución ya persistió el mismo ledger, se regenera Claude E en
+          # ese árbol para que la evidencia derivada nunca quede con conteos
+          # obsoletos respecto del histórico científico durable.
           for attempt in 1 2 3 4; do
             git fetch --no-tags origin main
-            if ! git diff --quiet "$validated_main" origin/main -- "$path"; then
-              remote_sha="$(git show "origin/main:$path" | sha256sum | awk '{print $1}')"
-              if [ "$remote_sha" = "$candidate_sha" ]; then
-                echo "El ledger candidato ya fue persistido por otra ejecución."
-                exit 0
-              fi
-              echo "ERROR: el ledger remoto cambió después de la validación; no se sobrescribe." >&2
+            remote_sha="$(git show "origin/main:$path" | sha256sum | awk '{print $1}')"
+
+            if ! git diff --quiet "$validated_main" origin/main -- "$path" && [ "$remote_sha" != "$candidate_sha" ]; then
+              echo "ERROR: el ledger remoto cambió a una versión distinta después de la validación; no se sobrescribe." >&2
               exit 1
             fi
 
             retry_dir="$(mktemp -d)"
             git worktree add --detach "$retry_dir" origin/main
-            cp -- "$candidate" "$retry_dir/$path"
+            if [ "$remote_sha" != "$candidate_sha" ]; then
+              cp -- "$candidate" "$retry_dir/$path"
+            else
+              echo "El histórico candidato ya está en main; se verificará/regenerará Claude E."
+            fi
+
             if (
               cd "$retry_dir"
+              python scripts/build_phase2_climate_evidence.py
+              python scripts/validate_phase2_climate_evidence.py
+
               git config user.name "github-actions[bot]"
               git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-              git add -- "$path"
+              git add -- "$path" "$derived"
               if git diff --cached --quiet; then
+                echo "Histórico y Claude E ya están sincronizados en main."
                 exit 0
               fi
               git commit -m "$commit_message"
@@ -441,7 +443,7 @@ jobs:
             ); then
               git worktree remove --force "$retry_dir"
               retry_dir=""
-              echo "Histórico IMERG persistido como commit Git independiente de Pages."
+              echo "Histórico IMERG y Claude E persistidos de forma atómica."
               exit 0
             fi
 
@@ -451,7 +453,7 @@ jobs:
               echo "ERROR: main siguió avanzando durante cuatro intentos acotados." >&2
               exit 1
             fi
-            echo "Carrera de fast-forward en intento ${attempt}/4; se reintentará sin force-push."
+            echo "Carrera de fast-forward en intento ${attempt}/4; se reconstruirá sobre el nuevo main."
             sleep "$((attempt * 2))"
           done
 

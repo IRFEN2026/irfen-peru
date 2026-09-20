@@ -15,6 +15,7 @@ or reinterprets regulatory corridors/fajas as drainage basins.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import hashlib
 import json
 from pathlib import Path
 
@@ -23,6 +24,10 @@ INVENTORY_PATH = ROOT / "config/phase2_candidate_inventory_v0_2.json"
 CATALOG_PATH = ROOT / "site/data/phase2/catalog.json"
 ZONE_CONTRACTS_DIR = ROOT / "site/data/validation/phase2_zone_contracts"
 OUT_PATH = ROOT / "site/data/phase2/spatial_observation_contracts_v0_1.json"
+LAMBAYEQUE_PARENT_ID = "lambayeque_chongoyape_oyotun_zana"
+LAMBAYEQUE_MIGRATION_VALIDATION = (
+    ROOT / "site/data/phase2/geometries/lambayeque_hydrologic_migration_validation.json"
+)
 
 POLYGON_TYPES = {"Polygon", "MultiPolygon"}
 RESEARCH_SUBUNIT_ROLE = "local_debris_flow_catchment_candidate"
@@ -68,6 +73,14 @@ def load_geometry_file(relative_path):
     if not path.is_file():
         return None
     return load_json(path)
+
+
+def sha256_file(path: Path):
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def feature_id(feature):
@@ -145,6 +158,7 @@ def build_subunit_contract(candidate_id, geometry_path, feature):
             "feature_selector": {"property": "unit_id", "value": unit_id},
             "geometry_type": geometry.get("type"),
             "geometry_sha256": props.get("geometry_sha256"),
+            "hash_scope": "FEATURE_GEOMETRY_SHA256",
             "representation": props.get("representation"),
             "hydrologic_role": props.get("hydrologic_role"),
             "declared_area_km2": coverage.get("delineated_area_km2"),
@@ -182,6 +196,127 @@ def build_subunit_contract(candidate_id, geometry_path, feature):
     }
 
 
+def build_lambayeque_child_contracts():
+    validation = load_json(LAMBAYEQUE_MIGRATION_VALIDATION)
+    if validation.get("status") != "PASS_RESEARCH_ONLY":
+        raise SpatialContractError("Lambayeque migration validation is not PASS_RESEARCH_ONLY")
+    if validation.get("hydrologic_children_reported_separately") != 2:
+        raise SpatialContractError("Lambayeque must retain exactly two separated hydrologic children")
+    if validation.get("phase2_registered_candidates_before") != 18 or validation.get("phase2_registered_candidates_after") != 18:
+        raise SpatialContractError("Lambayeque migration must not change the 18-candidate Phase-2 count")
+    if validation.get("artificial_connector_used") is not False:
+        raise SpatialContractError("Lambayeque child units must not use artificial connectors")
+    separation = validation.get("separation") or {}
+    if separation.get("interior_overlap") is not False:
+        raise SpatialContractError("Lambayeque child units must not overlap in their interiors")
+
+    contracts = []
+    for unit in validation.get("units") or []:
+        child_id = unit.get("candidate_id")
+        path = unit.get("output_path")
+        expected_sha = unit.get("output_sha256")
+        if not child_id or not path or not expected_sha:
+            raise SpatialContractError("Lambayeque child unit missing id/path/hash")
+        file_path = ROOT / path
+        if not file_path.is_file():
+            raise SpatialContractError(f"{child_id}: geometry file missing")
+        if sha256_file(file_path) != expected_sha:
+            raise SpatialContractError(f"{child_id}: geometry file hash mismatch")
+
+        document = load_json(file_path)
+        features = document.get("features") or []
+        if len(features) != 1:
+            raise SpatialContractError(f"{child_id}: expected exactly one official hydrologic feature")
+        feature = features[0]
+        props = feature.get("properties") or {}
+        geometry = feature.get("geometry") or {}
+
+        required = {
+            "candidate_id": child_id,
+            "parent_candidate_id": LAMBAYEQUE_PARENT_ID,
+            "deployment_status": "RESEARCH_ONLY",
+            "production_use": False,
+            "production_ready": False,
+            "operational_alerting_enabled": False,
+            "activation_gate": "BLOCKED",
+            "review_status": "REVIEW_ONLY",
+            "geometry_role": "official_hydrologic_unit_boundary_research_reference",
+        }
+        for key, value in required.items():
+            if props.get(key) != value:
+                raise SpatialContractError(f"{child_id}: {key} expected {value!r}")
+        if geometry.get("type") not in POLYGON_TYPES:
+            raise SpatialContractError(f"{child_id}: official geometry must be Polygon/MultiPolygon")
+        if unit.get("geometry_valid") is not True:
+            raise SpatialContractError(f"{child_id}: migration validator reports invalid geometry")
+
+        contracts.append({
+            "contract_id": f"phase2-spatial-observation:{LAMBAYEQUE_PARENT_ID}:{child_id}:v0.1",
+            "candidate_id": LAMBAYEQUE_PARENT_ID,
+            "subunit_id": child_id,
+            "contract_scope": "OFFICIAL_HYDROLOGIC_CHILD_UNIT_RESEARCH_ONLY",
+            "contract_status": "RESEARCH_SAMPLING_ELIGIBLE",
+            "deployment_status": "RESEARCH_ONLY",
+            "production_use": False,
+            "production_ready": False,
+            "operational_alerting_enabled": False,
+            "activation_gate": "BLOCKED",
+            "counts_as_candidate_wide_geometry": False,
+            "counts_as_operational_geometry": False,
+            "geometry_ref": {
+                "path": path,
+                "feature_selector": {"property": "candidate_id", "value": child_id},
+                "geometry_type": geometry.get("type"),
+                "geometry_sha256": expected_sha,
+                "hash_scope": "GEOJSON_FILE_SHA256",
+                "representation": "OFFICIAL_ANA_HYDROLOGIC_UNIT_BOUNDARY",
+                "hydrologic_role": props.get("geometry_role"),
+                "declared_area_km2": props.get("official_area_km2"),
+                "area_semantics": (
+                    "OFFICIAL_WHOLE_HYDROLOGIC_UNIT_RESEARCH_CONTEXT_NOT_EVENT_FOOTPRINT"
+                ),
+                "confidence": props.get("confidence"),
+                "candidate_status": props.get("review_status"),
+            },
+            "outlet_status": {
+                "official_confirmation": False,
+                "lon": None,
+                "lat": None,
+                "selection": None,
+            },
+            "sampling_contract": {
+                "method": "AREA_WEIGHTED_GRID_CELL_INTERSECTION",
+                "geometry_crs": "EPSG:4326",
+                "spatial_transfer_allowed": False,
+                "cross_candidate_transfer_allowed": False,
+                "minimum_coverage_pct": None,
+                "coverage_threshold_status": "UNRESOLVED_NO_ARBITRARY_THRESHOLD",
+                "missing_grid_cells_policy": "PRESERVE_COVERAGE_AND_FAIL_CLOSED",
+                "partial_coverage_interpretation": "INSUFFICIENT_EVIDENCE_UNLESS_SOURCE_SPECIFIC_METHOD_APPROVED",
+                "supported_source_families": ["IMERG", "GOES_RRQPE", "GEOS_CF"],
+                "source_use_policy": {
+                    "IMERG": "RESEARCH_ONLY_WHOLE_HYDROLOGIC_UNIT_CONTEXT",
+                    "GOES_RRQPE": "BLOCKED_UNTIL_CANDIDATE_LEVEL_PRECIPITATION_VALUES_ARE_PERSISTED",
+                    "GEOS_CF": "FORECAST_ONLY_NEVER_OBSERVATION",
+                },
+            },
+            "scientific_limitations": [
+                "Whole hydrologic-unit rainfall is basin-scale context and is not rainfall for any named local quebrada or event footprint.",
+                "The historical parent remains a non-activable grouper and receives no composite geometry.",
+                "Sampling does not validate activation, thresholds, runoff response, hydraulic routing, or local impacts.",
+            ],
+        })
+
+    contracts.sort(key=lambda row: row["subunit_id"])
+    expected_children = {
+        "lambayeque_chancay_lambayeque_chongoyape",
+        "lambayeque_zana_oyotun",
+    }
+    if {row["subunit_id"] for row in contracts} != expected_children:
+        raise SpatialContractError("unexpected Lambayeque hydrologic child set")
+    return contracts
+
+
 def build_candidate_entry(candidate, zone):
     candidate_id = candidate["candidate_id"]
     asset_status = (zone.get("asset_status") or {}).get("geometry")
@@ -208,6 +343,15 @@ def build_candidate_entry(candidate, zone):
         "production_ready": False,
         "activation_gate": "BLOCKED",
     }
+
+    if candidate_id == LAMBAYEQUE_PARENT_ID:
+        base["spatial_contract_status"] = "SUBUNIT_RESEARCH_ONLY"
+        base["blocker"] = (
+            "The historical parent has no composite geometry and remains non-activable; "
+            "its two official ANA hydrologic children may be sampled independently for research only."
+        )
+        base["subunit_contracts"] = build_lambayeque_child_contracts()
+        return base
 
     if presence != "PRESENT" or not geometry_path:
         base["spatial_contract_status"] = "BLOCKED_MISSING_GEOMETRY"

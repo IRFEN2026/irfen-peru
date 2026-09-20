@@ -2,6 +2,7 @@
 """Shared resolver for Phase-2 RESEARCH_ONLY hydrologic subunit sampling targets."""
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -18,6 +19,14 @@ class Phase2SubunitSamplingError(ValueError):
 
 def load_json(path: Path):
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _sha256_file(path: Path):
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _select_feature(document, selector):
@@ -75,7 +84,20 @@ def load_research_subunit_targets():
             props = feature.get("properties") or {}
             geometry = feature.get("geometry") or {}
             expected_hash = geometry_ref.get("geometry_sha256")
-            if not expected_hash or props.get("geometry_sha256") != expected_hash:
+            hash_scope = geometry_ref.get("hash_scope")
+            if not expected_hash:
+                raise Phase2SubunitSamplingError(
+                    f"{candidate_id}/{contract.get('subunit_id')}: missing geometry hash"
+                )
+            if hash_scope == "FEATURE_GEOMETRY_SHA256":
+                actual_hash = props.get("geometry_sha256")
+            elif hash_scope == "GEOJSON_FILE_SHA256":
+                actual_hash = _sha256_file(path)
+            else:
+                raise Phase2SubunitSamplingError(
+                    f"{candidate_id}/{contract.get('subunit_id')}: unsupported hash_scope {hash_scope!r}"
+                )
+            if actual_hash != expected_hash:
                 raise Phase2SubunitSamplingError(
                     f"{candidate_id}/{contract.get('subunit_id')}: geometry hash mismatch"
                 )
@@ -100,6 +122,8 @@ def load_research_subunit_targets():
                 "geometry_sha256": expected_hash,
                 "declared_area_km2": geometry_ref.get("declared_area_km2"),
                 "sampling_contract": contract.get("sampling_contract") or {},
+                "contract_scope": contract.get("contract_scope"),
+                "hash_scope": hash_scope,
                 "phase2_subunit": {
                     "candidate_id": candidate_id,
                     "subunit_id": subunit_id,

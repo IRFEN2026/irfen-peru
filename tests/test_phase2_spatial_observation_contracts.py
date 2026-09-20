@@ -94,10 +94,10 @@ class GeneratedContractTests(unittest.TestCase):
     def test_current_classification_counts(self):
         summary = self.result["summary"]
         self.assertEqual(summary["candidate_wide_ready_count"], 0)
-        self.assertEqual(summary["subunit_research_only_candidate_count"], 1)
+        self.assertEqual(summary["subunit_research_only_candidate_count"], 2)
         self.assertEqual(summary["non_catchment_geometry_only_count"], 1)
-        self.assertEqual(summary["blocked_missing_geometry_count"], 16)
-        self.assertEqual(summary["research_subunit_contract_count"], 2)
+        self.assertEqual(summary["blocked_missing_geometry_count"], 15)
+        self.assertEqual(summary["research_subunit_contract_count"], 4)
         self.assertEqual(summary["operational_spatial_contract_count"], 0)
 
     def test_santa_has_only_cashahuacra_and_shingolay_contracts(self):
@@ -116,6 +116,12 @@ class GeneratedContractTests(unittest.TestCase):
             contracts["shingolay"]["geometry_ref"]["geometry_sha256"],
             "df0e0594bc491f00968a4d314aa6fc03deee4bcaacce3842a1ebcbbbed145553",
         )
+        self.assertTrue(
+            all(
+                row["geometry_ref"]["hash_scope"] == "FEATURE_GEOMETRY_SHA256"
+                for row in contracts.values()
+            )
+        )
 
     def test_santa_fajas_are_explicitly_excluded(self):
         santa = self.by_id["lima_este_santa_eulalia_rimac"]
@@ -133,6 +139,43 @@ class GeneratedContractTests(unittest.TestCase):
             excluded["santa_eulalia_faja_2004"]["classification"],
             "EXCLUDED_NON_CATCHMENT_GEOMETRY",
         )
+
+    def test_lambayeque_official_children_are_separate_research_subunits(self):
+        parent = self.by_id["lambayeque_chongoyape_oyotun_zana"]
+        self.assertEqual(parent["spatial_contract_status"], "SUBUNIT_RESEARCH_ONLY")
+        self.assertIsNone(parent["geometry_path"])
+        self.assertFalse(parent["candidate_wide_sampling_ready"])
+        contracts = {
+            row["subunit_id"]: row
+            for row in parent["subunit_contracts"]
+        }
+        self.assertEqual(
+            set(contracts),
+            {
+                "lambayeque_chancay_lambayeque_chongoyape",
+                "lambayeque_zana_oyotun",
+            },
+        )
+        self.assertEqual(
+            contracts["lambayeque_chancay_lambayeque_chongoyape"]["geometry_ref"]["geometry_sha256"],
+            "1f62d4ae26c692c36c5001271b25bb46cf44ad5d4720782e7a701e1df2025639",
+        )
+        self.assertEqual(
+            contracts["lambayeque_zana_oyotun"]["geometry_ref"]["geometry_sha256"],
+            "b92123950eb08839d553d31262498faad95a42f572399bf60c41d0b1776ca73c",
+        )
+        for child in contracts.values():
+            self.assertEqual(
+                child["contract_scope"],
+                "OFFICIAL_HYDROLOGIC_CHILD_UNIT_RESEARCH_ONLY",
+            )
+            self.assertEqual(
+                child["geometry_ref"]["hash_scope"],
+                "GEOJSON_FILE_SHA256",
+            )
+            self.assertFalse(child["counts_as_candidate_wide_geometry"])
+            self.assertFalse(child["counts_as_operational_geometry"])
+            self.assertEqual(child["activation_gate"], "BLOCKED")
 
     def test_lurin_corridor_is_not_sampling_catchment(self):
         lurin = self.by_id["lima_este_lurin_cieneguilla"]

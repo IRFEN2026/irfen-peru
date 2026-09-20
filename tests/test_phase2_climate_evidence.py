@@ -265,6 +265,24 @@ class GeneratedLayerTests(unittest.TestCase):
         self.assertEqual(first, second)
 
 
+class WorkflowSynchronizationTests(unittest.TestCase):
+    def test_durable_imerg_history_regenerates_claude_e_atomically(self):
+        workflow = (
+            ROOT / ".github/workflows/update-and-deploy.yml"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            'derived="site/data/phase2/climate_evidence_normalized_v0_1.json"',
+            workflow,
+        )
+        self.assertIn("python scripts/build_phase2_climate_evidence.py", workflow)
+        self.assertIn("python scripts/validate_phase2_climate_evidence.py", workflow)
+        self.assertIn('git add -- "$path" "$derived"', workflow)
+        self.assertIn(
+            "Histórico IMERG y Claude E persistidos de forma atómica.",
+            workflow,
+        )
+
+
 class SchemaAndValidatorTests(unittest.TestCase):
     def test_schema_conformance(self):
         try:

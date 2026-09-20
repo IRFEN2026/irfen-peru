@@ -2,6 +2,7 @@
 """Validate Claude F Phase-2 Spatial Observation Contracts."""
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -13,9 +14,11 @@ INVENTORY = ROOT / "config/phase2_candidate_inventory_v0_2.json"
 CATALOG = ROOT / "site/data/phase2/catalog.json"
 SANTA_GEOM = ROOT / "site/data/phase2/geometries/w1_santa_eulalia_rimac.geojson"
 LURIN_GEOM = ROOT / "site/data/validation/phase2_research_evidence/ana_lurin_faja_marginal_antioquia_2025.geojson"
+LAMBAYEQUE_MIGRATION = ROOT / "site/data/phase2/geometries/lambayeque_hydrologic_migration_validation.json"
 
 SANTA_ID = "lima_este_santa_eulalia_rimac"
 LURIN_ID = "lima_este_lurin_cieneguilla"
+LAMBAYEQUE_PARENT_ID = "lambayeque_chongoyape_oyotun_zana"
 EXPECTED_SUBUNITS = {
     "cashahuacra": {
         "geometry_type": "Polygon",
@@ -28,6 +31,22 @@ EXPECTED_SUBUNITS = {
         "area_km2": 0.243,
     },
 }
+EXPECTED_LAMBAYEQUE_CHILDREN = {
+    "lambayeque_chancay_lambayeque_chongoyape": {
+        "path": "site/data/phase2/geometries/lambayeque_chancay_lambayeque_chongoyape.geojson",
+        "geometry_type": "Polygon",
+        "geometry_sha256": "1f62d4ae26c692c36c5001271b25bb46cf44ad5d4720782e7a701e1df2025639",
+        "area_km2": 4022.2645,
+        "ana_code": "13776",
+    },
+    "lambayeque_zana_oyotun": {
+        "path": "site/data/phase2/geometries/lambayeque_zana_oyotun.geojson",
+        "geometry_type": "Polygon",
+        "geometry_sha256": "b92123950eb08839d553d31262498faad95a42f572399bf60c41d0b1776ca73c",
+        "area_km2": 1745.3989,
+        "ana_code": "137754",
+    },
+}
 ERRORS = []
 
 
@@ -37,6 +56,14 @@ def load(path):
     except Exception as exc:
         ERRORS.append(f"cannot read {path.relative_to(ROOT)}: {exc}")
         return None
+
+
+def sha256_file(path: Path):
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def check_schema(result, schema):
@@ -166,6 +193,74 @@ def check_lurin_geometry():
         ERRORS.append(f"Lurin geometry roles changed: {sorted(roles)}")
 
 
+def check_lambayeque_children():
+    validation = load(LAMBAYEQUE_MIGRATION)
+    if validation is None:
+        return
+    if validation.get("status") != "PASS_RESEARCH_ONLY":
+        ERRORS.append("Lambayeque migration must remain PASS_RESEARCH_ONLY")
+    if validation.get("phase2_registered_candidates_before") != 18 or validation.get("phase2_registered_candidates_after") != 18:
+        ERRORS.append("Lambayeque migration must preserve exactly 18 Phase-2 candidates")
+    if validation.get("hydrologic_children_reported_separately") != 2:
+        ERRORS.append("Lambayeque must retain exactly two hydrologic children")
+    if validation.get("artificial_connector_used") is not False:
+        ERRORS.append("Lambayeque child units must not use artificial connectors")
+    separation = validation.get("separation") or {}
+    if separation.get("interior_overlap") is not False:
+        ERRORS.append("Lambayeque child units must not overlap in their interiors")
+
+    units = {row.get("candidate_id"): row for row in validation.get("units") or []}
+    if set(units) != set(EXPECTED_LAMBAYEQUE_CHILDREN):
+        ERRORS.append(f"unexpected Lambayeque child geometry set: {sorted(units)}")
+        return
+
+    for child_id, expected in EXPECTED_LAMBAYEQUE_CHILDREN.items():
+        unit = units[child_id]
+        if unit.get("output_path") != expected["path"]:
+            ERRORS.append(f"{child_id}: geometry path changed")
+        if unit.get("output_sha256") != expected["geometry_sha256"]:
+            ERRORS.append(f"{child_id}: migration output hash changed")
+        if unit.get("geometry_valid") is not True:
+            ERRORS.append(f"{child_id}: geometry no longer valid")
+        if unit.get("official_hydrologic_unit_code") != expected["ana_code"]:
+            ERRORS.append(f"{child_id}: ANA code changed")
+
+        path = ROOT / expected["path"]
+        if not path.is_file():
+            ERRORS.append(f"{child_id}: geometry file missing")
+            continue
+        if sha256_file(path) != expected["geometry_sha256"]:
+            ERRORS.append(f"{child_id}: geometry file SHA-256 mismatch")
+        document = load(path)
+        if document is None:
+            continue
+        features = document.get("features") or []
+        if len(features) != 1:
+            ERRORS.append(f"{child_id}: expected one official hydrologic feature")
+            continue
+        feature = features[0]
+        props = feature.get("properties") or {}
+        geometry = feature.get("geometry") or {}
+        if geometry.get("type") != expected["geometry_type"]:
+            ERRORS.append(f"{child_id}: geometry type changed")
+        required = {
+            "candidate_id": child_id,
+            "parent_candidate_id": LAMBAYEQUE_PARENT_ID,
+            "deployment_status": "RESEARCH_ONLY",
+            "production_use": False,
+            "production_ready": False,
+            "operational_alerting_enabled": False,
+            "activation_gate": "BLOCKED",
+            "review_status": "REVIEW_ONLY",
+            "geometry_role": "official_hydrologic_unit_boundary_research_reference",
+            "official_hydrologic_unit_code": expected["ana_code"],
+            "official_area_km2": expected["area_km2"],
+        }
+        for key, value in required.items():
+            if props.get(key) != value:
+                ERRORS.append(f"{child_id}: {key} expected {value!r}, found {props.get(key)!r}")
+
+
 def check_artifact(result, inventory):
     records = result.get("candidate_records") or []
     by_id = {record.get("candidate_id"): record for record in records}
@@ -177,6 +272,7 @@ def check_artifact(result, inventory):
     expected_status = {
         SANTA_ID: "SUBUNIT_RESEARCH_ONLY",
         LURIN_ID: "NON_CATCHMENT_GEOMETRY_ONLY",
+        LAMBAYEQUE_PARENT_ID: "SUBUNIT_RESEARCH_ONLY",
     }
     for cid in expected_ids:
         expected = expected_status.get(cid, "BLOCKED_MISSING_GEOMETRY")
@@ -199,6 +295,8 @@ def check_artifact(result, inventory):
         geom = contract.get("geometry_ref") or {}
         if geom.get("geometry_sha256") != expected["geometry_sha256"]:
             ERRORS.append(f"{unit_id}: artifact geometry hash mismatch")
+        if geom.get("hash_scope") != "FEATURE_GEOMETRY_SHA256":
+            ERRORS.append(f"{unit_id}: expected FEATURE_GEOMETRY_SHA256")
         if geom.get("declared_area_km2") != expected["area_km2"]:
             ERRORS.append(f"{unit_id}: artifact area mismatch")
         if contract.get("counts_as_candidate_wide_geometry") is not False:
@@ -211,14 +309,50 @@ def check_artifact(result, inventory):
         if sampling.get("minimum_coverage_pct") is not None:
             ERRORS.append(f"{unit_id}: arbitrary coverage threshold must not be introduced")
 
+    lambayeque = by_id.get(LAMBAYEQUE_PARENT_ID) or {}
+    if lambayeque.get("geometry_path") is not None:
+        ERRORS.append("historical Lambayeque parent must not receive a composite geometry path")
+    lambayeque_contracts = {
+        contract.get("subunit_id"): contract
+        for contract in lambayeque.get("subunit_contracts") or []
+    }
+    if set(lambayeque_contracts) != set(EXPECTED_LAMBAYEQUE_CHILDREN):
+        ERRORS.append(
+            f"unexpected Lambayeque research child set: {sorted(lambayeque_contracts)}"
+        )
+    for child_id, expected in EXPECTED_LAMBAYEQUE_CHILDREN.items():
+        contract = lambayeque_contracts.get(child_id) or {}
+        geom = contract.get("geometry_ref") or {}
+        if contract.get("candidate_id") != LAMBAYEQUE_PARENT_ID:
+            ERRORS.append(f"{child_id}: contract must stay under historical parent")
+        if contract.get("contract_scope") != "OFFICIAL_HYDROLOGIC_CHILD_UNIT_RESEARCH_ONLY":
+            ERRORS.append(f"{child_id}: wrong contract scope")
+        if geom.get("path") != expected["path"]:
+            ERRORS.append(f"{child_id}: artifact geometry path mismatch")
+        if geom.get("geometry_sha256") != expected["geometry_sha256"]:
+            ERRORS.append(f"{child_id}: artifact file hash mismatch")
+        if geom.get("hash_scope") != "GEOJSON_FILE_SHA256":
+            ERRORS.append(f"{child_id}: expected GEOJSON_FILE_SHA256")
+        if geom.get("declared_area_km2") != expected["area_km2"]:
+            ERRORS.append(f"{child_id}: artifact official area mismatch")
+        if contract.get("counts_as_candidate_wide_geometry") is not False:
+            ERRORS.append(f"{child_id}: child unit must not complete historical parent geometry")
+        if contract.get("counts_as_operational_geometry") is not False:
+            ERRORS.append(f"{child_id}: child unit must not become operational geometry")
+        sampling = contract.get("sampling_contract") or {}
+        if sampling.get("cross_candidate_transfer_allowed") is not False:
+            ERRORS.append(f"{child_id}: cross-candidate transfer must stay forbidden")
+        if sampling.get("minimum_coverage_pct") is not None:
+            ERRORS.append(f"{child_id}: arbitrary coverage threshold must remain unresolved")
+
     summary = result.get("summary") or {}
     expected_summary = {
         "candidate_count": 18,
         "candidate_wide_ready_count": 0,
-        "subunit_research_only_candidate_count": 1,
+        "subunit_research_only_candidate_count": 2,
         "non_catchment_geometry_only_count": 1,
-        "blocked_missing_geometry_count": 16,
-        "research_subunit_contract_count": 2,
+        "blocked_missing_geometry_count": 15,
+        "research_subunit_contract_count": 4,
         "operational_spatial_contract_count": 0,
     }
     for key, value in expected_summary.items():
@@ -302,6 +436,7 @@ def main():
     check_authoritative_geometry_state(catalog)
     check_santa_geometry()
     check_lurin_geometry()
+    check_lambayeque_children()
     check_artifact(result, inventory)
     walk_forbidden(result)
     check_determinism(result)
