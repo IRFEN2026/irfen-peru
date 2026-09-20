@@ -179,6 +179,10 @@ class WorkflowContractTests(unittest.TestCase):
         self.assertIn("subunit_imerg_late_v0_1.json", workflow)
         self.assertIn("subunit_rainfall_evidence_v0_1.json", workflow)
         self.assertIn("PHASE2_SUBUNIT_CONTINUITY_BACKFILL", workflow)
+        self.assertIn(
+            "get('research_subunit_count',-1)) == 4",
+            workflow,
+        )
 
     def test_goes_probe_regenerates_dependent_climate_evidence(self):
         workflow = (
