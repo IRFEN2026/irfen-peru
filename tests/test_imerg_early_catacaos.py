@@ -329,17 +329,21 @@ class HistoricalWindowValidationTests(unittest.TestCase):
 
 
 class ImergPublishHandoffTests(unittest.TestCase):
-    def test_probe_retries_bounded_push_races_without_overwriting_main(self):
+    def test_probe_rebuilds_evidence_on_latest_main_before_push(self):
         workflow = (ROOT / ".github/workflows/imerg-early-probe.yml").read_text(encoding="utf-8")
 
         self.assertIn("for attempt in 1 2 3 4", workflow)
-        self.assertIn("git fetch origin main", workflow)
-        self.assertIn("git rebase origin/main", workflow)
-        self.assertIn("git rebase --abort || true", workflow)
-        self.assertIn("if git push origin HEAD:main; then", workflow)
+        self.assertIn("git fetch --no-tags origin main", workflow)
+        self.assertIn("git worktree add --detach", workflow)
+        self.assertIn("python scripts/archive_imerg_early_probe.py", workflow)
+        self.assertIn("python scripts/build_phase2_event_reanalysis.py", workflow)
+        self.assertIn("python scripts/build_phase2_subunit_rainfall_evidence.py", workflow)
+        self.assertIn("python scripts/validate_phase2_subunit_rainfall_evidence.py", workflow)
+        self.assertIn("git push origin HEAD:main", workflow)
         self.assertIn("sleep $((attempt * 3))", workflow)
-        self.assertIn("No fue posible publicar evidencia IMERG Early tras 4 intentos.", workflow)
+        self.assertIn("se reconstruirá sobre el nuevo main", workflow)
         self.assertNotIn("git push --force", workflow)
+        self.assertNotIn("git rebase origin/main", workflow)
 
     def test_probe_dispatches_publisher_with_exact_main_sha(self):
         workflow = (ROOT / ".github/workflows/imerg-early-probe.yml").read_text(encoding="utf-8")
