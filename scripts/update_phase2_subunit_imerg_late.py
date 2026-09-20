@@ -55,8 +55,22 @@ def existing_is_fresh(now, min_refresh_hours):
         return False
     try:
         existing = load_json(OUT)
+        current_targets = load_research_subunit_targets()
     except Exception:
         return False
+
+    expected_target_ids = {target["id"] for target in current_targets}
+    existing_target_ids = {
+        row.get("target_id")
+        for row in existing.get("targets") or []
+        if row.get("target_id")
+    }
+    if existing_target_ids != expected_target_ids:
+        # A newly admitted Claude-F subunit must bootstrap its own Late
+        # history immediately; a globally fresh file is not fresh for a
+        # target that is absent from it.
+        return False
+
     generated = parse_time(existing.get("generated_at"))
     if generated is None:
         return False
