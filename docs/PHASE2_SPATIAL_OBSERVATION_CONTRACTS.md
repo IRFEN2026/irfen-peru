@@ -13,13 +13,16 @@ It does **not** decide activation, risk, thresholds, hydraulic response, or prod
 Across the 18 registered Phase-2 candidates:
 
 - **0** candidates have a candidate-wide geometry ready for area-based sampling.
-- **1** candidate has reproducible hydrologic subunits eligible for research-only sampling:
+- **2** candidates/groupers expose research-only hydrologic subunits:
   - `lima_este_santa_eulalia_rimac`
     - `cashahuacra`
     - `shingolay`
+  - `lambayeque_chongoyape_oyotun_zana` (historical non-activable grouper)
+    - `lambayeque_chancay_lambayeque_chongoyape` — ANA 13776
+    - `lambayeque_zana_oyotun` — ANA 137754
 - **1** candidate has a reproducible file but no catchment/watershed geometry suitable for rainfall-area sampling:
   - `lima_este_lurin_cieneguilla`
-- **16** candidates remain blocked because no reproducible geometry file is present for the candidate geometry asset.
+- **15** candidates remain blocked because no reproducible sampling geometry is available under the current contract.
 
 This classification is fail-closed. A `PARTIAL` asset label does not count as file presence.
 
@@ -54,6 +57,30 @@ They remain excluded from precipitation area-sampling contracts even where repre
 
 The 2022 Rímac left-margin update is a `MultiLineString` and is also not an area-sampling geometry.
 
+## Lambayeque hydrologic children
+
+The legacy `lambayeque_chongoyape_oyotun_zana` identifier remains a
+`HISTORICAL_NON_ACTIVABLE_GROUPER`. It receives no composite geometry and is
+never activated.
+
+Two official ANA hydrologic units may be sampled independently for research:
+
+- `lambayeque_chancay_lambayeque_chongoyape` — Cuenca Chancay-Lambayeque, ANA **13776**, official area **4022.2645 km²**.
+- `lambayeque_zana_oyotun` — Cuenca Zaña, ANA **137754**, official area **1745.3989 km²**.
+
+Both geometries come from the official ANA hydrologic-unit service and passed
+the committed migration validation as `PASS_RESEARCH_ONLY`. They remain
+separate, have no artificial connector and do not increase the 18-candidate
+Phase-2 count.
+
+Their contract scope is:
+
+`OFFICIAL_HYDROLOGIC_CHILD_UNIT_RESEARCH_ONLY`
+
+Rainfall sampled over these polygons is **whole-basin context**. It is not
+rainfall for a specific local quebrada, municipal boundary, event footprint,
+inundation polygon or hydraulic model.
+
 ## Lurín–Cieneguilla
 
 The committed Lurín file contains:
@@ -72,7 +99,7 @@ The corridor polygon is never reinterpreted as a watershed merely because it is 
 
 ## Sampling method
 
-The two research-subunit contracts define:
+All four research-subunit contracts define:
 
 `AREA_WEIGHTED_GRID_CELL_INTERSECTION`
 
@@ -112,11 +139,15 @@ Claude F never:
 - introduces rainfall or coverage thresholds;
 - treats missing geometry as low risk.
 
-## Next scientific step
+## Current data-ingestion scope
 
-After this layer is merged, the first safe data-ingestion experiment is to sample research-only IMERG evidence over the two pinned subunit polygons:
+Claude G may now sample four research-only spatial units automatically:
 
 - Cashahuacra
 - Shingolay
+- Chancay-Lambayeque / Chongoyape (ANA 13776)
+- Zaña / Oyotún (ANA 137754)
 
-That experiment must remain subunit-specific and must not be reported as candidate-wide Santa Eulalia–Rímac rainfall or activation evidence.
+The first two are local DEM-derived catchment candidates. The Lambayeque
+polygons are official whole hydrologic units. Their rainfall semantics must
+remain distinct and none of the four may be reported as activation evidence.
