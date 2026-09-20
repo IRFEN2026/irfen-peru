@@ -3,7 +3,7 @@
 
 El archivo resultante es estrictamente experimental. Conserva los gránulos
 muestreados sobre San Ildefonso, Huaycoloro, Pedregal y Catacaos/Bajo Piura;
-calcula ventanas 3 h / 6 h / 24 h solo cuando existe continuidad temporal
+calcula ventanas 1 h / 3 h / 6 h / 12 h / 24 h solo cuando existe continuidad temporal
 suficiente y mantiene casos retrospectivos sin efecto operativo.
 """
 from __future__ import annotations
@@ -18,7 +18,7 @@ LATEST = ROOT / "site/data/calibration/imerg_early_live_probe.json"
 ARCHIVE = ROOT / "site/data/calibration/imerg_early_live_archive.json"
 MAX_PROBE_RECORDS = 240
 MAX_GRANULE_RECORDS = 400  # > 7 días a resolución de 30 min.
-WINDOWS = {"3h": 6, "6h": 12, "24h": 48}
+WINDOWS = {"1h": 2, "3h": 6, "6h": 12, "12h": 24, "24h": 48}
 EVENT_CASES = [
     {
         "case_id": "PI-2026-08-14-LOCAL-RAIN",
