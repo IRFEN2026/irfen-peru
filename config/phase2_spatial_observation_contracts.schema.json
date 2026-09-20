@@ -140,16 +140,16 @@
           "const": 0
         },
         "subunit_research_only_candidate_count": {
-          "const": 1
+          "const": 2
         },
         "non_catchment_geometry_only_count": {
           "const": 1
         },
         "blocked_missing_geometry_count": {
-          "const": 16
+          "const": 15
         },
         "research_subunit_contract_count": {
-          "const": 2
+          "const": 4
         },
         "operational_spatial_contract_count": {
           "const": 0
@@ -224,16 +224,24 @@
           "type": "string"
         },
         "candidate_id": {
-          "const": "lima_este_santa_eulalia_rimac"
+          "enum": [
+            "lima_este_santa_eulalia_rimac",
+            "lambayeque_chongoyape_oyotun_zana"
+          ]
         },
         "subunit_id": {
           "enum": [
             "cashahuacra",
-            "shingolay"
+            "shingolay",
+            "lambayeque_chancay_lambayeque_chongoyape",
+            "lambayeque_zana_oyotun"
           ]
         },
         "contract_scope": {
-          "const": "HYDROLOGIC_SUBUNIT_RESEARCH_ONLY"
+          "enum": [
+            "HYDROLOGIC_SUBUNIT_RESEARCH_ONLY",
+            "OFFICIAL_HYDROLOGIC_CHILD_UNIT_RESEARCH_ONLY"
+          ]
         },
         "contract_status": {
           "const": "RESEARCH_SAMPLING_ELIGIBLE"
@@ -267,6 +275,7 @@
             "feature_selector",
             "geometry_type",
             "geometry_sha256",
+            "hash_scope",
             "representation",
             "hydrologic_role",
             "declared_area_km2",
@@ -276,7 +285,11 @@
           ],
           "properties": {
             "path": {
-              "const": "site/data/phase2/geometries/w1_santa_eulalia_rimac.geojson"
+              "enum": [
+                "site/data/phase2/geometries/w1_santa_eulalia_rimac.geojson",
+                "site/data/phase2/geometries/lambayeque_chancay_lambayeque_chongoyape.geojson",
+                "site/data/phase2/geometries/lambayeque_zana_oyotun.geojson"
+              ]
             },
             "feature_selector": {
               "type": "object",
@@ -287,12 +300,17 @@
               ],
               "properties": {
                 "property": {
-                  "const": "unit_id"
+                  "enum": [
+                    "unit_id",
+                    "candidate_id"
+                  ]
                 },
                 "value": {
                   "enum": [
                     "cashahuacra",
-                    "shingolay"
+                    "shingolay",
+                    "lambayeque_chancay_lambayeque_chongoyape",
+                    "lambayeque_zana_oyotun"
                   ]
                 }
               }
@@ -312,7 +330,10 @@
               "type": "string"
             },
             "hydrologic_role": {
-              "const": "local_debris_flow_catchment_candidate"
+              "enum": [
+                "local_debris_flow_catchment_candidate",
+                "official_hydrologic_unit_boundary_research_reference"
+              ]
             },
             "declared_area_km2": {
               "type": "number",
@@ -326,6 +347,12 @@
             },
             "candidate_status": {
               "const": "REVIEW_ONLY"
+            },
+            "hash_scope": {
+              "enum": [
+                "FEATURE_GEOMETRY_SHA256",
+                "GEOJSON_FILE_SHA256"
+              ]
             }
           }
         },
