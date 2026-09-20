@@ -145,34 +145,112 @@ jobs:
       - name: Guardar evidencia del probe
         shell: bash
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
-            site/data/calibration/imerg_early_live_probe.json \
-            site/data/calibration/imerg_early_live_archive.json \
-            site/data/phase2/event_reanalysis.json \
-            site/data/phase2/subunit_imerg_late_v0_1.json \
-            site/data/phase2/subunit_rainfall_evidence_v0_1.json
-          if git diff --cached --quiet; then
-            echo "Sin cambios que guardar."
-            exit 0
-          fi
-          git commit -m "IRFEN v0.8: actualizar evidencia IMERG Early"
+          set -euo pipefail
+          candidate_dir="$(mktemp -d)"
+          worktree=""
+          cleanup() {
+            if [ -n "$worktree" ]; then
+              git worktree remove --force "$worktree" >/dev/null 2>&1 || true
+            fi
+            rm -rf "$candidate_dir"
+          }
+          trap cleanup EXIT
+
+          cp site/data/calibration/imerg_early_live_probe.json "$candidate_dir/probe.json"
+          cp site/data/phase2/subunit_imerg_late_v0_1.json "$candidate_dir/late.json"
+
           for attempt in 1 2 3 4; do
-            git fetch origin main
-            if ! git rebase origin/main; then
-              git rebase --abort || true
-              echo "Conflicto real al rebasar evidencia IMERG Early; no se sobrescribe." >&2
+            git fetch --no-tags origin main
+            worktree="$(mktemp -d)"
+            git worktree add --detach "$worktree" origin/main
+
+            cp "$candidate_dir/probe.json" \
+              "$worktree/site/data/calibration/imerg_early_live_probe.json"
+
+            python - "$candidate_dir/late.json" \
+              "$worktree/site/data/phase2/subunit_imerg_late_v0_1.json" <<'PY'
+          import json
+          import shutil
+          import sys
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          candidate = Path(sys.argv[1])
+          destination = Path(sys.argv[2])
+
+          def load(path):
+              try:
+                  return json.loads(path.read_text(encoding="utf-8"))
+              except Exception:
+                  return {}
+
+          def stamp(row):
+              value = row.get("generated_at")
+              if not value:
+                  return datetime.min.replace(tzinfo=timezone.utc)
+              try:
+                  parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+                  if parsed.tzinfo is None:
+                      parsed = parsed.replace(tzinfo=timezone.utc)
+                  return parsed.astimezone(timezone.utc)
+              except Exception:
+                  return datetime.min.replace(tzinfo=timezone.utc)
+
+          fresh = load(candidate)
+          current = load(destination)
+          fresh_available = fresh.get("status") == "OBSERVATION_DATA_AVAILABLE"
+          current_available = current.get("status") == "OBSERVATION_DATA_AVAILABLE"
+
+          copy_fresh = (
+              fresh_available and not current_available
+              or fresh_available == current_available and stamp(fresh) > stamp(current)
+          )
+          if copy_fresh:
+              shutil.copy2(candidate, destination)
+              print("IMERG Late candidato seleccionado para persistencia.")
+          else:
+              print("Se conserva IMERG Late más fuerte/reciente ya presente en main.")
+          PY
+
+            (
+              cd "$worktree"
+              python scripts/archive_imerg_early_probe.py
+              python scripts/build_phase2_event_reanalysis.py
+              python scripts/build_phase2_subunit_rainfall_evidence.py
+              python scripts/validate_phase2_subunit_rainfall_evidence.py
+
+              git config user.name "github-actions[bot]"
+              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+              git add \
+                site/data/calibration/imerg_early_live_probe.json \
+                site/data/calibration/imerg_early_live_archive.json \
+                site/data/phase2/event_reanalysis.json \
+                site/data/phase2/subunit_imerg_late_v0_1.json \
+                site/data/phase2/subunit_rainfall_evidence_v0_1.json
+
+              if git diff --cached --quiet; then
+                echo "La evidencia reconstruida ya coincide con main."
+                exit 0
+              fi
+
+              git commit -m "IRFEN v0.8: actualizar evidencia IMERG Early"
+              git push origin HEAD:main
+            ) && {
+              git worktree remove --force "$worktree"
+              worktree=""
+              echo "Evidencia IMERG fusionada sobre el main remoto más reciente."
+              exit 0
+            }
+
+            git worktree remove --force "$worktree"
+            worktree=""
+            if [ "$attempt" -eq 4 ]; then
+              echo "No fue posible persistir evidencia IMERG tras 4 carreras acotadas." >&2
               exit 1
             fi
-            if git push origin HEAD:main; then
-              exit 0
-            fi
-            echo "Colisión transitoria al publicar evidencia (intento $attempt/4)." >&2
+            echo "Main avanzó durante persistencia (intento $attempt/4); se reconstruirá sobre el nuevo main." >&2
             sleep $((attempt * 3))
           done
-          echo "No fue posible publicar evidencia IMERG Early tras 4 intentos." >&2
-          exit 1
 
       - name: Ordenar publicación del archivo actualizado
         env:
