@@ -5,7 +5,9 @@ import importlib.util
 import json
 from pathlib import Path
 import sys
+import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
@@ -131,6 +133,59 @@ class LateDailyWindowTests(unittest.TestCase):
         self.assertTrue(late.consecutive_window(rows, 1)["available"])
         self.assertFalse(late.consecutive_window(rows, 3)["available"])
         self.assertIsNone(late.consecutive_window(rows, 3)["accum_mm"])
+
+
+class LateFreshnessTests(unittest.TestCase):
+    def test_new_subunit_forces_refresh_even_when_artifact_is_recent(self):
+        now = late.datetime(2026, 9, 20, 12, 0, tzinfo=late.timezone.utc)
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "late.json"
+            out.write_text(
+                json.dumps({
+                    "generated_at": "2026-09-20T11:30:00+00:00",
+                    "latest_observation_date": "2026-09-19",
+                    "targets": [
+                        {"target_id": "phase2_subunit:a:one"},
+                        {"target_id": "phase2_subunit:a:two"},
+                    ],
+                }),
+                encoding="utf-8",
+            )
+            current_targets = [
+                {"id": "phase2_subunit:a:one"},
+                {"id": "phase2_subunit:a:two"},
+                {"id": "phase2_subunit:b:new"},
+            ]
+            with (
+                patch.object(late, "OUT", out),
+                patch.object(late, "load_research_subunit_targets", return_value=current_targets),
+            ):
+                self.assertFalse(late.existing_is_fresh(now, 6.0))
+
+    def test_matching_target_set_can_remain_fresh(self):
+        now = late.datetime(2026, 9, 20, 12, 0, tzinfo=late.timezone.utc)
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "late.json"
+            out.write_text(
+                json.dumps({
+                    "generated_at": "2026-09-20T11:30:00+00:00",
+                    "latest_observation_date": "2026-09-19",
+                    "targets": [
+                        {"target_id": "phase2_subunit:a:one"},
+                        {"target_id": "phase2_subunit:a:two"},
+                    ],
+                }),
+                encoding="utf-8",
+            )
+            current_targets = [
+                {"id": "phase2_subunit:a:one"},
+                {"id": "phase2_subunit:a:two"},
+            ]
+            with (
+                patch.object(late, "OUT", out),
+                patch.object(late, "load_research_subunit_targets", return_value=current_targets),
+            ):
+                self.assertTrue(late.existing_is_fresh(now, 6.0))
 
 
 class ConsolidatedEvidenceTests(unittest.TestCase):
