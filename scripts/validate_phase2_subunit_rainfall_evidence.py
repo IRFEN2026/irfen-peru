@@ -73,8 +73,8 @@ def check_phase2_guardrails(catalog, climate_matrix):
 
 def check_spatial(spatial):
     summary = spatial.get("summary") or {}
-    if summary.get("research_subunit_contract_count") != 2:
-        ERRORS.append("Claude F research subunit count must remain 2")
+    if summary.get("research_subunit_contract_count") != 4:
+        ERRORS.append("Claude F research subunit count must remain 4")
     if summary.get("candidate_wide_ready_count") != 0:
         ERRORS.append("candidate-wide spatial readiness must remain 0")
     if summary.get("operational_spatial_contract_count") != 0:
@@ -119,8 +119,8 @@ def check_consolidated(result, expected):
     actual = {row.get("target_id") for row in rows}
     if actual != expected:
         ERRORS.append(f"consolidated target set mismatch: {sorted(actual)}")
-    if len(rows) != 2:
-        ERRORS.append(f"expected 2 research subunit rows, found {len(rows)}")
+    if len(rows) != 4:
+        ERRORS.append(f"expected 4 research subunit rows, found {len(rows)}")
 
     for row in rows:
         tid = row.get("target_id")
@@ -160,8 +160,8 @@ def check_consolidated(result, expected):
                     ERRORS.append(f"{tid}/{window_id}: Late unavailable state mismatch")
 
     summary = result.get("summary") or {}
-    if summary.get("research_subunit_count") != 2:
-        ERRORS.append("summary research_subunit_count must be 2")
+    if summary.get("research_subunit_count") != 4:
+        ERRORS.append("summary research_subunit_count must be 4")
     for key in (
         "candidate_wide_rainfall_outputs",
         "operational_activations",
@@ -246,8 +246,8 @@ def main():
         return 1
 
     expected = expected_target_ids(spatial)
-    if len(expected) != 2:
-        ERRORS.append(f"expected exactly 2 research subunit target ids, found {len(expected)}")
+    if len(expected) != 4:
+        ERRORS.append(f"expected exactly 4 research subunit target ids, found {len(expected)}")
 
     check_phase2_guardrails(catalog, climate_matrix)
     check_spatial(spatial)
