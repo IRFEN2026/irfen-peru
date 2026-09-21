@@ -1,0 +1,63 @@
+name: PR193 - Canonical climate mirror repair
+
+on:
+  push:
+    branches:
+      - agent/full-territorial-map-inventory-20260921
+    paths:
+      - .github/workflows/repair-climate-mirror-pr193.yml
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.repository == 'IRFEN2026/irfen-peru' && github.actor == 'IRFEN2026'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Rebuild the existing canonical mirror without changing sources
+        run: |
+          set -euo pipefail
+          python -m pip install jsonschema
+          python scripts/build_phase2_climate_evidence.py
+          python scripts/validate_phase2_climate_evidence.py
+      - name: Keep future IMERG event writes synchronized with their mirror
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('.github/workflows/imerg-early-probe.yml')
+          text = path.read_text(encoding='utf-8')
+          anchor = '      - name: Validar lluvia observada de subunidades Phase-2\n'
+          assert text.count(anchor) == 1
+          text = text.replace(anchor, '      - name: Regenerar y validar espejo climatico Phase-2\n        run: |\n          python scripts/build_phase2_climate_evidence.py\n          python scripts/validate_phase2_climate_evidence.py\n\n' + anchor)
+          anchor = '              python scripts/build_phase2_event_reanalysis.py\n'
+          assert text.count(anchor) == 1
+          text = text.replace(anchor, anchor + '              python scripts/build_phase2_climate_evidence.py\n              python scripts/validate_phase2_climate_evidence.py\n')
+          anchor = '                site/data/phase2/event_reanalysis.json \\\n'
+          assert text.count(anchor) == 1
+          text = text.replace(anchor, anchor + '                site/data/phase2/climate_evidence_normalized_v0_1.json \\\n')
+          path.write_text(text, encoding='utf-8')
+          PY
+      - name: Commit only the two scoped repairs to the same branch
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = 'agent/full-territorial-map-inventory-20260921'
+          python - <<'PY'
+          import subprocess
+          changed = set(subprocess.check_output(['git','diff','--name-only'], text=True).splitlines())
+          allowed = {'.github/workflows/imerg-early-probe.yml', 'site/data/phase2/climate_evidence_normalized_v0_1.json'}
+          assert changed <= allowed, changed
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/workflows/imerg-early-probe.yml site/data/phase2/climate_evidence_normalized_v0_1.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Synchronize canonical climate mirror with committed event evidence'
+          git push origin HEAD:agent/full-territorial-map-inventory-20260921
