@@ -5,7 +5,9 @@ import importlib.util
 import json
 from pathlib import Path
 import sys
+import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
@@ -131,6 +133,105 @@ class LateDailyWindowTests(unittest.TestCase):
         self.assertTrue(late.consecutive_window(rows, 1)["available"])
         self.assertFalse(late.consecutive_window(rows, 3)["available"])
         self.assertIsNone(late.consecutive_window(rows, 3)["accum_mm"])
+
+
+class LateGridGeometryTests(unittest.TestCase):
+    def test_midpoint_edges_tile_float32_grid_without_microgaps(self):
+        lon = late.np.array([0.05, 0.15000001, 0.25], dtype=late.np.float32)
+        lat = late.np.array([0.05, 0.15000001], dtype=late.np.float32)
+        lon_edges = late.grid_cell_edges(lon)
+        lat_edges = late.grid_cell_edges(lat)
+        geom = late.box(
+            float(min(lon_edges[0], lon_edges[-1])),
+            float(min(lat_edges[0], lat_edges[-1])),
+            float(max(lon_edges[0], lon_edges[-1])),
+            float(max(lat_edges[0], lat_edges[-1])),
+        )
+        values = late.np.ones((lat.size, lon.size), dtype=float)
+
+        value, meta = late.polygon_mean_complete(geom, lat, lon, values)
+
+        self.assertEqual(value, 1.0)
+        self.assertTrue(meta["complete_spatial_coverage"])
+        self.assertEqual(meta["valid_geometry_coverage_pct"], 100.0)
+        self.assertEqual(
+            meta["cell_edge_method"],
+            "MIDPOINT_BETWEEN_SOURCE_COORDINATE_CENTERS",
+        )
+
+    def test_missing_grid_value_still_fails_closed(self):
+        lon = late.np.array([0.05, 0.15], dtype=float)
+        lat = late.np.array([0.05, 0.15], dtype=float)
+        lon_edges = late.grid_cell_edges(lon)
+        lat_edges = late.grid_cell_edges(lat)
+        geom = late.box(
+            float(lon_edges[0]),
+            float(lat_edges[0]),
+            float(lon_edges[-1]),
+            float(lat_edges[-1]),
+        )
+        values = late.np.ones((2, 2), dtype=float)
+        values[0, 0] = late.np.nan
+
+        value, meta = late.polygon_mean_complete(geom, lat, lon, values)
+
+        self.assertIsNone(value)
+        self.assertFalse(meta["complete_spatial_coverage"])
+        self.assertEqual(meta["valid_cells"], 3)
+        self.assertIsNotNone(meta["partial_mean_mm_non_decisional"])
+
+
+class LateFreshnessTests(unittest.TestCase):
+    def test_new_subunit_forces_refresh_even_when_artifact_is_recent(self):
+        now = late.datetime(2026, 9, 20, 12, 0, tzinfo=late.timezone.utc)
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "late.json"
+            out.write_text(
+                json.dumps({
+                    "generated_at": "2026-09-20T11:30:00+00:00",
+                    "latest_observation_date": "2026-09-19",
+                    "targets": [
+                        {"target_id": "phase2_subunit:a:one"},
+                        {"target_id": "phase2_subunit:a:two"},
+                    ],
+                }),
+                encoding="utf-8",
+            )
+            current_targets = [
+                {"id": "phase2_subunit:a:one"},
+                {"id": "phase2_subunit:a:two"},
+                {"id": "phase2_subunit:b:new"},
+            ]
+            with (
+                patch.object(late, "OUT", out),
+                patch.object(late, "load_research_subunit_targets", return_value=current_targets),
+            ):
+                self.assertFalse(late.existing_is_fresh(now, 6.0))
+
+    def test_matching_target_set_can_remain_fresh(self):
+        now = late.datetime(2026, 9, 20, 12, 0, tzinfo=late.timezone.utc)
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "late.json"
+            out.write_text(
+                json.dumps({
+                    "generated_at": "2026-09-20T11:30:00+00:00",
+                    "latest_observation_date": "2026-09-19",
+                    "targets": [
+                        {"target_id": "phase2_subunit:a:one"},
+                        {"target_id": "phase2_subunit:a:two"},
+                    ],
+                }),
+                encoding="utf-8",
+            )
+            current_targets = [
+                {"id": "phase2_subunit:a:one"},
+                {"id": "phase2_subunit:a:two"},
+            ]
+            with (
+                patch.object(late, "OUT", out),
+                patch.object(late, "load_research_subunit_targets", return_value=current_targets),
+            ):
+                self.assertTrue(late.existing_is_fresh(now, 6.0))
 
 
 class ConsolidatedEvidenceTests(unittest.TestCase):
