@@ -65,6 +65,11 @@ jobs:
       - name: Construir reanálisis fail-closed de eventos Phase 2
         run: python scripts/build_phase2_event_reanalysis.py
 
+      - name: Regenerar y validar espejo climatico Phase-2
+        run: |
+          python scripts/build_phase2_climate_evidence.py
+          python scripts/validate_phase2_climate_evidence.py
+
       - name: Validar lluvia observada de subunidades Phase-2
         run: python scripts/validate_phase2_subunit_rainfall_evidence.py
 
@@ -213,11 +218,14 @@ jobs:
           PY
 
             (
-              cd "$worktree"
-              python scripts/archive_imerg_early_probe.py
-              python scripts/build_phase2_event_reanalysis.py
-              python scripts/build_phase2_subunit_rainfall_evidence.py
-              python scripts/validate_phase2_subunit_rainfall_evidence.py
+              # This subshell is followed by &&, so bash errexit alone is insufficient.
+              cd "$worktree" || exit 1
+              python scripts/archive_imerg_early_probe.py || exit 1
+              python scripts/build_phase2_event_reanalysis.py || exit 1
+              python scripts/build_phase2_climate_evidence.py || exit 1
+              python scripts/validate_phase2_climate_evidence.py || exit 1
+              python scripts/build_phase2_subunit_rainfall_evidence.py || exit 1
+              python scripts/validate_phase2_subunit_rainfall_evidence.py || exit 1
 
               git config user.name "github-actions[bot]"
               git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -225,6 +233,7 @@ jobs:
                 site/data/calibration/imerg_early_live_probe.json \
                 site/data/calibration/imerg_early_live_archive.json \
                 site/data/phase2/event_reanalysis.json \
+                site/data/phase2/climate_evidence_normalized_v0_1.json \
                 site/data/phase2/subunit_imerg_late_v0_1.json \
                 site/data/phase2/subunit_rainfall_evidence_v0_1.json
 
