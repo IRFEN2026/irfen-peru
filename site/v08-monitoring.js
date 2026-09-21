@@ -6,14 +6,22 @@
     spatial: "data/phase2/spatial_observation_contracts_v0_1.json",
     catalog: "data/phase2/catalog.json",
     scientific: "data/scientific_status.json",
-    climate: "data/phase2/climate_evidence_normalized_v0_1.json"
+    climate: "data/phase2/climate_evidence_normalized_v0_1.json",
+    probe: "data/calibration/imerg_early_live_probe.json",
+    daily: "data/phase2/subunit_imerg_late_v0_1.json",
+    archive: "data/calibration/imerg_early_live_archive.json"
   };
 
   const state = {
     map: null,
     layer: null,
     last: null,
-    timer: null
+    timer: null,
+    loading: false,
+    mapFitted: false,
+    selectedTarget: "",
+    mapLayers: new Map(),
+    refreshedAt: null
   };
 
   const labels = {
@@ -46,8 +54,9 @@
     .replace(/\b\w/g, c => c.toUpperCase());
 
   const fmt = (value, digits = 3) => {
-    const n = Number(value);
-    return Number.isFinite(n) ? n.toFixed(digits).replace(/\.?0+$/, "") : "—";
+    if (typeof value !== "number" || !Number.isFinite(value)) return "—";
+    const text = value.toFixed(digits);
+    return text.includes(".") ? text.replace(/\.?0+$/, "") : text;
   };
 
   const fmtDate = value => {
@@ -61,29 +70,82 @@
   };
 
   const fetchJson = async path => {
-    const response = await fetch(path + "?t=" + Date.now(), { cache: "no-store" });
-    if (!response.ok) throw new Error(path + " HTTP " + response.status);
-    return response.json();
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20000);
+    try {
+      const response = await fetch(path + "?t=" + Date.now(), {
+        cache: "no-store", signal: controller.signal
+      });
+      if (!response.ok) throw new Error(path + " HTTP " + response.status);
+      return await response.json();
+    } finally { clearTimeout(timer); }
   };
 
   const statusClass = status => {
     const s = String(status || "").toUpperCase();
-    if (s.includes("READY") || s.includes("AVAILABLE") || s.includes("PRESENT") || s.includes("ELIGIBLE")) return "v08-ok";
-    if (s.includes("PARTIAL") || s.includes("CANDIDATE") || s.includes("REVIEW") || s.includes("TEST")) return "v08-warn";
-    if (s.includes("MISSING") || s.includes("BLOCKED") || s.includes("INSUFFICIENT") || s.includes("UNKNOWN")) return "v08-bad";
+    // Negative states MUST precede AVAILABLE/READY substring checks.
+    if (/UNAVAILABLE|NOT_AVAILABLE|NOT_READY|NOT_YET|INCOMPLETE|MISSING|BLOCKED|INSUFFICIENT|UNKNOWN|ERROR|UNREACHABLE|STALE/.test(s)) return "v08-bad";
+    if (/PARTIAL|CANDIDATE|REVIEW|TEST|RESEARCH/.test(s)) return "v08-warn";
+    if (/READY|AVAILABLE|PRESENT|ELIGIBLE|COMPLETE/.test(s)) return "v08-ok";
     return "v08-neutral";
   };
+
+  const usableWindow = w => !!w && w.available === true &&
+    typeof w.accum_mm === "number" && Number.isFinite(w.accum_mm) && w.accum_mm >= 0;
+  const targetKey = (candidate, contract) =>
+    "phase2_subunit:" + candidate.candidate_id + ":" + contract.subunit_id;
+  const geometryPath = ref => {
+    const path = typeof ref.path === "string" ? ref.path.replace(/^site\//, "") : "";
+    if (!/^data\/[A-Za-z0-9_./-]+\.geojson$/.test(path) || path.split("/").includes("..")) {
+      throw new Error("Ruta geométrica no válida");
+    }
+    return path;
+  };
+  const ageText = (value, now = Date.now()) => {
+    const ms = value ? Date.parse(value) : NaN;
+    return Number.isFinite(ms) && ms <= now ? fmt((now - ms) / 3600000, 1) + " h" : "no calculable";
+  };
+
+  function continuityForTarget(archive, targetId, n = 48, anchorUtc = null) {
+    if (!Number.isInteger(n) || n < 1 || n > 48) throw new Error("Ventana de diagnóstico no válida");
+    const step = 30 * 60 * 1000;
+    const observed = new Map();
+    const allTimes = [];
+    for (const granule of (archive.granules || [])) {
+      const t = Date.parse(granule.time_utc);
+      if (!Number.isFinite(t) || t % step !== 0) continue;
+      allTimes.push(t);
+      const rows = (granule.targets || []).filter(r => r.target_id === targetId);
+      for (const row of rows) {
+        const v = row.accum_30min_mm;
+        if (typeof v !== "number" || !Number.isFinite(v) || v < 0) continue;
+        if (observed.has(t) && observed.get(t) !== v) observed.set(t, null);
+        else if (!observed.has(t)) observed.set(t, v);
+      }
+    }
+    let anchor = anchorUtc ? Date.parse(anchorUtc) : NaN;
+    if (!Number.isFinite(anchor) || anchor % step !== 0) {
+      anchor = allTimes.length ? Math.max(...allTimes) : NaN;
+    }
+    if (!Number.isFinite(anchor)) return {expected: n, present: null, missing: null, anchor: null};
+    const missing = [];
+    for (let i = n - 1; i >= 0; i -= 1) {
+      const t = anchor - i * step;
+      if (!observed.has(t) || observed.get(t) === null) missing.push(new Date(t).toISOString());
+    }
+    return {expected: n, present: n - missing.length, missing, anchor: new Date(anchor).toISOString()};
+  }
 
   const chip = (text, kind) => "<span class=\"v08-chip " + (kind || statusClass(text)) + "\">" + esc(text || "—") + "</span>";
 
   const windowValue = w => {
-    if (!w || !w.available || w.accum_mm == null) return "<span class=\"v08-missing\">Datos insuficientes</span>";
+    if (!usableWindow(w)) return "<span class=\"v08-missing\">Datos insuficientes</span>";
     return "<b>" + fmt(w.accum_mm) + " mm</b>";
   };
 
   const windowDetail = w => {
     if (!w) return "Sin evidencia";
-    if (w.available) {
+    if (usableWindow(w)) {
       return esc((w.start_utc || w.start_date || "") + (w.end_utc || w.end_date ? " → " + (w.end_utc || w.end_date) : ""));
     }
     const available = w.available_samples != null ? w.available_samples : w.days_available;
@@ -98,6 +160,15 @@
     style.id = "v08-monitor-style";
     style.textContent = [
       "body.v08-active .legacy-global{display:none!important}",
+      ".v08-map-tools{padding:10px 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--line)}",
+      ".v08-map-tools select{max-width:100%;flex:1;min-width:180px}",
+      ".v08-map-status{padding:8px 14px;font-size:12px;background:#f5f8fa;line-height:1.5}",
+      ".v08-map-label{font-size:11px;font-weight:700;background:#fff;color:#163b4e;border:1px solid #819cac;padding:3px 5px;white-space:normal;max-width:180px;box-shadow:none}",
+      ".v08-target button{margin-top:8px;font-weight:700;font-size:12px}",
+      ".v08-time{margin-top:8px;padding-top:7px;border-top:1px solid var(--line);font-size:11px;line-height:1.5;color:#42596a}",
+      ".v08-diagnostic{border:1px solid var(--line);border-radius:8px;padding:10px;margin:8px 0;font-size:12px;line-height:1.5}",
+      ".v08-diagnostic code{white-space:normal;overflow-wrap:anywhere}",
+      "button:disabled{cursor:not-allowed;opacity:.5}",
       ".v08-shell{display:grid;gap:16px}",
       ".v08-hero{background:linear-gradient(120deg,#062f4f,#0a668f);color:white;border-radius:14px;padding:18px 20px;display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap}",
       ".v08-hero h2{margin:3px 0 7px;font-size:24px}",
@@ -230,6 +301,25 @@
 
     document.body.classList.add("v08-active");
     document.getElementById("v08refresh").addEventListener("click", load);
+    const tools = document.createElement("div");
+    tools.className = "v08-map-tools";
+    tools.innerHTML = '<label for="v08unitSelect">Unidad:</label><select id="v08unitSelect" aria-label="Seleccionar unidad hidrológica"><option value="">Seleccionar…</option></select><button type="button" id="v08focus">Ver en el mapa</button><button type="button" id="v08all">Ver todas</button>';
+    const mapNode = document.getElementById("v08map");
+    mapNode.before(tools);
+    const report = document.createElement("div");
+    report.id = "v08mapStatus"; report.className = "v08-map-status";
+    report.setAttribute("role", "status"); report.textContent = "Comprobando geometrías…";
+    tools.after(report);
+    document.getElementById("v08focus").onclick = () => focusTarget(document.getElementById("v08unitSelect").value);
+    document.getElementById("v08unitSelect").onchange = e => focusTarget(e.target.value);
+    document.getElementById("v08all").onclick = fitAll;
+    document.getElementById("v08targets").addEventListener("click", e => {
+      const button = e.target.closest("button[data-v08-target]");
+      if (button) focusTarget(button.dataset.v08Target);
+    });
+    const diagnostics = document.createElement("div"); diagnostics.className = "v08-panel";
+    diagnostics.innerHTML = '<div class="v08-panel-head"><h3>Continuidad y trazabilidad IMERG Early</h3></div><div class="v08-pad" id="v08continuity"></div>';
+    section.querySelector(".v08-shell").appendChild(diagnostics);
   }
 
   function renderKpis(rain, spatial, catalog) {
@@ -240,9 +330,9 @@
     const approved = zones.filter(z => z.contract_status === "APPROVED").length;
     const items = [
       ["Candidatos Phase-2", ss.candidate_count != null ? ss.candidate_count : zones.length],
-      ["Unidades con contrato espacial", ss.research_subunit_contract_count || 0],
-      ["Early 1h disponibles", s.early_targets_with_1h || 0],
-      ["Late 24h / 72h / 7d", (s.late_targets_with_24h || 0) + " / " + (s.late_targets_with_72h || 0) + " / " + (s.late_targets_with_7d || 0)],
+      ["Unidades con contrato espacial", ss.research_subunit_contract_count ?? "—"],
+      ["Early 1h disponibles", s.early_targets_with_1h ?? "—"],
+      ["Late 24h / 72h / 7d", (s.late_targets_with_24h ?? "—") + " / " + (s.late_targets_with_72h ?? "—") + " / " + (s.late_targets_with_7d ?? "—")],
       ["Contratos aprobados", approved],
       ["Activation gates abiertos", openGates]
     ];
@@ -252,45 +342,74 @@
   }
 
   function renderTargets(rain, spatial) {
-    const contractsBySubunit = {};
+    const contracts = new Map();
     (spatial.candidate_records || []).forEach(candidate => {
-      (candidate.subunit_contracts || []).forEach(contract => {
-        contractsBySubunit[contract.subunit_id] = contract;
-      });
+      (candidate.subunit_contracts || []).forEach(contract => contracts.set(targetKey(candidate, contract), contract));
     });
-
-    const targets = rain.targets || [];
-    document.getElementById("v08targets").innerHTML = targets.map(target => {
+    const daily = new Map(((state.last.daily || {}).targets || []).map(r => [r.target_id, r]));
+    const probe = state.last.probe || {};
+    document.getElementById("v08targets").innerHTML = (rain.targets || []).map(target => {
       const early = (target.near_real_time_imerg_early || {}).windows || {};
       const late = (target.daily_imerg_late || {}).windows || {};
-      const contract = contractsBySubunit[target.subunit_id] || {};
+      const contract = contracts.get(target.target_id) || {};
       const geom = contract.geometry_ref || {};
-      const coverage = target.daily_imerg_late && target.daily_imerg_late.status
-        ? target.daily_imerg_late.status
-        : "—";
+      const rawDaily = daily.get(target.target_id) || {};
+      const observationDate = (late["24h"] || {}).end_date;
+      const day = (rawDaily.series || []).find(r => r.date === observationDate);
+      const coverage = (day || {}).sampling || {};
+      const lastStart = Object.values(early).filter(w => usableWindow(w) && w.end_utc)
+        .map(w => w.end_utc).sort().pop();
       const cards = [
-        ["Early 1h", early["1h"]],
-        ["Early 3h", early["3h"]],
-        ["Early 6h", early["6h"]],
-        ["Late 24h", late["24h"]],
-        ["Late 72h", late["72h"]],
-        ["Late 7d", late["7d"]]
+        ["Early 1h", early["1h"]], ["Early 3h", early["3h"]],
+        ["Early 6h", early["6h"]], ["Early 12h", early["12h"]],
+        ["Early 24h", early["24h"]], ["Late 24h", late["24h"]],
+        ["Late 72h", late["72h"]], ["Late 7d", late["7d"]]
       ];
-      return "<div class=\"v08-target\">" +
-        "<div style=\"display:flex;justify-content:space-between;gap:8px;align-items:flex-start\">" +
-          "<div><h4>" + esc(human(target.subunit_id)) + "</h4><div class=\"v08-target-meta\">" +
-            esc(fmt(target.declared_area_km2, 3)) + " km² · " + esc(geom.geometry_type || "geometría de área") +
-          "</div></div>" +
-          "<div>" + chip(target.activation_gate || "BLOCKED", "v08-bad") + "</div>" +
-        "</div>" +
-        "<div class=\"v08-rain-grid\">" +
-          cards.map(pair => "<div class=\"v08-rain\"><span>" + esc(pair[0]) + "</span>" + windowValue(pair[1]) + "<div class=\"v08-small\">" + windowDetail(pair[1]) + "</div></div>").join("") +
-        "</div>" +
-        "<div class=\"v08-small\" style=\"margin-top:8px\"><b>Early:</b> " + esc((target.near_real_time_imerg_early || {}).source || "—") +
-        " · <b>Late:</b> " + esc((target.daily_imerg_late || {}).source || "—") +
-        " · <b>Estado Late:</b> " + esc(coverage) + "</div>" +
-      "</div>";
-    }).join("") || "<div class=\"v08-small\">No hay unidades de investigación monitorizadas.</div>";
+      const scope = String(contract.contract_scope || "").includes("OFFICIAL")
+        ? "Unidad hidrológica oficial; no delimita una quebrada local ni un área inundable"
+        : "Microcuenca candidata; outlet y área oficiales pendientes";
+      return '<div class="v08-target">' +
+        '<h4>' + esc(human(target.subunit_id)) + '</h4>' +
+        '<div class="v08-target-meta">' + esc(fmt(geom.declared_area_km2, 3)) + ' km² · ' + esc(geom.geometry_type || "—") + '</div>' +
+        chip(target.activation_gate || "DESCONOCIDO", "v08-neutral") + ' ' + chip("RESEARCH_ONLY", "v08-warn") +
+        '<div class="v08-small">' + esc(scope) + '</div>' +
+        '<button type="button" data-v08-target="' + esc(target.target_id) + '" disabled>Ver en el mapa</button>' +
+        '<div class="v08-rain-grid" style="margin-top:8px">' + cards.map(pair =>
+          '<div class="v08-rain"><span>' + esc(pair[0]) + '</span>' + windowValue(pair[1]) +
+          '<div class="v08-small">' + windowDetail(pair[1]) + '</div></div>').join("") + '</div>' +
+        '<div class="v08-time"><b>Early · último inicio de muestra:</b> ' + esc(fmtDate(lastStart)) +
+        '<br><b>Antigüedad de esa muestra:</b> ' + esc(ageText(lastStart)) +
+        '<br><b>Registro de adquisición Early:</b> ' + esc(fmtDate(probe.generated_at)) +
+        '<br><b>Late · fecha diaria observada:</b> ' + esc(observationDate || "—") +
+        '<br><b>Registro de adquisición Late:</b> ' + esc(fmtDate((target.daily_imerg_late || {}).artifact_generated_at)) +
+        '<br><b>Cobertura espacial Late de esa fecha:</b> ' + esc(fmt(coverage.valid_geometry_coverage_pct, 2)) +
+        '% · celdas válidas ' + esc(fmt(coverage.valid_cells, 0)) + '/' + esc(fmt(coverage.cells_intersected, 0)) +
+        '<br>Cobertura completa no equivale a precisión local. La lluvia satelital no valida una activación.</div></div>';
+    }).join("") || '<div class="v08-small">No hay unidades de investigación monitorizadas.</div>';
+  }
+
+  function renderContinuity(rain, archive, probe) {
+    const root = document.getElementById("v08continuity");
+    if (!Array.isArray(archive.granules)) {
+      root.textContent = "Archivo de gránulos no disponible: no se puede diagnosticar continuidad. No se sustituye por cero.";
+      return;
+    }
+    const stamps = [...new Set((archive.records || []).map(r => Date.parse(r.probe_generated_at)).filter(Number.isFinite))].sort((a,b) => a-b);
+    const lastGap = stamps.length > 1 ? (stamps[stamps.length-1] - stamps[stamps.length-2]) / 3600000 : null;
+    let html = '<p class="v08-section-note">Diagnóstico independiente de intervalos de 30 minutos sobre el archivo retenido. No crea acumulados ni modifica las validaciones. Un hueco aquí significa <b>sin muestra válida en este archivo</b>; no demuestra que NASA carezca del gránulo.</p>' +
+      '<p class="v08-small"><b>Intervalo entre las dos últimas adquisiciones registradas:</b> ' + esc(fmt(lastGap, 2)) + ' h. ' +
+      '<b>Último estado consultado:</b> ' + esc(probe.status || "DESCONOCIDO") + '. ' +
+      '<b>Descargas de la última adquisición:</b> ' + esc(fmt(probe.granules_downloaded, 0)) + '.</p>';
+    html += (rain.targets || []).map(t => {
+      const d = continuityForTarget(archive, t.target_id, 48, probe.latest_granule_time_utc);
+      const short = continuityForTarget(archive, t.target_id, 6, d.anchor);
+      return '<div class="v08-diagnostic"><b>' + esc(human(t.subunit_id)) + '</b> · últimas 24h de la fuente: <b>' +
+        esc(fmt(d.present,0)) + '/48</b> intervalos válidos. <b>Huecos:</b> ' + esc(d.missing ? d.missing.length : "no calculable") +
+        '<div class="v08-small">Ancla: inicio de última muestra ' + esc(fmtDate(d.anchor)) + '.</div>' +
+        '<details><summary>Ver intervalos faltantes (UTC)</summary><b>Últimas 3h:</b> <code>' + esc(short.missing ? short.missing.join(", ") || "ninguno" : "no calculable") +
+        '</code><br><b>Últimas 24h:</b> <code>' + esc(d.missing ? d.missing.join(", ") || "ninguno" : "no calculable") + '</code></details></div>';
+    }).join("");
+    root.innerHTML = html;
   }
 
   function renderCandidates(catalog) {
@@ -322,8 +441,8 @@
     const rows = [
       {
         title: "NASA GPM IMERG Early",
-        status: nr.last_confirmed_status || (early.source ? "SOURCE_AVAILABLE" : "UNKNOWN"),
-        body: (early.source || nr.source || "—") + " · resolución temporal " + (nr.temporal_resolution_minutes || 30) + " min · resolución espacial " + (nr.grid_resolution_deg || 0.1) + "°."
+        status: (state.last.probe || {}).status || "UNKNOWN",
+        body: (early.source || nr.source || "—") + " · Registro de adquisición: " + fmtDate((state.last.probe || {}).generated_at) + ". Consultar la antigüedad de las observaciones en cada ficha; fuente accesible no significa dato actual."
       },
       {
         title: "NASA GPM IMERG Late",
@@ -362,120 +481,146 @@
 
   function selectFeature(documentJson, selector) {
     const features = documentJson && documentJson.type === "FeatureCollection"
-      ? (documentJson.features || [])
-      : [documentJson];
-    if (!selector || !selector.property) return features.filter(Boolean);
-    return features.filter(feature =>
-      feature && feature.properties && feature.properties[selector.property] === selector.value
-    );
+      ? (documentJson.features || []) : [documentJson];
+    if (!selector || !selector.property) return [];
+    return features.filter(feature => feature && feature.properties &&
+      feature.properties[selector.property] === selector.value);
+  }
+
+  function fitAll() {
+    if (!state.map || !state.mapLayers.size) return;
+    let bounds = null;
+    state.mapLayers.forEach(layer => {
+      bounds = bounds ? bounds.extend(layer.getBounds()) : L.latLngBounds(layer.getBounds().getSouthWest(), layer.getBounds().getNorthEast());
+    });
+    state.map.invalidateSize();
+    state.map.fitBounds(bounds.pad(0.12), {maxZoom: 9});
+    state.mapFitted = true;
+  }
+
+  function focusTarget(id) {
+    const layer = state.mapLayers.get(id);
+    if (!layer || !state.map) return;
+    state.selectedTarget = id;
+    document.getElementById("v08unitSelect").value = id;
+    state.map.invalidateSize();
+    state.map.fitBounds(layer.getBounds().pad(0.15), {maxZoom: 16});
+    state.mapLayers.forEach((item, key) => item.setStyle({weight: key === id ? 4 : 2}));
+    layer.bringToFront(); layer.openPopup();
+    document.getElementById("v08map").scrollIntoView({block:"center", behavior:"smooth"});
   }
 
   async function renderMap(spatial, rain) {
-    if (typeof L === "undefined") return;
-    if (!state.map) {
-      state.map = L.map("v08map").setView([-9.3, -76.5], 5);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 18,
-        attribution: "&copy; OpenStreetMap contributors"
-      }).addTo(state.map);
-      state.layer = L.layerGroup().addTo(state.map);
-    }
-    state.layer.clearLayers();
-
-    const targets = {};
-    (rain.targets || []).forEach(t => { targets[t.subunit_id] = t; });
-    const docs = {};
-    const bounds = [];
     const contracts = [];
     (spatial.candidate_records || []).forEach(candidate => {
       (candidate.subunit_contracts || []).forEach(contract => {
-        if (contract.contract_status === "RESEARCH_SAMPLING_ELIGIBLE") {
-          contracts.push({ candidate, contract });
-        }
+        if (contract.contract_status === "RESEARCH_SAMPLING_ELIGIBLE") contracts.push({candidate, contract});
       });
     });
-
-    for (let i = 0; i < contracts.length; i += 1) {
-      const item = contracts[i];
-      const ref = item.contract.geometry_ref || {};
-      if (!ref.path) continue;
-      const path = ref.path.replace(/^site\//, "");
-      if (!docs[path]) {
-        try {
-          docs[path] = await fetchJson(path);
-        } catch (_) {
-          continue;
-        }
-      }
-      const features = selectFeature(docs[path], ref.feature_selector);
-      features.forEach(feature => {
-        if (!feature || !feature.geometry) return;
-        const target = targets[item.contract.subunit_id] || {};
+    const errors = [];
+    const selector = document.getElementById("v08unitSelect");
+    const previousSelection = state.selectedTarget;
+    const targets = new Map((rain.targets || []).map(t => [t.target_id, t]));
+    const docs = new Map();
+    if (typeof L !== "undefined" && !state.map) {
+      state.map = L.map("v08map").setView([-9.3, -76.5], 5);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 18, attribution: "&copy; OpenStreetMap contributors"
+      }).addTo(state.map);
+      state.layer = L.layerGroup().addTo(state.map);
+    }
+    const replacement = typeof L !== "undefined" ? L.layerGroup() : null;
+    const layers = new Map();
+    for (const {candidate, contract} of contracts) {
+      const id = targetKey(candidate, contract);
+      try {
+        if (!replacement) throw new Error("Biblioteca cartográfica no disponible");
+        if (layers.has(id)) throw new Error("Identificador de unidad duplicado");
+        const ref = contract.geometry_ref || {};
+        const path = geometryPath(ref);
+        if (!docs.has(path)) docs.set(path, fetchJson(path));
+        const documentJson = await docs.get(path);
+        const features = selectFeature(documentJson, ref.feature_selector);
+        if (features.length !== 1) throw new Error("El selector debe resolver exactamente una geometría");
+        const feature = features[0];
+        if (!feature.geometry || !["Polygon", "MultiPolygon"].includes(feature.geometry.type)) throw new Error("Geometría de área ausente o no válida");
+        const target = targets.get(id) || {};
         const early = ((target.near_real_time_imerg_early || {}).windows || {})["1h"];
         const late = (target.daily_imerg_late || {}).windows || {};
-        const geo = L.geoJSON(feature, {
-          style: {
-            color: item.contract.contract_scope && item.contract.contract_scope.includes("OFFICIAL") ? "#2563eb" : "#0f766e",
-            weight: 2,
-            fillColor: item.contract.contract_scope && item.contract.contract_scope.includes("OFFICIAL") ? "#93c5fd" : "#5eead4",
-            fillOpacity: 0.14,
-            dashArray: "5 4"
-          }
-        }).addTo(state.layer);
-        geo.bindPopup(
-          "<b>" + esc(human(item.contract.subunit_id)) + "</b><br>" +
-          "Área declarada: " + esc(fmt(ref.declared_area_km2, 3)) + " km²<br>" +
-          "Estado: RESEARCH_ONLY · " + esc(item.contract.contract_status) + "<br>" +
-          "Early 1h: " + (early && early.available ? esc(fmt(early.accum_mm)) + " mm" : "datos insuficientes") + "<br>" +
-          "Late 24h: " + (late["24h"] && late["24h"].available ? esc(fmt(late["24h"].accum_mm)) + " mm" : "datos insuficientes") + "<br>" +
-          "Late 72h: " + (late["72h"] && late["72h"].available ? esc(fmt(late["72h"].accum_mm)) + " mm" : "datos insuficientes") + "<br>" +
-          "Late 7d: " + (late["7d"] && late["7d"].available ? esc(fmt(late["7d"].accum_mm)) + " mm" : "datos insuficientes") + "<br>" +
-          "Activation gate: " + esc(item.contract.activation_gate || "BLOCKED")
-        );
-        const b = geo.getBounds();
-        if (b && b.isValid()) bounds.push(b);
-      });
+        const official = String(contract.contract_scope || "").includes("OFFICIAL");
+        const geo = L.geoJSON(feature, {style: {
+          color: official ? "#2563eb" : "#0f766e", weight: id === previousSelection ? 4 : 2,
+          fillColor: official ? "#93c5fd" : "#5eead4", fillOpacity: 0.14, dashArray: "5 4"
+        }});
+        if (!geo.getBounds().isValid()) throw new Error("Límites geométricos no válidos");
+        geo.bindTooltip(esc(human(contract.subunit_id)), {permanent: true, direction: "auto", className: "v08-map-label"});
+        const rows = [["Early 1h", early], ["Late 24h", late["24h"]], ["Late 72h", late["72h"]], ["Late 7d", late["7d"]]];
+        geo.bindPopup('<b>' + esc(human(contract.subunit_id)) + '</b><br>Área declarada: ' + esc(fmt(ref.declared_area_km2)) + ' km²<br>RESEARCH_ONLY · Activation gate: ' + esc(contract.activation_gate || "DESCONOCIDO") + '<br>' +
+          rows.map(([label, w]) => esc(label) + ': ' + windowValue(w) + '<br><small>' + windowDetail(w) + '</small>').join('<br>') +
+          '<br><small>Fechas de las observaciones; no se actualizan al refrescar la pantalla. No representa riesgo ni alerta.</small>');
+        geo.on("click", () => {state.selectedTarget = id; selector.value = id;});
+        geo.addTo(replacement); layers.set(id, geo);
+      } catch (error) { errors.push(human(contract.subunit_id) + ": " + String(error.message || error)); }
     }
-
-    if (bounds.length) {
-      const merged = bounds.reduce((acc, b) => acc ? acc.extend(b) : L.latLngBounds(b.getSouthWest(), b.getNorthEast()), null);
-      state.map.fitBounds(merged.pad(0.12), { maxZoom: 9 });
+    if (state.map && replacement) {
+      replacement.addTo(state.map);
+      if (state.layer) state.map.removeLayer(state.layer);
+      state.layer = replacement;
     }
+    state.mapLayers = layers;
+    selector.innerHTML = '<option value="">Seleccionar…</option>' + contracts.map(({candidate, contract}) => {
+      const id = targetKey(candidate, contract);
+      return '<option value="' + esc(id) + '"' + (layers.has(id) ? '' : ' disabled') + '>' + esc(human(contract.subunit_id)) + (layers.has(id) ? '' : ' · error de carga') + '</option>';
+    }).join("");
+    selector.value = layers.has(previousSelection) ? previousSelection : "";
+    document.querySelectorAll("button[data-v08-target]").forEach(button => {button.disabled = !layers.has(button.dataset.v08Target);});
+    document.getElementById("v08all").disabled = !layers.size;
+    document.getElementById("v08focus").disabled = !layers.size;
+    document.getElementById("v08mapStatus").innerHTML = '<b>Geometrías esperadas:</b> ' + contracts.length + ' · <b>Cargadas:</b> ' + layers.size + ' · <b>Con error:</b> ' + errors.length +
+      (errors.length ? '<details open><summary>Detalles de carga</summary>' + errors.map(esc).join('<br>') + '</details>' : ' · Use el selector para ver las unidades pequeñas.');
+    // Refresh replaces evidence/layers but never recenters the user's viewport.
+    if (!state.mapFitted && layers.size) fitAll();
   }
 
   async function load() {
+    if (state.loading) return;
+    state.loading = true;
     const updated = document.getElementById("v08updated");
-    if (updated) updated.textContent = "Actualizando datos reales…";
+    const refresh = document.getElementById("v08refresh");
+    if (refresh) refresh.disabled = true;
+    if (updated) updated.textContent = "Consultando archivos publicados; esto no implica nuevas observaciones…";
     try {
-      const values = await Promise.all([
-        fetchJson(DATA.rainfall),
-        fetchJson(DATA.spatial),
-        fetchJson(DATA.catalog),
-        fetchJson(DATA.scientific),
-        fetchJson(DATA.climate)
-      ]);
-      const rainfall = values[0];
-      const spatial = values[1];
-      const catalog = values[2];
-      const scientific = values[3];
-      const climate = values[4];
-      state.last = { rainfall, spatial, catalog, scientific, climate };
-
+      const values = await Promise.all([fetchJson(DATA.rainfall), fetchJson(DATA.spatial), fetchJson(DATA.catalog)]);
+      const [rainfall, spatial, catalog] = values;
+      if (!Array.isArray(rainfall.targets) || !Array.isArray(spatial.candidate_records) || !Array.isArray(catalog.zones)) throw new Error("Contrato de datos incompleto");
+      for (const data of [rainfall, spatial, catalog]) {
+        if (data.production_use !== false || data.production_ready !== false) throw new Error("Estado científico incompatible con esta vista de investigación");
+      }
+      const optionalKeys = ["scientific", "climate", "probe", "daily", "archive"];
+      const extraResults = await Promise.allSettled(optionalKeys.map(key => fetchJson(DATA[key])));
+      const extra = {}; const failed = [];
+      extraResults.forEach((result, index) => {
+        const key = optionalKeys[index];
+        extra[key] = result.status === "fulfilled" ? result.value : {};
+        if (result.status !== "fulfilled") failed.push(DATA[key]);
+      });
+      state.last = {rainfall, spatial, catalog, ...extra};
       renderKpis(rainfall, spatial, catalog);
       renderTargets(rainfall, spatial);
       renderCandidates(catalog);
-      renderSources(rainfall, scientific, climate);
-      renderCore(scientific);
+      renderSources(rainfall, extra.scientific, extra.climate);
+      renderCore(extra.scientific);
+      renderContinuity(rainfall, extra.archive, extra.probe);
       await renderMap(spatial, rainfall);
-
-      if (updated) {
-        updated.innerHTML = "<b>Datos del panel:</b> " + esc(fmtDate(rainfall.generated_at)) +
-          " · <b>Phase-2:</b> " + esc(rainfall.deployment_status || "RESEARCH_ONLY") +
-          " · <b>Gate:</b> " + esc(rainfall.activation_gate || "BLOCKED");
-      }
+      state.refreshedAt = new Date().toISOString();
+      if (updated) updated.innerHTML = '<b>Consulta de pantalla:</b> ' + esc(fmtDate(state.refreshedAt)) +
+        ' · <b>Consolidación del archivo:</b> ' + esc(fmtDate(rainfall.generated_at)) +
+        ' · Las fechas observadas y la antigüedad figuran en cada unidad.' +
+        (failed.length ? '<br><b>Fuentes complementarias no cargadas:</b> ' + failed.map(esc).join(', ') : '');
     } catch (error) {
-      if (updated) updated.innerHTML = "<span class=\"v08-error\">Error cargando panel v0.8: " + esc(error.message || error) + "</span>";
-    }
+      if (updated) updated.innerHTML = '<span class="v08-error">Actualización fallida: ' + esc(error.message || error) +
+        '. ' + (state.refreshedAt ? 'Se conserva la vista anterior, consultada ' + esc(fmtDate(state.refreshedAt)) + '; no es una adquisición nueva.' : 'No hay datos confirmados para esta vista.') + '</span>';
+    } finally {state.loading = false; if (refresh) refresh.disabled = false;}
   }
 
   function init() {
@@ -488,5 +633,8 @@
     state.timer = setInterval(load, 5 * 60 * 1000);
   }
 
-  init();
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports = {fmt, statusClass, usableWindow, windowValue, selectFeature, geometryPath, continuityForTarget, ageText};
+  }
+  if (typeof document !== "undefined") init();
 })();
