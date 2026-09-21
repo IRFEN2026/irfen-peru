@@ -55,8 +55,21 @@ def existing_is_fresh(now, min_refresh_hours):
         return False
     try:
         existing = load_json(OUT)
+        current_targets = load_research_subunit_targets()
     except Exception:
         return False
+
+    expected_target_ids = {target["id"] for target in current_targets}
+    existing_target_ids = {
+        row.get("target_id")
+        for row in existing.get("targets") or []
+        if row.get("target_id")
+    }
+    if existing_target_ids != expected_target_ids:
+        # A newly admitted Claude-F subunit must bootstrap its own Late
+        # history immediately; freshness is target-set specific.
+        return False
+
     generated = parse_time(existing.get("generated_at"))
     if generated is None:
         return False
@@ -115,12 +128,39 @@ def read_daily_grid(path: Path):
         return lat, lon, values, units_text
 
 
+def grid_cell_edges(coords):
+    """Return exact per-cell edges from coordinate centers.
+
+    Using one median dx/dy for a float32 grid can create microscopic gaps
+    between adjacent cells. Midpoint-derived edges tile the source grid
+    exactly without introducing an arbitrary coverage tolerance.
+    """
+    centers = np.asarray(coords, dtype=float).squeeze()
+    if centers.ndim != 1 or centers.size < 2:
+        raise ValueError("grid coordinate vector must be one-dimensional with >=2 cells")
+    diffs = np.diff(centers)
+    if not (np.all(diffs > 0) or np.all(diffs < 0)):
+        raise ValueError("grid coordinates must be strictly monotonic")
+    edges = np.empty(centers.size + 1, dtype=float)
+    edges[1:-1] = (centers[:-1] + centers[1:]) / 2.0
+    edges[0] = centers[0] - (edges[1] - centers[0])
+    edges[-1] = centers[-1] + (centers[-1] - edges[-2])
+    return edges
+
+
 def polygon_mean_complete(geom, lat, lon, values):
-    dx = float(np.median(np.abs(np.diff(lon))))
-    dy = float(np.median(np.abs(np.diff(lat))))
+    lon_edges = grid_cell_edges(lon)
+    lat_edges = grid_cell_edges(lat)
+    dx = float(np.median(np.abs(np.diff(np.asarray(lon, dtype=float)))))
+    dy = float(np.median(np.abs(np.diff(np.asarray(lat, dtype=float)))))
+
     minx, miny, maxx, maxy = geom.bounds
-    xs = np.where((lon >= minx - dx / 2) & (lon <= maxx + dx / 2))[0]
-    ys = np.where((lat >= miny - dy / 2) & (lat <= maxy + dy / 2))[0]
+    lon_low = np.minimum(lon_edges[:-1], lon_edges[1:])
+    lon_high = np.maximum(lon_edges[:-1], lon_edges[1:])
+    lat_low = np.minimum(lat_edges[:-1], lat_edges[1:])
+    lat_high = np.maximum(lat_edges[:-1], lat_edges[1:])
+    xs = np.where((lon_high >= minx) & (lon_low <= maxx))[0]
+    ys = np.where((lat_high >= miny) & (lat_low <= maxy))[0]
 
     total_area = 0.0
     valid_area = 0.0
@@ -130,10 +170,10 @@ def polygon_mean_complete(geom, lat, lon, values):
     for row in ys:
         for col in xs:
             cell = box(
-                float(lon[col]) - dx / 2,
-                float(lat[row]) - dy / 2,
-                float(lon[col]) + dx / 2,
-                float(lat[row]) + dy / 2,
+                float(lon_low[col]),
+                float(lat_low[row]),
+                float(lon_high[col]),
+                float(lat_high[row]),
             )
             intersection = geom.intersection(cell)
             if intersection.is_empty or intersection.area <= 0:
@@ -148,23 +188,36 @@ def polygon_mean_complete(geom, lat, lon, values):
                 weighted_value += area * value
 
     partial_mean = weighted_value / valid_area if valid_area else None
-    geometry_covered = math.isclose(
-        total_area, float(geom.area), rel_tol=1e-6, abs_tol=1e-12
-    )
+
+    if len(xs) and len(ys):
+        grid_window = box(
+            float(np.min(lon_low[xs])),
+            float(np.min(lat_low[ys])),
+            float(np.max(lon_high[xs])),
+            float(np.max(lat_high[ys])),
+        )
+        geometry_covered = bool(grid_window.covers(geom))
+    else:
+        geometry_covered = False
+
     complete = (
         intersected > 0
         and valid == intersected
         and geometry_covered
-        and math.isclose(valid_area, total_area, rel_tol=1e-9, abs_tol=1e-12)
     )
     normalized = partial_mean if complete else None
     coverage_pct = (
-        round(100.0 * valid_area / max(float(geom.area), 1e-15), 4)
-        if geom.area > 0
-        else None
+        100.0
+        if complete
+        else (
+            round(min(100.0, 100.0 * valid_area / max(float(geom.area), 1e-15)), 4)
+            if geom.area > 0
+            else None
+        )
     )
     return normalized, {
         "sampling_method": "AREA_WEIGHTED_GRID_CELL_INTERSECTION",
+        "cell_edge_method": "MIDPOINT_BETWEEN_SOURCE_COORDINATE_CENTERS",
         "cells_intersected": intersected,
         "valid_cells": valid,
         "grid_resolution_deg": [round(dx, 6), round(dy, 6)],
@@ -174,7 +227,6 @@ def polygon_mean_complete(geom, lat, lon, values):
             None if complete or partial_mean is None else round(partial_mean, 4)
         ),
     }
-
 
 def date_from_name(path: Path):
     match = re.search(r"(20\d{2})(\d{2})(\d{2})", path.name)
