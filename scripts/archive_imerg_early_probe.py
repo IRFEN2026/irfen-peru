@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 LATEST = ROOT / "site/data/calibration/imerg_early_live_probe.json"
 ARCHIVE = ROOT / "site/data/calibration/imerg_early_live_archive.json"
 MAX_PROBE_RECORDS = 240
-MAX_GRANULE_RECORDS = 400  # > 7 días a resolución de 30 min.
+MAX_GRANULE_RECORDS = 400  # Hot tail; explicit replay slots are retained separately in this array.
 WINDOWS = {"1h": 2, "3h": 6, "6h": 12, "12h": 24, "24h": 48}
 EVENT_CASES = [
     {
@@ -100,6 +100,82 @@ def compact_targets(sample):
     return rows
 
 
+def _time(value):
+    if not value:
+        return None
+    try:
+        stamp = datetime.fromisoformat(str(value).replace('Z', '+00:00'))
+    except (TypeError, ValueError):
+        return None
+    return stamp.astimezone(timezone.utc) if stamp.tzinfo is not None else None
+
+
+def _case_windows(cases):
+    result = []
+    for case in cases:
+        start, end = _time(case.get('start_utc')), _time(case.get('end_utc'))
+        target_id = case.get('target_id')
+        if start is None or end is None or not target_id or end <= start:
+            raise ValueError('Invalid explicit IMERG replay retention window')
+        slots = (end - start).total_seconds() / 1800
+        if not slots.is_integer():
+            raise ValueError('IMERG replay retention window must contain whole half-hours')
+        result.append((start, end, target_id, int(slots)))
+    return result
+
+
+def _is_requested(row, windows):
+    stamp = _time(row.get('time_utc'))
+    if stamp is None:
+        return False
+    for start, end, target_id, _ in windows:
+        if start <= stamp < end and (stamp - start).total_seconds() % 1800 == 0:
+            for target in row.get('targets') or []:
+                value = target.get('accum_30min_mm')
+                if (target.get('target_id') == target_id
+                        and isinstance(value, (int, float)) and not isinstance(value, bool)
+                        and math.isfinite(value) and value >= 0):
+                    return True
+    return False
+
+
+def retain_recent_and_replay(rows, cases, recent_limit):
+    """Return unchanged records; bounded hot tail + explicitly requested slots.
+
+    Ambiguous excess replay versions fail closed rather than silently evicting
+    another verified sample. No new event can be created by this function.
+    """
+    if not isinstance(recent_limit, int) or recent_limit < 1:
+        raise ValueError('recent_limit must be a positive integer')
+    windows = _case_windows(cases)
+    ordered = sorted(rows, key=lambda r: (
+        _time(r.get('time_utc')) or datetime.min.replace(tzinfo=timezone.utc),
+        str(r.get('granule') or ''),
+    ))
+    recent = ordered[-recent_limit:]
+    pinned = [r for r in ordered if _is_requested(r, windows)]
+    if len(pinned) > sum(window[3] for window in windows):
+        raise ValueError('Replay retention exceeds its explicit interval budget; review duplicate granules')
+    keep = {(r.get('time_utc'), r.get('granule')): r for r in recent + pinned}
+    return sorted(keep.values(), key=lambda r: (
+        _time(r.get('time_utc')) or datetime.min.replace(tzinfo=timezone.utc),
+        str(r.get('granule') or ''),
+    ))
+
+
+def retention_summary(rows, cases, recent_limit):
+    windows = _case_windows(cases)
+    return {
+        'policy': 'RECENT_HOT_TAIL_PLUS_EXPLICIT_REPLAY_WINDOWS',
+        'recent_limit': recent_limit,
+        'replay_interval_slot_budget': sum(window[3] for window in windows),
+        'retained_replay_granules': sum(_is_requested(row, windows) for row in rows),
+        'retained_total_granules': len(rows),
+        'values_modified': False,
+        'production_use': False,
+    }
+
+
 def dedupe_granules(existing, samples):
     by_key = {}
     for row in existing:
@@ -116,7 +192,9 @@ def dedupe_granules(existing, samples):
         by_key[key] = row
     rows = list(by_key.values())
     rows.sort(key=lambda r: parse_time(r.get("time_utc")) or datetime.min.replace(tzinfo=timezone.utc))
-    return rows[-MAX_GRANULE_RECORDS:]
+    return retain_recent_and_replay(
+        rows, EVENT_CASES + phase2_event_cases(), MAX_GRANULE_RECORDS
+    )
 
 
 def rolling_for_target(granules, target_id, n):
@@ -455,6 +533,7 @@ def main():
         "source": "GPM_3IMERGHHE V07 via Earthdata",
         "records": records,
         "granules": granules,
+        "retention": retention_summary(granules, EVENT_CASES + phase2_event_cases(), MAX_GRANULE_RECORDS),
         "rolling_by_target": rolling,
         "validated_windows_by_target": validated_windows,
         "event_replays": event_replays,
