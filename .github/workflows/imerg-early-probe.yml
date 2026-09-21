@@ -218,13 +218,14 @@ jobs:
           PY
 
             (
-              cd "$worktree"
-              python scripts/archive_imerg_early_probe.py
-              python scripts/build_phase2_event_reanalysis.py
-              python scripts/build_phase2_climate_evidence.py
-              python scripts/validate_phase2_climate_evidence.py
-              python scripts/build_phase2_subunit_rainfall_evidence.py
-              python scripts/validate_phase2_subunit_rainfall_evidence.py
+              # This subshell is followed by &&, so bash errexit alone is insufficient.
+              cd "$worktree" || exit 1
+              python scripts/archive_imerg_early_probe.py || exit 1
+              python scripts/build_phase2_event_reanalysis.py || exit 1
+              python scripts/build_phase2_climate_evidence.py || exit 1
+              python scripts/validate_phase2_climate_evidence.py || exit 1
+              python scripts/build_phase2_subunit_rainfall_evidence.py || exit 1
+              python scripts/validate_phase2_subunit_rainfall_evidence.py || exit 1
 
               git config user.name "github-actions[bot]"
               git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
