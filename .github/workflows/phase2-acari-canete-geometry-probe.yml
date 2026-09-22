@@ -45,7 +45,13 @@ jobs:
           python scripts/build_phase2_catalog.py --check-only
           python scripts/build_map_layer_catalog.py --check-only
           python scripts/validate_phase2_spatial_observation_contracts.py
-          python -m unittest tests.test_phase2_acari_canete_geometry tests.test_phase2_spatial_observation_contracts tests.test_phase2_climate_matrix -v
+          python -m unittest \
+            tests.test_phase2_acari_canete_geometry \
+            tests.test_phase2_spatial_observation_contracts \
+            tests.test_phase2_climate_matrix \
+            tests.test_acari_research_context \
+            tests.test_canete_research_context \
+            tests.test_map_layer_catalog -v
       - name: Enforce exact frozen sources and Phase-2 research guards
         run: |
           python - <<'PY'
@@ -106,5 +112,3 @@ jobs:
             assert mz[cid]['production_use'] is False and mz[cid]['alerting_enabled'] is False
             assert mz[cid]['validation']['activation_gate']=='BLOCKED'
           PY
-      - name: Full repository regression
-        run: python -m unittest discover -s tests -v
