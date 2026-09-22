@@ -59,7 +59,16 @@ class AsiaOmasResearchContextTests(unittest.TestCase):
     def test_only_bounded_assets_advance(self):
         assets = self.contract["assets"]
         self.assertEqual(assets["geometry"]["status"], "PARTIAL")
-        self.assertIsNone(assets["geometry"]["path"])
+        self.assertEqual(assets["geometry"]["path"], "site/data/phase2/geometries/lima_sur_asia_omas_omas_basin_context.geojson")
+        document = json.loads((ROOT / assets["geometry"]["path"]).read_text(encoding="utf-8"))
+        self.assertEqual(len(document["features"]), 1)
+        props = document["features"][0]["properties"]
+        self.assertEqual(props["official_hydrologic_unit_code"], "1375512")
+        self.assertEqual(props["official_hydrologic_unit_name"], "Cuenca Omas")
+        self.assertFalse(props["local_asia_ravines_geometry_resolved"])
+        self.assertFalse(props["coastal_fans_geometry_resolved"])
+        self.assertFalse(props["event_2024_assigned_to_named_watercourse"])
+        self.assertFalse(props["counts_as_complete_candidate_geometry"])
         self.assertEqual(assets["exposure"]["status"], "PARTIAL")
         self.assertEqual(assets["historical_events"]["status"], "MISSING")
         self.assertEqual(assets["observations"]["status"], "MISSING")
