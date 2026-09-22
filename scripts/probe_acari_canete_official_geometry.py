@@ -202,6 +202,9 @@ def update_contract_document(candidate_id: str, contract: dict, geometry_rel: st
     updated["test_mode"] = "TEST_ONLY"
     updated["production_ready"] = False
     updated["operational_alerting_enabled"] = False
+    updated["test_mode"] = "TEST_ONLY"
+    updated["production_ready"] = False
+    updated["operational_alerting_enabled"] = False
     source_ids = list(updated.get("official_source_ids") or [])
     if source_id not in source_ids:
         source_ids.append(source_id)
