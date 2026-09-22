@@ -3,8 +3,11 @@
   "candidate_id": "lambayeque_motupe_la_leche_pitipo",
   "contract_status": "DRAFT",
   "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
   "production_use": false,
+  "production_ready": false,
   "alerting_enabled": false,
+  "operational_alerting_enabled": false,
   "decision_thresholds": null,
   "hydraulic_factors": null,
   "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
@@ -22,13 +25,20 @@
   },
   "official_source_ids": [
     "CENEPRED-EVAR-PITIPO-SECTOR-1",
-    "ANA-CENEPRED-CRITICAL-POINTS-2025"
+    "ANA-CENEPRED-CRITICAL-POINTS-2025",
+    "ANA-IDEP-UH-MOTUPE-137772-20260922",
+    "ANA-GEOSNIRH-MOTUPE-HYDROGRAPHIC-UNIT-137772",
+    "LA-LECHE-OFFICIAL-OUTCOME-HYDROLOGIC-CONTEXT-1998-2025"
   ],
   "assets": {
     "geometry": {
-      "status": "MISSING",
-      "path": null,
-      "source_ids": []
+      "status": "PARTIAL",
+      "path": "site/data/phase2/geometries/lambayeque_motupe_la_leche_pitipo_motupe_basin_context.geojson",
+      "source_ids": [
+        "ANA-IDEP-UH-MOTUPE-137772-20260922",
+        "ANA-GEOSNIRH-MOTUPE-HYDROGRAPHIC-UNIT-137772"
+      ],
+      "coverage": "Official ANA Cuenca Motupe hydrologic-unit polygon only; this does not create separate La Leche, Pítipo or local-ravine basin polygons."
     },
     "exposure": {
       "status": "MISSING",
@@ -68,12 +78,18 @@
       "local_outcome"
     ],
     "promotion_requires_all_gates": true,
-    "review_evidence": []
+    "review_evidence": [
+      "site/data/phase2/geometries/lambayeque_motupe_la_leche_pitipo_geometry_validation.json"
+    ]
   },
   "notes": [
-    "separate Motupe and La Leche systems",
-    "resolve local ravine contribution",
-    "normalize exposed caseríos",
-    "identify primary hydrological observations"
+    "ANA hydrologic unit 137772 is Cuenca Motupe; a reproducible official polygon is normalized only as basin context.",
+    "Existing official evidence identifies Rio La Leche as watercourse 1377722 within unit 137772. No separate La Leche basin polygon is asserted by this contract.",
+    "Rio Motupe and Rio La Leche remain distinct named watercourse components; their line geometries are not materialized here and local routing remains unresolved.",
+    "Pitipo remains a territorial/exposure reference, not a hydrologic polygon.",
+    "Local ravines remain unresolved and are not drawn without reproducible official geometry.",
+    "The Cuenca Motupe polygon is not an event footprint, inundation polygon, hydraulic-capacity model or operational alert layer.",
+    "No negative control, design discharge, hydraulic capacity or threshold is inferred from documentary silence, works or basin geometry.",
+    "Activation remains BLOCKED; decision thresholds and hydraulic factors remain null and operational alerting remains disabled."
   ]
 }
