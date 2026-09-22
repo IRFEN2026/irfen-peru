@@ -18,6 +18,9 @@ on:
       - scripts/validate_phase2_spatial_observation_contracts.py
       - tests/test_phase2_acari_canete_geometry.py
       - tests/test_phase2_spatial_observation_contracts.py
+      - tests/test_acari_research_context.py
+      - tests/test_canete_research_context.py
+      - tests/test_map_layer_catalog.py
       - .github/workflows/phase2-acari-canete-geometry-probe.yml
   workflow_dispatch:
 
@@ -27,12 +30,15 @@ permissions:
 jobs:
   validate-official-geometry:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+          cache: pip
+      - name: Install scientific test dependencies
+        run: pip install -r requirements.txt
       - name: Verify frozen geometry and derived catalogs without network
         run: |
           python scripts/probe_acari_canete_official_geometry.py --check-only
@@ -100,3 +106,5 @@ jobs:
             assert mz[cid]['production_use'] is False and mz[cid]['alerting_enabled'] is False
             assert mz[cid]['validation']['activation_gate']=='BLOCKED'
           PY
+      - name: Full repository regression
+        run: python -m unittest discover -s tests -v
