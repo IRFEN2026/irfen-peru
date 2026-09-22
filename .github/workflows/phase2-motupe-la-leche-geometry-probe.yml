@@ -1,0 +1,70 @@
+name: IRFEN - Phase2 Motupe La Leche geometry
+
+on:
+  pull_request:
+    paths:
+      - scripts/probe_motupe_la_leche_official_geometry.py
+      - config/phase2_candidate_inventory_v0_1.json
+      - config/phase2_candidate_inventory_v0_2.json
+      - site/data/phase2/sources/motupe_la_leche_hydrologic_context/**
+      - site/data/phase2/geometries/lambayeque_motupe_la_leche_pitipo_*.geojson
+      - site/data/phase2/geometries/lambayeque_motupe_la_leche_pitipo_geometry_validation.json
+      - site/data/phase2/catalog.json
+      - site/data/map_layers.json
+      - site/data/validation/phase2_research_evidence/la_leche_pacora_pitipo_official_context_1998_2025.json
+      - site/data/validation/phase2_zone_contracts/lambayeque_motupe_la_leche_pitipo.json
+      - tests/test_phase2_motupe_la_leche_geometry.py
+      - .github/workflows/phase2-motupe-la-leche-geometry-probe.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-official-geometry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Verify frozen geometry and derived catalogs without network
+        run: |
+          python scripts/probe_motupe_la_leche_official_geometry.py --check-only
+          python scripts/build_phase2_catalog.py --check-only
+          python scripts/build_map_layer_catalog.py --check-only
+          python -m unittest tests.test_phase2_motupe_la_leche_geometry -v
+      - name: Enforce Phase-2 research guards
+        run: |
+          python - <<'PY'
+          import json
+          g=json.load(open('site/data/phase2/geometries/lambayeque_motupe_la_leche_pitipo_motupe_basin_context.geojson',encoding='utf-8'))
+          v=json.load(open('site/data/phase2/geometries/lambayeque_motupe_la_leche_pitipo_geometry_validation.json',encoding='utf-8'))
+          c=json.load(open('site/data/validation/phase2_zone_contracts/lambayeque_motupe_la_leche_pitipo.json',encoding='utf-8'))
+          inv=json.load(open('config/phase2_candidate_inventory_v0_2.json',encoding='utf-8'))
+          maps=json.load(open('site/data/map_layers.json',encoding='utf-8'))
+          row=next(x for x in inv['candidates'] if x['candidate_id']=='lambayeque_motupe_la_leche_pitipo')
+          layer=next(x for x in maps['research_zones'] if x['candidate_id']=='lambayeque_motupe_la_leche_pitipo')
+          assert v['status']=='PASS_PARTIAL_OFFICIAL_HYDROLOGIC_GEOMETRY'
+          assert v['counts_as_complete_candidate_geometry'] is False
+          assert v['activation_gate']=='BLOCKED'
+          assert c['deployment_status']=='RESEARCH_ONLY' and c['test_mode']=='TEST_ONLY'
+          assert c['production_use'] is False and c['production_ready'] is False
+          assert c['alerting_enabled'] is False and c['operational_alerting_enabled'] is False
+          assert c['validation']['activation_gate']=='BLOCKED'
+          assert c['missing_data_rule']=='UNKNOWN_NOT_LOW_RISK'
+          assert c['decision_thresholds'] is None and c['hydraulic_factors'] is None
+          assert c['assets']['geometry']['status']=='PARTIAL'
+          assert set(c['official_source_ids']) == set(row['official_sources'])
+          assert len(g['features']) == 1
+          p=g['features'][0]['properties']
+          assert p['official_hydrologic_unit_code']=='137772'
+          assert p['separate_la_leche_basin_polygon_asserted'] is False
+          assert p['pitipo_hydrologic_polygon_asserted'] is False
+          assert p['watercourse_line_geometry_materialized'] is False
+          assert layer['deployment_status']=='RESEARCH_ONLY'
+          assert layer['production_use'] is False and layer['alerting_enabled'] is False
+          assert layer['geometry']['map_eligible'] is True
+          assert layer['geometry']['default_visibility'] is False
+          PY
