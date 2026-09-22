@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - scripts/probe_motupe_la_leche_official_geometry.py
+      - site/data/validation/phase2_research_evidence/la_leche_pacora_pitipo_official_context_1998_2025.json
       - .github/workflows/phase2-motupe-la-leche-geometry-probe.yml
   workflow_dispatch:
 
@@ -28,7 +29,7 @@ jobs:
           import json
           p='artifacts/motupe-la-leche/motupe_la_leche_official_geometry_probe.json'
           d=json.load(open(p,encoding='utf-8'))
-          assert d['status']=='PASS_OFFICIAL_GEOMETRY_IDENTITY_PROBE'
+          assert d['status']=='PASS_OFFICIAL_BASIN_GEOMETRY_IDENTITY_PROBE'
           assert d['deployment_status']=='RESEARCH_ONLY'
           assert d['test_mode']=='TEST_ONLY'
           assert d['production_use'] is False
@@ -38,8 +39,11 @@ jobs:
           assert d['missing_data_rule']=='UNKNOWN_NOT_LOW_RISK'
           assert d['decision_thresholds'] is None
           assert d['hydraulic_factors'] is None
-          assert d['la_leche_feature_count'] > 0
-          assert d['motupe_feature_count'] > 0
+          assert d['watercourse_geometry_materialized'] is False
+          assert d['separate_la_leche_basin_geometry_materialized'] is False
+          assert d['pitipo_hydrologic_geometry_materialized'] is False
+          assert str(d['basin']['properties']['CODIGO']) == '137772'
+          assert d['basin']['properties']['NOMBRE'] == 'Cuenca Motupe'
           PY
       - uses: actions/upload-artifact@v4
         with:
