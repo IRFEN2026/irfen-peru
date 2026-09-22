@@ -5,48 +5,70 @@ on:
     paths:
       - scripts/probe_motupe_la_leche_official_geometry.py
       - site/data/validation/phase2_research_evidence/la_leche_pacora_pitipo_official_context_1998_2025.json
+      - site/data/validation/phase2_zone_contracts/lambayeque_motupe_la_leche_pitipo.json
       - .github/workflows/phase2-motupe-la-leche-geometry-probe.yml
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  probe-official-geometry:
+  materialize-official-geometry:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - name: Probe bounded ANA hydrologic geometry
+      - name: Materialize locked ANA hydrologic geometry
         run: |
-          python scripts/probe_motupe_la_leche_official_geometry.py --out-dir artifacts/motupe-la-leche
+          python scripts/probe_motupe_la_leche_official_geometry.py --refresh-source
+          python scripts/build_phase2_catalog.py
+          python scripts/build_map_layer_catalog.py
       - name: Enforce Phase-2 research guards
         run: |
+          python scripts/probe_motupe_la_leche_official_geometry.py --check-only
+          python scripts/build_phase2_catalog.py --check-only
+          python scripts/build_map_layer_catalog.py --check-only
           python - <<'PY'
           import json
-          p='artifacts/motupe-la-leche/motupe_la_leche_official_geometry_probe.json'
-          d=json.load(open(p,encoding='utf-8'))
-          assert d['status']=='PASS_OFFICIAL_BASIN_GEOMETRY_IDENTITY_PROBE'
-          assert d['deployment_status']=='RESEARCH_ONLY'
-          assert d['test_mode']=='TEST_ONLY'
-          assert d['production_use'] is False
-          assert d['production_ready'] is False
-          assert d['operational_alerting_enabled'] is False
-          assert d['activation_gate']=='BLOCKED'
-          assert d['missing_data_rule']=='UNKNOWN_NOT_LOW_RISK'
-          assert d['decision_thresholds'] is None
-          assert d['hydraulic_factors'] is None
-          assert d['watercourse_geometry_materialized'] is False
-          assert d['separate_la_leche_basin_geometry_materialized'] is False
-          assert d['pitipo_hydrologic_geometry_materialized'] is False
-          assert str(d['basin']['properties']['CODIGO']) == '137772'
-          assert d['basin']['properties']['NOMBRE'] == 'Cuenca Motupe'
+          g=json.load(open('site/data/phase2/geometries/lambayeque_motupe_la_leche_pitipo_motupe_basin_context.geojson',encoding='utf-8'))
+          v=json.load(open('site/data/phase2/geometries/lambayeque_motupe_la_leche_pitipo_geometry_validation.json',encoding='utf-8'))
+          c=json.load(open('site/data/validation/phase2_zone_contracts/lambayeque_motupe_la_leche_pitipo.json',encoding='utf-8'))
+          assert v['status']=='PASS_PARTIAL_OFFICIAL_HYDROLOGIC_GEOMETRY'
+          assert v['counts_as_complete_candidate_geometry'] is False
+          assert v['activation_gate']=='BLOCKED'
+          assert c['deployment_status']=='RESEARCH_ONLY' and c['test_mode']=='TEST_ONLY'
+          assert c['production_use'] is False and c['production_ready'] is False
+          assert c['alerting_enabled'] is False and c['operational_alerting_enabled'] is False
+          assert c['validation']['activation_gate']=='BLOCKED'
+          assert c['missing_data_rule']=='UNKNOWN_NOT_LOW_RISK'
+          assert c['decision_thresholds'] is None and c['hydraulic_factors'] is None
+          assert c['assets']['geometry']['status']=='PARTIAL'
+          assert len(g['features']) == 1
+          p=g['features'][0]['properties']
+          assert p['official_hydrologic_unit_code']=='137772'
+          assert p['separate_la_leche_basin_polygon_asserted'] is False
+          assert p['pitipo_hydrologic_polygon_asserted'] is False
+          assert p['watercourse_line_geometry_materialized'] is False
           PY
-      - uses: actions/upload-artifact@v4
-        with:
-          name: phase2-motupe-la-leche-official-geometry-probe
-          path: artifacts/motupe-la-leche
-          if-no-files-found: error
+      - name: Commit generated research artifacts to PR branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            site/data/phase2/sources/motupe_la_leche_hydrologic_context/ \
+            site/data/phase2/geometries/lambayeque_motupe_la_leche_pitipo_motupe_basin_context.geojson \
+            site/data/phase2/geometries/lambayeque_motupe_la_leche_pitipo_geometry_validation.json \
+            site/data/phase2/catalog.json \
+            site/data/map_layers.json
+          if git diff --cached --quiet; then
+            echo 'No generated changes to commit.'
+          else
+            git commit -m 'Phase2: materialize official Cuenca Motupe research geometry'
+            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          fi
