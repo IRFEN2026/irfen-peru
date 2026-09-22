@@ -78,6 +78,7 @@ class MapLayerCatalogTests(unittest.TestCase):
         eligible = {
             "lima_este_santa_eulalia_rimac",
             "lima_este_lurin_cieneguilla",
+            "lambayeque_motupe_la_leche_pitipo",
         }
         self.assertEqual(self.catalog["summary"]["research_candidates_map_eligible"], len(eligible))
         for zone in zones:
@@ -88,6 +89,19 @@ class MapLayerCatalogTests(unittest.TestCase):
                 self.assertFalse(zone["geometry"]["map_eligible"])
                 self.assertEqual(zone["geometry"]["representation"], "NOT_MAPPED_NO_REPRODUCIBLE_FILE")
         self.assertTrue(self.catalog["guardrails"]["reference_points_for_missing_geometry_forbidden"])
+
+    def test_motupe_context_is_map_only_not_risk_or_event_footprint(self):
+        zone = next(row for row in self.catalog["research_zones"]
+                    if row["candidate_id"] == "lambayeque_motupe_la_leche_pitipo")
+        geometry = zone["geometry"]
+        self.assertEqual(geometry["status"], "PARTIAL")
+        self.assertTrue(geometry["map_eligible"])
+        self.assertFalse(geometry["default_visibility"])
+        self.assertEqual(geometry["source_metadata"]["feature_count"], 1)
+        self.assertEqual(zone["deployment_status"], "RESEARCH_ONLY")
+        self.assertFalse(zone["production_use"])
+        self.assertFalse(zone["alerting_enabled"])
+        self.assertEqual(zone["validation"]["activation_gate"], "BLOCKED")
 
     def test_w1_santa_eulalia_geometry_is_review_only_and_traceable(self):
         zone = next(row for row in self.catalog["research_zones"]
