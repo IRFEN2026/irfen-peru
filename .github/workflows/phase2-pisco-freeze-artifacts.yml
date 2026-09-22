@@ -1,0 +1,48 @@
+name: IRFEN - Phase2 Pisco freeze artifacts
+
+on:
+  pull_request:
+    paths:
+      - scripts/probe_pisco_official_geometry.py
+      - tests/test_phase2_pisco_geometry.py
+      - .github/workflows/phase2-pisco-freeze-artifacts.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-frozen-artifacts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Re-fetch only hash-identical ANA source and build deterministic artifacts
+        run: |
+          python scripts/probe_pisco_official_geometry.py --refresh-source
+          python scripts/build_phase2_catalog.py
+          python scripts/build_phase2_climate_matrix.py
+          python scripts/build_phase2_spatial_observation_contracts.py
+          python scripts/build_map_layer_catalog.py
+      - name: Verify replay and focused guards
+        run: |
+          python scripts/probe_pisco_official_geometry.py --check-only
+          python -m unittest tests.test_phase2_pisco_geometry tests.test_map_layer_catalog tests.test_phase2_spatial_observation_contracts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phase2-pisco-frozen-artifacts
+          path: |
+            site/data/phase2/sources/pisco_hydrologic_context/
+            site/data/phase2/geometries/ica_pisco_san_andres_pisco_basin_context.geojson
+            site/data/phase2/geometries/ica_pisco_san_andres_geometry_validation.json
+            site/data/validation/phase2_zone_contracts/ica_pisco_san_andres.json
+            config/phase2_candidate_inventory_v0_1.json
+            config/phase2_candidate_inventory_v0_2.json
+            site/data/phase2/catalog.json
+            site/data/phase2/climate_conditioned_activation_matrix_v0_1.json
+            site/data/phase2/spatial_observation_contracts_v0_1.json
+            site/data/map_layers.json
+          if-no-files-found: error
