@@ -39,10 +39,12 @@ jobs:
           rm -f .github/workflows/phase2-pisco-official-basin-bootstrap.yml
           rm -f .github/workflows/phase2-pisco-freeze-artifacts.yml
           rm -f .github/workflows/phase2-pisco-persist.yml
-          find scripts tests -type d -name __pycache__ -prune -exec rm -rf {} +
+          find . -type f -name '*.pyc' -delete
+          find . -type d -name '__pycache__' -prune -exec rm -rf {} +
       - name: Enforce bounded change allowlist and persist
         run: |
           git add -A
+          git reset -- ':(glob)**/*.pyc' ':(glob)**/__pycache__/**' 2>/dev/null || true
           python - <<'PY'
           import subprocess
           allowed_exact = {
