@@ -3,8 +3,11 @@
   "candidate_id": "lima_norte_arahuay_chillon",
   "contract_status": "DRAFT",
   "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
   "production_use": false,
+  "production_ready": false,
   "alerting_enabled": false,
+  "operational_alerting_enabled": false,
   "decision_thresholds": null,
   "hydraulic_factors": null,
   "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
@@ -22,13 +25,17 @@
   },
   "official_source_ids": [
     "CENEPRED-PPRRD-ARAHUAY-2025-2030",
-    "ANA-RD-0709-2025-AAACO"
+    "ANA-RD-0709-2025-AAACF",
+    "ANA-IT-024-2024-P_ALACHRL_39-JEAC"
   ],
   "assets": {
     "geometry": {
-      "status": "MISSING",
-      "path": null,
-      "source_ids": []
+      "status": "PARTIAL",
+      "path": "site/data/phase2/geometries/lima_norte_arahuay_quisquichaca_faja_context.geojson",
+      "source_ids": [
+        "ANA-RD-0709-2025-AAACF",
+        "ANA-IT-024-2024-P_ALACHRL_39-JEAC"
+      ]
     },
     "exposure": {
       "status": "MISSING",
@@ -71,9 +78,12 @@
     "review_evidence": []
   },
   "notes": [
-    "separate ravines from river reaches",
-    "normalize exposed localities",
-    "compile event chronology",
-    "define forecast-observation contract"
+    "ANA RD 0709-2025 and IT 024-2024 provide 88 field-validated WGS84 UTM Zone 18S faja-marginal hitos for the Río Quisquichaca reach km 0+000 to 6+600: 45 right margin and 43 left margin.",
+    "The normalized asset represents Río Quisquichaca regulatory margin alignments only. It does not delimit the Quisquichaca catchment, other Arahuay ravines, or the Chillón river reach.",
+    "The final coordinate set uses technical-report item 2.7 after field verification; HD-1 and HD-2 use the modified final coordinates and the earlier proposal coordinates are not materialized.",
+    "The 50-year modeled/design discharge in the official study is not imported as historical hydraulic capacity, an IRFEN decision threshold or a hydraulic factor.",
+    "No faja line is closed into an event, hazard or inundation polygon, and no artificial connector is created between Quisquichaca and other units.",
+    "Geometry advances only to PARTIAL; exposure, historical_events, observations and hydraulic_context remain MISSING.",
+    "Activation remains BLOCKED, missing evidence remains UNKNOWN_NOT_LOW_RISK, decision thresholds and hydraulic factors remain null, and operational alerting remains disabled."
   ]
 }
