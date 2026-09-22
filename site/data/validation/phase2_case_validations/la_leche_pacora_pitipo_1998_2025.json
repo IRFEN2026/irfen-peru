@@ -22,6 +22,11 @@
       "source_id": "SENAMHI-SARDON-LAVADO-FELIPE-2022-FLOOD-INVENTORY",
       "path": "site/data/validation/reference_sources/senamhi_flood_inventory_1981_2021_irfen_extract.json",
       "evidence_role": "OFFICIAL_EVENT_INVENTORY_CORROBORATION"
+    },
+    {
+      "source_id": "ANA-IDEP-UH-MOTUPE-137772-20260922",
+      "path": "site/data/phase2/sources/motupe_la_leche_hydrologic_context/ana_cuenca_motupe_137772.geojson",
+      "evidence_role": "OFFICIAL_WHOLE_HYDROLOGIC_UNIT_GEOMETRY_CONTEXT"
     }
   ],
   "hydrologic_identity": {
@@ -30,7 +35,9 @@
     "la_leche_watercourse_code": "1377722",
     "la_leche_watercourse_name": "Rio La Leche",
     "whole_unit_geometry_is_event_footprint": false,
-    "machine_readable_geometry_normalized_in_irfen": false
+    "machine_readable_geometry_normalized_in_irfen": true,
+    "normalized_geometry_path": "site/data/phase2/geometries/lambayeque_motupe_la_leche_pitipo_motupe_basin_context.geojson",
+    "normalized_geometry_role": "OFFICIAL_WHOLE_HYDROLOGIC_UNIT_RESEARCH_CONTEXT_ONLY"
   },
   "positive_controls": [
     {
@@ -91,7 +98,7 @@
     "historical_events": "READY",
     "exposure": "PARTIAL",
     "hydraulic_context": "PARTIAL",
-    "geometry": "MISSING_MACHINE_READABLE_NORMALIZATION",
+    "geometry": "PARTIAL_OFFICIAL_BASIN_CONTEXT_NOT_EVENT_FOOTPRINT",
     "observations": "MISSING_EVENT_PAIRED_PRIMARY_NUMERIC_SERIES",
     "forecast": "NOT_REQUIRED_FOR_HISTORICAL_RESEARCH_CLOSEOUT"
   },
@@ -107,13 +114,15 @@
       "bounded historical positive-outcome validation for Rio La Leche",
       "recurrent flood-impact chronology across independent time slices",
       "official hydrologic identity context",
+      "official whole-Cuenca-Motupe boundary as basin-scale research context only",
       "current exposure/mitigation context with explicit temporal separation"
     ],
     "forbidden": [
       "infer operational rainfall or discharge thresholds",
       "infer a negative control from missing reports",
       "transfer basin-wide or current-project hydraulic assumptions into historical events",
-      "treat ANA basin identity as observed inundation geometry",
+      "treat ANA basin identity or boundary as observed inundation geometry",
+      "use whole-Cuenca-Motupe geometry as Rio La Leche event footprint or local-ravine geometry",
       "close Rio Motupe or the full compound Phase-2 candidate",
       "enable production or live alerting"
     ]
@@ -121,7 +130,7 @@
   "closeout_decision": {
     "research_closeout_ready_now": true,
     "case_status": "CLOSED_RESEARCH_VALIDATION_CASE",
-    "why": "Multiple official positive Rio La Leche outcomes are independently documented across 1998, 2015 and 2025, with official basin identity and current exposure context sufficient for a bounded historical research closeout while explicitly retaining unresolved hydraulic, negative-control, geometry and compound-system gates.",
+    "why": "Multiple official positive Rio La Leche outcomes are independently documented across 1998, 2015 and 2025. The official Cuenca Motupe boundary is now normalized only as basin-scale research context; event/component geometry, hydraulic routing, observations, negative controls and the compound-system gates remain unresolved.",
     "production_authorized": false,
     "phase2_contract_promotion_authorized": false
   }
