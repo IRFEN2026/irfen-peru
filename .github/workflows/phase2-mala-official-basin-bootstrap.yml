@@ -1,0 +1,54 @@
+name: IRFEN - Phase2 Mala official basin bootstrap
+
+on:
+  pull_request:
+    paths:
+      - scripts/bootstrap_mala_official_basin.py
+      - .github/workflows/phase2-mala-official-basin-bootstrap.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-official-mala-basin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Fetch official ANA Cuenca Mala geometry
+        run: |
+          mkdir -p artifacts
+          python scripts/bootstrap_mala_official_basin.py \
+            --source artifacts/ana_cuenca_mala.geojson \
+            --manifest artifacts/lima_sur_mala_basin_manifest.json
+      - name: Enforce Phase-2 fail-closed guards
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/lima_sur_mala_basin_manifest.json',encoding='utf-8'))
+          assert d['candidate_id']=='lima_sur_mala'
+          assert d['official_unit_name']=='Cuenca Mala'
+          assert d['deployment_status']=='RESEARCH_ONLY'
+          assert d['test_mode']=='TEST_ONLY'
+          assert d['production_use'] is False
+          assert d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['activation_gate']=='BLOCKED'
+          assert d['missing_data_rule']=='UNKNOWN_NOT_LOW_RISK'
+          assert d['decision_thresholds'] is None
+          assert d['hydraulic_factors'] is None
+          assert d['counts_as_complete_candidate_geometry'] is False
+          assert d['artificial_connector_used'] is False
+          assert d['event_footprint_asserted'] is False
+          assert d['hydraulic_capacity_inferred'] is False
+          assert d['negative_control_inferred'] is False
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phase2-mala-official-basin-bootstrap
+          path: artifacts/
+          if-no-files-found: error
