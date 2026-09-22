@@ -19,6 +19,7 @@ LAMBAYEQUE_MIGRATION = ROOT / "site/data/phase2/geometries/lambayeque_hydrologic
 SANTA_ID = "lima_este_santa_eulalia_rimac"
 LURIN_ID = "lima_este_lurin_cieneguilla"
 LAMBAYEQUE_PARENT_ID = "lambayeque_chongoyape_oyotun_zana"
+MOTUPE_ID = "lambayeque_motupe_la_leche_pitipo"
 EXPECTED_SUBUNITS = {
     "cashahuacra": {
         "geometry_type": "Polygon",
@@ -109,7 +110,7 @@ def check_authoritative_geometry_state(catalog):
         if ((zone.get("asset_readiness") or {}).get("geometry") or {}).get("data_presence")
         == "PRESENT"
     }
-    if present != {SANTA_ID, LURIN_ID}:
+    if present != {SANTA_ID, LURIN_ID, MOTUPE_ID}:
         ERRORS.append(f"geometry PRESENT set changed: {sorted(present)}")
 
     ready = {
@@ -122,7 +123,7 @@ def check_authoritative_geometry_state(catalog):
             f"candidate-wide geometry READY state changed and requires review: {sorted(ready)}"
         )
 
-    for cid in (SANTA_ID, LURIN_ID):
+    for cid in (SANTA_ID, LURIN_ID, MOTUPE_ID):
         if (zones.get(cid, {}).get("asset_status") or {}).get("geometry") != "PARTIAL":
             ERRORS.append(f"{cid}: expected geometry asset status PARTIAL")
 
@@ -273,6 +274,7 @@ def check_artifact(result, inventory):
         SANTA_ID: "SUBUNIT_RESEARCH_ONLY",
         LURIN_ID: "NON_CATCHMENT_GEOMETRY_ONLY",
         LAMBAYEQUE_PARENT_ID: "SUBUNIT_RESEARCH_ONLY",
+        MOTUPE_ID: "NON_CATCHMENT_GEOMETRY_ONLY",
     }
     for cid in expected_ids:
         expected = expected_status.get(cid, "BLOCKED_MISSING_GEOMETRY")
@@ -350,8 +352,8 @@ def check_artifact(result, inventory):
         "candidate_count": 18,
         "candidate_wide_ready_count": 0,
         "subunit_research_only_candidate_count": 2,
-        "non_catchment_geometry_only_count": 1,
-        "blocked_missing_geometry_count": 15,
+        "non_catchment_geometry_only_count": 2,
+        "blocked_missing_geometry_count": 14,
         "research_subunit_contract_count": 4,
         "operational_spatial_contract_count": 0,
     }
