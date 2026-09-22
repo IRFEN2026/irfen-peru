@@ -33,12 +33,13 @@ jobs:
           python scripts/build_map_layer_catalog.py
           python scripts/probe_pisco_official_geometry.py --check-only
           python -m unittest tests.test_phase2_pisco_geometry tests.test_map_layer_catalog tests.test_phase2_spatial_observation_contracts
-      - name: Remove one-time bootstrap machinery
+      - name: Remove one-time bootstrap machinery and transient caches
         run: |
           rm -f scripts/bootstrap_pisco_official_basin.py
           rm -f .github/workflows/phase2-pisco-official-basin-bootstrap.yml
           rm -f .github/workflows/phase2-pisco-freeze-artifacts.yml
           rm -f .github/workflows/phase2-pisco-persist.yml
+          find scripts tests -type d -name __pycache__ -prune -exec rm -rf {} +
       - name: Enforce bounded change allowlist and persist
         run: |
           git add -A
