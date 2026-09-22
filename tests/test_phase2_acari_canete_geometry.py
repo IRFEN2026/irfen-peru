@@ -24,10 +24,6 @@ def load(path: Path):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def sha(path: Path):
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
 class AcariCaneteGeometryTests(unittest.TestCase):
     def test_offline_replay_passes_without_network(self):
         result = subprocess.run(
@@ -51,7 +47,7 @@ class AcariCaneteGeometryTests(unittest.TestCase):
         self.assertIsNone(inventory["hydraulic_factors"])
         by_id = {row["candidate_id"]: row for row in inventory["sources"]}
         self.assertEqual(set(by_id), set(EXPECTED))
-        for candidate_id, row in by_id.items():
+        for row in by_id.values():
             source_path = ROOT / row["local_path"]
             source = load(source_path)
             canonical = (json.dumps(source, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
@@ -98,8 +94,11 @@ class AcariCaneteGeometryTests(unittest.TestCase):
             self.assertEqual(geom["path"], rel)
             self.assertTrue((ROOT / rel).is_file())
             self.assertEqual(contract["deployment_status"], "RESEARCH_ONLY")
+            self.assertEqual(contract["test_mode"], "TEST_ONLY")
             self.assertFalse(contract["production_use"])
+            self.assertFalse(contract["production_ready"])
             self.assertFalse(contract["alerting_enabled"])
+            self.assertFalse(contract["operational_alerting_enabled"])
             self.assertEqual(contract["validation"]["activation_gate"], "BLOCKED")
             self.assertEqual(contract["missing_data_rule"], "UNKNOWN_NOT_LOW_RISK")
             self.assertIsNone(contract["decision_thresholds"])
@@ -115,13 +114,13 @@ class AcariCaneteGeometryTests(unittest.TestCase):
             self.assertEqual(row["asset_readiness"]["geometry"]["data_presence"], "PRESENT")
             self.assertFalse((row.get("promotion_gate") or {}).get("promotion_gate_met"))
             mapped = map_zones[candidate_id]
-            self.assertTrue(mapped["map_eligible"])
-            self.assertFalse(mapped["default_visibility"])
-            self.assertEqual(mapped["geometry_path"], rel)
             self.assertEqual(mapped["deployment_status"], "RESEARCH_ONLY")
-            self.assertFalse(mapped["loaded_into_operational_calculation"])
-            self.assertFalse(mapped["carries_alert_values"])
-            self.assertFalse(mapped["carries_risk_classification"])
+            self.assertFalse(mapped["production_use"])
+            self.assertFalse(mapped["alerting_enabled"])
+            self.assertTrue(mapped["geometry"]["map_eligible"])
+            self.assertFalse(mapped["geometry"]["default_visibility"])
+            self.assertEqual(mapped["geometry"]["path"], rel)
+            self.assertEqual(mapped["validation"]["activation_gate"], "BLOCKED")
 
 
 if __name__ == "__main__":
