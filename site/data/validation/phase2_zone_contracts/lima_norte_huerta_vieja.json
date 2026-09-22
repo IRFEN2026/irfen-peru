@@ -3,8 +3,11 @@
   "candidate_id": "lima_norte_huerta_vieja",
   "contract_status": "DRAFT",
   "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
   "production_use": false,
+  "production_ready": false,
   "alerting_enabled": false,
+  "operational_alerting_enabled": false,
   "decision_thresholds": null,
   "hydraulic_factors": null,
   "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
@@ -21,13 +24,17 @@
     "selected_model_family": null
   },
   "official_source_ids": [
-    "ANA-RD-0690-2025-AAACF"
+    "ANA-RD-0690-2025-AAACF",
+    "ANA-IT-0112-2024-AAA-CF-MCFS"
   ],
   "assets": {
     "geometry": {
-      "status": "MISSING",
-      "path": null,
-      "source_ids": []
+      "status": "PARTIAL",
+      "path": "site/data/phase2/geometries/lima_norte_huerta_vieja_faja_context.geojson",
+      "source_ids": [
+        "ANA-RD-0690-2025-AAACF",
+        "ANA-IT-0112-2024-AAA-CF-MCFS"
+      ]
     },
     "exposure": {
       "status": "MISSING",
@@ -70,9 +77,11 @@
     "review_evidence": []
   },
   "notes": [
-    "normalize official geometry",
-    "identify exposed settlements and services",
-    "compile event recurrence",
-    "define observation path"
+    "ANA RD 0690-2025 and IT 0112-2024 provide 39 official WGS84 UTM Zone 18S faja-marginal hitos for Quebrada Huerta Vieja, km 0+000 to 2+000.",
+    "The normalized geometry preserves two separate official margin alignments only; it is not a catchment polygon, event footprint, hazard extent or hydraulic-capacity measurement.",
+    "The resolution prose contains contradictory right/left hito counts; normalization follows the technical coordinate-table labels HI-1..HI-18 and HD-1..HD-21 without relabeling margins.",
+    "The study/model/design discharge is not imported as a historical capacity, decision threshold or operational factor.",
+    "Geometry advances only to PARTIAL; exposure, historical_events, observations and hydraulic_context remain MISSING.",
+    "Activation remains BLOCKED, missing evidence remains UNKNOWN_NOT_LOW_RISK, decision thresholds and hydraulic factors remain null, and operational alerting remains disabled."
   ]
 }
