@@ -1,0 +1,110 @@
+{
+  "version": "phase2-research-evidence-v0.1",
+  "source_id": "ACARI-OFFICIAL-RISK-GEODYNAMIC-CONTEXT-2014-2025",
+  "source_type": "OFFICIAL_MULTI_SOURCE_RISK_GEODYNAMIC_AND_CRITICAL_POINT_CONTEXT",
+  "zone_id": "arequipa_acari_san_agustin",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "decision_thresholds": null,
+  "activation_gate": "BLOCKED",
+  "scope": "Bounded official context for the Acarí district and Río Acarí hazard environment. This package does not resolve the geometry or hydraulic identity of quebrada San Agustín, does not create an event ledger, and does not infer operational thresholds or cross-component routing.",
+  "sources": [
+    {
+      "source_id": "CENEPRED-PPRRD-ACARI-2025-2030",
+      "institution": "Municipalidad Distrital de Acarí / CENEPRED-SIGRID",
+      "evidence_class": "OFFICIAL_DISTRICT_RISK_REDUCTION_PLAN",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca//22157_plan-de-prevencion-y-reduccion-del-riesgo-del-distrito-de-acari-provincia-de-caraveli-departamento-de-arequipa-2025-2030.pdf",
+      "role": "district_risk_and_exposure_context"
+    },
+    {
+      "source_id": "ANA-ACARI-CRITICAL-POINTS-2024",
+      "institution": "Autoridad Nacional del Agua",
+      "evidence_class": "OFFICIAL_CRITICAL_POINT_SUMMARY",
+      "url": "https://www.gob.pe/institucion/ana/noticias/1048497-arequipa-ana-identifica-seis-puntos-criticos-y-entrega-fichas-tecnicas-para-la-prevencion",
+      "role": "current_critical_point_context"
+    },
+    {
+      "source_id": "IGP-SIGRID-ACARI-GEODYNAMIC-4151",
+      "institution": "Instituto Geofísico del Perú / SIGRID",
+      "evidence_class": "OFFICIAL_GEODYNAMIC_HAZARD_MAP_CONTEXT",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/4151",
+      "role": "geodynamic_mechanism_context"
+    },
+    {
+      "source_id": "ANA-CENEPRED-CRITICAL-POINTS-2025",
+      "institution": "Autoridad Nacional del Agua / SIGRID-CENEPRED",
+      "evidence_class": "OFFICIAL_NATIONAL_CRITICAL_POINT_INVENTORY",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/21194",
+      "role": "national_critical_point_reference"
+    }
+  ],
+  "official_context": {
+    "ana_2024": {
+      "assessment_scope": "ALA Cháparra Acarí jurisdiction; not equivalent to the Acarí district alone",
+      "total_critical_points_reported": 24,
+      "very_high_risk_points_reported": 6,
+      "very_high_risk_districts": [
+        "Acarí",
+        "Huanuhuanu",
+        "Jaqui"
+      ],
+      "acari_high_risk_points_reported": 10,
+      "interpretation": "The source identifies Acarí as the most vulnerable district in that assessment. Counts are prevention-context indicators, not event observations, hydraulic capacities or IRFEN thresholds."
+    },
+    "igp_2014": {
+      "mapped_hazard_processes": [
+        "rock_fall",
+        "debris_flow",
+        "aeolian_sand",
+        "fluvial_erosion"
+      ],
+      "spatial_role": "local geodynamic hazard context around Acarí",
+      "event_footprint": false,
+      "hydrologic_unit_geometry": false
+    }
+  },
+  "component_separation": {
+    "rio_acari_context_available": true,
+    "quebrada_san_agustin_geometry_resolved": false,
+    "quebrada_san_agustin_hydraulic_identity_resolved": false,
+    "river_to_ravine_routing_validated": false,
+    "district_boundary_is_hydrologic_boundary": false
+  },
+  "geometry_status": {
+    "normalized_machine_readable_zone_geometry_available": false,
+    "san_agustin_geometry_available": false,
+    "event_footprints_available": false
+  },
+  "observations_status": {
+    "event_paired_primary_rainfall_available": false,
+    "event_paired_stage_or_discharge_available": false,
+    "verified_negative_controls_available": false
+  },
+  "scientific_limits": [
+    "The 24-point ANA figure refers to the broader ALA Cháparra Acarí assessment and must not be read as 24 points inside Acarí district.",
+    "The 10 high-risk points reported for Acarí are prevention/critical-point context; they are not ten dated flood or debris-flow events.",
+    "The IGP geodynamic map establishes relevant hazard processes around Acarí but is not a catchment polygon, event footprint or hydraulic model.",
+    "No reproducible official geometry for quebrada San Agustín is normalized in IRFEN in this package.",
+    "No event-paired primary rainfall, stage or discharge series is included.",
+    "No negative control is fabricated from absence of reported impact.",
+    "No design value, critical-point rating or mitigation work is promoted into an IRFEN operational threshold."
+  ],
+  "accepted_research_uses": [
+    "Acarí district exposure and prevention context",
+    "geodynamic mechanism discovery",
+    "critical-point prioritization for source acquisition",
+    "planning of separate Río Acarí and quebrada San Agustín validation tracks"
+  ],
+  "forbidden_uses": [
+    "operational threshold derivation",
+    "automatic alerting",
+    "inventing quebrada San Agustín geometry",
+    "treating district limits as hydrologic limits",
+    "cross-component hydraulic transfer",
+    "negative-control inference from missing reports",
+    "promoting current critical-point ratings as event truth"
+  ]
+}
