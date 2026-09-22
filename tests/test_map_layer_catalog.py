@@ -82,6 +82,7 @@ class MapLayerCatalogTests(unittest.TestCase):
             "arequipa_acari_san_agustin",
             "lima_sur_canete",
             "lima_sur_asia_omas",
+            "ica_pisco_san_andres",
             "lima_norte_huerta_vieja",
             "lima_norte_arahuay_chillon",
         }
