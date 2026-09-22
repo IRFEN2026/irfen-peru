@@ -22,6 +22,11 @@ SOURCE = SOURCE_DIR / "ana_cuenca_motupe_137772.geojson"
 SOURCE_INVENTORY = SOURCE_DIR / "source_inventory.json"
 GEOMETRY = ROOT / "site/data/phase2/geometries/lambayeque_motupe_la_leche_pitipo_motupe_basin_context.geojson"
 VALIDATION = ROOT / "site/data/phase2/geometries/lambayeque_motupe_la_leche_pitipo_geometry_validation.json"
+INVENTORIES = [
+    ROOT / "config/phase2_candidate_inventory_v0_1.json",
+    ROOT / "config/phase2_candidate_inventory_v0_2.json",
+]
+CANDIDATE_ID = "lambayeque_motupe_la_leche_pitipo"
 
 BASE = "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/8/query"
 BASIN_URL = BASE + "?" + urlencode({
@@ -33,7 +38,23 @@ BASIN_URL = BASE + "?" + urlencode({
     "f": "geojson",
 })
 EXPECTED_SOURCE_SHA256 = "5b5b59e51cd84809e5f63336147e713a8277b61126e6d65ae1acd53481242b07"
+EXPECTED_RAW_RESPONSE_SHA256 = "f4fc416ff85b3bfb6d3403298a37f3375e830c6f69df04ac2164bdaf2a99f048"
 SOURCE_ID = "ANA-IDEP-UH-MOTUPE-137772-20260922"
+GEOSNIRH_ID = "ANA-GEOSNIRH-MOTUPE-HYDROGRAPHIC-UNIT-137772"
+GEOSNIRH_URL = "https://geosnirh.ana.gob.pe/server/rest/services/Mapas_ALA/Capas_ALA_Motupe_Olmos_LaLeche/MapServer"
+OFFICIAL_SOURCE_IDS = [
+    "CENEPRED-EVAR-PITIPO-SECTOR-1",
+    "ANA-CENEPRED-CRITICAL-POINTS-2025",
+    SOURCE_ID,
+    GEOSNIRH_ID,
+]
+OFFICIAL_EVIDENCE_STAGE = "official_motupe_hydrologic_unit_geometry_and_la_leche_identity_context_available"
+UNRESOLVED_GATES = [
+    "preserve Rio Motupe and Rio La Leche as distinct named watercourses inside Cuenca Motupe until reproducible sub-basin or line geometry supports further separation",
+    "resolve local ravine contributions without inventing a Pitipo hydrologic polygon",
+    "normalize exposed caserios and infrastructure separately from the official basin boundary",
+    "identify primary hydrological observations and event-paired controls",
+]
 
 GUARDS = {
     "deployment_status": "RESEARCH_ONLY",
@@ -65,7 +86,7 @@ def normalized_text(value: object) -> str:
             .replace("á", "a").replace("é", "e").replace("ú", "u"))
 
 
-def fetch_source() -> tuple[dict, str]:
+def fetch_source() -> dict:
     request = Request(BASIN_URL, headers={"User-Agent": "IRFEN-research-source-lock/1.0"})
     with urlopen(request, timeout=45) as response:
         raw = response.read()
@@ -74,7 +95,7 @@ def fetch_source() -> tuple[dict, str]:
     sha = digest_bytes(payload)
     if sha != EXPECTED_SOURCE_SHA256:
         raise ValueError(f"ANA source changed: {sha}; refusing to overwrite frozen snapshot")
-    return data, digest_bytes(raw)
+    return data
 
 
 def validate_source(data: dict) -> dict:
@@ -91,7 +112,35 @@ def validate_source(data: dict) -> dict:
     return feature
 
 
-def build_documents(source: dict, raw_sha: str | None) -> tuple[dict, dict, dict]:
+def expected_inventory(value: dict) -> dict:
+    updated = json.loads(json.dumps(value))
+    rows = [row for row in updated.get("candidates") or [] if row.get("candidate_id") == CANDIDATE_ID]
+    if len(rows) != 1:
+        raise ValueError(f"expected one {CANDIDATE_ID} inventory row")
+    row = rows[0]
+    row["official_evidence_stage"] = OFFICIAL_EVIDENCE_STAGE
+    row["official_sources"] = list(OFFICIAL_SOURCE_IDS)
+    row["unresolved_gates"] = list(UNRESOLVED_GATES)
+    catalog = updated.setdefault("official_source_catalog", {})
+    catalog[SOURCE_ID] = BASIN_URL
+    catalog[GEOSNIRH_ID] = GEOSNIRH_URL
+    return updated
+
+
+def sync_inventories(check_only: bool) -> None:
+    for path in INVENTORIES:
+        if not path.is_file():
+            raise ValueError(f"missing inventory: {path.relative_to(ROOT)}")
+        current = json.loads(path.read_text(encoding="utf-8"))
+        expected = expected_inventory(current)
+        if check_only:
+            if current != expected:
+                raise ValueError(f"stale Motupe inventory row: {path.relative_to(ROOT)}")
+        else:
+            path.write_bytes(canonical(expected))
+
+
+def build_documents(source: dict) -> tuple[dict, dict, dict]:
     feature = validate_source(source)
     evidence = json.loads(EVIDENCE.read_text(encoding="utf-8"))
     identity = evidence["official_hydrologic_identity"]
@@ -105,7 +154,7 @@ def build_documents(source: dict, raw_sha: str | None) -> tuple[dict, dict, dict
         "type": "FeatureCollection",
         "properties": {
             **GUARDS,
-            "candidate_id": "lambayeque_motupe_la_leche_pitipo",
+            "candidate_id": CANDIDATE_ID,
             "geometry_status": "PARTIAL_OFFICIAL_HYDROLOGIC_UNIT_CONTEXT",
             "source_id": SOURCE_ID,
             "source_snapshot_sha256": EXPECTED_SOURCE_SHA256,
@@ -116,7 +165,7 @@ def build_documents(source: dict, raw_sha: str | None) -> tuple[dict, dict, dict
             "type": "Feature",
             "id": "lambayeque_motupe_basin_context_137772",
             "properties": {
-                "candidate_id": "lambayeque_motupe_la_leche_pitipo",
+                "candidate_id": CANDIDATE_ID,
                 "unit_id": "lambayeque_motupe_basin_context_137772",
                 "name": "Cuenca Motupe · contexto hidrológico ANA",
                 "feature_role": "OFFICIAL_HYDROLOGIC_UNIT_RESEARCH_CONTEXT",
@@ -167,7 +216,7 @@ def build_documents(source: dict, raw_sha: str | None) -> tuple[dict, dict, dict
             "evidence_tier": "PRIMARY_OFFICIAL",
             "local_path": SOURCE.relative_to(ROOT).as_posix(),
             "canonical_sha256": EXPECTED_SOURCE_SHA256,
-            "raw_response_sha256_at_freeze": raw_sha,
+            "raw_response_sha256_at_freeze": EXPECTED_RAW_RESPONSE_SHA256,
             "official_unit_code": "137772",
             "official_unit_name": "Cuenca Motupe",
         }, {
@@ -188,7 +237,7 @@ def build_documents(source: dict, raw_sha: str | None) -> tuple[dict, dict, dict
         "version": "phase2-motupe-la-leche-geometry-validation-v1",
         **GUARDS,
         "status": "PASS_PARTIAL_OFFICIAL_HYDROLOGIC_GEOMETRY",
-        "candidate_id": "lambayeque_motupe_la_leche_pitipo",
+        "candidate_id": CANDIDATE_ID,
         "source_snapshot_path": SOURCE.relative_to(ROOT).as_posix(),
         "source_snapshot_sha256": EXPECTED_SOURCE_SHA256,
         "normalized_geometry_path": GEOMETRY.relative_to(ROOT).as_posix(),
@@ -220,10 +269,11 @@ def main() -> int:
     parser.add_argument("--refresh-source", action="store_true")
     parser.add_argument("--check-only", action="store_true")
     args = parser.parse_args()
+    if args.refresh_source and args.check_only:
+        raise ValueError("--refresh-source and --check-only are mutually exclusive")
 
-    raw_sha = None
     if args.refresh_source:
-        source, raw_sha = fetch_source()
+        source = fetch_source()
         SOURCE_DIR.mkdir(parents=True, exist_ok=True)
         SOURCE.write_bytes(canonical(source))
     elif SOURCE.is_file():
@@ -233,14 +283,16 @@ def main() -> int:
 
     if digest_bytes(canonical(source)) != EXPECTED_SOURCE_SHA256:
         raise ValueError("frozen ANA source snapshot SHA-256 mismatch")
-    normalized, inventory, validation = build_documents(source, raw_sha)
+    normalized, inventory, validation = build_documents(source)
 
     if args.check_only:
+        sync_inventories(check_only=True)
         expected = {GEOMETRY: normalized, SOURCE_INVENTORY: inventory, VALIDATION: validation}
         for path, value in expected.items():
             if not path.is_file() or path.read_bytes() != canonical(value):
                 raise ValueError(f"stale or missing generated artifact: {path.relative_to(ROOT)}")
     else:
+        sync_inventories(check_only=False)
         write(GEOMETRY, normalized)
         write(SOURCE_INVENTORY, inventory)
         write(VALIDATION, validation)
