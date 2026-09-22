@@ -1,0 +1,79 @@
+name: IRFEN - Phase2 Pisco persist frozen artifacts
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/phase2-pisco-persist.yml
+
+permissions:
+  contents: write
+
+jobs:
+  persist:
+    if: >-
+      github.repository == 'IRFEN2026/irfen-peru' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'agent/phase2-pisco-official-basin-20260923'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: agent/phase2-pisco-official-basin-20260923
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Regenerate hash-locked source, geometry and derived catalogs
+        run: |
+          python scripts/probe_pisco_official_geometry.py --refresh-source
+          python scripts/build_phase2_catalog.py
+          python scripts/build_phase2_climate_matrix.py
+          python scripts/build_phase2_spatial_observation_contracts.py
+          python scripts/build_map_layer_catalog.py
+          python scripts/probe_pisco_official_geometry.py --check-only
+          python -m unittest tests.test_phase2_pisco_geometry tests.test_map_layer_catalog tests.test_phase2_spatial_observation_contracts
+      - name: Remove one-time bootstrap machinery
+        run: |
+          rm -f scripts/bootstrap_pisco_official_basin.py
+          rm -f .github/workflows/phase2-pisco-official-basin-bootstrap.yml
+          rm -f .github/workflows/phase2-pisco-freeze-artifacts.yml
+          rm -f .github/workflows/phase2-pisco-persist.yml
+      - name: Enforce bounded change allowlist and persist
+        run: |
+          git add -A
+          python - <<'PY'
+          import subprocess
+          allowed_exact = {
+              'config/phase2_candidate_inventory_v0_1.json',
+              'config/phase2_candidate_inventory_v0_2.json',
+              'site/data/phase2/catalog.json',
+              'site/data/phase2/climate_conditioned_activation_matrix_v0_1.json',
+              'site/data/phase2/spatial_observation_contracts_v0_1.json',
+              'site/data/map_layers.json',
+              'site/data/validation/phase2_zone_contracts/ica_pisco_san_andres.json',
+              'site/data/phase2/geometries/ica_pisco_san_andres_pisco_basin_context.geojson',
+              'site/data/phase2/geometries/ica_pisco_san_andres_geometry_validation.json',
+              'site/data/phase2/sources/pisco_hydrologic_context/ana_cuenca_pisco_13752.geojson',
+              'site/data/phase2/sources/pisco_hydrologic_context/source_inventory.json',
+              'scripts/bootstrap_pisco_official_basin.py',
+              '.github/workflows/phase2-pisco-official-basin-bootstrap.yml',
+              '.github/workflows/phase2-pisco-freeze-artifacts.yml',
+              '.github/workflows/phase2-pisco-persist.yml',
+          }
+          changed = set(subprocess.check_output(['git','diff','--cached','--name-only'], text=True).splitlines())
+          unexpected = changed - allowed_exact
+          if unexpected:
+              raise SystemExit('unexpected generated paths: ' + ', '.join(sorted(unexpected)))
+          required = {
+              'site/data/phase2/geometries/ica_pisco_san_andres_pisco_basin_context.geojson',
+              'site/data/phase2/sources/pisco_hydrologic_context/ana_cuenca_pisco_13752.geojson',
+              'site/data/map_layers.json',
+          }
+          if not required <= changed:
+              raise SystemExit('missing required persisted paths')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Phase2: freeze official Cuenca Pisco research context'
+          git push origin HEAD:agent/phase2-pisco-official-basin-20260923
