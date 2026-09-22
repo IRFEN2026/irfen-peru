@@ -95,8 +95,8 @@ class GeneratedContractTests(unittest.TestCase):
         summary = self.result["summary"]
         self.assertEqual(summary["candidate_wide_ready_count"], 0)
         self.assertEqual(summary["subunit_research_only_candidate_count"], 2)
-        self.assertEqual(summary["non_catchment_geometry_only_count"], 2)
-        self.assertEqual(summary["blocked_missing_geometry_count"], 14)
+        self.assertEqual(summary["non_catchment_geometry_only_count"], 4)
+        self.assertEqual(summary["blocked_missing_geometry_count"], 12)
         self.assertEqual(summary["research_subunit_contract_count"], 4)
         self.assertEqual(summary["operational_spatial_contract_count"], 0)
 
@@ -184,6 +184,15 @@ class GeneratedContractTests(unittest.TestCase):
         self.assertEqual(motupe["spatial_contract_status"], "NON_CATCHMENT_GEOMETRY_ONLY")
         self.assertFalse(motupe["candidate_wide_sampling_ready"])
         self.assertEqual(motupe["subunit_contracts"], [])
+
+    def test_acari_and_canete_basin_contexts_do_not_complete_compound_candidates(self):
+        for candidate_id in ("arequipa_acari_san_agustin", "lima_sur_canete"):
+            row = self.by_id[candidate_id]
+            self.assertEqual(row["geometry_asset_status"], "PARTIAL")
+            self.assertEqual(row["geometry_data_presence"], "PRESENT")
+            self.assertEqual(row["spatial_contract_status"], "NON_CATCHMENT_GEOMETRY_ONLY")
+            self.assertFalse(row["candidate_wide_sampling_ready"])
+            self.assertEqual(row["subunit_contracts"], [])
 
     def test_lurin_corridor_is_not_sampling_catchment(self):
         lurin = self.by_id["lima_este_lurin_cieneguilla"]
