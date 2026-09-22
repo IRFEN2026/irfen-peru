@@ -79,12 +79,17 @@ class MapLayerCatalogTests(unittest.TestCase):
             "lima_este_santa_eulalia_rimac",
             "lima_este_lurin_cieneguilla",
             "lambayeque_motupe_la_leche_pitipo",
+            "arequipa_acari_san_agustin",
+            "lima_sur_canete",
         }
         self.assertEqual(self.catalog["summary"]["research_candidates_map_eligible"], len(eligible))
         for zone in zones:
             if zone["candidate_id"] in eligible:
                 self.assertTrue(zone["geometry"]["map_eligible"])
                 self.assertEqual(zone["geometry"]["representation"], "REPRODUCIBLE_FILE")
+                self.assertFalse(zone["geometry"]["default_visibility"])
+                self.assertEqual(zone["deployment_status"], "RESEARCH_ONLY")
+                self.assertEqual(zone["validation"]["activation_gate"], "BLOCKED")
             else:
                 self.assertFalse(zone["geometry"]["map_eligible"])
                 self.assertEqual(zone["geometry"]["representation"], "NOT_MAPPED_NO_REPRODUCIBLE_FILE")

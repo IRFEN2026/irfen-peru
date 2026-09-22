@@ -1,0 +1,114 @@
+name: IRFEN - Phase2 Acari Canete geometry
+
+on:
+  pull_request:
+    paths:
+      - scripts/probe_acari_canete_official_geometry.py
+      - config/phase2_candidate_inventory_v0_1.json
+      - config/phase2_candidate_inventory_v0_2.json
+      - site/data/phase2/sources/acari_canete_hydrologic_context/**
+      - site/data/phase2/geometries/arequipa_acari_san_agustin_*
+      - site/data/phase2/geometries/lima_sur_canete_*
+      - site/data/validation/phase2_zone_contracts/arequipa_acari_san_agustin.json
+      - site/data/validation/phase2_zone_contracts/lima_sur_canete.json
+      - site/data/phase2/catalog.json
+      - site/data/map_layers.json
+      - site/data/phase2/climate_conditioned_activation_matrix_v0_1.json
+      - site/data/phase2/spatial_observation_contracts_v0_1.json
+      - scripts/validate_phase2_spatial_observation_contracts.py
+      - tests/test_phase2_acari_canete_geometry.py
+      - tests/test_phase2_spatial_observation_contracts.py
+      - tests/test_acari_research_context.py
+      - tests/test_canete_research_context.py
+      - tests/test_map_layer_catalog.py
+      - .github/workflows/phase2-acari-canete-geometry-probe.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-official-geometry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install scientific test dependencies
+        run: pip install -r requirements.txt
+      - name: Verify frozen geometry and derived catalogs without network
+        run: |
+          python scripts/probe_acari_canete_official_geometry.py --check-only
+          python scripts/build_phase2_catalog.py --check-only
+          python scripts/build_map_layer_catalog.py --check-only
+          python scripts/validate_phase2_spatial_observation_contracts.py
+          python -m unittest \
+            tests.test_phase2_acari_canete_geometry \
+            tests.test_phase2_spatial_observation_contracts \
+            tests.test_phase2_climate_matrix \
+            tests.test_acari_research_context \
+            tests.test_canete_research_context \
+            tests.test_map_layer_catalog -v
+      - name: Enforce exact frozen sources and Phase-2 research guards
+        run: |
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+
+          expected={
+            'arequipa_acari_san_agustin': {
+              'code':'13718','name':'Cuenca Acarí','area':4293.0766,
+              'sha':'e603ccf0a081b67edcad61c41fca2b8392d36a6eb25ea236e677b157b2477be1',
+              'geom':'site/data/phase2/geometries/arequipa_acari_san_agustin_acari_basin_context.geojson',
+            },
+            'lima_sur_canete': {
+              'code':'13754','name':'Cuenca Cañete','area':6017.3432,
+              'sha':'cb3940b848b70cd81e9a4c5670a4e9575219ef29fe807d4cd42dde7d79b850cb',
+              'geom':'site/data/phase2/geometries/lima_sur_canete_canete_basin_context.geojson',
+            },
+          }
+          inv=json.load(open('site/data/phase2/sources/acari_canete_hydrologic_context/source_inventory.json',encoding='utf-8'))
+          rows={x['candidate_id']:x for x in inv['sources']}
+          assert set(rows)==set(expected)
+          assert inv['deployment_status']=='RESEARCH_ONLY' and inv['test_mode']=='TEST_ONLY'
+          assert inv['production_use'] is False and inv['production_ready'] is False
+          assert inv['operational_alerting_enabled'] is False and inv['activation_gate']=='BLOCKED'
+          assert inv['missing_data_rule']=='UNKNOWN_NOT_LOW_RISK'
+          assert inv['decision_thresholds'] is None and inv['hydraulic_factors'] is None
+          for cid,e in expected.items():
+            r=rows[cid]
+            assert r['official_unit_code']==e['code'] and r['official_unit_name']==e['name']
+            assert abs(float(r['official_area_km2'])-e['area']) < 1e-4
+            assert r['canonical_sha256']==e['sha']
+            p=Path(r['local_path'])
+            data=json.load(open(p,encoding='utf-8'))
+            canonical=(json.dumps(data,ensure_ascii=False,sort_keys=True,separators=(',',':'))+'\n').encode()
+            assert hashlib.sha256(canonical).hexdigest()==e['sha']
+            g=json.load(open(e['geom'],encoding='utf-8'))
+            assert len(g['features'])==1
+            gp=g['features'][0]['properties']
+            assert gp['official_hydrologic_unit_code']==e['code']
+            assert gp['counts_as_complete_candidate_geometry'] is False
+            assert gp['loaded_into_operational_calculation'] is False
+            assert gp['carries_alert_values'] is False and gp['carries_risk_classification'] is False
+            assert gp['decision_thresholds'] is None and gp['hydraulic_factors'] is None
+            c=json.load(open(f'site/data/validation/phase2_zone_contracts/{cid}.json',encoding='utf-8'))
+            assert c['deployment_status']=='RESEARCH_ONLY' and c['test_mode']=='TEST_ONLY'
+            assert c['production_use'] is False and c['production_ready'] is False
+            assert c['alerting_enabled'] is False and c['operational_alerting_enabled'] is False
+            assert c['validation']['activation_gate']=='BLOCKED'
+            assert c['missing_data_rule']=='UNKNOWN_NOT_LOW_RISK'
+            assert c['decision_thresholds'] is None and c['hydraulic_factors'] is None
+            assert c['assets']['geometry']['status']=='PARTIAL'
+          maps=json.load(open('site/data/map_layers.json',encoding='utf-8'))
+          mz={x['candidate_id']:x for x in maps['research_zones']}
+          for cid in expected:
+            assert mz[cid]['geometry']['map_eligible'] is True
+            assert mz[cid]['geometry']['default_visibility'] is False
+            assert mz[cid]['deployment_status']=='RESEARCH_ONLY'
+            assert mz[cid]['production_use'] is False and mz[cid]['alerting_enabled'] is False
+            assert mz[cid]['validation']['activation_gate']=='BLOCKED'
+          PY
