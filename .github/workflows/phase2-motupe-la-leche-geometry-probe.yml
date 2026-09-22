@@ -1,0 +1,48 @@
+name: IRFEN - Phase2 Motupe La Leche geometry probe
+
+on:
+  pull_request:
+    paths:
+      - scripts/probe_motupe_la_leche_official_geometry.py
+      - .github/workflows/phase2-motupe-la-leche-geometry-probe.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe-official-geometry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Probe bounded ANA hydrologic geometry
+        run: |
+          python scripts/probe_motupe_la_leche_official_geometry.py --out-dir artifacts/motupe-la-leche
+      - name: Enforce Phase-2 research guards
+        run: |
+          python - <<'PY'
+          import json
+          p='artifacts/motupe-la-leche/motupe_la_leche_official_geometry_probe.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['status']=='PASS_OFFICIAL_GEOMETRY_IDENTITY_PROBE'
+          assert d['deployment_status']=='RESEARCH_ONLY'
+          assert d['test_mode']=='TEST_ONLY'
+          assert d['production_use'] is False
+          assert d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['activation_gate']=='BLOCKED'
+          assert d['missing_data_rule']=='UNKNOWN_NOT_LOW_RISK'
+          assert d['decision_thresholds'] is None
+          assert d['hydraulic_factors'] is None
+          assert d['la_leche_feature_count'] > 0
+          assert d['motupe_feature_count'] > 0
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phase2-motupe-la-leche-official-geometry-probe
+          path: artifacts/motupe-la-leche
+          if-no-files-found: error
