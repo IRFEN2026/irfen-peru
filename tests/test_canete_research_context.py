@@ -23,8 +23,11 @@ class CaneteResearchContextTests(unittest.TestCase):
         self.assertIsNone(e["decision_thresholds"])
         self.assertEqual(e["activation_gate"], "BLOCKED")
         self.assertEqual(c["deployment_status"], "RESEARCH_ONLY")
+        self.assertEqual(c["test_mode"], "TEST_ONLY")
         self.assertFalse(c["production_use"])
+        self.assertFalse(c["production_ready"])
         self.assertFalse(c["alerting_enabled"])
+        self.assertFalse(c["operational_alerting_enabled"])
         self.assertIsNone(c["decision_thresholds"])
         self.assertIsNone(c["hydraulic_factors"])
         self.assertEqual(c["validation"]["activation_gate"], "BLOCKED")
@@ -48,7 +51,18 @@ class CaneteResearchContextTests(unittest.TestCase):
     def test_only_bounded_assets_advance(self):
         c = self.contract["assets"]
         self.assertEqual(c["geometry"]["status"], "PARTIAL")
-        self.assertIsNone(c["geometry"]["path"])
+        self.assertEqual(
+            c["geometry"]["path"],
+            "site/data/phase2/geometries/lima_sur_canete_canete_basin_context.geojson",
+        )
+        document = json.loads((ROOT / c["geometry"]["path"]).read_text(encoding="utf-8"))
+        self.assertEqual(len(document["features"]), 1)
+        feature = document["features"][0]
+        self.assertEqual(feature["properties"]["official_hydrologic_unit_name"], "Cuenca Cañete")
+        self.assertEqual(feature["properties"]["unresolved_component"], "named tributary ravines")
+        self.assertFalse(feature["properties"]["counts_as_complete_candidate_geometry"])
+        self.assertFalse(feature["properties"]["outlet_used"])
+        self.assertFalse(feature["properties"]["dem_used"])
         self.assertEqual(c["exposure"]["status"], "PARTIAL")
         self.assertEqual(c["hydraulic_context"]["status"], "PARTIAL")
         self.assertEqual(c["historical_events"]["status"], "MISSING")
