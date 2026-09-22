@@ -11,14 +11,17 @@ on:
       - scripts/build_phase2_spatial_observation_contracts.py
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   regenerate:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
@@ -53,15 +56,21 @@ jobs:
         run: |
           python scripts/validate_phase2_spatial_observation_contracts.py
           python -m unittest tests.test_phase2_spatial_observation_contracts tests.test_phase2_climate_matrix -v
-      - name: Package exact files for branch update
+      - name: Persist only validated dependent artifacts
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
-          mkdir -p artifacts/scripts artifacts/tests artifacts/site/data/phase2
-          cp scripts/validate_phase2_spatial_observation_contracts.py artifacts/scripts/
-          cp tests/test_phase2_spatial_observation_contracts.py artifacts/tests/
-          cp site/data/phase2/climate_conditioned_activation_matrix_v0_1.json artifacts/site/data/phase2/
-          cp site/data/phase2/spatial_observation_contracts_v0_1.json artifacts/site/data/phase2/
-      - uses: actions/upload-artifact@v4
-        with:
-          name: pr196-dependent-artifacts
-          path: artifacts
-          if-no-files-found: error
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            scripts/validate_phase2_spatial_observation_contracts.py \
+            tests/test_phase2_spatial_observation_contracts.py \
+            site/data/phase2/climate_conditioned_activation_matrix_v0_1.json \
+            site/data/phase2/spatial_observation_contracts_v0_1.json
+          if git diff --cached --quiet; then
+            echo "No dependent artifact changes to persist."
+            exit 0
+          fi
+          git commit -m "Regenerate Motupe-dependent Phase2 artifacts"
+          git push origin "HEAD:${BRANCH}"
