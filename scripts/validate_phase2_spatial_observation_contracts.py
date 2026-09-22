@@ -18,6 +18,7 @@ LAMBAYEQUE_MIGRATION = ROOT / "site/data/phase2/geometries/lambayeque_hydrologic
 
 SANTA_ID = "lima_este_santa_eulalia_rimac"
 LURIN_ID = "lima_este_lurin_cieneguilla"
+MOTUPE_ID = "lambayeque_motupe_la_leche_pitipo"
 LAMBAYEQUE_PARENT_ID = "lambayeque_chongoyape_oyotun_zana"
 MOTUPE_ID = "lambayeque_motupe_la_leche_pitipo"
 EXPECTED_SUBUNITS = {
@@ -273,6 +274,7 @@ def check_artifact(result, inventory):
     expected_status = {
         SANTA_ID: "SUBUNIT_RESEARCH_ONLY",
         LURIN_ID: "NON_CATCHMENT_GEOMETRY_ONLY",
+        MOTUPE_ID: "NON_CATCHMENT_GEOMETRY_ONLY",
         LAMBAYEQUE_PARENT_ID: "SUBUNIT_RESEARCH_ONLY",
         MOTUPE_ID: "NON_CATCHMENT_GEOMETRY_ONLY",
     }

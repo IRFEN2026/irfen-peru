@@ -177,6 +177,14 @@ class GeneratedContractTests(unittest.TestCase):
             self.assertFalse(child["counts_as_operational_geometry"])
             self.assertEqual(child["activation_gate"], "BLOCKED")
 
+    def test_motupe_basin_context_does_not_complete_compound_candidate(self):
+        motupe = self.by_id["lambayeque_motupe_la_leche_pitipo"]
+        self.assertEqual(motupe["geometry_asset_status"], "PARTIAL")
+        self.assertEqual(motupe["geometry_data_presence"], "PRESENT")
+        self.assertEqual(motupe["spatial_contract_status"], "NON_CATCHMENT_GEOMETRY_ONLY")
+        self.assertFalse(motupe["candidate_wide_sampling_ready"])
+        self.assertEqual(motupe["subunit_contracts"], [])
+
     def test_lurin_corridor_is_not_sampling_catchment(self):
         lurin = self.by_id["lima_este_lurin_cieneguilla"]
         self.assertEqual(
