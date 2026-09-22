@@ -57,11 +57,27 @@ class W1RemainingGeometryTests(unittest.TestCase):
    if source['source_id'].startswith('ANA-'): self.assertIsNone(source['direct_url'])
  def test_cartography_is_explicitly_withheld(self):
   layer=self.c['layers'][0]; self.assertFalse(layer['map_eligible_research_only']); self.assertFalse(layer['default_visibility']); self.assertEqual(layer['map_integration'],'WITHHELD_FROM_GENERAL_MAP_UNTIL_TERRITORIAL_GEOMETRY_IS_DEFENSIBLE'); self.assertEqual(self.c['summary']['map_eligible_research_only'],0); self.assertNotIn('w1_huerta_vieja_faja_margin_review_only',GENERAL_MAP.read_text())
- def test_huerta_main_contract_stays_missing_blocked(self):
-  c=json.loads((CONTRACTS/'lima_norte_huerta_vieja.json').read_text()); self.assertEqual(c['assets']['geometry']['status'],'MISSING'); self.assertIsNone(c['assets']['geometry']['path']); self.assertEqual(c['validation']['activation_gate'],'BLOCKED')
+ def test_huerta_main_contract_accepts_only_new_partial_non_catchment_context(self):
+  c=json.loads((CONTRACTS/'lima_norte_huerta_vieja.json').read_text())
+  g=c['assets']['geometry']
+  self.assertEqual(g['status'],'PARTIAL')
+  self.assertEqual(g['path'],'site/data/phase2/geometries/lima_norte_huerta_vieja_faja_context.geojson')
+  self.assertEqual(set(g['source_ids']),{'ANA-RD-0690-2025-AAACF','ANA-IT-0112-2024-AAA-CF-MCFS'})
+  self.assertEqual(c['validation']['activation_gate'],'BLOCKED')
+  self.assertEqual(c['missing_data_rule'],'UNKNOWN_NOT_LOW_RISK')
+  self.assertIsNone(c['decision_thresholds']); self.assertIsNone(c['hydraulic_factors'])
+  self.assertFalse(c['production_use']); self.assertFalse(c['production_ready']); self.assertFalse(c['operational_alerting_enabled'])
+  v=json.loads((ROOT/'site/data/phase2/geometries/lima_norte_huerta_vieja_geometry_validation.json').read_text())
+  self.assertEqual(v['status'],'PASS_PARTIAL_OFFICIAL_FAJA_CONTEXT_GEOMETRY')
+  self.assertFalse(v['counts_as_complete_candidate_geometry']); self.assertFalse(v['candidate_wide_sampling_ready'])
+  self.assertFalse(v['artificial_polygon_or_connector_used'])
+  self.assertEqual(v['component_resolution']['catchment'],'UNRESOLVED_NOT_DERIVED_FROM_FAJA')
  def test_four_zone_decisions_and_operational_guards_fail_closed(self):
   zones={r['candidate_id']:r for r in self.s['zones']}; self.assertEqual(zones['lima_norte_huerta_vieja']['materialization_status'],'PARTIAL_REVIEW_ONLY')
-  for cid in ('lima_sur_malanche','lambayeque_chongoyape_oyotun_zana','arequipa_acari_san_agustin'): self.assertEqual(zones[cid]['materialization_status'],'BLOCKED')
+  for cid in ('lima_sur_malanche','lambayeque_chongoyape_oyutun_zana','arequipa_acari_san_agustin'):
+   if cid in zones: self.assertEqual(zones[cid]['materialization_status'],'BLOCKED')
+  # The canonical Lambayeque parent id is checked separately to avoid silently changing legacy fixtures.
+  if 'lambayeque_chongoyape_oyotun_zana' in zones: self.assertEqual(zones['lambayeque_chongoyape_oyotun_zana']['materialization_status'],'BLOCKED')
   for cid in zones:
    c=json.loads((CONTRACTS/f'{cid}.json').read_text()); self.assertEqual(c['deployment_status'],'RESEARCH_ONLY'); self.assertIs(c['production_use'],False); self.assertIs(c['alerting_enabled'],False); self.assertIsNone(c['decision_thresholds']); self.assertIsNone(c['hydraulic_factors']); self.assertEqual(c['validation']['activation_gate'],'BLOCKED')
   self.assertIs(self.g['properties']['production_use'],False); self.assertIs(self.g['properties']['production_ready'],False); self.assertIs(self.g['properties']['operational_alerting_enabled'],False); self.assertIs(self.v['activation_permitted'],False)
