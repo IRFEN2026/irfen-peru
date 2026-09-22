@@ -16,6 +16,7 @@ CONTRACT = ROOT / "site/data/validation/phase2_zone_contracts/ica_pisco_san_andr
 CATALOG = ROOT / "site/data/phase2/catalog.json"
 MAP = ROOT / "site/data/map_layers.json"
 EXPECTED_SHA = "693bcd668bcc5f692a04d516976908757172c6274962e9f4ca0a6c6d9e799e9b"
+EXPECTED_SOURCE_ID = "ANA-IDEP-UH-PISCO-13752-20260922"
 
 
 def load(path: Path):
@@ -40,6 +41,7 @@ class PiscoGeometryTests(unittest.TestCase):
         self.assertIsNone(inv["hydraulic_factors"])
         self.assertEqual(len(inv["sources"]), 1)
         row = inv["sources"][0]
+        self.assertEqual(row["source_id"], EXPECTED_SOURCE_ID)
         self.assertEqual(row["official_unit_code"], "13752")
         self.assertEqual(row["official_unit_name"], "Cuenca Pisco")
         self.assertAlmostEqual(float(row["official_area_km2"]), 4208.7453, delta=0.0001)
@@ -59,13 +61,24 @@ class PiscoGeometryTests(unittest.TestCase):
         self.assertEqual(doc["properties"]["missing_data_rule"], "UNKNOWN_NOT_LOW_RISK")
         self.assertIsNone(doc["properties"]["decision_thresholds"])
         self.assertIsNone(doc["properties"]["hydraulic_factors"])
+        self.assertEqual(doc["properties"]["source_id"], EXPECTED_SOURCE_ID)
         self.assertEqual(len(doc["features"]), 1)
         feature = doc["features"][0]
         props = feature["properties"]
+        self.assertEqual(props["source_id"], EXPECTED_SOURCE_ID)
         self.assertEqual(props["official_hydrologic_unit_code"], "13752")
         self.assertEqual(props["official_hydrologic_unit_name"], "Cuenca Pisco")
         self.assertIn(feature["geometry"]["type"], {"Polygon", "MultiPolygon"})
         self.assertEqual(props["feature_role"], "OFFICIAL_HYDROLOGIC_UNIT_RESEARCH_CONTEXT")
+        self.assertEqual(props["deployment_status"], "RESEARCH_ONLY")
+        self.assertEqual(props["test_mode"], "TEST_ONLY")
+        self.assertFalse(props["production_use"])
+        self.assertFalse(props["production_ready"])
+        self.assertFalse(props["operational_alerting_enabled"])
+        self.assertEqual(props["activation_gate"], "BLOCKED")
+        self.assertEqual(props["missing_data_rule"], "UNKNOWN_NOT_LOW_RISK")
+        self.assertIsNone(props["decision_thresholds"])
+        self.assertIsNone(props["hydraulic_factors"])
         self.assertFalse(props["san_andres_local_drainage_geometry_resolved"])
         self.assertFalse(props["tributary_ravines_geometry_resolved"])
         self.assertFalse(props["event_footprint_asserted"])
@@ -81,6 +94,8 @@ class PiscoGeometryTests(unittest.TestCase):
         g = c["assets"]["geometry"]
         self.assertEqual(g["status"], "PARTIAL")
         self.assertEqual(g["path"], GEOMETRY.relative_to(ROOT).as_posix())
+        self.assertIn(EXPECTED_SOURCE_ID, g["source_ids"])
+        self.assertIn(EXPECTED_SOURCE_ID, c["official_source_ids"])
         self.assertEqual(c["deployment_status"], "RESEARCH_ONLY")
         self.assertEqual(c["test_mode"], "TEST_ONLY")
         self.assertFalse(c["production_use"])
