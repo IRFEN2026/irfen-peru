@@ -21,6 +21,7 @@ LURIN_ID = "lima_este_lurin_cieneguilla"
 MOTUPE_ID = "lambayeque_motupe_la_leche_pitipo"
 ACARI_ID = "arequipa_acari_san_agustin"
 CANETE_ID = "lima_sur_canete"
+ASIA_ID = "lima_sur_asia_omas"
 LAMBAYEQUE_PARENT_ID = "lambayeque_chongoyape_oyotun_zana"
 EXPECTED_SUBUNITS = {
     "cashahuacra": {
@@ -112,7 +113,7 @@ def check_authoritative_geometry_state(catalog):
         if ((zone.get("asset_readiness") or {}).get("geometry") or {}).get("data_presence")
         == "PRESENT"
     }
-    if present != {SANTA_ID, LURIN_ID, MOTUPE_ID, ACARI_ID, CANETE_ID}:
+    if present != {SANTA_ID, LURIN_ID, MOTUPE_ID, ACARI_ID, CANETE_ID, ASIA_ID}:
         ERRORS.append(f"geometry PRESENT set changed: {sorted(present)}")
 
     ready = {
@@ -125,7 +126,7 @@ def check_authoritative_geometry_state(catalog):
             f"candidate-wide geometry READY state changed and requires review: {sorted(ready)}"
         )
 
-    for cid in (SANTA_ID, LURIN_ID, MOTUPE_ID, ACARI_ID, CANETE_ID):
+    for cid in (SANTA_ID, LURIN_ID, MOTUPE_ID, ACARI_ID, CANETE_ID, ASIA_ID):
         if (zones.get(cid, {}).get("asset_status") or {}).get("geometry") != "PARTIAL":
             ERRORS.append(f"{cid}: expected geometry asset status PARTIAL")
 
@@ -278,6 +279,7 @@ def check_artifact(result, inventory):
         MOTUPE_ID: "NON_CATCHMENT_GEOMETRY_ONLY",
         ACARI_ID: "NON_CATCHMENT_GEOMETRY_ONLY",
         CANETE_ID: "NON_CATCHMENT_GEOMETRY_ONLY",
+        ASIA_ID: "NON_CATCHMENT_GEOMETRY_ONLY",
         LAMBAYEQUE_PARENT_ID: "SUBUNIT_RESEARCH_ONLY",
     }
     for cid in expected_ids:
@@ -356,8 +358,8 @@ def check_artifact(result, inventory):
         "candidate_count": 18,
         "candidate_wide_ready_count": 0,
         "subunit_research_only_candidate_count": 2,
-        "non_catchment_geometry_only_count": 4,
-        "blocked_missing_geometry_count": 12,
+        "non_catchment_geometry_only_count": 5,
+        "blocked_missing_geometry_count": 11,
         "research_subunit_contract_count": 4,
         "operational_spatial_contract_count": 0,
     }
