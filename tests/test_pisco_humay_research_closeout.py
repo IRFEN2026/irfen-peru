@@ -77,27 +77,42 @@ class PiscoHumayResearchCloseoutTests(unittest.TestCase):
         c = self.contract
         self.assertEqual(c["contract_status"], "DRAFT")
         self.assertEqual(c["deployment_status"], "RESEARCH_ONLY")
+        self.assertEqual(c["test_mode"], "TEST_ONLY")
         self.assertFalse(c["production_use"])
+        self.assertFalse(c["production_ready"])
         self.assertFalse(c["alerting_enabled"])
+        self.assertFalse(c["operational_alerting_enabled"])
+        self.assertEqual(c["missing_data_rule"], "UNKNOWN_NOT_LOW_RISK")
         self.assertIsNone(c["decision_thresholds"])
         self.assertIsNone(c["hydraulic_factors"])
         self.assertEqual(c["validation"]["activation_gate"], "BLOCKED")
         self.assertEqual(c["hazard_model"]["mechanism_status"], "TO_BE_RESOLVED")
-        self.assertEqual(c["assets"]["geometry"]["status"], "MISSING")
+        geometry = c["assets"]["geometry"]
+        self.assertEqual(geometry["status"], "PARTIAL")
+        self.assertEqual(
+            geometry["path"],
+            "site/data/phase2/geometries/ica_pisco_san_andres_pisco_basin_context.geojson",
+        )
+        self.assertIn("ANA-IDEP-UH-PISCO-13752-20260922", geometry["source_ids"])
         self.assertEqual(c["assets"]["historical_events"]["status"], "READY")
         self.assertEqual(c["assets"]["observations"]["status"], "PARTIAL")
         self.assertEqual(c["assets"]["exposure"]["status"], "PARTIAL")
         self.assertEqual(c["assets"]["hydraulic_context"]["status"], "PARTIAL")
+        self.assertTrue(any("San Andres local drainage" in note for note in c["notes"]))
 
-
-    def test_missing_pisco_geometry_remains_withheld_from_map(self):
+    def test_official_pisco_basin_context_is_mapped_only_as_research(self):
         row = next(
             z for z in self.map_catalog["research_zones"]
             if z["candidate_id"] == "ica_pisco_san_andres"
         )
-        self.assertEqual(row["geometry"]["status"], "MISSING")
-        self.assertFalse(row["geometry"]["map_eligible"])
-        self.assertEqual(row["geometry"]["representation"], "NOT_MAPPED_NO_REPRODUCIBLE_FILE")
+        self.assertEqual(row["geometry"]["status"], "PARTIAL")
+        self.assertTrue(row["geometry"]["map_eligible"])
+        self.assertFalse(row["geometry"]["default_visibility"])
+        self.assertEqual(row["geometry"]["representation"], "REPRODUCIBLE_FILE")
+        self.assertEqual(row["deployment_status"], "RESEARCH_ONLY")
+        self.assertFalse(row["production_use"])
+        self.assertFalse(row["alerting_enabled"])
+        self.assertEqual(row["validation"]["activation_gate"], "BLOCKED")
 
     def test_no_threshold_or_hydraulic_promotion(self):
         self.assertIsNone(self.evidence["decision_thresholds"])
