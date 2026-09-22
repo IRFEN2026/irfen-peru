@@ -1,4 +1,4 @@
-name: IRFEN - Phase2 Motupe La Leche geometry probe
+name: IRFEN - Phase2 Motupe La Leche geometry
 
 on:
   pull_request:
@@ -6,36 +6,37 @@ on:
       - scripts/probe_motupe_la_leche_official_geometry.py
       - config/phase2_candidate_inventory_v0_1.json
       - config/phase2_candidate_inventory_v0_2.json
+      - site/data/phase2/sources/motupe_la_leche_hydrologic_context/**
+      - site/data/phase2/geometries/lambayeque_motupe_la_leche_pitipo_*.geojson
+      - site/data/phase2/geometries/lambayeque_motupe_la_leche_pitipo_geometry_validation.json
+      - site/data/phase2/catalog.json
+      - site/data/map_layers.json
       - site/data/validation/phase2_research_evidence/la_leche_pacora_pitipo_official_context_1998_2025.json
       - site/data/validation/phase2_zone_contracts/lambayeque_motupe_la_leche_pitipo.json
+      - tests/test_phase2_motupe_la_leche_geometry.py
       - .github/workflows/phase2-motupe-la-leche-geometry-probe.yml
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  materialize-official-geometry:
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+  validate-official-geometry:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - name: Materialize locked ANA hydrologic geometry
-        run: |
-          python scripts/probe_motupe_la_leche_official_geometry.py --refresh-source
-          python scripts/build_phase2_catalog.py
-          python scripts/build_map_layer_catalog.py
-      - name: Enforce Phase-2 research guards
+      - name: Verify frozen geometry and derived catalogs without network
         run: |
           python scripts/probe_motupe_la_leche_official_geometry.py --check-only
           python scripts/build_phase2_catalog.py --check-only
           python scripts/build_map_layer_catalog.py --check-only
+          python -m unittest tests.test_phase2_motupe_la_leche_geometry -v
+      - name: Enforce Phase-2 research guards
+        run: |
           python - <<'PY'
           import json
           g=json.load(open('site/data/phase2/geometries/lambayeque_motupe_la_leche_pitipo_motupe_basin_context.geojson',encoding='utf-8'))
@@ -67,21 +68,3 @@ jobs:
           assert layer['geometry']['map_eligible'] is True
           assert layer['geometry']['default_visibility'] is False
           PY
-      - name: Commit generated research artifacts to PR branch
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add \
-            config/phase2_candidate_inventory_v0_1.json \
-            config/phase2_candidate_inventory_v0_2.json \
-            site/data/phase2/sources/motupe_la_leche_hydrologic_context/ \
-            site/data/phase2/geometries/lambayeque_motupe_la_leche_pitipo_motupe_basin_context.geojson \
-            site/data/phase2/geometries/lambayeque_motupe_la_leche_pitipo_geometry_validation.json \
-            site/data/phase2/catalog.json \
-            site/data/map_layers.json
-          if git diff --cached --quiet; then
-            echo 'No generated changes to commit.'
-          else
-            git commit -m 'Phase2: materialize official Cuenca Motupe research geometry'
-            git push origin HEAD:${{ github.event.pull_request.head.ref }}
-          fi
