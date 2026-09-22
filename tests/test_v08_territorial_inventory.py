@@ -29,13 +29,34 @@ class TerritorialInventoryTests(unittest.TestCase):
         assert(plan.requests.some(r=>r.title.includes('Huaycoloro')));
         assert(plan.requests.some(r=>r.title.includes('Catacaos')));
         assert(plan.requests.some(r=>r.candidateId==='lima_este_lurin_cieneguilla'));
-        for(const id of ['lima_sur_malanche','lima_norte_huerta_vieja']) {
-          const c=plan.candidates.find(r=>r.candidateId===id);
-          assert(c); assert.equal(c.layerKeys.length,0);
-          assert(!plan.requests.some(r=>r.candidateId===id));
-          assert(!Object.hasOwn(c,'coordinates'));
+
+        // Malanche still has no reproducible machine-readable geometry and must remain absent.
+        const malanche=plan.candidates.find(r=>r.candidateId==='lima_sur_malanche');
+        assert(malanche); assert.equal(malanche.layerKeys.length,0);
+        assert(!plan.requests.some(r=>r.candidateId==='lima_sur_malanche'));
+        assert(!Object.hasOwn(malanche,'coordinates'));
+
+        // Huerta Vieja now has reproducible official ANA faja-margin alignments. They are
+        // intentionally map context only: one context request, never a catchment or sampling area.
+        const huerta=plan.candidates.find(r=>r.candidateId==='lima_norte_huerta_vieja');
+        assert(huerta); assert.deepEqual(huerta.layerKeys,['context:lima_norte_huerta_vieja']);
+        assert(!Object.hasOwn(huerta,'coordinates'));
+        const huertaRequest=plan.requests.find(r=>r.key==='context:lima_norte_huerta_vieja');
+        assert(huertaRequest); assert.equal(huertaRequest.kind,'context');
+        assert.equal(huertaRequest.path,'data/phase2/geometries/lima_norte_huerta_vieja_faja_context.geojson');
+        const huertaDoc=read(huertaRequest.path);
+        const huertaFeatures=m.selectFeatures(huertaDoc,huertaRequest);
+        assert.equal(huertaFeatures.length,2);
+        assert.deepEqual(new Set(huertaFeatures.map(f=>f.geometry.type)),new Set(['LineString']));
+        for(const f of huertaFeatures) {
+          assert.equal(f.properties.not_catchment,true);
+          assert.equal(f.properties.not_event_footprint,true);
+          assert.equal(f.properties.production_use,false);
+          assert.equal(f.properties.production_ready,false);
+          assert(m.semanticLabel(f,huertaRequest).includes('NO es cuenca') || m.semanticLabel(f,huertaRequest).includes('NO delimita'));
         }
-        assert(plan.candidates.find(r=>r.candidateId==='lima_norte_huerta_vieja').reason.includes('REVIEW_ONLY'));
+        assert(huerta.reason.includes('REVIEW_ONLY'));
+
         const grouper=plan.candidates.find(r=>r.historicalGrouper);
         assert(grouper);assert.equal(grouper.layerKeys.length,2);
         assert(!plan.requests.some(r=>r.key==='context:'+grouper.candidateId));
