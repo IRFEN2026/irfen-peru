@@ -15,6 +15,8 @@
   "source_registry_path": "site/data/phase2/sources/tumbes_rio_tumbes_official_evidence_v0_1.json",
   "official_source_ids": [
     "ANA-TUMBES-2023-MAPSERVER-BASIN",
+    "IGP-TUMBES-FEN-1983-HISTORICAL",
+    "INDECI-TUMBES-FEN-1998-DAMAGE-REPORT",
     "INGEMMET-A6764-TUMBES-2017",
     "ANA-TUMBES-GAUGING-NETWORK-20150907",
     "ANA-TUMBES-EARLY-WARNING-NETWORK-20160309",
@@ -44,8 +46,26 @@
       "invented_polygons_allowed": false
     },
     "event_ledger": {
-      "1982_1983": {"status": "UNKNOWN_NOT_NEGATIVE", "source_ids": []},
-      "1997_1998": {"status": "UNKNOWN_NOT_NEGATIVE", "source_ids": []},
+      "1982_1983": {
+        "status": "REGIONAL_EXTREME_RAINFALL_CONTEXT_RIO_TUMBES_SPECIFIC_OUTCOME_UNRESOLVED",
+        "source_ids": ["IGP-TUMBES-FEN-1983-HISTORICAL"],
+        "tumbes_regional_extreme_rainfall_supported": true,
+        "rio_tumbes_overflow_claimed": false,
+        "exact_event_footprint_frozen": false,
+        "counts_as_negative_control": false
+      },
+      "1997_1998": {
+        "status": "POSITIVE_RIO_TUMBES_OVERFLOW_INDECI_DAMAGE_REPORT",
+        "source_ids": ["INDECI-TUMBES-FEN-1998-DAMAGE-REPORT"],
+        "documented_overflow_events": [
+          {"date": "1998-02-15", "territorial_reference": "Corrales", "mechanism": "desborde del rio Tumbes"},
+          {"date": "1998-02-27", "territorial_reference": "Tumbes", "mechanism": "desborde del rio Tumbes"}
+        ],
+        "exact_event_footprint_frozen": false,
+        "historical_hydraulic_capacity_inferred": false,
+        "threshold_inferred": false,
+        "outcome_transferred_to_other_systems": false
+      },
       "2017": {
         "status": "POSITIVE_OFFICIAL_POSTEVENT_GEOHYDROLOGIC_EVIDENCE_LOWER_RIO_TUMBES_CONTEXT",
         "source_ids": ["INGEMMET-A6764-TUMBES-2017"],
@@ -151,7 +171,7 @@
       "exact reproducible ANA Rio Tumbes basin geometry replay",
       "freeze ANA 28-Apr and 04-May 2023 observed-inundation footprints as event evidence without basin substitution",
       "freeze and QA event-paired Cabo Inga/El Tigre/Puente Tumbes time series",
-      "1982-83 and 1997-98 event adjudication",
+      "1982-83 Rio Tumbes-specific outcome adjudication beyond regional rainfall context",
       "2017 exact footprint/component attribution only if a reproducible source geometry can be frozen",
       "exposure/connectivity normalization",
       "hydraulic context without treating works or observed discharge as historical capacity"
