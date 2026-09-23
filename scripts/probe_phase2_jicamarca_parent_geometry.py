@@ -39,7 +39,9 @@ def validate_contracts(cfg,disc,zone):
  if zone.get("decision_thresholds") is not None or zone.get("hydraulic_factors") is not None: raise ProbeError("UNSAFE_ZONE_NUMERIC_GUARDS")
  ident=cfg["official_identity"]; q=cfg["source_query"]; role=cfg["scientific_role"]
  if ident.get("unit_code")!="1375542" or ident.get("pfafstetter_level")!=7: raise ProbeError("IDENTITY_NOT_LOCKED")
- if q.get("endpoint")!="https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/7/query" or q.get("where")!="CODIGO='1375542'": raise ProbeError("QUERY_NOT_EXACT")
+ if q.get("endpoint")!="https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/7/query" or q.get("where")!="NIVEL7='1375542'": raise ProbeError("QUERY_NOT_EXACT")
+ exp=cfg.get("expected_response") or {}
+ if exp.get("code_field")!="NIVEL7" or exp.get("code")!="1375542": raise ProbeError("EXPECTED_IDENTITY_NOT_LEVEL7")
  required={"parent_context_only":True,"local_activation_geometry":False,"counts_as_complete_candidate_geometry":False,"candidate_wide_sampling_ready":False,"counts_as_event_footprint":False,"counts_as_operational_geometry":False,"child_geometry_inferred":False,"confluence_inferred":False,"routing_inferred":False}
  for k,e in required.items():
   if role.get(k)!=e: raise ProbeError(f"UNSAFE_ROLE_{k}")
@@ -55,13 +57,19 @@ def fetch(q):
 def validate_source(src,cfg):
  if src.get("type")!="FeatureCollection": raise ProbeError("ANA_RESPONSE_NOT_FEATURE_COLLECTION")
  fs=src.get("features") or []; exp=cfg["expected_response"]
- if len(fs)!=exp["feature_count"]: raise ProbeError(f"ANA_EXACT_CODE_NOT_UNIQUE count={len(fs)}")
- f=fs[0]; p=f.get("properties") or {}; code=str(p.get("CODIGO") or p.get("codigo") or ""); name=str(p.get("NOMBRE") or p.get("nombre") or "")
- if code!=exp["code"]: raise ProbeError(f"ANA_CODE_MISMATCH {code}")
- if exp["name_must_contain"].lower() not in name.lower(): raise ProbeError(f"ANA_NAME_MISMATCH {name!r}")
+ if len(fs)!=exp["feature_count"]: raise ProbeError(f"ANA_EXACT_LEVEL7_NOT_UNIQUE count={len(fs)}")
+ f=fs[0]; p=f.get("properties") or {}
+ code=str(p.get(exp["code_field"]) or "")
+ if code!=exp["code"]: raise ProbeError(f"ANA_LEVEL7_CODE_MISMATCH {code}")
+ names=[str(p.get(k) or "") for k in exp.get("name_fields",[])]; name=next((n for n in names if exp["name_must_contain"].lower() in n.lower()),"")
+ if not name: raise ProbeError(f"ANA_NAME_MISMATCH {names!r}")
+ area=p.get(exp.get("area_field","AREA_KM2"))
+ try: area=float(area)
+ except (TypeError,ValueError): raise ProbeError(f"ANA_AREA_MISSING {area!r}")
+ if abs(area-float(exp["area_km2"]))>float(exp["area_tolerance_km2"]): raise ProbeError(f"ANA_AREA_MISMATCH {area}")
  g=f.get("geometry") or {}
  if g.get("type") not in set(exp["geometry_types"]) or not g.get("coordinates"): raise ProbeError("ANA_GEOMETRY_MISSING_OR_NOT_POLYGON")
- return f,name,p.get("AREA_KM2") or p.get("area_km2")
+ return f,name,area
 
 def normalized(f,name,source_sha):
  props={"unit_id":"jicamarca_parent_subbasin_context","name":name,"official_unit_code":"1375542","parent_candidate_id":"lima_este_santa_eulalia_rimac","source_id":"ANA-UH-1375542-JICAMARCA","source_snapshot_sha256":source_sha,"representation":"OFFICIAL_ANA_PFAFSTETTER_PARENT_CONTEXT","context_only":True,"local_activation_geometry":False,"counts_as_event_footprint":False,"counts_as_operational_geometry":False,"deployment_status":"RESEARCH_ONLY","test_mode":"TEST_ONLY","production_use":False,"production_ready":False,"operational_alerting_enabled":False,"alerting_enabled":False,"activation_gate":"BLOCKED","missing_data_rule":"UNKNOWN_NOT_LOW_RISK","decision_thresholds":None,"hydraulic_factors":None}
@@ -73,7 +81,7 @@ def bind(cfg,disc,zone,geom_sha,val_rel,val_sha,source_rel,source_sha,name):
  disc["territorial_identity"]["official_parent_subbasin_code"]="1375542"
  disc["territorial_identity"]["official_parent_subbasin_name"]=name
  geom=zone["assets"]["geometry"]; layers=geom.setdefault("component_layers",[]); lid=cfg["output"]["map_layer_id"]
- layer={"layer_id":lid,"title":"Jicamarca · subcuenca ANA padre (contexto)","deployment_status":"RESEARCH_ONLY","path":cfg["output"]["normalized_geometry"],"source_ids":["ANA-UH-1375542-JICAMARCA"],"validation_path":val_rel,"representation":"OFFICIAL_ANA_PFAFSTETTER_PARENT_CONTEXT","confidence":"OFFICIAL_EXACT_CODE_PARENT_CONTEXT_ONLY","default_visibility":False,"counts_as_complete_candidate_geometry":False,"candidate_wide_sampling_ready":False,"map_disclaimer":"Subcuenca ANA 1375542 en gris/contexto RESEARCH_ONLY. No es una unidad local activada, riesgo, alerta, footprint de evento, geometría de hijos ni capacidad hidráulica."}
+ layer={"layer_id":lid,"title":"Jicamarca · subcuenca ANA padre (contexto)","deployment_status":"RESEARCH_ONLY","path":cfg["output"]["normalized_geometry"],"source_ids":["ANA-UH-1375542-JICAMARCA"],"validation_path":val_rel,"representation":"OFFICIAL_ANA_PFAFSTETTER_PARENT_CONTEXT","confidence":"OFFICIAL_EXACT_LEVEL7_PARENT_CONTEXT_ONLY","default_visibility":False,"counts_as_complete_candidate_geometry":False,"candidate_wide_sampling_ready":False,"map_disclaimer":"Subcuenca ANA 1375542 en gris/contexto RESEARCH_ONLY. No es una unidad local activada, riesgo, alerta, footprint de evento, geometría de hijos ni capacidad hidráulica."}
  existing=[x for x in layers if x.get("layer_id")==lid]
  if existing and existing[0]!=layer: raise ProbeError("EXISTING_MAP_LAYER_DRIFT")
  if not existing: layers.append(layer)
