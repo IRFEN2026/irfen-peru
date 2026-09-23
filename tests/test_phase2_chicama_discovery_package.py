@@ -1,3 +1,4 @@
+import hashlib
 import json
 from pathlib import Path
 
@@ -22,6 +23,10 @@ def load(path):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def sha256(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 def test_chicama_identity_and_guards_are_frozen():
     p = load(PACKAGE)
     s = load(SOURCES)
@@ -37,12 +42,23 @@ def test_chicama_identity_and_guards_are_frozen():
     assert s["qa"]["official_chicama_unit_code"] == "13772"
 
 
-def test_geometry_and_ravines_fail_closed_until_reproducible():
+def test_geometry_transition_is_fail_closed_and_never_promotes_ravines():
     p = load(PACKAGE)
     g = p["assets"]["geometry"]
-    assert g["status"] == "MISSING_PENDING_EXACT_ANA_QUERY"
     assert g["source_query"]["where"] == "CODIGO='13772'"
-    assert not (ROOT / g["path"]).exists()
+    path = ROOT / g["path"]
+    if str(g["status"]).startswith("MISSING"):
+        assert not path.exists()
+    else:
+        assert g["status"] == "PARTIAL_OFFICIAL_BASIN_CONTEXT"
+        assert g["representation"] == "OFFICIAL_ANA_HYDROGRAPHIC_UNIT_CONTEXT"
+        assert path.is_file()
+        assert g["sha256"] == sha256(path)
+        validation = ROOT / g["validation_path"]
+        source = ROOT / g["source_path"]
+        assert validation.is_file() and source.is_file()
+        assert g["validation_sha256"] == sha256(validation)
+        assert g["source_sha256"] == sha256(source)
     assert g["counts_as_operational_geometry"] is False
     assert g["counts_as_event_footprint"] is False
     assert p["map_policy"]["approximate_geometry_forbidden"] is True
