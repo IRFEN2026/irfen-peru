@@ -45,7 +45,7 @@ class Phase2NorthCoastDiscoveryTests(unittest.TestCase):
             "lalibertad_moche",
             "lalibertad_chicama",
         }
-        self.assertEqual(ids, required)
+        self.assertEqual(ids, required)\n        self.assertEqual(self.cfg["relationship_to_phase2"]["discovery_units_count"], 10)
 
     def test_huaura_and_huaral_are_strengthened_not_duplicated(self):
         ids = {r["candidate_id"] for r in self.cfg["registered_units_to_strengthen"]}
