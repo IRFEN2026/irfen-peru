@@ -60,9 +60,10 @@
         layerKeys:[]};
     });
     const registeredCandidateCount=candidates.length;
+    const discoveries=[];
     for (const d of mapsOK ? list(maps.research_discovery_units) : []) {
       const g=d.geometry||{};
-      candidates.push({key:'discovery:'+d.discovery_id,kind:'discovery',candidateId:d.discovery_id,
+      discoveries.push({key:'discovery:'+d.discovery_id,kind:'discovery',candidateId:d.discovery_id,
         title:d.system_name||d.discovery_id,territory:[d.department,d.territorial_reference].filter(Boolean).join(' · '),
         status:d.deployment_status,gate:d.activation_gate,contractStatus:d.contract_status,
         assets:{geometry:g.status},blockers:g.map_eligible?[]:['Geometría reproducible pendiente; no se dibuja aproximación'],
@@ -70,7 +71,7 @@
         reason:g.map_eligible?'':'Discovery registrada sin geometría reproducible; permanece en inventario sin contorno.',
         disclaimer:'Unidad discovery RESEARCH_ONLY; no altera los 18 candidatos Phase-2 ni habilita alertas.',layerKeys:[]});
     }
-    const byId = new Map(candidates.map(c => [c.candidateId,c]));
+    const byId = new Map([...candidates,...discoveries].map(c => [c.candidateId,c]));
     const requests = [];
     const keys = new Set();
     const add = request => {
@@ -144,11 +145,11 @@
       }
     }
     for (const r of requests) r.layerKeys = [r.key];
-    return {candidates,requests,mapsOK,spatialOK,
+    return {candidates,discoveries,requests,mapsOK,spatialOK,
       pilotIds:list((catalog.relationship_to_v08 || {}).operational_pilots),
       summary:{registeredCandidates:registeredCandidateCount,
-        discoveryUnits:candidates.filter(c=>c.kind==='discovery').length,
-        discoveryWithGeometry:candidates.filter(c=>c.kind==='discovery'&&c.layerKeys.length).length,
+        discoveryUnits:discoveries.length,
+        discoveryWithGeometry:discoveries.filter(c=>c.layerKeys.length).length,
         monitoredSubunits:requests.filter(r => r.kind === 'monitored').length,
         technicalLayers:requests.filter(r => r.kind === 'technical').length,
         candidatesWithRelatedGeometry:candidates.filter(c => c.layerKeys.length).length,
@@ -352,7 +353,7 @@
       const plan=buildPlan(catalog,data.spatial,data.layers,data.remaining);
       if(!plan.mapsOK && !failures.includes(PATHS.layers))failures.push(PATHS.layers+' (contrato no válido)');
       if(!plan.spatialOK && !failures.includes(PATHS.spatial))failures.push(PATHS.spatial+' (contrato no válido)');
-      state.plan=plan;state.records=[...plan.candidates,...plan.requests.filter(r=>r.kind!=='context')];
+      state.plan=plan;state.records=[...plan.candidates,...plan.discoveries,...plan.requests.filter(r=>r.kind!=='context')];
       const s=plan.summary;
       document.getElementById('ti-summary').innerHTML='<b>'+s.registeredCandidates+' candidatos Phase-2 definidos</b> · '+s.discoveryUnits+' unidades discovery norte-costera ('+s.discoveryWithGeometry+' con geometría representable) · '+s.monitoredSubunits+' subunidades con contrato de muestreo · '+s.technicalLayers+' capas técnicas de '+plan.pilotIds.length+' pilotos v0.8.<br>'+
         s.candidatesWithRelatedGeometry+' candidatos tienen geometrías relacionadas representables; <b>'+s.candidatesWithoutRelatedGeometry+' permanecen en el listado sin contorno representable</b>. Las subdivisiones no aumentan el total de candidatos.'+
