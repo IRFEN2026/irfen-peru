@@ -54,13 +54,18 @@ def validate_contracts(cfg,disc,zone):
 
 def metadata(cfg):
     service=cfg["source_service"]; meta,_=request_json(service["layer_url"],{"f":service["metadata_format"]})
-    fields={f.get("name") for f in meta.get("fields",[]) if f.get("name")}
+    field_defs=[f for f in meta.get("fields",[]) if f.get("name")]
+    fields={f["name"] for f in field_defs}
     oid=meta.get("objectIdField") or meta.get("objectIdFieldName")
-    if not oid or oid not in fields: raise ProbeError(f"ANA_OBJECT_ID_FIELD_UNRESOLVED {oid!r}")
+    if not oid or oid not in fields:
+        oid=next((f["name"] for f in field_defs if f.get("type")=="esriFieldTypeOID"),None)
+    if not oid or oid not in fields:
+        oid=next((x for x in ("OBJECTID","FID","OID","OBJECTID_1") if x in fields),None)
+    if not oid: raise ProbeError(f"ANA_OBJECT_ID_FIELD_UNRESOLVED fields={sorted(fields)!r}")
     names=[f for f in service["preferred_name_fields"] if f in fields]
     codes=[f for f in service["preferred_code_fields"] if f in fields]
     area=service["preferred_area_field"] if service["preferred_area_field"] in fields else None
-    if not names or not area: raise ProbeError(f"ANA_REQUIRED_FIELDS_MISSING names={names} area={area}")
+    if not names or not area: raise ProbeError(f"ANA_REQUIRED_FIELDS_MISSING names={names} area={area} fields={sorted(fields)!r}")
     return oid,names,codes,area
 
 def bounded_candidates(cfg,unit,oid,name_fields,code_fields,area_field):
