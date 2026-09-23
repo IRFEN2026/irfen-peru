@@ -1,0 +1,90 @@
+name: IRFEN - Zorritos Bocapan child geometry freeze
+
+on:
+  pull_request:
+    paths:
+      - site/data/validation/phase2_discovery_contracts/tumbes_zorritos_bocapan_coastal_ravines.json
+      - scripts/probe_zorritos_bocapan_component_geometry.py
+      - .github/workflows/phase2-zorritos-bocapan-source-freeze.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  freeze-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Freeze exact official ANA Bocapan source or replay frozen source
+        id: freeze
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_path="site/data/phase2/sources/north_coast_discovery_geometry/ana_tumbes_zorritos_bocapan_coastal_ravines_bocapan_casitas_13936.geojson"
+          if [[ -f "$source_path" ]]; then
+            python scripts/probe_zorritos_bocapan_component_geometry.py --check-only
+            python scripts/build_map_layer_catalog.py --check-only
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            python scripts/probe_zorritos_bocapan_component_geometry.py --refresh-source
+            python scripts/build_map_layer_catalog.py
+            python scripts/probe_zorritos_bocapan_component_geometry.py --check-only
+            python scripts/build_map_layer_catalog.py --check-only
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Enforce research-only component separation guards
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          c=json.loads(Path('site/data/validation/phase2_discovery_contracts/tumbes_zorritos_bocapan_coastal_ravines.json').read_text())
+          for k,v in {
+              'deployment_status':'RESEARCH_ONLY','test_mode':'TEST_ONLY','production_use':False,
+              'production_ready':False,'operational_alerting_enabled':False,'activation_gate':'BLOCKED',
+              'missing_data_rule':'UNKNOWN_NOT_LOW_RISK','decision_thresholds':None,'hydraulic_factors':None,
+          }.items(): assert c[k] == v, (k,c.get(k))
+          p=c['component_policy']
+          assert p['parent_is_hydrologic_basin'] is False
+          assert p['parent_is_map_polygon'] is False
+          assert p['components_must_remain_separate'] is True
+          assert p['composite_union_forbidden'] is True
+          assert c['assets']['geometry']['path'] is None
+          comps=c['assets']['geometry_components']
+          assert len(comps)==1 and comps[0]['component_id']=='bocapan_casitas'
+          g=comps[0]['geometry']
+          assert g['counts_as_operational_geometry'] is False
+          assert g['counts_as_event_footprint'] is False
+          assert g['status']=='PARTIAL_OFFICIAL_BASIN_CONTEXT'
+          v=json.loads(Path(g['validation_path']).read_text())
+          assert v['outcomes_read'] is False
+          assert v['rainfall_read'] is False
+          assert v['hydraulic_capacity_read'] is False
+          assert v['thresholds_used'] is False
+          assert v['negative_controls_read'] is False
+          assert v['approximate_geometry_used'] is False
+          assert v['composite_geometry_created'] is False
+          assert v['sibling_ravine_geometry_inferred'] is False
+          PY
+      - name: Commit frozen source and research geometry
+        if: steps.freeze.outputs.changed == 'true' && github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            site/data/phase2/sources/north_coast_discovery_geometry/ana_tumbes_zorritos_bocapan_coastal_ravines_bocapan_casitas_13936.geojson \
+            site/data/phase2/geometries/tumbes_bocapan_basin_context.geojson \
+            site/data/phase2/geometries/tumbes_bocapan_basin_context_validation.json \
+            site/data/validation/phase2_discovery_contracts/tumbes_zorritos_bocapan_coastal_ravines.json \
+            site/data/map_layers.json
+          git commit -m "Phase2: freeze official Bocapan child geometry"
+          git push origin HEAD:${{ github.head_ref }}
