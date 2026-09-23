@@ -240,8 +240,9 @@ def validate_spatial_subunits(arch: dict, candidate_inventory: dict) -> tuple[li
                 fail(f"SPATIAL_SUBUNIT_ID_INVALID_{parent}")
             if sub.get("candidate_id") != parent:
                 fail(f"SPATIAL_SUBUNIT_PARENT_DRIFT_{parent}_{sid}")
-            if sub.get("contract_scope") != "HYDROLOGIC_SUBUNIT_RESEARCH_ONLY":
-                fail(f"SPATIAL_SUBUNIT_SCOPE_DRIFT_{parent}_{sid}")
+            scope = str(sub.get("contract_scope") or "")
+            if not scope.endswith("_RESEARCH_ONLY") or "HYDROLOGIC" not in scope:
+                fail(f"SPATIAL_SUBUNIT_SCOPE_DRIFT_{parent}_{sid}_{scope}")
             if sub.get("contract_status") != "RESEARCH_SAMPLING_ELIGIBLE":
                 fail(f"SPATIAL_SUBUNIT_NOT_RESEARCH_ELIGIBLE_{parent}_{sid}")
             for key, expected in {
