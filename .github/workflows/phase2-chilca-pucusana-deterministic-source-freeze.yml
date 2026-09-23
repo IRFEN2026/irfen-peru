@@ -1,0 +1,87 @@
+name: IRFEN - Phase2 Chilca Pucusana deterministic source freeze
+on:
+  pull_request:
+    paths:
+      - .github/workflows/phase2-chilca-pucusana-deterministic-source-freeze.yml
+      - scripts/probe_chilca_pucusana_official_geometry.py
+      - tests/test_phase2_chilca_pucusana_geometry.py
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  freeze-and-synchronize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Freeze official ANA Chilca source once
+        id: source
+        run: |
+          if [ -f site/data/phase2/sources/chilca_pucusana_hydrologic_context/source_inventory.json ]; then
+            echo 'first_freeze=false' >> "$GITHUB_OUTPUT"
+            python scripts/probe_chilca_pucusana_official_geometry.py --check-only
+          else
+            echo 'first_freeze=true' >> "$GITHUB_OUTPUT"
+            python scripts/probe_chilca_pucusana_official_geometry.py --refresh-source
+          fi
+      - name: Patch deterministic expectations
+        if: steps.source.outputs.first_freeze == 'true'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/validate_phase2_spatial_observation_contracts.py');s=p.read_text()
+          a='CHILLON_BAJO_ID = "lima_norte_chillon_bajo"\n';b=a+'CHILCA_PUCUSANA_ID = "lima_sur_chilca_pucusana"\n'
+          if 'CHILCA_PUCUSANA_ID = "lima_sur_chilca_pucusana"' not in s:
+            if a not in s: raise SystemExit('missing constant anchor')
+            s=s.replace(a,b,1)
+          old='MALA_ID, CHANCAY_HUARAL_ID, HUAURA_ID, CHILLON_BAJO_ID}';new='MALA_ID, CHANCAY_HUARAL_ID, HUAURA_ID, CHILLON_BAJO_ID, CHILCA_PUCUSANA_ID}'
+          if new not in s:
+            if old not in s: raise SystemExit('missing present-set anchor')
+            s=s.replace(old,new,1)
+          old='MALA_ID, CHANCAY_HUARAL_ID, HUAURA_ID, CHILLON_BAJO_ID):';new='MALA_ID, CHANCAY_HUARAL_ID, HUAURA_ID, CHILLON_BAJO_ID, CHILCA_PUCUSANA_ID):'
+          if new not in s:
+            if old not in s: raise SystemExit('missing partial-loop anchor')
+            s=s.replace(old,new,1)
+          a='        CHILLON_BAJO_ID: "NON_CATCHMENT_GEOMETRY_ONLY",\n';b=a+'        CHILCA_PUCUSANA_ID: "NON_CATCHMENT_GEOMETRY_ONLY",\n'
+          if '        CHILCA_PUCUSANA_ID: "NON_CATCHMENT_GEOMETRY_ONLY",\n' not in s:
+            if a not in s: raise SystemExit('missing expected-status anchor')
+            s=s.replace(a,b,1)
+          s=s.replace('"non_catchment_geometry_only_count": 13,','"non_catchment_geometry_only_count": 14,',1).replace('"blocked_missing_geometry_count": 3,','"blocked_missing_geometry_count": 2,',1);p.write_text(s)
+          for n in ['tests/test_phase2_spatial_observation_contracts.py','tests/test_phase2_mala_geometry.py']:
+            p=Path(n);s=p.read_text().replace('non_catchment_geometry_only_count"], 13)','non_catchment_geometry_only_count"], 14)',1).replace('blocked_missing_geometry_count"], 3)','blocked_missing_geometry_count"], 2)',1);p.write_text(s)
+          p=Path('tests/test_map_layer_catalog.py');s=p.read_text();a='            "lima_norte_chillon_bajo",\n';b=a+'            "lima_sur_chilca_pucusana",\n'
+          if '            "lima_sur_chilca_pucusana",\n' not in s:
+            if a not in s: raise SystemExit('missing map anchor')
+            s=s.replace(a,b,1)
+          p.write_text(s)
+          PY
+      - name: Regenerate bounded derived state
+        if: steps.source.outputs.first_freeze == 'true'
+        run: |
+          python scripts/build_phase2_catalog.py
+          python scripts/build_map_layer_catalog.py
+          python scripts/build_phase2_climate_matrix.py
+          python scripts/build_phase2_spatial_observation_contracts.py
+      - name: Validate scientific guards
+        run: |
+          python scripts/probe_chilca_pucusana_official_geometry.py --check-only
+          python scripts/build_phase2_catalog.py --check-only
+          python scripts/build_map_layer_catalog.py --check-only
+          python scripts/validate_phase2_climate_matrix.py
+          python scripts/validate_phase2_spatial_observation_contracts.py
+          python -m unittest tests.test_phase2_chilca_pucusana_geometry tests.test_phase2_spatial_observation_contracts tests.test_phase2_climate_matrix tests.test_map_layer_catalog tests.test_phase2_mala_geometry -v
+      - name: Commit frozen source and deterministic artifacts
+        if: steps.source.outputs.first_freeze == 'true'
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
+        run: |
+          git config user.name 'github-actions[bot]'; git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add config/phase2_candidate_inventory_v0_1.json config/phase2_candidate_inventory_v0_2.json scripts/validate_phase2_spatial_observation_contracts.py site/data/validation/phase2_zone_contracts/lima_sur_chilca_pucusana.json site/data/phase2/sources/chilca_pucusana_hydrologic_context/source_inventory.json site/data/phase2/sources/chilca_pucusana_hydrologic_context/ana_cuenca_chilca_1375532.geojson site/data/phase2/geometries/lima_sur_chilca_pucusana_chilca_basin_context.geojson site/data/phase2/geometries/lima_sur_chilca_pucusana_geometry_validation.json site/data/phase2/catalog.json site/data/map_layers.json site/data/phase2/climate_conditioned_activation_matrix_v0_1.json site/data/phase2/spatial_observation_contracts_v0_1.json tests/test_phase2_spatial_observation_contracts.py tests/test_phase2_mala_geometry.py tests/test_map_layer_catalog.py
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Phase2: freeze official Chilca basin research context'
+          git push origin HEAD:"${HEAD_REF}"
