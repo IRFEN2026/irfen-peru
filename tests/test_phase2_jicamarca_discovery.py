@@ -7,6 +7,7 @@ ARCH=ROOT/"config/phase2_local_activation_hierarchy_v0_1.json"
 CENDEHUA=ROOT/"config/phase2_jicamarca_cendehua_event_metadata_v0_1.json"
 SOPHY=ROOT/"config/phase2_jicamarca_sophy_access_assessment_v0_1.json"
 IDENTITY=ROOT/"config/phase2_jicamarca_identity_source_assessment_v0_1.json"
+CANTO=ROOT/"config/phase2_jicamarca_canto_grande_media_luna_assessment_v0_1.json"
 INDEX=ROOT/"config/phase2_jicamarca_evidence_index_v0_1.json"
 
 def load(path=CFG):
@@ -73,11 +74,11 @@ def test_monitoring_does_not_import_operational_thresholds():
     radar=next(x for x in c["monitoring_assets"] if x["source_id"]=="IGP-SOPHY-XBAND-RADAR")
     assert radar["data_access_status"]=="PUBLIC_PROJECT_METADATA_ONLY_DATA_ACCESS_UNRESOLVED"
 
-def test_bounded_evidence_packages_are_linked_and_safe():
+def test_bounded_evidence_packages_exist_and_are_safe():
     c=load(); refs=c["evidence_packages"]
     assert refs["cendehua_event_metadata"]=="config/phase2_jicamarca_cendehua_event_metadata_v0_1.json"
     assert refs["sophy_access_assessment"]=="config/phase2_jicamarca_sophy_access_assessment_v0_1.json"
-    for p in (CENDEHUA,SOPHY,IDENTITY,INDEX):
+    for p in (CENDEHUA,SOPHY,IDENTITY,CANTO,INDEX):
         assert p.is_file()
         assert_safe(load(p))
 
@@ -111,18 +112,38 @@ def test_sophy_metadata_does_not_fabricate_rainfall_or_coverage():
     assert "infer rainfall values from project-page metadata" in c["forbidden"]
     assert "treat nominal radar range as verified event coverage" in c["forbidden"]
 
-def test_official_jicamarca_terminology_does_not_create_geometry():
+def test_official_jicamarca_relation_is_documented_but_geometry_stays_blocked():
     c=load(IDENTITY)
-    assert c["conclusion"]=="UNRESOLVED_DO_NOT_MATERIALIZE_STANDALONE_JICAMARCA_GEOMETRY"
+    assert c["status"]=="OFFICIAL_HYDROLOGIC_RELATION_DOCUMENTED_GEOMETRY_UNRESOLVED"
+    assert c["conclusion"].startswith("JICAMARCA_IS_OFFICIAL_SUBBASIN_AND_DOWNSTREAM_NAMING_CONTEXT")
     topo=c["topology_status"]
+    assert topo["official_parent_subbasin_id"]=="1375542"
     assert topo["huaycoloro_rio_seco_union"]=="OFFICIALLY_DESCRIBED_TOPOLOGY_COORDINATES_UNRESOLVED"
     assert topo["exact_union_coordinate"] is None
-    assert topo["jicamarca_named_channel_relationship"]=="UNRESOLVED"
+    assert topo["jicamarca_named_channel_relationship"]=="DOWNSTREAM_NAMING_RELATION_DOCUMENTED_EXACT_LINE_GEOMETRY_UNRESOLVED"
     gp=c["geometry_policy"]
-    assert gp["standalone_jicamarca_polygon_allowed"] is False
-    assert gp["standalone_jicamarca_channel_allowed"] is False
+    assert gp["official_parent_subbasin_is_local_activation_geometry"] is False
+    assert gp["standalone_jicamarca_local_polygon_allowed"] is False
     assert gp["approximate_confluence_point_allowed"] is False
     assert gp["union_of_child_polygons_allowed"] is False
+
+def test_canto_grande_media_luna_evidence_does_not_digitize_report_figures():
+    c=load(CANTO); ident=c["bounded_identity_evidence"]
+    assert ident["canto_grande_subbasin_officially_named"] is True
+    assert ident["media_luna_named_as_separate_ravine"] is True
+    assert ident["canto_grande_and_media_luna_described_as_two_main_branches"] is True
+    assert ident["media_luna_geometry_reproducible_from_source"] is False
+    assert ident["canto_grande_geometry_reproducible_from_source"] is False
+    ev=c["bounded_event_evidence"]
+    assert ev["event_year"]==2002
+    assert ev["component_id"]=="media_luna"
+    assert ev["research_state"]=="IMPACT_CONFIRMED"
+    assert ev["event_footprint_geometry_available"] is False
+    policy=c["local_unit_policy"]
+    assert policy["child_evidence_promotes_parent_activation"] is False
+    assert policy["synthetic_union_forbidden"] is True
+    assert policy["approximate_polygon_from_report_figure_forbidden"] is True
+    assert policy["approximate_outlet_from_report_figure_forbidden"] is True
 
 def test_evidence_index_forbids_promotion_side_effects():
     c=load(INDEX)
@@ -132,6 +153,7 @@ def test_evidence_index_forbids_promotion_side_effects():
     assert packages["config/phase2_jicamarca_cendehua_event_metadata_v0_1.json"]["may_infer_discharge"] is False
     assert packages["config/phase2_jicamarca_sophy_access_assessment_v0_1.json"]["may_infer_rainfall_before_data_access"] is False
     assert packages["config/phase2_jicamarca_identity_source_assessment_v0_1.json"]["may_create_synthetic_jicamarca_unit"] is False
+    assert packages["config/phase2_jicamarca_canto_grande_media_luna_assessment_v0_1.json"]["may_digitize_report_figure_as_geometry"] is False
 
 def test_collector_coupling_remains_unknown_until_reproducible_routing():
     c=load()["collector_coupling"]
