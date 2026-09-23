@@ -5,6 +5,13 @@ on:
     paths:
       - scripts/bootstrap_mala_official_basin.py
       - scripts/finalize_mala_official_basin.py
+      - tests/test_phase2_mala_geometry.py
+      - site/data/phase2/sources/mala_hydrologic_context/**
+      - site/data/phase2/geometries/lima_sur_mala_*.geojson
+      - site/data/phase2/geometries/lima_sur_mala_geometry_validation.json
+      - site/data/validation/phase2_zone_contracts/lima_sur_mala.json
+      - site/data/phase2/catalog.json
+      - site/data/map_layers.json
       - .github/workflows/phase2-mala-official-basin-bootstrap.yml
   workflow_dispatch:
 
@@ -29,11 +36,12 @@ jobs:
           else
             python scripts/finalize_mala_official_basin.py --materialize
           fi
-      - name: Validate Phase-2 contracts and map catalog
+      - name: Validate Phase-2 contracts, map catalog and Mala guards
         run: |
           python scripts/build_phase2_catalog.py --check-only
           python scripts/build_map_layer_catalog.py --check-only
           python scripts/finalize_mala_official_basin.py --check-only
+          python -m unittest tests.test_phase2_mala_geometry
           git diff --check
       - name: Commit deterministic research assets to PR branch
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
