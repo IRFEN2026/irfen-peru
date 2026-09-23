@@ -1,0 +1,41 @@
+name: IRFEN - Phase2 collector coupling
+
+on:
+  pull_request:
+    paths:
+      - config/phase2_collector_coupling_architecture_v0_1.json
+      - config/phase2_local_activation_hierarchy_v0_1.json
+      - site/data/phase2/spatial_observation_contracts_v0_1.json
+      - site/data/validation/phase2_collector_coupling/**
+      - scripts/validate_phase2_collector_coupling.py
+      - tests/test_phase2_collector_coupling.py
+      - .github/workflows/phase2-collector-coupling.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-collector-coupling:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install test dependency
+        run: python -m pip install pytest
+      - name: Validate fail-closed collector coupling architecture
+        run: |
+          mkdir -p artifacts
+          python scripts/validate_phase2_collector_coupling.py \
+            --output artifacts/phase2_collector_coupling_validation.json
+      - name: Run collector coupling guard tests
+        run: python -m pytest -q tests/test_phase2_collector_coupling.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: phase2-collector-coupling-validation
+          path: artifacts/phase2_collector_coupling_validation.json
+          if-no-files-found: warn
