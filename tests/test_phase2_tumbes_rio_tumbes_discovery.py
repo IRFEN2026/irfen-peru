@@ -45,6 +45,28 @@ def test_rio_tumbes_identity_and_guards_remain_separate():
     assert "tumbes_zorritos_bocapan_coastal_ravines" in contract["identity"]["must_remain_separate_from"]
 
 
+def test_source_registry_and_contract_reference_the_same_bounded_sources():
+    package = load(PACKAGE)
+    contract = load(CONTRACT)
+    registry = load(SOURCES)
+    registry_ids = {row["source_id"] for row in registry["sources"]}
+    assert set(package["official_source_ids"]) == set(contract["official_source_ids"])
+    assert set(package["official_source_ids"]) == registry_ids
+    assert "INGEMMET-A6764-TUMBES-2017" in registry_ids
+    assert "ANA-TUMBES-HIGHFLOW-20260409" in registry_ids
+
+
+def test_2017_positive_context_is_bounded_and_not_transferred():
+    package = load(PACKAGE)
+    event = package["assets"]["event_ledger"]["2017"]
+    assert event["status"] == "POSITIVE_OFFICIAL_POSTEVENT_GEOHYDROLOGIC_EVIDENCE_LOWER_RIO_TUMBES_CONTEXT"
+    assert event["source_ids"] == ["INGEMMET-A6764-TUMBES-2017"]
+    assert event["exact_event_footprint_frozen"] is False
+    assert event["basin_wide_uniform_mechanism_claimed"] is False
+    assert event["outcome_transferred_to_rio_zarumilla"] is False
+    assert event["outcome_transferred_to_coastal_ravines"] is False
+
+
 def test_2023_observed_inundation_is_positive_event_evidence_not_basin_geometry():
     package = load(PACKAGE)
     event = package["assets"]["event_ledger"]["2023"]
@@ -76,11 +98,32 @@ def test_provider_alert_bands_and_observed_discharge_never_become_irfen_threshol
             assert context["provider_band_is_irfen_threshold"] is False
 
 
-def test_unknown_epochs_are_not_fabricated_negative_controls():
+def test_provider_warning_and_anticipation_times_are_not_irfen_travel_times_or_thresholds():
+    package = load(PACKAGE)
+    registry = load(SOURCES)
+    network = package["assets"]["observations"]["network_provenance"]
+    assert network["provider_stated_anticipation_or_warning_times_are_irfen_travel_time"] is False
+    assert network["provider_stated_anticipation_or_warning_times_are_irfen_threshold"] is False
+    by_id = {row["source_id"]: row for row in registry["sources"]}
+    gauging = by_id["ANA-TUMBES-GAUGING-NETWORK-20150907"]["observed_context"]
+    warning = by_id["ANA-TUMBES-EARLY-WARNING-NETWORK-20160309"]["observed_context"]
+    assert gauging["provider_stated_anticipation_is_irfen_travel_time"] is False
+    assert gauging["provider_stated_anticipation_is_irfen_threshold"] is False
+    assert warning["provider_warning_is_irfen_travel_time"] is False
+    assert warning["provider_warning_is_irfen_threshold"] is False
+
+
+def test_unknown_epochs_and_scoped_recent_statements_never_create_negative_controls():
     package = load(PACKAGE)
     ledger = package["assets"]["event_ledger"]
-    for epoch in ("1982_1983", "1997_1998", "2017", "2025_2026"):
+    for epoch in ("1982_1983", "1997_1998"):
         assert ledger[epoch]["status"] == "UNKNOWN_NOT_NEGATIVE"
+    recent = ledger["2025_2026"]
+    assert recent["status"] == "POSITIVE_2026_HIGH_FLOW_WITH_BOUNDED_PROVIDER_NO_OVERFLOW_STATEMENT"
+    assert recent["provider_statement_scope_is_basin_wide"] is False
+    assert recent["counts_as_negative_control"] is False
+    assert recent["counts_as_hydraulic_capacity_test"] is False
+    assert recent["reported_discharge_is_irfen_threshold"] is False
     assert package["missing_data_rule"] == "UNKNOWN_NOT_LOW_RISK"
 
 
