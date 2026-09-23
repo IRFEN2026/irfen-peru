@@ -15,6 +15,7 @@ GEOMETRY = ROOT / "site/data/phase2/geometries/lima_sur_mala_mala_basin_context.
 CONTRACT = ROOT / "site/data/validation/phase2_zone_contracts/lima_sur_mala.json"
 CATALOG = ROOT / "site/data/phase2/catalog.json"
 MAP = ROOT / "site/data/map_layers.json"
+SPATIAL = ROOT / "site/data/phase2/spatial_observation_contracts_v0_1.json"
 EXPECTED_SOURCE_SHA256 = "fd2bc3c148689c6a24eaa150a5bcb02c86a2b62117f32c2f06f558dc855eada4"
 
 
@@ -104,6 +105,15 @@ class MalaGeometryTests(unittest.TestCase):
         self.assertFalse(mapped["production_use"])
         self.assertFalse(mapped["alerting_enabled"])
         self.assertEqual(mapped["validation"]["activation_gate"], "BLOCKED")
+
+    def test_spatial_contract_treats_mala_as_context_not_candidate_wide_geometry(self):
+        spatial = load(SPATIAL)
+        row = {r["candidate_id"]: r for r in spatial["candidate_records"]}["lima_sur_mala"]
+        self.assertEqual(row["spatial_contract_status"], "NON_CATCHMENT_GEOMETRY_ONLY")
+        self.assertEqual(spatial["summary"]["candidate_wide_ready_count"], 0)
+        self.assertEqual(spatial["summary"]["non_catchment_geometry_only_count"], 9)
+        self.assertEqual(spatial["summary"]["blocked_missing_geometry_count"], 7)
+        self.assertEqual(spatial["summary"]["operational_spatial_contract_count"], 0)
 
 
 if __name__ == "__main__":
