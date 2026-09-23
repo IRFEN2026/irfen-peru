@@ -3,8 +3,12 @@
   "candidate_id": "lima_este_santa_eulalia_rimac",
   "contract_status": "DRAFT",
   "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
   "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
   "alerting_enabled": false,
+  "activation_gate": "BLOCKED",
   "decision_thresholds": null,
   "hydraulic_factors": null,
   "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
@@ -29,7 +33,8 @@
     "ANA-FM-RIMAC-9803",
     "ANA-FM-RIMAC-13214",
     "COES-SHEQUE-MONTHLY-FLOW-2003",
-    "COES-SHEQUE-MONTHLY-FLOW-2007"
+    "COES-SHEQUE-MONTHLY-FLOW-2007",
+    "MML-SGDC-RIMAC-MONITORING-2013"
   ],
   "assets": {
     "geometry": {
@@ -43,6 +48,22 @@
         "ANA-FM-RIMAC-9803",
         "ANA-FM-RIMAC-13214",
         "INGEMMET-CHOSICA-SANTA-EULALIA-2015"
+      ],
+      "component_layers": [
+        {
+          "layer_id": "rimac_static_coupling_nodes_v0_1",
+          "title": "Rímac · nodos estáticos de acoplamiento quebrada→colector",
+          "deployment_status": "RESEARCH_ONLY",
+          "path": "site/data/phase2/geometries/rimac_static_coupling_nodes_v0_1.geojson",
+          "source_ids": ["MML-SGDC-RIMAC-MONITORING-2013", "COPERNICUS-DEM-GLO-30"],
+          "validation_path": "site/data/validation/phase2_collector_coupling/lima_este_santa_eulalia_rimac_v0_2.json",
+          "representation": "SEPARATE_STATIC_CHANNEL_ANCHORS_CONTROL_POINTS_AND_D8_INTERSECTION_NODES",
+          "confidence": "STATIC_GEOMETRY_ONLY_REPRODUCIBLE_RESEARCH",
+          "default_visibility": false,
+          "counts_as_complete_candidate_geometry": false,
+          "candidate_wide_sampling_ready": false,
+          "map_disclaimer": "Nodos RESEARCH_ONLY: controles y anclas estáticas oficiales más intersecciones hidrológicas D8 reproducibles. No son riesgo, alerta, caudal, capacidad, tiempo de tránsito ni footprint de evento."
+        }
       ]
     },
     "exposure": {
@@ -108,6 +129,8 @@
     "La metodología de 'caudales naturales' de COES debe verificarse antes de tratar la serie como algo distinto de contexto mensual; podría incluir naturalización o reconstrucción asociada a la operación hidroeléctrica.",
     "Evaluar activaciones simultáneas como escenarios compuestos solo después de validar cada componente y su sincronización.",
     "No inferir desborde del Rímac a partir de lluvia o activación de quebradas por sí solas: se requieren nivel/caudal y contexto hidráulico observados.",
+    "La extensión de acoplamiento estático MML 2013 añade únicamente controles/anclas pre-evento e intersecciones hidrológicas D8 reproducibles para Quirio y Pedregal/San Antonio; no usa outcomes, no asigna Q_i(t), tau_i, atenuación ni respuesta del colector.",
+    "Los nodos de intersección D8 no se presentan como confluencias superficiales oficiales ni como evidencia de evento; se publican como contexto científico RESEARCH_ONLY en una capa componente separada.",
     "Mantener este contrato de expansión separado del piloto v0.8 Chosica/Huaycoloro; no cambia su alcance ni sus umbrales."
   ]
 }
