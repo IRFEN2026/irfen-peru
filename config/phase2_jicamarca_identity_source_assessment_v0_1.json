@@ -1,0 +1,64 @@
+{
+  "schema_version": "0.1",
+  "status": "OFFICIAL_TERMINOLOGY_ASSESSMENT_IDENTITY_UNRESOLVED",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "assessment_date_utc": "2026-09-23",
+  "question": "Does official public evidence support a standalone hydrologic unit called Quebrada Jicamarca distinct from Huaycoloro, Río Seco and Canto Grande–Media Luna?",
+  "conclusion": "UNRESOLVED_DO_NOT_MATERIALIZE_STANDALONE_JICAMARCA_GEOMETRY",
+  "official_source_observations": [
+    {
+      "source_id": "IGP-ROJ-HUAYCOLORO-2017",
+      "url": "https://www.gob.pe/institucion/igp/noticias/74439-el-roj-fue-afectado-por-el-desborde-del-rio-huaycoloro",
+      "date": "2017-02-02",
+      "bounded_observation": "IGP describes the Radio Observatorio de Jicamarca as located where Río Seco and Huaycoloro meet and states that monitoring instrumentation was deployed in both ravines.",
+      "supports": ["HUAYCOLORO_AND_RIO_SECO_ARE_DISTINCT_NAMED_COMPONENTS", "A_UNION_OR_CONFLUENCE_RELATION_IS_OFFICIALLY_DESCRIBED"],
+      "does_not_support": ["EXACT_CONFLUENCE_COORDINATE", "STANDALONE_JICAMARCA_CHANNEL_POLYGON", "REPRODUCIBLE_OUTLET"]
+    },
+    {
+      "source_id": "IGP-CENDEHUA-2023-COLUMN",
+      "url": "https://www.gob.pe/institucion/igp/noticias/720572-columna-de-opinion-igp-y-su-sistema-de-informacion-de-huaicos",
+      "date": "2023",
+      "bounded_observation": "IGP places Huaycoloro and Río Seco in the Jicamarca subcatchment context.",
+      "supports": ["JICAMARCA_USED_AS_BROADER_SUBCATCHMENT_CONTEXT"],
+      "does_not_support": ["JICAMARCA_IS_ONE_LOCAL_ACTIVATION_UNIT", "JICAMARCA_GEOMETRY"]
+    },
+    {
+      "source_id": "IGP-CENDEHUA-2026",
+      "url": "https://www.gob.pe/institucion/igp/noticias/1343594-igp-refuerza-vigilancia-del-sistema-de-monitoreo-de-huaicos-en-las-quebradas-huaycoloro-y-rio-seco",
+      "date": "2026-02-01",
+      "bounded_observation": "IGP reports continued real-time monitoring of Huaycoloro and Río Seco as separate ravines.",
+      "supports": ["HUAYCOLORO_AND_RIO_SECO_REMAIN_SEPARATE_MONITORED_COMPONENTS"],
+      "does_not_support": ["SINGLE_SYNTHETIC_JICAMARCA_RAVINE"]
+    },
+    {
+      "source_id": "IGP-JICAMARCA-NACIENTES-2026",
+      "url": "https://www.gob.pe/institucion/igp/noticias/1352843-columna-de-opinion-ciencia-y-desarrollo-tecnologico-al-servicio-de-lima",
+      "date": "2026-02-13",
+      "bounded_observation": "IGP also uses the phrase 'nacientes de la quebrada Jicamarca' when discussing the monitoring system, showing that Jicamarca terminology is used at a broader or overlapping scale in official communication.",
+      "supports": ["JICAMARCA_NAME_EXISTS_IN_OFFICIAL_COMMUNICATION"],
+      "does_not_support": ["UNIQUE_STANDALONE_HYDROLOGIC_IDENTITY", "EXACT_CHANNEL_GEOMETRY", "OUTLET_COORDINATE"]
+    }
+  ],
+  "topology_status": {
+    "huaycoloro_rio_seco_union": "OFFICIALLY_DESCRIBED_TOPOLOGY_COORDINATES_UNRESOLVED",
+    "exact_union_coordinate": null,
+    "jicamarca_named_channel_relationship": "UNRESOLVED",
+    "canto_grande_media_luna_relationship_to_huaycoloro_rio_seco": "UNRESOLVED"
+  },
+  "geometry_policy": {
+    "standalone_jicamarca_polygon_allowed": false,
+    "standalone_jicamarca_channel_allowed": false,
+    "approximate_confluence_point_allowed": false,
+    "union_of_child_polygons_allowed": false,
+    "publish_only_independently_reproducible_children": true
+  },
+  "next_gate": "Resolve official or reproducible hydrography and exact child outlets/confluence geometry without using territorial naming as a geometry substitute."
+}
