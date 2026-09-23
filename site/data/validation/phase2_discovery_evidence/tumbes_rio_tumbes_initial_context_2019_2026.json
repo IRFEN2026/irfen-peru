@@ -1,0 +1,80 @@
+{
+  "version": "phase2-discovery-evidence-v0.1",
+  "discovery_id": "tumbes_rio_tumbes",
+  "evidence_status": "INITIAL_BOUNDED_OFFICIAL_CONTEXT",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "scope": "Initial evidence package for Río Tumbes, using official critical-point inventories, observed 2023 inundation layers and current hydrometric observations. Provider alert bands remain provider context only.",
+  "sources": [
+    {
+      "source_id": "ANA-TUMBES-CRITICAL-2019",
+      "role": "OFFICIAL_CRITICAL_POINT_CONTEXT"
+    },
+    {
+      "source_id": "ANA-TUMBES-INUNDATION-MAPSERVER-2023",
+      "role": "OFFICIAL_OBSERVED_INUNDATION_GEOMETRY_SOURCE"
+    },
+    {
+      "source_id": "ANA-TUMBES-APRIL-2023-OBSERVED-FLOOD",
+      "role": "DATED_2023_FLOW_AND_IMPACT_CONTEXT"
+    },
+    {
+      "source_id": "SENAMHI-TUMBES-CABO-INGA-2026",
+      "role": "PRIMARY_HYDROMETRIC_OBSERVATION_CONTEXT"
+    },
+    {
+      "source_id": "SENAMHI-TUMBES-EL-TIGRE-2026",
+      "role": "PRIMARY_HYDROMETRIC_OBSERVATION_CONTEXT"
+    },
+    {
+      "source_id": "ANA-TUMBES-CRITICAL-2021",
+      "role": "OFFICIAL_CRITICAL_POINT_CONTEXT"
+    }
+  ],
+  "observed_context": {
+    "critical_points_2019_rio_tumbes": 48,
+    "april_2023": {
+      "date_local": "2023-04-29",
+      "station": "El Tigre",
+      "max_instantaneous_discharge_m3s": 1833,
+      "reported_crop_impacts_ha": {
+        "banana": 2471,
+        "rice": 819
+      },
+      "irfen_threshold": false
+    },
+    "mapserver_2023": [
+      {
+        "date_local": "2023-04-28",
+        "observed_inundated_area_ha": 3290.85
+      },
+      {
+        "date_local": "2023-05-04",
+        "observed_inundated_area_ha": 1085.32,
+        "source_reported_discharge_m3s": 1845.77
+      }
+    ],
+    "february_2026": {
+      "cabo_inga_red_band_observations_available": true,
+      "el_tigre_red_band_observations_available": true,
+      "provider_alert_bands_are_irfen_thresholds": false
+    }
+  },
+  "component_separation": {
+    "rio_tumbes_mainstem_distinct": true,
+    "rio_zarumilla_separate": true,
+    "zorritos_coastal_ravines_separate": true,
+    "upstream_binational_forcing_requires_travel_time_contract": true
+  },
+  "scientific_limits": [
+    "Observed inundation polygons are event-specific and cannot be generalized to all discharges or years.",
+    "SENAMHI provider alert bands are not IRFEN thresholds.",
+    "No current channel capacity is inferred solely from 2023 or 2026 discharge values."
+  ]
+}

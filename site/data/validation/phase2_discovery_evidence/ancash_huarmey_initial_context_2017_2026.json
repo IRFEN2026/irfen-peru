@@ -1,0 +1,82 @@
+{
+  "version": "phase2-discovery-evidence-v0.1",
+  "discovery_id": "ancash_huarmey_culebras",
+  "evidence_status": "INITIAL_BOUNDED_OFFICIAL_CONTEXT",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "scope": "Initial official evidence intake for the Huarmey-Culebras discovery corridor. Rio Huarmey and Rio Culebras remain separate hydrologic components. This package supports research prioritization and historical reconstruction only.",
+  "sources": [
+    {
+      "source_id": "CENEPRED-EVAR-HUARMEY-2017",
+      "institution": "CENEPRED/SIGRID",
+      "evidence_class": "OFFICIAL_RISK_EVALUATION_WITH_2017_EL_NINO_CONTEXT",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/4108_informe-de-evaluacion-de-riesgo-por-desborde-del-rio-huarmey-e-inundacion-pluvial-en-el-centro-poblado-de-huarmey-distrito-y-provincia-de-huarmey-depa.pdf"
+    },
+    {
+      "source_id": "ANA-ANCASH-CRITICAL-POINTS-2021",
+      "institution": "Autoridad Nacional del Agua",
+      "evidence_class": "OFFICIAL_CRITICAL_POINT_INVENTORY",
+      "url": "https://www.gob.pe/institucion/ana/noticias/572285-ancash-ana-entrego-62-fichas-tecnicas-de-puntos-criticos-ante-peligro-de-inundacion-y-huaycos"
+    },
+    {
+      "source_id": "MUNI-HUARMEY-CRITICAL-2026",
+      "institution": "Municipalidad Provincial de Huarmey / MVCS coordination",
+      "evidence_class": "OFFICIAL_CURRENT_CRITICAL_SECTOR_CONTEXT",
+      "url": "https://www.gob.pe/institucion/munihuarmey/noticias/1397188-municipalidad-de-huarmey-y-ministerio-de-vivienda-identifican-puntos-criticos-en-el-rio-ante-la-problematica-del-fenomeno-del-nino"
+    },
+    {
+      "source_id": "ANIN-CASMA-HUARMEY-2026",
+      "institution": "Autoridad Nacional de Infraestructura",
+      "evidence_class": "OFFICIAL_CURRENT_PROTECTION_PROJECT_CONTEXT",
+      "url": "https://www.gob.pe/institucion/anin/noticias/1348606-anin-socializa-reinicio-de-trabajos-en-el-proyecto-de-defensas-riberenas-de-los-rios-casma-y-huarmey"
+    }
+  ],
+  "historical_regime_context": {
+    "el_nino_2017": {
+      "status": "HIGH_VALUE_RECONSTRUCTION_TARGET",
+      "evidence": "The official Huarmey risk evaluation characterizes 2017 rainfall in Huarmey and the middle western-slope basin as extremely rainy and reports local frequency/intensity exceeding the 1982-83 and 1997-98 El Nino episodes.",
+      "event_day_series_normalized": false,
+      "historical_comparison_is_local_context_not_universal_regime_rule": true
+    }
+  },
+  "critical_point_context": {
+    "ana_2021": {
+      "rio_huarmey_points_reported": 6,
+      "rio_culebras_points_reported": 2,
+      "role": "CRITICAL_POINT_CONTEXT_NOT_EVENT_COUNT"
+    },
+    "huarmey_2026_named_sectors": [
+      "Puente Panamericana",
+      "Puente Buenos Aires",
+      "Puente Las Arabes",
+      "El Arenal"
+    ],
+    "role": "CURRENT_VULNERABLE_SECTORS_NOT_HISTORICAL_EVENT_FOOTPRINTS"
+  },
+  "component_separation": {
+    "rio_huarmey_distinct_component": true,
+    "rio_culebras_distinct_component": true,
+    "combined_geometry_allowed": false,
+    "cross_basin_hydraulic_transfer_validated": false
+  },
+  "next_normalization_steps": [
+    "obtain and normalize official Rio Huarmey and Rio Culebras hydrologic-unit geometries independently",
+    "extract dated 2017 outcomes and reconstruct 1982-83 and 1997-98 local evidence without assuming undocumented equivalence",
+    "identify event-paired SENAMHI/ANA rainfall and river observations",
+    "map urban, agricultural, bridge, Panamericana and water-intake exposure by component",
+    "retain 2026 protection works as current mitigation context only"
+  ],
+  "scientific_limits": [
+    "No event-day rainfall, stage or discharge time series is normalized in this asset.",
+    "Critical-point counts are prevention context, not historical event counts.",
+    "Current ANIN/municipal works are not backcast as historical hydraulic capacity.",
+    "No negative control is inferred from an unreported day.",
+    "No design value or provider alert becomes an IRFEN threshold."
+  ]
+}
