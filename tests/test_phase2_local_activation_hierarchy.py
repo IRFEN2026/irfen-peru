@@ -1,8 +1,7 @@
 import json
 import sys
+import unittest
 from pathlib import Path
-
-import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
@@ -119,7 +118,7 @@ def test_explicit_weakening_is_rejected_even_when_legacy_omissions_are_inherited
         "production_use": False,
         "operational_alerting_enabled": True,
     }
-    with pytest.raises(hierarchy.HierarchyError, match="operational_alerting_enabled"):
+    with unittest.TestCase().assertRaisesRegex(hierarchy.HierarchyError, "operational_alerting_enabled"):
         hierarchy.reject_explicit_conflict(unsafe, "TEST")
 
 
