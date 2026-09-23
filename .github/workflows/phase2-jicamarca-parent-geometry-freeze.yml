@@ -1,0 +1,77 @@
+name: IRFEN - Phase2 Jicamarca parent geometry freeze
+
+on:
+  pull_request:
+    paths:
+      - config/phase2_jicamarca_parent_geometry_v0_1.json
+      - config/phase2_jicamarca_discovery_v0_1.json
+      - site/data/validation/phase2_zone_contracts/lima_este_santa_eulalia_rimac.json
+      - site/data/phase2/sources/jicamarca_hydrologic_context/ana_jicamarca_1375542.geojson
+      - site/data/phase2/geometries/lima_este_jicamarca_parent_basin_context.geojson
+      - site/data/phase2/geometries/lima_este_jicamarca_parent_basin_context_validation.json
+      - scripts/probe_phase2_jicamarca_parent_geometry.py
+      - scripts/verify_phase2_jicamarca_parent_geometry.py
+      - scripts/build_map_layer_catalog.py
+      - tests/test_phase2_jicamarca_discovery.py
+      - site/data/map_layers.json
+      - .github/workflows/phase2-jicamarca-parent-geometry-freeze.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap-or-replay-exact-ana-parent:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install test dependency
+        run: python -m pip install pytest
+      - name: Bootstrap once or replay frozen exact ANA 1375542
+        id: mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE=site/data/phase2/sources/jicamarca_hydrologic_context/ana_jicamarca_1375542.geojson
+          if [[ ! -f "$SOURCE" ]]; then
+            echo "bootstrap=true" >> "$GITHUB_OUTPUT"
+            python scripts/probe_phase2_jicamarca_parent_geometry.py --refresh-source
+            python scripts/verify_phase2_jicamarca_parent_geometry.py
+            python scripts/build_map_layer_catalog.py
+          else
+            echo "bootstrap=false" >> "$GITHUB_OUTPUT"
+            python scripts/verify_phase2_jicamarca_parent_geometry.py
+            python scripts/build_map_layer_catalog.py --check-only
+          fi
+      - name: Revalidate Jicamarca and universal hierarchy guards
+        run: |
+          python -m pytest -q tests/test_phase2_jicamarca_discovery.py
+          python scripts/validate_phase2_local_activation_hierarchy.py
+      - name: Commit frozen official parent context once
+        if: steps.mode.outputs.bootstrap == 'true' && github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            config/phase2_jicamarca_discovery_v0_1.json \
+            site/data/validation/phase2_zone_contracts/lima_este_santa_eulalia_rimac.json \
+            site/data/phase2/sources/jicamarca_hydrologic_context/ana_jicamarca_1375542.geojson \
+            site/data/phase2/geometries/lima_este_jicamarca_parent_basin_context.geojson \
+            site/data/phase2/geometries/lima_este_jicamarca_parent_basin_context_validation.json \
+            site/data/map_layers.json
+          if git diff --cached --quiet; then
+            echo "No bootstrap changes to persist"
+          else
+            git commit -m "Freeze exact ANA Jicamarca parent context"
+            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          fi
