@@ -37,27 +37,35 @@ jobs:
           fi
       - name: Retrieve exact preregistered source features
         run: python scripts/freeze_phase2_jicamarca_igp_channel_lines.py
-      - name: Enforce local-line-only guards
+      - name: Enforce local-line-only guards and rejected Rio Seco exclusion
         shell: bash
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
           v=json.loads(Path('site/data/validation/phase2_jicamarca_igp_channel_line_validation_v0_1.json').read_text(encoding='utf-8'))
-          assert v['status']=='PASS_FROZEN_IGP_NAMED_CHANNEL_LINES'
+          assert v['status']=='PASS_FROZEN_IGP_NAMED_CHANNEL_LINES_WITH_REJECTION_LEDGER'
           for k,e in {
             'deployment_status':'RESEARCH_ONLY','test_mode':'TEST_ONLY','production_use':False,
             'production_ready':False,'operational_alerting_enabled':False,'activation_gate':'BLOCKED',
             'missing_data_rule':'UNKNOWN_NOT_LOW_RISK','decision_thresholds':None,'hydraulic_factors':None}.items():
               assert v[k]==e, (k,v[k])
-          assert v['selection_used_geometry'] is False
+          assert v['initial_selection_used_geometry'] is False
           assert v['selection_used_outcomes'] is False
+          assert v['post_geometry_identity_rejection_performed'] is True
           assert v['source_segments_union_performed'] is False
           assert v['catchment_polygons_created'] is False
           assert v['outlets_or_confluences_inferred'] is False
           assert v['routing_enabled'] is False
-          assert {x['component_id'] for x in v['components']}=={'rio_seco_channel','canto_grande_channel','media_luna_channel'}
-          assert set(v['withheld_components'])=={'jicamarca_named_channel','huaycoloro'}
+          assert {x['component_id'] for x in v['components']}=={'canto_grande_channel','media_luna_channel'}
+          assert set(v['withheld_components'])=={'rio_seco','jicamarca_named_channel','huaycoloro'}
+          rejected=v['rejected_components']
+          assert rejected==[{
+            'component_id':'rio_seco_channel_candidate','hydrologic_child_id':'rio_seco',
+            'source_objectid':3338,'status':'REJECTED_WRONG_SAME_NAME_GEOGRAPHY_DO_NOT_PUBLISH',
+            'geometry_published':False,'outlet_inferred':False,'catchment_inferred':False,
+            'event_outcome_used':False}]
+          assert not Path('site/data/phase2/geometries/jicamarca_rio_seco_igp_channel.geojson').exists()
           for row in v['components']:
               d=json.loads(Path(row['path']).read_text(encoding='utf-8'))
               assert d['type']=='FeatureCollection'
@@ -82,7 +90,6 @@ jobs:
         shell: bash
         run: |
           git diff --exit-code -- \
-            site/data/phase2/geometries/jicamarca_rio_seco_igp_channel.geojson \
             site/data/phase2/geometries/jicamarca_canto_grande_igp_channel.geojson \
             site/data/phase2/geometries/jicamarca_media_luna_igp_channel.geojson \
             site/data/validation/phase2_jicamarca_igp_channel_line_validation_v0_1.json
@@ -94,9 +101,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add \
-            site/data/phase2/geometries/jicamarca_rio_seco_igp_channel.geojson \
             site/data/phase2/geometries/jicamarca_canto_grande_igp_channel.geojson \
             site/data/phase2/geometries/jicamarca_media_luna_igp_channel.geojson \
             site/data/validation/phase2_jicamarca_igp_channel_line_validation_v0_1.json
-          git commit -m "Freeze exact IGP Jicamarca child channel lines"
+          git commit -m "Freeze admissible IGP Jicamarca child channel lines"
           git push origin HEAD:${{ github.event.pull_request.head.ref }}
