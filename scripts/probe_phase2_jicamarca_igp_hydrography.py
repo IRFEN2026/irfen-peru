@@ -38,15 +38,12 @@ def get_json(url,params):
     if isinstance(obj,dict) and obj.get('error'): raise ProbeError(f"ARCGIS_ERROR {obj['error']}")
     return obj
 
-def canonical_field_map(meta):
-    """Map stable semantic suffixes to ArcGIS field names, including qualified SDE names."""
+def field_map(meta):
     out={}
     for field in meta.get('fields',[]):
         name=str(field.get('name') or '')
         suffix=name.rsplit('.',1)[-1].casefold()
-        alias=str(field.get('alias') or '').casefold()
-        for key in (suffix,alias):
-            if key and key not in out: out[key]=name
+        if suffix and suffix not in out: out[suffix]=name
     oid=str(meta.get('objectIdField') or '')
     if oid: out['objectid']=oid
     return out
@@ -63,19 +60,20 @@ def main():
     wkid=sr.get('latestWkid') or sr.get('wkid')
     if int(wkid)!=int(src['expected_spatial_reference_wkid']): raise ProbeError(f'SPATIAL_REFERENCE_DRIFT {wkid}')
     if meta.get('serviceItemId') not in (None,src['service_item_id']): raise ProbeError(f"SERVICE_ITEM_DRIFT {meta.get('serviceItemId')}")
-    fmap=canonical_field_map(meta)
-    required={'objectid','nom','codigo','cuencas','scuencas','mcuencas','distrito','provincia','region'}
+    fmap=field_map(meta)
+    required={str(x).casefold() for x in src['observed_required_fields']}
     missing=sorted(required-set(fmap))
-    if missing: raise ProbeError(f"MISSING_FIELDS {missing} available={sorted(fmap)}")
-    optional=['areakm','altura_min','altura_max','largo_max','ancho_max']
-    canonical_names=['objectid','codigo','nom','region','provincia','distrito','cuencas','scuencas','mcuencas']+[x for x in optional if x in fmap]
-    actual_fields=[fmap[x] for x in canonical_names]
+    if missing: raise ProbeError(f"SCHEMA_DRIFT missing={missing} available={sorted(fmap)}")
+    actual_fields=[fmap[x] for x in sorted(required)]
     query_url=layer_url+'/query'
     ids=get_json(query_url,{'where':'1=1','returnIdsOnly':'true','f':'json'}).get('objectIds') or []
     ids=sorted({int(x) for x in ids})
     if not ids: raise ProbeError('NO_OBJECT_IDS')
     if len(ids)>int(co['limits']['max_object_ids']): raise ProbeError(f'TOO_MANY_OBJECT_IDS {len(ids)}')
     chunk=int(co['limits']['query_chunk_size']); attrs=[]
+    semantic={
+        'objectid':'objectid','nombre':'name','nomdep':'department','nomprov':'province',
+        'nomdist':'district','clasificac':'classification','tipo':'source_type','ubigeo':'ubigeo'}
     for i in range(0,len(ids),chunk):
         subset=ids[i:i+chunk]
         obj=get_json(query_url,{
@@ -84,7 +82,7 @@ def main():
             'returnGeometry':'false','f':'json'})
         for feature in obj.get('features',[]):
             raw=feature.get('attributes') or {}
-            row={canon:raw.get(fmap[canon]) for canon in canonical_names}
+            row={semantic[k]:raw.get(fmap[k]) for k in semantic}
             attrs.append(row)
     if len(attrs)!=len(ids): raise ProbeError(f'ATTRIBUTE_COUNT_MISMATCH ids={len(ids)} features={len(attrs)}')
     target_results=[]
@@ -92,10 +90,10 @@ def main():
         aliases={norm(x) for x in target['accepted_name_aliases']}
         exact=[]; contains=[]
         for row in attrs:
-            n=norm(row.get('nom'))
+            n=norm(row.get('name'))
             if n in aliases: exact.append(row)
             elif n and any(a in n or n in a for a in aliases): contains.append(row)
-        key=lambda r:(str(r.get('nom') or ''),int(r.get('objectid') or 0))
+        key=lambda r:(str(r.get('name') or ''),int(r.get('objectid') or 0))
         exact.sort(key=key); contains.sort(key=key)
         target_results.append({
             'child_id':target['child_id'],'accepted_name_aliases':target['accepted_name_aliases'],
@@ -104,11 +102,11 @@ def main():
             'geometry_accepted':False,'outlet_accepted':False,'routing_enabled':False,
         })
     report={
-        'schema_version':'0.1','status':'PASS_BOUNDED_IGP_HYDROGRAPHY_ATTRIBUTE_PROBE',**SAFE,
+        'schema_version':'0.2','status':'PASS_BOUNDED_IGP_HYDROGRAPHY_ATTRIBUTE_PROBE',**SAFE,
         'source':{'institution':src['institution'],'layer_url':layer_url,'layer_name':meta.get('name'),
                   'geometry_type':meta.get('geometryType'),'spatial_reference_wkid':int(wkid),
                   'service_item_id':meta.get('serviceItemId') or src['service_item_id'],
-                  'resolved_field_names':{k:fmap[k] for k in canonical_names}},
+                  'resolved_field_names':{k:fmap[k] for k in sorted(required)}},
         'object_id_count':len(ids),'attribute_feature_count':len(attrs),'geometry_requested':False,
         'geometry_accepted':False,'outlets_inferred':False,'confluences_inferred':False,
         'routing_enabled':False,'targets':target_results,
