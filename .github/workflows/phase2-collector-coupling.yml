@@ -21,7 +21,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   validate-collector-coupling:
@@ -66,39 +66,6 @@ jobs:
           assert layer['style']['color']=='#64748b'
           assert layer['source_metadata']['geometry_types']==['Point']
           PY
-      - name: Sync generated map catalog to this bounded PR branch
-        if: github.event_name == 'pull_request' && github.head_ref == 'agent/phase2-rimac-static-coupling-20260923'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          HEAD_BRANCH: ${{ github.head_ref }}
-        run: |
-          set -euo pipefail
-          api="https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/site/data/map_layers.json"
-          current_sha=$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/vnd.github+json" "${api}?ref=${HEAD_BRANCH}" | python -c 'import json,sys; print(json.load(sys.stdin)["sha"])')
-          export MAP_CONTENT="$(base64 -w0 site/data/map_layers.json)"
-          export MAP_SHA="${current_sha}"
-          python - <<'PY' > /tmp/map-payload.json
-          import json, os
-          print(json.dumps({
-              "message": "Regenerate map layer catalog for Rímac coupling nodes",
-              "content": os.environ["MAP_CONTENT"],
-              "sha": os.environ["MAP_SHA"],
-              "branch": os.environ["HEAD_BRANCH"],
-          }))
-          PY
-          curl -fsSL -X PUT \
-            -H "Authorization: Bearer ${GH_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            --data-binary @/tmp/map-payload.json \
-            "${api}" >/tmp/map-sync-response.json
-          python - <<'PY'
-          import json
-          d=json.load(open('/tmp/map-sync-response.json',encoding='utf-8'))
-          assert d.get('commit',{}).get('sha')
-          print('MAP_CATALOG_SYNCED', d['commit']['sha'])
-          PY
-        shell: bash
       - uses: actions/upload-artifact@v4
         if: always()
         with:
