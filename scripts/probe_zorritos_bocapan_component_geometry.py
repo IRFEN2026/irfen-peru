@@ -10,8 +10,10 @@ from __future__ import annotations
 import argparse
 from hashlib import sha256
 import json
+import time
 import unicodedata
 from pathlib import Path
+from urllib.error import URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
@@ -114,8 +116,19 @@ def fetch_source(item: dict) -> dict:
         "geometryPrecision": str(query.get("geometry_precision", 7)),
         "f": query.get("format", "geojson"),
     })
-    with urlopen(Request(url, headers={"User-Agent": "IRFEN-RESEARCH-ONLY/0.1"}), timeout=90) as response:
-        return json.loads(response.read().decode("utf-8"))
+    request = Request(url, headers={"User-Agent": "IRFEN-RESEARCH-ONLY/0.1"})
+    last_error: Exception | None = None
+    for attempt, delay_s in enumerate((0, 5, 15), start=1):
+        if delay_s:
+            time.sleep(delay_s)
+        try:
+            with urlopen(request, timeout=120) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except (URLError, TimeoutError, OSError) as exc:
+            last_error = exc
+            if attempt == 3:
+                break
+    raise ProbeError(f"ANA_SOURCE_FETCH_FAILED_AFTER_3_ATTEMPTS: {last_error}")
 
 
 def validate_source(source: dict) -> dict:
