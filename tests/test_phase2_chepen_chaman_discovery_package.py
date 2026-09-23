@@ -50,7 +50,7 @@ def test_chaman_identity_exact_query_and_geometry_transition_are_fail_closed():
     c = load(CONTRACT)
     ch = p["hydrologic_components"]["rio_chaman"]
     assert ch["ana_unit_code"] == "137752"
-    assert ch["ana_unit_name"] == "Cuenca Chaman"
+    assert ch["ana_unit_name"] == "Cuenca Chamán"
     assert ch["source_query"]["where"] == "CODIGO='137752'"
     comp = c["assets"]["geometry_components"]
     assert len(comp) == 1 and comp[0]["component_id"] == "chaman_basin_context"
