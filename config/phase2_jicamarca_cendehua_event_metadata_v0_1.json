@@ -1,0 +1,94 @@
+{
+  "schema_version": "0.1",
+  "status": "BOUNDED_PUBLIC_EVENT_METADATA_RESEARCH_ONLY",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "retrieval_date_utc": "2026-09-23",
+  "scope": "Public IGP/INDECI event-report metadata only; no raw sensor stream, operational threshold or inferred discharge.",
+  "station_network_context": {
+    "source_id": "IGP-CENDEHUA-PUBLIC-SERVICE",
+    "source_url": "https://www.gob.pe/41855-centro-de-monitoreo-de-deslizamientos-y-huaicos-cendehua",
+    "reported_components": ["Huaycoloro", "Río Seco"],
+    "reported_sensor_classes": ["cameras", "continuity sensors", "level sensors"],
+    "reported_relative_location": "approximately 5 km upstream of Cajamarquilla",
+    "raw_station_coordinates_archived": false,
+    "raw_time_series_archived": false,
+    "operational_alert_logic_imported": false
+  },
+  "events": [
+    {
+      "record_id": "IGP-HL2-2023-03-15T14:44:19-05:00",
+      "component_id": "huaycoloro",
+      "station_label": "Huaycoloro 2",
+      "timestamp_local": "2023-03-15T14:44:19-05:00",
+      "source_url": "https://www.igp.gob.pe/servicios/centro-monitoreo-deslizamientos-huaicos/sites/default/files/reportes/Evento_15_03_2023_HL2.pdf",
+      "source_type": "IGP_EVENT_REPORT_PDF",
+      "reported_intensity": "Media",
+      "reported_height_m": null,
+      "reported_discharge_m3_s": null,
+      "reported_reference": "A la altura del puente al ingreso del ROJ - IGP",
+      "event_report_sha256": null,
+      "byte_archive_status": "PENDING_REPRODUCIBLE_BYTE_CAPTURE",
+      "research_use": "DIRECT_FLOW_EVIDENCE_METADATA",
+      "source_reported_intensity_is_irfen_threshold": false,
+      "source_reported_reference_is_reproducible_outlet": false
+    },
+    {
+      "record_id": "IGP-RS2-2023-03-15T16:27:41-05:00",
+      "component_id": "rio_seco",
+      "station_label": "Río Seco 2",
+      "timestamp_local": "2023-03-15T16:27:41-05:00",
+      "source_url": "https://www.igp.gob.pe/servicios/centro-monitoreo-deslizamientos-huaicos/sites/default/files/reportes/Evento_15_03_2023_RS2.pdf",
+      "source_type": "IGP_EVENT_REPORT_PDF",
+      "reported_intensity": "Moderada",
+      "reported_height_m": 0.43,
+      "reported_discharge_m3_s": null,
+      "reported_reference": "Frente a la barrera del Radio Observatorio de Jicamarca",
+      "event_report_sha256": null,
+      "byte_archive_status": "PENDING_REPRODUCIBLE_BYTE_CAPTURE",
+      "research_use": "DIRECT_FLOW_EVIDENCE_METADATA",
+      "source_reported_height_is_irfen_threshold": false,
+      "source_reported_reference_is_reproducible_outlet": false
+    },
+    {
+      "record_id": "IGP-HUAYCOLORO-2017-01-31T16:04-05:00",
+      "component_id": "huaycoloro",
+      "station_label": null,
+      "timestamp_local": "2017-01-31T16:04:00-05:00",
+      "timestamp_precision": "MINUTE",
+      "source_url": "https://www.gob.pe/institucion/igp/noticias/74439-el-roj-fue-afectado-por-el-desborde-del-rio-huaycoloro",
+      "source_type": "IGP_OFFICIAL_NEWS_ARCHIVE",
+      "reported_intensity": null,
+      "reported_height_m": null,
+      "reported_discharge_m3_s": null,
+      "research_use": "DIRECT_FLOW_EVIDENCE_METADATA",
+      "station_identity_status": "UNRESOLVED_FROM_THIS_SOURCE",
+      "source_reported_event_is_irfen_threshold": false
+    }
+  ],
+  "known_metadata_conflicts": [
+    {
+      "source_url": "https://www.gob.pe/institucion/indeci/noticias/726162-coen-monitorea-activacion-de-la-quebrada-huaycoloro-en-el-distrito-lurigancho-chosica-lima",
+      "reported_time_local": "2023-03-15T16:11:00-05:00",
+      "reported_station": "Rio Seco 1",
+      "reported_component_text": "quebrada Huaycoloro",
+      "status": "PRESERVE_AS_SOURCE_LABEL_CONFLICT_DO_NOT_REASSIGN_COMPONENT",
+      "rule": "Do not use this item to relabel Río Seco 1 as Huaycoloro or to infer hydrologic identity; retain for later source reconciliation."
+    }
+  ],
+  "qa_rules": {
+    "station_label_is_not_outlet": true,
+    "sensor_height_is_not_discharge": true,
+    "reported_intensity_is_not_irfen_threshold": true,
+    "operational_alert_level_is_not_irfen_threshold": true,
+    "missing_discharge_remains_unknown": true,
+    "cross_component_relabel_from_press_text_forbidden": true
+  }
+}
