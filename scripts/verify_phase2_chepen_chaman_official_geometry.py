@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Replay frozen ANA Chaman child geometry without network or mutation."""
+"""Replay frozen ANA Chamán child geometry without network or mutation."""
 from __future__ import annotations
 import json
 from hashlib import sha256
@@ -15,7 +15,7 @@ def main():
  source=p.load(p.SOURCE); source_sha=digest(p.SOURCE); feature=p.exact(source)
  if p.GEOM.read_bytes()!=p.cb(p.norm(feature,source_sha)): fail("CHAMAN_GEOMETRY_REPLAY_MISMATCH")
  geometry_sha=digest(p.GEOM); validation=p.load(p.VAL); p.guards(validation,"VALIDATION")
- required={"status":"PASS_OFFICIAL_ANA_DISCOVERY_CHILD_GEOMETRY","component_id":p.CID,"source_id":"ANA-UH-137752-CHAMAN","ana_unit_code":"137752","ana_unit_name":"Cuenca Chaman","source_sha256":source_sha,"geometry_sha256":geometry_sha,"outcomes_read":False,"event_footprint_created":False,"rainfall_read":False,"hydraulic_capacity_read":False,"thresholds_used":False,"negative_controls_read":False,"approximate_geometry_used":False,"morana_geometry_inferred":False,"avispero_geometry_inferred":False,"jequetepeque_geometry_merged":False,"parent_composite_created":False}
+ required={"status":"PASS_OFFICIAL_ANA_DISCOVERY_CHILD_GEOMETRY","component_id":p.CID,"source_id":"ANA-UH-137752-CHAMAN","ana_unit_code":"137752","ana_unit_name":"Cuenca Chamán","source_sha256":source_sha,"geometry_sha256":geometry_sha,"outcomes_read":False,"event_footprint_created":False,"rainfall_read":False,"hydraulic_capacity_read":False,"thresholds_used":False,"negative_controls_read":False,"approximate_geometry_used":False,"morana_geometry_inferred":False,"avispero_geometry_inferred":False,"jequetepeque_geometry_merged":False,"parent_composite_created":False}
  for key,value in required.items():
   if validation.get(key)!=value: fail(f"VALIDATION_DRIFT_{key}")
  validation_sha=digest(p.VAL)
