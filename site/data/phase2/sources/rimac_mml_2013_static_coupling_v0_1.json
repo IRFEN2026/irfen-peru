@@ -1,0 +1,163 @@
+{
+  "schema_version": "0.1",
+  "status": "FROZEN_RESEARCH_ONLY_STATIC_COUPLING_EVIDENCE",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "scope": "STATIC_GEOMETRY_AND_D8_CONNECTIVITY_ONLY",
+  "source": {
+    "source_id": "MML-SGDC-RIMAC-MONITORING-2013",
+    "institution": "Municipalidad Metropolitana de Lima - Subgerencia de Defensa Civil",
+    "document_date": "2013-06-20",
+    "document_title": "Monitoreo de la Cuenca Hidrografica del Rio Rimac en el Ambito del Gobierno Metropolitano y la Reduccion de Riesgos",
+    "source_url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/442/descargar",
+    "reported_crs": "UTM WGS84 Zona 18S",
+    "admissible_role": "STATIC_CHANNEL_AND_MAINSTEM_GEOMETRY_ONLY",
+    "event_outcomes_used": false,
+    "post_event_damage_used": false,
+    "numeric_reference_morphometry_used": false,
+    "rainfall_used": false,
+    "post_anchor_predictors_used": false
+  },
+  "source_snapshot_provenance": {
+    "repository": "IRFEN2026/irfen-peru",
+    "source_ref": "agent/chosica-2015-multibasin-v0.1",
+    "static_anchor_registry": {
+      "path": "config/chosica_2015_mml_2013_static_anchor_registry_v0_1.json",
+      "git_blob_sha": "b1ab25c5f2ca06e29e0b712a6a709924d8dbb8a5"
+    },
+    "quirio_method_contract": {
+      "path": "config/chosica_2015_quirio_outlet_resolution_contract_v0_1.json",
+      "git_blob_sha": "7e9fd713f3ee45fa32ad8b427b339244f9d5a6e9"
+    },
+    "quirio_result": {
+      "path": "site/data/validation/chosica_2015_quirio_outlet_candidate.json",
+      "git_blob_sha": "d9ad64cd915a77423a21262ea6e6996e6286da6b"
+    },
+    "pedregal_method_contract": {
+      "path": "config/chosica_2015_pedregal_outlet_resolution_contract_v0_1.json",
+      "git_blob_sha": "0104ebaf4b5cfe1c42d116816318db1d243d4856"
+    },
+    "pedregal_result": {
+      "path": "site/data/validation/chosica_2015_pedregal_outlet_candidate.json",
+      "git_blob_sha": "15a9ab5c37b9a0fa970ea4f7181c423849ba4f95"
+    }
+  },
+  "static_anchors": {
+    "rimac_r4_puente_colgante": {
+      "easting_m": 315681,
+      "northing_m": 8680063,
+      "elevation_m": 874,
+      "lon": -76.69255813902859,
+      "lat": -11.93507041701107,
+      "role": "RIMAC_MAINSTEM_CONTROL_POINT_STATIC_CONTEXT"
+    },
+    "rimac_r9_puente_california": {
+      "easting_m": 312032,
+      "northing_m": 8677974,
+      "elevation_m": 771,
+      "lon": -76.7261751272084,
+      "lat": -11.953749940597932,
+      "role": "RIMAC_MAINSTEM_CONTROL_POINT_STATIC_CONTEXT"
+    },
+    "quirio_r8": {
+      "easting_m": 313046,
+      "northing_m": 8680095,
+      "elevation_m": 970,
+      "lon": -76.7167453631911,
+      "lat": -11.934634563201794,
+      "role": "QUIRIO_CHANNEL_UPSTREAM_ANCHOR"
+    },
+    "pedregal_r7": {
+      "easting_m": 314551,
+      "northing_m": 8681534,
+      "elevation_m": 1108,
+      "lon": -76.70284849291879,
+      "lat": -11.921710826978806,
+      "role": "PEDREGAL_CHANNEL_UPSTREAM_ANCHOR"
+    }
+  },
+  "reproducible_hydrologic_intersections": {
+    "quirio": {
+      "method": "MML_R4_R9_RIMAC_D8_FIRST_INTERSECTION_WITH_QUIRIO_R8",
+      "dem_source": "Copernicus DEM GLO-30 Public",
+      "analysis_crs": "EPSG:32718",
+      "resolution_m": 30.0,
+      "identity_tolerance_m": 84.852814,
+      "mainstem_trace_cells": 343,
+      "distance_to_r9_m": 11.478,
+      "first_intersection_unique": true,
+      "node": {
+        "row": 224,
+        "col": 247,
+        "x_m": 313961.809,
+        "y_m": 8678939.96,
+        "lon": -76.7084038,
+        "lat": -11.94512659
+      },
+      "classification": "REPRODUCIBLE_TERRAIN_D8_HYDROLOGIC_INTERSECTION",
+      "official_surface_confluence_confirmed": false,
+      "event_outcomes_used": false,
+      "numeric_reference_morphometry_used": false,
+      "rainfall_used": false,
+      "post_anchor_predictors_used": false,
+      "workflow_provenance": {
+        "run_id": 33985701094,
+        "artifact_id": 9975098521,
+        "artifact_digest": "sha256:3a574f1190a933ebac3c0a2adc2d7faa9a0a34b9a1c50c697bd70a8adf252ea8"
+      }
+    },
+    "pedregal_san_antonio": {
+      "method": "MML_R4_R9_RIMAC_D8_FIRST_INTERSECTION_WITH_PEDREGAL_R7",
+      "dem_source": "Copernicus DEM GLO-30 Public",
+      "analysis_crs": "EPSG:32718",
+      "resolution_m": 30.0,
+      "identity_tolerance_m": 84.852814,
+      "mainstem_trace_cells": 344,
+      "distance_to_r9_m": 25.58,
+      "first_intersection_unique": true,
+      "node": {
+        "row": 262,
+        "col": 276,
+        "x_m": 314822.683,
+        "y_m": 8679229.571,
+        "lon": -76.70048443,
+        "lat": -11.94255661
+      },
+      "classification": "REPRODUCIBLE_TERRAIN_D8_HYDROLOGIC_INTERSECTION",
+      "official_surface_confluence_confirmed": false,
+      "event_outcomes_used": false,
+      "numeric_reference_morphometry_used": false,
+      "rainfall_used": false,
+      "post_anchor_predictors_used": false,
+      "workflow_provenance": {
+        "run_id": 33986275639,
+        "artifact_id": 9975265648,
+        "artifact_digest": "sha256:7c27874f327f716a07899a07c1e46d53c09efcae0ba692a4c9092d84c49d00a7"
+      }
+    }
+  },
+  "dem_tile_integrity": [
+    {
+      "tile": "Copernicus_DSM_COG_10_S13_00_W077_00_DEM",
+      "sha256": "ebd98f2dd44e09e90d36f8fd77bc462a60c151eb42d11ea85c0d74e66cfa4c96"
+    },
+    {
+      "tile": "Copernicus_DSM_COG_10_S12_00_W077_00_DEM",
+      "sha256": "d9f8d410da66bfb85c73b957401aea73043f8618cccdb7d1fc76082d30a31130"
+    }
+  ],
+  "scientific_limits": [
+    "The D8 intersection nodes establish reproducible terrain-routing connectivity only; they are not official surveyed surface confluences.",
+    "No discharge hydrograph, travel time, attenuation, channel capacity, overflow state, impact state, or event response is inferred from this package.",
+    "The package cannot be used to assign an activation state to the parent Rímac corridor.",
+    "Carossio is intentionally excluded because the 2013 static source documents an obstructed/blind lower reach and therefore direct receiver connectivity must not be assumed.",
+    "Corrales/Rayos de Sol and other tributaries remain outside this package until an equally bounded reproducible coupling trace is carried into Phase 2."
+  ]
+}
