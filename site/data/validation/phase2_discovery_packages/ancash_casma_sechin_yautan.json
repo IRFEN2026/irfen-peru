@@ -16,6 +16,11 @@
     "ANA-CASMA-HYDROGRAPHIC-REGISTRY-2018",
     "ANA-CASMA-HYDROLOGIC-STUDY-2007",
     "CENEPRED-CASMA-SECHIN-EVAR-2017-4105",
+    "INDECI-CASMA-SECHIN-GRANDE-2023-03",
+    "INDECI-YAUTAN-CRUZ-PUNTA-2023-03",
+    "INDECI-YAUTAN-MUNA-AND-APRIL-2023",
+    "ANA-CASMA-CRITICAL-POINTS-2021",
+    "MTC-SECHIN-BRIDGE-2023",
     "ANA-CASMA-FAJA-2022-RD0331",
     "SENAMHI-ANCASH-AVISOS-2017",
     "SENAMHI-ANCASH-DATA-DOWNLOAD"
@@ -61,23 +66,50 @@
       "1982_1983":{"status":"UNKNOWN_NOT_NEGATIVE","mechanism":null,"source_ids":[]},
       "1997_1998":{"status":"UNKNOWN_NOT_NEGATIVE","mechanism":null,"source_ids":[]},
       "2017":{"status":"POSITIVE_TERRITORIAL_MIXED_MECHANISM_EVIDENCE","source_ids":["CENEPRED-CASMA-SECHIN-EVAR-2017-4105","SENAMHI-ANCASH-AVISOS-2017"],"supported_components":["rio_sechin","urban_pluvial_casma"],"automatic_mainstem_casma_attribution":false,"automatic_other_child_activation":false},
-      "2023":{"status":"UNKNOWN_NOT_NEGATIVE","mechanism":null,"source_ids":[]},
-      "recent":{"status":"UNKNOWN_NOT_NEGATIVE","mechanism":null,"source_ids":[]}
+      "2023":{
+        "status":"POSITIVE_CHILD_SPECIFIC_AND_NAMED_RAVINE_EVIDENCE_GEOMETRY_PARTIAL",
+        "source_ids":["INDECI-CASMA-SECHIN-GRANDE-2023-03","INDECI-YAUTAN-CRUZ-PUNTA-2023-03","INDECI-YAUTAN-MUNA-AND-APRIL-2023","MTC-SECHIN-BRIDGE-2023"],
+        "child_evidence":{
+          "rio_sechin":{"status":"POSITIVE_DATED_RIVER_OVERFLOW","event_dates":["2023-03-10","2023-03-12"],"event_footprint_available":false},
+          "medio_casma_grande_context":{"status":"POSITIVE_DATED_RIO_GRANDE_OVERFLOW_CONTEXT","event_dates":["2023-03-10"],"event_footprint_available":false,"does_not_label_all_medio_casma_cells":true},
+          "rio_yautan":{"status":"UNKNOWN_NOT_NEGATIVE_MAINSTEM","territorial_huaicos_do_not_prove_mainstem_overflow":true}
+        },
+        "named_ravines_unmaterialized":[
+          {"name":"Quebrada Cruz Punta","status":"POSITIVE_DATED_ACTIVATION","event_date":"2023-03-10","geometry_status":"MISSING_NO_REPRODUCIBLE_GEOMETRY","materialize_map_layer":false},
+          {"name":"Quebrada Muna","status":"POSITIVE_DATED_ACTIVATION","event_date":"2023-02-17","geometry_status":"MISSING_NO_REPRODUCIBLE_GEOMETRY","materialize_map_layer":false}
+        ],
+        "territorial_april_yautan":{"status":"POSITIVE_HUAICO_AND_INUNDATION_TERRITORIAL_EVIDENCE_MECHANISM_UNRESOLVED","event_date":"2023-04-06","automatic_rio_yautan_mainstem_attribution":false},
+        "automatic_other_child_activation":false,
+        "complete_event_footprint_available":false
+      },
+      "recent":{"status":"UNKNOWN_NOT_NEGATIVE","mechanism":null,"source_ids":["ANA-CASMA-CRITICAL-POINTS-2021"]}
     },
     "observations": {
       "status":"HISTORICAL_NETWORK_IDENTIFIED_EVENT_PAIRING_PENDING",
       "source_ids":["ANA-CASMA-HYDROLOGIC-STUDY-2007","SENAMHI-ANCASH-DATA-DOWNLOAD"],
       "stations":[
-        {"code":"202001","name":"Puente Carretera","source_watercourse":"Rio Casma","reliable_period_reported":"1960-1973 / 2003-2005","event_paired_2017":false},
-        {"code":"202002","name":"Hacienda Poctao","source_watercourse":"Rio Grande","reliable_period_reported":"1965-1969","event_paired_2017":false},
-        {"code":"202003","name":"Puente Carretera","source_watercourse":"Rio Sechin","reliable_period_reported":"1960-1980 / 2003-2005","event_paired_2017":false},
-        {"code":"202004","name":"Sector Tutuma","source_watercourse":"Rio Grande","reliable_period_reported":"1973-2002","event_paired_2017":false},
-        {"code":"202005","name":"Puente Quillo","source_watercourse":"Rio Sechin","reliable_period_reported":"1973-2002","event_paired_2017":false}
-      ]
+        {"code":"202001","name":"Puente Carretera","source_watercourse":"Rio Casma","reliable_period_reported":"1960-1973 / 2003-2005","event_paired_2017":false,"event_paired_2023":false},
+        {"code":"202002","name":"Hacienda Poctao","source_watercourse":"Rio Grande","reliable_period_reported":"1965-1969","event_paired_2017":false,"event_paired_2023":false},
+        {"code":"202003","name":"Puente Carretera","source_watercourse":"Rio Sechin","reliable_period_reported":"1960-1980 / 2003-2005","event_paired_2017":false,"event_paired_2023":false},
+        {"code":"202004","name":"Sector Tutuma","source_watercourse":"Rio Grande","reliable_period_reported":"1973-2002","event_paired_2017":false,"event_paired_2023":false},
+        {"code":"202005","name":"Puente Quillo","source_watercourse":"Rio Sechin","reliable_period_reported":"1973-2002","event_paired_2017":false,"event_paired_2023":false}
+      ],
+      "event_paired_rainfall":[],
+      "event_paired_stage":[],
+      "event_paired_discharge":[],
+      "missing_series_is_low_risk":false
     },
-    "hydraulic_context":{"status":"CONTEXT_ONLY_NO_HISTORICAL_CAPACITY_INFERENCE","source_ids":["ANA-CASMA-FAJA-2022-RD0331"],"faja_marginal_is_event_footprint":false,"works_or_regulatory_geometry_is_capacity":false,"capacity_values":null}
+    "exposure_connectivity":{
+      "status":"PARTIAL_2023_OFFICIAL_IMPACT_NODES_NO_EVENT_POLYGON",
+      "source_ids":["INDECI-CASMA-SECHIN-GRANDE-2023-03","INDECI-YAUTAN-CRUZ-PUNTA-2023-03","INDECI-YAUTAN-MUNA-AND-APRIL-2023","MTC-SECHIN-BRIDGE-2023"],
+      "supported_context":["homes and national-road connectivity in Casma linked to Rio Sechin overflow reporting","agricultural impact at Santa Ana linked to Rio Grande overflow reporting","PE-14A road impact linked to Quebrada Cruz Punta activation","water-pipe and road impact near Tomeque linked to Quebrada Muna activation"],
+      "geometry_reproducible":false,
+      "impact_nodes_are_event_footprint":false,
+      "transport_structure_is_hydraulic_capacity":false
+    },
+    "hydraulic_context":{"status":"CONTEXT_ONLY_NO_HISTORICAL_CAPACITY_INFERENCE","source_ids":["ANA-CASMA-FAJA-2022-RD0331","MTC-SECHIN-BRIDGE-2023"],"faja_marginal_is_event_footprint":false,"works_or_regulatory_geometry_is_capacity":false,"bridge_or_ford_design_is_capacity":false,"capacity_values":null}
   },
-  "mechanism_policy":{"river_flood_and_pluvial_must_remain_separate":true,"sechin_2017_positive_does_not_label_other_children":true,"yautan_and_grande_are_not_silently_merged":true,"named_quebradas_require_independent_identity_before_materialization":true,"absence_of_report_is_negative":false},
-  "map_policy":{"approximate_geometry_forbidden":true,"parent_composite_polygon_forbidden":true,"publish_child_only_after_exact_identity_and_reproducible_geometry":true,"risk_or_alert_layer":false,"faja_marginal_is_event_footprint":false},
-  "validation":{"activation_gate":"BLOCKED","required_reviews":["exact ANA geometry replay for each child before map publication","event-mechanism adjudication by child","event-paired rainfall/stage/discharge retrieval with QA","exposure/connectivity package","hydraulic works context separated from historical response"],"review_evidence":[]}
+  "mechanism_policy":{"river_flood_and_pluvial_must_remain_separate":true,"sechin_2017_positive_does_not_label_other_children":true,"sechin_2023_positive_does_not_label_other_children":true,"yautan_and_grande_are_not_silently_merged":true,"named_quebradas_require_independent_identity_before_materialization":true,"absence_of_report_is_negative":false},
+  "map_policy":{"approximate_geometry_forbidden":true,"parent_composite_polygon_forbidden":true,"publish_child_only_after_exact_identity_and_reproducible_geometry":true,"risk_or_alert_layer":false,"faja_marginal_is_event_footprint":false,"named_2023_ravines_without_geometry_are_not_drawn":true},
+  "validation":{"activation_gate":"BLOCKED","required_reviews":["exact ANA geometry replay for each child before map publication","event-mechanism adjudication by child","event-paired rainfall/stage/discharge retrieval with QA","exposure/connectivity geometry only when reproducible","hydraulic works context separated from historical response"],"review_evidence":[]}
 }
