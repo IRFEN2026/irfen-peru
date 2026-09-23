@@ -1,0 +1,90 @@
+{
+  "schema_version": "0.1",
+  "discovery_id": "tumbes_rio_tumbes",
+  "system_name": "Rio Tumbes hydrologic system",
+  "contract_status": "DISCOVERY_RESEARCH_ONLY_GEOMETRY_PENDING_EXACT_REPLAY",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "official_source_ids": [
+    "ANA-TUMBES-2023-MAPSERVER-BASIN",
+    "ANA-TUMBES-2023-INUNDATION-20230428",
+    "ANA-TUMBES-2023-INUNDATION-20230504",
+    "SENAMHI-TUMBES-CABO-INGA-20230404",
+    "SENAMHI-TUMBES-EL-TIGRE-20230413",
+    "INDECI-TUMBES-CABO-INGA-20240320"
+  ],
+  "identity": {
+    "hydrologic_system": "Rio Tumbes",
+    "parent_is_territorial_grouper": false,
+    "must_remain_separate_from": ["Rio Zarumilla", "tumbes_zorritos_bocapan_coastal_ravines"],
+    "source_layer_identity": {
+      "service": "https://geosnirh.ana.gob.pe/server/rest/services/Inundacion_Tumbes/Capas_Inundacion_Tumbes_04052023/MapServer",
+      "basin_layer_id": 2,
+      "expected_layer_name": "Cuenca Tumbes"
+    }
+  },
+  "assets": {
+    "geometry": {
+      "status": "MISSING_PENDING_EXACT_ANA_LAYER_REPLAY",
+      "path": null,
+      "source_ids": ["ANA-TUMBES-2023-MAPSERVER-BASIN"],
+      "sha256": null,
+      "validation_path": null,
+      "validation_sha256": null,
+      "representation": "OFFICIAL_ANA_HYDROLOGIC_BASIN_RESEARCH_CONTEXT",
+      "counts_as_operational_geometry": false,
+      "counts_as_event_footprint": false,
+      "counts_as_complete_discovery_validation": false,
+      "candidate_wide_sampling_ready": false
+    },
+    "historical_events": {
+      "status": "PARTIAL",
+      "path": "site/data/validation/phase2_discovery_packages/tumbes_rio_tumbes.json"
+    },
+    "observations": {
+      "status": "PARTIAL",
+      "path": "site/data/validation/phase2_discovery_packages/tumbes_rio_tumbes.json"
+    },
+    "exposure": {
+      "status": "PARTIAL",
+      "path": "site/data/validation/phase2_discovery_packages/tumbes_rio_tumbes.json"
+    },
+    "hydraulic_context": {
+      "status": "MISSING",
+      "path": null
+    }
+  },
+  "event_footprint_sources": [
+    {
+      "source_id": "ANA-TUMBES-2023-INUNDATION-20230428",
+      "layer_id": 66,
+      "role": "OBSERVED_EVENT_FOOTPRINT_ONLY",
+      "counts_as_basin_geometry": false,
+      "counts_as_operational_hazard": false
+    },
+    {
+      "source_id": "ANA-TUMBES-2023-INUNDATION-20230504",
+      "layer_id": 67,
+      "role": "OBSERVED_EVENT_FOOTPRINT_ONLY",
+      "counts_as_basin_geometry": false,
+      "counts_as_operational_hazard": false
+    }
+  ],
+  "forbidden": [
+    "merge Rio Tumbes with Rio Zarumilla",
+    "merge Rio Tumbes with Zorritos-Bocapan coastal ravines",
+    "use observed 2023 inundation footprints as basin boundary",
+    "use provider hydrologic bands as IRFEN thresholds",
+    "use observed discharge as hydraulic capacity",
+    "infer negative controls from absence of reports",
+    "publish approximate points or invented polygons",
+    "derive risk, activation or alert classification"
+  ]
+}
