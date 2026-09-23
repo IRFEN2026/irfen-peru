@@ -6,6 +6,8 @@ CFG=ROOT/"config/phase2_jicamarca_discovery_v0_1.json"
 ARCH=ROOT/"config/phase2_local_activation_hierarchy_v0_1.json"
 CENDEHUA=ROOT/"config/phase2_jicamarca_cendehua_event_metadata_v0_1.json"
 SOPHY=ROOT/"config/phase2_jicamarca_sophy_access_assessment_v0_1.json"
+IDENTITY=ROOT/"config/phase2_jicamarca_identity_source_assessment_v0_1.json"
+INDEX=ROOT/"config/phase2_jicamarca_evidence_index_v0_1.json"
 
 def load(path=CFG):
     return json.loads(path.read_text(encoding="utf-8"))
@@ -75,14 +77,18 @@ def test_bounded_evidence_packages_are_linked_and_safe():
     c=load(); refs=c["evidence_packages"]
     assert refs["cendehua_event_metadata"]=="config/phase2_jicamarca_cendehua_event_metadata_v0_1.json"
     assert refs["sophy_access_assessment"]=="config/phase2_jicamarca_sophy_access_assessment_v0_1.json"
-    cen=load(CENDEHUA); radar=load(SOPHY)
-    assert_safe(cen); assert_safe(radar)
+    for p in (CENDEHUA,SOPHY,IDENTITY,INDEX):
+        assert p.is_file()
+        assert_safe(load(p))
 
 def test_cendehua_event_metadata_fails_closed_on_unknown_hydraulics():
     c=load(CENDEHUA)
     ev={x["record_id"]:x for x in c["events"]}
+    rs2_14=ev["IGP-RS2-2023-03-14T16:37:37-05:00"]
     hl2=ev["IGP-HL2-2023-03-15T14:44:19-05:00"]
     rs2=ev["IGP-RS2-2023-03-15T16:27:41-05:00"]
+    assert rs2_14["reported_discharge_m3_s"] is None
+    assert rs2_14["reported_height_m"] is None
     assert hl2["reported_discharge_m3_s"] is None
     assert rs2["reported_discharge_m3_s"] is None
     assert rs2["reported_height_m"]==0.43
@@ -104,6 +110,28 @@ def test_sophy_metadata_does_not_fabricate_rainfall_or_coverage():
     assert access["subcatchment_rainfall_reconstruction_allowed"] is False
     assert "infer rainfall values from project-page metadata" in c["forbidden"]
     assert "treat nominal radar range as verified event coverage" in c["forbidden"]
+
+def test_official_jicamarca_terminology_does_not_create_geometry():
+    c=load(IDENTITY)
+    assert c["conclusion"]=="UNRESOLVED_DO_NOT_MATERIALIZE_STANDALONE_JICAMARCA_GEOMETRY"
+    topo=c["topology_status"]
+    assert topo["huaycoloro_rio_seco_union"]=="OFFICIALLY_DESCRIBED_TOPOLOGY_COORDINATES_UNRESOLVED"
+    assert topo["exact_union_coordinate"] is None
+    assert topo["jicamarca_named_channel_relationship"]=="UNRESOLVED"
+    gp=c["geometry_policy"]
+    assert gp["standalone_jicamarca_polygon_allowed"] is False
+    assert gp["standalone_jicamarca_channel_allowed"] is False
+    assert gp["approximate_confluence_point_allowed"] is False
+    assert gp["union_of_child_polygons_allowed"] is False
+
+def test_evidence_index_forbids_promotion_side_effects():
+    c=load(INDEX)
+    assert c["map_effect"]=="NONE_UNTIL_INDEPENDENT_REPRODUCIBLE_CHILD_GEOMETRY_EXISTS"
+    assert c["collector_effect"]=="NO_Q_TRAVEL_TIME_ATTENUATION_OR_RECEIVER_RESPONSE_PROMOTION"
+    packages={x["path"]:x for x in c["packages"]}
+    assert packages["config/phase2_jicamarca_cendehua_event_metadata_v0_1.json"]["may_infer_discharge"] is False
+    assert packages["config/phase2_jicamarca_sophy_access_assessment_v0_1.json"]["may_infer_rainfall_before_data_access"] is False
+    assert packages["config/phase2_jicamarca_identity_source_assessment_v0_1.json"]["may_create_synthetic_jicamarca_unit"] is False
 
 def test_collector_coupling_remains_unknown_until_reproducible_routing():
     c=load()["collector_coupling"]
