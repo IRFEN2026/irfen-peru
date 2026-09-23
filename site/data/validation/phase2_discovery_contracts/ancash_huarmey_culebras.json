@@ -1,0 +1,111 @@
+{
+  "schema_version": "0.1",
+  "discovery_id": "ancash_huarmey_culebras",
+  "system_name": "Huarmey-Culebras coastal systems",
+  "contract_status": "DISCOVERY_CHILD_GEOMETRIES_SOURCE_LOCK_PENDING",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "component_policy": {
+    "parent_is_hydrologic_basin": false,
+    "parent_is_map_polygon": false,
+    "components_must_remain_separate": true,
+    "composite_union_forbidden": true,
+    "territorial_reference_is_basin": false
+  },
+  "assets": {
+    "geometry": {
+      "status": "MISSING_PARENT_GROUPER_HAS_NO_SINGLE_HYDROLOGIC_GEOMETRY",
+      "path": null,
+      "counts_as_operational_geometry": false,
+      "counts_as_event_footprint": false
+    },
+    "geometry_components": [
+      {
+        "component_id": "huarmey",
+        "name": "Cuenca Huarmey",
+        "hydrologic_identity": {
+          "ana_unit_code": "137594",
+          "ana_unit_name": "Cuenca Huarmey"
+        },
+        "source_id": "ANA-UH-137594-HUARMEY",
+        "source_query": {
+          "endpoint": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/8/query",
+          "where": "CODIGO='137594'",
+          "out_fields": "*",
+          "out_sr": 4326,
+          "geometry_precision": 7,
+          "format": "geojson"
+        },
+        "geometry": {
+          "status": "MISSING_PENDING_REPRODUCIBLE_FETCH",
+          "path": "site/data/phase2/geometries/ancash_huarmey_basin_context.geojson",
+          "representation": "OFFICIAL_ANA_HYDROGRAPHIC_UNIT_CONTEXT",
+          "counts_as_operational_geometry": false,
+          "counts_as_event_footprint": false
+        }
+      },
+      {
+        "component_id": "culebras",
+        "name": "Cuenca Culebras",
+        "hydrologic_identity": {
+          "ana_unit_code": "1375952",
+          "ana_unit_name": "Cuenca Culebras"
+        },
+        "source_id": "ANA-UH-1375952-CULEBRAS",
+        "source_query": {
+          "endpoint": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/8/query",
+          "where": "CODIGO='1375952'",
+          "out_fields": "*",
+          "out_sr": 4326,
+          "geometry_precision": 7,
+          "format": "geojson"
+        },
+        "geometry": {
+          "status": "MISSING_PENDING_REPRODUCIBLE_FETCH",
+          "path": "site/data/phase2/geometries/ancash_culebras_basin_context.geojson",
+          "representation": "OFFICIAL_ANA_HYDROGRAPHIC_UNIT_CONTEXT",
+          "counts_as_operational_geometry": false,
+          "counts_as_event_footprint": false
+        }
+      }
+    ]
+  },
+  "official_source_ids": [
+    "ANA-UH-137594-HUARMEY",
+    "ANA-UH-1375952-CULEBRAS",
+    "ANA-ALA-CASMA-HUARMEY-UH-COMPENDIUM",
+    "CENEPRED-EVAR-HUARMEY-2017"
+  ],
+  "evidence_locators": [
+    {
+      "source_id": "ANA-ALA-CASMA-HUARMEY-UH-COMPENDIUM",
+      "url": "https://repositorio.ana.gob.pe/bitstream/handle/20.500.12543/1817/ANA0000757_1.pdf?isAllowed=y&sequence=1",
+      "role": "official hydrologic identity and areas only",
+      "claims": [
+        "137594 is Cuenca Huarmey",
+        "1375952 is Cuenca Culebras",
+        "the units are separate hydrographic units"
+      ]
+    },
+    {
+      "source_id": "CENEPRED-EVAR-HUARMEY-2017",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/4108",
+      "role": "event/risk evidence locator; not used to alter basin geometry",
+      "event_outcome_use_in_geometry": false
+    }
+  ],
+  "map_policy": {
+    "publish_each_component_separately_after_reproducible_geometry": true,
+    "publish_parent_composite": false,
+    "context_only": true,
+    "risk_or_alert_layer": false,
+    "approximate_geometry_forbidden": true
+  }
+}
