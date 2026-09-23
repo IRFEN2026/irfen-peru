@@ -37,7 +37,7 @@ def test_viru_identity_query_and_guards_are_fail_closed():
             assert obj[key] == expected
         ident = obj["hydrologic_identity"]
         assert ident["ana_unit_code"] == "137714"
-        assert ident["ana_unit_name"] == "Cuenca Viru"
+        assert ident["ana_unit_name"] == "Cuenca Virú"
         assert ident["territorial_reference_is_basin"] is False
     query = contract["source_query"]
     assert query["endpoint"] == "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/8/query"
@@ -74,10 +74,12 @@ def test_viru_geometry_is_missing_or_exactly_hash_linked():
     assert len(data["features"]) == 1
     props = data["features"][0]["properties"]
     assert props["official_unit_code"] == "137714"
+    assert props["name"] == "Cuenca Virú"
     assert props["counts_as_event_footprint"] is False
     assert props["counts_as_operational_geometry"] is False
     assert props["alerting_enabled"] is False
     validation = load(VALIDATION)
+    assert validation["ana_unit_name"] == "Cuenca Virú"
     assert validation["outcomes_read"] is False
     assert validation["rainfall_read"] is False
     assert validation["hydraulic_capacity_read"] is False
