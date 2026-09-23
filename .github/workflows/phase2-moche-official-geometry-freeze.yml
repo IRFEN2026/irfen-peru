@@ -17,49 +17,22 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  freeze-or-verify-official-geometry:
+  verify-frozen-official-geometry:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.head_ref || github.ref_name }}
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Install test dependency
         run: python -m pip install pytest
-      - name: Freeze exact ANA Moche source once or replay existing freeze
-        run: |
-          set -euo pipefail
-          SOURCE=site/data/phase2/sources/north_coast_discovery_geometry/ana_lalibertad_moche_137716.geojson
-          if [ -f "$SOURCE" ]; then
-            python scripts/verify_phase2_moche_official_geometry.py
-          else
-            python scripts/probe_phase2_moche_official_geometry.py --refresh-source
-            python scripts/build_map_layer_catalog.py
-          fi
+      - name: Replay frozen official ANA Moche geometry fail-closed
+        run: python scripts/verify_phase2_moche_official_geometry.py
       - name: Enforce Moche scientific guards
         run: python -m pytest -q tests/test_phase2_moche_official_geometry.py tests/test_phase2_moche_discovery_package.py
       - name: Verify published research map catalog
         run: python scripts/build_map_layer_catalog.py --check-only
-      - name: Persist first exact source freeze on PR branch
-        if: github.event_name == 'pull_request'
-        shell: bash
-        run: |
-          set -euo pipefail
-          if git status --porcelain | grep -q .; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add site/data/validation/phase2_discovery_contracts/lalibertad_moche.json \
-                    site/data/validation/phase2_discovery_packages/lalibertad_moche.json \
-                    site/data/phase2/sources/north_coast_discovery_geometry/ana_lalibertad_moche_137716.geojson \
-                    site/data/phase2/geometries/lalibertad_moche_basin_context.geojson \
-                    site/data/phase2/geometries/lalibertad_moche_geometry_validation.json \
-                    site/data/map_layers.json
-            git commit -m "Phase2 Moche: freeze exact ANA basin context"
-            git push origin "HEAD:${GITHUB_HEAD_REF}"
-          fi
