@@ -38,7 +38,7 @@
     ensureCatalog(catalog);
     const mapsOK = maps.production_use === false && maps.production_ready === false &&
       maps.operational_alerting_enabled === false && Array.isArray(maps.research_zones) &&
-      Array.isArray(maps.technical_layers);
+      Array.isArray(maps.technical_layers) && Array.isArray(maps.research_discovery_units);
     const spatialOK = spatial.production_use === false && spatial.production_ready === false &&
       spatial.operational_alerting_enabled === false && spatial.activation_gate === 'BLOCKED';
     const sourceById = new Map((mapsOK ? maps.research_zones : []).map(z => [z.candidate_id,z]));
@@ -59,7 +59,19 @@
         reason: extra.map_eligible_research_only === false ? extra.disclaimer || 'Geometría retenida para revisión; no habilitada para el mapa general.' : blocked.reason || '',
         layerKeys:[]};
     });
-    const byId = new Map(candidates.map(c => [c.candidateId,c]));
+    const registeredCandidateCount=candidates.length;
+    const discoveries=[];
+    for (const d of mapsOK ? list(maps.research_discovery_units) : []) {
+      const g=d.geometry||{};
+      discoveries.push({key:'discovery:'+d.discovery_id,kind:'discovery',candidateId:d.discovery_id,
+        title:d.system_name||d.discovery_id,territory:[d.department,d.territorial_reference].filter(Boolean).join(' · '),
+        status:d.deployment_status,gate:d.activation_gate,contractStatus:d.contract_status,
+        assets:{geometry:g.status},blockers:g.map_eligible?[]:['Geometría reproducible pendiente; no se dibuja aproximación'],
+        sources:list(g.source_ids),contractPath:d.contract_path||null,historicalGrouper:/GROUPER/.test(String(d.entity_role||'')),
+        reason:g.map_eligible?'':'Discovery registrada sin geometría reproducible; permanece en inventario sin contorno.',
+        disclaimer:'Unidad discovery RESEARCH_ONLY; no altera los 18 candidatos Phase-2 ni habilita alertas.',layerKeys:[]});
+    }
+    const byId = new Map([...candidates,...discoveries].map(c => [c.candidateId,c]));
     const requests = [];
     const keys = new Set();
     const add = request => {
@@ -120,10 +132,24 @@
           sourceRef:PATHS.layers,layerKeys:[]});
       }
     }
+    if (mapsOK) {
+      for (const d of list(maps.research_discovery_units)) {
+        const g=d.geometry||{};
+        if (!byId.has(d.discovery_id) || g.map_eligible!==true || d.deployment_status!=='RESEARCH_ONLY' ||
+            d.production_use!==false || d.production_ready!==false || d.operational_alerting_enabled!==false ||
+            d.activation_gate!=='BLOCKED' || d.decision_thresholds!==null || d.hydraulic_factors!==null) continue;
+        add({key:'discovery_context:'+d.discovery_id,kind:'context',candidateId:d.discovery_id,recordKey:'discovery:'+d.discovery_id,
+          title:d.system_name+' · discovery',path:dataPath(g.source_path||g.path),status:d.deployment_status,
+          representation:g.representation,confidence:'OFFICIAL_CONTEXT_ONLY',sources:list(g.source_ids),
+          disclaimer:g.map_disclaimer||'Discovery RESEARCH_ONLY; no es riesgo ni alerta.',sourceRef:PATHS.layers,layerKeys:[]});
+      }
+    }
     for (const r of requests) r.layerKeys = [r.key];
-    return {candidates,requests,mapsOK,spatialOK,
+    return {candidates,discoveries,requests,mapsOK,spatialOK,
       pilotIds:list((catalog.relationship_to_v08 || {}).operational_pilots),
-      summary:{registeredCandidates:candidates.length,
+      summary:{registeredCandidates:registeredCandidateCount,
+        discoveryUnits:discoveries.length,
+        discoveryWithGeometry:discoveries.filter(c=>c.layerKeys.length).length,
         monitoredSubunits:requests.filter(r => r.kind === 'monitored').length,
         technicalLayers:requests.filter(r => r.kind === 'technical').length,
         candidatesWithRelatedGeometry:candidates.filter(c => c.layerKeys.length).length,
@@ -207,7 +233,7 @@
       <br><b>RESEARCH / TEST MODE.</b> Las fajas, los tramos, los ámbitos documentales y las alternativas de cuenca se identifican por separado. No son mapas de riesgo ni alertas.</div>
       <div class="ti-tools"><button id="ti-refresh">Actualizar inventario</button><button id="ti-all">Encuadrar capas visibles</button><button id="ti-monitor">Ir al monitoreo NASA</button><span class="ti-note" id="ti-time"></span></div>
       <div id="ti-summary" class="ti-status" role="status">Cargando catálogos…</div>
-      <div class="ti-grid"><div class="ti-panel"><div class="ti-header"><h3>Buscar zona o capa</h3><div class="ti-tools"><input id="ti-search" type="search" aria-label="Buscar candidato o capa" placeholder="Malanche, Huaycoloro, Catacaos…"><select id="ti-filter" aria-label="Filtrar inventario"><option value="all">Todo el inventario</option><option value="candidate">18 candidatos Phase-2</option><option value="monitored">Subunidades de muestreo</option><option value="technical">Capas de los pilotos v0.8</option><option value="pending">Sin geometría representable</option></select></div><p class="ti-note">Seleccionar una ficha muestra sus fuentes y pendientes, aunque aún no tenga contorno.</p></div><div id="ti-list"></div></div>
+      <div class="ti-grid"><div class="ti-panel"><div class="ti-header"><h3>Buscar zona o capa</h3><div class="ti-tools"><input id="ti-search" type="search" aria-label="Buscar candidato o capa" placeholder="Malanche, Huaycoloro, Catacaos…"><select id="ti-filter" aria-label="Filtrar inventario"><option value="all">Todo el inventario</option><option value="candidate">18 candidatos Phase-2</option><option value="discovery">Discovery norte-costera</option><option value="monitored">Subunidades de muestreo</option><option value="technical">Capas de los pilotos v0.8</option><option value="pending">Sin geometría representable</option></select></div><p class="ti-note">Seleccionar una ficha muestra sus fuentes y pendientes, aunque aún no tenga contorno.</p></div><div id="ti-list"></div></div>
       <div class="ti-panel"><div class="ti-header"><h3>Geometrías documentadas</h3><div class="ti-tools"><label><input type="checkbox" data-ti-layer="monitored" checked> Muestreo NASA</label><label><input type="checkbox" data-ti-layer="technical" checked> Capas de pilotos</label><label><input type="checkbox" data-ti-layer="context" checked> Investigación y contexto</label></div></div><div id="ti-map"></div>
       <div class="ti-legend"><span>Azul: capas de pilotos</span><span>Verde azulado: muestreo de investigación</span><span>Gris / violeta: contexto y alternativas</span><br>Los colores identifican tipos de capa, NO niveles de riesgo. No se crean marcadores para suplir geometrías faltantes.</div><div id="ti-map-status" class="ti-status"></div><div id="ti-detail" class="ti-detail">Selecciona una zona para ver sus características, fuentes y motivo de los pendientes.</div></div></div></div>`;
     first.before(section);
@@ -235,13 +261,13 @@
     if (!state.plan) return;
     const q=state.query.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
     const rows=state.records.filter(r=>{
-      if(state.mode==='pending' && (r.kind!=='candidate'||r.layerKeys.length))return false;
+      if(state.mode==='pending' && (!['candidate','discovery'].includes(r.kind)||r.layerKeys.length))return false;
       if(!['all','pending'].includes(state.mode)&&r.kind!==state.mode)return false;
       return !q||[r.title,r.territory,r.candidateId,...list(r.sources)].join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(q);
     });
     document.getElementById('ti-list').innerHTML=rows.map(r=>{
       const count=recordLayers(r).length;
-      const status=count ? (r.kind==='candidate'?'Capas relacionadas disponibles; no implica cuenca completa':'Geometría disponible') : r.layerKeys.length?'Error al cargar geometría':'Sin delimitación representable';
+      const status=count ? (r.kind==='candidate'?'Capas relacionadas disponibles; no implica cuenca completa':r.kind==='discovery'?'Geometría discovery oficial/contextual disponible; no es operativa':'Geometría disponible') : r.layerKeys.length?'Error al cargar geometría':'Sin delimitación representable';
       return '<button class="ti-row" data-ti-record="'+esc(r.key)+'" aria-current="'+String(state.selected===r.key)+'"><b>'+esc(r.title)+'</b><small>'+esc(r.territory||r.status||'')+'</small><small>'+esc(status)+'</small></button>';
     }).join('')||'<p class="ti-detail">Sin coincidencias. El filtro no elimina registros del catálogo.</p>';
   }
@@ -302,7 +328,7 @@
           layer.bindPopup('<div class="ti-popup"><b>'+esc(name)+'</b><p><b>'+esc(semantic)+'</b></p>'+esc(request.status)+'<br>'+esc(request.confidence||'')+
             (finite(area)?'<br>Área declarada: '+esc(area)+' km²':'')+'<p>'+esc(request.disclaimer)+'</p>'+sourceLink(request.path,'Geometría fuente')+
             (url?' · <a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">Documento fuente</a>':'')+'<br>No genera puntuaciones ni alertas.</div>');
-          layer.on('click',()=>selectRecord(request.candidateId?'candidate:'+request.candidateId:request.key,false));
+          layer.on('click',()=>selectRecord(request.recordKey||(request.candidateId?'candidate:'+request.candidateId:request.key),false));
           group.addLayer(layer);features.set(request.key+'#'+index,{layer,name,requestKey:request.key});
         });
         layers.set(request.key,group);
@@ -327,9 +353,9 @@
       const plan=buildPlan(catalog,data.spatial,data.layers,data.remaining);
       if(!plan.mapsOK && !failures.includes(PATHS.layers))failures.push(PATHS.layers+' (contrato no válido)');
       if(!plan.spatialOK && !failures.includes(PATHS.spatial))failures.push(PATHS.spatial+' (contrato no válido)');
-      state.plan=plan;state.records=[...plan.candidates,...plan.requests.filter(r=>r.kind!=='context')];
+      state.plan=plan;state.records=[...plan.candidates,...plan.discoveries,...plan.requests.filter(r=>r.kind!=='context')];
       const s=plan.summary;
-      document.getElementById('ti-summary').innerHTML='<b>'+s.registeredCandidates+' candidatos Phase-2 definidos</b> · '+s.monitoredSubunits+' subunidades con contrato de muestreo · '+s.technicalLayers+' capas técnicas de '+plan.pilotIds.length+' pilotos v0.8.<br>'+
+      document.getElementById('ti-summary').innerHTML='<b>'+s.registeredCandidates+' candidatos Phase-2 definidos</b> · '+s.discoveryUnits+' unidades discovery norte-costera ('+s.discoveryWithGeometry+' con geometría representable) · '+s.monitoredSubunits+' subunidades con contrato de muestreo · '+s.technicalLayers+' capas técnicas de '+plan.pilotIds.length+' pilotos v0.8.<br>'+
         s.candidatesWithRelatedGeometry+' candidatos tienen geometrías relacionadas representables; <b>'+s.candidatesWithoutRelatedGeometry+' permanecen en el listado sin contorno representable</b>. Las subdivisiones no aumentan el total de candidatos.'+
         '<br>El catálogo no autoriza sustituir geometrías faltantes por puntos aproximados. Una geometría parcial tampoco equivale a cuenca completa.'+
         (failures.length?'<p class="ti-error">Catálogos complementarios no cargados: '+failures.map(esc).join(', ')+'. Los conteos de capas pueden estar incompletos.</p>':'');
