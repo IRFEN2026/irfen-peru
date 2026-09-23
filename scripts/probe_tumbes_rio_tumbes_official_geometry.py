@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Freeze official ANA Rio Tumbes basin context and 2023 observed flood footprints.
+"""Freeze official ANA Rio Tumbes basin context and dated 2023 inundation footprints.
 
-RESEARCH_ONLY / TEST_ONLY. Basin geometry and dated observed-inundation footprints are
-kept as different scientific objects. This script never derives thresholds, capacity,
-negative controls, risk, activation or alerts.
+RESEARCH_ONLY / TEST_ONLY. Basin geometry and observed-event footprints remain separate.
+No threshold, capacity, negative control, risk, activation or alert is derived here.
 """
 from __future__ import annotations
 
@@ -39,13 +38,13 @@ GUARDS = {
     "hydraulic_factors": None,
 }
 
-LAYER_SPECS = {
+SPECS = {
     "basin": {
         "layer_id": 2,
         "source_id": "ANA-TUMBES-2023-MAPSERVER-BASIN",
         "name_contains": "Cuenca Tumbes",
         "snapshot": SOURCE_ROOT / "ana_cuenca_tumbes.geojson",
-        "normalized": BASIN_GEOMETRY,
+        "output": BASIN_GEOMETRY,
         "validation": BASIN_VALIDATION,
         "role": "OFFICIAL_HYDROLOGIC_BASIN_RESEARCH_CONTEXT",
         "event_date": None,
@@ -55,7 +54,7 @@ LAYER_SPECS = {
         "source_id": "ANA-TUMBES-2023-INUNDATION-20230428",
         "name_contains": "Areas Inundadas Rio Tumbes 28 Abril 2023",
         "snapshot": SOURCE_ROOT / "ana_rio_tumbes_inundation_20230428.geojson",
-        "normalized": EVENT_ROOT / "tumbes_rio_tumbes_observed_inundation_20230428.geojson",
+        "output": EVENT_ROOT / "tumbes_rio_tumbes_observed_inundation_20230428.geojson",
         "validation": EVENT_ROOT / "tumbes_rio_tumbes_observed_inundation_20230428_validation.json",
         "role": "OBSERVED_EVENT_FOOTPRINT_ONLY",
         "event_date": "2023-04-28",
@@ -65,7 +64,7 @@ LAYER_SPECS = {
         "source_id": "ANA-TUMBES-2023-INUNDATION-20230504",
         "name_contains": "Areas Inundadas Rio Tumbes 04 Mayo 2023",
         "snapshot": SOURCE_ROOT / "ana_rio_tumbes_inundation_20230504.geojson",
-        "normalized": EVENT_ROOT / "tumbes_rio_tumbes_observed_inundation_20230504.geojson",
+        "output": EVENT_ROOT / "tumbes_rio_tumbes_observed_inundation_20230504.geojson",
         "validation": EVENT_ROOT / "tumbes_rio_tumbes_observed_inundation_20230504_validation.json",
         "role": "OBSERVED_EVENT_FOOTPRINT_ONLY",
         "event_date": "2023-05-04",
@@ -77,12 +76,8 @@ def canonical(value) -> bytes:
     return (json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
 
 
-def sha_bytes(value: bytes) -> str:
+def sha(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
-
-
-def sha_file(path: Path) -> str:
-    return sha_bytes(path.read_bytes())
 
 
 def load(path: Path):
@@ -94,10 +89,10 @@ def write(path: Path, value) -> None:
     path.write_bytes(canonical(value))
 
 
-def norm_text(value: str) -> str:
-    value = unicodedata.normalize("NFKD", value or "")
-    value = "".join(ch for ch in value if not unicodedata.combining(ch))
-    return " ".join(value.lower().split())
+def normalized_text(value: str) -> str:
+    text = unicodedata.normalize("NFKD", value or "")
+    text = "".join(ch for ch in text if not unicodedata.combining(ch))
+    return " ".join(text.lower().split())
 
 
 def metadata_url(layer_id: int) -> str:
@@ -105,58 +100,57 @@ def metadata_url(layer_id: int) -> str:
 
 
 def query_url(layer_id: int) -> str:
-    params = {
+    return f"{SERVICE}/{layer_id}/query?" + urlencode({
         "where": "1=1",
         "outFields": "*",
         "returnGeometry": "true",
         "outSR": "4326",
         "geometryPrecision": "7",
         "f": "geojson",
-    }
-    return f"{SERVICE}/{layer_id}/query?{urlencode(params)}"
+    })
 
 
 def fetch_json(url: str) -> tuple[dict, bytes]:
-    req = Request(url, headers={"User-Agent": "IRFEN-research-source-lock/1.0"})
-    with urlopen(req, timeout=60) as response:
+    request = Request(url, headers={"User-Agent": "IRFEN-research-source-lock/1.0"})
+    with urlopen(request, timeout=75) as response:
         raw = response.read()
     return json.loads(raw.decode("utf-8")), raw
 
 
-def validate_layer_metadata(metadata: dict, spec: dict) -> str:
+def validate_metadata(metadata: dict, spec: dict) -> str:
     if metadata.get("id") != spec["layer_id"]:
-        raise ValueError(f"unexpected ANA layer id for {spec['source_id']}: {metadata.get('id')}")
+        raise ValueError(f"unexpected ANA layer id: {spec['source_id']}")
     name = str(metadata.get("name") or "")
-    if norm_text(spec["name_contains"]) not in norm_text(name):
+    if normalized_text(spec["name_contains"]) not in normalized_text(name):
         raise ValueError(f"unexpected ANA layer name for {spec['source_id']}: {name}")
-    if not metadata.get("capabilities") or "Query" not in str(metadata.get("capabilities")):
+    if "query" not in str(metadata.get("capabilities") or "").lower():
         raise ValueError(f"ANA layer is not queryable: {spec['source_id']}")
     return name
 
 
-def validate_geojson(data: dict, spec: dict) -> list[dict]:
-    if data.get("type") != "FeatureCollection":
-        raise ValueError(f"not a FeatureCollection: {spec['source_id']}")
-    features = data.get("features") or []
+def validate_source(source: dict, spec: dict) -> list[dict]:
+    if source.get("type") != "FeatureCollection":
+        raise ValueError(f"source is not FeatureCollection: {spec['source_id']}")
+    features = source.get("features") or []
     if not features:
         raise ValueError(f"empty official layer: {spec['source_id']}")
-    if spec["role"] == "OFFICIAL_HYDROLOGIC_BASIN_RESEARCH_CONTEXT" and len(features) != 1:
-        raise ValueError(f"basin layer expected exactly one feature, got {len(features)}")
+    if spec["event_date"] is None and len(features) != 1:
+        raise ValueError(f"Cuenca Tumbes expected exactly one feature, got {len(features)}")
     for feature in features:
-        gtype = (feature.get("geometry") or {}).get("type")
-        if gtype not in {"Polygon", "MultiPolygon"}:
-            raise ValueError(f"non-polygon official feature in {spec['source_id']}: {gtype}")
+        if (feature.get("geometry") or {}).get("type") not in {"Polygon", "MultiPolygon"}:
+            raise ValueError(f"non-polygon feature in {spec['source_id']}")
     return features
 
 
-def normalized_feature_collection(source: dict, spec: dict, source_hash: str, layer_name: str) -> dict:
-    features = validate_geojson(source, spec)
-    normalized_features = []
+def make_normalized(source: dict, spec: dict, source_hash: str, layer_name: str) -> dict:
+    features = validate_source(source, spec)
+    out = []
     for index, feature in enumerate(features, start=1):
-        properties = {
+        is_event = spec["event_date"] is not None
+        props = {
             "discovery_id": DISCOVERY_ID,
             "unit_id": f"{DISCOVERY_ID}_{spec['layer_id']}_{index}",
-            "name": "Rio Tumbes basin context" if spec["event_date"] is None else f"Rio Tumbes observed inundation {spec['event_date']}",
+            "name": "Rio Tumbes basin context" if not is_event else f"Rio Tumbes observed inundation {spec['event_date']}",
             "feature_role": spec["role"],
             "source_id": spec["source_id"],
             "source_layer_id": spec["layer_id"],
@@ -177,22 +171,12 @@ def normalized_feature_collection(source: dict, spec: dict, source_hash: str, la
             "carries_alert_values": False,
             "carries_risk_classification": False,
             "counts_as_operational_geometry": False,
-            "counts_as_event_footprint": spec["event_date"] is not None,
-            "counts_as_basin_geometry": spec["event_date"] is None,
+            "counts_as_event_footprint": is_event,
+            "counts_as_basin_geometry": not is_event,
             "provider_values_are_irfen_thresholds": False,
             "confidence": "HIGH_OFFICIAL_ANA_REPRODUCIBLE_GEOMETRY",
-            "warning": (
-                "Official Rio Tumbes basin context only; not an event footprint, risk extent, hydraulic capacity or alert."
-                if spec["event_date"] is None
-                else "Observed dated inundation footprint only; not a basin boundary, future hazard envelope, threshold, risk class or alert."
-            ),
         }
-        normalized_features.append({
-            "type": "Feature",
-            "id": properties["unit_id"],
-            "properties": properties,
-            "geometry": feature["geometry"],
-        })
+        out.append({"type": "Feature", "id": props["unit_id"], "properties": props, "geometry": feature["geometry"]})
     return {
         "type": "FeatureCollection",
         "properties": {
@@ -206,15 +190,16 @@ def normalized_feature_collection(source: dict, spec: dict, source_hash: str, la
             "event_date": spec["event_date"],
             "map_disclaimer": (
                 "RESEARCH_ONLY official basin context; not event footprint, risk, alert or hydraulic capacity."
-                if spec["event_date"] is None
+                if not is_event
                 else "RESEARCH_ONLY observed event footprint; not basin geometry, future hazard, threshold, risk or alert."
             ),
         },
-        "features": normalized_features,
+        "features": out,
     }
 
 
-def validation_record(spec: dict, source_hash: str, normalized: dict, layer_name: str, metadata_hash: str) -> dict:
+def make_validation(spec: dict, source_hash: str, normalized: dict, layer_name: str, metadata_hash: str) -> dict:
+    is_event = spec["event_date"] is not None
     return {
         "schema_version": "0.1",
         **GUARDS,
@@ -226,14 +211,14 @@ def validation_record(spec: dict, source_hash: str, normalized: dict, layer_name
         "source_snapshot_path": spec["snapshot"].relative_to(ROOT).as_posix(),
         "source_snapshot_sha256": source_hash,
         "source_layer_metadata_sha256": metadata_hash,
-        "normalized_path": spec["normalized"].relative_to(ROOT).as_posix(),
-        "normalized_sha256": sha_bytes(canonical(normalized)),
+        "normalized_path": spec["output"].relative_to(ROOT).as_posix(),
+        "normalized_sha256": sha(canonical(normalized)),
         "feature_count": len(normalized["features"]),
         "geometry_role": spec["role"],
         "event_date": spec["event_date"],
         "counts_as_operational_geometry": False,
-        "counts_as_event_footprint": spec["event_date"] is not None,
-        "counts_as_basin_geometry": spec["event_date"] is None,
+        "counts_as_event_footprint": is_event,
+        "counts_as_basin_geometry": not is_event,
         "provider_values_are_irfen_thresholds": False,
         "artificial_connector_used": False,
     }
@@ -242,7 +227,43 @@ def validation_record(spec: dict, source_hash: str, normalized: dict, layer_name
 def assert_guards(document: dict, label: str) -> None:
     for key, expected in GUARDS.items():
         if document.get(key) != expected:
-            raise ValueError(f"unsafe guard {label}: {key}={document.get(key)!r}")
+            raise ValueError(f"unsafe guard {label}: {key}")
+
+
+def build_from_frozen(check_only: bool) -> dict[str, dict]:
+    inventory = load(SOURCE_INVENTORY)
+    assert_guards(inventory, "source inventory")
+    rows = {row["key"]: row for row in inventory.get("layers") or []}
+    if set(rows) != set(SPECS):
+        raise ValueError("frozen source inventory does not contain exactly the three preregistered layers")
+    records = {}
+    for key, spec in SPECS.items():
+        row = rows[key]
+        snapshot = ROOT / row["snapshot_path"]
+        if not snapshot.is_file():
+            raise ValueError(f"missing frozen source snapshot: {key}")
+        source = load(snapshot)
+        source_hash = sha(canonical(source))
+        if source_hash != row["canonical_sha256"]:
+            raise ValueError(f"frozen source hash mismatch: {key}")
+        validate_source(source, spec)
+        normalized = make_normalized(source, spec, source_hash, row["layer_name"])
+        validation = make_validation(spec, source_hash, normalized, row["layer_name"], row["metadata_sha256"])
+        for path, value in ((spec["output"], normalized), (spec["validation"], validation)):
+            if check_only:
+                if not path.is_file() or path.read_bytes() != canonical(value):
+                    raise ValueError(f"stale deterministic artifact: {path.relative_to(ROOT)}")
+            else:
+                write(path, value)
+        records[key] = {
+            "source_id": spec["source_id"],
+            "event_date": spec["event_date"],
+            "normalized_path": spec["output"].relative_to(ROOT).as_posix(),
+            "normalized_sha256": sha(canonical(normalized)),
+            "validation_path": spec["validation"].relative_to(ROOT).as_posix(),
+            "validation_sha256": sha(canonical(validation)),
+        }
+    return records
 
 
 def sync_contract_and_package(records: dict[str, dict], check_only: bool) -> None:
@@ -251,8 +272,8 @@ def sync_contract_and_package(records: dict[str, dict], check_only: bool) -> Non
     assert_guards(contract, "contract")
     assert_guards(package, "package")
     basin = records["basin"]
-    geometry = contract.setdefault("assets", {}).setdefault("geometry", {})
-    geometry.update({
+    contract["contract_status"] = "DISCOVERY_RESEARCH_ONLY_BASIN_CONTEXT_REPRODUCIBLE"
+    contract["assets"]["geometry"].update({
         "status": "PARTIAL_REPRODUCIBLE_OFFICIAL_ANA_BASIN_CONTEXT",
         "path": basin["normalized_path"],
         "source_ids": [basin["source_id"]],
@@ -265,10 +286,8 @@ def sync_contract_and_package(records: dict[str, dict], check_only: bool) -> Non
         "counts_as_complete_discovery_validation": False,
         "candidate_wide_sampling_ready": False,
     })
-    contract["contract_status"] = "DISCOVERY_RESEARCH_ONLY_BASIN_CONTEXT_REPRODUCIBLE"
-
-    pgeom = package.setdefault("assets", {}).setdefault("geometry", {})
-    pgeom.update({
+    package["contract_status"] = "DISCOVERY_BASIN_CONTEXT_REPRODUCIBLE_EVENT_GEOMETRY_SEPARATE"
+    package["assets"]["geometry"].update({
         "status": "PARTIAL_REPRODUCIBLE_OFFICIAL_ANA_BASIN_CONTEXT",
         "path": basin["normalized_path"],
         "source_ids": [basin["source_id"]],
@@ -280,29 +299,25 @@ def sync_contract_and_package(records: dict[str, dict], check_only: bool) -> Non
         "approximate_points_allowed": False,
         "invented_polygons_allowed": False,
     })
-    package["contract_status"] = "DISCOVERY_BASIN_CONTEXT_REPRODUCIBLE_EVENT_GEOMETRY_SEPARATE"
-    reviews = [
-        {
-            "review_type": "OFFICIAL_ANA_BASIN_GEOMETRY_REPLAY",
-            "source_id": basin["source_id"],
-            "path": basin["normalized_path"],
-            "sha256": basin["normalized_sha256"],
-            "counts_as_event_footprint": False,
-        },
-        {
+    reviews = [{
+        "review_type": "OFFICIAL_ANA_BASIN_GEOMETRY_REPLAY",
+        "source_id": basin["source_id"],
+        "path": basin["normalized_path"],
+        "sha256": basin["normalized_sha256"],
+        "counts_as_event_footprint": False,
+    }]
+    for key in ("event_20230428", "event_20230504"):
+        record = records[key]
+        reviews.append({
             "review_type": "OFFICIAL_ANA_OBSERVED_INUNDATION_REPLAY",
-            "source_id": records[key]["source_id"],
-            "event_date": records[key]["event_date"],
-            "path": records[key]["normalized_path"],
-            "sha256": records[key]["normalized_sha256"],
+            "source_id": record["source_id"],
+            "event_date": record["event_date"],
+            "path": record["normalized_path"],
+            "sha256": record["normalized_sha256"],
             "counts_as_basin_geometry": False,
-        }
-        for key in ("event_20230428", "event_20230504")
-    ]
-    package.setdefault("validation", {})["review_evidence"] = reviews
-
-    expected = {CONTRACT: contract, PACKAGE: package}
-    for path, value in expected.items():
+        })
+    package["validation"]["review_evidence"] = reviews
+    for path, value in ((CONTRACT, contract), (PACKAGE, package)):
         if check_only:
             if path.read_bytes() != canonical(value):
                 raise ValueError(f"stale derived document: {path.relative_to(ROOT)}")
@@ -310,74 +325,13 @@ def sync_contract_and_package(records: dict[str, dict], check_only: bool) -> Non
             write(path, value)
 
 
-def records_from_inventory() -> dict[str, dict]:
-    inventory = load(SOURCE_INVENTORY)
-    assert_guards(inventory, "source inventory")
-    rows = {row["key"]: row for row in inventory.get("layers") or []}
-    if set(rows) != set(LAYER_SPECS):
-        raise ValueError("unexpected source inventory layer keys")
-    records = {}
-    for key, spec in LAYER_SPECS.items():
-        row = rows[key]
-        snapshot = ROOT / row["snapshot_path"]
-        if not snapshot.is_file() or sha_bytes(canonical(load(snapshot))) != row["canonical_sha256"]:
-            raise ValueError(f"frozen source hash mismatch: {key}")
-        source = load(snapshot)
-        validate_geojson(source, spec)
-        normalized = normalized_feature_collection(source, spec, row["canonical_sha256"], row["layer_name"])
-        validation = validation_record(spec, row["canonical_sha256"], normalized, row["layer_name"], row["metadata_sha256"])
-        records[key] = {
-            "source_id": spec["source_id"],
-            "event_date": spec["event_date"],
-            "normalized_path": spec["normalized"].relative_to(ROOT).as_posix(),
-            "normalized_sha256": sha_bytes(canonical(normalized)),
-            "validation_path": spec["validation"].relative_to(ROOT).as_posix(),
-            "validation_sha256": sha_bytes(canonical(validation)),
-        }
-    return records
-
-
-def sync(check_only: bool) -> None:
-    inventory = load(SOURCE_INVENTORY)
-    assert_guards(inventory, "source inventory")
-    rows = {row["key"]: row for row in inventory.get("layers") or []}
-    records = {}
-    for key, spec in LAYER_SPECS.items():
-        row = rows.get(key)
-        if not row:
-            raise ValueError(f"missing frozen source record: {key}")
-        snapshot = ROOT / row["snapshot_path"]
-        source = load(snapshot)
-        source_hash = sha_bytes(canonical(source))
-        if source_hash != row["canonical_sha256"]:
-            raise ValueError(f"frozen source hash mismatch: {key}")
-        normalized = normalized_feature_collection(source, spec, source_hash, row["layer_name"])
-        validation = validation_record(spec, source_hash, normalized, row["layer_name"], row["metadata_sha256"])
-        expected = {spec["normalized"]: normalized, spec["validation"]: validation}
-        for path, value in expected.items():
-            if check_only:
-                if not path.is_file() or path.read_bytes() != canonical(value):
-                    raise ValueError(f"stale deterministic artifact: {path.relative_to(ROOT)}")
-            else:
-                write(path, value)
-        records[key] = {
-            "source_id": spec["source_id"],
-            "event_date": spec["event_date"],
-            "normalized_path": spec["normalized"].relative_to(ROOT).as_posix(),
-            "normalized_sha256": sha_bytes(canonical(normalized)),
-            "validation_path": spec["validation"].relative_to(ROOT).as_posix(),
-            "validation_sha256": sha_bytes(canonical(validation)),
-        }
-    sync_contract_and_package(records, check_only)
-
-
 def refresh_source() -> None:
     rows = []
-    for key, spec in LAYER_SPECS.items():
+    for key, spec in SPECS.items():
         metadata, metadata_raw = fetch_json(metadata_url(spec["layer_id"]))
-        layer_name = validate_layer_metadata(metadata, spec)
+        layer_name = validate_metadata(metadata, spec)
         source, source_raw = fetch_json(query_url(spec["layer_id"]))
-        validate_geojson(source, spec)
+        validate_source(source, spec)
         write(spec["snapshot"], source)
         rows.append({
             "key": key,
@@ -387,15 +341,15 @@ def refresh_source() -> None:
             "metadata_url": metadata_url(spec["layer_id"]),
             "query_url": query_url(spec["layer_id"]),
             "snapshot_path": spec["snapshot"].relative_to(ROOT).as_posix(),
-            "canonical_sha256": sha_bytes(canonical(source)),
-            "raw_response_sha256_at_freeze": sha_bytes(source_raw),
-            "metadata_sha256": sha_bytes(canonical(metadata)),
-            "raw_metadata_sha256_at_freeze": sha_bytes(metadata_raw),
+            "canonical_sha256": sha(canonical(source)),
+            "raw_response_sha256_at_freeze": sha(source_raw),
+            "metadata_sha256": sha(canonical(metadata)),
+            "raw_metadata_sha256_at_freeze": sha(metadata_raw),
             "feature_count": len(source.get("features") or []),
             "geometry_role": spec["role"],
             "event_date": spec["event_date"],
         })
-    inventory = {
+    write(SOURCE_INVENTORY, {
         "schema_version": "0.1",
         **GUARDS,
         "discovery_id": DISCOVERY_ID,
@@ -408,9 +362,17 @@ def refresh_source() -> None:
             "provider_values_are_irfen_thresholds": False,
             "artificial_connector_used": False,
         },
-    }
-    write(SOURCE_INVENTORY, inventory)
-    sync(False)
+    })
+
+
+def run(refresh: bool, check_only: bool) -> dict[str, dict]:
+    if refresh:
+        refresh_source()
+    if not SOURCE_INVENTORY.is_file():
+        raise ValueError("frozen Rio Tumbes source inventory missing")
+    records = build_from_frozen(check_only)
+    sync_contract_and_package(records, check_only)
+    return records
 
 
 def main() -> int:
@@ -420,13 +382,7 @@ def main() -> int:
     args = parser.parse_args()
     if args.refresh_source and args.check_only:
         raise ValueError("--refresh-source and --check-only are mutually exclusive")
-    if args.refresh_source:
-        refresh_source()
-    else:
-        if not SOURCE_INVENTORY.is_file():
-            raise ValueError("frozen Rio Tumbes source inventory missing; run --refresh-source once")
-        sync(args.check_only)
-    records = records_from_inventory()
+    records = run(args.refresh_source, args.check_only)
     print(json.dumps({
         "status": "PASS_TUMBES_RIO_TUMBES_OFFICIAL_REPLAY",
         "discovery_id": DISCOVERY_ID,
