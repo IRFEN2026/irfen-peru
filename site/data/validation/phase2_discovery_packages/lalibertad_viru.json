@@ -1,0 +1,109 @@
+{
+  "schema_version": "0.1",
+  "discovery_id": "lalibertad_viru",
+  "system_name": "Cuenca Viru",
+  "contract_status": "DISCOVERY_HYDROLOGIC_IDENTITY_RESOLVED_GEOMETRY_PENDING",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "official_source_ids": [
+    "ANA-ALA-MOCHE-VIRU-CHAO-COMPENDIO",
+    "INDECI-LA-LIBERTAD-2017-IE46",
+    "INGEMMET-A6791-LA-LIBERTAD-2017",
+    "ANA-VIRU-DESCOLMATACION-2023",
+    "ANA-VIRU-DESCOLMATACION-2024"
+  ],
+  "source_registry_path": "site/data/phase2/sources/lalibertad_viru_official_evidence_v0_1.json",
+  "hydrologic_identity": {
+    "ana_unit_code": "137714",
+    "ana_unit_name": "Cuenca Viru",
+    "identity_source": "ANA ALA Moche-Viru-Chao hydrographic-unit compendium",
+    "territorial_reference_is_basin": false,
+    "must_not_merge_with": ["Cuenca Huamanzaña", "Cuenca Moche", "Chao territorial corridor"]
+  },
+  "assets": {
+    "geometry": {
+      "status": "MISSING_PENDING_EXACT_ANA_QUERY",
+      "path": "site/data/phase2/geometries/lalibertad_viru_basin_context.geojson",
+      "representation": "OFFICIAL_ANA_HYDROGRAPHIC_UNIT_CONTEXT_PENDING_REPLAY",
+      "source_ids": ["ANA-UH-137714-VIRU"],
+      "source_query": {
+        "endpoint": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/8/query",
+        "where": "CODIGO='137714'",
+        "out_fields": "*",
+        "out_sr": 4326,
+        "geometry_precision": 7,
+        "format": "geojson"
+      },
+      "counts_as_operational_geometry": false,
+      "counts_as_event_footprint": false
+    },
+    "event_ledger": {
+      "1982_1983": {"status": "UNKNOWN_NOT_NEGATIVE", "source_ids": []},
+      "1997_1998": {"status": "UNKNOWN_NOT_NEGATIVE", "source_ids": []},
+      "2017": {
+        "status": "POSITIVE_RIO_VIRU_TERRITORIAL_EVENT_EVIDENCE",
+        "source_ids": ["INDECI-LA-LIBERTAD-2017-IE46", "INGEMMET-A6791-LA-LIBERTAD-2017"],
+        "supported_claim": "Intense rainfall on 18 March 2017 increased Rio Viru flow and affected transport infrastructure; the exact inundation footprint and tributary participation remain unresolved.",
+        "uniform_tributary_activation": false,
+        "exact_event_footprint_available": false
+      },
+      "2023": {"status": "UNKNOWN_NOT_NEGATIVE", "source_ids": ["ANA-VIRU-DESCOLMATACION-2023"], "prevention_context_is_event": false},
+      "recent": {"status": "UNKNOWN_NOT_NEGATIVE", "source_ids": ["ANA-VIRU-DESCOLMATACION-2024"], "prevention_context_is_event": false}
+    },
+    "observations": {
+      "status": "MISSING_EVENT_PAIRED_HYDROMETEOROLOGICAL_SERIES",
+      "station_or_gauge_series": [],
+      "missing_series_is_low_risk": false,
+      "next_required": [
+        "retrieve official ANA/SENAMHI rainfall and river observations attributable to Cuenca Viru",
+        "pair each observation with exact station identity and event window",
+        "preserve provider values as observations, never thresholds"
+      ]
+    },
+    "exposure_connectivity": {
+      "status": "PARTIAL_PREVENTION_CONTEXT_ONLY",
+      "source_ids": ["ANA-VIRU-DESCOLMATACION-2023", "ANA-VIRU-DESCOLMATACION-2024"],
+      "named_sectors": ["Vinzos", "Huancaquito", "Puente Viru", "Huacapongo", "Carmelo"],
+      "classes": ["population", "housing", "agriculture", "health", "education", "irrigation", "roads"],
+      "prevention_sector_is_event_footprint": false,
+      "network_connectivity_normalized": false
+    },
+    "hydraulic_context": {
+      "status": "WORKS_CONTEXT_ONLY_NO_HISTORICAL_CAPACITY_INFERENCE",
+      "source_ids": ["ANA-VIRU-DESCOLMATACION-2023", "ANA-VIRU-DESCOLMATACION-2024"],
+      "descolmatation_length_is_capacity": false,
+      "works_are_historical_capacity": false,
+      "capacity_values": null
+    }
+  },
+  "mechanism_policy": {
+    "river_flow_increase_does_not_define_exact_inundation_footprint": true,
+    "tributaries_require_independent_event_evidence": true,
+    "works_do_not_define_capacity": true,
+    "absence_of_report_is_negative": false
+  },
+  "map_policy": {
+    "approximate_geometry_forbidden": true,
+    "publish_only_after_exact_identity_and_reproducible_geometry": true,
+    "prevention_sectors_are_event_footprints": false,
+    "risk_or_alert_layer": false
+  },
+  "validation": {
+    "activation_gate": "BLOCKED",
+    "required_reviews": [
+      "exact ANA geometry replay for Cuenca Viru",
+      "event ledger extension for 1982-83, 1997-98 and 2023/recent",
+      "event-paired rainfall/stage/discharge retrieval with QA",
+      "exposure/connectivity normalization",
+      "hydraulic works context kept separate from historical response"
+    ],
+    "review_evidence": []
+  }
+}
