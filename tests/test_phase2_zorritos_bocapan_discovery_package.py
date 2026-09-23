@@ -41,10 +41,64 @@ def test_parent_is_territorial_only_and_named_ravines_remain_separate():
     assert set(components) == expected
     assert components["bocapan_casitas"]["identity_status"] == "OFFICIAL_HYDROLOGIC_IDENTITY_SUPPORTED_BY_ANA"
     assert components["pena_negra"]["identity_status"] == "OFFICIAL_NAME_SUPPORTED_BY_MVCS_PREVENTION_SOURCE"
+    assert components["el_tiburon"]["identity_status"] == "OFFICIAL_NAME_SUPPORTED_BY_MP_FN_INFRASTRUCTURE_SOURCE"
+    assert components["nuevo_paraiso"]["identity_status"] == "OFFICIAL_NAME_SUPPORTED_BY_MVCS_PREVENTION_SOURCE_HYDROLOGIC_GEOMETRY_PENDING"
     for component in components.values():
-        assert component["activation_verified"] is False
         assert component["geometry_status"] == "MISSING_NO_APPROXIMATION_ALLOWED"
         assert component["map_publishable"] is False
+
+
+def test_el_grillo_has_component_specific_2023_evidence_without_geometry_or_threshold_promotion():
+    p = load(PACKAGE)
+    s = load(SOURCES)
+    component = p["hydrologic_components"]["el_grillo"]
+    assert component["identity_status"] == "OFFICIAL_NAME_AND_2023_YAKU_COMPONENT_EVENT_SUPPORTED_BY_CENEPRED_EVAR"
+    assert component["activation_verified"] is True
+    assert component["activation_source_ids"] == ["CENEPRED-EVAR-ZORRITOS-EL-GRILLO-2026"]
+    event = p["assets"]["event_ledger"]["2023"]["component_outcomes"]["el_grillo"]
+    assert event["status"] == "POSITIVE_COMPONENT_EVENT"
+    assert event["exact_event_footprint_frozen"] is False
+    assert event["threshold_inferred"] is False
+    assert event["hydraulic_capacity_inferred"] is False
+    assert p["assets"]["event_ledger"]["2023"]["outcome_transfer_to_other_children_allowed"] is False
+    assert s["qa"]["el_grillo_direct_source_frozen"] is True
+    assert s["qa"]["el_grillo_2023_component_event_positive"] is True
+
+
+def test_secondary_2017_context_does_not_become_primary_child_event_adjudication():
+    p = load(PACKAGE)
+    s = load(SOURCES)
+    ledger = p["assets"]["event_ledger"]["2017"]
+    assert ledger["regional_or_provincial_impact_confirmed"] is True
+    assert ledger["secondary_named_infrastructure_context"] == ["san_andres", "la_paja", "marinero"]
+    assert ledger["secondary_context_is_direct_primary_event_adjudication"] is False
+    assert ledger["specific_ravine_activation_adjudicated"] is False
+    assert ledger["absence_of_child_mention_is_negative"] is False
+    for component_id in ("san_andres", "la_paja", "marinero"):
+        component = p["hydrologic_components"][component_id]
+        assert "PRIMARY_SOURCE_FREEZE_PENDING" in component["identity_status"]
+        assert component["activation_verified"] is False
+    assert s["qa"]["san_andres_direct_source_frozen"] is False
+    assert s["qa"]["la_paja_direct_source_frozen"] is False
+    assert s["qa"]["marinero_direct_source_frozen"] is False
+    assert s["qa"]["san_andres_la_paja_marinero_secondary_official_context_frozen"] is True
+
+
+def test_direct_name_support_is_not_silently_promoted_to_event_evidence():
+    p = load(PACKAGE)
+    s = load(SOURCES)
+    for component_id, qa_key in (
+        ("el_tiburon", "el_tiburon_direct_source_frozen"),
+        ("nuevo_paraiso", "nuevo_paraiso_direct_hydrologic_source_frozen"),
+    ):
+        assert s["qa"][qa_key] is True
+        assert p["hydrologic_components"][component_id]["activation_verified"] is False
+    for component_id, qa_key in (
+        ("el_rubio", "el_rubio_direct_source_frozen"),
+        ("san_pedro", "san_pedro_direct_source_frozen"),
+    ):
+        assert "PENDING" in p["hydrologic_components"][component_id]["identity_status"]
+        assert s["qa"][qa_key] is False
 
 
 def test_no_composite_or_approximate_geometry_can_be_published():
@@ -66,18 +120,13 @@ def test_no_composite_or_approximate_geometry_can_be_published():
     assert m["risk_or_alert_layer"] is False
 
 
-def test_event_ledger_does_not_propagate_territorial_impacts_to_children():
+def test_event_ledger_keeps_unknown_epochs_unknown_and_prevention_non_event():
     p = load(PACKAGE)
     ledger = p["assets"]["event_ledger"]
     assert ledger["1982_1983"]["status"] == "UNKNOWN_NOT_NEGATIVE"
     assert ledger["1997_1998"]["status"] == "UNKNOWN_NOT_NEGATIVE"
-    assert ledger["2017"]["regional_or_provincial_impact_confirmed"] is True
-    assert ledger["2017"]["specific_ravine_activation_adjudicated"] is False
-    assert ledger["2017"]["absence_of_child_mention_is_negative"] is False
-    assert ledger["2023"]["zorritos_housing_impact_confirmed"] is True
-    assert ledger["2023"]["specific_ravine_activation_adjudicated"] is False
-    assert ledger["2023"]["pluvial_vs_ravine_mechanism_resolved"] is False
     assert ledger["2024_2026_recent"]["prevention_activity_is_event"] is False
+    assert ledger["2024_2026_recent"]["specific_ravine_activation_adjudicated"] is False
 
 
 def test_missing_observations_and_works_never_become_threshold_capacity_or_low_risk():
@@ -90,6 +139,7 @@ def test_missing_observations_and_works_never_become_threshold_capacity_or_low_r
     assert obs["missing_series_is_low_risk"] is False
     h = p["assets"]["hydraulic_context"]
     assert h["capacity_values"] is None
+    assert h["culvert_obstruction_event_is_capacity_test"] is False
     assert h["intervention_length_is_historical_capacity"] is False
     assert h["removed_material_volume_is_historical_capacity"] is False
     assert h["current_works_define_event_footprint"] is False
@@ -99,21 +149,3 @@ def test_missing_observations_and_works_never_become_threshold_capacity_or_low_r
     assert s["qa"]["critical_or_prevention_work_used_as_event"] is False
     assert s["qa"]["works_are_historical_capacity"] is False
     assert s["qa"]["absence_of_report_is_negative"] is False
-
-
-def test_unverified_inventory_names_cannot_be_silently_promoted():
-    p = load(PACKAGE)
-    s = load(SOURCES)
-    pending = {
-        "el_grillo": "el_grillo_direct_source_frozen",
-        "san_andres": "san_andres_direct_source_frozen",
-        "la_paja": "la_paja_direct_source_frozen",
-        "marinero": "marinero_direct_source_frozen",
-        "el_rubio": "el_rubio_direct_source_frozen",
-        "san_pedro": "san_pedro_direct_source_frozen",
-        "el_tiburon": "el_tiburon_direct_source_frozen",
-        "nuevo_paraiso": "nuevo_paraiso_direct_hydrologic_source_frozen",
-    }
-    for component_id, qa_key in pending.items():
-        assert "PENDING" in p["hydrologic_components"][component_id]["identity_status"]
-        assert s["qa"][qa_key] is False
