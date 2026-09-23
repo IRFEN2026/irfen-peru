@@ -19,7 +19,11 @@
     "INGEMMET-A6764-TUMBES-2017",
     "INDECI-TUMBES-PRECIP-2017-IE78",
     "INDECI-TUMBES-RAINS-2023-03",
+    "CENEPRED-EVAR-ZORRITOS-EL-GRILLO-2026",
     "MVCS-ZORRITOS-PENA-NEGRA-2023",
+    "MVCS-TUMBES-PREVENTION-2023-16",
+    "MPFN-ZORRITOS-EL-TIBURON-2026",
+    "ELECTROPERU-PPRRD-ZORRITOS-2026-2030",
     "MVCS-TUMBES-PREVENTION-2025"
   ],
   "territorial_identity": {
@@ -41,32 +45,37 @@
     "el_grillo": {
       "name": "Quebrada El Grillo",
       "component_type": "NAMED_COASTAL_RAVINE",
-      "identity_status": "DISCOVERY_INVENTORY_NAME_DIRECT_SOURCE_FREEZE_PENDING",
-      "activation_verified": false,
+      "identity_status": "OFFICIAL_NAME_AND_2023_YAKU_COMPONENT_EVENT_SUPPORTED_BY_CENEPRED_EVAR",
+      "activation_verified": true,
+      "activation_evidence_scope": "2023 Cyclone Yaku ravine-flow/culvert-obstruction context with downstream inundation and Panamericana Norte blockage",
+      "activation_source_ids": ["CENEPRED-EVAR-ZORRITOS-EL-GRILLO-2026"],
       "geometry_status": "MISSING_NO_APPROXIMATION_ALLOWED",
       "map_publishable": false
     },
     "san_andres": {
       "name": "Quebrada San Andres",
       "component_type": "NAMED_COASTAL_RAVINE",
-      "identity_status": "DISCOVERY_INVENTORY_NAME_DIRECT_SOURCE_FREEZE_PENDING",
+      "identity_status": "OFFICIAL_SECONDARY_2017_AFFECTED_INFRASTRUCTURE_CONTEXT_PRIMARY_SOURCE_FREEZE_PENDING",
       "activation_verified": false,
+      "secondary_context_source_ids": ["ELECTROPERU-PPRRD-ZORRITOS-2026-2030"],
       "geometry_status": "MISSING_NO_APPROXIMATION_ALLOWED",
       "map_publishable": false
     },
     "la_paja": {
       "name": "Quebrada La Paja",
       "component_type": "NAMED_COASTAL_RAVINE",
-      "identity_status": "DISCOVERY_INVENTORY_NAME_DIRECT_SOURCE_FREEZE_PENDING",
+      "identity_status": "OFFICIAL_SECONDARY_2017_AFFECTED_INFRASTRUCTURE_CONTEXT_PRIMARY_SOURCE_FREEZE_PENDING",
       "activation_verified": false,
+      "secondary_context_source_ids": ["ELECTROPERU-PPRRD-ZORRITOS-2026-2030"],
       "geometry_status": "MISSING_NO_APPROXIMATION_ALLOWED",
       "map_publishable": false
     },
     "marinero": {
       "name": "Quebrada Marinero",
       "component_type": "NAMED_COASTAL_RAVINE",
-      "identity_status": "DISCOVERY_INVENTORY_NAME_DIRECT_SOURCE_FREEZE_PENDING",
+      "identity_status": "OFFICIAL_SECONDARY_2017_AFFECTED_INFRASTRUCTURE_CONTEXT_PRIMARY_SOURCE_FREEZE_PENDING",
       "activation_verified": false,
+      "secondary_context_source_ids": ["ELECTROPERU-PPRRD-ZORRITOS-2026-2030"],
       "geometry_status": "MISSING_NO_APPROXIMATION_ALLOWED",
       "map_publishable": false
     },
@@ -97,15 +106,15 @@
     "el_tiburon": {
       "name": "Quebrada El Tiburon",
       "component_type": "NAMED_COASTAL_RAVINE",
-      "identity_status": "DISCOVERY_INVENTORY_NAME_DIRECT_SOURCE_FREEZE_PENDING",
+      "identity_status": "OFFICIAL_NAME_SUPPORTED_BY_MP_FN_INFRASTRUCTURE_SOURCE",
       "activation_verified": false,
       "geometry_status": "MISSING_NO_APPROXIMATION_ALLOWED",
       "map_publishable": false
     },
     "nuevo_paraiso": {
       "name": "Quebrada Nuevo Paraiso",
-      "component_type": "NAMED_COASTAL_RAVINE_OR_SECTOR_IDENTITY_PENDING",
-      "identity_status": "DISCOVERY_INVENTORY_NAME_DIRECT_HYDROLOGIC_SOURCE_FREEZE_PENDING",
+      "component_type": "NAMED_COASTAL_RAVINE",
+      "identity_status": "OFFICIAL_NAME_SUPPORTED_BY_MVCS_PREVENTION_SOURCE_HYDROLOGIC_GEOMETRY_PENDING",
       "activation_verified": false,
       "geometry_status": "MISSING_NO_APPROXIMATION_ALLOWED",
       "map_publishable": false
@@ -132,27 +141,42 @@
         "source_ids": []
       },
       "2017": {
-        "status": "POSITIVE_TERRITORIAL_MULTI_HAZARD_CONTEXT_CHILD_ATTRIBUTION_PENDING",
+        "status": "POSITIVE_TERRITORIAL_MULTI_HAZARD_CONTEXT_CHILD_ATTRIBUTION_PARTIAL",
         "source_ids": [
           "INGEMMET-A6764-TUMBES-2017",
-          "INDECI-TUMBES-PRECIP-2017-IE78"
+          "INDECI-TUMBES-PRECIP-2017-IE78",
+          "ELECTROPERU-PPRRD-ZORRITOS-2026-2030"
         ],
         "regional_or_provincial_impact_confirmed": true,
+        "secondary_named_infrastructure_context": ["san_andres", "la_paja", "marinero"],
+        "secondary_context_is_direct_primary_event_adjudication": false,
         "specific_ravine_activation_adjudicated": false,
         "exact_event_footprint_available": false,
         "absence_of_child_mention_is_negative": false
       },
       "2023": {
-        "status": "POSITIVE_ZORRITOS_TERRITORIAL_RAIN_IMPACT_COMPONENT_ATTRIBUTION_PENDING",
-        "source_ids": ["INDECI-TUMBES-RAINS-2023-03"],
+        "status": "POSITIVE_ZORRITOS_TERRITORIAL_RAIN_IMPACT_WITH_EL_GRILLO_COMPONENT_EVENT",
+        "source_ids": ["INDECI-TUMBES-RAINS-2023-03", "CENEPRED-EVAR-ZORRITOS-EL-GRILLO-2026"],
         "zorritos_housing_impact_confirmed": true,
-        "specific_ravine_activation_adjudicated": false,
-        "pluvial_vs_ravine_mechanism_resolved": false,
-        "exact_event_footprint_available": false
+        "component_outcomes": {
+          "el_grillo": {
+            "status": "POSITIVE_COMPONENT_EVENT",
+            "source_ids": ["CENEPRED-EVAR-ZORRITOS-EL-GRILLO-2026"],
+            "event_context": "Cyclone Yaku 2023",
+            "documented_mechanism": "ravine flow with culvert obstruction causing downstream inundation and Panamericana Norte blockage",
+            "exact_event_footprint_frozen": false,
+            "threshold_inferred": false,
+            "hydraulic_capacity_inferred": false
+          }
+        },
+        "other_specific_ravine_activation_adjudicated": false,
+        "district_wide_pluvial_vs_other_ravine_mechanisms_resolved": false,
+        "exact_event_footprint_available": false,
+        "outcome_transfer_to_other_children_allowed": false
       },
       "2024_2026_recent": {
         "status": "CURRENT_PREVENTION_CONTEXT_EVENT_ADJUDICATION_INCOMPLETE",
-        "source_ids": ["MVCS-TUMBES-PREVENTION-2025"],
+        "source_ids": ["MVCS-TUMBES-PREVENTION-2025", "MPFN-ZORRITOS-EL-TIBURON-2026"],
         "prevention_activity_is_event": false,
         "specific_ravine_activation_adjudicated": false
       }
@@ -170,11 +194,15 @@
       ]
     },
     "exposure_connectivity": {
-      "status": "TERRITORIAL_IMPACT_AND_PREVENTION_CONTEXT_NETWORK_NOT_NORMALIZED",
+      "status": "TERRITORIAL_AND_EL_GRILLO_COMPONENT_IMPACT_CONTEXT_NETWORK_NOT_NORMALIZED",
       "source_ids": [
         "INGEMMET-A6764-TUMBES-2017",
         "INDECI-TUMBES-RAINS-2023-03",
+        "CENEPRED-EVAR-ZORRITOS-EL-GRILLO-2026",
         "MVCS-ZORRITOS-PENA-NEGRA-2023",
+        "MVCS-TUMBES-PREVENTION-2023-16",
+        "MPFN-ZORRITOS-EL-TIBURON-2026",
+        "ELECTROPERU-PPRRD-ZORRITOS-2026-2030",
         "MVCS-TUMBES-PREVENTION-2025"
       ],
       "classes": [
@@ -185,16 +213,21 @@
         "water_and_sanitation",
         "other_public_infrastructure"
       ],
+      "el_grillo_panamericana_2023_component_link_supported": true,
       "network_connectivity_normalized": false,
       "territorial_impact_defines_basin": false
     },
     "hydraulic_context": {
       "status": "PREVENTION_AND_DESILTATION_CONTEXT_ONLY_CAPACITY_UNRESOLVED",
       "source_ids": [
+        "CENEPRED-EVAR-ZORRITOS-EL-GRILLO-2026",
         "MVCS-ZORRITOS-PENA-NEGRA-2023",
+        "MVCS-TUMBES-PREVENTION-2023-16",
+        "MPFN-ZORRITOS-EL-TIBURON-2026",
         "MVCS-TUMBES-PREVENTION-2025"
       ],
       "capacity_values": null,
+      "culvert_obstruction_event_is_capacity_test": false,
       "intervention_length_is_historical_capacity": false,
       "removed_material_volume_is_historical_capacity": false,
       "current_works_define_event_footprint": false,
@@ -221,12 +254,13 @@
   "validation": {
     "activation_gate": "BLOCKED",
     "required_reviews": [
-      "freeze direct official identity evidence for El Grillo, San Andres, La Paja, Marinero, El Rubio, San Pedro, El Tiburon and Nuevo Paraiso before promotion",
+      "freeze direct primary identity/event evidence for San Andres, La Paja and Marinero before treating secondary 2017 infrastructure context as child event adjudication",
+      "freeze direct official identity evidence for El Rubio and San Pedro before promotion",
       "resolve Bocapan-Casitas and every Zorritos ravine geometry/outlet independently; never create a composite Zorritos polygon",
-      "adjudicate 2017 and 2023 outcomes by child/mechanism without propagating regional or district impacts",
+      "adjudicate unresolved 2017 and 2023 outcomes by child/mechanism without propagating regional, district or El Grillo impacts",
       "identify event-paired rainfall and any child-attributable stage/flow observations",
       "normalize Panamericana, housing, tourism and water/sanitation exposure only after hydrologic child linkage is reproducible",
-      "preserve preventive/desiltation works as context only, never hydraulic capacity"
+      "preserve preventive/desiltation works and El Grillo culvert evidence as context/event mechanism only, never historical natural-channel capacity"
     ],
     "review_evidence": []
   }
