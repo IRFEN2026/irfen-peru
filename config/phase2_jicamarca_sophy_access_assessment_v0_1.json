@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.1",
+  "schema_version": "0.2",
   "status": "PUBLIC_PROJECT_METADATA_ONLY_DATA_ACCESS_UNRESOLVED",
   "deployment_status": "RESEARCH_ONLY",
   "test_mode": "TEST_ONLY",
@@ -10,18 +10,47 @@
   "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
   "decision_thresholds": null,
   "hydraulic_factors": null,
-  "retrieval_date_utc": "2026-09-23",
+  "retrieval_date_utc": "2026-09-24",
   "source": {
     "source_id": "IGP-SOPHY-XBAND-RADAR",
     "institution": "Instituto Geofísico del Perú",
-    "url": "https://www.igp.gob.pe/proyectos/desarrollo-tecnologico/radar-meteorologico/acercade",
+    "url": "https://www.igp.gob.pe/proyectos/desarrollo-tecnologico/radar-meteorologico/resultados-esperados",
     "source_class": "OFFICIAL_PUBLIC_PROJECT_PAGE"
   },
+  "bounded_official_sources": [
+    {
+      "source_id": "IGP-SOPHY-PROJECT-RESULTS",
+      "url": "https://www.igp.gob.pe/proyectos/desarrollo-tecnologico/radar-meteorologico/resultados-esperados",
+      "date_context": "CURRENT_PUBLIC_PROJECT_PAGE_AS_OF_2026-09-24",
+      "bounded_claims": ["X-band dual-polarization radar", "9345 MHz operating frequency", "50 km stated observation range"]
+    },
+    {
+      "source_id": "IGP-SOPHY-IEEE-2021",
+      "url": "https://repositorio.igp.gob.pe/items/79ff08bf-32b5-4415-83f1-6e6c800c6a3e",
+      "date_context": "2021",
+      "bounded_claims": ["portable X-band dual-pol system", "60 km stated maximum range"]
+    },
+    {
+      "source_id": "IGP-SOPHY-ATTENUATION-2024",
+      "url": "https://repositorio.igp.gob.pe/items/35e425b8-8499-4b0e-9bf9-07157aa91c01",
+      "date_context": "2024-07",
+      "bounded_claims": ["rain attenuation requires prior quality control", "preliminary attenuation correction slightly improved two Piura rain events", "specific attenuation was overestimated for reflectivity below 20 dBZ"]
+    },
+    {
+      "source_id": "IGP-SOPHY-GROUND-CLUTTER-2026",
+      "url": "https://repositorio.igp.gob.pe/items/827818ca-5e8c-4771-b676-3ff40346979f",
+      "date_context": "2026-07-06",
+      "bounded_claims": ["ground-clutter filtering remains a required operational-quality problem in complex orography", "reported evaluation used reflectivity and Doppler velocity", "stratiform precipitation was a more challenging classification case"]
+    }
+  ],
   "public_metadata": {
-    "instrument_class": "X_BAND_WEATHER_RADAR",
-    "reported_max_range_km": 60,
-    "reported_horizontal_scan_deg": 360,
-    "reported_vertical_scan_deg": 90,
+    "instrument_class": "X_BAND_DUAL_POLARIZATION_WEATHER_RADAR",
+    "operating_frequency_mhz": 9345,
+    "reported_range_values_km": [50, 60],
+    "range_source_discrepancy_status": "PRESERVE_PROVIDER_VERSION_DIFFERENCE_DO_NOT_RESOLVE_BY_ASSUMPTION",
+    "current_project_page_observation_range_km": 50,
+    "historical_2021_publication_max_range_km": 60,
+    "nominal_range_is_verified_event_coverage": false,
     "intended_measurement_context": "precipitation observation and research support",
     "huaico_monitoring_integration_context": true
   },
@@ -32,24 +61,40 @@
     "raw_or_level2_data_retrieved": false,
     "qa_reproducible": false,
     "subcatchment_rainfall_reconstruction_allowed": false,
-    "next_gate": "IDENTIFY_REPRODUCIBLE_DATA_ACCESS_AND_FREEZE_QA_BEFORE_ANY_EVENT_RECONSTRUCTION"
+    "event_coverage_verified": false,
+    "range_discrepancy_resolved": false,
+    "next_gate": "IDENTIFY_REPRODUCIBLE_DATA_ACCESS_FREEZE_SCAN_CALIBRATION_ATTENUATION_AND_GROUND_CLUTTER_QA_THEN_VERIFY_EVENT_COVERAGE_BEFORE_ANY_SUBCATCHMENT_RECONSTRUCTION"
+  },
+  "known_qa_constraints": {
+    "rain_attenuation_correction_required": true,
+    "ground_clutter_filtering_required": true,
+    "complex_orography_relevant": true,
+    "low_reflectivity_attenuation_caution": "Provider study reports preliminary overestimation of specific attenuation below 20 dBZ; this is a QA caution, not an IRFEN threshold.",
+    "stratiform_ground_clutter_caution": "Provider 2026 study reports stratiform precipitation as more challenging for clutter classification; no performance transfer to Jicamarca event reconstruction is assumed.",
+    "provider_dbz_value_is_irfen_decision_threshold": false,
+    "published_algorithm_performance_is_event_specific_jicamarca_validation": false
   },
   "required_qa_before_use": [
-    "archive source/data identifiers and retrieval timestamps",
-    "preserve native timestamp/timezone semantics",
-    "document scan strategy and missing scans",
-    "document calibration/quality flags available from provider",
+    "archive exact radar source/data identifiers and retrieval timestamps",
+    "preserve native timestamp and timezone semantics",
+    "document scan strategy elevation angles and missing scans",
+    "document calibration and provider quality flags",
+    "apply and freeze rain-attenuation quality-control method appropriate to the retrieved product",
+    "apply and freeze ground-clutter quality-control method appropriate to terrain and scan strategy",
+    "verify event-time spatial coverage instead of using nominal range as coverage",
     "define reproducible spatial extraction for each local hydrologic child",
-    "cross-check against independent station or satellite precipitation when available",
-    "freeze processing code and input hashes before comparing with local flow evidence"
+    "cross-check precipitation against independent station or satellite observations when available",
+    "freeze processing code input hashes and QA outputs before comparing with local direct-flow evidence"
   ],
   "forbidden": [
     "infer rainfall values from project-page metadata",
     "treat nominal radar range as verified event coverage",
+    "select 50 km or 60 km as truth without product/version provenance",
     "invent missing radar scans",
     "derive or import operational thresholds",
+    "reinterpret provider 20 dBZ QA finding as an IRFEN decision threshold",
     "use radar metadata alone to assign activation to a small ravine",
     "promote a parent Jicamarca or Rímac activation state",
-    "infer discharge, travel time, attenuation or receiver overflow from radar metadata"
+    "infer discharge travel time attenuation or receiver overflow from radar metadata"
   ]
 }
