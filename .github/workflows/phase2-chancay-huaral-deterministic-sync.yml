@@ -1,0 +1,78 @@
+name: IRFEN - Phase2 Chancay-Huaral deterministic sync
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/phase2-chancay-huaral-deterministic-sync.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  synchronize-derived-state:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Patch exact deterministic expectations
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p=Path('tests/test_phase2_spatial_observation_contracts.py')
+          s=p.read_text(encoding='utf-8')
+          for old,new in [
+            ('summary["non_catchment_geometry_only_count"], 10)', 'summary["non_catchment_geometry_only_count"], 11)'),
+            ('summary["blocked_missing_geometry_count"], 6)', 'summary["blocked_missing_geometry_count"], 5)'),
+          ]:
+            if old not in s:
+              raise SystemExit(f'missing exact spatial-test anchor: {old}')
+            s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+
+          p=Path('tests/test_map_layer_catalog.py')
+          s=p.read_text(encoding='utf-8')
+          anchor='            "lima_norte_arahuay_chillon",\n'
+          insertion=anchor+'            "lima_norte_chancay_huaral",\n'
+          if '            "lima_norte_chancay_huaral",\n' not in s:
+            if anchor not in s:
+              raise SystemExit('missing map eligible-set anchor')
+            s=s.replace(anchor,insertion,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Regenerate deterministic climate matrix
+        run: python scripts/build_phase2_climate_matrix.py
+      - name: Validate all synchronized Phase-2 derived state
+        run: |
+          python scripts/validate_phase2_climate_matrix.py
+          python scripts/validate_phase2_spatial_observation_contracts.py
+          python scripts/probe_chancay_huaral_official_geometry.py --check-only
+          python scripts/build_phase2_catalog.py --check-only
+          python scripts/build_map_layer_catalog.py --check-only
+          python -m unittest \
+            tests.test_phase2_spatial_observation_contracts \
+            tests.test_phase2_climate_matrix \
+            tests.test_map_layer_catalog \
+            tests.test_phase2_chancay_huaral_geometry -v
+      - name: Commit synchronized deterministic artifacts
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            tests/test_phase2_spatial_observation_contracts.py \
+            tests/test_map_layer_catalog.py \
+            site/data/phase2/climate_conditioned_activation_matrix_v0_1.json
+          if git diff --cached --quiet; then
+            echo 'Derived state already synchronized.'
+            exit 0
+          fi
+          git commit -m 'Phase2: synchronize Chancay-Huaral derived state'
+          git push origin HEAD:"${HEAD_REF}"
