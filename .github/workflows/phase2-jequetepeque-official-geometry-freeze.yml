@@ -1,0 +1,38 @@
+name: IRFEN - Phase2 Jequetepeque official geometry freeze
+
+on:
+  pull_request:
+    paths:
+      - site/data/validation/phase2_discovery_contracts/lalibertad_jequetepeque.json
+      - site/data/validation/phase2_discovery_packages/lalibertad_jequetepeque.json
+      - site/data/phase2/sources/lalibertad_jequetepeque_official_evidence_v0_1.json
+      - site/data/phase2/sources/north_coast_discovery_geometry/ana_lalibertad_jequetepeque_13774.geojson
+      - site/data/phase2/geometries/lalibertad_jequetepeque_basin_context.geojson
+      - site/data/phase2/geometries/lalibertad_jequetepeque_geometry_validation.json
+      - scripts/probe_phase2_jequetepeque_official_geometry.py
+      - scripts/verify_phase2_jequetepeque_official_geometry.py
+      - tests/test_phase2_jequetepeque_official_geometry.py
+      - site/data/map_layers.json
+      - .github/workflows/phase2-jequetepeque-official-geometry-freeze.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-frozen-official-geometry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install test dependency
+        run: python -m pip install pytest
+      - name: Replay frozen official ANA Jequetepeque geometry fail-closed
+        run: python scripts/verify_phase2_jequetepeque_official_geometry.py
+      - name: Enforce Jequetepeque scientific guards
+        run: python -m pytest -q tests/test_phase2_jequetepeque_official_geometry.py
+      - name: Verify published research map catalog
+        run: python scripts/build_map_layer_catalog.py --check-only
