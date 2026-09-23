@@ -31,11 +31,12 @@ class Phase2NorthCoastDiscoveryTests(unittest.TestCase):
         self.assertFalse(rel["changes_registered_candidate_count"])
         self.assertFalse(rel["changes_operational_scope"])
         self.assertTrue(rel["promotion_requires_explicit_versioned_migration"])
-        self.assertEqual(rel["discovery_units_count"], 14)
+        self.assertEqual(rel["discovery_units_count"], 15)
 
     def test_user_requested_corridors_are_explicit(self):
         ids = {r["discovery_id"] for r in self.cfg["discovery_units"]}
         required = {
+            "lima_norte_supe_caleta_vidal",
             "lima_norte_pativilca",
             "lima_norte_fortaleza_paramonga",
             "ancash_huarmey_culebras",
@@ -74,6 +75,14 @@ class Phase2NorthCoastDiscoveryTests(unittest.TestCase):
         self.assertIn("Rio Zaña", row["must_not_merge_with"])
         self.assertIn("Rio Chicama", row["must_not_merge_with"])
         self.assertTrue(any("Gallito Ciego" in item for item in row["first_work_package"]))
+
+    def test_supe_caleta_vidal_keeps_exposure_separate_from_event_routing(self):
+        rows = {r["discovery_id"]: r for r in self.cfg["discovery_units"]}
+        row = rows["lima_norte_supe_caleta_vidal"]
+        self.assertIn("Rio Pativilca", row["must_not_merge_with"])
+        self.assertIn("Rio Fortaleza", row["must_not_merge_with"])
+        self.assertIn("Caleta Vidal territorial exposure node", row["hydrologic_components"])
+        self.assertTrue(any("2017 Caleta Vidal flooding" in item for item in row["first_work_package"]))
 
     def test_chepen_and_far_north_components_are_fail_closed(self):
         rows = {r["discovery_id"]: r for r in self.cfg["discovery_units"]}
