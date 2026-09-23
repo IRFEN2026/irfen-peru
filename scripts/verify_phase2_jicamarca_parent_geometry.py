@@ -32,10 +32,13 @@ def main():
   if val.get(k) is not False: raise VerifyError(f"UNSAFE_VALIDATION_{k}")
  src=load(sp); fs=src.get("features") or []
  if len(fs)!=1: raise VerifyError("SOURCE_NOT_UNIQUE")
- props=fs[0].get("properties") or {}
- if str(props.get("CODIGO") or props.get("codigo") or "")!="1375542": raise VerifyError("SOURCE_CODE_DRIFT")
- name=str(props.get("NOMBRE") or props.get("nombre") or "")
- if "jicamarca" not in name.lower(): raise VerifyError("SOURCE_NAME_DRIFT")
+ props=fs[0].get("properties") or {}; exp=cfg.get("expected_response") or {}
+ if str(props.get(exp.get("code_field","NIVEL7")) or "")!="1375542": raise VerifyError("SOURCE_LEVEL7_CODE_DRIFT")
+ names=[str(props.get(k) or "") for k in exp.get("name_fields",["NOMB_UH_N7","NOMBRE"])]
+ if not any("jicamarca" in n.lower() for n in names): raise VerifyError("SOURCE_NAME_DRIFT")
+ try: area=float(props.get(exp.get("area_field","AREA_KM2")))
+ except (TypeError,ValueError): raise VerifyError("SOURCE_AREA_MISSING")
+ if abs(area-float(exp.get("area_km2",492.31)))>float(exp.get("area_tolerance_km2",1.0)): raise VerifyError("SOURCE_AREA_DRIFT")
  geo=load(gp); guards(geo.get("properties") or {},"GEOJSON")
  feats=geo.get("features") or []
  if len(feats)!=1: raise VerifyError("GEOMETRY_FEATURE_COUNT")
