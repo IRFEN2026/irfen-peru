@@ -109,6 +109,19 @@
       "event_footprint_available": false
     },
     {
+      "event_id": "JICAMARCA-RIOSECO2-2023-03-15",
+      "date_or_year": "2023-03-15",
+      "component_id": "rio_seco",
+      "status": "CONFIRMED_SENSOR_DETECTED_ACTIVATION",
+      "research_state": "DIRECT_FLOW_EVIDENCE",
+      "mechanism": "DEBRIS_FLOW_HUAICO",
+      "source_id": "IGP-RIOSECO2-2023-03-15",
+      "supported_claim": "IGP Río Seco 2 event metadata records a 16:27:41 local event with reported moderate intensity and 0.43 m sensor height; discharge remains unknown and the sensor height is not an IRFEN threshold.",
+      "event_footprint_available": false,
+      "reported_sensor_height_m": 0.43,
+      "reported_discharge_m3_s": null
+    },
+    {
       "event_id": "JICAMARCA-VALLE-SAGRADO-2023-03-15",
       "date_or_year": "2023-03-15",
       "component_id": "canto_grande_media_luna_or_adjacent_local_ravines_unresolved",
@@ -136,10 +149,14 @@
       "components": ["regional_precipitation_context"],
       "role": "HIGHER_RESOLUTION_PRECIPITATION_RESEARCH_SOURCE",
       "radar_range_context_km": 60,
-      "data_access_status": "PENDING_REPRODUCIBLE_ACCESS_AND_QA",
+      "data_access_status": "PUBLIC_PROJECT_METADATA_ONLY_DATA_ACCESS_UNRESOLVED",
       "use_policy": "RESEARCH_ONLY_UNTIL_DATA_ACCESS_AND_QA_ARE_REPRODUCIBLE"
     }
   ],
+  "evidence_packages": {
+    "cendehua_event_metadata": "config/phase2_jicamarca_cendehua_event_metadata_v0_1.json",
+    "sophy_access_assessment": "config/phase2_jicamarca_sophy_access_assessment_v0_1.json"
+  },
   "collector_coupling": {
     "receiver_system": "rimac_mainstem",
     "tributary_activation_implies_receiver_overflow": false,
@@ -159,6 +176,7 @@
     "INGEMMET-CANTO-GRANDE-MEDIA-LUNA-2010": "https://sigrid.cenepred.gob.pe/docs/PARA%20PUBLICAR/INGEMMET/Zonas%20criticas%20peligros%20geologicos%20Subcuenca%20Qda.%20Canto%20Grande.pdf",
     "IGP-CENDEHUA-2017": "https://www.gob.pe/institucion/igp/noticias/165905-radio-observatorio-de-jicamarca-ciencia-al-servicio-publico",
     "IGP-HUAYCOLORO2-2023-03-15": "https://www.igp.gob.pe/servicios/centro-monitoreo-deslizamientos-huaicos/sites/default/files/reportes/Evento_15_03_2023_HL2.pdf",
+    "IGP-RIOSECO2-2023-03-15": "https://www.igp.gob.pe/servicios/centro-monitoreo-deslizamientos-huaicos/sites/default/files/reportes/Evento_15_03_2023_RS2.pdf",
     "COEN-SAN-ANTONIO-JICAMARCA-2023-03-15": "https://portal.indeci.gob.pe/emergencias/reporte-preliminar-n-742-16-3-2023-coen-indeci-1200-horas-huaico-en-el-distrito-de-san-antonio-lima/",
     "IGP-CENDEHUA": "https://www.gob.pe/41855-centro-de-monitoreo-de-deslizamientos-y-huaicos-cendehua",
     "IGP-SOPHY-XBAND-RADAR": "https://www.igp.gob.pe/proyectos/desarrollo-tecnologico/radar-meteorologico/acercade"
@@ -167,10 +185,10 @@
     "resolve reproducible geometry and outlet for Río Seco",
     "resolve Canto Grande–Media Luna microcatchment/channel/outlet geometry without merging it with Huaycoloro",
     "resolve whether the named Quebrada Jicamarca is distinct from or nested within other local units using official/reproducible hydrography",
-    "archive IGP CENDEHUA event records and sensor metadata by station and timestamp",
+    "archive reproducible bytes/hashes for bounded IGP event reports when access permits; never infer missing values",
     "reconstruct 2002, 2017 and 2023 event windows with local rainfall evidence",
     "link each local unit to the receiving Rímac/Huaycoloro network only after reproducible routing is established",
-    "assess SOPHy X-band radar availability and QA for subcatchment rainfall reconstruction"
+    "identify reproducible SOPHy data access and freeze QA before subcatchment rainfall reconstruction"
   ],
   "map_policy": {
     "publish_parent_polygon": false,
