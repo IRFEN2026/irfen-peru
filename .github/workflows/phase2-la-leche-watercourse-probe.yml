@@ -1,9 +1,9 @@
-name: IRFEN - Phase2 Rio La Leche official watercourse probe
+name: IRFEN - Phase2 La Leche official hydrologic-unit probe
 
 on:
   pull_request:
     paths:
-      - scripts/probe_la_leche_official_watercourse.py
+      - scripts/probe_la_leche_official_hydrologic_unit.py
       - .github/workflows/phase2-la-leche-watercourse-probe.yml
   workflow_dispatch:
 
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  probe-official-watercourse:
+  probe-official-hydrologic-unit:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -19,22 +19,22 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - name: Probe exact ANA/GEOSNIRH Rio La Leche identity and geometry
+      - name: Probe exact ANA IDEP hydrologic-unit code 1377722
         run: |
           mkdir -p artifacts
-          python scripts/probe_la_leche_official_watercourse.py \
-            --response artifacts/ana_rio_la_leche_find_response.json \
+          python scripts/probe_la_leche_official_hydrologic_unit.py \
+            --response artifacts/ana_hydrologic_unit_1377722.geojson \
             --manifest artifacts/manifest.json
       - name: Enforce Phase-2 fail-closed guards
         run: |
           python - <<'PY'
           import json
           d=json.load(open('artifacts/manifest.json',encoding='utf-8'))
-          assert d['status']=='PASS_UNIQUE_OFFICIAL_WATERCOURSE'
+          assert d['status']=='PASS_UNIQUE_OFFICIAL_HYDROLOGIC_UNIT'
           assert d['candidate_id']=='lambayeque_motupe_la_leche_pitipo'
-          assert d['expected_watercourse_code']=='1377722'
-          assert d['expected_watercourse_name']=='Rio La Leche'
-          assert d['exact_match_count']==1
+          assert d['expected_unit_code']=='1377722'
+          assert d['feature_count']==1
+          assert d['geometry_type'] in {'Polygon','MultiPolygon'}
           assert d['deployment_status']=='RESEARCH_ONLY'
           assert d['test_mode']=='TEST_ONLY'
           assert d['production_use'] is False
@@ -44,15 +44,18 @@ jobs:
           assert d['missing_data_rule']=='UNKNOWN_NOT_LOW_RISK'
           assert d['decision_thresholds'] is None
           assert d['hydraulic_factors'] is None
-          assert d['separate_basin_asserted'] is False
+          assert d['separate_hydrologic_unit_asserted'] is True
+          assert d['separate_basin_wording_asserted'] is False
           assert d['outlet_inferred'] is False
           assert d['event_footprint_asserted'] is False
           assert d['hydraulic_capacity_inferred'] is False
           assert d['negative_control_inferred'] is False
+          assert d['pitipo_polygon_inferred'] is False
+          assert d['artificial_connector_used'] is False
           assert d['counts_as_complete_candidate_geometry'] is False
           PY
       - uses: actions/upload-artifact@v4
         with:
-          name: phase2-la-leche-official-watercourse-probe
+          name: phase2-la-leche-official-hydrologic-unit-probe
           path: artifacts/
           if-no-files-found: error
