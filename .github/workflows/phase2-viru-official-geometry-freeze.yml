@@ -7,6 +7,7 @@ on:
       - site/data/validation/phase2_discovery_packages/lalibertad_viru.json
       - scripts/probe_phase2_viru_official_geometry.py
       - tests/test_phase2_viru_official_geometry.py
+      - tests/test_phase2_viru_discovery_package.py
       - .github/workflows/phase2-viru-official-geometry-freeze.yml
   workflow_dispatch:
 
@@ -25,6 +26,8 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+      - name: Install test dependency
+        run: python -m pip install pytest
       - name: Freeze exact official ANA Viru source or replay frozen source
         id: freeze
         shell: bash
