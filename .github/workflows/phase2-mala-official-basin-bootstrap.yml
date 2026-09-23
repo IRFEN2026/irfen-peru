@@ -1,9 +1,8 @@
-name: IRFEN - Phase2 Mala official basin bootstrap
+name: IRFEN - Phase2 Mala official basin geometry
 
 on:
   pull_request:
     paths:
-      - scripts/bootstrap_mala_official_basin.py
       - scripts/finalize_mala_official_basin.py
       - scripts/validate_phase2_spatial_observation_contracts.py
       - tests/test_phase2_mala_geometry.py
@@ -18,75 +17,31 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  inspect-official-mala-basin:
+  validate-official-mala-basin:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.head_ref || github.ref_name }}
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - name: Fetch and freeze official ANA Cuenca Mala geometry when absent
+      - name: Verify frozen ANA source, PARTIAL geometry and fail-closed guards
         run: |
-          if [ -f site/data/phase2/sources/mala_hydrologic_context/ana_cuenca_mala_137552.geojson ]; then
-            python scripts/finalize_mala_official_basin.py --check-only
-          else
-            python scripts/finalize_mala_official_basin.py --materialize
-          fi
-      - name: Register Mala as reproducible non-operational basin context
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          p=Path('scripts/validate_phase2_spatial_observation_contracts.py')
-          s=p.read_text(encoding='utf-8')
-          if 'MALA_ID = "lima_sur_mala"' not in s:
-              s=s.replace('ARAHUAY_ID = "lima_norte_arahuay_chillon"\n', 'ARAHUAY_ID = "lima_norte_arahuay_chillon"\nMALA_ID = "lima_sur_mala"\n')
-              s=s.replace('ASIA_ID, PISCO_ID, HUERTA_ID, ARAHUAY_ID}', 'ASIA_ID, PISCO_ID, HUERTA_ID, ARAHUAY_ID, MALA_ID}')
-              s=s.replace('ASIA_ID, PISCO_ID, HUERTA_ID, ARAHUAY_ID):', 'ASIA_ID, PISCO_ID, HUERTA_ID, ARAHUAY_ID, MALA_ID):')
-              s=s.replace('ARAHUAY_ID: "NON_CATCHMENT_GEOMETRY_ONLY",\n', 'ARAHUAY_ID: "NON_CATCHMENT_GEOMETRY_ONLY",\n        MALA_ID: "NON_CATCHMENT_GEOMETRY_ONLY",\n')
-              s=s.replace('"non_catchment_geometry_only_count": 8,', '"non_catchment_geometry_only_count": 9,')
-              s=s.replace('"blocked_missing_geometry_count": 8,', '"blocked_missing_geometry_count": 7,')
-              p.write_text(s,encoding='utf-8')
-          PY
-          python scripts/build_phase2_spatial_observation_contracts.py
-      - name: Validate Phase-2 contracts, spatial contracts, map catalog and Mala guards
-        run: |
+          python scripts/finalize_mala_official_basin.py --check-only
           python scripts/build_phase2_catalog.py --check-only
           python scripts/build_map_layer_catalog.py --check-only
           python scripts/validate_phase2_spatial_observation_contracts.py
-          python scripts/finalize_mala_official_basin.py --check-only
           python -m unittest tests.test_phase2_mala_geometry
           git diff --check
-      - name: Commit deterministic research assets to PR branch
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-        run: |
-          if ! git diff --quiet; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add \
-              scripts/validate_phase2_spatial_observation_contracts.py \
-              site/data/phase2/sources/mala_hydrologic_context/ana_cuenca_mala_137552.geojson \
-              site/data/phase2/sources/mala_hydrologic_context/source_inventory.json \
-              site/data/phase2/geometries/lima_sur_mala_mala_basin_context.geojson \
-              site/data/phase2/geometries/lima_sur_mala_geometry_validation.json \
-              site/data/validation/phase2_zone_contracts/lima_sur_mala.json \
-              site/data/phase2/catalog.json \
-              site/data/phase2/spatial_observation_contracts_v0_1.json \
-              site/data/map_layers.json
-            git commit -m "Phase2: register Mala research geometry in spatial contracts"
-            git push origin HEAD:${{ github.head_ref }}
-          fi
       - name: Emit audit manifest
         run: |
           mkdir -p artifacts
           python scripts/finalize_mala_official_basin.py --check-only > artifacts/lima_sur_mala_geometry_audit.json
       - uses: actions/upload-artifact@v4
         with:
-          name: phase2-mala-official-basin-bootstrap
+          name: phase2-mala-official-basin-geometry
           path: artifacts/
           if-no-files-found: error
