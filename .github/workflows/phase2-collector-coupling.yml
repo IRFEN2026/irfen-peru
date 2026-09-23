@@ -5,10 +5,18 @@ on:
     paths:
       - config/phase2_collector_coupling_architecture_v0_1.json
       - config/phase2_local_activation_hierarchy_v0_1.json
+      - config/phase2_rimac_static_coupling_extension_v0_1.json
       - site/data/phase2/spatial_observation_contracts_v0_1.json
+      - site/data/phase2/sources/rimac_mml_2013_static_coupling_v0_1.json
+      - site/data/phase2/geometries/rimac_static_coupling_nodes_v0_1.geojson
       - site/data/validation/phase2_collector_coupling/**
+      - site/data/validation/phase2_zone_contracts/lima_este_santa_eulalia_rimac.json
       - scripts/validate_phase2_collector_coupling.py
+      - scripts/validate_phase2_rimac_static_coupling.py
+      - scripts/build_map_layer_catalog.py
+      - scripts/build_map_layer_catalog_core.py
       - tests/test_phase2_collector_coupling.py
+      - tests/test_phase2_rimac_static_coupling.py
       - .github/workflows/phase2-collector-coupling.yml
   workflow_dispatch:
 
@@ -29,11 +37,41 @@ jobs:
           mkdir -p artifacts
           python scripts/validate_phase2_collector_coupling.py \
             --output artifacts/phase2_collector_coupling_validation.json
+      - name: Validate bounded Rímac static coupling extension
+        run: |
+          python scripts/validate_phase2_rimac_static_coupling.py \
+            --output artifacts/phase2_rimac_static_coupling_validation.json
       - name: Run collector coupling guard tests
-        run: python -m unittest discover -s tests -p 'test_phase2_collector_coupling.py' -v
+        run: |
+          python -m unittest discover -s tests -p 'test_phase2_collector_coupling.py' -v
+          python -m unittest discover -s tests -p 'test_phase2_rimac_static_coupling.py' -v
+      - name: Build research map catalog and verify separate static node layer
+        run: |
+          python scripts/build_map_layer_catalog.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data=json.loads(Path('site/data/map_layers.json').read_text(encoding='utf-8'))
+          layers={x['layer_id']:x for x in data.get('research_component_layers') or []}
+          layer=layers['rimac_static_coupling_nodes_v0_1']
+          assert layer['deployment_status']=='RESEARCH_ONLY'
+          assert layer['production_use'] is False
+          assert layer['production_ready'] is False
+          assert layer['operational_alerting_enabled'] is False
+          assert layer['activation_gate']=='BLOCKED'
+          assert layer['map_eligible'] is True
+          assert layer['default_visibility'] is False
+          assert layer['carries_risk_classification'] is False
+          assert layer['carries_alert_values'] is False
+          assert layer['style']['color']=='#64748b'
+          assert layer['source_metadata']['geometry_types']==['Point']
+          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: phase2-collector-coupling-validation
-          path: artifacts/phase2_collector_coupling_validation.json
+          path: |
+            artifacts/phase2_collector_coupling_validation.json
+            artifacts/phase2_rimac_static_coupling_validation.json
+            site/data/map_layers.json
           if-no-files-found: warn

@@ -1,0 +1,302 @@
+{
+  "schema_version": "0.2",
+  "contract_id": "phase2-collector-coupling:lima_este_santa_eulalia_rimac:v0.2",
+  "status": "RESEARCH_ONLY_STATIC_CONNECTIVITY_EXTENSION",
+  "parent_id": "lima_este_santa_eulalia_rimac",
+  "parent_role": "CONTEXT_CONTAINER_NON_ACTIVATABLE",
+  "parent_activation_state": null,
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "architecture_ref": "config/phase2_collector_coupling_architecture_v0_1.json",
+  "local_hierarchy_ref": "config/phase2_local_activation_hierarchy_v0_1.json",
+  "local_extension_ref": "config/phase2_rimac_static_coupling_extension_v0_1.json",
+  "supersedes_for_coupling_research_only": "site/data/validation/phase2_collector_coupling/lima_este_santa_eulalia_rimac_v0_1.json",
+  "input_sources": [
+    {
+      "path": "site/data/phase2/spatial_observation_contracts_v0_1.json",
+      "git_blob_sha": "6a7b9cbc99499c789c3f5af669f7c089fb85555e",
+      "role": "REPRODUCIBLE_LOCAL_GEOMETRY_AND_RESEARCH_OUTLET_REGISTRY",
+      "outcome_source": false
+    },
+    {
+      "path": "site/data/phase2/sources/rimac_mml_2013_static_coupling_v0_1.json",
+      "git_blob_sha": "1ce66d0d1ec49d672a54bdd81c68394d8abaaff4",
+      "role": "PRE_EVENT_STATIC_CHANNEL_ANCHORS_AND_REPRODUCIBLE_TERRAIN_D8_INTERSECTIONS",
+      "outcome_source": false
+    }
+  ],
+  "collector_targets": [
+    {
+      "collector_id": "rimac_mainstem_receiver",
+      "display_name": "Río Rímac receptor",
+      "unit_type": "MAIN_CHANNEL_LINE",
+      "geometry_status": "MISSING_REPRODUCIBLE_CHANNEL_LINE_FOR_COUPLING",
+      "geometry": null,
+      "capacity_status": "UNKNOWN",
+      "capacity_evidence": null,
+      "stage_or_discharge_series": [],
+      "topographic_sources": [],
+      "hydraulic_geometry_status": "UNKNOWN",
+      "structures": [],
+      "historical_overflow_evidence": [],
+      "control_points": ["rimac_r4_puente_colgante", "rimac_r9_puente_california"],
+      "map_eligible": false
+    }
+  ],
+  "tributaries": [
+    {
+      "local_unit_id": "cashahuacra",
+      "parent_id": "lima_este_santa_eulalia_rimac",
+      "source_local_geometry_contract_or_explicit_missing_status": "phase2-spatial-observation:lima_este_santa_eulalia_rimac:cashahuacra:v0.1",
+      "source_geometry_status": "REPRODUCIBLE_REVIEW_ONLY_LOCAL_GEOMETRY",
+      "source_outlet_or_explicit_missing_status": {
+        "status": "RESEARCH_D8_OUTLET_NOT_OFFICIALLY_CONFIRMED",
+        "lon": -76.6630556,
+        "lat": -11.9136111,
+        "official_confirmation": false,
+        "is_receiver_confluence": false,
+        "selection": "maximum D8 accumulation inside official source scope and configured area band"
+      },
+      "receiver_confluence_or_explicit_missing_status": {
+        "status": "MISSING_PENDING_REPRODUCIBLE_CONFLUENCE",
+        "location": null,
+        "provenance": [],
+        "is_receiver_confluence": false
+      },
+      "collector_effect_state": "NO_EVIDENCE",
+      "connectivity": "UNRESOLVED_NOT_ASSUMED",
+      "q_i_t": null,
+      "travel_time_tau": null,
+      "routing_method": null,
+      "attenuation_or_storage": null,
+      "hydraulic_distance": null,
+      "quality_confidence": "INSUFFICIENT_FOR_COUPLING",
+      "paired_observations": [],
+      "validation_status": "BLOCKED_MISSING_REPRODUCIBLE_CONFLUENCE_AND_TEMPORAL_FLOW_EVIDENCE"
+    },
+    {
+      "local_unit_id": "shingolay",
+      "parent_id": "lima_este_santa_eulalia_rimac",
+      "source_local_geometry_contract_or_explicit_missing_status": "phase2-spatial-observation:lima_este_santa_eulalia_rimac:shingolay:v0.1",
+      "source_geometry_status": "REPRODUCIBLE_REVIEW_ONLY_LOCAL_GEOMETRY",
+      "source_outlet_or_explicit_missing_status": {
+        "status": "RESEARCH_D8_OUTLET_NOT_OFFICIALLY_CONFIRMED",
+        "lon": -76.6625,
+        "lat": -11.8991667,
+        "official_confirmation": false,
+        "is_receiver_confluence": false,
+        "selection": "maximum D8 accumulation inside official source scope and configured area band"
+      },
+      "receiver_confluence_or_explicit_missing_status": {
+        "status": "MISSING_PENDING_REPRODUCIBLE_CONFLUENCE",
+        "location": null,
+        "provenance": [],
+        "is_receiver_confluence": false
+      },
+      "collector_effect_state": "NO_EVIDENCE",
+      "connectivity": "UNRESOLVED_NOT_ASSUMED",
+      "q_i_t": null,
+      "travel_time_tau": null,
+      "routing_method": null,
+      "attenuation_or_storage": null,
+      "hydraulic_distance": null,
+      "quality_confidence": "INSUFFICIENT_FOR_COUPLING",
+      "paired_observations": [],
+      "validation_status": "BLOCKED_MISSING_REPRODUCIBLE_CONFLUENCE_AND_TEMPORAL_FLOW_EVIDENCE"
+    },
+    {
+      "local_unit_id": "quirio",
+      "parent_id": "lima_este_santa_eulalia_rimac",
+      "source_local_geometry_contract_or_explicit_missing_status": {
+        "status": "MISSING_LOCAL_CATCHMENT_GEOMETRY_NOT_ASSERTED",
+        "reason": "This extension carries only the pre-event channel anchor and the reproducible D8 receiver intersection; no Phase-2 catchment polygon is promoted."
+      },
+      "source_geometry_status": "CHANNEL_ANCHOR_ONLY_NO_LOCAL_CATCHMENT_POLYGON",
+      "source_outlet_or_explicit_missing_status": {
+        "status": "REPRODUCIBLE_TERRAIN_D8_HYDROLOGIC_INTERSECTION",
+        "lon": -76.7084038,
+        "lat": -11.94512659,
+        "official_confirmation": false,
+        "is_receiver_confluence": true,
+        "official_surface_confluence_confirmed": false,
+        "selection": "predeclared first D8 intersection of Quirio R8 trace with MML R4-R9 Rímac mainstem path"
+      },
+      "receiver_confluence_or_explicit_missing_status": {
+        "status": "REPRODUCIBLE_TERRAIN_D8_HYDROLOGIC_INTERSECTION",
+        "location": {"lon": -76.7084038, "lat": -11.94512659},
+        "provenance": ["site/data/phase2/sources/rimac_mml_2013_static_coupling_v0_1.json"],
+        "is_receiver_confluence": true,
+        "official_surface_confluence_confirmed": false
+      },
+      "collector_effect_state": "HYDROLOGICALLY_CONNECTED",
+      "connectivity": "REPRODUCIBLE_STATIC_D8_HYDROLOGIC_INTERSECTION",
+      "q_i_t": null,
+      "travel_time_tau": null,
+      "routing_method": null,
+      "attenuation_or_storage": null,
+      "hydraulic_distance": null,
+      "quality_confidence": "STATIC_GEOMETRY_ONLY_NO_TEMPORAL_FLOW",
+      "paired_observations": [],
+      "validation_status": "PASS_STATIC_CONNECTIVITY_ONLY_TEMPORAL_COUPLING_BLOCKED"
+    },
+    {
+      "local_unit_id": "pedregal_san_antonio",
+      "parent_id": "lima_este_santa_eulalia_rimac",
+      "source_local_geometry_contract_or_explicit_missing_status": {
+        "status": "MISSING_LOCAL_CATCHMENT_GEOMETRY_NOT_ASSERTED",
+        "reason": "This extension carries only the pre-event channel anchor and the reproducible D8 receiver intersection; no Phase-2 catchment polygon is promoted."
+      },
+      "source_geometry_status": "CHANNEL_ANCHOR_ONLY_NO_LOCAL_CATCHMENT_POLYGON",
+      "source_outlet_or_explicit_missing_status": {
+        "status": "REPRODUCIBLE_TERRAIN_D8_HYDROLOGIC_INTERSECTION",
+        "lon": -76.70048443,
+        "lat": -11.94255661,
+        "official_confirmation": false,
+        "is_receiver_confluence": true,
+        "official_surface_confluence_confirmed": false,
+        "selection": "predeclared first D8 intersection of Pedregal R7 trace with MML R4-R9 Rímac mainstem path"
+      },
+      "receiver_confluence_or_explicit_missing_status": {
+        "status": "REPRODUCIBLE_TERRAIN_D8_HYDROLOGIC_INTERSECTION",
+        "location": {"lon": -76.70048443, "lat": -11.94255661},
+        "provenance": ["site/data/phase2/sources/rimac_mml_2013_static_coupling_v0_1.json"],
+        "is_receiver_confluence": true,
+        "official_surface_confluence_confirmed": false
+      },
+      "collector_effect_state": "HYDROLOGICALLY_CONNECTED",
+      "connectivity": "REPRODUCIBLE_STATIC_D8_HYDROLOGIC_INTERSECTION",
+      "q_i_t": null,
+      "travel_time_tau": null,
+      "routing_method": null,
+      "attenuation_or_storage": null,
+      "hydraulic_distance": null,
+      "quality_confidence": "STATIC_GEOMETRY_ONLY_NO_TEMPORAL_FLOW",
+      "paired_observations": [],
+      "validation_status": "PASS_STATIC_CONNECTIVITY_ONLY_TEMPORAL_COUPLING_BLOCKED"
+    }
+  ],
+  "collector_control_points": [
+    {
+      "control_point_id": "rimac_r4_puente_colgante",
+      "display_name": "Rímac R4 · Puente Colgante",
+      "location": {"lon": -76.69255813902859, "lat": -11.93507041701107},
+      "source": "site/data/phase2/sources/rimac_mml_2013_static_coupling_v0_1.json",
+      "role": "STATIC_MAINSTEM_CONTROL_POINT_CONTEXT",
+      "capacity_status": "UNKNOWN",
+      "capacity_evidence": null,
+      "stage_or_discharge_series": [],
+      "historical_overflow_evidence": [],
+      "map_eligible": true
+    },
+    {
+      "control_point_id": "rimac_r9_puente_california",
+      "display_name": "Rímac R9 · Puente California",
+      "location": {"lon": -76.7261751272084, "lat": -11.953749940597932},
+      "source": "site/data/phase2/sources/rimac_mml_2013_static_coupling_v0_1.json",
+      "role": "STATIC_MAINSTEM_CONTROL_POINT_CONTEXT",
+      "capacity_status": "UNKNOWN",
+      "capacity_evidence": null,
+      "stage_or_discharge_series": [],
+      "historical_overflow_evidence": [],
+      "map_eligible": true
+    }
+  ],
+  "collector_coupling_matrix": [
+    {
+      "local_unit_id": "cashahuacra",
+      "collector_id": "rimac_mainstem_receiver",
+      "connectivity": "UNRESOLVED_NOT_ASSUMED",
+      "hydraulic_distance": null,
+      "travel_time_tau": null,
+      "attenuation_or_storage": null,
+      "joint_historical_event": null,
+      "paired_observations": [],
+      "collector_effect_state": "NO_EVIDENCE",
+      "validation_status": "BLOCKED_MISSING_REPRODUCIBLE_CONFLUENCE_AND_TEMPORAL_FLOW_EVIDENCE",
+      "provenance": []
+    },
+    {
+      "local_unit_id": "shingolay",
+      "collector_id": "rimac_mainstem_receiver",
+      "connectivity": "UNRESOLVED_NOT_ASSUMED",
+      "hydraulic_distance": null,
+      "travel_time_tau": null,
+      "attenuation_or_storage": null,
+      "joint_historical_event": null,
+      "paired_observations": [],
+      "collector_effect_state": "NO_EVIDENCE",
+      "validation_status": "BLOCKED_MISSING_REPRODUCIBLE_CONFLUENCE_AND_TEMPORAL_FLOW_EVIDENCE",
+      "provenance": []
+    },
+    {
+      "local_unit_id": "quirio",
+      "collector_id": "rimac_mainstem_receiver",
+      "connectivity": "REPRODUCIBLE_STATIC_D8_HYDROLOGIC_INTERSECTION",
+      "hydraulic_distance": null,
+      "travel_time_tau": null,
+      "attenuation_or_storage": null,
+      "joint_historical_event": null,
+      "paired_observations": [],
+      "collector_effect_state": "HYDROLOGICALLY_CONNECTED",
+      "validation_status": "PASS_STATIC_CONNECTIVITY_ONLY_TEMPORAL_COUPLING_BLOCKED",
+      "provenance": ["site/data/phase2/sources/rimac_mml_2013_static_coupling_v0_1.json"]
+    },
+    {
+      "local_unit_id": "pedregal_san_antonio",
+      "collector_id": "rimac_mainstem_receiver",
+      "connectivity": "REPRODUCIBLE_STATIC_D8_HYDROLOGIC_INTERSECTION",
+      "hydraulic_distance": null,
+      "travel_time_tau": null,
+      "attenuation_or_storage": null,
+      "joint_historical_event": null,
+      "paired_observations": [],
+      "collector_effect_state": "HYDROLOGICALLY_CONNECTED",
+      "validation_status": "PASS_STATIC_CONNECTIVITY_ONLY_TEMPORAL_COUPLING_BLOCKED",
+      "provenance": ["site/data/phase2/sources/rimac_mml_2013_static_coupling_v0_1.json"]
+    }
+  ],
+  "collector_balance_status": {
+    "equation_applicable_as_conceptual_framework": true,
+    "calculation_performed": false,
+    "q_upstream": null,
+    "q_lateral": null,
+    "storage_diversions_regulation": null,
+    "synchrony_analysis": null,
+    "downstream_flow_estimate": null
+  },
+  "hydrologic_routing": {
+    "method": null,
+    "hec_hms_model": null,
+    "reproducible_input_bundle": null,
+    "status": "NOT_RUN_INSUFFICIENT_REPRODUCIBLE_TEMPORAL_INPUTS"
+  },
+  "hydraulic_model": {
+    "method": null,
+    "hec_ras_model": null,
+    "reproducible_input_bundle": null,
+    "status": "NOT_RUN_INSUFFICIENT_REPRODUCIBLE_HYDRAULIC_INPUTS"
+  },
+  "map_updates": {
+    "component_layer": "site/data/phase2/geometries/rimac_static_coupling_nodes_v0_1.geojson",
+    "new_collector_control_nodes_published": 2,
+    "new_tributary_channel_anchor_nodes_published": 2,
+    "new_hydrologic_intersection_nodes_published": 2,
+    "new_collector_reaches_published": 0,
+    "reason": "Only exact static coordinates and reproducible D8 intersection nodes are mapped; no collector line, catchment polygon, event footprint, risk class or alert geometry is invented."
+  },
+  "scientific_limits": [
+    "Cashahuacra and Shingolay remain unchanged from v0.1 because their existing research outlets are not receiver confluences.",
+    "Quirio and Pedregal/San Antonio advance only to HYDROLOGICALLY_CONNECTED on the basis of reproducible pre-event static anchors plus terrain-D8 intersection with a bracketed Rímac mainstem path.",
+    "The D8 intersection nodes are hydrologic terrain-routing intersections, not official surveyed surface-confluence confirmations.",
+    "No Q_i(t), travel time, attenuation, peak synchrony, collector discharge, collector stage, channel capacity, overflow, HEC-HMS result or HEC-RAS result is inferred.",
+    "HYDROLOGICALLY_CONNECTED is a non-operational research evidence state and does not imply tributary activation, receiver overflow, risk, alert or event impact.",
+    "Carossio and other tributaries are not promoted by analogy; each requires its own reproducible coupling evidence."
+  ]
+}
