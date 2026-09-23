@@ -1,0 +1,58 @@
+name: IRFEN - Phase2 Jicamarca IGP hydrography probe
+
+on:
+  pull_request:
+    paths:
+      - config/phase2_jicamarca_igp_hydrography_probe_v0_1.json
+      - scripts/probe_phase2_jicamarca_igp_hydrography.py
+      - .github/workflows/phase2-jicamarca-igp-hydrography-probe.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bounded-attribute-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Probe official IGP Quebrada_Lima attributes only
+        run: |
+          mkdir -p artifacts
+          python scripts/probe_phase2_jicamarca_igp_hydrography.py \
+            --output artifacts/phase2_jicamarca_igp_hydrography_probe_v0_1.json
+      - name: Enforce fail-closed research semantics
+        run: |
+          python - <<'PY'
+          import json
+          p='artifacts/phase2_jicamarca_igp_hydrography_probe_v0_1.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['status']=='PASS_BOUNDED_IGP_HYDROGRAPHY_ATTRIBUTE_PROBE'
+          assert d['deployment_status']=='RESEARCH_ONLY'
+          assert d['test_mode']=='TEST_ONLY'
+          assert d['production_use'] is False
+          assert d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['activation_gate']=='BLOCKED'
+          assert d['missing_data_rule']=='UNKNOWN_NOT_LOW_RISK'
+          assert d['decision_thresholds'] is None
+          assert d['hydraulic_factors'] is None
+          assert d['geometry_requested'] is False
+          assert d['geometry_accepted'] is False
+          assert d['outlets_inferred'] is False
+          assert d['confluences_inferred'] is False
+          assert d['routing_enabled'] is False
+          assert {x['child_id'] for x in d['targets']}=={
+            'rio_seco','canto_grande','media_luna','huaycoloro_reference_only',
+            'jicamarca_named_channel_identity_only'}
+          assert all(x['geometry_accepted'] is False and x['outlet_accepted'] is False and x['routing_enabled'] is False for x in d['targets'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phase2-jicamarca-igp-hydrography-probe
+          path: artifacts/phase2_jicamarca_igp_hydrography_probe_v0_1.json
+          if-no-files-found: error
