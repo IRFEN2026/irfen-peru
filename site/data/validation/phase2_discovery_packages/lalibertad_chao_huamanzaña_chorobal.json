@@ -1,0 +1,158 @@
+{
+  "schema_version": "0.1",
+  "discovery_id": "lalibertad_chao_huamanzaña_chorobal",
+  "system_name": "Chao territorial corridor: Huamanzaña and Chorobal",
+  "contract_status": "DISCOVERY_PARENT_NON_ACTIVABLE_CHILD_IDENTITIES_PARTIAL_GEOMETRY_PENDING",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "source_registry_path": "site/data/phase2/sources/lalibertad_chao_huamanzana_chorobal_official_evidence_v0_1.json",
+  "official_source_ids": [
+    "ANA-ALA-MOCHE-VIRU-CHAO-COMPENDIO",
+    "INDECI-CHAO-CHOROBAL-2021-RC210",
+    "PECH-HUAMANZANA-YAKU-2023",
+    "ANA-CHAO-HUAMANZANA-CHOROBAL-2023-WORKS",
+    "ANA-CHAO-HUAMANZANA-CHOROBAL-2026-CRITICAL"
+  ],
+  "parent_policy": {
+    "entity_role": "TERRITORIAL_GROUPER_NON_ACTIVABLE_REQUIRES_HYDROLOGIC_CHILDREN",
+    "territorial_reference": "Chao",
+    "territorial_reference_is_basin": false,
+    "composite_parent_geometry_forbidden": true,
+    "must_not_merge_with": ["Cuenca Viru"],
+    "local_pluvial_drainage_is_separate_mechanism": true
+  },
+  "hydrologic_children": [
+    {
+      "child_id": "huamanzaña_basin_context",
+      "name": "Cuenca Huamanzaña",
+      "entity_role": "OFFICIAL_ANA_HYDROGRAPHIC_UNIT_CONTEXT",
+      "ana_unit_code": "137712",
+      "geometry": {
+        "status": "MISSING_PENDING_EXACT_ANA_QUERY",
+        "path": "site/data/phase2/geometries/lalibertad_huamanzaña_basin_context.geojson",
+        "representation": "OFFICIAL_ANA_HYDROGRAPHIC_UNIT_CONTEXT_PENDING_REPLAY",
+        "source_query": {
+          "endpoint": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/8/query",
+          "where": "CODIGO='137712'",
+          "out_fields": "*",
+          "out_sr": 4326,
+          "geometry_precision": 7,
+          "format": "geojson"
+        },
+        "counts_as_operational_geometry": false,
+        "counts_as_event_footprint": false
+      }
+    },
+    {
+      "child_id": "chorobal_river_component",
+      "name": "Rio Chorobal",
+      "entity_role": "DISTINCT_RIVER_COMPONENT_WITHIN_HUAMANZANA_BASIN_CONTEXT",
+      "relationship_evidence": "INDECI-CHAO-CHOROBAL-2021-RC210",
+      "geometry": {
+        "status": "MISSING_PENDING_REPRODUCIBLE_CHANNEL_OR_SUBCATCHMENT_GEOMETRY",
+        "path": null,
+        "approximate_geometry_forbidden": true,
+        "counts_as_operational_geometry": false,
+        "counts_as_event_footprint": false
+      },
+      "promotion_rule": "Do not promote Rio Chorobal to a standalone basin unless an official or reproducibly derived hydrologic boundary supports that identity."
+    },
+    {
+      "child_id": "chao_local_pluvial_drainage",
+      "name": "Chao local pluvial/anthropogenic drainage",
+      "entity_role": "SEPARATE_MECHANISM_PENDING_NETWORK_EVIDENCE",
+      "geometry": {
+        "status": "MISSING",
+        "path": null,
+        "approximate_geometry_forbidden": true
+      }
+    }
+  ],
+  "event_ledger": {
+    "1982_1983": {"status": "UNKNOWN_NOT_NEGATIVE", "source_ids": []},
+    "1997_1998": {"status": "UNKNOWN_NOT_NEGATIVE", "source_ids": []},
+    "2017": {
+      "status": "UNKNOWN_NOT_NEGATIVE_PENDING_CHILD_SPECIFIC_ADJUDICATION",
+      "source_ids": [],
+      "regional_2017_evidence_may_not_be_transferred_without_child_attribution": true
+    },
+    "2021_chorobal": {
+      "status": "POSITIVE_COMPONENT_EVENT_EVIDENCE",
+      "child_id": "chorobal_river_component",
+      "source_ids": ["INDECI-CHAO-CHOROBAL-2021-RC210"],
+      "supported_claim": "Rio Chorobal had an abrupt flow increase on 5 January 2021 with reported damage in sector San Jorge.",
+      "whole_basin_uniform_activation": false,
+      "exact_event_footprint_available": false
+    },
+    "2023_huamanzaña": {
+      "status": "POSITIVE_TERRITORIAL_IMPACT_EVIDENCE_MECHANISM_PARTIAL",
+      "child_id": "huamanzaña_basin_context",
+      "source_ids": ["PECH-HUAMANZANA-YAKU-2023"],
+      "supported_claim": "March 2023 Yaku impacts damaged the Huamanzaña siphon and Canal Madre in the Montegrande-Santa Rita reach context.",
+      "exact_hydraulic_mechanism_resolved": false,
+      "exact_event_footprint_available": false
+    },
+    "recent": {
+      "status": "UNKNOWN_NOT_NEGATIVE_WITH_CURRENT_PREVENTION_CONTEXT",
+      "source_ids": ["ANA-CHAO-HUAMANZANA-CHOROBAL-2026-CRITICAL"],
+      "critical_point_is_event": false
+    }
+  },
+  "observations": {
+    "status": "PARTIAL_SOURCE_DISCOVERY_NO_EVENT_PAIRED_SERIES_FROZEN",
+    "event_paired_series": [],
+    "context_source_ids": [],
+    "missing_series_is_low_risk": false,
+    "next_required": [
+      "retrieve official rainfall and river observations for Huamanzaña and Chorobal with exact station/source identity",
+      "preserve child attribution and event windows",
+      "keep provider discharge/rainfall observations separate from IRFEN thresholds"
+    ]
+  },
+  "exposure_connectivity": {
+    "status": "PARTIAL_OFFICIAL_CONTEXT_ONLY",
+    "source_ids": [
+      "INDECI-CHAO-CHOROBAL-2021-RC210",
+      "PECH-HUAMANZANA-YAKU-2023",
+      "ANA-CHAO-HUAMANZANA-CHOROBAL-2023-WORKS",
+      "ANA-CHAO-HUAMANZANA-CHOROBAL-2026-CRITICAL"
+    ],
+    "classes": ["population", "housing", "agriculture", "irrigation", "transport", "public_infrastructure"],
+    "network_connectivity_normalized": false,
+    "prevention_sector_is_event_footprint": false
+  },
+  "hydraulic_context": {
+    "status": "WORKS_CONTEXT_ONLY_NO_HISTORICAL_CAPACITY_INFERENCE",
+    "source_ids": ["PECH-HUAMANZANA-YAKU-2023", "ANA-CHAO-HUAMANZANA-CHOROBAL-2023-WORKS"],
+    "works_are_historical_capacity": false,
+    "intervention_length_is_capacity": false,
+    "capacity_values": null,
+    "regulation_or_infrastructure_effect_requires_separate_analysis": true
+  },
+  "map_policy": {
+    "parent_chao_polygon_forbidden": true,
+    "approximate_geometry_forbidden": true,
+    "publish_huamanzaña_only_after_exact_replay": true,
+    "publish_chorobal_only_after_reproducible_channel_or_subcatchment_geometry": true,
+    "risk_or_alert_layer": false
+  },
+  "validation": {
+    "activation_gate": "BLOCKED",
+    "required_reviews": [
+      "exact ANA replay for Cuenca Huamanzaña 137712",
+      "official or reproducible Chorobal channel/subcatchment geometry without inventing a standalone basin",
+      "child-specific 2017 event adjudication",
+      "event-paired rainfall/stage/discharge retrieval",
+      "exposure/connectivity normalization",
+      "separate hydraulic works/infrastructure context from historical event response"
+    ],
+    "review_evidence": []
+  }
+}
