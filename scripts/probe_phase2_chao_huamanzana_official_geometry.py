@@ -10,7 +10,7 @@ from urllib.request import Request,urlopen
 ROOT=Path(__file__).resolve().parents[1]
 DID="lalibertad_chao_huamanzaña_chorobal";CID="huamanzaña_basin_context";CODE="137712";ANA_NAME="Cuenca Huamansaña";DISPLAY_NAME="Cuenca Huamanzaña"
 CONTRACT=ROOT/f"site/data/validation/phase2_discovery_contracts/{DID}.json";PACKAGE=ROOT/f"site/data/validation/phase2_discovery_packages/{DID}.json"
-SOURCE=ROOT/"site/data/phase2/sources/north_coast_discovery_geometry/ana_lalibertad_huamanzana_137712.geojson";GEOM=ROOT/"site/data/phase2/geometries/lalibertad_huamanzana_basin_context.geojson";VAL=ROOT/"site/data/phase2/geometries/lalibertad_huamanzana_basin_context_validation.json"
+SOURCE=ROOT/"site/data/phase2/sources/north_coast_discovery_geometry/ana_lalibertad_huamanzana_137712.geojson";GEOM=ROOT/"site/data/phase2/geometries/lalibertad_huamanzaña_basin_context.geojson";VAL=ROOT/"site/data/phase2/geometries/lalibertad_huamanzaña_basin_context_validation.json"
 ENDPOINT="https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/8/query"
 SAFE={"deployment_status":"RESEARCH_ONLY","test_mode":"TEST_ONLY","production_use":False,"production_ready":False,"operational_alerting_enabled":False,"activation_gate":"BLOCKED","missing_data_rule":"UNKNOWN_NOT_LOW_RISK","decision_thresholds":None,"hydraulic_factors":None}
 class E(RuntimeError):pass
