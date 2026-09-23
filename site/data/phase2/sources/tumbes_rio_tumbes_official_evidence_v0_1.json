@@ -22,6 +22,47 @@
       "forbidden_use": ["event footprint", "risk class", "alert", "hydraulic capacity", "negative control"]
     },
     {
+      "source_id": "INGEMMET-A6764-TUMBES-2017",
+      "institution": "Instituto Geologico, Minero y Metalurgico",
+      "publisher_context": "CENEPRED SIGRID document 3708",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/3708",
+      "source_date_context": "2017",
+      "title": "Informe Tecnico N° A6764: evaluacion geologica de las zonas afectadas por El Nino Costero 2017 - Tumbes",
+      "role": "official post-event geologic and geo-hydrologic evidence for El Nino Costero 2017 in Tumbes, including lower Rio Tumbes context",
+      "allowed_use": ["positive 2017 regional event evidence", "lower Rio Tumbes geohydrologic/inundation context", "future bounded map/source extraction"],
+      "forbidden_use": ["transfer Rio Tumbes outcome to Rio Zarumilla or coastal ravines", "invent exact event footprint from document scope", "infer basin-wide uniform mechanism", "derive operational threshold or hydraulic capacity"]
+    },
+    {
+      "source_id": "ANA-TUMBES-GAUGING-NETWORK-20150907",
+      "institution": "Autoridad Nacional del Agua",
+      "url": "https://www.gob.pe/institucion/ana/noticias/138198-ana-participa-en-la-medicion-del-caudal-del-rio-tumbes",
+      "source_date": "2015-09-07",
+      "role": "official monitoring-network context for Rio Tumbes",
+      "observed_context": {
+        "cabo_inga_automatic_measurement_interval_minutes": 10,
+        "cabo_inga_provider_stated_anticipation_hours": 15,
+        "el_tigre_provider_stated_anticipation_hours": 4,
+        "provider_stated_anticipation_is_irfen_travel_time": false,
+        "provider_stated_anticipation_is_irfen_threshold": false
+      },
+      "forbidden_use": ["treat provider anticipation as deterministic travel time", "promote provider anticipation to IRFEN threshold", "infer missing historical series"]
+    },
+    {
+      "source_id": "ANA-TUMBES-EARLY-WARNING-NETWORK-20160309",
+      "institution": "Autoridad Nacional del Agua",
+      "url": "https://www.gob.pe/institucion/ana/noticias/137895-ana-promueve-equipo-tecnico-de-alerta-temprana-que-monitorea-el-caudal-de-las-quebradas-y-los-rios-tumbes-y-zarumilla",
+      "source_date": "2016-03-09",
+      "role": "official rainfall/river monitoring-network context",
+      "observed_context": {
+        "reported_rain_gauge_count": 17,
+        "monitoring_continuous_24h_context": true,
+        "provider_stated_warning_anticipation_hours": 10,
+        "provider_warning_is_irfen_threshold": false,
+        "provider_warning_is_irfen_travel_time": false
+      },
+      "forbidden_use": ["merge Rio Tumbes and Rio Zarumilla because they share monitoring operations", "treat provider warning lead as deterministic travel time", "promote provider warning to IRFEN decision rule"]
+    },
+    {
       "source_id": "ANA-TUMBES-2023-INUNDATION-20230428",
       "institution": "Autoridad Nacional del Agua",
       "url": "https://geosnirh.ana.gob.pe/server/rest/services/Inundacion_Tumbes/Capas_Inundacion_Tumbes_04052023/MapServer/66",
@@ -81,12 +122,27 @@
         "potentially_affected_settlements": ["Cabo Inga", "Rica Playa", "Brunos", "Loyola", "El Naranjo", "La Capitana"]
       },
       "forbidden_use": ["treat potential exposure as observed inundation footprint", "convert provider band to IRFEN threshold", "infer capacity"]
+    },
+    {
+      "source_id": "ANA-TUMBES-HIGHFLOW-20260409",
+      "institution": "Autoridad Nacional del Agua",
+      "url": "https://www.gob.pe/institucion/ana/noticias/1377233-ana-labores-de-limpieza-en-el-rio-tumbes-en-beneficio-de-1200-personas-ante-eventuales-desbordes",
+      "source_date": "2026-04-09",
+      "role": "recent high-flow and bounded no-overflow-at-attended-points context",
+      "observed_context": {
+        "reported_river_discharge_m3_s": 1800.0,
+        "provider_reported_no_overflow_at_attended_vulnerable_points": true,
+        "scope_is_basin_wide": false,
+        "counts_as_negative_control": false
+      },
+      "forbidden_use": ["generalize bounded no-overflow statement to the whole basin", "create a negative control", "treat current mitigation works as historical hydraulic capacity", "promote reported discharge to IRFEN threshold"]
     }
   ],
   "separation_rules": [
     "Rio Tumbes is its own hydrologic system and must remain separate from Rio Zarumilla.",
     "Rio Tumbes basin geometry must remain separate from Zorritos-Bocapan coastal ravines.",
     "ANA observed-inundation layers 66 and 67 are event footprints and must never replace the basin boundary.",
-    "SENAMHI provider alert bands remain provider metadata and are never IRFEN decision thresholds."
+    "SENAMHI provider alert bands remain provider metadata and are never IRFEN decision thresholds.",
+    "Provider-stated warning or anticipation times are monitoring-network context and never deterministic IRFEN travel times."
   ]
 }
