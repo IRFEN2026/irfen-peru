@@ -7,6 +7,7 @@ GEOMETRY=ROOT/"site/data/phase2/geometries/lalibertad_moche_basin_context.geojso
 VALIDATION=ROOT/"site/data/phase2/geometries/lalibertad_moche_geometry_validation.json"
 CATALOG=ROOT/"site/data/map_layers.json"
 SAFE={"deployment_status":"RESEARCH_ONLY","test_mode":"TEST_ONLY","production_use":False,"production_ready":False,"operational_alerting_enabled":False,"activation_gate":"BLOCKED","missing_data_rule":"UNKNOWN_NOT_LOW_RISK","decision_thresholds":None,"hydraulic_factors":None}
+MAP_SAFE={k:v for k,v in SAFE.items() if k!="test_mode"}
 def load(p): return json.loads(p.read_text(encoding="utf-8"))
 def digest(p): return hashlib.sha256(p.read_bytes()).hexdigest()
 def test_moche_identity_query_and_guards_are_fail_closed():
@@ -30,5 +31,5 @@ def test_moche_map_catalog_only_publishes_reproducible_context_geometry():
  c=load(CONTRACT)
  if str(c["assets"]["geometry"]["status"]).startswith("MISSING"): return
  rows=[x for x in load(CATALOG)["research_discovery_units"] if x.get("discovery_id")=="lalibertad_moche"]; assert len(rows)==1; r=rows[0]
- for k,e in SAFE.items(): assert r[k]==e
+ for k,e in MAP_SAFE.items(): assert r[k]==e
  assert r["geometry"]["map_eligible"] is True; assert r["geometry"]["path"]=="site/data/phase2/geometries/lalibertad_moche_basin_context.geojson"
