@@ -15,11 +15,15 @@
   "source_registry_path": "site/data/phase2/sources/tumbes_rio_tumbes_official_evidence_v0_1.json",
   "official_source_ids": [
     "ANA-TUMBES-2023-MAPSERVER-BASIN",
+    "INGEMMET-A6764-TUMBES-2017",
+    "ANA-TUMBES-GAUGING-NETWORK-20150907",
+    "ANA-TUMBES-EARLY-WARNING-NETWORK-20160309",
     "ANA-TUMBES-2023-INUNDATION-20230428",
     "ANA-TUMBES-2023-INUNDATION-20230504",
     "SENAMHI-TUMBES-CABO-INGA-20230404",
     "SENAMHI-TUMBES-EL-TIGRE-20230413",
-    "INDECI-TUMBES-CABO-INGA-20240220"
+    "INDECI-TUMBES-CABO-INGA-20240220",
+    "ANA-TUMBES-HIGHFLOW-20260409"
   ],
   "hydrologic_identity": {
     "entity_role": "DISCOVERY_HYDROLOGIC_SYSTEM",
@@ -42,7 +46,15 @@
     "event_ledger": {
       "1982_1983": {"status": "UNKNOWN_NOT_NEGATIVE", "source_ids": []},
       "1997_1998": {"status": "UNKNOWN_NOT_NEGATIVE", "source_ids": []},
-      "2017": {"status": "UNKNOWN_NOT_NEGATIVE", "source_ids": []},
+      "2017": {
+        "status": "POSITIVE_OFFICIAL_POSTEVENT_GEOHYDROLOGIC_EVIDENCE_LOWER_RIO_TUMBES_CONTEXT",
+        "source_ids": ["INGEMMET-A6764-TUMBES-2017"],
+        "evidence_scope": "INGEMMET post-event assessment of El Nino Costero 2017 in Tumbes with lower Rio Tumbes geologic, geomorphologic, geo-hydrologic and inundation context",
+        "exact_event_footprint_frozen": false,
+        "basin_wide_uniform_mechanism_claimed": false,
+        "outcome_transferred_to_rio_zarumilla": false,
+        "outcome_transferred_to_coastal_ravines": false
+      },
       "2023": {
         "status": "POSITIVE_RIVER_HIGH_FLOW_AND_OBSERVED_INUNDATION_EVIDENCE",
         "source_ids": [
@@ -62,10 +74,19 @@
         "observed_inundation_footprint_available": false,
         "potential_exposure_is_observed_damage": false
       },
-      "2025_2026": {"status": "UNKNOWN_NOT_NEGATIVE", "source_ids": []}
+      "2025_2026": {
+        "status": "POSITIVE_2026_HIGH_FLOW_WITH_BOUNDED_PROVIDER_NO_OVERFLOW_STATEMENT",
+        "source_ids": ["ANA-TUMBES-HIGHFLOW-20260409"],
+        "reported_discharge_m3_s": 1800.0,
+        "provider_reported_no_overflow_at_attended_vulnerable_points": true,
+        "provider_statement_scope_is_basin_wide": false,
+        "counts_as_negative_control": false,
+        "counts_as_hydraulic_capacity_test": false,
+        "reported_discharge_is_irfen_threshold": false
+      }
     },
     "observations": {
-      "status": "PARTIAL_DATED_RIVER_DISCHARGE_CONTEXT_NO_EVENT_PAIRED_SERIES_YET",
+      "status": "PARTIAL_DATED_RIVER_DISCHARGE_AND_NETWORK_CONTEXT_NO_EVENT_PAIRED_SERIES_YET",
       "stations": [
         {
           "station": "Cabo Inga",
@@ -83,6 +104,13 @@
         }
       ],
       "known_network_context": ["Cabo Inga", "El Tigre", "Puente Tumbes"],
+      "network_provenance": {
+        "source_ids": ["ANA-TUMBES-GAUGING-NETWORK-20150907", "ANA-TUMBES-EARLY-WARNING-NETWORK-20160309"],
+        "cabo_inga_automatic_interval_minutes_reported": 10,
+        "rain_gauge_count_reported_2016": 17,
+        "provider_stated_anticipation_or_warning_times_are_irfen_travel_time": false,
+        "provider_stated_anticipation_or_warning_times_are_irfen_threshold": false
+      },
       "continuous_event_paired_series_frozen": false,
       "missing_observation_is_low_risk": false,
       "next_required": ["freeze event-paired station time series with QA/QC where public", "pair rainfall observations without transferring thresholds", "preserve station/reach identity"]
@@ -122,8 +150,9 @@
     "required_reviews": [
       "exact reproducible ANA Rio Tumbes basin geometry replay",
       "freeze ANA 28-Apr and 04-May 2023 observed-inundation footprints as event evidence without basin substitution",
-      "event-paired Cabo Inga/El Tigre/Puente Tumbes time-series QA",
-      "1982-83/1997-98/2017 event adjudication",
+      "freeze and QA event-paired Cabo Inga/El Tigre/Puente Tumbes time series",
+      "1982-83 and 1997-98 event adjudication",
+      "2017 exact footprint/component attribution only if a reproducible source geometry can be frozen",
       "exposure/connectivity normalization",
       "hydraulic context without treating works or observed discharge as historical capacity"
     ],
