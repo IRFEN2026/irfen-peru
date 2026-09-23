@@ -1,0 +1,127 @@
+{
+  "schema_version": "0.1",
+  "discovery_id": "lalibertad_chepen_chaman_morana_avispero",
+  "system_name": "Chepen territorial corridor with separate Chaman, La Morana, Avispero and Jequetepeque components",
+  "contract_status": "DISCOVERY_GROUPER_CHAMAN_IDENTITY_RESOLVED_OTHER_COMPONENT_GEOMETRY_PENDING",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "source_registry_path": "site/data/phase2/sources/lalibertad_chepen_chaman_official_evidence_v0_1.json",
+  "official_source_ids": [
+    "ANA-CHAMAN-WATERCOURSE-CLASSIFICATION",
+    "GORE-CHEPEN-13-CRITICAL-2023",
+    "ANA-CHAMAN-PREVENTION-2023",
+    "GORE-CHAMAN-HIGH-FLOW-2026",
+    "GORE-CHAMAN-ENCAUZAMIENTO-2026"
+  ],
+  "territorial_identity": {
+    "chepen_role": "TERRITORIAL_EXPOSURE_CORRIDOR_NOT_HYDROLOGIC_UNIT",
+    "synthetic_rio_chepen_allowed": false
+  },
+  "hydrologic_components": {
+    "rio_chaman": {
+      "identity_status": "OFFICIAL_HYDROGRAPHIC_UNIT_RESOLVED",
+      "ana_unit_code": "137752",
+      "ana_unit_name": "Cuenca Chaman",
+      "geometry_status": "MISSING_PENDING_EXACT_ANA_QUERY",
+      "source_query": {
+        "endpoint": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/8/query",
+        "where": "CODIGO='137752'",
+        "out_fields": "*",
+        "out_sr": 4326,
+        "geometry_precision": 7,
+        "format": "geojson"
+      },
+      "geometry_path": "site/data/phase2/geometries/lalibertad_chaman_basin_context.geojson"
+    },
+    "rio_la_morana": {
+      "identity_status": "NAMED_OFFICIAL_PHYSICAL_COMPONENT_HYDROLOGIC_ASSIGNMENT_UNRESOLVED",
+      "geometry_status": "MISSING_NO_APPROXIMATION_ALLOWED"
+    },
+    "quebrada_avispero": {
+      "identity_status": "NAMED_OFFICIAL_PHYSICAL_COMPONENT_HYDROLOGIC_ASSIGNMENT_UNRESOLVED",
+      "geometry_status": "MISSING_NO_APPROXIMATION_ALLOWED"
+    },
+    "rio_jequetepeque": {
+      "identity_status": "SEPARATE_DISCOVERY_SYSTEM",
+      "reference_discovery_id": "lalibertad_jequetepeque",
+      "merge_into_chaman_forbidden": true
+    }
+  },
+  "assets": {
+    "event_ledger": {
+      "1982_1983": {"status": "UNKNOWN_NOT_NEGATIVE", "source_ids": []},
+      "1997_1998": {"status": "UNKNOWN_NOT_NEGATIVE", "source_ids": []},
+      "2017": {"status": "UNKNOWN_NOT_NEGATIVE_COMPONENT_SPECIFIC_ADJUDICATION_PENDING", "source_ids": []},
+      "2023": {
+        "status": "CRITICAL_POINT_AND_PREVENTION_CONTEXT_NOT_EVENT_LABEL",
+        "source_ids": ["GORE-CHEPEN-13-CRITICAL-2023", "ANA-CHAMAN-PREVENTION-2023"],
+        "event_label_assigned": false
+      },
+      "recent_2026_chaman": {
+        "status": "POSITIVE_RIO_CHAMAN_HIGH_FLOW_AND_OVERFLOW_CONTEXT",
+        "source_ids": ["GORE-CHAMAN-HIGH-FLOW-2026", "GORE-CHAMAN-ENCAUZAMIENTO-2026"],
+        "supported_claim": "Official February 2026 sources document increased Rio Chaman flow after intense rainfall and subsequent overflow context in Pacanga; response is Chaman-specific.",
+        "transfer_to_other_components": false,
+        "exact_event_footprint_available": false,
+        "operational_threshold_inferred": false
+      }
+    },
+    "observations": {
+      "status": "MISSING_EVENT_PAIRED_HYDROMETEOROLOGICAL_SERIES",
+      "event_paired_series": [],
+      "missing_series_is_low_risk": false,
+      "next_required": [
+        "identify official rainfall and river observations for Cuenca Chaman with exact station/reach linkage",
+        "seek independent observations for La Morana and Avispero before assigning response",
+        "do not borrow Jequetepeque observations across systems"
+      ]
+    },
+    "exposure_connectivity": {
+      "status": "PARTIAL_TERRITORIAL_CONTEXT_ONLY",
+      "source_ids": ["GORE-CHEPEN-13-CRITICAL-2023", "GORE-CHAMAN-ENCAUZAMIENTO-2026"],
+      "classes": ["settlements", "agriculture", "roads", "schools"],
+      "network_connectivity_normalized": false,
+      "territorial_nodes_define_basin": false
+    },
+    "hydraulic_context": {
+      "status": "CURRENT_PREVENTION_CONTEXT_ONLY",
+      "capacity_values": null,
+      "works_are_historical_capacity": false,
+      "intervention_lengths_are_event_geometry": false
+    }
+  },
+  "mechanism_policy": {
+    "rio_chaman": "TRACK_SEPARATELY",
+    "rio_la_morana": "TRACK_SEPARATELY_PENDING_HYDROLOGIC_ASSIGNMENT",
+    "quebrada_avispero": "TRACK_SEPARATELY_PENDING_HYDROLOGIC_ASSIGNMENT",
+    "rio_jequetepeque": "SEPARATE_DISCOVERY_SYSTEM",
+    "critical_point_is_event": false,
+    "absence_of_report_is_negative": false
+  },
+  "map_policy": {
+    "parent_chepen_geometry_allowed": false,
+    "approximate_geometry_forbidden": true,
+    "publish_chaman_only_after_exact_ana_geometry_replay": true,
+    "publish_morana_or_avispero_only_after_independent_reproducible_geometry": true,
+    "composite_polygon_forbidden": true,
+    "risk_or_alert_layer": false
+  },
+  "validation": {
+    "activation_gate": "BLOCKED",
+    "required_reviews": [
+      "exact ANA geometry replay for Cuenca Chaman 137752",
+      "independent hydrologic assignment and geometry for Rio La Morana",
+      "independent hydrologic assignment and geometry for Quebrada Avispero",
+      "dated component-specific 1982-83/1997-98/2017/2023 ledger",
+      "event-paired observations without cross-system transfer"
+    ],
+    "review_evidence": []
+  }
+}
