@@ -55,6 +55,8 @@ jobs:
           python scripts/probe_north_coast_discovery_official_geometry.py \
             --target lima_norte_pativilca \
             --target lima_norte_fortaleza_paramonga
+      - name: Install focused test dependency
+        run: python -m pip install pytest
       - name: Enforce discovery guard tests
         run: python -m pytest -q tests/test_phase2_north_coast_discovery_geometry_contracts.py
       - name: Commit frozen source and geometry to pull-request branch
