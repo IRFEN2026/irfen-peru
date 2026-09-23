@@ -67,21 +67,38 @@ def test_map_policy_keeps_parent_context_and_children_separate():
     assert policy["alerts_forbidden"] is True
 
 
-def test_rimac_santa_eulalia_demonstrator_is_decomposed_without_invented_geometry():
+def test_existing_phase2_spatial_subunits_are_local_not_parent_geometry():
+    registry = hierarchy.build_registry()
+    rows = registry["phase2_local_units"]
+    assert rows
+    assert all(row["activation_state_allowed"] is True for row in rows)
+    assert all(row["counts_as_parent_geometry"] is False for row in rows)
+    assert all(row["counts_as_operational_geometry"] is False for row in rows)
+    assert all(row["map_eligible"] is True for row in rows)
+    assert all(row["geometry_path"].startswith("site/data/phase2/geometries/") for row in rows)
+
+
+def test_rimac_santa_eulalia_demonstrator_reuses_reproducible_local_subunits_only():
     registry = hierarchy.build_registry()
     rows = [
         x for x in registry["demonstrator_local_units"]
         if x["parent_id"] == "lima_este_santa_eulalia_rimac"
     ]
-    assert {x["local_unit_id"] for x in rows} == {
-        "cashahuacra_local_drainage",
-        "shingolay_local_drainage",
+    by_id = {x["local_unit_id"]: x for x in rows}
+    assert set(by_id) == {
+        "cashahuacra",
+        "shingolay",
         "santa_eulalia_mainstem",
         "rimac_mainstem_receiver",
         "santa_eulalia_rimac_confluence",
     }
-    assert all(x["activation_state_allowed"] is True for x in rows)
-    assert all(x["map_eligible"] is False for x in rows)
+    assert by_id["cashahuacra"]["map_eligible"] is True
+    assert by_id["shingolay"]["map_eligible"] is True
+    assert by_id["cashahuacra"]["spatial_contract_id"].endswith(":cashahuacra:v0.1")
+    assert by_id["shingolay"]["spatial_contract_id"].endswith(":shingolay:v0.1")
+    assert by_id["santa_eulalia_mainstem"]["map_eligible"] is False
+    assert by_id["rimac_mainstem_receiver"]["map_eligible"] is False
+    assert by_id["santa_eulalia_rimac_confluence"]["map_eligible"] is False
     assert all(x["evidence_state"] is None for x in rows)
 
 
@@ -90,6 +107,8 @@ def test_existing_reproducible_discovery_children_remain_local_and_never_operati
     for child in registry["discovery_local_units"]:
         assert child["activation_state_allowed"] is True
         assert child["allowed_research_states"] == hierarchy.ALLOWED_STATES
+        assert child["counts_as_parent_geometry"] is False
+        assert child["counts_as_operational_geometry"] is False
         if child["map_eligible"]:
             assert child["geometry_path"].startswith("site/data/phase2/geometries/")
 
