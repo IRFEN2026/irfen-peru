@@ -1,0 +1,106 @@
+{
+  "schema_version": "0.3",
+  "status": "BLOCKED_OFFICIAL_VECTOR_SOURCE_NOT_RECONCILED",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "discovery_contract": "config/phase2_jicamarca_discovery_v0_1.json",
+  "candidate_contract": "site/data/validation/phase2_zone_contracts/lima_este_santa_eulalia_rimac.json",
+  "scientific_result": {
+    "geometry_accepted": false,
+    "map_layer_created": false,
+    "child_geometry_inferred": false,
+    "outlet_or_confluence_inferred": false,
+    "routing_inferred": false,
+    "reason": "The official documentary partition and the currently exposed ANA IDEP Unidades Hidrográficas service could not be reconciled to a unique vector feature for Jicamarca or Canto Grande. No polygon is admissible until an official vector source or an independently reproducible hydrologic delineation with a defensible control point is available."
+  },
+  "official_documentary_references": {
+    "ana_rimac_2010": {
+      "institution": "Autoridad Nacional del Agua",
+      "title": "Estudio Hidrológico de la Cuenca del Río Rímac",
+      "url": "https://www.ana.gob.pe/sites/default/files/normatividad/files/1_estudio_hidrologico_cuenca_rimac_-_volumen_i_-_texto_-_final_2010_0_2.pdf",
+      "partition": {
+        "1375542": {"name": "Qda. Jicamarca", "area_km2": 492.31},
+        "1375544": {"name": "Río Santa Eulalia", "area_km2": 1077.38}
+      },
+      "role": "LEGACY_DOCUMENTARY_PARTITION_CONTEXT"
+    },
+    "ana_chillon_rimac_lurin_2019": {
+      "institution": "Autoridad Nacional del Agua / Observatorio del Agua Chillón Rímac Lurín",
+      "title": "Diagnóstico Inicial para el Plan de Gestión de Recursos Hídricos de las Cuencas Chillón, Rímac, Lurín y Chilca",
+      "url": "https://observatoriochirilu.ana.gob.pe/sites/default/files/Archivos/Diagnostico%20Inicial%2027082019.pdf",
+      "partition": {
+        "1375541": {"name": "Bajo Rímac", "area_km2": 47.3},
+        "1375542": {"name": "Canto Grande", "area_km2": 133.8},
+        "1375543": {"name": "Medio Bajo Rímac", "area_km2": 11.4},
+        "1375544": {"name": "Jicamarca", "area_km2": 492.4},
+        "1375545": {"name": "Medio Rímac", "area_km2": 252.7},
+        "1375546": {"name": "Santa Eulalia", "area_km2": 1077.4},
+        "1375547": {"name": "Medio Alto Rímac", "area_km2": 820.1},
+        "1375548": {"name": "Alto Rímac", "area_km2": 169.8},
+        "1375549": {"name": "Blanco", "area_km2": 235.7}
+      },
+      "role": "LATER_DOCUMENTARY_PARTITION_CONTEXT"
+    }
+  },
+  "official_live_service_probe": {
+    "service": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer",
+    "service_group_layer": 6,
+    "queried_layers": [7, 8],
+    "query_mode": "ATTRIBUTE_ONLY_NO_GEOMETRY_FOR_IDENTITY_CHECK",
+    "observed_on_utc_date": "2026-09-23",
+    "exact_code_probes": [
+      {"layer": 7, "field": "CODIGO", "value": "1375542", "feature_count": 0},
+      {"layer": 7, "field": "NIVEL7", "value": "1375542", "feature_count": 0}
+    ],
+    "area_window_probes": {
+      "jicamarca_490_4_to_494_4_km2": {"layer_7_feature_count": 0, "layer_8_feature_count": 0},
+      "canto_grande_131_8_to_135_8_km2": {
+        "layer_7_feature_count": 2,
+        "layer_8_feature_count": 2,
+        "matches_expected_identity": false,
+        "observed_features": [
+          {"OBJECTID": 45, "CODIGO": "46645", "NOMBRE": "Intercuenca Medio Madre de Dios", "AREA_KM2": 133.8517},
+          {"OBJECTID": 49, "CODIGO": "1375539", "NIVEL7": "1375539", "NOMBRE": "Intercuenca 1375539", "AREA_KM2": 132.0556}
+        ]
+      }
+    },
+    "geometry_requests_accepted": 0,
+    "interpretation": "The exposed service layers do not reproduce either documentary Rímac partition closely enough to identify Jicamarca/Canto Grande by exact code, name or preregistered area. Treating unrelated features as substitutes is forbidden."
+  },
+  "geometry_policy": {
+    "parent_context_geometry_status": "MISSING_REPRODUCIBLE_OFFICIAL_VECTOR_OR_DEFENSIBLE_DEM_CONTROL_POINT",
+    "publish_parent_polygon": false,
+    "publish_child_polygon_from_parent": false,
+    "synthetic_union_forbidden": true,
+    "approximate_geometry_forbidden": true,
+    "documentary_map_digitization_forbidden": true,
+    "local_activation_geometry": false,
+    "counts_as_complete_candidate_geometry": false,
+    "candidate_wide_sampling_ready": false,
+    "counts_as_event_footprint": false,
+    "counts_as_operational_geometry": false
+  },
+  "next_safe_gates": [
+    "Search for an official vector source that explicitly implements the documented Rímac level-7 partition and can be frozen by exact feature identity and SHA-256.",
+    "Independently resolve Río Seco and Canto Grande–Media Luna from defensible channel/control-point evidence without deriving them from a Jicamarca parent polygon.",
+    "Keep Huaycoloro on the existing chosica_huaycoloro reference and do not duplicate its geometry."
+  ],
+  "forbidden": [
+    "accept an unrelated ANA feature because its area is similar",
+    "silently map the 2010 code partition onto the 2019 partition",
+    "use documentary PDF map outlines as vector geometry",
+    "use either documentary parent partition as a local activation unit",
+    "union Jicamarca and Canto Grande into a synthetic activation polygon",
+    "derive Río Seco, Huaycoloro, Media Luna or named-channel child geometry from a parent boundary",
+    "approximate outlets or confluences",
+    "infer discharge, travel time, attenuation, hydraulic capacity or receiver overflow",
+    "treat any parent polygon as an event footprint, risk class or alert layer"
+  ]
+}

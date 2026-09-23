@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.1",
+  "schema_version": "0.2",
   "status": "OFFICIAL_HYDROLOGIC_RELATION_DOCUMENTED_GEOMETRY_UNRESOLVED",
   "deployment_status": "RESEARCH_ONLY",
   "test_mode": "TEST_ONLY",
@@ -12,15 +12,31 @@
   "hydraulic_factors": null,
   "assessment_date_utc": "2026-09-23",
   "question": "How is official Jicamarca terminology related to Huaycoloro and Río Seco, and does that justify a standalone local activation geometry?",
-  "conclusion": "JICAMARCA_IS_OFFICIAL_SUBBASIN_AND_DOWNSTREAM_NAMING_CONTEXT_BUT_NOT_A_SYNTHETIC_LOCAL_ACTIVATION_UNIT; EXACT_CHILD_AND_CONFLUENCE_GEOMETRY_REMAINS_UNRESOLVED",
+  "conclusion": "JICAMARCA_IS_OFFICIAL_BROADER_HYDROLOGIC_AND_DOWNSTREAM_NAMING_CONTEXT_BUT_OFFICIAL_PARENT_PARTITIONS_DIFFER_BY_SOURCE; NO_SYNTHETIC_LOCAL_ACTIVATION_UNIT_OR_PARENT_GEOMETRY_IS_ADMISSIBLE_UNTIL_VECTOR_IDENTITY_IS_RECONCILED",
   "official_source_observations": [
     {
       "source_id": "ANA-RIMAC-HYDROLOGY-2010",
       "url": "https://www.ana.gob.pe/sites/default/files/normatividad/files/1_estudio_hidrologico_cuenca_rimac_-_volumen_i_-_texto_-_final_2010_0_2.pdf",
       "date": "2010",
       "bounded_observation": "ANA registers Pfafstetter level-7 unit 1375542 as Subcuenca Qda. Jicamarca, with principal river/channel described as Qda. Jicamarca - Qda. Huaycoloro and a reported subbasin area of 492.31 km2.",
-      "supports": ["JICAMARCA_IS_OFFICIAL_SUBBASIN_CONTEXT", "JICAMARCA_AND_HUAYCOLORO_NAMING_ARE_HYDROLOGICALLY_LINKED"],
-      "does_not_support": ["LOCAL_CHILD_ACTIVATION_FROM_PARENT_NAME", "EXACT_CHILD_POLYGONS_FROM_TEXT", "EXACT_CONFLUENCE_COORDINATE", "OPERATIONAL_THRESHOLD"]
+      "supports": ["JICAMARCA_IS_OFFICIAL_BROADER_HYDROLOGIC_CONTEXT", "JICAMARCA_AND_HUAYCOLORO_NAMING_ARE_HYDROLOGICALLY_LINKED"],
+      "does_not_support": ["CURRENT_VECTOR_IDENTITY", "LOCAL_CHILD_ACTIVATION_FROM_PARENT_NAME", "EXACT_CHILD_POLYGONS_FROM_TEXT", "EXACT_CONFLUENCE_COORDINATE", "OPERATIONAL_THRESHOLD"]
+    },
+    {
+      "source_id": "ANA-CHIRILU-DIAGNOSIS-2019",
+      "url": "https://observatoriochirilu.ana.gob.pe/sites/default/files/Archivos/Diagnostico%20Inicial%2027082019.pdf",
+      "date": "2019",
+      "bounded_observation": "The later ANA/Observatorio del Agua diagnosis uses a different Rímac level-7 partition: Canto Grande is 1375542 with 133.8 km2, while Jicamarca is 1375544 with 492.4 km2; Santa Eulalia is 1375546. This conflicts with the 2010 code-to-name partition and prevents silent code reuse.",
+      "supports": ["CANTO_GRANDE_AND_JICAMARCA_ARE_SEPARATE_DOCUMENTARY_UNITS_IN_LATER_PARTITION", "OFFICIAL_PARTITION_CHANGED_OR_WAS_REDEFINED"],
+      "does_not_support": ["EXACT_VECTOR_GEOMETRY_FROM_PDF", "SILENT_MAPPING_OF_2010_CODES_TO_2019_CODES", "LOCAL_CHILD_OUTLETS"]
+    },
+    {
+      "source_id": "ANA-IDEP-LIVE-UH-PROBE-2026-09-23",
+      "url": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer",
+      "date": "2026-09-23",
+      "bounded_observation": "Fail-closed attribute-only probes of the exposed ANA Unidades Hidrográficas child layers 7 and 8 returned no feature in the 490.4-494.4 km2 Jicamarca area window and only two unrelated features in the 131.8-135.8 km2 Canto Grande area window. Exact layer-7 CODIGO and NIVEL7 probes for 1375542 also returned zero. No geometry was accepted.",
+      "supports": ["CURRENT_EXPOSED_VECTOR_SERVICE_NOT_RECONCILED_TO_DOCUMENTARY_RIMAC_PARTITION", "PARENT_GEOMETRY_MUST_REMAIN_BLOCKED"],
+      "does_not_support": ["ABSENCE_OF_JICAMARCA_IN_ALL_ANA_DATA", "SUBSTITUTION_BY_AREA_SIMILAR_FEATURE", "GEOMETRY_PROMOTION"]
     },
     {
       "source_id": "INDECI-PERD-HUACHIPA-2013",
@@ -64,8 +80,13 @@
     }
   ],
   "topology_status": {
-    "official_parent_subbasin_id": "1375542",
-    "official_parent_subbasin_name": "Qda. Jicamarca",
+    "official_parent_partition_status": "CONFLICTING_OFFICIAL_DOCUMENTARY_PARTITIONS_VECTOR_IDENTITY_UNRESOLVED",
+    "legacy_2010_parent_reference": {"code": "1375542", "name": "Qda. Jicamarca", "area_km2": 492.31},
+    "later_2019_parent_references": {
+      "jicamarca": {"code": "1375544", "name": "Jicamarca", "area_km2": 492.4},
+      "canto_grande": {"code": "1375542", "name": "Canto Grande", "area_km2": 133.8}
+    },
+    "live_vector_parent_identity": null,
     "huaycoloro_rio_seco_union": "OFFICIALLY_DESCRIBED_TOPOLOGY_COORDINATES_UNRESOLVED",
     "exact_union_coordinate": null,
     "jicamarca_named_channel_relationship": "DOWNSTREAM_NAMING_RELATION_DOCUMENTED_EXACT_LINE_GEOMETRY_UNRESOLVED",
@@ -74,11 +95,13 @@
   "geometry_policy": {
     "official_parent_subbasin_may_be_context_layer_only_if_reproducible_geometry_obtained": true,
     "official_parent_subbasin_is_local_activation_geometry": false,
+    "parent_geometry_currently_publishable": false,
     "standalone_jicamarca_local_polygon_allowed": false,
     "downstream_jicamarca_channel_line_allowed_only_after_reproducible_geometry": true,
     "approximate_confluence_point_allowed": false,
     "union_of_child_polygons_allowed": false,
+    "digitize_documentary_map_as_geometry_allowed": false,
     "publish_only_independently_reproducible_children": true
   },
-  "next_gate": "Obtain reproducible official or DEM-validated child hydrography and exact Huaycoloro/Río Seco confluence/outlet geometry; preserve Pfafstetter 1375542 only as parent context and never infer local activation from it."
+  "next_gate": "Resolve an official vector identity for the documentary parent partition or bypass parent geometry by independently resolving Río Seco and Canto Grande–Media Luna from defensible local channel/control-point evidence; keep Huaycoloro referenced from chosica_huaycoloro and never infer local activation from a parent label."
 }
