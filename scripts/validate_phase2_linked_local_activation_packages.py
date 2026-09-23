@@ -3,7 +3,8 @@
 
 This is an overlay on the universal hierarchy. It never derives activation, geometry,
 thresholds or hydraulic capacity. It only verifies that explicit child-level research
-records remain local, non-operational and fail closed when geometry/data are missing.
+records remain local, source-traceable, non-operational and fail closed when geometry
+or data are missing.
 """
 from __future__ import annotations
 
@@ -58,14 +59,21 @@ def require_safe(obj: dict, label: str) -> None:
             fail(f"UNSAFE_{label}_{key}")
 
 
-def package_path(raw: str) -> Path:
-    prefix = "site/data/validation/phase2_registered_unit_packages/"
+def repo_json_path(raw: str, prefix: str, label: str) -> Path:
     if not isinstance(raw, str) or not raw.startswith(prefix) or not raw.endswith(".json"):
-        fail("LOCAL_PACKAGE_PATH_INVALID")
+        fail(f"{label}_PATH_INVALID")
     p = ROOT / raw
     if not p.is_file():
-        fail(f"LOCAL_PACKAGE_MISSING_{raw}")
+        fail(f"{label}_MISSING_{raw}")
     return p
+
+
+def package_path(raw: str) -> Path:
+    return repo_json_path(
+        raw,
+        "site/data/validation/phase2_registered_unit_packages/",
+        "LOCAL_PACKAGE",
+    )
 
 
 def validate_one(candidate_id: str, zone: dict, link: dict) -> dict:
@@ -94,6 +102,33 @@ def validate_one(candidate_id: str, zone: dict, link: dict) -> dict:
     if package.get("architecture_path") != link.get("architecture_path"):
         fail(f"PACKAGE_ARCHITECTURE_DRIFT_{candidate_id}")
 
+    evidence_path = repo_json_path(
+        package.get("evidence_registry_path"),
+        "site/data/phase2/sources/",
+        f"EVIDENCE_REGISTRY_{candidate_id}",
+    )
+    evidence = load(evidence_path)
+    require_safe(evidence, f"EVIDENCE_REGISTRY_{candidate_id}")
+    if evidence.get("candidate_id") != candidate_id:
+        fail(f"EVIDENCE_REGISTRY_CANDIDATE_DRIFT_{candidate_id}")
+    source_rows = evidence.get("sources") or []
+    source_ids = [row.get("source_id") for row in source_rows]
+    if any(not isinstance(x, str) or not x for x in source_ids) or len(source_ids) != len(set(source_ids)):
+        fail(f"EVIDENCE_SOURCE_IDS_INVALID_{candidate_id}")
+    source_id_set = set(source_ids)
+
+    strengthening_raw = package.get("strengthening_package_path")
+    if strengthening_raw is not None:
+        strengthening_path = repo_json_path(
+            strengthening_raw,
+            "site/data/validation/phase2_registered_unit_packages/",
+            f"STRENGTHENING_PACKAGE_{candidate_id}",
+        )
+        strengthening = load(strengthening_path)
+        require_safe(strengthening, f"STRENGTHENING_PACKAGE_{candidate_id}")
+        if strengthening.get("candidate_id") != candidate_id:
+            fail(f"STRENGTHENING_PACKAGE_CANDIDATE_DRIFT_{candidate_id}")
+
     parent = package.get("parent") or {}
     if parent.get("parent_id") != candidate_id:
         fail(f"PACKAGE_PARENT_ID_DRIFT_{candidate_id}")
@@ -120,6 +155,9 @@ def validate_one(candidate_id: str, zone: dict, link: dict) -> dict:
         cid = child["local_unit_id"]
         if child.get("unit_type") not in ALLOWED_TYPES:
             fail(f"CHILD_TYPE_INVALID_{candidate_id}_{cid}")
+        identity_source_ids = child.get("identity_source_ids") or []
+        if any(source_id not in source_id_set for source_id in identity_source_ids):
+            fail(f"CHILD_IDENTITY_SOURCE_NOT_FROZEN_{candidate_id}_{cid}")
         state = child.get("current_research_evidence_state")
         if state is not None and state not in ALLOWED_STATES:
             fail(f"CURRENT_STATE_INVALID_{candidate_id}_{cid}")
@@ -127,9 +165,15 @@ def validate_one(candidate_id: str, zone: dict, link: dict) -> dict:
         if historical:
             evidence_count += 1
         for event_key, record in historical.items():
-            event_state = (record or {}).get("state")
+            record = record or {}
+            event_state = record.get("state")
             if event_state not in ALLOWED_STATES:
                 fail(f"HISTORICAL_STATE_INVALID_{candidate_id}_{cid}_{event_key}")
+            event_sources = record.get("source_ids") or []
+            if not event_sources:
+                fail(f"HISTORICAL_STATE_SOURCE_MISSING_{candidate_id}_{cid}_{event_key}")
+            if any(source_id not in source_id_set for source_id in event_sources):
+                fail(f"HISTORICAL_STATE_SOURCE_NOT_FROZEN_{candidate_id}_{cid}_{event_key}")
         if child.get("state_is_operational_alert") is not False:
             fail(f"CHILD_STATE_ALERT_SEMANTICS_{candidate_id}_{cid}")
         if child.get("state_is_risk_class") is not False:
@@ -199,6 +243,8 @@ def validate_one(candidate_id: str, zone: dict, link: dict) -> dict:
     return {
         "candidate_id": candidate_id,
         "package_path": link["package_path"],
+        "evidence_registry_path": package["evidence_registry_path"],
+        "frozen_source_count": len(source_id_set),
         "child_count": len(children),
         "subunits_with_historical_evidence": evidence_count,
         "map_eligible_child_count": sum(c.get("map_eligible") is True for c in children),
