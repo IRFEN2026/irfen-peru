@@ -1,9 +1,7 @@
-import importlib.util
 import json
 from pathlib import Path
 import sys
 import unittest
-
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
@@ -27,7 +25,7 @@ class DiscoveryMapComponentTests(unittest.TestCase):
         self.assertIsNone(parent["geometry"]["path"])
         self.assertEqual(
             parent["geometry"]["status"],
-            "MISSING_PARENT_GROUPER_HAS_NO_SINGLE_HYDROLOGIC_GEOMETRY",
+            "MISSING_NO_REPRODUCIBLE_GEOMETRY",
         )
 
     def test_huarmey_and_culebras_are_separate_research_only_children(self):
