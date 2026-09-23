@@ -13,7 +13,7 @@ jobs:
   canonicalize:
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
         with:
@@ -22,6 +22,9 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+          cache: pip
+      - name: Install scientific dependencies
+        run: pip install -r requirements.txt
       - name: Canonicalize deterministic Acarí/Cañete artifacts
         run: python scripts/probe_acari_canete_official_geometry.py
       - name: Rebuild map catalog after canonicalization
