@@ -4,11 +4,15 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PATH = ROOT / "config/phase2_north_coast_discovery_inventory_v0_1.json"
+SCOPE = ROOT / "config/phase2_expansion_scope.json"
+CLIMATE = ROOT / "config/phase2_climate_conditioned_research_priority_v0_1.json"
 
 class Phase2NorthCoastDiscoveryTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.cfg = json.loads(PATH.read_text(encoding="utf-8"))
+        cls.scope = json.loads(SCOPE.read_text(encoding="utf-8"))
+        cls.climate = json.loads(CLIMATE.read_text(encoding="utf-8"))
 
     def test_extension_is_fail_closed_and_does_not_change_registered_count(self):
         c = self.cfg
@@ -65,6 +69,15 @@ class Phase2NorthCoastDiscoveryTests(unittest.TestCase):
             self.assertGreaterEqual(len(row["first_work_package"]), 4, row["discovery_id"])
             for source_id in row["official_source_ids"]:
                 self.assertIn(source_id, source_catalog, source_id)
+
+    def test_extension_is_referenced_by_scope_and_climate_overlay(self):
+        ext = self.scope["north_coast_discovery_extension"]
+        self.assertEqual(ext["inventory"], "config/phase2_north_coast_discovery_inventory_v0_1.json")
+        self.assertEqual(ext["registered_candidate_count_unchanged"], 18)
+        north = next(r for r in self.climate["scenario_corridors"]
+                     if r["corridor_id"] == "PACIFIC_NORTH_CENTRAL_WARM_EVENT")
+        self.assertEqual(north["discovery_inventory"], ext["inventory"])
+        self.assertGreaterEqual(len(north["discovery_gaps"]), 8)
 
 if __name__ == "__main__":
     unittest.main()
