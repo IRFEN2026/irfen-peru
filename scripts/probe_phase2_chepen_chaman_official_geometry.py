@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Freeze exact ANA Cuenca Chaman as one child of the Chepen territorial discovery grouper."""
+"""Freeze exact ANA Cuenca Chamán as one child of the Chepen territorial discovery grouper."""
 from __future__ import annotations
 import argparse,json
 from datetime import datetime,timezone
@@ -9,7 +9,7 @@ from urllib.parse import urlencode
 from urllib.request import Request,urlopen
 
 ROOT=Path(__file__).resolve().parents[1]
-DID="lalibertad_chepen_chaman_morana_avispero"; CID="chaman_basin_context"; CODE="137752"; ANA_NAME="Cuenca Chaman"
+DID="lalibertad_chepen_chaman_morana_avispero"; CID="chaman_basin_context"; CODE="137752"; ANA_NAME="Cuenca Chamán"
 CONTRACT=ROOT/f"site/data/validation/phase2_discovery_contracts/{DID}.json"
 PACKAGE=ROOT/f"site/data/validation/phase2_discovery_packages/{DID}.json"
 SOURCE=ROOT/"site/data/phase2/sources/north_coast_discovery_geometry/ana_lalibertad_chaman_137752.geojson"
