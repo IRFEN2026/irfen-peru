@@ -1,0 +1,159 @@
+{
+  "schema_version": "0.1",
+  "status": "FROZEN_RESEARCH_ARCHITECTURE",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "inherits": {
+    "local_activation_hierarchy": "config/phase2_local_activation_hierarchy_v0_1.json",
+    "rule": "Collector coupling augments, and never weakens, the local-unit hierarchy. Parent systems remain non-activatable context containers."
+  },
+  "scope": {
+    "applies_to_current_and_future_phase2_and_discovery_units": true,
+    "demonstrator_contract_directory": "site/data/validation/phase2_collector_coupling",
+    "first_demonstrator": "lima_este_santa_eulalia_rimac"
+  },
+  "collector_effect_states": [
+    "NO_EVIDENCE",
+    "HYDROLOGICALLY_CONNECTED",
+    "CONTRIBUTION_PLAUSIBLE",
+    "CONTRIBUTION_OBSERVED_OR_ROUTED",
+    "COLLECTOR_LEVEL_RESPONSE_OBSERVED_OR_HYDRAULICALLY_REPRODUCED"
+  ],
+  "state_semantics": {
+    "states_are_operational_alerts": false,
+    "states_are_risk_classes": false,
+    "states_are_probabilities": false,
+    "state_order_must_not_be_used_as_numeric_weight": true,
+    "missing_data_state": "NO_EVIDENCE",
+    "no_evidence_is_not_negative_evidence": true
+  },
+  "tributary_contract": {
+    "required_identity_fields": [
+      "local_unit_id",
+      "parent_id",
+      "source_local_geometry_contract_or_explicit_missing_status",
+      "source_outlet_or_explicit_missing_status",
+      "receiver_confluence_or_explicit_missing_status",
+      "collector_effect_state"
+    ],
+    "conditional_research_fields": [
+      "q_i_t",
+      "travel_time_tau",
+      "routing_method",
+      "attenuation_or_storage",
+      "hydraulic_distance",
+      "quality_confidence",
+      "paired_observations"
+    ],
+    "rule": "Conditional fields remain null/unknown until supported by reproducible admissible evidence and provenance."
+  },
+  "collector_balance": {
+    "conceptual_equation": "Q_collector(t)=Q_upstream(t)+sum(route_i(Q_i,tau_i))+Q_lateral(t)-storage/diversions/regulation",
+    "operational_rule": false,
+    "direct_sum_of_tributary_outlets_equals_downstream_flow": false,
+    "peak_synchrony_required_for_peak_compounding_inference": true,
+    "components_modeled_separately": [
+      "ANTECEDENT_COLLECTOR_FLOW",
+      "UPSTREAM_INFLOW",
+      "TRIBUTARY_ROUTED_INFLOW",
+      "DIRECT_OR_LATERAL_RAINFALL_RUNOFF",
+      "STORAGE",
+      "RESERVOIR_OPERATION",
+      "DIVERSIONS",
+      "BACKWATER",
+      "BRIDGES_OR_BOTTLENECKS",
+      "MORPHOLOGICAL_CHANGE"
+    ]
+  },
+  "routing_policy": {
+    "simplified_methods_must_be_labeled_simplified": true,
+    "hec_hms_or_equivalent_allowed_only_with_reproducible_inputs": true,
+    "travel_time_without_reproducible_basis_forbidden": true,
+    "attenuation_without_reproducible_basis_forbidden": true,
+    "routing_without_time_axis_forbidden": true
+  },
+  "hydraulic_policy": {
+    "hec_ras_1d_2d_or_equivalent_allowed_only_with_sufficient_inputs": true,
+    "minimum_input_families_when_claiming_hydraulic_reproduction": [
+      "TOPOGRAPHY_OR_SECTIONS",
+      "ROUGHNESS_BASIS",
+      "BOUNDARY_CONDITIONS",
+      "STRUCTURES_WHERE_PRESENT",
+      "MODEL_CONFIGURATION_AND_VERSION",
+      "OBSERVATIONAL_OR_EVENT_VALIDATION_BASIS"
+    ],
+    "works_or_design_are_historical_capacity": false,
+    "capacity_default": "UNKNOWN",
+    "capacity_may_be_inferred_from_design_document_alone": false
+  },
+  "collector_control_point_contract": {
+    "required_fields": [
+      "control_point_id",
+      "collector_id",
+      "location_or_explicit_missing_status",
+      "topographic_sources",
+      "hydraulic_geometry_status",
+      "stage_or_discharge_series",
+      "historical_overflow_evidence",
+      "capacity_status",
+      "structures",
+      "event_pairing_records"
+    ],
+    "default_capacity_status": "UNKNOWN",
+    "critical_point_is_observed_event": false
+  },
+  "collector_coupling_matrix": {
+    "rows": "TRIBUTARY_OR_LOCAL_HYDROLOGIC_UNITS",
+    "columns": "COLLECTOR_REACHES_OR_CONTROL_POINTS",
+    "allowed_cell_fields": [
+      "connectivity",
+      "hydraulic_distance",
+      "travel_time_tau",
+      "attenuation_or_storage",
+      "joint_historical_event",
+      "paired_observations",
+      "collector_effect_state",
+      "validation_status",
+      "provenance"
+    ],
+    "arbitrary_weights_forbidden": true,
+    "arbitrary_probabilities_forbidden": true,
+    "absence_of_report_is_negative_control": false
+  },
+  "data_integrity": {
+    "sealed_outcome_inputs_forbidden": true,
+    "contaminated_artifacts_forbidden": true,
+    "a6680_numeric_values_as_calibration_target_forbidden": true,
+    "postevent_evidence_may_support_event_validation_only_when_protocol_allows": true,
+    "source_paths_must_be_repository_traceable_when_used": true
+  },
+  "map_policy": {
+    "parent_style": "GREY_CONTEXT",
+    "tributaries_independent": true,
+    "reproducible_outlets_and_confluences_may_be_labeled": true,
+    "collector_control_points_separate_nodes": true,
+    "historical_footprints_separate": true,
+    "missing_geometry_is_not_drawn": true,
+    "risk_colors_forbidden": true,
+    "alerts_forbidden": true
+  },
+  "forbidden": [
+    "promote tributary evidence to parent activation",
+    "infer collector overflow from tributary activation alone",
+    "sum tributary outlet flows downstream without routing",
+    "invent discharge, capacity, travel time, attenuation, geometry, thresholds, weights or probabilities",
+    "treat regulatory faja marginal as event footprint",
+    "treat design or works documentation as validated historical hydraulic capacity",
+    "treat a critical point as an observed event without event evidence",
+    "transfer thresholds between basins",
+    "manufacture negative controls from documentary silence",
+    "artificially connect distinct hydrologic units"
+  ]
+}
