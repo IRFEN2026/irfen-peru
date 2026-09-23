@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Freeze exact official ANA Cuenca Viru geometry for discovery use only.
+"""Freeze exact official ANA Cuenca Virú geometry for discovery use only.
 
 RESEARCH_ONLY / TEST_ONLY. This script reads hydrologic identity and official geometry
 only. It does not read outcomes, rainfall, hydraulic capacity, thresholds or controls.
@@ -73,7 +73,7 @@ def validate_inputs(contract: dict, package: dict) -> tuple[str, str, dict]:
     pident = package.get("hydrologic_identity") or {}
     code = str(cident.get("ana_unit_code") or "")
     name = cident.get("ana_unit_name")
-    if code != "137714" or name != "Cuenca Viru":
+    if code != "137714" or name != "Cuenca Virú":
         raise ProbeError("UNEXPECTED_VIRU_IDENTITY")
     if str(pident.get("ana_unit_code") or "") != code or pident.get("ana_unit_name") != name:
         raise ProbeError("PACKAGE_CONTRACT_IDENTITY_DRIFT")
