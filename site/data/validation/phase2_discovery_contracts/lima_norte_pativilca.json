@@ -1,0 +1,47 @@
+{
+  "schema_version": "0.1",
+  "discovery_id": "lima_norte_pativilca",
+  "system_name": "Cuenca Pativilca y corredor bajo Pativilca-Barranca",
+  "contract_status": "DISCOVERY_GEOMETRY_SOURCE_LOCK_PENDING",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "hydrologic_identity": {
+    "ana_unit_code": "13758",
+    "ana_unit_name": "Cuenca Pativilca",
+    "identity_source": "ANA national hydrographic-unit registry",
+    "must_not_merge_with": ["Cuenca Fortaleza", "Cuenca Supe"],
+    "territorial_reference_is_basin": false
+  },
+  "official_source_ids": ["ANA-UH-13758-PATIVILCA"],
+  "assets": {
+    "geometry": {
+      "status": "MISSING_PENDING_REPRODUCIBLE_FETCH",
+      "path": "site/data/phase2/geometries/lima_norte_pativilca_basin_context.geojson",
+      "source_ids": ["ANA-UH-13758-PATIVILCA"],
+      "representation": "OFFICIAL_ANA_HYDROGRAPHIC_UNIT_CONTEXT",
+      "counts_as_operational_geometry": false,
+      "counts_as_event_footprint": false
+    }
+  },
+  "source_query": {
+    "endpoint": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/8/query",
+    "where": "CODIGO='13758'",
+    "out_fields": "*",
+    "out_sr": 4326,
+    "geometry_precision": 7,
+    "format": "geojson"
+  },
+  "map_policy": {
+    "publish_only_after_exact_identity_and_reproducible_geometry": true,
+    "context_only": true,
+    "risk_or_alert_layer": false,
+    "approximate_geometry_forbidden": true
+  }
+}
