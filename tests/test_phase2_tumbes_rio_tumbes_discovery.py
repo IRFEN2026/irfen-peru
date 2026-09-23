@@ -52,8 +52,37 @@ def test_source_registry_and_contract_reference_the_same_bounded_sources():
     registry_ids = {row["source_id"] for row in registry["sources"]}
     assert set(package["official_source_ids"]) == set(contract["official_source_ids"])
     assert set(package["official_source_ids"]) == registry_ids
-    assert "INGEMMET-A6764-TUMBES-2017" in registry_ids
-    assert "ANA-TUMBES-HIGHFLOW-20260409" in registry_ids
+    for required in (
+        "IGP-TUMBES-FEN-1983-HISTORICAL",
+        "INDECI-TUMBES-FEN-1998-DAMAGE-REPORT",
+        "INGEMMET-A6764-TUMBES-2017",
+        "ANA-TUMBES-HIGHFLOW-20260409",
+    ):
+        assert required in registry_ids
+
+
+def test_1982_83_context_does_not_invent_rio_tumbes_overflow():
+    event = load(PACKAGE)["assets"]["event_ledger"]["1982_1983"]
+    assert event["status"] == "REGIONAL_EXTREME_RAINFALL_CONTEXT_RIO_TUMBES_SPECIFIC_OUTCOME_UNRESOLVED"
+    assert event["tumbes_regional_extreme_rainfall_supported"] is True
+    assert event["rio_tumbes_overflow_claimed"] is False
+    assert event["exact_event_footprint_frozen"] is False
+    assert event["counts_as_negative_control"] is False
+
+
+def test_1997_98_indeci_record_is_positive_rio_tumbes_overflow_without_invented_polygon():
+    event = load(PACKAGE)["assets"]["event_ledger"]["1997_1998"]
+    assert event["status"] == "POSITIVE_RIO_TUMBES_OVERFLOW_INDECI_DAMAGE_REPORT"
+    rows = event["documented_overflow_events"]
+    assert [(r["date"], r["territorial_reference"]) for r in rows] == [
+        ("1998-02-15", "Corrales"),
+        ("1998-02-27", "Tumbes"),
+    ]
+    assert all(r["mechanism"] == "desborde del rio Tumbes" for r in rows)
+    assert event["exact_event_footprint_frozen"] is False
+    assert event["historical_hydraulic_capacity_inferred"] is False
+    assert event["threshold_inferred"] is False
+    assert event["outcome_transferred_to_other_systems"] is False
 
 
 def test_2017_positive_context_is_bounded_and_not_transferred():
@@ -113,12 +142,9 @@ def test_provider_warning_and_anticipation_times_are_not_irfen_travel_times_or_t
     assert warning["provider_warning_is_irfen_threshold"] is False
 
 
-def test_unknown_epochs_and_scoped_recent_statements_never_create_negative_controls():
+def test_scoped_recent_no_overflow_statement_is_not_negative_control():
     package = load(PACKAGE)
-    ledger = package["assets"]["event_ledger"]
-    for epoch in ("1982_1983", "1997_1998"):
-        assert ledger[epoch]["status"] == "UNKNOWN_NOT_NEGATIVE"
-    recent = ledger["2025_2026"]
+    recent = package["assets"]["event_ledger"]["2025_2026"]
     assert recent["status"] == "POSITIVE_2026_HIGH_FLOW_WITH_BOUNDED_PROVIDER_NO_OVERFLOW_STATEMENT"
     assert recent["provider_statement_scope_is_basin_wide"] is False
     assert recent["counts_as_negative_control"] is False
