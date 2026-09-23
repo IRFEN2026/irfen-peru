@@ -75,7 +75,8 @@ jobs:
           set -euo pipefail
           api="https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/site/data/map_layers.json"
           current_sha=$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/vnd.github+json" "${api}?ref=${HEAD_BRANCH}" | python -c 'import json,sys; print(json.load(sys.stdin)["sha"])')
-          content=$(base64 -w0 site/data/map_layers.json)
+          export MAP_CONTENT="$(base64 -w0 site/data/map_layers.json)"
+          export MAP_SHA="${current_sha}"
           python - <<'PY' > /tmp/map-payload.json
           import json, os
           print(json.dumps({
@@ -84,6 +85,18 @@ jobs:
               "sha": os.environ["MAP_SHA"],
               "branch": os.environ["HEAD_BRANCH"],
           }))
+          PY
+          curl -fsSL -X PUT \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            --data-binary @/tmp/map-payload.json \
+            "${api}" >/tmp/map-sync-response.json
+          python - <<'PY'
+          import json
+          d=json.load(open('/tmp/map-sync-response.json',encoding='utf-8'))
+          assert d.get('commit',{}).get('sha')
+          print('MAP_CATALOG_SYNCED', d['commit']['sha'])
           PY
         shell: bash
       - uses: actions/upload-artifact@v4
