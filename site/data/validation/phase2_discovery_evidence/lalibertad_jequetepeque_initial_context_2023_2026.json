@@ -1,0 +1,97 @@
+{
+  "version": "phase2-discovery-evidence-v0.1",
+  "discovery_id": "lalibertad_jequetepeque",
+  "evidence_status": "INITIAL_BOUNDED_OFFICIAL_CONTEXT",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "scope": "Initial official evidence intake for the Rio Jequetepeque system. This package treats the basin, tributaries, regulated hydraulic system and lower-valley exposure as distinct evidence layers until reproducible geometry and event-specific routing are independently validated.",
+  "sources": [
+    {
+      "source_id": "ANA-JEQUETEPEQUE-PACASMAYO-2023",
+      "institution": "Autoridad Nacional del Agua",
+      "evidence_class": "OFFICIAL_EL_NINO_PREVENTION_AND_CRITICAL_REACH_CONTEXT",
+      "url": "https://www.gob.pe/institucion/ana/noticias/878583-la-libertad-ana-concluye-descolmatacion-y-limpieza-de-puntos-criticos-en-pacasmayo"
+    },
+    {
+      "source_id": "MIDAGRI-JEQUETEPEQUE-PROTECTION-2023",
+      "institution": "MIDAGRI",
+      "evidence_class": "OFFICIAL_PROTECTION_WORK_CONTEXT",
+      "url": "https://www.gob.pe/institucion/midagri/noticias/887809-la-libertad-ministra-jennifer-contreras-inauguro-obra-de-servicios-de-proteccion-del-rio-jequetepeque"
+    },
+    {
+      "source_id": "PEJEZA-JEQUETEPEQUE-PREVENTION-2026",
+      "institution": "Proyecto Especial Jequetepeque Zaña",
+      "evidence_class": "OFFICIAL_CURRENT_EL_NINO_PREVENTION_CONTEXT",
+      "url": "https://www.gob.pe/institucion/pejeza/noticias/1421385-ana-pejeza-y-la-junta-de-usuarios-jequetepeque-articulan-acciones-para-la-gestion-preventiva-del-rio-jequetepeque"
+    },
+    {
+      "source_id": "ANA-JEQUETEPEQUE-FEN-HYDROLOGY-CONTEXT",
+      "institution": "Autoridad Nacional del Agua",
+      "evidence_class": "OFFICIAL_BASIN_ENVIRONMENTAL_AND_HYDROLOGIC_CONTEXT",
+      "url": "https://repositorio.ana.gob.pe/bitstream/handle/20.500.12543/3623/ANA0002147_2.pdf?isAllowed=y&sequence=2"
+    }
+  ],
+  "el_nino_context": {
+    "middle_and_lower_basin_sensitivity_supported": true,
+    "source_basis": "ANA basin context states strong El Nino episodes with intense rainfall can intensify erosion, debris-flow and fluvial-scour processes in the middle and lower Jequetepeque basin.",
+    "dated_event_ledger_normalized": false,
+    "interpretation": "This is climate-regime context, not an event label or probability."
+  },
+  "current_prevention_context": {
+    "pacasmayo_2023": {
+      "cleaned_or_desilted_reach_km_reported": 26,
+      "families_reported_protected": 350,
+      "agricultural_area_ha_reported": 1060,
+      "named_sectors": [
+        "Tecapa",
+        "Infiernillo Cultambo",
+        "Lache Chico",
+        "Sausal",
+        "Segunda Toma",
+        "Tallos Tiralarga",
+        "San Jose"
+      ],
+      "role": "CURRENT_PREVENTION_AND_EXPOSURE_CONTEXT_NOT_EVENT_COUNT"
+    },
+    "protection_project_2023": {
+      "dike_length_km_reported": 15.15,
+      "named_sectors": [
+        "Infiernillo",
+        "Ñampol",
+        "Cosque Ñampol",
+        "Isla de Faclo",
+        "Faclo Grande",
+        "Barranca Pellejito"
+      ],
+      "role": "CURRENT_PROTECTION_CONTEXT_NOT_HISTORICAL_CAPACITY"
+    }
+  },
+  "component_separation": {
+    "rio_jequetepeque_distinct_component": true,
+    "tributaries_require_independent_geometry": true,
+    "rio_chaman_relation_resolved": false,
+    "gallito_ciego_or_other_regulation_must_be_modeled_as_context": true,
+    "cross_component_hydraulic_transfer_validated": false
+  },
+  "next_normalization_steps": [
+    "obtain official Cuenca Jequetepeque geometry and separately identify river/tributary geometry",
+    "resolve the hydrologic relationship of Rio Chaman before any grouping",
+    "build dated local outcome ledger for 1982-83, 1997-98, 2017, 2023 and recent episodes",
+    "identify rainfall, river stage/discharge and reservoir-operation observations with timestamps and QA",
+    "map Pacasmayo/Chepen settlements, agriculture, roads, irrigation and hydraulic infrastructure exposure",
+    "separate current protection works and regulated-system operations from historical natural response"
+  ],
+  "scientific_limits": [
+    "No dated EVENT/NONE ledger is closed in this asset.",
+    "Current prevention works are not historical hydraulic capacity.",
+    "The 26 km and 15.15 km intervention lengths are not basin geometry or event footprints.",
+    "No reservoir operation or discharge value is transferred into an IRFEN threshold.",
+    "No negative control is inferred from absence of impact reporting."
+  ]
+}
