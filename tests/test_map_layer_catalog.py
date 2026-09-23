@@ -89,6 +89,7 @@ class MapLayerCatalogTests(unittest.TestCase):
             "lima_norte_arahuay_chillon",
             "lima_norte_chancay_huaral",
             "lima_norte_huaura_huacho_sayan",
+            "lima_norte_chillon_bajo",
         }
         self.assertEqual(self.catalog["summary"]["research_candidates_map_eligible"], len(eligible))
         for zone in zones:
