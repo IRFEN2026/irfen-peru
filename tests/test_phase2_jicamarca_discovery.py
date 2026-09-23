@@ -4,12 +4,13 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 CFG=ROOT/"config/phase2_jicamarca_discovery_v0_1.json"
 ARCH=ROOT/"config/phase2_local_activation_hierarchy_v0_1.json"
+CENDEHUA=ROOT/"config/phase2_jicamarca_cendehua_event_metadata_v0_1.json"
+SOPHY=ROOT/"config/phase2_jicamarca_sophy_access_assessment_v0_1.json"
 
 def load(path=CFG):
     return json.loads(path.read_text(encoding="utf-8"))
 
-def test_fail_closed():
-    c=load()
+def assert_safe(c):
     assert c["deployment_status"]=="RESEARCH_ONLY"
     assert c["test_mode"]=="TEST_ONLY"
     assert c["production_use"] is False
@@ -19,6 +20,9 @@ def test_fail_closed():
     assert c["missing_data_rule"]=="UNKNOWN_NOT_LOW_RISK"
     assert c["decision_thresholds"] is None
     assert c["hydraulic_factors"] is None
+
+def test_fail_closed():
+    assert_safe(load())
 
 def test_pending_discovery_inherits_universal_hierarchy_without_candidate_registration():
     c=load(); h=c["hierarchy_binding"]
@@ -54,6 +58,9 @@ def test_historical_evidence_preserves_component_attribution():
     c=load(); ev={x["event_id"]:x for x in c["historical_evidence"]}
     assert ev["JICAMARCA-MEDIA-LUNA-2002"]["component_id"]=="canto_grande_media_luna"
     assert ev["JICAMARCA-HUAYCOLORO2-2023-03-15"]["component_id"]=="huaycoloro"
+    assert ev["JICAMARCA-RIOSECO2-2023-03-15"]["component_id"]=="rio_seco"
+    assert ev["JICAMARCA-RIOSECO2-2023-03-15"]["reported_sensor_height_m"]==0.43
+    assert ev["JICAMARCA-RIOSECO2-2023-03-15"]["reported_discharge_m3_s"] is None
     assert ev["JICAMARCA-VALLE-SAGRADO-2023-03-15"]["status"].endswith("MECHANISM_PARTIAL")
     assert ev["JICAMARCA-VALLE-SAGRADO-2023-03-15"]["local_ravine_attribution"]=="PARTIAL_UNRESOLVED"
 
@@ -62,7 +69,41 @@ def test_monitoring_does_not_import_operational_thresholds():
     cen=next(x for x in c["monitoring_assets"] if x["source_id"]=="IGP-CENDEHUA")
     assert cen["operational_alert_thresholds_imported_to_irfen"] is False
     radar=next(x for x in c["monitoring_assets"] if x["source_id"]=="IGP-SOPHY-XBAND-RADAR")
-    assert radar["data_access_status"]=="PENDING_REPRODUCIBLE_ACCESS_AND_QA"
+    assert radar["data_access_status"]=="PUBLIC_PROJECT_METADATA_ONLY_DATA_ACCESS_UNRESOLVED"
+
+def test_bounded_evidence_packages_are_linked_and_safe():
+    c=load(); refs=c["evidence_packages"]
+    assert refs["cendehua_event_metadata"]=="config/phase2_jicamarca_cendehua_event_metadata_v0_1.json"
+    assert refs["sophy_access_assessment"]=="config/phase2_jicamarca_sophy_access_assessment_v0_1.json"
+    cen=load(CENDEHUA); radar=load(SOPHY)
+    assert_safe(cen); assert_safe(radar)
+
+def test_cendehua_event_metadata_fails_closed_on_unknown_hydraulics():
+    c=load(CENDEHUA)
+    ev={x["record_id"]:x for x in c["events"]}
+    hl2=ev["IGP-HL2-2023-03-15T14:44:19-05:00"]
+    rs2=ev["IGP-RS2-2023-03-15T16:27:41-05:00"]
+    assert hl2["reported_discharge_m3_s"] is None
+    assert rs2["reported_discharge_m3_s"] is None
+    assert rs2["reported_height_m"]==0.43
+    assert rs2["source_reported_height_is_irfen_threshold"] is False
+    assert hl2["source_reported_intensity_is_irfen_threshold"] is False
+    assert hl2["source_reported_reference_is_reproducible_outlet"] is False
+    assert rs2["source_reported_reference_is_reproducible_outlet"] is False
+    assert c["known_metadata_conflicts"][0]["status"].startswith("PRESERVE_AS_SOURCE_LABEL_CONFLICT")
+    assert c["qa_rules"]["cross_component_relabel_from_press_text_forbidden"] is True
+
+def test_sophy_metadata_does_not_fabricate_rainfall_or_coverage():
+    c=load(SOPHY); access=c["data_access_assessment"]
+    assert c["status"]=="PUBLIC_PROJECT_METADATA_ONLY_DATA_ACCESS_UNRESOLVED"
+    assert access["public_machine_readable_archive_identified"] is False
+    assert access["public_research_download_endpoint_identified"] is False
+    assert access["documented_api_identified"] is False
+    assert access["raw_or_level2_data_retrieved"] is False
+    assert access["qa_reproducible"] is False
+    assert access["subcatchment_rainfall_reconstruction_allowed"] is False
+    assert "infer rainfall values from project-page metadata" in c["forbidden"]
+    assert "treat nominal radar range as verified event coverage" in c["forbidden"]
 
 def test_collector_coupling_remains_unknown_until_reproducible_routing():
     c=load()["collector_coupling"]
