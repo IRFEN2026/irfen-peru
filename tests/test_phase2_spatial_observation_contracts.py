@@ -95,8 +95,8 @@ class GeneratedContractTests(unittest.TestCase):
         summary = self.result["summary"]
         self.assertEqual(summary["candidate_wide_ready_count"], 0)
         self.assertEqual(summary["subunit_research_only_candidate_count"], 2)
-        self.assertEqual(summary["non_catchment_geometry_only_count"], 10)
-        self.assertEqual(summary["blocked_missing_geometry_count"], 6)
+        self.assertEqual(summary["non_catchment_geometry_only_count"], 11)
+        self.assertEqual(summary["blocked_missing_geometry_count"], 5)
         self.assertEqual(summary["research_subunit_contract_count"], 4)
         self.assertEqual(summary["operational_spatial_contract_count"], 0)
 
