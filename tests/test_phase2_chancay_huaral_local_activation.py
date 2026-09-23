@@ -93,7 +93,8 @@ class ChancayHuaralLocalActivationTests(unittest.TestCase):
             self.assertFalse(obj["production_use"])
             self.assertFalse(obj["production_ready"])
             self.assertFalse(obj["operational_alerting_enabled"])
-            self.assertEqual(obj.get("activation_gate", obj["validation"]["activation_gate"]), "BLOCKED")
+            gate = obj["activation_gate"] if "activation_gate" in obj else obj["validation"]["activation_gate"]
+            self.assertEqual(gate, "BLOCKED")
             self.assertEqual(obj["missing_data_rule"], "UNKNOWN_NOT_LOW_RISK")
             self.assertIsNone(obj["decision_thresholds"])
             self.assertIsNone(obj["hydraulic_factors"])
