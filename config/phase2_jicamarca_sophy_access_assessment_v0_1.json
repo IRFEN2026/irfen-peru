@@ -1,0 +1,55 @@
+{
+  "schema_version": "0.1",
+  "status": "PUBLIC_PROJECT_METADATA_ONLY_DATA_ACCESS_UNRESOLVED",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "retrieval_date_utc": "2026-09-23",
+  "source": {
+    "source_id": "IGP-SOPHY-XBAND-RADAR",
+    "institution": "Instituto Geofísico del Perú",
+    "url": "https://www.igp.gob.pe/proyectos/desarrollo-tecnologico/radar-meteorologico/acercade",
+    "source_class": "OFFICIAL_PUBLIC_PROJECT_PAGE"
+  },
+  "public_metadata": {
+    "instrument_class": "X_BAND_WEATHER_RADAR",
+    "reported_max_range_km": 60,
+    "reported_horizontal_scan_deg": 360,
+    "reported_vertical_scan_deg": 90,
+    "intended_measurement_context": "precipitation observation and research support",
+    "huaico_monitoring_integration_context": true
+  },
+  "data_access_assessment": {
+    "public_machine_readable_archive_identified": false,
+    "public_research_download_endpoint_identified": false,
+    "documented_api_identified": false,
+    "raw_or_level2_data_retrieved": false,
+    "qa_reproducible": false,
+    "subcatchment_rainfall_reconstruction_allowed": false,
+    "next_gate": "IDENTIFY_REPRODUCIBLE_DATA_ACCESS_AND_FREEZE_QA_BEFORE_ANY_EVENT_RECONSTRUCTION"
+  },
+  "required_qa_before_use": [
+    "archive source/data identifiers and retrieval timestamps",
+    "preserve native timestamp/timezone semantics",
+    "document scan strategy and missing scans",
+    "document calibration/quality flags available from provider",
+    "define reproducible spatial extraction for each local hydrologic child",
+    "cross-check against independent station or satellite precipitation when available",
+    "freeze processing code and input hashes before comparing with local flow evidence"
+  ],
+  "forbidden": [
+    "infer rainfall values from project-page metadata",
+    "treat nominal radar range as verified event coverage",
+    "invent missing radar scans",
+    "derive or import operational thresholds",
+    "use radar metadata alone to assign activation to a small ravine",
+    "promote a parent Jicamarca or Rímac activation state",
+    "infer discharge, travel time, attenuation or receiver overflow from radar metadata"
+  ]
+}
