@@ -1,0 +1,132 @@
+{
+  "schema_version": "0.1",
+  "discovery_id": "tumbes_rio_tumbes",
+  "system_name": "Rio Tumbes hydrologic system",
+  "contract_status": "DISCOVERY_IDENTITY_CONFIRMED_GEOMETRY_PENDING_EXACT_REPLAY",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "source_registry_path": "site/data/phase2/sources/tumbes_rio_tumbes_official_evidence_v0_1.json",
+  "official_source_ids": [
+    "ANA-TUMBES-2023-MAPSERVER-BASIN",
+    "ANA-TUMBES-2023-INUNDATION-20230428",
+    "ANA-TUMBES-2023-INUNDATION-20230504",
+    "SENAMHI-TUMBES-CABO-INGA-20230404",
+    "SENAMHI-TUMBES-EL-TIGRE-20230413",
+    "INDECI-TUMBES-CABO-INGA-20240220"
+  ],
+  "hydrologic_identity": {
+    "entity_role": "DISCOVERY_HYDROLOGIC_SYSTEM",
+    "primary_system": "Rio Tumbes",
+    "identity_status": "OFFICIAL_SYSTEM_AND_BASIN_LAYER_IDENTIFIED",
+    "must_not_merge_with": ["Rio Zarumilla", "Zorritos-Bocapan coastal ravines", "Bocapan-Casitas", "El Grillo", "San Andres", "La Paja", "Marinero"],
+    "territorial_names_define_basin": false,
+    "cross_system_connector_allowed": false
+  },
+  "assets": {
+    "geometry": {
+      "status": "MISSING_PENDING_EXACT_ANA_LAYER_REPLAY",
+      "path": null,
+      "source_ids": ["ANA-TUMBES-2023-MAPSERVER-BASIN"],
+      "counts_as_operational_geometry": false,
+      "counts_as_event_footprint": false,
+      "approximate_points_allowed": false,
+      "invented_polygons_allowed": false
+    },
+    "event_ledger": {
+      "1982_1983": {"status": "UNKNOWN_NOT_NEGATIVE", "source_ids": []},
+      "1997_1998": {"status": "UNKNOWN_NOT_NEGATIVE", "source_ids": []},
+      "2017": {"status": "UNKNOWN_NOT_NEGATIVE", "source_ids": []},
+      "2023": {
+        "status": "POSITIVE_RIVER_HIGH_FLOW_AND_OBSERVED_INUNDATION_EVIDENCE",
+        "source_ids": [
+          "ANA-TUMBES-2023-INUNDATION-20230428",
+          "ANA-TUMBES-2023-INUNDATION-20230504",
+          "SENAMHI-TUMBES-CABO-INGA-20230404",
+          "SENAMHI-TUMBES-EL-TIGRE-20230413"
+        ],
+        "river_system": "Rio Tumbes",
+        "observed_inundation_footprints_are_basin_geometry": false,
+        "event_footprints_define_future_hazard": false,
+        "provider_alert_bands_are_irfen_thresholds": false
+      },
+      "2024_02_20": {
+        "status": "POSITIVE_HIGH_FLOW_OBSERVATION_WITH_POTENTIAL_EXPOSURE_CONTEXT",
+        "source_ids": ["INDECI-TUMBES-CABO-INGA-20240220"],
+        "observed_inundation_footprint_available": false,
+        "potential_exposure_is_observed_damage": false
+      },
+      "2025_2026": {"status": "UNKNOWN_NOT_NEGATIVE", "source_ids": []}
+    },
+    "observations": {
+      "status": "PARTIAL_DATED_RIVER_DISCHARGE_CONTEXT_NO_EVENT_PAIRED_SERIES_YET",
+      "stations": [
+        {
+          "station": "Cabo Inga",
+          "source_id": "SENAMHI-TUMBES-CABO-INGA-20230404",
+          "reported_peak_discharge_m3_s": 1527.36,
+          "provider_red_band_m3_s": 1000.0,
+          "provider_band_is_irfen_threshold": false
+        },
+        {
+          "station": "El Tigre",
+          "source_id": "SENAMHI-TUMBES-EL-TIGRE-20230413",
+          "reported_peak_discharge_m3_s": 1428.78,
+          "provider_red_band_m3_s": 1000.0,
+          "provider_band_is_irfen_threshold": false
+        }
+      ],
+      "known_network_context": ["Cabo Inga", "El Tigre", "Puente Tumbes"],
+      "continuous_event_paired_series_frozen": false,
+      "missing_observation_is_low_risk": false,
+      "next_required": ["freeze event-paired station time series with QA/QC where public", "pair rainfall observations without transferring thresholds", "preserve station/reach identity"]
+    },
+    "exposure_connectivity": {
+      "status": "PARTIAL_SETTLEMENT_CONTEXT_NOT_NETWORK_NORMALIZED",
+      "source_ids": ["INDECI-TUMBES-CABO-INGA-20240220"],
+      "settlement_context": ["Cabo Inga", "Rica Playa", "Brunos", "Loyola", "El Naranjo", "La Capitana"],
+      "potential_exposure_is_event_footprint": false,
+      "connectivity_graph_normalized": false
+    },
+    "hydraulic_context": {
+      "status": "MISSING_NO_REPRODUCIBLE_HISTORICAL_CAPACITY",
+      "capacity_values": null,
+      "works_or_faja_as_capacity_allowed": false,
+      "provider_discharge_as_capacity_allowed": false
+    }
+  },
+  "event_geometry_policy": {
+    "observed_inundation_layers": [
+      {"source_id": "ANA-TUMBES-2023-INUNDATION-20230428", "mapserver_layer": 66, "role": "OBSERVED_EVENT_FOOTPRINT_ONLY"},
+      {"source_id": "ANA-TUMBES-2023-INUNDATION-20230504", "mapserver_layer": 67, "role": "OBSERVED_EVENT_FOOTPRINT_ONLY"}
+    ],
+    "may_replace_basin_geometry": false,
+    "may_define_operational_risk": false,
+    "may_define_irfen_threshold": false
+  },
+  "map_policy": {
+    "publish_parent_basin_only_after_exact_official_replay": true,
+    "publish_observed_event_footprint_as_basin": false,
+    "publish_risk_or_alert_layer": false,
+    "approximate_geometry_forbidden": true,
+    "composite_with_zarumilla_or_coastal_ravines_forbidden": true
+  },
+  "validation": {
+    "activation_gate": "BLOCKED",
+    "required_reviews": [
+      "exact reproducible ANA Rio Tumbes basin geometry replay",
+      "freeze ANA 28-Apr and 04-May 2023 observed-inundation footprints as event evidence without basin substitution",
+      "event-paired Cabo Inga/El Tigre/Puente Tumbes time-series QA",
+      "1982-83/1997-98/2017 event adjudication",
+      "exposure/connectivity normalization",
+      "hydraulic context without treating works or observed discharge as historical capacity"
+    ],
+    "review_evidence": []
+  }
+}
