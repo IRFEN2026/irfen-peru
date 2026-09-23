@@ -81,6 +81,7 @@ class MapLayerCatalogTests(unittest.TestCase):
             "lambayeque_motupe_la_leche_pitipo",
             "arequipa_acari_san_agustin",
             "lima_sur_canete",
+            "lima_sur_mala",
             "lima_sur_asia_omas",
             "ica_pisco_san_andres",
             "lima_norte_huerta_vieja",
