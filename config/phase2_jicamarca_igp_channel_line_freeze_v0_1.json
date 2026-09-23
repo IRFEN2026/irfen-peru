@@ -1,6 +1,6 @@
 {
-  "schema_version": "0.1",
-  "status": "FROZEN_PRE_GEOMETRY_SOURCE_ID_SELECTION",
+  "schema_version": "0.2",
+  "status": "FROZEN_PRE_GEOMETRY_SOURCE_ID_SELECTION_WITH_POST_GEOMETRY_REJECTION",
   "deployment_status": "RESEARCH_ONLY",
   "test_mode": "TEST_ONLY",
   "production_use": false,
@@ -10,16 +10,16 @@
   "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
   "decision_thresholds": null,
   "hydraulic_factors": null,
-  "purpose": "Freeze exact official IGP source feature IDs for local named channel-line retrieval before reading their geometry. The resulting lines are channel context only, never catchment polygons, outlets, event footprints, routing or activation evidence.",
+  "purpose": "Freeze exact official IGP source feature IDs for bounded local named channel-line review. Accepted outputs are channel context only, never catchment polygons, outlets, event footprints, routing or activation evidence. A same-name Río Seco feature is explicitly rejected after static spatial review and must not be published as the CENDEHUA Río Seco geometry.",
   "selection_provenance": {
     "probe_contract": "config/phase2_jicamarca_igp_hydrography_probe_v0_1.json",
     "probe_workflow_run_id": 35934718288,
     "probe_artifact_id": 10782139664,
     "probe_artifact_digest": "sha256:603ca863dd0d9f8f6889d4dadfbae779ed5190112cbad021ae53707b201d3b90",
-    "selection_used_geometry": false,
+    "initial_selection_used_geometry": false,
     "selection_used_outcomes": false,
     "selection_used_hydraulic_response": false,
-    "selection_basis": "Official source name plus administrative context only. Same-name Rio Seco features outside the Jicamarca/San Antonio context were excluded without reading geometry."
+    "initial_selection_basis": "Official source name plus administrative context only."
   },
   "source": {
     "institution": "Instituto Geofisico del Peru",
@@ -29,18 +29,20 @@
     "spatial_reference_wkid": 4326,
     "service_item_id": "cc79e8bca3034d4aa39ea9e84aa627da"
   },
-  "components": [
-    {
-      "component_id": "rio_seco_channel",
-      "hydrologic_child_id": "rio_seco",
-      "output_path": "site/data/phase2/geometries/jicamarca_rio_seco_igp_channel.geojson",
-      "source_features": [
-        {"objectid": 3338, "name": "Qda Rio Seco", "district": "SAN ANTONIO", "province": "HUAROCHIRI", "department": "LIMA", "source_type": "Quebrada"}
-      ],
-      "source_segments_must_remain_separate": true,
-      "catchment_geometry_resolved": false,
-      "outlet_resolved": false
+  "independent_static_location_checks": {
+    "igp_roj_reference": {
+      "source_url": "https://repositorio.igp.gob.pe/items/be5e45e3-690d-4811-8509-35878e5d393c",
+      "reported_latitude_deg": -11.95,
+      "reported_longitude_deg": -76.87,
+      "coordinate_precision_note": "Published rounded observatory coordinate; used only to reject grossly incompatible same-name source geometry, not to infer an outlet."
     },
+    "igp_cendehua_context": {
+      "source_url": "https://www.gob.pe/41855-centro-de-monitoreo-de-deslizamientos-y-huaicos-cendehua",
+      "bounded_claim": "IGP places monitored Huaycoloro and Río Seco near the Radio Observatorio de Jicamarca at the Lurigancho-Chosica/San Antonio boundary, approximately 5 km upstream of Cajamarquilla.",
+      "use": "STATIC_IDENTITY_SANITY_CHECK_ONLY"
+    }
+  },
+  "components": [
     {
       "component_id": "canto_grande_channel",
       "hydrologic_child_id": "canto_grande_media_luna",
@@ -66,10 +68,27 @@
       "outlet_resolved": false
     }
   ],
-  "withheld_from_geometry_retrieval": [
+  "rejected_after_geometry_review": [
+    {
+      "component_id": "rio_seco_channel_candidate",
+      "hydrologic_child_id": "rio_seco",
+      "source_feature": {"objectid": 3338, "name": "Qda Rio Seco", "district": "SAN ANTONIO", "province": "HUAROCHIRI", "department": "LIMA", "source_type": "Quebrada"},
+      "status": "REJECTED_WRONG_SAME_NAME_GEOGRAPHY_DO_NOT_PUBLISH",
+      "review_basis": "The official source line occupies approximately 11.738-11.748 S / 76.804-76.809 W, more than 20 km from the rounded official ROJ reference and incompatible with IGP's monitored Río Seco context near the observatory/Cajamarquilla boundary. Administrative district plus repeated name was insufficient identity evidence.",
+      "geometry_used_only_for_rejection": true,
+      "outlet_inferred": false,
+      "catchment_inferred": false,
+      "event_outcome_used": false
+    }
+  ],
+  "withheld_from_geometry_publication": [
+    {
+      "component_id": "rio_seco",
+      "reason": "No IGP Quebrada_Lima feature has yet been reproducibly tied to the CENDEHUA Río Seco monitored reach; the only San Antonio same-name candidate was spatially rejected."
+    },
     {
       "component_id": "jicamarca_named_channel",
-      "reason": "Multiple official source segments occur across several districts and the relation to Huaycoloro/Rio Seco remains unresolved; no subset is selected from geometry or outcome evidence."
+      "reason": "Multiple official source segments occur across several districts and the relation to Huaycoloro/Río Seco remains unresolved; no subset is admissible yet."
     },
     {
       "component_id": "huaycoloro",
@@ -83,6 +102,7 @@
     "infer discharge or hydraulic capacity",
     "use source classification as an IRFEN threshold",
     "promote tributary activation to Rimac activation or overflow",
+    "publish the rejected Río Seco same-name feature",
     "publish the Jicamarca parent as a synthetic local activation geometry"
   ]
 }
