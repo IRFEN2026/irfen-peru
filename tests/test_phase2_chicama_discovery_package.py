@@ -1,8 +1,10 @@
+import hashlib
 import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / "site/data/validation/phase2_discovery_packages/lalibertad_chicama.json"
+CONTRACT = ROOT / "site/data/validation/phase2_discovery_contracts/lalibertad_chicama.json"
 SOURCES = ROOT / "site/data/phase2/sources/lalibertad_chicama_official_evidence_v0_1.json"
 
 SAFE = {
@@ -22,12 +24,17 @@ def load(path):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def sha256(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 def test_chicama_identity_and_guards_are_frozen():
     p = load(PACKAGE)
+    c = load(CONTRACT)
     s = load(SOURCES)
-    for key, expected in SAFE.items():
-        assert p[key] == expected
-        assert s[key] == expected
+    for obj in (p, c, s):
+        for key, expected in SAFE.items():
+            assert obj[key] == expected
     ident = p["hydrologic_identity"]
     assert ident["ana_unit_code"] == "13772"
     assert ident["ana_unit_name"] == "Cuenca Chicama"
@@ -35,19 +42,31 @@ def test_chicama_identity_and_guards_are_frozen():
     assert "Cuenca Jequetepeque" in ident["must_not_merge_with"]
     assert "Cuenca Moche" in ident["must_not_merge_with"]
     assert s["qa"]["official_chicama_unit_code"] == "13772"
+    assert c["source_query"]["where"] == "CODIGO='13772'"
 
 
-def test_geometry_and_ravines_fail_closed_until_reproducible():
+def test_geometry_is_frozen_exact_context_and_never_promotes_ravines():
     p = load(PACKAGE)
-    g = p["assets"]["geometry"]
-    assert g["status"] == "MISSING_PENDING_EXACT_ANA_QUERY"
-    assert g["source_query"]["where"] == "CODIGO='13772'"
-    assert not (ROOT / g["path"]).exists()
-    assert g["counts_as_operational_geometry"] is False
-    assert g["counts_as_event_footprint"] is False
+    c = load(CONTRACT)
+    for obj in (p, c):
+        g = obj["assets"]["geometry"]
+        assert g["status"] == "PARTIAL_OFFICIAL_BASIN_CONTEXT"
+        assert g["representation"] == "OFFICIAL_ANA_HYDROGRAPHIC_UNIT_CONTEXT"
+        assert g["source_query"]["where"] == "CODIGO='13772'"
+        path = ROOT / g["path"]
+        validation = ROOT / g["validation_path"]
+        source = ROOT / g["source_path"]
+        assert path.is_file() and validation.is_file() and source.is_file()
+        assert g["sha256"] == sha256(path)
+        assert g["validation_sha256"] == sha256(validation)
+        assert g["source_sha256"] == sha256(source)
+        assert g["counts_as_operational_geometry"] is False
+        assert g["counts_as_event_footprint"] is False
+    assert p["geometry_contract_path"] == "site/data/validation/phase2_discovery_contracts/lalibertad_chicama.json"
     assert p["map_policy"]["approximate_geometry_forbidden"] is True
     assert p["map_policy"]["named_ravines_require_separate_reproducible_geometry"] is True
     assert p["hydrologic_identity"]["named_ravines_requiring_independent_geometry"]
+    assert c["hydrologic_identity"]["named_ravines_require_independent_geometry"]
 
 
 def test_2017_flow_is_observation_context_not_threshold_and_unknowns_remain_unknown():
