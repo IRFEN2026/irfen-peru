@@ -1,0 +1,46 @@
+name: IRFEN - Phase2 La Leche national watercourse probe
+
+on:
+  pull_request:
+    paths:
+      - scripts/probe_la_leche_national_watercourse.py
+      - .github/workflows/phase2-la-leche-national-watercourse-probe.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe-official-watercourse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install bounded probe dependency
+        run: pip install 'requests>=2.31,<3'
+      - name: Query exact ANA national watercourse code
+        run: python scripts/probe_la_leche_national_watercourse.py
+      - name: Verify generated probe fail-closed
+        run: python scripts/probe_la_leche_national_watercourse.py --check-only
+      - name: Commit frozen probe evidence to bootstrap branch
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add site/data/validation/phase2_research_evidence/la_leche_national_watercourse_probe_20260923.json
+          if [ -f site/data/phase2/sources/motupe_la_leche_hydrologic_context/ana_national_rio_la_leche_1377722.geojson ]; then
+            git add site/data/phase2/sources/motupe_la_leche_hydrologic_context/ana_national_rio_la_leche_1377722.geojson
+          fi
+          if git diff --cached --quiet; then
+            echo 'No probe artifact change.'
+            exit 0
+          fi
+          git commit -m 'Phase2: freeze ANA La Leche exact-code probe result'
+          git push origin HEAD:"${HEAD_REF}"
