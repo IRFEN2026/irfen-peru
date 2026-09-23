@@ -1,0 +1,68 @@
+name: IRFEN - Phase2 Huarmey Culebras discovery geometry
+
+on:
+  pull_request:
+    paths:
+      - site/data/validation/phase2_discovery_contracts/ancash_huarmey_culebras.json
+      - scripts/probe_north_coast_discovery_component_geometries.py
+      - tests/test_phase2_huarmey_culebras_discovery_contract.py
+      - .github/workflows/phase2-huarmey-culebras-discovery-geometry.yml
+      - site/data/phase2/geometries/ancash_huarmey_basin_context.geojson
+      - site/data/phase2/geometries/ancash_culebras_basin_context.geojson
+      - site/data/phase2/sources/north_coast_discovery_geometry/**
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  freeze-split-official-geometry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Detect first source freeze
+        id: gate
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          d=json.load(open('site/data/validation/phase2_discovery_contracts/ancash_huarmey_culebras.json'))
+          pending=any(str(x['geometry']['status']).startswith('MISSING') for x in d['assets']['geometry_components'])
+          print('refresh=' + ('true' if pending else 'false'))
+          PY
+      - name: Freeze exact official ANA child sources
+        if: steps.gate.outputs.refresh == 'true'
+        run: |
+          python scripts/probe_north_coast_discovery_component_geometries.py \
+            --contract site/data/validation/phase2_discovery_contracts/ancash_huarmey_culebras.json \
+            --refresh-source
+      - name: Replay frozen child geometry exactly
+        if: steps.gate.outputs.refresh != 'true'
+        run: |
+          python scripts/probe_north_coast_discovery_component_geometries.py \
+            --contract site/data/validation/phase2_discovery_contracts/ancash_huarmey_culebras.json
+      - name: Install focused test dependency
+        run: python -m pip install pytest
+      - name: Enforce split hydrologic identity and guardrails
+        run: python -m pytest -q tests/test_phase2_huarmey_culebras_discovery_contract.py
+      - name: Commit frozen official child geometries
+        if: steps.gate.outputs.refresh == 'true' && github.event_name == 'pull_request'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            site/data/validation/phase2_discovery_contracts/ancash_huarmey_culebras.json \
+            site/data/phase2/geometries/ancash_huarmey_basin_context.geojson \
+            site/data/phase2/geometries/ancash_huarmey_basin_context_validation.json \
+            site/data/phase2/geometries/ancash_culebras_basin_context.geojson \
+            site/data/phase2/geometries/ancash_culebras_basin_context_validation.json \
+            site/data/phase2/sources/north_coast_discovery_geometry/
+          git diff --cached --quiet && exit 0
+          git commit -m 'Freeze separate official ANA Huarmey and Culebras basin geometry'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
