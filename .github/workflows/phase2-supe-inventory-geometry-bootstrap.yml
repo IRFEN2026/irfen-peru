@@ -1,0 +1,39 @@
+name: IRFEN - Phase2 Supe discovery bootstrap
+
+on:
+  pull_request:
+    paths:
+      - config/phase2_north_coast_discovery_inventory_v0_1.json
+      - site/data/validation/phase2_discovery_contracts/lima_norte_supe_caleta_vidal.json
+      - site/data/validation/phase2_discovery_packages/lima_norte_supe_caleta_vidal.json
+      - site/data/phase2/sources/north_coast_discovery_geometry/ana_lima_norte_supe_137572.geojson
+      - site/data/phase2/geometries/lima_norte_supe_basin_context.geojson
+      - site/data/phase2/geometries/lima_norte_supe_geometry_validation.json
+      - site/data/map_layers.json
+      - scripts/bootstrap_phase2_supe_discovery.py
+      - scripts/verify_phase2_supe_discovery.py
+      - tests/test_phase2_supe_inventory_geometry.py
+      - tests/test_phase2_supe_caleta_vidal_discovery_package.py
+      - .github/workflows/phase2-supe-inventory-geometry-bootstrap.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-frozen-discovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install test dependency
+        run: python -m pip install pytest
+      - name: Replay frozen Supe registration and ANA geometry fail-closed
+        run: python scripts/verify_phase2_supe_discovery.py
+      - name: Enforce Supe scientific guards
+        run: python -m pytest -q tests/test_phase2_supe_inventory_geometry.py tests/test_phase2_supe_caleta_vidal_discovery_package.py
+      - name: Verify published research map catalog
+        run: python scripts/build_map_layer_catalog.py --check-only

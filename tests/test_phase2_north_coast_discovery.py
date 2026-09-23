@@ -7,12 +7,39 @@ PATH = ROOT / "config/phase2_north_coast_discovery_inventory_v0_1.json"
 SCOPE = ROOT / "config/phase2_expansion_scope.json"
 CLIMATE = ROOT / "config/phase2_climate_conditioned_research_priority_v0_1.json"
 
+
 class Phase2NorthCoastDiscoveryTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.cfg = json.loads(PATH.read_text(encoding="utf-8"))
         cls.scope = json.loads(SCOPE.read_text(encoding="utf-8"))
         cls.climate = json.loads(CLIMATE.read_text(encoding="utf-8"))
+
+    @staticmethod
+    def source_registry_ids(discovery_id):
+        """Resolve source IDs from the explicit discovery-package registry when present.
+
+        The original north-coast inventory keeps a compact shared source_catalog. Newer
+        bounded discovery packages may instead carry a source_registry_path so their
+        evidence can stay independently versioned and fail-closed without duplicating
+        URLs into the shared inventory.
+        """
+        package_path = ROOT / "site/data/validation/phase2_discovery_packages" / f"{discovery_id}.json"
+        if not package_path.is_file():
+            return set()
+        package = json.loads(package_path.read_text(encoding="utf-8"))
+        registry_path = package.get("source_registry_path")
+        if not registry_path:
+            return set()
+        full_path = ROOT / registry_path
+        if not full_path.is_file():
+            return set()
+        registry = json.loads(full_path.read_text(encoding="utf-8"))
+        return {
+            row.get("source_id")
+            for row in registry.get("sources", [])
+            if isinstance(row, dict) and row.get("source_id")
+        }
 
     def test_extension_is_fail_closed_and_does_not_change_registered_count(self):
         c = self.cfg
@@ -31,11 +58,13 @@ class Phase2NorthCoastDiscoveryTests(unittest.TestCase):
         self.assertFalse(rel["changes_registered_candidate_count"])
         self.assertFalse(rel["changes_operational_scope"])
         self.assertTrue(rel["promotion_requires_explicit_versioned_migration"])
-        self.assertEqual(rel["discovery_units_count"], 14)
+        self.assertEqual(rel["discovery_units_count"], 15)
+        self.assertEqual(rel["discovery_units_count"], len(c["discovery_units"]))
 
     def test_user_requested_corridors_are_explicit(self):
         ids = {r["discovery_id"] for r in self.cfg["discovery_units"]}
         required = {
+            "lima_norte_supe_caleta_vidal",
             "lima_norte_pativilca",
             "lima_norte_fortaleza_paramonga",
             "ancash_huarmey_culebras",
@@ -91,8 +120,12 @@ class Phase2NorthCoastDiscoveryTests(unittest.TestCase):
         for row in self.cfg["discovery_units"]:
             self.assertGreaterEqual(len(row["official_source_ids"]), 2, row["discovery_id"])
             self.assertGreaterEqual(len(row["first_work_package"]), 4, row["discovery_id"])
+            registry_ids = self.source_registry_ids(row["discovery_id"])
             for source_id in row["official_source_ids"]:
-                self.assertIn(source_id, source_catalog, source_id)
+                self.assertTrue(
+                    source_id in source_catalog or source_id in registry_ids,
+                    f"{row['discovery_id']}: unresolved official source id {source_id}",
+                )
 
     def test_extension_is_referenced_by_scope_and_climate_overlay(self):
         ext = self.scope["north_coast_discovery_extension"]
@@ -103,6 +136,7 @@ class Phase2NorthCoastDiscoveryTests(unittest.TestCase):
                      if r["corridor_id"] == "PACIFIC_NORTH_CENTRAL_WARM_EVENT")
         self.assertEqual(north["discovery_inventory"], ext["inventory"])
         self.assertTrue(any(gap.startswith("Jequetepeque:") for gap in north["discovery_gaps"]))
+
 
 if __name__ == "__main__":
     unittest.main()
