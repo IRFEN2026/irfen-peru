@@ -1,6 +1,6 @@
 {
-  "schema_version": "0.1",
-  "status": "FROZEN_EXACT_ANA_PARENT_CONTEXT_QUERY",
+  "schema_version": "0.2",
+  "status": "FROZEN_BOUNDED_ANA_PARENT_CONTEXT_IDENTITY_RECONCILIATION",
   "deployment_status": "RESEARCH_ONLY",
   "test_mode": "TEST_ONLY",
   "production_use": false,
@@ -13,49 +13,65 @@
   "discovery_contract": "config/phase2_jicamarca_discovery_v0_1.json",
   "candidate_contract": "site/data/validation/phase2_zone_contracts/lima_este_santa_eulalia_rimac.json",
   "revision_basis": {
-    "previous_endpoint_layer": 7,
-    "previous_exact_query_field": "CODIGO",
-    "previous_exact_query_feature_count": 0,
-    "previous_query_used_for_geometry": false,
-    "correction_reason": "ANA IDEP layer 7 exposes the level-7 Pfafstetter identifier in NIVEL7. CODIGO is an 8-character field and the exact CODIGO='1375542' probe returned zero features; no geometry was accepted from that failed probe. The corrected query remains exact and is independently checked against the official documentary name and area for unit 1375542."
+    "failed_exact_queries": [
+      {"field": "CODIGO", "value": "1375542", "feature_count": 0, "geometry_accepted": false},
+      {"field": "NIVEL7", "value": "1375542", "feature_count": 0, "geometry_accepted": false}
+    ],
+    "scientific_issue": "ANA documentary partitions are not temporally identical: the 2010 Rímac study associates 1375542 with Qda. Jicamarca, while the later Chillón-Rímac-Lurín diagnosis separates Canto Grande and Jicamarca and reports them as distinct level-7 units. Live IDEP identity must therefore be resolved by bounded official name plus area matching before any geometry is accepted.",
+    "recovery_rule": "Search only the official ANA layer for the two preregistered names, without geometry; accept exactly one name-and-area match per unit; then fetch geometry by the live object-id field and freeze the exact responses. Fail closed on zero, multiple or area-inconsistent matches."
   },
-  "official_identity": {
-    "institution": "Autoridad Nacional del Agua",
-    "pfafstetter_level": 7,
-    "unit_code": "1375542",
-    "documentary_name": "Qda. Jicamarca",
-    "documentary_area_km2": 492.31,
-    "identity_source": "ANA Estudio Hidrológico de la Cuenca del Río Rímac 2010",
-    "identity_source_url": "https://www.ana.gob.pe/sites/default/files/normatividad/files/1_estudio_hidrologico_cuenca_rimac_-_volumen_i_-_texto_-_final_2010_0_2.pdf"
+  "official_documentary_references": {
+    "legacy_2010": {
+      "institution": "Autoridad Nacional del Agua",
+      "title": "Estudio Hidrológico de la Cuenca del Río Rímac",
+      "url": "https://www.ana.gob.pe/sites/default/files/normatividad/files/1_estudio_hidrologico_cuenca_rimac_-_volumen_i_-_texto_-_final_2010_0_2.pdf",
+      "jicamarca": {"reported_code": "1375542", "reported_name": "Qda. Jicamarca", "reported_area_km2": 492.31},
+      "role": "LEGACY_PARTITION_CONTEXT_NOT_LIVE_QUERY_KEY"
+    },
+    "later_chillon_rimac_lurin_diagnosis": {
+      "institution": "Autoridad Nacional del Agua",
+      "title": "Diagnóstico Inicial para el Plan de Gestión de Recursos Hídricos de las Cuencas Chillón, Rímac, Lurín y Chilca",
+      "jicamarca": {"reported_code": "1375544", "reported_name": "Jicamarca", "reported_area_km2": 492.4},
+      "canto_grande": {"reported_code": "1375542", "reported_name": "Canto Grande", "reported_area_km2": 133.8},
+      "role": "CURRENTER_DOCUMENTARY_PARTITION_IDENTITY_CHECK"
+    }
   },
-  "source_query": {
-    "endpoint": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/7/query",
-    "where": "NIVEL7='1375542'",
-    "out_fields": "*",
-    "return_geometry": true,
-    "out_sr": 4326,
+  "source_service": {
+    "layer_url": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/7",
+    "metadata_format": "pjson",
+    "attribute_search_return_geometry": false,
+    "geometry_fetch_out_sr": 4326,
     "geometry_precision": 7,
-    "format": "geojson"
+    "geometry_format": "geojson",
+    "preferred_name_fields": ["NOMB_UH_N7", "NOMBRE"],
+    "preferred_code_fields": ["NIVEL7", "CODIGO"],
+    "preferred_area_field": "AREA_KM2"
   },
-  "expected_response": {
-    "feature_count": 1,
-    "code": "1375542",
-    "code_field": "NIVEL7",
-    "name_fields": ["NOMB_UH_N7", "NOMBRE"],
-    "name_must_contain": "Jicamarca",
-    "area_field": "AREA_KM2",
-    "area_km2": 492.31,
-    "area_tolerance_km2": 1.0,
-    "geometry_types": ["Polygon", "MultiPolygon"]
+  "units": {
+    "jicamarca_parent": {
+      "search_token": "Jicamarca",
+      "expected_area_km2": 492.4,
+      "area_tolerance_km2": 2.0,
+      "documentary_current_code": "1375544",
+      "source_snapshot": "site/data/phase2/sources/jicamarca_hydrologic_context/ana_jicamarca_parent_current.geojson",
+      "normalized_geometry": "site/data/phase2/geometries/lima_este_jicamarca_parent_basin_context.geojson",
+      "map_layer_id": "jicamarca_parent_subbasin_context_v0_2",
+      "map_title": "Jicamarca · unidad ANA padre (contexto)"
+    },
+    "canto_grande_parent": {
+      "search_token": "Canto Grande",
+      "expected_area_km2": 133.8,
+      "area_tolerance_km2": 2.0,
+      "documentary_current_code": "1375542",
+      "source_snapshot": "site/data/phase2/sources/jicamarca_hydrologic_context/ana_canto_grande_parent_current.geojson",
+      "normalized_geometry": "site/data/phase2/geometries/lima_este_canto_grande_parent_basin_context.geojson",
+      "map_layer_id": "canto_grande_parent_subbasin_context_v0_1",
+      "map_title": "Canto Grande · unidad ANA padre (contexto)"
+    }
   },
-  "output": {
-    "source_snapshot": "site/data/phase2/sources/jicamarca_hydrologic_context/ana_jicamarca_1375542.geojson",
-    "normalized_geometry": "site/data/phase2/geometries/lima_este_jicamarca_parent_basin_context.geojson",
-    "validation": "site/data/phase2/geometries/lima_este_jicamarca_parent_basin_context_validation.json",
-    "map_layer_id": "jicamarca_parent_subbasin_context_v0_1"
-  },
+  "validation_output": "site/data/phase2/geometries/lima_este_jicamarca_parent_context_identity_validation.json",
   "scientific_role": {
-    "representation": "OFFICIAL_ANA_PFAFSTETTER_PARENT_CONTEXT",
+    "representation": "OFFICIAL_ANA_PARENT_CONTEXT_UNITS",
     "parent_context_only": true,
     "local_activation_geometry": false,
     "counts_as_complete_candidate_geometry": false,
@@ -67,11 +83,12 @@
     "routing_inferred": false
   },
   "forbidden": [
-    "use the parent polygon as a local activation unit",
-    "union child geometries into a Jicamarca activation polygon",
-    "derive Río Seco, Huaycoloro, Canto Grande or Media Luna geometry from the parent boundary",
-    "approximate the Huaycoloro-Río Seco confluence",
+    "use either parent polygon as a local activation unit",
+    "union Jicamarca and Canto Grande parent polygons into a synthetic activation polygon",
+    "derive Río Seco, Huaycoloro, Media Luna or named-channel child geometry from either parent boundary",
+    "approximate outlets or confluences from parent geometry",
     "infer discharge, travel time, attenuation, hydraulic capacity or receiver overflow",
-    "treat the basin polygon as an event footprint, risk class or alert layer"
+    "treat either parent polygon as an event footprint, risk class or alert layer",
+    "silently equate legacy 2010 codes with the live IDEP object identity"
   ]
 }
