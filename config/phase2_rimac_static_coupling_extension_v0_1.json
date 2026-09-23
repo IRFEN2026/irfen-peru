@@ -1,0 +1,73 @@
+{
+  "schema_version": "0.1",
+  "status": "FROZEN_RESEARCH_ONLY_LOCAL_COUPLING_EXTENSION",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "parent_id": "lima_este_santa_eulalia_rimac",
+  "parent_role": "CONTEXT_CONTAINER_NON_ACTIVATABLE",
+  "parent_activation_state": null,
+  "inherits": {
+    "local_activation_hierarchy": "config/phase2_local_activation_hierarchy_v0_1.json",
+    "collector_coupling_architecture": "config/phase2_collector_coupling_architecture_v0_1.json"
+  },
+  "source_package": "site/data/phase2/sources/rimac_mml_2013_static_coupling_v0_1.json",
+  "children": [
+    {
+      "local_unit_id": "quirio",
+      "display_name": "Quebrada Quirio",
+      "unit_type": "LOCAL_CATCHMENT_OR_RAVINE_POLYGON",
+      "local_catchment_geometry_status": "MISSING_NOT_ASSERTED_IN_THIS_EXTENSION",
+      "channel_anchor_status": "REPRODUCIBLE_OFFICIAL_STATIC_POINT",
+      "receiver_intersection_status": "REPRODUCIBLE_TERRAIN_D8_HYDROLOGIC_INTERSECTION",
+      "evidence_state": null,
+      "collector_effect_state_ceiling": "HYDROLOGICALLY_CONNECTED",
+      "reason_for_ceiling": "Static geometry establishes terrain-routing connectivity but supplies no admissible Q_i(t), tau_i, attenuation, paired collector response, or hydraulic reproduction."
+    },
+    {
+      "local_unit_id": "pedregal_san_antonio",
+      "display_name": "Quebrada Pedregal / San Antonio",
+      "unit_type": "LOCAL_CATCHMENT_OR_RAVINE_POLYGON",
+      "local_catchment_geometry_status": "MISSING_NOT_ASSERTED_IN_THIS_EXTENSION",
+      "channel_anchor_status": "REPRODUCIBLE_OFFICIAL_STATIC_POINT",
+      "receiver_intersection_status": "REPRODUCIBLE_TERRAIN_D8_HYDROLOGIC_INTERSECTION",
+      "evidence_state": null,
+      "collector_effect_state_ceiling": "HYDROLOGICALLY_CONNECTED",
+      "reason_for_ceiling": "Static geometry establishes terrain-routing connectivity but supplies no admissible Q_i(t), tau_i, attenuation, paired collector response, or hydraulic reproduction."
+    }
+  ],
+  "collector_nodes": [
+    {
+      "node_id": "rimac_r4_puente_colgante",
+      "role": "COLLECTOR_CONTROL_POINT_STATIC_CONTEXT",
+      "capacity_status": "UNKNOWN",
+      "stage_series_status": "MISSING",
+      "discharge_series_status": "MISSING",
+      "overflow_evidence_status": "NOT_EVALUATED_BY_THIS_EXTENSION"
+    },
+    {
+      "node_id": "rimac_r9_puente_california",
+      "role": "COLLECTOR_CONTROL_POINT_STATIC_CONTEXT",
+      "capacity_status": "UNKNOWN",
+      "stage_series_status": "MISSING",
+      "discharge_series_status": "MISSING",
+      "overflow_evidence_status": "NOT_EVALUATED_BY_THIS_EXTENSION"
+    }
+  ],
+  "forbidden_promotions": [
+    "parent activation",
+    "receiver overflow from tributary connectivity alone",
+    "discharge from contributing area alone",
+    "travel time without a reproducible routing basis",
+    "attenuation without a reproducible routing basis",
+    "historical capacity from works or design documents",
+    "risk class or alert state",
+    "arbitrary coupling weights or probabilities"
+  ]
+}
