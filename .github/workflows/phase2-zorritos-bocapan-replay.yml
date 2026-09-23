@@ -1,0 +1,66 @@
+name: IRFEN - Phase 2 Bocapan geometry replay
+
+on:
+  pull_request:
+    paths:
+      - scripts/probe_zorritos_bocapan_component_geometry.py
+      - site/data/phase2/sources/north_coast_discovery_geometry/ana_tumbes_zorritos_bocapan_coastal_ravines_bocapan_casitas_13936.geojson
+      - site/data/phase2/geometries/tumbes_bocapan_basin_context.geojson
+      - site/data/phase2/geometries/tumbes_bocapan_basin_context_validation.json
+      - site/data/validation/phase2_discovery_contracts/tumbes_zorritos_bocapan_coastal_ravines.json
+      - site/data/map_layers.json
+      - scripts/build_map_layer_catalog.py
+      - tests/test_phase2_zorritos_bocapan_geometry_contract.py
+      - .github/workflows/phase2-zorritos-bocapan-replay.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  replay-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install bounded test dependency
+        run: python -m pip install pytest
+      - name: Verify frozen source and derived geometry replay
+        run: |
+          python scripts/probe_zorritos_bocapan_component_geometry.py --check-only
+      - name: Verify map catalog is deterministic and current
+        run: |
+          python scripts/build_map_layer_catalog.py --check-only
+      - name: Run bounded contract tests
+        run: |
+          python -m pytest -q tests/test_phase2_zorritos_bocapan_geometry_contract.py
+      - name: Enforce scientific guards and exact hashes
+        run: |
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          c=json.loads(Path('site/data/validation/phase2_discovery_contracts/tumbes_zorritos_bocapan_coastal_ravines.json').read_text())
+          v=json.loads(Path('site/data/phase2/geometries/tumbes_bocapan_basin_context_validation.json').read_text())
+          safe={'deployment_status':'RESEARCH_ONLY','test_mode':'TEST_ONLY','production_use':False,'production_ready':False,'operational_alerting_enabled':False,'activation_gate':'BLOCKED','missing_data_rule':'UNKNOWN_NOT_LOW_RISK','decision_thresholds':None,'hydraulic_factors':None}
+          for obj in (c,v):
+              for k,x in safe.items(): assert obj[k]==x,(k,obj.get(k),x)
+          assert v['outcomes_read'] is False
+          assert v['rainfall_read'] is False
+          assert v['hydraulic_capacity_read'] is False
+          assert v['thresholds_used'] is False
+          assert v['negative_controls_read'] is False
+          assert v['approximate_geometry_used'] is False
+          assert v['composite_geometry_created'] is False
+          assert v['sibling_ravine_geometry_inferred'] is False
+          def canonical(path):
+              x=json.loads(Path(path).read_text())
+              raw=(json.dumps(x,ensure_ascii=False,sort_keys=True,separators=(',',':'))+'\n').encode()
+              return hashlib.sha256(raw).hexdigest()
+          child=c['assets']['geometry_components'][0]
+          assert child['component_id']=='bocapan_casitas'
+          assert canonical(child['geometry']['path'])==child['geometry']['sha256']
+          assert canonical(child['geometry']['validation_path'])==child['geometry']['validation_sha256']
+          PY
