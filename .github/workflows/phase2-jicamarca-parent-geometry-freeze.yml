@@ -37,6 +37,25 @@ jobs:
           python-version: "3.12"
       - name: Install test dependency
         run: python -m pip install pytest
+      - name: Inspect bounded ANA area candidates without geometry
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from urllib.parse import urlencode
+          from urllib.request import Request, urlopen
+          base='https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/7/query'
+          for label,lo,hi in [('jicamarca_area',490.4,494.4),('canto_grande_area',131.8,135.8)]:
+              params={'where':f'AREA_KM2 >= {lo} AND AREA_KM2 <= {hi}','outFields':'*','returnGeometry':'false','f':'json'}
+              url=base+'?'+urlencode(params)
+              with urlopen(Request(url,headers={'User-Agent':'IRFEN-RESEARCH-ONLY/0.2'}),timeout=90) as r:
+                  obj=json.loads(r.read().decode('utf-8'))
+              rows=[]
+              for f in obj.get('features',[]):
+                  p=f.get('attributes') or {}
+                  rows.append({k:p.get(k) for k in ('FID','OBJECTID','NIVEL7','CODIGO','NOMB_UH_N7','NOMBRE','AREA_KM2') if k in p})
+              print(json.dumps({'bounded_probe':label,'count':len(rows),'rows':rows},ensure_ascii=False,sort_keys=True))
+          PY
       - name: Bootstrap once or replay frozen official ANA parent contexts
         id: mode
         shell: bash
