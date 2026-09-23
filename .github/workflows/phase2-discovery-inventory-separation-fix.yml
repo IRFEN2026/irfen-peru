@@ -24,9 +24,31 @@ jobs:
           python-version: '3.12'
       - name: Apply exact-anchor separation patch
         run: python scripts/fix_phase2_discovery_inventory_separation.py
-      - name: Verify territorial inventory semantics
+      - name: Verify canonical candidate and discovery separation
         run: |
-          python -m unittest tests.test_v08_territorial_inventory -v
+          node - <<'JS'
+          const assert=require('node:assert/strict'),fs=require('node:fs'),m=require('./site/v08-territorial.js');
+          const read=p=>JSON.parse(fs.readFileSync('./site/'+p));
+          const c=read('data/phase2/catalog.json');
+          const s=read('data/phase2/spatial_observation_contracts_v0_1.json');
+          const l=read('data/map_layers.json');
+          const r=read('data/phase2/w1_remaining_geometry_catalog.json');
+          const p=m.buildPlan(c,s,l,r);
+          assert.equal(p.candidates.length,18);
+          assert.deepEqual(p.candidates.map(x=>x.candidateId),c.zones.map(x=>x.candidate_id));
+          assert.equal(p.discoveries.length,14);
+          assert.deepEqual(p.discoveries.map(x=>x.candidateId),l.research_discovery_units.map(x=>x.discovery_id));
+          for (const id of ['lima_norte_pativilca','lima_norte_fortaleza_paramonga']) {
+            const d=p.discoveries.find(x=>x.candidateId===id);
+            assert(d);
+            assert.equal(d.layerKeys.length,1);
+          }
+          assert.equal(p.summary.registeredCandidates,18);
+          assert.equal(p.summary.discoveryUnits,14);
+          assert.equal(p.summary.discoveryWithGeometry,2);
+          assert.equal(l.summary.new_operational_zones,0);
+          console.log('PASS_DISCOVERY_UI_SEPARATION');
+          JS
           python scripts/build_map_layer_catalog.py --check-only
       - name: Commit bounded UI fix
         if: github.event_name == 'pull_request'
