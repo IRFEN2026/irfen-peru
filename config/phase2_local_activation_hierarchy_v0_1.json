@@ -1,0 +1,157 @@
+{
+  "schema_version": "0.1",
+  "status": "FROZEN_RESEARCH_ARCHITECTURE",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "scope": {
+    "candidate_inventory": "config/phase2_candidate_inventory_v0_2.json",
+    "discovery_inventory": "config/phase2_north_coast_discovery_inventory_v0_1.json",
+    "spatial_observation_contracts": "site/data/phase2/spatial_observation_contracts_v0_1.json",
+    "zone_contract_directory": "site/data/validation/phase2_zone_contracts",
+    "discovery_contract_directory": "site/data/validation/phase2_discovery_contracts",
+    "applies_to_current_and_future_units": true,
+    "inheritance_rule": "Every Phase-2 candidate or discovery system inherits this architecture even when a legacy contract predates the explicit fields. Any explicit conflicting field fails closed."
+  },
+  "parent_policy": {
+    "role": "CONTEXT_CONTAINER_NON_ACTIVATABLE",
+    "child_evidence_promotes_parent_activation": false,
+    "allowed_parent_summary": "N_SUBUNITS_WITH_EVIDENCE",
+    "whole_basin_activation_statement_forbidden": true,
+    "composite_child_geometry_union_forbidden": true,
+    "territorial_name_is_not_hydrologic_unit": true,
+    "parent_geometry_if_official_or_reproducible": "CONTEXT_ONLY_NEVER_ACTIVATION_GEOMETRY"
+  },
+  "local_unit_contract": {
+    "activation_research_unit": "SMALLEST_REPRODUCIBLE_SCIENTIFICALLY_DEFENSIBLE_LOCAL_HYDROLOGIC_UNIT",
+    "allowed_unit_types": [
+      "LOCAL_CATCHMENT_OR_RAVINE_POLYGON",
+      "MAIN_CHANNEL_LINE",
+      "OUTLET_OR_CONTROL_POINT",
+      "HISTORICAL_FAN_DEPOSIT_OR_EVENT_FOOTPRINT",
+      "RECEIVER_CONFLUENCE_NODE"
+    ],
+    "required_spatial_fields": [
+      "identity",
+      "geometry_or_explicit_missing_status",
+      "method_or_official_source",
+      "confidence",
+      "observations",
+      "event_ledger",
+      "exposure",
+      "hydraulic_context"
+    ],
+    "approximate_geometry_forbidden": true,
+    "invented_polygon_forbidden": true,
+    "synthetic_union_forbidden": true
+  },
+  "research_evidence_states": [
+    "METEOROLOGICAL_CONDITIONS_PRESENT",
+    "RUNOFF_RESPONSE_PLAUSIBLE",
+    "DIRECT_FLOW_EVIDENCE",
+    "IMPACT_CONFIRMED"
+  ],
+  "state_semantics": {
+    "states_are_operational_alerts": false,
+    "states_are_risk_classes": false,
+    "state_assignment_requires_local_unit_identity": true,
+    "missing_data_can_be_low_risk": false,
+    "parent_state_assignment_forbidden": true
+  },
+  "meteorology_policy": {
+    "imerg_role": "REGIONAL_OR_SUBBASIN_CONTEXT_ONLY",
+    "imerg_alone_selects_small_ravine_activation": false,
+    "higher_resolution_sources_when_available": [
+      "GOES_OR_HIGHER_RESOLUTION_PRECIPITATION_ESTIMATES",
+      "LOCAL_STATIONS",
+      "RADAR_IF_AVAILABLE",
+      "CAMERAS_OR_SENSORS",
+      "OFFICIAL_FIELD_REPORTS",
+      "SENTINEL_1_OR_OPTICAL_POSTEVENT_VALIDATION"
+    ]
+  },
+  "receiver_policy": {
+    "tributary_activation_implies_receiver_overflow": false,
+    "model_separately": [
+      "TRAVEL_TIME",
+      "PEAK_COINCIDENCE",
+      "MAINSTEM_STAGE_OR_DISCHARGE_RESPONSE",
+      "RECEIVER_HYDRAULIC_CONTEXT"
+    ]
+  },
+  "semantic_guardrails": {
+    "faja_margin_is_event_footprint": false,
+    "works_or_design_are_historical_capacity": false,
+    "critical_point_is_observed_event": false,
+    "cross_basin_threshold_transfer_allowed": false,
+    "absence_of_report_is_negative_control": false,
+    "distinct_hydrologic_units_may_be_artificially_connected": false
+  },
+  "map_policy": {
+    "parent_style": "GREY_CONTEXT",
+    "children_are_independent_layers": true,
+    "channels_and_outlets_labeled_when_reproducible": true,
+    "historical_footprints_separate": true,
+    "risk_colors_forbidden": true,
+    "alerts_forbidden": true,
+    "missing_geometry_is_not_drawn": true,
+    "parent_composite_from_child_union_forbidden": true
+  },
+  "demonstrators": {
+    "lima_este_santa_eulalia_rimac": {
+      "parent_role": "CONTEXT_CONTAINER_NON_ACTIVATABLE",
+      "parent_activation_state": null,
+      "children": [
+        {
+          "local_unit_id": "cashahuacra",
+          "display_name": "Cashahuacra",
+          "unit_type": "LOCAL_CATCHMENT_OR_RAVINE_POLYGON",
+          "identity_source_ids": ["ANA-CASHAHUACRA-VULNERABLE-5769", "CENEPRED-RPAS-CASHAHUACRA-6765"],
+          "geometry_status": "REPRODUCIBLE_REVIEW_ONLY_LOCAL_GEOMETRY",
+          "spatial_contract_id": "phase2-spatial-observation:lima_este_santa_eulalia_rimac:cashahuacra:v0.1",
+          "evidence_state": null
+        },
+        {
+          "local_unit_id": "shingolay",
+          "display_name": "Shingolay",
+          "unit_type": "LOCAL_CATCHMENT_OR_RAVINE_POLYGON",
+          "identity_source_ids": ["CENEPRED-RPAS-CASHAHUACRA-SHINGOLAY-5291"],
+          "geometry_status": "REPRODUCIBLE_REVIEW_ONLY_LOCAL_GEOMETRY",
+          "spatial_contract_id": "phase2-spatial-observation:lima_este_santa_eulalia_rimac:shingolay:v0.1",
+          "evidence_state": null
+        },
+        {
+          "local_unit_id": "santa_eulalia_mainstem",
+          "display_name": "Río Santa Eulalia",
+          "unit_type": "MAIN_CHANNEL_LINE",
+          "identity_source_ids": ["ANA-FM-SANTA-EULALIA-6063"],
+          "geometry_status": "REGULATORY_MARGIN_CONTEXT_AVAILABLE_CHANNEL_GEOMETRY_NOT_ASSERTED_HERE",
+          "evidence_state": null
+        },
+        {
+          "local_unit_id": "rimac_mainstem_receiver",
+          "display_name": "Río Rímac receptor",
+          "unit_type": "MAIN_CHANNEL_LINE",
+          "identity_source_ids": ["ANA-FM-RIMAC-9803", "ANA-FM-RIMAC-13214"],
+          "geometry_status": "REGULATORY_MARGIN_CONTEXT_AVAILABLE_CHANNEL_GEOMETRY_NOT_ASSERTED_HERE",
+          "evidence_state": null
+        },
+        {
+          "local_unit_id": "santa_eulalia_rimac_confluence",
+          "display_name": "Confluencia Santa Eulalia–Rímac",
+          "unit_type": "RECEIVER_CONFLUENCE_NODE",
+          "identity_source_ids": [],
+          "geometry_status": "MISSING_PENDING_REPRODUCIBLE_NODE_NO_APPROXIMATION_ALLOWED",
+          "evidence_state": null
+        }
+      ],
+      "receiver_rule": "Evidence in Cashahuacra, Shingolay or another tributary does not imply overflow or activation-state assignment to the Rímac receiver."
+    }
+  }
+}
