@@ -106,6 +106,20 @@
           sourceRef:PATHS.layers,layerKeys:[]});
       }
     }
+    if (mapsOK) {
+      for (const c of list(maps.research_component_layers)) {
+        if (!byId.has(c.candidate_id) || c.map_eligible !== true || c.deployment_status !== 'RESEARCH_ONLY' ||
+            c.production_use !== false || c.production_ready !== false || c.operational_alerting_enabled !== false ||
+            c.loaded_into_operational_calculation !== false || c.carries_alert_values !== false ||
+            c.carries_risk_classification !== false || c.counts_as_complete_candidate_geometry !== false ||
+            c.candidate_wide_sampling_ready !== false) continue;
+        add({key:'context_component:'+c.layer_id,kind:'context',candidateId:c.candidate_id,
+          title:c.title,path:dataPath(c.source_path || c.path),status:c.deployment_status,
+          representation:c.representation,confidence:c.confidence,sources:list(c.source_ids),
+          disclaimer:c.map_disclaimer || 'Capa componente RESEARCH_ONLY; no es una delimitación de riesgo.',
+          sourceRef:PATHS.layers,layerKeys:[]});
+      }
+    }
     for (const r of requests) r.layerKeys = [r.key];
     return {candidates,requests,mapsOK,spatialOK,
       pilotIds:list((catalog.relationship_to_v08 || {}).operational_pilots),
