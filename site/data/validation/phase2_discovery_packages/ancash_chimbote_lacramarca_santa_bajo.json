@@ -18,7 +18,9 @@
     "INDECI-LACRAMARCA-NUEVO-CHIMBOTE-20230314",
     "INDECI-CHIMBOTE-LACRAMARCA-SANTA-20230314",
     "INDECI-CHIMBOTE-URBAN-DRAINAGE-20231218",
-    "ANA-NUEVO-CHIMBOTE-FEN-PREVENTION-2023"
+    "ANA-NUEVO-CHIMBOTE-FEN-PREVENTION-2023",
+    "ANIN-LACRAMARCA-DEFENSES-20251211",
+    "ANIN-LACRAMARCA-PREVENTION-20260227"
   ],
   "source_registry_path": "site/data/phase2/sources/ancash_chimbote_lacramarca_santa_bajo_official_evidence_v0_1.json",
   "hydrologic_identity": {
@@ -140,7 +142,19 @@
           "urban_drainage_chimbote": "A separate 18 December 2023 inundation was attributed to drainage-system obstruction near the Lacramarca bridge and must remain separate from river overflow."
         }
       },
-      "recent": {"status": "UNKNOWN_NOT_NEGATIVE", "source_ids": ["ANA-NUEVO-CHIMBOTE-FEN-PREVENTION-2023"]}
+      "recent": {
+        "status": "CURRENT_PROTECTION_AND_HIGH_FLOW_CONTEXT_NO_EVENT_CLASSIFICATION",
+        "source_ids": [
+          "ANA-NUEVO-CHIMBOTE-FEN-PREVENTION-2023",
+          "ANIN-LACRAMARCA-DEFENSES-20251211",
+          "ANIN-LACRAMARCA-PREVENTION-20260227"
+        ],
+        "component_notes": {
+          "rio_lacramarca": "ANIN documents current protection works and February 2026 preventive coordination during increased flow; this is not converted to an overflow/no-overflow outcome, historical capacity, or IRFEN threshold.",
+          "rio_santa_lower_reach": "No recent Lacramarca works or high-flow statement is transferred to lower Santa.",
+          "urban_drainage_chimbote": "No current river-work context is transferred to the separate urban drainage mechanism."
+        }
+      }
     },
     "observations": {
       "status": "MISSING_EVENT_PAIRED_HYDROMETEOROLOGICAL_SERIES",
@@ -153,15 +167,30 @@
       ]
     },
     "exposure_connectivity": {
-      "status": "PARTIAL_TERRITORIAL_EVIDENCE_ONLY",
+      "status": "PARTIAL_TERRITORIAL_AND_CURRENT_PROTECTION_CONTEXT",
       "known_exposure_classes": ["dwellings", "agriculture", "roads", "bridges", "irrigation infrastructure", "health and education services"],
+      "current_project_context": {
+        "source_id": "ANIN-LACRAMARCA-DEFENSES-20251211",
+        "reported_intended_beneficiary_communities": 58,
+        "reported_intended_beneficiary_population_lower_bound": 35000,
+        "districts": ["Macate", "Caceres del Peru", "Chimbote"],
+        "counts_as_observed_event_exposure": false,
+        "counts_as_lower_santa_exposure": false
+      },
       "spatial_network_not_yet_normalized": true
     },
     "hydraulic_context": {
-      "status": "CONTEXT_ONLY_NO_CAPACITY_INFERENCE",
-      "source_ids": ["INGEMMET-A6763-ANCASH-2017", "ANA-NUEVO-CHIMBOTE-FEN-PREVENTION-2023"],
+      "status": "CURRENT_WORKS_CONTEXT_ONLY_NO_CAPACITY_INFERENCE",
+      "source_ids": [
+        "INGEMMET-A6763-ANCASH-2017",
+        "ANA-NUEVO-CHIMBOTE-FEN-PREVENTION-2023",
+        "ANIN-LACRAMARCA-DEFENSES-20251211",
+        "ANIN-LACRAMARCA-PREVENTION-20260227"
+      ],
       "chinecas_canal_failure_is_river_capacity": false,
       "current_prevention_works_are_historical_capacity": false,
+      "reported_project_progress_is_hydraulic_capacity": false,
+      "local_bridge_intervention_dimensions_are_hydraulic_capacity": false,
       "capacity_values": null
     }
   },
@@ -189,6 +218,9 @@
       "exposure/connectivity normalization",
       "hydraulic works context separated from historical response"
     ],
-    "review_evidence": []
+    "review_evidence": [
+      "ANIN-LACRAMARCA-DEFENSES-20251211 bounded as current protection/exposure context only",
+      "ANIN-LACRAMARCA-PREVENTION-20260227 bounded as current high-flow/prevention context only"
+    ]
   }
 }
