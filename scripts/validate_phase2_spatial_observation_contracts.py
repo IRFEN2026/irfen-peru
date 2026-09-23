@@ -30,6 +30,7 @@ MALA_ID = "lima_sur_mala"
 CHANCAY_HUARAL_ID = "lima_norte_chancay_huaral"
 HUAURA_ID = "lima_norte_huaura_huacho_sayan"
 CHILLON_BAJO_ID = "lima_norte_chillon_bajo"
+CHILCA_PUCUSANA_ID = "lima_sur_chilca_pucusana"
 LAMBAYEQUE_PARENT_ID = "lambayeque_chongoyape_oyotun_zana"
 EXPECTED_SUBUNITS = {
     "cashahuacra": {
@@ -121,7 +122,7 @@ def check_authoritative_geometry_state(catalog):
         if ((zone.get("asset_readiness") or {}).get("geometry") or {}).get("data_presence")
         == "PRESENT"
     }
-    expected_present = {SANTA_ID, LURIN_ID, MOTUPE_ID, ACARI_ID, CANETE_ID, ASIA_ID, PISCO_ID, PALPA_ID, HUERTA_ID, ARAHUAY_ID, MALA_ID, CHANCAY_HUARAL_ID, HUAURA_ID, CHILLON_BAJO_ID}
+    expected_present = {SANTA_ID, LURIN_ID, MOTUPE_ID, ACARI_ID, CANETE_ID, ASIA_ID, PISCO_ID, PALPA_ID, HUERTA_ID, ARAHUAY_ID, MALA_ID, CHANCAY_HUARAL_ID, HUAURA_ID, CHILLON_BAJO_ID, CHILCA_PUCUSANA_ID}
     if present != expected_present:
         ERRORS.append(f"geometry PRESENT set changed: {sorted(present)}")
 
@@ -135,7 +136,7 @@ def check_authoritative_geometry_state(catalog):
             f"candidate-wide geometry READY state changed and requires review: {sorted(ready)}"
         )
 
-    for cid in (SANTA_ID, LURIN_ID, MOTUPE_ID, ACARI_ID, CANETE_ID, ASIA_ID, PISCO_ID, PALPA_ID, HUERTA_ID, ARAHUAY_ID, MALA_ID, CHANCAY_HUARAL_ID, HUAURA_ID, CHILLON_BAJO_ID):
+    for cid in (SANTA_ID, LURIN_ID, MOTUPE_ID, ACARI_ID, CANETE_ID, ASIA_ID, PISCO_ID, PALPA_ID, HUERTA_ID, ARAHUAY_ID, MALA_ID, CHANCAY_HUARAL_ID, HUAURA_ID, CHILLON_BAJO_ID, CHILCA_PUCUSANA_ID):
         if (zones.get(cid, {}).get("asset_status") or {}).get("geometry") != "PARTIAL":
             ERRORS.append(f"{cid}: expected geometry asset status PARTIAL")
 
@@ -297,6 +298,7 @@ def check_artifact(result, inventory):
         CHANCAY_HUARAL_ID: "NON_CATCHMENT_GEOMETRY_ONLY",
         HUAURA_ID: "NON_CATCHMENT_GEOMETRY_ONLY",
         CHILLON_BAJO_ID: "NON_CATCHMENT_GEOMETRY_ONLY",
+        CHILCA_PUCUSANA_ID: "NON_CATCHMENT_GEOMETRY_ONLY",
         LAMBAYEQUE_PARENT_ID: "SUBUNIT_RESEARCH_ONLY",
     }
     for cid in expected_ids:
@@ -375,8 +377,8 @@ def check_artifact(result, inventory):
         "candidate_count": 18,
         "candidate_wide_ready_count": 0,
         "subunit_research_only_candidate_count": 2,
-        "non_catchment_geometry_only_count": 13,
-        "blocked_missing_geometry_count": 3,
+        "non_catchment_geometry_only_count": 14,
+        "blocked_missing_geometry_count": 2,
         "research_subunit_contract_count": 4,
         "operational_spatial_contract_count": 0,
     }
