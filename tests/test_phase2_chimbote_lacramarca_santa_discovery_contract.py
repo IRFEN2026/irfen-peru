@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-CONTRACT = ROOT / "site/data/validation/phase2_discovery_contracts/ancash_chimbote_lacramarca_santa_bajo.json"
+CONTRACT = ROOT / "site/data/validation/phase2_discovery_packages/ancash_chimbote_lacramarca_santa_bajo.json"
 SOURCES = ROOT / "site/data/phase2/sources/ancash_chimbote_lacramarca_santa_bajo_official_evidence_v0_1.json"
 
 SAFE = {
@@ -44,14 +44,12 @@ def test_lacramarca_and_lower_santa_are_not_geometry_substitutes():
     c = load(CONTRACT)
     components = {x["component_id"]: x for x in c["assets"]["geometry_components"]}
     assert set(components) == {"rio_lacramarca", "rio_santa_lower_reach", "urban_drainage_chimbote"}
-
     lac = components["rio_lacramarca"]
     assert lac["hydrologic_identity"]["ana_unit_code"] == "1375992"
     assert lac["hydrologic_identity"]["ana_unit_name"] == "Cuenca Lacramarca"
     assert lac["source_query"]["where"] == "CODIGO='1375992'"
     assert lac["geometry"]["status"] == "MISSING_PENDING_EXACT_ANA_QUERY"
     assert not (ROOT / lac["geometry"]["path"]).exists()
-
     santa = components["rio_santa_lower_reach"]
     ident = santa["hydrologic_identity"]
     assert ident["ana_parent_unit_code"] == "1376"
@@ -60,7 +58,6 @@ def test_lacramarca_and_lower_santa_are_not_geometry_substitutes():
     assert ident["whole_basin_may_substitute_lower_reach_geometry"] is False
     assert santa["geometry"]["path"] is None
     assert santa["geometry"]["whole_basin_context_counts_as_lower_reach"] is False
-
     urban = components["urban_drainage_chimbote"]
     assert urban["hydrologic_identity"]["official_hydrographic_unit_code"] is None
     assert urban["hydrologic_identity"]["may_merge_with_lacramarca"] is False
@@ -78,7 +75,6 @@ def test_event_ledger_preserves_component_and_mechanism_separation():
     assert "Rio Lacramarca overflow" in notes["rio_lacramarca"]
     assert "Rio Santa rise/overflow" in notes["rio_santa_lower_reach"]
     assert "drainage-system obstruction" in notes["urban_drainage_chimbote"]
-
     p = c["mechanism_policy"]
     assert p["lacramarca_and_santa_must_remain_separate"] is True
     assert p["nepena_must_remain_separate"] is True
@@ -95,7 +91,6 @@ def test_missing_observations_do_not_create_low_risk_or_thresholds():
     assert obs["missing_series_is_low_risk"] is False
     assert c["decision_thresholds"] is None
     assert c["hydraulic_factors"] is None
-
     h = c["assets"]["hydraulic_context"]
     assert h["chinecas_canal_failure_is_river_capacity"] is False
     assert h["current_prevention_works_are_historical_capacity"] is False
