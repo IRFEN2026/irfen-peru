@@ -1,0 +1,116 @@
+name: IRFEN - Phase2 Palpa Changuillo official basin geometry
+
+on:
+  pull_request:
+    paths:
+      - scripts/probe_palpa_changuillo_official_geometry.py
+      - tests/test_phase2_palpa_changuillo_geometry.py
+      - scripts/validate_phase2_spatial_observation_contracts.py
+      - tests/test_phase2_spatial_observation_contracts.py
+      - tests/test_map_layer_catalog.py
+      - config/phase2_candidate_inventory_v0_*.json
+      - site/data/phase2/sources/palpa_changuillo_hydrologic_context/**
+      - site/data/phase2/geometries/ica_palpa_changuillo_*.geojson
+      - site/data/phase2/geometries/ica_palpa_changuillo_geometry_validation.json
+      - site/data/validation/phase2_zone_contracts/ica_palpa_changuillo.json
+      - site/data/phase2/catalog.json
+      - site/data/phase2/spatial_observation_contracts_v0_1.json
+      - site/data/phase2/climate_conditioned_activation_matrix_v0_1.json
+      - site/data/map_layers.json
+      - .github/workflows/phase2-palpa-changuillo-grande-finalize.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  finalize-official-basin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Materialize exact frozen ANA Cuenca Grande source and PARTIAL context
+        run: python scripts/probe_palpa_changuillo_official_geometry.py --materialize
+      - name: Synchronize bounded spatial/map regression expectations
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/validate_phase2_spatial_observation_contracts.py')
+          s=p.read_text(encoding='utf-8')
+          if 'PALPA_ID = "ica_palpa_changuillo"' not in s:
+              s=s.replace('PISCO_ID = "ica_pisco_san_andres"\n', 'PISCO_ID = "ica_pisco_san_andres"\nPALPA_ID = "ica_palpa_changuillo"\n',1)
+          s=s.replace('ASIA_ID, PISCO_ID, HUERTA_ID', 'ASIA_ID, PISCO_ID, PALPA_ID, HUERTA_ID')
+          s=s.replace('        PISCO_ID: "NON_CATCHMENT_GEOMETRY_ONLY",\n', '        PISCO_ID: "NON_CATCHMENT_GEOMETRY_ONLY",\n        PALPA_ID: "NON_CATCHMENT_GEOMETRY_ONLY",\n',1)
+          s=s.replace('"non_catchment_geometry_only_count": 9,', '"non_catchment_geometry_only_count": 10,')
+          s=s.replace('"blocked_missing_geometry_count": 7,', '"blocked_missing_geometry_count": 6,')
+          p.write_text(s,encoding='utf-8')
+
+          p=Path('tests/test_phase2_spatial_observation_contracts.py')
+          s=p.read_text(encoding='utf-8').replace('summary["non_catchment_geometry_only_count"], 9)', 'summary["non_catchment_geometry_only_count"], 10)').replace('summary["blocked_missing_geometry_count"], 7)', 'summary["blocked_missing_geometry_count"], 6)')
+          p.write_text(s,encoding='utf-8')
+
+          p=Path('tests/test_map_layer_catalog.py')
+          s=p.read_text(encoding='utf-8')
+          marker='            "ica_pisco_san_andres",\n'
+          addition='            "ica_palpa_changuillo",\n'
+          if addition not in s:
+              if marker not in s: raise SystemExit('FAIL_CLOSED: map eligible anchor missing')
+              s=s.replace(marker,marker+addition,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Rebuild deterministic Phase-2 research artifacts
+        run: |
+          python scripts/build_phase2_catalog.py
+          python scripts/build_map_layer_catalog.py
+          python scripts/build_phase2_spatial_observation_contracts.py
+          python scripts/build_phase2_climate_matrix.py
+      - name: Validate scientific guards and replay
+        run: |
+          python scripts/probe_palpa_changuillo_official_geometry.py --check-only
+          python scripts/build_phase2_catalog.py --check-only
+          python scripts/build_map_layer_catalog.py --check-only
+          python scripts/validate_phase2_spatial_observation_contracts.py
+          python scripts/validate_phase2_climate_matrix.py
+          python -m unittest \
+            tests.test_phase2_palpa_changuillo_geometry \
+            tests.test_phase2_spatial_observation_contracts \
+            tests.test_phase2_climate_matrix \
+            tests.test_map_layer_catalog -v
+          git diff --check
+      - name: Commit deterministic bounded research updates
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add \
+              config/phase2_candidate_inventory_v0_1.json \
+              config/phase2_candidate_inventory_v0_2.json \
+              scripts/validate_phase2_spatial_observation_contracts.py \
+              tests/test_phase2_spatial_observation_contracts.py \
+              tests/test_map_layer_catalog.py \
+              site/data/phase2/sources/palpa_changuillo_hydrologic_context/ \
+              site/data/phase2/geometries/ica_palpa_changuillo_grande_basin_context.geojson \
+              site/data/phase2/geometries/ica_palpa_changuillo_geometry_validation.json \
+              site/data/validation/phase2_zone_contracts/ica_palpa_changuillo.json \
+              site/data/phase2/catalog.json \
+              site/data/map_layers.json \
+              site/data/phase2/spatial_observation_contracts_v0_1.json \
+              site/data/phase2/climate_conditioned_activation_matrix_v0_1.json
+            git commit -m "Phase2: materialize Palpa-Changuillo Cuenca Grande research context"
+            git push origin HEAD:${{ github.head_ref }}
+          fi
+      - name: Emit audit manifest
+        run: |
+          mkdir -p artifacts
+          python scripts/probe_palpa_changuillo_official_geometry.py --check-only > artifacts/palpa_changuillo_geometry_audit.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phase2-palpa-changuillo-official-basin-geometry
+          path: artifacts/
+          if-no-files-found: error
