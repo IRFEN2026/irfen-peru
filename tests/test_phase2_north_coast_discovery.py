@@ -31,7 +31,7 @@ class Phase2NorthCoastDiscoveryTests(unittest.TestCase):
         self.assertFalse(rel["changes_registered_candidate_count"])
         self.assertFalse(rel["changes_operational_scope"])
         self.assertTrue(rel["promotion_requires_explicit_versioned_migration"])
-        self.assertEqual(rel["discovery_units_count"], 10)
+        self.assertEqual(rel["discovery_units_count"], 14)
 
     def test_user_requested_corridors_are_explicit(self):
         ids = {r["discovery_id"] for r in self.cfg["discovery_units"]}
@@ -46,6 +46,10 @@ class Phase2NorthCoastDiscoveryTests(unittest.TestCase):
             "lalibertad_moche",
             "lalibertad_jequetepeque",
             "lalibertad_chicama",
+            "tumbes_rio_tumbes",
+            "tumbes_zorritos_bocapan_coastal_ravines",
+            "piura_mancora_los_organos_coastal_ravines",
+            "lalibertad_chepen_chaman_morana_avispero",
         }
         self.assertEqual(ids, required)
 
@@ -70,6 +74,17 @@ class Phase2NorthCoastDiscoveryTests(unittest.TestCase):
         self.assertIn("Rio Zaña", row["must_not_merge_with"])
         self.assertIn("Rio Chicama", row["must_not_merge_with"])
         self.assertTrue(any("Gallito Ciego" in item for item in row["first_work_package"]))
+
+    def test_chepen_and_far_north_components_are_fail_closed(self):
+        rows = {r["discovery_id"]: r for r in self.cfg["discovery_units"]}
+        chepen = rows["lalibertad_chepen_chaman_morana_avispero"]
+        self.assertIn("Rio Jequetepeque", chepen["must_not_merge_with"])
+        mancora = rows["piura_mancora_los_organos_coastal_ravines"]
+        self.assertIn("Quebrada Fernandez", mancora["hydrologic_components"])
+        zorritos = rows["tumbes_zorritos_bocapan_coastal_ravines"]
+        self.assertIn("Quebrada Bocapan-Casitas", zorritos["hydrologic_components"])
+        tumbes = rows["tumbes_rio_tumbes"]
+        self.assertIn("Rio Zarumilla", tumbes["must_not_merge_with"])
 
     def test_every_discovery_unit_has_sources_and_a_work_package(self):
         source_catalog = self.cfg["source_catalog"]
