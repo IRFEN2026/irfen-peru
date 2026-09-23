@@ -1,0 +1,82 @@
+name: IRFEN - Phase2 Jicamarca CENDEHUA archive
+
+on:
+  pull_request:
+    paths:
+      - config/phase2_jicamarca_cendehua_archive_contract_v0_1.json
+      - config/phase2_jicamarca_cendehua_event_metadata_v0_1.json
+      - scripts/archive_phase2_jicamarca_cendehua_reports.py
+      - site/data/phase2/sources/jicamarca_cendehua/**
+      - .github/workflows/phase2-jicamarca-cendehua-archive.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  archive-public-event-reports:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Bootstrap exact public report bytes or replay frozen archive
+        id: mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          MANIFEST=site/data/phase2/sources/jicamarca_cendehua/archive_manifest_v0_1.json
+          if [[ ! -f "$MANIFEST" ]]; then
+            echo "bootstrap=true" >> "$GITHUB_OUTPUT"
+            python scripts/archive_phase2_jicamarca_cendehua_reports.py --refresh
+          else
+            echo "bootstrap=false" >> "$GITHUB_OUTPUT"
+            python scripts/archive_phase2_jicamarca_cendehua_reports.py
+          fi
+      - name: Enforce research-only archive semantics
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('site/data/phase2/sources/jicamarca_cendehua/archive_manifest_v0_1.json')
+          d=json.loads(p.read_text(encoding='utf-8'))
+          assert d['status']=='PASS_REPRODUCIBLE_CENDEHUA_BYTE_ARCHIVE'
+          assert d['deployment_status']=='RESEARCH_ONLY'
+          assert d['test_mode']=='TEST_ONLY'
+          assert d['production_use'] is False
+          assert d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['activation_gate']=='BLOCKED'
+          assert d['missing_data_rule']=='UNKNOWN_NOT_LOW_RISK'
+          assert d['decision_thresholds'] is None
+          assert d['hydraulic_factors'] is None
+          assert d['content_interpreted'] is False
+          assert d['thresholds_imported'] is False
+          assert d['outlets_inferred'] is False
+          assert d['discharge_inferred'] is False
+          assert d['routing_enabled'] is False
+          assert d['report_count']==3
+          PY
+      - name: Commit frozen archive once
+        if: steps.mode.outputs.bootstrap == 'true' && github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            config/phase2_jicamarca_cendehua_event_metadata_v0_1.json \
+            site/data/phase2/sources/jicamarca_cendehua
+          if git diff --cached --quiet; then
+            echo "No archive changes to persist"
+          else
+            git commit -m "Archive exact IGP CENDEHUA event report bytes"
+            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          fi
