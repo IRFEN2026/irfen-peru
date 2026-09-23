@@ -39,7 +39,7 @@ def validate_contracts(cfg,disc,zone):
  if zone.get("decision_thresholds") is not None or zone.get("hydraulic_factors") is not None: raise ProbeError("UNSAFE_ZONE_NUMERIC_GUARDS")
  ident=cfg["official_identity"]; q=cfg["source_query"]; role=cfg["scientific_role"]
  if ident.get("unit_code")!="1375542" or ident.get("pfafstetter_level")!=7: raise ProbeError("IDENTITY_NOT_LOCKED")
- if q.get("endpoint")!="https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/8/query" or q.get("where")!="CODIGO='1375542'": raise ProbeError("QUERY_NOT_EXACT")
+ if q.get("endpoint")!="https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/7/query" or q.get("where")!="CODIGO='1375542'": raise ProbeError("QUERY_NOT_EXACT")
  required={"parent_context_only":True,"local_activation_geometry":False,"counts_as_complete_candidate_geometry":False,"candidate_wide_sampling_ready":False,"counts_as_event_footprint":False,"counts_as_operational_geometry":False,"child_geometry_inferred":False,"confluence_inferred":False,"routing_inferred":False}
  for k,e in required.items():
   if role.get(k)!=e: raise ProbeError(f"UNSAFE_ROLE_{k}")
