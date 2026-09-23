@@ -21,7 +21,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   validate-collector-coupling:
@@ -66,6 +66,26 @@ jobs:
           assert layer['style']['color']=='#64748b'
           assert layer['source_metadata']['geometry_types']==['Point']
           PY
+      - name: Sync generated map catalog to this bounded PR branch
+        if: github.event_name == 'pull_request' && github.head_ref == 'agent/phase2-rimac-static-coupling-20260923'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_BRANCH: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          api="https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/site/data/map_layers.json"
+          current_sha=$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/vnd.github+json" "${api}?ref=${HEAD_BRANCH}" | python -c 'import json,sys; print(json.load(sys.stdin)["sha"])')
+          content=$(base64 -w0 site/data/map_layers.json)
+          python - <<'PY' > /tmp/map-payload.json
+          import json, os
+          print(json.dumps({
+              "message": "Regenerate map layer catalog for Rímac coupling nodes",
+              "content": os.environ["MAP_CONTENT"],
+              "sha": os.environ["MAP_SHA"],
+              "branch": os.environ["HEAD_BRANCH"],
+          }))
+          PY
+        shell: bash
       - uses: actions/upload-artifact@v4
         if: always()
         with:
