@@ -1,0 +1,106 @@
+name: IRFEN - Phase2 Chillon Bajo deterministic source freeze
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/phase2-chillon-bajo-deterministic-source-freeze.yml
+      - scripts/probe_chillon_bajo_official_geometry.py
+      - tests/test_phase2_chillon_bajo_geometry.py
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  freeze-and-synchronize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Freeze official ANA Chillon source once
+        id: source
+        run: |
+          if [ -f site/data/phase2/sources/chillon_bajo_hydrologic_context/source_inventory.json ]; then
+            echo 'first_freeze=false' >> "$GITHUB_OUTPUT"
+            python scripts/probe_chillon_bajo_official_geometry.py --check-only
+          else
+            echo 'first_freeze=true' >> "$GITHUB_OUTPUT"
+            python scripts/probe_chillon_bajo_official_geometry.py --refresh-source
+          fi
+      - name: Patch deterministic expectations for new research context
+        if: steps.source.outputs.first_freeze == 'true'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/validate_phase2_spatial_observation_contracts.py'); s=p.read_text(encoding='utf-8')
+          anchor='HUAURA_ID = "lima_norte_huaura_huacho_sayan"\n'
+          insertion=anchor+'CHILLON_BAJO_ID = "lima_norte_chillon_bajo"\n'
+          if 'CHILLON_BAJO_ID = "lima_norte_chillon_bajo"' not in s:
+            if anchor not in s: raise SystemExit('missing spatial validator Chillon constant anchor')
+            s=s.replace(anchor,insertion,1)
+          old='MALA_ID, CHANCAY_HUARAL_ID, HUAURA_ID}'
+          new='MALA_ID, CHANCAY_HUARAL_ID, HUAURA_ID, CHILLON_BAJO_ID}'
+          if new not in s:
+            if old not in s: raise SystemExit('missing spatial validator present-set anchor')
+            s=s.replace(old,new,1)
+          old='MALA_ID, CHANCAY_HUARAL_ID, HUAURA_ID):'
+          new='MALA_ID, CHANCAY_HUARAL_ID, HUAURA_ID, CHILLON_BAJO_ID):'
+          if new not in s:
+            if old not in s: raise SystemExit('missing spatial validator partial-loop anchor')
+            s=s.replace(old,new,1)
+          anchor='        HUAURA_ID: "NON_CATCHMENT_GEOMETRY_ONLY",\n'
+          insertion=anchor+'        CHILLON_BAJO_ID: "NON_CATCHMENT_GEOMETRY_ONLY",\n'
+          if '        CHILLON_BAJO_ID: "NON_CATCHMENT_GEOMETRY_ONLY",\n' not in s:
+            if anchor not in s: raise SystemExit('missing spatial validator expected-status anchor')
+            s=s.replace(anchor,insertion,1)
+          s=s.replace('"non_catchment_geometry_only_count": 12,','"non_catchment_geometry_only_count": 13,',1)
+          s=s.replace('"blocked_missing_geometry_count": 4,','"blocked_missing_geometry_count": 3,',1)
+          p.write_text(s,encoding='utf-8')
+
+          for name in ['tests/test_phase2_spatial_observation_contracts.py','tests/test_phase2_mala_geometry.py']:
+            p=Path(name); s=p.read_text(encoding='utf-8')
+            if 'non_catchment_geometry_only_count"], 12)' in s:
+              s=s.replace('non_catchment_geometry_only_count"], 12)','non_catchment_geometry_only_count"], 13)',1)
+            if 'blocked_missing_geometry_count"], 4)' in s:
+              s=s.replace('blocked_missing_geometry_count"], 4)','blocked_missing_geometry_count"], 3)',1)
+            p.write_text(s,encoding='utf-8')
+
+          p=Path('tests/test_map_layer_catalog.py'); s=p.read_text(encoding='utf-8')
+          anchor='            "lima_norte_huaura_huacho_sayan",\n'
+          insertion=anchor+'            "lima_norte_chillon_bajo",\n'
+          if '            "lima_norte_chillon_bajo",\n' not in s:
+            if anchor not in s: raise SystemExit('missing map eligible-set anchor')
+            s=s.replace(anchor,insertion,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Regenerate bounded Phase-2 derived state
+        if: steps.source.outputs.first_freeze == 'true'
+        run: |
+          python scripts/build_phase2_catalog.py
+          python scripts/build_map_layer_catalog.py
+          python scripts/build_phase2_climate_matrix.py
+          python scripts/build_phase2_spatial_observation_contracts.py
+      - name: Validate scientific guards and deterministic replay
+        run: |
+          python scripts/probe_chillon_bajo_official_geometry.py --check-only
+          python scripts/build_phase2_catalog.py --check-only
+          python scripts/build_map_layer_catalog.py --check-only
+          python scripts/validate_phase2_climate_matrix.py
+          python scripts/validate_phase2_spatial_observation_contracts.py
+          python -m unittest tests.test_phase2_chillon_bajo_geometry tests.test_phase2_spatial_observation_contracts tests.test_phase2_climate_matrix tests.test_map_layer_catalog tests.test_phase2_mala_geometry -v
+      - name: Commit first frozen source and deterministic artifacts
+        if: steps.source.outputs.first_freeze == 'true'
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add config/phase2_candidate_inventory_v0_1.json config/phase2_candidate_inventory_v0_2.json scripts/validate_phase2_spatial_observation_contracts.py site/data/validation/phase2_zone_contracts/lima_norte_chillon_bajo.json site/data/phase2/sources/chillon_bajo_hydrologic_context/source_inventory.json site/data/phase2/sources/chillon_bajo_hydrologic_context/ana_cuenca_chillon_137556.geojson site/data/phase2/geometries/lima_norte_chillon_bajo_chillon_basin_context.geojson site/data/phase2/geometries/lima_norte_chillon_bajo_geometry_validation.json site/data/phase2/catalog.json site/data/map_layers.json site/data/phase2/climate_conditioned_activation_matrix_v0_1.json site/data/phase2/spatial_observation_contracts_v0_1.json tests/test_phase2_spatial_observation_contracts.py tests/test_phase2_mala_geometry.py tests/test_map_layer_catalog.py
+          if git diff --cached --quiet; then echo 'Frozen Chillon Bajo state already synchronized.'; exit 0; fi
+          git commit -m 'Phase2: freeze official Chillon basin research context'
+          git push origin HEAD:"${HEAD_REF}"
