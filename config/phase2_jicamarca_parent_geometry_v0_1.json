@@ -12,6 +12,12 @@
   "hydraulic_factors": null,
   "discovery_contract": "config/phase2_jicamarca_discovery_v0_1.json",
   "candidate_contract": "site/data/validation/phase2_zone_contracts/lima_este_santa_eulalia_rimac.json",
+  "revision_basis": {
+    "previous_endpoint_layer": 8,
+    "previous_exact_query_feature_count": 0,
+    "previous_query_used_for_geometry": false,
+    "correction_reason": "ANA IDEP layer 8 is the basin-level display used by existing basin freezes; Pfafstetter level-7 unit 1375542 must be queried from the official Unidades Hidrográficas layer 7, which exposes NIVEL7/CODIGO fields. No geometry was accepted from the failed layer-8 probe."
+  },
   "official_identity": {
     "institution": "Autoridad Nacional del Agua",
     "pfafstetter_level": 7,
@@ -23,7 +29,7 @@
     "identity_source_url": "https://www.ana.gob.pe/sites/default/files/normatividad/files/1_estudio_hidrologico_cuenca_rimac_-_volumen_i_-_texto_-_final_2010_0_2.pdf"
   },
   "source_query": {
-    "endpoint": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/8/query",
+    "endpoint": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/7/query",
     "where": "CODIGO='1375542'",
     "out_fields": "*",
     "return_geometry": true,
