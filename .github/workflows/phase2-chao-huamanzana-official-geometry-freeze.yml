@@ -1,0 +1,37 @@
+name: IRFEN - Phase2 Chao Huamanzaña official child geometry freeze
+
+on:
+  pull_request:
+    paths:
+      - site/data/validation/phase2_discovery_contracts/lalibertad_chao_huamanzaña_chorobal.json
+      - site/data/validation/phase2_discovery_packages/lalibertad_chao_huamanzaña_chorobal.json
+      - site/data/phase2/sources/north_coast_discovery_geometry/ana_lalibertad_huamanzana_137712.geojson
+      - site/data/phase2/geometries/lalibertad_huamanzaña_basin_context.geojson
+      - site/data/phase2/geometries/lalibertad_huamanzaña_basin_context_validation.json
+      - scripts/probe_phase2_chao_huamanzana_official_geometry.py
+      - scripts/verify_phase2_chao_huamanzana_official_geometry.py
+      - tests/test_phase2_chao_huamanzana_geometry.py
+      - site/data/map_layers.json
+      - .github/workflows/phase2-chao-huamanzana-official-geometry-freeze.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-frozen-huamanazana-child:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install test dependency
+        run: python -m pip install pytest
+      - name: Replay frozen child geometry fail-closed
+        run: python scripts/verify_phase2_chao_huamanzana_official_geometry.py
+      - name: Enforce Chao child scientific guards
+        run: python -m pytest -q tests/test_phase2_chao_huamanzana_geometry.py
+      - name: Verify research map catalog
+        run: python scripts/build_map_layer_catalog.py --check-only

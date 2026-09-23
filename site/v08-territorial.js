@@ -7,7 +7,7 @@
     layers: 'data/map_layers.json',
     remaining: 'data/phase2/w1_remaining_geometry_catalog.json'
   };
-  const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
   const list = v => Array.isArray(v) ? v : [];
   const label = id => ({cashahuacra:'Cashahuacra', shingolay:'Shingolay',
     lambayeque_chancay_lambayeque_chongoyape:'Chancay–Lambayeque / Chongoyape',
@@ -16,7 +16,7 @@
   function dataPath(value, extension = 'geojson') {
     if (typeof value !== 'string') return null;
     const path = value.replace(/^site\//,'');
-    return path.startsWith('data/') && /^[A-Za-z0-9_./-]+$/.test(path) &&
+    return path.startsWith('data/') && /^[\p{L}\p{N}_./-]+$/u.test(path) &&
       !path.split('/').includes('..') && path.endsWith('.'+extension) ? path : null;
   }
   function safeURL(value) {
