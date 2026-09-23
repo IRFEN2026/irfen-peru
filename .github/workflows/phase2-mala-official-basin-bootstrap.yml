@@ -14,7 +14,7 @@ on:
       - site/data/validation/phase2_zone_contracts/lima_sur_mala.json
       - site/data/phase2/catalog.json
       - site/data/phase2/spatial_observation_contracts_v0_1.json
-      - site/data/phase2/climate_matrix_v0_1.json
+      - site/data/phase2/climate_conditioned_activation_matrix_v0_1.json
       - site/data/map_layers.json
       - .github/workflows/phase2-mala-official-basin-bootstrap.yml
   workflow_dispatch:
@@ -76,7 +76,7 @@ jobs:
             git add \
               tests/test_phase2_spatial_observation_contracts.py \
               tests/test_map_layer_catalog.py \
-              site/data/phase2/climate_matrix_v0_1.json
+              site/data/phase2/climate_conditioned_activation_matrix_v0_1.json
             git commit -m "Phase2: synchronize Mala research geometry fixtures"
             git push origin HEAD:${{ github.head_ref }}
           fi
