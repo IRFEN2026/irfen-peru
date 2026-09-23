@@ -31,6 +31,7 @@ class Phase2NorthCoastDiscoveryTests(unittest.TestCase):
         self.assertFalse(rel["changes_registered_candidate_count"])
         self.assertFalse(rel["changes_operational_scope"])
         self.assertTrue(rel["promotion_requires_explicit_versioned_migration"])
+        self.assertEqual(rel["discovery_units_count"], 10)
 
     def test_user_requested_corridors_are_explicit(self):
         ids = {r["discovery_id"] for r in self.cfg["discovery_units"]}
@@ -43,9 +44,10 @@ class Phase2NorthCoastDiscoveryTests(unittest.TestCase):
             "lalibertad_viru",
             "lalibertad_chao_huamanzaña_chorobal",
             "lalibertad_moche",
+            "lalibertad_jequetepeque",
             "lalibertad_chicama",
         }
-        self.assertEqual(ids, required)\n        self.assertEqual(self.cfg["relationship_to_phase2"]["discovery_units_count"], 10)
+        self.assertEqual(ids, required)
 
     def test_huaura_and_huaral_are_strengthened_not_duplicated(self):
         ids = {r["candidate_id"] for r in self.cfg["registered_units_to_strengthen"]}
@@ -62,6 +64,13 @@ class Phase2NorthCoastDiscoveryTests(unittest.TestCase):
         self.assertIn("Rio Pativilca", rows["lima_norte_fortaleza_paramonga"]["must_not_merge_with"])
         self.assertIn("Rio Fortaleza", rows["lima_norte_pativilca"]["must_not_merge_with"])
 
+    def test_jequetepeque_is_separate_and_regulation_is_explicit(self):
+        rows = {r["discovery_id"]: r for r in self.cfg["discovery_units"]}
+        row = rows["lalibertad_jequetepeque"]
+        self.assertIn("Rio Zaña", row["must_not_merge_with"])
+        self.assertIn("Rio Chicama", row["must_not_merge_with"])
+        self.assertTrue(any("Gallito Ciego" in item for item in row["first_work_package"]))
+
     def test_every_discovery_unit_has_sources_and_a_work_package(self):
         source_catalog = self.cfg["source_catalog"]
         for row in self.cfg["discovery_units"]:
@@ -74,10 +83,11 @@ class Phase2NorthCoastDiscoveryTests(unittest.TestCase):
         ext = self.scope["north_coast_discovery_extension"]
         self.assertEqual(ext["inventory"], "config/phase2_north_coast_discovery_inventory_v0_1.json")
         self.assertEqual(ext["registered_candidate_count_unchanged"], 18)
+        self.assertIn("Jequetepeque", ext["requested_corridors"])
         north = next(r for r in self.climate["scenario_corridors"]
                      if r["corridor_id"] == "PACIFIC_NORTH_CENTRAL_WARM_EVENT")
         self.assertEqual(north["discovery_inventory"], ext["inventory"])
-        self.assertGreaterEqual(len(north["discovery_gaps"]), 8)
+        self.assertTrue(any(gap.startswith("Jequetepeque:") for gap in north["discovery_gaps"]))
 
 if __name__ == "__main__":
     unittest.main()
