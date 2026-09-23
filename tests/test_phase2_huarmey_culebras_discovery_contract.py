@@ -18,7 +18,7 @@ def test_huarmey_culebras_parent_is_non_geometric_grouper_and_children_are_separ
     assert p['components_must_remain_separate'] is True
     assert p['composite_union_forbidden'] is True
     assert c['assets']['geometry']['path'] is None
-    assert c['assets']['geometry']['status'].startswith('MISSING_PARENT_GROUPER')
+    assert c['assets']['geometry']['status']=='MISSING_NO_REPRODUCIBLE_GEOMETRY'
     comps={x['component_id']:x for x in c['assets']['geometry_components']}
     assert set(comps)=={'huarmey','culebras'}
     assert comps['huarmey']['hydrologic_identity']=={'ana_unit_code':'137594','ana_unit_name':'Cuenca Huarmey'}
