@@ -28,23 +28,29 @@ def test_viru_identity_is_official_and_not_territorial_substitution():
         assert p[key] == expected
     ident = p["hydrologic_identity"]
     assert ident["ana_unit_code"] == "137714"
-    assert ident["ana_unit_name"] == "Cuenca Viru"
+    assert ident["ana_unit_name"] == "Cuenca Virú"
     assert ident["territorial_reference_is_basin"] is False
     assert "Cuenca Huamanzaña" in ident["must_not_merge_with"]
     assert "Cuenca Moche" in ident["must_not_merge_with"]
 
 
-def test_geometry_is_exact_query_pending_and_not_fabricated():
+def test_geometry_is_exact_query_and_never_fabricated():
     p = load(PACKAGE)
     g = p["assets"]["geometry"]
-    assert g["status"] == "MISSING_PENDING_EXACT_ANA_QUERY"
     assert g["source_query"]["where"] == "CODIGO='137714'"
     assert g["source_query"]["out_sr"] == 4326
     assert g["source_query"]["format"] == "geojson"
     assert g["path"].startswith("site/data/phase2/geometries/")
-    assert not (ROOT / g["path"]).exists()
     assert g["counts_as_operational_geometry"] is False
     assert g["counts_as_event_footprint"] is False
+    if str(g["status"]).startswith("MISSING"):
+        assert not (ROOT / g["path"]).exists()
+    else:
+        assert g["status"] == "PARTIAL_OFFICIAL_BASIN_CONTEXT"
+        assert (ROOT / g["path"]).is_file()
+        assert g["representation"] == "OFFICIAL_ANA_HYDROGRAPHIC_UNIT_CONTEXT"
+        assert isinstance(g["sha256"], str) and len(g["sha256"]) == 64
+        assert isinstance(g["validation_sha256"], str) and len(g["validation_sha256"]) == 64
 
 
 def test_event_ledger_does_not_invent_unknown_epochs_or_tributaries():
