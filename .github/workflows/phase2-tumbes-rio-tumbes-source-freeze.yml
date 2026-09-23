@@ -35,7 +35,17 @@ jobs:
             python scripts/probe_tumbes_rio_tumbes_official_geometry.py --check-only
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
-            python scripts/probe_tumbes_rio_tumbes_official_geometry.py --refresh-source
+            ok=false
+            for attempt in 1 2 3; do
+              if python scripts/probe_tumbes_rio_tumbes_official_geometry.py --refresh-source; then
+                ok=true
+                break
+              fi
+              if [[ "$attempt" -lt 3 ]]; then
+                sleep $((attempt * 15))
+              fi
+            done
+            [[ "$ok" == "true" ]] || { echo "ANA source fetch failed after 3 bounded attempts" >&2; exit 1; }
             python scripts/build_map_layer_catalog.py
             python scripts/probe_tumbes_rio_tumbes_official_geometry.py --check-only
             python scripts/build_map_layer_catalog.py --check-only
