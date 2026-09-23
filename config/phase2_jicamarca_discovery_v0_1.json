@@ -1,0 +1,156 @@
+{
+  "schema_version": "0.1",
+  "discovery_id": "lima_este_jicamarca_huaycoloro_rioseco_canto_grande",
+  "system_name": "Jicamarca local system: Huaycoloro, Río Seco and Canto Grande–Media Luna",
+  "status": "RESEARCH_ONLY_PENDING_DISCOVERY",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "purpose": "Register Jicamarca as a pending local hydrologic/geodynamic research system without inventing a single synthetic 'Quebrada Jicamarca'. Preserve Huaycoloro, Río Seco and Canto Grande–Media Luna as distinct physical components and reuse the existing Huaycoloro pilot only by reference.",
+  "relationship_to_existing_irfen": {
+    "creates_new_operational_zone": false,
+    "duplicates_huaycoloro_pilot": false,
+    "existing_huaycoloro_reference": "chosica_huaycoloro",
+    "candidate_inventory_count_changes": false,
+    "map_publication_allowed_before_reproducible_child_geometry": false
+  },
+  "territorial_identity": {
+    "jicamarca_is_single_hydrologic_unit": false,
+    "role": "TERRITORIAL_AND_SUBCATCHMENT_CONTEXT_REQUIRES_CHILD_SEPARATION",
+    "territorial_references": [
+      "Jicamarca",
+      "Anexo 22",
+      "Valle Sagrado",
+      "Cajamarquilla",
+      "Radio Observatorio de Jicamarca"
+    ]
+  },
+  "hydrologic_components": [
+    {
+      "child_id": "huaycoloro",
+      "display_name": "Quebrada Huaycoloro",
+      "role": "EXISTING_MONITORED_NATURAL_RAVINE_SYSTEM",
+      "existing_irfen_reference": "chosica_huaycoloro",
+      "independent_geometry_required": true,
+      "duplicate_new_parent_geometry_forbidden": true
+    },
+    {
+      "child_id": "rio_seco",
+      "display_name": "Quebrada Río Seco",
+      "role": "IGP_CENDEHUA_MONITORED_NATURAL_RAVINE_SYSTEM",
+      "independent_geometry_required": true,
+      "geometry_status": "PENDING_REPRODUCIBLE_GEOMETRY"
+    },
+    {
+      "child_id": "canto_grande_media_luna",
+      "display_name": "Canto Grande–Media Luna",
+      "role": "LOCAL_RAVINE_SUBCATCHMENT_WITH_CONFIRMED_HISTORICAL_DEBRIS_FLOW",
+      "independent_geometry_required": true,
+      "geometry_status": "PENDING_REPRODUCIBLE_GEOMETRY"
+    },
+    {
+      "child_id": "jicamarca_named_channel",
+      "display_name": "Quebrada Jicamarca",
+      "role": "NAMED_PHYSICAL_COMPONENT_IDENTITY_RELATIONSHIP_UNRESOLVED",
+      "independent_geometry_required": true,
+      "geometry_status": "PENDING_IDENTITY_AND_GEOMETRY_RESOLUTION"
+    }
+  ],
+  "historical_evidence": [
+    {
+      "event_id": "JICAMARCA-MEDIA-LUNA-2002",
+      "date_or_year": "2002",
+      "component_id": "canto_grande_media_luna",
+      "status": "CONFIRMED_POSITIVE_HISTORICAL_ACTIVATION",
+      "mechanism": "DEBRIS_FLOW_HUAICO",
+      "source_id": "INGEMMET-CANTO-GRANDE-MEDIA-LUNA-2010",
+      "supported_claim": "INGEMMET documents activation in 2002 in Media Luna/Canto Grande with destruction of precarious and masonry housing.",
+      "event_footprint_available": false
+    },
+    {
+      "event_id": "JICAMARCA-HUAYCOLORO-RIOSECO-2017",
+      "date_or_year": "2017",
+      "component_id": "huaycoloro_and_rioseco_monitored_system",
+      "status": "CONFIRMED_MONITORED_HUAICO_SEASON_CONTEXT",
+      "mechanism": "DEBRIS_FLOW_HUAICO",
+      "source_id": "IGP-CENDEHUA-2017",
+      "supported_claim": "IGP reports continuous huaico alerts during El Niño Costero 2017 at the Jicamarca monitoring system for Huaycoloro/Río Seco; station monitoring counts are preserved as monitoring records, not event counts.",
+      "event_footprint_available": false
+    },
+    {
+      "event_id": "JICAMARCA-HUAYCOLORO2-2023-03-15",
+      "date_or_year": "2023-03-15",
+      "component_id": "huaycoloro",
+      "status": "CONFIRMED_SENSOR_DETECTED_ACTIVATION",
+      "mechanism": "DEBRIS_FLOW_HUAICO",
+      "source_id": "IGP-HUAYCOLORO2-2023-03-15",
+      "supported_claim": "IGP reported Huaycoloro 2 activation at 14:44:19 local time with medium intensity near the Radio Observatorio de Jicamarca.",
+      "event_footprint_available": false
+    },
+    {
+      "event_id": "JICAMARCA-VALLE-SAGRADO-2023-03-15",
+      "date_or_year": "2023-03-15",
+      "component_id": "canto_grande_media_luna_or_adjacent_local_ravines_unresolved",
+      "status": "CONFIRMED_TERRITORIAL_HUAICO_IMPACT_MECHANISM_PARTIAL",
+      "mechanism": "DEBRIS_FLOW_HUAICO",
+      "source_id": "COEN-SAN-ANTONIO-JICAMARCA-2023-03-15",
+      "supported_claim": "COEN-INDECI reported a huaico at Valle Sagrado, San Antonio, caused by intense rainfall; exact local ravine attribution must remain unresolved until geometry/event evidence binds it.",
+      "event_footprint_available": false
+    }
+  ],
+  "monitoring_assets": [
+    {
+      "source_id": "IGP-CENDEHUA",
+      "components": [
+        "huaycoloro",
+        "rio_seco"
+      ],
+      "sensors": [
+        "cameras",
+        "continuity sensors",
+        "level sensors"
+      ],
+      "role": "DIRECT_FLOW_EVIDENCE_SOURCE",
+      "lead_time_context": "up to about 30 minutes before flows reach the observatory/nearest urban area, per IGP service description",
+      "operational_alert_thresholds_imported_to_irfen": false
+    },
+    {
+      "source_id": "IGP-SOPHY-XBAND-RADAR",
+      "components": [
+        "regional_precipitation_context"
+      ],
+      "role": "HIGHER_RESOLUTION_PRECIPITATION_RESEARCH_SOURCE",
+      "radar_range_context_km": 60,
+      "use_policy": "RESEARCH_ONLY_UNTIL_DATA_ACCESS_AND_QA_ARE_REPRODUCIBLE"
+    }
+  ],
+  "source_catalog": {
+    "INGEMMET-CANTO-GRANDE-MEDIA-LUNA-2010": "https://sigrid.cenepred.gob.pe/docs/PARA%20PUBLICAR/INGEMMET/Zonas%20criticas%20peligros%20geologicos%20Subcuenca%20Qda.%20Canto%20Grande.pdf",
+    "IGP-CENDEHUA-2017": "https://www.gob.pe/institucion/igp/noticias/165905-radio-observatorio-de-jicamarca-ciencia-al-servicio-publico",
+    "IGP-HUAYCOLORO2-2023-03-15": "https://www.igp.gob.pe/servicios/centro-monitoreo-deslizamientos-huaicos/sites/default/files/reportes/Evento_15_03_2023_HL2.pdf",
+    "COEN-SAN-ANTONIO-JICAMARCA-2023-03-15": "https://portal.indeci.gob.pe/emergencias/reporte-preliminar-n-742-16-3-2023-coen-indeci-1200-horas-huaico-en-el-distrito-de-san-antonio-lima/",
+    "IGP-CENDEHUA": "https://www.gob.pe/41855-centro-de-monitoreo-de-deslizamientos-y-huaicos-cendehua",
+    "IGP-SOPHY-XBAND-RADAR": "https://www.igp.gob.pe/proyectos/desarrollo-tecnologico/radar-meteorologico/acercade"
+  },
+  "required_next_work": [
+    "resolve reproducible geometry and outlet for Río Seco",
+    "resolve Canto Grande–Media Luna microcatchment/channel/outlet geometry without merging it with Huaycoloro",
+    "resolve whether the named Quebrada Jicamarca is distinct from or nested within other local units using official/reproducible hydrography",
+    "archive IGP CENDEHUA event records and sensor metadata by station and timestamp",
+    "reconstruct 2002, 2017 and 2023 event windows with local rainfall evidence",
+    "link each local unit to the receiving Rímac/Huaycoloro network only after reproducible routing is established",
+    "assess SOPHy X-band radar availability and QA for subcatchment rainfall reconstruction"
+  ],
+  "map_policy": {
+    "publish_parent_polygon": false,
+    "publish_child_only_after_reproducible_geometry": true,
+    "risk_colors_forbidden": true,
+    "approximate_points_for_missing_geometry_forbidden": true
+  }
+}
