@@ -91,7 +91,7 @@ def test_2017_evidence_is_not_spread_to_all_casma_children():
     assert event_2017["supported_components"] == ["rio_sechin", "urban_pluvial_casma"]
     assert event_2017["automatic_mainstem_casma_attribution"] is False
     assert event_2017["automatic_other_child_activation"] is False
-    for key in ("1982_1983", "1997_1998", "2023", "recent"):
+    for key in ("1982_1983", "1997_1998", "recent"):
         assert ledger[key]["status"] == "UNKNOWN_NOT_NEGATIVE"
     policy = contract["mechanism_policy"]
     assert policy["river_flood_and_pluvial_must_remain_separate"] is True
@@ -100,18 +100,68 @@ def test_2017_evidence_is_not_spread_to_all_casma_children():
     assert policy["absence_of_report_is_negative"] is False
 
 
-def test_historical_observations_are_context_not_thresholds_or_2017_pairs():
+def test_2023_event_evidence_stays_child_specific_and_fail_closed():
+    contract = load(CONTRACT)
+    event = contract["assets"]["event_ledger"]["2023"]
+    assert event["status"] == "POSITIVE_CHILD_SPECIFIC_AND_NAMED_RAVINE_EVIDENCE_GEOMETRY_PARTIAL"
+    assert event["automatic_other_child_activation"] is False
+    assert event["complete_event_footprint_available"] is False
+
+    children = event["child_evidence"]
+    assert children["rio_sechin"]["status"] == "POSITIVE_DATED_RIVER_OVERFLOW"
+    assert children["rio_sechin"]["event_dates"] == ["2023-03-10", "2023-03-12"]
+    assert children["rio_sechin"]["event_footprint_available"] is False
+    assert children["medio_casma_grande_context"]["status"] == "POSITIVE_DATED_RIO_GRANDE_OVERFLOW_CONTEXT"
+    assert children["medio_casma_grande_context"]["event_dates"] == ["2023-03-10"]
+    assert children["medio_casma_grande_context"]["does_not_label_all_medio_casma_cells"] is True
+    assert children["rio_yautan"]["status"] == "UNKNOWN_NOT_NEGATIVE_MAINSTEM"
+    assert children["rio_yautan"]["territorial_huaicos_do_not_prove_mainstem_overflow"] is True
+
+    ravines = {row["name"]: row for row in event["named_ravines_unmaterialized"]}
+    assert set(ravines) == {"Quebrada Cruz Punta", "Quebrada Muna"}
+    assert ravines["Quebrada Cruz Punta"]["status"] == "POSITIVE_DATED_ACTIVATION"
+    assert ravines["Quebrada Cruz Punta"]["event_date"] == "2023-03-10"
+    assert ravines["Quebrada Muna"]["status"] == "POSITIVE_DATED_ACTIVATION"
+    assert ravines["Quebrada Muna"]["event_date"] == "2023-02-17"
+    assert all(row["geometry_status"] == "MISSING_NO_REPRODUCIBLE_GEOMETRY" for row in ravines.values())
+    assert all(row["materialize_map_layer"] is False for row in ravines.values())
+
+    april = event["territorial_april_yautan"]
+    assert april["status"] == "POSITIVE_HUAICO_AND_INUNDATION_TERRITORIAL_EVIDENCE_MECHANISM_UNRESOLVED"
+    assert april["event_date"] == "2023-04-06"
+    assert april["automatic_rio_yautan_mainstem_attribution"] is False
+    assert contract["map_policy"]["named_2023_ravines_without_geometry_are_not_drawn"] is True
+    assert contract["mechanism_policy"]["sechin_2023_positive_does_not_label_other_children"] is True
+
+
+def test_historical_observations_are_context_not_thresholds_or_event_pairs():
     contract = load(CONTRACT)
     observations = contract["assets"]["observations"]
     assert observations["status"] == "HISTORICAL_NETWORK_IDENTIFIED_EVENT_PAIRING_PENDING"
     assert len(observations["stations"]) == 5
     assert all(row["event_paired_2017"] is False for row in observations["stations"])
+    assert all(row["event_paired_2023"] is False for row in observations["stations"])
+    assert observations["event_paired_rainfall"] == []
+    assert observations["event_paired_stage"] == []
+    assert observations["event_paired_discharge"] == []
+    assert observations["missing_series_is_low_risk"] is False
     assert contract["decision_thresholds"] is None
     assert contract["hydraulic_factors"] is None
     hydraulic = contract["assets"]["hydraulic_context"]
     assert hydraulic["faja_marginal_is_event_footprint"] is False
     assert hydraulic["works_or_regulatory_geometry_is_capacity"] is False
+    assert hydraulic["bridge_or_ford_design_is_capacity"] is False
     assert hydraulic["capacity_values"] is None
+
+
+def test_exposure_and_connectivity_do_not_become_event_geometry_or_capacity():
+    contract = load(CONTRACT)
+    exposure = contract["assets"]["exposure_connectivity"]
+    assert exposure["status"] == "PARTIAL_2023_OFFICIAL_IMPACT_NODES_NO_EVENT_POLYGON"
+    assert exposure["geometry_reproducible"] is False
+    assert exposure["impact_nodes_are_event_footprint"] is False
+    assert exposure["transport_structure_is_hydraulic_capacity"] is False
+    assert len(exposure["supported_context"]) == 4
 
 
 def test_source_registry_roles_are_scoped_and_safe():
@@ -121,15 +171,32 @@ def test_source_registry_roles_are_scoped_and_safe():
         assert registry[key] == expected
     source_ids = {row["source_id"] for row in registry["sources"]}
     assert set(contract["official_source_ids"]) == source_ids
+
     faja = next(row for row in registry["sources"] if row["source_id"] == "ANA-CASMA-FAJA-2022-RD0331")
     assert faja["role"] == "REGULATORY_CHANNEL_CONTEXT_ONLY"
     assert "event footprint" in faja["forbidden_inferences"]
     assert "hydraulic capacity" in faja["forbidden_inferences"]
+
     evar = next(row for row in registry["sources"] if row["source_id"] == "CENEPRED-CASMA-SECHIN-EVAR-2017-4105")
     assert "automatic attribution to Rio Casma mainstem" in evar["forbidden_inferences"]
     assert "negative labels for unmentioned tributaries" in evar["forbidden_inferences"]
+
+    indeci = next(row for row in registry["sources"] if row["source_id"] == "INDECI-CASMA-SECHIN-GRANDE-2023-03")
+    assert indeci["role"] == "DATED_2023_POSITIVE_SECHIN_AND_RIO_GRANDE_EVENT_EVIDENCE"
+    assert "Rio Sechin evidence labels Rio Yautan or other children" in indeci["forbidden_inferences"]
+    assert "event occurrence supplies an IRFEN threshold or hydraulic capacity" in indeci["forbidden_inferences"]
+
+    cruz = next(row for row in registry["sources"] if row["source_id"] == "INDECI-YAUTAN-CRUZ-PUNTA-2023-03")
+    assert "Quebrada Cruz Punta geometry is resolved by the report" in cruz["forbidden_inferences"]
+    muna = next(row for row in registry["sources"] if row["source_id"] == "INDECI-YAUTAN-MUNA-AND-APRIL-2023")
+    assert "the April territorial event is automatically attributed to Rio Yautan mainstem" in muna["forbidden_inferences"]
+
     qa = registry["qa"]
     assert qa["absence_of_report_is_negative"] is False
     assert qa["faja_is_event_footprint"] is False
     assert qa["works_are_historical_capacity"] is False
     assert qa["provider_bands_are_irfen_thresholds"] is False
+    assert qa["2023_named_ravines_have_reproducible_geometry"] is False
+    assert qa["2023_sechin_positive_does_not_label_other_children"] is True
+    assert qa["2023_rio_grande_event_polygon_invented"] is False
+    assert qa["yautan_territorial_huaicos_equal_rio_yautan_mainstem_event"] is False
