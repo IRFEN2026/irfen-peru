@@ -1,0 +1,97 @@
+{
+  "schema_version": "0.1",
+  "discovery_id": "tumbes_zorritos_bocapan_coastal_ravines",
+  "system_name": "Zorritos-Bocapan territorial corridor with independent coastal ravines",
+  "contract_status": "DISCOVERY_CHILD_GEOMETRY_PREREGISTERED_SOURCE_NOT_FROZEN",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "component_policy": {
+    "parent_is_hydrologic_basin": false,
+    "parent_is_map_polygon": false,
+    "components_must_remain_separate": true,
+    "composite_union_forbidden": true,
+    "territorial_reference_is_basin": false
+  },
+  "assets": {
+    "geometry": {
+      "status": "MISSING_PARENT_GROUPER_NO_SYNTHETIC_GEOMETRY",
+      "path": null,
+      "counts_as_operational_geometry": false,
+      "counts_as_event_footprint": false
+    },
+    "geometry_components": [
+      {
+        "component_id": "bocapan_casitas",
+        "name": "Cuenca Bocapán",
+        "source_id": "ANA-UH-13936-BOCAPAN",
+        "hydrologic_identity": {
+          "ana_unit_code": "13936",
+          "ana_unit_name": "Cuenca Bocapán"
+        },
+        "source_query": {
+          "endpoint": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/8/query",
+          "where": "CODIGO='13936'",
+          "out_fields": "*",
+          "out_sr": 4326,
+          "geometry_precision": 7,
+          "format": "geojson"
+        },
+        "geometry": {
+          "status": "MISSING_SOURCE_NOT_FROZEN",
+          "path": "site/data/phase2/geometries/tumbes_bocapan_basin_context.geojson",
+          "representation": "OFFICIAL_ANA_HYDROGRAPHIC_UNIT_CONTEXT",
+          "counts_as_operational_geometry": false,
+          "counts_as_event_footprint": false
+        }
+      }
+    ]
+  },
+  "evidence_locators": [
+    {
+      "source_id": "ANA-TUMBES-BASINS-DIAGNOSTIC-2013",
+      "url": "https://www.gob.pe/institucion/ana/noticias/139358-ana-presento-diagnostico-para-elaboracion-de-plan-de-gestion-de-las-cuencas-de-tumbes",
+      "role": "official hydrologic identity context",
+      "claims": [
+        "ANA treats Bocapan as a separately named basin in Tumbes",
+        "Bocapan remains separate from Rio Tumbes and Zarumilla"
+      ]
+    },
+    {
+      "source_id": "ANA-ZARUMILLA-BOCAPAN-HYDRO-2023",
+      "url": "https://www.gob.pe/institucion/ana/noticias/695049-ana-evalua-condiciones-hidricas-frente-a-un-posible-escenario-de-estres-hidrico-en-las-cuencas-zarumilla-y-bocapan",
+      "role": "Casitas-Bocapan hydrologic identity context",
+      "claims": [
+        "ANA identifies Casitas-Bocapan as a hydrologic study unit",
+        "the source does not establish a flood event or threshold"
+      ]
+    },
+    {
+      "source_id": "MINAM-TUMBES-HYDROGRAPHIC-LAYER-13936",
+      "url": "https://geoservidorperu.minam.gob.pe/arcgis/rest/services/02_CARACTERIZACI%C3%93N_DEL_TERRITORIO_TUMBES/MapServer/14",
+      "role": "independent public-code cross-check only",
+      "claims": [
+        "the public Tumbes hydrographic layer labels Bocapan with unit code 13936"
+      ]
+    }
+  ],
+  "official_source_ids": [
+    "ANA-UH-13936-BOCAPAN",
+    "ANA-TUMBES-BASINS-DIAGNOSTIC-2013",
+    "ANA-ZARUMILLA-BOCAPAN-HYDRO-2023",
+    "MINAM-TUMBES-HYDROGRAPHIC-LAYER-13936"
+  ],
+  "map_policy": {
+    "context_only": true,
+    "publish_parent_composite": false,
+    "publish_each_component_separately_after_reproducible_geometry": true,
+    "approximate_geometry_forbidden": true,
+    "risk_or_alert_layer": false
+  }
+}
