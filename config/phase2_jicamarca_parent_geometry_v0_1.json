@@ -1,0 +1,66 @@
+{
+  "schema_version": "0.1",
+  "status": "FROZEN_EXACT_ANA_PARENT_CONTEXT_QUERY",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "discovery_contract": "config/phase2_jicamarca_discovery_v0_1.json",
+  "candidate_contract": "site/data/validation/phase2_zone_contracts/lima_este_santa_eulalia_rimac.json",
+  "official_identity": {
+    "institution": "Autoridad Nacional del Agua",
+    "pfafstetter_level": 7,
+    "unit_code": "1375542",
+    "documentary_name": "Qda. Jicamarca",
+    "documentary_area_km2": 492.31,
+    "documentary_principal_channel": "Qda. Jicamarca - Qda. Huaycoloro",
+    "identity_source": "ANA Estudio Hidrológico de la Cuenca del Río Rímac 2010",
+    "identity_source_url": "https://www.ana.gob.pe/sites/default/files/normatividad/files/1_estudio_hidrologico_cuenca_rimac_-_volumen_i_-_texto_-_final_2010_0_2.pdf"
+  },
+  "source_query": {
+    "endpoint": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/8/query",
+    "where": "CODIGO='1375542'",
+    "out_fields": "*",
+    "return_geometry": true,
+    "out_sr": 4326,
+    "geometry_precision": 7,
+    "format": "geojson"
+  },
+  "expected_response": {
+    "feature_count": 1,
+    "code": "1375542",
+    "name_must_contain": "Jicamarca",
+    "geometry_types": ["Polygon", "MultiPolygon"]
+  },
+  "output": {
+    "source_snapshot": "site/data/phase2/sources/jicamarca_hydrologic_context/ana_jicamarca_1375542.geojson",
+    "normalized_geometry": "site/data/phase2/geometries/lima_este_jicamarca_parent_basin_context.geojson",
+    "validation": "site/data/phase2/geometries/lima_este_jicamarca_parent_basin_context_validation.json",
+    "map_layer_id": "jicamarca_parent_subbasin_context_v0_1"
+  },
+  "scientific_role": {
+    "representation": "OFFICIAL_ANA_PFAFSTETTER_PARENT_CONTEXT",
+    "parent_context_only": true,
+    "local_activation_geometry": false,
+    "counts_as_complete_candidate_geometry": false,
+    "candidate_wide_sampling_ready": false,
+    "counts_as_event_footprint": false,
+    "counts_as_operational_geometry": false,
+    "child_geometry_inferred": false,
+    "confluence_inferred": false,
+    "routing_inferred": false
+  },
+  "forbidden": [
+    "use the parent polygon as a local activation unit",
+    "union child geometries into a Jicamarca activation polygon",
+    "derive Río Seco, Huaycoloro, Canto Grande or Media Luna geometry from the parent boundary",
+    "approximate the Huaycoloro-Río Seco confluence",
+    "infer discharge, travel time, attenuation, hydraulic capacity or receiver overflow",
+    "treat the basin polygon as an event footprint, risk class or alert layer"
+  ]
+}
