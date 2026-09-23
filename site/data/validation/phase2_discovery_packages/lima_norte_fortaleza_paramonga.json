@@ -1,0 +1,75 @@
+{
+  "schema_version":"0.1",
+  "discovery_id":"lima_norte_fortaleza_paramonga",
+  "system_name":"Rio Fortaleza y exposición territorial de Paramonga",
+  "contract_status":"DISCOVERY_GEOMETRY_REPRODUCIBLE_EVENT_LEDGER_PARTIAL",
+  "deployment_status":"RESEARCH_ONLY",
+  "test_mode":"TEST_ONLY",
+  "production_use":false,
+  "production_ready":false,
+  "operational_alerting_enabled":false,
+  "activation_gate":"BLOCKED",
+  "missing_data_rule":"UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds":null,
+  "hydraulic_factors":null,
+  "source_registry_path":"site/data/phase2/sources/lima_norte_fortaleza_paramonga_official_evidence_v0_1.json",
+  "hydrologic_identity":{
+    "ana_unit_code":"137592",
+    "ana_unit_name":"Cuenca Fortaleza",
+    "geometry_path":"site/data/phase2/geometries/lima_norte_fortaleza_basin_context.geojson",
+    "geometry_sha256":"a154aff0e02b4705d75f5b5c9cbca781483e87e8ad9e2e11dd8598f3706fa395",
+    "geometry_is_event_footprint":false,
+    "must_not_merge_with":["Cuenca Pativilca","Cuenca Supe"],
+    "paramonga_is_basin":false
+  },
+  "event_ledger":{
+    "1982_1983":{"status":"UNKNOWN_NOT_NEGATIVE_RECONSTRUCTION_PENDING","absence_of_report_is_negative":false},
+    "1997_1998":{"status":"UNKNOWN_NOT_NEGATIVE_RECONSTRUCTION_PENDING","absence_of_report_is_negative":false},
+    "2017":{"status":"UNKNOWN_NOT_NEGATIVE_RECONSTRUCTION_PENDING","absence_of_report_is_negative":false},
+    "2023":{"status":"POSITIVE_BASIN_IMPACT_CONTEXT_AFTER_INTENSE_RAIN_AND_RIVER_RAVINE_ACTIVATION","source_ids":["ANA-BARRANCA-YAKU-2023-03-21","ANA-BARRANCA-YAKU-CANALS-2023-04-04"],"reported_crop_impact_lower_bound_ha":1000,"reported_intakes_affected":55,"reported_main_canal_km_affected":58,"reported_homes_affected_lower_bound":200,"reported_counts_used_as_geometry":false,"exact_event_footprint_reproducible":false,"specific_ravine_activation_assigned":false},
+    "2025":{"status":"POSITIVE_RIO_FORTALEZA_OVERFLOW_IMPACT_AT_CANCHAN","source_ids":["ANA-FORTALEZA-OVERFLOW-2025-03-03"],"avelino_diversion_canal_impact_positive":true,"reported_crop_impact_ha":10,"reported_area_used_as_geometry":false,"exact_event_footprint_reproducible":false}
+  },
+  "observations":{
+    "status":"NO_EVENT_PAIRED_STAGE_OR_DISCHARGE_SERIES_FROZEN",
+    "event_paired_rainfall":[],
+    "event_paired_stage":[],
+    "event_paired_discharge":[],
+    "missing_observations_are_low_risk":false
+  },
+  "exposure_connectivity":{
+    "status":"PARTIAL_DOCUMENTARY_EXPOSURE_CONNECTIVITY_UNRESOLVED",
+    "classes":["agriculture","irrigation_intakes","main_canals","housing"],
+    "named_context_nodes":["Canchán","Manas","Cutatambo","Huaricanga","Tunan","Quilca","Paramonga"],
+    "territorial_nodes_are_basins":false,
+    "network_connectivity_normalized":false
+  },
+  "hydraulic_context":{
+    "status":"PREVENTIVE_WORKS_AND_CRITICAL_POINTS_CONTEXT_ONLY",
+    "historical_capacity_values":null,
+    "works_define_historical_capacity":false,
+    "critical_points_are_events":false,
+    "provider_values_define_irfen_thresholds":false
+  },
+  "map_policy":{
+    "basin_geometry_context_only":true,
+    "basin_geometry_is_event_footprint":false,
+    "draw_paramonga_as_basin":false,
+    "draw_unresolved_ravines":false,
+    "risk_or_alert_layer":false
+  },
+  "qa":{
+    "pativilca_or_supe_merged":false,
+    "paramonga_used_as_basin":false,
+    "negative_controls_inferred":false,
+    "thresholds_inferred":false,
+    "hydraulic_capacity_inferred":false,
+    "absence_of_report_is_negative":false,
+    "approximate_geometry_created":false
+  },
+  "next_gates":[
+    "freeze dated event-paired stage/discharge observations where official station series are reproducible",
+    "reconstruct 1982-83, 1997-98 and 2017 from dated official evidence",
+    "resolve tributaries and ravines separately before any child map layer",
+    "normalize Paramonga exposure without changing Cuenca Fortaleza hydrologic identity"
+  ]
+}

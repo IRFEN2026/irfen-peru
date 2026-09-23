@@ -1,0 +1,74 @@
+{
+  "schema_version":"0.1",
+  "discovery_id":"lima_norte_pativilca",
+  "system_name":"Cuenca Pativilca y corredor bajo Pativilca-Barranca",
+  "contract_status":"DISCOVERY_GEOMETRY_REPRODUCIBLE_EVENT_LEDGER_PARTIAL",
+  "deployment_status":"RESEARCH_ONLY",
+  "test_mode":"TEST_ONLY",
+  "production_use":false,
+  "production_ready":false,
+  "operational_alerting_enabled":false,
+  "activation_gate":"BLOCKED",
+  "missing_data_rule":"UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds":null,
+  "hydraulic_factors":null,
+  "source_registry_path":"site/data/phase2/sources/lima_norte_pativilca_official_evidence_v0_1.json",
+  "hydrologic_identity":{
+    "ana_unit_code":"13758",
+    "ana_unit_name":"Cuenca Pativilca",
+    "geometry_path":"site/data/phase2/geometries/lima_norte_pativilca_basin_context.geojson",
+    "geometry_sha256":"16b3b331148ff3ebabaaa0565c9803ff95450ec86d425a9fa02d0679fa3bec87",
+    "geometry_is_event_footprint":false,
+    "must_not_merge_with":["Cuenca Fortaleza","Cuenca Supe"],
+    "paramonga_is_basin":false
+  },
+  "event_ledger":{
+    "1982_1983":{"status":"UNKNOWN_NOT_NEGATIVE_RECONSTRUCTION_PENDING","absence_of_report_is_negative":false},
+    "1997_1998":{"status":"UNKNOWN_NOT_NEGATIVE_RECONSTRUCTION_PENDING","absence_of_report_is_negative":false},
+    "2017":{"status":"UNKNOWN_NOT_NEGATIVE_RECONSTRUCTION_PENDING","absence_of_report_is_negative":false},
+    "2023":{"status":"POSITIVE_BASIN_IMPACT_CONTEXT_AFTER_INTENSE_RAIN_AND_RIVER_RAVINE_ACTIVATION","source_ids":["ANA-BARRANCA-YAKU-2023-03-21","ANA-BARRANCA-YAKU-CANALS-2023-04-04"],"reported_crop_damage_ha":800,"reported_area_used_as_geometry":false,"exact_event_footprint_reproducible":false,"specific_ravine_activation_assigned":false},
+    "2025":{"status":"POSITIVE_RIO_PATIVILCA_OVERFLOW_IMPACT_AT_RANCHO_GRANDE_COCHAS","source_ids":["ANA-PATIVILCA-OVERFLOW-2025-03-03"],"reported_crop_impact_ha":5,"reported_area_used_as_geometry":false,"exact_event_footprint_reproducible":false}
+  },
+  "observations":{
+    "status":"NO_EVENT_PAIRED_STAGE_OR_DISCHARGE_SERIES_FROZEN",
+    "event_paired_rainfall":[],
+    "event_paired_stage":[],
+    "event_paired_discharge":[],
+    "missing_observations_are_low_risk":false
+  },
+  "exposure_connectivity":{
+    "status":"PARTIAL_DOCUMENTARY_EXPOSURE_CONNECTIVITY_UNRESOLVED",
+    "classes":["agriculture","irrigation_intakes","roads"],
+    "named_recent_nodes":["Rancho Grande","Cochas","Puntizuela"],
+    "territorial_nodes_are_basins":false,
+    "network_connectivity_normalized":false
+  },
+  "hydraulic_context":{
+    "status":"PREVENTIVE_WORKS_AND_CRITICAL_POINTS_CONTEXT_ONLY",
+    "historical_capacity_values":null,
+    "works_define_historical_capacity":false,
+    "critical_points_are_events":false,
+    "provider_values_define_irfen_thresholds":false
+  },
+  "map_policy":{
+    "basin_geometry_context_only":true,
+    "basin_geometry_is_event_footprint":false,
+    "draw_unresolved_ravines":false,
+    "risk_or_alert_layer":false
+  },
+  "qa":{
+    "supe_or_fortaleza_merged":false,
+    "paramonga_used_as_basin":false,
+    "negative_controls_inferred":false,
+    "thresholds_inferred":false,
+    "hydraulic_capacity_inferred":false,
+    "absence_of_report_is_negative":false,
+    "approximate_geometry_created":false
+  },
+  "next_gates":[
+    "freeze dated event-paired stage/discharge observations where official station series are reproducible",
+    "reconstruct 1982-83, 1997-98 and 2017 from dated official evidence",
+    "resolve individual tributaries or ravines before any child map layer",
+    "normalize exposure connectivity separately from basin geometry"
+  ]
+}
