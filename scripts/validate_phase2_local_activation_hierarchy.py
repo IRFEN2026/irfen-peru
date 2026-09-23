@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Validate the universal Phase-2/discovery local-unit activation research architecture.
 
-This validator is intentionally an overlay over legacy Phase-2 contracts. Older contracts
-may omit newer guard fields, but any explicit conflicting value fails closed. The effective
-policy is always the stricter global architecture. No outcome, threshold, capacity or
-operational state is derived here.
+The hierarchy is a strict overlay over legacy Phase-2 contracts. Older contracts may omit
+newer guard fields, but any explicit conflicting value fails closed. Existing reproducible
+spatial subunits are registered as local research units without promoting their parent.
+No outcome, threshold, capacity or operational state is derived here.
 """
 from __future__ import annotations
 
@@ -122,7 +122,12 @@ def validate_architecture_semantics(arch: dict) -> None:
     receiver = arch.get("receiver_policy") or {}
     if receiver.get("tributary_activation_implies_receiver_overflow") is not False:
         fail("TRIBUTARY_IMPLIES_RECEIVER_OVERFLOW")
-    required_receiver = {"TRAVEL_TIME", "PEAK_COINCIDENCE", "MAINSTEM_STAGE_OR_DISCHARGE_RESPONSE", "RECEIVER_HYDRAULIC_CONTEXT"}
+    required_receiver = {
+        "TRAVEL_TIME",
+        "PEAK_COINCIDENCE",
+        "MAINSTEM_STAGE_OR_DISCHARGE_RESPONSE",
+        "RECEIVER_HYDRAULIC_CONTEXT",
+    }
     if set(receiver.get("model_separately") or []) != required_receiver:
         fail("RECEIVER_MODEL_COMPONENTS_DRIFT")
 
@@ -142,7 +147,12 @@ def validate_architecture_semantics(arch: dict) -> None:
     mp = arch.get("map_policy") or {}
     if mp.get("parent_style") != "GREY_CONTEXT":
         fail("PARENT_MAP_STYLE_NOT_GREY_CONTEXT")
-    for key in ("children_are_independent_layers", "historical_footprints_separate", "missing_geometry_is_not_drawn", "parent_composite_from_child_union_forbidden"):
+    for key in (
+        "children_are_independent_layers",
+        "historical_footprints_separate",
+        "missing_geometry_is_not_drawn",
+        "parent_composite_from_child_union_forbidden",
+    ):
         if mp.get(key) is not True:
             fail(f"MAP_POLICY_DRIFT_{key}")
     for key in ("risk_colors_forbidden", "alerts_forbidden"):
@@ -164,8 +174,6 @@ def validate_zone_contracts(arch: dict, inventory: dict) -> list[dict]:
         if c.get("candidate_id") != candidate_id:
             fail(f"ZONE_CONTRACT_ID_DRIFT_{candidate_id}")
         reject_explicit_conflict(c, f"ZONE_{candidate_id}")
-        # Parent rows are context containers under the overlay regardless of whether
-        # their legacy geometry is an official whole-basin polygon or partial context.
         if c.get("activation_state") is not None or c.get("research_activation_state") is not None:
             fail(f"PARENT_STATE_PRESENT_{candidate_id}")
         rows.append({
@@ -177,6 +185,126 @@ def validate_zone_contracts(arch: dict, inventory: dict) -> list[dict]:
             "contract_sha256": digest(path),
         })
     return rows
+
+
+def validate_spatial_subunits(arch: dict, candidate_inventory: dict) -> tuple[list[dict], dict[str, dict]]:
+    path = ROOT / arch["scope"]["spatial_observation_contracts"]
+    spatial = load(path)
+    if spatial.get("deployment_status") != "RESEARCH_ONLY":
+        fail("SPATIAL_CONTRACT_NOT_RESEARCH_ONLY")
+    if spatial.get("test_mode") not in (True, "TEST_ONLY"):
+        fail("SPATIAL_CONTRACT_NOT_TEST_ONLY")
+    for key, expected in {
+        "production_use": False,
+        "production_ready": False,
+        "operational_alerting_enabled": False,
+        "activation_gate": "BLOCKED",
+        "decision_thresholds": None,
+    }.items():
+        if spatial.get(key) != expected:
+            fail(f"SPATIAL_CONTRACT_GUARD_DRIFT_{key}")
+    guardrails = spatial.get("guardrails") or {}
+    required_true = {
+        "regulatory_corridor_is_not_catchment",
+        "river_margin_is_not_catchment",
+        "line_geometry_is_not_area_sampling_geometry",
+        "subunit_contract_does_not_complete_parent_candidate",
+        "cross_candidate_spatial_transfer_forbidden",
+        "sampling_contract_is_not_activation_validation",
+        "missing_geometry_is_blocked_not_low_risk",
+    }
+    for key in required_true:
+        if guardrails.get(key) is not True:
+            fail(f"SPATIAL_GUARD_DRIFT_{key}")
+
+    candidate_ids = {x["candidate_id"] for x in candidate_inventory.get("candidates") or []}
+    records = spatial.get("candidate_records") or []
+    record_ids = [x.get("candidate_id") for x in records]
+    if set(record_ids) != candidate_ids or len(record_ids) != len(set(record_ids)):
+        fail("SPATIAL_CANDIDATE_COVERAGE_DRIFT")
+
+    rows = []
+    by_contract = {}
+    for record in records:
+        parent = record["candidate_id"]
+        if record.get("production_use") is not False or record.get("production_ready") is not False:
+            fail(f"SPATIAL_PARENT_UNSAFE_{parent}")
+        if record.get("activation_gate") != "BLOCKED":
+            fail(f"SPATIAL_PARENT_GATE_OPEN_{parent}")
+        if record.get("candidate_wide_sampling_ready") is True and record.get("candidate_wide_contract") is None:
+            fail(f"SPATIAL_PARENT_READY_WITHOUT_CONTRACT_{parent}")
+        for sub in record.get("subunit_contracts") or []:
+            contract_id = sub.get("contract_id")
+            sid = sub.get("subunit_id")
+            if not contract_id or contract_id in by_contract or not sid:
+                fail(f"SPATIAL_SUBUNIT_ID_INVALID_{parent}")
+            if sub.get("candidate_id") != parent:
+                fail(f"SPATIAL_SUBUNIT_PARENT_DRIFT_{parent}_{sid}")
+            if sub.get("contract_scope") != "HYDROLOGIC_SUBUNIT_RESEARCH_ONLY":
+                fail(f"SPATIAL_SUBUNIT_SCOPE_DRIFT_{parent}_{sid}")
+            if sub.get("contract_status") != "RESEARCH_SAMPLING_ELIGIBLE":
+                fail(f"SPATIAL_SUBUNIT_NOT_RESEARCH_ELIGIBLE_{parent}_{sid}")
+            for key, expected in {
+                "deployment_status": "RESEARCH_ONLY",
+                "production_use": False,
+                "production_ready": False,
+                "operational_alerting_enabled": False,
+                "activation_gate": "BLOCKED",
+                "counts_as_candidate_wide_geometry": False,
+                "counts_as_operational_geometry": False,
+            }.items():
+                if sub.get(key) != expected:
+                    fail(f"SPATIAL_SUBUNIT_GUARD_DRIFT_{parent}_{sid}_{key}")
+            ref = sub.get("geometry_ref") or {}
+            raw = ref.get("path")
+            if not isinstance(raw, str) or not raw.startswith("site/data/phase2/geometries/"):
+                fail(f"SPATIAL_SUBUNIT_GEOMETRY_PATH_INVALID_{parent}_{sid}")
+            gp = ROOT / raw
+            if not gp.is_file():
+                fail(f"SPATIAL_SUBUNIT_GEOMETRY_MISSING_{parent}_{sid}")
+            selector = ref.get("feature_selector") or {}
+            prop = selector.get("property")
+            value = selector.get("value")
+            if not isinstance(prop, str) or value is None:
+                fail(f"SPATIAL_SUBUNIT_SELECTOR_MISSING_{parent}_{sid}")
+            doc = load(gp)
+            features = doc.get("features") if doc.get("type") == "FeatureCollection" else [doc]
+            selected = [f for f in features if (f.get("properties") or {}).get(prop) == value]
+            if len(selected) != 1:
+                fail(f"SPATIAL_SUBUNIT_SELECTOR_NOT_UNIQUE_{parent}_{sid}_{len(selected)}")
+            feature = selected[0]
+            geometry = feature.get("geometry") or {}
+            if geometry.get("type") != ref.get("geometry_type"):
+                fail(f"SPATIAL_SUBUNIT_GEOMETRY_TYPE_DRIFT_{parent}_{sid}")
+            props = feature.get("properties") or {}
+            if props.get("production_use") is True or props.get("production_ready") is True:
+                fail(f"SPATIAL_SUBUNIT_FEATURE_PRODUCTION_FLAG_{parent}_{sid}")
+            if props.get("loaded_into_operational_calculation") is True or props.get("carries_alert_values") is True or props.get("carries_risk_classification") is True:
+                fail(f"SPATIAL_SUBUNIT_FEATURE_OPERATIONAL_FLAG_{parent}_{sid}")
+            if ref.get("geometry_sha256") and props.get("geometry_sha256") != ref.get("geometry_sha256"):
+                fail(f"SPATIAL_SUBUNIT_FEATURE_HASH_REFERENCE_DRIFT_{parent}_{sid}")
+            row = {
+                "parent_id": parent,
+                "local_unit_id": sid,
+                "spatial_contract_id": contract_id,
+                "activation_state_allowed": True,
+                "allowed_research_states": ALLOWED_STATES,
+                "geometry_status": "REPRODUCIBLE_REVIEW_ONLY_LOCAL_GEOMETRY",
+                "geometry_path": raw,
+                "geometry_file_sha256": digest(gp),
+                "feature_selector": selector,
+                "feature_geometry_sha256": ref.get("geometry_sha256"),
+                "geometry_type": ref.get("geometry_type"),
+                "confidence": ref.get("confidence"),
+                "candidate_status": ref.get("candidate_status"),
+                "map_eligible": True,
+                "counts_as_parent_geometry": False,
+                "counts_as_operational_geometry": False,
+                "outlet_status": sub.get("outlet_status"),
+            }
+            rows.append(row)
+            by_contract[contract_id] = row
+    return rows, by_contract
 
 
 def validate_discovery_contracts(arch: dict, inventory: dict) -> tuple[list[dict], list[dict]]:
@@ -258,11 +386,13 @@ def validate_discovery_contracts(arch: dict, inventory: dict) -> tuple[list[dict
                 "geometry_status": status,
                 "map_eligible": reproducible,
                 "geometry_path": raw if reproducible else None,
+                "counts_as_parent_geometry": False,
+                "counts_as_operational_geometry": False,
             })
     return parent_rows, child_rows
 
 
-def validate_demonstrators(arch: dict, candidate_inventory: dict) -> list[dict]:
+def validate_demonstrators(arch: dict, candidate_inventory: dict, spatial_by_contract: dict[str, dict]) -> list[dict]:
     candidates = {row["candidate_id"]: row for row in candidate_inventory.get("candidates") or []}
     rows = []
     for parent_id, demo in (arch.get("demonstrators") or {}).items():
@@ -288,8 +418,20 @@ def validate_demonstrators(arch: dict, candidate_inventory: dict) -> list[dict]:
             if not set(source_ids).issubset(official):
                 fail(f"DEMONSTRATOR_SOURCE_NOT_REGISTERED_{parent_id}_{cid}")
             gs = str(child.get("geometry_status", ""))
-            if "PENDING" in gs or "NOT_ASSERTED" in gs or gs.startswith("MISSING"):
+            spatial_contract_id = child.get("spatial_contract_id")
+            if gs == "REPRODUCIBLE_REVIEW_ONLY_LOCAL_GEOMETRY":
+                linked = spatial_by_contract.get(spatial_contract_id)
+                if not linked:
+                    fail(f"DEMONSTRATOR_SPATIAL_CONTRACT_MISSING_{parent_id}_{cid}")
+                if linked["parent_id"] != parent_id or linked["local_unit_id"] != cid:
+                    fail(f"DEMONSTRATOR_SPATIAL_LINK_DRIFT_{parent_id}_{cid}")
+                map_eligible = True
+                geometry_path = linked["geometry_path"]
+            elif "PENDING" in gs or "NOT_ASSERTED" in gs or gs.startswith("MISSING"):
+                if spatial_contract_id is not None:
+                    fail(f"DEMONSTRATOR_UNRESOLVED_HAS_SPATIAL_CONTRACT_{parent_id}_{cid}")
                 map_eligible = False
+                geometry_path = None
             else:
                 fail(f"DEMONSTRATOR_GEOMETRY_UNVERIFIED_PROMOTION_{parent_id}_{cid}")
             rows.append({
@@ -300,6 +442,8 @@ def validate_demonstrators(arch: dict, candidate_inventory: dict) -> list[dict]:
                 "evidence_state": state,
                 "geometry_status": gs,
                 "map_eligible": map_eligible,
+                "geometry_path": geometry_path,
+                "spatial_contract_id": spatial_contract_id,
             })
     return rows
 
@@ -313,12 +457,14 @@ def build_registry() -> dict:
         fail("ARCHITECTURE_NOT_FUTURE_APPLICABLE")
     candidate_path = ROOT / scope["candidate_inventory"]
     discovery_path = ROOT / scope["discovery_inventory"]
+    spatial_path = ROOT / scope["spatial_observation_contracts"]
     candidates = load(candidate_path)
     discovery = load(discovery_path)
     reject_explicit_conflict(candidates, "CANDIDATE_INVENTORY")
     zone_parents = validate_zone_contracts(arch, candidates)
+    phase2_local_units, spatial_by_contract = validate_spatial_subunits(arch, candidates)
     discovery_parents, discovery_children = validate_discovery_contracts(arch, discovery)
-    demonstrator_children = validate_demonstrators(arch, candidates)
+    demonstrator_children = validate_demonstrators(arch, candidates, spatial_by_contract)
     parent_ids = [row["parent_id"] for row in zone_parents + discovery_parents]
     if len(parent_ids) != len(set(parent_ids)):
         fail("PARENT_ID_COLLISION_BETWEEN_INVENTORIES")
@@ -330,16 +476,20 @@ def build_registry() -> dict:
         "architecture_sha256": digest(ARCH_PATH),
         "candidate_inventory_sha256": digest(candidate_path),
         "discovery_inventory_sha256": digest(discovery_path),
+        "spatial_observation_contracts_sha256": digest(spatial_path),
         "summary": {
             "phase2_parent_count": len(zone_parents),
             "discovery_parent_count": len(discovery_parents),
+            "reproducible_phase2_local_unit_count": sum(row["map_eligible"] for row in phase2_local_units),
             "reproducible_discovery_child_count": sum(row["map_eligible"] for row in discovery_children),
             "declared_discovery_child_contract_count": len(discovery_children),
             "demonstrator_local_unit_count": len(demonstrator_children),
+            "demonstrator_reproducible_local_unit_count": sum(row["map_eligible"] for row in demonstrator_children),
             "parent_activation_state_assignments": 0,
             "new_operational_units": 0,
         },
         "parent_units": zone_parents + discovery_parents,
+        "phase2_local_units": phase2_local_units,
         "discovery_local_units": discovery_children,
         "demonstrator_local_units": demonstrator_children,
         "allowed_research_states": ALLOWED_STATES,
@@ -356,7 +506,10 @@ def main() -> None:
         if not out.is_absolute():
             out = ROOT / out
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(json.dumps(registry, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n", encoding="utf-8")
+        out.write_text(
+            json.dumps(registry, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n",
+            encoding="utf-8",
+        )
     print(json.dumps(registry["summary"], sort_keys=True))
 
 
