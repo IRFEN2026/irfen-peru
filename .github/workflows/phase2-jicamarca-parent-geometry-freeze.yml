@@ -1,4 +1,4 @@
-name: IRFEN - Phase2 Jicamarca parent geometry freeze
+name: IRFEN - Phase2 Jicamarca parent context reconciliation
 
 on:
   pull_request:
@@ -6,9 +6,11 @@ on:
       - config/phase2_jicamarca_parent_geometry_v0_1.json
       - config/phase2_jicamarca_discovery_v0_1.json
       - site/data/validation/phase2_zone_contracts/lima_este_santa_eulalia_rimac.json
-      - site/data/phase2/sources/jicamarca_hydrologic_context/ana_jicamarca_1375542.geojson
+      - site/data/phase2/sources/jicamarca_hydrologic_context/ana_jicamarca_parent_current.geojson
+      - site/data/phase2/sources/jicamarca_hydrologic_context/ana_canto_grande_parent_current.geojson
       - site/data/phase2/geometries/lima_este_jicamarca_parent_basin_context.geojson
-      - site/data/phase2/geometries/lima_este_jicamarca_parent_basin_context_validation.json
+      - site/data/phase2/geometries/lima_este_canto_grande_parent_basin_context.geojson
+      - site/data/phase2/geometries/lima_este_jicamarca_parent_context_identity_validation.json
       - scripts/probe_phase2_jicamarca_parent_geometry.py
       - scripts/verify_phase2_jicamarca_parent_geometry.py
       - scripts/build_map_layer_catalog.py
@@ -21,7 +23,7 @@ permissions:
   contents: write
 
 jobs:
-  bootstrap-or-replay-exact-ana-parent:
+  reconcile-and-freeze-official-parent-contexts:
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 12
@@ -35,13 +37,14 @@ jobs:
           python-version: "3.12"
       - name: Install test dependency
         run: python -m pip install pytest
-      - name: Bootstrap once or replay frozen exact ANA 1375542
+      - name: Bootstrap once or replay frozen official ANA parent contexts
         id: mode
         shell: bash
         run: |
           set -euo pipefail
-          SOURCE=site/data/phase2/sources/jicamarca_hydrologic_context/ana_jicamarca_1375542.geojson
-          if [[ ! -f "$SOURCE" ]]; then
+          JIC=site/data/phase2/sources/jicamarca_hydrologic_context/ana_jicamarca_parent_current.geojson
+          CANTO=site/data/phase2/sources/jicamarca_hydrologic_context/ana_canto_grande_parent_current.geojson
+          if [[ ! -f "$JIC" || ! -f "$CANTO" ]]; then
             echo "bootstrap=true" >> "$GITHUB_OUTPUT"
             python scripts/probe_phase2_jicamarca_parent_geometry.py --refresh-source
             python scripts/verify_phase2_jicamarca_parent_geometry.py
@@ -55,7 +58,7 @@ jobs:
         run: |
           python -m pytest -q tests/test_phase2_jicamarca_discovery.py
           python scripts/validate_phase2_local_activation_hierarchy.py
-      - name: Commit frozen official parent context once
+      - name: Commit frozen official parent contexts once
         if: steps.mode.outputs.bootstrap == 'true' && github.event_name == 'pull_request'
         shell: bash
         run: |
@@ -65,13 +68,15 @@ jobs:
           git add \
             config/phase2_jicamarca_discovery_v0_1.json \
             site/data/validation/phase2_zone_contracts/lima_este_santa_eulalia_rimac.json \
-            site/data/phase2/sources/jicamarca_hydrologic_context/ana_jicamarca_1375542.geojson \
+            site/data/phase2/sources/jicamarca_hydrologic_context/ana_jicamarca_parent_current.geojson \
+            site/data/phase2/sources/jicamarca_hydrologic_context/ana_canto_grande_parent_current.geojson \
             site/data/phase2/geometries/lima_este_jicamarca_parent_basin_context.geojson \
-            site/data/phase2/geometries/lima_este_jicamarca_parent_basin_context_validation.json \
+            site/data/phase2/geometries/lima_este_canto_grande_parent_basin_context.geojson \
+            site/data/phase2/geometries/lima_este_jicamarca_parent_context_identity_validation.json \
             site/data/map_layers.json
           if git diff --cached --quiet; then
             echo "No bootstrap changes to persist"
           else
-            git commit -m "Freeze exact ANA Jicamarca parent context"
+            git commit -m "Freeze reconciled ANA Jicamarca parent contexts"
             git push origin HEAD:${{ github.event.pull_request.head.ref }}
           fi
