@@ -282,8 +282,16 @@ def validate_spatial_subunits(arch: dict, candidate_inventory: dict) -> tuple[li
                 fail(f"SPATIAL_SUBUNIT_FEATURE_PRODUCTION_FLAG_{parent}_{sid}")
             if props.get("loaded_into_operational_calculation") is True or props.get("carries_alert_values") is True or props.get("carries_risk_classification") is True:
                 fail(f"SPATIAL_SUBUNIT_FEATURE_OPERATIONAL_FLAG_{parent}_{sid}")
-            if ref.get("geometry_sha256") and props.get("geometry_sha256") != ref.get("geometry_sha256"):
-                fail(f"SPATIAL_SUBUNIT_FEATURE_HASH_REFERENCE_DRIFT_{parent}_{sid}")
+            expected_hash = ref.get("geometry_sha256")
+            hash_scope = ref.get("hash_scope")
+            if hash_scope == "FEATURE_GEOMETRY_SHA256":
+                if not expected_hash or props.get("geometry_sha256") != expected_hash:
+                    fail(f"SPATIAL_SUBUNIT_FEATURE_HASH_REFERENCE_DRIFT_{parent}_{sid}")
+            elif hash_scope == "GEOJSON_FILE_SHA256":
+                if not expected_hash or digest(gp) != expected_hash:
+                    fail(f"SPATIAL_SUBUNIT_FILE_HASH_DRIFT_{parent}_{sid}")
+            else:
+                fail(f"SPATIAL_SUBUNIT_HASH_SCOPE_UNSUPPORTED_{parent}_{sid}_{hash_scope}")
             row = {
                 "parent_id": parent,
                 "local_unit_id": sid,
@@ -294,7 +302,8 @@ def validate_spatial_subunits(arch: dict, candidate_inventory: dict) -> tuple[li
                 "geometry_path": raw,
                 "geometry_file_sha256": digest(gp),
                 "feature_selector": selector,
-                "feature_geometry_sha256": ref.get("geometry_sha256"),
+                "declared_geometry_sha256": expected_hash,
+                "hash_scope": hash_scope,
                 "geometry_type": ref.get("geometry_type"),
                 "confidence": ref.get("confidence"),
                 "candidate_status": ref.get("candidate_status"),
