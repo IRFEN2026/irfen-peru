@@ -1,0 +1,58 @@
+name: IRFEN - Phase2 Rio La Leche official watercourse probe
+
+on:
+  pull_request:
+    paths:
+      - scripts/probe_la_leche_official_watercourse.py
+      - .github/workflows/phase2-la-leche-watercourse-probe.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe-official-watercourse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Probe exact ANA/GEOSNIRH Rio La Leche identity and geometry
+        run: |
+          mkdir -p artifacts
+          python scripts/probe_la_leche_official_watercourse.py \
+            --response artifacts/ana_rio_la_leche_find_response.json \
+            --manifest artifacts/manifest.json
+      - name: Enforce Phase-2 fail-closed guards
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/manifest.json',encoding='utf-8'))
+          assert d['status']=='PASS_UNIQUE_OFFICIAL_WATERCOURSE'
+          assert d['candidate_id']=='lambayeque_motupe_la_leche_pitipo'
+          assert d['expected_watercourse_code']=='1377722'
+          assert d['expected_watercourse_name']=='Rio La Leche'
+          assert d['exact_match_count']==1
+          assert d['deployment_status']=='RESEARCH_ONLY'
+          assert d['test_mode']=='TEST_ONLY'
+          assert d['production_use'] is False
+          assert d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['activation_gate']=='BLOCKED'
+          assert d['missing_data_rule']=='UNKNOWN_NOT_LOW_RISK'
+          assert d['decision_thresholds'] is None
+          assert d['hydraulic_factors'] is None
+          assert d['separate_basin_asserted'] is False
+          assert d['outlet_inferred'] is False
+          assert d['event_footprint_asserted'] is False
+          assert d['hydraulic_capacity_inferred'] is False
+          assert d['negative_control_inferred'] is False
+          assert d['counts_as_complete_candidate_geometry'] is False
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phase2-la-leche-official-watercourse-probe
+          path: artifacts/
+          if-no-files-found: error
