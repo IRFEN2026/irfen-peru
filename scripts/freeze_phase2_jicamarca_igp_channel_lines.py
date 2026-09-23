@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Freeze exact source-named IGP channel-line features selected before geometry read.
+"""Freeze exact source-named IGP channel-line features after bounded identity review.
 
-The outputs preserve each official source feature as an independent line feature.
-No source segments are unioned and no endpoint is interpreted as an outlet/confluence.
+Accepted outputs preserve every preregistered source feature independently. No source
+segments are unioned and no endpoint is interpreted as an outlet/confluence. Source
+features rejected during static spatial identity review are recorded but never emitted.
 """
 from __future__ import annotations
 import argparse, hashlib, json, tempfile
@@ -62,14 +63,10 @@ def feature_props(component, expected, raw, fmap):
         'unit_id':f"jicamarca__{component['component_id']}__igp_{expected['objectid']}",
         'component_id':component['component_id'],
         'hydrologic_child_id':component['hydrologic_child_id'],
-        'source_institution':'Instituto Geofisico del Peru',
-        'source_layer':'Quebrada_Lima',
-        'source_objectid':expected['objectid'],
-        'source_name':raw.get(fmap['nombre']),
-        'source_district':raw.get(fmap['nomdist']),
-        'source_province':raw.get(fmap['nomprov']),
-        'source_department':raw.get(fmap['nomdep']),
-        'source_type':raw.get(fmap['tipo']),
+        'source_institution':'Instituto Geofisico del Peru','source_layer':'Quebrada_Lima',
+        'source_objectid':expected['objectid'],'source_name':raw.get(fmap['nombre']),
+        'source_district':raw.get(fmap['nomdist']),'source_province':raw.get(fmap['nomprov']),
+        'source_department':raw.get(fmap['nomdep']),'source_type':raw.get(fmap['tipo']),
         'geometry_role':'OFFICIAL_NAMED_CHANNEL_LINE_CONTEXT_ONLY',
         'catchment_polygon':False,'outlet_or_confluence':False,'event_footprint':False,
         'routing_parameter':False,'activation_evidence':False,'risk_or_alert_layer':False,
@@ -83,14 +80,21 @@ def main():
     ap=argparse.ArgumentParser(); ap.add_argument('--contract',type=Path,default=DEFAULT); a=ap.parse_args()
     cp=a.contract if a.contract.is_absolute() else ROOT/a.contract
     co=load(cp); guard(co,'CONTRACT'); src=co['source']; layer=src['layer_url']
+    rejected=co.get('rejected_after_geometry_review') or []
+    if not rejected or not all(x.get('status')=='REJECTED_WRONG_SAME_NAME_GEOGRAPHY_DO_NOT_PUBLISH' for x in rejected):
+        raise FreezeError('REJECTION_LEDGER_MISSING_OR_UNSAFE')
+    if any(x.get('event_outcome_used') is not False for x in rejected): raise FreezeError('REJECTION_USED_OUTCOME')
+    accepted_ids={int(x['objectid']) for c in co['components'] for x in c['source_features']}
+    rejected_ids={int(x['source_feature']['objectid']) for x in rejected}
+    if accepted_ids & rejected_ids: raise FreezeError('REJECTED_SOURCE_ID_STILL_ACCEPTED')
+
     meta=get_json(layer,{'f':'json'})
     if meta.get('name')!=src['layer_name']: raise FreezeError(f"LAYER_NAME_DRIFT {meta.get('name')}")
     if meta.get('geometryType')!=src['geometry_type']: raise FreezeError(f"GEOMETRY_TYPE_DRIFT {meta.get('geometryType')}")
     sr=(meta.get('extent') or {}).get('spatialReference') or {}; wkid=sr.get('latestWkid') or sr.get('wkid')
     if int(wkid)!=int(src['spatial_reference_wkid']): raise FreezeError(f'SPATIAL_REFERENCE_DRIFT {wkid}')
     if meta.get('serviceItemId') not in (None,src['service_item_id']): raise FreezeError('SERVICE_ITEM_DRIFT')
-    fmap=suffix_map(meta)
-    required={'objectid','nombre','nomdist','nomprov','nomdep','tipo'}
+    fmap=suffix_map(meta); required={'objectid','nombre','nomdist','nomprov','nomdep','tipo'}
     if not required.issubset(fmap): raise FreezeError(f'SCHEMA_DRIFT {sorted(required-set(fmap))}')
 
     generated=[]
@@ -101,10 +105,7 @@ def main():
             features=[]
             for expected in component['source_features']:
                 oid=int(expected['objectid'])
-                obj=get_json(layer+'/query',{
-                    'objectIds':str(oid),
-                    'outFields':','.join(fmap[k] for k in sorted(required)),
-                    'returnGeometry':'true','outSR':'4326','f':'json'})
+                obj=get_json(layer+'/query',{'objectIds':str(oid),'outFields':','.join(fmap[k] for k in sorted(required)),'returnGeometry':'true','outSR':'4326','f':'json'})
                 rows=obj.get('features') or []
                 if len(rows)!=1: raise FreezeError(f'OBJECTID_NOT_UNIQUE {oid} count={len(rows)}')
                 row=rows[0]; attrs=row.get('attributes') or {}
@@ -114,35 +115,32 @@ def main():
                     if attrs.get(fmap[field])!=expected[contract_key]:
                         raise FreezeError(f"ATTRIBUTE_DRIFT oid={oid} {field}={attrs.get(fmap[field])!r} expected={expected[contract_key]!r}")
                 features.append({'type':'Feature','properties':feature_props(component,expected,attrs,fmap),'geometry':arcgis_line_to_geojson(row.get('geometry'))})
-            fc={
-                'type':'FeatureCollection',
-                'properties':{
-                    'component_id':component['component_id'],'hydrologic_child_id':component['hydrologic_child_id'],
-                    'geometry_role':'OFFICIAL_NAMED_CHANNEL_LINE_CONTEXT_ONLY','source_segments_union_performed':False,
-                    'catchment_polygon':False,'outlet_or_confluence':False,'event_footprint':False,'routing_enabled':False,
-                    **SAFE,
-                },
-                'features':features,
-            }
-            staged=td/(Path(component['output_path']).name); staged.write_text(canonical(fc),encoding='utf-8')
+            fc={'type':'FeatureCollection','properties':{
+                'component_id':component['component_id'],'hydrologic_child_id':component['hydrologic_child_id'],
+                'geometry_role':'OFFICIAL_NAMED_CHANNEL_LINE_CONTEXT_ONLY','source_segments_union_performed':False,
+                'catchment_polygon':False,'outlet_or_confluence':False,'event_footprint':False,'routing_enabled':False,**SAFE,
+            },'features':features}
+            staged=td/Path(component['output_path']).name; staged.write_text(canonical(fc),encoding='utf-8')
             generated.append((component,staged,digest_path(staged),len(features)))
         for component,staged,sha,count in generated:
             out=ROOT/component['output_path']; out.parent.mkdir(parents=True,exist_ok=True); out.write_bytes(staged.read_bytes())
 
     validation={
-        'schema_version':'0.1','status':'PASS_FROZEN_IGP_NAMED_CHANNEL_LINES',**SAFE,
+        'schema_version':'0.2','status':'PASS_FROZEN_IGP_NAMED_CHANNEL_LINES_WITH_REJECTION_LEDGER',**SAFE,
         'contract_path':cp.relative_to(ROOT).as_posix(),'contract_sha256':digest_path(cp),
         'source_layer':layer,'source_geometry_type':'esriGeometryPolyline','source_spatial_reference_wkid':4326,
-        'selection_used_geometry':False,'selection_used_outcomes':False,'source_segments_union_performed':False,
-        'catchment_polygons_created':False,'outlets_or_confluences_inferred':False,'routing_enabled':False,
-        'components':[
-            {'component_id':c['component_id'],'hydrologic_child_id':c['hydrologic_child_id'],'path':c['output_path'],
+        'initial_selection_used_geometry':False,'selection_used_outcomes':False,'source_segments_union_performed':False,
+        'post_geometry_identity_rejection_performed':True,'catchment_polygons_created':False,
+        'outlets_or_confluences_inferred':False,'routing_enabled':False,
+        'components':[{'component_id':c['component_id'],'hydrologic_child_id':c['hydrologic_child_id'],'path':c['output_path'],
              'sha256':sha,'feature_count':count,'source_objectids':[x['objectid'] for x in c['source_features']],
-             'catchment_geometry_resolved':False,'outlet_resolved':False}
-            for c,_,sha,count in generated],
-        'withheld_components':[x['component_id'] for x in co['withheld_from_geometry_retrieval']],
+             'catchment_geometry_resolved':False,'outlet_resolved':False} for c,_,sha,count in generated],
+        'rejected_components':[{'component_id':x['component_id'],'hydrologic_child_id':x['hydrologic_child_id'],
+            'source_objectid':x['source_feature']['objectid'],'status':x['status'],'geometry_published':False,
+            'outlet_inferred':False,'catchment_inferred':False,'event_outcome_used':False} for x in rejected],
+        'withheld_components':[x['component_id'] for x in co['withheld_from_geometry_publication']],
     }
     VALIDATION.parent.mkdir(parents=True,exist_ok=True); VALIDATION.write_text(canonical(validation),encoding='utf-8')
-    print(json.dumps({'status':validation['status'],'components':{x['component_id']:x['sha256'] for x in validation['components']}},sort_keys=True))
+    print(json.dumps({'status':validation['status'],'components':{x['component_id']:x['sha256'] for x in validation['components']},'rejected':validation['rejected_components']},sort_keys=True))
 
 if __name__=='__main__': main()
