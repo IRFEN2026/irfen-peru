@@ -1,0 +1,165 @@
+{
+  "schema_version": "0.1",
+  "contract_id": "phase2-collector-coupling:lima_este_santa_eulalia_rimac:v0.1",
+  "status": "RESEARCH_ONLY_FAIL_CLOSED_BASELINE",
+  "parent_id": "lima_este_santa_eulalia_rimac",
+  "parent_role": "CONTEXT_CONTAINER_NON_ACTIVATABLE",
+  "parent_activation_state": null,
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "architecture_ref": "config/phase2_collector_coupling_architecture_v0_1.json",
+  "local_hierarchy_ref": "config/phase2_local_activation_hierarchy_v0_1.json",
+  "input_sources": [
+    {
+      "path": "site/data/phase2/spatial_observation_contracts_v0_1.json",
+      "git_blob_sha": "6a7b9cbc99499c789c3f5af669f7c089fb85555e",
+      "role": "REPRODUCIBLE_LOCAL_GEOMETRY_AND_RESEARCH_OUTLET_REGISTRY",
+      "outcome_source": false
+    }
+  ],
+  "collector_targets": [
+    {
+      "collector_id": "rimac_mainstem_receiver",
+      "display_name": "Río Rímac receptor",
+      "unit_type": "MAIN_CHANNEL_LINE",
+      "geometry_status": "MISSING_REPRODUCIBLE_CHANNEL_GEOMETRY_FOR_COUPLING",
+      "geometry": null,
+      "capacity_status": "UNKNOWN",
+      "stage_or_discharge_series": [],
+      "topographic_sources": [],
+      "hydraulic_geometry_status": "UNKNOWN",
+      "structures": [],
+      "historical_overflow_evidence": [],
+      "control_points": [],
+      "map_eligible": false
+    }
+  ],
+  "tributaries": [
+    {
+      "local_unit_id": "cashahuacra",
+      "parent_id": "lima_este_santa_eulalia_rimac",
+      "source_local_geometry_contract_or_explicit_missing_status": "phase2-spatial-observation:lima_este_santa_eulalia_rimac:cashahuacra:v0.1",
+      "source_geometry_status": "REPRODUCIBLE_REVIEW_ONLY_LOCAL_GEOMETRY",
+      "source_outlet_or_explicit_missing_status": {
+        "status": "RESEARCH_D8_OUTLET_NOT_OFFICIALLY_CONFIRMED",
+        "lon": -76.6630556,
+        "lat": -11.9136111,
+        "official_confirmation": false,
+        "is_receiver_confluence": false,
+        "selection": "maximum D8 accumulation inside official source scope and configured area band"
+      },
+      "receiver_confluence_or_explicit_missing_status": {
+        "status": "MISSING_PENDING_REPRODUCIBLE_CONFLUENCE",
+        "location": null,
+        "provenance": []
+      },
+      "collector_effect_state": "NO_EVIDENCE",
+      "connectivity": "UNRESOLVED_NOT_ASSUMED",
+      "q_i_t": null,
+      "travel_time_tau": null,
+      "routing_method": null,
+      "attenuation_or_storage": null,
+      "hydraulic_distance": null,
+      "quality_confidence": "INSUFFICIENT_FOR_COUPLING",
+      "paired_observations": [],
+      "validation_status": "BLOCKED_MISSING_REPRODUCIBLE_CONFLUENCE_AND_TEMPORAL_FLOW_EVIDENCE"
+    },
+    {
+      "local_unit_id": "shingolay",
+      "parent_id": "lima_este_santa_eulalia_rimac",
+      "source_local_geometry_contract_or_explicit_missing_status": "phase2-spatial-observation:lima_este_santa_eulalia_rimac:shingolay:v0.1",
+      "source_geometry_status": "REPRODUCIBLE_REVIEW_ONLY_LOCAL_GEOMETRY",
+      "source_outlet_or_explicit_missing_status": {
+        "status": "RESEARCH_D8_OUTLET_NOT_OFFICIALLY_CONFIRMED",
+        "lon": -76.6625,
+        "lat": -11.8991667,
+        "official_confirmation": false,
+        "is_receiver_confluence": false,
+        "selection": "maximum D8 accumulation inside official source scope and configured area band"
+      },
+      "receiver_confluence_or_explicit_missing_status": {
+        "status": "MISSING_PENDING_REPRODUCIBLE_CONFLUENCE",
+        "location": null,
+        "provenance": []
+      },
+      "collector_effect_state": "NO_EVIDENCE",
+      "connectivity": "UNRESOLVED_NOT_ASSUMED",
+      "q_i_t": null,
+      "travel_time_tau": null,
+      "routing_method": null,
+      "attenuation_or_storage": null,
+      "hydraulic_distance": null,
+      "quality_confidence": "INSUFFICIENT_FOR_COUPLING",
+      "paired_observations": [],
+      "validation_status": "BLOCKED_MISSING_REPRODUCIBLE_CONFLUENCE_AND_TEMPORAL_FLOW_EVIDENCE"
+    }
+  ],
+  "collector_control_points": [],
+  "collector_coupling_matrix": [
+    {
+      "local_unit_id": "cashahuacra",
+      "collector_id": "rimac_mainstem_receiver",
+      "connectivity": "UNRESOLVED_NOT_ASSUMED",
+      "hydraulic_distance": null,
+      "travel_time_tau": null,
+      "attenuation_or_storage": null,
+      "joint_historical_event": null,
+      "paired_observations": [],
+      "collector_effect_state": "NO_EVIDENCE",
+      "validation_status": "BLOCKED_MISSING_REPRODUCIBLE_CONFLUENCE_AND_TEMPORAL_FLOW_EVIDENCE",
+      "provenance": []
+    },
+    {
+      "local_unit_id": "shingolay",
+      "collector_id": "rimac_mainstem_receiver",
+      "connectivity": "UNRESOLVED_NOT_ASSUMED",
+      "hydraulic_distance": null,
+      "travel_time_tau": null,
+      "attenuation_or_storage": null,
+      "joint_historical_event": null,
+      "paired_observations": [],
+      "collector_effect_state": "NO_EVIDENCE",
+      "validation_status": "BLOCKED_MISSING_REPRODUCIBLE_CONFLUENCE_AND_TEMPORAL_FLOW_EVIDENCE",
+      "provenance": []
+    }
+  ],
+  "collector_balance_status": {
+    "equation_applicable_as_conceptual_framework": true,
+    "calculation_performed": false,
+    "q_upstream": null,
+    "q_lateral": null,
+    "storage_diversions_regulation": null,
+    "synchrony_analysis": null,
+    "downstream_flow_estimate": null
+  },
+  "hydrologic_routing": {
+    "method": null,
+    "hec_hms_model": null,
+    "reproducible_input_bundle": null,
+    "status": "NOT_RUN_INSUFFICIENT_REPRODUCIBLE_INPUTS"
+  },
+  "hydraulic_model": {
+    "method": null,
+    "hec_ras_model": null,
+    "reproducible_input_bundle": null,
+    "status": "NOT_RUN_INSUFFICIENT_REPRODUCIBLE_INPUTS"
+  },
+  "map_updates": {
+    "new_collector_nodes_published": 0,
+    "new_collector_reaches_published": 0,
+    "reason": "No reproducible collector reach, confluence or control-point geometry is established by this contract. Existing local child geometries remain governed by their spatial contracts."
+  },
+  "scientific_limits": [
+    "The two registered D8 research outlets are not asserted to be receiver confluences.",
+    "No hydrologic connectivity to the Rímac is inferred here without a reproducible confluence trace or official hydrographic evidence.",
+    "No discharge hydrograph, travel time, attenuation, capacity, collector response or hydraulic reproduction is inferred from geometry alone.",
+    "NO_EVIDENCE means coupling evidence is presently absent or insufficient; it is not negative evidence and not a low-risk classification."
+  ]
+}
