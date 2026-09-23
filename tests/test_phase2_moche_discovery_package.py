@@ -36,14 +36,21 @@ def test_moche_identity_and_nonoperational_guards_are_frozen():
     assert any("San Carlos" in x for x in ident["must_not_merge_with"])
 
 
-def test_geometry_is_exact_ana_query_pending_and_not_fabricated():
+def test_geometry_is_exact_ana_query_only_and_not_fabricated():
     p = load(PACKAGE)
     g = p["assets"]["geometry"]
-    assert g["status"] == "MISSING_PENDING_EXACT_ANA_QUERY"
     assert g["source_query"]["where"] == "CODIGO='137716'"
     assert g["source_query"]["out_sr"] == 4326
     assert g["source_query"]["format"] == "geojson"
-    assert not (ROOT / g["path"]).exists()
+    path = ROOT / g["path"]
+    if g["status"] == "MISSING_PENDING_EXACT_ANA_QUERY":
+        assert not path.exists()
+    else:
+        assert g["status"] == "PARTIAL_OFFICIAL_BASIN_CONTEXT"
+        assert g["representation"] == "OFFICIAL_ANA_HYDROGRAPHIC_UNIT_CONTEXT"
+        assert path.is_file()
+        assert g["source_path"].endswith("ana_lalibertad_moche_137716.geojson")
+        assert g["validation_path"].endswith("lalibertad_moche_geometry_validation.json")
     assert g["counts_as_operational_geometry"] is False
     assert g["counts_as_event_footprint"] is False
     assert p["map_policy"]["approximate_geometry_forbidden"] is True
