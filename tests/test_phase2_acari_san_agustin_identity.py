@@ -70,18 +70,18 @@ class AcariSanAgustinIdentityReviewTest(unittest.TestCase):
         self.assertEqual(implication["activation_change"], "NONE")
         self.assertEqual(implication["map_action"], "NO_NEW_GEOMETRY")
 
-    def test_contract_links_review_without_promoting_geometry(self):
+    def test_existing_geometry_contract_stays_canonical_and_unpromoted(self):
         c = self.contract
         self.assertEqual(c["contract_status"], "DRAFT")
         self.assertEqual(c["assets"]["geometry"]["status"], "PARTIAL")
         self.assertTrue(c["assets"]["geometry"]["path"].endswith("_acari_basin_context.geojson"))
-        review_path = "site/data/validation/phase2_research_evidence/acari_san_agustin_identity_review_20260923.json"
-        self.assertIn(review_path, c["validation"]["review_evidence"])
-        self.assertIn(
+        self.assertEqual(c["validation"]["review_evidence"], [])
+        self.assertNotIn(
             "CENEPRED-PPRRD-HUANUHUANU-2025-2030-SAN-AGUSTIN",
             c["official_source_ids"],
         )
-        self.assertTrue((ROOT / review_path).is_file())
+        self.assertTrue(EVIDENCE.is_file())
+        self.assertEqual(self.evidence["candidate_implication"]["map_action"], "NO_NEW_GEOMETRY")
 
 
 if __name__ == "__main__":
