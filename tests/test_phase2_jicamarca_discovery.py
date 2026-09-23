@@ -9,6 +9,7 @@ SOPHY=ROOT/"config/phase2_jicamarca_sophy_access_assessment_v0_1.json"
 IDENTITY=ROOT/"config/phase2_jicamarca_identity_source_assessment_v0_1.json"
 CANTO=ROOT/"config/phase2_jicamarca_canto_grande_media_luna_assessment_v0_1.json"
 INDEX=ROOT/"config/phase2_jicamarca_evidence_index_v0_1.json"
+PARENT_GEOMETRY=ROOT/"config/phase2_jicamarca_parent_geometry_v0_1.json"
 
 def load(path=CFG):
     return json.loads(path.read_text(encoding="utf-8"))
@@ -78,7 +79,7 @@ def test_bounded_evidence_packages_exist_and_are_safe():
     c=load(); refs=c["evidence_packages"]
     assert refs["cendehua_event_metadata"]=="config/phase2_jicamarca_cendehua_event_metadata_v0_1.json"
     assert refs["sophy_access_assessment"]=="config/phase2_jicamarca_sophy_access_assessment_v0_1.json"
-    for p in (CENDEHUA,SOPHY,IDENTITY,CANTO,INDEX):
+    for p in (CENDEHUA,SOPHY,IDENTITY,CANTO,INDEX,PARENT_GEOMETRY):
         assert p.is_file()
         assert_safe(load(p))
 
@@ -112,20 +113,41 @@ def test_sophy_metadata_does_not_fabricate_rainfall_or_coverage():
     assert "infer rainfall values from project-page metadata" in c["forbidden"]
     assert "treat nominal radar range as verified event coverage" in c["forbidden"]
 
-def test_official_jicamarca_relation_is_documented_but_geometry_stays_blocked():
+def test_official_jicamarca_relation_is_documented_but_parent_vector_stays_blocked():
     c=load(IDENTITY)
     assert c["status"]=="OFFICIAL_HYDROLOGIC_RELATION_DOCUMENTED_GEOMETRY_UNRESOLVED"
-    assert c["conclusion"].startswith("JICAMARCA_IS_OFFICIAL_SUBBASIN_AND_DOWNSTREAM_NAMING_CONTEXT")
+    assert "OFFICIAL_PARENT_PARTITIONS_DIFFER_BY_SOURCE" in c["conclusion"]
     topo=c["topology_status"]
-    assert topo["official_parent_subbasin_id"]=="1375542"
+    assert topo["official_parent_partition_status"]=="CONFLICTING_OFFICIAL_DOCUMENTARY_PARTITIONS_VECTOR_IDENTITY_UNRESOLVED"
+    assert topo["legacy_2010_parent_reference"]["code"]=="1375542"
+    assert topo["legacy_2010_parent_reference"]["name"]=="Qda. Jicamarca"
+    assert topo["later_2019_parent_references"]["jicamarca"]["code"]=="1375544"
+    assert topo["later_2019_parent_references"]["canto_grande"]["code"]=="1375542"
+    assert topo["live_vector_parent_identity"] is None
     assert topo["huaycoloro_rio_seco_union"]=="OFFICIALLY_DESCRIBED_TOPOLOGY_COORDINATES_UNRESOLVED"
     assert topo["exact_union_coordinate"] is None
     assert topo["jicamarca_named_channel_relationship"]=="DOWNSTREAM_NAMING_RELATION_DOCUMENTED_EXACT_LINE_GEOMETRY_UNRESOLVED"
     gp=c["geometry_policy"]
     assert gp["official_parent_subbasin_is_local_activation_geometry"] is False
+    assert gp["parent_geometry_currently_publishable"] is False
     assert gp["standalone_jicamarca_local_polygon_allowed"] is False
     assert gp["approximate_confluence_point_allowed"] is False
     assert gp["union_of_child_polygons_allowed"] is False
+    assert gp["digitize_documentary_map_as_geometry_allowed"] is False
+
+def test_parent_geometry_source_probe_is_fail_closed_and_creates_no_map_geometry():
+    c=load(PARENT_GEOMETRY)
+    assert c["status"]=="BLOCKED_OFFICIAL_VECTOR_SOURCE_NOT_RECONCILED"
+    assert c["scientific_result"]["geometry_accepted"] is False
+    assert c["scientific_result"]["map_layer_created"] is False
+    assert c["scientific_result"]["child_geometry_inferred"] is False
+    assert c["scientific_result"]["outlet_or_confluence_inferred"] is False
+    assert c["official_live_service_probe"]["geometry_requests_accepted"]==0
+    assert c["official_live_service_probe"]["area_window_probes"]["jicamarca_490_4_to_494_4_km2"]["layer_7_feature_count"]==0
+    assert c["official_live_service_probe"]["area_window_probes"]["jicamarca_490_4_to_494_4_km2"]["layer_8_feature_count"]==0
+    assert c["geometry_policy"]["publish_parent_polygon"] is False
+    assert c["geometry_policy"]["documentary_map_digitization_forbidden"] is True
+    assert c["geometry_policy"]["approximate_geometry_forbidden"] is True
 
 def test_canto_grande_media_luna_evidence_does_not_digitize_report_figures():
     c=load(CANTO); ident=c["bounded_identity_evidence"]
