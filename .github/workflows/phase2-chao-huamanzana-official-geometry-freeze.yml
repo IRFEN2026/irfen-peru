@@ -63,4 +63,8 @@ jobs:
             site/data/phase2/geometries/lalibertad_huamanzaña_basin_context_validation.json \
             site/data/map_layers.json
           git commit -m "Phase2: freeze exact ANA Huamanzaña child context"
-          git push origin HEAD:${{ github.head_ref }}
+          for attempt in 1 2 3; do
+            if git push origin HEAD:${{ github.head_ref }}; then exit 0; fi
+            sleep $((attempt * 5))
+          done
+          exit 1
