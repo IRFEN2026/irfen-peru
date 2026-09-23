@@ -20,6 +20,8 @@ INVENTORY_PATH = ROOT / "config/phase2_candidate_inventory_v0_2.json"
 PRIORITY_PATH = ROOT / "config/phase2_map_priority_v0_1.json"
 PHASE2_CATALOG_PATH = SITE / "data/phase2/catalog.json"
 CONTRACTS_DIR = SITE / "data/validation/phase2_zone_contracts"
+DISCOVERY_INVENTORY_PATH = ROOT / "config/phase2_north_coast_discovery_inventory_v0_1.json"
+DISCOVERY_CONTRACTS_DIR = SITE / "data/validation/phase2_discovery_contracts"
 OUT_PATH = SITE / "data/map_layers.json"
 
 ALLOWED_DEPLOYMENT = {"TEST_ONLY", "RESEARCH_ONLY"}
@@ -378,16 +380,100 @@ def build_research_component_layers(inventory: dict) -> list[dict]:
     return layers
 
 
+def build_research_discovery_units(discovery_inventory: dict) -> list[dict]:
+    required = {
+        "deployment_status": "RESEARCH_ONLY",
+        "test_mode": "TEST_ONLY",
+        "production_use": False,
+        "production_ready": False,
+        "operational_alerting_enabled": False,
+        "activation_gate": "BLOCKED",
+        "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+        "decision_thresholds": None,
+        "hydraulic_factors": None,
+    }
+    for key, expected in required.items():
+        if discovery_inventory.get(key) != expected:
+            raise MapCatalogError(f"inventario discovery inseguro: {key}")
+    units = []
+    seen = set()
+    for item in discovery_inventory.get("discovery_units") or []:
+        discovery_id = item.get("discovery_id")
+        if not isinstance(discovery_id, str) or not discovery_id or discovery_id in seen:
+            raise MapCatalogError("discovery_id ausente o duplicado")
+        seen.add(discovery_id)
+        contract_path = DISCOVERY_CONTRACTS_DIR / f"{discovery_id}.json"
+        contract = load_json(contract_path) if contract_path.is_file() else None
+        geometry = ((contract or {}).get("assets") or {}).get("geometry") or {}
+        raw_path = geometry.get("path")
+        absolute_path = ROOT / raw_path if isinstance(raw_path, str) else None
+        map_eligible = bool(
+            contract
+            and not str(geometry.get("status", "MISSING")).startswith("MISSING")
+            and absolute_path
+            and absolute_path.is_file()
+            and absolute_path.suffix.lower() in {".geojson", ".json"}
+        )
+        metadata = geojson_summary(absolute_path) if map_eligible else None
+        if contract:
+            for key, expected in required.items():
+                if contract.get(key) != expected:
+                    raise MapCatalogError(f"contrato discovery inseguro {discovery_id}: {key}")
+            if geometry.get("counts_as_operational_geometry") is not False:
+                raise MapCatalogError(f"geometry discovery pretende uso operacional: {discovery_id}")
+            if geometry.get("counts_as_event_footprint") is not False:
+                raise MapCatalogError(f"geometry discovery pretende footprint de evento: {discovery_id}")
+        if map_eligible:
+            if not raw_path.startswith("site/data/phase2/geometries/") or ".." in Path(raw_path).parts:
+                raise MapCatalogError(f"ruta discovery insegura: {discovery_id}")
+            if metadata.get("research_only_guard") is not True:
+                raise MapCatalogError(f"geometría discovery sin guardas RESEARCH_ONLY: {discovery_id}")
+        units.append({
+            "discovery_id": discovery_id,
+            "system_name": item.get("system_name"),
+            "department": item.get("department"),
+            "territorial_reference": item.get("territorial_reference"),
+            "entity_role": item.get("entity_role"),
+            "hydrologic_components": item.get("hydrologic_components") or [],
+            "must_not_merge_with": item.get("must_not_merge_with") or [],
+            "deployment_status": "RESEARCH_ONLY",
+            "production_use": False,
+            "production_ready": False,
+            "operational_alerting_enabled": False,
+            "activation_gate": "BLOCKED",
+            "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+            "decision_thresholds": None,
+            "hydraulic_factors": None,
+            "contract_status": (contract or {}).get("contract_status", "DISCOVERY_ONLY_NO_GEOMETRY_CONTRACT"),
+            "contract_path": contract_path.relative_to(ROOT).as_posix() if contract else None,
+            "geometry": {
+                "status": geometry.get("status", "MISSING_NO_REPRODUCIBLE_GEOMETRY"),
+                "path": raw_path,
+                "source_path": raw_path.removeprefix("site/") if raw_path else None,
+                "source_ids": geometry.get("source_ids") or [],
+                "map_eligible": map_eligible,
+                "representation": geometry.get("representation") if map_eligible else "NOT_MAPPED_NO_REPRODUCIBLE_FILE",
+                "source_metadata": metadata,
+                "default_visibility": False,
+                "map_disclaimer": "Unidad discovery RESEARCH_ONLY: geometría oficial/contextual; no expresa riesgo, alerta, activación ni footprint de evento." if map_eligible else None,
+            },
+        })
+    return units
+
+
 def build_catalog() -> dict:
     inventory = load_json(INVENTORY_PATH)
     priority = load_json(PRIORITY_PATH)
     phase2_catalog = load_json(PHASE2_CATALOG_PATH)
+    discovery_inventory = load_json(DISCOVERY_INVENTORY_PATH)
     if inventory.get("production_use") is not False or inventory.get("deployment_status") != "RESEARCH_ONLY":
         raise MapCatalogError("inventario fase 2 inseguro")
     technical_layers = build_technical_layers()
     research_zones = build_research_zones(inventory, phase2_catalog, priority)
     research_component_layers = build_research_component_layers(inventory)
+    research_discovery_units = build_research_discovery_units(discovery_inventory)
     mappable_research = sum(zone["geometry"]["map_eligible"] for zone in research_zones)
+    mappable_discovery = sum(unit["geometry"]["map_eligible"] for unit in research_discovery_units)
     return {
         "version": "irfen-map-layer-catalog-v1",
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -399,6 +485,7 @@ def build_catalog() -> dict:
         "guardrails": {
             "technical_layers_are_test_only": True,
             "phase2_layers_are_research_only": True,
+            "discovery_layers_are_research_only": True,
             "missing_geometry_is_not_approximated": True,
             "reference_points_for_missing_geometry_forbidden": True,
             "risk_colors_for_research_layers_forbidden": True,
@@ -411,12 +498,16 @@ def build_catalog() -> dict:
             "research_candidates_registered": len(research_zones),
             "research_candidates_map_eligible": mappable_research,
             "research_component_layers_registered": len(research_component_layers),
+            "research_discovery_units_registered": len(research_discovery_units),
+            "research_discovery_units_map_eligible": mappable_discovery,
+            "research_discovery_units_withheld_missing_reproducible_geometry": len(research_discovery_units) - mappable_discovery,
             "research_candidates_withheld_missing_reproducible_geometry": len(research_zones) - mappable_research,
             "new_operational_zones": 0,
         },
         "technical_layers": technical_layers,
         "research_zones": research_zones,
         "research_component_layers": research_component_layers,
+        "research_discovery_units": research_discovery_units,
     }
 
 
