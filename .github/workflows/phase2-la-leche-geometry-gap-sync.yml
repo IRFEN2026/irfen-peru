@@ -1,0 +1,44 @@
+name: IRFEN - Phase2 La Leche geometry gap sync
+
+on:
+  pull_request:
+    paths:
+      - site/data/validation/phase2_zone_contracts/lambayeque_motupe_la_leche_pitipo.json
+      - site/data/validation/phase2_research_evidence/la_leche_geometry_discovery_20260923.json
+      - tests/test_phase2_la_leche_geometry_gap.py
+      - .github/workflows/phase2-la-leche-geometry-gap-sync.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Rebuild deterministic research map catalog
+        run: python scripts/build_map_layer_catalog.py
+      - name: Validate bounded fail-closed geometry gap
+        run: |
+          python scripts/probe_motupe_la_leche_official_geometry.py --check-only
+          python scripts/build_phase2_catalog.py --check-only
+          python scripts/build_map_layer_catalog.py --check-only
+          python -m unittest tests.test_phase2_motupe_la_leche_geometry tests.test_phase2_la_leche_geometry_gap -v
+          git diff --check
+      - name: Commit deterministic map catalog update
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add site/data/map_layers.json
+            git commit -m "Phase2: synchronize La Leche geometry-gap map metadata"
+            git push origin HEAD:${{ github.head_ref }}
+          fi
