@@ -6,6 +6,8 @@ ROOT = Path(__file__).resolve().parents[1]
 CASE = ROOT / "site/data/validation/phase2_case_validations/palpa_changuillo_2023_2026.json"
 EVIDENCE = ROOT / "site/data/validation/phase2_research_evidence/palpa_changuillo_official_context_2023_2026.json"
 CONTRACT = ROOT / "site/data/validation/phase2_zone_contracts/ica_palpa_changuillo.json"
+PALPA_GEOMETRY = "site/data/phase2/geometries/ica_palpa_changuillo_grande_basin_context.geojson"
+PALPA_SOURCE_ID = "ANA-IDEP-UH-GRANDE-1372-20260923"
 
 
 # Revalidated against advancing main before merge.
@@ -80,13 +82,24 @@ class PalpaChanguilloResearchCloseoutTests(unittest.TestCase):
         c = self.contract
         self.assertEqual(c["contract_status"], "DRAFT")
         self.assertEqual(c["deployment_status"], "RESEARCH_ONLY")
+        self.assertEqual(c["test_mode"], "TEST_ONLY")
         self.assertFalse(c["production_use"])
+        self.assertFalse(c["production_ready"])
         self.assertFalse(c["alerting_enabled"])
+        self.assertFalse(c["operational_alerting_enabled"])
+        self.assertEqual(c["missing_data_rule"], "UNKNOWN_NOT_LOW_RISK")
         self.assertIsNone(c["decision_thresholds"])
         self.assertIsNone(c["hydraulic_factors"])
         self.assertEqual(c["validation"]["activation_gate"], "BLOCKED")
         self.assertEqual(c["hazard_model"]["mechanism_status"], "TO_BE_RESOLVED")
-        self.assertEqual(c["assets"]["geometry"]["status"], "MISSING")
+        geometry = c["assets"]["geometry"]
+        self.assertEqual(geometry["status"], "PARTIAL")
+        self.assertEqual(geometry["path"], PALPA_GEOMETRY)
+        self.assertIn(PALPA_SOURCE_ID, geometry["source_ids"])
+        self.assertTrue((ROOT / PALPA_GEOMETRY).is_file())
+        self.assertEqual(c["assets"]["observations"]["status"], "MISSING")
+        self.assertEqual(c["assets"]["hydraulic_context"]["status"], "MISSING")
+        self.assertEqual(c["assets"]["historical_events"]["status"], "MISSING")
 
     def test_no_threshold_or_hydraulic_transfer(self):
         self.assertIsNone(self.evidence["decision_thresholds"])
