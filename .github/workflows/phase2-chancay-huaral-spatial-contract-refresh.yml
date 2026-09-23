@@ -1,0 +1,62 @@
+name: IRFEN - Phase2 Chancay-Huaral spatial contract refresh
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/phase2-chancay-huaral-spatial-contract-refresh.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-spatial-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Extend frozen spatial-observation geometry registry
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/validate_phase2_spatial_observation_contracts.py')
+          s=p.read_text(encoding='utf-8')
+          changes = [
+            ('MALA_ID = "lima_sur_mala"\nLAMBAYEQUE_PARENT_ID', 'MALA_ID = "lima_sur_mala"\nCHANCAY_HUARAL_ID = "lima_norte_chancay_huaral"\nLAMBAYEQUE_PARENT_ID'),
+            ('ACARI_ID, CANETE_ID, ASIA_ID, PISCO_ID, PALPA_ID, HUERTA_ID, ARAHUAY_ID, MALA_ID}', 'ACARI_ID, CANETE_ID, ASIA_ID, PISCO_ID, PALPA_ID, HUERTA_ID, ARAHUAY_ID, MALA_ID, CHANCAY_HUARAL_ID}'),
+            ('ACARI_ID, CANETE_ID, ASIA_ID, PISCO_ID, PALPA_ID, HUERTA_ID, ARAHUAY_ID, MALA_ID):', 'ACARI_ID, CANETE_ID, ASIA_ID, PISCO_ID, PALPA_ID, HUERTA_ID, ARAHUAY_ID, MALA_ID, CHANCAY_HUARAL_ID):'),
+            ('        MALA_ID: "NON_CATCHMENT_GEOMETRY_ONLY",\n        LAMBAYEQUE_PARENT_ID', '        MALA_ID: "NON_CATCHMENT_GEOMETRY_ONLY",\n        CHANCAY_HUARAL_ID: "NON_CATCHMENT_GEOMETRY_ONLY",\n        LAMBAYEQUE_PARENT_ID'),
+            ('"non_catchment_geometry_only_count": 10,', '"non_catchment_geometry_only_count": 11,'),
+            ('"blocked_missing_geometry_count": 6,', '"blocked_missing_geometry_count": 5,'),
+          ]
+          for old,new in changes:
+            if old not in s:
+              raise SystemExit(f'expected validator anchor not found: {old}')
+            s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Regenerate deterministic spatial observation contract
+        run: |
+          python scripts/build_phase2_spatial_observation_contracts.py
+          python scripts/validate_phase2_spatial_observation_contracts.py
+          python scripts/probe_chancay_huaral_official_geometry.py --check-only
+          python scripts/build_phase2_catalog.py --check-only
+          python scripts/build_map_layer_catalog.py --check-only
+      - name: Commit bounded validator/artifact update
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add scripts/validate_phase2_spatial_observation_contracts.py site/data/phase2/spatial_observation_contracts_v0_1.json
+          if git diff --cached --quiet; then
+            echo 'Spatial contract already synchronized.'
+            exit 0
+          fi
+          git commit -m 'Phase2: register Chancay-Huaral spatial context'
+          git push origin HEAD:"${HEAD_REF}"
