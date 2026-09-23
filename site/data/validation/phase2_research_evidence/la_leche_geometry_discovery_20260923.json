@@ -1,0 +1,69 @@
+{
+  "version": "phase2-la-leche-geometry-discovery-v1",
+  "candidate_id": "lambayeque_motupe_la_leche_pitipo",
+  "component_id": "la_leche_hydrologic_component",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "discovery_status": "NO_REPRODUCIBLE_SEPARATE_GEOMETRY_FROM_TESTED_OFFICIAL_ENDPOINTS",
+  "identity_context": {
+    "parent_ana_hydrologic_unit_code": "137772",
+    "parent_ana_hydrologic_unit_name": "Cuenca Motupe",
+    "la_leche_reference_code": "1377722",
+    "la_leche_reference_name": "Rio La Leche",
+    "identity_is_officially_supported": true,
+    "separate_geometry_is_supported": false
+  },
+  "official_endpoint_checks": [
+    {
+      "source_id": "ANA-GEOSNIRH-MOTUPE-OLMOS-LALECHE-MAPSERVER",
+      "institution": "Autoridad Nacional del Agua / GEOSNIRH",
+      "url": "https://geosnirh.ana.gob.pe/server/rest/services/Mapas_ALA/Capas_ALA_Motupe_Olmos_LaLeche/MapServer/find?searchText=Rio+La+Leche&contains=false&sr=4326&returnGeometry=true&geometryPrecision=7&returnZ=false&returnM=false&f=json",
+      "attempted_at_utc": "2026-09-23T00:39:13Z",
+      "result": "NETWORK_TIMEOUT_NO_SCIENTIFIC_INFERENCE",
+      "workflow_run_id": 35802980229,
+      "rule": "A timeout is not evidence of absence and cannot support geometry or a negative hydrologic claim."
+    },
+    {
+      "source_id": "ANA-IDEP-UNIDADES-HIDROGRAFICAS-LAYER-8",
+      "institution": "Autoridad Nacional del Agua / IDEP",
+      "url": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/8/query?where=CODIGO%3D%271377722%27&outFields=%2A&returnGeometry=true&outSR=4326&geometryPrecision=7&f=geojson",
+      "attempted_at_utc": "2026-09-23T00:41:28Z",
+      "result": "ZERO_FEATURES_FOR_EXACT_CODE_IN_THIS_LAYER",
+      "feature_count": 0,
+      "raw_response_sha256": "ed778c73ea51338d6576fb5992b189f2b94d9f3d5e199f46c1af520d6b0b3e6c",
+      "canonical_response_sha256": "6d6b80a88dc60e65991d34024fe7cf2eb86531ffba8b75efb697fe0a601f2799",
+      "workflow_run_id": 35803145365,
+      "rule": "This bounded result proves only that ANA IDEP layer 8 did not expose code 1377722 through the exact query at this time; it does not prove that no separate official geometry exists in other ANA datasets."
+    }
+  ],
+  "current_geometry_decision": {
+    "motupe_basin_context_path": "site/data/phase2/geometries/lambayeque_motupe_la_leche_pitipo_motupe_basin_context.geojson",
+    "la_leche_separate_geometry_path": null,
+    "pitipo_geometry_path": null,
+    "local_ravine_geometry_paths": [],
+    "map_action": "KEEP_EXISTING_MOTUPE_CONTEXT_ONLY",
+    "maturity_change": "NONE",
+    "counts_as_complete_candidate_geometry": false,
+    "artificial_connector_used": false
+  },
+  "next_safe_geometry_sources": [
+    "machine-readable ANA hydrologic subunit dataset explicitly exposing code 1377722 or named La Leche unit",
+    "machine-readable official ANA/GEOSNIRH watercourse layer with unique Rio La Leche identity and stable geometry",
+    "other official public geospatial source whose feature identity can be reproduced without outcome-based tuning"
+  ],
+  "forbidden_uses": [
+    "draw a La Leche polygon from documentary descriptions or PDF cartography alone",
+    "treat Rio La Leche identity code as proof of a polygon available in the tested IDEP layer",
+    "infer Pítipo as a hydrologic polygon",
+    "connect Motupe and La Leche with an artificial geometry",
+    "interpret a timeout as evidence of absence",
+    "infer event footprint, inundation extent, hydraulic capacity, discharge, negative control, threshold, risk or alert state"
+  ]
+}
