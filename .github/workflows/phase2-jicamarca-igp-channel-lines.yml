@@ -1,0 +1,102 @@
+name: IRFEN - Phase2 Jicamarca IGP channel lines
+
+on:
+  pull_request:
+    paths:
+      - config/phase2_jicamarca_igp_channel_line_freeze_v0_1.json
+      - scripts/freeze_phase2_jicamarca_igp_channel_lines.py
+      - site/data/phase2/geometries/jicamarca_*_igp_channel.geojson
+      - site/data/validation/phase2_jicamarca_igp_channel_line_validation_v0_1.json
+      - .github/workflows/phase2-jicamarca-igp-channel-lines.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  freeze-source-lines:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Detect bootstrap mode
+        id: mode
+        shell: bash
+        run: |
+          if [[ -f site/data/validation/phase2_jicamarca_igp_channel_line_validation_v0_1.json ]]; then
+            echo "bootstrap=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "bootstrap=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Retrieve exact preregistered source features
+        run: python scripts/freeze_phase2_jicamarca_igp_channel_lines.py
+      - name: Enforce local-line-only guards
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          v=json.loads(Path('site/data/validation/phase2_jicamarca_igp_channel_line_validation_v0_1.json').read_text(encoding='utf-8'))
+          assert v['status']=='PASS_FROZEN_IGP_NAMED_CHANNEL_LINES'
+          for k,e in {
+            'deployment_status':'RESEARCH_ONLY','test_mode':'TEST_ONLY','production_use':False,
+            'production_ready':False,'operational_alerting_enabled':False,'activation_gate':'BLOCKED',
+            'missing_data_rule':'UNKNOWN_NOT_LOW_RISK','decision_thresholds':None,'hydraulic_factors':None}.items():
+              assert v[k]==e, (k,v[k])
+          assert v['selection_used_geometry'] is False
+          assert v['selection_used_outcomes'] is False
+          assert v['source_segments_union_performed'] is False
+          assert v['catchment_polygons_created'] is False
+          assert v['outlets_or_confluences_inferred'] is False
+          assert v['routing_enabled'] is False
+          assert {x['component_id'] for x in v['components']}=={'rio_seco_channel','canto_grande_channel','media_luna_channel'}
+          assert set(v['withheld_components'])=={'jicamarca_named_channel','huaycoloro'}
+          for row in v['components']:
+              d=json.loads(Path(row['path']).read_text(encoding='utf-8'))
+              assert d['type']=='FeatureCollection'
+              assert d['properties']['source_segments_union_performed'] is False
+              assert d['properties']['catchment_polygon'] is False
+              assert d['properties']['outlet_or_confluence'] is False
+              assert d['properties']['event_footprint'] is False
+              assert d['properties']['routing_enabled'] is False
+              assert d['properties']['activation_gate']=='BLOCKED'
+              assert len(d['features'])==row['feature_count']
+              for f in d['features']:
+                  assert f['geometry']['type'] in {'LineString','MultiLineString'}
+                  assert f['properties']['deployment_status']=='RESEARCH_ONLY'
+                  assert f['properties']['production_use'] is False
+                  assert f['properties']['production_ready'] is False
+                  assert f['properties']['alerting_enabled'] is False
+                  assert f['properties']['outlet_or_confluence'] is False
+                  assert f['properties']['activation_evidence'] is False
+          PY
+      - name: Require exact replay after bootstrap
+        if: steps.mode.outputs.bootstrap == 'false'
+        shell: bash
+        run: |
+          git diff --exit-code -- \
+            site/data/phase2/geometries/jicamarca_rio_seco_igp_channel.geojson \
+            site/data/phase2/geometries/jicamarca_canto_grande_igp_channel.geojson \
+            site/data/phase2/geometries/jicamarca_media_luna_igp_channel.geojson \
+            site/data/validation/phase2_jicamarca_igp_channel_line_validation_v0_1.json
+      - name: Commit frozen source lines once
+        if: steps.mode.outputs.bootstrap == 'true' && github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            site/data/phase2/geometries/jicamarca_rio_seco_igp_channel.geojson \
+            site/data/phase2/geometries/jicamarca_canto_grande_igp_channel.geojson \
+            site/data/phase2/geometries/jicamarca_media_luna_igp_channel.geojson \
+            site/data/validation/phase2_jicamarca_igp_channel_line_validation_v0_1.json
+          git commit -m "Freeze exact IGP Jicamarca child channel lines"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
