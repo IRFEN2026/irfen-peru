@@ -6,8 +6,13 @@ on:
       - site/data/validation/phase2_discovery_contracts/lima_norte_pativilca.json
       - site/data/validation/phase2_discovery_contracts/lima_norte_fortaleza_paramonga.json
       - scripts/probe_north_coast_discovery_official_geometry.py
+      - scripts/apply_phase2_discovery_map_support_patch.py
+      - scripts/build_map_layer_catalog.py
+      - site/v08-territorial.js
       - tests/test_phase2_north_coast_discovery_geometry_contracts.py
+      - tests/test_phase2_discovery_map_catalog.py
       - .github/workflows/phase2-north-coast-pativilca-fortaleza-geometry.yml
+      - site/data/map_layers.json
       - site/data/phase2/geometries/lima_norte_pativilca_basin_context.geojson
       - site/data/phase2/geometries/lima_norte_fortaleza_basin_context.geojson
       - site/data/phase2/sources/north_coast_discovery_geometry/**
@@ -19,7 +24,7 @@ permissions:
 jobs:
   freeze-official-geometry:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -42,6 +47,14 @@ jobs:
               pending |= str(d['assets']['geometry']['status']).startswith('MISSING')
           print('refresh=' + ('true' if pending else 'false'))
           PY
+      - name: Decide whether map/catalog discovery support must be applied
+        id: mapgate
+        run: |
+          if grep -q 'def build_research_discovery_units' scripts/build_map_layer_catalog.py; then
+            echo 'patch=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'patch=true' >> "$GITHUB_OUTPUT"
+          fi
       - name: Freeze official ANA sources and normalized geometries
         if: steps.gate.outputs.refresh == 'true'
         run: |
@@ -55,12 +68,25 @@ jobs:
           python scripts/probe_north_coast_discovery_official_geometry.py \
             --target lima_norte_pativilca \
             --target lima_norte_fortaleza_paramonga
+      - name: Apply fail-closed map discovery support
+        if: steps.mapgate.outputs.patch == 'true'
+        run: python scripts/apply_phase2_discovery_map_support_patch.py
+      - name: Rebuild map layer catalog after first discovery-map integration
+        if: steps.mapgate.outputs.patch == 'true'
+        run: python scripts/build_map_layer_catalog.py
+      - name: Verify map layer catalog replay after integration
+        if: steps.mapgate.outputs.patch != 'true'
+        run: python scripts/build_map_layer_catalog.py --check-only
       - name: Install focused test dependency
         run: python -m pip install pytest
-      - name: Enforce discovery guard tests
-        run: python -m pytest -q tests/test_phase2_north_coast_discovery_geometry_contracts.py
-      - name: Commit frozen source and geometry to pull-request branch
-        if: steps.gate.outputs.refresh == 'true' && github.event_name == 'pull_request'
+      - name: Enforce discovery and map guard tests
+        run: |
+          python -m pytest -q tests/test_phase2_north_coast_discovery_geometry_contracts.py
+          if [ -f tests/test_phase2_discovery_map_catalog.py ]; then
+            python -m pytest -q tests/test_phase2_discovery_map_catalog.py
+          fi
+      - name: Commit frozen scientific assets and map publication plumbing
+        if: (steps.gate.outputs.refresh == 'true' || steps.mapgate.outputs.patch == 'true') && github.event_name == 'pull_request'
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
@@ -71,7 +97,11 @@ jobs:
             site/data/phase2/geometries/lima_norte_pativilca_geometry_validation.json \
             site/data/phase2/geometries/lima_norte_fortaleza_basin_context.geojson \
             site/data/phase2/geometries/lima_norte_fortaleza_geometry_validation.json \
-            site/data/phase2/sources/north_coast_discovery_geometry/
+            site/data/phase2/sources/north_coast_discovery_geometry/ \
+            scripts/build_map_layer_catalog.py \
+            site/v08-territorial.js \
+            tests/test_phase2_discovery_map_catalog.py \
+            site/data/map_layers.json
           git diff --cached --quiet && exit 0
-          git commit -m 'Freeze official ANA Pativilca and Fortaleza discovery geometry'
+          git commit -m 'Publish Pativilca and Fortaleza discovery geometry on research map'
           git push origin HEAD:${{ github.event.pull_request.head.ref }}
