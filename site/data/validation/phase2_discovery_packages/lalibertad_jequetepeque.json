@@ -1,0 +1,159 @@
+{
+  "schema_version": "0.1",
+  "discovery_id": "lalibertad_jequetepeque",
+  "system_name": "Cuenca Rio Jequetepeque with regulated Gallito Ciego context",
+  "contract_status": "DISCOVERY_HYDROLOGIC_IDENTITY_RESOLVED_GEOMETRY_PENDING",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "source_registry_path": "site/data/phase2/sources/lalibertad_jequetepeque_official_evidence_v0_1.json",
+  "official_source_ids": [
+    "ANA-CLASIFICACION-CUERPOS-AGUA-JEQUETEPEQUE",
+    "INGEMMET-A6769-JEQUETEPEQUE-2017",
+    "INDECI-JEQUETEPEQUE-MAGDALENA-2023-RC2456",
+    "INDECI-SENAMHI-JEQUETEPEQUE-YONAN-2023",
+    "PEJEZA-GALLITO-CIEGO-HYDROMETRIC-SERVICE",
+    "PEJEZA-GALLITO-CIEGO-OPERATOR-2025-2026"
+  ],
+  "hydrologic_identity": {
+    "ana_unit_code": "13774",
+    "ana_unit_name": "Cuenca Jequetepeque",
+    "territorial_reference_is_basin": false,
+    "named_watercourses_supported": [
+      "Rio Jequetepeque",
+      "Rio Contumaza",
+      "Rio Chilete",
+      "Rio San Miguel"
+    ],
+    "must_not_merge_with": [
+      "Cuenca Chaman 137752",
+      "Cuenca Zana",
+      "Cuenca Chicama",
+      "Chepen territorial corridor"
+    ],
+    "chepen_is_hydrologic_unit": false
+  },
+  "assets": {
+    "geometry": {
+      "status": "MISSING_PENDING_EXACT_ANA_QUERY",
+      "path": "site/data/phase2/geometries/lalibertad_jequetepeque_basin_context.geojson",
+      "representation": "OFFICIAL_ANA_HYDROGRAPHIC_UNIT_CONTEXT_PENDING_REPLAY",
+      "source_query": {
+        "endpoint": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/8/query",
+        "where": "CODIGO='13774'",
+        "out_fields": "*",
+        "out_sr": 4326,
+        "geometry_precision": 7,
+        "format": "geojson"
+      },
+      "counts_as_operational_geometry": false,
+      "counts_as_event_footprint": false
+    },
+    "event_ledger": {
+      "1982_1983": {"status": "UNKNOWN_NOT_NEGATIVE", "source_ids": []},
+      "1997_1998": {"status": "UNKNOWN_NOT_NEGATIVE", "source_ids": []},
+      "2017": {
+        "status": "POSITIVE_RIO_JEQUETEPEQUE_EVENT_EVIDENCE_REACH_SCOPED",
+        "source_ids": ["INGEMMET-A6769-JEQUETEPEQUE-2017"],
+        "supported_claim": "INGEMMET records exceptional Rio Jequetepeque growth with inundation and erosion of agricultural land on both margins in San Miguel, Cajamarca during El Nino Costero 2017.",
+        "lower_valley_uniform_response": false,
+        "exact_event_footprint_available": false
+      },
+      "2023": {
+        "status": "POSITIVE_RIVER_RESPONSE_AND_HYDROLOGIC_OBSERVATIONS",
+        "source_ids": [
+          "INDECI-JEQUETEPEQUE-MAGDALENA-2023-RC2456",
+          "INDECI-SENAMHI-JEQUETEPEQUE-YONAN-2023"
+        ],
+        "supported_claim": "Official sources document February 2023 Rio Jequetepeque flow increase with fluvial erosion at Magdalena and time-stamped March 2023 hydrologic monitoring at Yonan GORE.",
+        "event_footprint_available": false,
+        "provider_alert_bands_used_as_irfen_thresholds": false
+      },
+      "recent_2025_2026": {
+        "status": "REGULATED_SYSTEM_MONITORING_AND_PREVENTION_CONTEXT_NOT_EVENT_LABEL",
+        "source_ids": ["PEJEZA-GALLITO-CIEGO-OPERATOR-2025-2026"],
+        "event_label_assigned": false
+      }
+    },
+    "observations": {
+      "status": "OFFICIAL_OBSERVATION_SOURCES_IDENTIFIED_EVENT_SERIES_NOT_YET_FROZEN",
+      "station_or_system_locators": [
+        {
+          "name": "Yonan GORE",
+          "variable_role": "Rio Jequetepeque flow monitoring",
+          "source_id": "INDECI-SENAMHI-JEQUETEPEQUE-YONAN-2023",
+          "event_paired_values_frozen": false
+        },
+        {
+          "name": "Yonan",
+          "variable_role": "Gallito Ciego inflow observation context",
+          "source_id": "PEJEZA-GALLITO-CIEGO-HYDROMETRIC-SERVICE",
+          "event_paired_values_frozen": false
+        },
+        {
+          "name": "Las Paltas",
+          "variable_role": "Gallito Ciego inflow observation context",
+          "source_id": "PEJEZA-GALLITO-CIEGO-HYDROMETRIC-SERVICE",
+          "event_paired_values_frozen": false
+        }
+      ],
+      "missing_series_is_low_risk": false,
+      "provider_bands_are_irfen_thresholds": false,
+      "next_required": [
+        "freeze time-stamped SENAMHI/INDECI Yonan GORE series for selected event windows with QA metadata",
+        "retrieve PEJEZA reservoir inflow/outflow and level records only as regulated-system observations",
+        "identify basin rainfall observations and preserve station/reach attribution"
+      ]
+    },
+    "exposure_connectivity": {
+      "status": "PARTIAL_REACH_AND_LOWER_VALLEY_CONTEXT",
+      "source_ids": [
+        "INGEMMET-A6769-JEQUETEPEQUE-2017",
+        "INDECI-JEQUETEPEQUE-MAGDALENA-2023-RC2456"
+      ],
+      "classes": ["agriculture", "roads", "settlements", "irrigation_infrastructure"],
+      "network_connectivity_normalized": false,
+      "chepen_territorial_exposure_must_not_redefine_basin": true
+    },
+    "hydraulic_context": {
+      "status": "REGULATED_SYSTEM_REQUIRES_SEPARATE_RESPONSE_ANALYSIS",
+      "major_infrastructure": ["Gallito Ciego reservoir and associated major hydraulic system"],
+      "operator_source_id": "PEJEZA-GALLITO-CIEGO-OPERATOR-2025-2026",
+      "capacity_values": null,
+      "works_are_historical_capacity": false,
+      "reservoir_operation_is_natural_response": false,
+      "required_separation": "Natural upstream forcing, reservoir state/operations and downstream river response must remain separate variables before inference."
+    }
+  },
+  "mechanism_policy": {
+    "river_flood_and_fluvial_erosion": "TRACK_BY_REACH_AND_DATE",
+    "tributary_ravines": "TRACK_SEPARATELY_WHEN_IDENTITY_IS_REPRODUCIBLE",
+    "reservoir_regulation": "SEPARATE_CONTEXT_NOT_NATURAL_RESPONSE",
+    "chaman_auto_merge_forbidden": true,
+    "zana_or_chicama_auto_merge_forbidden": true,
+    "absence_of_report_is_negative": false
+  },
+  "map_policy": {
+    "approximate_geometry_forbidden": true,
+    "publish_only_after_exact_ana_geometry_replay": true,
+    "event_footprint_from_basin_geometry_forbidden": true,
+    "risk_or_alert_layer": false
+  },
+  "validation": {
+    "activation_gate": "BLOCKED",
+    "required_reviews": [
+      "exact ANA geometry replay for Cuenca Jequetepeque 13774",
+      "2017 reach-level ledger expansion without lower-valley extrapolation",
+      "event-paired rainfall and Yonan GORE flow reconstruction with QA",
+      "Gallito Ciego operation separated from natural hydrologic response",
+      "exposure/connectivity normalization without using Chepen as a basin"
+    ],
+    "review_evidence": []
+  }
+}
