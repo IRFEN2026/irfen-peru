@@ -1,0 +1,98 @@
+{
+  "schema_version":"0.1",
+  "discovery_id":"ancash_huarmey_culebras",
+  "system_name":"Huarmey-Culebras coastal systems",
+  "contract_status":"DISCOVERY_CHILD_GEOMETRIES_REPRODUCIBLE_EVENT_LEDGER_PARTIAL",
+  "deployment_status":"RESEARCH_ONLY",
+  "test_mode":"TEST_ONLY",
+  "production_use":false,
+  "production_ready":false,
+  "operational_alerting_enabled":false,
+  "activation_gate":"BLOCKED",
+  "missing_data_rule":"UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds":null,
+  "hydraulic_factors":null,
+  "source_registry_path":"site/data/phase2/sources/ancash_huarmey_culebras_official_evidence_v0_1.json",
+  "component_policy":{
+    "parent_is_hydrologic_basin":false,
+    "parent_is_map_polygon":false,
+    "components_must_remain_separate":true,
+    "composite_union_forbidden":true
+  },
+  "components":{
+    "huarmey":{
+      "ana_unit_code":"137594",
+      "ana_unit_name":"Cuenca Huarmey",
+      "geometry_path":"site/data/phase2/geometries/ancash_huarmey_basin_context.geojson",
+      "geometry_sha256":"48a83102ecaa95baf6ebd153e61c35992e657ebc61ca40062354d394d95b3dc4",
+      "geometry_is_event_footprint":false,
+      "event_ledger":{
+        "1982_1983":{"status":"UNKNOWN_NOT_NEGATIVE_RECONSTRUCTION_PENDING","absence_of_report_is_negative":false},
+        "1997_1998":{"status":"UNKNOWN_NOT_NEGATIVE_RECONSTRUCTION_PENDING","absence_of_report_is_negative":false},
+        "2017":{"status":"POSITIVE_RIO_HUARMEY_OVERFLOW_CITY_INUNDATION","source_ids":["MPH-HUARMEY-FLOOD-2017-RETROSPECTIVE-2024"],"event_date":"2017-03-15","reported_city_inundation_percent_lower_bound":80,"reported_percentage_used_as_geometry":false,"exact_event_footprint_reproducible":false,"all_provincial_impacts_assigned_to_main_channel":false},
+        "2023":{"status":"UNKNOWN_NOT_NEGATIVE_EVENT_RECONSTRUCTION_PENDING","absence_of_report_is_negative":false},
+        "2026":{"status":"POSITIVE_RECENT_HIGH_FLOW_CONTEXT_NO_DAMAGE_FOOTPRINT_FROZEN","source_ids":["MPH-HUARMEY-HIGHFLOW-2026-02-19","GORE-ANCASH-HUARMEY-HIGHFLOW-2026-02-26"],"exact_event_footprint_reproducible":false,"current_interventions_are_historical_capacity":false}
+      }
+    },
+    "culebras":{
+      "ana_unit_code":"1375952",
+      "ana_unit_name":"Cuenca Culebras",
+      "geometry_path":"site/data/phase2/geometries/ancash_culebras_basin_context.geojson",
+      "geometry_sha256":"95e22ba1e1a33db10ce9391a5041712c60cdec003a1af238d7044dafbb5d6370",
+      "geometry_is_event_footprint":false,
+      "event_ledger":{
+        "1982_1983":{"status":"UNKNOWN_NOT_NEGATIVE_RECONSTRUCTION_PENDING","absence_of_report_is_negative":false},
+        "1997_1998":{"status":"UNKNOWN_NOT_NEGATIVE_RECONSTRUCTION_PENDING","absence_of_report_is_negative":false},
+        "2017":{"status":"UNKNOWN_NOT_NEGATIVE_RECONSTRUCTION_PENDING","absence_of_report_is_negative":false},
+        "2023":{"status":"UNKNOWN_NOT_NEGATIVE_RECONSTRUCTION_PENDING","absence_of_report_is_negative":false},
+        "recent":{"status":"UNKNOWN_NOT_NEGATIVE_NO_CULEBRAS_EVENT_ASSIGNED_FROM_HUARMEY_SOURCES","absence_of_report_is_negative":false}
+      }
+    }
+  },
+  "observations":{
+    "status":"NO_COMPONENT_EVENT_PAIRED_RAINFALL_STAGE_OR_DISCHARGE_SERIES_FROZEN",
+    "huarmey":{"rainfall":[],"stage":[],"discharge":[]},
+    "culebras":{"rainfall":[],"stage":[],"discharge":[]},
+    "cross_component_transfer_allowed":false,
+    "missing_observations_are_low_risk":false
+  },
+  "exposure_connectivity":{
+    "status":"HUARMEY_2017_TERRITORIAL_EXPOSURE_POSITIVE_CULEBRAS_CONNECTIVITY_UNRESOLVED",
+    "huarmey_classes":["housing","public_institutions","private_institutions","agriculture","roads"],
+    "culebras_classes":[],
+    "reported_huarmey_impact_counts_used_as_hydrologic_geometry":false,
+    "network_connectivity_normalized":false
+  },
+  "hydraulic_context":{
+    "status":"CURRENT_DEFENSE_WORKS_CONTEXT_ONLY_HISTORICAL_CAPACITY_UNRESOLVED",
+    "source_ids":["ANIN-CASMA-HUARMEY-WORKS-2025-01-27","MPH-HUARMEY-HIGHFLOW-2026-02-19","GORE-ANCASH-HUARMEY-HIGHFLOW-2026-02-26"],
+    "historical_capacity_values":null,
+    "current_project_progress_is_model_parameter":false,
+    "current_critical_points_are_historical_events":false,
+    "current_works_define_historical_capacity":false,
+    "current_works_define_irfen_threshold":false
+  },
+  "map_policy":{
+    "publish_huarmey_and_culebras_as_separate_context_layers":true,
+    "publish_parent_composite":false,
+    "basin_geometries_are_event_footprints":false,
+    "risk_or_alert_layer":false
+  },
+  "qa":{
+    "components_merged":false,
+    "huarmey_2017_positive_event_retained":true,
+    "culebras_event_invented":false,
+    "negative_controls_inferred":false,
+    "thresholds_inferred":false,
+    "hydraulic_capacity_inferred":false,
+    "absence_of_report_is_negative":false,
+    "approximate_geometry_created":false
+  },
+  "next_gates":[
+    "reconstruct Culebras event history independently before assigning any activation evidence",
+    "freeze event-paired rainfall and stage or discharge series per component when official observations are reproducible",
+    "resolve a reproducible 2017 Huarmey event footprint independently from the basin polygon before spatial validation",
+    "normalize 2017 exposure connectivity without transferring impacts to Culebras",
+    "keep current protection works outside historical hydraulic-capacity inference"
+  ]
+}
