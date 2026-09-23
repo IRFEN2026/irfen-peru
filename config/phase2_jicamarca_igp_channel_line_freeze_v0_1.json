@@ -1,0 +1,88 @@
+{
+  "schema_version": "0.1",
+  "status": "FROZEN_PRE_GEOMETRY_SOURCE_ID_SELECTION",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "purpose": "Freeze exact official IGP source feature IDs for local named channel-line retrieval before reading their geometry. The resulting lines are channel context only, never catchment polygons, outlets, event footprints, routing or activation evidence.",
+  "selection_provenance": {
+    "probe_contract": "config/phase2_jicamarca_igp_hydrography_probe_v0_1.json",
+    "probe_workflow_run_id": 35934718288,
+    "probe_artifact_id": 10782139664,
+    "probe_artifact_digest": "sha256:603ca863dd0d9f8f6889d4dadfbae779ed5190112cbad021ae53707b201d3b90",
+    "selection_used_geometry": false,
+    "selection_used_outcomes": false,
+    "selection_used_hydraulic_response": false,
+    "selection_basis": "Official source name plus administrative context only. Same-name Rio Seco features outside the Jicamarca/San Antonio context were excluded without reading geometry."
+  },
+  "source": {
+    "institution": "Instituto Geofisico del Peru",
+    "layer_url": "https://ide.igp.gob.pe/arcgis/rest/services/mapabase/MapaBase/MapServer/20",
+    "layer_name": "Quebrada_Lima",
+    "geometry_type": "esriGeometryPolyline",
+    "spatial_reference_wkid": 4326,
+    "service_item_id": "cc79e8bca3034d4aa39ea9e84aa627da"
+  },
+  "components": [
+    {
+      "component_id": "rio_seco_channel",
+      "hydrologic_child_id": "rio_seco",
+      "output_path": "site/data/phase2/geometries/jicamarca_rio_seco_igp_channel.geojson",
+      "source_features": [
+        {"objectid": 3338, "name": "Qda Rio Seco", "district": "SAN ANTONIO", "province": "HUAROCHIRI", "department": "LIMA", "source_type": "Quebrada"}
+      ],
+      "source_segments_must_remain_separate": true,
+      "catchment_geometry_resolved": false,
+      "outlet_resolved": false
+    },
+    {
+      "component_id": "canto_grande_channel",
+      "hydrologic_child_id": "canto_grande_media_luna",
+      "output_path": "site/data/phase2/geometries/jicamarca_canto_grande_igp_channel.geojson",
+      "source_features": [
+        {"objectid": 15404, "name": "Qda Canto Grande", "district": "SAN ANTONIO", "province": "HUAROCHIRI", "department": "LIMA", "source_type": "Quebrada"},
+        {"objectid": 18807, "name": "Qda Canto Grande", "district": "SAN JUAN DE LURIGANCHO", "province": "LIMA", "department": "LIMA", "source_type": "Quebrada"}
+      ],
+      "source_segments_must_remain_separate": true,
+      "catchment_geometry_resolved": false,
+      "outlet_resolved": false
+    },
+    {
+      "component_id": "media_luna_channel",
+      "hydrologic_child_id": "canto_grande_media_luna",
+      "output_path": "site/data/phase2/geometries/jicamarca_media_luna_igp_channel.geojson",
+      "source_features": [
+        {"objectid": 3351, "name": "Qda Media Luna", "district": "SAN ANTONIO", "province": "HUAROCHIRI", "department": "LIMA", "source_type": "Quebrada"},
+        {"objectid": 11823, "name": "Qda Media Luna", "district": "SAN JUAN DE LURIGANCHO", "province": "LIMA", "department": "LIMA", "source_type": "Quebrada"}
+      ],
+      "source_segments_must_remain_separate": true,
+      "catchment_geometry_resolved": false,
+      "outlet_resolved": false
+    }
+  ],
+  "withheld_from_geometry_retrieval": [
+    {
+      "component_id": "jicamarca_named_channel",
+      "reason": "Multiple official source segments occur across several districts and the relation to Huaycoloro/Rio Seco remains unresolved; no subset is selected from geometry or outcome evidence."
+    },
+    {
+      "component_id": "huaycoloro",
+      "reason": "Existing IRFEN pilot chosica_huaycoloro must be reused by reference; duplicate geometry is forbidden."
+    }
+  ],
+  "forbidden": [
+    "union source segments into a catchment polygon",
+    "infer outlet or confluence from a line endpoint",
+    "infer travel time or attenuation from line length",
+    "infer discharge or hydraulic capacity",
+    "use source classification as an IRFEN threshold",
+    "promote tributary activation to Rimac activation or overflow",
+    "publish the Jicamarca parent as a synthetic local activation geometry"
+  ]
+}
