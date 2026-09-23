@@ -111,8 +111,8 @@ class MalaGeometryTests(unittest.TestCase):
         row = {r["candidate_id"]: r for r in spatial["candidate_records"]}["lima_sur_mala"]
         self.assertEqual(row["spatial_contract_status"], "NON_CATCHMENT_GEOMETRY_ONLY")
         self.assertEqual(spatial["summary"]["candidate_wide_ready_count"], 0)
-        self.assertEqual(spatial["summary"]["non_catchment_geometry_only_count"], 11)
-        self.assertEqual(spatial["summary"]["blocked_missing_geometry_count"], 5)
+        self.assertEqual(spatial["summary"]["non_catchment_geometry_only_count"], 12)
+        self.assertEqual(spatial["summary"]["blocked_missing_geometry_count"], 4)
         self.assertEqual(spatial["summary"]["operational_spatial_contract_count"], 0)
 
 
