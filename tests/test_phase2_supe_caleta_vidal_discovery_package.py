@@ -59,16 +59,23 @@ def test_2017_positive_territorial_evidence_does_not_force_mainstem_mechanism():
     assert s["qa"]["2017_mainstem_rio_supe_attribution_assumed"] is False
 
 
-def test_geometry_remains_fail_closed_until_exact_ana_source_is_frozen():
+def test_geometry_remains_fail_closed_or_is_exactly_frozen_ana_context():
     p = load(PACKAGE)
     g = p["assets"]["geometry"]
-    assert g["status"] == "MISSING_PENDING_EXACT_ANA_QUERY_AND_FROZEN_SOURCE"
     assert g["source_query"]["where"] == "CODIGO='137572'"
     assert g["counts_as_operational_geometry"] is False
     assert g["counts_as_event_footprint"] is False
     assert g["approximate_fallback_allowed"] is False
     assert g["caleta_vidal_point_or_district_polygon_allowed_as_basin_fallback"] is False
-    assert not (ROOT / g["path"]).exists()
+    if str(g["status"]).startswith("MISSING"):
+        assert not (ROOT / g["path"]).exists()
+    else:
+        assert g["status"] == "PARTIAL_OFFICIAL_BASIN_CONTEXT"
+        assert g["representation"] == "OFFICIAL_ANA_HYDROGRAPHIC_UNIT_CONTEXT"
+        assert (ROOT / g["path"]).is_file()
+        assert isinstance(g["sha256"], str) and len(g["sha256"]) == 64
+        assert isinstance(g["source_sha256"], str) and len(g["source_sha256"]) == 64
+        assert isinstance(g["validation_sha256"], str) and len(g["validation_sha256"]) == 64
     m = p["map_policy"]
     assert m["approximate_geometry_forbidden"] is True
     assert m["publish_only_after_exact_ana_geometry_replay"] is True
@@ -107,13 +114,19 @@ def test_missing_observations_and_historical_windows_do_not_become_low_risk_or_n
     assert p["mechanism_policy"]["cross_basin_threshold_transfer_allowed"] is False
 
 
-def test_inventory_gap_is_explicit_and_does_not_silently_change_operational_scope():
+def test_inventory_alignment_preserves_non_operational_scope_before_or_after_registration():
     p = load(PACKAGE)
     inv = load(INVENTORY)
     ids = {row["discovery_id"] for row in inv.get("discovery_units", [])}
-    assert "lima_norte_supe_caleta_vidal" not in ids
     a = p["inventory_alignment"]
-    assert a["registration_status"].startswith("GAP_DETECTED_")
     assert a["operational_candidate_count_change_allowed"] is False
+    assert inv["relationship_to_phase2"]["registered_candidate_count_unchanged"] == 18
     assert inv["relationship_to_phase2"]["changes_registered_candidate_count"] is False
     assert inv["relationship_to_phase2"]["changes_operational_scope"] is False
+    if "lima_norte_supe_caleta_vidal" in ids:
+        assert a["registration_status"] == "REGISTERED_DISCOVERY_ONLY_NON_OPERATIONAL"
+        rows = [row for row in inv["discovery_units"] if row["discovery_id"] == "lima_norte_supe_caleta_vidal"]
+        assert len(rows) == 1
+        assert inv["relationship_to_phase2"]["discovery_units_count"] == len(inv["discovery_units"])
+    else:
+        assert a["registration_status"].startswith("GAP_DETECTED_")
