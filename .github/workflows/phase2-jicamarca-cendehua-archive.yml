@@ -26,7 +26,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - name: Bootstrap exact public report bytes or replay frozen archive
+      - name: Bootstrap exact public report bytes or freeze blocked source state
         id: mode
         shell: bash
         run: |
@@ -47,7 +47,9 @@ jobs:
           from pathlib import Path
           p=Path('site/data/phase2/sources/jicamarca_cendehua/archive_manifest_v0_1.json')
           d=json.loads(p.read_text(encoding='utf-8'))
-          assert d['status']=='PASS_REPRODUCIBLE_CENDEHUA_BYTE_ARCHIVE'
+          assert d['status'] in {
+            'PASS_REPRODUCIBLE_CENDEHUA_BYTE_ARCHIVE',
+            'BLOCKED_PUBLIC_SOURCE_BYTES_NOT_REPRODUCIBLE'}
           assert d['deployment_status']=='RESEARCH_ONLY'
           assert d['test_mode']=='TEST_ONLY'
           assert d['production_use'] is False
@@ -62,9 +64,21 @@ jobs:
           assert d['outlets_inferred'] is False
           assert d['discharge_inferred'] is False
           assert d['routing_enabled'] is False
-          assert d['report_count']==3
+          assert d['partial_archive_retained'] is False
+          if d['status']=='PASS_REPRODUCIBLE_CENDEHUA_BYTE_ARCHIVE':
+              assert d['report_count']==3
+          else:
+              assert d['report_count']==0
+              assert d['source_probe_failures']
+              meta=json.loads(Path('config/phase2_jicamarca_cendehua_event_metadata_v0_1.json').read_text(encoding='utf-8'))
+              selected={r['record_id'] for r in json.loads(Path('config/phase2_jicamarca_cendehua_archive_contract_v0_1.json').read_text(encoding='utf-8'))['reports']}
+              for ev in meta['events']:
+                  if ev['record_id'] in selected:
+                      assert ev['event_report_sha256'] is None
+                      assert ev.get('archive_path') is None
+                      assert ev['byte_archive_status']=='BLOCKED_PUBLIC_SOURCE_BYTES_NOT_REPRODUCIBLE'
           PY
-      - name: Commit frozen archive once
+      - name: Commit frozen archive or blocked-source manifest once
         if: steps.mode.outputs.bootstrap == 'true' && github.event_name == 'pull_request'
         shell: bash
         run: |
@@ -77,6 +91,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No archive changes to persist"
           else
-            git commit -m "Archive exact IGP CENDEHUA event report bytes"
+            git commit -m "Freeze CENDEHUA archive access state"
             git push origin HEAD:${{ github.event.pull_request.head.ref }}
           fi
