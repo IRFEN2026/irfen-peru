@@ -84,6 +84,7 @@ class MapLayerCatalogTests(unittest.TestCase):
             "lima_sur_mala",
             "lima_sur_asia_omas",
             "ica_pisco_san_andres",
+            "ica_palpa_changuillo",
             "lima_norte_huerta_vieja",
             "lima_norte_arahuay_chillon",
         }
