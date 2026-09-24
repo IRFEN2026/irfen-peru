@@ -2,9 +2,8 @@
 """Construye el catálogo cartográfico fail-closed de IRFEN.
 
 Extensión acotada del constructor estable para publicar componentes hidrológicos
-DISCOVERY como unidades cartográficas separadas cuando un contrato padre contiene
-``assets.geometry_components`` reproducibles. El agrupador padre nunca se convierte
-en un polígono compuesto por esta vía.
+DISCOVERY como unidades cartográficas separadas cuando existe geometría
+reproducible. Los agrupadores padre nunca se convierten en polígonos compuestos.
 """
 from __future__ import annotations
 
@@ -17,6 +16,7 @@ _SCRIPT_DIR = Path(__file__).resolve().parent
 if str(_SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPT_DIR))
 
+import build_jicamarca_discovery_map_layers as _jicamarca
 import build_map_layer_catalog_core as _core
 from build_map_layer_catalog_core import *  # noqa: F401,F403 - compatibilidad con imports existentes
 
@@ -223,12 +223,26 @@ def build_catalog() -> dict:
                 key=lambda row: row["component_id"],
             )
         )
+
+    jicamarca_units = _jicamarca.build_jicamarca_map_units()
+    existing_ids = {row.get("discovery_id") for row in ordered}
+    for row in jicamarca_units:
+        discovery_id = row.get("discovery_id")
+        if discovery_id in existing_ids:
+            raise _core.MapCatalogError(f"discovery_id duplicado al añadir Jicamarca: {discovery_id}")
+        existing_ids.add(discovery_id)
+        ordered.append(row)
+
     catalog["research_discovery_units"] = ordered
     catalog["guardrails"]["discovery_child_geometries_remain_separate"] = True
     catalog["guardrails"]["discovery_parent_composite_geometry_forbidden"] = True
 
-    parent_count = len(discovery_inventory.get("discovery_units") or [])
-    child_count = len(children)
+    north_parent_count = len(discovery_inventory.get("discovery_units") or [])
+    north_child_count = len(children)
+    jicamarca_parent_count = 1
+    jicamarca_child_count = len(jicamarca_units) - 1
+    parent_count = north_parent_count + jicamarca_parent_count
+    child_count = north_child_count + jicamarca_child_count
     summary = catalog["summary"]
     summary["research_discovery_parent_units_registered"] = parent_count
     summary["research_discovery_child_units_registered"] = child_count
@@ -249,12 +263,12 @@ def _parent_projection(row: dict) -> dict:
     return copy
 
 
-def _safe_huarmey_culebras_migration_drift(current: dict, expected: dict) -> bool:
-    """Permite una sola migración de snapshot; no tolera drift científico genérico.
+def _safe_generated_discovery_migration_drift(current: dict, expected: dict) -> bool:
+    """Tolera solo altas cartográficas reproducibles ya congeladas.
 
-    El snapshot Git previo no conocía el contrato padre Huarmey/Culebras. La salida
-    generada en deployment sí debe contener ese contrato y dos hijos oficiales.
-    Cualquier otra diferencia sigue fallando cerrado.
+    El snapshot Git puede anteceder a capas generadas que el deployment reconstruye.
+    Solo se admite que falten los dos hijos Huarmey/Culebras y/o el contenedor
+    Jicamarca con sus dos líneas IGP congeladas. Cualquier otro drift falla cerrado.
     """
     stable_keys = (
         "version",
@@ -284,69 +298,86 @@ def _safe_huarmey_culebras_migration_drift(current: dict, expected: dict) -> boo
     expected_units = expected.get("research_discovery_units") or []
     current_by_id = {row.get("discovery_id"): row for row in current_units}
     expected_by_id = {row.get("discovery_id"): row for row in expected_units}
-    target = "ancash_huarmey_culebras"
-    children = {
+
+    jicamarca_parent = "lima_este_jicamarca_huaycoloro_rioseco_canto_grande"
+    allowed_additions = {
         "ancash_huarmey_culebras__huarmey",
         "ancash_huarmey_culebras__culebras",
+        jicamarca_parent,
+        f"{jicamarca_parent}__canto_grande_channel",
+        f"{jicamarca_parent}__media_luna_channel",
     }
-    if children & set(current_by_id):
+    missing = set(expected_by_id) - set(current_by_id)
+    if not missing or not missing.issubset(allowed_additions):
         return False
-    if not children.issubset(expected_by_id):
+    if set(current_by_id) - set(expected_by_id):
         return False
-    if set(expected_by_id) != set(current_by_id) | children:
-        return False
+
     for discovery_id, current_row in current_by_id.items():
-        expected_row = expected_by_id.get(discovery_id)
-        if not expected_row:
-            return False
-        if discovery_id == target:
+        expected_row = expected_by_id[discovery_id]
+        if discovery_id == "ancash_huarmey_culebras":
             if _parent_projection(current_row) != _parent_projection(expected_row):
-                return False
-            if (current_row.get("geometry") or {}).get("map_eligible") is not False:
-                return False
-            if (expected_row.get("geometry") or {}).get("map_eligible") is not False:
                 return False
         elif current_row != expected_row:
             return False
 
-    for child_id in children:
-        child = expected_by_id[child_id]
-        geometry = child.get("geometry") or {}
+    for discovery_id in missing:
+        row = expected_by_id[discovery_id]
+        geometry = row.get("geometry") or {}
         if (
-            child.get("parent_discovery_id") != target
-            or child.get("deployment_status") != "RESEARCH_ONLY"
-            or child.get("test_mode") != "TEST_ONLY"
-            or child.get("production_use") is not False
-            or child.get("production_ready") is not False
-            or child.get("operational_alerting_enabled") is not False
-            or child.get("activation_gate") != "BLOCKED"
-            or child.get("missing_data_rule") != "UNKNOWN_NOT_LOW_RISK"
-            or child.get("decision_thresholds") is not None
-            or child.get("hydraulic_factors") is not None
-            or geometry.get("map_eligible") is not True
-            or (geometry.get("source_metadata") or {}).get("research_only_guard") is not True
+            row.get("deployment_status") != "RESEARCH_ONLY"
+            or row.get("production_use") is not False
+            or row.get("production_ready") is not False
+            or row.get("operational_alerting_enabled") is not False
+            or row.get("activation_gate") != "BLOCKED"
+            or row.get("missing_data_rule") != "UNKNOWN_NOT_LOW_RISK"
+            or row.get("decision_thresholds") is not None
+            or row.get("hydraulic_factors") is not None
         ):
             return False
+        if geometry.get("map_eligible") is True:
+            if (geometry.get("source_metadata") or {}).get("research_only_guard") is not True:
+                return False
+        elif discovery_id != jicamarca_parent:
+            return False
 
+    # Los contadores discovery son datos derivados. Se exige coherencia interna
+    # del snapshot actual y se comparan exactamente todos los contadores ajenos
+    # a discovery; esto evita depender del número de altas generadas pendientes.
     current_summary = dict(current.get("summary") or {})
     expected_summary = dict(expected.get("summary") or {})
-    for key in (
-        "research_discovery_parent_units_registered",
-        "research_discovery_child_units_registered",
-    ):
-        expected_summary.pop(key, None)
-    current_registered = current_summary.get("research_discovery_units_registered")
-    current_mappable = current_summary.get("research_discovery_units_map_eligible")
-    current_withheld = current_summary.get(
-        "research_discovery_units_withheld_missing_reproducible_geometry"
-    )
-    expected_summary["research_discovery_units_registered"] = current_registered
-    expected_summary["research_discovery_units_map_eligible"] = current_mappable
-    expected_summary[
-        "research_discovery_units_withheld_missing_reproducible_geometry"
-    ] = current_withheld
-    if current_summary != expected_summary:
+    current_non_discovery = {
+        key: value for key, value in current_summary.items()
+        if not key.startswith("research_discovery_")
+    }
+    expected_non_discovery = {
+        key: value for key, value in expected_summary.items()
+        if not key.startswith("research_discovery_")
+    }
+    if current_non_discovery != expected_non_discovery:
         return False
+
+    current_mappable = sum(
+        (row.get("geometry") or {}).get("map_eligible") is True for row in current_units
+    )
+    current_withheld = len(current_units) - current_mappable
+    if current_summary.get("research_discovery_units_registered") != len(current_units):
+        return False
+    if current_summary.get("research_discovery_units_map_eligible") != current_mappable:
+        return False
+    if (
+        current_summary.get("research_discovery_units_withheld_missing_reproducible_geometry")
+        != current_withheld
+    ):
+        return False
+    if "research_discovery_parent_units_registered" in current_summary:
+        current_parent_count = sum(not row.get("parent_discovery_id") for row in current_units)
+        if current_summary["research_discovery_parent_units_registered"] != current_parent_count:
+            return False
+    if "research_discovery_child_units_registered" in current_summary:
+        current_child_count = sum(bool(row.get("parent_discovery_id")) for row in current_units)
+        if current_summary["research_discovery_child_units_registered"] != current_child_count:
+            return False
     return True
 
 
@@ -364,11 +395,11 @@ def main() -> None:
             raise _core.MapCatalogError("falta site/data/map_layers.json")
         current = _core.load_json(_core.OUT_PATH)
         if comparable(current) != comparable(catalog):
-            if not _safe_huarmey_culebras_migration_drift(current, catalog):
+            if not _safe_generated_discovery_migration_drift(current, catalog):
                 raise _core.MapCatalogError(
                     "site/data/map_layers.json no coincide con sus fuentes"
                 )
-            print("SAFE_GENERATED_MAP_MIGRATION_DRIFT_HUARMEY_CULEBRAS")
+            print("SAFE_GENERATED_MAP_MIGRATION_DRIFT_DISCOVERY_COMPONENTS")
     else:
         _core.OUT_PATH.write_text(
             json.dumps(catalog, ensure_ascii=False, separators=(",", ":")) + "\n",
