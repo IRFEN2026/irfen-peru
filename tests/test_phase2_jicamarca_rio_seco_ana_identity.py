@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,8 +38,15 @@ def test_ana_rio_seco_identity_anchor_is_fail_closed():
     assert c["source"]["cut"] == "239127-2022"
     assert c["source"]["authenticity_key"] == "1870368C"
     assert c["source"]["sigrid_document_id"] == 16195
-    assert c["source"]["remote_bytes_sha256"] is None
-    assert c["source"]["archive_status"].endswith("NOT_YET_FROZEN_IN_REPOSITORY")
+
+    source_sha = c["source"].get("remote_bytes_sha256")
+    if source_sha is None:
+        assert c["source"]["archive_status"].endswith("NOT_YET_FROZEN_IN_REPOSITORY")
+        assert c["source"].get("archive_path") is None
+    else:
+        assert re.fullmatch(r"[0-9a-f]{64}", source_sha)
+        assert c["source"]["archive_status"] == "ARCHIVED_REPRODUCIBLE_PUBLIC_BYTES"
+        assert c["source"]["archive_path"] == "site/data/phase2/sources/jicamarca_rio_seco_ana/RD 0525-2023 ANA AAA CF.pdf"
 
 
 def test_official_regulatory_counts_are_preserved_without_hydrologic_promotion():
@@ -52,9 +60,22 @@ def test_official_regulatory_counts_are_preserved_without_hydrologic_promotion()
     assert g["left_bank_hito_count"] == 129
     assert g["right_bank_hito_count"] + g["left_bank_hito_count"] == g["main_faja_hito_count"]
     assert g["exact_hito_table_present_in_source"] is True
-    assert g["exact_hito_coordinates_archived_in_repository"] is False
-    assert g["coordinate_reprojection_frozen"] is False
-    assert g["map_eligible_now"] is False
+
+    if c["source"].get("remote_bytes_sha256") is None:
+        assert g["exact_hito_coordinates_archived_in_repository"] is False
+        assert g["coordinate_reprojection_frozen"] is False
+        assert g["map_eligible_now"] is False
+        assert g.get("coordinate_ledger_path") is None
+        assert g.get("geometry_path") is None
+    else:
+        assert g["exact_hito_coordinates_archived_in_repository"] is True
+        assert g["coordinate_reprojection_frozen"] is True
+        assert g["map_eligible_now"] is True
+        assert g["coordinate_ledger_path"] == "site/data/phase2/sources/jicamarca_rio_seco_ana/rio_seco_main_faja_hitos_epsg32718_v0_1.csv"
+        assert g["geometry_path"] == "site/data/phase2/geometries/jicamarca_rio_seco_ana_faja_context.geojson"
+        assert re.fullmatch(r"[0-9a-f]{64}", g["coordinate_ledger_sha256"])
+        assert re.fullmatch(r"[0-9a-f]{64}", g["geometry_sha256"])
+        assert g["map_semantics"] == "SEPARATE_ANA_REGULATORY_FAJA_CONTEXT_ONLY_NOT_ACTIVATION_GEOMETRY"
 
 
 def test_faja_semantics_cannot_become_activation_geometry_or_event_footprint():
@@ -100,7 +121,7 @@ def test_collector_coupling_stays_unknown_and_non_operational():
     assert c["tributary_activation_implies_receiver_overflow"] is False
 
 
-def test_evidence_index_registers_anchor_without_map_or_routing_promotion():
+def test_evidence_index_registers_anchor_without_hydrologic_or_routing_promotion():
     idx = load(INDEX)
     assert_safe(idx)
     packages = {x["path"]: x for x in idx["packages"]}
