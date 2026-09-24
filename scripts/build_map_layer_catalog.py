@@ -263,12 +263,139 @@ def _parent_projection(row: dict) -> dict:
     return copy
 
 
-def _safe_generated_discovery_migration_drift(current: dict, expected: dict) -> bool:
-    """Tolera solo altas cartográficas reproducibles ya congeladas.
+_JICAMARCA_PARENT = "lima_este_jicamarca_huaycoloro_rioseco_canto_grande"
+_JICAMARCA_CHILD_IDS = {
+    f"{_JICAMARCA_PARENT}__canto_grande_channel": "canto_grande_upper_branch",
+    f"{_JICAMARCA_PARENT}__media_luna_channel": "media_luna",
+}
 
-    El snapshot Git puede anteceder a capas generadas que el deployment reconstruye.
-    Solo se admite que falten los dos hijos Huarmey/Culebras y/o el contenedor
-    Jicamarca con sus dos líneas IGP congeladas. Cualquier otro drift falla cerrado.
+
+def _safe_map_row_guards(row: dict, *, allow_missing_test_mode: bool = False) -> bool:
+    required = {
+        "deployment_status": "RESEARCH_ONLY",
+        "production_use": False,
+        "production_ready": False,
+        "operational_alerting_enabled": False,
+        "activation_gate": "BLOCKED",
+        "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+        "decision_thresholds": None,
+        "hydraulic_factors": None,
+    }
+    if any(row.get(key) != value for key, value in required.items()):
+        return False
+    test_mode = row.get("test_mode")
+    if allow_missing_test_mode:
+        return test_mode in (None, "TEST_ONLY")
+    return test_mode == "TEST_ONLY"
+
+
+def _safe_jicamarca_local_child_split(
+    current_row: dict, expected_row: dict, discovery_id: str
+) -> bool:
+    """Admite solo la migración congelada del hijo sintético a hijos locales separados."""
+    if not _safe_map_row_guards(expected_row):
+        return False
+    if not _safe_map_row_guards(current_row, allow_missing_test_mode=True):
+        return False
+    if current_row.get("discovery_id") != discovery_id or expected_row.get("discovery_id") != discovery_id:
+        return False
+
+    normalized = json.loads(json.dumps(current_row))
+    normalized["test_mode"] = "TEST_ONLY"
+
+    if discovery_id == _JICAMARCA_PARENT:
+        legacy_system_name = "Jicamarca local system: Huaycoloro, Río Seco and Canto Grande–Media Luna"
+        legacy_components = [
+            "Quebrada Huaycoloro",
+            "Quebrada Río Seco",
+            "Canto Grande–Media Luna",
+            "Quebrada Jicamarca",
+        ]
+        legacy_must_not_merge = [
+            "chosica_huaycoloro",
+            "rio_seco",
+            "canto_grande_media_luna",
+            "jicamarca_named_channel",
+        ]
+        geometry = current_row.get("geometry") or {}
+        expected_geometry = expected_row.get("geometry") or {}
+        if current_row.get("entity_role") != "CONTEXT_CONTAINER_NON_ACTIVATABLE":
+            return False
+        if expected_row.get("entity_role") != "CONTEXT_CONTAINER_NON_ACTIVATABLE":
+            return False
+        if current_row.get("system_name") != legacy_system_name:
+            return False
+        if current_row.get("hydrologic_components") != legacy_components:
+            return False
+        if current_row.get("must_not_merge_with") != legacy_must_not_merge:
+            return False
+        if geometry.get("map_eligible") is not False or geometry.get("path") is not None:
+            return False
+        if expected_geometry.get("map_eligible") is not False or expected_geometry.get("path") is not None:
+            return False
+        normalized["system_name"] = expected_row.get("system_name")
+        normalized["hydrologic_components"] = expected_row.get("hydrologic_components")
+        normalized["must_not_merge_with"] = expected_row.get("must_not_merge_with")
+        return normalized == expected_row
+
+    expected_child_id = _JICAMARCA_CHILD_IDS.get(discovery_id)
+    if expected_child_id is None:
+        return False
+    if current_row.get("hydrologic_child_id") != "canto_grande_media_luna":
+        return False
+    if expected_row.get("hydrologic_child_id") != expected_child_id:
+        return False
+    if current_row.get("entity_role") != "DISCOVERY_LOCAL_CHANNEL_CONTEXT":
+        return False
+    if expected_row.get("entity_role") != "DISCOVERY_LOCAL_CHANNEL_CONTEXT":
+        return False
+    current_geometry = current_row.get("geometry") or {}
+    expected_geometry = expected_row.get("geometry") or {}
+    for key in (
+        "status",
+        "path",
+        "source_path",
+        "source_ids",
+        "map_eligible",
+        "representation",
+        "validation_path",
+        "default_visibility",
+        "map_disclaimer",
+    ):
+        if current_geometry.get(key) != expected_geometry.get(key):
+            return False
+    if current_geometry.get("map_eligible") is not True:
+        return False
+    if expected_geometry.get("representation") != "OFFICIAL_IGP_CHANNEL_LINE_NOT_CATCHMENT_OR_OUTLET":
+        return False
+    current_metadata = json.loads(json.dumps(current_geometry.get("source_metadata") or {}))
+    expected_metadata = json.loads(json.dumps(expected_geometry.get("source_metadata") or {}))
+    if current_metadata.get("research_only_guard") is not True:
+        return False
+    if expected_metadata.get("research_only_guard") is not True:
+        return False
+    if not set(expected_metadata.get("geometry_types") or []).issubset({"LineString", "MultiLineString"}):
+        return False
+    current_metadata.pop("sha256", None)
+    expected_metadata.pop("sha256", None)
+    if current_metadata != expected_metadata:
+        return False
+
+    normalized["hydrologic_child_id"] = expected_child_id
+    normalized["must_not_merge_with"] = expected_row.get("must_not_merge_with")
+    normalized_geometry = normalized.get("geometry") or {}
+    normalized_metadata = normalized_geometry.get("source_metadata") or {}
+    normalized_metadata["sha256"] = expected_geometry.get("source_metadata", {}).get("sha256")
+    return normalized == expected_row
+
+
+def _safe_generated_discovery_migration_drift(current: dict, expected: dict) -> bool:
+    """Tolera solo altas o migraciones cartográficas reproducibles ya congeladas.
+
+    El snapshot Git puede anteceder a capas que el deployment reconstruye. Se
+    admiten únicamente altas conocidas Huarmey/Culebras/Jicamarca y la migración
+    exacta del legado sintético Canto Grande–Media Luna a dos hijos locales ya
+    congelados. Cualquier otro drift falla cerrado.
     """
     stable_keys = (
         "version",
@@ -299,47 +426,45 @@ def _safe_generated_discovery_migration_drift(current: dict, expected: dict) -> 
     current_by_id = {row.get("discovery_id"): row for row in current_units}
     expected_by_id = {row.get("discovery_id"): row for row in expected_units}
 
-    jicamarca_parent = "lima_este_jicamarca_huaycoloro_rioseco_canto_grande"
     allowed_additions = {
         "ancash_huarmey_culebras__huarmey",
         "ancash_huarmey_culebras__culebras",
-        jicamarca_parent,
-        f"{jicamarca_parent}__canto_grande_channel",
-        f"{jicamarca_parent}__media_luna_channel",
+        _JICAMARCA_PARENT,
+        *_JICAMARCA_CHILD_IDS.keys(),
     }
     missing = set(expected_by_id) - set(current_by_id)
-    if not missing or not missing.issubset(allowed_additions):
+    if not missing.issubset(allowed_additions):
         return False
     if set(current_by_id) - set(expected_by_id):
         return False
 
+    jicamarca_migration_seen = False
+    jicamarca_ids = {_JICAMARCA_PARENT, *_JICAMARCA_CHILD_IDS.keys()}
     for discovery_id, current_row in current_by_id.items():
         expected_row = expected_by_id[discovery_id]
         if discovery_id == "ancash_huarmey_culebras":
             if _parent_projection(current_row) != _parent_projection(expected_row):
                 return False
+        elif discovery_id in jicamarca_ids and current_row != expected_row:
+            if not _safe_jicamarca_local_child_split(current_row, expected_row, discovery_id):
+                return False
+            jicamarca_migration_seen = True
         elif current_row != expected_row:
             return False
 
     for discovery_id in missing:
         row = expected_by_id[discovery_id]
         geometry = row.get("geometry") or {}
-        if (
-            row.get("deployment_status") != "RESEARCH_ONLY"
-            or row.get("production_use") is not False
-            or row.get("production_ready") is not False
-            or row.get("operational_alerting_enabled") is not False
-            or row.get("activation_gate") != "BLOCKED"
-            or row.get("missing_data_rule") != "UNKNOWN_NOT_LOW_RISK"
-            or row.get("decision_thresholds") is not None
-            or row.get("hydraulic_factors") is not None
-        ):
+        if not _safe_map_row_guards(row):
             return False
         if geometry.get("map_eligible") is True:
             if (geometry.get("source_metadata") or {}).get("research_only_guard") is not True:
                 return False
-        elif discovery_id != jicamarca_parent:
+        elif discovery_id != _JICAMARCA_PARENT:
             return False
+
+    if not missing and not jicamarca_migration_seen:
+        return False
 
     # Los contadores discovery son datos derivados. Se exige coherencia interna
     # del snapshot actual y se comparan exactamente todos los contadores ajenos

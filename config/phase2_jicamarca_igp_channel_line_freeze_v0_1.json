@@ -1,6 +1,6 @@
 {
-  "schema_version": "0.2",
-  "status": "FROZEN_PRE_GEOMETRY_SOURCE_ID_SELECTION_WITH_POST_GEOMETRY_REJECTION",
+  "schema_version": "0.3",
+  "status": "FROZEN_PRE_GEOMETRY_SOURCE_ID_SELECTION_WITH_POST_GEOMETRY_REJECTION_LOCAL_CHILD_IDS_SEPARATED",
   "deployment_status": "RESEARCH_ONLY",
   "test_mode": "TEST_ONLY",
   "production_use": false,
@@ -10,7 +10,7 @@
   "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
   "decision_thresholds": null,
   "hydraulic_factors": null,
-  "purpose": "Freeze exact official IGP source feature IDs for bounded local named channel-line review. Accepted outputs are channel context only, never catchment polygons, outlets, event footprints, routing or activation evidence. A same-name Río Seco feature is explicitly rejected after static spatial review and must not be published as the CENDEHUA Río Seco geometry.",
+  "purpose": "Freeze exact official IGP source feature IDs for bounded local named channel-line review. Accepted outputs are channel context only, never catchment polygons, outlets, event footprints, routing or activation evidence. Canto Grande upper branch and Media Luna are distinct hydrologic children. A same-name Río Seco feature is explicitly rejected after static spatial review and must not be published as the CENDEHUA Río Seco geometry.",
   "selection_provenance": {
     "probe_contract": "config/phase2_jicamarca_igp_hydrography_probe_v0_1.json",
     "probe_workflow_run_id": 35934718288,
@@ -45,7 +45,7 @@
   "components": [
     {
       "component_id": "canto_grande_channel",
-      "hydrologic_child_id": "canto_grande_media_luna",
+      "hydrologic_child_id": "canto_grande_upper_branch",
       "output_path": "site/data/phase2/geometries/jicamarca_canto_grande_igp_channel.geojson",
       "source_features": [
         {"objectid": 15404, "name": "Qda Canto Grande", "district": "SAN ANTONIO", "province": "HUAROCHIRI", "department": "LIMA", "source_type": "Quebrada"},
@@ -53,11 +53,12 @@
       ],
       "source_segments_must_remain_separate": true,
       "catchment_geometry_resolved": false,
-      "outlet_resolved": false
+      "outlet_resolved": false,
+      "channel_line_is_activation_polygon": false
     },
     {
       "component_id": "media_luna_channel",
-      "hydrologic_child_id": "canto_grande_media_luna",
+      "hydrologic_child_id": "media_luna",
       "output_path": "site/data/phase2/geometries/jicamarca_media_luna_igp_channel.geojson",
       "source_features": [
         {"objectid": 3351, "name": "Qda Media Luna", "district": "SAN ANTONIO", "province": "HUAROCHIRI", "department": "LIMA", "source_type": "Quebrada"},
@@ -65,7 +66,8 @@
       ],
       "source_segments_must_remain_separate": true,
       "catchment_geometry_resolved": false,
-      "outlet_resolved": false
+      "outlet_resolved": false,
+      "channel_line_is_activation_polygon": false
     }
   ],
   "rejected_after_geometry_review": [
@@ -96,6 +98,8 @@
     }
   ],
   "forbidden": [
+    "use canto_grande_media_luna as a synthetic hydrologic child id",
+    "union Canto Grande and Media Luna into one child geometry",
     "union source segments into a catchment polygon",
     "infer outlet or confluence from a line endpoint",
     "infer travel time or attenuation from line length",

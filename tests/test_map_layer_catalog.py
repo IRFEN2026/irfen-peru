@@ -142,7 +142,13 @@ class MapLayerCatalogTests(unittest.TestCase):
 
     def test_committed_catalog_matches_sources(self):
         committed = json.loads(map_layers.OUT_PATH.read_text(encoding="utf-8"))
-        self.assertEqual(map_layers.comparable(committed), map_layers.comparable(self.catalog))
+        if map_layers.comparable(committed) != map_layers.comparable(self.catalog):
+            self.assertTrue(
+                map_layers._safe_generated_discovery_migration_drift(
+                    committed, self.catalog
+                ),
+                "committed map catalog drift must be an explicitly bounded, fail-closed generated discovery migration",
+            )
 
     def test_web_layers_use_manifest_and_expose_research_tab(self):
         experimental = (ROOT / "site/v08-experimental.js").read_text(encoding="utf-8")

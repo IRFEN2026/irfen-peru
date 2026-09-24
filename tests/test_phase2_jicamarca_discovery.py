@@ -10,9 +10,12 @@ IDENTITY=ROOT/"config/phase2_jicamarca_identity_source_assessment_v0_1.json"
 CANTO=ROOT/"config/phase2_jicamarca_canto_grande_media_luna_assessment_v0_1.json"
 INDEX=ROOT/"config/phase2_jicamarca_evidence_index_v0_1.json"
 PARENT_GEOMETRY=ROOT/"config/phase2_jicamarca_parent_geometry_v0_1.json"
+LINE_FREEZE=ROOT/"config/phase2_jicamarca_igp_channel_line_freeze_v0_1.json"
+
 
 def load(path=CFG):
     return json.loads(path.read_text(encoding="utf-8"))
+
 
 def assert_safe(c):
     assert c["deployment_status"]=="RESEARCH_ONLY"
@@ -25,8 +28,10 @@ def assert_safe(c):
     assert c["decision_thresholds"] is None
     assert c["hydraulic_factors"] is None
 
+
 def test_fail_closed():
     assert_safe(load())
+
 
 def test_pending_discovery_inherits_universal_hierarchy_without_candidate_registration():
     c=load(); h=c["hierarchy_binding"]
@@ -37,13 +42,21 @@ def test_pending_discovery_inherits_universal_hierarchy_without_candidate_regist
     assert h["candidate_inventory_registration"] is False
     assert ARCH.is_file()
 
-def test_jicamarca_is_not_one_synthetic_ravine():
+
+def test_jicamarca_is_not_one_synthetic_ravine_and_canto_media_are_separate_children():
     c=load()
     assert c["territorial_identity"]["jicamarca_is_single_hydrologic_unit"] is False
     ids={x["child_id"] for x in c["hydrologic_components"]}
-    assert {"huaycoloro","rio_seco","canto_grande_media_luna","jicamarca_named_channel"} <= ids
+    assert {"huaycoloro","rio_seco","canto_grande_upper_branch","media_luna","jicamarca_named_channel"} <= ids
+    assert "canto_grande_media_luna" not in ids
+    separation=c["local_child_separation"]
+    assert separation["synthetic_child_id_canto_grande_media_luna_allowed"] is False
+    assert separation["canto_grande_upper_branch_and_media_luna_are_distinct_children"] is True
+    assert separation["child_geometry_union_allowed"] is False
     assert c["map_policy"]["publish_parent_polygon"] is False
     assert c["map_policy"]["approximate_points_for_missing_geometry_forbidden"] is True
+    assert c["map_policy"]["synthetic_child_union_forbidden"] is True
+
 
 def test_huaycoloro_is_referenced_not_duplicated():
     c=load()
@@ -51,22 +64,35 @@ def test_huaycoloro_is_referenced_not_duplicated():
     assert h["existing_irfen_reference"]=="chosica_huaycoloro"
     assert h["duplicate_new_parent_geometry_forbidden"] is True
 
-def test_unresolved_children_have_no_invented_geometry_or_outlets():
+
+def test_unresolved_children_have_no_invented_catchment_geometry_or_outlets():
     c=load()
     by={x["child_id"]:x for x in c["hydrologic_components"]}
-    for cid in ("rio_seco","canto_grande_media_luna","jicamarca_named_channel"):
+    for cid in ("rio_seco","canto_grande_upper_branch","media_luna","jicamarca_named_channel"):
         assert by[cid]["geometry_status"].startswith("MISSING_")
         assert by[cid]["outlet_status"].startswith("MISSING_")
+    for cid in ("canto_grande_upper_branch","media_luna"):
+        assert by[cid]["channel_geometry_status"]=="REPRODUCIBLE_OFFICIAL_IGP_LINE_CONTEXT_ONLY"
+        assert by[cid]["channel_line_is_catchment_polygon"] is False
+        assert by[cid]["channel_line_endpoint_is_outlet"] is False
+        assert (ROOT/by[cid]["channel_geometry_path"]).is_file()
 
-def test_historical_evidence_preserves_component_attribution():
+
+def test_historical_evidence_preserves_local_component_attribution_without_synthetic_union():
     c=load(); ev={x["event_id"]:x for x in c["historical_evidence"]}
-    assert ev["JICAMARCA-MEDIA-LUNA-2002"]["component_id"]=="canto_grande_media_luna"
+    assert ev["JICAMARCA-MEDIA-LUNA-2002"]["component_id"]=="media_luna"
+    assert ev["JICAMARCA-MEDIA-LUNA-2002"]["promotes_canto_grande_context_activation"] is False
+    assert ev["JICAMARCA-HUAYCOLORO-RIOSECO-2017"]["component_id"]=="huaycoloro_or_rio_seco_unresolved"
+    assert ev["JICAMARCA-HUAYCOLORO-RIOSECO-2017"]["synthetic_union_event_assignment_allowed"] is False
+    assert set(ev["JICAMARCA-HUAYCOLORO-RIOSECO-2017"]["candidate_components"])=={"huaycoloro","rio_seco"}
     assert ev["JICAMARCA-HUAYCOLORO2-2023-03-15"]["component_id"]=="huaycoloro"
     assert ev["JICAMARCA-RIOSECO2-2023-03-15"]["component_id"]=="rio_seco"
     assert ev["JICAMARCA-RIOSECO2-2023-03-15"]["reported_sensor_height_m"]==0.43
     assert ev["JICAMARCA-RIOSECO2-2023-03-15"]["reported_discharge_m3_s"] is None
     assert ev["JICAMARCA-VALLE-SAGRADO-2023-03-15"]["status"].endswith("MECHANISM_PARTIAL")
     assert ev["JICAMARCA-VALLE-SAGRADO-2023-03-15"]["local_ravine_attribution"]=="PARTIAL_UNRESOLVED"
+    assert ev["JICAMARCA-VALLE-SAGRADO-2023-03-15"]["candidate_list_is_exhaustive"] is False
+
 
 def test_monitoring_does_not_import_operational_thresholds():
     c=load()
@@ -75,13 +101,28 @@ def test_monitoring_does_not_import_operational_thresholds():
     radar=next(x for x in c["monitoring_assets"] if x["source_id"]=="IGP-SOPHY-XBAND-RADAR")
     assert radar["data_access_status"]=="PUBLIC_PROJECT_METADATA_ONLY_DATA_ACCESS_UNRESOLVED"
 
+
 def test_bounded_evidence_packages_exist_and_are_safe():
     c=load(); refs=c["evidence_packages"]
     assert refs["cendehua_event_metadata"]=="config/phase2_jicamarca_cendehua_event_metadata_v0_1.json"
     assert refs["sophy_access_assessment"]=="config/phase2_jicamarca_sophy_access_assessment_v0_1.json"
-    for p in (CENDEHUA,SOPHY,IDENTITY,CANTO,INDEX,PARENT_GEOMETRY):
+    assert refs["igp_channel_line_freeze"]=="config/phase2_jicamarca_igp_channel_line_freeze_v0_1.json"
+    for p in (CENDEHUA,SOPHY,IDENTITY,CANTO,INDEX,PARENT_GEOMETRY,LINE_FREEZE):
         assert p.is_file()
         assert_safe(load(p))
+
+
+def test_igp_line_freeze_binds_lines_to_distinct_local_children():
+    c=load(LINE_FREEZE)
+    by={x["component_id"]:x for x in c["components"]}
+    assert by["canto_grande_channel"]["hydrologic_child_id"]=="canto_grande_upper_branch"
+    assert by["media_luna_channel"]["hydrologic_child_id"]=="media_luna"
+    assert by["canto_grande_channel"]["channel_line_is_activation_polygon"] is False
+    assert by["media_luna_channel"]["channel_line_is_activation_polygon"] is False
+    assert all(x["hydrologic_child_id"]!="canto_grande_media_luna" for x in c["components"])
+    assert "use canto_grande_media_luna as a synthetic hydrologic child id" in c["forbidden"]
+    assert "union Canto Grande and Media Luna into one child geometry" in c["forbidden"]
+
 
 def test_cendehua_event_metadata_fails_closed_on_unknown_hydraulics():
     c=load(CENDEHUA)
@@ -101,6 +142,7 @@ def test_cendehua_event_metadata_fails_closed_on_unknown_hydraulics():
     assert c["known_metadata_conflicts"][0]["status"].startswith("PRESERVE_AS_SOURCE_LABEL_CONFLICT")
     assert c["qa_rules"]["cross_component_relabel_from_press_text_forbidden"] is True
 
+
 def test_sophy_metadata_does_not_fabricate_rainfall_or_coverage():
     c=load(SOPHY); access=c["data_access_assessment"]
     assert c["status"]=="PUBLIC_PROJECT_METADATA_ONLY_DATA_ACCESS_UNRESOLVED"
@@ -112,6 +154,7 @@ def test_sophy_metadata_does_not_fabricate_rainfall_or_coverage():
     assert access["subcatchment_rainfall_reconstruction_allowed"] is False
     assert "infer rainfall values from project-page metadata" in c["forbidden"]
     assert "treat nominal radar range as verified event coverage" in c["forbidden"]
+
 
 def test_official_jicamarca_relation_is_documented_but_parent_vector_stays_blocked():
     c=load(IDENTITY)
@@ -135,6 +178,7 @@ def test_official_jicamarca_relation_is_documented_but_parent_vector_stays_block
     assert gp["union_of_child_polygons_allowed"] is False
     assert gp["digitize_documentary_map_as_geometry_allowed"] is False
 
+
 def test_parent_geometry_source_probe_is_fail_closed_and_creates_no_map_geometry():
     c=load(PARENT_GEOMETRY)
     assert c["status"]=="BLOCKED_OFFICIAL_VECTOR_SOURCE_NOT_RECONCILED"
@@ -148,6 +192,7 @@ def test_parent_geometry_source_probe_is_fail_closed_and_creates_no_map_geometry
     assert c["geometry_policy"]["publish_parent_polygon"] is False
     assert c["geometry_policy"]["documentary_map_digitization_forbidden"] is True
     assert c["geometry_policy"]["approximate_geometry_forbidden"] is True
+
 
 def test_canto_grande_media_luna_evidence_does_not_digitize_report_figures():
     c=load(CANTO); ident=c["bounded_identity_evidence"]
@@ -167,6 +212,7 @@ def test_canto_grande_media_luna_evidence_does_not_digitize_report_figures():
     assert policy["approximate_polygon_from_report_figure_forbidden"] is True
     assert policy["approximate_outlet_from_report_figure_forbidden"] is True
 
+
 def test_evidence_index_forbids_promotion_side_effects():
     c=load(INDEX)
     assert c["map_effect"]=="NONE_UNTIL_INDEPENDENT_REPRODUCIBLE_CHILD_GEOMETRY_EXISTS"
@@ -177,10 +223,13 @@ def test_evidence_index_forbids_promotion_side_effects():
     assert packages["config/phase2_jicamarca_identity_source_assessment_v0_1.json"]["may_create_synthetic_jicamarca_unit"] is False
     assert packages["config/phase2_jicamarca_canto_grande_media_luna_assessment_v0_1.json"]["may_digitize_report_figure_as_geometry"] is False
 
+
 def test_collector_coupling_remains_unknown_until_reproducible_routing():
     c=load()["collector_coupling"]
     assert c["tributary_activation_implies_receiver_overflow"] is False
     assert c["routing_status"].startswith("BLOCKED_")
+    assert set(c["children"]) >= {"huaycoloro","rio_seco","canto_grande_upper_branch","media_luna","jicamarca_named_channel"}
+    assert "canto_grande_media_luna" not in c["children"]
     for child in c["children"].values():
         assert child["outlet_or_confluence"] is None
         assert child["Q_i_t"] is None

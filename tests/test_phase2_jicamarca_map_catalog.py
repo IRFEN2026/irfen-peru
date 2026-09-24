@@ -9,6 +9,9 @@ if str(SCRIPTS) not in sys.path:
 
 import build_map_layer_catalog as catalog_builder
 
+# The exact IGP source-line replay is validated by the dedicated workflow; these tests
+# only assert map semantics after the frozen artifacts have been regenerated.
+
 
 class JicamarcaMapCatalogTests(unittest.TestCase):
     def setUp(self):
@@ -33,16 +36,24 @@ class JicamarcaMapCatalogTests(unittest.TestCase):
         self.assertIsNone(parent["decision_thresholds"])
         self.assertIsNone(parent["hydraulic_factors"])
 
-    def test_canto_grande_and_media_luna_publish_as_separate_channel_lines(self):
+    def test_canto_grande_and_media_luna_publish_as_separate_channel_lines_and_children(self):
         expected = {
-            "canto_grande_channel": "jicamarca_canto_grande_igp_channel.geojson",
-            "media_luna_channel": "jicamarca_media_luna_igp_channel.geojson",
+            "canto_grande_channel": (
+                "canto_grande_upper_branch",
+                "jicamarca_canto_grande_igp_channel.geojson",
+            ),
+            "media_luna_channel": (
+                "media_luna",
+                "jicamarca_media_luna_igp_channel.geojson",
+            ),
         }
         paths = set()
-        for component_id, filename in expected.items():
+        child_ids = set()
+        for component_id, (child_id, filename) in expected.items():
             row = self.units[f"{self.parent_id}__{component_id}"]
             self.assertEqual(row["parent_discovery_id"], self.parent_id)
-            self.assertEqual(row["hydrologic_child_id"], "canto_grande_media_luna")
+            self.assertEqual(row["hydrologic_child_id"], child_id)
+            self.assertNotEqual(row["hydrologic_child_id"], "canto_grande_media_luna")
             self.assertEqual(row["entity_role"], "DISCOVERY_LOCAL_CHANNEL_CONTEXT")
             self.assertEqual(row["activation_gate"], "BLOCKED")
             self.assertEqual(row["missing_data_rule"], "UNKNOWN_NOT_LOW_RISK")
@@ -68,7 +79,9 @@ class JicamarcaMapCatalogTests(unittest.TestCase):
             )
             self.assertIn("no es polígono de drenaje", geometry["map_disclaimer"])
             paths.add(geometry["path"])
+            child_ids.add(row["hydrologic_child_id"])
         self.assertEqual(len(paths), 2)
+        self.assertEqual(child_ids, {"canto_grande_upper_branch", "media_luna"})
 
     def test_rejected_rio_seco_and_unresolved_named_jicamarca_are_not_drawn(self):
         forbidden_tokens = ("rio_seco_channel_candidate", "jicamarca_named_channel")
