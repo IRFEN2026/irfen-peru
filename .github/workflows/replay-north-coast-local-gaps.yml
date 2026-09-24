@@ -1,0 +1,141 @@
+name: IRFEN - Temporary replay north-coast local gaps
+
+on:
+  push:
+    branches:
+      - phase2-north-coast-local-gaps-replay-20260924
+    paths:
+      - '.github/workflows/replay-north-coast-local-gaps.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: phase2-north-coast-local-gaps-replay-20260924
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Fetch bounded source branch
+        run: git fetch origin phase2-north-coast-local-gaps-20260924
+      - name: Replay only local-gap scientific changes on top of Colan state
+        run: |
+          set -euo pipefail
+          git checkout origin/phase2-north-coast-local-gaps-20260924 -- \
+            site/data/phase2/sources/lalibertad_chicama_official_evidence_v0_1.json \
+            site/data/phase2/sources/piura_mancora_organos_official_evidence_v0_1.json \
+            site/data/validation/phase2_discovery_packages/lalibertad_chicama.json \
+            site/data/validation/phase2_discovery_packages/piura_mancora_los_organos_coastal_ravines.json \
+            site/data/validation/phase2_discovery_packages/piura_paita_urban_local_ravines.json \
+            site/data/validation/phase2_discovery_packages/piura_talara_parinas_local_ravines.json \
+            tests/test_phase2_north_coast_local_gaps.py
+          python - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+
+          other='origin/phase2-north-coast-local-gaps-20260924'
+          inv_path=Path('config/phase2_north_coast_discovery_inventory_v0_1.json')
+          scope_path=Path('config/phase2_expansion_scope.json')
+          cur=json.loads(inv_path.read_text(encoding='utf-8'))
+          old=json.loads(subprocess.check_output(['git','show',f'{other}:{inv_path.as_posix()}'], text=True))
+          replace_ids={
+              'lalibertad_chicama',
+              'piura_mancora_los_organos_coastal_ravines',
+              'piura_talara_parinas_local_ravines',
+              'piura_paita_urban_local_ravines',
+          }
+          old_rows={r['discovery_id']:r for r in old['discovery_units']}
+          missing=replace_ids-old_rows.keys()
+          if missing:
+              raise SystemExit(f'old source branch missing expected units: {sorted(missing)}')
+          out=[]
+          seen=set()
+          for row in cur['discovery_units']:
+              did=row['discovery_id']
+              if did in replace_ids:
+                  out.append(old_rows[did]); seen.add(did)
+              else:
+                  out.append(row)
+          for did in ('piura_talara_parinas_local_ravines','piura_paita_urban_local_ravines'):
+              if did not in seen and not any(r['discovery_id']==did for r in out):
+                  out.append(old_rows[did]); seen.add(did)
+          ids=[r['discovery_id'] for r in out]
+          if len(ids)!=len(set(ids)):
+              raise SystemExit('duplicate discovery_id after replay')
+          if 'piura_colan_bajo_chira_local_ravines' not in ids:
+              raise SystemExit('Colan unit lost during replay')
+          cur['discovery_units']=out
+          for did in replace_ids:
+              for sid in old_rows[did].get('official_source_ids',[]):
+                  if sid in cur.get('source_catalog',{}):
+                      if sid in old.get('source_catalog',{}) and cur['source_catalog'][sid] != old['source_catalog'][sid]:
+                          raise SystemExit(f'conflicting source URL for {sid}')
+                  elif sid in old.get('source_catalog',{}):
+                      cur.setdefault('source_catalog',{})[sid]=old['source_catalog'][sid]
+                  else:
+                      raise SystemExit(f'unresolved official source id in replay: {sid}')
+          cur['relationship_to_phase2']['discovery_units_count']=len(out)
+          if len(out)!=18:
+              raise SystemExit(f'expected combined discovery count 18, got {len(out)}')
+          inv_path.write_text(json.dumps(cur, ensure_ascii=False, indent=2)+'\n',encoding='utf-8')
+
+          scope=json.loads(scope_path.read_text(encoding='utf-8'))
+          old_scope=json.loads(subprocess.check_output(['git','show',f'{other}:{scope_path.as_posix()}'], text=True))
+          ext=scope['north_coast_discovery_extension']
+          old_ext=old_scope['north_coast_discovery_extension']
+          requested=list(ext.get('requested_corridors',[]))
+          for item in old_ext.get('requested_corridors',[]):
+              if item not in requested:
+                  requested.append(item)
+          ext['requested_corridors']=requested
+          ext['discovery_units_count']=len(out)
+          if 'Colán / lower Chira / named local ravines' not in requested:
+              raise SystemExit('Colan corridor lost from expansion scope')
+          for required in (
+              'Talara / Pariñas local ravines',
+              'Paita urban ravines / El Zanjón',
+              'Vichayito / Los Órganos local ravines',
+              'Cartavio / Santiago de Cao lower Chicama exposure',
+          ):
+              if required not in requested:
+                  raise SystemExit(f'missing replay corridor: {required}')
+          scope_path.write_text(json.dumps(scope, ensure_ascii=False, indent=2)+'\n',encoding='utf-8')
+          print('COMBINED_DISCOVERY_COUNT', len(out))
+          PY
+          python scripts/build_map_layer_catalog.py
+      - name: Validate replay before persistence
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_phase2_north_coast_discovery.py' -v
+          python -m unittest discover -s tests -p 'test_phase2_north_coast_local_gaps.py' -v
+          python -m unittest discover -s tests -p 'test_phase2_colan_discovery.py' -v
+          python scripts/build_map_layer_catalog.py --check-only
+          python scripts/validate_scientific_assets.py
+          python scripts/validate_pedregal_clean_room.py
+      - name: Commit bounded replay
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            config/phase2_expansion_scope.json \
+            config/phase2_north_coast_discovery_inventory_v0_1.json \
+            site/data/map_layers.json \
+            site/data/phase2/sources/lalibertad_chicama_official_evidence_v0_1.json \
+            site/data/phase2/sources/piura_mancora_organos_official_evidence_v0_1.json \
+            site/data/validation/phase2_discovery_packages/lalibertad_chicama.json \
+            site/data/validation/phase2_discovery_packages/piura_mancora_los_organos_coastal_ravines.json \
+            site/data/validation/phase2_discovery_packages/piura_paita_urban_local_ravines.json \
+            site/data/validation/phase2_discovery_packages/piura_talara_parinas_local_ravines.json \
+            tests/test_phase2_north_coast_local_gaps.py
+          if git diff --cached --quiet; then
+            echo 'NO_REPLAY_CHANGES'
+            exit 0
+          fi
+          git commit -m 'research: replay north-coast local gaps after Colan'
+          git push origin HEAD:phase2-north-coast-local-gaps-replay-20260924
