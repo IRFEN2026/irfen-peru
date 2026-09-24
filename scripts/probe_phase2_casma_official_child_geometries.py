@@ -2,9 +2,9 @@
 """Freeze and replay exact ANA N7 hydrologic children for the Casma discovery grouper.
 
 The territorial/discovery parent remains non-activatable and has no composite map
-polygon. Each official N7 unit is fetched independently by exact ANA code and is
-published only as RESEARCH_ONLY hydrologic context. No event footprint, outlet,
-flow, capacity, threshold, routing parameter or negative control is inferred.
+polygon. Each official N7 unit is fetched independently by exact ANA NIVEL7 code
+and is published only as RESEARCH_ONLY hydrologic context. No event footprint,
+outlet, flow, capacity, threshold, routing parameter or negative control is inferred.
 """
 from __future__ import annotations
 
@@ -21,6 +21,8 @@ PACKAGE = ROOT / f"site/data/validation/phase2_discovery_packages/{DID}.json"
 CONTRACT = ROOT / f"site/data/validation/phase2_discovery_contracts/{DID}.json"
 SOURCE_DIR = ROOT / "site/data/phase2/sources/north_coast_discovery_geometry"
 ENDPOINT = "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/8/query"
+PARENT_N6_CODE = "137596"
+PARENT_N6_NAME = "Cuenca Casma"
 
 SAFE = {
     "deployment_status": "RESEARCH_ONLY",
@@ -83,12 +85,23 @@ def validation_path(geometry_path: Path) -> Path:
     return geometry_path.with_name(geometry_path.stem + "_validation.json")
 
 
+def exact_n7_query(code: str) -> dict:
+    return {
+        "endpoint": ENDPOINT,
+        "where": f"NIVEL7='{code}'",
+        "out_fields": "*",
+        "out_sr": 4326,
+        "geometry_precision": 7,
+        "format": "geojson",
+    }
+
+
 def validate_package(package: dict) -> list[dict]:
     guards(package, "PACKAGE")
     if package.get("discovery_id") != DID:
         raise CasmaGeometryError("DISCOVERY_ID_DRIFT")
     identity = package.get("hydrologic_identity") or {}
-    if str(identity.get("ana_parent_unit_code")) != "137596" or identity.get("ana_parent_unit_name") != "Cuenca Casma":
+    if str(identity.get("ana_parent_unit_code")) != PARENT_N6_CODE or identity.get("ana_parent_unit_name") != PARENT_N6_NAME:
         raise CasmaGeometryError("CASMA_PARENT_IDENTITY_DRIFT")
     policy = package.get("component_policy") or {}
     if policy.get("parent_is_map_polygon") is not False:
@@ -108,15 +121,17 @@ def validate_package(package: dict) -> list[dict]:
         ident = row.get("hydrologic_identity") or {}
         if str(ident.get("ana_unit_code")) != code or ident.get("ana_unit_name") != name:
             raise CasmaGeometryError(f"CHILD_IDENTITY_DRIFT_{cid}")
-        if str(ident.get("parent_code")) != "137596" or ident.get("level") != "N7":
+        if str(ident.get("parent_code")) != PARENT_N6_CODE or ident.get("level") != "N7":
             raise CasmaGeometryError(f"CHILD_HIERARCHY_DRIFT_{cid}")
         query = row.get("source_query") or {}
         if query.get("endpoint") != ENDPOINT:
             raise CasmaGeometryError(f"ENDPOINT_DRIFT_{cid}")
-        if query.get("where") != f"CODIGO='{code}'":
+        allowed_where = {f"CODIGO='{code}'", f"NIVEL7='{code}'"}
+        if query.get("where") not in allowed_where:
             raise CasmaGeometryError(f"WHERE_DRIFT_{cid}")
         if query.get("out_fields") != "*" or query.get("out_sr") != 4326 or query.get("geometry_precision") != 7 or query.get("format") != "geojson":
             raise CasmaGeometryError(f"QUERY_CONTRACT_DRIFT_{cid}")
+        row["source_query"] = exact_n7_query(code)
         geometry = row.get("geometry") or {}
         raw_path = geometry.get("path")
         if not isinstance(raw_path, str) or not raw_path.startswith("site/data/phase2/geometries/"):
@@ -160,10 +175,14 @@ def exact_feature(snapshot: dict, code: str, name: str) -> dict:
         raise CasmaGeometryError(f"ANA_EXACT_QUERY_NOT_UNIQUE_{code}_{len(features)}")
     feature = features[0]
     props = feature.get("properties") or {}
-    actual_code = str(props.get("CODIGO") or props.get("codigo") or "")
-    actual_name = props.get("NOMBRE") or props.get("nombre")
+    actual_code = str(props.get("NIVEL7") or props.get("nivel7") or "")
+    actual_name = props.get("NOMB_UH_N7") or props.get("nomb_uh_n7")
+    parent_code = str(props.get("NIVEL6") or props.get("nivel6") or "")
+    parent_name = props.get("NOMB_UH_N6") or props.get("nomb_uh_n6")
     if actual_code != code or actual_name != name:
-        raise CasmaGeometryError(f"ANA_IDENTITY_MISMATCH_{code}_{actual_code}_{actual_name}")
+        raise CasmaGeometryError(f"ANA_N7_IDENTITY_MISMATCH_{code}_{actual_code}_{actual_name}")
+    if parent_code != PARENT_N6_CODE or parent_name != PARENT_N6_NAME:
+        raise CasmaGeometryError(f"ANA_N6_PARENT_MISMATCH_{code}_{parent_code}_{parent_name}")
     geometry = feature.get("geometry") or {}
     if geometry.get("type") not in {"Polygon", "MultiPolygon"} or not geometry.get("coordinates"):
         raise CasmaGeometryError(f"ANA_POLYGON_MISSING_{code}")
@@ -178,6 +197,10 @@ def normalized_geometry(cid: str, code: str, name: str, feature: dict, source_sh
         "name": name,
         "official_name": name,
         "official_unit_code": code,
+        "official_identity_field": "NIVEL7",
+        "official_name_field": "NOMB_UH_N7",
+        "official_parent_unit_code": PARENT_N6_CODE,
+        "official_parent_unit_name": PARENT_N6_NAME,
         "source_id": f"ANA-UH-{code}-{cid.upper()}",
         "source_snapshot_sha256": source_sha,
         "representation": "OFFICIAL_ANA_N7_HYDROGRAPHIC_CHILD_CONTEXT",
@@ -292,6 +315,10 @@ def run(refresh_source: bool) -> dict:
             **SAFE,
             "ana_unit_code": code,
             "ana_unit_name": name,
+            "ana_identity_field": "NIVEL7",
+            "ana_name_field": "NOMB_UH_N7",
+            "ana_parent_unit_code": PARENT_N6_CODE,
+            "ana_parent_unit_name": PARENT_N6_NAME,
             "source_id": package_row["source_id"],
             "source_path": source.relative_to(ROOT).as_posix(),
             "source_sha256": source_sha,
