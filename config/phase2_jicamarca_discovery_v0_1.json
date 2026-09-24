@@ -1,8 +1,8 @@
 {
-  "schema_version": "0.1",
+  "schema_version": "0.2",
   "discovery_id": "lima_este_jicamarca_huaycoloro_rioseco_canto_grande",
-  "system_name": "Jicamarca local system: Huaycoloro, Río Seco and Canto Grande–Media Luna",
-  "status": "RESEARCH_ONLY_PENDING_DISCOVERY",
+  "system_name": "Jicamarca local system: Huaycoloro, Río Seco, Canto Grande and Media Luna",
+  "status": "RESEARCH_ONLY_PENDING_DISCOVERY_LOCAL_CHILDREN_SEPARATED",
   "deployment_status": "RESEARCH_ONLY",
   "test_mode": "TEST_ONLY",
   "production_use": false,
@@ -14,24 +14,40 @@
   "hydraulic_factors": null,
   "hierarchy_binding": {
     "architecture": "config/phase2_local_activation_hierarchy_v0_1.json",
+    "collector_architecture": "config/phase2_collector_coupling_architecture_v0_1.json",
     "parent_role": "CONTEXT_CONTAINER_NON_ACTIVATABLE",
     "parent_activation_state": null,
     "child_evidence_promotes_parent_activation": false,
     "candidate_inventory_registration": false,
-    "reason": "Pending discovery remains outside registered candidate demonstrators until hydrologic identity and reproducible local geometry satisfy the registration gate."
+    "reason": "Pending discovery remains outside registered candidate demonstrators until hydrologic identity and reproducible local geometry satisfy the registration gate. Canto Grande and Media Luna are maintained as separate local children; no synthetic Canto Grande–Media Luna activation unit is allowed."
   },
-  "purpose": "Register Jicamarca as a pending local hydrologic/geodynamic research system without inventing a single synthetic 'Quebrada Jicamarca'. Preserve Huaycoloro, Río Seco and Canto Grande–Media Luna as distinct physical components and reuse the existing Huaycoloro pilot only by reference.",
+  "purpose": "Register Jicamarca as a pending local hydrologic/geodynamic research system without inventing a single synthetic 'Quebrada Jicamarca' or a synthetic Canto Grande–Media Luna child. Preserve Huaycoloro, Río Seco, Canto Grande upper branch, Media Luna and any named Jicamarca channel as distinct components, while reusing the existing Huaycoloro pilot only by reference.",
   "relationship_to_existing_irfen": {
     "creates_new_operational_zone": false,
     "duplicates_huaycoloro_pilot": false,
     "existing_huaycoloro_reference": "chosica_huaycoloro",
     "candidate_inventory_count_changes": false,
-    "map_publication_allowed_before_reproducible_child_geometry": false
+    "map_publication_allowed_before_reproducible_child_geometry": false,
+    "channel_context_publication_allowed_when_exact_official_line_is_frozen": true
   },
   "territorial_identity": {
     "jicamarca_is_single_hydrologic_unit": false,
     "role": "TERRITORIAL_AND_SUBCATCHMENT_CONTEXT_REQUIRES_CHILD_SEPARATION",
-    "territorial_references": ["Jicamarca", "Anexo 22", "Valle Sagrado", "Cajamarquilla", "Radio Observatorio de Jicamarca"]
+    "territorial_references": [
+      "Jicamarca",
+      "Anexo 22",
+      "Valle Sagrado",
+      "Cajamarquilla",
+      "Radio Observatorio de Jicamarca"
+    ]
+  },
+  "local_child_separation": {
+    "synthetic_child_id_canto_grande_media_luna_allowed": false,
+    "canto_grande_upper_branch_and_media_luna_are_distinct_children": true,
+    "channel_line_context_may_replace_catchment_polygon": false,
+    "channel_line_endpoint_may_define_outlet": false,
+    "child_geometry_union_allowed": false,
+    "parent_activation_from_child_evidence_allowed": false
   },
   "hydrologic_components": [
     {
@@ -51,17 +67,37 @@
       "unit_type": "LOCAL_CATCHMENT_OR_RAVINE_POLYGON",
       "role": "IGP_CENDEHUA_MONITORED_NATURAL_RAVINE_SYSTEM",
       "independent_geometry_required": true,
-      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY",
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_CATCHMENT_POLYGON",
+      "channel_geometry_status": "MISSING_PENDING_REPRODUCIBLE_NATURAL_CHANNEL_GEOMETRY",
       "outlet_status": "MISSING_PENDING_REPRODUCIBLE_OUTLET"
     },
     {
-      "child_id": "canto_grande_media_luna",
-      "display_name": "Canto Grande–Media Luna",
+      "child_id": "canto_grande_upper_branch",
+      "display_name": "Canto Grande upper branch",
       "unit_type": "LOCAL_CATCHMENT_OR_RAVINE_POLYGON",
-      "role": "LOCAL_RAVINE_SUBCATCHMENT_WITH_CONFIRMED_HISTORICAL_DEBRIS_FLOW",
+      "role": "LOCAL_RAVINE_CHILD_WITH_REPRODUCIBLE_OFFICIAL_CHANNEL_CONTEXT",
       "independent_geometry_required": true,
-      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY",
-      "outlet_status": "MISSING_PENDING_REPRODUCIBLE_OUTLET"
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_CATCHMENT_POLYGON",
+      "channel_geometry_status": "REPRODUCIBLE_OFFICIAL_IGP_LINE_CONTEXT_ONLY",
+      "channel_geometry_path": "site/data/phase2/geometries/jicamarca_canto_grande_igp_channel.geojson",
+      "channel_geometry_contract": "config/phase2_jicamarca_igp_channel_line_freeze_v0_1.json",
+      "outlet_status": "MISSING_PENDING_REPRODUCIBLE_OUTLET",
+      "channel_line_is_catchment_polygon": false,
+      "channel_line_endpoint_is_outlet": false
+    },
+    {
+      "child_id": "media_luna",
+      "display_name": "Quebrada Media Luna",
+      "unit_type": "LOCAL_CATCHMENT_OR_RAVINE_POLYGON",
+      "role": "LOCAL_RAVINE_CHILD_WITH_REPRODUCIBLE_OFFICIAL_CHANNEL_CONTEXT_AND_CONFIRMED_2002_IMPACT",
+      "independent_geometry_required": true,
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_CATCHMENT_POLYGON",
+      "channel_geometry_status": "REPRODUCIBLE_OFFICIAL_IGP_LINE_CONTEXT_ONLY",
+      "channel_geometry_path": "site/data/phase2/geometries/jicamarca_media_luna_igp_channel.geojson",
+      "channel_geometry_contract": "config/phase2_jicamarca_igp_channel_line_freeze_v0_1.json",
+      "outlet_status": "MISSING_PENDING_REPRODUCIBLE_OUTLET",
+      "channel_line_is_catchment_polygon": false,
+      "channel_line_endpoint_is_outlet": false
     },
     {
       "child_id": "jicamarca_named_channel",
@@ -77,25 +113,32 @@
     {
       "event_id": "JICAMARCA-MEDIA-LUNA-2002",
       "date_or_year": "2002",
-      "component_id": "canto_grande_media_luna",
+      "component_id": "media_luna",
       "status": "CONFIRMED_POSITIVE_HISTORICAL_ACTIVATION",
       "research_state": "IMPACT_CONFIRMED",
       "mechanism": "DEBRIS_FLOW_HUAICO",
       "source_id": "INGEMMET-CANTO-GRANDE-MEDIA-LUNA-2010",
-      "supported_claim": "INGEMMET documents activation in 2002 in Media Luna/Canto Grande with destruction of precarious and masonry housing.",
-      "event_footprint_available": false
+      "supported_claim": "INGEMMET documents activation in 2002 in Media Luna/Canto Grande with destruction of precarious and masonry housing; the event is assigned to the Media Luna local child because the source specifically documents Quebrada Media Luna, without promoting the Canto Grande context parent.",
+      "event_footprint_available": false,
+      "promotes_canto_grande_context_activation": false,
+      "promotes_rimac_overflow": false
     },
     {
       "event_id": "JICAMARCA-HUAYCOLORO-RIOSECO-2017",
       "date_or_year": "2017",
-      "component_id": "huaycoloro_and_rioseco_monitored_system",
+      "component_id": "huaycoloro_or_rio_seco_unresolved",
+      "candidate_components": [
+        "huaycoloro",
+        "rio_seco"
+      ],
       "status": "CONFIRMED_MONITORED_HUAICO_SEASON_CONTEXT",
       "research_state": "DIRECT_FLOW_EVIDENCE",
       "mechanism": "DEBRIS_FLOW_HUAICO",
       "source_id": "IGP-CENDEHUA-2017",
-      "supported_claim": "IGP reports continuous huaico alerts during El Niño Costero 2017 at the Jicamarca monitoring system for Huaycoloro/Río Seco; station monitoring counts are preserved as monitoring records, not event counts.",
+      "supported_claim": "IGP reports continuous huaico alerts during El Niño Costero 2017 at the Jicamarca monitoring system for Huaycoloro/Río Seco; station monitoring counts are preserved as monitoring records, not event counts, and component attribution remains unresolved unless station/timestamp evidence identifies a child.",
       "event_footprint_available": false,
-      "component_attribution_complete": false
+      "component_attribution_complete": false,
+      "synthetic_union_event_assignment_allowed": false
     },
     {
       "event_id": "JICAMARCA-HUAYCOLORO2-2023-03-15",
@@ -124,21 +167,33 @@
     {
       "event_id": "JICAMARCA-VALLE-SAGRADO-2023-03-15",
       "date_or_year": "2023-03-15",
-      "component_id": "canto_grande_media_luna_or_adjacent_local_ravines_unresolved",
+      "component_id": "media_luna_or_canto_grande_upper_branch_or_adjacent_local_ravines_unresolved",
+      "candidate_components": [
+        "media_luna",
+        "canto_grande_upper_branch"
+      ],
       "status": "CONFIRMED_TERRITORIAL_HUAICO_IMPACT_MECHANISM_PARTIAL",
       "research_state": "IMPACT_CONFIRMED",
       "mechanism": "DEBRIS_FLOW_HUAICO",
       "source_id": "COEN-SAN-ANTONIO-JICAMARCA-2023-03-15",
       "supported_claim": "COEN-INDECI reported a huaico at Valle Sagrado, San Antonio, caused by intense rainfall; exact local ravine attribution must remain unresolved until geometry/event evidence binds it.",
       "event_footprint_available": false,
-      "local_ravine_attribution": "PARTIAL_UNRESOLVED"
+      "local_ravine_attribution": "PARTIAL_UNRESOLVED",
+      "candidate_list_is_exhaustive": false
     }
   ],
   "monitoring_assets": [
     {
       "source_id": "IGP-CENDEHUA",
-      "components": ["huaycoloro", "rio_seco"],
-      "sensors": ["cameras", "continuity sensors", "level sensors"],
+      "components": [
+        "huaycoloro",
+        "rio_seco"
+      ],
+      "sensors": [
+        "cameras",
+        "continuity sensors",
+        "level sensors"
+      ],
       "role": "DIRECT_FLOW_EVIDENCE_SOURCE",
       "lead_time_context": "up to about 30 minutes before flows reach the observatory/nearest urban area, per IGP service description",
       "operational_alert_thresholds_imported_to_irfen": false,
@@ -146,7 +201,9 @@
     },
     {
       "source_id": "IGP-SOPHY-XBAND-RADAR",
-      "components": ["regional_precipitation_context"],
+      "components": [
+        "regional_precipitation_context"
+      ],
       "role": "HIGHER_RESOLUTION_PRECIPITATION_RESEARCH_SOURCE",
       "radar_range_context_km": 60,
       "data_access_status": "PUBLIC_PROJECT_METADATA_ONLY_DATA_ACCESS_UNRESOLVED",
@@ -155,18 +212,58 @@
   ],
   "evidence_packages": {
     "cendehua_event_metadata": "config/phase2_jicamarca_cendehua_event_metadata_v0_1.json",
-    "sophy_access_assessment": "config/phase2_jicamarca_sophy_access_assessment_v0_1.json"
+    "sophy_access_assessment": "config/phase2_jicamarca_sophy_access_assessment_v0_1.json",
+    "canto_grande_media_luna_topology": "config/phase2_jicamarca_canto_grande_media_luna_assessment_v0_1.json",
+    "igp_channel_line_freeze": "config/phase2_jicamarca_igp_channel_line_freeze_v0_1.json",
+    "rio_seco_ana_identity": "config/phase2_jicamarca_rio_seco_ana_faja_identity_v0_1.json"
   },
   "collector_coupling": {
     "receiver_system": "rimac_mainstem",
     "tributary_activation_implies_receiver_overflow": false,
     "routing_status": "BLOCKED_PENDING_REPRODUCIBLE_OUTLETS_AND_ROUTING",
-    "per_child_required_fields": ["outlet_or_confluence", "Q_i_t", "travel_time", "attenuation", "quality"],
+    "per_child_required_fields": [
+      "outlet_or_confluence",
+      "Q_i_t",
+      "travel_time",
+      "attenuation",
+      "quality"
+    ],
     "children": {
-      "huaycoloro": {"outlet_or_confluence": null, "Q_i_t": null, "travel_time": null, "attenuation": null, "quality": "UNKNOWN"},
-      "rio_seco": {"outlet_or_confluence": null, "Q_i_t": null, "travel_time": null, "attenuation": null, "quality": "UNKNOWN"},
-      "canto_grande_media_luna": {"outlet_or_confluence": null, "Q_i_t": null, "travel_time": null, "attenuation": null, "quality": "UNKNOWN"},
-      "jicamarca_named_channel": {"outlet_or_confluence": null, "Q_i_t": null, "travel_time": null, "attenuation": null, "quality": "UNKNOWN"}
+      "huaycoloro": {
+        "outlet_or_confluence": null,
+        "Q_i_t": null,
+        "travel_time": null,
+        "attenuation": null,
+        "quality": "UNKNOWN"
+      },
+      "rio_seco": {
+        "outlet_or_confluence": null,
+        "Q_i_t": null,
+        "travel_time": null,
+        "attenuation": null,
+        "quality": "UNKNOWN"
+      },
+      "canto_grande_upper_branch": {
+        "outlet_or_confluence": null,
+        "Q_i_t": null,
+        "travel_time": null,
+        "attenuation": null,
+        "quality": "UNKNOWN"
+      },
+      "media_luna": {
+        "outlet_or_confluence": null,
+        "Q_i_t": null,
+        "travel_time": null,
+        "attenuation": null,
+        "quality": "UNKNOWN"
+      },
+      "jicamarca_named_channel": {
+        "outlet_or_confluence": null,
+        "Q_i_t": null,
+        "travel_time": null,
+        "attenuation": null,
+        "quality": "UNKNOWN"
+      }
     },
     "collector_stage_or_discharge_response": null,
     "peak_coincidence": null,
@@ -182,8 +279,9 @@
     "IGP-SOPHY-XBAND-RADAR": "https://www.igp.gob.pe/proyectos/desarrollo-tecnologico/radar-meteorologico/acercade"
   },
   "required_next_work": [
-    "resolve reproducible geometry and outlet for Río Seco",
-    "resolve Canto Grande–Media Luna microcatchment/channel/outlet geometry without merging it with Huaycoloro",
+    "resolve reproducible natural channel/catchment geometry and outlet for Río Seco without using the rejected same-name IGP feature or ANA faja endpoints as an outlet",
+    "resolve Canto Grande upper-branch catchment geometry and exact downstream outlet independently of Media Luna",
+    "resolve Media Luna catchment geometry and exact junction/outlet independently of Canto Grande; do not union the two child geometries",
     "resolve whether the named Quebrada Jicamarca is distinct from or nested within other local units using official/reproducible hydrography",
     "archive reproducible bytes/hashes for bounded IGP event reports when access permits; never infer missing values",
     "reconstruct 2002, 2017 and 2023 event windows with local rainfall evidence",
@@ -193,7 +291,13 @@
   "map_policy": {
     "publish_parent_polygon": false,
     "publish_child_only_after_reproducible_geometry": true,
+    "published_channel_context_children": [
+      "canto_grande_upper_branch",
+      "media_luna"
+    ],
+    "channel_context_is_activation_geometry": false,
     "risk_colors_forbidden": true,
-    "approximate_points_for_missing_geometry_forbidden": true
+    "approximate_points_for_missing_geometry_forbidden": true,
+    "synthetic_child_union_forbidden": true
   }
 }
