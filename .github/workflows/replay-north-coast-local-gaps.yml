@@ -151,21 +151,22 @@ jobs:
           python - <<'PY'
           import importlib.util
           from pathlib import Path
-          p=Path('tests/test_phase2_north_coast_local_gaps.py')
-          spec=importlib.util.spec_from_file_location('local_gaps', p)
-          m=importlib.util.module_from_spec(spec)
-          spec.loader.exec_module(m)
-          tests=[
-              m.test_new_piura_units_are_fail_closed,
-              m.test_vichayito_is_explicit_but_not_promoted,
-              m.test_cartavio_santiago_are_exposure_nodes_not_basins,
-              m.test_paita_is_separate_from_colan_and_separates_mechanisms,
-          ]
-          for t in tests:
-              t()
-              print('PASS', t.__name__)
+
+          for filename in (
+              'tests/test_phase2_north_coast_local_gaps.py',
+              'tests/test_phase2_colan_discovery.py',
+          ):
+              p=Path(filename)
+              spec=importlib.util.spec_from_file_location(p.stem, p)
+              m=importlib.util.module_from_spec(spec)
+              spec.loader.exec_module(m)
+              tests=[getattr(m,name) for name in sorted(dir(m)) if name.startswith('test_') and callable(getattr(m,name))]
+              if not tests:
+                  raise SystemExit(f'no test functions discovered in {filename}')
+              for t in tests:
+                  t()
+                  print('PASS', filename, t.__name__)
           PY
-          python -m unittest discover -s tests -p 'test_phase2_colan_discovery.py' -v
           python scripts/build_map_layer_catalog.py --check-only
           python scripts/validate_scientific_assets.py
           python scripts/validate_pedregal_clean_room.py
