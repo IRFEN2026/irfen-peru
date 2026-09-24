@@ -1,8 +1,10 @@
+import hashlib
 import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "site/data/validation/phase2_discovery_packages/ancash_casma_sechin_yautan.json"
+GEOMETRY_CONTRACT = ROOT / "site/data/validation/phase2_discovery_contracts/ancash_casma_sechin_yautan.json"
 SOURCES = ROOT / "site/data/phase2/sources/ancash_casma_sechin_yautan_official_evidence_v0_1.json"
 
 SAFE = {
@@ -34,6 +36,10 @@ def load(path):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def digest(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 def test_casma_discovery_contract_is_fail_closed_and_non_operational():
     contract = load(CONTRACT)
     for key, expected in SAFE.items():
@@ -54,11 +60,26 @@ def test_casma_discovery_contract_is_fail_closed_and_non_operational():
     assert parent_geometry["counts_as_event_footprint"] is False
 
 
-def test_casma_children_are_exact_official_units_and_not_materialized_approximately():
+def test_casma_children_are_exact_official_units_and_materialize_only_from_exact_ana_queries():
     contract = load(CONTRACT)
     components = contract["assets"]["geometry_components"]
     assert len(components) == len(EXPECTED_CHILDREN) == 9
+    assert contract["contract_status"] == "DISCOVERY_CHILD_GEOMETRIES_REPRODUCIBLE_CONTEXT_ONLY"
+    assert contract["geometry_contract_path"] == "site/data/validation/phase2_discovery_contracts/ancash_casma_sechin_yautan.json"
+    assert GEOMETRY_CONTRACT.is_file()
+    geometry_contract = load(GEOMETRY_CONTRACT)
+    for key, expected in SAFE.items():
+        assert geometry_contract[key] == expected
+    assert geometry_contract["component_policy"]["parent_is_map_polygon"] is False
+    assert geometry_contract["component_policy"]["components_must_remain_separate"] is True
+    assert geometry_contract["component_policy"]["composite_union_forbidden"] is True
+    assert geometry_contract["assets"]["geometry"]["path"] is None
+    assert len(geometry_contract["assets"]["geometry_components"]) == 9
+
     seen = set()
+    geometry_contract_by_id = {
+        row["component_id"]: row for row in geometry_contract["assets"]["geometry_components"]
+    }
     for component in components:
         cid = component["component_id"]
         assert cid not in seen
@@ -73,13 +94,48 @@ def test_casma_children_are_exact_official_units_and_not_materialized_approximat
         assert query["endpoint"] == "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/8/query"
         assert query["where"] == f"CODIGO='{code}'"
         assert query["out_sr"] == 4326
+        assert query["geometry_precision"] == 7
         assert query["format"] == "geojson"
+
         geometry = component["geometry"]
-        assert geometry["status"] == "MISSING_PENDING_EXACT_ANA_QUERY"
-        assert geometry["path"].startswith("site/data/phase2/geometries/")
-        assert not (ROOT / geometry["path"]).exists()
+        assert geometry["status"] == "PARTIAL_OFFICIAL_ANA_N7_HYDROGRAPHIC_CHILD_CONTEXT"
+        assert geometry["representation"] == "OFFICIAL_ANA_N7_HYDROGRAPHIC_CHILD_CONTEXT"
         assert geometry["counts_as_operational_geometry"] is False
         assert geometry["counts_as_event_footprint"] is False
+        geometry_path = ROOT / geometry["path"]
+        validation_path = ROOT / geometry["validation_path"]
+        source_path = ROOT / geometry["source_path"]
+        assert geometry_path.is_file()
+        assert validation_path.is_file()
+        assert source_path.is_file()
+        assert digest(geometry_path) == geometry["sha256"]
+        assert digest(validation_path) == geometry["validation_sha256"]
+        assert digest(source_path) == geometry["source_sha256"]
+
+        feature_collection = load(geometry_path)
+        assert feature_collection["type"] == "FeatureCollection"
+        assert len(feature_collection["features"]) == 1
+        assert feature_collection["properties"]["deployment_status"] == "RESEARCH_ONLY"
+        assert feature_collection["properties"]["activation_gate"] == "BLOCKED"
+        feature = feature_collection["features"][0]
+        assert feature["properties"]["official_unit_code"] == code
+        assert feature["properties"]["official_name"] == name
+        assert feature["properties"]["parent_composite"] is False
+        assert feature["properties"]["counts_as_event_footprint"] is False
+        assert feature["properties"]["counts_as_operational_geometry"] is False
+        assert feature["geometry"]["type"] in {"Polygon", "MultiPolygon"}
+
+        frozen = load(source_path)
+        assert frozen["type"] == "FeatureCollection"
+        assert len(frozen["features"]) == 1
+        props = frozen["features"][0]["properties"]
+        assert str(props.get("CODIGO") or props.get("codigo")) == code
+        assert (props.get("NOMBRE") or props.get("nombre")) == name
+
+        contract_row = geometry_contract_by_id[cid]
+        assert contract_row["hydrologic_identity"] == ident
+        assert contract_row["source_query"] == query
+        assert contract_row["geometry"] == geometry
     assert seen == set(EXPECTED_CHILDREN)
 
 
