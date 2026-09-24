@@ -1,0 +1,150 @@
+{
+  "schema_version": "0.1",
+  "status": "RESEARCH_ONLY_EFFECTIVE_DISCOVERY_REFINEMENT",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "extends": "config/phase2_jicamarca_discovery_v0_1.json",
+  "hierarchy_architecture": "config/phase2_local_activation_hierarchy_v0_1.json",
+  "collector_architecture": "config/phase2_collector_coupling_architecture_v0_1.json",
+  "existing_huaycoloro_reference": "chosica_huaycoloro",
+  "purpose": "Apply already-closed Jicamarca evidence refinements to the effective discovery view without rewriting frozen base evidence, inventing geometry, or promoting routing, hydraulic or operational parameters.",
+  "parent_policy": {
+    "jicamarca_parent_is_context_only": true,
+    "parent_activation_state": null,
+    "child_evidence_promotes_parent_activation": false,
+    "synthetic_quejada_jicamarca_unit_allowed": false,
+    "synthetic_child_geometry_union_allowed": false
+  },
+  "effective_local_children": [
+    "huaycoloro",
+    "rio_seco",
+    "canto_grande_upper_branch",
+    "media_luna",
+    "jicamarca_named_channel"
+  ],
+  "event_refinements": {
+    "source_package": "config/phase2_jicamarca_huaycoloro_rio_seco_union_2017_v0_2.json",
+    "coarse_2017_union_summary_in_base_contract_is_event_selection_authority": false,
+    "events": [
+      {
+        "event_id": "JICAMARCA-HUAYCOLORO-2017-01-31",
+        "date": "2017-01-31",
+        "component_id": "huaycoloro",
+        "research_state": "DIRECT_FLOW_EVIDENCE",
+        "child_attribution_status": "RESOLVED_FOR_THIS_EVENT",
+        "rio_seco_activation_inferred": false,
+        "negative_evidence_for_rio_seco_created": false,
+        "event_footprint_geometry": null,
+        "rimac_overflow_inferred": false
+      },
+      {
+        "event_id": "JICAMARCA-ROJ-2017-MARCH-CORRIDOR-CONTEXT",
+        "date_or_period": "2017-03",
+        "component_id": "huaycoloro_or_rio_seco_or_adjacent_receiver_context_unresolved",
+        "candidate_components": [
+          "huaycoloro",
+          "rio_seco"
+        ],
+        "research_state": "IMPACT_CONFIRMED",
+        "child_attribution_status": "UNRESOLVED_NOT_UNIQUE",
+        "synthetic_union_event_assignment_allowed": false,
+        "negative_evidence_for_unmentioned_child_allowed": false,
+        "event_footprint_geometry": null,
+        "rimac_overflow_inferred_from_local_child": false
+      }
+    ],
+    "field_observation_policy": {
+      "reported_estimated_discharge_m3_s_72_5_is_Q_i_t": false,
+      "reported_segment_travel_time_min_4_is_collector_routing_parameter": false,
+      "event_specific_values_transferable_to_other_events": false,
+      "event_specific_values_transferable_to_rio_seco": false,
+      "event_specific_values_transferable_to_rimac_receiver": false,
+      "historical_hydraulic_capacity_inferred": false
+    }
+  },
+  "monitoring_refinements": {
+    "cendehua": {
+      "station_event_metadata_package": "config/phase2_jicamarca_cendehua_event_metadata_v0_1.json",
+      "monitoring_topology_package": "config/phase2_jicamarca_rio_seco_huaycoloro_monitoring_topology_v0_1.json",
+      "direct_flow_evidence_may_define_small_ravine_activation_when_station_identity_is_reproducible": true,
+      "provider_operational_thresholds_imported_to_irfen": false,
+      "missing_or_false_provider_activity_is_negative_evidence": false
+    },
+    "sophy_xband": {
+      "access_assessment": "config/phase2_jicamarca_sophy_access_assessment_v0_1.json",
+      "public_graphical_product_evidence_identified": true,
+      "public_graphical_products_are_machine_readable_raw_or_level2_archive": false,
+      "public_machine_readable_archive_identified": false,
+      "documented_api_identified": false,
+      "raw_or_level2_data_retrieved": false,
+      "reported_range_values_km": [
+        50,
+        60
+      ],
+      "range_discrepancy_resolved": false,
+      "subcatchment_rainfall_reconstruction_allowed": false,
+      "provider_dbz_qa_values_are_irfen_thresholds": false
+    }
+  },
+  "geometry_effect": {
+    "new_geometry_created": false,
+    "rio_seco_catchment_resolved": false,
+    "rio_seco_natural_channel_resolved": false,
+    "rio_seco_outlet_resolved": false,
+    "canto_grande_catchment_resolved": false,
+    "canto_grande_outlet_resolved": false,
+    "media_luna_catchment_resolved": false,
+    "media_luna_outlet_resolved": false,
+    "jicamarca_named_channel_identity_resolved": false,
+    "quarantined_qda_colca_faja_may_define_rio_seco": false,
+    "channel_line_endpoint_may_define_outlet": false,
+    "approximate_points_allowed": false
+  },
+  "collector_coupling_effect": {
+    "receiver_system": "rimac_mainstem",
+    "tributary_activation_implies_receiver_overflow": false,
+    "outlet_or_confluence_promoted": false,
+    "Q_i_t_promoted": false,
+    "travel_time_promoted": false,
+    "attenuation_promoted": false,
+    "peak_coincidence_inferred": false,
+    "collector_stage_or_discharge_response_promoted": false,
+    "hydraulic_capacity_promoted": false,
+    "routing_status": "BLOCKED_PENDING_REPRODUCIBLE_OUTLETS_AND_ROUTING"
+  },
+  "map_effect": {
+    "parent_polygon_created": false,
+    "new_child_polygon_created": false,
+    "new_outlet_or_confluence_point_created": false,
+    "new_event_footprint_created": false,
+    "existing_official_canto_grande_and_media_luna_channel_context_remains_research_only": true,
+    "risk_colors_allowed": false,
+    "alert_symbology_allowed": false
+  },
+  "required_next_gates": [
+    "byte-freeze official IGP 2017 source pages or equivalent official archived artifacts before treating the refined 2017 narrative as fully source-frozen",
+    "bind any additional 2017 station-specific timestamp records only when station identity and provenance are reproducible",
+    "resolve Rio Seco natural channel, catchment and outlet independently of quarantined Qda. Colca regulatory context",
+    "resolve Canto Grande upper-branch and Media Luna catchments and outlets independently without unioning child geometry",
+    "identify reproducible SOPHy raw or Level-2 data access and freeze scan, calibration, attenuation and clutter QA before any subcatchment rainfall reconstruction",
+    "parameterize QUEBRADA_TO_RIO_COLLECTOR routing only after reproducible outlets/confluences and admissible event-specific hydrologic data exist"
+  ],
+  "forbidden": [
+    "promote the coarse 2017 Huaycoloro-Rio Seco season summary over the event-specific Huaycoloro attribution",
+    "infer Rio Seco activation from the 31-Jan-2017 Huaycoloro event",
+    "create a negative control from absence of a Rio Seco mention",
+    "turn the reported 72.5 m3/s field estimate into reusable Q_i(t), threshold or capacity",
+    "turn the reported 4-minute segment travel time into collector routing travel time",
+    "treat public SOPHy graphics as raw or Level-2 radar data",
+    "derive local-ravine activation from coarse precipitation alone",
+    "infer Rímac overflow from activation of any local child",
+    "invent or approximate missing geometry, outlet, confluence, routing, attenuation or capacity"
+  ]
+}
