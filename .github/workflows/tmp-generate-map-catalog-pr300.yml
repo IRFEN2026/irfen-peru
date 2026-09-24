@@ -1,0 +1,31 @@
+name: TEMP - generate map catalog for PR300
+
+on:
+  push:
+    branches:
+      - phase2-north-coast-local-gaps-20260924
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Generate map catalog
+        run: python scripts/build_map_layer_catalog.py
+      - name: Upload generated catalog
+        uses: actions/upload-artifact@v6
+        with:
+          name: pr300-map-catalog
+          path: site/data/map_layers.json
+          if-no-files-found: error
