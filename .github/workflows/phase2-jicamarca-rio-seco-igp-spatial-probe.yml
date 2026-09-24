@@ -23,6 +23,8 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+      - name: Install test dependency
+        run: python -m pip install --disable-pip-version-check pytest
       - name: Run static scientific guards
         run: python -m pytest tests/test_phase2_jicamarca_rio_seco_igp_spatial_probe.py -q
       - name: Probe official IGP lines within exact frozen ANA context envelope
