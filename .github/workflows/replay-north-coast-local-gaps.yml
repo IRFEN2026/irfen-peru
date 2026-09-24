@@ -22,6 +22,8 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+      - name: Install scientific validator dependency
+        run: python -m pip install 'shapely>=2.0,<3'
       - name: Fetch bounded source branch
         run: git fetch origin phase2-north-coast-local-gaps-20260924
       - name: Replay only local-gap scientific changes on top of Colan state
