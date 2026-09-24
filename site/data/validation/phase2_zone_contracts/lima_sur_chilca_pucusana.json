@@ -3,77 +3,202 @@
   "candidate_id": "lima_sur_chilca_pucusana",
   "contract_status": "DRAFT",
   "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
   "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
   "alerting_enabled": false,
+  "activation_gate": "BLOCKED",
   "decision_thresholds": null,
   "hydraulic_factors": null,
   "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
   "identity": {
-    "system_name": "Corredor de quebradas Chilca-Pucusana",
+    "system_name": "Chilca-Pucusana lower-river context with separate Chilca arms",
     "department": "Lima",
-    "province_or_corridor": "Cañete / Lima Sur Chico",
+    "province_or_corridor": "Canete / Lima Sur Chico",
     "territorial_profile": "small_coastal_settlements_and_roads",
-    "inside_lima_metropolitana": false
+    "inside_lima_metropolitana": false,
+    "corridor_is_hydrologic_activation_unit": false,
+    "pucusana_is_separate_basin": false
+  },
+  "hierarchy_binding": {
+    "architecture": "config/phase2_local_activation_hierarchy_v0_1.json",
+    "collector_architecture": "config/phase2_collector_coupling_architecture_v0_1.json",
+    "parent_role": "CONTEXT_CONTAINER_NON_ACTIVATABLE",
+    "parent_activation_state": null,
+    "child_evidence_promotes_parent_activation": false,
+    "synthetic_union_geometry_allowed": false,
+    "source_registry": "site/data/phase2/sources/lima_sur_chilca_pucusana_official_evidence_v0_1.json"
   },
   "hazard_model": {
-    "mechanism_status": "TO_BE_RESOLVED",
-    "mechanism_preliminary": "several_short_response_ravines_to_be_disaggregated",
-    "selected_model_family": null
+    "mechanism_status": "TO_BE_RESOLVED_PER_LOCAL_CHANNEL_AND_EVENT",
+    "mechanism_preliminary": "lower_chilca_bifurcation_with_separate_north_and_south_channel_response",
+    "selected_model_family": null,
+    "same_response_may_be_assumed_for_both_arms": false
   },
   "official_source_ids": [
     "INDECI-LIMA-2017-EVENT-REPORT",
-    "ANA-CENEPRED-CRITICAL-POINTS-2025"
+    "ANA-CENEPRED-CRITICAL-POINTS-2025",
+    "ANA-CHILCA-BIFURCATION-2021-08-24",
+    "ANA-SIGRID-CHILCA-BRAZO-SUR-RD0007-2022",
+    "ANA-CHILCA-BRAZO-NORTE-RD0641-2024",
+    "CENEPRED-PUCUSANA-CHILCA-MOUTH-2023-03-29"
   ],
+  "local_units": [
+    {
+      "component_id": "rio_chilca_upstream_context",
+      "display_name": "Rio/Quebrada Chilca upstream of lower bifurcation",
+      "role": "UPSTREAM_PARENT_CHANNEL_CONTEXT",
+      "identity_status": "OFFICIAL_SYSTEM_CONTEXT_CONFIRMED_EXACT_REACH_PENDING",
+      "channel_geometry_status": "MISSING_PENDING_REPRODUCIBLE_REACH_GEOMETRY",
+      "outlet_or_node_status": "MISSING_PENDING_REPRODUCIBLE_BIFURCATION_NODE",
+      "activation_state": null,
+      "map_publishable": false
+    },
+    {
+      "component_id": "chilca_brazo_sur",
+      "display_name": "Quebrada/Rio Chilca Brazo Sur",
+      "role": "LOWER_LOCAL_CHANNEL_CHILD",
+      "identity_status": "OFFICIAL_NAME_AND_REGULATORY_CONTEXT_CONFIRMED",
+      "channel_geometry_status": "MISSING_REPRODUCIBLE_CENTERLINE_NOT_YET_FROZEN",
+      "catchment_geometry_status": "MISSING_NO_SYNTHETIC_DRAINAGE_POLYGON",
+      "outlet_status": "MISSING_PENDING_REPRODUCIBLE_MOUTH_NODE",
+      "regulatory_faja_available": true,
+      "regulatory_faja_is_event_footprint": false,
+      "activation_state": null,
+      "map_publishable": false
+    },
+    {
+      "component_id": "chilca_brazo_norte",
+      "display_name": "Quebrada/Rio Chilca Brazo Norte",
+      "role": "LOWER_LOCAL_CHANNEL_CHILD",
+      "identity_status": "OFFICIAL_NAME_AND_REGULATORY_CONTEXT_CONFIRMED",
+      "channel_geometry_status": "MISSING_REPRODUCIBLE_CENTERLINE_NOT_YET_FROZEN",
+      "catchment_geometry_status": "MISSING_NO_SYNTHETIC_DRAINAGE_POLYGON",
+      "outlet_status": "MISSING_PENDING_REPRODUCIBLE_MOUTH_NODE",
+      "regulatory_faja_available": true,
+      "regulatory_faja_is_event_footprint": false,
+      "activation_state": null,
+      "map_publishable": false
+    },
+    {
+      "component_id": "pucusana_mouth_exposure_node",
+      "display_name": "Pucusana / desembocadura del sistema Chilca",
+      "role": "TERRITORIAL_EXPOSURE_AND_MOUTH_CONTEXT_NOT_BASIN",
+      "identity_status": "OFFICIAL_TERRITORIAL_CONTEXT_CONFIRMED_EXACT_NODE_PENDING",
+      "geometry_status": "MISSING_NO_APPROXIMATE_POINT_ALLOWED",
+      "activation_state": null,
+      "map_publishable": false
+    }
+  ],
+  "collector_coupling": {
+    "topology_status": "LOWER_BIFURCATION_DOCUMENTED_EXACT_NODES_UNRESOLVED",
+    "exact_bifurcation_node": null,
+    "exact_north_mouth_node": null,
+    "exact_south_mouth_node": null,
+    "Q_i_t": null,
+    "travel_time": null,
+    "attenuation": null,
+    "peak_coincidence": null,
+    "hydraulic_capacity": null,
+    "routing_enabled": false,
+    "south_arm_activation_implies_north_arm_activation": false,
+    "north_arm_activation_implies_south_arm_activation": false,
+    "either_arm_activation_implies_pucusana_impact": false
+  },
   "assets": {
     "geometry": {
-      "status": "MISSING",
+      "status": "MISSING_CHILD_CHANNEL_CENTERLINES_AND_OUTLETS_NOT_FROZEN",
       "path": null,
-      "source_ids": []
+      "source_ids": [
+        "ANA-CHILCA-BIFURCATION-2021-08-24",
+        "ANA-SIGRID-CHILCA-BRAZO-SUR-RD0007-2022",
+        "ANA-CHILCA-BRAZO-NORTE-RD0641-2024"
+      ],
+      "faja_marginal_may_substitute_channel_or_catchment": false,
+      "approximate_points_allowed": false,
+      "synthetic_union_allowed": false
     },
     "exposure": {
-      "status": "MISSING",
+      "status": "PARTIAL_PUCUSANA_AND_CHILCA_TERRITORIAL_CONTEXT_NETWORK_NOT_NORMALIZED",
       "path": null,
-      "source_ids": []
+      "source_ids": [
+        "CENEPRED-PUCUSANA-CHILCA-MOUTH-2023-03-29",
+        "ANA-CHILCA-BIFURCATION-2021-08-24"
+      ],
+      "territorial_context_is_basin": false
     },
     "historical_events": {
-      "status": "MISSING",
+      "status": "MISSING_CHILD_SPECIFIC_EVENT_ADJUDICATION",
       "path": null,
-      "source_ids": [],
+      "source_ids": [
+        "INDECI-LIMA-2017-EVENT-REPORT"
+      ],
       "minimum_verified_event_days": 1,
-      "minimum_verified_none_days": 10
+      "minimum_verified_none_days": 10,
+      "none_days_require_positive_verification": true,
+      "absence_of_report_may_define_none_day": false,
+      "corridor_event_may_be_assigned_to_both_arms_without_attribution": false
     },
     "observations": {
-      "status": "MISSING",
+      "status": "MISSING_ARM_SPECIFIC_EVENT_PAIRED_RAINFALL_STAGE_FLOW_SERIES",
       "path": null,
-      "source_ids": []
+      "source_ids": [],
+      "provider_values_may_define_irfen_thresholds": false
     },
     "forecast": {
-      "status": "CANDIDATE",
+      "status": "CANDIDATE_CONTEXT_ONLY",
       "path": null,
       "source_ids": [
         "NASA-GEOS-CF"
-      ]
+      ],
+      "coarse_precipitation_may_select_active_arm": false
     },
     "hydraulic_context": {
-      "status": "MISSING",
+      "status": "REGULATORY_FAJA_OBSTRUCTION_AND_PREVENTION_CONTEXT_ONLY",
       "path": null,
-      "source_ids": []
+      "source_ids": [
+        "ANA-CHILCA-BIFURCATION-2021-08-24",
+        "ANA-SIGRID-CHILCA-BRAZO-SUR-RD0007-2022",
+        "ANA-CHILCA-BRAZO-NORTE-RD0641-2024"
+      ],
+      "capacity_values": null,
+      "regulatory_faja_is_historical_capacity": false,
+      "obstruction_or_planned_works_are_historical_capacity": false
     }
+  },
+  "map_policy": {
+    "parent_corridor_polygon_allowed": false,
+    "publish_each_arm_only_after_reproducible_channel_or_local_polygon_geometry": true,
+    "publish_faja_only_as_regulatory_context_if_normalized_with_provenance": true,
+    "faja_marginal_is_event_footprint": false,
+    "pucusana_administrative_geometry_may_substitute_mouth_node": false,
+    "approximate_geometry_forbidden": true,
+    "composite_arm_polygon_forbidden": true,
+    "risk_or_alert_coloring": false
   },
   "validation": {
     "activation_gate": "BLOCKED",
     "required_reviews": [
-      "scientific",
-      "hydrological_or_hydraulic",
-      "local_outcome"
+      "freeze reproducible south-arm and north-arm channel geometries separately",
+      "resolve the lower bifurcation node and each mouth/outlet independently without approximate points",
+      "adjudicate 2017 and later events to individual arms or preserve attribution as unresolved",
+      "retrieve arm-specific or defensibly localized rainfall/stage/flow observations",
+      "normalize Pucusana/Chilca exposure without treating administrative territory as hydrologic geometry",
+      "keep regulatory fajas and obstruction/prevention works separate from event footprints and historical capacity"
     ],
     "promotion_requires_all_gates": true,
-    "review_evidence": []
+    "review_evidence": [
+      "ANA 2021 official lower-river bifurcation context",
+      "ANA/SIGRID south-arm regulatory faja record",
+      "ANA 2024 north-arm regulatory faja record",
+      "CENEPRED 2023 Pucusana mouth and both-arm prevention context"
+    ]
   },
   "notes": [
-    "replace corridor with named official ravines",
-    "separate Chilca and Pucusana mechanisms",
-    "identify settlements and critical services",
-    "obtain local event controls"
+    "Chilca-Pucusana remains a context corridor, not an activation unit.",
+    "North and south arms are independent local-channel research units and must not be activated as a pair by assumption.",
+    "Pucusana is retained as territorial exposure/mouth context, not a replacement hydrologic basin.",
+    "No operational promotion is permitted while activation_gate remains BLOCKED."
   ]
 }
