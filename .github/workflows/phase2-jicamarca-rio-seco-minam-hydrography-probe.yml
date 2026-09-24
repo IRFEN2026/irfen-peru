@@ -1,0 +1,96 @@
+name: IRFEN - Phase2 Jicamarca Rio Seco MINAM hydrography probe
+
+on:
+  pull_request:
+    paths:
+      - config/phase2_jicamarca_rio_seco_minam_hydrography_probe_v0_1.json
+      - config/phase2_jicamarca_rio_seco_minam_hydrography_probe_closeout_v0_1.json
+      - config/phase2_jicamarca_discovery_v0_2.json
+      - config/phase2_jicamarca_evidence_index_v0_6.json
+      - config/phase2_jicamarca_indeci2013_confluence_topology_v0_1.json
+      - config/phase2_jicamarca_rio_seco_ign_hydrography_probe_closeout_v0_1.json
+      - scripts/probe_phase2_jicamarca_rio_seco_minam_hydrography.py
+      - site/data/phase2/sources/jicamarca_rio_seco_minam/probe_result_v0_1.json
+      - tests/test_phase2_jicamarca_rio_seco_minam_hydrography_probe.py
+      - tests/test_phase2_jicamarca_rio_seco_minam_hydrography_closeout.py
+      - .github/workflows/phase2-jicamarca-rio-seco-minam-hydrography-probe.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bounded-candidate-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install focused test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Run scientific guards
+        run: |
+          python -m pytest tests/test_phase2_jicamarca_rio_seco_minam_hydrography_probe.py -q
+          python -m pytest tests/test_phase2_jicamarca_rio_seco_minam_hydrography_closeout.py -q
+          python -m pytest tests/test_phase2_jicamarca_evidence_index_v0_6.py -q
+      - name: Probe official MINAM hydrography within preregistered Jicamarca window
+        run: |
+          mkdir -p artifacts
+          python scripts/probe_phase2_jicamarca_rio_seco_minam_hydrography.py \
+            --output artifacts/phase2_jicamarca_rio_seco_minam_hydrography_probe_v0_1.json
+      - name: Enforce candidate-only output semantics and frozen zero-candidate parity
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('artifacts/phase2_jicamarca_rio_seco_minam_hydrography_probe_v0_1.json')
+          d = json.loads(p.read_text(encoding='utf-8'))
+          frozen = json.loads(Path('site/data/phase2/sources/jicamarca_rio_seco_minam/probe_result_v0_1.json').read_text(encoding='utf-8'))
+          closeout = json.loads(Path('config/phase2_jicamarca_rio_seco_minam_hydrography_probe_closeout_v0_1.json').read_text(encoding='utf-8'))
+          assert d['status'] == 'PASS_BOUNDED_MINAM_RIO_SECO_HYDROGRAPHY_CANDIDATE_PROBE'
+          assert d['deployment_status'] == 'RESEARCH_ONLY'
+          assert d['test_mode'] == 'TEST_ONLY'
+          assert d['production_use'] is False
+          assert d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['activation_gate'] == 'BLOCKED'
+          assert d['missing_data_rule'] == 'UNKNOWN_NOT_LOW_RISK'
+          assert d['decision_thresholds'] is None
+          assert d['hydraulic_factors'] is None
+          assert d['query_window']['buffer_applied'] is False
+          assert d['query_window']['catchment_geometry'] is False
+          assert d['candidate_geometry_accepted'] is False
+          assert d['catchment_geometry_accepted'] is False
+          assert d['outlet_inferred'] is False
+          assert d['confluence_inferred'] is False
+          assert d['routing_enabled'] is False
+          assert d['Q_i_t'] is None
+          assert d['travel_time'] is None
+          assert d['attenuation'] is None
+          assert d['hydraulic_capacity'] is None
+          assert d['parent_activation_promoted'] is False
+          assert d['rimac_overflow_inferred'] is False
+          for c in d['candidates']:
+              assert c['geometry_accepted_as_rio_seco_channel'] is False
+              assert c['catchment_accepted'] is False
+              assert c['outlet_or_confluence_accepted'] is False
+              assert c['routing_enabled'] is False
+              assert c['event_footprint'] is False
+              assert c['requires_separate_identity_and_topology_review'] is True
+          assert d['candidate_count'] == frozen['candidate_count'] == 0
+          assert d['candidates'] == frozen['candidates'] == []
+          assert d['source']['metadata_response_sha256'] == frozen['source']['metadata_response_sha256']
+          assert d['source']['query_response_sha256'] == frozen['source']['query_response_sha256']
+          assert closeout['source_result']['candidate_count'] == 0
+          assert closeout['scientific_disposition']['zero_candidates_is_negative_event_evidence'] is False
+          assert closeout['scientific_disposition']['agreement_with_prior_ign_zero_candidate_result_is_evidence_of_absence'] is False
+          assert closeout['scientific_disposition']['fallback_to_quarantined_qda_colca_allowed'] is False
+          assert closeout['scientific_disposition']['fallback_to_unrelated_same_name_rio_seco_allowed'] is False
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phase2-jicamarca-rio-seco-minam-hydrography-probe
+          path: artifacts/phase2_jicamarca_rio_seco_minam_hydrography_probe_v0_1.json
+          if-no-files-found: error
