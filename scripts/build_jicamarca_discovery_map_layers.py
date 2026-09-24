@@ -39,6 +39,7 @@ def _guard(document: dict, label: str) -> None:
 def _base_row(discovery: dict) -> dict:
     return {
         "deployment_status": "RESEARCH_ONLY",
+        "test_mode": "TEST_ONLY",
         "production_use": False,
         "production_ready": False,
         "operational_alerting_enabled": False,
