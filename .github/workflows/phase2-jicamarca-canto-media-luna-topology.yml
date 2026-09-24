@@ -1,0 +1,27 @@
+name: IRFEN - Phase2 Jicamarca Canto Grande Media Luna topology
+
+on:
+  pull_request:
+    paths:
+      - config/phase2_jicamarca_canto_grande_media_luna_assessment_v0_1.json
+      - tests/test_phase2_jicamarca_canto_media_luna_topology.py
+      - tests/test_phase2_jicamarca_discovery.py
+      - .github/workflows/phase2-jicamarca-canto-media-luna-topology.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-canto-media-luna-topology:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Run bounded topology and compatibility guards
+        run: python -m pytest tests/test_phase2_jicamarca_canto_media_luna_topology.py tests/test_phase2_jicamarca_discovery.py -q
