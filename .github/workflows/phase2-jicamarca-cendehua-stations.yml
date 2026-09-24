@@ -1,0 +1,97 @@
+name: IRFEN - Phase2 Jicamarca CENDEHUA station metadata
+
+on:
+  pull_request:
+    paths:
+      - scripts/probe_phase2_jicamarca_cendehua_stations.py
+      - tests/test_phase2_jicamarca_cendehua_station_probe.py
+      - .github/workflows/phase2-jicamarca-cendehua-stations.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bounded-station-metadata:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install bounded dependencies
+        run: pip install requests pytest
+      - name: Run scientific guard tests
+        run: pytest -q tests/test_phase2_jicamarca_cendehua_station_probe.py tests/test_igp_cendehua_probe.py
+      - name: Capture official structured station metadata
+        run: python scripts/probe_phase2_jicamarca_cendehua_stations.py
+      - name: Enforce fail-closed research semantics
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          safe={
+            'deployment_status':'RESEARCH_ONLY',
+            'test_mode':'TEST_ONLY',
+            'production_use':False,
+            'production_ready':False,
+            'operational_alerting_enabled':False,
+            'activation_gate':'BLOCKED',
+            'missing_data_rule':'UNKNOWN_NOT_LOW_RISK',
+            'decision_thresholds':None,
+            'hydraulic_factors':None,
+          }
+          latest_path=Path('site/data/phase2/sources/jicamarca_cendehua_live/station_metadata_latest_v0_1.json')
+          assert latest_path.is_file()
+          latest=json.loads(latest_path.read_text(encoding='utf-8'))
+          for key,expected in safe.items(): assert latest[key]==expected
+          assert latest['automatic_outcome_label'] is None
+          assert latest['routing_enabled'] is False
+          assert latest['receiver_overflow_inferred'] is False
+          assert latest['map_geometry_created'] is False
+          assert {row['component_id'] for row in latest['observations']} <= {'huaycoloro','rio_seco'}
+          for row in latest['observations']:
+            assert row['irfen_outcome_label'] is None
+            assert row['outlet'] is None
+            assert row['confluence'] is None
+            assert row['Q_i_t'] is None
+            assert row['travel_time'] is None
+            assert row['attenuation'] is None
+            assert row['human_review_required'] is True
+
+          archive_path=Path('site/data/phase2/sources/jicamarca_cendehua_live/station_metadata_archive_v0_1.json')
+          if latest['observations']:
+            assert archive_path.is_file()
+            archive=json.loads(archive_path.read_text(encoding='utf-8'))
+            for key,expected in safe.items(): assert archive[key]==expected
+            gate=archive['scientific_gate']
+            assert gate['automatic_event_or_none_classification'] is False
+            assert gate['absence_of_provider_activity_is_none'] is False
+            assert gate['provider_activity_flag_is_irfen_threshold'] is False
+            assert gate['provider_ravine_label_is_outlet_or_geometry'] is False
+            assert gate['station_id_is_outlet'] is False
+            assert gate['station_name_is_outlet'] is False
+            assert gate['discharge_inference_allowed'] is False
+            assert gate['routing_enabled'] is False
+          PY
+      - name: Persist exact station/timestamp metadata on PR branch
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/phase2/sources/jicamarca_cendehua_live
+          if git diff --cached --quiet; then
+            echo "No station metadata changes to persist"
+            exit 0
+          fi
+          git commit -m "phase2: freeze bounded Jicamarca CENDEHUA station metadata"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
