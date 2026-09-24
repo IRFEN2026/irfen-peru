@@ -1,6 +1,6 @@
 {
-  "schema_version": "0.1",
-  "status": "OFFICIAL_IDENTITY_AND_EVENT_EVIDENCE_GEOMETRY_NOT_REPRODUCIBLE_YET",
+  "schema_version": "0.2",
+  "status": "OFFICIAL_LOCAL_TOPOLOGY_DOCUMENTED_GEOMETRY_AND_OUTLETS_UNRESOLVED",
   "deployment_status": "RESEARCH_ONLY",
   "test_mode": "TEST_ONLY",
   "production_use": false,
@@ -10,13 +10,30 @@
   "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
   "decision_thresholds": null,
   "hydraulic_factors": null,
-  "source": {
-    "source_id": "INGEMMET-CANTO-GRANDE-MEDIA-LUNA-2010",
-    "institution": "INGEMMET",
-    "title": "Primer Reporte de Zonas críticas por peligros geológicos en la cuenca de la quebrada Canto Grande",
-    "url": "https://sigrid.cenepred.gob.pe/docs/PARA%20PUBLICAR/INGEMMET/Zonas%20criticas%20peligros%20geologicos%20Subcuenca%20Qda.%20Canto%20Grande.pdf",
-    "date": "2010-02"
-  },
+  "assessment_date_utc": "2026-09-24",
+  "sources": [
+    {
+      "source_id": "INGEMMET-CANTO-GRANDE-MEDIA-LUNA-2010",
+      "institution": "INGEMMET",
+      "title": "Primer Reporte de Zonas críticas por peligros geológicos en la cuenca de la quebrada Canto Grande",
+      "url": "https://sigrid.cenepred.gob.pe/docs/PARA%20PUBLICAR/INGEMMET/Zonas%20criticas%20peligros%20geologicos%20Subcuenca%20Qda.%20Canto%20Grande.pdf",
+      "date": "2010-02",
+      "source_role": "OFFICIAL_GEOLOGIC_HAZARD_IDENTITY_AND_EVENT_CONTEXT",
+      "geometry_use": "NONE"
+    },
+    {
+      "source_id": "MDSJL-GEOGRAFIA-CANTO-GRANDE-2025",
+      "institution": "Municipalidad Distrital de San Juan de Lurigancho",
+      "title": "Geografía del distrito - Historia del distrito de San Juan de Lurigancho",
+      "url": "https://www.gob.pe/40170-municipalidad-distrital-de-san-juan-de-lurigancho-geografia-del-distrito",
+      "last_change": "2025-09-08",
+      "retrieved_utc": "2026-09-24",
+      "source_role": "OFFICIAL_TERRITORIAL_HYDROLOGIC_TOPOLOGY_CONTEXT",
+      "bounded_observation": "The municipal description places Quebrada Canto Grande on the right side of the lower Rímac valley and states that in its upper part the quebrada divides into two named branches, Canto Grande and Media Luna.",
+      "geometry_use": "NONE",
+      "outlet_coordinate_use": "NONE"
+    }
+  ],
   "bounded_identity_evidence": {
     "canto_grande_subbasin_officially_named": true,
     "reported_area_km2_context_only": 137,
@@ -28,9 +45,13 @@
     },
     "media_luna_named_as_separate_ravine": true,
     "canto_grande_and_media_luna_described_as_two_main_branches": true,
+    "upper_canto_grande_divides_into_named_canto_grande_and_media_luna_branches": true,
+    "media_luna_is_part_of_canto_grande_local_system": true,
     "media_luna_geometry_reproducible_from_source": false,
     "canto_grande_geometry_reproducible_from_source": false,
-    "reason_geometry_blocked": "The public report provides map figures and descriptive cartography but no machine-readable vector geometry or frozen coordinate sequence suitable for direct publication."
+    "media_luna_geometry_reproducible_from_sources": false,
+    "canto_grande_geometry_reproducible_from_sources": false,
+    "reason_geometry_blocked": "The official sources provide descriptive cartography/topology but no machine-readable vector geometry or frozen coordinate sequence suitable for direct child publication."
   },
   "bounded_event_evidence": {
     "event_year": 2002,
@@ -39,7 +60,48 @@
     "research_state": "IMPACT_CONFIRMED",
     "supported_claim": "INGEMMET states that exceptional rainfall affected the upper Canto Grande subbasin at Jicamarca Anexo 22 / Quebrada Media Luna in 2002 and documents debris-flow material and destruction of precarious and masonry housing in Media Luna.",
     "event_footprint_geometry_available": false,
-    "event_footprint_may_be_digitized_from_report_image": false
+    "event_footprint_may_be_digitized_from_report_image": false,
+    "promotes_canto_grande_parent_activation": false,
+    "promotes_rimac_overflow": false
+  },
+  "topology_model": {
+    "parent_context": "canto_grande_subbasin",
+    "local_children": [
+      "canto_grande_upper_branch",
+      "media_luna"
+    ],
+    "relationship": "UPPER_CANTO_GRANDE_SYSTEM_HAS_CANTO_GRANDE_AND_MEDIA_LUNA_NAMED_BRANCHES",
+    "media_luna_receiver_or_junction": "CANTO_GRANDE_LOCAL_SYSTEM_EXACT_JUNCTION_UNRESOLVED",
+    "media_luna_exact_junction_coordinate": null,
+    "canto_grande_exact_outlet_coordinate": null,
+    "canto_grande_rimac_connection": "RIMAC_LOWER_VALLEY_CONTEXT_DOCUMENTED_EXACT_HYDROLOGIC_OUTLET_UNRESOLVED",
+    "direct_media_luna_to_rimac_connection_assumed": false,
+    "synthetic_canto_media_luna_union_geometry_allowed": false,
+    "topology_may_be_used_for_routing_before_geometry_and_outlets": false
+  },
+  "collector_coupling": {
+    "local_collector": "canto_grande_downstream_system",
+    "ultimate_receiver_context": "rimac_mainstem",
+    "routing_status": "BLOCKED_PENDING_REPRODUCIBLE_CHILD_GEOMETRY_JUNCTION_AND_OUTLET",
+    "media_luna": {
+      "outlet_or_confluence": null,
+      "Q_i_t": null,
+      "travel_time": null,
+      "attenuation": null,
+      "quality": "UNKNOWN"
+    },
+    "canto_grande_upper_branch": {
+      "outlet_or_confluence": null,
+      "Q_i_t": null,
+      "travel_time": null,
+      "attenuation": null,
+      "quality": "UNKNOWN"
+    },
+    "collector_stage_or_discharge_response": null,
+    "peak_coincidence": null,
+    "hydraulic_capacity": null,
+    "child_activation_implies_canto_grande_parent_activation": false,
+    "child_activation_implies_rimac_overflow": false
   },
   "local_unit_policy": {
     "parent_canto_grande_subbasin_role": "CONTEXT_CONTAINER_NON_ACTIVATABLE",
@@ -48,7 +110,18 @@
     "child_evidence_promotes_parent_activation": false,
     "synthetic_union_forbidden": true,
     "approximate_polygon_from_report_figure_forbidden": true,
-    "approximate_outlet_from_report_figure_forbidden": true
+    "approximate_outlet_from_report_figure_forbidden": true,
+    "municipal_descriptive_text_may_define_geometry": false,
+    "documented_topology_may_replace_missing_outlet_coordinates": false
   },
-  "next_gate": "Obtain official vector hydrography or independently reproducible DEM/channel geometry for Canto Grande and Media Luna, then freeze each child and outlet separately before map publication or collector coupling."
+  "map_policy": {
+    "publish_parent_context_now": false,
+    "publish_media_luna_child_now": false,
+    "publish_canto_grande_child_now": false,
+    "publish_topology_as_risk_or_alert": false,
+    "publish_only_after_independent_reproducible_geometry": true,
+    "parent_style_when_reproducible": "GRAY_CONTEXT_ONLY",
+    "child_style_when_reproducible": "RESEARCH_CONTEXT_NO_RISK_COLOR"
+  },
+  "next_gate": "Resolve independently reproducible vector or DEM-derived geometry for Media Luna and the Canto Grande upper branch, then resolve their exact junction and downstream outlet separately. Only after those spatial gates may the local topology enter collector routing; Q_i(t), travel time, attenuation and Rímac response remain unknown until independently supported."
 }
