@@ -341,23 +341,43 @@ def _safe_generated_discovery_migration_drift(current: dict, expected: dict) -> 
         elif discovery_id != jicamarca_parent:
             return False
 
+    # Los contadores discovery son datos derivados. Se exige coherencia interna
+    # del snapshot actual y se comparan exactamente todos los contadores ajenos
+    # a discovery; esto evita depender del número de altas generadas pendientes.
     current_summary = dict(current.get("summary") or {})
     expected_summary = dict(expected.get("summary") or {})
-    expected_summary.pop("research_discovery_parent_units_registered", None)
-    expected_summary.pop("research_discovery_child_units_registered", None)
-    expected_summary["research_discovery_units_registered"] = (
-        expected_summary.get("research_discovery_units_registered", 0) - len(missing)
-    )
-    expected_summary["research_discovery_units_map_eligible"] = (
-        expected_summary.get("research_discovery_units_map_eligible", 0)
-        - sum((expected_by_id[row_id].get("geometry") or {}).get("map_eligible") is True for row_id in missing)
-    )
-    expected_summary["research_discovery_units_withheld_missing_reproducible_geometry"] = (
-        expected_summary.get("research_discovery_units_withheld_missing_reproducible_geometry", 0)
-        - sum((expected_by_id[row_id].get("geometry") or {}).get("map_eligible") is not True for row_id in missing)
-    )
-    if current_summary != expected_summary:
+    current_non_discovery = {
+        key: value for key, value in current_summary.items()
+        if not key.startswith("research_discovery_")
+    }
+    expected_non_discovery = {
+        key: value for key, value in expected_summary.items()
+        if not key.startswith("research_discovery_")
+    }
+    if current_non_discovery != expected_non_discovery:
         return False
+
+    current_mappable = sum(
+        (row.get("geometry") or {}).get("map_eligible") is True for row in current_units
+    )
+    current_withheld = len(current_units) - current_mappable
+    if current_summary.get("research_discovery_units_registered") != len(current_units):
+        return False
+    if current_summary.get("research_discovery_units_map_eligible") != current_mappable:
+        return False
+    if (
+        current_summary.get("research_discovery_units_withheld_missing_reproducible_geometry")
+        != current_withheld
+    ):
+        return False
+    if "research_discovery_parent_units_registered" in current_summary:
+        current_parent_count = sum(not row.get("parent_discovery_id") for row in current_units)
+        if current_summary["research_discovery_parent_units_registered"] != current_parent_count:
+            return False
+    if "research_discovery_child_units_registered" in current_summary:
+        current_child_count = sum(bool(row.get("parent_discovery_id")) for row in current_units)
+        if current_summary["research_discovery_child_units_registered"] != current_child_count:
+            return False
     return True
 
 
