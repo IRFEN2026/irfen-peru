@@ -1,0 +1,147 @@
+{
+  "schema_version": "0.1",
+  "candidate_id": "lima_sur_chilca_pucusana",
+  "status": "RESEARCH_ONLY_OFFICIAL_LOCAL_CHANNEL_IDENTITY_EVIDENCE",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "sources": [
+    {
+      "source_id": "ANA-CHILCA-BIFURCATION-2021-08-24",
+      "institution": "Autoridad Nacional del Agua",
+      "publication_date": "2021-08-24",
+      "url": "https://www.gob.pe/institucion/ana/noticias/513070-autoridad-nacional-del-agua-propone-delimitacion-de-28-8-km-de-faja-marginal-del-rio-chilca",
+      "source_role": "OFFICIAL_LOWER_CHILCA_BIFURCATION_AND_REGULATORY_CONTEXT",
+      "bounded_findings": [
+        "ANA states that the lower Chilca river bifurcates into a south-west arm and a north-west arm.",
+        "ANA describes a 28.8 km proposed marginal-strip delimitation for the south arm and a separate planned field-topography effort for approximately 15 km of the north arm.",
+        "ANA reports that human activity has obstructed or interrupted the north arm in places."
+      ],
+      "forbidden_inferences": [
+        "The 28.8 km marginal strip is not an event footprint.",
+        "The approximately 15 km planning length is not a verified channel geometry or routing distance.",
+        "Obstruction context does not define historical hydraulic capacity or an IRFEN threshold.",
+        "The two lower arms must not be unioned into one local activation geometry."
+      ]
+    },
+    {
+      "source_id": "ANA-SIGRID-CHILCA-BRAZO-SUR-RD0007-2022",
+      "institution": "Autoridad Nacional del Agua / CENEPRED SIGRID",
+      "publication_year": 2022,
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/13196",
+      "source_role": "OFFICIAL_SOUTH_ARM_REGULATORY_FAJA_CONTEXT",
+      "bounded_findings": [
+        "The official record approves a 28.80 km marginal strip for Quebrada Chilca Brazo Sur.",
+        "The approved strip is described with 675 georeferenced UTM WGS84 markers: 362 on the right margin and 313 on the left margin."
+      ],
+      "forbidden_inferences": [
+        "A marginal strip is not an observed-event footprint.",
+        "Marginal-strip markers do not by themselves define a drainage polygon or an activation outlet.",
+        "Regulatory delimitation does not establish historical conveyance capacity."
+      ]
+    },
+    {
+      "source_id": "ANA-CHILCA-BRAZO-NORTE-RD0641-2024",
+      "institution": "Autoridad Nacional del Agua",
+      "publication_date": "2024-06-28",
+      "url": "https://www.gob.pe/institucion/ana/noticias/979824-ana-delimita-12-5-kilometros-de-la-faja-marginal-del-brazo-norte-de-la-quebrada-chilca",
+      "source_role": "OFFICIAL_NORTH_ARM_REGULATORY_FAJA_CONTEXT",
+      "bounded_findings": [
+        "ANA reports approval through RD 0641-2024-ANA-AAA.CF of 12.5 km of marginal-strip delimitation for the north arm of Quebrada Chilca.",
+        "ANA separately recalls the earlier 28.80 km south-arm delimitation."
+      ],
+      "forbidden_inferences": [
+        "The north-arm marginal strip is not an event footprint.",
+        "The regulatory length is not a routing travel distance or hydraulic-capacity observation.",
+        "North-arm and south-arm geometries must remain distinct local units."
+      ]
+    },
+    {
+      "source_id": "CENEPRED-PUCUSANA-CHILCA-MOUTH-2023-03-29",
+      "institution": "CENEPRED",
+      "publication_date": "2023-03-29",
+      "url": "https://www.gob.pe/institucion/cenepred/noticias/735912-cenepred-participo-en-una-reunion-de-trabajo-y-realizo-una-visita-de-campo-en-pucusana-en-la-desembocadura-del-rio-chilca",
+      "source_role": "OFFICIAL_MOUTH_EXPOSURE_AND_BOTH_ARMS_CONTEXT",
+      "bounded_findings": [
+        "CENEPRED describes a working group for the mouth of the Chilca river, explicitly referencing north and south channels in Pucusana.",
+        "The field visit was for prevention and risk-reduction planning upstream of the river divider."
+      ],
+      "forbidden_inferences": [
+        "Pucusana is not established as a separate hydrologic basin by this source.",
+        "A prevention field visit is not an observed-event footprint.",
+        "The source does not provide an exact bifurcation, outlet or confluence coordinate for IRFEN routing."
+      ]
+    }
+  ],
+  "local_identity_ledger": [
+    {
+      "component_id": "rio_chilca_upstream_context",
+      "display_name": "Rio/Quebrada Chilca upstream of lower bifurcation",
+      "role": "UPSTREAM_PARENT_CHANNEL_CONTEXT",
+      "identity_status": "OFFICIAL_SYSTEM_CONTEXT_CONFIRMED_EXACT_REACH_PENDING",
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_REACH_GEOMETRY",
+      "outlet_status": "NOT_APPLICABLE_AS_LOCAL_CHILD_OUTLET_UNTIL_BIFURCATION_NODE_RESOLVED",
+      "activation_state": null
+    },
+    {
+      "component_id": "chilca_brazo_sur",
+      "display_name": "Quebrada/Rio Chilca Brazo Sur",
+      "role": "LOWER_LOCAL_CHANNEL_CHILD",
+      "identity_status": "OFFICIAL_NAME_AND_REGULATORY_CONTEXT_CONFIRMED",
+      "channel_geometry_status": "MISSING_REPRODUCIBLE_CENTERLINE_NOT_YET_FROZEN",
+      "catchment_geometry_status": "MISSING_NO_SYNTHETIC_DRAINAGE_POLYGON",
+      "outlet_status": "MISSING_PENDING_REPRODUCIBLE_MOUTH_NODE",
+      "marginal_strip_is_event_footprint": false,
+      "activation_state": null
+    },
+    {
+      "component_id": "chilca_brazo_norte",
+      "display_name": "Quebrada/Rio Chilca Brazo Norte",
+      "role": "LOWER_LOCAL_CHANNEL_CHILD",
+      "identity_status": "OFFICIAL_NAME_AND_REGULATORY_CONTEXT_CONFIRMED",
+      "channel_geometry_status": "MISSING_REPRODUCIBLE_CENTERLINE_NOT_YET_FROZEN",
+      "catchment_geometry_status": "MISSING_NO_SYNTHETIC_DRAINAGE_POLYGON",
+      "outlet_status": "MISSING_PENDING_REPRODUCIBLE_MOUTH_NODE",
+      "marginal_strip_is_event_footprint": false,
+      "activation_state": null
+    },
+    {
+      "component_id": "pucusana_mouth_exposure_node",
+      "display_name": "Pucusana / desembocadura del sistema Chilca",
+      "role": "TERRITORIAL_EXPOSURE_AND_MOUTH_CONTEXT_NOT_BASIN",
+      "identity_status": "OFFICIAL_TERRITORIAL_CONTEXT_CONFIRMED_EXACT_NODE_PENDING",
+      "geometry_status": "MISSING_NO_APPROXIMATE_POINT_ALLOWED",
+      "activation_state": null
+    }
+  ],
+  "topology": {
+    "lower_bifurcation_supported": true,
+    "exact_bifurcation_coordinate": null,
+    "exact_bifurcation_geometry_resolved": false,
+    "north_and_south_arms_must_remain_separate": true,
+    "pucusana_is_separate_basin": false,
+    "exact_mouth_nodes": null,
+    "routing_enabled": false,
+    "Q_i_t": null,
+    "travel_time": null,
+    "attenuation": null,
+    "peak_coincidence": null,
+    "hydraulic_capacity": null
+  },
+  "qa": {
+    "parent_corridor_is_activation_unit": false,
+    "faja_is_event_footprint": false,
+    "works_or_obstruction_context_is_capacity": false,
+    "critical_or_prevention_context_is_event": false,
+    "absence_of_report_is_negative": false,
+    "approximate_geometry_allowed": false,
+    "arm_activation_implies_other_arm_activation": false,
+    "arm_activation_implies_territorial_flooding": false
+  }
+}
