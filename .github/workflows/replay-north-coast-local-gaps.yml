@@ -54,12 +54,33 @@ jobs:
           if missing:
               raise SystemExit(f'old source branch missing expected units: {sorted(missing)}')
 
-          # Fail closed on a source identifier that existed in the draft row but had no
-          # repository-bound URL/registry entry. Keep the supported 2017 context in the
-          # PPRRD source and do not manufacture an INDECI binding.
+          # Build a narrowly bounded source resolver from the two copied official-evidence
+          # registries. This is intentionally not a generic "search anywhere" fallback:
+          # only records with explicit source_id + URL in these versioned registries can
+          # satisfy an inventory source reference.
+          registry_urls={}
+          for registry_path in (
+              Path('site/data/phase2/sources/lalibertad_chicama_official_evidence_v0_1.json'),
+              Path('site/data/phase2/sources/piura_mancora_organos_official_evidence_v0_1.json'),
+          ):
+              reg=json.loads(registry_path.read_text(encoding='utf-8'))
+              for src in reg.get('sources',[]):
+                  sid=src.get('source_id') if isinstance(src,dict) else None
+                  url=src.get('url') if isinstance(src,dict) else None
+                  if not sid or not url:
+                      continue
+                  if sid in registry_urls and registry_urls[sid] != url:
+                      raise SystemExit(f'conflicting explicit registry URL for {sid}')
+                  registry_urls[sid]=url
+
+          # Fail closed on a source identifier that existed in the draft Talara row but
+          # had no repository-bound URL/registry entry. Keep supported 2017 context in
+          # the PPRRD source and do not manufacture an INDECI binding.
           talara=old_rows['piura_talara_parinas_local_ravines']
           unresolved='INDECI-TALARA-2017-HISTORICAL-CONTEXT'
           if unresolved in talara.get('official_source_ids',[]):
+              if unresolved in old.get('source_catalog',{}) or unresolved in registry_urls:
+                  raise SystemExit('Talara source unexpectedly became resolvable; review quarantine before replay')
               talara['official_source_ids']=[sid for sid in talara['official_source_ids'] if sid != unresolved]
           if unresolved in talara.get('official_source_ids',[]):
               raise SystemExit('unresolved Talara source was not quarantined')
@@ -81,15 +102,23 @@ jobs:
           if 'piura_colan_bajo_chira_local_ravines' not in ids:
               raise SystemExit('Colan unit lost during replay')
           cur['discovery_units']=out
+
           for did in replace_ids:
               for sid in old_rows[did].get('official_source_ids',[]):
-                  if sid in cur.get('source_catalog',{}):
-                      if sid in old.get('source_catalog',{}) and cur['source_catalog'][sid] != old['source_catalog'][sid]:
-                          raise SystemExit(f'conflicting source URL for {sid}')
-                  elif sid in old.get('source_catalog',{}):
-                      cur.setdefault('source_catalog',{})[sid]=old['source_catalog'][sid]
-                  else:
+                  resolved_url=None
+                  if sid in old.get('source_catalog',{}):
+                      resolved_url=old['source_catalog'][sid]
+                  if sid in registry_urls:
+                      if resolved_url is not None and resolved_url != registry_urls[sid]:
+                          raise SystemExit(f'conflicting catalog/registry URL for {sid}')
+                      resolved_url=registry_urls[sid]
+                  if resolved_url is None:
                       raise SystemExit(f'unresolved official source id in replay: {sid}')
+                  existing=cur.setdefault('source_catalog',{}).get(sid)
+                  if existing is not None and existing != resolved_url:
+                      raise SystemExit(f'conflicting current/replay source URL for {sid}')
+                  cur['source_catalog'][sid]=resolved_url
+
           cur['relationship_to_phase2']['discovery_units_count']=len(out)
           if len(out)!=18:
               raise SystemExit(f'expected combined discovery count 18, got {len(out)}')
@@ -118,6 +147,7 @@ jobs:
           scope_path.write_text(json.dumps(scope, ensure_ascii=False, indent=2)+'\n',encoding='utf-8')
           print('COMBINED_DISCOVERY_COUNT', len(out))
           print('QUARANTINED_UNRESOLVED_SOURCE', unresolved)
+          print('EXPLICIT_REGISTRY_SOURCE_COUNT', len(registry_urls))
           PY
           python scripts/build_map_layer_catalog.py
       - name: Validate replay before persistence
