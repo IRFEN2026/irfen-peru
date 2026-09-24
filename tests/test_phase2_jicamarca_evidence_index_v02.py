@@ -4,6 +4,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 INDEX = ROOT / "config/phase2_jicamarca_evidence_index_v0_2.json"
 ASSESSMENT = "config/phase2_jicamarca_canto_grande_media_luna_assessment_v0_2.json"
+MONITORING_TOPOLOGY = "config/phase2_jicamarca_rio_seco_huaycoloro_monitoring_topology_v0_1.json"
 
 SAFE = {
     "deployment_status": "RESEARCH_ONLY",
@@ -55,3 +56,36 @@ def test_index_map_effect_is_channel_context_only():
     effect = load()["map_effect"]
     assert effect.startswith("OFFICIAL_CANTO_GRANDE_AND_MEDIA_LUNA_CHILD_CHANNEL_LINES_MAY_BE_PUBLISHED_AS_RESEARCH_CONTEXT_ONLY")
     assert "CATCHMENT_POLYGONS_OUTLETS_EVENT_FOOTPRINTS_AND_PARENT_ACTIVATION_REMAIN_WITHHELD" in effect
+
+
+def test_monitoring_topology_is_indexed_without_promoting_geometry_or_routing():
+    index = load()
+    package = next(row for row in index["packages"] if row["path"] == MONITORING_TOPOLOGY)
+    assert (ROOT / MONITORING_TOPOLOGY).is_file()
+    assert package["role"] == "IGP_DOCUMENTARY_LOCAL_CONVERGENCE_EXACT_NODE_GEOMETRY_UNRESOLVED"
+    assert package["documents_distinct_rio_seco_huaycoloro_convergence"] is True
+    for key in (
+        "may_define_exact_confluence",
+        "may_define_outlet",
+        "may_define_Q_i_t",
+        "may_define_travel_time",
+        "may_define_attenuation",
+        "may_infer_rimac_connection",
+        "may_promote_receiver_overflow",
+        "may_create_map_geometry",
+    ):
+        assert package[key] is False
+
+
+def test_monitoring_topology_package_itself_remains_fail_closed():
+    package = json.loads((ROOT / MONITORING_TOPOLOGY).read_text(encoding="utf-8"))
+    for key, expected in SAFE.items():
+        assert package[key] == expected
+    adjudication = package["cross_source_adjudication"]
+    assert adjudication["rio_seco_and_huaycoloro_are_distinct_local_children"] is True
+    assert adjudication["exact_confluence_coordinate"] is None
+    assert adjudication["exact_confluence_geometry_resolved"] is False
+    assert adjudication["downstream_receiver_identity_resolved_by_this_package"] is False
+    assert adjudication["rimac_connection_resolved_by_this_package"] is False
+    assert adjudication["map_geometry_created"] is False
+    assert adjudication["receiver_overflow_inferred"] is False
