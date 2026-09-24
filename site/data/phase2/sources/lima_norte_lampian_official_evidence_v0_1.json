@@ -1,0 +1,114 @@
+{
+  "schema_version": "0.1",
+  "discovery_id": "lima_norte_lampian_ravines",
+  "status": "RESEARCH_ONLY_OFFICIAL_LOCAL_IDENTITY_EVIDENCE",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "sources": [
+    {
+      "source_id": "CENEPRED-PPRRD-LAMPIAN-2025-2030",
+      "institution": "Municipalidad Distrital de Lampian / CENEPRED SIGRID",
+      "document": "Plan de Prevencion y Reduccion del Riesgo de Desastres del distrito de Lampian 2025-2030",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/21487_plan-de-prevencion-y-reduccion-del-riesgo-de-desastres-del-distrito-de-lampian-2025-2030.pdf",
+      "publication_period": "2025-2030",
+      "source_role": "OFFICIAL_LOCAL_RAVINE_IDENTITY_AND_CRITICAL_SECTOR_CONTEXT",
+      "source_bytes_sha256": null,
+      "archive_status": "PUBLIC_OFFICIAL_PDF_IDENTIFIED_NOT_BYTE_FROZEN",
+      "bounded_findings": [
+        "The plan explicitly names Quebrada Lampian, Quebrada Callantama, Quebrada Muyopunco (Muyucunto), Quebrada Carnay and Quebrada Lomo Largo as local watercourses or ravines in the district.",
+        "The plan identifies critical sectors and field visits tied to named ravines, including Toma Huandaro-Rumoj on Quebrada Lampian, Callantama on Quebrada Callantama and Huachupampa on Quebrada Carnay.",
+        "Within the same plan, Marcayjo nomenclature is internally inconsistent: a critical-point table labels Quebrada Marcayjo while later sector text and field-visit captions bind Marcayjo to Quebrada Lampian.",
+        "A proposed intervention describes canalizing Quebrada Carnay to a meeting point with Quebrada Lampian at Huachupampa; this is works/topology context, not an exact reproducible confluence geometry."
+      ],
+      "forbidden_inferences": [
+        "A critical point or proposed intervention is not an observed event footprint.",
+        "Critical-point coordinates are not catchment polygons or outlets.",
+        "The Marcayjo naming conflict cannot be resolved by choosing one label without independent hydrologic evidence.",
+        "A planned canalization or stated meeting point does not define routing time, attenuation, discharge or hydraulic capacity.",
+        "District boundaries do not define the Lampian hydrologic parent or any child catchment."
+      ]
+    }
+  ],
+  "local_identity_ledger": [
+    {
+      "component_id": "quebrada_lampian",
+      "display_name": "Quebrada Lampian",
+      "identity_status": "OFFICIAL_NAME_CONFIRMED",
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_CHANNEL_AND_CATCHMENT_GEOMETRY",
+      "outlet_status": "MISSING_PENDING_REPRODUCIBLE_OUTLET",
+      "critical_sector_examples": ["Toma Huandaro-Rumoj", "Marcayjo"],
+      "critical_sector_is_event": false
+    },
+    {
+      "component_id": "quebrada_callantama",
+      "display_name": "Quebrada Callantama",
+      "identity_status": "OFFICIAL_NAME_CONFIRMED",
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_CHANNEL_AND_CATCHMENT_GEOMETRY",
+      "outlet_status": "MISSING_PENDING_REPRODUCIBLE_OUTLET",
+      "critical_sector_examples": ["Callantama", "Lampian"],
+      "critical_sector_is_event": false
+    },
+    {
+      "component_id": "quebrada_muyopunco_muyucunto",
+      "display_name": "Quebrada Muyopunco (Muyucunto)",
+      "identity_status": "OFFICIAL_NAME_WITH_ALIAS_CONFIRMED",
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_CHANNEL_AND_CATCHMENT_GEOMETRY",
+      "outlet_status": "MISSING_PENDING_REPRODUCIBLE_OUTLET",
+      "critical_sector_is_event": false
+    },
+    {
+      "component_id": "quebrada_carnay",
+      "display_name": "Quebrada Carnay",
+      "identity_status": "OFFICIAL_NAME_CONFIRMED",
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_CHANNEL_AND_CATCHMENT_GEOMETRY",
+      "outlet_status": "MISSING_PENDING_REPRODUCIBLE_OUTLET",
+      "critical_sector_examples": ["Huachupampa"],
+      "critical_sector_is_event": false
+    },
+    {
+      "component_id": "quebrada_lomo_largo",
+      "display_name": "Quebrada Lomo Largo",
+      "identity_status": "OFFICIAL_NAME_CONFIRMED",
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_CHANNEL_AND_CATCHMENT_GEOMETRY",
+      "outlet_status": "MISSING_PENDING_REPRODUCIBLE_OUTLET",
+      "critical_sector_examples": ["Huayo"],
+      "critical_sector_is_event": false
+    }
+  ],
+  "nomenclature_quarantine": [
+    {
+      "label": "Marcayjo",
+      "status": "INTERNAL_SOURCE_NOMENCLATURE_CONFLICT_DO_NOT_PROMOTE_AS_CHILD",
+      "evidence_a": "critical-point table labels Quebrada Marcayjo",
+      "evidence_b": "later PPRRD sector text and field-visit material bind Marcayjo to Quebrada Lampian",
+      "standalone_child_allowed_now": false,
+      "geometry_allowed_now": false,
+      "negative_control_allowed": false
+    }
+  ],
+  "topology_context": {
+    "carnay_to_lampian_meeting_context_documented": true,
+    "exact_confluence_coordinate": null,
+    "exact_confluence_geometry_resolved": false,
+    "routing_enabled": false,
+    "travel_time": null,
+    "attenuation": null,
+    "Q_i_t": null,
+    "hydraulic_capacity": null
+  },
+  "qa": {
+    "parent_district_is_basin": false,
+    "critical_point_is_event": false,
+    "works_define_historical_capacity": false,
+    "absence_of_report_is_negative": false,
+    "approximate_geometry_allowed": false,
+    "parent_activation_from_child_evidence_allowed": false
+  }
+}
