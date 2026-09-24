@@ -92,7 +92,7 @@ def test_casma_children_are_exact_official_units_and_materialize_only_from_exact
         assert ident["level"] == "N7"
         query = component["source_query"]
         assert query["endpoint"] == "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/8/query"
-        assert query["where"] == f"CODIGO='{code}'"
+        assert query["where"] == f"NIVEL7='{code}'"
         assert query["out_sr"] == 4326
         assert query["geometry_precision"] == 7
         assert query["format"] == "geojson"
@@ -120,6 +120,10 @@ def test_casma_children_are_exact_official_units_and_materialize_only_from_exact
         feature = feature_collection["features"][0]
         assert feature["properties"]["official_unit_code"] == code
         assert feature["properties"]["official_name"] == name
+        assert feature["properties"]["official_identity_field"] == "NIVEL7"
+        assert feature["properties"]["official_name_field"] == "NOMB_UH_N7"
+        assert feature["properties"]["official_parent_unit_code"] == "137596"
+        assert feature["properties"]["official_parent_unit_name"] == "Cuenca Casma"
         assert feature["properties"]["parent_composite"] is False
         assert feature["properties"]["counts_as_event_footprint"] is False
         assert feature["properties"]["counts_as_operational_geometry"] is False
@@ -129,8 +133,10 @@ def test_casma_children_are_exact_official_units_and_materialize_only_from_exact
         assert frozen["type"] == "FeatureCollection"
         assert len(frozen["features"]) == 1
         props = frozen["features"][0]["properties"]
-        assert str(props.get("CODIGO") or props.get("codigo")) == code
-        assert (props.get("NOMBRE") or props.get("nombre")) == name
+        assert str(props.get("NIVEL7") or props.get("nivel7")) == code
+        assert (props.get("NOMB_UH_N7") or props.get("nomb_uh_n7")) == name
+        assert str(props.get("NIVEL6") or props.get("nivel6")) == "137596"
+        assert (props.get("NOMB_UH_N6") or props.get("nomb_uh_n6")) == "Cuenca Casma"
 
         contract_row = geometry_contract_by_id[cid]
         assert contract_row["hydrologic_identity"] == ident
