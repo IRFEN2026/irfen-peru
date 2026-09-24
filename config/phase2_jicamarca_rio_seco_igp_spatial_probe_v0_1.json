@@ -1,0 +1,79 @@
+{
+  "schema_version": "0.1",
+  "status": "PREREGISTERED_BOUNDED_OFFICIAL_IGP_SPATIAL_IDENTITY_PROBE",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "component_id": "rio_seco",
+  "purpose": "Search the official IGP Quebrada_Lima line layer only inside the exact envelope of the frozen ANA Rio Seco regulatory-context geometry, to identify candidate natural-channel source features for later independent identity review. The probe cannot accept a channel, catchment, outlet, confluence, routing parameter, event footprint, risk state or alert state.",
+  "ana_context": {
+    "identity_contract": "config/phase2_jicamarca_rio_seco_ana_faja_identity_v0_1.json",
+    "geometry_path": "site/data/phase2/geometries/jicamarca_rio_seco_ana_faja_context.geojson",
+    "geometry_sha256": "c9e53874fd274d42f2dde31c3b0299937b9b5568463950a1d7b0db449d324509",
+    "geometry_role": "ANA_REGULATORY_FAJA_MARGIN_CONTEXT_ONLY",
+    "use_as_query_envelope_only": true,
+    "faja_is_channel_centerline": false,
+    "faja_is_catchment_polygon": false,
+    "faja_is_event_footprint": false,
+    "faja_may_define_outlet": false
+  },
+  "source": {
+    "institution": "Instituto Geofisico del Peru",
+    "service_url": "https://ide.igp.gob.pe/arcgis/rest/services/mapabase/MapaBase/MapServer",
+    "layer_id": 20,
+    "expected_layer_name": "Quebrada_Lima",
+    "expected_geometry_type": "esriGeometryPolyline",
+    "expected_spatial_reference_wkid": 4326,
+    "service_item_id": "cc79e8bca3034d4aa39ea9e84aa627da",
+    "observed_required_fields": [
+      "OBJECTID",
+      "NOMBRE",
+      "NOMDEP",
+      "NOMPROV",
+      "NOMDIST",
+      "CLASIFICAC",
+      "TIPO",
+      "UBIGEO"
+    ]
+  },
+  "query": {
+    "geometry_source": "EXACT_FROZEN_ANA_CONTEXT_ENVELOPE_NO_BUFFER",
+    "geometry_type": "esriGeometryEnvelope",
+    "spatial_relation": "esriSpatialRelIntersects",
+    "return_geometry": true,
+    "output_spatial_reference_wkid": 4326,
+    "max_candidate_features": 200,
+    "max_response_bytes": 20000000
+  },
+  "candidate_policy": {
+    "name_match_required": false,
+    "candidate_geometry_is_accepted_channel": false,
+    "candidate_geometry_is_catchment": false,
+    "candidate_endpoint_is_outlet": false,
+    "candidate_endpoint_is_confluence": false,
+    "candidate_length_may_define_travel_time": false,
+    "candidate_may_define_discharge": false,
+    "candidate_may_define_hydraulic_capacity": false,
+    "candidate_may_define_event_footprint": false,
+    "candidate_may_enable_routing": false,
+    "candidate_may_promote_parent_activation": false,
+    "candidate_may_promote_rimac_overflow": false,
+    "selection_requires_separate_frozen_identity_review": true
+  },
+  "collector_coupling": {
+    "receiver": "rimac_mainstem",
+    "connectivity": "UNRESOLVED_NOT_ASSUMED",
+    "outlet_or_confluence": null,
+    "Q_i_t": null,
+    "travel_time": null,
+    "attenuation": null,
+    "quality": "UNKNOWN",
+    "tributary_activation_implies_receiver_overflow": false
+  }
+}
