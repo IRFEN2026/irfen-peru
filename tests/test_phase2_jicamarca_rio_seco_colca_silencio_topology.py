@@ -22,19 +22,73 @@ def test_phase2_scientific_guards_remain_fail_closed():
     assert doc["hydraulic_factors"] is None
 
 
+def test_ten_tramo_inventory_is_frozen_by_explicit_source_label():
+    doc = load()
+    findings = doc["bounded_documentary_findings"]
+    assert findings["hydrographic_system_reported_as_ten_tramos"] is True
+    assert findings["summary_tramo_inventory_resolved"] is True
+    assert findings["summary_tramo_count"] == 10
+    assert findings["main_summary_tramo_label"] == "Qda Colca"
+    assert findings["rio_seco_specific_summary_tramo_present"] is False
+    assert findings["rio_seco_specific_segment_crosswalk_resolved"] is False
+    assert findings["generic_resolution_scope_label_may_override_component_table_label"] is False
+    assert findings["frozen_270_hito_table_label_in_existing_archive"] == "Qda. Colca"
+
+    rows = doc["official_tramo_inventory"]
+    assert len(rows) == 10
+    assert [row["tramo_index"] for row in rows] == list(range(1, 11))
+    assert rows[0]["source_label"] == "Qda Colca"
+    assert rows[0]["reported_length_km"] == 26.0
+    assert rows[0]["reported_hitos_total"] == 270
+    assert rows[0]["is_independently_labelled_rio_seco"] is False
+    assert not any(row["is_independently_labelled_rio_seco"] for row in rows)
+    assert not any(row["source_label"].casefold().strip() == "rio seco" for row in rows)
+
+    families = [row["component_family"] for row in rows]
+    assert families.count("colca") == 7
+    assert families.count("el_silencio") == 3
+    assert doc["inventory_interpretation"]["rio_seco_family_explicit_tramo_count"] == 0
+
+
+def test_el_silencio_and_colca_branches_remain_independent_source_rows():
+    rows = load()["official_tramo_inventory"]
+    labels = {row["source_label"] for row in rows}
+    assert labels == {
+        "Qda Colca",
+        "Qda. El Silencio",
+        "Qda. El Silencio 01",
+        "Qda. El Silencio 02",
+        "Qda. Colca Derecha 01",
+        "Qda. Colca Izquierda 01",
+        "Qda. Colca Izquierda 02",
+        "Qda. Colca Izquierda 03",
+        "Qda. Colca Izquierda 04",
+        "Qda. Colca Izquierda 05",
+    }
+    silencio_02 = next(row for row in rows if row["source_label"] == "Qda. El Silencio 02")
+    assert silencio_02["reported_hitos_total"] is None
+    assert silencio_02["reported_hitos_right_margin"] is None
+    assert silencio_02["reported_hitos_left_margin"] is None
+    assert silencio_02["hito_count_parse_status"] == "AMBIGUOUS_PDF_TABLE_LAYOUT_NOT_FROZEN"
+    assert load()["inventory_interpretation"]["summary_rows_are_not_event_footprints"] is True
+    assert load()["inventory_interpretation"]["table_start_end_coordinates_are_not_outlets_or_confluences"] is True
+
+
 def test_colca_el_silencio_and_rio_seco_remain_separate_local_components():
     doc = load()
     adj = doc["cross_source_adjudication"]
     assert adj["adjudication"] == "KEEP_COLCA_EL_SILENCIO_AND_RIO_SECO_AS_DISTINCT_LOCAL_COMPONENTS_WHILE_TREATING_THE_ANA_CONFLUENCE_RELATION_AS_DOCUMENTARY_TOPOLOGY_ONLY"
-    assert adj["crosswalk_status"] == "PARTIAL_DOCUMENTARY_RELATION_NOT_GEOMETRY_CROSSWALK"
+    assert adj["crosswalk_status"] == "TEN_TRAMO_COMPONENT_LABELS_FROZEN_NO_EXPLICIT_RIO_SECO_TRAMO_CROSSWALK"
     assert adj["silent_component_collapse_allowed"] is False
     assert adj["frozen_colca_faja_may_be_rebound_to_rio_seco"] is False
     children = {c["child_id"]: c for c in doc["local_hierarchy"]["children"]}
     assert set(children) == {"colca", "el_silencio", "rio_seco"}
     assert children["colca"]["geometry_semantics"] == "QDA_COLCA_REGULATORY_CONTEXT_ONLY"
     assert children["colca"]["activation_geometry"] is False
-    assert children["el_silencio"]["geometry_status"].startswith("MISSING_")
-    assert children["rio_seco"]["geometry_status"].startswith("MISSING_")
+    assert children["el_silencio"]["geometry_status"] == "EXPLICIT_ANA_SUMMARY_IDENTITY_AVAILABLE_FULL_COORDINATE_LEDGER_PENDING_FREEZE"
+    assert children["el_silencio"]["activation_geometry"] is False
+    assert children["rio_seco"]["geometry_status"] == "MISSING_NO_EXPLICIT_RIO_SECO_TRAMO_IN_ANA_TEN_TRAMO_SUMMARY"
+    assert children["rio_seco"]["activation_geometry"] is False
 
 
 def test_documentary_topology_cannot_invent_geometry_or_routing():
@@ -76,14 +130,11 @@ def test_map_remains_context_only_and_no_new_geometry_is_published():
     assert policy["risk_or_alert_symbology_allowed"] is False
 
 
-def test_next_gate_requires_explicit_component_table_labels_before_geometry():
+def test_next_gate_advances_to_full_ledgers_and_independent_rio_seco_geometry():
     doc = load()
-    findings = doc["bounded_documentary_findings"]
-    assert findings["hydrographic_system_reported_as_ten_tramos"] is True
-    assert findings["colca_el_silencio_confluence_relation_documented"] is True
-    assert findings["exact_confluence_coordinate_documented_in_bounded_text"] is False
-    assert findings["exact_table_to_component_crosswalk_resolved"] is False
-    assert findings["frozen_270_hito_table_label_in_existing_archive"] == "Qda. Colca"
     gates = " ".join(doc["next_gate"])
-    assert "ten-tramo" in gates
-    assert "explicit source label" in gates
+    assert "complete coordinate ledgers" in gates
+    assert "Qda. El Silencio" in gates
+    assert "CENDEHUA-monitored Río Seco" in gates
+    assert "no independently labelled Río Seco tramo" in gates
+    assert "extract and freeze the complete ten-tramo ANA table inventory" not in gates
