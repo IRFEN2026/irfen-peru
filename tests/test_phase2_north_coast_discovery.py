@@ -17,7 +17,7 @@ class Phase2NorthCoastDiscoveryTests(unittest.TestCase):
 
     @staticmethod
     def source_registry_ids(discovery_id):
-        """Resolve source IDs from the explicit discovery-package registry when present.
+        """Resolve source IDs from an explicit per-package source registry when present.
 
         The original north-coast inventory keeps a compact shared source_catalog. Newer
         bounded discovery packages may instead carry a source_registry_path so their
@@ -58,7 +58,7 @@ class Phase2NorthCoastDiscoveryTests(unittest.TestCase):
         self.assertFalse(rel["changes_registered_candidate_count"])
         self.assertFalse(rel["changes_operational_scope"])
         self.assertTrue(rel["promotion_requires_explicit_versioned_migration"])
-        self.assertEqual(rel["discovery_units_count"], 15)
+        self.assertEqual(rel["discovery_units_count"], 16)
         self.assertEqual(rel["discovery_units_count"], len(c["discovery_units"]))
 
     def test_user_requested_corridors_are_explicit(self):
@@ -79,6 +79,7 @@ class Phase2NorthCoastDiscoveryTests(unittest.TestCase):
             "tumbes_zorritos_bocapan_coastal_ravines",
             "piura_mancora_los_organos_coastal_ravines",
             "lalibertad_chepen_chaman_morana_avispero",
+            "piura_colan_bajo_chira_local_ravines",
         }
         self.assertEqual(ids, required)
 
@@ -117,13 +118,17 @@ class Phase2NorthCoastDiscoveryTests(unittest.TestCase):
 
     def test_every_discovery_unit_has_sources_and_a_work_package(self):
         source_catalog = self.cfg["source_catalog"]
+        inventory_registry = self.cfg.get("source_registry", {})
+        self.assertIsInstance(inventory_registry, dict)
         for row in self.cfg["discovery_units"]:
             self.assertGreaterEqual(len(row["official_source_ids"]), 2, row["discovery_id"])
             self.assertGreaterEqual(len(row["first_work_package"]), 4, row["discovery_id"])
             registry_ids = self.source_registry_ids(row["discovery_id"])
             for source_id in row["official_source_ids"]:
                 self.assertTrue(
-                    source_id in source_catalog or source_id in registry_ids,
+                    source_id in source_catalog
+                    or source_id in inventory_registry
+                    or source_id in registry_ids,
                     f"{row['discovery_id']}: unresolved official source id {source_id}",
                 )
 
