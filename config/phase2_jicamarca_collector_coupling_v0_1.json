@@ -1,0 +1,303 @@
+{
+  "schema_version": "0.1",
+  "contract_id": "phase2-collector-coupling:lima_este_jicamarca:v0.1",
+  "status": "RESEARCH_ONLY_STATIC_TOPOLOGY_COUPLING_GATE",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "architecture_ref": "config/phase2_collector_coupling_architecture_v0_1.json",
+  "local_hierarchy_ref": "config/phase2_local_activation_hierarchy_v0_1.json",
+  "discovery_ref": "config/phase2_jicamarca_discovery_v0_1.json",
+  "purpose": "Freeze the current Jicamarca local-child to collector-coupling state without inventing outlets, confluences, discharge, travel time, attenuation, receiver response or a synthetic Quebrada Jicamarca unit.",
+  "parent_context": {
+    "parent_id": "lima_este_jicamarca_huaycoloro_rioseco_canto_grande",
+    "role": "CONTEXT_CONTAINER_NON_ACTIVATABLE",
+    "activation_state": null,
+    "child_evidence_promotes_parent_activation": false,
+    "synthetic_jicamarca_activation_unit_allowed": false
+  },
+  "collector_targets": [
+    {
+      "collector_id": "rimac_mainstem_receiver",
+      "display_name": "Río Rímac receptor",
+      "unit_type": "MAIN_CHANNEL_RECEIVER",
+      "geometry_status": "MISSING_REPRODUCIBLE_LOCAL_COUPLING_REACH",
+      "geometry": null,
+      "capacity_status": "UNKNOWN",
+      "capacity_evidence": null,
+      "stage_or_discharge_series": [],
+      "topographic_sources": [],
+      "hydraulic_geometry_status": "UNKNOWN",
+      "structures": [],
+      "historical_overflow_evidence": [],
+      "control_points": [],
+      "map_eligible": false,
+      "tributary_activation_implies_receiver_overflow": false
+    },
+    {
+      "collector_id": "canto_grande_local_receiver",
+      "display_name": "Sistema local Canto Grande receptor de Media Luna",
+      "unit_type": "LOCAL_INTERMEDIATE_RECEIVER_CONTEXT",
+      "geometry_status": "OFFICIAL_CHANNEL_CONTEXT_EXISTS_EXACT_JUNCTION_UNRESOLVED",
+      "geometry": "site/data/phase2/geometries/jicamarca_canto_grande_igp_channel.geojson",
+      "geometry_role": "OFFICIAL_NAMED_CHANNEL_LINE_CONTEXT_ONLY",
+      "capacity_status": "UNKNOWN",
+      "capacity_evidence": null,
+      "stage_or_discharge_series": [],
+      "hydraulic_geometry_status": "UNKNOWN",
+      "map_eligible": true,
+      "activation_state": null
+    }
+  ],
+  "tributaries": [
+    {
+      "local_unit_id": "huaycoloro",
+      "source_local_geometry_contract_or_explicit_missing_status": "EXISTING_IRFEN_REFERENCE:chosica_huaycoloro",
+      "source_geometry_status": "REFERENCE_ONLY_NOT_DUPLICATED",
+      "source_outlet_or_explicit_missing_status": {
+        "status": "NOT_REASSERTED_IN_JICAMARCA_DISCOVERY",
+        "location": null,
+        "is_receiver_confluence": false
+      },
+      "receiver_confluence_or_explicit_missing_status": {
+        "status": "OFFICIAL_DOCUMENTARY_JOIN_CONTEXT_WITH_RIO_SECO_EXACT_NODE_UNRESOLVED",
+        "location": null,
+        "provenance": ["config/phase2_jicamarca_huaycoloro_rio_seco_union_2017_v0_1.json"],
+        "is_receiver_confluence": false
+      },
+      "ultimate_receiver": "rimac_mainstem_receiver",
+      "ultimate_receiver_connection_status": "UNRESOLVED_NOT_ASSUMED",
+      "collector_effect_state": "NO_EVIDENCE",
+      "q_i_t": null,
+      "travel_time_tau": null,
+      "routing_method": null,
+      "attenuation_or_storage": null,
+      "hydraulic_distance": null,
+      "quality_confidence": "INSUFFICIENT_FOR_RIMAC_COUPLING",
+      "paired_observations": ["IGP-HL2-2023-03-15T14:44:19-05:00"],
+      "validation_status": "BLOCKED_EXACT_CONFLUENCE_AND_TEMPORAL_ROUTING_UNRESOLVED"
+    },
+    {
+      "local_unit_id": "rio_seco",
+      "source_local_geometry_contract_or_explicit_missing_status": {
+        "status": "MISSING_REPRODUCIBLE_NATURAL_CHANNEL_AND_CATCHMENT_GEOMETRY",
+        "quarantined_geometry": "ANA_QDA_COLCA_FAJA_DO_NOT_USE_AS_RIO_SECO"
+      },
+      "source_geometry_status": "MISSING_PENDING_INDEPENDENT_RIO_SECO_GEOMETRY",
+      "source_outlet_or_explicit_missing_status": {
+        "status": "MISSING_PENDING_REPRODUCIBLE_OUTLET",
+        "location": null,
+        "station_labels_are_outlets": false
+      },
+      "receiver_confluence_or_explicit_missing_status": {
+        "status": "OFFICIAL_DOCUMENTARY_JOIN_CONTEXT_WITH_HUAYCOLORO_EXACT_NODE_UNRESOLVED",
+        "location": null,
+        "provenance": ["config/phase2_jicamarca_huaycoloro_rio_seco_union_2017_v0_1.json"],
+        "is_receiver_confluence": false
+      },
+      "ultimate_receiver": "rimac_mainstem_receiver",
+      "ultimate_receiver_connection_status": "UNRESOLVED_NOT_ASSUMED",
+      "collector_effect_state": "NO_EVIDENCE",
+      "q_i_t": null,
+      "travel_time_tau": null,
+      "routing_method": null,
+      "attenuation_or_storage": null,
+      "hydraulic_distance": null,
+      "quality_confidence": "INSUFFICIENT_FOR_RIMAC_COUPLING",
+      "paired_observations": [
+        "IGP-RS2-2023-03-14T16:37:37-05:00",
+        "IGP-RS2-2023-03-15T16:27:41-05:00"
+      ],
+      "validation_status": "BLOCKED_NATURAL_GEOMETRY_OUTLET_CONFLUENCE_AND_TEMPORAL_ROUTING_UNRESOLVED"
+    },
+    {
+      "local_unit_id": "canto_grande_upper_branch",
+      "source_local_geometry_contract_or_explicit_missing_status": "config/phase2_jicamarca_igp_channel_line_freeze_v0_1.json",
+      "source_geometry_status": "REPRODUCIBLE_OFFICIAL_CHANNEL_CONTEXT_ONLY_NO_CATCHMENT_POLYGON",
+      "source_outlet_or_explicit_missing_status": {
+        "status": "MISSING_PENDING_REPRODUCIBLE_OUTLET",
+        "location": null,
+        "channel_endpoint_is_outlet": false
+      },
+      "receiver_confluence_or_explicit_missing_status": {
+        "status": "MISSING_PENDING_REPRODUCIBLE_RIMAC_OR_INTERMEDIATE_CONFLUENCE",
+        "location": null,
+        "is_receiver_confluence": false
+      },
+      "ultimate_receiver": "rimac_mainstem_receiver",
+      "ultimate_receiver_connection_status": "UNRESOLVED_NOT_ASSUMED",
+      "collector_effect_state": "NO_EVIDENCE",
+      "q_i_t": null,
+      "travel_time_tau": null,
+      "routing_method": null,
+      "attenuation_or_storage": null,
+      "hydraulic_distance": null,
+      "quality_confidence": "INSUFFICIENT_FOR_RIMAC_COUPLING",
+      "paired_observations": [],
+      "validation_status": "BLOCKED_CATCHMENT_OUTLET_CONFLUENCE_AND_TEMPORAL_ROUTING_UNRESOLVED"
+    },
+    {
+      "local_unit_id": "media_luna",
+      "source_local_geometry_contract_or_explicit_missing_status": "config/phase2_jicamarca_igp_channel_line_freeze_v0_1.json",
+      "source_geometry_status": "REPRODUCIBLE_OFFICIAL_CHANNEL_CONTEXT_ONLY_NO_CATCHMENT_POLYGON",
+      "source_outlet_or_explicit_missing_status": {
+        "status": "MISSING_PENDING_REPRODUCIBLE_OUTLET",
+        "location": null,
+        "channel_endpoint_is_outlet": false
+      },
+      "receiver_confluence_or_explicit_missing_status": {
+        "status": "DOCUMENTARY_TOPOLOGY_TO_CANTO_GRANDE_EXACT_JUNCTION_UNRESOLVED",
+        "location": null,
+        "provenance": ["config/phase2_jicamarca_canto_grande_media_luna_assessment_v0_1.json"],
+        "is_receiver_confluence": false
+      },
+      "immediate_receiver": "canto_grande_local_receiver",
+      "ultimate_receiver": "rimac_mainstem_receiver",
+      "ultimate_receiver_connection_status": "UNRESOLVED_NOT_ASSUMED",
+      "collector_effect_state": "NO_EVIDENCE",
+      "q_i_t": null,
+      "travel_time_tau": null,
+      "routing_method": null,
+      "attenuation_or_storage": null,
+      "hydraulic_distance": null,
+      "quality_confidence": "INSUFFICIENT_FOR_COUPLING",
+      "paired_observations": ["JICAMARCA-MEDIA-LUNA-2002"],
+      "validation_status": "BLOCKED_EXACT_LOCAL_JUNCTION_AND_DOWNSTREAM_ROUTING_UNRESOLVED"
+    },
+    {
+      "local_unit_id": "jicamarca_named_channel",
+      "source_local_geometry_contract_or_explicit_missing_status": {
+        "status": "MISSING_PENDING_IDENTITY_AND_GEOMETRY_RESOLUTION",
+        "synthetic_unit_forbidden": true
+      },
+      "source_geometry_status": "MISSING_PENDING_IDENTITY_RESOLUTION",
+      "source_outlet_or_explicit_missing_status": {
+        "status": "MISSING_PENDING_IDENTITY_RESOLUTION",
+        "location": null
+      },
+      "receiver_confluence_or_explicit_missing_status": {
+        "status": "MISSING_PENDING_IDENTITY_RESOLUTION",
+        "location": null,
+        "is_receiver_confluence": false
+      },
+      "ultimate_receiver": null,
+      "ultimate_receiver_connection_status": "UNRESOLVED_NOT_ASSUMED",
+      "collector_effect_state": "NO_EVIDENCE",
+      "q_i_t": null,
+      "travel_time_tau": null,
+      "routing_method": null,
+      "attenuation_or_storage": null,
+      "hydraulic_distance": null,
+      "quality_confidence": "IDENTITY_UNRESOLVED",
+      "paired_observations": [],
+      "validation_status": "BLOCKED_IDENTITY_GEOMETRY_AND_TOPOLOGY_UNRESOLVED"
+    }
+  ],
+  "event_pairing_gate": {
+    "same_day_direct_flow_records": [
+      {
+        "date": "2023-03-15",
+        "records": [
+          "IGP-HL2-2023-03-15T14:44:19-05:00",
+          "IGP-RS2-2023-03-15T16:27:41-05:00"
+        ],
+        "interpretation": "TWO_LOCAL_DIRECT_FLOW_DETECTIONS_SAME_DATE",
+        "peak_coincidence_inferred": false,
+        "shared_routing_basis_available": false,
+        "receiver_response_observed": false,
+        "may_infer_rimac_overflow": false
+      }
+    ],
+    "valle_sagrado_2023": {
+      "record": "JICAMARCA-VALLE-SAGRADO-2023-03-15",
+      "research_state": "IMPACT_CONFIRMED",
+      "local_component_attribution": "PARTIAL_UNRESOLVED",
+      "may_feed_back_to_geometry_selection": false,
+      "may_imply_rimac_overflow": false
+    }
+  },
+  "collector_coupling_matrix": [
+    {
+      "local_unit_id": "huaycoloro",
+      "collector_id": "rimac_mainstem_receiver",
+      "connectivity": "UNRESOLVED_NOT_ASSUMED",
+      "travel_time_tau": null,
+      "attenuation_or_storage": null,
+      "q_i_t": null,
+      "collector_effect_state": "NO_EVIDENCE",
+      "validation_status": "BLOCKED"
+    },
+    {
+      "local_unit_id": "rio_seco",
+      "collector_id": "rimac_mainstem_receiver",
+      "connectivity": "UNRESOLVED_NOT_ASSUMED",
+      "travel_time_tau": null,
+      "attenuation_or_storage": null,
+      "q_i_t": null,
+      "collector_effect_state": "NO_EVIDENCE",
+      "validation_status": "BLOCKED"
+    },
+    {
+      "local_unit_id": "canto_grande_upper_branch",
+      "collector_id": "rimac_mainstem_receiver",
+      "connectivity": "UNRESOLVED_NOT_ASSUMED",
+      "travel_time_tau": null,
+      "attenuation_or_storage": null,
+      "q_i_t": null,
+      "collector_effect_state": "NO_EVIDENCE",
+      "validation_status": "BLOCKED"
+    },
+    {
+      "local_unit_id": "media_luna",
+      "collector_id": "canto_grande_local_receiver",
+      "connectivity": "DOCUMENTARY_TOPOLOGY_ONLY_EXACT_NODE_UNRESOLVED",
+      "travel_time_tau": null,
+      "attenuation_or_storage": null,
+      "q_i_t": null,
+      "collector_effect_state": "NO_EVIDENCE",
+      "validation_status": "BLOCKED"
+    }
+  ],
+  "collector_balance_status": {
+    "calculation_performed": false,
+    "q_upstream": null,
+    "q_lateral": null,
+    "storage_diversions_regulation": null,
+    "synchrony_analysis": null,
+    "downstream_flow_estimate": null
+  },
+  "hydrologic_routing": {
+    "method": null,
+    "reproducible_input_bundle": null,
+    "status": "NOT_RUN_INSUFFICIENT_REPRODUCIBLE_OUTLET_CONFLUENCE_AND_TEMPORAL_INPUTS"
+  },
+  "hydraulic_model": {
+    "method": null,
+    "reproducible_input_bundle": null,
+    "status": "NOT_RUN_INSUFFICIENT_REPRODUCIBLE_HYDRAULIC_INPUTS"
+  },
+  "next_gates": [
+    "Resolve an independent reproducible natural-channel/catchment geometry for Río Seco without reusing quarantined Qda. Colca regulatory geometry.",
+    "Resolve reproducible outlets and exact confluences for Río Seco, Canto Grande and Media Luna without using channel endpoints as outlets.",
+    "Freeze station coordinates only if an official reproducible source becomes available; station labels or approximate descriptions are not outlets.",
+    "Only after spatial gates pass, reconstruct time-aligned child flow or admissible proxy series and receiver observations before estimating routing or peak coincidence.",
+    "Keep Huaycoloro referenced through chosica_huaycoloro rather than duplicating its geometry."
+  ],
+  "forbidden": [
+    "create a synthetic Quebrada Jicamarca activation unit",
+    "rebind Qda. Colca regulatory faja geometry to Río Seco",
+    "treat a faja marginal as a channel centerline, catchment, outlet, confluence or event footprint",
+    "treat IGP station labels or descriptive references as reproducible outlets",
+    "treat named-channel line endpoints as outlets",
+    "invent Q_i(t), travel time, attenuation, hydraulic distance or capacity",
+    "infer Rímac overflow from one or more activated tributaries",
+    "interpret same-day detections as peak coincidence without common routing and receiver observations",
+    "promote local evidence to parent activation, risk color or alert"
+  ]
+}
