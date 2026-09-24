@@ -1,0 +1,147 @@
+{
+  "schema_version": "0.2",
+  "status": "OFFICIAL_2017_EVENT_ATTRIBUTION_REFINED_WITHOUT_ROUTING_PROMOTION",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "extends": "config/phase2_jicamarca_huaycoloro_rio_seco_union_2017_v0_1.json",
+  "discovery_contract": "config/phase2_jicamarca_discovery_v0_1.json",
+  "existing_huaycoloro_reference": "chosica_huaycoloro",
+  "purpose": "Separate event-specific 2017 Huaycoloro evidence from broader Jicamarca corridor context so that confirmed Huaycoloro observations do not create a synthetic Huaycoloro-Rio Seco event, do not imply Rio Seco activation, and do not parameterize collector routing to the Rimac.",
+  "sources": [
+    {
+      "source_id": "IGP-ROJ-HUAYCOLORO-2017-02-02",
+      "institution": "Instituto Geofisico del Peru",
+      "publication_date": "2017-02-02",
+      "url": "https://www.gob.pe/institucion/igp/noticias/74439-el-roj-fue-afectado-por-el-desborde-del-rio-huaycoloro",
+      "source_role": "OFFICIAL_HUAYCOLORO_EVENT_AND_LOCAL_CONVERGENCE_CONTEXT",
+      "bounded_claims": [
+        "The IGP identifies the affected event as overflow of the Huaycoloro river/ravine.",
+        "The IGP states that the Rio Seco and Huaycoloro channels join in the Radio Observatorio de Jicamarca area.",
+        "The early-warning system first registered passage of the 31-Jan-2017 flow at 16:04 local time."
+      ],
+      "source_bytes_sha256": null,
+      "archive_status": "PUBLIC_OFFICIAL_HTML_IDENTIFIED_NOT_BYTE_FROZEN"
+    },
+    {
+      "source_id": "IGP-HUAYCOLORO-FIELD-2017-02-06",
+      "institution": "Instituto Geofisico del Peru",
+      "publication_date": "2017-02-06",
+      "url": "https://www.gob.pe/institucion/igp/noticias/74437-especialistas-de-la-scts-realizan-inspeccion-en-quebrada-de-huaycoloro-jicamarca",
+      "source_role": "OFFICIAL_HUAYCOLORO_FIELD_OBSERVATION",
+      "bounded_claims": [
+        "IGP identifies the 31-Jan-2017 affected area as the Huaycoloro subcatchment.",
+        "IGP reports a later observed alluvial flow at Puente Petramas and a field-estimated discharge of 72.5 m3/s.",
+        "IGP reports a 4-minute travel time between the monitoring-system point and the Saracoto/Puente Petramas observation segment."
+      ],
+      "source_bytes_sha256": null,
+      "archive_status": "PUBLIC_OFFICIAL_HTML_IDENTIFIED_NOT_BYTE_FROZEN"
+    },
+    {
+      "source_id": "IGP-ROJ-MARCH-2017-CORRIDOR-CONTEXT",
+      "institution": "Instituto Geofisico del Peru",
+      "publication_date": "2017-03-21",
+      "url": "https://www.gob.pe/institucion/igp/noticias/74419-huaicos-ponen-en-peligro-funcionamiento-del-roj",
+      "source_role": "OFFICIAL_MULTI_CHANNEL_CORRIDOR_IMPACT_CONTEXT",
+      "bounded_claims": [
+        "IGP reports March 2017 impacts around Cajamarquilla, Carapongo, Huachipa and the ROJ during recurrent huaicos and overflows involving Huaycoloro/Rimac context.",
+        "IGP describes protective works along both Huaycoloro and Rio Seco near the ROJ, but this source does not uniquely assign every March flow to one local child."
+      ],
+      "source_bytes_sha256": null,
+      "archive_status": "PUBLIC_OFFICIAL_HTML_IDENTIFIED_NOT_BYTE_FROZEN"
+    }
+  ],
+  "event_attribution": [
+    {
+      "event_id": "JICAMARCA-HUAYCOLORO-2017-01-31",
+      "date": "2017-01-31",
+      "component_id": "huaycoloro",
+      "research_state": "DIRECT_FLOW_EVIDENCE",
+      "attribution_status": "LOCAL_CHILD_ATTRIBUTION_SUPPORTED_BY_OFFICIAL_IGP_SOURCE",
+      "reported_first_detection_local": "2017-01-31T16:04:00-05:00",
+      "reported_discharge_m3_s": null,
+      "reported_travel_time_min": null,
+      "event_footprint_geometry": null,
+      "rio_seco_activation_inferred": false,
+      "rimac_overflow_inferred": false
+    },
+    {
+      "event_id": "JICAMARCA-HUAYCOLORO-2017-FIELD-PETRAMAS",
+      "date": "2017-02-06",
+      "component_id": "huaycoloro",
+      "research_state": "DIRECT_FLOW_EVIDENCE",
+      "attribution_status": "LOCAL_CHILD_ATTRIBUTION_SUPPORTED_BY_OFFICIAL_IGP_FIELD_SOURCE",
+      "observation_location_label": "Puente Petramas / Saracoto segment",
+      "observation_location_coordinate": null,
+      "reported_estimated_discharge_m3_s": 72.5,
+      "reported_segment_travel_time_min": 4,
+      "reported_estimated_discharge_is_Q_i_t": false,
+      "reported_segment_travel_time_is_collector_routing_parameter": false,
+      "transferable_to_other_events": false,
+      "transferable_to_rio_seco": false,
+      "transferable_to_rimac_receiver": false,
+      "hydraulic_capacity_inferred": false,
+      "event_footprint_geometry": null
+    },
+    {
+      "event_id": "JICAMARCA-ROJ-2017-MARCH-CORRIDOR-CONTEXT",
+      "date_or_period": "2017-03",
+      "component_id": "huaycoloro_or_rio_seco_or_adjacent_receiver_context_unresolved",
+      "candidate_components": [
+        "huaycoloro",
+        "rio_seco"
+      ],
+      "research_state": "IMPACT_CONFIRMED",
+      "attribution_status": "CORRIDOR_IMPACT_CONFIRMED_LOCAL_CHILD_ATTRIBUTION_NOT_UNIQUE",
+      "event_footprint_geometry": null,
+      "component_attribution_complete": false,
+      "synthetic_union_event_assignment_allowed": false,
+      "negative_evidence_for_unmentioned_child_allowed": false,
+      "rimac_overflow_inferred_from_local_child": false
+    }
+  ],
+  "adjudication": {
+    "huaycoloro_and_rio_seco_are_distinct_local_children": true,
+    "31_jan_2017_huaycoloro_attribution_resolved": true,
+    "31_jan_2017_rio_seco_activation_supported_by_this_package": false,
+    "absence_of_rio_seco_report_is_negative_evidence": false,
+    "exact_huaycoloro_rio_seco_confluence_coordinate": null,
+    "exact_confluence_geometry_resolved": false,
+    "downstream_rimac_connection_geometry_resolved": false,
+    "event_specific_field_estimate_may_parameterize_routing": false,
+    "event_specific_field_estimate_may_define_hydraulic_capacity": false,
+    "receiver_overflow_inferred": false
+  },
+  "collector_coupling_effect": {
+    "outlet_or_confluence_promoted": false,
+    "Q_i_t_promoted": false,
+    "travel_time_promoted": false,
+    "attenuation_promoted": false,
+    "peak_coincidence_inferred": false,
+    "hydraulic_capacity_promoted": false,
+    "receiver_response_promoted": false
+  },
+  "map_effect": {
+    "new_geometry_created": false,
+    "event_footprint_created": false,
+    "approximate_points_created": false,
+    "risk_or_alert_symbology_allowed": false
+  },
+  "forbidden": [
+    "merge Huaycoloro and Rio Seco into one synthetic activated unit",
+    "infer Rio Seco activation from the 31-Jan-2017 Huaycoloro evidence",
+    "use absence of a Rio Seco mention as a negative control",
+    "turn the 72.5 m3/s field estimate into reusable Q_i(t), capacity or threshold",
+    "turn the 4-minute segment travel time into collector-routing travel time",
+    "invent an exact confluence or outlet from documentary place names",
+    "infer Rimac overflow from local-child activation",
+    "create event footprints or map points without reproducible geometry"
+  ],
+  "next_gate": "Byte-freeze the official IGP source pages or equivalent archived official artifacts, then bind any station-specific 2017 timestamp records only when station identity and provenance are reproducible. Keep Rio Seco 2017 attribution unresolved unless independent child-specific evidence supports it."
+}
