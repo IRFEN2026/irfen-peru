@@ -120,7 +120,7 @@ def test_historical_silence_is_not_negative_and_coarse_forecast_cannot_select_ar
 def test_map_remains_research_context_only_without_approximate_or_composite_geometry():
     policy = load(CONTRACT)["map_policy"]
     assert policy["parent_corridor_polygon_allowed"] is False
-    assert policy["publish_child_only_after_reproducible_channel_or_local_polygon_geometry"] is True
+    assert policy["publish_each_arm_only_after_reproducible_channel_or_local_polygon_geometry"] is True
     assert policy["publish_faja_only_as_regulatory_context_if_normalized_with_provenance"] is True
     assert policy["pucusana_administrative_geometry_may_substitute_mouth_node"] is False
     assert policy["approximate_geometry_forbidden"] is True
