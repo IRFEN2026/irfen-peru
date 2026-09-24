@@ -1,0 +1,74 @@
+name: IRFEN - Phase2 Jicamarca Rio Seco IGP spatial probe
+
+on:
+  pull_request:
+    paths:
+      - config/phase2_jicamarca_rio_seco_igp_spatial_probe_v0_1.json
+      - config/phase2_jicamarca_rio_seco_ana_faja_identity_v0_1.json
+      - scripts/probe_phase2_jicamarca_rio_seco_igp_spatial.py
+      - tests/test_phase2_jicamarca_rio_seco_igp_spatial_probe.py
+      - site/data/phase2/geometries/jicamarca_rio_seco_ana_faja_context.geojson
+      - .github/workflows/phase2-jicamarca-rio-seco-igp-spatial-probe.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bounded-spatial-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Run static scientific guards
+        run: python -m pytest tests/test_phase2_jicamarca_rio_seco_igp_spatial_probe.py -q
+      - name: Probe official IGP lines within exact frozen ANA context envelope
+        run: |
+          mkdir -p artifacts
+          python scripts/probe_phase2_jicamarca_rio_seco_igp_spatial.py \
+            --output artifacts/phase2_jicamarca_rio_seco_igp_spatial_probe_v0_1.json
+      - name: Enforce candidate-only output semantics
+        run: |
+          python - <<'PY'
+          import json
+          p='artifacts/phase2_jicamarca_rio_seco_igp_spatial_probe_v0_1.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['status']=='PASS_BOUNDED_IGP_RIO_SECO_SPATIAL_IDENTITY_PROBE'
+          assert d['deployment_status']=='RESEARCH_ONLY'
+          assert d['test_mode']=='TEST_ONLY'
+          assert d['production_use'] is False
+          assert d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['activation_gate']=='BLOCKED'
+          assert d['missing_data_rule']=='UNKNOWN_NOT_LOW_RISK'
+          assert d['decision_thresholds'] is None
+          assert d['hydraulic_factors'] is None
+          assert d['query_envelope_wgs84']['buffer_applied'] is False
+          assert d['candidate_geometry_requested'] is True
+          assert d['candidate_geometry_accepted'] is False
+          assert d['catchment_geometry_accepted'] is False
+          assert d['outlet_inferred'] is False
+          assert d['confluence_inferred'] is False
+          assert d['routing_enabled'] is False
+          assert d['Q_i_t'] is None
+          assert d['travel_time'] is None
+          assert d['attenuation'] is None
+          assert d['hydraulic_capacity'] is None
+          assert d['parent_activation_promoted'] is False
+          assert d['rimac_overflow_inferred'] is False
+          for c in d['candidates']:
+              assert c['geometry_accepted_as_rio_seco_channel'] is False
+              assert c['catchment_accepted'] is False
+              assert c['outlet_or_confluence_accepted'] is False
+              assert c['routing_enabled'] is False
+              assert c['event_footprint'] is False
+              assert c['requires_separate_identity_review'] is True
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phase2-jicamarca-rio-seco-igp-spatial-probe
+          path: artifacts/phase2_jicamarca_rio_seco_igp_spatial_probe_v0_1.json
+          if-no-files-found: error
