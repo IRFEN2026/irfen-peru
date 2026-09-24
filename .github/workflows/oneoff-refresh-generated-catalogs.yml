@@ -1,0 +1,48 @@
+name: IRFEN - One-off refresh generated catalogs
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/oneoff-refresh-generated-catalogs.yml
+      - site/data/validation/phase2_zone_contracts/**
+      - site/data/phase2/sources/**
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Configure Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Rebuild deterministic research catalogs
+        run: |
+          python scripts/build_phase2_catalog.py
+          python scripts/build_map_layer_catalog.py
+
+      - name: Commit generated catalogs if changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- site/data/phase2/catalog.json site/data/map_layers.json; then
+            echo "Generated catalogs already synchronized."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/phase2/catalog.json site/data/map_layers.json
+          git commit -m "chore: refresh generated research catalogs"
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
