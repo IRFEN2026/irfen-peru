@@ -1,0 +1,99 @@
+name: IRFEN - Phase2 Jicamarca 2017 IGP source archive
+
+on:
+  pull_request:
+    paths:
+      - config/phase2_jicamarca_2017_igp_source_archive_contract_v0_1.json
+      - config/phase2_jicamarca_huaycoloro_rio_seco_union_2017_v0_2.json
+      - config/phase2_jicamarca_discovery_v0_2.json
+      - scripts/archive_phase2_jicamarca_2017_igp_sources.py
+      - site/data/phase2/sources/jicamarca_igp_2017/**
+      - tests/test_phase2_jicamarca_2017_igp_source_archive.py
+      - .github/workflows/phase2-jicamarca-2017-igp-source-archive.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: phase2-jicamarca-2017-igp-source-archive-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  freeze-official-source-bytes:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install focused test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Bootstrap exact official IGP bytes once or replay frozen archive offline
+        id: mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          MANIFEST=site/data/phase2/sources/jicamarca_igp_2017/archive_manifest_v0_1.json
+          if [[ ! -f "$MANIFEST" ]]; then
+            echo "bootstrap=true" >> "$GITHUB_OUTPUT"
+            python scripts/archive_phase2_jicamarca_2017_igp_sources.py --refresh
+          else
+            echo "bootstrap=false" >> "$GITHUB_OUTPUT"
+            python scripts/archive_phase2_jicamarca_2017_igp_sources.py
+          fi
+      - name: Persist the one-shot archive or bounded blocked-source state
+        if: steps.mode.outputs.bootstrap == 'true' && github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/phase2/sources/jicamarca_igp_2017
+          if git diff --cached --quiet; then
+            echo "No archive changes to persist"
+          else
+            git commit -m "Freeze official IGP 2017 Jicamarca source bytes"
+            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          fi
+      - name: Fail closed unless all three official source bodies are frozen
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          p=Path('site/data/phase2/sources/jicamarca_igp_2017/archive_manifest_v0_1.json')
+          d=json.loads(p.read_text(encoding='utf-8'))
+          assert d['status']=='PASS_REPRODUCIBLE_IGP_2017_BYTE_ARCHIVE', d.get('status')
+          assert d['deployment_status']=='RESEARCH_ONLY'
+          assert d['test_mode']=='TEST_ONLY'
+          assert d['production_use'] is False
+          assert d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['activation_gate']=='BLOCKED'
+          assert d['missing_data_rule']=='UNKNOWN_NOT_LOW_RISK'
+          assert d['decision_thresholds'] is None
+          assert d['hydraulic_factors'] is None
+          assert d['source_count']==3
+          assert d['partial_archive_retained'] is False
+          for field in (
+              'content_interpreted','event_attribution_modified','negative_evidence_created',
+              'geometry_modified','outlet_or_confluence_inferred','Q_i_t_inferred',
+              'travel_time_inferred','attenuation_inferred','hydraulic_capacity_inferred',
+              'thresholds_imported','routing_enabled','alerting_enabled'):
+              assert d[field] is False, field
+          assert len(d['sources'])==3
+          for row in d['sources']:
+              b=Path(row['archive_path']).read_bytes()
+              assert b
+              assert hashlib.sha256(b).hexdigest()==row['sha256']
+              assert len(b)==row['bytes']
+          PY
+      - name: Focused scientific regression tests
+        run: python -m pytest -q tests/test_phase2_jicamarca_2017_igp_source_archive.py
