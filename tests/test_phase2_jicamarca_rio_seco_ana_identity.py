@@ -4,6 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "config/phase2_jicamarca_rio_seco_ana_faja_identity_v0_1.json"
+CONFLICT = ROOT / "config/phase2_jicamarca_rio_seco_colca_nomenclature_conflict_v0_1.json"
 INDEX = ROOT / "config/phase2_jicamarca_evidence_index_v0_1.json"
 FREEZE = ROOT / "config/phase2_jicamarca_igp_channel_line_freeze_v0_1.json"
 
@@ -29,27 +30,23 @@ def assert_safe(doc):
         assert doc[key] == expected
 
 
-def test_ana_rio_seco_identity_anchor_is_fail_closed():
+def test_ana_archive_is_fail_closed_after_colca_rio_seco_conflict():
     c = load(EVIDENCE)
     assert_safe(c)
     assert c["component_id"] == "rio_seco"
+    assert c["status"].startswith("QUARANTINED_")
+    assert c["nomenclature_conflict"]["colca_and_rio_seco_must_remain_distinct"] is True
+    assert c["nomenclature_conflict"]["ana_title_may_prove_colca_equals_rio_seco"] is False
+    assert c["nomenclature_conflict"]["regulatory_table_may_be_relabelled_rio_seco"] is False
     assert c["source"]["institution"] == "Autoridad Nacional del Agua"
     assert c["source"]["resolution"] == "RESOLUCIÓN DIRECTORAL N° 0525-2023-ANA-AAA.CF"
     assert c["source"]["cut"] == "239127-2022"
     assert c["source"]["authenticity_key"] == "1870368C"
     assert c["source"]["sigrid_document_id"] == 16195
-
-    source_sha = c["source"].get("remote_bytes_sha256")
-    if source_sha is None:
-        assert c["source"]["archive_status"].endswith("NOT_YET_FROZEN_IN_REPOSITORY")
-        assert c["source"].get("archive_path") is None
-    else:
-        assert re.fullmatch(r"[0-9a-f]{64}", source_sha)
-        assert c["source"]["archive_status"] == "ARCHIVED_REPRODUCIBLE_PUBLIC_BYTES"
-        assert c["source"]["archive_path"] == "site/data/phase2/sources/jicamarca_rio_seco_ana/RD 0525-2023 ANA AAA CF.pdf"
+    assert re.fullmatch(r"[0-9a-f]{64}", c["source"]["remote_bytes_sha256"])
 
 
-def test_official_regulatory_counts_are_preserved_without_hydrologic_promotion():
+def test_270_hito_artifact_is_reproducible_but_not_map_eligible_as_rio_seco():
     c = load(EVIDENCE)
     g = c["regulatory_geometry_evidence"]
     assert g["crs"] == "WGS84 / UTM zone 18S"
@@ -58,29 +55,18 @@ def test_official_regulatory_counts_are_preserved_without_hydrologic_promotion()
     assert g["main_faja_hito_count"] == 270
     assert g["right_bank_hito_count"] == 141
     assert g["left_bank_hito_count"] == 129
-    assert g["right_bank_hito_count"] + g["left_bank_hito_count"] == g["main_faja_hito_count"]
-    assert g["exact_hito_table_present_in_source"] is True
-
-    if c["source"].get("remote_bytes_sha256") is None:
-        assert g["exact_hito_coordinates_archived_in_repository"] is False
-        assert g["coordinate_reprojection_frozen"] is False
-        assert g["map_eligible_now"] is False
-        assert g.get("coordinate_ledger_path") is None
-        assert g.get("geometry_path") is None
-    else:
-        assert g["exact_hito_coordinates_archived_in_repository"] is True
-        assert g["coordinate_reprojection_frozen"] is True
-        assert g["map_eligible_now"] is True
-        assert g["coordinate_ledger_path"] == "site/data/phase2/sources/jicamarca_rio_seco_ana/rio_seco_main_faja_hitos_epsg32718_v0_1.csv"
-        assert g["geometry_path"] == "site/data/phase2/geometries/jicamarca_rio_seco_ana_faja_context.geojson"
-        assert re.fullmatch(r"[0-9a-f]{64}", g["coordinate_ledger_sha256"])
-        assert re.fullmatch(r"[0-9a-f]{64}", g["geometry_sha256"])
-        assert g["map_semantics"] == "SEPARATE_ANA_REGULATORY_FAJA_CONTEXT_ONLY_NOT_ACTIVATION_GEOMETRY"
+    assert g["official_summary_reference"]["source_label"] == "Qda. Colca"
+    assert g["exact_hito_coordinates_archived_in_repository"] is True
+    assert g["coordinate_reprojection_frozen"] is True
+    assert g["map_eligible_now"] is False
+    assert g["semantic_binding_status"] == "QUARANTINED_DO_NOT_USE_AS_RIO_SECO_GEOMETRY"
+    assert g["map_semantics"] == "WITHHELD_SOURCE_LABEL_QDA_COLCA_NOT_RIO_SECO"
+    assert re.fullmatch(r"[0-9a-f]{64}", g["coordinate_ledger_sha256"])
+    assert re.fullmatch(r"[0-9a-f]{64}", g["geometry_sha256"])
 
 
 def test_faja_semantics_cannot_become_activation_geometry_or_event_footprint():
-    c = load(EVIDENCE)
-    s = c["geometry_semantics"]
+    s = load(EVIDENCE)["geometry_semantics"]
     for key in (
         "faja_marginal_is_event_footprint",
         "faja_marginal_is_catchment_polygon",
@@ -97,16 +83,19 @@ def test_faja_semantics_cannot_become_activation_geometry_or_event_footprint():
     assert s["receiver_confluence_status"].startswith("MISSING_")
 
 
-def test_wrong_same_name_igp_rio_seco_feature_remains_rejected():
+def test_wrong_same_name_igp_rio_seco_feature_remains_rejected_and_colca_not_substituted():
     c = load(EVIDENCE)
     freeze = load(FREEZE)
     cross = c["cross_check_with_existing_igp_freeze"]
     assert cross["rejection_remains_valid"] is True
     rejected = {x["component_id"]: x for x in freeze["rejected_after_geometry_review"]}
-    assert cross["rejected_feature_id"] in rejected
     row = rejected[cross["rejected_feature_id"]]
     assert row["source_feature"]["objectid"] == cross["rejected_source_objectid"] == 3338
     assert row["status"] == "REJECTED_WRONG_SAME_NAME_GEOGRAPHY_DO_NOT_PUBLISH"
+    conflict = load(CONFLICT)
+    assert_safe(conflict)
+    assert conflict["finding"]["adjudication"].startswith("COLCA_AND_RIO_SECO_MUST_REMAIN_DISTINCT")
+    assert conflict["igp_spatial_probe_effect"]["q_colca_may_replace_rio_seco"] is False
 
 
 def test_collector_coupling_stays_unknown_and_non_operational():
@@ -121,14 +110,15 @@ def test_collector_coupling_stays_unknown_and_non_operational():
     assert c["tributary_activation_implies_receiver_overflow"] is False
 
 
-def test_evidence_index_registers_anchor_without_hydrologic_or_routing_promotion():
+def test_evidence_index_registers_quarantine_without_hydrologic_promotion():
     idx = load(INDEX)
     assert_safe(idx)
     packages = {x["path"]: x for x in idx["packages"]}
     path = "config/phase2_jicamarca_rio_seco_ana_faja_identity_v0_1.json"
     assert path in packages
     row = packages[path]
-    assert row["role"] == "ANA_RIO_SECO_REGULATORY_CORRIDOR_IDENTITY_ANCHOR"
+    assert row["role"] == "ANA_QDA_COLCA_REGULATORY_CONTEXT_QUARANTINED_FROM_RIO_SECO_BINDING"
+    assert row["map_eligible_as_rio_seco"] is False
     for key in (
         "may_define_catchment_geometry",
         "may_define_channel_centerline",
@@ -139,6 +129,9 @@ def test_evidence_index_registers_anchor_without_hydrologic_or_routing_promotion
         "may_infer_routing",
     ):
         assert row[key] is False
+    conflict_path = "config/phase2_jicamarca_rio_seco_colca_nomenclature_conflict_v0_1.json"
+    assert packages[conflict_path]["may_equate_colca_with_rio_seco"] is False
+    assert packages[conflict_path]["may_publish_quarantined_faja_as_rio_seco"] is False
     assert idx["collector_effect"] == "NO_Q_TRAVEL_TIME_ATTENUATION_OR_RECEIVER_RESPONSE_PROMOTION"
 
 
