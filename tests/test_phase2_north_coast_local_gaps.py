@@ -44,3 +44,18 @@ def test_paita_is_separate_from_colan_and_separates_mechanisms():
     assert p["territorial_identity"]["colan_is_separate"] is True
     assert p["hydrologic_components"]["paita_alta_blind_basins"]["is_natural_ravine"] is False
     assert p["event_ledger"]["2017"]["transfer_to_other_ravines_forbidden"] is True
+
+
+def test_paita_historical_windows_do_not_overassign_children():
+    p=load(PAI)
+    e83=p["event_ledger"]["1982_1983"]
+    assert e83["status"]=="POSITIVE_EL_ZANJON_TERRITORIAL_OVERFLOW_CONTEXT"
+    assert e83["transfer_to_other_ravines_forbidden"] is True
+    assert e83["exact_event_footprint_available"] is False
+    assert e83["operational_threshold_inferred"] is False
+
+    e98=p["event_ledger"]["1997_1998"]
+    assert e98["status"]=="UNKNOWN_NOT_NEGATIVE_CHILD_LEVEL_SOURCE_GAP"
+    assert e98["local_child_activation_assigned"] is False
+    assert e98["absence_of_local_report_is_negative"] is False
+    assert e98["source_ids"]==[]
