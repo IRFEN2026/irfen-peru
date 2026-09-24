@@ -1,0 +1,64 @@
+name: IRFEN - Phase2 Jicamarca Rio Seco ANA hito archive
+
+on:
+  pull_request:
+    paths:
+      - config/phase2_jicamarca_rio_seco_ana_hito_archive_contract_v0_1.json
+      - config/phase2_jicamarca_rio_seco_ana_faja_identity_v0_1.json
+      - scripts/archive_phase2_jicamarca_rio_seco_ana_hitos.py
+      - tests/test_phase2_jicamarca_rio_seco_ana_hito_archive.py
+      - site/data/phase2/sources/jicamarca_rio_seco_ana/**
+      - site/data/phase2/geometries/jicamarca_rio_seco_ana_faja_context.geojson
+      - .github/workflows/phase2-jicamarca-rio-seco-ana-hito-archive.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  freeze-ana-rio-seco-regulatory-context:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install bounded parsing dependencies
+        run: python -m pip install --disable-pip-version-check pypdf pyproj pytest
+      - name: Bootstrap exact ANA source and hito replay or freeze blocked state
+        id: mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          MANIFEST=site/data/phase2/sources/jicamarca_rio_seco_ana/archive_manifest_v0_1.json
+          if [[ ! -f "$MANIFEST" ]]; then
+            echo "bootstrap=true" >> "$GITHUB_OUTPUT"
+            python scripts/archive_phase2_jicamarca_rio_seco_ana_hitos.py --refresh
+          else
+            echo "bootstrap=false" >> "$GITHUB_OUTPUT"
+            python scripts/archive_phase2_jicamarca_rio_seco_ana_hitos.py
+          fi
+      - name: Run fail-closed ANA hito archive tests
+        run: python -m pytest tests/test_phase2_jicamarca_rio_seco_ana_hito_archive.py tests/test_phase2_jicamarca_rio_seco_ana_identity.py -q
+      - name: Commit frozen source/coordinates/context geometry or blocked state once
+        if: steps.mode.outputs.bootstrap == 'true' && github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            config/phase2_jicamarca_rio_seco_ana_faja_identity_v0_1.json \
+            site/data/phase2/sources/jicamarca_rio_seco_ana \
+            site/data/phase2/geometries/jicamarca_rio_seco_ana_faja_context.geojson 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "No archive-state changes to persist"
+          else
+            git commit -m "Freeze ANA Rio Seco hito archive state"
+            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          fi
