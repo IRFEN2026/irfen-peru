@@ -1,0 +1,28 @@
+name: IRFEN - Phase2 Jicamarca Rio Seco ANA identity
+
+on:
+  pull_request:
+    paths:
+      - config/phase2_jicamarca_rio_seco_ana_faja_identity_v0_1.json
+      - config/phase2_jicamarca_evidence_index_v0_1.json
+      - config/phase2_jicamarca_igp_channel_line_freeze_v0_1.json
+      - tests/test_phase2_jicamarca_rio_seco_ana_identity.py
+      - .github/workflows/phase2-jicamarca-rio-seco-ana-identity.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-rio-seco-ana-identity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Run fail-closed Rio Seco ANA identity guards
+        run: python -m pytest tests/test_phase2_jicamarca_rio_seco_ana_identity.py -q

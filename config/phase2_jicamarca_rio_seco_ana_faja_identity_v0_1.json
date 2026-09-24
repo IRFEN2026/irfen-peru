@@ -1,0 +1,115 @@
+{
+  "schema_version": "0.1",
+  "status": "OFFICIAL_ANA_RIO_SECO_REGULATORY_CORRIDOR_IDENTITY_RESOLVED_CATCHMENT_OUTLET_UNRESOLVED",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "discovery_contract": "config/phase2_jicamarca_discovery_v0_1.json",
+  "component_id": "rio_seco",
+  "purpose": "Bind the Jicamarca Río Seco child to the correct official ANA regulatory corridor and exact published coordinate framework without promoting a faja marginal to catchment geometry, event footprint, channel centerline, outlet, confluence, routing or activation evidence.",
+  "source": {
+    "institution": "Autoridad Nacional del Agua",
+    "publication_host": "CENEPRED SIGRID",
+    "resolution": "RESOLUCIÓN DIRECTORAL N° 0525-2023-ANA-AAA.CF",
+    "issue_date": "2023-04-21",
+    "cut": "239127-2022",
+    "authenticity_key": "1870368C",
+    "sigrid_document_id": 16195,
+    "landing_url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/16195",
+    "document_url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/16195_resolucion-directoral-n0-0525-2023-ana-aaacf-delimitacion-de-la-faja-marginal-de-la-quebrada-rio-seco-y-09-tributarios-que-forma-parte-del-proyecto-me.pdf",
+    "source_role": "OFFICIAL_REGULATORY_FAJA_MARGINAL_AND_LOCAL_IDENTITY_CONTEXT_ONLY",
+    "remote_bytes_sha256": null,
+    "archive_status": "REMOTE_PUBLIC_DOCUMENT_IDENTIFIED_BYTES_NOT_YET_FROZEN_IN_REPOSITORY"
+  },
+  "official_identity": {
+    "named_waterbody": "Quebrada Río Seco",
+    "district": "San Antonio de Chaclla",
+    "province": "Huarochirí",
+    "department": "Lima",
+    "project_context": "Mejoramiento y ampliación del servicio de protección ante inundaciones y movimiento de masas en la quebrada Huaycoloro",
+    "official_relation_note": "The ANA resolution delimits Quebrada Río Seco together with nine tributary/reach sections and documents Colca and El Silencio within that regulatory study. This contract does not reinterpret those names into a synthetic basin topology.",
+    "identity_use": "CORRECT_RIO_SECO_LOCAL_SYSTEM_SPATIAL_IDENTITY_ANCHOR",
+    "same_name_feature_selection_allowed_from_name_only": false
+  },
+  "regulatory_geometry_evidence": {
+    "geometry_class": "FAJA_MARGINAL_GEODETIC_HITOS",
+    "crs": "WGS84 / UTM zone 18S",
+    "epsg": 32718,
+    "main_study_length_km": 26.0,
+    "main_faja_hito_count": 270,
+    "right_bank_hito_count": 141,
+    "left_bank_hito_count": 129,
+    "official_summary_reference": {
+      "source_label": "Qda. Colca",
+      "start_easting_m": 294832,
+      "start_northing_m": 8677959,
+      "end_easting_m": 312277,
+      "end_northing_m": 8686966,
+      "reported_length_km": 26.0
+    },
+    "exact_hito_table_present_in_source": true,
+    "exact_hito_coordinates_archived_in_repository": false,
+    "coordinate_reprojection_frozen": false,
+    "map_eligible_now": false,
+    "reason_map_withheld": "Exact source bytes and complete hito table have not yet been frozen/replayed in-repository. Even after that gate, any publication may only be a separate regulatory-context layer, not local activation geometry."
+  },
+  "geometry_semantics": {
+    "faja_marginal_is_event_footprint": false,
+    "faja_marginal_is_catchment_polygon": false,
+    "faja_marginal_is_channel_centerline": false,
+    "faja_marginal_is_historical_hydraulic_capacity": false,
+    "regulatory_hitos_may_define_activation_polygon": false,
+    "regulatory_hitos_may_define_outlet": false,
+    "regulatory_hitos_may_define_receiver_confluence": false,
+    "catchment_geometry_status": "MISSING_PENDING_REPRODUCIBLE_DRAINAGE_POLYGON",
+    "channel_geometry_status": "MISSING_PENDING_REPRODUCIBLE_NATURAL_CHANNEL_GEOMETRY",
+    "outlet_status": "MISSING_PENDING_REPRODUCIBLE_OUTLET",
+    "receiver_confluence_status": "MISSING_PENDING_REPRODUCIBLE_CONFLUENCE"
+  },
+  "cross_check_with_existing_igp_freeze": {
+    "freeze_contract": "config/phase2_jicamarca_igp_channel_line_freeze_v0_1.json",
+    "rejected_feature_id": "rio_seco_channel_candidate",
+    "rejected_source_objectid": 3338,
+    "rejection_remains_valid": true,
+    "rule": "The ANA identity anchor strengthens rejection of the geographically incompatible same-name IGP feature; it does not authorize selecting a replacement line by name alone."
+  },
+  "collector_coupling": {
+    "receiver": "rimac_mainstem",
+    "connectivity": "UNRESOLVED_NOT_ASSUMED",
+    "outlet_or_confluence": null,
+    "Q_i_t": null,
+    "travel_time": null,
+    "attenuation": null,
+    "quality": "UNKNOWN",
+    "tributary_activation_implies_receiver_overflow": false
+  },
+  "event_use_policy": {
+    "resolution_is_event_evidence": false,
+    "resolution_is_negative_control": false,
+    "absence_of_event_in_resolution_is_negative_evidence": false,
+    "faja_geometry_may_be_used_as_event_footprint": false
+  },
+  "next_gate": [
+    "freeze exact public source bytes and SHA-256 or an equivalently immutable official representation",
+    "extract the complete 270 main Río Seco marginal hitos preserving bank, source order and EPSG:32718",
+    "validate exact counts, coordinate ranges and deterministic WGS84 reprojection before any regulatory-context map publication",
+    "keep the regulatory faja as a separate context layer; do not convert it into a catchment polygon, channel centerline or historical event footprint",
+    "resolve natural channel/catchment geometry and outlet/confluence from independent reproducible hydrographic or DEM evidence before collector coupling"
+  ],
+  "forbidden": [
+    "treat faja marginal as event footprint",
+    "treat faja marginal as catchment polygon",
+    "derive channel centerline by averaging or interpolating opposite-bank hitos without a separately preregistered and validated method",
+    "infer outlet or Rímac confluence from regulatory endpoints",
+    "infer discharge, capacity, travel time or attenuation from the 26 km regulatory length",
+    "select a same-name Río Seco feature without spatial identity validation",
+    "promote Río Seco evidence to Jicamarca parent activation or Rímac overflow",
+    "publish risk or alert semantics"
+  ]
+}
