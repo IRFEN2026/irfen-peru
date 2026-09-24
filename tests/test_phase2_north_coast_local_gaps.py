@@ -42,20 +42,23 @@ def test_cartavio_santiago_are_exposure_nodes_not_basins():
 def test_paita_is_separate_from_colan_and_separates_mechanisms():
     p=load(PAI)
     assert p["territorial_identity"]["colan_is_separate"] is True
+    assert p["territorial_identity"]["parent_activation_synthesis_forbidden"] is True
     assert p["hydrologic_components"]["paita_alta_blind_basins"]["is_natural_ravine"] is False
-    assert p["event_ledger"]["2017"]["transfer_to_other_ravines_forbidden"] is True
+    assert p["event_ledger"]["2017"]["other_named_ravines_activation_assigned"] is False
+    assert p["qa"]["urban_pluvial_and_ravine_overflow_mechanisms_remain_separate"] is True
 
 
 def test_paita_historical_windows_do_not_overassign_children():
     p=load(PAI)
     e83=p["event_ledger"]["1982_1983"]
-    assert e83["status"]=="POSITIVE_EL_ZANJON_TERRITORIAL_OVERFLOW_CONTEXT"
-    assert e83["transfer_to_other_ravines_forbidden"] is True
+    assert set(e83["child_evidence"]) == {"el_zanjon"}
+    assert "DIRECT_FLOW_EVIDENCE" in e83["child_evidence"]["el_zanjon"]
+    assert e83["other_children_activation_assigned"] is False
     assert e83["exact_event_footprint_available"] is False
     assert e83["operational_threshold_inferred"] is False
 
     e98=p["event_ledger"]["1997_1998"]
-    assert e98["status"]=="UNKNOWN_NOT_NEGATIVE_CHILD_LEVEL_SOURCE_GAP"
+    assert "CONTEXT_ONLY" in e98["status"]
     assert e98["local_child_activation_assigned"] is False
     assert e98["absence_of_local_report_is_negative"] is False
-    assert e98["source_ids"]==[]
+    assert e98["provider_rainfall_used_as_irfen_threshold"] is False
