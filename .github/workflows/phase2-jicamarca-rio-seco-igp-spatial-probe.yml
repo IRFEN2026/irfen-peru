@@ -5,6 +5,7 @@ on:
     paths:
       - config/phase2_jicamarca_rio_seco_igp_spatial_probe_v0_1.json
       - config/phase2_jicamarca_rio_seco_ana_faja_identity_v0_1.json
+      - config/phase2_jicamarca_rio_seco_colca_nomenclature_conflict_v0_1.json
       - scripts/probe_phase2_jicamarca_rio_seco_igp_spatial.py
       - tests/test_phase2_jicamarca_rio_seco_igp_spatial_probe.py
       - site/data/phase2/geometries/jicamarca_rio_seco_ana_faja_context.geojson
@@ -27,18 +28,19 @@ jobs:
         run: python -m pip install --disable-pip-version-check pytest
       - name: Run static scientific guards
         run: python -m pytest tests/test_phase2_jicamarca_rio_seco_igp_spatial_probe.py -q
-      - name: Probe official IGP lines within exact frozen ANA context envelope
+      - name: Inventory official IGP lines within exact frozen Qda Colca context envelope
         run: |
           mkdir -p artifacts
           python scripts/probe_phase2_jicamarca_rio_seco_igp_spatial.py \
             --output artifacts/phase2_jicamarca_rio_seco_igp_spatial_probe_v0_1.json
-      - name: Enforce candidate-only output semantics
+      - name: Enforce quarantined source-inventory semantics
         run: |
           python - <<'PY'
           import json
           p='artifacts/phase2_jicamarca_rio_seco_igp_spatial_probe_v0_1.json'
           d=json.load(open(p,encoding='utf-8'))
-          assert d['status']=='PASS_BOUNDED_IGP_RIO_SECO_SPATIAL_IDENTITY_PROBE'
+          assert d['status']=='QUARANTINED_QDA_COLCA_CORRIDOR_SOURCE_INVENTORY_NOT_RIO_SECO_IDENTITY_PROBE'
+          assert d['semantic_binding_status']=='QUARANTINED_QDA_COLCA_CORRIDOR_SOURCE_INVENTORY_NOT_RIO_SECO_IDENTITY_PROBE'
           assert d['deployment_status']=='RESEARCH_ONLY'
           assert d['test_mode']=='TEST_ONLY'
           assert d['production_use'] is False
@@ -49,6 +51,8 @@ jobs:
           assert d['decision_thresholds'] is None
           assert d['hydraulic_factors'] is None
           assert d['query_envelope_wgs84']['buffer_applied'] is False
+          assert d['query_envelope_wgs84']['source_geometry_role']=='ANA_QDA_COLCA_REGULATORY_FAJA_MARGIN_CONTEXT_ONLY'
+          assert d['query_envelope_wgs84']['may_define_rio_seco_search_domain'] is False
           assert d['candidate_geometry_requested'] is True
           assert d['candidate_geometry_accepted'] is False
           assert d['catchment_geometry_accepted'] is False
@@ -61,6 +65,7 @@ jobs:
           assert d['hydraulic_capacity'] is None
           assert d['parent_activation_promoted'] is False
           assert d['rimac_overflow_inferred'] is False
+          assert d['rio_seco_identity_resolved'] is False
           for c in d['candidates']:
               assert c['geometry_accepted_as_rio_seco_channel'] is False
               assert c['catchment_accepted'] is False
@@ -68,9 +73,10 @@ jobs:
               assert c['routing_enabled'] is False
               assert c['event_footprint'] is False
               assert c['requires_separate_identity_review'] is True
+              assert c['may_replace_rio_seco'] is False
           PY
       - uses: actions/upload-artifact@v4
         with:
-          name: phase2-jicamarca-rio-seco-igp-spatial-probe
+          name: phase2-jicamarca-qda-colca-igp-source-inventory
           path: artifacts/phase2_jicamarca_rio_seco_igp_spatial_probe_v0_1.json
           if-no-files-found: error
