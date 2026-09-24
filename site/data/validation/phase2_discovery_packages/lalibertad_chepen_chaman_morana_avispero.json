@@ -2,7 +2,7 @@
   "schema_version": "0.1",
   "discovery_id": "lalibertad_chepen_chaman_morana_avispero",
   "system_name": "Chepen territorial corridor with separate Chaman, La Morana, Avispero and Jequetepeque components",
-  "contract_status": "DISCOVERY_GROUPER_CHAMAN_IDENTITY_RESOLVED_OTHER_COMPONENT_GEOMETRY_PENDING",
+  "contract_status": "DISCOVERY_GROUPER_CHAMAN_GEOMETRY_REPRODUCIBLE_OTHER_COMPONENTS_PENDING",
   "deployment_status": "RESEARCH_ONLY",
   "test_mode": "TEST_ONLY",
   "production_use": false,
@@ -28,8 +28,8 @@
     "rio_chaman": {
       "identity_status": "OFFICIAL_HYDROGRAPHIC_UNIT_RESOLVED",
       "ana_unit_code": "137752",
-      "ana_unit_name": "Cuenca Chaman",
-      "geometry_status": "MISSING_PENDING_EXACT_ANA_QUERY",
+      "ana_unit_name": "Cuenca Chamán",
+      "geometry_status": "PARTIAL_OFFICIAL_BASIN_CONTEXT",
       "source_query": {
         "endpoint": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/8/query",
         "where": "CODIGO='137752'",
@@ -38,7 +38,27 @@
         "geometry_precision": 7,
         "format": "geojson"
       },
-      "geometry_path": "site/data/phase2/geometries/lalibertad_chaman_basin_context.geojson"
+      "geometry_path": "site/data/phase2/geometries/lalibertad_chaman_basin_context.geojson",
+      "geometry": {
+        "status": "PARTIAL_OFFICIAL_BASIN_CONTEXT",
+        "path": "site/data/phase2/geometries/lalibertad_chaman_basin_context.geojson",
+        "representation": "OFFICIAL_ANA_HYDROGRAPHIC_UNIT_CONTEXT",
+        "sha256": "6e30e546c9717719c5add310259c278c055d0c815ae81c883c4a1efa672b0fba",
+        "validation_path": "site/data/phase2/geometries/lalibertad_chaman_basin_context_validation.json",
+        "validation_sha256": "5207fcdc9fddfe952983c179fb62462e482e76235f6c7b14af843f4a57598de1",
+        "source_path": "site/data/phase2/sources/north_coast_discovery_geometry/ana_lalibertad_chaman_137752.geojson",
+        "source_sha256": "894665a7997584511ac4ad02dac3a95b27039dd648a3f569da1dabee7a827baf",
+        "counts_as_operational_geometry": false,
+        "counts_as_event_footprint": false,
+        "source_query": {
+          "endpoint": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/8/query",
+          "where": "CODIGO='137752'",
+          "out_fields": "*",
+          "out_sr": 4326,
+          "geometry_precision": 7,
+          "format": "geojson"
+        }
+      }
     },
     "rio_la_morana": {
       "identity_status": "NAMED_OFFICIAL_PHYSICAL_COMPONENT_HYDROLOGIC_ASSIGNMENT_UNRESOLVED",
@@ -113,15 +133,17 @@
     "composite_polygon_forbidden": true,
     "risk_or_alert_layer": false
   },
+  "geometry_contract_path": "site/data/validation/phase2_discovery_contracts/lalibertad_chepen_chaman_morana_avispero.json",
   "validation": {
     "activation_gate": "BLOCKED",
     "required_reviews": [
-      "exact ANA geometry replay for Cuenca Chaman 137752",
       "independent hydrologic assignment and geometry for Rio La Morana",
       "independent hydrologic assignment and geometry for Quebrada Avispero",
       "dated component-specific 1982-83/1997-98/2017/2023 ledger",
       "event-paired observations without cross-system transfer"
     ],
-    "review_evidence": []
+    "review_evidence": [
+      "Exact ANA Cuenca Chaman hydrographic-unit polygon 137752 is frozen and replayable by SHA-256 as child research/context geometry only; it is neither a Chepen parent polygon nor an event footprint."
+    ]
   }
 }

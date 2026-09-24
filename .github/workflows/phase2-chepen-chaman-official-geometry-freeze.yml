@@ -1,0 +1,59 @@
+# Final frozen-state verifier for the exact ANA Chamán child.
+# The source and generated catalog are already committed; CI must now replay offline
+# and fail closed instead of mutating the PR branch or refreshing generated_at.
+name: IRFEN - Phase2 Chepen Chaman official child geometry freeze
+
+on:
+  pull_request:
+    paths:
+      - site/data/validation/phase2_discovery_contracts/lalibertad_chepen_chaman_morana_avispero.json
+      - site/data/validation/phase2_discovery_packages/lalibertad_chepen_chaman_morana_avispero.json
+      - site/data/phase2/sources/north_coast_discovery_geometry/ana_lalibertad_chaman_137752.geojson
+      - site/data/phase2/geometries/lalibertad_chaman_basin_context.geojson
+      - site/data/phase2/geometries/lalibertad_chaman_basin_context_validation.json
+      - scripts/probe_phase2_chepen_chaman_official_geometry.py
+      - scripts/verify_phase2_chepen_chaman_official_geometry.py
+      - tests/test_phase2_chepen_chaman_discovery_package.py
+      - site/data/map_layers.json
+      - .github/workflows/phase2-chepen-chaman-official-geometry-freeze.yml
+
+permissions:
+  contents: read
+
+jobs:
+  replay-frozen-exact-ana-child:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install test dependency
+        run: python -m pip install pytest
+      - name: Require frozen exact ANA source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s site/data/phase2/sources/north_coast_discovery_geometry/ana_lalibertad_chaman_137752.geojson
+      - name: Replay frozen exact ANA Chamán child offline
+        run: python scripts/verify_phase2_chepen_chaman_official_geometry.py
+      - name: Verify research/context map catalog without rewriting generated_at
+        run: python scripts/build_map_layer_catalog.py --check-only
+      - name: Enforce Chepén-Chamán scientific guards
+        run: python -m pytest -q tests/test_phase2_chepen_chaman_discovery_package.py
+      - name: Require side-effect-free frozen replay
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code -- \
+            site/data/validation/phase2_discovery_contracts/lalibertad_chepen_chaman_morana_avispero.json \
+            site/data/validation/phase2_discovery_packages/lalibertad_chepen_chaman_morana_avispero.json \
+            site/data/phase2/sources/north_coast_discovery_geometry/ana_lalibertad_chaman_137752.geojson \
+            site/data/phase2/geometries/lalibertad_chaman_basin_context.geojson \
+            site/data/phase2/geometries/lalibertad_chaman_basin_context_validation.json \
+            site/data/map_layers.json
