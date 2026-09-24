@@ -1,0 +1,35 @@
+name: IRFEN - Phase2 Jicamarca evidence index v0.4
+
+on:
+  pull_request:
+    paths:
+      - config/phase2_jicamarca_evidence_index_v0_4.json
+      - config/phase2_jicamarca_evidence_index_v0_3.json
+      - config/phase2_jicamarca_2017_igp_source_archive_contract_v0_1.json
+      - config/phase2_jicamarca_huaycoloro_rio_seco_union_2017_v0_2.json
+      - config/phase2_jicamarca_discovery_v0_2.json
+      - site/data/phase2/sources/jicamarca_igp_2017/**
+      - tests/test_phase2_jicamarca_evidence_index_v0_4.py
+      - .github/workflows/phase2-jicamarca-evidence-index-v04.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-evidence-index-v04:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install focused test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Verify frozen IGP source archive offline
+        run: python scripts/archive_phase2_jicamarca_2017_igp_sources.py
+      - name: Validate additive evidence-index binding and fail-closed semantics
+        run: python -m pytest -q tests/test_phase2_jicamarca_evidence_index_v0_4.py
+      - name: Revalidate universal local-unit hierarchy
+        run: python scripts/validate_phase2_local_activation_hierarchy.py
