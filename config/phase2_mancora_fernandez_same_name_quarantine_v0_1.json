@@ -1,0 +1,64 @@
+{
+  "schema_version": "0.1",
+  "status": "CROSS_REGION_SAME_NAME_GEOMETRY_QUARANTINE",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "discovery_id": "piura_mancora_los_organos_coastal_ravines",
+  "purpose": "Prevent a same-name cross-region source from being used as Quebrada Fernandez geometry for the Mancora child without an explicit reproducible spatial crosswalk.",
+  "mancora_identity_anchor": {
+    "source_id": "ANA-RD-0173-2025-AAA-JZ",
+    "institution": "Autoridad Nacional del Agua",
+    "url": "https://www.ana.gob.pe/sites/default/files/normatividad/files/RD-0173-2025.pdf",
+    "publication_date": "2025-02-14",
+    "bounded_claim": "The official resolution locates groundwater-investigation sectors named Quebrada Fernandez and Quebrada La Capilla in district Mancora, province Talara.",
+    "surface_catchment_geometry_supplied": false,
+    "event_geometry_supplied": false,
+    "outlet_supplied": false
+  },
+  "cross_region_same_name_source": {
+    "source_id": "ANA-TUMBES-FAJAS-COMUNICADO-2023-05-04",
+    "institution": "Autoridad Nacional del Agua",
+    "url": "https://www.gob.pe/institucion/ana/noticias/752481-comunicado",
+    "publication_date": "2023-05-04",
+    "source_region_context": "Tumbes",
+    "bounded_claim": "ANA states that, within its Tumbes-region faja-marginal inventory, a Quebrada Fernandez has 7.0 km of delimited marginal strip.",
+    "faja_length_km_reported": 7.0,
+    "is_mancora_surface_geometry": false,
+    "may_be_used_as_mancora_catchment": false,
+    "may_be_used_as_mancora_channel": false,
+    "may_be_used_as_mancora_outlet": false,
+    "may_be_used_as_mancora_event_footprint": false
+  },
+  "adjudication": {
+    "same_name_is_sufficient_for_cross_region_geometry_binding": false,
+    "administrative_or_territorial_label_is_sufficient_for_hydrologic_identity": false,
+    "tumbes_faja_may_fill_mancora_missing_geometry": false,
+    "mancora_fernandez_geometry_status_after_review": "MISSING_NO_APPROXIMATION_ALLOWED",
+    "mancora_fernandez_activation_evidence_status": "UNCHANGED_VERIFIED_FROM_COMPONENT_SPECIFIC_EVENT_EVIDENCE",
+    "negative_control_created": false,
+    "map_geometry_created": false
+  },
+  "required_before_any_crosswalk": [
+    "exact source geometry with explicit location/provenance",
+    "coordinate-level confirmation that the source feature belongs to the Mancora Quebrada Fernandez child",
+    "independent hydrologic identity check against the Mancora/Talara discovery contract",
+    "separate treatment of regulatory faja versus channel/catchment/event-footprint roles"
+  ],
+  "forbidden": [
+    "select a Quebrada Fernandez geometry by name alone",
+    "use the Tumbes-region 7.0 km faja statement as Mancora catchment or channel geometry",
+    "treat a faja marginal as an event footprint",
+    "treat the groundwater-study sector as a surface catchment",
+    "invent an outlet or approximate point from place-name context",
+    "change the verified 2026 Mancora activation outcome because geometry remains unresolved",
+    "create a negative control from missing historical reports"
+  ],
+  "next_gate": "Resolve the Mancora/Talara Quebrada Fernandez surface channel and drainage polygon from an official vector source or independently reproducible terrain/hydrography with explicit provenance; keep any Tumbes same-name feature quarantined unless coordinate-level crosswalk proves identity."
+}
