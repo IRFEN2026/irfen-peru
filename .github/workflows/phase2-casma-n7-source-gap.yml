@@ -1,0 +1,28 @@
+name: IRFEN - Phase2 Casma N7 geometry source gap
+
+on:
+  pull_request:
+    paths:
+      - config/phase2_casma_n7_geometry_source_gap_v0_1.json
+      - site/data/validation/phase2_discovery_packages/ancash_casma_sechin_yautan.json
+      - tests/test_phase2_casma_n7_geometry_source_gap.py
+      - .github/workflows/phase2-casma-n7-source-gap.yml
+
+permissions:
+  contents: read
+
+jobs:
+  validate-fail-closed-source-gap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install test dependency
+        run: python -m pip install pytest
+      - name: Validate Casma N7 public geometry source gap
+        run: python -m pytest -q tests/test_phase2_casma_n7_geometry_source_gap.py
+      - name: Re-run universal local activation hierarchy gate
+        run: python scripts/validate_phase2_local_activation_hierarchy.py
