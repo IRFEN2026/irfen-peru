@@ -1,0 +1,398 @@
+{
+  "schema_version": "phase2-local-hierarchy-context-v0.1",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "purpose": "Register high-priority north-coast discovery systems without promoting territorial names, intervention points, or documentary hazard context into activation units.",
+  "global_rules": {
+    "parent_is_context_only": true,
+    "child_activation_does_not_activate_parent": true,
+    "smallest_reproducible_local_hydrologic_unit_is_activation_unit": true,
+    "no_synthetic_union_geometry": true,
+    "no_approximate_points": true,
+    "critical_point_is_not_event": true,
+    "intervention_is_not_event": true,
+    "work_or_design_is_not_historical_capacity": true,
+    "marginal_strip_is_not_event_footprint": true,
+    "absence_of_report_is_not_negative_control": true,
+    "threshold_transfer_between_basins_forbidden": true,
+    "coarse_satellite_rainfall_alone_cannot_assign_small_ravine_activation": true,
+    "receiver_river_response_must_be_modelled_separately": true
+  },
+  "allowed_child_evidence_states": [
+    "METEOROLOGICAL_CONDITIONS_PRESENT",
+    "RUNOFF_RESPONSE_PLAUSIBLE",
+    "DIRECT_FLOW_EVIDENCE",
+    "IMPACT_CONFIRMED",
+    "UNKNOWN"
+  ],
+  "map_policy": {
+    "parents": "CONTEXT_GREY_ONLY",
+    "children": "PUBLISH_ONLY_WITH_REPRODUCIBLE_GEOMETRY",
+    "territorial_nodes": "CONTEXT_ONLY",
+    "critical_points": "CONTEXT_ONLY",
+    "historical_footprints": "SEPARATE_LAYER_ONLY_WITH_REPRODUCIBLE_OFFICIAL_GEOMETRY",
+    "risk_colours_forbidden": true,
+    "alert_semantics_forbidden": true
+  },
+  "systems": [
+    {
+      "discovery_id": "piura_paita_urban_pluvial_ravines",
+      "name": "Paita urbana: quebradas y depresiones pluviales locales",
+      "entity_role": "TERRITORIAL_CONTEXT_WITH_LOCAL_HYDROLOGIC_CHILDREN",
+      "must_not_merge_with": [
+        "piura_colan_bajo_chira_local_ravines",
+        "Rio Chira",
+        "Cuenca Chira"
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null,
+      "parent_geometry": null,
+      "parent_map_publishable": false,
+      "children": [
+        {
+          "child_id": "paita_el_zanjon",
+          "name": "Quebrada / dren El Zanjón",
+          "unit_role": "LOCAL_DRAINAGE_AXIS",
+          "geometry_status": "DOCUMENTED_IN_OFFICIAL_FIGURES_NOT_YET_NORMALIZED",
+          "geometry_asset": null,
+          "outlet_status": "DOCUMENTED_TO_SEA_BUT_COORDINATES_NOT_YET_FROZEN",
+          "outlet": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "event_attribution_note": "Official Paita sources document 1983 overflow/inundation and a 2017 overflow of the left margin before the outlet. This does not attribute activation to every tributary or define an operational threshold.",
+          "map_publishable": false
+        },
+        {
+          "child_id": "paita_nueva_esperanza",
+          "name": "Quebrada Nueva Esperanza",
+          "unit_role": "LOCAL_TRIBUTARY_TARGET",
+          "geometry_status": "DOCUMENTED_NAME_NOT_YET_REPRODUCIBLY_NORMALIZED",
+          "geometry_asset": null,
+          "outlet_status": "UNKNOWN",
+          "outlet": null,
+          "evidence_state": "UNKNOWN",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        },
+        {
+          "child_id": "paita_la_piscina",
+          "name": "Quebrada La Piscina",
+          "unit_role": "LOCAL_TRIBUTARY_TARGET",
+          "geometry_status": "DOCUMENTED_NAME_NOT_YET_REPRODUCIBLY_NORMALIZED",
+          "geometry_asset": null,
+          "outlet_status": "DOCUMENTED_RELATION_TO_EL_ZANJON_COORDINATES_UNKNOWN",
+          "outlet": null,
+          "evidence_state": "UNKNOWN",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        },
+        {
+          "child_id": "paita_la_catarata",
+          "name": "Quebrada La Catarata",
+          "unit_role": "LOCAL_TRIBUTARY_TARGET",
+          "geometry_status": "DOCUMENTED_NAME_NOT_YET_REPRODUCIBLY_NORMALIZED",
+          "geometry_asset": null,
+          "outlet_status": "DOCUMENTED_RELATION_TO_EL_ZANJON_COORDINATES_UNKNOWN",
+          "outlet": null,
+          "evidence_state": "UNKNOWN",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        },
+        {
+          "child_id": "paita_villa_naval",
+          "name": "Quebrada Villa Naval",
+          "unit_role": "LOCAL_DRAINAGE_TARGET",
+          "geometry_status": "DOCUMENTED_NAME_NOT_YET_REPRODUCIBLY_NORMALIZED",
+          "geometry_asset": null,
+          "outlet_status": "DOCUMENTED_TOWARD_RADA_COMPLEJO_PESQUERO_COORDINATES_UNKNOWN",
+          "outlet": null,
+          "evidence_state": "UNKNOWN",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        },
+        {
+          "child_id": "paita_alta_closed_depressions",
+          "name": "Depresiones / cuencas ciegas pluviales de Paita Alta",
+          "unit_role": "URBAN_PLUVIAL_STORAGE_MECHANISM",
+          "geometry_status": "OFFICIALLY_DESCRIBED_NOT_YET_FROZEN_AS_INDIVIDUAL_BASINS",
+          "geometry_asset": null,
+          "outlet_status": "CLOSED_OR_DRAINAGE_DEPENDENT_BY_DEFINITION_REQUIRES_LOCAL_DECOMPOSITION",
+          "outlet": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "event_attribution_note": "IGP documents pluvial ponding in Paita Alta blind depressions during February-March 2017. Keep this mechanism separate from El Zanjón fluvial overflow and from sewer/drainage failures.",
+          "map_publishable": false
+        }
+      ],
+      "event_ledger": [
+        {
+          "window": "1982-1983",
+          "component": "paita_el_zanjon",
+          "status": "IMPACT_CONFIRMED",
+          "statement": "Official provincial risk plan reports overflow and widespread urban inundation during the 1983 FEN.",
+          "do_not_infer": "No automatic attribution to all contributing ravines."
+        },
+        {
+          "window": "1997-1998",
+          "component": null,
+          "status": "METEOROLOGICAL_CONDITIONS_PRESENT",
+          "statement": "Paita official hydrologic context recognizes the strong 1997-1998 ENOS window; local child-level activation remains unresolved in this package.",
+          "do_not_infer": "Regional FEN occurrence is not a local child outcome."
+        },
+        {
+          "window": "2017",
+          "component": "paita_el_zanjon",
+          "status": "IMPACT_CONFIRMED",
+          "statement": "IGP documents 2017 overflow of the left margin before the outlet affecting Paita Baja.",
+          "do_not_infer": "Do not convert observed inundation depth or mapped susceptibility into IRFEN thresholds."
+        },
+        {
+          "window": "2017",
+          "component": "paita_alta_closed_depressions",
+          "status": "IMPACT_CONFIRMED",
+          "statement": "IGP documents pluvial ponding in blind depressions in Paita Alta during February-March 2017.",
+          "do_not_infer": "Do not merge pluvial storage with ravine overflow."
+        }
+      ]
+    },
+    {
+      "discovery_id": "piura_talara_parinas_local_ravines",
+      "name": "Talara–Pariñas: cuenca Pariñas y quebradas locales",
+      "entity_role": "HYDROLOGIC_CONTEXT_WITH_SEPARATE_LOCAL_CHILDREN",
+      "must_not_merge_with": [
+        "piura_mancora_los_organos_coastal_ravines",
+        "Cuenca Fernandez",
+        "Los Organos",
+        "Mancora"
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null,
+      "parent_identity": "ANA recognizes Cuenca Pariñas as a distinct hydrographic unit; the parent remains context only.",
+      "parent_geometry": null,
+      "parent_map_publishable": false,
+      "children": [
+        {
+          "child_id": "talara_quebrada_parinas",
+          "name": "Quebrada Pariñas",
+          "unit_role": "LOCAL_CHANNEL_TARGET",
+          "geometry_status": "OFFICIAL_IDENTITY_CONFIRMED_GEOMETRY_NOT_YET_FROZEN",
+          "geometry_asset": null,
+          "outlet_status": "OFFICIAL_DESCRIPTIVE_SEA_OUTLET_COORDINATES_NOT_YET_FROZEN",
+          "outlet": null,
+          "evidence_state": "RUNOFF_RESPONSE_PLAUSIBLE",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        },
+        {
+          "child_id": "talara_quebrada_acholado",
+          "name": "Quebrada Acholado / Acholao",
+          "unit_role": "LOCAL_CHANNEL_TARGET",
+          "geometry_status": "OFFICIALLY_DESCRIBED_NOT_YET_REPRODUCIBLY_NORMALIZED",
+          "geometry_asset": null,
+          "outlet_status": "DESCRIPTIVE_ONLY_COORDINATES_UNKNOWN",
+          "outlet": null,
+          "evidence_state": "RUNOFF_RESPONSE_PLAUSIBLE",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false,
+          "name_qa_note": "Official sources use Acholado and Acholao spellings; retain alias quarantine until a canonical hydrographic identifier is resolved."
+        },
+        {
+          "child_id": "talara_quebrada_debora",
+          "name": "Quebrada Debora",
+          "unit_role": "LOCAL_CHANNEL_TARGET",
+          "geometry_status": "OFFICIALLY_DESCRIBED_NOT_YET_REPRODUCIBLY_NORMALIZED",
+          "geometry_asset": null,
+          "outlet_status": "UNKNOWN",
+          "outlet": null,
+          "evidence_state": "UNKNOWN",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        }
+      ],
+      "event_ledger": [
+        {
+          "window": "1982-1983",
+          "component": null,
+          "status": "METEOROLOGICAL_CONDITIONS_PRESENT",
+          "statement": "Regional El Niño window retained for reconstruction; no child-level outcome assigned here."
+        },
+        {
+          "window": "1997-1998",
+          "component": null,
+          "status": "METEOROLOGICAL_CONDITIONS_PRESENT",
+          "statement": "Regional El Niño window retained for reconstruction; no child-level outcome assigned here."
+        },
+        {
+          "window": "2017",
+          "component": "talara_quebrada_acholado",
+          "status": "RUNOFF_RESPONSE_PLAUSIBLE",
+          "statement": "Contraloria records infrastructure in the Acholado sector as affected by maximum-precipitation events in 2017 and 2023; this is context, not direct flow confirmation."
+        }
+      ]
+    },
+    {
+      "discovery_id": "piura_vichayito_local_hydrology",
+      "name": "Vichayito local hydrology",
+      "entity_role": "TERRITORIAL_CHILD_DISCOVERY_TARGET",
+      "parent_corridor_reference": "piura_mancora_los_organos_coastal_ravines",
+      "must_not_inherit_events_from": [
+        "Mancora",
+        "Quebrada Fernandez",
+        "Los Organos"
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null,
+      "official_territorial_identity": "CONFIRMED",
+      "hydrologic_identity": "UNKNOWN",
+      "activation_status": "UNKNOWN",
+      "geometry_status": "UNKNOWN",
+      "geometry_asset": null,
+      "outlet_status": "UNKNOWN",
+      "outlet": null,
+      "evidence_state": "UNKNOWN",
+      "map_publishable": false,
+      "research_rule": "Do not materialize a Vichayito basin, ravine polygon, event attribution, or outlet until an official or reproducible hydrologic source resolves it."
+    },
+    {
+      "discovery_id": "lalibertad_chicama_cartavio_santiago_context_nodes",
+      "name": "Río Chicama: Cartavio y Santiago de Cao context nodes",
+      "entity_role": "RECEIVER_RIVER_CONTEXT_WITH_TERRITORIAL_EXPOSURE_NODES",
+      "parent_reference": "lalibertad_chicama",
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null,
+      "parent_rule": "Cuenca Chicama remains context; territorial nodes and intervention points are never activation units by themselves.",
+      "nodes": [
+        {
+          "node_id": "chicama_cartavio_15",
+          "name": "Cartavio 15",
+          "node_role": "CRITICAL_REACH_CONTEXT",
+          "territorial_context": "Santiago de Cao / Cartavio",
+          "geometry_status": "OFFICIALLY_NAMED_POINT_OR_REACH_NOT_YET_REPRODUCIBLY_NORMALIZED",
+          "geometry_asset": null,
+          "activation_eligible": false,
+          "event_status": "NOT_AN_EVENT",
+          "capacity_status": "UNKNOWN",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        },
+        {
+          "node_id": "chicama_santiago_de_cao_critical_points",
+          "name": "Santiago de Cao critical points",
+          "node_role": "TERRITORIAL_EXPOSURE_CONTEXT",
+          "geometry_status": "MULTIPLE_POINTS_REQUIRING_INDIVIDUAL_NORMALIZATION",
+          "geometry_asset": null,
+          "activation_eligible": false,
+          "event_status": "NOT_AN_EVENT",
+          "capacity_status": "UNKNOWN",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        }
+      ],
+      "intervention_context": {
+        "cartavio_15_works_documented": true,
+        "works_include_dike_protection_rock_armoring_and_desilting": true,
+        "intervention_is_event": false,
+        "intervention_defines_historical_capacity": false,
+        "critical_point_defines_observed_flood": false
+      }
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "PAITA_PPRRD_2019_2021_SIGRID",
+      "authority": "Municipalidad Provincial de Paita / SIGRID-CENEPRED",
+      "title": "Plan de Prevencion y Reduccion del Riesgo de Desastres de la Provincia de Paita 2019-2021",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/6187_plan-de-prevencion-y-reduccion-del-riesgo-de-desastres-de-la-provincia-de-paita-2019-2021.pdf",
+      "allowed_use": "hydrologic names, drainage relationships, 1983 El Zanjon impact context; not thresholds"
+    },
+    {
+      "source_id": "IGP_PAITA_ZONIFICACION_2019",
+      "authority": "Instituto Geofisico del Peru / SIGRID-CENEPRED",
+      "title": "Zonificacion Sismica-Geotecnica de la Ciudad de Paita",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/9856_zonificacion-sismica-geotecnica-de-la-ciudad-de-paita.pdf",
+      "allowed_use": "2017 observed urban inundation mechanism separation and documentary geometry context; not IRFEN thresholds"
+    },
+    {
+      "source_id": "IGP_PAITA_GEODINAMICA_2021",
+      "authority": "Instituto Geofisico del Peru / SIGRID-CENEPRED",
+      "title": "Caracteristicas Geodinamicas en el Distrito de Paita",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/13951_caracteristicas-geodinamicas-en-el-distrito-de-paita-provincia-de-paita-region-piura-informe-tecnico-n0032-2021igp.pdf",
+      "allowed_use": "named local ravines and documentary drainage relationships; not frozen geometry until reproducibly extracted"
+    },
+    {
+      "source_id": "ANA_RJ_056_2018_WATERCOURSE_CLASSIFICATION",
+      "authority": "Autoridad Nacional del Agua",
+      "title": "Resolucion Jefatural 056-2018-ANA - clasificacion de cuerpos de agua continentales superficiales",
+      "url": "https://www.ana.gob.pe/sites/default/files/normatividad/files/r.j._056-2018-ana_0.pdf",
+      "allowed_use": "official Cuenca Parinas and Quebrada Parinas identity; not event outcome"
+    },
+    {
+      "source_id": "INDECI_TALARA_HAZARD_STUDY_2010",
+      "authority": "INDECI / SIGRID-CENEPRED",
+      "title": "Estudio Mapa de Peligros, Plan de Usos del Suelo ante Desastres y Medidas de Mitigacion de Talara",
+      "url": "https://sigrid.cenepred.gob.pe/docs/PARA%20PUBLICAR/INDECI/Estudio%20mapa%20peligros%20plan%20usos%20del%20suelo%20ante%20desastres%20y%20medidas%20de%20mitigacion%20de%20Talara_2010.pdf",
+      "allowed_use": "descriptive Quebrada Parinas, Acholado/Acholao and Debora identity/context; not operational thresholds"
+    },
+    {
+      "source_id": "CONTRALORIA_TALARA_ACHOLADO_2023",
+      "authority": "Contraloria General de la Republica",
+      "title": "Advierten riesgo de colapso de tuberia que abastece con agua potable a Talara",
+      "url": "https://www.gob.pe/institucion/contraloria/noticias/829751-advierten-riesgo-de-colapso-de-tuberia-que-abastece-con-agua-potable-a-talara",
+      "allowed_use": "2017/2023 infrastructure-impact context at Acholado; not direct-flow outcome"
+    },
+    {
+      "source_id": "GORE_PIURA_VICHAYITO_IDENTITY_2024",
+      "authority": "Gobierno Regional Piura - DIRCETUR",
+      "title": "Jerarquizacion de recursos turisticos - Playa Vichayito, distrito de Los Organos",
+      "url": "https://www.gob.pe/institucion/regionpiura-dircetur/noticias/1058391-la-dircetur-logra-jerarquizacion-de-10-recursos-turisticos-en-el-inventario-nacional-de-recursos-turisticos",
+      "allowed_use": "territorial identity only; not hydrologic identity or activation"
+    },
+    {
+      "source_id": "GORE_LALIBERTAD_CHICAMA_CRITICAL_POINTS_2026",
+      "authority": "Gobierno Regional La Libertad",
+      "title": "Gobierno regional intensifica intervencion en 21 puntos criticos del rio Chicama",
+      "url": "https://www.gob.pe/institucion/regionlalibertad/noticias/1374085-gobierno-regional-intensifica-intervencion-en-21-puntos-criticos-del-rio-chicama",
+      "allowed_use": "Cartavio 15 and intervention/critical-reach context only; not event or hydraulic capacity"
+    }
+  ],
+  "qa": {
+    "geometry_publication_requires_reproducible_asset": true,
+    "source_claims_must_not_be_promoted_beyond_allowed_use": true,
+    "local_event_attribution_must_be_component_specific": true,
+    "parent_summary_may_only_report_child_counts": true,
+    "receiver_river_overflow_never_implied_by_child_activation": true
+  }
+}
