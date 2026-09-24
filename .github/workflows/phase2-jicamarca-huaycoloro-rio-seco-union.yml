@@ -1,0 +1,28 @@
+name: IRFEN - Phase2 Jicamarca Huaycoloro Rio Seco union
+
+on:
+  pull_request:
+    paths:
+      - config/phase2_jicamarca_huaycoloro_rio_seco_union_2017_v0_1.json
+      - config/phase2_jicamarca_evidence_index_v0_1.json
+      - tests/test_phase2_jicamarca_huaycoloro_rio_seco_union.py
+      - tests/test_phase2_jicamarca_discovery.py
+      - .github/workflows/phase2-jicamarca-huaycoloro-rio-seco-union.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-union-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Run fail-closed union and compatibility guards
+        run: python -m pytest tests/test_phase2_jicamarca_huaycoloro_rio_seco_union.py tests/test_phase2_jicamarca_discovery.py -q

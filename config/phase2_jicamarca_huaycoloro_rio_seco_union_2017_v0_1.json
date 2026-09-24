@@ -1,0 +1,128 @@
+{
+  "schema_version": "0.1",
+  "status": "OFFICIAL_LOCAL_UNION_TOPOLOGY_AND_BOUNDED_2017_FLOW_OBSERVATION_GEOMETRY_UNRESOLVED",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "discovery_contract": "config/phase2_jicamarca_discovery_v0_1.json",
+  "existing_huaycoloro_reference": "chosica_huaycoloro",
+  "purpose": "Freeze official IGP evidence that Huaycoloro and Río Seco are distinct monitored local components whose channels join in the Radio Observatorio de Jicamarca area, while preserving the exact junction/outlet and all collector-routing parameters as unresolved. Also preserve one bounded IGP field observation from 2017 without converting it into a transferable IRFEN routing parameter or threshold.",
+  "sources": [
+    {
+      "source_id": "IGP-ROJ-HUAYCOLORO-2017-02-02",
+      "institution": "Instituto Geofísico del Perú",
+      "publication_date": "2017-02-02",
+      "url": "https://www.gob.pe/institucion/igp/noticias/74439-el-roj-fue-afectado-por-el-desborde-del-rio-huaycoloro",
+      "source_role": "OFFICIAL_LOCAL_TOPOLOGY_AND_HUAYCOLORO_EVENT_CONTEXT",
+      "bounded_observation": "IGP describes the ROJ area as the zone where the channels of Río Seco and Huaycoloro join and states that flow-detection instrumentation was deployed in both ravines. The reported 31-Jan-2017 flow passage was first registered at 16:04 local time.",
+      "source_bytes_sha256": null,
+      "archive_status": "PUBLIC_OFFICIAL_HTML_IDENTIFIED_NOT_BYTE_FROZEN"
+    },
+    {
+      "source_id": "IGP-HUAYCOLORO-FIELD-2017-02-06",
+      "institution": "Instituto Geofísico del Perú",
+      "publication_date": "2017-02-06",
+      "url": "https://www.gob.pe/institucion/igp/noticias/74437-especialistas-de-la-scts-realizan-inspeccion-en-quebrada-de-huaycoloro-jicamarca",
+      "source_role": "OFFICIAL_BOUNDED_HUAYCOLORO_FIELD_OBSERVATION",
+      "bounded_observation": "IGP reports observation of a new alluvial flow at Puente Petramás, approximately 8 km upstream of Carretera Ramiro Prialé, with an estimated discharge of 72.5 m3/s and a reported 4-minute arrival time from the monitoring-system point to the settlement/bridge observation point.",
+      "source_bytes_sha256": null,
+      "archive_status": "PUBLIC_OFFICIAL_HTML_IDENTIFIED_NOT_BYTE_FROZEN"
+    }
+  ],
+  "local_topology": {
+    "components": ["huaycoloro", "rio_seco"],
+    "components_are_distinct": true,
+    "channels_join": true,
+    "join_context": "RADIO_OBSERVATORIO_DE_JICAMARCA_AREA",
+    "exact_join_coordinate": null,
+    "join_is_reproducible_outlet_geometry": false,
+    "downstream_named_jicamarca_channel_identity": "DOCUMENTED_ELSEWHERE_EXACT_GEOMETRY_UNRESOLVED",
+    "direct_rimac_confluence_coordinate": null,
+    "direct_rimac_connection_geometry_resolved": false,
+    "synthetic_jicamarca_local_unit_created": false
+  },
+  "event_observations": [
+    {
+      "event_id": "JICAMARCA-HUAYCOLORO-2017-01-31",
+      "component_id": "huaycoloro",
+      "research_state": "DIRECT_FLOW_EVIDENCE",
+      "reported_first_detection_local": "2017-01-31T16:04:00-05:00",
+      "station_identity": "UNRESOLVED_FROM_THIS_SOURCE",
+      "reported_discharge_m3_s": null,
+      "reported_travel_time_min": null,
+      "event_footprint_geometry": null,
+      "receiver_overflow_inferred": false
+    },
+    {
+      "event_id": "JICAMARCA-HUAYCOLORO-2017-FIELD-PETRAMAS",
+      "component_id": "huaycoloro",
+      "research_state": "DIRECT_FLOW_EVIDENCE",
+      "observation_location_label": "Puente Petramás",
+      "observation_location_coordinate": null,
+      "reported_relative_position": "approximately 8 km upstream of Carretera Ramiro Prialé",
+      "reported_estimated_discharge_m3_s": 72.5,
+      "reported_segment_travel_time_min": 4,
+      "segment_origin": "SAT monitoring point; exact station identity/coordinate unresolved in this source",
+      "segment_destination": "Saracoto/Puente Petramás observation point; exact coordinate unresolved in this source",
+      "reported_estimated_discharge_is_Q_i_t": false,
+      "reported_segment_travel_time_is_collector_routing_parameter": false,
+      "transferable_to_other_events": false,
+      "transferable_to_rio_seco": false,
+      "transferable_to_rimac_receiver": false,
+      "hydraulic_capacity_inferred": false,
+      "event_footprint_geometry": null
+    }
+  ],
+  "collector_coupling": {
+    "local_union_node": "HUAYCOLORO_RIO_SECO_UNION",
+    "local_union_node_coordinate": null,
+    "receiver_context": "rimac_mainstem",
+    "receiver_connection_status": "DOCUMENTARY_CONTEXT_ONLY_EXACT_GEOMETRY_UNRESOLVED",
+    "huaycoloro": {
+      "outlet_or_confluence": null,
+      "Q_i_t": null,
+      "travel_time": null,
+      "attenuation": null,
+      "quality": "UNKNOWN"
+    },
+    "rio_seco": {
+      "outlet_or_confluence": null,
+      "Q_i_t": null,
+      "travel_time": null,
+      "attenuation": null,
+      "quality": "UNKNOWN"
+    },
+    "collector_stage_or_discharge_response": null,
+    "peak_coincidence": null,
+    "hydraulic_capacity": null,
+    "tributary_activation_implies_union_activation": false,
+    "tributary_activation_implies_rimac_overflow": false
+  },
+  "map_policy": {
+    "publish_union_point_now": false,
+    "publish_approximate_union_point": false,
+    "publish_petramas_point_now": false,
+    "publish_approximate_petramas_point": false,
+    "publish_new_huaycoloro_geometry": false,
+    "reuse_existing_huaycoloro_by_reference": true,
+    "publish_rio_seco_child_only_after_reproducible_geometry": true,
+    "risk_or_alert_symbology_allowed": false
+  },
+  "forbidden": [
+    "use the phrase 'ROJ area' to invent an exact confluence coordinate",
+    "turn the 4-minute observed segment travel time into a Huaycoloro-to-Rimac or Rio-Seco-to-Rimac routing parameter",
+    "turn the 72.5 m3/s field estimate into Q_i(t), a capacity, a threshold, or a value transferable to another event",
+    "infer Río Seco activation from the Huaycoloro 2017 field observation",
+    "infer Rímac overflow from Huaycoloro or Río Seco activation",
+    "create a synthetic Quebrada Jicamarca activation unit",
+    "duplicate chosica_huaycoloro geometry",
+    "publish approximate points or risk/alert semantics"
+  ],
+  "next_gate": "Resolve exact reproducible local channel geometries and the Huaycoloro–Río Seco junction from an official vector/topographic source or independently reproducible DEM/hydrography; resolve the downstream receiver connection separately. Preserve the 2017 field estimate only as event-specific bounded observation unless a traceable station/segment geometry and calibration support routing use."
+}
