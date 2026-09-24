@@ -36,17 +36,24 @@ jobs:
           rows=[x for x in idx['packages'] if x['path']==p]
           assert len(rows)==1
           row=rows[0]
+          assert row['ten_tramo_summary_labels_frozen'] is True
+          assert row['explicit_rio_seco_summary_tramo_present'] is False
+          assert row['rio_seco_specific_geometry_crosswalk_resolved'] is False
           assert row['may_rebind_colca_faja_to_rio_seco'] is False
           assert row['may_collapse_local_children'] is False
           assert row['may_define_exact_confluence'] is False
           assert row['may_define_outlet'] is False
           assert row['may_infer_routing'] is False
-          assert row['requires_explicit_component_table_crosswalk_before_geometry'] is True
+          assert row['requires_full_component_ledger_before_geometry_normalization'] is True
           doc=json.loads((root/p).read_text(encoding='utf-8'))
           assert doc['production_use'] is False
           assert doc['production_ready'] is False
           assert doc['operational_alerting_enabled'] is False
           assert doc['activation_gate']=='BLOCKED'
+          assert doc['missing_data_rule']=='UNKNOWN_NOT_LOW_RISK'
           assert doc['decision_thresholds'] is None
           assert doc['hydraulic_factors'] is None
+          assert len(doc['official_tramo_inventory']) == 10
+          assert doc['bounded_documentary_findings']['rio_seco_specific_summary_tramo_present'] is False
+          assert doc['bounded_documentary_findings']['rio_seco_specific_segment_crosswalk_resolved'] is False
           PY
