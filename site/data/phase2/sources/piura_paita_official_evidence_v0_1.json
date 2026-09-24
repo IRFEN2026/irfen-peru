@@ -1,0 +1,107 @@
+{
+  "schema_version": "0.1",
+  "discovery_id": "piura_paita_urban_local_ravines",
+  "status": "RESEARCH_ONLY_OFFICIAL_EVIDENCE_REGISTRY",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "sources": [
+    {
+      "source_id": "INDECI-BVPAD-PAITA-URBAN-DRAINAGE",
+      "institution": "INADUR / CEREN / PNUD; archived by INDECI BVPAD",
+      "document": "Mapa de peligros, plan de usos del suelo y plan de mitigacion de los efectos producidos por los desastres naturales en la ciudad de Paita",
+      "url": "https://bvpad.indeci.gob.pe/doc/estudios_CS/Region_Piura/paita/paita.pdf",
+      "role": "OFFICIAL_ARCHIVED_LOCAL_CHANNEL_IDENTITY_AND_DRAINAGE_RELATIONSHIP_CONTEXT",
+      "admissible_claims": [
+        "Quebrada Nueva Esperanza, La Piscina, La Catarata, Villa Naval and El Zanjon are described as distinct local temporary drainage features in Paita",
+        "Nueva Esperanza is described as having originally drained toward El Zanjon, with urban construction modifying its course toward the 13 de Julio sector",
+        "La Piscina is described as having originally joined Nueva Esperanza and then El Zanjon",
+        "La Catarata is described as draining from Paita Alta toward El Zanjon",
+        "Villa Naval is described as draining toward the sea near the fishing complex, with a wall capable of diverting the path toward Puerto Nuevo",
+        "the local channels are temporary and respond to intense rainfall"
+      ],
+      "forbidden_inferences": [
+        "schematic or printed-map linework is reproducible child geometry without an independently frozen georeferencing method",
+        "a described drainage relationship supplies an exact confluence or outlet coordinate",
+        "a temporary channel description proves activation for an undated historical window",
+        "urban modification may be ignored when resolving current receiver connectivity",
+        "any named local channel shares an activation state with another channel"
+      ]
+    },
+    {
+      "source_id": "PPRRD-PAITA-2019-2021",
+      "institution": "Municipalidad Provincial de Paita / CENEPRED SIGRID",
+      "document": "Plan de Prevencion y Reduccion del Riesgo de Desastres de la Provincia de Paita 2019-2021",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/6187_plan-de-prevencion-y-reduccion-del-riesgo-de-desastres-de-la-provincia-de-paita-2019-2021.pdf",
+      "role": "OFFICIAL_LOCAL_DRAINAGE_EVENT_AND_EXPOSURE_CONTEXT",
+      "admissible_claims": [
+        "El Zanjon is described as draining most of Paita Baja through a canal-road toward the sea",
+        "the plan reports overflow of El Zanjon and extensive urban inundation during the 1983 El Nino event",
+        "La Piscina is described as draining through 13 de Julio toward El Zanjon",
+        "La Catarata is described as draining from Paita Alta toward El Zanjon",
+        "Villa Naval is described as draining toward the fishing-complex roadstead, with possible diversion toward Puerto Nuevo under severe El Nino conditions",
+        "the plan states that the 2017 event produced provincial impacts exceeding prior 1983 and 1998 events",
+        "the plan provides historical rainfall context for Paita including 1983 and 1998"
+      ],
+      "forbidden_inferences": [
+        "province-level 1998 impact context proves activation of any named Paita child",
+        "historical rainfall magnitudes become IRFEN decision thresholds",
+        "the canal-road description defines present hydraulic capacity",
+        "a mitigation structure or wall is historical channel capacity",
+        "susceptibility maps are observed event footprints",
+        "absence of a named-child report is a negative control"
+      ]
+    },
+    {
+      "source_id": "IGP-PAITA-ZONIFICACION-2019",
+      "institution": "Instituto Geofisico del Peru",
+      "document": "Zonificacion sismica-geotecnica de la ciudad de Paita",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/9856_zonificacion-sismica-geotecnica-de-la-ciudad-de-paita.pdf",
+      "role": "OFFICIAL_2017_EL_ZANJON_OVERFLOW_AND_URBAN_PLUVIAL_CONTEXT",
+      "admissible_claims": [
+        "the study distinguishes fluvial and pluvial inundation mechanisms in Paita for the February-March 2017 rainfall period",
+        "it reports overflow from the left margin of El Zanjon before its mouth with flooding of Paita Baja and the historic urban core",
+        "it documents pluvial inundation in the upper urban setting as a distinct mechanism from El Zanjon overflow"
+      ],
+      "forbidden_inferences": [
+        "the 2017 El Zanjon observation proves activation of Nueva Esperanza, La Piscina, La Catarata or Villa Naval",
+        "an inundation depth reported by the provider becomes an IRFEN threshold",
+        "study figures are exact event footprints unless independently georeferenced and frozen",
+        "pluvial inundation and ravine overflow may be merged into one synthetic hydrologic child"
+      ]
+    },
+    {
+      "source_id": "CENEPRED-PAITA-EVAR-2017",
+      "institution": "CENEPRED",
+      "document": "Informe de evaluacion del riesgo por inundacion pluvial en el centro poblado de Paita, distrito de Paita, provincia de Paita, departamento de Piura",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/4118",
+      "role": "OFFICIAL_POST_EVENT_PLUVIAL_RISK_CONTEXT",
+      "admissible_claims": [
+        "an official 2017 post-emergency risk evaluation exists for pluvial inundation in the urban center of Paita"
+      ],
+      "forbidden_inferences": [
+        "risk classes are IRFEN activation states or decision thresholds",
+        "risk polygons are observed 2017 event footprints",
+        "the EVAR proves dated activation of each named ravine",
+        "urban pluvial hazard may be reassigned to a natural ravine without component evidence"
+      ]
+    }
+  ],
+  "qa": {
+    "paita_city_is_basin": false,
+    "colan_merged_with_paita": false,
+    "named_channels_auto_merged": false,
+    "documentary_receiver_relation_used_as_exact_outlet": false,
+    "urban_pluvial_and_ravine_mechanisms_merged": false,
+    "1998_province_context_used_as_child_activation": false,
+    "absence_of_report_is_negative": false,
+    "provider_rainfall_or_hazard_values_are_irfen_thresholds": false,
+    "works_or_walls_used_as_hydraulic_capacity": false
+  }
+}
