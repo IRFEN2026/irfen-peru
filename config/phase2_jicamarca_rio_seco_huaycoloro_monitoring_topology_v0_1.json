@@ -1,0 +1,158 @@
+{
+  "schema_version": "0.1",
+  "status": "DOCUMENTARY_LOCAL_CONVERGENCE_FROZEN_EXACT_NODE_GEOMETRY_UNRESOLVED",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "scope": "Jicamarca local child topology: Río Seco and Huaycoloro monitoring/convergence relation",
+  "purpose": "Freeze bounded documentary topology that constrains the QUEBRADA→RÍO COLECTOR model without inventing a confluence coordinate, outlet, routing parameter, discharge, threshold or receiver overflow.",
+  "sources": [
+    {
+      "source_id": "IGP-REPOSITORY-JICAMARCA-SAT-DESIGN",
+      "institution": "Instituto Geofísico del Perú repository",
+      "source_role": "IGP_HOSTED_TECHNICAL_ACADEMIC_DOCUMENT",
+      "title": "Diseño e implementación de un sistema de alerta temprana para aluviones en el Radio Observatorio de Jicamarca",
+      "url": "https://repositorio.igp.gob.pe/bitstreams/4c5145d4-6b00-411b-9bdc-5aae8cd446d9/download",
+      "bounded_section": "3.2 Determinación de puntos de monitoreo, PDF pages 57-58 as indexed by the public repository text layer",
+      "accessed_utc_date": "2026-09-24",
+      "source_bytes_sha256": null,
+      "source_archive_status": "PUBLIC_IGP_REPOSITORY_PDF_IDENTIFIED_NOT_BYTE_FROZEN_IN_THIS_PACKAGE",
+      "bounded_findings": [
+        "The document explicitly treats Río Seco and Huaycoloro as two channels that converge.",
+        "The monitoring design places one measurement point after the channel union and another on the Río Seco channel to distinguish source contribution.",
+        "The document reports an approximate 100 m separation between monitoring points as instrumentation-design context.",
+        "The document reports an approximate 680 m field-to-ROJ communications distance as communications-design context."
+      ],
+      "forbidden_interpretations": [
+        "The approximate 100 m monitoring-point separation is not an IRFEN travel time, attenuation, outlet distance or hydraulic parameter.",
+        "The approximate 680 m communications distance is not a channel length, routing distance, hydraulic parameter or receiver distance.",
+        "The monitoring design does not provide an exact confluence coordinate in the bounded text and cannot be converted into one by approximation."
+      ]
+    },
+    {
+      "source_id": "IGP-JRO-OFFICIAL-ABOUT",
+      "institution": "Instituto Geofísico del Perú - Radio Observatorio de Jicamarca",
+      "source_role": "OFFICIAL_INSTITUTIONAL_LOCATION_DESCRIPTION",
+      "title": "Radio Observatorio de Jicamarca - Acerca de",
+      "url": "https://www.igp.gob.pe/observatorios/radio-observatorio-jicamarca/?page_id=4749",
+      "accessed_utc_date": "2026-09-24",
+      "source_bytes_sha256": null,
+      "source_archive_status": "PUBLIC_IGP_WEBPAGE_IDENTIFIED_NOT_BYTE_FROZEN_IN_THIS_PACKAGE",
+      "bounded_findings": [
+        "The official IGP page describes the Radio Observatorio de Jicamarca as located at the junction of the Río Seco and Huaycoloro quebradas in Lurigancho-Chosica."
+      ],
+      "forbidden_interpretations": [
+        "The institutional location description is not an exact hydrologic confluence coordinate.",
+        "The observatory location is not itself an outlet, event footprint, hydraulic section or river-overflow observation."
+      ]
+    }
+  ],
+  "cross_source_adjudication": {
+    "rio_seco_and_huaycoloro_are_distinct_local_children": true,
+    "documentary_convergence_supported_by_two_igp_public_sources": true,
+    "synthetic_queberada_jicamarca_created": false,
+    "exact_confluence_coordinate": null,
+    "exact_confluence_geometry_resolved": false,
+    "downstream_receiver_identity_resolved_by_this_package": false,
+    "rimac_connection_resolved_by_this_package": false,
+    "map_geometry_created": false,
+    "parent_activation_promoted": false,
+    "receiver_overflow_inferred": false
+  },
+  "local_hierarchy": {
+    "parent_context": "jicamarca",
+    "parent_role": "CONTEXT_CONTAINER_NON_ACTIVATABLE",
+    "children": [
+      {
+        "component_id": "rio_seco",
+        "role": "LOCAL_MONITORED_CHILD",
+        "station_metadata_reference": "site/data/phase2/sources/jicamarca_cendehua_live/station_metadata_archive_v0_1.json",
+        "channel_geometry": null,
+        "catchment_polygon": null,
+        "outlet": null,
+        "confluence": null,
+        "Q_i_t": null,
+        "travel_time": null,
+        "attenuation": null,
+        "quality": "DOCUMENTARY_TOPOLOGY_ONLY_EXACT_GEOMETRY_PENDING"
+      },
+      {
+        "component_id": "huaycoloro",
+        "role": "EXISTING_LOCAL_MONITORED_CHILD_REUSE_BY_REFERENCE",
+        "existing_pilot_reference": "chosica_huaycoloro",
+        "station_metadata_reference": "site/data/phase2/sources/jicamarca_cendehua_live/station_metadata_archive_v0_1.json",
+        "Q_i_t": null,
+        "travel_time": null,
+        "attenuation": null,
+        "quality": "REUSE_EXISTING_PILOT_GEOMETRY_SEPARATE_FROM_THIS_DOCUMENTARY_TOPOLOGY_PACKAGE"
+      }
+    ]
+  },
+  "collector_coupling": {
+    "topology_edges": [
+      {
+        "from_component": "rio_seco",
+        "to_node": "rio_seco_huaycoloro_local_confluence",
+        "relation": "DOCUMENTARY_CONVERGENCE_SUPPORTED",
+        "node_coordinate": null,
+        "routing_enabled": false,
+        "Q_i_t": null,
+        "travel_time": null,
+        "attenuation": null,
+        "quality": "DOCUMENTARY_ONLY"
+      },
+      {
+        "from_component": "huaycoloro",
+        "to_node": "rio_seco_huaycoloro_local_confluence",
+        "relation": "DOCUMENTARY_CONVERGENCE_SUPPORTED",
+        "node_coordinate": null,
+        "routing_enabled": false,
+        "Q_i_t": null,
+        "travel_time": null,
+        "attenuation": null,
+        "quality": "DOCUMENTARY_ONLY"
+      },
+      {
+        "from_component": "rio_seco_huaycoloro_local_confluence",
+        "to_node": "downstream_receiver",
+        "relation": "UNRESOLVED_IN_THIS_PACKAGE",
+        "node_coordinate": null,
+        "routing_enabled": false,
+        "Q_i_t": null,
+        "travel_time": null,
+        "attenuation": null,
+        "quality": "UNKNOWN"
+      }
+    ],
+    "peak_coincidence": null,
+    "hydraulic_capacity": null,
+    "tributary_activation_implies_receiver_overflow": false,
+    "provider_station_activity_may_set_Q_i_t": false,
+    "monitoring_point_spacing_may_set_travel_time": false,
+    "communications_distance_may_set_routing_distance": false
+  },
+  "map_policy": {
+    "publish_new_geometry": false,
+    "publish_confluence_node": false,
+    "publish_approximate_point": false,
+    "publish_parent_composite": false,
+    "risk_or_alert_coloring": false,
+    "reason": "No exact reproducible confluence coordinate or new Río Seco geometry is established by the bounded documentary sources."
+  },
+  "forbidden": [
+    "create a synthetic Quebrada Jicamarca activation unit",
+    "collapse Río Seco and Huaycoloro into one child geometry",
+    "infer an exact confluence coordinate from illustrative figures or approximate distances",
+    "convert monitoring-point spacing into travel time or attenuation",
+    "convert ROJ communications distance into channel or routing distance",
+    "infer Q_i(t) from provider activity flags",
+    "infer Rímac overflow from either child activation",
+    "use documentary convergence as an event footprint or hydraulic-capacity observation"
+  ]
+}
