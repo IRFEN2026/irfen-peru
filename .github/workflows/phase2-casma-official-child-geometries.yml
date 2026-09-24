@@ -9,6 +9,7 @@ on:
       - site/data/phase2/geometries/ancash_casma_*.geojson
       - site/data/phase2/geometries/ancash_casma_*_validation.json
       - scripts/probe_phase2_casma_official_child_geometries.py
+      - scripts/diagnose_phase2_casma_ana_hydro_layers.py
       - tests/test_phase2_casma_sechin_yautan_discovery_contract.py
       - site/data/map_layers.json
       - .github/workflows/phase2-casma-official-child-geometries.yml
@@ -31,6 +32,8 @@ jobs:
           python-version: "3.12"
       - name: Install test dependency
         run: python -m pip install pytest
+      - name: Inspect bounded ANA identity exposure without geometry
+        run: python scripts/diagnose_phase2_casma_ana_hydro_layers.py
       - name: Bootstrap exact ANA N7 sources only from a completely missing source set
         shell: bash
         run: |
@@ -38,10 +41,8 @@ jobs:
           shopt -s nullglob
           files=(site/data/phase2/sources/north_coast_discovery_geometry/ana_ancash_casma_137596?.geojson)
           if (( ${#files[@]} == 0 )); then
-            # The ANA/IDEP public service can be intermittently unreachable from hosted
-            # runners. Retry the whole atomic bootstrap only on failure. The probe stages
-            # all nine responses in memory and writes nothing until the complete exact
-            # N7 set validates, so retries cannot create a partial scientific source set.
+            # Retry only transient service failures. The probe stages all nine responses
+            # in memory and writes nothing until the complete exact source set validates.
             for attempt in 1 2 3; do
               if python scripts/probe_phase2_casma_official_child_geometries.py --refresh-source; then
                 break
