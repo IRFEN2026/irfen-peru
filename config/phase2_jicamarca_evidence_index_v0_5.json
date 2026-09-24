@@ -1,0 +1,100 @@
+{
+  "schema_version": "0.1",
+  "status": "RESEARCH_ONLY_EVIDENCE_INDEX_2023_RIO_SECO_METADATA_BOUND",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "extends": "config/phase2_jicamarca_evidence_index_v0_4.json",
+  "effective_discovery_contract": "config/phase2_jicamarca_discovery_v0_2.json",
+  "inherited_event_monitoring_geometry_and_collector_rules_remain_authoritative": true,
+  "newly_bound_evidence": {
+    "local_identity_evidence": "config/phase2_jicamarca_igp2016_local_identity_evidence_v0_1.json",
+    "rio_seco_2023_event_metadata_extension": "config/phase2_jicamarca_rio_seco_2023_event_metadata_extension_v0_1.json",
+    "binding_scope": "INDEX_AND_TRACEABILITY_ONLY_NO_GEOMETRY_OR_ROUTING_PROMOTION"
+  },
+  "effective_local_identity_rules": {
+    "jicamarca_parent_role": "CONTEXT_CONTAINER_NON_ACTIVATABLE",
+    "rio_seco_is_distinct_from_colca_el_silencio_and_huaycoloro": true,
+    "synthetic_quebrada_jicamarca_unit_allowed": false,
+    "qada_colca_regulatory_geometry_may_define_rio_seco": false,
+    "report_figures_may_be_digitized_as_final_geometry": false,
+    "territorial_or_station_coordinates_may_define_outlet": false,
+    "use_A6680_as_geometry_calibration_target": false
+  },
+  "effective_2023_rio_seco_event_rules": {
+    "accepted_records": [
+      {
+        "record_id": "IGP-RS2-2023-03-12T22:41:24-05:00",
+        "component_id": "rio_seco",
+        "research_state": "DIRECT_FLOW_EVIDENCE",
+        "time_alignment_status": "ADMISSIBLE_SOURCE_INTERNAL_DATE_CONSISTENT",
+        "reported_intensity_is_irfen_threshold": false,
+        "may_define_discharge": false,
+        "may_define_travel_time": false,
+        "may_define_receiver_overflow": false
+      },
+      {
+        "record_id": "IGP-RS1-2023-03-14T16:25:13-05:00",
+        "component_id": "rio_seco",
+        "research_state": "DIRECT_FLOW_EVIDENCE",
+        "time_alignment_status": "ADMISSIBLE_WITH_PRESERVED_INTENSITY_LABEL_CONFLICT",
+        "intensity_label_conflict_must_remain_unadjudicated": true,
+        "reported_intensity_is_irfen_threshold": false,
+        "may_define_discharge": false,
+        "may_define_travel_time": false,
+        "may_define_receiver_overflow": false
+      }
+    ],
+    "quarantined_records": [
+      {
+        "conflict_id": "IGP-RS1-FILENAME-HEADER-VS-DATA-DATE-2023-03-15",
+        "component_id": "rio_seco",
+        "status": "QUARANTINED_SOURCE_INTERNAL_DATE_CONFLICT_DO_NOT_TIME_ALIGN",
+        "may_enter_time_aligned_event_ledger": false,
+        "may_define_peak_coincidence": false,
+        "may_define_travel_time": false,
+        "may_define_receiver_response": false,
+        "may_define_threshold": false
+      }
+    ],
+    "absence_of_report_may_define_negative_control": false,
+    "sensor_height_may_be_treated_as_discharge": false,
+    "station_label_may_define_outlet_or_confluence": false
+  },
+  "geometry_and_map_effect": {
+    "new_geometry_created": false,
+    "rio_seco_channel_or_catchment_resolved": false,
+    "rio_seco_outlet_or_confluence_resolved": false,
+    "parent_polygon_allowed": false,
+    "approximate_points_allowed": false,
+    "event_footprint_created": false,
+    "risk_or_alert_symbology_allowed": false,
+    "existing_reproducible_child_lines_remain_research_context_only": true
+  },
+  "collector_effect": {
+    "receiver_system": "rimac_mainstem",
+    "routing_enabled": false,
+    "Q_i_t_promoted": false,
+    "travel_time_promoted": false,
+    "attenuation_promoted": false,
+    "peak_coincidence_promoted": false,
+    "hydraulic_capacity_promoted": false,
+    "receiver_overflow_promoted": false,
+    "tributary_activation_implies_rimac_overflow": false
+  },
+  "remaining_safe_gates": [
+    "Resolve reproducible Rio Seco natural channel, local catchment and outlet/confluence independently of Qda. Colca regulatory context and without outcome-fitting.",
+    "Resolve Canto Grande upper branch and Media Luna local catchments and outlets independently; keep their official channel lines as context until those gates pass.",
+    "Resolve any named Jicamarca channel identity and relation independently before materialization.",
+    "Reconcile the quarantined 15-Mar-2023 Rio Seco 1 source date conflict from an authoritative source before any time-aligned use or deduplication.",
+    "Keep SOPHy subcatchment rainfall reconstruction blocked until reproducible machine-readable raw or Level-2 access and QA are frozen.",
+    "Only after reproducible local outlets/confluences and admissible event-specific hydrologic evidence exist may QUEBRADA_TO_RIO_COLLECTOR routing be evaluated; tributary activation never implies Rímac overflow."
+  ],
+  "next_safe_gate": "Independent reproducible Rio Seco channel/catchment/outlet resolution under frozen geometry rules, while the 15-Mar-2023 RS1 date-conflict record, SOPHy rainfall reconstruction and all collector routing remain blocked."
+}
