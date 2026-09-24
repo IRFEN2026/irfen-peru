@@ -1,0 +1,86 @@
+{
+  "schema_version": "0.1",
+  "status": "RESEARCH_ONLY_EVIDENCE_INDEX_IGP_2017_BYTE_ARCHIVE_BOUND",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "extends": "config/phase2_jicamarca_evidence_index_v0_3.json",
+  "effective_discovery_contract": "config/phase2_jicamarca_discovery_v0_2.json",
+  "inherited_event_monitoring_geometry_and_collector_rules_remain_authoritative": true,
+  "completed_provenance_gate": {
+    "gate_id": "JICAMARCA_2017_OFFICIAL_IGP_SOURCE_BYTE_FREEZE",
+    "archive_contract": "config/phase2_jicamarca_2017_igp_source_archive_contract_v0_1.json",
+    "archive_manifest": "site/data/phase2/sources/jicamarca_igp_2017/archive_manifest_v0_1.json",
+    "manifest_status_required": "PASS_REPRODUCIBLE_IGP_2017_BYTE_ARCHIVE",
+    "source_count_required": 3,
+    "archive_contract_sha256": "c2c6e26284f264c2fb7024332029cfa86c6aa9830c0263d23119b382de957629",
+    "metadata_contract_sha256": "bec6225f89cd69e54ecc8c347d150b72fa591d34bb93bc70d946b3379cf5dc74",
+    "effective_discovery_contract_sha256": "f7fa2d8ec139adb5966c69efdee9dcf0e2f24eacaf53de030860e7af9eeeb049",
+    "source_ids": [
+      "IGP-ROJ-HUAYCOLORO-2017-02-02",
+      "IGP-HUAYCOLORO-FIELD-2017-02-06",
+      "IGP-ROJ-MARCH-2017-CORRIDOR-CONTEXT"
+    ],
+    "use_scope": "PROVENANCE_ONLY_FOR_ALREADY_PREREGISTERED_OFFICIAL_2017_EVENT_SOURCES",
+    "archive_bytes_are_new_event_interpretation": false,
+    "archive_bytes_may_modify_child_attribution": false,
+    "archive_bytes_may_create_negative_evidence": false,
+    "archive_bytes_may_create_geometry": false,
+    "archive_bytes_may_define_outlet_or_confluence": false,
+    "archive_bytes_may_define_Q_i_t": false,
+    "archive_bytes_may_define_travel_time": false,
+    "archive_bytes_may_define_attenuation": false,
+    "archive_bytes_may_define_hydraulic_capacity": false,
+    "archive_bytes_may_import_thresholds": false,
+    "archive_bytes_may_enable_routing": false,
+    "archive_bytes_may_enable_alerting": false
+  },
+  "effective_event_rules": {
+    "huaycoloro_2017_01_31_child_attribution": "RESOLVED_HUAYCOLORO_ONLY",
+    "rio_seco_2017_01_31_activation_inferred": false,
+    "march_2017_corridor_child_attribution": "UNRESOLVED_NOT_UNIQUE",
+    "synthetic_huaycoloro_rio_seco_event_allowed": false,
+    "absence_of_report_may_define_negative_control": false,
+    "event_specific_field_numbers_may_parameterize_collector": false
+  },
+  "effective_monitoring_rules": {
+    "cendehua_station_identity_required_for_child_specific_direct_flow_use": true,
+    "sophy_public_graphics_are_raw_or_level2_archive": false,
+    "sophy_raw_or_level2_machine_readable_access_resolved": false,
+    "sophy_subcatchment_rainfall_reconstruction_allowed": false,
+    "provider_operational_thresholds_imported": false
+  },
+  "geometry_and_map_effect": {
+    "new_geometry_created": false,
+    "parent_polygon_allowed": false,
+    "approximate_points_allowed": false,
+    "event_footprint_created": false,
+    "risk_or_alert_symbology_allowed": false,
+    "existing_reproducible_child_lines_remain_context_only_until_local_spatial_contracts_are_resolved": true
+  },
+  "collector_effect": {
+    "routing_enabled": false,
+    "Q_i_t_promoted": false,
+    "travel_time_promoted": false,
+    "attenuation_promoted": false,
+    "peak_coincidence_promoted": false,
+    "hydraulic_capacity_promoted": false,
+    "receiver_overflow_promoted": false,
+    "tributary_activation_implies_rimac_overflow": false
+  },
+  "remaining_safe_gates": [
+    "Resolve reproducible Rio Seco local catchment/channel/outlet identity without using regulatory strips or approximate points as drainage geometry.",
+    "Resolve Canto Grande upper branch and Media Luna local catchment/outlet/confluence geometry independently; do not synthesize a combined polygon.",
+    "Resolve any named Jicamarca channel identity and relation independently before materialization.",
+    "Freeze additional station-specific direct-flow evidence only when station identity and timestamp are reproducible.",
+    "Keep SOPHy subcatchment rainfall reconstruction blocked until reproducible machine-readable raw or Level-2 access and QA are frozen.",
+    "Only after local outlets and admissible hydrologic evidence exist may QUEBRADA_TO_RIO_COLLECTOR routing be evaluated; tributary activation never implies Rímac overflow."
+  ],
+  "next_safe_gate": "Independent reproducible local catchment/outlet resolution for Rio Seco and Canto Grande-Media Luna, while SOPHy raw/Level-2 rainfall reconstruction and all collector routing remain blocked."
+}
