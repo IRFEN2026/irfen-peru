@@ -1,0 +1,85 @@
+{
+  "schema_version": "0.1",
+  "status": "CONFIRMED_CROSS_SOURCE_NOMENCLATURE_CONFLICT_SEMANTIC_QUARANTINE_ACTIVE",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "scope": "Jicamarca local hydrologic children: Qda. Colca versus Río Seco",
+  "finding": {
+    "ana_source": {
+      "institution": "Autoridad Nacional del Agua",
+      "resolution": "RESOLUCIÓN DIRECTORAL N° 0525-2023-ANA-AAA.CF",
+      "sigrid_document_id": 16195,
+      "title_scope": "Quebrada Río Seco y 09 tributarios",
+      "frozen_270_hito_table_label": "Qda. Colca",
+      "frozen_270_hito_length_km": 26.0,
+      "use": "REGULATORY_SOURCE_CONTEXT_ONLY"
+    },
+    "igp_source": {
+      "institution": "Instituto Geofísico del Perú",
+      "title": "Aspectos geológicos y geodinámicos de flujos aluvionales en la quebrada Jicamarca y análisis de la vulnerabilidad para la implementación de un Sistema de Alerta Temprana (SAT) en el centro poblado Cajamarquilla",
+      "year": 2016,
+      "url": "https://repositorio.igp.gob.pe/items/b13886c1-021b-4748-bb35-23dd3330b8a1",
+      "bounded_claim": "The study describes Colca, El Silencio and Río Seco as distinct tributary components of the Jicamarca system.",
+      "use": "INDEPENDENT_LOCAL_IDENTITY_CONSTRAINT_ONLY"
+    },
+    "adjudication": "COLCA_AND_RIO_SECO_MUST_REMAIN_DISTINCT_UNLESS_A_LATER_EXPLICIT_OFFICIAL_CROSSWALK_PROVES_OTHERWISE",
+    "absence_of_crosswalk_is_not_equivalence": true
+  },
+  "quarantined_artifacts": [
+    {
+      "path": "site/data/phase2/geometries/jicamarca_rio_seco_ana_faja_context.geojson",
+      "sha256": "c9e53874fd274d42f2dde31c3b0299937b9b5568463950a1d7b0db449d324509",
+      "quarantine_reason": "Frozen coordinates derive from the ANA 270-hito table labelled Qda. Colca. Existing rio_seco identifiers are legacy semantic binding and must not be interpreted as hydrologic attribution.",
+      "source_geometry_valid": true,
+      "rio_seco_semantic_binding_valid": false,
+      "map_eligible_as_rio_seco": false,
+      "may_define_rio_seco_channel": false,
+      "may_define_rio_seco_catchment": false,
+      "may_define_rio_seco_outlet": false,
+      "may_define_rio_seco_confluence": false
+    },
+    {
+      "path": "site/data/phase2/sources/jicamarca_rio_seco_ana/rio_seco_main_faja_hitos_epsg32718_v0_1.csv",
+      "sha256": "5cd4284d73ed6c418d20113f5b26945bce8d662fa15c93111e32a05fa4da9a40",
+      "quarantine_reason": "Exact source coordinates are preserved for provenance, but the source table label is Qda. Colca and cannot be rebound to Río Seco.",
+      "source_coordinates_valid": true,
+      "rio_seco_semantic_binding_valid": false
+    }
+  ],
+  "igp_spatial_probe_effect": {
+    "probe_contract": "config/phase2_jicamarca_rio_seco_igp_spatial_probe_v0_1.json",
+    "q_colca_objectids_observed": [3364, 11542],
+    "q_colca_duplicate_geometry_across_admin_records": true,
+    "same_name_rio_seco_objectid_3338_inside_ana_colca_envelope": false,
+    "q_colca_may_replace_rio_seco": false,
+    "interpretation": "The bounded spatial probe strengthens Qda. Colca source reproducibility but cannot promote it to Río Seco because independent IGP identity evidence keeps the two components distinct."
+  },
+  "map_policy": {
+    "quarantined_ana_geometry_publishable_as_rio_seco": false,
+    "quarantined_ana_geometry_publishable_as_risk_or_alert": false,
+    "q_colca_may_be_added_later_as_separate_local_context_after_dedicated_contract": true,
+    "rio_seco_remains_unmapped_until_reproducible_geometry_is_resolved": true
+  },
+  "collector_coupling": {
+    "receiver": "rimac_mainstem",
+    "connectivity": "UNRESOLVED_NOT_ASSUMED",
+    "outlet_or_confluence": null,
+    "Q_i_t": null,
+    "travel_time": null,
+    "attenuation": null,
+    "quality": "UNKNOWN",
+    "tributary_activation_implies_receiver_overflow": false
+  },
+  "next_gate": [
+    "resolve Río Seco natural channel identity from an independent official hydrographic source, DEM/topology workflow or explicit official crosswalk that distinguishes Río Seco from Colca",
+    "retain Qda. Colca as a separate local hydrologic component/context if incorporated",
+    "do not infer outlet, confluence, travel time, attenuation, discharge or receiver response from the quarantined faja"
+  ]
+}
