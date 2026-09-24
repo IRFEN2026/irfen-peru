@@ -263,6 +263,7 @@ def main() -> None:
         "ana_context_geometry_sha256": actual_sha,
         "ana_context_source_table_label": "Qda. Colca",
         "rio_seco_search_domain_admissible": False,
+        "rio_seco_identity_resolved": False,
         "query_envelope_wgs84": {
             "xmin": xmin,
             "ymin": ymin,
@@ -270,6 +271,7 @@ def main() -> None:
             "ymax": ymax,
             "buffer_applied": False,
             "source_role": "FROZEN_ANA_QDA_COLCA_REGULATORY_CONTEXT_SOURCE_INVENTORY_ENVELOPE_ONLY",
+            "may_define_rio_seco_search_domain": False,
         },
         "source": {
             "institution": source["institution"],
