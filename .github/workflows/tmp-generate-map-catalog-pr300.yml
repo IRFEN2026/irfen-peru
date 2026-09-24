@@ -1,4 +1,4 @@
-name: TEMP - generate map catalog for PR300
+name: TEMP - repair map catalog for PR300
 
 on:
   push:
@@ -6,14 +6,16 @@ on:
       - phase2-north-coast-local-gaps-20260924
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  generate:
+  repair:
     runs-on: ubuntu-24.04
     steps:
-      - name: Checkout
+      - name: Checkout branch
         uses: actions/checkout@v6
+        with:
+          ref: phase2-north-coast-local-gaps-20260924
       - name: Python
         uses: actions/setup-python@v6
         with:
@@ -21,11 +23,15 @@ jobs:
           cache: pip
       - name: Install dependencies
         run: pip install -r requirements.txt
-      - name: Generate map catalog
+      - name: Regenerate fail-closed map catalog
         run: python scripts/build_map_layer_catalog.py
-      - name: Upload generated catalog
-        uses: actions/upload-artifact@v6
-        with:
-          name: pr300-map-catalog
-          path: site/data/map_layers.json
-          if-no-files-found: error
+      - name: Commit generated catalog and remove temporary workflow
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/tmp-generate-map-catalog-pr300.yml
+          git add site/data/map_layers.json
+          git diff --cached --check
+          git commit -m "phase2: refresh map catalog for north-coast local gaps"
+          git push origin HEAD:phase2-north-coast-local-gaps-20260924
