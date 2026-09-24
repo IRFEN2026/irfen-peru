@@ -66,11 +66,20 @@ def build_jicamarca_map_units() -> list[dict]:
         raise core.MapCatalogError("discovery_id Jicamarca inesperado")
     if (discovery.get("territorial_identity") or {}).get("jicamarca_is_single_hydrologic_unit") is not False:
         raise core.MapCatalogError("Jicamarca no puede tratarse como una sola unidad hidrológica")
+    separation = discovery.get("local_child_separation") or {}
+    if separation.get("synthetic_child_id_canto_grande_media_luna_allowed") is not False:
+        raise core.MapCatalogError("Jicamarca no puede reintroducir hijo sintético Canto Grande–Media Luna")
+    if separation.get("canto_grande_upper_branch_and_media_luna_are_distinct_children") is not True:
+        raise core.MapCatalogError("Canto Grande y Media Luna deben permanecer como hijos locales distintos")
+    if separation.get("child_geometry_union_allowed") is not False:
+        raise core.MapCatalogError("Jicamarca no puede unir geometrías de hijos")
     map_policy = discovery.get("map_policy") or {}
     if map_policy.get("publish_parent_polygon") is not False:
         raise core.MapCatalogError("Jicamarca parent polygon debe permanecer bloqueado")
     if map_policy.get("approximate_points_for_missing_geometry_forbidden") is not True:
         raise core.MapCatalogError("Jicamarca exige prohibir puntos aproximados")
+    if map_policy.get("synthetic_child_union_forbidden") is not True:
+        raise core.MapCatalogError("Jicamarca exige prohibir unión sintética de hijos")
     if validation.get("routing_enabled") is not False:
         raise core.MapCatalogError("routing Jicamarca no puede habilitarse desde líneas de cauce")
     if validation.get("outlets_or_confluences_inferred") is not False:
@@ -92,7 +101,8 @@ def build_jicamarca_map_units() -> list[dict]:
         "must_not_merge_with": [
             "chosica_huaycoloro",
             "rio_seco",
-            "canto_grande_media_luna",
+            "canto_grande_upper_branch",
+            "media_luna",
             "jicamarca_named_channel",
         ],
         "contract_status": "DISCOVERY_PARENT_CONTEXT_NO_PUBLISHABLE_PARENT_GEOMETRY",
@@ -113,7 +123,11 @@ def build_jicamarca_map_units() -> list[dict]:
     validation_by_component = {
         row.get("component_id"): row for row in validation.get("components") or []
     }
-    expected_components = {"canto_grande_channel", "media_luna_channel"}
+    expected_child_ids = {
+        "canto_grande_channel": "canto_grande_upper_branch",
+        "media_luna_channel": "media_luna",
+    }
+    expected_components = set(expected_child_ids)
     frozen_components = {
         row.get("component_id"): row for row in freeze.get("components") or []
     }
@@ -126,8 +140,11 @@ def build_jicamarca_map_units() -> list[dict]:
     for component_id in sorted(expected_components):
         frozen = frozen_components[component_id]
         checked = validation_by_component[component_id]
-        if frozen.get("hydrologic_child_id") != "canto_grande_media_luna":
-            raise core.MapCatalogError(f"hijo hidrológico inesperado: {component_id}")
+        expected_child_id = expected_child_ids[component_id]
+        if frozen.get("hydrologic_child_id") != expected_child_id:
+            raise core.MapCatalogError(f"hijo hidrológico inesperado en freeze: {component_id}")
+        if checked.get("hydrologic_child_id") != expected_child_id:
+            raise core.MapCatalogError(f"hijo hidrológico inesperado en validación: {component_id}")
         if frozen.get("catchment_geometry_resolved") is not False or frozen.get("outlet_resolved") is not False:
             raise core.MapCatalogError(f"freeze Jicamarca promovió geometría/outlet: {component_id}")
         if checked.get("catchment_geometry_resolved") is not False or checked.get("outlet_resolved") is not False:
@@ -160,7 +177,7 @@ def build_jicamarca_map_units() -> list[dict]:
                 "discovery_id": f"{discovery_id}__{component_id}",
                 "parent_discovery_id": discovery_id,
                 "component_id": component_id,
-                "hydrologic_child_id": "canto_grande_media_luna",
+                "hydrologic_child_id": expected_child_id,
                 "system_name": display,
                 "entity_role": "DISCOVERY_LOCAL_CHANNEL_CONTEXT",
                 "hydrologic_components": [display],
@@ -168,7 +185,7 @@ def build_jicamarca_map_units() -> list[dict]:
                     "huaycoloro",
                     "rio_seco",
                     "jicamarca_named_channel",
-                    "media_luna_channel" if component_id == "canto_grande_channel" else "canto_grande_channel",
+                    "media_luna" if component_id == "canto_grande_channel" else "canto_grande_upper_branch",
                 ],
                 "outlet_status": "MISSING_PENDING_REPRODUCIBLE_OUTLET",
                 "catchment_geometry_status": "MISSING_PENDING_REPRODUCIBLE_CATCHMENT_POLYGON",
