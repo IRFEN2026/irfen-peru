@@ -4,11 +4,14 @@ on:
   pull_request:
     paths:
       - config/phase2_jicamarca_rio_seco_ign_hydrography_probe_v0_1.json
+      - config/phase2_jicamarca_rio_seco_ign_hydrography_probe_closeout_v0_1.json
       - config/phase2_jicamarca_discovery_v0_2.json
       - config/phase2_jicamarca_evidence_index_v0_6.json
       - config/phase2_jicamarca_indeci2013_confluence_topology_v0_1.json
       - scripts/probe_phase2_jicamarca_rio_seco_ign_hydrography.py
+      - site/data/phase2/sources/jicamarca_rio_seco_ign/probe_result_v0_1.json
       - tests/test_phase2_jicamarca_rio_seco_ign_hydrography_probe.py
+      - tests/test_phase2_jicamarca_rio_seco_ign_hydrography_closeout.py
       - .github/workflows/phase2-jicamarca-rio-seco-ign-hydrography-probe.yml
   workflow_dispatch:
 
@@ -29,18 +32,22 @@ jobs:
       - name: Run scientific guards
         run: |
           python -m pytest tests/test_phase2_jicamarca_rio_seco_ign_hydrography_probe.py -q
+          python -m pytest tests/test_phase2_jicamarca_rio_seco_ign_hydrography_closeout.py -q
           python -m pytest tests/test_phase2_jicamarca_evidence_index_v0_6.py -q
       - name: Probe official IGN hydrography within preregistered Jicamarca window
         run: |
           mkdir -p artifacts
           python scripts/probe_phase2_jicamarca_rio_seco_ign_hydrography.py \
             --output artifacts/phase2_jicamarca_rio_seco_ign_hydrography_probe_v0_1.json
-      - name: Enforce candidate-only output semantics
+      - name: Enforce candidate-only output semantics and frozen zero-candidate parity
         run: |
           python - <<'PY'
           import json
-          p = 'artifacts/phase2_jicamarca_rio_seco_ign_hydrography_probe_v0_1.json'
-          d = json.load(open(p, encoding='utf-8'))
+          from pathlib import Path
+          p = Path('artifacts/phase2_jicamarca_rio_seco_ign_hydrography_probe_v0_1.json')
+          d = json.loads(p.read_text(encoding='utf-8'))
+          frozen = json.loads(Path('site/data/phase2/sources/jicamarca_rio_seco_ign/probe_result_v0_1.json').read_text(encoding='utf-8'))
+          closeout = json.loads(Path('config/phase2_jicamarca_rio_seco_ign_hydrography_probe_closeout_v0_1.json').read_text(encoding='utf-8'))
           assert d['status'] == 'PASS_BOUNDED_IGN_RIO_SECO_HYDROGRAPHY_CANDIDATE_PROBE'
           assert d['deployment_status'] == 'RESEARCH_ONLY'
           assert d['test_mode'] == 'TEST_ONLY'
@@ -71,6 +78,16 @@ jobs:
               assert c['routing_enabled'] is False
               assert c['event_footprint'] is False
               assert c['requires_separate_identity_and_topology_review'] is True
+          # Source drift is scientifically meaningful. If the named-source query no longer
+          # returns the frozen zero-candidate result, fail closed rather than silently
+          # mutating the closeout or promoting a new geometry.
+          assert d['candidate_count'] == 0
+          assert d['candidates'] == []
+          assert d['source']['metadata_response_sha256'] == frozen['source']['metadata_response_sha256']
+          assert d['source']['query_response_sha256'] == frozen['source']['query_response_sha256']
+          assert closeout['source_result']['candidate_count'] == 0
+          assert closeout['scientific_disposition']['zero_candidates_is_negative_event_evidence'] is False
+          assert closeout['scientific_disposition']['fallback_to_quarantined_qda_colca_allowed'] is False
           PY
       - uses: actions/upload-artifact@v4
         with:
