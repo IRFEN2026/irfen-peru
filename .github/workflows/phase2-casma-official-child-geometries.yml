@@ -38,7 +38,20 @@ jobs:
           shopt -s nullglob
           files=(site/data/phase2/sources/north_coast_discovery_geometry/ana_ancash_casma_137596?.geojson)
           if (( ${#files[@]} == 0 )); then
-            python scripts/probe_phase2_casma_official_child_geometries.py --refresh-source
+            # The ANA/IDEP public service can be intermittently unreachable from hosted
+            # runners. Retry the whole atomic bootstrap only on failure. The probe stages
+            # all nine responses in memory and writes nothing until the complete exact
+            # N7 set validates, so retries cannot create a partial scientific source set.
+            for attempt in 1 2 3; do
+              if python scripts/probe_phase2_casma_official_child_geometries.py --refresh-source; then
+                break
+              fi
+              if (( attempt == 3 )); then
+                echo "ANA exact-source bootstrap failed after ${attempt} bounded attempts" >&2
+                exit 1
+              fi
+              sleep $((attempt * 10))
+            done
           elif (( ${#files[@]} != 9 )); then
             echo "Partial frozen Casma source set: ${#files[@]}/9" >&2
             exit 1
