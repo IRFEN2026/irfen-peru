@@ -1,8 +1,10 @@
 {
-  "schema_version": "0.1",
+  "schema_version": "0.2",
   "discovery_id": "piura_talara_parinas_local_ravines",
   "system_name": "Talara–Pariñas local ravine and pluvial system",
-  "contract_status": "DISCOVERY_REGISTERED_LOCAL_GEOMETRY_PENDING",
+  "contract_status": "DISCOVERY_REGISTERED_LOCAL_HYDROLOGIC_DECOMPOSITION_GEOMETRY_PENDING",
+  "architecture_ref": "config/phase2_local_activation_hierarchy_v0_1.json",
+  "source_registry_ref": "site/data/phase2/sources/piura_talara_official_evidence_v0_1.json",
   "deployment_status": "RESEARCH_ONLY",
   "test_mode": "TEST_ONLY",
   "production_use": false,
@@ -14,34 +16,201 @@
   "hydraulic_factors": null,
   "territorial_identity": {
     "talara_parinas_is_single_hydrologic_unit": false,
-    "mancora_los_organos_separate": true
+    "corridor_role": "TERRITORIAL_CONTEXT_ONLY_NON_ACTIVATABLE",
+    "mancora_los_organos_separate": true,
+    "parent_activation_synthesis_forbidden": true
   },
   "hydrologic_components": {
     "quebrada_parinas": {
-      "identity_status": "HISTORICAL_ACTIVATION_CONTEXT_REQUIRES_GEOMETRY_BINDING",
-      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY"
+      "identity_status": "OFFICIAL_INDECI_NAME_CONFIRMED",
+      "source_ids": [
+        "INDECI-PNUD-TALARA-2010"
+      ],
+      "historical_context": "INDECI_2010_DESCRIBES_QUEBRADA_PARINAS_AS_INUNDABLE_DURING_EL_NINO_PERIODS",
+      "activation_status": "UNKNOWN_NO_DATED_CHILD_LEVEL_FLOW_SERIES_FROZEN",
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY",
+      "outlet_status": "UNKNOWN",
+      "receiver_status": "UNKNOWN",
+      "map_materialization_allowed": false
     },
     "quebrada_acholado": {
-      "identity_status": "OFFICIAL_NAME_CONFIRMED_ACTIVATION_UNRESOLVED",
-      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY"
+      "identity_status": "OFFICIAL_INDECI_CENEPRED_OEFA_NAME_CONFIRMED",
+      "source_ids": [
+        "INDECI-PNUD-TALARA-2010",
+        "CENEPRED-TALARA-PPRRD-2019-2022",
+        "CONTRALORIA-TALARA-ACHOLADO-2023",
+        "OEFA-TALARA-ACHOLADO-2025"
+      ],
+      "geomorphology_context": "INDECI_2010_DESCRIBES_THE_CHANNEL_AS_LOSING_SOUTH_OF_TALARA_BEHIND_PUNTA_ARENAS_RATHER_THAN_REACHING_THE_SEA",
+      "activation_status": "UNKNOWN_CHILD_LEVEL_HYDROGRAPH_AND_EVENT_FOOTPRINT_ABSENT",
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY",
+      "outlet_status": "NO_SEA_OUTLET_IN_2010_DESCRIPTION_TERMINAL_ZONE_NOT_SPATIALLY_FROZEN",
+      "receiver_status": "NO_RIVER_RECEIVER_CONFIRMED",
+      "map_materialization_allowed": false
     },
-    "other_local_ravines": {
-      "identity_status": "PPRRD_INVENTORY_REQUIRES_CHILD_BY_CHILD_NORMALIZATION",
-      "geometry_status": "MISSING_NO_SYNTHETIC_UNION"
+    "quebrada_debora": {
+      "identity_status": "OFFICIAL_INDECI_NAME_CONFIRMED",
+      "source_ids": [
+        "INDECI-PNUD-TALARA-2010"
+      ],
+      "activation_status": "UNKNOWN_NO_DATED_CHILD_EVENT_ASSIGNED",
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY",
+      "outlet_status": "UNKNOWN",
+      "map_materialization_allowed": false
+    },
+    "quebrada_santa_rita": {
+      "identity_status": "OFFICIAL_INDECI_CHANNEL_NAME_CONFIRMED",
+      "source_ids": [
+        "INDECI-PNUD-TALARA-2010"
+      ],
+      "activation_status": "UNKNOWN",
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY",
+      "outlet_status": "UNKNOWN",
+      "map_materialization_allowed": false
+    },
+    "quebrada_politecnico": {
+      "identity_status": "OFFICIAL_INDECI_CHANNEL_NAME_CONFIRMED",
+      "source_ids": [
+        "INDECI-PNUD-TALARA-2010"
+      ],
+      "activation_status": "UNKNOWN",
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY",
+      "outlet_status": "UNKNOWN",
+      "map_materialization_allowed": false
+    },
+    "quebrada_yale": {
+      "identity_status": "OFFICIAL_INDECI_CHANNEL_NAME_CONFIRMED",
+      "source_ids": [
+        "INDECI-PNUD-TALARA-2010"
+      ],
+      "activation_status": "UNKNOWN",
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY",
+      "outlet_status": "UNKNOWN",
+      "map_materialization_allowed": false
+    },
+    "quebrada_mangle": {
+      "identity_status": "OFFICIAL_INDECI_CHANNEL_NAME_CONFIRMED",
+      "source_ids": [
+        "INDECI-PNUD-TALARA-2010"
+      ],
+      "activation_status": "UNKNOWN",
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY",
+      "outlet_status": "UNKNOWN",
+      "map_materialization_allowed": false
+    },
+    "quebrada_de_la_pena": {
+      "identity_status": "OFFICIAL_CENEPRED_PPRRD_NAME_CONFIRMED",
+      "source_ids": [
+        "CENEPRED-TALARA-PPRRD-2019-2022"
+      ],
+      "activation_status": "UNKNOWN_CRITICAL_POINT_INVENTORY_IS_NOT_EVENT_EVIDENCE",
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY",
+      "outlet_status": "UNKNOWN",
+      "map_materialization_allowed": false
     }
   },
-  "event_ledger": {
-    "2017": {
-      "status": "POSITIVE_TERRITORIAL_RAINFALL_AND_RAVINE_IMPACT_CONTEXT",
-      "source_ids": [
-        "PPRRD-TALARA-2019-2022"
-      ],
-      "exact_child_attribution_pending": true
+  "context_nodes": [
+    {
+      "node_id": "pprrd_acholada_point_96",
+      "source_id": "CENEPRED-TALARA-PPRRD-2019-2022",
+      "role": "CRITICAL_POINT_CONTEXT_NOT_EVENT_NOT_OUTLET",
+      "reported_name": "Quebrada Acholada",
+      "reported_hazard_context": "FLUJO_DE_DETRITO",
+      "reported_coordinate_x": 477114,
+      "reported_coordinate_y": 9494690,
+      "coordinate_reference_status": "REPORT_CONTEXT_USES_UTM_ZONE_17S_BUT_ROW_LEVEL_DATUM_BINDING_NOT_YET_FROZEN",
+      "is_observed_event": false,
+      "is_outlet": false,
+      "map_materialization_allowed": false
+    },
+    {
+      "node_id": "pprrd_acholada_tributary_point_98",
+      "source_id": "CENEPRED-TALARA-PPRRD-2019-2022",
+      "role": "UNNAMED_TRIBUTARY_CRITICAL_POINT_CONTEXT_NOT_NEW_SYNTHETIC_CHILD",
+      "reported_name": "Tributario quebrada Acholada",
+      "reported_hazard_context": "FLUJO_DE_LODO",
+      "reported_coordinate_x": 473049,
+      "reported_coordinate_y": 9494446,
+      "coordinate_reference_status": "REPORT_CONTEXT_USES_UTM_ZONE_17S_BUT_ROW_LEVEL_DATUM_BINDING_NOT_YET_FROZEN",
+      "is_observed_event": false,
+      "is_outlet": false,
+      "map_materialization_allowed": false
+    },
+    {
+      "node_id": "pprrd_quebrada_de_la_pena_point_100",
+      "source_id": "CENEPRED-TALARA-PPRRD-2019-2022",
+      "role": "CRITICAL_POINT_CONTEXT_NOT_EVENT_NOT_OUTLET",
+      "reported_name": "Quebrada de la Peña",
+      "reported_hazard_context": "FLUJO_DE_LODO",
+      "reported_coordinate_x": 469447,
+      "reported_coordinate_y": 9496293,
+      "coordinate_reference_status": "REPORT_CONTEXT_USES_UTM_ZONE_17S_BUT_ROW_LEVEL_DATUM_BINDING_NOT_YET_FROZEN",
+      "is_observed_event": false,
+      "is_outlet": false,
+      "map_materialization_allowed": false
     }
+  ],
+  "event_ledger": {
+    "1982_1983": {
+      "status": "UNKNOWN_NOT_NEGATIVE_CHILD_LEVEL_SOURCE_GAP",
+      "source_ids": [],
+      "regional_el_nino_window_known": true,
+      "local_child_activation_assigned": false,
+      "absence_of_local_report_is_negative": false
+    },
+    "1997_1998": {
+      "status": "UNKNOWN_NOT_NEGATIVE_CHILD_LEVEL_SOURCE_GAP",
+      "source_ids": [],
+      "regional_el_nino_window_known": true,
+      "local_child_activation_assigned": false,
+      "absence_of_local_report_is_negative": false
+    },
+    "2017": {
+      "status": "TERRITORIAL_EVENT_CONTEXT_WITH_ACHOLADO_CROSSING_IMPACT_CHILD_FLOW_ATTRIBUTION_UNRESOLVED",
+      "source_ids": [
+        "CENEPRED-TALARA-EVAR-2017",
+        "CONTRALORIA-TALARA-ACHOLADO-2023"
+      ],
+      "acholado_crossing_pluvial_impact_context": true,
+      "direct_flow_evidence": false,
+      "exact_child_event_footprint_available": false,
+      "other_ravines_activation_assigned": false,
+      "operational_threshold_inferred": false
+    },
+    "2023": {
+      "status": "ACHOLADO_CROSSING_PLUVIAL_IMPACT_CONTEXT_CHILD_FLOW_ATTRIBUTION_UNRESOLVED",
+      "source_ids": [
+        "CONTRALORIA-TALARA-ACHOLADO-2023"
+      ],
+      "acholado_crossing_pluvial_impact_context": true,
+      "direct_flow_evidence": false,
+      "exact_child_event_footprint_available": false,
+      "other_ravines_activation_assigned": false,
+      "operational_threshold_inferred": false
+    }
+  },
+  "collector_coupling": {
+    "status": "BLOCKED_PENDING_REPRODUCIBLE_CHILD_GEOMETRY_OUTLETS_AND_OBSERVATIONS",
+    "q_i_t_allowed": false,
+    "travel_time_allowed": false,
+    "attenuation_allowed": false,
+    "synthetic_receiver_assignment_forbidden": true
+  },
+  "qa": {
+    "historical_window_attribution_is_child_bounded": true,
+    "regional_el_nino_window_is_not_child_outcome": true,
+    "unknown_child_outcome_is_not_negative_control": true,
+    "critical_points_are_not_events": true,
+    "critical_points_are_not_outlets": true,
+    "hazard_class_is_not_irfen_risk_class": true,
+    "infrastructure_impact_is_not_hydrograph": true,
+    "parent_activation_synthesis_forbidden": true
   },
   "map_policy": {
     "parent_polygon_forbidden": true,
     "child_only_after_reproducible_geometry": true,
+    "critical_nodes_only_after_crs_binding": true,
+    "synthetic_union_forbidden": true,
     "risk_colors_forbidden": true,
     "alerts_forbidden": true
   }
