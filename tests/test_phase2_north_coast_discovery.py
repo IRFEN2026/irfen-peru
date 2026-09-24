@@ -58,7 +58,7 @@ class Phase2NorthCoastDiscoveryTests(unittest.TestCase):
         self.assertFalse(rel["changes_registered_candidate_count"])
         self.assertFalse(rel["changes_operational_scope"])
         self.assertTrue(rel["promotion_requires_explicit_versioned_migration"])
-        self.assertEqual(rel["discovery_units_count"], 16)
+        self.assertEqual(rel["discovery_units_count"], 18)
         self.assertEqual(rel["discovery_units_count"], len(c["discovery_units"]))
 
     def test_user_requested_corridors_are_explicit(self):
@@ -80,6 +80,8 @@ class Phase2NorthCoastDiscoveryTests(unittest.TestCase):
             "piura_mancora_los_organos_coastal_ravines",
             "lalibertad_chepen_chaman_morana_avispero",
             "piura_colan_bajo_chira_local_ravines",
+            "piura_talara_parinas_local_ravines",
+            "piura_paita_urban_local_ravines",
         }
         self.assertEqual(ids, required)
 
