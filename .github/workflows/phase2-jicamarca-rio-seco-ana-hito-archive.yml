@@ -43,6 +43,16 @@ jobs:
             echo "bootstrap=false" >> "$GITHUB_OUTPUT"
             python scripts/archive_phase2_jicamarca_rio_seco_ana_hitos.py
           fi
+      - name: Verify frozen replay is idempotent
+        if: steps.mode.outputs.bootstrap == 'false'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/archive_phase2_jicamarca_rio_seco_ana_hitos.py
+          git diff --exit-code -- \
+            config/phase2_jicamarca_rio_seco_ana_faja_identity_v0_1.json \
+            site/data/phase2/sources/jicamarca_rio_seco_ana \
+            site/data/phase2/geometries/jicamarca_rio_seco_ana_faja_context.geojson
       - name: Run fail-closed ANA hito archive tests
         run: python -m pytest tests/test_phase2_jicamarca_rio_seco_ana_hito_archive.py tests/test_phase2_jicamarca_rio_seco_ana_identity.py -q
       - name: Commit frozen source/coordinates/context geometry or blocked state once
