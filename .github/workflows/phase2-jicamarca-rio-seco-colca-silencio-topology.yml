@@ -1,0 +1,52 @@
+name: IRFEN - Phase2 Jicamarca Colca Silencio Rio Seco topology
+
+on:
+  pull_request:
+    paths:
+      - config/phase2_jicamarca_rio_seco_colca_silencio_topology_v0_1.json
+      - config/phase2_jicamarca_evidence_index_v0_1.json
+      - tests/test_phase2_jicamarca_rio_seco_colca_silencio_topology.py
+      - .github/workflows/phase2-jicamarca-rio-seco-colca-silencio-topology.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  topology-guards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Run Jicamarca local topology guards
+        run: python -m pytest tests/test_phase2_jicamarca_rio_seco_colca_silencio_topology.py -q
+      - name: Enforce evidence-index fail-closed registration
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('.')
+          idx=json.loads((root/'config/phase2_jicamarca_evidence_index_v0_1.json').read_text(encoding='utf-8'))
+          p='config/phase2_jicamarca_rio_seco_colca_silencio_topology_v0_1.json'
+          rows=[x for x in idx['packages'] if x['path']==p]
+          assert len(rows)==1
+          row=rows[0]
+          assert row['may_rebind_colca_faja_to_rio_seco'] is False
+          assert row['may_collapse_local_children'] is False
+          assert row['may_define_exact_confluence'] is False
+          assert row['may_define_outlet'] is False
+          assert row['may_infer_routing'] is False
+          assert row['requires_explicit_component_table_crosswalk_before_geometry'] is True
+          doc=json.loads((root/p).read_text(encoding='utf-8'))
+          assert doc['production_use'] is False
+          assert doc['production_ready'] is False
+          assert doc['operational_alerting_enabled'] is False
+          assert doc['activation_gate']=='BLOCKED'
+          assert doc['decision_thresholds'] is None
+          assert doc['hydraulic_factors'] is None
+          PY
