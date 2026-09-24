@@ -3,76 +3,186 @@
   "candidate_id": "lima_norte_lampian_ravines",
   "contract_status": "DRAFT",
   "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
   "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
   "alerting_enabled": false,
+  "activation_gate": "BLOCKED",
   "decision_thresholds": null,
   "hydraulic_factors": null,
   "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
   "identity": {
-    "system_name": "Sistema de quebradas de Lampián",
+    "system_name": "Sistema local de quebradas de Lampian",
     "department": "Lima",
-    "province_or_corridor": "Huaral / Lampián",
+    "province_or_corridor": "Huaral / Lampian",
     "territorial_profile": "rural_and_distributed_settlements",
-    "inside_lima_metropolitana": false
+    "inside_lima_metropolitana": false,
+    "territorial_parent_is_hydrologic_activation_unit": false
+  },
+  "hierarchy_binding": {
+    "architecture": "config/phase2_local_activation_hierarchy_v0_1.json",
+    "collector_architecture": "config/phase2_collector_coupling_architecture_v0_1.json",
+    "parent_role": "CONTEXT_CONTAINER_NON_ACTIVATABLE",
+    "parent_activation_state": null,
+    "child_evidence_promotes_parent_activation": false,
+    "synthetic_union_geometry_allowed": false,
+    "source_registry": "site/data/phase2/sources/lima_norte_lampian_official_evidence_v0_1.json"
   },
   "hazard_model": {
-    "mechanism_status": "TO_BE_RESOLVED",
-    "mechanism_preliminary": "multiple_local_debris_flows",
-    "selected_model_family": null
+    "mechanism_status": "TO_BE_RESOLVED_PER_LOCAL_CHILD",
+    "mechanism_preliminary": "multiple_local_debris_flow_and_fluvial_response_components",
+    "selected_model_family": null,
+    "same_mechanism_may_be_assumed_for_all_children": false
   },
   "official_source_ids": [
     "CENEPRED-PPRRD-LAMPIAN-2025-2030"
   ],
+  "local_children": [
+    {
+      "component_id": "quebrada_lampian",
+      "display_name": "Quebrada Lampian",
+      "identity_status": "OFFICIAL_NAME_CONFIRMED",
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_CHANNEL_AND_CATCHMENT_GEOMETRY",
+      "outlet_status": "MISSING_PENDING_REPRODUCIBLE_OUTLET",
+      "activation_state": null,
+      "map_publishable": false
+    },
+    {
+      "component_id": "quebrada_callantama",
+      "display_name": "Quebrada Callantama",
+      "identity_status": "OFFICIAL_NAME_CONFIRMED",
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_CHANNEL_AND_CATCHMENT_GEOMETRY",
+      "outlet_status": "MISSING_PENDING_REPRODUCIBLE_OUTLET",
+      "activation_state": null,
+      "map_publishable": false
+    },
+    {
+      "component_id": "quebrada_muyopunco_muyucunto",
+      "display_name": "Quebrada Muyopunco (Muyucunto)",
+      "identity_status": "OFFICIAL_NAME_WITH_ALIAS_CONFIRMED",
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_CHANNEL_AND_CATCHMENT_GEOMETRY",
+      "outlet_status": "MISSING_PENDING_REPRODUCIBLE_OUTLET",
+      "activation_state": null,
+      "map_publishable": false
+    },
+    {
+      "component_id": "quebrada_carnay",
+      "display_name": "Quebrada Carnay",
+      "identity_status": "OFFICIAL_NAME_CONFIRMED",
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_CHANNEL_AND_CATCHMENT_GEOMETRY",
+      "outlet_status": "MISSING_PENDING_REPRODUCIBLE_OUTLET",
+      "activation_state": null,
+      "map_publishable": false
+    },
+    {
+      "component_id": "quebrada_lomo_largo",
+      "display_name": "Quebrada Lomo Largo",
+      "identity_status": "OFFICIAL_NAME_CONFIRMED",
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_CHANNEL_AND_CATCHMENT_GEOMETRY",
+      "outlet_status": "MISSING_PENDING_REPRODUCIBLE_OUTLET",
+      "activation_state": null,
+      "map_publishable": false
+    }
+  ],
+  "nomenclature_quarantine": {
+    "marcayjo": {
+      "status": "INTERNAL_SOURCE_NOMENCLATURE_CONFLICT_DO_NOT_PROMOTE_AS_CHILD",
+      "standalone_child_allowed_now": false,
+      "geometry_allowed_now": false,
+      "reason": "The PPRRD uses both Quebrada Marcayjo and Quebrada Lampian for Marcayjo-sector context; independent hydrologic resolution is required."
+    }
+  },
+  "collector_coupling": {
+    "receiver_system": null,
+    "routing_status": "BLOCKED_PENDING_REPRODUCIBLE_CHILD_OUTLETS_AND_RECEIVER_RELATIONS",
+    "documentary_carnay_lampian_meeting_context": true,
+    "exact_carnay_lampian_confluence": null,
+    "Q_i_t": null,
+    "travel_time": null,
+    "attenuation": null,
+    "peak_coincidence": null,
+    "hydraulic_capacity": null,
+    "child_activation_implies_receiver_overflow": false
+  },
   "assets": {
     "geometry": {
       "status": "MISSING",
+      "detail_status": "PARENT_CONTEXT_NO_SYNTHETIC_GEOMETRY_CHILD_GEOMETRY_UNRESOLVED",
       "path": null,
-      "source_ids": []
+      "source_ids": [],
+      "approximate_points_allowed": false,
+      "synthetic_union_allowed": false
     },
     "exposure": {
-      "status": "MISSING",
+      "status": "PARTIAL",
+      "detail_status": "CRITICAL_SECTOR_CONTEXT_NETWORK_NOT_NORMALIZED",
       "path": null,
-      "source_ids": []
+      "source_ids": ["CENEPRED-PPRRD-LAMPIAN-2025-2030"],
+      "critical_point_is_event": false
     },
     "historical_events": {
       "status": "MISSING",
+      "detail_status": "DATED_CHILD_SPECIFIC_EVENT_LEDGER_UNRESOLVED",
       "path": null,
       "source_ids": [],
       "minimum_verified_event_days": 1,
-      "minimum_verified_none_days": 10
+      "minimum_verified_none_days": 10,
+      "none_days_require_positive_verification": true,
+      "absence_of_report_may_define_none_day": false
     },
     "observations": {
       "status": "MISSING",
+      "detail_status": "CHILD_PAIRED_HYDROMETEOROLOGICAL_SERIES_UNRESOLVED",
       "path": null,
-      "source_ids": []
+      "source_ids": [],
+      "provider_values_may_define_irfen_thresholds": false
     },
     "forecast": {
       "status": "CANDIDATE",
+      "detail_status": "REGIONAL_CONTEXT_ONLY",
       "path": null,
       "source_ids": [
         "NASA-GEOS-CF"
-      ]
+      ],
+      "coarse_precipitation_may_select_local_child": false
     },
     "hydraulic_context": {
-      "status": "MISSING",
+      "status": "PARTIAL",
+      "detail_status": "WORKS_AND_CRITICAL_POINT_CONTEXT_ONLY_CAPACITY_MISSING",
       "path": null,
-      "source_ids": []
+      "source_ids": ["CENEPRED-PPRRD-LAMPIAN-2025-2030"],
+      "works_are_historical_capacity": false,
+      "capacity_values": null
     }
+  },
+  "map_policy": {
+    "parent_context_polygon_allowed_only_if_official_or_reproducible": true,
+    "parent_context_is_risk_layer": false,
+    "publish_child_only_after_reproducible_geometry": true,
+    "critical_point_coordinate_may_substitute_child_geometry": false,
+    "synthetic_union_forbidden": true,
+    "risk_or_alert_coloring": false
   },
   "validation": {
     "activation_gate": "BLOCKED",
     "required_reviews": [
-      "scientific",
-      "hydrological_or_hydraulic",
-      "local_outcome"
+      "resolve reproducible channel/catchment geometry for each named local child",
+      "resolve Marcayjo nomenclature conflict before standalone child promotion",
+      "resolve child outlets and receiver/confluence relations independently",
+      "build dated child-specific event ledger without negatives from silence",
+      "bind rainfall/stage/flow observations by child and event window",
+      "separate works/critical-point context from historical hydraulic response"
     ],
     "promotion_requires_all_gates": true,
-    "review_evidence": []
+    "review_evidence": [
+      "CENEPRED-hosted Lampian PPRRD 2025-2030 bounded for local ravine identity and critical-sector context only"
+    ]
   },
   "notes": [
-    "resolve each ravine geometry",
-    "verify exposed roads and settlements",
-    "rank whether one or several models are required",
-    "assess satellite representativeness"
+    "Parent Lampian corridor/system is context only and never activates from one child.",
+    "Resolve each local ravine geometry independently; do not use district polygons or critical-point coordinates as catchments.",
+    "IMERG/GEOS precipitation is context and cannot by itself identify the activated local ravine.",
+    "No operational promotion is permitted while activation_gate remains BLOCKED."
   ]
 }
