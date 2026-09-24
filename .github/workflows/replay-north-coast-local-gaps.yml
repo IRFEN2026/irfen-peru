@@ -6,6 +6,7 @@ on:
       - phase2-north-coast-local-gaps-replay-20260924
     paths:
       - '.github/workflows/replay-north-coast-local-gaps.yml'
+      - 'tests/test_phase2_north_coast_discovery.py'
 
 permissions:
   contents: write
@@ -54,10 +55,6 @@ jobs:
           if missing:
               raise SystemExit(f'old source branch missing expected units: {sorted(missing)}')
 
-          # Build a narrowly bounded source resolver from the two copied official-evidence
-          # registries. This is intentionally not a generic "search anywhere" fallback:
-          # only records with explicit source_id + URL in these versioned registries can
-          # satisfy an inventory source reference.
           registry_urls={}
           for registry_path in (
               Path('site/data/phase2/sources/lalibertad_chicama_official_evidence_v0_1.json'),
@@ -73,9 +70,6 @@ jobs:
                       raise SystemExit(f'conflicting explicit registry URL for {sid}')
                   registry_urls[sid]=url
 
-          # Fail closed on a source identifier that existed in the draft Talara row but
-          # had no repository-bound URL/registry entry. Keep supported 2017 context in
-          # the PPRRD source and do not manufacture an INDECI binding.
           talara=old_rows['piura_talara_parinas_local_ravines']
           unresolved='INDECI-TALARA-2017-HISTORICAL-CONTEXT'
           if unresolved in talara.get('official_source_ids',[]):
