@@ -37,8 +37,21 @@ def test_radar_data_access_and_subcatchment_reconstruction_remain_blocked():
     assert a['public_research_download_endpoint_identified'] is False
     assert a['documented_api_identified'] is False
     assert a['raw_or_level2_data_retrieved'] is False
+    assert a['machine_readable_raw_access_status']=='UNRESOLVED'
     assert a['qa_reproducible'] is False
     assert a['subcatchment_rainfall_reconstruction_allowed'] is False
+
+def test_public_graphical_products_do_not_promote_machine_readable_access():
+    c=load(); p=c['public_metadata']; a=c['data_access_assessment']
+    assert p['public_graphical_product_evidence_identified'] is True
+    assert p['public_graphical_products_are_subcatchment_rainfall_inputs'] is False
+    assert a['public_graphical_product_evidence_identified'] is True
+    assert a['public_graphical_product_evidence_is_machine_readable_archive'] is False
+    assert a['public_machine_readable_archive_identified'] is False
+    assert a['documented_api_identified'] is False
+    assert a['raw_or_level2_data_retrieved'] is False
+    assert a['subcatchment_rainfall_reconstruction_allowed'] is False
+    assert 'treat public graphical or illustrative SOPHy products as a reproducible raw or Level-2 archive' in c['forbidden']
 
 def test_attenuation_and_clutter_are_qa_constraints_not_thresholds():
     c=load(); q=c['known_qa_constraints']
@@ -51,5 +64,16 @@ def test_attenuation_and_clutter_are_qa_constraints_not_thresholds():
 
 def test_bounded_sources_are_official_igp_and_include_current_qa_evidence():
     c=load(); by={x['source_id']:x for x in c['bounded_official_sources']}
-    assert {'IGP-SOPHY-PROJECT-RESULTS','IGP-SOPHY-IEEE-2021','IGP-SOPHY-ATTENUATION-2024','IGP-SOPHY-GROUND-CLUTTER-2026'} <= set(by)
+    assert {
+        'IGP-SOPHY-PROJECT-RESULTS',
+        'IGP-SOPHY-IEEE-2021',
+        'IGP-SOPHY-ATTENUATION-2024',
+        'IGP-SOPHY-GROUND-CLUTTER-2026',
+        'IGP-SOPHY-COMPENDIO-2025',
+    } <= set(by)
     assert all('igp.gob.pe' in x['url'] for x in by.values())
+    compendio=by['IGP-SOPHY-COMPENDIO-2025']
+    assert compendio['date_context']=='2025-12'
+    claims=' '.join(compendio['bounded_claims'])
+    assert 'meteorological graph generation' in claims
+    assert 'does not establish a reproducible machine-readable raw or Level-2 archive' in claims
