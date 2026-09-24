@@ -1,0 +1,136 @@
+{
+  "schema_version": "0.1",
+  "discovery_id": "piura_colan_bajo_chira_local_ravines",
+  "system_name": "Colán territorial corridor: lower Chira, local ravines and separate coastal hazard",
+  "contract_status": "DISCOVERY_REGISTERED_GEOMETRY_AND_EVENT_ATTRIBUTION_PENDING",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "territorial_identity": {
+    "territorial_reference": "Colán / Pueblo Nuevo / San Lucas / La Bocana",
+    "territorial_reference_is_basin": false,
+    "synthetic_colan_basin_allowed": false
+  },
+  "mechanism_policy": {
+    "lower_chira_river_flood_separate": true,
+    "local_ravines_separate_by_child": true,
+    "dike_breach_is_not_natural_channel_capacity": true,
+    "poe_chos_operation_context_separate": true,
+    "marine_oleaje_tsunami_separate_nonhydrologic": true,
+    "absence_of_report_is_negative": false
+  },
+  "hydrologic_components": {
+    "lower_chira_colan_exposure": {
+      "role": "RIVER_RECEIVER_AND_FLOODPLAIN_EXPOSURE_COMPONENT",
+      "geometry_status": "PENDING_REPRODUCIBLE_LOWER_REACH_AND_EXPOSURE_GEOMETRY",
+      "status_2023": "POSITIVE_RIVER_FLOOD_DIKE_BREACH_IMPACT_CONTEXT"
+    },
+    "local_ravines": {
+      "role": "SHORT_RESPONSE_LOCAL_RAVINES_REQUIRE_INDEPENDENT_CHILD_CONTRACTS",
+      "named": [
+        "Centenario",
+        "Libertad",
+        "Arroyo Mío",
+        "Salaverry",
+        "Cahuide",
+        "Atahualpa",
+        "Bolognesi",
+        "Grau",
+        "Sucre"
+      ],
+      "geometry_status": "PENDING_CHILD_BY_CHILD_REPRODUCIBLE_GEOMETRY",
+      "event_attribution_rule": "VULNERABILITY_INVENTORY_DOES_NOT_EQUAL_CONFIRMED_ACTIVATION_EVENT"
+    },
+    "coastal_marine": {
+      "role": "SEPARATE_NON_HYDROLOGIC_HAZARD_CONTEXT",
+      "examples": [
+        "La Esmeralda",
+        "San Lucas de Colán"
+      ],
+      "merge_into_ravine_or_chira_model": false
+    }
+  },
+  "historical_evidence": [
+    {
+      "period": "1971",
+      "status": "POSITIVE_TERRITORIAL_INUNDATION_RECORD",
+      "source_id": "GRD-PAITA-TALARA-HISTORICAL-1970-2003",
+      "component_attribution": "UNRESOLVED"
+    },
+    {
+      "period": "1972-03/04",
+      "status": "POSITIVE_RAINFALL_ASSOCIATED_INUNDATION_RECORDS",
+      "source_id": "GRD-PAITA-TALARA-HISTORICAL-1970-2003",
+      "component_attribution": "UNRESOLVED"
+    },
+    {
+      "period": "1983",
+      "status": "MULTIPLE_POSITIVE_FEN_INUNDATION_AVENIDA_RAINFALL_RECORDS",
+      "source_id": "GRD-PAITA-TALARA-HISTORICAL-1970-2003",
+      "component_attribution": "UNRESOLVED"
+    },
+    {
+      "period": "1993",
+      "status": "POSITIVE_TERRITORIAL_INUNDATION_RECORD",
+      "source_id": "GRD-PAITA-TALARA-HISTORICAL-1970-2003",
+      "component_attribution": "UNRESOLVED"
+    },
+    {
+      "period": "2017",
+      "status": "POSITIVE_FLUVIAL_INUNDATION_TERRITORIAL_EVIDENCE",
+      "source_ids": [
+        "INGEMMET-PIURA-NINO-COSTERO-2017",
+        "PPRRD-PAITA-2019-2021"
+      ],
+      "component_attribution": "LOWER_CHIRA_OR_LOCAL_DRAINAGE_RELATIONSHIP_TO_RESOLVE"
+    },
+    {
+      "period": "2023-04-29",
+      "status": "POSITIVE_LOWER_CHIRA_RIVER_FLOOD_WITH_DIKE_BREACH",
+      "source_ids": [
+        "INDECI-COLAN-CHIRA-DIKE-2023",
+        "MVCS-COLAN-CHIRA-DIKE-2023"
+      ],
+      "component_attribution": "LOWER_CHIRA_LEFT_BANK_COLAN_EXPOSURE"
+    }
+  ],
+  "vulnerability_evidence": {
+    "named_ravines_officially_identified": true,
+    "source_ids": [
+      "ANA-COLAN-NAMED-RAVINES-2016",
+      "ANA-COLAN-VULNERABLE-RAVINES-2016-2017"
+    ],
+    "warning": "Named-ravine vulnerability inventory is not an event ledger and must not be converted into activation dates without independent evidence."
+  },
+  "assets": {
+    "geometry": {
+      "status": "MISSING_NO_COMPOSITE_GEOMETRY_PARENT_IS_TERRITORIAL_GROUPER",
+      "path": null,
+      "counts_as_operational_geometry": false,
+      "counts_as_event_footprint": false
+    }
+  },
+  "next_required": [
+    "retrieve official/reproducible geometry for each named Colán ravine",
+    "resolve Bolognesi vs Grau naming/identity before any merge",
+    "resolve exact lower-Chira reach, levee/dike and floodplain relation to La Bocana/Colán",
+    "reconstruct rainfall windows for 1972, 1983, 2017 and 2023 where observations exist",
+    "identify which historical Colán records are river flooding versus local-ravine/pluvial flooding",
+    "build child outlets and collector relations only after geometry is reproducible",
+    "keep coastal/marine hazard on a separate lane"
+  ],
+  "map_policy": {
+    "parent_polygon_forbidden": true,
+    "publish_child_only_after_reproducible_geometry": true,
+    "lower_chira_context_may_be_published_separately": true,
+    "coastal_hazard_separate_layer_only": true,
+    "risk_colors_forbidden": true,
+    "alerts_forbidden": true
+  }
+}
