@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Bounded spatial identity probe for the Jicamarca Rio Seco child.
+"""Bounded IGP source inventory inside the frozen ANA Qda. Colca corridor.
 
-The exact frozen ANA faja geometry is used only to define a no-buffer search
-envelope against the official IGP Quebrada_Lima line layer. Returned source
-features remain candidates for a separate identity review. This script never
-accepts a channel, catchment, outlet, confluence, event footprint, routing
-parameter, discharge, capacity, risk state or alert state.
+The exact frozen ANA faja geometry is used only to define a no-buffer inventory
+envelope against the official IGP Quebrada_Lima line layer. Cross-source review
+shows the 270-hito ANA table is labelled Qda. Colca and cannot be used as an
+admissible Rio Seco search domain. Returned source features therefore remain
+quarantined source-inventory candidates only. This script never accepts or
+selects a Rio Seco channel, catchment, outlet, confluence, event footprint,
+routing parameter, discharge, capacity, risk state or alert state.
 """
 from __future__ import annotations
 
@@ -29,6 +31,7 @@ SAFE = {
     "decision_thresholds": None,
     "hydraulic_factors": None,
 }
+EXPECTED_STATUS = "QUARANTINED_QDA_COLCA_CORRIDOR_SOURCE_INVENTORY_NOT_RIO_SECO_IDENTITY_PROBE"
 
 
 class ProbeError(RuntimeError):
@@ -128,8 +131,34 @@ def main() -> None:
     guard(contract, "CONTRACT")
     if contract.get("component_id") != "rio_seco":
         raise ProbeError("COMPONENT_MISMATCH")
+    if contract.get("semantic_binding_status") != EXPECTED_STATUS:
+        raise ProbeError("SEMANTIC_QUARANTINE_MISSING")
+    if contract.get("component_id_semantics") != "LEGACY_FILENAME_AND_DISCOVERY_SCOPE_ONLY_NOT_SEARCH_DOMAIN_ATTRIBUTION":
+        raise ProbeError("LEGACY_SCOPE_NOT_EXPLICIT")
 
     context = contract["ana_context"]
+    if context.get("source_table_label") != "Qda. Colca":
+        raise ProbeError("ANA_SOURCE_LABEL_NOT_COLCA")
+    if context.get("may_define_rio_seco_search_domain") is not False:
+        raise ProbeError("UNSAFE_RIO_SECO_SEARCH_DOMAIN_PROMOTION")
+    if context.get("may_define_rio_seco_identity") is not False:
+        raise ProbeError("UNSAFE_RIO_SECO_IDENTITY_PROMOTION")
+    conflict_path = ROOT / context["nomenclature_conflict_contract"]
+    if not conflict_path.is_file():
+        raise ProbeError("MISSING_NOMENCLATURE_CONFLICT_CONTRACT")
+    conflict = load(conflict_path)
+    guard(conflict, "NOMENCLATURE_CONFLICT")
+    if conflict.get("finding", {}).get("adjudication", "").startswith("COLCA_AND_RIO_SECO_MUST_REMAIN_DISTINCT") is not True:
+        raise ProbeError("NOMENCLATURE_CONFLICT_NOT_FAIL_CLOSED")
+
+    policy = contract["candidate_policy"]
+    if policy.get("candidate_may_replace_rio_seco") is not False:
+        raise ProbeError("CANDIDATE_MAY_REPLACE_RIO_SECO")
+    if policy.get("candidate_may_define_rio_seco_search_domain") is not False:
+        raise ProbeError("CANDIDATE_MAY_DEFINE_RIO_SECO_SEARCH_DOMAIN")
+    if policy.get("rio_seco_identity_requires_independent_search_domain") is not True:
+        raise ProbeError("INDEPENDENT_RIO_SECO_SEARCH_DOMAIN_NOT_REQUIRED")
+
     context_path = ROOT / context["geometry_path"]
     if not context_path.is_file():
         raise ProbeError("MISSING_FROZEN_ANA_CONTEXT_GEOMETRY")
@@ -212,6 +241,8 @@ def main() -> None:
                 "source_geometry": {"paths": paths, "spatial_reference_wkid": 4326},
                 "source_geometry_bbox": candidate_bbox(paths),
                 "geometry_accepted_as_rio_seco_channel": False,
+                "may_replace_rio_seco": False,
+                "may_define_rio_seco_search_domain": False,
                 "catchment_accepted": False,
                 "outlet_or_confluence_accepted": False,
                 "routing_enabled": False,
@@ -223,18 +254,22 @@ def main() -> None:
     candidates.sort(key=lambda item: int(item.get("objectid") or 0))
 
     report = {
-        "schema_version": "0.1",
-        "status": "PASS_BOUNDED_IGP_RIO_SECO_SPATIAL_IDENTITY_PROBE",
+        "schema_version": "0.2",
+        "status": EXPECTED_STATUS,
         **SAFE,
         "component_id": "rio_seco",
+        "component_id_semantics": contract["component_id_semantics"],
+        "semantic_binding_status": EXPECTED_STATUS,
         "ana_context_geometry_sha256": actual_sha,
+        "ana_context_source_table_label": "Qda. Colca",
+        "rio_seco_search_domain_admissible": False,
         "query_envelope_wgs84": {
             "xmin": xmin,
             "ymin": ymin,
             "xmax": xmax,
             "ymax": ymax,
             "buffer_applied": False,
-            "source_role": "FROZEN_ANA_REGULATORY_CONTEXT_SEARCH_ENVELOPE_ONLY",
+            "source_role": "FROZEN_ANA_QDA_COLCA_REGULATORY_CONTEXT_SOURCE_INVENTORY_ENVELOPE_ONLY",
         },
         "source": {
             "institution": source["institution"],
@@ -247,6 +282,8 @@ def main() -> None:
         "candidate_count": len(candidates),
         "candidate_geometry_requested": True,
         "candidate_geometry_accepted": False,
+        "candidate_may_replace_rio_seco": False,
+        "candidate_may_define_rio_seco_search_domain": False,
         "catchment_geometry_accepted": False,
         "outlet_inferred": False,
         "confluence_inferred": False,
@@ -258,7 +295,7 @@ def main() -> None:
         "parent_activation_promoted": False,
         "rimac_overflow_inferred": False,
         "candidates": candidates,
-        "interpretation_rule": "Every returned IGP line is only a spatially intersecting source candidate. Selection of the monitored Rio Seco natural channel requires a separate frozen identity review; line endpoints cannot define the outlet or confluence without independent reproducible evidence.",
+        "interpretation_rule": "Every returned IGP line is only a source feature intersecting the Qda. Colca regulatory corridor. This inventory cannot select or substitute the monitored Rio Seco natural channel because the corridor is not an admissible Rio Seco search domain. Rio Seco requires an independent reproducible search domain/identity source; line endpoints cannot define an outlet or confluence without independent evidence.",
     }
     guard(report, "REPORT")
     args.output.parent.mkdir(parents=True, exist_ok=True)
