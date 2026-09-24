@@ -1,0 +1,102 @@
+{
+  "schema_version": "0.1",
+  "status": "FROZEN_BOUNDED_LOCAL_TOPOLOGY_CANDIDATE_PROBE_CONTRACT",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "purpose": "Generate reproducible source candidates around the already-frozen Canto Grande upper-branch and Media Luna official IGP channel lines. Candidate generation is spatial discovery only and cannot accept a junction, outlet, receiver, catchment, routing parameter or activation state.",
+  "scientific_parent_context": "jicamarca",
+  "assessment_contract": "config/phase2_jicamarca_canto_grande_media_luna_assessment_v0_2.json",
+  "effective_evidence_index": "config/phase2_jicamarca_evidence_index_v0_4.json",
+  "source": {
+    "institution": "Instituto Geofisico del Peru",
+    "service_url": "https://ide.igp.gob.pe/arcgis/rest/services/mapabase/MapaBase/MapServer",
+    "layer_id": 20,
+    "expected_layer_name": "Quebrada_Lima",
+    "expected_geometry_type": "esriGeometryPolyline",
+    "expected_spatial_reference_wkid": 4326,
+    "service_item_id": "cc79e8bca3034d4aa39ea9e84aa627da",
+    "required_fields": [
+      "objectid",
+      "nombre",
+      "nomdep",
+      "nomprov",
+      "nomdist",
+      "clasificac",
+      "tipo",
+      "ubigeo"
+    ]
+  },
+  "children": [
+    {
+      "child_id": "canto_grande_upper_branch",
+      "frozen_channel_path": "site/data/phase2/geometries/jicamarca_canto_grande_igp_channel.geojson",
+      "frozen_channel_git_blob_sha": "db4b4204cfd5c5b1447ebdfc8aa963f37ee6ab3f",
+      "own_source_objectids": [15404, 18807],
+      "snapshot_path": "site/data/phase2/sources/jicamarca_topology_candidates/igp_canto_grande_search_v0_1.json"
+    },
+    {
+      "child_id": "media_luna",
+      "frozen_channel_path": "site/data/phase2/geometries/jicamarca_media_luna_igp_channel.geojson",
+      "frozen_channel_git_blob_sha": "9fbaa8349f29f79b4890dee1a1c2f32b638fd5d4",
+      "own_source_objectids": [3351, 11823],
+      "snapshot_path": "site/data/phase2/sources/jicamarca_topology_candidates/igp_media_luna_search_v0_1.json"
+    }
+  ],
+  "candidate_report_path": "site/data/phase2/sources/jicamarca_topology_candidates/topology_candidate_report_v0_1.json",
+  "search": {
+    "method": "ARCGIS_ENVELOPE_INTERSECTS_AROUND_FULL_FROZEN_CHILD_CHANNEL_EXTENT",
+    "envelope_buffer_degrees": 0.015,
+    "buffer_role": "BOUNDED_SOURCE_DISCOVERY_ONLY_NOT_HYDROLOGIC_DISTANCE_OR_ROUTING_PARAMETER",
+    "where": "1=1",
+    "out_sr": 4326,
+    "geometry_precision": 7,
+    "max_candidate_object_ids_per_child": 500,
+    "query_chunk_size": 200,
+    "max_response_bytes": 10000000,
+    "exclude_own_source_objectids_from_candidate_report": true,
+    "literal_2d_intersections_may_be_recorded_as_candidate_signal": true,
+    "literal_2d_intersection_is_junction": false,
+    "line_endpoint_is_outlet": false
+  },
+  "allowed_inputs": [
+    "the two frozen official IGP child channel-line assets named above",
+    "official IGP Quebrada_Lima layer metadata and geometries returned by the preregistered bounded spatial queries",
+    "the fixed search parameters in this contract"
+  ],
+  "forbidden_inputs": [
+    "event outcomes or impact footprints",
+    "A6680",
+    "CENDEHUA activation labels for candidate selection",
+    "SOPHy rainfall products for candidate selection",
+    "free web search results for candidate selection",
+    "faja marginal endpoints",
+    "city or district centroids",
+    "OSM or place points as outlets",
+    "contaminated or outcome-bearing geometry-selection artifacts",
+    "synthetic Quebrada Jicamarca union geometry"
+  ],
+  "promotion_guards": {
+    "candidate_geometry_is_accepted_child_geometry": false,
+    "candidate_geometry_is_receiver_geometry": false,
+    "literal_2d_intersection_is_accepted_confluence": false,
+    "channel_endpoint_is_outlet": false,
+    "catchment_polygon_may_be_created": false,
+    "map_publication_allowed": false,
+    "Q_i_t_may_be_defined": false,
+    "travel_time_may_be_defined": false,
+    "attenuation_may_be_defined": false,
+    "hydraulic_capacity_may_be_defined": false,
+    "thresholds_may_be_defined": false,
+    "routing_may_be_enabled": false,
+    "child_evidence_may_promote_parent_activation": false,
+    "tributary_evidence_may_imply_rimac_overflow": false
+  },
+  "next_gate_if_candidates_are_frozen": "Independent source-identity and terrain/topology review may assess candidate receiver/junction hypotheses without using event outcomes. Any accepted local junction/outlet still requires a separate versioned spatial contract, deterministic replay and independent scientific QA before collector routing can be considered."
+}
