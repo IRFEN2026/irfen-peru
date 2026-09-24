@@ -1,0 +1,143 @@
+{
+  "schema_version": "0.1",
+  "status": "OFFICIAL_ANA_TOPOLOGY_TEXT_FOUND_CROSS_SOURCE_COMPONENT_GEOMETRY_STILL_UNRESOLVED",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "scope": "Jicamarca local hydrologic children: Qda. Colca, Qda. El Silencio and Río Seco",
+  "purpose": "Preserve the official ANA documentary topology/naming relation in RD 0525-2023 without undoing the scientific quarantine on the frozen Qda. Colca faja. The document supports a relation among Colca, El Silencio and Río Seco but does not by itself bind the already-frozen 270-hito Qda. Colca table to a Río Seco channel, catchment, outlet or routing geometry.",
+  "source": {
+    "institution": "Autoridad Nacional del Agua",
+    "resolution": "RESOLUCIÓN DIRECTORAL N° 0525-2023-ANA-AAA.CF",
+    "sigrid_document_id": 16195,
+    "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/16195_resolucion-directoral-n0-0525-2023-ana-aaacf-delimitacion-de-la-faja-marginal-de-la-quebrada-rio-seco-y-09-tributarios-que-forma-parte-del-proyecto-me.pdf",
+    "technical_report_reference": "Informe Técnico N° 009-2023/LLLL, 2023-03-02",
+    "resolution_scope": "Delimitación de la faja marginal de la Quebrada Río Seco y 09 tributarios",
+    "source_bytes_sha256": null,
+    "archive_status": "PUBLIC_OFFICIAL_PDF_IDENTIFIED_TEXT_EVIDENCE_NOT_BYTE_FROZEN_IN_THIS_PACKAGE"
+  },
+  "bounded_documentary_findings": {
+    "hydrographic_system_reported_as_ten_tramos": true,
+    "reported_main_tramo_progressive_start": "0+000",
+    "reported_main_tramo_progressive_end": "25+9800",
+    "reported_main_tramo_length_km_rounded": 26.0,
+    "reported_total_hitos_main_tramo": 270,
+    "reported_right_margin_hitos_main_tramo": 141,
+    "reported_left_margin_hitos_main_tramo": 129,
+    "ana_naming_topology_paraphrase": "ANA states that the Río Seco naming is associated with the confluence of the Colca and El Silencio ravines; the exact segment/table crosswalk must be resolved before geometry attribution.",
+    "colca_el_silencio_confluence_relation_documented": true,
+    "exact_confluence_coordinate_documented_in_bounded_text": false,
+    "exact_table_to_component_crosswalk_resolved": false,
+    "frozen_270_hito_table_label_in_existing_archive": "Qda. Colca"
+  },
+  "cross_source_adjudication": {
+    "igp_constraint": {
+      "source": "config/phase2_jicamarca_rio_seco_colca_nomenclature_conflict_v0_1.json",
+      "bounded_constraint": "Independent IGP evidence treats Colca, El Silencio and Río Seco as distinct named local components."
+    },
+    "ana_relation": "ANA RD 0525-2023 documents a naming/topology relation involving the Colca-El Silencio confluence and Río Seco within a ten-tramo regulatory study.",
+    "adjudication": "KEEP_COLCA_EL_SILENCIO_AND_RIO_SECO_AS_DISTINCT_LOCAL_COMPONENTS_WHILE_TREATING_THE_ANA_CONFLUENCE_RELATION_AS_DOCUMENTARY_TOPOLOGY_ONLY",
+    "crosswalk_status": "PARTIAL_DOCUMENTARY_RELATION_NOT_GEOMETRY_CROSSWALK",
+    "silent_component_collapse_allowed": false,
+    "frozen_colca_faja_may_be_rebound_to_rio_seco": false
+  },
+  "local_hierarchy": {
+    "parent_context": "jicamarca",
+    "parent_role": "CONTEXT_CONTAINER_NON_ACTIVATABLE",
+    "children": [
+      {
+        "child_id": "colca",
+        "role": "LOCAL_RAVINE_COMPONENT_DOCUMENTED_BY_ANA_AND_IGP",
+        "geometry_status": "FROZEN_ANA_REGULATORY_FAJA_CONTEXT_AVAILABLE_SEMANTICALLY_COLCA_ONLY",
+        "geometry_path": "site/data/phase2/geometries/jicamarca_rio_seco_ana_faja_context.geojson",
+        "geometry_semantics": "QDA_COLCA_REGULATORY_CONTEXT_ONLY",
+        "activation_geometry": false,
+        "event_footprint": false,
+        "outlet": null
+      },
+      {
+        "child_id": "el_silencio",
+        "role": "LOCAL_RAVINE_COMPONENT_DOCUMENTED_BY_ANA_AND_IGP",
+        "geometry_status": "MISSING_PENDING_EXACT_SOURCE_TABLE_OR_INDEPENDENT_REPRODUCIBLE_GEOMETRY",
+        "activation_geometry": false,
+        "event_footprint": false,
+        "outlet": null
+      },
+      {
+        "child_id": "rio_seco",
+        "role": "CENDEHUA_MONITORED_LOCAL_RAVINE_OR_DOWNSTREAM_NAMED_REACH_IDENTITY_REQUIRES_GEOMETRIC_CROSSWALK",
+        "geometry_status": "MISSING_PENDING_EXACT_COMPONENT_SEGMENT_AND_REPRODUCIBLE_GEOMETRY",
+        "activation_geometry": false,
+        "event_footprint": false,
+        "outlet": null
+      }
+    ],
+    "documentary_relation": {
+      "relation_type": "COLCA_EL_SILENCIO_CONFLUENCE_ASSOCIATED_WITH_RIO_SECO_NAMING_IN_ANA_TEXT",
+      "node_coordinate": null,
+      "geometry_resolved": false,
+      "routing_resolved": false,
+      "children_may_be_union_geometry": false,
+      "child_evidence_promotes_parent_activation": false
+    }
+  },
+  "collector_coupling": {
+    "local_collector_relation": "DOCUMENTARY_TOPOLOGY_ONLY",
+    "colca_to_local_confluence": {
+      "outlet_or_confluence": null,
+      "Q_i_t": null,
+      "travel_time": null,
+      "attenuation": null,
+      "quality": "UNKNOWN"
+    },
+    "el_silencio_to_local_confluence": {
+      "outlet_or_confluence": null,
+      "Q_i_t": null,
+      "travel_time": null,
+      "attenuation": null,
+      "quality": "UNKNOWN"
+    },
+    "rio_seco_downstream_relation": {
+      "channel_geometry": null,
+      "downstream_receiver": "UNRESOLVED_BEFORE_EXACT_LOCAL_GEOMETRY",
+      "Q_i_t": null,
+      "travel_time": null,
+      "attenuation": null,
+      "quality": "UNKNOWN"
+    },
+    "rimac_mainstem_connection": "UNRESOLVED_NOT_ASSUMED",
+    "hydraulic_capacity": null,
+    "peak_coincidence": null,
+    "tributary_activation_implies_receiver_overflow": false
+  },
+  "map_policy": {
+    "new_geometry_published_by_this_package": false,
+    "publish_colca_faja_as_rio_seco": false,
+    "publish_el_silencio_before_reproducible_geometry": false,
+    "publish_rio_seco_before_reproducible_geometry": false,
+    "publish_confluence_as_approximate_point": false,
+    "parent_jicamarca_risk_or_alert_symbology_allowed": false,
+    "risk_or_alert_symbology_allowed": false
+  },
+  "forbidden": [
+    "rebind the frozen Qda. Colca 270-hito faja to Río Seco",
+    "collapse Colca, El Silencio and Río Seco into one synthetic activation geometry",
+    "invent an exact confluence coordinate from documentary text",
+    "treat a regulatory faja as an event footprint",
+    "infer discharge, hydraulic capacity, travel time or attenuation from the resolution",
+    "infer Rímac overflow from activation of any local child",
+    "create an operational threshold or alert state"
+  ],
+  "next_gate": [
+    "extract and freeze the complete ten-tramo ANA table inventory with each explicit source label preserved",
+    "identify which coordinate tables correspond independently to Qda. Colca, Qda. El Silencio and any Río Seco downstream reach without semantic rebinding",
+    "only after component-level source labels are reproducibly bound may separate research-context geometries be normalized and considered for map publication",
+    "resolve exact local confluence/outlet and downstream receiver connection independently before enabling routing"
+  ]
+}
