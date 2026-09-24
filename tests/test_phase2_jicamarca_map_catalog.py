@@ -9,6 +9,9 @@ if str(SCRIPTS) not in sys.path:
 
 import build_map_layer_catalog as catalog_builder
 
+# The exact IGP source-line replay is validated by the dedicated workflow; these tests
+# only assert map semantics after the frozen artifacts have been regenerated.
+
 
 class JicamarcaMapCatalogTests(unittest.TestCase):
     def setUp(self):
