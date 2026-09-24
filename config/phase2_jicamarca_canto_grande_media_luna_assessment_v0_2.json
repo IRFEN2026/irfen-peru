@@ -1,0 +1,160 @@
+{
+  "schema_version": "0.3",
+  "status": "OFFICIAL_CHILD_CHANNEL_LINES_FROZEN_CATCHMENTS_JUNCTIONS_AND_OUTLETS_UNRESOLVED",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "assessment_date_utc": "2026-09-24",
+  "extends": "config/phase2_jicamarca_canto_grande_media_luna_assessment_v0_1.json",
+  "scope": "Canto Grande and Media Luna local children only. This version recognizes frozen official IGP channel-line geometry while keeping catchments, junctions, outlets and routing unresolved.",
+  "scientific_interpretation": {
+    "parent_context": "canto_grande_subbasin",
+    "parent_role": "CONTEXT_CONTAINER_NON_ACTIVATABLE",
+    "local_children": [
+      "canto_grande_upper_branch",
+      "media_luna"
+    ],
+    "child_evidence_promotes_parent_activation": false,
+    "child_activation_implies_rimac_overflow": false,
+    "synthetic_canto_media_luna_union_geometry_allowed": false,
+    "synthetic_quebrada_jicamarca_unit_allowed": false
+  },
+  "frozen_official_channel_assets": {
+    "canto_grande_upper_branch": {
+      "source_institution": "Instituto Geofisico del Peru",
+      "source_layer": "Quebrada_Lima",
+      "source_name": "Qda Canto Grande",
+      "path": "site/data/phase2/geometries/jicamarca_canto_grande_igp_channel.geojson",
+      "git_blob_sha": "db4b4204cfd5c5b1447ebdfc8aa963f37ee6ab3f",
+      "source_objectids": [
+        15404,
+        18807
+      ],
+      "channel_geometry_reproducible": true,
+      "catchment_polygon_reproducible": false,
+      "outlet_or_confluence_reproducible": false,
+      "official_channel_endpoint_is_outlet": false,
+      "source_segments_union_performed": false,
+      "geometry_role": "OFFICIAL_NAMED_CHANNEL_LINE_CONTEXT_ONLY"
+    },
+    "media_luna": {
+      "source_institution": "Instituto Geofisico del Peru",
+      "source_layer": "Quebrada_Lima",
+      "source_name": "Qda Media Luna",
+      "path": "site/data/phase2/geometries/jicamarca_media_luna_igp_channel.geojson",
+      "git_blob_sha": "9fbaa8349f29f79b4890dee1a1c2f32b638fd5d4",
+      "source_objectids": [
+        3351,
+        11823
+      ],
+      "channel_geometry_reproducible": true,
+      "catchment_polygon_reproducible": false,
+      "outlet_or_confluence_reproducible": false,
+      "official_channel_endpoint_is_outlet": false,
+      "source_segments_union_performed": false,
+      "geometry_role": "OFFICIAL_NAMED_CHANNEL_LINE_CONTEXT_ONLY"
+    }
+  },
+  "bounded_event_evidence": {
+    "event_year": 2002,
+    "component_id": "media_luna",
+    "mechanism": "DEBRIS_FLOW_HUAICO",
+    "research_state": "IMPACT_CONFIRMED",
+    "event_footprint_geometry_available": false,
+    "event_footprint_may_be_digitized_from_report_image": false,
+    "promotes_canto_grande_parent_activation": false,
+    "promotes_rimac_overflow": false,
+    "note": "The prior official INGEMMET event evidence is retained without using event outcome or report imagery to fit outlet or catchment geometry."
+  },
+  "topology_model": {
+    "media_luna_receiver_or_junction": "CANTO_GRANDE_LOCAL_SYSTEM_EXACT_JUNCTION_UNRESOLVED",
+    "media_luna_exact_junction_coordinate": null,
+    "canto_grande_exact_outlet_coordinate": null,
+    "canto_grande_rimac_connection": "RIMAC_LOWER_VALLEY_CONTEXT_DOCUMENTED_EXACT_HYDROLOGIC_OUTLET_UNRESOLVED",
+    "direct_media_luna_to_rimac_connection_assumed": false,
+    "topology_may_be_used_for_routing_before_geometry_and_outlets": false
+  },
+  "outlet_resolution_gate": {
+    "status": "BLOCKED_PENDING_DETERMINISTIC_TERRAIN_TOPOLOGY_RESOLUTION_AND_QA",
+    "candidate_generation_promotion_allowed": false,
+    "resolved_outlets": {
+      "canto_grande_upper_branch": null,
+      "media_luna": null
+    },
+    "resolved_catchments": {
+      "canto_grande_upper_branch": null,
+      "media_luna": null
+    },
+    "allowed_inputs": [
+      "frozen official IGP child channel-line assets referenced by this contract",
+      "independently acquired and versioned DEM suitable for deterministic terrain analysis",
+      "independently reproducible receiver or confluence geometry when available",
+      "explicit algorithm parameters and source hashes sufficient for replay"
+    ],
+    "forbidden_inputs": [
+      "faja_marginal_endpoints_as_outlets",
+      "event_or_impact_footprints_for_geometry_fitting",
+      "A6680_as_geometry_calibration_target",
+      "city_or_district_centroids_as_outlets",
+      "report_image_digitization_as_final_geometry",
+      "OSM_or_place_points_as_final_outlets",
+      "official_channel_endpoints_assumed_to_be_outlets",
+      "contaminated_or_outcome_bearing_artifacts_for_geometry_selection",
+      "synthetic_quebrada_jicamarca_union"
+    ],
+    "deterministic_method_requirements": {
+      "terrain_method": "D8_OR_EQUIVALENT_REPRODUCIBLE_FLOW_ROUTING_WITH_EXPLICIT_PARAMETERS",
+      "official_channel_line_role": "SEARCH_ANCHOR_AND_TOPOLOGIC_CONSTRAINT_ONLY_NOT_OUTLET",
+      "candidate_must_be_unique_under_frozen_parameters": true,
+      "source_and_parameter_hashes_required": true,
+      "exact_replay_required": true,
+      "independent_scientific_qa_required": true,
+      "prohibited_source_touch_fails_closed": true,
+      "ambiguous_candidate_fails_closed": true,
+      "missing_dem_or_receiver_geometry_fails_closed": true
+    },
+    "implementation_reference": "scripts/build_chosica_local_dem_candidates.py",
+    "reuse_constraint": "Only the bounded deterministic DEM-processing pattern may be reused. OSM seed semantics and any endpoint-as-outlet shortcut are forbidden for this gate."
+  },
+  "collector_coupling": {
+    "local_collector": "canto_grande_downstream_system",
+    "ultimate_receiver_context": "rimac_mainstem",
+    "routing_status": "BLOCKED_PENDING_REPRODUCIBLE_CHILD_CATCHMENTS_JUNCTIONS_AND_OUTLETS",
+    "canto_grande_upper_branch": {
+      "outlet_or_confluence": null,
+      "Q_i_t": null,
+      "travel_time": null,
+      "attenuation": null,
+      "quality": "UNKNOWN"
+    },
+    "media_luna": {
+      "outlet_or_confluence": null,
+      "Q_i_t": null,
+      "travel_time": null,
+      "attenuation": null,
+      "quality": "UNKNOWN"
+    },
+    "collector_stage_or_discharge_response": null,
+    "peak_coincidence": null,
+    "hydraulic_capacity": null,
+    "child_activation_implies_canto_grande_parent_activation": false,
+    "child_activation_implies_rimac_overflow": false
+  },
+  "map_policy": {
+    "publish_parent_as_activation_or_risk": false,
+    "publish_official_child_channel_lines_as_research_context": true,
+    "publish_child_catchment_polygons_now": false,
+    "publish_child_outlets_now": false,
+    "publish_event_footprint_from_channel_geometry": false,
+    "risk_or_alert_colors_allowed": false,
+    "parent_style": "GRAY_CONTEXT_ONLY",
+    "child_channel_style": "RESEARCH_CONTEXT_NO_RISK_COLOR"
+  },
+  "next_gate": "Resolve each child's catchment, exact local junction/outlet and receiver relationship with deterministic replayable terrain/topology analysis anchored only by frozen official channel geometry. Fail closed on ambiguity. Do not parameterize Q_i(t), travel time, attenuation or Rímac response until the spatial gate and independent QA pass."
+}

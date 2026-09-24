@@ -1,0 +1,110 @@
+{
+  "schema_version": "0.3",
+  "status": "RESEARCH_ONLY_EVIDENCE_INDEX_CHILD_CHANNEL_GEOMETRY_FROZEN",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "extends": "config/phase2_jicamarca_evidence_index_v0_1.json",
+  "discovery_contract": "config/phase2_jicamarca_discovery_v0_1.json",
+  "packages": [
+    {
+      "path": "config/phase2_jicamarca_cendehua_event_metadata_v0_1.json",
+      "role": "BOUNDED_STATION_AND_EVENT_METADATA",
+      "may_define_geometry": false,
+      "may_define_thresholds": false,
+      "may_infer_discharge": false
+    },
+    {
+      "path": "config/phase2_jicamarca_sophy_access_assessment_v0_1.json",
+      "role": "RADAR_ACCESS_AND_QA_GATE",
+      "may_define_geometry": false,
+      "may_define_thresholds": false,
+      "may_infer_rainfall_before_data_access": false
+    },
+    {
+      "path": "config/phase2_jicamarca_identity_source_assessment_v0_1.json",
+      "role": "OFFICIAL_TERMINOLOGY_AND_TOPOLOGY_ASSESSMENT",
+      "may_define_geometry": false,
+      "may_create_synthetic_jicamarca_unit": false,
+      "may_approximate_confluence": false
+    },
+    {
+      "path": "config/phase2_jicamarca_canto_grande_media_luna_assessment_v0_2.json",
+      "role": "OFFICIAL_IGP_CHILD_CHANNEL_GEOMETRY_AND_FAIL_CLOSED_OUTLET_GATE",
+      "may_define_channel_geometry": true,
+      "may_define_catchment_geometry": false,
+      "may_define_outlet": false,
+      "may_use_channel_endpoint_as_outlet": false,
+      "may_use_event_outcome_to_fit_geometry": false,
+      "may_promote_parent_activation": false,
+      "may_promote_rimac_overflow": false
+    },
+    {
+      "path": "config/phase2_jicamarca_rio_seco_ana_faja_identity_v0_1.json",
+      "role": "ANA_QDA_COLCA_REGULATORY_CONTEXT_QUARANTINED_FROM_RIO_SECO_BINDING",
+      "may_define_catchment_geometry": false,
+      "may_define_channel_centerline": false,
+      "may_define_outlet": false,
+      "may_define_receiver_confluence": false,
+      "may_be_event_footprint": false,
+      "may_infer_historical_capacity": false,
+      "may_infer_routing": false,
+      "map_eligible_as_rio_seco": false
+    },
+    {
+      "path": "config/phase2_jicamarca_rio_seco_colca_nomenclature_conflict_v0_1.json",
+      "role": "CROSS_SOURCE_NOMENCLATURE_CONFLICT_AND_SEMANTIC_QUARANTINE",
+      "may_equate_colca_with_rio_seco": false,
+      "may_publish_quarantined_faja_as_rio_seco": false,
+      "may_define_outlet": false,
+      "may_infer_routing": false
+    },
+    {
+      "path": "config/phase2_jicamarca_rio_seco_colca_silencio_topology_v0_1.json",
+      "role": "ANA_TEN_TRAMO_COMPONENT_LABEL_INVENTORY_AND_COLCA_EL_SILENCIO_RIO_SECO_DOCUMENTARY_TOPOLOGY",
+      "ten_tramo_summary_labels_frozen": true,
+      "explicit_rio_seco_summary_tramo_present": false,
+      "rio_seco_specific_geometry_crosswalk_resolved": false,
+      "may_rebind_colca_faja_to_rio_seco": false,
+      "may_collapse_local_children": false,
+      "may_define_exact_confluence": false,
+      "may_define_outlet": false,
+      "may_infer_routing": false,
+      "requires_full_component_ledger_before_geometry_normalization": true
+    },
+    {
+      "path": "config/phase2_jicamarca_huaycoloro_rio_seco_union_2017_v0_1.json",
+      "role": "IGP_LOCAL_UNION_TOPOLOGY_AND_EVENT_SPECIFIC_FIELD_OBSERVATION",
+      "may_define_exact_union_coordinate": false,
+      "may_define_outlet": false,
+      "may_define_Q_i_t": false,
+      "may_transfer_reported_discharge": false,
+      "may_transfer_reported_segment_travel_time": false,
+      "may_define_hydraulic_capacity": false,
+      "may_promote_receiver_overflow": false
+    },
+    {
+      "path": "config/phase2_jicamarca_collector_coupling_v0_1.json",
+      "role": "FAIL_CLOSED_LOCAL_CHILD_TO_COLLECTOR_COUPLING_GATE",
+      "may_create_synthetic_jicamarca_unit": false,
+      "may_use_quarantined_colca_geometry_as_rio_seco": false,
+      "may_define_outlet_from_station_label": false,
+      "may_define_outlet_from_channel_endpoint": false,
+      "may_infer_Q_i_t": false,
+      "may_infer_travel_time": false,
+      "may_infer_attenuation": false,
+      "may_infer_peak_coincidence_from_same_day_records": false,
+      "may_promote_rimac_overflow": false
+    }
+  ],
+  "map_effect": "OFFICIAL_CANTO_GRANDE_AND_MEDIA_LUNA_CHILD_CHANNEL_LINES_MAY_BE_PUBLISHED_AS_RESEARCH_CONTEXT_ONLY; CATCHMENT_POLYGONS_OUTLETS_EVENT_FOOTPRINTS_AND_PARENT_ACTIVATION_REMAIN_WITHHELD",
+  "regulatory_context_effect": "ANA's ten-tramo summary remains frozen by explicit labels: seven Colca-family tramos and three El-Silencio-family tramos; no independently labelled Río Seco summary tramo exists. The existing 270-hito table remains Qda. Colca and cannot be rebound to Río Seco. Full labelled ledgers may support separate research-context geometries only after exact provenance is frozen.",
+  "semantic_quarantine_effect": "QDA_COLCA_FROZEN_FAJA_DO_NOT_USE_AS_RIO_SECO; COLCA_EL_SILENCIO_AND_RIO_SECO_REMAIN_DISTINCT_LOCAL_COMPONENTS; CANTO_GRANDE_AND_MEDIA_LUNA_OFFICIAL_CHANNEL_LINES_ARE_SEPARATE_LOCAL_CHILD_CONTEXTS_AND_MUST_NOT_BE_UNIONED",
+  "collector_effect": "NO_OUTLET_PROMOTION_NO_Q_TRAVEL_TIME_ATTENUATION_PEAK_COINCIDENCE_OR_RECEIVER_RESPONSE_PROMOTION"
+}
