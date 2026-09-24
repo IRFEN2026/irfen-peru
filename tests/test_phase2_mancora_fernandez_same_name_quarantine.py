@@ -30,22 +30,24 @@ def test_quarantine_is_fail_closed_and_bound_to_mancora_discovery():
         assert q[key] == expected
         assert p[key] == expected
     assert q["discovery_id"] == p["discovery_id"] == "piura_mancora_los_organos_coastal_ravines"
-    assert q["status"] == "CROSS_REGION_SAME_NAME_GEOMETRY_QUARANTINE"
+    assert q["status"] == "CROSS_REGION_SAME_NAME_GEOMETRY_CROSSWALK_REQUIRED"
 
 
-def test_tumbes_same_name_faja_cannot_fill_mancora_geometry_gap():
+def test_tumbes_same_name_faja_cannot_fill_mancora_geometry_gap_without_crosswalk():
     q = load(QUARANTINE)
     x = q["cross_region_same_name_source"]
     assert x["source_region_context"] == "Tumbes"
     assert x["faja_length_km_reported"] == 7.0
-    assert x["is_mancora_surface_geometry"] is False
-    assert x["may_be_used_as_mancora_catchment"] is False
-    assert x["may_be_used_as_mancora_channel"] is False
-    assert x["may_be_used_as_mancora_outlet"] is False
+    assert x["relationship_to_mancora_fernandez"] == "UNRESOLVED_REQUIRES_COORDINATE_LEVEL_CROSSWALK"
+    assert x["may_be_used_as_mancora_catchment_without_crosswalk"] is False
+    assert x["may_be_used_as_mancora_channel_without_crosswalk"] is False
+    assert x["may_be_used_as_mancora_outlet_without_crosswalk"] is False
     assert x["may_be_used_as_mancora_event_footprint"] is False
     a = q["adjudication"]
     assert a["same_name_is_sufficient_for_cross_region_geometry_binding"] is False
-    assert a["tumbes_faja_may_fill_mancora_missing_geometry"] is False
+    assert a["tumbes_faja_may_fill_mancora_missing_geometry_without_crosswalk"] is False
+    assert a["tumbes_and_mancora_features_proven_distinct"] is False
+    assert a["tumbes_and_mancora_features_proven_same"] is False
     assert a["mancora_fernandez_geometry_status_after_review"] == "MISSING_NO_APPROXIMATION_ALLOWED"
     assert a["map_geometry_created"] is False
 
