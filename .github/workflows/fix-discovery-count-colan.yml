@@ -1,0 +1,48 @@
+name: IRFEN - Temporary fix discovery count Colan
+
+on:
+  push:
+    branches:
+      - phase2-colan-discovery-20260924
+    paths:
+      - '.github/workflows/fix-discovery-count-colan.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: phase2-colan-discovery-20260924
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Synchronize derived discovery count without changing scientific content
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('config/phase2_north_coast_discovery_inventory_v0_1.json')
+          obj=json.loads(p.read_text(encoding='utf-8'))
+          rel=obj['relationship_to_phase2']
+          rel['discovery_units_count']=len(obj.get('discovery_units') or [])
+          p.write_text(json.dumps(obj,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print('DISCOVERY_UNITS_COUNT', rel['discovery_units_count'])
+          PY
+          python scripts/verify_phase2_supe_discovery.py
+          python scripts/build_map_layer_catalog.py --check-only
+      - name: Commit inventory metadata repair only
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- config/phase2_north_coast_discovery_inventory_v0_1.json; then
+            echo 'NO_COUNT_CHANGE'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add config/phase2_north_coast_discovery_inventory_v0_1.json
+          git commit -m 'fix: synchronize north-coast discovery count'
+          git push origin HEAD:phase2-colan-discovery-20260924
