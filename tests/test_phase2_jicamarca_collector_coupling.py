@@ -6,6 +6,7 @@ CONTRACT = ROOT / "config/phase2_jicamarca_collector_coupling_v0_1.json"
 DISCOVERY = ROOT / "config/phase2_jicamarca_discovery_v0_1.json"
 ARCH = ROOT / "config/phase2_collector_coupling_architecture_v0_1.json"
 HIER = ROOT / "config/phase2_local_activation_hierarchy_v0_1.json"
+MONITORING_TOPOLOGY = "config/phase2_jicamarca_rio_seco_huaycoloro_monitoring_topology_v0_1.json"
 
 SAFE = {
     "deployment_status": "RESEARCH_ONLY",
@@ -140,3 +141,29 @@ def test_map_semantics_do_not_promote_risk_or_new_fake_geometry():
     assert canto["geometry_role"] == "OFFICIAL_NAMED_CHANNEL_LINE_CONTEXT_ONLY"
     assert canto["activation_state"] is None
     assert (ROOT / canto["geometry"]).exists()
+
+
+def test_monitored_rio_seco_huaycoloro_topology_is_traceable_but_does_not_promote_coupling():
+    doc = load(CONTRACT)
+    assert doc["monitoring_topology_ref"] == MONITORING_TOPOLOGY
+    topology = ROOT / MONITORING_TOPOLOGY
+    assert topology.is_file()
+    monitored = load(topology)
+    for key, expected in SAFE.items():
+        assert monitored[key] == expected
+    rows = {r["local_unit_id"]: r for r in doc["tributaries"]}
+    for child in ("huaycoloro", "rio_seco"):
+        node = rows[child]["receiver_confluence_or_explicit_missing_status"]
+        assert MONITORING_TOPOLOGY in node["provenance"]
+        assert node["location"] is None
+        assert node["is_receiver_confluence"] is False
+        assert rows[child]["ultimate_receiver_connection_status"] == "UNRESOLVED_NOT_ASSUMED"
+        assert rows[child]["q_i_t"] is None
+        assert rows[child]["travel_time_tau"] is None
+        assert rows[child]["attenuation_or_storage"] is None
+    adjudication = monitored["cross_source_adjudication"]
+    assert adjudication["exact_confluence_coordinate"] is None
+    assert adjudication["exact_confluence_geometry_resolved"] is False
+    assert adjudication["downstream_receiver_identity_resolved_by_this_package"] is False
+    assert adjudication["rimac_connection_resolved_by_this_package"] is False
+    assert adjudication["receiver_overflow_inferred"] is False
