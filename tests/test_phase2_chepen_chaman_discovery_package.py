@@ -106,3 +106,13 @@ def test_event_and_prevention_context_do_not_create_thresholds_negatives_or_capa
     assert s["qa"]["critical_points_used_as_events"] is False
     assert s["qa"]["works_are_historical_capacity"] is False
     assert s["qa"]["absence_of_report_is_negative"] is False
+
+
+def test_chaman_map_role_stays_research_context_only():
+    c = load(CONTRACT)
+    p = load(PACKAGE)
+    assert c["map_policy"]["context_only"] is True
+    assert c["map_policy"]["risk_or_alert_layer"] is False
+    assert c["map_policy"]["publish_parent_composite"] is False
+    assert p["map_policy"]["risk_or_alert_layer"] is False
+    assert p["map_policy"]["parent_chepen_geometry_allowed"] is False
