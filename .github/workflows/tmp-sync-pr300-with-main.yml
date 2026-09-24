@@ -1,0 +1,43 @@
+name: TEMP - sync PR300 with main
+
+on:
+  push:
+    branches:
+      - phase2-north-coast-local-gaps-20260924
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v6
+        with:
+          ref: phase2-north-coast-local-gaps-20260924
+          fetch-depth: 0
+      - name: Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest
+      - name: Merge latest main and verify bounded scope
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git merge --no-edit origin/main
+          python scripts/build_map_layer_catalog.py
+          pytest -q tests/test_phase2_north_coast_local_gaps.py
+          python scripts/build_map_layer_catalog.py --check-only
+          git rm .github/workflows/tmp-sync-pr300-with-main.yml
+          git add site/data/map_layers.json
+          git diff --cached --check
+          if ! git diff --cached --quiet; then
+            git commit -m "phase2: sync north-coast local gaps with latest main"
+          fi
+          git push origin HEAD:phase2-north-coast-local-gaps-20260924
