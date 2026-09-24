@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-"""Freeze and replay exact ANA N7 hydrologic children for the Casma discovery grouper.
+"""Freeze/replay exact ANA Casma N7 child polygons as research context only.
 
-The territorial/discovery parent remains non-activatable and has no composite map
-polygon. Each official N7 unit is fetched independently by exact ANA NIVEL7 code
-and is published only as RESEARCH_ONLY hydrologic context. No event footprint,
-outlet, flow, capacity, threshold, routing parameter or negative control is inferred.
+The discovery parent is never materialized as an activation polygon. The probe uses
+the detailed ANA/IDEP hydrographic-unit layer (MapServer/7), selects each child by
+its exact final-unit CODIGO and independently verifies parent hierarchy plus official
+name. No event outcome, outlet, flow, capacity, routing parameter, threshold or
+negative control participates in geometry selection.
 """
 from __future__ import annotations
 
 import argparse
 import json
+import unicodedata
 from hashlib import sha256
 from pathlib import Path
 from urllib.parse import urlencode
@@ -20,7 +22,8 @@ DID = "ancash_casma_sechin_yautan"
 PACKAGE = ROOT / f"site/data/validation/phase2_discovery_packages/{DID}.json"
 CONTRACT = ROOT / f"site/data/validation/phase2_discovery_contracts/{DID}.json"
 SOURCE_DIR = ROOT / "site/data/phase2/sources/north_coast_discovery_geometry"
-ENDPOINT = "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/8/query"
+DETAILED_ENDPOINT = "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/7/query"
+LEGACY_GENERALIZED_ENDPOINT = "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/8/query"
 PARENT_N6_CODE = "137596"
 PARENT_N6_NAME = "Cuenca Casma"
 
@@ -71,6 +74,11 @@ def dump(path: Path, value: object) -> str:
     return digest(path)
 
 
+def folded(value: object) -> str:
+    text = unicodedata.normalize("NFKD", str(value or ""))
+    return "".join(ch for ch in text if not unicodedata.combining(ch)).strip().casefold()
+
+
 def guards(obj: dict, label: str) -> None:
     for key, expected in SAFE.items():
         if obj.get(key) != expected:
@@ -87,58 +95,13 @@ def validation_path(geometry_path: Path) -> Path:
 
 def exact_n7_query(code: str) -> dict:
     return {
-        "endpoint": ENDPOINT,
-        "where": f"NIVEL7='{code}'",
+        "endpoint": DETAILED_ENDPOINT,
+        "where": f"CODIGO='{code}'",
         "out_fields": "*",
         "out_sr": 4326,
         "geometry_precision": 7,
         "format": "geojson",
     }
-
-
-def validate_package(package: dict) -> list[dict]:
-    guards(package, "PACKAGE")
-    if package.get("discovery_id") != DID:
-        raise CasmaGeometryError("DISCOVERY_ID_DRIFT")
-    identity = package.get("hydrologic_identity") or {}
-    if str(identity.get("ana_parent_unit_code")) != PARENT_N6_CODE or identity.get("ana_parent_unit_name") != PARENT_N6_NAME:
-        raise CasmaGeometryError("CASMA_PARENT_IDENTITY_DRIFT")
-    policy = package.get("component_policy") or {}
-    if policy.get("parent_is_map_polygon") is not False:
-        raise CasmaGeometryError("PARENT_MAP_POLYGON_NOT_FORBIDDEN")
-    if policy.get("components_must_remain_separate") is not True or policy.get("composite_union_forbidden") is not True:
-        raise CasmaGeometryError("CHILD_SEPARATION_GUARD_DRIFT")
-    if policy.get("whole_casma_n6_may_replace_child_layers") is not False:
-        raise CasmaGeometryError("PARENT_REPLACEMENT_GUARD_DRIFT")
-    components = (package.get("assets") or {}).get("geometry_components") or []
-    if len(components) != len(EXPECTED):
-        raise CasmaGeometryError(f"CHILD_COUNT_DRIFT_{len(components)}")
-    by_id = {row.get("component_id"): row for row in components}
-    if set(by_id) != set(EXPECTED):
-        raise CasmaGeometryError("CHILD_ID_SET_DRIFT")
-    for cid, (code, name) in EXPECTED.items():
-        row = by_id[cid]
-        ident = row.get("hydrologic_identity") or {}
-        if str(ident.get("ana_unit_code")) != code or ident.get("ana_unit_name") != name:
-            raise CasmaGeometryError(f"CHILD_IDENTITY_DRIFT_{cid}")
-        if str(ident.get("parent_code")) != PARENT_N6_CODE or ident.get("level") != "N7":
-            raise CasmaGeometryError(f"CHILD_HIERARCHY_DRIFT_{cid}")
-        query = row.get("source_query") or {}
-        if query.get("endpoint") != ENDPOINT:
-            raise CasmaGeometryError(f"ENDPOINT_DRIFT_{cid}")
-        allowed_where = {f"CODIGO='{code}'", f"NIVEL7='{code}'"}
-        if query.get("where") not in allowed_where:
-            raise CasmaGeometryError(f"WHERE_DRIFT_{cid}")
-        if query.get("out_fields") != "*" or query.get("out_sr") != 4326 or query.get("geometry_precision") != 7 or query.get("format") != "geojson":
-            raise CasmaGeometryError(f"QUERY_CONTRACT_DRIFT_{cid}")
-        row["source_query"] = exact_n7_query(code)
-        geometry = row.get("geometry") or {}
-        raw_path = geometry.get("path")
-        if not isinstance(raw_path, str) or not raw_path.startswith("site/data/phase2/geometries/"):
-            raise CasmaGeometryError(f"GEOMETRY_PATH_DRIFT_{cid}")
-        if geometry.get("counts_as_operational_geometry") is not False or geometry.get("counts_as_event_footprint") is not False:
-            raise CasmaGeometryError(f"UNSAFE_GEOMETRY_ROLE_{cid}")
-    return [by_id[cid] for cid in EXPECTED]
 
 
 def request_url(query: dict) -> str:
@@ -161,13 +124,58 @@ def fetch_json(query: dict) -> tuple[dict, str]:
     if not payload:
         raise CasmaGeometryError("ANA_EMPTY_RESPONSE")
     try:
-        data = json.loads(payload.decode("utf-8"))
+        return json.loads(payload.decode("utf-8")), url
     except Exception as exc:
         raise CasmaGeometryError("ANA_RESPONSE_NOT_JSON") from exc
-    return data, url
 
 
-def exact_feature(snapshot: dict, code: str, name: str) -> dict:
+def validate_package(package: dict) -> list[dict]:
+    guards(package, "PACKAGE")
+    if package.get("discovery_id") != DID:
+        raise CasmaGeometryError("DISCOVERY_ID_DRIFT")
+    identity = package.get("hydrologic_identity") or {}
+    if str(identity.get("ana_parent_unit_code")) != PARENT_N6_CODE or folded(identity.get("ana_parent_unit_name")) != folded(PARENT_N6_NAME):
+        raise CasmaGeometryError("CASMA_PARENT_IDENTITY_DRIFT")
+    policy = package.get("component_policy") or {}
+    if policy.get("parent_is_map_polygon") is not False:
+        raise CasmaGeometryError("PARENT_MAP_POLYGON_NOT_FORBIDDEN")
+    if policy.get("components_must_remain_separate") is not True or policy.get("composite_union_forbidden") is not True:
+        raise CasmaGeometryError("CHILD_SEPARATION_GUARD_DRIFT")
+    if policy.get("whole_casma_n6_may_replace_child_layers") is not False:
+        raise CasmaGeometryError("PARENT_REPLACEMENT_GUARD_DRIFT")
+
+    components = (package.get("assets") or {}).get("geometry_components") or []
+    if len(components) != len(EXPECTED):
+        raise CasmaGeometryError(f"CHILD_COUNT_DRIFT_{len(components)}")
+    by_id = {row.get("component_id"): row for row in components}
+    if set(by_id) != set(EXPECTED):
+        raise CasmaGeometryError("CHILD_ID_SET_DRIFT")
+
+    for cid, (code, name) in EXPECTED.items():
+        row = by_id[cid]
+        ident = row.get("hydrologic_identity") or {}
+        if str(ident.get("ana_unit_code")) != code or folded(ident.get("ana_unit_name")) != folded(name):
+            raise CasmaGeometryError(f"CHILD_IDENTITY_DRIFT_{cid}")
+        if str(ident.get("parent_code")) != PARENT_N6_CODE or ident.get("level") != "N7":
+            raise CasmaGeometryError(f"CHILD_HIERARCHY_DRIFT_{cid}")
+        query = row.get("source_query") or {}
+        if query.get("endpoint") not in {DETAILED_ENDPOINT, LEGACY_GENERALIZED_ENDPOINT}:
+            raise CasmaGeometryError(f"ENDPOINT_DRIFT_{cid}")
+        if query.get("where") not in {f"CODIGO='{code}'", f"NIVEL7='{code}'"}:
+            raise CasmaGeometryError(f"WHERE_DRIFT_{cid}")
+        if query.get("out_fields") != "*" or query.get("out_sr") != 4326 or query.get("geometry_precision") != 7 or query.get("format") != "geojson":
+            raise CasmaGeometryError(f"QUERY_CONTRACT_DRIFT_{cid}")
+        row["source_query"] = exact_n7_query(code)
+        geometry = row.get("geometry") or {}
+        raw_path = geometry.get("path")
+        if not isinstance(raw_path, str) or not raw_path.startswith("site/data/phase2/geometries/"):
+            raise CasmaGeometryError(f"GEOMETRY_PATH_DRIFT_{cid}")
+        if geometry.get("counts_as_operational_geometry") is not False or geometry.get("counts_as_event_footprint") is not False:
+            raise CasmaGeometryError(f"UNSAFE_GEOMETRY_ROLE_{cid}")
+    return [by_id[cid] for cid in EXPECTED]
+
+
+def exact_feature(snapshot: dict, code: str, expected_name: str) -> tuple[dict, str]:
     if snapshot.get("type") != "FeatureCollection":
         raise CasmaGeometryError(f"ANA_NOT_FEATURE_COLLECTION_{code}")
     features = snapshot.get("features") or []
@@ -175,32 +183,46 @@ def exact_feature(snapshot: dict, code: str, name: str) -> dict:
         raise CasmaGeometryError(f"ANA_EXACT_QUERY_NOT_UNIQUE_{code}_{len(features)}")
     feature = features[0]
     props = feature.get("properties") or {}
-    actual_code = str(props.get("NIVEL7") or props.get("nivel7") or "")
-    actual_name = props.get("NOMB_UH_N7") or props.get("nomb_uh_n7")
+
+    actual_code = str(props.get("CODIGO") or props.get("codigo") or "")
+    actual_name = props.get("NOMBRE") or props.get("nombre") or props.get("NOMB_UH_N7") or props.get("nomb_uh_n7")
     parent_code = str(props.get("NIVEL6") or props.get("nivel6") or "")
     parent_name = props.get("NOMB_UH_N6") or props.get("nomb_uh_n6")
-    if actual_code != code or actual_name != name:
-        raise CasmaGeometryError(f"ANA_N7_IDENTITY_MISMATCH_{code}_{actual_code}_{actual_name}")
-    if parent_code != PARENT_N6_CODE or parent_name != PARENT_N6_NAME:
+    hierarchy_n7 = str(props.get("NIVEL7") or props.get("nivel7") or "")
+    order = props.get("ORDEN") if "ORDEN" in props else props.get("orden")
+
+    if actual_code != code:
+        raise CasmaGeometryError(f"ANA_CODIGO_IDENTITY_MISMATCH_{code}_{actual_code}")
+    if folded(actual_name) != folded(expected_name):
+        raise CasmaGeometryError(f"ANA_NAME_IDENTITY_MISMATCH_{code}_{actual_name}")
+    if parent_code != PARENT_N6_CODE or folded(parent_name) != folded(PARENT_N6_NAME):
         raise CasmaGeometryError(f"ANA_N6_PARENT_MISMATCH_{code}_{parent_code}_{parent_name}")
+    if hierarchy_n7 and hierarchy_n7 != code:
+        raise CasmaGeometryError(f"ANA_N7_HIERARCHY_MISMATCH_{code}_{hierarchy_n7}")
+    if order is not None and int(float(order)) != 7:
+        raise CasmaGeometryError(f"ANA_ORDER_MISMATCH_{code}_{order}")
+
     geometry = feature.get("geometry") or {}
     if geometry.get("type") not in {"Polygon", "MultiPolygon"} or not geometry.get("coordinates"):
         raise CasmaGeometryError(f"ANA_POLYGON_MISSING_{code}")
-    return feature
+    return feature, str(actual_name)
 
 
-def normalized_geometry(cid: str, code: str, name: str, feature: dict, source_sha: str) -> dict:
+def normalized_geometry(cid: str, code: str, expected_name: str, official_name: str, feature: dict, source_sha: str) -> dict:
     props = {
         "unit_id": f"{DID}__{cid}",
         "parent_discovery_id": DID,
         "component_id": cid,
-        "name": name,
-        "official_name": name,
+        "name": expected_name,
+        "official_name": official_name,
         "official_unit_code": code,
-        "official_identity_field": "NIVEL7",
-        "official_name_field": "NOMB_UH_N7",
+        "official_identity_field": "CODIGO",
+        "official_name_field": "NOMBRE",
+        "official_hierarchy_level": "N7",
+        "official_parent_identity_field": "NIVEL6",
         "official_parent_unit_code": PARENT_N6_CODE,
         "official_parent_unit_name": PARENT_N6_NAME,
+        "source_layer": 7,
         "source_id": f"ANA-UH-{code}-{cid.upper()}",
         "source_snapshot_sha256": source_sha,
         "representation": "OFFICIAL_ANA_N7_HYDROGRAPHIC_CHILD_CONTEXT",
@@ -217,7 +239,8 @@ def normalized_geometry(cid: str, code: str, name: str, feature: dict, source_sh
             **SAFE,
             "context_only": True,
             "parent_composite": False,
-            "source_id": f"ANA-UH-{code}-{cid.upper()}",
+            "source_layer": 7,
+            "source_id": props["source_id"],
             "source_snapshot_sha256": source_sha,
         },
         "features": [{"type": "Feature", "properties": props, "geometry": feature["geometry"]}],
@@ -226,11 +249,18 @@ def normalized_geometry(cid: str, code: str, name: str, feature: dict, source_sh
 
 def build_contract(package: dict, components: list[dict]) -> dict:
     return {
-        "schema_version": "0.1",
+        "schema_version": "0.2",
         "discovery_id": DID,
         "system_name": package.get("system_name"),
         "contract_status": "DISCOVERY_CHILD_GEOMETRIES_REPRODUCIBLE_CONTEXT_ONLY",
         **SAFE,
+        "source_layer_policy": {
+            "service": "ANA_WMS",
+            "detailed_layer_id": 7,
+            "generalized_layer_id_not_valid_for_n7_bootstrap": 8,
+            "selection_field": "CODIGO",
+            "selection_is_outcome_independent": True,
+        },
         "official_source_ids": [row["source_id"] for row in components],
         "component_policy": {
             "parent_is_hydrologic_basin": False,
@@ -264,7 +294,6 @@ def build_contract(package: dict, components: list[dict]) -> dict:
             "union the nine N7 children into a synthetic activation geometry",
             "promote Cuenca Casma or the territorial discovery parent as activated because one child has evidence",
             "use these basin polygons as event footprints",
-            "treat faja marginal, critical points, bridges or works as historical hydraulic capacity",
             "infer outlets, confluences, Q_i(t), travel time, attenuation or receiver response from basin polygons",
             "propagate Rio Sechin or Rio Grande event evidence to sibling children",
             "materialize Quebrada Cruz Punta or Quebrada Muna without independent reproducible geometry",
@@ -277,20 +306,19 @@ def build_contract(package: dict, components: list[dict]) -> dict:
 def run(refresh_source: bool) -> dict:
     package = load(PACKAGE)
     rows = validate_package(package)
-
     existing = [source_path(EXPECTED[row["component_id"]][0]).is_file() for row in rows]
     if any(existing) and not all(existing):
         raise CasmaGeometryError("PARTIAL_FROZEN_SOURCE_SET_FAIL_CLOSED")
 
-    staged: dict[str, tuple[dict, str]] = {}
+    staged: dict[str, tuple[dict, str, str]] = {}
     if refresh_source:
         for row in rows:
             cid = row["component_id"]
-            code, name = EXPECTED[cid]
+            code, expected_name = EXPECTED[cid]
             snapshot, url = fetch_json(row["source_query"])
-            exact_feature(snapshot, code, name)
-            staged[cid] = (snapshot, url)
-        for cid, (snapshot, _) in staged.items():
+            _, official_name = exact_feature(snapshot, code, expected_name)
+            staged[cid] = (snapshot, url, official_name)
+        for cid, (snapshot, _, _) in staged.items():
             code, _ = EXPECTED[cid]
             dump(source_path(code), snapshot)
     elif not all(existing):
@@ -298,27 +326,30 @@ def run(refresh_source: bool) -> dict:
 
     materialized: list[dict] = []
     package_by_id = {row["component_id"]: row for row in rows}
-    for cid, (code, name) in EXPECTED.items():
+    for cid, (code, expected_name) in EXPECTED.items():
         source = source_path(code)
         snapshot = load(source)
-        feature = exact_feature(snapshot, code, name)
+        feature, official_name = exact_feature(snapshot, code, expected_name)
         source_sha = digest(source)
         package_row = package_by_id[cid]
         geom_path = ROOT / package_row["geometry"]["path"]
-        geom_sha = dump(geom_path, normalized_geometry(cid, code, name, feature, source_sha))
+        geom_sha = dump(geom_path, normalized_geometry(cid, code, expected_name, official_name, feature, source_sha))
         val_path = validation_path(geom_path)
         validation = {
-            "schema_version": "0.1",
+            "schema_version": "0.2",
             "discovery_id": DID,
             "component_id": cid,
             "status": "PASS_EXACT_OFFICIAL_ANA_N7_CHILD_GEOMETRY",
             **SAFE,
             "ana_unit_code": code,
-            "ana_unit_name": name,
-            "ana_identity_field": "NIVEL7",
-            "ana_name_field": "NOMB_UH_N7",
+            "ana_expected_name": expected_name,
+            "ana_official_name": official_name,
+            "ana_identity_field": "CODIGO",
+            "ana_name_field": "NOMBRE",
+            "ana_parent_identity_field": "NIVEL6",
             "ana_parent_unit_code": PARENT_N6_CODE,
             "ana_parent_unit_name": PARENT_N6_NAME,
+            "source_layer": 7,
             "source_id": package_row["source_id"],
             "source_path": source.relative_to(ROOT).as_posix(),
             "source_sha256": source_sha,
@@ -326,6 +357,7 @@ def run(refresh_source: bool) -> dict:
             "geometry_sha256": geom_sha,
             "request_url": request_url(package_row["source_query"]),
             "exact_query_unique_feature": True,
+            "selection_depends_on_outcomes": False,
             "approximate_geometry_used": False,
             "parent_composite_created": False,
             "event_footprint_created": False,
@@ -353,7 +385,7 @@ def run(refresh_source: bool) -> dict:
         package_row["geometry"] = geometry
         materialized.append({
             "component_id": cid,
-            "name": name,
+            "name": expected_name,
             "hydrologic_identity": package_row["hydrologic_identity"],
             "source_id": package_row["source_id"],
             "source_query": package_row["source_query"],
@@ -362,14 +394,16 @@ def run(refresh_source: bool) -> dict:
 
     package["contract_status"] = "DISCOVERY_CHILD_GEOMETRIES_REPRODUCIBLE_CONTEXT_ONLY"
     package["geometry_contract_path"] = CONTRACT.relative_to(ROOT).as_posix()
+    package["geometry_source_layer"] = 7
+    package["geometry_selection_field"] = "CODIGO"
     dump(PACKAGE, package)
-    contract = build_contract(package, materialized)
-    contract_sha = dump(CONTRACT, contract)
-
+    contract_sha = dump(CONTRACT, build_contract(package, materialized))
     return {
         "status": "PASS_EXACT_ANA_CASMA_N7_CHILD_GEOMETRIES",
         "discovery_id": DID,
         "child_count": len(materialized),
+        "source_layer": 7,
+        "selection_field": "CODIGO",
         "contract_sha256": contract_sha,
         "source_sha256": {cid: digest(source_path(code)) for cid, (code, _) in EXPECTED.items()},
         "geometry_sha256": {row["component_id"]: row["geometry"]["sha256"] for row in materialized},
@@ -380,8 +414,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--refresh-source", action="store_true")
     args = parser.parse_args()
-    result = run(args.refresh_source)
-    print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+    print(json.dumps(run(args.refresh_source), ensure_ascii=False, sort_keys=True))
 
 
 if __name__ == "__main__":
