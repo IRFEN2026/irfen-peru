@@ -53,6 +53,17 @@ jobs:
           missing=replace_ids-old_rows.keys()
           if missing:
               raise SystemExit(f'old source branch missing expected units: {sorted(missing)}')
+
+          # Fail closed on a source identifier that existed in the draft row but had no
+          # repository-bound URL/registry entry. Keep the supported 2017 context in the
+          # PPRRD source and do not manufacture an INDECI binding.
+          talara=old_rows['piura_talara_parinas_local_ravines']
+          unresolved='INDECI-TALARA-2017-HISTORICAL-CONTEXT'
+          if unresolved in talara.get('official_source_ids',[]):
+              talara['official_source_ids']=[sid for sid in talara['official_source_ids'] if sid != unresolved]
+          if unresolved in talara.get('official_source_ids',[]):
+              raise SystemExit('unresolved Talara source was not quarantined')
+
           out=[]
           seen=set()
           for row in cur['discovery_units']:
@@ -106,6 +117,7 @@ jobs:
                   raise SystemExit(f'missing replay corridor: {required}')
           scope_path.write_text(json.dumps(scope, ensure_ascii=False, indent=2)+'\n',encoding='utf-8')
           print('COMBINED_DISCOVERY_COUNT', len(out))
+          print('QUARANTINED_UNRESOLVED_SOURCE', unresolved)
           PY
           python scripts/build_map_layer_catalog.py
       - name: Validate replay before persistence
