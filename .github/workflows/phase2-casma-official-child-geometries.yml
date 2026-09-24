@@ -10,6 +10,7 @@ on:
       - site/data/phase2/geometries/ancash_casma_*_validation.json
       - scripts/probe_phase2_casma_official_child_geometries.py
       - scripts/diagnose_phase2_casma_ana_hydro_layers.py
+      - scripts/diagnose_phase2_casma_ana_legacy_service.py
       - tests/test_phase2_casma_sechin_yautan_discovery_contract.py
       - site/data/map_layers.json
       - .github/workflows/phase2-casma-official-child-geometries.yml
@@ -32,8 +33,10 @@ jobs:
           python-version: "3.12"
       - name: Install test dependency
         run: python -m pip install pytest
-      - name: Inspect bounded ANA identity exposure without geometry
+      - name: Inspect bounded ANA IDEP identity exposure without geometry
         run: python scripts/diagnose_phase2_casma_ana_hydro_layers.py
+      - name: Probe legacy official ANA Pfafstetter service without persisting geometry
+        run: python scripts/diagnose_phase2_casma_ana_legacy_service.py
       - name: Bootstrap exact ANA N7 sources only from a completely missing source set
         shell: bash
         run: |
