@@ -1,0 +1,906 @@
+{
+  "schema_version": "phase2-south-coast-moquegua-tacna-discovery-v0.1",
+  "lane": "IRFEN_SOUTH_COAST_MOQUEGUA_TACNA",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "map_publish_enabled": false,
+  "purpose": "Register a fail-closed Moquegua + Tacna coastal discovery hierarchy using official ANA hydrographic units and bounded official event evidence, without publishing unverified local geometry or operational states.",
+  "global_rules": {
+    "parent_is_context_only": true,
+    "child_activation_does_not_activate_parent": true,
+    "smallest_reproducible_local_hydrologic_unit_is_research_unit": true,
+    "no_synthetic_union_geometry": true,
+    "no_approximate_points": true,
+    "territorial_name_is_not_hydrologic_unit": true,
+    "territorial_event_without_named_ravine_cannot_create_child_geometry": true,
+    "critical_point_is_not_event": true,
+    "intervention_is_not_event": true,
+    "work_or_design_is_not_historical_capacity": true,
+    "marginal_strip_is_not_event_footprint": true,
+    "absence_of_report_is_not_negative_control": true,
+    "threshold_transfer_between_basins_forbidden": true,
+    "coarse_satellite_rainfall_alone_cannot_assign_small_ravine_activation": true,
+    "tributary_activation_does_not_imply_receiver_overflow": true
+  },
+  "map_policy": {
+    "parents": "CONTEXT_GREY_ONLY",
+    "children": "PUBLISH_ONLY_WITH_REPRODUCIBLE_GEOMETRY",
+    "channels_and_outlets": "PUBLISH_ONLY_WHEN_REPRODUCIBLE",
+    "territorial_events": "SEPARATE_CONTEXT_ONLY",
+    "critical_points": "CONTEXT_ONLY_NOT_EVENTS",
+    "historical_footprints": "SEPARATE_LAYER_ONLY_WITH_REPRODUCIBLE_OFFICIAL_GEOMETRY",
+    "risk_colours_forbidden": true,
+    "alert_semantics_forbidden": true,
+    "missing_geometry_is_not_drawn": true
+  },
+  "official_hydrographic_context": [
+    {
+      "discovery_id": "south_tambo_1318",
+      "name": "Cuenca Tambo",
+      "official_unit_code": "1318",
+      "department": "Arequipa / Moquegua / Puno",
+      "entity_role": "OFFICIAL_PARENT_OR_CONTEXT_UNIT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "parent_geometry_status": "OFFICIAL_GEOMETRY_CANDIDATE_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "parent_geometry_asset": null,
+      "parent_map_publishable": false,
+      "must_not_merge_with": [
+        "Moquegua-Ilo/Osmore 1317",
+        "Locumba 1316"
+      ],
+      "notes": "Cross-regional Pacific basin; Moquegua territorial events require spatial containment before assignment.",
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "moquegua_ilo_moquegua_1317",
+      "name": "Cuenca Moquegua-Ilo",
+      "official_unit_code": "1317",
+      "department": "Moquegua",
+      "entity_role": "OFFICIAL_PARENT_OR_CONTEXT_UNIT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "parent_geometry_status": "OFFICIAL_GEOMETRY_CANDIDATE_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "parent_geometry_asset": null,
+      "parent_map_publishable": false,
+      "level5_units": [
+        {
+          "code": "13172",
+          "name": "Ilo-Moquegua"
+        },
+        {
+          "code": "13173",
+          "name": "Licona"
+        },
+        {
+          "code": "13174",
+          "name": "El Carrizal"
+        },
+        {
+          "code": "13170",
+          "name": "Huacacunegrande"
+        }
+      ],
+      "level6_units": [
+        {
+          "code": "131721",
+          "name": "Bajo Ilo-Moquegua"
+        },
+        {
+          "code": "131723",
+          "name": "Medio Bajo Ilo-Moquegua / Río Ilo"
+        },
+        {
+          "code": "131724",
+          "name": "Guaneros / Quebrada Guaneros"
+        },
+        {
+          "code": "131725",
+          "name": "Medio Ilo-Moquegua / Río Osmore"
+        },
+        {
+          "code": "131726",
+          "name": "Tumilaca"
+        },
+        {
+          "code": "131727",
+          "name": "Medio Alto Ilo-Moquegua / Río Torata context"
+        },
+        {
+          "code": "131728",
+          "name": "Torata"
+        },
+        {
+          "code": "131729",
+          "name": "Alto Ilo-Moquegua / Río Huaracane"
+        },
+        {
+          "code": "131722",
+          "name": "Honda"
+        },
+        {
+          "code": "131730",
+          "name": "Pacocha"
+        }
+      ],
+      "must_not_merge_with": [
+        "Tambo 1318",
+        "Locumba 1316"
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "tacna_locumba_1316",
+      "name": "Cuenca Locumba",
+      "official_unit_code": "1316",
+      "department": "Tacna / Moquegua interface",
+      "entity_role": "OFFICIAL_PARENT_OR_CONTEXT_UNIT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "parent_geometry_status": "OFFICIAL_GEOMETRY_CANDIDATE_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "parent_geometry_asset": null,
+      "parent_map_publishable": false,
+      "must_not_merge_with": [
+        "Sama 13158",
+        "Caplina 13156"
+      ],
+      "notes": "Mirave/Ilabaya territorial events require local hydrologic adjudication.",
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "tacna_sama_13158",
+      "name": "Cuenca Sama",
+      "official_unit_code": "13158",
+      "department": "Tacna",
+      "entity_role": "OFFICIAL_PARENT_OR_CONTEXT_UNIT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "parent_geometry_status": "OFFICIAL_GEOMETRY_CANDIDATE_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "parent_geometry_asset": null,
+      "parent_map_publishable": false,
+      "must_not_merge_with": [
+        "Locumba 1316",
+        "Caplina 13156"
+      ],
+      "notes": "District Sama is not sufficient evidence that a local ravine belongs to UH 13158.",
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "tacna_caplina_13156",
+      "name": "Cuenca Caplina",
+      "official_unit_code": "13156",
+      "department": "Tacna",
+      "entity_role": "OFFICIAL_PARENT_OR_CONTEXT_UNIT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "parent_geometry_status": "OFFICIAL_GEOMETRY_CANDIDATE_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "parent_geometry_asset": null,
+      "parent_map_publishable": false,
+      "management_context_units": [
+        {
+          "code": "13152",
+          "name": "La Concordia"
+        },
+        {
+          "code": "13153",
+          "name": "Escritos"
+        },
+        {
+          "code": "13154",
+          "name": "Hospicio"
+        },
+        {
+          "code": "13155",
+          "name": "Los Molles"
+        },
+        {
+          "code": "13157",
+          "name": "Los Muelles"
+        },
+        {
+          "code": "13159",
+          "name": "Intercuenca"
+        },
+        {
+          "code": "13171",
+          "name": "Intercuenca"
+        }
+      ],
+      "must_not_merge_with": [
+        "Sama 13158",
+        "Uchusuma 0148"
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "tacna_uchusuma_0148",
+      "name": "Uchusuma",
+      "official_unit_code": "0148",
+      "department": "Tacna",
+      "entity_role": "OFFICIAL_PARENT_OR_CONTEXT_UNIT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "parent_geometry_status": "OFFICIAL_GEOMETRY_CANDIDATE_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "parent_geometry_asset": null,
+      "parent_map_publishable": false,
+      "related_management_unit": {
+        "code": "0146",
+        "name": "Caño"
+      },
+      "must_not_merge_with": [
+        "Caplina 13156"
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    }
+  ],
+  "local_discovery_systems": [
+    {
+      "discovery_id": "moquegua_torata_local_ravines",
+      "parent_basin_candidates": [
+        "moquegua_ilo_moquegua_1317"
+      ],
+      "parent_assignment_status": "PENDING_EXACT_SPATIAL_CONTAINMENT",
+      "entity_role": "LOCAL_RAVINE_DISCOVERY_SYSTEM",
+      "children": [
+        {
+          "child_id": "moquegua_chacane",
+          "name": "Quebrada Chacane",
+          "unit_role": "LOCAL_RAVINE_OR_CHANNEL_TARGET",
+          "identity_status": "OFFICIAL_NAME_CONFIRMED",
+          "geometry_status": "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+          "geometry_asset": null,
+          "parent_assignment_status": "PENDING_EXACT_SPATIAL_CONTAINMENT",
+          "outlet_status": "UNKNOWN",
+          "outlet": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "INDECI-CHACANE-TORATA-2024"
+          ],
+          "event_attribution_note": "COEN-INDECI directly names Quebrada Chacane in the 2024-02-21 huaico. District Torata alone does not establish exact UH containment.",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        }
+      ],
+      "territorial_events": [],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "moquegua_ilo_pacocha_local_ravines",
+      "parent_basin_candidates": [
+        "moquegua_ilo_moquegua_1317"
+      ],
+      "parent_assignment_status": "MIXED_LOCAL_ASSIGNMENT_PENDING_EXACT_SPATIAL_CONTAINMENT",
+      "entity_role": "LOCAL_RAVINE_DISCOVERY_SYSTEM",
+      "children": [
+        {
+          "child_id": "moquegua_zaparo",
+          "name": "Quebrada Zaparo",
+          "unit_role": "LOCAL_RAVINE_OR_CHANNEL_TARGET",
+          "identity_status": "OFFICIAL_NAME_CONFIRMED",
+          "geometry_status": "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+          "geometry_asset": null,
+          "parent_assignment_status": "PENDING_EXACT_SPATIAL_CONTAINMENT",
+          "outlet_status": "UNKNOWN",
+          "outlet": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "INGEMMET-ZAPARO-A7065",
+            "CENEPRED-ZAPARO-EVAR-2024"
+          ],
+          "event_attribution_note": "INGEMMET documents debris-flow evidence and a 2020-01-23 huaico; CENEPRED 2024 adds hazard/risk context. Risk polygons are not channel geometry or event footprints.",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        }
+      ],
+      "territorial_events": [
+        {
+          "event_id": "moquegua_ilo_unnamed_costanera_sur_2026_08_17",
+          "date_or_window": "2026-08-17 10:18",
+          "territorial_reference": "Ilo, Costanera Sur",
+          "named_child": null,
+          "receiver_reference": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "INDECI-ILO-COSTANERA-SUR-2026"
+          ],
+          "statement": "COEN-INDECI reports activation of an unnamed quebrada causing a huaico on Costanera Sur.",
+          "hydrologic_assignment_status": "TERRITORIAL_EVENT_PENDING_LOCAL_GEOMETRY",
+          "do_not_infer": "Do not create or name a child from territorial location alone."
+        },
+        {
+          "event_id": "moquegua_pacocha_costanera_norte_2026_08_16",
+          "date_or_window": "2026-08-16 13:00",
+          "territorial_reference": "Pacocha, Costanera Norte km 224",
+          "named_child": null,
+          "receiver_reference": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "INDECI-PACOCHA-COSTANERA-NORTE-2026"
+          ],
+          "statement": "COEN-INDECI reports a huaico affecting the Costanera Norte in Pacocha; the local ravine is unnamed.",
+          "hydrologic_assignment_status": "TERRITORIAL_EVENT_PENDING_LOCAL_GEOMETRY",
+          "do_not_infer": "Do not attribute this event to Quebrada Zaparo without direct evidence."
+        }
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "moquegua_general_sanchez_cerro_local_ravines",
+      "parent_basin_candidates": [
+        "south_tambo_1318",
+        "moquegua_ilo_moquegua_1317"
+      ],
+      "parent_assignment_status": "CHILD_SPECIFIC_SPATIAL_ADJUDICATION_REQUIRED",
+      "entity_role": "LOCAL_RAVINE_DISCOVERY_SYSTEM",
+      "children": [
+        {
+          "child_id": "moquegua_volcanmayo",
+          "name": "Quebrada Volcanmayo",
+          "unit_role": "LOCAL_RAVINE_OR_CHANNEL_TARGET",
+          "identity_status": "OFFICIAL_NAME_CONFIRMED",
+          "geometry_status": "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+          "geometry_asset": null,
+          "parent_assignment_status": "PENDING_EXACT_SPATIAL_CONTAINMENT",
+          "outlet_status": "UNKNOWN",
+          "outlet": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "INDECI-UBINAS-VOLCANMAYO-2026"
+          ],
+          "event_attribution_note": "COEN-INDECI directly names Quebrada Volcanmayo in a 2026-01-17 huaico in Ubinas; exact coastal-basin parent remains a spatial question.",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        }
+      ],
+      "territorial_events": [
+        {
+          "event_id": "moquegua_omate_unnamed_2026_01_18",
+          "date_or_window": "2026-01-18 18:00",
+          "territorial_reference": "Omate / Santa Catalina road MO-108",
+          "named_child": null,
+          "receiver_reference": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "INDECI-OMATE-2026A"
+          ],
+          "statement": "COEN-INDECI reports a huaico on the Omate–Santa Catalina road; the ravine is unnamed.",
+          "hydrologic_assignment_status": "TERRITORIAL_EVENT_PENDING_LOCAL_GEOMETRY",
+          "do_not_infer": "Do not create a named child or assign Tambo/Moquegua-Ilo parent without exact geometry."
+        }
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "tacna_ilabaya_mirave_locumba_local_system",
+      "parent_basin_candidates": [
+        "tacna_locumba_1316"
+      ],
+      "parent_assignment_status": "PARENT_CONTEXT_SUPPORTED_BUT_LOCAL_CHILD_GEOMETRY_PENDING",
+      "entity_role": "LOCAL_RAVINE_AND_TERRITORIAL_EVENT_SYSTEM",
+      "children": [
+        {
+          "child_id": "tacna_colacaya",
+          "name": "Quebrada Colacaya",
+          "unit_role": "LOCAL_RAVINE_OR_CHANNEL_TARGET",
+          "identity_status": "OFFICIAL_NAME_AND_LOCUMBA_CONTEXT_CONFIRMED",
+          "geometry_status": "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+          "geometry_asset": null,
+          "parent_assignment_status": "PENDING_EXACT_SPATIAL_CONTAINMENT",
+          "outlet_status": "UNKNOWN",
+          "outlet": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "IGP-TACNA-EXTREME-RAIN-2021"
+          ],
+          "event_attribution_note": "IGP historical analysis names Quebrada Colacaya activation in Ilabaya and places it in part of the Locumba basin. Exact channel/outlet geometry remains to be frozen.",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        }
+      ],
+      "territorial_events": [
+        {
+          "event_id": "tacna_mirave_2015",
+          "date_or_window": "2015-03",
+          "territorial_reference": "Mirave / Ilabaya",
+          "named_child": null,
+          "receiver_reference": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "IGP-TACNA-EXTREME-RAIN-2021"
+          ],
+          "statement": "IGP documents severe March 2015 rainfall impacts in Mirave; this is not automatically the Quebrada Colacaya event.",
+          "hydrologic_assignment_status": "TERRITORIAL_EVENT_PENDING_LOCAL_GEOMETRY",
+          "do_not_infer": "Do not conflate the Mirave territorial event with Quebrada Colacaya."
+        },
+        {
+          "event_id": "tacna_mirave_2019_02_08",
+          "date_or_window": "2019-02-08 about 15:30",
+          "territorial_reference": "Mirave / Ilabaya",
+          "named_child": null,
+          "receiver_reference": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "INDECI-MIRAVE-2019",
+            "INDECI-PACHIA-MIRAVE-2019"
+          ],
+          "statement": "COEN-INDECI reports a huaico affecting Mirave; the report does not name the local ravine.",
+          "hydrologic_assignment_status": "TERRITORIAL_EVENT_PENDING_LOCAL_GEOMETRY",
+          "do_not_infer": "Do not assign the 2019 Mirave huaico to Colacaya or any other named child without direct evidence."
+        }
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "tacna_sama_coastal_ravines",
+      "parent_basin_candidates": [
+        "tacna_sama_13158",
+        "tacna_caplina_13156"
+      ],
+      "parent_assignment_status": "UNRESOLVED_FOR_LOCAL_RAVINE",
+      "entity_role": "LOCAL_RAVINE_DISCOVERY_SYSTEM",
+      "children": [
+        {
+          "child_id": "tacna_quebrada_de_los_burros",
+          "name": "Quebrada de los Burros",
+          "unit_role": "LOCAL_RAVINE_OR_CHANNEL_TARGET",
+          "identity_status": "OFFICIAL_NAME_CONFIRMED",
+          "geometry_status": "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+          "geometry_asset": null,
+          "parent_assignment_status": "PENDING_EXACT_SPATIAL_CONTAINMENT",
+          "outlet_status": "UNKNOWN",
+          "outlet": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "INDECI-SAMA-BURROS-2021",
+            "INDECI-SAMA-BURROS-2026"
+          ],
+          "event_attribution_note": "COEN-INDECI locates huaico impacts near Quebrada de los Burros in Sama in 2021 and 2026. District name does not prove UH 13158 containment.",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        }
+      ],
+      "territorial_events": [
+        {
+          "event_id": "tacna_burros_2021_08_25",
+          "date_or_window": "2021-08-25 about 03:00",
+          "territorial_reference": "Sama / sector Quebrada de los Burros",
+          "named_child": "tacna_quebrada_de_los_burros",
+          "receiver_reference": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "INDECI-SAMA-BURROS-2021"
+          ],
+          "statement": "COEN-INDECI reports a huaico affecting PE-1SD in the Quebrada de Burros sector.",
+          "hydrologic_assignment_status": "NAMED_LOCAL_RAVINE_EVENT_PARENT_UH_PENDING",
+          "do_not_infer": "Do not create a local hydrologic child from territorial location alone."
+        },
+        {
+          "event_id": "tacna_burros_2026_08_17",
+          "date_or_window": "2026-08-17 08:25",
+          "territorial_reference": "Sama / near Quebrada de los Burros",
+          "named_child": "tacna_quebrada_de_los_burros",
+          "receiver_reference": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "INDECI-SAMA-BURROS-2026"
+          ],
+          "statement": "COEN-INDECI reports a huaico near Quebrada de los Burros after a separate 2026-08-16 landslide in the same corridor.",
+          "hydrologic_assignment_status": "NAMED_LOCAL_RAVINE_EVENT_PARENT_UH_PENDING",
+          "do_not_infer": "Keep the 2026-08-16 landslide and 2026-08-17 huaico as separate mechanisms/events."
+        }
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "tacna_caplina_pachia_local_system",
+      "parent_basin_candidates": [
+        "tacna_caplina_13156",
+        "tacna_uchusuma_0148",
+        "tacna_locumba_1316"
+      ],
+      "parent_assignment_status": "LOCAL_CHILD_SPECIFIC_SPATIAL_ADJUDICATION_REQUIRED",
+      "entity_role": "LOCAL_RAVINE_DISCOVERY_SYSTEM",
+      "children": [
+        {
+          "child_id": "tacna_ataspaca",
+          "name": "Quebrada Ataspaca",
+          "unit_role": "LOCAL_RAVINE_OR_CHANNEL_TARGET",
+          "identity_status": "OFFICIAL_NAME_CONFIRMED",
+          "geometry_status": "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+          "geometry_asset": null,
+          "parent_assignment_status": "PENDING_EXACT_SPATIAL_CONTAINMENT",
+          "outlet_status": "UNKNOWN",
+          "outlet": null,
+          "evidence_state": "HAZARD_AND_DEPOSIT_CONTEXT_CONFIRMED_NOT_DATED_EVENT",
+          "source_ids": [
+            "INGEMMET-ATASPACA"
+          ],
+          "event_attribution_note": "INGEMMET identifies debris-flow deposits/hazard in Quebrada Ataspaca. Do not count this source alone as a dated activation event.",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        }
+      ],
+      "territorial_events": [
+        {
+          "event_id": "tacna_pachia_2019_02_08",
+          "date_or_window": "2019-02-08 about 14:00",
+          "territorial_reference": "Pachía, Tacna",
+          "named_child": null,
+          "receiver_reference": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "INDECI-PACHIA-MIRAVE-2019"
+          ],
+          "statement": "COEN-INDECI reports a huaico affecting Pachía; the exact ravine is not named.",
+          "hydrologic_assignment_status": "TERRITORIAL_EVENT_PENDING_LOCAL_GEOMETRY",
+          "do_not_infer": "Do not assign the Pachía event to Ataspaca or any named ravine without direct evidence."
+        }
+      ],
+      "receiver_context": {
+        "source_id": "ANA-CAPLINA-TRC-PACHIA-2025",
+        "statement": "ANA study reach around Pachía/Calana/Pocollay spans UH level-5 Los Molles 13155 and Caplina 13156; this is reach context, not identity of the 2019 ravine."
+      },
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    }
+  ],
+  "geometry_probe_plan": {
+    "source_id": "MINAM-UH-SUBCUENCAS-MAPSERVER-1",
+    "service_url": "https://geoservidorperu.minam.gob.pe/arcgis/rest/services/ServicioActivacionQuebrada/MapServer/1",
+    "geometry_type": "polygon",
+    "spatial_reference": "EPSG:4326",
+    "exact_code_field": "CODIGO",
+    "required_attributes": [
+      "CODIGO",
+      "Nombre_UH",
+      "AREA_KM2",
+      "NIVEL",
+      "NIVEL1",
+      "NIVEL2",
+      "NIVEL3",
+      "NIVEL4",
+      "NIVEL5",
+      "NIVEL6",
+      "NIVEL7",
+      "NIVEL8"
+    ],
+    "probe_codes": [
+      "1318",
+      "1317",
+      "13172",
+      "131721",
+      "131723",
+      "131724",
+      "131725",
+      "131726",
+      "131727",
+      "131728",
+      "131729",
+      "13173",
+      "131730",
+      "1316",
+      "13158",
+      "13156",
+      "13155",
+      "0148",
+      "0146",
+      "13152",
+      "13153",
+      "13154",
+      "13157",
+      "13159",
+      "13171"
+    ],
+    "require_exact_code_match": true,
+    "require_single_feature_for_direct_publish": true,
+    "multiple_features_must_not_be_dissolved": true,
+    "require_geometry_hash": true,
+    "require_topology_and_parent_review": true,
+    "publish_to_map": false,
+    "current_status": "PREREGISTERED_NOT_EXECUTED_IN_THIS_PACKAGE"
+  },
+  "provenance_policy": {
+    "retrieved_at": "2026-09-25T23:05:00Z",
+    "capture_hash_semantics": "capture_sha256 hashes each canonical evidence record (source_id|url|retrieved_at|bounded_claims), not original remote bytes.",
+    "original_remote_bytes_frozen": false,
+    "original_byte_hash_must_not_be_claimed": true
+  },
+  "sources": [
+    {
+      "source_id": "ANA-PGRH-CAPLINA-LOCUMBA-2013",
+      "institution": "Autoridad Nacional del Agua",
+      "url": "https://www.ana.gob.pe/sites/default/files/normatividad/files/pgrh-locumba.pdf",
+      "role": "OFFICIAL_HYDROGRAPHIC_UNIT_IDENTITY_AND_MANAGEMENT_CONTEXT",
+      "bounded_claims": [
+        "Confirms Caplina-Locumba planning unit composition and official codes including Locumba 1316, Sama 13158, Caplina 13156 and Uchusuma 0148."
+      ],
+      "retrieved_at": "2026-09-25T23:05:00Z",
+      "capture_sha256": "41486a727077c8b58e3a3df920c81ff1c78244a21645a723ab22c3666b2bb61d",
+      "capture_hash_basis": "SHA-256 of canonical source_id|url|retrieved_at|bounded_claims; original remote bytes not archived by this PR",
+      "original_bytes_frozen": false
+    },
+    {
+      "source_id": "ANA-MOQUEGUA-ILO-UH-2020",
+      "institution": "Autoridad Nacional del Agua / SINIA mirror",
+      "url": "https://sinia.minam.gob.pe/sites/default/files/archivos/public/docs/XV%20MAP%20de%20la%20calidad%20de%20agua%20de%20la%20cuenca%20Moquegua%20-%20Ilo.pdf",
+      "role": "OFFICIAL_HYDROGRAPHIC_UNIT_TABLE",
+      "bounded_claims": [
+        "Confirms Moquegua-Ilo 1317 and listed level-5/level-6 hydrographic unit codes/names."
+      ],
+      "retrieved_at": "2026-09-25T23:05:00Z",
+      "capture_sha256": "a4152e1cf738c69feed8c391d33e331bc73a23df8f91fb2734a9777522bf756a",
+      "capture_hash_basis": "SHA-256 of canonical source_id|url|retrieved_at|bounded_claims; original remote bytes not archived by this PR",
+      "original_bytes_frozen": false
+    },
+    {
+      "source_id": "ANA-MOQUEGUA-ILO-MONITOR-2024",
+      "institution": "Autoridad Nacional del Agua",
+      "url": "https://www.gob.pe/institucion/ana/noticias/948234-moquegua-inician-actividades-para-mitigar-afectacion-al-agua-en-la-cuenca-moquegua-ilo",
+      "role": "CURRENT_OFFICIAL_NOMENCLATURE_CONTEXT",
+      "bounded_claims": [
+        "Uses Alto, Medio and Medio Bajo Ilo-Moquegua plus Torata and Tumilaca as distinct monitoring units."
+      ],
+      "retrieved_at": "2026-09-25T23:05:00Z",
+      "capture_sha256": "6b1e379759b08e462e94539f4b1a868055ca0f28db147cc80d603bdc52f4a2e2",
+      "capture_hash_basis": "SHA-256 of canonical source_id|url|retrieved_at|bounded_claims; original remote bytes not archived by this PR",
+      "original_bytes_frozen": false
+    },
+    {
+      "source_id": "INDECI-CHACANE-TORATA-2024",
+      "institution": "COEN-INDECI",
+      "url": "https://portal.indeci.gob.pe/emergencias/reporte-preliminar-n-367-23-2-2024-coen-indeci-0125-horas-lluvias-intensas-en-el-distrito-de-torata-moquegua/",
+      "role": "NAMED_RAVINE_EVENT",
+      "bounded_claims": [
+        "Reports 2024-02-21 activation of Quebrada Chacane and huaico impacts in Torata."
+      ],
+      "retrieved_at": "2026-09-25T23:05:00Z",
+      "capture_sha256": "3df69f3be9dac2798fbe0ffafb4f9d33d9adf05c65c33f2f428e48be7c23d85b",
+      "capture_hash_basis": "SHA-256 of canonical source_id|url|retrieved_at|bounded_claims; original remote bytes not archived by this PR",
+      "original_bytes_frozen": false
+    },
+    {
+      "source_id": "INDECI-ILO-COSTANERA-SUR-2026",
+      "institution": "COEN-INDECI",
+      "url": "https://portal.indeci.gob.pe/emergencias/reporte-complementario-n-10627-17-8-2026-coen-indeci-1800-horas-reporte-n-1-lluvias-intensas-en-el-distrito-de-ilo-moquegua/",
+      "role": "TERRITORIAL_UNNAMED_RAVINE_EVENT",
+      "bounded_claims": [
+        "Reports 2026-08-17 activation of an unnamed ravine causing a huaico on Costanera Sur, Ilo."
+      ],
+      "retrieved_at": "2026-09-25T23:05:00Z",
+      "capture_sha256": "43f10f5baddb6f8f49b468f49cc303d3aa8c4b9b00a4fc0de9887f8af54207ed",
+      "capture_hash_basis": "SHA-256 of canonical source_id|url|retrieved_at|bounded_claims; original remote bytes not archived by this PR",
+      "original_bytes_frozen": false
+    },
+    {
+      "source_id": "INDECI-PACOCHA-COSTANERA-NORTE-2026",
+      "institution": "COEN-INDECI",
+      "url": "https://portal.indeci.gob.pe/emergencias/reporte-preliminar-n-0743-16-8-2026-coen-indeci-2100-horas-huaico-en-el-distrito-de-pacocha-moquegua/",
+      "role": "TERRITORIAL_UNNAMED_RAVINE_EVENT",
+      "bounded_claims": [
+        "Reports 2026-08-16 huaico at km 224 Costanera Norte, Pacocha; ravine unnamed."
+      ],
+      "retrieved_at": "2026-09-25T23:05:00Z",
+      "capture_sha256": "f4d709d6407794ef707fc11c0353d8972d916493b98db7688de867dd9d967883",
+      "capture_hash_basis": "SHA-256 of canonical source_id|url|retrieved_at|bounded_claims; original remote bytes not archived by this PR",
+      "original_bytes_frozen": false
+    },
+    {
+      "source_id": "INGEMMET-ZAPARO-A7065",
+      "institution": "INGEMMET",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/9731_informe-tecnico-n0a7065-evaluacion-de-peligros-geologicos-por-flujos-de-detritos-huaicos-en-la-quebrada-zaparo-distrito-pacocha-provincia-ilo-departam.pdf",
+      "role": "NAMED_RAVINE_GEOLOGIC_AND_EVENT_CONTEXT",
+      "bounded_claims": [
+        "Identifies Quebrada Zaparo and debris-flow evidence including a 2020-01-23 huaico."
+      ],
+      "retrieved_at": "2026-09-25T23:05:00Z",
+      "capture_sha256": "fec8f974274aa32517fd95dcb9c422e84a59e5f93700612799dff217fcc0dbe1",
+      "capture_hash_basis": "SHA-256 of canonical source_id|url|retrieved_at|bounded_claims; original remote bytes not archived by this PR",
+      "original_bytes_frozen": false
+    },
+    {
+      "source_id": "CENEPRED-ZAPARO-EVAR-2024",
+      "institution": "CENEPRED",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/18979_informe-de-evaluacion-de-riesgo-por-flujo-de-detritos-en-la-quebrada-zaparo-distrito-de-pacocha-provincia-ilo-departamento-moquegua.pdf",
+      "role": "RISK_AND_HAZARD_CONTEXT",
+      "bounded_claims": [
+        "Provides Quebrada Zaparo hazard/risk mapping context; risk polygons are not channel geometry or observed event footprint."
+      ],
+      "retrieved_at": "2026-09-25T23:05:00Z",
+      "capture_sha256": "df630a7cd30df494bea07ba43aaf0116b16d6d2928b1d218a68b37d65ad72245",
+      "capture_hash_basis": "SHA-256 of canonical source_id|url|retrieved_at|bounded_claims; original remote bytes not archived by this PR",
+      "original_bytes_frozen": false
+    },
+    {
+      "source_id": "IGP-TACNA-EXTREME-RAIN-2021",
+      "institution": "Instituto Geofísico del Perú",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/12821_analisis-y-evaluacion-historica-de-lluvias-en-la-region-tacna-informe-tecnico-n0043-2021igp-ciencias-de-la-tierra-solida.pdf",
+      "role": "HISTORICAL_EVENT_AND_RAINFALL_CONTEXT",
+      "bounded_claims": [
+        "Documents severe March 2015 Mirave impacts and separately names Quebrada Colacaya activation in Ilabaya in Locumba-basin context."
+      ],
+      "retrieved_at": "2026-09-25T23:05:00Z",
+      "capture_sha256": "992b14bf9c885ffc8a07b791b594da9b2787030f109e66404504b9f5666ea0cc",
+      "capture_hash_basis": "SHA-256 of canonical source_id|url|retrieved_at|bounded_claims; original remote bytes not archived by this PR",
+      "original_bytes_frozen": false
+    },
+    {
+      "source_id": "INDECI-MIRAVE-2019",
+      "institution": "COEN-INDECI",
+      "url": "https://portal.indeci.gob.pe/emergencias/tacna-jorge-basadre-ilabaya-mirave-huaico-reporte-complementario-01/",
+      "role": "TERRITORIAL_HUAICO_EVENT",
+      "bounded_claims": [
+        "Reports 2019-02-08 huaico affecting Mirave, Ilabaya; local ravine unnamed."
+      ],
+      "retrieved_at": "2026-09-25T23:05:00Z",
+      "capture_sha256": "226fd3b9ab26b6bb2a81c45ce9e6d56c94ae09c5c91b9b82351373dd00e04681",
+      "capture_hash_basis": "SHA-256 of canonical source_id|url|retrieved_at|bounded_claims; original remote bytes not archived by this PR",
+      "original_bytes_frozen": false
+    },
+    {
+      "source_id": "INDECI-PACHIA-MIRAVE-2019",
+      "institution": "COEN-INDECI",
+      "url": "https://portal.indeci.gob.pe/emergencias/tacna-tacna-jorge-basadre-pachia-ilabaya-pachia-mirave-precipitaciones-pluviales-reporte-complementario-05/",
+      "role": "MULTI_TERRITORIAL_HUAICO_CONTEXT",
+      "bounded_claims": [
+        "Reports 2019-02-08 huaico impacts in Pachía and Mirave with separate times; does not name exact Pachía ravine."
+      ],
+      "retrieved_at": "2026-09-25T23:05:00Z",
+      "capture_sha256": "a221e5941ea2fa623509051458ee3df707af7111da9bc176b893361500dbf40d",
+      "capture_hash_basis": "SHA-256 of canonical source_id|url|retrieved_at|bounded_claims; original remote bytes not archived by this PR",
+      "original_bytes_frozen": false
+    },
+    {
+      "source_id": "INDECI-SAMA-BURROS-2021",
+      "institution": "COEN-INDECI",
+      "url": "https://portal.indeci.gob.pe/emergencias/reporte-preliminar-no-1979-25-8-2021-coen-indeci-1250-horas-huaico-en-el-distrito-de-sama-tacna/",
+      "role": "NAMED_CORRIDOR_HUAICO_EVENT",
+      "bounded_claims": [
+        "Reports 2021-08-25 huaico affecting PE-1SD in sector Quebrada de Burros, Sama."
+      ],
+      "retrieved_at": "2026-09-25T23:05:00Z",
+      "capture_sha256": "6b0138cabbf4d41497a09af6066c85e4e46f23a79ea4d29be1e789cacad6c998",
+      "capture_hash_basis": "SHA-256 of canonical source_id|url|retrieved_at|bounded_claims; original remote bytes not archived by this PR",
+      "original_bytes_frozen": false
+    },
+    {
+      "source_id": "INDECI-SAMA-BURROS-2026",
+      "institution": "COEN-INDECI",
+      "url": "https://portal.indeci.gob.pe/emergencias/reporte-preliminar-n-o-0744-17-8-2026-coen-indeci-0050-horas-lluvias-intensas-el-distrito-de-sama-tacna/",
+      "role": "MULTI_MECHANISM_CORRIDOR_EVENT",
+      "bounded_claims": [
+        "Separately reports a 2026-08-16 landslide and a 2026-08-17 huaico near Quebrada de los Burros."
+      ],
+      "retrieved_at": "2026-09-25T23:05:00Z",
+      "capture_sha256": "2375c6754ce58bb113b309a603319d4411084a0c2952ef02b2f29471fc2e1936",
+      "capture_hash_basis": "SHA-256 of canonical source_id|url|retrieved_at|bounded_claims; original remote bytes not archived by this PR",
+      "original_bytes_frozen": false
+    },
+    {
+      "source_id": "ANA-CAPLINA-TRC-PACHIA-2025",
+      "institution": "Autoridad Nacional del Agua",
+      "url": "https://www.ana.gob.pe/sites/default/files/normatividad/files/32-IT-0002-2024-14733-2022-229.pdf",
+      "role": "OFFICIAL_REACH_AND_UH_CONTEXT",
+      "bounded_claims": [
+        "Pachía/Calana/Pocollay study reach spans UH level-5 Los Molles 13155 and Caplina 13156; does not identify the 2019 ravine."
+      ],
+      "retrieved_at": "2026-09-25T23:05:00Z",
+      "capture_sha256": "165db892b0a7090ef1a72e9792e04e291e4468f121b419114657a3a9777cf61d",
+      "capture_hash_basis": "SHA-256 of canonical source_id|url|retrieved_at|bounded_claims; original remote bytes not archived by this PR",
+      "original_bytes_frozen": false
+    },
+    {
+      "source_id": "INGEMMET-ATASPACA",
+      "institution": "INGEMMET",
+      "url": "https://alicia.concytec.gob.pe/vufind/Record/INGEMMET_99ef7bcabdfa30975bc86d05a3389d8a",
+      "role": "NAMED_RAVINE_HAZARD_CONTEXT",
+      "bounded_claims": [
+        "Identifies Quebrada Ataspaca debris-flow deposits/hazard; source alone is not a dated activation event."
+      ],
+      "retrieved_at": "2026-09-25T23:05:00Z",
+      "capture_sha256": "69fc50f7d404f45200587792f05e2d7b2201984e60b37ede0c6e9275141b19a1",
+      "capture_hash_basis": "SHA-256 of canonical source_id|url|retrieved_at|bounded_claims; original remote bytes not archived by this PR",
+      "original_bytes_frozen": false
+    },
+    {
+      "source_id": "INDECI-UBINAS-VOLCANMAYO-2026",
+      "institution": "COEN-INDECI",
+      "url": "https://portal.indeci.gob.pe/emergencias/reporte-complementario-n-0817-21-1-2026-coen-indeci-0550-horas-reporte-n-1-huaico-en-el-distrito-de-ubinas-moquegua/",
+      "role": "NAMED_RAVINE_EVENT",
+      "bounded_claims": [
+        "Reports 2026-01-17 activation of Quebrada Volcanmayo and huaico transport impacts in Ubinas."
+      ],
+      "retrieved_at": "2026-09-25T23:05:00Z",
+      "capture_sha256": "0cc6bae02697d0618b9ea4197efdc66d00d74aa5f10ae24025f5327f1fcfe568",
+      "capture_hash_basis": "SHA-256 of canonical source_id|url|retrieved_at|bounded_claims; original remote bytes not archived by this PR",
+      "original_bytes_frozen": false
+    },
+    {
+      "source_id": "INDECI-OMATE-2026A",
+      "institution": "COEN-INDECI",
+      "url": "https://portal.indeci.gob.pe/emergencias/reporte-complementario-n-1407-2-2-2026-coen-indeci-2215-horas-reporte-n-o-1-huaico-en-el-distrito-de-omate-moquegua/",
+      "role": "TERRITORIAL_UNNAMED_RAVINE_EVENT",
+      "bounded_claims": [
+        "Reports 2026-01-18 huaico affecting MO-108 Omate–Santa Catalina; ravine unnamed."
+      ],
+      "retrieved_at": "2026-09-25T23:05:00Z",
+      "capture_sha256": "d8b3aa5686a93060af340499422d30f6fa87d01e10c250add9403b45686ea888",
+      "capture_hash_basis": "SHA-256 of canonical source_id|url|retrieved_at|bounded_claims; original remote bytes not archived by this PR",
+      "original_bytes_frozen": false
+    },
+    {
+      "source_id": "MINAM-UH-SUBCUENCAS-MAPSERVER-1",
+      "institution": "MINAM Geoservidor / ANA-derived hydrography",
+      "url": "https://geoservidorperu.minam.gob.pe/arcgis/rest/services/ServicioActivacionQuebrada/MapServer/1",
+      "role": "REPRODUCIBLE_OFFICIAL_GEOMETRY_CANDIDATE_SOURCE",
+      "bounded_claims": [
+        "Polygon layer exposes CODIGO, Nombre_UH, hierarchy fields, area and level in EPSG:4326; exact-code features require freezing and QA before map publication."
+      ],
+      "retrieved_at": "2026-09-25T23:05:00Z",
+      "capture_sha256": "1a7f55bfaae1afc9d55f4b1e16000f26ea306a5a9a29f1111a37ad9581b3fe2a",
+      "capture_hash_basis": "SHA-256 of canonical source_id|url|retrieved_at|bounded_claims; original remote bytes not archived by this PR",
+      "original_bytes_frozen": false
+    },
+    {
+      "source_id": "ANA-TAMBO-UH1318",
+      "institution": "Autoridad Nacional del Agua / ALICIA",
+      "url": "https://alicia.concytec.gob.pe/vufind/Record/ANAI_e16d710268945ec51f831195b28d1d60",
+      "role": "OFFICIAL_BASIN_IDENTITY",
+      "bounded_claims": [
+        "Confirms Cuenca Tambo official code 1318."
+      ],
+      "retrieved_at": "2026-09-25T23:05:00Z",
+      "capture_sha256": "2b400ba8880ab76b740636bc76d5cb25e7780ec183f0db3ba115b81de15a3a0b",
+      "capture_hash_basis": "SHA-256 of canonical source_id|url|retrieved_at|bounded_claims; original remote bytes not archived by this PR",
+      "original_bytes_frozen": false
+    },
+    {
+      "source_id": "ANA-RJ056-2018-SOUTH-WATERS",
+      "institution": "Autoridad Nacional del Agua",
+      "url": "https://www.ana.gob.pe/sites/default/files/normatividad/files/r.j._056-2018-ana_0.pdf",
+      "role": "OFFICIAL_COURSE_TO_HYDROGRAPHIC_UNIT_CONTEXT",
+      "bounded_claims": [
+        "Provides course-to-UH associations for Ilo, Osmore, Tumilaca, Torata, Huaracane, Guaneros and other southern waters."
+      ],
+      "retrieved_at": "2026-09-25T23:05:00Z",
+      "capture_sha256": "8d46594b1b4006c84956a228970f89cb6cc1226f27098c468ca9fc3ed347e701",
+      "capture_hash_basis": "SHA-256 of canonical source_id|url|retrieved_at|bounded_claims; original remote bytes not archived by this PR",
+      "original_bytes_frozen": false
+    }
+  ]
+}
