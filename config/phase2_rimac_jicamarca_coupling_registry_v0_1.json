@@ -1,0 +1,118 @@
+{
+  "schema_version": "0.1",
+  "registry_id": "phase2-rimac-jicamarca-coupling-registry:v0.1",
+  "status": "RESEARCH_ONLY_FAIL_CLOSED_COUPLING_REGISTRY",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "purpose": "Unify the admissible quebrada-to-collector research state for the Rimac/Santa Eulalia/Jicamarca corridor without promoting unresolved topology, activation, routing, discharge, capacity or receiver overflow.",
+  "architecture_ref": "config/phase2_collector_coupling_architecture_v0_1.json",
+  "source_contracts": [
+    "site/data/validation/phase2_collector_coupling/lima_este_santa_eulalia_rimac_v0_2.json",
+    "config/phase2_jicamarca_collector_coupling_v0_1.json"
+  ],
+  "local_units": [
+    {
+      "local_unit_id": "cashahuacra",
+      "corridor": "santa_eulalia_rimac",
+      "source_contract": "site/data/validation/phase2_collector_coupling/lima_este_santa_eulalia_rimac_v0_2.json",
+      "connectivity": "UNRESOLVED_NOT_ASSUMED",
+      "collector_effect_state": "NO_EVIDENCE",
+      "travel_time_tau": null,
+      "q_i_t": null,
+      "receiver_response": null,
+      "validation_status": "BLOCKED_MISSING_REPRODUCIBLE_CONFLUENCE_AND_TEMPORAL_FLOW_EVIDENCE"
+    },
+    {
+      "local_unit_id": "shingolay",
+      "corridor": "santa_eulalia_rimac",
+      "source_contract": "site/data/validation/phase2_collector_coupling/lima_este_santa_eulalia_rimac_v0_2.json",
+      "connectivity": "UNRESOLVED_NOT_ASSUMED",
+      "collector_effect_state": "NO_EVIDENCE",
+      "travel_time_tau": null,
+      "q_i_t": null,
+      "receiver_response": null,
+      "validation_status": "BLOCKED_MISSING_REPRODUCIBLE_CONFLUENCE_AND_TEMPORAL_FLOW_EVIDENCE"
+    },
+    {
+      "local_unit_id": "quirio",
+      "corridor": "santa_eulalia_rimac",
+      "source_contract": "site/data/validation/phase2_collector_coupling/lima_este_santa_eulalia_rimac_v0_2.json",
+      "connectivity": "REPRODUCIBLE_STATIC_D8_HYDROLOGIC_INTERSECTION",
+      "collector_effect_state": "HYDROLOGICALLY_CONNECTED",
+      "travel_time_tau": null,
+      "q_i_t": null,
+      "receiver_response": null,
+      "validation_status": "PASS_STATIC_CONNECTIVITY_ONLY_TEMPORAL_COUPLING_BLOCKED"
+    },
+    {
+      "local_unit_id": "pedregal_san_antonio",
+      "corridor": "santa_eulalia_rimac",
+      "source_contract": "site/data/validation/phase2_collector_coupling/lima_este_santa_eulalia_rimac_v0_2.json",
+      "connectivity": "REPRODUCIBLE_STATIC_D8_HYDROLOGIC_INTERSECTION",
+      "collector_effect_state": "HYDROLOGICALLY_CONNECTED",
+      "travel_time_tau": null,
+      "q_i_t": null,
+      "receiver_response": null,
+      "validation_status": "PASS_STATIC_CONNECTIVITY_ONLY_TEMPORAL_COUPLING_BLOCKED"
+    },
+    {
+      "local_unit_id": "huaycoloro",
+      "corridor": "jicamarca_huaycoloro",
+      "source_contract": "config/phase2_jicamarca_collector_coupling_v0_1.json",
+      "connectivity": "UNRESOLVED_NOT_ASSUMED",
+      "collector_effect_state": "NO_EVIDENCE",
+      "travel_time_tau": null,
+      "q_i_t": null,
+      "receiver_response": null,
+      "validation_status": "BLOCKED_EXACT_CONFLUENCE_AND_TEMPORAL_ROUTING_UNRESOLVED"
+    },
+    {
+      "local_unit_id": "rio_seco",
+      "corridor": "jicamarca_huaycoloro",
+      "source_contract": "config/phase2_jicamarca_collector_coupling_v0_1.json",
+      "connectivity": "UNRESOLVED_NOT_ASSUMED",
+      "collector_effect_state": "NO_EVIDENCE",
+      "travel_time_tau": null,
+      "q_i_t": null,
+      "receiver_response": null,
+      "validation_status": "BLOCKED_NATURAL_GEOMETRY_OUTLET_CONFLUENCE_AND_TEMPORAL_ROUTING_UNRESOLVED"
+    },
+    {
+      "local_unit_id": "canto_grande_upper_branch",
+      "corridor": "jicamarca_huaycoloro",
+      "source_contract": "config/phase2_jicamarca_collector_coupling_v0_1.json",
+      "connectivity": "UNRESOLVED_NOT_ASSUMED",
+      "collector_effect_state": "NO_EVIDENCE",
+      "travel_time_tau": null,
+      "q_i_t": null,
+      "receiver_response": null,
+      "validation_status": "BLOCKED_CATCHMENT_OUTLET_CONFLUENCE_AND_TEMPORAL_ROUTING_UNRESOLVED"
+    },
+    {
+      "local_unit_id": "media_luna",
+      "corridor": "jicamarca_huaycoloro",
+      "source_contract": "config/phase2_jicamarca_collector_coupling_v0_1.json",
+      "connectivity": "DOCUMENTARY_TOPOLOGY_ONLY_EXACT_NODE_UNRESOLVED",
+      "collector_effect_state": "NO_EVIDENCE",
+      "travel_time_tau": null,
+      "q_i_t": null,
+      "receiver_response": null,
+      "validation_status": "BLOCKED_EXACT_LOCAL_JUNCTION_AND_DOWNSTREAM_ROUTING_UNRESOLVED"
+    }
+  ],
+  "coupling_gates": {
+    "tributary_activation_implies_receiver_overflow": false,
+    "same_day_events_imply_peak_coincidence": false,
+    "imerg_may_decide_local_activation": false,
+    "travel_time_estimation_enabled": false,
+    "routing_enabled": false,
+    "hydraulic_model_enabled": false
+  }
+}
