@@ -1,0 +1,23 @@
+name: IRFEN - Phase2 Corrales static coupling
+
+on:
+  push:
+    branches:
+      - phase2-rimac-corrales-static-coupling
+  pull_request:
+    paths:
+      - "config/phase2_rimac_corrales_coupling_v0_1.json"
+      - "site/data/phase2/geometries/rimac_corrales_coupling_nodes_v0_1.geojson"
+      - "tests/test_phase2_rimac_corrales_coupling.py"
+      - ".github/workflows/phase2-rimac-corrales-coupling.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run bounded Corrales coupling tests
+        run: python -m pytest -q tests/test_phase2_rimac_corrales_coupling.py
