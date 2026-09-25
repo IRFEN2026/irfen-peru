@@ -1,0 +1,256 @@
+{
+  "schema_version": "phase2-north-rainfall-episode-validation-v0.1",
+  "episode_id": "north_peru_20260923_20260925",
+  "title": "Piura-Tumbes rainfall episode 23-25 September 2026: forecast-reference research contract",
+  "research_mode": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "protected_logic": {
+    "v0_7_1_mutation_allowed": false,
+    "candidate_promotion_allowed": false,
+    "activation_probability_allowed": false,
+    "automatic_forecast_bias_correction_allowed": false
+  },
+  "temporal_scope": {
+    "research_followup_local_peru": {
+      "start": "2026-09-23T00:00:00-05:00",
+      "end": "2026-09-26T00:00:00-05:00",
+      "role": "observation_and_latency_followup_envelope"
+    },
+    "window_rule": "Accumulation windows end at the last valid observation, never at query wall-clock time when the source is delayed.",
+    "cenepred_derivative_scope_window": {
+      "start_local_date": "2026-09-23",
+      "end_local_date": "2026-09-24",
+      "status": "VERIFIED_OFFICIAL_CENEPRED_DERIVATIVE_SCOPE_NOT_PRIMARY_SENAMHI_VALIDITY",
+      "interpretation": "This window is the scope stated by CENEPRED's official scenario derived from Aviso 376; it is not primary SENAMHI issue/validity metadata."
+    }
+  },
+  "senamhi_notice_376": {
+    "notice_number": 376,
+    "primary_senamhi_bytes_status": "UNRESOLVED_NOT_FROZEN",
+    "primary_senamhi_issue_time_status": "UNRESOLVED_UNTIL_PRIMARY_SOURCE_IS_FROZEN",
+    "primary_senamhi_url": null,
+    "official_derivative_evidence": [
+      {
+        "institution": "CENEPRED",
+        "kind": "OFFICIAL_RISK_SCENARIO_DERIVED_FROM_SENAMHI_NOTICE",
+        "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/22733",
+        "title": "Estudio de Escenario de Riesgo ante el pronóstico de precipitaciones en la sierra norte y costa norte del 23 al 24 de septiembre del 2026",
+        "notice_reference": "Aviso 376",
+        "scope_departments": [
+          "Cajamarca",
+          "La Libertad",
+          "Lambayeque",
+          "Piura",
+          "Tumbes"
+        ],
+        "content_sha256": null,
+        "archive_status": "METADATA_ONLY_PENDING_EXACT_BYTE_FREEZE"
+      }
+    ],
+    "interpretation_guard": "CENEPRED verifies an official derivative scenario tied to Aviso 376 for 23-24 September and PRODUCE/COES indexes N°376 files on 22-24 September. Neither substitutes for the original SENAMHI bytes. Primary issue time, complete validity semantics, station rainfall, local activation and exact numeric accumulations remain unresolved.",
+    "social_capture_is_primary_evidence": false,
+    "primary_senamhi_validity_status": "UNRESOLVED_UNTIL_PRIMARY_SOURCE_IS_FROZEN",
+    "official_cross_agency_archive_index": [
+      {
+        "institution": "PRODUCE_COES",
+        "kind": "OFFICIAL_CROSS_AGENCY_DOCUMENT_INDEX_METADATA_ONLY",
+        "url": "https://coes.produce.gob.pe/main/documents/",
+        "retrieved_at_utc": "2026-09-25T19:10:00Z",
+        "listed_entries": [
+          {
+            "listing_date": "2026-09-22",
+            "filename": "Boletín Meteorológico N° 376 - 22 SEPTIEMBRE Precipitaciones Sierra Norte y Costa Norte.pdf"
+          },
+          {
+            "listing_date": "2026-09-23",
+            "filename": "Boletín Meteorológico N° 376 - 23 SEPTIEMBRE Precipitaciones Sierra Norte y Costa Norte.pdf"
+          },
+          {
+            "listing_date": "2026-09-24",
+            "filename": "Boletín Meteorológico N° 376 - 24 SEPTIEMBRE Precipitaciones Sierra Norte y Costa Norte.pdf"
+          }
+        ],
+        "content_sha256": null,
+        "exact_pdf_bytes_frozen": false,
+        "primary_senamhi_notice": false,
+        "issue_time_verified": false,
+        "primary_validity_verified": false,
+        "interpretation": "The official PRODUCE/COES index proves only that files labelled N°376 were archived on 22, 23 and 24 September 2026. It does not resolve the original SENAMHI issue timestamp, update/extension semantics or numeric rainfall observations."
+      }
+    ]
+  },
+  "explicitly_excluded_numeric_claims_until_primary_verification": [
+    {
+      "place": "Pananga",
+      "claim_status": "EXCLUDED"
+    },
+    {
+      "place": "Chulucanas",
+      "claim_status": "EXCLUDED"
+    },
+    {
+      "place": "Morropón",
+      "claim_status": "EXCLUDED"
+    },
+    {
+      "place": "Santo Domingo",
+      "claim_status": "EXCLUDED"
+    }
+  ],
+  "study_units": [
+    {
+      "unit_id": "chulucanas_morropon_alto_piura",
+      "role": "TERRITORIAL_OR_HYDROLOGIC_CONTEXT_PENDING_REPRODUCIBLE_SUPPORT"
+    },
+    {
+      "unit_id": "piura_catacaos",
+      "role": "RIVER_AND_TERRITORIAL_CONTEXT"
+    },
+    {
+      "unit_id": "chira_sullana_colan",
+      "role": "RIVER_AND_TERRITORIAL_CONTEXT"
+    },
+    {
+      "unit_id": "paita_urban",
+      "role": "URBAN_PLUVIAL_AND_LOCAL_RAVINE_CONTEXT"
+    },
+    {
+      "unit_id": "talara_parinas",
+      "role": "LOCAL_RAVINE_CORRIDOR_CONTEXT"
+    },
+    {
+      "unit_id": "mancora_fernandez",
+      "role": "LOCAL_RAVINE_CONTEXT"
+    },
+    {
+      "unit_id": "los_organos_vichayito",
+      "role": "LOCAL_DISCOVERY_CONTEXT"
+    },
+    {
+      "unit_id": "tumbes_river",
+      "role": "RIVER_SYSTEM_CONTEXT"
+    },
+    {
+      "unit_id": "zorritos_bocapan",
+      "role": "LOCAL_RAVINE_AND_BASIN_CONTEXT"
+    }
+  ],
+  "source_classes": {
+    "forecast": [
+      "NASA_GEOS_CF_V2_TPREC"
+    ],
+    "observed_reference": [
+      "SENAMHI_STATION",
+      "IMERG_EARLY",
+      "IMERG_LATE",
+      "GOES_RRQPE"
+    ],
+    "physical_response": [
+      "SENAMHI",
+      "ANA",
+      "INDECI_COEN",
+      "COER",
+      "IGP",
+      "GORE_OR_MUNICIPALITY"
+    ]
+  },
+  "forecast_rules": {
+    "mutable_latest_is_historical_archive": false,
+    "generated_at_is_model_issue_time": false,
+    "required_cycle_freeze_fields": [
+      "model",
+      "model_version",
+      "retrieved_at_utc",
+      "issue_time_utc",
+      "issue_time_verified",
+      "valid_start_utc",
+      "valid_end_utc",
+      "units",
+      "spatial_support",
+      "sampling_method",
+      "payload_sha256"
+    ],
+    "prospective_definition": "A forecast counts as prospective for a window only when verified model issue_time is at or before that window start.",
+    "retrospective_definition": "An authentic historical forecast recovered after the event may be evaluated retrospectively but cannot count as prior anticipation without verified issue_time.",
+    "revisions_preserved": true,
+    "same_cycle_requery_deduplicated": true
+  },
+  "accumulation_rules": {
+    "allowed_geos_durations_hours": [
+      1,
+      3,
+      6,
+      12,
+      24
+    ],
+    "geos_30_min_comparison_allowed": false,
+    "observation_optional_durations_hours": [
+      0.5,
+      1,
+      3,
+      6,
+      12,
+      24,
+      72
+    ],
+    "daily_value_may_be_disaggregated_to_subdaily": false,
+    "overlapping_windows_may_be_summed": false,
+    "mixed_source_accumulations_allowed": false,
+    "rate_to_accumulation_requires_explicit_dt_and_time_bounds": true,
+    "time_basis": "UTC_WITH_PERU_LOCAL_MIRROR_METADATA"
+  },
+  "pairing_rules": {
+    "same_valid_start_required": true,
+    "same_valid_end_required": true,
+    "same_duration_required": true,
+    "same_or_documented_common_spatial_support_required": true,
+    "station_is_basin_truth": false,
+    "coarse_to_fine_interpolation_creates_support": false,
+    "percent_error_denominator_min_observed_mm": 0.1,
+    "percent_error_formula": "100 * (forecast_mm - observed_mm) / observed_mm",
+    "percent_error_when_observed_below_min": "NOT_APPLICABLE",
+    "signed_error_formula": "forecast_mm - observed_mm",
+    "positive_signed_error_meaning": "FORECAST_OVERESTIMATE",
+    "negative_signed_error_meaning": "FORECAST_UNDERESTIMATE"
+  },
+  "metric_rules": {
+    "allowed_metrics": [
+      "bias_mm",
+      "mae_mm",
+      "rmse_mm"
+    ],
+    "required_grouping_dimensions": [
+      "unit_or_support_id",
+      "reference_source_kind",
+      "duration_hours",
+      "lead_bucket",
+      "model_version"
+    ],
+    "must_report_period_count": true,
+    "must_report_unique_episode_count": true,
+    "dry_zero_hits_do_not_prove_extreme_skill": true,
+    "single_episode_calibration_allowed": false
+  },
+  "physical_response_rules": {
+    "rainfall_or_notice_confirms_local_activation": false,
+    "absence_of_report_is_negative_activation": false,
+    "tributary_activation_implies_receiver_overflow": false,
+    "dry_rainfall_observation_is_negative_activation_control": false,
+    "unresolved_child_attribution_state": "TERRITORIAL_OR_UNRESOLVED",
+    "routing_requires_admissible_hydrograph_and_topology": true
+  },
+  "geometry_rules": {
+    "approximate_points_allowed": false,
+    "invented_polygons_allowed": false,
+    "city_or_district_substitutes_for_basin": false,
+    "homonym_binding_requires_identity_evidence": true,
+    "map_state": "CONTEXT_RESEARCH_ONLY_NO_RISK_COLORS"
+  }
+}
