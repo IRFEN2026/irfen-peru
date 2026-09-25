@@ -1,0 +1,127 @@
+{
+  "schema_version": "0.1",
+  "discovery_id": "tacna_locumba_sama_caplina_local_activation",
+  "system_name": "Tacna Locumba-Sama-Caplina and independent coastal-ravine discovery system",
+  "contract_status": "DISCOVERY_REGISTERED_OFFICIAL_PARENTS_LOCAL_CHILDREN_PARTIAL",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "source_registry_ref": "site/data/phase2/sources/south_coast_moquegua_tacna_official_evidence_v0_1.json",
+  "hydrologic_parents": {
+    "cuenca_locumba": {
+      "official_code": "1316",
+      "identity_status": "OFFICIAL_CODE_CONFIRMED",
+      "geometry_status": "MISSING_PENDING_EXACT_OFFICIAL_REPLAY"
+    },
+    "cuenca_sama": {
+      "official_code": "13158",
+      "identity_status": "OFFICIAL_CODE_CONFIRMED",
+      "geometry_status": "MISSING_PENDING_EXACT_OFFICIAL_REPLAY"
+    },
+    "cuenca_caplina": {
+      "official_code": "13156",
+      "identity_status": "OFFICIAL_CODE_CONFIRMED",
+      "geometry_status": "MISSING_PENDING_EXACT_OFFICIAL_REPLAY"
+    }
+  },
+  "hydrologic_components": {
+    "rio_ilabaya": {
+      "parent_code": "1316",
+      "identity_status": "OFFICIAL_ANA_COURSE_AND_FAJA_CONTEXT_CONFIRMED",
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_CHANNEL_GEOMETRY",
+      "event_status": "UNKNOWN_NOT_NEGATIVE",
+      "map_materialization_allowed": false
+    },
+    "rio_salado_medio_locumba": {
+      "local_unit_code": "13165",
+      "parent_code": "1316",
+      "identity_status": "OFFICIAL_ANA_LEVEL5_CONTEXT_CONFIRMED",
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_CHANNEL_GEOMETRY",
+      "event_status": "UNKNOWN_NOT_NEGATIVE",
+      "map_materialization_allowed": false
+    },
+    "quebrada_mirave": {
+      "parent_context": "CUENCA_LOCUMBA",
+      "parent_code": "1316",
+      "identity_status": "OFFICIAL_INGEMMET_NAME_AND_EVENT_CONTEXT_CONFIRMED",
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_CHANNEL_OR_CATCHMENT_GEOMETRY",
+      "event_ledger": {
+        "2015-05-04": {
+          "status": "POSITIVE_HUAICO_INGEMMET_RETROSPECTIVE_CONTEXT",
+          "source_ids": ["INGEMMET-MIRAVE-OT007-2020"]
+        },
+        "2019-02-08": {
+          "status": "POSITIVE_HUAICO_INDECI_AND_INGEMMET",
+          "source_ids": ["INDECI-MIRAVE-2019", "INGEMMET-MIRAVE-OT007-2020"]
+        }
+      },
+      "outlet_status": "UNRESOLVED_NO_AUTOMATIC_RIO_SALADO_OR_ILABAYA_ASSIGNMENT",
+      "map_materialization_allowed": false
+    },
+    "quebrada_higuerani": {
+      "parent_context": "CUENCA_LOCUMBA_RIO_CINTO",
+      "parent_code": "1316",
+      "identity_status": "OFFICIAL_CENEPRED_AND_INDECI_NAME_CONFIRMED",
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY",
+      "event_status": "POSITIVE_DATED_ACTIVATION_2024_02_21",
+      "source_ids": ["CENEPRED-HIGUERANI-EVAR", "INDECI-HIGUERANI-2024"],
+      "outlet_status": "UNKNOWN",
+      "map_materialization_allowed": false
+    },
+    "quebrada_de_los_burros": {
+      "parent_context": "INDEPENDENT_COASTAL_MICROCATCHMENT",
+      "parent_assignment_status": "EXPLICITLY_DO_NOT_MERGE_WITH_SAMA_OR_LOCUMBA_WITHOUT_NEW_OFFICIAL_EVIDENCE",
+      "identity_status": "OFFICIAL_EVENT_AND_TECHNICAL_FILE_NAME_CONFIRMED",
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_MICROCATCHMENT_GEOMETRY",
+      "event_ledger": {
+        "2026-08-16": {
+          "status": "POSITIVE_LANDSLIDE_IMPACT_CONTEXT",
+          "source_ids": ["INDECI-QBURROS-SAMA-2026"]
+        },
+        "2026-08-17": {
+          "status": "POSITIVE_HUAICO_IMPACT_CONTEXT",
+          "source_ids": ["INDECI-QBURROS-SAMA-2026"]
+        }
+      },
+      "source_ids": ["INDECI-QBURROS-SAMA-2026", "MINAM-MORRO-SAMA-QBURROS-MICROCUENCA"],
+      "outlet_status": "PACIFIC_COASTAL_OUTLET_CONTEXT_REQUIRES_EXACT_GEOMETRY",
+      "map_materialization_allowed": false
+    },
+    "pachia_local_ravines": {
+      "role": "TERRITORIAL_DISCOVERY_TARGET_NOT_YET_HYDROLOGIC_CHILD",
+      "identity_status": "PENDING_OFFICIAL_CHILD_BY_CHILD_NORMALIZATION",
+      "geometry_status": "MISSING",
+      "event_status": "UNKNOWN_NOT_NEGATIVE",
+      "map_materialization_allowed": false
+    }
+  },
+  "collector_coupling": {
+    "status": "BLOCKED_PENDING_CHILD_GEOMETRY_OUTLETS_AND_OBSERVATIONS",
+    "mirave_receiver_assignment_allowed": false,
+    "quebrada_burros_sama_receiver_assignment_allowed": false,
+    "q_i_t_allowed": false,
+    "travel_time_allowed": false,
+    "attenuation_allowed": false
+  },
+  "map_policy": {
+    "parent_context_after_exact_official_replay": true,
+    "child_only_after_reproducible_geometry": true,
+    "independent_coastal_microcatchments_not_forced_into_nearest_named_basin": true,
+    "approximate_geometry_forbidden": true,
+    "risk_colors_forbidden": true,
+    "alerts_forbidden": true
+  },
+  "qa": {
+    "district_name_defines_basin": false,
+    "faja_is_event_footprint": false,
+    "risk_map_is_event": false,
+    "absence_of_report_is_negative": false,
+    "event_transfer_between_children": false
+  }
+}

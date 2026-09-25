@@ -1,0 +1,32 @@
+name: IRFEN - Phase2 South Coast Moquegua Tacna discovery
+
+on:
+  pull_request:
+    paths:
+      - site/data/phase2/sources/south_coast_moquegua_tacna_official_evidence_v0_1.json
+      - site/data/validation/phase2_discovery_packages/moquegua_tambo_ilo_local_activation.json
+      - site/data/validation/phase2_discovery_packages/tacna_locumba_sama_caplina_local_activation.json
+      - site/data/validation/phase2_discovery_contracts/moquegua_tambo_ilo_local_activation.json
+      - site/data/validation/phase2_discovery_contracts/tacna_locumba_sama_caplina_local_activation.json
+      - tests/test_phase2_south_coast_moquegua_tacna.py
+      - .github/workflows/phase2-south-coast-moquegua-tacna.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-south-coast-discovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install test dependency
+        run: python -m pip install pytest
+      - name: Enforce Moquegua-Tacna scientific guards
+        run: python -m pytest -q tests/test_phase2_south_coast_moquegua_tacna.py
+      - name: Re-run universal local activation hierarchy gate
+        run: python scripts/validate_phase2_local_activation_hierarchy.py
