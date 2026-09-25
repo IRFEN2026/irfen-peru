@@ -1,0 +1,123 @@
+{
+  "schema_version": "0.1",
+  "status": "FROZEN_OFFICIAL_2011_LOWER_SANTA_DOCUMENTARY_CONTROLS_GEOMETRY_WITHHELD",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "discovery_id": "ancash_chimbote_lacramarca_santa_bajo",
+  "component_id": "rio_santa_lower_reach",
+  "purpose": "Freeze official ANA 2011 lower-Santa documentary controls without publishing geometry until coordinate reference and chainage ambiguity are independently resolved.",
+  "source_provenance": {
+    "source_id": "ANA-SANTA-TREATMENT-2011-2362",
+    "institution": "Autoridad Nacional del Agua",
+    "title": "Tratamiento de cauce del rio para el control de inundaciones en la cuenca Santa",
+    "publication_date": "2011-11",
+    "hdl": "https://hdl.handle.net/20.500.12543/2362",
+    "original_pdf": "https://repositorio.ana.gob.pe/bitstream/20.500.12543/2362/1/ANA0001097.pdf",
+    "original_pdf_bytes": 5981714,
+    "original_pdf_md5": "b920108b7054aa77f164b979ea618ec0"
+  },
+  "study_scope": {
+    "stated_length_m": 50000,
+    "narrative_start": {
+      "chainage": "0+000",
+      "x": 758969,
+      "y": 9007565
+    },
+    "narrative_end": {
+      "chainage": "50+000",
+      "x": 788881,
+      "y": 9038309
+    },
+    "coordinate_reference_status": "UTM_DATUM_AND_ZONE_UNRESOLVED",
+    "whole_santa_basin_substitute_for_reach": false
+  },
+  "chainage_qa": {
+    "source_table": "Cuadro 6",
+    "transcribed_rows": 51,
+    "ambiguity": [
+      "The table labels 758969/9007565 as 1+000 although the narrative identifies it as 0+000.",
+      "The table contains two 50+000 rows: 788372/9037490 and 788881/9038309."
+    ],
+    "map_eligible": false
+  },
+  "hydraulic_model_context": {
+    "role": "2011_DESIGN_AND_HAZARD_MODEL_CONTEXT_NOT_CURRENT_CAPACITY",
+    "software": [
+      "HEC-RAS",
+      "HEC-GeoRAS",
+      "ArcGIS 9.3"
+    ],
+    "model_type": "one_dimensional_steady_gradually_varied_mixed_regime",
+    "modeled_return_periods_years": [
+      10,
+      25,
+      50
+    ],
+    "study_peak_flows_m3_s": {
+      "10": 976,
+      "25": 1177,
+      "50": 1327
+    },
+    "values_are_irfen_thresholds": false,
+    "values_are_observed_event_flows": false,
+    "values_are_current_hydraulic_capacity": false
+  },
+  "critical_point_context": {
+    "source_tables": [
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25
+    ],
+    "documented_count": 24,
+    "assessment_basis": [
+      "field_evaluation",
+      "modeled_floodplain"
+    ],
+    "coordinate_reference_status": "UTM_DATUM_AND_ZONE_UNRESOLVED",
+    "points_are_observed_historical_events": false,
+    "points_are_event_footprints": false,
+    "map_eligible": false
+  },
+  "original_asset_recovery": {
+    "original_pdf_recovered_by_repository_metadata": true,
+    "separate_hec_ras_project_found": false,
+    "separate_hec_georas_gis_found": false,
+    "separate_mdt_or_tin_found": false,
+    "separate_cross_section_dataset_found": false,
+    "next_safe_gates": [
+      "Recover original HEC-RAS project/geometry/plan files, GeoRAS layers, terrain and cross sections if publicly available.",
+      "Resolve coordinate datum/zone and duplicated chainage labels from an official source before any coordinate transformation.",
+      "If original GIS is unavailable, use an independent traceable hydrographic/DEM workflow and use 2011 controls only for QA."
+    ]
+  },
+  "scientific_effect": {
+    "map_geometry_created": false,
+    "map_publication_enabled": false,
+    "event_footprint_created": false,
+    "historical_capacity_inferred": false,
+    "current_capacity_inferred": false,
+    "threshold_created": false,
+    "negative_control_created": false,
+    "routing_or_travel_time_inferred": false
+  },
+  "forbidden": [
+    "assign an EPSG before coordinate reference is resolved",
+    "publish an interpolated river axis from the documentary controls while chainage ambiguity remains unresolved",
+    "treat modeled floodplain as an observed historical footprint",
+    "treat design flows or stable-section results as present-day capacity or IRFEN thresholds",
+    "use the whole Santa basin polygon as lower-Santa reach geometry"
+  ]
+}
