@@ -1,0 +1,65 @@
+{
+  "schema_version": "0.1",
+  "discovery_id": "lalibertad_chicama",
+  "status": "RESEARCH_ONLY_SOURCE_ASSESSMENT",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "sources": [
+    {
+      "source_id": "ANA-CHICAMA-HYDROLOGIC-STUDY",
+      "url": "https://www.ana.gob.pe/sites/default/files/normatividad/files/estudio_hidrologico_chicama_0_0_8.pdf",
+      "role": "OFFICIAL_BASIN_HYDROLOGIC_CONTEXT"
+    },
+    {
+      "source_id": "SENAMHI-CHICAMA-CLIMATE-2013",
+      "url": "https://web2.senamhi.gob.pe/load/file/01401SENA-5.pdf",
+      "role": "BASIN_SCALE_CLIMATE_CONTEXT"
+    },
+    {
+      "source_id": "SENAMHI-CHICAMA-PRECIP-THRESHOLDS-2013",
+      "url": "https://www.senamhi.gob.pe/load/file/01401SENA-3.pdf",
+      "role": "PROVIDER_METEOROLOGICAL_THRESHOLD_CONTEXT_ONLY"
+    },
+    {
+      "source_id": "MASTERGIS-CHICAMA-DEM-METHOD",
+      "url": "https://mastergis.com/proyecto/caracterizacion-fisica-de-la-cuenca-del-rio-chicama-mediante-el-analisis-de-pendientes-y-precipitacion-usando-sig",
+      "role": "NON_AUTHORITATIVE_METHOD_REFERENCE_ONLY"
+    },
+    {
+      "source_id": "UPAO-CHICAMA-GALAXIA-PAMPA-HERMOSA-2022",
+      "url": "https://hdl.handle.net/20.500.12759/9839",
+      "role": "SECONDARY_HYDRAULIC_REACH_STUDY"
+    }
+  ],
+  "dem_method": {
+    "allowed_pipeline": [
+      "freeze DEM provenance",
+      "Fill",
+      "Slope",
+      "Flow Direction",
+      "Flow Accumulation",
+      "pre-register stream extraction sensitivity",
+      "Stream Link",
+      "Stream Order",
+      "Stream to Feature",
+      "candidate outlet QA"
+    ],
+    "import_mastergis_geometry": false,
+    "inherit_mastergis_accumulation_cutoff": false,
+    "named_ravine_geometry_resolved": false
+  },
+  "hydraulic_qa": {
+    "secondary_design_discharge_is_current_capacity": false,
+    "secondary_design_discharge_is_irfen_threshold": false,
+    "modeled_inundation_is_observed_event_footprint": false,
+    "provider_meteorological_thresholds_are_irfen_activation_thresholds": false
+  },
+  "note": "Cartavio and Santiago de Cao remain territorial/exposure nodes, not hydrologic basins."
+}
