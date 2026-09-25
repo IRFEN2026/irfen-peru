@@ -9,7 +9,7 @@
   "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
   "decision_thresholds": null,
   "hydraulic_factors": null,
-  "purpose": "Register a fail-closed Ica + Arequipa south-coast discovery hierarchy using official ANA hydrographic units and bounded official event evidence, without publishing unverified local geometry or operational states. Additionally reuses already-frozen official parent geometry where available and preregisters fail-closed ANA national hydrography probes for every named local child.",
+  "purpose": "Register a fail-closed Ica + Arequipa south-coast discovery hierarchy using official ANA hydrographic units and bounded official event evidence, without publishing unverified local geometry or operational states. Preregisters fail-closed ANA national hydrography probes for every named local child.",
   "global_rules": {
     "parent_is_context_only": true,
     "child_activation_does_not_activate_parent": true,
@@ -83,21 +83,16 @@
       "department": "Ica / Huancavelica",
       "entity_role": "OFFICIAL_PARENT_BASIN_CONTEXT_NON_ACTIVATABLE",
       "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
-      "parent_geometry_status": "FROZEN_EXISTING_OFFICIAL_CONTEXT_REUSED",
-      "parent_geometry_asset": "site/data/phase2/geometries/ica_pisco_san_andres_pisco_basin_context.geojson",
-      "parent_map_publishable": true,
+      "parent_geometry_status": "OFFICIAL_GEOMETRY_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "parent_geometry_asset": null,
+      "parent_map_publishable": false,
       "must_not_merge_with": [
         "ica_topara",
         "ica_ica"
       ],
       "activation_gate": "BLOCKED",
       "decision_thresholds": null,
-      "hydraulic_factors": null,
-      "existing_repository_context_candidate_id": "ica_pisco_san_andres",
-      "parent_geometry_source_ids": [
-        "ANA-IDEP-UH-PISCO-13752-20260922"
-      ],
-      "parent_geometry_role": "OFFICIAL_BASIN_CONTEXT_ONLY_NOT_LOCAL_CHILD_GEOMETRY"
+      "hydraulic_factors": null
     },
     {
       "discovery_id": "ica_ica",
@@ -124,21 +119,16 @@
       "department": "Ica / Ayacucho / Huancavelica",
       "entity_role": "OFFICIAL_PARENT_BASIN_CONTEXT_NON_ACTIVATABLE",
       "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
-      "parent_geometry_status": "FROZEN_EXISTING_OFFICIAL_CONTEXT_REUSED",
-      "parent_geometry_asset": "site/data/phase2/geometries/ica_palpa_changuillo_grande_basin_context.geojson",
-      "parent_map_publishable": true,
+      "parent_geometry_status": "OFFICIAL_GEOMETRY_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "parent_geometry_asset": null,
+      "parent_map_publishable": false,
       "must_not_merge_with": [
         "ica_ica",
         "arequipa_acari"
       ],
       "activation_gate": "BLOCKED",
       "decision_thresholds": null,
-      "hydraulic_factors": null,
-      "existing_repository_context_candidate_id": "ica_palpa_changuillo",
-      "parent_geometry_source_ids": [
-        "ANA-IDEP-UH-GRANDE-1372-20260923"
-      ],
-      "parent_geometry_role": "OFFICIAL_BASIN_CONTEXT_ONLY_NOT_LOCAL_CHILD_GEOMETRY"
+      "hydraulic_factors": null
     },
     {
       "discovery_id": "arequipa_pescadores_caraveli",
@@ -237,21 +227,16 @@
       "department": "Arequipa / Ayacucho",
       "entity_role": "OFFICIAL_PARENT_BASIN_CONTEXT_NON_ACTIVATABLE",
       "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
-      "parent_geometry_status": "FROZEN_EXISTING_OFFICIAL_CONTEXT_REUSED",
-      "parent_geometry_asset": "site/data/phase2/geometries/arequipa_acari_san_agustin_acari_basin_context.geojson",
-      "parent_map_publishable": true,
+      "parent_geometry_status": "OFFICIAL_GEOMETRY_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "parent_geometry_asset": null,
+      "parent_map_publishable": false,
       "must_not_merge_with": [
         "arequipa_yauca",
         "ica_rio_grande_palpa_nasca"
       ],
       "activation_gate": "BLOCKED",
       "decision_thresholds": null,
-      "hydraulic_factors": null,
-      "existing_repository_context_candidate_id": "arequipa_acari_san_agustin",
-      "parent_geometry_source_ids": [
-        "ANA-IDEP-UH-ACARI-20260922"
-      ],
-      "parent_geometry_role": "OFFICIAL_BASIN_CONTEXT_ONLY_NOT_LOCAL_CHILD_GEOMETRY"
+      "hydraulic_factors": null
     },
     {
       "discovery_id": "arequipa_ocona",
@@ -1152,11 +1137,6 @@
   "next_geometry_work_packages": [
     {
       "priority": 1,
-      "target": "south_coast_named_children_ana_hydrography",
-      "goal": "execute and archive the 17 exact-name ANA national hydrography queries; accept only unique parent-UH-consistent linework; hash raw/canonical source bytes; publish nothing automatically"
-    },
-    {
-      "priority": 1,
       "target": "ica_cansas",
       "goal": "freeze official/reproducible channel, local catchment candidate and outlet topology separately; archive source bytes before map publication"
     },
@@ -1187,7 +1167,6 @@
     "named_local_children_registered": 17,
     "map_publishable_children": 0,
     "new_operational_zones": 0,
-    "frozen_official_parent_contexts_reused": 3,
     "local_hydrography_probe_contracts_registered": 17
   },
   "hydrography_probe_contracts": [
