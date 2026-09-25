@@ -1,0 +1,225 @@
+{
+  "version": "phase2-south-coast-discovery-v0.1",
+  "status": "RESEARCH_ONLY_DISCOVERY_EXTENSION",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "purpose": "Extend Phase-2 discovery across Moquegua and Tacna coastal hydrologic systems using official identity/event evidence while keeping every geometry, threshold, capacity and operational inference fail-closed.",
+  "relationship_to_phase2": {
+    "registered_candidate_count_unchanged": 18,
+    "changes_registered_candidate_count": false,
+    "changes_operational_scope": false,
+    "changes_thresholds": false,
+    "changes_hydraulic_factors": false,
+    "promotion_requires_explicit_versioned_migration": true,
+    "discovery_units_count": 6
+  },
+  "geometry_policy": {
+    "map_publication_requires_reproducible_official_or_independently_reproducible_geometry": true,
+    "territorial_event_location_is_not_hydrologic_geometry": true,
+    "approximate_geometry_forbidden": true,
+    "event_footprint_is_not_basin_geometry": true,
+    "faja_margin_is_not_event_footprint": true,
+    "points_critical_are_not_events": true
+  },
+  "source_registry_path": "site/data/phase2/sources/moquegua_tacna_official_evidence_v0_1.json",
+  "discovery_units": [
+    {
+      "discovery_id": "moquegua_rio_tambo",
+      "department": "Moquegua / Arequipa lower-basin interface",
+      "entity_role": "DISCOVERY_HYDROLOGIC_SYSTEM",
+      "system_name": "Cuenca río Tambo y tributarios alto-andinos de Moquegua",
+      "territorial_reference": "General Sánchez Cerro / valle de Tambo",
+      "mechanism_preliminary": "river_flood_and_tributary_debris_flow_components_to_be_separated",
+      "hydrologic_components": [
+        "Rio Tambo",
+        "Rio Coralaque as documented tributary context",
+        "upper-basin ravines to be attributed independently"
+      ],
+      "must_not_merge_with": [
+        "Cuenca Moquegua-Ilo/Osmore",
+        "local Ilo coastal ravines"
+      ],
+      "official_evidence_stage": "official_basin_identity_and_current_ANA_management_context_available_event_decomposition_pending",
+      "official_source_ids": [
+        "ANA-MOQ-TAMBO-CORALAQUE-20250703",
+        "ANA-MOQ-TAMBO-MONITORING-20240713"
+      ],
+      "first_work_package": [
+        "freeze exact official Rio Tambo hydrographic-unit identity and geometry",
+        "resolve Moquegua-side tributary and ravine children before attributing events",
+        "build dated river-flood and debris-flow ledger by physical component",
+        "identify rainfall/river observations without transferring station values across sub-basins",
+        "keep mining/water-quality evidence separate from event activation truth"
+      ]
+    },
+    {
+      "discovery_id": "moquegua_moquegua_ilo_osmore",
+      "department": "Moquegua",
+      "entity_role": "DISCOVERY_HYDROLOGIC_SYSTEM_WITH_LOCAL_RAVINES_PENDING_SPLIT",
+      "system_name": "Cuenca Moquegua-Ilo/Osmore y quebradas costeras de Ilo",
+      "territorial_reference": "Moquegua / Ilo / Pacocha",
+      "mechanism_preliminary": "river_system_plus_short_response_coastal_ravines_and_pluvial_processes_to_be_separated",
+      "hydrologic_components": [
+        "Moquegua-Ilo/Osmore river system",
+        "Ilo local coastal ravines to be identified",
+        "Pacocha local coastal ravines to be identified"
+      ],
+      "must_not_merge_with": [
+        "Rio Tambo",
+        "Tacna coastal systems"
+      ],
+      "official_evidence_stage": "ANA_current_basin_management_context_plus_2026_confirmed_huaico_events_available_local_channel_identity_pending",
+      "official_source_ids": [
+        "ANA-MOQ-MOQUEGUA-ILO-20260505",
+        "INDECI-ILO-20260817",
+        "INDECI-PACOCHA-20260816"
+      ],
+      "first_work_package": [
+        "freeze exact official Moquegua-Ilo/Osmore basin identity and geometry",
+        "adjudicate the 16-17 Aug 2026 Ilo/Pacocha events without inventing unnamed ravine identities",
+        "identify Costanera-crossing ravines and outlets from official geometry",
+        "separate fluvial, debris-flow, pluvial and coastal mechanisms",
+        "map transport/settlement exposure independently from event footprint"
+      ]
+    },
+    {
+      "discovery_id": "moquegua_torata_chacane_local_ravines",
+      "department": "Moquegua",
+      "entity_role": "TERRITORIAL_GROUPER_NON_ACTIVABLE_REQUIRES_HYDROLOGIC_CHILDREN",
+      "system_name": "Torata: quebrada Chacane y quebradas locales",
+      "territorial_reference": "Torata / Mariscal Nieto",
+      "mechanism_preliminary": "local_debris_flow_ravines_with_parent_basin_attribution_pending",
+      "hydrologic_components": [
+        "Quebrada Chacane",
+        "other Torata ravines only after official identity verification"
+      ],
+      "must_not_merge_with": [
+        "Cuenca Moquegua-Ilo/Osmore until exact child-parent topology is frozen",
+        "Rio Tambo"
+      ],
+      "official_evidence_stage": "named_2024_positive_event_and_official_Torata_subbasin_context_available_geometry_pending",
+      "official_source_ids": [
+        "INDECI-CHACANE-20240221",
+        "ANA-TORATA-SUBCUENCA-20240828"
+      ],
+      "first_work_package": [
+        "resolve Quebrada Chacane official/reproducible channel and catchment geometry",
+        "resolve exact receiving channel and parent hydrographic unit",
+        "freeze 21 Feb 2024 positive event evidence without inventing footprint",
+        "identify event-paired rainfall observations if public",
+        "keep road/irrigation damage as exposure and outcome evidence, not hydraulic capacity"
+      ]
+    },
+    {
+      "discovery_id": "tacna_locumba_ilabaya_mirave",
+      "department": "Tacna",
+      "entity_role": "DISCOVERY_HYDROLOGIC_SYSTEM_WITH_LOCAL_RAVINE_CHILD_PENDING",
+      "system_name": "Cuenca Locumba e interfaz Ilabaya-Mirave",
+      "territorial_reference": "Ilabaya / Mirave / Jorge Basadre",
+      "mechanism_preliminary": "river_system_with_local_debris_flow_child_to_be_resolved",
+      "hydrologic_components": [
+        "Rio Locumba",
+        "Mirave local debris-flow channel/catchment to be identified independently"
+      ],
+      "must_not_merge_with": [
+        "Rio Sama",
+        "Rio Caplina/Uchusuma"
+      ],
+      "official_evidence_stage": "ANA_current_catchment_identity_plus_2019_confirmed_Mirave_huaico_available_2015_event_pending_primary_freeze",
+      "official_source_ids": [
+        "ANA-TACNA-PADH-20260114",
+        "ANA-TACNA-QUALITY-20251218",
+        "INDECI-MIRAVE-20190208"
+      ],
+      "first_work_package": [
+        "freeze exact official Locumba hydrographic-unit geometry",
+        "resolve Mirave event channel/catchment and receiving channel",
+        "freeze 8 Feb 2019 positive huaico as territorial outcome until hydrologic identity is resolved",
+        "locate and freeze a primary official 2015 Mirave event source before using that year",
+        "identify Locumba/Mirave observations without transferring Sama or Caplina values"
+      ]
+    },
+    {
+      "discovery_id": "tacna_sama_quebrada_de_los_burros",
+      "department": "Tacna",
+      "entity_role": "DISCOVERY_HYDROLOGIC_SYSTEM_WITH_NAMED_EVENT_LOCATION_PENDING_CHANNEL_IDENTITY",
+      "system_name": "Cuenca Sama y quebrada/zona Quebrada de los Burros",
+      "territorial_reference": "Sama / Morro Sama / Costanera Sur",
+      "mechanism_preliminary": "river_system_plus_local_debris_flow_landslide_and_pluvial_components_to_be_separated",
+      "hydrologic_components": [
+        "Rio Sama",
+        "Quebrada de los Burros local channel/catchment identity to be resolved"
+      ],
+      "must_not_merge_with": [
+        "Rio Locumba",
+        "Rio Caplina/Uchusuma"
+      ],
+      "official_evidence_stage": "ANA_current_Sama_identity_plus_2026_named_location_huaico_and_landslide_evidence_available",
+      "official_source_ids": [
+        "ANA-TACNA-PADH-20260114",
+        "INDECI-SAMA-BURROS-20260816",
+        "INDECI-SAMA-BURROS-20260817"
+      ],
+      "first_work_package": [
+        "freeze exact official Sama basin geometry",
+        "resolve whether the named Quebrada de los Burros event location corresponds to one reproducible hydrologic child",
+        "freeze 16-17 Aug 2026 event outcomes without upgrading territorial naming into channel geometry",
+        "separate landslide, huaico, inundation and river processes",
+        "map Costanera/village exposure independently from basin geometry"
+      ]
+    },
+    {
+      "discovery_id": "tacna_caplina_uchusuma_pachia",
+      "department": "Tacna",
+      "entity_role": "DISCOVERY_HYDROLOGIC_SYSTEM_WITH_LOCAL_RAVINES_PENDING_SPLIT",
+      "system_name": "Sistema Caplina-Uchusuma y quebradas de Pachía",
+      "territorial_reference": "Tacna / Pachía",
+      "mechanism_preliminary": "managed_river_system_plus_local_debris_flow_ravines_to_be_separated",
+      "hydrologic_components": [
+        "Rio Caplina",
+        "Uchusuma system",
+        "Pachia local huaico source catchment to be identified"
+      ],
+      "must_not_merge_with": [
+        "Rio Sama",
+        "Rio Locumba",
+        "Intercuenca 13155"
+      ],
+      "official_evidence_stage": "ANA_current_Caplina_Uchusuma_identity_plus_2019_Pachia_huaico_available_local_source_geometry_pending",
+      "official_source_ids": [
+        "ANA-TACNA-PADH-20260114",
+        "ANA-TACNA-QUALITY-20251218",
+        "INDECI-PACHIA-20190208"
+      ],
+      "first_work_package": [
+        "freeze exact official Caplina and Uchusuma identities/geometries without fabricating a single composite polygon",
+        "resolve Pachia huaico source channel/catchment independently",
+        "freeze 8 Feb 2019 Pachia positive outcome as territorial event evidence",
+        "separate managed hydraulic-system context from natural event response",
+        "keep Intercuenca 13155 as a separate future discovery unit"
+      ]
+    }
+  ],
+  "pending_next_units": [
+    "Tacna Intercuenca 13155 coastal ravines",
+    "Moquegua General Sanchez Cerro local ravines including Volcanmayo only after parent hydrographic attribution",
+    "additional Ilo/Pacocha named ravines after official geometry review"
+  ],
+  "forbidden": [
+    "create approximate basin or ravine polygons from event locations",
+    "infer a named ravine activation when the official report only names a road sector or territorial zone",
+    "transfer station values, discharge or thresholds between Tambo, Moquegua-Ilo, Locumba, Sama or Caplina",
+    "use absence of reports as a negative control",
+    "use a faja marginal as an event footprint",
+    "use a critical point as a historical event",
+    "use works/design values as historical hydraulic capacity",
+    "promote any unit to operational status"
+  ]
+}
