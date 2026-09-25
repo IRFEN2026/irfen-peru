@@ -87,8 +87,8 @@ def test_official_south_coast_parent_codes_are_explicit_and_non_activatable():
 def test_every_local_child_is_withheld_until_geometry_is_reproducible():
     cfg = load()
     children = all_children(cfg)
-    assert len(children) == 17
-    assert cfg["summary"]["named_local_children_registered"] == 17
+    assert len(children) == 23
+    assert cfg["summary"]["named_local_children_registered"] == 23
     assert cfg["summary"]["map_publishable_children"] == 0
     assert cfg["summary"]["new_operational_zones"] == 0
     for child in children:
@@ -236,3 +236,116 @@ def test_geometry_work_queue_prioritizes_reproducible_sources_not_approximation(
     assert queue[1]["target"] == "arequipa_metropolitana_torrenteras"
     assert "freeze" in queue[0]["goal"].lower()
     assert cfg["global_rules"]["no_approximate_points"] is True
+
+
+def test_ica_pisco_quitasol_and_paracas_are_parent_bound_but_not_events():
+    cfg = load()
+    sys = systems(cfg)["ica_pisco_local_ravines"]
+    children = {x["child_id"]: x for x in sys["children"]}
+    for child_id in ("ica_quitasol", "ica_paracas"):
+        child = children[child_id]
+        assert child["identity_status"] == "OFFICIAL_ANA_CRITICAL_POINT_NAME_AND_PARENT_CONFIRMED"
+        assert child["evidence_state"] == "CRITICAL_POINT_CONTEXT_NOT_EVENT"
+        assert child["geometry_asset"] is None
+        assert child["map_publishable"] is False
+        assert child["activation_gate"] == "BLOCKED"
+
+
+def test_catambo_is_registered_from_ana_works_context_without_capacity_inference():
+    cfg = load()
+    sys = systems(cfg)["ica_ica_local_ravines"]
+    children = {x["child_id"]: x for x in sys["children"]}
+    catambo = children["ica_catambo"]
+    assert catambo["identity_status"] == "OFFICIAL_ANA_WORKS_PACKAGE_NAME_CONFIRMED"
+    assert catambo["evidence_state"] == "OFFICIAL_CHANNEL_IDENTITY_CONTEXT_NO_EVENT_ASSIGNED"
+    assert catambo["geometry_asset"] is None
+    assert catambo["outlet"] is None
+    assert catambo["map_publishable"] is False
+
+
+def test_rio_seco_intercuenca_is_not_forced_into_pisco_or_ica_basin():
+    cfg = load()
+    contexts = {x["discovery_id"]: x for x in cfg["official_intercuenca_contexts"]}
+    row = contexts["ica_intercuenca_13751_rio_seco"]
+    assert row["official_unit_code"] == "13751"
+    assert row["entity_role"] == "OFFICIAL_INTERCUENCA_CONTEXT_NON_ACTIVATABLE"
+    assert row["course_context"][0]["official_course_code"] == "137516"
+    assert row["course_context"][0]["name"] == "Río Seco"
+    assert row["course_context"][0]["map_publishable"] is False
+    assert row["activation_gate"] == "BLOCKED"
+    assert set(row["must_not_merge_with"]) == {"ica_pisco", "ica_ica"}
+
+
+def test_arequipa_metro_response_names_are_context_not_activation_timing():
+    cfg = load()
+    sys = systems(cfg)["arequipa_metropolitana_torrenteras"]
+    children = {x["child_id"]: x for x in sys["children"]}
+    for child_id in ("arequipa_roncero", "arequipa_huarangal", "arequipa_ojo_del_buey"):
+        child = children[child_id]
+        assert child["identity_status"] == "OFFICIAL_INDECI_RESPONSE_NAME_CONFIRMED"
+        assert child["evidence_state"] == "POST_EVENT_RESPONSE_CONTEXT_NOT_DIRECT_ACTIVATION_TIMING"
+        assert child["geometry_asset"] is None
+        assert child["outlet"] is None
+        assert child["map_publishable"] is False
+
+
+def test_pending_hydrologic_adjudication_never_creates_child_geometry():
+    cfg = load()
+    pending = {x["candidate_id"]: x for x in cfg["pending_hydrologic_adjudication"]}
+    expected = {
+        "ica_san_ignacio_palpa",
+        "ica_sacramento_palpa",
+        "ica_nuevo_vista_alegre_nasca",
+        "ica_ayapana_de_tulin_sector_2025",
+        "arequipa_quechualla_chaupo_2026",
+        "arequipa_quechualla_aytinco_2026",
+    }
+    assert set(pending) == expected
+    for row in pending.values():
+        assert row["map_publishable"] is False
+        assert row["activation_gate"] == "BLOCKED"
+        assert row["do_not_infer"]
+
+    ayapana = pending["ica_ayapana_de_tulin_sector_2025"]
+    assert ayapana["identity_status"] == "TERRITORIAL_SECTOR_ONLY_NOT_A_NAMED_RAVINE"
+    assert ayapana["geometry_status"] == "NO_CHILD_GEOMETRY_ALLOWED"
+    assert "Quebrada Ayapana" in ayapana["do_not_infer"]
+
+
+def test_new_local_children_have_fail_closed_ana_probe_contracts():
+    cfg = load()
+    probes = {(x["child_name"], x["expected_parent_uh_code"]) for x in cfg["hydrography_probe_contracts"]}
+    assert len(probes) == 23
+    expected = {
+        ("Quebrada Catambo", "1374"),
+        ("Quebrada Quitasol", "13752"),
+        ("Quebrada Paracas", "13752"),
+        ("Quebrada Roncero", "132"),
+        ("Quebrada Huarangal", "132"),
+        ("Quebrada Ojo del Buey", "132"),
+    }
+    assert expected <= probes
+    assert cfg["summary"]["local_hydrography_probe_contracts_registered"] == 23
+    for probe in cfg["hydrography_probe_contracts"]:
+        assert probe["status"] == "PLANNED_FAIL_CLOSED_NOT_EXECUTED"
+        assert probe["map_publishable"] is False
+        assert probe["event_state_transferred"] is False
+        assert probe["match_policy"] == "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE"
+
+
+def test_ranrata_2026_direct_event_is_added_without_geometry_promotion():
+    cfg = load()
+    sys = systems(cfg)["arequipa_ocona_cotahuasi_local_ravines"]
+    ranrata = next(x for x in sys["children"] if x["child_id"] == "arequipa_ranrata")
+    assert "INDECI-TOMEPAMPA-RANRATA-2026" in ranrata["source_ids"]
+    assert ranrata["map_publishable"] is False
+    assert ranrata["geometry_asset"] is None
+
+
+def test_expansion_summary_remains_research_only_and_zero_operational_zones():
+    cfg = load()
+    assert cfg["summary"]["named_local_children_registered"] == 23
+    assert cfg["summary"]["map_publishable_children"] == 0
+    assert cfg["summary"]["official_intercuenca_contexts_registered"] == 1
+    assert cfg["summary"]["pending_hydrologic_adjudications"] == 6
+    assert cfg["summary"]["new_operational_zones"] == 0
