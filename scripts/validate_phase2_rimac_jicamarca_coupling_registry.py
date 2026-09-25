@@ -30,6 +30,7 @@ EXPECTED = {
     "rio_seco",
     "canto_grande_upper_branch",
     "media_luna",
+    "jicamarca_named_channel",
 }
 
 NULL_FIELDS = ("travel_time_tau", "q_i_t", "receiver_response")
@@ -56,7 +57,7 @@ def validate_registry(reg: dict, rimac: dict, jic: dict) -> None:
 
     units = by_id(reg.get("local_units") or [])
     assert set(units) == EXPECTED
-    assert len(units) == 8
+    assert len(units) == 9
 
     rimac_rows = by_id(rimac.get("tributaries") or [])
     jic_rows = by_id(jic.get("tributaries") or [])
@@ -71,14 +72,21 @@ def validate_registry(reg: dict, rimac: dict, jic: dict) -> None:
         for field in NULL_FIELDS:
             assert row.get(field) is None
 
-    for unit_id in ("huaycoloro", "rio_seco", "canto_grande_upper_branch", "media_luna"):
+    for unit_id in ("huaycoloro", "rio_seco", "canto_grande_upper_branch", "media_luna", "jicamarca_named_channel"):
         row = units[unit_id]
         source = jic_rows[unit_id]
         assert row["source_contract"] == "config/phase2_jicamarca_collector_coupling_v0_1.json"
         assert row["collector_effect_state"] == source["collector_effect_state"]
         assert row["validation_status"] == source["validation_status"]
+        if unit_id != "media_luna":
+            assert row["connectivity"] == source.get("ultimate_receiver_connection_status", "UNRESOLVED_NOT_ASSUMED")
+        else:
+            assert row["connectivity"] == "DOCUMENTARY_TOPOLOGY_ONLY_EXACT_NODE_UNRESOLVED"
         for field in NULL_FIELDS:
             assert row.get(field) is None
+
+    assert jic_rows["jicamarca_named_channel"]["ultimate_receiver"] is None
+    assert jic_rows["jicamarca_named_channel"]["source_local_geometry_contract_or_explicit_missing_status"]["synthetic_unit_forbidden"] is True
 
     gates = reg.get("coupling_gates") or {}
     required = {
