@@ -29,7 +29,10 @@
   "identity": {
     "hydrologic_system": "Rio Tumbes",
     "parent_is_territorial_grouper": false,
-    "must_remain_separate_from": ["Rio Zarumilla", "tumbes_zorritos_bocapan_coastal_ravines"],
+    "must_remain_separate_from": [
+      "Rio Zarumilla",
+      "tumbes_zorritos_bocapan_coastal_ravines"
+    ],
     "source_layer_identity": {
       "service": "https://geosnirh.ana.gob.pe/server/rest/services/Inundacion_Tumbes/Capas_Inundacion_Tumbes_04052023/MapServer",
       "basin_layer_id": 2,
@@ -40,7 +43,9 @@
     "geometry": {
       "status": "MISSING_PENDING_EXACT_ANA_LAYER_REPLAY",
       "path": null,
-      "source_ids": ["ANA-TUMBES-2023-MAPSERVER-BASIN"],
+      "source_ids": [
+        "ANA-TUMBES-2023-MAPSERVER-BASIN"
+      ],
       "sha256": null,
       "validation_path": null,
       "validation_sha256": null,
@@ -48,7 +53,20 @@
       "counts_as_operational_geometry": false,
       "counts_as_event_footprint": false,
       "counts_as_complete_discovery_validation": false,
-      "candidate_wide_sampling_ready": false
+      "candidate_wide_sampling_ready": false,
+      "source_query": {
+        "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/Inundacion_Tumbes/Capas_Inundacion_Tumbes_04052023/MapServer/2/query",
+        "where": "OBJECTID IS NOT NULL",
+        "out_fields": "*",
+        "out_sr": 4326,
+        "geometry_precision": 7,
+        "format": "geojson"
+      },
+      "expected_service_layer_id": 2,
+      "expected_service_layer_name": "Cuenca Tumbes",
+      "target_geometry_path": "site/data/phase2/geometries/tumbes_rio_tumbes_basin_context.geojson",
+      "target_validation_path": "site/data/phase2/geometries/tumbes_rio_tumbes_basin_context_validation.json",
+      "target_source_path": "site/data/phase2/sources/north_coast_discovery_geometry/ana_tumbes_rio_tumbes_mapserver_layer2.geojson"
     },
     "historical_events": {
       "status": "PARTIAL",
