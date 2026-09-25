@@ -1,0 +1,27 @@
+name: IRFEN - Phase2 lower Santa 2011 source control
+
+on:
+  pull_request:
+    paths:
+      - site/data/phase2/sources/ancash_santa_lower_reach_2011_source_control_v0_1.json
+      - tests/test_phase2_santa_lower_reach_2011_source_control.py
+      - .github/workflows/phase2-santa-lower-reach-2011-source-control.yml
+
+permissions:
+  contents: read
+
+jobs:
+  validate-source-control:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install test dependency
+        run: python -m pip install pytest
+      - name: Validate lower Santa 2011 source control
+        run: python -m pytest -q tests/test_phase2_santa_lower_reach_2011_source_control.py
+      - name: Re-run universal local activation hierarchy gate
+        run: python scripts/validate_phase2_local_activation_hierarchy.py
