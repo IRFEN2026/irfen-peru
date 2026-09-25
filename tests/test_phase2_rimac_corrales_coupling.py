@@ -1,5 +1,6 @@
 import json
 import re
+import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,80 +27,86 @@ EXPECTED_BLOBS = {
     "freeze_registry_blob": "d2577c4dfd81fdd8ee372e16277054006b28c079",
 }
 
+
 def load(path):
     return json.loads(path.read_text(encoding="utf-8"))
 
-def test_corrales_contract_is_fail_closed_and_static_only():
-    doc = load(CONTRACT)
-    for key, expected in SAFE.items():
-        assert doc[key] == expected
-    assert doc["parent_id"] == "lima_este_santa_eulalia_rimac"
-    assert doc["local_unit_id"] == "corrales"
-    assert doc["territorial_target_label"] == "rayos_de_sol"
-    assert doc["source_ref"] == "agent/chosica-2015-multibasin-v0.1"
-    assert doc["collector_id"] == "rimac_mainstem_receiver"
-    assert doc["collector_effect_state"] == "HYDROLOGICALLY_CONNECTED"
-    assert doc["q_i_t"] is None
-    assert doc["travel_time_tau"] is None
-    assert doc["routing_method"] is None
-    assert doc["attenuation_or_storage"] is None
-    assert doc["capacity_status"] == "UNKNOWN"
-    assert doc["receiver_response_observed"] is False
 
-def test_source_artifacts_are_exactly_pinned():
-    doc = load(CONTRACT)
-    assert doc["source_artifacts"] == EXPECTED_BLOBS
-    assert all(re.fullmatch(r"[0-9a-f]{40}", sha) for sha in doc["source_artifacts"].values())
+class TestRimacCorralesStaticCoupling(unittest.TestCase):
+    def test_corrales_contract_is_fail_closed_and_static_only(self):
+        doc = load(CONTRACT)
+        for key, expected in SAFE.items():
+            self.assertEqual(doc[key], expected)
+        self.assertEqual(doc["parent_id"], "lima_este_santa_eulalia_rimac")
+        self.assertEqual(doc["local_unit_id"], "corrales")
+        self.assertEqual(doc["territorial_target_label"], "rayos_de_sol")
+        self.assertEqual(doc["source_ref"], "agent/chosica-2015-multibasin-v0.1")
+        self.assertEqual(doc["collector_id"], "rimac_mainstem_receiver")
+        self.assertEqual(doc["collector_effect_state"], "HYDROLOGICALLY_CONNECTED")
+        self.assertIsNone(doc["q_i_t"])
+        self.assertIsNone(doc["travel_time_tau"])
+        self.assertIsNone(doc["routing_method"])
+        self.assertIsNone(doc["attenuation_or_storage"])
+        self.assertEqual(doc["capacity_status"], "UNKNOWN")
+        self.assertFalse(doc["receiver_response_observed"])
 
-def test_static_anchor_and_d8_intersection_coordinates_are_frozen():
-    doc = load(CONTRACT)
-    assert doc["static_anchor"] == {
-        "lon": -76.68075049654043,
-        "lat": -11.922865103815958,
-    }
-    node = doc["receiver_intersection"]
-    assert node["lon"] == -76.68083293
-    assert node["lat"] == -11.92442315
-    assert node["classification"] == "REPRODUCIBLE_TERRAIN_D8_HYDROLOGIC_INTERSECTION"
-    assert node["official_surface_confluence_confirmed"] is False
+    def test_source_artifacts_are_exactly_pinned(self):
+        doc = load(CONTRACT)
+        self.assertEqual(doc["source_artifacts"], EXPECTED_BLOBS)
+        self.assertTrue(all(re.fullmatch(r"[0-9a-f]{40}", sha) for sha in doc["source_artifacts"].values()))
 
-def test_map_nodes_are_context_only_and_not_alerts_or_event_footprints():
-    geo = load(NODES)
-    props = geo["properties"]
-    for key, expected in SAFE.items():
-        assert props[key] == expected
-    assert props["default_visibility"] is False
-    assert props["carries_risk_classification"] is False
-    assert props["carries_alert_values"] is False
-    assert props["counts_as_event_footprint"] is False
-    assert props["counts_as_complete_candidate_geometry"] is False
+    def test_static_anchor_and_d8_intersection_coordinates_are_frozen(self):
+        doc = load(CONTRACT)
+        self.assertEqual(doc["static_anchor"], {
+            "lon": -76.68075049654043,
+            "lat": -11.922865103815958,
+        })
+        node = doc["receiver_intersection"]
+        self.assertEqual(node["lon"], -76.68083293)
+        self.assertEqual(node["lat"], -11.92442315)
+        self.assertEqual(node["classification"], "REPRODUCIBLE_TERRAIN_D8_HYDROLOGIC_INTERSECTION")
+        self.assertFalse(node["official_surface_confluence_confirmed"])
 
-    features = {f["properties"]["unit_id"]: f for f in geo["features"]}
-    assert set(features) == {
-        "corrales_r5_channel_anchor",
-        "corrales_rimac_d8_intersection",
-    }
-    anchor = features["corrales_r5_channel_anchor"]
-    assert anchor["geometry"] == {
-        "type": "Point",
-        "coordinates": [-76.68075049654043, -11.922865103815958],
-    }
-    intersection = features["corrales_rimac_d8_intersection"]
-    assert intersection["geometry"] == {
-        "type": "Point",
-        "coordinates": [-76.68083293, -11.92442315],
-    }
-    ip = intersection["properties"]
-    assert ip["collector_effect_state"] == "HYDROLOGICALLY_CONNECTED"
-    assert ip["official_surface_confluence_confirmed"] is False
-    assert ip["source_blob_sha"] == EXPECTED_BLOBS["outlet_candidate_blob"]
+    def test_map_nodes_are_context_only_and_not_alerts_or_event_footprints(self):
+        geo = load(NODES)
+        props = geo["properties"]
+        for key, expected in SAFE.items():
+            self.assertEqual(props[key], expected)
+        self.assertFalse(props["default_visibility"])
+        self.assertFalse(props["carries_risk_classification"])
+        self.assertFalse(props["carries_alert_values"])
+        self.assertFalse(props["counts_as_event_footprint"])
+        self.assertFalse(props["counts_as_complete_candidate_geometry"])
 
-def test_rayos_de_sol_remains_territorial_label_not_hydrologic_unit():
-    doc = load(CONTRACT)
-    assert doc["local_unit_id"] == "corrales"
-    assert doc["territorial_target_label"] == "rayos_de_sol"
-    geo = load(NODES)
-    for feature in geo["features"]:
-        props = feature["properties"]
-        assert props["hydrologic_unit_id"] == "corrales"
-        assert props["territorial_target_label"] == "rayos_de_sol"
+        features = {f["properties"]["unit_id"]: f for f in geo["features"]}
+        self.assertEqual(set(features), {
+            "corrales_r5_channel_anchor",
+            "corrales_rimac_d8_intersection",
+        })
+        self.assertEqual(features["corrales_r5_channel_anchor"]["geometry"], {
+            "type": "Point",
+            "coordinates": [-76.68075049654043, -11.922865103815958],
+        })
+        intersection = features["corrales_rimac_d8_intersection"]
+        self.assertEqual(intersection["geometry"], {
+            "type": "Point",
+            "coordinates": [-76.68083293, -11.92442315],
+        })
+        ip = intersection["properties"]
+        self.assertEqual(ip["collector_effect_state"], "HYDROLOGICALLY_CONNECTED")
+        self.assertFalse(ip["official_surface_confluence_confirmed"])
+        self.assertEqual(ip["source_blob_sha"], EXPECTED_BLOBS["outlet_candidate_blob"])
+
+    def test_rayos_de_sol_remains_territorial_label_not_hydrologic_unit(self):
+        doc = load(CONTRACT)
+        self.assertEqual(doc["local_unit_id"], "corrales")
+        self.assertEqual(doc["territorial_target_label"], "rayos_de_sol")
+        geo = load(NODES)
+        for feature in geo["features"]:
+            props = feature["properties"]
+            self.assertEqual(props["hydrologic_unit_id"], "corrales")
+            self.assertEqual(props["territorial_target_label"], "rayos_de_sol")
+
+
+if __name__ == "__main__":
+    unittest.main()
