@@ -1,1 +1,133 @@
-{}
+{
+  "schema_version": "0.1",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "sources": {
+    "santa_rimac": "site/data/validation/phase2_collector_coupling/lima_este_santa_eulalia_rimac_v0_2.json",
+    "jicamarca": "config/phase2_jicamarca_collector_coupling_v0_1.json"
+  },
+  "fields": [
+    "local_unit_id",
+    "parent_id",
+    "geometry_status",
+    "immediate_receiver",
+    "receiver_relation",
+    "collector_effect_state",
+    "outlet_status"
+  ],
+  "children": [
+    [
+      "cashahuacra",
+      "lima_este_santa_eulalia_rimac",
+      "REPRODUCIBLE_REVIEW_ONLY_D8_CATCHMENT",
+      "santa_eulalia_mainstem_context",
+      "D8_PATH_REACHES_SANTA_EULALIA_FAJA_CONTEXT",
+      "HYDROLOGICALLY_CONNECTED",
+      "RESEARCH_D8_OUTLET_NOT_OFFICIALLY_CONFIRMED"
+    ],
+    [
+      "shingolay",
+      "lima_este_santa_eulalia_rimac",
+      "REPRODUCIBLE_REVIEW_ONLY_D8_CATCHMENT",
+      "santa_eulalia_mainstem_context",
+      "D8_PATH_REACHES_SANTA_EULALIA_FAJA_CONTEXT",
+      "HYDROLOGICALLY_CONNECTED",
+      "RESEARCH_D8_OUTLET_NOT_OFFICIALLY_CONFIRMED"
+    ],
+    [
+      "quirio",
+      "lima_este_santa_eulalia_rimac",
+      "CHANNEL_ANCHOR_ONLY",
+      "rimac_mainstem_receiver",
+      "STATIC_D8_HYDROLOGIC_INTERSECTION",
+      "HYDROLOGICALLY_CONNECTED",
+      "NOT_OFFICIAL_SURFACE_CONFLUENCE"
+    ],
+    [
+      "pedregal_san_antonio",
+      "lima_este_santa_eulalia_rimac",
+      "CHANNEL_ANCHOR_ONLY",
+      "rimac_mainstem_receiver",
+      "STATIC_D8_HYDROLOGIC_INTERSECTION",
+      "HYDROLOGICALLY_CONNECTED",
+      "NOT_OFFICIAL_SURFACE_CONFLUENCE"
+    ],
+    [
+      "huaycoloro",
+      "lima_este_jicamarca_huaycoloro_rioseco_canto_grande",
+      "REFERENCE_ONLY",
+      null,
+      "DOCUMENTARY_JOIN_WITH_RIO_SECO_NODE_UNRESOLVED",
+      "NO_EVIDENCE",
+      "NOT_REASSERTED"
+    ],
+    [
+      "rio_seco",
+      "lima_este_jicamarca_huaycoloro_rioseco_canto_grande",
+      "MISSING_INDEPENDENT_GEOMETRY",
+      null,
+      "DOCUMENTARY_JOIN_WITH_HUAYCOLORO_NODE_UNRESOLVED",
+      "NO_EVIDENCE",
+      "MISSING"
+    ],
+    [
+      "canto_grande_upper_branch",
+      "lima_este_jicamarca_huaycoloro_rioseco_canto_grande",
+      "OFFICIAL_CHANNEL_CONTEXT_ONLY",
+      null,
+      "RECEIVER_CONFLUENCE_UNRESOLVED",
+      "NO_EVIDENCE",
+      "MISSING"
+    ],
+    [
+      "media_luna",
+      "lima_este_jicamarca_huaycoloro_rioseco_canto_grande",
+      "OFFICIAL_CHANNEL_CONTEXT_ONLY",
+      "canto_grande_local_receiver",
+      "DOCUMENTARY_TOPOLOGY_EXACT_JUNCTION_UNRESOLVED",
+      "NO_EVIDENCE",
+      "MISSING"
+    ],
+    [
+      "jicamarca_named_channel",
+      "lima_este_jicamarca_huaycoloro_rioseco_canto_grande",
+      "IDENTITY_UNRESOLVED",
+      null,
+      "IDENTITY_UNRESOLVED",
+      "NO_EVIDENCE",
+      "MISSING"
+    ]
+  ],
+  "invariant_defaults": {
+    "exact_receiver_confluence_resolved": false,
+    "q_i_t": null,
+    "travel_time_tau": null,
+    "routing_method": null,
+    "attenuation_or_storage": null,
+    "hydraulic_distance": null,
+    "capacity_status": "UNKNOWN",
+    "receiver_overflow_inference_allowed": false
+  },
+  "rules": [
+    "parent context is non-activatable",
+    "D8 intersection is not an official surface confluence",
+    "faja marginal is not channel centerline or event footprint",
+    "candidate outlet is not official outlet",
+    "no receiver overflow from child activation",
+    "no travel time without reproducible routing",
+    "no capacity without reproducible hydraulics"
+  ],
+  "map_policy": {
+    "registry_creates_new_geometry": false,
+    "missing_geometry_is_not_drawn": true,
+    "risk_colors_forbidden": true,
+    "alerts_forbidden": true
+  }
+}
