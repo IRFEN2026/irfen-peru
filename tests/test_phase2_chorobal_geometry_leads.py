@@ -12,3 +12,19 @@ def test_chorobal_faja_leads_fail_closed():
  assert g['faja_marginal_is_subcatchment_geometry'] is False
  assert g['faja_marginal_is_event_footprint'] is False
  assert s['qa']['chorobal_outlet_resolved'] is False
+
+
+def test_chorobal_event_evidence_stays_child_specific():
+ p=load(P); s=load(S)
+ e17=p['event_ledger']['2017']; e22=p['event_ledger']['2022_chorobal']
+ assert e17['child_id']=='chorobal_river_component'
+ assert e17['exact_event_date_available'] is False
+ assert e17['exact_event_footprint_available'] is False
+ assert e17['whole_basin_uniform_activation'] is False
+ assert e22['child_id']=='chorobal_river_component'
+ assert e22['event_time_local']=='2022-04-03T01:35:00-05:00'
+ assert e22['exact_event_footprint_available'] is False
+ assert e22['whole_basin_uniform_activation'] is False
+ assert s['qa']['chorobal_2017_exact_event_date_resolved'] is False
+ assert s['qa']['chorobal_2022_event_date_resolved'] is True
+ assert s['qa']['chorobal_2022_event_footprint_resolved'] is False
