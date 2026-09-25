@@ -59,3 +59,17 @@ def test_paita_historical_windows_do_not_overassign_children():
     assert e98["local_child_activation_assigned"] is False
     assert e98["absence_of_local_report_is_negative"] is False
     assert e98["source_ids"]==[]
+
+
+def test_talara_official_evidence_registry_stays_fail_closed():
+    src=load(ROOT/"site/data/phase2/sources/piura_talara_official_evidence_v0_1.json")
+    assert src["deployment_status"]=="RESEARCH_ONLY"
+    assert src["test_mode"]=="TEST_ONLY"
+    assert src["production_use"] is False
+    assert src["production_ready"] is False
+    assert src["operational_alerting_enabled"] is False
+    assert src["activation_gate"]=="BLOCKED"
+    assert src["decision_thresholds"] is None
+    assert src["hydraulic_factors"] is None
+    ids={x["source_id"] for x in src["sources"]}
+    assert "IGP-TALARA-ZONIFICACION-2020" in ids
