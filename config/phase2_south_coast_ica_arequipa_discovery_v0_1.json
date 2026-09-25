@@ -9,7 +9,7 @@
   "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
   "decision_thresholds": null,
   "hydraulic_factors": null,
-  "purpose": "Register a fail-closed Ica + Arequipa south-coast discovery hierarchy using official ANA hydrographic units and bounded official event evidence, without publishing unverified local geometry or operational states.",
+  "purpose": "Register a fail-closed Ica + Arequipa south-coast discovery hierarchy using official ANA hydrographic units and bounded official event evidence, without publishing unverified local geometry or operational states. Additionally reuses already-frozen official parent geometry where available and preregisters fail-closed ANA national hydrography probes for every named local child.",
   "global_rules": {
     "parent_is_context_only": true,
     "child_activation_does_not_activate_parent": true,
@@ -83,16 +83,21 @@
       "department": "Ica / Huancavelica",
       "entity_role": "OFFICIAL_PARENT_BASIN_CONTEXT_NON_ACTIVATABLE",
       "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
-      "parent_geometry_status": "OFFICIAL_GEOMETRY_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
-      "parent_geometry_asset": null,
-      "parent_map_publishable": false,
+      "parent_geometry_status": "FROZEN_EXISTING_OFFICIAL_CONTEXT_REUSED",
+      "parent_geometry_asset": "site/data/phase2/geometries/ica_pisco_san_andres_pisco_basin_context.geojson",
+      "parent_map_publishable": true,
       "must_not_merge_with": [
         "ica_topara",
         "ica_ica"
       ],
       "activation_gate": "BLOCKED",
       "decision_thresholds": null,
-      "hydraulic_factors": null
+      "hydraulic_factors": null,
+      "existing_repository_context_candidate_id": "ica_pisco_san_andres",
+      "parent_geometry_source_ids": [
+        "ANA-IDEP-UH-PISCO-13752-20260922"
+      ],
+      "parent_geometry_role": "OFFICIAL_BASIN_CONTEXT_ONLY_NOT_LOCAL_CHILD_GEOMETRY"
     },
     {
       "discovery_id": "ica_ica",
@@ -119,16 +124,21 @@
       "department": "Ica / Ayacucho / Huancavelica",
       "entity_role": "OFFICIAL_PARENT_BASIN_CONTEXT_NON_ACTIVATABLE",
       "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
-      "parent_geometry_status": "OFFICIAL_GEOMETRY_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
-      "parent_geometry_asset": null,
-      "parent_map_publishable": false,
+      "parent_geometry_status": "FROZEN_EXISTING_OFFICIAL_CONTEXT_REUSED",
+      "parent_geometry_asset": "site/data/phase2/geometries/ica_palpa_changuillo_grande_basin_context.geojson",
+      "parent_map_publishable": true,
       "must_not_merge_with": [
         "ica_ica",
         "arequipa_acari"
       ],
       "activation_gate": "BLOCKED",
       "decision_thresholds": null,
-      "hydraulic_factors": null
+      "hydraulic_factors": null,
+      "existing_repository_context_candidate_id": "ica_palpa_changuillo",
+      "parent_geometry_source_ids": [
+        "ANA-IDEP-UH-GRANDE-1372-20260923"
+      ],
+      "parent_geometry_role": "OFFICIAL_BASIN_CONTEXT_ONLY_NOT_LOCAL_CHILD_GEOMETRY"
     },
     {
       "discovery_id": "arequipa_pescadores_caraveli",
@@ -227,16 +237,21 @@
       "department": "Arequipa / Ayacucho",
       "entity_role": "OFFICIAL_PARENT_BASIN_CONTEXT_NON_ACTIVATABLE",
       "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
-      "parent_geometry_status": "OFFICIAL_GEOMETRY_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
-      "parent_geometry_asset": null,
-      "parent_map_publishable": false,
+      "parent_geometry_status": "FROZEN_EXISTING_OFFICIAL_CONTEXT_REUSED",
+      "parent_geometry_asset": "site/data/phase2/geometries/arequipa_acari_san_agustin_acari_basin_context.geojson",
+      "parent_map_publishable": true,
       "must_not_merge_with": [
         "arequipa_yauca",
         "ica_rio_grande_palpa_nasca"
       ],
       "activation_gate": "BLOCKED",
       "decision_thresholds": null,
-      "hydraulic_factors": null
+      "hydraulic_factors": null,
+      "existing_repository_context_candidate_id": "arequipa_acari_san_agustin",
+      "parent_geometry_source_ids": [
+        "ANA-IDEP-UH-ACARI-20260922"
+      ],
+      "parent_geometry_role": "OFFICIAL_BASIN_CONTEXT_ONLY_NOT_LOCAL_CHILD_GEOMETRY"
     },
     {
       "discovery_id": "arequipa_ocona",
@@ -1099,9 +1114,47 @@
         "territorial Vítor huaico"
       ],
       "forbidden_use": "Unnamed ravine remains unresolved."
+    },
+    {
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "institution": "Autoridad Nacional del Agua / SNIRH",
+      "official": true,
+      "title": "Ríos y Quebradas — red hidrográfica nacional Pfafstetter",
+      "url": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0",
+      "query_endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "service_item_id": "99cc803fb9044523b6ee55f24dcab270",
+      "source_year": 2018,
+      "geometry_type": "esriGeometryPolyline",
+      "spatial_reference": "EPSG:4326",
+      "supported_query_formats": [
+        "JSON",
+        "geoJSON",
+        "PBF"
+      ],
+      "identity_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "provenance_status": "OFFICIAL_ARCGIS_LAYER_METADATA_VERIFIED_2026-09-25; FEATURE_BYTES_NOT_YET_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "exact named-channel discovery",
+        "Pfafstetter parent-unit adjudication",
+        "official polyline recovery candidates"
+      ],
+      "forbidden_use": "Do not treat an exact-name result as sufficient for map publication until parent-unit identity, uniqueness, source bytes, SHA-256 and geometry review are frozen. No event, threshold, hydraulic-capacity or negative-control inference."
     }
   ],
   "next_geometry_work_packages": [
+    {
+      "priority": 1,
+      "target": "south_coast_named_children_ana_hydrography",
+      "goal": "execute and archive the 17 exact-name ANA national hydrography queries; accept only unique parent-UH-consistent linework; hash raw/canonical source bytes; publish nothing automatically"
+    },
     {
       "priority": 1,
       "target": "ica_cansas",
@@ -1133,6 +1186,452 @@
     "local_discovery_systems_registered": 7,
     "named_local_children_registered": 17,
     "map_publishable_children": 0,
-    "new_operational_zones": 0
-  }
+    "new_operational_zones": 0,
+    "frozen_official_parent_contexts_reused": 3,
+    "local_hydrography_probe_contracts_registered": 17
+  },
+  "hydrography_probe_contracts": [
+    {
+      "child_name": "Quebrada Cansas",
+      "discovery_system_id": "ica_ica_local_ravines",
+      "expected_parent_discovery_id": "ica_ica",
+      "expected_parent_uh_code": "1374",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Cansas'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada La Yesera",
+      "discovery_system_id": "ica_ica_local_ravines",
+      "expected_parent_discovery_id": "ica_ica",
+      "expected_parent_uh_code": "1374",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='La Yesera'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada Tortolita",
+      "discovery_system_id": "ica_ica_local_ravines",
+      "expected_parent_discovery_id": "ica_ica",
+      "expected_parent_uh_code": "1374",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Tortolita'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada San José de Curis",
+      "discovery_system_id": "ica_rio_grande_local_ravines",
+      "expected_parent_discovery_id": "ica_rio_grande_palpa_nasca",
+      "expected_parent_uh_code": "1372",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='San José de Curis'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada San Isidro de Macchanga",
+      "discovery_system_id": "ica_rio_grande_local_ravines",
+      "expected_parent_discovery_id": "ica_rio_grande_palpa_nasca",
+      "expected_parent_uh_code": "1372",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='San Isidro de Macchanga'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada / torrentera Chullo",
+      "discovery_system_id": "arequipa_metropolitana_torrenteras",
+      "expected_parent_discovery_id": "arequipa_quilca_vitor_chili",
+      "expected_parent_uh_code": "132",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Chullo'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada / torrentera Los Incas",
+      "discovery_system_id": "arequipa_metropolitana_torrenteras",
+      "expected_parent_discovery_id": "arequipa_quilca_vitor_chili",
+      "expected_parent_uh_code": "132",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Los Incas'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada / torrentera Añashuayco",
+      "discovery_system_id": "arequipa_metropolitana_torrenteras",
+      "expected_parent_discovery_id": "arequipa_quilca_vitor_chili",
+      "expected_parent_uh_code": "132",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Añashuayco'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada / torrentera San Lázaro",
+      "discovery_system_id": "arequipa_metropolitana_torrenteras",
+      "expected_parent_discovery_id": "arequipa_quilca_vitor_chili",
+      "expected_parent_uh_code": "132",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='San Lázaro'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada / torrentera El Pato",
+      "discovery_system_id": "arequipa_metropolitana_torrenteras",
+      "expected_parent_discovery_id": "arequipa_quilca_vitor_chili",
+      "expected_parent_uh_code": "132",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='El Pato'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada Añascoy",
+      "discovery_system_id": "arequipa_metropolitana_torrenteras",
+      "expected_parent_discovery_id": "arequipa_quilca_vitor_chili",
+      "expected_parent_uh_code": "132",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Añascoy'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada Gamarra",
+      "discovery_system_id": "arequipa_metropolitana_torrenteras",
+      "expected_parent_discovery_id": "arequipa_quilca_vitor_chili",
+      "expected_parent_uh_code": "132",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Gamarra'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada Panteón",
+      "discovery_system_id": "arequipa_metropolitana_torrenteras",
+      "expected_parent_discovery_id": "arequipa_quilca_vitor_chili",
+      "expected_parent_uh_code": "132",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Panteón'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada Ranrata",
+      "discovery_system_id": "arequipa_ocona_cotahuasi_local_ravines",
+      "expected_parent_discovery_id": "arequipa_ocona",
+      "expected_parent_uh_code": "136",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Ranrata'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada Alca",
+      "discovery_system_id": "arequipa_ocona_cotahuasi_local_ravines",
+      "expected_parent_discovery_id": "arequipa_ocona",
+      "expected_parent_uh_code": "136",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Alca'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada Umahuato",
+      "discovery_system_id": "arequipa_camana_castilla_local_ravines",
+      "expected_parent_discovery_id": "arequipa_camana_majes_colca",
+      "expected_parent_uh_code": "134",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Umahuato'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada Allachaya",
+      "discovery_system_id": "arequipa_camana_castilla_local_ravines",
+      "expected_parent_discovery_id": "arequipa_camana_majes_colca",
+      "expected_parent_uh_code": "134",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Allachaya'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    }
+  ]
 }
