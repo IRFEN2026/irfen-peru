@@ -1,0 +1,60 @@
+{
+  "schema_version": "0.1",
+  "discovery_id": "piura_paita_urban_local_ravines",
+  "status": "RESEARCH_ONLY_OFFICIAL_EVIDENCE_REGISTRY",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "sources": [
+    {
+      "source_id": "IGP-PAITA-GEODYNAMICS-2021",
+      "institution": "Instituto Geofisico del Peru",
+      "document": "Caracteristicas Geodinamicas en el Distrito de Paita - Informe Tecnico N032-2021/IGP",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/13951_caracteristicas-geodinamicas-en-el-distrito-de-paita-provincia-de-paita-region-piura-informe-tecnico-n0032-2021igp.pdf",
+      "role": "OFFICIAL_FIELD_BASED_LOCAL_DRAINAGE_IDENTITY_AND_ROUTING_CONTEXT",
+      "admissible_claims": [
+        "IGP identifies El Zanjon as the principal local ravine and Nueva Esperanza, La Piscina, Catarata and Villa Naval as named contributing ravines in the Paita urban setting",
+        "the study states that the named contributing ravines ultimately drain through the principal El Zanjon system to the Pacific in its generalized local-drainage description",
+        "the study is based on field inspection and identifies ravines that activate in rainy periods"
+      ],
+      "forbidden_inferences": [
+        "the generalized routing statement overrides more specific official routing for Villa Naval",
+        "the report supplies survey-grade child geometries or outlet coordinates",
+        "rainfall climatology in the report is an IRFEN activation threshold",
+        "generic rainy-period activation proves a dated child event"
+      ]
+    },
+    {
+      "source_id": "PPRRD-PAITA-2019-2021",
+      "institution": "Municipalidad Provincial de Paita / CENEPRED SIGRID",
+      "document": "Plan de Prevencion y Reduccion del Riesgo de Desastres de la Provincia de Paita 2019-2021",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/6187_plan-de-prevencion-y-reduccion-del-riesgo-de-desastres-de-la-provincia-de-paita-2019-2021.pdf",
+      "role": "OFFICIAL_LOCAL_RAVINE_ROUTING_AND_1983_EVENT_CONTEXT",
+      "admissible_claims": [
+        "El Zanjon drains much of Paita Baja through a canal-way that reaches the sea and the plan reports overflow and widespread urban inundation during the 1983 El Nino event",
+        "La Piscina is described as draining toward El Zanjon",
+        "La Catarata is described as draining from Paita Alta toward El Zanjon",
+        "Villa Naval is described as draining toward the Rada del Complejo Pesquero, with possible diversion toward Puerto Nuevo under severe conditions"
+      ],
+      "forbidden_inferences": [
+        "the report proves 1983 activation of La Piscina, La Catarata or Villa Naval separately",
+        "Villa Naval may be forced into El Zanjon contrary to the more specific routing description",
+        "described insufficient section is a current quantified hydraulic capacity",
+        "return-period rainfall values in the plan are IRFEN thresholds"
+      ]
+    }
+  ],
+  "qa": {
+    "specific_routing_overrides_generalized_summary_when_sources_differ": true,
+    "dated_event_transfer_between_children_forbidden": true,
+    "rainfall_values_used_as_operational_thresholds": false,
+    "descriptive_routes_used_as_survey_geometry": false,
+    "absence_of_report_is_negative": false
+  }
+}
