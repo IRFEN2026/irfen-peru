@@ -4,6 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "site/data/phase2/sources/ancash_santa_lower_reach_2011_normalization_v0_1.json"
+CORRECTION = ROOT / "site/data/phase2/source_assessments/santa_2011_source_locator_correction_v0_2.json"
 
 SAFE = {
     "deployment_status": "RESEARCH_ONLY",
@@ -65,6 +66,16 @@ class SantaLowerReach2011NormalizationTests(unittest.TestCase):
         self.assertFalse(h["design_values_are_current_capacity"])
         self.assertFalse(h["works_are_historical_capacity"])
         self.assertFalse(self.doc["map_policy"]["design_flow_is_operational_threshold"])
+
+    def test_verified_source_locator_correction_is_explicit(self):
+        c = json.loads(CORRECTION.read_text(encoding="utf-8"))
+        for key, expected in SAFE.items():
+            self.assertEqual(c[key], expected)
+        self.assertEqual(c["status"], "SOURCE_LOCATOR_CORRECTION")
+        self.assertEqual(c["source_id"], "ANA-SANTA-LOWER-REACH-2011")
+        self.assertIn("/sigridv3/documento/14534", c["verified_sigrid_catalog"])
+        self.assertIn("14534_tratamiento-de-cauce-del-rio-para-el-control-de-inundaciones-en-la-cuenca-del-santa.pdf", c["verified_sigrid_pdf"])
+        self.assertFalse(c["map_eligible"])
 
     def test_source_hash_is_not_invented(self):
         self.assertEqual(self.doc["source"]["source_hash_status"], "NOT_FROZEN_PENDING_ARCHIVE")
