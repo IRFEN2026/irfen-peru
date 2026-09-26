@@ -1,0 +1,358 @@
+{
+  "version": "0.1",
+  "name": "IRFEN Episode Continuity Controlled Pilot",
+  "report_generated_at": "2026-09-05T19:00:00+00:00",
+  "mode": "SHADOW_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "public_social_publishing": false,
+  "scientific_candidate_forwarding_enabled": false,
+  "pilot_type": "CONTROLLED_SYNTHETIC_REPLAY",
+  "controller_contract_path": "config/episode_continuity_contract_v01.json",
+  "report_path": "site/data/episodes/continuity/shadow/pilot_report_v01.json",
+  "scope": {
+    "control_logic_validated": true,
+    "hydrological_skill_validated": false,
+    "rainfall_thresholds_validated": false,
+    "operational_readiness_validated": false,
+    "purpose": "Validar continuidad, histéresis, deduplicación, persistencia y saturación antes de usar series históricas reales."
+  },
+  "signal_states": [
+    "clear",
+    "watch",
+    "candidate",
+    "blocked"
+  ],
+  "temporal_profiles": {
+    "complete": "1h, 3h, 6h, 24h, 72h, 7d y contexto antecedente disponibles",
+    "partial": "24h, 72h y 7d disponibles; ventanas subdiarias ausentes y no inferidas"
+  },
+  "scenarios": [
+    {
+      "scenario_id": "ordinary_single_zone_hysteresis",
+      "mode": "ORDINARY",
+      "description": "Una zona pasa por vigilancia, apertura, persistencia, pausa, reactivación del mismo episodio, cierre, nueva apertura e idempotencia.",
+      "frames": [
+        {
+          "at": "2026-09-05T00:00:00+00:00",
+          "signals": {
+            "san_ildefonso": "watch"
+          },
+          "temporal_profile": "complete"
+        },
+        {
+          "at": "2026-09-05T01:00:00+00:00",
+          "signals": {
+            "san_ildefonso": "candidate"
+          },
+          "temporal_profile": "complete"
+        },
+        {
+          "at": "2026-09-05T02:00:00+00:00",
+          "signals": {
+            "san_ildefonso": "candidate"
+          },
+          "temporal_profile": "complete"
+        },
+        {
+          "at": "2026-09-05T03:00:00+00:00",
+          "signals": {
+            "san_ildefonso": "candidate"
+          },
+          "temporal_profile": "complete"
+        },
+        {
+          "at": "2026-09-05T04:00:00+00:00",
+          "signals": {},
+          "temporal_profile": "complete"
+        },
+        {
+          "at": "2026-09-05T05:00:00+00:00",
+          "signals": {
+            "san_ildefonso": "candidate"
+          },
+          "temporal_profile": "complete"
+        },
+        {
+          "at": "2026-09-05T06:00:00+00:00",
+          "signals": {},
+          "temporal_profile": "complete"
+        },
+        {
+          "at": "2026-09-05T07:00:00+00:00",
+          "signals": {},
+          "temporal_profile": "complete"
+        },
+        {
+          "at": "2026-09-05T08:00:00+00:00",
+          "signals": {},
+          "temporal_profile": "complete"
+        },
+        {
+          "at": "2026-09-05T09:00:00+00:00",
+          "signals": {
+            "san_ildefonso": "candidate"
+          },
+          "temporal_profile": "complete"
+        },
+        {
+          "duplicate_of": 9
+        }
+      ],
+      "expected_metrics": {
+        "cycles": 11,
+        "events_opened": 2,
+        "events_closed": 1,
+        "same_event_reactivations": 1,
+        "persistent_transitions": 1,
+        "upstream_candidate_id_churn_absorbed": 2,
+        "maximum_concurrent_open_zones": 1,
+        "regional_saturation_cycles": 0,
+        "blocked_zone_observations": 0,
+        "idempotent_cycles": 1,
+        "alerts_created": 0,
+        "publications_created": 0
+      },
+      "checkpoints": [
+        {
+          "check_id": "watch_without_opening",
+          "path": "timeline.0.lifecycle_states.san_ildefonso",
+          "equals": "WATCH"
+        },
+        {
+          "check_id": "third_candidate_becomes_persistent",
+          "path": "timeline.3.lifecycle_states.san_ildefonso",
+          "equals": "PERSISTENT"
+        },
+        {
+          "check_id": "first_clear_enters_recovery",
+          "path": "timeline.4.lifecycle_states.san_ildefonso",
+          "equals": "RECOVERY"
+        },
+        {
+          "check_id": "reactivation_transition",
+          "path": "timeline.5.transitions.san_ildefonso",
+          "equals": "REACTIVATED_SAME_EVENT"
+        },
+        {
+          "check_id": "reactivation_preserves_identity",
+          "path": "timeline.5.continuity_episode_ids.san_ildefonso",
+          "same_as": "timeline.1.continuity_episode_ids.san_ildefonso"
+        },
+        {
+          "check_id": "third_clear_closes_event",
+          "path": "timeline.8.transitions.san_ildefonso",
+          "equals": "EVENT_CLOSED"
+        },
+        {
+          "check_id": "post_close_candidate_is_new_event",
+          "path": "timeline.9.transitions.san_ildefonso",
+          "equals": "NEW_EVENT"
+        },
+        {
+          "check_id": "post_close_identity_changes",
+          "path": "timeline.9.continuity_episode_ids.san_ildefonso",
+          "not_equal_to": "timeline.1.continuity_episode_ids.san_ildefonso"
+        },
+        {
+          "check_id": "duplicate_cycle_is_idempotent",
+          "path": "timeline.10.status",
+          "equals": "IDEMPOTENT_REPLAY_COMPLETE"
+        },
+        {
+          "check_id": "duplicate_does_not_increment_zone",
+          "path": "timeline.10.controller_statuses.san_ildefonso",
+          "equals": "IDEMPOTENT_NO_COUNTER_INCREMENT"
+        }
+      ]
+    },
+    {
+      "scenario_id": "extreme_multizone_multiday_saturation",
+      "mode": "EXTREME",
+      "description": "Tres zonas abren de forma escalonada, persisten, sufren pausas y una entrada bloqueada, y se recuperan sin parpadeo regional.",
+      "frames": [
+        {
+          "at": "2026-09-04T00:00:00+00:00",
+          "signals": {},
+          "temporal_profile": "complete"
+        },
+        {
+          "at": "2026-09-04T01:00:00+00:00",
+          "signals": {
+            "san_ildefonso": "candidate",
+            "catacaos": "candidate"
+          },
+          "temporal_profile": "complete"
+        },
+        {
+          "at": "2026-09-04T02:00:00+00:00",
+          "signals": {
+            "san_ildefonso": "candidate",
+            "catacaos": "candidate"
+          },
+          "temporal_profile": "complete"
+        },
+        {
+          "at": "2026-09-04T03:00:00+00:00",
+          "signals": {
+            "san_ildefonso": "candidate",
+            "catacaos": "candidate"
+          },
+          "temporal_profile": "complete"
+        },
+        {
+          "at": "2026-09-04T04:00:00+00:00",
+          "signals": {
+            "catacaos": "candidate",
+            "chosica": "candidate"
+          },
+          "temporal_profile": "complete"
+        },
+        {
+          "at": "2026-09-04T05:00:00+00:00",
+          "signals": {
+            "san_ildefonso": "candidate",
+            "catacaos": "candidate",
+            "chosica": "candidate"
+          },
+          "temporal_profile": "complete"
+        },
+        {
+          "at": "2026-09-04T06:00:00+00:00",
+          "signals": {
+            "san_ildefonso": "candidate",
+            "chosica": "candidate"
+          },
+          "temporal_profile": "complete"
+        },
+        {
+          "at": "2026-09-04T07:00:00+00:00",
+          "signals": {
+            "san_ildefonso": "blocked",
+            "chosica": "candidate"
+          },
+          "temporal_profile": "complete",
+          "temporal_profiles_by_zone": {
+            "san_ildefonso": "partial"
+          }
+        },
+        {
+          "at": "2026-09-04T08:00:00+00:00",
+          "signals": {
+            "san_ildefonso": "candidate",
+            "chosica": "candidate"
+          },
+          "temporal_profile": "complete"
+        },
+        {
+          "at": "2026-09-04T09:00:00+00:00",
+          "signals": {
+            "chosica": "candidate"
+          },
+          "temporal_profile": "complete"
+        },
+        {
+          "at": "2026-09-04T10:00:00+00:00",
+          "signals": {},
+          "temporal_profile": "partial"
+        },
+        {
+          "at": "2026-09-04T11:00:00+00:00",
+          "signals": {},
+          "temporal_profile": "partial"
+        },
+        {
+          "at": "2026-09-04T12:00:00+00:00",
+          "signals": {},
+          "temporal_profile": "partial"
+        }
+      ],
+      "expected_metrics": {
+        "cycles": 13,
+        "events_opened": 3,
+        "events_closed": 3,
+        "same_event_reactivations": 1,
+        "persistent_transitions": 3,
+        "upstream_candidate_id_churn_absorbed": 12,
+        "maximum_concurrent_open_zones": 3,
+        "regional_saturation_cycles": 10,
+        "blocked_zone_observations": 1,
+        "idempotent_cycles": 0,
+        "alerts_created": 0,
+        "publications_created": 0
+      },
+      "checkpoints": [
+        {
+          "check_id": "two_zones_start_saturation",
+          "path": "timeline.1.global_saturation",
+          "equals": "REGIONAL_SATURATION_TEST"
+        },
+        {
+          "check_id": "north_zones_become_persistent",
+          "path": "timeline.3.lifecycle_states.san_ildefonso",
+          "equals": "PERSISTENT"
+        },
+        {
+          "check_id": "three_zones_open",
+          "path": "timeline.4.open_zone_ids",
+          "set_equals": [
+            "san_ildefonso",
+            "chosica",
+            "catacaos"
+          ]
+        },
+        {
+          "check_id": "blocked_input_retains_previous_state",
+          "path": "timeline.7.controller_statuses.san_ildefonso",
+          "equals": "BLOCKED_RETAINED_PREVIOUS"
+        },
+        {
+          "check_id": "missing_subdaily_window_not_inferred",
+          "path": "timeline.7.temporal_missing_windows.san_ildefonso",
+          "contains": "rain1h"
+        },
+        {
+          "check_id": "catacaos_closes_after_hysteresis",
+          "path": "timeline.8.transitions.catacaos",
+          "equals": "EVENT_CLOSED"
+        },
+        {
+          "check_id": "saturation_persists_during_recovery",
+          "path": "timeline.10.global_saturation",
+          "equals": "REGIONAL_SATURATION_TEST"
+        },
+        {
+          "check_id": "saturation_ends_only_after_staggered_recovery",
+          "path": "timeline.11.global_saturation",
+          "equals": "LOCALIZED_ACTIVITY"
+        },
+        {
+          "check_id": "all_events_close",
+          "path": "timeline.12.global_saturation",
+          "equals": "NORMAL_LOAD"
+        },
+        {
+          "check_id": "regional_group_never_claims_shared_hydrology",
+          "path": "final_state.coordination_groups.0.shared_hydrologic_event",
+          "equals": false
+        },
+        {
+          "check_id": "no_messages_created",
+          "path": "final_state.notification_preview.messages_created",
+          "equals": 0
+        }
+      ]
+    }
+  ],
+  "acceptance_policy": {
+    "all_scenarios_must_pass": true,
+    "all_metric_checks_must_pass": true,
+    "all_checkpoints_must_pass": true,
+    "alerts_created_must_equal": 0,
+    "publications_created_must_equal": 0,
+    "scientific_candidate_forwarding_must_remain_false": true,
+    "interpretation_on_pass": "CONTROL_LOGIC_PASSED_NOT_HYDROLOGICAL_VALIDATION"
+  }
+}
