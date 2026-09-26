@@ -1,0 +1,59 @@
+{
+  "schema_version": "0.1",
+  "assessment_id": "santa_2011_crs_zone_adjudication_v0_1",
+  "status": "RESEARCH_ONLY_UTM_ZONE_17_ADJUDICATED_DATUM_STILL_UNRESOLVED",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "target_component": "rio_santa_lower_reach_2011_axis",
+  "source_axis": {
+    "path": "site/data/phase2/sources/ancash_santa_2011_axis_native_v0_1.json",
+    "start_xy": [758969, 9007565],
+    "end_xy": [788881, 9038309],
+    "study_claim": "0+000 at the Pacific mouth to 50+000 near Tablones"
+  },
+  "bounded_zone_test": {
+    "candidate_17s_wgs84_preview": {
+      "epsg": 32717,
+      "start_lon_lat": [-78.64471936, -8.97062607],
+      "end_lon_lat": [-78.37482735, -8.69100165],
+      "interpretation": "Geographically consistent with the lower Santa corridor described by the study."
+    },
+    "candidate_18s_wgs84_preview": {
+      "epsg": 32718,
+      "start_lon_lat": [-72.64471936, -8.97062607],
+      "end_lon_lat": [-72.37482735, -8.69100165],
+      "interpretation": "Approximately six degrees east of the lower Santa corridor and incompatible with the study location."
+    },
+    "zone_adjudication": 17,
+    "zone_adjudication_status": "RESOLVED_BY_COORDINATE_GEOGRAPHY_AND_INDEPENDENT_LOWER_SANTA_CONTROL",
+    "datum_adjudication": null,
+    "datum_status": "UNRESOLVED_WGS84_VS_HISTORICAL_DATUM_NOT_EXPLICITLY_VERIFIED_IN_2011_SOURCE"
+  },
+  "independent_control": {
+    "institution": "Autoridad Nacional del Agua",
+    "document": "Lower Santa / Chavimochic water-right administrative record",
+    "public_url": "https://www.ana.gob.pe/sites/default/files/normatividad/files/11-RA-0114-2022-04.pdf",
+    "coordinate_reference": "WGS 84 Zona 17",
+    "rio_santa_control_xy": [797739, 9041633],
+    "role": "ZONE_CONTROL_ONLY_NOT_PROOF_OF_2011_DATUM"
+  },
+  "scientific_policy": {
+    "utm_zone_17_may_be_used_as_adjudicated_context": true,
+    "wgs84_datum_may_be_assumed_for_2011_axis": false,
+    "psad56_or_other_historical_datum_excluded": false,
+    "transform_2011_axis_to_irfen_map_authorized": false,
+    "map_publication_enabled": false,
+    "silent_crs_assumption_forbidden": true,
+    "hydraulic_capacity_inferred": false,
+    "event_footprint_created": false,
+    "threshold_created": false
+  },
+  "next_safe_gate": "Recover an explicit 2011 datum statement from the original map/model metadata or an original HEC-GeoRAS/GIS project. Until then, preserve the axis in native coordinates and keep map transformation blocked."
+}
