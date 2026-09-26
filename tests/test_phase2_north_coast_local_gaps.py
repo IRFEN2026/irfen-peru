@@ -59,3 +59,33 @@ def test_paita_historical_windows_do_not_overassign_children():
     assert e98["local_child_activation_assigned"] is False
     assert e98["absence_of_local_report_is_negative"] is False
     assert e98["source_ids"]==[]
+
+def test_mancora_fernandez_receiver_and_2023_event_are_bounded():
+    p=load(MAN)
+    f=p["hydrologic_components"]["quebrada_fernandez"]
+    assert f["receiver_status"]=="PACIFIC_OCEAN_CONFIRMED"
+    assert f["outlet_status"]=="SEA_RECEIVER_CONFIRMED_EXACT_MOUTH_GEOMETRY_PENDING"
+    assert f["exact_outlet_coordinate"] is None
+    assert f["map_publishable"] is False
+
+    e=p["assets"]["event_ledger"]["2023_03_09_coer_cutoff"]
+    assert e["natural_component"]=="quebrada_fernandez"
+    assert e["natural_component_response"]=="ACTIVE_HIGH_FLOW_REPORTED"
+    assert e["event_onset_time_local"] is None
+    assert e["discharge_value_available"] is False
+    assert e["operational_threshold_inferred"] is False
+    assert e["transfer_to_la_capilla_vichayito_or_los_organos_forbidden"] is True
+
+
+def test_mancora_ana_channel_control_point_is_not_promoted_to_outlet():
+    p=load(MAN)
+    pts=p["assets"]["geometry"]["official_channel_control_points"]
+    assert len(pts)==1
+    pt=pts[0]
+    assert pt["crs"]=="WGS84_UTM_ZONE_17S"
+    assert pt["easting_m"]==503489
+    assert pt["northing_m"]==9538848
+    assert pt["is_outlet"] is False
+    assert pt["defines_channel_geometry"] is False
+    assert pt["map_materialization_allowed"] is False
+
