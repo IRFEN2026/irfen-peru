@@ -1,0 +1,61 @@
+{
+  "schema_version": "0.1",
+  "discovery_id": "tacna_sama",
+  "system_name": "Cuenca Sama and named tributary ravines",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "contract_status": "DISCOVERY_IDENTITY_LOCKED_GEOMETRY_PENDING",
+  "hydrologic_identity": {
+    "ana_unit_code": "13158",
+    "ana_unit_name": "Cuenca Sama",
+    "territorial_reference_is_basin": false,
+    "official_geometry_role": "BASIN_CONTEXT_ONLY_NOT_EVENT_FOOTPRINT"
+  },
+  "source_query": {
+    "endpoint": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/8/query",
+    "where": "CODIGO='13158'",
+    "out_fields": "*",
+    "return_geometry": true,
+    "out_sr": 4326,
+    "geometry_precision": 7,
+    "format": "geojson"
+  },
+  "official_source_ids": ["ANA-UH-PACIFIC-MAP", "ANA-TACNA-PADH-2026"],
+  "assets": {
+    "geometry": {
+      "status": "MISSING_PENDING_EXACT_ANA_FREEZE",
+      "path": "site/data/phase2/geometries/tacna_sama_basin_context.geojson",
+      "representation": "OFFICIAL_ANA_HYDROGRAPHIC_UNIT_CONTEXT",
+      "source_ids": ["ANA-UH-13158-SAMA"],
+      "counts_as_event_footprint": false,
+      "counts_as_operational_geometry": false
+    }
+  },
+  "local_evidence": {
+    "local_units_pending": [
+      {"name": "Rio Sama", "role": "MAINSTEM_CONTEXT"},
+      {"name": "named tributary ravines", "role": "PENDING_INDEPENDENT_IDENTITY_AND_GEOMETRY"}
+    ],
+    "attribution_rule": "Management or critical-point context is not an observed event and cannot be promoted to an event footprint or historical hydraulic capacity."
+  },
+  "map_policy": {
+    "context_only": true,
+    "approximate_geometry_forbidden": true,
+    "event_footprint_from_basin_geometry_forbidden": true,
+    "publish_only_after_exact_identity_and_reproducible_geometry": true,
+    "risk_or_alert_layer": false
+  },
+  "transfer_guards": {
+    "cross_basin_observation_transfer_forbidden": true,
+    "threshold_transfer_forbidden": true,
+    "negative_control_transfer_forbidden": true,
+    "receiver_overflow_inference_from_local_activation_forbidden": true
+  }
+}
