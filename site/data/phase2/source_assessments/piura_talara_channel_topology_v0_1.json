@@ -1,0 +1,19 @@
+{
+  "schema_version":"0.1",
+  "source_id":"INDECI-PNUD-TALARA-2010",
+  "deployment_status":"RESEARCH_ONLY",
+  "test_mode":"TEST_ONLY",
+  "production_use":false,
+  "production_ready":false,
+  "operational_alerting_enabled":false,
+  "activation_gate":"BLOCKED",
+  "channels":{
+    "santa_rita":{"receiver":"PACIFIC_OCEAN","exact_outlet":false},
+    "politecnico":{"receiver":"PACIFIC_OCEAN","exact_outlet":false},
+    "yale":{"receiver":"PACIFIC_OCEAN","tributary":["mangle"],"exact_outlet":false},
+    "mangle":{"parent":"yale","independent_receiver":false},
+    "acholado":{"terminal":"INLAND_SOUTH_TALARA","reaches_pacific":false},
+    "debora":{"terminal":"INLAND_SOUTH_TALARA","reaches_pacific":false}
+  },
+  "map_materialization_allowed":false
+}
