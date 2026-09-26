@@ -37,6 +37,7 @@
         "Centenario",
         "Libertad",
         "Arroyo Mío",
+        "9 de Diciembre",
         "Salaverry",
         "Cahuide",
         "Atahualpa",
@@ -104,9 +105,17 @@
     "named_ravines_officially_identified": true,
     "source_ids": [
       "ANA-COLAN-NAMED-RAVINES-2016",
-      "ANA-COLAN-VULNERABLE-RAVINES-2016-2017"
+      "ANA-COLAN-VULNERABLE-RAVINES-2016-2017",
+      "ANA-PIURA-VULNERABLE-QUEBRADAS-MAP-2016"
     ],
-    "warning": "Named-ravine vulnerability inventory is not an event ledger and must not be converted into activation dates without independent evidence."
+    "warning": "Named-ravine vulnerability inventory is not an event ledger and must not be converted into activation dates without independent evidence.",
+    "identity_binding_path": "site/data/phase2/sources/piura_colan_ana2016_named_ravines_v0_1.json",
+    "official_named_ravine_count": 10,
+    "identity_resolution": {
+      "Bolognesi_vs_Grau": "DISTINCT_ANA_2016_SOURCE_ROWS_NAMES_CONFIRMED_GEOMETRY_AND_ROUTING_STILL_UNRESOLVED",
+      "9_de_Diciembre_vs_Salaverry": "DISTINCT_ANA_2016_SOURCE_ROWS_NAMES_CONFIRMED_GEOMETRY_AND_ROUTING_STILL_UNRESOLVED",
+      "source_points_are_channel_or_outlet_geometry": false
+    }
   },
   "assets": {
     "geometry": {
@@ -117,8 +126,9 @@
     }
   },
   "next_required": [
+    "use ANA 2016 table rows only as identity/exposure QA; do not promote source points to channels, outlets, catchments or event footprints",
+    "retrieve official/reproducible channel, catchment and outlet geometry independently for all ten ANA-named Colán ravines",
     "retrieve official/reproducible geometry for each named Colán ravine",
-    "resolve Bolognesi vs Grau naming/identity before any merge",
     "resolve exact lower-Chira reach, levee/dike and floodplain relation to La Bocana/Colán",
     "reconstruct rainfall windows for 1972, 1983, 2017 and 2023 where observations exist",
     "identify which historical Colán records are river flooding versus local-ravine/pluvial flooding",
