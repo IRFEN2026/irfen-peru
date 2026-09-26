@@ -80,3 +80,13 @@ def test_paita_local_receiver_topology_stays_fail_closed():
     assert t["qa"]["textual_receiver_relation_is_exact_outlet_geometry"] is False
     assert t["qa"]["figure_lines_are_reproducible_channel_geometry"] is False
     assert t["qa"]["map_materialization_allowed"] is False
+
+
+def test_paita_package_binds_topology_without_mapping():
+    p=load(PAI)
+    assert p["topology_evidence_path"]=="site/data/phase2/sources/piura_paita_local_topology_v0_1.json"
+    assert p["hydrologic_components"]["la_piscina"]["receiver_status"].startswith("QUEBRADA_EL_ZANJON")
+    assert p["hydrologic_components"]["la_catarata"]["receiver_status"].startswith("QUEBRADA_EL_ZANJON")
+    assert p["hydrologic_components"]["villa_naval"]["receiver_status"]=="SOURCE_CONFLICT_PENDING_ADJUDICATION"
+    assert p["qa"]["source_conflict_is_not_silently_resolved"] is True
+    assert p["map_policy"]["topology_context_does_not_enable_mapping"] is True
