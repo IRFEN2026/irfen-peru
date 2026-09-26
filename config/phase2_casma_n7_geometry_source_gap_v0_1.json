@@ -17,21 +17,51 @@
     "parent_name": "Cuenca Casma",
     "n7_identity_is_documentarily_supported": true,
     "n7_children": [
-      {"code": "1375961", "name": "Bajo Casma"},
-      {"code": "1375962", "name": "Rio Sechin"},
-      {"code": "1375963", "name": "Medio Bajo Casma"},
-      {"code": "1375964", "name": "Rio Yautan"},
-      {"code": "1375965", "name": "Medio Casma"},
-      {"code": "1375966", "name": "Rio Vado"},
-      {"code": "1375967", "name": "Medio Alto Casma"},
-      {"code": "1375968", "name": "Rio Pira"},
-      {"code": "1375969", "name": "Alto Casma"}
+      {
+        "code": "1375961",
+        "name": "Bajo Casma"
+      },
+      {
+        "code": "1375962",
+        "name": "Rio Sechin"
+      },
+      {
+        "code": "1375963",
+        "name": "Medio Bajo Casma"
+      },
+      {
+        "code": "1375964",
+        "name": "Rio Yautan"
+      },
+      {
+        "code": "1375965",
+        "name": "Medio Casma"
+      },
+      {
+        "code": "1375966",
+        "name": "Rio Vado"
+      },
+      {
+        "code": "1375967",
+        "name": "Medio Alto Casma"
+      },
+      {
+        "code": "1375968",
+        "name": "Rio Pira"
+      },
+      {
+        "code": "1375969",
+        "name": "Alto Casma"
+      }
     ],
     "identity_does_not_supply_geometry": true
   },
   "public_vector_probe_result": {
     "ana_idep_service": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS",
-    "tested_layers": [7, 8],
+    "tested_layers": [
+      7,
+      8
+    ],
     "feature_count_each_layer": 231,
     "casma_record_exposed": {
       "CODIGO": "137596",
@@ -88,6 +118,7 @@
     "absence_of_geometry_is_low_risk": false
   },
   "next_safe_gates": [
+    "Probe the independent MINAM ServicioActivacionQuebrada subbasin layer for exact Casma N7 codes 1375961-1375969; metadata exposes NIVEL7/NIVEL8 fields and GeoJSON but does not count as recovered geometry until exact feature queries are verified and raw bytes are frozen.",
     "Locate an official public ANA vector/download/service that exposes the documented N7 Casma units by reproducible identity and freeze exact bytes plus SHA-256 before normalization.",
     "Alternatively delineate a local child only through a preregistered outcome-independent DEM/topology workflow after a reproducible outlet/control point is independently resolved; do not fit geometry to event outcomes.",
     "Keep Quebrada Cruz Punta and Quebrada Muna unmapped until each obtains an independent reproducible local hydrologic identity and geometry."
@@ -101,5 +132,33 @@
     "create negative controls from absence of reports",
     "infer hydraulic capacity from works, bridge or faja context",
     "promote any missing child geometry to low risk"
+  ],
+  "institutional_descendant_vector_candidates": [
+    {
+      "source_id": "MINAM-SERVICIO-ACTIVACION-QUEBRADA-UH-N7",
+      "institution": "Ministerio del Ambiente (MINAM)",
+      "layer_url": "https://geoservidorperu.minam.gob.pe/arcgis/rest/services/ServicioActivacionQuebrada/MapServer/1",
+      "geometry_type": "esriGeometryPolygon",
+      "spatial_reference": 4326,
+      "supported_query_formats": [
+        "JSON",
+        "geoJSON"
+      ],
+      "exposed_identity_fields": [
+        "NIVEL6",
+        "NIVEL7",
+        "NIVEL8",
+        "NOMB_UH_N6",
+        "NOMB_UH_N7",
+        "NOMB_UH_N8",
+        "CODIGO",
+        "Nombre_UH"
+      ],
+      "exact_casma_n7_query_completed": false,
+      "exact_casma_n7_features_verified": false,
+      "geometry_retrieved": false,
+      "map_publication_enabled": false,
+      "scientific_status": "CANDIDATE_VECTOR_SOURCE_REQUIRES_EXACT_CODE_QUERY_AND_BYTE_FREEZE"
+    }
   ]
 }
