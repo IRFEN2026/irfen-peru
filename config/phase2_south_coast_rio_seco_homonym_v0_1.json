@@ -1,0 +1,149 @@
+{
+  "schema_version": "phase2-south-coast-rio-seco-homonym-v0.1",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "base_inventory_dependency": {
+    "pull_request": 308,
+    "path": "config/phase2_south_coast_ica_arequipa_discovery_v0_1.json",
+    "merge_order": "MERGE_BASE_INVENTORY_BEFORE_THIS_OVERLAY"
+  },
+  "purpose": "Resolve the Ica-versus-Arequipa Río Seco homonym using official ANA evidence while keeping geometry, outlets, thresholds, capacity and event footprints fail-closed.",
+  "rules": {
+    "same_name_does_not_imply_same_channel": true,
+    "parent_uh_identity_required_before_geometry_freeze": true,
+    "faja_marginal_is_not_channel_axis": true,
+    "faja_marginal_is_not_event_footprint": true,
+    "design_discharge_is_not_historical_capacity": true,
+    "territorial_location_is_not_event_transfer": true,
+    "receiver_overflow_inference_forbidden": true
+  },
+  "sources": [
+    {
+      "source_id": "ANA-RJ056-2018-ICA-RIO-SECO",
+      "institution": "Autoridad Nacional del Agua",
+      "official": true,
+      "title": "R.J. N° 056-2018-ANA — clasificación de cuerpos de agua continentales superficiales",
+      "url": "https://www.ana.gob.pe/sites/default/files/normatividad/files/r.j._056-2018-ana_0.pdf",
+      "provenance_status": "OFFICIAL_ANA_CLASSIFICATION_TABLE_SEARCH_VERIFIED_2026-09-26_SOURCE_BYTES_NOT_ARCHIVED_IN_THIS_PACKAGE",
+      "source_content_sha256": null,
+      "supports": [
+        "Río Seco course code 137516",
+        "parent hydrographic unit 13751 — Intercuenca 13751"
+      ],
+      "forbidden_use": "Classification establishes watercourse identity and parent-UH context only; it is not activation evidence, local event geometry, outlet, discharge, capacity or threshold evidence."
+    },
+    {
+      "source_id": "ANA-ICA-RIO-SECO-2017-HISTORY-2020",
+      "institution": "Autoridad Nacional del Agua",
+      "official": true,
+      "title": "Identifican cuatro puntos críticos en la quebrada de Río Seco",
+      "url": "https://www.gob.pe/institucion/ana/noticias/135916-identifican-cuatro-puntos-criticos-en-la-quebrada-de-rio-seco",
+      "provenance_status": "OFFICIAL_GOB_PE_ANA_HTML_VERIFIED_2026-09-26",
+      "source_content_sha256": null,
+      "supports": [
+        "Río Seco in Salas/Ica is a distinct local channel",
+        "ANA reports activation during 2017 rains",
+        "2020 critical-point inspection exists"
+      ],
+      "forbidden_use": "Historical narrative does not define exact event footprint, event timing, discharge, local outlet geometry, capacity or transferable threshold."
+    },
+    {
+      "source_id": "ANA-AREQUIPA-RD0130-2025-RIO-SECO",
+      "institution": "Autoridad Nacional del Agua / SIGRID-CENEPRED",
+      "official": true,
+      "title": "R.D. N° 0130-2025-ANA-AAA.CO — faja marginal del cauce de la quebrada Río Seco, UH 13254",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/18643",
+      "provenance_status": "OFFICIAL_ANA_SIGRID_PDF_TEXT_AND_PAGE_VERIFIED_2026-09-26_SOURCE_BYTES_NOT_ARCHIVED_IN_THIS_PACKAGE",
+      "source_content_sha256": null,
+      "supports": [
+        "Quebrada Río Seco in Cerro Colorado, Arequipa",
+        "UH level 3 Quilca-Vítor-Chili 132",
+        "UH level 4 Medio Quilca-Vítor-Chili 1325",
+        "UH level 5 Estanquillo 13254",
+        "regulatory faja segment has georeferenced vertices"
+      ],
+      "forbidden_use": "Regulatory faja vertices are not the complete natural channel axis or event footprint; design discharge and return period in the resolution are not historical channel capacity or IRFEN thresholds."
+    }
+  ],
+  "channel_identities": [
+    {
+      "child_id": "ica_rio_seco_salas",
+      "name": "Río Seco / Quebrada Río Seco",
+      "region": "Ica",
+      "territorial_context": "Salas–Villacurí",
+      "expected_parent_uh_code": "13751",
+      "expected_parent_uh_name": "Intercuenca 13751",
+      "official_course_code": "137516",
+      "identity_status": "OFFICIAL_ANA_COURSE_AND_PARENT_UH_CONFIRMED",
+      "historical_event_context": "ANA reports activation in 2017; exact event time and footprint are not frozen.",
+      "geometry_status": "OFFICIAL_WATERCOURSE_EXISTS_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+      "geometry_asset": null,
+      "outlet_status": "UNKNOWN",
+      "outlet": null,
+      "map_publishable": false,
+      "event_state_transferred": false
+    },
+    {
+      "child_id": "arequipa_rio_seco_cerro_colorado",
+      "name": "Quebrada Río Seco",
+      "region": "Arequipa",
+      "territorial_context": "Cerro Colorado",
+      "expected_parent_uh_code": "13254",
+      "expected_parent_uh_name": "Estanquillo",
+      "ancestor_uh_codes": [
+        "132",
+        "1325",
+        "13254"
+      ],
+      "identity_status": "OFFICIAL_ANA_FAJA_CHANNEL_NAME_AND_PARENT_HIERARCHY_CONFIRMED",
+      "regulatory_geometry_context": "R.D. N° 0130-2025-ANA-AAA.CO delimits a 0.92 km regulatory faja segment with georeferenced vertices.",
+      "geometry_status": "OFFICIAL_REGULATORY_FAJA_AVAILABLE_NOT_FROZEN_AS_FULL_CHANNEL",
+      "geometry_asset": null,
+      "outlet_status": "UNKNOWN",
+      "outlet": null,
+      "map_publishable": false,
+      "event_state_transferred": false
+    }
+  ],
+  "homonym_guard": {
+    "canonical_name": "Río Seco",
+    "distinct_units": [
+      {
+        "child_id": "ica_rio_seco_salas",
+        "parent_uh_code": "13751",
+        "region": "Ica"
+      },
+      {
+        "child_id": "arequipa_rio_seco_cerro_colorado",
+        "parent_uh_code": "13254",
+        "region": "Arequipa"
+      }
+    ],
+    "rule": "Never merge, transfer events, reuse geometry or infer outlets by name. Any geometry acceptance must independently match the expected parent hydrographic unit."
+  },
+  "next_geometry_actions": [
+    {
+      "child_id": "ica_rio_seco_salas",
+      "action": "Query official ANA national Ríos y Quebradas geometry for course code 137516 and verify returned CODIGO_UH=13751 before freezing."
+    },
+    {
+      "child_id": "arequipa_rio_seco_cerro_colorado",
+      "action": "Query official ANA national Ríos y Quebradas geometry within UH 13254; use R.D. 0130-2025 faja only as independent QA/context, not as the full channel axis."
+    }
+  ],
+  "summary": {
+    "distinct_rio_seco_units_registered": 2,
+    "official_course_codes_confirmed": 1,
+    "official_parent_hierarchies_confirmed": 2,
+    "historical_activation_contexts_registered": 1,
+    "geometry_assets_published": 0,
+    "new_operational_zones": 0
+  }
+}
