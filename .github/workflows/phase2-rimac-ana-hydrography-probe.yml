@@ -1,0 +1,74 @@
+name: IRFEN - Phase2 Rimac ANA hydrography probe
+
+on:
+  pull_request:
+    paths:
+      - config/phase2_ana_national_hydrography_service_v0_1.json
+      - scripts/probe_phase2_rimac_ana_hydrography_service.py
+      - tests/test_phase2_ana_national_hydrography_service.py
+      - tests/test_phase2_rimac_ana_hydrography_probe.py
+      - .github/workflows/phase2-rimac-ana-hydrography-probe.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bounded-official-vector-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install focused test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Run fail-closed scientific guards
+        run: |
+          python -m pytest -q tests/test_phase2_ana_national_hydrography_service.py
+          python -m pytest -q tests/test_phase2_rimac_ana_hydrography_probe.py
+      - name: Probe official ANA national hydrography within bounded Rimac window
+        run: |
+          mkdir -p artifacts
+          ok=0
+          for attempt in 1 2 3; do
+            if python scripts/probe_phase2_rimac_ana_hydrography_service.py \
+              --output artifacts/phase2_rimac_ana_hydrography_probe.json; then
+              ok=1
+              break
+            fi
+            sleep $((attempt * 10))
+          done
+          test "$ok" -eq 1
+      - name: Enforce candidate-only output semantics
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          p=Path('artifacts/phase2_rimac_ana_hydrography_probe.json')
+          d=json.loads(p.read_text(encoding='utf-8'))
+          assert d['status']=='RESEARCH_ONLY_LIVE_VECTOR_PROBE'
+          assert d['deployment_status']=='RESEARCH_ONLY'
+          assert d['test_mode']=='TEST_ONLY'
+          assert d['production_use'] is False
+          assert d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['activation_gate']=='BLOCKED'
+          assert set(d['candidate_counts'])=={'quirio','pedregal','rimac'}
+          assert d['adjudication']['name_match_confirms_local_unit_identity'] is False
+          assert d['adjudication']['literal_line_intersection_confirms_official_confluence'] is False
+          assert d['adjudication']['exact_surface_confluence_resolved'] is False
+          assert d['adjudication']['replace_existing_d8_nodes'] is False
+          assert d['adjudication']['routing_enabled'] is False
+          assert d['adjudication']['travel_time_enabled'] is False
+          assert d['adjudication']['map_publish_enabled'] is False
+          for row in d['literal_intersection_candidates']:
+              assert row['scientific_status']=='GEOMETRIC_INTERSECTION_CANDIDATE_NOT_ADJUDICATED_CONFLUENCE'
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phase2-rimac-ana-hydrography-probe
+          path: artifacts/phase2_rimac_ana_hydrography_probe.json
+          if-no-files-found: error
