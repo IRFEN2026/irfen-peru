@@ -5,10 +5,12 @@ on:
     paths:
       - config/phase2_ana_national_hydrography_service_v0_1.json
       - config/phase2_ana2015_quirio_pedregal_faja_terminal_qa_v0_1.json
+      - config/phase2_senamhi2020_pedregal_microbasin_receiver_context_v0_1.json
       - scripts/probe_phase2_rimac_ana_hydrography_service.py
       - tests/test_phase2_ana_national_hydrography_service.py
       - tests/test_phase2_rimac_ana_hydrography_probe.py
       - tests/test_phase2_ana2015_quirio_pedregal_faja_terminal_qa.py
+      - tests/test_phase2_senamhi2020_pedregal_microbasin_receiver_context.py
       - .github/workflows/phase2-rimac-ana-hydrography-probe.yml
   workflow_dispatch:
 
@@ -31,6 +33,7 @@ jobs:
           python -m pytest -q tests/test_phase2_ana_national_hydrography_service.py
           python -m pytest -q tests/test_phase2_rimac_ana_hydrography_probe.py
           python -m pytest -q tests/test_phase2_ana2015_quirio_pedregal_faja_terminal_qa.py
+          python -m pytest -q tests/test_phase2_senamhi2020_pedregal_microbasin_receiver_context.py
       - name: Probe official ANA national hydrography within bounded Rimac window
         run: |
           mkdir -p artifacts
