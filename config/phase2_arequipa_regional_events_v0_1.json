@@ -1,0 +1,41 @@
+{
+  "schema_version": "phase2-arequipa-regional-events-v0.1",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "base_inventory_dependency": {"pull_request":308,"path":"config/phase2_south_coast_ica_arequipa_discovery_v0_1.json"},
+  "rules": {
+    "named_event_requires_named_channel_in_source": true,
+    "territorial_event_does_not_create_child_state": true,
+    "event_transfer_forbidden": true,
+    "receiver_overflow_inference_forbidden": true,
+    "no_geometry_without_reproducible_source": true
+  },
+  "sources": [
+    {"id":"INDECI-1133-2024","url":"https://portal.indeci.gob.pe/emergencias/reporte-preliminar-n-203-26-1-2024-coen-indeci-0340-horas-huaico-en-el-distrito-de-quequena-arequipa/"},
+    {"id":"INDECI-3192-2023","url":"https://portal.indeci.gob.pe/emergencias/reporte-preliminar-n-796-21-3-2023-coen-indeci-1920-horas-huaico-en-el-distrito-de-cerro-colorado-arequipa/"},
+    {"id":"INDECI-0809-2024","url":"https://portal.indeci.gob.pe/emergencias/reporte-complementario-n-o-2628-14-3-2024-coen-indeci-2215-horas-reporte-n-o-1-huaico-en-el-distrito-de-choco-arequipa/"},
+    {"id":"INDECI-1442-2024","url":"https://portal.indeci.gob.pe/emergencias/reporte-preliminar-n-219-27-1-2024-coen-indeci-0305-horas-huaico-en-el-distrito-de-chachas-arequipa/"},
+    {"id":"INDECI-0901-2024","url":"https://portal.indeci.gob.pe/emergencias/reporte-preliminar-n-171-20-1-2024-coen-indeci-0040-horas-huaico-en-el-distrito-de-alca-arequipa/"},
+    {"id":"INDECI-0642-2026","url":"https://portal.indeci.gob.pe/wp-content/uploads/2026/03/INFORME-DE-EMERGENCIA-N.%C2%BA-0642-29MAR2026-HUAICO-EN-EL-DISTRITO-DE-TOMEPAMPA-AREQUIPA-2.pdf"},
+    {"id":"INDECI-0984-2026","url":"https://portal.indeci.gob.pe/emergencias/reporte-complementario-n-0984-24-1-2026-coen-indeci-2300-horas-reporte-n-1-huaico-en-el-distrito-de-characato-arequipa/"},
+    {"id":"INDECI-NP-031-2026","url":"https://www.gob.pe/institucion/indeci/noticias/1357618-indeci-continuo-evaluacion-de-zonas-afectadas-por-lluvias-intensas-en-arequipa"}
+  ],
+  "direct_named_events": [
+    {"id":"arequipa_panteon_2024_01_24","child_id":"arequipa_panteon_quequena","name":"Quebrada Panteón","time":"2024-01-24T17:31:00-05:00","source_id":"INDECI-1133-2024","geometry_asset":null,"map_publishable":false},
+    {"id":"arequipa_anas_coy_gamarra_2023_03_20","child_ids":["arequipa_anas_coy","arequipa_gamarra"],"name":"Quebrada Añascoy y Gamarra","time":"2023-03-20T18:20:00-05:00","source_id":"INDECI-3192-2023","joint_source_wording_preserved":true,"geometry_asset":null,"map_publishable":false},
+    {"id":"arequipa_umahuato_2024_03_08","child_id":"arequipa_umahuato_choco","name":"Quebrada Umahuato","time":"2024-03-08T17:00:00-05:00","source_id":"INDECI-0809-2024","geometry_asset":null,"map_publishable":false},
+    {"id":"arequipa_allachaya_2024_01_25","child_id":"arequipa_allachaya_chachas","name":"Quebrada Allachaya","time":"2024-01-25T16:00:00-05:00","source_id":"INDECI-1442-2024","geometry_asset":null,"map_publishable":false},
+    {"id":"arequipa_lucha_2024_01_19","child_id":"arequipa_lucha_alca","name":"Quebrada Lucha","time":"2024-01-19T16:00:00-05:00","source_id":"INDECI-0901-2024","geometry_asset":null,"map_publishable":false},
+    {"id":"arequipa_ranrata_2026_02_19","child_id":"arequipa_ranrata_tomepampa","name":"Quebrada Ranrata","time":"2026-02-19T19:00:00-05:00","source_id":"INDECI-0642-2026","geometry_asset":null,"map_publishable":false},
+    {"id":"arequipa_huaylla_2026_01_24","child_id":"arequipa_huaylla_characato","name":"Quebrada Huaylla","time":"2026-01-24T14:30:00-05:00","source_id":"INDECI-0984-2026","geometry_asset":null,"map_publishable":false},
+    {"id":"arequipa_utupara_2026_02","child_id":"arequipa_utupara_yura","name":"Quebrada Utupara","time":null,"time_precision":"REPORTED_BY_2026-02-22","source_id":"INDECI-NP-031-2026","geometry_asset":null,"map_publishable":false}
+  ],
+  "summary": {"direct_named_events":8,"geometry_assets_published":0,"new_operational_zones":0}
+}
