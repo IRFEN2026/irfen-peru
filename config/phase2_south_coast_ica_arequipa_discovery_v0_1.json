@@ -1,0 +1,2484 @@
+{
+  "schema_version": "phase2-south-coast-ica-arequipa-discovery-v0.1",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "purpose": "Register a fail-closed Ica + Arequipa south-coast discovery hierarchy using official ANA hydrographic units and bounded official event evidence, without publishing unverified local geometry or operational states. Preregisters fail-closed ANA national hydrography probes for every named local child.",
+  "global_rules": {
+    "parent_is_context_only": true,
+    "child_activation_does_not_activate_parent": true,
+    "smallest_reproducible_local_hydrologic_unit_is_research_unit": true,
+    "no_synthetic_union_geometry": true,
+    "no_approximate_points": true,
+    "territorial_name_is_not_hydrologic_unit": true,
+    "territorial_event_without_named_ravine_cannot_create_child_geometry": true,
+    "critical_point_is_not_event": true,
+    "intervention_is_not_event": true,
+    "work_or_design_is_not_historical_capacity": true,
+    "marginal_strip_is_not_event_footprint": true,
+    "absence_of_report_is_not_negative_control": true,
+    "threshold_transfer_between_basins_forbidden": true,
+    "coarse_satellite_rainfall_alone_cannot_assign_small_ravine_activation": true,
+    "tributary_activation_does_not_imply_receiver_overflow": true,
+    "same_name_receiver_must_not_be_conflated_with_official_basin": true
+  },
+  "map_policy": {
+    "parents": "CONTEXT_GREY_ONLY",
+    "children": "PUBLISH_ONLY_WITH_REPRODUCIBLE_GEOMETRY",
+    "channels_and_outlets": "PUBLISH_ONLY_WHEN_REPRODUCIBLE",
+    "territorial_events": "SEPARATE_CONTEXT_ONLY",
+    "critical_points": "CONTEXT_ONLY_NOT_EVENTS",
+    "historical_footprints": "SEPARATE_LAYER_ONLY_WITH_REPRODUCIBLE_OFFICIAL_GEOMETRY",
+    "risk_colours_forbidden": true,
+    "alert_semantics_forbidden": true,
+    "missing_geometry_is_not_drawn": true
+  },
+  "official_basin_hierarchy": [
+    {
+      "discovery_id": "ica_san_juan_matagente",
+      "name": "Cuenca San Juan / Matagente",
+      "official_unit_code": "137532",
+      "department": "Ica / Huancavelica",
+      "entity_role": "OFFICIAL_PARENT_BASIN_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "parent_geometry_status": "OFFICIAL_GEOMETRY_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "parent_geometry_asset": null,
+      "parent_map_publishable": false,
+      "must_not_merge_with": [
+        "ica_topara",
+        "ica_pisco"
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "ica_topara",
+      "name": "Cuenca Topará",
+      "official_unit_code": "137534",
+      "department": "Ica / Lima interface",
+      "entity_role": "OFFICIAL_PARENT_BASIN_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "parent_geometry_status": "OFFICIAL_GEOMETRY_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "parent_geometry_asset": null,
+      "parent_map_publishable": false,
+      "must_not_merge_with": [
+        "ica_san_juan_matagente",
+        "ica_pisco"
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "ica_pisco",
+      "name": "Cuenca Pisco",
+      "official_unit_code": "13752",
+      "department": "Ica / Huancavelica",
+      "entity_role": "OFFICIAL_PARENT_BASIN_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "parent_geometry_status": "OFFICIAL_GEOMETRY_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "parent_geometry_asset": null,
+      "parent_map_publishable": false,
+      "must_not_merge_with": [
+        "ica_topara",
+        "ica_ica"
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "ica_ica",
+      "name": "Cuenca Ica",
+      "official_unit_code": "1374",
+      "department": "Ica / Huancavelica",
+      "entity_role": "OFFICIAL_PARENT_BASIN_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "parent_geometry_status": "OFFICIAL_GEOMETRY_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "parent_geometry_asset": null,
+      "parent_map_publishable": false,
+      "must_not_merge_with": [
+        "ica_pisco",
+        "ica_rio_grande_palpa_nasca"
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "ica_rio_grande_palpa_nasca",
+      "name": "Cuenca Grande / Río Grande–Palpa–Nasca",
+      "official_unit_code": "1372",
+      "department": "Ica / Ayacucho / Huancavelica",
+      "entity_role": "OFFICIAL_PARENT_BASIN_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "parent_geometry_status": "OFFICIAL_GEOMETRY_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "parent_geometry_asset": null,
+      "parent_map_publishable": false,
+      "must_not_merge_with": [
+        "ica_ica",
+        "arequipa_acari"
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "arequipa_pescadores_caraveli",
+      "name": "Cuenca Pescadores–Caravelí",
+      "official_unit_code": "13712",
+      "department": "Arequipa",
+      "entity_role": "OFFICIAL_PARENT_BASIN_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "parent_geometry_status": "OFFICIAL_GEOMETRY_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "parent_geometry_asset": null,
+      "parent_map_publishable": false,
+      "must_not_merge_with": [
+        "arequipa_atico",
+        "arequipa_ocona"
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "arequipa_atico",
+      "name": "Cuenca Atico",
+      "official_unit_code": "13714",
+      "department": "Arequipa",
+      "entity_role": "OFFICIAL_PARENT_BASIN_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "parent_geometry_status": "OFFICIAL_GEOMETRY_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "parent_geometry_asset": null,
+      "parent_map_publishable": false,
+      "must_not_merge_with": [
+        "arequipa_pescadores_caraveli",
+        "arequipa_chaparra"
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "arequipa_choclon",
+      "name": "Cuenca Choclón",
+      "official_unit_code": "137152",
+      "department": "Arequipa",
+      "entity_role": "OFFICIAL_PARENT_BASIN_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "parent_geometry_status": "OFFICIAL_GEOMETRY_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "parent_geometry_asset": null,
+      "parent_map_publishable": false,
+      "must_not_merge_with": [
+        "arequipa_atico",
+        "arequipa_chaparra"
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "arequipa_chaparra",
+      "name": "Cuenca Cháparra",
+      "official_unit_code": "137154",
+      "department": "Arequipa",
+      "entity_role": "OFFICIAL_PARENT_BASIN_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "parent_geometry_status": "OFFICIAL_GEOMETRY_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "parent_geometry_asset": null,
+      "parent_map_publishable": false,
+      "must_not_merge_with": [
+        "arequipa_atico",
+        "arequipa_chala"
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "arequipa_chala",
+      "name": "Cuenca Chala",
+      "official_unit_code": "137156",
+      "department": "Arequipa",
+      "entity_role": "OFFICIAL_PARENT_BASIN_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "parent_geometry_status": "OFFICIAL_GEOMETRY_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "parent_geometry_asset": null,
+      "parent_map_publishable": false,
+      "must_not_merge_with": [
+        "arequipa_chaparra",
+        "arequipa_yauca"
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "arequipa_honda",
+      "name": "Cuenca Honda",
+      "official_unit_code": "137158",
+      "department": "Arequipa",
+      "entity_role": "OFFICIAL_PARENT_BASIN_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "parent_geometry_status": "OFFICIAL_GEOMETRY_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "parent_geometry_asset": null,
+      "parent_map_publishable": false,
+      "must_not_merge_with": [
+        "arequipa_chala",
+        "arequipa_yauca"
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "arequipa_yauca",
+      "name": "Cuenca Yauca",
+      "official_unit_code": "13716",
+      "department": "Arequipa / Ayacucho",
+      "entity_role": "OFFICIAL_PARENT_BASIN_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "parent_geometry_status": "OFFICIAL_GEOMETRY_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "parent_geometry_asset": null,
+      "parent_map_publishable": false,
+      "must_not_merge_with": [
+        "arequipa_chala",
+        "arequipa_acari"
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "arequipa_acari",
+      "name": "Cuenca Acarí",
+      "official_unit_code": "13718",
+      "department": "Arequipa / Ayacucho",
+      "entity_role": "OFFICIAL_PARENT_BASIN_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "parent_geometry_status": "OFFICIAL_GEOMETRY_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "parent_geometry_asset": null,
+      "parent_map_publishable": false,
+      "must_not_merge_with": [
+        "arequipa_yauca",
+        "ica_rio_grande_palpa_nasca"
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "arequipa_ocona",
+      "name": "Cuenca Ocoña",
+      "official_unit_code": "136",
+      "department": "Arequipa / Ayacucho / Apurímac",
+      "entity_role": "OFFICIAL_PARENT_BASIN_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "parent_geometry_status": "OFFICIAL_GEOMETRY_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "parent_geometry_asset": null,
+      "parent_map_publishable": false,
+      "must_not_merge_with": [
+        "arequipa_camana_majes_colca",
+        "arequipa_pescadores_caraveli"
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "arequipa_camana_majes_colca",
+      "name": "Cuenca Camaná / Majes–Colca",
+      "official_unit_code": "134",
+      "department": "Arequipa",
+      "entity_role": "OFFICIAL_PARENT_BASIN_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "parent_geometry_status": "OFFICIAL_GEOMETRY_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "parent_geometry_asset": null,
+      "parent_map_publishable": false,
+      "must_not_merge_with": [
+        "arequipa_ocona",
+        "arequipa_quilca_vitor_chili"
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "arequipa_quilca_vitor_chili",
+      "name": "Cuenca Quilca–Vítor–Chili",
+      "official_unit_code": "132",
+      "department": "Arequipa",
+      "entity_role": "OFFICIAL_PARENT_BASIN_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "parent_geometry_status": "OFFICIAL_GEOMETRY_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "parent_geometry_asset": null,
+      "parent_map_publishable": false,
+      "must_not_merge_with": [
+        "arequipa_camana_majes_colca",
+        "arequipa_tambo"
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "arequipa_tambo",
+      "name": "Cuenca Tambo",
+      "official_unit_code": "1318",
+      "department": "Arequipa / Moquegua / Puno",
+      "entity_role": "OFFICIAL_PARENT_BASIN_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "parent_geometry_status": "OFFICIAL_GEOMETRY_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "parent_geometry_asset": null,
+      "parent_map_publishable": false,
+      "must_not_merge_with": [
+        "arequipa_quilca_vitor_chili",
+        "moquegua_ilo_osmore"
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    }
+  ],
+  "local_discovery_systems": [
+    {
+      "discovery_id": "ica_ica_local_ravines",
+      "parent_basin_id": "ica_ica",
+      "entity_role": "LOCAL_RAVINE_DISCOVERY_SYSTEM",
+      "children": [
+        {
+          "child_id": "ica_cansas",
+          "name": "Quebrada Cansas",
+          "unit_role": "LOCAL_RAVINE_OR_TORRENTERA_TARGET",
+          "identity_status": "OFFICIAL_NAME_CONFIRMED",
+          "geometry_status": "OFFICIAL_RPAS_AND_REGULATORY_GEOMETRY_AVAILABLE_NOT_FROZEN",
+          "geometry_asset": null,
+          "outlet_status": "REQUIRES_REPRODUCIBLE_CHANNEL_TO_RECEIVER_TOPOLOGY",
+          "outlet": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "ANA-CANSAS-UH1374-2025",
+            "CENEPRED-CANSAS-RPAS-2018",
+            "ANA-CANSAS-FAJA-2018",
+            "INDECI-CANSAS-HISTORICAL-PLAN",
+            "ANA-CANSAS-FAJA-MOD-2019",
+            "ANA-CANSAS-FAJA-2020-TRACE-2024"
+          ],
+          "event_attribution_note": "Official planning material documents recurrent destructive alluvial/debris-flow history. The RPAS orthomosaic and faja marginal are geometry/evidence context, not event footprints or hydraulic capacity.",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        },
+        {
+          "child_id": "ica_la_yesera",
+          "name": "Quebrada La Yesera",
+          "unit_role": "LOCAL_RAVINE_OR_TORRENTERA_TARGET",
+          "identity_status": "OFFICIAL_MAP_IDENTITY_CONFIRMED",
+          "geometry_status": "OFFICIAL_REGULATORY_MARGIN_GEOMETRY_AVAILABLE_NOT_FROZEN",
+          "geometry_asset": null,
+          "outlet_status": "UNKNOWN",
+          "outlet": null,
+          "evidence_state": "UNKNOWN",
+          "source_ids": [
+            "ANA-CENEPRED-ICA-VULNERABLE-MAPS",
+            "ANA-LA-YESERA-FAJA-2019"
+          ],
+          "event_attribution_note": null,
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        },
+        {
+          "child_id": "ica_tortolita",
+          "name": "Quebrada Tortolita",
+          "unit_role": "LOCAL_RAVINE_OR_TORRENTERA_TARGET",
+          "identity_status": "OFFICIAL_MAP_IDENTITY_CONFIRMED",
+          "geometry_status": "OFFICIAL_REGULATORY_MARGIN_GEOMETRY_AVAILABLE_NOT_FROZEN",
+          "geometry_asset": null,
+          "outlet_status": "UNKNOWN",
+          "outlet": null,
+          "evidence_state": "UNKNOWN",
+          "source_ids": [
+            "ANA-CENEPRED-ICA-VULNERABLE-MAPS",
+            "ANA-TORTOLITA-FAJA-2019"
+          ],
+          "event_attribution_note": null,
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        },
+        {
+          "child_id": "ica_catambo",
+          "name": "Quebrada Catambo",
+          "unit_role": "LOCAL_RAVINE_OR_TORRENTERA_TARGET",
+          "identity_status": "OFFICIAL_ANA_WORKS_PACKAGE_NAME_CONFIRMED",
+          "geometry_status": "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+          "geometry_asset": null,
+          "outlet_status": "UNKNOWN",
+          "outlet": null,
+          "evidence_state": "OFFICIAL_CHANNEL_IDENTITY_CONTEXT_NO_EVENT_ASSIGNED",
+          "source_ids": [
+            "ANA-ICA-CATAMBO-CANSAS-TDR-2023"
+          ],
+          "event_attribution_note": "ANA works terms of reference identify Quebrada Catambo together with Río Ica and Quebrada Cansas. This confirms channel identity/context only; it is not an event footprint or capacity statement.",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        }
+      ],
+      "territorial_events": [
+        {
+          "event_id": "ica_ocucaje_huaico_2026_02_18",
+          "date_or_window": "2026-02-18",
+          "territorial_reference": "Ocucaje, Ica",
+          "named_child": null,
+          "receiver_reference": "Río Ica / local Ocucaje drainage unresolved",
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "INDECI-OCUCAJE-2026"
+          ],
+          "statement": "COEN-INDECI reports a huaico affecting transport and agriculture in Ocucaje; the retrieved report does not name the local ravine.",
+          "hydrologic_assignment_status": "TERRITORIAL_EVENT_PENDING_LOCAL_GEOMETRY",
+          "do_not_infer": "Do not assign the Ocucaje event to Cansas, La Yesera, Tortolita or any unnamed ravine."
+        }
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "ica_pisco_local_ravines",
+      "parent_basin_id": "ica_pisco",
+      "entity_role": "LOCAL_RAVINE_DISCOVERY_SYSTEM",
+      "children": [
+        {
+          "child_id": "ica_quitasol",
+          "name": "Quebrada Quitasol",
+          "unit_role": "LOCAL_RAVINE_OR_TORRENTERA_TARGET",
+          "identity_status": "OFFICIAL_ANA_CRITICAL_POINT_NAME_AND_PARENT_CONFIRMED",
+          "geometry_status": "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+          "geometry_asset": null,
+          "outlet_status": "UNKNOWN",
+          "outlet": null,
+          "evidence_state": "CRITICAL_POINT_CONTEXT_NOT_EVENT",
+          "source_ids": [
+            "ANA-ICA-CRITICAL-POINTS-DU015-2023"
+          ],
+          "event_attribution_note": "ANA critical-point inventory binds Qda. Quitasol to Cuenca Pisco. Critical-point status is not an observed activation event or event footprint.",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        },
+        {
+          "child_id": "ica_paracas",
+          "name": "Quebrada Paracas",
+          "unit_role": "LOCAL_RAVINE_OR_TORRENTERA_TARGET",
+          "identity_status": "OFFICIAL_ANA_CRITICAL_POINT_NAME_AND_PARENT_CONFIRMED",
+          "geometry_status": "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+          "geometry_asset": null,
+          "outlet_status": "UNKNOWN",
+          "outlet": null,
+          "evidence_state": "CRITICAL_POINT_CONTEXT_NOT_EVENT",
+          "source_ids": [
+            "ANA-ICA-CRITICAL-POINTS-DU015-2023"
+          ],
+          "event_attribution_note": "ANA critical-point inventory binds Qda. Paracas to Cuenca Pisco. Critical-point status is not an observed activation event or event footprint.",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        }
+      ],
+      "territorial_events": [
+        {
+          "event_id": "ica_huancano_2026_02_20",
+          "date_or_window": "2026-02-20 05:00",
+          "territorial_reference": "Huancano, Pisco, Ica",
+          "named_child": null,
+          "receiver_reference": "Local Río Grande name in Huancano / Pisco",
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "INDECI-HUANCANO-2026"
+          ],
+          "statement": "COEN-INDECI reports activation of an unnamed quebrada plus increased discharge/overflow of a locally named Río Grande, with housing, crop, road and water-network impacts.",
+          "hydrologic_assignment_status": "TERRITORIAL_EVENT_PENDING_LOCAL_GEOMETRY",
+          "do_not_infer": "Do not conflate the locally named Río Grande in this report with ANA Cuenca Grande UH 1372; do not create a child geometry until hydrologic identity is resolved."
+        }
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "ica_rio_grande_local_ravines",
+      "parent_basin_id": "ica_rio_grande_palpa_nasca",
+      "entity_role": "LOCAL_RAVINE_DISCOVERY_SYSTEM",
+      "children": [
+        {
+          "child_id": "ica_san_jose_de_curis",
+          "name": "Quebrada San José de Curis",
+          "unit_role": "LOCAL_RAVINE_OR_TORRENTERA_TARGET",
+          "identity_status": "OFFICIAL_NAME_CONFIRMED",
+          "geometry_status": "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+          "geometry_asset": null,
+          "outlet_status": "DOCUMENTED_FLOW_TO_RIO_CHICO_AND_RIO_GRANDE_EXACT_NODE_NOT_FROZEN",
+          "outlet": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "INDECI-YAUCA-ROSARIO-2024"
+          ],
+          "event_attribution_note": "Directly named by COEN-INDECI in the 2024-03-16 event.",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        },
+        {
+          "child_id": "ica_san_isidro_de_macchanga",
+          "name": "Quebrada San Isidro de Macchanga",
+          "unit_role": "LOCAL_RAVINE_OR_TORRENTERA_TARGET",
+          "identity_status": "OFFICIAL_NAME_CONFIRMED",
+          "geometry_status": "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+          "geometry_asset": null,
+          "outlet_status": "DOCUMENTED_FLOW_TO_RIO_CHICO_AND_RIO_GRANDE_EXACT_NODE_NOT_FROZEN",
+          "outlet": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "INDECI-YAUCA-ROSARIO-2024"
+          ],
+          "event_attribution_note": "Directly named by COEN-INDECI in the 2024-03-16 event.",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        }
+      ],
+      "territorial_events": [
+        {
+          "event_id": "ica_yauca_rosario_2024_03_16",
+          "date_or_window": "2024-03-16 20:15",
+          "territorial_reference": "Yauca del Rosario, Ica",
+          "named_child": null,
+          "receiver_reference": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "INDECI-YAUCA-ROSARIO-2024"
+          ],
+          "statement": "COEN-INDECI reports increased flow in Quebrada San José de Curis and Quebrada San Isidro de Macchanga, discharging through Río Chico and Río Grande and damaging a drinking-water intake.",
+          "hydrologic_assignment_status": "NAMED_CHILDREN_CONFIRMED_TOPOLOGY_PARTIAL",
+          "do_not_infer": "Do not create child geometry, outlet or threshold beyond the cited source."
+        }
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "arequipa_metropolitana_torrenteras",
+      "parent_basin_id": "arequipa_quilca_vitor_chili",
+      "entity_role": "METROPOLITAN_TORRENTERA_SYSTEM_WITH_INDEPENDENT_CHILDREN",
+      "children": [
+        {
+          "child_id": "arequipa_chullo",
+          "name": "Quebrada / torrentera Chullo",
+          "unit_role": "LOCAL_RAVINE_OR_TORRENTERA_TARGET",
+          "identity_status": "OFFICIAL_NAME_CONFIRMED",
+          "geometry_status": "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+          "geometry_asset": null,
+          "outlet_status": "UNKNOWN",
+          "outlet": null,
+          "evidence_state": "DIRECT_FLOW_EVIDENCE",
+          "source_ids": [
+            "INGEMMET-A7737-AREQUIPA-2026"
+          ],
+          "event_attribution_note": "INGEMMET A7737 evaluated this torrentera after February 2026 rain-triggered geological hazards; exact event timing/outcome remains report-specific.",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        },
+        {
+          "child_id": "arequipa_los_incas",
+          "name": "Quebrada / torrentera Los Incas",
+          "unit_role": "LOCAL_RAVINE_OR_TORRENTERA_TARGET",
+          "identity_status": "OFFICIAL_NAME_CONFIRMED",
+          "geometry_status": "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+          "geometry_asset": null,
+          "outlet_status": "UNKNOWN",
+          "outlet": null,
+          "evidence_state": "DIRECT_FLOW_EVIDENCE",
+          "source_ids": [
+            "INGEMMET-A7737-AREQUIPA-2026"
+          ],
+          "event_attribution_note": "INGEMMET A7737 2026 evaluation context; do not infer identical behavior across metropolitan torrenteras.",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        },
+        {
+          "child_id": "arequipa_anas_huayco",
+          "name": "Quebrada / torrentera Añashuayco",
+          "unit_role": "LOCAL_RAVINE_OR_TORRENTERA_TARGET",
+          "identity_status": "OFFICIAL_NAME_CONFIRMED",
+          "geometry_status": "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+          "geometry_asset": null,
+          "outlet_status": "UNKNOWN",
+          "outlet": null,
+          "evidence_state": "DIRECT_FLOW_EVIDENCE",
+          "source_ids": [
+            "INGEMMET-A7737-AREQUIPA-2026"
+          ],
+          "event_attribution_note": "INGEMMET A7737 2026 evaluation context.",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        },
+        {
+          "child_id": "arequipa_san_lazaro",
+          "name": "Quebrada / torrentera San Lázaro",
+          "unit_role": "LOCAL_RAVINE_OR_TORRENTERA_TARGET",
+          "identity_status": "OFFICIAL_NAME_CONFIRMED",
+          "geometry_status": "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+          "geometry_asset": null,
+          "outlet_status": "UNKNOWN",
+          "outlet": null,
+          "evidence_state": "DIRECT_FLOW_EVIDENCE",
+          "source_ids": [
+            "INGEMMET-A7737-AREQUIPA-2026"
+          ],
+          "event_attribution_note": "INGEMMET A7737 2026 evaluation context.",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        },
+        {
+          "child_id": "arequipa_el_pato",
+          "name": "Quebrada / torrentera El Pato",
+          "unit_role": "LOCAL_RAVINE_OR_TORRENTERA_TARGET",
+          "identity_status": "OFFICIAL_NAME_CONFIRMED",
+          "geometry_status": "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+          "geometry_asset": null,
+          "outlet_status": "UNKNOWN",
+          "outlet": null,
+          "evidence_state": "DIRECT_FLOW_EVIDENCE",
+          "source_ids": [
+            "INGEMMET-A7737-AREQUIPA-2026"
+          ],
+          "event_attribution_note": "INGEMMET A7737 2026 evaluation context.",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        },
+        {
+          "child_id": "arequipa_anascoy",
+          "name": "Quebrada Añascoy",
+          "unit_role": "LOCAL_RAVINE_OR_TORRENTERA_TARGET",
+          "identity_status": "OFFICIAL_NAME_CONFIRMED",
+          "geometry_status": "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+          "geometry_asset": null,
+          "outlet_status": "UNKNOWN",
+          "outlet": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "INDECI-CERRO-COLORADO-2023"
+          ],
+          "event_attribution_note": "COEN-INDECI directly reports activation on 2023-03-20 with housing and road impacts.",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        },
+        {
+          "child_id": "arequipa_gamarra",
+          "name": "Quebrada Gamarra",
+          "unit_role": "LOCAL_RAVINE_OR_TORRENTERA_TARGET",
+          "identity_status": "OFFICIAL_NAME_CONFIRMED",
+          "geometry_status": "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+          "geometry_asset": null,
+          "outlet_status": "UNKNOWN",
+          "outlet": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "INDECI-CERRO-COLORADO-2023"
+          ],
+          "event_attribution_note": "COEN-INDECI directly reports activation on 2023-03-20 with housing and road impacts.",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        },
+        {
+          "child_id": "arequipa_panteon",
+          "name": "Quebrada Panteón",
+          "unit_role": "LOCAL_RAVINE_OR_TORRENTERA_TARGET",
+          "identity_status": "OFFICIAL_NAME_CONFIRMED",
+          "geometry_status": "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+          "geometry_asset": null,
+          "outlet_status": "UNKNOWN",
+          "outlet": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "INDECI-QUEQUENA-PANTEON-2024"
+          ],
+          "event_attribution_note": "COEN-INDECI directly reports activation in Quequeña in 2024.",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        },
+        {
+          "child_id": "arequipa_roncero",
+          "name": "Quebrada Roncero",
+          "unit_role": "LOCAL_RAVINE_OR_TORRENTERA_TARGET",
+          "identity_status": "OFFICIAL_INDECI_RESPONSE_NAME_CONFIRMED",
+          "geometry_status": "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+          "geometry_asset": null,
+          "outlet_status": "UNKNOWN",
+          "outlet": null,
+          "evidence_state": "POST_EVENT_RESPONSE_CONTEXT_NOT_DIRECT_ACTIVATION_TIMING",
+          "source_ids": [
+            "INDECI-AREQUIPA-METRO-MARCH-2026"
+          ],
+          "event_attribution_note": "INDECI post-event response records channel rehabilitation/descolmatation by name after intense-rain impacts. This supports channel identity and affected-context only, not a precise activation time, discharge, footprint or capacity.",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        },
+        {
+          "child_id": "arequipa_huarangal",
+          "name": "Quebrada Huarangal",
+          "unit_role": "LOCAL_RAVINE_OR_TORRENTERA_TARGET",
+          "identity_status": "OFFICIAL_INDECI_RESPONSE_NAME_CONFIRMED",
+          "geometry_status": "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+          "geometry_asset": null,
+          "outlet_status": "UNKNOWN",
+          "outlet": null,
+          "evidence_state": "POST_EVENT_RESPONSE_CONTEXT_NOT_DIRECT_ACTIVATION_TIMING",
+          "source_ids": [
+            "INDECI-AREQUIPA-METRO-MARCH-2026"
+          ],
+          "event_attribution_note": "INDECI post-event response records channel rehabilitation/descolmatation by name after intense-rain impacts. This supports channel identity and affected-context only, not a precise activation time, discharge, footprint or capacity.",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        },
+        {
+          "child_id": "arequipa_ojo_del_buey",
+          "name": "Quebrada Ojo del Buey",
+          "unit_role": "LOCAL_RAVINE_OR_TORRENTERA_TARGET",
+          "identity_status": "OFFICIAL_INDECI_RESPONSE_NAME_CONFIRMED",
+          "geometry_status": "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+          "geometry_asset": null,
+          "outlet_status": "UNKNOWN",
+          "outlet": null,
+          "evidence_state": "POST_EVENT_RESPONSE_CONTEXT_NOT_DIRECT_ACTIVATION_TIMING",
+          "source_ids": [
+            "INDECI-AREQUIPA-METRO-MARCH-2026"
+          ],
+          "event_attribution_note": "INDECI post-event response records channel rehabilitation/descolmatation by name after intense-rain impacts. This supports channel identity and affected-context only, not a precise activation time, discharge, footprint or capacity.",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        }
+      ],
+      "territorial_events": [
+        {
+          "event_id": "arequipa_vitor_unnamed_2026",
+          "date_or_window": "2026-02-22",
+          "territorial_reference": "Vítor, Arequipa",
+          "named_child": null,
+          "receiver_reference": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "INDECI-VITOR-2026"
+          ],
+          "statement": "COEN-INDECI reports a huaico from an unnamed quebrada interrupting traffic in Vítor.",
+          "hydrologic_assignment_status": "TERRITORIAL_EVENT_PENDING_LOCAL_GEOMETRY",
+          "do_not_infer": "Do not assign this territorial event to a named Arequipa Metropolitana torrentera or create an approximate ravine."
+        }
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "arequipa_ocona_cotahuasi_local_ravines",
+      "parent_basin_id": "arequipa_ocona",
+      "entity_role": "LOCAL_RAVINE_DISCOVERY_SYSTEM",
+      "children": [
+        {
+          "child_id": "arequipa_ranrata",
+          "name": "Quebrada Ranrata",
+          "unit_role": "LOCAL_RAVINE_OR_TORRENTERA_TARGET",
+          "identity_status": "OFFICIAL_NAME_CONFIRMED",
+          "geometry_status": "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+          "geometry_asset": null,
+          "outlet_status": "DOCUMENTED_CONTRIBUTION_TO_RIO_COTAHUASI_EXACT_NODE_NOT_FROZEN",
+          "outlet": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "INDECI-TOMEPAMPA-RANRATA-2024",
+            "INDECI-TOMEPAMPA-RANRATA-2026"
+          ],
+          "event_attribution_note": "COEN-INDECI directly reports 2024-03-16 activation and increased Río Cotahuasi flow.",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        },
+        {
+          "child_id": "arequipa_alca",
+          "name": "Quebrada Alca",
+          "unit_role": "LOCAL_RAVINE_OR_TORRENTERA_TARGET",
+          "identity_status": "OFFICIAL_NAME_CONFIRMED",
+          "geometry_status": "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+          "geometry_asset": null,
+          "outlet_status": "UNKNOWN",
+          "outlet": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "INDECI-ALCA-2023"
+          ],
+          "event_attribution_note": "COEN-INDECI directly reports activation in Alca in 2023.",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        }
+      ],
+      "territorial_events": [
+        {
+          "event_id": "arequipa_lucha_2025",
+          "date_or_window": "2025-02-22",
+          "territorial_reference": "Localidad Lucha, distrito de Alca, Arequipa",
+          "named_child": null,
+          "receiver_reference": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "INDECI-ALCA-LUCHA-2025"
+          ],
+          "statement": "COEN-INDECI reports a huaico in the locality of Lucha; the retrieved source does not name a Quebrada Lucha.",
+          "hydrologic_assignment_status": "TERRITORIAL_EVENT_PENDING_LOCAL_GEOMETRY",
+          "do_not_infer": "Lucha is a territorial locality in this source. Do not create or name a child 'Quebrada Lucha' without independent hydrologic evidence."
+        }
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "arequipa_camana_castilla_local_ravines",
+      "parent_basin_id": "arequipa_camana_majes_colca",
+      "entity_role": "LOCAL_RAVINE_DISCOVERY_SYSTEM",
+      "children": [
+        {
+          "child_id": "arequipa_umahuato",
+          "name": "Quebrada Umahuato",
+          "unit_role": "LOCAL_RAVINE_OR_TORRENTERA_TARGET",
+          "identity_status": "OFFICIAL_NAME_CONFIRMED",
+          "geometry_status": "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+          "geometry_asset": null,
+          "outlet_status": "UNKNOWN",
+          "outlet": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "INDECI-CHOCO-UMAHUATO-2024"
+          ],
+          "event_attribution_note": "COEN-INDECI directly reports activation on 2024-03-08 in Choco, Castilla.",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        },
+        {
+          "child_id": "arequipa_allachaya",
+          "name": "Quebrada Allachaya",
+          "unit_role": "LOCAL_RAVINE_OR_TORRENTERA_TARGET",
+          "identity_status": "OFFICIAL_NAME_CONFIRMED",
+          "geometry_status": "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+          "geometry_asset": null,
+          "outlet_status": "UNKNOWN",
+          "outlet": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "INDECI-CHACHAS-ALLACHAYA-2024"
+          ],
+          "event_attribution_note": "COEN-INDECI directly reports activation in Chachas in 2024.",
+          "activation_gate": "BLOCKED",
+          "decision_thresholds": null,
+          "hydraulic_factors": null,
+          "map_publishable": false
+        }
+      ],
+      "territorial_events": [
+        {
+          "event_id": "arequipa_secocha_2023",
+          "date_or_window": "2023",
+          "territorial_reference": "Secocha / Mariano Nicolás Valcárcel, Camaná, Arequipa",
+          "named_child": null,
+          "receiver_reference": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "INDECI-SECOCHA-2023"
+          ],
+          "statement": "Official emergency reporting documents huaico impacts in Secocha and material in ravines, but the bounded source used here does not provide a defensible individual ravine identity.",
+          "hydrologic_assignment_status": "TERRITORIAL_EVENT_PENDING_LOCAL_GEOMETRY",
+          "do_not_infer": "Do not create a Secocha ravine polygon or transfer the event to an unnamed tributary until local hydrologic identity is resolved."
+        }
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    },
+    {
+      "discovery_id": "arequipa_chala_local_ravines",
+      "parent_basin_id": "arequipa_chala",
+      "entity_role": "LOCAL_RAVINE_DISCOVERY_SYSTEM",
+      "children": [],
+      "territorial_events": [
+        {
+          "event_id": "arequipa_chala_san_andres_ii_2025",
+          "date_or_window": "2025-02-13",
+          "territorial_reference": "San Andrés II, Chala, Arequipa",
+          "named_child": null,
+          "receiver_reference": null,
+          "evidence_state": "IMPACT_CONFIRMED",
+          "source_ids": [
+            "INDECI-CHALA-2025"
+          ],
+          "statement": "COEN-INDECI reports a huaico affecting road AR-510 in sector San Andrés II; the source does not name the contributing ravine.",
+          "hydrologic_assignment_status": "TERRITORIAL_EVENT_PENDING_LOCAL_GEOMETRY",
+          "do_not_infer": "Do not create a named child or outlet until the ravine identity and geometry are independently resolved."
+        }
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null
+    }
+  ],
+  "source_catalog": [
+    {
+      "source_id": "ANA-HYDRO-UH-PACIFIC-2025",
+      "institution": "Autoridad Nacional del Agua",
+      "official": true,
+      "title": "Listado / mapa oficial de unidades hidrográficas del Pacífico",
+      "url": "https://www.ana.gob.pe/sites/default/files/normatividad/files/hidrometricas_0_0_2.pdf",
+      "provenance_status": "OFFICIAL_URL_VERIFIED_TEXT_RETRIEVAL_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "137154 Chaparra",
+        "137156 Chala",
+        "13716 Yauca",
+        "13718 Acarí",
+        "1372 Grande",
+        "1374 Ica",
+        "13752 Pisco",
+        "137532 San Juan",
+        "137534 Topará"
+      ],
+      "forbidden_use": "Does not itself provide local ravine activation outcomes or operational thresholds."
+    },
+    {
+      "source_id": "ANA-SOUTH-HYDROGRAPHIC-CODES",
+      "institution": "Autoridad Nacional del Agua",
+      "official": true,
+      "title": "Official hydrographic classification / codes for southern Pacific units",
+      "url": "https://www.ana.gob.pe/sites/default/files/normatividad/files/004_1_0.pdf",
+      "provenance_status": "OFFICIAL_URL_VERIFIED_TEXT_RETRIEVAL_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "1318 Tambo",
+        "132 Quilca-Vitor-Chili",
+        "134 Camaná",
+        "136 Ocoña",
+        "13712 Pescadores-Caravelí",
+        "13714 Atico",
+        "137154 Cháparra",
+        "137156 Chala",
+        "13716 Yauca",
+        "13718 Acarí"
+      ],
+      "forbidden_use": "Classification is parent-basin context, not local hazard geometry."
+    },
+    {
+      "source_id": "ANA-CANSAS-UH1374-2025",
+      "institution": "Autoridad Nacional del Agua",
+      "official": true,
+      "title": "ANA resolution / technical context identifying Quebrada Cansas inside Cuenca Ica UH 1374",
+      "url": "https://www.gob.pe/institucion/ana/normas-legales",
+      "provenance_status": "OFFICIAL_INSTITUTIONAL_FACT_VERIFIED_SEARCH_RESULT_CANONICAL_RESOLUTION_URL_PENDING_ARCHIVE",
+      "content_sha256": null,
+      "supports": [
+        "Cansas belongs to Cuenca Ica UH 1374"
+      ],
+      "forbidden_use": "Bridge or works authorization does not establish historical hydraulic capacity."
+    },
+    {
+      "source_id": "CENEPRED-CANSAS-RPAS-2018",
+      "institution": "CENEPRED / SIGRID",
+      "official": true,
+      "title": "ORTOMOSAICO Quebrada Cansas",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/6769",
+      "provenance_status": "OFFICIAL_URL_VERIFIED_TEXT_RETRIEVAL_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "2018 RPAS orthomosaic",
+        "3.45 cm spatial resolution",
+        "ground control",
+        "204.04 ha"
+      ],
+      "forbidden_use": "Orthomosaic coverage is not an event footprint and does not define a watershed boundary by itself."
+    },
+    {
+      "source_id": "ANA-CANSAS-FAJA-2018",
+      "institution": "Autoridad Nacional del Agua / SIGRID",
+      "official": true,
+      "title": "Faja marginal Quebrada Cansas (2018)",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/6072",
+      "provenance_status": "OFFICIAL_SIGRID_CANONICAL_DOCUMENT_URL_VERIFIED_2026-09-25_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "official regulatory-margin context for Cansas"
+      ],
+      "forbidden_use": "Faja marginal is not an observed event footprint, catchment polygon, or historical capacity."
+    },
+    {
+      "source_id": "INDECI-YAUCA-ROSARIO-2024",
+      "institution": "COEN-INDECI",
+      "official": true,
+      "title": "Huaico en el distrito de Yauca del Rosario - Ica, event 2024-03-16",
+      "url": "https://portal.indeci.gob.pe/emergencias/reporte-preliminar-n-602-17-3-2024-coen-indeci-1230-horas-huaico-en-el-distrito-de-yauca-del-rosario-ica/",
+      "provenance_status": "OFFICIAL_URL_VERIFIED_TEXT_RETRIEVAL_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "San José de Curis activation",
+        "San Isidro de Macchanga activation",
+        "flow via Río Chico and Río Grande"
+      ],
+      "forbidden_use": "Does not provide exact child polygons, outlet coordinates or thresholds."
+    },
+    {
+      "source_id": "INDECI-HUANCANO-2026",
+      "institution": "COEN-INDECI",
+      "official": true,
+      "title": "Lluvias intensas en el distrito de Huancano - Ica, event 2026-02-20",
+      "url": "https://portal.indeci.gob.pe/emergencias/reporte-complementario-n-o-2396-22-2-2026-coen-indeci-1250-horas-reporte-n-1-lluvias-intensas-en-el-distrito-de-huancano-ica/",
+      "provenance_status": "OFFICIAL_URL_VERIFIED_TEXT_RETRIEVAL_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "unnamed quebrada activation",
+        "local Río Grande rise/overflow",
+        "impacts"
+      ],
+      "forbidden_use": "Local Río Grande name must not be conflated with ANA Cuenca Grande UH 1372."
+    },
+    {
+      "source_id": "INDECI-OCUCAJE-2026",
+      "institution": "COEN-INDECI",
+      "official": true,
+      "title": "Huaico en el distrito de Ocucaje - Ica",
+      "url": "https://portal.indeci.gob.pe/emergencias/reporte-complementario-n-2241-19-2-2026-coen-indeci-1520-horas-reporte-n-1-huaico-en-el-distrito-de-ocucaje-ica/",
+      "provenance_status": "OFFICIAL_URL_VERIFIED_TEXT_RETRIEVAL_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "territorial huaico impact in Ocucaje"
+      ],
+      "forbidden_use": "Source does not name the contributing ravine; no child attribution."
+    },
+    {
+      "source_id": "INGEMMET-A7737-AREQUIPA-2026",
+      "institution": "INGEMMET / SIGRID",
+      "official": true,
+      "title": "Informe técnico N° A7737: Evaluación geológica de zonas afectadas por lluvias en Arequipa Metropolitana - Febrero 2026",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/21728",
+      "provenance_status": "OFFICIAL_URL_VERIFIED_TEXT_RETRIEVAL_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "Chullo",
+        "Los Incas",
+        "Añashuayco",
+        "San Lázaro",
+        "El Pato"
+      ],
+      "forbidden_use": "Do not infer identical timing, discharge or activation severity across the five torrenteras."
+    },
+    {
+      "source_id": "INDECI-CERRO-COLORADO-2023",
+      "institution": "COEN-INDECI",
+      "official": true,
+      "title": "Huaico en Cerro Colorado - Arequipa, event 2023-03-20",
+      "url": "https://portal.indeci.gob.pe/emergencias/reporte-preliminar-n-796-21-3-2023-coen-indeci-1920-horas-huaico-en-el-distrito-de-cerro-colorado-arequipa/",
+      "provenance_status": "OFFICIAL_URL_VERIFIED_TEXT_RETRIEVAL_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "Añascoy activation",
+        "Gamarra activation",
+        "housing and road impacts"
+      ],
+      "forbidden_use": "Does not provide exact catchment geometry or hydraulic threshold."
+    },
+    {
+      "source_id": "INDECI-TOMEPAMPA-RANRATA-2024",
+      "institution": "COEN-INDECI",
+      "official": true,
+      "title": "Huaico en Tomepampa - Arequipa, event 2024-03-16",
+      "url": "https://portal.indeci.gob.pe/emergencias/reporte-complementario-n-2687-16-3-2024-coen-indeci-2315-horas-reporte-n-1-huaico-en-el-distrito-de-tomepampa-arequipa/",
+      "provenance_status": "OFFICIAL_URL_VERIFIED_TEXT_RETRIEVAL_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "Ranrata activation",
+        "increased Río Cotahuasi flow",
+        "documented impacts"
+      ],
+      "forbidden_use": "Does not establish causality for all downstream Ocoña/Cotahuasi behavior or thresholds."
+    },
+    {
+      "source_id": "INDECI-CHOCO-UMAHUATO-2024",
+      "institution": "COEN-INDECI",
+      "official": true,
+      "title": "Lluvias intensas / huaico en Choco - Arequipa, event 2024-03-08",
+      "url": "https://portal.indeci.gob.pe/emergencias/reporte-complementario-n-o-2628-14-3-2024-coen-indeci-2215-horas-reporte-n-o-1-huaico-en-el-distrito-de-choco-arequipa/",
+      "provenance_status": "OFFICIAL_URL_VERIFIED_TEXT_RETRIEVAL_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "Umahuato activation",
+        "transport impacts"
+      ],
+      "forbidden_use": "Keep the separate Quishishi/Challa river-rise event distinct from Umahuato."
+    },
+    {
+      "source_id": "INDECI-QUEQUENA-PANTEON-2024",
+      "institution": "COEN-INDECI",
+      "official": true,
+      "title": "Huaico in Quequeña - Quebrada Panteón (2024)",
+      "url": "https://portal.indeci.gob.pe/emergencias/",
+      "provenance_status": "OFFICIAL_EVENT_VERIFIED_CANONICAL_REPORT_URL_PENDING_ARCHIVE",
+      "content_sha256": null,
+      "supports": [
+        "Panteón activation"
+      ],
+      "forbidden_use": "No approximate geometry or threshold."
+    },
+    {
+      "source_id": "INDECI-CHACHAS-ALLACHAYA-2024",
+      "institution": "COEN-INDECI",
+      "official": true,
+      "title": "Huaico in Chachas - Quebrada Allachaya (2024)",
+      "url": "https://portal.indeci.gob.pe/emergencias/",
+      "provenance_status": "OFFICIAL_EVENT_VERIFIED_CANONICAL_REPORT_URL_PENDING_ARCHIVE",
+      "content_sha256": null,
+      "supports": [
+        "Allachaya activation"
+      ],
+      "forbidden_use": "No approximate geometry or threshold."
+    },
+    {
+      "source_id": "INDECI-ALCA-2023",
+      "institution": "COEN-INDECI",
+      "official": true,
+      "title": "Huaico in Alca - Quebrada Alca (2023)",
+      "url": "https://portal.indeci.gob.pe/emergencias/",
+      "provenance_status": "OFFICIAL_EVENT_VERIFIED_CANONICAL_REPORT_URL_PENDING_ARCHIVE",
+      "content_sha256": null,
+      "supports": [
+        "Quebrada Alca activation"
+      ],
+      "forbidden_use": "No approximate geometry or threshold."
+    },
+    {
+      "source_id": "INDECI-ALCA-LUCHA-2025",
+      "institution": "COEN-INDECI",
+      "official": true,
+      "title": "Huaico in localidad Lucha, Alca (2025)",
+      "url": "https://portal.indeci.gob.pe/emergencias/",
+      "provenance_status": "OFFICIAL_EVENT_VERIFIED_CANONICAL_REPORT_URL_PENDING_ARCHIVE",
+      "content_sha256": null,
+      "supports": [
+        "territorial huaico in localidad Lucha"
+      ],
+      "forbidden_use": "The source does not name a Quebrada Lucha; do not create one."
+    },
+    {
+      "source_id": "INDECI-CHALA-2025",
+      "institution": "COEN-INDECI",
+      "official": true,
+      "title": "Huaico in Chala, sector San Andrés II (2025)",
+      "url": "https://portal.indeci.gob.pe/emergencias/",
+      "provenance_status": "OFFICIAL_EVENT_VERIFIED_CANONICAL_REPORT_URL_PENDING_ARCHIVE",
+      "content_sha256": null,
+      "supports": [
+        "territorial huaico impact in Chala"
+      ],
+      "forbidden_use": "Unnamed contributing ravine remains unresolved."
+    },
+    {
+      "source_id": "INDECI-SECOCHA-2023",
+      "institution": "COEN-INDECI",
+      "official": true,
+      "title": "Huaico impacts in Secocha / Mariano Nicolás Valcárcel (2023)",
+      "url": "https://portal.indeci.gob.pe/emergencias/",
+      "provenance_status": "OFFICIAL_EVENT_VERIFIED_CANONICAL_REPORT_URL_PENDING_ARCHIVE",
+      "content_sha256": null,
+      "supports": [
+        "territorial Secocha huaico context"
+      ],
+      "forbidden_use": "Do not invent individual ravine identity from settlement name."
+    },
+    {
+      "source_id": "INDECI-VITOR-2026",
+      "institution": "COEN-INDECI",
+      "official": true,
+      "title": "Huaico from unnamed ravine in Vítor (2026)",
+      "url": "https://portal.indeci.gob.pe/emergencias/",
+      "provenance_status": "OFFICIAL_EVENT_VERIFIED_CANONICAL_REPORT_URL_PENDING_ARCHIVE",
+      "content_sha256": null,
+      "supports": [
+        "territorial Vítor huaico"
+      ],
+      "forbidden_use": "Unnamed ravine remains unresolved."
+    },
+    {
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "institution": "Autoridad Nacional del Agua / SNIRH",
+      "official": true,
+      "title": "Ríos y Quebradas — red hidrográfica nacional Pfafstetter",
+      "url": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0",
+      "query_endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "service_item_id": "99cc803fb9044523b6ee55f24dcab270",
+      "source_year": 2018,
+      "geometry_type": "esriGeometryPolyline",
+      "spatial_reference": "EPSG:4326",
+      "supported_query_formats": [
+        "JSON",
+        "geoJSON",
+        "PBF"
+      ],
+      "identity_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "provenance_status": "OFFICIAL_ARCGIS_LAYER_METADATA_VERIFIED_2026-09-25_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "exact named-channel discovery",
+        "Pfafstetter parent-unit adjudication",
+        "official polyline recovery candidates"
+      ],
+      "forbidden_use": "Do not treat an exact-name result as sufficient for map publication until parent-unit identity, uniqueness, source bytes, SHA-256 and geometry review are frozen. No event, threshold, hydraulic-capacity or negative-control inference."
+    },
+    {
+      "source_id": "ANA-CANSAS-FAJA-MOD-2019",
+      "institution": "Autoridad Nacional del Agua / SIGRID",
+      "official": true,
+      "title": "RD N° 451-2019-ANA-AAA-CH.CH — modificación de faja marginal de quebrada Cansas",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/16264",
+      "provenance_status": "OFFICIAL_SIGRID_CANONICAL_DOCUMENT_URL_VERIFIED_2026-09-25_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "Cansas regulatory-margin modification",
+        "16.10 km Chanchajalla upstream hydraulic-model context"
+      ],
+      "forbidden_use": "Regulatory margin/model context is not an event footprint, catchment polygon, historical capacity or activation threshold."
+    },
+    {
+      "source_id": "ANA-CANSAS-FAJA-2020-TRACE-2024",
+      "institution": "Autoridad Nacional del Agua",
+      "official": true,
+      "title": "TNRCH 2024 decision documenting RD N° 738-2020-ANA-AAA-CHCH as latest Cansas faja modification",
+      "url": "https://www.ana.gob.pe/sites/default/files/normatividad/files/82-RTNRCH-0098-2024-022.pdf",
+      "provenance_status": "OFFICIAL_ANA_PDF_TEXT_VERIFIED_2026-09-25_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "RD 738-2020 traceability",
+        "16.20 km bilateral Cansas faja context",
+        "ARCC protection-project provenance"
+      ],
+      "forbidden_use": "Administrative traceability and works design do not establish current hydraulic capacity, event footprint or threshold."
+    },
+    {
+      "source_id": "ANA-TORTOLITA-FAJA-2019",
+      "institution": "Autoridad Nacional del Agua / SIGRID",
+      "official": true,
+      "title": "RD N° 2063-2019-ANA-AAA-CH.CH — faja marginal quebrada Tortolita",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/16252",
+      "provenance_status": "OFFICIAL_SIGRID_CANONICAL_DOCUMENT_URL_VERIFIED_2026-09-25_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "Tortolita official identity",
+        "4.5215 km regulatory-margin context",
+        "91+91 georeferenced margin markers"
+      ],
+      "forbidden_use": "Faja marginal is not an event footprint, local catchment polygon, historical capacity or activation threshold."
+    },
+    {
+      "source_id": "ANA-LA-YESERA-FAJA-2019",
+      "institution": "Autoridad Nacional del Agua / SIGRID",
+      "official": true,
+      "title": "RD N° 2070-2019-ANA-AAA-CH.CH — faja marginal quebrada La Yesera",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/biblioteca?c=+San+Jos%C3%A9&p=2",
+      "provenance_status": "OFFICIAL_SIGRID_CATALOG_ENTRY_VERIFIED_2026-09-25_CANONICAL_DOCUMENT_ID_PENDING_ARCHIVE",
+      "content_sha256": null,
+      "supports": [
+        "La Yesera official identity",
+        "5.1599 km regulatory-margin context"
+      ],
+      "forbidden_use": "Faja marginal is not an event footprint, local catchment polygon, historical capacity or activation threshold."
+    },
+    {
+      "source_id": "ANA-ICA-CRITICAL-POINTS-DU015-2023",
+      "institution": "Autoridad Nacional del Agua",
+      "official": true,
+      "title": "ANEXO II - Listado de puntos críticos para limpieza y descolmatación",
+      "url": "https://www.ana.gob.pe/sites/default/files/file_content/Anexo_II_DU015_2023.pdf",
+      "provenance_status": "OFFICIAL_ANA_PDF_TEXT_VERIFIED_2026-09-26_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "Qda. Quitasol — Cuenca Pisco",
+        "Qda. Paracas — Cuenca Pisco",
+        "Qda. Topará — Cuenca Topará"
+      ],
+      "forbidden_use": "Critical-point inventory is not an observed activation event, event footprint, catchment polygon, hydraulic capacity or operational threshold."
+    },
+    {
+      "source_id": "ANA-ICA-CATAMBO-CANSAS-TDR-2023",
+      "institution": "Autoridad Nacional del Agua",
+      "official": true,
+      "title": "Términos de referencia: limpieza y descolmatación del Río Ica y quebradas Catambo y Cansas",
+      "url": "https://www.ana.gob.pe/sites/default/files/file_content/CARTA%20N%C2%B0%20109%20CD.pdf",
+      "provenance_status": "OFFICIAL_ANA_PDF_TEXT_VERIFIED_2026-09-26_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "Quebrada Catambo identity",
+        "Quebrada Cansas identity",
+        "Río Ica works context"
+      ],
+      "forbidden_use": "Works package does not establish an event footprint, present hydraulic capacity, activation threshold or catchment geometry."
+    },
+    {
+      "source_id": "ANA-ICA-RIO-SECO-CLASSIFICATION",
+      "institution": "Autoridad Nacional del Agua",
+      "official": true,
+      "title": "Clasificación de cuerpos de agua continentales superficiales — Ica/Pisco sector",
+      "url": "https://www.ana.gob.pe/sites/default/files/normatividad/files/clasificacion_de_cuerpos_de_agua_continental_parte_1.pdf",
+      "provenance_status": "OFFICIAL_ANA_PDF_TEXT_VERIFIED_2026-09-26_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "Intercuenca 13751",
+        "Río Seco course code 137516",
+        "Cuenca Pisco 13752"
+      ],
+      "forbidden_use": "Water-body classification is hydrographic identity context only; it is not event evidence, a flood footprint, capacity or threshold."
+    },
+    {
+      "source_id": "INDECI-AREQUIPA-METRO-MARCH-2026",
+      "institution": "COEN - INDECI",
+      "official": true,
+      "title": "Reporte complementario de lluvias intensas en la provincia de Arequipa — marzo 2026",
+      "url": "https://portal.indeci.gob.pe/wp-content/uploads/2026/03/REPORTE-COMPLEMENTARIO-N.%C2%BA-4573-27MAR2026-LLUVIAS-INTENSAS-EN-LA-PROVINCIA-DE-AREQUIPA-AREQUIPA-51.pdf",
+      "provenance_status": "OFFICIAL_INDECI_PDF_TEXT_VERIFIED_2026-09-26_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "Quebrada Roncero",
+        "Quebrada San Lázaro",
+        "Quebrada Pato",
+        "Quebrada Huarangal",
+        "Quebrada Chullo",
+        "Quebrada Ojo del Buey"
+      ],
+      "forbidden_use": "Post-event rehabilitation/descolmatation context does not provide precise activation timing, discharge, event footprint, historical capacity or threshold for each named channel."
+    },
+    {
+      "source_id": "INDECI-QUECHUALLA-CHAUP0-AYTINCO-2026",
+      "institution": "COEN - INDECI",
+      "official": true,
+      "title": "Huaico en Quechualla — event 2026-02-09",
+      "url": "https://portal.indeci.gob.pe/emergencias/reporte-complementario-n-o-1764-10-2-2026-coen-indeci-1615-horas-reporte-n-1-huaico-en-el-distrito-de-quechualla-arequipa/",
+      "provenance_status": "OFFICIAL_INDECI_URL_VERIFIED_TEXT_RETRIEVAL_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "Quebrada de Chaupo activation",
+        "Quebrada Aytinco activation",
+        "Quechualla territorial event"
+      ],
+      "forbidden_use": "Do not assign the named ravines to Ocoña/Cotahuasi or derive geometry, discharge, travel time or thresholds until hydrographic parent identity is reproduced."
+    },
+    {
+      "source_id": "INDECI-TOMEPAMPA-RANRATA-2026",
+      "institution": "COEN - INDECI",
+      "official": true,
+      "title": "Huaico en Tomepampa — activación de quebrada Ranrata, event 2026-02-19",
+      "url": "https://portal.indeci.gob.pe/emergencias/reporte-complementario-n-2336-21-2-2026-coen-indeci-0400-horas-reporte-n-o-1-huaico-en-el-distrito-de-tomepampa-arequipa/",
+      "provenance_status": "OFFICIAL_INDECI_URL_VERIFIED_TEXT_RETRIEVAL_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "Quebrada Ranrata direct activation on 2026-02-19"
+      ],
+      "forbidden_use": "Event report does not establish catchment geometry, discharge, receiver overflow or activation threshold."
+    },
+    {
+      "source_id": "INDECI-ICA-STUDY-INVENTORY",
+      "institution": "INDECI",
+      "official": true,
+      "title": "DDI Ica study inventory — named hazard-study locations",
+      "url": "https://portal.indeci.gob.pe/contactenos/",
+      "provenance_status": "OFFICIAL_INDECI_CATALOG_TEXT_VERIFIED_2026-09-26_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "Quebrada San Ignacio — Palpa",
+        "Quebrada Sacramento — Palpa",
+        "Quebrada Nuevo Vista Alegre — Vista Alegre",
+        "additional named Ica ravine study targets"
+      ],
+      "forbidden_use": "Study-list naming does not by itself prove activation, parent basin, geometry, outlet, footprint, capacity or threshold."
+    },
+    {
+      "source_id": "INDECI-INGENIO-2025",
+      "institution": "COEN - INDECI",
+      "official": true,
+      "title": "Huaico en el distrito de Ingenio — Ica, event 2025-02-06",
+      "url": "https://portal.indeci.gob.pe/wp-content/uploads/2025/02/REPORTE-COMPLEMENTARIO-N.%C2%BA-1670-8FEB2025-HUAICO-EN-EL-DISTRITO-DE-INGENIO-ICA-1-1-1.pdf",
+      "provenance_status": "OFFICIAL_INDECI_PDF_TEXT_VERIFIED_2026-09-26_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "Ingenio huaico 2025-02-06",
+        "Ayapana de Tulin affected sector"
+      ],
+      "forbidden_use": "The report lists affected sectors and does not name Ayapana de Tulin as a ravine; do not create a child called Quebrada Ayapana."
+    },
+    {
+      "source_id": "ANA-AAA-SOUTH-UH-2009",
+      "institution": "Autoridad Nacional del Agua",
+      "official": true,
+      "title": "Delimitación de ámbitos de las Autoridades Administrativas del Agua — unidades hidrográficas Caplina-Ocoña y Cháparra-Chincha",
+      "url": "https://www.ana.gob.pe/sites/default/files/normatividad/files/aaa_memoria_0_0_2.pdf",
+      "provenance_status": "OFFICIAL_URL_VERIFIED_TEXT_RETRIEVAL_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "137152 Cuenca Choclón",
+        "137158 Cuenca Honda",
+        "135 Intercuenca 135",
+        "13711 Intercuenca 13711",
+        "13713 Intercuenca 13713",
+        "137151 Intercuenca 137151",
+        "137153 Intercuenca 137153",
+        "137155 Intercuenca 137155",
+        "137157 Intercuenca 137157",
+        "137159 Intercuenca 137159",
+        "13717 Intercuenca 13717",
+        "13719 Intercuenca 13719",
+        "1373 Intercuenca 1373",
+        "13751 Intercuenca 13751",
+        "137531 Intercuenca 137531",
+        "137533 Intercuenca 137533"
+      ],
+      "forbidden_use": "Administrative/hydrographic classification only; does not establish local hazard geometry, activation, event footprint, hydraulic capacity or thresholds."
+    },
+    {
+      "source_id": "ANA-RJ-056-2018-SOUTH-COURSES",
+      "institution": "Autoridad Nacional del Agua",
+      "official": true,
+      "title": "Resolución Jefatural N° 056-2018-ANA — clasificación de cuerpos de agua continentales superficiales",
+      "url": "https://www.ana.gob.pe/sites/default/files/normatividad/files/r.j._056-2018-ana_0.pdf",
+      "provenance_status": "OFFICIAL_URL_VERIFIED_TEXT_RETRIEVAL_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "137152 Quebrada Choclón → Cuenca Choclón 137152",
+        "137158 Quebrada Honda → Cuenca Honda 137158",
+        "13714 Río Atico → Cuenca Atico 13714",
+        "137154 Río Cháparra → Cuenca Cháparra 137154",
+        "137156 Quebrada de Chala → Cuenca Chala 137156"
+      ],
+      "forbidden_use": "Course classification and parent-UH identity only; does not prove a historical activation, event footprint, local outlet geometry, capacity or operational threshold."
+    }
+  ],
+  "next_geometry_work_packages": [
+    {
+      "priority": 1,
+      "target": "ica_cansas",
+      "goal": "freeze official/reproducible channel, local catchment candidate and outlet topology separately; archive source bytes before map publication"
+    },
+    {
+      "priority": 2,
+      "target": "arequipa_metropolitana_torrenteras",
+      "goal": "recover official INGEMMET/ANA channel geometry for Chullo, Los Incas, Añashuayco, San Lázaro and El Pato; freeze each as independent child"
+    },
+    {
+      "priority": 3,
+      "target": "arequipa_ranrata",
+      "goal": "freeze named channel and Cotahuasi confluence/outlet from official or reproducible data"
+    },
+    {
+      "priority": 4,
+      "target": "ica_san_jose_de_curis+ica_san_isidro_de_macchanga",
+      "goal": "resolve exact local geometry and flow topology to Río Chico/Río Grande without transferring event state"
+    },
+    {
+      "priority": 5,
+      "target": "south_coast_parent_basins",
+      "goal": "freeze official parent polygons for context only, preserving intercuencas and adjacent-unit boundaries"
+    }
+  ],
+  "summary": {
+    "official_parent_basins_registered": 17,
+    "local_discovery_systems_registered": 7,
+    "named_local_children_registered": 23,
+    "map_publishable_children": 0,
+    "new_operational_zones": 0,
+    "local_hydrography_probe_contracts_registered": 23,
+    "official_local_children_with_regulatory_geometry_context": 3,
+    "official_intercuenca_contexts_registered": 14,
+    "pending_hydrologic_adjudications": 6
+  },
+  "hydrography_probe_contracts": [
+    {
+      "child_name": "Quebrada Cansas",
+      "discovery_system_id": "ica_ica_local_ravines",
+      "expected_parent_discovery_id": "ica_ica",
+      "expected_parent_uh_code": "1374",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Cansas'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada La Yesera",
+      "discovery_system_id": "ica_ica_local_ravines",
+      "expected_parent_discovery_id": "ica_ica",
+      "expected_parent_uh_code": "1374",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='La Yesera'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada Tortolita",
+      "discovery_system_id": "ica_ica_local_ravines",
+      "expected_parent_discovery_id": "ica_ica",
+      "expected_parent_uh_code": "1374",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Tortolita'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada San José de Curis",
+      "discovery_system_id": "ica_rio_grande_local_ravines",
+      "expected_parent_discovery_id": "ica_rio_grande_palpa_nasca",
+      "expected_parent_uh_code": "1372",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='San José de Curis'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada San Isidro de Macchanga",
+      "discovery_system_id": "ica_rio_grande_local_ravines",
+      "expected_parent_discovery_id": "ica_rio_grande_palpa_nasca",
+      "expected_parent_uh_code": "1372",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='San Isidro de Macchanga'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada / torrentera Chullo",
+      "discovery_system_id": "arequipa_metropolitana_torrenteras",
+      "expected_parent_discovery_id": "arequipa_quilca_vitor_chili",
+      "expected_parent_uh_code": "132",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Chullo'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada / torrentera Los Incas",
+      "discovery_system_id": "arequipa_metropolitana_torrenteras",
+      "expected_parent_discovery_id": "arequipa_quilca_vitor_chili",
+      "expected_parent_uh_code": "132",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Los Incas'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada / torrentera Añashuayco",
+      "discovery_system_id": "arequipa_metropolitana_torrenteras",
+      "expected_parent_discovery_id": "arequipa_quilca_vitor_chili",
+      "expected_parent_uh_code": "132",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Añashuayco'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada / torrentera San Lázaro",
+      "discovery_system_id": "arequipa_metropolitana_torrenteras",
+      "expected_parent_discovery_id": "arequipa_quilca_vitor_chili",
+      "expected_parent_uh_code": "132",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='San Lázaro'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada / torrentera El Pato",
+      "discovery_system_id": "arequipa_metropolitana_torrenteras",
+      "expected_parent_discovery_id": "arequipa_quilca_vitor_chili",
+      "expected_parent_uh_code": "132",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='El Pato'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada Añascoy",
+      "discovery_system_id": "arequipa_metropolitana_torrenteras",
+      "expected_parent_discovery_id": "arequipa_quilca_vitor_chili",
+      "expected_parent_uh_code": "132",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Añascoy'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada Gamarra",
+      "discovery_system_id": "arequipa_metropolitana_torrenteras",
+      "expected_parent_discovery_id": "arequipa_quilca_vitor_chili",
+      "expected_parent_uh_code": "132",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Gamarra'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada Panteón",
+      "discovery_system_id": "arequipa_metropolitana_torrenteras",
+      "expected_parent_discovery_id": "arequipa_quilca_vitor_chili",
+      "expected_parent_uh_code": "132",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Panteón'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada Ranrata",
+      "discovery_system_id": "arequipa_ocona_cotahuasi_local_ravines",
+      "expected_parent_discovery_id": "arequipa_ocona",
+      "expected_parent_uh_code": "136",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Ranrata'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada Alca",
+      "discovery_system_id": "arequipa_ocona_cotahuasi_local_ravines",
+      "expected_parent_discovery_id": "arequipa_ocona",
+      "expected_parent_uh_code": "136",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Alca'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada Umahuato",
+      "discovery_system_id": "arequipa_camana_castilla_local_ravines",
+      "expected_parent_discovery_id": "arequipa_camana_majes_colca",
+      "expected_parent_uh_code": "134",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Umahuato'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada Allachaya",
+      "discovery_system_id": "arequipa_camana_castilla_local_ravines",
+      "expected_parent_discovery_id": "arequipa_camana_majes_colca",
+      "expected_parent_uh_code": "134",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Allachaya'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada Catambo",
+      "discovery_system_id": "ica_ica_local_ravines",
+      "expected_parent_discovery_id": "ica_ica",
+      "expected_parent_uh_code": "1374",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Catambo'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada Quitasol",
+      "discovery_system_id": "ica_pisco_local_ravines",
+      "expected_parent_discovery_id": "ica_pisco",
+      "expected_parent_uh_code": "13752",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Quitasol'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada Paracas",
+      "discovery_system_id": "ica_pisco_local_ravines",
+      "expected_parent_discovery_id": "ica_pisco",
+      "expected_parent_uh_code": "13752",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Paracas'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada Roncero",
+      "discovery_system_id": "arequipa_metropolitana_torrenteras",
+      "expected_parent_discovery_id": "arequipa_quilca_vitor_chili",
+      "expected_parent_uh_code": "132",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Roncero'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada Huarangal",
+      "discovery_system_id": "arequipa_metropolitana_torrenteras",
+      "expected_parent_discovery_id": "arequipa_quilca_vitor_chili",
+      "expected_parent_uh_code": "132",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Huarangal'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    },
+    {
+      "child_name": "Quebrada Ojo del Buey",
+      "discovery_system_id": "arequipa_metropolitana_torrenteras",
+      "expected_parent_discovery_id": "arequipa_quilca_vitor_chili",
+      "expected_parent_uh_code": "132",
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Ojo del Buey'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false,
+      "event_state_transferred": false,
+      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+    }
+  ],
+  "official_intercuenca_contexts": [
+    {
+      "discovery_id": "ica_intercuenca_1373",
+      "name": "Intercuenca 1373",
+      "official_unit_code": "1373",
+      "department": "Ica",
+      "entity_role": "OFFICIAL_INTERCUENCA_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "course_context": [],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null,
+      "must_not_merge_with": [],
+      "geometry_status": "OFFICIAL_UNIT_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "geometry_asset": null,
+      "map_publishable": false
+    },
+    {
+      "discovery_id": "ica_intercuenca_13751_rio_seco",
+      "name": "Intercuenca 13751 / Río Seco",
+      "official_unit_code": "13751",
+      "department": "Ica",
+      "entity_role": "OFFICIAL_INTERCUENCA_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_AND_COURSE_CONFIRMED",
+      "course_context": [
+        {
+          "official_course_code": "137516",
+          "name": "Río Seco",
+          "geometry_status": "OFFICIAL_COURSE_EXISTS_NOT_FROZEN",
+          "geometry_asset": null,
+          "map_publishable": false
+        }
+      ],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null,
+      "must_not_merge_with": [
+        "ica_pisco",
+        "ica_ica"
+      ],
+      "geometry_status": "OFFICIAL_UNIT_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "geometry_asset": null,
+      "map_publishable": false
+    },
+    {
+      "discovery_id": "ica_intercuenca_137531",
+      "name": "Intercuenca 137531",
+      "official_unit_code": "137531",
+      "department": "Ica",
+      "entity_role": "OFFICIAL_INTERCUENCA_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "course_context": [],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null,
+      "must_not_merge_with": [],
+      "geometry_status": "OFFICIAL_UNIT_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "geometry_asset": null,
+      "map_publishable": false
+    },
+    {
+      "discovery_id": "ica_intercuenca_137533",
+      "name": "Intercuenca 137533",
+      "official_unit_code": "137533",
+      "department": "Ica",
+      "entity_role": "OFFICIAL_INTERCUENCA_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "course_context": [],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null,
+      "must_not_merge_with": [],
+      "geometry_status": "OFFICIAL_UNIT_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "geometry_asset": null,
+      "map_publishable": false
+    },
+    {
+      "discovery_id": "arequipa_intercuenca_13711",
+      "name": "Intercuenca 13711",
+      "official_unit_code": "13711",
+      "department": "Arequipa",
+      "entity_role": "OFFICIAL_INTERCUENCA_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "course_context": [],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null,
+      "must_not_merge_with": [],
+      "geometry_status": "OFFICIAL_UNIT_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "geometry_asset": null,
+      "map_publishable": false
+    },
+    {
+      "discovery_id": "arequipa_intercuenca_13713",
+      "name": "Intercuenca 13713",
+      "official_unit_code": "13713",
+      "department": "Arequipa",
+      "entity_role": "OFFICIAL_INTERCUENCA_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "course_context": [],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null,
+      "must_not_merge_with": [],
+      "geometry_status": "OFFICIAL_UNIT_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "geometry_asset": null,
+      "map_publishable": false
+    },
+    {
+      "discovery_id": "arequipa_intercuenca_137151",
+      "name": "Intercuenca 137151",
+      "official_unit_code": "137151",
+      "department": "Arequipa",
+      "entity_role": "OFFICIAL_INTERCUENCA_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "course_context": [],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null,
+      "must_not_merge_with": [],
+      "geometry_status": "OFFICIAL_UNIT_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "geometry_asset": null,
+      "map_publishable": false
+    },
+    {
+      "discovery_id": "arequipa_intercuenca_137153",
+      "name": "Intercuenca 137153",
+      "official_unit_code": "137153",
+      "department": "Arequipa",
+      "entity_role": "OFFICIAL_INTERCUENCA_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "course_context": [],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null,
+      "must_not_merge_with": [],
+      "geometry_status": "OFFICIAL_UNIT_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "geometry_asset": null,
+      "map_publishable": false
+    },
+    {
+      "discovery_id": "arequipa_intercuenca_137155",
+      "name": "Intercuenca 137155",
+      "official_unit_code": "137155",
+      "department": "Arequipa",
+      "entity_role": "OFFICIAL_INTERCUENCA_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "course_context": [],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null,
+      "must_not_merge_with": [],
+      "geometry_status": "OFFICIAL_UNIT_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "geometry_asset": null,
+      "map_publishable": false
+    },
+    {
+      "discovery_id": "arequipa_intercuenca_137157",
+      "name": "Intercuenca 137157",
+      "official_unit_code": "137157",
+      "department": "Arequipa",
+      "entity_role": "OFFICIAL_INTERCUENCA_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "course_context": [],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null,
+      "must_not_merge_with": [],
+      "geometry_status": "OFFICIAL_UNIT_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "geometry_asset": null,
+      "map_publishable": false
+    },
+    {
+      "discovery_id": "arequipa_intercuenca_137159",
+      "name": "Intercuenca 137159",
+      "official_unit_code": "137159",
+      "department": "Arequipa",
+      "entity_role": "OFFICIAL_INTERCUENCA_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "course_context": [],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null,
+      "must_not_merge_with": [],
+      "geometry_status": "OFFICIAL_UNIT_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "geometry_asset": null,
+      "map_publishable": false
+    },
+    {
+      "discovery_id": "arequipa_intercuenca_13717",
+      "name": "Intercuenca 13717",
+      "official_unit_code": "13717",
+      "department": "Arequipa",
+      "entity_role": "OFFICIAL_INTERCUENCA_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "course_context": [],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null,
+      "must_not_merge_with": [],
+      "geometry_status": "OFFICIAL_UNIT_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "geometry_asset": null,
+      "map_publishable": false
+    },
+    {
+      "discovery_id": "arequipa_intercuenca_13719",
+      "name": "Intercuenca 13719",
+      "official_unit_code": "13719",
+      "department": "Arequipa / Ayacucho / Ica",
+      "entity_role": "OFFICIAL_INTERCUENCA_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "course_context": [],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null,
+      "must_not_merge_with": [],
+      "geometry_status": "OFFICIAL_UNIT_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "geometry_asset": null,
+      "map_publishable": false
+    },
+    {
+      "discovery_id": "arequipa_intercuenca_135",
+      "name": "Intercuenca 135",
+      "official_unit_code": "135",
+      "department": "Arequipa",
+      "entity_role": "OFFICIAL_INTERCUENCA_CONTEXT_NON_ACTIVATABLE",
+      "identity_status": "OFFICIAL_ANA_UNIT_CONFIRMED",
+      "course_context": [],
+      "activation_gate": "BLOCKED",
+      "decision_thresholds": null,
+      "hydraulic_factors": null,
+      "must_not_merge_with": [],
+      "geometry_status": "OFFICIAL_UNIT_EXISTS_NOT_FROZEN_IN_THIS_PACKAGE",
+      "geometry_asset": null,
+      "map_publishable": false
+    }
+  ],
+  "pending_hydrologic_adjudication": [
+    {
+      "candidate_id": "ica_san_ignacio_palpa",
+      "name": "Quebrada San Ignacio",
+      "department": "Ica",
+      "territorial_reference": "Palpa / San Ignacio",
+      "identity_status": "OFFICIAL_INDECI_STUDY_INVENTORY_NAME_CONFIRMED",
+      "parent_assignment_status": "PENDING_REPRODUCIBLE_HYDROGRAPHIC_ADJUDICATION",
+      "geometry_status": "UNKNOWN",
+      "source_ids": [
+        "INDECI-ICA-STUDY-INVENTORY"
+      ],
+      "map_publishable": false,
+      "activation_gate": "BLOCKED",
+      "do_not_infer": "Do not assign to Cuenca Grande or any child system until official hydrography resolves parent code and geometry."
+    },
+    {
+      "candidate_id": "ica_sacramento_palpa",
+      "name": "Quebrada Sacramento",
+      "department": "Ica",
+      "territorial_reference": "Palpa / Sacramento",
+      "identity_status": "OFFICIAL_INDECI_STUDY_INVENTORY_NAME_CONFIRMED",
+      "parent_assignment_status": "PENDING_REPRODUCIBLE_HYDROGRAPHIC_ADJUDICATION",
+      "geometry_status": "UNKNOWN",
+      "source_ids": [
+        "INDECI-ICA-STUDY-INVENTORY"
+      ],
+      "map_publishable": false,
+      "activation_gate": "BLOCKED",
+      "do_not_infer": "Do not assign to Cuenca Grande or any child system until official hydrography resolves parent code and geometry."
+    },
+    {
+      "candidate_id": "ica_nuevo_vista_alegre_nasca",
+      "name": "Quebrada Nuevo Vista Alegre",
+      "department": "Ica",
+      "territorial_reference": "Vista Alegre, Nasca",
+      "identity_status": "OFFICIAL_INDECI_STUDY_INVENTORY_NAME_CONFIRMED",
+      "parent_assignment_status": "PENDING_REPRODUCIBLE_HYDROGRAPHIC_ADJUDICATION",
+      "geometry_status": "UNKNOWN",
+      "source_ids": [
+        "INDECI-ICA-STUDY-INVENTORY"
+      ],
+      "map_publishable": false,
+      "activation_gate": "BLOCKED",
+      "do_not_infer": "Do not simplify this to a generic 'Quebrada Vista Alegre'; preserve the official study name until hydrologic identity is resolved."
+    },
+    {
+      "candidate_id": "ica_ayapana_de_tulin_sector_2025",
+      "name": "Ayapana de Tulin",
+      "department": "Ica",
+      "territorial_reference": "Ingenio, Nasca",
+      "identity_status": "TERRITORIAL_SECTOR_ONLY_NOT_A_NAMED_RAVINE",
+      "parent_assignment_status": "PENDING_LOCAL_HYDROGRAPHIC_ADJUDICATION",
+      "geometry_status": "NO_CHILD_GEOMETRY_ALLOWED",
+      "source_ids": [
+        "INDECI-INGENIO-2025"
+      ],
+      "map_publishable": false,
+      "activation_gate": "BLOCKED",
+      "do_not_infer": "The 2025 COEN report lists Ayapana de Tulin as an affected sector, not a named ravine. Do not create 'Quebrada Ayapana'."
+    },
+    {
+      "candidate_id": "arequipa_quechualla_chaupo_2026",
+      "name": "Quebrada de Chaupo",
+      "department": "Arequipa",
+      "territorial_reference": "Quechualla, La Unión",
+      "identity_status": "DIRECT_INDECI_EVENT_NAME_CONFIRMED",
+      "parent_assignment_status": "PENDING_REPRODUCIBLE_HYDROGRAPHIC_ADJUDICATION",
+      "geometry_status": "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+      "source_ids": [
+        "INDECI-QUECHUALLA-CHAUP0-AYTINCO-2026"
+      ],
+      "map_publishable": false,
+      "activation_gate": "BLOCKED",
+      "do_not_infer": "Do not bind to Ocoña/Cotahuasi until the official hydrography parent code is reproduced."
+    },
+    {
+      "candidate_id": "arequipa_quechualla_aytinco_2026",
+      "name": "Quebrada Aytinco",
+      "department": "Arequipa",
+      "territorial_reference": "Quechualla, La Unión",
+      "identity_status": "DIRECT_INDECI_EVENT_NAME_CONFIRMED",
+      "parent_assignment_status": "PENDING_REPRODUCIBLE_HYDROGRAPHIC_ADJUDICATION",
+      "geometry_status": "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+      "source_ids": [
+        "INDECI-QUECHUALLA-CHAUP0-AYTINCO-2026"
+      ],
+      "map_publishable": false,
+      "activation_gate": "BLOCKED",
+      "do_not_infer": "Do not bind to Ocoña/Cotahuasi until the official hydrography parent code is reproduced."
+    }
+  ]
+}
