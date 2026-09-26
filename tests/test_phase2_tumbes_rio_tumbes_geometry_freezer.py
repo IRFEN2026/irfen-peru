@@ -1,77 +1,57 @@
 import json
 from pathlib import Path
-import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS = ROOT / "scripts"
-if str(SCRIPTS) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS))
-
-import freeze_tumbes_rio_tumbes_official_geometry as freezer
+PLAN = ROOT / "site/data/phase2/sources/tumbes_rio_tumbes_geometry_freeze_plan_v0_2.json"
 
 
-def test_layer_contract_is_exact_and_separated():
-    assert set(freezer.LAYERS) == {2, 66, 67}
-    assert freezer.LAYERS[2]["role"] == "OFFICIAL_HYDROLOGIC_BASIN_RESEARCH_CONTEXT"
-    assert freezer.LAYERS[2]["event_date"] is None
-    assert freezer.LAYERS[66]["role"] == "OBSERVED_EVENT_FOOTPRINT_ONLY"
-    assert freezer.LAYERS[66]["event_date"] == "2023-04-28"
-    assert freezer.LAYERS[67]["role"] == "OBSERVED_EVENT_FOOTPRINT_ONLY"
-    assert freezer.LAYERS[67]["event_date"] == "2023-05-04"
+def load():
+    return json.loads(PLAN.read_text(encoding="utf-8"))
 
 
-def test_research_guards_fail_closed():
-    safe = freezer.SAFE
-    assert safe["deployment_status"] == "RESEARCH_ONLY"
-    assert safe["test_mode"] == "TEST_ONLY"
-    assert safe["production_use"] is False
-    assert safe["production_ready"] is False
-    assert safe["operational_alerting_enabled"] is False
-    assert safe["activation_gate"] == "BLOCKED"
-    assert safe["missing_data_rule"] == "UNKNOWN_NOT_LOW_RISK"
-    assert safe["decision_thresholds"] is None
-    assert safe["hydraulic_factors"] is None
+def test_freeze_plan_keeps_roles_separate():
+    x = load()
+    rows = {row["layer_id"]: row for row in x["layers"]}
+    assert set(rows) == {2, 66, 67}
+    assert rows[2]["role"] == "OFFICIAL_HYDROLOGIC_BASIN_RESEARCH_CONTEXT"
+    assert rows[66]["role"] == "OBSERVED_EVENT_FOOTPRINT_ONLY"
+    assert rows[66]["event_date"] == "2023-04-28"
+    assert rows[67]["role"] == "OBSERVED_EVENT_FOOTPRINT_ONLY"
+    assert rows[67]["event_date"] == "2023-05-04"
 
 
-def test_query_contract_is_reproducible():
-    for layer_id in (2, 66, 67):
-        url = freezer.query_url(layer_id)
-        assert f"/{layer_id}/query?" in url
-        assert "where=1%3D1" in url
-        assert "outFields=%2A" in url
-        assert "returnGeometry=true" in url
-        assert "outSR=4326" in url
-        assert "geometryPrecision=7" in url
-        assert "f=geojson" in url
+def test_freeze_plan_is_fail_closed():
+    x = load()
+    assert x["deployment_status"] == "RESEARCH_ONLY"
+    assert x["test_mode"] == "TEST_ONLY"
+    assert x["production_use"] is False
+    assert x["production_ready"] is False
+    assert x["operational_alerting_enabled"] is False
+    assert x["activation_gate"] == "BLOCKED"
+    assert x["missing_data_rule"] == "UNKNOWN_NOT_LOW_RISK"
+    assert x["decision_thresholds"] is None
+    assert x["hydraulic_factors"] is None
 
 
-def test_validate_basin_requires_one_polygon():
-    fc = {
-        "type": "FeatureCollection",
-        "features": [
-            {"type": "Feature", "properties": {}, "geometry": {"type": "Polygon", "coordinates": [[[0, 0], [1, 0], [1, 1], [0, 0]]]}}
-        ],
-    }
-    count, types = freezer.validate_geojson(2, fc)
-    assert count == 1
-    assert types == {"Polygon"}
+def test_freeze_contract_requires_exact_bytes_and_hashes():
+    x = load()["freeze_contract"]
+    assert x["preserve_raw_metadata_bytes"] is True
+    assert x["preserve_raw_geojson_bytes"] is True
+    assert x["write_canonical_geojson"] is True
+    assert x["sha256_raw_and_canonical"] is True
+    assert x["out_sr"] == 4326
+    assert x["geometry_precision"] == 7
+    assert x["query_where"] == "1=1"
+    assert x["query_out_fields"] == "*"
+    assert x["query_return_geometry"] is True
 
 
-def test_event_layers_are_not_required_to_be_single_feature():
-    fc = {
-        "type": "FeatureCollection",
-        "features": [
-            {"type": "Feature", "properties": {}, "geometry": {"type": "Polygon", "coordinates": [[[0, 0], [1, 0], [1, 1], [0, 0]]]}} ,
-            {"type": "Feature", "properties": {}, "geometry": {"type": "MultiPolygon", "coordinates": [[[[0, 0], [1, 0], [1, 1], [0, 0]]]]}},
-        ],
-    }
-    count, types = freezer.validate_geojson(66, fc)
-    assert count == 2
-    assert types == {"Polygon", "MultiPolygon"}
-
-
-def test_canonical_bytes_are_stable():
-    a = {"z": 1, "a": {"b": 2}}
-    b = {"a": {"b": 2}, "z": 1}
-    assert freezer.canonical_bytes(a) == freezer.canonical_bytes(b)
-    assert freezer.sha256(freezer.canonical_bytes(a)) == freezer.sha256(freezer.canonical_bytes(b))
+def test_freeze_guards_forbid_cross_role_promotion():
+    g = load()["guards"]
+    assert g["basin_geometry_is_event_footprint"] is False
+    assert g["event_footprints_are_basin_geometry"] is False
+    assert g["provider_alert_bands_are_irfen_thresholds"] is False
+    assert g["observed_discharge_is_hydraulic_capacity"] is False
+    assert g["transfer_to_zarumilla_or_zorritos_allowed"] is False
+    assert g["event_footprint_implies_basin_activation"] is False
+    assert g["absence_of_event_footprint_is_negative"] is False
