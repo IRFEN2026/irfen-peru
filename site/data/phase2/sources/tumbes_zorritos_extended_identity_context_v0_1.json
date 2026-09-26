@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.1",
+  "schema_version": "0.2",
   "discovery_id": "tumbes_zorritos_bocapan_coastal_ravines",
   "deployment_status": "RESEARCH_ONLY",
   "test_mode": "TEST_ONLY",
@@ -10,29 +10,102 @@
   "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
   "decision_thresholds": null,
   "hydraulic_factors": null,
+  "source_freeze_status": "URL_VERIFIED_CONTEXT_ONLY_NOT_FROZEN",
   "sources": {
     "ANA-SIGRID-LOS-POZOS-2016": {
       "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/3753",
       "claim": "ANA identifies Quebrada Los Pozos in Zorritos; map point WGS84 UTM 17S E=535862 N=9593185; PDF map is not accepted as vector geometry",
+      "claim_scope": "IDENTITY_AND_MAP_CONTEXT_ONLY",
       "snapshot_sha256": null
     },
     "CENEPRED-EVAR-ZORRITOS-2026": {
       "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/21748_estudio-de-evaluacion-de-riesgos-por-peligro-flujo-de-detritos-para-el-proyecto-hayat-club-zorritos-sac-distrito-de-zorritos-provincia-contralmirante-.pdf",
       "claim": "Los Pozos anchors: Costa Verde E=535824 N=9593364 and Alto Miramar E=536088 N=9593034; anchors are not outlets or complete geometry",
+      "claim_scope": "POINT_ANCHORS_AND_GEOMORPHIC_CONTEXT_ONLY",
       "snapshot_sha256": null
     },
     "MPCV-ZORRITOS-NAMED-RAVINES": {
       "url": "https://municvz.gob.pe/institucional/noticias/1711-municipalidad-realiza-limpieza-de-quebradas.html",
       "claim": "Municipality names Las Delicias, Los Pozos and Miramar in quebrada maintenance context; maintenance is not an activation event or geometry",
+      "claim_scope": "LOCAL_OFFICIAL_IDENTITY_MAINTENANCE_CONTEXT_ONLY",
+      "snapshot_sha256": null
+    },
+    "MPCV-ZORRITOS-BRIDGES-LOS-POZOS-LAS-DELICIAS": {
+      "url": "https://municvz.gob.pe/institucional/noticias/1315-municipalidad-realiza-mantenimiento-de-puentes.html",
+      "claim": "Municipality explicitly places bridges in Quebrada Los Pozos and Quebrada Las Delicias and a vehicular baden in Los Pozos; this corroborates local hydrographic identity and exposure infrastructure only",
+      "claim_scope": "LOCAL_OFFICIAL_IDENTITY_AND_EXPOSURE_CONTEXT_ONLY",
+      "snapshot_sha256": null
+    },
+    "EL-PERUANO-CASITAS-ZORRITOS-BOUNDARY-2026": {
+      "url": "https://busquedas.elperuano.pe/api/visor_html/2502573-2",
+      "claim": "Official Casitas-Zorritos boundary memory names Quebrada Miramar on a watershed divide and cites IGN basic cartography; this supports regional hydrographic identity but does not prove that the municipal urban Miramar maintenance site is the same channel",
+      "claim_scope": "REGIONAL_HYDROGRAPHIC_IDENTITY_SPATIAL_CROSSWALK_REQUIRED",
+      "snapshot_sha256": null
+    },
+    "ANA-TUMBES-VULNERABLE-RAVINES-2015-2016": {
+      "url": "https://www.ana.gob.pe/sites/default/files/publication/files/informe_-_identificacion_de_poblaciones_vulnerables_2015-2016.pdf",
+      "claim": "Official ANA Tumbes map labels Quebrada Sechurita, San Andres, Marinero, La Paja, El Grillo and Bocapan in the Zorritos area; cartographic names are context only and are not accepted as digitized vector geometry",
+      "claim_scope": "OFFICIAL_MAP_IDENTITY_CONTEXT_ONLY",
+      "snapshot_sha256": null
+    },
+    "DHN-PUERTO-ZORRITOS-2016": {
+      "url": "https://www.dhn.mil.pe/Archivos/navegacion/avilonas/2016/10-2016.pdf",
+      "claim": "Dirección de Hidrografía y Navegación states that south of Caleta Contralmirante Villar, formerly Sechurita, Quebrada Sechurita (El Pozo) reaches the coast; this is coastal-mouth context, not an exact outlet coordinate or channel geometry",
+      "claim_scope": "OFFICIAL_COASTAL_MOUTH_CONTEXT_ONLY",
       "snapshot_sha256": null
     }
   },
   "adjudication": {
-    "los_pozos": {"identity_status": "OFFICIAL_IDENTITY_CORROBORATED", "geometry_status": "VECTOR_GEOMETRY_NOT_FROZEN", "outlet_status": "UNRESOLVED", "map_publishable": false},
-    "las_delicias": {"identity_status": "DISCOVERY_CONTEXT_ONLY", "geometry_status": "HYDROGRAPHY_PENDING", "outlet_status": "UNRESOLVED", "map_publishable": false},
-    "miramar": {"identity_status": "DISCOVERY_CONTEXT_ONLY", "geometry_status": "HYDROGRAPHY_PENDING", "outlet_status": "UNRESOLVED", "map_publishable": false},
-    "mal_paso_01": {"identity_status": "SECTOR_VS_RAVINE_UNRESOLVED", "geometry_status": "QUARANTINED", "outlet_status": "UNRESOLVED", "map_publishable": false},
-    "mal_paso_02": {"identity_status": "SECTOR_VS_RAVINE_UNRESOLVED", "geometry_status": "QUARANTINED", "outlet_status": "UNRESOLVED", "map_publishable": false},
-    "nueva_esperanza": {"identity_status": "RAVINE_VS_SECTOR_UNRESOLVED", "geometry_status": "QUARANTINED", "outlet_status": "UNRESOLVED", "map_publishable": false}
+    "los_pozos": {
+      "identity_status": "OFFICIAL_IDENTITY_CORROBORATED",
+      "geometry_status": "VECTOR_GEOMETRY_NOT_FROZEN",
+      "outlet_status": "UNRESOLVED",
+      "map_publishable": false
+    },
+    "las_delicias": {
+      "identity_status": "LOCAL_OFFICIAL_IDENTITY_CORROBORATED",
+      "geometry_status": "HYDROGRAPHY_PENDING",
+      "outlet_status": "UNRESOLVED",
+      "map_publishable": false
+    },
+    "miramar": {
+      "identity_status": "OFFICIAL_AND_LOCAL_IDENTITY_CONTEXT_SPATIAL_CROSSWALK_PENDING",
+      "geometry_status": "HYDROGRAPHIC_IDENTITY_SPATIAL_CROSSWALK_PENDING",
+      "outlet_status": "UNRESOLVED",
+      "map_publishable": false
+    },
+    "sechurita": {
+      "identity_status": "OFFICIAL_IDENTITY_CORROBORATED",
+      "geometry_status": "VECTOR_GEOMETRY_NOT_FROZEN",
+      "outlet_status": "COASTAL_MOUTH_CONTEXT_ONLY_EXACT_POINT_UNRESOLVED",
+      "map_publishable": false
+    },
+    "mal_paso_01": {
+      "identity_status": "SECTOR_VS_RAVINE_UNRESOLVED",
+      "geometry_status": "QUARANTINED",
+      "outlet_status": "UNRESOLVED",
+      "map_publishable": false
+    },
+    "mal_paso_02": {
+      "identity_status": "SECTOR_VS_RAVINE_UNRESOLVED",
+      "geometry_status": "QUARANTINED",
+      "outlet_status": "UNRESOLVED",
+      "map_publishable": false
+    },
+    "nueva_esperanza": {
+      "identity_status": "RAVINE_VS_SECTOR_UNRESOLVED",
+      "geometry_status": "QUARANTINED",
+      "outlet_status": "UNRESOLVED",
+      "map_publishable": false
+    }
+  },
+  "scientific_guards": {
+    "maintenance_is_event": false,
+    "bridge_or_baden_is_capacity": false,
+    "map_label_is_vector_geometry": false,
+    "point_anchor_is_outlet": false,
+    "coastal_mouth_context_is_exact_outlet": false,
+    "regional_miramar_identity_is_urban_crosswalk": false,
+    "absence_of_geometry_is_negative": false
   }
 }
