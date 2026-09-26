@@ -21,7 +21,7 @@ def test_matrix_is_fail_closed():
 
 def test_all_targets_remain_unmapped_until_full_adjudication():
     x = load()
-    assert len(x["targets"]) == 9
+    assert len(x["targets"]) == 16
     for row in x["targets"].values():
         assert row["map_publishable"] is False
         assert row["outlet_status"] == "UNRESOLVED"
