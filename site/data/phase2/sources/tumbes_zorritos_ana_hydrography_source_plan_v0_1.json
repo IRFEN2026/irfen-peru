@@ -1,0 +1,139 @@
+{
+  "schema_version": "0.2",
+  "discovery_id": "tumbes_zorritos_bocapan_coastal_ravines",
+  "status": "RESEARCH_ONLY_HYDROGRAPHY_SOURCE_PLAN",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "service_reference": "ANA ONRH Rios_Quebradas_AAVI MapServer layer 0",
+  "source_year": 2018,
+  "independent_context_registry": "site/data/phase2/sources/tumbes_zorritos_extended_identity_context_v0_1.json",
+  "target_children": [
+    "el_grillo",
+    "san_andres",
+    "la_paja",
+    "marinero",
+    "el_rubio",
+    "san_pedro",
+    "pena_negra",
+    "el_tiburon",
+    "leoncio_prado",
+    "nuevo_paraiso",
+    "sechurita",
+    "los_pozos",
+    "nueva_esperanza",
+    "mal_paso_01",
+    "mal_paso_02",
+    "las_delicias",
+    "miramar"
+  ],
+  "target_context": {
+    "el_grillo": {
+      "identity_context": "CENEPRED/INGEMMET",
+      "quarantine": null
+    },
+    "san_andres": {
+      "identity_context": "INGEMMET-2017 plus ANA-2016 map name context",
+      "quarantine": null
+    },
+    "la_paja": {
+      "identity_context": "INGEMMET-2017 plus ANA-2016 map name context",
+      "quarantine": null
+    },
+    "marinero": {
+      "identity_context": "INGEMMET-2017 plus ANA-2016 map name context",
+      "quarantine": null
+    },
+    "el_rubio": {
+      "identity_context": "GORE-TUMBES-PPRRD-2024-2030",
+      "quarantine": null
+    },
+    "san_pedro": {
+      "identity_context": "GORE-TUMBES-PPRRD-2024-2030",
+      "quarantine": "HOMONYM_WITH_SAN_PEDRO_DE_LOS_INCAS"
+    },
+    "pena_negra": {
+      "identity_context": "GORE-TUMBES/MVCS",
+      "quarantine": "HOMONYM_WITH_CANOAS_DE_PUNTA_SAL"
+    },
+    "el_tiburon": {
+      "identity_context": "MPFN-2026",
+      "quarantine": null
+    },
+    "nuevo_paraiso": {
+      "identity_context": "MVCS/GORE-TUMBES",
+      "quarantine": null
+    },
+    "sechurita": {
+      "identity_context": "ANA-SIGRID-2016 map name plus GORE-TUMBES-PPRRD-2024-2030",
+      "quarantine": null
+    },
+    "los_pozos": {
+      "identity_context": "ANA-SIGRID-2016 explicit activation-vulnerability map plus CENEPRED-EVAR-2026",
+      "quarantine": null
+    },
+    "nueva_esperanza": {
+      "identity_context": "GORE-TUMBES-PPRRD-2024-2030 plus separate marine-exposure context",
+      "quarantine": "RAVINE_VS_SECTOR_UNRESOLVED"
+    },
+    "mal_paso_01": {
+      "identity_context": "GORE-TUMBES-PPRRD-2024-2030",
+      "quarantine": "SECTOR_VS_RAVINE_AND_SHARED_NAME_UNRESOLVED"
+    },
+    "mal_paso_02": {
+      "identity_context": "GORE-TUMBES-PPRRD-2024-2030",
+      "quarantine": "SECTOR_VS_RAVINE_AND_SHARED_NAME_UNRESOLVED"
+    },
+    "las_delicias": {
+      "identity_context": "Municipalidad Provincial de Contralmirante Villar named-quebrada maintenance context",
+      "quarantine": "HYDROGRAPHIC_IDENTITY_PENDING"
+    },
+    "miramar": {
+      "identity_context": "Municipalidad Provincial de Contralmirante Villar named-quebrada maintenance context",
+      "quarantine": "HYDROGRAPHIC_IDENTITY_PENDING"
+    },
+    "leoncio_prado": {
+      "identity_context": "INGEMMET-A7454 direct named-ravine pair context with El Tiburon in Las Begonias, Zorritos",
+      "quarantine": "PAIRED_EVENT_CONTEXT_NOT_INDIVIDUAL_OUTCOME"
+    }
+  },
+  "query_policy": {
+    "name_match_is_geometry_adjudication": false,
+    "require_zorritos_spatial_context": true,
+    "require_independent_identity_source": true,
+    "require_exact_source_snapshot_and_hash_before_map_publication": true,
+    "require_outlet_or_downstream_connectivity_check": true,
+    "homonym_quarantine": [
+      "san_pedro",
+      "pena_negra"
+    ],
+    "sector_vs_ravine_quarantine": [
+      "nueva_esperanza",
+      "mal_paso_01",
+      "mal_paso_02"
+    ],
+    "shared_name_candidate_quarantine": [
+      "mal_paso_01",
+      "mal_paso_02"
+    ],
+    "marine_hazard_separation_required": [
+      "nueva_esperanza"
+    ],
+    "approximate_points_allowed": false,
+    "synthetic_connectors_allowed": false,
+    "composite_parent_geometry_allowed": false
+  },
+  "map_policy": {
+    "publish_only_reproducible_line_or_catchment_geometry": true,
+    "publish_each_child_separately": true,
+    "parent_is_not_a_hydrologic_polygon": true,
+    "event_footprint_is_not_catchment_geometry": true,
+    "risk_or_alert_layer": false
+  }
+}

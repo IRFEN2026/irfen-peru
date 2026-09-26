@@ -1,0 +1,38 @@
+{
+  "schema_version": "0.1",
+  "discovery_id": "tumbes_zorritos_bocapan_coastal_ravines",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "sources": {
+    "ANA-SIGRID-LOS-POZOS-2016": {
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/3753",
+      "claim": "ANA identifies Quebrada Los Pozos in Zorritos; map point WGS84 UTM 17S E=535862 N=9593185; PDF map is not accepted as vector geometry",
+      "snapshot_sha256": null
+    },
+    "CENEPRED-EVAR-ZORRITOS-2026": {
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/21748_estudio-de-evaluacion-de-riesgos-por-peligro-flujo-de-detritos-para-el-proyecto-hayat-club-zorritos-sac-distrito-de-zorritos-provincia-contralmirante-.pdf",
+      "claim": "Los Pozos anchors: Costa Verde E=535824 N=9593364 and Alto Miramar E=536088 N=9593034; anchors are not outlets or complete geometry",
+      "snapshot_sha256": null
+    },
+    "MPCV-ZORRITOS-NAMED-RAVINES": {
+      "url": "https://municvz.gob.pe/institucional/noticias/1711-municipalidad-realiza-limpieza-de-quebradas.html",
+      "claim": "Municipality names Las Delicias, Los Pozos and Miramar in quebrada maintenance context; maintenance is not an activation event or geometry",
+      "snapshot_sha256": null
+    }
+  },
+  "adjudication": {
+    "los_pozos": {"identity_status": "OFFICIAL_IDENTITY_CORROBORATED", "geometry_status": "VECTOR_GEOMETRY_NOT_FROZEN", "outlet_status": "UNRESOLVED", "map_publishable": false},
+    "las_delicias": {"identity_status": "DISCOVERY_CONTEXT_ONLY", "geometry_status": "HYDROGRAPHY_PENDING", "outlet_status": "UNRESOLVED", "map_publishable": false},
+    "miramar": {"identity_status": "DISCOVERY_CONTEXT_ONLY", "geometry_status": "HYDROGRAPHY_PENDING", "outlet_status": "UNRESOLVED", "map_publishable": false},
+    "mal_paso_01": {"identity_status": "SECTOR_VS_RAVINE_UNRESOLVED", "geometry_status": "QUARANTINED", "outlet_status": "UNRESOLVED", "map_publishable": false},
+    "mal_paso_02": {"identity_status": "SECTOR_VS_RAVINE_UNRESOLVED", "geometry_status": "QUARANTINED", "outlet_status": "UNRESOLVED", "map_publishable": false},
+    "nueva_esperanza": {"identity_status": "RAVINE_VS_SECTOR_UNRESOLVED", "geometry_status": "QUARANTINED", "outlet_status": "UNRESOLVED", "map_publishable": false}
+  }
+}
