@@ -19,31 +19,49 @@
   "hydrologic_components": {
     "el_zanjon": {
       "identity_status": "OFFICIAL_NAME_AND_2017_OVERFLOW_CONTEXT_CONFIRMED",
-      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY"
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY",
+      "receiver_context": "PRIMARY_URBAN_RECEIVER_CHANNEL_TO_COAST"
     },
     "nueva_esperanza": {
       "identity_status": "OFFICIAL_IGP_NAME_CONFIRMED",
-      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY"
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY",
+      "receiver_context": "HISTORICALLY_TO_EL_ZANJON_CURRENT_URBAN_ROUTING_UNRESOLVED"
     },
     "la_piscina": {
       "identity_status": "OFFICIAL_IGP_NAME_CONFIRMED",
-      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY"
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY",
+      "receiver_context": "HISTORICALLY_VIA_NUEVA_ESPERANZA_TO_EL_ZANJON_CURRENT_ROUTING_UNRESOLVED"
     },
     "la_catarata": {
       "identity_status": "OFFICIAL_IGP_NAME_CONFIRMED",
-      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY"
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY",
+      "receiver_context": "DOCUMENTARY_TO_EL_ZANJON"
     },
     "villa_naval": {
       "identity_status": "OFFICIAL_IGP_NAME_CONFIRMED",
-      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY"
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY",
+      "receiver_context": "SEPARATE_COASTAL_OUTFALL_NOT_ASSUMED_EL_ZANJON"
     },
     "paita_alta_blind_basins": {
       "component_type": "URBAN_PLUVIAL_DEPRESSION_SYSTEM",
       "is_natural_ravine": false,
-      "geometry_status": "PENDING_TOPOGRAPHIC_REPRODUCIBILITY"
+      "geometry_status": "PENDING_TOPOGRAPHIC_REPRODUCIBILITY",
+      "receiver_context": "NO_RECEIVER_ASSIGNED_PLUVIAL_CLOSED_DEPRESSION_CONTEXT"
     }
   },
   "event_ledger": {
+    "2017": {
+      "status": "POSITIVE_MULTI_MECHANISM_EVENT",
+      "source_ids": [
+        "IGP-PAITA-ZONIFICACION-2019",
+        "MP-PAITA-EVAR-ZANJON-2021"
+      ],
+      "el_zanjon_response": "OVERFLOW_CONTEXT_OBSERVED",
+      "paita_alta_pluvial_response": "BLIND_BASIN_INUNDATION_OBSERVED",
+      "transfer_to_other_ravines_forbidden": true,
+      "exact_event_footprint_available": false,
+      "operational_threshold_inferred": false
+    },
     "1982_1983": {
       "status": "POSITIVE_EL_ZANJON_TERRITORIAL_OVERFLOW_CONTEXT",
       "source_ids": [
@@ -61,30 +79,92 @@
       "local_child_activation_assigned": false,
       "absence_of_local_report_is_negative": false,
       "next_required": "Locate dated official Paita child-level evidence before assigning any ravine or blind-basin outcome for 1997-1998."
-    },
-    "2017": {
-      "status": "POSITIVE_MULTI_MECHANISM_EVENT",
-      "source_ids": [
-        "IGP-PAITA-ZONIFICACION-2019",
-        "MP-PAITA-EVAR-ZANJON-2021"
-      ],
-      "el_zanjon_response": "OVERFLOW_CONTEXT_OBSERVED",
-      "paita_alta_pluvial_response": "BLIND_BASIN_INUNDATION_OBSERVED",
-      "transfer_to_other_ravines_forbidden": true,
-      "exact_event_footprint_available": false,
-      "operational_threshold_inferred": false
     }
   },
   "qa": {
     "historical_window_attribution_is_child_bounded": true,
     "regional_el_nino_window_is_not_child_outcome": true,
     "unknown_child_outcome_is_not_negative_control": true,
-    "urban_pluvial_and_ravine_overflow_mechanisms_remain_separate": true
+    "urban_pluvial_and_ravine_overflow_mechanisms_remain_separate": true,
+    "documentary_topology_is_not_geometry": true,
+    "historical_topology_is_not_assumed_current": true,
+    "villa_naval_forced_to_el_zanjon": false,
+    "blind_basins_forced_to_natural_receiver": false
   },
   "map_policy": {
     "parent_polygon_forbidden": true,
     "child_only_after_reproducible_geometry": true,
     "risk_colors_forbidden": true,
     "alerts_forbidden": true
-  }
+  },
+  "source_registry_path": "site/data/phase2/sources/piura_paita_official_evidence_v0_1.json",
+  "documentary_topology": {
+    "status": "DOCUMENTARY_TOPOLOGY_CONTEXT_ONLY_GEOMETRY_AND_OUTLETS_UNRESOLVED",
+    "source_ids": [
+      "IGP-PAITA-GEODYNAMICS-2021",
+      "PPRRD-PAITA-2019-2021",
+      "INDECI-PAITA-MAP-2000"
+    ],
+    "current_outlet_coordinates_available": false,
+    "travel_time_available": false,
+    "hydraulic_capacity_available": false,
+    "relationships": {
+      "el_zanjon": {
+        "role": "PRIMARY_URBAN_RECEIVER_CHANNEL",
+        "documentary_receiver": "Pacific Ocean / Paita waterfront",
+        "receiver_status": "DOCUMENTARY_TERMINAL_RECEIVER_CONTEXT_NO_SURVEYED_OUTLET_COORDINATE",
+        "notes": "Official/municipal sources describe El Zanjón as the main Paita Baja drainage axis reaching the sea."
+      },
+      "nueva_esperanza": {
+        "role": "LOCAL_RAVINE_WITH_URBAN_ALTERATION",
+        "historical_receiver": "El Zanjón",
+        "current_receiver": "A.H. 13 de Julio / altered urban drainage context",
+        "receiver_status": "CURRENT_ROUTING_UNRESOLVED_AFTER_URBAN_MORPHOLOGY_CHANGE",
+        "notes": "Historical direct routing toward El Zanjón is documented, but current hydrologic routing cannot be asserted without reproducible present-day geometry."
+      },
+      "la_piscina": {
+        "role": "LOCAL_RAVINE",
+        "historical_receiver_chain": [
+          "Nueva Esperanza",
+          "El Zanjón"
+        ],
+        "current_receiver": "UNRESOLVED",
+        "receiver_status": "HISTORICAL_CHAIN_DOCUMENTED_CURRENT_ROUTING_UNRESOLVED",
+        "notes": "Historical documentary topology links La Piscina through Nueva Esperanza toward El Zanjón."
+      },
+      "la_catarata": {
+        "role": "LOCAL_RAVINE",
+        "documentary_receiver": "El Zanjón",
+        "receiver_status": "DOCUMENTARY_RECEIVER_CONTEXT_NO_SURVEYED_CONFLUENCE_COORDINATE",
+        "notes": "Provincial risk planning describes La Catarata routing from Paita Alta toward El Zanjón."
+      },
+      "villa_naval": {
+        "role": "LOCAL_RAVINE_WITH_SEPARATE_COASTAL_OUTFALL",
+        "documentary_receiver": "Rada del Complejo Pesquero / Pacific coast",
+        "receiver_status": "DOCUMENTARY_COASTAL_OUTFALL_CONTEXT_NO_SURVEYED_OUTLET_COORDINATE",
+        "notes": "Villa Naval remains separate from the El Zanjón chain; the provincial plan describes drainage toward the fishery-complex roadstead and possible diversion toward Puerto Nuevo under severe conditions."
+      },
+      "paita_alta_blind_basins": {
+        "role": "URBAN_PLUVIAL_DEPRESSION_SYSTEM",
+        "documentary_receiver": "NONE_ASSIGNED",
+        "receiver_status": "CLOSED_OR_BLIND_PLUVIAL_MECHANISM_TOPOGRAPHY_PENDING",
+        "notes": "No natural-ravine or downstream receiver is assigned until a reproducible topographic analysis is available."
+      }
+    },
+    "scientific_guardrails": [
+      "documentary receiver relationships do not count as mapped outlets",
+      "historical routing is not assumed to represent present-day routing",
+      "no child geometry is materialized from report figures alone",
+      "Villa Naval is not forced into the El Zanjón receiver chain",
+      "Paita Alta blind basins remain a separate pluvial mechanism"
+    ]
+  },
+  "next_required": [
+    "freeze reproducible current geometry for El Zanjón and each named local ravine",
+    "resolve current Nueva Esperanza and La Piscina routing after urban morphology changes",
+    "freeze surveyed or reproducible outlet/confluence coordinates before map coupling",
+    "derive Paita Alta blind-basin depressions only from reproducible topography",
+    "reconstruct child-level dated event outcomes without transferring El Zanjón evidence",
+    "pair rainfall/flow observations to children only after spatial support is defensible"
+  ]
 }
