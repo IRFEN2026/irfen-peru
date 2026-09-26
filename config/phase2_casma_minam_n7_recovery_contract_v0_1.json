@@ -1,0 +1,110 @@
+{
+  "schema_version": "0.1",
+  "contract_id": "phase2_casma_minam_n7_recovery_v0_1",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "source": {
+    "institution": "Ministerio del Ambiente / Geoservidor Peru",
+    "layer_url": "https://geoservidorperu.minam.gob.pe/arcgis/rest/services/ServicioActivacionQuebrada/MapServer/1",
+    "metadata_url": "https://geoservidorperu.minam.gob.pe/arcgis/rest/services/ServicioActivacionQuebrada/MapServer/1?f=pjson",
+    "expected_geometry_type": "esriGeometryPolygon",
+    "expected_source_wkid": 32718,
+    "query_output_wkid": 4326,
+    "exact_identity_field": "CODIGO",
+    "output_fields": [
+      "OBJECTID",
+      "CODIGO",
+      "NIVEL",
+      "NIVEL7",
+      "NOMB_UH_N7",
+      "Nombre_UH",
+      "AREA_KM2",
+      "AREA_FINAL"
+    ]
+  },
+  "independent_qa": {
+    "source_id": "ANA-CASMA-SURFACE-WATER-INVENTORY-2007",
+    "path": "site/data/phase2/sources/ancash_casma_2007_surface_water_inventory_v0_1.json",
+    "area_comparison_rule": "round(service AREA_KM2, 1) must equal the one-decimal 2007 ANA-INRENA inventory area; otherwise fail closed for adjudication",
+    "name_comparison_rule": "accent/case/whitespace-normalized exact equality against the 2007 inventory name"
+  },
+  "units": [
+    {
+      "code": "1375961",
+      "name": "Bajo Casma",
+      "area_km2": 418.7
+    },
+    {
+      "code": "1375962",
+      "name": "Rio Sechin",
+      "area_km2": 729.5
+    },
+    {
+      "code": "1375963",
+      "name": "Medio Bajo Casma",
+      "area_km2": 487.8
+    },
+    {
+      "code": "1375964",
+      "name": "Rio Yautan",
+      "area_km2": 352
+    },
+    {
+      "code": "1375965",
+      "name": "Medio Casma",
+      "area_km2": 492.5
+    },
+    {
+      "code": "1375966",
+      "name": "Rio Vado",
+      "area_km2": 163.7
+    },
+    {
+      "code": "1375967",
+      "name": "Medio Alto Casma",
+      "area_km2": 4
+    },
+    {
+      "code": "1375968",
+      "name": "Rio Pira",
+      "area_km2": 164.8
+    },
+    {
+      "code": "1375969",
+      "name": "Alto Casma",
+      "area_km2": 177.8
+    }
+  ],
+  "validation": {
+    "required_feature_count_per_code": 1,
+    "allowed_geojson_geometry_types": [
+      "Polygon",
+      "MultiPolygon"
+    ],
+    "casma_bbox_wgs84": {
+      "min_lon": -79.2,
+      "max_lon": -77,
+      "min_lat": -10.2,
+      "max_lat": -8.4
+    },
+    "require_level_7_when_level_field_present": true,
+    "require_nonempty_geometry": true,
+    "partial_archive_allowed": false,
+    "pdf_digitization_allowed": false,
+    "outlet_inference_allowed": false,
+    "event_outcome_for_geometry_allowed": false
+  },
+  "outputs": {
+    "archive_root": "data/phase2/source_archive/casma_minam_n7",
+    "metadata_archive_path": "data/phase2/source_archive/casma_minam_n7/layer_metadata.pjson",
+    "geometry_path": "site/data/phase2/geometries/ancash_casma_n7_minam_official_v0_1.geojson",
+    "manifest_path": "site/data/phase2/source_assessments/casma_minam_n7_recovery_manifest_v0_1.json"
+  }
+}
