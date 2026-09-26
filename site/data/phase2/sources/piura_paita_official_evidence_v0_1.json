@@ -1,10 +1,116 @@
 {
   "schema_version": "0.1",
   "discovery_id": "piura_paita_urban_local_ravines",
+  "status": "RESEARCH_ONLY_OFFICIAL_EVIDENCE_REGISTRY",
   "deployment_status": "RESEARCH_ONLY",
   "test_mode": "TEST_ONLY",
   "production_use": false,
   "production_ready": false,
   "operational_alerting_enabled": false,
-  "activation_gate": "BLOCKED"
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "sources": [
+    {
+      "source_id": "MPP-PAITA-PPRRD-2019-2021",
+      "institution": "Municipalidad Provincial de Paita / CENEPRED SIGRID",
+      "document": "Plan de Prevención y Reducción del Riesgo de Desastres de la Provincia de Paita 2019-2021",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/6187_plan-de-prevencion-y-reduccion-del-riesgo-de-desastres-de-la-provincia-de-paita-2019-2021.pdf",
+      "role": "OFFICIAL_LOCAL_DRAINAGE_TOPOLOGY_AND_HISTORICAL_CONTEXT",
+      "admissible_claims": [
+        "El Zanjón drains most of Paita Baja through a canal-via to the sea and overflowed during the 1983 El Niño context",
+        "Quebrada La Piscina drains toward Quebrada El Zanjón",
+        "Quebrada La Catarata drains from Paita Alta toward Quebrada El Zanjón",
+        "Quebrada Villa Naval is described as draining toward the Rada del Complejo Pesquero, with possible diversion toward Puerto Nuevo under severe El Niño conditions"
+      ],
+      "forbidden_inferences": [
+        "the report supplies reproducible child catchment geometry",
+        "the reported inadequate section is a measured historical hydraulic capacity for IRFEN",
+        "1983 overflow may be transferred from El Zanjón to every named tributary",
+        "Villa Naval may be forced into El Zanjón despite conflicting official topology"
+      ]
+    },
+    {
+      "source_id": "IGP-PAITA-GEODINAMICA-2021",
+      "institution": "Instituto Geofísico del Perú",
+      "document": "Características geodinámicas en el distrito de Paita, Informe Técnico N. 0032-2021/IGP",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/13951_caracteristicas-geodinamicas-en-el-distrito-de-paita-provincia-de-paita-region-piura-informe-tecnico-n0032-2021igp.pdf",
+      "role": "OFFICIAL_CHILD_IDENTITY_FLOW_DIRECTION_AND_GEODYNAMIC_CONTEXT",
+      "admissible_claims": [
+        "IGP identifies Nueva Esperanza, La Piscina, Catarata and Villa Naval as named ravines around Paita Baja",
+        "IGP describes those ravines as contributors whose waters ultimately flow through the principal El Zanjón drainage and then to the Pacific Ocean",
+        "IGP documents activation of Quebrada Catarata as a mudflow-producing local channel under rainfall conditions"
+      ],
+      "forbidden_inferences": [
+        "figure linework is a reproducible catchment polygon without an explicit georeferencing workflow",
+        "a photographed activation zone defines a full event footprint or outlet",
+        "generic rainy-season activation supplies a dated event for every ravine",
+        "the source resolves the Villa Naval outlet conflict against the municipal PPRRD"
+      ]
+    },
+    {
+      "source_id": "MP-PAITA-EVAR-ZANJON-2021",
+      "institution": "Municipalidad Provincial de Paita / CENEPRED SIGRID",
+      "document": "EVAR in the area of influence of Quebrada El Zanjón, Paita Alta",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/14224",
+      "role": "OFFICIAL_EL_ZANJON_IDENTITY_AND_LOCAL_RISK_CONTEXT",
+      "admissible_claims": [
+        "El Zanjón is an officially named local ravine/drainage feature in Paita"
+      ],
+      "forbidden_inferences": [
+        "the EVAR ambit is an event footprint",
+        "risk levels are IRFEN activation states or thresholds",
+        "the EVAR supplies tributary basin geometry unless independently extracted and validated"
+      ]
+    }
+  ],
+  "topology_adjudication": {
+    "el_zanjon": {
+      "role": "PRINCIPAL_LOCAL_COLLECTOR_TO_PACIFIC",
+      "downstream_receiver": "Pacific Ocean",
+      "evidence_status": "SUPPORTED_BY_MUNICIPAL_PPRRD_AND_IGP",
+      "geometry_status": "PENDING_REPRODUCIBLE_CHANNEL_AND_CATCHMENT_GEOMETRY"
+    },
+    "la_piscina": {
+      "role": "LOCAL_TRIBUTARY_TO_EL_ZANJON",
+      "downstream_receiver": "El Zanjón",
+      "evidence_status": "SUPPORTED_BY_MUNICIPAL_PPRRD_AND_IGP",
+      "geometry_status": "PENDING_REPRODUCIBLE_GEOMETRY"
+    },
+    "la_catarata": {
+      "role": "LOCAL_TRIBUTARY_TO_EL_ZANJON",
+      "downstream_receiver": "El Zanjón",
+      "evidence_status": "SUPPORTED_BY_MUNICIPAL_PPRRD_AND_IGP",
+      "geometry_status": "PENDING_REPRODUCIBLE_GEOMETRY"
+    },
+    "nueva_esperanza": {
+      "role": "LOCAL_TRIBUTARY_IN_IGP_EL_ZANJON_SYSTEM",
+      "downstream_receiver": "El Zanjón",
+      "evidence_status": "SUPPORTED_BY_IGP_2021_TOPOLOGY_ONLY",
+      "geometry_status": "PENDING_REPRODUCIBLE_GEOMETRY"
+    },
+    "villa_naval": {
+      "role": "LOCAL_RAVINE_WITH_CONFLICTING_OFFICIAL_DOWNSTREAM_DESCRIPTION",
+      "downstream_receiver": null,
+      "evidence_status": "UNRESOLVED_OFFICIAL_TOPOLOGY_CONFLICT",
+      "geometry_status": "PENDING_REPRODUCIBLE_GEOMETRY_AND_OUTLET_ADJUDICATION",
+      "publish_collector_link": false
+    },
+    "paita_alta_blind_basins": {
+      "role": "SEPARATE_URBAN_PLUVIAL_DEPRESSION_SYSTEM",
+      "downstream_receiver": null,
+      "evidence_status": "SEPARATE_FROM_NATURAL_RAVINE_NETWORK",
+      "geometry_status": "PENDING_TOPOGRAPHIC_REPRODUCIBILITY"
+    }
+  },
+  "qa": {
+    "territorial_city_is_basin": false,
+    "topology_conflict_preserved": true,
+    "critical_point_used_as_event": false,
+    "generic_activation_used_as_dated_child_event": false,
+    "source_figure_digitized_as_geometry": false,
+    "works_or_channel_section_used_as_capacity": false,
+    "absence_of_report_is_negative": false
+  }
 }
