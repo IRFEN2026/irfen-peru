@@ -1,0 +1,62 @@
+{
+  "schema_version": "0.3",
+  "discovery_id": "tumbes_rio_tumbes",
+  "status": "RESEARCH_ONLY_FREEZE_PLAN",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "official_service": "https://geosnirh.ana.gob.pe/server/rest/services/Inundacion_Tumbes/Capas_Inundacion_Tumbes_04052023/MapServer",
+  "layers": [
+    {
+      "key": "basin",
+      "layer_id": 2,
+      "expected_name_contains": "Cuenca Tumbes",
+      "role": "OFFICIAL_HYDROLOGIC_BASIN_RESEARCH_CONTEXT",
+      "event_date": null,
+      "map_publication_requires_frozen_snapshot": true
+    },
+    {
+      "key": "event_20230428",
+      "layer_id": 66,
+      "expected_name_contains": "28 Abril 2023",
+      "role": "OBSERVED_EVENT_FOOTPRINT_ONLY",
+      "event_date": "2023-04-28",
+      "map_publication_as_catchment_forbidden": true
+    },
+    {
+      "key": "event_20230504",
+      "layer_id": 67,
+      "expected_name_contains": "04 Mayo 2023",
+      "role": "OBSERVED_EVENT_FOOTPRINT_ONLY",
+      "event_date": "2023-05-04",
+      "map_publication_as_catchment_forbidden": true
+    }
+  ],
+  "freeze_contract": {
+    "preserve_raw_metadata_bytes": true,
+    "preserve_raw_geojson_bytes": true,
+    "write_canonical_geojson": true,
+    "sha256_raw_and_canonical": true,
+    "all_layers_must_validate_before_any_write": true,
+    "out_sr": 4326,
+    "geometry_precision": 7,
+    "query_where": "1=1",
+    "query_out_fields": "*",
+    "query_return_geometry": true
+  },
+  "guards": {
+    "basin_geometry_is_event_footprint": false,
+    "event_footprints_are_basin_geometry": false,
+    "provider_alert_bands_are_irfen_thresholds": false,
+    "observed_discharge_is_hydraulic_capacity": false,
+    "transfer_to_zarumilla_or_zorritos_allowed": false,
+    "event_footprint_implies_basin_activation": false,
+    "absence_of_event_footprint_is_negative": false
+  }
+}
