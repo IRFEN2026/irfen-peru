@@ -1,0 +1,40 @@
+{
+  "schema_version": "0.1",
+  "discovery_id": "piura_talara_parinas_local_ravines",
+  "status": "OFFICIAL_PARENT_CONTEXT_QUERY_LOCKED_FREEZE_PENDING",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "source": {
+    "institution": "Autoridad Nacional del Agua / IDEP",
+    "service": "ANA_WMS MapServer layer 8 - Unidades Hidrográficas",
+    "service_url": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/8",
+    "query_endpoint": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/8/query",
+    "geometry_type": "esriGeometryPolygon",
+    "source_spatial_reference": 4326,
+    "target_code": "1392",
+    "target_name": "Cuenca Pariñas"
+  },
+  "admissible_use": [
+    "parent basin context only after exact code/name geometry freeze",
+    "independent QA anchor for Talara local child spatial crosswalk"
+  ],
+  "forbidden_inferences": [
+    "parent polygon is any local child catchment",
+    "parent polygon proves a child outlet or receiver",
+    "similar Acholado and Acholada names prove hydrologic identity",
+    "parent basin context is an event footprint, hydraulic capacity, decision threshold or activation state"
+  ],
+  "next_required": [
+    "execute exact CODIGO='1392' query against the official ANA service",
+    "freeze returned source bytes and SHA-256",
+    "validate one unique polygon with exact code and name match",
+    "crosswalk each Talara local child spatially before any collector assignment"
+  ]
+}
