@@ -1,0 +1,102 @@
+{
+  "schema_version": "0.1",
+  "discovery_id": "piura_paita_urban_local_ravines",
+  "status": "RESEARCH_ONLY_OFFICIAL_EVIDENCE_REGISTRY",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "sources": [
+    {
+      "source_id": "IGP-PAITA-GEODYNAMICS-2021",
+      "institution": "Instituto Geofísico del Perú",
+      "document": "Características geodinámicas en el distrito de Paita (Informe Técnico N. 032-2021/IGP)",
+      "url": "https://repositorio.igp.gob.pe/items/93190f10-8bf8-46a9-aedd-2215fb989237",
+      "role": "OFFICIAL_LOCAL_RAVINE_IDENTITY_AND_DOCUMENTARY_TOPOLOGY_CONTEXT",
+      "admissible_claims": [
+        "IGP identifies El Zanjón as the principal ravine/drainage axis in Paita and separately identifies Nueva Esperanza, La Piscina, La Catarata and Villa Naval",
+        "IGP maps the named tributary/drainage relationships as documentary context for Paita local hydrology",
+        "the report documents mud/debris-flow impacts during rainy periods in named urban sectors"
+      ],
+      "forbidden_inferences": [
+        "the published figure may be treated as a reproducible GIS child geometry without an explicit georeferencing/freeze method",
+        "the report defines operational discharge thresholds, travel times or hydraulic capacity",
+        "all Paita ravines share one activation state",
+        "mud-flow impact sectors are exact event footprints"
+      ]
+    },
+    {
+      "source_id": "PPRRD-PAITA-2019-2021",
+      "institution": "Municipalidad Provincial de Paita / CENEPRED SIGRID",
+      "document": "Plan de Prevención y Reducción del Riesgo de Desastres de la Provincia de Paita 2019-2021",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/6187_plan-de-prevencion-y-reduccion-del-riesgo-de-desastres-de-la-provincia-de-paita-2019-2021.pdf",
+      "role": "OFFICIAL_LOCAL_DRAINAGE_TOPOLOGY_AND_HISTORICAL_CONTEXT",
+      "admissible_claims": [
+        "the plan states that El Zanjón drains much of Paita Baja to the sea",
+        "La Piscina routes toward the 13 de Julio sector and El Zanjón",
+        "La Catarata routes from Paita Alta toward El Zanjón",
+        "Villa Naval drains toward the Rada del Complejo Pesquero rather than being assumed to join El Zanjón",
+        "the plan reports 1983 overflow and widespread urban inundation in the El Zanjón context"
+      ],
+      "forbidden_inferences": [
+        "documentary routing is a surveyed current outlet coordinate",
+        "section descriptions or mitigation language define historical/current hydraulic capacity",
+        "1983 El Zanjón evidence may be transferred to the other named ravines",
+        "municipal hazard maps are observed event footprints"
+      ]
+    },
+    {
+      "source_id": "INDECI-PAITA-MAP-2000",
+      "institution": "INDECI / Programa Ciudades Sostenibles",
+      "document": "Mapa de peligros, plan de usos del suelo y plan de mitigación de los efectos producidos por los desastres naturales en la ciudad de Paita",
+      "url": "https://bvpad.indeci.gob.pe/doc/estudios_CS/Region_Piura/paita/paita.pdf",
+      "role": "OFFICIAL_HISTORICAL_URBAN_DRAINAGE_RELATIONSHIP_CONTEXT",
+      "admissible_claims": [
+        "Nueva Esperanza historically routed directly to El Zanjón but urban development altered its morphology and routing toward the 13 de Julio sector",
+        "La Piscina historically joined Nueva Esperanza and then El Zanjón",
+        "the source supports separating historical drainage topology from present-day unresolved urban routing"
+      ],
+      "forbidden_inferences": [
+        "historical routing equals present-day hydraulic connectivity",
+        "narrative channel descriptions are reproducible GIS geometry",
+        "urban alteration can be represented without a current topographic or field-verified source"
+      ]
+    },
+    {
+      "source_id": "SENAMHI-PAITA-INTERCUENCAL-CONTEXT",
+      "institution": "SENAMHI",
+      "document": "Historical hydrometeorological hazard context for coastal basins/interbasins",
+      "url": "https://www.senamhi.gob.pe/load/file/01401SENA-99.pdf",
+      "role": "OFFICIAL_REGIONAL_HAZARD_INVENTORY_CONTEXT",
+      "admissible_claims": [
+        "SENAMHI identifies Nueva Esperanza, La Piscina, Villa Naval, Zanjón and Catarata under Paita intercuencal quebrada context",
+        "the inventory associates the Paita quebrada set with mud-flow transport"
+      ],
+      "forbidden_inferences": [
+        "the inventory supplies a dated child-level activation for each named ravine",
+        "the regional inventory defines exact catchment boundaries or outlets",
+        "inventory membership creates a shared activation state"
+      ]
+    }
+  ],
+  "topology_policy": {
+    "documentary_topology_may_be_recorded_without_geometry": true,
+    "documentary_topology_is_not_outlet_coordinate": true,
+    "historical_topology_is_not_assumed_current": true,
+    "current_routing_requires_reproducible_geometry_or_current_official_mapping": true,
+    "synthetic_parent_basin_forbidden": true
+  },
+  "qa": {
+    "paita_city_is_single_hydrologic_unit": false,
+    "named_channels_auto_merged": false,
+    "historical_routing_promoted_to_current_geometry": false,
+    "source_maps_used_as_event_footprints": false,
+    "works_or_sections_used_as_hydraulic_capacity": false,
+    "absence_of_report_is_negative": false
+  }
+}
