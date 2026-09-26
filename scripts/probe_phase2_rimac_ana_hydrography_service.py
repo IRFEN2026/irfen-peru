@@ -123,7 +123,24 @@ def geometry_query_url(object_ids):
 
 
 def query_url():
-    return id_query_url()
+    """Legacy full-geometry URL retained only for regression compatibility.
+
+    The live fetch path never calls this function; it uses id_query_url()
+    followed by geometry_query_url(object_ids).
+    """
+    params = {
+        "where":"1=1",
+        "geometry":",".join(str(x) for x in BBOX),
+        "geometryType":"esriGeometryEnvelope",
+        "inSR":"4326",
+        "spatialRel":"esriSpatialRelIntersects",
+        "outFields":OUT_FIELDS,
+        "returnGeometry":"true",
+        "outSR":"4326",
+        "geometryPrecision":"7",
+        "f":"geojson",
+    }
+    return ENDPOINT + "?" + urlencode(params)
 
 
 def source_stub():

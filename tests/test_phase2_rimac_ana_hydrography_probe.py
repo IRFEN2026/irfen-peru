@@ -19,6 +19,15 @@ def test_probe_query_is_bounded_and_reproducible():
     assert q["returnGeometry"]==["true"]
     assert q["f"]==["geojson"]
 
+def test_live_fetch_uses_id_only_then_objectid_geometry():
+    q=parse_qs(urlparse(MOD.id_query_url()).query)
+    assert q["returnIdsOnly"]==["true"]
+    assert "returnGeometry" not in q
+    q2=parse_qs(urlparse(MOD.geometry_query_url([9,3,9])).query)
+    assert q2["objectIds"]==["3,9"]
+    assert q2["returnGeometry"]==["true"]
+    assert "geometry" not in q2
+
 
 def test_probe_helper_is_fail_closed_after_literal_intersection():
     data={"type":"FeatureCollection","features":[
@@ -36,7 +45,7 @@ def test_probe_helper_is_fail_closed_after_literal_intersection():
 
 
 def test_source_access_failure_is_unknown_not_zero_candidates():
-    doc=MOD.build_unavailable(TimeoutError("timed out"))
+    doc=MOD.build_unavailable(MOD.SourceAccessError("geometry_query", TimeoutError("timed out")))
     assert doc["status"]=="SOURCE_ACCESS_UNAVAILABLE"
     assert doc["query_completed"] is False
     assert set(doc["candidate_counts"])=={"quirio","pedregal","rimac"}
