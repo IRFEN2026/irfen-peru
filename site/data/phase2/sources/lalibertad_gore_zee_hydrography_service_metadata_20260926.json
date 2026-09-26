@@ -1,0 +1,43 @@
+{
+  "schema_version": "0.1",
+  "captured_at_utc": "2026-09-26T04:45:00Z",
+  "institution": "Gobierno Regional La Libertad / MINAM Geoservidor",
+  "service": "ZEE_VISOR/05_CARTOGRAFÍA_BASE_LA_LIBERTAD",
+  "service_url": "https://geoservidorperu.minam.gob.pe/arcgis/rest/services/ZEE_VISOR/05_CARTOGRAF%C3%8DA_BASE_LA_LIBERTAD/MapServer",
+  "hydrography_layer": {
+    "id": 5,
+    "name": "Hidrografía",
+    "url": "https://geoservidorperu.minam.gob.pe/arcgis/rest/services/ZEE_VISOR/05_CARTOGRAF%C3%8DA_BASE_LA_LIBERTAD/MapServer/5",
+    "geometry_type": "esriGeometryPolyline",
+    "native_wkid": 32717,
+    "supported_query_formats": ["JSON", "geoJSON"],
+    "max_record_count": 1000,
+    "description": "Red hídrica generada por digitalización de cartas nacionales 1:50000, corregida y suavizada con imágenes Sentinel 2024.",
+    "copyright_text": "Gobierno Regional La Libertad.",
+    "fields": ["OBJECTID","OBJECTID_1","RASGO_PRIN","RASGO_SECU","NOMBRE","CARACT","OBS","PROVINCIA","DPTO","CUENCA","LONGITUD"],
+    "renderer_field": "RASGO_PRIN",
+    "renderer_values_observed": ["Quebrada","Río"]
+  },
+  "main_channel_polygon_layer": {
+    "id": 11,
+    "name": "Cauce principal del río",
+    "url": "https://geoservidorperu.minam.gob.pe/arcgis/rest/services/ZEE_VISOR/05_CARTOGRAF%C3%8DA_BASE_LA_LIBERTAD/MapServer/11",
+    "geometry_type": "esriGeometryPolygon",
+    "native_wkid": 32717,
+    "supported_query_formats": ["JSON", "geoJSON"],
+    "description": "Red hídrica SIG tomada como fuente secundaria de cartas nacionales 1:50000 y corregida con imagen Sentinel 2024.",
+    "copyright_text": "Gobierno Regional La Libertad.",
+    "fields": ["OBJECTID","RASGO_PRIN","RASGO_SECU","NOMBRE","PROVINCIA","DPTO","CUENCA","TIPO_HRD","AREA_HAS"],
+    "scientific_role": "MAIN_CHANNEL_WATERBODY_CONTEXT_ONLY_NOT_CENTERLINE"
+  },
+  "scientific_assessment": {
+    "priority_over_national_100k_for_local_channel_geometry_candidate": true,
+    "same_name_is_identity": false,
+    "same_name_is_topology": false,
+    "polyline_is_subcatchment": false,
+    "polyline_is_event_footprint": false,
+    "main_channel_polygon_is_centerline": false,
+    "absence_is_negative": false,
+    "map_eligible_without_exact_feature_freeze_and_topology_qa": false
+  }
+}
