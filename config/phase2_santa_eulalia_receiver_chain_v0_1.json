@@ -1,0 +1,158 @@
+{
+  "schema_version": "0.1",
+  "contract_id": "phase2-receiver-chain:lima_este_santa_eulalia_rimac:v0.1",
+  "status": "FROZEN_RESEARCH_ONLY_RECEIVER_CHAIN_CONTEXT",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "parent_id": "lima_este_santa_eulalia_rimac",
+  "parent_role": "CONTEXT_CONTAINER_NON_ACTIVATABLE",
+  "parent_activation_state": null,
+  "architecture_ref": "config/phase2_collector_coupling_architecture_v0_1.json",
+  "upstream_coupling_ref": "site/data/validation/phase2_collector_coupling/lima_este_santa_eulalia_rimac_v0_2.json",
+  "purpose": "Freeze a fail-closed receiver chain for Cashahuacra and Shingolay from local D8 catchment/outlet candidate to Santa Eulalia regulatory-corridor context and then Rímac regulatory-corridor context, without asserting exact confluences, flow, travel time, capacity or receiver response.",
+  "input_sources": [
+    {
+      "path": "site/data/phase2/geometries/w1_santa_eulalia_rimac.geojson",
+      "git_blob_sha": "17a5d83fc94b6ba0f00deaae656ccae884b073c0",
+      "role": "REPRODUCIBLE_LOCAL_D8_CATCHMENTS_AND_OFFICIAL_REGULATORY_CORRIDOR_GEOMETRY",
+      "outcome_source": false
+    },
+    {
+      "path": "site/data/phase2/geometries/w1_santa_eulalia_rimac_validation.json",
+      "git_blob_sha": "5891ed63231b7a0fb93313e6415003f666d4f859",
+      "role": "REPRODUCIBLE_TOPOLOGY_CHECKS_ONLY",
+      "outcome_source": false
+    },
+    {
+      "path": "site/data/phase2/sources/w1_santa_eulalia_rimac_source_snapshot.json",
+      "git_blob_sha": "b583a5c140fc8560d6761b13488ae3b1658229ae",
+      "role": "PINNED_ANA_SIGRID_SOURCE_GEOMETRY_AND_DEM_PROVENANCE",
+      "outcome_source": false
+    }
+  ],
+  "collector_contexts": [
+    {
+      "collector_id": "santa_eulalia_mainstem_context",
+      "display_name": "Río Santa Eulalia · contexto receptor",
+      "geometry_ref": {
+        "path": "site/data/phase2/geometries/w1_santa_eulalia_rimac.geojson",
+        "feature_selector": {"property": "unit_id", "value": "santa_eulalia_faja_2004"},
+        "geometry_role": "OFFICIAL_REGULATORY_FAJA_MARGINAL_CONTEXT_NOT_CHANNEL_AXIS"
+      },
+      "source_id": "ANA-FM-SANTA-EULALIA-6063",
+      "source_wkt_sha256": "ffa8250f4a3434cdd9d72fc26e5dd76bd834e7804054325d6d13fe40ade59a83",
+      "channel_axis_status": "MISSING_NOT_INFERRED_FROM_FAJA",
+      "exact_confluence_geometry_status": "UNRESOLVED",
+      "capacity_status": "UNKNOWN",
+      "stage_or_discharge_series": [],
+      "historical_overflow_evidence": [],
+      "map_eligible_as_existing_context": true,
+      "counts_as_event_footprint": false
+    },
+    {
+      "collector_id": "rimac_mainstem_context",
+      "display_name": "Río Rímac · contexto receptor final",
+      "geometry_ref": {
+        "path": "site/data/phase2/geometries/w1_santa_eulalia_rimac.geojson",
+        "feature_selector": {"property": "unit_id", "value": "rimac_faja_2020"},
+        "geometry_role": "OFFICIAL_REGULATORY_FAJA_MARGINAL_CONTEXT_NOT_CHANNEL_AXIS"
+      },
+      "source_id": "ANA-FM-RIMAC-9803",
+      "source_wkt_sha256": "96c491286c330f17d6e5ef229cc7008698eed920202d5c407b867e57ecf29cea",
+      "channel_axis_status": "MISSING_NOT_INFERRED_FROM_FAJA",
+      "exact_confluence_geometry_status": "UNRESOLVED",
+      "capacity_status": "UNKNOWN",
+      "stage_or_discharge_series": [],
+      "historical_overflow_evidence": [],
+      "map_eligible_as_existing_context": true,
+      "counts_as_event_footprint": false
+    }
+  ],
+  "local_receiver_chains": [
+    {
+      "local_unit_id": "cashahuacra",
+      "local_outlet_status": "RESEARCH_D8_OUTLET_NOT_OFFICIALLY_CONFIRMED",
+      "immediate_receiver": "santa_eulalia_mainstem_context",
+      "immediate_receiver_evidence": {
+        "classification": "D8_DOWNSTREAM_TRACE_REACHES_OFFICIAL_SANTA_EULALIA_FAJA_CONTEXT",
+        "validation_check": "checks.cashahuacra.downstream_reaches_santa_eulalia_faja",
+        "exact_channel_confluence_confirmed": false,
+        "regulatory_faja_is_channel_axis": false,
+        "is_receiver_confluence": false
+      },
+      "ultimate_receiver": "rimac_mainstem_context",
+      "ultimate_receiver_chain_evidence": {
+        "classification": "OFFICIAL_REGULATORY_CORRIDORS_INTERSECT_AT_EXPECTED_SANTA_EULALIA_RIMAC_CONFLUENCE_CONTEXT",
+        "validation_check": "checks.santa_eulalia_rimac_intersection_expected_at_confluence",
+        "exact_channel_confluence_confirmed": false,
+        "hydraulic_connection_reproduced": false
+      },
+      "collector_effect_state": "NO_EVIDENCE",
+      "q_i_t": null,
+      "travel_time_tau": null,
+      "routing_method": null,
+      "attenuation_or_storage": null,
+      "hydraulic_distance": null,
+      "paired_receiver_observations": [],
+      "validation_status": "PASS_RECEIVER_CHAIN_CONTEXT_ONLY_EXACT_CONFLUENCE_AND_TEMPORAL_COUPLING_BLOCKED"
+    },
+    {
+      "local_unit_id": "shingolay",
+      "local_outlet_status": "RESEARCH_D8_OUTLET_NOT_OFFICIALLY_CONFIRMED",
+      "immediate_receiver": "santa_eulalia_mainstem_context",
+      "immediate_receiver_evidence": {
+        "classification": "D8_DOWNSTREAM_TRACE_REACHES_OFFICIAL_SANTA_EULALIA_FAJA_CONTEXT",
+        "validation_check": "checks.shingolay.downstream_reaches_santa_eulalia_faja",
+        "exact_channel_confluence_confirmed": false,
+        "regulatory_faja_is_channel_axis": false,
+        "is_receiver_confluence": false
+      },
+      "ultimate_receiver": "rimac_mainstem_context",
+      "ultimate_receiver_chain_evidence": {
+        "classification": "OFFICIAL_REGULATORY_CORRIDORS_INTERSECT_AT_EXPECTED_SANTA_EULALIA_RIMAC_CONFLUENCE_CONTEXT",
+        "validation_check": "checks.santa_eulalia_rimac_intersection_expected_at_confluence",
+        "exact_channel_confluence_confirmed": false,
+        "hydraulic_connection_reproduced": false
+      },
+      "collector_effect_state": "NO_EVIDENCE",
+      "q_i_t": null,
+      "travel_time_tau": null,
+      "routing_method": null,
+      "attenuation_or_storage": null,
+      "hydraulic_distance": null,
+      "paired_receiver_observations": [],
+      "validation_status": "PASS_RECEIVER_CHAIN_CONTEXT_ONLY_EXACT_CONFLUENCE_AND_TEMPORAL_COUPLING_BLOCKED"
+    }
+  ],
+  "collector_chain_context": {
+    "from_collector": "santa_eulalia_mainstem_context",
+    "to_collector": "rimac_mainstem_context",
+    "connectivity_classification": "REGULATORY_CORRIDOR_INTERSECTION_CONTEXT_ONLY",
+    "exact_channel_confluence_confirmed": false,
+    "channel_axis_to_channel_axis_intersection_reproduced": false,
+    "routing_performed": false,
+    "receiver_response_observed": false,
+    "overflow_inferred": false
+  },
+  "map_updates": {
+    "new_geometries_published": 0,
+    "new_nodes_published": 0,
+    "reuses_existing_context_features": ["santa_eulalia_faja_2004", "rimac_faja_2020", "cashahuacra", "shingolay"]
+  },
+  "forbidden": [
+    "treat faja marginal as channel centreline",
+    "treat faja marginal as event footprint",
+    "promote D8 contact with a regulatory corridor to an exact surface confluence",
+    "infer Santa Eulalia or Rímac overflow from local tributary activation",
+    "invent discharge, travel time, attenuation, hydraulic distance, capacity, weights, probabilities or thresholds",
+    "promote child evidence to parent activation",
+    "interpret NO_EVIDENCE as negative evidence or low risk"
+  ]
+}
