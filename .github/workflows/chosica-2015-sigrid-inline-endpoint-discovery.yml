@@ -1,0 +1,67 @@
+name: IRFEN - Chosica 2015 SIGRID inline endpoint discovery
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_sigrid_inline_endpoint_discovery_contract_v0_1.json
+      - scripts/discover_chosica_2015_sigrid_inline_endpoints.py
+      - .github/workflows/chosica-2015-sigrid-inline-endpoint-discovery.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  discover-generic-endpoints-without-following:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_sigrid_inline_endpoint_discovery_contract_v0_1.json
+            scripts/discover_chosica_2015_sigrid_inline_endpoints.py
+            .github/workflows/chosica-2015-sigrid-inline-endpoint-discovery.yml
+      - name: Assert forbidden scientific files absent
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+          test ! -e config/chosica_2015_multibasin_validation_set_v0_1.json
+      - name: Parse only inline route literals from frozen generic pages
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          env -i PATH="$PATH" HOME=/tmp LANG=C.UTF-8 python -I scripts/discover_chosica_2015_sigrid_inline_endpoints.py \
+            --contract config/chosica_2015_sigrid_inline_endpoint_discovery_contract_v0_1.json \
+            --output artifacts/chosica_2015_sigrid_inline_endpoints_v0_1.json | tee artifacts/sigrid_inline_endpoint_summary.json
+      - name: Enforce infrastructure-only stage boundary
+        run: |
+          set -euo pipefail
+          python -I - <<'PY'
+          import json,pathlib,re
+          p=pathlib.Path('artifacts/chosica_2015_sigrid_inline_endpoints_v0_1.json');d=json.loads(p.read_text(encoding='utf-8'))
+          g={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          assert d['status']=='PASS_SIGRID_INLINE_INFRASTRUCTURE_ENDPOINT_DISCOVERY' and d['guards']==g
+          assert d['classification']=='INFRASTRUCTURE_ONLY_NOT_TERRITORIAL_EVIDENCE'
+          assert d['raw_html_written'] is False and d['raw_inline_script_written'] is False and d['raw_inline_script_logged'] is False
+          assert d['external_script_bytes_read'] is False and d['extracted_routes_followed'] is False and d['query_strings_retained'] is False
+          assert d['candidate_territorial_evidence_read'] is False and d['control_labels_assigned'] is False and d['sealed_target_unblind_allowed'] is False
+          assert len(d['endpoints'])==2
+          for e in d['endpoints']:
+              assert e['generic_endpoint_routes']==sorted(set(e['generic_endpoint_routes']))
+              for u in e['generic_endpoint_routes']:
+                  assert u.startswith('https://') and '.cenepred.gob.pe/' in u and '?' not in u and '#' not in u
+                  assert re.search(r'/documento/\d+(?:/|$)',u,re.I) is None
+          text=p.read_text(encoding='utf-8').lower()
+          for token in ('pedregal','quirio','carossio','carosio','rayos de sol','cashahuacra','la libertad','a6680','official_outcome_evidence'):
+              assert token not in text,token
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-sigrid-inline-endpoints
+          path: |
+            artifacts/chosica_2015_sigrid_inline_endpoints_v0_1.json
+            artifacts/sigrid_inline_endpoint_summary.json
+          if-no-files-found: error

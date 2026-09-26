@@ -1,0 +1,70 @@
+name: IRFEN - Chosica 2015 candidate Landsat 7 availability mirror
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_candidate_landsat7_availability_contract_v0_2.json
+      - scripts/query_chosica_2015_candidate_landsat7_availability_mirror.py
+      - .github/workflows/chosica-2015-candidate-landsat7-availability-mirror.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  availability-mirror:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_candidate_landsat7_availability_contract_v0_2.json
+            scripts/query_chosica_2015_candidate_landsat7_availability_mirror.py
+            .github/workflows/chosica-2015-candidate-landsat7-availability-mirror.yml
+      - name: Assert forbidden scientific paths absent
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_multibasin_validation_set_v0_1.json
+          test ! -e config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09_b.json
+      - name: Download exact frozen candidate geometry
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p sources/geometry artifacts
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/10171108859/zip" > /tmp/geometry.zip
+          unzip -q /tmp/geometry.zip -d sources/geometry
+          test "$(sha256sum sources/geometry/chosica_2015_cleanroom_candidate_geometries_v0_1.geojson | cut -d' ' -f1)" = "9a23644c191c88fb66722b368773251051b4098ddd74e4d5861c3a37dbfbb1ca"
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install metadata-only dependency
+        run: pip install 'requests>=2.31,<3'
+      - name: Query fixed Landsat 7 metadata through transport mirror
+        run: |
+          env -i PATH="$PATH" HOME=/tmp LANG=C.UTF-8 python -I scripts/query_chosica_2015_candidate_landsat7_availability_mirror.py \
+            --contract config/chosica_2015_candidate_landsat7_availability_contract_v0_2.json \
+            --geometry sources/geometry/chosica_2015_cleanroom_candidate_geometries_v0_1.geojson \
+            --output artifacts/chosica_2015_candidate_landsat7_availability_mirror_v0_2.json
+      - name: Enforce clean-room and transport-only guards
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/chosica_2015_candidate_landsat7_availability_mirror_v0_2.json',encoding='utf-8'))
+          assert d['status']=='PASS_CANDIDATE_ONLY_LANDSAT7_AVAILABILITY_TRANSPORT_MIRROR_METADATA_ONLY'
+          assert d['candidate_count']==7
+          assert d['transport_mirror_role']=='TRANSPORT_ONLY_NOT_SCIENTIFIC_SOURCE'
+          for k in ('pixel_assets_read','asset_hrefs_read','surface_signal_observed','outcome_evidence_read','target_names_or_ids_read','a6680_read','contaminated_adjudication_used','candidate_selection_modified','candidate_ranking_modified','surface_signal_used_for_scene_selection','free_web_search_used','control_labels_assigned','sealed_target_unblind_allowed'):
+              assert d[k] is False, k
+          assert d['guards']=={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-candidate-landsat7-availability-mirror
+          path: artifacts/chosica_2015_candidate_landsat7_availability_mirror_v0_2.json
+          if-no-files-found: error

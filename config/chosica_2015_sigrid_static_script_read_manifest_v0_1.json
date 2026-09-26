@@ -1,0 +1,46 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_INFRASTRUCTURE_STATIC_SCRIPT_READ_MANIFEST",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "provenance": {
+    "discovery_workflow_run_id": 34512537836,
+    "discovery_head_sha": "500d158c21fdbd5d3c009fc4bd59b1d57f26ca91",
+    "discovery_artifact_id": 10166348974,
+    "discovery_artifact_zip_sha256": "4d284f5d7a3f6520c0fefb4dc5bfd0e860a914cd6b217039bfecbb45135bd348",
+    "discovery_output_sha256": "dd42606f52c847e87f9c5142837e6f687faa6b6fceba480a6d60358b76949efe",
+    "root_response_sha256": "47fe089b758ccdc3eb2a09ed152a5694a31a51875b27303a2d75c00cf694fc1e"
+  },
+  "selection_basis": "Filename-only infrastructure heuristic: main.js is the sole application script among the eight frozen same-host JavaScript URLs; vendor library scripts are excluded without reading their bytes.",
+  "scripts": [
+    {
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/gp/js/main.js",
+      "classification": "INFRASTRUCTURE_ONLY_NOT_TERRITORIAL_EVIDENCE",
+      "allowed_extraction": "URL_OR_ROUTE_LIKE_STRING_LITERALS_ONLY",
+      "raw_bytes_write_to_repo": false,
+      "raw_bytes_print_or_log": false,
+      "maximum_bytes": 2000000
+    }
+  ],
+  "forbidden": [
+    "emit arbitrary JavaScript strings",
+    "emit HTML or document text",
+    "follow extracted routes in the same stage",
+    "candidate feature queries",
+    "target names or IDs",
+    "event keywords",
+    "A6680",
+    "contaminated adjudication",
+    "control labels",
+    "candidate replacement or reranking"
+  ],
+  "candidate_territorial_evidence_read": false,
+  "sealed_target_unblind_allowed": false,
+  "next_gate": "EXTRACT_AND_FREEZE_SAME_HOST_ENDPOINT_LIKE_ROUTES_BEFORE_FOLLOWING_ANY_ROUTE"
+}

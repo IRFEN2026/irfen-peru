@@ -1,0 +1,78 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PRE_EXECUTION_CLEANROOM_CANDIDATE_GEOMETRY_RECOVERY",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "purpose": "Recover exact preincident DEM-only basin polygons for the seven already-selected clean-room candidates without carrying forward legacy candidate IDs or any contaminated adjudication.",
+  "frozen_cleanroom_inputs": {
+    "cleanroom_input_path": "site/data/validation/cleanroom/chosica_2015_cleanroom_input_v0_1.json",
+    "cleanroom_input_sha256": "d243ab2e51f96f83a89068d3b8f77d49e836102e48192070bebafe47ee0ed5ad",
+    "cleanroom_matching_path": "site/data/validation/cleanroom/chosica_2015_cleanroom_matching_v0_1.json",
+    "cleanroom_matching_sha256": "108faf9d525929cdab10b5cfaa4325a0b806ca1705c6a36fa3e3a1d082821d73",
+    "selected_candidate_count": 7
+  },
+  "preincident_geometry_sources": {
+    "candidate_pool_artifact_id": 10112960251,
+    "candidate_pool_workflow_run_id": 34373568489,
+    "candidate_pool_raw_file": "chosica_2015_negative_control_candidate_pool.json",
+    "candidate_pool_raw_sha256": "a739e884b90048cc40cc72535697731458e3b7ec075ff95a4613a9ef49267570",
+    "candidate_pool_committed_canonical_sha256": "bd0e0f8e1fa0dfdb5ded676373e4a54590e3f8acc540e3171bde5f1adc075fcf",
+    "shortlist_geometry_artifact_id": 10113835166,
+    "shortlist_geometry_workflow_run_id": 34375704757,
+    "shortlist_geometry_report_file": "chosica_2015_negative_control_shortlist_geometry_report.json",
+    "shortlist_geometry_report_sha256": "87a100084f3d3dccf6a922fd3bd1216e02c659c6a7b3cbb4aefe6c49cf51cf53",
+    "shortlist_geometry_geojson_file": "chosica_2015_negative_control_shortlist.geojson",
+    "shortlist_geometry_geojson_sha256": "7fc3db40f7163a7b8019640ffbaa4564e54e09fc769b9de0c4554bcec382c412",
+    "source_candidate_count": 7,
+    "source_anti_leakage_required": {
+      "outcome_evidence_read": false,
+      "candidate_outcome_evidence_read": false,
+      "a6680_numeric_reference_read": false,
+      "post_anchor_predictor_read": false,
+      "control_outcome_adjudication_performed": false
+    }
+  },
+  "mapping_rule": {
+    "legacy_ids_may_be_read_only_inside_isolated_builder": true,
+    "legacy_ids_may_be_written_to_output": false,
+    "derive_mapping_by_exact_mainstem_confluence_xy": true,
+    "coordinate_precision_decimals": 3,
+    "selected_codes_source": "cleanroom_matching.selected_candidate_codes",
+    "candidate_coordinates_source": "cleanroom_input.candidates.mainstem_confluence_x_m/mainstem_confluence_y_m",
+    "legacy_coordinates_source": "preincident_candidate_pool.candidates.mainstem_cell.x_m/y_m",
+    "require_unique_bijection": true,
+    "geometry_is_not_modified": true
+  },
+  "output_policy": {
+    "format": "GeoJSON FeatureCollection",
+    "feature_properties_allowed": [
+      "candidate_code",
+      "RESEARCH_ONLY",
+      "TEST_ONLY",
+      "production_use",
+      "production_ready",
+      "operational_alerting_enabled",
+      "outcome_evidence_read",
+      "candidate_outcome_evidence_read"
+    ],
+    "expected_feature_count": 7,
+    "expected_geojson_sha256": "9a23644c191c88fb66722b368773251051b4098ddd74e4d5861c3a37dbfbb1ca"
+  },
+  "forbidden": [
+    "read contaminated adjudication",
+    "read any target outcome or name",
+    "read A6680",
+    "read post-anchor predictor",
+    "use web or network evidence",
+    "modify candidate selection, ranking or geometry",
+    "emit legacy NC identifiers",
+    "emit target identifiers or names"
+  ],
+  "sealed_target_unblind_allowed": false
+}

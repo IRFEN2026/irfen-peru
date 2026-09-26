@@ -1,0 +1,51 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_INFRASTRUCTURE_ONLY_ENDPOINT_DISCOVERY",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "prerequisites": {
+    "candidate_packet_sha256": "dbf02fc9ba1b436754cef72741fff129892a0107eed57362552041d6657cf782",
+    "candidate_count": 7,
+    "candidate_selection_immutable": true,
+    "candidate_territorial_evidence_read": false,
+    "sealed_target_unblind_allowed": false
+  },
+  "purpose": "Resolve machine-readable metadata endpoints without reading candidate/event evidence after the exact official portal root was reachable but no exact metadata endpoint was known.",
+  "allowed_root": "https://sigrid.cenepred.gob.pe/sigridv3/",
+  "allowed_stage_1_operation": "GET_EXACT_ROOT_PARSE_SAME_HOST_SCRIPT_SRC_ONLY",
+  "classification": "INFRASTRUCTURE_ONLY_NOT_TERRITORIAL_EVIDENCE",
+  "raw_body_policy": {
+    "write_to_disk": false,
+    "print_or_log": false,
+    "retain_text_nodes": false,
+    "sha256_required": true,
+    "maximum_bytes": 5000000
+  },
+  "parser_policy": {
+    "emit_only": ["same_host_javascript_url", "root_response_sha256", "http_status", "content_type"],
+    "same_host_required": true,
+    "javascript_suffix_required": true,
+    "inline_script_content_allowed": false,
+    "follow_discovered_script_urls_in_same_stage": false
+  },
+  "forbidden": [
+    "search engines",
+    "free-text portal search",
+    "candidate names",
+    "target names or IDs",
+    "event keywords",
+    "document content",
+    "API feature records",
+    "A6680",
+    "contaminated adjudication artifacts",
+    "candidate replacement or reranking",
+    "control labels"
+  ],
+  "next_gate": "FREEZE_SAME_HOST_STATIC_SCRIPT_URLS_BEFORE_SCRIPT_BYTES_ARE_READ"
+}

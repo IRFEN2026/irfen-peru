@@ -1,0 +1,69 @@
+name: IRFEN - Chosica 2015 candidate Landsat 7 pair freeze
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_candidate_landsat7_availability_freeze_record_v0_1.json
+      - config/chosica_2015_candidate_landsat7_pair_freeze_contract_v0_1.json
+      - scripts/freeze_chosica_2015_candidate_landsat7_pairs.py
+      - .github/workflows/chosica-2015-candidate-landsat7-pair-freeze.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  freeze-pairs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_candidate_landsat7_pair_freeze_contract_v0_1.json
+            scripts/freeze_chosica_2015_candidate_landsat7_pairs.py
+            .github/workflows/chosica-2015-candidate-landsat7-pair-freeze.yml
+      - name: Assert forbidden scientific paths absent
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_multibasin_validation_set_v0_1.json
+          test ! -e config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09_b.json
+      - name: Download exact frozen Landsat 7 availability
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p sources/availability artifacts
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/10180090979/zip" > /tmp/availability.zip
+          unzip -q /tmp/availability.zip -d sources/availability
+          test "$(sha256sum sources/availability/chosica_2015_candidate_landsat7_availability_mirror_v0_2.json | cut -d' ' -f1)" = "32659a5d9201f793fb5fbb49af16d05580a8107124152b37cfe658ced1d6ea75"
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Freeze deterministic metadata-only pairs
+        run: |
+          env -i PATH="$PATH" HOME=/tmp LANG=C.UTF-8 python -I scripts/freeze_chosica_2015_candidate_landsat7_pairs.py \
+            --contract config/chosica_2015_candidate_landsat7_pair_freeze_contract_v0_1.json \
+            --availability sources/availability/chosica_2015_candidate_landsat7_availability_mirror_v0_2.json \
+            --output artifacts/chosica_2015_candidate_landsat7_pairs_v0_1.json
+      - name: Enforce pre-pixel guards
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/chosica_2015_candidate_landsat7_pairs_v0_1.json',encoding='utf-8'))
+          assert d['status']=='FROZEN_LANDSAT7_METADATA_ONLY_SCENE_PAIRS'
+          assert d['candidate_count']==7
+          assert len({(x['pre']['item_id'],x['post']['item_id']) for x in d['pairs']})>=1
+          for k in ('pixel_assets_read','asset_hrefs_read','surface_signal_observed','outcome_evidence_read','target_names_or_ids_read','a6680_read','contaminated_adjudication_used','surface_signal_used_for_selection','candidate_selection_modified','candidate_ranking_modified','free_web_search_used','control_labels_assigned','sealed_target_unblind_allowed'):
+              assert d[k] is False, k
+          assert d['guards']=={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-candidate-landsat7-pairs
+          path: artifacts/chosica_2015_candidate_landsat7_pairs_v0_1.json
+          if-no-files-found: error

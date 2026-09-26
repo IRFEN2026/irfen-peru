@@ -1,0 +1,135 @@
+name: IRFEN - Chosica 2015 clean-room committed freeze
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_cleanroom_recovery_contract_v0_1.json
+      - config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+      - config/chosica_2015_cleanroom_freeze_record_v0_1.json
+      - scripts/build_chosica_2015_cleanroom_input.py
+      - scripts/match_chosica_2015_cleanroom_controls.py
+      - scripts/validate_chosica_2015_cleanroom_recovery.py
+      - site/data/validation/cleanroom/chosica_2015_cleanroom_input_v0_1.json
+      - site/data/validation/cleanroom/chosica_2015_cleanroom_matching_v0_1.json
+      - site/data/validation/cleanroom/chosica_2015_cleanroom_validation_v0_1.json
+      - site/data/validation/cleanroom/chosica_2015_cleanroom_manifest_v0_1.json
+      - .github/workflows/chosica-2015-cleanroom-freeze.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-committed-freeze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout clean-room freeze surface only
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_cleanroom_recovery_contract_v0_1.json
+            config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+            config/chosica_2015_cleanroom_freeze_record_v0_1.json
+            scripts/build_chosica_2015_cleanroom_input.py
+            scripts/match_chosica_2015_cleanroom_controls.py
+            scripts/validate_chosica_2015_cleanroom_recovery.py
+            site/data/validation/cleanroom/chosica_2015_cleanroom_input_v0_1.json
+            site/data/validation/cleanroom/chosica_2015_cleanroom_matching_v0_1.json
+            site/data/validation/cleanroom/chosica_2015_cleanroom_validation_v0_1.json
+            site/data/validation/cleanroom/chosica_2015_cleanroom_manifest_v0_1.json
+            .github/workflows/chosica-2015-cleanroom-freeze.yml
+
+      - name: Verify exact committed hashes and gate policy
+        run: |
+          set -euo pipefail
+          python -I - <<'PY'
+          import hashlib,json,pathlib
+          def sha(p): return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+          expected={
+            'site/data/validation/cleanroom/chosica_2015_cleanroom_input_v0_1.json':'d243ab2e51f96f83a89068d3b8f77d49e836102e48192070bebafe47ee0ed5ad',
+            'site/data/validation/cleanroom/chosica_2015_cleanroom_matching_v0_1.json':'108faf9d525929cdab10b5cfaa4325a0b806ca1705c6a36fa3e3a1d082821d73',
+            'site/data/validation/cleanroom/chosica_2015_cleanroom_validation_v0_1.json':'ecaf1999b2773d53dceba14ed617ae16e38fe3617540d599ec5b1adf3227506d',
+            'site/data/validation/cleanroom/chosica_2015_cleanroom_manifest_v0_1.json':'bbe4044426741df6445cd258a7f9fa2ace28a7163e3faaa11e4212dd81e5e79b',
+            'config/chosica_2015_cleanroom_recovery_contract_v0_1.json':'cd985443529b1df25ddf6af9d6e37fe7e136171220d57b296d79ab477a751851'
+          }
+          for p,h in expected.items():
+              got=sha(p)
+              assert got==h,(p,got,h)
+          r=json.load(open('config/chosica_2015_cleanroom_freeze_record_v0_1.json',encoding='utf-8'))
+          guards={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          assert r['guards']==guards
+          assert r['scientific_state']['contaminated_adjudication_used'] is False
+          assert r['scientific_state']['outcome_evidence_read'] is False
+          assert r['scientific_state']['a6680_numeric_reference_read'] is False
+          assert r['scientific_state']['post_anchor_predictor_read'] is False
+          assert r['scientific_state']['free_web_search_used_for_matching'] is False
+          assert r['scientific_state']['precipitation_used_for_matching'] is False
+          assert r['scientific_state']['selected_candidate_count']==7
+          assert r['gates']['sealed_target_unblind_allowed'] is False
+          assert r['gates']['operational_use_allowed'] is False
+          for k,p in [('input','site/data/validation/cleanroom/chosica_2015_cleanroom_input_v0_1.json'),('matching','site/data/validation/cleanroom/chosica_2015_cleanroom_matching_v0_1.json'),('validation','site/data/validation/cleanroom/chosica_2015_cleanroom_validation_v0_1.json'),('manifest','site/data/validation/cleanroom/chosica_2015_cleanroom_manifest_v0_1.json')]:
+              assert r['committed_artifacts'][k]['path']==p
+              assert r['committed_artifacts'][k]['sha256']==expected[p]
+          if r['status']=='PENDING_COMMITTED_FREEZE_VERIFICATION':
+              assert r['gates']['committed_freeze_verified'] is False
+              assert r['gates']['candidate_territorial_unblind_allowed'] is False
+          elif r['status']=='FROZEN_CLEANROOM_PACKAGE_AND_MATCHING':
+              assert r['gates']['committed_freeze_verified'] is True
+              assert r['gates']['candidate_territorial_unblind_allowed'] is True
+          else:
+              raise AssertionError(r['status'])
+          PY
+
+      - name: Recompute deterministic matching from committed blinded input
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/irfen-freeze artifacts
+          cp scripts/match_chosica_2015_cleanroom_controls.py /tmp/irfen-freeze/matcher.py
+          cp site/data/validation/cleanroom/chosica_2015_cleanroom_input_v0_1.json /tmp/irfen-freeze/input.json
+          cd /tmp/irfen-freeze
+          env -i PATH="$PATH" PYTHONHASHSEED=0 python -I matcher.py --input input.json --output matching.json
+          cmp matching.json "$GITHUB_WORKSPACE/site/data/validation/cleanroom/chosica_2015_cleanroom_matching_v0_1.json"
+
+      - name: Revalidate committed clean-room boundary
+        run: |
+          set -euo pipefail
+          python -I scripts/validate_chosica_2015_cleanroom_recovery.py \
+            --contract config/chosica_2015_cleanroom_recovery_contract_v0_1.json \
+            --contamination config/chosica_2015_control_adjudication_contamination_registry_v0_1.json \
+            --package site/data/validation/cleanroom/chosica_2015_cleanroom_input_v0_1.json \
+            --matching site/data/validation/cleanroom/chosica_2015_cleanroom_matching_v0_1.json \
+            --matcher scripts/match_chosica_2015_cleanroom_controls.py \
+            --builder scripts/build_chosica_2015_cleanroom_input.py \
+            --output /tmp/irfen-freeze/validation.json
+          cmp /tmp/irfen-freeze/validation.json site/data/validation/cleanroom/chosica_2015_cleanroom_validation_v0_1.json
+
+      - name: Emit committed-freeze verification
+        run: |
+          set -euo pipefail
+          python -I - <<'PY'
+          import hashlib,json,pathlib
+          def sha(p): return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
+          r=json.load(open('config/chosica_2015_cleanroom_freeze_record_v0_1.json',encoding='utf-8'))
+          out={
+            'schema_version':'0.1',
+            'status':'PASS_COMMITTED_CLEANROOM_FREEZE',
+            'freeze_record_status':r['status'],
+            'guards':r['guards'],
+            'committed_freeze_verified':True,
+            'candidate_territorial_unblind_allowed':r['gates']['candidate_territorial_unblind_allowed'],
+            'sealed_target_unblind_allowed':False,
+            'contaminated_adjudication_used':False,
+            'input_sha256':sha('site/data/validation/cleanroom/chosica_2015_cleanroom_input_v0_1.json'),
+            'matching_sha256':sha('site/data/validation/cleanroom/chosica_2015_cleanroom_matching_v0_1.json'),
+            'validation_sha256':sha('site/data/validation/cleanroom/chosica_2015_cleanroom_validation_v0_1.json')
+          }
+          pathlib.Path('artifacts/committed_cleanroom_freeze_verification.json').write_text(json.dumps(out,sort_keys=True,separators=(',',':'))+'\n',encoding='utf-8')
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-committed-cleanroom-freeze
+          path: artifacts/committed_cleanroom_freeze_verification.json
+          if-no-files-found: error
