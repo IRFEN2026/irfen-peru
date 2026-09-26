@@ -1,0 +1,282 @@
+{
+  "schema_version": "phase2-south-coast-channel-identity-v0.1",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "base_inventory_dependency": {
+    "pull_request": 308,
+    "path": "config/phase2_south_coast_ica_arequipa_discovery_v0_1.json",
+    "merge_order": "MERGE_BASE_INVENTORY_BEFORE_THIS_OVERLAY",
+    "reason": "Keep the channel-identity expansion small and independently reviewable."
+  },
+  "purpose": "Strengthen official channel identity for Ica/Pisco and Arequipa without publishing local geometry, transferring event state, or inferring collector topology.",
+  "global_rules": {
+    "exact_name_plus_parent_uh_required_for_geometry_acceptance": true,
+    "homonyms_are_independent_until_parent_uh_match": true,
+    "regulatory_faja_is_not_event_footprint": true,
+    "regulatory_faja_is_not_full_channel_axis": true,
+    "intervention_is_not_activation_event": true,
+    "official_course_identity_is_not_outlet_or_collector_proof": true,
+    "no_geometry_without_reproducible_source": true,
+    "no_event_transfer_between_units": true
+  },
+  "sources": [
+    {
+      "source_id": "ANA-PISCO-HUARANGAL-RA060-2018",
+      "institution": "Autoridad Nacional del Agua",
+      "official": true,
+      "title": "R.A. N° 060-2018-ANA-AAA.CHCH-ALA.P — Quebrada Huarangal, Huancano/Pisco",
+      "url": "https://www.ana.gob.pe/sites/default/files/normatividad/files/R.A.%20N%C2%B0%20060-2018-ANA-AAA-CH.CH_.ALA%20PISCO._1.PDF",
+      "provenance_status": "OFFICIAL_ANA_PDF_TEXT_VERIFIED_2026-09-26_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "Quebrada Huarangal identity in Huancano/Pisco"
+      ],
+      "forbidden_use": "Channel identity/location context only; not activation evidence, event footprint, outlet geometry, discharge, capacity or threshold evidence."
+    },
+    {
+      "source_id": "ANA-AREQUIPA-CHULLO-ANASHUAYCO-RD1176-2024",
+      "institution": "Autoridad Nacional del Agua",
+      "official": true,
+      "title": "R.D. N° 1176-2024-ANA-AAA.CO — quebradas intervenidas/verificadas in situ en Arequipa",
+      "url": "https://www.ana.gob.pe/sites/default/files/normatividad/files/28-RD-1176-2024-03_0.pdf",
+      "provenance_status": "OFFICIAL_ANA_PDF_TEXT_VERIFIED_2026-09-26_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "Quebrada Chullo",
+        "Quebrada Añashuayco",
+        "compound name Quebrada Gamarra-Chullo"
+      ],
+      "forbidden_use": "Confirms named field-verified/intervention channels only; not direct activation timing, event footprint, historical capacity, discharge or threshold evidence."
+    },
+    {
+      "source_id": "ANA-RJ-056-2018-SOUTH-COURSES",
+      "institution": "Autoridad Nacional del Agua",
+      "official": true,
+      "title": "R.J. N° 056-2018-ANA — clasificación de cuerpos de agua continentales superficiales",
+      "url": "https://www.ana.gob.pe/sites/default/files/normatividad/files/r.j._056-2018-ana_0.pdf",
+      "provenance_status": "OFFICIAL_ANA_PDF_TEXT_VERIFIED_2026-09-26_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "Quebrada Estanquillo, course 13254, UH 132 Quilca-Vítor-Chili"
+      ],
+      "forbidden_use": "Course identity and parent-UH context only; not event, outlet, capacity or threshold evidence."
+    },
+    {
+      "source_id": "ANA-AREQUIPA-ESTANQUILLO-AZUFRAL-2024",
+      "institution": "Autoridad Nacional del Agua",
+      "official": true,
+      "title": "R.D. N° 0150-2024-ANA-AAA.CO — faja marginal de El Azufral y quebradas sin nombre en UH Estanquillo",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/17524_resolucion-directoral-n0-0150-2024-ana-aaaco-delimitacion-de-la-faja-marginal-de-un-tramo-de-la-quebrada-sin-nombre-01-02-y-03-de-sector-pampa-condorm.pdf",
+      "provenance_status": "OFFICIAL_ANA_SIGRID_PDF_TEXT_VERIFIED_2026-09-26_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "Quebrada El Azufral",
+        "Unidad Hidrográfica Estanquillo (modificado), nivel 5",
+        "regulatory faja vertices"
+      ],
+      "forbidden_use": "Regulatory faja geometry and channel identity only; faja is not an observed event footprint, full channel axis, historical capacity, activation state or threshold."
+    },
+    {
+      "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+      "institution": "Autoridad Nacional del Agua",
+      "official": true,
+      "title": "Ríos y Quebradas — red hidrográfica nacional Pfafstetter",
+      "url": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0",
+      "provenance_status": "OFFICIAL_ARCGIS_LAYER_METADATA_VERIFIED_2026-09-26_NOT_ARCHIVED",
+      "content_sha256": null,
+      "supports": [
+        "queryable national channel geometry",
+        "NOMBRE_CA",
+        "CODIGO_CA",
+        "CODIGO_UH",
+        "NOMBRE_UH",
+        "GeoJSON output"
+      ],
+      "forbidden_use": "A name-only hit is insufficient; exact channel identity plus expected parent-UH code is required before freezing geometry."
+    }
+  ],
+  "channel_identity_additions": [
+    {
+      "child_id": "ica_huarangal_pisco",
+      "discovery_system_id": "ica_pisco_local_ravines",
+      "expected_parent_discovery_id": "ica_pisco",
+      "expected_parent_uh_code": "13752",
+      "name": "Quebrada Huarangal",
+      "unit_role": "LOCAL_RAVINE_OR_TORRENTERA_TARGET",
+      "identity_status": "OFFICIAL_ANA_SOURCE_WATER_NAME_AND_PISCO_LOCATION_CONFIRMED",
+      "geometry_status": "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+      "geometry_asset": null,
+      "outlet_status": "UNKNOWN",
+      "outlet": null,
+      "evidence_state": "OFFICIAL_CHANNEL_IDENTITY_CONTEXT_NO_EVENT_ASSIGNED",
+      "source_ids": [
+        "ANA-PISCO-HUARANGAL-RA060-2018"
+      ],
+      "homonym_guard": "Do not conflate with arequipa_huarangal in the Quilca-Vítor-Chili system.",
+      "event_state_transferred": false,
+      "map_publishable": false
+    },
+    {
+      "child_id": "arequipa_estanquillo",
+      "discovery_system_id": "arequipa_metropolitana_torrenteras",
+      "expected_parent_discovery_id": "arequipa_quilca_vitor_chili",
+      "expected_parent_uh_code": "132",
+      "name": "Quebrada Estanquillo",
+      "official_course_code": "13254",
+      "unit_role": "LOCAL_RAVINE_OR_TORRENTERA_TARGET",
+      "identity_status": "OFFICIAL_ANA_COURSE_CODE_AND_PARENT_CONFIRMED",
+      "geometry_status": "OFFICIAL_COURSE_EXISTS_REPRODUCIBLE_GEOMETRY_NOT_FROZEN",
+      "geometry_asset": null,
+      "outlet_status": "UNKNOWN",
+      "outlet": null,
+      "evidence_state": "OFFICIAL_CHANNEL_IDENTITY_CONTEXT_NO_EVENT_ASSIGNED",
+      "source_ids": [
+        "ANA-RJ-056-2018-SOUTH-COURSES",
+        "ANA-AREQUIPA-ESTANQUILLO-AZUFRAL-2024"
+      ],
+      "event_state_transferred": false,
+      "map_publishable": false
+    },
+    {
+      "child_id": "arequipa_el_azufral",
+      "discovery_system_id": "arequipa_metropolitana_torrenteras",
+      "expected_parent_discovery_id": "arequipa_quilca_vitor_chili",
+      "expected_parent_uh_code": "132",
+      "name": "Quebrada El Azufral",
+      "parent_subunit_reference": "Unidad Hidrográfica Estanquillo (modificado), nivel 5",
+      "unit_role": "LOCAL_RAVINE_OR_TORRENTERA_TARGET",
+      "identity_status": "OFFICIAL_ANA_FAJA_CHANNEL_NAME_CONFIRMED",
+      "geometry_status": "OFFICIAL_REGULATORY_FAJA_GEOMETRY_AVAILABLE_NOT_FROZEN_AS_CHANNEL",
+      "geometry_asset": null,
+      "outlet_status": "UNKNOWN",
+      "outlet": null,
+      "evidence_state": "OFFICIAL_CHANNEL_IDENTITY_CONTEXT_NO_EVENT_ASSIGNED",
+      "source_ids": [
+        "ANA-AREQUIPA-ESTANQUILLO-AZUFRAL-2024"
+      ],
+      "event_state_transferred": false,
+      "map_publishable": false
+    }
+  ],
+  "identity_reinforcement": [
+    {
+      "child_id": "arequipa_chullo",
+      "supporting_source_id": "ANA-AREQUIPA-CHULLO-ANASHUAYCO-RD1176-2024",
+      "conclusion": "Official ANA field/intervention record independently reinforces channel identity.",
+      "does_not_change_event_state": true,
+      "does_not_publish_geometry": true
+    },
+    {
+      "child_id": "arequipa_anas_huayco",
+      "supporting_source_id": "ANA-AREQUIPA-CHULLO-ANASHUAYCO-RD1176-2024",
+      "conclusion": "Official ANA field/intervention record independently reinforces channel identity.",
+      "does_not_change_event_state": true,
+      "does_not_publish_geometry": true
+    },
+    {
+      "child_id": "arequipa_gamarra",
+      "supporting_source_id": "ANA-AREQUIPA-CHULLO-ANASHUAYCO-RD1176-2024",
+      "conclusion": "ANA uses compound name 'Quebrada Gamarra-Chullo'; keep separate from the independently event-attributed Quebrada Gamarra child until topology is resolved.",
+      "does_not_change_event_state": true,
+      "does_not_publish_geometry": true
+    }
+  ],
+  "homonym_guards": [
+    {
+      "name": "Quebrada Huarangal",
+      "units": [
+        {
+          "child_id": "ica_huarangal_pisco",
+          "expected_parent_uh_code": "13752"
+        },
+        {
+          "child_id": "arequipa_huarangal",
+          "expected_parent_uh_code": "132"
+        }
+      ],
+      "rule": "Never merge by name; geometry acceptance requires exact expected parent-UH match."
+    }
+  ],
+  "hydrography_probe_contracts": [
+    {
+      "child_id": "ica_huarangal_pisco",
+      "child_name": "Quebrada Huarangal",
+      "expected_parent_uh_code": "13752",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Huarangal'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false
+    },
+    {
+      "child_id": "arequipa_estanquillo",
+      "child_name": "Quebrada Estanquillo",
+      "expected_parent_uh_code": "132",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='Estanquillo'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false
+    },
+    {
+      "child_id": "arequipa_el_azufral",
+      "child_name": "Quebrada El Azufral",
+      "expected_parent_uh_code": "132",
+      "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+      "where": "NOMBRE_CA='El Azufral'",
+      "out_fields": [
+        "CODIGO_CA",
+        "NOMBRE_CA",
+        "TIPO_CA",
+        "LONG_KM",
+        "NOMBRE_UH",
+        "CODIGO_UH",
+        "NOMBRE_AAA"
+      ],
+      "return_geometry": true,
+      "out_sr": 4326,
+      "format": "geojson",
+      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
+      "map_publishable": false
+    }
+  ],
+  "summary": {
+    "channel_identity_additions": 3,
+    "official_identity_reinforcements": 3,
+    "homonym_guards": 1,
+    "geometry_assets_published": 0,
+    "new_operational_zones": 0
+  }
+}
