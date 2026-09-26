@@ -48,7 +48,7 @@ def test_vulnerability_inventory_is_not_promoted_to_event_truth():
     p=load(PKG)
     assert p["vulnerability_evidence"]["named_ravines_officially_identified"] is True
     assert "not an event ledger" in p["vulnerability_evidence"]["warning"]
-    assert p["hydrologic_components"]["local_ravines"]["event_attribution_rule"]=="VULNERABILITY_INVENTORY_DOES_NOT_EQUAL_CONFIRMED_ACTIVATION_EVENT"
+    local=[v for k,v in p["hydrologic_components"].items() if k.startswith("quebrada_")]\n    assert local\n    assert all(v["activation_status"]=="UNKNOWN_NOT_NEGATIVE" for v in local)
 
 
 def test_colan_named_ravines_are_independent_fail_closed_children():
