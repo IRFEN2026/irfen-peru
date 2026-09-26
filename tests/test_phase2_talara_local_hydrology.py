@@ -115,3 +115,17 @@ def test_source_semantics_do_not_promote_context_to_activation_or_capacity():
     assert qa["absence_of_report_is_negative"] is False
     assert qa["provider_or_report_hazard_classes_are_irfen_thresholds"] is False
     assert qa["works_or_infrastructure_used_as_hydraulic_capacity"] is False
+
+
+def test_parinas_2024_official_event_is_not_auto_bound_across_district_context():
+    p = load(PKG)
+    e = p["event_ledger"]["2024_02_08"]
+    assert e["status"] == "OFFICIAL_PARINAS_ACTIVATION_REPORTED_IN_LOBITOS_SPATIAL_BINDING_PENDING"
+    assert e["reported_component_name"] == "Quebrada Parinas"
+    assert e["reported_district"] == "Lobitos"
+    assert e["bind_to_registered_quebrada_parinas_child"] is False
+    assert e["binding_status"] == "PENDING_REPRODUCIBLE_GEOMETRY_AND_SAME_NAME_CROSSWALK"
+    assert e["exact_event_footprint_available"] is False
+    assert e["discharge_available"] is False
+    assert e["operational_threshold_inferred"] is False
+    assert p["qa"]["same_name_event_not_auto_bound_across_district_context"] is True
