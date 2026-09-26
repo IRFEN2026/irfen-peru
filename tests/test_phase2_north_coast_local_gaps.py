@@ -43,19 +43,33 @@ def test_paita_is_separate_from_colan_and_separates_mechanisms():
     p=load(PAI)
     assert p["territorial_identity"]["colan_is_separate"] is True
     assert p["hydrologic_components"]["paita_alta_blind_basins"]["is_natural_ravine"] is False
-    assert p["event_ledger"]["2017"]["transfer_to_other_ravines_forbidden"] is True
+    assert p["event_ledger"]["2017"]["direct_child_flow_evidence_frozen"] is False\n    assert p["event_ledger"]["2017"]["exact_child_event_footprint_available"] is False\n    assert p["event_ledger"]["2017"]["operational_threshold_inferred"] is False
 
 
 def test_paita_historical_windows_do_not_overassign_children():
     p=load(PAI)
     e83=p["event_ledger"]["1982_1983"]
-    assert e83["status"]=="POSITIVE_EL_ZANJON_TERRITORIAL_OVERFLOW_CONTEXT"
-    assert e83["transfer_to_other_ravines_forbidden"] is True
-    assert e83["exact_event_footprint_available"] is False
-    assert e83["operational_threshold_inferred"] is False
+    assert e83["status"]=="UNKNOWN_NOT_NEGATIVE_CHILD_LEVEL_PRIMARY_SOURCE_ARCHIVE_GAP"
+    assert e83["child_activation_assigned"] is False
+    assert e83["absence_of_local_report_is_negative"] is False
+    assert e83["source_ids"]==[]
 
     e98=p["event_ledger"]["1997_1998"]
     assert e98["status"]=="UNKNOWN_NOT_NEGATIVE_CHILD_LEVEL_SOURCE_GAP"
     assert e98["local_child_activation_assigned"] is False
     assert e98["absence_of_local_report_is_negative"] is False
     assert e98["source_ids"]==[]
+
+
+def test_paita_documentary_collector_topology_is_not_operational_coupling():
+    p=load(PAI)
+    hs={h["hypothesis_id"]:h for h in p["documentary_topology_hypotheses"]}
+    h=hs["paita_el_zanjon_collector_hypothesis"]
+    assert h["candidate_collector"]=="el_zanjon"
+    assert set(h["candidate_contributors"])=={"nueva_esperanza","la_catarata","la_piscina"}
+    assert h["allowed_for_collector_coupling"] is False
+    assert h["allowed_for_map_geometry"] is False
+    coupling=p["collector_coupling"]
+    assert coupling["q_i_t_allowed"] is False
+    assert coupling["travel_time_allowed"] is False
+    assert coupling["attenuation_allowed"] is False
