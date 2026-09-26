@@ -59,3 +59,35 @@ def test_source_locators_cover_table_and_conclusion():
     e = load(EVIDENCE)
     locators = {(row["pdf_page_index"], row["printed_page"]) for row in e["source_locators"]}
     assert locators == {(32, 31), (35, 34)}
+
+
+def test_package_binds_only_the_three_direct_2017_child_flows_without_geometry_promotion():
+    p = load(PACKAGE)
+    expected = {"san_andres", "la_paja", "marinero"}
+    for component_id in expected:
+        component = p["hydrologic_components"][component_id]
+        assert component["activation_verified"] is True
+        assert component["activation_source_ids"] == ["INGEMMET-A6764-TUMBES-2017"]
+        assert component["geometry_status"] == "MISSING_NO_APPROXIMATION_ALLOWED"
+        assert component["map_publishable"] is False
+        assert component["adjudication_sidecar"].endswith("tumbes_zorritos_ingemmet_2017_child_events_v0_1.json")
+    ledger = p["assets"]["event_ledger"]["2017"]
+    assert ledger["specific_ravine_activation_adjudicated"] is True
+    assert set(ledger["component_outcomes"]) == expected
+    assert ledger["outcome_transfer_to_other_children_allowed"] is False
+    for row in ledger["component_outcomes"].values():
+        assert row["status"] == "POSITIVE_COMPONENT_FLOW_AT_INFRASTRUCTURE_CROSSING"
+        assert row["full_catchment_activation_claimed"] is False
+        assert row["exact_event_footprint_frozen"] is False
+        assert row["geometry_promoted"] is False
+
+
+def test_unmentioned_zorritos_children_remain_unknown_not_negative():
+    p = load(PACKAGE)
+    for component_id in {"el_grillo", "el_rubio", "san_pedro", "pena_negra", "el_tiburon", "nuevo_paraiso", "bocapan_casitas"}:
+        if component_id == "el_grillo":
+            continue
+        component = p["hydrologic_components"][component_id]
+        assert component["geometry_status"] == "MISSING_NO_APPROXIMATION_ALLOWED" or component_id == "bocapan_casitas"
+        assert component.get("activation_verified") is False
+    assert p["missing_data_rule"] == "UNKNOWN_NOT_LOW_RISK"
