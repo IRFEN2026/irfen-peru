@@ -20,7 +20,10 @@
     "MVCS-MANCORA-DREN-2026-02-24",
     "MVCS-MANCORA-ORGANOS-2026-02-27",
     "DEFENSORIA-MANCORA-ORGANOS-2026",
-    "PPRRD-TALARA-2019-2022"
+    "PPRRD-TALARA-2019-2022",
+    "IGP-MANCORA-ZONIFICATION-2024",
+    "INDECI-PIURA-2023-IE743-MANCORA",
+    "ANA-FERNANDEZ-GEOPHYSICS-1985"
   ],
   "territorial_identity": {
     "mancora_los_organos_role": "TERRITORIAL_CORRIDOR_NOT_SINGLE_SURFACE_CATCHMENT",
@@ -31,8 +34,31 @@
       "component_type": "NATURAL_RAVINE",
       "identity_status": "OFFICIAL_NAME_CONFIRMED_AND_ACTIVATION_VERIFIED",
       "activation_verified": true,
-      "geometry_status": "MISSING_NO_APPROXIMATION_ALLOWED",
-      "map_publishable": false
+      "geometry_status": "MISSING_REPRODUCIBLE_CHANNEL_LINE_AND_CATCHMENT_GEOMETRY",
+      "map_publishable": false,
+      "source_ids": [
+        "ANA-SIGRID-MANCORA-FERNANDEZ-CRITICAL-2020",
+        "INDECI-PIURA-2023-IE743-MANCORA",
+        "INDECI-MANCORA-2026-RC6454",
+        "IGP-MANCORA-ZONIFICATION-2024",
+        "ANA-RD-0173-2025-AAA-JZ",
+        "ANA-FERNANDEZ-GEOPHYSICS-1985"
+      ],
+      "channel_topology_status": "OFFICIAL_NARRATIVE_TOPOLOGY_CONFIRMED_GEOMETRY_PENDING",
+      "upstream_name_sequence": [
+        "Quebrada Carrizo",
+        "La Ventana",
+        "Grande",
+        "Madre del Agua"
+      ],
+      "named_confluents": [
+        "Manga Mocho",
+        "El Cardo"
+      ],
+      "aliases_are_independent_children": false,
+      "receiver_status": "PACIFIC_OCEAN_CONFIRMED",
+      "outlet_status": "SEA_RECEIVER_CONFIRMED_EXACT_MOUTH_GEOMETRY_PENDING",
+      "exact_outlet_coordinate": null
     },
     "dren_primero_de_mayo": {
       "component_type": "ANTHROPOGENIC_DRAINAGE",
@@ -71,7 +97,32 @@
       "approximate_points_allowed": false,
       "invented_polygons_allowed": false,
       "critical_point_ambit_counts_as_basin_geometry": false,
-      "groundwater_investigation_counts_as_surface_catchment": false
+      "groundwater_investigation_counts_as_surface_catchment": false,
+      "official_channel_control_points": [
+        {
+          "point_id": "ana_2025_fernandez_channel_well_control",
+          "source_id": "ANA-RD-0173-2025-AAA-JZ",
+          "role": "FIELD_VERIFIED_POINT_INSIDE_QUEBRADA_FERNANDEZ_CHANNEL_NOT_OUTLET",
+          "crs": "WGS84_UTM_ZONE_17S",
+          "easting_m": 503489,
+          "northing_m": 9538848,
+          "territorial_note": "ANA assigns the field-verified point to Canoas de Punta Sal, Contralmirante Villar, Tumbes.",
+          "is_outlet": false,
+          "is_event_location": false,
+          "defines_channel_geometry": false,
+          "map_materialization_allowed": false
+        }
+      ],
+      "receiver_context": {
+        "component": "quebrada_fernandez",
+        "receiver": "Pacific Ocean",
+        "status": "CONFIRMED_BY_IGP_AND_INDECI_2023",
+        "exact_mouth_geometry_status": "PENDING",
+        "source_ids": [
+          "IGP-MANCORA-ZONIFICATION-2024",
+          "INDECI-PIURA-2023-IE743-MANCORA"
+        ]
+      }
     },
     "event_ledger": {
       "2017": {
@@ -79,8 +130,15 @@
         "source_ids": []
       },
       "2023": {
-        "status": "UNKNOWN_NOT_NEGATIVE_COMPONENT_SPECIFIC_ADJUDICATION_PENDING",
-        "source_ids": []
+        "status": "FERNANDEZ_POSITIVE_EVENT_RESOLVED_OTHER_COMPONENTS_UNKNOWN_NOT_NEGATIVE",
+        "source_ids": [
+          "INDECI-PIURA-2023-IE743-MANCORA"
+        ],
+        "fernandez_activation_verified": true,
+        "other_components_activation_assigned": false,
+        "absence_of_other_component_report_is_negative": false,
+        "exact_event_footprint_available": false,
+        "operational_threshold_inferred": false
       },
       "1982_1983": {
         "status": "UNKNOWN_NOT_NEGATIVE",
@@ -105,6 +163,26 @@
         "cross_component_routing_resolved": false,
         "exact_event_footprint_available": false,
         "operational_threshold_inferred": false
+      },
+      "2023_03_09_coer_cutoff": {
+        "status": "CONFIRMED_QUEBRADA_FERNANDEZ_ACTIVE_HIGH_FLOW_AT_REPORT_CUTOFF",
+        "source_ids": [
+          "INDECI-PIURA-2023-IE743-MANCORA"
+        ],
+        "report_date_local": "2023-03-09",
+        "report_time_local": "08:40",
+        "compilation_time_local": "13:00",
+        "event_onset_time_local": null,
+        "natural_component": "quebrada_fernandez",
+        "natural_component_response": "ACTIVE_HIGH_FLOW_REPORTED",
+        "receiver_context": "PACIFIC_OCEAN",
+        "receiver_route_exact_geometry_resolved": false,
+        "exact_event_footprint_available": false,
+        "event_paired_rainfall_available": false,
+        "discharge_value_available": false,
+        "operational_threshold_inferred": false,
+        "transfer_to_la_capilla_vichayito_or_los_organos_forbidden": true,
+        "cabo_blanco_note": "The same territorial report names Cabo Blanco active with low flow; hydrologic crosswalk remains unresolved and no child is created here."
       }
     },
     "observations": {
@@ -113,8 +191,8 @@
       "event_timestamp_is_observation_series": false,
       "missing_series_is_low_risk": false,
       "next_required": [
-        "identify SENAMHI rainfall observations for Mancora/Talara event windows with station QA",
-        "seek any reproducible level/flow observations attributable to Quebrada Fernandez",
+        "identify SENAMHI rainfall observations for the 9 March 2023 and 22 February 2026 Mancora/Talara event windows with station QA",
+        "seek any reproducible level/flow observations attributable to Quebrada Fernandez; the qualitative 2023 high-flow report is not a discharge series",
         "keep Dren Primero de Mayo drainage observations separate from natural-ravine response"
       ]
     },
@@ -168,13 +246,35 @@
   "validation": {
     "activation_gate": "BLOCKED",
     "required_reviews": [
-      "reproducible Quebrada Fernandez surface geometry/outlet without using critical-point ambit as basin",
+      "reproducible Quebrada Fernandez surface channel/catchment geometry and exact mouth coordinate; the Pacific Ocean receiver is now confirmed but does not substitute for geometry",
       "independent geometry and routing for Dren Primero de Mayo if mapped",
-      "component-specific 1982-83/1997-98/2017/2023 historical ledger",
-      "event-paired rainfall and any natural-ravine flow/stage observations",
+      "component-specific 1982-83/1997-98/2017 historical ledger; Fernandez 2023 is positive while other 2023 components remain unknown",
+      "event-paired rainfall and any natural-ravine flow/stage observations for 2023 and 2026",
       "Los Organos local catchment identity before any geometry or promotion",
       "reproducible Quebrada Vichayito channel/catchment/outlet and event ledger independent of Máncora"
     ],
-    "review_evidence": []
+    "review_evidence": [
+      {
+        "review_id": "fernandez_receiver_and_2023_activation_v0_1",
+        "status": "EVIDENCE_STRENGTHENED_GEOMETRY_STILL_BLOCKED",
+        "source_ids": [
+          "INDECI-PIURA-2023-IE743-MANCORA",
+          "IGP-MANCORA-ZONIFICATION-2024",
+          "ANA-RD-0173-2025-AAA-JZ"
+        ],
+        "resolved": [
+          "Pacific Ocean receiver identity",
+          "positive Quebrada Fernandez activation/high-flow context at 9 March 2023 official report cutoff",
+          "one field-verified point inside the Quebrada Fernandez channel"
+        ],
+        "unresolved": [
+          "exact mouth coordinate",
+          "reproducible channel line",
+          "surface catchment polygon",
+          "event-paired rainfall/flow series"
+        ],
+        "promotion_allowed": false
+      }
+    ]
   }
 }
