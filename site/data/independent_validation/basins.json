@@ -1,0 +1,158 @@
+{
+  "version": "irfen-independent-basin-validation-map-v0.1",
+  "generated_at": "2026-08-28T15:45:00Z",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_status": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "operational_labels_allowed": false,
+  "blind_outcome_evidence": "SEALED",
+  "map_policy": {
+    "visible_by_default": false,
+    "layer_name": "Investigación independiente · RESEARCH_ONLY",
+    "styling_semantics": "RESEARCH_STAGE_NOT_RISK",
+    "never_enters_operational_calc": true,
+    "missing_data_semantics": "UNKNOWN_OR_MISSING_NEVER_LOW_RISK"
+  },
+  "basins": [
+    {
+      "basin_id": "cashahuacra",
+      "basin_name": "Quebrada Cashahuacra",
+      "research_role": "METHODOLOGICAL_ANCHOR",
+      "target_date": "2015-03-23",
+      "target_window_start": "2015-03-16",
+      "target_window_end": "2015-03-24",
+      "research_stage": "A1_2_A1_3",
+      "blind_assessment_status": "SEALED",
+      "geometry": {
+        "status": "REVIEW_ONLY_CANDIDATE_REVALIDATION_REQUIRED",
+        "source_path": "data/phase2/geometries/w1_santa_eulalia_rimac.geojson",
+        "feature_property": "unit_id",
+        "feature_value": "cashahuacra",
+        "confidence": "MEDIUM_CANDIDATE",
+        "candidate_area_km2": 15.088,
+        "dem_source": "COPERNICUS_DEM_GLO_30",
+        "dem_tile": "S12_00_W077_00",
+        "dem_expected_sha256": "d9f8d410da66bfb85c73b957401aea73043f8618cccdb7d1fc76082d30a31130",
+        "raw_byte_hash_independently_reverified": false,
+        "existing_candidate_outlet": {
+          "lon": -76.6630556,
+          "lat": -11.9136111,
+          "official_confirmation": false
+        },
+        "ana_channel_seed": {
+          "reference": "ANA_RD_1634_2015_0+000",
+          "utm_zone": "18S",
+          "easting_m": 318847,
+          "northing_m": 8682257,
+          "lon": -76.6633732871,
+          "lat": -11.9154109221,
+          "role": "SNAP_SEED_ONLY_NOT_FORCED_OUTLET"
+        },
+        "existing_outlet_to_ana_seed_distance_m": 202.1,
+        "required_next_check": "DEM_SNAP_STABILITY_AND_CATCHMENT_SENSITIVITY_AROUND_ANA_SEED"
+      },
+      "sensors": {
+        "sentinel1": {
+          "status": "UNKNOWN_NOT_MISSING",
+          "compatible_pair": "UNKNOWN",
+          "query_window": "2015-02-15/2015-05-15"
+        },
+        "landsat": {
+          "status": "CANDIDATE_PAIR_PENDING_C2_L2_AOI_QA",
+          "pre_candidate_date": "2015-03-18",
+          "post_candidate_date": "2015-04-19",
+          "wrs_candidate": "007/069"
+        },
+        "imerg_final_v07": {
+          "status": "EVENT_DAY_ARCHIVE_VERIFIED_RAW_FREEZE_PENDING",
+          "event_day_expected_slots": 48,
+          "window_expected_slots": 432
+        },
+        "smap": {
+          "status": "MISSING_FOR_EVENT_WINDOW",
+          "imputation_allowed": false
+        }
+      },
+      "public_indicators": [
+        {"id": "research_stage", "label": "Etapa científica", "value": "A1.2/A1.3"},
+        {"id": "geometry_area", "label": "Área candidata", "value": "15.088 km²", "qualifier": "REVIEW_ONLY"},
+        {"id": "sentinel1", "label": "Sentinel-1", "value": "UNKNOWN"},
+        {"id": "landsat", "label": "Landsat C2 L2", "value": "QA PENDIENTE"},
+        {"id": "imerg", "label": "IMERG Final V07", "value": "RAW FREEZE PENDIENTE"},
+        {"id": "completeness", "label": "Dataset mínimo", "value": "INCOMPLETO"}
+      ],
+      "production_use": false,
+      "production_ready": false,
+      "operational_alerting_enabled": false
+    },
+    {
+      "basin_id": "shingolay",
+      "basin_name": "Quebrada Shingolay",
+      "research_role": "PARALLEL_CASE_INTAKE",
+      "target_date": null,
+      "target_window_start": null,
+      "target_window_end": null,
+      "research_stage": "A0_A1_INTAKE",
+      "blind_assessment_status": "SEALED",
+      "geometry": {
+        "status": "REVIEW_ONLY_LOW_CONFIDENCE_CANDIDATE",
+        "source_path": "data/phase2/geometries/w1_santa_eulalia_rimac.geojson",
+        "feature_property": "unit_id",
+        "feature_value": "shingolay",
+        "confidence": "LOW_CANDIDATE",
+        "candidate_area_km2": 0.243,
+        "dem_source": "COPERNICUS_DEM_GLO_30",
+        "dem_tile": "S12_00_W077_00",
+        "dem_expected_sha256": "d9f8d410da66bfb85c73b957401aea73043f8618cccdb7d1fc76082d30a31130",
+        "raw_byte_hash_independently_reverified": false,
+        "required_next_check": "FREEZE_BLIND_TARGET_WINDOW_THEN_REPEAT_SAME_A1_PROTOCOL"
+      },
+      "sensors": {
+        "sentinel1": {"status": "UNKNOWN"},
+        "landsat": {"status": "UNKNOWN"},
+        "imerg_final_v07": {"status": "TARGET_WINDOW_NOT_YET_FROZEN"},
+        "smap": {"status": "UNKNOWN", "imputation_allowed": false}
+      },
+      "public_indicators": [
+        {"id": "research_stage", "label": "Etapa científica", "value": "A0/A1"},
+        {"id": "geometry_area", "label": "Área candidata", "value": "0.243 km²", "qualifier": "LOW_CANDIDATE"},
+        {"id": "sentinel1", "label": "Sentinel-1", "value": "UNKNOWN"},
+        {"id": "landsat", "label": "Landsat C2 L2", "value": "UNKNOWN"},
+        {"id": "imerg", "label": "IMERG Final V07", "value": "VENTANA PENDIENTE"},
+        {"id": "completeness", "label": "Dataset mínimo", "value": "INCOMPLETO"}
+      ],
+      "production_use": false,
+      "production_ready": false,
+      "operational_alerting_enabled": false
+    }
+  ],
+  "parallel_queue": [
+    {
+      "case_id": "santa_eulalia_rimac_controls",
+      "stage": "CONTROL_SELECTION_DESIGN",
+      "geometry_status": "CONTEXT_GEOMETRY_AVAILABLE_NOT_BASIN_LABEL",
+      "map_entry_allowed": false,
+      "reason": "Control windows must be frozen blindly before map indicators are published."
+    },
+    {
+      "case_id": "san_ildefonso_independent_replay",
+      "stage": "INDEPENDENT_PROTOCOL_INTAKE",
+      "geometry_status": "LEGACY_GEOMETRY_AVAILABLE_REUSE_NOT_YET_APPROVED_FOR_INDEPENDENT_TRACK",
+      "map_entry_allowed": false
+    },
+    {
+      "case_id": "catacaos_independent_replay",
+      "stage": "INDEPENDENT_PROTOCOL_INTAKE",
+      "geometry_status": "HYDRAULIC_CONTEXT_EXISTS_BASIN_GEOMETRY_NOT_FROZEN_FOR_THIS_TRACK",
+      "map_entry_allowed": false
+    },
+    {
+      "case_id": "pedregal_independent_replay",
+      "stage": "INDEPENDENT_PROTOCOL_INTAKE",
+      "geometry_status": "BASIN_GEOMETRY_NOT_FROZEN_FOR_THIS_TRACK",
+      "map_entry_allowed": false
+    }
+  ]
+}
