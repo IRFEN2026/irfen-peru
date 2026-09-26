@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.1",
+  "schema_version": "0.2",
   "discovery_id": "tumbes_zorritos_bocapan_coastal_ravines",
   "status": "RESEARCH_ONLY_CANDIDATE_ADJUDICATION_MATRIX",
   "deployment_status": "RESEARCH_ONLY",
@@ -12,16 +12,24 @@
   "decision_thresholds": null,
   "hydraulic_factors": null,
   "source_plan": "site/data/phase2/sources/tumbes_zorritos_ana_hydrography_source_plan_v0_1.json",
+  "independent_context_registry": "site/data/phase2/sources/tumbes_zorritos_extended_identity_context_v0_1.json",
   "targets": {
     "el_grillo": {"identity_source": "CENEPRED/INGEMMET", "geometry_status": "QUERY_PENDING", "outlet_status": "UNRESOLVED", "map_publishable": false},
-    "san_andres": {"identity_source": "INGEMMET-2017", "geometry_status": "QUERY_PENDING", "outlet_status": "UNRESOLVED", "map_publishable": false},
-    "la_paja": {"identity_source": "INGEMMET-2017", "geometry_status": "QUERY_PENDING", "outlet_status": "UNRESOLVED", "map_publishable": false},
-    "marinero": {"identity_source": "INGEMMET-2017", "geometry_status": "QUERY_PENDING", "outlet_status": "UNRESOLVED", "map_publishable": false},
+    "san_andres": {"identity_source": "INGEMMET-2017 plus ANA-2016", "geometry_status": "QUERY_PENDING", "outlet_status": "UNRESOLVED", "map_publishable": false},
+    "la_paja": {"identity_source": "INGEMMET-2017 plus ANA-2016", "geometry_status": "QUERY_PENDING", "outlet_status": "UNRESOLVED", "map_publishable": false},
+    "marinero": {"identity_source": "INGEMMET-2017 plus ANA-2016", "geometry_status": "QUERY_PENDING", "outlet_status": "UNRESOLVED", "map_publishable": false},
     "el_rubio": {"identity_source": "GORE-TUMBES-PPRRD-2024-2030", "geometry_status": "QUERY_PENDING", "outlet_status": "UNRESOLVED", "map_publishable": false},
     "san_pedro": {"identity_source": "GORE-TUMBES-PPRRD-2024-2030", "geometry_status": "QUERY_PENDING_HOMONYM_QUARANTINE", "outlet_status": "UNRESOLVED", "map_publishable": false},
     "pena_negra": {"identity_source": "GORE-TUMBES/MVCS", "geometry_status": "QUERY_PENDING_HOMONYM_QUARANTINE", "outlet_status": "UNRESOLVED", "map_publishable": false},
     "el_tiburon": {"identity_source": "MPFN-2026", "geometry_status": "QUERY_PENDING", "outlet_status": "UNRESOLVED", "map_publishable": false},
-    "nuevo_paraiso": {"identity_source": "MVCS/GORE-TUMBES", "geometry_status": "QUERY_PENDING", "outlet_status": "UNRESOLVED", "map_publishable": false}
+    "nuevo_paraiso": {"identity_source": "MVCS/GORE-TUMBES", "geometry_status": "QUERY_PENDING", "outlet_status": "UNRESOLVED", "map_publishable": false},
+    "sechurita": {"identity_source": "ANA-SIGRID-2016 plus GORE-TUMBES-PPRRD-2024-2030", "geometry_status": "QUERY_PENDING_ANA_2016_MAP_NAME_CONTEXT", "outlet_status": "UNRESOLVED", "map_publishable": false},
+    "los_pozos": {"identity_source": "ANA-SIGRID-2016 plus CENEPRED-EVAR-2026 plus MPCV", "geometry_status": "QUERY_PENDING_OFFICIAL_MAP_AND_POINT_ANCHORS_NOT_LINE_GEOMETRY", "outlet_status": "UNRESOLVED", "map_publishable": false},
+    "nueva_esperanza": {"identity_source": "GORE-TUMBES-PPRRD-2024-2030", "geometry_status": "QUERY_PENDING_RAVINE_VS_SECTOR_QUARANTINE", "outlet_status": "UNRESOLVED", "map_publishable": false},
+    "mal_paso_01": {"identity_source": "GORE-TUMBES-PPRRD-2024-2030 plus GORE/INDECI sector context", "geometry_status": "QUERY_PENDING_SECTOR_VS_RAVINE_SHARED_NAME_QUARANTINE", "outlet_status": "UNRESOLVED", "map_publishable": false},
+    "mal_paso_02": {"identity_source": "GORE-TUMBES-PPRRD-2024-2030 plus GORE/INDECI sector context", "geometry_status": "QUERY_PENDING_SECTOR_VS_RAVINE_SHARED_NAME_QUARANTINE", "outlet_status": "UNRESOLVED", "map_publishable": false},
+    "las_delicias": {"identity_source": "MPCV named-quebrada maintenance context", "geometry_status": "QUERY_PENDING_HYDROGRAPHIC_IDENTITY", "outlet_status": "UNRESOLVED", "map_publishable": false},
+    "miramar": {"identity_source": "MPCV named-quebrada maintenance context", "geometry_status": "QUERY_PENDING_HYDROGRAPHIC_IDENTITY", "outlet_status": "UNRESOLVED", "map_publishable": false}
   },
   "promotion_requirements": {
     "name_match_only_is_sufficient": false,
@@ -32,6 +40,8 @@
     "approximate_points_allowed": false,
     "synthetic_connectors_allowed": false,
     "composite_parent_geometry_allowed": false,
-    "absence_of_match_is_negative": false
+    "absence_of_match_is_negative": false,
+    "sector_name_can_be_promoted_as_ravine": false,
+    "marine_exposure_can_be_promoted_as_ravine": false
   }
 }
