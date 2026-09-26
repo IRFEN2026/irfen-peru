@@ -48,4 +48,39 @@ def test_vulnerability_inventory_is_not_promoted_to_event_truth():
     p=load(PKG)
     assert p["vulnerability_evidence"]["named_ravines_officially_identified"] is True
     assert "not an event ledger" in p["vulnerability_evidence"]["warning"]
-    assert p["hydrologic_components"]["local_ravines"]["event_attribution_rule"]=="VULNERABILITY_INVENTORY_DOES_NOT_EQUAL_CONFIRMED_ACTIVATION_EVENT"
+    local=[v for k,v in p["hydrologic_components"].items() if k.startswith("quebrada_")]
+    assert local
+    assert all(v["activation_status"]=="UNKNOWN_NOT_NEGATIVE" for v in local)
+
+
+def test_colan_named_ravines_are_independent_fail_closed_children():
+    p=load(PKG)
+    expected={
+        "quebrada_centenario","quebrada_libertad","quebrada_arroyo_mio",
+        "quebrada_9_de_diciembre","quebrada_salaverry","quebrada_cahuide",
+        "quebrada_atahualpa","quebrada_bolognesi","quebrada_grau","quebrada_sucre",
+    }
+    assert expected.issubset(p["hydrologic_components"])
+    for key in expected:
+        child=p["hydrologic_components"][key]
+        assert child["geometry_status"].startswith("MISSING_")
+        assert child["outlet_status"]=="UNRESOLVED"
+        assert child["activation_status"]=="UNKNOWN_NOT_NEGATIVE"
+        assert child["map_materialization_allowed"] is False
+
+def test_colan_bolognesi_grau_identity_remains_unmerged():
+    p=load(PKG)
+    b=p["hydrologic_components"]["quebrada_bolognesi"]
+    g=p["hydrologic_components"]["quebrada_grau"]
+    assert "UNRESOLVED" in b["identity_status"]
+    assert "UNRESOLVED" in g["identity_status"]
+    assert p["qa"]["bolognesi_grau_merge_forbidden_until_identity_resolved"] is True
+
+def test_colan_collector_coupling_is_blocked_without_outlets():
+    p=load(PKG)
+    cc=p["collector_coupling"]
+    assert cc["status"].startswith("BLOCKED_")
+    assert cc["local_ravine_to_lower_chira_assignment_allowed"] is False
+    assert cc["local_ravine_to_pacific_assignment_allowed"] is False
+    assert cc["travel_time_allowed"] is False
+    assert cc["attenuation_allowed"] is False
