@@ -1,0 +1,82 @@
+{
+  "schema_version": "0.1",
+  "contract_id": "phase2-rimac-receiver-context:v0.1",
+  "status": "FROZEN_RESEARCH_ONLY_RECEIVER_AND_PRIORITY_CONTEXT",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "purpose": "Normalize official Rímac project-reach scope and named-quebrada identity context without inventing reach geometries, confluences, channel capacity, hydraulic performance, activation states or receiver overflow.",
+  "rimac_receiver_project_context": {
+    "collector_id": "rimac_mainstem_receiver",
+    "official_project_reach_count": 10,
+    "approx_total_project_length_km": 63.5,
+    "extent_text": "Rímac mouth to Santa Eulalia confluence context",
+    "source_url": "https://www.gob.pe/institucion/anin/noticias/1359694-comunicado",
+    "source_date": "2026-02-27",
+    "source_classification": "PROJECT_SCOPE_NOT_EVENT_NOT_CAPACITY",
+    "individual_reach_ids": [],
+    "individual_reach_geometries": [],
+    "channel_axis_status": "MISSING_NOT_INFERRED_FROM_PROJECT_SCOPE",
+    "exact_reach_boundaries_status": "MISSING_NOT_INFERRED_FROM_PROJECT_SCOPE",
+    "capacity_status": "UNKNOWN",
+    "stage_or_discharge_series": [],
+    "historical_overflow_evidence": [],
+    "receiver_response": null,
+    "map_eligible": false
+  },
+  "institutional_named_quebrada_context": {
+    "sources": [
+      {
+        "source_id": "MUNI_LURIGANCHO_2026_07_20_TEN_PRIORITY_QUEBRADAS",
+        "source_url": "https://www.gob.pe/institucion/munilurigancho/noticias/1421374-anin-realizara-intervencion-en-10-quebradas-priorizadas-de-lurigancho-chosicarenun",
+        "source_date": "2026-07-20",
+        "classification": "INSTITUTIONAL_PRIORITY_AND_IDENTITY_NOT_EVENT",
+        "names": ["Mariscal Castilla","La Libertad","Carosio","Santo Domingo","Pedregal","Quirio","Corrales","Yanacoto","Chacrasana","La Ronda"]
+      },
+      {
+        "source_id": "ANIN_2026_07_14_SIX_QUEBRADAS_MARKET_SCOPE",
+        "source_url": "https://www.gob.pe/institucion/anin/noticias/1418899-comunicado",
+        "source_date": "2026-07-14",
+        "classification": "CONSTRUCTION_SCOPE_AND_IDENTITY_NOT_EVENT",
+        "names": ["Yanacoto","Quirio","La Ronda","Pedregal","Rayito del Sol","Chacrasana"]
+      },
+      {
+        "source_id": "ANA_2017_04_11_DYNAMIC_BARRIERS_CONTEXT",
+        "source_url": "https://www.gob.pe/institucion/ana/noticias/137419-autoridad-nacional-del-agua-supervisa-estado-de-barreras-dinamicas-instaladas-en-lurigancho-chosica",
+        "source_date": "2017-04-11",
+        "classification": "STRUCTURE_AND_HISTORICAL_PRIORITY_CONTEXT_NOT_CAPACITY",
+        "names": ["Mariscal Castilla","La Ronda","San Antonio de Pedregal","Quirio-Nicolás de Piérola","Santo Domingo","La Libertad","Rayo de Sol–Corrales","Huampaní","Carossio"],
+        "reported_dynamic_barrier_count": 22,
+        "reported_quebrada_count": 9,
+        "event_attribution_requires_separate_event_registry": true
+      }
+    ],
+    "adjudicated_local_units_added_to_coupling_registry": 0,
+    "name_reconciliation": [
+      {"labels":["Carosio","Carossio"],"status":"SPELLING_RELATIONSHIP_NOT_MERGED_IN_THIS_CONTRACT"},
+      {"labels":["Pedregal","San Antonio de Pedregal"],"status":"NAME_RELATIONSHIP_NOT_MERGED_IN_THIS_CONTRACT"},
+      {"labels":["Quirio","Quirio-Nicolás de Piérola"],"status":"NAME_RELATIONSHIP_NOT_MERGED_IN_THIS_CONTRACT"},
+      {"labels":["Corrales","Rayito del Sol","Rayo de Sol–Corrales"],"status":"CROSS_SOURCE_RELATIONSHIP_UNRESOLVED_NOT_MERGED"}
+    ],
+    "rule": "Institutional naming, project priority or protection structures do not create a hydrologic child, outlet, confluence, activation state, map geometry or capacity."
+  },
+  "map_updates": {
+    "new_geometries_published": 0,
+    "new_receiver_reaches_published": 0,
+    "new_local_units_published": 0
+  },
+  "forbidden": [
+    "split 63.5 km into ten synthetic equal reaches",
+    "draw reach boundaries from project count alone",
+    "treat project scope as channel axis",
+    "treat protection works or dynamic barriers as historical hydraulic capacity",
+    "merge Corrales, Rayito del Sol or Rayo de Sol-Corrales without independent adjudication",
+    "infer activation, discharge, travel time, receiver response or Rímac overflow from project priority"
+  ]
+}

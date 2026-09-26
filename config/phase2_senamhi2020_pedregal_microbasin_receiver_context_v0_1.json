@@ -1,0 +1,107 @@
+{
+  "schema_version": "0.1",
+  "contract_id": "phase2-senamhi2020-pedregal-microbasin-receiver-context:v0.1",
+  "status": "FROZEN_RESEARCH_ONLY_OFFICIAL_HYDROLOGIC_STUDY_CONTEXT",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "purpose": "Freeze official SENAMHI 2020 hydrologic-study evidence that Quebrada Pedregal forms a defined microbasin draining to the Rio Rimac, together with source-reported morphometry. This contract does not recover an official channel axis, exact surface confluence coordinate, observed routing response, travel time, receiver capacity, event footprint, or operational threshold.",
+  "source": {
+    "institution": "Servicio Nacional de Meteorologia e Hidrologia del Peru (SENAMHI)",
+    "directorate": "Direccion de Hidrologia",
+    "title": "Caracterizacion del peligro por movimientos en masa debido a lluvias extremas en la quebrada Pedregal",
+    "publication_date": "2020-05",
+    "document_id": "01401SENA-89",
+    "source_url": "https://www.senamhi.gob.pe/load/file/01401SENA-89.pdf",
+    "author": "Henry Joel Asencios Astorayme",
+    "source_role": "OFFICIAL_HYDROLOGIC_STUDY_CONTEXT"
+  },
+  "local_unit": {
+    "local_unit_id": "pedregal_san_antonio",
+    "official_named_unit": "Quebrada Pedregal",
+    "study_location_context": "parte media de la cuenca del rio Rimac, localidad de Chosica",
+    "documentary_receiver": "Rio Rimac",
+    "documentary_receiver_relation_confirmed": true,
+    "point_of_interest_description": "desembocadura en el rio Rimac",
+    "exact_surface_confluence_coordinate": null,
+    "exact_surface_confluence_confirmed": false,
+    "official_channel_axis_geometry": null,
+    "official_microbasin_polygon_geometry": null,
+    "reproducible_map_geometry_recovered": false
+  },
+  "source_reported_morphometry": {
+    "area_km2": 10.28,
+    "perimeter_km": 18.53,
+    "altitudinal_difference_m": 1504.31,
+    "gravelius_coefficient": 1.63,
+    "equivalent_rectangle_major_km": 8.06,
+    "equivalent_rectangle_minor_km": 1.28,
+    "main_channel_length_km": 5.66,
+    "mean_main_channel_slope_pct": 14.74,
+    "mean_hillslope_slope_pct": 50.35,
+    "altitudinal_hypsometric_index": 0.86,
+    "areal_hypsometric_index": 0.47,
+    "source_topography": "ALOS World 3D - 30m (AW3D30)",
+    "role": "SOURCE_REPORTED_MICROBASIN_MORPHOMETRY_NOT_IRFEN_ROUTING_PARAMETERS"
+  },
+  "study_observation_context": {
+    "representative_precipitation_station": "Chosica",
+    "precipitation_series_role": "MAXIMUM_24H_STUDY_INPUT_CONTEXT",
+    "source_reported_period": "1990-2019",
+    "current_realtime_observation": false,
+    "may_be_used_as_local_activation_observation_without_event_time_alignment": false
+  },
+  "modelling_context": {
+    "hydrologic_model": "TREX",
+    "debris_flow_model": "FLO-2D",
+    "source_contains_hazard_modelling": true,
+    "modeled_potential_affected_zones_are_observed_event_footprints": false,
+    "source_model_thresholds_are_irfen_decision_thresholds": false,
+    "source_model_discharge_is_observed_receiver_response": false,
+    "may_calibrate_irfen_child_to_receiver_transfer_automatically": false
+  },
+  "coupling": {
+    "immediate_receiver": "rimac_mainstem_receiver",
+    "receiver_identity_supported": true,
+    "exact_outlet_or_confluence_geometry_resolved": false,
+    "q_i_t": null,
+    "travel_time_tau": null,
+    "routing_method": null,
+    "attenuation_or_storage": null,
+    "receiver_response": null,
+    "receiver_capacity": "UNKNOWN",
+    "overflow_inferred": false
+  },
+  "adjudication": {
+    "strengthens_pedregal_microbasin_identity": true,
+    "strengthens_documentary_receiver_relation_to_rimac": true,
+    "freezes_source_reported_morphometry": true,
+    "resolves_exact_surface_confluence": false,
+    "resolves_official_channel_axis": false,
+    "resolves_reproducible_microbasin_geometry": false,
+    "creates_map_geometry": false,
+    "enables_child_routing": false,
+    "enables_travel_time_estimation": false,
+    "establishes_receiver_capacity": false,
+    "establishes_receiver_overflow": false,
+    "creates_irfen_decision_threshold": false
+  },
+  "forbidden": [
+    "treat the study point-of-interest wording as an exact geodetic confluence coordinate",
+    "digitize a figure from the report and call it official reproducible channel or basin geometry",
+    "convert study-model thresholds or return-period simulations into IRFEN decision thresholds",
+    "treat modeled potential affected zones as observed historical event footprints",
+    "infer q_i(t), travel time, attenuation, receiver capacity or Rimac overflow from morphometry alone",
+    "use the 1990-2019 Chosica precipitation study input as a current local activation observation without event-aligned evidence"
+  ],
+  "map_updates": {
+    "new_geometries_published": 0,
+    "new_nodes_published": 0
+  }
+}
