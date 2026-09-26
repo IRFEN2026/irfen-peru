@@ -1,0 +1,88 @@
+{
+  "schema_version": "0.1",
+  "assessment_id": "casma_minam_n7_candidate_service_v0_1",
+  "status": "RESEARCH_ONLY_INDEPENDENT_PUBLIC_N7_SERVICE_ROUTE_IDENTIFIED_QUERY_REPLAY_PENDING",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "target_discovery_id": "ancash_casma_sechin_yautan",
+  "source": {
+    "institution": "Ministerio del Ambiente / Geoservidor Peru",
+    "service": "ServicioActivacionQuebrada",
+    "layer_name": "Unidades Hidrográficas (subcuencas)",
+    "layer_id": 1,
+    "url": "https://geoservidorperu.minam.gob.pe/arcgis/rest/services/ServicioActivacionQuebrada/MapServer/1",
+    "geometry_type": "esriGeometryPolygon",
+    "spatial_reference": 4326,
+    "supported_query_formats": ["JSON", "geoJSON"],
+    "fields_relevant_to_replay": [
+      "NIVEL6",
+      "NIVEL7",
+      "NOMB_UH_N6",
+      "NOMB_UH_N7",
+      "AREA_KM2",
+      "Nombre_UH",
+      "CODIGO"
+    ]
+  },
+  "target_codes": [
+    "1375961",
+    "1375962",
+    "1375963",
+    "1375964",
+    "1375965",
+    "1375966",
+    "1375967",
+    "1375968",
+    "1375969"
+  ],
+  "independent_qa_reference": {
+    "source_id": "ANA-CASMA-SURFACE-WATER-INVENTORY-2007",
+    "expected_names_and_areas_must_match_before_acceptance": true,
+    "pdf_annex_maps_may_be_used_only_as_cartographic_qa": true
+  },
+  "probe_status": {
+    "service_metadata_publicly_resolved": true,
+    "n7_fields_exposed_by_layer_schema": true,
+    "exact_target_feature_queries_completed": false,
+    "exact_target_features_retrieved": false,
+    "exact_geometry_bytes_frozen": false,
+    "sha256_recorded": false,
+    "reason": "The public layer is a new independent candidate route. Exact per-code query replay and byte freezing remain required before any geometry is accepted."
+  },
+  "acceptance_gate": {
+    "required_query_identity": "exact NIVEL7 or CODIGO equality for each documented code",
+    "required_feature_count_per_code": 1,
+    "required_identity_checks": [
+      "code matches 2007 inventory",
+      "name matches 2007 inventory after bounded accent/case normalization",
+      "area is scientifically compatible with the 2007 reported area or discrepancy is explicitly adjudicated",
+      "geometry is returned directly by the public feature service rather than digitized from PDF"
+    ],
+    "required_provenance": [
+      "query URL/parameters",
+      "retrieval timestamp",
+      "raw response bytes",
+      "SHA-256",
+      "normalized GeoJSON path",
+      "geometry validation report"
+    ]
+  },
+  "scientific_effect": {
+    "n7_geometry_recovered": false,
+    "map_publication_enabled": false,
+    "pdf_digitization_authorized": false,
+    "dem_backfill_triggered": false,
+    "outlet_or_confluence_inferred": false,
+    "event_outcome_used_for_geometry": false,
+    "negative_control_created": false,
+    "threshold_created": false
+  },
+  "next_safe_action": "Replay the public MINAM feature layer for all nine exact N7 codes, freeze raw bytes and SHA-256, compare names/areas against the 2007 ANA-INRENA inventory, then normalize only features that pass the identity and geometry gate."
+}
