@@ -1,0 +1,35 @@
+{
+  "schema_version": "0.1",
+  "discovery_id": "tumbes_zorritos_bocapan_coastal_ravines",
+  "status": "RESEARCH_ONLY_HYDROGRAPHY_SOURCE_PLAN",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "service_reference": "ANA ONRH Rios_Quebradas_AAVI MapServer layer 0",
+  "source_year": 2018,
+  "target_children": ["el_grillo","san_andres","la_paja","marinero","el_rubio","san_pedro","pena_negra","el_tiburon","nuevo_paraiso"],
+  "query_policy": {
+    "name_match_is_geometry_adjudication": false,
+    "require_zorritos_spatial_context": true,
+    "require_independent_identity_source": true,
+    "require_exact_source_snapshot_and_hash_before_map_publication": true,
+    "require_outlet_or_downstream_connectivity_check": true,
+    "homonym_quarantine": ["san_pedro","pena_negra"],
+    "approximate_points_allowed": false,
+    "synthetic_connectors_allowed": false,
+    "composite_parent_geometry_allowed": false
+  },
+  "map_policy": {
+    "publish_only_reproducible_line_or_catchment_geometry": true,
+    "publish_each_child_separately": true,
+    "parent_is_not_a_hydrologic_polygon": true,
+    "event_footprint_is_not_catchment_geometry": true,
+    "risk_or_alert_layer": false
+  }
+}
