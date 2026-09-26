@@ -1,0 +1,84 @@
+{
+  "schema_version": "0.1",
+  "lane": "IRFEN_CHICAMA_CHAO",
+  "status": "RESEARCH_ONLY_NATIONAL_SUBUNIT_CONTRAST_PREREGISTRATION",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "map_publish_enabled": false,
+  "sources": [
+    {
+      "source_id": "MINAM-SERVICIO-ACTIVACION-QUEBRADA-UH-L1",
+      "institution": "Ministerio del Ambiente / Geoservidor Peru",
+      "url": "https://geoservidorperu.minam.gob.pe/arcgis/rest/services/ServicioActivacionQuebrada/MapServer/1",
+      "role": "NATIONAL_HYDROGRAPHIC_SUBUNIT_CONTRAST_CANDIDATE",
+      "geometry_type": "polygon",
+      "spatial_reference": 4326,
+      "supported_query_formats": ["JSON", "geoJSON"],
+      "max_record_count": 1000,
+      "required_fields": ["OBJECTID","CODIGO","Nombre_UH","AREA_KM2","NIVEL","NIVEL1","NIVEL2","NIVEL3","NIVEL4","NIVEL5","NIVEL6","NIVEL7","NIVEL8","NOMB_UH_N1","NOMB_UH_N2","NOMB_UH_N3","NOMB_UH_N4","NOMB_UH_N5","NOMB_UH_N6","NOMB_UH_N7","NOMB_UH_N8"],
+      "admissible_claims": [
+        "the live MINAM national service exposes polygonal hydrographic subunits with CODIGO and hierarchical NIVEL fields",
+        "exact-code queries can be used as an independent contrast for regional ZEE code-family candidates before any identity promotion"
+      ],
+      "forbidden_inferences": [
+        "matching code prefix alone establishes containment or routing",
+        "regional renderer label automatically equals the corresponding national polygon identity",
+        "polygon is an event footprint, hydraulic capacity, operational geometry or IRFEN threshold"
+      ]
+    },
+    {
+      "source_id": "MINAM-ZEE-LALIBERTAD-UH-L39",
+      "institution": "Ministerio del Ambiente / Geoservidor Peru",
+      "url": "https://geoservidorperu.minam.gob.pe/arcgis/rest/services/ZEE_VISOR/05_CARACTERIZACI%C3%93N_TERRITORIAL_LA_LIBERTAD/MapServer/39",
+      "role": "REGIONAL_RENDERER_CODE_FAMILY_DISCOVERY_CONTEXT",
+      "geometry_type": "polygon",
+      "spatial_reference": 32717,
+      "renderer_field": "Nombre_U_1",
+      "chao_huamanzana_code_family_renderer_labels": [
+        "Unidad Hidrografica 1377121",
+        "Unidad Hidrografica 1377123",
+        "Cuenca Unidad Hidrografica 1377124",
+        "Unidad Hidrografica 1377125",
+        "Unidad Hidrografica 1377127",
+        "Unidad Hidrografica 1377129"
+      ],
+      "additional_related_renderer_labels": [
+        "Cuenca Chao",
+        "Cuenca Tucumaca",
+        "Cuenca Tutumo",
+        "Unidad Hidrografica 137711"
+      ],
+      "admissible_claims": [
+        "the regional live renderer exposes six additional 137712x code-family labels beyond the previously queued named Chao/Tucumaca/Tutumo candidates",
+        "the labels justify widening the discovery queue for exact feature freeze and national contrast"
+      ],
+      "forbidden_inferences": [
+        "renderer presence establishes hydrologic parentage",
+        "the 137712x labels are automatically siblings of the same routing system",
+        "regional labels can be published before exact feature freeze and topology QA"
+      ]
+    }
+  ],
+  "adjudication": {
+    "national_context_code": "137712",
+    "national_query_codes": ["1377121","1377123","1377124","1377125","1377127","1377129"],
+    "regional_renderer_labels_are_identity": false,
+    "code_prefix_is_topology": false,
+    "exact_national_feature_query_required": true,
+    "exact_regional_feature_freeze_required": true,
+    "parent_containment_qa_required": true,
+    "channel_routing_qa_required": true,
+    "chorobal_outlet_resolved": false,
+    "map_publication_allowed": false,
+    "absence_is_negative": false,
+    "event_footprint_creation_forbidden": true
+  },
+  "next_safe_action": "Freeze exact national layer-1 features for the six 137712x codes and exact regional layer-39 features for the matching renderer labels, then compare attributes/geometry and test containment/routing against independently frozen channel evidence before any map publication."
+}
