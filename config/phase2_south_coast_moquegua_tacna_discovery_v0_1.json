@@ -1,0 +1,176 @@
+{
+  "schema_version": "0.1",
+  "version": "phase2-south-coast-moquegua-tacna-discovery-v0.1",
+  "status": "RESEARCH_ONLY_DISCOVERY_EXTENSION",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "purpose": "Prepare reproducible South-Coast discovery packages for Moquegua and Tacna without changing the historical Phase-2 candidate count or creating operational zones.",
+  "relationship_to_phase2": {
+    "base_inventory": "config/phase2_candidate_inventory_v0_2.json",
+    "changes_registered_candidate_count": false,
+    "changes_operational_scope": false,
+    "registration_into_global_discovery_inventory": "PENDING_SEPARATE_INTEGRATION_AFTER_QA",
+    "map_publication_before_reproducible_geometry": false
+  },
+  "scientific_principles": [
+    "Official hydrographic identity is resolved before events, observations or exposure are attached.",
+    "Territorial names are not hydrologic boundaries.",
+    "Mirave and Chacane events remain local evidence until reproducible catchment or channel geometry supports attribution.",
+    "Uchusuma transfer context must not be unioned with Cuenca Caplina as a synthetic basin.",
+    "Critical points, fajas and works are context, not event footprints or historical channel capacity.",
+    "No cross-basin transfer of rainfall, discharge, thresholds or negative controls is allowed."
+  ],
+  "source_catalog": {
+    "ANA-UH-PACIFIC-MAP": "https://www.ana.gob.pe/sites/default/files/normatividad/files/unidades_hidrograficas_0_0_2.pdf",
+    "ANA-ALA-MOQUEGUA-COMPENDIO": "https://repositorio.ana.gob.pe/bitstream/handle/20.500.12543/1817/ANA0000757_1.pdf?isAllowed=y&sequence=1",
+    "ANA-MOQUEGUA-ILO-GOVERNANCE-2026": "https://www.gob.pe/institucion/ana/noticias/1388109-moquegua-ana-impulsa-grupo-multisectorial-para-atender-desafios-hidricos-en-la-cuenca-moquegua-ilo",
+    "SINIA-ANA-MOQUEGUA-CRITICAL-2025": "https://sinia.minam.gob.pe/documentos/informe-2025-autoridad-nacional-agua-ana-identifico-09-puntos-0",
+    "INDECI-CHACANE-TORATA-2024": "https://portal.indeci.gob.pe/emergencias/reporte-preliminar-n-367-23-2-2024-coen-indeci-0125-horas-lluvias-intensas-en-el-distrito-de-torata-moquegua/",
+    "INDECI-MIRAVE-2019": "https://portal.indeci.gob.pe/emergencias/tacna-jorge-basadre-ilabaya-mirave-huaico-reporte-complementario-01/",
+    "INDECI-ILABAYA-LOCUMBA-TRIBUTARIES-2019": "https://portal.indeci.gob.pe/emergencias/tacna-jorge-basadre-ilabaya-inundacion-reporte-preliminar/",
+    "ANA-TICAPAMPA-CURIBAYA-STATION-2023": "https://www.gob.pe/institucion/ana/noticias/819191-tacna-ana-conforma-comite-de-vigilancia-de-estacion-hidrologica-automatica-en-ticapampa",
+    "ANA-TACNA-PADH-2026": "https://www.gob.pe/institucion/ana/noticias/1333432-tacna-grupo-de-trabajo-evalua-primer-trimestre-del-padh-2025-2026-en-las-cuencas-caplina-sama-y-locumba",
+    "ANA-CAPLINA-UCHUSUMA-CRITICAL-2025": "https://www.gob.pe/institucion/ana/noticias/1111799-ana-verifica-puntos-criticos-del-trasvase-uchusuma-en-tacna",
+    "INDECI-TACNA-PACHIA-MIRAVE-2019": "https://portal.indeci.gob.pe/emergencias/tacna-tacna-jorge-basadre-pachia-ilabaya-pachia-mirave-precipitaciones-pluviales-reporte-complementario-05/"
+  },
+  "discovery_units": [
+    {
+      "discovery_id": "moquegua_ilo_moquegua_osmore",
+      "department": "Moquegua",
+      "system_name": "Cuenca Ilo-Moquegua/Osmore and local ravines",
+      "territorial_reference": "Moquegua / Torata / Ilo",
+      "entity_role": "DISCOVERY_HYDROLOGIC_SYSTEM_WITH_LOCAL_RAVINES_PENDING",
+      "ana_unit_code": "13172",
+      "ana_unit_name": "Cuenca Ilo - Moquegua",
+      "hydrologic_components": [
+        "Cuenca Ilo - Moquegua",
+        "Rio Moquegua/Osmore nomenclature to be normalized",
+        "Rio Torata tributary context",
+        "Quebrada Chacane pending local geometry"
+      ],
+      "must_not_merge_with": [
+        "Cuenca Tambo",
+        "Cuenca Honda",
+        "coastal/pluvial drainage without hydrologic evidence"
+      ],
+      "official_source_ids": [
+        "ANA-UH-PACIFIC-MAP",
+        "ANA-ALA-MOQUEGUA-COMPENDIO",
+        "ANA-MOQUEGUA-ILO-GOVERNANCE-2026",
+        "SINIA-ANA-MOQUEGUA-CRITICAL-2025",
+        "INDECI-CHACANE-TORATA-2024"
+      ],
+      "geometry_status": "PENDING_EXACT_ANA_FREEZE",
+      "event_attribution_status": "CHACANE_2024_LOCAL_EVENT_NOT_YET_ASSIGNED_TO_CATCHMENT_POLYGON"
+    },
+    {
+      "discovery_id": "moquegua_tambo",
+      "department": "Moquegua / Arequipa interface",
+      "system_name": "Cuenca Tambo and tributary systems",
+      "territorial_reference": "Moquegua / Arequipa interface",
+      "entity_role": "DISCOVERY_HYDROLOGIC_SYSTEM",
+      "ana_unit_code": "1318",
+      "ana_unit_name": "Cuenca Tambo",
+      "hydrologic_components": [
+        "Rio Tambo mainstem",
+        "named tributaries to be independently resolved"
+      ],
+      "must_not_merge_with": [
+        "Cuenca Ilo - Moquegua",
+        "Cuenca Quilca - Vitor - Chili"
+      ],
+      "official_source_ids": [
+        "ANA-UH-PACIFIC-MAP",
+        "ANA-ALA-MOQUEGUA-COMPENDIO"
+      ],
+      "geometry_status": "PENDING_EXACT_ANA_FREEZE",
+      "event_attribution_status": "PENDING"
+    },
+    {
+      "discovery_id": "tacna_locumba_ilabaya_mirave",
+      "department": "Tacna",
+      "system_name": "Cuenca Locumba with Ilabaya-Mirave local debris-flow sources",
+      "territorial_reference": "Locumba / Ilabaya / Mirave",
+      "entity_role": "DISCOVERY_HYDROLOGIC_SYSTEM_WITH_LOCAL_DEBRIS_FLOW_CHILDREN_PENDING",
+      "ana_unit_code": "1316",
+      "ana_unit_name": "Cuenca Locumba",
+      "hydrologic_components": [
+        "Rio Locumba",
+        "Rio Ilabaya/Curibaya context",
+        "Rios Cambaya, Borogueña and Colocaya",
+        "Mirave local debris-flow source catchment pending geometry"
+      ],
+      "must_not_merge_with": [
+        "Cuenca Sama",
+        "Cuenca Caplina",
+        "Mirave territorial polygon as hydrologic basin"
+      ],
+      "official_source_ids": [
+        "ANA-UH-PACIFIC-MAP",
+        "INDECI-MIRAVE-2019",
+        "INDECI-ILABAYA-LOCUMBA-TRIBUTARIES-2019",
+        "ANA-TICAPAMPA-CURIBAYA-STATION-2023",
+        "ANA-TACNA-PADH-2026"
+      ],
+      "geometry_status": "PENDING_EXACT_ANA_FREEZE",
+      "event_attribution_status": "MIRAVE_2019_CONFIRMED_TERRITORIAL_EVENT_LOCAL_SOURCE_GEOMETRY_PENDING"
+    },
+    {
+      "discovery_id": "tacna_sama",
+      "department": "Tacna",
+      "system_name": "Cuenca Sama and named tributary ravines",
+      "territorial_reference": "Sama / coastal Tacna",
+      "entity_role": "DISCOVERY_HYDROLOGIC_SYSTEM",
+      "ana_unit_code": "13158",
+      "ana_unit_name": "Cuenca Sama",
+      "hydrologic_components": [
+        "Rio Sama",
+        "named tributary ravines to be extracted"
+      ],
+      "must_not_merge_with": [
+        "Cuenca Locumba",
+        "Cuenca Caplina"
+      ],
+      "official_source_ids": [
+        "ANA-UH-PACIFIC-MAP",
+        "ANA-TACNA-PADH-2026"
+      ],
+      "geometry_status": "PENDING_EXACT_ANA_FREEZE",
+      "event_attribution_status": "PENDING"
+    },
+    {
+      "discovery_id": "tacna_caplina",
+      "department": "Tacna",
+      "system_name": "Cuenca Caplina with Uchusuma transfer context kept separate",
+      "territorial_reference": "Tacna / Pachia / Caplina",
+      "entity_role": "DISCOVERY_HYDROLOGIC_SYSTEM_WITH_EXTERNAL_TRANSFER_CONTEXT",
+      "ana_unit_code": "13156",
+      "ana_unit_name": "Cuenca Caplina",
+      "hydrologic_components": [
+        "Rio Caplina",
+        "Pachia/local tributary ravines to be identified",
+        "Uchusuma transfer system as separate hydraulic context"
+      ],
+      "must_not_merge_with": [
+        "Cuenca Sama",
+        "Cuenca Locumba",
+        "Cuenca Ushusuma via synthetic polygon union"
+      ],
+      "official_source_ids": [
+        "ANA-UH-PACIFIC-MAP",
+        "ANA-CAPLINA-UCHUSUMA-CRITICAL-2025",
+        "ANA-TACNA-PADH-2026",
+        "INDECI-TACNA-PACHIA-MIRAVE-2019"
+      ],
+      "geometry_status": "PENDING_EXACT_ANA_FREEZE",
+      "event_attribution_status": "PACHIA_2019_TERRITORIAL_EVENT_LOCAL_SOURCE_GEOMETRY_PENDING"
+    }
+  ]
+}
