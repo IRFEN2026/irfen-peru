@@ -43,7 +43,7 @@ def test_paita_is_separate_from_colan_and_separates_mechanisms():
     p=load(PAI)
     assert p["territorial_identity"]["colan_is_separate"] is True
     assert p["hydrologic_components"]["paita_alta_blind_basins"]["is_natural_ravine"] is False
-    assert p["event_ledger"]["2017"]["transfer_to_other_ravines_forbidden"] is True
+    assert p["event_ledger"]["2017"]["direct_child_flow_evidence_frozen"] is False\n    assert p["event_ledger"]["2017"]["exact_child_event_footprint_available"] is False\n    assert p["event_ledger"]["2017"]["operational_threshold_inferred"] is False
 
 
 def test_paita_historical_windows_do_not_overassign_children():
