@@ -1,0 +1,56 @@
+{
+  "schema_version": "0.1",
+  "lane": "IRFEN_CHICAMA_CHAO",
+  "status": "RESEARCH_ONLY_LOCAL_50K_HYDROGRAPHY_FREEZE_PLAN",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "map_publish_enabled": false,
+  "source": {
+    "source_id": "GORE-LL-MINAM-ZEE-HYDROGRAPHY-50K-L5",
+    "institution": "Gobierno Regional La Libertad / MINAM Geoservidor",
+    "service_metadata_path": "site/data/phase2/sources/lalibertad_gore_zee_hydrography_service_metadata_20260926.json",
+    "service_metadata_git_blob_sha": "0503951d342ba5421d92f722d50132b971d71be7",
+    "layer_url": "https://geoservidorperu.minam.gob.pe/arcgis/rest/services/ZEE_VISOR/05_CARTOGRAF%C3%8DA_BASE_LA_LIBERTAD/MapServer/5",
+    "query_url": "https://geoservidorperu.minam.gob.pe/arcgis/rest/services/ZEE_VISOR/05_CARTOGRAF%C3%8DA_BASE_LA_LIBERTAD/MapServer/5/query",
+    "expected_geometry_type": "esriGeometryPolyline",
+    "expected_native_wkid": 32717,
+    "query_format": "geojson",
+    "out_sr": 4326,
+    "geometry_precision": 7,
+    "required_fields": ["OBJECTID","RASGO_PRIN","RASGO_SECU","NOMBRE","CARACT","OBS","PROVINCIA","DPTO","CUENCA","LONGITUD"]
+  },
+  "candidate_names": {
+    "chao": ["Chorobal","Tutumo","Tucumaca"],
+    "chicama": ["Chicama","Quirripano","Santanero","Ochape","Chuquillanqui","Huancay"]
+  },
+  "query_policy": {
+    "name_fields": ["NOMBRE","CUENCA"],
+    "require_geometry": true,
+    "require_each_feature_source_attributes": true,
+    "deduplicate_by_objectid": true,
+    "record_all_same_name_matches": true,
+    "do_not_select_one_match_by_nearest_or_longest_without_topology_qa": true
+  },
+  "scientific_guards": {
+    "same_name_is_identity": false,
+    "same_name_is_topology": false,
+    "polyline_is_subcatchment": false,
+    "polyline_is_event_footprint": false,
+    "absence_is_negative": false,
+    "chorobal_outlet_resolved": false,
+    "tutumo_derivation_is_centerline_identity": false,
+    "tucumaca_affluent_is_centerline_identity": false,
+    "map_publication_before_exact_freeze_and_topology_qa": false
+  },
+  "source_priority": {
+    "local_50k_hydrography_over_national_100k_for_geometry_candidate": true,
+    "reason": "The regional layer documents 1:50,000 cartographic origin and Sentinel 2024 correction, but identity and topology still require independent adjudication."
+  }
+}
