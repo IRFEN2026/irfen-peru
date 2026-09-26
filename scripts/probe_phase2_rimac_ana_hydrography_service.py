@@ -28,6 +28,15 @@ ENDPOINT = "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas
 BBOX = (-76.74, -11.97, -76.67, -11.89)
 OUT = ROOT / "artifacts/phase2_rimac_ana_hydrography_probe.json"
 TARGETS = {"quirio": "quirio", "pedregal": "pedregal", "rimac": "rimac"}
+OUT_FIELDS = "OBJECTID_1,CODIGO_CA,NOMBRE_CA,CATEGORIA,LONG_KM,TIPO_CA,CODIGO_UH,NOMBRE_UH,CODIGO_AAA,NOMBRE_AAA,CODIGO_RH,NOMBRE_RH"
+NAME_WHERE = "NOMBRE_CA LIKE '%Quirio%' OR NOMBRE_CA LIKE '%Pedregal%' OR NOMBRE_CA LIKE '%Rimac%' OR NOMBRE_CA LIKE '%Rímac%'"
+BATCH_SIZE = 50
+
+class SourceAccessError(Exception):
+    def __init__(self, stage, cause):
+        super().__init__(f"{stage}: {type(cause).__name__}: {cause}")
+        self.stage = stage
+        self.cause = cause
 
 
 def canonical(v: object) -> bytes:
@@ -88,20 +97,33 @@ def exact_intersections(g1: dict, g2: dict):
     return pts
 
 
-def query_url():
+def id_query_url():
     params = {
-        "where":"1=1",
-        "geometry":",".join(str(x) for x in BBOX),
-        "geometryType":"esriGeometryEnvelope",
-        "inSR":"4326",
-        "spatialRel":"esriSpatialRelIntersects",
-        "outFields":"OBJECTID_1,CODIGO_CA,NOMBRE_CA,CATEGORIA,LONG_KM,TIPO_CA,CODIGO_UH,NOMBRE_UH,CODIGO_AAA,NOMBRE_AAA,CODIGO_RH,NOMBRE_RH",
-        "returnGeometry":"true",
-        "outSR":"4326",
-        "geometryPrecision":"7",
-        "f":"geojson",
+        "where": NAME_WHERE,
+        "geometry": ",".join(str(x) for x in BBOX),
+        "geometryType": "esriGeometryEnvelope",
+        "inSR": "4326",
+        "spatialRel": "esriSpatialRelIntersects",
+        "returnIdsOnly": "true",
+        "f": "json",
     }
     return ENDPOINT + "?" + urlencode(params)
+
+
+def geometry_query_url(object_ids):
+    params = {
+        "objectIds": ",".join(str(int(x)) for x in sorted(set(object_ids))),
+        "outFields": OUT_FIELDS,
+        "returnGeometry": "true",
+        "outSR": "4326",
+        "geometryPrecision": "7",
+        "f": "geojson",
+    }
+    return ENDPOINT + "?" + urlencode(params)
+
+
+def query_url():
+    return id_query_url()
 
 
 def source_stub():
@@ -109,8 +131,10 @@ def source_stub():
         "institution":"Autoridad Nacional del Agua",
         "service":"ONRH/Rios_Quebradas_AAVI/MapServer/0",
         "service_item_id":"99cc803fb9044523b6ee55f24dcab270",
-        "query_url":query_url(),
+        "query_strategy":"BOUNDED_TARGET_NAME_ID_ONLY_THEN_OBJECTID_GEOMETRY",
+        "id_query_url":id_query_url(),
         "bbox_wgs84":list(BBOX),
+        "target_names":["Quirio","Pedregal","Rimac","Rímac"],
     }
 
 
@@ -126,14 +150,43 @@ def fail_closed_adjudication():
     }
 
 
+def fetch_json(url, stage, timeout=25):
+    req = Request(url, headers={"User-Agent":"IRFEN-research-ana-hydrography-probe/0.2"})
+    try:
+        with urlopen(req, timeout=timeout) as r:
+            raw = r.read()
+    except (TimeoutError, URLError, OSError) as exc:
+        raise SourceAccessError(stage, exc) from exc
+    return json.loads(raw.decode("utf-8"))
+
+
 def fetch():
-    req = Request(query_url(), headers={"User-Agent":"IRFEN-research-ana-hydrography-probe/0.1"})
-    with urlopen(req, timeout=60) as r:
-        raw = r.read()
-    data = json.loads(raw.decode("utf-8"))
-    if data.get("type") != "FeatureCollection":
-        raise ValueError("ANA response is not a GeoJSON FeatureCollection")
-    return data
+    ids_doc = fetch_json(id_query_url(), "id_query")
+    object_ids = ids_doc.get("objectIds")
+    if object_ids is None:
+        raise ValueError("ANA ID-only response has no objectIds field")
+    object_ids = sorted({int(x) for x in object_ids})
+    features = []
+    geometry_urls = []
+    geometry_hashes = []
+    for i in range(0, len(object_ids), BATCH_SIZE):
+        batch = object_ids[i:i+BATCH_SIZE]
+        url = geometry_query_url(batch)
+        geometry_urls.append(url)
+        doc = fetch_json(url, "geometry_query")
+        if doc.get("type") != "FeatureCollection":
+            raise ValueError("ANA geometry response is not a GeoJSON FeatureCollection")
+        features.extend(doc.get("features") or [])
+        geometry_hashes.append(hashlib.sha256(canonical(doc)).hexdigest())
+    data = {"type":"FeatureCollection","features":features}
+    meta = {
+        "object_ids": object_ids,
+        "object_id_count": len(object_ids),
+        "id_payload_sha256": hashlib.sha256(canonical(ids_doc)).hexdigest(),
+        "geometry_query_urls": geometry_urls,
+        "geometry_payload_sha256": geometry_hashes,
+    }
+    return data, meta
 
 
 def candidate_key(feature):
@@ -145,7 +198,7 @@ def candidate_key(feature):
     return None
 
 
-def build(data):
+def build(data, access_meta=None):
     features = data.get("features") or []
     groups = {k: [] for k in TARGETS}
     for f in features:
@@ -173,8 +226,10 @@ def build(data):
                     })
     source = source_stub()
     source["source_payload_sha256"] = hashlib.sha256(canonical(data)).hexdigest()
+    if access_meta:
+        source["two_stage_access"] = access_meta
     return {
-        "schema_version":"0.1",
+        "schema_version":"0.2",
         "status":"RESEARCH_ONLY_LIVE_VECTOR_PROBE",
         "deployment_status":"RESEARCH_ONLY",
         "test_mode":"TEST_ONLY",
@@ -202,8 +257,10 @@ def build(data):
 
 def build_unavailable(exc):
     source = source_stub()
+    cause = getattr(exc, "cause", exc)
+    stage = getattr(exc, "stage", "unknown")
     return {
-        "schema_version":"0.1",
+        "schema_version":"0.2",
         "status":"SOURCE_ACCESS_UNAVAILABLE",
         "deployment_status":"RESEARCH_ONLY",
         "test_mode":"TEST_ONLY",
@@ -218,8 +275,9 @@ def build_unavailable(exc):
         "candidates":None,
         "literal_intersection_candidates":None,
         "access":{
-            "error_class":type(exc).__name__,
-            "error_message":str(exc),
+            "stage":stage,
+            "error_class":type(cause).__name__,
+            "error_message":str(cause),
             "zero_candidates_inferred":False,
             "hydrologic_absence_inferred":False,
         },
@@ -240,7 +298,7 @@ def self_test():
     c={"type":"LineString","coordinates":[[3,3],[4,4]]}
     assert exact_intersections(a,b)==[[1.0,1.0]]
     assert exact_intersections(a,c)==[]
-    unavailable=build_unavailable(TimeoutError("timed out"))
+    unavailable=build_unavailable(SourceAccessError("id_query", TimeoutError("timed out")))
     assert unavailable["query_completed"] is False
     assert all(v is None for v in unavailable["candidate_counts"].values())
     print("self-test ok")
@@ -257,9 +315,10 @@ def main():
     path=Path(args.output)
     path.parent.mkdir(parents=True,exist_ok=True)
     try:
-        doc=build(fetch())
+        data, meta = fetch()
+        doc=build(data, meta)
         exit_code=0
-    except (TimeoutError, URLError, OSError) as exc:
+    except SourceAccessError as exc:
         doc=build_unavailable(exc)
         exit_code=2
 
@@ -276,6 +335,7 @@ def main():
         summary={
             "status":doc["status"],
             "query_completed":False,
+            "access_stage":doc["access"]["stage"],
             "error_class":doc["access"]["error_class"],
             "zero_candidates_inferred":False,
             "output":str(path),
