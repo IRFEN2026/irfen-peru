@@ -13,14 +13,34 @@
   "hydraulic_factors": null,
   "service_reference": "ANA ONRH Rios_Quebradas_AAVI MapServer layer 0",
   "source_year": 2018,
-  "target_children": ["el_grillo","san_andres","la_paja","marinero","el_rubio","san_pedro","pena_negra","el_tiburon","nuevo_paraiso"],
+  "target_children": [
+    "el_grillo",
+    "san_andres",
+    "la_paja",
+    "marinero",
+    "el_rubio",
+    "san_pedro",
+    "pena_negra",
+    "el_tiburon",
+    "nuevo_paraiso",
+    "sechurita",
+    "los_pozos",
+    "nueva_esperanza",
+    "mal_paso_01",
+    "mal_paso_02"
+  ],
   "query_policy": {
     "name_match_is_geometry_adjudication": false,
     "require_zorritos_spatial_context": true,
     "require_independent_identity_source": true,
     "require_exact_source_snapshot_and_hash_before_map_publication": true,
     "require_outlet_or_downstream_connectivity_check": true,
-    "homonym_quarantine": ["san_pedro","pena_negra"],
+    "homonym_quarantine": [
+      "san_pedro",
+      "pena_negra",
+      "mal_paso_01",
+      "mal_paso_02"
+    ],
     "approximate_points_allowed": false,
     "synthetic_connectors_allowed": false,
     "composite_parent_geometry_allowed": false
@@ -31,5 +51,21 @@
     "parent_is_not_a_hydrologic_polygon": true,
     "event_footprint_is_not_catchment_geometry": true,
     "risk_or_alert_layer": false
+  },
+  "additional_identity_context": {
+    "source": "GORE Tumbes PPRRD 2024-2030 pp.36-37",
+    "candidates": {
+      "sechurita": "Quebrada Sechurita",
+      "los_pozos": "Quebrada Los Pozos",
+      "nueva_esperanza": "Quebrada/sector Nueva Esperanza; hydrologic identity still requires direct adjudication",
+      "mal_paso_01": "Quebrada Mal Paso N.°01",
+      "mal_paso_02": "Quebrada Mal Paso N.°02"
+    },
+    "territorial_projects_not_children": [
+      "El Milagro 2",
+      "Los Pinos Sur",
+      "AA.HH. Cruz de Motupe",
+      "Barrio 25 de Noviembre"
+    ]
   }
 }
