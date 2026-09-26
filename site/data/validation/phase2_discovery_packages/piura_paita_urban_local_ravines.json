@@ -1,8 +1,8 @@
 {
-  "schema_version": "0.1",
+  "schema_version": "0.2",
   "discovery_id": "piura_paita_urban_local_ravines",
   "system_name": "Paita urban ravines and blind-basin pluvial system",
-  "contract_status": "DISCOVERY_REGISTERED_LOCAL_GEOMETRY_PENDING",
+  "contract_status": "DISCOVERY_REGISTERED_REPORTED_TOPOLOGY_GEOMETRY_PENDING",
   "deployment_status": "RESEARCH_ONLY",
   "test_mode": "TEST_ONLY",
   "production_use": false,
@@ -18,32 +18,99 @@
   },
   "hydrologic_components": {
     "el_zanjon": {
-      "identity_status": "OFFICIAL_NAME_AND_2017_OVERFLOW_CONTEXT_CONFIRMED",
-      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY"
+      "component_type": "NATURAL_RAVINE_MAIN_RECEIVER",
+      "identity_status": "OFFICIAL_NAME_AND_HISTORICAL_OVERFLOW_CONTEXT_CONFIRMED",
+      "source_ids": [
+        "IGP-PAITA-GEODYNAMICS-2021",
+        "MP-PAITA-EVAR-ZANJON-2021"
+      ],
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY",
+      "receiver_status": "PACIFIC_OCEAN_SYSTEM_LEVEL_RECEIVER_CONFIRMED",
+      "outlet_status": "EXACT_OUTLET_COORDINATE_UNRESOLVED",
+      "map_materialization_allowed": false
     },
     "nueva_esperanza": {
+      "component_type": "NATURAL_RAVINE_TRIBUTARY",
       "identity_status": "OFFICIAL_IGP_NAME_CONFIRMED",
-      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY"
+      "source_ids": [
+        "IGP-PAITA-GEODYNAMICS-2021",
+        "IGP-PAITA-ZONIFICACION-2019"
+      ],
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY",
+      "reported_receiver": "el_zanjon",
+      "receiver_relation_status": "SYSTEM_LEVEL_TOPOLOGY_CONFIRMED_EXACT_CONFLUENCE_UNRESOLVED",
+      "outlet_status": "EXACT_CHILD_CONFLUENCE_UNRESOLVED",
+      "map_materialization_allowed": false
     },
     "la_piscina": {
+      "component_type": "NATURAL_RAVINE_TRIBUTARY",
       "identity_status": "OFFICIAL_IGP_NAME_CONFIRMED",
-      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY"
+      "source_ids": [
+        "IGP-PAITA-GEODYNAMICS-2021",
+        "IGP-PAITA-ZONIFICACION-2019"
+      ],
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY",
+      "reported_receiver": "el_zanjon",
+      "receiver_relation_status": "SYSTEM_LEVEL_TOPOLOGY_CONFIRMED_EXACT_CONFLUENCE_UNRESOLVED",
+      "outlet_status": "EXACT_CHILD_CONFLUENCE_UNRESOLVED",
+      "map_materialization_allowed": false
     },
     "la_catarata": {
+      "component_type": "NATURAL_RAVINE_TRIBUTARY",
       "identity_status": "OFFICIAL_IGP_NAME_CONFIRMED",
-      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY"
+      "source_ids": [
+        "IGP-PAITA-GEODYNAMICS-2021",
+        "IGP-PAITA-ZONIFICACION-2019"
+      ],
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY",
+      "reported_receiver": "el_zanjon",
+      "receiver_relation_status": "SYSTEM_LEVEL_TOPOLOGY_CONFIRMED_EXACT_CONFLUENCE_UNRESOLVED",
+      "outlet_status": "EXACT_CHILD_CONFLUENCE_UNRESOLVED",
+      "map_materialization_allowed": false,
+      "activation_context": {
+        "status": "POSITIVE_UNDATED_FIELD_BASED_ACTIVATION_CONTEXT_NOT_EVENT_LEDGER",
+        "source_ids": [
+          "IGP-PAITA-GEODYNAMICS-2021"
+        ],
+        "exact_event_date": null,
+        "exact_event_footprint_available": false,
+        "operational_threshold_inferred": false
+      }
     },
     "villa_naval": {
+      "component_type": "NATURAL_RAVINE_TRIBUTARY",
       "identity_status": "OFFICIAL_IGP_NAME_CONFIRMED",
-      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY"
+      "source_ids": [
+        "IGP-PAITA-GEODYNAMICS-2021",
+        "IGP-PAITA-ZONIFICACION-2019"
+      ],
+      "geometry_status": "MISSING_PENDING_REPRODUCIBLE_GEOMETRY",
+      "reported_receiver": "el_zanjon",
+      "receiver_relation_status": "SYSTEM_LEVEL_TOPOLOGY_CONFIRMED_EXACT_CONFLUENCE_UNRESOLVED",
+      "outlet_status": "EXACT_CHILD_CONFLUENCE_UNRESOLVED",
+      "map_materialization_allowed": false
     },
     "paita_alta_blind_basins": {
       "component_type": "URBAN_PLUVIAL_DEPRESSION_SYSTEM",
       "is_natural_ravine": false,
-      "geometry_status": "PENDING_TOPOGRAPHIC_REPRODUCIBILITY"
+      "geometry_status": "PENDING_TOPOGRAPHIC_REPRODUCIBILITY",
+      "receiver_status": "NO_SYNTHETIC_CONNECTION_TO_EL_ZANJON_WITHOUT_TOPOGRAPHIC_ROUTING",
+      "map_materialization_allowed": false
     }
   },
   "event_ledger": {
+    "2017": {
+      "status": "POSITIVE_MULTI_MECHANISM_EVENT",
+      "source_ids": [
+        "IGP-PAITA-ZONIFICACION-2019",
+        "MP-PAITA-EVAR-ZANJON-2021"
+      ],
+      "el_zanjon_response": "OVERFLOW_CONTEXT_OBSERVED",
+      "paita_alta_pluvial_response": "BLIND_BASIN_INUNDATION_OBSERVED",
+      "transfer_to_other_ravines_forbidden": true,
+      "exact_event_footprint_available": false,
+      "operational_threshold_inferred": false
+    },
     "1982_1983": {
       "status": "POSITIVE_EL_ZANJON_TERRITORIAL_OVERFLOW_CONTEXT",
       "source_ids": [
@@ -61,30 +128,54 @@
       "local_child_activation_assigned": false,
       "absence_of_local_report_is_negative": false,
       "next_required": "Locate dated official Paita child-level evidence before assigning any ravine or blind-basin outcome for 1997-1998."
-    },
-    "2017": {
-      "status": "POSITIVE_MULTI_MECHANISM_EVENT",
-      "source_ids": [
-        "IGP-PAITA-ZONIFICACION-2019",
-        "MP-PAITA-EVAR-ZANJON-2021"
-      ],
-      "el_zanjon_response": "OVERFLOW_CONTEXT_OBSERVED",
-      "paita_alta_pluvial_response": "BLIND_BASIN_INUNDATION_OBSERVED",
-      "transfer_to_other_ravines_forbidden": true,
-      "exact_event_footprint_available": false,
-      "operational_threshold_inferred": false
     }
   },
   "qa": {
     "historical_window_attribution_is_child_bounded": true,
     "regional_el_nino_window_is_not_child_outcome": true,
     "unknown_child_outcome_is_not_negative_control": true,
-    "urban_pluvial_and_ravine_overflow_mechanisms_remain_separate": true
+    "urban_pluvial_and_ravine_overflow_mechanisms_remain_separate": true,
+    "official_reported_topology_is_not_geometry": true,
+    "exact_confluences_are_unresolved": true,
+    "exact_terminal_outlet_is_unresolved": true,
+    "rainy_period_activation_is_not_dated_event": true,
+    "narrative_capacity_is_not_numeric_capacity": true,
+    "blind_basins_are_not_auto_connected_to_el_zanjon": true
   },
   "map_policy": {
     "parent_polygon_forbidden": true,
     "child_only_after_reproducible_geometry": true,
     "risk_colors_forbidden": true,
-    "alerts_forbidden": true
+    "alerts_forbidden": true,
+    "reported_topology_without_geometry_is_context_only": true,
+    "materialize_topology_as_synthetic_lines": false
+  },
+  "source_registry_ref": "site/data/phase2/sources/piura_paita_official_evidence_v0_1.json",
+  "official_source_ids": [
+    "IGP-PAITA-GEODYNAMICS-2021",
+    "IGP-PAITA-ZONIFICACION-2019",
+    "MP-PAITA-EVAR-ZANJON-2021"
+  ],
+  "collector_coupling": {
+    "status": "PARTIAL_OFFICIAL_REPORTED_TOPOLOGY_GEOMETRY_AND_EXACT_OUTLETS_UNRESOLVED",
+    "source_ids": [
+      "IGP-PAITA-GEODYNAMICS-2021"
+    ],
+    "tributaries": [
+      "nueva_esperanza",
+      "la_piscina",
+      "la_catarata",
+      "villa_naval"
+    ],
+    "principal_local_collector": "el_zanjon",
+    "terminal_receiver": "PACIFIC_OCEAN",
+    "exact_child_confluences_available": false,
+    "exact_terminal_outlet_available": false,
+    "engineered_current_routing_resolved": false,
+    "q_i_t_allowed": false,
+    "travel_time_allowed": false,
+    "attenuation_allowed": false,
+    "synthetic_receiver_assignment_forbidden": true,
+    "blind_basin_connection_inferred": false
   }
 }
