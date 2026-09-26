@@ -49,3 +49,12 @@ def test_vulnerability_inventory_is_not_promoted_to_event_truth():
     assert p["vulnerability_evidence"]["named_ravines_officially_identified"] is True
     assert "not an event ledger" in p["vulnerability_evidence"]["warning"]
     assert p["hydrologic_components"]["local_ravines"]["event_attribution_rule"]=="VULNERABILITY_INVENTORY_DOES_NOT_EQUAL_CONFIRMED_ACTIVATION_EVENT"
+
+
+def test_ana_2016_colan_identity_refinement():
+    p=load(PKG)
+    names=p["hydrologic_components"]["local_ravines"]["named"]
+    assert "9 de Diciembre" in names
+    assert "Bolognesi" in names and "Grau" in names
+    assert p["vulnerability_evidence"]["official_named_ravine_count"]==10
+    assert p["vulnerability_evidence"]["identity_resolution"]["source_points_are_channel_or_outlet_geometry"] is False
