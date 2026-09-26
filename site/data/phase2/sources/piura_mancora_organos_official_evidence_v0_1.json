@@ -120,6 +120,23 @@
         "all Talara ravines form one catchment",
         "a territorial road impact defines hydrologic geometry"
       ]
+    },
+    {
+      "source_id": "IGP-PAITA-GEODYNAMIC-2022-036",
+      "institution": "Instituto Geofisico del Peru / CENEPRED SIGRID",
+      "document": "Inspeccion Geodinamica en los A.H. Vista al Mar, Cerro Lloron y Playa Cangrejos (Distrito y Provincia de Paita - Region Piura)",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/14893_inspeccion-geodinamica-en-los-ah-vista-al-mar-cerro-lloron-y-playa-cangrejos-distrito-y-provincia-de-paita-region-piura.pdf",
+      "role": "CROSS_PROVINCE_SAME_NAME_CARTOGRAPHIC_CONTEXT_ONLY",
+      "admissible_claims": [
+        "a Paita-context official geodynamic mapping source contains a same-name Quebrada Vichayito cartographic label in the broader Paita coastal-ravine context",
+        "the same-name label creates a cross-province identity conflict that must be resolved before any geometry binding to the Los Organos/Talara child"
+      ],
+      "forbidden_inferences": [
+        "the Paita-labelled feature is the Los Organos/Talara Quebrada Vichayito",
+        "the source supplies Talara Vichayito catchment, channel or outlet geometry",
+        "the cartographic label is a verified Talara activation event",
+        "name coincidence resolves hydrologic continuity or separation"
+      ]
     }
   ],
   "qa_artifacts": [
@@ -127,6 +144,12 @@
       "path": "config/phase2_mancora_fernandez_same_name_quarantine_v0_1.json",
       "role": "CROSS_REGION_SAME_NAME_GEOMETRY_QUARANTINE",
       "may_supply_mancora_geometry": false,
+      "may_bind_same_name_source_without_coordinate_crosswalk": false
+    },
+    {
+      "path": "config/phase2_vichayito_same_name_quarantine_v0_1.json",
+      "role": "CROSS_PROVINCE_SAME_NAME_GEOMETRY_QUARANTINE",
+      "may_supply_talara_vichayito_geometry": false,
       "may_bind_same_name_source_without_coordinate_crosswalk": false
     }
   ],
@@ -141,6 +164,7 @@
     "absence_of_report_is_negative": false,
     "same_name_cross_region_geometry_binding_allowed": false,
     "vichayito_named_ravine_confirmed": true,
-    "vichayito_activation_verified": false
+    "vichayito_activation_verified": false,
+    "vichayito_cross_province_same_name_binding_allowed": false
   }
 }
