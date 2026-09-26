@@ -1,0 +1,58 @@
+{
+  "schema_version":"0.1",
+  "contract_id":"phase2-ana2015-quirio-pedregal-faja-terminal-qa:v0.1",
+  "status":"FROZEN_RESEARCH_ONLY_OFFICIAL_REGULATORY_TERMINAL_PROXIMITY_QA",
+  "deployment_status":"RESEARCH_ONLY",
+  "test_mode":"TEST_ONLY",
+  "production_use":false,
+  "production_ready":false,
+  "operational_alerting_enabled":false,
+  "activation_gate":"BLOCKED",
+  "missing_data_rule":"UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds":null,
+  "hydraulic_factors":null,
+  "purpose":"Freeze reproducible spatial QA between existing terrain-D8 nodes and ANA 2015 regulatory faja terminal references for Quirio and Pedregal. Proximity strengthens spatial consistency only; no regulatory point, midpoint or D8 node is promoted to an official surface confluence.",
+  "analysis":{"source_crs":"EPSG:4326","analysis_crs":"EPSG:32718","method":"PYPROJ_TRANSFORM_THEN_EUCLIDEAN_DISTANCE","distance_unit":"m"},
+  "units":[
+    {
+      "local_unit_id":"quirio",
+      "source":{"institution":"Autoridad Nacional del Agua","resolution":"RD 2256-2015-ANA-AAA.CANETE-FORTALEZA","sigrid_document_id":6067},
+      "source_table_coordinates_utm18s":{"Inicio":[312646,8680887],"Final":[313927,8678977],"H1_0+000_right_margin":[313776,8678766],"H1_0+000_left_margin":[313934,8678993]},
+      "frozen_d8_node_wgs84":[-76.7084038,-11.94512659],
+      "qa_distance_ranges_m":{"to_source_table_Final":[45.0,60.0],"to_H1_0+000_left_margin":[55.0,65.0]},
+      "official_surface_confluence_confirmed":false,
+      "exact_surface_confluence_coordinate":null,
+      "replace_existing_d8_node":false
+    },
+    {
+      "local_unit_id":"pedregal_san_antonio",
+      "source":{"institution":"Autoridad Nacional del Agua","resolution":"RD 2070-2015-ANA-AAA.CANETE-FORTALEZA","sigrid_document_id":6066},
+      "source_table_coordinates_utm18s":{"Inicio":[314578,8681538],"Final":[314744,8679162],"H1_0+000_right_margin":[314648,8679037],"H1_0+000_left_margin":[314769,8679203]},
+      "frozen_d8_node_wgs84":[-76.70048443,-11.94255661],
+      "qa_distance_ranges_m":{"to_source_table_Final":[95.0,112.0],"to_H1_0+000_left_margin":[55.0,65.0]},
+      "official_surface_confluence_confirmed":false,
+      "exact_surface_confluence_coordinate":null,
+      "replace_existing_d8_node":false
+    }
+  ],
+  "adjudication":{
+    "strengthens_d8_spatial_consistency_with_official_lower_regulatory_references":true,
+    "regulatory_final_is_official_confluence":false,
+    "h1_margin_point_is_official_confluence":false,
+    "average_of_margin_points_may_define_confluence":false,
+    "d8_node_becomes_official_confluence":false,
+    "routing_enabled":false,
+    "travel_time_enabled":false,
+    "receiver_capacity_established":false,
+    "receiver_overflow_established":false,
+    "map_geometry_created":false
+  },
+  "forbidden":[
+    "average left and right margin markers to manufacture a channel centreline or confluence",
+    "snap a D8 node to a regulatory faja point and call it an official outlet",
+    "treat proximity as proof of exact channel-axis intersection",
+    "infer discharge, travel time, attenuation, capacity, risk or Rimac overflow",
+    "publish regulatory terminal points as activation or event geometry"
+  ],
+  "map_updates":{"new_geometries_published":0,"new_nodes_published":0}
+}
