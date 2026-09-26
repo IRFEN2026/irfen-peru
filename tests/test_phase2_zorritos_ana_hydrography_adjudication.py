@@ -1,11 +1,18 @@
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MATRIX = ROOT / "site/data/phase2/sources/tumbes_zorritos_ana_hydrography_adjudication_matrix_v0_1.json"
+PLAN = ROOT / "site/data/phase2/sources/tumbes_zorritos_ana_hydrography_source_plan_v0_1.json"
+PROBE = ROOT / "scripts/probe_zorritos_ana_hydrography.py"
 
 def load():
     return json.loads(MATRIX.read_text(encoding="utf-8"))
+
+def load_plan():
+    return json.loads(PLAN.read_text(encoding="utf-8"))
 
 def test_matrix_is_fail_closed():
     x = load()
@@ -21,7 +28,7 @@ def test_matrix_is_fail_closed():
 
 def test_all_targets_remain_unmapped_until_full_adjudication():
     x = load()
-    assert len(x["targets"]) == 16
+    assert len(x["targets"]) == 17
     for row in x["targets"].values():
         assert row["map_publishable"] is False
         assert row["outlet_status"] == "UNRESOLVED"
@@ -31,6 +38,29 @@ def test_homonyms_are_explicitly_quarantined():
     x = load()
     assert "HOMONYM_QUARANTINE" in x["targets"]["san_pedro"]["geometry_status"]
     assert "HOMONYM_QUARANTINE" in x["targets"]["pena_negra"]["geometry_status"]
+
+def test_leoncio_prado_paired_event_context_is_quarantined():
+    row = load()["targets"]["leoncio_prado"]
+    assert "PAIRED_EVENT_CONTEXT_QUARANTINE" in row["geometry_status"]
+    assert row["outlet_status"] == "UNRESOLVED"
+    assert row["map_publishable"] is False
+
+def test_matrix_and_source_plan_target_sets_match():
+    matrix_targets = set(load()["targets"])
+    plan_targets = set(load_plan()["target_children"])
+    assert matrix_targets == plan_targets
+    assert "leoncio_prado" in matrix_targets
+
+def test_probe_check_plan_only_is_ci_safe_and_passes():
+    completed = subprocess.run(
+        [sys.executable, str(PROBE), "--check-plan-only"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert "PASS_ZORRITOS_ANA_HYDROGRAPHY_PLAN" in completed.stdout
 
 def test_geometry_promotion_requires_reproducible_chain():
     p = load()["promotion_requirements"]
