@@ -1,0 +1,57 @@
+name: IRFEN - Chosica 2015 negative-control candidates
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_negative_control_candidate_generation_v0_1.json
+      - config/chosica_2015_outlet_freeze_registry_v0_1.json
+      - config/chosica_2015_mml_2013_static_anchor_registry_v0_1.json
+      - scripts/generate_chosica_2015_negative_control_candidates.py
+      - .github/workflows/chosica-2015-negative-control-candidates.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  freeze-candidate-pool:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install scientific dependencies
+        run: pip install -r requirements.txt
+      - name: Generate geography/DEM-only candidate pool
+        run: |
+          mkdir -p artifacts
+          python scripts/generate_chosica_2015_negative_control_candidates.py \
+            --contract config/chosica_2015_negative_control_candidate_generation_v0_1.json \
+            --output artifacts/chosica_2015_negative_control_candidate_pool.json
+      - name: Enforce pre-unblind scientific guards
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/chosica_2015_negative_control_candidate_pool.json',encoding='utf-8'))
+          assert d['status']=='PASS_PREUNBLIND_NEGATIVE_CONTROL_CANDIDATE_POOL'
+          assert d['candidate_pool_frozen'] is True
+          assert d['candidate_count'] > 0
+          assert d['outcome_evidence_read'] is False
+          assert d['a6680_numeric_reference_read'] is False
+          assert d['post_anchor_predictor_read'] is False
+          assert d['control_outcome_adjudication_performed'] is False
+          assert d['candidate_selection_used_observed_2015_response'] is False
+          assert d['guards']=={
+            'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,
+            'production_ready':False,'operational_alerting_enabled':False}
+          ids=[x['candidate_id'] for x in d['candidates']]
+          assert len(ids)==len(set(ids))==d['candidate_count']
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-negative-control-candidate-pool
+          path: artifacts/chosica_2015_negative_control_candidate_pool.json
+          if-no-files-found: error

@@ -1,0 +1,71 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "PREREGISTERED_PHASE1_OUTPUT_FREEZE_CONTRACT",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "purpose": "Freeze the complete successful pre-unblind DEM morphometry output by immutable content hash before any INGEMMET A6680 numeric morphometry is read.",
+  "admissible_source": {
+    "workflow_name": "IRFEN - Chosica 2015 phase-1 morphometry",
+    "workflow_conclusion": "success",
+    "artifact_name": "chosica-2015-morphometry-phase1",
+    "report_name": "chosica_2015_morphometry_phase1.json",
+    "required_execution_revision": "0.6_EXACT_GEOMETRY_POURPOINT_REPLAY",
+    "required_target_count": 6
+  },
+  "required_report_guards": {
+    "status": "PASS_CHOSICA_2015_PHASE1_MORPHOMETRY",
+    "phase": "PHASE_1_PREUNBLIND_DEM_MORPHOMETRY",
+    "a6680_numeric_reference_read": false,
+    "outcome_evidence_read": false,
+    "post_anchor_predictor_read": false,
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false,
+    "exact_geometry_dem_binary_match_all_targets": true,
+    "frozen_polygon_mask_modified": false,
+    "frozen_outlet_modified": false
+  },
+  "freeze_record_must_contain": [
+    "workflow_run_id",
+    "workflow_head_sha",
+    "workflow_conclusion",
+    "artifact_id",
+    "artifact_digest_if_available",
+    "report_sha256",
+    "report_size_bytes",
+    "phase1_execution_contract_path",
+    "phase1_execution_contract_git_blob_sha",
+    "phase1_implementation_path",
+    "phase1_implementation_git_blob_sha",
+    "phase1_report_execution_revision",
+    "target_count",
+    "a6680_numeric_reference_read=false",
+    "outcome_evidence_read=false",
+    "post_anchor_predictor_read=false",
+    "phase1_frozen=true"
+  ],
+  "hash_rule": "SHA256 is computed over the exact report bytes downloaded from the successful GitHub Actions artifact; do not parse and reserialize before hashing.",
+  "immutability_rule": "Once committed, a freeze record for this phase-1 report SHA256 is append-only provenance. Any replacement phase-1 result requires a new freeze record and an explicit scientific reason; the prior record is not overwritten.",
+  "comparison_gate": {
+    "a6680_numeric_morphometry_may_be_opened_only_after": [
+      "successful phase-1 workflow",
+      "exact artifact report SHA256 computed",
+      "freeze record committed with phase1_frozen=true",
+      "freeze record validates all anti-leakage guards"
+    ],
+    "forbidden_before_gate": [
+      "read A6680 numeric basin area, channel length, drainage density, slope or other morphometry",
+      "change outlet or geometry",
+      "change DEM reconstruction, conditioning, slope algorithm, channel threshold or metric inclusion rule",
+      "select a phase-1 run because its metrics agree better with A6680"
+    ]
+  }
+}

@@ -1,0 +1,115 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PREUNBLIND_PREDICTOR_TIME_PLAN",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "source_contract": {
+    "product": "GPM_3IMERGHH Final V07",
+    "temporal_resolution_minutes": 30,
+    "units_input": "mm/hr",
+    "aggregation": "area-weighted over frozen basin polygon",
+    "missingness": "UNKNOWN/null; no zero imputation"
+  },
+  "anchor_utc": "2015-03-23T19:30:00Z",
+  "grid": {
+    "start_utc": "2015-03-08T19:30:00Z",
+    "end_exclusive_utc": "2015-03-23T19:30:00Z",
+    "slot_count": 720,
+    "slot_minutes": 30
+  },
+  "windows": [
+    {
+      "id": "trigger_0_5h",
+      "kind": "trigger",
+      "hours": 0.5,
+      "start_utc": "2015-03-23T19:00:00Z",
+      "end_exclusive_utc": "2015-03-23T19:30:00Z",
+      "expected_slot_count": 1,
+      "grid_start_index_0based": 719,
+      "grid_end_index_0based_inclusive": 719
+    },
+    {
+      "id": "trigger_1h",
+      "kind": "trigger",
+      "hours": 1,
+      "start_utc": "2015-03-23T18:30:00Z",
+      "end_exclusive_utc": "2015-03-23T19:30:00Z",
+      "expected_slot_count": 2,
+      "grid_start_index_0based": 718,
+      "grid_end_index_0based_inclusive": 719
+    },
+    {
+      "id": "trigger_3h",
+      "kind": "trigger",
+      "hours": 3,
+      "start_utc": "2015-03-23T16:30:00Z",
+      "end_exclusive_utc": "2015-03-23T19:30:00Z",
+      "expected_slot_count": 6,
+      "grid_start_index_0based": 714,
+      "grid_end_index_0based_inclusive": 719
+    },
+    {
+      "id": "trigger_6h",
+      "kind": "trigger",
+      "hours": 6,
+      "start_utc": "2015-03-23T13:30:00Z",
+      "end_exclusive_utc": "2015-03-23T19:30:00Z",
+      "expected_slot_count": 12,
+      "grid_start_index_0based": 708,
+      "grid_end_index_0based_inclusive": 719
+    },
+    {
+      "id": "trigger_24h",
+      "kind": "trigger",
+      "hours": 24,
+      "start_utc": "2015-03-22T19:30:00Z",
+      "end_exclusive_utc": "2015-03-23T19:30:00Z",
+      "expected_slot_count": 48,
+      "grid_start_index_0based": 672,
+      "grid_end_index_0based_inclusive": 719
+    },
+    {
+      "id": "antecedent_72h",
+      "kind": "antecedent",
+      "hours": 72,
+      "start_utc": "2015-03-20T19:30:00Z",
+      "end_exclusive_utc": "2015-03-23T19:30:00Z",
+      "expected_slot_count": 144,
+      "grid_start_index_0based": 576,
+      "grid_end_index_0based_inclusive": 719
+    },
+    {
+      "id": "antecedent_168h",
+      "kind": "antecedent",
+      "hours": 168,
+      "start_utc": "2015-03-16T19:30:00Z",
+      "end_exclusive_utc": "2015-03-23T19:30:00Z",
+      "expected_slot_count": 336,
+      "grid_start_index_0based": 384,
+      "grid_end_index_0based_inclusive": 719
+    },
+    {
+      "id": "antecedent_360h",
+      "kind": "antecedent",
+      "hours": 360,
+      "start_utc": "2015-03-08T19:30:00Z",
+      "end_exclusive_utc": "2015-03-23T19:30:00Z",
+      "expected_slot_count": 720,
+      "grid_start_index_0based": 0,
+      "grid_end_index_0based_inclusive": 719
+    }
+  ],
+  "prohibitions": [
+    "no post-anchor timestamp",
+    "no window shifting to rainfall maxima",
+    "no basin-specific temporal windows",
+    "no outcome-informed missingness handling",
+    "no zero imputation"
+  ]
+}

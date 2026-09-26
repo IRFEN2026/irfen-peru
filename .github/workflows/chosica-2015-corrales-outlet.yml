@@ -1,0 +1,54 @@
+name: IRFEN - Chosica 2015 Corrales outlet
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_corrales_outlet_resolution_contract_v0_1.json
+      - config/chosica_2015_outlet_freeze_registry_v0_1.json
+      - scripts/resolve_chosica_2015_corrales_outlet.py
+      - .github/workflows/chosica-2015-corrales-outlet.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  resolve-corrales-outlet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install scientific dependencies
+        run: pip install -r requirements.txt
+      - name: Resolve frozen-method D8 candidate
+        run: |
+          mkdir -p artifacts
+          python scripts/resolve_chosica_2015_corrales_outlet.py --report artifacts/chosica_2015_corrales_outlet_report.json
+      - name: Enforce pre-unblind guards
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/chosica_2015_corrales_outlet_report.json',encoding='utf-8'))
+          assert d['outcome_evidence_read'] is False
+          assert d['a6680_numeric_reference_read'] is False
+          assert d['post_anchor_predictor_read'] is False
+          assert d['guards']['RESEARCH_ONLY'] is True
+          assert d['guards']['TEST_ONLY'] is True
+          assert d['guards']['production_use'] is False
+          assert d['guards']['production_ready'] is False
+          assert d['guards']['operational_alerting_enabled'] is False
+          assert d['status'].startswith(('PASS_CORRALES_', 'PENDING_REVIEW_'))
+          if d['status'].startswith('PASS_CORRALES_'):
+              assert d['freeze_eligible'] is True
+              assert d['accepted_outlet'] is not None
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: chosica-2015-corrales-outlet-report
+          path: artifacts/chosica_2015_corrales_outlet_report.json
+          if-no-files-found: error

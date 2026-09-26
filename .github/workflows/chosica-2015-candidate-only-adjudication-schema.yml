@@ -1,0 +1,63 @@
+name: IRFEN - Chosica 2015 candidate adjudication schema
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_candidate_only_territorial_adjudication_ingest_contract_v0_1.json
+      - config/chosica_2015_target_unblind_readiness_contract_v0_1.json
+      - site/data/validation/chosica_2015_candidate_only_territorial_adjudication_template_v0_1.json
+      - scripts/validate_chosica_2015_candidate_only_adjudication.py
+      - .github/workflows/chosica-2015-candidate-only-adjudication-schema.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  schema-and-fail-closed-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - name: Compile validator
+        run: python -m py_compile scripts/validate_chosica_2015_candidate_only_adjudication.py
+      - name: Validate neutral template structure
+        run: |
+          python - <<'PY'
+          import json
+          c=json.load(open('config/chosica_2015_candidate_only_territorial_adjudication_ingest_contract_v0_1.json',encoding='utf-8'))
+          t=json.load(open('site/data/validation/chosica_2015_candidate_only_territorial_adjudication_template_v0_1.json',encoding='utf-8'))
+          u=json.load(open('config/chosica_2015_target_unblind_readiness_contract_v0_1.json',encoding='utf-8'))
+          guards={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          assert c['guards']==t['guards']==u['guards']==guards
+          assert t['status']=='TEMPLATE_NOT_SCIENTIFIC_EVIDENCE'
+          codes=[x['candidate_code'] for x in t['candidates']]
+          assert codes==c['selected_candidate_codes']
+          assert len(codes)==len(set(codes))==7
+          assert all(x['adjudication'] is None for x in t['candidates'])
+          assert t['target_unblind_allowed'] is False and t['a6680_allowed'] is False
+          assert u['eligibility_rule']['automatic_target_outcome_unblind'] is False
+          PY
+      - name: Prove incomplete template fails closed
+        run: |
+          mkdir -p artifacts
+          set +e
+          python scripts/validate_chosica_2015_candidate_only_adjudication.py \
+            --contract config/chosica_2015_candidate_only_territorial_adjudication_ingest_contract_v0_1.json \
+            --cleanroom-freeze config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json \
+            --contamination config/chosica_2015_control_adjudication_contamination_registry_v0_1.json \
+            --territorial-contract config/chosica_2015_candidate_only_territorial_unblind_contract_v0_1.json \
+            --packet site/data/validation/chosica_2015_cleanroom_candidate_review_packet_v0_1.json \
+            --adjudication site/data/validation/chosica_2015_candidate_only_territorial_adjudication_template_v0_1.json \
+            --output artifacts/expected_fail_closed.json
+          rc=$?
+          set -e
+          test "$rc" -eq 2
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/expected_fail_closed.json',encoding='utf-8'))
+          assert d['status']=='FAIL_CLOSED_CANDIDATE_ONLY_ADJUDICATION_FREEZE'
+          assert d['scientific_use_allowed'] is False
+          assert d['target_unblind_allowed'] is False
+          assert 'FAIL_CLOSED_ADJUDICATION_STATUS' in d['error']
+          PY

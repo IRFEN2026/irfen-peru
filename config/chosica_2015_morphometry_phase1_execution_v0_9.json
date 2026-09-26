@@ -1,0 +1,96 @@
+{
+  "schema_version": "0.9",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PREUNBLIND_EXECUTION_REV9_TOPOLOGY_EQUIVALENT_REPLAY_NO_SECOND_NATIVE_GRID",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "inherits_method_contract": "config/chosica_2015_dem_morphometry_contract_v0_1.json",
+  "supersedes_execution_contract": "config/chosica_2015_morphometry_phase1_execution_v0_8.json",
+  "revision_basis": {
+    "prior_execution_target_count": 0,
+    "prior_execution_metrics_observed": false,
+    "v0_8_run_id": 34288860695,
+    "v0_8_status": "FAIL_CLOSED_PHASE1_MORPHOMETRY",
+    "v0_8_failed_worker_target": "quirio",
+    "v0_8_worker_return_code": -6,
+    "v0_8_native_error": "double free or corruption (out)",
+    "v0_8_coordinator_aggregated_partial_metrics": false,
+    "selection_or_tuning_from_metric_values": false,
+    "outcome_evidence_read": false,
+    "a6680_numeric_reference_read": false,
+    "post_anchor_predictor_read": false,
+    "diagnosis": "Fresh-process isolation proved the native abort is target-local to the non-Cashahuacra replay path rather than cross-target process state. Revision 0.7 replayed the already-computed D8 topology by constructing a second Pysheds Grid and re-running DEM conditioning/flowdir/catchment/distance operations. Revision 0.9 removes only that redundant second native-grid execution. For the five geometries originally generated with Pysheds catchment semantics, it replays the mathematically identical upstream set and weighted D8 distance directly from the unchanged first-pass D8 flow-direction array to the unchanged rasterio containing-cell center pour point, then requires >=0.995 frozen-polygon coverage and Jaccard. No observed metric value was used to choose this change."
+  },
+  "required_gate": {
+    "frozen_outlet_count": 6,
+    "frozen_geometry_count": 6,
+    "batch_morphometry_allowed": true,
+    "unblind_allowed": false
+  },
+  "execution_isolation": {
+    "one_target_per_fresh_python_process": true,
+    "worker_order": ["cashahuacra", "quirio", "pedregal_san_antonio", "la_libertad", "carossio", "rayos_de_sol"],
+    "parallel_workers": false,
+    "worker_failure_policy": "FAIL_CLOSED_NO_PARTIAL_BATCH_FREEZE",
+    "coordinator_observes_metric_values_only_after_all_six_workers_succeed": true
+  },
+  "routing_replay_dispatch": {
+    "cashahuacra": {
+      "frozen_generation_method": "MANUAL_REVERSE_D8_UPSTREAM_MASK_FROM_FROZEN_ROW_COL",
+      "morphometry_routing_method": "UNCHANGED_REVISION_0_7_MANUAL_REVERSE_D8_FROM_FROZEN_ROW_COL"
+    },
+    "quirio": {"frozen_generation_method": "PYSHEDS_CATCHMENT_FROM_RASTERIO_CONTAINING_CELL_CENTER_COORDINATE", "morphometry_routing_method": "TOPOLOGY_EQUIVALENT_REVERSE_D8_TO_SAME_CONTAINING_CELL_CENTER"},
+    "pedregal_san_antonio": {"frozen_generation_method": "PYSHEDS_CATCHMENT_FROM_RASTERIO_CONTAINING_CELL_CENTER_COORDINATE", "morphometry_routing_method": "TOPOLOGY_EQUIVALENT_REVERSE_D8_TO_SAME_CONTAINING_CELL_CENTER"},
+    "la_libertad": {"frozen_generation_method": "PYSHEDS_CATCHMENT_FROM_RASTERIO_CONTAINING_CELL_CENTER_COORDINATE", "morphometry_routing_method": "TOPOLOGY_EQUIVALENT_REVERSE_D8_TO_SAME_CONTAINING_CELL_CENTER"},
+    "carossio": {"frozen_generation_method": "PYSHEDS_CATCHMENT_FROM_RASTERIO_CONTAINING_CELL_CENTER_COORDINATE", "morphometry_routing_method": "TOPOLOGY_EQUIVALENT_REVERSE_D8_TO_SAME_CONTAINING_CELL_CENTER"},
+    "rayos_de_sol": {"frozen_generation_method": "PYSHEDS_CATCHMENT_FROM_RASTERIO_CONTAINING_CELL_CENTER_COORDINATE", "morphometry_routing_method": "TOPOLOGY_EQUIVALENT_REVERSE_D8_TO_SAME_CONTAINING_CELL_CENTER"}
+  },
+  "semantic_equivalence_constraints": {
+    "input_flow_direction_array": "unchanged first-pass Pysheds D8 flowdir on binary-identical frozen geometry-generation DEM",
+    "pour_point": "unchanged rasterio containing-cell center for frozen outlet row/col",
+    "catchment_definition": "all cells whose unique D8 downstream path reaches the pour-point cell",
+    "weighted_distance_definition": "sum of 30 m orthogonal and sqrt(2)*30 m diagonal D8 links along the unique downstream path",
+    "frozen_polygon_metric_mask_unchanged": true,
+    "minimum_replay_polygon_coverage_fraction": 0.995,
+    "minimum_replay_polygon_jaccard": 0.995,
+    "second_pysheds_grid_construction": false,
+    "second_dem_conditioning": false,
+    "second_flowdir_computation": false
+  },
+  "retained_scientific_contracts": {
+    "exact_geometry_dem_reconstruction": "config/chosica_2015_morphometry_phase1_execution_v0_4.json",
+    "frozen_polygon_is_metric_mask": true,
+    "frozen_outlet_modified": false,
+    "frozen_polygon_modified": false,
+    "dem_conditioning_changed": false,
+    "slope_algorithm_changed": false,
+    "channel_threshold_changed": false,
+    "drainage_density_rule_changed": false
+  },
+  "phase_1_output": {
+    "a6680_numeric_reference_read": false,
+    "outcome_evidence_read": false,
+    "post_anchor_predictor_read": false,
+    "required_target_count": 6,
+    "freeze_before_compare": true,
+    "comparison_allowed_in_same_execution": false,
+    "record_exact_geometry_dem_hash_audit_per_target": true,
+    "record_geometry_generation_routing_replay_audit_per_target": true,
+    "record_worker_return_code_per_target": true
+  },
+  "forbidden": [
+    "read A6680 numeric morphometry before phase-1 output is frozen by hash",
+    "read sealed outcomes before the allowed unblind",
+    "use any metric value from a worker to select, tune, drop or rerun a target under different scientific semantics",
+    "move an outlet or alter/expand a frozen basin polygon",
+    "change DEM conditioning, slope algorithm, channel threshold or metric inclusion rule",
+    "accept a regenerated DEM whose binary GeoTIFF SHA256 differs from the frozen geometry-generation DEM hash",
+    "relax the 0.995 topology replay coverage or Jaccard gates to force a pass",
+    "treat a worker crash, missing artifact or topology mismatch as zero, dry, inactive or scientifically usable"
+  ]
+}

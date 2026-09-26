@@ -1,0 +1,27 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "target_id": "la_libertad",
+  "registry_target_key": "la_libertad",
+  "status": "FROZEN_PREEXECUTION_METHOD",
+  "guards": {"RESEARCH_ONLY":true,"TEST_ONLY":true,"production_use":false,"production_ready":false,"operational_alerting_enabled":false},
+  "registry_path": "config/chosica_2015_outlet_freeze_registry_v0_1.json",
+  "candidate_path": "site/data/validation/chosica_2015_la_libertad_outlet_candidate.json",
+  "required_outlet_status": "FROZEN",
+  "base_extent_points_utm18s": [
+    {"id":"ana_0_000_centerline_midpoint","x_m":315680.0,"y_m":8680086.0},
+    {"id":"ana_0_825_centerline_midpoint","x_m":315351.0,"y_m":8680800.5},
+    {"id":"frozen_pedregal_outlet_context_only","x_m":314822.683,"y_m":8679229.571},
+    {"id":"frozen_carossio_outlet_context_only","x_m":316441.065,"y_m":8681008.592}
+  ],
+  "margin_sequence_degrees": [0.05,0.10,0.20,0.40],
+  "selection_rule": "After the La Libertad outlet is independently FROZEN, use the first frozen margin whose D8 upstream catchment from that outlet does not touch the DEM crop boundary.",
+  "outlet_mapping_rule": "Map only the frozen accepted outlet coordinate to the containing 30 m grid cell and require cell-center distance <= one DEM-cell diagonal.",
+  "source_integrity_rule": "Any Copernicus tile shared with the outlet diagnostic must reproduce its persisted SHA256 exactly.",
+  "dem_processing": {"source":"Copernicus DEM GLO-30 Public","analysis_crs":"EPSG:32718","resolution_m":30,"reprojection_resampling":"bilinear","conditioning":["fill pits","fill depressions","resolve flats"],"flow_direction":"D8"},
+  "neighboring_outlet_role": "Pedregal and Carossio coordinates are extent/context guards only; they may not move, select, optimize, clip, or reshape the La Libertad catchment.",
+  "forbidden_inputs": ["2015-03-23 activation/non-activation labels","2015-03-23 damage or severity","A6680 numeric morphometry","published basin area or channel length as fitting targets","rainfall or remote-sensing response"],
+  "morphometry_allowed": false,
+  "unblind_allowed": false,
+  "pass_status": "PASS_LA_LIBERTAD_EXPANDED_D8_CATCHMENT_CANDIDATE"
+}

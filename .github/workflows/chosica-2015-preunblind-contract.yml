@@ -1,0 +1,49 @@
+name: IRFEN - Chosica 2015 pre-unblind contract
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_multibasin_validation_set_v0_1.json
+      - config/chosica_2015_preunblind_predictor_time_plan_v0_1.json
+      - config/chosica_2015_dem_morphometry_contract_v0_1.json
+      - config/chosica_2015_outlet_resolution_contract_v0_1.json
+      - scripts/validate_chosica_2015_preunblind_contract.py
+      - .github/workflows/chosica-2015-preunblind-contract.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-preunblind-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Validate frozen pre-unblind contract
+        run: |
+          mkdir -p artifacts
+          python scripts/validate_chosica_2015_preunblind_contract.py \
+            --report artifacts/chosica_2015_preunblind_contract_report.json
+          python - <<'PY'
+          import json
+          p='artifacts/chosica_2015_preunblind_contract_report.json'
+          d=json.load(open(p,encoding='utf-8'))
+          assert d['status']=='PASS_CHOSICA_2015_PREUNBLIND_CONTRACT'
+          assert d['checks_failed']==0
+          assert d['outcome_evidence_read'] is False
+          assert d['guards']['RESEARCH_ONLY'] is True
+          assert d['guards']['TEST_ONLY'] is True
+          assert d['guards']['production_use'] is False
+          assert d['guards']['production_ready'] is False
+          assert d['guards']['operational_alerting_enabled'] is False
+          assert d['outlet_resolution_contract_sha256']
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-preunblind-contract-report
+          path: artifacts/chosica_2015_preunblind_contract_report.json
+          if-no-files-found: error

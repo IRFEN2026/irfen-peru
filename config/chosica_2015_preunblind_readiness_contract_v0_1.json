@@ -1,0 +1,78 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PREUNBLIND_READINESS_CONTRACT_CLEANROOM_RECOVERY",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "required_records": {
+    "validation_set": "config/chosica_2015_multibasin_validation_set_v0_1.json",
+    "outlet_geometry_freeze": "config/chosica_2015_outlet_freeze_registry_v0_1.json",
+    "morphometry_freeze": "config/chosica_2015_morphometry_phase1_freeze_record_v0_1.json",
+    "imerg_freeze": "config/chosica_2015_preunblind_imerg_freeze_record_v0_1.json",
+    "negative_control_pool_freeze": "config/chosica_2015_negative_control_candidate_pool_freeze_record_v0_1.json",
+    "negative_control_matching_freeze_preincident": "config/chosica_2015_negative_control_matching_freeze_record_v0_1.json",
+    "negative_control_shortlist_geometry_freeze": "config/chosica_2015_negative_control_shortlist_geometry_freeze_record_v0_1.json",
+    "negative_control_imerg_freeze": "config/chosica_2015_negative_control_preunblind_imerg_freeze_record_v0_1.json",
+    "blinding_recovery_handoff": "config/chosica_2015_blinding_recovery_handoff_v0_1.json",
+    "contamination_registry": "config/chosica_2015_control_adjudication_contamination_registry_v0_1.json",
+    "cleanroom_recovery_freeze": "config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json",
+    "candidate_only_territorial_contract": "config/chosica_2015_candidate_only_territorial_unblind_contract_v0_1.json",
+    "candidate_only_review_packet": "site/data/validation/chosica_2015_cleanroom_candidate_review_packet_v0_1.json",
+    "candidate_only_adjudication_ingest_contract": "config/chosica_2015_candidate_only_territorial_adjudication_ingest_contract_v0_1.json",
+    "target_unblind_readiness_contract": "config/chosica_2015_target_unblind_readiness_contract_v0_1.json"
+  },
+  "authoritative_postincident_matching": {
+    "record": "config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json",
+    "matching_sha256": "7fa4d488de385832f8b213b8fd314bcade01fda5495df2987d32be35a90ee5e2",
+    "selected_candidate_codes": [
+      "C_15cbc5db136d",
+      "C_19f0c525214f",
+      "C_51061f9f6857",
+      "C_636da855a58d",
+      "C_b903bae5d9c9",
+      "C_c767e4cea74e",
+      "C_d0274c1c4240"
+    ],
+    "preincident_matching_use_after_incident": "PROVENANCE_ONLY_TO_VERIFY_ALREADY_FROZEN_GEOMETRY_AND_PREDICTORS; NOT_AUTHORITATIVE_FOR_SELECTION_OR_ADJUDICATION"
+  },
+  "hard_gates": [
+    "six target outlets frozen",
+    "six target geometries frozen by reproducible D8 hash",
+    "phase-1 DEM morphometry frozen by exact report hash",
+    "pre-anchor IMERG predictors for all six targets frozen by exact report hash with complete coverage",
+    "negative-control candidate pool frozen before any control outcome adjudication",
+    "contaminated control adjudication explicitly tombstoned and ineligible for matching, calibration, validation, labeling or unblind",
+    "clean-room input and matching frozen by exact SHA-256 and reproducible replay",
+    "clean-room matching selects exactly the same seven neutral candidate IDs whose geometries and pre-anchor IMERG had been frozen before the contamination event",
+    "exact catchment geometries for those seven candidates remain frozen by report and GeoJSON SHA256",
+    "pre-anchor IMERG predictors for those seven candidates remain frozen by exact report hash with complete coverage",
+    "candidate-only territorial review packet frozen before any new outcome adjudication",
+    "candidate-only adjudication ingest contract frozen before any independent review result is accepted",
+    "territorial review cannot change candidate membership, rerun matching, reveal target outcomes or use A6680",
+    "post-control target readiness is evaluated only against anonymous frozen target codes and frozen shortlists",
+    "all target outcomes remain SEALED",
+    "no production or operational alerting guard may be relaxed"
+  ],
+  "control_gate": {
+    "required_before_target_unblind": true,
+    "rule": "Adjudicate only the seven candidate codes frozen by the clean-room matching. A candidate may be CONTROL only with affirmative independent evidence of no activation in the frozen 2015 event window; documentary silence remains OUTCOME_UNKNOWN.",
+    "post_adjudication_candidate_replacement_allowed": false,
+    "post_adjudication_predictor_reselection_allowed": false,
+    "ranking_or_geometry_changes_after_control_outcome_read": false,
+    "matching_recalculation_after_control_outcome_read": false,
+    "preincident_contaminated_adjudication_reuse_allowed": false
+  },
+  "unblind_policy": {
+    "automatic_unblind": false,
+    "candidate_only_territorial_review_may_proceed_after_gate": true,
+    "target_outcome_file_may_be_read_by_readiness_validator": false,
+    "a6680_outcome_narrative_may_be_read_by_readiness_validator": false,
+    "unblind_requires_separate_explicit_record_after_candidate_only_control_adjudication": true,
+    "sealed_target_outcome_unblind_allowed_now": false
+  }
+}

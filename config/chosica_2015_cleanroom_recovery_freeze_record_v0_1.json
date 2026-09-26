@@ -1,0 +1,67 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "CLEANROOM_RECOVERY_FROZEN_BY_EXACT_HASH",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "contaminated_adjudication_excluded": true,
+  "contamination_registry": "config/chosica_2015_control_adjudication_contamination_registry_v0_1.json",
+  "cleanroom_contract": "config/chosica_2015_cleanroom_recovery_contract_v0_1.json",
+  "provenance": {
+    "workflow_run_id": 34498597819,
+    "workflow_head_sha": "91dfea17bae18fc4b8437cb1ee52b1a5cdd3b4fe",
+    "artifact_id": 10160891501,
+    "artifact_name": "chosica-2015-cleanroom-recovery",
+    "artifact_digest": "sha256:37a123e64f9127d56e7982ebbcc6f1522cda0f8dd5bc59738dcfd0663a3002ec"
+  },
+  "implementation": {
+    "builder_path": "scripts/build_chosica_2015_cleanroom_input.py",
+    "builder_blob_sha": "720a63815cb150838538cfb853a1394c3afff919",
+    "matcher_path": "scripts/match_chosica_2015_cleanroom_controls.py",
+    "matcher_blob_sha": "3455af655d4e5fae19deb4494a204983c1344aab",
+    "validator_path": "scripts/validate_chosica_2015_cleanroom_recovery.py",
+    "validator_blob_sha": "7c9c3e1d9afed873b3350de2224372b58c796851"
+  },
+  "frozen_outputs": {
+    "cleanroom_input": {
+      "file_name": "chosica_2015_cleanroom_input.json",
+      "sha256": "724efd398d23e0431c4490a40a78af23e9ebf1f2642db3e87f1f0ecc0f3a22ac",
+      "target_count": 6,
+      "candidate_count": 29,
+      "contains_target_names": false,
+      "contains_outcome_labels": false,
+      "contains_post_anchor_predictors": false
+    },
+    "cleanroom_matching": {
+      "file_name": "chosica_2015_cleanroom_matching.json",
+      "sha256": "7fa4d488de385832f8b213b8fd314bcade01fda5495df2987d32be35a90ee5e2",
+      "selected_candidate_count": 7,
+      "shortlist_per_target": 3,
+      "precipitation_used_for_matching": false,
+      "outcomes_used_for_matching": false,
+      "free_web_search_used": false
+    },
+    "validation": {
+      "file_name": "chosica_2015_cleanroom_recovery_validation.json",
+      "sha256": "07eebbe943ccaadf68c97a61255246a223df974cc934192055b56952a3a9125f",
+      "status": "PASS_CLEANROOM_RECOVERY_PRE_FREEZE"
+    }
+  },
+  "immutability_rule": "Any regeneration must reproduce all three frozen SHA-256 values exactly before territorial outcome adjudication is allowed. A mismatch fails closed and invalidates the attempted downstream review, without altering the frozen record.",
+  "territorial_unblind_policy": {
+    "allowed_after_exact_replay": true,
+    "scope": "candidate confirmation/exclusion only after selection is frozen",
+    "selection_feedback_allowed": false,
+    "candidate_replacement_after_outcome_review_allowed": false,
+    "target_outcomes_allowed": false,
+    "a6680_numeric_morphometry_allowed": false,
+    "post_event_target_evidence_allowed": false,
+    "documentary_silence_means_control": false
+  },
+  "next_gate": "EXACT_REPLAY_CLEANROOM_FREEZE_THEN_INDEPENDENT_CANDIDATE_ONLY_TERRITORIAL_ADJUDICATION"
+}
