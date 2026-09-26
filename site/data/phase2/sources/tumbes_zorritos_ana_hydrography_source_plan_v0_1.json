@@ -1,0 +1,66 @@
+{
+  "schema_version": "0.1",
+  "discovery_id": "tumbes_zorritos_bocapan_coastal_ravines",
+  "status": "RESEARCH_ONLY_HYDROGRAPHY_SOURCE_PLAN",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "official_service": {
+    "institution": "Autoridad Nacional del Agua",
+    "service": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer",
+    "layer_id": 0,
+    "layer_name": "Ríos y Quebradas",
+    "role": "NATIONAL_TOPOLOGICALLY_CONSISTENT_PFAFSTETTER_HYDROGRAPHY_SOURCE_CANDIDATE",
+    "spatial_reference": 4326,
+    "source_year": 2018
+  },
+  "target_children": [
+    "el_grillo",
+    "san_andres",
+    "la_paja",
+    "marinero",
+    "el_rubio",
+    "san_pedro",
+    "pena_negra",
+    "el_tiburon",
+    "nuevo_paraiso"
+  ],
+  "query_policy": {
+    "name_match_is_geometry_adjudication": false,
+    "require_zorritos_spatial_context": true,
+    "require_independent_identity_source": true,
+    "require_exact_source_snapshot_and_hash_before_map_publication": true,
+    "require_outlet_or_downstream_connectivity_check": true,
+    "homonym_quarantine": [
+      "san_pedro",
+      "pena_negra"
+    ],
+    "approximate_points_allowed": false,
+    "synthetic_connectors_allowed": false,
+    "composite_parent_geometry_allowed": false
+  },
+  "known_identity_context": {
+    "el_rubio": "GORE Tumbes PPRRD 2024-2030 prevention context",
+    "san_pedro": "GORE Tumbes PPRRD 2024-2030, Acapulco/Zorritos; keep separate from San Pedro de los Incas",
+    "pena_negra": "GORE Tumbes/MVCS Zorritos context; same-name Canoas de Punta Sal feature quarantined",
+    "el_tiburon": "official Zorritos/Los Pinos infrastructure context",
+    "nuevo_paraiso": "official Zorritos prevention context",
+    "la_paja": "official secondary 2017 infrastructure context pending direct primary geometry adjudication",
+    "san_andres": "official secondary 2017 infrastructure context pending direct primary geometry adjudication",
+    "marinero": "official secondary 2017 infrastructure context pending direct primary geometry adjudication",
+    "el_grillo": "official CENEPRED/INGEMMET identity and 2023 component-event context"
+  },
+  "map_policy": {
+    "publish_only_reproducible_line_or_catchment_geometry": true,
+    "publish_each_child_separately": true,
+    "parent_is_not_a_hydrologic_polygon": true,
+    "event_footprint_is_not_catchment_geometry": true,
+    "risk_or_alert_layer": false
+  }
+}
