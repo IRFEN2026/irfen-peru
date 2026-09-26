@@ -1,0 +1,82 @@
+{
+  "schema_version": "0.1",
+  "discovery_id": "ancash_chimbote_lacramarca_santa_bajo",
+  "component_id": "rio_santa_lower_reach",
+  "status": "RESEARCH_ONLY_SOURCE_RECOVERY_ORIGINAL_MODEL_ASSETS_MISSING",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "ana_study_reach_chainage_km": [
+    0,
+    50
+  ],
+  "sources": [
+    {
+      "source_id": "ANA-SANTA-CHANNEL-TREATMENT-2011",
+      "institution": "Autoridad Nacional del Agua",
+      "document": "Tratamiento de cauce del rio para el control de inundaciones en la cuenca Santa",
+      "publication_date": "2011",
+      "url": "https://hdl.handle.net/20.500.12543/2362",
+      "role": "PRIMARY_OFFICIAL_HYDRAULIC_STUDY_LOCATOR",
+      "bounded_use": "Documentary QA for lower-Santa critical points, stable-channel treatment and floodplain modelling; report is not treated as the original hydraulic project files."
+    },
+    {
+      "source_id": "JICA-ANA-FLOOD-MAPS-11-RIVERS-SANTA",
+      "institution": "Japan International Cooperation Agency / Autoridad Nacional del Agua",
+      "document": "Hydraulic-analysis and flood-hazard-map development status for ANA river studies",
+      "url": "https://openjicareport.jica.go.jp/pdf/1000034201_01.pdf",
+      "role": "INDEPENDENT_INSTITUTIONAL_EXISTENCE_CONFIRMATION",
+      "bounded_use": "JICA reports ANA hazard maps for 14 rivers using HEC-RAS and HEC-GeoRAS and states it obtained results including maps for 11 rivers, explicitly including Santa."
+    },
+    {
+      "source_id": "UNS-SANTA-HECRAS-LA-HUACA-VIBORA-2013",
+      "institution": "Universidad Nacional del Santa",
+      "document": "Aplicacion del modelo HEC-RAS en el rio Santa, tramo Bocatoma La Huaca a 10 km aguas abajo de Bocatoma La Vibora",
+      "publication_date": "2013",
+      "url": "https://repositorio.uns.edu.pe/handle/20.500.14278/2371",
+      "role": "SECONDARY_PARTIAL_REACH_HYDRAULIC_QA",
+      "bounded_use": "Independent local HEC-RAS QA/source-recovery lead only; cannot substitute or be mosaicked into the ANA 0+000 to 50+000 model."
+    },
+    {
+      "source_id": "UNS-SANTA-HECRAS-PUENTE-SANTA-2013",
+      "institution": "Universidad Nacional del Santa",
+      "document": "Modelamiento hidraulico del rio Santa desde 1 km aguas abajo hasta 1.5 km aguas arriba del Puente Santa mediante HEC-RAS 4.0",
+      "publication_date": "2013",
+      "url": "https://repositorio.uns.edu.pe/handle/20.500.14278/2380",
+      "role": "SECONDARY_PARTIAL_REACH_HYDRAULIC_QA",
+      "bounded_use": "Independent 2.5 km HEC-RAS QA/source-recovery lead only; not the ANA 50 km corridor."
+    }
+  ],
+  "documented_methods": [
+    "HEC-RAS",
+    "HEC-GeoRAS",
+    "GIS floodplain mapping"
+  ],
+  "original_assets_retrieved": {
+    "hec_ras_project": false,
+    "hec_georas_workspace": false,
+    "dem_or_tin": false,
+    "cross_sections": false,
+    "floodplain_vector_or_raster": false
+  },
+  "scientific_effect": {
+    "lower_santa_geometry_created": false,
+    "partial_models_union_created": false,
+    "design_flow_promoted_to_threshold": false,
+    "modelled_floodplain_treated_as_observed_event": false,
+    "hydraulic_capacity_inferred": false,
+    "map_publication_enabled": false
+  },
+  "next_gate": [
+    "Recover ANA 2011 HEC-RAS and HEC-GeoRAS project files, DEM/TIN, cross sections and floodplain outputs from ANA/SNIRH or an institutional copy.",
+    "Check whether JICA retained transferable copies of the Santa result package it reports receiving.",
+    "Use UNS local models only for bounded QA and source-file recovery, never to fabricate a continuous official 50 km model.",
+    "Verify chainage and CRS before any coordinate transformation or map publication."
+  ]
+}
