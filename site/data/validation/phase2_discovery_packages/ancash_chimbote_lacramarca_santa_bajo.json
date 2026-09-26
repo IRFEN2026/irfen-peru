@@ -20,7 +20,8 @@
     "INDECI-CHIMBOTE-URBAN-DRAINAGE-20231218",
     "ANA-NUEVO-CHIMBOTE-FEN-PREVENTION-2023",
     "ANIN-LACRAMARCA-DEFENSES-20251211",
-    "ANIN-LACRAMARCA-PREVENTION-20260227"
+    "ANIN-LACRAMARCA-PREVENTION-20260227",
+    "ANA-SANTA-CAUCE-CONTROL-INUNDACIONES-2011"
   ],
   "source_registry_path": "site/data/phase2/sources/ancash_chimbote_lacramarca_santa_bajo_official_evidence_v0_1.json",
   "hydrologic_identity": {
@@ -99,6 +100,17 @@
           "whole_basin_context_counts_as_lower_reach": false,
           "counts_as_operational_geometry": false,
           "counts_as_event_footprint": false
+        },
+        "documentary_geometry_context": {
+          "source_id": "ANA-SANTA-CAUCE-CONTROL-INUNDACIONES-2011",
+          "gate_path": "site/data/phase2/sources/santa_2011_treatment/ana_santa_2011_documentary_gate_v0_1.json",
+          "study_reach": "0+000-50+000",
+          "axis_table_present": true,
+          "critical_points_reported": 24,
+          "source_crs_status": "UNRESOLVED_DATUM_AND_UTM_ZONE",
+          "map_eligible": false,
+          "whole_basin_substitution": false,
+          "pdf_digitization_as_final_geometry": false
         }
       },
       {
@@ -118,11 +130,11 @@
       }
     ],
     "event_ledger": {
-      "1982_1983": {"status": "UNKNOWN_NOT_NEGATIVE", "source_ids": []},
-      "1997_1998": {"status": "UNKNOWN_NOT_NEGATIVE", "source_ids": []},
       "2017": {
         "status": "POSITIVE_TERRITORIAL_MULTI_MECHANISM_EVIDENCE",
-        "source_ids": ["INGEMMET-A6763-ANCASH-2017"],
+        "source_ids": [
+          "INGEMMET-A6763-ANCASH-2017"
+        ],
         "component_notes": {
           "rio_lacramarca": "Positive territorial impact evidence exists, but the documented mechanism includes transverse debris flows and Chinecas canal failures; do not reduce to river overflow only.",
           "rio_santa_lower_reach": "Santa-system corridor impacts were documented, including lateral scour and debris-flow contributions; do not label the full Santa basin or lower reach with a uniform mechanism.",
@@ -141,6 +153,14 @@
           "rio_santa_lower_reach": "INDECI reports Rio Santa rise/overflow on 14 March 2023 with damage in Chimbote district; exact lower-reach spatial attribution remains to be normalized.",
           "urban_drainage_chimbote": "A separate 18 December 2023 inundation was attributed to drainage-system obstruction near the Lacramarca bridge and must remain separate from river overflow."
         }
+      },
+      "1982_1983": {
+        "status": "UNKNOWN_NOT_NEGATIVE",
+        "source_ids": []
+      },
+      "1997_1998": {
+        "status": "UNKNOWN_NOT_NEGATIVE",
+        "source_ids": []
       },
       "recent": {
         "status": "CURRENT_PROTECTION_AND_HIGH_FLOW_CONTEXT_NO_EVENT_CLASSIFICATION",
@@ -168,12 +188,23 @@
     },
     "exposure_connectivity": {
       "status": "PARTIAL_TERRITORIAL_AND_CURRENT_PROTECTION_CONTEXT",
-      "known_exposure_classes": ["dwellings", "agriculture", "roads", "bridges", "irrigation infrastructure", "health and education services"],
+      "known_exposure_classes": [
+        "dwellings",
+        "agriculture",
+        "roads",
+        "bridges",
+        "irrigation infrastructure",
+        "health and education services"
+      ],
       "current_project_context": {
         "source_id": "ANIN-LACRAMARCA-DEFENSES-20251211",
         "reported_intended_beneficiary_communities": 58,
         "reported_intended_beneficiary_population_lower_bound": 35000,
-        "districts": ["Macate", "Caceres del Peru", "Chimbote"],
+        "districts": [
+          "Macate",
+          "Caceres del Peru",
+          "Chimbote"
+        ],
         "counts_as_observed_event_exposure": false,
         "counts_as_lower_santa_exposure": false
       },
@@ -191,7 +222,16 @@
       "current_prevention_works_are_historical_capacity": false,
       "reported_project_progress_is_hydraulic_capacity": false,
       "local_bridge_intervention_dimensions_are_hydraulic_capacity": false,
-      "capacity_values": null
+      "capacity_values": null,
+      "ana_2011_lower_santa_design_model": {
+        "source_id": "ANA-SANTA-CAUCE-CONTROL-INUNDACIONES-2011",
+        "model": "HEC-RAS",
+        "gis_preprocessor": "HEC-GeoRAS / ArcGIS",
+        "design_model_values_are_current_capacity": false,
+        "design_model_values_are_historical_observed_capacity": false,
+        "design_model_values_are_irfen_thresholds": false,
+        "original_project_assets_recovered": false
+      }
     }
   },
   "mechanism_policy": {
@@ -220,7 +260,8 @@
     ],
     "review_evidence": [
       "ANIN-LACRAMARCA-DEFENSES-20251211 bounded as current protection/exposure context only",
-      "ANIN-LACRAMARCA-PREVENTION-20260227 bounded as current high-flow/prevention context only"
+      "ANIN-LACRAMARCA-PREVENTION-20260227 bounded as current high-flow/prevention context only",
+      "ANA-SANTA-CAUCE-CONTROL-INUNDACIONES-2011 bounded as documentary/design context only with CRS unresolved and no map geometry promotion"
     ]
   }
 }
