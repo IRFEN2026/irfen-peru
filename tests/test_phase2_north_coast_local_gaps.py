@@ -59,3 +59,24 @@ def test_paita_historical_windows_do_not_overassign_children():
     assert e98["local_child_activation_assigned"] is False
     assert e98["absence_of_local_report_is_negative"] is False
     assert e98["source_ids"]==[]
+
+
+PAI_TOPO=ROOT/"site/data/phase2/sources/piura_paita_local_topology_v0_1.json"
+
+def test_paita_local_receiver_topology_stays_fail_closed():
+    t=load(PAI_TOPO)
+    assert t["deployment_status"]=="RESEARCH_ONLY"
+    assert t["test_mode"]=="TEST_ONLY"
+    assert t["production_use"] is False
+    assert t["production_ready"] is False
+    assert t["operational_alerting_enabled"] is False
+    assert t["activation_gate"]=="BLOCKED"
+    assert t["decision_thresholds"] is None
+    assert t["hydraulic_factors"] is None
+    assert t["relations"]["la_piscina"]["receiver_context"]=="QUEBRADA_EL_ZANJON"
+    assert t["relations"]["la_catarata"]["receiver_context"]=="QUEBRADA_EL_ZANJON"
+    assert t["relations"]["villa_naval"]["receiver_context"]=="SOURCE_CONFLICT_PENDING_ADJUDICATION"
+    assert t["qa"]["source_conflict_is_not_silently_resolved"] is True
+    assert t["qa"]["textual_receiver_relation_is_exact_outlet_geometry"] is False
+    assert t["qa"]["figure_lines_are_reproducible_channel_geometry"] is False
+    assert t["qa"]["map_materialization_allowed"] is False
