@@ -1,0 +1,66 @@
+{
+  "schema_version": "0.1",
+  "discovery_id": "piura_talara_parinas_local_ravines",
+  "system_name": "Talara–Pariñas local ravines with official Cuenca Pariñas parent context",
+  "contract_status": "DISCOVERY_BASIN_CONTEXT_SOURCE_LOCKED_GEOMETRY_FREEZE_PENDING",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "hydrologic_identity": {
+    "ana_unit_code": "1392",
+    "ana_unit_name": "Cuenca Pariñas",
+    "identity_source": "ANA national hydrographic-unit registry and ANA IDEP Unidades Hidrográficas feature service",
+    "territorial_reference": "Talara–Pariñas local ravine corridor",
+    "territorial_reference_is_basin": false,
+    "relation_to_local_children": "PARENT_CONTEXT_ONLY_CHILD_TO_PARENT_CROSSWALK_UNRESOLVED",
+    "must_not_merge_with": [
+      "Intercuenca 1391",
+      "Cuenca Fernández",
+      "Máncora–Los Órganos local ravines",
+      "Paita urban ravines"
+    ]
+  },
+  "official_source_ids": [
+    "ANA-UH-1392-PARINAS"
+  ],
+  "source_query": {
+    "endpoint": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/8/query",
+    "where": "CODIGO='1392'",
+    "out_fields": "*",
+    "out_sr": 4326,
+    "geometry_precision": 7,
+    "format": "geojson"
+  },
+  "assets": {
+    "geometry": {
+      "status": "PENDING_EXACT_ANA_GEOMETRY_FREEZE",
+      "path": "site/data/phase2/geometries/piura_talara_parinas_basin_context.geojson",
+      "representation": "OFFICIAL_ANA_HYDROGRAPHIC_UNIT_CONTEXT",
+      "source_ids": [
+        "ANA-UH-1392-PARINAS"
+      ],
+      "counts_as_operational_geometry": false,
+      "counts_as_event_footprint": false
+    }
+  },
+  "crosswalk_gate": {
+    "local_children_auto_assigned_to_cuenca_parinas": false,
+    "quebrada_acholado_auto_crosswalk_to_ana_acholada": false,
+    "same_or_similar_name_is_identity_proof": false,
+    "exact_child_outlets_required_before_collector_assignment": true,
+    "note": "The official parent basin context may be frozen independently. It must not be used to assign Talara urban ravines to Cuenca Pariñas until each child channel/outlet is spatially crosswalked."
+  },
+  "map_policy": {
+    "approximate_geometry_forbidden": true,
+    "context_only": true,
+    "publish_only_after_exact_identity_and_reproducible_geometry": true,
+    "child_geometry_not_derived_from_parent_polygon": true,
+    "risk_or_alert_layer": false
+  }
+}
