@@ -115,3 +115,25 @@ def test_source_semantics_do_not_promote_context_to_activation_or_capacity():
     assert qa["absence_of_report_is_negative"] is False
     assert qa["provider_or_report_hazard_classes_are_irfen_thresholds"] is False
     assert qa["works_or_infrastructure_used_as_hydraulic_capacity"] is False
+
+
+TOPO = ROOT / "site/data/phase2/sources/piura_talara_2010_topology_v0_1.json"
+
+def test_2010_topology_context_is_fail_closed():
+    t = load(TOPO)
+    assert t["deployment_status"] == "RESEARCH_ONLY"
+    assert t["test_mode"] == "TEST_ONLY"
+    assert t["production_use"] is False
+    assert t["production_ready"] is False
+    assert t["operational_alerting_enabled"] is False
+    assert t["activation_gate"] == "BLOCKED"
+    assert t["decision_thresholds"] is None
+    assert t["hydraulic_factors"] is None
+    assert t["map_materialization_allowed"] is False
+    r = t["relations"]
+    assert r["quebrada_mangle"].startswith("TRIBUTARY_OF_QUEBRADA_YALE")
+    assert r["quebrada_santa_rita"].startswith("DIRECT_SEA_OUTLET")
+    assert r["quebrada_politecnico"].startswith("DIRECT_SEA_OUTLET")
+    assert r["quebrada_yale"].startswith("DIRECT_SEA_OUTLET")
+    assert r["quebrada_acholado"].startswith("TERMINAL_BEFORE_SEA")
+    assert r["quebrada_debora"].startswith("TERMINAL_BEFORE_SEA")
