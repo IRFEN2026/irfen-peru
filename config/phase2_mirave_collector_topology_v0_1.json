@@ -1,0 +1,107 @@
+{
+  "schema_version": "phase2-mirave-collector-topology-v0.1",
+  "discovery_id": "tacna_locumba_ilabaya_local_ravines",
+  "child_id": "tacna_mirave",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "identity": {
+    "child_name": "Quebrada Mirave",
+    "parent_basin": {
+      "name": "Cuenca Locumba",
+      "official_unit_code": "1316",
+      "status": "OFFICIAL_ANA_PARENT_CONFIRMED"
+    },
+    "receiver": {
+      "name": "río Salado",
+      "relationship": "QUEBRADA_MIRAVE_CONFLUENCE_WITH_RIO_SALADO",
+      "relationship_status": "OFFICIAL_INGEMMET_FIELD_REPORT_CONFIRMED",
+      "receiving_hydrographic_unit": {
+        "official_unit_code": "13165",
+        "name": "Medio Locumba",
+        "status": "OFFICIAL_ANA_RD_CONFIRMED_FOR_RIO_SALADO_MIRAVE_OCONCHAY"
+      },
+      "exact_outlet_coordinate": null,
+      "outlet_geometry_status": "PENDING_REPRODUCIBLE_VECTOR_OR_OFFICIAL_HITO_FREEZE"
+    }
+  },
+  "evidence": {
+    "ingemmet_a6705": {
+      "source_id": "INGEMMET-A6705-MIRAVE",
+      "support": "Deposito proluvial en forma de cono en la confluencia de la quebrada Mirave y el río Salado; confirma relación geomorfológica local.",
+      "geometry_use": "FIELD_MAP_CONTEXT_NOT_YET_FROZEN_AS_EXACT_CHILD_GEOMETRY"
+    },
+    "ana_rd_0928_2022": {
+      "source_id": "ANA-RD-0928-2022-SALADO-MIRAVE-OCONCHAY",
+      "support": "Faja marginal del río Salado, tramo Mirave-Oconchay, Unidad Hidrográfica 13165 Medio Locumba; 280 hitos en UTM WGS84 zona 19S.",
+      "geometry_use": "OFFICIAL_RECEIVER_MARGIN_CONTEXT; NOT_EVENT_FOOTPRINT; HITO_COORDINATES_PENDING_FREEZE"
+    },
+    "ana_pgrh_caplina_locumba": {
+      "source_id": "ANA-PGRH-CAPLINA-LOCUMBA",
+      "support": "Locumba se organiza en cuenca alta, media y baja; la cuenca media comprende Curibaya, Ilabaya y Cinto. El mismo plan describe un río Salado distinto en la cuenca alta del Sama.",
+      "geometry_use": "TOPOLOGY_AND_HOMONYM_CONTEXT_ONLY"
+    }
+  },
+  "homonym_guard": {
+    "rule": "DO_NOT_CONFLATE_SAME_NAME_RIO_SALADO_ACROSS_BASINS",
+    "local_receiver": "río Salado en el corredor Mirave-Oconchay, UH 13165 Medio Locumba",
+    "distinct_context": "río Salado descrito en la cuenca alta del Sama por el PGRH Caplina-Locumba",
+    "exact_parent_uh_match_required": true
+  },
+  "event_binding": {
+    "confirmed_child_events": [
+      "tacna_mirave_2015",
+      "tacna_mirave_2019"
+    ],
+    "events_do_not_define_geometry": true,
+    "events_do_not_define_threshold": true,
+    "child_activation_does_not_imply_receiver_overflow": true,
+    "receiver_overflow_requires_independent_evidence": true
+  },
+  "map_policy": {
+    "child_map_publishable": false,
+    "receiver_map_publishable": false,
+    "reason": "Exact Mirave child geometry/outlet and frozen ANA receiver hitos are not yet persisted reproducibly.",
+    "synthetic_connector_forbidden": true,
+    "faja_margin_is_not_event_footprint": true,
+    "risk_colours_forbidden": true,
+    "alerts_forbidden": true
+  },
+  "sources": [
+    {
+      "source_id": "INGEMMET-A6705-MIRAVE",
+      "institution": "INGEMMET via SIGRID/CENEPRED",
+      "official": true,
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/14338_informe-tecnico-n0-a6705-evaluacion-de-peligros-geologicos-en-el-centro-poblado-mirave-y-sector-alto-mirave-distrito-ilabaya-provincia-jorge-basadre-r.pdf",
+      "provenance_status": "OFFICIAL_PDF_VERIFIED_NOT_ARCHIVED_IN_THIS_PACKAGE",
+      "content_sha256": null
+    },
+    {
+      "source_id": "ANA-RD-0928-2022-SALADO-MIRAVE-OCONCHAY",
+      "institution": "Autoridad Nacional del Agua via SIGRID/CENEPRED",
+      "official": true,
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/16033",
+      "provenance_status": "OFFICIAL_SIGRID_RECORD_VERIFIED_NOT_ARCHIVED_IN_THIS_PACKAGE",
+      "content_sha256": null
+    },
+    {
+      "source_id": "ANA-PGRH-CAPLINA-LOCUMBA",
+      "institution": "Autoridad Nacional del Agua",
+      "official": true,
+      "url": "https://www.ana.gob.pe/sites/default/files/normatividad/files/pgrh-locumba.pdf",
+      "provenance_status": "OFFICIAL_PDF_VERIFIED_NOT_ARCHIVED_IN_THIS_PACKAGE",
+      "content_sha256": null
+    }
+  ],
+  "next_geometry_actions": [
+    "Freeze ANA RD 0928-2022 280 receiver-margin hitos with CRS metadata and hashes.",
+    "Freeze or derive a reproducible Mirave channel/catchment geometry from an admissible official source without tracing a PDF as exact geometry.",
+    "Resolve exact Mirave outlet coordinate/confluence and verify intersection with UH 13165 before map publication."
+  ]
+}
