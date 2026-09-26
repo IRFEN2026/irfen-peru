@@ -40,8 +40,13 @@ jobs:
             fi
             sleep $((attempt * 10))
           done
-          test "$ok" -eq 1
-      - name: Enforce candidate-only output semantics
+          if [ "$ok" -ne 1 ]; then
+            # A source-access timeout is a preserved UNKNOWN state, not zero
+            # candidates and not a hydrologic negative. The probe writes the
+            # fail-closed artifact before returning its retryable exit code.
+            test -s artifacts/phase2_rimac_ana_hydrography_probe.json
+          fi
+      - name: Enforce candidate-only or explicit unavailable-source semantics
         run: |
           python - <<'PY'
           import json
@@ -49,7 +54,6 @@ jobs:
 
           p=Path('artifacts/phase2_rimac_ana_hydrography_probe.json')
           d=json.loads(p.read_text(encoding='utf-8'))
-          assert d['status']=='RESEARCH_ONLY_LIVE_VECTOR_PROBE'
           assert d['deployment_status']=='RESEARCH_ONLY'
           assert d['test_mode']=='TEST_ONLY'
           assert d['production_use'] is False
@@ -64,8 +68,22 @@ jobs:
           assert d['adjudication']['routing_enabled'] is False
           assert d['adjudication']['travel_time_enabled'] is False
           assert d['adjudication']['map_publish_enabled'] is False
-          for row in d['literal_intersection_candidates']:
-              assert row['scientific_status']=='GEOMETRIC_INTERSECTION_CANDIDATE_NOT_ADJUDICATED_CONFLUENCE'
+
+          if d['status']=='RESEARCH_ONLY_LIVE_VECTOR_PROBE':
+              assert d['query_completed'] is True
+              assert all(isinstance(v,int) and v>=0 for v in d['candidate_counts'].values())
+              assert isinstance(d['candidates'],dict)
+              assert isinstance(d['literal_intersection_candidates'],list)
+              for row in d['literal_intersection_candidates']:
+                  assert row['scientific_status']=='GEOMETRIC_INTERSECTION_CANDIDATE_NOT_ADJUDICATED_CONFLUENCE'
+          else:
+              assert d['status']=='SOURCE_ACCESS_UNAVAILABLE'
+              assert d['query_completed'] is False
+              assert all(v is None for v in d['candidate_counts'].values())
+              assert d['candidates'] is None
+              assert d['literal_intersection_candidates'] is None
+              assert d['access']['zero_candidates_inferred'] is False
+              assert d['access']['hydrologic_absence_inferred'] is False
           PY
       - uses: actions/upload-artifact@v4
         with:
