@@ -8264,8 +8264,204 @@
         "previous_chain_sha256": "216bbd1f6fc3ebe729597c8afc79bc7604eef257a5e4eb1c1a8dd6405234c58b",
         "chain_sha256": "33554b3f2360c3a5078a4368fb5d035f88121132b3de488cb9d13a2d00f24fc0"
       }
+    },
+    {
+      "snapshot_date_utc": "2026-09-27",
+      "archived_at": "2026-09-26T16:18:28.877755+00:00",
+      "pre_outcome_capture_window": {
+        "start_utc": "2026-09-26T12:00:00+00:00",
+        "end_utc": "2026-09-27T02:00:00+00:00",
+        "captured_within_window": true
+      },
+      "source_timestamps": {
+        "experimental_state": "2026-09-23T15:06:17.110723+00:00",
+        "latest_observation": "2026-09-23T15:06:12.407096+00:00",
+        "forecast": "2026-09-22T21:33:55.774771+00:00",
+        "imerg_early": "2026-09-23T15:05:08.204255+00:00",
+        "igp_cendehua": "2026-09-23T11:29:37.699452+00:00"
+      },
+      "operational_dataset_status": "updated",
+      "core_test_status": {
+        "code": "END_TO_END_TEST_MODE_AVAILABLE_WITH_KNOWN_LIMITATIONS",
+        "production_ready": false,
+        "testable_pilot_lanes": [
+          "san_ildefonso",
+          "chosica",
+          "catacaos"
+        ],
+        "incomplete_pilot_lanes": [],
+        "local_chosica_status": "SHADOW_TEST_WITH_MANUAL_OFFICIAL_VERIFICATION",
+        "local_chosica_shadow_manual_verification_available": true,
+        "statement": "Los tres carriles principales pueden ejecutarse en modo de prueba con señales reales/experimentales y trazabilidad. Pedregal puede añadirse a pruebas en sombra mediante verificación manual oficial ISAAC; sigue bloqueado para decisión automática.",
+        "stop_rule": "No ampliar a nuevas cuencas hasta cerrar calibración, controles sin impacto y puertas de los tres pilotos."
+      },
+      "zones": [
+        {
+          "zone_id": "san_ildefonso",
+          "test_ready": true,
+          "readiness": "END_TO_END_METEO_TESTABLE_HYDRAULIC_GATE_OPEN_FOR_TESTS",
+          "observed_mm": {
+            "rain24": 0.0,
+            "rain72": 0.0,
+            "rain7d": 0.09,
+            "method": "validated_dem_polygon_parallel"
+          },
+          "forecast_mm": {
+            "forecast24": 0.2,
+            "forecast72": 0.26,
+            "available_future_hours": 83
+          },
+          "observed_threshold_crossings": [],
+          "forecast_threshold_crossings": [],
+          "river_state": null,
+          "recommendation": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          },
+          "blockers": [
+            "hydraulic_calibration_required"
+          ]
+        },
+        {
+          "zone_id": "chosica",
+          "test_ready": true,
+          "readiness": "END_TO_END_METEO_TESTABLE_HYDRAULIC_GATE_OPEN_FOR_TESTS",
+          "observed_mm": {
+            "rain24": 0.0,
+            "rain72": 0.0,
+            "rain7d": 0.15,
+            "method": "validated_dem_polygon_parallel"
+          },
+          "forecast_mm": {
+            "forecast24": 0.0,
+            "forecast72": 0.01,
+            "available_future_hours": 83
+          },
+          "observed_threshold_crossings": [],
+          "forecast_threshold_crossings": [],
+          "river_state": null,
+          "recommendation": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          },
+          "blockers": [
+            "hydraulic_calibration_required"
+          ]
+        },
+        {
+          "zone_id": "catacaos",
+          "test_ready": true,
+          "readiness": "END_TO_END_TESTABLE_SECONDARY_RIVER_PROXY",
+          "observed_mm": {
+            "rain24": 0.02,
+            "rain72": 0.08,
+            "rain7d": 0.39,
+            "method": "operational_sampling_geometry_reference"
+          },
+          "forecast_mm": {
+            "forecast24": 9.73,
+            "forecast72": 16.94,
+            "available_future_hours": 83
+          },
+          "observed_threshold_crossings": [],
+          "forecast_threshold_crossings": [],
+          "river_state": {
+            "available": true,
+            "role": "secondary_modelled_categorical_proxy",
+            "proxy_class": "NO_MODELLED_RETURN_PERIOD_EXCEEDANCE",
+            "value": null,
+            "unit": null
+          },
+          "recommendation": {
+            "code": "TEST_NO_TRIGGER",
+            "mode": "TEST_ONLY",
+            "operational_alert": false
+          },
+          "blockers": [
+            "senamhi_numeric_river_state_preferred_when_available",
+            "floodplain_and_current_channel_capacity_validation_required"
+          ]
+        }
+      ],
+      "lima_east_local_shadow": {
+        "status": "SHADOW_TEST_WITH_MANUAL_OFFICIAL_VERIFICATION",
+        "shadow_test_ready_with_manual_official_verification": true,
+        "automatic_live_test_ready": false,
+        "isaac": {
+          "available": true,
+          "station": "Pedregal Koica",
+          "machine_readable_channel": false,
+          "role": "external_manual_shadow_verification_only"
+        }
+      },
+      "ground_signals": {
+        "huaycoloro_cendehua": {
+          "provider": "IGP/CENDEHUA",
+          "pilot": "Huaycoloro/Chosica",
+          "source_generated_at": "2026-09-23T11:29:37.699452+00:00",
+          "source_status": "HUAYCOLORO_STRUCTURED_CHANNEL_FOUND",
+          "station_count": 2,
+          "recent_station_count_at_shadow_capture": 0,
+          "observations": [
+            {
+              "station_id": "Huaycoloro1",
+              "last_alert_update": "2026-09-23T11:27:15.489006+00:00",
+              "last_image_update": "2026-09-23T11:28:28.820998+00:00",
+              "age_seconds_at_shadow_capture": 276673.389,
+              "recent_at_shadow_capture": false,
+              "provider_activity_flag_raw": false,
+              "irfen_outcome_label": null
+            },
+            {
+              "station_id": "Huaycoloro2",
+              "last_alert_update": "2026-09-23T11:27:19.330431+00:00",
+              "last_image_update": "2026-09-23T11:28:14.229950+00:00",
+              "age_seconds_at_shadow_capture": 276669.547,
+              "recent_at_shadow_capture": false,
+              "provider_activity_flag_raw": false,
+              "irfen_outcome_label": null
+            }
+          ],
+          "automatic_outcome_label": null,
+          "can_support_none_classification_by_itself": false,
+          "human_review_required": true,
+          "missing_or_stale_data_rule": "UNCERTAIN; never low risk or NONE"
+        }
+      },
+      "source_health": {
+        "forecast_available": true,
+        "forecast_covers_target_day": true,
+        "required_forecast_hours_to_target_day_end": 31.692,
+        "forecast_verification_pairs": 483,
+        "forecast_verification_pairs_by_zone": {
+          "san_ildefonso": 161,
+          "chosica": 161,
+          "catacaos": 161
+        },
+        "imerg_early_status": "EARLY_HALFHOURLY_SOURCE_AVAILABLE",
+        "imerg_early_latency_hours": 5.59,
+        "regression_status": "PASS"
+      },
+      "outcome_verification": {
+        "status": "PENDING_REAL_WORLD_OUTCOME_REVIEW",
+        "label": null,
+        "verified_event": null,
+        "official_source": null,
+        "notes": null
+      },
+      "production_use": false,
+      "integrity": {
+        "algorithm": "SHA-256",
+        "canonicalization": "JSON_SORT_KEYS_UTF8_COMPACT",
+        "scope": "PRE_OUTCOME_SNAPSHOT_EXCLUDING_HUMAN_REVIEW_ANNOTATIONS",
+        "snapshot_payload_sha256": "241605a1eaf843ed6287889889180f06eec0154fd958f1f3276db30842dd2001",
+        "previous_chain_sha256": "33554b3f2360c3a5078a4368fb5d035f88121132b3de488cb9d13a2d00f24fc0",
+        "chain_sha256": "42ddef963180bf40557ba504b9a65a0163c2939ee34e58ecede4aab451c2eb18"
+      }
     }
   ],
-  "updated_at": "2026-09-25T17:05:24.617328+00:00",
-  "record_count": 43
+  "updated_at": "2026-09-26T16:18:28.877755+00:00",
+  "record_count": 44
 }
