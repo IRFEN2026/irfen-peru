@@ -1,0 +1,67 @@
+{
+  "schema_version": "0.1",
+  "status": "CROSS_PROVINCE_SAME_NAME_GEOMETRY_QUARANTINE_REQUIRED",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "discovery_id": "piura_mancora_los_organos_coastal_ravines",
+  "target_component": "quebrada_vichayito",
+  "purpose": "Prevent a Paita-context same-name Quebrada Vichayito label from being bound to the Los Organos/Talara Quebrada Vichayito child without a reproducible coordinate-level and hydrologic crosswalk.",
+  "talara_identity_anchor": {
+    "source_id": "PPRRD-TALARA-2019-2022",
+    "institution": "Municipalidad Provincial de Talara / CENEPRED SIGRID",
+    "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/9835",
+    "bounded_claim": "The official provincial plan names Quebrada Vichayito among dry or intermittent ravines in Talara hydrographic context.",
+    "activation_event_supplied": false,
+    "reproducible_surface_geometry_supplied": false,
+    "outlet_supplied": false
+  },
+  "paita_same_name_source": {
+    "source_id": "IGP-PAITA-GEODYNAMIC-2022-036",
+    "institution": "Instituto Geofisico del Peru / CENEPRED SIGRID",
+    "document": "Inspeccion Geodinamica en los A.H. Vista al Mar, Cerro Lloron y Playa Cangrejos (Distrito y Provincia de Paita - Region Piura)",
+    "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/14893_inspeccion-geodinamica-en-los-ah-vista-al-mar-cerro-lloron-y-playa-cangrejos-distrito-y-provincia-de-paita-region-piura.pdf",
+    "publication_date": "2022-10",
+    "source_region_context": "Paita",
+    "bounded_claim": "A Paita-context official geodynamic mapping source contains a same-name Quebrada Vichayito cartographic label in the broader Paita coastal-ravine context; that label is not by itself evidence that the feature is the Los Organos/Talara Quebrada Vichayito child.",
+    "relationship_to_talara_vichayito": "UNRESOLVED_REQUIRES_COORDINATE_AND_HYDROLOGIC_CROSSWALK",
+    "may_supply_talara_vichayito_catchment_without_crosswalk": false,
+    "may_supply_talara_vichayito_channel_without_crosswalk": false,
+    "may_supply_talara_vichayito_outlet_without_crosswalk": false,
+    "may_supply_talara_vichayito_event_without_crosswalk": false
+  },
+  "adjudication": {
+    "same_name_is_sufficient_for_cross_province_geometry_binding": false,
+    "administrative_or_cartographic_context_is_sufficient_for_hydrologic_identity": false,
+    "paita_same_name_label_may_fill_talara_geometry_gap_without_crosswalk": false,
+    "paita_and_talara_features_proven_distinct": false,
+    "paita_and_talara_features_proven_same": false,
+    "talara_vichayito_geometry_status_after_review": "MISSING_NO_APPROXIMATION_ALLOWED",
+    "talara_vichayito_activation_verified": false,
+    "negative_control_created": false,
+    "map_geometry_created": false
+  },
+  "required_before_any_crosswalk": [
+    "exact source geometry or georeferenced line/polygon for the Paita-labelled feature with provenance",
+    "exact or reproducible geometry for the Los Organos/Talara Quebrada Vichayito child",
+    "coordinate-level comparison of continuity, separation and drainage direction",
+    "hydrologic crosswalk using outlet and receiving-water context rather than name coincidence",
+    "independent review that no event, threshold or negative label was transferred between provinces"
+  ],
+  "forbidden": [
+    "select a Quebrada Vichayito geometry by name alone",
+    "reuse any Paita Quebrada Vichayito geometry for Los Organos/Talara without a coordinate-level hydrologic crosswalk",
+    "treat a map label as a verified activation event",
+    "infer an outlet from territorial proximity",
+    "use absence of a dated local event as a negative control",
+    "create approximate geometry for the Talara child to resolve the ambiguity",
+    "merge Paita and Talara Vichayito identities until continuity is reproducibly demonstrated"
+  ],
+  "next_gate": "Acquire reproducible coordinates or vector geometry for both same-name features and adjudicate hydrologic continuity/separation before any Talara Vichayito geometry, outlet or event binding is allowed."
+}
