@@ -1,0 +1,87 @@
+{
+  "schema_version": "0.1",
+  "discovery_id": "piura_paita_urban_local_ravines",
+  "package_role": "STATIC_COLLECTOR_TOPOLOGY_SIDECAR",
+  "source_registry_ref": "site/data/phase2/sources/piura_paita_official_evidence_v0_1.json",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "topology": {
+    "receiver": "el_zanjon",
+    "receiver_role": "MAIN_LOCAL_RAVINE_COLLECTOR",
+    "tributaries": [
+      "nueva_esperanza",
+      "la_piscina",
+      "la_catarata",
+      "villa_naval"
+    ],
+    "evidence_status": "OFFICIAL_STATIC_RELATION_EXACT_GEOMETRY_UNRESOLVED",
+    "terminal_context": "SYSTEM_ULTIMATELY_DISCHARGES_TO_PACIFIC_PER_IGP",
+    "exact_confluences_reproducible": false,
+    "exact_terminal_outlet_reproducible": false
+  },
+  "component_status": {
+    "el_zanjon": {
+      "geometry": "MISSING",
+      "map_publishable": false,
+      "hydraulic_capacity": null
+    },
+    "nueva_esperanza": {
+      "geometry": "MISSING",
+      "map_publishable": false,
+      "dated_event": "UNKNOWN"
+    },
+    "la_piscina": {
+      "geometry": "MISSING",
+      "map_publishable": false,
+      "dated_event": "UNKNOWN"
+    },
+    "la_catarata": {
+      "geometry": "MISSING",
+      "map_publishable": false,
+      "dated_event": "UNKNOWN",
+      "field_context": "IGP_REPORTS_UNDATED_ACTIVATION_WITH_MUDFLOW_IMPACT"
+    },
+    "villa_naval": {
+      "geometry": "MISSING",
+      "map_publishable": false,
+      "dated_event": "UNKNOWN"
+    },
+    "paita_alta_blind_basins": {
+      "mechanism": "URBAN_PLUVIAL_DEPRESSION_SYSTEM",
+      "natural_ravine": false,
+      "receiver": null,
+      "geometry": "PENDING_TOPOGRAPHIC_REPRODUCIBILITY"
+    }
+  },
+  "coupling_gate": {
+    "static_topology_metadata_allowed": true,
+    "hydrologic_routing_allowed": false,
+    "discharge_allowed": false,
+    "travel_time_allowed": false,
+    "attenuation_allowed": false,
+    "capacity_allowed": false,
+    "thresholds_allowed": false,
+    "operational_use_allowed": false
+  },
+  "observation_context": {
+    "historical_rainfall_series_cited_by_source": true,
+    "event_paired_to_named_child": false,
+    "child_flow_or_stage_series_available": false,
+    "threshold_derivation_allowed": false
+  },
+  "map_policy": {
+    "parent_polygon_forbidden": true,
+    "publish_children_only_after_reproducible_geometry": true,
+    "digitized_pdf_linework_forbidden": true,
+    "approximate_points_forbidden": true,
+    "risk_colors_forbidden": true,
+    "alerts_forbidden": true
+  }
+}
