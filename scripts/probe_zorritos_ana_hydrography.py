@@ -25,6 +25,13 @@ TARGETS = {
     "pena_negra": ["PENA NEGRA", "PEÑA NEGRA"],
     "el_tiburon": ["TIBURON", "TIBURÓN"],
     "nuevo_paraiso": ["NUEVO PARAISO", "NUEVO PARAÍSO"],
+    "sechurita": ["SECHURITA"],
+    "los_pozos": ["LOS POZOS", "POZOS"],
+    "nueva_esperanza": ["NUEVA ESPERANZA"],
+    "mal_paso_01": ["MAL PASO"],
+    "mal_paso_02": ["MAL PASO"],
+    "las_delicias": ["LAS DELICIAS", "DELICIAS"],
+    "miramar": ["MIRAMAR"],
 }
 
 SAFE = {
@@ -66,7 +73,6 @@ def candidate_text_fields(metadata: dict) -> list[str]:
         key = strip_accents(f"{field.get('name','')} {field.get('alias','')}").lower()
         if any(token in key for token in ("nom", "name", "rio", "queb", "cauce")):
             fields.append(field["name"])
-    # Fail closed rather than guessing an arbitrary string field.
     if not fields:
         raise ValueError("ANA metadata exposes no defensible name-like text field")
     return sorted(set(fields))
@@ -86,7 +92,6 @@ def query_url(field: str, token: str) -> str:
 def normalize_feature(feature: dict) -> dict:
     geometry = feature.get("geometry")
     if geometry is not None and geometry.get("type") not in {"LineString", "MultiLineString"}:
-        # Preserve the candidate, but explicitly flag unexpected geometry.
         geometry_type = geometry.get("type")
     else:
         geometry_type = None if geometry is None else geometry.get("type")
@@ -141,6 +146,7 @@ def run() -> dict:
             "candidate_count": len(candidates),
             "requests": requests,
             "candidates": candidates,
+            "target_context": (plan.get("target_context") or {}).get(component_id),
             "name_match_is_identity_adjudication": False,
             "geometry_map_publishable": False,
             "outlet_verified": False,
@@ -148,7 +154,7 @@ def run() -> dict:
         }
 
     snapshot = {
-        "schema_version": "0.1",
+        "schema_version": "0.2",
         **SAFE,
         "discovery_id": "tumbes_zorritos_bocapan_coastal_ravines",
         "source_id": "ANA-ONRH-RIOS-QUEBRADAS-AAVI-2018-PROBE",
@@ -170,6 +176,9 @@ def run() -> dict:
             "exact_snapshot_hash_required_before_map_publication": True,
             "outlet_or_downstream_connectivity_required": True,
             "homonym_quarantine": ["san_pedro", "pena_negra"],
+            "sector_vs_ravine_quarantine": ["nueva_esperanza", "mal_paso_01", "mal_paso_02"],
+            "shared_name_candidate_quarantine": ["mal_paso_01", "mal_paso_02"],
+            "marine_hazard_separation_required": ["nueva_esperanza"],
             "absence_of_candidate_is_negative": False,
             "synthetic_connectors_allowed": False,
             "composite_parent_geometry_allowed": False,
