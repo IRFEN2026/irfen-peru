@@ -1,0 +1,74 @@
+{
+  "schema_version": "0.3",
+  "discovery_id": "tumbes_rio_tumbes",
+  "status": "RESEARCH_ONLY_FREEZE_PLAN",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "official_service": "https://geosnirh.ana.gob.pe/server/rest/services/Inundacion_Tumbes/Capas_Inundacion_Tumbes_04052023/MapServer",
+  "service_item_id": "05eaeb1a998f42a3a5e9649482bd9332",
+  "service_spatial_reference_wkid": 3857,
+  "supported_query_formats": ["JSON", "geoJSON", "PBF"],
+  "service_verified_at": "2026-09-26",
+  "layers": [
+    {
+      "layer_id": 2,
+      "role": "OFFICIAL_HYDROLOGIC_BASIN_RESEARCH_CONTEXT",
+      "expected_name": "Cuenca Tumbes",
+      "source_id": "ANA-TUMBES-2023-MAPSERVER-BASIN",
+      "canonical_path": "site/data/phase2/geometries/tumbes_rio_tumbes_basin_context.geojson",
+      "map_publication_requires_frozen_snapshot": true,
+      "counts_as_event_footprint": false
+    },
+    {
+      "layer_id": 66,
+      "role": "OBSERVED_EVENT_FOOTPRINT_ONLY",
+      "expected_name": "Áreas Inundadas Río Tumbes 28 Abril 2023 - 3290.85 Ha",
+      "source_id": "ANA-TUMBES-2023-INUNDATION-20230428",
+      "event_date": "2023-04-28",
+      "canonical_path": "site/data/phase2/event_footprints/tumbes_rio_tumbes_inundation_20230428.geojson",
+      "map_publication_as_catchment_forbidden": true,
+      "counts_as_basin_geometry": false
+    },
+    {
+      "layer_id": 67,
+      "role": "OBSERVED_EVENT_FOOTPRINT_ONLY",
+      "expected_name": "Áreas Inundadas Río Tumbes 04 Mayo 2023 - Caudal 1845.77_m3_s - 1085.32 Ha",
+      "source_id": "ANA-TUMBES-2023-INUNDATION-20230504",
+      "event_date": "2023-05-04",
+      "canonical_path": "site/data/phase2/event_footprints/tumbes_rio_tumbes_inundation_20230504.geojson",
+      "map_publication_as_catchment_forbidden": true,
+      "counts_as_basin_geometry": false
+    }
+  ],
+  "freeze_contract": {
+    "preserve_raw_metadata_bytes": true,
+    "preserve_raw_geojson_bytes": true,
+    "write_canonical_geojson": true,
+    "sha256_raw_and_canonical": true,
+    "out_sr": 4326,
+    "geometry_precision": 7,
+    "query_where": "1=1",
+    "query_out_fields": "*",
+    "query_return_geometry": true,
+    "raw_directory": "site/data/phase2/sources/tumbes_rio_tumbes_geometry_freeze",
+    "manifest_path": "site/data/phase2/geometries/tumbes_rio_tumbes_geometry_freeze_manifest_v0_1.json"
+  },
+  "guards": {
+    "basin_geometry_is_event_footprint": false,
+    "event_footprints_are_basin_geometry": false,
+    "provider_alert_bands_are_irfen_thresholds": false,
+    "observed_discharge_is_hydraulic_capacity": false,
+    "transfer_to_zarumilla_or_zorritos_allowed": false,
+    "event_footprint_implies_basin_activation": false,
+    "absence_of_event_footprint_is_negative": false,
+    "event_footprint_defines_future_hazard": false,
+    "map_publication_before_snapshot_validation": false
+  }
+}
