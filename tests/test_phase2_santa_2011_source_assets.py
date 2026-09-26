@@ -49,3 +49,12 @@ def test_santa_2011_model_values_remain_context_only():
     assert policy["modeled_area_is_observed_event_footprint"] is False
     assert policy["study_sector_rows_are_observed_event_labels"] is False
     assert policy["study_era_defenses_are_current_capacity"] is False
+
+
+def test_santa_crs_adjudication_file_exists():
+    p = ROOT / "site/data/phase2/source_assessments/santa_2011_crs_zone_adjudication_v0_1.json"
+    data = load(p)
+    assert data["bounded_zone_test"]["zone_adjudication"] == 17
+    assert data["bounded_zone_test"]["datum_adjudication"] is None
+    assert data["scientific_policy"]["transform_2011_axis_to_irfen_map_authorized"] is False
+    assert data["scientific_policy"]["map_publication_enabled"] is False
