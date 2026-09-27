@@ -32,8 +32,10 @@
   "independent_qa": {
     "source_id": "ANA-CASMA-SURFACE-WATER-INVENTORY-2007",
     "path": "site/data/phase2/sources/ancash_casma_2007_surface_water_inventory_v0_1.json",
-    "area_comparison_rule": "round(service AREA_KM2, 1) must equal the one-decimal 2007 ANA-INRENA inventory area; otherwise fail closed for adjudication",
-    "name_comparison_rule": "accent/case/whitespace-normalized exact equality against the 2007 inventory name"
+    "identity_rule": "Exact current-service CODIGO plus one level-7 polygon is the reproducible identity gate for CURRENT institutional N7 context; this does not prove byte/geometric equivalence to Uh_pfas100 (2007).",
+    "area_comparison_rule": "Record exact service AREA_KM2, exact 2007 inventory area, delta and one-decimal equality as QA evidence. Area drift is not post-hoc tolerated or erased and is not used to claim historical equivalence.",
+    "name_comparison_rule": "Require accent/case/whitespace-normalized equality after bounded removal of a leading generic 'Rio' designator only. Record whether the exact historical normalized label also matches.",
+    "historical_equivalence_rule": "Never label current MINAM geometry as exact 2007 Uh_pfas100 geometry without direct lineage or original bytes."
   },
   "units": [
     {
@@ -99,7 +101,11 @@
     "partial_archive_allowed": false,
     "pdf_digitization_allowed": false,
     "outlet_inference_allowed": false,
-    "event_outcome_for_geometry_allowed": false
+    "event_outcome_for_geometry_allowed": false,
+    "historical_area_tolerance_km2": null,
+    "historical_area_match_required_for_current_context": false,
+    "historical_exact_name_match_required_for_current_context": false,
+    "bounded_generic_rio_prefix_normalization_allowed": true
   },
   "outputs": {
     "archive_root": "data/phase2/source_archive/casma_minam_n7",
