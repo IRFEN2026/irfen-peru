@@ -45,6 +45,13 @@ def test_leoncio_prado_paired_event_context_is_quarantined():
     assert row["outlet_status"] == "UNRESOLVED"
     assert row["map_publishable"] is False
 
+def test_miramar_spatial_crosswalk_remains_quarantined():
+    row = load()["targets"]["miramar"]
+    plan = load_plan()
+    assert row["outlet_status"] == "UNRESOLVED"
+    assert row["map_publishable"] is False
+    assert "miramar" in plan["query_policy"]["spatial_crosswalk_quarantine"]
+
 def test_matrix_and_source_plan_target_sets_match():
     matrix_targets = set(load()["targets"])
     plan_targets = set(load_plan()["target_children"])
