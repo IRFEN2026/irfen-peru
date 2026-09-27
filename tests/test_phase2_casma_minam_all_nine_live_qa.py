@@ -30,6 +30,18 @@ class TestCasmaMinamAllNineLiveQA(unittest.TestCase):
                     accept="application/geo+json,application/json;q=0.9,*/*;q=0.1",
                 )
                 doc = json.loads(raw)
+                feature = doc["features"][0]
+                props = feature.get("properties") or {}
+                print("CASMA_MINAM_LIVE_OBS=" + json.dumps({
+                    "code": expected["code"],
+                    "expected_name": expected["name"],
+                    "service_name": module.service_name(props),
+                    "expected_area_km2": expected["area_km2"],
+                    "service_area_km2": module.service_area(props),
+                    "area_final": props.get("AREA_FINAL"),
+                    "geometry_type": (feature.get("geometry") or {}).get("type"),
+                    "bbox_wgs84": [round(v, 8) for v in module.geometry_bbox(feature["geometry"])],
+                }, ensure_ascii=False, sort_keys=True))
                 with patch.dict(os.environ, {"GITHUB_ACTIONS": "diagnostic"}, clear=False):
                     module.validate_feature(contract, expected, doc)
 
