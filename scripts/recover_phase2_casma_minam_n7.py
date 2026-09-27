@@ -169,8 +169,14 @@ def validate_feature(contract: dict, expected: dict, doc: dict) -> dict:
         raise RecoveryError(f"NAME_MISMATCH code={expected['code']} expected={expected['name']} actual={actual_name}")
     actual_area = service_area(props)
     if round(actual_area, 1) != round(float(expected["area_km2"]), 1):
+        expected_area = float(expected["area_km2"])
+        delta = actual_area - expected_area
+        rel_pct = (delta / expected_area * 100.0) if expected_area else math.nan
         raise RecoveryError(
-            f"AREA_MISMATCH code={expected['code']} expected={expected['area_km2']:.1f} actual={actual_area:.6f}"
+            "AREA_MISMATCH "
+            f"code={expected['code']} expected={expected_area:.1f} actual={actual_area:.6f} "
+            f"AREA_KM2={props.get('AREA_KM2')!r} AREA_FINAL={props.get('AREA_FINAL')!r} "
+            f"delta_km2={delta:.6f} rel_pct={rel_pct:.6f}"
         )
     geometry = feature.get("geometry")
     if not isinstance(geometry, dict):
