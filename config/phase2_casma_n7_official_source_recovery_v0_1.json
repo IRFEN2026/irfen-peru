@@ -1,0 +1,151 @@
+{
+  "schema_version": "0.1",
+  "status": "OFFICIAL_PUBLIC_DOWNLOAD_PATH_IDENTIFIED_EXACT_N7_BYTES_NOT_YET_FROZEN",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "discovery_id": "ancash_casma_sechin_yautan",
+  "purpose": "Narrow the Casma N7 recovery gate to the documented official Pfafstetter dataset without promoting any geometry until exact vector bytes are retrieved and QAed.",
+  "official_dataset_identity": {
+    "title": "Delimitacion y codificacion de unidades hidrograficas del Peru",
+    "provider": "INRENA / Autoridad Nacional del Agua",
+    "documented_dataset_basename": "Uh_pfas100",
+    "documented_attribute_table": "Uh_pfas100.dbf",
+    "representation": "POLYGON_VECTOR",
+    "source_scale": "1:100000",
+    "reference_system": "WGS84",
+    "methodology": "Pfafstetter",
+    "documented_levels": "N1-N8",
+    "expected_fields": [
+      "ID",
+      "NIVEL_1",
+      "NIVEL_2",
+      "NIVEL_3",
+      "NIVEL_4",
+      "NIVEL_5",
+      "NIVEL_6",
+      "NIVEL_7",
+      "NIVEL_8",
+      "NOMB_UH_N1",
+      "NOMB_UH_N2",
+      "NOMB_UH_N3",
+      "NOMB_UH_N4",
+      "NOMB_UH_N5",
+      "NOMB_UH_N6",
+      "NOMB_UH_N7",
+      "NOMB_UH_N8",
+      "AREA_KM2",
+      "AREA_Final"
+    ]
+  },
+  "documentary_sources": [
+    {
+      "source_id": "ANA-PFAFSTETTER-DESCRIPTIVE-MEMORY",
+      "institution": "Autoridad Nacional del Agua / INRENA",
+      "url": "https://repositorio.ana.gob.pe/bitstream/handle/20.500.12543/597/ANA0000383.pdf?isAllowed=y&sequence=1",
+      "admissible_claims": [
+        "the official attribute structure is documented under Uh_pfas100.dbf",
+        "the dataset includes Pfafstetter levels N1 through N8, unit names and areas",
+        "the source scale is 1:100000 and the official hydrographic-unit product is vector"
+      ]
+    },
+    {
+      "source_id": "ANA-SNIRH-IDE",
+      "institution": "Autoridad Nacional del Agua",
+      "url": "https://snirh.ana.gob.pe/ConsultaIDE/",
+      "admissible_claims": [
+        "ANA maintains an official spatial-data portal for hydrographic units and supports interoperable/download services"
+      ]
+    },
+    {
+      "source_id": "GEOIDEP-ANA-UNIDADES-HIDROGRAFICAS",
+      "institution": "Secretaria de Gobierno y Transformacion Digital / ANA",
+      "url": "https://www.geoidep.gob.pe/catalogo-nacional-de-servicios-web?id_institucion=172",
+      "admissible_claims": [
+        "the national geoservice catalog currently lists ANA Unidades Hidrograficas with WMS and WFS services"
+      ]
+    }
+  ],
+  "casma_n7_expected": [
+    {
+      "code": "1375961",
+      "name": "Bajo Casma",
+      "area_km2": 418.7
+    },
+    {
+      "code": "1375962",
+      "name": "Rio Sechin",
+      "area_km2": 729.5
+    },
+    {
+      "code": "1375963",
+      "name": "Medio Bajo Casma",
+      "area_km2": 487.8
+    },
+    {
+      "code": "1375964",
+      "name": "Rio Yautan",
+      "area_km2": 352
+    },
+    {
+      "code": "1375965",
+      "name": "Medio Casma",
+      "area_km2": 492.5
+    },
+    {
+      "code": "1375966",
+      "name": "Rio Vado",
+      "area_km2": 163.7
+    },
+    {
+      "code": "1375967",
+      "name": "Medio Alto Casma",
+      "area_km2": 4
+    },
+    {
+      "code": "1375968",
+      "name": "Rio Pira",
+      "area_km2": 164.8
+    },
+    {
+      "code": "1375969",
+      "name": "Alto Casma",
+      "area_km2": 177.8
+    }
+  ],
+  "exact_byte_gate": {
+    "retrieved": false,
+    "source_archive_sha256": null,
+    "extracted_feature_sha256": null,
+    "normalized_geojson_sha256": null,
+    "required_before_publication": [
+      "retrieve official ANA/INRENA vector bytes from an institutional download or WFS endpoint",
+      "freeze source artifact and SHA-256",
+      "select exactly NIVEL_7 codes 1375961 through 1375969 without geometry editing",
+      "verify code, name, area and topology against the 2007 Casma study",
+      "normalize to GeoJSON with explicit CRS transformation provenance if needed",
+      "freeze normalized bytes and SHA-256",
+      "run geometry validity, non-overlap/topology and area-tolerance QA"
+    ]
+  },
+  "scientific_effect": {
+    "child_geometry_created": false,
+    "pdf_digitization_used": false,
+    "n6_substitution_used": false,
+    "event_outcome_used_for_geometry": false,
+    "map_publication_enabled": false
+  },
+  "forbidden": [
+    "trace the 2007 PDF map as final N7 geometry",
+    "use the N6 Casma polygon as a child substitute",
+    "edit official child boundaries to fit event outcomes",
+    "infer outlets from settlements or impact points",
+    "treat source availability as successful retrieval before exact bytes are frozen"
+  ]
+}
