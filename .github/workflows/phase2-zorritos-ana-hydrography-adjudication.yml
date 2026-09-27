@@ -53,7 +53,15 @@ jobs:
                   assert obj[key] == expected, (key, obj.get(key), expected)
 
           assert set(matrix["targets"]) == set(plan["target_children"])
-          assert len(matrix["targets"]) == 17
+          assert len(matrix["targets"]) == 18
+
+          la_tucilla = matrix["targets"]["la_tucilla"]
+          assert la_tucilla["geometry_status"] == "QUERY_PENDING_OFFICIAL_MAP_ANCHOR_NOT_LINE_GEOMETRY"
+          assert la_tucilla["outlet_status"] == "UNRESOLVED"
+          assert la_tucilla["map_publishable"] is False
+          assert "la_tucilla" in plan["query_policy"]["official_map_anchor_not_line_geometry_quarantine"]
+          assert "la_tucilla" in plan["query_policy"]["scope_adjudication_quarantine"]
+          assert "la_tucilla" in plan["query_policy"]["marine_hazard_separation_required"]
 
           leoncio = matrix["targets"]["leoncio_prado"]
           assert "PAIRED_EVENT_CONTEXT_QUARANTINE" in leoncio["geometry_status"]
