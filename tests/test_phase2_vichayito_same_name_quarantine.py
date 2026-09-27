@@ -60,10 +60,21 @@ def test_registry_preserves_vichayito_cross_province_quarantine():
         for inference in src["forbidden_inferences"]
     )
 
+    mincetur = next(
+        s for s in reg["sources"]
+        if s["source_id"] == "MINCETUR-PLAYA-VICHAYITO-5374"
+    )
+    assert mincetur["role"] == "OFFICIAL_TERRITORIAL_IDENTITY_AND_NAMED_LOCAL_RAVINE_CONTEXT"
+    assert any("Los Organos district, Talara province" in claim for claim in mincetur["admissible_claims"])
+    assert any("Quebrada del Chino and Quebrada Vichayito" in claim for claim in mincetur["admissible_claims"])
+    assert any("does not resolve the Paita/Talara same-name geometry conflict" in inference or "does not resolve" in inference for inference in mincetur["forbidden_inferences"])
+
     qa = reg["qa"]
     assert qa["vichayito_named_ravine_confirmed"] is True
     assert qa["vichayito_activation_verified"] is False
     assert qa["vichayito_cross_province_same_name_binding_allowed"] is False
+    assert qa["vichayito_talara_territorial_identity_independently_supported"] is True
+    assert qa["vichayito_talara_local_named_ravines_independently_supported"] is True
 
     artifacts = {a["path"]: a for a in reg["qa_artifacts"]}
     artifact = artifacts["config/phase2_vichayito_same_name_quarantine_v0_1.json"]
