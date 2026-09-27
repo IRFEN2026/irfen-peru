@@ -13,8 +13,6 @@ import argparse
 import hashlib
 import json
 import math
-import os
-import tempfile
 import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
@@ -169,15 +167,7 @@ def validate_feature(contract: dict, expected: dict, doc: dict) -> dict:
     if normalize_name(actual_name) != normalize_name(expected["name"]):
         raise RecoveryError(f"NAME_MISMATCH code={expected['code']} expected={expected['name']} actual={actual_name}")
     actual_area = service_area(props)
-    diagnostic_bypass = {
-        "1375961": 418.2315,
-    }
-    is_bounded_ci_probe = (
-        os.environ.get("GITHUB_ACTIONS") == "true"
-        and expected["code"] in diagnostic_bypass
-        and abs(actual_area - diagnostic_bypass[expected["code"]]) < 1e-7
-    )
-    if round(actual_area, 1) != round(float(expected["area_km2"]), 1) and not is_bounded_ci_probe:
+    if round(actual_area, 1) != round(float(expected["area_km2"]), 1):
         expected_area = float(expected["area_km2"])
         delta = actual_area - expected_area
         rel_pct = (delta / expected_area * 100.0) if expected_area else math.nan
