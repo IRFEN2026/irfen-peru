@@ -24,7 +24,10 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
-ENDPOINT = "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query"
+SERVICE_ROOT = "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer"
+LAYER_ID = 0
+ENDPOINT = SERVICE_ROOT + f"/{LAYER_ID}/query"
+FIND_ENDPOINT = SERVICE_ROOT + "/find"
 BBOX = (-76.74, -11.97, -76.67, -11.89)
 OUT = ROOT / "artifacts/phase2_rimac_ana_hydrography_probe.json"
 TARGETS = {"quirio": "quirio", "pedregal": "pedregal", "rimac": "rimac"}
@@ -110,6 +113,19 @@ def id_query_url():
     return ENDPOINT + "?" + urlencode(params)
 
 
+def find_query_url(target_name):
+    params = {
+        "searchText": target_name,
+        "contains": "true",
+        "searchFields": "NOMBRE_CA",
+        "layers": str(LAYER_ID),
+        "returnGeometry": "false",
+        "outFields": "OBJECTID_1,NOMBRE_CA",
+        "f": "json",
+    }
+    return FIND_ENDPOINT + "?" + urlencode(params)
+
+
 def geometry_query_url(object_ids):
     params = {
         "objectIds": ",".join(str(int(x)) for x in sorted(set(object_ids))),
@@ -148,10 +164,12 @@ def source_stub():
         "institution":"Autoridad Nacional del Agua",
         "service":"ONRH/Rios_Quebradas_AAVI/MapServer/0",
         "service_item_id":"99cc803fb9044523b6ee55f24dcab270",
-        "query_strategy":"BOUNDED_TARGET_NAME_ID_ONLY_THEN_OBJECTID_GEOMETRY",
+        "query_strategy":"BOUNDED_ID_QUERY_WITH_INDEPENDENT_FIND_FALLBACK_THEN_OBJECTID_GEOMETRY",
         "id_query_url":id_query_url(),
+        "find_query_urls":{name:find_query_url(name) for name in ("Quirio","Pedregal","Rimac","Rímac")},
         "bbox_wgs84":list(BBOX),
         "target_names":["Quirio","Pedregal","Rimac","Rímac"],
+        "zero_candidates_inferred_as_hydrologic_absence":False,
     }
 
 
@@ -168,21 +186,39 @@ def fail_closed_adjudication():
 
 
 def fetch_json(url, stage, timeout=25):
-    req = Request(url, headers={"User-Agent":"IRFEN-research-ana-hydrography-probe/0.2"})
+    req = Request(url, headers={"User-Agent":"IRFEN-research-ana-hydrography-probe/0.3"})
     try:
         with urlopen(req, timeout=timeout) as r:
             raw = r.read()
     except (TimeoutError, URLError, OSError) as exc:
         raise SourceAccessError(stage, exc) from exc
-    return json.loads(raw.decode("utf-8"))
+    try:
+        doc = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise SourceAccessError(stage, exc) from exc
+    if isinstance(doc, dict) and doc.get("error"):
+        err = RuntimeError(json.dumps(doc["error"], ensure_ascii=False, sort_keys=True))
+        raise SourceAccessError(stage, err)
+    return doc
 
 
-def fetch():
-    ids_doc = fetch_json(id_query_url(), "id_query")
-    object_ids = ids_doc.get("objectIds")
-    if object_ids is None:
-        raise ValueError("ANA ID-only response has no objectIds field")
-    object_ids = sorted({int(x) for x in object_ids})
+def geometry_overlaps_bbox(geom):
+    coords = []
+    for line in iter_lines(geom) or []:
+        coords.extend(line)
+    if not coords:
+        return False
+    xs = [float(p[0]) for p in coords if len(p) >= 2]
+    ys = [float(p[1]) for p in coords if len(p) >= 2]
+    if not xs or not ys:
+        return False
+    gxmin, gxmax = min(xs), max(xs)
+    gymin, gymax = min(ys), max(ys)
+    xmin, ymin, xmax, ymax = BBOX
+    return not (gxmax < xmin or gxmin > xmax or gymax < ymin or gymin > ymax)
+
+
+def fetch_geometry(object_ids):
     features = []
     geometry_urls = []
     geometry_hashes = []
@@ -192,16 +228,87 @@ def fetch():
         geometry_urls.append(url)
         doc = fetch_json(url, "geometry_query")
         if doc.get("type") != "FeatureCollection":
-            raise ValueError("ANA geometry response is not a GeoJSON FeatureCollection")
+            raise SourceAccessError("geometry_query", ValueError("ANA geometry response is not a GeoJSON FeatureCollection"))
         features.extend(doc.get("features") or [])
         geometry_hashes.append(hashlib.sha256(canonical(doc)).hexdigest())
+    return features, geometry_urls, geometry_hashes
+
+
+def fetch_by_find(primary_exc):
+    object_ids = set()
+    find_urls = {}
+    find_hashes = {}
+    find_result_counts = {}
+    matched_names = {}
+    for target in ("Quirio","Pedregal","Rimac","Rímac"):
+        url = find_query_url(target)
+        find_urls[target] = url
+        doc = fetch_json(url, "find:" + norm(target))
+        results = doc.get("results")
+        if results is None:
+            raise SourceAccessError("find:" + norm(target), ValueError("ANA find response has no results field"))
+        find_hashes[target] = hashlib.sha256(canonical(doc)).hexdigest()
+        find_result_counts[target] = len(results)
+        names = []
+        for result in results:
+            if int(result.get("layerId", LAYER_ID)) != LAYER_ID:
+                continue
+            attrs = result.get("attributes") or {}
+            oid = attrs.get("OBJECTID_1")
+            if oid is not None:
+                object_ids.add(int(oid))
+            if attrs.get("NOMBRE_CA") is not None:
+                names.append(str(attrs.get("NOMBRE_CA")))
+        matched_names[target] = sorted(set(names))
+
+    object_ids = sorted(object_ids)
+    raw_features, geometry_urls, geometry_hashes = fetch_geometry(object_ids)
+    features = [f for f in raw_features if geometry_overlaps_bbox(f.get("geometry") or {})]
+    meta = {
+        "access_strategy_used":"FIND_NAME_ID_ONLY_THEN_OBJECTID_GEOMETRY_POSTFILTER_BBOX",
+        "primary_id_query_error":{
+            "stage":getattr(primary_exc, "stage", "id_query"),
+            "error_class":type(getattr(primary_exc, "cause", primary_exc)).__name__,
+            "error_message":str(getattr(primary_exc, "cause", primary_exc)),
+        },
+        "find_query_urls":find_urls,
+        "find_payload_sha256":find_hashes,
+        "find_result_counts":find_result_counts,
+        "find_matched_names":matched_names,
+        "object_ids":object_ids,
+        "object_id_count":len(object_ids),
+        "geometry_query_urls":geometry_urls,
+        "geometry_payload_sha256":geometry_hashes,
+        "raw_geometry_feature_count":len(raw_features),
+        "bbox_postfilter_feature_count":len(features),
+        "zero_candidates_inferred_as_hydrologic_absence":False,
+    }
+    return {"type":"FeatureCollection","features":features}, meta
+
+
+def fetch():
+    try:
+        ids_doc = fetch_json(id_query_url(), "id_query")
+    except SourceAccessError as exc:
+        return fetch_by_find(exc)
+
+    object_ids = ids_doc.get("objectIds")
+    if object_ids is None:
+        raise SourceAccessError("id_query", ValueError("ANA ID-only response has no objectIds field"))
+    object_ids = sorted({int(x) for x in object_ids})
+    raw_features, geometry_urls, geometry_hashes = fetch_geometry(object_ids)
+    features = [f for f in raw_features if geometry_overlaps_bbox(f.get("geometry") or {})]
     data = {"type":"FeatureCollection","features":features}
     meta = {
-        "object_ids": object_ids,
-        "object_id_count": len(object_ids),
-        "id_payload_sha256": hashlib.sha256(canonical(ids_doc)).hexdigest(),
-        "geometry_query_urls": geometry_urls,
-        "geometry_payload_sha256": geometry_hashes,
+        "access_strategy_used":"BOUNDED_TARGET_NAME_ID_ONLY_THEN_OBJECTID_GEOMETRY",
+        "object_ids":object_ids,
+        "object_id_count":len(object_ids),
+        "id_payload_sha256":hashlib.sha256(canonical(ids_doc)).hexdigest(),
+        "geometry_query_urls":geometry_urls,
+        "geometry_payload_sha256":geometry_hashes,
+        "raw_geometry_feature_count":len(raw_features),
+        "bbox_postfilter_feature_count":len(features),
+        "zero_candidates_inferred_as_hydrologic_absence":False,
     }
     return data, meta
 
@@ -246,7 +353,7 @@ def build(data, access_meta=None):
     if access_meta:
         source["two_stage_access"] = access_meta
     return {
-        "schema_version":"0.2",
+        "schema_version":"0.3",
         "status":"RESEARCH_ONLY_LIVE_VECTOR_PROBE",
         "deployment_status":"RESEARCH_ONLY",
         "test_mode":"TEST_ONLY",
@@ -277,7 +384,7 @@ def build_unavailable(exc):
     cause = getattr(exc, "cause", exc)
     stage = getattr(exc, "stage", "unknown")
     return {
-        "schema_version":"0.2",
+        "schema_version":"0.3",
         "status":"SOURCE_ACCESS_UNAVAILABLE",
         "deployment_status":"RESEARCH_ONLY",
         "test_mode":"TEST_ONLY",
@@ -318,6 +425,12 @@ def self_test():
     unavailable=build_unavailable(SourceAccessError("id_query", TimeoutError("timed out")))
     assert unavailable["query_completed"] is False
     assert all(v is None for v in unavailable["candidate_counts"].values())
+    assert unavailable["source"]["zero_candidates_inferred_as_hydrologic_absence"] is False
+    assert "searchFields=NOMBRE_CA" in find_query_url("Quirio")
+    inside={"type":"LineString","coordinates":[[-76.72,-11.95],[-76.70,-11.93]]}
+    outside={"type":"LineString","coordinates":[[-77.0,-12.2],[-76.9,-12.1]]}
+    assert geometry_overlaps_bbox(inside) is True
+    assert geometry_overlaps_bbox(outside) is False
     print("self-test ok")
 
 
