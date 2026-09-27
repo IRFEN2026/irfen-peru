@@ -1,0 +1,65 @@
+{
+  "schema_version": "0.1",
+  "assessment_id": "casma_minam_n7_all_nine_live_observations_v0_1",
+  "status": "ALL_NINE_EXACT_CODES_OBSERVED_ATTRIBUTE_DRIFT_RECORDED_FAIL_CLOSED",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "observation_date_utc": "2026-09-27",
+  "source": {
+    "institution": "Ministerio del Ambiente / Geoservidor Peru",
+    "layer_url": "https://geoservidorperu.minam.gob.pe/arcgis/rest/services/ServicioActivacionQuebrada/MapServer/1",
+    "layer_name": "Unidades Hidrográficas (subcuencas)",
+    "geometry_type": "esriGeometryPolygon",
+    "source_spatial_reference_wkid": 32718,
+    "exact_identity_field": "CODIGO",
+    "output_spatial_reference_wkid": 4326,
+    "query_script_pr": 335,
+    "query_script_head_sha": "eb03ca3f9a4d1fcc6bdfca497704ec7993d79cfc",
+    "github_actions_run_id": 36292439777,
+    "github_actions_job_id": 108544977635,
+    "observation_scope": "Exact live per-code queries performed by CI; this record freezes reported attributes and WGS84 bounding boxes only, not raw feature bytes."
+  },
+  "observations": [
+    {"code":"1375961","expected_name_2007":"Bajo Casma","service_name":"Bajo Casma","expected_area_km2_2007":418.7,"service_area_km2":418.2315,"area_final_km2":416.0118,"area_delta_km2":-0.4685,"bbox_wgs84":[-78.39134686,-9.62712132,-78.14252599,-9.24681329],"geometry_type":"Polygon"},
+    {"code":"1375962","expected_name_2007":"Rio Sechin","service_name":"Sechin","expected_area_km2_2007":729.5,"service_area_km2":729.3274,"area_final_km2":725.4567,"area_delta_km2":-0.1726,"bbox_wgs84":[-78.2698974,-9.50029354,-77.80460415,-9.216849],"geometry_type":"Polygon"},
+    {"code":"1375963","expected_name_2007":"Medio Bajo Casma","service_name":"Medio Bajo Casma","expected_area_km2_2007":487.8,"service_area_km2":487.5388,"area_final_km2":484.9513,"area_delta_km2":-0.2612,"bbox_wgs84":[-78.2866074,-9.65112971,-77.93227785,-9.38113965],"geometry_type":"Polygon"},
+    {"code":"1375964","expected_name_2007":"Rio Yautan","service_name":"Yaután","expected_area_km2_2007":352.0,"service_area_km2":352.0356,"area_final_km2":350.1673,"area_delta_km2":0.0356,"bbox_wgs84":[-78.04899898,-9.53201885,-77.74256125,-9.28766717],"geometry_type":"Polygon"},
+    {"code":"1375965","expected_name_2007":"Medio Casma","service_name":"Medio Casma","expected_area_km2_2007":492.5,"service_area_km2":492.4516,"area_final_km2":489.838,"area_delta_km2":-0.0484,"bbox_wgs84":[-78.04501579,-9.67805315,-77.77158122,-9.42231009],"geometry_type":"Polygon"},
+    {"code":"1375966","expected_name_2007":"Rio Vado","service_name":"Vado","expected_area_km2_2007":163.7,"service_area_km2":163.7308,"area_final_km2":162.8618,"area_delta_km2":0.0308,"bbox_wgs84":[-77.79759205,-9.70212371,-77.62271515,-9.55068898],"geometry_type":"Polygon"},
+    {"code":"1375967","expected_name_2007":"Medio Alto Casma","service_name":"Medio Alto Casma","expected_area_km2_2007":4.0,"service_area_km2":3.97,"area_final_km2":3.9489,"area_delta_km2":-0.03,"bbox_wgs84":[-77.7949166,-9.55221374,-77.77672486,-9.5202259],"geometry_type":"Polygon"},
+    {"code":"1375968","expected_name_2007":"Rio Pira","service_name":"Pira","expected_area_km2_2007":164.8,"service_area_km2":164.7498,"area_final_km2":163.8754,"area_delta_km2":-0.0502,"bbox_wgs84":[-77.77939635,-9.62046881,-77.61702349,-9.46681088],"geometry_type":"Polygon"},
+    {"code":"1375969","expected_name_2007":"Alto Casma","service_name":"Alto Casma","expected_area_km2_2007":177.8,"service_area_km2":177.8031,"area_final_km2":176.8595,"area_delta_km2":0.0031,"bbox_wgs84":[-77.79453969,-9.54331267,-77.64915675,-9.37074049],"geometry_type":"Polygon"}
+  ],
+  "adjudication": {
+    "exact_code_match_count": 9,
+    "polygon_geometry_count": 9,
+    "exact_name_match_count": 5,
+    "generic_rio_designator_or_accent_drift_count": 4,
+    "strict_2007_area_equivalence_passed": false,
+    "current_service_geometry_is_exact_2007_geometry": false,
+    "current_service_is_original_uh_pfas100_bytes": false,
+    "raw_feature_bytes_frozen": false,
+    "raw_response_sha256_frozen": false,
+    "topology_union_adjudicated": false,
+    "map_publication_authorized": false
+  },
+  "scientific_interpretation": [
+    "The live MINAM service exposes all nine target N7 codes as polygons and materially strengthens the case that it is an institutional descendant or re-expression of the Pfafstetter hierarchy.",
+    "It cannot yet be declared geometrically equivalent to the 2007 INRENA dataset because names and areas drift and raw feature bytes/topological union have not been frozen and adjudicated.",
+    "No post-hoc numerical area tolerance is introduced. Exact CODIGO/NIVEL7 identity remains the primary identity key; area drift is retained as QA evidence.",
+    "Any later map use must label the geometry as current institutional N7 context unless historical equivalence to Uh_pfas100 is proven."
+  ],
+  "next_safe_gates": [
+    "Freeze the exact nine raw GeoJSON responses and SHA-256 hashes from the MINAM service.",
+    "Run geometry validity, mutual-overlap, gap/topological-union and parent-context checks on the frozen nine polygons.",
+    "Adjudicate a bounded generic-name normalization rule separately from historical-geometry equivalence.",
+    "Publish only as current institutional N7 context if those gates pass; do not label it as exact 2007 Uh_pfas100 geometry without direct lineage proof."
+  ]
+}
