@@ -41,8 +41,13 @@ def test_huamanzaña_and_chorobal_remain_distinct_components():
     h = children["huamanzaña_basin_context"]
     c = children["chorobal_river_component"]
     assert h["ana_unit_code"] == "137712"
-    assert h["geometry"]["status"] == "MISSING_PENDING_EXACT_ANA_QUERY"
+    assert h["geometry"]["status"] == "PARTIAL_OFFICIAL_BASIN_CONTEXT"
     assert h["geometry"]["source_query"]["where"] == "CODIGO='137712'"
+    assert h["geometry"]["counts_as_event_footprint"] is False
+    assert h["geometry"]["counts_as_operational_geometry"] is False
+    assert h["geometry"]["sha256"]
+    assert h["geometry"]["source_sha256"]
+    assert h["geometry"]["validation_sha256"]
     assert c["entity_role"] == "DISTINCT_RIVER_COMPONENT_WITHIN_HUAMANZANA_BASIN_CONTEXT"
     assert c["geometry"]["status"] == "MISSING_PENDING_REPRODUCIBLE_CHANNEL_OR_SUBCATCHMENT_GEOMETRY"
     assert c["geometry"]["path"] is None
@@ -53,8 +58,12 @@ def test_huamanzaña_and_chorobal_remain_distinct_components():
 def test_missing_geometries_are_not_drawn_or_fabricated():
     p = load(PACKAGE)
     children = {row["child_id"]: row for row in p["hydrologic_children"]}
-    hpath = children["huamanzaña_basin_context"]["geometry"]["path"]
-    assert not (ROOT / hpath).exists()
+    h = children["huamanzaña_basin_context"]["geometry"]
+    assert h["status"] == "PARTIAL_OFFICIAL_BASIN_CONTEXT"
+    assert (ROOT / h["path"]).is_file()
+    assert children["chorobal_river_component"]["geometry"]["path"] is None
+    assert str(children["chorobal_river_component"]["geometry"]["status"]).startswith("MISSING")
+    assert p["parent_policy"]["composite_parent_geometry_forbidden"] is True
     assert p["map_policy"]["approximate_geometry_forbidden"] is True
     assert p["map_policy"]["publish_huamanzaña_only_after_exact_replay"] is True
     assert p["map_policy"]["publish_chorobal_only_after_reproducible_channel_or_subcatchment_geometry"] is True
