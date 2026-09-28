@@ -1,0 +1,21 @@
+# Pinned test-runner dependency for the mandatory PR-validation gate
+# (.github/workflows/pr-validation.yml) and for
+# scripts/verify_phase2_test_collection.py, which enforces this exact
+# version at runtime and fails closed on any mismatch.
+#
+# This is pinned, not left to "latest", for the same reason the Phase-2
+# test-collection manifest is identity-based rather than a floating count:
+# an unpinned `pip install pytest` could silently pick up a newer pytest
+# release with different collection or node-ID formatting behavior between
+# one CI run and the next, which would make the collection-identity ratchet
+# in scripts/verify_phase2_test_collection.py compare apples to oranges
+# without anyone deciding that on purpose. Bumping this version is a
+# deliberate, reviewed action, exactly like regenerating the collection
+# manifest itself -- never an incidental side effect of an unrelated PR.
+#
+# To upgrade: change the version below, then regenerate
+# config/phase2_test_collection_manifest.json with
+# `python scripts/verify_phase2_test_collection.py --write-manifest` on a
+# CI runner with this file's dependencies (and requirements.txt) installed,
+# and commit both changes together in the same PR.
+pytest==9.0.3
