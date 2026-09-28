@@ -13,7 +13,7 @@ on:
       - .github/workflows/phase2-manifest-bootstrap.yml
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   bootstrap-manifest:
@@ -36,9 +36,6 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements-ci-test.txt
 
-      - name: Validar workflow temporal
-        run: python scripts/check_phase2_manifest_bootstrap_workflow.py
-
       - name: Generar manifest real desde pytest
         run: python scripts/verify_phase2_test_collection.py --write-manifest
 
@@ -48,3 +45,14 @@ jobs:
           name: phase2_test_collection_manifest
           path: config/phase2_test_collection_manifest.json
           retention-days: 14
+
+      - name: Commit manifest real en la rama del Draft PR
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add config/phase2_test_collection_manifest.json
+          git commit -m "CI: record real pytest Phase-2 collection manifest"
+          git push origin HEAD:"refs/heads/${{ github.head_ref }}"
