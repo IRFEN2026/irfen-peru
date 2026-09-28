@@ -1,0 +1,50 @@
+name: IRFEN - Bootstrap Phase-2 manifest (temporary, delete after use)
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - scripts/verify_phase2_test_collection.py
+      - scripts/check_phase2_manifest_bootstrap_workflow.py
+      - requirements.txt
+      - requirements-ci-test.txt
+      - pytest.ini
+      - .github/workflows/phase2-manifest-bootstrap.yml
+
+permissions:
+  contents: read
+
+jobs:
+  bootstrap-manifest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Descargar el HEAD del PR
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Configurar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Instalar dependencias
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-ci-test.txt
+
+      - name: Validar workflow temporal
+        run: python scripts/check_phase2_manifest_bootstrap_workflow.py
+
+      - name: Generar manifest real desde pytest
+        run: python scripts/verify_phase2_test_collection.py --write-manifest
+
+      - name: Publicar manifest como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase2_test_collection_manifest
+          path: config/phase2_test_collection_manifest.json
+          retention-days: 14
