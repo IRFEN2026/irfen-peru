@@ -41,11 +41,14 @@ def test_jequetepeque_identity_and_scientific_guards_are_frozen():
 def test_geometry_is_exact_ana_query_pending_and_not_fabricated():
     p = load(PACKAGE)
     g = p["assets"]["geometry"]
-    assert g["status"] == "MISSING_PENDING_EXACT_ANA_QUERY"
+    assert g["status"] == "PARTIAL_OFFICIAL_BASIN_CONTEXT"
     assert g["source_query"]["where"] == "CODIGO='13774'"
     assert g["source_query"]["out_sr"] == 4326
     assert g["source_query"]["format"] == "geojson"
-    assert not (ROOT / g["path"]).exists()
+    assert (ROOT / g["path"]).is_file()
+    assert g["sha256"]
+    assert g["source_sha256"]
+    assert g["validation_sha256"]
     assert g["counts_as_operational_geometry"] is False
     assert g["counts_as_event_footprint"] is False
     assert p["map_policy"]["approximate_geometry_forbidden"] is True
