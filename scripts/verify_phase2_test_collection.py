@@ -23,9 +23,9 @@ MANIFEST_PATH = ROOT / "config/phase2_test_collection_manifest.json"
 PINNED = ROOT / "requirements-ci-test.txt"
 MANIFEST_SCHEMA_VERSION = "phase2-test-collection-manifest-v0.3"
 MANIFEST_STATUS_REAL = "REAL_PYTEST_COLLECTION"
-NODE_ID_RE = re.compile(r"^tests/(test_[^:\\s]+\\.py)::")
-PHASE2_NODE_ID_RE = re.compile(r"^tests/(test_phase2_[^:\\s]+\\.py)::")
-PYTEST_VERSION_RE = re.compile(r"^pytest (\\S+)")
+NODE_ID_RE = re.compile(r"^tests/(test_[^:\s]+\.py)::")
+PHASE2_NODE_ID_RE = re.compile(r"^tests/(test_phase2_[^:\s]+\.py)::")
+PYTEST_VERSION_RE = re.compile(r"^pytest (\S+)")
 
 
 def pinned_pytest_version() -> str:
