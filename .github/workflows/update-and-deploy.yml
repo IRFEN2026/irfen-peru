@@ -93,7 +93,7 @@ jobs:
   build:
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
 
     steps:
       - name: Descargar repositorio
@@ -109,7 +109,9 @@ jobs:
           cache: "pip"
 
       - name: Instalar dependencias
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-ci-test.txt
 
       - name: Guardar datasets válidos antes de actualizar
         shell: bash
@@ -345,7 +347,10 @@ jobs:
         run: python scripts/validate_phase2_climate_matrix.py
 
       - name: Ejecutar pruebas unitarias v0.8
-        run: python -m unittest discover -s tests -v
+        run: python -m pytest tests/ -v
+
+      - name: Verificar colección pytest contra manifest
+        run: python scripts/verify_phase2_test_collection.py
 
       - name: Ejecutar pruebas de regresión v0.8
         run: |
