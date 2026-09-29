@@ -6,6 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MATRIX = ROOT / "site/data/phase2/sources/tumbes_zorritos_ana_hydrography_adjudication_matrix_v0_1.json"
 PLAN = ROOT / "site/data/phase2/sources/tumbes_zorritos_ana_hydrography_source_plan_v0_1.json"
+CONTEXT = ROOT / "site/data/phase2/sources/tumbes_zorritos_extended_identity_context_v0_1.json"
 PROBE = ROOT / "scripts/probe_zorritos_ana_hydrography.py"
 
 
@@ -15,6 +16,10 @@ def load_matrix():
 
 def load_plan():
     return json.loads(PLAN.read_text(encoding="utf-8"))
+
+
+def load_context():
+    return json.loads(CONTEXT.read_text(encoding="utf-8"))
 
 
 def test_matrix_is_fail_closed():
@@ -58,6 +63,35 @@ def test_la_tucilla_is_fail_closed_anchor_not_geometry():
     assert "la_tucilla" in plan["query_policy"]["official_map_anchor_not_line_geometry_quarantine"]
     assert "la_tucilla" in plan["query_policy"]["scope_adjudication_quarantine"]
     assert "la_tucilla" in plan["query_policy"]["marine_hazard_separation_required"]
+
+
+def test_la_tucilla_ingemmet_a7454_context_is_identity_only():
+    context = load_context()
+    source = context["sources"]["INGEMMET-A7454-24-050-TUCILLAL"]
+    adjudication = context["adjudication"]["la_tucilla"]
+    guards = context["scientific_guards"]
+
+    assert source["feature_code"] == "24-050"
+    assert source["source_name"] == "Quebrada Tucillal (Zorritos)"
+    assert source["coordinate_reference"] == "WGS84 / UTM zone 17S"
+    assert source["northing_m"] == 9595829
+    assert source["easting_m"] == 538559
+    assert source["claim_scope"] == "OFFICIAL_NAMED_RAVINE_IDENTITY_AND_CRITICAL_HAZARD_POINT_CONTEXT_ONLY"
+    assert source["snapshot_sha256"] is None
+    assert source["freeze_status"] == "SOURCE_IDENTIFIED_BYTES_NOT_FROZEN"
+
+    assert adjudication["identity_status"] == "OFFICIAL_NAMED_RAVINE_IDENTITY_CORROBORATED_INGEMMET_A7454_24_050"
+    assert adjudication["geometry_status"] == "OFFICIAL_POINT_AND_MAP_ANCHORS_ONLY_LINE_AND_CATCHMENT_UNRESOLVED"
+    assert adjudication["outlet_status"] == "UNRESOLVED"
+    assert adjudication["event_status"] == "NO_DATED_CHILD_LEVEL_ACTIVATION_INFERRED_FROM_SUSCEPTIBILITY"
+    assert adjudication["map_publishable"] is False
+
+    assert guards["point_anchor_is_outlet"] is False
+    assert guards["point_anchor_is_line_geometry"] is False
+    assert guards["point_anchor_is_catchment"] is False
+    assert guards["susceptibility_is_dated_activation_event"] is False
+    assert guards["susceptibility_is_threshold"] is False
+    assert guards["susceptibility_is_capacity"] is False
 
 
 def test_homonyms_and_paired_context_remain_quarantined():
