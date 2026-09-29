@@ -1,0 +1,122 @@
+name: IRFEN - Build Claude context packs
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/claude-context-packs.yml
+
+permissions:
+  contents: read
+
+jobs:
+  build-context-packs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout Casma PR335 snapshot
+        uses: actions/checkout@v6
+        with:
+          ref: c9f602eafd7959c675923281d7dd29c11a2c81ad
+          path: casma
+          fetch-depth: 1
+
+      - name: Checkout Rimac Jicamarca PR310 snapshot
+        uses: actions/checkout@v6
+        with:
+          ref: 0bdcb457c0255452e02293447b1ca198b0b97428
+          path: rimac-jicamarca
+          fetch-depth: 1
+
+      - name: Checkout Zorritos PR340 snapshot
+        uses: actions/checkout@v6
+        with:
+          ref: f82c3313ce4ed6a2a05c7b0acbb07925e60500e4
+          path: zorritos
+          fetch-depth: 1
+
+      - name: Checkout map/main snapshot
+        uses: actions/checkout@v6
+        with:
+          ref: 94a6ba2bd3b15cde00b790889c907e1e5cf283ed
+          path: map-main
+          fetch-depth: 1
+
+      - name: Add context README files
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > casma/CLAUDE_CONTEXT_README.txt <<'EOF'
+          IRFEN CASMA CONTEXT
+          Repo: IRFEN2026/irfen-peru
+          PR: #335
+          Branch: phase2-casma-n7-source-recovery-v02-20260926
+          Commit: c9f602eafd7959c675923281d7dd29c11a2c81ad
+          Purpose: exact repository snapshot for Claude offline patch development.
+          Do not merge, push or modify main from this package.
+          EOF
+          cat > rimac-jicamarca/CLAUDE_CONTEXT_README.txt <<'EOF'
+          IRFEN RIMAC / JICAMARCA CONTEXT
+          Repo: IRFEN2026/irfen-peru
+          PR: #310
+          Branch: agent/rimac-jicamarca-coupling-registry-v0-1
+          Commit: 0bdcb457c0255452e02293447b1ca198b0b97428
+          Purpose: exact repository snapshot for Claude offline patch development.
+          Do not merge, push or modify main from this package.
+          EOF
+          cat > zorritos/CLAUDE_CONTEXT_README.txt <<'EOF'
+          IRFEN ZORRITOS CONTEXT
+          Repo: IRFEN2026/irfen-peru
+          PR: #340
+          Branch: phase2/zorritos-ana-hydrography-replay-20260927
+          Commit: f82c3313ce4ed6a2a05c7b0acbb07925e60500e4
+          Purpose: exact repository snapshot for Claude offline patch development.
+          Do not merge, push or modify main from this package.
+          EOF
+          cat > map-main/CLAUDE_CONTEXT_README.txt <<'EOF'
+          IRFEN MAP CONTEXT
+          Repo: IRFEN2026/irfen-peru
+          Reference: main
+          Commit: 94a6ba2bd3b15cde00b790889c907e1e5cf283ed
+          Purpose: map/catalog analysis only. Do not promote pending Casma/Rimac/Zorritos results until INDEPENDENT_QA_ACCEPTED.
+          Do not merge, push or modify main from this package.
+          EOF
+
+      - name: Remove Git metadata and build archives
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf casma/.git rimac-jicamarca/.git zorritos/.git map-main/.git
+          zip -qr "IRFEN Casma PR335 Context.zip" casma
+          zip -qr "IRFEN Rimac Jicamarca PR310 Context.zip" rimac-jicamarca
+          zip -qr "IRFEN Zorritos PR340 Context.zip" zorritos
+          zip -qr "IRFEN Map Main Context.zip" map-main
+
+      - name: Upload Casma context
+        uses: actions/upload-artifact@v4
+        with:
+          name: IRFEN-Casma-PR335-Context
+          path: IRFEN Casma PR335 Context.zip
+          retention-days: 7
+
+      - name: Upload Rimac Jicamarca context
+        uses: actions/upload-artifact@v4
+        with:
+          name: IRFEN-Rimac-Jicamarca-PR310-Context
+          path: IRFEN Rimac Jicamarca PR310 Context.zip
+          retention-days: 7
+
+      - name: Upload Zorritos context
+        uses: actions/upload-artifact@v4
+        with:
+          name: IRFEN-Zorritos-PR340-Context
+          path: IRFEN Zorritos PR340 Context.zip
+          retention-days: 7
+
+      - name: Upload map context
+        uses: actions/upload-artifact@v4
+        with:
+          name: IRFEN-Map-Main-Context
+          path: IRFEN Map Main Context.zip
+          retention-days: 7
