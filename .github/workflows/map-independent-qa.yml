@@ -31,6 +31,29 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install pytest==9.0.3
+      - name: Hydrate transient published evidence used by repository tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://irfen2026.github.io/irfen-peru/data"
+          files=(
+            "latest.json"
+            "experimental_state.json"
+            "test_report.json"
+            "forecast/archive.json"
+            "forecast/historical_daily.json"
+            "forecast/verification.json"
+            "calibration/historical_replay.json"
+            "hydrology/piura_reference_model.json"
+            "hydrology/ana_catacaos_critical_segments_2026.geojson"
+            "hydrology/ana_catacaos_critical_segments_2026_validation.json"
+            "hydrology/glofas_catacaos_current.json"
+          )
+          for file in "${files[@]}"; do
+            mkdir -p "site/data/$(dirname "$file")"
+            curl -fsSL --connect-timeout 10 --max-time 35 --retry 3 --retry-all-errors               "$BASE/$file?qa=${{ github.run_id }}" -o "site/data/$file"
+          done
+
       - name: Canonical map builder check
         run: python scripts/build_map_layer_catalog.py --check-only
       - name: Map-focused pytest
