@@ -1,0 +1,40 @@
+name: IRFEN - Independent map QA (temporary)
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/map-independent-qa.yml
+      - scripts/build_map_layer_catalog.py
+      - scripts/build_map_semantic_layers.py
+      - site/data/map_layers.json
+      - site/v08-territorial.js
+      - site/v08-experimental.js
+      - tests/**
+      - docs/PHASE2_MAP_LAYER_MODEL.md
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest==9.0.3
+      - name: Canonical map builder check
+        run: python scripts/build_map_layer_catalog.py --check-only
+      - name: Map-focused pytest
+        run: |
+          python -m pytest -q             tests/test_map_semantic_consolidation.py             tests/test_map_layer_catalog.py             tests/test_phase2_discovery_map_catalog.py             tests/test_v08_territorial_inventory.py             tests/test_phase2_canete_jacayita_faja_context.py
+      - name: Full pytest suite
+        run: python -m pytest tests/ -v
