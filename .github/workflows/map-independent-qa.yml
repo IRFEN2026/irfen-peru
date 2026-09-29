@@ -54,6 +54,16 @@ jobs:
             curl -fsSL --connect-timeout 10 --max-time 35 --retry 3 --retry-all-errors               "$BASE/$file?qa=${{ github.run_id }}" -o "site/data/$file"
           done
 
+      - name: Build canonical map catalog from hydrated sources
+        run: python scripts/build_map_layer_catalog.py
+
+      - name: Upload canonical generated map catalog
+        uses: actions/upload-artifact@v4
+        with:
+          name: map-layers-canonical
+          path: site/data/map_layers.json
+          retention-days: 7
+
       - name: Canonical map builder check
         run: python scripts/build_map_layer_catalog.py --check-only
       - name: Map-focused pytest
