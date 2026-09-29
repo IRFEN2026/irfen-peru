@@ -2,10 +2,10 @@
 """Live MINAM Huaycoloro/Rímac vector probe for Phase-2 QA.
 
 RESEARCH_ONLY / TEST_ONLY. This probe can freeze reproducible source payload
-hashes and expose geometric candidates. It MUST NOT promote a name match or
-literal source-line intersection to hydrologic identity, an official
-confluence, routing, travel time, discharge, capacity, overflow or map
-publication.
+hashes and expose geometric candidates. It MUST NOT promote a name match,
+OBJECTID match, /find match or literal source-line intersection to hydrologic
+identity, an official confluence, routing, travel time, discharge, capacity,
+overflow or map publication.
 
 Source access failure remains UNKNOWN. A completed zero-result query is not
 hydrologic absence.
@@ -24,30 +24,44 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
-LAYER_ENDPOINT = (
+SERVICE_ROOT = (
     "https://geoservidorperu.minam.gob.pe/arcgis/rest/services/"
-    "CS/Desarrollo_Urbano/MapServer/10"
+    "CS/Desarrollo_Urbano/MapServer"
 )
+LAYER_ID = 10
+LAYER_ENDPOINT = f"{SERVICE_ROOT}/{LAYER_ID}"
 QUERY_ENDPOINT = LAYER_ENDPOINT + "/query"
+FIND_ENDPOINT = SERVICE_ROOT + "/find"
 OUT = ROOT / "artifacts/phase2_minam2020_huaycoloro_rimac_probe.json"
-TARGET_NAMES = ("HUAYCOLORO", "RIMAC", "RÍMAC")
+TARGETS = {
+    "huaycoloro": ("HUAYCOLORO",),
+    "rimac": ("RIMAC", "RÍMAC"),
+}
 OUT_FIELDS = (
     "OBJECTID,COD_RIO,TIPO,SUBTIPO,NOM_RIO,NOM_UH,LONG_KM,LONG_M,"
     "LABEL_RIO,NOMBDIST,NOMBPROV,NOMBDEP"
 )
 
+
 class SourceAccessError(Exception):
-    pass
+    def __init__(self, message: str, trace=None):
+        super().__init__(message)
+        self.trace = trace
+
 
 def canonical(value: object) -> bytes:
     return (json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n").encode()
+
 
 def norm(value: object) -> str:
     s = unicodedata.normalize("NFKD", str(value or "")).encode("ascii", "ignore").decode().upper()
     return " ".join(s.split())
 
+
 def query_url() -> str:
-    where = " OR ".join(f"NOM_RIO='{name}'" for name in TARGET_NAMES)
+    """Legacy exact-name GeoJSON URL retained for compatibility/tests."""
+    names = tuple(name for values in TARGETS.values() for name in values)
+    where = " OR ".join(f"NOM_RIO='{name}'" for name in names)
     params = {
         "where": where,
         "outFields": OUT_FIELDS,
@@ -58,8 +72,42 @@ def query_url() -> str:
     }
     return QUERY_ENDPOINT + "?" + urlencode(params)
 
-def fetch(timeout: int = 30):
-    req = Request(query_url(), headers={"User-Agent": "IRFEN-research-minam-huaycoloro-probe/0.1"})
+
+def id_query_url(name: str) -> str:
+    params = {
+        "where": f"NOM_RIO='{name}'",
+        "returnIdsOnly": "true",
+        "f": "json",
+    }
+    return QUERY_ENDPOINT + "?" + urlencode(params)
+
+
+def find_url(name: str) -> str:
+    params = {
+        "searchText": name,
+        "contains": "false",
+        "searchFields": "NOM_RIO",
+        "layers": str(LAYER_ID),
+        "returnGeometry": "false",
+        "f": "json",
+    }
+    return FIND_ENDPOINT + "?" + urlencode(params)
+
+
+def geometry_query_url(objectids) -> str:
+    params = {
+        "objectIds": ",".join(str(int(v)) for v in sorted(set(objectids))),
+        "outFields": OUT_FIELDS,
+        "returnGeometry": "true",
+        "outSR": "4326",
+        "geometryPrecision": "7",
+        "f": "geojson",
+    }
+    return QUERY_ENDPOINT + "?" + urlencode(params)
+
+
+def _fetch_json(url: str, timeout: int, user_agent: str):
+    req = Request(url, headers={"User-Agent": user_agent})
     try:
         with urlopen(req, timeout=timeout) as response:
             raw = response.read()
@@ -71,9 +119,145 @@ def fetch(timeout: int = 30):
         raise SourceAccessError(f"{type(exc).__name__}: {exc}") from exc
     if isinstance(data, dict) and data.get("error"):
         raise SourceAccessError(json.dumps(data["error"], ensure_ascii=False, sort_keys=True))
-    if not isinstance(data, dict) or data.get("type") != "FeatureCollection":
-        raise SourceAccessError("MINAM response is not a GeoJSON FeatureCollection")
+    if not isinstance(data, dict):
+        raise SourceAccessError("MINAM response is not a JSON object")
     return raw, data
+
+
+def _trace_success(trace, method: str, group: str, target: str, url: str, raw: bytes, data: dict):
+    trace.append({
+        "method": method,
+        "group": group,
+        "target": target,
+        "url": url,
+        "status": "SUCCESS",
+        "raw_payload_sha256": hashlib.sha256(raw).hexdigest(),
+        "canonical_payload_sha256": hashlib.sha256(canonical(data)).hexdigest(),
+    })
+
+
+def _trace_error(trace, method: str, group: str, target: str, url: str, exc: Exception):
+    trace.append({
+        "method": method,
+        "group": group,
+        "target": target,
+        "url": url,
+        "status": "SOURCE_ACCESS_UNAVAILABLE",
+        "error_class": type(exc).__name__,
+        "error_message": str(exc),
+    })
+
+
+def _ids_from_id_query(data: dict):
+    ids = data.get("objectIds")
+    if ids is None:
+        return []
+    if not isinstance(ids, list):
+        raise SourceAccessError("returnIdsOnly response objectIds is not a list")
+    return [int(v) for v in ids]
+
+
+def _ids_from_find(data: dict, target: str):
+    results = data.get("results")
+    if results is None:
+        return []
+    if not isinstance(results, list):
+        raise SourceAccessError("/find response results is not a list")
+    wanted = norm(target)
+    ids = []
+    for row in results:
+        if not isinstance(row, dict) or int(row.get("layerId", -1)) != LAYER_ID:
+            continue
+        attrs = row.get("attributes") or {}
+        name = norm(attrs.get("NOM_RIO") or row.get("value"))
+        if name != wanted:
+            continue
+        oid = attrs.get("OBJECTID")
+        if oid is None:
+            oid = row.get("foundFieldName") == "OBJECTID" and row.get("value")
+        if oid is not None:
+            try:
+                ids.append(int(oid))
+            except (TypeError, ValueError):
+                pass
+    return ids
+
+
+def _discover_group_ids(group: str, targets, timeout: int, trace, raw_parts):
+    ids = set()
+    completed_paths = 0
+
+    for target in targets:
+        url = id_query_url(target)
+        try:
+            raw, data = _fetch_json(url, timeout, "IRFEN-research-minam-huaycoloro-probe/0.2")
+            _trace_success(trace, "RETURN_IDS_ONLY", group, target, url, raw, data)
+            raw_parts.append(raw)
+            ids.update(_ids_from_id_query(data))
+            completed_paths += 1
+        except SourceAccessError as exc:
+            _trace_error(trace, "RETURN_IDS_ONLY", group, target, url, exc)
+
+        url = find_url(target)
+        try:
+            raw, data = _fetch_json(url, timeout, "IRFEN-research-minam-huaycoloro-probe/0.2")
+            _trace_success(trace, "SERVICE_ROOT_FIND", group, target, url, raw, data)
+            raw_parts.append(raw)
+            ids.update(_ids_from_find(data, target))
+            completed_paths += 1
+        except SourceAccessError as exc:
+            _trace_error(trace, "SERVICE_ROOT_FIND", group, target, url, exc)
+
+    if completed_paths == 0:
+        raise SourceAccessError(
+            f"Both exact-ID and service-root /find paths unavailable for group {group}",
+            trace=trace,
+        )
+    return sorted(ids)
+
+
+def fetch(timeout: int = 30):
+    trace = []
+    raw_parts = []
+    ids_by_group = {}
+    for group, targets in TARGETS.items():
+        try:
+            ids_by_group[group] = _discover_group_ids(group, targets, timeout, trace, raw_parts)
+        except SourceAccessError as exc:
+            if exc.trace is None:
+                exc.trace = trace
+            raise
+
+    features = []
+    for group, objectids in ids_by_group.items():
+        if not objectids:
+            continue
+        url = geometry_query_url(objectids)
+        try:
+            raw, data = _fetch_json(url, timeout, "IRFEN-research-minam-huaycoloro-probe/0.2")
+        except SourceAccessError as exc:
+            _trace_error(trace, "OBJECTID_GEOMETRY", group, "*", url, exc)
+            raise SourceAccessError(
+                f"Geometry query unavailable for group {group}: {exc}",
+                trace=trace,
+            ) from exc
+        if data.get("type") != "FeatureCollection":
+            exc = SourceAccessError("MINAM geometry response is not a GeoJSON FeatureCollection")
+            _trace_error(trace, "OBJECTID_GEOMETRY", group, "*", url, exc)
+            raise SourceAccessError(str(exc), trace=trace)
+        _trace_success(trace, "OBJECTID_GEOMETRY", group, "*", url, raw, data)
+        raw_parts.append(raw)
+        features.extend(data.get("features") or [])
+
+    synthetic = {"type": "FeatureCollection", "features": features}
+    material = b"\n--IRFEN-PAYLOAD--\n".join(raw_parts)
+    return material, synthetic, {
+        "strategy": "PER_TARGET_RETURN_IDS_ONLY_WITH_INDEPENDENT_SERVICE_ROOT_FIND_FALLBACK_THEN_OBJECTID_GEOMETRY",
+        "ids_by_group": ids_by_group,
+        "source_payloads": trace,
+        "zero_candidates_inferred_as_hydrologic_absence": False,
+    }
+
 
 def iter_lines(geometry: dict):
     if not geometry:
@@ -85,8 +269,10 @@ def iter_lines(geometry: dict):
     elif typ == "MultiLineString":
         yield from coords
 
+
 def _cross(ax, ay, bx, by):
     return ax * by - ay * bx
+
 
 def segment_intersection(a, b, c, d, eps=1e-12):
     ax, ay = map(float, a); bx, by = map(float, b)
@@ -103,6 +289,7 @@ def segment_intersection(a, b, c, d, eps=1e-12):
         return [ax+t*rx, ay+t*ry]
     return None
 
+
 def exact_intersections(g1: dict, g2: dict):
     pts = []
     for l1 in iter_lines(g1) or []:
@@ -115,9 +302,12 @@ def exact_intersections(g1: dict, g2: dict):
                             pts.append(p)
     return pts
 
+
 def fail_closed_guards():
     return {
         "name_match_confirms_local_identity": False,
+        "objectid_match_confirms_local_identity": False,
+        "find_match_confirms_local_identity": False,
         "literal_line_intersection_confirms_official_confluence": False,
         "exact_huaycoloro_rimac_confluence_resolved": False,
         "routing_enabled": False,
@@ -128,7 +318,8 @@ def fail_closed_guards():
         "zero_query_result_may_be_inferred_as_hydrologic_absence": False,
     }
 
-def build(raw: bytes, data: dict):
+
+def build(raw: bytes, data: dict, source_trace=None):
     groups = {"huaycoloro": [], "rimac": []}
     for feature in data.get("features") or []:
         props = dict(feature.get("properties") or {})
@@ -164,8 +355,22 @@ def build(raw: bytes, data: dict):
         if row["objectid"] is not None
     })
 
+    source = {
+        "institution": "Ministerio del Ambiente",
+        "platform": "Geoservidor",
+        "layer": "CS/Desarrollo_Urbano/MapServer/10",
+        "attribution": "IMP/ANA",
+        "source_year": 2020,
+        "query_format": "json IDs + geoJSON geometry",
+        "requested_out_sr": 4326,
+        "raw_payload_sha256": hashlib.sha256(raw).hexdigest(),
+        "canonical_payload_sha256": hashlib.sha256(canonical(data)).hexdigest(),
+    }
+    if source_trace:
+        source.update(source_trace)
+
     return {
-        "schema_version": "0.1",
+        "schema_version": "0.2",
         "status": "RESEARCH_ONLY_LIVE_VECTOR_PROBE",
         "deployment_status": "RESEARCH_ONLY",
         "test_mode": "TEST_ONLY",
@@ -178,18 +383,7 @@ def build(raw: bytes, data: dict):
         "hydraulic_factors": None,
         "query_completed": True,
         "retrieved_at_utc": datetime.now(timezone.utc).isoformat(),
-        "source": {
-            "institution": "Ministerio del Ambiente",
-            "platform": "Geoservidor",
-            "layer": "CS/Desarrollo_Urbano/MapServer/10",
-            "attribution": "IMP/ANA",
-            "source_year": 2020,
-            "query_url": query_url(),
-            "query_format": "geoJSON",
-            "requested_out_sr": 4326,
-            "raw_payload_sha256": hashlib.sha256(raw).hexdigest(),
-            "canonical_payload_sha256": hashlib.sha256(canonical(data)).hexdigest(),
-        },
+        "source": source,
         "candidate_counts": {k: len(v) for k, v in groups.items()},
         "matching_objectids": objectids,
         "matching_feature_count": sum(len(v) for v in groups.values()),
@@ -198,9 +392,11 @@ def build(raw: bytes, data: dict):
         "guards": fail_closed_guards(),
     }
 
+
 def build_unavailable(exc: Exception):
+    trace = getattr(exc, "trace", None)
     return {
-        "schema_version": "0.1",
+        "schema_version": "0.2",
         "status": "SOURCE_ACCESS_UNAVAILABLE",
         "deployment_status": "RESEARCH_ONLY",
         "test_mode": "TEST_ONLY",
@@ -217,7 +413,8 @@ def build_unavailable(exc: Exception):
             "institution": "Ministerio del Ambiente",
             "platform": "Geoservidor",
             "layer": "CS/Desarrollo_Urbano/MapServer/10",
-            "query_url": query_url(),
+            "strategy": "PER_TARGET_RETURN_IDS_ONLY_WITH_INDEPENDENT_SERVICE_ROOT_FIND_FALLBACK_THEN_OBJECTID_GEOMETRY",
+            "source_payloads": trace,
         },
         "candidate_counts": {"huaycoloro": None, "rimac": None},
         "matching_objectids": None,
@@ -233,11 +430,17 @@ def build_unavailable(exc: Exception):
         "guards": fail_closed_guards(),
     }
 
+
 def self_test():
     url = query_url()
     assert "returnGeometry=true" in url
     assert "outSR=4326" in url
     assert "NOM_RIO%3D%27HUAYCOLORO%27" in url
+    assert "returnIdsOnly=true" in id_query_url("HUAYCOLORO")
+    assert "searchFields=NOM_RIO" in find_url("HUAYCOLORO")
+    assert "layers=10" in find_url("HUAYCOLORO")
+    assert "returnGeometry=false" in find_url("HUAYCOLORO")
+    assert "objectIds=1%2C2" in geometry_query_url([2, 1])
     a = {"type":"LineString","coordinates":[[0,0],[2,2]]}
     b = {"type":"LineString","coordinates":[[0,2],[2,0]]}
     assert exact_intersections(a,b) == [[1.0,1.0]]
@@ -245,7 +448,9 @@ def self_test():
     assert d["query_completed"] is False
     assert d["candidate_counts"] == {"huaycoloro": None, "rimac": None}
     assert d["guards"]["zero_query_result_may_be_inferred_as_hydrologic_absence"] is False
+    assert d["access"]["hydrologic_absence_inferred"] is False
     print("self-test ok")
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -258,8 +463,8 @@ def main():
     path = Path(args.output)
     path.parent.mkdir(parents=True, exist_ok=True)
     try:
-        raw, data = fetch()
-        doc = build(raw, data)
+        raw, data, source_trace = fetch()
+        doc = build(raw, data, source_trace)
         code = 0
     except SourceAccessError as exc:
         doc = build_unavailable(exc)
@@ -274,6 +479,7 @@ def main():
         "output": str(path),
     }, ensure_ascii=False, sort_keys=True))
     return code
+
 
 if __name__ == "__main__":
     raise SystemExit(main())
