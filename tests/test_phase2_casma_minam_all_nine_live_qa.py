@@ -25,12 +25,47 @@ class TestCasmaMinamAllNineLiveQA(unittest.TestCase):
         contract = json.loads(CONTRACT.read_text(encoding="utf-8"))
         for expected in contract["units"]:
             with self.subTest(code=expected["code"]):
-                raw = module.fetch(
-                    module.query_url(contract, expected["code"]),
-                    accept="application/geo+json,application/json;q=0.9,*/*;q=0.1",
+                try:
+                    raw = module.fetch(
+                        module.query_url(contract, expected["code"]),
+                        accept="application/geo+json,application/json;q=0.9,*/*;q=0.1",
+                    )
+                except module.SourceUnavailable as exc:
+                    self.skipTest(
+                        "SOURCE_ACCESS_UNAVAILABLE "
+                        f"code={expected['code']} reason={exc}"
+                    )
+
+                try:
+                    doc = json.loads(raw)
+                except json.JSONDecodeError as exc:
+                    self.fail(
+                        "SOURCE_RESPONSE_NOT_JSON "
+                        f"code={expected['code']} error={type(exc).__name__}"
+                    )
+
+                # ArcGIS can return an HTTP-200 JSON error object during transient
+                # service/proxy failures. Treat that as source unavailability,
+                # never as a negative observation or a missing N7 polygon.
+                if isinstance(doc, dict) and doc.get("error") is not None:
+                    self.skipTest(
+                        "SOURCE_ACCESS_UNAVAILABLE "
+                        f"code={expected['code']} arcgis_error={doc.get('error')}"
+                    )
+
+                features = doc.get("features") if isinstance(doc, dict) else None
+                if not isinstance(features, list):
+                    self.fail(
+                        "SOURCE_SCHEMA_DRIFT "
+                        f"code={expected['code']} missing_features_array"
+                    )
+                self.assertEqual(
+                    len(features),
+                    1,
+                    f"GATE_A_FEATURE_COUNT_MISMATCH code={expected['code']}",
                 )
-                doc = json.loads(raw)
-                feature = doc["features"][0]
+
+                feature = features[0]
                 props = feature.get("properties") or {}
                 print("CASMA_MINAM_LIVE_OBS=" + json.dumps({
                     "code": expected["code"],
