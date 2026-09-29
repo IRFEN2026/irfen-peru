@@ -119,3 +119,42 @@ un archivo GeoJSON/JSON existente y el activo de geometría deja de estar
 `MISSING`. Aun entonces conserva `RESEARCH_ONLY`, `production_use=false`,
 `alerting_enabled=false`, umbrales nulos y puerta `BLOCKED` hasta completar sus
 revisiones específicas.
+
+## Consolidación semántica · cuenca / quebrada / colector / nodo
+
+`scripts/build_map_semantic_layers.py`, invocado por el builder canónico
+`scripts/build_map_layer_catalog.py`, añade a `site/data/map_layers.json` el
+bloque `map_semantics`. No crea geometrías: clasifica, feature por feature, los
+archivos que el catálogo ya admitió con SHA-256 y registra en inventario lo que
+no puede dibujarse.
+
+| Grupo | Categoría | Tipos admitidos | Nunca es |
+|---|---|---|---|
+| A | `CATCHMENT` cuenca / subcuenca | Polygon, MultiPolygon | footprint, inundación, unión compuesta del padre |
+| B | `LOCAL_CHANNEL` quebrada / cauce local | LineString, MultiLineString | cuenca, outlet, confluencia, colector |
+| C | `COLLECTOR` río colector | LineString, MultiLineString propios | faja marginal, cauce local, capacidad |
+| D | `NODE` outlet / confluencia / nodo | Point | evento, alerta, ubicación aproximada |
+| contexto | `REGULATORY_FAJA_MARGINAL` | Polygon/Line | cuenca, cauce, footprint, extensión de inundación |
+| contexto | `ENGINEERED_OR_CRITICAL_REACH_CONTEXT` | Line/Point | capacidad hidráulica histórica, evento |
+| contexto | `DOCUMENT_CONTEXT` | Polygon | cuenca, peligro, inundación |
+
+Reglas:
+
+- Cada categoría es una capa distinta en ambos mapas; los colores identifican el
+  tipo de entidad y excluyen la gama roja/naranja/amarilla de riesgo.
+- Los nodos declaran `EXACT_OFFICIAL`, `REPRODUCIBLE_DERIVED`,
+  `MONITORING_ANCHOR`, `NEAR_CONFLUENCE` o `UNRESOLVED`. Los `UNRESOLVED` no se
+  dibujan y sólo `EXACT_OFFICIAL` puede rotularse como confluencia exacta.
+- Los colectores se registran aunque no tengan eje reproducible, separando
+  `tributary_coupling` / `tributary_activation_evidence` de
+  `collector_response`, con `tributary_activation_implies_collector_response=false`.
+- Los contenedores territoriales (candidatos Phase-2, agrupadores discovery,
+  grupos de capas) nunca se dibujan como polígono propio; sus hijos sí, por
+  separado.
+- Toda geometría de `site/data/phase2/geometries/` que no entra al mapa necesita
+  una decisión explícita en `WITHHELD_REPOSITORY_GEOMETRY_POLICY`; un archivo
+  nuevo sin decisión hace fallar el builder.
+- Los resultados nuevos de Casma (#335), Rímac/Jicamarca (#310) y Zorritos
+  (#340) no se consolidan hasta `INDEPENDENT_QA_ACCEPTED`.
+- Todos los conteos (`map_semantics.summary` y `summary.map_semantic_*`) se
+  derivan de las filas; los tests los recalculan en lugar de fijarlos.
