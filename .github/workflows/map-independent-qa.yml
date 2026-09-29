@@ -15,7 +15,7 @@ on:
       - docs/PHASE2_MAP_LAYER_MODEL.md
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   qa:
@@ -23,6 +23,9 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
@@ -56,6 +59,21 @@ jobs:
 
       - name: Build canonical map catalog from hydrated sources
         run: python scripts/build_map_layer_catalog.py
+
+      - name: Persist canonical generated map catalog to Draft branch when needed
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- site/data/map_layers.json; then
+            echo "map_layers.json already canonical"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add site/data/map_layers.json
+            git commit -m "Map semantics: persist canonical catalog after hydration"
+            git push origin HEAD:"refs/heads/${{ github.head_ref }}"
+          fi
 
       - name: Upload canonical generated map catalog
         uses: actions/upload-artifact@v4
