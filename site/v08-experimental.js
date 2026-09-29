@@ -30,49 +30,53 @@
     const catalog=await safeJson('data/map_layers.json');
     if(!catalog||catalog.production_use!==false||catalog.operational_alerting_enabled!==false)return;
     const overlays={};
-    for(const entry of catalog.technical_layers||[]){
-      if(!['TEST_ONLY','RESEARCH_ONLY'].includes(entry.deployment_status)||entry.map_eligible!==true||!entry.source_path)continue;
-      const geo=await safeJson(entry.source_path);if(!geo)continue;
-      const style=entry.style||{color:'#475569',weight:2,fillOpacity:0,dashArray:'5 5'};
-      const layerName=`${entry.title} · ${entry.deployment_status}`;
-      const technicalLayer=L.geoJSON(geo,{
-        style,
-        pointToLayer:(_feature,latlng)=>L.circleMarker(latlng,{radius:6,...style}),
-        onEachFeature:(feature,featureLayer)=>{
-          const p=feature.properties||{};
-          const featureName=p.name||p.sector||p.quebrada_search_name||entry.title;
-          featureLayer.bindPopup(`<b>${esc(featureName)}</b><br>${esc(entry.title)}<br><b>${esc(entry.deployment_status)} · sin alerta · sin puntuación de riesgo</b><br>${esc(entry.map_disclaimer)}<br><span style="font-size:11px">Fuente geométrica: ${esc(entry.source_path)} · confianza: ${esc(entry.confidence)}</span>`);
-        }
-      });
-      overlays[layerName]=technicalLayer;
-      if(entry.default_visibility===true)technicalLayer.addTo(map);
+    const sem=catalog.map_semantics||{};
+    const guard=sem.guardrails||{};
+    if(!Array.isArray(sem.features)||guard.categories_never_mixed_in_one_map_layer!==true||guard.risk_colors_forbidden!==true||guard.unresolved_nodes_not_drawn!==true)return;
+    const categories=sem.categories||{},nodeSemantics=sem.node_semantics||{};
+    const HEX=/^#[0-9a-f]{6}$/i;
+    const styleFor=category=>{const s=(categories[category]||{}).style||{};const color=HEX.test(s.color||'')?s.color:'#64748b';
+      return {color,weight:Number.isFinite(s.weight)?s.weight:2,fillColor:HEX.test(s.fillColor||'')?s.fillColor:color,fillOpacity:Number.isFinite(s.fillOpacity)?s.fillOpacity:0,dashArray:typeof s.dashArray==='string'?s.dashArray:null,radius:Number.isFinite(s.radius)?s.radius:5};};
+    // Una capa por categoría semántica (A cuencas, B cauces locales, C colectores, D nodos y contextos):
+    // nunca se mezclan en un mismo overlay ni se usa un color de riesgo.
+    const groups=new Map();
+    for(const f of sem.features){
+      if(f.map_eligible!==true||!categories[f.map_category]||f.production_use!==false||f.operational_alerting_enabled!==false||
+         f.loaded_into_operational_calculation!==false||f.carries_alert_values!==false||f.carries_risk_classification!==false)continue;
+      if(!['TEST_ONLY','RESEARCH_ONLY'].includes(f.deployment_status))continue;
+      if(f.map_category==='NODE'&&((nodeSemantics[f.node_semantics]||{}).drawable!==true||f.node_semantics==='UNRESOLVED'))continue;
+      const key=f.map_category+(f.default_visibility===true?'|default':'');
+      if(!groups.has(key))groups.set(key,{category:f.map_category,visible:f.default_visibility===true,items:[]});
+      groups.get(key).items.push(f);
     }
-    for(const zone of catalog.research_zones||[]){
-      const geometry=zone.geometry||{};
-      if(zone.deployment_status!=='RESEARCH_ONLY'||zone.production_use!==false||zone.alerting_enabled!==false||geometry.map_eligible!==true||!geometry.source_path)continue;
-      const geo=await safeJson(geometry.source_path);if(!geo)continue;
-      const baseStyle=geometry.style||{color:'#0f766e',weight:2,fillOpacity:.03,dashArray:'5 5'};
-      const layerName=`${zone.system_name} · RESEARCH_ONLY`;
-      const researchLayer=L.geoJSON(geo,{
-        style:feature=>{
-          const role=(feature.properties||{}).hydrologic_role||'';
-          if(role.includes('updated_faja'))return {...baseStyle,color:'#0891b2',weight:3,fillOpacity:0,dashArray:'3 5'};
-          if(role.includes('faja_marginal'))return {...baseStyle,color:'#0f766e',weight:3,fillOpacity:0,dashArray:'7 4'};
-          return baseStyle;
-        },
-        onEachFeature:(feature,featureLayer)=>{
-          const p=feature.properties||{};
-          featureLayer.bindPopup(`<b>${esc(p.name||p.unit_id||zone.system_name)}</b><br><b>RESEARCH_ONLY · REVIEW_ONLY · sin alerta · sin puntuación de riesgo</b><br>${esc(p.map_disclaimer||geometry.map_disclaimer)}<br><span style="font-size:11px">Unidad: ${esc(p.unit_id)} · confianza: ${esc(p.confidence)} · hash: ${esc((p.geometry_sha256||'').slice(0,12))}…</span>`);
+    const docs=new Map();
+    const loadDoc=path=>{if(!docs.has(path))docs.set(path,safeJson(path));return docs.get(path);};
+    for(const group of groups.values()){
+      const def=categories[group.category]||{},style=styleFor(group.category),layer=L.featureGroup();
+      for(const f of group.items){
+        const geo=await loadDoc(f.path);if(!geo)continue;
+        const all=geo.type==='FeatureCollection'?(geo.features||[]):[geo];
+        const sel=f.selector||{};
+        const picked=sel.all_features===true?all:Number.isInteger(sel.feature_index)&&all[sel.feature_index]?[all[sel.feature_index]]:[];
+        for(const feature of picked){
+          const type=(feature.geometry||{}).type;
+          if(!(def.allowed_geometry_types||[]).includes(type))continue;
+          const node=f.map_category==='NODE'?`<br><b>Semántica de nodo:</b> ${esc(f.node_semantics)} · ${esc((nodeSemantics[f.node_semantics]||{}).label)}`:'';
+          L.geoJSON(feature,{style,pointToLayer:(_feature,latlng)=>L.circleMarker(latlng,{radius:style.radius,color:style.color,weight:style.weight,fillColor:style.fillColor,fillOpacity:style.fillOpacity})})
+            .bindPopup(`<b>${esc(f.name)}</b><br>${esc(def.label)} · ${esc(f.semantic_role)}${node}<br><b>${esc(f.deployment_status)} · sin alerta · sin puntuación de riesgo</b><br>${esc(f.map_disclaimer)}<br><span style="font-size:11px">Padre: ${esc(f.parent_id)} · fuente: ${esc((f.source_ids||[]).join(', '))} · confianza: ${esc(f.confidence)} · hash: ${esc((f.file_sha256||'').slice(0,12))}…</span>`)
+            .addTo(layer);
         }
-      });
-      overlays[layerName]=researchLayer;
-      if(geometry.default_visibility===true)researchLayer.addTo(map);
+      }
+      if(!layer.getLayers().length)continue;
+      const name=`${def.group&&def.group!=='CONTEXT'?def.group+' · ':''}${def.label}${group.visible?' · pilotos TEST_ONLY':' · RESEARCH/TEST'}`;
+      overlays[name]=layer;
+      if(group.visible)layer.addTo(map);
     }
     if(Object.keys(overlays).length)L.control.layers(null,overlays,{collapsed:true,position:'topright'}).addTo(map);
     const mapNode=document.getElementById('map'),summary=catalog.summary||{};
     if(mapNode&&!document.getElementById('mapLayerTrace')){
       const note=document.createElement('div');note.id='mapLayerTrace';note.className='histnote';note.style.margin='0';note.style.borderRadius='0';
-      note.innerHTML=`<b>Capas técnicas no operativas:</b> ${esc(summary.technical_layers_registered)} registradas; ${esc(summary.technical_layers_visible_by_default)} visibles por defecto. <b>Expansión:</b> ${esc(summary.research_candidates_map_eligible)}/${esc(summary.research_candidates_registered)} zonas tienen geometría reproducible apta para mostrarse. Las restantes se retienen; no se sustituyen por puntos aproximados.`;
+      note.innerHTML=`<b>Capas técnicas no operativas:</b> ${esc(summary.technical_layers_registered)} registradas; ${esc(summary.technical_layers_visible_by_default)} visibles por defecto. <b>Expansión:</b> ${esc(summary.research_candidates_map_eligible)}/${esc(summary.research_candidates_registered)} zonas tienen geometría reproducible apta para mostrarse. <b>Capas semánticas separadas:</b> ${esc(summary.map_semantic_features_catchment_map_eligible)} cuencas · ${esc(summary.map_semantic_features_local_channel_map_eligible)} cauces locales · ${esc(summary.map_semantic_features_collector_map_eligible)} ejes de colector · ${esc(summary.map_semantic_features_node_map_eligible)} nodos · ${esc(summary.map_semantic_entities_withheld)} entidades retenidas en inventario. Las restantes se retienen; no se sustituyen por puntos aproximados.`;
       mapNode.insertAdjacentElement('afterend',note);
     }
   }
