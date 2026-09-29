@@ -55,28 +55,56 @@ class CasmaMinamRecoveryTests(unittest.TestCase):
         self.assertFalse(data["validation"]["partial_archive_allowed"])
         self.assertFalse(data["validation"]["pdf_digitization_allowed"])
         self.assertFalse(data["validation"]["outlet_inference_allowed"])
+        self.assertIsNone(data["validation"]["historical_area_tolerance_km2"])
+        self.assertFalse(data["validation"]["historical_area_match_required_for_current_context"])
+        self.assertFalse(data["validation"]["historical_exact_name_match_required_for_current_context"])
 
     def test_bounded_name_normalization(self):
         self.assertEqual(module.normalize_name(" Río   Sechín "), module.normalize_name("Rio Sechin"))
         self.assertEqual(module.normalize_name("YAUTÁN"), module.normalize_name("Yautan"))
 
-    def test_exact_identity_area_and_geometry_pass(self):
+    def test_gate_a_exact_identity_and_geometry_pass(self):
         data = load_contract()
         out = module.validate_feature(data, data["units"][0], feature_doc())
         self.assertEqual(out["actual_name"], "Bajo Casma")
         self.assertEqual(round(out["actual_area_km2"], 1), 418.7)
+        self.assertTrue(out["gate_a_identity_pass"])
+        self.assertTrue(out["historical_exact_name_match"])
+        self.assertTrue(out["historical_one_decimal_area_match"])
+        self.assertFalse(out["historical_geometry_equivalence_to_Uh_pfas100"])
 
-    def test_identity_and_area_drift_fail_closed(self):
+    def test_gate_a_identity_or_level_drift_fails_closed(self):
         data = load_contract()
         for doc, message in [
             (feature_doc(code="1375962"), "CODE_MISMATCH"),
-            (feature_doc(name="Otro nombre"), "NAME_MISMATCH"),
-            (feature_doc(area=420.0), "AREA_MISMATCH"),
             (feature_doc(nivel=6), "LEVEL_MISMATCH"),
         ]:
             with self.subTest(message=message):
                 with self.assertRaisesRegex(module.RecoveryError, message):
                     module.validate_feature(data, data["units"][0], doc)
+
+    def test_gate_b_name_and_area_drift_are_recorded_without_blocking_gate_a_capture(self):
+        data = load_contract()
+
+        name_drift = module.validate_feature(
+            data,
+            data["units"][0],
+            feature_doc(name="Otro nombre"),
+        )
+        self.assertTrue(name_drift["gate_a_identity_pass"])
+        self.assertFalse(name_drift["historical_exact_name_match"])
+        self.assertFalse(name_drift["historical_bounded_generic_rio_name_match"])
+        self.assertFalse(name_drift["historical_geometry_equivalence_to_Uh_pfas100"])
+
+        area_drift = module.validate_feature(
+            data,
+            data["units"][0],
+            feature_doc(area=420.0),
+        )
+        self.assertTrue(area_drift["gate_a_identity_pass"])
+        self.assertFalse(area_drift["historical_one_decimal_area_match"])
+        self.assertAlmostEqual(area_drift["historical_area_delta_km2"], 1.3, places=6)
+        self.assertFalse(area_drift["historical_geometry_equivalence_to_Uh_pfas100"])
 
     def test_multiple_features_are_not_silently_dissolved(self):
         data = load_contract()
