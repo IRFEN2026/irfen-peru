@@ -111,7 +111,19 @@ class TestCaneteJacayitaFajaContext(unittest.TestCase):
         self.assertEqual(parent["geometry"]["source_metadata"]["feature_count"], 1)
         js = TERRITORIAL_JS.read_text(encoding="utf-8")
         self.assertIn("maps.research_component_layers", js)
-        self.assertIn("context_component:", js)
+        # La capa componente se publica por categoría semántica: faja marginal
+        # separada del contenedor Cañete, nunca como cuenca ni como cauce.
+        rows = [
+            row for row in catalog["map_semantics"]["features"]
+            if row["owner_collection"] == "research_component_layers"
+            and row["owner_id"] == "lima_sur_canete_jacayita_faja_2025"
+        ]
+        self.assertEqual(len(rows), jacayita["source_metadata"]["feature_count"])
+        for row in rows:
+            self.assertEqual(row["map_category"], "REGULATORY_FAJA_MARGINAL")
+            self.assertEqual(row["parent_id"], "lima_sur_canete")
+            self.assertIn("CATCHMENT", row["is_not"])
+            self.assertIn("CHANNEL", row["is_not"])
 
 
 if __name__ == "__main__":
