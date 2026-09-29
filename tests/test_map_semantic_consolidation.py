@@ -14,7 +14,21 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
+try:
+    import pytest
+except ModuleNotFoundError:
+    # El CI legado aún descubre con unittest y no instala pytest. Los tests de
+    # este módulo son pytest-style y se ejecutan en el gate independiente; este
+    # stub permite que unittest importe el módulo sin omitir/fallar el resto de
+    # la suite mientras se completa la migración global del runner.
+    class _PytestImportCompat:
+        @staticmethod
+        def fixture(*args, **kwargs):
+            def decorator(func):
+                return func
+            return decorator
+
+    pytest = _PytestImportCompat()
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
