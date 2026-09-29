@@ -21,10 +21,12 @@ class TerritorialInventoryTests(unittest.TestCase):
         const plan=m.buildPlan(...inputs);
         assert.equal(JSON.stringify(inputs),before,'Do not modify scientific inputs');
         assert.deepEqual(plan.candidates.map(r=>r.candidateId),catalog.zones.map(z=>z.candidate_id));
-        assert.equal(plan.candidates.length,18);
+        assert.equal(plan.candidates.length,catalog.zones.length);
         assert.equal(plan.summary.monitoredSubunits,spatial.summary.research_subunit_contract_count);
-        assert.equal(plan.summary.technicalLayers,5);
-        assert.equal(plan.pilotIds.length,3);
+        assert.equal(plan.summary.technicalLayers,layers.technical_layers.filter(t=>t.map_eligible===true).length);
+        assert(plan.pilotIds.length>0);
+        assert.deepEqual(plan.pilotIds,catalog.relationship_to_v08.operational_pilots);
+        assert(plan.semanticsOK,'map_semantics must validate');
         assert(plan.requests.some(r=>r.title.includes('San Ildefonso')));
         assert(plan.requests.some(r=>r.title.includes('Huaycoloro')));
         assert(plan.requests.some(r=>r.title.includes('Catacaos')));
@@ -37,12 +39,13 @@ class TerritorialInventoryTests(unittest.TestCase):
         assert(!Object.hasOwn(malanche,'coordinates'));
 
         // Huerta Vieja now has reproducible official ANA faja-margin alignments. They are
-        // intentionally map context only: one context request, never a catchment or sampling area.
+        // intentionally faja context only: one faja request, never a catchment, channel or sampling area.
         const huerta=plan.candidates.find(r=>r.candidateId==='lima_norte_huerta_vieja');
-        assert(huerta); assert.deepEqual(huerta.layerKeys,['context:lima_norte_huerta_vieja']);
+        assert(huerta); assert.deepEqual(huerta.layerKeys,['faja:research_zones:lima_norte_huerta_vieja']);
         assert(!Object.hasOwn(huerta,'coordinates'));
-        const huertaRequest=plan.requests.find(r=>r.key==='context:lima_norte_huerta_vieja');
-        assert(huertaRequest); assert.equal(huertaRequest.kind,'context');
+        const huertaRequest=plan.requests.find(r=>r.key==='faja:research_zones:lima_norte_huerta_vieja');
+        assert(huertaRequest); assert.equal(huertaRequest.kind,'faja');
+        assert.equal(huertaRequest.category,'REGULATORY_FAJA_MARGINAL');
         assert.equal(huertaRequest.path,'data/phase2/geometries/lima_norte_huerta_vieja_faja_context.geojson');
         const huertaDoc=read(huertaRequest.path);
         const huertaFeatures=m.selectFeatures(huertaDoc,huertaRequest);
@@ -53,7 +56,7 @@ class TerritorialInventoryTests(unittest.TestCase):
           assert.equal(f.properties.not_event_footprint,true);
           assert.equal(f.properties.production_use,false);
           assert.equal(f.properties.production_ready,false);
-          assert(m.semanticLabel(f,huertaRequest).includes('NO es cuenca') || m.semanticLabel(f,huertaRequest).includes('NO delimita'));
+          assert(m.semanticLabel(f,huertaRequest).includes('NO es cuenca'));
         }
         assert(huerta.reason.includes('REVIEW_ONLY'));
 
@@ -64,13 +67,16 @@ class TerritorialInventoryTests(unittest.TestCase):
         for(const request of plan.requests) {
           assert(request.path);const doc=read(request.path);
           const features=m.selectFeatures(doc,request);
-          for(const f of features) {
+          features.forEach((f,i)=>{
             const signature=JSON.stringify(f.geometry);
             assert(!seen.has(signature),'Do not draw duplicate sampling/context polygons');
             seen.add(signature);featureCount++;
-            if(f.properties?.context_only) assert(m.semanticLabel(f,request).includes('NO es cuenca'));
-            if(f.properties?.feature_role?.includes('margin')) assert(m.semanticLabel(f,request).includes('NO es cuenca'));
-          }
+            const label=m.semanticLabel(f,request,(request.featureMeta||[])[i]||{});
+            if(request.category==='DOCUMENT_CONTEXT') assert(label.includes('NO es cuenca'));
+            // Una cuenca ANA con context_only sigue siendo cuenca: no se rotula como ámbito documental.
+            if(f.properties?.context_only && request.category==='CATCHMENT') assert(label.startsWith('Cuenca'),label);
+            if(f.properties?.feature_role?.includes('margin')) assert(label.includes('NO es cuenca'));
+          });
         }
         assert(featureCount>plan.summary.monitoredSubunits);
         assert.equal(m.dataPath('https://example.com/a.geojson'),null);
@@ -78,11 +84,11 @@ class TerritorialInventoryTests(unittest.TestCase):
         assert.equal(m.dataPath('site/data/a.geojson'),'data/a.geojson');
         assert.equal(m.safeURL('javascript:alert(1)'),null);
         const missing=m.buildPlan(catalog,{}, {}, {});
-        assert.equal(missing.candidates.length,18);
+        assert.equal(missing.candidates.length,catalog.zones.length);
         assert.equal(missing.requests.length,0);
         const changed=structuredClone(layers);
         changed.research_zones.find(r=>r.candidate_id==='lima_este_lurin_cieneguilla').geometry.map_eligible=false;
-        assert(!m.buildPlan(catalog,spatial,changed,remaining).requests.some(r=>r.key==='context:lima_este_lurin_cieneguilla'));
+        assert(!m.buildPlan(catalog,spatial,changed,remaining).requests.some(r=>r.candidateId==='lima_este_lurin_cieneguilla'));
         assert.throws(()=>m.buildPlan({...catalog,production_use:true},spatial,layers,remaining));
         assert.throws(()=>m.buildPlan({...catalog,zones:[catalog.zones[0],catalog.zones[0]]}));
         assert.throws(()=>m.selectFeatures({type:'FeatureCollection',features:[]},{kind:'monitored'}));
