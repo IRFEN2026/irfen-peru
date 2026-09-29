@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
-"""Recover exact Casma N7 polygons from the public MINAM ArcGIS feature layer.
+"""Capture current institutional Casma N7 polygons from the public MINAM layer.
 
-This is a provenance-first, fail-closed research replay. It accepts only exact
-CODIGO matches that independently agree with the 2007 ANA-INRENA inventory on
-identity and one-decimal area. It never digitizes the PDF, infers outlets,
-creates event outcomes, routing parameters, hydraulic capacity, thresholds,
-risk states or alerts.
+This is a provenance-first, fail-closed research replay with three explicit
+gates. Gate A captures one exact current institutional feature per CODIGO/NIVEL7
+and freezes raw bytes plus SHA-256 without requiring historical name/area
+equality. Gate B keeps 2007 ANA-INRENA lineage/equivalence separate and false
+unless direct evidence establishes it. Gate C (topology/map) is not performed
+here, so captured geometry remains non-publishable. The replay never digitizes
+the PDF, infers outlets, creates event outcomes, routing parameters, hydraulic
+capacity, thresholds, risk states or alerts.
 """
 from __future__ import annotations
 
@@ -147,41 +150,74 @@ def service_name(props: dict) -> str:
 
 
 def validate_feature(contract: dict, expected: dict, doc: dict) -> dict:
+    """Gate A: validate and capture a current institutional N7 feature.
+
+    Historical display-name/area comparisons are recorded as Gate B evidence
+    but do not gate immutable capture. This function never establishes
+    equivalence to the 2007 Uh_pfas100 geometry.
+    """
     features = doc.get("features")
     required_count = int(contract["validation"]["required_feature_count_per_code"])
     if not isinstance(features, list) or len(features) != required_count:
-        raise RecoveryError(f"FEATURE_COUNT_MISMATCH code={expected['code']} count={0 if not isinstance(features,list) else len(features)}")
+        raise RecoveryError(
+            f"FEATURE_COUNT_MISMATCH code={expected['code']} "
+            f"count={0 if not isinstance(features, list) else len(features)}"
+        )
     feature = features[0]
     if feature.get("type") != "Feature":
         raise RecoveryError(f"NOT_GEOJSON_FEATURE code={expected['code']}")
     props = feature.get("properties") or {}
+
     actual_code = str(props.get("CODIGO") or "").strip()
     if actual_code != expected["code"]:
-        raise RecoveryError(f"CODE_MISMATCH expected={expected['code']} actual={actual_code}")
-    nivel = props.get("NIVEL")
-    if contract["validation"]["require_level_7_when_level_field_present"] and nivel is not None and int(nivel) != 7:
-        raise RecoveryError(f"LEVEL_MISMATCH code={expected['code']} NIVEL={nivel}")
-    if str(props.get("NIVEL7") or "").strip() not in {"", expected["code"]}:
-        raise RecoveryError(f"NIVEL7_MISMATCH code={expected['code']} value={props.get('NIVEL7')}")
-    actual_name = service_name(props)
-    if normalize_name(actual_name) != normalize_name(expected["name"]):
-        raise RecoveryError(f"NAME_MISMATCH code={expected['code']} expected={expected['name']} actual={actual_name}")
-    actual_area = service_area(props)
-    if round(actual_area, 1) != round(float(expected["area_km2"]), 1):
-        expected_area = float(expected["area_km2"])
-        delta = actual_area - expected_area
-        rel_pct = (delta / expected_area * 100.0) if expected_area else math.nan
         raise RecoveryError(
-            "AREA_MISMATCH "
-            f"code={expected['code']} expected={expected_area:.1f} actual={actual_area:.6f} "
-            f"AREA_KM2={props.get('AREA_KM2')!r} AREA_FINAL={props.get('AREA_FINAL')!r} "
-            f"delta_km2={delta:.6f} rel_pct={rel_pct:.6f}"
+            f"CODE_MISMATCH expected={expected['code']} actual={actual_code}"
         )
+
+    nivel = props.get("NIVEL")
+    if (
+        contract["validation"]["require_level_7_when_level_field_present"]
+        and nivel is not None
+        and int(nivel) != 7
+    ):
+        raise RecoveryError(f"LEVEL_MISMATCH code={expected['code']} NIVEL={nivel}")
+
+    actual_nivel7 = str(props.get("NIVEL7") or "").strip()
+    if actual_nivel7 != expected["code"]:
+        raise RecoveryError(
+            f"NIVEL7_MISMATCH code={expected['code']} value={props.get('NIVEL7')}"
+        )
+
+    actual_name = service_name(props)
+    actual_area = service_area(props)
+    expected_name = str(expected["name"])
+    expected_area = float(expected["area_km2"])
+
+    exact_name_match = normalize_name(actual_name) == normalize_name(expected_name)
+
+    def without_generic_rio(value: object) -> str:
+        normalized = normalize_name(value)
+        return normalized[4:] if normalized.startswith("rio ") else normalized
+
+    bounded_name_match = (
+        without_generic_rio(actual_name) == without_generic_rio(expected_name)
+    )
+    area_delta = actual_area - expected_area
+    area_rel_pct = (area_delta / expected_area * 100.0) if expected_area else None
+    historical_one_decimal_area_match = (
+        round(actual_area, 1) == round(expected_area, 1)
+    )
+
     geometry = feature.get("geometry")
     if not isinstance(geometry, dict):
         raise RecoveryError(f"MISSING_GEOMETRY code={expected['code']}")
-    if geometry.get("type") not in set(contract["validation"]["allowed_geojson_geometry_types"]):
-        raise RecoveryError(f"GEOMETRY_TYPE_MISMATCH code={expected['code']} type={geometry.get('type')}")
+    if geometry.get("type") not in set(
+        contract["validation"]["allowed_geojson_geometry_types"]
+    ):
+        raise RecoveryError(
+            f"GEOMETRY_TYPE_MISMATCH code={expected['code']} "
+            f"type={geometry.get('type')}"
+        )
     bbox = geometry_bbox(geometry)
     bounds = contract["validation"]["casma_bbox_wgs84"]
     if not (
@@ -191,14 +227,23 @@ def validate_feature(contract: dict, expected: dict, doc: dict) -> dict:
         and bounds["min_lat"] <= bbox[3] <= bounds["max_lat"]
     ):
         raise RecoveryError(f"CASMA_BBOX_MISMATCH code={expected['code']} bbox={bbox}")
+
     return {
         "feature": feature,
         "actual_name": actual_name,
         "actual_area_km2": actual_area,
         "bbox_wgs84": [round(v, 8) for v in bbox],
         "objectid": props.get("OBJECTID"),
+        "gate_a_identity_pass": True,
+        "historical_exact_name_match": exact_name_match,
+        "historical_bounded_generic_rio_name_match": bounded_name_match,
+        "historical_one_decimal_area_match": historical_one_decimal_area_match,
+        "historical_area_delta_km2": round(area_delta, 6),
+        "historical_area_delta_percent": (
+            None if area_rel_pct is None else round(area_rel_pct, 6)
+        ),
+        "historical_geometry_equivalence_to_Uh_pfas100": False,
     }
-
 
 def validate_metadata(contract: dict, metadata: dict) -> None:
     source = contract["source"]
@@ -218,6 +263,7 @@ def validate_metadata(contract: dict, metadata: dict) -> None:
 
 
 def write_outputs(contract: dict, metadata_bytes: bytes, staged: list[dict]) -> dict:
+    """Persist Gate A capture artifacts; do not authorize map publication."""
     outputs = contract["outputs"]
     archive_root = ROOT / outputs["archive_root"]
     metadata_path = ROOT / outputs["metadata_archive_path"]
@@ -236,7 +282,6 @@ def write_outputs(contract: dict, metadata_bytes: bytes, staged: list[dict]) -> 
         raw_path.write_bytes(row["raw_bytes"])
         raw_sha = sha256_bytes(row["raw_bytes"])
         feature = row["validated"]["feature"]
-        props = feature.get("properties") or {}
         normalized_features.append({
             "type": "Feature",
             "properties": {
@@ -254,7 +299,12 @@ def write_outputs(contract: dict, metadata_bytes: bytes, staged: list[dict]) -> 
                 "output_wkid": contract["source"]["query_output_wkid"],
                 "raw_response_sha256": raw_sha,
                 "source_objectid": row["validated"]["objectid"],
-                "geometry_role": "OFFICIAL_N7_HYDROGRAPHIC_CONTEXT",
+                "geometry_role": "CURRENT_INSTITUTIONAL_N7_RESEARCH_CAPTURE",
+                "gate_a_source_capture": "PASS",
+                "gate_b_lineage_equivalence": "NOT_ESTABLISHED",
+                "gate_c_topology_map": "PENDING",
+                "historical_geometry_equivalence_to_Uh_pfas100": False,
+                "map_publication_authorized": False,
                 "activation_evidence": False,
                 "event_footprint": False,
                 "outlet_or_confluence": False,
@@ -266,18 +316,31 @@ def write_outputs(contract: dict, metadata_bytes: bytes, staged: list[dict]) -> 
         })
         rows.append({
             "code": row["expected"]["code"],
-            "expected_name": row["expected"]["name"],
+            "expected_name_2007": row["expected"]["name"],
             "service_name": row["validated"]["actual_name"],
-            "expected_area_km2": row["expected"]["area_km2"],
+            "expected_area_km2_2007": row["expected"]["area_km2"],
             "service_area_km2": row["validated"]["actual_area_km2"],
+            "historical_exact_name_match": row["validated"]["historical_exact_name_match"],
+            "historical_bounded_generic_rio_name_match": row["validated"][
+                "historical_bounded_generic_rio_name_match"
+            ],
+            "historical_one_decimal_area_match": row["validated"][
+                "historical_one_decimal_area_match"
+            ],
+            "historical_area_delta_km2": row["validated"]["historical_area_delta_km2"],
+            "historical_area_delta_percent": row["validated"][
+                "historical_area_delta_percent"
+            ],
+            "historical_geometry_equivalence_to_Uh_pfas100": False,
             "bbox_wgs84": row["validated"]["bbox_wgs84"],
             "objectid": row["validated"]["objectid"],
             "query_url": row["query_url"],
             "raw_archive_path": raw_path.relative_to(ROOT).as_posix(),
             "raw_response_sha256": raw_sha,
-            "identity_pass": True,
-            "area_pass": True,
-            "geometry_pass": True,
+            "gate_a_identity_pass": True,
+            "gate_a_raw_capture_pass": True,
+            "gate_b_lineage_equivalence": "NOT_ESTABLISHED",
+            "gate_c_topology_map": "PENDING",
         })
 
     normalized_features.sort(key=lambda f: f["properties"]["n7_code"])
@@ -290,8 +353,13 @@ def write_outputs(contract: dict, metadata_bytes: bytes, staged: list[dict]) -> 
             "source_institution": contract["source"]["institution"],
             "source_native_wkid": contract["source"]["expected_source_wkid"],
             "output_wkid": contract["source"]["query_output_wkid"],
-            "geometry_role": "OFFICIAL_N7_HYDROGRAPHIC_CONTEXT",
-            "map_eligible_as_research_context": True,
+            "geometry_role": "CURRENT_INSTITUTIONAL_N7_RESEARCH_CAPTURE",
+            "gate_a_source_capture": "PASS",
+            "gate_b_lineage_equivalence": "NOT_ESTABLISHED",
+            "gate_c_topology_map": "PENDING",
+            "historical_geometry_equivalence_to_Uh_pfas100": False,
+            "map_publication_authorized": False,
+            "map_eligible_as_research_context": False,
             "map_eligible_as_activation_geometry": False,
             "event_footprint": False,
             "routing_enabled": False,
@@ -301,10 +369,15 @@ def write_outputs(contract: dict, metadata_bytes: bytes, staged: list[dict]) -> 
     }
     geometry_path.write_text(canonical(geometry_doc), encoding="utf-8")
     geometry_sha = sha256_file(geometry_path)
-    retrieved_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    retrieved_at = (
+        datetime.now(timezone.utc)
+        .replace(microsecond=0)
+        .isoformat()
+        .replace("+00:00", "Z")
+    )
     manifest = {
         "schema_version": "0.1",
-        "status": "PASS_REPRODUCIBLE_MINAM_CASMA_N7_OFFICIAL_GEOMETRY",
+        "status": "PASS_GATE_A_CURRENT_INSTITUTIONAL_N7_CAPTURE",
         **SAFE,
         "dataset_id": "ancash_casma_n7_minam_official_v0_1",
         "retrieved_at_utc": retrieved_at,
@@ -319,22 +392,35 @@ def write_outputs(contract: dict, metadata_bytes: bytes, staged: list[dict]) -> 
         "features": rows,
         "geometry_path": geometry_path.relative_to(ROOT).as_posix(),
         "geometry_sha256": geometry_sha,
-        "exact_vector_recovered": True,
+        "current_institutional_vector_recovered": True,
+        "exact_current_code_capture_recovered": True,
+        "exact_vector_recovered": False,
+        "historical_geometry_equivalence_to_Uh_pfas100": False,
         "all_nine_identity_checks_passed": len(rows) == 9,
+        "all_nine_raw_hashes_frozen": len(rows) == 9,
+        "gate_a_source_capture": "PASS",
+        "gate_b_lineage_equivalence": "NOT_ESTABLISHED",
+        "gate_c_topology_map": "PENDING",
         "pdf_digitization_used": False,
         "dem_backfill_used": False,
         "outlet_or_confluence_inferred": False,
         "event_outcome_used_for_geometry": False,
         "negative_control_created": False,
         "threshold_created": False,
-        "map_eligible_as_research_context": True,
+        "map_publication_authorized": False,
+        "map_eligible_as_research_context": False,
         "map_eligible_as_activation_geometry": False,
         "map_layers_registry_modified_by_this_replay": False,
-        "rule": "Geometry may be presented only as official N7 hydrographic research context after independent PR QA; it is not activation evidence, an event footprint, routing, capacity, risk or alert semantics.",
+        "rule": (
+            "Gate A freezes current institutional N7 source bytes and exact identity only. "
+            "Historical name/area drift is preserved as Gate B evidence and does not block "
+            "capture. Gate B remains not established without direct Uh_pfas100 lineage, "
+            "and Gate C topology QA is required before any map publication as "
+            "CURRENT_INSTITUTIONAL_N7_RESEARCH_CONTEXT."
+        ),
     }
     manifest_path.write_text(canonical(manifest), encoding="utf-8")
     return manifest
-
 
 def verify_existing(contract: dict) -> dict:
     outputs = contract["outputs"]
@@ -343,10 +429,24 @@ def verify_existing(contract: dict) -> dict:
     metadata_path = ROOT / outputs["metadata_archive_path"]
     manifest = load(manifest_path)
     guard(manifest, "MANIFEST")
-    if manifest.get("status") != "PASS_REPRODUCIBLE_MINAM_CASMA_N7_OFFICIAL_GEOMETRY":
+    if manifest.get("status") != "PASS_GATE_A_CURRENT_INSTITUTIONAL_N7_CAPTURE":
         raise RecoveryError(f"UNKNOWN_MANIFEST_STATUS {manifest.get('status')}")
     if manifest.get("feature_count") != 9 or manifest.get("all_nine_identity_checks_passed") is not True:
         raise RecoveryError("INCOMPLETE_RECOVERY_MANIFEST")
+    if manifest.get("all_nine_raw_hashes_frozen") is not True:
+        raise RecoveryError("INCOMPLETE_RAW_HASH_CAPTURE")
+    if manifest.get("gate_a_source_capture") != "PASS":
+        raise RecoveryError("GATE_A_NOT_PASS")
+    if manifest.get("gate_b_lineage_equivalence") != "NOT_ESTABLISHED":
+        raise RecoveryError("GATE_B_UNEXPECTED_STATE")
+    if manifest.get("gate_c_topology_map") != "PENDING":
+        raise RecoveryError("GATE_C_UNEXPECTED_STATE")
+    if manifest.get("historical_geometry_equivalence_to_Uh_pfas100") is not False:
+        raise RecoveryError("HISTORICAL_EQUIVALENCE_MUST_REMAIN_FALSE")
+    if manifest.get("map_publication_authorized") is not False:
+        raise RecoveryError("MAP_PUBLICATION_MUST_REMAIN_BLOCKED")
+    if manifest.get("map_eligible_as_research_context") is not False:
+        raise RecoveryError("MAP_CONTEXT_ELIGIBILITY_MUST_REMAIN_FALSE")
     if sha256_file(metadata_path) != manifest["metadata_sha256"]:
         raise RecoveryError("METADATA_HASH_DRIFT")
     if sha256_file(geometry_path) != manifest["geometry_sha256"]:
@@ -355,12 +455,18 @@ def verify_existing(contract: dict) -> dict:
         path = ROOT / row["raw_archive_path"]
         if sha256_file(path) != row["raw_response_sha256"]:
             raise RecoveryError(f"RAW_RESPONSE_HASH_DRIFT {row['code']}")
+        if row.get("historical_geometry_equivalence_to_Uh_pfas100") is not False:
+            raise RecoveryError(f"ROW_HISTORICAL_EQUIVALENCE_DRIFT {row['code']}")
     geometry = load(geometry_path)
     guard(geometry["properties"], "GEOMETRY")
     if len(geometry.get("features", [])) != 9:
         raise RecoveryError("GEOMETRY_FEATURE_COUNT_DRIFT")
+    props = geometry["properties"]
+    if props.get("map_publication_authorized") is not False:
+        raise RecoveryError("GEOMETRY_MAP_PUBLICATION_DRIFT")
+    if props.get("map_eligible_as_research_context") is not False:
+        raise RecoveryError("GEOMETRY_MAP_ELIGIBILITY_DRIFT")
     return manifest
-
 
 def main() -> None:
     parser = argparse.ArgumentParser()
