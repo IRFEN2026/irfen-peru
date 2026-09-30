@@ -1,0 +1,123 @@
+{
+  "schema_version": "0.1",
+  "assessment_id": "casma_gate_b_documentary_evidence_review_v0_1",
+  "status": "GATE_B_NOT_ESTABLISHED_DOCUMENTARY_EVIDENCE_INSUFFICIENT_BY_CONTRACT",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "review_date_utc": "2026-09-29",
+  "gate_contract_ref": {
+    "path": "site/data/phase2/source_assessments/casma_minam_recovery_gate_adjudication_v0_1.json",
+    "section": "gate_b_lineage_equivalence",
+    "criterion_modified": false,
+    "area_tolerance_authorized": false,
+    "post_hoc_attribute_bypass_authorized": false
+  },
+  "evidence_reviewed": [
+    {
+      "topic": "estudio hidrologico oficial de la cuenca del rio Casma",
+      "registered_source_id": "ANA-CASMA-HYDROLOGIC-STUDY-2007",
+      "registry_path": "site/data/phase2/sources/ancash_casma_sechin_yautan_official_evidence_v0_1.json",
+      "public_byte_hash_status": "PENDING_ARCHIVE_OF_PUBLIC_BYTES",
+      "gate_b_contribution": "DOCUMENTARY_IDENTITY_NAME_AREA_CONTEXT_ONLY"
+    },
+    {
+      "topic": "unidades hidrograficas principales (N7 1375961-1375969)",
+      "registered_source_id": "ANA-CASMA-SURFACE-WATER-INVENTORY-2007",
+      "registry_path": "site/data/phase2/sources/ancash_casma_2007_surface_water_inventory_v0_1.json",
+      "public_byte_hash_status": "PENDING_ARCHIVE_OF_PUBLIC_BYTES",
+      "gate_b_contribution": "HISTORICAL_NAME_AND_AREA_SIDE_OF_REQUIREMENT_2_ONLY"
+    },
+    {
+      "topic": "unidades hidrograficas auxiliares (Puente Quillo 137596A, Sector Tutuma 137596B)",
+      "registered_source_id": "ANA-CASMA-HYDROLOGIC-STUDY-2007",
+      "registry_path": "site/data/phase2/sources/ancash_casma_sechin_yautan_official_evidence_v0_1.json",
+      "public_byte_hash_status": "PENDING_ARCHIVE_OF_PUBLIC_BYTES",
+      "gate_b_contribution": "NONE_AUXILIARY_RECEIVER_UNITS_ARE_NOT_N7_TARGET_CODES"
+    },
+    {
+      "topic": "sistema de drenaje y topologia Casma-Sechin",
+      "registered_source_id": "ANA-CASMA-HYDROLOGIC-STUDY-2007",
+      "registry_path": "site/data/phase2/sources/ancash_casma_sechin_yautan_official_evidence_v0_1.json",
+      "public_byte_hash_status": "PENDING_ARCHIVE_OF_PUBLIC_BYTES",
+      "gate_b_contribution": "NONE_CHILD_TO_MAINSTEM_TOPOLOGY_IS_NOT_POLYGON_EQUIVALENCE"
+    },
+    {
+      "topic": "estaciones hidrometricas y pluviometricas; caudales historicos",
+      "registered_source_id": "ANA-CASMA-HYDROLOGIC-STUDY-2007",
+      "registry_path": "site/data/phase2/sources/ancash_casma_sechin_yautan_official_evidence_v0_1.json",
+      "public_byte_hash_status": "PENDING_ARCHIVE_OF_PUBLIC_BYTES",
+      "gate_b_contribution": "NONE_OBSERVATION_CONTEXT_DOES_NOT_ADDRESS_GEOMETRY"
+    },
+    {
+      "topic": "caudales maximos instantaneos",
+      "registered_source_id": null,
+      "registry_path": null,
+      "public_byte_hash_status": "NOT_REGISTERED_NO_SOURCE_BYTES_OR_PAGE_REFERENCE_IN_REPOSITORY",
+      "gate_b_contribution": "NONE_OBSERVATION_CONTEXT_DOES_NOT_ADDRESS_GEOMETRY"
+    },
+    {
+      "topic": "quebrada Tomeque",
+      "registered_source_id": "ANA-CASMA-CRITICAL-POINTS-2021",
+      "registry_path": "site/data/phase2/sources/ancash_casma_sechin_yautan_official_evidence_v0_1.json",
+      "public_byte_hash_status": "NOT_ARCHIVED",
+      "gate_b_contribution": "NONE_NAMED_RAVINE_IS_NOT_AN_N7_TARGET_CODE"
+    },
+    {
+      "topic": "sector Muna-Jayhua-La Hoyada",
+      "registered_source_id": null,
+      "registry_path": null,
+      "public_byte_hash_status": "NOT_REGISTERED_NO_SOURCE_BYTES_OR_PAGE_REFERENCE_IN_REPOSITORY",
+      "gate_b_contribution": "NONE_LOCAL_SECTOR_IS_NOT_AN_N7_TARGET_CODE"
+    }
+  ],
+  "requirement_assessment": [
+    {
+      "requirement": "original Uh_pfas100 bytes or direct institutional lineage evidence",
+      "satisfied": false,
+      "reason": "No reviewed document contains Uh_pfas100 vector bytes. The 2007 study states that INRENA digital cartography with Pfafstetter N7 delineation was used; that is lineage of the 2007 study to INRENA, not lineage of the current MINAM ServicioActivacionQuebrada layer to Uh_pfas100. A 2007 document cannot attest the provenance of a later service."
+    },
+    {
+      "requirement": "preserved comparison of every current/historical name and area delta",
+      "satisfied": false,
+      "reason": "The historical side (2007 names and areas) is frozen. The current side exists only as PR #339 live observations and an ephemeral CI artifact; no current per-code attributes derived from committed raw bytes with SHA-256 exist in the repository to compare against."
+    },
+    {
+      "requirement": "independent evidence sufficient to establish geometric equivalence",
+      "satisfied": false,
+      "reason": "Documentary sources supply names, codes, areas, topology and map images only. Contract forbids PDF digitization, so no reviewed evidence yields comparable polygon coordinates. Observed area drift (sum delta -0.9614 km2) and name/designator drift remain unexplained without lineage."
+    }
+  ],
+  "gate_b_result": "NOT_ESTABLISHED",
+  "historical_geometry_equivalence_to_Uh_pfas100": false,
+  "missing_evidence_to_establish_gate_b": [
+    "Uh_pfas100 original vector bytes (.shp/.shx/.dbf/.prj) from an institutional source (ANA repository, INRENA/ANA SIG archive or formal access request), frozen with SHA-256, containing codes 1375961-1375969",
+    "OR an institutional statement (MINAM or ANA metadata, service documentation or official letter) that ServicioActivacionQuebrada layer 1 is derived from Uh_pfas100 without re-delineation, with any edits enumerated",
+    "Committed Gate A raw per-code MINAM responses plus SHA-256 so the current-side name and area comparison is reproducible from repository bytes",
+    "Given original bytes: a preregistered geometric comparison (per-code symmetric difference / Hausdorff after a documented WGS84 to EPSG:32718 transform) reported without post-hoc tolerance",
+    "Archived public bytes plus SHA-256 of the ANA 2007 hydrologic study and surface-water inventory PDFs (currently PENDING_ARCHIVE_OF_PUBLIC_BYTES)"
+  ],
+  "gate_c_dependency": {
+    "gate_c_requires_gate_b": false,
+    "gate_c_blocked_by": [
+      "Gate A raw per-code responses, geometry and manifest are produced only as a 30-day CI artifact and are not committed; adjudication current_status remains PENDING_IMMUTABLE_RAW_CAPTURE",
+      "No topology QA (validity, pairwise overlap, gaps/union, parent coherence, hash stability) is implemented in the repository"
+    ],
+    "publication_label_if_eventually_passed": "CURRENT_INSTITUTIONAL_N7_RESEARCH_CONTEXT",
+    "map_publication_authorized": false
+  },
+  "scientific_effect": {
+    "new_claims_registered": false,
+    "pdf_digitized": false,
+    "geometry_created": false,
+    "threshold_created": false,
+    "hydraulic_capacity_inferred": false,
+    "negative_control_created": false
+  }
+}
