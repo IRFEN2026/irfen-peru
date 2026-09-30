@@ -32,6 +32,19 @@ LAYER_ID = 10
 LAYER_ENDPOINT = f"{SERVICE_ROOT}/{LAYER_ID}"
 QUERY_ENDPOINT = LAYER_ENDPOINT + "/query"
 FIND_ENDPOINT = SERVICE_ROOT + "/find"
+
+# Independent official MINAM fallback. This nationwide 1:100,000 hydrography
+# layer is kept separate from the 2020 Desarrollo_Urbano source so that a
+# degraded source cannot be mistaken for hydrologic absence.
+SECONDARY_SERVICE_ROOT = (
+    "https://geoservidorperu.minam.gob.pe/arcgis/rest/services/"
+    "ServicioActivacionQuebrada/MapServer"
+)
+SECONDARY_LAYER_ID = 36
+SECONDARY_LAYER_ENDPOINT = f"{SECONDARY_SERVICE_ROOT}/{SECONDARY_LAYER_ID}"
+SECONDARY_FIND_ENDPOINT = SECONDARY_SERVICE_ROOT + "/find"
+SECONDARY_QUERY_ENDPOINT = SECONDARY_LAYER_ENDPOINT + "/query"
+
 OUT = ROOT / "artifacts/phase2_minam2020_huaycoloro_rimac_probe.json"
 TARGETS = {
     "huaycoloro": ("HUAYCOLORO",),
@@ -104,6 +117,34 @@ def geometry_query_url(objectids) -> str:
         "f": "geojson",
     }
     return QUERY_ENDPOINT + "?" + urlencode(params)
+
+
+def secondary_find_url(name: str) -> str:
+    params = {
+        "searchText": name,
+        "contains": "true",
+        "searchFields": "r_q_text,nombre,nomb_min",
+        "layers": str(SECONDARY_LAYER_ID),
+        "returnGeometry": "false",
+        "f": "json",
+    }
+    return SECONDARY_FIND_ENDPOINT + "?" + urlencode(params)
+
+
+def secondary_geometry_query_url(objectids) -> str:
+    params = {
+        "objectIds": ",".join(str(int(v)) for v in sorted(set(objectids))),
+        "outFields": (
+            "OBJECTID_1,nombre,tipo,estado,codigo,zona,text_tramo,aaa,"
+            "nivel5,nivel6,nivel7,id,escala,code_rio,tipo_g,r_q_text,"
+            "nomb_min,fuente"
+        ),
+        "returnGeometry": "true",
+        "outSR": "4326",
+        "geometryPrecision": "7",
+        "f": "geojson",
+    }
+    return SECONDARY_QUERY_ENDPOINT + "?" + urlencode(params)
 
 
 def _fetch_json(url: str, timeout: int, user_agent: str):
@@ -183,6 +224,37 @@ def _ids_from_find(data: dict, target: str):
     return ids
 
 
+def _secondary_ids_from_find(data: dict, target: str):
+    results = data.get("results")
+    if results is None:
+        return []
+    if not isinstance(results, list):
+        raise SourceAccessError("secondary /find response results is not a list")
+    wanted = norm(target)
+    ids = []
+    for row in results:
+        if not isinstance(row, dict) or int(row.get("layerId", -1)) != SECONDARY_LAYER_ID:
+            continue
+        attrs = row.get("attributes") or {}
+        name = norm(
+            attrs.get("r_q_text")
+            or attrs.get("nombre")
+            or attrs.get("nomb_min")
+            or row.get("value")
+        )
+        # Contains is discovery-only. The candidate remains unadjudicated even
+        # when the literal target token is present in the official label.
+        if wanted not in name:
+            continue
+        oid = attrs.get("OBJECTID_1")
+        if oid is not None:
+            try:
+                ids.append(int(oid))
+            except (TypeError, ValueError):
+                pass
+    return ids
+
+
 def _discover_group_ids(group: str, targets, timeout: int, trace, raw_parts):
     ids = set()
     completed_paths = 0
@@ -216,7 +288,7 @@ def _discover_group_ids(group: str, targets, timeout: int, trace, raw_parts):
     return sorted(ids)
 
 
-def fetch(timeout: int = 30):
+def _fetch_primary(timeout: int = 30):
     trace = []
     raw_parts = []
     ids_by_group = {}
@@ -257,6 +329,164 @@ def fetch(timeout: int = 30):
         "source_payloads": trace,
         "zero_candidates_inferred_as_hydrologic_absence": False,
     }
+
+
+def _fetch_secondary(timeout: int = 30):
+    """Probe independent MINAM 1:100k hydrography without promoting identity."""
+    trace = []
+    raw_parts = []
+    ids_by_group = {}
+
+    for group, targets in TARGETS.items():
+        ids = set()
+        completed = 0
+        for target in targets:
+            url = secondary_find_url(target)
+            try:
+                raw, data = _fetch_json(
+                    url,
+                    timeout,
+                    "IRFEN-research-minam-huaycoloro-probe/0.3-secondary",
+                )
+                _trace_success(
+                    trace,
+                    "SECONDARY_SERVICE_FIND",
+                    group,
+                    target,
+                    url,
+                    raw,
+                    data,
+                )
+                raw_parts.append(raw)
+                ids.update(_secondary_ids_from_find(data, target))
+                completed += 1
+            except SourceAccessError as exc:
+                _trace_error(
+                    trace,
+                    "SECONDARY_SERVICE_FIND",
+                    group,
+                    target,
+                    url,
+                    exc,
+                )
+        if completed == 0:
+            raise SourceAccessError(
+                f"Secondary MINAM service unavailable for group {group}",
+                trace=trace,
+            )
+        ids_by_group[group] = sorted(ids)
+
+    features = []
+    for group, objectids in ids_by_group.items():
+        if not objectids:
+            continue
+        url = secondary_geometry_query_url(objectids)
+        try:
+            raw, data = _fetch_json(
+                url,
+                timeout,
+                "IRFEN-research-minam-huaycoloro-probe/0.3-secondary",
+            )
+        except SourceAccessError as exc:
+            _trace_error(
+                trace,
+                "SECONDARY_OBJECTID_GEOMETRY",
+                group,
+                "*",
+                url,
+                exc,
+            )
+            raise SourceAccessError(
+                f"Secondary geometry query unavailable for group {group}: {exc}",
+                trace=trace,
+            ) from exc
+        if data.get("type") != "FeatureCollection":
+            exc = SourceAccessError(
+                "Secondary MINAM geometry response is not a GeoJSON FeatureCollection"
+            )
+            _trace_error(
+                trace,
+                "SECONDARY_OBJECTID_GEOMETRY",
+                group,
+                "*",
+                url,
+                exc,
+            )
+            raise SourceAccessError(str(exc), trace=trace)
+        _trace_success(
+            trace,
+            "SECONDARY_OBJECTID_GEOMETRY",
+            group,
+            "*",
+            url,
+            raw,
+            data,
+        )
+        raw_parts.append(raw)
+
+        for feature in data.get("features") or []:
+            if not isinstance(feature, dict):
+                continue
+            props = dict(feature.get("properties") or {})
+            source_name = (
+                props.get("r_q_text")
+                or props.get("nombre")
+                or props.get("nomb_min")
+                or ""
+            )
+            normalized = dict(props)
+            normalized["NOM_RIO"] = source_name
+            normalized["OBJECTID"] = props.get("OBJECTID_1")
+            features.append({
+                "type": "Feature",
+                "properties": normalized,
+                "geometry": feature.get("geometry"),
+            })
+
+    synthetic = {"type": "FeatureCollection", "features": features}
+    material = b"\n--IRFEN-PAYLOAD--\n".join(raw_parts)
+    return material, synthetic, {
+        "strategy": "INDEPENDENT_MINAM_100K_FIND_THEN_OBJECTID_GEOMETRY",
+        "layer": "ServicioActivacionQuebrada/MapServer/36",
+        "source_role": "INDEPENDENT_OFFICIAL_HYDROGRAPHY_QA_FALLBACK",
+        "ids_by_group": ids_by_group,
+        "source_payloads": trace,
+        "zero_candidates_inferred_as_hydrologic_absence": False,
+    }
+
+
+def fetch(timeout: int = 30):
+    """Use the 2020 source first, then independent MINAM hydrography if needed."""
+    try:
+        primary = _fetch_primary(timeout)
+    except SourceAccessError as primary_exc:
+        try:
+            return _fetch_secondary(timeout)
+        except SourceAccessError as secondary_exc:
+            combined = list(getattr(primary_exc, "trace", None) or [])
+            combined.extend(list(getattr(secondary_exc, "trace", None) or []))
+            raise SourceAccessError(
+                "Primary and independent secondary MINAM vector sources unavailable",
+                trace=combined,
+            ) from secondary_exc
+
+    raw, data, source_trace = primary
+    ids_by_group = source_trace.get("ids_by_group") or {}
+    if all(ids_by_group.get(group) for group in TARGETS):
+        return primary
+
+    # A completed zero/partial result is not absence. Probe a second official
+    # source for corroboration, but preserve the primary result if that source
+    # is also unavailable.
+    try:
+        return _fetch_secondary(timeout)
+    except SourceAccessError as secondary_exc:
+        source_trace["secondary_fallback"] = {
+            "status": "SOURCE_ACCESS_UNAVAILABLE",
+            "source_payloads": getattr(secondary_exc, "trace", None),
+            "zero_candidates_inferred_as_hydrologic_absence": False,
+        }
+        return raw, data, source_trace
 
 
 def iter_lines(geometry: dict):
@@ -412,8 +642,8 @@ def build_unavailable(exc: Exception):
         "source": {
             "institution": "Ministerio del Ambiente",
             "platform": "Geoservidor",
-            "layer": "CS/Desarrollo_Urbano/MapServer/10",
-            "strategy": "PER_TARGET_RETURN_IDS_ONLY_WITH_INDEPENDENT_SERVICE_ROOT_FIND_FALLBACK_THEN_OBJECTID_GEOMETRY",
+            "layer": "CS/Desarrollo_Urbano/MapServer/10 + ServicioActivacionQuebrada/MapServer/36 fallback",
+            "strategy": "PRIMARY_2020_SOURCE_THEN_INDEPENDENT_MINAM_100K_FALLBACK",
             "source_payloads": trace,
         },
         "candidate_counts": {"huaycoloro": None, "rimac": None},
@@ -441,6 +671,10 @@ def self_test():
     assert "layers=10" in find_url("HUAYCOLORO")
     assert "returnGeometry=false" in find_url("HUAYCOLORO")
     assert "objectIds=1%2C2" in geometry_query_url([2, 1])
+    assert "layers=36" in secondary_find_url("HUAYCOLORO")
+    assert "searchFields=r_q_text%2Cnombre%2Cnomb_min" in secondary_find_url("HUAYCOLORO")
+    assert "returnGeometry=false" in secondary_find_url("HUAYCOLORO")
+    assert "objectIds=1%2C2" in secondary_geometry_query_url([2, 1])
     a = {"type":"LineString","coordinates":[[0,0],[2,2]]}
     b = {"type":"LineString","coordinates":[[0,2],[2,0]]}
     assert exact_intersections(a,b) == [[1.0,1.0]]
