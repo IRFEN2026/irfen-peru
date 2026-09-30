@@ -1,0 +1,43 @@
+{
+  "schema_version": "0.1",
+  "decision_id": "casma_n7_map_promotion_v0_1",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "decision": "PUBLISH_AS_CURRENT_INSTITUTIONAL_N7_RESEARCH_CONTEXT",
+  "authorized_label": "CURRENT_INSTITUTIONAL_N7_RESEARCH_CONTEXT",
+  "authorized_by": "repository owner (explicit request, 2026-10-01)",
+  "authorized_on": "2026-10-01",
+  "preconditions": {
+    "gate_a_source_capture": "PASS",
+    "gate_c_topology_map": "PASS",
+    "gate_c_adjudication": "site/data/phase2/source_assessments/casma_n7_gate_c_adjudication_v0_1.json",
+    "gate_b_lineage_equivalence_required": false,
+    "gate_b_lineage_equivalence_observed": "NOT_ESTABLISHED"
+  },
+  "map_constraints": {
+    "default_visibility": false,
+    "entity_role": "DISCOVERY_HYDROLOGIC_CHILD_CONTEXT",
+    "representation": "CURRENT_INSTITUTIONAL_N7_RESEARCH_CONTEXT",
+    "one_layer_per_n7_unit": true,
+    "parent_composite_published": false,
+    "risk_colors": false,
+    "risk_classification": false,
+    "alert_values": false,
+    "decision_thresholds": null,
+    "hydraulic_factors": null,
+    "counts_as_operational_geometry": false,
+    "counts_as_event_footprint": false,
+    "loaded_into_operational_calculation": false
+  },
+  "forbidden_labels": ["EXACT_2007_Uh_pfas100_GEOMETRY", "HISTORICALLY_IDENTICAL_2007_GEOMETRY"],
+  "historical_geometry_equivalence_to_Uh_pfas100": false,
+  "relation_to_frozen_artifacts": "Frozen Gate A/C artifacts keep map_publication_authorized=false: they describe the capture and QA, which do not publish anything by themselves. This record is the separate, explicit publication decision; the published layers are derived copies whose geometry is identical to the frozen normalized EPSG:4326 capture.",
+  "scope_note": "Current institutional MINAM N7 polygons as research context only. Not a risk, alert, activation, event-footprint, routing or hydraulic layer, and not a claim about the 2007 INRENA Uh_pfas100 geometry."
+}

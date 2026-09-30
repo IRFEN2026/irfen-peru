@@ -33,6 +33,13 @@ on:
       - tests/test_phase2_casma_n6_parent_capture.py
       - data/phase2/source_archive/casma_n6_parent/**
       - site/data/phase2/source_assessments/casma_n6_parent_capture_manifest_v0_1.json
+      - scripts/build_phase2_casma_n7_research_context.py
+      - tests/test_phase2_casma_n7_map_research_context.py
+      - site/data/phase2/source_assessments/casma_n7_map_promotion_v0_1.json
+      - site/data/validation/phase2_discovery_contracts/ancash_casma_sechin_yautan.json
+      - site/data/phase2/geometries/ancash_casma_n7_*_research_context*.json
+      - site/data/phase2/geometries/ancash_casma_n7_*_research_context.geojson
+      - site/data/map_layers.json
       - .github/workflows/phase2-casma-n7-source-gap.yml
   workflow_dispatch:
 
@@ -80,7 +87,8 @@ jobs:
             tests/test_phase2_casma_n7_gate_c_topology.py \
             tests/test_phase2_casma_gate_b_documentary_review.py \
             tests/test_phase2_casma_c6d_parent_comparison.py \
-            tests/test_phase2_casma_n6_parent_capture.py
+            tests/test_phase2_casma_n6_parent_capture.py \
+            tests/test_phase2_casma_n7_map_research_context.py
       - name: Bootstrap Gate A capture once, or replay the frozen capture offline
         id: mode
         shell: bash
@@ -143,6 +151,11 @@ jobs:
       - name: Gate C topology QA (fail-closed; verifies the committed report byte-for-byte)
         if: steps.mode.outputs.bootstrap == 'false'
         run: python scripts/qa_phase2_casma_n7_gate_c_topology.py
+      - name: Casma N7 research-context map layers reproduce and map catalog matches its sources
+        if: steps.mode.outputs.bootstrap == 'false'
+        run: |
+          python scripts/build_phase2_casma_n7_research_context.py
+          python scripts/build_map_layer_catalog.py --check-only
       - name: Upload Gate A source capture artifact
         uses: actions/upload-artifact@v4
         with:
