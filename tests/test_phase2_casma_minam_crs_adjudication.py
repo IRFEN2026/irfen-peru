@@ -5,6 +5,7 @@ when outSR is omitted is the WGS84 / UTM zone 18S inverse projection of the
 32718 vertex returned with outSR=32718, and pins that the mechanism requests
 the declared storage CRS and never accepts the map SR as native.
 """
+import hashlib
 import importlib.util
 import json
 import math
@@ -67,11 +68,12 @@ class CasmaMinamCrsAdjudicationTests(unittest.TestCase):
             self.assertEqual(self.adj[key], value, key)
 
     def test_storage_crs_matches_contract_and_map_sr_is_not_native(self):
-        meta = self.adj["service_metadata"]
+        meta = self.adj["frozen_metadata_evidence"]
         expected = self.contract["source"]["expected_source_wkid"]
-        self.assertEqual(meta["layer_source_spatial_reference"]["wkid"], expected)
-        self.assertEqual(meta["layer_spatial_reference"]["wkid"], 4326)
-        self.assertNotEqual(meta["layer_spatial_reference"]["wkid"], expected)
+        self.assertEqual(meta["source_spatial_reference"]["wkid"], expected)
+        self.assertEqual(meta["extent_spatial_reference"]["wkid"], 4326)
+        self.assertNotEqual(meta["extent_spatial_reference"]["wkid"], expected)
+        self.assertEqual(self.adj["live_observations_not_byte_frozen"]["mapserver_spatial_reference"]["wkid"], 4326)
         findings = self.adj["findings"]
         self.assertEqual(findings["storage_crs_per_official_metadata"], expected)
         self.assertFalse(findings["wkid_4326_accepted_as_native"])
@@ -90,6 +92,40 @@ class CasmaMinamCrsAdjudicationTests(unittest.TestCase):
         self.assertLess(abs(d_north_m), 0.001)
         for v in variants:
             self.assertEqual(v["first_vertex"], native["first_vertex"] if v.get("outSR") == 32718 else mapped["first_vertex"])
+
+    def test_adjudication_matches_frozen_metadata_bytes(self):
+        meta = self.adj["frozen_metadata_evidence"]
+        path = ROOT / meta["path"]
+        if not path.is_file():
+            self.skipTest("Gate A capture not present in this checkout")
+        raw = path.read_bytes()
+        self.assertEqual(hashlib.sha256(raw).hexdigest(), meta["sha256"])
+        doc = json.loads(raw)
+        self.assertEqual(doc["sourceSpatialReference"], meta["source_spatial_reference"])
+        self.assertEqual(doc["extent"]["spatialReference"], meta["extent_spatial_reference"])
+        self.assertEqual("spatialReference" in doc, meta["top_level_spatial_reference_present"])
+        self.assertEqual(doc["currentVersion"], meta["current_version"])
+        self.assertEqual(doc["supportsDatumTransformation"], meta["supports_datum_transformation"])
+
+    def test_frozen_native_capture_is_storage_crs_and_projects_to_geojson(self):
+        manifest_path = ROOT / "site/data/phase2/source_assessments/casma_minam_n7_recovery_manifest_v0_1.json"
+        if not manifest_path.is_file():
+            self.skipTest("Gate A capture not present in this checkout")
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        self.assertEqual(manifest["crs_provenance"]["native_request_outSR"], 32718)
+        self.assertFalse(manifest["crs_provenance"]["map_spatial_reference_accepted_as_native"])
+        checked = 0
+        for row in manifest["features"]:
+            native = json.loads((ROOT / row["native_archive_path"]).read_bytes())
+            self.assertEqual(native["spatialReference"]["wkid"], 32718, row["code"])
+            geo = json.loads((ROOT / row["raw_archive_path"]).read_bytes())["features"][0]["geometry"]
+            polys = geo["coordinates"] if geo["type"] == "MultiPolygon" else [geo["coordinates"]]
+            observed = sorted((round(x, 9), round(y, 9)) for poly in polys for ring in poly for x, y in ring)
+            pts = [p for ring in native["features"][0]["geometry"]["rings"] for p in ring]
+            projected = sorted((round(lon, 9), round(lat, 9)) for lon, lat in (utm18s_inverse(x, y) for x, y in pts))
+            self.assertEqual(projected, observed, row["code"])
+            checked += len(pts)
+        self.assertEqual(checked, self.adj["frozen_capture_confirmation"]["native_vertices_checked"])
 
     def test_mechanism_requests_storage_crs_and_gates_are_untouched(self):
         spec = importlib.util.spec_from_file_location("casma_crs_mechanism", SCRIPT)

@@ -18,22 +18,24 @@
     "error": "RecoveryError: NATIVE_WKID_DRIFT code=1375961 sr={'wkid': 4326, 'latestWkid': 4326}",
     "disposition": "Correct fail-closed behaviour; the defect was the native request omitting outSR."
   },
-  "observation_method": {
-    "date_utc": "2026-09-30",
-    "method": "Live REST reads of the public MINAM service from an independent fetcher; values transcribed, not byte-frozen. Byte freezing is performed by the Gate A capture itself.",
-    "byte_frozen": false
-  },
-  "service_metadata": {
-    "mapserver_url": "https://geoservidorperu.minam.gob.pe/arcgis/rest/services/ServicioActivacionQuebrada/MapServer?f=pjson",
-    "layer_url": "https://geoservidorperu.minam.gob.pe/arcgis/rest/services/ServicioActivacionQuebrada/MapServer/1?f=pjson",
+  "frozen_metadata_evidence": {
+    "path": "data/phase2/source_archive/casma_minam_n7/layer_metadata.pjson",
+    "sha256": "e314482ff15d6b5422d8fd2c49cbe8f5253c0fbc8ba2d5bee66569ad72175427",
+    "captured_by_commit": "dbf37eba5b9c3ca6d824ce8f62fac4afeec13858",
     "current_version": 10.71,
+    "source_spatial_reference": {"wkid": 32718, "latestWkid": 32718},
+    "top_level_spatial_reference_present": false,
+    "extent_spatial_reference": {"wkid": 4326, "latestWkid": 4326},
+    "supports_datum_transformation": true,
+    "supported_query_formats": "JSON, geoJSON"
+  },
+  "live_observations_not_byte_frozen": {
+    "date_utc": "2026-09-30",
+    "method": "Live REST reads of the public MINAM service from an independent fetcher; values transcribed, not byte-frozen.",
+    "mapserver_url": "https://geoservidorperu.minam.gob.pe/arcgis/rest/services/ServicioActivacionQuebrada/MapServer?f=pjson",
     "mapserver_spatial_reference": {"wkid": 4326, "latestWkid": 4326},
     "mapserver_full_extent_spatial_reference": {"wkid": 4326, "latestWkid": 4326},
-    "layer_spatial_reference": {"wkid": 4326, "latestWkid": 4326},
-    "layer_extent_spatial_reference": {"wkid": 4326, "latestWkid": 4326},
-    "layer_source_spatial_reference": {"wkid": 32718, "latestWkid": 32718},
-    "layer_supports_datum_transformation": true,
-    "layer_supported_query_formats": "JSON, geoJSON",
+    "correction": "An earlier transcription reported a top-level layer spatialReference of 4326; the frozen layer bytes contain none. The 4326 map SR is carried by extent.spatialReference (frozen) and the MapServer root (observed).",
     "prior_repository_record": "site/data/phase2/sources/ancash_casma_minam_candidate_v0_2.json already recorded source 32718 / map 4326 and output_spatial_reference_must_be_explicit=true"
   },
   "official_semantics": {
@@ -59,6 +61,14 @@
     "projection_consistency_check": "UTM 18S (WGS84) inverse of the 32718 vertex reproduces the 4326 vertex to sub-millimetre; both share the WGS84 datum, so no datum transformation is involved",
     "storage_grid_hint": "32718 coordinates sit on a 0.0001 m grid; 4326 coordinates carry computed floating-point noise",
     "wkid_4326_accepted_as_native": false
+  },
+  "frozen_capture_confirmation": {
+    "commit": "dbf37eba5b9c3ca6d824ce8f62fac4afeec13858",
+    "native_spatial_reference_all_nine": 32718,
+    "native_request_outSR": 32718,
+    "native_vertices_checked": 11209,
+    "geojson_4326_equals_utm18s_inverse_of_native_32718": "all 11209 vertices, compared as sorted multisets rounded to 1e-9 degrees",
+    "first_native_vertex_1375961": [154685.8819000004, 8973906.005]
   },
   "mechanism_adjustment": {
     "native_request": "f=json with outSR equal to the layer sourceSpatialReference read from the metadata captured in the same run and cross-checked against the contract (32718); no datumTransformation",

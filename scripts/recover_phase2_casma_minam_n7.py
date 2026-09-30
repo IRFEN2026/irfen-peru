@@ -378,7 +378,10 @@ def validate_metadata(contract: dict, metadata: dict) -> dict:
     return {
         "source_wkid": expected,
         "layer_source_spatial_reference": ssr,
-        "layer_map_spatial_reference": metadata.get("spatialReference"),
+        # A MapServer layer resource exposes the map SR through extent; a
+        # top-level spatialReference may be absent (it is for MINAM layer 1).
+        "layer_top_level_spatial_reference": metadata.get("spatialReference"),
+        "layer_extent_spatial_reference": (metadata.get("extent") or {}).get("spatialReference"),
         "service_current_version": metadata.get("currentVersion"),
     }
 
@@ -537,7 +540,8 @@ def write_outputs(
         "sha256sums_sha256": sha256_file(sums_path),
         "crs_provenance": {
             "layer_source_spatial_reference": (service_crs or {}).get("layer_source_spatial_reference"),
-            "layer_map_spatial_reference": (service_crs or {}).get("layer_map_spatial_reference"),
+            "layer_top_level_spatial_reference": (service_crs or {}).get("layer_top_level_spatial_reference"),
+            "layer_extent_spatial_reference": (service_crs or {}).get("layer_extent_spatial_reference"),
             "service_current_version": (service_crs or {}).get("service_current_version"),
             "native_request_outSR": contract["source"]["expected_source_wkid"],
             "native_crs_basis": (

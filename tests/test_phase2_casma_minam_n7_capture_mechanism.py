@@ -35,14 +35,15 @@ def contract():
 
 
 def metadata_bytes(wkid=32718, latest=32718, map_wkid=4326):
-    # Mirrors the live MINAM layer 1 resource (ArcGIS 10.71): map/extent SR 4326,
+    # Mirrors the frozen MINAM layer 1 resource (ArcGIS 10.71): no top-level
+    # spatialReference, extent.spatialReference 4326 (map SR) and
     # sourceSpatialReference 32718 (storage CRS of the source dataset).
     fields = ",".join(
         '{"name": "%s"}' % name for name in contract()["source"]["output_fields"]
     )
     return (
         '{ "currentVersion":10.71, "geometryType":"esriGeometryPolygon" ,\n'
-        '  "spatialReference":{"wkid":%d,"latestWkid":%d},\n'
+        '  "extent":{"xmin":-79.2,"ymin":-10.2,"xmax":-77,"ymax":-8.4,"spatialReference":{"wkid":%d,"latestWkid":%d}},\n'
         '  "sourceSpatialReference":{"wkid":%d,"latestWkid":%d},\r\n'
         '  "supportedQueryFormats":"JSON, geoJSON",\n'
         '  "fields":[%s] }' % (map_wkid, map_wkid, wkid, latest, fields)
@@ -261,7 +262,8 @@ class CasmaCaptureMechanismTests(unittest.TestCase):
         _, manifest = self.run_capture()
         crs = manifest["crs_provenance"]
         self.assertEqual(crs["layer_source_spatial_reference"]["wkid"], 32718)
-        self.assertEqual(crs["layer_map_spatial_reference"]["wkid"], 4326)
+        self.assertIsNone(crs["layer_top_level_spatial_reference"])
+        self.assertEqual(crs["layer_extent_spatial_reference"]["wkid"], 4326)
         self.assertEqual(crs["native_request_outSR"], 32718)
         self.assertFalse(crs["map_spatial_reference_accepted_as_native"])
         self.assertFalse(crs["datum_transformation_requested"])
