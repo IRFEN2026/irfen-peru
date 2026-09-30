@@ -74,7 +74,33 @@ def normalize_name(value: object) -> str:
     return " ".join(text.casefold().split())
 
 
-def fetch(url: str, *, accept: str, max_bytes: int = 15_000_000) -> bytes:
+CAPTURE_FORMAT_VERSION = 2
+PROVENANCE_HEADERS = (
+    "Content-Type",
+    "Content-Length",
+    "Content-Encoding",
+    "Date",
+    "Last-Modified",
+    "ETag",
+    "Server",
+)
+
+
+def utc_now() -> str:
+    return (
+        datetime.now(timezone.utc)
+        .replace(microsecond=0)
+        .isoformat()
+        .replace("+00:00", "Z")
+    )
+
+
+def fetch_response(url: str, *, accept: str, max_bytes: int = 15_000_000) -> tuple[bytes, dict]:
+    """Return the undecoded response body plus HTTP provenance.
+
+    The body is returned exactly as read from the socket; it is never parsed,
+    re-serialized or re-encoded before being archived.
+    """
     req = Request(
         url,
         headers={
@@ -88,13 +114,30 @@ def fetch(url: str, *, accept: str, max_bytes: int = 15_000_000) -> bytes:
             if declared and int(declared) > max_bytes:
                 raise SourceUnavailable(f"SOURCE_TOO_LARGE declared={declared}")
             data = response.read(max_bytes + 1)
+            meta = {
+                "requested_url": url,
+                "final_url": response.geturl(),
+                "http_status": getattr(response, "status", None),
+                "headers": {
+                    name: response.headers.get(name)
+                    for name in PROVENANCE_HEADERS
+                    if response.headers.get(name) is not None
+                },
+            }
     except (HTTPError, URLError, TimeoutError, ValueError) as exc:
         raise SourceUnavailable(f"SOURCE_FETCH_FAILED {type(exc).__name__}") from exc
     if not data:
         raise SourceUnavailable("EMPTY_SOURCE")
     if len(data) > max_bytes:
         raise SourceUnavailable(f"SOURCE_TOO_LARGE actual>{max_bytes}")
-    return data
+    meta["retrieved_at_utc"] = utc_now()
+    meta["body_size_bytes"] = len(data)
+    meta["body_sha256"] = sha256_bytes(data)
+    return data, meta
+
+
+def fetch(url: str, *, accept: str, max_bytes: int = 15_000_000) -> bytes:
+    return fetch_response(url, accept=accept, max_bytes=max_bytes)[0]
 
 
 def query_url(contract: dict, code: str) -> str:
@@ -110,6 +153,56 @@ def query_url(contract: dict, code: str) -> str:
         "f": "geojson",
     }
     return source["layer_url"].rstrip("/") + "/query?" + urlencode(params)
+
+
+def native_query_url(contract: dict, code: str) -> str:
+    """Same exact-code query in native ArcGIS JSON without outSR.
+
+    Omitting outSR asks the service for geometry in its source spatial
+    reference, so the archived native bytes carry no server-side reprojection.
+    """
+    source = contract["source"]
+    params = {
+        "where": f"{source['exact_identity_field']} = '{code}'",
+        "outFields": ",".join(source["output_fields"]),
+        "returnGeometry": "true",
+        "returnZ": "false",
+        "returnM": "false",
+        "f": "json",
+    }
+    return source["layer_url"].rstrip("/") + "/query?" + urlencode(params)
+
+
+def validate_native(contract: dict, expected: dict, doc: dict) -> dict:
+    """Fail-closed identity check of the native (source-CRS) ArcGIS response.
+
+    Establishes only that the native bytes describe the same exact-code
+    feature; it asserts nothing about historical equivalence.
+    """
+    code = expected["code"]
+    if not isinstance(doc, dict) or doc.get("error") is not None:
+        raise RecoveryError(f"NATIVE_SERVICE_ERROR code={code}")
+    if doc.get("exceededTransferLimit") is True:
+        raise RecoveryError(f"NATIVE_TRANSFER_LIMIT_EXCEEDED code={code}")
+    features = doc.get("features")
+    if not isinstance(features, list) or len(features) != 1:
+        raise RecoveryError(
+            f"NATIVE_FEATURE_COUNT_MISMATCH code={code} "
+            f"count={0 if not isinstance(features, list) else len(features)}"
+        )
+    sr = doc.get("spatialReference") or {}
+    wkids = {sr.get("wkid"), sr.get("latestWkid")}
+    if int(contract["source"]["expected_source_wkid"]) not in wkids:
+        raise RecoveryError(f"NATIVE_WKID_DRIFT code={code} sr={sr}")
+    attrs = features[0].get("attributes") or {}
+    if str(attrs.get("CODIGO") or "").strip() != code:
+        raise RecoveryError(f"NATIVE_CODE_MISMATCH code={code}")
+    if str(attrs.get("NIVEL7") or "").strip() != code:
+        raise RecoveryError(f"NATIVE_NIVEL7_MISMATCH code={code}")
+    rings = (features[0].get("geometry") or {}).get("rings")
+    if not isinstance(rings, list) or not rings or not all(isinstance(r, list) and r for r in rings):
+        raise RecoveryError(f"NATIVE_EMPTY_GEOMETRY code={code}")
+    return {"objectid": attrs.get("OBJECTID"), "spatial_reference": sr}
 
 
 def iter_positions(value):
@@ -156,6 +249,8 @@ def validate_feature(contract: dict, expected: dict, doc: dict) -> dict:
     but do not gate immutable capture. This function never establishes
     equivalence to the 2007 Uh_pfas100 geometry.
     """
+    if isinstance(doc, dict) and doc.get("exceededTransferLimit") is True:
+        raise RecoveryError(f"TRANSFER_LIMIT_EXCEEDED code={expected['code']}")
     features = doc.get("features")
     required_count = int(contract["validation"]["required_feature_count_per_code"])
     if not isinstance(features, list) or len(features) != required_count:
@@ -262,8 +357,17 @@ def validate_metadata(contract: dict, metadata: dict) -> None:
         raise RecoveryError("SERVICE_GEOJSON_SUPPORT_MISSING")
 
 
-def write_outputs(contract: dict, metadata_bytes: bytes, staged: list[dict]) -> dict:
-    """Persist Gate A capture artifacts; do not authorize map publication."""
+def write_outputs(
+    contract: dict,
+    metadata_bytes: bytes,
+    staged: list[dict],
+    metadata_http: dict | None = None,
+) -> dict:
+    """Persist Gate A capture artifacts; do not authorize map publication.
+
+    Raw response bodies are written with write_bytes exactly as received.
+    Only the separate normalized FeatureCollection is re-serialized.
+    """
     outputs = contract["outputs"]
     archive_root = ROOT / outputs["archive_root"]
     metadata_path = ROOT / outputs["metadata_archive_path"]
@@ -275,12 +379,18 @@ def write_outputs(contract: dict, metadata_bytes: bytes, staged: list[dict]) -> 
 
     metadata_path.write_bytes(metadata_bytes)
     metadata_sha = sha256_bytes(metadata_bytes)
+    sums = {metadata_path.relative_to(archive_root).as_posix(): metadata_sha}
     normalized_features = []
     rows = []
     for row in staged:
         raw_path = archive_root / f"{row['expected']['code']}.geojson"
         raw_path.write_bytes(row["raw_bytes"])
         raw_sha = sha256_bytes(row["raw_bytes"])
+        sums[raw_path.relative_to(archive_root).as_posix()] = raw_sha
+        native_path = archive_root / f"{row['expected']['code']}.native.json"
+        native_path.write_bytes(row["native_bytes"])
+        native_sha = sha256_bytes(row["native_bytes"])
+        sums[native_path.relative_to(archive_root).as_posix()] = native_sha
         feature = row["validated"]["feature"]
         normalized_features.append({
             "type": "Feature",
@@ -337,6 +447,13 @@ def write_outputs(contract: dict, metadata_bytes: bytes, staged: list[dict]) -> 
             "query_url": row["query_url"],
             "raw_archive_path": raw_path.relative_to(ROOT).as_posix(),
             "raw_response_sha256": raw_sha,
+            "raw_response_http": row.get("http"),
+            "native_query_url": row["native_query_url"],
+            "native_archive_path": native_path.relative_to(ROOT).as_posix(),
+            "native_response_sha256": native_sha,
+            "native_response_http": row.get("native_http"),
+            "native_spatial_reference": row["native_validated"]["spatial_reference"],
+            "native_objectid": row["native_validated"]["objectid"],
             "gate_a_identity_pass": True,
             "gate_a_raw_capture_pass": True,
             "gate_b_lineage_equivalence": "NOT_ESTABLISHED",
@@ -369,14 +486,15 @@ def write_outputs(contract: dict, metadata_bytes: bytes, staged: list[dict]) -> 
     }
     geometry_path.write_text(canonical(geometry_doc), encoding="utf-8")
     geometry_sha = sha256_file(geometry_path)
-    retrieved_at = (
-        datetime.now(timezone.utc)
-        .replace(microsecond=0)
-        .isoformat()
-        .replace("+00:00", "Z")
+    sums_path = archive_root / "SHA256SUMS"
+    sums_path.write_text(
+        "".join(f"{digest}  {name}\n" for name, digest in sorted(sums.items())),
+        encoding="utf-8",
     )
+    retrieved_at = utc_now()
     manifest = {
         "schema_version": "0.1",
+        "capture_format_version": CAPTURE_FORMAT_VERSION,
         "status": "PASS_GATE_A_CURRENT_INSTITUTIONAL_N7_CAPTURE",
         **SAFE,
         "dataset_id": "ancash_casma_n7_minam_official_v0_1",
@@ -387,6 +505,14 @@ def write_outputs(contract: dict, metadata_bytes: bytes, staged: list[dict]) -> 
         "query_output_wkid": contract["source"]["query_output_wkid"],
         "metadata_archive_path": metadata_path.relative_to(ROOT).as_posix(),
         "metadata_sha256": metadata_sha,
+        "metadata_http": metadata_http,
+        "sha256sums_path": sums_path.relative_to(ROOT).as_posix(),
+        "sha256sums_sha256": sha256_file(sums_path),
+        "raw_bytes_policy": (
+            "Response bodies archived byte-for-byte as received; the native "
+            "ArcGIS JSON is requested without outSR so it carries no server-side "
+            "reprojection. Only the normalized FeatureCollection is re-serialized."
+        ),
         "independent_qa_source": contract["independent_qa"],
         "feature_count": len(rows),
         "features": rows,
@@ -429,6 +555,10 @@ def verify_existing(contract: dict) -> dict:
     metadata_path = ROOT / outputs["metadata_archive_path"]
     manifest = load(manifest_path)
     guard(manifest, "MANIFEST")
+    if manifest.get("capture_format_version") != CAPTURE_FORMAT_VERSION:
+        raise RecoveryError(
+            f"UNSUPPORTED_CAPTURE_FORMAT {manifest.get('capture_format_version')}"
+        )
     if manifest.get("status") != "PASS_GATE_A_CURRENT_INSTITUTIONAL_N7_CAPTURE":
         raise RecoveryError(f"UNKNOWN_MANIFEST_STATUS {manifest.get('status')}")
     if manifest.get("feature_count") != 9 or manifest.get("all_nine_identity_checks_passed") is not True:
@@ -455,8 +585,12 @@ def verify_existing(contract: dict) -> dict:
         path = ROOT / row["raw_archive_path"]
         if sha256_file(path) != row["raw_response_sha256"]:
             raise RecoveryError(f"RAW_RESPONSE_HASH_DRIFT {row['code']}")
+        native_path = ROOT / row["native_archive_path"]
+        if sha256_file(native_path) != row["native_response_sha256"]:
+            raise RecoveryError(f"NATIVE_RESPONSE_HASH_DRIFT {row['code']}")
         if row.get("historical_geometry_equivalence_to_Uh_pfas100") is not False:
             raise RecoveryError(f"ROW_HISTORICAL_EQUIVALENCE_DRIFT {row['code']}")
+    verify_sha256sums(manifest)
     geometry = load(geometry_path)
     guard(geometry["properties"], "GEOMETRY")
     if len(geometry.get("features", [])) != 9:
@@ -467,6 +601,87 @@ def verify_existing(contract: dict) -> dict:
     if props.get("map_eligible_as_research_context") is not False:
         raise RecoveryError("GEOMETRY_MAP_ELIGIBILITY_DRIFT")
     return manifest
+
+def verify_sha256sums(manifest: dict) -> None:
+    """Cross-check the sha256sum-compatible ledger against the manifest."""
+    sums_path = ROOT / manifest["sha256sums_path"]
+    if sha256_file(sums_path) != manifest["sha256sums_sha256"]:
+        raise RecoveryError("SHA256SUMS_HASH_DRIFT")
+    archive_root = sums_path.parent
+    listed = {}
+    for line in sums_path.read_text(encoding="utf-8").splitlines():
+        digest, _, name = line.partition("  ")
+        listed[name] = digest
+    expected = {
+        (ROOT / manifest["metadata_archive_path"]).relative_to(archive_root).as_posix(): manifest["metadata_sha256"],
+    }
+    for row in manifest["features"]:
+        expected[(ROOT / row["raw_archive_path"]).relative_to(archive_root).as_posix()] = row["raw_response_sha256"]
+        expected[(ROOT / row["native_archive_path"]).relative_to(archive_root).as_posix()] = row["native_response_sha256"]
+    if listed != expected:
+        raise RecoveryError("SHA256SUMS_MANIFEST_MISMATCH")
+    for name, digest in listed.items():
+        if sha256_file(archive_root / name) != digest:
+            raise RecoveryError(f"SHA256SUMS_FILE_DRIFT {name}")
+
+
+def refresh(contract: dict) -> dict:
+    """Stage all nine exact-code captures in memory, then write atomically.
+
+    Nothing is written unless metadata and all nine GeoJSON + native responses
+    pass Gate A identity checks (partial archives are forbidden by contract).
+    """
+    metadata_bytes, metadata_http = fetch_response(
+        contract["source"]["metadata_url"],
+        accept="application/json,text/plain;q=0.9,*/*;q=0.1",
+    )
+    try:
+        metadata = json.loads(metadata_bytes)
+    except json.JSONDecodeError as exc:
+        raise RecoveryError("SERVICE_METADATA_NOT_JSON") from exc
+    validate_metadata(contract, metadata)
+
+    staged = []
+    for expected in contract["units"]:
+        code = expected["code"]
+        url = query_url(contract, code)
+        raw, http = fetch_response(url, accept="application/geo+json,application/json;q=0.9,*/*;q=0.1")
+        try:
+            doc = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            raise RecoveryError(f"QUERY_NOT_JSON code={code}") from exc
+        validated = validate_feature(contract, expected, doc)
+
+        native_url = native_query_url(contract, code)
+        native_raw, native_http = fetch_response(native_url, accept="application/json;q=0.9,*/*;q=0.1")
+        try:
+            native_doc = json.loads(native_raw)
+        except json.JSONDecodeError as exc:
+            raise RecoveryError(f"NATIVE_QUERY_NOT_JSON code={code}") from exc
+        native_validated = validate_native(contract, expected, native_doc)
+        if native_validated["objectid"] != validated["objectid"]:
+            raise RecoveryError(
+                f"NATIVE_GEOJSON_OBJECTID_MISMATCH code={code} "
+                f"native={native_validated['objectid']} geojson={validated['objectid']}"
+            )
+        staged.append({
+            "expected": expected,
+            "query_url": url,
+            "raw_bytes": raw,
+            "http": http,
+            "validated": validated,
+            "native_query_url": native_url,
+            "native_bytes": native_raw,
+            "native_http": native_http,
+            "native_validated": native_validated,
+        })
+
+    if len(staged) != 9:
+        raise RecoveryError(f"INCOMPLETE_STAGE count={len(staged)}")
+    manifest = write_outputs(contract, metadata_bytes, staged, metadata_http)
+    verify_existing(contract)
+    return manifest
+
 
 def main() -> None:
     parser = argparse.ArgumentParser()
@@ -485,28 +700,7 @@ def main() -> None:
     if not args.refresh:
         raise RecoveryError("MISSING_MANIFEST_REFRESH_REQUIRED")
 
-    metadata_bytes = fetch(contract["source"]["metadata_url"], accept="application/json,text/plain;q=0.9,*/*;q=0.1")
-    try:
-        metadata = json.loads(metadata_bytes)
-    except json.JSONDecodeError as exc:
-        raise RecoveryError("SERVICE_METADATA_NOT_JSON") from exc
-    validate_metadata(contract, metadata)
-
-    staged = []
-    for expected in contract["units"]:
-        url = query_url(contract, expected["code"])
-        raw = fetch(url, accept="application/geo+json,application/json;q=0.9,*/*;q=0.1")
-        try:
-            doc = json.loads(raw)
-        except json.JSONDecodeError as exc:
-            raise RecoveryError(f"QUERY_NOT_JSON code={expected['code']}") from exc
-        validated = validate_feature(contract, expected, doc)
-        staged.append({"expected": expected, "query_url": url, "raw_bytes": raw, "validated": validated})
-
-    if len(staged) != 9:
-        raise RecoveryError(f"INCOMPLETE_STAGE count={len(staged)}")
-    manifest = write_outputs(contract, metadata_bytes, staged)
-    verify_existing(contract)
+    manifest = refresh(contract)
     print(canonical({
         "status": manifest["status"],
         "feature_count": manifest["feature_count"],
