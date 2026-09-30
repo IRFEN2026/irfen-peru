@@ -3,7 +3,7 @@
   "assessment_id": "casma_minam_recovery_gate_adjudication_v0_1",
   "status": "FAIL_CLOSED_DESCENDANT_ATTRIBUTE_DRIFT",
   "status_semantics": "Legacy fail-closed summary retained for regression compatibility. Attribute drift blocks historical equivalence (Gate B), not immutable capture of a current institutional descendant (Gate A).",
-  "gate_model_status": "GATE_A_PASS_CURRENT_INSTITUTIONAL_CAPTURE__GATE_B_NOT_ESTABLISHED__GATE_C_INTERNAL_TOPOLOGY_PASS_PARENT_CONTEXT_PENDING",
+  "gate_model_status": "GATE_A_PASS_CURRENT_INSTITUTIONAL_CAPTURE__GATE_B_NOT_ESTABLISHED__GATE_C_PASS_CURRENT_INSTITUTIONAL_TOPOLOGY",
   "deployment_status": "RESEARCH_ONLY",
   "test_mode": "TEST_ONLY",
   "production_use": false,
@@ -37,7 +37,7 @@
     "historical_geometry_equivalence_to_Uh_pfas100": false,
     "map_publication_authorized": false,
     "internal_topology_adjudicated": true,
-    "parent_context_geometry_adjudicated": false
+    "parent_context_geometry_adjudicated": true
   },
   "gate_a_source_capture": {
     "purpose": "Freeze a reproducible CURRENT institutional descendant without asserting 2007 geometric equivalence.",
@@ -89,7 +89,7 @@
       "parent-context/union coherence QA",
       "all Gate A hashes remain stable"
     ],
-    "current_status": "PARTIAL_PASS_INTERNAL_TOPOLOGY__PARENT_CONTEXT_PENDING",
+    "current_status": "PASS_CURRENT_INSTITUTIONAL_TOPOLOGY",
     "publication_label_if_eventually_passed": "CURRENT_INSTITUTIONAL_N7_RESEARCH_CONTEXT",
     "forbidden_labels_without_gate_b": [
       "EXACT_2007_Uh_pfas100_GEOMETRY",
@@ -111,8 +111,8 @@
         "evidence": "Shared source edges have multiplicity 1 or 2; unmatched edges form one degree-2 connected outer loop, excluding enclosed internal gap loops under the frozen source-vertex topology."
       },
       "parent_context": {
-        "status": "PENDING",
-        "evidence": "No separate current institutional parent polygon or equivalently frozen parent-context geometry has yet been captured for an external union-to-parent comparison. No parent boundary is inferred from the 2007 PDF."
+        "status": "PASS",
+        "evidence": "Independently frozen ANA/IDEP N6 parent CODIGO 137596 passed preregistered C6d comparison against the nine frozen N7 children: P90 boundary distance 0.000115 m <= 50.8 m and symmetric-difference ratio 0.000007534 <= 0.0048238444. This establishes current institutional parent coherence only; it does not establish Uh_pfas100 historical equivalence."
       }
     },
     "topology_evidence": {
@@ -134,7 +134,11 @@
       "geometric_area_sum_km2": 2990.689973229004,
       "current_service_area_sum_km2": 2989.8386,
       "historical_2007_area_sum_km2": 2990.8,
-      "area_semantics": "Geometric, current service AREA_KM2 and historical 2007 inventory area are preserved as distinct quantities; none is used to establish Uh_pfas100 equivalence."
+      "area_semantics": "Geometric, current service AREA_KM2 and historical 2007 inventory area are preserved as distinct quantities; none is used to establish Uh_pfas100 equivalence.",
+      "c6d_parent_capture_manifest": "site/data/phase2/source_assessments/casma_n6_parent_capture_manifest_v0_1.json",
+      "c6d_gate_c_adjudication": "site/data/phase2/source_assessments/casma_n7_gate_c_adjudication_v0_1.json",
+      "c6d_parent_raw_sha256": "99cd59cacac11123092fa3f941618f42338e47070c6c6ae7ff76c1c2dd54c26d",
+      "c6d_status": "PASS"
     }
   },
   "cross_pr_observation_reference": {
@@ -150,5 +154,5 @@
   "scientific_rule": "Separate capture from equivalence. Gate A may freeze exact-code current institutional polygons despite documented name/area drift. Gate B remains false unless direct historical lineage/equivalence is proven. Gate C alone may authorize publication as CURRENT_INSTITUTIONAL_N7_RESEARCH_CONTEXT after immutable capture and topology QA. No tolerance, CI-only bypass, PDF digitization, inferred outlet, event outcome, threshold, routing, capacity, risk or alert semantics are introduced.",
   "original_source_target": "INRENA Uh_pfas100",
   "original_source_public_bytes_recovered": false,
-  "updated_at_utc": "2026-09-30T12:34:24Z"
+  "updated_at_utc": "2026-09-30T18:40:42Z"
 }
