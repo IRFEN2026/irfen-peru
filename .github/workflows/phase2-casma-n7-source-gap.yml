@@ -26,6 +26,13 @@ on:
       - data/phase2/source_archive/casma_minam_n7/**
       - site/data/phase2/geometries/ancash_casma_n7_minam_official_v0_1.geojson
       - site/data/phase2/source_assessments/casma_minam_n7_recovery_manifest_v0_1.json
+      - scripts/c6d_parent_comparison.py
+      - scripts/capture_phase2_casma_n6_parent.py
+      - config/phase2_casma_n6_parent_c6d_preregistration_v0_1.json
+      - tests/test_phase2_casma_c6d_parent_comparison.py
+      - tests/test_phase2_casma_n6_parent_capture.py
+      - data/phase2/source_archive/casma_n6_parent/**
+      - site/data/phase2/source_assessments/casma_n6_parent_capture_manifest_v0_1.json
       - .github/workflows/phase2-casma-n7-source-gap.yml
   workflow_dispatch:
 
@@ -43,6 +50,8 @@ env:
   CASMA_ARCHIVE: data/phase2/source_archive/casma_minam_n7
   CASMA_GEOMETRY: site/data/phase2/geometries/ancash_casma_n7_minam_official_v0_1.geojson
   CASMA_MANIFEST: site/data/phase2/source_assessments/casma_minam_n7_recovery_manifest_v0_1.json
+  PARENT_ARCHIVE: data/phase2/source_archive/casma_n6_parent
+  PARENT_MANIFEST: site/data/phase2/source_assessments/casma_n6_parent_capture_manifest_v0_1.json
 
 jobs:
   validate-fail-closed-source-gap:
@@ -69,7 +78,9 @@ jobs:
             tests/test_phase2_casma_minam_n7_capture_mechanism.py \
             tests/test_phase2_casma_minam_crs_adjudication.py \
             tests/test_phase2_casma_n7_gate_c_topology.py \
-            tests/test_phase2_casma_gate_b_documentary_review.py
+            tests/test_phase2_casma_gate_b_documentary_review.py \
+            tests/test_phase2_casma_c6d_parent_comparison.py \
+            tests/test_phase2_casma_n6_parent_capture.py
       - name: Bootstrap Gate A capture once, or replay the frozen capture offline
         id: mode
         shell: bash
@@ -94,8 +105,21 @@ jobs:
           set -euo pipefail
           python scripts/recover_phase2_casma_minam_n7.py
           git diff --exit-code -- "$CASMA_ARCHIVE" "$CASMA_GEOMETRY" "$CASMA_MANIFEST"
+      - name: Bootstrap N6 parent capture once (preregistered C6d source), or replay offline
+        id: parent_mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -f "$PARENT_MANIFEST" ]]; then
+            echo "bootstrap=true" >> "$GITHUB_OUTPUT"
+            python scripts/capture_phase2_casma_n6_parent.py --refresh
+          else
+            echo "bootstrap=false" >> "$GITHUB_OUTPUT"
+            python scripts/capture_phase2_casma_n6_parent.py
+          fi
+          (cd "$PARENT_ARCHIVE" && sha256sum --strict -c SHA256SUMS)
       - name: Commit the one-shot Gate A capture to the pull-request branch
-        if: steps.mode.outputs.bootstrap == 'true' && github.event_name == 'pull_request'
+        if: (steps.mode.outputs.bootstrap == 'true' || steps.parent_mode.outputs.bootstrap == 'true') && github.event_name == 'pull_request'
         shell: bash
         env:
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
@@ -109,10 +133,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add "$CASMA_ARCHIVE" "$CASMA_GEOMETRY" "$CASMA_MANIFEST"
+          if [[ -f "$PARENT_MANIFEST" ]]; then git add "$PARENT_ARCHIVE" "$PARENT_MANIFEST"; fi
           if git diff --cached --quiet; then
-            echo "No Gate A capture changes to persist"
+            echo "No capture changes to persist"
           else
-            git commit -m "Phase2 Casma: freeze Gate A MINAM N7 raw capture (Gate B unchanged)"
+            git commit -m "Phase2 Casma: freeze raw capture (Gate A children and/or preregistered N6 parent; Gate B unchanged)"
             git push origin "HEAD:refs/heads/$HEAD_REF"
           fi
       - name: Gate C topology QA (fail-closed; verifies the committed report byte-for-byte)
@@ -128,5 +153,7 @@ jobs:
             data/phase2/source_archive/casma_minam_n7/**
             site/data/phase2/geometries/ancash_casma_n7_minam_official_v0_1.geojson
             site/data/phase2/source_assessments/casma_minam_n7_recovery_manifest_v0_1.json
+            data/phase2/source_archive/casma_n6_parent/**
+            site/data/phase2/source_assessments/casma_n6_parent_capture_manifest_v0_1.json
       - name: Re-run universal local activation hierarchy gate
         run: python scripts/validate_phase2_local_activation_hierarchy.py

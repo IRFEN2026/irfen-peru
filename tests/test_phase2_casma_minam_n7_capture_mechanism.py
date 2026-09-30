@@ -293,7 +293,10 @@ class CasmaCaptureWorkflowTests(unittest.TestCase):
 
     def test_commit_is_bootstrap_only_same_repo_and_never_to_main(self):
         self.assertIn("github.event.pull_request.head.repo.full_name == github.repository", self.text)
-        self.assertIn("steps.mode.outputs.bootstrap == 'true' && github.event_name == 'pull_request'", self.text)
+        self.assertIn(
+            "(steps.mode.outputs.bootstrap == 'true' || steps.parent_mode.outputs.bootstrap == 'true') && github.event_name == 'pull_request'",
+            self.text,
+        )
         pushes = re.findall(r"^\s*git push .*$", self.text, flags=re.M)
         self.assertEqual([p.strip() for p in pushes], ['git push origin "HEAD:refs/heads/$HEAD_REF"'])
         self.assertIn("HEAD_REF: ${{ github.event.pull_request.head.ref }}", self.text)
