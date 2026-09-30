@@ -24,7 +24,9 @@ derivan de las filas generadas.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
+from urllib.parse import urlparse
 
 import build_map_layer_catalog_core as core
 
@@ -449,6 +451,63 @@ def _contexts(catalog: dict) -> list[dict]:
     return contexts
 
 
+SOURCE_ATTRIBUTIONS = {
+    "FEATURE_DECLARED_SOURCE_ID",
+    "FEATURE_DECLARED_SOURCE_IDS",
+    "FEATURE_KEY_MATCHED_TO_LAYER_SOURCE_ID",
+    "LAYER_SINGLE_SOURCE",
+    "LAYER_LEVEL_NOT_ATTRIBUTABLE_TO_FEATURE",
+    "NO_SOURCE_DECLARED",
+}
+
+
+def _feature_source_keys(props: dict) -> set[str]:
+    """Identificadores numéricos que la propia feature declara de su fuente."""
+    keys: set[str] = set()
+    objectid = props.get("source_objectid")
+    if isinstance(objectid, int) and not isinstance(objectid, bool):
+        keys.add(str(objectid))
+    elif isinstance(objectid, str) and objectid.isdigit():
+        keys.add(objectid)
+    url = props.get("source_url")
+    if isinstance(url, str) and url:
+        segment = urlparse(url).path.rstrip("/").rsplit("/", 1)[-1]
+        if segment.isdigit():
+            keys.add(segment)
+    return keys
+
+
+def _feature_source_ids(props: dict, layer_source_ids: list[str]) -> tuple[list[str], str]:
+    """Fuentes de UNA geometría; nunca se le transfieren las de sus hermanas.
+
+    Orden de evidencia: fuente declarada por la feature; identificador propio de
+    la feature (OBJECTID, número de documento) que coincide con exactamente una
+    fuente de la capa; capa de fuente única. Si la capa tiene varias fuentes y la
+    feature no permite distinguirlas, se conservan las de la capa pero se marca
+    explícitamente que no son atribuibles a la feature.
+    """
+    layer_ids = sorted(set(layer_source_ids))
+    own = props.get("source_id")
+    if isinstance(own, str) and own:
+        return [own], "FEATURE_DECLARED_SOURCE_ID"
+    own_list = props.get("source_ids")
+    if isinstance(own_list, list) and own_list and all(isinstance(v, str) and v for v in own_list):
+        return sorted(set(own_list)), "FEATURE_DECLARED_SOURCE_IDS"
+    keys = _feature_source_keys(props)
+    if keys:
+        matched = sorted({
+            source_id for source_id in layer_ids
+            for key in keys if re.search(rf"(?:^|-){re.escape(key)}$", source_id)
+        })
+        if len(matched) == 1:
+            return matched, "FEATURE_KEY_MATCHED_TO_LAYER_SOURCE_ID"
+    if len(layer_ids) == 1:
+        return layer_ids, "LAYER_SINGLE_SOURCE"
+    if not layer_ids:
+        return [], "NO_SOURCE_DECLARED"
+    return layer_ids, "LAYER_LEVEL_NOT_ATTRIBUTABLE_TO_FEATURE"
+
+
 def _feature_row(context: dict, index: int, total: int, props: dict, geometry_type: str, classification: dict) -> dict:
     category = classification["map_category"]
     entity_id = _feature_entity_id(props, index, context, total)
@@ -461,6 +520,7 @@ def _feature_row(context: dict, index: int, total: int, props: dict, geometry_ty
         parent_id = context["owner_id"]
     node_semantics = classification.get("node_semantics")
     drawable = node_semantics is None or NODE_SEMANTICS[node_semantics]["drawable"]
+    source_ids, source_attribution = _feature_source_ids(props, context["source_ids"])
     return {
         "feature_key": f"{context['collection']}:{context['owner_id']}#{index}",
         "entity_id": entity_id,
@@ -486,10 +546,8 @@ def _feature_row(context: dict, index: int, total: int, props: dict, geometry_ty
         "validation_path": context["validation_path"],
         "validation_sha256": _digest_or_none(context["validation_path"]),
         "provenance_sha256": context["provenance_sha256"],
-        "source_ids": (
-            [props["source_id"]] if isinstance(props.get("source_id"), str) and props["source_id"]
-            else sorted(set(context["source_ids"]))
-        ),
+        "source_ids": source_ids,
+        "source_attribution": source_attribution,
         "layer_source_ids": sorted(set(context["source_ids"])),
         "derivation_method": props.get("method") if isinstance(props.get("method"), str) else None,
         "confidence": props.get("confidence") or context.get("confidence") or "NOT_DECLARED",
@@ -532,6 +590,12 @@ def build_map_features(catalog: dict) -> list[dict]:
             row["selector"] = {"all_features": True}
             row["feature_level_resolution"] = "LAYER_LEVEL_GENERATED_AT_DEPLOY_FROM_HASHED_INPUTS"
             row["allowed_geometry_types"] = list(context["geometry_types"])
+            # El informe de validación de una capa generada en el despliegue no está
+            # versionado y se regenera con marca temporal: su hash depende del
+            # entorno y no puede fijarse en el catálogo. La procedencia fijada es
+            # provenance_sha256 (insumos versionados con hash).
+            row["validation_sha256"] = None
+            row["validation_sha256_status"] = "NOT_PINNED_REPORT_REGENERATED_AT_DEPLOY"
             rows.append(row)
             continue
         if not absolute.is_file():
@@ -721,6 +785,7 @@ def build_collectors_and_nodes(features: list[dict]) -> tuple[list[dict], list[d
                         "local_unit_id": row.get("local_unit_id"),
                         "coupling_state": row.get("collector_effect_state"),
                         "connectivity": row.get("connectivity"),
+                        "validation_status": row.get("validation_status"),
                         "tributary_activation_state": None,
                         "coupling_state_is_tributary_activation": False,
                         "coupling_state_is_collector_response": False,
@@ -728,6 +793,7 @@ def build_collectors_and_nodes(features: list[dict]) -> tuple[list[dict], list[d
                     for row in tributaries
                 ],
                 "tributary_activation_implies_collector_response": False,
+                "identity_source_ids": [],  # el contrato de acoplamiento no declara fuentes del colector
                 "contract_path": rel,
                 "contract_sha256": core.digest(path),
             })
@@ -805,10 +871,12 @@ def build_collectors_and_nodes(features: list[dict]) -> tuple[list[dict], list[d
                     "node_semantics": "MONITORING_ANCHOR",
                     "may_be_labeled_exact_confluence": False,
                     "location_source": None,
+                    "location_status": child.get("outlet_status") or child.get("geometry_status"),
                     "path": None,
                     "file_sha256": None,
                     "map_eligible": False,
                     "reason_if_withheld": child.get("outlet_status") or child.get("geometry_status"),
+                    "identity_source_ids": list(child.get("identity_source_ids") or []),
                     "contract_path": rel,
                 })
         for child in package.get("children") or []:
@@ -832,6 +900,7 @@ def build_collectors_and_nodes(features: list[dict]) -> tuple[list[dict], list[d
                 },
                 "tributary_activation_evidence": tributary_evidence,
                 "tributary_activation_implies_collector_response": False,
+                "identity_source_ids": list(child.get("identity_source_ids") or []),
                 "contract_path": rel,
                 "contract_sha256": core.digest(path),
             })
@@ -954,7 +1023,10 @@ def build_entities(catalog: dict, features: list[dict], collectors: list[dict],
                 "source": ", ".join(geometry.get("source_ids") or []),
                 "source_path": geometry.get("source_path"),
                 "file_sha256": (geometry.get("source_metadata") or {}).get("sha256"),
-                "confidence": "OFFICIAL_CONTEXT_ONLY",
+                # Estado declarado por la propia unidad; no se fabrica una confianza.
+                "confidence": geometry.get("status") or "NOT_DECLARED",
+                "routing_status": unit.get("routing_status"),
+                "outlet_status": unit.get("outlet_status"),
                 "node_semantics": None,
                 "map_eligible": True,
                 "reason_if_withheld": None,
@@ -1019,7 +1091,7 @@ def build_entities(catalog: dict, features: list[dict], collectors: list[dict],
             "type": "COLLECTOR",
             "parent": row["parent_id"],
             "geometry": None,
-            "source": row["contract_path"],
+            "source": ", ".join(row.get("identity_source_ids") or []) or row["contract_path"],
             "source_path": row["contract_path"],
             "file_sha256": row["contract_sha256"],
             "confidence": "GEOMETRY_MISSING_CAPACITY_UNKNOWN",
@@ -1032,15 +1104,19 @@ def build_entities(catalog: dict, features: list[dict], collectors: list[dict],
     for row in nodes:
         if row["map_eligible"] or row.get("path"):
             continue  # nodos dibujables ya son filas MAP_FEATURE
+        location_unresolved = (
+            row["node_semantics"] == "UNRESOLVED"
+            or "UNRESOLVED" in str(row.get("location_status") or "")
+        )
         add({
             "entity": row["node_id"],
             "type": "NODE",
             "parent": row["parent_id"],
             "geometry": None,
-            "source": row.get("contract_path"),
+            "source": ", ".join(row.get("identity_source_ids") or []) or row.get("contract_path"),
             "source_path": row.get("contract_path"),
             "file_sha256": None,
-            "confidence": "NOT_RESOLVED" if row["node_semantics"] == "UNRESOLVED" else "LOCATION_NOT_FROZEN",
+            "confidence": "NOT_RESOLVED" if location_unresolved else "LOCATION_NOT_FROZEN",
             "node_semantics": row["node_semantics"],
             "map_eligible": False,
             "reason_if_withheld": row["reason_if_withheld"],
@@ -1103,6 +1179,9 @@ def build_map_semantics(catalog: dict) -> dict:
             (core.ROOT / rel).is_file() for rel in EXCLUDED_FROM_GENERAL_MAP_CATALOG
         ),
         "registered_local_units": len(registered),
+        "features_source_not_attributable_to_feature": _count(
+            features, "source_attribution", "LAYER_LEVEL_NOT_ATTRIBUTABLE_TO_FEATURE"
+        ),
         "operational_promotions": 0,
     }
     for category in CATEGORY_DEFINITIONS:

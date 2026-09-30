@@ -63,7 +63,7 @@
           if(!(def.allowed_geometry_types||[]).includes(type))continue;
           const node=f.map_category==='NODE'?`<br><b>Semántica de nodo:</b> ${esc(f.node_semantics)} · ${esc((nodeSemantics[f.node_semantics]||{}).label)}`:'';
           L.geoJSON(feature,{style,pointToLayer:(_feature,latlng)=>L.circleMarker(latlng,{radius:style.radius,color:style.color,weight:style.weight,fillColor:style.fillColor,fillOpacity:style.fillOpacity})})
-            .bindPopup(`<b>${esc(f.name)}</b><br>${esc(def.label)} · ${esc(f.semantic_role)}${node}<br><b>${esc(f.deployment_status)} · sin alerta · sin puntuación de riesgo</b><br>${esc(f.map_disclaimer)}<br><span style="font-size:11px">Padre: ${esc(f.parent_id)} · fuente: ${esc((f.source_ids||[]).join(', '))} · confianza: ${esc(f.confidence)} · hash: ${esc((f.file_sha256||'').slice(0,12))}…</span>`)
+            .bindPopup(`<b>${esc(f.name)}</b><br>${esc(def.label)} · ${esc(f.semantic_role)}${node}<br><b>${esc(f.deployment_status)} · sin alerta · sin puntuación de riesgo</b><br>${esc(f.map_disclaimer)}<br><span style="font-size:11px">Padre: ${esc(f.parent_id)} · fuente: ${esc((f.source_ids||[]).join(', '))}${f.source_attribution==='LAYER_LEVEL_NOT_ATTRIBUTABLE_TO_FEATURE'?' (nivel capa; no atribuibles a esta geometría)':''} · confianza: ${esc(f.confidence)} · hash: ${esc((f.file_sha256||'').slice(0,12))}…</span>`)
             .addTo(layer);
         }
       }

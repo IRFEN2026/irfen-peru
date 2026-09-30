@@ -189,7 +189,7 @@
         else continue;
         g.featureMeta.push({entityId:f.entity_id, parentId:f.parent_id, semanticRole:f.semantic_role,
           nodeSemantics:f.node_semantics, exactConfluence:f.may_be_labeled_exact_confluence === true,
-          confidence:f.confidence, name:f.name});
+          confidence:f.confidence, name:f.name, sources:list(f.source_ids), sourceAttribution:f.source_attribution});
         g.sources = [...new Set([...g.sources, ...list(f.source_ids)])];
       }
       for (const g of groups.values()) add(g);
@@ -424,7 +424,11 @@
           const area=finite(prop.delineated_area_km2)?prop.delineated_area_km2:finite((prop.coverage||{}).delineated_area_km2)?prop.coverage.delineated_area_km2:request.area;
           const url=safeURL(prop.source_url || prop.source_page);
           layer.bindTooltip(esc(name)+(request.category==='NODE'?' · '+esc(meta.nodeSemantics||''):''),{permanent:request.kind==='monitored',className:'ti-label',direction:'auto'});
-          layer.bindPopup('<div class="ti-popup"><b>'+esc(name)+'</b><p><b>'+esc(semantic)+'</b></p>'+esc(request.status)+'<br>'+esc(request.confidence||'')+
+          // Confianza y fuentes de ESTA geometría; las del grupo no se transfieren.
+          const ownConfidence=meta.confidence||request.confidence||'';
+          const ownSources=Array.isArray(meta.sources)?meta.sources:[];
+          layer.bindPopup('<div class="ti-popup"><b>'+esc(name)+'</b><p><b>'+esc(semantic)+'</b></p>'+esc(request.status)+'<br>'+esc(ownConfidence)+
+            (ownSources.length?'<br>Fuentes: '+esc(ownSources.join(' · '))+(meta.sourceAttribution==='LAYER_LEVEL_NOT_ATTRIBUTABLE_TO_FEATURE'?' (nivel capa; no atribuibles a esta geometría)':''):'')+
             (finite(area)?'<br>Área declarada: '+esc(area)+' km²':'')+'<p>'+esc(request.disclaimer)+'</p>'+sourceLink(request.path,'Geometría fuente')+
             (url?' · <a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">Documento fuente</a>':'')+'<br>No genera puntuaciones ni alertas.</div>');
           layer.on('click',()=>selectRecord(request.recordKey||(request.candidateId&&state.records.some(r=>r.key==='candidate:'+request.candidateId)?'candidate:'+request.candidateId:request.key),false));
