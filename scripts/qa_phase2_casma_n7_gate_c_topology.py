@@ -689,6 +689,134 @@ def run_dataset(contract: dict, dataset_id: str, polygons: dict, attributes: dic
     }
 
 
+def _load_script(rel: str, name: str):
+    spec = importlib.util.spec_from_file_location(name, ROOT / rel)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
+
+
+def union_loop(polygons: dict):
+    """The C5 outer loop (largest reduced boundary cycle) of the children."""
+    _, reduced, _, _ = edge_topology(polygons)
+    cycles, _ = extract_cycles(reduced)
+    return max(cycles, key=len) if cycles else None
+
+
+def _round(value):
+    if isinstance(value, float):
+        return round(value, 6)
+    if isinstance(value, dict):
+        return {k: _round(v) for k, v in value.items()}
+    return value
+
+
+def c6d_diagnostics(c6d, prereg: dict, union: list, parent_shell: list) -> dict:
+    """Non-gating, post-capture description of where the boundaries differ.
+
+    Uses only public functions of the frozen comparison module; never feeds
+    the C6d decision.
+    """
+    lon0, lat0 = prereg["local_frame_origin_lonlat"]
+    frame = c6d.local_frame(lon0, lat0)
+    kx, ky = frame(lon0 + 1, lat0)[0], frame(lon0, lat0 + 1)[1]
+    u_xy, p_xy = [[frame(*p) for p in union]], [[frame(*p) for p in parent_shell]]
+    cell = prereg["distance_grid_cell_m"]
+    spacing = prereg["metrics"]["M1_p90_boundary_distance"]["densification_spacing_m"]
+    out = {}
+    for label, samples, target in (("union_to_parent", c6d.densify(u_xy, spacing), p_xy), ("parent_to_union", c6d.densify(p_xy, spacing), u_xy)):
+        grid = c6d.SegmentGrid(c6d.segments(target), cell)
+        dist = [(grid.nearest_distance(p), p) for p in samples]
+        clusters = []
+        for value, p in sorted((d for d in dist if d[0] > 1.0), reverse=True):
+            for c in clusters:
+                if math.hypot(c["p"][0] - p[0], c["p"][1] - p[1]) < 500.0:
+                    c["samples_over_1m"] += 1
+                    break
+            else:
+                clusters.append({"p": p, "max_m": value, "samples_over_1m": 1})
+        out[label] = {
+            "samples": len(dist),
+            "samples_over_1m": sum(1 for d, _ in dist if d > 1.0),
+            "samples_over_0_01m": sum(1 for d, _ in dist if d > 0.01),
+            "largest_deviation_clusters": [
+                {"lon": round(c["p"][0] / kx + lon0, 5), "lat": round(c["p"][1] / ky + lat0, 5), "max_m": round(c["max_m"], 3), "samples_over_1m": c["samples_over_1m"]}
+                for c in clusters[:6]
+            ],
+        }
+    key = lambda p: (round(p[0], 7), round(p[1], 7))
+    out["vertices"] = {
+        "union_positions": len(union),
+        "parent_positions": len(parent_shell),
+        "parent_positions_matching_union_vertex_1e-7_deg": len({key(p) for p in parent_shell[:-1]} & {key(p) for p in union[:-1]}),
+    }
+    return out
+
+
+def evaluate_c6d(source: dict | None, native: dict, c5_passed: bool) -> dict:
+    """C6d: preregistered comparison with the independently frozen N6 parent.
+
+    Metrics are computed only by the preregistered comparison module, whose
+    SHA-256 must match the preregistration; this function only checks
+    evaluability and wires inputs.
+    """
+    if source is None:
+        return {"status": NOT_EVALUABLE, "reasons": ["NO_EXTERNAL_PARENT_SOURCE"]}
+    reasons = []
+    prereg_path = ROOT / source["preregistration"]
+    prereg = load(prereg_path)
+    try:
+        capture = _load_script(source["capture_script"], "casma_parent_capture_for_gate_c")
+        manifest = capture.verify()
+    except Exception as exc:
+        return {"status": NOT_EVALUABLE, "reasons": [f"PARENT_CAPTURE_VERIFY_FAILED {type(exc).__name__}: {exc}"]}
+    module_path = ROOT / prereg["comparison_module_path"]
+    if sha256_file(module_path) != prereg["comparison_module_sha256"]:
+        reasons.append("COMPARISON_MODULE_HASH_MISMATCH")
+    if manifest["preregistration_sha256_at_capture"] != sha256_file(prereg_path):
+        reasons.append("PREREGISTRATION_CHANGED_AFTER_CAPTURE")
+    raw = json.loads((ROOT / manifest["raw_archive_path"]).read_bytes())
+    rings = [[(float(x), float(y)) for x, y in ring] for ring in raw["features"][0]["geometry"]["rings"]]
+    validity = check_ring_structure({"137596": rings}) + check_intersections({"137596": rings})
+    if validity:
+        reasons.append("PARENT_GEOMETRY_INVALID")
+    if not c5_passed:
+        reasons.append("CHILDREN_UNION_NOT_A_SINGLE_SIMPLE_LOOP")
+    base = {
+        "source": {
+            "capture_manifest": source["capture_manifest"],
+            "capture_manifest_sha256": sha256_file(ROOT / source["capture_manifest"]),
+            "layer_url": manifest["source"]["layer_url"],
+            "query_url": manifest["query_url"],
+            "raw_response_sha256": manifest["raw_response_sha256"],
+            "metadata_sha256": manifest["metadata_sha256"],
+            "retrieved_at_utc": manifest["retrieved_at_utc"],
+            "response_spatial_reference": manifest["crs"]["response_spatial_reference"],
+            "layer_source_spatial_reference_wkid": manifest["crs"]["layer_source_spatial_reference"].get("wkid"),
+            "identity": manifest["identity"],
+        },
+        "preregistration_sha256": sha256_file(prereg_path),
+        "comparison_module_sha256": sha256_file(module_path),
+        "parent_validity_anomalies": validity,
+        "parent_ring_count": len(rings),
+        "parent_position_count": sum(len(r) for r in rings),
+    }
+    if reasons:
+        return {"status": NOT_EVALUABLE, "reasons": reasons, **base}
+    c6d = _load_script(prereg["comparison_module_path"], "c6d_parent_comparison_for_gate_c")
+    loop = union_loop(native)
+    union = [utm18s_inverse(x, y) for x, y in loop]
+    children = {code: [utm18s_inverse(x, y) for x, y in rings_[0]] for code, rings_ in sorted(native.items())}
+    result = c6d.compare(union, rings, prereg, children)
+    result["report_only"]["post_capture_diagnostics"] = c6d_diagnostics(c6d, prereg, union, rings[0])
+    attr_area = manifest["identity"].get("AREA_KM2")
+    result["report_only"]["parent_AREA_KM2_attribute"] = attr_area
+    if attr_area is not None:
+        result["report_only"]["parent_AREA_KM2_minus_computed_km2"] = float(attr_area) - result["report_only"]["area_parent_km2"]
+    return {"status": result["decision"], "reasons": [], **base, "metrics": _round(result)}
+
+
 def evaluate(contract_path: Path = DEFAULT_CONTRACT) -> dict:
     contract = load(contract_path)
     guard(contract, "CONTRACT")
@@ -744,7 +872,12 @@ def evaluate(contract_path: Path = DEFAULT_CONTRACT) -> dict:
     parent_sub = {}
     for key in ("C6a_PFAFSTETTER_COMPLETENESS", "C6b_UNION_SIMPLY_CONNECTED", "C6c_PFAFSTETTER_ADJACENCY"):
         parent_sub[key] = FAIL if any(d["parent_coherence_subchecks"][key] == FAIL for d in datasets.values()) else PASS
-    parent_sub["C6d_EXTERNAL_PARENT_POLYGON"] = NOT_EVALUABLE if contract["checks"]["C6_PARENT_COHERENCE"]["external_parent_source"] is None else FAIL
+    c6d_result = evaluate_c6d(
+        contract["checks"]["C6_PARENT_COHERENCE"]["external_parent_source"],
+        native,
+        datasets["native_storage_crs"]["checks"]["C5_UNION_GAPS"] == PASS,
+    )
+    parent_sub["C6d_EXTERNAL_PARENT_POLYGON"] = c6d_result["status"]
     c6_status = FAIL if FAIL in parent_sub.values() else (NOT_EVALUABLE if NOT_EVALUABLE in parent_sub.values() else PASS)
     summary = {
         "C0_INPUT_INTEGRITY": agg("C0_INPUT_INTEGRITY"),
@@ -775,6 +908,7 @@ def evaluate(contract_path: Path = DEFAULT_CONTRACT) -> dict:
         "anomalies": anomalies,
         "datasets": {k: {kk: vv for kk, vv in v.items() if kk != "anomalies"} for k, v in datasets.items()},
         "areas": areas,
+        "c6d_external_parent": c6d_result,
         "certificate": (
             "If every unit ring is simple and consistently oriented (C1-C3), shared edges are exactly noded and "
             "used once in each direction (C4), and the reduced boundary chain is one simple loop with the shell "

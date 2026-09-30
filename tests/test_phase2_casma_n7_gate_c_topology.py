@@ -81,13 +81,27 @@ class CommittedReportTests(unittest.TestCase):
         self.assertEqual(gates["gate_b_lineage_equivalence"]["current_status"], "NOT_ESTABLISHED")
         self.assertFalse(gates["gate_c_topology_map"]["map_publication_authorized"])
 
-    def test_gate_cannot_pass_while_external_parent_is_not_evaluable(self):
-        self.assertIsNone(CONTRACT_DOC["checks"]["C6_PARENT_COHERENCE"]["external_parent_source"])
-        self.assertEqual(self.report["parent_coherence_subchecks"]["C6d_EXTERNAL_PARENT_POLYGON"], "NOT_EVALUABLE")
-        self.assertEqual(self.report["checks"]["C6_PARENT_COHERENCE"], "NOT_EVALUABLE")
-        self.assertNotEqual(self.report["gate_c_status"], "PASS")
-        if self.report["gate_c_status"] == "NOT_PASS_PENDING":
-            self.assertNotIn("FAIL", self.report["checks"].values())
+    def test_c6d_follows_the_preregistered_rule(self):
+        source = CONTRACT_DOC["checks"]["C6_PARENT_COHERENCE"]["external_parent_source"]
+        prereg_path = ROOT / source["preregistration"]
+        prereg = json.loads(prereg_path.read_text(encoding="utf-8"))
+        capture = json.loads((ROOT / source["capture_manifest"]).read_text(encoding="utf-8"))
+        c6d = self.report["c6d_external_parent"]
+        self.assertEqual(c6d["reasons"], [])
+        self.assertEqual(c6d["preregistration_sha256"], QA.sha256_file(prereg_path))
+        self.assertEqual(c6d["preregistration_sha256"], capture["preregistration_sha256_at_capture"])
+        self.assertEqual(c6d["comparison_module_sha256"], prereg["comparison_module_sha256"])
+        self.assertFalse(capture["derived_from_children"])
+        m = c6d["metrics"]
+        self.assertEqual(m["M1_threshold_m"], prereg["tolerance"]["tau_m"])
+        self.assertAlmostEqual(m["M2_threshold"], prereg["tolerance"]["sdr_bound"], places=6)
+        self.assertEqual(m["M1_pass"], m["M1_p90_boundary_distance_m"] <= prereg["tolerance"]["tau_m"])
+        self.assertEqual(m["M2_pass"], m["M2_symmetric_difference_ratio"] <= prereg["tolerance"]["sdr_bound"])
+        self.assertEqual(c6d["status"], "PASS" if (m["M1_pass"] and m["M2_pass"]) else "FAIL")
+        self.assertEqual(self.report["parent_coherence_subchecks"]["C6d_EXTERNAL_PARENT_POLYGON"], c6d["status"])
+        statuses = set(self.report["checks"].values())
+        expected = "FAIL" if "FAIL" in statuses else ("NOT_PASS_PENDING" if "NOT_EVALUABLE" in statuses else "PASS")
+        self.assertEqual(self.report["gate_c_status"], expected)
 
     def test_both_datasets_were_checked_on_all_frozen_vertices(self):
         manifest = json.loads((ROOT / CONTRACT_DOC["inputs"]["gate_a_manifest"]).read_text(encoding="utf-8"))
@@ -223,15 +237,56 @@ class TamperTests(unittest.TestCase):
         "scripts/recover_phase2_casma_minam_n7.py",
         "site/data/phase2/geometries/ancash_casma_n7_minam_official_v0_1.geojson",
         "site/data/phase2/source_assessments/casma_minam_n7_recovery_manifest_v0_1.json",
+        "config/phase2_casma_n6_parent_c6d_preregistration_v0_1.json",
+        "scripts/c6d_parent_comparison.py",
+        "scripts/capture_phase2_casma_n6_parent.py",
+        "site/data/phase2/source_assessments/casma_n6_parent_capture_manifest_v0_1.json",
     ]
 
-    def test_single_coordinate_change_fails_closed(self):
+    def copy_tree(self):
         tmp = Path(tempfile.mkdtemp())
+        for rel in self.FILES:
+            (tmp / rel).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(ROOT / rel, tmp / rel)
+        for archive in ("data/phase2/source_archive/casma_minam_n7", "data/phase2/source_archive/casma_n6_parent"):
+            shutil.copytree(ROOT / archive, tmp / archive)
+        return tmp
+
+    def run_write(self, tmp):
+        proc = subprocess.run([sys.executable, "scripts/qa_phase2_casma_n7_gate_c_topology.py", "--write"], cwd=tmp, capture_output=True, text=True)
+        report = json.loads((tmp / CONTRACT_DOC["outputs"]["report_path"]).read_text(encoding="utf-8"))
+        return proc, report
+
+    def test_parent_byte_change_makes_c6d_not_evaluable(self):
+        tmp = self.copy_tree()
         try:
-            for rel in self.FILES:
-                (tmp / rel).parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(ROOT / rel, tmp / rel)
-            shutil.copytree(ROOT / "data/phase2/source_archive/casma_minam_n7", tmp / "data/phase2/source_archive/casma_minam_n7")
+            target = tmp / "data/phase2/source_archive/casma_n6_parent/137596.native.json"
+            raw = target.read_bytes()
+            target.write_bytes(raw.replace(b"Cuenca Casma", b"Cuenca Casmb", 1))
+            proc, report = self.run_write(tmp)
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertEqual(report["parent_coherence_subchecks"]["C6d_EXTERNAL_PARENT_POLYGON"], "NOT_EVALUABLE")
+            self.assertEqual(report["gate_c_status"], "NOT_PASS_PENDING")
+            self.assertTrue(any("PARENT_CAPTURE_VERIFY_FAILED" in r for r in report["c6d_external_parent"]["reasons"]))
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_post_capture_tolerance_change_cannot_pass(self):
+        tmp = self.copy_tree()
+        try:
+            path = tmp / "config/phase2_casma_n6_parent_c6d_preregistration_v0_1.json"
+            doc = json.loads(path.read_text(encoding="utf-8"))
+            doc["tolerance"]["tau_m"] = 1000.0
+            path.write_text(json.dumps(doc), encoding="utf-8")
+            proc, report = self.run_write(tmp)
+            self.assertEqual(report["parent_coherence_subchecks"]["C6d_EXTERNAL_PARENT_POLYGON"], "NOT_EVALUABLE")
+            self.assertNotEqual(report["gate_c_status"], "PASS")
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_single_coordinate_change_fails_closed(self):
+        tmp = self.copy_tree()
+        try:
             target = tmp / "data/phase2/source_archive/casma_minam_n7/1375965.native.json"
             raw = target.read_bytes()
             first = json.loads(raw)["features"][0]["geometry"]["rings"][0][1]

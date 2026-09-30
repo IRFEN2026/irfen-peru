@@ -42,7 +42,7 @@
     "union_area_identity": {"value": 0, "rule": "The signed area of the reduced boundary chain must equal the sum of unit signed areas exactly (rational arithmetic)."},
     "equal_area_implementation_cross_check": {"value": 1e-6, "units": "relative", "rule": "Implementation QA only: ellipsoidal areas from two independent equal-area projections (Lambert cylindrical and Albers conic, both on the WGS84 ellipsoid) must agree within this relative bound."},
     "service_attribute_area_comparison": {"value": null, "rule": "Reported, never gating. The contract authorizes no area tolerance against AREA_KM2, AREA_FINAL or the 2007 inventory."},
-    "external_parent_comparison": {"value": null, "rule": "No external parent geometry is frozen, so no tolerance is defined; the check is NOT_EVALUABLE until a parent is frozen and a comparison tolerance is preregistered before inspection."}
+    "external_parent_comparison": {"value": "preregistered", "rule": "Defined only in config/phase2_casma_n6_parent_c6d_preregistration_v0_1.json (tau_m = 50.8 m on the P90 boundary distance; symmetric-difference ratio <= 0.0048238444), committed before the parent was captured."}
   },
   "checks": {
     "C0_INPUT_INTEGRITY": {"gating": true, "rule": "Gate A manifest verifies (capture format, statuses, SHA256SUMS) and every Gate C input hash equals the manifest."},
@@ -57,7 +57,7 @@
         "C6a_PFAFSTETTER_COMPLETENESS": "Codes are exactly the parent code followed by digits 1-9; NIVEL == 7 and NIVEL7 == CODIGO for every unit.",
         "C6b_UNION_SIMPLY_CONNECTED": "The union of the nine children is one simply connected polygon (from C5); by the Pfafstetter definition the parent N6 unit is exactly this union within the same coverage.",
         "C6c_PFAFSTETTER_ADJACENCY": "Interbasins 1-3-5-7-9 form a chain along the main stem, and each tributary basin 2k shares boundary with its flanking interbasins 2k-1 and 2k+1. Required pairs must share boundary length > 0. Additional adjacencies are reported, not failed.",
-        "C6d_EXTERNAL_PARENT_POLYGON": "Comparison against an independently frozen parent N6 polygon. NOT_EVALUABLE while no parent geometry is frozen."
+        "C6d_EXTERNAL_PARENT_POLYGON": "Comparison against the independently frozen official N6 137596 parent, with metric, tolerance and decision rules preregistered in external_parent_source.preregistration before capture."
       },
       "required_adjacency_pairs": [
         ["1375961", "1375962"], ["1375961", "1375963"], ["1375962", "1375963"],
@@ -65,7 +65,11 @@
         ["1375965", "1375966"], ["1375965", "1375967"], ["1375966", "1375967"],
         ["1375967", "1375968"], ["1375967", "1375969"], ["1375968", "1375969"]
       ],
-      "external_parent_source": null
+      "external_parent_source": {
+        "preregistration": "config/phase2_casma_n6_parent_c6d_preregistration_v0_1.json",
+        "capture_script": "scripts/capture_phase2_casma_n6_parent.py",
+        "capture_manifest": "site/data/phase2/source_assessments/casma_n6_parent_capture_manifest_v0_1.json"
+      }
     },
     "C7_AREAS": {"gating": true, "rule": "Union area identity (exact) and equal-area implementation cross-check are gating. Planar UTM, ellipsoidal (equal-area), service AREA_KM2 / AREA_FINAL and 2007 inventory sums are reported with deltas only."},
     "C8_HASH_STABILITY": {"gating": true, "rule": "Every Gate A input hash is identical before and after QA."}

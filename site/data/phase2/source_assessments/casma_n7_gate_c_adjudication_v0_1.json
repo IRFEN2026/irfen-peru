@@ -10,13 +10,45 @@
   "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
   "decision_thresholds": null,
   "hydraulic_factors": null,
-  "gate_c_status": "NOT_PASS_PENDING",
-  "status_meaning": "No gating check failed, but the external parent-polygon comparison (C6d) is NOT_EVALUABLE, so Gate C does not pass.",
+  "gate_c_status": "PASS",
+  "status_meaning": "Every gating check and subcheck passed, including C6d against the independently frozen official N6 parent under rules preregistered before capture. Gate C PASS does not by itself change any map flag; promotion requires a separate explicit decision.",
   "contract_path": "config/phase2_casma_n7_gate_c_topology_contract_v0_1.json",
   "qa_script_path": "scripts/qa_phase2_casma_n7_gate_c_topology.py",
   "report_path": "site/data/phase2/source_assessments/casma_n7_gate_c_topology_report_v0_1.json",
-  "report_sha256": "94323d9e5f4e1c90f49234721ad358e8f048baddd16e8123b4edff0884ee4b69",
+  "report_sha256": "088bb9637b3f81dfa39e5ef7a5be1ac364cfbbb3f40353c7c79a23724e83cd0f",
   "gate_a_capture_commit": "dbf37eba5b9c3ca6d824ce8f62fac4afeec13858",
+  "c6d_evidence_chain": {
+    "preregistration_commit": "be5aa551e69c65da9acb986f14305214e8d9eb0f",
+    "preregistration_path": "config/phase2_casma_n6_parent_c6d_preregistration_v0_1.json",
+    "preregistration_sha256": "c9320f4eac4b4394b13cd346bcb92368e3c21cc2225098102002fd6ada8d971f",
+    "comparison_module_sha256": "bff8052d3158efe5f6191a1ea1b2024a04d44ebc2edbe076586f9909d2adc749",
+    "capture_commit": "c3f6b482be47bcb413172d60205eea328859487d",
+    "capture_manifest": "site/data/phase2/source_assessments/casma_n6_parent_capture_manifest_v0_1.json",
+    "capture_manifest_sha256": "917e2ad6737e4d6d63330837d4afadb1f9e48cbc8dff7784e55b6f00860ac3ac",
+    "retrieved_at_utc": "2026-09-30T14:22:08Z",
+    "source_layer_url": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/FeatureServer/7",
+    "query_url": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/FeatureServer/7/query?where=CODIGO+%3D+%27137596%27&outFields=OBJECTID%2CCODIGO%2CNIVEL6%2CNIVEL7%2CNOMB_UH_N6%2CNOMBRE%2CAREA_KM2&returnGeometry=true&outSR=4326&returnZ=false&returnM=false&f=json",
+    "raw_response_sha256": "99cd59cacac11123092fa3f941618f42338e47070c6c6ae7ff76c1c2dd54c26d",
+    "metadata_sha256": "a8d8ad3986ca6c236668f237b5dc64551b3c3677a47347a97cd1f0ac2a100690",
+    "layer_source_spatial_reference_wkid": 4326,
+    "response_spatial_reference": {
+      "latestWkid": 4326,
+      "wkid": 4326
+    },
+    "identity": {
+      "AREA_KM2": 2973.9704,
+      "CODIGO": "137596",
+      "NIVEL6": "137596",
+      "NIVEL7": " ",
+      "NOMBRE": "Cuenca Casma",
+      "NOMB_UH_N6": "Casma",
+      "OBJECTID": 147.0
+    },
+    "derived_from_children": false,
+    "manual_digitization": false,
+    "protocol_deviations": [],
+    "post_capture_code": "Gate C glue (evaluability checks, input wiring, non-gating diagnostics) was written after capture; every gating metric is computed by the preregistered comparison module, whose SHA-256 is verified at run time."
+  },
   "checks": {
     "C0_INPUT_INTEGRITY": "PASS",
     "C1_RING_STRUCTURE": "PASS",
@@ -24,7 +56,7 @@
     "C3_SELF_INTERSECTION": "PASS",
     "C4_SIBLING_OVERLAP": "PASS",
     "C5_UNION_GAPS": "PASS",
-    "C6_PARENT_COHERENCE": "NOT_EVALUABLE",
+    "C6_PARENT_COHERENCE": "PASS",
     "C7_AREAS": "PASS",
     "C8_HASH_STABILITY": "PASS"
   },
@@ -32,16 +64,25 @@
     "C6a_PFAFSTETTER_COMPLETENESS": "PASS",
     "C6b_UNION_SIMPLY_CONNECTED": "PASS",
     "C6c_PFAFSTETTER_ADJACENCY": "PASS",
-    "C6d_EXTERNAL_PARENT_POLYGON": "NOT_EVALUABLE"
+    "C6d_EXTERNAL_PARENT_POLYGON": "PASS"
+  },
+  "c6d_metrics": {
+    "M1_p90_boundary_distance_m": 0.000115,
+    "M1_threshold_m": 50.8,
+    "M1_pass": true,
+    "M2_symmetric_difference_ratio": 8e-06,
+    "M2_threshold": 0.004824,
+    "M2_pass": true,
+    "decision": "PASS"
   },
   "scope_of_topology_result": "Both frozen datasets (native EPSG:32718, 11209 positions; normalized EPSG:4326, 11209 positions) were checked with exact predicates and no snapping. The union of the nine units is one simple loop of 4369 positions; the directed-edge certificate rules out positive-area overlap and internal gaps.",
   "blocking_anomaly_count": 0,
   "blocking_anomalies": [],
   "non_gating_findings": [
     {
-      "id": "F1_EXTERNAL_PARENT_NOT_FROZEN",
+      "id": "F1_C6D_PARENT_COMPARISON",
       "check": "C6d_EXTERNAL_PARENT_POLYGON",
-      "finding": "No independently frozen parent N6 137596 (Cuenca Casma) polygon exists in the repository, so the union cannot be compared with an external parent. This is the only reason Gate C does not pass."
+      "finding": "PASS under the preregistered rule: P90 boundary distance 0.000115 m (<= 50.8 m); symmetric-difference ratio 7.534e-06 (<= 0.004824). Hausdorff 12.9144 m, P99 2.367203 m, mean 0.081921 m, IoU 0.999992. Union 2985.080249 km2 vs parent 2985.080627 km2 (difference -0.000379 km2); symmetric difference 0.02249 km2 (0.011056 km2 of children outside the parent, 0.011434 km2 of parent outside the children)."
     },
     {
       "id": "F2_SERVICE_AREA_KM2_DIFFERS_FROM_OWN_GEOMETRY",
@@ -72,18 +113,29 @@
       "id": "F7_ORIENTATION_CONVENTIONS",
       "check": "C2_ORIENTATION",
       "finding": "Native Esri shells are clockwise; the normalized GeoJSON shells are counter-clockwise (RFC 7946 right-hand rule). Both are internally consistent; informational."
+    },
+    {
+      "id": "F8_PARENT_BOUNDARY_NEAR_IDENTICAL",
+      "check": "C6d_EXTERNAL_PARENT_POLYGON",
+      "finding": "3909 of 4147 parent positions coincide with union vertices at 1e-7 degrees; 1729 of 58828 union samples and 1621 of 58664 parent samples deviate by more than 1 m, in a few localized stretches (largest near 77.839 W 9.218 S, 77.623 W 9.622 S and 78.386 W 9.456 S, up to 12.9 m). This near-identity is consistent with the current ANA N6 parent and the current MINAM N7 children sharing one cartographic lineage; it is not evidence of equivalence to INRENA Uh_pfas100 and Gate B is unchanged."
+    },
+    {
+      "id": "F9_PARENT_AREA_ATTRIBUTE",
+      "check": "C7_AREAS",
+      "finding": "Parent attribute AREA_KM2 = 2973.9704 km2 is -11.110227 km2 below its computed ellipsoidal area and matches the sum of the MINAM AREA_FINAL attributes (2973.9707 km2) to 0.0003 km2: both services share an undocumented area convention (see F3). Not interpreted."
+    },
+    {
+      "id": "F10_HTTP_DATE_SKEW",
+      "check": "C6d_EXTERNAL_PARENT_POLYGON",
+      "finding": "The IDEP response Date header (Wed, 30 Sep 2026 14:44:14 GMT) is about 22 minutes ahead of the CI retrieval clock (2026-09-30T14:22:08Z); recorded as provenance only."
     }
   ],
   "relation_to_existing_gate_adjudication": {
     "path": "site/data/phase2/source_assessments/casma_minam_recovery_gate_adjudication_v0_1.json",
     "modified_by_this_change": false,
-    "consistency": "Reproduces the recorded PARTIAL_PASS_INTERNAL_TOPOLOGY__PARENT_CONTEXT_PENDING with exact predicates, touch/T-junction detection, a directed-edge overlap/gap certificate and QA of the publication-CRS geometry. Its geometric_area_sum_km2 (2990.689973...) is the planar EPSG:32718 area, not the ellipsoidal area (see F4)."
+    "consistency": "Reproduces the recorded PARTIAL_PASS_INTERNAL_TOPOLOGY__PARENT_CONTEXT_PENDING with exact predicates, touch/T-junction detection, a directed-edge overlap/gap certificate and QA of the publication-CRS geometry. Its geometric_area_sum_km2 (2990.689973...) is the planar EPSG:32718 area, not the ellipsoidal area (see F4).",
+    "note": "That file still records PARTIAL_PASS_INTERNAL_TOPOLOGY__PARENT_CONTEXT_PENDING for Gate C; this adjudication supersedes it for Gate C only and it was deliberately not edited because it also carries Gate B."
   },
-  "required_for_gate_c_pass": [
-    "Freeze an independent parent N6 137596 polygon from a named institutional source (raw bytes + SHA-256), e.g. ANA/IDEP INSTITUCIONALES/ANA_WMS layer 7 or 8 (CODIGO 137596, service SR 3857) or an N6 record of the same MINAM layer if one exists.",
-    "Preregister the parent comparison metric and tolerance (for example symmetric-difference area and Hausdorff distance in an equal-area CRS) before inspecting that geometry, and record whether the parent shares lineage with the MINAM coverage.",
-    "Set external_parent_source in the Gate C contract and regenerate the report."
-  ],
   "map_publication_authorized": false,
   "map_eligible_as_research_context": false,
   "gate_b_modified": false,
