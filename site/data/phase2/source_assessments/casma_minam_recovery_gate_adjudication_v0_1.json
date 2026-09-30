@@ -3,7 +3,7 @@
   "assessment_id": "casma_minam_recovery_gate_adjudication_v0_1",
   "status": "FAIL_CLOSED_DESCENDANT_ATTRIBUTE_DRIFT",
   "status_semantics": "Legacy fail-closed summary retained for regression compatibility. Attribute drift blocks historical equivalence (Gate B), not immutable capture of a current institutional descendant (Gate A).",
-  "gate_model_status": "GATE_A_PENDING_RAW_CAPTURE__GATE_B_NOT_ESTABLISHED__GATE_C_BLOCKED",
+  "gate_model_status": "GATE_A_PASS_CURRENT_INSTITUTIONAL_CAPTURE__GATE_B_NOT_ESTABLISHED__GATE_C_PENDING",
   "deployment_status": "RESEARCH_ONLY",
   "test_mode": "TEST_ONLY",
   "production_use": false,
@@ -31,8 +31,8 @@
     "observed_generic_designator_or_accent_drift": true,
     "exact_code_match_count_observed": 9,
     "polygon_geometry_count_observed": 9,
-    "raw_feature_bytes_frozen": false,
-    "raw_response_sha256_frozen": false,
+    "raw_feature_bytes_frozen": true,
+    "raw_response_sha256_frozen": true,
     "topology_union_adjudicated": false,
     "historical_geometry_equivalence_to_Uh_pfas100": false,
     "map_publication_authorized": false
@@ -53,8 +53,18 @@
       "historical one-decimal area equality",
       "historical geometry equivalence to Uh_pfas100"
     ],
-    "current_status": "PENDING_IMMUTABLE_RAW_CAPTURE",
-    "pass_does_not_authorize_map_publication": true
+    "current_status": "PASS_IMMUTABLE_CURRENT_INSTITUTIONAL_CAPTURE",
+    "pass_does_not_authorize_map_publication": true,
+    "evidence": {
+      "recovery_manifest": "site/data/phase2/source_assessments/casma_minam_n7_recovery_manifest_v0_1.json",
+      "archive_root": "data/phase2/source_archive/casma_minam_n7",
+      "sha256sums": "data/phase2/source_archive/casma_minam_n7/SHA256SUMS",
+      "feature_count": 9,
+      "capture_format_version": 3,
+      "source_native_wkid": 32718,
+      "query_output_wkid": 4326,
+      "captured_at_utc": "2026-09-30T01:54:42Z"
+    }
   },
   "gate_b_lineage_equivalence": {
     "purpose": "Adjudicate whether the current institutional descendant is historically/geometrically equivalent to INRENA Uh_pfas100 (2007).",
@@ -77,13 +87,14 @@
       "parent-context/union coherence QA",
       "all Gate A hashes remain stable"
     ],
-    "current_status": "BLOCKED_PENDING_GATE_A_AND_TOPOLOGY_QA",
+    "current_status": "PENDING_TOPOLOGY_QA_AFTER_GATE_A_PASS",
     "publication_label_if_eventually_passed": "CURRENT_INSTITUTIONAL_N7_RESEARCH_CONTEXT",
     "forbidden_labels_without_gate_b": [
       "EXACT_2007_Uh_pfas100_GEOMETRY",
       "HISTORICALLY_IDENTICAL_2007_GEOMETRY"
     ],
-    "map_publication_authorized": false
+    "map_publication_authorized": false,
+    "pass_does_not_assert_historical_equivalence": true
   },
   "cross_pr_observation_reference": {
     "pr": 339,
@@ -97,5 +108,6 @@
   },
   "scientific_rule": "Separate capture from equivalence. Gate A may freeze exact-code current institutional polygons despite documented name/area drift. Gate B remains false unless direct historical lineage/equivalence is proven. Gate C alone may authorize publication as CURRENT_INSTITUTIONAL_N7_RESEARCH_CONTEXT after immutable capture and topology QA. No tolerance, CI-only bypass, PDF digitization, inferred outlet, event outcome, threshold, routing, capacity, risk or alert semantics are introduced.",
   "original_source_target": "INRENA Uh_pfas100",
-  "original_source_public_bytes_recovered": false
+  "original_source_public_bytes_recovered": false,
+  "updated_at_utc": "2026-09-30T07:33:26Z"
 }
