@@ -3,7 +3,7 @@
   "assessment_id": "casma_minam_recovery_gate_adjudication_v0_1",
   "status": "FAIL_CLOSED_DESCENDANT_ATTRIBUTE_DRIFT",
   "status_semantics": "Legacy fail-closed summary retained for regression compatibility. Attribute drift blocks historical equivalence (Gate B), not immutable capture of a current institutional descendant (Gate A).",
-  "gate_model_status": "GATE_A_PASS_CURRENT_INSTITUTIONAL_CAPTURE__GATE_B_NOT_ESTABLISHED__GATE_C_PENDING",
+  "gate_model_status": "GATE_A_PASS_CURRENT_INSTITUTIONAL_CAPTURE__GATE_B_NOT_ESTABLISHED__GATE_C_INTERNAL_TOPOLOGY_PASS_PARENT_CONTEXT_PENDING",
   "deployment_status": "RESEARCH_ONLY",
   "test_mode": "TEST_ONLY",
   "production_use": false,
@@ -33,9 +33,11 @@
     "polygon_geometry_count_observed": 9,
     "raw_feature_bytes_frozen": true,
     "raw_response_sha256_frozen": true,
-    "topology_union_adjudicated": false,
+    "topology_union_adjudicated": true,
     "historical_geometry_equivalence_to_Uh_pfas100": false,
-    "map_publication_authorized": false
+    "map_publication_authorized": false,
+    "internal_topology_adjudicated": true,
+    "parent_context_geometry_adjudicated": false
   },
   "gate_a_source_capture": {
     "purpose": "Freeze a reproducible CURRENT institutional descendant without asserting 2007 geometric equivalence.",
@@ -87,14 +89,53 @@
       "parent-context/union coherence QA",
       "all Gate A hashes remain stable"
     ],
-    "current_status": "PENDING_TOPOLOGY_QA_AFTER_GATE_A_PASS",
+    "current_status": "PARTIAL_PASS_INTERNAL_TOPOLOGY__PARENT_CONTEXT_PENDING",
     "publication_label_if_eventually_passed": "CURRENT_INSTITUTIONAL_N7_RESEARCH_CONTEXT",
     "forbidden_labels_without_gate_b": [
       "EXACT_2007_Uh_pfas100_GEOMETRY",
       "HISTORICALLY_IDENTICAL_2007_GEOMETRY"
     ],
     "map_publication_authorized": false,
-    "pass_does_not_assert_historical_equivalence": true
+    "pass_does_not_assert_historical_equivalence": true,
+    "subgates": {
+      "geometry_validity": {
+        "status": "PASS",
+        "evidence": "Frozen native EPSG:32718 polygons are closed, non-zero single rings with no proper self-crossings."
+      },
+      "pairwise_overlap": {
+        "status": "PASS",
+        "evidence": "No proper boundary crossings or containment-derived positive-area overlap among the nine frozen polygons."
+      },
+      "gap_union": {
+        "status": "PASS_INTERNAL_UNION",
+        "evidence": "Shared source edges have multiplicity 1 or 2; unmatched edges form one degree-2 connected outer loop, excluding enclosed internal gap loops under the frozen source-vertex topology."
+      },
+      "parent_context": {
+        "status": "PENDING",
+        "evidence": "No separate current institutional parent polygon or equivalently frozen parent-context geometry has yet been captured for an external union-to-parent comparison. No parent boundary is inferred from the 2007 PDF."
+      }
+    },
+    "topology_evidence": {
+      "test_path": "tests/test_phase2_casma_minam_n7_capture_mechanism.py",
+      "tested_head_sha": "6332057b5e94a1dae47228783b556464a8a5e4f8",
+      "workflow_runs": [
+        {
+          "id": 36698622730,
+          "name": "IRFEN - Phase2 Casma N7 geometry source gap",
+          "conclusion": "success"
+        },
+        {
+          "id": 36698622591,
+          "name": "IRFEN - Phase2 local activation hierarchy",
+          "conclusion": "success"
+        }
+      ],
+      "frozen_geometry_sha256": "628be7517d5bbd92e5b1d7cf2b7ab5292741e3fa2eaedae40a7bda8ff0e4bf31",
+      "geometric_area_sum_km2": 2990.689973229004,
+      "current_service_area_sum_km2": 2989.8386,
+      "historical_2007_area_sum_km2": 2990.8,
+      "area_semantics": "Geometric, current service AREA_KM2 and historical 2007 inventory area are preserved as distinct quantities; none is used to establish Uh_pfas100 equivalence."
+    }
   },
   "cross_pr_observation_reference": {
     "pr": 339,
@@ -109,5 +150,5 @@
   "scientific_rule": "Separate capture from equivalence. Gate A may freeze exact-code current institutional polygons despite documented name/area drift. Gate B remains false unless direct historical lineage/equivalence is proven. Gate C alone may authorize publication as CURRENT_INSTITUTIONAL_N7_RESEARCH_CONTEXT after immutable capture and topology QA. No tolerance, CI-only bypass, PDF digitization, inferred outlet, event outcome, threshold, routing, capacity, risk or alert semantics are introduced.",
   "original_source_target": "INRENA Uh_pfas100",
   "original_source_public_bytes_recovered": false,
-  "updated_at_utc": "2026-09-30T07:33:26Z"
+  "updated_at_utc": "2026-09-30T12:34:24Z"
 }
