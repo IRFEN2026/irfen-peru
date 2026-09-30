@@ -15,6 +15,11 @@ on:
       - tests/test_recover_phase2_casma_minam_n7.py
       - tests/test_phase2_casma_minam_n7_capture_mechanism.py
       - tests/test_phase2_casma_minam_crs_adjudication.py
+      - tests/test_phase2_casma_n7_gate_c_topology.py
+      - scripts/qa_phase2_casma_n7_gate_c_topology.py
+      - config/phase2_casma_n7_gate_c_topology_contract_v0_1.json
+      - site/data/phase2/source_assessments/casma_n7_gate_c_topology_report_v0_1.json
+      - site/data/phase2/source_assessments/casma_n7_gate_c_adjudication_v0_1.json
       - site/data/phase2/source_assessments/casma_minam_crs_adjudication_v0_1.json
       - tests/test_phase2_casma_gate_b_documentary_review.py
       - site/data/phase2/source_assessments/casma_gate_b_documentary_evidence_review_v0_1.json
@@ -63,6 +68,7 @@ jobs:
             tests/test_recover_phase2_casma_minam_n7.py \
             tests/test_phase2_casma_minam_n7_capture_mechanism.py \
             tests/test_phase2_casma_minam_crs_adjudication.py \
+            tests/test_phase2_casma_n7_gate_c_topology.py \
             tests/test_phase2_casma_gate_b_documentary_review.py
       - name: Bootstrap Gate A capture once, or replay the frozen capture offline
         id: mode
@@ -109,6 +115,9 @@ jobs:
             git commit -m "Phase2 Casma: freeze Gate A MINAM N7 raw capture (Gate B unchanged)"
             git push origin "HEAD:refs/heads/$HEAD_REF"
           fi
+      - name: Gate C topology QA (fail-closed; verifies the committed report byte-for-byte)
+        if: steps.mode.outputs.bootstrap == 'false'
+        run: python scripts/qa_phase2_casma_n7_gate_c_topology.py
       - name: Upload Gate A source capture artifact
         uses: actions/upload-artifact@v4
         with:

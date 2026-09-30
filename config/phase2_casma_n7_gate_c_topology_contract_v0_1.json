@@ -1,0 +1,84 @@
+{
+  "schema_version": "0.1",
+  "contract_id": "phase2_casma_n7_gate_c_topology_v0_1",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "scope": "Gate C internal topology QA of the nine frozen Gate A MINAM N7 polygons. Does not modify Gate B, does not assert Uh_pfas100 equivalence, does not authorize map publication.",
+  "authoring_note": "Authored after the Gate A capture existed. Every gating tolerance below is either an exact identity or follows from the Pfafstetter definition; none is fitted to observed values.",
+  "inputs": {
+    "gate_a_manifest": "site/data/phase2/source_assessments/casma_minam_n7_recovery_manifest_v0_1.json",
+    "gate_adjudication": "site/data/phase2/source_assessments/casma_minam_recovery_gate_adjudication_v0_1.json",
+    "parent_code": "137596",
+    "child_codes": ["1375961", "1375962", "1375963", "1375964", "1375965", "1375966", "1375967", "1375968", "1375969"],
+    "datasets": [
+      {
+        "dataset_id": "native_storage_crs",
+        "role": "Frozen ArcGIS JSON in the layer storage CRS (sourceSpatialReference). Primary object of Gate C.",
+        "source": "gate_a_native_archive",
+        "crs": "EPSG:32718",
+        "planar_units": "metre",
+        "blocking": true
+      },
+      {
+        "dataset_id": "normalized_publication_crs",
+        "role": "Frozen normalized FeatureCollection in EPSG:4326, i.e. the geometry any future map layer would draw. QA'd so that server projection cannot hide a publication-facing defect.",
+        "source": "gate_a_normalized_geometry",
+        "crs": "EPSG:4326",
+        "planar_units": "degree",
+        "blocking": true
+      }
+    ]
+  },
+  "tolerances": {
+    "coordinate_equality": {"value": 0, "rule": "Vertices are equal only if their parsed IEEE-754 values are identical. No snapping, rounding or grid alignment is applied."},
+    "geometric_predicates": {"value": "exact", "rule": "Orientation and intersection predicates are evaluated in exact rational arithmetic on the parsed coordinates (no epsilon)."},
+    "union_area_identity": {"value": 0, "rule": "The signed area of the reduced boundary chain must equal the sum of unit signed areas exactly (rational arithmetic)."},
+    "equal_area_implementation_cross_check": {"value": 1e-6, "units": "relative", "rule": "Implementation QA only: ellipsoidal areas from two independent equal-area projections (Lambert cylindrical and Albers conic, both on the WGS84 ellipsoid) must agree within this relative bound."},
+    "service_attribute_area_comparison": {"value": null, "rule": "Reported, never gating. The contract authorizes no area tolerance against AREA_KM2, AREA_FINAL or the 2007 inventory."},
+    "external_parent_comparison": {"value": null, "rule": "No external parent geometry is frozen, so no tolerance is defined; the check is NOT_EVALUABLE until a parent is frozen and a comparison tolerance is preregistered before inspection."}
+  },
+  "checks": {
+    "C0_INPUT_INTEGRITY": {"gating": true, "rule": "Gate A manifest verifies (capture format, statuses, SHA256SUMS) and every Gate C input hash equals the manifest."},
+    "C1_RING_STRUCTURE": {"gating": true, "rule": "Exactly one feature per code; every ring closed (first == last), at least 4 positions, no repeated vertex (consecutive or not), non-zero area."},
+    "C2_ORIENTATION": {"gating": true, "rule": "All shells share one orientation within a dataset; holes, if any, have the opposite orientation. Native Esri shells must be clockwise. RFC 7946 right-hand rule for the normalized GeoJSON is reported, not gating."},
+    "C3_SELF_INTERSECTION": {"gating": true, "rule": "Within a ring, non-adjacent segments must be disjoint (no crossing and no touching); adjacent segments must not fold back collinearly (spike)."},
+    "C4_SIBLING_OVERLAP": {"gating": true, "rule": "Between different units, segments may only coincide as identical shared edges or touch at a common vertex. Proper crossings, T-junctions (vertex on another unit's edge interior) and partial collinear overlaps fail. Each shared edge must be used by exactly two units in opposite directions."},
+    "C5_UNION_GAPS": {"gating": true, "rule": "After cancelling opposite directed shared edges, the remaining boundary must be exactly one simple closed loop with the shell orientation and no pinch vertices. Together with C1-C4 this certifies that the unit indicator functions sum to the indicator of that loop almost everywhere: no positive-area overlap and no internal gap. Any additional loop is reported as an unexplained gap/island with its area."},
+    "C6_PARENT_COHERENCE": {
+      "gating": true,
+      "subchecks": {
+        "C6a_PFAFSTETTER_COMPLETENESS": "Codes are exactly the parent code followed by digits 1-9; NIVEL == 7 and NIVEL7 == CODIGO for every unit.",
+        "C6b_UNION_SIMPLY_CONNECTED": "The union of the nine children is one simply connected polygon (from C5); by the Pfafstetter definition the parent N6 unit is exactly this union within the same coverage.",
+        "C6c_PFAFSTETTER_ADJACENCY": "Interbasins 1-3-5-7-9 form a chain along the main stem, and each tributary basin 2k shares boundary with its flanking interbasins 2k-1 and 2k+1. Required pairs must share boundary length > 0. Additional adjacencies are reported, not failed.",
+        "C6d_EXTERNAL_PARENT_POLYGON": "Comparison against an independently frozen parent N6 polygon. NOT_EVALUABLE while no parent geometry is frozen."
+      },
+      "required_adjacency_pairs": [
+        ["1375961", "1375962"], ["1375961", "1375963"], ["1375962", "1375963"],
+        ["1375963", "1375964"], ["1375963", "1375965"], ["1375964", "1375965"],
+        ["1375965", "1375966"], ["1375965", "1375967"], ["1375966", "1375967"],
+        ["1375967", "1375968"], ["1375967", "1375969"], ["1375968", "1375969"]
+      ],
+      "external_parent_source": null
+    },
+    "C7_AREAS": {"gating": true, "rule": "Union area identity (exact) and equal-area implementation cross-check are gating. Planar UTM, ellipsoidal (equal-area), service AREA_KM2 / AREA_FINAL and 2007 inventory sums are reported with deltas only."},
+    "C8_HASH_STABILITY": {"gating": true, "rule": "Every Gate A input hash is identical before and after QA."}
+  },
+  "decision_rule": {
+    "PASS": "Every gating check and subcheck is PASS.",
+    "FAIL": "Any gating check or subcheck is FAIL.",
+    "NOT_PASS_PENDING": "No FAIL, but at least one gating check or subcheck is NOT_EVALUABLE.",
+    "map_publication_authorized": false,
+    "gate_b_modified": false,
+    "historical_equivalence_asserted": false
+  },
+  "outputs": {
+    "report_path": "site/data/phase2/source_assessments/casma_n7_gate_c_topology_report_v0_1.json"
+  }
+}
