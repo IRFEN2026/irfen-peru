@@ -74,7 +74,7 @@ def normalize_name(value: object) -> str:
     return " ".join(text.casefold().split())
 
 
-CAPTURE_FORMAT_VERSION = 2
+CAPTURE_FORMAT_VERSION = 3
 PROVENANCE_HEADERS = (
     "Content-Type",
     "Content-Length",
@@ -155,17 +155,26 @@ def query_url(contract: dict, code: str) -> str:
     return source["layer_url"].rstrip("/") + "/query?" + urlencode(params)
 
 
-def native_query_url(contract: dict, code: str) -> str:
-    """Same exact-code query in native ArcGIS JSON without outSR.
+def native_query_url(contract: dict, code: str, source_wkid: int) -> str:
+    """Same exact-code query in ArcGIS JSON, in the layer's storage CRS.
 
-    Omitting outSR asks the service for geometry in its source spatial
-    reference, so the archived native bytes carry no server-side reprojection.
+    For a MapServer layer, a query without outSR returns geometry in the
+    spatial reference of the *map* (Esri REST "Query (Map Service/Layer)"),
+    which for this service is 4326, i.e. a server-side projection. The layer
+    resource's ``sourceSpatialReference`` reports the CRS the features are
+    stored in, so the native request sets outSR to exactly that WKID, taken
+    from the layer metadata captured in the same run and cross-checked against
+    the contract. No datumTransformation is requested.
     """
     source = contract["source"]
+    expected = int(source["expected_source_wkid"])
+    if int(source_wkid) != expected:
+        raise RecoveryError(f"NATIVE_OUTSR_NOT_DECLARED_SOURCE wkid={source_wkid} expected={expected}")
     params = {
         "where": f"{source['exact_identity_field']} = '{code}'",
         "outFields": ",".join(source["output_fields"]),
         "returnGeometry": "true",
+        "outSR": str(expected),
         "returnZ": "false",
         "returnM": "false",
         "f": "json",
@@ -340,13 +349,24 @@ def validate_feature(contract: dict, expected: dict, doc: dict) -> dict:
         "historical_geometry_equivalence_to_Uh_pfas100": False,
     }
 
-def validate_metadata(contract: dict, metadata: dict) -> None:
+def validate_metadata(contract: dict, metadata: dict) -> dict:
+    """Validate the layer resource and return its declared spatial references.
+
+    ``sourceSpatialReference`` (storage CRS of the source dataset) must equal
+    the contract WKID, with a consistent latestWkid when present. The map
+    ``spatialReference`` is recorded as provenance only; it is the CRS the
+    service projects to when outSR is omitted and is never accepted as the
+    native CRS.
+    """
     source = contract["source"]
     if metadata.get("geometryType") != source["expected_geometry_type"]:
         raise RecoveryError(f"SERVICE_GEOMETRY_TYPE_DRIFT {metadata.get('geometryType')}")
     ssr = metadata.get("sourceSpatialReference") or {}
-    if int(ssr.get("wkid") or -1) != int(source["expected_source_wkid"]):
+    expected = int(source["expected_source_wkid"])
+    if int(ssr.get("wkid") or -1) != expected:
         raise RecoveryError(f"SOURCE_WKID_DRIFT {ssr}")
+    if ssr.get("latestWkid") is not None and int(ssr["latestWkid"]) != expected:
+        raise RecoveryError(f"SOURCE_LATEST_WKID_DRIFT {ssr}")
     names = {row.get("name") for row in metadata.get("fields", []) if isinstance(row, dict)}
     required = set(source["output_fields"])
     missing = sorted(required - names)
@@ -355,6 +375,12 @@ def validate_metadata(contract: dict, metadata: dict) -> None:
     formats = str(metadata.get("supportedQueryFormats") or "").lower()
     if "geojson" not in formats:
         raise RecoveryError("SERVICE_GEOJSON_SUPPORT_MISSING")
+    return {
+        "source_wkid": expected,
+        "layer_source_spatial_reference": ssr,
+        "layer_map_spatial_reference": metadata.get("spatialReference"),
+        "service_current_version": metadata.get("currentVersion"),
+    }
 
 
 def write_outputs(
@@ -362,6 +388,7 @@ def write_outputs(
     metadata_bytes: bytes,
     staged: list[dict],
     metadata_http: dict | None = None,
+    service_crs: dict | None = None,
 ) -> dict:
     """Persist Gate A capture artifacts; do not authorize map publication.
 
@@ -508,10 +535,27 @@ def write_outputs(
         "metadata_http": metadata_http,
         "sha256sums_path": sums_path.relative_to(ROOT).as_posix(),
         "sha256sums_sha256": sha256_file(sums_path),
+        "crs_provenance": {
+            "layer_source_spatial_reference": (service_crs or {}).get("layer_source_spatial_reference"),
+            "layer_map_spatial_reference": (service_crs or {}).get("layer_map_spatial_reference"),
+            "service_current_version": (service_crs or {}).get("service_current_version"),
+            "native_request_outSR": contract["source"]["expected_source_wkid"],
+            "native_crs_basis": (
+                "outSR set explicitly to the layer sourceSpatialReference, which Esri "
+                "documents as the spatial reference features are stored in; a MapServer "
+                "query without outSR returns the map spatial reference instead"
+            ),
+            "native_crs_role": "DECLARED_STORAGE_CRS_OF_SOURCE_DATASET",
+            "geojson_crs_role": "SERVER_PROJECTION_TO_REQUESTED_OUTSR",
+            "map_spatial_reference_accepted_as_native": False,
+            "datum_transformation_requested": False,
+        },
         "raw_bytes_policy": (
-            "Response bodies archived byte-for-byte as received; the native "
-            "ArcGIS JSON is requested without outSR so it carries no server-side "
-            "reprojection. Only the normalized FeatureCollection is re-serialized."
+            "Response bodies archived byte-for-byte as received. The native ArcGIS "
+            "JSON is requested with outSR equal to the layer's declared "
+            "sourceSpatialReference (storage CRS); the GeoJSON is a server "
+            "projection to the contract outSR. Only the normalized "
+            "FeatureCollection is re-serialized."
         ),
         "independent_qa_source": contract["independent_qa"],
         "feature_count": len(rows),
@@ -591,6 +635,20 @@ def verify_existing(contract: dict) -> dict:
         if row.get("historical_geometry_equivalence_to_Uh_pfas100") is not False:
             raise RecoveryError(f"ROW_HISTORICAL_EQUIVALENCE_DRIFT {row['code']}")
     verify_sha256sums(manifest)
+    expected_wkid = int(contract["source"]["expected_source_wkid"])
+    crs = manifest.get("crs_provenance") or {}
+    if crs.get("native_request_outSR") != expected_wkid:
+        raise RecoveryError("NATIVE_OUTSR_PROVENANCE_DRIFT")
+    if crs.get("map_spatial_reference_accepted_as_native") is not False:
+        raise RecoveryError("MAP_SR_ACCEPTED_AS_NATIVE")
+    if int((crs.get("layer_source_spatial_reference") or {}).get("wkid") or -1) != expected_wkid:
+        raise RecoveryError("LAYER_SOURCE_SR_PROVENANCE_DRIFT")
+    for row in manifest["features"]:
+        sr = row.get("native_spatial_reference") or {}
+        if expected_wkid not in {sr.get("wkid"), sr.get("latestWkid")}:
+            raise RecoveryError(f"ROW_NATIVE_WKID_DRIFT {row['code']} sr={sr}")
+        if f"outSR={expected_wkid}" not in str(row.get("native_query_url")):
+            raise RecoveryError(f"ROW_NATIVE_OUTSR_DRIFT {row['code']}")
     geometry = load(geometry_path)
     guard(geometry["properties"], "GEOMETRY")
     if len(geometry.get("features", [])) != 9:
@@ -639,7 +697,7 @@ def refresh(contract: dict) -> dict:
         metadata = json.loads(metadata_bytes)
     except json.JSONDecodeError as exc:
         raise RecoveryError("SERVICE_METADATA_NOT_JSON") from exc
-    validate_metadata(contract, metadata)
+    service_crs = validate_metadata(contract, metadata)
 
     staged = []
     for expected in contract["units"]:
@@ -652,7 +710,7 @@ def refresh(contract: dict) -> dict:
             raise RecoveryError(f"QUERY_NOT_JSON code={code}") from exc
         validated = validate_feature(contract, expected, doc)
 
-        native_url = native_query_url(contract, code)
+        native_url = native_query_url(contract, code, service_crs["source_wkid"])
         native_raw, native_http = fetch_response(native_url, accept="application/json;q=0.9,*/*;q=0.1")
         try:
             native_doc = json.loads(native_raw)
@@ -678,7 +736,7 @@ def refresh(contract: dict) -> dict:
 
     if len(staged) != 9:
         raise RecoveryError(f"INCOMPLETE_STAGE count={len(staged)}")
-    manifest = write_outputs(contract, metadata_bytes, staged, metadata_http)
+    manifest = write_outputs(contract, metadata_bytes, staged, metadata_http, service_crs)
     verify_existing(contract)
     return manifest
 

@@ -34,15 +34,18 @@ def contract():
     return json.loads(CONTRACT.read_text(encoding="utf-8"))
 
 
-def metadata_bytes(wkid=32718):
+def metadata_bytes(wkid=32718, latest=32718, map_wkid=4326):
+    # Mirrors the live MINAM layer 1 resource (ArcGIS 10.71): map/extent SR 4326,
+    # sourceSpatialReference 32718 (storage CRS of the source dataset).
     fields = ",".join(
         '{"name": "%s"}' % name for name in contract()["source"]["output_fields"]
     )
     return (
-        '{ "geometryType":"esriGeometryPolygon" ,\n'
-        '  "sourceSpatialReference":{"wkid":%d},\r\n'
+        '{ "currentVersion":10.71, "geometryType":"esriGeometryPolygon" ,\n'
+        '  "spatialReference":{"wkid":%d,"latestWkid":%d},\n'
+        '  "sourceSpatialReference":{"wkid":%d,"latestWkid":%d},\r\n'
         '  "supportedQueryFormats":"JSON, geoJSON",\n'
-        '  "fields":[%s] }' % (wkid, fields)
+        '  "fields":[%s] }' % (map_wkid, map_wkid, wkid, latest, fields)
     ).encode("utf-8")
 
 
@@ -77,7 +80,7 @@ class FakeService:
         self.bodies[c["source"]["metadata_url"]] = metadata_bytes()
         for i, unit in enumerate(c["units"], start=1):
             self.bodies[module.query_url(c, unit["code"])] = geojson_bytes(unit, i)
-            self.bodies[module.native_query_url(c, unit["code"])] = native_bytes(unit, i)
+            self.bodies[module.native_query_url(c, unit["code"], 32718)] = native_bytes(unit, i)
         self.bodies.update(self.overrides)
 
     def __call__(self, url, *, accept, max_bytes=15_000_000):
@@ -124,16 +127,22 @@ class CasmaCaptureMechanismTests(unittest.TestCase):
             )
             self.assertEqual(
                 (archive / f"{code}.native.json").read_bytes(),
-                service.bodies[self.module.native_query_url(self.contract, code)],
+                service.bodies[self.module.native_query_url(self.contract, code, 32718)],
             )
-        self.assertEqual(manifest["capture_format_version"], 2)
+        self.assertEqual(manifest["capture_format_version"], 3)
         self.assertEqual(manifest["feature_count"], 9)
 
-    def test_native_query_requests_source_crs_without_reprojection(self):
-        url = self.module.native_query_url(self.contract, "1375961")
+    def test_native_query_requests_declared_storage_crs_explicitly(self):
+        url = self.module.native_query_url(self.contract, "1375961", 32718)
         self.assertIn("f=json", url)
-        self.assertNotIn("outSR", url)
+        self.assertIn("outSR=32718", url)
+        self.assertNotIn("outSR=4326", url)
+        self.assertNotIn("datumTransformation", url)
         self.assertIn("1375961", url)
+
+    def test_native_query_refuses_map_spatial_reference(self):
+        with self.assertRaisesRegex(self.module.RecoveryError, "NATIVE_OUTSR_NOT_DECLARED_SOURCE"):
+            self.module.native_query_url(self.contract, "1375961", 4326)
 
     def test_manifest_hashes_and_http_provenance_match_bytes(self):
         service, manifest = self.run_capture()
@@ -186,11 +195,11 @@ class CasmaCaptureMechanismTests(unittest.TestCase):
         units = self.contract["units"]
         bad = units[4]
         cases = {
-            "NATIVE_WKID_DRIFT": {self.module.native_query_url(self.contract, bad["code"]): native_bytes(bad, 5, wkid=4326)},
-            "NATIVE_CODE_MISMATCH": {self.module.native_query_url(self.contract, bad["code"]): native_bytes(bad, 5, code="1375961")},
-            "NATIVE_TRANSFER_LIMIT_EXCEEDED": {self.module.native_query_url(self.contract, bad["code"]): native_bytes(bad, 5, extra=',"exceededTransferLimit":true')},
-            "NATIVE_GEOJSON_OBJECTID_MISMATCH": {self.module.native_query_url(self.contract, bad["code"]): native_bytes(bad, 99)},
-            "SOURCE_FETCH_FAILED": {self.module.native_query_url(self.contract, units[8]["code"]): self.module.SourceUnavailable("SOURCE_FETCH_FAILED URLError")},
+            "NATIVE_WKID_DRIFT": {self.module.native_query_url(self.contract, bad["code"], 32718): native_bytes(bad, 5, wkid=4326)},
+            "NATIVE_CODE_MISMATCH": {self.module.native_query_url(self.contract, bad["code"], 32718): native_bytes(bad, 5, code="1375961")},
+            "NATIVE_TRANSFER_LIMIT_EXCEEDED": {self.module.native_query_url(self.contract, bad["code"], 32718): native_bytes(bad, 5, extra=',"exceededTransferLimit":true')},
+            "NATIVE_GEOJSON_OBJECTID_MISMATCH": {self.module.native_query_url(self.contract, bad["code"], 32718): native_bytes(bad, 99)},
+            "SOURCE_FETCH_FAILED": {self.module.native_query_url(self.contract, units[8]["code"], 32718): self.module.SourceUnavailable("SOURCE_FETCH_FAILED URLError")},
         }
         for message, override in cases.items():
             with self.subTest(message=message):
@@ -219,6 +228,61 @@ class CasmaCaptureMechanismTests(unittest.TestCase):
         path.write_text(json.dumps(manifest), encoding="utf-8")
         with self.assertRaisesRegex(self.module.RecoveryError, "UNSUPPORTED_CAPTURE_FORMAT"):
             self.module.verify_existing(self.contract)
+
+
+    # --- Regression: first real Gate A run on PR #344 (2026-09-30) failed with
+    # NATIVE_WKID_DRIFT because a MapServer query without outSR returns the map
+    # spatial reference (4326), not the layer's storage CRS (32718).
+    OBSERVED_4326_NATIVE = (
+        '{"displayFieldName":"NOMB_UH_N7","spatialReference":{"wkid":4326,"latestWkid":4326},'
+        '"features":[{"attributes":{"OBJECTID":1,"CODIGO":"1375961","NIVEL7":"1375961"},'
+        '"geometry":{"rings":[[[-78.142525993906602,-9.2687765987241661],[-78.1,-9.2],'
+        '[-78.0,-9.3],[-78.142525993906602,-9.2687765987241661]]]}}]}'
+    ).encode("utf-8")
+
+    def test_observed_map_sr_native_response_still_fails_closed(self):
+        url = self.module.native_query_url(self.contract, "1375961", 32718)
+        with self.assertRaisesRegex(self.module.RecoveryError, r"NATIVE_WKID_DRIFT code=1375961"):
+            self.run_capture({url: self.OBSERVED_4326_NATIVE})
+        self.assertFalse(any(self.tmp.rglob("*")))
+
+    def test_metadata_source_sr_drift_fails_closed(self):
+        meta_url = self.contract["source"]["metadata_url"]
+        for body, message in [
+            (metadata_bytes(wkid=4326, latest=4326), "SOURCE_WKID_DRIFT"),
+            (metadata_bytes(latest=4326), "SOURCE_LATEST_WKID_DRIFT"),
+        ]:
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(self.module.RecoveryError, message):
+                    self.run_capture({meta_url: body})
+                self.assertFalse(any(self.tmp.rglob("*")))
+
+    def test_manifest_records_crs_provenance_without_accepting_map_sr(self):
+        _, manifest = self.run_capture()
+        crs = manifest["crs_provenance"]
+        self.assertEqual(crs["layer_source_spatial_reference"]["wkid"], 32718)
+        self.assertEqual(crs["layer_map_spatial_reference"]["wkid"], 4326)
+        self.assertEqual(crs["native_request_outSR"], 32718)
+        self.assertFalse(crs["map_spatial_reference_accepted_as_native"])
+        self.assertFalse(crs["datum_transformation_requested"])
+        for row in manifest["features"]:
+            self.assertIn("outSR=32718", row["native_query_url"])
+            self.assertEqual(row["native_spatial_reference"]["wkid"], 32718)
+
+    def test_offline_verify_rejects_manifest_claiming_map_sr_as_native(self):
+        _, manifest = self.run_capture()
+        path = self.tmp / self.outputs["manifest_path"]
+        for mutate, message in [
+            (lambda m: m["features"][0].__setitem__("native_spatial_reference", {"wkid": 4326, "latestWkid": 4326}), "ROW_NATIVE_WKID_DRIFT"),
+            (lambda m: m["crs_provenance"].__setitem__("map_spatial_reference_accepted_as_native", True), "MAP_SR_ACCEPTED_AS_NATIVE"),
+            (lambda m: m["crs_provenance"].__setitem__("native_request_outSR", 4326), "NATIVE_OUTSR_PROVENANCE_DRIFT"),
+        ]:
+            with self.subTest(message=message):
+                doc = json.loads(json.dumps(manifest))
+                mutate(doc)
+                path.write_text(json.dumps(doc), encoding="utf-8")
+                with self.assertRaisesRegex(self.module.RecoveryError, message):
+                    self.module.verify_existing(self.contract)
 
 
 class CasmaCaptureWorkflowTests(unittest.TestCase):

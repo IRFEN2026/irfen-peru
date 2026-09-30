@@ -1,0 +1,73 @@
+{
+  "schema_version": "0.1",
+  "assessment_id": "casma_minam_crs_adjudication_v0_1",
+  "status": "NATIVE_CRS_ADJUDICATED_FROM_OFFICIAL_METADATA__GATE_A_UNCHANGED__GATE_B_UNCHANGED",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "trigger": {
+    "pr": 344,
+    "workflow_run_id": 36656137616,
+    "head_sha": "fef42900223efeeda022f9b553aa3862cb3ef463",
+    "error": "RecoveryError: NATIVE_WKID_DRIFT code=1375961 sr={'wkid': 4326, 'latestWkid': 4326}",
+    "disposition": "Correct fail-closed behaviour; the defect was the native request omitting outSR."
+  },
+  "observation_method": {
+    "date_utc": "2026-09-30",
+    "method": "Live REST reads of the public MINAM service from an independent fetcher; values transcribed, not byte-frozen. Byte freezing is performed by the Gate A capture itself.",
+    "byte_frozen": false
+  },
+  "service_metadata": {
+    "mapserver_url": "https://geoservidorperu.minam.gob.pe/arcgis/rest/services/ServicioActivacionQuebrada/MapServer?f=pjson",
+    "layer_url": "https://geoservidorperu.minam.gob.pe/arcgis/rest/services/ServicioActivacionQuebrada/MapServer/1?f=pjson",
+    "current_version": 10.71,
+    "mapserver_spatial_reference": {"wkid": 4326, "latestWkid": 4326},
+    "mapserver_full_extent_spatial_reference": {"wkid": 4326, "latestWkid": 4326},
+    "layer_spatial_reference": {"wkid": 4326, "latestWkid": 4326},
+    "layer_extent_spatial_reference": {"wkid": 4326, "latestWkid": 4326},
+    "layer_source_spatial_reference": {"wkid": 32718, "latestWkid": 32718},
+    "layer_supports_datum_transformation": true,
+    "layer_supported_query_formats": "JSON, geoJSON",
+    "prior_repository_record": "site/data/phase2/sources/ancash_casma_minam_candidate_v0_2.json already recorded source 32718 / map 4326 and output_spatial_reference_must_be_explicit=true"
+  },
+  "official_semantics": {
+    "source": "Esri ArcGIS REST API, Query (Map Service/Layer)",
+    "url": "https://developers.arcgis.com/rest/services-reference/enterprise/query-map-service-layer/",
+    "outSR_omitted": "geometry is returned in the spatial reference of the map",
+    "inSR": "spatial reference of the input geometry filter only; no geometry filter is used, so inSR has no effect on these queries",
+    "sourceSpatialReference": "reports the spatial reference features are stored in the source dataset"
+  },
+  "query_variants_code_1375961": [
+    {"f": "json", "outSR": null, "returned_sr": 4326, "first_vertex": [-78.142525993906602, -9.2687765987241661]},
+    {"f": "pjson", "outSR": null, "returned_sr": 4326, "first_vertex": [-78.142525993906602, -9.2687765987241661]},
+    {"f": "geojson", "outSR": null, "returned_crs": "EPSG:4326", "first_vertex": [-78.142525993906602, -9.2687765987241661]},
+    {"f": "json", "outSR": 32718, "returned_sr": 32718, "first_vertex": [154685.88190000039, 8973906.0050000008]},
+    {"f": "geojson", "outSR": 32718, "returned_crs": "EPSG:32718", "first_vertex": [154685.88190000039, 8973906.0050000008]}
+  ],
+  "findings": {
+    "f_json_pjson_geojson_differ_only_in_encoding": true,
+    "omitting_outSR_returns_map_sr_4326": true,
+    "service_reprojects_implicitly_when_outSR_omitted": true,
+    "storage_crs_per_official_metadata": 32718,
+    "epsg_32718_is_storage_not_a_derived_representation": true,
+    "projection_consistency_check": "UTM 18S (WGS84) inverse of the 32718 vertex reproduces the 4326 vertex to sub-millimetre; both share the WGS84 datum, so no datum transformation is involved",
+    "storage_grid_hint": "32718 coordinates sit on a 0.0001 m grid; 4326 coordinates carry computed floating-point noise",
+    "wkid_4326_accepted_as_native": false
+  },
+  "mechanism_adjustment": {
+    "native_request": "f=json with outSR equal to the layer sourceSpatialReference read from the metadata captured in the same run and cross-checked against the contract (32718); no datumTransformation",
+    "response_must_declare": 32718,
+    "map_sr_4326_response_behaviour": "still fails closed with NATIVE_WKID_DRIFT",
+    "geojson_request_unchanged": "outSR=4326, recorded as a server projection",
+    "gate_a_relaxed": false,
+    "gate_b_modified": false,
+    "geometry_promoted": false,
+    "residual_caveat": "Identity of outSR=32718 output with the stored coordinates follows from ArcGIS semantics and the metadata; the REST API does not expose storage bytes, so byte identity to the underlying dataset is not asserted."
+  }
+}
