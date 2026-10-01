@@ -1,0 +1,58 @@
+{
+  "schema_version":"0.1",
+  "contract_id":"phase2-minam2020-huaycoloro-vector-source:v0.1",
+  "status":"RESEARCH_ONLY_INDEPENDENT_OFFICIAL_ATTRIBUTED_VECTOR_SOURCE_CANDIDATE",
+  "deployment_status":"RESEARCH_ONLY",
+  "test_mode":"TEST_ONLY",
+  "production_use":false,
+  "production_ready":false,
+  "operational_alerting_enabled":false,
+  "activation_gate":"BLOCKED",
+  "missing_data_rule":"UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds":null,
+  "hydraulic_factors":null,
+  "source":{
+    "institution":"Ministerio del Ambiente",
+    "platform":"Geoservidor",
+    "service_name":"CS/Desarrollo_Urbano",
+    "service_type":"ArcGIS MapServer",
+    "layer_id":10,
+    "layer_name":"Ríos y quebradas",
+    "geometry_type":"esriGeometryPolyline",
+    "spatial_reference":32718,
+    "endpoint":"https://geoservidorperu.minam.gob.pe/arcgis/rest/services/CS/Desarrollo_Urbano/MapServer/10",
+    "supported_query_formats":["JSON","geoJSON"],
+    "attribution":"IMP/ANA",
+    "source_year":2020,
+    "fields":["COD_RIO","TIPO","SUBTIPO","NOM_RIO","NOM_UH","LONG_KM","LONG_M","LABEL_RIO","NOMBDIST","NOMBPROV","NOMBDEP","OBJECTID"],
+    "renderer_name_evidence":{
+      "field":"NOM_RIO",
+      "labels_observed":["RIMAC","HUAYCOLORO"],
+      "semantic_limit":"RENDERER_OR_SERVICE_METADATA_NAME_EVIDENCE_ONLY"
+    }
+  },
+  "huaycoloro_rimac_probe":{
+    "target_names":["HUAYCOLORO","RIMAC"],
+    "exact_feature_query_completed":false,
+    "matching_objectids":[],
+    "matching_feature_count":null,
+    "local_feature_geometry_frozen":false,
+    "exact_huaycoloro_rimac_confluence_resolved":false,
+    "candidate_role":"INDEPENDENT_VECTOR_GEOMETRY_AND_TOPOLOGY_QA_SOURCE",
+    "required_next_step":"EXECUTE_REPRODUCIBLE_FEATURE_QUERY_AND_FREEZE_PAYLOAD_HASH_BEFORE_ANY_LOCAL_GEOMETRY_OR_TOPOLOGY_CLAIM"
+  },
+  "guards":{
+    "service_metadata_alone_confirms_local_feature":false,
+    "renderer_name_alone_confirms_local_feature":false,
+    "name_match_alone_confirms_identity":false,
+    "metadata_may_define_catchment_geometry":false,
+    "metadata_may_define_outlet_or_confluence":false,
+    "metadata_may_define_routing_or_travel_time":false,
+    "metadata_may_define_flow_or_capacity":false,
+    "metadata_may_define_event_footprint":false,
+    "zero_query_result_may_be_inferred_as_hydrologic_absence":false,
+    "map_publish_enabled":false,
+    "routing_enabled":false,
+    "overflow_inference_enabled":false
+  }
+}

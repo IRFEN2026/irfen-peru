@@ -1,0 +1,203 @@
+{
+  "schema_version": "0.1",
+  "contract_id": "phase2-igp2023-jicamarca-station-activation-events:v0.1",
+  "status": "FROZEN_RESEARCH_ONLY_STATION_LEVEL_ACTIVATION_EVENTS",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "purpose": "Freeze exact IGP station-level activation observations for Rio Seco 2 and Huaycoloro 1/2 from March 2023 while preserving source inconsistencies and quarantining internally conflicting records. These observations do not establish catchment geometry, routing, travel time, discharge, receiver capacity, Rio Rimac overflow, or IRFEN decision thresholds.",
+  "source": {
+    "institution": "Instituto Geofisico del Peru",
+    "source_family": "IGP_HUAYCOS_2023_EVENT_REPORTS",
+    "source_role": "OFFICIAL_STATION_LEVEL_EVENT_REPORTS",
+    "source_urls_frozen": false,
+    "source_file_names_are_exact": true
+  },
+  "guards": {
+    "station_activation_is_not_collector_overflow": true,
+    "station_activation_is_not_discharge": true,
+    "reported_height_is_not_receiver_capacity": true,
+    "event_sequence_may_not_be_used_for_travel_time_without_independent_synchronization": true,
+    "internal_source_inconsistencies_must_be_preserved": true,
+    "quarantined_records_may_not_be_promoted": true,
+    "zero_or_missing_measurement_is_not_negative_evidence": true
+  },
+  "accepted_station_events": [
+    {
+      "event_id": "igp_rio_seco2_2023-03-12T22:41:24",
+      "local_unit_id": "rio_seco",
+      "station_name": "Rio Seco 2",
+      "source_file": "Evento_12_03_2023_RS2.pdf",
+      "reported_datetime_local": "2023-03-12T22:41:24",
+      "reported_intensity_field": "Leve",
+      "reported_height_m": null,
+      "reported_discharge": null,
+      "source_location_description": "segunda estacion pasando tranquera ROJ; flujo/activacion cerca del modulo Hyssel",
+      "classification": "STATION_LEVEL_ACTIVATION_EVENT_ONLY",
+      "source_internal_inconsistency": false
+    },
+    {
+      "event_id": "igp_rio_seco2_2023-03-14T16:37:37",
+      "local_unit_id": "rio_seco",
+      "station_name": "Rio Seco 2",
+      "source_file": "Evento_14_03_2023_RS2.pdf",
+      "reported_datetime_local": "2023-03-14T16:37:37",
+      "reported_intensity_field": "Media",
+      "reported_height_m": null,
+      "reported_discharge": null,
+      "source_location_description": "frente barrera ROJ",
+      "classification": "STATION_LEVEL_ACTIVATION_EVENT_ONLY",
+      "source_internal_inconsistency": false
+    },
+    {
+      "event_id": "igp_rio_seco2_2023-03-15T16:27:41",
+      "local_unit_id": "rio_seco",
+      "station_name": "Rio Seco 2",
+      "source_file": "Evento_15_03_2023_RS2.pdf",
+      "reported_datetime_local": "2023-03-15T16:27:41",
+      "reported_intensity_field": "Moderada",
+      "reported_height_m": 0.43,
+      "reported_discharge": null,
+      "source_location_description": "frente barrera ROJ",
+      "classification": "STATION_LEVEL_ACTIVATION_EVENT_ONLY",
+      "source_internal_inconsistency": false
+    },
+    {
+      "event_id": "igp_huaycoloro1_2023-03-12T15:49:00",
+      "local_unit_id": "huaycoloro",
+      "station_name": "Huaycoloro1",
+      "source_file": "Evento_12_03_2023_HL1_0.pdf",
+      "reported_datetime_local": "2023-03-12T15:49:00",
+      "reported_intensity_field": "Media",
+      "reported_height_m": null,
+      "reported_discharge": null,
+      "source_location_description": "Petramas pasando balanza",
+      "classification": "STATION_LEVEL_ACTIVATION_EVENT_ONLY",
+      "source_internal_inconsistency": false
+    },
+    {
+      "event_id": "igp_huaycoloro2_2023-03-12T17:43:00",
+      "local_unit_id": "huaycoloro",
+      "station_name": "Huaycoloro2",
+      "source_file": "Evento_12_03_2023_HL2.pdf",
+      "reported_datetime_local": "2023-03-12T17:43:00",
+      "reported_intensity_field": "Media",
+      "reported_height_m": 0.5,
+      "reported_discharge": null,
+      "source_location_description": "puente ingreso ROJ",
+      "classification": "STATION_LEVEL_ACTIVATION_EVENT_ONLY",
+      "source_internal_inconsistency": true,
+      "source_internal_inconsistency_notes": [
+        "station field reports Huaycoloro2 while body text says Datos ... Huaycoloro 1"
+      ],
+      "adjudicated_station_basis": "EXPLICIT_STATION_FIELD_PRESERVED_WITH_BODY_LABEL_MISMATCH_FLAGGED"
+    },
+    {
+      "event_id": "igp_huaycoloro2_2023-03-14T15:24:33",
+      "local_unit_id": "huaycoloro",
+      "station_name": "Huaycoloro2",
+      "source_file": "Evento_14_03_2023_HL2.pdf",
+      "reported_datetime_local": "2023-03-14T15:24:33",
+      "reported_intensity_field": "Media",
+      "reported_height_m": null,
+      "reported_discharge": null,
+      "classification": "STATION_LEVEL_ACTIVATION_EVENT_ONLY",
+      "source_internal_inconsistency": true,
+      "source_internal_inconsistency_notes": [
+        "station field reports Huaycoloro2 while body text says Huaycoloro1"
+      ],
+      "adjudicated_station_basis": "EXPLICIT_STATION_FIELD_PRESERVED_WITH_BODY_LABEL_MISMATCH_FLAGGED"
+    },
+    {
+      "event_id": "igp_huaycoloro2_2023-03-15T14:44:19",
+      "local_unit_id": "huaycoloro",
+      "station_name": "Huaycoloro2",
+      "source_file": "Evento_15_03_2023_HL2.pdf",
+      "reported_datetime_local": "2023-03-15T14:44:19",
+      "reported_intensity_field": "Media",
+      "reported_intensity_observation_text": "moderada",
+      "reported_height_m": null,
+      "reported_discharge": null,
+      "classification": "STATION_LEVEL_ACTIVATION_EVENT_ONLY",
+      "source_internal_inconsistency": true,
+      "source_internal_inconsistency_notes": [
+        "field Intensidad=Media while observation wording says moderada; exact wording preserved without silent normalization"
+      ]
+    },
+    {
+      "event_id": "igp_huaycoloro1_2023-03-15T15:36:56",
+      "local_unit_id": "huaycoloro",
+      "station_name": "Huaycoloro1",
+      "source_file": "Evento_15_03_2023_HL1.pdf",
+      "reported_datetime_local": "2023-03-15T15:36:56",
+      "reported_intensity_field": "Leve",
+      "reported_height_m": null,
+      "reported_discharge": null,
+      "classification": "STATION_LEVEL_ACTIVATION_EVENT_ONLY",
+      "source_internal_inconsistency": false
+    }
+  ],
+  "quarantined_source_records": [
+    {
+      "source_file": "Evento_18_03_2023_RS2.pdf",
+      "station_name": "Rio Seco 2",
+      "filename_or_report_date": "2023-03-18",
+      "internal_reported_datetime_local": "2023-03-15T17:21:35",
+      "reported_intensity_field": "Leve",
+      "classification": "QUARANTINE_INTERNAL_DATE_CONFLICT",
+      "may_be_frozen_as_2023_03_18_event": false,
+      "may_be_used_for_travel_time": false
+    },
+    {
+      "source_file": "Evento_17_03_2023_HL2.pdf",
+      "station_name": "Huaycoloro2",
+      "filename_or_report_date": "2023-03-17",
+      "internal_reported_datetime_local": "2023-03-15T15:28:38",
+      "reported_intensity_field": "Media",
+      "reported_intensity_observation_text": "Leve",
+      "classification": "QUARANTINE_INTERNAL_DATE_AND_INTENSITY_CONFLICT",
+      "may_be_frozen_as_2023_03_17_event": false,
+      "may_be_used_for_travel_time": false
+    }
+  ],
+  "corroborating_regional_context": {
+    "indeci": [
+      {
+        "report_reference": "Reporte 2726",
+        "reported_date": "2023-03-12",
+        "reported_context": "joint activation context for Huaycoloro1, Huaycoloro2 and Rio Seco2",
+        "classification": "REGIONAL_EVENT_CORROBORATION_ONLY"
+      },
+      {
+        "report_reference": "Informes 549/581",
+        "reported_date": "2023-03-14",
+        "reported_context": "activations including Huaycoloro1/2, Rio Seco1/2, Quirio and Jicamarca",
+        "classification": "REGIONAL_EVENT_CORROBORATION_ONLY"
+      }
+    ],
+    "may_be_used_to_infer_child_routing": false,
+    "may_be_used_to_infer_receiver_overflow": false
+  },
+  "adjudication": {
+    "accepted_station_event_count": 8,
+    "quarantined_source_record_count": 2,
+    "resolves_exact_outlet_or_confluence": false,
+    "resolves_channel_or_catchment_geometry": false,
+    "enables_routing": false,
+    "enables_travel_time_estimation": false,
+    "establishes_discharge": false,
+    "establishes_receiver_capacity": false,
+    "establishes_rimac_overflow": false,
+    "creates_irfen_decision_threshold": false
+  },
+  "map_updates": {
+    "new_geometries_published": 0,
+    "new_nodes_published": 0
+  }
+}

@@ -166,3 +166,22 @@ Reglas:
   (`WITHHELD_FROZEN_GATE_A_EVIDENCE`) para no duplicar entidades.
 - Todos los conteos (`map_semantics.summary` y `summary.map_semantic_*`) se
   derivan de las filas; los tests los recalculan en lugar de fijarlos.
+
+## Línea Rímac/Jicamarca (#310) · reconciliación sin promoción
+
+`config/phase2_rimac_jicamarca_map_semantic_reconciliation_v0_1.json` clasifica
+cada elemento de la línea con el vocabulario de este modelo. La línea sigue en
+`PENDING_INDEPENDENT_QA_LINES`: no se dibuja ningún elemento nuevo y
+`map_layers.json` no cambia.
+
+- Ya dibujado en `main`, sin cambios: cuenca Huaycoloro (CATCHMENT), líneas IGP
+  Canto Grande y Media Luna (LOCAL_CHANNEL), Cashahuacra y Shingolay (CATCHMENT),
+  fajas Santa Eulalia/Rímac (contexto) y nodos D8 Quirio/Pedregal
+  (`REPRODUCIBLE_DERIVED`, nunca `EXACT_OFFICIAL`).
+- Topología documental parcial Colca / El Silencio → Río Seco → Huaycoloro →
+  Rímac: los cuatro nodos quedan `UNRESOLVED` (sólo inventario).
+- Único elemento dibujable tras QA independiente: QHuay1 como `NEAR_CONFLUENCE`
+  (requiere bytes del PDF ANA con hash y un Point congelado con guardas).
+- Colector Rímac: sin eje reproducible; las fajas no lo sustituyen.
+- Tambo de Viso 1998: contexto histórico del Rímac alto, no entidad cartográfica
+  ni parámetro hidráulico transferible.

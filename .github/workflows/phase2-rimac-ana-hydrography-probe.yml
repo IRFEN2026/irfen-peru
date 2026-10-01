@@ -1,0 +1,98 @@
+name: IRFEN - Phase2 Rimac ANA hydrography probe
+
+on:
+  pull_request:
+    paths:
+      - config/phase2_ana_national_hydrography_service_v0_1.json
+      - config/phase2_ana2015_quirio_pedregal_faja_terminal_qa_v0_1.json
+      - config/phase2_senamhi2020_pedregal_microbasin_receiver_context_v0_1.json
+      - scripts/probe_phase2_rimac_ana_hydrography_service.py
+      - tests/test_phase2_ana_national_hydrography_service.py
+      - tests/test_phase2_rimac_ana_hydrography_probe.py
+      - tests/test_phase2_ana2015_quirio_pedregal_faja_terminal_qa.py
+      - tests/test_phase2_senamhi2020_pedregal_microbasin_receiver_context.py
+      - .github/workflows/phase2-rimac-ana-hydrography-probe.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bounded-official-vector-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install focused test dependencies
+        run: python -m pip install --disable-pip-version-check pytest pyproj
+      - name: Run fail-closed scientific guards
+        run: |
+          python -m pytest -q tests/test_phase2_ana_national_hydrography_service.py
+          python -m pytest -q tests/test_phase2_rimac_ana_hydrography_probe.py
+          python -m pytest -q tests/test_phase2_ana2015_quirio_pedregal_faja_terminal_qa.py
+          python -m pytest -q tests/test_phase2_senamhi2020_pedregal_microbasin_receiver_context.py
+      - name: Probe official ANA national hydrography within bounded Rimac window
+        run: |
+          mkdir -p artifacts
+          ok=0
+          for attempt in 1 2 3; do
+            if python scripts/probe_phase2_rimac_ana_hydrography_service.py \
+              --output artifacts/phase2_rimac_ana_hydrography_probe.json; then
+              ok=1
+              break
+            fi
+            sleep $((attempt * 10))
+          done
+          if [ "$ok" -ne 1 ]; then
+            # A source-access timeout is a preserved UNKNOWN state, not zero
+            # candidates and not a hydrologic negative. The probe writes the
+            # fail-closed artifact before returning its retryable exit code.
+            test -s artifacts/phase2_rimac_ana_hydrography_probe.json
+          fi
+      - name: Enforce candidate-only or explicit unavailable-source semantics
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          p=Path('artifacts/phase2_rimac_ana_hydrography_probe.json')
+          d=json.loads(p.read_text(encoding='utf-8'))
+          assert d['deployment_status']=='RESEARCH_ONLY'
+          assert d['test_mode']=='TEST_ONLY'
+          assert d['production_use'] is False
+          assert d['production_ready'] is False
+          assert d['operational_alerting_enabled'] is False
+          assert d['activation_gate']=='BLOCKED'
+          assert set(d['candidate_counts'])=={'quirio','pedregal','rimac'}
+          assert d['adjudication']['name_match_confirms_local_unit_identity'] is False
+          assert d['adjudication']['literal_line_intersection_confirms_official_confluence'] is False
+          assert d['adjudication']['exact_surface_confluence_resolved'] is False
+          assert d['adjudication']['replace_existing_d8_nodes'] is False
+          assert d['adjudication']['routing_enabled'] is False
+          assert d['adjudication']['travel_time_enabled'] is False
+          assert d['adjudication']['map_publish_enabled'] is False
+
+          if d['status']=='RESEARCH_ONLY_LIVE_VECTOR_PROBE':
+              assert d['query_completed'] is True
+              assert all(isinstance(v,int) and v>=0 for v in d['candidate_counts'].values())
+              assert isinstance(d['candidates'],dict)
+              assert isinstance(d['literal_intersection_candidates'],list)
+              for row in d['literal_intersection_candidates']:
+                  assert row['scientific_status']=='GEOMETRIC_INTERSECTION_CANDIDATE_NOT_ADJUDICATED_CONFLUENCE'
+          else:
+              assert d['status']=='SOURCE_ACCESS_UNAVAILABLE'
+              assert d['query_completed'] is False
+              assert all(v is None for v in d['candidate_counts'].values())
+              assert d['candidates'] is None
+              assert d['literal_intersection_candidates'] is None
+              assert d['access']['zero_candidates_inferred'] is False
+              assert d['access']['hydrologic_absence_inferred'] is False
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phase2-rimac-ana-hydrography-probe
+          path: artifacts/phase2_rimac_ana_hydrography_probe.json
+          if-no-files-found: error
