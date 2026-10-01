@@ -1,0 +1,100 @@
+{
+  "schema_version": "0.1",
+  "contract_id": "phase2-rimac-jicamarca-source-archive:v0.1",
+  "status": "RESEARCH_ONLY_PROVENANCE_ARCHIVE_CONTRACT",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "purpose": "Freeze exact raw response bytes and SHA-256 for the official sources this line depends on: every HTTP response consumed by the ANA and MINAM vector probes (same code path, intercepted, not re-implemented), the ANA monitoring-network PDF that carries the QHuay1 coordinate, and two candidate documents searched for a Tambo de Viso 1998 citation. Provenance only: no content is interpreted, no geometry, node, routing, travel time, capacity, threshold or map eligibility is created or changed.",
+  "archive_root": "site/data/phase2/sources/rimac_jicamarca_v0_1",
+  "manifest": "site/data/phase2/sources/rimac_jicamarca_v0_1/archive_manifest_v0_1.json",
+  "allowed_final_host_suffix": ".gob.pe",
+  "max_bytes_per_response": 26214400,
+  "final_host_must_equal_requested_host": true,
+  "scheme_downgrade_policy": {
+    "https_to_http_same_host_allowed": true,
+    "recorded_as": "final_scheme_downgraded",
+    "reason": "SIGRID storage answers HTTPS with a 302 to the same path over HTTP; bytes are still pinned by SHA-256 at freeze time and verified offline afterwards."
+  },
+  "probe_freeze_method": "Import the probe module, replace its module-level urlopen with a recorder, call its own fetch()/build(); replay later offline through the same functions and require identical output except retrieved_at_utc.",
+  "freeze_scope": "Only groups not yet FROZEN are fetched; FROZEN groups are never re-downloaded.",
+  "frozen_bytes_are_immutable": true,
+  "source_groups": [
+    {
+      "group_id": "ana_onrh_rios_quebradas_probe",
+      "kind": "PROBE_HTTP_RESPONSES",
+      "institution": "Autoridad Nacional del Agua",
+      "probe_script": "scripts/probe_phase2_rimac_ana_hydrography_service.py",
+      "service_contract": "config/phase2_ana_national_hydrography_service_v0_1.json",
+      "expected_content": "JSON",
+      "role": "REPRODUCIBLE_PROVENANCE_FOR_QUIRIO_PEDREGAL_RIMAC_VECTOR_CANDIDATES"
+    },
+    {
+      "group_id": "minam_hydrography_probe",
+      "kind": "PROBE_HTTP_RESPONSES",
+      "institution": "Ministerio del Ambiente",
+      "probe_script": "scripts/probe_phase2_minam2020_huaycoloro_rimac.py",
+      "service_contract": "config/phase2_minam2020_huaycoloro_vector_source_v0_1.json",
+      "expected_content": "JSON",
+      "role": "REPRODUCIBLE_PROVENANCE_FOR_HUAYCOLORO_RIMAC_VECTOR_CANDIDATES"
+    },
+    {
+      "group_id": "ana_qhuay1_monitoring_network_pdf",
+      "kind": "DOCUMENT",
+      "institution": "Autoridad Nacional del Agua",
+      "url": "https://repositorio.ana.gob.pe/bitstream/handle/20.500.12543/2072/ANA0000959.pdf?isAllowed=y&sequence=1",
+      "archive_filename": "ANA0000959.pdf",
+      "expected_content": "PDF",
+      "cited_by": "config/phase2_ana_qhuay1_near_confluence_monitoring_anchor_v0_1.json",
+      "role": "SOURCE_BYTES_FOR_QHUAY1_MONITORING_COORDINATE"
+    },
+    {
+      "group_id": "tambo_de_viso_candidate_sigrid_14536",
+      "kind": "DOCUMENT",
+      "institution": "SIGRID / CENEPRED repository",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca//14536_tratamiento-de-cauce-del-rio-rimac-y-principales-quebradas-tributarias-para-mitigar-efectos-de-eventos-hidrologicos-extremos.pdf",
+      "archive_filename": "sigrid_14536_tratamiento_cauce_rimac.pdf",
+      "expected_content": "PDF",
+      "role": "CITATION_SEARCH_CANDIDATE_CONTENT_NOT_INTERPRETED"
+    },
+    {
+      "group_id": "tambo_de_viso_candidate_minem_rio_rimac",
+      "kind": "DOCUMENT",
+      "institution": "Ministerio de Energia y Minas (gob.pe document)",
+      "url": "https://cdn.www.gob.pe/uploads/document/file/5209280/R%C3%ADo%20Rimac.pdf?v=1696012690",
+      "archive_filename": "gobpe_5209280_rio_rimac.pdf",
+      "expected_content": "PDF",
+      "role": "CITATION_SEARCH_CANDIDATE_CONTENT_NOT_INTERPRETED"
+    }
+  ],
+  "unavailable_source_semantics": {
+    "status": "SOURCE_ACCESS_UNAVAILABLE",
+    "partial_bytes_retained": false,
+    "zero_candidates_inferred": false,
+    "hydrologic_absence_inferred": false,
+    "retry_allowed_until_frozen": true
+  },
+  "forbidden": [
+    "re-download or overwrite a group that is already frozen",
+    "interpret archived content as geometry, node, routing, travel time, capacity, threshold or event footprint",
+    "treat an unavailable source as zero candidates or as hydrologic absence",
+    "change map eligibility from archived bytes"
+  ],
+  "evidence_flags_all_false": [
+    "content_interpreted",
+    "geometry_modified",
+    "node_created",
+    "routing_enabled",
+    "travel_time_inferred",
+    "capacity_inferred",
+    "threshold_imported",
+    "map_eligibility_changed",
+    "negative_evidence_created"
+  ]
+}

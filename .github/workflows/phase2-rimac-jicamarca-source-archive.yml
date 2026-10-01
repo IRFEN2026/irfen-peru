@@ -1,0 +1,63 @@
+name: IRFEN - Phase2 Rimac Jicamarca source archive
+
+on:
+  pull_request:
+    paths:
+      - config/phase2_rimac_jicamarca_source_archive_contract_v0_1.json
+      - scripts/archive_phase2_rimac_jicamarca_sources.py
+      - scripts/probe_phase2_rimac_ana_hydrography_service.py
+      - scripts/probe_phase2_minam2020_huaycoloro_rimac.py
+      - site/data/phase2/sources/rimac_jicamarca_v0_1/**
+      - tests/test_phase2_rimac_jicamarca_source_archive.py
+      - .github/workflows/phase2-rimac-jicamarca-source-archive.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: phase2-rimac-jicamarca-source-archive-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  freeze-official-source-bytes:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install focused test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Mechanism tests (offline, before any network access)
+        run: python -m pytest -q tests/test_phase2_rimac_jicamarca_source_archive.py
+      - name: Freeze groups that are not frozen yet (frozen groups are never re-downloaded)
+        id: freeze
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/archive_phase2_rimac_jicamarca_sources.py --freeze-missing
+          if git status --porcelain -- site/data/phase2/sources/rimac_jicamarca_v0_1 | grep -q .; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Persist newly frozen bytes or unavailable-source state
+        if: steps.freeze.outputs.changed == 'true' && github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/phase2/sources/rimac_jicamarca_v0_1
+          git commit -m "Freeze Rimac/Jicamarca official source bytes (ANA, MINAM, QHuay1 PDF, Tambo de Viso candidates)"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+      - name: Offline replay and hash verification (no network)
+        run: |
+          python scripts/archive_phase2_rimac_jicamarca_sources.py
+          python -m pytest -q tests/test_phase2_rimac_jicamarca_source_archive.py
