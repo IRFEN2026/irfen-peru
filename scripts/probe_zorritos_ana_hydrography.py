@@ -227,7 +227,9 @@ def main() -> int:
         assert len(TARGETS) == 18
         assert "la_tucilla" in TARGETS
         assert "la_tucilla" in plan["query_policy"]["official_map_anchor_not_line_geometry_quarantine"]
-        assert "la_tucilla" in plan["query_policy"]["scope_adjudication_quarantine"]
+        assert "la_tucilla" not in plan["query_policy"]["scope_adjudication_quarantine"]
+        assert plan["target_context"]["la_tucilla"]["official_coordinates"]["easting_m"] == 538042
+        assert plan["target_context"]["la_tucilla"]["official_coordinates"]["northing_m"] == 9594412
         assert plan["query_policy"]["lexical_neighbour_exclusions"] == LEXICAL_NEIGHBOUR_EXCLUSIONS
         assert "tucillal" not in TARGETS
         for component_id, excluded in LEXICAL_NEIGHBOUR_EXCLUSIONS.items():
