@@ -98,8 +98,8 @@ def test_tucillal_is_separate_ingemmet_entity_not_la_tucilla():
     assert "official_point_anchor" not in plan["target_context"]["la_tucilla"]
 
     assert "INGEMMET-A7454-24-050-TUCILLAL" not in la_tucilla["identity_source_ids"]
-    assert la_tucilla["identity_status"] == "ANA_OFFICIAL_NAMED_QUEBRADA_INDEPENDENT_CROSSCHECK_PENDING"
-    assert la_tucilla["official_coordinates"] is None
+    assert la_tucilla["identity_status"] == "ANA_OFFICIAL_NAMED_QUEBRADA_AND_POINT_ANCHOR_CORROBORATED_TWO_DOCUMENTS"
+    assert la_tucilla["official_coordinates"] == {"easting_m": 538042, "northing_m": 9594412, "coordinate_reference": "WGS84 / UTM zone 17S"}
     assert la_tucilla["map_publishable"] is False
 
 
@@ -113,8 +113,11 @@ def test_la_tucilla_tucillal_equivalence_is_not_established():
     for sid in ("ANA-SIGRID-3750-2016", "ANA-SIGRID-478-2015"):
         s = context["sources"][sid]
         assert s["entity_id"] == "la_tucilla"
-        assert s["official_coordinates"] is None
-        assert s["coordinate_status"] == "OFFICIAL_COORDINATES_REPORTED_AVAILABLE_NOT_TRANSCRIBED"
+        assert s["official_coordinates"]["easting_m"] == 538042
+        assert s["official_coordinates"]["northing_m"] == 9594412
+        assert s["official_coordinates"]["coordinate_reference"] == "WGS84 / UTM zone 17S"
+        assert s["coordinate_status"] == "TRANSCRIBED_FROM_FROZEN_REVIEW_COPY"
+        assert s["snapshot_sha256"] in {"f8c730c32685da062bdcd281a584549962a4bc0819975bee98f793b4da6c0774", "1f6d4255482b17bb63ada89bc74af097ebc7a33f993d72c76f5974da7ec5578a"}
 
 
 def test_probe_quarantines_tucillal_rows_for_la_tucilla():
