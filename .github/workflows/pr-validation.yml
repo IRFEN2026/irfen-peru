@@ -124,11 +124,6 @@ jobs:
           python scripts/validate_scientific_assets.py
           python scripts/validate_pedregal_clean_room.py
 
-      - name: Ejecutar pruebas unitarias v0.8
-        # pytest ejecuta tanto unittest.TestCase como funciones test_* de
-        # estilo pytest; `unittest discover` omitía estas últimas en silencio.
-        run: python -m pytest tests/ -v -rfE
-
       - name: Verificar colección pytest contra manifest
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -145,7 +140,14 @@ jobs:
             python scripts/verify_phase2_test_collection.py
           fi
 
+      - name: Ejecutar pruebas unitarias v0.8
+        # pytest ejecuta tanto unittest.TestCase como funciones test_* de
+        # estilo pytest; `unittest discover` omitía estas últimas en silencio.
+        run: python -m pytest tests/ -v -rfE
+
       - name: Ejecutar regresión y scorecard v0.8
+        # Se ejecuta aunque falle pytest (diagnóstico); el job sigue fallando.
+        if: ${{ !cancelled() }}
         shell: bash
         run: |
           set -euo pipefail
