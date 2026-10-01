@@ -114,7 +114,7 @@ jobs:
           python scripts/validate_phase2_quirio_pedregal_rimac_direct_coupling.py
       - name: Topology, routing, provenance and reconciliation tests (pytest, incl. function tests)
         run: |
-          python -m pytest -q \
+          python -m pytest -q --junitxml=line-report.xml \
             tests/test_phase2_ana2015_cashahuacra_local_hierarchy.py \
             tests/test_phase2_ana2015_quirio_pedregal_faja_context.py \
             tests/test_phase2_ana2015_quirio_pedregal_faja_terminal_qa.py \
@@ -140,6 +140,21 @@ jobs:
             tests/test_phase2_santa_eulalia_receiver_chain.py \
             tests/test_phase2_senamhi2020_pedregal_microbasin_receiver_context.py \
             tests/test_phase2_rimac_jicamarca_context_numeric_guards.py
+      - name: Surface failing tests as annotations
+        if: failure()
+        run: |
+          python - <<'PY'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          p = Path("line-report.xml")
+          if p.is_file():
+              for case in ET.parse(p).getroot().iter("testcase"):
+                  for tag in ("failure", "error"):
+                      for node in case.findall(tag):
+                          msg = (node.get("message") or "") + " | " + (node.text or "")[-600:]
+                          msg = msg.replace("%", "%25").replace("\r", "").replace("\n", "%0A")
+                          print(f"::error title={case.get('classname')}.{case.get('name')}::{msg}")
+          PY
       - name: Map semantic model unchanged (builder check-only + map tests)
         run: |
           python scripts/build_map_layer_catalog.py --check-only
