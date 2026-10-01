@@ -41,7 +41,7 @@ class TestRimacJicamarcaCouplingRegistry(unittest.TestCase):
         self.assertEqual(report["documentary_routing_edges"], 4)
         self.assertEqual(report["historical_overflow_occurrences"], 1)
         self.assertEqual(report["capacity_values_assigned"], 0)
-        self.assertEqual(report["excluded_evidence_count"], 1)
+        self.assertEqual(report["historical_context_count"], 1)
 
 
 if __name__ == "__main__":

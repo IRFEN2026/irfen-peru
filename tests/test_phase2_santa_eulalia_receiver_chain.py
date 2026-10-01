@@ -25,7 +25,8 @@ def load(path):
 
 def git_blob_sha(path):
     data = path.read_bytes()
-    return hashlib.sha1(f"blob {len(data)}\\0".encode("ascii") + data).hexdigest()
+    # Git object header is "blob <size>" followed by a NUL byte (not a literal backslash-zero).
+    return hashlib.sha1(f"blob {len(data)}\0".encode("ascii") + data).hexdigest()
 
 def test_contract_is_fail_closed():
     doc = load(CONTRACT)

@@ -18,6 +18,10 @@ class TestHistoricalEvidenceRegistry(unittest.TestCase):
   d=json.loads(P.read_text(encoding="utf-8"))
   self.assertEqual(d["status"],"RESEARCH_ONLY_HISTORICAL_EVIDENCE_REGISTRY")
   self.assertTrue(all(v is False for v in d["guards"].values()))
+  for k,v in {"deployment_status":"RESEARCH_ONLY","test_mode":"TEST_ONLY","production_use":False,"production_ready":False,
+              "operational_alerting_enabled":False,"activation_gate":"BLOCKED","missing_data_rule":"UNKNOWN_NOT_LOW_RISK",
+              "decision_thresholds":None,"hydraulic_factors":None}.items():
+   self.assertEqual(d[k],v,k)
   ev={x["local_unit_id"]:x for x in d["unit_attributed_events"]}
   self.assertEqual(ev["quirio"]["event_years"],[1907,1925,1970,1987,1998,2009])
   self.assertEqual([x["reported_time"] for x in ev["huaycoloro"]["reported_events"]],["16:40","17:44"])

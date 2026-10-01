@@ -89,13 +89,25 @@ class TestJicamarcaHistoricalCouplingEvidence(unittest.TestCase):
         ev["rio_seco_material_contribution"]["may_be_used_as_flow_partition"] = True
         self.assert_rejected(ev=ev)
 
+    def test_tambo_de_viso_is_historical_context_only(self):
+        tambo = self.ev["historical_context"][0]
+        self.assertEqual(tambo["context_id"], "TAMBO_DE_VISO_1998")
+        self.assertEqual(tambo["classification"], "HISTORICAL_CONTEXT_ONLY_NOT_TRANSFERABLE")
+        self.assertEqual(tambo["context_scale"], "UPPER_RIMAC_MAINSTEM_OUTSIDE_JICAMARCA_SYSTEM")
+        self.assertFalse(tambo["is_hydraulic_parameter"])
+        self.assertFalse(tambo["numeric_value_verified"])
+
     def test_rejects_tambo_de_viso_transfer(self):
-        ev = copy.deepcopy(self.ev)
-        ev["excluded_evidence"][0]["may_inform_jicamarca_capacity"] = True
-        self.assert_rejected(ev=ev)
-        ev = copy.deepcopy(self.ev)
-        ev["excluded_evidence"][0]["in_jicamarca_system"] = True
-        self.assert_rejected(ev=ev)
+        for key in ("may_inform_jicamarca_capacity", "may_be_used_as_event_volume_for_other_quebradas",
+                    "may_be_used_as_travel_time_or_release_timing", "may_create_map_geometry"):
+            ev = copy.deepcopy(self.ev)
+            ev["historical_context"][0][key] = True
+            self.assert_rejected(ev=ev)
+        for key, value in (("in_jicamarca_system", True), ("is_hydraulic_parameter", True),
+                           ("numeric_value_use", "PARAMETER"), ("numeric_value_verified", True)):
+            ev = copy.deepcopy(self.ev)
+            ev["historical_context"][0][key] = value
+            self.assert_rejected(ev=ev)
 
     def test_unit_hydraulic_fields_stay_null(self):
         units = copy.deepcopy(self.units)

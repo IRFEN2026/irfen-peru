@@ -7,12 +7,16 @@ S=R/"site/data/phase2/sources/rimac_mml_2013_static_coupling_v0_1.json"
 EXPECTED={
  "quirio":{"anchor":(-76.7167453631911,-11.934634563201794),"node":(-76.7084038,-11.94512659),"run":33985701094,"digest":"sha256:3a574f1190a933ebac3c0a2adc2d7faa9a0a34b9a1c50c697bd70a8adf252ea8"},
  "pedregal_san_antonio":{"anchor":(-76.70284849291879,-11.921710826978806),"node":(-76.70048443,-11.94255661),"run":33986275639,"digest":"sha256:7c27874f327f716a07899a07c1e46d53c09efcae0ba692a4c9092d84c49d00a7"}}
+GUARDS={"deployment_status":"RESEARCH_ONLY","test_mode":"TEST_ONLY","production_use":False,"production_ready":False,
+ "operational_alerting_enabled":False,"activation_gate":"BLOCKED","missing_data_rule":"UNKNOWN_NOT_LOW_RISK",
+ "decision_thresholds":None,"hydraulic_factors":None}
 def load(p): return json.loads(p.read_text(encoding="utf-8"))
 def blob_sha(p):
  b=p.read_bytes(); return hashlib.sha1(b"blob "+str(len(b)).encode()+b"\0"+b).hexdigest()
 def validate():
  c,s=load(C),load(S)
  assert c["status"]=="RESEARCH_ONLY_STATIC_DIRECT_COUPLING"
+ for k,v in GUARDS.items(): assert c.get(k)==v,f"guard_drift:{k}"
  assert c["source_snapshot"]["git_blob_sha"]=="1ce66d0d1ec49d672a54bdd81c68394d8abaaff4"
  assert blob_sha(S)==c["source_snapshot"]["git_blob_sha"]
  assert c["receiver"]["official_surface_confluence_confirmed"] is False

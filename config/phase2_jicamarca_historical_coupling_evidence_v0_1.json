@@ -13,8 +13,8 @@
   "hydraulic_factors": null,
   "system_id": "lima_este_jicamarca_huaycoloro_rioseco_canto_grande",
   "parent_role": "CONTEXT_CONTAINER_NON_ACTIVATABLE",
-  "assessment_date_utc": "2026-09-30",
-  "purpose": "Adjudicate whether historical Jicamarca evidence (events 1983/1987/1998/2012, Colca/El Silencio/Rio Seco/Huaycoloro/Jicamarca subbasins, Rio Seco material contribution, 1998 Puente Huaycoloro obstruction with Rimac overflow, and Tambo de Viso 1998) can close the routing, capacity and overflow blockers. Routing topology, capacity and overflow are adjudicated separately. No historical record is converted into an unmeasured hydraulic parameter.",
+  "assessment_date_utc": "2026-10-01",
+  "purpose": "Adjudicate whether historical Jicamarca evidence (events 1983/1987/1998/2012, Colca/El Silencio/Rio Seco/Huaycoloro/Jicamarca subbasins, Rio Seco material contribution, 1998 Puente Huaycoloro obstruction with Rimac overflow, and Tambo de Viso 1998 as upper-Rimac historical context) can close the routing, capacity and overflow blockers. Routing topology, capacity and overflow are adjudicated separately. No historical record is converted into an unmeasured hydraulic parameter.",
   "base_evidence_ref": "config/phase2_jicamarca_igp2016_local_identity_evidence_v0_1.json",
   "sources": [
     {
@@ -109,24 +109,31 @@
     "may_calibrate_routing_or_travel_time": false,
     "tributary_activation_implies_rimac_overflow": false
   },
-  "excluded_evidence": [
+  "historical_context": [
     {
-      "evidence_id": "TAMBO_DE_VISO_1998",
+      "context_id": "TAMBO_DE_VISO_1998",
+      "classification": "HISTORICAL_CONTEXT_ONLY_NOT_TRANSFERABLE",
+      "context_scale": "UPPER_RIMAC_MAINSTEM_OUTSIDE_JICAMARCA_SYSTEM",
       "reported_by": "TASK_BRIEF_2026_09_30",
       "reported_year": 1998,
+      "reported_mechanism": "debris flow temporarily dammed the Rimac mainstem, followed by release",
       "reported_volume_m3": 400000,
-      "reported_mechanism": "temporary Rimac damming followed by release",
+      "numeric_value_use": "PROVENANCE_ONLY",
+      "numeric_value_verified": false,
+      "primary_event_source_pinned": false,
       "location": "Tambo de Viso, distrito de San Mateo, provincia de Huarochiri (upper Rimac mainstem)",
       "location_source_id": "INDECI_TAMBO_DE_VISO_LOCATION",
-      "primary_event_source_pinned": false,
-      "numeric_value_verified": false,
       "in_jicamarca_system": false,
       "in_rimac_corridor_mouth_to_santa_eulalia": false,
-      "exclusion_reason": "Different quebrada on the upper Rimac mainstem, outside the Jicamarca/Huaycoloro system and outside the mouth-to-Santa-Eulalia receiver scope; not mentioned in the Jicamarca source.",
+      "admissible_use": "Historical context that tributary debris flows on the Rimac basin have produced temporary mainstem damming and release; documents the mechanism class only.",
+      "is_hydraulic_parameter": false,
       "may_inform_jicamarca_routing": false,
       "may_inform_jicamarca_capacity": false,
       "may_inform_jicamarca_overflow": false,
-      "may_be_used_as_rimac_capacity_or_damming_threshold": false
+      "may_be_used_as_rimac_capacity_or_damming_threshold": false,
+      "may_be_used_as_event_volume_for_other_quebradas": false,
+      "may_be_used_as_travel_time_or_release_timing": false,
+      "may_create_map_geometry": false
     }
   ],
   "blocker_adjudication": {
@@ -211,7 +218,7 @@
     "treat the 1998 Puente Huaycoloro obstruction as channel or structure capacity",
     "derive an overflow threshold from the 1998 occurrence",
     "assign the 1998 occurrence to Rio Seco or Huaycoloro individually",
-    "transfer Tambo de Viso volume, damming or release to the Jicamarca system or use it as a Rimac capacity",
+    "transfer Tambo de Viso volume, damming or release timing to the Jicamarca system or any other quebrada, or use it as a Rimac capacity or damming threshold",
     "place exact confluence nodes from the documentary chain"
   ]
 }

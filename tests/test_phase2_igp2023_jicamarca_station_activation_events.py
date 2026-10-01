@@ -44,7 +44,7 @@ def test_rio_seco2_events_are_frozen_exactly_without_hydraulic_promotion():
 
     for event_id, (intensity, height, source_file) in expected.items():
         e = events[event_id]
-        assert e["local_unit_id"] == "rio_seco_jicamarca"
+        assert e["local_unit_id"] == "rio_seco"
         assert e["station_name"] == "Rio Seco 2"
         assert e["reported_intensity_field"] == intensity
         assert e["reported_height_m"] == height

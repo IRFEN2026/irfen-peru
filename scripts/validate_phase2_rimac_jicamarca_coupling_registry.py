@@ -169,11 +169,20 @@ def validate_blockers(reg: dict, ev: dict, units: dict) -> None:
     assert events["may_estimate_return_period"] is False
     assert events["may_estimate_frequency"] is False
 
-    excluded = {row["evidence_id"]: row for row in ev["excluded_evidence"]}
-    assert set(excluded) == set(status["excluded_evidence_ids"])
-    tambo = excluded["TAMBO_DE_VISO_1998"]
+    # Historical context (e.g. Tambo de Viso 1998): kept as context only, never
+    # as a transferable hydraulic parameter for Jicamarca or any other quebrada.
+    context = {row["context_id"]: row for row in ev["historical_context"]}
+    assert set(context) == set(status["historical_context_ids"])
+    for row in context.values():
+        assert row["classification"] == "HISTORICAL_CONTEXT_ONLY_NOT_TRANSFERABLE"
+        assert row["is_hydraulic_parameter"] is False
+        assert row["numeric_value_use"] == "PROVENANCE_ONLY"
+        assert all(row[k] is False for k in row if k.startswith("may_")), row["context_id"]
+    tambo = context["TAMBO_DE_VISO_1998"]
     assert tambo["in_jicamarca_system"] is False
-    assert all(tambo[k] is False for k in tambo if k.startswith("may_"))
+    assert tambo["in_rimac_corridor_mouth_to_santa_eulalia"] is False
+    assert tambo["numeric_value_verified"] is False
+    assert tambo["primary_event_source_pinned"] is False
 
     # Unit-level hydraulic fields stay empty regardless of blocker progress.
     for unit in units.values():
@@ -201,7 +210,7 @@ def build_report() -> dict:
         "documentary_routing_edges": len(ev["blocker_adjudication"]["routing"]["documentary_chain"]),
         "historical_overflow_occurrences": len(overflow["documented_occurrences"]),
         "capacity_values_assigned": 0,
-        "excluded_evidence_count": len(ev["excluded_evidence"]),
+        "historical_context_count": len(ev["historical_context"]),
     }
 
 
