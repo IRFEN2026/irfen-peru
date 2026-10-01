@@ -135,18 +135,41 @@
       "may_be_used_as_travel_time_or_release_timing": false,
       "may_create_map_geometry": false,
       "primary_source_search": {
-        "status": "NO_PRIMARY_SOURCE_VERIFIED",
+        "status": "PARTIAL_CORROBORATION_IN_FROZEN_OFFICIAL_DOCUMENT",
         "searched_utc": "2026-10-01",
-        "candidates_frozen_via_archive": [
+        "corroborated": [
           {
+            "claim": "A huayco at Tambo de Viso (San Mateo, Huarochiri) is listed in the INGEMMET 1998 hazard inventory of the Rimac basin.",
+            "document": "ANA-DEPHM, Tratamiento del Cauce del Rio Rimac y Principales Quebradas Tributarias para Mitigar Efectos de Eventos Hidrologicos Extremos, Vol I, Lima, agosto 2012",
             "archive_group_id": "tambo_de_viso_candidate_sigrid_14536",
-            "title": "Tratamiento de cauce del rio Rimac y principales quebradas tributarias para mitigar efectos de eventos hidrologicos extremos",
-            "status": "PENDING_CI_FREEZE_THEN_TEXT_SEARCH"
+            "archive_sha256": "0315b657514d16a55cbaac1e6f38ba95e1805d5cdd761705623d0521070cd7fe",
+            "pdf_page": 64,
+            "locator": "Cuadro 2. Peligros geologico e hidrologicos en la cuenca del rio Rimac (Fuente INGEMMET, 1998)",
+            "verbatim_row": "Huayco | Tambo De Viso. | San Mateo | Huarochiri | Lima | 354226 8695116 | Mientras sigan las precipitaciones en la cuenca de la quebrada Viso, es probable que ocurran nuevos huaycos, con magnitudes de acuerdo a la intensidad de la precipitacion.",
+            "citation_type": "OFFICIAL_SECONDARY_CITATION_OF_INGEMMET_1998",
+            "coordinates_role": "INVENTORY_LOCATION_CONTEXT_ONLY_NOT_IMPORTED_AS_GEOMETRY"
           },
           {
+            "claim": "Debris flows from Quebrada Viso can dam the Rimac (mechanism class).",
+            "archive_group_id": "tambo_de_viso_candidate_sigrid_14536",
+            "archive_sha256": "0315b657514d16a55cbaac1e6f38ba95e1805d5cdd761705623d0521070cd7fe",
+            "pdf_page": 131,
+            "locator": "7.2 Distrito de San Mateo-Matucana, Quebrada Viso",
+            "verbatim": "Esta situacion genera represamiento del rio Rimac, poniendo en riesgo de inundacion y erosion la Carretera Central, puente y viviendas aledanas. El ultimo evento de este tipo, afecto entre 10 a 15 casas.",
+            "event_date_stated": false,
+            "document_design_values_imported": false
+          }
+        ],
+        "not_corroborated": [
+          "1998 date of a Rimac damming at Tambo de Viso",
+          "release (desembalse) sequence",
+          "400000 m3 volume"
+        ],
+        "rejected_candidates": [
+          {
             "archive_group_id": "tambo_de_viso_candidate_minem_rio_rimac",
-            "title": "Rio Rimac (gob.pe document 5209280)",
-            "status": "PENDING_CI_FREEZE_THEN_TEXT_SEARCH"
+            "archive_sha256": "f0007dd2f86f5e2637e4bfb767e5cebce27e0953daa051e67922cb18ce5d8bfd",
+            "reason": "PREDATES_EVENT: document metadata CreationDate 1997-09-01; mentions Tambo de Viso only as a geological area and Q. Viso mining context"
           }
         ],
         "checked_and_not_supporting": [
@@ -163,7 +186,8 @@
             "result": "HTTP 404; non-institutional, not usable"
           }
         ],
-        "rule": "Until a frozen official document states the event, the 1998 date, the damming/release and the volume, the 400000 m3 value stays PROVENANCE_ONLY and numeric_value_verified=false."
+        "next_primary_source": "INGEMMET 1998 report/map 'El Nino en la cuenca del rio Rimac' (cited by the ANA 2012 document) — original not yet frozen",
+        "rule": "Classification stays HISTORICAL_CONTEXT_ONLY_NOT_TRANSFERABLE. The 400000 m3 value stays PROVENANCE_ONLY with numeric_value_verified=false; no number from the ANA 2012 document (flows, lengths, slopes) is imported."
       }
     }
   ],

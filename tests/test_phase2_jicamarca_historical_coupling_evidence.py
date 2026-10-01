@@ -103,8 +103,35 @@ class TestJicamarcaHistoricalCouplingEvidence(unittest.TestCase):
         archive = json.loads((ROOT / "config/phase2_rimac_jicamarca_source_archive_contract_v0_1.json")
                              .read_text(encoding="utf-8"))
         group_ids = {g["group_id"] for g in archive["source_groups"]}
-        for cand in search["candidates_frozen_via_archive"]:
-            self.assertIn(cand["archive_group_id"], group_ids)
+        manifest_path = ROOT / archive["manifest"]
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.is_file() else {"groups": {}}
+        for row in search.get("corroborated", []) + search.get("rejected_candidates", []):
+            self.assertIn(row["archive_group_id"], group_ids)
+            frozen = manifest["groups"].get(row["archive_group_id"])
+            self.assertIsNotNone(frozen, row["archive_group_id"])
+            self.assertEqual(frozen["status"], "FROZEN")
+            self.assertEqual(row["archive_sha256"], frozen["sha256"])
+        for row in search.get("corroborated", []):
+            self.assertIsInstance(row["pdf_page"], int)
+            self.assertIs(row.get("document_design_values_imported", False), False)
+        self.assertIn("400000 m3 volume", search["not_corroborated"])
+        self.assertIn("1998 date of a Rimac damming at Tambo de Viso", search["not_corroborated"])
+
+    @unittest.skipUnless(importlib.util.find_spec("pypdf"), "pypdf not installed")
+    def test_tambo_de_viso_citations_are_in_frozen_pdf_text(self):
+        import re
+        from pypdf import PdfReader
+        archive = json.loads((ROOT / "config/phase2_rimac_jicamarca_source_archive_contract_v0_1.json")
+                             .read_text(encoding="utf-8"))
+        manifest = json.loads((ROOT / archive["manifest"]).read_text(encoding="utf-8"))
+        search = self.ev["historical_context"][0]["primary_source_search"]
+        checks = {64: [r"Tambo\s*De\s*Viso", r"INGEMMET", r"354226"],
+                  131: [r"represamiento del r[ií]o R[ií]mac", r"10 a 15 casas", r"Viso"]}
+        for row in search["corroborated"]:
+            path = ROOT / manifest["groups"][row["archive_group_id"]]["archive_path"]
+            text = re.sub(r"\s+", " ", PdfReader(str(path)).pages[row["pdf_page"] - 1].extract_text())
+            for pattern in checks[row["pdf_page"]]:
+                self.assertRegex(text, pattern)
 
     def test_rejects_tambo_de_viso_transfer(self):
         for key in ("may_inform_jicamarca_capacity", "may_be_used_as_event_volume_for_other_quebradas",
