@@ -1,0 +1,95 @@
+{
+  "schema_version": "0.1",
+  "contract_id": "phase2-ana-qhuay1-near-confluence-monitoring-anchor:v0.1",
+  "status": "FROZEN_RESEARCH_ONLY_OFFICIAL_NEAR_CONFLUENCE_MONITORING_ANCHOR_ONLY",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "purpose": "Freeze the official ANA QHuay1 surface-water monitoring point as a near-confluence monitoring anchor for Quebrada Huaycoloro. The source explicitly places QHuay1 40 m before the confluence with Rio Rimac. The monitoring coordinate is not promoted to the exact confluence/outlet, channel geometry, routing node, travel-time anchor, capacity observation, event footprint, threshold or overflow evidence.",
+  "source": {
+    "institution": "Autoridad Nacional del Agua",
+    "primary_repository_document": {
+      "repository_file": "ANA0000959.pdf",
+      "source_url": "https://repositorio.ana.gob.pe/bitstream/handle/20.500.12543/2072/ANA0000959.pdf?isAllowed=y&sequence=1",
+      "source_role": "OFFICIAL_MONITORING_NETWORK_DOCUMENT",
+      "source_reported_network_reference_year": 2014
+    },
+    "corroborating_note": {
+      "title": "Minagri invoca a los municipios a trabajar coordinadamente para proteger rios",
+      "publication_date": "2020-05-23",
+      "source_url": "https://www.gob.pe/institucion/ana/noticias/169679-minagri-invoca-a-los-municipios-a-trabajar-coordinadamente-para-proteger-rios",
+      "source_role": "OFFICIAL_ANA_NEAR_CONFLUENCE_LOCATION_CORROBORATION"
+    }
+  },
+  "monitoring_anchor": {
+    "station_id": "QHuay1",
+    "waterbody": "Quebrada Huaycoloro",
+    "coordinate_reference_system": "WGS84_UTM_ZONE_18S",
+    "easting_m": 287433,
+    "northing_m": 8670443,
+    "source_location_description": "Quebrada Huaycoloro, 40 m antes de la confluencia con el rio Rimac",
+    "distance_before_documented_confluence_m": 40,
+    "coordinate_role": "MONITORING_POINT_NOT_CONFLUENCE",
+    "official_near_confluence_monitoring_anchor": true,
+    "exact_surface_confluence_confirmed": false,
+    "exact_surface_confluence_coordinate": null,
+    "exact_outlet_coordinate": null,
+    "official_channel_axis_geometry": null,
+    "catchment_geometry": null,
+    "reproducible_map_geometry_recovered": false
+  },
+  "coupling_context": {
+    "local_unit_id": "huaycoloro",
+    "documentary_receiver": "Rio Rimac",
+    "documentary_receiver_relation_supported": true,
+    "receiver_relation_basis": "ANA explicitly describes QHuay1 as located 40 m before the confluence with Rio Rimac.",
+    "exact_confluence_geometry_resolved": false,
+    "routing_method": null,
+    "q_i_t": null,
+    "travel_time_tau": null,
+    "attenuation_or_storage": null,
+    "receiver_response": null,
+    "receiver_capacity": "UNKNOWN",
+    "receiver_overflow_inferred": false
+  },
+  "observation_semantics": {
+    "station_role": "WATER_QUALITY_MONITORING_POINT",
+    "is_flow_gauge": false,
+    "is_stage_gauge": false,
+    "is_event_activation_sensor": false,
+    "may_be_used_as_hydraulic_capacity_observation": false,
+    "may_be_used_as_irfen_decision_threshold": false,
+    "may_be_used_as_exact_confluence_without_independent_geometry": false
+  },
+  "adjudication": {
+    "strengthens_huaycoloro_receiver_relation_to_rimac": true,
+    "freezes_official_near_confluence_monitoring_anchor": true,
+    "resolves_exact_surface_confluence": false,
+    "resolves_exact_outlet": false,
+    "resolves_channel_axis": false,
+    "resolves_catchment_geometry": false,
+    "creates_map_geometry": false,
+    "enables_child_routing": false,
+    "enables_travel_time_estimation": false,
+    "establishes_receiver_capacity": false,
+    "establishes_receiver_overflow": false,
+    "creates_irfen_decision_threshold": false
+  },
+  "forbidden": [
+    "move the QHuay1 monitoring coordinate 40 m downstream and call the result the official confluence",
+    "treat the monitoring point as the exact outlet or exact surface confluence",
+    "infer channel axis, catchment geometry or routing from the monitoring coordinate alone",
+    "infer q_i(t), travel time, attenuation, receiver capacity or Rimac overflow from station proximity",
+    "treat water-quality measurements at QHuay1 as flow, stage, activation, hydraulic capacity or IRFEN threshold evidence"
+  ],
+  "map_updates": {
+    "new_geometries_published": 0,
+    "new_nodes_published": 0
+  }
+}

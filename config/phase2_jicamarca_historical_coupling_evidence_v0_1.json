@@ -1,0 +1,217 @@
+{
+  "schema_version": "0.1",
+  "contract_id": "phase2-jicamarca-historical-coupling-evidence:v0.1",
+  "status": "FROZEN_RESEARCH_ONLY_HISTORICAL_AND_DOCUMENTARY_COUPLING_EVIDENCE",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "system_id": "lima_este_jicamarca_huaycoloro_rioseco_canto_grande",
+  "parent_role": "CONTEXT_CONTAINER_NON_ACTIVATABLE",
+  "assessment_date_utc": "2026-09-30",
+  "purpose": "Adjudicate whether historical Jicamarca evidence (events 1983/1987/1998/2012, Colca/El Silencio/Rio Seco/Huaycoloro/Jicamarca subbasins, Rio Seco material contribution, 1998 Puente Huaycoloro obstruction with Rimac overflow, and Tambo de Viso 1998) can close the routing, capacity and overflow blockers. Routing topology, capacity and overflow are adjudicated separately. No historical record is converted into an unmeasured hydraulic parameter.",
+  "base_evidence_ref": "config/phase2_jicamarca_igp2016_local_identity_evidence_v0_1.json",
+  "sources": [
+    {
+      "source_id": "IGP_FIGMMG_2016_CHIROQUE_LAVADO_JICAMARCA",
+      "title": "Aspectos geologicos y geodinamicos de flujos aluvionales en la quebrada Jicamarca y analisis de la vulnerabilidad para la implementacion de un Sistema de Alerta Temprana (SAT) en el centro poblado Cajamarquilla",
+      "authors": [
+        "Cristhian Chiroque Herrera",
+        "Hector Lavado"
+      ],
+      "year": 2016,
+      "venue": "Revista del Instituto de Investigacion FIGMMG-UNMSM, Vol. 19, N. 38, pp. 47-55",
+      "handle": "http://hdl.handle.net/20.500.12816/3077",
+      "mirror_url": "https://app.ingemmet.gob.pe/biblioteca/pdf/RFIGMMG-38-47.pdf",
+      "already_frozen_in": "config/phase2_jicamarca_igp2016_local_identity_evidence_v0_1.json",
+      "pdf_sha256": null,
+      "binary_frozen_in_repo": false,
+      "text_verification": "Sentences for events, 1998 Puente Huaycoloro/Rimac and material shares re-read from the mirror PDF on 2026-09-30; binary not ingested, so no hash is asserted."
+    },
+    {
+      "source_id": "INDECI_TAMBO_DE_VISO_LOCATION",
+      "title": "LIMA - Huarochiri - San Mateo (Tambo de Viso): Huayco (Informe de Emergencia 08)",
+      "url": "https://www.indeci.gob.pe/emergencias/lima-huarochiri-san-mateo-tambo-de-viso-huayco-informe-de-emergencia-08/",
+      "source_role": "LOCATION_ONLY_NOT_1998_EVENT_SOURCE"
+    }
+  ],
+  "parent_context_events": {
+    "source_id": "IGP_FIGMMG_2016_CHIROQUE_LAVADO_JICAMARCA",
+    "event_years": [
+      1983,
+      1987,
+      1998,
+      2012
+    ],
+    "attribution_scale": "JICAMARCA_PARENT_CONTEXT",
+    "child_attribution_resolved": false,
+    "transfer_to_named_child_forbidden": true,
+    "may_estimate_return_period": false,
+    "may_estimate_frequency": false,
+    "may_create_negative_controls_from_unmentioned_years": false,
+    "numeric_flow_used": false
+  },
+  "subbasin_identity": {
+    "source_id": "IGP_FIGMMG_2016_CHIROQUE_LAVADO_JICAMARCA",
+    "parent": "quebrada_jicamarca_context",
+    "named_subbasins": [
+      "huaycoloro",
+      "rio_seco",
+      "el_silencio",
+      "colca"
+    ],
+    "colca_and_rio_seco_remain_distinct": true,
+    "nomenclature_conflict_ref": "config/phase2_jicamarca_rio_seco_colca_nomenclature_conflict_v0_1.json",
+    "synthetic_jicamarca_activation_unit_allowed": false
+  },
+  "rio_seco_material_contribution": {
+    "source_id": "IGP_FIGMMG_2016_CHIROQUE_LAVADO_JICAMARCA",
+    "classification": "SOURCE_REPORTED_MATERIAL_INVENTORY_SHARE_NOT_SEDIMENT_YIELD",
+    "reported_shares_percent": {
+      "colca": 25.9,
+      "el_silencio": 3.6,
+      "rio_seco": 70.8
+    },
+    "reported_total_material_volume_m3": 1023495,
+    "numeric_value_use": "PROVENANCE_ONLY",
+    "qualitative_finding": "RIO_SECO_REPORTED_AS_DOMINANT_MATERIAL_CONTRIBUTOR_AMONG_COLCA_EL_SILENCIO_RIO_SECO",
+    "may_be_used_as_event_volume": false,
+    "may_be_used_as_sediment_bulking_factor": false,
+    "may_be_used_as_discharge_or_q_i_t": false,
+    "may_be_used_as_flow_partition": false,
+    "may_be_used_as_threshold": false
+  },
+  "documented_1998_receiver_impact": {
+    "source_id": "IGP_FIGMMG_2016_CHIROQUE_LAVADO_JICAMARCA",
+    "year": 1998,
+    "date": null,
+    "bounded_claim": "The 1998 Jicamarca flow affected the Rimac district through overflow of the Rio Rimac, attributed by the source to large sediment volumes obstructed at Puente Huaycoloro converging with the river.",
+    "classification": "HISTORICAL_RECEIVER_OVERFLOW_OCCURRENCE_QUALITATIVE",
+    "attribution_scale": "JICAMARCA_PARENT_CONTEXT_VIA_PUENTE_HUAYCOLORO",
+    "child_attribution_resolved": false,
+    "mechanism_reported": "SEDIMENT_OBSTRUCTION_AT_STRUCTURE",
+    "structure": "Puente Huaycoloro",
+    "structure_location": null,
+    "affected_area_reported": "distrito del Rimac",
+    "overflow_location": null,
+    "flow_depth": null,
+    "discharge": null,
+    "sediment_volume": null,
+    "is_channel_capacity_observation": false,
+    "is_structure_capacity_observation": false,
+    "may_define_overflow_threshold": false,
+    "may_define_return_period": false,
+    "may_calibrate_routing_or_travel_time": false,
+    "tributary_activation_implies_rimac_overflow": false
+  },
+  "excluded_evidence": [
+    {
+      "evidence_id": "TAMBO_DE_VISO_1998",
+      "reported_by": "TASK_BRIEF_2026_09_30",
+      "reported_year": 1998,
+      "reported_volume_m3": 400000,
+      "reported_mechanism": "temporary Rimac damming followed by release",
+      "location": "Tambo de Viso, distrito de San Mateo, provincia de Huarochiri (upper Rimac mainstem)",
+      "location_source_id": "INDECI_TAMBO_DE_VISO_LOCATION",
+      "primary_event_source_pinned": false,
+      "numeric_value_verified": false,
+      "in_jicamarca_system": false,
+      "in_rimac_corridor_mouth_to_santa_eulalia": false,
+      "exclusion_reason": "Different quebrada on the upper Rimac mainstem, outside the Jicamarca/Huaycoloro system and outside the mouth-to-Santa-Eulalia receiver scope; not mentioned in the Jicamarca source.",
+      "may_inform_jicamarca_routing": false,
+      "may_inform_jicamarca_capacity": false,
+      "may_inform_jicamarca_overflow": false,
+      "may_be_used_as_rimac_capacity_or_damming_threshold": false
+    }
+  ],
+  "blocker_adjudication": {
+    "routing": {
+      "topology_state": "PARTIAL_DOCUMENTARY_CHAIN_ESTABLISHED_EXACT_NODES_UNRESOLVED",
+      "temporal_routing_state": "BLOCKED_UNCHANGED",
+      "documentary_chain": [
+        {
+          "from": "colca",
+          "to": "rio_seco",
+          "basis_ref": "config/phase2_ana2023_rio_seco_colca_el_silencio_faja_context_v0_1.json",
+          "exact_node": null
+        },
+        {
+          "from": "el_silencio",
+          "to": "rio_seco",
+          "basis_ref": "config/phase2_ana2023_rio_seco_colca_el_silencio_faja_context_v0_1.json",
+          "exact_node": null
+        },
+        {
+          "from": "rio_seco",
+          "to": "huaycoloro",
+          "basis_ref": "config/phase2_jicamarca_huaycoloro_rio_seco_union_2017_v0_2.json",
+          "relation_note": "IGP 2017 documents that Rio Seco and Huaycoloro join near the Radio Observatorio de Jicamarca; Huaycoloro is the documented continuation toward the Rimac (QHuay1).",
+          "exact_node": null
+        },
+        {
+          "from": "huaycoloro",
+          "to": "rimac_mainstem_receiver",
+          "basis_ref": "config/phase2_ana_qhuay1_near_confluence_monitoring_anchor_v0_1.json",
+          "exact_node": null
+        }
+      ],
+      "event_corroboration": {
+        "year": 1998,
+        "claim": "A Jicamarca flow reached the Rimac through the Puente Huaycoloro crossing.",
+        "corroborates_chain_end": "huaycoloro->rimac_mainstem_receiver",
+        "may_add_edges": false
+      },
+      "not_established": [
+        "exact_confluence_coordinates",
+        "outlets",
+        "q_i_t",
+        "travel_time_tau",
+        "attenuation_or_storage",
+        "flow_partition",
+        "peak_coincidence"
+      ],
+      "routing_enabled": false
+    },
+    "capacity": {
+      "state": "BLOCKED_UNCHANGED",
+      "reason": "No measured section geometry, stage-discharge, or conveyance data. The 1998 record is a structure obstruction outcome, not a capacity measurement; a single event cannot define channel capacity.",
+      "channel_capacity": null,
+      "structure_capacity": null,
+      "evidence_counted_toward_capacity": 0
+    },
+    "overflow": {
+      "state": "PARTIAL_HISTORICAL_OCCURRENCE_ONLY",
+      "documented_occurrences": [
+        {
+          "year": 1998,
+          "receiver": "rimac_mainstem_receiver",
+          "attribution_scale": "JICAMARCA_PARENT_CONTEXT_VIA_PUENTE_HUAYCOLORO",
+          "mechanism_reported": "SEDIMENT_OBSTRUCTION_AT_STRUCTURE"
+        }
+      ],
+      "overflow_threshold": null,
+      "return_period": null,
+      "frequency_inferred": false,
+      "receiver_overflow_state_assigned_to_units": false,
+      "tributary_activation_implies_receiver_overflow": false
+    }
+  },
+  "map_updates": {
+    "new_geometries_published": 0,
+    "new_nodes_published": 0
+  },
+  "forbidden": [
+    "convert event years into return periods, frequencies or negative controls",
+    "use material inventory shares or total material volume as event volume, discharge, flow partition or bulking factor",
+    "treat the 1998 Puente Huaycoloro obstruction as channel or structure capacity",
+    "derive an overflow threshold from the 1998 occurrence",
+    "assign the 1998 occurrence to Rio Seco or Huaycoloro individually",
+    "transfer Tambo de Viso volume, damming or release to the Jicamarca system or use it as a Rimac capacity",
+    "place exact confluence nodes from the documentary chain"
+  ]
+}

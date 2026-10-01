@@ -1,0 +1,98 @@
+name: IRFEN - Phase2 MINAM Huaycoloro vector probe
+
+on:
+  pull_request:
+    paths:
+      - config/phase2_minam2020_huaycoloro_vector_source_v0_1.json
+      - scripts/probe_phase2_minam2020_huaycoloro_rimac.py
+      - tests/test_phase2_minam2020_huaycoloro_rimac_probe.py
+      - .github/workflows/phase2-minam-huaycoloro-vector-probe.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact-official-vector-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install focused test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Run fail-closed scientific guards
+        run: |
+          python -m pytest -q tests/test_phase2_minam2020_huaycoloro_vector_source.py
+          python -m pytest -q tests/test_phase2_minam2020_huaycoloro_rimac_probe.py
+          python scripts/probe_phase2_minam2020_huaycoloro_rimac.py --self-test
+      - name: Query exact Huaycoloro and Rimac source features
+        run: |
+          mkdir -p artifacts
+          ok=0
+          for attempt in 1 2 3; do
+            if python scripts/probe_phase2_minam2020_huaycoloro_rimac.py \
+              --output artifacts/phase2_minam2020_huaycoloro_rimac_probe.json; then
+              ok=1
+              break
+            fi
+            sleep $((attempt * 10))
+          done
+          if [ "$ok" -ne 1 ]; then
+            test -s artifacts/phase2_minam2020_huaycoloro_rimac_probe.json
+          fi
+      - name: Enforce candidate-only or unavailable-source semantics
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          d=json.loads(Path("artifacts/phase2_minam2020_huaycoloro_rimac_probe.json").read_text(encoding="utf-8"))
+          assert d["deployment_status"]=="RESEARCH_ONLY"
+          assert d["test_mode"]=="TEST_ONLY"
+          assert d["production_use"] is False
+          assert d["production_ready"] is False
+          assert d["operational_alerting_enabled"] is False
+          assert d["activation_gate"]=="BLOCKED"
+          assert d["missing_data_rule"]=="UNKNOWN_NOT_LOW_RISK"
+          assert d["decision_thresholds"] is None
+          assert d["hydraulic_factors"] is None
+          g=d["guards"]
+          assert g["name_match_confirms_local_identity"] is False
+          assert g["literal_line_intersection_confirms_official_confluence"] is False
+          assert g["exact_huaycoloro_rimac_confluence_resolved"] is False
+          assert g["routing_enabled"] is False
+          assert g["travel_time_enabled"] is False
+          assert g["flow_or_capacity_inference_enabled"] is False
+          assert g["overflow_inference_enabled"] is False
+          assert g["map_publish_enabled"] is False
+          assert g["zero_query_result_may_be_inferred_as_hydrologic_absence"] is False
+
+          if d["status"]=="RESEARCH_ONLY_LIVE_VECTOR_PROBE":
+              assert d["query_completed"] is True
+              assert all(isinstance(v,int) and v>=0 for v in d["candidate_counts"].values())
+              assert isinstance(d["matching_objectids"],list)
+              assert isinstance(d["matching_feature_count"],int)
+              assert isinstance(d["source"]["raw_payload_sha256"],str) and len(d["source"]["raw_payload_sha256"])==64
+              assert isinstance(d["source"]["canonical_payload_sha256"],str) and len(d["source"]["canonical_payload_sha256"])==64
+              assert isinstance(d["literal_intersection_candidates"],list)
+              for row in d["literal_intersection_candidates"]:
+                  assert row["scientific_status"]=="GEOMETRIC_INTERSECTION_CANDIDATE_NOT_ADJUDICATED_CONFLUENCE"
+          else:
+              assert d["status"]=="SOURCE_ACCESS_UNAVAILABLE"
+              assert d["query_completed"] is False
+              assert all(v is None for v in d["candidate_counts"].values())
+              assert d["matching_objectids"] is None
+              assert d["matching_feature_count"] is None
+              assert d["candidates"] is None
+              assert d["literal_intersection_candidates"] is None
+              assert d["access"]["zero_candidates_inferred"] is False
+              assert d["access"]["hydrologic_absence_inferred"] is False
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phase2-minam2020-huaycoloro-rimac-probe
+          path: artifacts/phase2_minam2020_huaycoloro_rimac_probe.json
+          if-no-files-found: error
