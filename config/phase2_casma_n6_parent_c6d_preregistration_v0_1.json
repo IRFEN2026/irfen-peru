@@ -1,0 +1,108 @@
+{
+  "schema_version": "0.1",
+  "preregistration_id": "phase2_casma_n6_parent_c6d_preregistration_v0_1",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "purpose": "Preregister, before any parent geometry is retrieved, how Gate C subcheck C6d compares the union of the nine frozen MINAM N7 children with an independently frozen official N6 parent 137596 (Cuenca Casma).",
+  "preregistration_timing": {
+    "statement": "Written and committed before the parent query with returnGeometry=true was ever issued. Only layer metadata and a returnCountOnly identity query were inspected. The parent capture manifest records the SHA-256 of this file at capture time; Gate C evaluation refuses to run if it differs.",
+    "pre_capture_observations": {
+      "layer_metadata_url": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/FeatureServer/7?f=pjson",
+      "current_version": 11.2,
+      "source_spatial_reference_wkid": 4326,
+      "service_spatial_reference_wkid": 102100,
+      "count_CODIGO_137596": 1,
+      "count_NIVEL6_137596": 1,
+      "observed_date_utc": "2026-09-30"
+    }
+  },
+  "source": {
+    "institution": "Autoridad Nacional del Agua (ANA), institutional service published on the Infraestructura de Datos Espaciales del Peru (IDEP)",
+    "service": "INSTITUCIONALES/ANA_WMS FeatureServer",
+    "layer_id": 7,
+    "layer_name": "Unidades Hidrográficas",
+    "layer_url": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/FeatureServer/7",
+    "metadata_url": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/FeatureServer/7?f=pjson",
+    "query": {
+      "where": "CODIGO = '137596'",
+      "outFields": "OBJECTID,CODIGO,NIVEL6,NIVEL7,NOMB_UH_N6,NOMBRE,AREA_KM2",
+      "returnGeometry": "true",
+      "outSR": 4326,
+      "returnZ": "false",
+      "returnM": "false",
+      "f": "json"
+    },
+    "forbidden_query_parameters": ["maxAllowableOffset", "geometryPrecision", "quantizationParameters", "datumTransformation", "resultRecordCount"],
+    "alternatives_considered": [
+      {"source": "ANA geosnirh.ana.gob.pe ArcGIS Server", "disposition": "Not verifiable from the research fetcher (robots/connection timeout); no N6 service URL could be confirmed."},
+      {"source": "ANA geo.ana.gob.pe SERV_UNIDADES_HIDROGRAFICAS", "disposition": "Previously recorded as DNS-unresolved from CI (config/phase2_casma_n7_geometry_source_gap_v0_1.json)."}
+    ]
+  },
+  "identity_rules": [
+    "Exactly one feature in the response.",
+    "CODIGO == '137596' and NIVEL6 == '137596' (string, trimmed).",
+    "Geometry has at least one ring; every ring closed.",
+    "Name fields (NOMB_UH_N6, NOMBRE) and AREA_KM2 are recorded, never gating."
+  ],
+  "crs_rules": {
+    "layer_source_spatial_reference_wkid_required": 4326,
+    "response_spatial_reference_wkid_required": 4326,
+    "rationale": "Same rule as Gate A: request outSR equal to the declared storage CRS (sourceSpatialReference). A FeatureServer query without outSR returns the service SR (102100), i.e. a server projection.",
+    "datum_transformation": "None. Parent (EPSG:4326) and children (EPSG:32718) are both WGS84."
+  },
+  "children_union_reference": {
+    "definition": "The single reduced boundary loop of the nine frozen native EPSG:32718 children (Gate C C5), inverse-projected to WGS84 lon/lat with the Krueger 6th-order UTM 18S series in scripts/qa_phase2_casma_n7_gate_c_topology.py. The parent is never derived from this union.",
+    "positions": 4369,
+    "perimeter_local_frame_m": 283455.9597,
+    "area_km2": 2985.080249
+  },
+  "local_frame_origin_lonlat": [-78.00418517754196, -9.459486355559616],
+  "intersection_grid_cell_m": 2000.0,
+  "distance_grid_cell_m": 250.0,
+  "metrics": {
+    "M1_p90_boundary_distance": {
+      "gating": true,
+      "definition": "Densify the union boundary and every parent ring at spacing <= densification_spacing_m (vertices included). For every sample, compute the Euclidean distance to the other boundary in the local tangent-plane frame centred at local_frame_origin_lonlat. Pool both directions and take the nearest-rank 90th percentile.",
+      "densification_spacing_m": 5.0,
+      "discretisation_error_bound_m": 2.5
+    },
+    "M2_symmetric_difference_ratio": {
+      "gating": true,
+      "definition": "area(U xor P) / area(P), with areas on the WGS84 ellipsoid via Lambert cylindrical equal-area and area(U n P) from the boundary-integral method in scripts/c6d_parent_comparison.py."
+    },
+    "report_only": ["hausdorff_m", "directed maxima", "mean and median boundary distance", "p99 boundary distance", "IoU", "area ratio and signed area difference", "children area outside parent (total and per child)", "parent AREA_KM2 attribute vs computed area", "shared boundary pieces"]
+  },
+  "tolerance": {
+    "tau_m": 50.8,
+    "tau_basis": "US National Map Accuracy Standard horizontal limit for scales smaller than 1:20,000 (1/50 inch at map scale) applied to the documented 1:100,000 source scale of the Pfafstetter coverage (IGN 1:100,000 base, ANA0000383): 0.000508 m x 100000 = 50.8 m, evaluated as a 90th percentile as in that standard.",
+    "sdr_bound": 0.0048238444,
+    "sdr_bound_basis": "Area swept if every union boundary point were displaced by tau: tau x perimeter(U) / area(U) = 50.8 x 283455.9597 / 2985080248.70.",
+    "fitted_to_parent": false
+  },
+  "decision_rules": {
+    "NOT_EVALUABLE": [
+      "Parent capture absent, source unavailable, or capture manifest/hash verification fails.",
+      "Response is not exactly one feature satisfying the identity rules.",
+      "Declared layer sourceSpatialReference or response spatialReference differs from 4326.",
+      "Capture manifest does not record this preregistration's SHA-256, or the comparison module SHA-256 differs from comparison_module_sha256.",
+      "Parent geometry fails the Gate C C1/C3 validity rules (unclosed ring, repeated vertex, self-intersection), so the metrics are undefined."
+    ],
+    "PASS": "Evaluable and M1 <= tau_m and M2 <= sdr_bound.",
+    "FAIL": "Evaluable and (M1 > tau_m or M2 > sdr_bound).",
+    "effect_on_gate_c": "C6d PASS allows C6 PASS if C6a-C6c pass; C6d FAIL makes Gate C FAIL; NOT_EVALUABLE keeps Gate C NOT_PASS_PENDING."
+  },
+  "comparison_module_path": "scripts/c6d_parent_comparison.py",
+  "comparison_module_sha256": "bff8052d3158efe5f6191a1ea1b2024a04d44ebc2edbe076586f9909d2adc749",
+  "post_capture_rules": [
+    "tau_m, sdr_bound, metric definitions, densification spacing, frame origin and the comparison module must not change after capture.",
+    "Any post-capture change is a protocol deviation that must be recorded and cannot yield PASS.",
+    "A PASS establishes spatial coherence of the current MINAM N7 children with the current ANA N6 parent only. It does not establish Uh_pfas100 equivalence, modify Gate B, or authorize map publication."
+  ]
+}
