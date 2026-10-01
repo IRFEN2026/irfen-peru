@@ -1,0 +1,158 @@
+{
+  "schema_version": "0.1",
+  "assessment_id": "casma_minam_recovery_gate_adjudication_v0_1",
+  "status": "FAIL_CLOSED_DESCENDANT_ATTRIBUTE_DRIFT",
+  "status_semantics": "Legacy fail-closed summary retained for regression compatibility. Attribute drift blocks historical equivalence (Gate B), not immutable capture of a current institutional descendant (Gate A).",
+  "gate_model_status": "GATE_A_PASS_CURRENT_INSTITUTIONAL_CAPTURE__GATE_B_NOT_ESTABLISHED__GATE_C_PASS_CURRENT_INSTITUTIONAL_TOPOLOGY",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "target_codes": [
+    "1375961",
+    "1375962",
+    "1375963",
+    "1375964",
+    "1375965",
+    "1375966",
+    "1375967",
+    "1375968",
+    "1375969"
+  ],
+  "findings": {
+    "minam_descendant_exact_codes_exposed": true,
+    "strict_2007_attribute_equivalence_passed": false,
+    "observed_area_drift": true,
+    "observed_generic_designator_or_accent_drift": true,
+    "exact_code_match_count_observed": 9,
+    "polygon_geometry_count_observed": 9,
+    "raw_feature_bytes_frozen": true,
+    "raw_response_sha256_frozen": true,
+    "topology_union_adjudicated": true,
+    "historical_geometry_equivalence_to_Uh_pfas100": false,
+    "map_publication_authorized": false,
+    "internal_topology_adjudicated": true,
+    "parent_context_geometry_adjudicated": true
+  },
+  "gate_a_source_capture": {
+    "purpose": "Freeze a reproducible CURRENT institutional descendant without asserting 2007 geometric equivalence.",
+    "required": [
+      "exact CODIGO equals target N7 code",
+      "NIVEL7 equals target code when populated",
+      "exactly one returned feature",
+      "GeoJSON geometry is Polygon or MultiPolygon",
+      "geometry is non-empty and bounded in the Casma study region",
+      "raw response bytes are archived immutably",
+      "SHA-256 of each raw response is recorded"
+    ],
+    "explicitly_not_required": [
+      "exact historical display-name equality",
+      "historical one-decimal area equality",
+      "historical geometry equivalence to Uh_pfas100"
+    ],
+    "current_status": "PASS_IMMUTABLE_CURRENT_INSTITUTIONAL_CAPTURE",
+    "pass_does_not_authorize_map_publication": true,
+    "evidence": {
+      "recovery_manifest": "site/data/phase2/source_assessments/casma_minam_n7_recovery_manifest_v0_1.json",
+      "archive_root": "data/phase2/source_archive/casma_minam_n7",
+      "sha256sums": "data/phase2/source_archive/casma_minam_n7/SHA256SUMS",
+      "feature_count": 9,
+      "capture_format_version": 3,
+      "source_native_wkid": 32718,
+      "query_output_wkid": 4326,
+      "captured_at_utc": "2026-09-30T01:54:42Z"
+    }
+  },
+  "gate_b_lineage_equivalence": {
+    "purpose": "Adjudicate whether the current institutional descendant is historically/geometrically equivalent to INRENA Uh_pfas100 (2007).",
+    "required_for_exact_2007_geometry_claim": [
+      "original Uh_pfas100 bytes or direct institutional lineage evidence",
+      "preserved comparison of every current/historical name and area delta",
+      "independent evidence sufficient to establish geometric equivalence"
+    ],
+    "current_status": "NOT_ESTABLISHED",
+    "area_tolerance_authorized": false,
+    "post_hoc_attribute_bypass_authorized": false,
+    "historical_geometry_equivalence_to_Uh_pfas100": false
+  },
+  "gate_c_topology_map": {
+    "purpose": "Determine whether the frozen current institutional N7 polygons are internally/topologically defensible as map research context.",
+    "required": [
+      "geometry validity for all nine frozen polygons",
+      "pairwise mutual-overlap QA",
+      "gap/topological-union QA",
+      "parent-context/union coherence QA",
+      "all Gate A hashes remain stable"
+    ],
+    "current_status": "PASS_CURRENT_INSTITUTIONAL_TOPOLOGY",
+    "publication_label_if_eventually_passed": "CURRENT_INSTITUTIONAL_N7_RESEARCH_CONTEXT",
+    "forbidden_labels_without_gate_b": [
+      "EXACT_2007_Uh_pfas100_GEOMETRY",
+      "HISTORICALLY_IDENTICAL_2007_GEOMETRY"
+    ],
+    "map_publication_authorized": false,
+    "pass_does_not_assert_historical_equivalence": true,
+    "subgates": {
+      "geometry_validity": {
+        "status": "PASS",
+        "evidence": "Frozen native EPSG:32718 polygons are closed, non-zero single rings with no proper self-crossings."
+      },
+      "pairwise_overlap": {
+        "status": "PASS",
+        "evidence": "No proper boundary crossings or containment-derived positive-area overlap among the nine frozen polygons."
+      },
+      "gap_union": {
+        "status": "PASS_INTERNAL_UNION",
+        "evidence": "Shared source edges have multiplicity 1 or 2; unmatched edges form one degree-2 connected outer loop, excluding enclosed internal gap loops under the frozen source-vertex topology."
+      },
+      "parent_context": {
+        "status": "PASS",
+        "evidence": "Independently frozen ANA/IDEP N6 parent CODIGO 137596 passed preregistered C6d comparison against the nine frozen N7 children: P90 boundary distance 0.000115 m <= 50.8 m and symmetric-difference ratio 0.000007534 <= 0.0048238444. This establishes current institutional parent coherence only; it does not establish Uh_pfas100 historical equivalence."
+      }
+    },
+    "topology_evidence": {
+      "test_path": "tests/test_phase2_casma_minam_n7_capture_mechanism.py",
+      "tested_head_sha": "6332057b5e94a1dae47228783b556464a8a5e4f8",
+      "workflow_runs": [
+        {
+          "id": 36698622730,
+          "name": "IRFEN - Phase2 Casma N7 geometry source gap",
+          "conclusion": "success"
+        },
+        {
+          "id": 36698622591,
+          "name": "IRFEN - Phase2 local activation hierarchy",
+          "conclusion": "success"
+        }
+      ],
+      "frozen_geometry_sha256": "628be7517d5bbd92e5b1d7cf2b7ab5292741e3fa2eaedae40a7bda8ff0e4bf31",
+      "geometric_area_sum_km2": 2990.689973229004,
+      "current_service_area_sum_km2": 2989.8386,
+      "historical_2007_area_sum_km2": 2990.8,
+      "area_semantics": "Geometric, current service AREA_KM2 and historical 2007 inventory area are preserved as distinct quantities; none is used to establish Uh_pfas100 equivalence.",
+      "c6d_parent_capture_manifest": "site/data/phase2/source_assessments/casma_n6_parent_capture_manifest_v0_1.json",
+      "c6d_gate_c_adjudication": "site/data/phase2/source_assessments/casma_n7_gate_c_adjudication_v0_1.json",
+      "c6d_parent_raw_sha256": "99cd59cacac11123092fa3f941618f42338e47070c6c6ae7ff76c1c2dd54c26d",
+      "c6d_status": "PASS"
+    }
+  },
+  "cross_pr_observation_reference": {
+    "pr": 339,
+    "assessment": "site/data/phase2/source_assessments/casma_minam_n7_all_nine_live_observations_v0_1.json",
+    "observation_date_utc": "2026-09-27",
+    "role": "Observed attributes/bboxes only; not immutable raw-byte capture.",
+    "historical_area_sum_km2": 2990.8,
+    "current_area_km2_sum": 2989.8386,
+    "delta_km2": -0.9614,
+    "delta_percent": -0.032145
+  },
+  "scientific_rule": "Separate capture from equivalence. Gate A may freeze exact-code current institutional polygons despite documented name/area drift. Gate B remains false unless direct historical lineage/equivalence is proven. Gate C alone may authorize publication as CURRENT_INSTITUTIONAL_N7_RESEARCH_CONTEXT after immutable capture and topology QA. No tolerance, CI-only bypass, PDF digitization, inferred outlet, event outcome, threshold, routing, capacity, risk or alert semantics are introduced.",
+  "original_source_target": "INRENA Uh_pfas100",
+  "original_source_public_bytes_recovered": false,
+  "updated_at_utc": "2026-09-30T18:40:42Z"
+}
