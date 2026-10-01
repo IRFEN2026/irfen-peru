@@ -1,0 +1,366 @@
+{
+  "schema_version": "0.1",
+  "contract_id": "phase2-rimac-jicamarca-map-semantic-reconciliation:v0.1",
+  "status": "RESEARCH_ONLY_MAP_SEMANTIC_RECONCILIATION_NO_PROMOTION",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "assessment_date_utc": "2026-10-01",
+  "purpose": "Classify every Rimac/Jicamarca element carried by this line against the map semantic model already merged in main (PR #343: CATCHMENT, LOCAL_CHANNEL, COLLECTOR, NODE and context categories; node semantics EXACT_OFFICIAL / REPRODUCIBLE_DERIVED / MONITORING_ANCHOR / NEAR_CONFLUENCE / UNRESOLVED). State what is already drawn, what could be drawn after independent QA and what must stay withheld, with the exact reason. This contract creates no geometry and changes no map_layers.json row.",
+  "map_model_ref": {
+    "doc": "docs/PHASE2_MAP_LAYER_MODEL.md",
+    "builder": "scripts/build_map_semantic_layers.py",
+    "catalog": "site/data/map_layers.json",
+    "main_merge_commit": "631959eda6eabb11d9798d0a2f7c31307490786e"
+  },
+  "qa_gate": {
+    "line": "RIMAC_JICAMARCA",
+    "builder_status": "NOT_CONSOLIDATED_UNTIL_INDEPENDENT_QA_ACCEPTED",
+    "independent_qa_accepted": false,
+    "self_review_counts_as_independent_qa": false,
+    "consequence": "No element of this line is admitted to the map by this change. Elements already drawn on main stay exactly as main draws them."
+  },
+  "existing_on_main_unchanged": [
+    {
+      "entity_id": "huaycoloro_candidate_watershed",
+      "map_category": "CATCHMENT",
+      "map_eligible_on_main": true,
+      "origin": "v0.8 pilot technical layer (not this line)",
+      "effect_of_this_line": "NONE",
+      "note": "ANIN 2025 engineered lower reach does not create or move this polygon; pre-2023 imagery still cannot define the current lower channel."
+    },
+    {
+      "entity_id": "jicamarca__canto_grande_channel__igp_15404",
+      "map_category": "LOCAL_CHANNEL",
+      "map_eligible_on_main": true,
+      "origin": "Jicamarca discovery IGP channel line",
+      "effect_of_this_line": "NONE"
+    },
+    {
+      "entity_id": "jicamarca__canto_grande_channel__igp_18807",
+      "map_category": "LOCAL_CHANNEL",
+      "map_eligible_on_main": true,
+      "origin": "Jicamarca discovery IGP channel line",
+      "effect_of_this_line": "NONE"
+    },
+    {
+      "entity_id": "jicamarca__media_luna_channel__igp_3351",
+      "map_category": "LOCAL_CHANNEL",
+      "map_eligible_on_main": true,
+      "origin": "Jicamarca discovery IGP channel line",
+      "effect_of_this_line": "NONE"
+    },
+    {
+      "entity_id": "jicamarca__media_luna_channel__igp_11823",
+      "map_category": "LOCAL_CHANNEL",
+      "map_eligible_on_main": true,
+      "origin": "Jicamarca discovery IGP channel line",
+      "effect_of_this_line": "NONE"
+    },
+    {
+      "entity_id": "cashahuacra",
+      "map_category": "CATCHMENT",
+      "map_eligible_on_main": true,
+      "origin": "W1 Santa Eulalia-Rimac D8 candidate",
+      "effect_of_this_line": "IDENTITY_CONTEXT_ONLY: ANA 2015 documents Cashahuacra parte Alta as a tributary child; no geometry change."
+    },
+    {
+      "entity_id": "shingolay",
+      "map_category": "CATCHMENT",
+      "map_eligible_on_main": true,
+      "origin": "W1 Santa Eulalia-Rimac D8 candidate",
+      "effect_of_this_line": "NONE: INDECI 2017 'Chingolay' spelling variant left unresolved."
+    },
+    {
+      "entity_id": "santa_eulalia_faja_2004",
+      "map_category": "REGULATORY_FAJA_MARGINAL",
+      "map_eligible_on_main": true,
+      "origin": "W1 Santa Eulalia-Rimac official faja",
+      "effect_of_this_line": "Receiver-chain context reuses it as regulatory context only; it is not promoted to COLLECTOR."
+    },
+    {
+      "entity_id": "rimac_faja_2020",
+      "map_category": "REGULATORY_FAJA_MARGINAL",
+      "map_eligible_on_main": true,
+      "origin": "W1 Santa Eulalia-Rimac official faja",
+      "effect_of_this_line": "Receiver-chain context reuses it as regulatory context only; it is not promoted to COLLECTOR."
+    },
+    {
+      "entity_id": "quirio_rimac_d8_intersection",
+      "map_category": "NODE",
+      "node_semantics": "REPRODUCIBLE_DERIVED",
+      "map_eligible_on_main": true,
+      "origin": "Rimac static coupling nodes",
+      "effect_of_this_line": "ANA 2015 terminal QA: 45-60 m to the regulatory Final point. Strengthens spatial consistency only; semantics stay REPRODUCIBLE_DERIVED, never EXACT_OFFICIAL."
+    },
+    {
+      "entity_id": "pedregal_rimac_d8_intersection",
+      "map_category": "NODE",
+      "node_semantics": "REPRODUCIBLE_DERIVED",
+      "map_eligible_on_main": true,
+      "origin": "Rimac static coupling nodes",
+      "effect_of_this_line": "ANA 2015 terminal QA: 95-112 m to the regulatory Final point. Strengthens spatial consistency only; semantics stay REPRODUCIBLE_DERIVED, never EXACT_OFFICIAL."
+    }
+  ],
+  "line_elements": [
+    {
+      "element_id": "rio_seco",
+      "map_category": "LOCAL_CHANNEL",
+      "map_eligible_today": false,
+      "eligible_after_independent_qa": false,
+      "reason_if_withheld": "MISSING_REPRODUCIBLE_NATURAL_CHANNEL_GEOMETRY: the only frozen coordinates come from the ANA table labelled Qda. Colca (semantic quarantine); IGN/MINAM/IGP probes did not freeze a Rio Seco feature.",
+      "evidence_refs": [
+        "config/phase2_jicamarca_rio_seco_colca_nomenclature_conflict_v0_1.json",
+        "config/phase2_ana2023_rio_seco_colca_el_silencio_faja_context_v0_1.json"
+      ]
+    },
+    {
+      "element_id": "colca",
+      "map_category": "LOCAL_CHANNEL",
+      "map_eligible_today": false,
+      "eligible_after_independent_qa": false,
+      "reason_if_withheld": "REGULATORY_FAJA_ONLY: ANA 2023 provides faja hitos, not a channel axis; the existing file is quarantined because it is bound to the rio_seco id.",
+      "evidence_refs": [
+        "config/phase2_ana2023_rio_seco_colca_el_silencio_faja_context_v0_1.json"
+      ]
+    },
+    {
+      "element_id": "el_silencio",
+      "map_category": "LOCAL_CHANNEL",
+      "map_eligible_today": false,
+      "eligible_after_independent_qa": false,
+      "reason_if_withheld": "REGULATORY_FAJA_ONLY: ANA 2023 faja hitos are not a channel axis.",
+      "evidence_refs": [
+        "config/phase2_ana2023_rio_seco_colca_el_silencio_faja_context_v0_1.json"
+      ]
+    },
+    {
+      "element_id": "huaycoloro_lower_engineered_channel",
+      "map_category": "LOCAL_CHANNEL",
+      "map_eligible_today": false,
+      "eligible_after_independent_qa": false,
+      "reason_if_withheld": "MISSING_POST_WORK_GEODATA: ANIN 10.5 km reinforced-concrete channel (inaugurated 2025-09-16) has no public as-built geodata; MINAM/ANA vector probes ran in CI but no feature payload was frozen in the repository.",
+      "evidence_refs": [
+        "config/phase2_anin2023_2026_huaycoloro_engineered_channel_context_v0_1.json",
+        "config/phase2_minam2020_huaycoloro_vector_source_v0_1.json"
+      ]
+    },
+    {
+      "element_id": "jicamarca_named_channel",
+      "map_category": "LOCAL_CHANNEL",
+      "map_eligible_today": false,
+      "eligible_after_independent_qa": false,
+      "reason_if_withheld": "IDENTITY_UNRESOLVED: no source fixes which channel carries the Jicamarca name; a synthetic Quebrada Jicamarca unit is forbidden.",
+      "evidence_refs": [
+        "config/phase2_jicamarca_collector_coupling_v0_1.json"
+      ]
+    },
+    {
+      "element_id": "cashahuacra_alta",
+      "map_category": "LOCAL_CHANNEL",
+      "map_eligible_today": false,
+      "eligible_after_independent_qa": false,
+      "reason_if_withheld": "NO_GEOMETRY: ANA 2015 confirms the documentary child relation (progressive 0+950) without a channel axis or coordinate.",
+      "evidence_refs": [
+        "config/phase2_ana2015_cashahuacra_local_hierarchy_v0_1.json"
+      ]
+    },
+    {
+      "element_id": "pedregal_san_antonio_senamhi_microbasin",
+      "map_category": "CATCHMENT",
+      "map_eligible_today": false,
+      "eligible_after_independent_qa": false,
+      "reason_if_withheld": "NO_POLYGON: SENAMHI 2020 reports morphometry (10.28 km2) but no reproducible polygon; source-reported values are not IRFEN parameters.",
+      "evidence_refs": [
+        "config/phase2_senamhi2020_pedregal_microbasin_receiver_context_v0_1.json"
+      ]
+    },
+    {
+      "element_id": "rimac_mainstem_receiver",
+      "map_category": "COLLECTOR",
+      "map_eligible_today": false,
+      "eligible_after_independent_qa": false,
+      "reason_if_withheld": "MISSING_REPRODUCIBLE_COLLECTOR_AXIS: fajas are not a substitute; capacity UNKNOWN; ANIN project scope (10 reaches, 63.5 km) is not reach geometry.",
+      "evidence_refs": [
+        "config/phase2_rimac_receiver_context_v0_1.json",
+        "config/phase2_santa_eulalia_receiver_chain_v0_1.json"
+      ],
+      "note": "Already registered (withheld) on main from the Santa Eulalia-Rimac coupling contract. The Jicamarca tributary coupling rows live in config/phase2_jicamarca_collector_coupling_v0_1.json, which the builder does not read; wiring them into the collector inventory is part of independent QA, not of this change."
+    },
+    {
+      "element_id": "colca__rio_seco__confluence",
+      "map_category": "NODE",
+      "node_semantics": "UNRESOLVED",
+      "map_eligible_today": false,
+      "eligible_after_independent_qa": false,
+      "reason_if_withheld": "UNRESOLVED_NODE_NOT_DRAWN: ANA 2023 states Colca and El Silencio form Rio Seco; no confluence coordinate.",
+      "evidence_refs": [
+        "config/phase2_ana2023_rio_seco_colca_el_silencio_faja_context_v0_1.json"
+      ]
+    },
+    {
+      "element_id": "el_silencio__rio_seco__confluence",
+      "map_category": "NODE",
+      "node_semantics": "UNRESOLVED",
+      "map_eligible_today": false,
+      "eligible_after_independent_qa": false,
+      "reason_if_withheld": "UNRESOLVED_NODE_NOT_DRAWN: documentary relation only; no confluence coordinate.",
+      "evidence_refs": [
+        "config/phase2_ana2023_rio_seco_colca_el_silencio_faja_context_v0_1.json"
+      ]
+    },
+    {
+      "element_id": "rio_seco__huaycoloro__confluence",
+      "map_category": "NODE",
+      "node_semantics": "UNRESOLVED",
+      "map_eligible_today": false,
+      "eligible_after_independent_qa": false,
+      "reason_if_withheld": "UNRESOLVED_NODE_NOT_DRAWN: IGP 2017 places the union near the Radio Observatorio de Jicamarca without a coordinate; station labels are not nodes.",
+      "evidence_refs": [
+        "config/phase2_jicamarca_huaycoloro_rio_seco_union_2017_v0_2.json"
+      ]
+    },
+    {
+      "element_id": "huaycoloro__rimac__confluence",
+      "map_category": "NODE",
+      "node_semantics": "UNRESOLVED",
+      "map_eligible_today": false,
+      "eligible_after_independent_qa": false,
+      "reason_if_withheld": "UNRESOLVED_NODE_NOT_DRAWN: exact surface confluence unknown; moving QHuay1 40 m downstream to manufacture it is forbidden.",
+      "evidence_refs": [
+        "config/phase2_ana_qhuay1_near_confluence_monitoring_anchor_v0_1.json"
+      ]
+    },
+    {
+      "element_id": "qhuay1_near_confluence_anchor",
+      "map_category": "NODE",
+      "node_semantics": "NEAR_CONFLUENCE",
+      "map_eligible_today": false,
+      "eligible_after_independent_qa": true,
+      "reason_if_withheld": "WITHHELD_PENDING_INDEPENDENT_QA_AND_POINT_ARTIFACT: official ANA coordinate (UTM 18S 287433 E, 8670443 N, 40 m before the Rimac confluence) exists only inside an unhashed PDF table; no frozen Point artifact with per-feature guards exists. After QA it can be drawn as NEAR_CONFLUENCE (water-quality monitoring point), never labelled as the confluence.",
+      "evidence_refs": [
+        "config/phase2_ana_qhuay1_near_confluence_monitoring_anchor_v0_1.json"
+      ],
+      "requirements_before_drawing": [
+        "freeze ANA0000959.pdf bytes and SHA-256",
+        "commit a Point GeoJSON at the exact source coordinate with RESEARCH_ONLY per-feature guards",
+        "register it in the catalog and record INDEPENDENT_QA_ACCEPTED for RIMAC_JICAMARCA"
+      ]
+    },
+    {
+      "element_id": "media_luna__canto_grande__junction",
+      "map_category": "NODE",
+      "node_semantics": "UNRESOLVED",
+      "map_eligible_today": false,
+      "eligible_after_independent_qa": false,
+      "reason_if_withheld": "UNRESOLVED_NODE_NOT_DRAWN: the frozen IGP lines do not intersect (expected minimum gap 1.4-1.6 km); snapping or hand extension is forbidden.",
+      "evidence_refs": [
+        "config/phase2_jicamarca_canto_media_line_proximity_v0_1.json"
+      ]
+    },
+    {
+      "element_id": "cashahuacra_alta__cashahuacra__confluence",
+      "map_category": "NODE",
+      "node_semantics": "UNRESOLVED",
+      "map_eligible_today": false,
+      "eligible_after_independent_qa": false,
+      "reason_if_withheld": "UNRESOLVED_NODE_NOT_DRAWN: regulatory progressive 0+950 is not a surface confluence.",
+      "evidence_refs": [
+        "config/phase2_ana2015_cashahuacra_local_hierarchy_v0_1.json"
+      ]
+    },
+    {
+      "element_id": "quirio__rimac__official_confluence",
+      "map_category": "NODE",
+      "node_semantics": "UNRESOLVED",
+      "map_eligible_today": false,
+      "eligible_after_independent_qa": false,
+      "reason_if_withheld": "UNRESOLVED_NODE_NOT_DRAWN: no official surface confluence; the D8 node already on main stays REPRODUCIBLE_DERIVED.",
+      "evidence_refs": [
+        "config/phase2_ana2015_quirio_pedregal_faja_terminal_qa_v0_1.json",
+        "config/phase2_ana2016_quirio_pedregal_topology_v0_1.json"
+      ]
+    },
+    {
+      "element_id": "pedregal__rimac__official_confluence",
+      "map_category": "NODE",
+      "node_semantics": "UNRESOLVED",
+      "map_eligible_today": false,
+      "eligible_after_independent_qa": false,
+      "reason_if_withheld": "UNRESOLVED_NODE_NOT_DRAWN: no official surface confluence; the D8 node already on main stays REPRODUCIBLE_DERIVED.",
+      "evidence_refs": [
+        "config/phase2_ana2015_quirio_pedregal_faja_terminal_qa_v0_1.json",
+        "config/phase2_senamhi2020_pedregal_microbasin_receiver_context_v0_1.json"
+      ]
+    },
+    {
+      "element_id": "igp_jicamarca_stations_rs2_hl1_hl2",
+      "map_category": "NODE",
+      "node_semantics": "MONITORING_ANCHOR",
+      "map_eligible_today": false,
+      "eligible_after_independent_qa": false,
+      "reason_if_withheld": "NO_FROZEN_STATION_COORDINATES: IGP 2023 event reports give descriptive locations only (ROJ barrier, Petramas, ROJ entrance bridge); station labels are not outlets.",
+      "evidence_refs": [
+        "config/phase2_igp2023_jicamarca_station_activation_events_v0_1.json"
+      ]
+    },
+    {
+      "element_id": "huaycoloro_engineered_works",
+      "map_category": "ENGINEERED_OR_CRITICAL_REACH_CONTEXT",
+      "map_eligible_today": false,
+      "eligible_after_independent_qa": false,
+      "reason_if_withheld": "NARRATIVE_ONLY: ANIN reports (Ramiro Priale motorway to Puente Saracoto, two aqueducts) without geodata; georeferencing the narrative is forbidden. Design or completion is not observed capacity.",
+      "evidence_refs": [
+        "config/phase2_anin2023_2026_huaycoloro_engineered_channel_context_v0_1.json"
+      ]
+    },
+    {
+      "element_id": "senamhi2023_rimac_overflow_hazard_sectors",
+      "map_category": "DOCUMENT_CONTEXT",
+      "map_eligible_today": false,
+      "eligible_after_independent_qa": false,
+      "reason_if_withheld": "TEXT_ONLY: named sectors without polygons; not an event footprint.",
+      "evidence_refs": [
+        "config/phase2_senamhi2023_rimac_downstream_hazard_context_v0_1.json"
+      ]
+    },
+    {
+      "element_id": "cenepred_rpas_cashahuacra_shingolay_santa_eulalia",
+      "map_category": "DOCUMENT_CONTEXT",
+      "map_eligible_today": false,
+      "eligible_after_independent_qa": false,
+      "reason_if_withheld": "METADATA_ONLY: SIGRID 6765/6766/6767/6731/6732 bytes not recovered or hashed; QA sources, not map layers.",
+      "evidence_refs": [
+        "config/phase2_santa_eulalia_receiver_chain_v0_1.json"
+      ]
+    }
+  ],
+  "not_map_entities": [
+    {
+      "item_id": "jicamarca_events_1983_1987_1998_2012",
+      "classification": "HISTORICAL_PARENT_CONTEXT",
+      "reason": "Event years at Jicamarca parent scale; no footprint, no child attribution."
+    },
+    {
+      "item_id": "puente_huaycoloro_1998_rimac_overflow",
+      "classification": "HISTORICAL_RECEIVER_OVERFLOW_OCCURRENCE_QUALITATIVE",
+      "reason": "Qualitative occurrence without location, depth or discharge; event footprints are forbidden."
+    },
+    {
+      "item_id": "TAMBO_DE_VISO_1998",
+      "classification": "HISTORICAL_CONTEXT_ONLY_NOT_TRANSFERABLE",
+      "reason": "Upper Rimac (San Mateo, Huarochiri), outside the Jicamarca system and the mouth-to-Santa-Eulalia scope; no geometry and no transferable hydraulic value."
+    }
+  ],
+  "map_updates": {
+    "new_geometries_published": 0,
+    "new_nodes_published": 0,
+    "map_layers_json_changed": false
+  }
+}

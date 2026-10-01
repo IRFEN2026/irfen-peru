@@ -1,0 +1,92 @@
+name: IRFEN - Phase2 Rimac Jicamarca line
+
+on:
+  pull_request:
+    paths:
+      - config/phase2_ana2015_cashahuacra_local_hierarchy_v0_1.json
+      - config/phase2_ana2015_quirio_pedregal_faja_context_v0_1.json
+      - config/phase2_ana2015_quirio_pedregal_faja_terminal_qa_v0_1.json
+      - config/phase2_ana2016_quirio_pedregal_topology_v0_1.json
+      - config/phase2_ana2023_rio_seco_colca_el_silencio_faja_context_v0_1.json
+      - config/phase2_ana_national_hydrography_service_v0_1.json
+      - config/phase2_ana_qhuay1_near_confluence_monitoring_anchor_v0_1.json
+      - config/phase2_anin2023_2026_huaycoloro_engineered_channel_context_v0_1.json
+      - config/phase2_igp2023_jicamarca_station_activation_events_v0_1.json
+      - config/phase2_jicamarca_canto_media_line_proximity_v0_1.json
+      - config/phase2_jicamarca_historical_coupling_evidence_v0_1.json
+      - config/phase2_minam2020_huaycoloro_vector_source_v0_1.json
+      - config/phase2_quirio_pedregal_rimac_direct_coupling_v0_1.json
+      - config/phase2_rimac_jicamarca_coupling_registry_v0_1.json
+      - config/phase2_rimac_jicamarca_map_semantic_reconciliation_v0_1.json
+      - config/phase2_rimac_local_historical_evidence_registry_v0_1.json
+      - config/phase2_rimac_receiver_context_v0_1.json
+      - config/phase2_santa_eulalia_indeci2017_local_activation_names_v0_1.json
+      - config/phase2_santa_eulalia_receiver_chain_v0_1.json
+      - config/phase2_senamhi2020_pedregal_microbasin_receiver_context_v0_1.json
+      - config/phase2_senamhi2023_rimac_downstream_hazard_context_v0_1.json
+      - scripts/validate_phase2_rimac_jicamarca_coupling_registry.py
+      - scripts/validate_phase2_quirio_pedregal_rimac_direct_coupling.py
+      - scripts/build_map_semantic_layers.py
+      - scripts/build_map_layer_catalog.py
+      - site/data/map_layers.json
+      - tests/test_phase2_*rimac*.py
+      - tests/test_phase2_*jicamarca*.py
+      - tests/test_phase2_*quirio*.py
+      - tests/test_phase2_*santa_eulalia*.py
+      - tests/test_phase2_*huaycoloro*.py
+      - tests/test_phase2_ana*.py
+      - tests/test_phase2_senamhi*.py
+      - tests/test_map_semantic_*.py
+      - .github/workflows/phase2-rimac-jicamarca-line.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  topology-routing-provenance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest
+      - name: Fail-closed validators
+        run: |
+          python scripts/validate_phase2_rimac_jicamarca_coupling_registry.py
+          python scripts/validate_phase2_quirio_pedregal_rimac_direct_coupling.py
+      - name: Topology, routing, provenance and reconciliation tests (pytest, incl. function tests)
+        run: |
+          python -m pytest -q \
+            tests/test_phase2_ana2015_cashahuacra_local_hierarchy.py \
+            tests/test_phase2_ana2015_quirio_pedregal_faja_context.py \
+            tests/test_phase2_ana2015_quirio_pedregal_faja_terminal_qa.py \
+            tests/test_phase2_ana2016_quirio_pedregal_topology.py \
+            tests/test_phase2_ana2023_rio_seco_colca_el_silencio_faja_context.py \
+            tests/test_phase2_ana_national_hydrography_service.py \
+            tests/test_phase2_ana_qhuay1_near_confluence_monitoring_anchor.py \
+            tests/test_phase2_igp2023_jicamarca_station_activation_events.py \
+            tests/test_phase2_jicamarca_canto_media_line_proximity.py \
+            tests/test_phase2_jicamarca_historical_coupling_evidence.py \
+            tests/test_phase2_minam2020_huaycoloro_rimac_probe.py \
+            tests/test_phase2_minam2020_huaycoloro_vector_source.py \
+            tests/test_phase2_quirio_pedregal_rimac_direct_coupling.py \
+            tests/test_phase2_rimac_ana_hydrography_probe.py \
+            tests/test_phase2_rimac_jicamarca_coupling_registry.py \
+            tests/test_phase2_rimac_jicamarca_map_semantic_reconciliation.py \
+            tests/test_phase2_rimac_local_historical_evidence_registry.py \
+            tests/test_phase2_rimac_receiver_context.py \
+            tests/test_phase2_santa_eulalia_indeci2017_local_activation_names.py \
+            tests/test_phase2_santa_eulalia_receiver_chain.py \
+            tests/test_phase2_senamhi2020_pedregal_microbasin_receiver_context.py \
+            tests/test_phase2_rimac_jicamarca_context_numeric_guards.py
+      - name: Map semantic model unchanged (builder check-only + map tests)
+        run: |
+          python scripts/build_map_layer_catalog.py --check-only
+          python -m pytest -q tests/test_map_semantic_consolidation.py tests/test_map_semantic_provenance.py tests/test_map_layer_catalog.py
