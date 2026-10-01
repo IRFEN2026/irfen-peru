@@ -67,7 +67,7 @@ def test_la_tucilla_is_fail_closed_anchor_not_geometry():
     assert row["outlet_status"] == "UNRESOLVED"
     assert row["map_publishable"] is False
     assert "la_tucilla" in plan["query_policy"]["official_map_anchor_not_line_geometry_quarantine"]
-    assert "la_tucilla" in plan["query_policy"]["scope_adjudication_quarantine"]
+    assert "la_tucilla" not in plan["query_policy"]["scope_adjudication_quarantine"]\n    assert plan["target_context"]["la_tucilla"]["official_coordinates"] == {"easting_m": 538042, "northing_m": 9594412, "coordinate_reference": "WGS84 / UTM zone 17S", "source_page": 1}
     assert "la_tucilla" in plan["query_policy"]["marine_hazard_separation_required"]
 
 
