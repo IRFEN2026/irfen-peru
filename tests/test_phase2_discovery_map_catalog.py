@@ -5,8 +5,16 @@ ROOT=Path(__file__).resolve().parents[1]
 
 def test_discovery_units_enter_map_catalog_only_with_reproducible_guarded_geometry():
     catalog=json.loads((ROOT/"site/data/map_layers.json").read_text())
-    rows={r["discovery_id"]:r for r in catalog["research_discovery_units"]}
-    assert len(rows) == 14
+    units=catalog["research_discovery_units"]
+    rows={r["discovery_id"]:r for r in units}
+    # Conteos derivados del propio catálogo: ningún número fijo de unidades.
+    assert len(rows) == len(units) == catalog["summary"]["research_discovery_units_registered"]
+    parents=[r for r in units if not r.get("parent_discovery_id")]
+    children=[r for r in units if r.get("parent_discovery_id")]
+    assert catalog["summary"]["research_discovery_parent_units_registered"] == len(parents)
+    assert catalog["summary"]["research_discovery_child_units_registered"] == len(children)
+    assert catalog["summary"]["research_discovery_units_map_eligible"] == sum(r["geometry"]["map_eligible"] is True for r in units)
+    assert all(c["parent_discovery_id"] in rows for c in children)
     for did in ("lima_norte_pativilca","lima_norte_fortaleza_paramonga"):
         row=rows[did]
         assert row["deployment_status"]=="RESEARCH_ONLY"
