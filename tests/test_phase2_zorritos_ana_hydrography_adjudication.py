@@ -1,5 +1,7 @@
 import importlib.util
 import json
+import tempfile
+import unittest
 import subprocess
 import sys
 from pathlib import Path
@@ -220,3 +222,44 @@ def test_geometry_promotion_requires_reproducible_chain():
     assert p["synthetic_connectors_allowed"] is False
     assert p["composite_parent_geometry_allowed"] is False
     assert p["absence_of_match_is_negative"] is False
+
+
+def test_reconciled_with_map_semantic_model_and_nothing_promoted_to_map():
+    matrix = load_matrix()
+    rec = matrix["map_semantics_reconciliation"]
+    layers = json.loads((ROOT / "site/data/map_layers.json").read_text(encoding="utf-8"))
+    sem = layers["map_semantics"]
+
+    pending = {row["line"]: row for row in sem["admissibility"]["pending_independent_qa_lines"]}
+    assert pending["ZORRITOS"]["status"] == rec["pending_independent_qa_status"] == "NOT_CONSOLIDATED_UNTIL_INDEPENDENT_QA_ACCEPTED"
+    assert rec["map_counts_changed_by_this_package"] is False
+    assert rec["child_targets"]["count"] == len(matrix["targets"]) == 18
+    assert rec["child_targets"]["semantic_category_if_ever_admitted"] == "LOCAL_CHANNEL"
+    assert rec["point_anchors"]["drawable"] is False
+
+    text = json.dumps(sem, ensure_ascii=False)
+    for target in list(matrix["targets"]) + ["tucillal"]:
+        assert f"__{target}" not in text, target
+    zorritos_features = [f for f in sem["features"] if "zorritos" in f["entity_id"]]
+    assert [f["entity_id"] for f in zorritos_features] == [rec["already_on_map_unchanged"]["entity_id"]]
+    assert zorritos_features[0]["source_ids"] == [rec["already_on_map_unchanged"]["source_id"]]
+
+
+class _ModuleFunctionTests(unittest.TestCase):
+    """Expose the module-level test functions to `unittest discover` (pr-validation)."""
+
+
+def _bind(name, fn):
+    def method(self):
+        if "tmp_path" in fn.__code__.co_varnames[: fn.__code__.co_argcount]:
+            with tempfile.TemporaryDirectory() as tmp:
+                fn(Path(tmp))
+        else:
+            fn()
+    method.__name__ = name
+    return method
+
+
+for _name, _fn in list(globals().items()):
+    if _name.startswith("test_") and callable(_fn):
+        setattr(_ModuleFunctionTests, _name, _bind(_name, _fn))

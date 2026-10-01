@@ -3,16 +3,29 @@
 No network: the fetcher is replaced by synthetic fixtures. Synthetic rows exist
 only to exercise the contract and are never written to the repository.
 """
+import contextlib
 import importlib.util
 import json
+import re
+import tempfile
+import unittest
 from pathlib import Path
-
-import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts/freeze_zorritos_priority_ana_hydrography.py"
 CONTEXT = ROOT / "site/data/phase2/sources/tumbes_zorritos_extended_identity_context_v0_1.json"
 MATRIX = ROOT / "site/data/phase2/sources/tumbes_zorritos_ana_hydrography_adjudication_matrix_v0_1.json"
+
+@contextlib.contextmanager
+def raises(exc_type, match):
+    try:
+        yield
+    except exc_type as exc:
+        if not re.search(match, str(exc)):
+            raise AssertionError(f"{exc!r} does not match {match!r}") from exc
+        return
+    raise AssertionError(f"{exc_type.__name__} not raised")
+
 
 spec = importlib.util.spec_from_file_location("freezer", SCRIPT)
 freezer = importlib.util.module_from_spec(spec)
@@ -124,21 +137,24 @@ def test_replay_detects_tampered_raw_bytes(tmp_path):
     manifest, files = freezer.build_capture(freezer.load_plan(), make_fetch({"POZOS": fc(line(3, "Quebrada Los Pozos"))}))
     freezer.write_capture(manifest, files, tmp_path)
     (tmp_path / "los_pozos__pozos.raw.geojson").write_bytes(b'{"type":"FeatureCollection","features":[]}')
-    with pytest.raises(freezer.FreezeError, match="RAW_HASH_MISMATCH"):
+    with raises(freezer.FreezeError, match="RAW_HASH_MISMATCH"):
         freezer.check_capture(tmp_path)
 
 
-@pytest.mark.parametrize("responses, code", [
+INVALID_RESPONSES = [
     ({"meta": {**META, "name": "Otra capa"}}, "UNEXPECTED_LAYER_NAME"),
     ({"meta": {**META, "fields": [{"name": "NOMBRE_CA"}]}}, "MISSING_FIELDS"),
     ({"POZOS": fc(line(3, "Los Pozos"), exceededTransferLimit=True)}, "EXCEEDED_TRANSFER_LIMIT"),
     ({"POZOS": fc({**line(3, "Los Pozos"), "geometry": {"type": "Point", "coordinates": [-80.68, -3.68]}})}, "NON_LINE_OR_EMPTY_GEOMETRY"),
     ({"SECHURITA": {"error": {"code": 400}}}, "SERVICE_ERROR"),
-])
-def test_any_invalid_response_aborts_before_write(tmp_path, responses, code):
-    with pytest.raises(freezer.FreezeError, match=code):
-        freezer.build_capture(freezer.load_plan(), make_fetch(responses))
-    assert freezer.check_capture(tmp_path) == "NO_CAPTURE_PRESENT"
+]
+
+
+def test_any_invalid_response_aborts_before_write(tmp_path):
+    for responses, code in INVALID_RESPONSES:
+        with raises(freezer.FreezeError, match=code):
+            freezer.build_capture(freezer.load_plan(), make_fetch(responses))
+        assert freezer.check_capture(tmp_path) == "NO_CAPTURE_PRESENT"
 
 
 def test_repository_has_no_capture_until_ci_freeze_runs():
@@ -156,3 +172,60 @@ def test_priority_is_capture_order_only_not_risk_and_no_substitute_geometry():
     assert plan["promotion_policy"]["point_geometry_may_substitute_line"] is False
     assert plan["promotion_policy"]["pdf_or_image_derived_geometry_allowed"] is False
     assert plan["expected_geometry_type"] == "esriGeometryPolyline"
+
+
+def _network_down(url):
+    import urllib.error
+    raise urllib.error.URLError("Tunnel connection failed: 403 Forbidden")
+
+
+def test_attempt_fails_closed_and_records_exact_blocker(tmp_path):
+    out, report_path = tmp_path / "cap", tmp_path / "report.json"
+    report = freezer.attempt(freezer.load_plan(), _network_down, out, report_path)
+    assert report["status"] == "CAPTURE_BLOCKED_NOTHING_WRITTEN"
+    assert report["blocker_class"] == "EGRESS_PROXY_TUNNEL_REJECTED"
+    assert report["failed_url"].endswith("/0?f=pjson")
+    assert report["geometry_fabricated"] is False and report["targets_promoted"] == []
+    assert set(report["targets"].values()) == {"NOT_CAPTURED_BLOCKED_NOT_NEGATIVE"}
+    assert not out.exists()
+    assert json.loads(report_path.read_text(encoding="utf-8"))["status"] == report["status"]
+
+
+def test_attempt_contract_violation_is_blocked_not_partial(tmp_path):
+    out = tmp_path / "cap"
+    fetch = make_fetch({"SECHURITA": fc({**line(9, "Qda Sechurita"), "geometry": {"type": "Point", "coordinates": [-80.7, -3.7]}})})
+    report = freezer.attempt(freezer.load_plan(), fetch, out, tmp_path / "r.json")
+    assert report["blocker_class"] == "CAPTURE_REJECTED_BY_CONTRACT"
+    assert "NON_LINE_OR_EMPTY_GEOMETRY" in report["exception_message"]
+    assert not out.exists()
+
+
+def test_attempt_success_writes_only_outside_repo_and_replays(tmp_path):
+    out = tmp_path / "cap"
+    fetch = make_fetch({"POZOS": fc(line(3, "Quebrada Los Pozos"))})
+    report = freezer.attempt(freezer.load_plan(), fetch, out, tmp_path / "r.json")
+    assert report["status"] == "CAPTURE_COMPLETE_NOT_ADJUDICATED"
+    assert report["targets"]["los_pozos"] == "ROWS_CAPTURED_NOT_ADJUDICATED"
+    assert report["targets"]["la_tucilla"] == "NO_ROWS_NOT_NEGATIVE"
+    assert freezer.check_capture(out) == "PASS_CAPTURE_REPLAY_HASHES_MATCH"
+    assert freezer.check_capture(freezer.OUT_DIR) == "NO_CAPTURE_PRESENT"
+
+
+class _ModuleFunctionTests(unittest.TestCase):
+    """Expose the module-level test functions to `unittest discover` (pr-validation)."""
+
+
+def _bind(name, fn):
+    def method(self):
+        if "tmp_path" in fn.__code__.co_varnames[: fn.__code__.co_argcount]:
+            with tempfile.TemporaryDirectory() as tmp:
+                fn(Path(tmp))
+        else:
+            fn()
+    method.__name__ = name
+    return method
+
+
+for _name, _fn in list(globals().items()):
+    if _name.startswith("test_") and callable(_fn):
+        setattr(_ModuleFunctionTests, _name, _bind(_name, _fn))

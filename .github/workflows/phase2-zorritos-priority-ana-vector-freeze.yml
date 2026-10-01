@@ -8,12 +8,8 @@ on:
       - site/data/phase2/sources/zorritos_priority_ana_capture/**
       - tests/test_phase2_zorritos_priority_ana_vector_freeze.py
       - .github/workflows/phase2-zorritos-priority-ana-vector-freeze.yml
+      - .github/scripts/zorritos_capture_attempt_summary.py
   workflow_dispatch:
-    inputs:
-      capture:
-        description: "Fetch live ANA rows for la_tucilla, los_pozos, sechurita and upload them as an artifact (never committed, never promoted)"
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -33,8 +29,9 @@ jobs:
       - name: Replay committed capture hashes (or report none present)
         run: python scripts/freeze_zorritos_priority_ana_hydrography.py --check-only
 
-  capture:
-    if: github.event_name == 'workflow_dispatch' && inputs.capture
+  capture-attempt:
+    # Live, read-only attempt against ANA. Writes only to the runner temp dir,
+    # never commits, never promotes. A blocked endpoint is recorded, not faked.
     needs: contract
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -43,13 +40,29 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - name: Exact all-or-nothing capture from ANA
-        run: python scripts/freeze_zorritos_priority_ana_hydrography.py --capture
-      - name: Replay the fresh capture
-        run: python scripts/freeze_zorritos_priority_ana_hydrography.py --check-only
+      - name: Attempt exact all-or-nothing ANA capture (fail closed)
+        id: attempt
+        run: |
+          set -euo pipefail
+          python scripts/freeze_zorritos_priority_ana_hydrography.py --attempt \
+            --out-dir "$RUNNER_TEMP/zorritos_capture" \
+            --report "$RUNNER_TEMP/zorritos_capture_attempt_report.json"
+          python .github/scripts/zorritos_capture_attempt_summary.py "$RUNNER_TEMP/zorritos_capture_attempt_report.json"
+      - name: Replay fresh capture hashes
+        if: steps.attempt.outputs.status == 'CAPTURE_COMPLETE_NOT_ADJUDICATED'
+        run: |
+          python - <<'PY'
+          import importlib.util, os
+          from pathlib import Path
+          spec = importlib.util.spec_from_file_location("f", "scripts/freeze_zorritos_priority_ana_hydrography.py")
+          f = importlib.util.module_from_spec(spec); spec.loader.exec_module(f)
+          print(f.check_capture(Path(os.environ["RUNNER_TEMP"]) / "zorritos_capture"))
+          PY
       - uses: actions/upload-artifact@v4
         with:
-          name: zorritos-priority-ana-capture-${{ github.run_id }}
-          path: site/data/phase2/sources/zorritos_priority_ana_capture/
+          name: zorritos-priority-ana-capture-attempt-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/zorritos_capture_attempt_report.json
+            ${{ runner.temp }}/zorritos_capture/
           if-no-files-found: error
           retention-days: 90

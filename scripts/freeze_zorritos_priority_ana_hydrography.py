@@ -8,15 +8,22 @@ digitised or inferred. Zero rows is recorded as NO_ROWS_NOT_NEGATIVE.
 Modes:
   --capture      fetch live (CI runner), validate everything, then write
   --check-only   replay: verify manifest hashes against committed bytes
+  --attempt      fetch live into --out-dir (never the repository) and always
+                 write --report; on any network or contract failure nothing is
+                 written to --out-dir and the report records the exact blocker
 """
 import argparse
 import hashlib
 import json
 import math
+import os
+import socket
+import traceback
 import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlencode
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -254,12 +261,107 @@ def check_capture(out_dir: Path) -> str:
     return "PASS_CAPTURE_REPLAY_HASHES_MATCH"
 
 
+def _environment() -> dict:
+    keys = ("GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT", "GITHUB_SHA", "GITHUB_REF", "GITHUB_REPOSITORY",
+            "GITHUB_WORKFLOW", "RUNNER_NAME", "RUNNER_OS", "RUNNER_ENVIRONMENT")
+    env = {k: os.environ.get(k) for k in keys}
+    env["proxy_configured"] = bool(os.environ.get("HTTPS_PROXY") or os.environ.get("https_proxy"))
+    return env
+
+
+def _classify(exc: BaseException) -> str:
+    if isinstance(exc, FreezeError):
+        return "CAPTURE_REJECTED_BY_CONTRACT"
+    if isinstance(exc, HTTPError):
+        return f"HTTP_ERROR_{exc.code}"
+    if isinstance(exc, URLError):
+        reason = exc.reason
+        if isinstance(reason, socket.gaierror):
+            return "DNS_RESOLUTION_FAILED"
+        if isinstance(reason, (TimeoutError, socket.timeout)):
+            return "CONNECT_TIMEOUT"
+        if isinstance(reason, ConnectionRefusedError):
+            return "CONNECTION_REFUSED"
+        if "Tunnel connection failed" in str(reason) or "403" in str(reason):
+            return "EGRESS_PROXY_TUNNEL_REJECTED"
+        return "NETWORK_URL_ERROR"
+    if isinstance(exc, (TimeoutError, socket.timeout)):
+        return "READ_TIMEOUT"
+    if isinstance(exc, (ConnectionError, OSError)):
+        return "NETWORK_OS_ERROR"
+    return "UNEXPECTED_ERROR"
+
+
+def attempt(plan: dict, fetch, out_dir: Path, report_path: Path) -> dict:
+    """Never raises for network/contract failures. Writes capture only on full success."""
+    calls: list[str] = []
+
+    def tracked(url: str) -> bytes:
+        calls.append(url)
+        return fetch(url)
+
+    started = datetime.now(timezone.utc).isoformat()
+    report = {
+        "schema_version": "0.1",
+        **SAFE,
+        "plan": str(PLAN.relative_to(ROOT)),
+        "plan_sha256": sha256(PLAN.read_bytes()),
+        "service": plan["service"],
+        "started_at_utc": started,
+        "environment": _environment(),
+        "geometry_fabricated": False,
+        "map_publishable": False,
+        "targets_promoted": [],
+    }
+    try:
+        manifest, files = build_capture(plan, tracked)
+    except Exception as exc:  # fail closed: record, write nothing
+        report.update({
+            "status": "CAPTURE_BLOCKED_NOTHING_WRITTEN",
+            "blocker_class": _classify(exc),
+            "exception_type": f"{type(exc).__module__}.{type(exc).__name__}",
+            "exception_message": str(exc)[:500],
+            "failed_url": calls[-1] if calls else None,
+            "requests_attempted": len(calls),
+            "traceback_tail": traceback.format_exc(limit=3)[-1500:],
+            "capture_files_written": [],
+            "targets": {t["component_id"]: "NOT_CAPTURED_BLOCKED_NOT_NEGATIVE" for t in plan["priority_targets"]},
+        })
+    else:
+        manifest["environment"] = report["environment"]
+        write_capture(manifest, files, out_dir)
+        report.update({
+            "status": "CAPTURE_COMPLETE_NOT_ADJUDICATED",
+            "blocker_class": None,
+            "requests_attempted": len(calls),
+            "capture_files_written": sorted(list(files) + ["manifest_v0_1.json"]),
+            "manifest_sha256": sha256((out_dir / "manifest_v0_1.json").read_bytes()),
+            "targets": {cid: t["capture_status"] for cid, t in manifest["targets"].items()},
+            "candidate_row_counts": {cid: t["candidate_row_count"] for cid, t in manifest["targets"].items()},
+        })
+    report["finished_at_utc"] = datetime.now(timezone.utc).isoformat()
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    return report
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--capture", action="store_true")
     mode.add_argument("--check-only", action="store_true")
+    mode.add_argument("--attempt", action="store_true")
+    parser.add_argument("--out-dir", type=Path)
+    parser.add_argument("--report", type=Path)
     args = parser.parse_args()
+    if args.attempt:
+        if not args.out_dir or not args.report:
+            parser.error("--attempt requires --out-dir and --report")
+        if args.out_dir.resolve() == OUT_DIR.resolve() or ROOT.resolve() in args.out_dir.resolve().parents:
+            parser.error("--attempt must not write inside the repository")
+        report = attempt(load_plan(), http_fetch, args.out_dir, args.report)
+        print(json.dumps({k: report.get(k) for k in ("status", "blocker_class", "failed_url", "targets")}, ensure_ascii=False))
+        return 0
     if args.check_only:
         load_plan()
         print(check_capture(OUT_DIR))
