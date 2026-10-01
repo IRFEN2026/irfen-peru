@@ -277,7 +277,12 @@ def test_tucillal_senamhi_historical_context_is_tracked_but_not_admitted():
     assert src["review_copy_sha256"] == "2b830199d2ae24362f57f098e3db0cc8dfc3adb8e7eecf45ac817953778df29d"
     assert src["evidence_page"] == 32
     assert src["claim_scope"] == "HISTORICAL_GROUP_ACTIVATION_CONTEXT_1997_98_ONLY"
-    assert sid in tuc["identity_source_ids"]
+    assert tuc["identity_source_ids"] == ["INGEMMET-A7454-24-050-TUCILLAL"]
+    assert sid not in tuc["identity_source_ids"]
+    assert sid in tuc["historical_event_source_ids"]
+    assert outside["identity_source_ids"] == ["INGEMMET-A7454-24-050-TUCILLAL"]
+    assert sid not in outside["identity_source_ids"]
+    assert sid in outside["historical_event_source_ids"]
     assert tuc["target_set_member"] is False
     assert tuc["target_set_status"] == "OUTSIDE_18_TARGET_SET__TRACKED_BACKLOG_CANDIDATE_19"
     assert tuc["scope_decision"] == "KEEP_OUTSIDE_FROZEN_18_TARGET_SET_UNTIL_EXPLICIT_SCOPE_EXPANSION"
