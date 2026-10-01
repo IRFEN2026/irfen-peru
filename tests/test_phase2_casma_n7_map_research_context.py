@@ -113,6 +113,75 @@ class CasmaMapResearchContextTests(unittest.TestCase):
         self.assertFalse(promotion["historical_geometry_equivalence_to_Uh_pfas100"])
         self.assertIn("EXACT_2007_Uh_pfas100_GEOMETRY", promotion["forbidden_labels"])
 
+    def test_map_semantics_classifies_nine_casma_catchments_with_feature_provenance(self):
+        sem = load(ROOT / "site/data/map_layers.json")["map_semantics"]
+        manifest_rows = {row["code"]: row for row in load(MANIFEST)["features"]}
+        casma = [f for f in sem["features"] if f["parent_id"] == PARENT]
+        self.assertEqual(len(casma), 9)
+        self.assertEqual(sorted(f["entity_id"] for f in casma), [f"{PARENT}__n7_{c}" for c in CODES])
+        for f in casma:
+            code = f["entity_id"].rsplit("_", 1)[-1]
+            with self.subTest(code=code):
+                self.assertEqual(f["map_category"], "CATCHMENT")
+                self.assertEqual(f["category_group"], "A")
+                self.assertEqual(f["semantic_role"], "CURRENT_INSTITUTIONAL_N7_HYDROGRAPHIC_UNIT")
+                self.assertEqual(f["geometry_type"], "Polygon")
+                self.assertIs(f["map_eligible"], True)
+                self.assertIs(f["default_visibility"], False)
+                self.assertEqual(f["source_attribution"], "FEATURE_DECLARED_SOURCE_ID")
+                self.assertEqual(f["source_ids"], [f"MINAM-SERVICIO-ACTIVACION-QUEBRADA-UH-N7-{code}"])
+                self.assertEqual(f["derivation_method"], "COPIED_UNCHANGED_FROM_FROZEN_GATE_A_EPSG4326_CAPTURE")
+                for key, value in {"production_use": False, "production_ready": False, "operational_alerting_enabled": False,
+                                   "activation_gate": "BLOCKED", "decision_thresholds": None, "hydraulic_factors": None,
+                                   "carries_alert_values": False, "carries_risk_classification": False,
+                                   "loaded_into_operational_calculation": False}.items():
+                    self.assertEqual(f[key], value, key)
+                props = load(ROOT / "site" / f["path"])["features"][f["selector"]["feature_index"]]["properties"]
+                self.assertEqual(props["raw_response_sha256"], manifest_rows[code]["raw_response_sha256"])
+                self.assertEqual(props["native_response_sha256"], manifest_rows[code]["native_response_sha256"])
+                self.assertEqual(props["source_service_objectid"], manifest_rows[code]["objectid"])
+        self.assertEqual(sem["summary"]["operational_promotions"], 0)
+        self.assertEqual(load(ROOT / "site/data/map_layers.json")["summary"]["map_semantic_operational_promotions"], 0)
+
+    def test_parent_and_frozen_capture_are_not_drawn(self):
+        sem = load(ROOT / "site/data/map_layers.json")["map_semantics"]
+        self.assertFalse(any(f["entity_id"] == PARENT or f["owner_id"] == PARENT for f in sem["features"]))
+        self.assertFalse(any("casma_n6_parent" in f["path"] or "ancash_casma_n7_minam_official" in f["path"] for f in sem["features"]))
+        entities = {e["entity"]: e for e in sem["entities"]}
+        self.assertEqual(entities[PARENT]["type"], "CONTAINER")
+        self.assertIs(entities[PARENT]["map_eligible"], False)
+        frozen = entities["ancash_casma_n7_gate_a_frozen_capture"]
+        self.assertIs(frozen["map_eligible"], False)
+        self.assertEqual(frozen["record_kind"], "REPOSITORY_GEOMETRY_WITHHELD")
+        withheld = {w["path"]: w for w in sem["withheld_repository_geometries"]}
+        frozen_path = load(MANIFEST)["geometry_path"]
+        self.assertEqual(withheld[frozen_path]["file_sha256"], load(MANIFEST)["geometry_sha256"])
+
+    def test_semantic_classifier_fails_closed_for_casma_without_guards_or_acceptance(self):
+        spec = importlib.util.spec_from_file_location("casma_sem_guard_test", ROOT / "scripts/build_map_semantic_layers.py")
+        sem_mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(sem_mod)
+        good = load(ROOT / self.rows[f"{PARENT}__n7_1375961"]["geometry"]["path"])["features"][0]["properties"]
+        ctx = {"representation": LABEL, "owner_id": "t"}
+        self.assertEqual(sem_mod.classify_feature(good, "Polygon", ctx)["map_category"], "CATCHMENT")
+        for key, bad in [("gate_b_lineage_equivalence", "ESTABLISHED"), ("historical_geometry_equivalence_to_Uh_pfas100", True),
+                         ("gate_c_topology_map", "PENDING"), ("context_only", False)]:
+            with self.subTest(key=key):
+                with self.assertRaises(sem_mod.MapSemanticError):
+                    sem_mod.classify_feature({**good, key: bad}, "Polygon", ctx)
+        with self.assertRaises(sem_mod.MapSemanticError):
+            sem_mod.classify_feature(good, "Polygon", {"representation": "OTHER", "owner_id": "t"})
+        original = sem_mod.ACCEPTED_INDEPENDENT_QA_LINES
+        try:
+            sem_mod.ACCEPTED_INDEPENDENT_QA_LINES = []
+            with self.assertRaises(sem_mod.MapSemanticError):
+                sem_mod.classify_feature(good, "Polygon", ctx)
+            sem_mod.ACCEPTED_INDEPENDENT_QA_LINES = [{**original[0], "acceptance_record": "site/data/phase2/source_assessments/casma_n7_gate_c_adjudication_v0_1.json"}]
+            with self.assertRaises(sem_mod.MapSemanticError):
+                sem_mod.classify_feature(good, "Polygon", ctx)
+        finally:
+            sem_mod.ACCEPTED_INDEPENDENT_QA_LINES = original
+
     def test_catalog_scope_unchanged_outside_casma(self):
         summary = self.catalog["summary"]
         self.assertEqual(summary["research_candidates_registered"], 18)
