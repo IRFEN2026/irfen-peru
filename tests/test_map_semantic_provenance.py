@@ -182,9 +182,16 @@ class NonPromotedInventoryTests(unittest.TestCase):
 
     def test_tributary_coupling_carries_contract_validation_status(self):
         for collector in SEM["collectors"]:
-            contract = json.loads((ROOT / collector["contract_path"]).read_text(encoding="utf-8"))
-            declared = {row["local_unit_id"]: row.get("validation_status") for row in contract.get("tributaries") or []}
+            declared_by_contract = {}
             for row in collector.get("tributary_coupling") or []:
+                # Rows appended from an additional coupling contract declare it per row.
+                contract_path = row.get("source_contract") or collector["contract_path"]
+                if contract_path not in declared_by_contract:
+                    contract = json.loads((ROOT / contract_path).read_text(encoding="utf-8"))
+                    declared_by_contract[contract_path] = {
+                        r["local_unit_id"]: r.get("validation_status") for r in contract.get("tributaries") or []
+                    }
+                declared = declared_by_contract[contract_path]
                 self.assertEqual(row["validation_status"], declared[row["local_unit_id"]])
                 self.assertFalse(row["coupling_state_is_tributary_activation"])
                 self.assertFalse(row["coupling_state_is_collector_response"])

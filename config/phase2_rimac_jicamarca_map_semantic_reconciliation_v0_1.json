@@ -191,7 +191,8 @@
         "config/phase2_rimac_receiver_context_v0_1.json",
         "config/phase2_santa_eulalia_receiver_chain_v0_1.json"
       ],
-      "note": "Already registered (withheld) on main from the Santa Eulalia-Rimac coupling contract. The Jicamarca tributary coupling rows live in config/phase2_jicamarca_collector_coupling_v0_1.json, which the builder does not read; wiring them into the collector inventory is part of independent QA, not of this change."
+      "note": "Registered (withheld) on main from the Santa Eulalia-Rimac coupling contract. The Jicamarca tributary coupling rows (config/phase2_jicamarca_collector_coupling_v0_1.json) are now appended to the same collector fail-closed, tagged qa_line RIMAC_JICAMARCA / NOT_CONSOLIDATED_UNTIL_INDEPENDENT_QA_ACCEPTED; this does not make the collector drawable.",
+      "inventory_collector_id": "rimac_mainstem_receiver"
     },
     {
       "element_id": "colca__rio_seco__confluence",
@@ -224,7 +225,8 @@
       "reason_if_withheld": "UNRESOLVED_NODE_NOT_DRAWN: IGP 2017 places the union near the Radio Observatorio de Jicamarca without a coordinate; station labels are not nodes.",
       "evidence_refs": [
         "config/phase2_jicamarca_huaycoloro_rio_seco_union_2017_v0_2.json"
-      ]
+      ],
+      "inventory_node_id": "rio_seco__receiver_confluence"
     },
     {
       "element_id": "huaycoloro__rimac__confluence",
@@ -235,7 +237,8 @@
       "reason_if_withheld": "UNRESOLVED_NODE_NOT_DRAWN: exact surface confluence unknown; moving QHuay1 40 m downstream to manufacture it is forbidden.",
       "evidence_refs": [
         "config/phase2_ana_qhuay1_near_confluence_monitoring_anchor_v0_1.json"
-      ]
+      ],
+      "inventory_node_id": "huaycoloro__receiver_confluence"
     },
     {
       "element_id": "qhuay1_near_confluence_anchor",
@@ -262,7 +265,8 @@
       "reason_if_withheld": "UNRESOLVED_NODE_NOT_DRAWN: the frozen IGP lines do not intersect (expected minimum gap 1.4-1.6 km); snapping or hand extension is forbidden.",
       "evidence_refs": [
         "config/phase2_jicamarca_canto_media_line_proximity_v0_1.json"
-      ]
+      ],
+      "inventory_node_id": "media_luna__receiver_confluence"
     },
     {
       "element_id": "cashahuacra_alta__cashahuacra__confluence",
@@ -298,6 +302,30 @@
         "config/phase2_ana2015_quirio_pedregal_faja_terminal_qa_v0_1.json",
         "config/phase2_senamhi2020_pedregal_microbasin_receiver_context_v0_1.json"
       ]
+    },
+    {
+      "element_id": "canto_grande_upper_branch__receiver_confluence",
+      "map_category": "NODE",
+      "node_semantics": "UNRESOLVED",
+      "map_eligible_today": false,
+      "eligible_after_independent_qa": false,
+      "reason_if_withheld": "UNRESOLVED_NODE_NOT_DRAWN: no reproducible outlet or Rimac/intermediate confluence; channel endpoints are not outlets.",
+      "evidence_refs": [
+        "config/phase2_jicamarca_collector_coupling_v0_1.json"
+      ],
+      "inventory_node_id": "canto_grande_upper_branch__receiver_confluence"
+    },
+    {
+      "element_id": "jicamarca_named_channel__receiver_confluence",
+      "map_category": "NODE",
+      "node_semantics": "UNRESOLVED",
+      "map_eligible_today": false,
+      "eligible_after_independent_qa": false,
+      "reason_if_withheld": "UNRESOLVED_NODE_NOT_DRAWN: channel identity unresolved, so no receiver can be assigned.",
+      "evidence_refs": [
+        "config/phase2_jicamarca_collector_coupling_v0_1.json"
+      ],
+      "inventory_node_id": "jicamarca_named_channel__receiver_confluence"
     },
     {
       "element_id": "igp_jicamarca_stations_rs2_hl1_hl2",
@@ -362,5 +390,23 @@
     "new_geometries_published": 0,
     "new_nodes_published": 0,
     "map_layers_json_changed": false
+  },
+  "collector_inventory_wiring": {
+    "builder_function": "scripts/build_map_semantic_layers.py::_integrate_jicamarca_coupling",
+    "coupling_contract": "config/phase2_jicamarca_collector_coupling_v0_1.json",
+    "tributary_rows_appended_to": "rimac_mainstem_receiver",
+    "unresolved_nodes_registered": 5,
+    "intermediate_receiver_canto_grande_duplicated_as_collector": false,
+    "changes_map_eligibility": false,
+    "fail_closed_on": [
+      "unsafe guards",
+      "non-null q_i_t/travel_time_tau/routing_method/attenuation_or_storage/hydraulic_distance",
+      "receiver connection other than UNRESOLVED_NOT_ASSUMED",
+      "exact confluence location",
+      "declared collector capacity",
+      "routing or hydraulic method",
+      "collector balance calculation",
+      "line removed from pending QA without acceptance"
+    ]
   }
 }

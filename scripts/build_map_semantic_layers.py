@@ -194,6 +194,15 @@ REGISTERED_UNIT_DIR = core.SITE / "data/validation/phase2_registered_unit_packag
 GEOMETRY_DIR = core.SITE / "data/phase2/geometries"
 SPATIAL_CONTRACTS_PATH = core.SITE / "data/phase2/spatial_observation_contracts_v0_1.json"
 
+# Contrato de acoplamiento Jicamarca (vive en config/, fuera del directorio de
+# validación). Se conecta al inventario sólo como acoplamiento tributario y nodos
+# UNRESOLVED: nunca crea eje de colector, geometría, routing ni respuesta.
+JICAMARCA_COUPLING_PATH = core.ROOT / "config/phase2_jicamarca_collector_coupling_v0_1.json"
+JICAMARCA_QA_LINE = "RIMAC_JICAMARCA"
+_JICAMARCA_PARENT = "lima_este_jicamarca_huaycoloro_rioseco_canto_grande"
+_JICAMARCA_NULL_HYDRAULICS = (
+    "q_i_t", "travel_time_tau", "routing_method", "attenuation_or_storage", "hydraulic_distance",
+)
 # Toda geometría del directorio de geometrías que no entre al mapa debe tener
 # una decisión explícita. Un archivo nuevo sin decisión hace fallar el builder.
 WITHHELD_REPOSITORY_GEOMETRY_POLICY = {
@@ -799,6 +808,152 @@ _UNIT_TYPE_CATEGORY = {
 }
 
 
+def _load_jicamarca_coupling() -> dict | None:
+    """Contrato Jicamarca validado fail-closed, o None si no existe en la rama."""
+    if not JICAMARCA_COUPLING_PATH.is_file():
+        return None
+    contract = core.load_json(JICAMARCA_COUPLING_PATH)
+    rel = _rel(JICAMARCA_COUPLING_PATH)
+    for key, expected in (
+        ("deployment_status", "RESEARCH_ONLY"),
+        ("production_use", False),
+        ("production_ready", False),
+        ("operational_alerting_enabled", False),
+        ("activation_gate", "BLOCKED"),
+        ("missing_data_rule", "UNKNOWN_NOT_LOW_RISK"),
+        ("decision_thresholds", None),
+        ("hydraulic_factors", None),
+    ):
+        if contract.get(key) != expected:
+            raise MapSemanticError(f"contrato colector inseguro {rel}: {key}")
+    parent = contract.get("parent_context") or {}
+    if parent.get("parent_id") != _JICAMARCA_PARENT:
+        raise MapSemanticError(f"padre Jicamarca inesperado en {rel}")
+    if parent.get("child_evidence_promotes_parent_activation") is not False:
+        raise MapSemanticError(f"contrato promueve activación del padre: {rel}")
+    if parent.get("synthetic_jicamarca_activation_unit_allowed") is not False:
+        raise MapSemanticError(f"contrato admite unidad Jicamarca sintética: {rel}")
+    if (contract.get("hydrologic_routing") or {}).get("method") is not None:
+        raise MapSemanticError(f"routing hidrológico declarado sin aceptación: {rel}")
+    if (contract.get("hydraulic_model") or {}).get("method") is not None:
+        raise MapSemanticError(f"modelo hidráulico declarado sin aceptación: {rel}")
+    if (contract.get("collector_balance_status") or {}).get("calculation_performed") is not False:
+        raise MapSemanticError(f"balance del colector calculado sin aceptación: {rel}")
+    for target in contract.get("collector_targets") or []:
+        if target.get("capacity_status") != "UNKNOWN" or target.get("capacity_evidence") is not None:
+            raise MapSemanticError(f"capacidad de colector declarada: {target.get('collector_id')}")
+        if target.get("tributary_activation_implies_receiver_overflow") not in (None, False):
+            raise MapSemanticError(f"activación tributaria implica desborde: {target.get('collector_id')}")
+    for row in contract.get("tributaries") or []:
+        unit = row.get("local_unit_id")
+        for key in _JICAMARCA_NULL_HYDRAULICS:
+            if row.get(key) is not None:
+                raise MapSemanticError(f"parámetro hidráulico no aceptado en {unit}: {key}")
+        if row.get("ultimate_receiver_connection_status") != "UNRESOLVED_NOT_ASSUMED":
+            raise MapSemanticError(f"conexión al receptor promovida sin QA independiente: {unit}")
+        receiver = row.get("receiver_confluence_or_explicit_missing_status") or {}
+        if receiver.get("location") is not None or receiver.get("is_receiver_confluence") is not False:
+            raise MapSemanticError(f"confluencia exacta declarada sin QA independiente: {unit}")
+    return contract
+
+
+def _integrate_jicamarca_coupling(collectors: list[dict], nodes: list[dict]) -> None:
+    """Conecta el acoplamiento Jicamarca al inventario sin volver dibujable nada.
+
+    - Las filas tributarias se añaden al colector Rímac existente (mismo
+      collector_id); si no existiera, se registra retenido. Nunca se crea eje.
+    - Cada confluencia receptora no resuelta se registra como nodo UNRESOLVED.
+    - El receptor intermedio Canto Grande ya se dibuja como LOCAL_CHANNEL: no se
+      duplica como COLLECTOR.
+    """
+    contract = _load_jicamarca_coupling()
+    if contract is None:
+        return
+    rel = _rel(JICAMARCA_COUPLING_PATH)
+    sha = core.digest(JICAMARCA_COUPLING_PATH)
+    qa_status = next(
+        (row["status"] for row in PENDING_INDEPENDENT_QA_LINES if row["line"] == JICAMARCA_QA_LINE),
+        None,
+    )
+    if qa_status is None:
+        raise MapSemanticError("línea Rímac/Jicamarca fuera de la lista de QA pendiente sin aceptación registrada")
+    targets = {row["collector_id"]: row for row in contract.get("collector_targets") or []}
+    rimac = targets.get("rimac_mainstem_receiver")
+    if rimac is None:
+        raise MapSemanticError(f"contrato Jicamarca sin colector Rímac: {rel}")
+
+    collector = next((row for row in collectors if row["collector_id"] == "rimac_mainstem_receiver"), None)
+    if collector is None:
+        collector = {
+            "collector_id": "rimac_mainstem_receiver",
+            "display_name": rimac.get("display_name"),
+            "parent_id": _JICAMARCA_PARENT,
+            "unit_type": rimac.get("unit_type"),
+            "geometry_status": rimac.get("geometry_status"),
+            "geometry_path": None,
+            "map_eligible": False,
+            "reason_if_withheld": (rimac.get("geometry_status") or "MISSING_REPRODUCIBLE_COLLECTOR_AXIS")
+            + ": no hay eje de colector reproducible admisible; no se sustituye por faja ni por cauce local.",
+            "capacity_status": "UNKNOWN",
+            "collector_response": {"state": "NO_EVIDENCE_UNKNOWN", "no_evidence_is_not_negative_evidence": True},
+            "tributary_coupling": [],
+            "tributary_activation_implies_collector_response": False,
+            "identity_source_ids": [],
+            "contract_path": rel,
+            "contract_sha256": sha,
+        }
+        collectors.append(collector)
+    if collector["map_eligible"] is not False:
+        raise MapSemanticError("colector Rímac dibujable sin eje reproducible")
+    collector.setdefault("additional_coupling_contracts", []).append({
+        "contract_path": rel,
+        "contract_sha256": sha,
+        "qa_line": JICAMARCA_QA_LINE,
+        "qa_status": qa_status,
+        "parent_id": _JICAMARCA_PARENT,
+    })
+    coupling = collector.setdefault("tributary_coupling", [])
+    known = {row.get("local_unit_id") for row in coupling}
+    for row in contract.get("tributaries") or []:
+        unit = row["local_unit_id"]
+        if unit in known:
+            raise MapSemanticError(f"tributario duplicado en el colector Rímac: {unit}")
+        coupling.append({
+            "local_unit_id": unit,
+            "coupling_state": row.get("collector_effect_state"),
+            "connectivity": row.get("ultimate_receiver_connection_status"),
+            "validation_status": row.get("validation_status"),
+            "immediate_receiver": row.get("immediate_receiver"),
+            "tributary_activation_state": None,
+            "coupling_state_is_tributary_activation": False,
+            "coupling_state_is_collector_response": False,
+            "source_contract": rel,
+            "qa_line": JICAMARCA_QA_LINE,
+        })
+
+    for row in contract.get("tributaries") or []:
+        unit = row["local_unit_id"]
+        receiver = row.get("receiver_confluence_or_explicit_missing_status") or {}
+        status = receiver.get("status") or "MISSING_RECEIVER_STATUS"
+        receiver_id = row.get("immediate_receiver") or row.get("ultimate_receiver")
+        nodes.append({
+            "node_id": f"{unit}__receiver_confluence",
+            "parent_id": _JICAMARCA_PARENT,
+            "node_kind": "RECEIVER_CONFLUENCE",
+            "node_semantics": "UNRESOLVED",
+            "may_be_labeled_exact_confluence": False,
+            "location_source": None,
+            "path": None,
+            "file_sha256": None,
+            "map_eligible": False,
+            "receiver_id": receiver_id,
+            "reason_if_withheld": f"{status}: confluencia receptora no resuelta; no se dibuja ni se aproxima. "
+            f"Línea {JICAMARCA_QA_LINE} {qa_status}.",
+            "contract_path": rel,
+            "qa_line": JICAMARCA_QA_LINE,
+        })
+
+
 def build_collectors_and_nodes(features: list[dict]) -> tuple[list[dict], list[dict], list[dict]]:
     """Colectores, nodos y unidades registradas; sin inferir respuesta del colector."""
     collectors: list[dict] = []
@@ -968,6 +1123,8 @@ def build_collectors_and_nodes(features: list[dict]) -> tuple[list[dict], list[d
                 "contract_path": rel,
                 "contract_sha256": core.digest(path),
             })
+
+    _integrate_jicamarca_coupling(collectors, nodes)
 
     ids = [row["collector_id"] for row in collectors]
     if len(ids) != len(set(ids)):
