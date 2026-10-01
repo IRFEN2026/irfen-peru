@@ -1,0 +1,55 @@
+name: IRFEN - Phase2 Zorritos priority ANA vector freeze
+
+on:
+  pull_request:
+    paths:
+      - scripts/freeze_zorritos_priority_ana_hydrography.py
+      - site/data/phase2/sources/tumbes_zorritos_priority_ana_vector_freeze_plan_v0_1.json
+      - site/data/phase2/sources/zorritos_priority_ana_capture/**
+      - tests/test_phase2_zorritos_priority_ana_vector_freeze.py
+      - .github/workflows/phase2-zorritos-priority-ana-vector-freeze.yml
+  workflow_dispatch:
+    inputs:
+      capture:
+        description: "Fetch live ANA rows for la_tucilla, los_pozos, sechurita and upload them as an artifact (never committed, never promoted)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install pytest
+      - name: Offline freezer contract tests
+        run: python -m pytest -q tests/test_phase2_zorritos_priority_ana_vector_freeze.py
+      - name: Replay committed capture hashes (or report none present)
+        run: python scripts/freeze_zorritos_priority_ana_hydrography.py --check-only
+
+  capture:
+    if: github.event_name == 'workflow_dispatch' && inputs.capture
+    needs: contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Exact all-or-nothing capture from ANA
+        run: python scripts/freeze_zorritos_priority_ana_hydrography.py --capture
+      - name: Replay the fresh capture
+        run: python scripts/freeze_zorritos_priority_ana_hydrography.py --check-only
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zorritos-priority-ana-capture-${{ github.run_id }}
+          path: site/data/phase2/sources/zorritos_priority_ana_capture/
+          if-no-files-found: error
+          retention-days: 90

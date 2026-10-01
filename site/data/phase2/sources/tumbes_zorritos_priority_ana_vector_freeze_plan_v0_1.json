@@ -1,0 +1,118 @@
+{
+  "schema_version": "0.1",
+  "discovery_id": "tumbes_zorritos_bocapan_coastal_ravines",
+  "status": "RESEARCH_ONLY_PREREGISTERED_VECTOR_FREEZE_PLAN",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "service": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer",
+  "layer_id": 0,
+  "expected_layer_name": "Ríos y Quebradas",
+  "expected_geometry_type": "esriGeometryPolyline",
+  "name_field": "NOMBRE_CA",
+  "required_fields": [
+    "NOMBRE_CA",
+    "CODIGO_CA",
+    "TIPO_CA",
+    "NOMBRE_UH",
+    "CODIGO_UH"
+  ],
+  "service_metadata_context": "site/data/phase2/sources/tumbes_zorritos_ana_hydrography_source_plan_v0_1.json#service_metadata_context",
+  "spatial_filter": {
+    "role": "ZORRITOS_DISTRICT_COASTAL_STRIP_PREREGISTERED_BEFORE_CAPTURE",
+    "spatial_reference_epsg": 4326,
+    "xmin": -80.8,
+    "ymin": -3.85,
+    "xmax": -80.55,
+    "ymax": -3.55,
+    "spatial_rel": "esriSpatialRelIntersects",
+    "filter_is_identity_adjudication": false
+  },
+  "priority_semantics": {
+    "meaning": "CAPTURE_ORDER_ONLY",
+    "is_risk_ranking": false,
+    "is_hazard_or_exposure_ranking": false,
+    "affects_activation_or_alerting": false,
+    "basis": "Order of evidence availability for an exact vector capture (La Tucilla, then Los Pozos, then Sechurita); it carries no hazard, exposure or risk meaning."
+  },
+  "priority_targets": [
+    {
+      "priority": 1,
+      "component_id": "la_tucilla",
+      "tokens": [
+        "TUCILLA"
+      ],
+      "lexical_neighbour_exclusions": [
+        "TUCILLAL"
+      ],
+      "reference_anchor_ids": [],
+      "reference_anchor_note": "ANA official coordinates for La Tucilla are not transcribed; no spatial cross-check anchor exists yet."
+    },
+    {
+      "priority": 2,
+      "component_id": "los_pozos",
+      "tokens": [
+        "POZOS"
+      ],
+      "lexical_neighbour_exclusions": [],
+      "reference_anchor_ids": [
+        "LOS-POZOS-ANA-SIGRID-3753",
+        "LOS-POZOS-EVAR-COSTA-VERDE",
+        "LOS-POZOS-EVAR-ALTO-MIRAMAR"
+      ],
+      "reference_anchor_note": "Anchors are cross-check points only; they are not outlets and never become geometry."
+    },
+    {
+      "priority": 3,
+      "component_id": "sechurita",
+      "tokens": [
+        "SECHURITA"
+      ],
+      "lexical_neighbour_exclusions": [],
+      "reference_anchor_ids": [],
+      "reference_anchor_note": "DHN 2016 gives coastal-mouth context only; the alias 'El Pozo' is not queried to avoid a Los Pozos collision."
+    }
+  ],
+  "freeze_contract": {
+    "all_requests_must_validate_before_any_write": true,
+    "preserve_raw_metadata_bytes": true,
+    "preserve_raw_query_bytes": true,
+    "sha256_raw_and_canonical": true,
+    "out_sr": 4326,
+    "geometry_precision": 7,
+    "out_fields": "*",
+    "return_geometry": true,
+    "response_format": "geojson",
+    "exceeded_transfer_limit_is_failure": true,
+    "zero_rows_is_negative": false
+  },
+  "promotion_policy": {
+    "capture_is_identity_adjudication": false,
+    "capture_is_outlet_verification": false,
+    "capture_is_map_publishable": false,
+    "name_match_is_sufficient": false,
+    "lexical_neighbour_rows_are_candidates": false,
+    "multiple_same_name_rows_may_be_merged": false,
+    "promotion_requires_separate_reviewed_adjudication": true,
+    "point_geometry_may_substitute_line": false,
+    "pdf_or_image_derived_geometry_allowed": false
+  },
+  "prior_search_2026_09_30": {
+    "result": "NO_OFFICIAL_REPRODUCIBLE_VECTOR_FOR_ANY_PRIORITY_TARGET_IN_REPOSITORY_OR_HISTORY",
+    "scope": "all 467 remote branches plus full git history",
+    "findings": [
+      "No committed capture of ANA Rios_Quebradas_AAVI rows for any Zorritos target; the existing probe only ran --check-plan-only in CI.",
+      "Only frozen ANA vector in the Zorritos package is Cuenca Bocapan (UH 13936, via IDEP ANA_WMS layer 8), a 900 km2 basin polygon, not ravine geometry for any of the 18 targets.",
+      "Inundacion_Tumbes MapServer freeze plan covers layers 2, 66, 67 (Rio Tumbes basin and 2023 flood footprints) and forbids transfer to Zorritos.",
+      "La Tucilla, Los Pozos and Sechurita have only PDF map context and point anchors; per policy these are not digitised."
+    ],
+    "live_access_from_review_environment": "BLOCKED: egress proxy denies geosnirh.ana.gob.pe, geo.ana.gob.pe, snirh.ana.gob.pe, www.ana.gob.pe, idep.gob.pe, sigrid.cenepred.gob.pe and ArcGIS Online; WebFetch timed out on ANA",
+    "absence_is_negative": false
+  }
+}
