@@ -267,6 +267,29 @@ def test_ingemmet_a6764_review_copy_is_registered_and_scoped():
     assert "INGEMMET-A6764-TUMBES-2017" in matrix["targets"]["sechurita"]["supporting_context_source_ids"]
 
 
+def test_tucillal_senamhi_historical_context_is_tracked_but_not_admitted():
+    context = load_context()
+    plan = load_plan()
+    sid = "SENAMHI-FLOOD-INVENTORY-2022-TUCILLAL-1997-98"
+    src = context["sources"][sid]
+    tuc = context["adjudication"]["tucillal"]
+    outside = plan["separate_identity_entities_outside_target_set"]["tucillal"]
+    assert src["review_copy_sha256"] == "2b830199d2ae24362f57f098e3db0cc8dfc3adb8e7eecf45ac817953778df29d"
+    assert src["evidence_page"] == 32
+    assert src["claim_scope"] == "HISTORICAL_GROUP_ACTIVATION_CONTEXT_1997_98_ONLY"
+    assert sid in tuc["identity_source_ids"]
+    assert tuc["target_set_member"] is False
+    assert tuc["target_set_status"] == "OUTSIDE_18_TARGET_SET__TRACKED_BACKLOG_CANDIDATE_19"
+    assert tuc["scope_decision"] == "KEEP_OUTSIDE_FROZEN_18_TARGET_SET_UNTIL_EXPLICIT_SCOPE_EXPANSION"
+    assert tuc["event_status"] == "HISTORICAL_GROUP_ACTIVATION_CONTEXT_1997_98_NOT_CHILD_SPECIFIC_TIMING"
+    assert tuc["outlet_status"] == "UNRESOLVED"
+    assert tuc["map_publishable"] is False
+    assert "tucillal" not in load_matrix()["targets"]
+    assert "tucillal" not in plan["target_children"]
+    assert outside["target_set_status"] == tuc["target_set_status"]
+    assert outside["historical_event_context"]["source_id"] == sid
+
+
 class _ModuleFunctionTests(unittest.TestCase):
     """Expose the module-level test functions to `unittest discover` (pr-validation)."""
 
