@@ -63,7 +63,7 @@ jobs:
           assert la_tucilla["outlet_status"] == "UNRESOLVED"
           assert la_tucilla["map_publishable"] is False
           assert "la_tucilla" in plan["query_policy"]["official_map_anchor_not_line_geometry_quarantine"]
-          assert "la_tucilla" in plan["query_policy"]["scope_adjudication_quarantine"]
+          assert "la_tucilla" not in plan["query_policy"]["scope_adjudication_quarantine"]\n          assert plan["target_context"]["la_tucilla"]["official_coordinates"]["easting_m"] == 538042\n          assert plan["target_context"]["la_tucilla"]["official_coordinates"]["northing_m"] == 9594412
           assert "la_tucilla" in plan["query_policy"]["marine_hazard_separation_required"]
           assert "tucillal" not in matrix["targets"]
           assert ["la_tucilla", "tucillal"] in plan["query_policy"]["distinct_entity_guard"]
