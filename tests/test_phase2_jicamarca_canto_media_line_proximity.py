@@ -14,7 +14,7 @@ def load(path):
 
 def blob_sha(path):
     data = path.read_bytes()
-    return hashlib.sha1(f"blob {len(data)}\\0".encode("ascii") + data).hexdigest()
+    return hashlib.sha1(f"blob {len(data)}\0".encode("ascii") + data).hexdigest()
 
 def test_canto_media_frozen_lines_do_not_resolve_exact_junction():
     cfg = load(CONFIG)
