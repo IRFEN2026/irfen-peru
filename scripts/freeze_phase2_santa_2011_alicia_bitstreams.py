@@ -75,7 +75,17 @@ AXIS_ENDPOINT_DIGITS = ["758969", "9007565", "788881", "9038309"]
 UA = "IRFEN-research-freezer/0.1 (+https://github.com/IRFEN2026/irfen-peru)"
 
 
-def fetch(url: str, timeout: float) -> tuple[bytes | None, dict]:
+def fetch(url: str, timeout: float, attempts: int = 3) -> tuple[bytes | None, dict]:
+    meta: dict = {}
+    for attempt in range(1, attempts + 1):
+        data, meta = _fetch_once(url, timeout)
+        meta["attempts"] = attempt
+        if data is not None:
+            return data, meta
+    return None, meta
+
+
+def _fetch_once(url: str, timeout: float) -> tuple[bytes | None, dict]:
     meta: dict = {"url": url}
     req = urllib.request.Request(url, headers={"User-Agent": UA})
     try:
@@ -97,6 +107,26 @@ def fetch(url: str, timeout: float) -> tuple[bytes | None, dict]:
 
 def digits_only(text: str) -> str:
     return re.sub(r"[^0-9]", "", text)
+
+
+def pdf_text(data: bytes) -> str | None:
+    """Extract text with pypdf (pinned in CI). Pages joined by form feed."""
+    try:
+        import io
+        from pypdf import PdfReader
+    except ImportError:
+        return None
+    try:
+        reader = PdfReader(io.BytesIO(data))
+        pages = []
+        for page in reader.pages:
+            try:
+                pages.append(page.extract_text() or "")
+            except Exception:  # noqa: BLE001 - one bad page must not hide the rest
+                pages.append("")
+        return "\f".join(pages)
+    except Exception:  # noqa: BLE001
+        return None
 
 
 def text_probe(raw: bytes) -> dict:
@@ -143,6 +173,7 @@ def main() -> int:
     }
     integrity_failure = False
     text_bytes = None
+    ana_pdf_bytes = None
     for role, spec in TARGETS.items():
         data, meta = fetch(spec["url"], args.timeout)
         entry = {**meta, "expected_size_bytes": spec["expected_size_bytes"],
@@ -162,6 +193,8 @@ def main() -> int:
                 entry["sha256"] = sha
                 if role == "EXTRACTED_TEXT":
                     text_bytes = data
+                if role == "ORIGINAL_PDF":
+                    ana_pdf_bytes = data
             else:
                 integrity_failure = True
                 entry["freeze_status"] = "INTEGRITY_MISMATCH_NOT_PINNABLE"
@@ -170,6 +203,7 @@ def main() -> int:
         receipt["bitstreams"][role] = entry
         print(f"::notice title=santa-freeze {role}::{json.dumps({k: entry.get(k) for k in ('freeze_status', 'received_size_bytes', 'received_md5', 'sha256', 'error')})}")
 
+    mirror_pdf_bytes = None
     for name, url in MIRRORS.items():
         data, meta = fetch(url, args.timeout)
         if data is not None:
@@ -177,11 +211,19 @@ def main() -> int:
                         md5=hashlib.md5(data).hexdigest(),
                         role="SECONDARY_MIRROR_COMPARISON_ONLY")
             pdf = receipt["bitstreams"]["ORIGINAL_PDF"]
-            meta["byte_identical_to_ana_original"] = (
-                pdf.get("sha256") is not None and pdf["sha256"] == meta["sha256"]
+            meta["byte_identical_to_ana_original_download"] = (
+                None if pdf.get("sha256") is None else pdf["sha256"] == meta["sha256"]
             )
+            spec = TARGETS["ORIGINAL_PDF"]
+            meta["size_matches_ana_repository_original"] = len(data) == spec["expected_size_bytes"]
+            meta["md5_matches_ana_repository_original"] = meta["md5"] == spec["repository_md5"]
+            if meta["size_matches_ana_repository_original"] and meta["md5_matches_ana_repository_original"]:
+                meta["freeze_status"] = "MIRROR_BYTES_MATCH_ANA_REPOSITORY_SIZE_AND_MD5"
+                mirror_pdf_bytes = data
+            else:
+                meta["freeze_status"] = "MIRROR_BYTES_DIFFER_FROM_ANA_REPOSITORY_ORIGINAL_NOT_PINNABLE"
         receipt["mirrors"][name] = meta
-        print(f"::notice title=santa-freeze {name}::{json.dumps({k: meta.get(k) for k in ('access_status', 'received_size_bytes', 'sha256', 'byte_identical_to_ana_original', 'error')})}")
+        print(f"::notice title=santa-freeze {name}::{json.dumps({k: meta.get(k) for k in ('freeze_status', 'access_status', 'received_size_bytes', 'md5', 'sha256', 'md5_matches_ana_repository_original', 'byte_identical_to_ana_original_download', 'error')})}")
 
     if text_bytes is not None:
         receipt["text_probe"] = text_probe(text_bytes)
@@ -192,7 +234,27 @@ def main() -> int:
             if ctx:
                 print(f"::notice title=santa-freeze TEXT_CONTEXT {key}::{json.dumps(ctx, ensure_ascii=False)[:900]}")
     else:
-        receipt["text_probe"] = {"probe_status": "NOT_RUN_TEXT_BITSTREAM_NOT_FROZEN"}
+        pdf_bytes = None
+        pdf_origin = None
+        if receipt["bitstreams"]["ORIGINAL_PDF"].get("sha256"):
+            pdf_bytes, pdf_origin = ana_pdf_bytes, "ANA_REPOSITORY_ORIGINAL"
+        elif mirror_pdf_bytes is not None:
+            pdf_bytes, pdf_origin = mirror_pdf_bytes, "SIGRID_MIRROR_VERIFIED_AGAINST_ANA_REPOSITORY_MD5"
+        text = pdf_text(pdf_bytes) if pdf_bytes is not None else None
+        if text is None:
+            receipt["text_probe"] = {"probe_status": "NOT_RUN_NO_VERIFIED_TEXT_OR_PDF_BYTES"}
+        else:
+            receipt["text_probe"] = text_probe(text.encode("utf-8"))
+            receipt["text_probe"]["probe_scope"] = "PYPDF_TEXT_OF_VERIFIED_PDF_BYTES"
+            receipt["text_probe"]["pdf_origin"] = pdf_origin
+            receipt["text_probe"]["pages_with_text"] = text.count("\f") + 1
+        tp = receipt["text_probe"]
+        if "term_counts" in tp:
+            print(f"::notice title=santa-freeze PDF_TEXT_PROBE counts::{json.dumps(tp['term_counts'])}")
+            print(f"::notice title=santa-freeze PDF_TEXT_PROBE axis endpoints::{json.dumps(tp['axis_endpoint_digits_present'])}")
+            for key, ctx in tp["term_contexts_first5"].items():
+                if ctx:
+                    print(f"::notice title=santa-freeze PDF_TEXT_CONTEXT {key}::{json.dumps(ctx, ensure_ascii=False)[:900]}")
 
     with open(args.out, "w", encoding="utf-8") as fh:
         json.dump(receipt, fh, ensure_ascii=False, indent=2)

@@ -31,14 +31,16 @@ jobs:
     # Network to ANA may be unavailable; that yields SOURCE_ACCESS_UNAVAILABLE,
     # never a negative.  A size/MD5 mismatch fails the job (fail-closed).
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Freeze ANA ALICIA bitstreams (ORIGINAL PDF + extracted text)
-        run: python scripts/freeze_phase2_santa_2011_alicia_bitstreams.py --out santa_2011_alicia_freeze_receipt.json
+        run: |
+          pip install pypdf==3.17.4
+          python scripts/freeze_phase2_santa_2011_alicia_bitstreams.py --out santa_2011_alicia_freeze_receipt.json --timeout 60
       - uses: actions/upload-artifact@v4
         if: always()
         with:
