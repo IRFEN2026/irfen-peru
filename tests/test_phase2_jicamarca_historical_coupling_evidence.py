@@ -119,19 +119,27 @@ class TestJicamarcaHistoricalCouplingEvidence(unittest.TestCase):
 
     @unittest.skipUnless(importlib.util.find_spec("pypdf"), "pypdf not installed")
     def test_tambo_de_viso_citations_are_in_frozen_pdf_text(self):
-        import re
+        import unicodedata
         from pypdf import PdfReader
+
+        def squash(text):
+            # Robust to extractor differences (spacing, accents, case, line order within a page).
+            text = unicodedata.normalize("NFKD", text)
+            text = "".join(ch for ch in text if not unicodedata.combining(ch))
+            return "".join(text.lower().split())
+
         archive = json.loads((ROOT / "config/phase2_rimac_jicamarca_source_archive_contract_v0_1.json")
                              .read_text(encoding="utf-8"))
         manifest = json.loads((ROOT / archive["manifest"]).read_text(encoding="utf-8"))
         search = self.ev["historical_context"][0]["primary_source_search"]
-        checks = {64: [r"Tambo\s*De\s*Viso", r"INGEMMET", r"354226"],
-                  131: [r"represamiento del r[ií]o R[ií]mac", r"10 a 15 casas", r"Viso"]}
+        checks = {64: ["tambo", "viso", "ingemmet", "354226", "8695116"],
+                  131: ["represamiento", "rimac", "10a15casas", "viso"]}
         for row in search["corroborated"]:
             path = ROOT / manifest["groups"][row["archive_group_id"]]["archive_path"]
-            text = re.sub(r"\s+", " ", PdfReader(str(path)).pages[row["pdf_page"] - 1].extract_text())
-            for pattern in checks[row["pdf_page"]]:
-                self.assertRegex(text, pattern)
+            raw = PdfReader(str(path)).pages[row["pdf_page"] - 1].extract_text() or ""
+            text = squash(raw)
+            for needle in checks[row["pdf_page"]]:
+                self.assertIn(needle, text, f"p{row['pdf_page']} missing {needle!r}; extract head: {raw[:300]!r}")
 
     def test_rejects_tambo_de_viso_transfer(self):
         for key in ("may_inform_jicamarca_capacity", "may_be_used_as_event_volume_for_other_quebradas",
