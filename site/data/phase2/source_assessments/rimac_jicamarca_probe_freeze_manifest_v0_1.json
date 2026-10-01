@@ -1,0 +1,54 @@
+{
+  "schema_version": "0.1",
+  "assessment_id": "rimac_jicamarca_probe_freeze_manifest_v0_1",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "capture_scope": "CI_PROBE_OUTPUT_SNAPSHOT_NOT_RAW_SOURCE_ARCHIVE",
+  "raw_source_bytes_frozen": false,
+  "probe_output_bytes_frozen": true,
+  "scientific_guard": "Frozen probe outputs preserve source-access/result state only. MINAM zero results are not hydrologic absence; ANA source unavailability is not a negative. No identity, routing, confluence, capacity, threshold, overflow, risk, alert or map promotion is authorized.",
+  "source_head_sha": "86e85081ee58e0944afbf6520ef7f1d9cc75ce12",
+  "probes": {
+    "minam_huaycoloro_rimac": {
+      "path": "data/phase2/source_archive/rimac_jicamarca_probe_runs/2026-10-01/phase2_minam2020_huaycoloro_rimac_probe.json",
+      "sha256": "6b03a1b9894479eee75bad63d7a70b86a95c2ee3ed6bcc267464809e1d701665",
+      "workflow_run_id": 36801599295,
+      "artifact_id": 11135792641,
+      "artifact_digest": "sha256:67b8d2f567cc0dc6005d48f1bca1c33d9206d0eb39b9119c2ff35f9880b4b1b6",
+      "status": "RESEARCH_ONLY_LIVE_VECTOR_PROBE",
+      "query_completed": true,
+      "candidate_counts": {
+        "huaycoloro": 0,
+        "rimac": 0
+      },
+      "interpretation": "ZERO_RESULTS_NOT_HYDROLOGIC_ABSENCE"
+    },
+    "ana_rimac_hydrography": {
+      "path": "data/phase2/source_archive/rimac_jicamarca_probe_runs/2026-10-01/phase2_rimac_ana_hydrography_probe.json",
+      "sha256": "02bc2877c7aea51eb48af61259169f7add9d9fe5366f37211d2540931ea68dcc",
+      "workflow_run_id": 36801599269,
+      "artifact_id": 11136486414,
+      "artifact_digest": "sha256:0ea6f564fedb644b966c1741d8d2aa86ac7469d51883e5eca8361e20004eda0d",
+      "status": "SOURCE_ACCESS_UNAVAILABLE",
+      "query_completed": false,
+      "candidate_counts": {
+        "pedregal": null,
+        "quirio": null,
+        "rimac": null
+      },
+      "interpretation": "SOURCE_UNAVAILABLE_NOT_NEGATIVE"
+    }
+  },
+  "next_required_evidence": "Future probe workflow should archive exact raw source response bytes, not only their hashes, before any source-payload equivalence claim.",
+  "map_publication_authorized": false,
+  "routing_enabled": false,
+  "capacity_inference_enabled": false,
+  "thresholds_enabled": false
+}
