@@ -327,9 +327,18 @@ def test_registered_local_units_without_geometry_stay_in_inventory(sem):
 
 def test_pending_independent_qa_lines_are_not_promoted(sem):
     pending = {row["line"] for row in sem["admissibility"]["pending_independent_qa_lines"]}
-    assert pending == {"CASMA", "RIMAC_JICAMARCA", "ZORRITOS"}
-    drawn_parents = {f["parent_id"] for f in sem["features"]} | {f["owner_id"] for f in sem["features"]}
-    assert "ancash_casma_sechin_yautan" not in drawn_parents
+    assert pending == {"RIMAC_JICAMARCA", "ZORRITOS"}
+    accepted = {row["line"]: row for row in sem["admissibility"]["accepted_independent_qa_lines"]}
+    assert set(accepted) == {"CASMA"}
+    assert accepted["CASMA"]["status"] == "INDEPENDENT_QA_ACCEPTED"
+    assert accepted["CASMA"]["gate_b_lineage_equivalence"] == "NOT_ESTABLISHED"
+    # CASMA aceptada: sólo sus 9 hijos N7 se dibujan, por separado; el padre nunca.
+    drawn_owners = {f["entity_id"] for f in sem["features"]} | {f["owner_id"] for f in sem["features"]}
+    assert "ancash_casma_sechin_yautan" not in drawn_owners
+    casma = [f for f in sem["features"] if f["parent_id"] == "ancash_casma_sechin_yautan"]
+    assert {f["semantic_role"] for f in casma} == {"CURRENT_INSTITUTIONAL_N7_HYDROGRAPHIC_UNIT"}
+    assert all(f["default_visibility"] is False for f in casma)
+    assert len({f["entity_id"] for f in casma}) == len(casma)
     withheld = {row["entity"]: row for row in sem["entities"] if row["record_kind"] == "REPOSITORY_GEOMETRY_WITHHELD"}
     assert "INDEPENDENT_QA" in withheld["jicamarca_el_silencio_ana_faja"]["reason_if_withheld"]
     assert "QUARANTINE" in withheld["jicamarca_ana_qda_colca_faja_quarantined"]["reason_if_withheld"]

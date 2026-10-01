@@ -154,8 +154,16 @@ Reglas:
 - Toda geometría de `site/data/phase2/geometries/` que no entra al mapa necesita
   una decisión explícita en `WITHHELD_REPOSITORY_GEOMETRY_POLICY`; un archivo
   nuevo sin decisión hace fallar el builder.
-- Los resultados nuevos de Casma (#335), Rímac/Jicamarca (#310) y Zorritos
-  (#340) no se consolidan hasta `INDEPENDENT_QA_ACCEPTED`.
+- Los resultados nuevos de Rímac/Jicamarca (#310) y Zorritos (#340) no se
+  consolidan hasta `INDEPENDENT_QA_ACCEPTED`.
+- Casma (#335→#346, integrada en #347) está en `ACCEPTED_INDEPENDENT_QA_LINES`
+  (alcance: captura Gate A y topología Gate C; Gate B `NOT_ESTABLISHED`). Sólo
+  sus 9 unidades N7 `CURRENT_INSTITUTIONAL_N7_RESEARCH_CONTEXT` se clasifican,
+  como `CATCHMENT` / `CURRENT_INSTITUTIONAL_N7_HYDROGRAPHIC_UNIT`, apagadas por
+  defecto y con fuente declarada por feature. El builder verifica el registro
+  de aceptación y el hash del informe Gate C; si no verifican, falla cerrado.
+  El padre N6 137596 no se dibuja y la captura congelada Gate A queda retenida
+  (`WITHHELD_FROZEN_GATE_A_EVIDENCE`) para no duplicar entidades.
 - Todos los conteos (`map_semantics.summary` y `summary.map_semantic_*`) se
   derivan de las filas; los tests los recalculan en lugar de fijarlos.
 

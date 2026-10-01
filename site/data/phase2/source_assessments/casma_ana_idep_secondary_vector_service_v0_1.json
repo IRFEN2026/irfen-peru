@@ -1,0 +1,93 @@
+{
+  "schema_version": "0.1",
+  "assessment_id": "casma_ana_idep_secondary_vector_service_v0_1",
+  "status": "RESEARCH_ONLY_SECONDARY_INSTITUTIONAL_VECTOR_SERVICE_IDENTIFIED_QUERY_FREEZE_PENDING",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "target": "ancash_casma_n7_1375961_1375969",
+  "source": {
+    "institution": "Autoridad Nacional del Agua / Infraestructura de Datos Espaciales del Peru (IDEP)",
+    "service_url": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/FeatureServer/7",
+    "layer_name": "Unidades Hidrográficas",
+    "geometry_type": "esriGeometryPolygon",
+    "service_spatial_reference_wkid": 3857,
+    "max_record_count": 1000,
+    "supported_query_formats": [
+      "JSON",
+      "geoJSON",
+      "PBF"
+    ],
+    "supports_advanced_queries": true,
+    "supports_datum_transformation": true,
+    "identity_fields": [
+      "NIVEL1",
+      "NIVEL2",
+      "NIVEL3",
+      "NIVEL4",
+      "NIVEL5",
+      "NIVEL6",
+      "NIVEL7",
+      "NOMB_UH_N1",
+      "NOMB_UH_N2",
+      "NOMB_UH_N3",
+      "NOMB_UH_N4",
+      "NOMB_UH_N5",
+      "NOMB_UH_N6",
+      "NOMB_UH_N7",
+      "CODIGO",
+      "NOMBRE",
+      "AREA_KM2"
+    ],
+    "metadata_verified_date_utc": "2026-09-26"
+  },
+  "relation_to_primary_candidate": {
+    "primary_candidate": "MINAM Geoservidor ServicioActivacionQuebrada/MapServer/1",
+    "scientific_role": "INDEPENDENT_INSTITUTIONAL_DESCENDANT_CROSS_CHECK_CANDIDATE",
+    "exact_per_code_geometry_frozen": false,
+    "raw_response_sha256_frozen": false,
+    "geometry_equivalence_to_minam_proven": false,
+    "original_inrena_uh_pfas100_bytes_recovered": false
+  },
+  "exact_target_codes": [
+    "1375961",
+    "1375962",
+    "1375963",
+    "1375964",
+    "1375965",
+    "1375966",
+    "1375967",
+    "1375968",
+    "1375969"
+  ],
+  "recovery_gate": {
+    "query_each_code_exactly": true,
+    "require_single_feature_per_code": true,
+    "require_name_match_to_ana_inrena_2007": true,
+    "require_area_match_to_one_decimal_ana_inrena_2007": true,
+    "require_nonempty_polygon_geometry": true,
+    "require_raw_response_archive_and_sha256": true,
+    "cross_source_geometry_comparison_required_before_preferred_source_adjudication": true,
+    "map_registry_modification_allowed": false
+  },
+  "scientific_disposition": {
+    "metadata_is_geometry": false,
+    "service_existence_proves_exact_casma_extract": false,
+    "pdf_digitization_allowed": false,
+    "outlet_inference_allowed": false,
+    "event_or_activation_geometry_created": false,
+    "routing_enabled": false,
+    "map_eligible": false
+  },
+  "next_safe_gate": [
+    "Freeze exact IDEP/ANA feature responses for the nine Casma N7 codes with raw-response SHA-256.",
+    "Compare identity, one-decimal area and polygon geometry against the frozen MINAM descendant responses when available.",
+    "Prefer original INRENA Uh_pfas100 bytes if an institutional public copy is recovered; otherwise document descendant-source adjudication explicitly."
+  ]
+}
