@@ -1,0 +1,84 @@
+name: IRFEN - Phase2 Zorritos ANA hydrography adjudication
+
+on:
+  pull_request:
+    paths:
+      - scripts/probe_zorritos_ana_hydrography.py
+      - site/data/phase2/sources/tumbes_zorritos_ana_hydrography_source_plan_v0_1.json
+      - site/data/phase2/sources/tumbes_zorritos_ana_hydrography_adjudication_matrix_v0_1.json
+      - site/data/phase2/sources/tumbes_zorritos_extended_identity_context_v0_1.json
+      - site/data/phase2/sources/tumbes_zorritos_bocapan_official_evidence_v0_1.json
+      - site/data/map_layers.json
+      - tests/test_phase2_zorritos_ana_hydrography_adjudication.py
+      - .github/workflows/phase2-zorritos-ana-hydrography-adjudication.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fail-closed-adjudication:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install bounded test dependency
+        run: python -m pip install pytest
+      - name: Verify source plan and probe target consistency without live ANA access
+        run: python scripts/probe_zorritos_ana_hydrography.py --check-plan-only
+      - name: Run bounded hydrography adjudication tests
+        run: python -m pytest -q tests/test_phase2_zorritos_ana_hydrography_adjudication.py
+      - name: Enforce fail-closed scientific guards
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          matrix = json.loads(Path("site/data/phase2/sources/tumbes_zorritos_ana_hydrography_adjudication_matrix_v0_1.json").read_text())
+          plan = json.loads(Path("site/data/phase2/sources/tumbes_zorritos_ana_hydrography_source_plan_v0_1.json").read_text())
+
+          safe = {
+              "deployment_status": "RESEARCH_ONLY",
+              "test_mode": "TEST_ONLY",
+              "production_use": False,
+              "production_ready": False,
+              "operational_alerting_enabled": False,
+              "activation_gate": "BLOCKED",
+              "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+              "decision_thresholds": None,
+              "hydraulic_factors": None,
+          }
+          for obj in (matrix, plan):
+              for key, expected in safe.items():
+                  assert obj[key] == expected, (key, obj.get(key), expected)
+
+          assert set(matrix["targets"]) == set(plan["target_children"])
+          assert len(matrix["targets"]) == 18
+
+          la_tucilla = matrix["targets"]["la_tucilla"]
+          assert la_tucilla["geometry_status"] == "QUERY_PENDING_OFFICIAL_MAP_ANCHOR_NOT_LINE_GEOMETRY"
+          assert la_tucilla["outlet_status"] == "UNRESOLVED"
+          assert la_tucilla["map_publishable"] is False
+          assert "la_tucilla" in plan["query_policy"]["official_map_anchor_not_line_geometry_quarantine"]
+          assert "la_tucilla" not in plan["query_policy"]["scope_adjudication_quarantine"]
+          assert plan["target_context"]["la_tucilla"]["official_coordinates"]["easting_m"] == 538042
+          assert plan["target_context"]["la_tucilla"]["official_coordinates"]["northing_m"] == 9594412
+          assert "la_tucilla" in plan["query_policy"]["marine_hazard_separation_required"]
+          assert "tucillal" not in matrix["targets"]
+          assert ["la_tucilla", "tucillal"] in plan["query_policy"]["distinct_entity_guard"]
+          assert "INGEMMET-A7454-24-050-TUCILLAL" not in la_tucilla["identity_source_ids"]
+          assert matrix["unresolved_review"]["outlet_or_map_state_changes"] == 0
+
+          leoncio = matrix["targets"]["leoncio_prado"]
+          assert "PAIRED_EVENT_CONTEXT_QUARANTINE" in leoncio["geometry_status"]
+          assert leoncio["outlet_status"] == "UNRESOLVED"
+          assert leoncio["map_publishable"] is False
+          assert "leoncio_prado" in plan["query_policy"]["paired_event_context_quarantine"]
+
+          for target in matrix["targets"].values():
+              assert target["map_publishable"] is False
+              assert target["outlet_status"] == "UNRESOLVED"
+          PY

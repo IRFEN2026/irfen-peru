@@ -1,0 +1,52 @@
+{
+  "schema_version": "0.1",
+  "discovery_id": "tumbes_zorritos_bocapan_coastal_ravines",
+  "status": "RESEARCH_ONLY_CAPTURE_ATTEMPT_LOG",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "plan": "site/data/phase2/sources/tumbes_zorritos_priority_ana_vector_freeze_plan_v0_1.json",
+  "freezer": "scripts/freeze_zorritos_priority_ana_hydrography.py --attempt",
+  "attempts": [
+    {
+      "attempt_id": "REVIEW_SANDBOX_2026_10_01",
+      "environment": "Claude review sandbox (egress via organization proxy)",
+      "status": "CAPTURE_BLOCKED_NOTHING_WRITTEN",
+      "blocker_class": "EGRESS_PROXY_TUNNEL_REJECTED",
+      "exception": "urllib.error.URLError: <urlopen error Tunnel connection failed: 403 Forbidden>",
+      "failed_url": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0?f=pjson",
+      "requests_attempted": 1,
+      "capture_files_written": []
+    },
+    {
+      "attempt_id": "GITHUB_ACTIONS_RUN_36798969133",
+      "environment": "GitHub-hosted runner ubuntu-latest (GitHub Actions 1000019486), PR #348 head 00d5ee65",
+      "workflow": ".github/workflows/phase2-zorritos-priority-ana-vector-freeze.yml#capture-attempt",
+      "run_url": "https://github.com/IRFEN2026/irfen-peru/actions/runs/36798969133",
+      "started_at_utc": "2026-10-01T01:00:30Z",
+      "status": "CAPTURE_BLOCKED_NOTHING_WRITTEN",
+      "blocker_class": "CONNECT_TIMEOUT",
+      "failed_url": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0?f=pjson",
+      "evidence": "check-run annotation 'Zorritos ANA capture attempt' and artifact zorritos-priority-ana-capture-attempt-36798969133 (1547 bytes, report only)",
+      "capture_files_written": []
+    }
+  ],
+  "result": {
+    "official_geometries_captured": 0,
+    "targets": {
+      "la_tucilla": "NOT_CAPTURED_BLOCKED_NOT_NEGATIVE",
+      "los_pozos": "NOT_CAPTURED_BLOCKED_NOT_NEGATIVE",
+      "sechurita": "NOT_CAPTURED_BLOCKED_NOT_NEGATIVE"
+    },
+    "geometry_fabricated": false,
+    "targets_changed_from_unresolved": [],
+    "absence_is_negative": false,
+    "interpretation": "ANA layer metadata (first request) was unreachable from both environments; nothing about the existence of these ravines in ANA hydrography can be inferred. A capture needs a network path to geosnirh.ana.gob.pe (e.g. a runner in Peru or an institutional export with hash)."
+  }
+}
