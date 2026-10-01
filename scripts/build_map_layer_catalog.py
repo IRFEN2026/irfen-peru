@@ -18,6 +18,7 @@ if str(_SCRIPT_DIR) not in sys.path:
 
 import build_jicamarca_discovery_map_layers as _jicamarca
 import build_map_layer_catalog_core as _core
+import build_map_semantic_layers as _semantics
 from build_map_layer_catalog_core import *  # noqa: F401,F403 - compatibilidad con imports existentes
 
 
@@ -253,6 +254,16 @@ def build_catalog() -> dict:
     summary["research_discovery_units_withheld_missing_reproducible_geometry"] = sum(
         (row.get("geometry") or {}).get("map_eligible") is not True for row in ordered
     )
+
+    # Consolidación semántica A/B/C/D + contextos. Se deriva exclusivamente de
+    # las filas ya admitidas arriba; no añade geometrías ni altera las existentes.
+    semantics = _semantics.build_map_semantics(catalog)
+    catalog["map_semantics"] = semantics
+    catalog["guardrails"]["map_semantic_categories_never_mixed"] = True
+    catalog["guardrails"]["unresolved_nodes_not_drawn_as_confluences"] = True
+    catalog["guardrails"]["tributary_activation_is_not_collector_response"] = True
+    for key, value in semantics["summary"].items():
+        summary[f"map_semantic_{key}"] = value
     return catalog
 
 
@@ -407,6 +418,7 @@ def _safe_generated_discovery_migration_drift(current: dict, expected: dict) -> 
         "technical_layers",
         "research_zones",
         "research_component_layers",
+        "map_semantics",
     )
     if any(current.get(key) != expected.get(key) for key in stable_keys):
         return False

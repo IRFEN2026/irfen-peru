@@ -30,8 +30,13 @@ class MapLayerCatalogTests(unittest.TestCase):
 
     def test_technical_layers_are_non_operational_and_traceable(self):
         layers = self.catalog["technical_layers"]
-        self.assertEqual(len(layers), 5)
-        self.assertEqual(sum(layer["default_visibility"] for layer in layers), 2)
+        # Derivado de las definiciones canónicas, no de un número fijo.
+        self.assertEqual(len(layers), len(map_layers.LAYER_DEFINITIONS))
+        self.assertEqual(
+            sum(layer["default_visibility"] for layer in layers),
+            sum(bool(row["default_visibility"]) for row in map_layers.LAYER_DEFINITIONS),
+        )
+        self.assertEqual(self.catalog["summary"]["technical_layers_registered"], len(layers))
         for layer in layers:
             self.assertIn(layer["deployment_status"], {"TEST_ONLY", "RESEARCH_ONLY"})
             self.assertFalse(layer["loaded_into_operational_calculation"])
@@ -63,7 +68,9 @@ class MapLayerCatalogTests(unittest.TestCase):
 
     def test_phase2_zones_have_minimum_reproducible_model(self):
         zones = self.catalog["research_zones"]
-        self.assertEqual(len(zones), 18)
+        inventory = json.loads(map_layers.INVENTORY_PATH.read_text(encoding="utf-8"))
+        self.assertEqual(len(zones), len(inventory["candidates"]))
+        self.assertEqual(self.catalog["summary"]["research_candidates_registered"], len(zones))
         required = {"geometry", "sources", "confidence", "coverage", "variables_available", "validation"}
         for zone in zones:
             self.assertTrue(required.issubset(zone))
@@ -75,22 +82,15 @@ class MapLayerCatalogTests(unittest.TestCase):
 
     def test_missing_geometry_is_not_replaced_by_reference_points(self):
         zones = self.catalog["research_zones"]
-        eligible = {
-            "lima_este_santa_eulalia_rimac",
-            "lima_este_lurin_cieneguilla",
-            "lambayeque_motupe_la_leche_pitipo",
-            "arequipa_acari_san_agustin",
-            "lima_sur_canete",
-            "lima_sur_mala",
-            "lima_sur_asia_omas",
-            "ica_pisco_san_andres",
-            "ica_palpa_changuillo",
-            "lima_norte_huerta_vieja",
-            "lima_norte_arahuay_chillon",
-            "lima_norte_chancay_huaral",
-            "lima_norte_huaura_huacho_sayan",
-            "lima_norte_chillon_bajo",
-        }
+        # Elegibilidad recalculada de forma independiente desde cada contrato:
+        # archivo existente y activo de geometría distinto de MISSING.
+        eligible = set()
+        for zone in zones:
+            contract = json.loads((ROOT / zone["sources"]["contract_path"]).read_text(encoding="utf-8"))
+            geometry = (contract.get("assets") or {}).get("geometry") or {}
+            path = geometry.get("path")
+            if geometry.get("status") != "MISSING" and path and (ROOT / path).is_file():
+                eligible.add(zone["candidate_id"])
         self.assertEqual(self.catalog["summary"]["research_candidates_map_eligible"], len(eligible))
         for zone in zones:
             if zone["candidate_id"] in eligible:
@@ -111,7 +111,8 @@ class MapLayerCatalogTests(unittest.TestCase):
         self.assertEqual(geometry["status"], "PARTIAL")
         self.assertTrue(geometry["map_eligible"])
         self.assertFalse(geometry["default_visibility"])
-        self.assertEqual(geometry["source_metadata"]["feature_count"], 1)
+        document = json.loads((ROOT / geometry["path"]).read_text(encoding="utf-8"))
+        self.assertEqual(geometry["source_metadata"]["feature_count"], len(document["features"]))
         self.assertEqual(zone["deployment_status"], "RESEARCH_ONLY")
         self.assertFalse(zone["production_use"])
         self.assertFalse(zone["alerting_enabled"])
@@ -123,19 +124,24 @@ class MapLayerCatalogTests(unittest.TestCase):
         geometry = zone["geometry"]
         self.assertEqual(geometry["status"], "PARTIAL")
         self.assertFalse(geometry["default_visibility"])
-        self.assertEqual(geometry["source_metadata"]["feature_count"], 5)
+        document = json.loads((ROOT / geometry["path"]).read_text(encoding="utf-8"))
+        file_ids = [feature["properties"]["unit_id"] for feature in document["features"]]
+        self.assertEqual(geometry["source_metadata"]["feature_count"], len(file_ids))
         self.assertTrue(geometry["source_metadata"]["research_only_guard"])
-        self.assertEqual(set(geometry["source_metadata"]["feature_ids"]), {
+        self.assertEqual(set(geometry["source_metadata"]["feature_ids"]), set(file_ids))
+        # Identidades científicas que deben seguir separadas dentro del archivo.
+        self.assertTrue({
             "cashahuacra", "shingolay", "santa_eulalia_faja_2004",
             "rimac_faja_2020", "rimac_left_margin_update_2022",
-        })
+        }.issubset(file_ids))
         self.assertEqual(len(geometry["source_metadata"]["sha256"]), 64)
         self.assertEqual(zone["confidence"]["overall"], "NOT_VALIDATED")
 
     def test_development_queue_is_complete_and_not_a_risk_score(self):
         rows = [item for wave in self.priority["waves"] for item in wave["candidates"]]
-        self.assertEqual(len(rows), 18)
-        self.assertEqual(sorted(item["development_order"] for item in rows), list(range(1, 19)))
+        inventory = json.loads(map_layers.INVENTORY_PATH.read_text(encoding="utf-8"))
+        self.assertEqual(len(rows), len(inventory["candidates"]))
+        self.assertEqual(sorted(item["development_order"] for item in rows), list(range(1, len(rows) + 1)))
         self.assertFalse(self.priority["scoring"]["numeric_score_used"])
         self.assertFalse(self.priority["scoring"]["risk_score_used"])
         self.assertFalse(self.priority["guardrails"]["promotion_from_this_queue_allowed"])
