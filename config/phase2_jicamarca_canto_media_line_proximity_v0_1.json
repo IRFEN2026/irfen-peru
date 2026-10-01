@@ -1,0 +1,58 @@
+{
+  "schema_version": "0.1",
+  "contract_id": "phase2-jicamarca-canto-media-line-proximity:v0.1",
+  "status": "FROZEN_RESEARCH_ONLY_OFFICIAL_LINE_PROXIMITY_QA",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "purpose": "Test whether the already-frozen official IGP Canto Grande and Media Luna channel-line assets themselves contain a reproducible exact line-line junction. A negative result only means the current frozen source segments do not resolve the junction; it is not evidence that the hydrologic systems are disconnected.",
+  "source_assets": {
+    "canto_grande_upper_branch": {
+      "path": "site/data/phase2/geometries/jicamarca_canto_grande_igp_channel.geojson",
+      "git_blob_sha": "db4b4204cfd5c5b1447ebdfc8aa963f37ee6ab3f",
+      "expected_source_objectids": [15404, 18807],
+      "geometry_role": "OFFICIAL_NAMED_CHANNEL_LINE_CONTEXT_ONLY"
+    },
+    "media_luna": {
+      "path": "site/data/phase2/geometries/jicamarca_media_luna_igp_channel.geojson",
+      "git_blob_sha": "9fbaa8349f29f79b4890dee1a1c2f32b638fd5d4",
+      "expected_source_objectids": [3351, 11823],
+      "geometry_role": "OFFICIAL_NAMED_CHANNEL_LINE_CONTEXT_ONLY"
+    }
+  },
+  "analysis": {
+    "source_crs": "EPSG:4326",
+    "analysis_crs": "EPSG:32718",
+    "method": "PAIRWISE_SHAPELY_LINE_INTERSECTION_AND_EUCLIDEAN_DISTANCE_AFTER_PYPROJ_UTM18S_TRANSFORM",
+    "expected_pair_count": 4,
+    "expected_exact_line_intersection_count": 0,
+    "expected_global_min_distance_m_range": [1400.0, 1600.0],
+    "line_endpoints_are_outlets": false,
+    "nearest_points_are_confluences": false
+  },
+  "adjudication": {
+    "exact_media_luna_canto_grande_junction_resolved": false,
+    "documentary_topology_rejected": false,
+    "current_frozen_channel_assets_spatially_confirm_exact_junction": false,
+    "result_semantics": "SOURCE_SEGMENT_COVERAGE_GAP_OR_UNRESOLVED_JUNCTION_REMAINS",
+    "required_next_method": "DETERMINISTIC_TERRAIN_TOPOLOGY_EXTENSION_WITH_REPRODUCIBLE_RECEIVER_GEOMETRY_AND_INDEPENDENT_QA",
+    "routing_enabled": false,
+    "travel_time_estimation_enabled": false,
+    "collector_effect_state": "NO_EVIDENCE"
+  },
+  "forbidden": [
+    "interpret no line-line intersection as proof of hydrologic disconnection",
+    "snap nearest points together to manufacture a junction",
+    "extend an official source line by hand",
+    "treat a channel endpoint as an outlet",
+    "infer discharge, travel time, attenuation, capacity, risk or overflow from line proximity",
+    "use event outcomes to select or move the junction",
+    "promote Media Luna activation to Canto Grande parent activation or Rimac overflow"
+  ]
+}
