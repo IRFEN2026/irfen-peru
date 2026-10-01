@@ -249,6 +249,24 @@ def test_reconciled_with_map_semantic_model_and_nothing_promoted_to_map():
     assert zorritos_features[0]["source_ids"] == [rec["already_on_map_unchanged"]["source_id"]]
 
 
+def test_ingemmet_a6764_review_copy_is_registered_and_scoped():
+    context = load_context()
+    matrix = load_matrix()
+    src = context["sources"]["INGEMMET-A6764-TUMBES-2017"]
+    assert src["snapshot_sha256"] == "1144c68bef0102925037d3ec9aacd5080555d5418847271f3bd7c25c30210c36"
+    assert src["review_copy_page_count"] == 70
+    assert src["evidence_pages"]["san_andres"] == [33, 36]
+    assert src["evidence_pages"]["la_paja"] == [33, 36]
+    assert src["evidence_pages"]["marinero"] == [33, 36]
+    assert "REPORT_CONTEXT_IS_NOT_VECTOR_GEOMETRY" in src["prohibited_inferences"]
+    for tid in ("san_andres", "la_paja", "marinero"):
+        assert "INGEMMET-A6764-TUMBES-2017" in matrix["targets"][tid]["identity_source_ids"]
+        assert not any(x.startswith("INGEMMET-2017") for x in matrix["targets"][tid]["unregistered_source_labels"])
+        assert matrix["targets"][tid]["outlet_status"] == "UNRESOLVED"
+        assert matrix["targets"][tid]["map_publishable"] is False
+    assert "INGEMMET-A6764-TUMBES-2017" in matrix["targets"]["sechurita"]["supporting_context_source_ids"]
+
+
 class _ModuleFunctionTests(unittest.TestCase):
     """Expose the module-level test functions to `unittest discover` (pr-validation)."""
 
