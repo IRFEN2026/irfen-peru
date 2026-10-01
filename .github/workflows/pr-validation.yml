@@ -15,7 +15,7 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25
     steps:
       - name: Descargar pull request
         uses: actions/checkout@v6
@@ -27,7 +27,9 @@ jobs:
           cache: "pip"
 
       - name: Instalar dependencias
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-ci-test.txt
 
       - name: Demostrar rechazo atómico de latest.json DEMO
         shell: bash
@@ -123,7 +125,25 @@ jobs:
           python scripts/validate_pedregal_clean_room.py
 
       - name: Ejecutar pruebas unitarias v0.8
-        run: python -m unittest discover -s tests -v
+        # pytest ejecuta tanto unittest.TestCase como funciones test_* de
+        # estilo pytest; `unittest discover` omitía estas últimas en silencio.
+        run: python -m pytest tests/ -v -rfE
+
+      - name: Verificar colección pytest contra manifest
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin "${PR_BASE_SHA}"
+          if git show "${PR_BASE_SHA}:config/phase2_test_collection_manifest.json" \
+              > /tmp/base_phase2_test_collection_manifest.json 2>/dev/null; then
+            python scripts/verify_phase2_test_collection.py \
+              --base-manifest /tmp/base_phase2_test_collection_manifest.json
+          else
+            echo "Base sin manifest previo; se valida HEAD contra la colección real."
+            python scripts/verify_phase2_test_collection.py
+          fi
 
       - name: Ejecutar regresión y scorecard v0.8
         shell: bash
