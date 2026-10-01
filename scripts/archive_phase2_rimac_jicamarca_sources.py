@@ -415,6 +415,8 @@ def freeze_missing(contract: dict, manifest: dict) -> dict:
             record = freeze_document(contract, group)
         else:
             record = freeze_probe(contract, group)
+        if current and record["status"] != "FROZEN":
+            continue  # still unavailable: keep the first recorded attempt (no timestamp-only churn)
         manifest["groups"][group["group_id"]] = record
     manifest["status"] = overall_status(contract, manifest)
     manifest["contract_sha256"] = sha256(CONTRACT.read_bytes())

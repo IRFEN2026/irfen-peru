@@ -10,6 +10,17 @@ on:
       - site/data/phase2/sources/rimac_jicamarca_v0_1/**
       - tests/test_phase2_rimac_jicamarca_source_archive.py
       - .github/workflows/phase2-rimac-jicamarca-source-archive.yml
+  push:
+    branches:
+      - "phase2/rimac-jicamarca-*"
+    paths:
+      - config/phase2_rimac_jicamarca_source_archive_contract_v0_1.json
+      - scripts/archive_phase2_rimac_jicamarca_sources.py
+      - scripts/probe_phase2_rimac_ana_hydrography_service.py
+      - scripts/probe_phase2_minam2020_huaycoloro_rimac.py
+      - site/data/phase2/sources/rimac_jicamarca_v0_1/**
+      - tests/test_phase2_rimac_jicamarca_source_archive.py
+      - .github/workflows/phase2-rimac-jicamarca-source-archive.yml
   workflow_dispatch:
 
 permissions:
@@ -21,7 +32,7 @@ concurrency:
 
 jobs:
   freeze-official-source-bytes:
-    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -48,7 +59,7 @@ jobs:
             echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Persist newly frozen bytes or unavailable-source state
-        if: steps.freeze.outputs.changed == 'true' && github.event_name == 'pull_request'
+        if: steps.freeze.outputs.changed == 'true' && github.event_name != 'workflow_dispatch'
         shell: bash
         run: |
           set -euo pipefail
@@ -56,7 +67,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add site/data/phase2/sources/rimac_jicamarca_v0_1
           git commit -m "Freeze Rimac/Jicamarca official source bytes (ANA, MINAM, QHuay1 PDF, Tambo de Viso candidates)"
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          git push origin HEAD:${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
       - name: Offline replay and hash verification (no network)
         run: |
           python scripts/archive_phase2_rimac_jicamarca_sources.py

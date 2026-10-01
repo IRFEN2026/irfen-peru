@@ -163,13 +163,23 @@ class ArchiveMechanismTests(unittest.TestCase):
         self.assertFalse((self.tmp / "archive/probe").exists())
         self.assertEqual(manifest["status"], "PARTIAL_UNFROZEN_GROUPS_REMAIN_UNKNOWN")
         ARC.verify(contract, ARC.load_manifest(contract))
+        before = (self.tmp / "archive/archive_manifest_v0_1.json").read_bytes()
+        self.freeze()
+        self.assertEqual((self.tmp / "archive/archive_manifest_v0_1.json").read_bytes(), before,
+                         "a still-unavailable group must not rewrite the manifest")
+        (self.tmp / "scripts/fake_probe.py").write_text(FAKE_PROBE, encoding="utf-8")
+        sys.modules.pop("irfen_archive_fake_probe", None)
+        _, manifest = self.freeze()
+        self.assertEqual(manifest["groups"]["probe"]["status"], "FROZEN")
 
     def test_document_rules(self):
         _, manifest = self.freeze(pdf=b"<html>blocked</html>")
         self.assertEqual(manifest["groups"]["doc"]["status"], "SOURCE_ACCESS_UNAVAILABLE")
         self.assertIn("NOT_A_PDF", manifest["groups"]["doc"]["error"])
+        shutil.rmtree(self.tmp / "archive")
         _, manifest = self.freeze(pdf_url="https://mirror.example.com/a.pdf")
         self.assertIn("FINAL_HOST_NOT_ALLOWED", manifest["groups"]["doc"]["error"])
+        shutil.rmtree(self.tmp / "archive")
         _, manifest = self.freeze(pdf_url="http://docs.example.gob.pe/a.pdf")
         doc = manifest["groups"]["doc"]
         self.assertEqual(doc["status"], "FROZEN")
