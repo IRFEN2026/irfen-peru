@@ -230,6 +230,14 @@ WITHHELD_REPOSITORY_GEOMETRY_POLICY = {
         "validation_path": None,
         "reason": "WITHHELD_PENDING_INDEPENDENT_QA: faja del sistema Jicamarca (línea Rímac/Jicamarca, PR #310) no publicada por el builder cartográfico Jicamarca; además el archivo carece de alerting_enabled por feature. No se promueve hasta INDEPENDENT_QA_ACCEPTED.",
     },
+    "site/data/phase2/geometries/rimac_jicamarca_qhuay1_monitoring_anchor_candidate_v0_1.geojson": {
+        "entity_id": "qhuay1_near_confluence_anchor",
+        "type": "NODE",
+        "parent_id": "lima_este_jicamarca_huaycoloro_rioseco_canto_grande",
+        "contract_path": "config/phase2_rimac_jicamarca_qhuay1_candidate_package_v0_1.json",
+        "validation_path": None,
+        "reason": "WITHHELD_PENDING_INDEPENDENT_QA: punto de monitoreo ANA QHuay1 en la coordenada exacta de la fuente (UTM 18S 287433/8670443), candidato NEAR_CONFLUENCE (40 m antes de la confluencia; nunca EXACT_OFFICIAL). Requiere PDF fuente congelado con SHA-256, coordenada verificada en ese PDF e INDEPENDENT_QA_ACCEPTED de la línea Rímac/Jicamarca.",
+    },
     "site/data/phase2/geometries/ancash_casma_n7_minam_official_v0_1.geojson": {
         "entity_id": "ancash_casma_n7_gate_a_frozen_capture",
         "type": "CATCHMENT",

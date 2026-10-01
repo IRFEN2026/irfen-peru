@@ -246,15 +246,29 @@
       "node_semantics": "NEAR_CONFLUENCE",
       "map_eligible_today": false,
       "eligible_after_independent_qa": true,
-      "reason_if_withheld": "WITHHELD_PENDING_INDEPENDENT_QA_AND_POINT_ARTIFACT: official ANA coordinate (UTM 18S 287433 E, 8670443 N, 40 m before the Rimac confluence) exists only inside an unhashed PDF table; no frozen Point artifact with per-feature guards exists. After QA it can be drawn as NEAR_CONFLUENCE (water-quality monitoring point), never labelled as the confluence.",
+      "reason_if_withheld": "WITHHELD_PENDING_INDEPENDENT_QA: guarded Point frozen at the exact ANA coordinate (UTM 18S 287433 E, 8670443 N; 40 m before the Rimac confluence) and registered as a withheld repository geometry; source PDF hash and coordinate check in the frozen PDF are tracked in the candidate package. Drawable after QA only as NEAR_CONFLUENCE (water-quality monitoring point), never labelled as the confluence.",
       "evidence_refs": [
         "config/phase2_ana_qhuay1_near_confluence_monitoring_anchor_v0_1.json"
       ],
       "requirements_before_drawing": [
-        "freeze ANA0000959.pdf bytes and SHA-256",
-        "commit a Point GeoJSON at the exact source coordinate with RESEARCH_ONLY per-feature guards",
-        "register it in the catalog and record INDEPENDENT_QA_ACCEPTED for RIMAC_JICAMARCA"
-      ]
+        {
+          "requirement": "guarded Point at the exact source coordinate",
+          "status": "DONE"
+        },
+        {
+          "requirement": "freeze ANA0000959.pdf bytes and SHA-256",
+          "status": "PENDING_CI_FREEZE"
+        },
+        {
+          "requirement": "verify the QHuay1 row in the frozen PDF text",
+          "status": "PENDING"
+        },
+        {
+          "requirement": "INDEPENDENT_QA_ACCEPTED for RIMAC_JICAMARCA",
+          "status": "PENDING"
+        }
+      ],
+      "candidate_package": "config/phase2_rimac_jicamarca_qhuay1_candidate_package_v0_1.json"
     },
     {
       "element_id": "media_luna__canto_grande__junction",

@@ -96,6 +96,15 @@ class TestJicamarcaHistoricalCouplingEvidence(unittest.TestCase):
         self.assertEqual(tambo["context_scale"], "UPPER_RIMAC_MAINSTEM_OUTSIDE_JICAMARCA_SYSTEM")
         self.assertFalse(tambo["is_hydraulic_parameter"])
         self.assertFalse(tambo["numeric_value_verified"])
+        search = tambo["primary_source_search"]
+        if search["status"] != "PRIMARY_SOURCE_VERIFIED_IN_FROZEN_DOCUMENT":
+            self.assertFalse(tambo["primary_event_source_pinned"])
+            self.assertEqual(tambo["numeric_value_use"], "PROVENANCE_ONLY")
+        archive = json.loads((ROOT / "config/phase2_rimac_jicamarca_source_archive_contract_v0_1.json")
+                             .read_text(encoding="utf-8"))
+        group_ids = {g["group_id"] for g in archive["source_groups"]}
+        for cand in search["candidates_frozen_via_archive"]:
+            self.assertIn(cand["archive_group_id"], group_ids)
 
     def test_rejects_tambo_de_viso_transfer(self):
         for key in ("may_inform_jicamarca_capacity", "may_be_used_as_event_volume_for_other_quebradas",

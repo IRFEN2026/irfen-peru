@@ -1,0 +1,67 @@
+{
+  "schema_version": "0.1",
+  "contract_id": "phase2-rimac-jicamarca-qhuay1-candidate-package:v0.1",
+  "status": "CANDIDATE_PENDING_SOURCE_PDF_VERIFICATION_AND_INDEPENDENT_QA",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "assessment_date_utc": "2026-10-01",
+  "purpose": "Separate candidate package for the ANA QHuay1 monitoring point: the exact source coordinate frozen as a guarded Point, the source PDF frozen by SHA-256 through the line's source archive, and an explicit verification step tying the coordinate to the frozen PDF text. The point stays withheld from the map until the line records INDEPENDENT_QA_ACCEPTED. It is NEAR_CONFLUENCE, never EXACT_OFFICIAL: the source places it 40 m before the confluence, so it is not the confluence.",
+  "anchor_contract": "config/phase2_ana_qhuay1_near_confluence_monitoring_anchor_v0_1.json",
+  "point_artifact": {
+    "path": "site/data/phase2/geometries/rimac_jicamarca_qhuay1_monitoring_anchor_candidate_v0_1.geojson",
+    "unit_id": "qhuay1_near_confluence_anchor",
+    "source_crs": "EPSG:32718",
+    "source_easting_m": 287433,
+    "source_northing_m": 8670443,
+    "wgs84_lon": -76.95247928,
+    "wgs84_lat": -12.02033736,
+    "transform": "Krueger 4th-order inverse series; must agree with pyproj EPSG:32718->EPSG:4326 within 1e-7 degrees",
+    "offset_applied_m": 0,
+    "snapped": false
+  },
+  "source_pdf": {
+    "archive_contract": "config/phase2_rimac_jicamarca_source_archive_contract_v0_1.json",
+    "archive_group_id": "ana_qhuay1_monitoring_network_pdf",
+    "url": "https://repositorio.ana.gob.pe/bitstream/handle/20.500.12543/2072/ANA0000959.pdf?isAllowed=y&sequence=1",
+    "sha256": null,
+    "sha256_status": "PENDING_CI_FREEZE"
+  },
+  "coordinate_verification": {
+    "status": "PENDING_FROZEN_PDF_TEXT_CHECK",
+    "method": "Extract text from the frozen PDF bytes and require the QHuay1 row with easting 287433 and northing 8670443 (whitespace/thousand-separator tolerant). Record page and verbatim row.",
+    "verified_page": null,
+    "verified_text": null
+  },
+  "node_semantics": {
+    "candidate": "NEAR_CONFLUENCE",
+    "exact_official": false,
+    "may_be_labeled_exact_confluence": false,
+    "upgrade_to_exact_official_requires": "an official source that identifies the confluence coordinate itself; a monitoring point described as 40 m upstream does not qualify"
+  },
+  "map": {
+    "map_eligible_today": false,
+    "withheld_policy_reason": "WITHHELD_PENDING_INDEPENDENT_QA",
+    "drawable_after": [
+      "source_pdf.sha256 frozen by CI",
+      "coordinate_verification.status == VERIFIED_IN_FROZEN_PDF",
+      "INDEPENDENT_QA_ACCEPTED recorded for RIMAC_JICAMARCA"
+    ]
+  },
+  "observation_semantics": {
+    "station_role": "WATER_QUALITY_MONITORING_POINT",
+    "is_flow_gauge": false,
+    "is_stage_gauge": false,
+    "is_event_activation_sensor": false,
+    "may_be_used_as_outlet": false,
+    "may_be_used_as_exact_confluence": false,
+    "may_define_routing_or_travel_time": false,
+    "may_define_capacity_or_threshold": false
+  }
+}
