@@ -211,6 +211,26 @@ def test_attempt_success_writes_only_outside_repo_and_replays(tmp_path):
     assert freezer.check_capture(freezer.OUT_DIR) == "NO_CAPTURE_PRESENT"
 
 
+def test_capture_attempt_log_records_blockers_and_no_geometry():
+    log = json.loads((ROOT / "site/data/phase2/sources/zorritos_priority_ana_capture_attempts_v0_1.json").read_text(encoding="utf-8"))
+    for key, expected in freezer.SAFE.items():
+        assert log[key] == expected, key
+    assert log["attempts"], "at least one attempt must be recorded"
+    for attempt in log["attempts"]:
+        assert attempt["status"] == "CAPTURE_BLOCKED_NOTHING_WRITTEN"
+        assert attempt["blocker_class"] and attempt["failed_url"].startswith(freezer.load_plan()["service"])
+        assert attempt["capture_files_written"] == []
+    result = log["result"]
+    assert result["official_geometries_captured"] == 0
+    assert result["geometry_fabricated"] is False
+    assert result["targets_changed_from_unresolved"] == []
+    assert result["absence_is_negative"] is False
+    assert freezer.check_capture(freezer.OUT_DIR) == "NO_CAPTURE_PRESENT"
+    matrix = json.loads(MATRIX.read_text(encoding="utf-8"))
+    assert matrix["unresolved_review"]["capture_attempt_log"].endswith("zorritos_priority_ana_capture_attempts_v0_1.json")
+    assert all(row["outlet_status"] == "UNRESOLVED" for row in matrix["targets"].values())
+
+
 class _ModuleFunctionTests(unittest.TestCase):
     """Expose the module-level test functions to `unittest discover` (pr-validation)."""
 
