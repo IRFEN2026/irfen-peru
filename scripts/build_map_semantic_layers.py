@@ -142,10 +142,52 @@ NODE_SEMANTICS = {
 # Líneas de desarrollo cuyo resultado nuevo NO se consolida hasta aceptación
 # independiente. El mapa sólo usa lo que ya está en la rama base y valida por hash.
 PENDING_INDEPENDENT_QA_LINES = [
-    {"line": "CASMA", "pull_request": 335, "status": "NOT_CONSOLIDATED_UNTIL_INDEPENDENT_QA_ACCEPTED"},
     {"line": "RIMAC_JICAMARCA", "pull_request": 310, "status": "NOT_CONSOLIDATED_UNTIL_INDEPENDENT_QA_ACCEPTED"},
     {"line": "ZORRITOS", "pull_request": 340, "status": "NOT_CONSOLIDATED_UNTIL_INDEPENDENT_QA_ACCEPTED"},
 ]
+
+# Líneas cuya aceptación independiente consta en un registro versionado. Sólo se
+# consolidan las features que el propio registro autoriza y con las guardas que
+# exige; si el registro o la adjudicación Gate C no verifican, el builder falla.
+CASMA_N7_LABEL = "CURRENT_INSTITUTIONAL_N7_RESEARCH_CONTEXT"
+ACCEPTED_INDEPENDENT_QA_LINES = [
+    {
+        "line": "CASMA",
+        "pull_request": 347,
+        "source_pull_requests": [335, 344, 345, 346],
+        "status": "INDEPENDENT_QA_ACCEPTED",
+        "accepted_scope": "GATE_A_CAPTURE_AND_GATE_C_TOPOLOGY_ONLY",
+        "gate_b_lineage_equivalence": "NOT_ESTABLISHED",
+        "publication_label": CASMA_N7_LABEL,
+        "acceptance_record": "site/data/phase2/source_assessments/casma_n7_map_promotion_v0_1.json",
+        "gate_c_adjudication": "site/data/phase2/source_assessments/casma_n7_gate_c_adjudication_v0_1.json",
+    },
+]
+
+
+def _accepted_line(line: str) -> dict:
+    """Verifica, contra los registros versionados, que una línea esté aceptada."""
+    entry = next((row for row in ACCEPTED_INDEPENDENT_QA_LINES if row["line"] == line), None)
+    if entry is None:
+        raise MapSemanticError(f"línea sin aceptación independiente: {line}")
+    record = core.load_json(core.ROOT / entry["acceptance_record"])
+    acceptance = record.get("independent_qa_acceptance") or {}
+    gate_c = core.load_json(core.ROOT / entry["gate_c_adjudication"])
+    report_path = core.ROOT / gate_c.get("report_path", "")
+    if (
+        acceptance.get("line") != line
+        or acceptance.get("status") != "INDEPENDENT_QA_ACCEPTED"
+        or acceptance.get("gate_b_lineage_equivalence") != "NOT_ESTABLISHED"
+        or record.get("authorized_label") != entry["publication_label"]
+        or record.get("historical_geometry_equivalence_to_Uh_pfas100") is not False
+        or (record.get("map_constraints") or {}).get("default_visibility") is not False
+        or any(record.get(key) != value for key, value in GUARDS.items() if key in record)
+        or gate_c.get("gate_c_status") != "PASS"
+        or not report_path.is_file()
+        or core.digest(report_path) != gate_c.get("report_sha256")
+    ):
+        raise MapSemanticError(f"registro de aceptación no verificable: {line}")
+    return entry
 
 COLLECTOR_COUPLING_DIR = core.SITE / "data/validation/phase2_collector_coupling"
 REGISTERED_UNIT_DIR = core.SITE / "data/validation/phase2_registered_unit_packages"
@@ -178,6 +220,14 @@ WITHHELD_REPOSITORY_GEOMETRY_POLICY = {
         "contract_path": "config/phase2_jicamarca_el_silencio_ana_faja_contract_v0_1.json",
         "validation_path": None,
         "reason": "WITHHELD_PENDING_INDEPENDENT_QA: faja del sistema Jicamarca (línea Rímac/Jicamarca, PR #310) no publicada por el builder cartográfico Jicamarca; además el archivo carece de alerting_enabled por feature. No se promueve hasta INDEPENDENT_QA_ACCEPTED.",
+    },
+    "site/data/phase2/geometries/ancash_casma_n7_minam_official_v0_1.geojson": {
+        "entity_id": "ancash_casma_n7_gate_a_frozen_capture",
+        "type": "CATCHMENT",
+        "parent_id": "ancash_casma_sechin_yautan",
+        "contract_path": "config/phase2_casma_minam_n7_recovery_contract_v0_1.json",
+        "validation_path": "site/data/phase2/source_assessments/casma_minam_n7_recovery_manifest_v0_1.json",
+        "reason": "WITHHELD_FROZEN_GATE_A_EVIDENCE: captura congelada Gate A (bytes y SHA-256 fijados por su manifiesto; no se modifica). Su geometría se publica una sola vez, por unidad, mediante las 9 capas derivadas CURRENT_INSTITUTIONAL_N7_RESEARCH_CONTEXT con geometría idéntica; dibujar también este archivo duplicaría entidades.",
     },
 }
 
@@ -317,7 +367,21 @@ def classify_feature(props: dict, geometry_type: str, context: dict) -> dict:
         else:
             raise MapSemanticError(f"línea sin semántica reproducible en {context.get('owner_id')}")
     elif geometry_type in POLYGONS:
-        if (
+        if layer_repr == CASMA_N7_LABEL or props.get("representation") == CASMA_N7_LABEL:
+            # Unidad N7 institucional vigente (MINAM) aceptada por QA independiente:
+            # contexto de cuenca, nunca geometría 2007 Uh_pfas100 ni padre compuesto.
+            if not (
+                layer_repr == CASMA_N7_LABEL
+                and props.get("representation") == CASMA_N7_LABEL
+                and props.get("gate_c_topology_map") == "PASS"
+                and props.get("gate_b_lineage_equivalence") == "NOT_ESTABLISHED"
+                and props.get("historical_geometry_equivalence_to_Uh_pfas100") is False
+                and props.get("context_only") is True
+            ):
+                raise MapSemanticError(f"unidad N7 institucional sin guardas completas en {context.get('owner_id')}")
+            _accepted_line("CASMA")
+            category, role = "CATCHMENT", "CURRENT_INSTITUTIONAL_N7_HYDROGRAPHIC_UNIT"
+        elif (
             layer_repr == "MULTIPLE_DEM_CANDIDATE_POLYGONS"
             or (props.get("candidate_status") == "REVIEW_ONLY" and props.get("seed_authority"))
         ):
@@ -1196,6 +1260,7 @@ def build_map_semantics(catalog: dict) -> dict:
         "admissibility": {
             "basis": "Sólo artefactos presentes en la rama base y admitidos por el builder canónico con SHA-256; ninguna geometría nueva.",
             "pending_independent_qa_lines": PENDING_INDEPENDENT_QA_LINES,
+            "accepted_independent_qa_lines": [_accepted_line(row["line"]) for row in ACCEPTED_INDEPENDENT_QA_LINES],
         },
         "categories": CATEGORY_DEFINITIONS,
         "node_semantics": NODE_SEMANTICS,
