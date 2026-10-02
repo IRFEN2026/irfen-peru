@@ -44,6 +44,7 @@
             '<option value="0">Hoy UTC (si está disponible)</option><option value="-1">Ayer UTC</option><option value="-2">Hace 2 días</option>'+
           '</select></label>'+
           '<label class="iw-row">Opacidad <input data-iw="opacity" type="range" min="20" max="90" value="62"></label>'+
+          '<div class="iw-status" data-iw="status">Capa meteorológica inactiva.</div>'+
           '<div class="iw-senamhi"><b>SENAMHI</b> · conector WMS preparado; se habilitará cuando quede fijado un endpoint/capa institucional estable.</div>'+
           '<div class="iw-note">'+SOURCE_NOTE+'</div>';
 
@@ -54,14 +55,24 @@
         const cloudInput=box.querySelector('[data-iw="clouds"]');
         const dayInput=box.querySelector('[data-iw="day"]');
         const opacityInput=box.querySelector('[data-iw="opacity"]');
+        const statusEl=box.querySelector('[data-iw="status"]');
 
         function rebuild(){
           if(rain){targetMap.removeLayer(rain);rain=null;}
           if(clouds){targetMap.removeLayer(clouds);clouds=null;}
 
           if(rainInput.checked){
-            rain=makeWms('IMERG_Precipitation_Rate_v7_NRT',date,opacity);
+            if(statusEl) statusEl.textContent='IMERG: cargando '+date+'…';
+            rain=makeWms('IMERG_Precipitation_Rate_30min',date,opacity);
+            rain.on('load',function(){
+              if(statusEl) statusEl.textContent='IMERG cargado · '+date+' · las áreas transparentes indican precipitación no visible/detectable en esta capa.';
+            });
+            rain.on('tileerror',function(){
+              if(statusEl) statusEl.textContent='IMERG: error al recuperar mosaicos de NASA GIBS para '+date+'.';
+            });
             rain.addTo(targetMap);
+          } else if(statusEl && !cloudInput.checked){
+            statusEl.textContent='Capa meteorológica inactiva.';
           }
           if(cloudInput.checked){
             clouds=makeWms('VIIRS_SNPP_CorrectedReflectance_TrueColor',date,Math.min(opacity,.78));
@@ -100,6 +111,7 @@
       '.iw-head span{font-size:10px;color:#6d7f8c}.iw-row{display:flex!important;justify-content:space-between;align-items:center;gap:8px}'+
       '.iw-row select{max-width:120px;padding:4px}.iw-row input[type=range]{width:120px}'+
       '.iw-note,.iw-senamhi{margin-top:8px;padding-top:7px;border-top:1px solid #e2e9ee;color:#5c6f7d;font-size:10px}'+
+      '.iw-status{margin-top:8px;padding:7px;background:#eef6fb;border-radius:6px;color:#36586f;font-size:10px}'+
       '.iw-senamhi{background:#f5f8fa;padding:7px;border-radius:6px}'+
       '@media(max-width:700px){.irfen-weather-control{width:220px}}';
     document.head.appendChild(s);
