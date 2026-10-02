@@ -145,9 +145,9 @@
       "statement": "ANA Anexo II DU 015-2023, ANA AAA delimitation memoir, RJ 056-2018-ANA and the INDECI reports remain not archived. Until bytes and hashes are frozen, identity claims depend on recorded text retrieval."
     },
     {
-      "item_id": "OPEN-YAUCA-ROSARIO-RECEIVER-HOMONYM",
+      "item_id": "OPEN-YAUCA-ROSARIO-PARENT-UH",
       "blocking_for_this_adjudication": false,
-      "statement": "The Yauca del Rosario event sits under the Cuenca Grande (1372) system on the basis of the reported receivers 'Río Chico' and 'Río Grande'. The parent UH of the two ravines has not been reproduced from official hydrography, and the package itself forbids conflating a same-name receiver with an official basin (as it does for Huancano). Parent binding of this system should be independently reviewed before any geometry work."
+      "statement": "Parent binding to Cuenca Grande 1372 withdrawn on 2026-10-03 (see parent_binding_adjudication). Open: execute the ANA SNIRH named-channel probe for both ravines from an environment that can reach geosnirh.ana.gob.pe, archive the bytes, and read CODIGO_UH from the result."
     }
   ],
   "summary": {
@@ -156,6 +156,81 @@
     "state_fields_added": 1,
     "states_relaxed": 0,
     "geometry_assets_published": 0,
-    "new_operational_zones": 0
+    "new_operational_zones": 0,
+    "parent_bindings_withdrawn": 1,
+    "parent_bindings_reassigned": 0
+  },
+  "parent_binding_adjudication": {
+    "system": "ica_rio_grande_local_ravines",
+    "adjudicated_on": "2026-10-03",
+    "question": "Do Quebrada San José de Curis and Quebrada San Isidro de Macchanga belong to ANA Cuenca Grande UH 1372?",
+    "result": "NOT_DEMONSTRATED_BINDING_WITHDRAWN",
+    "resulting_state": "UNRESOLVED_PARENT_HYDROGRAPHIC_ASSIGNMENT",
+    "reassigned_to": null,
+    "official_evidence_attempted": [
+      {
+        "source": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+        "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+        "queries": [
+          "where=NOMBRE_CA LIKE '%Curis%'&outFields=*&returnGeometry=false&f=json",
+          "where=NOMBRE_CA LIKE '%Macchanga%'&outFields=*&returnGeometry=false&f=json"
+        ],
+        "outcome": "NOT_EXECUTED_HOST_UNREACHABLE",
+        "detail": "Connection timeout from this environment (both the fetcher and the shell). This is the only registered official layer carrying ravine names with CODIGO_UH. Unreachable is not a negative result.",
+        "content_sha256": null
+      },
+      {
+        "source": "ANA via IDEP, ANA_WMS FeatureServer",
+        "endpoint": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/FeatureServer?f=json",
+        "outcome": "NO_NAMED_CHANNEL_LAYER",
+        "detail": "Layers exposed: Humedales Costeros, Manantial, Glaciares, Hidrometeorológica, AAA, Unidades Hidrográficas (7, 8), Consejo de Recursos Hídricos, ALA, Marino Costero. No river or ravine layer, so ravine identity cannot be matched here.",
+        "content_sha256": null
+      },
+      {
+        "source": "ANA via IDEP, layer 7 Unidades Hidrográficas",
+        "endpoint": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/FeatureServer/7/query?where=CODIGO IN ('1372','1374')&outFields=*&returnGeometry=false&f=json",
+        "outcome": "UNIT_IDENTITY_ONLY",
+        "detail": "OBJECTID_1 164, CODIGO 1372, NOMBRE 'Cuenca Grande', AREA_KM2 10991.2703; OBJECTID_1 163, CODIGO 1374, NOMBRE 'Cuenca Ica', AREA_KM2 7301.8761. Confirms the two units exist; says nothing about the ravines.",
+        "content_sha256": null
+      },
+      {
+        "source": "INDECI-YAUCA-ROSARIO-2024",
+        "endpoint": "https://portal.indeci.gob.pe/emergencias/reporte-preliminar-n-602-17-3-2024-coen-indeci-1230-horas-huaico-en-el-distrito-de-yauca-del-rosario-ica/",
+        "outcome": "RE_READ_TEXT_NOT_ARCHIVED",
+        "detail": "«...un huaico que incrementó el caudal de las quebradas de San José de Curis y San Isidro de Macchanga el mismo que discurre por los ríos Chico y Río Grande en el sector Pampahuasi y centro poblado de Orongocucho, que causó daños a la captación de agua para consumo humano en el distrito de Yauca del Rosario, provincia de Ica.» Confirms ravine names, receiver names and localities. Names no hydrographic unit.",
+        "content_sha256": null
+      }
+    ],
+    "why_not_demonstrated": [
+      "No official hydrographic record tying either ravine to a UH code could be obtained.",
+      "The previous binding rested only on the receiver name 'Río Grande', which the package's own rule same_name_receiver_must_not_be_conflated_with_official_basin forbids as a basis.",
+      "Responses were read through a text-extracting fetcher; no bytes could be frozen from this environment, so even unit-level corroboration is not byte-reproducible."
+    ],
+    "contextual_observation_not_evidence": {
+      "use": "NOT_EVIDENCE_FOR_ASSIGNMENT. Recorded only because it contradicts the withdrawn binding and shows why a candidate must not be inferred either.",
+      "observation": "Point-in-polygon queries on IDEP layer 7 with non-official approximate coordinates for the locality Pampahuasi and for the district reference point of Yauca del Rosario both returned CODIGO 1374 'Cuenca Ica', not 1372.",
+      "why_not_usable": [
+        "Coordinates come from non-official web sources and are not stored in this package (no approximate points).",
+        "A locality or district point is not a ravine; the probe contract forbids fallback by proximity or district name.",
+        "Not byte-frozen."
+      ],
+      "consequence": "The system is not transferred to Cuenca Ica. candidate_parent_basin_ids stays empty until the official named-channel probe is executed."
+    },
+    "state_changes": [
+      "system.parent_basin_id: ica_rio_grande_palpa_nasca -> null",
+      "system.parent_assignment_status and parent_assignment block added (withdrawn parent recorded, reassigned_to null)",
+      "system.homonym_guard added",
+      "both children: parent_assignment_status added; identity, evidence state, sources, outlet_status unchanged",
+      "event ica_yauca_rosario_2024_03_16: receiver_reference filled with the reported local names and localities; do_not_infer extended",
+      "both probe contracts: expected parent set to null, match policy changed so the parent UH is read from the official result instead of presupposed",
+      "work package 4: parent UH reproduction placed before geometry",
+      "summary.local_systems_with_unresolved_parent_assignment = 1"
+    ],
+    "not_changed": [
+      "No geometry, outlet, threshold, routing or alert created",
+      "Event evidence and its attribution to the two named ravines",
+      "Official basin row for UH 1372",
+      "All hashes and provenance fields"
+    ]
   }
 }

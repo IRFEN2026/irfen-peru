@@ -510,6 +510,8 @@ def test_new_local_children_have_fail_closed_ana_probe_contracts():
     cfg = load()
     probes = {(x["child_name"], x["expected_parent_uh_code"]) for x in cfg["hydrography_probe_contracts"]}
     assert len(probes) == 23
+    assert ("Quebrada San José de Curis", None) in probes
+    assert ("Quebrada San Isidro de Macchanga", None) in probes
     expected = {
         ("Quebrada Catambo", "1374"),
         ("Quebrada Quitasol", "13752"),
@@ -520,11 +522,24 @@ def test_new_local_children_have_fail_closed_ana_probe_contracts():
     }
     assert expected <= probes
     assert cfg["summary"]["local_hydrography_probe_contracts_registered"] == 23
+    unresolved_systems = {
+        x["discovery_id"] for x in cfg["local_discovery_systems"] if x["parent_basin_id"] is None
+    }
+    assert unresolved_systems == {"ica_rio_grande_local_ravines"}
     for probe in cfg["hydrography_probe_contracts"]:
         assert probe["status"] == "PLANNED_FAIL_CLOSED_NOT_EXECUTED"
         assert probe["map_publishable"] is False
         assert probe["event_state_transferred"] is False
-        assert probe["match_policy"] == "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE"
+        unresolved = probe["discovery_system_id"] in unresolved_systems
+        if unresolved:
+            # Parent UH is not presupposed for systems whose parent is unresolved.
+            assert probe["expected_parent_uh_code"] is None
+            assert probe["expected_parent_discovery_id"] is None
+            assert probe["match_policy"] == "EXACT_NAME_REQUIRED_PARENT_UH_READ_FROM_OFFICIAL_RESULT_NOT_PRESUPPOSED"
+            assert "no fallback by receiver name, proximity or district name" in probe["notes"]
+        else:
+            assert probe["expected_parent_uh_code"]
+            assert probe["match_policy"] == "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE"
 
 
 def test_ranrata_2026_direct_event_is_added_without_geometry_promotion():
@@ -548,3 +563,165 @@ def test_expansion_summary_remains_research_only_and_zero_operational_zones():
     assert cfg["summary"]["official_parent_basins_registered"] == len(cfg["official_basin_hierarchy"]) == 17
     assert cfg["summary"]["pending_hydrologic_adjudications"] == 6
     assert cfg["summary"]["new_operational_zones"] == 0
+
+
+# --- Parent binding of the Yauca del Rosario ravines (withdrawn 2026-10-03) -----------
+
+UNRESOLVED_PARENT = "UNRESOLVED_PARENT_HYDROGRAPHIC_ASSIGNMENT"
+HYDROGRAPHIC_AUTHORITY = "Autoridad Nacional del Agua"
+
+
+def _basin_name_tokens(basin):
+    """Proper-name tokens of an official basin, e.g. 'Cuenca Grande / Río Grande–Palpa–Nasca' -> {'grande', ...}."""
+    import re
+
+    stop = {"cuenca", "río", "rio", "de", "del", "la", "el", "y"}
+    return {w for w in re.split(r"[^0-9a-záéíóúñü]+", basin["name"].lower()) if w and w not in stop}
+
+
+def _receiver_text(system):
+    parts = []
+    for ev in system.get("territorial_events", []):
+        parts += [ev.get("receiver_reference") or "", ev.get("statement") or ""]
+    for child in system.get("children", []):
+        parts.append((child.get("outlet_status") or "").replace("_", " "))
+    return " ".join(parts).lower()
+
+
+def receiver_homonym_bindings(cfg):
+    """Systems bound to an official basin whose name also appears as a reported receiver
+    ('Río <name>') while no child carries a source from the hydrographic authority.
+    Such a binding rests on a receiver name alone and is forbidden."""
+    import re
+
+    basins = {x["discovery_id"]: x for x in cfg["official_basin_hierarchy"]}
+    sources = {x["source_id"]: x for x in cfg["source_catalog"]}
+    offenders = []
+    for system in cfg["local_discovery_systems"]:
+        parent = system.get("parent_basin_id")
+        if parent is None:
+            continue
+        text = _receiver_text(system)
+        homonym = any(re.search(r"r[ií]o " + re.escape(tok) + r"\b", text) for tok in _basin_name_tokens(basins[parent]))
+        if not homonym:
+            continue
+        hydrographic = any(
+            sources[sid]["institution"].startswith(HYDROGRAPHIC_AUTHORITY)
+            for child in system.get("children", [])
+            for sid in child["source_ids"]
+        )
+        if not hydrographic:
+            offenders.append(system["discovery_id"])
+    return offenders
+
+
+def test_receiver_name_alone_never_binds_a_system_to_a_homonymous_official_basin():
+    cfg = load()
+    assert cfg["global_rules"]["same_name_receiver_must_not_be_conflated_with_official_basin"] is True
+    assert receiver_homonym_bindings(cfg) == []
+
+
+def test_receiver_homonym_detector_rejects_the_withdrawn_binding_and_its_variants():
+    import copy
+
+    # Restoring the withdrawn parent must be caught.
+    cfg = copy.deepcopy(load())
+    system = systems(cfg)["ica_rio_grande_local_ravines"]
+    system["parent_basin_id"] = "ica_rio_grande_palpa_nasca"
+    assert receiver_homonym_bindings(cfg) == ["ica_rio_grande_local_ravines"]
+
+    # Same pattern on another system: the Huancano report names a local 'Río Grande'.
+    cfg = copy.deepcopy(load())
+    pisco = systems(cfg)["ica_pisco_local_ravines"]
+    pisco["parent_basin_id"] = "ica_rio_grande_palpa_nasca"
+    pisco["children"] = []
+    assert receiver_homonym_bindings(cfg) == ["ica_pisco_local_ravines"]
+
+    # An emergency report is not a hydrographic source, however official.
+    cfg = copy.deepcopy(load())
+    system = systems(cfg)["ica_rio_grande_local_ravines"]
+    system["parent_basin_id"] = "ica_rio_grande_palpa_nasca"
+    assert all(
+        s["institution"] == "COEN-INDECI"
+        for s in cfg["source_catalog"]
+        if s["source_id"] in {sid for c in system["children"] for sid in c["source_ids"]}
+    )
+    assert receiver_homonym_bindings(cfg)
+
+    # A binding that does carry a hydrographic-authority source is not flagged:
+    # Ocucaje reports 'Río Ica' under Cuenca Ica, whose children have ANA sources.
+    assert "ica_ica_local_ravines" not in receiver_homonym_bindings(load())
+    assert "río ica" in _receiver_text(systems(load())["ica_ica_local_ravines"])
+
+
+def test_yauca_del_rosario_parent_is_explicitly_unresolved_and_not_transferred():
+    cfg = load()
+    system = systems(cfg)["ica_rio_grande_local_ravines"]
+    assert system["parent_basin_id"] is None
+    assert system["parent_assignment_status"] == UNRESOLVED_PARENT
+    pa = system["parent_assignment"]
+    assert pa["status"] == UNRESOLVED_PARENT
+    assert pa["withdrawn_parent_basin_id"] == "ica_rio_grande_palpa_nasca"
+    assert pa["withdrawn_parent_uh_code"] == "1372"
+    assert pa["reassigned_to"] is None
+    assert pa["candidate_parent_basin_ids"] == []
+    assert pa["discovery_id_is_legacy_label_not_basin_assertion"] is True
+    assert "receiver name" in pa["withdrawal_reason"]
+    assert "UH 1372" in system["homonym_guard"] and "any other official basin" in system["homonym_guard"]
+
+    ev = system["territorial_events"][0]
+    assert "Río Grande" in ev["receiver_reference"] and "unresolved" in ev["receiver_reference"]
+    assert "ANA Cuenca Grande UH 1372" in ev["do_not_infer"]
+    assert ev["hydrologic_assignment_status"] == MULTI_NAMED
+
+    # The event evidence itself is untouched; only the basin claim is withdrawn.
+    for child in system["children"]:
+        assert child["parent_assignment_status"] == UNRESOLVED_PARENT
+        assert child["identity_status"] == "OFFICIAL_NAME_CONFIRMED"
+        assert child["evidence_state"] == "IMPACT_CONFIRMED"
+        assert child["source_ids"] == ["INDECI-YAUCA-ROSARIO-2024"]
+        assert child["geometry_asset"] is None and child["outlet"] is None
+        assert child["map_publishable"] is False
+        assert child["activation_gate"] == "BLOCKED"
+        assert child["decision_thresholds"] is None and child["hydraulic_factors"] is None
+    for key in ("activation_gate", "decision_thresholds", "hydraulic_factors"):
+        assert system[key] == SAFE[key]
+
+    # The official basin row stays as context and is not altered by the withdrawal.
+    grande = next(x for x in cfg["official_basin_hierarchy"] if x["discovery_id"] == "ica_rio_grande_palpa_nasca")
+    assert grande["official_unit_code"] == "1372"
+    assert cfg["summary"]["local_systems_with_unresolved_parent_assignment"] == 1
+    assert cfg["summary"]["new_operational_zones"] == 0
+    assert cfg["summary"]["map_publishable_children"] == 0
+
+
+def test_every_system_has_either_a_registered_parent_or_an_explicit_unresolved_state():
+    cfg = load()
+    basins = {x["discovery_id"] for x in cfg["official_basin_hierarchy"]}
+    unresolved = 0
+    for system in cfg["local_discovery_systems"]:
+        if system["parent_basin_id"] is None:
+            unresolved += 1
+            assert system["parent_assignment_status"] == UNRESOLVED_PARENT
+            assert system["parent_assignment"]["reassigned_to"] is None
+        else:
+            assert system["parent_basin_id"] in basins
+            assert system.get("parent_assignment_status") != UNRESOLVED_PARENT
+    assert unresolved == cfg["summary"]["local_systems_with_unresolved_parent_assignment"]
+
+
+def test_parent_binding_adjudication_record_matches_state_and_claims_no_proof():
+    cfg = load()
+    rec = load_json(ADJUDICATION)["parent_binding_adjudication"]
+    system = systems(cfg)[rec["system"]]
+    assert rec["result"] == "NOT_DEMONSTRATED_BINDING_WITHDRAWN"
+    assert rec["resulting_state"] == system["parent_assignment_status"] == UNRESOLVED_PARENT
+    assert rec["reassigned_to"] is None
+    for attempt in rec["official_evidence_attempted"]:
+        assert attempt["content_sha256"] is None  # nothing was byte-frozen; never fake a hash
+        assert attempt["outcome"] not in {"PARENT_UH_CONFIRMED", "DEMONSTRATED"}
+    ctx = rec["contextual_observation_not_evidence"]
+    assert ctx["use"].startswith("NOT_EVIDENCE_FOR_ASSIGNMENT")
+    assert "ica_ica" not in system["parent_assignment"]["candidate_parent_basin_ids"]
+    summary = load_json(ADJUDICATION)["summary"]
+    assert summary["parent_bindings_withdrawn"] == 1 and summary["parent_bindings_reassigned"] == 0
