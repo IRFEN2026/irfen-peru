@@ -1,0 +1,43 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_CLEANROOM_PSEUDONYMOUS_TARGET_READINESS",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "inputs": {
+    "matching": {
+      "path": "site/data/validation/cleanroom/chosica_2015_cleanroom_matching_v0_1.json",
+      "sha256": "108faf9d525929cdab10b5cfaa4325a0b806ca1705c6a36fa3e3a1d082821d73",
+      "required_status": "PASS_CLEANROOM_MATCHING"
+    },
+    "candidate_adjudication": {
+      "artifact_id": 10180559828,
+      "file": "chosica_2015_candidate_evidence_adjudication_v0_1.json",
+      "sha256": "9f36611e13972a0400cc28850598a7f523ff30cdeb130e32fb4f3086b7b556d8",
+      "required_status": "PASS_CANDIDATE_ONLY_ADJUDICATION_ALL_UNKNOWN"
+    }
+  },
+  "eligibility_rule": {
+    "minimum_confirmed_controls_within_each_frozen_shortlist": 1,
+    "outcome_unknown_is_not_control": true,
+    "excluded_active_is_not_control": true,
+    "candidate_replacement_allowed": false,
+    "matching_recalculation_allowed": false,
+    "selection_feedback_allowed": false,
+    "automatic_target_outcome_unblind": false
+  },
+  "forbidden": [
+    "read target names or target outcomes",
+    "read A6680",
+    "read contaminated adjudication",
+    "change matching or shortlists",
+    "infer controls from unknown candidates",
+    "unblind a pseudonymous target without a confirmed control in its frozen shortlist"
+  ],
+  "next_gate": "ONLY_PSEUDONYMOUS_TARGET_CODES_WITH_AT_LEAST_ONE_AFFIRMATIVE_CONFIRMED_CONTROL_IN_THEIR_FROZEN_SHORTLIST_MAY_RECEIVE_A_SEPARATE_EXPLICIT_UNBLIND_RECORD"
+}

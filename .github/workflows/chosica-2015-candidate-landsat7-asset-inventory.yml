@@ -1,0 +1,72 @@
+name: IRFEN - Chosica 2015 candidate Landsat 7 asset inventory
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_candidate_landsat7_pair_freeze_record_v0_1.json
+      - config/chosica_2015_candidate_landsat7_asset_inventory_contract_v0_1.json
+      - scripts/inventory_chosica_2015_candidate_landsat7_assets.py
+      - .github/workflows/chosica-2015-candidate-landsat7-asset-inventory.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_candidate_landsat7_asset_inventory_contract_v0_1.json
+            scripts/inventory_chosica_2015_candidate_landsat7_assets.py
+            .github/workflows/chosica-2015-candidate-landsat7-asset-inventory.yml
+      - name: Assert forbidden scientific paths absent
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_multibasin_validation_set_v0_1.json
+          test ! -e config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09_b.json
+      - name: Download exact frozen Landsat 7 pair artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p sources/pairs artifacts
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/10180152726/zip" > /tmp/pairs.zip
+          unzip -q /tmp/pairs.zip -d sources/pairs
+          test "$(sha256sum sources/pairs/chosica_2015_candidate_landsat7_pairs_v0_1.json | cut -d' ' -f1)" = "266d608d8e41b02513a6445bd8140d2612fbf2f05bddbf3e2b5a7318fdd3050b"
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install metadata-only dependency
+        run: pip install 'requests>=2.31,<3'
+      - name: Inventory frozen pair asset metadata only
+        run: |
+          env -i PATH="$PATH" HOME=/tmp LANG=C.UTF-8 python -I scripts/inventory_chosica_2015_candidate_landsat7_assets.py \
+            --contract config/chosica_2015_candidate_landsat7_asset_inventory_contract_v0_1.json \
+            --pairs sources/pairs/chosica_2015_candidate_landsat7_pairs_v0_1.json \
+            --output artifacts/chosica_2015_candidate_landsat7_asset_inventory_v0_1.json
+      - name: Enforce no-pixel and clean-room guards
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/chosica_2015_candidate_landsat7_asset_inventory_v0_1.json',encoding='utf-8'))
+          assert d['status']=='FROZEN_LANDSAT7_FROZEN_PAIR_ASSET_METADATA_INVENTORY'
+          assert d['item_count']==2
+          assert d['asset_href_metadata_read'] is True
+          for k in ('asset_href_requested','pixel_bytes_read','surface_signal_observed','outcome_evidence_read','target_names_or_ids_read','a6680_read','contaminated_adjudication_used','scene_selection_modified','candidate_selection_modified','candidate_ranking_modified','free_web_search_used','control_labels_assigned','sealed_target_unblind_allowed'):
+              assert d[k] is False, k
+          assert all(len(x['assets'])==6 for x in d['items'])
+          assert d['guards']=={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-candidate-landsat7-asset-inventory
+          path: artifacts/chosica_2015_candidate_landsat7_asset_inventory_v0_1.json
+          if-no-files-found: error

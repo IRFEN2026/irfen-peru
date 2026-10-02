@@ -1,0 +1,73 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PRE_EXECUTION_CANDIDATE_ONLY_LANDSAT7_AVAILABILITY",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "scientific_role": "Independent candidate-only optical availability from Landsat 7 ETM+ after Sentinel-1 produced no scenes and the separately frozen Landsat 8 three-scene QA route was quality-blocked. This stage is metadata-only, was frozen before any Landsat 7 pixel read, and cannot assign a control label.",
+  "source": {
+    "institution": "U.S. Geological Survey",
+    "mission": "Landsat 7",
+    "product_family": "Landsat Collection 2 Level-2 Surface Reflectance",
+    "stac_search_endpoint": "https://landsatlook.usgs.gov/stac-server/search",
+    "endpoint_host": "landsatlook.usgs.gov",
+    "collection": "landsat-c2l2-sr",
+    "http_method": "POST",
+    "content_type": "application/json",
+    "free_web_search_allowed": false,
+    "search_engine_allowed": false,
+    "redirects_allowed": false
+  },
+  "candidate_geometry": {
+    "workflow_run_id": 34524860992,
+    "artifact_id": 10171108859,
+    "artifact_digest": "sha256:6290b2018770acf1332f7a6680d85d9a5b179d82c2e9f95155ef628d8b445c61",
+    "file": "chosica_2015_cleanroom_candidate_geometries_v0_1.geojson",
+    "sha256": "9a23644c191c88fb66722b368773251051b4098ddd74e4d5861c3a37dbfbb1ca",
+    "candidate_count": 7
+  },
+  "event_anchor_utc": "2015-03-23T19:30:00Z",
+  "fixed_windows": {
+    "pre": {"start": "2015-02-01T00:00:00Z", "end": "2015-03-23T19:29:59Z"},
+    "post": {"start": "2015-03-23T19:30:00Z", "end": "2015-05-15T23:59:59Z"},
+    "window_shift_allowed": false
+  },
+  "query": {
+    "one_query_per_candidate_per_window": true,
+    "spatial_filter": "exact candidate polygon GeoJSON geometry",
+    "max_results": 100,
+    "mission_filter_after_response": "platform LANDSAT_7 or item ID prefix LE07_",
+    "metadata_only": true
+  },
+  "pairing_policy_after_availability_freeze": {
+    "pairing_deferred_until_availability_is_frozen": true,
+    "same_wrs_path_required": true,
+    "same_wrs_row_required": true,
+    "pre_scene_datetime_must_precede_anchor": true,
+    "post_scene_datetime_must_follow_or_equal_anchor": true,
+    "scene_pair_selection": "minimize sum of absolute temporal distance to anchor; then minimize maximum of the two distances; then lower scene-level cloud-cover sum when both values are present; then lexical item IDs",
+    "surface_signal_must_not_be_read_before_pair_freeze": true,
+    "candidate_specific_pair_replacement_after_pixel_read": false
+  },
+  "sensor_caution": {
+    "landsat7_slc_off": true,
+    "rule": "SLC-off gaps are handled only as invalid/missing pixels by the later QA gate; gaps must never be imputed as no change, dry, inactive, or CONTROL."
+  },
+  "forbidden": [
+    "read or download Landsat 7 pixel assets in this availability stage",
+    "read target outcomes or names",
+    "read A6680",
+    "read contaminated adjudication",
+    "modify candidate shortlist or matching",
+    "use observed surface response to select a scene",
+    "free web search",
+    "interpret no imagery, SLC-off gaps, or no detected change as CONTROL_CONFIRMED"
+  ],
+  "sealed_target_unblind_allowed": false,
+  "next_gate": "IF_LANDSAT7_BRACKETING_METADATA_EXIST_FREEZE_DETERMINISTIC_SCENE_PAIRS_BEFORE_ANY_LANDSAT7_PIXEL_ASSET_READ"
+}

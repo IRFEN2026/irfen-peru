@@ -1,0 +1,87 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PRE_PIXEL_LANDSAT7_CANDIDATE_QA_GATE",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "inputs": {
+    "candidate_geometry": {
+      "artifact_id": 10171108859,
+      "file": "chosica_2015_cleanroom_candidate_geometries_v0_1.geojson",
+      "sha256": "9a23644c191c88fb66722b368773251051b4098ddd74e4d5861c3a37dbfbb1ca",
+      "candidate_count": 7
+    },
+    "asset_inventory": {
+      "artifact_id": 10180217499,
+      "file": "chosica_2015_candidate_landsat7_asset_inventory_v0_1.json",
+      "sha256": "f10c4442ffe6bb12992b342e78140eb89f0e5db95abd2ab05304d8f399952cda"
+    },
+    "frozen_items": {
+      "pre": "LE07_L2SP_007068_20150310_02_T1",
+      "post": "LE07_L2SP_007068_20150326_02_T1"
+    }
+  },
+  "transport": {
+    "provider": "Microsoft Planetary Computer",
+    "role": "TRANSPORT_ONLY_NOT_SCIENTIFIC_SOURCE",
+    "unsigned_asset_host": "landsateuwest.blob.core.windows.net",
+    "ephemeral_signing_library": "planetary-computer",
+    "signed_url_may_be_persisted": false,
+    "signed_url_may_be_logged": false,
+    "redirects_allowed": false,
+    "full_file_sha512_before_raster_read": true,
+    "canonical_usgs_byte_checksum_available": false,
+    "scientific_limit": "Mirror bytes are checksum-locked by SHA-512 within this execution but are not independently byte-matched to the currently TLS-inaccessible USGS origin. QA may determine usability; it cannot establish a control outcome."
+  },
+  "allowed_asset_keys": ["qa_pixel", "qa_radsat"],
+  "qa_pixel": {
+    "invalid_bits": {
+      "0": "fill_or_missing_including_slc_off_gap_when_flagged",
+      "1": "dilated_cloud",
+      "3": "cloud",
+      "4": "cloud_shadow",
+      "5": "snow",
+      "7": "water"
+    },
+    "valid_rule": "all listed invalid bits equal zero"
+  },
+  "qa_radsat": {
+    "valid_rule": "value equals zero",
+    "purpose": "Exclude any radiometric saturation or sensor-specific dropped-pixel flags without imputing missing pixels."
+  },
+  "alignment": {
+    "reference_grid": "frozen immediate-pre qa_pixel raster grid",
+    "post_masks": "nearest-neighbor reproject to immediate-pre grid",
+    "outside_source_extent": "invalid",
+    "candidate_geometry": "transform WGS84 candidate polygon to immediate-pre raster CRS and rasterize by pixel-center inclusion; all_touched=false",
+    "categorical_resampling": "nearest only"
+  },
+  "quality_gate": {
+    "minimum_candidate_pixels": 100,
+    "minimum_valid_land_fraction_each_scene": 0.50,
+    "minimum_two_scene_common_valid_land_fraction": 0.40,
+    "candidate_status_if_pass": "QA_USABLE_FOR_LANDSAT7_EVENT_CHANGE",
+    "candidate_status_if_fail": "QA_INSUFFICIENT_NO_SCENE_REPLACEMENT",
+    "minimum_usable_candidates_to_continue": 1,
+    "scene_replacement_allowed": false
+  },
+  "forbidden": [
+    "read reflectance bands in this QA stage",
+    "replace a frozen scene because of QA",
+    "impute SLC-off or fill gaps",
+    "read target outcomes or names",
+    "read A6680",
+    "read contaminated adjudication",
+    "change candidate selection or ranking",
+    "interpret QA failure, clear pixels, or missing pixels as a control outcome",
+    "free web search",
+    "assign control labels"
+  ],
+  "sealed_target_unblind_allowed": false,
+  "next_gate": "IF_AT_LEAST_ONE_CANDIDATE_PASSES_QA_FREEZE_QA_OUTPUT_AND_BYTE_HASHES_THEN_PREREGISTER_REFLECTANCE_CHANGE_METRICS_ON_THE_SAME_FROZEN_SCENES_ONLY"
+}

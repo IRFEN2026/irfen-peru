@@ -1,0 +1,81 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PRE_EXECUTION_CANDIDATE_POLYGON_BOUNDED_INGEMMET_QUERY_MANIFEST",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "source": {
+    "service_root": "https://geocatmin.ingemmet.gob.pe/arcgis/rest/services/SERV_PELIGROS_GEOLOGICOS/MapServer",
+    "verified_metadata_workflow_run_id": 34524244926,
+    "verified_metadata_artifact_id": 10170881730,
+    "verified_metadata_artifact_digest": "sha256:af69c009dc703304d0296af8ecab17f518a328e169f24c6bce1d8b87a7982e92",
+    "verified_metadata_output_sha256": "a22bcf7e5aed85fd05c40bba9578606bfb9e340829282c2962228771a6262613",
+    "service_metadata_sha256": "834e194da6a6fb8d2e075a0a6b010eb87cb6e3617cd711b4990968054e1a869e",
+    "tls_leaf_pem_sha256": "179b91c4fb93b9af167a53ca4401c1b696d52cba4d4ea16b27b1f010aa6b1da0",
+    "verified_intermediate_pem_sha256": "505ca50c3930cedca888c4e1ebb0747cb485498547b60ea6bcd23cf78766aeeb",
+    "aia_certificate_sha256": "6542d176bed50f193c0ce297ae44ecd8a0a86bec2ede682769344059b4e78530"
+  },
+  "candidate_geometry": {
+    "freeze_record": "config/chosica_2015_cleanroom_candidate_geometry_freeze_record_v0_1.json",
+    "workflow_run_id": 34524860992,
+    "artifact_id": 10171108859,
+    "artifact_digest": "sha256:6290b2018770acf1332f7a6680d85d9a5b179d82c2e9f95155ef628d8b445c61",
+    "file": "chosica_2015_cleanroom_candidate_geometries_v0_1.geojson",
+    "sha256": "9a23644c191c88fb66722b368773251051b4098ddd74e4d5861c3a37dbfbb1ca",
+    "candidate_count": 7,
+    "geometry_relation": "esriSpatialRelIntersects",
+    "in_sr": 4326,
+    "buffer_m": 0
+  },
+  "event_day_filter": {
+    "field": "FECHA",
+    "field_type": "esriFieldTypeDate",
+    "where": "FECHA >= DATE '2015-03-23 00:00:00' AND FECHA < DATE '2015-03-24 00:00:00'",
+    "frozen_local_day": "2015-03-23",
+    "date_window_shift_allowed": false
+  },
+  "layers": [
+    {
+      "layer_id": 0,
+      "metadata_sha256": "d92a9f31e2924acf61b0e50d6694c2e69ce40febcd45621aba300eac6540542a",
+      "geometry_type": "esriGeometryPoint",
+      "supports_query": true,
+      "out_fields": ["OBJECTID", "FECHA", "NOM_PELIGRO", "TIP_PELIGRO"]
+    },
+    {
+      "layer_id": 1,
+      "metadata_sha256": "5a8ec96cc6522cb1c162701d30c0ec33ffafe309086cfa75559772a4e9879122",
+      "geometry_type": "esriGeometryPoint",
+      "supports_query": true,
+      "out_fields": ["OBJECTID", "FECHA", "NOM_PELIGRO", "TIP_PELIGRO"]
+    }
+  ],
+  "query_policy": {
+    "one_query_per_candidate_per_layer": true,
+    "exact_candidate_polygon_only": true,
+    "return_geometry": false,
+    "raw_response_persisted": false,
+    "raw_response_logged": false,
+    "feature_query_allowed": true,
+    "candidate_reranking_allowed": false,
+    "candidate_replacement_allowed": false,
+    "feedback_to_matching_allowed": false,
+    "free_web_search_allowed": false,
+    "target_sources_allowed": false,
+    "a6680_allowed": false,
+    "contaminated_artifacts_allowed": false
+  },
+  "conservative_interpretation": {
+    "positive_exact_day_candidate_local_geological_hazard_record": "EXCLUDE_FROM_CLEAN_NEGATIVE_CONTROL",
+    "zero_records": "OUTCOME_UNKNOWN_NOT_CONTROL",
+    "absence_of_record_may_confirm_control": false,
+    "control_confirmed_by_this_source_alone": false
+  },
+  "sealed_target_unblind_allowed": false,
+  "next_gate": "EXECUTE_EXACT_FROZEN_MANIFEST_IN_SPARSE_ISOLATED_WORKFLOW_AND_HASH_CANDIDATE_ONLY_RESULTS"
+}

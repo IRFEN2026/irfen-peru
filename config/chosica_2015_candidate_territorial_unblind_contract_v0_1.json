@@ -1,0 +1,82 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_CANDIDATE_ONLY_TERRITORIAL_UNBLIND_CONTRACT",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "prerequisite": {
+    "freeze_record": "config/chosica_2015_cleanroom_freeze_record_v0_1.json",
+    "required_status": "FROZEN_CLEANROOM_PACKAGE_AND_MATCHING",
+    "committed_freeze_verified": true,
+    "candidate_territorial_unblind_allowed": true,
+    "sealed_target_unblind_allowed": false
+  },
+  "frozen_inputs": {
+    "cleanroom_input": {
+      "path": "site/data/validation/cleanroom/chosica_2015_cleanroom_input_v0_1.json",
+      "sha256": "d243ab2e51f96f83a89068d3b8f77d49e836102e48192070bebafe47ee0ed5ad"
+    },
+    "cleanroom_matching": {
+      "path": "site/data/validation/cleanroom/chosica_2015_cleanroom_matching_v0_1.json",
+      "sha256": "108faf9d525929cdab10b5cfaa4325a0b806ca1705c6a36fa3e3a1d082821d73"
+    },
+    "selected_candidate_count": 7
+  },
+  "packet_policy": {
+    "include": [
+      "candidate_code",
+      "mainstem_confluence_x_m",
+      "mainstem_confluence_y_m",
+      "analysis_crs",
+      "area_km2",
+      "relief_m",
+      "mean_basin_slope_deg",
+      "preanchor_mm"
+    ],
+    "exclude": [
+      "all target codes",
+      "all target names or IDs",
+      "all target outcomes",
+      "all rankings and target-to-candidate shortlist associations",
+      "A6680 content",
+      "post-event target evidence",
+      "contaminated adjudication notes or snippets"
+    ],
+    "analysis_crs": "EPSG:32718",
+    "selection_is_immutable": true
+  },
+  "territorial_adjudication": {
+    "allowed_labels": ["CONTROL_CONFIRMED", "EXCLUDED_ACTIVE", "OUTCOME_UNKNOWN"],
+    "control_confirmed_rule": "Requires affirmative independent evidence covering the frozen event window and candidate location that explicitly establishes no activation; documentary silence is insufficient.",
+    "excluded_active_rule": "Requires affirmative independent evidence of activation at the candidate location during the frozen event window.",
+    "outcome_unknown_rule": "Use whenever evidence is incomplete, spatially ambiguous, temporally incomplete, non-independent, or merely silent.",
+    "candidate_replacement_allowed": false,
+    "candidate_reranking_allowed": false,
+    "feedback_to_matching_allowed": false,
+    "feedback_to_target_predictors_allowed": false,
+    "free_web_search_allowed": false,
+    "target_outcome_sources_allowed": false,
+    "source_allowlisting_required_before_read": true,
+    "evidence_hash_required": true
+  },
+  "event_window": {
+    "anchor_utc": "2015-03-23T19:30:00Z",
+    "adjudication_window_rule": "Source must explicitly cover the local event day and relevant activation interval; no temporal shifting to fit candidate evidence."
+  },
+  "hard_fail_closed": [
+    "candidate code not in frozen seven",
+    "candidate coordinates or scientific metrics differ from committed clean-room input",
+    "matching hash differs from frozen hash",
+    "attempt to expose target codes, names, IDs or outcomes",
+    "attempt to use contaminated adjudication artifacts",
+    "attempt to browse unrestricted web sources",
+    "attempt to replace or rerank a candidate after territorial evidence",
+    "attempt to infer CONTROL from absence of a report"
+  ],
+  "next_gate": "FREEZE_CANDIDATE_ONLY_TERRITORIAL_PACKET_BEFORE_EVIDENCE_ADJUDICATION"
+}
