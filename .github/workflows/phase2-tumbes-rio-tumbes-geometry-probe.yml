@@ -1,0 +1,28 @@
+name: IRFEN - Phase2 Rio Tumbes official geometry probe
+
+on:
+  pull_request:
+    paths:
+      - scripts/probe_tumbes_rio_tumbes_official_geometry.py
+      - tests/test_phase2_tumbes_rio_tumbes_geometry_probe.py
+      - .github/workflows/phase2-tumbes-rio-tumbes-geometry-probe.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install test dependency
+        run: python -m pip install pytest
+      - name: Run static guard tests
+        run: python -m pytest -q tests/test_phase2_tumbes_rio_tumbes_geometry_probe.py
+      - name: Probe preregistered ANA Cuenca Tumbes layer
+        run: python scripts/probe_tumbes_rio_tumbes_official_geometry.py --json
