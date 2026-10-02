@@ -107,6 +107,14 @@
 
   installStyles();
 
+  // API estable para que cualquier mapa Leaflet de IRFEN pueda adjuntar
+  // explícitamente las capas meteorológicas sin depender del orden de eventos.
+  window.IRFENWeatherLayers = {
+    attach:function(targetMap,label){
+      addControl(targetMap,label||'Vista experta');
+    }
+  };
+
   // Mapa operativo principal, definido en index.html.
   try{
     if(typeof map!=='undefined' && map) addControl(map,'Vista operativa');
