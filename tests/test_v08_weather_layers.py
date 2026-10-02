@@ -21,5 +21,56 @@ class WeatherOverlayIntegrationTests(unittest.TestCase):
         self.assertIn("irfen:map-ready", text)
         self.assertNotIn("IMERG_Precipitation_Rate_30min_v7_NRT", text)
 
+class WeatherOverlayRegressionTests(unittest.TestCase):
+    """Regressions for the CI failures of the overlay integration.
+
+    The overlays stay external visual context: nothing here reads or changes
+    the IRFEN model, thresholds, states or alerts.
+    """
+
+    ROOT = Path(__file__).resolve().parents[1]
+    SCRIPTS = ("v08-weather-layers.js", "v08-monitoring.js", "v08-territorial.js")
+
+    def test_map_scripts_are_syntactically_valid(self):
+        import subprocess
+        for name in self.SCRIPTS:
+            with self.subTest(script=name):
+                result = subprocess.run(
+                    ["node", "--check", str(self.ROOT / "site" / name)],
+                    capture_output=True, text=True,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_no_literal_escape_sequences_left_in_script_source(self):
+        # A stray "\n" outside a string literal broke the territorial map.
+        text = (self.ROOT / "site/v08-territorial.js").read_text(encoding="utf-8")
+        self.assertNotIn(".addTo(state.map);\\n", text)
+
+    def test_index_loads_scripts_with_exact_tags_and_weather_first(self):
+        html = (self.ROOT / "site/index.html").read_text(encoding="utf-8")
+        positions = []
+        for name in self.SCRIPTS:
+            tag = f'<script src="{name}"></script>'
+            self.assertEqual(html.count(tag), 1, name)
+            positions.append(html.index(tag))
+        self.assertEqual(positions, sorted(positions))
+
+    def test_weather_module_is_decoupled_from_the_model(self):
+        text = (self.ROOT / "site/v08-weather-layers.js").read_text(encoding="utf-8")
+        for token in ("fetch(", "XMLHttpRequest", "latest.json", "data/", "calc(",
+                      "localStorage", "risk_score", "activation_score", "alert_score"):
+            with self.subTest(token=token):
+                self.assertNotIn(token, text)
+        self.assertIn("window.IRFENWeatherLayers = {", text)
+        self.assertIn("L.Control.extend", text)
+
+    def test_model_pipeline_does_not_consume_the_overlays(self):
+        for script in sorted((self.ROOT / "scripts").glob("*.py")):
+            text = script.read_text(encoding="utf-8")
+            for token in ("gibs.earthdata.nasa.gov", "v08-weather-layers", "IRFENWeatherLayers"):
+                with self.subTest(script=script.name, token=token):
+                    self.assertNotIn(token, text)
+
+
 if __name__=="__main__":
     unittest.main()
