@@ -1,0 +1,145 @@
+{
+  "version": "0.1",
+  "name": "IRFEN Scientific Episode Gate",
+  "mode": "SHADOW_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "public_social_publishing": false,
+  "thresholds_modified": false,
+  "scientific_acceptance_modified": false,
+  "scientific_pass_implemented": false,
+  "purpose": "Enrutar candidatos POTENTIAL_EPISODE a mecanismos científicos separados y bloquear cualquier promoción automática, alerta o publicación.",
+  "sources": {
+    "potential_episode": {
+      "path": "site/data/episodes/shadow/latest.json",
+      "required_mode": "SHADOW_ONLY"
+    },
+    "experimental_state": {
+      "path": "site/data/experimental_state.json"
+    },
+    "external_evidence": {
+      "path": "site/data/validation/v08_external_evidence.json",
+      "accepted_status": "ACCEPTED"
+    },
+    "lima_east_decomposition": {
+      "path": "site/data/hazard_models/lima_east_decomposition.json",
+      "required_status": "SUBMODEL_SPLIT_ACTIVE_EXPERIMENTAL"
+    },
+    "current_infrastructure": {
+      "path": "site/data/hydraulics/current_infrastructure.json"
+    },
+    "san_ildefonso_test_rule": {
+      "path": "site/data/calibration/san_ildefonso_test_rule.json",
+      "required_mode": "TEST_ONLY"
+    },
+    "imerg_early_live_probe": {
+      "path": "site/data/calibration/imerg_early_live_probe.json",
+      "available_status": "EARLY_HALFHOURLY_SOURCE_AVAILABLE"
+    }
+  },
+  "states": [
+    "NO_CANDIDATE",
+    "UNDER_SCIENTIFIC_REVIEW",
+    "SCIENTIFIC_BLOCKED"
+  ],
+  "pass_policy": {
+    "automatic_scientific_pass_forbidden": true,
+    "scientific_pass_implemented_v01": false,
+    "manual_scientific_review_required": true,
+    "all_required_external_evidence_must_be_accepted_before_future_pass": true
+  },
+  "mechanisms": [
+    {
+      "mechanism_id": "san_ildefonso_debris_flow_flash_runoff",
+      "source_zone_id": "san_ildefonso",
+      "mechanism": "debris_flow_flash_runoff",
+      "candidate_attribution": "DIRECT_FROM_SOURCE_ZONE",
+      "requires_fresh_imerg_early": true,
+      "required_external_evidence_ids": [
+        "current_integral_system_as_built_status",
+        "component_capacity_and_overflow_rules",
+        "sediment_obstruction_and_maintenance_condition",
+        "observed_events_with_current_system",
+        "rainfall_to_impact_hydraulic_review"
+      ],
+      "scientific_context_refs": [
+        "site/data/calibration/san_ildefonso_test_rule.json",
+        "site/data/hydraulics/current_infrastructure.json"
+      ]
+    },
+    {
+      "mechanism_id": "catacaos_bajo_piura_river_floodplain",
+      "source_zone_id": "catacaos",
+      "mechanism": "river_floodplain",
+      "candidate_attribution": "DIRECT_FROM_SOURCE_ZONE",
+      "requires_river_state": true,
+      "required_external_evidence_ids": [
+        "official_numeric_river_state_channel",
+        "upstream_to_bajo_piura_location_harmonization",
+        "current_channel_capacity_and_critical_levels",
+        "current_floodplain_and_defense_condition",
+        "operational_vs_projected_urban_drainage",
+        "observed_river_state_to_impact_review"
+      ],
+      "scientific_context_refs": [
+        "site/data/hydraulics/current_infrastructure.json"
+      ]
+    },
+    {
+      "mechanism_id": "huaycoloro_main_channel",
+      "source_zone_id": "chosica",
+      "mechanism": "basin_runoff_channel_overflow_and_conveyance",
+      "candidate_attribution": "EXPLICIT_SUBMODEL_SIGNAL_REQUIRED",
+      "lima_submodel_id": "huaycoloro_main_channel",
+      "required_external_evidence_ids": [
+        "huaycoloro_channel_as_built_capacity",
+        "overflow_restriction_and_maintenance_condition",
+        "observed_events_after_2025_inauguration",
+        "rainfall_to_impact_hydraulic_review"
+      ],
+      "scientific_context_refs": [
+        "site/data/hazard_models/lima_east_decomposition.json",
+        "site/data/hydraulics/current_infrastructure.json"
+      ],
+      "rule": "A POTENTIAL_EPISODE del contenedor legado chosica no se atribuye automáticamente a Huaycoloro. Se requiere una señal candidata explícita del submodelo de cauce/canal."
+    },
+    {
+      "mechanism_id": "chosica_local_debris_flows",
+      "source_zone_id": "chosica",
+      "mechanism": "short_response_local_debris_flow",
+      "candidate_attribution": "EXPLICIT_SUBMODEL_SIGNAL_REQUIRED",
+      "lima_submodel_id": "chosica_local_debris_flows",
+      "required_external_evidence_ids": [
+        "pedregal_live_ground_signal_validation",
+        "observed_events_after_2025_inauguration",
+        "rainfall_to_impact_hydraulic_review"
+      ],
+      "scientific_context_refs": [
+        "site/data/hazard_models/lima_east_decomposition.json"
+      ],
+      "rule": "A POTENTIAL_EPISODE del contenedor chosica no se hereda a quebradas locales. Se requiere una señal candidata explícita del submodelo."
+    }
+  ],
+  "forbidden_output_fields": [
+    "alert",
+    "alert_level",
+    "risk_level",
+    "final_alert",
+    "publish",
+    "published",
+    "meta_post_id"
+  ],
+  "rules": {
+    "no_new_thresholds": true,
+    "do_not_recompute_or_copy_threshold_values": true,
+    "no_automatic_bias_correction": true,
+    "no_evidence_promotion": true,
+    "no_scorecard_or_rc_changes": true,
+    "fail_closed": true,
+    "potential_episode_is_not_scientific_pass": true,
+    "local_debris_flow_does_not_inherit_chosica_container_candidate": true,
+    "lima_parent_candidate_not_auto_attributed_to_submodels": true
+  }
+}
