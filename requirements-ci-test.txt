@@ -19,3 +19,11 @@
 # CI runner with this file's dependencies (and requirements.txt) installed,
 # and commit both changes together in the same PR.
 pytest==9.0.3
+
+# JSON-schema validation is mandatory in the PR-validation gate. Without this
+# package the schema tests skipped and the validators returned silently, which
+# hid a stale schema (spatial observation contracts) for several releases.
+# Pinned for the same reason as pytest: a floating validator could change what
+# "conforms" means between two CI runs. The gate checks the installed version
+# against this pin and sets IRFEN_REQUIRE_JSONSCHEMA=1.
+jsonschema==4.26.0

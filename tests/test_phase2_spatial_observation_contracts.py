@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 import unittest
@@ -290,7 +291,9 @@ class SchemaAndValidatorTests(unittest.TestCase):
         try:
             import jsonschema
         except ImportError:
-            self.skipTest("jsonschema not installed")
+            if os.environ.get("IRFEN_REQUIRE_JSONSCHEMA", "").strip() == "1":
+                self.fail("jsonschema is not installed but IRFEN_REQUIRE_JSONSCHEMA=1 makes this schema test mandatory")
+            self.skipTest("jsonschema not installed (schema validation not mandatory in this environment)")
         schema = json.loads(
             (
                 ROOT
@@ -298,6 +301,92 @@ class SchemaAndValidatorTests(unittest.TestCase):
             ).read_text(encoding="utf-8")
         )
         jsonschema.validate(sc.generate(write=False), schema)
+
+    def test_schema_summary_constants_match_candidate_records(self):
+        # The schema pins the summary counts as constants. They went stale once
+        # (1 / 15 instead of 13 / 3) while nothing executed the schema, so they are
+        # tied here to the classification of the real candidate records.
+        schema = json.loads(
+            (ROOT / "config/phase2_spatial_observation_contracts.schema.json").read_text(encoding="utf-8")
+        )
+        consts = {
+            key: spec["const"]
+            for key, spec in schema["properties"]["summary"]["properties"].items()
+        }
+        records = sc.generate(write=False)["candidate_records"]
+        by_status = {}
+        for row in records:
+            by_status.setdefault(row["spatial_contract_status"], []).append(row)
+        derived = {
+            "candidate_count": len(records),
+            "candidate_wide_ready_count": sum(1 for r in records if r["candidate_wide_sampling_ready"]),
+            "subunit_research_only_candidate_count": len(by_status.get("SUBUNIT_RESEARCH_ONLY", [])),
+            "non_catchment_geometry_only_count": len(by_status.get("NON_CATCHMENT_GEOMETRY_ONLY", [])),
+            "blocked_missing_geometry_count": len(by_status.get("BLOCKED_MISSING_GEOMETRY", [])),
+            "research_subunit_contract_count": sum(len(r["subunit_contracts"]) for r in records),
+            "operational_spatial_contract_count": 0,
+        }
+        self.assertEqual(consts, derived)
+        self.assertEqual(sc.generate(write=False)["summary"], derived)
+        # Classification is not relaxed by the count change.
+        for row in by_status.get("NON_CATCHMENT_GEOMETRY_ONLY", []):
+            self.assertEqual(row["geometry_data_presence"], "PRESENT")
+            self.assertEqual(row["subunit_contracts"], [])
+            self.assertIsNone(row["candidate_wide_contract"])
+            self.assertTrue(row["excluded_geometry_features"])
+            for feature in row["excluded_geometry_features"]:
+                self.assertTrue(feature["classification"].startswith("EXCLUDED_"))
+        for row in by_status.get("BLOCKED_MISSING_GEOMETRY", []):
+            self.assertEqual(row["geometry_data_presence"], "MISSING")
+            self.assertIsNone(row["geometry_path"])
+        for row in records:
+            self.assertFalse(row["candidate_wide_sampling_ready"])
+            self.assertEqual(row["activation_gate"], "BLOCKED")
+            self.assertFalse(row["production_use"])
+
+    def _run_validator_without_jsonschema(self, required):
+        script = ROOT / "scripts/validate_phase2_spatial_observation_contracts.py"
+        code = (
+            "import runpy, sys\n"
+            "sys.modules['jsonschema'] = None  # makes `import jsonschema` raise ImportError\n"
+            f"sys.argv = [{str(script)!r}]\n"
+            f"runpy.run_path({str(script)!r}, run_name='__main__')\n"
+        )
+        env = dict(os.environ)
+        env.pop("IRFEN_REQUIRE_JSONSCHEMA", None)
+        if required:
+            env["IRFEN_REQUIRE_JSONSCHEMA"] = "1"
+        return subprocess.run(
+            [sys.executable, "-c", code], cwd=ROOT, env=env, capture_output=True, text=True
+        )
+
+    def test_missing_jsonschema_is_an_error_when_schema_validation_is_required(self):
+        result = self._run_validator_without_jsonschema(required=True)
+        output = result.stdout + result.stderr
+        self.assertNotEqual(result.returncode, 0, output)
+        self.assertIn("jsonschema is not installed", output)
+        self.assertIn("IRFEN_REQUIRE_JSONSCHEMA=1", output)
+
+    def test_missing_jsonschema_is_never_silent_when_not_required(self):
+        result = self._run_validator_without_jsonschema(required=False)
+        output = result.stdout + result.stderr
+        self.assertEqual(result.returncode, 0, output)
+        self.assertIn("JSON-schema validation was NOT executed", output)
+
+    def test_pr_validation_gate_pins_and_requires_jsonschema(self):
+        import re
+
+        pins = re.findall(
+            r"^jsonschema==(\S+)$",
+            (ROOT / "requirements-ci-test.txt").read_text(encoding="utf-8"),
+            re.M,
+        )
+        self.assertEqual(len(pins), 1)
+        workflow = (ROOT / ".github/workflows/pr-validation.yml").read_text(encoding="utf-8")
+        self.assertIn('IRFEN_REQUIRE_JSONSCHEMA: "1"', workflow)
+        self.assertIn("pip install -r requirements-ci-test.txt", workflow)
+        self.assertIn("python scripts/validate_phase2_spatial_observation_contracts.py", workflow)
+        self.assertIn("jsonschema version mismatch", workflow)
 
     def test_validator_passes(self):
         result = subprocess.run(

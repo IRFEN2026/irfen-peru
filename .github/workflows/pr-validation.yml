@@ -16,6 +16,10 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      # Schema validation is mandatory in this gate: a missing jsonschema is an
+      # error in the Phase-2 validators and schema tests, never a silent skip.
+      IRFEN_REQUIRE_JSONSCHEMA: "1"
     steps:
       - name: Descargar pull request
         uses: actions/checkout@v6
@@ -30,6 +34,29 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install -r requirements-ci-test.txt
+
+      - name: Exigir jsonschema fijado (validación de esquema obligatoria)
+        run: |
+          python - <<'PY'
+          import importlib.metadata as md
+          import re
+          from pathlib import Path
+
+          pins = re.findall(r"^jsonschema==(\S+)$", Path("requirements-ci-test.txt").read_text(encoding="utf-8"), re.M)
+          if len(pins) != 1:
+              raise SystemExit("requirements-ci-test.txt must contain exactly one jsonschema==VERSION pin")
+          installed = md.version("jsonschema")
+          if installed != pins[0]:
+              raise SystemExit(f"jsonschema version mismatch: installed={installed}, pinned={pins[0]}")
+          import jsonschema  # noqa: F401
+          print(f"JSONSCHEMA_PINNED_AND_INSTALLED {installed}")
+          PY
+
+      - name: Validar esquemas Phase 2 (obligatorio, sin omisión silenciosa)
+        run: |
+          python scripts/validate_phase2_spatial_observation_contracts.py
+          python scripts/validate_phase2_climate_evidence.py
+          python scripts/validate_phase2_climate_matrix.py
 
       - name: Demostrar rechazo atómico de latest.json DEMO
         shell: bash
