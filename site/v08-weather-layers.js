@@ -39,9 +39,9 @@
         box.innerHTML=
           '<div class="iw-head"><b>Capas meteorológicas</b><span>'+label+'</span></div>'+
           '<label><input type="checkbox" data-iw="rain"> NASA · lluvia IMERG NRT</label>'+
-          '<label><input type="checkbox" data-iw="clouds"> NASA · nubes / imagen visible</label>'+
+          '<label><input type="checkbox" data-iw="clouds"> NASA · imagen satelital visible</label>'+
           '<label class="iw-row">Fecha <select data-iw="day">'+
-            '<option value="0">Hoy UTC</option><option value="-1">Ayer UTC</option><option value="-2">Hace 2 días</option>'+
+            '<option value="0">Hoy UTC (si está disponible)</option><option value="-1">Ayer UTC</option><option value="-2">Hace 2 días</option>'+
           '</select></label>'+
           '<label class="iw-row">Opacidad <input data-iw="opacity" type="range" min="20" max="90" value="62"></label>'+
           '<div class="iw-senamhi"><b>SENAMHI</b> · conector WMS preparado; se habilitará cuando quede fijado un endpoint/capa institucional estable.</div>'+
@@ -60,7 +60,7 @@
           if(clouds){targetMap.removeLayer(clouds);clouds=null;}
 
           if(rainInput.checked){
-            rain=makeWms('IMERG_Precipitation_Rate_30min_v7_NRT',date,opacity);
+            rain=makeWms('IMERG_Precipitation_Rate_v7_NRT',date,opacity);
             rain.addTo(targetMap);
           }
           if(cloudInput.checked){
