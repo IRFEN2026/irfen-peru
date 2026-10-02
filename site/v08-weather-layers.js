@@ -1,7 +1,8 @@
 (function(){
   'use strict';
 
-  const NASA_WMS='https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi';
+  const NASA_WMS_BEST='https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi';
+  const NASA_WMS_NRT='https://gibs.earthdata.nasa.gov/wms/epsg3857/nrt/wms.cgi';
   const SOURCE_NOTE='Contexto visual externo. No modifica el cálculo, estado, umbrales ni alertas IRFEN.';
   const attached=new WeakSet();
 
@@ -11,9 +12,10 @@
     return d.toISOString().slice(0,10);
   }
 
-  function makeWms(layerName,date,opacity){
-    return L.tileLayer.wms(NASA_WMS,{
+  function makeWms(baseUrl,layerName,date,opacity){
+    return L.tileLayer.wms(baseUrl,{
       layers:layerName,
+      styles:'',
       format:'image/png',
       transparent:true,
       version:'1.3.0',
@@ -44,7 +46,7 @@
             '<option value="0">Hoy UTC (si está disponible)</option><option value="-1">Ayer UTC</option><option value="-2">Hace 2 días</option>'+
           '</select></label>'+
           '<label class="iw-row">Opacidad <input data-iw="opacity" type="range" min="20" max="90" value="62"></label>'+
-          '<div class="iw-status" data-iw="status">Capa meteorológica inactiva.</div>'+
+          '<div class="iw-status" data-iw="status"><b>Conexión IMERG:</b> inactiva.</div>'+
           '<div class="iw-senamhi"><b>SENAMHI</b> · conector WMS preparado; se habilitará cuando quede fijado un endpoint/capa institucional estable.</div>'+
           '<div class="iw-note">'+SOURCE_NOTE+'</div>';
 
@@ -62,20 +64,20 @@
           if(clouds){targetMap.removeLayer(clouds);clouds=null;}
 
           if(rainInput.checked){
-            if(statusEl) statusEl.textContent='IMERG: cargando '+date+'…';
-            rain=makeWms('IMERG_Precipitation_Rate_30min',date,opacity);
+            if(statusEl) statusEl.innerHTML='<b>Conexión IMERG:</b> cargando '+date+'…';
+            rain=makeWms(NASA_WMS_NRT,'IMERG_Precipitation_Rate_30min_v7_NRT',date,opacity);
             rain.on('load',function(){
-              if(statusEl) statusEl.textContent='IMERG cargado · '+date+' · las áreas transparentes indican precipitación no visible/detectable en esta capa.';
+              if(statusEl) statusEl.innerHTML='<b>Conexión IMERG:</b> cargada · '+date+'. Si no aparece color, no hay precipitación representada en los mosaicos visibles.';
             });
             rain.on('tileerror',function(){
-              if(statusEl) statusEl.textContent='IMERG: error al recuperar mosaicos de NASA GIBS para '+date+'.';
+              if(statusEl) statusEl.innerHTML='<b>Conexión IMERG:</b> error recuperando mosaicos NASA GIBS para '+date+'.';
             });
             rain.addTo(targetMap);
           } else if(statusEl && !cloudInput.checked){
-            statusEl.textContent='Capa meteorológica inactiva.';
+            statusEl.innerHTML='<b>Conexión IMERG:</b> inactiva.';
           }
           if(cloudInput.checked){
-            clouds=makeWms('VIIRS_SNPP_CorrectedReflectance_TrueColor',date,Math.min(opacity,.78));
+            clouds=makeWms(NASA_WMS_BEST,'VIIRS_SNPP_CorrectedReflectance_TrueColor',date,Math.min(opacity,.78));
             clouds.addTo(targetMap);
           }
         }
