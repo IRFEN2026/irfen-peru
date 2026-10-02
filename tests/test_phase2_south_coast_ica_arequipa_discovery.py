@@ -3,6 +3,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CFG = ROOT / "config/phase2_south_coast_ica_arequipa_discovery_v0_1.json"
+COMPLETENESS = ROOT / "config/phase2_south_coast_ica_arequipa_hydrographic_completeness_v0_1.json"
+EVENTS_2019 = ROOT / "config/phase2_ica_2019_named_events_v0_1.json"
+ADJUDICATION = ROOT / "config/phase2_south_coast_ica_arequipa_pytest_adjudication_v0_1.json"
 
 SAFE = {
     "deployment_status": "RESEARCH_ONLY",
@@ -32,7 +35,19 @@ EXPECTED_BASINS = {
     "arequipa_camana_majes_colca": "134",
     "arequipa_quilca_vitor_chili": "132",
     "arequipa_tambo": "1318",
+    # Added by the hydrographic-completeness addendum (commit e9278551), after this
+    # expectation was last written (30d25ce1). Both are official ANA units; see
+    # config/phase2_south_coast_ica_arequipa_pytest_adjudication_v0_1.json (F1).
+    "arequipa_choclon": "137152",
+    "arequipa_honda": "137158",
 }
+
+# Parents that entered the inventory through the completeness addendum and therefore
+# must stay traceable to it (provenance guard, not just a count).
+ADDENDUM_PARENTS = {"arequipa_choclon": "137152", "arequipa_honda": "137158"}
+
+UNNAMED = "TERRITORIAL_EVENT_PENDING_LOCAL_GEOMETRY"
+MULTI_NAMED = "NAMED_CHILDREN_CONFIRMED_TOPOLOGY_PARTIAL"
 
 
 def load():
@@ -41,6 +56,10 @@ def load():
 
 def systems(cfg):
     return {x["discovery_id"]: x for x in cfg["local_discovery_systems"]}
+
+
+def load_json(path):
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def all_children(cfg):
@@ -82,6 +101,9 @@ def test_official_south_coast_parent_codes_are_explicit_and_non_activatable():
         assert row["activation_gate"] == "BLOCKED"
         assert row["decision_thresholds"] is None
         assert row["hydraulic_factors"] is None
+    codes = [x["official_unit_code"] for x in cfg["official_basin_hierarchy"]]
+    assert len(codes) == len(set(codes))
+    assert cfg["summary"]["official_parent_basins_registered"] == len(basins) == len(EXPECTED_BASINS)
 
 
 def test_every_local_child_is_withheld_until_geometry_is_reproducible():
@@ -129,9 +151,19 @@ def test_pisco_local_rio_grande_is_not_conflated_with_ana_cuenca_grande():
     cfg = load()
     sys = systems(cfg)["ica_pisco_local_ravines"]
     assert sys["parent_basin_id"] == "ica_pisco"
-    assert sys["children"] == []
+    # The Huancano event stays unnamed and unbound: the two children registered in this
+    # system are ANA critical-point identities (see the Quitasol/Paracas tests below),
+    # not the unnamed quebrada of this event and not the locally named Río Grande.
+    assert {x["child_id"] for x in sys["children"]} == {"ica_quitasol", "ica_paracas"}
+    assert len(sys["territorial_events"]) == 1
     ev = sys["territorial_events"][0]
+    assert ev["event_id"] == "ica_huancano_2026_02_20"
     assert ev["named_child"] is None
+    assert not ev.get("named_children")
+    assert ev["hydrologic_assignment_status"] == UNNAMED
+    for child in sys["children"]:
+        assert not set(child["source_ids"]) & set(ev["source_ids"])
+        assert "grande" not in child["name"].lower()
     assert "Río Grande" in ev["receiver_reference"]
     guard = ev["do_not_infer"]
     assert "ANA Cuenca Grande UH 1372" in guard
@@ -200,16 +232,73 @@ def test_lucha_is_territorial_event_not_invented_quebrada():
     ev = next(x for x in sys["territorial_events"] if x["event_id"] == "arequipa_lucha_2025")
     assert ev["named_child"] is None
     assert "Localidad Lucha" in ev["territorial_reference"]
-    assert "do not create or name a child 'Quebrada Lucha'" in ev["do_not_infer"]
+    assert not ev.get("named_children")
+    assert ev["hydrologic_assignment_status"] == UNNAMED
+    # Canonical wording is two sentences, so the prohibition starts with a capital
+    # "Do not". The semantic content is pinned exactly; only letter case is normalised.
+    guard = ev["do_not_infer"]
+    assert guard == (
+        "Lucha is a territorial locality in this source. Do not create or name a child "
+        "'Quebrada Lucha' without independent hydrologic evidence."
+    )
+    assert "do not create or name a child 'quebrada lucha'" in guard.lower()
+    assert "territorial locality" in guard
 
 
 def test_unnamed_territorial_events_never_create_geometry_by_implication():
     cfg = load()
     for sys in cfg["local_discovery_systems"]:
         for ev in sys.get("territorial_events", []):
-            if ev["named_child"] is None:
-                assert ev["hydrologic_assignment_status"] == "TERRITORIAL_EVENT_PENDING_LOCAL_GEOMETRY"
-                assert ev["do_not_infer"]
+            assert ev["do_not_infer"]
+            assert ev["hydrologic_assignment_status"] in {UNNAMED, MULTI_NAMED}
+            named = ([ev["named_child"]] if ev["named_child"] else []) + list(ev.get("named_children", []))
+            if not named:
+                # Hard rule: no identified quebrada -> pending status, nothing bound.
+                assert ev["hydrologic_assignment_status"] == UNNAMED
+            else:
+                # A named status is only legitimate with an explicit binding to children
+                # registered in the same system and backed by the event's own source.
+                assert ev["hydrologic_assignment_status"] == MULTI_NAMED
+                children = {x["child_id"]: x for x in sys["children"]}
+                for child_id in named:
+                    assert set(ev["source_ids"]) <= set(children[child_id]["source_ids"])
+            assert ("named_children" in ev) == (ev["hydrologic_assignment_status"] == MULTI_NAMED)
+        # Neither kind of event may create geometry, outlet, publication or activation.
+        for child in sys["children"]:
+            assert child["geometry_asset"] is None
+            assert child["outlet"] is None
+            assert child["map_publishable"] is False
+            assert child["activation_gate"] == "BLOCKED"
+
+
+def test_yauca_del_rosario_is_the_only_multi_named_event_and_binds_exactly_its_source_children():
+    cfg = load()
+    multi = [
+        (sys, ev)
+        for sys in cfg["local_discovery_systems"]
+        for ev in sys.get("territorial_events", [])
+        if ev["hydrologic_assignment_status"] == MULTI_NAMED
+    ]
+    assert [ev["event_id"] for _, ev in multi] == ["ica_yauca_rosario_2024_03_16"]
+    sys, ev = multi[0]
+    assert ev["named_child"] is None
+    assert ev["named_children"] == ["ica_san_jose_de_curis", "ica_san_isidro_de_macchanga"]
+    assert set(ev["named_children"]) == {x["child_id"] for x in sys["children"]}
+    for child in sys["children"]:
+        assert child["name"] in ev["statement"]
+    assert "Do not create child geometry, outlet or threshold" in ev["do_not_infer"]
+
+
+def test_unnamed_events_bind_no_child_and_no_child_claims_their_source():
+    cfg = load()
+    for sys in cfg["local_discovery_systems"]:
+        for ev in sys.get("territorial_events", []):
+            if ev["hydrologic_assignment_status"] != UNNAMED:
+                continue
+            assert ev["named_child"] is None
+            assert "named_children" not in ev
+            for child in all_children(cfg):
+                assert not set(child["source_ids"]) & set(ev["source_ids"]), (ev["event_id"], child["child_id"])
 
 
 def test_source_provenance_never_fakes_hashes():
@@ -249,6 +338,111 @@ def test_ica_pisco_quitasol_and_paracas_are_parent_bound_but_not_events():
         assert child["geometry_asset"] is None
         assert child["map_publishable"] is False
         assert child["activation_gate"] == "BLOCKED"
+
+
+def test_pisco_critical_point_identity_event_and_geometry_stay_separate():
+    cfg = load()
+    sys = systems(cfg)["ica_pisco_local_ravines"]
+    sources = {x["source_id"]: x for x in cfg["source_catalog"]}
+    src = sources["ANA-ICA-CRITICAL-POINTS-DU015-2023"]
+    assert src["official"] is True and src["content_sha256"] is None
+    assert "Qda. Quitasol — Cuenca Pisco" in src["supports"]
+    assert "Qda. Paracas — Cuenca Pisco" in src["supports"]
+    forbidden = src["forbidden_use"].lower()
+    for phrase in ("not an observed activation event", "event footprint", "catchment polygon", "hydraulic capacity", "threshold"):
+        assert phrase in forbidden
+    probes = {x["child_name"]: x for x in cfg["hydrography_probe_contracts"]}
+    for child_id in ("ica_quitasol", "ica_paracas"):
+        child = next(x for x in sys["children"] if x["child_id"] == child_id)
+        # identity: one official ANA source, bound to Cuenca Pisco only
+        assert child["source_ids"] == ["ANA-ICA-CRITICAL-POINTS-DU015-2023"]
+        # critical point is not an event
+        assert "IMPACT" not in child["evidence_state"] and "FLOW" not in child["evidence_state"]
+        assert "not an observed activation event" in child["event_attribution_note"]
+        # identity is not geometry
+        assert child["geometry_status"] == "NAMED_BUT_REPRODUCIBLE_GEOMETRY_NOT_FROZEN"
+        assert child["outlet_status"] == "UNKNOWN" and child["outlet"] is None
+        probe = probes[child["name"]]
+        assert probe["status"] == "PLANNED_FAIL_CLOSED_NOT_EXECUTED"
+        assert probe["map_publishable"] is False and probe["event_state_transferred"] is False
+        assert child["decision_thresholds"] is None and child["hydraulic_factors"] is None
+
+    # The 2019 INDECI record that names "Quebrada Quitasol" is a historical event kept in
+    # its own overlay with parent assignment pending. It must not be transferred onto the
+    # critical-point identity, and the critical point must not upgrade that event.
+    events = {e["id"]: e for e in load_json(EVENTS_2019)["events"]}
+    hist = events["ica_huancano_huayanto_quitasol_remanso_2019_02_10"]
+    assert "Quebrada Quitasol" in hist["reported_names"]
+    assert hist["parent_assignment"] == "PENDING_REPRODUCIBLE_HYDROGRAPHIC_ADJUDICATION"
+    assert hist["geometry_asset"] is None and hist["map_publishable"] is False
+    assert "child_id" not in hist and "named_child" not in hist
+    quitasol = next(x for x in sys["children"] if x["child_id"] == "ica_quitasol")
+    assert "INDECI-ICA-IE472-2019" not in quitasol["source_ids"]
+    assert all("Paracas" not in n for e in events.values() for n in e["reported_names"])
+
+
+def test_addendum_parents_are_traceable_to_official_ana_sources():
+    cfg = load()
+    comp = load_json(COMPLETENESS)
+    basins = {x["discovery_id"]: x for x in cfg["official_basin_hierarchy"]}
+    additions = {x["discovery_id"]: x for x in comp["official_parent_additions"]}
+    assert set(additions) == set(ADDENDUM_PARENTS)
+    assert comp["summary"]["official_parent_additions"] == len(ADDENDUM_PARENTS)
+    supported = {code for s in comp["sources"] if s["official"] for code in s["supports"]}
+    course_text = " ".join(x for s in comp["sources"] for x in s["supports"])
+    for basin_id, code in ADDENDUM_PARENTS.items():
+        assert basins[basin_id]["official_unit_code"] == additions[basin_id]["official_unit_code"] == code
+        assert basins[basin_id]["name"] == additions[basin_id]["name"]
+        assert code in supported
+        assert f"{additions[basin_id]['official_course_context']['name']} {code}" in course_text
+        assert basins[basin_id]["must_not_merge_with"]
+    assert "Quequeña" in additions["arequipa_honda"]["homonym_guard"]
+    for s in comp["sources"]:
+        assert s["content_sha256"] is None  # never fake a hash for a non-archived source
+        assert "NOT_ARCHIVED" in s["provenance_status"]
+
+
+def test_intercuenca_count_is_derived_from_inventory_and_matches_addendum():
+    cfg = load()
+    comp = load_json(COMPLETENESS)
+    rows = cfg["official_intercuenca_contexts"]
+    codes = [x["official_unit_code"] for x in rows]
+    assert len(codes) == len(set(codes))
+    assert cfg["summary"]["official_intercuenca_contexts_registered"] == len(rows)
+    assert comp["summary"]["canonical_intercuenca_contexts_required"] == len(rows)
+    assert set(codes) == {x["official_unit_code"] for x in comp["official_intercuenca_contexts"]}
+    parent_codes = {x["official_unit_code"] for x in cfg["official_basin_hierarchy"]}
+    assert not set(codes) & parent_codes
+    supported = {code for s in comp["sources"] if s["official"] for code in s["supports"]}
+    for row in rows:
+        assert row["official_unit_code"] in supported
+        assert row["entity_role"] == "OFFICIAL_INTERCUENCA_CONTEXT_NON_ACTIVATABLE"
+        assert row["identity_status"] in {"OFFICIAL_ANA_UNIT_CONFIRMED", "OFFICIAL_ANA_UNIT_AND_COURSE_CONFIRMED"}
+        assert (row["identity_status"] == "OFFICIAL_ANA_UNIT_AND_COURSE_CONFIRMED") == bool(row["course_context"])
+        assert row["geometry_asset"] is None
+        assert row["map_publishable"] is False
+        assert row["activation_gate"] == "BLOCKED"
+        assert row["decision_thresholds"] is None and row["hydraulic_factors"] is None
+
+
+def test_pytest_adjudication_record_is_fail_closed_and_matches_inventory():
+    cfg = load()
+    adj = load_json(ADJUDICATION)
+    for key, value in SAFE.items():
+        assert adj[key] == value
+    assert [x["finding_id"] for x in adj["findings"]] == ["F1", "F2", "F3", "F4", "F5"]
+    for finding in adj["findings"]:
+        assert finding["verdict"] in {"TEST_EXPECTATION_STALE", "TEST_AND_STATE_UNDERSPECIFIED"}
+        assert finding["evidence"] and finding["change"] and finding["limitations"] is not None
+    live = adj["live_official_reference"]
+    assert live["byte_frozen"] is False and live["content_sha256"] is None
+    observed = live["observed_codigo_nombre"]
+    for row in cfg["official_basin_hierarchy"] + cfg["official_intercuenca_contexts"]:
+        assert row["official_unit_code"] in observed, row["discovery_id"]
+    assert adj["summary"]["new_operational_zones"] == 0
+    assert adj["summary"]["geometry_assets_published"] == 0
+    assert adj["summary"]["states_relaxed"] == 0
+    assert any(x["item_id"] == "OPEN-137539" for x in adj["open_scientific_items"])
 
 
 def test_catambo_is_registered_from_ana_works_context_without_capacity_inference():
@@ -346,6 +540,11 @@ def test_expansion_summary_remains_research_only_and_zero_operational_zones():
     cfg = load()
     assert cfg["summary"]["named_local_children_registered"] == 23
     assert cfg["summary"]["map_publishable_children"] == 0
-    assert cfg["summary"]["official_intercuenca_contexts_registered"] == 1
+    # Was a literal 1 written before the completeness addendum registered the full
+    # official intercuenca context. Derived from the inventory instead of hard-coded;
+    # the 14 codes are pinned individually in the dedicated intercuenca test.
+    assert cfg["summary"]["official_intercuenca_contexts_registered"] == len(cfg["official_intercuenca_contexts"]) == 14
+    assert cfg["summary"]["named_local_children_registered"] == len(all_children(cfg))
+    assert cfg["summary"]["official_parent_basins_registered"] == len(cfg["official_basin_hierarchy"]) == 17
     assert cfg["summary"]["pending_hydrologic_adjudications"] == 6
     assert cfg["summary"]["new_operational_zones"] == 0
