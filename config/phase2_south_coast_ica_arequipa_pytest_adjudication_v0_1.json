@@ -1,0 +1,255 @@
+{
+  "schema_version": "phase2-south-coast-ica-arequipa-pytest-adjudication-v0.1",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "purpose": "Scientific adjudication of the five tests in tests/test_phase2_south_coast_ica_arequipa_discovery.py that fail under real pytest but were never executed by the legacy 'unittest discover' CI. For each one: whether the expectation or the inventory state was wrong, the evidence used, and exactly what was changed. No control is relaxed and nothing becomes publishable or operational.",
+  "scope": {
+    "pull_request": 308,
+    "branch": "phase2/south-ica-arequipa-discovery-v0-1",
+    "adjudicated_on": "2026-10-03",
+    "root_cause": "The test module was last edited in 30d25ce1 (2026-09-26). Later package commits (e9278551 completeness addendum; Quitasol/Paracas critical-point registration) changed the inventory, and the legacy CI could not notice because unittest discovery silently skips pytest-style functions."
+  },
+  "live_official_reference": {
+    "institution": "Autoridad Nacional del Agua via IDEP (Infraestructura de Datos Espaciales del Perú)",
+    "layer": "INSTITUCIONALES/ANA_WMS/FeatureServer/7 (Unidades Hidrográficas)",
+    "queries": [
+      "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/FeatureServer/7/query?where=CODIGO LIKE '137%'&outFields=CODIGO,NOMBRE&returnGeometry=false&f=json",
+      "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/FeatureServer/7/query?where=CODIGO IN ('1318','132','134','135','136')&outFields=CODIGO,NOMBRE&returnGeometry=false&f=json"
+    ],
+    "retrieved_on": [
+      "2026-10-02",
+      "2026-10-03"
+    ],
+    "retrieval_method": "Attribute-only query read through a text-extracting fetcher; response bytes were not captured.",
+    "byte_frozen": false,
+    "content_sha256": null,
+    "use": "Corroboration of CODIGO/NOMBRE identity only. Not geometry, not hazard, not event, not threshold evidence.",
+    "observed_codigo_nombre": {
+      "1318": "Cuenca Tambo",
+      "132": "Cuenca Quilca - Vitor - Chili",
+      "134": "Cuenca Camaná",
+      "135": "Intercuenca 135",
+      "136": "Cuenca Ocoña",
+      "13711": "Intercuenca 13711",
+      "13712": "Cuenca Pescadores - Caraveli",
+      "13713": "Intercuenca 13713",
+      "13714": "Cuenca Atico",
+      "137151": "Intercuenca 137151",
+      "137152": "Cuenca Choclón",
+      "137153": "Intercuenca 137153",
+      "137154": "Cuenca Cháparra",
+      "137155": "Intercuenca 137155",
+      "137156": "Cuenca Chala",
+      "137157": "Intercuenca 137157",
+      "137158": "Cuenca Honda",
+      "137159": "Intercuenca 137159",
+      "13716": "Cuenca Yauca",
+      "13717": "Intercuenca 13717",
+      "13718": "Cuenca Acarí",
+      "13719": "Intercuenca 13719",
+      "1372": "Cuenca Grande",
+      "1373": "Intercuenca 1373",
+      "1374": "Cuenca Ica",
+      "13751": "Intercuenca 13751",
+      "13752": "Cuenca Pisco",
+      "137531": "Intercuenca 137531",
+      "137532": "Cuenca San Juan",
+      "137533": "Intercuenca 137533",
+      "137534": "Cuenca Topará"
+    },
+    "observed_not_in_inventory": {
+      "137539": "Intercuenca 137539"
+    }
+  },
+  "findings": [
+    {
+      "finding_id": "F1",
+      "node_id": "tests/test_phase2_south_coast_ica_arequipa_discovery.py::test_official_south_coast_parent_codes_are_explicit_and_non_activatable",
+      "verdict": "TEST_EXPECTATION_STALE",
+      "state_changed": false,
+      "evidence": [
+        "Inventory rows arequipa_choclon (137152) and arequipa_honda (137158) were added by e9278551 together with official_parent_additions in the hydrographic-completeness addendum, citing ANA-AAA-SOUTH-UH-2009 and ANA-RJ-056-2018-SOUTH-COURSES.",
+        "Live ANA/IDEP layer returns '137152 Cuenca Choclón' and '137158 Cuenca Honda', and every other parent code of the inventory with the expected name."
+      ],
+      "change": "EXPECTED_BASINS gains the two ids. Added guards: unique codes, summary count derived from inventory, non-publishable/BLOCKED/null thresholds per parent, and a provenance test tying both parents to the addendum, its official sources, the course context and the Honda homonym guard.",
+      "limitations": "The two ANA PDFs cited by the addendum are not archived (content_sha256 null, unchanged) and www.ana.gob.pe was not reachable from this environment; the live corroboration is not byte-frozen."
+    },
+    {
+      "finding_id": "F2",
+      "node_id": "tests/test_phase2_south_coast_ica_arequipa_discovery.py::test_pisco_local_rio_grande_is_not_conflated_with_ana_cuenca_grande",
+      "verdict": "TEST_EXPECTATION_STALE",
+      "state_changed": false,
+      "evidence": [
+        "The same module already requires ica_quitasol and ica_paracas in this system (test_ica_pisco_quitasol_and_paracas_are_parent_bound_but_not_events), so 'children == []' was an internal contradiction left from the earlier revision.",
+        "Identity: each child has a single source, ANA-ICA-CRITICAL-POINTS-DU015-2023 (Anexo II, critical points for cleaning and desilting), whose recorded support is 'Qda. Quitasol — Cuenca Pisco' and 'Qda. Paracas — Cuenca Pisco'. Parent binding: Cuenca Pisco UH 13752, confirmed as an official unit in the live ANA/IDEP layer.",
+        "Evidence nature: CRITICAL_POINT_CONTEXT_NOT_EVENT; geometry_asset and outlet null; probes PLANNED_FAIL_CLOSED_NOT_EXECUTED; not publishable; BLOCKED.",
+        "A separate INDECI record (Informe de Emergencia 472, 2019-02-10, Huancano) names Quebrada Quitasol jointly with Huayanto and Remanso. It lives in config/phase2_ica_2019_named_events_v0_1.json with parent assignment pending and is not attached to the child."
+      ],
+      "change": "The assertion now pins the exact child set and proves what the test is about: the Huancano 2026 event stays unnamed, shares no source with either child, and no child is a 'Grande'. A new test keeps four things apart for both children: ravine identity, critical point, historical event and geometry.",
+      "limitations": "The ANA Anexo II PDF could not be re-read in this session (robots/timeout) and is not archived; the name-to-basin binding rests on the provenance recorded on 2026-09-26. Quitasol has independent official corroboration of its name (INDECI 2019); Paracas has none beyond the ANA list."
+    },
+    {
+      "finding_id": "F3",
+      "node_id": "tests/test_phase2_south_coast_ica_arequipa_discovery.py::test_lucha_is_territorial_event_not_invented_quebrada",
+      "verdict": "TEST_EXPECTATION_STALE",
+      "state_changed": false,
+      "evidence": [
+        "Canonical do_not_infer: \"Lucha is a territorial locality in this source. Do not create or name a child 'Quebrada Lucha' without independent hydrologic evidence.\" The prohibition is a second sentence and correctly starts with a capital letter; the test searched the lowercase form. Letter case only.",
+        "No child id or name contains 'lucha'; the event has named_child null and status TERRITORIAL_EVENT_PENDING_LOCAL_GEOMETRY."
+      ],
+      "change": "Canonical wording left untouched. The test pins the full sentence exactly, keeps the original phrase as a case-insensitive check, and additionally requires the pending status and no child binding.",
+      "limitations": ""
+    },
+    {
+      "finding_id": "F4",
+      "node_id": "tests/test_phase2_south_coast_ica_arequipa_discovery.py::test_unnamed_territorial_events_never_create_geometry_by_implication",
+      "verdict": "TEST_AND_STATE_UNDERSPECIFIED",
+      "state_changed": true,
+      "evidence": [
+        "Seven territorial events exist. Six name no ravine and carry TERRITORIAL_EVENT_PENDING_LOCAL_GEOMETRY (Ocucaje 2026, Huancano 2026, Vítor 2026, Lucha 2025, Secocha 2023, Chala San Andrés II 2025). None shares a source with any child.",
+        "The seventh, ica_yauca_rosario_2024_03_16, is not unnamed: its COEN-INDECI source names Quebrada San José de Curis and Quebrada San Isidro de Macchanga, both registered children citing that same source. NAMED_CHILDREN_CONFIRMED_TOPOLOGY_PARTIAL is the correct status; PENDING_LOCAL_GEOMETRY would erase a directly sourced attribution.",
+        "The mismatch came from the singular field: named_child was null because two ravines are named, and the test read null as 'no ravine identified'."
+      ],
+      "change": "State: additive field named_children on that one event listing the two existing child ids. No status, evidence state, source or hash was altered. Test: 'unnamed' now means no named_child and no named_children, and must be PENDING; the named status is only accepted with an explicit binding to same-system children backed by the event's own source; for every system, no child has geometry, outlet, publication or activation. Two regressions added.",
+      "limitations": "The INDECI report is not archived (content_sha256 null, unchanged) and was not re-read in this session."
+    },
+    {
+      "finding_id": "F5",
+      "node_id": "tests/test_phase2_south_coast_ica_arequipa_discovery.py::test_expansion_summary_remains_research_only_and_zero_operational_zones",
+      "verdict": "TEST_EXPECTATION_STALE",
+      "state_changed": false,
+      "evidence": [
+        "official_intercuenca_contexts holds 14 rows with 14 distinct codes; summary says 14; the completeness addendum requires 14 and lists the same codes; its dedicated test already enforces this.",
+        "All 14 codes appear in the live ANA/IDEP layer as 'Intercuenca <code>'. The literal 1 predates the addendum."
+      ],
+      "change": "The expectation is derived from the inventory (len == summary == 14) and a dedicated test pins codes, addendum equality, source support, disjointness from parent codes and fail-closed fields. new_operational_zones == 0 untouched.",
+      "limitations": "Same non-archived ANA sources as F1."
+    }
+  ],
+  "open_scientific_items": [
+    {
+      "item_id": "OPEN-137539",
+      "blocking_for_this_adjudication": false,
+      "statement": "The live ANA layer also lists Intercuenca 137539, adjacent to Cuenca Topará (137534) on the Ica/Lima boundary. It is not in the inventory nor in the addendum's 14. Whether it belongs to the Ica scope is undecided; it was deliberately not added here."
+    },
+    {
+      "item_id": "OPEN-ARCHIVE-SOURCES",
+      "blocking_for_this_adjudication": false,
+      "statement": "ANA Anexo II DU 015-2023, ANA AAA delimitation memoir, RJ 056-2018-ANA and the INDECI reports remain not archived. Until bytes and hashes are frozen, identity claims depend on recorded text retrieval."
+    },
+    {
+      "item_id": "OPEN-YAUCA-ROSARIO-PARENT-UH",
+      "blocking_for_this_adjudication": false,
+      "statement": "Parent binding to Cuenca Grande 1372 withdrawn on 2026-10-03 (see parent_binding_adjudication). Open: execute the ANA SNIRH named-channel probe for both ravines from an environment that can reach geosnirh.ana.gob.pe, archive the bytes, and read CODIGO_UH from the result."
+    },
+    {
+      "item_id": "OPEN-UNCATALOGUED-SOURCE-IDS",
+      "blocking_for_this_adjudication": false,
+      "statement": "Found while hardening the homonym regression: ica_cansas cites INDECI-CANSAS-HISTORICAL-PLAN, and ica_la_yesera and ica_tortolita cite ANA-CENEPRED-ICA-VULNERABLE-MAPS, but neither id has a source_catalog entry. The citations were left untouched; the sources need to be catalogued with URL and provenance. Uncatalogued ids never count as parent-binding evidence."
+    },
+    {
+      "item_id": "OPEN-SIBLING-PARENT-BINDINGS",
+      "blocking_for_this_adjudication": false,
+      "statement": "Only Quebrada Cansas has an explicit statement of membership in a parent UH (ANA-CANSAS-UH1374-2025, itself pending archive). No other child of any system has an explicit parent-binding statement; their parents are asserted at system level and are not exposed to a homonymous receiver, so the detector does not flag them. They remain to be reproduced by the planned ANA named-channel probes."
+    }
+  ],
+  "summary": {
+    "findings": 5,
+    "test_expectations_corrected": 5,
+    "state_fields_added": 1,
+    "states_relaxed": 0,
+    "geometry_assets_published": 0,
+    "new_operational_zones": 0,
+    "parent_bindings_withdrawn": 1,
+    "parent_bindings_reassigned": 0
+  },
+  "parent_binding_adjudication": {
+    "system": "ica_rio_grande_local_ravines",
+    "adjudicated_on": "2026-10-03",
+    "question": "Do Quebrada San José de Curis and Quebrada San Isidro de Macchanga belong to ANA Cuenca Grande UH 1372?",
+    "result": "NOT_DEMONSTRATED_BINDING_WITHDRAWN",
+    "resulting_state": "UNRESOLVED_PARENT_HYDROGRAPHIC_ASSIGNMENT",
+    "reassigned_to": null,
+    "official_evidence_attempted": [
+      {
+        "source": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
+        "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
+        "queries": [
+          "where=NOMBRE_CA LIKE '%Curis%'&outFields=*&returnGeometry=false&f=json",
+          "where=NOMBRE_CA LIKE '%Macchanga%'&outFields=*&returnGeometry=false&f=json"
+        ],
+        "outcome": "NOT_EXECUTED_HOST_UNREACHABLE",
+        "detail": "Connection timeout from this environment (both the fetcher and the shell). This is the only registered official layer carrying ravine names with CODIGO_UH. Unreachable is not a negative result.",
+        "content_sha256": null
+      },
+      {
+        "source": "ANA via IDEP, ANA_WMS FeatureServer",
+        "endpoint": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/FeatureServer?f=json",
+        "outcome": "NO_NAMED_CHANNEL_LAYER",
+        "detail": "Layers exposed: Humedales Costeros, Manantial, Glaciares, Hidrometeorológica, AAA, Unidades Hidrográficas (7, 8), Consejo de Recursos Hídricos, ALA, Marino Costero. No river or ravine layer, so ravine identity cannot be matched here.",
+        "content_sha256": null
+      },
+      {
+        "source": "ANA via IDEP, layer 7 Unidades Hidrográficas",
+        "endpoint": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/FeatureServer/7/query?where=CODIGO IN ('1372','1374')&outFields=*&returnGeometry=false&f=json",
+        "outcome": "UNIT_IDENTITY_ONLY",
+        "detail": "OBJECTID_1 164, CODIGO 1372, NOMBRE 'Cuenca Grande', AREA_KM2 10991.2703; OBJECTID_1 163, CODIGO 1374, NOMBRE 'Cuenca Ica', AREA_KM2 7301.8761. Confirms the two units exist; says nothing about the ravines.",
+        "content_sha256": null
+      },
+      {
+        "source": "INDECI-YAUCA-ROSARIO-2024",
+        "endpoint": "https://portal.indeci.gob.pe/emergencias/reporte-preliminar-n-602-17-3-2024-coen-indeci-1230-horas-huaico-en-el-distrito-de-yauca-del-rosario-ica/",
+        "outcome": "RE_READ_TEXT_NOT_ARCHIVED",
+        "detail": "«...un huaico que incrementó el caudal de las quebradas de San José de Curis y San Isidro de Macchanga el mismo que discurre por los ríos Chico y Río Grande en el sector Pampahuasi y centro poblado de Orongocucho, que causó daños a la captación de agua para consumo humano en el distrito de Yauca del Rosario, provincia de Ica.» Confirms ravine names, receiver names and localities. Names no hydrographic unit.",
+        "content_sha256": null
+      }
+    ],
+    "why_not_demonstrated": [
+      "No official hydrographic record tying either ravine to a UH code could be obtained.",
+      "The previous binding rested only on the receiver name 'Río Grande', which the package's own rule same_name_receiver_must_not_be_conflated_with_official_basin forbids as a basis.",
+      "Responses were read through a text-extracting fetcher; no bytes could be frozen from this environment, so even unit-level corroboration is not byte-reproducible."
+    ],
+    "contextual_observation_not_evidence": {
+      "use": "NOT_EVIDENCE_FOR_ASSIGNMENT. Recorded only because it contradicts the withdrawn binding and shows why a candidate must not be inferred either.",
+      "observation": "Point-in-polygon queries on IDEP layer 7 with non-official approximate coordinates for the locality Pampahuasi and for the district reference point of Yauca del Rosario both returned CODIGO 1374 'Cuenca Ica', not 1372.",
+      "why_not_usable": [
+        "Coordinates come from non-official web sources and are not stored in this package (no approximate points).",
+        "A locality or district point is not a ravine; the probe contract forbids fallback by proximity or district name.",
+        "Not byte-frozen."
+      ],
+      "consequence": "The system is not transferred to Cuenca Ica. candidate_parent_basin_ids stays empty until the official named-channel probe is executed."
+    },
+    "state_changes": [
+      "system.parent_basin_id: ica_rio_grande_palpa_nasca -> null",
+      "system.parent_assignment_status and parent_assignment block added (withdrawn parent recorded, reassigned_to null)",
+      "system.homonym_guard added",
+      "both children: parent_assignment_status added; identity, evidence state, sources, outlet_status unchanged",
+      "event ica_yauca_rosario_2024_03_16: receiver_reference filled with the reported local names and localities; do_not_infer extended",
+      "both probe contracts: expected parent set to null, match policy changed so the parent UH is read from the official result instead of presupposed",
+      "work package 4: parent UH reproduction placed before geometry",
+      "summary.local_systems_with_unresolved_parent_assignment = 1"
+    ],
+    "not_changed": [
+      "No geometry, outlet, threshold, routing or alert created",
+      "Event evidence and its attribution to the two named ravines",
+      "Official basin row for UH 1372",
+      "All hashes and provenance fields"
+    ],
+    "regression_hardening": {
+      "added_on": "2026-10-03",
+      "reason": "The first detector exempted a system whenever any child cited a source from the hydrographic authority. An ANA source can be a marginal strip, a works package, a critical-point list or a nominal identity, none of which states that a ravine belongs to a given parent UH.",
+      "rule": "A homonym-exposed system is exempt only if one of its children cites a source carrying a parent_binding_assertions entry that names that child (id and name), the system's parent_basin_id and that basin's official_unit_code, with relation CHANNEL_BELONGS_TO_PARENT_UH and a statement present verbatim in the source's supports that contains both the UH code and the ravine's proper name. The institution is not a criterion.",
+      "state_change": "Additive field parent_binding_assertions on ANA-CANSAS-UH1374-2025, structuring its existing supports statement. No status, evidence state, hash or provenance changed.",
+      "sources_carrying_assertions": [
+        "ANA-CANSAS-UH1374-2025"
+      ]
+    }
+  }
+}
