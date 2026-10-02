@@ -143,7 +143,11 @@ jobs:
       - name: Ejecutar pruebas unitarias v0.8
         # pytest ejecuta tanto unittest.TestCase como funciones test_* de
         # estilo pytest; `unittest discover` omitía estas últimas en silencio.
-        run: python -m pytest tests/ -v -rfE
+        run: python -m pytest tests/ -v -rfE --junitxml="${RUNNER_TEMP}/pytest-junit.xml"
+
+      - name: Publicar resultado exacto de pytest (diagnóstico, no cambia el veredicto)
+        if: ${{ !cancelled() }}
+        run: python scripts/report_pytest_junit_annotations.py "${RUNNER_TEMP}/pytest-junit.xml"
 
       - name: Ejecutar regresión y scorecard v0.8
         # Se ejecuta aunque falle pytest (diagnóstico); el job sigue fallando.
