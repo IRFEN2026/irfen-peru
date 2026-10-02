@@ -148,6 +148,16 @@
       "item_id": "OPEN-YAUCA-ROSARIO-PARENT-UH",
       "blocking_for_this_adjudication": false,
       "statement": "Parent binding to Cuenca Grande 1372 withdrawn on 2026-10-03 (see parent_binding_adjudication). Open: execute the ANA SNIRH named-channel probe for both ravines from an environment that can reach geosnirh.ana.gob.pe, archive the bytes, and read CODIGO_UH from the result."
+    },
+    {
+      "item_id": "OPEN-UNCATALOGUED-SOURCE-IDS",
+      "blocking_for_this_adjudication": false,
+      "statement": "Found while hardening the homonym regression: ica_cansas cites INDECI-CANSAS-HISTORICAL-PLAN, and ica_la_yesera and ica_tortolita cite ANA-CENEPRED-ICA-VULNERABLE-MAPS, but neither id has a source_catalog entry. The citations were left untouched; the sources need to be catalogued with URL and provenance. Uncatalogued ids never count as parent-binding evidence."
+    },
+    {
+      "item_id": "OPEN-SIBLING-PARENT-BINDINGS",
+      "blocking_for_this_adjudication": false,
+      "statement": "Only Quebrada Cansas has an explicit statement of membership in a parent UH (ANA-CANSAS-UH1374-2025, itself pending archive). No other child of any system has an explicit parent-binding statement; their parents are asserted at system level and are not exposed to a homonymous receiver, so the detector does not flag them. They remain to be reproduced by the planned ANA named-channel probes."
     }
   ],
   "summary": {
@@ -231,6 +241,15 @@
       "Event evidence and its attribution to the two named ravines",
       "Official basin row for UH 1372",
       "All hashes and provenance fields"
-    ]
+    ],
+    "regression_hardening": {
+      "added_on": "2026-10-03",
+      "reason": "The first detector exempted a system whenever any child cited a source from the hydrographic authority. An ANA source can be a marginal strip, a works package, a critical-point list or a nominal identity, none of which states that a ravine belongs to a given parent UH.",
+      "rule": "A homonym-exposed system is exempt only if one of its children cites a source carrying a parent_binding_assertions entry that names that child (id and name), the system's parent_basin_id and that basin's official_unit_code, with relation CHANNEL_BELONGS_TO_PARENT_UH and a statement present verbatim in the source's supports that contains both the UH code and the ravine's proper name. The institution is not a criterion.",
+      "state_change": "Additive field parent_binding_assertions on ANA-CANSAS-UH1374-2025, structuring its existing supports statement. No status, evidence state, hash or provenance changed.",
+      "sources_carrying_assertions": [
+        "ANA-CANSAS-UH1374-2025"
+      ]
+    }
   }
 }

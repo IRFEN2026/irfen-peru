@@ -568,7 +568,9 @@ def test_expansion_summary_remains_research_only_and_zero_operational_zones():
 # --- Parent binding of the Yauca del Rosario ravines (withdrawn 2026-10-03) -----------
 
 UNRESOLVED_PARENT = "UNRESOLVED_PARENT_HYDROGRAPHIC_ASSIGNMENT"
-HYDROGRAPHIC_AUTHORITY = "Autoridad Nacional del Agua"
+BINDING_RELATION = "CHANNEL_BELONGS_TO_PARENT_UH"
+BINDING_KEYS = {"child_id", "channel_name", "parent_basin_id", "parent_uh_code", "relation", "statement"}
+NAME_PREFIXES = ("Quebrada / torrentera ", "Quebrada ", "Qda. ", "Río ")
 
 
 def _basin_name_tokens(basin):
@@ -588,14 +590,63 @@ def _receiver_text(system):
     return " ".join(parts).lower()
 
 
+def _proper_name(child):
+    name = child["name"]
+    for prefix in NAME_PREFIXES:
+        if name.startswith(prefix):
+            return name[len(prefix):]
+    return name
+
+
+def explicit_parent_bindings(cfg, system):
+    """(child_id, source_id) pairs that explicitly prove the parent binding the system asserts.
+
+    A source counts only through a dedicated `parent_binding_assertions` entry, and only if
+    every link of the chain is present and consistent:
+      1. the child cites the source;
+      2. the entry names that child by id and by its exact registered name;
+      3. the entry names the system's own parent_basin_id;
+      4. the entry's UH code equals that basin's official_unit_code;
+      5. the relation is CHANNEL_BELONGS_TO_PARENT_UH;
+      6. the statement is verbatim one of the source's `supports` and contains both the UH
+         code and the ravine's proper name.
+    The issuing institution, the document type and generic wording are never criteria.
+    """
+    parent = system.get("parent_basin_id")
+    if parent is None:
+        return []
+    basins = {x["discovery_id"]: x for x in cfg["official_basin_hierarchy"]}
+    sources = {x["source_id"]: x for x in cfg["source_catalog"]}
+    code = basins[parent]["official_unit_code"]
+    proven = []
+    for child in system.get("children", []):
+        for sid in child["source_ids"]:
+            source = sources.get(sid)
+            if source is None:
+                continue  # a source absent from the catalog proves nothing
+            for a in source.get("parent_binding_assertions", []):
+                if (
+                    set(a) == BINDING_KEYS
+                    and a["child_id"] == child["child_id"]
+                    and a["channel_name"] == child["name"]
+                    and a["parent_basin_id"] == parent
+                    and a["parent_uh_code"] == code
+                    and a["relation"] == BINDING_RELATION
+                    and a["statement"] in source["supports"]
+                    and f"UH {code}" in a["statement"]
+                    and _proper_name(child) in a["statement"]
+                ):
+                    proven.append((child["child_id"], sid))
+    return proven
+
+
 def receiver_homonym_bindings(cfg):
     """Systems bound to an official basin whose name also appears as a reported receiver
-    ('Río <name>') while no child carries a source from the hydrographic authority.
-    Such a binding rests on a receiver name alone and is forbidden."""
+    ('Río <name>') without explicit evidence of that concrete parent binding.
+    Such a binding may rest on the receiver name alone and is forbidden."""
     import re
 
     basins = {x["discovery_id"]: x for x in cfg["official_basin_hierarchy"]}
-    sources = {x["source_id"]: x for x in cfg["source_catalog"]}
     offenders = []
     for system in cfg["local_discovery_systems"]:
         parent = system.get("parent_basin_id")
@@ -603,25 +654,174 @@ def receiver_homonym_bindings(cfg):
             continue
         text = _receiver_text(system)
         homonym = any(re.search(r"r[ií]o " + re.escape(tok) + r"\b", text) for tok in _basin_name_tokens(basins[parent]))
-        if not homonym:
-            continue
-        hydrographic = any(
-            sources[sid]["institution"].startswith(HYDROGRAPHIC_AUTHORITY)
-            for child in system.get("children", [])
-            for sid in child["source_ids"]
-        )
-        if not hydrographic:
+        if homonym and not explicit_parent_bindings(cfg, system):
             offenders.append(system["discovery_id"])
     return offenders
+
+
+def _ica_with_children(children_sources):
+    """Copy of the inventory where ica_ica_local_ravines (receiver 'Río Ica', parent Cuenca
+    Ica) keeps only the given children, each restricted to the given sources."""
+    import copy
+
+    cfg = copy.deepcopy(load())
+    system = systems(cfg)["ica_ica_local_ravines"]
+    kept = []
+    for child in system["children"]:
+        if child["child_id"] in children_sources:
+            wanted = children_sources[child["child_id"]]
+            assert set(wanted) <= set(child["source_ids"]), "controls must use real, already-cited sources"
+            child["source_ids"] = list(wanted)
+            kept.append(child)
+    assert len(kept) == len(children_sources)
+    system["children"] = kept
+    return cfg
 
 
 def test_receiver_name_alone_never_binds_a_system_to_a_homonymous_official_basin():
     cfg = load()
     assert cfg["global_rules"]["same_name_receiver_must_not_be_conflated_with_official_basin"] is True
     assert receiver_homonym_bindings(cfg) == []
+    # The only homonym-exposed bound system is Ica ('Río Ica' under Cuenca Ica), and it is
+    # exempt through exactly one explicit binding, not through the issuer of its sources.
+    ica = systems(cfg)["ica_ica_local_ravines"]
+    assert "río ica" in _receiver_text(ica)
+    assert explicit_parent_bindings(cfg, ica) == [("ica_cansas", "ANA-CANSAS-UH1374-2025")]
 
 
-def test_receiver_homonym_detector_rejects_the_withdrawn_binding_and_its_variants():
+def test_only_sources_with_a_traceable_statement_carry_parent_binding_assertions():
+    cfg = load()
+    basins = {x["discovery_id"]: x for x in cfg["official_basin_hierarchy"]}
+    children = {x["child_id"]: x for x in all_children(cfg)}
+    carriers = {}
+    for source in cfg["source_catalog"]:
+        for a in source.get("parent_binding_assertions", []):
+            carriers.setdefault(source["source_id"], []).append(a)
+            assert set(a) == BINDING_KEYS
+            assert a["relation"] == BINDING_RELATION
+            assert a["statement"] in source["supports"]
+            assert a["channel_name"] == children[a["child_id"]]["name"]
+            assert a["parent_uh_code"] == basins[a["parent_basin_id"]]["official_unit_code"]
+            assert f"UH {a['parent_uh_code']}" in a["statement"]
+            assert source["source_id"] in children[a["child_id"]]["source_ids"]
+    assert set(carriers) == {"ANA-CANSAS-UH1374-2025"}
+    # Marginal-strip, works, critical-point and administrative sources carry none.
+    for sid in (
+        "ANA-CANSAS-FAJA-2018",
+        "ANA-CANSAS-FAJA-MOD-2019",
+        "ANA-CANSAS-FAJA-2020-TRACE-2024",
+        "ANA-LA-YESERA-FAJA-2019",
+        "ANA-TORTOLITA-FAJA-2019",
+        "ANA-ICA-CATAMBO-CANSAS-TDR-2023",
+        "ANA-ICA-CRITICAL-POINTS-DU015-2023",
+        "ANA-HYDRO-UH-PACIFIC-2025",
+    ):
+        source = next(x for x in cfg["source_catalog"] if x["source_id"] == sid)
+        assert source["institution"].startswith("Autoridad Nacional del Agua")
+        assert "parent_binding_assertions" not in source
+
+
+def test_uncatalogued_source_ids_are_a_pinned_open_item_and_never_binding_evidence():
+    # Known provenance gap (OPEN-UNCATALOGUED-SOURCE-IDS): two ids cited by Ica children have
+    # no source_catalog entry. Pinned so the gap cannot grow silently; closing it means
+    # cataloguing the sources and emptying this set, not deleting the citations.
+    cfg = load()
+    catalog = {x["source_id"] for x in cfg["source_catalog"]}
+    cited = {sid for child in all_children(cfg) for sid in child["source_ids"]}
+    assert cited - catalog == {"INDECI-CANSAS-HISTORICAL-PLAN", "ANA-CENEPRED-ICA-VULNERABLE-MAPS"}
+    open_ids = {x["item_id"] for x in load_json(ADJUDICATION)["open_scientific_items"]}
+    assert "OPEN-UNCATALOGUED-SOURCE-IDS" in open_ids
+    # An uncatalogued id whose name starts with 'ANA' still proves no parent binding.
+    cfg = _ica_with_children({"ica_la_yesera": ["ANA-CENEPRED-ICA-VULNERABLE-MAPS"]})
+    assert receiver_homonym_bindings(cfg) == ["ica_ica_local_ravines"]
+
+
+def test_negative_control_ana_marginal_strip_does_not_suppress_the_detector():
+    for faja in (
+        {"ica_cansas": ["ANA-CANSAS-FAJA-2018"]},
+        {"ica_cansas": ["ANA-CANSAS-FAJA-2018", "ANA-CANSAS-FAJA-MOD-2019", "ANA-CANSAS-FAJA-2020-TRACE-2024"]},
+        {"ica_la_yesera": ["ANA-LA-YESERA-FAJA-2019"], "ica_tortolita": ["ANA-TORTOLITA-FAJA-2019"]},
+    ):
+        cfg = _ica_with_children(faja)
+        assert explicit_parent_bindings(cfg, systems(cfg)["ica_ica_local_ravines"]) == []
+        assert receiver_homonym_bindings(cfg) == ["ica_ica_local_ravines"]
+
+
+def test_negative_control_ana_works_tdr_does_not_suppress_the_detector():
+    for works in (
+        {"ica_catambo": ["ANA-ICA-CATAMBO-CANSAS-TDR-2023"]},
+        {"ica_catambo": ["ANA-ICA-CATAMBO-CANSAS-TDR-2023"], "ica_cansas": ["ANA-CANSAS-FAJA-2018"]},
+    ):
+        cfg = _ica_with_children(works)
+        assert receiver_homonym_bindings(cfg) == ["ica_ica_local_ravines"]
+    # The TDR names 'Quebrada Cansas identity' and 'Río Ica works context': a name plus a
+    # receiver in a works package is still not a statement of UH membership.
+    tdr = next(x for x in load()["source_catalog"] if x["source_id"] == "ANA-ICA-CATAMBO-CANSAS-TDR-2023")
+    assert "Río Ica works context" in tdr["supports"]
+
+
+def test_negative_control_ana_critical_point_does_not_become_parent_binding():
+    import copy
+
+    cfg = copy.deepcopy(load())
+    pisco = systems(cfg)["ica_pisco_local_ravines"]
+    assert receiver_homonym_bindings(cfg) == []  # not exposed: its receiver is a local 'Río Grande'
+    # Expose it to a homonymous receiver. Its children cite only the ANA critical-point list,
+    # whose supports even name the basin ('Qda. Quitasol — Cuenca Pisco'): still not a binding.
+    pisco["territorial_events"][0]["receiver_reference"] = "Río Pisco"
+    assert {sid for c in pisco["children"] for sid in c["source_ids"]} == {"ANA-ICA-CRITICAL-POINTS-DU015-2023"}
+    assert explicit_parent_bindings(cfg, pisco) == []
+    assert receiver_homonym_bindings(cfg) == ["ica_pisco_local_ravines"]
+    # And the critical point stays what it is.
+    for child in pisco["children"]:
+        assert child["evidence_state"] == "CRITICAL_POINT_CONTEXT_NOT_EVENT"
+
+
+def test_positive_control_explicit_uh_statement_supports_the_cansas_binding_only():
+    import copy
+
+    # Cansas alone, with only the explicit UH 1374 source: binding to Cuenca Ica holds.
+    cfg = _ica_with_children({"ica_cansas": ["ANA-CANSAS-UH1374-2025"]})
+    ica = systems(cfg)["ica_ica_local_ravines"]
+    assert explicit_parent_bindings(cfg, ica) == [("ica_cansas", "ANA-CANSAS-UH1374-2025")]
+    assert receiver_homonym_bindings(cfg) == []
+
+    def tampered(mutate):
+        c = _ica_with_children({"ica_cansas": ["ANA-CANSAS-UH1374-2025"]})
+        source = next(x for x in c["source_catalog"] if x["source_id"] == "ANA-CANSAS-UH1374-2025")
+        mutate(c, source, source["parent_binding_assertions"][0])
+        return receiver_homonym_bindings(c)
+
+    flagged = ["ica_ica_local_ravines"]
+    # Every link of the chain is required.
+    assert tampered(lambda c, s, a: a.update(parent_uh_code="1372")) == flagged
+    assert tampered(lambda c, s, a: a.update(parent_basin_id="ica_pisco")) == flagged
+    assert tampered(lambda c, s, a: a.update(child_id="ica_catambo")) == flagged
+    assert tampered(lambda c, s, a: a.update(channel_name="Quebrada Catambo")) == flagged
+    assert tampered(lambda c, s, a: a.update(relation="NAME_IDENTITY_ONLY")) == flagged
+    assert tampered(lambda c, s, a: a.update(statement="Cansas is in Cuenca Ica UH 1374")) == flagged  # not in supports
+    assert tampered(lambda c, s, a: s.update(supports=["Cansas identity"])) == flagged
+    assert tampered(lambda c, s, a: s.pop("parent_binding_assertions")) == flagged
+    assert tampered(lambda c, s, a: a.pop("relation")) == flagged
+
+    # The statement is about Cuenca Ica: it cannot support a binding to another basin.
+    cfg = _ica_with_children({"ica_cansas": ["ANA-CANSAS-UH1374-2025"]})
+    ica = systems(cfg)["ica_ica_local_ravines"]
+    ica["parent_basin_id"] = "ica_rio_grande_palpa_nasca"
+    ica["territorial_events"][0]["receiver_reference"] = "Río Grande"
+    assert receiver_homonym_bindings(cfg) == ["ica_ica_local_ravines"]
+
+    # Nor does it travel to another system's children.
+    cfg = copy.deepcopy(load())
+    yauca = systems(cfg)["ica_rio_grande_local_ravines"]
+    yauca["parent_basin_id"] = "ica_ica"
+    yauca["territorial_events"][0]["receiver_reference"] = "Río Ica"
+    for child in yauca["children"]:
+        child["source_ids"] = child["source_ids"] + ["ANA-CANSAS-UH1374-2025"]
+    assert receiver_homonym_bindings(cfg) == ["ica_rio_grande_local_ravines"]
+
+
+def test_receiver_homonym_detector_rejects_the_withdrawn_yauca_binding_and_its_variants():
     import copy
 
     # Restoring the withdrawn parent must be caught.
@@ -634,24 +834,13 @@ def test_receiver_homonym_detector_rejects_the_withdrawn_binding_and_its_variant
     cfg = copy.deepcopy(load())
     pisco = systems(cfg)["ica_pisco_local_ravines"]
     pisco["parent_basin_id"] = "ica_rio_grande_palpa_nasca"
-    pisco["children"] = []
     assert receiver_homonym_bindings(cfg) == ["ica_pisco_local_ravines"]
 
-    # An emergency report is not a hydrographic source, however official.
-    cfg = copy.deepcopy(load())
-    system = systems(cfg)["ica_rio_grande_local_ravines"]
-    system["parent_basin_id"] = "ica_rio_grande_palpa_nasca"
-    assert all(
-        s["institution"] == "COEN-INDECI"
-        for s in cfg["source_catalog"]
-        if s["source_id"] in {sid for c in system["children"] for sid in c["source_ids"]}
-    )
-    assert receiver_homonym_bindings(cfg)
-
-    # A binding that does carry a hydrographic-authority source is not flagged:
-    # Ocucaje reports 'Río Ica' under Cuenca Ica, whose children have ANA sources.
-    assert "ica_ica_local_ravines" not in receiver_homonym_bindings(load())
-    assert "río ica" in _receiver_text(systems(load())["ica_ica_local_ravines"])
+    # Being unresolved is not a finding, and unresolved systems never count as proven.
+    cfg = load()
+    yauca = systems(cfg)["ica_rio_grande_local_ravines"]
+    assert explicit_parent_bindings(cfg, yauca) == []
+    assert "ica_rio_grande_local_ravines" not in receiver_homonym_bindings(cfg)
 
 
 def test_yauca_del_rosario_parent_is_explicitly_unresolved_and_not_transferred():
