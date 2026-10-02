@@ -1,0 +1,179 @@
+{
+  "schema_version": "0.1",
+  "lane": "IRFEN_CHICAMA_CHAO",
+  "status": "RESEARCH_ONLY_SOURCE_AND_GEOMETRY_PROBE_PLAN",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "map_publish_enabled": false,
+  "sources": [
+    {
+      "source_id": "MINAM-ZEE-LALIBERTAD-UH-L39",
+      "institution": "Ministerio del Ambiente / Geoservidor Peru",
+      "url": "https://geoservidorperu.minam.gob.pe/arcgis/rest/services/ZEE_VISOR/05_CARACTERIZACI%C3%93N_TERRITORIAL_LA_LIBERTAD/MapServer/39",
+      "role": "REGIONAL_OFFICIAL_HYDROGRAPHIC_SUBUNIT_GEOMETRY_CANDIDATE_SOURCE",
+      "geometry_type": "polygon",
+      "query_field": "Nombre_U_1",
+      "candidate_names_chicama": [
+        "Cuenca Quirripano",
+        "Cuenca Santanero",
+        "Cuenca Ochape",
+        "Cuenca Chuquillanqui",
+        "Cuenca Huancay"
+      ],
+      "candidate_names_chao": [
+        "Cuenca Chao",
+        "Cuenca Tucumaca",
+        "Cuenca Tutumo",
+        "Unidad Hidrografica 137711"
+      ],
+      "admissible_claims": [
+        "the regional ZEE service exposes named hydrographic polygons that can be probed as candidate subunits",
+        "candidate polygons may support reproducible subunit geometry after parent/topology adjudication"
+      ],
+      "forbidden_inferences": [
+        "regional ZEE polygon automatically equals an ANA nationally codified basin",
+        "candidate polygon is an event footprint",
+        "candidate polygon is operational geometry",
+        "candidate polygon defines an IRFEN threshold or hydraulic capacity"
+      ],
+      "service_contract_snapshot": {
+        "path": "site/data/phase2/sources/lalibertad_chicama_chao_zee_layer39_service_metadata_20260926.json",
+        "sha256": "5ed7593aa6ae870a54b7fc4939975b547f5143596036bc4782e46710786cc553",
+        "status": "LIVE_SERVICE_CONTRACT_FROZEN_FEATURE_GEOMETRY_PENDING",
+        "native_wkid": 32717,
+        "query_formats": [
+          "JSON",
+          "geoJSON"
+        ],
+        "renderer_field": "Nombre_U_1",
+        "exact_feature_geometry_frozen": false,
+        "map_eligible": false
+      },
+      "candidate_names_chicama_intercuencas": [
+        "Intercuenca Chicama 137721",
+        "Intercuenca Chicama 137723",
+        "Intercuenca Chicama 137725",
+        "Intercuenca Chicama 137727"
+      ],
+      "required_service_fields": [
+        "OBJECTID",
+        "CODIGO",
+        "CODIGO_1",
+        "Nombre_U_1",
+        "Fuente",
+        "AREA_KM2",
+        "NIVEL",
+        "NIVEL1",
+        "NIVEL2",
+        "NIVEL3",
+        "NIVEL4",
+        "NIVEL5",
+        "NIVEL6",
+        "NIVEL7",
+        "NIVEL8"
+      ]
+    },
+    {
+      "source_id": "MPSCH-OM-14-2018-CHOROBAL",
+      "institution": "Municipalidad Provincial de Santiago de Chuco / El Peruano",
+      "url": "https://www.munisantiagodechuco.gob.pe/wp-content/uploads/2022/02/ORDENANZA-MUNICIPAL-N%C2%B0-14-2018.pdf",
+      "role": "OFFICIAL_LOCAL_HYDROLOGIC_NOMENCLATURE_CONTEXT",
+      "admissible_claims": [
+        "Rio Chorobal is explicitly treated as a microcuenca in the municipal ordinance",
+        "Calipuy, Lamball and Caypanda are listed as principal quebradas of the Rio Chorobal microcuenca"
+      ],
+      "forbidden_inferences": [
+        "municipal nomenclature establishes a standalone ANA national hydrographic unit",
+        "listed tributaries have reproducible geometry without an independent spatial source",
+        "absence of another tributary is a negative"
+      ]
+    },
+    {
+      "source_id": "DU-015-2023-CHAO-SECTORS",
+      "institution": "Estado Peruano / Decreto de Urgencia 015-2023",
+      "url": "https://leyes.congreso.gob.pe/Documentos/2021_2026/Decretos/Urgencias/2023/DU-015-2023-OF..pdf",
+      "role": "OFFICIAL_SECTOR_TO_HYDROGRAPHIC_UNIT_CONTEXT",
+      "admissible_claims": [
+        "official intervention tables associate Rio Chorobal sectors with Cuenca Huamanzaña and also with Intercuenca 137711",
+        "sector-level attribution demonstrates that Chorobal routing cannot be reduced to one assumed basin polygon without adjudication"
+      ],
+      "forbidden_inferences": [
+        "all Rio Chorobal reaches belong to a single polygon",
+        "intervention sectors are event footprints",
+        "works or sector lengths imply hydraulic capacity"
+      ]
+    },
+    {
+      "source_id": "SENAMHI-CHICAMA-BALANCE-2013",
+      "institution": "SENAMHI",
+      "url": "https://www.senamhi.gob.pe/load/file/docTec-2013-senamhi.pdf",
+      "role": "BASIN_SCALE_HYDROCLIMATIC_AND_WATER_BALANCE_CONTEXT",
+      "admissible_claims": [
+        "SENAMHI characterizes precipitation, evapotranspiration and runoff for the Chicama basin",
+        "the study can support basin-scale rainfall-runoff context and station inventory"
+      ],
+      "forbidden_inferences": [
+        "basin-scale relationships transfer directly to named ravines",
+        "monthly or historical model outputs are operational thresholds",
+        "the study supplies current channel capacity"
+      ]
+    },
+    {
+      "source_id": "SENAMHI-CHICAMA-MODEL-2013",
+      "institution": "SENAMHI / SIGRID",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/887",
+      "role": "BASIN_SCALE_RAINFALL_RUNOFF_MODEL_CONTEXT",
+      "admissible_claims": [
+        "SENAMHI evaluated rainfall-runoff models for flow forecasting in the Chicama basin"
+      ],
+      "forbidden_inferences": [
+        "model calibration is valid for independent tributary activation without verification",
+        "model output is an IRFEN operational decision threshold"
+      ]
+    },
+    {
+      "source_id": "UPAO-CHICAMA-GALAXIA-PAMPA-HERMOSA-2022",
+      "institution": "Universidad Privada Antenor Orrego / ALICIA-CONCYTEC",
+      "url": "https://hdl.handle.net/20.500.12759/9839",
+      "role": "SECONDARY_HYDRAULIC_REACH_CONTEXT",
+      "admissible_claims": [
+        "the thesis models floodplain behavior in the Galaxia-Pampa Hermosa reach of Rio Chicama"
+      ],
+      "forbidden_inferences": [
+        "thesis design values are current capacity",
+        "modeled floodplain is a footprint of a specific observed event",
+        "thesis overrides official basin or channel geometry"
+      ]
+    }
+  ],
+  "probe_policy": {
+    "write_candidate_source_snapshots_only": true,
+    "publish_to_map": false,
+    "require_exact_single_feature_per_name": true,
+    "require_parent_topology_review": true,
+    "require_source_field_capture": [
+      "CODIGO",
+      "CODIGO_1",
+      "Nombre_U_1",
+      "Fuente",
+      "AREA_KM2",
+      "NIVEL"
+    ],
+    "chicama_parent_code": "13772",
+    "chao_national_parent_code": "137712",
+    "chorobal_standalone_basin_promotion_forbidden": true,
+    "chorobal_outlet_status": "UNRESOLVED_PENDING_REPRODUCIBLE_ROUTING",
+    "event_footprint_creation_forbidden": true,
+    "service_contract_frozen": true,
+    "exact_candidate_feature_geometry_frozen": false,
+    "map_publication_blocked_until_feature_freeze_and_topology_qa": true
+  },
+  "mastergis_role": "METHOD_REFERENCE_ONLY_NOT_EVIDENCE"
+}
