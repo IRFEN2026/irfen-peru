@@ -528,6 +528,7 @@
         maxZoom: 18, attribution: "&copy; OpenStreetMap contributors"
       }).addTo(state.map);
       state.layer = L.layerGroup().addTo(state.map);
+      window.dispatchEvent(new CustomEvent("irfen:map-ready",{detail:{map:state.map,label:"Monitoreo NASA"}}));
     }
     const replacement = typeof L !== "undefined" ? L.layerGroup() : null;
     const layers = new Map();
