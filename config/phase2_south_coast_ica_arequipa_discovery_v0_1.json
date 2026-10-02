@@ -523,7 +523,21 @@
     },
     {
       "discovery_id": "ica_rio_grande_local_ravines",
-      "parent_basin_id": "ica_rio_grande_palpa_nasca",
+      "parent_basin_id": null,
+      "parent_assignment_status": "UNRESOLVED_PARENT_HYDROGRAPHIC_ASSIGNMENT",
+      "parent_assignment": {
+        "status": "UNRESOLVED_PARENT_HYDROGRAPHIC_ASSIGNMENT",
+        "withdrawn_parent_basin_id": "ica_rio_grande_palpa_nasca",
+        "withdrawn_parent_uh_code": "1372",
+        "withdrawn_on": "2026-10-03",
+        "withdrawal_reason": "The only basis for the binding was the receiver names 'Río Chico' and 'Río Grande' in the COEN-INDECI report. A receiver name is not a hydrographic assignment, and no official ANA hydrography has reproduced the parent UH of either ravine.",
+        "reassigned_to": null,
+        "candidate_parent_basin_ids": [],
+        "acceptance_requirement": "Exact-name match of each ravine in official ANA hydrography with CODIGO_UH read from the result, unique, source bytes archived with SHA-256.",
+        "discovery_id_is_legacy_label_not_basin_assertion": true,
+        "adjudication_record": "config/phase2_south_coast_ica_arequipa_pytest_adjudication_v0_1.json#parent_binding_adjudication"
+      },
+      "homonym_guard": "The 'Río Grande' and 'Río Chico' named in the Yauca del Rosario report are local receiver names. Do not bind this system to ANA Cuenca Grande UH 1372, nor to any other official basin, on the basis of a receiver name, district or proximity.",
       "entity_role": "LOCAL_RAVINE_DISCOVERY_SYSTEM",
       "children": [
         {
@@ -543,7 +557,8 @@
           "activation_gate": "BLOCKED",
           "decision_thresholds": null,
           "hydraulic_factors": null,
-          "map_publishable": false
+          "map_publishable": false,
+          "parent_assignment_status": "UNRESOLVED_PARENT_HYDROGRAPHIC_ASSIGNMENT"
         },
         {
           "child_id": "ica_san_isidro_de_macchanga",
@@ -562,7 +577,8 @@
           "activation_gate": "BLOCKED",
           "decision_thresholds": null,
           "hydraulic_factors": null,
-          "map_publishable": false
+          "map_publishable": false,
+          "parent_assignment_status": "UNRESOLVED_PARENT_HYDROGRAPHIC_ASSIGNMENT"
         }
       ],
       "territorial_events": [
@@ -575,14 +591,14 @@
             "ica_san_jose_de_curis",
             "ica_san_isidro_de_macchanga"
           ],
-          "receiver_reference": null,
+          "receiver_reference": "Locally named Río Chico and Río Grande in Yauca del Rosario (sector Pampahuasi, centro poblado Orongocucho); official receiver identity unresolved",
           "evidence_state": "IMPACT_CONFIRMED",
           "source_ids": [
             "INDECI-YAUCA-ROSARIO-2024"
           ],
           "statement": "COEN-INDECI reports increased flow in Quebrada San José de Curis and Quebrada San Isidro de Macchanga, discharging through Río Chico and Río Grande and damaging a drinking-water intake.",
           "hydrologic_assignment_status": "NAMED_CHILDREN_CONFIRMED_TOPOLOGY_PARTIAL",
-          "do_not_infer": "Do not create child geometry, outlet or threshold beyond the cited source."
+          "do_not_infer": "Do not create child geometry, outlet or threshold beyond the cited source. Do not use the receiver name 'Río Grande' to assign these ravines to ANA Cuenca Grande UH 1372 or to any other official basin."
         }
       ],
       "activation_gate": "BLOCKED",
@@ -1537,7 +1553,7 @@
     {
       "priority": 4,
       "target": "ica_san_jose_de_curis+ica_san_isidro_de_macchanga",
-      "goal": "resolve exact local geometry and flow topology to Río Chico/Río Grande without transferring event state"
+      "goal": "first reproduce the parent UH of both ravines from official ANA hydrography (currently UNRESOLVED; receiver names Río Chico/Río Grande are not an assignment); only then resolve exact local geometry and flow topology, without transferring event state"
     },
     {
       "priority": 5,
@@ -1554,7 +1570,8 @@
     "local_hydrography_probe_contracts_registered": 23,
     "official_local_children_with_regulatory_geometry_context": 3,
     "official_intercuenca_contexts_registered": 14,
-    "pending_hydrologic_adjudications": 6
+    "pending_hydrologic_adjudications": 6,
+    "local_systems_with_unresolved_parent_assignment": 1
   },
   "hydrography_probe_contracts": [
     {
@@ -1638,8 +1655,8 @@
     {
       "child_name": "Quebrada San José de Curis",
       "discovery_system_id": "ica_rio_grande_local_ravines",
-      "expected_parent_discovery_id": "ica_rio_grande_palpa_nasca",
-      "expected_parent_uh_code": "1372",
+      "expected_parent_discovery_id": null,
+      "expected_parent_uh_code": null,
       "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
       "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
       "where": "NOMBRE_CA='San José de Curis'",
@@ -1655,17 +1672,17 @@
       "return_geometry": true,
       "out_sr": 4326,
       "format": "geojson",
-      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "match_policy": "EXACT_NAME_REQUIRED_PARENT_UH_READ_FROM_OFFICIAL_RESULT_NOT_PRESUPPOSED",
       "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
       "map_publishable": false,
       "event_state_transferred": false,
-      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+      "notes": "Parent UH is not presupposed: it must be read from CODIGO_UH of a unique exact-name result. Zero or multiple results remain unresolved; no fallback by receiver name, proximity or district name."
     },
     {
       "child_name": "Quebrada San Isidro de Macchanga",
       "discovery_system_id": "ica_rio_grande_local_ravines",
-      "expected_parent_discovery_id": "ica_rio_grande_palpa_nasca",
-      "expected_parent_uh_code": "1372",
+      "expected_parent_discovery_id": null,
+      "expected_parent_uh_code": null,
       "source_id": "ANA-SNIRH-RIOS-QUEBRADAS-AAVI-2018",
       "endpoint": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query",
       "where": "NOMBRE_CA='San Isidro de Macchanga'",
@@ -1681,11 +1698,11 @@
       "return_geometry": true,
       "out_sr": 4326,
       "format": "geojson",
-      "match_policy": "EXACT_NAME_PLUS_PARENT_UH_REQUIRED_FOR_ACCEPTANCE",
+      "match_policy": "EXACT_NAME_REQUIRED_PARENT_UH_READ_FROM_OFFICIAL_RESULT_NOT_PRESUPPOSED",
       "status": "PLANNED_FAIL_CLOSED_NOT_EXECUTED",
       "map_publishable": false,
       "event_state_transferred": false,
-      "notes": "Zero, multiple or parent-code-mismatched results remain unresolved; no fallback by proximity or district name."
+      "notes": "Parent UH is not presupposed: it must be read from CODIGO_UH of a unique exact-name result. Zero or multiple results remain unresolved; no fallback by receiver name, proximity or district name."
     },
     {
       "child_name": "Quebrada / torrentera Chullo",
