@@ -1,0 +1,56 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "NEGATIVE_CONTROL_SHORTLIST_GEOMETRY_FROZEN_BY_EXACT_HASH",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "anti_leakage": {
+    "outcome_evidence_read": false,
+    "candidate_outcome_evidence_read": false,
+    "a6680_numeric_reference_read": false,
+    "post_anchor_predictor_read": false,
+    "control_outcome_adjudication_performed": false
+  },
+  "contract": {
+    "path": "config/chosica_2015_negative_control_shortlist_geometry_contract_v0_1.json",
+    "git_blob_sha": "bbdd1af0095e77734a615307fead6cb7be33840c",
+    "sha256": "da645f0751fcd509dd41ad6944d14227292a18d64a1cbfb57e3cf9da59d7182d"
+  },
+  "implementation": {
+    "path": "scripts/delineate_chosica_2015_negative_control_shortlist.py",
+    "git_blob_sha": "8fed421ab77af2aff39dcd1af2b078db87cbb9cd"
+  },
+  "frozen_inputs": {
+    "candidate_pool_sha256": "bd0e0f8e1fa0dfdb5ded676373e4a54590e3f8acc540e3171bde5f1adc075fcf",
+    "matching_freeze_record_sha256": "b476694e266cd2c8c5991ececb3a99acb0e043509072be32198dbdff2d72e29c",
+    "dem_utm_sha256": "1f69c09540cd3d1d69fd93fc2a75c23308baa0fba0e6ad12d6cf3181e3cc9dbd",
+    "shortlisted_candidate_ids": ["NC_001","NC_007","NC_017","NC_019","NC_023","NC_024","NC_027"]
+  },
+  "workflow_provenance": {
+    "workflow_run_id": 34375704757,
+    "workflow_head_sha": "2ae37ec155cdd92f2b946a625670e12c1dfd3720",
+    "artifact_id": 10113835166,
+    "artifact_name": "chosica-2015-negative-control-shortlist-geometry",
+    "artifact_digest": "sha256:81308b3ebad4c5acb2f2886c2760060c93c114fdac92ddc21ff06bd32201064e"
+  },
+  "frozen_outputs": {
+    "report_file": "chosica_2015_negative_control_shortlist_geometry_report.json",
+    "report_sha256": "87a100084f3d3dccf6a922fd3bd1216e02c659c6a7b3cbb4aefe6c49cf51cf53",
+    "geojson_file": "chosica_2015_negative_control_shortlist.geojson",
+    "geojson_sha256": "7fc3db40f7163a7b8019640ffbaa4564e54e09fc769b9de0c4554bcec382c412",
+    "candidate_count": 7,
+    "catchment_touches_dem_boundary": false
+  },
+  "regeneration_rule": "Regenerate with the exact frozen contract, candidate pool, matching freeze record and implementation. Accept downstream use only if report_sha256 and geojson_sha256 exactly match this record.",
+  "next_gate": {
+    "control_outcome_adjudication_allowed_in_fresh_blind_reviewer": true,
+    "sealed_target_outcome_unblind_allowed": false,
+    "post_adjudication_geometry_change_allowed": false,
+    "post_adjudication_candidate_replacement_allowed": false
+  }
+}

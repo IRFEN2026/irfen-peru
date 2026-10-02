@@ -1,0 +1,59 @@
+{
+  "schema_version": "0.2",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_CANDIDATE_ONLY_REVIEW_V0_2_CONTRACT",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "preserved_preincident_geometry": {
+    "freeze_record": "config/chosica_2015_negative_control_shortlist_geometry_freeze_record_v0_1.json",
+    "source_geojson_sha256": "7fc3db40f7163a7b8019640ffbaa4564e54e09fc769b9de0c4554bcec382c412",
+    "candidate_count": 7
+  },
+  "inputs": {
+    "geometry_fingerprint_freeze": "config/chosica_2015_candidate_only_geometry_fingerprint_freeze_v0_1.json",
+    "geometry_fingerprint_freeze_sha256": "2957a453cab4daaeb7b8f60fb4707d5a9f00b15d4091ba20368a391cc0d190fb",
+    "reviewer_bundle_v0_1_sha256": "ea57553e6235bf9dfb7a145e7cbf7f729ca7417e2b77753e53d7f8cc13c4f65d"
+  },
+  "output": {
+    "reviewer_bundle": "site/data/validation/chosica_2015_candidate_only_reviewer_bundle_v0_2.json",
+    "reviewer_bundle_sha256": "c4f62777d31a223f77de049ea368c321f5c299114d6a14f407899c772e911f15",
+    "candidate_count": 7,
+    "candidate_membership_sha256": "5738c0e2bcddf95be0e1cc9c77660d030355602f39920b3873c6ec65b0f26bc1"
+  },
+  "scientific_reason": "Strengthen the independent candidate-only territorial review after the blinding incident by adding only preincident frozen candidate geometry fingerprints and bounding boxes, while preserving the already-frozen candidate membership and matching. No candidate replacement, rematching or target unblind is permitted.",
+  "evidence_gate": {
+    "decisive_labels": ["CONFIRMED_CONTROL", "EXCLUDE_ACTIVATED"],
+    "decisive_labels_require_evidence_resolution": "CANDIDATE_SPECIFIC",
+    "jurisdiction_only_evidence_alone": "OUTCOME_UNKNOWN",
+    "documentary_silence": "OUTCOME_UNKNOWN",
+    "candidate_replacement_allowed": false,
+    "matching_recalculation_allowed": false,
+    "selection_feedback_allowed": false,
+    "target_unblind_allowed": false
+  },
+  "institutional_location_caveat": {
+    "source": "INDECI historical emergency open-data metadata",
+    "stable_locator": "https://www.datosabiertos.gob.pe/dataset/emergencias-historicas-registradas-por-indeci",
+    "interpretation": "Records whose published coordinates identify only the registering jurisdiction rather than the event site are corroborative only and cannot alone establish a candidate-specific outcome."
+  },
+  "forbidden_tokens_case_insensitive": [
+    "cashahuacra", "quirio", "pedregal", "san antonio", "san_antonio",
+    "la libertad", "la_libertad", "carossio", "carosio", "rayos de sol",
+    "rayos_de_sol", "corrales", "official_outcome_evidence", "a6680"
+  ],
+  "fail_closed": [
+    "geometry fingerprint file hash differs from the frozen value",
+    "reviewer bundle hash differs from the preregistered value",
+    "candidate membership differs from the frozen seven-code set",
+    "any target identifier or A6680 token enters the candidate-only bundle",
+    "any target outcome, contaminated-stage material, matching feedback or post-anchor predictor enters the candidate-only bundle",
+    "jurisdiction-only evidence is treated as sufficient for a decisive candidate label",
+    "production or operational guard changes"
+  ],
+  "next_gate": "INDEPENDENT_CANDIDATE_ONLY_TERRITORIAL_ADJUDICATION_V0_2"
+}

@@ -1,0 +1,74 @@
+name: IRFEN - Chosica 2015 pre-unblind readiness
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_preunblind_readiness_contract_v0_1.json
+      - config/chosica_2015_multibasin_validation_set_v0_1.json
+      - config/chosica_2015_outlet_freeze_registry_v0_1.json
+      - config/chosica_2015_morphometry_phase1_freeze_record_v0_1.json
+      - config/chosica_2015_preunblind_imerg_freeze_record_v0_1.json
+      - config/chosica_2015_negative_control_candidate_pool_freeze_record_v0_1.json
+      - config/chosica_2015_negative_control_matching_freeze_record_v0_1.json
+      - config/chosica_2015_negative_control_shortlist_geometry_freeze_record_v0_1.json
+      - config/chosica_2015_negative_control_preunblind_imerg_freeze_record_v0_1.json
+      - config/chosica_2015_blinding_recovery_handoff_v0_1.json
+      - config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+      - config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json
+      - config/chosica_2015_candidate_only_territorial_unblind_contract_v0_1.json
+      - config/chosica_2015_candidate_only_territorial_adjudication_ingest_contract_v0_1.json
+      - config/chosica_2015_target_unblind_readiness_contract_v0_1.json
+      - site/data/validation/chosica_2015_cleanroom_candidate_review_packet_v0_1.json
+      - scripts/validate_chosica_2015_preunblind_readiness.py
+      - .github/workflows/chosica-2015-preunblind-readiness.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-readiness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Validate pre-unblind core freezes and clean-room recovery without outcome reads
+        run: |
+          mkdir -p artifacts
+          python scripts/validate_chosica_2015_preunblind_readiness.py \
+            --contract config/chosica_2015_preunblind_readiness_contract_v0_1.json \
+            --output artifacts/chosica_2015_preunblind_readiness.json
+      - name: Enforce fail-closed recovered state
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/chosica_2015_preunblind_readiness.json',encoding='utf-8'))
+          assert d['status']=='PASS_PREUNBLIND_CORE_FREEZES_CLEANROOM_RECOVERED_PENDING_CANDIDATE_ONLY_TERRITORIAL_ADJUDICATION'
+          assert d['next_gate']=='INDEPENDENT_CANDIDATE_ONLY_TERRITORIAL_ADJUDICATION'
+          assert d['candidate_only_territorial_review_allowed'] is True
+          assert d['sealed_target_outcome_unblind_allowed'] is False
+          assert d['outcome_evidence_read'] is False
+          assert d['candidate_outcome_evidence_read'] is False
+          assert d['a6680_outcome_narrative_read'] is False
+          assert d['a6680_numeric_reference_read'] is False
+          assert d['post_anchor_predictor_read'] is False
+          assert d['sealed_target_unblind_performed'] is False
+          assert d['checks']['contaminated_adjudication_tombstoned'] is True
+          assert d['checks']['cleanroom_matching_frozen'] is True
+          assert d['checks']['cleanroom_selected_candidate_count']==7
+          assert d['checks']['cleanroom_matches_preserved_candidate_geometry_set'] is True
+          assert d['checks']['candidate_only_review_packet_frozen'] is True
+          assert d['checks']['candidate_only_adjudication_ingest_contract_frozen'] is True
+          assert d['checks']['target_unblind_readiness_contract_frozen'] is True
+          assert d['checks']['negative_control_imerg_frozen'] is True
+          assert d['checks']['negative_control_imerg_count']==7
+          assert d['checks']['negative_control_imerg_coverage_fraction']==1.0
+          assert d['guards']=={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-preunblind-readiness
+          path: artifacts/chosica_2015_preunblind_readiness.json
+          if-no-files-found: error

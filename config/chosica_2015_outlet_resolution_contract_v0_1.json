@@ -1,0 +1,181 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PREUNBLIND_METHOD_OUTLETS_PENDING",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "purpose": "Resolve hydrologic outlet identity reproducibly without consulting the 2015-03-23 territorial activation outcome or using external morphometry as a fitting target.",
+  "sealed_during_resolution": [
+    "territorial activation/non-activation labels for 2015-03-23",
+    "post-event damage or severity descriptions",
+    "A6680 numeric basin area, length, relief or slope values",
+    "post-event institutional layers that encode the observed 2015 response",
+    "post-anchor precipitation and remote-sensing response"
+  ],
+  "allowed_evidence_classes": [
+    "pre-event or event-independent authoritative channel/confluence geometry",
+    "DEM drainage topology computed under the frozen morphometry DEM/CRS contract",
+    "pre-event base cartography used only for channel identity",
+    "authoritative static channel endpoints whose publication does not encode the 2015 activation result"
+  ],
+  "forbidden_selection_signals": [
+    "observed 2015 activation status",
+    "observed 2015 impact or severity",
+    "rainfall peak magnitude or timing",
+    "agreement with A6680 numeric morphometry",
+    "published basin area as a selection target",
+    "published channel length as a selection target",
+    "post-unblind replacement of a failed outlet"
+  ],
+  "source_screening": {
+    "rule": "A source can be authoritative yet still be inadmissible pre-unblind if its inclusion, point inventory or geometry was conditioned on 2015 activation/vulnerability evidence.",
+    "quarantined_until_permitted_unblind": [
+      {
+        "source_id": "ANA-HDL-20.500.12543/198",
+        "file_locator": "ANA0000014.pdf",
+        "title": "Identificación de poblaciones vulnerables por activación de quebradas 2015-2016",
+        "institution": "Autoridad Nacional del Agua",
+        "publication_year": 2016,
+        "reason": "The source inventory is explicitly conditioned on activation/vulnerability in 2015-2016. Its published coordinates, including named Chosica/Santa Eulalia quebradas, are therefore not admissible for pre-unblind outlet selection even if spatially useful.",
+        "coordinates_may_be_used_preunblind": false
+      },
+      {
+        "source_id": "CENEPRED-EVAR-CHOSICA-2015-POSTEVENT",
+        "title": "Evaluación de riesgos por flujo de detritos - Chosica",
+        "institution": "CENEPRED / Municipalidad Distrital de Lurigancho Chosica",
+        "reason": "Post-event risk and vulnerability mapping can encode the observed 2015 territorial response and remains comparison-only until the permitted unblind.",
+        "coordinates_may_be_used_preunblind": false
+      }
+    ],
+    "pre2015_identity_locators_not_yet_outlet_evidence": [
+      {
+        "source_id": "PREDES-PEDREGAL-2000",
+        "title": "Estudio de riesgo y propuesta de prevención de la quebrada Pedregal",
+        "publication_year": 2000,
+        "role": "PRE2015_BASE_CARTOGRAPHY_LOCATOR_ONLY",
+        "outlet_coordinate_accepted": false,
+        "notes": "May be inspected for channel/confluence identity without using its morphometric values as fitting targets."
+      },
+      {
+        "source_id": "PREDES-CHOSICA-EMERGENCY-2009",
+        "title": "Evaluación de emergencia en Chosica",
+        "publication_year": 2009,
+        "role": "PRE2015_BASE_CARTOGRAPHY_LOCATOR_ONLY",
+        "outlet_coordinate_accepted": false,
+        "notes": "Contains pre-2015 satellite cartography labeling Quirio and Pedregal; no outlet is frozen from the locator alone."
+      },
+      {
+        "source_id": "IGP-CHOSICA-2012-FIG27",
+        "title": "Zonificación Sísmica-Geotécnica del Área Urbana de Chosica",
+        "publication_year": 2012,
+        "role": "PRE2015_HYDROLOGIC_IDENTITY_CARTOGRAPHY",
+        "outlet_coordinate_accepted": false,
+        "notes": "Figure 27 separately labels Qda. Corrales and Qda. Carosio while Rayos de Sol is a territorial label adjacent to/within the Corrales drainage. Used only to prevent a false standalone Rayos basin identity."
+      },
+      {
+        "source_id": "UNMSM-IIGEO-CAROSSIO-2014",
+        "title": "Flujos de detritos y dispersores de energía en la torrentera Juan Carossio Chosica - Lima",
+        "publication_year": 2014,
+        "role": "PRE2015_HYDROLOGIC_IDENTITY_LOCATOR_ONLY",
+        "outlet_coordinate_accepted": false,
+        "notes": "Pre-event source identifies Juan Carossio as an independent drainage delivering to the Rimac; no exact outlet cell is accepted from the locator alone."
+      }
+    ]
+  },
+  "general_freeze_gate": {
+    "dem": "Copernicus DEM GLO-30 Public",
+    "analysis_crs": "EPSG:32718",
+    "flow_direction": "D8",
+    "candidate_generation": "Generate candidate outlet cells only from independently located channel/confluence evidence and the local D8 drainage trace; do not search the basin for a cell that optimizes area, length, rainfall, or outcome agreement.",
+    "identity_requirement": "The selected cell must belong to the named tributary/drainage unit rather than the Rimac/Santa Eulalia mainstem or a neighboring tributary.",
+    "reproducibility_requirement": "Record source identifiers, source coordinates, DEM identity, code SHA, candidate cells, selected cell, distances and D8 trace diagnostics.",
+    "sensitivity_requirement": "If the source location spans more than one 30 m cell or is represented by an endpoint rather than an exact outlet, all admissible local source-cell alternatives must converge to the same downstream named-channel cell before FROZEN is permitted.",
+    "contradiction_rule": "Any independent static geometry contradiction keeps outlet_status=PENDING_REVIEW; numerical repeatability alone is insufficient.",
+    "fail_closed": true
+  },
+  "targets": [
+    {
+      "id": "quirio",
+      "outlet_status": "PENDING_SOURCE_AND_D8_IDENTITY",
+      "accepted_outlet": null,
+      "notes": "Existing local DEM candidate geometry remains REVIEW_ONLY and cannot be promoted by this contract."
+    },
+    {
+      "id": "pedregal_san_antonio",
+      "outlet_status": "PENDING_SOURCE_AND_D8_IDENTITY",
+      "accepted_outlet": null,
+      "notes": "Existing local DEM candidate geometry remains REVIEW_ONLY and cannot be promoted by this contract. PREDES 2000 is registered only as a pre-2015 cartographic locator pending exact outlet evidence."
+    },
+    {
+      "id": "la_libertad",
+      "outlet_status": "PENDING_SOURCE_AND_D8_IDENTITY",
+      "accepted_outlet": null
+    },
+    {
+      "id": "carossio",
+      "outlet_status": "PENDING_SOURCE_AND_D8_IDENTITY",
+      "accepted_outlet": null,
+      "hydrologic_identity": "Carossio/Carosio drainage to Rimac",
+      "identity_support": "UNMSM-IIGEO-CAROSSIO-2014"
+    },
+    {
+      "id": "rayos_de_sol",
+      "outlet_status": "PENDING_CORRALES_OUTLET_SOURCE_AND_D8_IDENTITY",
+      "accepted_outlet": null,
+      "hydrologic_identity": {
+        "drainage_name": "Corrales",
+        "territorial_sector_name": "Rayos de Sol",
+        "status": "PRE2015_IDENTITY_FROZEN_CORRALES_DRAINAGE_OUTLET_PENDING",
+        "source_id": "IGP-CHOSICA-2012-FIG27",
+        "selection_outcome_used": false,
+        "standalone_rayos_basin_forbidden_without_independent_contradictory_evidence": true
+      }
+    },
+    {
+      "id": "cashahuacra",
+      "outlet_status": "PENDING_TWO_POINT_D8_IDENTITY",
+      "accepted_outlet": null,
+      "prior_candidate_disposition": {
+        "source_branch": "agent/independent-basin-validation-map",
+        "audit_file": "site/data/validation/cashahuacra_geometry_identity_audit.json",
+        "audit_blob_sha": "d3b8d75c77002c5faca04819a10cd91833e9d8b7",
+        "candidate_geometry_sha256": "410938abf108588335bcb2995757b2c14d712d0c8c932f14705d68d11e736fff",
+        "disposition": "REJECT_AS_CASHAHUACRA_BASIN_WRONG_CHANNEL_IDENTITY",
+        "reuse_for_features": false
+      },
+      "independent_static_anchor": {
+        "source_id": "ANA-RD-1634-2015-AAA-CF",
+        "source_role": "STATIC_CHANNEL_GEOMETRY_ONLY",
+        "activation_outcome_used": false,
+        "downstream_progressive": "0+000",
+        "downstream_wgs84": [-76.66337328710895, -11.915410922094027],
+        "upstream_progressive": "2+180",
+        "upstream_wgs84": [-76.6762331062582, -11.901774876923458]
+      },
+      "predeclared_resolution_method": {
+        "name": "ANA_TWO_POINT_UPSTREAM_ANCHORED_D8_CHANNEL_SNAP",
+        "step_1": "Locate the DEM cell containing the ANA 2+180 upstream anchor and enumerate any immediately adjacent DEM cells required solely by coordinate-to-grid ambiguity.",
+        "step_2": "Trace D8 downstream from each admissible upstream source cell without using basin area, channel length, rainfall or outcome information.",
+        "step_3": "For each trace, identify the traced Cashahuacra-channel cell nearest the ANA 0+000 downstream anchor.",
+        "step_4": "Require all admissible upstream source-cell traces to converge to the same selected downstream cell; otherwise remain PENDING_REVIEW.",
+        "step_5": "After selection, compare trace orientation/location against the ANA static segment only as an identity contradiction check, never as an optimization objective.",
+        "step_6": "Only after identity PASS may the outlet and resulting basin geometry be marked FROZEN and passed to morphometry/IMERG jobs.",
+        "target_basin_area_used_for_selection": false,
+        "published_length_used_for_selection": false,
+        "territorial_activation_evidence_used": false
+      }
+    }
+  ],
+  "downstream_gate": {
+    "all_six_required_before_batch_morphometry": true,
+    "all_six_required_before_basin_weighted_imerg": true,
+    "negative_control_pool_may_not_use_unfrozen_target_geometry_for_matching": true,
+    "permitted_terminal_states_before_unblind": ["FROZEN", "PENDING_REVIEW", "PENDING_SOURCE_AND_D8_IDENTITY", "PENDING_CORRALES_OUTLET_SOURCE_AND_D8_IDENTITY", "PENDING_TWO_POINT_D8_IDENTITY"],
+    "unblind_forbidden_until_all_six_frozen": true
+  }
+}
