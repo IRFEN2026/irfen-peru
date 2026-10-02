@@ -54,5 +54,8 @@ def test_probes_and_sources():
 def test_base_inventory_dependency_is_explicit():
     c = load()
     d = c['base_inventory_dependency']
-    assert d['pull_request'] == 308
-    assert d['merge_order'] == 'MERGE_BASE_INVENTORY_BEFORE_THIS_OVERLAY'
+    assert 'pull_request' not in d
+    assert d['dependency_type'] == 'INTERNAL_PACKAGE_FILE'
+    assert d['merge_order'] == 'ATOMIC_SAME_PACKAGE_NO_EXTERNAL_PULL_REQUEST'
+    base = json.loads(Path(d['path']).read_text(encoding='utf-8'))
+    assert d['package_schema_version'] == base['schema_version']
