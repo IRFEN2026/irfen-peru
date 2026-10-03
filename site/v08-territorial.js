@@ -404,7 +404,8 @@
   async function renderMap(){
     const p=state.plan; const docs=new Map(); const layers=new Map();const features=new Map();const errors=[];
     if(typeof L!=='undefined'&&!state.map){state.map=L.map('ti-map').setView([-9.3,-76.5],5);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; OpenStreetMap contributors'}).addTo(state.map);}
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; OpenStreetMap contributors'}).addTo(state.map);
+      if(window.IRFENWeatherLayers && typeof window.IRFENWeatherLayers.attach==='function') window.IRFENWeatherLayers.attach(state.map,'Mapa e inventario'); else window.dispatchEvent(new CustomEvent('irfen:map-ready',{detail:{map:state.map,label:'Mapa e inventario'}}));}
     await Promise.all(p.requests.map(async request=>{
       try{
         if(typeof L==='undefined')throw new Error('Biblioteca cartográfica no disponible');
