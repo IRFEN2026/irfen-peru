@@ -390,7 +390,9 @@ class ImergPublishHandoffTests(unittest.TestCase):
         workflow = (ROOT / ".github/workflows/pr-validation.yml").read_text(encoding="utf-8")
         self.assertIn("pull_request:", workflow)
         self.assertIn("Hidratar evidencia transitoria publicada", workflow)
-        self.assertIn("python -m unittest discover -s tests -v", workflow)
+        self.assertIn("pip install -r requirements-ci-test.txt", workflow)
+        self.assertIn("python -m pytest tests/ -v", workflow)
+        self.assertIn("python scripts/verify_phase2_test_collection.py", workflow)
         self.assertIn("python scripts/run_v08_regression_tests.py", workflow)
         self.assertNotIn("actions/deploy-pages", workflow)
 

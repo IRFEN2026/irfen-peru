@@ -15,7 +15,11 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25
+    env:
+      # Schema validation is mandatory in this gate: a missing jsonschema is an
+      # error in the Phase-2 validators and schema tests, never a silent skip.
+      IRFEN_REQUIRE_JSONSCHEMA: "1"
     steps:
       - name: Descargar pull request
         uses: actions/checkout@v6
@@ -27,7 +31,50 @@ jobs:
           cache: "pip"
 
       - name: Instalar dependencias
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-ci-test.txt
+
+      - name: Exigir jsonschema fijado (validación de esquema obligatoria)
+        run: |
+          python - <<'PY'
+          import importlib.metadata as md
+          import re
+          from pathlib import Path
+
+          pins = re.findall(r"^jsonschema==(\S+)$", Path("requirements-ci-test.txt").read_text(encoding="utf-8"), re.M)
+          if len(pins) != 1:
+              raise SystemExit("requirements-ci-test.txt must contain exactly one jsonschema==VERSION pin")
+          installed = md.version("jsonschema")
+          if installed != pins[0]:
+              raise SystemExit(f"jsonschema version mismatch: installed={installed}, pinned={pins[0]}")
+          import jsonschema  # noqa: F401
+          print(f"JSONSCHEMA_PINNED_AND_INSTALLED {installed}")
+          PY
+
+      - name: Exigir pypdf fijado (tests de descubrimiento PDF sin omisión)
+        run: |
+          python - <<'PY'
+          import importlib.metadata as md
+          import re
+          from pathlib import Path
+
+          pins = re.findall(r"^pypdf==(\S+)$", Path("requirements-ci-test.txt").read_text(encoding="utf-8"), re.M)
+          if len(pins) != 1:
+              raise SystemExit("requirements-ci-test.txt must contain exactly one pypdf==VERSION pin")
+          installed = md.version("pypdf")
+          if installed != pins[0]:
+              raise SystemExit(f"pypdf version mismatch: installed={installed}, pinned={pins[0]}")
+          from pypdf import PdfReader  # noqa: F401
+          from pypdf.errors import PdfReadError  # noqa: F401
+          print(f"PYPDF_PINNED_AND_INSTALLED {installed}")
+          PY
+
+      - name: Validar esquemas Phase 2 (obligatorio, sin omisión silenciosa)
+        run: |
+          python scripts/validate_phase2_spatial_observation_contracts.py
+          python scripts/validate_phase2_climate_evidence.py
+          python scripts/validate_phase2_climate_matrix.py
 
       - name: Demostrar rechazo atómico de latest.json DEMO
         shell: bash
@@ -122,10 +169,34 @@ jobs:
           python scripts/validate_scientific_assets.py
           python scripts/validate_pedregal_clean_room.py
 
+      - name: Verificar colección pytest contra manifest
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin "${PR_BASE_SHA}"
+          if git show "${PR_BASE_SHA}:config/phase2_test_collection_manifest.json" \
+              > /tmp/base_phase2_test_collection_manifest.json 2>/dev/null; then
+            python scripts/verify_phase2_test_collection.py \
+              --base-manifest /tmp/base_phase2_test_collection_manifest.json
+          else
+            echo "Base sin manifest previo; se valida HEAD contra la colección real."
+            python scripts/verify_phase2_test_collection.py
+          fi
+
       - name: Ejecutar pruebas unitarias v0.8
-        run: python -m unittest discover -s tests -v
+        # pytest ejecuta tanto unittest.TestCase como funciones test_* de
+        # estilo pytest; `unittest discover` omitía estas últimas en silencio.
+        run: python -m pytest tests/ -v -rfE --junitxml="${RUNNER_TEMP}/pytest-junit.xml"
+
+      - name: Publicar resultado exacto de pytest (diagnóstico, no cambia el veredicto)
+        if: ${{ !cancelled() }}
+        run: python scripts/report_pytest_junit_annotations.py "${RUNNER_TEMP}/pytest-junit.xml"
 
       - name: Ejecutar regresión y scorecard v0.8
+        # Se ejecuta aunque falle pytest (diagnóstico); el job sigue fallando.
+        if: ${{ !cancelled() }}
         shell: bash
         run: |
           set -euo pipefail
