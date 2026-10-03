@@ -43,10 +43,10 @@
           '<label class="iw-rain-label"><input type="checkbox" data-iw="rain"> NASA · lluvia IMERG NRT <span class="iw-active-pill" data-iw="rain-pill">APAGADA</span></label>'+
           '<label><input type="checkbox" data-iw="clouds"> NASA · imagen satelital visible</label>'+
           '<label class="iw-row">Fecha <select data-iw="day">'+
-            '<option value="-1" selected>Última disponible · ayer UTC</option><option value="0">Hoy UTC (si está disponible)</option><option value="-2">Hace 2 días</option>'+
+            '<option value="-1" selected>Ayer UTC (predeterminado)</option><option value="0">Hoy UTC (si está disponible)</option><option value="-2">Hace 2 días</option>'+
           '</select></label>'+
           '<label class="iw-row">Opacidad <input data-iw="opacity" type="range" min="20" max="90" value="62"></label>'+
-          '<div class="iw-status" data-iw="status"><b>Conexión IMERG:</b> inactiva. Por defecto se usa ayer UTC para reducir falsos vacíos por latencia NRT.</div><div class="iw-rain-legend" data-iw="rain-legend" hidden><div><b>Precipitación IMERG</b> · intensidad relativa</div><div class="iw-gradient"></div><div class="iw-scale"><span>menor</span><span>mayor</span></div><div class="iw-empty">Sin color = sin precipitación representada en el mosaico visible.</div></div>'+
+          '<div class="iw-status" data-iw="status"><b>Conexión IMERG:</b> inactiva. Por defecto se usa ayer UTC para reducir falsos vacíos por latencia NRT.</div><div class="iw-rain-legend" data-iw="rain-legend" hidden><div><b>Precipitación IMERG</b> · contexto visual</div><div class="iw-empty">Los colores son los del mosaico publicado por NASA GIBS. Aquí no se muestra una escala cuantitativa. Sin color = sin precipitación representada en el mosaico visible.</div></div>'+
           '<div class="iw-senamhi"><b>SENAMHI</b> · conector WMS preparado; se habilitará cuando quede fijado un endpoint/capa institucional estable.</div>'+
           '<div class="iw-note">'+SOURCE_NOTE+'</div>';
 
@@ -119,7 +119,7 @@
       '.iw-note,.iw-senamhi{margin-top:8px;padding-top:7px;border-top:1px solid #e2e9ee;color:#5c6f7d;font-size:10px}'+
       '.iw-status{margin-top:8px;padding:7px;background:#eef6fb;border-radius:6px;color:#36586f;font-size:10px}'+
       '.iw-rain-label{display:flex!important;align-items:center;gap:6px}.iw-active-pill{margin-left:auto;padding:2px 6px;border-radius:999px;background:#eef1f3;color:#667781;font-size:9px;font-weight:800}.iw-active-pill.on{background:#dff3e5;color:#1d6539}'+
-      '.iw-rain-legend{margin-top:8px;padding:8px;background:#f7fafc;border:1px solid #dfe8ee;border-radius:7px;color:#42596a;font-size:10px}.iw-gradient{height:8px;border-radius:999px;margin:5px 0;background:linear-gradient(90deg,#2f8f4e,#d7df39,#f3a11a,#d84343)}.iw-scale{display:flex;justify-content:space-between}.iw-empty{margin-top:5px;color:#687b8c}'+
+      '.iw-rain-legend{margin-top:8px;padding:8px;background:#f7fafc;border:1px solid #dfe8ee;border-radius:7px;color:#42596a;font-size:10px}.iw-empty{margin-top:5px;color:#687b8c}'+
       '.iw-senamhi{background:#f5f8fa;padding:7px;border-radius:6px}'+
       '@media(max-width:700px){.irfen-weather-control{width:220px}}';
     document.head.appendChild(s);
