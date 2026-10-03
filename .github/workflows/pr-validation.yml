@@ -52,6 +52,24 @@ jobs:
           print(f"JSONSCHEMA_PINNED_AND_INSTALLED {installed}")
           PY
 
+      - name: Exigir pypdf fijado (tests de descubrimiento PDF sin omisión)
+        run: |
+          python - <<'PY'
+          import importlib.metadata as md
+          import re
+          from pathlib import Path
+
+          pins = re.findall(r"^pypdf==(\S+)$", Path("requirements-ci-test.txt").read_text(encoding="utf-8"), re.M)
+          if len(pins) != 1:
+              raise SystemExit("requirements-ci-test.txt must contain exactly one pypdf==VERSION pin")
+          installed = md.version("pypdf")
+          if installed != pins[0]:
+              raise SystemExit(f"pypdf version mismatch: installed={installed}, pinned={pins[0]}")
+          from pypdf import PdfReader  # noqa: F401
+          from pypdf.errors import PdfReadError  # noqa: F401
+          print(f"PYPDF_PINNED_AND_INSTALLED {installed}")
+          PY
+
       - name: Validar esquemas Phase 2 (obligatorio, sin omisión silenciosa)
         run: |
           python scripts/validate_phase2_spatial_observation_contracts.py
