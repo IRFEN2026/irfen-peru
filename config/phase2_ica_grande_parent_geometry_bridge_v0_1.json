@@ -1,0 +1,65 @@
+{
+  "schema_version": "phase2-ica-grande-parent-geometry-bridge-v0.1",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "purpose": "Bind future discovery parent ica_rio_grande_palpa_nasca to the already frozen official ANA Cuenca Grande polygon without conflating local Río Grande references or promoting local ravine geometry.",
+  "base_discovery_dependency": {
+    "pull_request": 308,
+    "future_discovery_id": "ica_rio_grande_palpa_nasca",
+    "merge_order": "BASE_DISCOVERY_INVENTORY_BEFORE_REGISTRY_BINDING"
+  },
+  "official_parent_identity": {
+    "discovery_id": "ica_rio_grande_palpa_nasca",
+    "name": "Cuenca Grande / Río Grande-Palpa-Nasca",
+    "official_unit_code": "1372",
+    "official_unit_name": "Cuenca Grande",
+    "official_area_km2": 10991.2703,
+    "entity_role": "OFFICIAL_PARENT_BASIN_CONTEXT_NON_ACTIVATABLE"
+  },
+  "reused_frozen_geometry": {
+    "existing_candidate_id": "ica_palpa_changuillo",
+    "geometry_path": "site/data/phase2/geometries/ica_palpa_changuillo_grande_basin_context.geojson",
+    "geometry_validation_path": "site/data/phase2/geometries/ica_palpa_changuillo_geometry_validation.json",
+    "normalized_geometry_sha256": "a5691982accf7f3ef1458a2fdb93c05f2f779af028f2d337e00d37da309e1fef",
+    "source_snapshot_path": "site/data/phase2/sources/palpa_changuillo_hydrologic_context/ana_cuenca_grande_1372.geojson",
+    "source_snapshot_sha256": "3ac91009d90eaf5f245fb0d481b7fb0777f1d8265b081bc23601f83bf6b3de70",
+    "geometry_status": "REPRODUCIBLE_OFFICIAL_ANA_PARENT_CONTEXT"
+  },
+  "homonym_and_scope_guards": {
+    "local_receiver_name_rio_grande_is_not_automatically_the_same_unit": true,
+    "parent_uh_match_required_for_local_assignment": true,
+    "territorial_reference_cannot_create_child_geometry": true,
+    "no_event_transfer_between_local_ravines": true
+  },
+  "map_binding_policy": {
+    "existing_candidate_layer_is_already_map_eligible": true,
+    "new_discovery_parent_registry_update_in_this_pr": false,
+    "future_parent_style": "CONTEXT_GREY_ONLY",
+    "default_visibility": false,
+    "risk_colours_forbidden": true,
+    "alert_semantics_forbidden": true,
+    "event_footprint_inference_forbidden": true
+  },
+  "scientific_guards": {
+    "parent_geometry_is_not_event_footprint": true,
+    "parent_geometry_is_not_local_ravine_geometry": true,
+    "child_activation_does_not_activate_parent": true,
+    "no_receiver_overflow_inference": true,
+    "no_threshold_inference": true,
+    "no_hydraulic_capacity_inference": true,
+    "no_negative_control_inference": true
+  },
+  "summary": {
+    "official_parent_geometry_reused": 1,
+    "new_geometry_assets_created": 0,
+    "local_children_promoted": 0,
+    "new_operational_zones": 0
+  }
+}
