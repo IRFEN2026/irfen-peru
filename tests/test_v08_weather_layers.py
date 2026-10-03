@@ -71,6 +71,28 @@ class WeatherOverlayRegressionTests(unittest.TestCase):
                 with self.subTest(script=script.name, token=token):
                     self.assertNotIn(token, text)
 
+    def test_presentation_claims_nothing_the_module_does_not_do(self):
+        import re
+
+        text = (self.ROOT / "site/v08-weather-layers.js").read_text(encoding="utf-8")
+        # The module never asks GIBS which date is the latest available, so the
+        # default option must not say so.
+        self.assertIn('<option value="-1" selected>Ayer UTC (predeterminado)</option>', text)
+        for token in ("Última disponible", "ltima disponible", "más reciente"):
+            self.assertNotIn(token, text)
+        # No hand-drawn colour ramp presented as an IMERG scale, and no invented
+        # units, categories or thresholds in the legend.
+        for token in ("linear-gradient", "iw-gradient", "iw-scale", "intensidad relativa"):
+            self.assertNotIn(token, text)
+        legend = re.search(r'data-iw="rain-legend" hidden>(.*?)</div></div>', text, re.S).group(1)
+        self.assertIn("Aquí no se muestra una escala cuantitativa", legend)
+        self.assertIn("NASA GIBS", legend)
+        for token in ("mm/h", "mm ", "umbral", "débil", "moderada", "fuerte", "extrema", "menor", "mayor"):
+            self.assertNotIn(token, legend)
+        # SENAMHI stays a disabled placeholder: announced, no endpoint, no layer.
+        self.assertIn("se habilitará cuando quede fijado un endpoint/capa institucional estable", text)
+        self.assertNotIn("senamhi.gob.pe", text.lower())
+
 
 if __name__=="__main__":
     unittest.main()
