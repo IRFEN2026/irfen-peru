@@ -9,12 +9,14 @@
   "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
   "decision_thresholds": null,
   "hydraulic_factors": null,
-  "purpose": "Bind the future south-coast discovery parent arequipa_acari to the already frozen official ANA Cuenca Acarí polygon without duplicating geometry or transferring event, outlet, capacity, threshold or activation state.",
+  "purpose": "Bind the south-coast discovery parent arequipa_acari, already registered in the repository inventory, to the already frozen official ANA Cuenca Acarí polygon without duplicating geometry, creating any hydrologic child, or transferring event, outlet, capacity, threshold or activation state.",
   "base_discovery_dependency": {
-    "pull_request": 308,
-    "future_config_path": "config/phase2_south_coast_ica_arequipa_discovery_v0_1.json",
-    "future_discovery_id": "arequipa_acari",
-    "merge_order": "BASE_DISCOVERY_INVENTORY_BEFORE_REGISTRY_BINDING"
+    "dependency_type": "INTERNAL_REPOSITORY_FILE",
+    "path": "config/phase2_south_coast_ica_arequipa_discovery_v0_1.json",
+    "base_schema_version": "phase2-south-coast-ica-arequipa-discovery-v0.1",
+    "discovery_id": "arequipa_acari",
+    "official_unit_code": "13718",
+    "merge_order": "BASE_DISCOVERY_INVENTORY_ALREADY_IN_REPOSITORY_NO_EXTERNAL_PULL_REQUEST"
   },
   "official_parent_identity": {
     "discovery_id": "arequipa_acari",
@@ -43,19 +45,35 @@
     "alert_semantics_forbidden": true,
     "event_footprint_inference_forbidden": true
   },
-  "local_children_remaining_fail_closed": [
-    {
-      "child_id": "arequipa_san_agustin",
-      "geometry_asset": null,
-      "outlet": null,
-      "map_publishable": false,
-      "event_state": "UNRESOLVED_LOCAL_COMPONENT"
-    }
-  ],
+  "existing_candidate_unresolved_component": {
+    "candidate_id": "arequipa_acari_san_agustin",
+    "component_id": "quebrada_san_agustin",
+    "component_name": "quebrada San Agustín",
+    "component_role": "UNRESOLVED_LOCAL_COMPONENT_OF_EXISTING_CANDIDATE_NOT_A_DISCOVERY_CHILD",
+    "candidate_contract_path": "site/data/validation/phase2_zone_contracts/arequipa_acari_san_agustin.json",
+    "identity_review_path": "site/data/validation/phase2_research_evidence/acari_san_agustin_identity_review_20260923.json",
+    "review_status": "TERRITORIAL_IDENTITY_BOUNDED_HYDROLOGIC_IDENTITY_UNRESOLVED",
+    "new_discovery_child_created": false,
+    "discovery_child_id": null,
+    "full_channel_geometry_supported": false,
+    "catchment_geometry_supported": false,
+    "outlet_supported": false,
+    "routing_to_rio_acari_supported": false,
+    "event_footprint_supported": false,
+    "historical_hydraulic_capacity_supported": false,
+    "map_geometry_materialized": false,
+    "geometry_asset": null,
+    "outlet": null,
+    "map_publishable": false,
+    "do_not_infer": "San Agustín is an unresolved local component of the existing research candidate, not a resolved hydrologic child of Cuenca Acarí in the discovery inventory. The protection-reach endpoints reported in the Huanuhuanu PPRRD are not a channel line, catchment, outlet, event footprint or hydraulic capacity, and no routing to Río Acarí is asserted."
+  },
   "scientific_guards": {
     "parent_geometry_is_not_event_footprint": true,
     "parent_geometry_is_not_local_ravine_geometry": true,
     "child_activation_does_not_activate_parent": true,
+    "unresolved_component_is_not_hydrologic_child": true,
+    "protection_reach_endpoints_are_not_channel_geometry": true,
+    "no_routing_to_rio_acari_inference": true,
     "critical_point_is_not_event": true,
     "no_receiver_overflow_inference": true,
     "no_threshold_inference": true,
@@ -66,6 +84,8 @@
     "official_parent_geometry_reused": 1,
     "new_geometry_assets_created": 0,
     "local_children_promoted": 0,
+    "new_discovery_children_created": 0,
+    "unresolved_components_resolved": 0,
     "new_operational_zones": 0
   }
 }
