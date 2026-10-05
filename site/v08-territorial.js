@@ -39,6 +39,25 @@
     REGULATORY_FAJA_MARGINAL:'faja', ENGINEERED_OR_CRITICAL_REACH_CONTEXT:'works', DOCUMENT_CONTEXT:'document'};
   const FORBIDDEN_TRUE = ['loaded_into_operational_calculation','carries_alert_values','carries_risk_classification'];
   const INVENTORY_KINDS = new Set(['REGISTERED_LOCAL_UNIT','COLLECTOR','NODE','REPOSITORY_GEOMETRY_WITHHELD']);
+  // Display-only shortcuts to exact, already map-eligible official parent-basin
+  // geometries. They never create geometry or change scientific state.
+  const RECENT_ADVANCES = Object.freeze({
+    ica_pisco_san_andres: Object.freeze({
+      title:'Pisco · Cuenca oficial ANA · UH 13752',
+      path:'data/phase2/geometries/ica_pisco_san_andres_pisco_basin_context.geojson',
+      note:'Cuenca Pisco disponible como contexto oficial. Quitasol y Paracas siguen sin geometría ni outlet resueltos.'
+    }),
+    arequipa_acari_san_agustin: Object.freeze({
+      title:'Acarí · Cuenca oficial ANA · UH 13718',
+      path:'data/phase2/geometries/arequipa_acari_san_agustin_acari_basin_context.geojson',
+      note:'Cuenca Acarí disponible como contexto oficial. San Agustín sigue como componente local con identidad hidrológica no resuelta y sin routing al Río Acarí.'
+    }),
+    ica_palpa_changuillo: Object.freeze({
+      title:'Grande · Cuenca oficial ANA · UH 1372',
+      path:'data/phase2/geometries/ica_palpa_changuillo_grande_basin_context.geojson',
+      note:'Cuenca Grande disponible como contexto oficial para Palpa-Changuillo. Yauca del Rosario, Curis y Macchanga permanecen fuera de este binding y sin padre hidrográfico asignado.'
+    })
+  });
   function semanticsOf(maps) {
     const s = maps && maps.map_semantics;
     if (!s || typeof s.version !== 'string' || !s.version.startsWith('irfen-map-semantic-layers-') ||
@@ -205,6 +224,14 @@
       }
     }
     for (const r of requests) r.layerKeys = [r.key];
+    // Only surface a recent advance when the exact approved parent-basin file
+    // exists in the guarded semantic catalog as a CATCHMENT request.
+    for (const c of candidates) {
+      const meta=RECENT_ADVANCES[c.candidateId];
+      if (!meta) continue;
+      const request=requests.find(r=>r.candidateId===c.candidateId && r.category==='CATCHMENT' && r.path===meta.path);
+      if (request) c.recentAdvance={...meta,layerKey:request.key};
+    }
     const ss = sem ? sem.summary : {};
     return {candidates,discoveries,inventory,requests,mapsOK,spatialOK,semanticsOK:!!sem,
       categories: sem ? sem.categories : {}, nodeSemantics: sem ? sem.node_semantics : {},
@@ -217,6 +244,7 @@
         candidatesWithRelatedGeometry:candidates.filter(c => c.layerKeys.length).length,
         candidatesWithoutRelatedGeometry:candidates.filter(c => !c.layerKeys.length).length,
         inventoryWithheld:inventory.length,
+        recentIntegrated:candidates.filter(c=>c.recentAdvance).length,
         semantic:ss}};
   }
   function selectFeatures(documentJSON, request) {
@@ -303,6 +331,7 @@
       .ti-feature-list{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}.ti-feature-list button{font-size:11px;padding:5px 7px}
       .ti-error{color:#783f00;background:#fff1d8;padding:9px}.ti-legend{padding:10px;font-size:12px;line-height:1.5}.ti-legend span{margin-right:16px}
       .ti-popup{font-size:12px;line-height:1.45;max-width:290px}.ti-label{font-size:11px;font-weight:bold}
+      .ti-recent{background:#f7fafc;border:1px solid #d9e2ea;border-radius:10px;padding:11px 12px;display:grid;gap:8px}.ti-recent-actions{display:flex;gap:7px;flex-wrap:wrap}.ti-recent-actions button{font-size:12px;padding:7px 9px;background:#fff}.ti-recent-note{font-size:11px;color:#536776;line-height:1.45}
       @media(max-width:1000px){.ti-grid{grid-template-columns:1fr}#ti-list{max-height:300px}#ti-map{height:420px}}
     `;document.head.appendChild(s);
   }
@@ -317,7 +346,8 @@
       <br><b>RESEARCH / TEST MODE.</b> Cuencas, quebradas/cauces locales, ríos colectores y nodos se dibujan en capas separadas; las fajas marginales, obras/tramos críticos y ámbitos documentales se identifican aparte. No son mapas de riesgo ni alertas.</div>
       <div class="ti-tools"><button id="ti-refresh">Actualizar inventario</button><button id="ti-all">Encuadrar capas visibles</button><button id="ti-monitor">Ir al monitoreo NASA</button><span class="ti-note" id="ti-time"></span></div>
       <div id="ti-summary" class="ti-status" role="status">Cargando catálogos…</div>
-      <div class="ti-grid"><div class="ti-panel"><div class="ti-header"><h3>Buscar zona o capa</h3><div class="ti-tools"><input id="ti-search" type="search" aria-label="Buscar candidato o capa" placeholder="Malanche, Huaycoloro, Catacaos…"><select id="ti-filter" aria-label="Filtrar inventario"><option value="all">Todo el inventario</option><option value="candidate">Candidatos Phase-2</option><option value="discovery">Discovery norte-costera</option><option value="monitored">Subunidades de muestreo</option><option value="technical">Capas de los pilotos v0.8</option><option value="withheld">Retenidas: colectores, nodos y unidades sin geometría</option><option value="pending">Sin geometría representable</option></select></div><p class="ti-note">Seleccionar una ficha muestra sus fuentes y pendientes, aunque aún no tenga contorno.</p></div><div id="ti-list"></div></div>
+      <div class="ti-recent" id="ti-recent"><div><b>Avances recientes integrados</b> · geometrías oficiales ANA ya disponibles como contexto de investigación.</div><div class="ti-recent-actions"><button type="button" data-ti-recent="ica_pisco_san_andres">Pisco · UH 13752</button><button type="button" data-ti-recent="arequipa_acari_san_agustin">Acarí · UH 13718</button><button type="button" data-ti-recent="ica_palpa_changuillo">Grande · UH 1372</button></div><div class="ti-recent-note">Seleccionar una cuenca enfoca únicamente su geometría oficial integrada. No representa riesgo, inundación, activación ni alerta.</div></div>
+      <div class="ti-grid"><div class="ti-panel"><div class="ti-header"><h3>Buscar zona o capa</h3><div class="ti-tools"><input id="ti-search" type="search" aria-label="Buscar candidato o capa" placeholder="Malanche, Huaycoloro, Catacaos…"><select id="ti-filter" aria-label="Filtrar inventario"><option value="all">Todo el inventario</option><option value="recent">Avances recientes</option><option value="candidate">Candidatos Phase-2</option><option value="discovery">Discovery norte-costera</option><option value="monitored">Subunidades de muestreo</option><option value="technical">Capas de los pilotos v0.8</option><option value="withheld">Retenidas: colectores, nodos y unidades sin geometría</option><option value="pending">Sin geometría representable</option></select></div><p class="ti-note">Seleccionar una ficha muestra sus fuentes y pendientes, aunque aún no tenga contorno.</p></div><div id="ti-list"></div></div>
       <div class="ti-panel"><div class="ti-header"><h3>Geometrías documentadas</h3><div class="ti-tools" id="ti-layer-toggles"><label><input type="checkbox" data-ti-layer="monitored" checked> Muestreo NASA</label><label><input type="checkbox" data-ti-layer="catchment" checked> A · Cuencas / subcuencas</label><label><input type="checkbox" data-ti-layer="local_channel" checked> B · Quebradas / cauces locales</label><label><input type="checkbox" data-ti-layer="collector" checked> C · Ríos colectores</label><label><input type="checkbox" data-ti-layer="node" checked> D · Outlets / confluencias / nodos</label><label><input type="checkbox" data-ti-layer="faja" checked> Fajas marginales</label><label><input type="checkbox" data-ti-layer="works" checked> Obras / tramos críticos</label><label><input type="checkbox" data-ti-layer="document" checked> Ámbitos documentales</label></div></div><div id="ti-map"></div>
       <div class="ti-legend" id="ti-legend">Los colores identifican tipos de entidad, NO niveles de riesgo. No se crean marcadores para suplir geometrías faltantes.</div><div id="ti-map-status" class="ti-status"></div><div id="ti-detail" class="ti-detail">Selecciona una zona para ver sus características, fuentes y motivo de los pendientes.</div></div></div></div>`;
     first.before(section);
@@ -334,6 +364,7 @@
     document.getElementById('ti-all').onclick=fitVisible;
     document.getElementById('ti-monitor').onclick=()=>{const t=document.querySelector('.tab[data-tab="v08monitor"]');if(t)t.click();};
     document.getElementById('ti-list').addEventListener('click',e=>{const b=e.target.closest('[data-ti-record]');if(b)selectRecord(b.dataset.tiRecord,true);});
+    document.getElementById('ti-recent').addEventListener('click',e=>{const b=e.target.closest('[data-ti-recent]');if(b)focusRecentAdvance(b.dataset.tiRecent);});
     document.getElementById('ti-detail').addEventListener('click',e=>{const b=e.target.closest('[data-ti-feature]');if(b){const f=state.features.get(b.dataset.tiFeature);if(f&&state.map){state.map.fitBounds(f.layer.getBounds().pad(.12),{maxZoom:16});f.layer.openPopup();}}});
     const selectedSection = section;
     selectedSection.querySelectorAll('[data-ti-layer]').forEach(input=>input.addEventListener('change',applyVisibility));
@@ -341,18 +372,31 @@
   }
   function categoryOn(kind) {const el=document.querySelector('[data-ti-layer="'+kind+'"]');return !!el&&el.checked;}
   function recordLayers(record) {return record.layerKeys.map(k=>state.layers.get(k)).filter(Boolean);}
+  function focusRecentAdvance(candidateId) {
+    const r=state.records.find(x=>x.candidateId===candidateId && x.recentAdvance);
+    if(!r)return;
+    selectRecord(r.key,false);
+    const request=state.plan.requests.find(x=>x.key===r.recentAdvance.layerKey);
+    const layer=state.layers.get(r.recentAdvance.layerKey);
+    if(!request||!layer||!state.map)return;
+    const input=document.querySelector('[data-ti-layer="'+request.kind+'"]');if(input)input.checked=true;
+    applyVisibility();state.map.invalidateSize();
+    state.map.fitBounds(layer.getBounds().pad(.12),{maxZoom:10});
+    layer.eachLayer(x=>{if(typeof x.openPopup==='function')x.openPopup();});
+  }
   function renderList() {
     if (!state.plan) return;
     const q=state.query.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
     const rows=state.records.filter(r=>{
       if(state.mode==='pending' && (!['candidate','discovery'].includes(r.kind)||r.layerKeys.length))return false;
-      if(!['all','pending'].includes(state.mode)&&(r.listKind||r.kind)!==state.mode)return false;
+      if(state.mode==='recent' && !r.recentAdvance)return false;
+      if(!['all','pending','recent'].includes(state.mode)&&(r.listKind||r.kind)!==state.mode)return false;
       return !q||[r.title,r.territory,r.candidateId,...list(r.sources)].join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(q);
     });
     document.getElementById('ti-list').innerHTML=rows.map(r=>{
       const count=recordLayers(r).length;
       const status=r.kind==='withheld'?'Retenida: inventario sin dibujo':count ? (r.kind==='candidate'?'Capas relacionadas disponibles; no implica cuenca completa':r.kind==='discovery'?'Geometría discovery oficial/contextual disponible; no es operativa':'Geometría disponible') : r.layerKeys.length?'Error al cargar geometría':'Sin delimitación representable';
-      return '<button class="ti-row" data-ti-record="'+esc(r.key)+'" aria-current="'+String(state.selected===r.key)+'"><b>'+esc(r.title)+'</b><small>'+esc(r.territory||r.status||'')+'</small><small>'+esc(status)+'</small></button>';
+      return '<button class="ti-row" data-ti-record="'+esc(r.key)+'" aria-current="'+String(state.selected===r.key)+'"><b>'+esc(r.title)+'</b><small>'+esc(r.territory||r.status||'')+'</small>'+(r.recentAdvance?'<small><b>Avance integrado · cuenca oficial ANA</b></small>':'')+'<small>'+esc(status)+'</small></button>';
     }).join('')||'<p class="ti-detail">Sin coincidencias. El filtro no elimina registros del catálogo.</p>';
   }
   function selectRecord(key,focus) {
@@ -364,6 +408,7 @@
     const dl=(k,v)=>'<dt>'+esc(k)+'</dt><dd>'+esc(v??'No consta')+'</dd>';
     const assets=Object.entries(r.assets||{}).map(([k,v])=>k+': '+v).join(' · ');
     document.getElementById('ti-detail').innerHTML='<h3>'+esc(r.title)+'</h3><span class="ti-badge">'+esc(r.status||'TEST_ONLY')+'</span><p>'+esc(status)+'</p>'+
+      (r.recentAdvance?'<p class="ti-note"><b>'+esc(r.recentAdvance.title)+'</b><br>'+esc(r.recentAdvance.note)+'<br><b>Estado:</b> RESEARCH_ONLY / BLOCKED. No representa riesgo, inundación ni alerta.</p>':'')+
       (r.historicalGrouper?'<p><b>Agrupador histórico no activable.</b> Se visualizan sus unidades hijas por separado. No se dibuja una cuenca compuesta.</p>':'')+
       '<dl>'+dl('Territorio',r.territory)+dl('Estado / contrato',r.contractStatus||r.representation)+dl('Activation gate',r.gate||'No aplicable: capa informativa')+dl('Activos',assets||null)+dl('Fuentes',list(r.sources).join(' · ')||null)+dl('Confianza',r.confidence)+(r.nodeSemantics?dl('Semántica de nodo',r.nodeSemantics):'')+dl('Pendientes',list(r.blockers).join(' · ')||null)+'</dl>'+
       (r.reason?'<p class="ti-error">'+esc(r.reason)+'</p>':'')+(r.disclaimer?'<p class="ti-note">'+esc(r.disclaimer)+'</p>':'')+
@@ -470,6 +515,7 @@
       renderLegend(plan);
       const s=plan.summary;
       document.getElementById('ti-summary').innerHTML='<b>'+s.registeredCandidates+' candidatos Phase-2 definidos</b> · '+s.discoveryUnits+' unidades discovery norte-costera ('+s.discoveryWithGeometry+' con geometría representable) · '+s.monitoredSubunits+' subunidades con contrato de muestreo · '+s.technicalLayers+' capas técnicas de '+plan.pilotIds.length+' pilotos v0.8.<br>'+
+        '<b>'+s.recentIntegrated+' avances recientes</b> tienen una cuenca oficial ANA integrada y representable como contexto de investigación.<br>'+
         s.candidatesWithRelatedGeometry+' candidatos tienen geometrías relacionadas representables; <b>'+s.candidatesWithoutRelatedGeometry+' permanecen en el listado sin contorno representable</b>. Las subdivisiones no aumentan el total de candidatos.'+
         '<br>El catálogo no autoriza sustituir geometrías faltantes por puntos aproximados. Una geometría parcial tampoco equivale a cuenca completa.'+
         semanticSummary(s.semantic,plan.semanticsOK)+
