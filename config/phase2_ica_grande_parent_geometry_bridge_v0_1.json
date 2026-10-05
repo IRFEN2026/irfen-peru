@@ -9,11 +9,14 @@
   "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
   "decision_thresholds": null,
   "hydraulic_factors": null,
-  "purpose": "Bind future discovery parent ica_rio_grande_palpa_nasca to the already frozen official ANA Cuenca Grande polygon without conflating local Río Grande references or promoting local ravine geometry.",
+  "purpose": "Bind the discovery parent ica_rio_grande_palpa_nasca, already registered in the repository inventory, to the already frozen official ANA Cuenca Grande UH 1372 polygon of the existing research candidate ica_palpa_changuillo, as parent-basin research context only, without conflating local Río Grande references, binding any unresolved local system to this basin, or promoting local ravine geometry.",
   "base_discovery_dependency": {
-    "pull_request": 308,
-    "future_discovery_id": "ica_rio_grande_palpa_nasca",
-    "merge_order": "BASE_DISCOVERY_INVENTORY_BEFORE_REGISTRY_BINDING"
+    "dependency_type": "INTERNAL_REPOSITORY_FILE",
+    "path": "config/phase2_south_coast_ica_arequipa_discovery_v0_1.json",
+    "base_schema_version": "phase2-south-coast-ica-arequipa-discovery-v0.1",
+    "discovery_id": "ica_rio_grande_palpa_nasca",
+    "official_unit_code": "1372",
+    "merge_order": "BASE_DISCOVERY_INVENTORY_ALREADY_IN_REPOSITORY_NO_EXTERNAL_PULL_REQUEST"
   },
   "official_parent_identity": {
     "discovery_id": "ica_rio_grande_palpa_nasca",
@@ -30,13 +33,47 @@
     "normalized_geometry_sha256": "a5691982accf7f3ef1458a2fdb93c05f2f779af028f2d337e00d37da309e1fef",
     "source_snapshot_path": "site/data/phase2/sources/palpa_changuillo_hydrologic_context/ana_cuenca_grande_1372.geojson",
     "source_snapshot_sha256": "3ac91009d90eaf5f245fb0d481b7fb0777f1d8265b081bc23601f83bf6b3de70",
-    "geometry_status": "REPRODUCIBLE_OFFICIAL_ANA_PARENT_CONTEXT"
+    "geometry_status": "REPRODUCIBLE_OFFICIAL_ANA_PARENT_CONTEXT",
+    "geometry_reuse_policy": "REFERENCE_EXISTING_FROZEN_ASSET_DO_NOT_DUPLICATE"
   },
+  "parent_context_scope": {
+    "existing_candidate_id": "ica_palpa_changuillo",
+    "candidate_contract_path": "site/data/validation/phase2_zone_contracts/ica_palpa_changuillo.json",
+    "scope": "PARENT_BASIN_RESEARCH_CONTEXT_ONLY",
+    "resolves_local_river_reaches": false,
+    "resolves_local_ravines": false,
+    "resolves_event_footprints": false,
+    "resolves_cross_component_routing": false,
+    "local_systems_bound_by_this_bridge": []
+  },
+  "excluded_unresolved_systems": [
+    {
+      "discovery_id": "ica_rio_grande_local_ravines",
+      "territorial_reference": "Yauca del Rosario, Ica",
+      "child_ids": [
+        "ica_san_jose_de_curis",
+        "ica_san_isidro_de_macchanga"
+      ],
+      "event_ids": [
+        "ica_yauca_rosario_2024_03_16"
+      ],
+      "bound_by_this_bridge": false,
+      "parent_basin_id_asserted_by_this_bridge": null,
+      "required_inventory_parent_basin_id": null,
+      "required_inventory_parent_assignment_status": "UNRESOLVED_PARENT_HYDROGRAPHIC_ASSIGNMENT",
+      "discovery_id_is_legacy_label_not_basin_assertion": true,
+      "event_transferred_to_candidate": false,
+      "do_not_infer": "The Yauca del Rosario system and its ravines Quebrada San José de Curis and Quebrada San Isidro de Macchanga are not part of this bridge. Their earlier binding to Cuenca Grande UH 1372 was withdrawn because it rested only on the local receiver name 'Río Grande'. Reusing the Cuenca Grande polygon does not restore that binding, does not assign them to any official basin, and does not transfer their 2024 event to the candidate ica_palpa_changuillo."
+    }
+  ],
   "homonym_and_scope_guards": {
     "local_receiver_name_rio_grande_is_not_automatically_the_same_unit": true,
     "parent_uh_match_required_for_local_assignment": true,
     "territorial_reference_cannot_create_child_geometry": true,
-    "no_event_transfer_between_local_ravines": true
+    "no_event_transfer_between_local_ravines": true,
+    "legacy_discovery_id_containing_rio_grande_is_not_a_basin_assertion": true,
+    "withdrawn_parent_binding_is_not_restored_by_geometry_reuse": true,
+    "no_event_transfer_into_parent_context_candidate": true
   },
   "map_binding_policy": {
     "existing_candidate_layer_is_already_map_eligible": true,
@@ -60,6 +97,8 @@
     "official_parent_geometry_reused": 1,
     "new_geometry_assets_created": 0,
     "local_children_promoted": 0,
+    "unresolved_systems_bound_to_parent": 0,
+    "events_transferred": 0,
     "new_operational_zones": 0
   }
 }
