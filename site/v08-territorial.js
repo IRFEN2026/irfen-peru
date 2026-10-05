@@ -39,6 +39,37 @@
     REGULATORY_FAJA_MARGINAL:'faja', ENGINEERED_OR_CRITICAL_REACH_CONTEXT:'works', DOCUMENT_CONTEXT:'document'};
   const FORBIDDEN_TRUE = ['loaded_into_operational_calculation','carries_alert_values','carries_risk_classification'];
   const INVENTORY_KINDS = new Set(['REGISTERED_LOCAL_UNIT','COLLECTOR','NODE','REPOSITORY_GEOMETRY_WITHHELD']);
+  // "Avances recientes" es una agrupación de interfaz, NO una categoría científica.
+  // Sólo referencia candidatos ya presentes en el catálogo; no aporta rutas, geometrías ni estados.
+  const RECENT_ADVANCES = [
+    {candidateId:'ica_pisco_san_andres',
+      note:'Quitasol/Paracas siguen sin geometría local ni outlet; no se promueven como evento.'},
+    {candidateId:'arequipa_acari_san_agustin',
+      note:'San Agustín sigue como componente local con identidad hidrológica no resuelta; sin routing al Río Acarí.'},
+    {candidateId:'ica_palpa_changuillo',
+      note:'Palpa/Changuillo conserva tramos locales no resueltos; Yauca/Curis/Macchanga no se vinculan a UH 1372.'}
+  ];
+  const RECENT_CONTEXT = 'Cuenca oficial ANA · contexto de investigación';
+  const RECENT_DISCLAIMER = 'No representa riesgo, inundación ni alerta.';
+  const recentAdvanceOf = r => r && r.kind === 'candidate' ? RECENT_ADVANCES.find(a => a.candidateId === r.candidateId) || null : null;
+  // Devuelve las fichas recientes en orden fijo, usando los registros reales del inventario.
+  function recentRecords(records) {
+    return RECENT_ADVANCES.map(advance => ({advance,
+      record: list(records).find(r => r && r.kind === 'candidate' && r.candidateId === advance.candidateId)}))
+      .filter(x => x.record);
+  }
+  const fold = v => String(v ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  function filterRecords(records, mode, query) {
+    const q = fold(query);
+    return list(records).filter(r => {
+      if (mode === 'recent') { if (!recentAdvanceOf(r)) return false; }
+      else {
+        if (mode === 'pending' && (!['candidate','discovery'].includes(r.kind) || r.layerKeys.length)) return false;
+        if (!['all','pending'].includes(mode) && (r.listKind || r.kind) !== mode) return false;
+      }
+      return !q || fold([r.title,r.territory,r.candidateId,...list(r.sources)].join(' ')).includes(q);
+    });
+  }
   function semanticsOf(maps) {
     const s = maps && maps.map_semantics;
     if (!s || typeof s.version !== 'string' || !s.version.startsWith('irfen-map-semantic-layers-') ||
@@ -303,7 +334,11 @@
       .ti-feature-list{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}.ti-feature-list button{font-size:11px;padding:5px 7px}
       .ti-error{color:#783f00;background:#fff1d8;padding:9px}.ti-legend{padding:10px;font-size:12px;line-height:1.5}.ti-legend span{margin-right:16px}
       .ti-popup{font-size:12px;line-height:1.45;max-width:290px}.ti-label{font-size:11px;font-weight:bold}
-      @media(max-width:1000px){.ti-grid{grid-template-columns:1fr}#ti-list{max-height:300px}#ti-map{height:420px}}
+      .ti-recent{background:#f3f6f8;padding:10px;font-size:12px;line-height:1.5}.ti-recent h3{margin:0 0 8px;font-size:13px}
+      .ti-recent-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+      .ti-recent-card{display:block;width:100%;text-align:left;white-space:normal;cursor:pointer;background:white;color:inherit;border:1px solid var(--line,#d9e2ea);border-radius:8px;padding:10px}
+      .ti-recent-card:hover,.ti-recent-card[aria-current=true]{background:#edf6fc}.ti-recent-card b{display:block;font-size:13px}.ti-recent-card small{display:block;font-size:11px;color:#536776;line-height:1.4;margin-top:4px}
+      @media(max-width:1000px){.ti-grid{grid-template-columns:1fr}#ti-list{max-height:300px}#ti-map{height:420px}.ti-recent-grid{grid-template-columns:1fr}}
     `;document.head.appendChild(s);
   }
   function setup() {
@@ -315,9 +350,10 @@
     section.innerHTML=`<div class="ti-shell"><div class="ti-banner"><b>Inventario territorial completo · IRFEN v0.8</b><br>
       Aquí aparecen los candidatos definidos, las subunidades de muestreo y las capas de los pilotos. Mostrar una geometría no exige que esté habilitada para NASA, pero sí una fuente cartográfica admisible.
       <br><b>RESEARCH / TEST MODE.</b> Cuencas, quebradas/cauces locales, ríos colectores y nodos se dibujan en capas separadas; las fajas marginales, obras/tramos críticos y ámbitos documentales se identifican aparte. No son mapas de riesgo ni alertas.</div>
-      <div class="ti-tools"><button id="ti-refresh">Actualizar inventario</button><button id="ti-all">Encuadrar capas visibles</button><button id="ti-monitor">Ir al monitoreo NASA</button><span class="ti-note" id="ti-time"></span></div>
+      <div class="ti-tools"><button id="ti-refresh">Actualizar inventario</button><button id="ti-all">Encuadrar capas visibles</button><button id="ti-monitor">Ir al monitoreo NASA</button><button id="ti-recent-btn">Ver avances recientes</button><span class="ti-note" id="ti-time"></span></div>
       <div id="ti-summary" class="ti-status" role="status">Cargando catálogos…</div>
-      <div class="ti-grid"><div class="ti-panel"><div class="ti-header"><h3>Buscar zona o capa</h3><div class="ti-tools"><input id="ti-search" type="search" aria-label="Buscar candidato o capa" placeholder="Malanche, Huaycoloro, Catacaos…"><select id="ti-filter" aria-label="Filtrar inventario"><option value="all">Todo el inventario</option><option value="candidate">Candidatos Phase-2</option><option value="discovery">Discovery norte-costera</option><option value="monitored">Subunidades de muestreo</option><option value="technical">Capas de los pilotos v0.8</option><option value="withheld">Retenidas: colectores, nodos y unidades sin geometría</option><option value="pending">Sin geometría representable</option></select></div><p class="ti-note">Seleccionar una ficha muestra sus fuentes y pendientes, aunque aún no tenga contorno.</p></div><div id="ti-list"></div></div>
+      <div id="ti-recent" class="ti-recent" aria-label="Avances integrados recientemente"></div>
+      <div class="ti-grid"><div class="ti-panel"><div class="ti-header"><h3>Buscar zona o capa</h3><div class="ti-tools"><input id="ti-search" type="search" aria-label="Buscar candidato o capa" placeholder="Malanche, Huaycoloro, Catacaos…"><select id="ti-filter" aria-label="Filtrar inventario"><option value="all">Todo el inventario</option><option value="candidate">Candidatos Phase-2</option><option value="recent">Avances recientes</option><option value="discovery">Discovery norte-costera</option><option value="monitored">Subunidades de muestreo</option><option value="technical">Capas de los pilotos v0.8</option><option value="withheld">Retenidas: colectores, nodos y unidades sin geometría</option><option value="pending">Sin geometría representable</option></select></div><p class="ti-note">Seleccionar una ficha muestra sus fuentes y pendientes, aunque aún no tenga contorno.</p></div><div id="ti-list"></div></div>
       <div class="ti-panel"><div class="ti-header"><h3>Geometrías documentadas</h3><div class="ti-tools" id="ti-layer-toggles"><label><input type="checkbox" data-ti-layer="monitored" checked> Muestreo NASA</label><label><input type="checkbox" data-ti-layer="catchment" checked> A · Cuencas / subcuencas</label><label><input type="checkbox" data-ti-layer="local_channel" checked> B · Quebradas / cauces locales</label><label><input type="checkbox" data-ti-layer="collector" checked> C · Ríos colectores</label><label><input type="checkbox" data-ti-layer="node" checked> D · Outlets / confluencias / nodos</label><label><input type="checkbox" data-ti-layer="faja" checked> Fajas marginales</label><label><input type="checkbox" data-ti-layer="works" checked> Obras / tramos críticos</label><label><input type="checkbox" data-ti-layer="document" checked> Ámbitos documentales</label></div></div><div id="ti-map"></div>
       <div class="ti-legend" id="ti-legend">Los colores identifican tipos de entidad, NO niveles de riesgo. No se crean marcadores para suplir geometrías faltantes.</div><div id="ti-map-status" class="ti-status"></div><div id="ti-detail" class="ti-detail">Selecciona una zona para ver sus características, fuentes y motivo de los pendientes.</div></div></div></div>`;
     first.before(section);
@@ -334,6 +370,8 @@
     document.getElementById('ti-all').onclick=fitVisible;
     document.getElementById('ti-monitor').onclick=()=>{const t=document.querySelector('.tab[data-tab="v08monitor"]');if(t)t.click();};
     document.getElementById('ti-list').addEventListener('click',e=>{const b=e.target.closest('[data-ti-record]');if(b)selectRecord(b.dataset.tiRecord,true);});
+    document.getElementById('ti-recent').addEventListener('click',e=>{const b=e.target.closest('[data-ti-record]');if(b)selectRecord(b.dataset.tiRecord,true);});
+    document.getElementById('ti-recent-btn').onclick=showRecent;
     document.getElementById('ti-detail').addEventListener('click',e=>{const b=e.target.closest('[data-ti-feature]');if(b){const f=state.features.get(b.dataset.tiFeature);if(f&&state.map){state.map.fitBounds(f.layer.getBounds().pad(.12),{maxZoom:16});f.layer.openPopup();}}});
     const selectedSection = section;
     selectedSection.querySelectorAll('[data-ti-layer]').forEach(input=>input.addEventListener('change',applyVisibility));
@@ -343,27 +381,43 @@
   function recordLayers(record) {return record.layerKeys.map(k=>state.layers.get(k)).filter(Boolean);}
   function renderList() {
     if (!state.plan) return;
-    const q=state.query.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-    const rows=state.records.filter(r=>{
-      if(state.mode==='pending' && (!['candidate','discovery'].includes(r.kind)||r.layerKeys.length))return false;
-      if(!['all','pending'].includes(state.mode)&&(r.listKind||r.kind)!==state.mode)return false;
-      return !q||[r.title,r.territory,r.candidateId,...list(r.sources)].join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(q);
-    });
+    const rows=filterRecords(state.records,state.mode,state.query);
     document.getElementById('ti-list').innerHTML=rows.map(r=>{
       const count=recordLayers(r).length;
       const status=r.kind==='withheld'?'Retenida: inventario sin dibujo':count ? (r.kind==='candidate'?'Capas relacionadas disponibles; no implica cuenca completa':r.kind==='discovery'?'Geometría discovery oficial/contextual disponible; no es operativa':'Geometría disponible') : r.layerKeys.length?'Error al cargar geometría':'Sin delimitación representable';
       return '<button class="ti-row" data-ti-record="'+esc(r.key)+'" aria-current="'+String(state.selected===r.key)+'"><b>'+esc(r.title)+'</b><small>'+esc(r.territory||r.status||'')+'</small><small>'+esc(status)+'</small></button>';
     }).join('')||'<p class="ti-detail">Sin coincidencias. El filtro no elimina registros del catálogo.</p>';
   }
+  function renderRecent() {
+    const el=document.getElementById('ti-recent');if(!el)return;
+    const items=recentRecords(state.records);
+    // El título procede del catálogo real; la ficha sólo añade contexto y pendientes.
+    el.innerHTML='<h3>Avances integrados recientemente</h3>'+(items.length?'<div class="ti-recent-grid">'+items.map(({advance,record})=>
+      '<button class="ti-recent-card" data-ti-record="'+esc(record.key)+'" aria-current="'+String(state.selected===record.key)+'"><b>'+esc(record.title)+'</b>'+
+      '<small>'+esc(RECENT_CONTEXT)+'</small><small>'+esc(RECENT_DISCLAIMER)+'</small><small>'+esc(advance.note)+'</small></button>').join('')+'</div>'
+      :'<span class="ti-note">Catálogo sin estos candidatos; no se muestra ninguna ficha.</span>');
+  }
+  function showRecent() {
+    // Sólo cambia el filtro de la lista y la cámara. No altera datos ni visibilidad por defecto.
+    state.mode='recent';state.query='';
+    const filter=document.getElementById('ti-filter');if(filter)filter.value='recent';
+    const search=document.getElementById('ti-search');if(search)search.value='';
+    renderList();renderRecent();
+    const layers=recentRecords(state.records).flatMap(x=>recordLayers(x.record));
+    // Encuadre de capas ya cargadas y map_eligible. Bounds only control the camera; no composite polygon is built.
+    if(layers.length&&state.map){state.map.invalidateSize();state.map.fitBounds(L.featureGroup(layers).getBounds().pad(.1),{maxZoom:9});}
+  }
   function selectRecord(key,focus) {
     const r=state.records.find(r=>r.key===key);if(!r)return;
-    state.selected=key;renderList();
+    state.selected=key;renderList();renderRecent();
+    const advance=recentAdvanceOf(r);
     const layers=recordLayers(r);
     const featureEntries=[...state.features.entries()].filter(([,f])=>r.layerKeys.includes(f.requestKey));
     const status=layers.length?'Geometrías disponibles como información; no constituye validación operacional':r.layerKeys.length?'No se pudo cargar la geometría. Consulta el estado de las capas.':'Candidato definido, pero sin delimitación cartográfica representable. No se inventa un contorno ni una ubicación puntual.';
     const dl=(k,v)=>'<dt>'+esc(k)+'</dt><dd>'+esc(v??'No consta')+'</dd>';
     const assets=Object.entries(r.assets||{}).map(([k,v])=>k+': '+v).join(' · ');
-    document.getElementById('ti-detail').innerHTML='<h3>'+esc(r.title)+'</h3><span class="ti-badge">'+esc(r.status||'TEST_ONLY')+'</span><p>'+esc(status)+'</p>'+
+    document.getElementById('ti-detail').innerHTML='<h3>'+esc(r.title)+'</h3><span class="ti-badge">'+esc(r.status||'TEST_ONLY')+'</span>'+(advance?'<span class="ti-badge">Avance integrado</span>':'')+'<p>'+esc(status)+'</p>'+
+      (advance?'<p class="ti-note">'+esc(RECENT_CONTEXT)+'. '+esc(RECENT_DISCLAIMER)+' '+esc(advance.note)+'</p>':'')+
       (r.historicalGrouper?'<p><b>Agrupador histórico no activable.</b> Se visualizan sus unidades hijas por separado. No se dibuja una cuenca compuesta.</p>':'')+
       '<dl>'+dl('Territorio',r.territory)+dl('Estado / contrato',r.contractStatus||r.representation)+dl('Activation gate',r.gate||'No aplicable: capa informativa')+dl('Activos',assets||null)+dl('Fuentes',list(r.sources).join(' · ')||null)+dl('Confianza',r.confidence)+(r.nodeSemantics?dl('Semántica de nodo',r.nodeSemantics):'')+dl('Pendientes',list(r.blockers).join(' · ')||null)+'</dl>'+
       (r.reason?'<p class="ti-error">'+esc(r.reason)+'</p>':'')+(r.disclaimer?'<p class="ti-note">'+esc(r.disclaimer)+'</p>':'')+
@@ -474,11 +528,11 @@
         '<br>El catálogo no autoriza sustituir geometrías faltantes por puntos aproximados. Una geometría parcial tampoco equivale a cuenca completa.'+
         semanticSummary(s.semantic,plan.semanticsOK)+
         (failures.length?'<p class="ti-error">Catálogos complementarios no cargados: '+failures.map(esc).join(', ')+'. Los conteos de capas pueden estar incompletos.</p>':'');
-      await renderMap();renderList();if(state.selected)selectRecord(state.selected,false);
+      await renderMap();renderList();renderRecent();if(state.selected)selectRecord(state.selected,false);
       state.checkedAt=new Date().toISOString();time.textContent='Consulta de pantalla: '+state.checkedAt+' · Catálogo: '+(catalog.generated_at||'sin fecha');
     }catch(error){time.textContent='No se pudo actualizar: '+String(error.message||error)+(state.checkedAt?'. Se conserva la vista anterior consultada '+state.checkedAt:'');}
     finally{state.loading=false;button.disabled=false;}
   }
-  if(typeof module!=='undefined'&&module.exports)module.exports={buildPlan,selectFeatures,semanticLabel,dataPath,safeURL,featureName};
+  if(typeof module!=='undefined'&&module.exports)module.exports={buildPlan,selectFeatures,semanticLabel,dataPath,safeURL,featureName,filterRecords,recentRecords,RECENT_ADVANCES,RECENT_CONTEXT,RECENT_DISCLAIMER};
   if(typeof document!=='undefined'&&setup()){load();setInterval(load,5*60*1000);}
 })();
