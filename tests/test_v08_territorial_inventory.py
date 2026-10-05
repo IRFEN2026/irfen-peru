@@ -32,6 +32,26 @@ class TerritorialInventoryTests(unittest.TestCase):
         assert(plan.requests.some(r=>r.title.includes('Catacaos')));
         assert(plan.requests.some(r=>r.candidateId==='lima_este_lurin_cieneguilla'));
 
+        // Recent advances are UI shortcuts to exact, already approved parent-basin context.
+        const recent=plan.candidates.filter(r=>r.recentAdvance);
+        assert.equal(plan.summary.recentIntegrated,3);
+        assert.deepEqual(new Set(recent.map(r=>r.candidateId)),new Set([
+          'ica_pisco_san_andres','arequipa_acari_san_agustin','ica_palpa_changuillo'
+        ]));
+        const expectedRecent={
+          ica_pisco_san_andres:'data/phase2/geometries/ica_pisco_san_andres_pisco_basin_context.geojson',
+          arequipa_acari_san_agustin:'data/phase2/geometries/arequipa_acari_san_agustin_acari_basin_context.geojson',
+          ica_palpa_changuillo:'data/phase2/geometries/ica_palpa_changuillo_grande_basin_context.geojson'
+        };
+        for(const row of recent){
+          assert.equal(row.recentAdvance.path,expectedRecent[row.candidateId]);
+          const req=plan.requests.find(r=>r.key===row.recentAdvance.layerKey);
+          assert(req);assert.equal(req.category,'CATCHMENT');assert.equal(req.path,expectedRecent[row.candidateId]);
+          assert.equal(req.status,'RESEARCH_ONLY');
+        }
+        assert(recent.find(r=>r.candidateId==='arequipa_acari_san_agustin').recentAdvance.note.includes('identidad hidrológica no resuelta'));
+        assert(recent.find(r=>r.candidateId==='ica_palpa_changuillo').recentAdvance.note.includes('sin padre hidrográfico asignado'));
+
         // Malanche still has no reproducible machine-readable geometry and must remain absent.
         const malanche=plan.candidates.find(r=>r.candidateId==='lima_sur_malanche');
         assert(malanche); assert.equal(malanche.layerKeys.length,0);
@@ -102,8 +122,9 @@ class TerritorialInventoryTests(unittest.TestCase):
         self.assertIn('src="v08-territorial.js"',html)
         self.assertIn('src="v08-monitoring.js"',html)
         js=(ROOT/'site/v08-territorial.js').read_text(encoding='utf-8')
-        for value in ['Mapa e inventario','Todo el inventario','Sin geometría representable',
-                      'No se crean marcadores para suplir geometrías faltantes',
+        for value in ['Mapa e inventario','Todo el inventario','Avances recientes','Pisco · UH 13752',
+                      'Acarí · UH 13718','Grande · UH 1372','No representa riesgo, inundación, activación ni alerta',
+                      'Sin geometría representable','No se crean marcadores para suplir geometrías faltantes',
                       "g.map_eligible !== true",'Agrupador histórico no activable',
                       'Los elementos geométricos no se cuentan como nuevas quebradas']:
             self.assertIn(value,js)
