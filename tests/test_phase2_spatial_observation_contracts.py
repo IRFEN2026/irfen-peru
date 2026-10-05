@@ -1,6 +1,7 @@
 """Tests for Claude F — Phase-2 Spatial Observation Contracts."""
 from __future__ import annotations
 
+import copy
 import importlib.util
 import json
 import os
@@ -284,6 +285,120 @@ class GeneratedContractTests(unittest.TestCase):
         first.pop("generated_at", None)
         second.pop("generated_at", None)
         self.assertEqual(first, second)
+
+
+class ReproducibleOutputTests(unittest.TestCase):
+    """A scientifically identical regeneration must not change the Git blob of the output."""
+
+    COMMITTED_BLOB = "6a7b9cbc99499c789c3f5af669f7c089fb85555e"
+    COUPLING_PINS = (
+        "site/data/validation/phase2_collector_coupling/lima_este_santa_eulalia_rimac_v0_1.json",
+        "site/data/validation/phase2_collector_coupling/lima_este_santa_eulalia_rimac_v0_2.json",
+    )
+
+    @staticmethod
+    def blob_sha(data):
+        import hashlib
+
+        return hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
+
+    def setUp(self):
+        import tempfile
+
+        self.committed_path = sc.OUT_PATH
+        self.committed_bytes = self.committed_path.read_bytes()
+        self.tmp = tempfile.TemporaryDirectory()
+        self.out = Path(self.tmp.name) / "spatial_observation_contracts_v0_1.json"
+        sc.OUT_PATH = self.out
+
+    def tearDown(self):
+        sc.OUT_PATH = self.committed_path
+        self.tmp.cleanup()
+        # The repository file is never written by these tests.
+        self.assertEqual(self.committed_path.read_bytes(), self.committed_bytes)
+
+    def test_identical_regenerations_keep_generated_at_and_bytes(self):
+        first = sc.generate(write=True)
+        first_bytes = self.out.read_bytes()
+        second = sc.generate(write=True)
+        self.assertEqual(second["generated_at"], first["generated_at"])
+        self.assertEqual(self.out.read_bytes(), first_bytes)
+        third = sc.generate(write=True)
+        self.assertEqual(third["generated_at"], first["generated_at"])
+        self.assertEqual(self.out.read_bytes(), first_bytes)
+        # Serialisation is unchanged: compact separators, non-ASCII kept, one trailing newline.
+        self.assertEqual(
+            first_bytes,
+            (json.dumps(first, ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8"),
+        )
+
+    def test_regenerating_the_current_tree_keeps_the_committed_git_blob(self):
+        self.assertEqual(self.blob_sha(self.committed_bytes), self.COMMITTED_BLOB)
+        committed = json.loads(self.committed_bytes)
+        self.out.write_bytes(self.committed_bytes)
+        result = sc.generate(write=True)
+        self.assertEqual(result["generated_at"], committed["generated_at"])
+        self.assertEqual(self.out.read_bytes(), self.committed_bytes)
+        self.assertEqual(self.blob_sha(self.out.read_bytes()), self.COMMITTED_BLOB)
+        # The downstream coupling artefacts still pin that same blob; they are not repinned.
+        for rel in self.COUPLING_PINS:
+            with self.subTest(pin=rel):
+                document = json.loads((ROOT / rel).read_text(encoding="utf-8"))
+                pins = [
+                    row["git_blob_sha"]
+                    for row in document["input_sources"]
+                    if row["path"] == "site/data/phase2/spatial_observation_contracts_v0_1.json"
+                ]
+                self.assertEqual(pins, [self.COMMITTED_BLOB])
+
+    def test_scientific_difference_never_reuses_the_previous_timestamp(self):
+        committed = json.loads(self.committed_bytes)
+        old_stamp = committed["generated_at"]
+
+        def tampered(mutate):
+            document = copy.deepcopy(committed)
+            mutate(document)
+            self.out.write_text(
+                json.dumps(document, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8"
+            )
+            result = sc.generate(write=True)
+            written = json.loads(self.out.read_text(encoding="utf-8"))
+            self.assertEqual(written, result)
+            return result
+
+        mutations = {
+            "summary count": lambda d: d["summary"].update(non_catchment_geometry_only_count=12),
+            "candidate status": lambda d: d["candidate_records"][0].update(spatial_contract_status="BLOCKED_MISSING_GEOMETRY"),
+            "guardrail": lambda d: d["guardrails"].update(regulatory_corridor_is_not_catchment=False),
+            "activation gate": lambda d: d.update(activation_gate="OPEN"),
+            "extra field": lambda d: d.update(unexpected_field=1),
+            "missing record": lambda d: d["candidate_records"].pop(),
+        }
+        for name, mutate in mutations.items():
+            with self.subTest(difference=name):
+                result = tampered(mutate)
+                self.assertNotEqual(result["generated_at"], old_stamp)
+                self.assertNotEqual(self.blob_sha(self.out.read_bytes()), self.COMMITTED_BLOB)
+                # The fresh build wins: the altered value is not preserved.
+                fresh = {k: v for k, v in result.items() if k != "generated_at"}
+                self.assertEqual(fresh, {k: v for k, v in committed.items() if k != "generated_at"})
+                self.assertEqual(result["activation_gate"], "BLOCKED")
+
+    def test_missing_or_unreadable_previous_output_gets_a_new_timestamp(self):
+        old_stamp = json.loads(self.committed_bytes)["generated_at"]
+        self.assertFalse(self.out.exists())
+        self.assertNotEqual(sc.generate(write=True)["generated_at"], old_stamp)
+        for garbage in (b"", b"not json", b"[]", b'{"generated_at": 5}'):
+            with self.subTest(previous=garbage):
+                self.out.write_bytes(garbage)
+                result = sc.generate(write=True)
+                self.assertNotEqual(result["generated_at"], old_stamp)
+                self.assertEqual(json.loads(self.out.read_text(encoding="utf-8")), result)
+
+    def test_only_generated_at_is_ignored_in_the_comparison(self):
+        document = {"generated_at": "x", "version": "v", "summary": {"generated_at": "inner"}}
+        self.assertEqual(sc.without_timestamp(document), {"version": "v", "summary": {"generated_at": "inner"}})
+        self.assertIn("generated_at", document)
 
 
 class SchemaAndValidatorTests(unittest.TestCase):
