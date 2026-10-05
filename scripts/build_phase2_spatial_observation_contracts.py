@@ -497,9 +497,37 @@ def build():
     }
 
 
+def without_timestamp(document):
+    """The document with `generated_at` removed and nothing else touched."""
+    return {key: value for key, value in document.items() if key != "generated_at"}
+
+
+def stabilise_generated_at(result, path: Path):
+    """Reuse the committed `generated_at` when nothing but the timestamp would change.
+
+    The output is pinned downstream by Git blob SHA. A wall-clock timestamp alone
+    must therefore not produce a new blob: if the freshly built document equals
+    the existing one once `generated_at` is removed from both, the existing
+    timestamp is kept and the bytes stay identical. Any other difference keeps the
+    new UTC timestamp, so a real revision still changes the blob. An existing file
+    that is missing, unreadable or not an object counts as different.
+    """
+    try:
+        existing = load_json(path)
+    except (OSError, ValueError):
+        return result
+    if not isinstance(existing, dict) or not isinstance(existing.get("generated_at"), str):
+        return result
+    if without_timestamp(existing) != without_timestamp(result):
+        return result
+    result["generated_at"] = existing["generated_at"]
+    return result
+
+
 def generate(write=True):
     result = build()
     if write:
+        result = stabilise_generated_at(result, OUT_PATH)
         write_json(OUT_PATH, result)
     return result
 
