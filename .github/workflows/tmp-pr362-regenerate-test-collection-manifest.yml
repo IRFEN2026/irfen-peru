@@ -1,0 +1,42 @@
+# TEMPORARY (PR #362). Regenerates config/phase2_test_collection_manifest.json on
+# the pinned interpreter with the project's own generator and publishes it as an
+# artifact. Removed in the next commit of the same branch; never meant for main.
+name: TMP PR362 - regenerar manifest de colección pytest
+
+on:
+  push:
+    branches:
+      - inventory/national-completeness-audit-v0-1
+    paths:
+      - .github/workflows/tmp-pr362-regenerate-test-collection-manifest.yml
+
+permissions:
+  contents: read
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12.3"
+          cache: "pip"
+      - name: Instalar dependencias fijadas
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-ci-test.txt
+      - name: Regenerar manifest con el generador del proyecto
+        run: |
+          python --version
+          python -m pytest --version
+          python scripts/verify_phase2_test_collection.py --write-manifest
+          python scripts/verify_phase2_test_collection.py
+          sha256sum config/phase2_test_collection_manifest.json
+          git diff --stat
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phase2-test-collection-manifest
+          path: config/phase2_test_collection_manifest.json
+          if-no-files-found: error

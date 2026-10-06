@@ -2,7 +2,7 @@
 
 **Estado:** `RESEARCH_ONLY / TEST_ONLY` · `production_use=false` · `production_ready=false` · `operational_alerting_enabled=false` · `activation_gate=BLOCKED` · `decision_thresholds=null` · `hydraulic_factors=null`
 
-**Registro de datos:** `config/phase2_national_inventory_completeness_audit_v0_1.json` · **Verificador:** `python scripts/validate_phase2_national_inventory_audit.py`
+**Registro de datos:** `config/phase2_national_inventory_completeness_audit_v0_1.json` · **Verificador:** `python scripts/validate_phase2_national_inventory_audit.py` · **Pruebas en CI:** `tests/test_phase2_national_inventory_completeness_audit.py`
 
 Este documento es un inventario/backlog. No crea unidades hidrológicas, geometrías, outlets, eventos en ningún ledger, umbrales, alertas ni capas de mapa. La falta de geometría no excluye a ninguna unidad, y la ausencia de una quebrada en este archivo no significa que no exista.
 
@@ -13,6 +13,7 @@ Este documento es un inventario/backlog. No crea unidades hidrológicas, geometr
 - **400 filas deduplicadas** tomadas de fuentes de ANA, INGEMMET, INDECI, CENEPRED/SIGRID, IGP, ANIN, gobiernos regionales y municipalidades (más pistas de ONG/prensa, marcadas como tales).
 - Cada fila se contrastó con `main`, con las 531 ramas y con los 41 PR abiertos antes de proponerla.
 - **0** filas `MAP_ELIGIBLE`, **0** geometrías nuevas, **0** outlets nuevos, **0** aliases fusionados, **0** cuencas padre asignadas.
+- **0** filas `EVENT_EVIDENCE`: las 41 filas con afirmaciones fechadas de evento quedan como `EVENT_LEAD_UNVERIFIED` hasta que su fuente se reabra, verifique y archive (0 de 24 fuentes tienen `source_text_verified=true`).
 - **Advertencia de extracción.** Los documentos se leyeron con una herramienta automática de lectura web. Los nombres de archivo que entrega el servidor de SIGRID son identificadores fiables; las transcripciones de texto y tablas **no están verificadas byte a byte** y ningún archivo fuente se archivó ni se hasheó. Durante la auditoría se detectó y descartó una tabla fabricada por el lector (Áncash). QA independiente debe reabrir cada fuente antes de promover cualquier fila.
 - **Aviso clean-room.** El JSON contiene afirmaciones con resultado sobre el evento del 23-03-2015 en Chosica; los trabajos sellados de `agent/chosica-2015-*` (PR #146, #149, #150, #151) no deben leerlo.
 
@@ -31,7 +32,16 @@ Este documento es un inventario/backlog. No crea unidades hidrológicas, geometr
 | 5e. Áncash interior | 18 | 0 | 0 | 0 | 18 | 0 | 0 |
 | 5f. Piura interior | 38 | 0 | 0 | 0 | 38 | 0 | 0 |
 
-Estado sugerido (uno por fila): `EVENT_EVIDENCE` 28, `IDENTITY_ONLY` 349, `GEOMETRY_PENDING` 20, `GEOMETRY_REPRODUCIBLE` 3.
+Estado sugerido (uno por fila): `EVENT_LEAD_UNVERIFIED` 28, `IDENTITY_ONLY` 349, `GEOMETRY_PENDING` 20, `GEOMETRY_REPRODUCIBLE` 3.
+
+### Regla de verificación de eventos
+
+Un ítem EVENT solo cuenta como `EVENT_EVIDENCE` si `source_text_verified` es `true` en la fuente **y** en el ítem, con sus registros de verificación. El verificador y las pruebas (`tests/test_phase2_national_inventory_completeness_audit.py`) lo imponen. Para promover una fila:
+
+1. Reabrir el archivo fuente (no un resumen) y archivarlo de forma reproducible.
+2. Poner `sources[id].source_text_verified=true` y rellenar `verification_record`: `archived_sha256` (64 hex), `archive_locator` (ruta en el repositorio o URL estable de los bytes archivados), `verified_on` (AAAA-MM-DD) y `verified_by`.
+3. En cada ítem EVENT confirmado en esos bytes, poner `source_text_verified=true` y rellenar `verification`: `locator` (página, tabla, fila) y `verified_statement` (el texto tal como aparece).
+4. Regenerar `state_flags`, `suggested_state`, `verified_event_dates`, `event_lead_dates_unverified` y `summary`; el verificador rechaza cualquier desajuste.
 
 ### Vocabulario de estados
 
@@ -39,9 +49,10 @@ Estado sugerido (uno por fila): `EVENT_EVIDENCE` 28, `IDENTITY_ONLY` 349, `GEOME
 - `GEOMETRY_PENDING` — Existe una pista de geometría (resolución ANA de faja marginal con hitos, o geometría congelada en una rama que no es main), pero no hay nada reproducible en main para la unidad.
 - `GEOMETRY_REPRODUCIBLE` — Ya existe geometría reproducible en main para la unidad (previa a esta auditoría, que no añadió ninguna).
 - `OUTLET_PENDING` — Marca adicional: la unidad tiene pista de geometría o evidencia de evento, pero no un nodo de salida/confluencia reproducible.
-- `EVENT_EVIDENCE` — Al menos una afirmación fechada de evento en una fuente institucional leída (la atribución a nivel de lista distrital se marca como tal). No es una entrada de ledger. Las fechas por quebrada leídas del informe IGP 001-2023 se guardan pero no activan esta marca, porque main registra ese informe como contexto territorial cuya transferencia a una unidad local nombrada está prohibida.
+- `EVENT_LEAD_UNVERIFIED` — Se leyó, por extracción automática, al menos una afirmación fechada de evento en una fuente institucional primaria, pero el texto de la fuente no se ha reabierto, verificado ni archivado. Es una pista por verificar: no es evidencia adjudicada ni una entrada de ledger. La atribución a nivel de lista distrital se marca como tal.
+- `EVENT_EVIDENCE` — Reservado para filas con al menos un ítem EVENT cuyo texto fuente está verificado: `source_text_verified=true` en la fuente (con `verification_record`: SHA-256 del archivo archivado, localizador, fecha y verificador) y en el ítem (con su localizador y la frase verificada). Ninguna fila lo tiene en v0.1.
 - `MAP_ELIGIBLE` — Esta auditoría no lo asigna a ninguna fila.
-- Regla: El estado sugerido es el más avanzado de GEOMETRY_REPRODUCIBLE > GEOMETRY_PENDING > EVENT_EVIDENCE > IDENTITY_ONLY; las marcas adicionales aparecen entre paréntesis.
+- Regla: El estado sugerido es el más avanzado de GEOMETRY_REPRODUCIBLE > GEOMETRY_PENDING > EVENT_EVIDENCE > EVENT_LEAD_UNVERIFIED > IDENTITY_ONLY; las marcas adicionales aparecen entre paréntesis.
 
 ## 2. Carretera Central: nombres pedidos expresamente
 
@@ -49,8 +60,8 @@ Estado sugerido (uno por fila): `EVENT_EVIDENCE` 28, `IDENTITY_ONLY` 349, `GEOME
 |---|---|---|---|---|
 | Quirio / Nicolás de Piérola | `lima_lurigancho_quirio` (Quirio)<br>`lima_lurigancho_nicolas_de_pierola_label` (Nicolás de Piérola (label component)) | `GEOMETRY_PENDING`<br>`IDENTITY_ONLY` | main: unidad registrada `quirio` · PR #149<br>main: solo nombre/contexto · PR #149 | EXISTING<br>P2 |
 | Pedregal / San Antonio | `lima_lurigancho_pedregal_san_antonio` (Pedregal) | `GEOMETRY_PENDING` | main: unidad registrada `pedregal_san_antonio` · PR #148, #149, #326 | EXISTING |
-| California | `lima_lurigancho_california` (California) | `EVENT_EVIDENCE` | main: solo nombre/contexto · PR #149 | P1 |
-| Rayos de Sol / Rayito de Sol | `lima_lurigancho_rayos_de_sol` (Rayos de Sol) | `EVENT_EVIDENCE` | main: solo nombre/contexto · PR #146, #149, #151 | P1 |
+| California | `lima_lurigancho_california` (California) | `EVENT_LEAD_UNVERIFIED` | main: solo nombre/contexto · PR #149 | P1 |
+| Rayos de Sol / Rayito de Sol | `lima_lurigancho_rayos_de_sol` (Rayos de Sol) | `EVENT_LEAD_UNVERIFIED` | main: solo nombre/contexto · PR #146, #149, #151 | P1 |
 | Corrales | `lima_lurigancho_corrales` (Corrales) | `GEOMETRY_PENDING` | main: solo nombre/contexto · PR #149 | P1 |
 | Carossio | `lima_lurigancho_carossio` (Carossio) | `GEOMETRY_PENDING` | main: solo nombre/contexto · PR #146, #149, #151 | P1 |
 | La Libertad | `lima_lurigancho_la_libertad` (La Libertad) | `GEOMETRY_PENDING` | main: solo nombre/contexto · PR #146, #149, #151 | P1 |
@@ -63,10 +74,10 @@ Estado sugerido (uno por fila): `EVENT_EVIDENCE` 28, `IDENTITY_ONLY` 349, `GEOME
 | Pablo Patrón / Dos Amigos | `lima_lurigancho_pablo_patron_dos_amigos` (Pablo Patrón/Dos Amigos) | `IDENTITY_ONLY` | no está | P2 |
 | Huampaní | `lima_lurigancho_huampani` (Huampaní) | `IDENTITY_ONLY` | main: solo nombre/contexto | P2 |
 | Chacrasana | `lima_lurigancho_chacrasana` (Chacrasana) | `GEOMETRY_PENDING` | main: solo nombre/contexto | P1 |
-| Santa María / Yanacoto | `lima_lurigancho_santa_maria` (Santa María)<br>`lima_lurigancho_yanacoto` (Yanacoto) | `EVENT_EVIDENCE`<br>`GEOMETRY_PENDING` | no está<br>main: solo nombre/contexto | P1<br>P1 |
-| Mariscal Castilla | `lima_lurigancho_mariscal_castilla` (Mariscal Castilla)<br>`lima_lurigancho_castilla_faja` (Castilla) | `EVENT_EVIDENCE`<br>`GEOMETRY_PENDING` | main: solo nombre/contexto<br>no está | P1<br>P1 |
-| Señor de los Milagros | `lima_lurigancho_senor_de_los_milagros` (Señor de los Milagros) | `EVENT_EVIDENCE` | no está | P1 |
-| Laderas Virgen del Rosario | `lima_lurigancho_virgen_del_rosario` (Virgen del Rosario)<br>`lima_lurigancho_rosario_igp` (Rosario) | `EVENT_EVIDENCE`<br>`IDENTITY_ONLY` | no está<br>no está | P1<br>P2 |
+| Santa María / Yanacoto | `lima_lurigancho_santa_maria` (Santa María)<br>`lima_lurigancho_yanacoto` (Yanacoto) | `EVENT_LEAD_UNVERIFIED`<br>`GEOMETRY_PENDING` | no está<br>main: solo nombre/contexto | P1<br>P1 |
+| Mariscal Castilla | `lima_lurigancho_mariscal_castilla` (Mariscal Castilla)<br>`lima_lurigancho_castilla_faja` (Castilla) | `EVENT_LEAD_UNVERIFIED`<br>`GEOMETRY_PENDING` | main: solo nombre/contexto<br>no está | P1<br>P1 |
+| Señor de los Milagros | `lima_lurigancho_senor_de_los_milagros` (Señor de los Milagros) | `EVENT_LEAD_UNVERIFIED` | no está | P1 |
+| Laderas Virgen del Rosario | `lima_lurigancho_virgen_del_rosario` (Virgen del Rosario)<br>`lima_lurigancho_rosario_igp` (Rosario) | `EVENT_LEAD_UNVERIFIED`<br>`IDENTITY_ONLY` | no está<br>no está | P1<br>P2 |
 | Huascarán | `lima_chaclacayo_huascaran` (Huascarán) | `GEOMETRY_PENDING` | no está | P1 |
 | Cusipata | `lima_chaclacayo_cusipata` (Cusipata) | `GEOMETRY_PENDING` | no está | P1 |
 | Cashahuacra | `lima_santa_eulalia_cashahuacra` (Cashahuacra) | `GEOMETRY_REPRODUCIBLE` | main: unidad registrada `cashahuacra` · PR #136, #146, #149, #151 | EXISTING |
@@ -78,42 +89,42 @@ Además aparecieron en fuente institucional, sin estar en la lista pedida: Barba
 
 ## 3. Tabla maestra deduplicada
 
-No hay columna de cuenca o sistema padre: ninguna fuente leída lo sustenta para un candidato nuevo y no se infiere por proximidad (campo `parent_basin_or_system = null` en todas las filas). *Fechas* lista solo fechas de fuente institucional primaria leída; las fechas del informe IGP 001-2023 se guardan en el JSON pero no cuentan. *Outlet* = existe nodo de salida/confluencia reproducible.
+No hay columna de cuenca o sistema padre: ninguna fuente leída lo sustenta para un candidato nuevo y no se infiere por proximidad (campo `parent_basin_or_system = null` en todas las filas). *Fechas (pista sin verificar)* lista fechas leídas por extracción automática en fuente institucional primaria; ninguna está verificada todavía (`verified_event_dates` está vacío en todas las filas). Las fechas del informe IGP 001-2023 se guardan en el JSON pero no cuentan ni como pista. *Outlet* = existe nodo de salida/confluencia reproducible.
 
 ### 1. Carretera Central / Rímac / Chosica / Chaclacayo / Ricardo Palma / Santa Eulalia (44 filas)
 
-| Nombre documental | Variantes observadas (sin adjudicar) | Distrito · provincia | Evidencia | Fechas documentadas | Geometría reproducible | Outlet | Relación con colector | Estado | En IRFEN | Prio. | Fuente e identificador |
+| Nombre documental | Variantes observadas (sin adjudicar) | Distrito · provincia | Evidencia | Fechas (pista sin verificar) | Geometría reproducible | Outlet | Relación con colector | Estado | En IRFEN | Prio. | Fuente e identificador |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| Huaycán (Ate) | — | Ate · Lima | EVENT | 2023-03 | No | No | — | `EVENT_EVIDENCE` (+ OUTLET_PENDING) | no está | P1 | INDECI-DDI-LIMA-2023-BALANCE |
+| Huaycán (Ate) | — | Ate · Lima | EVENT | 2023-03 | No | No | — | `EVENT_LEAD_UNVERIFIED` | no está | P1 | INDECI-DDI-LIMA-2023-BALANCE |
 | Callahuanca ⚠ | — | distrito no indicado · Huarochirí † | WORKS | — | No | No | — | `IDENTITY_ONLY` | no está | P2 | ANDINA-MVCS-2023-02-23 |
-| Cusipata | Cusipata (San Bartolomé) | Chaclacayo · Lima | EVENT, FAJA | 2023-03 | No · pista: faja ANA (hitos por extraer) | No | — | `GEOMETRY_PENDING` (+ EVENT_EVIDENCE, OUTLET_PENDING) | no está | P1 | ANA-FAJA-RD-SIGRID (SIGRID 13203); INDECI-DDI-LIMA-2023-BALANCE; IGP-IT-001-2023 |
-| Don Bosco | — | Chaclacayo · Lima | EVENT | 2023-03 | No | No | — | `EVENT_EVIDENCE` (+ OUTLET_PENDING) | no está | P1 | INDECI-DDI-LIMA-2023-BALANCE |
+| Cusipata | Cusipata (San Bartolomé) | Chaclacayo · Lima | EVENT, FAJA | 2023-03 | No · pista: faja ANA (hitos por extraer) | No | — | `GEOMETRY_PENDING` (+ EVENT_LEAD_UNVERIFIED, OUTLET_PENDING) | no está | P1 | ANA-FAJA-RD-SIGRID (SIGRID 13203); INDECI-DDI-LIMA-2023-BALANCE; IGP-IT-001-2023 |
+| Don Bosco | — | Chaclacayo · Lima | EVENT | 2023-03 | No | No | — | `EVENT_LEAD_UNVERIFIED` | no está | P1 | INDECI-DDI-LIMA-2023-BALANCE |
 | El Cuadro | — | Chaclacayo · Lima | IDENTITY | — | No | No | — | `IDENTITY_ONLY` | no está | P2 | PRESS-LEAD |
-| Huascarán | Huascarán cauce principal (Huascarán 01) | Chaclacayo · Lima | EVENT, FAJA, IDENTITY | 2023-03 | No · pista: faja ANA (hitos por extraer) | No | — | `GEOMETRY_PENDING` (+ EVENT_EVIDENCE, OUTLET_PENDING) | no está | P1 | ANA-FAJA-RD-SIGRID (SIGRID 19205); INDECI-DDI-LIMA-2023-BALANCE; IGP-IT-001-2023; PRESS-LEAD |
+| Huascarán | Huascarán cauce principal (Huascarán 01) | Chaclacayo · Lima | EVENT, FAJA, IDENTITY | 2023-03 | No · pista: faja ANA (hitos por extraer) | No | — | `GEOMETRY_PENDING` (+ EVENT_LEAD_UNVERIFIED, OUTLET_PENDING) | no está | P1 | ANA-FAJA-RD-SIGRID (SIGRID 19205); INDECI-DDI-LIMA-2023-BALANCE; IGP-IT-001-2023; PRESS-LEAD |
 | La Floresta | — | Chaclacayo · Lima | IDENTITY | — | No | No | — | `IDENTITY_ONLY` | no está | P2 | PREDES-CARTILLA-2017 |
-| Los Cóndores | Qda. Los Cóndores | Chaclacayo · Lima | EVENT, FAJA | 2023-03 | No · pista: faja ANA (hitos por extraer) | No | — | `GEOMETRY_PENDING` (+ EVENT_EVIDENCE, OUTLET_PENDING) | no está | P1 | ANA-FAJA-RD-SIGRID (SIGRID 10436); INDECI-DDI-LIMA-2023-BALANCE; IGP-IT-001-2023 |
-| Huaycoloro | — | Lurigancho / San Juan de Lurigancho · Lima | CRITICAL_POINT, EVENT, FAJA | 2023-03 | Sí (ya en main) | No | Contratos del piloto existentes | `GEOMETRY_REPRODUCIBLE` (+ EVENT_EVIDENCE, OUTLET_PENDING) | main: unidad registrada `huaycoloro (v0.8 pilot)` | EXISTING | ANA-FAJA-RD-SIGRID (SIGRID 6058); ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5763); INDECI-DDI-LIMA-2023-BALANCE |
-| California | — | Lurigancho-Chosica · Lima | EVENT, WORKS | 2023-03 | No | No | — | `EVENT_EVIDENCE` (+ OUTLET_PENDING) | main: solo nombre/contexto · PR #149 | P1 | INDECI-DDI-LIMA-2023-BALANCE; IGP-IT-001-2023; PRESS-LEAD |
-| Carossio | Carosio; Carosio | Lurigancho-Chosica · Lima | CRITICAL_POINT, EVENT, WORKS | 2015-03-23, 2023-03 | No en main · geometría congelada en rama legacy | No | MML 2013 (R6): «desembocadura sin salida directa al río Rímac»; no se afirma conexión superficial | `GEOMETRY_PENDING` (+ EVENT_EVIDENCE, OUTLET_PENDING) | main: solo nombre/contexto · PR #146, #149, #151 | P1 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5767); MUNI-LURIGANCHO-EVAR-2015; INDECI-DDI-LIMA-2023-BALANCE; ANA-2017-2019-BARRERAS-DINAMICAS |
-| Chacrasana | — | Lurigancho-Chosica · Lima | EVENT, FAJA, IDENTITY, WORKS | 2023-03 | No · pista: faja ANA (hitos por extraer) | No | — | `GEOMETRY_PENDING` (+ EVENT_EVIDENCE, OUTLET_PENDING) | main: solo nombre/contexto | P1 | ANA-FAJA-RD-SIGRID (SIGRID 12478); INDECI-DDI-LIMA-2023-BALANCE; CENEPRED-SIGRID-13867; ANIN-MUNI-LURIGANCHO-2026; PRESS-LEAD |
+| Los Cóndores | Qda. Los Cóndores | Chaclacayo · Lima | EVENT, FAJA | 2023-03 | No · pista: faja ANA (hitos por extraer) | No | — | `GEOMETRY_PENDING` (+ EVENT_LEAD_UNVERIFIED, OUTLET_PENDING) | no está | P1 | ANA-FAJA-RD-SIGRID (SIGRID 10436); INDECI-DDI-LIMA-2023-BALANCE; IGP-IT-001-2023 |
+| Huaycoloro | — | Lurigancho / San Juan de Lurigancho · Lima | CRITICAL_POINT, EVENT, FAJA | 2023-03 | Sí (ya en main) | No | Contratos del piloto existentes | `GEOMETRY_REPRODUCIBLE` (+ EVENT_LEAD_UNVERIFIED, OUTLET_PENDING) | main: unidad registrada `huaycoloro (v0.8 pilot)` | EXISTING | ANA-FAJA-RD-SIGRID (SIGRID 6058); ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5763); INDECI-DDI-LIMA-2023-BALANCE |
+| California | — | Lurigancho-Chosica · Lima | EVENT, WORKS | 2023-03 | No | No | — | `EVENT_LEAD_UNVERIFIED` | main: solo nombre/contexto · PR #149 | P1 | INDECI-DDI-LIMA-2023-BALANCE; IGP-IT-001-2023; PRESS-LEAD |
+| Carossio | Carosio; Carosio | Lurigancho-Chosica · Lima | CRITICAL_POINT, EVENT, WORKS | 2015-03-23, 2023-03 | No en main · geometría congelada en rama legacy | No | MML 2013 (R6): «desembocadura sin salida directa al río Rímac»; no se afirma conexión superficial | `GEOMETRY_PENDING` (+ EVENT_LEAD_UNVERIFIED, OUTLET_PENDING) | main: solo nombre/contexto · PR #146, #149, #151 | P1 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5767); MUNI-LURIGANCHO-EVAR-2015; INDECI-DDI-LIMA-2023-BALANCE; ANA-2017-2019-BARRERAS-DINAMICAS |
+| Chacrasana | — | Lurigancho-Chosica · Lima | EVENT, FAJA, IDENTITY, WORKS | 2023-03 | No · pista: faja ANA (hitos por extraer) | No | — | `GEOMETRY_PENDING` (+ EVENT_LEAD_UNVERIFIED, OUTLET_PENDING) | main: solo nombre/contexto | P1 | ANA-FAJA-RD-SIGRID (SIGRID 12478); INDECI-DDI-LIMA-2023-BALANCE; CENEPRED-SIGRID-13867; ANIN-MUNI-LURIGANCHO-2026; PRESS-LEAD |
 | Coricancha | — | Lurigancho-Chosica · Lima | CRITICAL_POINT, IDENTITY | — | No | No | — | `IDENTITY_ONLY` | no está | P2 | INGEMMET-A7459; PREDES-CARTILLA-2017 |
-| Corrales | Corrales (Rayos del Sol); Rayo de Sol – Corrales | Lurigancho-Chosica · Lima | CRITICAL_POINT, EVENT, FAJA | 2023-03 | No en main · faja ANA + geometría congelada en rama legacy | No | Solo en rama legacy: primera intersección D8 con el Rímac | `GEOMETRY_PENDING` (+ EVENT_EVIDENCE, OUTLET_PENDING) | main: solo nombre/contexto · PR #149 | P1 | ANA-FAJA-RD-SIGRID (SIGRID 6062); ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5768); INDECI-DDI-LIMA-2023-BALANCE; IGP-IT-001-2023 |
-| La Cantuta | Cantuta | Lurigancho-Chosica · Lima | EVENT, FAJA | 2009-02, 2023-03 | No · pista: faja ANA (hitos por extraer) | No | — | `GEOMETRY_PENDING` (+ EVENT_EVIDENCE, OUTLET_PENDING) | no está | P1 | ANA-FAJA-RD-SIGRID (SIGRID 6074); ANA-FAJA-RD-SIGRID (SIGRID 19341); INDECI-DDI-LIMA-2023-BALANCE; MUNI-LURIGANCHO-EVAR-2015 |
-| La Libertad | Libertad | Lurigancho-Chosica · Lima | EVENT, FAJA, WORKS | 2015-03-23, 2023-03 | No en main · faja ANA + geometría congelada en rama legacy | No | Solo en rama legacy | `GEOMETRY_PENDING` (+ EVENT_EVIDENCE, OUTLET_PENDING) | main: solo nombre/contexto · PR #146, #149, #151 | P1 | IRFEN-REPO; MUNI-LURIGANCHO-EVAR-2015; INDECI-DDI-LIMA-2023-BALANCE; ANA-2017-2019-BARRERAS-DINAMICAS |
-| Mariscal Castilla | — | Lurigancho-Chosica · Lima | CRITICAL_POINT, EVENT, WORKS | 2023-03 | No | No | — | `EVENT_EVIDENCE` (+ OUTLET_PENDING) | main: solo nombre/contexto | P1 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5765); INDECI-DDI-LIMA-2023-BALANCE; IGP-IT-001-2023; ANA-2017-2019-BARRERAS-DINAMICAS |
+| Corrales | Corrales (Rayos del Sol); Rayo de Sol – Corrales | Lurigancho-Chosica · Lima | CRITICAL_POINT, EVENT, FAJA | 2023-03 | No en main · faja ANA + geometría congelada en rama legacy | No | Solo en rama legacy: primera intersección D8 con el Rímac | `GEOMETRY_PENDING` (+ EVENT_LEAD_UNVERIFIED, OUTLET_PENDING) | main: solo nombre/contexto · PR #149 | P1 | ANA-FAJA-RD-SIGRID (SIGRID 6062); ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5768); INDECI-DDI-LIMA-2023-BALANCE; IGP-IT-001-2023 |
+| La Cantuta | Cantuta | Lurigancho-Chosica · Lima | EVENT, FAJA | 2009-02, 2023-03 | No · pista: faja ANA (hitos por extraer) | No | — | `GEOMETRY_PENDING` (+ EVENT_LEAD_UNVERIFIED, OUTLET_PENDING) | no está | P1 | ANA-FAJA-RD-SIGRID (SIGRID 6074); ANA-FAJA-RD-SIGRID (SIGRID 19341); INDECI-DDI-LIMA-2023-BALANCE; MUNI-LURIGANCHO-EVAR-2015 |
+| La Libertad | Libertad | Lurigancho-Chosica · Lima | EVENT, FAJA, WORKS | 2015-03-23, 2023-03 | No en main · faja ANA + geometría congelada en rama legacy | No | Solo en rama legacy | `GEOMETRY_PENDING` (+ EVENT_LEAD_UNVERIFIED, OUTLET_PENDING) | main: solo nombre/contexto · PR #146, #149, #151 | P1 | IRFEN-REPO; MUNI-LURIGANCHO-EVAR-2015; INDECI-DDI-LIMA-2023-BALANCE; ANA-2017-2019-BARRERAS-DINAMICAS |
+| Mariscal Castilla | — | Lurigancho-Chosica · Lima | CRITICAL_POINT, EVENT, WORKS | 2023-03 | No | No | — | `EVENT_LEAD_UNVERIFIED` | main: solo nombre/contexto | P1 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5765); INDECI-DDI-LIMA-2023-BALANCE; IGP-IT-001-2023; ANA-2017-2019-BARRERAS-DINAMICAS |
 | Nicolás de Piérola (label component) | Quirio – Nicolás de Piérola | Lurigancho-Chosica · Lima | IDENTITY | — | No | No | — | `IDENTITY_ONLY` | main: solo nombre/contexto · PR #149 | P2 | ANA-2017-2019-BARRERAS-DINAMICAS |
 | Pablo Patrón/Dos Amigos | — | Lurigancho-Chosica · Lima | IDENTITY | — | No | No | — | `IDENTITY_ONLY` | no está | P2 | PREDES-CARTILLA-2017 |
-| Pedregal | San Antonio de Pedregal; Pedregal o San Antonio; San Antonio | Lurigancho-Chosica · Lima | CRITICAL_POINT, EVENT, FAJA, WORKS | 2023-03 | No en main · faja ANA + geometría congelada en rama legacy | Sí | Intersección D8 reproducible con el Rímac (techo HYDROLOGICALLY_CONNECTED en main) | `GEOMETRY_PENDING` (+ EVENT_EVIDENCE) | main: unidad registrada `pedregal_san_antonio` · PR #148, #149, #326 | EXISTING | ANA-FAJA-RD-SIGRID (SIGRID 6066); ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5766); INDECI-DDI-LIMA-2023-BALANCE; IGP-IT-001-2023; ANA-2017-2019-BARRERAS-DINAMICAS |
-| Quirio | Quirio – Nicolás de Piérola; Quiro | Lurigancho-Chosica · Lima | EVENT, FAJA, IDENTITY, WORKS | 2023-03 | No en main · faja ANA + geometría congelada en rama legacy | Sí | Intersección D8 reproducible con el Rímac (techo HYDROLOGICALLY_CONNECTED en main) | `GEOMETRY_PENDING` (+ EVENT_EVIDENCE) | main: unidad registrada `quirio` · PR #149 | EXISTING | ANA-FAJA-RD-SIGRID (SIGRID 6067); INDECI-DDI-LIMA-2023-BALANCE; IGP-IT-001-2023; ANA-2017-2019-BARRERAS-DINAMICAS; MUNI-LURIGANCHO-PPRRD-2022-2025 |
-| Rayos de Sol | Rayo de Sol – Corrales; Rayito del Sol; Quebrada Rayo del Sol; Corrales (Rayos del Sol) | Lurigancho-Chosica · Lima | EVENT, IDENTITY, WORKS | 2015-03-23 | No | No | — | `EVENT_EVIDENCE` (+ OUTLET_PENDING) | main: solo nombre/contexto · PR #146, #149, #151 | P1 | MUNI-LURIGANCHO-EVAR-2015; CENEPRED-2025-RAYO-DEL-SOL-RF; ANA-2017-2019-BARRERAS-DINAMICAS |
+| Pedregal | San Antonio de Pedregal; Pedregal o San Antonio; San Antonio | Lurigancho-Chosica · Lima | CRITICAL_POINT, EVENT, FAJA, WORKS | 2023-03 | No en main · faja ANA + geometría congelada en rama legacy | Sí | Intersección D8 reproducible con el Rímac (techo HYDROLOGICALLY_CONNECTED en main) | `GEOMETRY_PENDING` (+ EVENT_LEAD_UNVERIFIED) | main: unidad registrada `pedregal_san_antonio` · PR #148, #149, #326 | EXISTING | ANA-FAJA-RD-SIGRID (SIGRID 6066); ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5766); INDECI-DDI-LIMA-2023-BALANCE; IGP-IT-001-2023; ANA-2017-2019-BARRERAS-DINAMICAS |
+| Quirio | Quirio – Nicolás de Piérola; Quiro | Lurigancho-Chosica · Lima | EVENT, FAJA, IDENTITY, WORKS | 2023-03 | No en main · faja ANA + geometría congelada en rama legacy | Sí | Intersección D8 reproducible con el Rímac (techo HYDROLOGICALLY_CONNECTED en main) | `GEOMETRY_PENDING` (+ EVENT_LEAD_UNVERIFIED) | main: unidad registrada `quirio` · PR #149 | EXISTING | ANA-FAJA-RD-SIGRID (SIGRID 6067); INDECI-DDI-LIMA-2023-BALANCE; IGP-IT-001-2023; ANA-2017-2019-BARRERAS-DINAMICAS; MUNI-LURIGANCHO-PPRRD-2022-2025 |
+| Rayos de Sol | Rayo de Sol – Corrales; Rayito del Sol; Quebrada Rayo del Sol; Corrales (Rayos del Sol) | Lurigancho-Chosica · Lima | EVENT, IDENTITY, WORKS | 2015-03-23 | No | No | — | `EVENT_LEAD_UNVERIFIED` | main: solo nombre/contexto · PR #146, #149, #151 | P1 | MUNI-LURIGANCHO-EVAR-2015; CENEPRED-2025-RAYO-DEL-SOL-RF; ANA-2017-2019-BARRERAS-DINAMICAS |
 | Rosario | — | Lurigancho-Chosica · Lima | EVENT, IDENTITY | — | No | No | — | `IDENTITY_ONLY` | no está | P2 | IGP-IT-001-2023; INGEMMET-SIGRID-434-TITLE |
-| Santa María | — | Lurigancho-Chosica · Lima | EVENT, IDENTITY | 2015, 2017 | No | No | INGEMMET A7437 indica desembocadura en el río Rímac (margen derecha); nodo no reproducido | `EVENT_EVIDENCE` (+ OUTLET_PENDING) | no está | P1 | INGEMMET-A7437; MUNI-LURIGANCHO-PPRRD-2022-2025 |
+| Santa María | — | Lurigancho-Chosica · Lima | EVENT, IDENTITY | 2015, 2017 | No | No | INGEMMET A7437 indica desembocadura en el río Rímac (margen derecha); nodo no reproducido | `EVENT_LEAD_UNVERIFIED` | no está | P1 | INGEMMET-A7437; MUNI-LURIGANCHO-PPRRD-2022-2025 |
 | Santo Domingo | — | Lurigancho-Chosica · Lima | CRITICAL_POINT, EVENT, FAJA, WORKS | — | No · pista: faja ANA (hitos por extraer) | No | Título de la ficha SIGRID: «tributario del río Rímac - margen izquierda»; nodo de confluencia no reproducido | `GEOMETRY_PENDING` (+ OUTLET_PENDING) | main: solo nombre/contexto | P1 | ANA-FAJA-RD-SIGRID (SIGRID 19950); ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5808); IGP-IT-001-2023; ANA-2017-2019-BARRERAS-DINAMICAS |
-| Señor de los Milagros | — | Lurigancho-Chosica · Lima | CRITICAL_POINT, EVENT | 2023-03 | No | No | — | `EVENT_EVIDENCE` (+ OUTLET_PENDING) | no está | P1 | INDECI-DDI-LIMA-2023-BALANCE; INGEMMET-A7459 |
-| Virgen del Rosario | — | Lurigancho-Chosica · Lima | CRITICAL_POINT, EVENT | 2023-03 | No | No | — | `EVENT_EVIDENCE` (+ OUTLET_PENDING) | no está | P1 | INDECI-DDI-LIMA-2023-BALANCE; INGEMMET-A7459 |
+| Señor de los Milagros | — | Lurigancho-Chosica · Lima | CRITICAL_POINT, EVENT | 2023-03 | No | No | — | `EVENT_LEAD_UNVERIFIED` | no está | P1 | INDECI-DDI-LIMA-2023-BALANCE; INGEMMET-A7459 |
+| Virgen del Rosario | — | Lurigancho-Chosica · Lima | CRITICAL_POINT, EVENT | 2023-03 | No | No | — | `EVENT_LEAD_UNVERIFIED` | no está | P1 | INDECI-DDI-LIMA-2023-BALANCE; INGEMMET-A7459 |
 | Vizcachera | — | Lurigancho-Chosica · Lima | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P2 | INGEMMET-A7459 |
-| Yanacoto | — | Lurigancho-Chosica · Lima | EVENT, FAJA, WORKS | 2023-03 | No · pista: faja ANA (hitos por extraer) | No | — | `GEOMETRY_PENDING` (+ EVENT_EVIDENCE, OUTLET_PENDING) | main: solo nombre/contexto | P1 | ANA-FAJA-RD-SIGRID (SIGRID 6068); INDECI-DDI-LIMA-2023-BALANCE; IGP-IT-001-2023; ANIN-MUNI-LURIGANCHO-2026 |
-| La Ronda | — | Lurigancho-Chosica · Lima † | EVENT, FAJA, WORKS | 2023-03 | No · pista: faja ANA (hitos por extraer) | No | — | `GEOMETRY_PENDING` (+ EVENT_EVIDENCE, OUTLET_PENDING) | main: solo nombre/contexto | P1 | ANA-FAJA-RD-SIGRID (SIGRID 6064); INDECI-DDI-LIMA-2023-BALANCE; IGP-IT-001-2023; ANA-2017-2019-BARRERAS-DINAMICAS |
+| Yanacoto | — | Lurigancho-Chosica · Lima | EVENT, FAJA, WORKS | 2023-03 | No · pista: faja ANA (hitos por extraer) | No | — | `GEOMETRY_PENDING` (+ EVENT_LEAD_UNVERIFIED, OUTLET_PENDING) | main: solo nombre/contexto | P1 | ANA-FAJA-RD-SIGRID (SIGRID 6068); INDECI-DDI-LIMA-2023-BALANCE; IGP-IT-001-2023; ANIN-MUNI-LURIGANCHO-2026 |
+| La Ronda | — | Lurigancho-Chosica · Lima † | EVENT, FAJA, WORKS | 2023-03 | No · pista: faja ANA (hitos por extraer) | No | — | `GEOMETRY_PENDING` (+ EVENT_LEAD_UNVERIFIED, OUTLET_PENDING) | main: solo nombre/contexto | P1 | ANA-FAJA-RD-SIGRID (SIGRID 6064); INDECI-DDI-LIMA-2023-BALANCE; IGP-IT-001-2023; ANA-2017-2019-BARRERAS-DINAMICAS |
 | Huampaní | Huampani | Lurigancho-Chosica · Lima † | IDENTITY, WORKS | — | No | No | — | `IDENTITY_ONLY` | main: solo nombre/contexto | P2 | ANA-2017-2019-BARRERAS-DINAMICAS; PREDES-CARTILLA-2017 |
 | Chucumayo | — | Matucana · Huarochirí | FAJA | — | No · pista: faja ANA (hitos por extraer) | No | — | `GEOMETRY_PENDING` (+ OUTLET_PENDING) | no está | P1 | ANA-FAJA-RD-SIGRID (SIGRID 19929) |
 | Payhua | Paihua | Matucana · Huarochirí | EVENT | — | No | No | — | `IDENTITY_ONLY` | no está | P2 | IGP-IT-001-2023 |
@@ -131,17 +142,17 @@ No hay columna de cuenca o sistema padre: ninguna fuente leída lo sustenta para
 
 ### 2. Pisco / Ica (48 filas)
 
-| Nombre documental | Variantes observadas (sin adjudicar) | Distrito · provincia | Evidencia | Fechas documentadas | Geometría reproducible | Outlet | Relación con colector | Estado | En IRFEN | Prio. | Fuente e identificador |
+| Nombre documental | Variantes observadas (sin adjudicar) | Distrito · provincia | Evidencia | Fechas (pista sin verificar) | Geometría reproducible | Outlet | Relación con colector | Estado | En IRFEN | Prio. | Fuente e identificador |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | quebrada huachinga | — | Alto Larán | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5631) |
 | quebrada pampas de chincha | — | Alto Larán | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5629) |
 | quebrada pampas de los arrieros | — | El Carmen | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5630) |
 | quebrada huancano ⚠ | — | Huancano | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | main: mención sin confirmar | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5622) |
 | quebrada huayanga | — | Huancano | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5730) |
-| quebrada Huayanto | — | Huancano · Pisco | EVENT | 2025-02-06 | No | No | — | `EVENT_EVIDENCE` (+ OUTLET_PENDING) | main: nombrada como quebrada | P2 | COER-ICA-NP-041-2025 |
+| quebrada Huayanto | — | Huancano · Pisco | EVENT | 2025-02-06 | No | No | — | `EVENT_LEAD_UNVERIFIED` | main: nombrada como quebrada | P2 | COER-ICA-NP-041-2025 |
 | quebrada huayanto-pampano | — | Huancano | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5732) |
 | quebrada paracas | — | Huancano | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | main: unidad registrada `ica_paracas` | EXISTING | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5733) |
-| quebrada quitasol | — | Huancano · Pisco | CRITICAL_POINT, EVENT | 2025-02-06 | No | No | — | `EVENT_EVIDENCE` (+ OUTLET_PENDING) | main: unidad registrada `ica_quitasol` | EXISTING | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5729); COER-ICA-NP-041-2025 |
+| quebrada quitasol | — | Huancano · Pisco | CRITICAL_POINT, EVENT | 2025-02-06 | No | No | — | `EVENT_LEAD_UNVERIFIED` | main: unidad registrada `ica_quitasol` | EXISTING | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5729); COER-ICA-NP-041-2025 |
 | quebrada reposo | — | Huancano | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5731) |
 | quebrada san vicente | — | Huancano | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5728) |
 | quebrada villanueva | — | Huancano | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5621) |
@@ -184,7 +195,7 @@ No hay columna de cuenca o sistema padre: ninguna fuente leída lo sustenta para
 
 ### 3. Santa / Casma (16 filas)
 
-| Nombre documental | Variantes observadas (sin adjudicar) | Distrito · provincia | Evidencia | Fechas documentadas | Geometría reproducible | Outlet | Relación con colector | Estado | En IRFEN | Prio. | Fuente e identificador |
+| Nombre documental | Variantes observadas (sin adjudicar) | Distrito · provincia | Evidencia | Fechas (pista sin verificar) | Geometría reproducible | Outlet | Relación con colector | Estado | En IRFEN | Prio. | Fuente e identificador |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | quebrada el olivar ⚠ | — | Buenavista · Casma | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5986) |
 | río seco ⚠ | — | Buenavista · Casma | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | rama: mención sin confirmar | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5985) |
@@ -205,7 +216,7 @@ No hay columna de cuenca o sistema padre: ninguna fuente leída lo sustenta para
 
 ### 4. Tumbes / Zorritos (68 filas)
 
-| Nombre documental | Variantes observadas (sin adjudicar) | Distrito · provincia | Evidencia | Fechas documentadas | Geometría reproducible | Outlet | Relación con colector | Estado | En IRFEN | Prio. | Fuente e identificador |
+| Nombre documental | Variantes observadas (sin adjudicar) | Distrito · provincia | Evidencia | Fechas (pista sin verificar) | Geometría reproducible | Outlet | Relación con colector | Estado | En IRFEN | Prio. | Fuente e identificador |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | Piedritas | — | Aguas Verdes · Zarumilla | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-COMPLEMENTACION-NACIONAL (Cuadro 9 f.17) |
 | Cancas ⚠ | — | Canoas de Punta Sal · Contralmirante Villar | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-COMPLEMENTACION-NACIONAL (Cuadro 9 f.23) |
@@ -278,12 +289,12 @@ No hay columna de cuenca o sistema padre: ninguna fuente leída lo sustenta para
 
 ### 5a. Otros valles de Lima y Lima Metropolitana (73 filas)
 
-| Nombre documental | Variantes observadas (sin adjudicar) | Distrito · provincia | Evidencia | Fechas documentadas | Geometría reproducible | Outlet | Relación con colector | Estado | En IRFEN | Prio. | Fuente e identificador |
+| Nombre documental | Variantes observadas (sin adjudicar) | Distrito · provincia | Evidencia | Fechas (pista sin verificar) | Geometría reproducible | Outlet | Relación con colector | Estado | En IRFEN | Prio. | Fuente e identificador |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | quebrada chipial / lashcamayo | — | Ámbar · Huaura | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5705) |
 | quebrada huisca | — | Ámbar · Huaura | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5780) |
 | quebrada huyunte | — | Ámbar · Huaura | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5706) |
-| Los Inocentes | — | Ancón · Lima | EVENT | 2023-03 | No | No | — | `EVENT_EVIDENCE` (+ OUTLET_PENDING) | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
+| Los Inocentes | — | Ancón · Lima | EVENT | 2023-03 | No | No | — | `EVENT_LEAD_UNVERIFIED` | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
 | quebrada río chico ⚠ | — | Asia | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | main: mención sin confirmar · PR #213 | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5798) |
 | quebrada río grande ⚠ | — | Asia | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | main: mención sin confirmar | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5799) |
 | quebrada río seco ⚠ | — | Asia | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | rama: mención sin confirmar | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5797) |
@@ -294,20 +305,20 @@ No hay columna de cuenca o sistema padre: ninguna fuente leída lo sustenta para
 | quebrada la vuelta-yuncaviri | — | Calango | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5781) |
 | quebrada millay | — | Calango | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5782) |
 | quebrada minay | — | Calango | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5783) |
-| Hacienda Caballero | — | Carabayllo · Lima | EVENT | 2023-03 | No | No | — | `EVENT_EVIDENCE` (+ OUTLET_PENDING) | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
-| Huatocay | — | Carabayllo · Lima | EVENT | 2023-03 | No | No | — | `EVENT_EVIDENCE` (+ OUTLET_PENDING) | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
-| Rio Seco ⚠ | — | Carabayllo · Lima | EVENT | 2023-03 | No | No | — | `EVENT_EVIDENCE` (+ OUTLET_PENDING) | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
-| San Lorenzo | — | Carabayllo · Lima | EVENT | 2023-03 | No | No | — | `EVENT_EVIDENCE` (+ OUTLET_PENDING) | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
+| Hacienda Caballero | — | Carabayllo · Lima | EVENT | 2023-03 | No | No | — | `EVENT_LEAD_UNVERIFIED` | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
+| Huatocay | — | Carabayllo · Lima | EVENT | 2023-03 | No | No | — | `EVENT_LEAD_UNVERIFIED` | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
+| Rio Seco ⚠ | — | Carabayllo · Lima | EVENT | 2023-03 | No | No | — | `EVENT_LEAD_UNVERIFIED` | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
+| San Lorenzo | — | Carabayllo · Lima | EVENT | 2023-03 | No | No | — | `EVENT_LEAD_UNVERIFIED` | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
 | quebrada ihuanco | — | Cerro Azul | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5803) |
 | Chilca Brazo Norte | — | Chilca · Cañete | FAJA | — | No · pista: faja ANA (hitos por extraer) | No | — | `GEOMETRY_PENDING` (+ OUTLET_PENDING) | main: unidad registrada `lima_sur_chilca_pucusana (source ANA-CHILCA-BRAZO-NORTE-RD0641-2024)` | EXISTING | ANA-FAJA-RD-SIGRID (SIGRID 17739) |
-| Huaycán | — | Cieneguilla · Lima | EVENT | 2023-03 | No | No | — | `EVENT_EVIDENCE` (+ OUTLET_PENDING) | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
+| Huaycán | — | Cieneguilla · Lima | EVENT | 2023-03 | No | No | — | `EVENT_LEAD_UNVERIFIED` | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
 | Huaycán de Cieneguilla | — | Cieneguilla · Lima | FAJA | — | No · pista: faja ANA (hitos por extraer) | No | — | `GEOMETRY_PENDING` (+ OUTLET_PENDING) | no está | P3 | ANA-FAJA-RD-SIGRID (SIGRID 18341) |
-| La Cantera | — | Cieneguilla · Lima | EVENT | 2023-03 | No | No | — | `EVENT_EVIDENCE` (+ OUTLET_PENDING) | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
-| Molle | — | Cieneguilla · Lima | EVENT | 2023-03 | No | No | — | `EVENT_EVIDENCE` (+ OUTLET_PENDING) | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
-| Río Seco ⚠ | — | Cieneguilla · Lima | EVENT | 2023-03 | No | No | — | `EVENT_EVIDENCE` (+ OUTLET_PENDING) | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
-| Tambo Viejo | — | Cieneguilla · Lima | EVENT | 2023-03 | No | No | — | `EVENT_EVIDENCE` (+ OUTLET_PENDING) | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
-| Terrazas | — | Cieneguilla · Lima | EVENT | 2023-03 | No | No | — | `EVENT_EVIDENCE` (+ OUTLET_PENDING) | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
-| Tinajas | — | Cieneguilla · Lima | EVENT | 2023-03 | No | No | — | `EVENT_EVIDENCE` (+ OUTLET_PENDING) | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
+| La Cantera | — | Cieneguilla · Lima | EVENT | 2023-03 | No | No | — | `EVENT_LEAD_UNVERIFIED` | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
+| Molle | — | Cieneguilla · Lima | EVENT | 2023-03 | No | No | — | `EVENT_LEAD_UNVERIFIED` | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
+| Río Seco ⚠ | — | Cieneguilla · Lima | EVENT | 2023-03 | No | No | — | `EVENT_LEAD_UNVERIFIED` | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
+| Tambo Viejo | — | Cieneguilla · Lima | EVENT | 2023-03 | No | No | — | `EVENT_LEAD_UNVERIFIED` | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
+| Terrazas | — | Cieneguilla · Lima | EVENT | 2023-03 | No | No | — | `EVENT_LEAD_UNVERIFIED` | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
+| Tinajas | — | Cieneguilla · Lima | EVENT | 2023-03 | No | No | — | `EVENT_LEAD_UNVERIFIED` | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
 | quebrada corralon | — | Coayllo | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5800) |
 | quebrada piedra hueca | — | Coayllo | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5801) |
 | quebrada san juan de quisque | — | Coayllo | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5802) |
@@ -325,7 +336,7 @@ No hay columna de cuenca o sistema padre: ninguna fuente leída lo sustenta para
 | quebrada los palomos | — | Lunahuaná | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5752) |
 | quebrada lucumo | — | Lunahuaná | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5753) |
 | quebrada paullo | — | Lunahuaná | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | main: mención sin confirmar · PR #213 | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5754) |
-| Pucara | — | Lurín · Lima | EVENT | 2023-03 | No | No | — | `EVENT_EVIDENCE` (+ OUTLET_PENDING) | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
+| Pucara | — | Lurín · Lima | EVENT | 2023-03 | No | No | — | `EVENT_LEAD_UNVERIFIED` | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
 | quebrada huarangal | — | Mala | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5794) |
 | quebrada ihuanco | — | Mala | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5795) |
 | quebrada san juan | — | Mala | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | main: mención sin confirmar | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5796) |
@@ -336,14 +347,14 @@ No hay columna de cuenca o sistema padre: ninguna fuente leída lo sustenta para
 | quebrada romani | — | Pacarán | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5755) |
 | quebrada tacayita | — | Pacarán | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5804) |
 | quebrada shipra | — | Pacaraos | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5762) |
-| Tinajas-Cosanche | — | Pachacámac · Lima | EVENT | 2023-03 | No | No | — | `EVENT_EVIDENCE` (+ OUTLET_PENDING) | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
-| Quebrada seca rio Chilca | — | Pucusana · Lima | EVENT | 2023-03 | No | No | — | `EVENT_EVIDENCE` (+ OUTLET_PENDING) | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
-| Malanche | — | Punta Hermosa · Lima | EVENT | 2023-03 | No | No | — | `EVENT_EVIDENCE` (+ OUTLET_PENDING) | main: unidad registrada `lima_sur_malanche (candidate inventory v0.2)` · PR #148, #213 | EXISTING | INDECI-DDI-LIMA-2023-BALANCE |
+| Tinajas-Cosanche | — | Pachacámac · Lima | EVENT | 2023-03 | No | No | — | `EVENT_LEAD_UNVERIFIED` | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
+| Quebrada seca rio Chilca | — | Pucusana · Lima | EVENT | 2023-03 | No | No | — | `EVENT_LEAD_UNVERIFIED` | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
+| Malanche | — | Punta Hermosa · Lima | EVENT | 2023-03 | No | No | — | `EVENT_LEAD_UNVERIFIED` | main: unidad registrada `lima_sur_malanche (candidate inventory v0.2)` · PR #148, #213 | EXISTING | INDECI-DDI-LIMA-2023-BALANCE |
 | Río Seco (Malanche) ⚠ | — | Punta Hermosa · Lima | FAJA | — | No · pista: faja ANA (hitos por extraer) | No | — | `GEOMETRY_PENDING` (+ OUTLET_PENDING) | main: mención sin confirmar | P3 | ANA-FAJA-RD-SIGRID (SIGRID 13056) |
-| Cruz de Hueso | — | Punta Negra · Lima | EVENT | 2023-03 | No | No | — | `EVENT_EVIDENCE` (+ OUTLET_PENDING) | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
+| Cruz de Hueso | — | Punta Negra · Lima | EVENT | 2023-03 | No | No | — | `EVENT_LEAD_UNVERIFIED` | no está | P3 | INDECI-DDI-LIMA-2023-BALANCE |
 | quebrada roldan-la capilla | — | Quilmaná | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5746) |
 | quebrada los jardines | — | San Antonio | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5785) |
-| Jicamarca | — | San Juan de Lurigancho · Lima | EVENT | 2023-03 | No | No | — | `EVENT_EVIDENCE` (+ OUTLET_PENDING) | main: unidad registrada `Jicamarca discovery system (config/phase2_jicamarca_discovery_v0_2.json)` | EXISTING | INDECI-DDI-LIMA-2023-BALANCE |
+| Jicamarca | — | San Juan de Lurigancho · Lima | EVENT | 2023-03 | No | No | — | `EVENT_LEAD_UNVERIFIED` | main: unidad registrada `Jicamarca discovery system (config/phase2_jicamarca_discovery_v0_2.json)` | EXISTING | INDECI-DDI-LIMA-2023-BALANCE |
 | quebrada san carlos | — | San Vicente de Cañete | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5747) |
 | quebrada río baños ⚠ | — | Santa Cruz de Andamarca | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5761) |
 | quebrada las viñas de sta cruz | — | Santa Cruz de Flores | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5784) |
@@ -356,7 +367,7 @@ No hay columna de cuenca o sistema padre: ninguna fuente leída lo sustenta para
 
 ### 5b. Costa de Piura (40 filas)
 
-| Nombre documental | Variantes observadas (sin adjudicar) | Distrito · provincia | Evidencia | Fechas documentadas | Geometría reproducible | Outlet | Relación con colector | Estado | En IRFEN | Prio. | Fuente e identificador |
+| Nombre documental | Variantes observadas (sin adjudicar) | Distrito · provincia | Evidencia | Fechas (pista sin verificar) | Geometría reproducible | Outlet | Relación con colector | Estado | En IRFEN | Prio. | Fuente e identificador |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | Boqueron de Núñez | — | Bellavista · Sullana | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-COMPLEMENTACION-NACIONAL (Cuadro 11 f.24) |
 | El Gallo | — | Castilla · Piura | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-COMPLEMENTACION-NACIONAL (Cuadro 11 f.16) |
@@ -401,7 +412,7 @@ No hay columna de cuenca o sistema padre: ninguna fuente leída lo sustenta para
 
 ### 5c. Lambayeque (46 filas)
 
-| Nombre documental | Variantes observadas (sin adjudicar) | Distrito · provincia | Evidencia | Fechas documentadas | Geometría reproducible | Outlet | Relación con colector | Estado | En IRFEN | Prio. | Fuente e identificador |
+| Nombre documental | Variantes observadas (sin adjudicar) | Distrito · provincia | Evidencia | Fechas (pista sin verificar) | Geometría reproducible | Outlet | Relación con colector | Estado | En IRFEN | Prio. | Fuente e identificador |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | Cojal ⚠ | — | Cayalti · Chiclayo | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | main: mención sin confirmar | P3 | ANA-2016-COMPLEMENTACION-NACIONAL (Cuadro 17 f.27) |
 | Guayaquil ⚠ | — | Cayalti · Chiclayo | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-COMPLEMENTACION-NACIONAL (Cuadro 17 f.43) |
@@ -452,7 +463,7 @@ No hay columna de cuenca o sistema padre: ninguna fuente leída lo sustenta para
 
 ### 5d. La Libertad (parcial) (9 filas)
 
-| Nombre documental | Variantes observadas (sin adjudicar) | Distrito · provincia | Evidencia | Fechas documentadas | Geometría reproducible | Outlet | Relación con colector | Estado | En IRFEN | Prio. | Fuente e identificador |
+| Nombre documental | Variantes observadas (sin adjudicar) | Distrito · provincia | Evidencia | Fechas (pista sin verificar) | Geometría reproducible | Outlet | Relación con colector | Estado | En IRFEN | Prio. | Fuente e identificador |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | quebrada gashpa - la botella | — | Chicama | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5590) |
 | quebradas la monica - piedra molino | — | Chicama | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5660) |
@@ -466,7 +477,7 @@ No hay columna de cuenca o sistema padre: ninguna fuente leída lo sustenta para
 
 ### 5e. Áncash interior (18 filas)
 
-| Nombre documental | Variantes observadas (sin adjudicar) | Distrito · provincia | Evidencia | Fechas documentadas | Geometría reproducible | Outlet | Relación con colector | Estado | En IRFEN | Prio. | Fuente e identificador |
+| Nombre documental | Variantes observadas (sin adjudicar) | Distrito · provincia | Evidencia | Fechas (pista sin verificar) | Geometría reproducible | Outlet | Relación con colector | Estado | En IRFEN | Prio. | Fuente e identificador |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | quebrada llamachupan ⚠ | — | Acas · Ocros | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P4 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 6001) |
 | quebradas piña urán y esperanza | — | Anta · Carhuaz | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P4 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5997) |
@@ -489,7 +500,7 @@ No hay columna de cuenca o sistema padre: ninguna fuente leída lo sustenta para
 
 ### 5f. Piura interior (38 filas)
 
-| Nombre documental | Variantes observadas (sin adjudicar) | Distrito · provincia | Evidencia | Fechas documentadas | Geometría reproducible | Outlet | Relación con colector | Estado | En IRFEN | Prio. | Fuente e identificador |
+| Nombre documental | Variantes observadas (sin adjudicar) | Distrito · provincia | Evidencia | Fechas (pista sin verificar) | Geometría reproducible | Outlet | Relación con colector | Estado | En IRFEN | Prio. | Fuente e identificador |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | Carrizo | — | Buenos Aires · Morropón | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P4 | ANA-2016-COMPLEMENTACION-NACIONAL (Cuadro 11 f.19) |
 | El Ingenio ⚠ | — | Buenos Aires · Morropón | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P4 | ANA-2016-COMPLEMENTACION-NACIONAL (Cuadro 11 f.21) |
@@ -602,14 +613,14 @@ No hay columna de cuenca o sistema padre: ninguna fuente leída lo sustenta para
 | P1 | Cuchimachay | Surco | `GEOMETRY_PENDING` | ANA-FAJA-RD-SIGRID (SIGRID 19619) |
 | P1 | Cupiche | Ricardo Palma | `GEOMETRY_PENDING` | ANA-FAJA-RD-SIGRID (SIGRID 6061); ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5775) |
 | P1 | Cusipata | Chaclacayo | `GEOMETRY_PENDING` | ANA-FAJA-RD-SIGRID (SIGRID 13203); INDECI-DDI-LIMA-2023-BALANCE; IGP-IT-001-2023 |
-| P1 | Don Bosco | Chaclacayo | `EVENT_EVIDENCE` | INDECI-DDI-LIMA-2023-BALANCE |
+| P1 | Don Bosco | Chaclacayo | `EVENT_LEAD_UNVERIFIED` | INDECI-DDI-LIMA-2023-BALANCE |
 | P1 | Huascarán | Chaclacayo | `GEOMETRY_PENDING` | ANA-FAJA-RD-SIGRID (SIGRID 19205); INDECI-DDI-LIMA-2023-BALANCE; IGP-IT-001-2023; PRESS-LEAD |
-| P1 | Huaycán (Ate) | Ate | `EVENT_EVIDENCE` | INDECI-DDI-LIMA-2023-BALANCE |
+| P1 | Huaycán (Ate) | Ate | `EVENT_LEAD_UNVERIFIED` | INDECI-DDI-LIMA-2023-BALANCE |
 | P1 | La Cantuta | Lurigancho-Chosica | `GEOMETRY_PENDING` | ANA-FAJA-RD-SIGRID (SIGRID 6074); ANA-FAJA-RD-SIGRID (SIGRID 19341); INDECI-DDI-LIMA-2023-BALANCE; MUNI-LURIGANCHO-EVAR-2015 |
 | P1 | Los Cóndores | Chaclacayo | `GEOMETRY_PENDING` | ANA-FAJA-RD-SIGRID (SIGRID 10436); INDECI-DDI-LIMA-2023-BALANCE; IGP-IT-001-2023 |
-| P1 | Santa María | Lurigancho-Chosica | `EVENT_EVIDENCE` | INGEMMET-A7437; MUNI-LURIGANCHO-PPRRD-2022-2025 |
-| P1 | Señor de los Milagros | Lurigancho-Chosica | `EVENT_EVIDENCE` | INDECI-DDI-LIMA-2023-BALANCE; INGEMMET-A7459 |
-| P1 | Virgen del Rosario | Lurigancho-Chosica | `EVENT_EVIDENCE` | INDECI-DDI-LIMA-2023-BALANCE; INGEMMET-A7459 |
+| P1 | Santa María | Lurigancho-Chosica | `EVENT_LEAD_UNVERIFIED` | INGEMMET-A7437; MUNI-LURIGANCHO-PPRRD-2022-2025 |
+| P1 | Señor de los Milagros | Lurigancho-Chosica | `EVENT_LEAD_UNVERIFIED` | INDECI-DDI-LIMA-2023-BALANCE; INGEMMET-A7459 |
+| P1 | Virgen del Rosario | Lurigancho-Chosica | `EVENT_LEAD_UNVERIFIED` | INDECI-DDI-LIMA-2023-BALANCE; INGEMMET-A7459 |
 | P2 | Barba Blanca | no indicado | `IDENTITY_ONLY` | CENEPRED-SIGRID-13867 |
 | P2 | Callahuanca | no indicado | `IDENTITY_ONLY` | ANDINA-MVCS-2023-02-23 |
 | P2 | Centro Santa Eulalia 1, 2 y 3 | Santa Eulalia | `IDENTITY_ONLY` | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5807) |
@@ -721,15 +732,15 @@ Las notas de acceso de cada fuente (qué parte se leyó y con qué límites) est
 
 ## 10. Prioridad sugerida para incorporación
 
-- **P1** (23 filas) — Unidad de Carretera Central / Rímac / Santa Eulalia que no es unidad local registrada en main y que tiene evidencia institucional de evento y/o una pista regulatoria de geometría.
-- **P2** (17 filas) — (a) Unidad de Pisco/Ica, Santa/Casma o Tumbes/Zorritos con evidencia institucional de evento y/o pista de geometría; o (b) nombre de Carretera Central sustentado solo por identidad, obras, ONG/prensa o lectura no verificada, que necesita antes una fuente institucional primaria verificada.
+- **P1** (23 filas) — Unidad de Carretera Central / Rímac / Santa Eulalia que no es unidad local registrada en main y que tiene una pista institucional de evento (sin verificar) y/o una pista regulatoria de geometría.
+- **P2** (17 filas) — (a) Unidad de Pisco/Ica, Santa/Casma o Tumbes/Zorritos con pista institucional de evento (sin verificar) y/o pista de geometría; o (b) nombre de Carretera Central sustentado solo por identidad, obras, ONG/prensa o lectura no verificada, que necesita antes una fuente institucional primaria verificada.
 - **P3** (291 filas) — Solo evidencia de identidad o punto crítico, en un corredor prioritario o en un corredor ya presente en IRFEN (otros valles de Lima y Lima Metropolitana, costa de Piura, Lambayeque, La Libertad).
 - **P4** (56 filas) — Filas de interior/sierra fuera de los corredores presentes o previstos en IRFEN; se conservan para no mutilar las tablas de la fuente.
 - **EXISTING** (13 filas) — Ya registrada en main (unidad local, sistema candidato o fuente citada). No requiere incorporación; la auditoría solo añade referencias cruzadas.
 
 Orden de trabajo propuesto, sin tocar el mapa:
 
-1. Verificar byte a byte las fuentes de las filas P1 (INDECI DDI Lima 2023, resoluciones de faja ANA, INGEMMET A7437) y archivarlas con SHA-256.
+1. Verificar byte a byte las fuentes de las filas P1 (INDECI DDI Lima 2023, resoluciones de faja ANA, INGEMMET A7437), archivarlas con SHA-256 y solo entonces promover sus pistas de evento a `EVENT_EVIDENCE`.
 2. Extraer por OCR los hitos de las fajas ANA de Carretera Central (La Cantuta, La Ronda, Yanacoto, Castilla, Cupiche, Corrales, Santo Domingo, Chacrasana, Los Cóndores, Cusipata, Huascarán) como contexto regulatorio.
 3. Adjudicar las relaciones de nombres de la sección 6 antes de crear cualquier hijo local.
 4. Completar el barrido que quedó pendiente (sección 11).
