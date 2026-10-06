@@ -267,6 +267,98 @@ def test_ingemmet_a6764_review_copy_is_registered_and_scoped():
     assert "INGEMMET-A6764-TUMBES-2017" in matrix["targets"]["sechurita"]["supporting_context_source_ids"]
 
 
+
+def test_ana_timeout_is_source_unavailable_not_a_negative_observation():
+    """A failed live ANA read must never manufacture a negative candidate snapshot."""
+    from unittest.mock import patch
+
+    spec = importlib.util.spec_from_file_location("probe_timeout", PROBE)
+    probe = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(probe)
+    with tempfile.TemporaryDirectory() as temp:
+        out = Path(temp) / "candidate_snapshot.json"
+        with patch.object(probe, "OUT", out), patch.object(
+            probe, "fetch", side_effect=TimeoutError("ANA source unavailable")
+        ):
+            with unittest.TestCase().assertRaises(TimeoutError):
+                probe.run()
+        assert not out.exists()
+
+
+def test_ana_empty_candidate_responses_remain_unknown_not_low_risk():
+    """Zero lexical hits are not a verified absence of a ravine or hazard."""
+    from unittest.mock import patch
+
+    spec = importlib.util.spec_from_file_location("probe_empty", PROBE)
+    probe = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(probe)
+    metadata = {
+        "id": 0,
+        "name": "ANA test metadata",
+        "capabilities": "Query",
+        "fields": [{"name": "NOMBRE_CA", "alias": "Nombre de cauce", "type": "esriFieldTypeString"}],
+    }
+    empty = {"type": "FeatureCollection", "features": []}
+
+    def fake_fetch(url):
+        payload = metadata if url == probe.metadata_url() else empty
+        return payload, json.dumps(payload, sort_keys=True).encode("utf-8")
+
+    with tempfile.TemporaryDirectory() as temp:
+        out = Path(temp) / "candidate_snapshot.json"
+        with patch.object(probe, "OUT", out), patch.object(probe, "fetch", side_effect=fake_fetch):
+            result = probe.run()
+        assert out.exists()
+        assert len(result["target_results"]) == 18
+        assert result["missing_data_rule"] == "UNKNOWN_NOT_LOW_RISK"
+        assert result["activation_gate"] == "BLOCKED"
+        assert result["production_use"] is False
+        for row in result["target_results"].values():
+            assert row["status"] == "NO_CANDIDATE_RETURNED_NOT_NEGATIVE"
+            assert row["candidate_count"] == 0
+            assert row["geometry_map_publishable"] is False
+            assert row["outlet_verified"] is False
+
+
+def test_ana_lexical_neighbour_tucillal_never_becomes_la_tucilla():
+    """Mock name matches cannot silently equate Tucillal with La Tucilla."""
+    from unittest.mock import patch
+
+    spec = importlib.util.spec_from_file_location("probe_neighbour", PROBE)
+    probe = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(probe)
+    metadata = {
+        "id": 0,
+        "name": "ANA test metadata",
+        "capabilities": "Query",
+        "fields": [{"name": "NOMBRE_CA", "alias": "Nombre de cauce", "type": "esriFieldTypeString"}],
+    }
+    rows = [
+        {"type": "Feature", "properties": {"NOMBRE_CA": "Quebrada Tucillal"}, "geometry": None},
+        {"type": "Feature", "properties": {"NOMBRE_CA": "Quebrada La Tucilla"}, "geometry": None},
+    ]
+
+    def fake_fetch(url):
+        if url == probe.metadata_url():
+            payload = metadata
+        else:
+            payload = {"type": "FeatureCollection", "features": rows if "TUCILLA" in url else []}
+        return payload, json.dumps(payload, sort_keys=True).encode("utf-8")
+
+    with tempfile.TemporaryDirectory() as temp:
+        with patch.object(probe, "OUT", Path(temp) / "candidate_snapshot.json"), patch.object(
+            probe, "fetch", side_effect=fake_fetch
+        ):
+            result = probe.run()
+    la_tucilla = result["target_results"]["la_tucilla"]
+    assert la_tucilla["candidate_count"] == 1
+    assert len(la_tucilla["lexical_neighbour_quarantine"]) == 1
+    assert la_tucilla["lexical_neighbour_quarantine"][0]["_irfen_probe"]["lexical_neighbour_token"] == "TUCILLAL"
+    assert la_tucilla["geometry_map_publishable"] is False
+    assert la_tucilla["outlet_verified"] is False
+    assert "tucillal" not in result["target_results"]
+
+
 class _ModuleFunctionTests(unittest.TestCase):
     """Expose the module-level test functions to `unittest discover` (pr-validation)."""
 
