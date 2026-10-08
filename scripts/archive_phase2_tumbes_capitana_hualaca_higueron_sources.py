@@ -212,7 +212,13 @@ def capture() -> int:
             candidates = []
             if query["kind"].startswith("wp_"):
                 try:
-                    for item in json.loads(data.decode("utf-8", "replace")):
+                    payload = json.loads(data.decode("utf-8", "replace"))
+                    if not isinstance(payload, list):
+                        record["parse_error"] = "JSON_NOT_A_RESULT_LIST"
+                        payload = []
+                    for item in payload:
+                        if not isinstance(item, dict):
+                            continue
                         url = item.get("source_url") or item.get("url") or item.get("link")
                         title = item.get("title")
                         title = title.get("rendered") if isinstance(title, dict) else title

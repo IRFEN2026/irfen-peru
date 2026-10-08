@@ -47,11 +47,28 @@ jobs:
           fi
           if [[ "$recorded" != "$current" ]]; then
             echo "capture=true" >> "$GITHUB_OUTPUT"
-            python scripts/archive_phase2_tumbes_capitana_hualaca_higueron_sources.py --capture
+            if ! python scripts/archive_phase2_tumbes_capitana_hualaca_higueron_sources.py --capture > capture.log 2>&1; then
+              cat capture.log
+              python -c 'import sys; t=open("capture.log").read()[-6000:]; print("::error title=CAPTURE_FAILED::" + t.replace("%","%25").replace("\r","").replace("\n","%0A"))'
+              exit 1
+            fi
+            cat capture.log
+            python - <<'PY'
+          import json
+          m = json.load(open("site/data/phase2/sources/tumbes_capitana_hualaca_higueron/archive_manifest_v0_1.json"))
+          rows = [f"{r['document_id']}|{r['status']}|{r.get('http_status')}|{','.join(r.get('terms_found', []))}|{r.get('requested_url','')[:110]}" for r in m["records"]]
+          print("::notice title=CAPTURE_SUMMARY::" + "%0A".join(rows).replace("\r", ""))
+          PY
           else
             echo "capture=false" >> "$GITHUB_OUTPUT"
           fi
-          python scripts/archive_phase2_tumbes_capitana_hualaca_higueron_sources.py
+          if ! python scripts/archive_phase2_tumbes_capitana_hualaca_higueron_sources.py > verify.log 2>&1; then
+            cat verify.log
+            python -c 'import sys; t=open("verify.log").read()[-6000:]; print("::error title=VERIFY_FAILED::" + t.replace("%","%25").replace("\r","").replace("\n","%0A"))'
+            exit 1
+          fi
+          cat verify.log
+          rm -f capture.log verify.log
       - name: Verify offline replay leaves the archive unchanged
         if: steps.mode.outputs.capture == 'false'
         run: git diff --exit-code -- site/data/phase2/sources/tumbes_capitana_hualaca_higueron
