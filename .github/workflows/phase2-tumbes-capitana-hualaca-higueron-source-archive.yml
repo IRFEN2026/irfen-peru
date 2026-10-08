@@ -6,6 +6,7 @@ on:
       - config/phase2_tumbes_capitana_hualaca_higueron_capture_seeds_v0_1.json
       - config/phase2_tumbes_capitana_hualaca_higueron_identity_v0_1.json
       - scripts/archive_phase2_tumbes_capitana_hualaca_higueron_sources.py
+      - scripts/validate_phase2_tumbes_capitana_hualaca_higueron_identity.py
       - tests/test_phase2_tumbes_capitana_hualaca_higueron_identity.py
       - site/data/phase2/sources/tumbes_capitana_hualaca_higueron/**
       - .github/workflows/phase2-tumbes-capitana-hualaca-higueron-source-archive.yml
@@ -72,12 +73,11 @@ jobs:
       - name: Verify offline replay leaves the archive unchanged
         if: steps.mode.outputs.capture == 'false'
         run: git diff --exit-code -- site/data/phase2/sources/tumbes_capitana_hualaca_higueron
-      - name: Run fail-closed identity tests
+      - name: Run fail-closed identity validator and tests
+        if: steps.mode.outputs.capture == 'false'
         run: |
-          if [[ -f tests/test_phase2_tumbes_capitana_hualaca_higueron_identity.py ]]; then
-            python -m pytest tests/test_phase2_tumbes_capitana_hualaca_higueron_identity.py -q
-          fi
-        shell: bash
+          python scripts/validate_phase2_tumbes_capitana_hualaca_higueron_identity.py
+          python -m pytest tests/test_phase2_tumbes_capitana_hualaca_higueron_identity.py -q
       - name: Commit captured bytes, hashes and text extractions once
         if: steps.mode.outputs.capture == 'true' && github.event_name == 'pull_request'
         shell: bash
