@@ -1,0 +1,32 @@
+name: IRFEN - Chosica 2015 pre-unblind freezes
+on:
+  pull_request:
+    paths:
+      - 'config/chosica_2015_morphometry_phase1_freeze_contract_v0_2.json'
+      - 'config/chosica_2015_morphometry_phase1_freeze_record_v0_1.json'
+      - 'config/chosica_2015_preunblind_imerg_freeze_record_v0_1.json'
+      - 'scripts/validate_chosica_2015_preunblind_freezes.py'
+      - '.github/workflows/chosica-2015-preunblind-freeze.yml'
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: read
+jobs:
+  validate-freezes:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: Download exact frozen reports
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/morph artifacts/imerg
+          gh run download 34291741232 --repo "$GH_REPO" --name chosica-2015-morphometry-phase1 --dir artifacts/morph
+          gh run download 34291741336 --repo "$GH_REPO" --name chosica-2015-preunblind-imerg --dir artifacts/imerg
+      - name: Validate exact hashes and anti-leakage gates
+        run: |
+          python scripts/validate_chosica_2015_preunblind_freezes.py \
+            --morph-report artifacts/morph/chosica_2015_morphometry_phase1.json \
+            --imerg-report artifacts/imerg/chosica_2015_preunblind_imerg.json

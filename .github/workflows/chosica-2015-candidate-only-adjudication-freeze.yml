@@ -1,0 +1,71 @@
+name: IRFEN - Chosica 2015 candidate-only adjudication freeze
+
+on:
+  pull_request:
+    paths:
+      - site/data/validation/chosica_2015_candidate_only_territorial_adjudication_v0_1.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-and-freeze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_candidate_only_territorial_adjudication_ingest_contract_v0_1.json
+            config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json
+            config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+            config/chosica_2015_candidate_only_territorial_unblind_contract_v0_1.json
+            site/data/validation/chosica_2015_cleanroom_candidate_review_packet_v0_1.json
+            site/data/validation/chosica_2015_candidate_only_territorial_adjudication_v0_1.json
+            scripts/validate_chosica_2015_candidate_only_adjudication.py
+      - name: Fail closed if independent adjudication artifact is absent
+        run: test -f site/data/validation/chosica_2015_candidate_only_territorial_adjudication_v0_1.json
+      - name: Prove sealed target sources and contaminated incident records are absent
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09_b.json
+          test ! -e config/chosica_2015_outlet_freeze_registry_v0_1.json
+          test ! -e config/chosica_2015_multibasin_validation_set_v0_1.json
+          echo PASS_CANDIDATE_ADJUDICATION_SPARSE_WORKSPACE
+      - name: Validate isolated adjudication and freeze control set
+        run: |
+          mkdir -p artifacts
+          python scripts/validate_chosica_2015_candidate_only_adjudication.py \
+            --contract config/chosica_2015_candidate_only_territorial_adjudication_ingest_contract_v0_1.json \
+            --cleanroom-freeze config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json \
+            --contamination config/chosica_2015_control_adjudication_contamination_registry_v0_1.json \
+            --territorial-contract config/chosica_2015_candidate_only_territorial_unblind_contract_v0_1.json \
+            --packet site/data/validation/chosica_2015_cleanroom_candidate_review_packet_v0_1.json \
+            --adjudication site/data/validation/chosica_2015_candidate_only_territorial_adjudication_v0_1.json \
+            --output artifacts/chosica_2015_candidate_only_control_set_freeze.json
+      - name: Enforce scientific guards on frozen output
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/chosica_2015_candidate_only_control_set_freeze.json',encoding='utf-8'))
+          assert d['status']=='CANDIDATE_ONLY_CONTROL_SET_FROZEN_BY_ADJUDICATION_SHA256'
+          assert d['guards']=={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          assert d['candidate_count']==7
+          assert d['candidate_replacement_performed'] is False
+          assert d['matching_recalculated_after_review'] is False
+          assert d['selection_feedback_used'] is False
+          assert d['contaminated_adjudication_reused'] is False
+          assert d['target_outcomes_accessed'] is False
+          assert d['a6680_accessed'] is False
+          assert d['target_unblind_allowed'] is False
+          assert len(d['confirmed_control_codes'])+len(d['excluded_activated_codes'])+len(d['outcome_unknown_codes'])==7
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-candidate-only-control-set-freeze
+          path: artifacts/chosica_2015_candidate_only_control_set_freeze.json
+          if-no-files-found: error

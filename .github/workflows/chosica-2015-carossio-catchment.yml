@@ -1,0 +1,60 @@
+name: IRFEN - Chosica 2015 Carossio catchment
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_carossio_geometry_delineation_contract_v0_1.json
+      - config/chosica_2015_outlet_freeze_registry_v0_1.json
+      - site/data/validation/chosica_2015_carossio_outlet_candidate.json
+      - scripts/delineate_chosica_2015_frozen_outlet_catchment.py
+      - .github/workflows/chosica-2015-carossio-catchment.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  delineate-carossio-catchment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install scientific dependencies
+        run: pip install -r requirements.txt
+      - name: Delineate frozen-pour-point D8 catchment candidate
+        run: |
+          mkdir -p artifacts
+          python scripts/delineate_chosica_2015_frozen_outlet_catchment.py \
+            --contract config/chosica_2015_carossio_geometry_delineation_contract_v0_1.json \
+            --report artifacts/chosica_2015_carossio_catchment_report.json \
+            --geojson artifacts/chosica_2015_carossio_catchment.geojson
+      - name: Enforce geometry-only anti-leakage guards
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/chosica_2015_carossio_catchment_report.json',encoding='utf-8'))
+          assert d['status'] == 'PASS_CAROSSIO_EXPANDED_D8_CATCHMENT_CANDIDATE'
+          assert d['geometry_only'] is True
+          assert d['morphometry_computed'] is False
+          assert d['outcome_evidence_read'] is False
+          assert d['a6680_numeric_reference_read'] is False
+          assert d['post_anchor_predictor_read'] is False
+          assert d['catchment_touches_dem_boundary'] is False
+          assert d['freeze_eligible'] is True
+          assert d['guards']['RESEARCH_ONLY'] is True
+          assert d['guards']['TEST_ONLY'] is True
+          assert d['guards']['production_use'] is False
+          assert d['guards']['production_ready'] is False
+          assert d['guards']['operational_alerting_enabled'] is False
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-carossio-catchment-candidate
+          path: |
+            artifacts/chosica_2015_carossio_catchment_report.json
+            artifacts/chosica_2015_carossio_catchment.geojson
+          if-no-files-found: error

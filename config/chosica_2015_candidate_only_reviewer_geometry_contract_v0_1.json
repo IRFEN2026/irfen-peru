@@ -1,0 +1,49 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_CANDIDATE_ONLY_REVIEWER_GEOMETRY_CONTRACT",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "source_artifact": {
+    "workflow_run_id": 34375704757,
+    "artifact_id": 10113835166,
+    "artifact_name": "chosica-2015-negative-control-shortlist-geometry",
+    "artifact_digest": "sha256:81308b3ebad4c5acb2f2886c2760060c93c114fdac92ddc21ff06bd32201064e",
+    "source_geojson_file": "chosica_2015_negative_control_shortlist.geojson",
+    "source_geojson_sha256": "7fc3db40f7163a7b8019640ffbaa4564e54e09fc769b9de0c4554bcec382c412"
+  },
+  "frozen_fingerprint_registry": "config/chosica_2015_candidate_only_geometry_fingerprint_freeze_v0_1.json",
+  "reviewer_bundle": "site/data/validation/chosica_2015_candidate_only_reviewer_bundle_v0_2.json",
+  "reviewer_bundle_sha256": "c4f62777d31a223f77de049ea368c321f5c299114d6a14f407899c772e911f15",
+  "candidate_membership_sha256": "5738c0e2bcddf95be0e1cc9c77660d030355602f39920b3873c6ec65b0f26bc1",
+  "derivation": {
+    "candidate_code_rule": "C_ + first 12 hex characters of SHA256(candidate_id)",
+    "geometry_hash_rule": "SHA256(canonical JSON geometry with sort_keys=true,separators=(',',':'))",
+    "feature_order": "candidate_code ascending",
+    "allowed_output_properties": [
+      "candidate_code",
+      "geometry_sha256",
+      "RESEARCH_ONLY",
+      "TEST_ONLY",
+      "production_use",
+      "production_ready",
+      "operational_alerting_enabled"
+    ]
+  },
+  "forbidden_output_tokens_case_insensitive": [
+    "cashahuacra", "quirio", "pedregal", "san antonio", "san_antonio",
+    "la libertad", "la_libertad", "carossio", "carosio", "rayos de sol",
+    "rayos_de_sol", "corrales", "official_outcome_evidence", "a6680",
+    "activation", "severity", "damage", "outcome"
+  ],
+  "network_policy": "The builder itself is offline. GitHub network access is used only by the workflow to download the exact allowlisted preincident artifact before the builder runs.",
+  "scientific_use": "Exact anonymized candidate polygons for independent candidate-only territorial review after matching is frozen. Geometry is not outcome evidence by itself.",
+  "selection_feedback_allowed": false,
+  "candidate_replacement_allowed": false,
+  "target_unblind_allowed": false
+}
