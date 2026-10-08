@@ -178,6 +178,14 @@ def capture() -> int:
         except Exception as exc:  # noqa: BLE001
             pages = []
             record["text_extraction"] = f"FAILED: {type(exc).__name__}"
+        if not pdf and origin.get("kind") in {"seed", "discovery_result"}:
+            for url, label in links(data, result.get("final_url") or result["requested_url"]):
+                lower = url.lower()
+                looks_doc = lower.endswith(".pdf") or "/descargar" in lower or "/bitstream" in lower or "/bitstreams/" in lower
+                if looks_doc and allowed(url, hosts) and url not in seen:
+                    attachment = origin["kind"] == "seed" and "/wp-content/uploads/" in lower and "descargar" in fold(label)
+                    queue.append((url, dict(kind="link_from_archived_page" if attachment else "link_from_page", parent=doc_id,
+                                            anchor_text=label[:200], retained_as_seed_attachment=attachment), attachment))
         hits = term_hits(pages, terms)
         record.update(media="pdf" if pdf else "html", bytes=len(data), sha256=sha256_bytes(data), page_count=len(pages),
                       text_characters=sum(len(p) for p in pages), term_hits=hits,
@@ -204,12 +212,6 @@ def capture() -> int:
         record.update(status="ARCHIVED", raw_path=str(raw_path.relative_to(ROOT)), text_path=str(text_path.relative_to(ROOT)),
                       text_sha256=sha256_bytes(text_path.read_bytes()))
         records.append(record)
-        if not pdf and len(queue) < limits["max_documents"]:
-            for url, label in links(data, result.get("final_url") or result["requested_url"]):
-                lower = url.lower()
-                looks_doc = lower.endswith(".pdf") or "/descargar" in lower or "/bitstream" in lower or "/bitstreams/" in lower
-                if looks_doc and allowed(url, hosts) and url not in seen:
-                    queue.append((url, dict(kind="link_from_archived_page", parent=doc_id, anchor_text=label[:200]), False))
 
     for query in seeds["discovery_queries"]:
         result = fetch(query["url"], limits["timeout_seconds"], 3_000_000)
@@ -239,6 +241,10 @@ def capture() -> int:
                             candidates.append((url, str(title or "")))
                 except ValueError:
                     record["parse_error"] = "NOT_JSON"
+            elif query["kind"] == "html_site_search":
+                found = [(u, t) for u, t in links(data, result.get("final_url") or query["url"]) if "/emergencias/" in u]
+                unique = list(dict.fromkeys(found))
+                candidates = unique[: limits.get("max_site_search_results_per_query", 15)]
             else:
                 candidates = [(u, t) for u, t in links(data, result.get("final_url") or query["url"])
                               if term_rx.search(fold(t)) and DOC_URL_RE.search(u)]
@@ -251,8 +257,15 @@ def capture() -> int:
         records.append(record)
         time.sleep(1)
 
-    for seed in seeds["seed_documents"]:
-        queue.insert(0, (seed["url"], dict(kind="seed", seed_id=seed["id"], institution=seed["institution"], why=seed["why"]), True))
+    front = [(seed["url"], dict(kind="seed", seed_id=seed["id"], institution=seed["institution"], why=seed["why"]), True)
+             for seed in seeds["seed_documents"]]
+    front += [(probe["url"], dict(kind="probe", seed_id=probe["id"], institution=probe["institution"], why=probe["why"]), False)
+              for probe in seeds.get("probe_documents", [])]
+    sweep = seeds.get("sigrid_id_sweep")
+    if sweep:
+        front += [(sweep["url_template"].format(id=i), dict(kind="sigrid_id_sweep", seed_id=f"sigrid-{i}"), False)
+                  for i in range(sweep["from"], sweep["to"] + 1)]
+    queue[:0] = front
 
     count = 0
     while queue and count < limits["max_documents"]:
