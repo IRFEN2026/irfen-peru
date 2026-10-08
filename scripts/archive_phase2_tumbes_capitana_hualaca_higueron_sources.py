@@ -115,7 +115,11 @@ def is_pdf(result: dict) -> bool:
 
 
 def pdf_pages(data: bytes) -> list[str]:
+    import logging
+
     from pypdf import PdfReader  # imported lazily: offline verification needs no PDF parser
+
+    logging.getLogger("pypdf").setLevel(logging.ERROR)
 
     reader = PdfReader(io.BytesIO(data))
     pages = []
@@ -362,7 +366,11 @@ def capture_supplements() -> int:
             attempts.append(attempt)
             if result["status"] == "CAPTURED" and (not item.get("expect_pdf") or (result["data"] or b"")[:5] == b"%PDF-"):
                 data = result["data"]
-                pages = pdf_pages(data) if is_pdf(result) else [html_text(data)]
+                try:
+                    pages = pdf_pages(data) if is_pdf(result) else [html_text(data)]
+                except Exception as exc:  # noqa: BLE001 - one unreadable candidate must not stop the capture
+                    attempt.update(sha256=sha256_bytes(data), bytes=len(data), rejected=f"TEXT_EXTRACTION_FAILED: {type(exc).__name__}: {str(exc)[:160]}")
+                    continue
                 hits = term_hits(pages, terms)
                 attempt.update(sha256=sha256_bytes(data), bytes=len(data), terms_found=sorted({h["term"] for h in hits}))
                 if accept and not any(a in fold(" ".join(pages)) for a in accept):
