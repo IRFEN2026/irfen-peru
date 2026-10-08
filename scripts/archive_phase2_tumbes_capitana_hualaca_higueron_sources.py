@@ -303,8 +303,42 @@ def capture() -> int:
     return 0
 
 
-def route_kind(url: str) -> str:
-    return "WAYBACK_ID_REPLAY_OF_OFFICIAL_URL" if urlparse(url).netloc.lower() == "web.archive.org" else "OFFICIAL_HOST"
+def expand_routes(routes: list, limits: dict, attempts: list):
+    """Yield (url, route description). Plain strings are direct URLs; dicts expand lazily.
+
+    * ``wayback_cdx``: list Wayback snapshots of ``target`` and replay each with ``id_``
+      (the bytes Wayback stored for the official URL).
+    * ``html_follow_links``: fetch an official landing page and try the links whose
+      URL or anchor text matches ``link_pattern``.
+    """
+    for route in routes:
+        if isinstance(route, str):
+            kind = "WAYBACK_ID_REPLAY_OF_OFFICIAL_URL" if urlparse(route).netloc.lower() == "web.archive.org" else "OFFICIAL_HOST_DIRECT"
+            yield route, kind, []
+            continue
+        if route["kind"] == "wayback_cdx":
+            cdx = "https://web.archive.org/cdx/search/cdx?output=json&filter=statuscode:200&url=" + quote(route["target"], safe="")
+            result = fetch(cdx, limits["timeout_seconds"], 2_000_000)
+            attempts.append(dict(requested_url=cdx, status=result["status"], http_status=result.get("http_status"), route="WAYBACK_CDX_LOOKUP"))
+            rows = []
+            if result["status"] == "CAPTURED":
+                try:
+                    rows = json.loads(result["data"].decode("utf-8", "replace"))[1:]
+                except ValueError:
+                    rows = []
+            attempts[-1]["snapshots"] = len(rows)
+            for row in rows[-5:]:
+                yield f"https://web.archive.org/web/{row[1]}id_/{row[2]}", f"WAYBACK_ID_REPLAY_OF_OFFICIAL_URL ({row[1]})", []
+        elif route["kind"] == "html_follow_links":
+            result = fetch(route["url"], limits["timeout_seconds"], 5_000_000)
+            attempts.append(dict(requested_url=route["url"], status=result["status"], http_status=result.get("http_status"), route="LANDING_PAGE"))
+            if result["status"] != "CAPTURED":
+                continue
+            rx = re.compile(route["link_pattern"], re.I)
+            found = [(u, t) for u, t in links(result["data"], result.get("final_url") or route["url"]) if rx.search(u) or rx.search(t)]
+            attempts[-1]["matching_links"] = [dict(url=u, text=t[:120]) for u, t in found[:20]]
+            for url, text in list(dict.fromkeys(found))[: route.get("max_links", 10)]:
+                yield url, f"LINK_FROM_OFFICIAL_LANDING_PAGE ({route['url']})", [fold(t) for t in route.get("accept_only_if_text_contains_any", [])]
 
 
 def capture_supplements() -> int:
@@ -321,13 +355,19 @@ def capture_supplements() -> int:
             continue
         manifest["records"] = [r for r in manifest["records"] if r["document_id"] != doc_id]
         attempts, record = [], None
-        for url in item["routes"]:
+        for url, how, accept in expand_routes(item["routes"], limits, attempts):
             result = fetch(url, limits["timeout_seconds"], limits["max_bytes_per_document"])
-            attempts.append({k: v for k, v in result.items() if k in ("requested_url", "status", "http_status", "error", "final_url", "retrieved_at_utc")})
+            attempt = {k: v for k, v in result.items() if k in ("requested_url", "status", "http_status", "error", "final_url", "retrieved_at_utc")}
+            attempt["route"] = how
+            attempts.append(attempt)
             if result["status"] == "CAPTURED" and (not item.get("expect_pdf") or (result["data"] or b"")[:5] == b"%PDF-"):
                 data = result["data"]
                 pages = pdf_pages(data) if is_pdf(result) else [html_text(data)]
                 hits = term_hits(pages, terms)
+                attempt.update(sha256=sha256_bytes(data), bytes=len(data), terms_found=sorted({h["term"] for h in hits}))
+                if accept and not any(a in fold(" ".join(pages)) for a in accept):
+                    attempt["rejected"] = "TEXT_LACKS_REQUIRED_TOKEN"
+                    continue
                 ext = ".pdf" if is_pdf(result) else ".html"
                 raw_path = ARCHIVE / "raw" / f"{doc_id}{ext}"
                 raw_path.write_bytes(data)
@@ -336,7 +376,7 @@ def capture_supplements() -> int:
                 record = dict(
                     document_id=doc_id, origin=dict(kind="supplement", seed_id=doc_id, institution=item["institution"], why=item["why"], requested_by=item.get("requested_by")),
                     **{k: v for k, v in result.items() if k != "data"},
-                    official_url=item["official_url"], served_by_route=route_kind(url), route_attempts=attempts,
+                    official_url=item["official_url"], served_by_route=how, route_attempts=attempts,
                     text_extraction="PYPDF_PER_PAGE" if ext == ".pdf" else "HTML_TAGS_STRIPPED",
                     media=ext[1:], bytes=len(data), sha256=sha256_bytes(data), page_count=len(pages),
                     text_characters=sum(len(p) for p in pages), term_hits=hits, terms_found=sorted({h["term"] for h in hits}),
