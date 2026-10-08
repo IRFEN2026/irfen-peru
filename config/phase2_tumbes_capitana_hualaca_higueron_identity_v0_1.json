@@ -1,6 +1,7 @@
 {
-  "schema_version": "0.1",
+  "schema_version": "0.2",
   "registry_id": "phase2-tumbes-capitana-hualaca-higueron-identity:v0.1",
+  "revision": "r2 (2026-10-09): Hualaca attested by ANA Anexo II DU 015-2023; every channel relation UNRESOLVED; archive moved out of site/",
   "status": "RESEARCH_ONLY_DOCUMENTARY_IDENTITY_RECORD_PENDING_INDEPENDENT_QA",
   "deployment_status": "RESEARCH_ONLY",
   "test_mode": "TEST_ONLY",
@@ -14,21 +15,61 @@
   "purpose": "Documentary identity record for the names La Capitana, Hualaca and Higuerón (Tumbes). Every statement rests on a verbatim quote from an official source archived in this PR with its real SHA-256. It does not create channels, catchments, outlets, receivers, events in any ledger, thresholds or map layers.",
   "provenance": {
     "main_reviewed_at_commit": "879f9254439d803755582050801cb6343eaad982",
-    "archive_manifest": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/archive_manifest_v0_1.json",
-    "archive_manifest_sha256": "bca8cb8ec503849d8a95035f1ad22224c365567bd7b548ef7c2bbf9d1b708c55",
     "archive_seeds": "config/phase2_tumbes_capitana_hualaca_higueron_capture_seeds_v0_1.json",
-    "archive_seeds_sha256": "37842523c844616954d7b15c82eac440b8367c860c046164784716b9db2b825a",
-    "archive_captured_at_utc": "2026-10-08T14:17:22.752117+00:00",
     "capture_environment": "GitHub Actions runner (pull_request workflow phase2-tumbes-capitana-hualaca-higueron-source-archive)",
     "text_reading_method": "pypdf text layer (PDF) or tag-stripped HTML, extracted from the archived bytes on the capture runner and stored in text/*.pages.json. No OCR, no LLM summarisation.",
     "quote_rule": "Each quote is a verbatim (whitespace-normalised) substring of the archived text page it cites; tests re-check this against files whose SHA-256 matches the manifest.",
     "map_label_caveat": "Map PDFs (ANA 2016) are read through their text layer. The order of labels in the extraction is not a spatial order: two labels printed next to each other in a quote need not be neighbours on the map.",
-    "independent_review": "PENDING (ChatGPT scientific review). No quote has been re-read by a second reviewer yet.",
     "duplicate_check": {
       "main": "On main 879f925, 'La Capitana' appears only as a settlement name in tumbes_rio_tumbes_official_evidence_v0_1.json and phase2_discovery_packages/tumbes_rio_tumbes.json (INDECI 2024-02-20). No quebrada La Capitana, no Tumbes Higuerón, no Hualaca and no Hualtacal anywhere on main. The national audit has one homonym outside Tumbes: piura_lalaquiz_el_higueron.",
       "open_pull_requests": "All 30 open PRs (#309–#364) diffed against main on 2026-10-08: no hunk names Hualaca, Higuerón, Capitana or Hualtacal except this PR.",
       "result": "NO_DUPLICATE_RECORD_FOUND"
-    }
+    },
+    "archive_manifest": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/archive_manifest_v0_1.json",
+    "archive_manifest_sha256": "4b9938e63e54c6c3bc46c797101f3e7eae14e884347986124cf4ca44207f48a6",
+    "archive_seeds_sha256": "cdc4596b72ce02ff7592ee5e431f9fbec4f0bf60987b005acc47bc7d9cd96d71",
+    "archive_captured_at_utc": "2026-10-08T14:17:22.752117+00:00",
+    "supplement_captures": [
+      {
+        "captured_at_utc": "2026-10-08T22:58:33.893091+00:00",
+        "documents": [
+          "ana-du-015-2023-anexo-ii: UNREACHABLE_ALL_ROUTES"
+        ]
+      },
+      {
+        "captured_at_utc": "2026-10-08T23:09:37.856449+00:00",
+        "documents": [
+          "ana-du-015-2023-anexo-ii: ARCHIVED"
+        ]
+      },
+      {
+        "captured_at_utc": "2026-10-08T23:11:33.379717+00:00",
+        "documents": [
+          "mef-gobpe-du-015-2023-norm-page: ARCHIVED",
+          "mef-gobpe-du-015-2023-text: ARCHIVED"
+        ]
+      },
+      {
+        "captured_at_utc": "2026-10-08T23:12:38.279161+00:00",
+        "documents": [
+          "ana-du-015-2023-anexo-iii: ARCHIVED"
+        ]
+      }
+    ],
+    "storage": "Original bytes, text extractions and the manifest live in data/phase2/source_archive/tumbes_capitana_hualaca_higueron/, outside site/ (the only directory GitHub Pages publishes). They were moved there with git mv on 2026-10-09; bytes and SHA-256 are unchanged.",
+    "independent_review": [
+      {
+        "by": "ChatGPT",
+        "on": "2026-10-08",
+        "requested": [
+          "Incorporate Hualaca from ANA Anexo II DU 015-2023, row 17, archived with its real SHA-256, without presupposing same or different channel as Higuerón.",
+          "Keep undemonstrated relations UNRESOLVED: two names in official sources do not prove two hydraulically independent channels.",
+          "Move the original PDFs out of site/ while keeping traceability, hashes and automated checks."
+        ],
+        "status": "ADDRESSED_IN_R2_PENDING_NEW_INDEPENDENT_REVIEW"
+      }
+    ],
+    "relation_rule": "Two different names in official sources show that the sources use two labels. They do not show two hydraulically independent channels: one channel can carry different names by reach or by sector, and two names can belong to connected channels. Without reproducible geometry no relation is asserted."
   },
   "sources": {
     "INGEMMET-A6764-TUMBES-2017": {
@@ -42,11 +83,11 @@
       "source_url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/3708/descargar",
       "final_url": "http://sigrid.cenepred.gob.pe/docs/PARA%20PUBLICAR/INGEMMET/Informe_Tecnico_6764_Evaluacion_geologica_de_las_zonas_afectadas_por_el_nino_costero_Tumbes_2017.pdf",
       "retrieved_at_utc": "2026-10-08T14:08:51.005044+00:00",
-      "raw_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/raw/sigrid-3708-ingemmet-a6764-tumbes-2017.pdf",
+      "raw_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/raw/sigrid-3708-ingemmet-a6764-tumbes-2017.pdf",
       "sha256": "e32e0c506300368351e54d5d190219c764995b913f3604e466f8185edd7b5231",
       "bytes": 10450600,
       "media": "pdf",
-      "text_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/text/sigrid-3708-ingemmet-a6764-tumbes-2017.pages.json",
+      "text_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/text/sigrid-3708-ingemmet-a6764-tumbes-2017.pages.json",
       "text_sha256": "562428530ced087d9b0cabcf7f8e94d5e087c84f8ccb9c279ff78720f92739ef",
       "text_extraction": "PYPDF_PER_PAGE"
     },
@@ -59,11 +100,11 @@
       "source_url": "https://busquedas.elperuano.pe/dispositivo/NL/2502573-2",
       "final_url": "https://busquedas.elperuano.pe/dispositivo/NL/2502573-2",
       "retrieved_at_utc": "2026-10-08T14:08:40.762549+00:00",
-      "raw_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/raw/elperuano-ley-32573-limites-tumbes.html",
+      "raw_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/raw/elperuano-ley-32573-limites-tumbes.html",
       "sha256": "af13a052b86bdfbd5c1153cb6ade854421a4230e29546b50bb6c25bebd879d4a",
       "bytes": 189242,
       "media": "html",
-      "text_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/text/elperuano-ley-32573-limites-tumbes.pages.json",
+      "text_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/text/elperuano-ley-32573-limites-tumbes.pages.json",
       "text_sha256": "0626fa76aef35db63370b8103956ee90c369ff87cf1fd76fffc95129da996a99",
       "text_extraction": "HTML_TAGS_STRIPPED"
     },
@@ -76,11 +117,11 @@
       "source_url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/3743/descargar",
       "final_url": "http://sigrid.cenepred.gob.pe/docs/PARA%20PUBLICAR/ANA/Mapa_Ubicacion_de_poblaciones_vulnerables_por_activacion_de_quebradas_Tumbes_2016.pdf",
       "retrieved_at_utc": "2026-10-08T14:11:09.704676+00:00",
-      "raw_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/raw/sigrid-3743.pdf",
+      "raw_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/raw/sigrid-3743.pdf",
       "sha256": "3b63261930a7e908722c8109b4818908e08cdb28591d96edc7a54171d165f8c8",
       "bytes": 2362506,
       "media": "pdf",
-      "text_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/text/sigrid-3743.pages.json",
+      "text_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/text/sigrid-3743.pages.json",
       "text_sha256": "90a27e291788face3c83135330cef2ced30d5c92fe9f11074951b6dec98dc009",
       "text_extraction": "PYPDF_PER_PAGE"
     },
@@ -93,11 +134,11 @@
       "source_url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/3755/descargar",
       "final_url": "http://sigrid.cenepred.gob.pe/docs/PARA%20PUBLICAR/ANA/Mapa_de_ubicacion_quebrada_Oidor_centro_poblado_Oidor_Tumbes_2016.pdf",
       "retrieved_at_utc": "2026-10-08T14:09:14.352842+00:00",
-      "raw_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/raw/sigrid-3755.pdf",
+      "raw_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/raw/sigrid-3755.pdf",
       "sha256": "2186e4cfab39a8e1056e2c77dfff8124ee3b8196dd798e4c6d7058f8e627dcba",
       "bytes": 4741964,
       "media": "pdf",
-      "text_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/text/sigrid-3755.pages.json",
+      "text_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/text/sigrid-3755.pages.json",
       "text_sha256": "d261ded6ac87789f4619de827d08da22863649f2ff6ee42158291ad08f6e47df",
       "text_extraction": "PYPDF_PER_PAGE"
     },
@@ -110,11 +151,11 @@
       "source_url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/3751/descargar",
       "final_url": "http://sigrid.cenepred.gob.pe/docs/PARA%20PUBLICAR/ANA/Mapa_de_ubicacion_quebrada_La_Urbina_centros_poblados_La_Pena_Tumbes_2016.pdf",
       "retrieved_at_utc": "2026-10-08T14:09:07.340583+00:00",
-      "raw_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/raw/sigrid-3751.pdf",
+      "raw_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/raw/sigrid-3751.pdf",
       "sha256": "b63c5416532beb3bf94dcd5f79a39525cc4e4fd789f25f18d30add611acbd2c8",
       "bytes": 4856992,
       "media": "pdf",
-      "text_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/text/sigrid-3751.pages.json",
+      "text_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/text/sigrid-3751.pages.json",
       "text_sha256": "292eefbcfd3b713f5c43195dbb8dfc34cd6684b65d73c0aaca40abb7bd3175cc",
       "text_extraction": "PYPDF_PER_PAGE"
     },
@@ -127,11 +168,11 @@
       "source_url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/3747/descargar",
       "final_url": "http://sigrid.cenepred.gob.pe/docs/PARA%20PUBLICAR/ANA/Mapa_de_Ubicacion_quebrada_Cruz_Blanca_centro_poblado_%20Cruz_Blanca_Tumbes_2016.pdf",
       "retrieved_at_utc": "2026-10-08T14:11:28.452440+00:00",
-      "raw_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/raw/sigrid-3747.pdf",
+      "raw_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/raw/sigrid-3747.pdf",
       "sha256": "272110b77ef6c88384f9f0e01d5cab90930a7d499d9a7abc7f230b456f044ee1",
       "bytes": 4984286,
       "media": "pdf",
-      "text_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/text/sigrid-3747.pages.json",
+      "text_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/text/sigrid-3747.pages.json",
       "text_sha256": "428f4076634af450dfb4d6a417a0ae9aef414d6b33700085884f29548528368f",
       "text_extraction": "PYPDF_PER_PAGE"
     },
@@ -145,11 +186,11 @@
       "source_url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/3753/descargar",
       "final_url": "http://sigrid.cenepred.gob.pe/docs/PARA%20PUBLICAR/ANA/Mapa_de_ubicacion_quebrada_Los_Pozos_centro_pablado_Zorritos_Tumbes_2016.pdf",
       "retrieved_at_utc": "2026-10-08T14:13:02.533601+00:00",
-      "raw_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/raw/sigrid-3753.pdf",
+      "raw_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/raw/sigrid-3753.pdf",
       "sha256": "86f20f720bb0581401c35015cec744f2f8d41f34ac0cffa25e82027fec600452",
       "bytes": 3995007,
       "media": "pdf",
-      "text_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/text/sigrid-3753.pages.json",
+      "text_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/text/sigrid-3753.pages.json",
       "text_sha256": "3f82dccba8dd64e16da147133925c79aac171d99c2f52214036d96b37d621d3d",
       "text_extraction": "PYPDF_PER_PAGE"
     },
@@ -162,11 +203,11 @@
       "source_url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/3761/descargar",
       "final_url": "http://sigrid.cenepred.gob.pe/docs/PARA%20PUBLICAR/ANA/Mapa_de_ubicacion_quebradas_Cancas_centro_poblado_Cancas_Tumbes_2016.pdf",
       "retrieved_at_utc": "2026-10-08T14:13:51.367791+00:00",
-      "raw_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/raw/sigrid-3761.pdf",
+      "raw_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/raw/sigrid-3761.pdf",
       "sha256": "a30daeaae41c896d43e369b28b59cd442891be634a8887eea786521746455a20",
       "bytes": 4145773,
       "media": "pdf",
-      "text_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/text/sigrid-3761.pages.json",
+      "text_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/text/sigrid-3761.pages.json",
       "text_sha256": "1877d1fa3c692e7169d9011159888171cccff8402948edd5607d84d57daf9aa8",
       "text_extraction": "PYPDF_PER_PAGE"
     },
@@ -179,11 +220,11 @@
       "source_url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/3762/descargar",
       "final_url": "http://sigrid.cenepred.gob.pe/docs/PARA%20PUBLICAR/ANA/Mapa_de_ubicacion_quebradas_Canoas_de_Punta_Sal_centros_poblados_Canoas_de_Punta_Sal_Tumbes_2016.pdf",
       "retrieved_at_utc": "2026-10-08T14:13:56.823866+00:00",
-      "raw_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/raw/sigrid-3762.pdf",
+      "raw_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/raw/sigrid-3762.pdf",
       "sha256": "41a2efb01c4b39290ce398f3ca50c05043105c0b51779e221948d577f0a53c28",
       "bytes": 3474422,
       "media": "pdf",
-      "text_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/text/sigrid-3762.pages.json",
+      "text_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/text/sigrid-3762.pages.json",
       "text_sha256": "9045a9f3fe173a334fe1fdbc36c540c687bba2242cb4795f80dd9af784732cf1",
       "text_extraction": "PYPDF_PER_PAGE"
     },
@@ -197,11 +238,11 @@
       "source_url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/3741/descargar",
       "final_url": "http://sigrid.cenepred.gob.pe/docs/PARA%20PUBLICAR/ANA/Mapa_Ubicacion_de_poblaciones_vulnerables_por_activacion_de_quebradas_Piura_2016.pdf",
       "retrieved_at_utc": "2026-10-08T14:10:59.881658+00:00",
-      "raw_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/raw/sigrid-3741.pdf",
+      "raw_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/raw/sigrid-3741.pdf",
       "sha256": "c246b48b3f94ec72cecdd6531da35073c1102bf9ce8f1a694adc321577bb4004",
       "bytes": 1977797,
       "media": "pdf",
-      "text_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/text/sigrid-3741.pages.json",
+      "text_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/text/sigrid-3741.pages.json",
       "text_sha256": "36a266e2e74a5d948c89c59f8b06066cfe3f718682e6e3f3e53a903a09f8379f",
       "text_extraction": "PYPDF_PER_PAGE"
     },
@@ -215,11 +256,11 @@
       "source_url": "https://www.gob.pe/institucion/indeci/noticias/908526",
       "final_url": "https://www.gob.pe/institucion/indeci/noticias/908526",
       "retrieved_at_utc": "2026-10-08T14:09:05.320774+00:00",
-      "raw_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/raw/gobpe-indeci-908526-cabo-inga-2024.html",
+      "raw_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/raw/gobpe-indeci-908526-cabo-inga-2024.html",
       "sha256": "6a66ad50c3a401616c3e6ebfb60fb3f3da9d5b1ab189e9b2873f403b4815db7c",
       "bytes": 29637,
       "media": "html",
-      "text_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/text/gobpe-indeci-908526-cabo-inga-2024.pages.json",
+      "text_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/text/gobpe-indeci-908526-cabo-inga-2024.pages.json",
       "text_sha256": "05eefe86c79c8e651af21257d4b86058739be715b9a76aa5d49bee1a33f8a01b",
       "text_extraction": "HTML_TAGS_STRIPPED"
     },
@@ -232,11 +273,11 @@
       "source_url": "https://portal.indeci.gob.pe/wp-content/uploads/2025/03/REPORTE-COMPLEMENTARIO-N.%C2%BA-3755-18MAR2025-LLUVIAS-INTENSAS-EN-EL-DEPARTAMENTO-DE-TUMBES-29.pdf",
       "final_url": "https://portal.indeci.gob.pe/wp-content/uploads/2025/03/REPORTE-COMPLEMENTARIO-N.%C2%BA-3755-18MAR2025-LLUVIAS-INTENSAS-EN-EL-DEPARTAMENTO-DE-TUMBES-29.pdf",
       "retrieved_at_utc": "2026-10-08T14:08:35.423853+00:00",
-      "raw_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/raw/indeci-rc-3755-2025-03-18-tumbes.pdf",
+      "raw_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/raw/indeci-rc-3755-2025-03-18-tumbes.pdf",
       "sha256": "a0eb6ecac12b3c8577170c735b62d08893ea2fc454cdc6e10dd7c21b83bcf460",
       "bytes": 1722301,
       "media": "pdf",
-      "text_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/text/indeci-rc-3755-2025-03-18-tumbes.pages.json",
+      "text_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/text/indeci-rc-3755-2025-03-18-tumbes.pages.json",
       "text_sha256": "c19c7dd8dcd899c103a28e96631d2837b05426e78e2baf6acd6f8b0fe580a3e7",
       "text_extraction": "PYPDF_PER_PAGE"
     },
@@ -250,11 +291,11 @@
       "source_url": "https://portal.indeci.gob.pe/wp-content/uploads/2026/09/REPORTE-COMPLEMENTARIO-N.º-13112-28SET2026-LLUVIAS-INTENSAS-EN-EL-DISTRITO-DE-SAN-JACINTO-TUMBES-1.pdf",
       "final_url": "https://portal.indeci.gob.pe/wp-content/uploads/2026/09/REPORTE-COMPLEMENTARIO-N.%C2%BA-13112-28SET2026-LLUVIAS-INTENSAS-EN-EL-DISTRITO-DE-SAN-JACINTO-TUMBES-1.pdf",
       "retrieved_at_utc": "2026-10-08T14:16:15.007032+00:00",
-      "raw_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/raw/d50-descargar-archivo.pdf",
+      "raw_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/raw/d50-descargar-archivo.pdf",
       "sha256": "d09473288ad04cc3a4d5ea0666c5748b9e4564800f7c2c5e7e449c04cb035ab4",
       "bytes": 653352,
       "media": "pdf",
-      "text_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/text/d50-descargar-archivo.pages.json",
+      "text_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/text/d50-descargar-archivo.pages.json",
       "text_sha256": "99e529491809ae228f40ce36b051fa5e161fdc0e5a2bfd5fb0c20659b4503803",
       "text_extraction": "PYPDF_PER_PAGE"
     },
@@ -268,11 +309,11 @@
       "source_url": "https://portal.indeci.gob.pe/wp-content/uploads/2026/09/REPORTE-COMPLEMENTARIO-N.º-13111-28SET2026-LLUVIAS-INTENSAS-EN-EL-DISTRITO-DE-PAMPAS-DE-HOSPITAL-TUMBES-1.pdf",
       "final_url": "https://portal.indeci.gob.pe/wp-content/uploads/2026/09/REPORTE-COMPLEMENTARIO-N.%C2%BA-13111-28SET2026-LLUVIAS-INTENSAS-EN-EL-DISTRITO-DE-PAMPAS-DE-HOSPITAL-TUMBES-1.pdf",
       "retrieved_at_utc": "2026-10-08T14:16:19.414093+00:00",
-      "raw_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/raw/d52-descargar-archivo.pdf",
+      "raw_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/raw/d52-descargar-archivo.pdf",
       "sha256": "3b4da80172b59e0d81b2f60284bb3139c956bfdfad0954a424965a97e17deaa3",
       "bytes": 609025,
       "media": "pdf",
-      "text_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/text/d52-descargar-archivo.pages.json",
+      "text_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/text/d52-descargar-archivo.pages.json",
       "text_sha256": "1791ab94b2d10ec9f76e4dc3225ee4afb864dffc5dfb8e0acb58e268c39d246b",
       "text_extraction": "PYPDF_PER_PAGE"
     },
@@ -286,13 +327,89 @@
       "source_url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/11733/descargar",
       "final_url": "http://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca//11733_mapa-de-puntos-criticos-de-la-region-tumbes-del-2015.pdf",
       "retrieved_at_utc": "2026-10-08T14:08:43.103623+00:00",
-      "raw_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/raw/sigrid-11733-ana-puntos-criticos-tumbes-2015.pdf",
+      "raw_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/raw/sigrid-11733-ana-puntos-criticos-tumbes-2015.pdf",
       "sha256": "b7c02a54c83937613eb8bf6d9231a798ff2f754c6cbf7ca04d75eb205fadd498",
       "bytes": 680569,
       "media": "pdf",
-      "text_path": "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/text/sigrid-11733-ana-puntos-criticos-tumbes-2015.pages.json",
+      "text_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/text/sigrid-11733-ana-puntos-criticos-tumbes-2015.pages.json",
       "text_sha256": "c131f46d925b37871a5aed309917cf8bd6cf89f87b30f7da58f30013b7c1ab3e",
       "text_extraction": "PYPDF_PER_PAGE"
+    },
+    "ANA-DU-015-2023-ANEXO-II": {
+      "archive_document_id": "ana-du-015-2023-anexo-ii",
+      "institution": "Autoridad Nacional del Agua (ANA), Dirección de Planificación y Desarrollo de los Recursos Hídricos; anexo del Decreto de Urgencia N.° 015-2023, publicado por el MEF en gob.pe",
+      "title": "Anexo II — Listado de puntos críticos para limpieza y descolmatación (Decreto de Urgencia N.° 015-2023)",
+      "date": "2023-06-16 (fecha del decreto en la página del MEF y en El Peruano)",
+      "source_class": "PRIMARY_LEGAL_ANNEX_INSTITUTIONAL_TABLE",
+      "reviewer_cited_url": "https://www.ana.gob.pe/sites/default/files/file_content/Anexo_II_DU015_2023.pdf",
+      "copy_note": "The ANA-hosted copy cited by the reviewer timed out from the GitHub runners (https and http) and has no Wayback snapshot. The archived bytes are the copy published by the MEF on gob.pe, one of the two official venues named by article 2.4 of the decree. Byte identity with the ANA-hosted copy is NOT verified.",
+      "visual_check": "Row 17 column assignment checked by rendering PDF page 1 with pdftoppm at 110 dpi (Claude, 2026-10-09). An independent visual check is pending.",
+      "source_url": "https://cdn.www.gob.pe/uploads/document/file/4704868/Anexo_II_DU015_2023.pdf?v=1687213880",
+      "final_url": "https://cdn.www.gob.pe/uploads/document/file/4704868/Anexo_II_DU015_2023.pdf?v=1687213880",
+      "retrieved_at_utc": "2026-10-08T23:09:37.069794+00:00",
+      "raw_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/raw/ana-du-015-2023-anexo-ii.pdf",
+      "sha256": "c00095672208cb0afbd368aa02fe8172c2661d0df629385fb91b9f464db883b9",
+      "bytes": 41028,
+      "media": "pdf",
+      "text_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/text/ana-du-015-2023-anexo-ii.pages.json",
+      "text_sha256": "7bcb8907694bf810aa890baa75685e9b52e301111bf96c4e6a1a4aae70821a1c",
+      "text_extraction": "PYPDF_PER_PAGE",
+      "served_by_route": "LINK_FROM_OFFICIAL_LANDING_PAGE (https://www.gob.pe/institucion/mef/normas-legales/4329680-015-2023)"
+    },
+    "DU-015-2023-TEXT": {
+      "archive_document_id": "mef-gobpe-du-015-2023-text",
+      "institution": "Poder Ejecutivo (Decreto de Urgencia); PDF publicado por el MEF en gob.pe (separata de El Peruano)",
+      "title": "Decreto de Urgencia N.° 015-2023 — Dictan medidas para la ejecución de intervenciones ante peligro inminente por intensas precipitaciones pluviales y posible Fenómeno El Niño",
+      "date": "2023-06-16",
+      "source_class": "PRIMARY_LEGAL_TEXT",
+      "source_url": "https://cdn.www.gob.pe/uploads/document/file/4704866/DU015_2023.pdf?v=1687213880",
+      "final_url": "https://cdn.www.gob.pe/uploads/document/file/4704866/DU015_2023.pdf?v=1687213880",
+      "retrieved_at_utc": "2026-10-08T23:11:29.288902+00:00",
+      "raw_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/raw/mef-gobpe-du-015-2023-text.pdf",
+      "sha256": "f3da600721d65a4c49e16205d9e6c3614fdd1b8495082087c4c8da85367f092f",
+      "bytes": 1070384,
+      "media": "pdf",
+      "text_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/text/mef-gobpe-du-015-2023-text.pages.json",
+      "text_sha256": "a8cb85c592362c05c53c1662c991e2820a4accc9286efc1ffc5a6e41ac0a90de",
+      "text_extraction": "PYPDF_PER_PAGE",
+      "served_by_route": "OFFICIAL_HOST_DIRECT"
+    },
+    "MEF-DU-015-2023-NORM-PAGE": {
+      "archive_document_id": "mef-gobpe-du-015-2023-norm-page",
+      "institution": "Ministerio de Economía y Finanzas (MEF), gob.pe",
+      "title": "Decreto de Urgencia N.° 015-2023 — página de normas legales del MEF con los enlaces al decreto y a sus Anexos I, II y III",
+      "date": "2023-06-16 (fecha mostrada en la página)",
+      "source_class": "OFFICIAL_PUBLICATION_PAGE",
+      "source_url": "https://www.gob.pe/institucion/mef/normas-legales/4329680-015-2023",
+      "final_url": "https://www.gob.pe/institucion/mef/normas-legales/4329680-015-2023",
+      "retrieved_at_utc": "2026-10-08T23:11:28.485211+00:00",
+      "raw_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/raw/mef-gobpe-du-015-2023-norm-page.html",
+      "sha256": "ec30df29769c15d19901caf286d7e715d4bb33334fb936c96f107bde6f60b7c6",
+      "bytes": 32104,
+      "media": "html",
+      "text_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/text/mef-gobpe-du-015-2023-norm-page.pages.json",
+      "text_sha256": "10363a849cf27c80c72fe09953dd18b1c9fa163ee527da25386634caf95e1562",
+      "text_extraction": "HTML_TAGS_STRIPPED",
+      "served_by_route": "OFFICIAL_HOST_DIRECT"
+    },
+    "ANA-DU-015-2023-ANEXO-III": {
+      "archive_document_id": "ana-du-015-2023-anexo-iii",
+      "institution": "Autoridad Nacional del Agua (ANA); anexo del Decreto de Urgencia N.° 015-2023, publicado por el MEF en gob.pe",
+      "title": "Anexo III — Listado de quebradas a ser intervenidas (Decreto de Urgencia N.° 015-2023)",
+      "date": "2023-06-16",
+      "source_class": "PRIMARY_LEGAL_ANNEX_INSTITUTIONAL_TABLE",
+      "role_here": "Searched for the four labels: none of La Capitana, Hualaca, Higuerón or Hualtacal appears (absence is not evidence).",
+      "source_url": "https://cdn.www.gob.pe/uploads/document/file/4704869/Anexo_III_DU015_2023.pdf?v=1687213880",
+      "final_url": "https://cdn.www.gob.pe/uploads/document/file/4704869/Anexo_III_DU015_2023.pdf?v=1687213880",
+      "retrieved_at_utc": "2026-10-08T23:12:36.381658+00:00",
+      "raw_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/raw/ana-du-015-2023-anexo-iii.pdf",
+      "sha256": "5963b140cd49b8ee6599044ab094e7a511a77d5ad0d9efdebcad35f633ac1cad",
+      "bytes": 84610,
+      "media": "pdf",
+      "text_path": "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/text/ana-du-015-2023-anexo-iii.pages.json",
+      "text_sha256": "5f050ccf67310fef33dede03ee81f1eaeb1c425c01d3eaca420bd9737d1be158",
+      "text_extraction": "PYPDF_PER_PAGE",
+      "served_by_route": "OFFICIAL_HOST_DIRECT"
     }
   },
   "quotes": {
@@ -561,60 +678,192 @@
       "printed_page": 1,
       "locator": "1. Hechos",
       "text": "en el sector Pampas de Hospital, distrito de Pampas de Hospital, provincia de Tumbes"
+    },
+    "DU015-TITLE": {
+      "source_id": "DU-015-2023-TEXT",
+      "text_page_index": 1,
+      "printed_page": null,
+      "locator": "encabezado del decreto",
+      "text": "DECRETO DE URGENCIA Nº 015-2023 DICTAN MEDIDAS PARA LA EJECUCIÓN DE INTERVENCIONES ANTE PELIGRO INMINENTE POR INTENSAS PRECIPITACIONES PLUVIALES Y POSIBLE FENÓMENO EL NIÑO"
+    },
+    "DU015-ART-2.4": {
+      "source_id": "DU-015-2023-TEXT",
+      "text_page_index": 3,
+      "printed_page": null,
+      "locator": "artículo 2, numeral 2.4",
+      "text": "el Anexo II “Listado de Puntos Críticos para la limpieza y descolmatación” y el Anexo III “Listado de Quebradas a ser intervenidas”, los cuales forman parte integrante del presente Decreto de Urgencia y se publican en las sedes digitales del Ministerio de Economía y Finanzas ( www. gob.pe/mef) y del Ministerio de Desarrollo Agrario y Riego (www.gob.pe/midagri)"
+    },
+    "MEF-PAGE-DATE-AND-ANNEXES": {
+      "source_id": "MEF-DU-015-2023-NORM-PAGE",
+      "text_page_index": 1,
+      "printed_page": null,
+      "locator": "cuerpo de la página",
+      "text": "Decreto de Urgencia N.° 015-2023 16 de junio de 2023 Dictan medidas para la ejecución de intervenciones ante peligro inminente por intensas precipitaciones pluviales y posible Fenómeno El Niño DU015_2023 PDF 1.1 MB Descargar Anexo_I_DU015_2023 PDF 82.1 KB Descargar Anexo_II_DU015_2023 PDF 41 KB Descargar"
+    },
+    "ANEXO-II-TITLE": {
+      "source_id": "ANA-DU-015-2023-ANEXO-II",
+      "text_page_index": 1,
+      "printed_page": 1,
+      "locator": "título de la tabla",
+      "text": "ANEXO II - LISTADO DE PUNTOS CRITICOS PARA LIMPIEZA Y DESCOLMATACION"
+    },
+    "ANEXO-II-ISSUER-AND-SECTION": {
+      "source_id": "ANA-DU-015-2023-ANEXO-II",
+      "text_page_index": 1,
+      "printed_page": 1,
+      "locator": "cabecera y sección I - TUMBES",
+      "text": "Autoridad Nacional del Agua I - TUMBES II - PIURA DEPARTAMENTO PROVINCIA DISTRITO SECTOR Dirección de Planificación y Desarrollo de los Recursos Hidricos"
+    },
+    "ANEXO-II-COLUMNS": {
+      "source_id": "ANA-DU-015-2023-ANEXO-II",
+      "text_page_index": 1,
+      "printed_page": 1,
+      "locator": "encabezado de columnas (UBICACIÓN HIDROGRÁFICA: CUENCA, FUENTE, RIO_Qda.; ADMINISTRATIVA: AAA, ALA; POLÍTICA: DEPARTAMENTO, PROVINCIA, DISTRITO, SECTOR)",
+      "text": "UBICACIÒN HIDROGRÀFICA UBICACIÓN ADMINISTRATIVA UBICACIÓN POLÍTICA"
+    },
+    "ANEXO-II-ROW-16": {
+      "source_id": "ANA-DU-015-2023-ANEXO-II",
+      "text_page_index": 1,
+      "printed_page": 1,
+      "locator": "sección I - TUMBES, fila 16",
+      "text": "16 Tumbes Quebrada Qda. 07 De Junio Jequetepeque- Zarumilla Tumbes Tumbes Tumbes San Jacinto Casa Blanqueada"
+    },
+    "ANEXO-II-ROW-17": {
+      "source_id": "ANA-DU-015-2023-ANEXO-II",
+      "text_page_index": 1,
+      "printed_page": 1,
+      "locator": "sección I - TUMBES, fila 17",
+      "text": "17 Tumbes Quebrada Qda. Hualaca Jequetepeque- Zarumilla Tumbes Tumbes Tumbes San Jacinto Higueron"
+    },
+    "ANEXO-II-ROW-18": {
+      "source_id": "ANA-DU-015-2023-ANEXO-II",
+      "text_page_index": 1,
+      "printed_page": 1,
+      "locator": "sección I - TUMBES, fila 18",
+      "text": "18 Tumbes Quebrada Qda. Hualtacal Jequetepeque- Zarumilla Tumbes Tumbes Tumbes San Jacinto Rica Playa"
     }
   },
   "identity_decisions": [
     {
       "id": "HUALACA_VS_HIGUERON",
-      "question": "¿Hualaca e Higuerón son quebradas diferentes, nombres alternativos del mismo cauce, o no se puede resolver?",
-      "decision": "NOT_RESOLVABLE_FROM_EVIDENCE",
-      "basis": "Higuerón is named as a quebrada in three official sources archived here. Hualaca is named in none: 0 matches in every archived text, 0 results in the SIGRID library search, an empty INDECI media search, and no relevant web result. With no source naming Hualaca, no source can state that it is, or is not, the same channel as Higuerón.",
+      "question": "¿Hualaca e Higuerón son el mismo cauce, cauces distintos, o no se puede resolver?",
+      "decision": "UNRESOLVED",
+      "labels_distinct_in_sources": true,
+      "basis": "ANA (Anexo II del DU 015-2023, fila 17) lists 'Qda. Hualaca' in distrito San Jacinto, sector 'Higueron'. Other sources name a 'quebrada Higuerón' (INGEMMET A6764 C-28; Ley 32573 §1.2; ANA 2016 maps). The row gives Higuerón as the sector of the Hualaca critical point; it does not say whether Hualaca is the quebrada Higuerón, a reach or tributary of it, or a separate channel. Two different names in official sources show that the sources use two labels. They do not show two hydraulically independent channels: one channel can carry different names by reach or by sector, and two names can belong to connected channels. Without reproducible geometry no relation is asserted.",
       "quote_ids": [
+        "ANEXO-II-ROW-17",
+        "ANEXO-II-COLUMNS",
         "A6764-CUADRO-3.2-C28",
-        "LEY-32573-DIVIDE-HIGUERON-HUALTACAL",
-        "ANA3743-Q-HIGUERON-ACCENT"
+        "LEY-32573-DIVIDE-HIGUERON-HUALTACAL"
       ],
-      "equivalence_asserted": false
+      "same_channel": "UNRESOLVED",
+      "hydraulically_independent": "UNRESOLVED",
+      "equivalence_asserted": false,
+      "distinctness_asserted": false
     },
     {
       "id": "HUALACA_VS_HUALTACAL",
-      "question": "¿Es 'Hualaca' una grafía de 'Hualtacal'?",
-      "decision": "NOT_EQUATED_NOT_RESOLVABLE",
-      "basis": "The names look alike, but no source links them. Hualtacal is an attested official name (Ley 32573; ANA 2016 maps). It is recorded only so that the two labels are kept apart.",
+      "question": "¿Hualaca y Hualtacal son el mismo cauce?",
+      "decision": "UNRESOLVED",
+      "labels_distinct_in_sources": true,
+      "basis": "Anexo II gives them separate rows (17 'Qda. Hualaca', sector Higueron; 18 'Qda. Hualtacal', sector Rica Playa), both in San Jacinto. Separate rows in a list of critical points are separate intervention points, not proof of separate channels. The earlier hypothesis that 'Hualaca' might be a spelling of 'Hualtacal' is withdrawn: both labels appear in the same table. Two different names in official sources show that the sources use two labels. They do not show two hydraulically independent channels: one channel can carry different names by reach or by sector, and two names can belong to connected channels. Without reproducible geometry no relation is asserted.",
       "quote_ids": [
-        "LEY-32573-DIVIDE-HIGUERON-HUALTACAL",
-        "ANA3761-Q-HUALTACAL"
+        "ANEXO-II-ROW-17",
+        "ANEXO-II-ROW-18"
       ],
-      "equivalence_asserted": false
+      "same_channel": "UNRESOLVED",
+      "hydraulically_independent": "UNRESOLVED",
+      "equivalence_asserted": false,
+      "distinctness_asserted": false
     },
     {
       "id": "HIGUERON_VS_HUALTACAL",
       "question": "¿Higuerón y Hualtacal son el mismo cauce?",
-      "decision": "DOCUMENTED_AS_DISTINCT_NAMED_QUEBRADAS",
-      "basis": "Ley 32573 §1.2 lists 'quebrada Higuerón y quebrada Hualtacal' as two items in one enumeration; ANA 2016 map 3743 prints 'Quebrada Higueron' and 'Quebrada Hualtacal' as separate labels. Distinct names, not a statement about drainage relation.",
+      "decision": "UNRESOLVED",
+      "labels_distinct_in_sources": true,
+      "basis": "Ley 32573 §1.2 enumerates 'quebrada Higuerón y quebrada Hualtacal' on one side of a divide; ANA 2016 map 3743 prints both labels. The enumeration shows two labels, not two independent channels. Two different names in official sources show that the sources use two labels. They do not show two hydraulically independent channels: one channel can carry different names by reach or by sector, and two names can belong to connected channels. Without reproducible geometry no relation is asserted.",
       "quote_ids": [
         "LEY-32573-DIVIDE-HIGUERON-HUALTACAL",
         "ANA3743-Q-HIGUERON-NOACCENT"
       ],
-      "equivalence_asserted": false
+      "same_channel": "UNRESOLVED",
+      "hydraulically_independent": "UNRESOLVED",
+      "equivalence_asserted": false,
+      "distinctness_asserted": false
     },
     {
       "id": "CAPITANA_VS_HIGUERON",
       "question": "¿La Capitana e Higuerón son el mismo cauce?",
-      "decision": "DOCUMENTED_AS_DISTINCT_NAMED_QUEBRADAS",
-      "basis": "INGEMMET A6764 Cuadro 3.2 gives them separate rows (C-27 quebrada La Capitana, C-28 quebrada Higuerón); ANA 2016 maps 3743 and 3755 print separate labels.",
+      "decision": "UNRESOLVED",
+      "labels_distinct_in_sources": true,
+      "basis": "INGEMMET A6764 Cuadro 3.2 gives separate road-damage rows (C-27 quebrada La Capitana, C-28 quebrada Higuerón); ANA 2016 maps print separate labels. Separate rows are separate damaged road sections, not proof of independent channels. Two different names in official sources show that the sources use two labels. They do not show two hydraulically independent channels: one channel can carry different names by reach or by sector, and two names can belong to connected channels. Without reproducible geometry no relation is asserted.",
       "quote_ids": [
         "A6764-CUADRO-3.2-C27",
         "A6764-CUADRO-3.2-C28",
         "ANA3755-Q-HIGUERON-CAPITANA"
       ],
-      "equivalence_asserted": false
+      "same_channel": "UNRESOLVED",
+      "hydraulically_independent": "UNRESOLVED",
+      "equivalence_asserted": false,
+      "distinctness_asserted": false
+    },
+    {
+      "id": "CAPITANA_VS_HUALACA",
+      "question": "¿La Capitana y Hualaca son el mismo cauce?",
+      "decision": "UNRESOLVED",
+      "labels_distinct_in_sources": true,
+      "basis": "No source names both. Anexo II does not list La Capitana; INGEMMET and ANA 2016 do not name Hualaca. Two different names in official sources show that the sources use two labels. They do not show two hydraulically independent channels: one channel can carry different names by reach or by sector, and two names can belong to connected channels. Without reproducible geometry no relation is asserted.",
+      "quote_ids": [
+        "ANEXO-II-ROW-17",
+        "A6764-CUADRO-3.2-C27"
+      ],
+      "same_channel": "UNRESOLVED",
+      "hydraulically_independent": "UNRESOLVED",
+      "equivalence_asserted": false,
+      "distinctness_asserted": false
+    },
+    {
+      "id": "HIGUERON_ONE_OR_SEVERAL_CHANNELS",
+      "question": "¿Las menciones de 'quebrada Higuerón' en Tumbes se refieren a un solo cauce?",
+      "decision": "UNRESOLVED",
+      "labels_distinct_in_sources": false,
+      "basis": "Contexts: (A) road crossing INGEMMET C-28 on the San Jacinto road; (B) Contralmirante Villar–Tumbes interprovincial divide (Ley 32573 §1.2); (C) ANA 2016 sheets that print both 'Q. Higuerón' and 'Quebrada Higueron'. In addition, Anexo II uses 'Higueron' as the sector of Qda. Hualaca. Text alone cannot tell how many channels these refer to.",
+      "quote_ids": [
+        "A6764-CUADRO-3.2-C28",
+        "LEY-32573-TRAMO-1.2",
+        "LEY-32573-DIVIDE-HIGUERON-HUALTACAL",
+        "ANA3743-Q-HIGUERON-ACCENT",
+        "ANA3743-Q-HIGUERON-NOACCENT",
+        "ANEXO-II-ROW-17"
+      ],
+      "same_channel": "UNRESOLVED",
+      "hydraulically_independent": "UNRESOLVED",
+      "equivalence_asserted": false,
+      "distinctness_asserted": false
+    },
+    {
+      "id": "HUALTACAL_ONE_OR_SEVERAL_CHANNELS",
+      "question": "¿Las menciones de 'Hualtacal' se refieren a un solo cauce?",
+      "decision": "UNRESOLVED",
+      "labels_distinct_in_sources": false,
+      "basis": "Hualtacal appears on the Contralmirante Villar–Tumbes divide (Ley 32573 §1.2), as the upstream name of a quebrada Seca on the Canoas de Punta Sal / Casitas / Zorritos boundary (Ley 32573), on ANA 2016 sheets for Cancas and Canoas de Punta Sal, and as a critical point in San Jacinto, sector Rica Playa (Anexo II, fila 18). How many channels these are is not stated.",
+      "quote_ids": [
+        "LEY-32573-DIVIDE-HIGUERON-HUALTACAL",
+        "LEY-32573-SECA-HUALTACAL",
+        "ANA3761-Q-HUALTACAL",
+        "ANEXO-II-ROW-18"
+      ],
+      "same_channel": "UNRESOLVED",
+      "hydraulically_independent": "UNRESOLVED",
+      "equivalence_asserted": false,
+      "distinctness_asserted": false
     },
     {
       "id": "CAPITANA_QUEBRADA_VS_SETTLEMENT",
       "question": "¿'La Capitana' es una quebrada o un centro poblado?",
-      "decision": "BOTH_ATTESTED_AS_DIFFERENT_FEATURE_TYPES_RELATION_NOT_STATED",
-      "basis": "INGEMMET A6764 names the 'quebrada La Capitana'; ANA 2016 prints both 'Q Capitana' (quebrada label) and 'LA CAPITANA' (centro poblado label); INDECI 2024 and COEN 2025 name La Capitana / Capitana as a centro poblado / caserío. No source says the settlement lies on, or takes its name from, the quebrada.",
+      "decision": "DIFFERENT_FEATURE_TYPES_RELATION_UNRESOLVED",
+      "labels_distinct_in_sources": false,
+      "basis": "INGEMMET A6764 names the 'quebrada La Capitana'; ANA 2016 prints 'Q Capitana' and the centro poblado label 'LA CAPITANA'; INDECI 2024 and COEN 2025 name La Capitana / Capitana as a centro poblado / caserío. No source states how the settlement relates to the quebrada.",
       "quote_ids": [
         "A6764-CUADRO-3.2-C27",
         "ANA3743-Q-CAPITANA",
@@ -622,52 +871,51 @@
         "INDECI908526-LA-CAPITANA",
         "RC3755-SAN-JACINTO-ACTIONS"
       ],
-      "equivalence_asserted": false
+      "same_channel": "UNRESOLVED",
+      "hydraulically_independent": "UNRESOLVED",
+      "equivalence_asserted": false,
+      "distinctness_asserted": false
     },
     {
       "id": "HIGUERON_QUEBRADA_VS_SETTLEMENT",
       "question": "¿'Higuerón' es una quebrada o un caserío/sector?",
-      "decision": "BOTH_ATTESTED_AS_DIFFERENT_FEATURE_TYPES_RELATION_NOT_STATED",
-      "basis": "Quebrada Higuerón: INGEMMET A6764 C-28, Ley 32573, ANA 2016 maps. Settlement/sector Higuerón: road name 'Casa Blanqueada - Higuerón - Rica Playa', INGEMMET zones 2 and 8 ('Higuerón (San Jacinto)'), ANA 3743 centro poblado labels 'HIGUERON' and 'HIGUERON SECO', COEN 2025 'caseríos de Capitana e Higuerón'.",
+      "decision": "DIFFERENT_FEATURE_TYPES_RELATION_UNRESOLVED",
+      "labels_distinct_in_sources": false,
+      "basis": "Quebrada Higuerón: INGEMMET C-28, Ley 32573, ANA 2016 maps. Sector/caserío Higuerón: road name 'Casa Blanqueada - Higuerón - Rica Playa', INGEMMET zones 2 and 8, ANA 3743 labels 'HIGUERON' and 'HIGUERON SECO', COEN 2025 'caseríos de Capitana e Higuerón', and the SECTOR column of Anexo II row 17. No source states how the sector relates to the quebrada.",
       "quote_ids": [
         "A6764-CUADRO-3.2-C28",
         "A6764-ROAD-ROUTE",
         "A6764-CUADRO-2.1-ZONA-2",
         "ANA3743-CP-HIGUERON",
         "ANA3743-CP-HIGUERON-SECO",
-        "RC3755-SAN-JACINTO-ACTIONS"
+        "RC3755-SAN-JACINTO-ACTIONS",
+        "ANEXO-II-ROW-17"
       ],
-      "equivalence_asserted": false
-    },
-    {
-      "id": "HIGUERON_ONE_OR_SEVERAL_CHANNELS",
-      "question": "¿Las menciones de 'quebrada Higuerón' en Tumbes se refieren a un solo cauce?",
-      "decision": "UNRESOLVED",
-      "basis": "Three contexts: (A) a road crossing on the PE-1N–San Pedro de los Incas–San Jacinto–Puente Francos road (INGEMMET C-28); (B) the Contralmirante Villar–Tumbes interprovincial divide (Ley 32573 §1.2), opposite the quebrada Tumbes; (C) ANA 2016 maps that print both 'Q. Higuerón' and 'Quebrada Higueron' on the same sheet (3743 and 3755). Text alone cannot tell whether these are one channel or several; the two spellings on one sheet are compatible with two features or with one feature labelled twice.",
-      "quote_ids": [
-        "A6764-CUADRO-3.2-C28",
-        "LEY-32573-TRAMO-1.2",
-        "LEY-32573-DIVIDE-HIGUERON-HUALTACAL",
-        "ANA3743-Q-HIGUERON-ACCENT",
-        "ANA3743-Q-HIGUERON-NOACCENT"
-      ],
-      "equivalence_asserted": false
+      "same_channel": "UNRESOLVED",
+      "hydraulically_independent": "UNRESOLVED",
+      "equivalence_asserted": false,
+      "distinctness_asserted": false
     },
     {
       "id": "CAPITANA_VS_CAPITAN_HOYLE",
       "question": "¿El 'sector Capitán Hoyle' del Reporte Complementario 13112 (San Jacinto, 27/9/2026) es La Capitana?",
-      "decision": "NOT_EQUATED",
-      "basis": "Different label in the source; no source relates them. RC 13112 and RC 13111 do not name La Capitana, Higuerón or Hualaca (absence of a name is not evidence that a quebrada was inactive).",
+      "decision": "UNRESOLVED",
+      "labels_distinct_in_sources": true,
+      "basis": "Different label in the source and no source relating them; not equated. RC 13112 and RC 13111 do not name La Capitana, Higuerón, Hualaca or Hualtacal (absence of a name is not evidence of inactivity).",
       "quote_ids": [
         "RC13112-SECTOR"
       ],
-      "equivalence_asserted": false
+      "same_channel": "UNRESOLVED",
+      "hydraulically_independent": "UNRESOLVED",
+      "equivalence_asserted": false,
+      "distinctness_asserted": false
     },
     {
       "id": "OUT_OF_REGION_HIGUERON_HOMONYMS",
       "question": "¿Las quebradas El Higuerón de Piura, Cajamarca o La Libertad tienen relación con Tumbes?",
       "decision": "DIFFERENT_DEPARTMENTS_NOT_MERGED",
-      "basis": "ANA 2016 Piura map (Lalaquiz, San Miguel de El Faique) and SIGRID documents for Paimas (Piura), San Ignacio (Cajamarca) and Mocan/Casa Grande (La Libertad) use the same name in other departments. The capture logged the latter as CAPTURED_NOT_RETAINED_OUTSIDE_TUMBES_CONTEXT; none is attached to a Tumbes record.",
+      "labels_distinct_in_sources": true,
+      "basis": "The sources place them in other departments (ANA 2016 Piura map: Lalaquiz, San Miguel de El Faique; SIGRID documents for Paimas, San Ignacio and Mocan/Casa Grande). The capture logged the latter as CAPTURED_NOT_RETAINED_OUTSIDE_TUMBES_CONTEXT; none is attached to a Tumbes record.",
       "quote_ids": [
         "ANA3741-PIURA-HIGUERON"
       ],
@@ -714,7 +962,7 @@
         "centro poblado / caserío La Capitana (settlement_context)",
         "sector Capitán Hoyle (RC 13112)"
       ],
-      "identity_adjudication": "NAMED_QUEBRADA_CONFIRMED_IN_OFFICIAL_TEXT_CHANNEL_POSITION_UNRESOLVED",
+      "identity_adjudication": "NAMED_QUEBRADA_ATTESTED_IN_OFFICIAL_TEXT_CHANNEL_POSITION_AND_RELATIONS_UNRESOLVED",
       "documented_events": [
         {
           "event_ref": "A6764-C27",
@@ -771,7 +1019,14 @@
       "discharge_q_i": null,
       "collector_capacity": null,
       "collector_overflow_evidence": null,
-      "map_publishable": false
+      "map_publishable": false,
+      "name_token": "capitana",
+      "label_quote_ids": [
+        "A6764-CUADRO-3.2-C27",
+        "A6764-CUADRO-3.2-C42",
+        "ANA3743-Q-CAPITANA"
+      ],
+      "critical_point_listings": []
     },
     {
       "id": "tumbes_quebrada_higueron_label_group",
@@ -843,10 +1098,10 @@
         }
       ],
       "homonyms_kept_apart": [
-        "caserío / sector Higuerón and centro poblado Higuerón Seco (settlement_context)",
+        "caserío / sector Higuerón and centro poblado Higuerón Seco (settlement_context), including the SECTOR 'Higueron' of Anexo II row 17",
         "El Higuerón quebradas in Piura, Cajamarca and La Libertad"
       ],
-      "identity_adjudication": "NAMED_QUEBRADA_CONFIRMED_IN_OFFICIAL_TEXT_NUMBER_OF_CHANNELS_AND_POSITION_UNRESOLVED",
+      "identity_adjudication": "NAMED_QUEBRADA_ATTESTED_IN_OFFICIAL_TEXT_NUMBER_OF_CHANNELS_POSITION_AND_RELATIONS_UNRESOLVED",
       "documented_events": [
         {
           "event_ref": "A6764-C28",
@@ -895,6 +1150,83 @@
       "discharge_q_i": null,
       "collector_capacity": null,
       "collector_overflow_evidence": null,
+      "map_publishable": false,
+      "name_token": "higuer",
+      "label_quote_ids": [
+        "A6764-CUADRO-3.2-C28",
+        "LEY-32573-DIVIDE-HIGUERON-HUALTACAL",
+        "ANA3743-Q-HIGUERON-ACCENT"
+      ],
+      "critical_point_listings": []
+    },
+    {
+      "id": "tumbes_san_jacinto_quebrada_hualaca",
+      "documentary_label": "Qda. Hualaca",
+      "name_token": "hualaca",
+      "label_quote_ids": [
+        "ANEXO-II-ROW-17"
+      ],
+      "record_role": "NAMED_QUEBRADA_ATTESTED_IN_OFFICIAL_TEXT",
+      "department": "Tumbes",
+      "province": "Tumbes",
+      "district": "San Jacinto",
+      "sector_as_printed": "Higueron",
+      "location_basis": "Anexo II of DU 015-2023, section I - TUMBES, row 17: DEPARTAMENTO Tumbes, PROVINCIA Tumbes, DISTRITO San Jacinto, SECTOR Higueron. Column order from the table header; checked visually on the rendered page.",
+      "location_quote_ids": [
+        "ANEXO-II-ROW-17",
+        "ANEXO-II-COLUMNS",
+        "ANEXO-II-ISSUER-AND-SECTION"
+      ],
+      "source_stated_hydrographic_fields_not_adopted": {
+        "cuenca_as_printed": "Tumbes",
+        "fuente_as_printed": "Quebrada",
+        "aaa_as_printed": "Jequetepeque-Zarumilla",
+        "ala_as_printed": "Tumbes",
+        "note": "Printed administrative/hydrographic columns are recorded as text. 'Tumbes' in the CUENCA column is not adopted as a parent basin, receiver or outlet: the table gives no channel line, confluence or coordinates."
+      },
+      "main_presence": "NOT_FOUND_IN_REPO",
+      "national_audit_presence": "NOT_IN_AUDIT",
+      "documentary_variants": [
+        {
+          "label": "Qda. Hualaca",
+          "source_id": "ANA-DU-015-2023-ANEXO-II",
+          "quote_id": "ANEXO-II-ROW-17",
+          "adjudicated_alias": false
+        }
+      ],
+      "homonyms_kept_apart": [
+        "Qda. Hualtacal (Anexo II row 18, sector Rica Playa)",
+        "quebrada / sector Higuerón"
+      ],
+      "identity_adjudication": "NAMED_QUEBRADA_ATTESTED_IN_ONE_OFFICIAL_SOURCE_CHANNEL_POSITION_AND_RELATIONS_UNRESOLVED",
+      "critical_point_listings": [
+        {
+          "ref": "DU015-ANEXO-II-ROW-17",
+          "statement": "Listed by ANA as a critical point for cleaning and desilting (limpieza y descolmatación) under DU 015-2023 (June 2023). A planned intervention list, not an event, a footprint or a capacity statement.",
+          "quote_ids": [
+            "ANEXO-II-TITLE",
+            "ANEXO-II-ROW-17",
+            "DU015-ART-2.4"
+          ],
+          "usable_as_event": false,
+          "usable_as_footprint": false
+        }
+      ],
+      "documented_events": [],
+      "sector_level_context": [],
+      "unverified_event_leads": [],
+      "geometry_status": "MISSING",
+      "outlet_status": "MISSING",
+      "channel_or_catchment_geometry": "NONE_IN_ANY_ARCHIVED_SOURCE",
+      "reproducible_geometry_ref": null,
+      "outlet_coordinate": null,
+      "exact_confluence_coordinate": null,
+      "receiver_relation": "UNKNOWN_NOT_ASSUMED",
+      "parent_basin_or_system": null,
+      "travel_time_tau": null,
+      "discharge_q_i": null,
+      "collector_capacity": null,
+      "collector_overflow_evidence": null,
       "map_publishable": false
     }
   ],
@@ -928,7 +1260,7 @@
           ]
         }
       ],
-      "relation_to_quebrada_la_capitana": "NOT_STATED_IN_ANY_SOURCE",
+      "relation_to_quebrada_la_capitana": "UNRESOLVED",
       "map_publishable": false
     },
     {
@@ -936,7 +1268,8 @@
       "documentary_labels": [
         "Higuerón (caserío / sector)",
         "HIGUERON",
-        "HIGUERON SECO"
+        "HIGUERON SECO",
+        "Higueron (SECTOR, Anexo II fila 17)"
       ],
       "record_role": "SETTLEMENT_NOT_A_HYDROLOGIC_UNIT",
       "statements": [
@@ -964,10 +1297,17 @@
           "quote_ids": [
             "RC3755-SAN-JACINTO-ACTIONS"
           ]
+        },
+        {
+          "statement": "ANA, Anexo II of DU 015-2023, row 17: SECTOR 'Higueron' for the critical point 'Qda. Hualaca' in San Jacinto.",
+          "quote_ids": [
+            "ANEXO-II-ROW-17"
+          ]
         }
       ],
-      "relation_to_quebrada_higueron": "NOT_STATED_IN_ANY_SOURCE",
-      "map_publishable": false
+      "relation_to_quebrada_higueron": "UNRESOLVED",
+      "map_publishable": false,
+      "relation_to_quebrada_hualaca": "UNRESOLVED (Anexo II gives Higueron as the sector where the Hualaca critical point lies; nothing more)"
     }
   ],
   "related_names_kept_apart": [
@@ -994,27 +1334,25 @@
             "ANA3761-Q-HUALTACAL",
             "ANA3762-Q-HUALTACAL"
           ]
+        },
+        {
+          "statement": "ANA, Anexo II of DU 015-2023, row 18: 'Qda. Hualtacal', distrito San Jacinto, sector Rica Playa (critical point for limpieza y descolmatación).",
+          "quote_ids": [
+            "ANEXO-II-ROW-18"
+          ]
         }
       ],
-      "relation_to_hualaca": "NOT_EQUATED",
-      "map_publishable": false
+      "relation_to_hualaca": "UNRESOLVED",
+      "map_publishable": false,
+      "number_of_channels": "UNRESOLVED"
     }
   ],
-  "requested_unresolved_name_leads": [
+  "name_lead_history": [
     {
       "requested_name": "Hualaca",
-      "department": "Tumbes",
-      "result": "NOT_ATTESTED_IN_ANY_ARCHIVED_OFFICIAL_SOURCE",
-      "searches": [
-        "SIGRID biblioteca ?c=Hualaca: page archived, no result rows (sigrid-biblioteca-hualaca)",
-        "INDECI WordPress media search 'Hualaca': empty list (indeci-wp-media-hualaca)",
-        "INDECI WordPress search endpoint: HTTP 404 for every term (endpoint not available)",
-        "INDECI site search ?s=Hualaca and ANA repositorio search: unreachable from the runner",
-        "Full text of every archived document (Ley 32573, INGEMMET A6764, ANA 2016 Tumbes series 3740-3770, INDECI 2024, COEN RC 3755, 13111, 13112): 0 matches",
-        "Web search \"quebrada Hualaca\" Tumbes (2026-10-08): no relevant result"
-      ],
-      "note": "Absence from these sources is not evidence that a quebrada Hualaca does not exist. The person or document that supplied the name should be asked for its source.",
-      "map_publishable": false
+      "r1_result": "NOT_ATTESTED in the first bounded capture of 2026-10-08 (SIGRID library search, INDECI media search, full text of every captured document).",
+      "r2_result": "ATTESTED by ANA, Anexo II of DU 015-2023, row 17, after the independent review pointed to that annex; archived from the MEF publication on gob.pe.",
+      "lesson": "The first capture's searches did not reach decree annexes; absence from a bounded search was correctly not treated as non-existence."
     }
   ],
   "national_inventory_crosswalk": {
@@ -1023,7 +1361,7 @@
     "homonym_rows_outside_tumbes": [
       "piura_lalaquiz_el_higueron"
     ],
-    "integration": "DEFERRED_UNTIL_INDEPENDENT_QA. The audit JSON and its generated Markdown are not edited in this PR. After review, the two unit records above can become audit rows with state IDENTITY_ONLY (the 2017 rows carry no event date, so the audit's dated-event rule cannot raise them) and Hualaca can join requested_names_without_source."
+    "integration": "DEFERRED_UNTIL_INDEPENDENT_QA. The audit JSON and its generated Markdown are not edited in this PR. After review, the three unit records can become audit rows with state IDENTITY_ONLY (La Capitana and Higuerón: 2017 rows carry no event date; Hualaca: CRITICAL_POINT evidence only), with every relation left unresolved."
   },
   "map_updates": {
     "new_geometries_published": 0,
@@ -1033,16 +1371,18 @@
     "risk_indicators_changed": 0
   },
   "blockers_requiring_external_action": [
-    "Hualaca: the origin of the name is unknown; only the requester or a local source (Municipalidad Distrital de San Jacinto, ALA Tumbes, Gobierno Regional) can say where it comes from.",
-    "Higuerón: deciding whether the road crossing (INGEMMET C-28), the Ley 32573 divide and the two ANA map spellings are one channel needs georeferenced data: ANA hydrography or the Ley 32573 memoria with its cartography (IGN sheets 0863/0864), or a field check by ALA Tumbes.",
-    "Geometry and outlet for both quebradas: no archived source carries a channel line, catchment or outlet. ANA geoservers (geosnirh.ana.gob.pe) and repositorio.ana.gob.pe were unreachable from the runners in this lane.",
-    "Dated events: the only per-unit evidence (INGEMMET A6764, 2017) is period-level. A dated activation needs an INDECI/COEN, SINPAD or municipal report that names the quebrada."
+    "ANA-hosted copy of Anexo II (www.ana.gob.pe/sites/default/files/file_content/Anexo_II_DU015_2023.pdf) timed out from the GitHub runners and has no Wayback snapshot; the archived bytes come from the MEF publication. Someone with access from Peru can fetch the ANA copy so its SHA-256 can be compared.",
+    "Relations among Hualaca, Higuerón, Hualtacal and La Capitana (same channel, reach names, tributaries or separate channels) need georeferenced data: ANA hydrography or the faja/intervention files of ALA Tumbes for the DU 015-2023 points, the Ley 32573 cartography (IGN 0863/0864), or a field check.",
+    "Geometry and outlet for the three quebradas: no archived source carries a channel line, catchment or outlet; ANA geoservers and repositorio.ana.gob.pe were unreachable from the runners.",
+    "Dated events: the only per-unit damage evidence (INGEMMET A6764, 2017) is period-level; Hualaca has only a 2023 critical-point listing."
   ],
   "forbidden_uses": [
     "No alias, merge or 'same channel' decision may be taken from this record beyond the identity_decisions listed.",
     "No geometry, outlet, receiver, parent basin or footprint may be derived from map label order or from district names.",
     "The 2017 road-damage rows are not dated events, not footprints and not discharge or capacity evidence.",
     "Settlement exposure statements (INDECI 2024) are not quebrada events.",
-    "Missing names in COEN reports are not evidence of inactivity (UNKNOWN_NOT_LOW_RISK)."
+    "Missing names in COEN reports are not evidence of inactivity (UNKNOWN_NOT_LOW_RISK).",
+    "Different names, separate table rows or separate map labels are not evidence of hydraulically independent channels.",
+    "The DU 015-2023 critical-point listing is a planned intervention list: not an event, footprint, capacity or priority score."
   ]
 }

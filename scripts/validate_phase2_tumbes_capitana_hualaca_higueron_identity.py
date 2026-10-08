@@ -11,7 +11,12 @@ proves it, offline:
   text page it cites;
 * no geometry, outlet, receiver, parent basin, hydraulic value or alias merge
   is asserted, and the 2017 period-level rows are not turned into dated events;
-* Hualaca stays unresolved while no archived text names it.
+* every unit is named by the quotes it cites (a unit cannot exist without an
+  archived source that prints its name);
+* no relation between two Tumbes channel names is asserted: different labels
+  are not proof of hydraulically independent channels, so same_channel and
+  hydraulically_independent stay UNRESOLVED;
+* the archive lives outside site/, the directory GitHub Pages publishes.
 
 Standard library only. Exit code 0 = consistent, 1 = violations (listed).
 
@@ -41,17 +46,14 @@ GUARDS = {
     "decision_thresholds": None,
     "hydraulic_factors": None,
 }
-DECISIONS = {
-    "NOT_RESOLVABLE_FROM_EVIDENCE",
-    "NOT_EQUATED_NOT_RESOLVABLE",
-    "NOT_EQUATED",
-    "UNRESOLVED",
-    "DOCUMENTED_AS_DISTINCT_NAMED_QUEBRADAS",
-    "BOTH_ATTESTED_AS_DIFFERENT_FEATURE_TYPES_RELATION_NOT_STATED",
-    "DIFFERENT_DEPARTMENTS_NOT_MERGED",
-}
+# Outcomes allowed for a relation. Only an out-of-department homonym may be kept
+# apart on the strength of the sources' own locations; every Tumbes relation stays open.
+DECISIONS = {"UNRESOLVED", "DIFFERENT_FEATURE_TYPES_RELATION_UNRESOLVED", "DIFFERENT_DEPARTMENTS_NOT_MERGED"}
 REQUIRED_DECISIONS = {"HUALACA_VS_HIGUERON", "HUALACA_VS_HUALTACAL", "HIGUERON_VS_HUALTACAL", "CAPITANA_VS_HIGUERON",
-                      "HIGUERON_ONE_OR_SEVERAL_CHANNELS"}
+                      "CAPITANA_VS_HUALACA", "HIGUERON_ONE_OR_SEVERAL_CHANNELS"}
+REQUIRED_UNITS = {"tumbes_san_jacinto_quebrada_la_capitana", "tumbes_quebrada_higueron_label_group",
+                  "tumbes_san_jacinto_quebrada_hualaca"}
+PUBLIC_DIR = "site/"
 # Keys that would mean a coordinate, geometry or hydraulic value slipped in.
 FORBIDDEN_KEYS = {
     "geometry", "coordinates", "lat", "lon", "latitude", "longitude", "easting_m", "northing_m", "outlet_point",
@@ -166,28 +168,48 @@ def validate(record: dict, manifest: dict, manifest_sha256: str, root: Path = RO
     for missing in sorted(REQUIRED_DECISIONS - set(decisions)):
         errors.append(f"identity decision {missing} missing")
     for did, decision in decisions.items():
-        if decision.get("decision") not in DECISIONS:
+        outcome = decision.get("decision")
+        if outcome not in DECISIONS:
             errors.append(f"identity decision {did}: outcome outside the allowed vocabulary")
-        if not decision.get("quote_ids") and did != "HUALACA_VS_HIGUERON":
+        if not decision.get("quote_ids"):
             errors.append(f"identity decision {did}: needs at least one quote")
+        if decision.get("equivalence_asserted") is not False:
+            errors.append(f"identity decision {did}: equivalence_asserted must be false")
+        if outcome != "DIFFERENT_DEPARTMENTS_NOT_MERGED":
+            # Different labels are not proof of independent channels, and nothing proves they are one channel.
+            for key in ("same_channel", "hydraulically_independent"):
+                if decision.get(key) != "UNRESOLVED":
+                    errors.append(f"identity decision {did}: {key} must stay UNRESOLVED without reproducible geometry")
+            if decision.get("distinctness_asserted") is not False:
+                errors.append(f"identity decision {did}: distinctness_asserted must be false")
 
-    hualaca_in_archive = any("hualaca" in fold(" ".join(p)) for p in pages_cache.values())
+    for path, key, value in walk(record):
+        if key in ("relation_to_hualaca", "relation_to_quebrada_higueron", "relation_to_quebrada_la_capitana", "number_of_channels") \
+                and not str(value).startswith("UNRESOLVED"):
+            errors.append(f"{path}: {key} must stay UNRESOLVED")
+    for sid, src in sources.items():
+        for key in ("raw_path", "text_path"):
+            if str(src.get(key, "")).startswith(PUBLIC_DIR):
+                errors.append(f"source {sid}: {key} lies inside site/, which GitHub Pages publishes")
     for rec in manifest.get("records", []):
-        if any(h.get("term") == "Hualaca" for h in rec.get("term_hits", [])):
-            hualaca_in_archive = True
-    if not hualaca_in_archive:
-        if decisions.get("HUALACA_VS_HIGUERON", {}).get("decision") != "NOT_RESOLVABLE_FROM_EVIDENCE":
-            errors.append("Hualaca is named by no archived source: HUALACA_VS_HIGUERON must stay NOT_RESOLVABLE_FROM_EVIDENCE")
-        leads = [lead for lead in record.get("requested_unresolved_name_leads", []) if lead.get("requested_name") == "Hualaca"]
-        if not leads or leads[0].get("result") != "NOT_ATTESTED_IN_ANY_ARCHIVED_OFFICIAL_SOURCE":
-            errors.append("Hualaca must be recorded as NOT_ATTESTED_IN_ANY_ARCHIVED_OFFICIAL_SOURCE")
-    else:
-        errors.append("an archived source now names Hualaca: the identity decisions must be re-adjudicated")
+        for key in ("raw_path", "text_path"):
+            if str(rec.get(key, "")).startswith(PUBLIC_DIR):
+                errors.append(f"manifest record {rec.get('document_id')}: {key} lies inside site/")
 
+    units = {u.get("id"): u for u in record.get("units", [])}
+    for missing in sorted(REQUIRED_UNITS - set(units)):
+        errors.append(f"unit {missing} missing")
     for unit in record.get("units", []):
         uid = unit.get("id")
-        if fold(unit.get("documentary_label", "")).find("hualaca") >= 0:
-            errors.append(f"unit {uid}: Hualaca has no attested source and cannot be a unit")
+        token = fold(unit.get("name_token", ""))
+        label_quotes = unit.get("label_quote_ids") or []
+        if not token or token not in fold(unit.get("documentary_label", "")):
+            errors.append(f"unit {uid}: name_token must be part of the documentary label")
+        elif not label_quotes or not all(token in fold(quotes.get(q, {}).get("text", "")) for q in label_quotes):
+            errors.append(f"unit {uid}: every label quote must print the unit's name (no unit without an archived source naming it)")
+        for listing in unit.get("critical_point_listings", []):
+            if listing.get("usable_as_event") is not False or listing.get("usable_as_footprint") is not False:
+                errors.append(f"unit {uid}: a critical-point listing is not an event or a footprint")
         if unit.get("department") != "Tumbes":
             errors.append(f"unit {uid}: only Tumbes units belong in this record")
         if unit.get("geometry_status") != "MISSING" or unit.get("outlet_status") != "MISSING":

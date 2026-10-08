@@ -1,53 +1,86 @@
-# Tumbes: identidad documental de La Capitana, Hualaca e Higuerón (v0.1)
+# Tumbes: identidad documental de La Capitana, Hualaca e Higuerón (v0.1, revisión r2)
 
 **Estado:** `RESEARCH_ONLY / TEST_ONLY` · `production_use=false` · `production_ready=false` · `operational_alerting_enabled=false` · `activation_gate=BLOCKED` · `missing_data_rule=UNKNOWN_NOT_LOW_RISK` · `decision_thresholds=null` · `hydraulic_factors=null` · `map_publishable=false`
 
+**Revisión r2 (2026-10-09).** Responde a la revisión científica independiente de ChatGPT del 2026-10-08:
+
+1. Hualaca queda incorporada a partir del Anexo II del DU 015-2023 (fila 17), archivado con su SHA-256 real.
+2. Todas las relaciones entre cauces quedan como `UNRESOLVED`.
+3. El archivo de fuentes se movió fuera de `site/`.
+
 | Archivo | Papel |
 |---|---|
-| `config/phase2_tumbes_capitana_hualaca_higueron_capture_seeds_v0_1.json` | Contrato de captura: búsquedas, semillas, sondas, barrido SIGRID 3740–3770, hosts y límites |
-| `scripts/archive_phase2_tumbes_capitana_hualaca_higueron_sources.py` | Captura acotada (`--capture`, en runner) y verificación offline de hashes (modo por defecto) |
-| `site/data/phase2/sources/tumbes_capitana_hualaca_higueron/` | Bytes originales (`raw/`), texto por página (`text/`) y `archive_manifest_v0_1.json` con SHA-256 reales |
-| `config/phase2_tumbes_capitana_hualaca_higueron_identity_v0_1.json` | Registro de identidad: fuentes, 38 citas literales, decisiones, unidades, contexto de asentamientos, bloqueos |
+| `config/phase2_tumbes_capitana_hualaca_higueron_capture_seeds_v0_1.json` | Contrato de captura: búsquedas, semillas, sondas, barrido SIGRID 3740–3770 y documentos suplementarios (DU 015-2023) con sus rutas |
+| `scripts/archive_phase2_tumbes_capitana_hualaca_higueron_sources.py` | Tiene tres modos. `--capture`: captura completa. `--capture-supplements`: solo los suplementos que faltan; nunca reescribe los registros anteriores. Sin argumentos: verificación offline de los hashes |
+| `data/phase2/source_archive/tumbes_capitana_hualaca_higueron/` | Bytes originales (`raw/`), texto por página (`text/`) y `archive_manifest_v0_1.json`. **Está fuera de `site/`**, así que GitHub Pages no lo publica |
+| `config/phase2_tumbes_capitana_hualaca_higueron_identity_v0_1.json` | Registro de identidad: 19 fuentes, 47 citas literales, decisiones, 3 unidades, asentamientos y bloqueos |
 | `scripts/validate_phase2_tumbes_capitana_hualaca_higueron_identity.py` | Verificador stdlib, sin red |
-| `tests/test_phase2_tumbes_capitana_hualaca_higueron_identity.py` | 17 pruebas: el registro pasa y cada guarda rechaza su violación |
+| `tests/test_phase2_tumbes_capitana_hualaca_higueron_identity.py` | 20 pruebas: el registro pasa y cada guarda rechaza su violación |
 
-Cada afirmación del registro cita un texto literal del archivo archivado. Las pruebas comprueban que la cita es una subcadena literal de esa página, con espacios normalizados. También comprueban que el archivo coincide con el SHA-256 del manifest.
+Cada afirmación del registro cita un texto literal de un archivo archivado. Las pruebas comprueban que la cita es una subcadena literal de su página y que el archivo coincide con el SHA-256 del manifest.
 
-## Decisiones de identidad
+## Hualaca
 
-| Pregunta | Decisión | Base documental |
+Fuente: **Anexo II del Decreto de Urgencia N.° 015-2023** (16-06-2023). Su título es «Listado de puntos críticos para limpieza y descolmatación». Lo emite la Autoridad Nacional del Agua, Dirección de Planificación y Desarrollo de los Recursos Hídricos.
+
+La fila 17 dice: «17 Tumbes Quebrada Qda. Hualaca Jequetepeque- Zarumilla Tumbes Tumbes Tumbes San Jacinto Higueron». Es decir:
+
+| Campo | Valor |
+|---|---|
+| CUENCA | Tumbes |
+| FUENTE | Quebrada |
+| RIO_Qda. | Qda. Hualaca |
+| AAA | Jequetepeque-Zarumilla |
+| ALA | Tumbes |
+| DEPARTAMENTO / PROVINCIA | Tumbes / Tumbes |
+| DISTRITO | San Jacinto |
+| SECTOR | Higueron |
+
+La asignación de columnas se comprobó a ojo sobre la página renderizada.
+
+- **Copia archivada.** La copia de ANA citada por la revisión (`www.ana.gob.pe/.../Anexo_II_DU015_2023.pdf`) agotó el tiempo de espera desde los runners de GitHub y no tiene captura en Wayback. Se archivó la copia que publica el MEF en gob.pe. El artículo 2.4 del decreto (también archivado) establece que los anexos se publican en las sedes digitales del MEF y del MIDAGRI. **No está verificado** que esta copia sea idéntica byte a byte a la de ANA.
+- **Uso permitido.** Es un listado de puntos críticos para intervenciones previstas. No es un evento, ni una huella, ni un dato de capacidad. La palabra «Tumbes» en la columna CUENCA se registra como texto y no se adopta como cuenca padre.
+- **Unidad creada:** `tumbes_san_jacinto_quebrada_hualaca`, con geometría y outlet en `MISSING` y `receiver_relation=UNKNOWN_NOT_ASSUMED`.
+
+## Relaciones (todas sin demostrar)
+
+Que dos nombres aparezcan en fuentes oficiales prueba que las fuentes usan dos etiquetas. **No prueba** que haya dos cauces hidráulicamente independientes: un mismo cauce puede llevar nombres distintos según el tramo o el sector, y dos nombres pueden corresponder a cauces conectados.
+
+Mientras no haya geometría reproducible, `same_channel` y `hydraulically_independent` quedan en `UNRESOLVED`, y el verificador rechaza cualquier otro valor.
+
+| Relación | Decisión | Observación |
 |---|---|---|
-| Hualaca vs Higuerón | **No se puede resolver con la evidencia** | Higuerón aparece en INGEMMET A6764, la Ley 32573 y los mapas ANA 2016. Hualaca no aparece en ninguna fuente oficial archivada. |
-| Hualaca vs Hualtacal | **No se equiparan** | Los nombres se parecen, pero ninguna fuente los relaciona. |
-| Higuerón vs Hualtacal | **Quebradas distintas por nombre** | La Ley 32573 §1.2 enumera «quebrada Higuerón y quebrada Hualtacal». ANA 3743 los rotula por separado. |
-| La Capitana vs Higuerón | **Quebradas distintas por nombre** | INGEMMET A6764, Cuadro 3.2: filas C-27 y C-28. Rótulos separados en ANA 3743 y 3755. |
-| Quebrada vs centro poblado «La Capitana» | **Dos tipos de entidad; relación no declarada** | La quebrada aparece en INGEMMET y ANA. El centro poblado o caserío aparece en INDECI 2024, COEN 2025 y ANA 3743. |
-| Quebrada vs caserío/sector «Higuerón» | **Dos tipos de entidad; relación no declarada** | Nombre de la carretera; zonas INGEMMET 2 y 8; ANA «HIGUERON» y «HIGUERON SECO»; COEN 2025. |
-| ¿Un solo cauce Higuerón en Tumbes? | **Sin resolver** | (A) cruce vial C-28 en la ruta de San Jacinto; (B) divisoria interprovincial Contralmirante Villar–Tumbes; (C) dos grafías en una misma hoja ANA. |
-| «Capitán Hoyle» (RC 13112) vs La Capitana | **No se equiparan** | Etiqueta distinta en la fuente. |
-| El Higuerón de Piura, Cajamarca y La Libertad | **Distinto departamento; no se fusionan** | No se archivan como fuentes de Tumbes. |
+| Hualaca – Higuerón | `UNRESOLVED` | El Anexo II sitúa la Qda. Hualaca en el sector «Higueron». No dice si es la quebrada Higuerón, un tramo o un afluente de ella, o un cauce distinto. |
+| Hualaca – Hualtacal | `UNRESOLVED` | Filas 17 y 18 del Anexo II (sectores Higueron y Rica Playa). Se retira la hipótesis de que «Hualaca» fuera una grafía de «Hualtacal». |
+| Higuerón – Hualtacal | `UNRESOLVED` | Se enumeran por separado en la Ley 32573 §1.2 y llevan rótulos separados en ANA 2016. |
+| La Capitana – Higuerón | `UNRESOLVED` | Filas C-27 y C-28 de INGEMMET A6764 y rótulos separados en ANA 2016. |
+| La Capitana – Hualaca | `UNRESOLVED` | Ninguna fuente nombra a ambas. |
+| ¿Uno o varios Higuerón? ¿Uno o varios Hualtacal? | `UNRESOLVED` | Aparecen en varios contextos: cruce vial, divisoria legal, rótulos de mapa y sectores del Anexo II. |
+| Quebrada vs asentamiento (La Capitana, Higuerón) | `DIFFERENT_FEATURE_TYPES_RELATION_UNRESOLVED` | Son tipos de entidad distintos; su relación no se declara. |
+| «Capitán Hoyle» (RC 13112) vs La Capitana | `UNRESOLVED` | No se equiparan. |
+| El Higuerón de Piura, Cajamarca y La Libertad | `DIFFERENT_DEPARTMENTS_NOT_MERGED` | Las propias fuentes los sitúan en otros departamentos. |
 
-## Eventos documentados
+## Eventos
 
-Solo hay evidencia a nivel de periodo, sin fecha diaria. Proviene de INGEMMET A6764, Cuadro 3.2 («Tramos carreteros afectados por los peligros detonados con las fuertes lluvias de El Niño Costero 2017»):
+- **La Capitana e Higuerón.** Solo hay evidencia a nivel de periodo, de INGEMMET A6764, Cuadro 3.2 (El Niño Costero 2017, sin fecha diaria): C-27 y C-42 para La Capitana, C-28 para Higuerón.
+- **Hualaca.** No tiene eventos. Solo figura en el listado de puntos críticos de 2023.
+- **RC 13111/13112 (2026).** No nombran ninguno de los cuatro nombres. Eso no prueba inactividad.
 
-- C-27: tramo de carretera afectado por flujo proveniente de la quebrada La Capitana (bloque de flujos).
-- C-42: vía afirmada afectada por erosión fluvial en la quebrada La Capitana.
-- C-28: tramo de carretera afectado por flujo proveniente de la quebrada Higuerón (solo la mención A).
+## Almacenamiento
 
-Estas filas no son eventos fechados, huellas de inundación ni datos de caudal o capacidad. Los Reportes Complementarios 13111 y 13112 (27-28/9/2026) no nombran ninguna de las tres quebradas. Eso no prueba que hubieran estado inactivas.
+El 2026-10-09 se movió el archivo con `git mv` desde `site/data/phase2/sources/...` a `data/phase2/source_archive/...`:
 
-## Geometría y outlet
-
-Ambas unidades tienen geometría y outlet en `MISSING`. Ninguna fuente archivada trae línea de cauce, cuenca ni punto de desembocadura. El orden de los rótulos en el texto de los mapas ANA no es un orden espacial. No se publica nada en el mapa.
-
-## Integración con la auditoría nacional
-
-Se aplaza hasta el QA independiente. En esta PR no se editan `config/phase2_national_inventory_completeness_audit_v0_1.json` ni su Markdown generado. La propuesta está en `national_inventory_crosswalk`: dos filas `IDENTITY_ONLY` y Hualaca en `requested_names_without_source`.
+- Los bytes y los SHA-256 no cambian.
+- El manifest reescribe solo los prefijos de ruta y registra el traslado en `relocations`.
+- GitHub Pages publica únicamente `site/`.
+- El archivador, el workflow, el verificador y las pruebas rechazan cualquier copia o ruta del archivo dentro de `site/`.
 
 ## Bloqueos externos
 
-1. **Origen del nombre «Hualaca».** Solo pueden aclararlo quien lo aportó o una fuente local: Municipalidad Distrital de San Jacinto, ALA Tumbes o Gobierno Regional.
-2. **¿Uno o varios cauces Higuerón?** Hace falta hidrografía ANA georreferenciada, la cartografía de la Ley 32573 (IGN 0863/0864) o una verificación de campo.
-3. **Geometría y outlet.** `geosnirh.ana.gob.pe` y `repositorio.ana.gob.pe` no respondieron desde los runners.
+1. **Copia de ANA.** Hace falta la copia de ANA del Anexo II, descargada desde una red con acceso, para comparar su SHA-256 con la del MEF.
+2. **Relaciones entre Hualaca, Higuerón, Hualtacal y La Capitana.** Resolverlas requiere datos georreferenciados:
+   - hidrografía ANA o expedientes de ALA Tumbes de los puntos del DU 015-2023;
+   - cartografía de la Ley 32573 (IGN 0863/0864);
+   - o verificación de campo.
+3. **Geometría y outlet.** `geosnirh.ana.gob.pe` y `repositorio.ana.gob.pe` no responden desde los runners.
 4. **Eventos fechados.** Hace falta un reporte INDECI/COEN, SINPAD o municipal que nombre la quebrada.

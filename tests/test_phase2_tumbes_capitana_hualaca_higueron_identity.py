@@ -101,37 +101,80 @@ def test_record_must_match_the_committed_manifest():
     assert any("archive_manifest_sha256" in e for e in V.validate(record, manifest, "f" * 64))
 
 
-def test_hualaca_cannot_be_equated_with_higueron_or_hualtacal():
+def test_hualaca_is_attested_by_archived_ana_anexo_ii_row_17():
+    record, manifest, _ = _inputs()
+    quote = record["quotes"]["ANEXO-II-ROW-17"]
+    assert quote["source_id"] == "ANA-DU-015-2023-ANEXO-II"
+    assert "Qda. Hualaca" in quote["text"] and "San Jacinto Higueron" in quote["text"]
+    src = record["sources"]["ANA-DU-015-2023-ANEXO-II"]
+    rec = next(r for r in manifest["records"] if r["document_id"] == src["archive_document_id"])
+    assert rec["status"] == "ARCHIVED" and "Hualaca" in rec["terms_found"]
+    assert hashlib.sha256((ROOT / src["raw_path"]).read_bytes()).hexdigest() == src["sha256"] == rec["sha256"]
+    unit = _unit(record, "tumbes_san_jacinto_quebrada_hualaca")
+    assert unit["district"] == "San Jacinto" and unit["sector_as_printed"] == "Higueron"
+    assert unit["geometry_status"] == "MISSING" and unit["map_publishable"] is False
+
+
+def test_hualaca_higueron_relation_stays_unresolved_both_ways():
     record, _, _ = _inputs()
     decisions = {d["id"]: d for d in record["identity_decisions"]}
-    assert decisions["HUALACA_VS_HIGUERON"]["decision"] == "NOT_RESOLVABLE_FROM_EVIDENCE"
-    assert decisions["HUALACA_VS_HUALTACAL"]["decision"] == "NOT_EQUATED_NOT_RESOLVABLE"
+    hh = decisions["HUALACA_VS_HIGUERON"]
+    assert hh["decision"] == "UNRESOLVED" and hh["same_channel"] == hh["hydraulically_independent"] == "UNRESOLVED"
+    for key, value in (("same_channel", "YES"), ("hydraulically_independent", "YES"), ("decision", "SAME_CHANNEL"),
+                       ("decision", "DOCUMENTED_AS_DISTINCT_NAMED_QUEBRADAS"), ("distinctness_asserted", True),
+                       ("equivalence_asserted", True)):
+        bad = copy.deepcopy(record)
+        next(d for d in bad["identity_decisions"] if d["id"] == "HUALACA_VS_HIGUERON")[key] = value
+        assert any("HUALACA_VS_HIGUERON" in e for e in _errors(bad)), (key, value)
+
+
+def test_distinct_names_do_not_make_independent_channels():
+    record, _, _ = _inputs()
+    for did in ("HIGUERON_VS_HUALTACAL", "CAPITANA_VS_HIGUERON", "HUALACA_VS_HUALTACAL", "CAPITANA_VS_HUALACA"):
+        decision = next(d for d in record["identity_decisions"] if d["id"] == did)
+        assert decision["labels_distinct_in_sources"] is True
+        assert decision["hydraulically_independent"] == "UNRESOLVED"
+        bad = copy.deepcopy(record)
+        next(d for d in bad["identity_decisions"] if d["id"] == did)["hydraulically_independent"] = "INDEPENDENT"
+        assert any(did in e and "hydraulically_independent" in e for e in _errors(bad)), did
     bad = copy.deepcopy(record)
-    for d in bad["identity_decisions"]:
-        if d["id"] == "HUALACA_VS_HIGUERON":
-            d["decision"] = "DOCUMENTED_AS_DISTINCT_NAMED_QUEBRADAS"
-    assert any("HUALACA_VS_HIGUERON" in e for e in _errors(bad))
-    bad = copy.deepcopy(record)
-    bad["identity_decisions"][0]["equivalence_asserted"] = True
-    assert any("equivalence_asserted" in e for e in _errors(bad))
+    bad["related_names_kept_apart"][0]["relation_to_hualaca"] = "DISTINCT"
+    assert any("relation_to_hualaca" in e for e in _errors(bad))
 
 
-def test_no_archived_text_names_hualaca():
-    _, manifest, _ = _inputs()
-    for rec in manifest["records"]:
-        assert "Hualaca" not in rec.get("terms_found", [])
-        if rec.get("text_path"):
-            pages = json.loads((ROOT / rec["text_path"]).read_text(encoding="utf-8"))["pages"]
-            assert "hualaca" not in V.fold(" ".join(pages))
-
-
-def test_hualaca_cannot_become_a_unit():
+def test_a_unit_needs_an_archived_quote_that_prints_its_name():
     record, _, _ = _inputs()
     bad = copy.deepcopy(record)
-    fake = copy.deepcopy(_unit(bad, "tumbes_san_jacinto_quebrada_la_capitana"))
-    fake.update(id="tumbes_quebrada_hualaca", documentary_label="quebrada Hualaca")
+    fake = copy.deepcopy(_unit(bad, "tumbes_san_jacinto_quebrada_hualaca"))
+    fake.update(id="tumbes_quebrada_inventada", documentary_label="quebrada Inventada", name_token="inventada")
     bad["units"].append(fake)
-    assert any("Hualaca has no attested source" in e for e in _errors(bad))
+    assert any("tumbes_quebrada_inventada" in e and "label quote" in e for e in _errors(bad))
+    bad = copy.deepcopy(record)
+    bad["units"] = [u for u in bad["units"] if u["id"] != "tumbes_san_jacinto_quebrada_hualaca"]
+    assert any("tumbes_san_jacinto_quebrada_hualaca missing" in e for e in _errors(bad))
+
+
+def test_critical_point_listing_is_not_an_event():
+    record, _, _ = _inputs()
+    unit = _unit(record, "tumbes_san_jacinto_quebrada_hualaca")
+    assert unit["documented_events"] == []
+    bad = copy.deepcopy(record)
+    _unit(bad, "tumbes_san_jacinto_quebrada_hualaca")["critical_point_listings"][0]["usable_as_event"] = True
+    assert any("critical-point listing" in e for e in _errors(bad))
+
+
+def test_archive_lives_outside_the_published_site_directory():
+    record, manifest, _ = _inputs()
+    assert not (ROOT / "site/data/phase2/sources/tumbes_capitana_hualaca_higueron").exists()
+    assert MANIFEST.resolve().is_relative_to(ROOT / "data")
+    for rec in manifest["records"]:
+        for key in ("raw_path", "text_path"):
+            assert not rec.get(key, "").startswith("site/")
+    assert not any(p.suffix == ".pdf" for p in (ROOT / "site").rglob("*tumbes_capitana*"))
+    bad = copy.deepcopy(record)
+    src = bad["sources"]["ANA-DU-015-2023-ANEXO-II"]
+    src["raw_path"] = "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/raw/x.pdf"
+    assert any("inside site/" in e for e in _errors(bad))
 
 
 def test_alias_merge_and_attestation_merge_are_rejected():
