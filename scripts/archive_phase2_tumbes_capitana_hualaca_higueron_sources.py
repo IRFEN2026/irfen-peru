@@ -381,9 +381,9 @@ def capture_supplements() -> int:
                 raw_path.write_bytes(data)
                 text_path = ARCHIVE / "text" / f"{doc_id}.pages.json"
                 text_path.write_text(json.dumps(dict(document_id=doc_id, sha256_of_raw=sha256_bytes(data), pages=pages), ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-                record = dict(
+                record = {k: v for k, v in result.items() if k not in ("data", "status")}
+                record.update(
                     document_id=doc_id, origin=dict(kind="supplement", seed_id=doc_id, institution=item["institution"], why=item["why"], requested_by=item.get("requested_by")),
-                    **{k: v for k, v in result.items() if k != "data"},
                     official_url=item["official_url"], served_by_route=how, route_attempts=attempts,
                     text_extraction="PYPDF_PER_PAGE" if ext == ".pdf" else "HTML_TAGS_STRIPPED",
                     media=ext[1:], bytes=len(data), sha256=sha256_bytes(data), page_count=len(pages),
