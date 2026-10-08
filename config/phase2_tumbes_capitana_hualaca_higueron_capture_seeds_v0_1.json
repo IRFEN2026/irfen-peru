@@ -1,0 +1,62 @@
+{
+  "schema_version": "0.1",
+  "capture_id": "phase2-tumbes-capitana-hualaca-higueron-source-capture:v0.1",
+  "status": "RESEARCH_ONLY_SOURCE_CAPTURE_SEEDS",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "purpose": "Bounded capture of official ANA, INDECI/COEN and related public sources that may name La Capitana, Hualaca or Higuerón in Tumbes. Captured bytes are archived with their real SHA-256; identity decisions are recorded separately and only from archived text.",
+  "search_terms": [
+    {"term": "Capitana", "pattern": "capitana"},
+    {"term": "Hualaca", "pattern": "hualaca"},
+    {"term": "Higuerón", "pattern": "higuer[oó]n"},
+    {"term": "Hualtacal", "pattern": "hualtacal", "note": "Recorded only to keep a similar-looking official name apart from Hualaca; it is not a search for an alias."}
+  ],
+  "allowed_hosts": [
+    "portal.indeci.gob.pe",
+    "www.indeci.gob.pe",
+    "sigrid.cenepred.gob.pe",
+    "www.ana.gob.pe",
+    "repositorio.ana.gob.pe",
+    "www.gob.pe",
+    "cdn.www.gob.pe",
+    "busquedas.elperuano.pe",
+    "diariooficial.elperuano.pe"
+  ],
+  "discovery_queries": [
+    {"id": "indeci-wp-search-capitana", "kind": "wp_search", "url": "https://portal.indeci.gob.pe/wp-json/wp/v2/search?search=Capitana&per_page=100"},
+    {"id": "indeci-wp-search-hualaca", "kind": "wp_search", "url": "https://portal.indeci.gob.pe/wp-json/wp/v2/search?search=Hualaca&per_page=100"},
+    {"id": "indeci-wp-search-higueron", "kind": "wp_search", "url": "https://portal.indeci.gob.pe/wp-json/wp/v2/search?search=Higuer%C3%B3n&per_page=100"},
+    {"id": "indeci-wp-search-higueron-noaccent", "kind": "wp_search", "url": "https://portal.indeci.gob.pe/wp-json/wp/v2/search?search=Higueron&per_page=100"},
+    {"id": "indeci-wp-media-capitana", "kind": "wp_media", "url": "https://portal.indeci.gob.pe/wp-json/wp/v2/media?search=Capitana&per_page=100"},
+    {"id": "indeci-wp-media-hualaca", "kind": "wp_media", "url": "https://portal.indeci.gob.pe/wp-json/wp/v2/media?search=Hualaca&per_page=100"},
+    {"id": "indeci-wp-media-higueron", "kind": "wp_media", "url": "https://portal.indeci.gob.pe/wp-json/wp/v2/media?search=Higueron&per_page=100"},
+    {"id": "sigrid-biblioteca-capitana", "kind": "html", "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/biblioteca?c=Capitana"},
+    {"id": "sigrid-biblioteca-hualaca", "kind": "html", "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/biblioteca?c=Hualaca"},
+    {"id": "sigrid-biblioteca-higueron", "kind": "html", "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/biblioteca?c=Higuer%C3%B3n"},
+    {"id": "ana-repositorio-hualaca", "kind": "html", "url": "https://repositorio.ana.gob.pe/discover?query=Hualaca"},
+    {"id": "ana-repositorio-capitana-tumbes", "kind": "html", "url": "https://repositorio.ana.gob.pe/discover?query=%22La+Capitana%22+Tumbes"},
+    {"id": "ana-repositorio-higueron-tumbes", "kind": "html", "url": "https://repositorio.ana.gob.pe/discover?query=Higuer%C3%B3n+Tumbes"}
+  ],
+  "seed_documents": [
+    {"id": "indeci-rc-13112-2026-09-28-san-jacinto", "institution": "INDECI / COEN", "kind": "html_with_pdf_links", "url": "https://portal.indeci.gob.pe/emergencias/reporte-complementario-n-13112-28-9-2026-coen-indeci-2305-horas-reporte-n-1-lluvias-intensas-en-el-distrito-de-san-jacinto-tumbes/", "why": "Indexed on main (official_outcome_evidence.json): lluvias intensas, distrito de San Jacinto, where La Capitana is located."},
+    {"id": "indeci-rc-13111-2026-09-28-pampas-de-hospital", "institution": "INDECI / COEN", "kind": "html_with_pdf_links", "url": "https://portal.indeci.gob.pe/emergencias/reporte-complementario-n-13111-28-9-2026-coen-indeci-2300-horas-reporte-n-1-lluvias-intensas-en-el-distrito-de-pampas-de-hospital-tumbes/", "why": "Indexed on main: lluvias intensas, distrito de Pampas de Hospital (adjacent district)."},
+    {"id": "indeci-rc-3755-2025-03-18-tumbes", "institution": "INDECI / COEN", "kind": "pdf", "url": "https://portal.indeci.gob.pe/wp-content/uploads/2025/03/REPORTE-COMPLEMENTARIO-N.%C2%BA-3755-18MAR2025-LLUVIAS-INTENSAS-EN-EL-DEPARTAMENTO-DE-TUMBES-29.pdf", "why": "Search engines associate this Tumbes rainfall report with Higuerón and La Capitana; content not yet read."},
+    {"id": "elperuano-ley-32573-limites-tumbes", "institution": "Congreso de la República (El Peruano)", "kind": "html", "url": "https://busquedas.elperuano.pe/dispositivo/NL/2502573-2", "why": "Ley N.° 32573 names 'quebrada Higuerón' and 'quebrada Hualtacal' as boundary features in Tumbes (automated reading, to be confirmed in archived bytes)."},
+    {"id": "sigrid-11733-ana-puntos-criticos-tumbes-2015", "institution": "ANA (SIGRID)", "kind": "sigrid_download", "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/11733/descargar", "why": "ANA map of critical points in Tumbes region, 2015."}
+  ],
+  "limits": {
+    "max_documents": 40,
+    "max_bytes_per_document": 15000000,
+    "max_total_bytes": 80000000,
+    "follow_links_depth": 1,
+    "follow_only_pdf_links_from_discovered_pages": true,
+    "timeout_seconds": 40
+  }
+}
