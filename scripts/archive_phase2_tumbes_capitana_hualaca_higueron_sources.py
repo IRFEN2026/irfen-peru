@@ -30,7 +30,7 @@ import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.error import HTTPError, URLError
-from urllib.parse import urljoin, urlparse
+from urllib.parse import quote, urljoin, urlparse
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -51,6 +51,7 @@ GUARDS = {
 }
 HREF_RE = re.compile(r"""href\s*=\s*["']([^"'#]+)["'][^>]*>(.*?)</a>""", re.I | re.S)
 TAG_RE = re.compile(r"<[^>]+>")
+DOC_URL_RE = re.compile(r"(/sigridv3/documento/\d+|/handle/\d+/\d+|/items/[0-9a-f-]{36}|/bitstream|\.pdf(\?|$))", re.I)
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -79,10 +80,15 @@ def slug(text: str, limit: int = 80) -> str:
     return s[:limit] or "document"
 
 
+def safe_url(url: str) -> str:
+    """Percent-encode spaces and non-ASCII characters without touching reserved URL syntax."""
+    return quote(url, safe=":/?#[]@!$&'()*+,;=%~")
+
+
 def fetch(url: str, timeout: int, max_bytes: int) -> dict:
-    request = Request(url, headers={"User-Agent": USER_AGENT, "Accept": "*/*"})
     started = datetime.now(timezone.utc).isoformat()
     try:
+        request = Request(safe_url(url), headers={"User-Agent": USER_AGENT, "Accept": "*/*"})
         with urlopen(request, timeout=timeout) as response:
             data = response.read(max_bytes + 1)
             if len(data) > max_bytes:
@@ -93,6 +99,8 @@ def fetch(url: str, timeout: int, max_bytes: int) -> dict:
         return dict(status="HTTP_ERROR", requested_url=url, http_status=exc.code, retrieved_at_utc=started)
     except (URLError, TimeoutError, OSError) as exc:
         return dict(status="UNREACHABLE", requested_url=url, error=type(exc).__name__ + ": " + str(exc)[:200], retrieved_at_utc=started)
+    except Exception as exc:  # noqa: BLE001 - invalid URL or protocol error is recorded, never fatal
+        return dict(status="FETCH_ERROR", requested_url=url, error=type(exc).__name__ + ": " + str(exc)[:200], retrieved_at_utc=started)
 
 
 def is_pdf(result: dict) -> bool:
@@ -178,6 +186,11 @@ def capture() -> int:
             record["status"] = "CAPTURED_NOT_RETAINED_NO_TERM_HIT"
             records.append(record)
             return
+        context = [fold(c) for c in limits.get("retain_discovered_only_if_text_contains_any", [])]
+        if not keep_without_hits and context and not any(c in fold(" ".join(pages)) for c in context):
+            record["status"] = "CAPTURED_NOT_RETAINED_OUTSIDE_TUMBES_CONTEXT"
+            records.append(record)
+            return
         if total + len(data) > limits["max_total_bytes"]:
             record["status"] = "SKIPPED_TOTAL_BYTE_LIMIT"
             records.append(record)
@@ -227,7 +240,8 @@ def capture() -> int:
                 except ValueError:
                     record["parse_error"] = "NOT_JSON"
             else:
-                candidates = [(u, t) for u, t in links(data, result.get("final_url") or query["url"]) if term_rx.search(fold(t))]
+                candidates = [(u, t) for u, t in links(data, result.get("final_url") or query["url"])
+                              if term_rx.search(fold(t)) and DOC_URL_RE.search(u)]
             record["candidate_links"] = [dict(url=u, title=t[:200]) for u, t in candidates]
             for url, title in candidates:
                 if allowed(url, hosts) and url not in seen:
