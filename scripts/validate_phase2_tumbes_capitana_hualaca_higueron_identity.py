@@ -28,7 +28,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 RECORD = ROOT / "config/phase2_tumbes_capitana_hualaca_higueron_identity_v0_1.json"
-MANIFEST = ROOT / "site/data/phase2/sources/tumbes_capitana_hualaca_higueron/archive_manifest_v0_1.json"
+MANIFEST = ROOT / "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/archive_manifest_v0_1.json"
 
 GUARDS = {
     "deployment_status": "RESEARCH_ONLY",

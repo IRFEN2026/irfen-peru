@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 """Bounded, fail-closed capture of official sources for La Capitana, Hualaca and Higuerón (Tumbes).
 
-Two modes:
+Three modes:
 
 * ``--capture`` (network): reads the seed contract, queries the listed official
   search endpoints, follows result pages on allowed hosts one level deep, keeps
   only documents whose text names a search term (plus every explicit seed),
   stores the original bytes, their real SHA-256, a per-page text extraction and
   the exact term hits, and writes ``archive_manifest_v0_1.json``.
+* ``--capture-supplements`` (network): fetches only the ``supplement_documents``
+  of the seed contract that the manifest does not hold yet, trying each listed
+  route in order, and appends them without touching earlier records.
 * default (offline): re-hashes every archived file and checks it against the
   manifest, the seed contract digest and the fail-closed guards. Nothing is
   downloaded.
@@ -35,7 +38,10 @@ from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 SEEDS = ROOT / "config/phase2_tumbes_capitana_hualaca_higueron_capture_seeds_v0_1.json"
-ARCHIVE = ROOT / "site/data/phase2/sources/tumbes_capitana_hualaca_higueron"
+ARCHIVE = ROOT / "data/phase2/source_archive/tumbes_capitana_hualaca_higueron"
+# The archive must never sit inside site/, which GitHub Pages publishes as a whole.
+PUBLIC_ROOT = ROOT / "site"
+LEGACY_PUBLIC_ARCHIVE = ROOT / "site/data/phase2/sources/tumbes_capitana_hualaca_higueron"
 MANIFEST = ARCHIVE / "archive_manifest_v0_1.json"
 USER_AGENT = "IRFEN-phase2-research-source-archive/1.0 (+https://github.com/IRFEN2026/irfen-peru)"
 GUARDS = {
@@ -297,9 +303,69 @@ def capture() -> int:
     return 0
 
 
+def route_kind(url: str) -> str:
+    return "WAYBACK_ID_REPLAY_OF_OFFICIAL_URL" if urlparse(url).netloc.lower() == "web.archive.org" else "OFFICIAL_HOST"
+
+
+def capture_supplements() -> int:
+    seeds = load_seeds()
+    limits = seeds["limits"]
+    terms = seeds["search_terms"]
+    manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    before = manifest.get("seeds_sha256")
+    held = {r["document_id"] for r in manifest["records"] if r.get("status") == "ARCHIVED"}
+    added = []
+    for item in seeds.get("supplement_documents", []):
+        doc_id = item["id"]
+        if doc_id in held:
+            continue
+        manifest["records"] = [r for r in manifest["records"] if r["document_id"] != doc_id]
+        attempts, record = [], None
+        for url in item["routes"]:
+            result = fetch(url, limits["timeout_seconds"], limits["max_bytes_per_document"])
+            attempts.append({k: v for k, v in result.items() if k in ("requested_url", "status", "http_status", "error", "final_url", "retrieved_at_utc")})
+            if result["status"] == "CAPTURED" and (not item.get("expect_pdf") or (result["data"] or b"")[:5] == b"%PDF-"):
+                data = result["data"]
+                pages = pdf_pages(data) if is_pdf(result) else [html_text(data)]
+                hits = term_hits(pages, terms)
+                ext = ".pdf" if is_pdf(result) else ".html"
+                raw_path = ARCHIVE / "raw" / f"{doc_id}{ext}"
+                raw_path.write_bytes(data)
+                text_path = ARCHIVE / "text" / f"{doc_id}.pages.json"
+                text_path.write_text(json.dumps(dict(document_id=doc_id, sha256_of_raw=sha256_bytes(data), pages=pages), ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+                record = dict(
+                    document_id=doc_id, origin=dict(kind="supplement", seed_id=doc_id, institution=item["institution"], why=item["why"], requested_by=item.get("requested_by")),
+                    **{k: v for k, v in result.items() if k != "data"},
+                    official_url=item["official_url"], served_by_route=route_kind(url), route_attempts=attempts,
+                    text_extraction="PYPDF_PER_PAGE" if ext == ".pdf" else "HTML_TAGS_STRIPPED",
+                    media=ext[1:], bytes=len(data), sha256=sha256_bytes(data), page_count=len(pages),
+                    text_characters=sum(len(p) for p in pages), term_hits=hits, terms_found=sorted({h["term"] for h in hits}),
+                    status="ARCHIVED", raw_path=str(raw_path.relative_to(ROOT)), text_path=str(text_path.relative_to(ROOT)),
+                    text_sha256=sha256_bytes(text_path.read_bytes()),
+                )
+                break
+            time.sleep(2)
+        if record is None:
+            record = dict(document_id=doc_id, origin=dict(kind="supplement", seed_id=doc_id, institution=item["institution"], why=item["why"]),
+                          official_url=item["official_url"], status="UNREACHABLE_ALL_ROUTES", route_attempts=attempts)
+        manifest["records"].append(record)
+        added.append(dict(document_id=doc_id, status=record["status"], served_by_route=record.get("served_by_route")))
+    manifest.setdefault("supplement_captures", []).append(dict(
+        captured_at_utc=datetime.now(timezone.utc).isoformat(), seeds_sha256_before=before, seeds_sha256_after=seeds_digest(),
+        documents=added, earlier_records_untouched=True))
+    manifest["seeds_sha256"] = seeds_digest()
+    MANIFEST.write_text(json.dumps(manifest, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    print("supplement capture:", json.dumps(added, ensure_ascii=False))
+    return 0
+
+
 def verify() -> list[str]:
     errors: list[str] = []
     load_seeds()
+    if LEGACY_PUBLIC_ARCHIVE.exists():
+        errors.append(f"archive must not live under the published site/: remove {LEGACY_PUBLIC_ARCHIVE.relative_to(ROOT)}")
+    if ARCHIVE.resolve().is_relative_to(PUBLIC_ROOT.resolve()):
+        errors.append("ARCHIVE points inside site/, which GitHub Pages publishes")
     if not MANIFEST.is_file():
         return [f"missing {MANIFEST.relative_to(ROOT)}"]
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
@@ -316,6 +382,8 @@ def verify() -> list[str]:
         if not raw:
             continue
         path = ROOT / raw
+        if path.resolve().is_relative_to(PUBLIC_ROOT.resolve()):
+            errors.append(f"archived file inside the published site/: {raw}")
         listed.add(path.resolve())
         if not path.is_file():
             errors.append(f"archived file missing: {raw}")
@@ -337,9 +405,12 @@ def verify() -> list[str]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--capture", action="store_true", help="download from the network and rewrite the archive")
+    parser.add_argument("--capture-supplements", action="store_true", help="download only missing supplement documents")
     args = parser.parse_args(argv)
     if args.capture:
         return capture()
+    if args.capture_supplements:
+        return capture_supplements()
     errors = verify()
     if errors:
         print("FAIL:")
