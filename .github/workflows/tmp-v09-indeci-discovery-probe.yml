@@ -22,13 +22,12 @@ jobs:
               except Exception as e:
                   return getattr(e,"code",None), None, str(e).encode()[:200]
           B="https://portal.indeci.gob.pe/wp-json/wp/v2/"
-          tests=[("types",B+"types"),
-                 ("media_aviso",B+"media?search=aviso&per_page=10&orderby=date&order=desc&_fields=id,date,modified,title,source_url"),
-                 ("media_boletin",B+"media?search=boletin&per_page=10&orderby=date&order=desc&_fields=id,date,title,source_url"),
-                 ("media_latest",B+"media?per_page=15&orderby=date&order=desc&_fields=id,date,title,source_url,mime_type"),
-                 ("posts_aviso",B+"posts?search=aviso&per_page=10&_fields=id,date,title,link,type"),
-                 ("emergencias_aviso",B+"emergencias?search=aviso&per_page=10&_fields=id,date,title,link"),
-                 ("emergencias_latest",B+"emergencias?per_page=15&_fields=id,date,title,link")]
+          tests=[("media_nofields",B+"media?search=aviso&per_page=5&orderby=date&order=desc"),
+                 ("feed_emergencias","https://portal.indeci.gob.pe/emergencias/feed/"),
+                 ("feed_posttype","https://portal.indeci.gob.pe/feed/?post_type=emergencias"),
+                 ("html_emergencias","https://portal.indeci.gob.pe/emergencias/"),
+                 ("sitemap","https://portal.indeci.gob.pe/wp-sitemap.xml"),
+                 ("robots","https://portal.indeci.gob.pe/robots.txt")]
           for name,u in tests:
               st,tot,body=get(u)
               summ=""
@@ -37,5 +36,13 @@ jobs:
                   if name=="types": summ=", ".join(f"{k}:{v.get('rest_base')}" for k,v in j.items())
                   elif isinstance(j,list): summ=" || ".join(f"{x.get('date','')[:16]} {(x.get('title') or {}).get('rendered','')[:90]} {x.get('source_url') or x.get('link') or ''}" for x in j)
                   else: summ=str(j)[:300]
-              except Exception: summ=body[:200].decode('utf-8','replace')
+              except Exception:
+                  import re
+                  t=body.decode('utf-8','replace')
+                  if name=="robots": summ=t[:1500]
+                  else:
+                      items=re.findall(r"<title>([^<]{5,200})</title>",t)[:15]
+                      links=[l for l in re.findall(r'href="(https://portal\.indeci\.gob\.pe/emergencias/[^"]+)"',t)][:15]
+                      locs=re.findall(r"<loc>([^<]+)</loc>",t)[:30]
+                      summ=f"len={len(t)} titles={items} links={links} locs={locs}"
               print(f"::notice title=PROBE_{name}::status={st} total={tot} {summ[:3500].replace('%','%25')}")
