@@ -1,0 +1,65 @@
+{
+ "schema_version": "0.1",
+ "capture_id": "phase2-pisco-ica-polvareda-polvora-higos-monte-source-capture:v0.1",
+ "status": "RESEARCH_ONLY_SOURCE_CAPTURE_SEEDS",
+ "deployment_status": "RESEARCH_ONLY",
+ "test_mode": "TEST_ONLY",
+ "production_use": false,
+ "production_ready": false,
+ "operational_alerting_enabled": false,
+ "activation_gate": "BLOCKED",
+ "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+ "decision_thresholds": null,
+ "hydraulic_factors": null,
+ "map_publishable": false,
+ "purpose": "Bounded capture of the documents named in the request for Quebrada La Polvareda, Quebrada La Pólvora and Quebrada Higos Monte (Pisco, Ica). Bytes are archived with their real SHA-256 outside site/; identity decisions are recorded separately and only from archived text.",
+ "search_terms": [
+  {"term": "Polvareda", "pattern": "polvareda"},
+  {"term": "Pólvora", "pattern": "polvora"},
+  {"term": "Higos Monte", "pattern": "higos\\s*-?\\s*monte"}
+ ],
+ "limits": {"timeout_seconds": 90, "max_bytes_per_document": 60000000, "pause_seconds": 2},
+ "documents": [
+  {
+   "id": "gore-ica-ana-2011-pisco-afianzamiento-resumen-ejecutivo",
+   "capture": true,
+   "expect_pdf": true,
+   "institution": "Convenio Gobierno Regional de Ica - Autoridad Nacional del Agua (ANA)",
+   "title_as_requested": "Estudio de factibilidad ANA-Gobierno Regional de Ica (2011): resumen ejecutivo, Afianzamiento Hídrico en la Cuenca del Río Pisco",
+   "url": "https://www.juasvi.com/ANEXO1_ResumenEjecutivoPolvareda.pdf",
+   "host_kind": "NON_OFFICIAL_HOST",
+   "host_note": "www.juasvi.com is not a government host. The document identifies itself as an ANA-GORE Ica study; the copy is a third-party upload and is not claimed byte-identical to any official copy.",
+   "routes": ["direct", "wayback_latest"]
+  },
+  {
+   "id": "gore-ica-plan-competitividad-2014-2021",
+   "capture": true,
+   "expect_pdf": true,
+   "institution": "Gobierno Regional de Ica, Gerencia Regional de Desarrollo Económico",
+   "title_as_requested": "Plan de Competitividad del Gobierno Regional de Ica",
+   "url": "https://www.regionica.gob.pe/pdf/grde/2014/plan_de_competitividad_2014_2021.pdf",
+   "host_kind": "OFFICIAL_HOST",
+   "routes": ["direct", "wayback_latest"]
+  },
+  {
+   "id": "elperuano-ley-31070-represa-la-polvareda",
+   "capture": true,
+   "expect_pdf": false,
+   "institution": "Congreso de la República / Diario Oficial El Peruano",
+   "title_as_requested": "Ley N.º 31070 (supplement found while checking official hosts; context for the project name only)",
+   "url": "https://busquedas.elperuano.pe/dispositivo/NL/1905307-1",
+   "host_kind": "OFFICIAL_HOST",
+   "routes": ["direct"]
+  },
+  {
+   "id": "ana-2018-ddl-lpn-03-2018-ana-pgirh-bm",
+   "capture": false,
+   "institution": "Autoridad Nacional del Agua (ANA), PGIRH-BM",
+   "title_as_requested": "Documento técnico ANA (2018), LPN N.º 03-2018-ANA-PGIRH-BM",
+   "url": "https://www.ana.gob.pe/sites/default/files/ana-convocatoria/02%20DDL.LPN%20N.o%2003-2018-ANA-PGIRH-BM.pdf",
+   "host_kind": "OFFICIAL_HOST",
+   "not_captured_reason": "ACCESS_DECLINED_TO_AGENT_WEB_TOOLS",
+   "not_captured_note": "The agent's web tools were declined by the host (robots restriction). The agent does not route around such a refusal (no runner request, cache or mirror). The document stays NOT_READ until the owner supplies a copy downloaded in a browser; that copy will then be archived with its SHA-256."
+  }
+ ]
+}
