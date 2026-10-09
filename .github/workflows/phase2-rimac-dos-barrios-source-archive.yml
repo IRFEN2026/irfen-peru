@@ -1,0 +1,104 @@
+name: IRFEN - Phase2 Rimac Dos Barrios source archive
+
+on:
+  pull_request:
+    paths:
+      - config/phase2_rimac_dos_barrios_capture_seeds_v0_1.json
+      - config/phase2_rimac_corridor_master_documentary_inventory_v0_1.json
+      - scripts/archive_phase2_rimac_dos_barrios_sources.py
+      - scripts/validate_phase2_rimac_dos_barrios_identity.py
+      - tests/test_phase2_rimac_corridor_master_documentary_inventory.py
+      - data/phase2/source_archive/rimac_dos_barrios/**
+      - .github/workflows/phase2-rimac-dos-barrios-source-archive.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: phase2-rimac-dos-barrios-${{ github.event.pull_request.number || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  archive-official-sources:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          fetch-depth: 0
+      - name: Refuse any copy of this archive inside the published site/
+        run: |
+          if [[ -e site/data/phase2/sources/rimac_dos_barrios ]]; then
+            echo "::error title=PUBLIC_ARCHIVE::original sources must stay outside site/ (GitHub Pages artifact)"
+            exit 1
+          fi
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install bounded parsing dependencies
+        run: |
+          python -m pip install --disable-pip-version-check pypdf pytest
+          command -v pdftotext || { sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils >/dev/null; } || echo "::warning title=POPPLER::pdftotext unavailable; pypdf text layer only"
+      - name: Capture once (manifest missing or seed contract changed), otherwise verify offline
+        id: mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          MANIFEST=data/phase2/source_archive/rimac_dos_barrios/archive_manifest_v0_1.json
+          SEEDS=config/phase2_rimac_dos_barrios_capture_seeds_v0_1.json
+          current="$(sha256sum "$SEEDS" | awk '{print $1}')"
+          recorded=""
+          if [[ -f "$MANIFEST" ]]; then
+            recorded="$(python -c 'import json,sys; print(json.load(open(sys.argv[1])).get("seeds_sha256",""))' "$MANIFEST")"
+          fi
+          if [[ "$recorded" != "$current" ]]; then
+            echo "capture=true" >> "$GITHUB_OUTPUT"
+            if ! python scripts/archive_phase2_rimac_dos_barrios_sources.py --capture > capture.log 2>&1; then
+              cat capture.log
+              python -c 'import sys; t=open("capture.log").read()[-6000:]; print("::error title=CAPTURE_FAILED::" + t.replace("%","%25").replace("\r","").replace("\n","%0A"))'
+              exit 1
+            fi
+            cat capture.log
+            python - <<'PY'
+          import json
+          m = json.load(open("data/phase2/source_archive/rimac_dos_barrios/archive_manifest_v0_1.json"))
+          for r in m["records"]:
+              keep = {k: r.get(k) for k in ("document_id", "status", "served_by_route", "http_status", "bytes", "sha256", "page_count", "terms_found")}
+              keep["attempts"] = [{k: a.get(k) for k in ("route", "status", "http_status", "error", "bytes_read", "content_length_header")} for a in r.get("route_attempts", [])]
+              print("::notice title=CAPTURE_SUMMARY::" + json.dumps(keep, ensure_ascii=False).replace("%", "%25"))
+          PY
+          else
+            echo "capture=false" >> "$GITHUB_OUTPUT"
+          fi
+          if ! python scripts/archive_phase2_rimac_dos_barrios_sources.py > verify.log 2>&1; then
+            cat verify.log
+            python -c 'import sys; t=open("verify.log").read()[-6000:]; print("::error title=VERIFY_FAILED::" + t.replace("%","%25").replace("\r","").replace("\n","%0A"))'
+            exit 1
+          fi
+          cat verify.log
+          rm -f capture.log verify.log
+      - name: Verify offline replay leaves the archive unchanged
+        if: steps.mode.outputs.capture == 'false'
+        run: git diff --exit-code -- data/phase2/source_archive/rimac_dos_barrios
+      - name: Run fail-closed identity validator and tests
+        if: steps.mode.outputs.capture == 'false' && hashFiles('scripts/validate_phase2_rimac_dos_barrios_identity.py') != ''
+        run: |
+          python scripts/validate_phase2_rimac_dos_barrios_identity.py
+          python -m pytest tests/test_phase2_rimac_corridor_master_documentary_inventory.py -q
+      - name: Commit captured bytes, hashes and text extractions once
+        if: steps.mode.outputs.capture == 'true' && github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A data/phase2/source_archive/rimac_dos_barrios
+          if git diff --cached --quiet; then
+            echo "No archive changes to persist"
+          else
+            git commit -m "Archive Rimac Dos Barrios sources (bytes + SHA-256)"
+            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          fi

@@ -1,0 +1,74 @@
+{
+ "schema_version": "0.1",
+ "capture_id": "phase2-rimac-dos-barrios-source-capture:v0.1",
+ "status": "RESEARCH_ONLY_SOURCE_CAPTURE_SEEDS",
+ "deployment_status": "RESEARCH_ONLY",
+ "test_mode": "TEST_ONLY",
+ "production_use": false,
+ "production_ready": false,
+ "operational_alerting_enabled": false,
+ "activation_gate": "BLOCKED",
+ "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+ "decision_thresholds": null,
+ "hydraulic_factors": null,
+ "map_publishable": false,
+ "purpose": "Bounded capture of the institutional documents cited for Quebrada Dos Barrios (Rímac corridor) and of nearby Chosica sources that could name it. Bytes are archived with their real SHA-256 outside site/; identity decisions are recorded separately and only from archived text.",
+ "search_terms": [
+  {"term": "Dos Barrios", "pattern": "dos\\s+barrios"},
+  {"term": "Santo Domingo", "pattern": "santo\\s+domingo"},
+  {"term": "La Ronda", "pattern": "la\\s+ronda"}
+ ],
+ "limits": {"timeout_seconds": 120, "max_bytes_per_document": 120000000, "pause_seconds": 2},
+ "documents": [
+  {
+   "id": "ingemmet-te0306",
+   "capture": true,
+   "expect_pdf": true,
+   "institution": "INGEMMET biblioteca (app.ingemmet.gob.pe)",
+   "title_as_requested": "INGEMMET TE0306, cited in PR #363 for Dos Barrios (April 2012 debris flows)",
+   "url": "https://app.ingemmet.gob.pe/biblioteca/pdf/TE0306.pdf",
+   "host_kind": "OFFICIAL_HOST",
+   "routes": ["direct"]
+  },
+  {
+   "id": "ingemmet-rfigmmg-29-3-chosica-2012",
+   "capture": true,
+   "expect_pdf": true,
+   "institution": "Revista del Instituto de Investigación FIGMMG-UNMSM, hosted by the INGEMMET biblioteca",
+   "title_as_requested": "Caracterización y análisis de los huaycos del 5 de abril del 2012, Chosica - Lima (checked because the PR #363 note dates the Dos Barrios mention to April 2012)",
+   "url": "https://app.ingemmet.gob.pe/biblioteca/pdf/RFIGMMG-29-3.pdf",
+   "host_kind": "OFFICIAL_HOST",
+   "routes": ["direct"]
+  },
+  {
+   "id": "sigrid-19950-ana-faja-santo-domingo",
+   "capture": true,
+   "expect_pdf": true,
+   "institution": "ANA, AAA Cañete-Fortaleza (CENEPRED SIGRID biblioteca 19950)",
+   "title_as_requested": "Estudio de delimitación de faja marginal de la quebrada Santo Domingo, tributario del río Rímac, margen izquierda (checked for neighbouring labels)",
+   "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca//19950_estudio-de-delimitacion-de-la-faja-marginal-de-la-quebrada-santo-domingo-tributario-del-rio-rimac-margen-izquierda-145-km-distrito-de-lurigancho-provi.pdf",
+   "host_kind": "OFFICIAL_HOST",
+   "routes": ["direct"]
+  },
+  {
+   "id": "sigrid-13867-caracterizacion-quiro-la-ronda",
+   "capture": true,
+   "expect_pdf": true,
+   "institution": "CENEPRED SIGRID biblioteca 13867",
+   "title_as_requested": "Informe de caracterización geológica-geodinámica preliminar por flujos de detritos en las quebradas Quiro, Chacrasana, La Ronda, Barba Blanca y otras (checked for neighbouring labels)",
+   "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca//13867_informe-de-caracterizacion-geologica-geodinamica-preliminar-por-flujos-de-detritos-huaycos-en-las-quebradas-quiro-chacrasana-la-ronda-barba-blanca-y-r.pdf",
+   "host_kind": "OFFICIAL_HOST",
+   "routes": ["direct"]
+  },
+  {
+   "id": "senamhi-01401sena-88",
+   "capture": false,
+   "institution": "SENAMHI",
+   "title_as_requested": "SENAMHI hydrographic study cited in PR #363 (Santo Domingo / La Cantuta), adjacency to Dos Barrios and La Ronda",
+   "url": "https://www.senamhi.gob.pe/load/file/01401SENA-88.pdf",
+   "host_kind": "OFFICIAL_HOST",
+   "not_captured_reason": "ACCESS_DECLINED_TO_AGENT_WEB_TOOLS",
+   "not_captured_note": "The agent's web tools were declined by the host (robots restriction). The agent does not route around such a refusal (no runner request, cache or mirror). The document stays NOT_READ until the owner supplies a copy downloaded in a browser; that copy will then be archived with its SHA-256."
+  }
+ ]
+}
