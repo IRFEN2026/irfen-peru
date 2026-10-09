@@ -360,42 +360,94 @@ def pdf_text(data: bytes) -> str:
     return "\f".join((p.extract_text() or "") for p in PdfReader(BytesIO(data)).pages)
 
 
+RSS_ITEM_RE = re.compile(r"<item>(.*?)</item>", re.S)
+
+
+def rss_items(xml: str) -> list[dict]:
+    """Items of a WordPress RSS 2.0 feed (title, link, pubDate, guid). Pure: tested offline."""
+    import html as htmlmod
+
+    out = []
+    for block in RSS_ITEM_RE.findall(xml or ""):
+        def tag(name):
+            m = re.search(rf"<{name}[^>]*>(.*?)</{name}>", block, re.S)
+            if not m:
+                return None
+            v = m.group(1).strip()
+            v = re.sub(r"^<!\[CDATA\[(.*)\]\]>$", r"\1", v, flags=re.S)
+            return htmlmod.unescape(v).strip()
+        out.append(dict(title=norm(tag("title") or ""), link=tag("link"), pub_date=tag("pubDate"), guid=tag("guid")))
+    return out
+
+
+def classify_title(title: str, families: list[dict]) -> str | None:
+    hay = fold(title)
+    for fam in families:
+        if re.search(fam["title_pattern"], hay):
+            return fam["id"]
+    return None
+
+
+def html_main_text(raw_html: str) -> str:
+    import html as htmlmod
+
+    body = re.sub(r"(?is)<(script|style|noscript)[^>]*>.*?</\1>", " ", raw_html)
+    m = re.search(r"(?is)<article[^>]*>(.*?)</article>", body) or re.search(r"(?is)<main[^>]*>(.*?)</main>", body)
+    body = m.group(1) if m else body
+    body = re.sub(r"(?i)<br\s*/?>|</p>|</li>|</tr>|</h\d>", "\n", body)
+    text = htmlmod.unescape(re.sub(r"<[^>]+>", " ", body))
+    return "\n".join(norm(line) for line in text.splitlines() if norm(line))
+
+
+def pdf_links(raw_html: str) -> list[str]:
+    links = re.findall(r'href="(https://portal\.indeci\.gob\.pe/wp-content/uploads/[^"]+?\.pdf)"', raw_html, re.I)
+    seen, out = set(), []
+    for l in links:
+        if l not in seen:
+            seen.add(l)
+            out.append(l)
+    return out
+
+
 def discover(contract: dict) -> tuple[list[dict], list[dict]]:
-    """WordPress media items (PDF) from INDECI that look like aviso or monitoring bulletins."""
+    """RSS items of the INDECI 'emergencias' feed whose title is an aviso or monitoring bulletin."""
     limits = contract["limits"]
     items, log = [], []
-    since = (utc_now() - timedelta(days=limits["lookback_days"])).strftime("%Y-%m-%dT%H:%M:%S")
-    for query in contract["discovery_queries"]:
-        params = dict(search=query["search"], per_page=limits["per_page"], orderby="date", order="desc", after=since,
-                      _fields="id,date,modified,title,source_url,mime_type")
-        url = contract["discovery_endpoint"] + "?" + urlencode(params)
+    for page in range(1, limits["feed_pages"] + 1):
+        url = contract["feed_url"] + ("" if page == 1 else f"?paged={page}")
         data, meta = http_get(url, limits["timeout_seconds"], 5_000_000)
-        meta["query_id"] = query["id"]
+        meta["feed_page"] = page
         log.append(meta)
         if data is None:
-            continue
-        try:
-            payload = json.loads(data.decode("utf-8"))
-        except ValueError as exc:
-            meta["error"] = f"NOT_JSON: {exc}"
-            continue
-        meta["items_returned"] = len(payload) if isinstance(payload, list) else None
-        for item in payload if isinstance(payload, list) else []:
-            title = norm(re.sub(r"<[^>]+>", " ", (item.get("title") or {}).get("rendered", "")))
-            src = item.get("source_url") or ""
-            if not src.lower().endswith(".pdf"):
-                continue
-            hay = fold(title + " " + src.replace("-", " "))
-            if not re.search(query["title_pattern"], hay):
-                continue
-            items.append(dict(wp_media_id=item.get("id"), wp_date=item.get("date"), wp_modified=item.get("modified"),
-                              title=title, url=src, query_id=query["id"], doc_family=query["doc_family"]))
+            break
+        parsed = rss_items(data.decode("utf-8", "replace"))
+        meta["items_returned"] = len(parsed)
+        for it in parsed:
+            fam = classify_title(it["title"], contract["bulletin_families"])
+            if fam:
+                items.append(dict(it, family=fam))
     seen, unique = set(), []
-    for it in sorted(items, key=lambda x: x.get("wp_date") or "", reverse=True):
-        if it["url"] not in seen:
-            seen.add(it["url"])
+    for it in items:
+        if it["link"] and it["link"] not in seen:
+            seen.add(it["link"])
             unique.append(it)
-    return unique[: limits["max_documents_per_check"]], log
+    return unique[: limits["max_items_per_check"]], log
+
+
+def observations_for(family: str, text: str, ref_year: int | None) -> list[dict]:
+    if family == "MONITORING_BULLETIN":
+        return parse_monitoring_table(text)
+    obs = parse_aviso_bulletin(text, ref_year)
+    obs["family"] = family
+    return [obs]
+
+
+def archive_bytes(data: bytes, suffix: str) -> tuple[str, Path]:
+    digest = sha256_bytes(data)
+    raw = STORE / "raw" / f"{digest}{suffix}"
+    if not raw.exists():
+        raw.write_bytes(data)
+    return digest, raw
 
 
 def capture() -> int:
@@ -403,42 +455,58 @@ def capture() -> int:
     limits = contract["limits"]
     now = utc_now()
     registry = json.loads(REGISTRY.read_text(encoding="utf-8")) if REGISTRY.is_file() else empty_registry()
+    registry.setdefault("posts", {})
     (STORE / "raw").mkdir(parents=True, exist_ok=True)
     (STORE / "text").mkdir(parents=True, exist_ok=True)
     candidates, log = discover(contract)
-    discovery_ok = any(m.get("http_status") == 200 and m.get("items_returned") is not None for m in log)
-    known_by_url = {d["url"]: d for d in registry["documents"].values()}
+    discovery_ok = any(m.get("http_status") == 200 and m.get("items_returned") for m in log)
     new_events, fetched = [], 0
     for item in candidates:
-        prev = known_by_url.get(item["url"])
-        if prev and prev.get("wp_modified") == item.get("wp_modified"):
-            continue  # unchanged on the source: no re-download
-        data, meta = http_get(item["url"], limits["timeout_seconds"], limits["max_bytes_per_document"])
+        prev = registry["posts"].get(item["link"])
+        if prev and prev.get("pub_date") == item.get("pub_date"):
+            continue  # already archived and unchanged in the feed
+        page, meta = http_get(item["link"], limits["timeout_seconds"], 8_000_000)
         fetched += 1
-        if data is None or data[:5] != b"%PDF-":
-            log.append(dict(meta, error=meta.get("error") or "NOT_A_PDF"))
+        if page is None:
+            log.append(dict(meta, error=meta.get("error") or "POST_UNREACHABLE"))
             continue
-        digest = sha256_bytes(data)
-        raw = STORE / "raw" / f"{digest}.pdf"
-        if not raw.exists():
-            raw.write_bytes(data)
-        text = pdf_text(data)
-        txt = STORE / "text" / f"{digest}.txt"
-        txt.write_text(text, encoding="utf-8")
-        document = dict(sha256=digest, url=item["url"], wp_media_id=item["wp_media_id"], wp_date=item["wp_date"],
-                        wp_modified=item["wp_modified"], title=item["title"], doc_family=item["doc_family"],
-                        retrieved_at_utc=iso(now), bytes=len(data), raw_path=str(raw.relative_to(ROOT)),
-                        text_path=str(txt.relative_to(ROOT)), text_sha256=sha256_bytes(txt.read_bytes()),
-                        supersedes_document=prev["sha256"] if prev and prev["sha256"] != digest else None)
-        ref_year = int(item["wp_date"][:4]) if item.get("wp_date") else None
-        if item["doc_family"] == "AVISO_BULLETIN":
-            observations = [parse_aviso_bulletin(text, ref_year)]
-        else:
-            observations = parse_monitoring_table(text)
-        document["parsed"] = [dict(aviso_number=o.get("aviso_number"), aviso_year=o.get("aviso_year"), doc_type=o["doc_type"],
-                                   parse_notes=o.get("parse_notes", [])) for o in observations]
-        registry["documents"][digest] = document
+        page_sha, page_raw = archive_bytes(page, ".html")
+        raw_html = page.decode("utf-8", "replace")
+        texts = [html_main_text(raw_html)]
+        doc_shas = [page_sha]
+        for pdf_url in pdf_links(raw_html)[: limits["max_pdfs_per_post"]]:
+            data, pmeta = http_get(pdf_url, limits["timeout_seconds"], limits["max_bytes_per_document"])
+            if data is None or data[:5] != b"%PDF-":
+                log.append(dict(pmeta, error=pmeta.get("error") or "NOT_A_PDF"))
+                continue
+            sha, raw = archive_bytes(data, ".pdf")
+            text = pdf_text(data)
+            txt = STORE / "text" / f"{sha}.txt"
+            txt.write_text(text, encoding="utf-8")
+            registry["documents"][sha] = dict(sha256=sha, url=pdf_url, kind="PDF", post_link=item["link"], retrieved_at_utc=iso(now),
+                                              bytes=len(data), raw_path=str(raw.relative_to(ROOT)), text_path=str(txt.relative_to(ROOT)),
+                                              text_sha256=sha256_bytes(txt.read_bytes()))
+            texts.append(text)
+            doc_shas.append(sha)
+        page_txt = STORE / "text" / f"{page_sha}.txt"
+        page_txt.write_text(texts[0], encoding="utf-8")
+        registry["documents"][page_sha] = dict(sha256=page_sha, url=item["link"], kind="HTML_POST", post_link=item["link"],
+                                               retrieved_at_utc=iso(now), bytes=len(page), raw_path=str(page_raw.relative_to(ROOT)),
+                                               text_path=str(page_txt.relative_to(ROOT)), text_sha256=sha256_bytes(page_txt.read_bytes()))
+        try:
+            ref_year = parsedate_year(item.get("pub_date"))
+        except Exception:  # noqa: BLE001
+            ref_year = None
+        combined = "\n".join(texts)
+        observations = observations_for(item["family"], combined, ref_year)
+        registry["posts"][item["link"]] = dict(link=item["link"], title=item["title"], pub_date=item.get("pub_date"), guid=item.get("guid"),
+                                               family=item["family"], first_seen_utc=(prev or {}).get("first_seen_utc") or iso(now),
+                                               last_archived_utc=iso(now), document_sha256=doc_shas,
+                                               parsed=[dict(aviso_number=o.get("aviso_number"), aviso_year=o.get("aviso_year"),
+                                                            doc_type=o["doc_type"], parse_notes=o.get("parse_notes", [])) for o in observations])
+        document = dict(sha256=doc_shas[-1], post_link=item["link"])
         for obs in observations:
+            obs.setdefault("indeci_post", item["link"])
             event = merge_observation(registry, obs, document, now)
             if event:
                 new_events.append(event)
@@ -447,13 +515,18 @@ def capture() -> int:
         str(m.get("error")) for m in log if m.get("error"))[:400], contract["stale_after_minutes"])
     registry["events"] = (registry.get("events", []) + new_events)[-500:]
     registry["last_check"] = dict(checked_at_utc=iso(now), checked_at_lima=iso(now.astimezone(LIMA)), discovery_ok=discovery_ok,
-                                  candidates=len(candidates), documents_downloaded=fetched, new_events=len(new_events),
-                                  request_log=log[-40:])
+                                  candidates=len(candidates), posts_archived=fetched, new_events=len(new_events), request_log=log[-40:])
     registry["contract_sha256"] = sha256_bytes(CONTRACT.read_bytes())
-    REGISTRY.write_text(json.dumps(registry, ensure_ascii=False, indent=1, sort_keys=False) + "\n", encoding="utf-8")
-    print(json.dumps(dict(discovery_ok=discovery_ok, candidates=len(candidates), downloaded=fetched,
-                          avisos=len(registry["avisos"]), events=[e["event"] + ":" + e["aviso_key"] for e in new_events][:20]), ensure_ascii=False))
+    REGISTRY.write_text(json.dumps(registry, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    print(json.dumps(dict(discovery_ok=discovery_ok, candidates=len(candidates), archived=fetched, avisos=len(registry["avisos"]),
+                          events=[e["event"] + ":" + e["aviso_key"] for e in new_events][:20]), ensure_ascii=False))
     return 0  # a failed check is recorded in source_health; it does not fail the workflow
+
+
+def parsedate_year(value: str | None) -> int | None:
+    from email.utils import parsedate_to_datetime
+
+    return parsedate_to_datetime(value).year if value else None
 
 
 # --------------------------------------------------------------------------- offline verification

@@ -16,30 +16,56 @@
  "source_channels": [
   {
    "id": "SENAMHI_DIRECT",
-   "hosts": ["www.senamhi.gob.pe", "wis.senamhi.gob.pe", "idesep.senamhi.gob.pe"],
+   "hosts": [
+    "www.senamhi.gob.pe",
+    "wis.senamhi.gob.pe",
+    "idesep.senamhi.gob.pe"
+   ],
    "status": "NOT_USED",
    "reason": "The hosts decline automated access by the agent's web tools (robots). Automated requests are not routed around that refusal. Use requires an explicit owner decision backed by SENAMHI authorisation or a documented machine-access channel."
   },
   {
    "id": "INDECI_COEN_BULLETINS",
-   "hosts": ["portal.indeci.gob.pe"],
+   "hosts": [
+    "portal.indeci.gob.pe"
+   ],
    "status": "USED",
    "kind": "OFFICIAL_SECONDARY_REPRODUCTION",
-   "note": "INDECI/COEN reproduces each SENAMHI aviso in a 'Boletín informativo de aviso meteorológico' and lists avisos in the daily 'Boletín informativo monitoreo de peligros y perspectivas'. Field values are taken as reproduced; SENAMHI emission time is recorded only when the bulletin states it."
+   "note": "INDECI/COEN publishes each SENAMHI aviso as a post in its 'emergencias' RSS feed (https://portal.indeci.gob.pe/emergencias/feed/): 'Boletín informativo de aviso meteorológico', 'Boletín informativo de aviso de corto plazo ante lluvias intensas' and '... ante posible activación de quebradas', plus the daily 'Monitoreo de peligros y perspectivas'. Posts and attached PDFs are archived with SHA-256. Field values are taken as reproduced by INDECI; SENAMHI emission time is recorded only when stated. portal.indeci.gob.pe has no robots.txt restriction (checked 2026-10-09)."
   }
  ],
- "discovery_endpoint": "https://portal.indeci.gob.pe/wp-json/wp/v2/media",
- "discovery_queries": [
-  {"id": "indeci-media-aviso-meteorologico", "search": "aviso meteorologico", "doc_family": "AVISO_BULLETIN", "title_pattern": "AVISO (METEOROLOGICO|DE CORTO PLAZO)"},
-  {"id": "indeci-media-monitoreo-peligros", "search": "monitoreo de peligros", "doc_family": "MONITORING_BULLETIN", "title_pattern": "MONITOREO DE PELIGROS"}
- ],
- "limits": {"timeout_seconds": 60, "per_page": 20, "lookback_days": 21, "max_documents_per_check": 30, "max_bytes_per_document": 30000000},
- "cadence": {"target_minutes": 30, "manual_trigger": "workflow_dispatch", "idempotence": "documents are keyed by SHA-256 and WordPress 'modified'; unchanged items are not downloaded again"},
+ "limits": {
+  "timeout_seconds": 60,
+  "feed_pages": 3,
+  "max_items_per_check": 40,
+  "max_pdfs_per_post": 3,
+  "max_bytes_per_document": 30000000
+ },
+ "cadence": {
+  "target_minutes": 30,
+  "manual_trigger": "workflow_dispatch",
+  "idempotence": "feed items are keyed by link and pubDate; unchanged items are not fetched again; documents are keyed by SHA-256"
+ },
  "stale_after_minutes": 90,
- "status_vocabulary": ["FUTURO", "VIGENTE", "VENCIDO", "REEMPLAZADO", "CANCELADO", "DESCONOCIDO"],
- "priority_regions": ["TUMBES", "PIURA", "LAMBAYEQUE", "LA LIBERTAD"],
+ "status_vocabulary": [
+  "FUTURO",
+  "VIGENTE",
+  "VENCIDO",
+  "REEMPLAZADO",
+  "CANCELADO",
+  "DESCONOCIDO"
+ ],
+ "priority_regions": [
+  "TUMBES",
+  "PIURA",
+  "LAMBAYEQUE",
+  "LA LIBERTAD"
+ ],
  "rain_related_pattern": "PRECIPITACION|LLUVIA|TORMENTA|CHUBASCO|DESCARGAS? ELECTRICAS?",
- "geometry": {"level_a_official_geometry": "NOT_AVAILABLE_FROM_THIS_CHANNEL", "level_b_administrative": "departments as listed in the bulletin; administrative boundaries not yet attached"},
+ "geometry": {
+  "level_a_official_geometry": "NOT_AVAILABLE_FROM_THIS_CHANNEL",
+  "level_b_administrative": "departments as listed in the bulletin; administrative boundaries not yet attached"
+ },
  "never": [
   "treat the download time as emission or validity",
   "declare 'no avisos' after a failed check",
@@ -47,5 +73,28 @@
   "mix the SENAMHI official level with an IRFEN review priority",
   "publish to the map or to third parties",
   "query SENAMHI hosts that decline automated access"
+ ],
+ "feed_url": "https://portal.indeci.gob.pe/emergencias/feed/",
+ "bulletin_families": [
+  {
+   "id": "AVISO_CORTO_PLAZO_LLUVIAS",
+   "title_pattern": "AVISO DE CORTO PLAZO ANTE LLUVIAS"
+  },
+  {
+   "id": "AVISO_CORTO_PLAZO_QUEBRADAS",
+   "title_pattern": "AVISO DE CORTO PLAZO ANTE (POSIBLE )?ACTIVACION DE QUEBRADAS"
+  },
+  {
+   "id": "AVISO_CORTO_PLAZO_OTRO",
+   "title_pattern": "AVISO DE CORTO PLAZO"
+  },
+  {
+   "id": "AVISO_METEOROLOGICO",
+   "title_pattern": "AVISO METEOROLOGICO"
+  },
+  {
+   "id": "MONITORING_BULLETIN",
+   "title_pattern": "MONITOREO DE PELIGROS"
+  }
  ]
 }
