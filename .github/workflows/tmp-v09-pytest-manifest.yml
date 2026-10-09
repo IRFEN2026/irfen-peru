@@ -1,0 +1,32 @@
+name: TMP v0.9 regenerate pytest collection manifest (removed next commit)
+on:
+  push:
+    branches: [v09/territorial-crossing-v0-1]
+    paths: [.github/workflows/tmp-v09-pytest-manifest.yml]
+permissions:
+  contents: write
+jobs:
+  manifest:
+    runs-on: ubuntu-latest
+    env:
+      IRFEN_REQUIRE_JSONSCHEMA: "1"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: |
+          pip install -q -r requirements.txt
+          pip install -q -r requirements-ci-test.txt
+      - run: python scripts/verify_phase2_test_collection.py --write-manifest
+      - run: python -m pytest tests/test_v09_senamhi_avisos.py tests/test_v09_aviso_zone_crossing.py -q -rs
+      - name: Commit the regenerated manifest (real collection on the pinned runner)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add config/phase2_test_collection_manifest.json
+          git diff --cached --quiet && exit 0
+          git commit -q -m "Regenerate pytest collection manifest on the pinned runner (v0.9 crossing tests)"
+          for i in 1 2 3; do git fetch -q origin "$GITHUB_REF_NAME" && git rebase -q "origin/$GITHUB_REF_NAME" && git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0; sleep 5; done; exit 1

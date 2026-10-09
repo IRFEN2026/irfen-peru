@@ -1,0 +1,187 @@
+{
+ "schema_version": "0.1",
+ "config_id": "irfen-v09-north-surveillance-zones:v0.1",
+ "deployment_status": "RESEARCH_ONLY",
+ "test_mode": "TEST_ONLY",
+ "production_use": false,
+ "production_ready": false,
+ "operational_alerting_enabled": false,
+ "activation_gate": "BLOCKED",
+ "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+ "decision_thresholds": null,
+ "hydraulic_factors": null,
+ "map_publishable": false,
+ "priority_departments": [
+  "TUMBES",
+  "PIURA",
+  "LAMBAYEQUE",
+  "LA LIBERTAD"
+ ],
+ "excluded_sources": [
+  "config/phase2_national_inventory_completeness_audit_v0_1.json (documentary rows 400-418: identity/event leads, not geometry)"
+ ],
+ "rules": [
+  "only geometries with a known official source and a validation file are used",
+  "no basin polygon is drawn for Piura; listed provinces are administrative context",
+  "a relation to an aviso never states that a quebrada will activate"
+ ],
+ "zones": [
+  {
+   "zone_id": "tumbes_bocapan",
+   "zone_type": "BASIN_GEOMETRY",
+   "display_name": "Cuenca Bocapán",
+   "registered_department": "TUMBES",
+   "geometry_path": "site/data/phase2/geometries/tumbes_bocapan_basin_context.geojson",
+   "geometry_sha256": "9f3473ee383cb1107a5c885b2cf4582b61b27feb61108aab0567bad9f7385edf",
+   "geometry_source_id": "ANA-UH-13936-BOCAPAN",
+   "geometry_kind": "ANA_UH_COMPONENT",
+   "validation_path": "site/data/phase2/geometries/tumbes_bocapan_basin_context_validation.json",
+   "validation_status": "PASS_OFFICIAL_ANA_DISCOVERY_COMPONENT_GEOMETRY",
+   "activation_gate": "BLOCKED",
+   "note": "Official ANA hydrologic-unit geometry used for research visualisation; registered_department is the IRFEN record department, not a spatial result."
+  },
+  {
+   "zone_id": "lambayeque_motupe",
+   "zone_type": "BASIN_GEOMETRY",
+   "display_name": "Cuenca Motupe (contexto hidrológico ANA)",
+   "registered_department": "LAMBAYEQUE",
+   "geometry_path": "site/data/phase2/geometries/lambayeque_motupe_la_leche_pitipo_motupe_basin_context.geojson",
+   "geometry_sha256": "cde815f60f4901b767107ea024f81b313f58da59e5cc73829ecf375ce4905001",
+   "geometry_source_id": "ANA-IDEP-UH-MOTUPE-137772-20260922",
+   "geometry_kind": "ANA_UH_BASIN_PARTIAL",
+   "validation_path": "site/data/phase2/geometries/lambayeque_motupe_la_leche_pitipo_geometry_validation.json",
+   "validation_status": "PASS_PARTIAL_OFFICIAL_HYDROLOGIC_GEOMETRY",
+   "activation_gate": "BLOCKED",
+   "note": "Official ANA hydrologic-unit geometry used for research visualisation; registered_department is the IRFEN record department, not a spatial result."
+  },
+  {
+   "zone_id": "lambayeque_chancay_lambayeque_chongoyape",
+   "zone_type": "BASIN_GEOMETRY",
+   "display_name": "Chancay-Lambayeque (Chongoyape)",
+   "registered_department": "LAMBAYEQUE",
+   "geometry_path": "site/data/phase2/geometries/lambayeque_chancay_lambayeque_chongoyape.geojson",
+   "geometry_sha256": "1f62d4ae26c692c36c5001271b25bb46cf44ad5d4720782e7a701e1df2025639",
+   "geometry_source_id": "ANA-IDEP-UH-MAPSERVER-8-QUERY-20260820",
+   "geometry_kind": "ANA_UH_RESEARCH_REFERENCE",
+   "validation_path": "site/data/phase2/geometries/lambayeque_hydrologic_migration_validation.json",
+   "validation_status": "PASS_RESEARCH_ONLY",
+   "activation_gate": "BLOCKED",
+   "note": "Official ANA hydrologic-unit geometry used for research visualisation; registered_department is the IRFEN record department, not a spatial result."
+  },
+  {
+   "zone_id": "lambayeque_zana_oyotun",
+   "zone_type": "BASIN_GEOMETRY",
+   "display_name": "Zaña (Oyotún)",
+   "registered_department": "LAMBAYEQUE",
+   "geometry_path": "site/data/phase2/geometries/lambayeque_zana_oyotun.geojson",
+   "geometry_sha256": "b92123950eb08839d553d31262498faad95a42f572399bf60c41d0b1776ca73c",
+   "geometry_source_id": "ANA-IDEP-UH-MAPSERVER-8-QUERY-20260820",
+   "geometry_kind": "ANA_UH_RESEARCH_REFERENCE",
+   "validation_path": "site/data/phase2/geometries/lambayeque_hydrologic_migration_validation.json",
+   "validation_status": "PASS_RESEARCH_ONLY",
+   "activation_gate": "BLOCKED",
+   "note": "Official ANA hydrologic-unit geometry used for research visualisation; registered_department is the IRFEN record department, not a spatial result."
+  },
+  {
+   "zone_id": "lalibertad_jequetepeque",
+   "zone_type": "BASIN_GEOMETRY",
+   "display_name": "Cuenca Jequetepeque",
+   "registered_department": "LA LIBERTAD",
+   "geometry_path": "site/data/phase2/geometries/lalibertad_jequetepeque_basin_context.geojson",
+   "geometry_sha256": "6972837f33c89d826d29abdbbc17667b84e475cb33a8edb94b8d82d82647c4fc",
+   "geometry_source_id": "ANA-UH-13774-JEQUETEPEQUE",
+   "geometry_kind": "ANA_UH_BASIN",
+   "validation_path": "site/data/phase2/geometries/lalibertad_jequetepeque_geometry_validation.json",
+   "validation_status": "PASS_OFFICIAL_ANA_DISCOVERY_BASIN_GEOMETRY",
+   "activation_gate": "BLOCKED",
+   "note": "Official ANA hydrologic-unit geometry used for research visualisation; registered_department is the IRFEN record department, not a spatial result."
+  },
+  {
+   "zone_id": "lalibertad_chaman",
+   "zone_type": "BASIN_GEOMETRY",
+   "display_name": "Cuenca Chamán",
+   "registered_department": "LA LIBERTAD",
+   "geometry_path": "site/data/phase2/geometries/lalibertad_chaman_basin_context.geojson",
+   "geometry_sha256": "6e30e546c9717719c5add310259c278c055d0c815ae81c883c4a1efa672b0fba",
+   "geometry_source_id": "ANA-UH-137752-CHAMAN",
+   "geometry_kind": "ANA_UH_CHILD",
+   "validation_path": "site/data/phase2/geometries/lalibertad_chaman_basin_context_validation.json",
+   "validation_status": "PASS_OFFICIAL_ANA_DISCOVERY_CHILD_GEOMETRY",
+   "activation_gate": "BLOCKED",
+   "note": "Official ANA hydrologic-unit geometry used for research visualisation; registered_department is the IRFEN record department, not a spatial result."
+  },
+  {
+   "zone_id": "lalibertad_chicama",
+   "zone_type": "BASIN_GEOMETRY",
+   "display_name": "Cuenca Chicama",
+   "registered_department": "LA LIBERTAD",
+   "geometry_path": "site/data/phase2/geometries/lalibertad_chicama_basin_context.geojson",
+   "geometry_sha256": "5b430e97df2e947564a0acf3d1d25906830b7362cffffa3e40523c0fa8065e01",
+   "geometry_source_id": "ANA-UH-13772-CHICAMA",
+   "geometry_kind": "ANA_UH_BASIN",
+   "validation_path": "site/data/phase2/geometries/lalibertad_chicama_geometry_validation.json",
+   "validation_status": "PASS_OFFICIAL_ANA_DISCOVERY_BASIN_GEOMETRY",
+   "activation_gate": "BLOCKED",
+   "note": "Official ANA hydrologic-unit geometry used for research visualisation; registered_department is the IRFEN record department, not a spatial result."
+  },
+  {
+   "zone_id": "lalibertad_moche",
+   "zone_type": "BASIN_GEOMETRY",
+   "display_name": "Cuenca Moche",
+   "registered_department": "LA LIBERTAD",
+   "geometry_path": "site/data/phase2/geometries/lalibertad_moche_basin_context.geojson",
+   "geometry_sha256": "1209f6b9028f7573919fa1a4a07d150a5084765ed923a948671d88bb4a1cd79d",
+   "geometry_source_id": "ANA-UH-137716-MOCHE",
+   "geometry_kind": "ANA_UH_BASIN",
+   "validation_path": "site/data/phase2/geometries/lalibertad_moche_geometry_validation.json",
+   "validation_status": "PASS_OFFICIAL_ANA_DISCOVERY_BASIN_GEOMETRY",
+   "activation_gate": "BLOCKED",
+   "note": "Official ANA hydrologic-unit geometry used for research visualisation; registered_department is the IRFEN record department, not a spatial result."
+  },
+  {
+   "zone_id": "lalibertad_viru",
+   "zone_type": "BASIN_GEOMETRY",
+   "display_name": "Cuenca Virú",
+   "registered_department": "LA LIBERTAD",
+   "geometry_path": "site/data/phase2/geometries/lalibertad_viru_basin_context.geojson",
+   "geometry_sha256": "290f1426f325ca2da8d241776113f669fa875983368d6f617e06edfb5af5a9dd",
+   "geometry_source_id": "ANA-UH-137714-VIRU",
+   "geometry_kind": "ANA_UH_BASIN",
+   "validation_path": "site/data/phase2/geometries/lalibertad_viru_geometry_validation.json",
+   "validation_status": "PASS_OFFICIAL_ANA_DISCOVERY_BASIN_GEOMETRY",
+   "activation_gate": "BLOCKED",
+   "note": "Official ANA hydrologic-unit geometry used for research visualisation; registered_department is the IRFEN record department, not a spatial result."
+  },
+  {
+   "zone_id": "lalibertad_huamanzana",
+   "zone_type": "BASIN_GEOMETRY",
+   "display_name": "Cuenca Huamanzaña",
+   "registered_department": "LA LIBERTAD",
+   "geometry_path": "site/data/phase2/geometries/lalibertad_huamanzaña_basin_context.geojson",
+   "geometry_sha256": "ca2300dab163fe9a3cd8435aa4b324c8760857976a2fde81cd037ff4a9f3bc39",
+   "geometry_source_id": "ANA-UH-137712-HUAMANZANA",
+   "geometry_kind": "ANA_UH_CHILD",
+   "validation_path": "site/data/phase2/geometries/lalibertad_huamanzaña_basin_context_validation.json",
+   "validation_status": "PASS_OFFICIAL_ANA_DISCOVERY_CHILD_GEOMETRY",
+   "activation_gate": "BLOCKED",
+   "note": "Official ANA hydrologic-unit geometry used for research visualisation; registered_department is the IRFEN record department, not a spatial result."
+  },
+  {
+   "zone_id": "piura_province_context",
+   "zone_type": "ADMINISTRATIVE_CONTEXT_NO_BASIN",
+   "display_name": "Piura (provincias listadas en el aviso)",
+   "registered_department": "PIURA",
+   "geometry_path": null,
+   "geometry_sha256": null,
+   "activation_gate": "BLOCKED",
+   "note": "No validated Piura basin geometry exists in IRFEN. Each Piura province listed by an aviso becomes a context zone; no basin polygon is drawn or inferred.",
+   "existing_context_layers": [
+    {
+     "path": "site/data/hydrology/catacaos_official_context.geojson",
+     "role": "CONTEXT_ONLY_NOT_HAZARD_EXTENT",
+     "sha256": "c99cbb46d01e71a3fa27781c2a75be0160b256aab2321788ec5f78305c51d3c5"
+    }
+   ]
+  }
+ ]
+}
