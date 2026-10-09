@@ -41,7 +41,7 @@ jobs:
       - name: Install bounded parsing dependencies
         run: |
           python -m pip install --disable-pip-version-check pypdf pytest
-          sudo apt-get install -y -qq poppler-utils >/dev/null
+          command -v pdftotext || { sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils >/dev/null; } || echo "::warning title=POPPLER::pdftotext unavailable; pypdf text layer only"
       - name: Capture once (manifest missing or seed contract changed), otherwise verify offline
         id: mode
         shell: bash
