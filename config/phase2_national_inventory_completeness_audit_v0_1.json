@@ -36,6 +36,11 @@
     "revision": "r2",
     "date": "2026-10-07",
     "note": "After independent QA on r1: dated event statements read through automated extraction are EVENT_LEAD_UNVERIFIED, not EVENT_EVIDENCE; source_text_verified added to every source and EVENT item; the validator is exercised by a pytest module in the PR gate. No row, source, geometry or priority was added or removed."
+   },
+   {
+    "revision": "r4",
+    "date": "2026-10-09",
+    "note": "Pisco/Ica: 3 IDENTITY_ONLY rows (La Polvareda, Humay; La Pólvora and Higos Monte, district not stated) from the GORE Ica-ANA 2011 Pisco feasibility study, plus the GORE Ica Plan de Competitividad for La Polvareda; 2 archived sources added with source_text_verified=false. Possible equivalence La Polvareda / La Pólvora UNRESOLVED. Proposed works are not executed works and no event is attributed. No geometry, outlet, parent basin, merge, map promotion or event-ledger entry. Registry: config/phase2_pisco_ica_polvareda_polvora_higos_monte_identity_v0_1.json. Revision label r3 is used by PR #365 (Tumbes), which is not yet in main."
    }
   ],
   "clean_room_notice": "This file contains outcome-bearing statements about the 2015-03-23 Chosica event and about named Chosica quebradas. It must not be read by the sealed Chosica 2015 clean-room predictor jobs (branches agent/chosica-2015-*, PRs #146, #149, #150, #151)."
@@ -118,10 +123,10 @@
   "map_eligible": "false on every row"
  },
  "summary": {
-  "candidate_rows": 400,
+  "candidate_rows": 403,
   "by_corridor": {
    "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA": 44,
-   "PISCO_ICA": 48,
+   "PISCO_ICA": 51,
    "SANTA_CASMA": 16,
    "TUMBES_ZORRITOS": 68,
    "ANCASH_INTERIOR": 18,
@@ -133,12 +138,12 @@
   },
   "by_suggested_state": {
    "EVENT_LEAD_UNVERIFIED": 28,
-   "IDENTITY_ONLY": 349,
+   "IDENTITY_ONLY": 352,
    "GEOMETRY_PENDING": 20,
    "GEOMETRY_REPRODUCIBLE": 3
   },
   "by_irfen_presence": {
-   "NOT_FOUND_IN_REPO": 321,
+   "NOT_FOUND_IN_REPO": 324,
    "MAIN_REGISTERED_UNIT": 13,
    "MAIN_NAME_CONTEXT_ONLY": 12,
    "MAIN_LABEL_MENTION_UNCONFIRMED": 24,
@@ -151,7 +156,7 @@
    "P1": 23,
    "P2": 17,
    "EXISTING": 13,
-   "P3": 291,
+   "P3": 294,
    "P4": 56
   },
   "event_evidence_rows": 0,
@@ -492,6 +497,35 @@
    "access_note": "Title only. Concerns rock instability in a zone called Rosario; it does not establish a quebrada identity.",
    "source_text_verified": false,
    "verification_record": null
+  },
+  "GORE-ICA-ANA-2011-AFIANZAMIENTO-PISCO-RE": {
+   "institution": "Convenio Gobierno Regional de Ica - Autoridad Nacional del Agua (cover); copy hosted by www.juasvi.com (not a government host)",
+   "title": "Afianzamiento Hídrico en la Cuenca del Río Pisco (Provincias Pisco-Ica / Región Ica). Estudio a nivel de factibilidad, Volumen I: El Proyecto. Resumen Ejecutivo",
+   "date": "2011-03",
+   "url": "https://www.juasvi.com/ANEXO1_ResumenEjecutivoPolvareda.pdf",
+   "alt_identifiers": [
+    "data/phase2/source_archive/pisco_ica_polvareda/raw/gore-ica-ana-2011-pisco-afianzamiento-resumen-ejecutivo.pdf (sha256 461e280f21397e16ca50dce2f603ffad1fd63b9e847d0470110622975579a8e4)"
+   ],
+   "source_class": "PRIMARY_INSTITUTIONAL_HOSTED_BY_THIRD_PARTY",
+   "access": "ARCHIVED_BYTES_TEXT_LAYER_QUOTES_TESTED",
+   "access_note": "Original bytes archived in data/phase2/source_archive/pisco_ica_polvareda/ (outside site/) with SHA-256 461e280f21397e16ca50dce2f603ffad1fd63b9e847d0470110622975579a8e4; quotes are verbatim substrings of the archived text layer, re-checked by tests/test_phase2_pisco_ica_polvareda_identity.py (config/phase2_pisco_ica_polvareda_polvora_higos_monte_identity_v0_1.json). Third-party upload of an institutional study. Not claimed byte-identical to any ANA or GORE Ica copy; no official-host copy was found in this sweep. The document describes proposed works; it states no event. source_text_verified stays false: promotion is left to independent QA.",
+   "source_text_verified": false,
+   "verification_record": null
+  },
+  "GORE-ICA-PLAN-COMPETITIVIDAD-2014-2021": {
+   "institution": "Gobierno Regional de Ica, Gerencia Regional de Desarrollo Económico",
+   "title": "Primer Plan de Competitividad Regional Ica 2014 - 2021",
+   "date": "2013-12",
+   "url": "https://www.regionica.gob.pe/pdf/grde/2014/plan_de_competitividad_2014_2021.pdf",
+   "alt_identifiers": [
+    "data/phase2/source_archive/pisco_ica_polvareda/raw/gore-ica-plan-competitividad-2014-2021.pdf (sha256 fa83ecc85ab62e603473be0467db300a8a6699d5a47ad09a962dba8a98def80c)",
+    "https://web.archive.org/web/2id_/https://www.regionica.gob.pe/pdf/grde/2014/plan_de_competitividad_2014_2021.pdf"
+   ],
+   "source_class": "PRIMARY_INSTITUTIONAL",
+   "access": "ARCHIVED_BYTES_TEXT_LAYER_QUOTES_TESTED",
+   "access_note": "Original bytes archived in data/phase2/source_archive/pisco_ica_polvareda/ (outside site/) with SHA-256 fa83ecc85ab62e603473be0467db300a8a6699d5a47ad09a962dba8a98def80c; quotes are verbatim substrings of the archived text layer, re-checked by tests/test_phase2_pisco_ica_polvareda_identity.py (config/phase2_pisco_ica_polvareda_polvora_higos_monte_identity_v0_1.json). The official URL timed out from the runner; the bytes come from the Internet Archive capture 20230410070416 of that official URL (id_ raw mode). Byte identity with the current official copy is not asserted. The document describes proposed works; it states no event. source_text_verified stays false: promotion is left to independent QA.",
+   "source_text_verified": false,
+   "verification_record": null
   }
  },
  "sweep_coverage": {
@@ -539,7 +573,12 @@
    "IGP huaico monitoring network station list",
    "Arequipa, Moquegua, Tacna, La Libertad (beyond 9 map titles), Lima norte beyond SIGRID titles",
    "Municipal PPRRD of Chaclacayo, Ricardo Palma, Santa Eulalia"
-  ]
+  ],
+  "pisco_ica_polvareda_request_2026_10_09": {
+   "method": "Three named documents plus Ley 31070 captured on the GitHub runner and archived with SHA-256 in data/phase2/source_archive/pisco_ica_polvareda/; quotes checked on the archived text layer and on rendered pages.",
+   "rows_covered": "La Polvareda, La Pólvora, Higos Monte (GORE Ica-ANA 2011 feasibility study; Plan de Competitividad GORE Ica 2014-2021).",
+   "not_covered": "ANA 2018 LPN N.º 03-2018-ANA-PGIRH-BM bidding document: not read (host declined the agent's web tools; no workaround used)."
+  }
  },
  "extraction_conflicts": [
   {
@@ -853,6 +892,22 @@
     "main_status": "not recorded",
     "status": "PENDING_ADJUDICATION",
     "needed": "D.S. 181-2023-EF annex."
+   },
+   {
+    "labels": [
+     "La Polvareda",
+     "La Pólvora"
+    ],
+    "inventory_ids": [
+     "ica_humay_la_polvareda",
+     "ica_district_unknown_la_polvora"
+    ],
+    "documentary_basis": "The same 2011 study describes La Polvareda as a dry quebrada meeting the río Pisco near Cerro Colorado (Humay) and La Pólvora as the northern branch of the quebrada de Río Seco draining toward Lanchas. The different descriptions are recorded, not adjudicated: a misspelling, two labels for one channel, or two channels all remain possible.",
+    "main_status": "not recorded",
+    "status": "PENDING_ADJUDICATION",
+    "needed": "Georeferenced hydrography (ANA) or the study's maps/annexes placing both labels. Each label has its own row; equivalence UNRESOLVED.",
+    "equivalence": "UNRESOLVED",
+    "added_in_revision": "r4"
    }
   ],
   "same_label_groups_not_merged": [
@@ -1440,7 +1495,10 @@
    "piura_san_miguel_el_faique_cerro_blanco",
    "piura_san_miguel_el_faique_el_algarrobo",
    "piura_san_miguel_el_faique_el_ceibo",
-   "piura_tambogrande_paccha"
+   "piura_tambogrande_paccha",
+   "ica_humay_la_polvareda",
+   "ica_district_unknown_la_polvora",
+   "ica_district_unknown_higos_monte"
   ],
   "geometry_pending": [
    "lima_chaclacayo_cusipata",
@@ -1909,6 +1967,9 @@
   {"inventory_id": "piura_san_miguel_el_faique_cerro_blanco", "row_role": "CANDIDATE_UNIT", "documentary_name": "Cerro Blanco", "name_variants_observed": [], "department": "Piura", "province": "Huancabamba", "district": "San Miguel El Faique", "corridor": "PIURA_INTERIOR", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 11, fila 58: centro poblado 'Caserío La Capilla', quebrada 'Cerro Blanco'", "table": "Cuadro 11", "row_number_as_read": 58, "source_reference_point": {"easting_m": 654676, "northing_m": 9398062}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P4", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
   {"inventory_id": "piura_san_miguel_el_faique_el_algarrobo", "row_role": "CANDIDATE_UNIT", "documentary_name": "El Algarrobo", "name_variants_observed": [], "department": "Piura", "province": "Huancabamba", "district": "San Miguel El Faique", "corridor": "PIURA_INTERIOR", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 11, fila 66: centro poblado 'Caserío Huacas Alta', quebrada 'El Algarrobo'", "table": "Cuadro 11", "row_number_as_read": 66, "source_reference_point": {"easting_m": 639209, "northing_m": 9399119}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P4", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
   {"inventory_id": "piura_san_miguel_el_faique_el_ceibo", "row_role": "CANDIDATE_UNIT", "documentary_name": "El Ceibo", "name_variants_observed": [], "department": "Piura", "province": "Huancabamba", "district": "San Miguel El Faique", "corridor": "PIURA_INTERIOR", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 11, fila 67: centro poblado 'Caserío Huacas Alta', quebrada 'El Ceibo'", "table": "Cuadro 11", "row_number_as_read": 67, "source_reference_point": {"easting_m": 639111, "northing_m": 9399029}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P4", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
-  {"inventory_id": "piura_tambogrande_paccha", "row_role": "CANDIDATE_UNIT", "documentary_name": "Paccha", "label_caution": "LABEL_IS_A_RIVER_NAME_OR_EQUALS_A_PLACE_NAME_REPO_MATCH_CANNOT_CONFIRM_A_UNIT", "name_variants_observed": [], "department": "Piura", "province": "Morropón", "district": "Tambogrande", "corridor": "PIURA_INTERIOR", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 11, fila 13: centro poblado 'Paccha', quebrada 'Paccha'", "table": "Cuadro 11", "row_number_as_read": 13, "source_reference_point": {"easting_m": 587557, "northing_m": 9445864}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P4", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []}
+  {"inventory_id": "piura_tambogrande_paccha", "row_role": "CANDIDATE_UNIT", "documentary_name": "Paccha", "label_caution": "LABEL_IS_A_RIVER_NAME_OR_EQUALS_A_PLACE_NAME_REPO_MATCH_CANNOT_CONFIRM_A_UNIT", "name_variants_observed": [], "department": "Piura", "province": "Morropón", "district": "Tambogrande", "corridor": "PIURA_INTERIOR", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 11, fila 13: centro poblado 'Paccha', quebrada 'Paccha'", "table": "Cuadro 11", "row_number_as_read": 13, "source_reference_point": {"easting_m": 587557, "northing_m": 9445864}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P4", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
+  {"inventory_id": "ica_humay_la_polvareda", "row_role": "CANDIDATE_UNIT", "documentary_name": "La Polvareda", "feature_class_as_named": "quebrada", "label_caution": "LABEL_ALSO_NAMES_A_DAM_PROJECT_AN_ASSOCIATION_AND_OTHER_PLACES", "name_variants_observed": [], "department": "Ica", "province": "Pisco", "district": "Humay", "corridor": "PISCO_ICA", "location_note": "Source: dry quebrada that meets the río Pisco 'a la altura de Cerro Colorado en el distrito de Humay, Pisco' (GORE Ica-ANA 2011, p. 5). Recorded as source text; not adopted as outlet or parent basin. The label also names the proposed dam project (Ley 31070) and a farmers' association (Plan de Competitividad p. 72).", "evidence_types": ["IDENTITY"], "evidence": [{"evidence_type": "IDENTITY", "source_id": "GORE-ICA-ANA-2011-AFIANZAMIENTO-PISCO-RE", "detail": "GORE Ica-ANA 2011 feasibility study p. 5: dry quebrada chosen as the proposed dam site, meeting the río Pisco near Cerro Colorado, distrito de Humay (proposed works; not executed works, not an event)", "label_in_source": "Qda. La Polvareda", "page": 5, "quote_id": "EST-P5-POLVAREDA"}, {"evidence_type": "IDENTITY", "source_id": "GORE-ICA-PLAN-COMPETITIVIDAD-2014-2021", "detail": "Plan de Competitividad GORE Ica 2014-2021 p. 64, project n.º 11: 'presa en la quebrada La Polvareda' (same project; not an independent observation)", "label_in_source": "quebrada La Polvareda", "page": 64, "quote_id": "PLAN-P64-PROJECT-11"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r4"},
+  {"inventory_id": "ica_district_unknown_la_polvora", "row_role": "CANDIDATE_UNIT", "documentary_name": "La Pólvora", "feature_class_as_named": "quebrada", "label_caution": "NEAR_LABEL_OF_ANOTHER_ROW_EQUIVALENCE_UNRESOLVED", "name_variants_observed": [], "department": "Ica", "province": null, "district": null, "corridor": "PISCO_ICA", "location_note": "Source: 'el ramal del norte denominado Qda. La Pólvora que drena hacia Lanchas', part of the recharge system on the quebrada de Río Seco (GORE Ica-ANA 2011, p. 5). District not stated. Relation to Río Seco recorded as source text only; not adopted as parent system. Possible equivalence with La Polvareda UNRESOLVED.", "evidence_types": ["IDENTITY"], "evidence": [{"evidence_type": "IDENTITY", "source_id": "GORE-ICA-ANA-2011-AFIANZAMIENTO-PISCO-RE", "detail": "GORE Ica-ANA 2011 feasibility study p. 5: 'ramal del norte denominado Qda. La Pólvora que drena hacia Lanchas', within the proposed recharge system on the quebrada de Río Seco (proposed works; no event)", "label_in_source": "Qda. La Pólvora", "page": 5, "quote_id": "EST-P5-POLVORA"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r4"},
+  {"inventory_id": "ica_district_unknown_higos_monte", "row_role": "CANDIDATE_UNIT", "documentary_name": "Higos Monte", "feature_class_as_named": "quebrada", "name_variants_observed": [{"label": "Higosmonte", "source_id": "GORE-ICA-ANA-2011-AFIANZAMIENTO-PISCO-RE"}], "department": "Ica", "province": null, "district": null, "corridor": "PISCO_ICA", "location_note": "Source: 'Desarenador en la Qda. Higos Monte a 4 540 m de la bocatoma' (bocatoma on the left bank of the río Pisco at Huáncano; GORE Ica-ANA 2011, p. 5). District and drainage not stated; nothing inferred. The figure on p. 6 writes 'Higosmonte'.", "evidence_types": ["IDENTITY"], "evidence": [{"evidence_type": "IDENTITY", "source_id": "GORE-ICA-ANA-2011-AFIANZAMIENTO-PISCO-RE", "detail": "GORE Ica-ANA 2011 feasibility study p. 5: proposed desarenador 'en la Qda. Higos Monte a 4 540 m de la bocatoma' (proposed works; no event)", "label_in_source": "Qda. Higos Monte", "page": 5, "quote_id": "EST-P5-HIGOS-MONTE"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r4"}
  ]
 }
