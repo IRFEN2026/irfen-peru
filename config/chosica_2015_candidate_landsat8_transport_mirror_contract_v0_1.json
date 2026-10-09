@@ -1,0 +1,72 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_TRANSPORT_MIRROR_METADATA_ONLY_DISCOVERY",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "scientific_source": {
+    "institution": "U.S. Geological Survey",
+    "product_family": "Landsat Collection 2 Level-2 Surface Reflectance",
+    "scene_identity_remains_usgs_canonical": true
+  },
+  "transport_mirror": {
+    "provider": "Microsoft Planetary Computer",
+    "role": "transport only; not an independent scientific evidence source",
+    "stac_search_endpoint": "https://planetarycomputer.microsoft.com/api/stac/v1/search",
+    "endpoint_host": "planetarycomputer.microsoft.com",
+    "collection": "landsat-c2-l2",
+    "http_method": "POST",
+    "tls_verify": true,
+    "redirects_allowed": false,
+    "free_web_search_allowed": false
+  },
+  "frozen_usgs_items": [
+    {
+      "usgs_item_id": "LC08_L2SP_007068_20150214_20200910_02_T1_SR",
+      "usgs_product_id": "LC08_L2SP_007068_20150214_20200910_02_T1",
+      "date": "2015-02-14",
+      "wrs_path": "007",
+      "wrs_row": "068"
+    },
+    {
+      "usgs_item_id": "LC08_L2SP_007068_20150318_20200909_02_T1_SR",
+      "usgs_product_id": "LC08_L2SP_007068_20150318_20200909_02_T1",
+      "date": "2015-03-18",
+      "wrs_path": "007",
+      "wrs_row": "068"
+    },
+    {
+      "usgs_item_id": "LC08_L2SP_007068_20150403_20200909_02_T1_SR",
+      "usgs_product_id": "LC08_L2SP_007068_20150403_20200909_02_T1",
+      "date": "2015-04-03",
+      "wrs_path": "007",
+      "wrs_row": "068"
+    }
+  ],
+  "required_asset_keys": ["qa_pixel", "red", "nir08", "swir16", "swir22"],
+  "acceptance_rule": {
+    "metadata_discovery_only": true,
+    "exactly_one_mirror_item_per_usgs_product_id": true,
+    "mirror_product_id_must_equal_frozen_usgs_product_id": true,
+    "mirror_acquisition_date_must_equal_frozen_date": true,
+    "asset_bytes_may_not_be_read_in_this_stage": true,
+    "later_asset_acceptance_requires_exact_usgs_file_sha512": true,
+    "mirror_metadata_may_not_replace_or reselect_scene": false
+  },
+  "forbidden": [
+    "free web search",
+    "target outcomes or target names",
+    "A6680",
+    "contaminated adjudication",
+    "candidate reranking or replacement",
+    "scene reselection",
+    "pixel asset read",
+    "control-label assignment"
+  ],
+  "sealed_target_unblind_allowed": false
+}

@@ -1,0 +1,73 @@
+name: IRFEN - Chosica 2015 clean-room candidate geometry recovery
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_cleanroom_candidate_geometry_recovery_contract_v0_1.json
+      - scripts/recover_chosica_2015_cleanroom_candidate_geometry.py
+      - site/data/validation/cleanroom/chosica_2015_cleanroom_input_v0_1.json
+      - site/data/validation/cleanroom/chosica_2015_cleanroom_matching_v0_1.json
+      - .github/workflows/chosica-2015-cleanroom-candidate-geometry-recovery.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  recover-pseudonymized-geometry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_cleanroom_candidate_geometry_recovery_contract_v0_1.json
+            scripts/recover_chosica_2015_cleanroom_candidate_geometry.py
+            site/data/validation/cleanroom/chosica_2015_cleanroom_input_v0_1.json
+            site/data/validation/cleanroom/chosica_2015_cleanroom_matching_v0_1.json
+            .github/workflows/chosica-2015-cleanroom-candidate-geometry-recovery.yml
+      - name: Assert forbidden scientific paths absent
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+          test ! -e config/chosica_2015_multibasin_validation_set_v0_1.json
+      - name: Download exact preincident outcome-free geometry sources
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p sources/pool sources/geometry artifacts
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/10112960251/zip" > /tmp/pool.zip
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/10113835166/zip" > /tmp/geometry.zip
+          unzip -q /tmp/pool.zip -d sources/pool
+          unzip -q /tmp/geometry.zip -d sources/geometry
+          test "$(sha256sum sources/pool/chosica_2015_negative_control_candidate_pool.json | cut -d' ' -f1)" = "a739e884b90048cc40cc72535697731458e3b7ec075ff95a4613a9ef49267570"
+          test "$(sha256sum sources/geometry/chosica_2015_negative_control_shortlist_geometry_report.json | cut -d' ' -f1)" = "87a100084f3d3dccf6a922fd3bd1216e02c659c6a7b3cbb4aefe6c49cf51cf53"
+          test "$(sha256sum sources/geometry/chosica_2015_negative_control_shortlist.geojson | cut -d' ' -f1)" = "7fc3db40f7163a7b8019640ffbaa4564e54e09fc769b9de0c4554bcec382c412"
+      - name: Rebind exact polygons to clean-room candidate codes
+        run: |
+          set -euo pipefail
+          env -i PATH="$PATH" HOME=/tmp LANG=C.UTF-8 python -I scripts/recover_chosica_2015_cleanroom_candidate_geometry.py \
+            --contract config/chosica_2015_cleanroom_candidate_geometry_recovery_contract_v0_1.json \
+            --input site/data/validation/cleanroom/chosica_2015_cleanroom_input_v0_1.json \
+            --matching site/data/validation/cleanroom/chosica_2015_cleanroom_matching_v0_1.json \
+            --candidate-pool sources/pool/chosica_2015_negative_control_candidate_pool.json \
+            --source-report sources/geometry/chosica_2015_negative_control_shortlist_geometry_report.json \
+            --source-geojson sources/geometry/chosica_2015_negative_control_shortlist.geojson \
+            --output artifacts/chosica_2015_cleanroom_candidate_geometries_v0_1.geojson \
+            | tee artifacts/candidate_geometry_recovery_summary.json
+      - name: Enforce pseudonymized output boundary
+        run: |
+          set -euo pipefail
+          test "$(sha256sum artifacts/chosica_2015_cleanroom_candidate_geometries_v0_1.geojson | cut -d' ' -f1)" = "9a23644c191c88fb66722b368773251051b4098ddd74e4d5861c3a37dbfbb1ca"
+          ! grep -Eiq 'NC_|pedregal|quirio|carossio|carosio|rayos de sol|cashahuacra|la libertad|a6680|official_outcome_evidence' artifacts/chosica_2015_cleanroom_candidate_geometries_v0_1.geojson
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-cleanroom-candidate-geometries
+          path: |
+            artifacts/chosica_2015_cleanroom_candidate_geometries_v0_1.geojson
+            artifacts/candidate_geometry_recovery_summary.json
+          if-no-files-found: error

@@ -1,0 +1,63 @@
+{
+  "schema_version": "0.2",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_INFRASTRUCTURE_ONLY_DOM_ROUTE_DISCOVERY",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "revision_basis": {
+    "prior_script_discovery_run_id": 34512537836,
+    "prior_main_script_route_run_id": 34512740303,
+    "prior_main_script_endpoint_like_route_count": 0,
+    "candidate_territorial_evidence_read": false,
+    "control_labels_assigned": false,
+    "selection_or_matching_modified": false,
+    "reason": "The frozen application-script route stage produced zero endpoint-like routes. This revision inspects only URL-bearing DOM attributes of the already-allowlisted exact portal root; no text nodes or linked content are read."
+  },
+  "prerequisites": {
+    "candidate_packet_sha256": "dbf02fc9ba1b436754cef72741fff129892a0107eed57362552041d6657cf782",
+    "candidate_count": 7,
+    "candidate_selection_immutable": true,
+    "sealed_target_unblind_allowed": false
+  },
+  "allowed_root": "https://sigrid.cenepred.gob.pe/sigridv3/",
+  "allowed_operation": "GET_EXACT_ROOT_PARSE_URL_BEARING_ATTRIBUTES_ONLY",
+  "allowed_attributes": ["a.href", "form.action", "script.src"],
+  "classification": "INFRASTRUCTURE_ONLY_NOT_TERRITORIAL_EVIDENCE",
+  "route_markers": ["document", "biblioteca", "map", "api", "ajax", "buscar", "search", "servicio", "service", "consulta"],
+  "raw_body_policy": {
+    "write_to_disk": false,
+    "print_or_log": false,
+    "retain_text_nodes": false,
+    "sha256_required": true,
+    "maximum_bytes": 5000000
+  },
+  "output_policy": {
+    "same_host_https_only": true,
+    "strip_fragments": true,
+    "follow_routes_in_same_stage": false,
+    "emit_only_matching_normalized_urls": true
+  },
+  "forbidden": [
+    "free web search",
+    "search-engine queries",
+    "portal free-text search",
+    "read linked document bytes",
+    "read API feature records",
+    "retain page text",
+    "candidate names",
+    "target names or IDs",
+    "event keywords",
+    "A6680",
+    "contaminated adjudication",
+    "control labels",
+    "candidate replacement or reranking"
+  ],
+  "candidate_territorial_evidence_read": false,
+  "sealed_target_unblind_allowed": false,
+  "next_gate": "FREEZE_EXACT_CANDIDATE_METADATA_ENDPOINTS_BEFORE_ANY_ROUTE_IS_FOLLOWED"
+}

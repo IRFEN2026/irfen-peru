@@ -1,0 +1,61 @@
+name: IRFEN - Chosica 2015 INGEMMET TLS diagnostics
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_ingemmet_tls_diagnostics_contract_v0_1.json
+      - scripts/diagnose_chosica_2015_ingemmet_tls.py
+      - .github/workflows/chosica-2015-ingemmet-tls-diagnostics.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose-peer-chain-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_ingemmet_tls_diagnostics_contract_v0_1.json
+            scripts/diagnose_chosica_2015_ingemmet_tls.py
+            .github/workflows/chosica-2015-ingemmet-tls-diagnostics.yml
+      - name: Assert forbidden scientific files absent
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+          test ! -e config/chosica_2015_multibasin_validation_set_v0_1.json
+      - name: Diagnose exact-host TLS chain only
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          env -i PATH="$PATH" HOME=/tmp LANG=C.UTF-8 python -I scripts/diagnose_chosica_2015_ingemmet_tls.py \
+            --contract config/chosica_2015_ingemmet_tls_diagnostics_contract_v0_1.json \
+            --output artifacts/chosica_2015_ingemmet_tls_diagnostics_v0_1.json \
+            | tee artifacts/ingemmet_tls_diagnostics_summary.json
+      - name: Enforce infrastructure-only boundary
+        run: |
+          set -euo pipefail
+          python -I - <<'PY'
+          import json,pathlib
+          p=pathlib.Path('artifacts/chosica_2015_ingemmet_tls_diagnostics_v0_1.json');d=json.loads(p.read_text(encoding='utf-8'))
+          g={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          assert d['status']=='PASS_INGEMMET_TLS_DIAGNOSTICS' and d['guards']==g
+          assert d['classification']=='INFRASTRUCTURE_ONLY_NOT_TERRITORIAL_EVIDENCE'
+          assert d['http_requests_executed'] is False and d['tls_verification_disabled'] is False and d['aia_uris_fetched'] is False
+          assert d['candidate_territorial_evidence_read'] is False and d['control_labels_assigned'] is False and d['sealed_target_unblind_allowed'] is False
+          text=p.read_text(encoding='utf-8').lower()
+          for token in ('pedregal','quirio','carossio','carosio','rayos de sol','cashahuacra','la libertad','a6680','official_outcome_evidence'):
+              assert token not in text,token
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-ingemmet-tls-diagnostics
+          path: |
+            artifacts/chosica_2015_ingemmet_tls_diagnostics_v0_1.json
+            artifacts/ingemmet_tls_diagnostics_summary.json
+          if-no-files-found: error

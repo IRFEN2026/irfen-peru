@@ -1,0 +1,67 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_SIGRID_GENERIC_INFRASTRUCTURE_ENDPOINTS",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "provenance": {
+    "dom_discovery_run_id": 34512897416,
+    "dom_discovery_head_sha": "c6b70333535bb1535dd497d7c5834d0829051c42",
+    "dom_discovery_artifact_id": 10166490870,
+    "dom_discovery_artifact_zip_sha256": "3323bc25413ae10eeef30a94465cb9acdd0e6e29563b644a50d6301cd264e4cf",
+    "dom_discovery_output_sha256": "8e5f9a6ba6233b7720f4a1328216a670153e820a11c594cbb70bea3771b113fb"
+  },
+  "selection_policy": {
+    "basis": "Route-shape only, before reading linked content.",
+    "include": "generic collection or map interface routes without fixed document/event identifiers",
+    "exclude": "all concrete /documento/<numeric-id> routes discovered on the portal root",
+    "candidate_or_target_content_used": false,
+    "event_content_used": false
+  },
+  "endpoints": [
+    {
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/biblioteca",
+      "classification": "INFRASTRUCTURE_ONLY_NOT_TERRITORIAL_EVIDENCE",
+      "allowed_read": "HTML_STRUCTURE_ONLY",
+      "allowed_extract": ["form_method", "same_host_form_action", "input_name", "input_type", "same_host_script_src"],
+      "retain_text_nodes": false,
+      "retain_input_values": false,
+      "follow_links": false,
+      "maximum_bytes": 5000000
+    },
+    {
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/mapa",
+      "classification": "INFRASTRUCTURE_ONLY_NOT_TERRITORIAL_EVIDENCE",
+      "allowed_read": "HTML_STRUCTURE_ONLY",
+      "allowed_extract": ["form_method", "same_host_form_action", "input_name", "input_type", "same_host_script_src"],
+      "retain_text_nodes": false,
+      "retain_input_values": false,
+      "follow_links": false,
+      "maximum_bytes": 5000000
+    }
+  ],
+  "forbidden": [
+    "concrete document routes",
+    "document bytes",
+    "page text",
+    "input values",
+    "feature records",
+    "free-text searches",
+    "search engines",
+    "target names or IDs",
+    "candidate names",
+    "event keywords",
+    "A6680",
+    "contaminated adjudication",
+    "control labels",
+    "candidate replacement or reranking"
+  ],
+  "candidate_territorial_evidence_read": false,
+  "sealed_target_unblind_allowed": false,
+  "next_gate": "FREEZE_DISCOVERED_FORM_SCHEMAS_AND_STATIC_APP_SCRIPTS_BEFORE_ANY_QUERY_OR_SCRIPT_READ"
+}

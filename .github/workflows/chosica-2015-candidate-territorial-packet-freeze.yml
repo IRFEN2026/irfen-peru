@@ -1,0 +1,100 @@
+name: IRFEN - Chosica 2015 candidate territorial packet freeze
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_candidate_territorial_packet_freeze_record_v0_1.json
+      - .github/workflows/chosica-2015-candidate-territorial-packet-freeze.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  verify-packet-freeze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Sparse checkout freeze record only
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_candidate_territorial_packet_freeze_record_v0_1.json
+            .github/workflows/chosica-2015-candidate-territorial-packet-freeze.yml
+
+      - name: Download exact frozen packet artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/territorial-packet
+          gh run download 34511652706 -R "$GITHUB_REPOSITORY" -n chosica-2015-candidate-territorial-packet -D /tmp/territorial-packet
+
+      - name: Verify exact file inventory, packet hash and scientific guards
+        run: |
+          set -euo pipefail
+          find /tmp/territorial-packet -maxdepth 1 -type f -printf '%f\n' | sort > /tmp/observed.txt
+          cat > /tmp/expected.txt <<'EOF'
+          chosica_2015_candidate_territorial_packet_freeze_v0_1.json
+          chosica_2015_candidate_territorial_packet_v0_1.json
+          packet_build_summary.json
+          EOF
+          diff -u /tmp/expected.txt /tmp/observed.txt
+          python -I - <<'PY'
+          import hashlib,json,pathlib
+          r=json.load(open('config/chosica_2015_candidate_territorial_packet_freeze_record_v0_1.json',encoding='utf-8'))
+          p=pathlib.Path('/tmp/territorial-packet/chosica_2015_candidate_territorial_packet_v0_1.json')
+          f=pathlib.Path('/tmp/territorial-packet/chosica_2015_candidate_territorial_packet_freeze_v0_1.json')
+          h=lambda q: hashlib.sha256(q.read_bytes()).hexdigest()
+          guards={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          assert r['status']=='FROZEN_CANDIDATE_ONLY_TERRITORIAL_PACKET'
+          assert r['guards']==guards
+          assert h(p)==r['source']['packet_sha256']=='dbf02fc9ba1b436754cef72741fff129892a0107eed57362552041d6657cf782'
+          d=json.loads(p.read_text(encoding='utf-8'))
+          z=json.loads(f.read_text(encoding='utf-8'))
+          assert d['guards']==guards and z['guards']==guards
+          assert d['candidate_count']==z['candidate_count']==r['scientific_state']['candidate_count']==7
+          assert d['selection_is_immutable'] is True
+          assert d['free_web_search_allowed'] is False
+          assert d['target_outcome_sources_allowed'] is False
+          assert d['candidate_replacement_allowed'] is False
+          assert d['candidate_reranking_allowed'] is False
+          assert d['feedback_to_matching_allowed'] is False
+          assert d['sealed_target_unblind_allowed'] is False
+          assert z['candidate_territorial_evidence_read'] is False
+          assert z['control_labels_assigned'] is False
+          assert r['scientific_state']['contaminated_adjudication_used'] is False
+          assert r['scientific_state']['sealed_target_outcomes_read'] is False
+          assert r['gates']['candidate_packet_frozen'] is True
+          assert r['gates']['candidate_territorial_unblind_allowed'] is True
+          assert r['gates']['source_allowlist_required_before_evidence_read'] is True
+          assert r['gates']['sealed_target_unblind_allowed'] is False
+          PY
+
+      - name: Emit verification artifact
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          python -I - <<'PY'
+          import json,pathlib
+          out={
+            'schema_version':'0.1',
+            'status':'PASS_FROZEN_CANDIDATE_TERRITORIAL_PACKET_VERIFICATION',
+            'guards':{'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False},
+            'packet_sha256':'dbf02fc9ba1b436754cef72741fff129892a0107eed57362552041d6657cf782',
+            'candidate_count':7,
+            'candidate_territorial_evidence_read':False,
+            'source_allowlist_required_next':True,
+            'sealed_target_unblind_allowed':False,
+            'operational_use_allowed':False
+          }
+          pathlib.Path('artifacts/candidate_territorial_packet_freeze_verification.json').write_text(json.dumps(out,sort_keys=True,separators=(',',':'))+'\n',encoding='utf-8')
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-candidate-territorial-packet-freeze-verification
+          path: artifacts/candidate_territorial_packet_freeze_verification.json
+          if-no-files-found: error

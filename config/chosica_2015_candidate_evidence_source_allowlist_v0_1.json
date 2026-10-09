@@ -1,0 +1,86 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PRE_READ_CANDIDATE_EVIDENCE_SOURCE_ALLOWLIST",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "prerequisite": {
+    "packet_freeze_record": "config/chosica_2015_candidate_territorial_packet_freeze_record_v0_1.json",
+    "required_packet_sha256": "dbf02fc9ba1b436754cef72741fff129892a0107eed57362552041d6657cf782",
+    "required_candidate_count": 7,
+    "candidate_selection_immutable": true,
+    "candidate_territorial_evidence_read_before_allowlist_freeze": false
+  },
+  "network_policy": {
+    "free_web_search_allowed": false,
+    "search_engine_queries_allowed": false,
+    "unrestricted_url_following_allowed": false,
+    "only_exact_allowlisted_service_roots": true,
+    "candidate_bounded_spatial_queries_required": true,
+    "raw_responses_must_not_be_logged": true,
+    "response_bytes_sha256_required": true,
+    "candidate_replacement_allowed": false,
+    "candidate_reranking_allowed": false,
+    "feedback_to_matching_allowed": false
+  },
+  "spatial_policy": {
+    "analysis_crs": "EPSG:32718",
+    "candidate_query_buffer_m": 750,
+    "maximum_admissible_feature_distance_from_candidate_m": 1000,
+    "corridor_wide_or_region_wide_narrative_evidence_allowed": false,
+    "candidate_location_must_be_explicit_or_machine_georeferenced": true
+  },
+  "temporal_policy": {
+    "frozen_anchor_utc": "2015-03-23T19:30:00Z",
+    "required_local_day": "2015-03-23",
+    "evidence_must_explicitly_cover_required_local_day": true,
+    "temporal_shifting_allowed": false
+  },
+  "sources": [
+    {
+      "source_id": "INGEMMET_GEOCATMIN_PELIGROS_GEOLOGICOS",
+      "institution": "INGEMMET",
+      "service_root": "https://geocatmin.ingemmet.gob.pe/arcgis/rest/services/SERV_PELIGROS_GEOLOGICOS/MapServer",
+      "protocol": "ArcGIS_REST",
+      "allowed_operations": ["service_metadata", "layer_metadata", "query"],
+      "discovery_scope": "service/layer schema and candidate-bounded spatial feature queries only",
+      "evidence_eligible": true,
+      "eligibility_rule": "A returned record is usable only if its geometry is within the frozen candidate buffer and its own structured date/time fields explicitly cover 2015-03-23. Records without explicit event-day temporal coverage are OUTCOME_UNKNOWN support only."
+    },
+    {
+      "source_id": "CENEPRED_SIGRID_CANDIDATE_BOUNDED",
+      "institution": "CENEPRED",
+      "service_root": "https://sigrid.cenepred.gob.pe/sigridv3/",
+      "protocol": "HTTPS_OFFICIAL_PORTAL",
+      "allowed_operations": ["candidate_bounded_metadata_lookup", "exact_document_fetch_after_metadata_allowlisting"],
+      "discovery_scope": "candidate-bounded metadata only; no keyword or free-text search for target/event names",
+      "evidence_eligible": true,
+      "eligibility_rule": "Exact document IDs must be frozen in a second-stage manifest before document bytes are read; broad regional documents and any document whose metadata scope extends beyond the candidate-local buffer are rejected."
+    }
+  ],
+  "globally_forbidden": [
+    "INGEMMET A6680",
+    "site/data/validation/official_outcome_evidence.json",
+    "target outcome evidence",
+    "target names or IDs",
+    "post-event target narratives",
+    "contaminated adjudication artifacts",
+    "search-engine snippets",
+    "social media",
+    "news aggregation",
+    "documentary silence interpreted as CONTROL"
+  ],
+  "adjudication_labels": ["CONTROL_CONFIRMED", "EXCLUDED_ACTIVE", "OUTCOME_UNKNOWN"],
+  "control_confirmed_requires": [
+    "affirmative independent candidate-local evidence",
+    "explicit coverage of 2015-03-23",
+    "explicit statement or structured record establishing no activation at that candidate location",
+    "evidence-byte SHA-256 and source locator"
+  ],
+  "next_gate": "CANDIDATE_ONLY_ALLOWLISTED_SOURCE_DISCOVERY_AND_EXACT_EVIDENCE_MANIFEST_FREEZE"
+}

@@ -1,0 +1,74 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PRE_EXECUTION_CANDIDATE_ONLY_LANDSAT8_AVAILABILITY",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "scientific_role": "Candidate-only independent optical availability for fixed event-bracketing windows. This stage reads metadata only, selects no controls, and cannot establish a negative outcome.",
+  "source": {
+    "institution": "U.S. Geological Survey",
+    "mission": "Landsat 8",
+    "product_family": "Landsat Collection 2 Level-2 Surface Reflectance",
+    "stac_search_endpoint": "https://landsatlook.usgs.gov/stac-server/search",
+    "endpoint_host": "landsatlook.usgs.gov",
+    "collection": "landsat-c2l2-sr",
+    "http_method": "POST",
+    "content_type": "application/json",
+    "free_web_search_allowed": false,
+    "search_engine_allowed": false,
+    "redirects_allowed": false
+  },
+  "candidate_geometry": {
+    "workflow_run_id": 34524860992,
+    "artifact_id": 10171108859,
+    "artifact_digest": "sha256:6290b2018770acf1332f7a6680d85d9a5b179d82c2e9f95155ef628d8b445c61",
+    "file": "chosica_2015_cleanroom_candidate_geometries_v0_1.geojson",
+    "sha256": "9a23644c191c88fb66722b368773251051b4098ddd74e4d5861c3a37dbfbb1ca",
+    "candidate_count": 7
+  },
+  "event_anchor_utc": "2015-03-23T19:30:00Z",
+  "fixed_windows": {
+    "pre": {"start": "2015-02-01T00:00:00Z", "end": "2015-03-23T19:29:59Z"},
+    "post": {"start": "2015-03-23T19:30:00Z", "end": "2015-05-15T23:59:59Z"},
+    "window_shift_allowed": false
+  },
+  "query": {
+    "one_query_per_candidate_per_window": true,
+    "spatial_filter": "exact candidate polygon GeoJSON geometry",
+    "max_results": 100,
+    "mission_filter_after_response": "platform LANDSAT_8 or item ID prefix LC08_",
+    "metadata_only": true
+  },
+  "metadata_retention": [
+    "candidate_code", "window", "item_id", "datetime", "start_datetime", "end_datetime",
+    "platform", "instruments", "eo_cloud_cover", "landsat_wrs_path", "landsat_wrs_row",
+    "landsat_scene_id", "landsat_product_id", "metadata_response_sha256"
+  ],
+  "pairing_policy_after_availability_freeze": {
+    "pairing_deferred_until_availability_is_frozen": true,
+    "same_wrs_path_required": true,
+    "same_wrs_row_required": true,
+    "pre_scene_datetime_must_precede_anchor": true,
+    "post_scene_datetime_must_follow_or_equal_anchor": true,
+    "scene_pair_selection": "minimize sum of absolute temporal distance to anchor; then minimize maximum of the two distances; then lower scene-level cloud-cover sum when both values are present; then lexical item IDs",
+    "surface_signal_must_not_be_read_before_pair_freeze": true,
+    "candidate_specific_pair_replacement_after_pixel_read": false
+  },
+  "forbidden": [
+    "read or download Landsat pixel assets in this availability stage",
+    "read target outcomes or names",
+    "read A6680",
+    "read contaminated adjudication",
+    "modify candidate shortlist or matching",
+    "use observed surface response to select a scene",
+    "free web search",
+    "interpret no imagery or no change as CONTROL_CONFIRMED"
+  ],
+  "sealed_target_unblind_allowed": false,
+  "next_gate": "IF_LANDSAT8_BRACKETING_METADATA_EXIST_FREEZE_DETERMINISTIC_SCENE_PAIRS_BEFORE_ANY_PIXEL_ASSET_READ"
+}
