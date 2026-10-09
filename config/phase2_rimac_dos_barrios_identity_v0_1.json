@@ -1,0 +1,588 @@
+{
+ "schema_version": "0.1",
+ "registry_id": "phase2-rimac-dos-barrios-identity:v0.1",
+ "status": "RESEARCH_ONLY_DOCUMENTARY_IDENTITY_PENDING_INDEPENDENT_QA",
+ "deployment_status": "RESEARCH_ONLY",
+ "test_mode": "TEST_ONLY",
+ "production_use": false,
+ "production_ready": false,
+ "operational_alerting_enabled": false,
+ "activation_gate": "BLOCKED",
+ "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+ "decision_thresholds": null,
+ "hydraulic_factors": null,
+ "map_publishable": false,
+ "purpose": "Verify the documentary identity of Quebrada Dos Barrios (Rímac corridor, Chosica) on archived sources and register it as IDENTITY_ONLY. No geometry, confluence, outlet or event is derived.",
+ "provenance": {
+  "pull_request": 363,
+  "pr_head_before_this_change": "7228f08b03b376cbf8746d819fad2bfae63534b1",
+  "main_reviewed_at_commit": "324e7db5e00d0e32fce504b8f7a8f8505dbd01cf",
+  "archive_manifest": "data/phase2/source_archive/rimac_dos_barrios/archive_manifest_v0_1.json",
+  "archive_manifest_sha256": "8502b71ff0eb9202889d45e0e8cafd0a4784acefedec0f27086da74f0697fb8c",
+  "quote_rule": "Every quote is a whitespace-normalised verbatim substring of the archived text layer named by its source (poppler, or Spanish OCR for the scanned A6608) on the cited PDF page; tests re-check it against files whose SHA-256 matches the manifest.",
+  "visual_check": "SENAMHI pp. 17-18 (printed 3-4), TE0306 pp. 86 and 88 (printed 83 and 85) and A6608 pp. 1, 29, 42 (printed 30 and 43) rendered with pdftoppm and read by eye (Claude, 2026-10-09); the A6608 OCR quotes match the printed text on those pages.",
+  "supersedes": "The national audit sweep result 'NO_SOURCE_FOUND_IN_THIS_SWEEP' for Dos Barrios (kept as a historical observation) and the PR #363 post-sweep note, whose sources had no SHA-256."
+ },
+ "sources": {
+  "INGEMMET-A6608-2012-LA-RONDA-LOS-CONDORES": {
+   "institution": "INGEMMET (Informe Técnico N.º A6608; Zavala, Vílchez y Núñez), via CENEPRED SIGRID documento 401",
+   "title": "Flujos de detritos del 05/04/2012 entre las quebradas La Ronda y Los Cóndores, margen izquierda del río Rímac. Características geodinámicas y evaluación de peligro",
+   "date": "2012 (cover prints 'Octubre 2011', inconsistent with the 05/04/2012 event in the title)",
+   "source_class": "PRIMARY_INSTITUTIONAL",
+   "archive_document_id": "ingemmet-a6608-sigrid-401",
+   "requested_url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/401/descargar",
+   "acquisition": "RUNNER_CAPTURE",
+   "raw_path": "data/phase2/source_archive/rimac_dos_barrios/raw/ingemmet-a6608-sigrid-401.pdf",
+   "bytes": 27049625,
+   "sha256": "b710247572a7a83efed53be0f0f565cc4971eb542f43f2881cbefc7bba0b5927",
+   "page_count": 48,
+   "text_path": "data/phase2/source_archive/rimac_dos_barrios/text/ingemmet-a6608-sigrid-401.pages.json",
+   "text_sha256": "5d0e6194f0422091a87100e3334c42c73a124735b816d8368066ff64839ce6d0",
+   "quote_text_layer": "ocr_pages",
+   "copy_note": "Scanned PDF without a text layer: quotes are taken from the archived Spanish OCR layer (tesseract spa) and each was also read on the rendered page. Captured on the runner from https://sigrid.cenepred.gob.pe/sigridv3/documento/401/descargar (served from sigrid.cenepred.gob.pe/docs/PARA PUBLICAR/INGEMMET/...); the institutional handle hdl.handle.net/20.500.12544/1580 was not opened by the agent. This is the 'Zavala et al., 2012' cited by the 2018 thesis."
+  },
+  "SENAMHI-2020-QDAS-SANTO-DOMINGO-CANTUTA": {
+   "institution": "Servicio Nacional de Meteorología e Hidrología del Perú (SENAMHI), Dirección de Hidrología",
+   "title": "Caracterización del peligro por movimientos en masa debido a lluvias extremas en las quebradas Santo Domingo y Cantuta. Informe final (Asencios, Millán, Sabino Rojas y Breña)",
+   "date": "2020-05",
+   "source_class": "PRIMARY_INSTITUTIONAL",
+   "archive_document_id": "senamhi-01401sena-88",
+   "requested_url": "https://www.senamhi.gob.pe/load/file/01401SENA-88.pdf",
+   "acquisition": "OWNER_SUPPLIED_COPY",
+   "raw_path": "data/phase2/source_archive/rimac_dos_barrios/owner_supplied/senamhi-01401sena-88.pdf",
+   "bytes": 3629989,
+   "sha256": "f15ee79bb556824b292d6347615cf50f84eefc24f59758da9daf38c28c3400a8",
+   "page_count": 79,
+   "text_path": "data/phase2/source_archive/rimac_dos_barrios/text/senamhi-01401sena-88.pages.json",
+   "text_sha256": "e87a91a978d4a90bc45c936c16f95bb2ad53412877a2270f05b3efdf6cdf4d8f",
+   "quote_text_layer": "poppler_layout_pages",
+   "copy_note": "Owner-supplied copy: the SENAMHI host declined the agent's web tools, so the repository owner downloaded the file in a browser (stated URL https://www.senamhi.gob.pe/load/file/01401SENA-88.pdf). Byte identity with the host copy is not verified by the agent."
+  },
+  "VILLACORTA-2018-UPM-THESIS-INGEMMET-TE0306": {
+   "institution": "Universidad Politécnica de Madrid (doctoral thesis of S. P. Villacorta Chambi); PDF hosted by the INGEMMET biblioteca as TE0306",
+   "title": "Evolución geomorfológica del abanico aluvial de Lima y sus relaciones con la peligrosidad por inundaciones (Tesis Doctoral)",
+   "date": "2018-11",
+   "source_class": "ACADEMIC_THESIS_HOSTED_BY_INSTITUTION",
+   "archive_document_id": "ingemmet-te0306",
+   "requested_url": "https://app.ingemmet.gob.pe/biblioteca/pdf/TE0306.pdf",
+   "acquisition": "RUNNER_CAPTURE",
+   "raw_path": "data/phase2/source_archive/rimac_dos_barrios/raw/ingemmet-te0306.pdf",
+   "bytes": 11044724,
+   "sha256": "addab6d18a40ea6277e723f5477bb898223bec5280606ebd7ad4b7d79f8cea29",
+   "page_count": 260,
+   "text_path": "data/phase2/source_archive/rimac_dos_barrios/text/ingemmet-te0306.pages.json",
+   "text_sha256": "eb095cb053b3e6fd4fdea3a1bdd058f3a27f9f137942a9c4902da7ce4c9c6b33",
+   "quote_text_layer": "poppler_layout_pages",
+   "copy_note": "PR #363 had described TE0306 as an INGEMMET 2012 report; the archived file is a 2018 UPM doctoral thesis. Its 2012 statements cite 'Zavala et al., 2012', which was not read."
+  },
+  "RIIGEO-2012-HUAYCOS-CHOSICA": {
+   "institution": "Revista del Instituto de Investigación (RIIGEO), FIGMMG-UNMSM; PDF hosted by the INGEMMET biblioteca",
+   "title": "Caracterización y análisis de los huaycos del 5 de abril del 2012, Chosica - Lima (Guadalupe y Carrillo)",
+   "date": "2012",
+   "source_class": "ACADEMIC_JOURNAL_HOSTED_BY_INSTITUTION",
+   "archive_document_id": "ingemmet-rfigmmg-29-3-chosica-2012",
+   "requested_url": "https://app.ingemmet.gob.pe/biblioteca/pdf/RFIGMMG-29-3.pdf",
+   "acquisition": "RUNNER_CAPTURE",
+   "raw_path": "data/phase2/source_archive/rimac_dos_barrios/raw/ingemmet-rfigmmg-29-3-chosica-2012.pdf",
+   "bytes": 7680914,
+   "sha256": "761cfed38ba8388e529616c77766881c22de689495b9d5499c6ac123bf3b5973",
+   "page_count": 14,
+   "text_path": "data/phase2/source_archive/rimac_dos_barrios/text/ingemmet-rfigmmg-29-3-chosica-2012.pages.json",
+   "text_sha256": "cfb4119d7b65df7f4d08a7819818899094f9be828e1d2af389350c30310b1da1",
+   "quote_text_layer": "poppler_layout_pages",
+   "copy_note": "Read as a contemporary check; it does not name Dos Barrios. It names Pablo Patrón as a settlement (asentamiento urbano, Cooperativa, LOC.)."
+  },
+  "IGP-2020-SIGRID-13867-QUIRO-LA-RONDA": {
+   "institution": "Instituto Geofísico del Perú (CENEPRED SIGRID biblioteca 13867)",
+   "title": "Caracterización geológica-geodinámica preliminar por flujos de detritos (huaycos) en las quebradas Quirio, Chacrasana, La Ronda, Barba Blanca y Río Seco",
+   "date": "2020",
+   "source_class": "PRIMARY_INSTITUTIONAL",
+   "archive_document_id": "sigrid-13867-caracterizacion-quiro-la-ronda",
+   "requested_url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca//13867_informe-de-caracterizacion-geologica-geodinamica-preliminar-por-flujos-de-detritos-huaycos-en-las-quebradas-quiro-chacrasana-la-ronda-barba-blanca-y-r.pdf",
+   "acquisition": "RUNNER_CAPTURE",
+   "raw_path": "data/phase2/source_archive/rimac_dos_barrios/raw/sigrid-13867-caracterizacion-quiro-la-ronda.pdf",
+   "bytes": 2216360,
+   "sha256": "4590f117bf076f870ef30e83d8f14727ea725a2bef53ce2ddca713335d337cc5",
+   "page_count": 41,
+   "text_path": "data/phase2/source_archive/rimac_dos_barrios/text/sigrid-13867-caracterizacion-quiro-la-ronda.pages.json",
+   "text_sha256": "ded5bfa478975f2938116e5b8ccb2139de8efd368278f255f7600b59d3bdb24a",
+   "quote_text_layer": "poppler_layout_pages",
+   "copy_note": "Read for the neighbouring quebrada La Ronda; it does not name Dos Barrios."
+  },
+  "ANA-SIGRID-19950-FAJA-SANTO-DOMINGO": {
+   "institution": "ANA, AAA Cañete-Fortaleza (CENEPRED SIGRID biblioteca 19950)",
+   "title": "Estudio de delimitación de faja marginal de la quebrada Santo Domingo, tributario del río Rímac - margen izquierda (1,48 km)",
+   "date": "2025",
+   "source_class": "PRIMARY_INSTITUTIONAL",
+   "archive_document_id": "sigrid-19950-ana-faja-santo-domingo",
+   "requested_url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca//19950_estudio-de-delimitacion-de-la-faja-marginal-de-la-quebrada-santo-domingo-tributario-del-rio-rimac-margen-izquierda-145-km-distrito-de-lurigancho-provi.pdf",
+   "acquisition": "RUNNER_CAPTURE",
+   "raw_path": "data/phase2/source_archive/rimac_dos_barrios/raw/sigrid-19950-ana-faja-santo-domingo.pdf",
+   "bytes": 4054969,
+   "sha256": "e6c9b3220a06846eff4e6a568e11e944fe628c61d299e9c542f7b6badd2c6341",
+   "page_count": 30,
+   "text_path": "data/phase2/source_archive/rimac_dos_barrios/text/sigrid-19950-ana-faja-santo-domingo.pages.json",
+   "text_sha256": "ddfd48079fd5c67d5dcde987950ab079006ce39f53fc82f62f1d979280b467a4",
+   "quote_text_layer": "poppler_layout_pages",
+   "copy_note": "Read for the neighbouring quebrada Santo Domingo; it does not name Dos Barrios."
+  }
+ },
+ "quotes": {
+  "A6-COVER-NUMBER": {
+   "source_id": "INGEMMET-A6608-2012-LA-RONDA-LOS-CONDORES",
+   "page": 1,
+   "printed_page_label": null,
+   "locator": "portada",
+   "text_layer": "ocr_pages",
+   "text": "Informe Técnico N* A6608"
+  },
+  "A6-COVER-TITLE": {
+   "source_id": "INGEMMET-A6608-2012-LA-RONDA-LOS-CONDORES",
+   "page": 1,
+   "printed_page_label": null,
+   "locator": "portada (verificada en la página renderizada)",
+   "text_layer": "ocr_pages",
+   "text": "Flujos de Detritos del 05/04/2012"
+  },
+  "A6-TOC-5-6": {
+   "source_id": "INGEMMET-A6608-2012-LA-RONDA-LOS-CONDORES",
+   "page": 2,
+   "printed_page_label": null,
+   "locator": "contenido",
+   "text_layer": "ocr_pages",
+   "text": "5.6 QUEBRADA DOS BARRIOS /PABLO PATRÓN"
+  },
+  "A6-P23-SANTO-DOMINGO": {
+   "source_id": "INGEMMET-A6608-2012-LA-RONDA-LOS-CONDORES",
+   "page": 22,
+   "printed_page_label": "23",
+   "locator": "5.5 Quebrada Santo Domingo, ubicación",
+   "text_layer": "ocr_pages",
+   "text": "Esta quebrada se encuentra contigua a las quebradas Dos Barrios y La Ronda (al este), La Cantuta (al oeste)."
+  },
+  "A6-P30-HEADING": {
+   "source_id": "INGEMMET-A6608-2012-LA-RONDA-LOS-CONDORES",
+   "page": 29,
+   "printed_page_label": "30",
+   "locator": "5.6, título de sección",
+   "text_layer": "ocr_pages",
+   "text": "5.6 QUEBRADA DOS BARRIOS /PABLO PATRÓN Ubicación, accesibilidad y ocupación"
+  },
+  "A6-P30-ADJACENCY": {
+   "source_id": "INGEMMET-A6608-2012-LA-RONDA-LOS-CONDORES",
+   "page": 29,
+   "printed_page_label": "30",
+   "locator": "5.6, ubicación (tal como está impreso; ver nota de inconsistencia)",
+   "text_layer": "ocr_pages",
+   "text": "contigua a la quebrada Santo Domingo (al oeste) y quebrada La Ronda e"
+  },
+  "A6-P30-ACCESS": {
+   "source_id": "INGEMMET-A6608-2012-LA-RONDA-LOS-CONDORES",
+   "page": 29,
+   "printed_page_label": "30",
+   "locator": "5.6, accesibilidad",
+   "text_layer": "ocr_pages",
+   "text": "Se accede por la margen izquierda del río Rímac desde Chosica, por el Puente Los Ángeles o por Ricardo Palma. Se encuentra frente a Moyopampa."
+  },
+  "A6-P30-FAN-BARRIOS": {
+   "source_id": "INGEMMET-A6608-2012-LA-RONDA-LOS-CONDORES",
+   "page": 29,
+   "printed_page_label": "30",
+   "locator": "5.6, ocupación del abanico",
+   "text_layer": "ocr_pages",
+   "text": "está ocupado por barrios populares: Mariscal Castilla y San Juan"
+  },
+  "A6-P30-FAN-PABLO-PATRON": {
+   "source_id": "INGEMMET-A6608-2012-LA-RONDA-LOS-CONDORES",
+   "page": 29,
+   "printed_page_label": "30",
+   "locator": "5.6, ocupación del abanico",
+   "text_layer": "ocr_pages",
+   "text": "y la parte baja de éste por la zona de Pablo Patrón y La Florida, así como un tramo del ferrocarril central."
+  },
+  "A6-P30-MOST-AFFECTED": {
+   "source_id": "INGEMMET-A6608-2012-LA-RONDA-LOS-CONDORES",
+   "page": 29,
+   "printed_page_label": "30",
+   "locator": "5.6, ocupación",
+   "text_layer": "ocr_pages",
+   "text": "La zona de Pablo patrón es la zona más afectada por las lluvias originadas el 05 de Abril."
+  },
+  "A6-P31-FLOW-TO-SECTOR": {
+   "source_id": "INGEMMET-A6608-2012-LA-RONDA-LOS-CONDORES",
+   "page": 30,
+   "printed_page_label": "31",
+   "locator": "5.6, geodinámica",
+   "text_layer": "ocr_pages",
+   "text": "llegando al sector de Pablo Patrón, ingresando a las viviendas, calles y parques de la zona"
+  },
+  "A6-P33-FIGURE-9": {
+   "source_id": "INGEMMET-A6608-2012-LA-RONDA-LOS-CONDORES",
+   "page": 32,
+   "printed_page_label": null,
+   "locator": "Figura 9 (imagen; no es geometría reproducible)",
+   "text_layer": "ocr_pages",
+   "text": "Figura 9. Imagen satelital que muestra la microcuenca de la quebrada Dos Barrios."
+  },
+  "A6-P38-LA-RONDA": {
+   "source_id": "INGEMMET-A6608-2012-LA-RONDA-LOS-CONDORES",
+   "page": 37,
+   "printed_page_label": "38",
+   "locator": "5.7 Quebrada La Ronda, ubicación",
+   "text_layer": "ocr_pages",
+   "text": "Esta quebrada colinda a las quebradas Dos Barrios, Santo Domingo y La Cantuta (al oeste), San Pedro y Huayco (al este)"
+  },
+  "A6-P43-CONCLUSION": {
+   "source_id": "INGEMMET-A6608-2012-LA-RONDA-LOS-CONDORES",
+   "page": 42,
+   "printed_page_label": "43",
+   "locator": "6. Conclusiones, punto 6",
+   "text_layer": "ocr_pages",
+   "text": "La quebrada Dos Barrios/pablo Patrón que afectó el sector de Pablo Patrón y Mariscal Castilla/San Juan, es la cuenca más pequeña de las evaluadas."
+  },
+  "RII-P7-SETTLEMENTS": {
+   "source_id": "RIIGEO-2012-HUAYCOS-CHOSICA",
+   "page": 7,
+   "printed_page_label": null,
+   "locator": "asentamientos urbanos afectados",
+   "text_layer": "poppler_layout_pages",
+   "text": "asentamientos urbanos como 9 de octubre, Señor de los Milagros, Mariscal Castilla, Pablo Patrón"
+  },
+  "RII-P9-COOPERATIVA": {
+   "source_id": "RIIGEO-2012-HUAYCOS-CHOSICA",
+   "page": 9,
+   "printed_page_label": null,
+   "locator": "afectación",
+   "text_layer": "poppler_layout_pages",
+   "text": "La Cooperativa Pablo Patrón se encuentran emplazadas en la parte baja de la quebrada"
+  },
+  "SEN-COVER-TITLE": {
+   "source_id": "SENAMHI-2020-QDAS-SANTO-DOMINGO-CANTUTA",
+   "page": 3,
+   "printed_page_label": null,
+   "locator": "portada interior",
+   "text_layer": "poppler_layout_pages",
+   "text": "Caracterización del peligro por movimientos en masa debido a lluvias extremas en las quebradas Santo Domingo y Cantuta INFORME FINAL"
+  },
+  "SEN-CITATION": {
+   "source_id": "SENAMHI-2020-QDAS-SANTO-DOMINGO-CANTUTA",
+   "page": 6,
+   "printed_page_label": null,
+   "locator": "citar como",
+   "text_layer": "poppler_layout_pages",
+   "text": "Caracterización del peligro por movimientos en masa debido a lluvias extremas en las quebradas Santo Domingo y Cantuta -Informe Final. Servicio Nacional de Meteorología e Hidrología del Perú –SENAMHI."
+  },
+  "SEN-P3-STUDY-AREA": {
+   "source_id": "SENAMHI-2020-QDAS-SANTO-DOMINGO-CANTUTA",
+   "page": 17,
+   "printed_page_label": "3",
+   "locator": "3.1.1 Ubicación geográfica del área de estudio",
+   "text_layer": "poppler_layout_pages",
+   "text": "La zona de estudio se encuentra ubicada en la parte media de la cuenca del río Rímac."
+  },
+  "SEN-P3-ADJACENCY": {
+   "source_id": "SENAMHI-2020-QDAS-SANTO-DOMINGO-CANTUTA",
+   "page": 17,
+   "printed_page_label": "3",
+   "locator": "3.1.1 Ubicación geográfica del área de estudio",
+   "text_layer": "poppler_layout_pages",
+   "text": "La quebrada Santo Domingo se encuentra contigua a las quebradas Dos Barrios y La Ronda (al este), Cantuta (al oeste)."
+  },
+  "SEN-P3-SANTO-DOMINGO-ACCESS": {
+   "source_id": "SENAMHI-2020-QDAS-SANTO-DOMINGO-CANTUTA",
+   "page": 17,
+   "printed_page_label": "3",
+   "locator": "3.1.1, sobre la quebrada Santo Domingo",
+   "text_layer": "poppler_layout_pages",
+   "text": "Se accede por la margen izquierda del río Rímac, directamente desde Chosica o también desde el ingreso por Puente Los Ángeles. Se encuentra frente a la localidad de Chosica."
+  },
+  "SEN-P4-FIGURE-1": {
+   "source_id": "SENAMHI-2020-QDAS-SANTO-DOMINGO-CANTUTA",
+   "page": 18,
+   "printed_page_label": "4",
+   "locator": "Figura 1 (la figura no rotula Dos Barrios; revisado en la página renderizada)",
+   "text_layer": "poppler_layout_pages",
+   "text": "Figura 1. Ubicación de la quebrada Santo Domingo y Cantuta que drenan hacia el río Rímac en la localidad de Chosica."
+  },
+  "TE-COVER-TITLE": {
+   "source_id": "VILLACORTA-2018-UPM-THESIS-INGEMMET-TE0306",
+   "page": 1,
+   "printed_page_label": null,
+   "locator": "portada",
+   "text_layer": "poppler_layout_pages",
+   "text": "EVOLUCIÓN GEOMORFOLÓGICA DEL ABANICO ALUVIAL DE LIMA Y SUS RELACIONES CON LA PELIGROSIDAD POR INUNDACIONES Tesis Doctoral"
+  },
+  "TE-COVER-INSTITUTION": {
+   "source_id": "VILLACORTA-2018-UPM-THESIS-INGEMMET-TE0306",
+   "page": 1,
+   "printed_page_label": null,
+   "locator": "portada",
+   "text_layer": "poppler_layout_pages",
+   "text": "Universidad Politécnica de Madrid"
+  },
+  "TE-COVER-DATE": {
+   "source_id": "VILLACORTA-2018-UPM-THESIS-INGEMMET-TE0306",
+   "page": 1,
+   "printed_page_label": null,
+   "locator": "portada",
+   "text_layer": "poppler_layout_pages",
+   "text": "Noviembre de 2018"
+  },
+  "TE-P83-TABLE-2012": {
+   "source_id": "VILLACORTA-2018-UPM-THESIS-INGEMMET-TE0306",
+   "page": 86,
+   "printed_page_label": "83",
+   "locator": "Figura 22, fila 2012 (tabla en columnas; ver página renderizada)",
+   "text_layer": "poppler_layout_pages",
+   "text": "Se activaron el río Huaycoloro y las quebradas La Ronda, Dos Barrios, Santo"
+  },
+  "TE-P83-FIGURE-22": {
+   "source_id": "VILLACORTA-2018-UPM-THESIS-INGEMMET-TE0306",
+   "page": 86,
+   "printed_page_label": "83",
+   "locator": "Figura 22, leyenda",
+   "text_layer": "poppler_layout_pages",
+   "text": "Figura 22. Gráfico que representa los eventos hidrometeorológicos registrados por el INGEMMET en la región de Lima Metropolitana."
+  },
+  "TE-P85-2012-LIST": {
+   "source_id": "VILLACORTA-2018-UPM-THESIS-INGEMMET-TE0306",
+   "page": 88,
+   "printed_page_label": "85",
+   "locator": "3.1.4 Flujos de detritos de Chaclacayo y Chosica en el 2012",
+   "text_layer": "poppler_layout_pages",
+   "text": "En abril del 2012 se produjeron flujos en las quebradas La Ronda, Dos Barrios, Santo Domingo, La Cantuta, California, Coricancha y Los Cóndores; de la margen izquierda del río Rímac."
+  },
+  "TE-P85-CITATION": {
+   "source_id": "VILLACORTA-2018-UPM-THESIS-INGEMMET-TE0306",
+   "page": 88,
+   "printed_page_label": "85",
+   "locator": "3.1.4, fuente citada",
+   "text_layer": "poppler_layout_pages",
+   "text": "Producto de ello se contabilizaron 26 000 damnificados (Zavala et al., 2012)."
+  },
+  "RII-P7-LEFT-BANK-LIST": {
+   "source_id": "RIIGEO-2012-HUAYCOS-CHOSICA",
+   "page": 7,
+   "printed_page_label": null,
+   "locator": "caracterización de los huaycos en la margen izquierda",
+   "text_layer": "poppler_layout_pages",
+   "text": "En la margen izquierda, cercana a la zona urbana de Chosica están las siguientes quebradas: La Can- tuta, Santo Domingo, Mariscal Castilla, La Ronda y California"
+  },
+  "IGP-P16-LA-RONDA-DISTRICT": {
+   "source_id": "IGP-2020-SIGRID-13867-QUIRO-LA-RONDA",
+   "page": 22,
+   "printed_page_label": "16",
+   "locator": "6.1.1 Quebrada La Ronda",
+   "text_layer": "poppler_layout_pages",
+   "text": "Se ubica en el distrito de Ricardo Palma"
+  }
+ },
+ "candidate": {
+  "inventory_id": "lima_district_unknown_dos_barrios",
+  "documentary_name": "Dos Barrios",
+  "labels_in_sources": [
+   "QUEBRADA DOS BARRIOS /PABLO PATRÓN (A6608 §5.6 heading)",
+   "quebrada Dos Barrios",
+   "quebradas Dos Barrios",
+   "quebradas La Ronda, Dos Barrios, Santo Domingo"
+  ],
+  "classification": {
+   "identity_state": "IDENTITY_ONLY",
+   "geometry_state": "GEOMETRY_PENDING",
+   "outlet_state": "OUTLET_PENDING",
+   "event_state": "EVENT_LEAD_UNVERIFIED"
+  },
+  "classification_note": "identity_state describes the identity evidence only and stays IDENTITY_ONLY; the event lead is recorded separately (event_state) and does not change the identity, geometry, outlet or map status.",
+  "identity_basis": {
+   "status": "DOCUMENTARY_IDENTITY_ATTESTED",
+   "attestations": [
+    {
+     "source_id": "INGEMMET-A6608-2012-LA-RONDA-LOS-CONDORES",
+     "quote_ids": [
+      "A6-TOC-5-6",
+      "A6-P30-HEADING",
+      "A6-P33-FIGURE-9",
+      "A6-P43-CONCLUSION"
+     ],
+     "reading": "INGEMMET A6608 devotes section 5.6 to the 'Quebrada Dos Barrios / Pablo Patrón' and names the microcuenca of the quebrada Dos Barrios (Figura 9)."
+    },
+    {
+     "source_id": "SENAMHI-2020-QDAS-SANTO-DOMINGO-CANTUTA",
+     "quote_ids": [
+      "SEN-P3-ADJACENCY"
+     ],
+     "reading": "SENAMHI names 'Dos Barrios' among the quebradas contiguous to the quebrada Santo Domingo."
+    },
+    {
+     "source_id": "VILLACORTA-2018-UPM-THESIS-INGEMMET-TE0306",
+     "quote_ids": [
+      "TE-P85-2012-LIST",
+      "TE-P83-TABLE-2012"
+     ],
+     "reading": "The thesis lists 'Dos Barrios' among left-bank Rímac quebradas with flows in April 2012 (list level)."
+    }
+   ],
+   "independence": "INGEMMET A6608 (2012) is the primary source. The SENAMHI 2020 adjacency sentence reproduces the A6608 §5.5 sentence almost word for word (quote A6-P23-SANTO-DOMINGO), and the 2018 thesis cites 'Zavala et al., 2012'; neither is independent of A6608 for Dos Barrios.",
+   "sufficient_for": "Documentary identity. Not sufficient for hydrologic distinctness, geometry or confluence; the event lead rests on A6608 alone (event_leads)."
+  },
+  "department": "Lima",
+  "province": null,
+  "district": null,
+  "administrative_basis": "Not stated for Dos Barrios by any source read. SENAMHI places the study area in the middle Rímac basin at Chosica; the neighbouring quebrada La Ronda is recorded in Lurigancho-Chosica by the national audit and in Ricardo Palma by IGP 2020 (quote IGP-P16-LA-RONDA-DISTRICT), so no district is inferred from adjacency.",
+  "documentary_location": [
+   {
+    "quote_id": "A6-P30-ACCESS",
+    "reading": "Reached from the left bank of the río Rímac (from Chosica, Puente Los Ángeles or Ricardo Palma); 'frente a Moyopampa'. Not a district statement."
+   },
+   {
+    "quote_id": "A6-P30-ADJACENCY",
+    "reading": "A6608 §5.6 prints both Santo Domingo and La Ronda as '(al oeste)'; §5.5 (A6-P23-SANTO-DOMINGO) and §5.7 (A6-P38-LA-RONDA) place Dos Barrios east of Santo Domingo and west of La Ronda. The inconsistency is recorded, not resolved; no topology is derived."
+   },
+   {
+    "quote_id": "SEN-P3-ADJACENCY",
+    "reading": "Contiguous to the quebrada Santo Domingo; '(al este)' follows 'Dos Barrios y La Ronda' and its scope (both or only La Ronda) is not adjudicated."
+   },
+   {
+    "quote_id": "TE-P85-2012-LIST",
+    "reading": "Named in a list of quebradas 'de la margen izquierda del río Rímac' (list-level statement)."
+   }
+  ],
+  "receiver_relation": "UNKNOWN_NOT_ASSUMED",
+  "exact_confluence": null,
+  "geometry_status": "GEOMETRY_PENDING_NONE_REPRODUCIBLE",
+  "outlet_status": "OUTLET_PENDING_NONE_REPRODUCIBLE",
+  "map_publishable": false,
+  "map_eligible": false,
+  "historical_period_mentions": [
+   {
+    "period": "2012-04",
+    "source_id": "VILLACORTA-2018-UPM-THESIS-INGEMMET-TE0306",
+    "quote_ids": [
+     "TE-P85-2012-LIST",
+     "TE-P83-TABLE-2012"
+    ],
+    "attribution_scale": "NAMED_IN_LIST_OF_SEVEN_QUEBRADAS_ACADEMIC_THESIS",
+    "cited_primary_source": "Zavala et al., 2012 = INGEMMET A6608 (now archived)",
+    "event_lead_eligible": false,
+    "usable_as_confirmed_unit_event": false,
+    "note": "Not an event record for this unit. The contemporary RIIGEO 2012 article on the 5 April 2012 flows lists the left-bank quebradas La Cantuta, Santo Domingo, Mariscal Castilla, La Ronda and California and does not name Dos Barrios (quote RII-P7-LEFT-BANK-LIST)."
+   }
+  ],
+  "event_leads": [
+   {
+    "event_date": "2012-04-05",
+    "source_id": "INGEMMET-A6608-2012-LA-RONDA-LOS-CONDORES",
+    "section": "5.6 Quebrada Dos Barrios / Pablo Patrón (pp. 30-31) and 6. Conclusiones (p. 43)",
+    "quote_ids": [
+     "A6-P30-MOST-AFFECTED",
+     "A6-P31-FLOW-TO-SECTOR",
+     "A6-P43-CONCLUSION"
+    ],
+    "state": "EVENT_LEAD_UNVERIFIED",
+    "attribution_scale": "NAMED_PER_UNIT_SECTION_PRIMARY_INSTITUTIONAL_REPORT",
+    "event_lead_eligible": true,
+    "source_text_verified": false,
+    "verification": null,
+    "usable_as_confirmed_unit_event": false,
+    "event_ledger_entry_allowed": false,
+    "promotion_to_event_evidence_allowed": false,
+    "authorisation": "Independent QA (ChatGPT), 2026-10-09: authorised as EVENT_LEAD_UNVERIFIED only; not a validated or operational event.",
+    "affected_sector_in_source": "Pablo Patrón (sector on the lower fan; not an alias of the channel)",
+    "date_warning": "A6608 cover prints 'Octubre 2011' while its title and §5.6 date the flow 05/04/2012 and the institutional record dates the report 2012; the event date is taken from the text, the report date stays flagged.",
+    "not_derived": "No rainfall amount, discharge, volume, duration, travel time, confluence or footprint is derived from this lead."
+   }
+  ],
+  "events_attributed": []
+ },
+ "relations_recorded_not_adopted": [
+  {
+   "labels": [
+    "Dos Barrios",
+    "Pablo Patrón (sector)"
+   ],
+   "status": "PABLO_PATRON_IS_A_SECTOR_ON_THE_LOWER_FAN_PER_A6608",
+   "channel_equivalence": "NOT_ASSERTED_BY_SOURCE",
+   "quote_ids": [
+    "A6-P30-FAN-PABLO-PATRON",
+    "A6-P30-MOST-AFFECTED",
+    "A6-P31-FLOW-TO-SECTOR",
+    "A6-P43-CONCLUSION",
+    "RII-P7-SETTLEMENTS",
+    "RII-P9-COOPERATIVA"
+   ],
+   "note": "A6608 calls Pablo Patrón a 'zona'/'sector' in the lower part of the old fan of the quebrada Dos Barrios, reached by its 5 April 2012 flow; RIIGEO 2012 names it as a settlement (asentamiento urbano, Cooperativa). The '/' in the §5.6 heading joins the channel and the affected sector, as the same report joins two barrios with '/' ('Mariscal Castilla/San Juan'). A '/' is not read as hydrologic equivalence; Pablo Patrón is not recorded as a channel name."
+  },
+  {
+   "labels": [
+    "Dos Barrios",
+    "Pablo Patrón/Dos Amigos"
+   ],
+   "inventory_ids": [
+    "lima_district_unknown_dos_barrios",
+    "lima_lurigancho_pablo_patron_dos_amigos"
+   ],
+   "status": "UNRESOLVED",
+   "quote_ids": [
+    "A6-P30-FAN-PABLO-PATRON"
+   ],
+   "note": "The audit row 'Pablo Patrón/Dos Amigos' comes from a PREDES booklet (NGO). A6608 places the Pablo Patrón sector on the Dos Barrios fan, which makes a relation plausible, but 'Dos Amigos' appears in neither A6608 nor RIIGEO 2012 and no source equates the PREDES label with the quebrada Dos Barrios. Not merged."
+  },
+  {
+   "labels": [
+    "Dos Barrios",
+    "Mariscal Castilla"
+   ],
+   "inventory_ids": [
+    "lima_district_unknown_dos_barrios",
+    "lima_lurigancho_mariscal_castilla"
+   ],
+   "status": "UNRESOLVED",
+   "quote_ids": [
+    "A6-P30-FAN-BARRIOS",
+    "RII-P7-LEFT-BANK-LIST"
+   ],
+   "note": "A6608 names Mariscal Castilla as a barrio on the old fan of the quebrada Dos Barrios; RIIGEO 2012 lists a 'quebrada' Mariscal Castilla among the left-bank quebradas and does not name Dos Barrios. Whether RIIGEO's label designates the same channel is not stated by any source. Not merged."
+  },
+  {
+   "labels": [
+    "Dos Barrios",
+    "Santo Domingo",
+    "La Ronda"
+   ],
+   "status": "ADJACENCY_STATED_NOT_TOPOLOGY",
+   "note": "Adjacency stated in text only; no shared divide, confluence or catchment boundary is derived."
+  }
+ ],
+ "documents_checked_without_the_label": [
+  {
+   "source_id": "RIIGEO-2012-HUAYCOS-CHOSICA",
+   "note": "Contemporary account of the 5 April 2012 flows; Dos Barrios not named (it names the Pablo Patrón and Mariscal Castilla settlements)."
+  },
+  {
+   "source_id": "IGP-2020-SIGRID-13867-QUIRO-LA-RONDA",
+   "note": "IGP 2020 report on La Ronda and other quebradas; Dos Barrios not named."
+  },
+  {
+   "source_id": "ANA-SIGRID-19950-FAJA-SANTO-DOMINGO",
+   "note": "ANA faja marginal study of Santo Domingo; Dos Barrios not named."
+  },
+  {
+   "rule": "Absence from a document is not evidence that the quebrada does not exist."
+  }
+ ],
+ "blockers": [
+  "District and province: not stated for Dos Barrios by any source read.",
+  "Geometry, confluence and outlet: none reproducible; the SENAMHI figure does not draw or label Dos Barrios.",
+  "A6608 is a scanned PDF: its quotes rest on a Spanish OCR layer plus visual reading; an institutionally issued text copy would remove OCR risk.",
+  "A6608 cover date ('Octubre 2011') is inconsistent with the 05/04/2012 event in its title; the institutional record dates it 2012.",
+  "The 5 April 2012 lead (A6608) is EVENT_LEAD_UNVERIFIED only: becoming EVENT_EVIDENCE needs source_text_verified=true with a verification record after independent re-reading; no event-ledger entry.",
+  "SENAMHI copy is owner-supplied; byte identity with the host copy is not verified by the agent.",
+  "Relations to the PREDES row 'Pablo Patrón/Dos Amigos' and to the RIIGEO label 'Mariscal Castilla' remain UNRESOLVED; 'Dos Amigos' is absent from A6608 and RIIGEO 2012."
+ ],
+ "map_updates": {
+  "new_geometries_published": 0,
+  "new_outlets_published": 0,
+  "new_nodes_published": 0,
+  "new_event_ledger_entries": 0
+ }
+}

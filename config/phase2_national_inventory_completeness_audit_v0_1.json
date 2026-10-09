@@ -36,6 +36,11 @@
     "revision": "r2",
     "date": "2026-10-07",
     "note": "After independent QA on r1: dated event statements read through automated extraction are EVENT_LEAD_UNVERIFIED, not EVENT_EVIDENCE; source_text_verified added to every source and EVENT item; the validator is exercised by a pytest module in the PR gate. No row, source, geometry or priority was added or removed."
+   },
+   {
+    "revision": "r5",
+    "date": "2026-10-09",
+    "note": "Rímac (PR #363): Dos Barrios registered as IDENTITY_ONLY (P2) from INGEMMET A6608 (2012, §5.6 'Quebrada Dos Barrios / Pablo Patrón'), with SENAMHI 2020 and a 2018 doctoral thesis that repeat it, all archived with SHA-256; the earlier 'no source found' result is kept and marked superseded. A6608 treats Pablo Patrón as a sector on the fan, not a channel name; the PREDES row 'Pablo Patrón/Dos Amigos' and the RIIGEO label 'Mariscal Castilla' stay UNRESOLVED. Event lead 2012-04-05 (A6608 §5.6) recorded as EVENT_LEAD_UNVERIFIED after independent QA (priority P1 by definition); not EVENT_EVIDENCE, not in any event ledger. District not stated. No geometry, outlet, merge or map change. Registry: config/phase2_rimac_dos_barrios_identity_v0_1.json. Labels r3 and r4 are used by PRs #365 and #366, not yet in main."
    }
   ],
   "clean_room_notice": "This file contains outcome-bearing statements about the 2015-03-23 Chosica event and about named Chosica quebradas. It must not be read by the sealed Chosica 2015 clean-room predictor jobs (branches agent/chosica-2015-*, PRs #146, #149, #150, #151)."
@@ -118,9 +123,9 @@
   "map_eligible": "false on every row"
  },
  "summary": {
-  "candidate_rows": 400,
+  "candidate_rows": 401,
   "by_corridor": {
-   "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA": 44,
+   "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA": 45,
    "PISCO_ICA": 48,
    "SANTA_CASMA": 16,
    "TUMBES_ZORRITOS": 68,
@@ -132,13 +137,13 @@
    "PIURA_INTERIOR": 38
   },
   "by_suggested_state": {
-   "EVENT_LEAD_UNVERIFIED": 28,
+   "EVENT_LEAD_UNVERIFIED": 29,
    "IDENTITY_ONLY": 349,
    "GEOMETRY_PENDING": 20,
    "GEOMETRY_REPRODUCIBLE": 3
   },
   "by_irfen_presence": {
-   "NOT_FOUND_IN_REPO": 321,
+   "NOT_FOUND_IN_REPO": 322,
    "MAIN_REGISTERED_UNIT": 13,
    "MAIN_NAME_CONTEXT_ONLY": 12,
    "MAIN_LABEL_MENTION_UNCONFIRMED": 24,
@@ -148,14 +153,14 @@
    "NOT_EVALUATED_NO_DISCRIMINATING_CONTEXT": 3
   },
   "by_priority": {
-   "P1": 23,
+   "P1": 24,
    "P2": 17,
    "EXISTING": 13,
    "P3": 291,
    "P4": 56
   },
   "event_evidence_rows": 0,
-  "event_lead_unverified_rows": 41,
+  "event_lead_unverified_rows": 42,
   "sources_with_verified_text": 0,
   "map_eligible_rows": 0,
   "new_geometries": 0,
@@ -492,6 +497,48 @@
    "access_note": "Title only. Concerns rock instability in a zone called Rosario; it does not establish a quebrada identity.",
    "source_text_verified": false,
    "verification_record": null
+  },
+  "INGEMMET-A6608-2012-LA-RONDA-LOS-CONDORES": {
+   "institution": "INGEMMET (Informe Técnico N.º A6608; Zavala, Vílchez y Núñez), via CENEPRED SIGRID documento 401",
+   "title": "Flujos de detritos del 05/04/2012 entre las quebradas La Ronda y Los Cóndores, margen izquierda del río Rímac. Características geodinámicas y evaluación de peligro",
+   "date": "2012 (cover prints 'Octubre 2011', inconsistent with the 05/04/2012 event in the title)",
+   "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/401/descargar",
+   "alt_identifiers": [
+    "data/phase2/source_archive/rimac_dos_barrios/raw/ingemmet-a6608-sigrid-401.pdf (sha256 b710247572a7a83efed53be0f0f565cc4971eb542f43f2881cbefc7bba0b5927)"
+   ],
+   "source_class": "PRIMARY_INSTITUTIONAL",
+   "access": "ARCHIVED_BYTES_TEXT_LAYER_QUOTES_TESTED",
+   "access_note": "Archived in data/phase2/source_archive/rimac_dos_barrios/ (outside site/) with SHA-256 b710247572a7a83efed53be0f0f565cc4971eb542f43f2881cbefc7bba0b5927; quotes re-checked by tests/test_phase2_rimac_corridor_master_documentary_inventory.py (config/phase2_rimac_dos_barrios_identity_v0_1.json). Scanned PDF without a text layer: quotes are taken from the archived Spanish OCR layer (tesseract spa) and each was also read on the rendered page. Captured on the runner from https://sigrid.cenepred.gob.pe/sigridv3/documento/401/descargar (served from sigrid.cenepred.gob.pe/docs/PARA PUBLICAR/INGEMMET/...); the institutional handle hdl.handle.net/20.500.12544/1580 was not opened by the agent. This is the 'Zavala et al., 2012' cited by the 2018 thesis. source_text_verified stays false: promotion is left to independent QA.",
+   "source_text_verified": false,
+   "verification_record": null
+  },
+  "SENAMHI-2020-QDAS-SANTO-DOMINGO-CANTUTA": {
+   "institution": "Servicio Nacional de Meteorología e Hidrología del Perú (SENAMHI), Dirección de Hidrología",
+   "title": "Caracterización del peligro por movimientos en masa debido a lluvias extremas en las quebradas Santo Domingo y Cantuta. Informe final (Asencios, Millán, Sabino Rojas y Breña)",
+   "date": "2020-05",
+   "url": "https://www.senamhi.gob.pe/load/file/01401SENA-88.pdf",
+   "alt_identifiers": [
+    "data/phase2/source_archive/rimac_dos_barrios/owner_supplied/senamhi-01401sena-88.pdf (sha256 f15ee79bb556824b292d6347615cf50f84eefc24f59758da9daf38c28c3400a8)"
+   ],
+   "source_class": "PRIMARY_INSTITUTIONAL",
+   "access": "ARCHIVED_BYTES_TEXT_LAYER_QUOTES_TESTED",
+   "access_note": "Archived in data/phase2/source_archive/rimac_dos_barrios/ (outside site/) with SHA-256 f15ee79bb556824b292d6347615cf50f84eefc24f59758da9daf38c28c3400a8; quotes re-checked by tests/test_phase2_rimac_corridor_master_documentary_inventory.py (config/phase2_rimac_dos_barrios_identity_v0_1.json). Owner-supplied copy: the SENAMHI host declined the agent's web tools, so the repository owner downloaded the file in a browser (stated URL https://www.senamhi.gob.pe/load/file/01401SENA-88.pdf). Byte identity with the host copy is not verified by the agent. source_text_verified stays false: promotion is left to independent QA.",
+   "source_text_verified": false,
+   "verification_record": null
+  },
+  "VILLACORTA-2018-UPM-THESIS-INGEMMET-TE0306": {
+   "institution": "Universidad Politécnica de Madrid (doctoral thesis of S. P. Villacorta Chambi); PDF hosted by the INGEMMET biblioteca as TE0306",
+   "title": "Evolución geomorfológica del abanico aluvial de Lima y sus relaciones con la peligrosidad por inundaciones (Tesis Doctoral)",
+   "date": "2018-11",
+   "url": "https://app.ingemmet.gob.pe/biblioteca/pdf/TE0306.pdf",
+   "alt_identifiers": [
+    "data/phase2/source_archive/rimac_dos_barrios/raw/ingemmet-te0306.pdf (sha256 addab6d18a40ea6277e723f5477bb898223bec5280606ebd7ad4b7d79f8cea29)"
+   ],
+   "source_class": "ACADEMIC_THESIS_HOSTED_BY_INSTITUTION",
+   "access": "ARCHIVED_BYTES_TEXT_LAYER_QUOTES_TESTED",
+   "access_note": "Archived in data/phase2/source_archive/rimac_dos_barrios/ (outside site/) with SHA-256 addab6d18a40ea6277e723f5477bb898223bec5280606ebd7ad4b7d79f8cea29; quotes re-checked by tests/test_phase2_rimac_corridor_master_documentary_inventory.py (config/phase2_rimac_dos_barrios_identity_v0_1.json). PR #363 had described TE0306 as an INGEMMET 2012 report; the archived file is a 2018 UPM doctoral thesis. Its 2012 statements cite 'Zavala et al., 2012', which was not read. source_text_verified stays false: promotion is left to independent QA.",
+   "source_text_verified": false,
+   "verification_record": null
   }
  },
  "sweep_coverage": {
@@ -539,7 +586,12 @@
    "IGP huaico monitoring network station list",
    "Arequipa, Moquegua, Tacna, La Libertad (beyond 9 map titles), Lima norte beyond SIGRID titles",
    "Municipal PPRRD of Chaclacayo, Ricardo Palma, Santa Eulalia"
-  ]
+  ],
+  "rimac_dos_barrios_followup_2026_10_09": {
+   "method": "Sources archived with SHA-256 in data/phase2/source_archive/rimac_dos_barrios/ (runner capture; SENAMHI owner-supplied copy); quotes checked on the archived text layer and rendered pages.",
+   "rows_covered": "Dos Barrios (INGEMMET A6608 §5.6 pp. 30-31 and conclusions p. 43; SENAMHI 2020 p. 3; doctoral thesis 2018 pp. 83 and 85).",
+   "checked_without_the_label": "RIIGEO 2012 (huaycos del 5 de abril de 2012), IGP 2020 (SIGRID 13867), ANA faja Santo Domingo (SIGRID 19950)."
+  }
  },
  "extraction_conflicts": [
   {
@@ -576,7 +628,13 @@
    "requested_name": "Dos Barrios",
    "corridor": "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA",
    "result": "NO_SOURCE_FOUND_IN_THIS_SWEEP",
-   "note": "No public-institution document, NGO booklet or press item naming a 'quebrada Dos Barrios' in the Rímac corridor was found. Not in main, open PRs or branches. Absence of a source here is not evidence that the unit does not exist."
+   "note": "No public-institution document, NGO booklet or press item naming a 'quebrada Dos Barrios' in the Rímac corridor was found. Not in main, open PRs or branches. Absence of a source here is not evidence that the unit does not exist.",
+   "superseded_in_revision": "r5",
+   "superseded_by": {
+    "inventory_id": "lima_district_unknown_dos_barrios",
+    "registry": "config/phase2_rimac_dos_barrios_identity_v0_1.json",
+    "note": "Sources located and archived after the sweep (INGEMMET A6608 2012; SENAMHI 2020; doctoral thesis 2018 hosted by INGEMMET). The sweep result above is kept as a historical observation."
+   }
   },
   {
    "requested_name": "Laderas Virgen del Rosario",
@@ -853,6 +911,38 @@
     "main_status": "not recorded",
     "status": "PENDING_ADJUDICATION",
     "needed": "D.S. 181-2023-EF annex."
+   },
+   {
+    "labels": [
+     "Dos Barrios",
+     "Pablo Patrón/Dos Amigos"
+    ],
+    "inventory_ids": [
+     "lima_district_unknown_dos_barrios",
+     "lima_lurigancho_pablo_patron_dos_amigos"
+    ],
+    "documentary_basis": "INGEMMET A6608 §5.6 places the Pablo Patrón sector on the lower fan of the quebrada Dos Barrios; the row 'Pablo Patrón/Dos Amigos' comes from a PREDES booklet. 'Dos Amigos' appears in neither A6608 nor RIIGEO 2012, and no source equates the PREDES label with the quebrada Dos Barrios.",
+    "main_status": "not recorded",
+    "status": "PENDING_ADJUDICATION",
+    "equivalence": "UNRESOLVED",
+    "needed": "A source that states what 'Dos Amigos' designates and whether the PREDES row is the quebrada Dos Barrios; each keeps its own row.",
+    "added_in_revision": "r5"
+   },
+   {
+    "labels": [
+     "Dos Barrios",
+     "Mariscal Castilla"
+    ],
+    "inventory_ids": [
+     "lima_district_unknown_dos_barrios",
+     "lima_lurigancho_mariscal_castilla"
+    ],
+    "documentary_basis": "INGEMMET A6608 §5.6 names Mariscal Castilla as a barrio on the old fan of the quebrada Dos Barrios; RIIGEO 2012 lists a quebrada 'Mariscal Castilla' among the left-bank quebradas. No source states that the RIIGEO label designates the same channel.",
+    "main_status": "not recorded",
+    "status": "PENDING_ADJUDICATION",
+    "equivalence": "UNRESOLVED",
+    "needed": "A source or georeferenced map that places the quebrada 'Mariscal Castilla' of RIIGEO 2012 relative to the quebrada Dos Barrios.",
+    "added_in_revision": "r5"
    }
   ],
   "same_label_groups_not_merged": [
@@ -1440,7 +1530,8 @@
    "piura_san_miguel_el_faique_cerro_blanco",
    "piura_san_miguel_el_faique_el_algarrobo",
    "piura_san_miguel_el_faique_el_ceibo",
-   "piura_tambogrande_paccha"
+   "piura_tambogrande_paccha",
+   "lima_district_unknown_dos_barrios"
   ],
   "geometry_pending": [
    "lima_chaclacayo_cusipata",
@@ -1487,7 +1578,8 @@
    "lima_huarochiri_matucana_chucumayo",
    "lima_lurigancho_castilla_faja",
    "lima_ricardo_palma_cupiche",
-   "lima_huarochiri_surco_cuchimachay"
+   "lima_huarochiri_surco_cuchimachay",
+   "lima_district_unknown_dos_barrios"
   ],
   "priority_p2": [
    "lima_huarochiri_callahuanca",
@@ -1554,6 +1646,7 @@
   {"inventory_id": "lima_santa_eulalia_julio_cesar_tello", "row_role": "CANDIDATE_UNIT", "documentary_name": "Julio César Tello", "name_variants_observed": [], "department": "Lima", "province": "Huarochirí", "district": "Santa Eulalia", "corridor": "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS", "detail": "Mapa de poblaciones vulnerables – quebrada Julio César Tello, distrito Santa Eulalia", "sigrid_id": 5770, "extraction_basis": "SIGRID_SERVER_FILENAME", "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/5770"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P2", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
   {"inventory_id": "lima_santa_eulalia_shingolay", "row_role": "CANDIDATE_UNIT", "documentary_name": "Shingolay", "name_variants_observed": [{"label": "Chingolay", "source_id": "IRFEN-REPO"}], "department": "Lima", "province": "Huarochirí", "district": "Santa Eulalia", "corridor": "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA", "evidence_types": ["GEOMETRY"], "evidence": [{"evidence_type": "GEOMETRY", "source_id": "IRFEN-REPO", "detail": "REPRODUCIBLE_REVIEW_ONLY_LOCAL_GEOMETRY already registered in config/phase2_local_activation_hierarchy_v0_1.json"}], "reproducible_geometry": {"exists": true, "main": "REPRODUCIBLE_REVIEW_ONLY_LOCAL_GEOMETRY (existing; unchanged by this audit)", "legacy_or_branch": "n/a"}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": {"documented_statement": "Not asserted", "status": "DOCUMENTED_STATEMENT_NOT_A_REPRODUCED_NODE"}, "suggested_state": "GEOMETRY_REPRODUCIBLE", "state_flags": ["GEOMETRY_REPRODUCIBLE", "OUTLET_PENDING"], "irfen_presence": {"status": "MAIN_REGISTERED_UNIT", "match_tier": "CURATED_PATTERN", "main_unit_id": "shingolay", "main_paths_sample": ["config/phase2_candidate_inventory_v0_1.json", "config/phase2_candidate_inventory_v0_2.json", "config/phase2_expansion_scope.json", "config/phase2_local_activation_hierarchy_v0_1.json"], "main_path_count": 30, "branches_with_additional_mentions": {"agent/add-santa-eulalia-rimac-research": ["config/phase2_candidate_inventory_v0_1.json", "config/phase2_expansion_scope.json", "docs/PHASE2_EXPANSION_STRATEGY.md"], "agent/cashahuacra-2015-research-closeout-v0.1": ["config/phase2_candidate_inventory_v0_1.json", "config/phase2_candidate_inventory_v0_2.json", "config/phase2_expansion_scope.json"], "agent/cashahuacra-2015-research-closeout-v0.2": ["tests/test_map_layer_catalog.py"], "agent/casma-official-vector-lineage-v0-1": ["config/phase2_spatial_observation_contracts.schema.json", "site/data/phase2/subunit_rainfall_evidence_v0_1.json", "tests/test_map_layer_catalog.py"], "agent/catacaos-capacity-evidence-1705": ["config/phase2_candidate_inventory_v0_1.json"], "agent/chancay-chongoyape-2021-2026-research-closeout-v0.1": ["site/data/validation/phase2_master_state_v08.json"]}, "branch_count": 108, "open_prs_with_additional_mentions": [136, 213, 326, 358]}, "priority": "EXISTING", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
   {"inventory_id": "lima_huarochiri_surco_cuchimachay", "row_role": "CANDIDATE_UNIT", "documentary_name": "Cuchimachay", "name_variants_observed": [], "department": "Lima", "province": "Huarochirí", "district": "Surco", "corridor": "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA", "evidence_types": ["FAJA"], "evidence": [{"evidence_type": "FAJA", "source_id": "ANA-FAJA-RD-SIGRID", "detail": "SIGRID record title: 'Resolución Directoral N° 1042-2025-ANA-AAA.CF: Delimitación de faja marginal de la quebrada Cuchimachay, ubicada en el distrito de Surco, provincia de Huarochirí'", "sigrid_id": 19619, "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/19619"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "GEOMETRY_PENDING", "state_flags": ["GEOMETRY_PENDING", "OUTLET_PENDING"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P1", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
+  {"inventory_id": "lima_district_unknown_dos_barrios", "row_role": "CANDIDATE_UNIT", "documentary_name": "Dos Barrios", "feature_class_as_named": "quebrada", "name_variants_observed": [], "department": "Lima", "province": null, "district": null, "corridor": "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA", "location_note": "INGEMMET A6608 (2012) §5.6 'Quebrada Dos Barrios / Pablo Patrón': reached from the left bank of the río Rímac, 'frente a Moyopampa'; Pablo Patrón is a sector on its lower fan, not a channel name. SENAMHI 2020 and the 2018 thesis repeat A6608. District not stated; not inferred.", "evidence_types": ["EVENT", "IDENTITY"], "evidence": [{"evidence_type": "IDENTITY", "source_id": "INGEMMET-A6608-2012-LA-RONDA-LOS-CONDORES", "detail": "INGEMMET A6608 §5.6 (p. 30): 'QUEBRADA DOS BARRIOS /PABLO PATRÓN'; Figura 9 names the microcuenca of the quebrada Dos Barrios. Pablo Patrón is a sector on its fan, not an alias", "label_in_source": "QUEBRADA DOS BARRIOS /PABLO PATRÓN", "page": 29, "quote_id": "A6-P30-HEADING"}, {"evidence_type": "EVENT", "source_id": "INGEMMET-A6608-2012-LA-RONDA-LOS-CONDORES", "detail": "INGEMMET A6608 §5.6 (pp. 30-31) and conclusions (p. 43): debris and mud flow of the quebrada Dos Barrios on 05/04/2012 reaching the Pablo Patrón sector. EVENT_LEAD_UNVERIFIED authorised by independent QA (2026-10-09); not a validated or operational event; no event-ledger entry. Report date warning: cover 'Octubre 2011' vs event 05/04/2012 and catalogue 2012", "event_dates": ["2012-04-05"], "attribution_scale": "NAMED_PER_UNIT_SECTION_PRIMARY_INSTITUTIONAL_REPORT", "event_lead_eligible": true, "source_text_verified": false, "verification": null, "page": 29, "quote_id": "A6-P30-MOST-AFFECTED"}, {"evidence_type": "IDENTITY", "source_id": "SENAMHI-2020-QDAS-SANTO-DOMINGO-CANTUTA", "detail": "SENAMHI 2020 p. 3: 'La quebrada Santo Domingo se encuentra contigua a las quebradas Dos Barrios y La Ronda (al este)'", "label_in_source": "quebradas Dos Barrios", "page": 17, "quote_id": "SEN-P3-ADJACENCY"}, {"evidence_type": "IDENTITY", "source_id": "VILLACORTA-2018-UPM-THESIS-INGEMMET-TE0306", "detail": "Doctoral thesis 2018 p. 85: listed among left-bank Rímac quebradas with flows in April 2012 (list level; academic source, not an event record for this unit)", "label_in_source": "quebradas La Ronda, Dos Barrios, Santo Domingo", "page": 88, "quote_id": "TE-P85-2012-LIST"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "EVENT_LEAD_UNVERIFIED", "state_flags": ["EVENT_LEAD_UNVERIFIED"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P1", "priority_note": "P1 by the audit definition (Carretera Central unit not registered in main, with an institutional event lead, unverified).", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": ["2012-04-05"], "added_in_revision": "r5"},
   {"inventory_id": "ica_alto_laran_huachinga", "row_role": "CANDIDATE_UNIT", "documentary_name": "huachinga", "feature_class_as_named": "quebrada", "name_variants_observed": [], "department": "Ica", "province": null, "district": "Alto Larán", "corridor": "PISCO_ICA", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS", "detail": "Mapa de ubicación de poblaciones vulnerables", "sigrid_id": 5631, "extraction_basis": "SIGRID_SERVER_FILENAME", "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/5631"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
   {"inventory_id": "ica_alto_laran_pampas_de_chincha", "row_role": "CANDIDATE_UNIT", "documentary_name": "pampas de chincha", "feature_class_as_named": "quebrada", "name_variants_observed": [], "department": "Ica", "province": null, "district": "Alto Larán", "corridor": "PISCO_ICA", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS", "detail": "Mapa de ubicación de poblaciones vulnerables", "sigrid_id": 5629, "extraction_basis": "SIGRID_SERVER_FILENAME", "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/5629"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
   {"inventory_id": "ica_el_carmen_pampas_de_los_arrieros", "row_role": "CANDIDATE_UNIT", "documentary_name": "pampas de los arrieros", "feature_class_as_named": "quebrada", "name_variants_observed": [], "department": "Ica", "province": null, "district": "El Carmen", "corridor": "PISCO_ICA", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS", "detail": "Mapa de ubicación de poblaciones vulnerables", "sigrid_id": 5630, "extraction_basis": "SIGRID_SERVER_FILENAME", "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/5630"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},

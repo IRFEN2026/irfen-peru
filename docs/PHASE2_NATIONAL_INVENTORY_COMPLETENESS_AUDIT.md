@@ -10,18 +10,19 @@ Este documento es un inventario/backlog. No crea unidades hidrológicas, geometr
 
 ## 1. Qué se hizo y qué no
 
-- **400 filas deduplicadas** tomadas de fuentes de ANA, INGEMMET, INDECI, CENEPRED/SIGRID, IGP, ANIN, gobiernos regionales y municipalidades (más pistas de ONG/prensa, marcadas como tales).
+- **401 filas deduplicadas** tomadas de fuentes de ANA, INGEMMET, INDECI, CENEPRED/SIGRID, IGP, ANIN, gobiernos regionales y municipalidades (más pistas de ONG/prensa, marcadas como tales).
 - Cada fila se contrastó con `main`, con las 531 ramas y con los 41 PR abiertos antes de proponerla.
 - **0** filas `MAP_ELIGIBLE`, **0** geometrías nuevas, **0** outlets nuevos, **0** aliases fusionados, **0** cuencas padre asignadas.
-- **0** filas `EVENT_EVIDENCE`: las 41 filas con afirmaciones fechadas de evento quedan como `EVENT_LEAD_UNVERIFIED` hasta que su fuente se reabra, verifique y archive (0 de 24 fuentes tienen `source_text_verified=true`).
+- **0** filas `EVENT_EVIDENCE`: las 42 filas con afirmaciones fechadas de evento quedan como `EVENT_LEAD_UNVERIFIED` hasta que su fuente se reabra, verifique y archive (0 de 27 fuentes tienen `source_text_verified=true`).
 - **Advertencia de extracción.** Los documentos se leyeron con una herramienta automática de lectura web. Los nombres de archivo que entrega el servidor de SIGRID son identificadores fiables; las transcripciones de texto y tablas **no están verificadas byte a byte** y ningún archivo fuente se archivó ni se hasheó. Durante la auditoría se detectó y descartó una tabla fabricada por el lector (Áncash). QA independiente debe reabrir cada fuente antes de promover cualquier fila.
+- **Revisión r5 (2026-10-09, Rímac, PR #363).** Dos Barrios se registra con identidad documental y, tras el QA independiente, con una pista `EVENT_LEAD_UNVERIFIED` del 05/04/2012 atribuida a INGEMMET A6608 §5.6 (no es evento validado ni entra en ningún ledger; P1 por definición). La fuente primaria es INGEMMET A6608 (2012), §5.6 «Quebrada Dos Barrios / Pablo Patrón» (p. 30), donde Pablo Patrón es un sector del abanico, no un nombre de cauce. SENAMHI 2020 (p. 3) y una tesis doctoral de 2018 alojada por INGEMMET (TE0306, p. 85) repiten A6608. Las fuentes están archivadas con SHA-256 en `data/phase2/source_archive/rimac_dos_barrios/`. El resultado anterior «sin fuente en este barrido» se conserva y se marca como superado. Advertencia: la portada de A6608 dice «Octubre 2011», mientras el título y el texto fechan el flujo el 05/04/2012 y el catálogo data el informe en 2012. El distrito no consta en las fuentes. Las relaciones con «Pablo Patrón/Dos Amigos» (PREDES) y con «Mariscal Castilla» (RIIGEO 2012) quedan `UNRESOLVED`. Registro: `config/phase2_rimac_dos_barrios_identity_v0_1.json`. (Las etiquetas r3 y r4 corresponden a los PR #365 y #366.)
 - **Aviso clean-room.** El JSON contiene afirmaciones con resultado sobre el evento del 23-03-2015 en Chosica; los trabajos sellados de `agent/chosica-2015-*` (PR #146, #149, #150, #151) no deben leerlo.
 
 ### Resumen
 
 | Corredor | Filas | En main (registrada / nombrada) | Mención sin confirmar | Solo rama/PR | No está en IRFEN | P1 | P2 |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| 1. Carretera Central / Rímac / Chosica / Chaclacayo / Ricardo Palma / Santa Eulalia | 44 | 17 | 0 | 0 | 27 | 23 | 16 |
+| 1. Carretera Central / Rímac / Chosica / Chaclacayo / Ricardo Palma / Santa Eulalia | 45 | 17 | 0 | 0 | 28 | 24 | 16 |
 | 2. Pisco / Ica | 48 | 12 | 3 | 2 | 31 | 0 | 1 |
 | 3. Santa / Casma | 16 | 1 | 1 | 1 | 13 | 0 | 0 |
 | 4. Tumbes / Zorritos | 68 | 4 | 4 | 2 | 58 | 0 | 0 |
@@ -32,7 +33,7 @@ Este documento es un inventario/backlog. No crea unidades hidrológicas, geometr
 | 5e. Áncash interior | 18 | 0 | 0 | 0 | 18 | 0 | 0 |
 | 5f. Piura interior | 38 | 0 | 0 | 0 | 38 | 0 | 0 |
 
-Estado sugerido (uno por fila): `EVENT_LEAD_UNVERIFIED` 28, `IDENTITY_ONLY` 349, `GEOMETRY_PENDING` 20, `GEOMETRY_REPRODUCIBLE` 3.
+Estado sugerido (uno por fila): `EVENT_LEAD_UNVERIFIED` 29, `IDENTITY_ONLY` 349, `GEOMETRY_PENDING` 20, `GEOMETRY_REPRODUCIBLE` 3.
 
 ### Regla de verificación de eventos
 
@@ -68,7 +69,7 @@ Un ítem EVENT solo cuenta como `EVENT_EVIDENCE` si `source_text_verified` es `t
 | Santo Domingo | `lima_lurigancho_santo_domingo` (Santo Domingo) | `GEOMETRY_PENDING` | main: solo nombre/contexto | P1 |
 | La Cantuta | `lima_lurigancho_la_cantuta` (La Cantuta) | `GEOMETRY_PENDING` | no está | P1 |
 | La Ronda | `lima_lurigancho_la_ronda` (La Ronda) | `GEOMETRY_PENDING` | main: solo nombre/contexto | P1 |
-| Dos Barrios | — | sin fuente en este barrido | no está | — |
+| Dos Barrios | `lima_district_unknown_dos_barrios` (Dos Barrios) | `EVENT_LEAD_UNVERIFIED` | no está | P1 |
 | Coricancha | `lima_lurigancho_coricancha` (Coricancha) | `IDENTITY_ONLY` | no está | P2 |
 | Los Cóndores | `lima_chaclacayo_los_condores` (Los Cóndores) | `GEOMETRY_PENDING` | no está | P1 |
 | Pablo Patrón / Dos Amigos | `lima_lurigancho_pablo_patron_dos_amigos` (Pablo Patrón/Dos Amigos) | `IDENTITY_ONLY` | no está | P2 |
@@ -82,7 +83,7 @@ Un ítem EVENT solo cuenta como `EVENT_EVIDENCE` si `source_text_verified` es `t
 | Cusipata | `lima_chaclacayo_cusipata` (Cusipata) | `GEOMETRY_PENDING` | no está | P1 |
 | Cashahuacra | `lima_santa_eulalia_cashahuacra` (Cashahuacra) | `GEOMETRY_REPRODUCIBLE` | main: unidad registrada `cashahuacra` · PR #136, #146, #149, #151 | EXISTING |
 
-- **Dos Barrios** — No se encontró ningún documento de institución pública, cartilla de ONG ni nota de prensa que nombre una «quebrada Dos Barrios» en el corredor del Rímac. Tampoco está en main, PR abiertos ni ramas. Que no haya fuente aquí no prueba que la unidad no exista.
+- **Dos Barrios** — El barrido original no encontró fuente (resultado histórico conservado). En r5 se archivaron INGEMMET A6608 (2012, §5.6 «Quebrada Dos Barrios / Pablo Patrón», p. 30), SENAMHI 2020 (p. 3) y la tesis doctoral de Villacorta 2018 (TE0306, pp. 83 y 85). Fila `lima_district_unknown_dos_barrios`: identidad documental y pista `EVENT_LEAD_UNVERIFIED` del 05/04/2012 (A6608 §5.6), sin distrito, geometría ni confluencia. Pablo Patrón es el sector afectado del abanico, no un alias.
 - **Laderas Virgen del Rosario** — Las fuentes halladas usan «Virgen del Rosario» (INDECI DDI Lima 2023) y «Rosario» (IGP 2023). El prefijo «Laderas» no aparece en ninguna fuente leída; las tres etiquetas se mantienen separadas hasta su adjudicación.
 
 Además aparecieron en fuente institucional, sin estar en la lista pedida: Barba Blanca (distrito no indicado), Callahuanca (distrito no indicado), Centro Santa Eulalia 1, 2 y 3 (Santa Eulalia), Chucumayo (Matucana), Cuchimachay (Surco), Cuculí (Santa Eulalia), Cupiche (Ricardo Palma), Don Bosco (Chaclacayo), El Cuadro (Chaclacayo), Huayaringa (Santa Eulalia), Huayaringa Centro y Portada de Huayaringa (Santa Eulalia), Huaycán (Ate) (Ate), Julio César Tello (Santa Eulalia), La Floresta (Chaclacayo), Payhua (Matucana), Vizcachera (Lurigancho-Chosica).
@@ -91,7 +92,7 @@ Además aparecieron en fuente institucional, sin estar en la lista pedida: Barba
 
 No hay columna de cuenca o sistema padre: ninguna fuente leída lo sustenta para un candidato nuevo y no se infiere por proximidad (campo `parent_basin_or_system = null` en todas las filas). *Fechas (pista sin verificar)* lista fechas leídas por extracción automática en fuente institucional primaria; ninguna está verificada todavía (`verified_event_dates` está vacío en todas las filas). Las fechas del informe IGP 001-2023 se guardan en el JSON pero no cuentan ni como pista. *Outlet* = existe nodo de salida/confluencia reproducible.
 
-### 1. Carretera Central / Rímac / Chosica / Chaclacayo / Ricardo Palma / Santa Eulalia (44 filas)
+### 1. Carretera Central / Rímac / Chosica / Chaclacayo / Ricardo Palma / Santa Eulalia (45 filas)
 
 | Nombre documental | Variantes observadas (sin adjudicar) | Distrito · provincia | Evidencia | Fechas (pista sin verificar) | Geometría reproducible | Outlet | Relación con colector | Estado | En IRFEN | Prio. | Fuente e identificador |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -129,6 +130,7 @@ No hay columna de cuenca o sistema padre: ninguna fuente leída lo sustenta para
 | Chucumayo | — | Matucana · Huarochirí | FAJA | — | No · pista: faja ANA (hitos por extraer) | No | — | `GEOMETRY_PENDING` (+ OUTLET_PENDING) | no está | P1 | ANA-FAJA-RD-SIGRID (SIGRID 19929) |
 | Payhua | Paihua | Matucana · Huarochirí | EVENT | — | No | No | — | `IDENTITY_ONLY` | no está | P2 | IGP-IT-001-2023 |
 | Barba Blanca | — | distrito no indicado † | IDENTITY | — | No | No | — | `IDENTITY_ONLY` | no está | P2 | CENEPRED-SIGRID-13867 |
+| Dos Barrios | — | distrito no indicado | EVENT, IDENTITY | 2012-04-05 | No | No | — | `EVENT_LEAD_UNVERIFIED` | no está | P1 | INGEMMET-A6608-2012-LA-RONDA-LOS-CONDORES (p. 30); SENAMHI-2020-QDAS-SANTO-DOMINGO-CANTUTA (p. 3); VILLACORTA-2018-UPM-THESIS-INGEMMET-TE0306 (p. 85) |
 | Castilla | — | Lurigancho · Lima † | FAJA | — | No · pista: faja ANA (hitos por extraer) | No | — | `GEOMETRY_PENDING` (+ OUTLET_PENDING) | no está | P1 | ANA-FAJA-RD-SIGRID (SIGRID 6065) |
 | Cupiche | — | Ricardo Palma · Huarochirí | CRITICAL_POINT, FAJA | — | No · pista: faja ANA (hitos por extraer) | No | — | `GEOMETRY_PENDING` (+ OUTLET_PENDING) | no está | P1 | ANA-FAJA-RD-SIGRID (SIGRID 6061); ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5775) |
 | Cashahuacra | Casahuacra | Santa Eulalia · Huarochirí | CRITICAL_POINT, EVENT, GEOMETRY | — | Sí (ya en main) | No | El nodo de confluencia Santa Eulalia–Rímac está MISSING en main (no se admite aproximación) | `GEOMETRY_REPRODUCIBLE` (+ OUTLET_PENDING) | main: unidad registrada `cashahuacra` · PR #136, #146, #149, #151 | EXISTING | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5769); IRFEN-REPO; IGP-IT-001-2023 |
@@ -604,7 +606,7 @@ No hay columna de cuenca o sistema padre: ninguna fuente leída lo sustenta para
 
 ## 5. Candidatos faltantes
 
-**324** filas no aparecen en `main`, ramas ni PR. Las de mayor prioridad:
+**325** filas no aparecen en `main`, ramas ni PR. Las de mayor prioridad:
 
 | Prio. | Nombre | Distrito | Estado | Fuente |
 |---|---|---|---|---|
@@ -614,6 +616,7 @@ No hay columna de cuenca o sistema padre: ninguna fuente leída lo sustenta para
 | P1 | Cupiche | Ricardo Palma | `GEOMETRY_PENDING` | ANA-FAJA-RD-SIGRID (SIGRID 6061); ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5775) |
 | P1 | Cusipata | Chaclacayo | `GEOMETRY_PENDING` | ANA-FAJA-RD-SIGRID (SIGRID 13203); INDECI-DDI-LIMA-2023-BALANCE; IGP-IT-001-2023 |
 | P1 | Don Bosco | Chaclacayo | `EVENT_LEAD_UNVERIFIED` | INDECI-DDI-LIMA-2023-BALANCE |
+| P1 | Dos Barrios | no indicado | `EVENT_LEAD_UNVERIFIED` | INGEMMET-A6608-2012-LA-RONDA-LOS-CONDORES; SENAMHI-2020-QDAS-SANTO-DOMINGO-CANTUTA; VILLACORTA-2018-UPM-THESIS-INGEMMET-TE0306 |
 | P1 | Huascarán | Chaclacayo | `GEOMETRY_PENDING` | ANA-FAJA-RD-SIGRID (SIGRID 19205); INDECI-DDI-LIMA-2023-BALANCE; IGP-IT-001-2023; PRESS-LEAD |
 | P1 | Huaycán (Ate) | Ate | `EVENT_LEAD_UNVERIFIED` | INDECI-DDI-LIMA-2023-BALANCE |
 | P1 | La Cantuta | Lurigancho-Chosica | `GEOMETRY_PENDING` | ANA-FAJA-RD-SIGRID (SIGRID 6074); ANA-FAJA-RD-SIGRID (SIGRID 19341); INDECI-DDI-LIMA-2023-BALANCE; MUNI-LURIGANCHO-EVAR-2015 |
@@ -663,6 +666,8 @@ Ninguna relación de nombres se resolvió en esta auditoría. Las variantes son 
 | La Tucilla · Tucillal · Tucillay | Ya adjudicado como NO fusionado en main y en el PR #351 (INGEMMET A7454 nombra Tucillal). | NOT_MERGED (site/data/phase2/sources/tumbes_zorritos_extended_identity_context_v0_1.json) | `TRACKED_IN_MAIN_AND_PR_351` | Nada por parte de esta auditoría. |
 | Charán · El Charán | ANA 2016 Cuadro 9: «Charán» (La Cruz); Andina 2024: «Charán» (sin distrito); MEF 2023: «El Charán» (sin distrito ni tipo de elemento). | not recorded | `PENDING_ADJUDICATION` | Reporte del COER Tumbes y anexo del D.S. 181-2023-EF. |
 | Luey (Lucy) · Luey | ANA 2016 Cuadro 9 escribe «Luey (Lucy)» (Tumbes, Andrés Araujo Morán); MEF 2023 escribe «Luey». | not recorded | `PENDING_ADJUDICATION` | Anexo del D.S. 181-2023-EF. |
+| Dos Barrios · Pablo Patrón/Dos Amigos | INGEMMET A6608 §5.6 places the Pablo Patrón sector on the lower fan of the quebrada Dos Barrios; the row 'Pablo Patrón/Dos Amigos' comes from a PREDES booklet. 'Dos Amigos' appears in neither A6608 nor RIIGEO 2012, and no source equates the PREDES label with the quebrada Dos Barrios. | not recorded | `PENDING_ADJUDICATION` | A source that states what 'Dos Amigos' designates and whether the PREDES row is the quebrada Dos Barrios; each keeps its own row. |
+| Dos Barrios · Mariscal Castilla | INGEMMET A6608 §5.6 names Mariscal Castilla as a barrio on the old fan of the quebrada Dos Barrios; RIIGEO 2012 lists a quebrada 'Mariscal Castilla' among the left-bank quebradas. No source states that the RIIGEO label designates the same channel. | not recorded | `PENDING_ADJUDICATION` | A source or georeferenced map that places the quebrada 'Mariscal Castilla' of RIIGEO 2012 relative to the quebrada Dos Barrios. |
 
 **Misma etiqueta, distrito distinto o desconocido (no fusionadas):** rio seco (ancash: 2 filas); tomeque (ancash: 2 filas); utiyacu (lambayeque: 2 filas); huaycan (lima: 2 filas); ihuanco (lima: 2 filas); rio seco (lima: 6 filas); charan (tumbes: 2 filas); los cerezos (tumbes: 2 filas); luey (tumbes: 2 filas); pedregal (tumbes: 2 filas).
 
@@ -729,10 +734,13 @@ Las notas de acceso de cada fuente (qué parte se leyó y con qué límites) est
 | `PRESS-LEAD` | Prensa (Perú21 2024-01-07; La República 2024-02-08 y 2025-01-31; Infobae 2026-02-25) | Notas de prensa que citan a INGEMMET, COEN-INDECI, Contraloría o municipalidades | 2024-2026 | `NON_INSTITUTIONAL_LEAD` | `AUTOMATED_TEXT_EXTRACTION` | see per-evidence url |
 | `IRFEN-REPO` | IRFEN repository | Existing IRFEN contracts on main, or on the legacy branch named in the evidence detail | 2026-10-06 | `INTERNAL` | `REPO` | https://github.com/IRFEN2026/irfen-peru |
 | `INGEMMET-SIGRID-434-TITLE` | INGEMMET (SIGRID biblioteca) | Inestabilidad de rocas zona de Rosario, Chosica (revisión de informe) | unknown | `PRIMARY_INSTITUTIONAL` | `SERVER_TITLE_ONLY` | https://sigrid.cenepred.gob.pe/sigridv3/documento/434 · SIGRID 434 |
+| `INGEMMET-A6608-2012-LA-RONDA-LOS-CONDORES` | INGEMMET (Informe Técnico N.º A6608; Zavala, Vílchez y Núñez), via CENEPRED SIGRID documento 401 | Flujos de detritos del 05/04/2012 entre las quebradas La Ronda y Los Cóndores, margen izquierda del río Rímac. Características geodinámicas y evaluación de peligro | 2012 (cover prints 'Octubre 2011', inconsistent with the 05/04/2012 event in the title) | `PRIMARY_INSTITUTIONAL` | `ARCHIVED_BYTES_TEXT_LAYER_QUOTES_TESTED` | https://sigrid.cenepred.gob.pe/sigridv3/documento/401/descargar |
+| `SENAMHI-2020-QDAS-SANTO-DOMINGO-CANTUTA` | Servicio Nacional de Meteorología e Hidrología del Perú (SENAMHI), Dirección de Hidrología | Caracterización del peligro por movimientos en masa debido a lluvias extremas en las quebradas Santo Domingo y Cantuta. Informe final (Asencios, Millán, Sabino Rojas y Breña) | 2020-05 | `PRIMARY_INSTITUTIONAL` | `ARCHIVED_BYTES_TEXT_LAYER_QUOTES_TESTED` | https://www.senamhi.gob.pe/load/file/01401SENA-88.pdf |
+| `VILLACORTA-2018-UPM-THESIS-INGEMMET-TE0306` | Universidad Politécnica de Madrid (doctoral thesis of S. P. Villacorta Chambi); PDF hosted by the INGEMMET biblioteca as TE0306 | Evolución geomorfológica del abanico aluvial de Lima y sus relaciones con la peligrosidad por inundaciones (Tesis Doctoral) | 2018-11 | `ACADEMIC_THESIS_HOSTED_BY_INSTITUTION` | `ARCHIVED_BYTES_TEXT_LAYER_QUOTES_TESTED` | https://app.ingemmet.gob.pe/biblioteca/pdf/TE0306.pdf |
 
 ## 10. Prioridad sugerida para incorporación
 
-- **P1** (23 filas) — Unidad de Carretera Central / Rímac / Santa Eulalia que no es unidad local registrada en main y que tiene una pista institucional de evento (sin verificar) y/o una pista regulatoria de geometría.
+- **P1** (24 filas) — Unidad de Carretera Central / Rímac / Santa Eulalia que no es unidad local registrada en main y que tiene una pista institucional de evento (sin verificar) y/o una pista regulatoria de geometría.
 - **P2** (17 filas) — (a) Unidad de Pisco/Ica, Santa/Casma o Tumbes/Zorritos con pista institucional de evento (sin verificar) y/o pista de geometría; o (b) nombre de Carretera Central sustentado solo por identidad, obras, ONG/prensa o lectura no verificada, que necesita antes una fuente institucional primaria verificada.
 - **P3** (291 filas) — Solo evidencia de identidad o punto crítico, en un corredor prioritario o en un corredor ya presente en IRFEN (otros valles de Lima y Lima Metropolitana, costa de Piura, Lambayeque, La Libertad).
 - **P4** (56 filas) — Filas de interior/sierra fuera de los corredores presentes o previstos en IRFEN; se conservan para no mutilar las tablas de la fuente.
@@ -750,6 +758,7 @@ Orden de trabajo propuesto, sin tocar el mapa:
 - Serie de mapas ANA 2016 en SIGRID — rangos barridos: 5601-5643 (partial: 5602, 5609, 5610, 5612, 5613, 5615, 5616, 5636 timed out); 5700-5819 (complete except 5710 image-only); 5965-6018. **No barridos:** 5560-5600; 5644-5699; 5820-5964; any ids below 5560. Arequipa, Moquegua, Tacna y la mayor parte de La Libertad no se localizaron en los rangos barridos.
 - Informe nacional ANA 2016-2017 — tablas transcritas: Cuadro 9 Tumbes (44), Cuadro 11 Piura (79), Cuadro 17 Lambayeque (47). **No recuperables:** Cuadro 19 La Libertad, Cuadro 23 Ancash, Cuadro 29 Lima (97 centres), Cuadro 41 Ica, Cuadro 43 Arequipa, all remaining departments.
 - **Sin barrer:** inventario anual de puntos críticos de ANA; servicio GEOCATMIN de peligros geológicos de INGEMMET; reportes de emergencia COEN-INDECI/SINPAD por distrito; avisos SENAMHI de activación de quebradas; lista de estaciones de la red de monitoreo de huaicos del IGP; Arequipa, Moquegua, Tacna, La Libertad (más allá de 9 títulos de mapa) y Lima norte más allá de los títulos SIGRID; PPRRD municipales de Chaclacayo, Ricardo Palma y Santa Eulalia.
+- **Rímac, Dos Barrios (2026-10-09)** — Dos Barrios (INGEMMET A6608 §5.6 pp. 30-31 and conclusions p. 43; SENAMHI 2020 p. 3; doctoral thesis 2018 pp. 83 and 85). Sources archived with SHA-256 in data/phase2/source_archive/rimac_dos_barrios/ (runner capture; SENAMHI owner-supplied copy); quotes checked on the archived text layer and rendered pages. **Revisadas sin la etiqueta:** RIIGEO 2012 (huaycos del 5 de abril de 2012), IGP 2020 (SIGRID 13867), ANA faja Santo Domingo (SIGRID 19950).
 
 ### Conflictos e incidencias de extracción
 
