@@ -40,23 +40,43 @@ def sha256_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def fetch_full(url: str, timeout: int, max_bytes: int) -> dict:
-    """Like the PR #364 fetch, but also records Content-Length so a truncated body is visible."""
+def fetch_full(url: str, timeout: int, max_bytes: int, resumes: int = 6) -> dict:
+    """Download with Content-Length check; resume a short body with HTTP Range requests."""
     from urllib.request import Request, urlopen
 
     started = datetime.now(timezone.utc).isoformat()
-    try:
-        request = Request(BASE.safe_url(url), headers={"User-Agent": BASE.USER_AGENT, "Accept": "*/*"})
-        with urlopen(request, timeout=timeout) as response:
-            data = response.read(max_bytes + 1)
-            declared = response.headers.get("Content-Length")
-            if len(data) > max_bytes:
-                return dict(status="SKIPPED_TOO_LARGE", requested_url=url, retrieved_at_utc=started, bytes_read=len(data))
-            return dict(status="CAPTURED", requested_url=url, final_url=response.geturl(), http_status=response.status,
-                        content_type=response.headers.get("Content-Type"), content_length_header=declared,
-                        retrieved_at_utc=started, data=data)
-    except Exception as exc:  # noqa: BLE001 - recorded, never fatal
-        return dict(status="UNREACHABLE", requested_url=url, error=type(exc).__name__ + ": " + str(exc)[:200], retrieved_at_utc=started)
+    data, declared, meta, notes = b"", None, {}, []
+    for attempt in range(resumes + 1):
+        headers = {"User-Agent": BASE.USER_AGENT, "Accept": "*/*"}
+        if data:
+            headers["Range"] = f"bytes={len(data)}-"
+        try:
+            with urlopen(Request(BASE.safe_url(url), headers=headers), timeout=timeout) as response:
+                if not meta:
+                    meta = dict(final_url=response.geturl(), http_status=response.status, content_type=response.headers.get("Content-Type"))
+                    declared = response.headers.get("Content-Length")
+                if data and response.status != 206:
+                    notes.append(f"resume {attempt}: server ignored Range (HTTP {response.status}); restarting")
+                    data = b""
+                while True:
+                    chunk = response.read(1 << 20)
+                    if not chunk:
+                        break
+                    data += chunk
+                    if len(data) > max_bytes:
+                        return dict(status="SKIPPED_TOO_LARGE", requested_url=url, retrieved_at_utc=started, bytes_read=len(data))
+        except Exception as exc:  # noqa: BLE001 - recorded; a resume may follow
+            notes.append(f"attempt {attempt}: {type(exc).__name__}: {str(exc)[:120]} after {len(data)} bytes")
+            if not meta and not data:
+                return dict(status="UNREACHABLE", requested_url=url, error=notes[-1], retrieved_at_utc=started)
+        if declared and declared.isdigit() and len(data) >= int(declared):
+            break
+        if not declared:
+            break
+        time.sleep(3)
+    complete = not (declared and declared.isdigit() and len(data) != int(declared))
+    return dict(status="CAPTURED" if complete else "INCOMPLETE_BODY", requested_url=url, **meta,
+                content_length_header=declared, transfer_notes=notes, retrieved_at_utc=started, data=data, bytes_read=len(data))
 
 
 def extract_pages(data: bytes) -> tuple[list[str], str]:
@@ -98,17 +118,19 @@ def capture_supplements() -> int:
                         seeds_path=str(SEEDS.relative_to(ROOT)), reused_archive=seeds["reused_archive"], records=[],
                         rule="Hits are verbatim text matches only. A hit is not an identity, alias, event or geometry decision.",
                         map_publishable=False)
-    held = {r["document_id"] for r in manifest["records"] if r.get("status") == "ARCHIVED"}
+    held = {r["document_id"] for r in manifest["records"] if r.get("status") == "ARCHIVED" and not r.get("possibly_truncated")}
     added = []
     for item in seeds.get("supplement_documents", []):
         doc_id = item["id"]
         if doc_id in held:
             continue
         manifest["records"] = [r for r in manifest["records"] if r["document_id"] != doc_id]
+        for stale in list((ARCHIVE / "raw").glob(f"{doc_id}.*")) + list((ARCHIVE / "text").glob(f"{doc_id}.*")):
+            stale.unlink()  # a superseded (e.g. truncated) copy is replaced, never kept unlisted
         attempts, record = [], None
         for url, how, accept in BASE.expand_routes(item["routes"], limits, attempts):
             result = fetch_full(url, limits["timeout_seconds"], limits["max_bytes_per_document"])
-            attempt = {k: v for k, v in result.items() if k in ("requested_url", "status", "http_status", "error", "final_url", "retrieved_at_utc", "bytes_read", "content_length_header")}
+            attempt = {k: v for k, v in result.items() if k in ("requested_url", "status", "http_status", "error", "final_url", "retrieved_at_utc", "bytes_read", "content_length_header", "transfer_notes")}
             attempt["route"] = how
             attempts.append(attempt)
             data = result.get("data") or b""

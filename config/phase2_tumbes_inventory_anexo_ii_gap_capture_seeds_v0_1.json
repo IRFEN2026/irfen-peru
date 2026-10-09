@@ -94,7 +94,8 @@
   ],
   "limits": {
     "max_bytes_per_document": 40000000,
-    "timeout_seconds": 40
+    "timeout_seconds": 90
   },
-  "text_extraction_rule": "pypdf per page; if pypdf cannot parse the archived bytes, poppler pdftotext -layout is used and the method is recorded per document. Bytes are archived whenever they are a PDF, even if no text can be extracted."
+  "text_extraction_rule": "pypdf per page; if pypdf cannot parse the archived bytes, poppler pdftotext -layout is used and the method is recorded per document. Bytes are archived whenever they are a PDF, even if no text can be extracted.",
+  "transfer_rule": "A body shorter than its Content-Length is resumed with HTTP Range requests; a body that stays short is recorded as INCOMPLETE_BODY and never archived as the document."
 }
