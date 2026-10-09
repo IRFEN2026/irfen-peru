@@ -114,9 +114,34 @@ def validate(reg: dict, rimac: dict, audit: dict, manifest: dict) -> list[str]:
     for mention in cand.get("historical_period_mentions", []):
         if mention.get("event_lead_eligible") is not False or mention.get("usable_as_confirmed_unit_event") is not False:
             errors.append("list-level period mentions may not become event leads or unit events")
-    for rel in reg.get("relations_recorded_not_adopted", []):
-        if "Pablo Patrón/Dos Amigos" in rel.get("labels", []) and rel.get("status") != "UNRESOLVED":
-            errors.append("Dos Barrios / Pablo Patrón-Dos Amigos must stay UNRESOLVED")
+    relations = reg.get("relations_recorded_not_adopted", [])
+    for rel in relations:
+        status = str(rel.get("status", ""))
+        if any(word in status for word in ("SAME", "EQUIVALEN", "MERGED", "ALIAS_CONFIRMED")):
+            errors.append(f"relation {rel.get('labels')}: no channel equivalence may be recorded ({status})")
+        for label in ("Pablo Patrón/Dos Amigos", "Mariscal Castilla"):
+            if label in rel.get("labels", []) and status != "UNRESOLVED":
+                errors.append(f"Dos Barrios / {label} must stay UNRESOLVED")
+    # A6608 (primary source): Pablo Patrón is a sector on the fan, and a '/' in a heading is not an equivalence
+    a6608 = [sid for sid, src in sources.items() if src.get("archive_document_id") == "ingemmet-a6608-sigrid-401"]
+    if len(a6608) != 1 or not any(att.get("source_id") == a6608[0] for att in attestations):
+        errors.append("INGEMMET A6608 must be archived and cited as an attestation")
+    sector = [rel for rel in relations if "Pablo Patrón (sector)" in rel.get("labels", [])]
+    if len(sector) != 1:
+        errors.append("the Pablo Patrón sector relation must be recorded once")
+    else:
+        rel = sector[0]
+        if rel.get("channel_equivalence") != "NOT_ASSERTED_BY_SOURCE" or rel.get("status") != "PABLO_PATRON_IS_A_SECTOR_ON_THE_LOWER_FAN_PER_A6608":
+            errors.append("Pablo Patrón must stay recorded as a sector, with no channel equivalence")
+        texts_rel = " ".join(quotes.get(q, {}).get("text", "") for q in rel.get("quote_ids", []))
+        if not re.search(r"(sector|zona) de Pablo Patr[oó]n", texts_rel, re.I):
+            errors.append("the Pablo Patrón sector relation must cite a quote naming the 'sector'/'zona' de Pablo Patrón")
+        if a6608 and not any(quotes.get(q, {}).get("source_id") == a6608[0] for q in rel.get("quote_ids", [])):
+            errors.append("the Pablo Patrón sector relation must rest on A6608 quotes")
+    if a6608:
+        layer = texts.setdefault(a6608[0], json.loads((ROOT / sources[a6608[0]]["text_path"]).read_text(encoding="utf-8"))).get(sources[a6608[0]]["quote_text_layer"], [])
+        if any(re.search(r"dos\s+amigos", page, re.I) for page in layer) and any("Dos Amigos" in str(rel.get("note", "")) and "neither A6608" in str(rel.get("note", "")) for rel in relations):
+            errors.append("the registry says 'Dos Amigos' is absent from A6608, but the archived text names it")
     for checked in reg.get("documents_checked_without_the_label", []):
         sid = checked.get("source_id")
         if sid and sid in sources:
@@ -140,6 +165,8 @@ def validate(reg: dict, rimac: dict, audit: dict, manifest: dict) -> list[str]:
                 errors.append(f"Rímac unit: {field} must be null")
         if unit.get("receiver_relation") != "UNKNOWN_NOT_ASSUMED" or unit.get("verified_event_refs"):
             errors.append("Rímac unit: no receiver relation or verified event")
+        if any("pablo" in str(v).lower() for v in unit.get("documentary_variants", [])):
+            errors.append("Rímac unit: Pablo Patrón may not be recorded as a variant of Dos Barrios")
         if any(lead.get("usable_as_confirmed_unit_event") is not False for lead in unit.get("unverified_event_leads", [])):
             errors.append("Rímac unit: event leads may not be usable as confirmed unit events")
         refs = unit.get("source_refs", [])

@@ -141,7 +141,8 @@ def test_dos_barrios_is_registered_only_on_archived_verifiable_evidence():
     unit = next(u for u in rimac["units"] if u["id"] == V.RID)
     assert unit["documentary_label"] == "Dos Barrios" and unit["map_publishable"] is False
     assert {ref["source_id"] for ref in unit["source_refs"]} == {
-        "SENAMHI-2020-QDAS-SANTO-DOMINGO-CANTUTA", "VILLACORTA-2018-UPM-THESIS-INGEMMET-TE0306"
+        "INGEMMET-A6608-2012-LA-RONDA-LOS-CONDORES", "SENAMHI-2020-QDAS-SANTO-DOMINGO-CANTUTA",
+        "VILLACORTA-2018-UPM-THESIS-INGEMMET-TE0306",
     }
     assert all(len(ref["archived_sha256"]) == 64 for ref in unit["source_refs"])
     resolved = [r for r in rimac["resolved_name_leads"] if r["requested_name"] == "Dos Barrios"]
@@ -163,7 +164,8 @@ def test_dos_barrios_registration_fails_without_verifiable_archive_evidence():
     assert any("no quote contains" in e for e in V.validate(bad, rimac, audit, manifest))
     bad = copy.deepcopy(reg)
     bad["candidate"]["identity_basis"]["attestations"] = [
-        a for a in bad["candidate"]["identity_basis"]["attestations"] if not a["source_id"].startswith("SENAMHI")
+        a for a in bad["candidate"]["identity_basis"]["attestations"]
+        if bad["sources"][a["source_id"]]["source_class"] != "PRIMARY_INSTITUTIONAL"
     ]
     assert any("primary institutional" in e for e in V.validate(bad, rimac, audit, manifest))
     bad_rimac = copy.deepcopy(rimac)
@@ -204,3 +206,33 @@ def test_dos_barrios_is_not_left_both_as_lead_and_unit_or_merged_with_dos_amigos
     group["status"] = "MERGED"
     assert any("pending" in e for e in V.validate(reg, bad_rimac, audit, manifest))
     assert not any(u["documentary_label"] == "Pablo Patrón/Dos Amigos" and u["id"] == V.RID for u in rimac["units"])
+
+
+def test_a6608_slash_heading_is_not_a_channel_equivalence():
+    """INGEMMET A6608 §5.6 'Quebrada Dos Barrios / Pablo Patrón': Pablo Patrón is a sector on the fan, not an alias."""
+    reg, rimac, audit, manifest = V.load_all()
+    assert reg["quotes"]["A6-P30-HEADING"]["text"].startswith("5.6 QUEBRADA DOS BARRIOS /PABLO PATRÓN")
+    assert reg["sources"]["INGEMMET-A6608-2012-LA-RONDA-LOS-CONDORES"]["sha256"] == (
+        "b710247572a7a83efed53be0f0f565cc4971eb542f43f2881cbefc7bba0b5927"
+    )
+    statuses = {tuple(r["labels"]): r["status"] for r in reg["relations_recorded_not_adopted"]}
+    assert statuses[("Dos Barrios", "Pablo Patrón (sector)")] == "PABLO_PATRON_IS_A_SECTOR_ON_THE_LOWER_FAN_PER_A6608"
+    assert statuses[("Dos Barrios", "Pablo Patrón/Dos Amigos")] == "UNRESOLVED"
+    assert statuses[("Dos Barrios", "Mariscal Castilla")] == "UNRESOLVED"
+    for mutate in (
+        lambda r: next(x for x in r["relations_recorded_not_adopted"] if "Pablo Patrón (sector)" in x["labels"]).__setitem__("channel_equivalence", "SAME_CHANNEL"),
+        lambda r: next(x for x in r["relations_recorded_not_adopted"] if "Pablo Patrón/Dos Amigos" in x["labels"]).__setitem__("status", "SAME_CHANNEL"),
+        lambda r: next(x for x in r["relations_recorded_not_adopted"] if "Mariscal Castilla" in x["labels"]).__setitem__("status", "ALIAS_CONFIRMED"),
+        lambda r: next(x for x in r["relations_recorded_not_adopted"] if "Pablo Patrón (sector)" in x["labels"]).__setitem__("quote_ids", ["A6-P30-HEADING"]),
+        lambda r: r["candidate"]["identity_basis"].__setitem__(
+            "attestations", [a for a in r["candidate"]["identity_basis"]["attestations"] if not a["source_id"].startswith("INGEMMET-A6608")]),
+        lambda r: r["candidate"]["historical_period_mentions"][0].__setitem__("event_lead_eligible", True),
+    ):
+        bad = copy.deepcopy(reg)
+        mutate(bad)
+        assert V.validate(bad, rimac, audit, manifest)
+    bad_rimac = copy.deepcopy(rimac)
+    next(u for u in bad_rimac["units"] if u["id"] == V.RID)["documentary_variants"] = [{"label": "Pablo Patrón"}]
+    assert any("variant" in e for e in V.validate(reg, bad_rimac, audit, manifest))
+    groups = [g for g in rimac["pending_identity_groups"] if V.RID in g["inventory_ids"]]
+    assert len(groups) == 2 and all(g["status"] == "PENDING_ADJUDICATION" for g in groups)
