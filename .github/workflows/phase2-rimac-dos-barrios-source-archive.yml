@@ -5,6 +5,8 @@ on:
     paths:
       - config/phase2_rimac_dos_barrios_capture_seeds_v0_1.json
       - config/phase2_rimac_corridor_master_documentary_inventory_v0_1.json
+      - config/phase2_rimac_dos_barrios_identity_v0_1.json
+      - config/phase2_national_inventory_completeness_audit_v0_1.json
       - scripts/archive_phase2_rimac_dos_barrios_sources.py
       - scripts/validate_phase2_rimac_dos_barrios_identity.py
       - tests/test_phase2_rimac_corridor_master_documentary_inventory.py
@@ -87,6 +89,7 @@ jobs:
         if: steps.mode.outputs.capture == 'false' && hashFiles('scripts/validate_phase2_rimac_dos_barrios_identity.py') != ''
         run: |
           python scripts/validate_phase2_rimac_dos_barrios_identity.py
+          python scripts/validate_phase2_national_inventory_audit.py
           python -m pytest tests/test_phase2_rimac_corridor_master_documentary_inventory.py -q
       - name: Commit captured bytes, hashes and text extractions once
         if: steps.mode.outputs.capture == 'true' && github.event_name == 'pull_request'

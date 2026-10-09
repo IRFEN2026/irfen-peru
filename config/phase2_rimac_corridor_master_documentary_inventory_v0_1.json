@@ -21,15 +21,21 @@
       "config/phase2_rimac_receiver_context_v0_1.json",
       "config/phase2_jicamarca_discovery_v0_1.json",
       "config/phase2_rimac_jicamarca_coupling_registry_v0_1.json"
-    ]
+    ],
+    "dos_barrios_revision": {
+      "date": "2026-10-09",
+      "national_audit_revision": "r5",
+      "registry": "config/phase2_rimac_dos_barrios_identity_v0_1.json",
+      "archive_manifest": "data/phase2/source_archive/rimac_dos_barrios/archive_manifest_v0_1.json"
+    }
   },
   "counts": {
-    "national_audit_corridor_documentary_rows": 44,
+    "national_audit_corridor_documentary_rows": 45,
     "jicamarca_additional_documentary_rows": 6,
-    "total_documentary_rows": 50,
+    "total_documentary_rows": 51,
     "confirmed_unique_hydrologic_unit_count": null,
     "possible_alias_double_count_unresolved": true,
-    "missing_source_name_leads": 2
+    "missing_source_name_leads": 1
   },
   "pending_identity_groups": [
     {
@@ -212,50 +218,21 @@
       ],
       "status": "DISTRICT_CONFLICT_PENDING",
       "needed": "RD 078-2016 text."
+    },
+    {
+      "labels": [
+        "Dos Barrios",
+        "Pablo Patrón/Dos Amigos"
+      ],
+      "inventory_ids": [
+        "lima_district_unknown_dos_barrios",
+        "lima_lurigancho_pablo_patron_dos_amigos"
+      ],
+      "status": "PENDING_ADJUDICATION",
+      "needed": "A source or geometry that places both labels. Similar labels and the shared April 2012 lists are not an equivalence."
     }
   ],
   "requested_unresolved_name_leads": [
-    {
-      "requested_name": "Dos Barrios",
-      "corridor": "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA",
-      "result": "NO_SOURCE_FOUND_IN_THIS_SWEEP",
-      "note": "Original inventory sweep found no official citation for Dos Barrios; this is a historical sweep result, now superseded by the independently located official sources below. The name remains a documentary candidate, not an adjudicated unique hydrologic unit. No GIS geometry, exact outlet, travel time, discharge, or collector overflow is inferred.",
-      "post_sweep_official_evidence": {
-        "status": "OFFICIAL_DOCUMENTARY_NAME_ATTESTED_NOT_YET_INTEGRATED_AS_UNIT",
-        "verified_on": "2026-10-08",
-        "sources": [
-          {
-            "source_id": "SENAMHI-SANTO-DOMINGO-CANTUTA-HYDROGRAPHIC-STUDY",
-            "publisher": "SENAMHI",
-            "source_url": "https://www.senamhi.gob.pe/load/file/01401SENA-88.pdf",
-            "evidence_type": "HYDROGRAPHIC_DOCUMENTARY_NAME",
-            "evidence_summary": "Santo Domingo is described as adjacent to Dos Barrios and La Ronda to the east. Documentary adjacency only, not channel geometry or distinctness adjudication.",
-            "original_pdf_sha256": null,
-            "exact_geometry": null
-          },
-          {
-            "source_id": "INGEMMET-TE0306-2012-CHOSICA-FLOWS",
-            "publisher": "INGEMMET",
-            "source_url": "https://app.ingemmet.gob.pe/biblioteca/pdf/TE0306.pdf",
-            "evidence_type": "HISTORICAL_PERIOD_EVENT_MENTION",
-            "evidence_summary": "Dos Barrios is enumerated among left-bank Rímac ravines with debris flows in April 2012; the text does not independently establish an exact per-unit event timestamp or outlet.",
-            "event_period": "2012-04",
-            "event_day": null,
-            "original_pdf_sha256": null,
-            "exact_geometry": null
-          }
-        ],
-        "identity_adjudication": "PENDING_PRIMARY_GEOMETRY_AND_ALIAS_REVIEW",
-        "map_publishable": false,
-        "confirmed_unique_hydrologic_unit": false,
-        "exact_confluence": null,
-        "travel_time_tau": null,
-        "discharge_q_i": null,
-        "collector_capacity": null,
-        "collector_overflow_evidence": null,
-        "integrated_in_units": false
-      }
-    },
     {
       "requested_name": "Laderas Virgen del Rosario",
       "corridor": "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA",
@@ -2987,6 +2964,68 @@
       "map_publishable": false
     },
     {
+      "id": "lima_district_unknown_dos_barrios",
+      "documentary_label": "Dos Barrios",
+      "record_role": "POTENTIAL_DISTINCT_LOCAL_UNIT_UNADJUDICATED",
+      "district": null,
+      "province": null,
+      "priority_from_audit": "P2",
+      "main_presence": "NOT_FOUND_IN_REPO",
+      "source_refs": [
+        {
+          "source_id": "SENAMHI-2020-QDAS-SANTO-DOMINGO-CANTUTA",
+          "evidence_type": "IDENTITY",
+          "source_text_verified": false,
+          "quote_verified_against_archive": true,
+          "archived_sha256": "f15ee79bb556824b292d6347615cf50f84eefc24f59758da9daf38c28c3400a8",
+          "quote_ids": [
+            "SEN-P3-ADJACENCY"
+          ],
+          "detail_locator": "config/phase2_rimac_dos_barrios_identity_v0_1.json#quotes",
+          "source_url": "https://www.senamhi.gob.pe/load/file/01401SENA-88.pdf"
+        },
+        {
+          "source_id": "VILLACORTA-2018-UPM-THESIS-INGEMMET-TE0306",
+          "evidence_type": "IDENTITY",
+          "source_text_verified": false,
+          "quote_verified_against_archive": true,
+          "archived_sha256": "addab6d18a40ea6277e723f5477bb898223bec5280606ebd7ad4b7d79f8cea29",
+          "quote_ids": [
+            "TE-P85-2012-LIST",
+            "TE-P83-TABLE-2012"
+          ],
+          "detail_locator": "config/phase2_rimac_dos_barrios_identity_v0_1.json#quotes",
+          "source_url": "https://app.ingemmet.gob.pe/biblioteca/pdf/TE0306.pdf"
+        }
+      ],
+      "documentary_variants": [],
+      "identity_adjudication": "DOCUMENTARY_LABEL_ONLY_HYDROLOGIC_DISTINCTNESS_UNRESOLVED",
+      "channel_or_catchment_geometry": "NOT_ADJUDICATED_FROM_SOURCE_GEOMETRY",
+      "reproducible_geometry_ref": null,
+      "outlet_coordinate": null,
+      "exact_confluence_coordinate": null,
+      "receiver_relation": "UNKNOWN_NOT_ASSUMED",
+      "existing_context_refs": [],
+      "verified_event_refs": [],
+      "unverified_event_leads": [
+        {
+          "date_or_period": "2012-04",
+          "source_id": "VILLACORTA-2018-UPM-THESIS-INGEMMET-TE0306",
+          "source_text_verified": false,
+          "unit_attribution": "NAMED_IN_LIST_OF_SEVEN_QUEBRADAS_ACADEMIC_THESIS",
+          "usable_as_confirmed_unit_event": false
+        }
+      ],
+      "exposure_refs": [],
+      "rainfall_observation_refs": [],
+      "flow_or_stage_observation_refs": [],
+      "travel_time_tau": null,
+      "discharge_q_i": null,
+      "collector_capacity": null,
+      "collector_overflow_evidence": null,
+      "map_publishable": false
+    },
+    {
       "id": "jicamarca_rio_seco",
       "documentary_label": "Río Seco",
       "record_role": "OFFICIAL_MONITORED_LOCAL_UNIT",
@@ -3243,6 +3282,21 @@
       "collector_capacity": null,
       "collector_overflow_evidence": null,
       "map_publishable": false
+    }
+  ],
+  "resolved_name_leads": [
+    {
+      "requested_name": "Dos Barrios",
+      "corridor": "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA",
+      "historical_sweep_result": "NO_SOURCE_FOUND_IN_THIS_SWEEP",
+      "resolution": "REGISTERED_AS_IDENTITY_ONLY_AFTER_ARCHIVED_SOURCE_VERIFICATION",
+      "inventory_id": "lima_district_unknown_dos_barrios",
+      "registry": "config/phase2_rimac_dos_barrios_identity_v0_1.json",
+      "resolved_in_audit_revision": "r5",
+      "corrections_to_earlier_note": [
+        "INGEMMET TE0306 is a 2018 UPM doctoral thesis hosted by the INGEMMET library, not an INGEMMET 2012 report.",
+        "Both sources are now archived with SHA-256 (the earlier note had original_pdf_sha256=null)."
+      ]
     }
   ]
 }

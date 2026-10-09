@@ -3,6 +3,8 @@
 Documentary rows are not a count of unique hydrologic catchments.
 A source mention, regulatory faja, work or event is not publishable GIS geometry.
 """
+import copy
+import importlib.util
 import json
 from pathlib import Path
 
@@ -119,52 +121,86 @@ def test_unresolved_requested_names_remain_leads_not_negative_evidence():
         assert lead["note"]
 
 
+def _dos_barrios_validator():
+    spec = importlib.util.spec_from_file_location(
+        "irfen_rimac_dos_barrios_validator", ROOT / "scripts/validate_phase2_rimac_dos_barrios_identity.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
-def test_dos_barrios_official_post_sweep_attestation_remains_fail_closed():
-    """Two official mentions attest a label, not a uniquely routed or mapped ravine."""
-    d = load()
-    leads = [
-        lead for lead in d["requested_unresolved_name_leads"]
-        if lead["requested_name"] == "Dos Barrios"
-    ]
-    assert len(leads) == 1
-    lead = leads[0]
-    # Preserve the provenance of the earlier sweep; later evidence supersedes
-    # its source-search conclusion without rewriting the historical observation.
-    assert lead["result"] == "NO_SOURCE_FOUND_IN_THIS_SWEEP"
-    evidence = lead["post_sweep_official_evidence"]
-    assert evidence["status"] == (
-        "OFFICIAL_DOCUMENTARY_NAME_ATTESTED_NOT_YET_INTEGRATED_AS_UNIT"
-    )
-    assert evidence["identity_adjudication"] == (
-        "PENDING_PRIMARY_GEOMETRY_AND_ALIAS_REVIEW"
-    )
-    assert {source["publisher"] for source in evidence["sources"]} == {
-        "SENAMHI", "INGEMMET"
+
+V = _dos_barrios_validator()
+
+
+def test_dos_barrios_is_registered_only_on_archived_verifiable_evidence():
+    """Dos Barrios is IDENTITY_ONLY because archived, page-cited quotes name it; nothing hydrologic follows."""
+    reg, rimac, audit, manifest = V.load_all()
+    assert V.validate(reg, rimac, audit, manifest) == []
+    assert V.main() == 0
+    unit = next(u for u in rimac["units"] if u["id"] == V.RID)
+    assert unit["documentary_label"] == "Dos Barrios" and unit["map_publishable"] is False
+    assert {ref["source_id"] for ref in unit["source_refs"]} == {
+        "SENAMHI-2020-QDAS-SANTO-DOMINGO-CANTUTA", "VILLACORTA-2018-UPM-THESIS-INGEMMET-TE0306"
     }
-    assert all(source["source_url"].startswith("https://") for source in evidence["sources"])
-    assert all(source["original_pdf_sha256"] is None for source in evidence["sources"])
-    assert all(source["exact_geometry"] is None for source in evidence["sources"])
-    event_mentions = [
-        source for source in evidence["sources"]
-        if source["evidence_type"] == "HISTORICAL_PERIOD_EVENT_MENTION"
-    ]
-    assert len(event_mentions) == 1
-    assert event_mentions[0]["event_period"] == "2012-04"
-    assert event_mentions[0]["event_day"] is None
+    assert all(len(ref["archived_sha256"]) == 64 for ref in unit["source_refs"])
+    resolved = [r for r in rimac["resolved_name_leads"] if r["requested_name"] == "Dos Barrios"]
+    assert len(resolved) == 1 and resolved[0]["historical_sweep_result"] == "NO_SOURCE_FOUND_IN_THIS_SWEEP"
+    assert reg["quotes"]["SEN-P3-ADJACENCY"]["page"] == 17 and reg["quotes"]["SEN-P3-ADJACENCY"]["printed_page_label"] == "3"
 
-    # An attested label must not silently become an extra confirmed unit or
-    # be equated to Pablo Patron / Dos Amigos by locality or similarity.
-    assert evidence["integrated_in_units"] is False
-    assert evidence["confirmed_unique_hydrologic_unit"] is False
-    assert evidence["map_publishable"] is False
-    assert evidence["exact_confluence"] is None
-    for field in (
-        "travel_time_tau", "discharge_q_i", "collector_capacity",
-        "collector_overflow_evidence",
+
+def test_dos_barrios_registration_fails_without_verifiable_archive_evidence():
+    reg, rimac, audit, manifest = V.load_all()
+    bad = copy.deepcopy(reg)
+    bad["sources"]["SENAMHI-2020-QDAS-SANTO-DOMINGO-CANTUTA"]["sha256"] = "0" * 64
+    assert any("sha256" in e or "SHA-256" in e for e in V.validate(bad, rimac, audit, manifest))
+    bad = copy.deepcopy(reg)
+    bad["quotes"]["SEN-P3-ADJACENCY"]["text"] = "La quebrada Santo Domingo se encuentra contigua a la quebrada Dos Barrios."
+    assert any("SEN-P3-ADJACENCY" in e and "verbatim" in e for e in V.validate(bad, rimac, audit, manifest))
+    bad = copy.deepcopy(reg)
+    for att in bad["candidate"]["identity_basis"]["attestations"]:
+        att["quote_ids"] = ["SEN-P3-STUDY-AREA"] if att["source_id"].startswith("SENAMHI") else ["TE-P85-CITATION"]
+    assert any("no quote contains" in e for e in V.validate(bad, rimac, audit, manifest))
+    bad = copy.deepcopy(reg)
+    bad["candidate"]["identity_basis"]["attestations"] = [
+        a for a in bad["candidate"]["identity_basis"]["attestations"] if not a["source_id"].startswith("SENAMHI")
+    ]
+    assert any("primary institutional" in e for e in V.validate(bad, rimac, audit, manifest))
+    bad_rimac = copy.deepcopy(rimac)
+    next(u for u in bad_rimac["units"] if u["id"] == V.RID)["source_refs"][0]["archived_sha256"] = None
+    assert any("archived SHA-256" in e for e in V.validate(reg, bad_rimac, audit, manifest))
+
+
+def test_dos_barrios_gets_no_location_geometry_confluence_or_event_by_inference():
+    reg, rimac, audit, manifest = V.load_all()
+    for mutate in (
+        lambda r: r["candidate"].__setitem__("district", "Lurigancho-Chosica"),
+        lambda r: r["candidate"].__setitem__("receiver_relation", "RIMAC_LEFT_BANK_CONFLUENCE"),
+        lambda r: r["candidate"].__setitem__("events_attributed", [{"date": "2012-04-05"}]),
+        lambda r: r["candidate"]["historical_period_mentions"][0].__setitem__("usable_as_confirmed_unit_event", True),
+        lambda r: r["relations_recorded_not_adopted"][0].__setitem__("status", "SAME_CHANNEL"),
     ):
-        assert evidence[field] is None
-    assert not any(
-        unit["documentary_label"] == "Dos Barrios" for unit in d["units"]
-    )
-    assert d["counts"]["confirmed_unique_hydrologic_unit_count"] is None
+        bad = copy.deepcopy(reg)
+        mutate(bad)
+        assert V.validate(bad, rimac, audit, manifest)
+    for field, value in (("exact_confluence_coordinate", [314700, 8679000]), ("reproducible_geometry_ref", "x.geojson"),
+                         ("map_publishable", True), ("district", "Ricardo Palma")):
+        bad_rimac = copy.deepcopy(rimac)
+        next(u for u in bad_rimac["units"] if u["id"] == V.RID)[field] = value
+        assert V.validate(reg, bad_rimac, audit, manifest), field
+    bad_audit = copy.deepcopy(audit)
+    row = next(r for r in bad_audit["candidates"] if r["inventory_id"] == V.RID)
+    row["state_flags"] = ["EVENT_LEAD_UNVERIFIED"]
+    assert V.validate(reg, rimac, bad_audit, manifest)
+
+
+def test_dos_barrios_is_not_left_both_as_lead_and_unit_or_merged_with_dos_amigos():
+    reg, rimac, audit, manifest = V.load_all()
+    bad_rimac = copy.deepcopy(rimac)
+    bad_rimac["requested_unresolved_name_leads"].append({"requested_name": "Dos Barrios", "result": "NO_SOURCE_FOUND_IN_THIS_SWEEP", "note": "x"})
+    assert any("unresolved lead" in e for e in V.validate(reg, bad_rimac, audit, manifest))
+    bad_rimac = copy.deepcopy(rimac)
+    group = next(g for g in bad_rimac["pending_identity_groups"] if V.RID in g["inventory_ids"])
+    group["status"] = "MERGED"
+    assert any("pending" in e for e in V.validate(reg, bad_rimac, audit, manifest))
+    assert not any(u["documentary_label"] == "Pablo Patrón/Dos Amigos" and u["id"] == V.RID for u in rimac["units"])
