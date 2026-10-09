@@ -15,7 +15,10 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import shutil
+import subprocess
 import sys
+import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -35,6 +38,44 @@ GUARDS = BASE.GUARDS
 
 def sha256_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def fetch_full(url: str, timeout: int, max_bytes: int) -> dict:
+    """Like the PR #364 fetch, but also records Content-Length so a truncated body is visible."""
+    from urllib.request import Request, urlopen
+
+    started = datetime.now(timezone.utc).isoformat()
+    try:
+        request = Request(BASE.safe_url(url), headers={"User-Agent": BASE.USER_AGENT, "Accept": "*/*"})
+        with urlopen(request, timeout=timeout) as response:
+            data = response.read(max_bytes + 1)
+            declared = response.headers.get("Content-Length")
+            if len(data) > max_bytes:
+                return dict(status="SKIPPED_TOO_LARGE", requested_url=url, retrieved_at_utc=started, bytes_read=len(data))
+            return dict(status="CAPTURED", requested_url=url, final_url=response.geturl(), http_status=response.status,
+                        content_type=response.headers.get("Content-Type"), content_length_header=declared,
+                        retrieved_at_utc=started, data=data)
+    except Exception as exc:  # noqa: BLE001 - recorded, never fatal
+        return dict(status="UNREACHABLE", requested_url=url, error=type(exc).__name__ + ": " + str(exc)[:200], retrieved_at_utc=started)
+
+
+def extract_pages(data: bytes) -> tuple[list[str], str]:
+    """pypdf per page; if pypdf fails, fall back to poppler pdftotext (one page per form feed)."""
+    try:
+        return BASE.pdf_pages(data), "PYPDF_PER_PAGE"
+    except Exception as exc:  # noqa: BLE001
+        first_error = f"{type(exc).__name__}: {str(exc)[:120]}"
+    if shutil.which("pdftotext"):
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp) / "in.pdf"
+            src.write_bytes(data)
+            out = subprocess.run(["pdftotext", "-layout", str(src), "-"], capture_output=True, timeout=300)
+            if out.returncode == 0 and out.stdout.strip():
+                pages = out.stdout.decode("utf-8", "replace").split("\f")
+                if pages and not pages[-1].strip():
+                    pages = pages[:-1]
+                return pages, f"POPPLER_PDFTOTEXT_LAYOUT_AFTER_PYPDF_FAILED ({first_error})"
+    return [], f"FAILED ({first_error})"
 
 
 def load_seeds() -> dict:
@@ -66,19 +107,21 @@ def capture_supplements() -> int:
         manifest["records"] = [r for r in manifest["records"] if r["document_id"] != doc_id]
         attempts, record = [], None
         for url, how, accept in BASE.expand_routes(item["routes"], limits, attempts):
-            result = BASE.fetch(url, limits["timeout_seconds"], limits["max_bytes_per_document"])
-            attempt = {k: v for k, v in result.items() if k in ("requested_url", "status", "http_status", "error", "final_url", "retrieved_at_utc", "bytes_read")}
+            result = fetch_full(url, limits["timeout_seconds"], limits["max_bytes_per_document"])
+            attempt = {k: v for k, v in result.items() if k in ("requested_url", "status", "http_status", "error", "final_url", "retrieved_at_utc", "bytes_read", "content_length_header")}
             attempt["route"] = how
             attempts.append(attempt)
             data = result.get("data") or b""
             if result["status"] != "CAPTURED" or (item.get("expect_pdf") and data[:5] != b"%PDF-"):
                 time.sleep(2)
                 continue
-            try:
-                pages = BASE.pdf_pages(data) if BASE.is_pdf(result) else [BASE.html_text(data)]
-            except Exception as exc:  # noqa: BLE001
-                attempt["rejected"] = f"TEXT_EXTRACTION_FAILED: {type(exc).__name__}"
-                continue
+            attempt.update(bytes=len(data), sha256=BASE.sha256_bytes(data))
+            if BASE.is_pdf(result):
+                pages, extraction = extract_pages(data)
+            else:
+                pages, extraction = [BASE.html_text(data)], "HTML_TAGS_STRIPPED"
+            declared = result.get("content_length_header")
+            truncated = bool(declared and declared.isdigit() and int(declared) != len(data))
             hits = BASE.term_hits(pages, terms)
             if accept and not any(a in BASE.fold(" ".join(pages)) for a in accept):
                 attempt["rejected"] = "TEXT_LACKS_REQUIRED_TOKEN"
@@ -91,7 +134,7 @@ def capture_supplements() -> int:
             record = {k: v for k, v in result.items() if k not in ("data", "status")}
             record.update(document_id=doc_id, origin=dict(kind="supplement", institution=item["institution"], why=item["why"]),
                           official_url=item["official_url"], served_by_route=how, route_attempts=attempts,
-                          text_extraction="PYPDF_PER_PAGE" if ext == ".pdf" else "HTML_TAGS_STRIPPED",
+                          text_extraction=extraction, possibly_truncated=truncated,
                           media=ext[1:], bytes=len(data), sha256=BASE.sha256_bytes(data), page_count=len(pages),
                           text_characters=sum(len(p) for p in pages), term_hits=hits, terms_found=sorted({h["term"] for h in hits}),
                           status="ARCHIVED", raw_path=str(raw_path.relative_to(ROOT)), text_path=str(text_path.relative_to(ROOT)),
