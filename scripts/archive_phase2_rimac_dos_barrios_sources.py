@@ -156,6 +156,22 @@ def poppler_pages(data: bytes) -> list[str] | None:
         return pages
 
 
+def ocr_pages(data: bytes, lang: str) -> tuple[list[str] | None, str | None]:
+    """OCR a scanned PDF page by page (pdftoppm 300 dpi + tesseract). Only used when a document has no text layer."""
+    if not (shutil.which("pdftoppm") and shutil.which("tesseract")):
+        return None, None
+    version = subprocess.run(["tesseract", "--version"], capture_output=True, text=True).stdout.splitlines()[:1]
+    with tempfile.TemporaryDirectory() as tmp:
+        src = Path(tmp) / "in.pdf"
+        src.write_bytes(data)
+        subprocess.run(["pdftoppm", "-r", "300", "-png", str(src), str(Path(tmp) / "p")], check=True, timeout=1800)
+        pages = []
+        for image in sorted(Path(tmp).glob("p-*.png")):
+            out = subprocess.run(["tesseract", str(image), "-", "-l", lang, "--psm", "3"], capture_output=True, timeout=600)
+            pages.append(out.stdout.decode("utf-8", "replace"))
+        return pages, f"pdftoppm 300 dpi + {version[0] if version else 'tesseract'} -l {lang} --psm 3"
+
+
 def html_text(data: bytes) -> str:
     raw = data.decode("utf-8", "replace")
     raw = re.sub(r"(?is)<(script|style)[^>]*>.*?</\1>", " ", raw)
@@ -255,6 +271,12 @@ def capture() -> int:
                 poppler = poppler_pages(data)
                 if poppler is not None:
                     layers["poppler_layout_pages"] = poppler
+                if item.get("ocr_if_no_text_layer") and not any(p.strip() for pages in layers.values() for p in pages):
+                    ocr, engine = ocr_pages(data, item["ocr_if_no_text_layer"])
+                    if ocr is not None:
+                        layers["ocr_pages"] = ocr
+                        attempts[-1]["ocr_engine"] = engine
+                        attempts[-1]["ocr_note"] = "No text layer in the PDF (scanned). OCR text is a reading aid; quotes from it are also checked on the rendered page."
             else:
                 layers["html_text_pages"] = [html_text(data)]
             text_path = ARCHIVE / "text" / f"{item['id']}.pages.json"
