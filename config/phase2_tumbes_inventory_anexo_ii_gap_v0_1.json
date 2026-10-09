@@ -25,7 +25,17 @@
   "lane_archive_manifest_sha256": "1b6009f1f2577e425303f8bc203d5b448a90b25305c5d51ea829ee49ef9344c1",
   "requested_by": "Independent scientific review (ChatGPT), 2026-10-09",
   "quote_rule": "Every quote is a verbatim, whitespace-normalised substring of the archived text page it cites; tests re-check it against files whose SHA-256 matches the manifest.",
-  "visual_check": "Anexo II page 1 (rows 1-29) and page 2 (row II-68) rendered with pdftoppm and read by eye (Claude, 2026-10-09)."
+  "visual_check": "Anexo II page 1 (rows 1-29) and page 2 (row II-68) rendered with pdftoppm and read by eye (Claude, 2026-10-09).",
+  "revisions": [
+   {
+    "revision": "r3",
+    "note": "Initial gap closure: 10 new rows; Malvales and 07 De Junio attached as variants of existing rows."
+   },
+   {
+    "revision": "r3b",
+    "note": "After independent QA (ChatGPT, 2026-10-09): Malvales and 07 De Junio get their own rows; possible equivalence with Malval and Casa Blanqueada - I.E. 7 de Junio is UNRESOLVED; the pre-existing rows are restored to their main content."
+   }
+  ]
  },
  "sources": {
   "ANA-DU-015-2023-ANEXO-II": {
@@ -480,8 +490,7 @@
   "NOT_MAP_ELIGIBLE": "Never published to the map by this registry."
  },
  "registration_vocabulary": {
-  "NEW_ROW_IN_MASTER_INVENTORY": "A new candidate row was added to the national audit (r3).",
-  "VARIANT_EVIDENCE_ON_EXISTING_ROW_PENDING_ALIAS": "The label is attached as a documentary variant to an existing row; it moves to its own row if the alias is rejected."
+  "NEW_ROW_IN_MASTER_INVENTORY": "A new candidate row was added to the national audit (r3)."
  },
  "requested_names": [
   {
@@ -607,6 +616,10 @@
    "map_eligible": false
   },
   {
+   "possible_equivalence": {
+    "inventory_id": "tumbes_san_jacinto_casa_blanqueada_i_e_7_de_junio",
+    "status": "UNRESOLVED"
+   },
    "requested_name": "07 de Junio",
    "anexo_ii_rows": [
     16
@@ -615,9 +628,9 @@
     "ANEXO-II-I-16"
    ],
    "plan_de_intervenciones": "NOT_READ_SOURCE_INCOMPLETE",
-   "registration": "VARIANT_EVIDENCE_ON_EXISTING_ROW_PENDING_ALIAS",
+   "registration": "NEW_ROW_IN_MASTER_INVENTORY",
    "inventory_ids": [
-    "tumbes_san_jacinto_casa_blanqueada_i_e_7_de_junio"
+    "tumbes_san_jacinto_07_de_junio"
    ],
    "maturity": "M1_SINGLE_OFFICIAL_LISTING",
    "flags": [
@@ -629,7 +642,7 @@
    "context_quote_ids": [
     "ANA3743-CASA-BLANQUEADA-7-JUNIO"
    ],
-   "note": "Existing row 'Casa Blanqueada - I.E. 7 de Junio' (ANA 2016) in the same district; Anexo II gives sector Casa Blanqueada. Not merged: variant evidence pending adjudication.",
+   "note": "Own row. Possible equivalence with the existing row 'Casa Blanqueada - I.E. 7 de Junio' (ANA 2016, same district; Anexo II gives sector Casa Blanqueada) is UNRESOLVED.",
    "geometry_status": "UNKNOWN",
    "outlet_status": "UNKNOWN",
    "map_eligible": false
@@ -806,6 +819,10 @@
    "map_eligible": false
   },
   {
+   "possible_equivalence": {
+    "inventory_id": "tumbes_corrales_malval",
+    "status": "UNRESOLVED"
+   },
    "requested_name": "Malvales",
    "anexo_ii_rows": [
     29
@@ -814,9 +831,9 @@
     "ANEXO-II-I-29"
    ],
    "plan_de_intervenciones": "NOT_READ_SOURCE_INCOMPLETE",
-   "registration": "VARIANT_EVIDENCE_ON_EXISTING_ROW_PENDING_ALIAS",
+   "registration": "NEW_ROW_IN_MASTER_INVENTORY",
    "inventory_ids": [
-    "tumbes_corrales_malval"
+    "tumbes_corrales_malvales"
    ],
    "maturity": "M1_SINGLE_OFFICIAL_LISTING",
    "flags": [
@@ -830,7 +847,7 @@
     "A6764-C36-MALVAL",
     "RC3755-CORRALES-SECTORES"
    ],
-   "note": "Existing row 'Malval' (ANA 2016) in the same district (Corrales). INGEMMET C-36 refers to flows from the slopes of sector Malval and COEN to sector Malvales: neither is attached as quebrada evidence.",
+   "note": "Own row. Possible equivalence with the existing row 'Malval' (ANA 2016, same district Corrales) is UNRESOLVED. INGEMMET C-36 (flows from the slopes of sector Malval) and COEN (sector Malvales) are not attached as quebrada evidence.",
    "geometry_status": "UNKNOWN",
    "outlet_status": "UNKNOWN",
    "map_eligible": false
@@ -952,8 +969,8 @@
   {
    "row": 16,
    "quote_id": "ANEXO-II-I-16",
-   "outcome": "REQUESTED_NAME_VARIANT_EVIDENCE_ON_EXISTING_ROW_PENDING_ALIAS",
-   "inventory_id": "tumbes_san_jacinto_casa_blanqueada_i_e_7_de_junio"
+   "outcome": "REQUESTED_NAME_NEW_ROW_IN_MASTER_INVENTORY",
+   "inventory_id": "tumbes_san_jacinto_07_de_junio"
   },
   {
    "row": 17,
@@ -1030,8 +1047,8 @@
   {
    "row": 29,
    "quote_id": "ANEXO-II-I-29",
-   "outcome": "REQUESTED_NAME_VARIANT_EVIDENCE_ON_EXISTING_ROW_PENDING_ALIAS",
-   "inventory_id": "tumbes_corrales_malval"
+   "outcome": "REQUESTED_NAME_NEW_ROW_IN_MASTER_INVENTORY",
+   "inventory_id": "tumbes_corrales_malvales"
   }
  ],
  "duplicates_detected": [
@@ -1040,18 +1057,24 @@
     "Malvales",
     "Malval"
    ],
-   "inventory_id": "tumbes_corrales_malval",
+   "inventory_ids": [
+    "tumbes_corrales_malvales",
+    "tumbes_corrales_malval"
+   ],
    "kind": "NEAR_LABEL_SAME_DISTRICT",
-   "handling": "variant evidence, alias pending"
+   "handling": "separate rows; equivalence UNRESOLVED (alias group PENDING_ADJUDICATION)"
   },
   {
    "labels": [
-    "07 de Junio",
+    "07 De Junio",
     "Casa Blanqueada - I.E. 7 de Junio"
    ],
-   "inventory_id": "tumbes_san_jacinto_casa_blanqueada_i_e_7_de_junio",
+   "inventory_ids": [
+    "tumbes_san_jacinto_07_de_junio",
+    "tumbes_san_jacinto_casa_blanqueada_i_e_7_de_junio"
+   ],
    "kind": "NEAR_LABEL_SAME_DISTRICT",
-   "handling": "variant evidence, alias pending"
+   "handling": "separate rows; equivalence UNRESOLVED (alias group PENDING_ADJUDICATION)"
   },
   {
    "labels": [
@@ -1108,13 +1131,13 @@
    "tumbes_san_jacinto_santa_rosa",
    "tumbes_pampas_de_hospital_santa_maria",
    "tumbes_pampas_de_hospital_nueva_esperanza",
+   "tumbes_corrales_malvales",
+   "tumbes_san_jacinto_07_de_junio",
    "tumbes_san_jacinto_la_capitana",
    "tumbes_district_unknown_higueron"
   ],
-  "rows_with_variant_evidence_added": [
-   "tumbes_corrales_malval",
-   "tumbes_san_jacinto_casa_blanqueada_i_e_7_de_junio"
-  ],
+  "rows_with_variant_evidence_added": [],
+  "pre_existing_rows_modified": [],
   "sources_added": [
    "ANA-DU-015-2023-ANEXO-II",
    "INGEMMET-A6764-TUMBES-2017",

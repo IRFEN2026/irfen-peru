@@ -33,29 +33,25 @@ La revisión independiente señaló 12 nombres del Anexo II del DU 015-2023 (ANA
 
 | Nombre | Filas Anexo II | Registro | Fila del inventario | Madurez | Marcas | Nota |
 |---|---|---|---|---|---|---|
-| Fernández | 7, 8 | fila nueva (r3) | `tumbes_canoas_de_punta_sal_fernandez` | `M2_MULTI_SOURCE_IDENTITY` | homónimos, alias pendiente | Main names a Quebrada Fernández system (Bocapán evidence) and quarantines its same-name use for the Máncora child; Anexo II also lists Qda. Fernández in Piura (II-68). Not merged. |
-| Seca | 9 | fila nueva (r3) | `tumbes_canoas_de_punta_sal_seca` | `M2_MULTI_SOURCE_IDENTITY` | homónimos, alias pendiente | Several Tumbes features carry the label: Anexo II row 3 uses 'Quebrada Seca' as a SECTOR of a Río Zarumilla point (Matapalo); INGEMMET names a 'Quebrada Seca - Pajaritos' road section; Ley 32573 names a quebrada Seca whose upper reach is called Hualtacal. None is attached to the row. |
-| Casitas | 10, 11 | fila nueva (r3) | `tumbes_casitas_casitas` | `M2_MULTI_SOURCE_IDENTITY` | homónimos, alias pendiente | Main holds the Casitas-Bocapán drainage only as ANA hydrographic-unit context; the audit row 'Panales-Casitas' (Andina 2024) is kept separate. |
-| Carretas | 15 | fila nueva (r3) | `tumbes_san_jacinto_carretas` | `M1_SINGLE_OFFICIAL_LISTING` | — | Sector of the same name; ANA 2016 map 3743 prints a centro poblado 'CARRETAS'. |
-| 07 de Junio | 16 | variante en fila existente (alias pendiente) | `tumbes_san_jacinto_casa_blanqueada_i_e_7_de_junio` | `M1_SINGLE_OFFICIAL_LISTING` | alias pendiente | Existing row 'Casa Blanqueada - I.E. 7 de Junio' (ANA 2016) in the same district; Anexo II gives sector Casa Blanqueada. Not merged: variant evidence pending adjudication. |
-| Hualaca | 17 | fila nueva (r3) | `tumbes_san_jacinto_hualaca` | `M1_SINGLE_OFFICIAL_LISTING` | alias pendiente | Already registered in PR #364 (unit tumbes_san_jacinto_quebrada_hualaca); the audit row indexes it. Relation to Higuerón UNRESOLVED. |
-| Hualtacal | 18 | fila nueva (r3) | `tumbes_san_jacinto_hualtacal` | `M2_MULTI_SOURCE_IDENTITY` | homónimos, alias pendiente | Named in PR #364 as context. Contexts: San Jacinto / Rica Playa (Anexo II), Contralmirante Villar–Tumbes divide and upper reach of a quebrada Seca (Ley 32573), ANA 2016 Cancas and Canoas maps. |
-| Plateros | 20 | fila nueva (r3) | `tumbes_san_jacinto_plateros` | `M3_PERIOD_EVENT_LEAD` | — | Sector of the same name. INGEMMET 2017 road damage from flows of the quebrada Plateros is period-level only. |
-| Santa María | 23 | fila nueva (r3) | `tumbes_pampas_de_hospital_santa_maria` | `M1_SINGLE_OFFICIAL_LISTING` | homónimos | INGEMMET 2017 names a 'Quebrada Santa María' (district not printed in the row) and 'Santa María de Dios' in distrito Tumbes: not attached. Lima homonym in the audit. |
-| Nueva Esperanza | 25 | fila nueva (r3) | `tumbes_pampas_de_hospital_nueva_esperanza` | `M1_SINGLE_OFFICIAL_LISTING` | homónimos | COEN RC 3755 names settlements/sectors 'Nueva Esperanza' in Corrales and in Aguas Verdes (not quebradas). Lambayeque homonym in the audit. |
-| Santa Rosa | 21 | fila nueva (r3) | `tumbes_san_jacinto_santa_rosa` | `M1_SINGLE_OFFICIAL_LISTING` | homónimos | Kept apart from 'Barrio Santa Rosa-Uña de Gato' (Papayal) and from the INGEMMET quebrada Santa Rosa in distrito Tumbes. Ica homonym in the audit. |
-| Malvales | 29 | variante en fila existente (alias pendiente) | `tumbes_corrales_malval` | `M1_SINGLE_OFFICIAL_LISTING` | alias pendiente | Existing row 'Malval' (ANA 2016) in the same district (Corrales). INGEMMET C-36 refers to flows from the slopes of sector Malval and COEN to sector Malvales: neither is attached as quebrada evidence. |
+| Fernández | 7, 8 | fila propia (r3/r3b) | `tumbes_canoas_de_punta_sal_fernandez` | `M2_MULTI_SOURCE_IDENTITY` | homónimos, alias pendiente | Main names a Quebrada Fernández system (Bocapán evidence) and quarantines its same-name use for the Máncora child; Anexo II also lists Qda. Fernández in Piura (II-68). Not merged. |
+| Seca | 9 | fila propia (r3/r3b) | `tumbes_canoas_de_punta_sal_seca` | `M2_MULTI_SOURCE_IDENTITY` | homónimos, alias pendiente | Several Tumbes features carry the label: Anexo II row 3 uses 'Quebrada Seca' as a SECTOR of a Río Zarumilla point (Matapalo); INGEMMET names a 'Quebrada Seca - Pajaritos' road section; Ley 32573 names a quebrada Seca whose upper reach is called Hualtacal. None is attached to the row. |
+| Casitas | 10, 11 | fila propia (r3/r3b) | `tumbes_casitas_casitas` | `M2_MULTI_SOURCE_IDENTITY` | homónimos, alias pendiente | Main holds the Casitas-Bocapán drainage only as ANA hydrographic-unit context; the audit row 'Panales-Casitas' (Andina 2024) is kept separate. |
+| Carretas | 15 | fila propia (r3/r3b) | `tumbes_san_jacinto_carretas` | `M1_SINGLE_OFFICIAL_LISTING` | — | Sector of the same name; ANA 2016 map 3743 prints a centro poblado 'CARRETAS'. |
+| 07 de Junio | 16 | fila propia (r3/r3b) | `tumbes_san_jacinto_07_de_junio` | `M1_SINGLE_OFFICIAL_LISTING` | alias pendiente | Own row. Possible equivalence with the existing row 'Casa Blanqueada - I.E. 7 de Junio' (ANA 2016, same district; Anexo II gives sector Casa Blanqueada) is UNRESOLVED. Equivalencia posible con `tumbes_san_jacinto_casa_blanqueada_i_e_7_de_junio`: `UNRESOLVED`. |
+| Hualaca | 17 | fila propia (r3/r3b) | `tumbes_san_jacinto_hualaca` | `M1_SINGLE_OFFICIAL_LISTING` | alias pendiente | Already registered in PR #364 (unit tumbes_san_jacinto_quebrada_hualaca); the audit row indexes it. Relation to Higuerón UNRESOLVED. |
+| Hualtacal | 18 | fila propia (r3/r3b) | `tumbes_san_jacinto_hualtacal` | `M2_MULTI_SOURCE_IDENTITY` | homónimos, alias pendiente | Named in PR #364 as context. Contexts: San Jacinto / Rica Playa (Anexo II), Contralmirante Villar–Tumbes divide and upper reach of a quebrada Seca (Ley 32573), ANA 2016 Cancas and Canoas maps. |
+| Plateros | 20 | fila propia (r3/r3b) | `tumbes_san_jacinto_plateros` | `M3_PERIOD_EVENT_LEAD` | — | Sector of the same name. INGEMMET 2017 road damage from flows of the quebrada Plateros is period-level only. |
+| Santa María | 23 | fila propia (r3/r3b) | `tumbes_pampas_de_hospital_santa_maria` | `M1_SINGLE_OFFICIAL_LISTING` | homónimos | INGEMMET 2017 names a 'Quebrada Santa María' (district not printed in the row) and 'Santa María de Dios' in distrito Tumbes: not attached. Lima homonym in the audit. |
+| Nueva Esperanza | 25 | fila propia (r3/r3b) | `tumbes_pampas_de_hospital_nueva_esperanza` | `M1_SINGLE_OFFICIAL_LISTING` | homónimos | COEN RC 3755 names settlements/sectors 'Nueva Esperanza' in Corrales and in Aguas Verdes (not quebradas). Lambayeque homonym in the audit. |
+| Santa Rosa | 21 | fila propia (r3/r3b) | `tumbes_san_jacinto_santa_rosa` | `M1_SINGLE_OFFICIAL_LISTING` | homónimos | Kept apart from 'Barrio Santa Rosa-Uña de Gato' (Papayal) and from the INGEMMET quebrada Santa Rosa in distrito Tumbes. Ica homonym in the audit. |
+| Malvales | 29 | fila propia (r3/r3b) | `tumbes_corrales_malvales` | `M1_SINGLE_OFFICIAL_LISTING` | alias pendiente | Own row. Possible equivalence with the existing row 'Malval' (ANA 2016, same district Corrales) is UNRESOLVED. INGEMMET C-36 (flows from the slopes of sector Malval) and COEN (sector Malvales) are not attached as quebrada evidence. Equivalencia posible con `tumbes_corrales_malval`: `UNRESOLVED`. |
 
 También se indexan en el inventario las dos unidades del PR #364 que no figuran en el Anexo II:
 
 - **La Capitana**: `tumbes_san_jacinto_la_capitana`, `M3_PERIOD_EVENT_LEAD`. Not in Anexo II. PR #364 unit tumbes_san_jacinto_quebrada_la_capitana.
 - **Higuerón**: `tumbes_district_unknown_higueron`, `M3_PERIOD_EVENT_LEAD`. Not a quebrada row in Anexo II ('Higueron' is only the sector of Qda. Hualaca). PR #364 label group; number of channels UNRESOLVED.
 
-**Resultado.** Los 12 nombres no se tratan como 12 cauces:
-
-- 10 se registran como filas nuevas;
-- 2 se agregan como variantes documentales de filas existentes, pendientes de adjudicación;
-- ninguna relación entre cauces queda adjudicada.
+**Resultado (r3b, tras la QA independiente).** Cada uno de los 12 nombres tiene su propia fila. «Malvales» y «07 De Junio» se registran aparte de las filas existentes Malval y Casa Blanqueada - I.E. 7 de Junio, que no cambian. Su posible equivalencia queda en `UNRESOLVED`, dentro de grupos de alias en `PENDING_ADJUDICATION`. Tener 12 filas no implica que existan 12 cauces independientes: ninguna relación entre cauces está adjudicada.
 
 ## Cruce de la sección I - TUMBES (filas 1-29)
 
@@ -76,7 +72,7 @@ También se indexan en el inventario las dos unidades del PR #364 que no figuran
 | 13 | 13 Bocapan Quebrada Qda. Bocapán Jequetepeque- Zarumilla Tumbes Tumbes Contralmirante Villar Casitas Cañaveral | `LITERAL_MATCH_EXISTING_ROW` | `tumbes_district_unknown_bocapan` |
 | 14 | 14 Bocapan Quebrada Qda. Bocapán Jequetepeque- Zarumilla Tumbes Tumbes Contralmirante Villar Casitas La Florida | `LITERAL_MATCH_EXISTING_ROW` | `tumbes_district_unknown_bocapan` |
 | 15 | 15 Tumbes Quebrada Qda Carretas Jequetepeque- Zarumilla Tumbes Tumbes Tumbes San Jacinto Carretas | `REQUESTED_NAME_NEW_ROW_IN_MASTER_INVENTORY` | `tumbes_san_jacinto_carretas` |
-| 16 | 16 Tumbes Quebrada Qda. 07 De Junio Jequetepeque- Zarumilla Tumbes Tumbes Tumbes San Jacinto Casa Blanqueada | `REQUESTED_NAME_VARIANT_EVIDENCE_ON_EXISTING_ROW_PENDING_ALIAS` | `tumbes_san_jacinto_casa_blanqueada_i_e_7_de_junio` |
+| 16 | 16 Tumbes Quebrada Qda. 07 De Junio Jequetepeque- Zarumilla Tumbes Tumbes Tumbes San Jacinto Casa Blanqueada | `REQUESTED_NAME_NEW_ROW_IN_MASTER_INVENTORY` | `tumbes_san_jacinto_07_de_junio` |
 | 17 | 17 Tumbes Quebrada Qda. Hualaca Jequetepeque- Zarumilla Tumbes Tumbes Tumbes San Jacinto Higueron | `REQUESTED_NAME_NEW_ROW_IN_MASTER_INVENTORY` | `tumbes_san_jacinto_hualaca` |
 | 18 | 18 Tumbes Quebrada Qda. Hualtacal Jequetepeque- Zarumilla Tumbes Tumbes Tumbes San Jacinto Rica Playa | `REQUESTED_NAME_NEW_ROW_IN_MASTER_INVENTORY` | `tumbes_san_jacinto_hualtacal` |
 | 19 | 19 Tumbes Quebrada Qda. Oidor Jequetepeque- Zarumilla Tumbes Tumbes Tumbes San Jacinto Oidor | `LITERAL_MATCH_EXISTING_ROW` | `tumbes_san_jacinto_oidor` |
@@ -89,7 +85,7 @@ También se indexan en el inventario las dos unidades del PR #364 que no figuran
 | 26 | 26 Zarumilla Quebrada Qda. Faical Jequetepeque- Zarumilla Tumbes Tumbes Zarumilla Matapalo Leandro Campos | `LITERAL_MATCH_EXISTING_ROW` | `tumbes_matapalo_faical` |
 | 27 | 27 Intercuenca Quebrada Qda. Los Cerezos Jequetepeque- Zarumilla Tumbes Tumbes Tumbes La Cruz Quebrada Los Cerezos | `LITERAL_MATCH_EXISTING_ROW` | `tumbes_la_cruz_los_cerezos` |
 | 28 | 28 Intercuenca Quebrada Qda. La Jota Jequetepeque- Zarumilla Tumbes Tumbes Tumbes Corrales Quebrada san Jose sector La Jota | `LITERAL_LABEL_EXISTING_ROW_DISTRICT_UNKNOWN_THERE` | `tumbes_district_unknown_la_jota` |
-| 29 | 29 Tumbes Quebrada Qda. Malvales Jequetepeque- Zarumilla Tumbes Tumbes Tumbes Corrales Malvales | `REQUESTED_NAME_VARIANT_EVIDENCE_ON_EXISTING_ROW_PENDING_ALIAS` | `tumbes_corrales_malval` |
+| 29 | 29 Tumbes Quebrada Qda. Malvales Jequetepeque- Zarumilla Tumbes Tumbes Tumbes Corrales Malvales | `REQUESTED_NAME_NEW_ROW_IN_MASTER_INVENTORY` | `tumbes_corrales_malvales` |
 
 ## Plan de Intervenciones (ANA)
 

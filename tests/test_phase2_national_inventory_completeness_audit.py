@@ -102,7 +102,7 @@ def test_fail_closed_guards_and_zero_promotions():
         "new_event_ledger_entries": 0,
     }
     rows = doc["candidates"]
-    assert len(rows) == doc["summary"]["candidate_rows"] == 412  # r3: +12 Tumbes rows (Anexo II DU 015-2023 gap closure)
+    assert len(rows) == doc["summary"]["candidate_rows"] == 414  # r3/r3b: +14 Tumbes rows (Anexo II DU 015-2023 gap closure)
     assert all(row["map_eligible"] is False for row in rows)
     assert all(row["parent_basin_or_system"] is None for row in rows)
     assert not any("MAP_ELIGIBLE" in row["state_flags"] for row in rows)

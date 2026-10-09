@@ -10,12 +10,12 @@ Este documento es un inventario/backlog. No crea unidades hidrológicas, geometr
 
 ## 1. Qué se hizo y qué no
 
-- **412 filas deduplicadas** tomadas de fuentes de ANA, INGEMMET, INDECI, CENEPRED/SIGRID, IGP, ANIN, gobiernos regionales y municipalidades (más pistas de ONG/prensa, marcadas como tales).
+- **414 filas deduplicadas** tomadas de fuentes de ANA, INGEMMET, INDECI, CENEPRED/SIGRID, IGP, ANIN, gobiernos regionales y municipalidades (más pistas de ONG/prensa, marcadas como tales).
 - Cada fila se contrastó con `main`, con las 531 ramas y con los 41 PR abiertos antes de proponerla.
 - **0** filas `MAP_ELIGIBLE`, **0** geometrías nuevas, **0** outlets nuevos, **0** aliases fusionados, **0** cuencas padre asignadas.
 - **0** filas `EVENT_EVIDENCE`: las 44 filas con afirmaciones fechadas de evento quedan como `EVENT_LEAD_UNVERIFIED` hasta que su fuente se reabra, verifique y archive (0 de 27 fuentes tienen `source_text_verified=true`).
 - **Advertencia de extracción.** Los documentos se leyeron con una herramienta automática de lectura web. Los nombres de archivo que entrega el servidor de SIGRID son identificadores fiables; las transcripciones de texto y tablas **no están verificadas byte a byte** y ningún archivo fuente se archivó ni se hasheó. Durante la auditoría se detectó y descartó una tabla fabricada por el lector (Áncash). QA independiente debe reabrir cada fuente antes de promover cualquier fila.
-- **Revisión r3 (2026-10-09, Tumbes).** Se añadieron 12 filas de Tumbes a partir del Anexo II del DU 015-2023 (ANA), cuyo PDF está archivado con SHA-256 en el PR #364 (`data/phase2/source_archive/`, fuera de `site/`). Diez corresponden a nombres del Anexo II sin coincidencia en el inventario (Fernández, Seca, Casitas, Carretas, Hualaca, Hualtacal, Plateros, Santa Maria, Nueva Esperanza, Santa Rosa) y dos indexan las unidades del PR #364 (La Capitana, Higuerón). «Malvales» y «07 de Junio» se agregaron como variantes documentales de las filas existentes Malval y Casa Blanqueada - I.E. 7 de Junio, pendientes de adjudicación. El cruce fila a fila y la clasificación de madurez están en `config/phase2_tumbes_inventory_anexo_ii_gap_v0_1.json`. El Plan de Intervenciones de ANA no pudo leerse (copia incompleta).
+- **Revisión r3 (2026-10-09, Tumbes).** Se añadieron 14 filas de Tumbes a partir del Anexo II del DU 015-2023 (ANA), cuyo PDF está archivado con SHA-256 en el PR #364 (`data/phase2/source_archive/`, fuera de `site/`). Doce corresponden a nombres del Anexo II sin coincidencia en el inventario (Fernández, Seca, Casitas, Carretas, 07 De Junio, Hualaca, Hualtacal, Plateros, Santa Maria, Nueva Esperanza, Santa Rosa, Malvales) y dos indexan las unidades del PR #364 (La Capitana, Higuerón). «Malvales» y «07 De Junio» tienen fila propia; su posible equivalencia con las filas existentes Malval y Casa Blanqueada - I.E. 7 de Junio queda `UNRESOLVED` y esas filas no cambian. El cruce fila a fila y la clasificación de madurez están en `config/phase2_tumbes_inventory_anexo_ii_gap_v0_1.json`. El Plan de Intervenciones de ANA no pudo leerse (copia incompleta).
 - **Aviso clean-room.** El JSON contiene afirmaciones con resultado sobre el evento del 23-03-2015 en Chosica; los trabajos sellados de `agent/chosica-2015-*` (PR #146, #149, #150, #151) no deben leerlo.
 
 ### Resumen
@@ -25,7 +25,7 @@ Este documento es un inventario/backlog. No crea unidades hidrológicas, geometr
 | 1. Carretera Central / Rímac / Chosica / Chaclacayo / Ricardo Palma / Santa Eulalia | 44 | 17 | 0 | 0 | 27 | 23 | 16 |
 | 2. Pisco / Ica | 48 | 12 | 3 | 2 | 31 | 0 | 1 |
 | 3. Santa / Casma | 16 | 1 | 1 | 1 | 13 | 0 | 0 |
-| 4. Tumbes / Zorritos | 80 | 8 | 4 | 5 | 63 | 0 | 3 |
+| 4. Tumbes / Zorritos | 82 | 8 | 4 | 5 | 65 | 0 | 3 |
 | 5a. Otros valles de Lima y Lima Metropolitana | 73 | 4 | 9 | 1 | 59 | 0 | 0 |
 | 5b. Costa de Piura | 40 | 2 | 1 | 5 | 32 | 0 | 0 |
 | 5c. Lambayeque | 46 | 1 | 6 | 0 | 39 | 0 | 0 |
@@ -33,7 +33,7 @@ Este documento es un inventario/backlog. No crea unidades hidrológicas, geometr
 | 5e. Áncash interior | 18 | 0 | 0 | 0 | 18 | 0 | 0 |
 | 5f. Piura interior | 38 | 0 | 0 | 0 | 38 | 0 | 0 |
 
-Estado sugerido (uno por fila): `EVENT_LEAD_UNVERIFIED` 31, `IDENTITY_ONLY` 358, `GEOMETRY_PENDING` 20, `GEOMETRY_REPRODUCIBLE` 3.
+Estado sugerido (uno por fila): `EVENT_LEAD_UNVERIFIED` 31, `IDENTITY_ONLY` 360, `GEOMETRY_PENDING` 20, `GEOMETRY_REPRODUCIBLE` 3.
 
 ### Regla de verificación de eventos
 
@@ -215,7 +215,7 @@ No hay columna de cuenca o sistema padre: ninguna fuente leída lo sustenta para
 | quebrada nivin ⚠ | — | Yaután · Casma | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5987) |
 | quebrada tomeque ⚠ | — | Yaután · Casma | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | main: mención sin confirmar | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5982) |
 
-### 4. Tumbes / Zorritos (80 filas)
+### 4. Tumbes / Zorritos (82 filas)
 
 | Nombre documental | Variantes observadas (sin adjudicar) | Distrito · provincia | Evidencia | Fechas (pista sin verificar) | Geometría reproducible | Outlet | Relación con colector | Estado | En IRFEN | Prio. | Fuente e identificador |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -229,7 +229,8 @@ No hay columna de cuenca o sistema padre: ninguna fuente leída lo sustenta para
 | Cristales ⚠ | — | Corrales · Tumbes | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-COMPLEMENTACION-NACIONAL (Cuadro 9 f.34) |
 | El Rodeo ⚠ | — | Corrales · Tumbes | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-COMPLEMENTACION-NACIONAL (Cuadro 9 f.2) |
 | La Arena | — | Corrales · Tumbes | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-COMPLEMENTACION-NACIONAL (Cuadro 9 f.1) |
-| Malval ⚠ | Malvales | Corrales · Tumbes | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-COMPLEMENTACION-NACIONAL (Cuadro 9 f.36); ANA-DU-015-2023-ANEXO-II (Anexo II f.29, variante sin adjudicar) |
+| Malval ⚠ | — | Corrales · Tumbes | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-COMPLEMENTACION-NACIONAL (Cuadro 9 f.36) |
+| Malvales ⚠ | — | Corrales · Tumbes | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-DU-015-2023-ANEXO-II (Anexo II f.29) |
 | Relengal ⚠ | — | Corrales · Tumbes | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-COMPLEMENTACION-NACIONAL (Cuadro 9 f.3) |
 | San Francisco ⚠ | — | Corrales · Tumbes | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-COMPLEMENTACION-NACIONAL (Cuadro 9 f.33) |
 | Urcos ⚠ | — | Corrales · Tumbes | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-COMPLEMENTACION-NACIONAL (Cuadro 9 f.35) |
@@ -252,8 +253,9 @@ No hay columna de cuenca o sistema padre: ninguna fuente leída lo sustenta para
 | La Palma ⚠ | — | Papayal · Zarumilla | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-COMPLEMENTACION-NACIONAL (Cuadro 9 f.6) |
 | Papayal ⚠ | — | Papayal · Zarumilla | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-COMPLEMENTACION-NACIONAL (Cuadro 9 f.5) |
 | San Miguel | — | Papayal · Zarumilla | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-COMPLEMENTACION-NACIONAL (Cuadro 9 f.9) |
+| 07 De Junio ⚠ | — | San Jacinto · Tumbes | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-DU-015-2023-ANEXO-II (Anexo II f.16) |
 | Carretas ⚠ | — | San Jacinto · Tumbes | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-DU-015-2023-ANEXO-II (Anexo II f.15) |
-| Casa Blanqueada - I.E. 7 de Junio ⚠ | 07 De Junio | San Jacinto · Tumbes | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-COMPLEMENTACION-NACIONAL (Cuadro 9 f.21); ANA-DU-015-2023-ANEXO-II (Anexo II f.16, variante sin adjudicar) |
+| Casa Blanqueada - I.E. 7 de Junio ⚠ | — | San Jacinto · Tumbes | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-COMPLEMENTACION-NACIONAL (Cuadro 9 f.21) |
 | Chorillos | — | San Jacinto · Tumbes | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-COMPLEMENTACION-NACIONAL (Cuadro 9 f.44) |
 | Hualaca | — | San Jacinto · Tumbes | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | solo rama/PR · PR #364 | P3 | ANA-DU-015-2023-ANEXO-II (Anexo II f.17) |
 | Hualtacal ⚠ | — | San Jacinto · Tumbes | CRITICAL_POINT, IDENTITY | — | No | No | — | `IDENTITY_ONLY` | solo rama/PR · PR #364 | P3 | ANA-DU-015-2023-ANEXO-II (Anexo II f.18); LEY-32573-LIMITES-TUMBES |
@@ -624,7 +626,7 @@ No hay columna de cuenca o sistema padre: ninguna fuente leída lo sustenta para
 
 ## 5. Candidatos faltantes
 
-**329** filas no aparecen en `main`, ramas ni PR. Las de mayor prioridad:
+**331** filas no aparecen en `main`, ramas ni PR. Las de mayor prioridad:
 
 | Prio. | Nombre | Distrito | Estado | Fuente |
 |---|---|---|---|---|
@@ -684,8 +686,8 @@ Ninguna relación de nombres se resolvió en esta auditoría. Las variantes son 
 | La Tucilla · Tucillal · Tucillay | Ya adjudicado como NO fusionado en main y en el PR #351 (INGEMMET A7454 nombra Tucillal). | NOT_MERGED (site/data/phase2/sources/tumbes_zorritos_extended_identity_context_v0_1.json) | `TRACKED_IN_MAIN_AND_PR_351` | Nada por parte de esta auditoría. |
 | Charán · El Charán | ANA 2016 Cuadro 9: «Charán» (La Cruz); Andina 2024: «Charán» (sin distrito); MEF 2023: «El Charán» (sin distrito ni tipo de elemento). | not recorded | `PENDING_ADJUDICATION` | Reporte del COER Tumbes y anexo del D.S. 181-2023-EF. |
 | Luey (Lucy) · Luey | ANA 2016 Cuadro 9 escribe «Luey (Lucy)» (Tumbes, Andrés Araujo Morán); MEF 2023 escribe «Luey». | not recorded | `PENDING_ADJUDICATION` | Anexo del D.S. 181-2023-EF. |
-| Malval · Malvales | ANA 2016 Cuadro 9 / SIGRID 3743 fila 36: quebrada 'Malval', centro poblado Malval (Corrales); ANA Anexo II DU 015-2023 fila 29: 'Qda. Malvales', sector Malvales (Corrales); INGEMMET A6764 C-36: flows from the slopes of sector Malval; COEN RC 3755: sector Malvales. | not recorded | `PENDING_ADJUDICATION` | A source or geometry that places both labels on the same channel, or separates them. The Anexo II evidence sits on the Malval row as a variant and moves to its own row if adjudication rejects the relation. |
-| Casa Blanqueada - I.E. 7 de Junio · 07 De Junio | ANA 2016 Cuadro 9 / SIGRID 3743 fila 21: quebrada 'Casa Blanqueada - I.E. 7 de Junio' (San Jacinto); ANA Anexo II DU 015-2023 fila 16: 'Qda. 07 De Junio', sector Casa Blanqueada (San Jacinto). | not recorded | `PENDING_ADJUDICATION` | Same channel or not; the Anexo II evidence sits on the existing row as a variant and moves to its own row if rejected. |
+| Malval · Malvales | ANA 2016 Cuadro 9 / SIGRID 3743 fila 36: quebrada 'Malval', centro poblado Malval (Corrales); ANA Anexo II DU 015-2023 fila 29: 'Qda. Malvales', sector Malvales (Corrales); INGEMMET A6764 C-36: flows from the slopes of sector Malval; COEN RC 3755: sector Malvales. | not recorded | `PENDING_ADJUDICATION` | A source or geometry that places both labels on the same channel, or separates them. Each label has its own row; equivalence UNRESOLVED. |
+| Casa Blanqueada - I.E. 7 de Junio · 07 De Junio | ANA 2016 Cuadro 9 / SIGRID 3743 fila 21: quebrada 'Casa Blanqueada - I.E. 7 de Junio' (San Jacinto); ANA Anexo II DU 015-2023 fila 16: 'Qda. 07 De Junio', sector Casa Blanqueada (San Jacinto). | not recorded | `PENDING_ADJUDICATION` | Same channel or not. Each label has its own row; equivalence UNRESOLVED. |
 | Seca · Hualtacal | Ley 32573: 'quebrada Seca (que aguas arriba cambia de nombre a quebrada Hualtacal)' on the Canoas de Punta Sal / Casitas / Zorritos limit. Anexo II places 'Qda. Seca' in Canoas de Punta Sal (sector Pajaritos) and 'Qda. Hualtacal' in San Jacinto (sector Rica Playa), so the San Jacinto Hualtacal point cannot be assumed to lie on that reach. | not recorded | `PENDING_ADJUDICATION` | Which quebrada Seca the law describes, and whether any Hualtacal label refers to its upper reach; georeferenced hydrography. |
 | Casitas · Cherrelique · El Ciénego · Bocapán · Panales-Casitas | Ley 32573: 'quebrada Casitas (que aguas arriba cambia de nombre a quebrada Cherrelique y quebrada El Ciénego)' and 'la confluencia de la quebrada Seca y la quebrada Casitas (que dan origen a la quebrada Bocapan)'. Anexo II lists 'Qda. Casitas' (filas 10-11, CUENCA Bocapan) and 'Qda. Bocapán' (filas 12-14, one in sector 'Cherrelique Bellavista'). Andina 2024 names 'Panales-Casitas'. Main holds Casitas-Bocapán only as ANA hydrographic-unit context. | Casitas-Bocapán drainage context (site/data/validation/phase2_discovery_contracts/tumbes_zorritos_bocapan_coastal_ravines.json) | `PENDING_ADJUDICATION` | The confluence is source-stated, not adopted as a collector relation or parent basin; reach-name changes and 'Panales-Casitas' need adjudication with georeferenced data. |
 | Hualaca · Higuerón | Anexo II fila 17 gives 'Higueron' as the SECTOR of 'Qda. Hualaca'; INGEMMET A6764 and Ley 32573 name a 'quebrada Higuerón'. PR #364 keeps same_channel and hydraulically_independent UNRESOLVED. | PR #364 (config/phase2_tumbes_capitana_hualaca_higueron_identity_v0_1.json) | `PENDING_ADJUDICATION` | Georeferenced data. |
@@ -766,7 +768,7 @@ Las notas de acceso de cada fuente (qué parte se leyó y con qué límites) est
 
 - **P1** (23 filas) — Unidad de Carretera Central / Rímac / Santa Eulalia que no es unidad local registrada en main y que tiene una pista institucional de evento (sin verificar) y/o una pista regulatoria de geometría.
 - **P2** (20 filas) — (a) Unidad de Pisco/Ica, Santa/Casma o Tumbes/Zorritos con pista institucional de evento (sin verificar) y/o pista de geometría; o (b) nombre de Carretera Central sustentado solo por identidad, obras, ONG/prensa o lectura no verificada, que necesita antes una fuente institucional primaria verificada.
-- **P3** (300 filas) — Solo evidencia de identidad o punto crítico, en un corredor prioritario o en un corredor ya presente en IRFEN (otros valles de Lima y Lima Metropolitana, costa de Piura, Lambayeque, La Libertad).
+- **P3** (302 filas) — Solo evidencia de identidad o punto crítico, en un corredor prioritario o en un corredor ya presente en IRFEN (otros valles de Lima y Lima Metropolitana, costa de Piura, Lambayeque, La Libertad).
 - **P4** (56 filas) — Filas de interior/sierra fuera de los corredores presentes o previstos en IRFEN; se conservan para no mutilar las tablas de la fuente.
 - **EXISTING** (13 filas) — Ya registrada en main (unidad local, sistema candidato o fuente citada). No requiere incorporación; la auditoría solo añade referencias cruzadas.
 

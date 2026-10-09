@@ -64,13 +64,24 @@ def test_all_twelve_names_are_classified_with_unknown_geometry_and_outlet():
         assert row["reproducible_geometry"] == {"exists": False}
 
 
-def test_twelve_names_do_not_become_twelve_new_rows():
+def test_near_labels_get_their_own_rows_with_unresolved_equivalence():
     gap, audit = _docs()
-    regs = {n["requested_name"]: n["registration"] for n in gap["requested_names"]}
-    assert regs["Malvales"] == regs["07 de Junio"] == "VARIANT_EVIDENCE_ON_EXISTING_ROW_PENDING_ALIAS"
-    assert sum(r == "NEW_ROW_IN_MASTER_INVENTORY" for r in regs.values()) == 10
-    assert _name(gap, "Malvales")["inventory_ids"] == ["tumbes_corrales_malval"]
-    assert "added_in_revision" not in _row(audit, "tumbes_corrales_malval")
+    assert all(n["registration"] == "NEW_ROW_IN_MASTER_INVENTORY" for n in gap["requested_names"])
+    for name, own, existing in (("Malvales", "tumbes_corrales_malvales", "tumbes_corrales_malval"),
+                                ("07 de Junio", "tumbes_san_jacinto_07_de_junio", "tumbes_san_jacinto_casa_blanqueada_i_e_7_de_junio")):
+        entry = _name(gap, name)
+        assert entry["inventory_ids"] == [own]
+        assert entry["possible_equivalence"] == {"inventory_id": existing, "status": "UNRESOLVED"}
+        assert "added_in_revision" not in _row(audit, existing)
+        assert not any(e["source_id"] == "ANA-DU-015-2023-ANEXO-II" for e in _row(audit, existing)["evidence"])
+    for mutate in (lambda g: _name(g, "Malvales")["possible_equivalence"].__setitem__("status", "SAME_CHANNEL"),
+                   lambda g: _name(g, "07 de Junio").__setitem__("registration", "VARIANT_EVIDENCE_ON_EXISTING_ROW_PENDING_ALIAS")):
+        bad = copy.deepcopy(gap)
+        mutate(bad)
+        assert V.validate(bad, audit)
+    bad = copy.deepcopy(audit)
+    _row(bad, "tumbes_corrales_malval")["evidence"].append(copy.deepcopy(_row(bad, "tumbes_corrales_malvales")["evidence"][0]))
+    assert any("pre-existing row tumbes_corrales_malval" in e for e in V.validate(gap, bad))
 
 
 def test_every_anexo_ii_tumbes_row_is_accounted_for_once():
@@ -116,7 +127,7 @@ def test_map_geometry_and_parent_basin_cannot_be_added():
 def test_alias_groups_stay_pending_and_duplicates_are_rejected():
     gap, audit = _docs()
     bad = copy.deepcopy(audit)
-    group = next(g for g in bad["aliases_pending_adjudication"]["curated_relationships"] if "tumbes_corrales_malval" in g["inventory_ids"])
+    group = next(g for g in bad["aliases_pending_adjudication"]["curated_relationships"] if "tumbes_corrales_malvales" in g["inventory_ids"])
     group["status"] = "MERGED"
     assert any("Malvales" in e or "merged" in e for e in V.validate(gap, bad))
     bad = copy.deepcopy(audit)

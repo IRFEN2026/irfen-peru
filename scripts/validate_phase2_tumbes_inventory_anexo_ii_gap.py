@@ -10,7 +10,9 @@ Proves, offline, that config/phase2_tumbes_inventory_anexo_ii_gap_v0_1.json:
 * classifies each of the 12 requested names with an allowed maturity, keeps
   geometry and outlet UNKNOWN, and points to existing national-audit rows that
   are not map-eligible, have no geometry, outlet or parent basin;
-* does not create duplicate audit rows and leaves every alias group pending;
+* gives every requested name its own row, keeps possible equivalences with
+  existing rows UNRESOLVED, leaves pre-existing rows untouched, does not create
+  duplicate audit rows and leaves every alias group pending;
 * does not use the Plan de Intervenciones while no complete copy is archived.
 
 Standard library only. Exit code 0 = consistent, 1 = violations (listed).
@@ -37,7 +39,9 @@ REQUESTED = ["Fernández", "Seca", "Casitas", "Carretas", "07 de Junio", "Hualac
 MATURITY = {"M1_SINGLE_OFFICIAL_LISTING", "M2_MULTI_SOURCE_IDENTITY", "M3_PERIOD_EVENT_LEAD"}
 FLAGS = {"HOMONYM_RESOLUTION_REQUIRED", "ALIAS_ADJUDICATION_PENDING", "GEOMETRY_UNKNOWN", "OUTLET_UNKNOWN", "NOT_MAP_ELIGIBLE"}
 REQUIRED_FLAGS = {"GEOMETRY_UNKNOWN", "OUTLET_UNKNOWN", "NOT_MAP_ELIGIBLE"}
-REGISTRATION = {"NEW_ROW_IN_MASTER_INVENTORY", "VARIANT_EVIDENCE_ON_EXISTING_ROW_PENDING_ALIAS"}
+# r3b (after independent QA): every requested name has its own row; a near label of an existing row
+# records the possible equivalence as UNRESOLVED instead of sitting on that row as a variant.
+REGISTRATION = {"NEW_ROW_IN_MASTER_INVENTORY"}
 FORBIDDEN_KEYS = {"geometry", "coordinates", "lat", "lon", "latitude", "longitude", "easting_m", "northing_m", "outlet_point",
                   "confluence_point", "discharge", "capacity", "threshold", "thresholds", "alert_level", "risk_class"}
 
@@ -183,11 +187,15 @@ def validate(gap: dict, audit: dict, root: Path = ROOT) -> list[str]:
             errors.append(f"{name}: audit row {rid} lacks the Anexo II evidence for rows {n.get('anexo_ii_rows')}")
         if reg == "NEW_ROW_IN_MASTER_INVENTORY" and row.get("added_in_revision") != "r3":
             errors.append(f"{name}: {rid} is not a row added in r3")
-        if reg == "VARIANT_EVIDENCE_ON_EXISTING_ROW_PENDING_ALIAS":
-            if row.get("added_in_revision"):
-                errors.append(f"{name}: variant evidence must sit on a pre-existing row")
-            if not any(e.get("variant_attachment") for e in row.get("evidence", [])):
-                errors.append(f"{name}: variant evidence must be marked as a pending attachment")
+        eq = n.get("possible_equivalence")
+        if eq is not None:
+            target = eq.get("inventory_id")
+            if eq.get("status") != "UNRESOLVED":
+                errors.append(f"{name}: possible_equivalence must stay UNRESOLVED")
+            if target not in rows or target == rid or rows[target].get("added_in_revision"):
+                errors.append(f"{name}: possible_equivalence must point to a different, pre-existing audit row")
+            if not any({rid, target} <= set(g.get("inventory_ids", [])) and g.get("status") == "PENDING_ADJUDICATION" for g in curated):
+                errors.append(f"{name}: possible equivalence needs a PENDING_ADJUDICATION group holding both rows")
         if "ALIAS_ADJUDICATION_PENDING" in flags and not any(
                 rid in g.get("inventory_ids", []) and g.get("status") == "PENDING_ADJUDICATION" for g in curated):
             errors.append(f"{name}: alias flag without a PENDING_ADJUDICATION group in the audit")
@@ -195,6 +203,9 @@ def validate(gap: dict, audit: dict, root: Path = ROOT) -> list[str]:
         if (n.get("maturity") == "M3_PERIOD_EVENT_LEAD") != has_event:
             errors.append(f"{name}: M3 requires (and only M3 allows) an EVENT item on the audit row")
 
+    for r in audit.get("candidates", []):
+        if not r.get("added_in_revision") and any(e.get("source_id") == "ANA-DU-015-2023-ANEXO-II" for e in r.get("evidence", [])):
+            errors.append(f"pre-existing row {r['inventory_id']}: Anexo II evidence belongs on its own r3 row, not on an existing row")
     added = [r["inventory_id"] for r in audit.get("candidates", []) if r.get("added_in_revision") == "r3"]
     if sorted(added) != sorted(gap.get("audit_changes", {}).get("rows_added", [])):
         errors.append("audit_changes.rows_added differs from the audit rows marked r3")
