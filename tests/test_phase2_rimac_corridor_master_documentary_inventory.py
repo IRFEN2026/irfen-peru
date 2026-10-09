@@ -117,3 +117,54 @@ def test_unresolved_requested_names_remain_leads_not_negative_evidence():
             "ONLY_SHORTER_LABEL_FOUND",
         )
         assert lead["note"]
+
+
+
+def test_dos_barrios_official_post_sweep_attestation_remains_fail_closed():
+    """Two official mentions attest a label, not a uniquely routed or mapped ravine."""
+    d = load()
+    leads = [
+        lead for lead in d["requested_unresolved_name_leads"]
+        if lead["requested_name"] == "Dos Barrios"
+    ]
+    assert len(leads) == 1
+    lead = leads[0]
+    # Preserve the provenance of the earlier sweep; later evidence supersedes
+    # its source-search conclusion without rewriting the historical observation.
+    assert lead["result"] == "NO_SOURCE_FOUND_IN_THIS_SWEEP"
+    evidence = lead["post_sweep_official_evidence"]
+    assert evidence["status"] == (
+        "OFFICIAL_DOCUMENTARY_NAME_ATTESTED_NOT_YET_INTEGRATED_AS_UNIT"
+    )
+    assert evidence["identity_adjudication"] == (
+        "PENDING_PRIMARY_GEOMETRY_AND_ALIAS_REVIEW"
+    )
+    assert {source["publisher"] for source in evidence["sources"]} == {
+        "SENAMHI", "INGEMMET"
+    }
+    assert all(source["source_url"].startswith("https://") for source in evidence["sources"])
+    assert all(source["original_pdf_sha256"] is None for source in evidence["sources"])
+    assert all(source["exact_geometry"] is None for source in evidence["sources"])
+    event_mentions = [
+        source for source in evidence["sources"]
+        if source["evidence_type"] == "HISTORICAL_PERIOD_EVENT_MENTION"
+    ]
+    assert len(event_mentions) == 1
+    assert event_mentions[0]["event_period"] == "2012-04"
+    assert event_mentions[0]["event_day"] is None
+
+    # An attested label must not silently become an extra confirmed unit or
+    # be equated to Pablo Patron / Dos Amigos by locality or similarity.
+    assert evidence["integrated_in_units"] is False
+    assert evidence["confirmed_unique_hydrologic_unit"] is False
+    assert evidence["map_publishable"] is False
+    assert evidence["exact_confluence"] is None
+    for field in (
+        "travel_time_tau", "discharge_q_i", "collector_capacity",
+        "collector_overflow_evidence",
+    ):
+        assert evidence[field] is None
+    assert not any(
+        unit["documentary_label"] == "Dos Barrios" for unit in d["units"]
+    )
+    assert d["counts"]["confirmed_unique_hydrologic_unit_count"] is None
