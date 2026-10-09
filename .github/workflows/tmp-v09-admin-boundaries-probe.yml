@@ -8,60 +8,12 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 8
     steps:
-      - name: Probe ArcGIS REST directories and layer metadata (read-only)
-        shell: python
+      - name: Reachability of geosnirh.ana.gob.pe from the runner (read-only)
         run: |
-          import json, urllib.request, urllib.parse
-          UA = {"User-Agent": "IRFEN-v0.9-research-boundary-probe/1.0 (+https://github.com/IRFEN2026/irfen-peru)"}
-          import time
-          def get(url):
-              err = None
-              for attempt in range(3):
-                  try:
-                      with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=90) as r:
-                          return r.status, r.read(3_000_000).decode("utf-8", "replace")
-                  except Exception as e:
-                      err = (getattr(e, "code", None), f"ERR {type(e).__name__}: {e} (attempt {attempt+1})")
-                      if err[0]: return err
-                      time.sleep(10)
-              return err
-          def note(t, s): print(f"::notice title={t}::{s[:3500]}")
-          for robots in ("https://geosnirh.ana.gob.pe/robots.txt",):
-              st, body = get(robots); note("robots", f"{robots} {st} {body[:300]!r}")
-          base = "https://geosnirh.ana.gob.pe/server/rest/services"
-          st, body = get(base + "?f=json")
-          root = json.loads(body) if st == 200 else {}
-          note("root", f"{st} folders={root.get('folders')} services={[s['name'] for s in root.get('services', [])][:80]}")
-          hits = []
-          for folder in root.get("folders", []):
-              st, body = get(f"{base}/{folder}?f=json")
-              if st != 200: continue
-              for s in json.loads(body).get("services", []):
-                  if any(k in s["name"].upper() for k in ("LIMITE", "DEPART", "PROVIN", "DISTRIT", "CENSAL")):
-                      hits.append((s["name"], s["type"]))
-          for s in root.get("services", []):
-              if any(k in s["name"].upper() for k in ("LIMITE", "DEPART", "PROVIN", "DISTRIT", "CENSAL")):
-                  hits.append((s["name"], s["type"]))
-          note("boundary_services", json.dumps(hits))
-          known = ("DU0302023/Limite_Provincial_DU_N_030_2023", "MapServer")  # listed by the ANA server itself (search result)
-          if known not in hits: hits.insert(0, known)
-          for name, typ in hits[:12]:
-              st, body = get(f"{base}/{name}/{typ}?f=json")
-              if st != 200: note("svc_err", f"{name} {st}"); continue
-              svc = json.loads(body)
-              layers = [(l["id"], l["name"]) for l in svc.get("layers", [])]
-              note("svc", f"{name} desc={svc.get('serviceDescription','')[:300]!r} copyright={svc.get('copyrightText')!r} sr={svc.get('spatialReference')} layers={layers}")
-              for lid, lname in layers[:4]:
-                  st, body = get(f"{base}/{name}/{typ}/{lid}?f=json")
-                  if st != 200: continue
-                  L = json.loads(body)
-                  fields = [f["name"] for f in L.get("fields", [])]
-                  q = urllib.parse.urlencode({"where": "1=1", "returnCountOnly": "true", "f": "json"})
-                  st2, cnt = get(f"{base}/{name}/{typ}/{lid}/query?{q}")
-                  q2 = urllib.parse.urlencode({"where": "1=1", "outFields": "*", "returnGeometry": "false", "resultRecordCount": "3", "f": "json"})
-                  st3, sample = get(f"{base}/{name}/{typ}/{lid}/query?{q2}")
-                  try: attrs = [f["attributes"] for f in json.loads(sample).get("features", [])]
-                  except Exception: attrs = sample[:300]
-                  note("layer", f"{name}/{lid} {lname} geom={L.get('geometryType')} fields={fields} count={cnt[:80]} maxRec={L.get('maxRecordCount')} sample={json.dumps(attrs, ensure_ascii=False)[:900]}")
+          for u in https://geosnirh.ana.gob.pe/server/rest/services/DU0302023/Limite_Provincial_DU_N_030_2023/MapServer?f=json https://geosnirh.ana.gob.pe/ https://portal.indeci.gob.pe/robots.txt; do
+            r=$(curl -sS -o /tmp/b -w "%{http_code} %{time_total}s ip=%{remote_ip}" --max-time 60 "$u" 2>&1 || true)
+            echo "::notice title=reach::$u -> $r $(head -c 600 /tmp/b 2>/dev/null | tr '\n' ' ')"
+          done
+          getent hosts geosnirh.ana.gob.pe | sed 's/^/::notice title=dns::/' || echo "::notice title=dns::no resolution"
