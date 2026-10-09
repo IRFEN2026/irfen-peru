@@ -1,0 +1,59 @@
+name: IRFEN v0.9 - Capturar avisos SENAMHI (via INDECI/COEN) TEST_ONLY
+
+on:
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+  push:
+    branches:
+      - v09/senamhi-avisos-capture-v0-1
+    paths:
+      - scripts/v09_senamhi_avisos.py
+      - config/v09_senamhi_avisos_contract_v0_1.json
+      - .github/workflows/v09-senamhi-avisos-capture.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: v09-senamhi-avisos-capture-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install bounded dependencies
+        run: |
+          python -m pip install --disable-pip-version-check pypdf
+          command -v pdftotext || { sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils >/dev/null; } || echo "::warning::pdftotext unavailable; pypdf fallback"
+      - name: Capture (failures are recorded in source_health, never read as 'no avisos')
+        run: |
+          python scripts/v09_senamhi_avisos.py --capture | tee capture.log
+          echo "::notice title=V09_AVISOS_CAPTURE::$(tail -1 capture.log | sed 's/%/%25/g')"
+      - name: Verify archive, hashes and guards
+        run: python scripts/v09_senamhi_avisos.py
+      - name: Persist (idempotent, bounded retries)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/v09/senamhi_avisos
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "IRFEN v0.9: capturar avisos SENAMHI via INDECI/COEN (TEST_ONLY)"
+          BR="${GITHUB_REF_NAME}"
+          for attempt in 1 2 3 4; do
+            git fetch -q origin "$BR"
+            if ! git rebase -q "origin/$BR"; then git rebase --abort || true; echo "Real conflict; not overwriting" >&2; exit 1; fi
+            if git push -q origin "HEAD:$BR"; then exit 0; fi
+            sleep $((attempt * 3))
+          done
+          exit 1
