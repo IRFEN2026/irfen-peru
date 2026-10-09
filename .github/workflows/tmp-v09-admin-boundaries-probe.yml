@@ -15,12 +15,18 @@ jobs:
         run: |
           import json, urllib.request, urllib.parse
           UA = {"User-Agent": "IRFEN-v0.9-research-boundary-probe/1.0 (+https://github.com/IRFEN2026/irfen-peru)"}
+          import time
           def get(url):
-              try:
-                  with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=60) as r:
-                      return r.status, r.read(3_000_000).decode("utf-8", "replace")
-              except Exception as e:
-                  return getattr(e, "code", None), f"ERR {type(e).__name__}: {e}"
+              err = None
+              for attempt in range(3):
+                  try:
+                      with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=90) as r:
+                          return r.status, r.read(3_000_000).decode("utf-8", "replace")
+                  except Exception as e:
+                      err = (getattr(e, "code", None), f"ERR {type(e).__name__}: {e} (attempt {attempt+1})")
+                      if err[0]: return err
+                      time.sleep(10)
+              return err
           def note(t, s): print(f"::notice title={t}::{s[:3500]}")
           for robots in ("https://geosnirh.ana.gob.pe/robots.txt",):
               st, body = get(robots); note("robots", f"{robots} {st} {body[:300]!r}")
@@ -39,6 +45,8 @@ jobs:
               if any(k in s["name"].upper() for k in ("LIMITE", "DEPART", "PROVIN", "DISTRIT", "CENSAL")):
                   hits.append((s["name"], s["type"]))
           note("boundary_services", json.dumps(hits))
+          known = ("DU0302023/Limite_Provincial_DU_N_030_2023", "MapServer")  # listed by the ANA server itself (search result)
+          if known not in hits: hits.insert(0, known)
           for name, typ in hits[:12]:
               st, body = get(f"{base}/{name}/{typ}?f=json")
               if st != 200: note("svc_err", f"{name} {st}"); continue
