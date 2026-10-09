@@ -8,6 +8,7 @@ import copy
 import hashlib
 import importlib.util
 import json
+import os
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -206,23 +207,52 @@ class RevisionsAndEvents(unittest.TestCase):
 
 class SourceHealth(unittest.TestCase):
     def test_failure_never_reads_as_no_avisos(self):
-        reg = M.empty_registry()
+        reg, health = M.empty_registry(), M.empty_health()
         t0 = datetime(2026, 10, 9, 19, 0, tzinfo=UTC)
-        self.assertIn("DESCONOCIDO", M.summary_view(reg)["headline"])
+        self.assertIn("DESCONOCIDO", M.summary_view(reg, health)["headline"])
         M.merge_observation(reg, lluvias(), dict(sha256="a" * 64), t0)
         M.refresh_statuses(reg, t0)
-        M.update_health(reg, True, t0, None, 90)
-        self.assertEqual(reg["source_health"]["state"], "AL_DIA")
-        M.update_health(reg, False, t0 + timedelta(minutes=30), "URLError", 90)
-        self.assertEqual(reg["source_health"]["state"], "ULTIMA_CONSULTA_FALLIDA")
-        self.assertIn("not an absence of avisos", reg["source_health"]["note"])
-        M.update_health(reg, False, t0 + timedelta(minutes=120), "URLError", 90)
-        h = reg["source_health"]
+        M.update_health(health, True, t0, None, 90)
+        self.assertEqual(health["source_health"]["state"], "AL_DIA")
+        M.update_health(health, False, t0 + timedelta(minutes=30), "URLError", 90)
+        self.assertEqual(health["source_health"]["state"], "ULTIMA_CONSULTA_FALLIDA")
+        self.assertIn("not an absence of avisos", health["source_health"]["note"])
+        M.update_health(health, False, t0 + timedelta(minutes=120), "URLError", 90)
+        h = health["source_health"]
         self.assertEqual((h["state"], h["consecutive_failures"], h["minutes_since_last_success"]), ("DESACTUALIZADA", 2, 120.0))
         self.assertEqual(len(reg["avisos"]), 1)
-        headline = M.summary_view(reg)["headline"]
+        headline = M.summary_view(reg, health)["headline"]
         self.assertIn("puede haber avisos no capturados", headline)
         self.assertNotIn("0 avisos", headline)
+
+    def test_viewer_marks_an_old_snapshot_stale_even_if_it_says_al_dia(self):
+        health = M.empty_health()
+        t0 = datetime(2026, 10, 9, 19, 0, tzinfo=UTC)
+        M.update_health(health, True, t0, None, 90)
+        self.assertEqual(M.viewer_source_state(health, t0 + timedelta(minutes=170), 180), "AL_DIA")
+        self.assertEqual(M.viewer_source_state(health, t0 + timedelta(minutes=181), 180), "DESACTUALIZADA")
+        self.assertEqual(M.viewer_source_state(None, t0, 180), "NO_SUCCESSFUL_CHECK_YET")
+
+
+class SnapshotPolicy(unittest.TestCase):
+    def setUp(self):
+        self.t0 = datetime(2026, 10, 9, 19, 0, tzinfo=UTC)
+        self.committed = M.empty_health()
+        M.update_health(self.committed, True, self.t0, None, 90)
+        self.committed["snapshot"] = dict(written_at_utc=M.iso(self.t0))
+
+    def live(self, ok, minutes):
+        h = json.loads(json.dumps(self.committed))
+        M.update_health(h, ok, self.t0 + timedelta(minutes=minutes), None if ok else "URLError", 90)
+        return h
+
+    def test_decisions(self):
+        d = M.snapshot_decision
+        self.assertEqual(d(self.committed, self.live(True, 30), True, self.t0 + timedelta(minutes=30), 120), (True, "REGISTRY_CHANGED"))
+        self.assertEqual(d(None, self.live(True, 30), False, self.t0, 120), (True, "FIRST_SNAPSHOT"))
+        self.assertEqual(d(self.committed, self.live(True, 30), False, self.t0 + timedelta(minutes=30), 120), (False, "NO_CHANGE_WITHIN_HEARTBEAT"))
+        self.assertEqual(d(self.committed, self.live(False, 30), False, self.t0 + timedelta(minutes=30), 120), (True, "SOURCE_STATE_CHANGED"))
+        self.assertEqual(d(self.committed, self.live(True, 120), False, self.t0 + timedelta(minutes=120), 120), (True, "HEARTBEAT"))
 
 
 class FeedParsing(unittest.TestCase):
@@ -254,4 +284,178 @@ class GuardsAndArchive(unittest.TestCase):
         self.assertEqual(M.verify(), [])
         reg = json.loads(M.REGISTRY.read_text(encoding="utf-8"))
         self.assertEqual(reg["notification_channel"], "NOT_CONFIGURED_EVENTS_TRAY_ONLY")
+        for key in ("source_health", "last_check", "summary"):
+            self.assertNotIn(key, reg)
+        for entry in reg["avisos"].values():
+            for key in M.VOLATILE_ENTRY_KEYS:
+                self.assertNotIn(key, entry)
         self.assertFalse(str(M.STORE.resolve()).startswith(str((ROOT / "site").resolve())))
+
+
+FEED_URL = "https://portal.indeci.gob.pe/emergencias/feed/"
+POST = "https://portal.indeci.gob.pe/emergencias/boletin-informativo-de-aviso-de-corto-plazo-ante-lluvias-intensas-n281-2026-indeci-coen/"
+PDF = "https://portal.indeci.gob.pe/wp-content/uploads/2026/10/BOLETIN-281-2026.pdf"
+PUBDATE = "Fri, 09 Oct 2026 18:40:00 +0000"
+
+
+class FakePortal:
+    """Replays an INDECI feed, post and PDF. Honours If-None-Match. Can fail the feed. Counts requests per URL."""
+
+    def __init__(self):
+        self.pdf = (b"%PDF-1.4 version-1", '"v1"')
+        self.sidebar = 0
+        self.feed_down = False
+        self.calls = {}
+
+    def feed(self):
+        return ("<rss><channel><item><title>BOLETÍN INFORMATIVO DE AVISO DE CORTO PLAZO ANTE LLUVIAS INTENSAS "
+                f"N°281-2026-INDECI/COEN</title><link>{POST}</link><pubDate>{PUBDATE}</pubDate><guid>g1</guid></item>"
+                "</channel></rss>").encode("utf-8")
+
+    def page(self):
+        self.sidebar += 1  # the real page sidebar changes on every request
+        return (f'<html><div class="post-content alerta-inside" style="w"><h1>BOLETÍN N°281-2026-INDECI/COEN</h1>'
+                f'<p>VIGENCIA: 09-10-2026 (13:00 h) al 10-10-2026 (13:00 h)</p><a href="{PDF}">DESCARGAR</a></div>'
+                f"<aside>latest reports {self.sidebar}</aside></html>").encode("utf-8")
+
+    def get(self, url, timeout, max_bytes, headers=None):
+        self.calls[url] = self.calls.get(url, 0) + 1
+        meta = dict(url=url, http_status=200)
+        if url.startswith(FEED_URL):
+            if self.feed_down:
+                return None, dict(url=url, error="URLError: timed out")
+            return (self.feed(), meta) if url == FEED_URL else (b"<rss><channel></channel></rss>", meta)
+        if url == POST:
+            return self.page(), meta
+        if url == PDF:
+            data, etag = self.pdf
+            if (headers or {}).get("If-None-Match") == etag:
+                return None, dict(url=url, http_status=304, not_modified=True)
+            return data, dict(meta, etag=etag)
+        return None, dict(url=url, error="HTTPError 404", http_status=404)
+
+
+class CaptureEndToEnd(unittest.TestCase):
+    """Real capture() against a replayed portal: new aviso, unchanged rechecks, a PDF replaced under the same
+    permalink and pubDate, a feed outage, expiry and heartbeat. Uses the archived real bulletin text."""
+
+    def setUp(self):
+        import tempfile
+        self.tmp = tempfile.TemporaryDirectory()
+        root = Path(self.tmp.name)
+        self.saved = {k: getattr(M, k) for k in ("ROOT", "STORE", "REGISTRY", "HEALTH", "http_get", "pdf_text", "pdf_words")}
+        M.ROOT, M.STORE = root, root / "data/v09/senamhi_avisos"
+        M.REGISTRY, M.HEALTH = M.STORE / "registry_v0_1.json", M.STORE / "health_v0_1.json"
+        self.portal = FakePortal()
+        M.http_get = self.portal.get
+        text, words = fixture("acp_lluvias_282_2026")
+        revised = text.replace("10-10-2026 (13:00 h)", "10-10-2026 (19:00 h)")
+        self.assertNotEqual(text, revised)
+        texts = {b"%PDF-1.4 version-1": text, b"%PDF-1.4 version-2": revised}
+        M.pdf_text = lambda data: texts[data]
+        M.pdf_words = lambda data: words
+        self.env = os.environ.get("V09_LIVE_DIR")
+        os.environ["V09_LIVE_DIR"] = str(root / "live")
+        self.t0 = datetime(2026, 10, 9, 19, 48, tzinfo=UTC)
+
+    def tearDown(self):
+        for k, v in self.saved.items():
+            setattr(M, k, v)
+        if self.env is None:
+            os.environ.pop("V09_LIVE_DIR", None)
+        else:
+            os.environ["V09_LIVE_DIR"] = self.env
+        self.tmp.cleanup()
+
+    def run_at(self, minutes):
+        return M.capture(self.t0 + timedelta(minutes=minutes))
+
+    def registry(self):
+        return json.loads(M.REGISTRY.read_text(encoding="utf-8"))
+
+    def test_full_cycle(self):
+        key = "SENAMHI-ACP-LLUVIAS-2026-282"
+        r1 = self.run_at(0)
+        self.assertEqual((r1["snapshot_written"], r1["snapshot_reason"]), (True, "REGISTRY_CHANGED"))
+        reg = self.registry()
+        self.assertEqual(reg["avisos"][key]["status"], "VIGENTE")
+        self.assertEqual([e["event"] for e in reg["events"]], ["NEW_AVISO"])
+        self.assertEqual(len(reg["documents"]), 2)  # post page + PDF
+
+        # 30 min later: same feed item, page sidebar changed, PDF answers 304 -> nothing written
+        before = M.REGISTRY.read_bytes()
+        r2 = self.run_at(30)
+        self.assertEqual((r2["snapshot_written"], r2["rechecked"], r2["not_modified"], r2["new_documents"]), (False, 1, 1, 0))
+        self.assertEqual(M.REGISTRY.read_bytes(), before)
+        live = json.loads((Path(os.environ["V09_LIVE_DIR"]) / "health_v0_1.json").read_text(encoding="utf-8"))
+        committed = json.loads(M.HEALTH.read_text(encoding="utf-8"))
+        self.assertEqual((len(live["checks"]), len(committed["checks"])), (2, 1))
+
+        # 60 min: INDECI replaces the PDF under the same URL; permalink and pubDate unchanged
+        self.portal.pdf = (b"%PDF-1.4 version-2", '"v2"')
+        r3 = self.run_at(60)
+        self.assertEqual((r3["snapshot_written"], r3["snapshot_reason"], r3["new_documents"]), (True, "REGISTRY_CHANGED", 1))
+        reg = self.registry()
+        entry = reg["avisos"][key]
+        self.assertEqual(len(entry["revisions"]), 2)
+        self.assertEqual(entry["revisions"][1]["changed_fields"], ["validity_end", "validity_text"])
+        self.assertEqual(entry["revisions"][1]["previous_values"]["validity_end"], "2026-10-10T13:00:00-05:00")
+        self.assertEqual(entry["current"]["validity_end"], "2026-10-10T19:00:00-05:00")
+        self.assertEqual([e["event"] for e in reg["events"]], ["NEW_AVISO", "DOCUMENT_CHANGED", "AVISO_REVISED"])
+        self.assertEqual(len(json.loads(M.HEALTH.read_text(encoding="utf-8"))["checks"]), 3)  # the unwritten check is kept
+
+        # 90 min: same state again -> no new event, no duplicate, nothing written
+        r4 = self.run_at(90)
+        self.assertEqual((r4["snapshot_written"], r4["events"]), (False, []))
+        self.assertEqual(len(self.registry()["events"]), 3)
+
+        # 120 min: feed down -> ULTIMA_CONSULTA_FALLIDA written at once; avisos kept; one source-loss event
+        self.portal.feed_down = True
+        r5 = self.run_at(120)
+        self.assertEqual((r5["discovery_ok"], r5["snapshot_written"]), (False, True))  # registry also changed (source-loss event)
+        health = json.loads(M.HEALTH.read_text(encoding="utf-8"))
+        self.assertEqual(health["source_health"]["state"], "ULTIMA_CONSULTA_FALLIDA")
+        self.assertIn("puede haber avisos no capturados", health["summary"]["headline"])
+        reg = self.registry()
+        self.assertEqual(reg["avisos"][key]["status"], "VIGENTE")
+        self.assertEqual(reg["events"][-1]["event"], "SOURCE_LOST_DURING_ACTIVE_AVISO")
+        self.run_at(150)  # still down: same outage, no second event
+        self.assertEqual(sum(e["event"] == "SOURCE_LOST_DURING_ACTIVE_AVISO" for e in self.registry()["events"]), 1)
+        r7 = self.run_at(240)  # > 90 min without success -> DESACTUALIZADA, written
+        self.assertEqual(r7["source"], "DESACTUALIZADA")
+        self.assertEqual(json.loads(M.HEALTH.read_text(encoding="utf-8"))["source_health"]["state"], "DESACTUALIZADA")
+
+        # After the revised end (10-10 19:00 Lima = 11-10 00:00 UTC): VENCIDO once, and no longer rechecked
+        self.portal.feed_down = False
+        pdf_calls = self.portal.calls[PDF]
+        late = int((datetime(2026, 10, 11, 0, 30, tzinfo=UTC) - self.t0).total_seconds() // 60)
+        self.run_at(late)
+        entry = self.registry()["avisos"][key]
+        self.assertEqual(entry["status"], "VENCIDO")
+        self.run_at(late + 30)
+        self.assertEqual(self.portal.calls[PDF], pdf_calls)
+        events = [e["event"] for e in self.registry()["events"]]
+        self.assertEqual(events.count("STATUS_CHANGED"), 1)
+        self.assertEqual(len(set(e["event_id"] for e in self.registry()["events"])), len(events))
+
+        # Heartbeat: no change for 120 min -> a snapshot is still written
+        r = self.run_at(late + 150)
+        self.assertEqual((r["snapshot_written"], r["snapshot_reason"]), (True, "HEARTBEAT"))
+
+
+class RecheckBound(unittest.TestCase):
+    def test_only_active_or_recent_unparsed_posts_and_bounded(self):
+        now = datetime(2026, 10, 9, 20, tzinfo=UTC)
+        reg = M.empty_registry()
+        for i in range(15):
+            link = f"https://portal.indeci.gob.pe/emergencias/p{i}/"
+            reg["posts"][link] = dict(link=link, first_seen_utc=M.iso(now - timedelta(days=10, minutes=i)),
+                                      parsed=[dict(aviso_key=f"K{i}")], document_sha256=[])
+            reg["avisos"][f"K{i}"] = dict(aviso_key=f"K{i}", status="VIGENTE" if i < 14 else "VENCIDO", indeci_posts=[link])
+        recent = "https://portal.indeci.gob.pe/emergencias/unparsed/"
+        reg["posts"][recent] = dict(link=recent, first_seen_utc=M.iso(now - timedelta(hours=2)), parsed=[dict(aviso_key=None)], document_sha256=[])
+        limits = dict(max_rechecks_per_check=12, recheck_unparsed_hours=48)
+        targets = M.recheck_targets(reg, now, limits)
+        self.assertEqual(len(targets), 12)
+        self.assertEqual(targets[0], recent)
+        self.assertNotIn("https://portal.indeci.gob.pe/emergencias/p14/", targets)

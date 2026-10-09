@@ -34,11 +34,27 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check pypdf==6.19.0 pdfplumber==0.11.10
           command -v pdftotext || { sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils >/dev/null; } || echo "::warning::pdftotext unavailable; pypdf fallback"
+      - name: Restore live check log (Actions cache; checks between snapshots)
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/v09_live
+          key: v09-avisos-live-${{ github.ref_name }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            v09-avisos-live-${{ github.ref_name }}-
       - name: Capture (failures are recorded in source_health, never read as 'no avisos')
+        id: capture
+        env:
+          V09_LIVE_DIR: ${{ runner.temp }}/v09_live
         run: |
           python -c "import pdfplumber" || echo "::warning::pdfplumber unavailable: department/province table will degrade to free text"
           python scripts/v09_senamhi_avisos.py --capture | tee capture.log
           echo "::notice title=V09_AVISOS_CAPTURE::$(tail -1 capture.log | sed 's/%/%25/g')"
+      - name: Save live check log
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ runner.temp }}/v09_live
+          key: v09-avisos-live-${{ github.ref_name }}-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Verify archive, hashes and guards
         run: python scripts/v09_senamhi_avisos.py
       - name: Persist (idempotent, bounded retries)
@@ -49,7 +65,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/v09/senamhi_avisos
           if git diff --cached --quiet; then echo "No changes"; exit 0; fi
-          git commit -q -m "IRFEN v0.9: capturar avisos SENAMHI via INDECI/COEN (TEST_ONLY)"
+          git commit -q -m "IRFEN v0.9: avisos SENAMHI via INDECI/COEN (TEST_ONLY) - ${{ steps.capture.outputs.snapshot_reason }}"
           BR="${GITHUB_REF_NAME}"
           for attempt in 1 2 3 4; do
             git fetch -q origin "$BR"

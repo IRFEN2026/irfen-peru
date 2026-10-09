@@ -39,7 +39,9 @@
   "feed_pages": 3,
   "max_items_per_check": 40,
   "max_pdfs_per_post": 3,
-  "max_bytes_per_document": 30000000
+  "max_bytes_per_document": 30000000,
+  "max_rechecks_per_check": 12,
+  "recheck_unparsed_hours": 48
  },
  "cadence": {
   "target_minutes": 30,
@@ -132,5 +134,20 @@
    "SOURCE_LOST_DURING_ACTIVE_AVISO"
   ],
   "dedup": "stable event_id = hash(event, aviso_key, revision, status, post, document); ids already seen are never re-emitted"
+ },
+ "recheck": {
+  "why": "INDECI can replace a bulletin PDF or edit a post without changing its permalink or the RSS pubDate",
+  "targets": "posts of avisos whose status is VIGENTE or FUTURO, plus posts first seen in the last recheck_unparsed_hours that produced no aviso",
+  "bound": "at most limits.max_rechecks_per_check posts per check, newest first",
+  "method": "post page re-read and compared by its body text (the page sidebar changes constantly); PDFs fetched with If-None-Match / If-Modified-Since; any new bytes are archived as a new document and applied once, appending a revision",
+  "never": "an expired, cancelled or superseded aviso is not rechecked; a recheck never rewrites an earlier revision"
+ },
+ "snapshot_policy": {
+  "heartbeat_commit_minutes": 120,
+  "snapshot_stale_after_minutes": 180,
+  "check_log_max": 672,
+  "rule": "The registry holds no per-check timestamps and is byte-identical when nothing changed. The repository snapshot (registry + health) is written when the registry changed, when the source state changed (AL_DIA / ULTIMA_CONSULTA_FALLIDA / DESACTUALIZADA), or at least every heartbeat_commit_minutes. Every check is appended to the live check log kept in the Actions cache and committed with the next snapshot.",
+  "viewer_rule": "A reader of the committed snapshot shows the source as DESACTUALIZADA when the snapshot's last check is older than snapshot_stale_after_minutes (this also catches a stopped scheduler)",
+  "expected_commits_per_day": "about 12 heartbeats plus one per real change (new or revised aviso, status transition, source-state change), instead of 48"
  }
 }
