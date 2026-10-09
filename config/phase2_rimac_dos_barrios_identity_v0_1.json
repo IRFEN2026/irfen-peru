@@ -16,7 +16,7 @@
  "provenance": {
   "pull_request": 363,
   "pr_head_before_this_change": "7228f08b03b376cbf8746d819fad2bfae63534b1",
-  "main_reviewed_at_commit": "31f7223f8548398d87829bb0e6708cfca4493393",
+  "main_reviewed_at_commit": "324e7db5e00d0e32fce504b8f7a8f8505dbd01cf",
   "archive_manifest": "data/phase2/source_archive/rimac_dos_barrios/archive_manifest_v0_1.json",
   "archive_manifest_sha256": "8502b71ff0eb9202889d45e0e8cafd0a4784acefedec0f27086da74f0697fb8c",
   "quote_rule": "Every quote is a whitespace-normalised verbatim substring of the archived text layer named by its source (poppler, or Spanish OCR for the scanned A6608) on the cited PDF page; tests re-check it against files whose SHA-256 matches the manifest.",
@@ -389,8 +389,10 @@
   "classification": {
    "identity_state": "IDENTITY_ONLY",
    "geometry_state": "GEOMETRY_PENDING",
-   "outlet_state": "OUTLET_PENDING"
+   "outlet_state": "OUTLET_PENDING",
+   "event_state": "EVENT_LEAD_UNVERIFIED"
   },
+  "classification_note": "identity_state describes the identity evidence only and stays IDENTITY_ONLY; the event lead is recorded separately (event_state) and does not change the identity, geometry, outlet or map status.",
   "identity_basis": {
    "status": "DOCUMENTARY_IDENTITY_ATTESTED",
    "attestations": [
@@ -421,7 +423,7 @@
     }
    ],
    "independence": "INGEMMET A6608 (2012) is the primary source. The SENAMHI 2020 adjacency sentence reproduces the A6608 §5.5 sentence almost word for word (quote A6-P23-SANTO-DOMINGO), and the 2018 thesis cites 'Zavala et al., 2012'; neither is independent of A6608 for Dos Barrios.",
-   "sufficient_for": "IDENTITY_ONLY documentary row. Not sufficient for hydrologic distinctness, geometry, confluence or any event attribution."
+   "sufficient_for": "Documentary identity. Not sufficient for hydrologic distinctness, geometry or confluence; the event lead rests on A6608 alone (event_leads)."
   },
   "department": "Lima",
   "province": null,
@@ -453,20 +455,6 @@
   "map_eligible": false,
   "historical_period_mentions": [
    {
-    "period": "2012-04-05",
-    "source_id": "INGEMMET-A6608-2012-LA-RONDA-LOS-CONDORES",
-    "quote_ids": [
-     "A6-P30-MOST-AFFECTED",
-     "A6-P31-FLOW-TO-SECTOR",
-     "A6-P43-CONCLUSION"
-    ],
-    "attribution_scale": "PER_UNIT_SECTION_PRIMARY_INSTITUTIONAL_REPORT",
-    "event_lead_eligible": false,
-    "usable_as_confirmed_unit_event": false,
-    "promotion_decision": "PENDING_INDEPENDENT_QA",
-    "note": "A6608 describes the 5 April 2012 debris and mud flow of this quebrada reaching the Pablo Patrón sector. Under the national audit rules this per-unit statement in a primary institutional source would qualify as EVENT_LEAD_UNVERIFIED; it is NOT promoted in this change and awaits an explicit QA decision."
-   },
-   {
     "period": "2012-04",
     "source_id": "VILLACORTA-2018-UPM-THESIS-INGEMMET-TE0306",
     "quote_ids": [
@@ -478,6 +466,30 @@
     "event_lead_eligible": false,
     "usable_as_confirmed_unit_event": false,
     "note": "Not an event record for this unit. The contemporary RIIGEO 2012 article on the 5 April 2012 flows lists the left-bank quebradas La Cantuta, Santo Domingo, Mariscal Castilla, La Ronda and California and does not name Dos Barrios (quote RII-P7-LEFT-BANK-LIST)."
+   }
+  ],
+  "event_leads": [
+   {
+    "event_date": "2012-04-05",
+    "source_id": "INGEMMET-A6608-2012-LA-RONDA-LOS-CONDORES",
+    "section": "5.6 Quebrada Dos Barrios / Pablo Patrón (pp. 30-31) and 6. Conclusiones (p. 43)",
+    "quote_ids": [
+     "A6-P30-MOST-AFFECTED",
+     "A6-P31-FLOW-TO-SECTOR",
+     "A6-P43-CONCLUSION"
+    ],
+    "state": "EVENT_LEAD_UNVERIFIED",
+    "attribution_scale": "NAMED_PER_UNIT_SECTION_PRIMARY_INSTITUTIONAL_REPORT",
+    "event_lead_eligible": true,
+    "source_text_verified": false,
+    "verification": null,
+    "usable_as_confirmed_unit_event": false,
+    "event_ledger_entry_allowed": false,
+    "promotion_to_event_evidence_allowed": false,
+    "authorisation": "Independent QA (ChatGPT), 2026-10-09: authorised as EVENT_LEAD_UNVERIFIED only; not a validated or operational event.",
+    "affected_sector_in_source": "Pablo Patrón (sector on the lower fan; not an alias of the channel)",
+    "date_warning": "A6608 cover prints 'Octubre 2011' while its title and §5.6 date the flow 05/04/2012 and the institutional record dates the report 2012; the event date is taken from the text, the report date stays flagged.",
+    "not_derived": "No rainfall amount, discharge, volume, duration, travel time, confluence or footprint is derived from this lead."
    }
   ],
   "events_attributed": []
@@ -563,7 +575,7 @@
   "Geometry, confluence and outlet: none reproducible; the SENAMHI figure does not draw or label Dos Barrios.",
   "A6608 is a scanned PDF: its quotes rest on a Spanish OCR layer plus visual reading; an institutionally issued text copy would remove OCR risk.",
   "A6608 cover date ('Octubre 2011') is inconsistent with the 05/04/2012 event in its title; the institutional record dates it 2012.",
-  "QA decision pending: whether the A6608 per-unit statement of the 5 April 2012 flow is recorded as EVENT_LEAD_UNVERIFIED (not done here).",
+  "The 5 April 2012 lead (A6608) is EVENT_LEAD_UNVERIFIED only: becoming EVENT_EVIDENCE needs source_text_verified=true with a verification record after independent re-reading; no event-ledger entry.",
   "SENAMHI copy is owner-supplied; byte identity with the host copy is not verified by the agent.",
   "Relations to the PREDES row 'Pablo Patrón/Dos Amigos' and to the RIIGEO label 'Mariscal Castilla' remain UNRESOLVED; 'Dos Amigos' is absent from A6608 and RIIGEO 2012."
  ],

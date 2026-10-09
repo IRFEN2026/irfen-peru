@@ -121,7 +121,7 @@ def test_no_event_evidence_while_no_source_text_is_verified():
     assert events
     assert all(item["source_text_verified"] is False and item["verification"] is None for item in events)
     leads = [row for row in rows if "EVENT_LEAD_UNVERIFIED" in row["state_flags"]]
-    assert len(leads) == doc["summary"]["event_lead_unverified_rows"] == 41
+    assert len(leads) == doc["summary"]["event_lead_unverified_rows"] == 42  # r5: +1 lead (Dos Barrios 2012-04-05, INGEMMET A6608 §5.6; QA-authorised EVENT_LEAD_UNVERIFIED)
     assert doc["summary"]["event_evidence_rows"] == 0
     assert doc["summary"]["sources_with_verified_text"] == 0
 

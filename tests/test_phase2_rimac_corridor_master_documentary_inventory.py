@@ -192,7 +192,7 @@ def test_dos_barrios_gets_no_location_geometry_confluence_or_event_by_inference(
         assert V.validate(reg, bad_rimac, audit, manifest), field
     bad_audit = copy.deepcopy(audit)
     row = next(r for r in bad_audit["candidates"] if r["inventory_id"] == V.RID)
-    row["state_flags"] = ["EVENT_LEAD_UNVERIFIED"]
+    row["state_flags"] = ["EVENT_EVIDENCE"]
     assert V.validate(reg, rimac, bad_audit, manifest)
 
 
@@ -236,3 +236,39 @@ def test_a6608_slash_heading_is_not_a_channel_equivalence():
     assert any("variant" in e for e in V.validate(reg, bad_rimac, audit, manifest))
     groups = [g for g in rimac["pending_identity_groups"] if V.RID in g["inventory_ids"]]
     assert len(groups) == 2 and all(g["status"] == "PENDING_ADJUDICATION" for g in groups)
+
+
+def test_a6608_event_lead_is_unverified_and_never_promoted_or_ledgered():
+    """QA-authorised: 2012-04-05 is an EVENT_LEAD_UNVERIFIED from A6608 §5.6, not a validated or operational event."""
+    reg, rimac, audit, manifest = V.load_all()
+    lead = reg["candidate"]["event_leads"][0]
+    assert (lead["event_date"], lead["state"], lead["source_text_verified"]) == ("2012-04-05", "EVENT_LEAD_UNVERIFIED", False)
+    assert reg["candidate"]["classification"]["identity_state"] == "IDENTITY_ONLY"
+    row = next(r for r in audit["candidates"] if r["inventory_id"] == V.RID)
+    assert row["state_flags"] == ["EVENT_LEAD_UNVERIFIED"] and row["verified_event_dates"] == []
+    assert row["event_lead_dates_unverified"] == ["2012-04-05"] and row["map_eligible"] is False
+    for mutate in (
+        lambda r: r["candidate"]["event_leads"][0].__setitem__("source_text_verified", True),
+        lambda r: r["candidate"]["event_leads"][0].__setitem__("verification", {"locator": "p. 30"}),
+        lambda r: r["candidate"]["event_leads"][0].__setitem__("event_ledger_entry_allowed", True),
+        lambda r: r["candidate"]["event_leads"][0].__setitem__("promotion_to_event_evidence_allowed", True),
+        lambda r: r["candidate"]["event_leads"][0].__setitem__("usable_as_confirmed_unit_event", True),
+        lambda r: r["candidate"]["event_leads"][0].__setitem__("event_date", "2011-10-01"),
+        lambda r: r["candidate"]["event_leads"][0].__setitem__("date_warning", ""),
+        lambda r: r["candidate"]["event_leads"][0].__setitem__("source_id", "SENAMHI-2020-QDAS-SANTO-DOMINGO-CANTUTA"),
+        lambda r: r["candidate"]["event_leads"].append(dict(r["candidate"]["event_leads"][0], event_date="2015-03-23")),
+    ):
+        bad = copy.deepcopy(reg)
+        mutate(bad)
+        assert V.validate(bad, rimac, audit, manifest)
+    for mutate in (
+        lambda r: r.__setitem__("state_flags", ["EVENT_EVIDENCE"]),
+        lambda r: r.__setitem__("verified_event_dates", ["2012-04-05"]),
+        lambda r: next(i for i in r["evidence"] if i["evidence_type"] == "EVENT").__setitem__("source_text_verified", True),
+        lambda r: r.__setitem__("map_eligible", True),
+    ):
+        bad_audit = copy.deepcopy(audit)
+        mutate(next(x for x in bad_audit["candidates"] if x["inventory_id"] == V.RID))
+        assert V.validate(reg, rimac, bad_audit, manifest)
+    ledger = json.loads((ROOT / "config/historical_events.json").read_text(encoding="utf-8"))
+    assert "dos barrios" not in json.dumps(ledger, ensure_ascii=False).lower()

@@ -7,6 +7,7 @@ confluence, outlet or event may follow from it. Standard library only; no networ
 """
 from __future__ import annotations
 
+import functools
 import hashlib
 import json
 import re
@@ -26,7 +27,13 @@ GUARDS = {
     "operational_alerting_enabled": False, "activation_gate": "BLOCKED", "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
     "decision_thresholds": None, "hydraulic_factors": None,
 }
-CLASS = {"identity_state": "IDENTITY_ONLY", "geometry_state": "GEOMETRY_PENDING", "outlet_state": "OUTLET_PENDING"}
+CLASS = {"identity_state": "IDENTITY_ONLY", "geometry_state": "GEOMETRY_PENDING", "outlet_state": "OUTLET_PENDING",
+         "event_state": "EVENT_LEAD_UNVERIFIED"}
+A6608_DOC = "ingemmet-a6608-sigrid-401"
+A6608_SHA256 = "b710247572a7a83efed53be0f0f565cc4971eb542f43f2881cbefc7bba0b5927"
+LEAD_DATE = "2012-04-05"
+# Files that hold event ledgers or the published map: the lead may never appear there.
+NO_LEAD_PATHS = [ROOT / "config/historical_events.json", ROOT / "site"]
 
 
 def sha256_file(path: Path) -> str:
@@ -39,6 +46,19 @@ def norm(text: str) -> str:
 
 def load_all():
     return tuple(json.loads(p.read_text(encoding="utf-8")) for p in (REG, RIMAC, AUDIT, MANIFEST))
+
+
+@functools.lru_cache(maxsize=1)
+def ledger_or_map_hits() -> tuple[str, ...]:
+    """Files under the event ledger or site/ (published map) that mention Dos Barrios; scanned once per process."""
+    hits = []
+    for path in NO_LEAD_PATHS:
+        files = [path] if path.is_file() else (sorted(path.rglob("*")) if path.is_dir() else [])
+        for f in files:
+            if f.is_file() and f.suffix in {".json", ".geojson", ".js", ".html", ".csv"}:
+                if re.search(r"dos\s*barrios|dos_barrios", f.read_text(encoding="utf-8", errors="ignore"), re.I):
+                    hits.append(str(f.relative_to(ROOT)))
+    return tuple(hits)
 
 
 def validate(reg: dict, rimac: dict, audit: dict, manifest: dict) -> list[str]:
@@ -90,7 +110,7 @@ def validate(reg: dict, rimac: dict, audit: dict, manifest: dict) -> list[str]:
     # identity basis: verifiable, label-bearing, at least one primary institutional attestation
     cand = reg.get("candidate", {})
     if cand.get("inventory_id") != RID or cand.get("classification") != CLASS:
-        errors.append("candidate must be lima_district_unknown_dos_barrios with IDENTITY_ONLY / GEOMETRY_PENDING / OUTLET_PENDING")
+        errors.append("candidate must be lima_district_unknown_dos_barrios with IDENTITY_ONLY / GEOMETRY_PENDING / OUTLET_PENDING and event_state EVENT_LEAD_UNVERIFIED")
     attestations = cand.get("identity_basis", {}).get("attestations", [])
     primary = 0
     for att in attestations:
@@ -114,6 +134,28 @@ def validate(reg: dict, rimac: dict, audit: dict, manifest: dict) -> list[str]:
     for mention in cand.get("historical_period_mentions", []):
         if mention.get("event_lead_eligible") is not False or mention.get("usable_as_confirmed_unit_event") is not False:
             errors.append("list-level period mentions may not become event leads or unit events")
+    # The only event lead: A6608 §5.6, 2012-04-05, authorised by independent QA as EVENT_LEAD_UNVERIFIED and nothing more
+    a6608_ids = {sid for sid, src in sources.items() if src.get("archive_document_id") == A6608_DOC}
+    leads = cand.get("event_leads", [])
+    if len(leads) != 1:
+        errors.append("exactly one event lead (A6608, 2012-04-05) may be recorded")
+    for lead in leads:
+        src = sources.get(lead.get("source_id"), {})
+        if lead.get("source_id") not in a6608_ids or src.get("sha256") != A6608_SHA256 or src.get("source_class") != "PRIMARY_INSTITUTIONAL":
+            errors.append("the event lead must rest on the archived INGEMMET A6608 (primary institutional, fixed SHA-256)")
+        if lead.get("event_date") != LEAD_DATE or lead.get("state") != "EVENT_LEAD_UNVERIFIED" or lead.get("event_lead_eligible") is not True:
+            errors.append("the event lead must be EVENT_LEAD_UNVERIFIED for 2012-04-05")
+        if lead.get("source_text_verified") is not False or lead.get("verification") is not None:
+            errors.append("the event lead must stay source_text_verified=false with no verification record (no EVENT_EVIDENCE)")
+        for flag in ("usable_as_confirmed_unit_event", "event_ledger_entry_allowed", "promotion_to_event_evidence_allowed"):
+            if lead.get(flag) is not False:
+                errors.append(f"the event lead must keep {flag}=false")
+        if not lead.get("date_warning") or "2011" not in lead.get("date_warning", ""):
+            errors.append("the A6608 cover-date discrepancy (Octubre 2011 vs 05/04/2012) must stay recorded with the lead")
+        if not any(re.search(r"05 de abril|5 de abril", quotes.get(q, {}).get("text", ""), re.I) for q in lead.get("quote_ids", [])):
+            errors.append("the event lead must cite a quote that states the 5 April date")
+    for hit in ledger_or_map_hits():
+        errors.append(f"Dos Barrios may not appear in an event ledger or the published map: {hit}")
     relations = reg.get("relations_recorded_not_adopted", [])
     for rel in relations:
         status = str(rel.get("status", ""))
@@ -186,12 +228,22 @@ def validate(reg: dict, rimac: dict, audit: dict, manifest: dict) -> list[str]:
         errors.append("national audit: exactly one Dos Barrios row required")
     else:
         row = rows[0]
-        if row.get("state_flags") != ["IDENTITY_ONLY"] or row.get("map_eligible") is not False or row.get("parent_basin_or_system") is not None:
-            errors.append("national audit row: IDENTITY_ONLY, not map-eligible, no parent basin")
+        if (row.get("state_flags") != ["EVENT_LEAD_UNVERIFIED"] or row.get("suggested_state") != "EVENT_LEAD_UNVERIFIED"
+                or row.get("map_eligible") is not False or row.get("parent_basin_or_system") is not None):
+            errors.append("national audit row: EVENT_LEAD_UNVERIFIED only (never EVENT_EVIDENCE), not map-eligible, no parent basin")
         if row.get("reproducible_geometry") != {"exists": False} or row.get("reproducible_outlet_or_confluence") != {"exists": False}:
             errors.append("national audit row: no geometry or outlet")
-        if row.get("evidence_types") != ["IDENTITY"] or row.get("event_lead_dates_unverified") or row.get("verified_event_dates"):
-            errors.append("national audit row: IDENTITY evidence only, no event dates")
+        if row.get("evidence_types") != ["EVENT", "IDENTITY"] or row.get("event_lead_dates_unverified") != [LEAD_DATE] or row.get("verified_event_dates"):
+            errors.append("national audit row: identity evidence plus the single 2012-04-05 lead; no verified event dates")
+        events = [i for i in row.get("evidence", []) if i.get("evidence_type") == "EVENT"]
+        if len(events) != 1 or events[0].get("source_id") not in a6608_ids or events[0].get("event_dates") != [LEAD_DATE]:
+            errors.append("national audit row: the only EVENT item is the A6608 2012-04-05 lead")
+        for item in events:
+            if item.get("source_text_verified") is not False or item.get("verification") is not None or item.get("event_lead_eligible") is not True:
+                errors.append("national audit row: the EVENT item stays an unverified, eligible lead")
+        for sid in a6608_ids:
+            if audit.get("sources", {}).get(sid, {}).get("source_text_verified") is not False:
+                errors.append("national audit: A6608 source_text_verified must stay false until independent re-reading")
         for item in row.get("evidence", []):
             q = quotes.get(item.get("quote_id"), {})
             if q.get("source_id") != item.get("source_id") or q.get("page") != item.get("page"):
@@ -211,7 +263,7 @@ def main() -> int:
         return 1
     reg = json.loads(REG.read_text(encoding="utf-8"))
     print(f"OK: Dos Barrios IDENTITY_ONLY on {len(reg['sources'])} archived sources and {len(reg['quotes'])} verbatim quotes; "
-          "no geometry, confluence or event; map_publishable=false; guards closed.")
+          "one EVENT_LEAD_UNVERIFIED (A6608, 2012-04-05; not EVENT_EVIDENCE, not in any ledger); no geometry or confluence; map_publishable=false; guards closed.")
     return 0
 
 
