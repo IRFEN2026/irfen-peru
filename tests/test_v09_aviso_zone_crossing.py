@@ -151,9 +151,11 @@ class OverlayBuilder(unittest.TestCase):
     def test_intersections_and_fractions(self):
         out = O.build_overlay(self.bounds, self.PROV, self.zones, "c" * 64)
         z = out["zones"][0]
-        self.assertEqual([(r["department"], r["province"]) for r in z["intersections"]], [("LA LIBERTAD", "OTUZCO"), ("LA LIBERTAD", "TRUJILLO")])
+        self.assertEqual(sorted((r["department"], r["province"]) for r in z["intersections"]), [("LA LIBERTAD", "OTUZCO"), ("LA LIBERTAD", "TRUJILLO")])
         self.assertAlmostEqual(sum(r["zone_fraction"] for r in z["intersections"]), 1.0, places=2)
-        self.assertAlmostEqual(z["intersections"][0]["zone_fraction"], 0.5, places=2)
+        for r in z["intersections"]:
+            self.assertAlmostEqual(r["zone_fraction"], 0.5, places=2)
+        self.assertEqual(z["departments"], ["LA LIBERTAD"])
         self.assertEqual(out["boundary_source"]["sha256"], "c" * 64)
 
     def test_fail_closed_on_bad_inputs(self):

@@ -21,7 +21,7 @@ jobs:
           pip install -q -r requirements.txt
           pip install -q -r requirements-ci-test.txt
       - run: python scripts/verify_phase2_test_collection.py --write-manifest
-      - run: python -m pytest tests/test_v09_senamhi_avisos.py tests/test_v09_aviso_zone_crossing.py -q -rs
+      - run: python -m pytest tests/test_v09_senamhi_avisos.py tests/test_v09_aviso_zone_crossing.py -q -rs --junitxml=j.xml || { python scripts/report_pytest_junit_annotations.py j.xml; exit 1; }
       - name: Commit the regenerated manifest (real collection on the pinned runner)
         run: |
           git config user.name "github-actions[bot]"
