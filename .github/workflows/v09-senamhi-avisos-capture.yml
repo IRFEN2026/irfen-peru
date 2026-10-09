@@ -32,10 +32,11 @@ jobs:
           python-version: "3.12"
       - name: Install bounded dependencies
         run: |
-          python -m pip install --disable-pip-version-check pypdf
+          python -m pip install --disable-pip-version-check pypdf==6.19.0 pdfplumber==0.11.10
           command -v pdftotext || { sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils >/dev/null; } || echo "::warning::pdftotext unavailable; pypdf fallback"
       - name: Capture (failures are recorded in source_health, never read as 'no avisos')
         run: |
+          python -c "import pdfplumber" || echo "::warning::pdfplumber unavailable: department/province table will degrade to free text"
           python scripts/v09_senamhi_avisos.py --capture | tee capture.log
           echo "::notice title=V09_AVISOS_CAPTURE::$(tail -1 capture.log | sed 's/%/%25/g')"
       - name: Verify archive, hashes and guards

@@ -44,7 +44,8 @@
  "cadence": {
   "target_minutes": 30,
   "manual_trigger": "workflow_dispatch",
-  "idempotence": "feed items are keyed by link and pubDate; unchanged items are not fetched again; documents are keyed by SHA-256"
+  "idempotence": "feed items are keyed by link and pubDate; unchanged items are not fetched again; documents are keyed by SHA-256",
+  "schedule_note": "GitHub runs scheduled workflows only from the default branch: on this PR branch the capture runs on push and workflow_dispatch; the 30-min cron becomes active only if the owner merges. Runs may start late; each run is idempotent and reports minutes since the last success."
  },
  "stale_after_minutes": 90,
  "status_vocabulary": [
@@ -64,7 +65,7 @@
  "rain_related_pattern": "PRECIPITACION|LLUVIA|TORMENTA|CHUBASCO|DESCARGAS? ELECTRICAS?",
  "geometry": {
   "level_a_official_geometry": "NOT_AVAILABLE_FROM_THIS_CHANNEL",
-  "level_b_administrative": "departments as listed in the bulletin; administrative boundaries not yet attached"
+  "level_b_administrative": "departments and provinces as listed in the bulletin table; boundaries not attached in v0.1"
  },
  "never": [
   "treat the download time as emission or validity",
@@ -96,5 +97,40 @@
    "id": "MONITORING_BULLETIN",
    "title_pattern": "MONITOREO DE PELIGROS"
   }
- ]
+ ],
+ "identity": {
+  "aviso_key": "SENAMHI-{product}-{year}-{number:03d}",
+  "products": {
+   "ACP-LLUVIAS": "Aviso de corto plazo ante lluvias intensas (24 h)",
+   "ACP-QUEBRADAS": "Aviso de corto plazo ante posible activación de quebradas (24 h)",
+   "AVISO-METEOROLOGICO": "Aviso meteorológico",
+   "ACP-OTRO": "Other short-term aviso"
+  },
+  "number_source": "'Fuente: Aviso N° X ...' line of the INDECI bulletin (SENAMHI number); the INDECI bulletin number is kept separately as indeci_bulletin_id",
+  "year_source": "stated year when present, otherwise the year of the INDECI bulletin number (aviso_year_basis records which)",
+  "observed_2026_10_09": "SENAMHI rain aviso N°282 and quebradas aviso N°282 share the number but are distinct products; keying by number alone merges them"
+ },
+ "field_rules": {
+  "official_level": "only when the text states it (NIVEL ... ROJO/NARANJA/AMARILLO/VERDE). Short-term bulletins convey the level by map colour: left null with official_level_note; never inferred",
+  "senamhi_emission": "null unless stated; INDECI publication time (RSS pubDate) is kept as indeci_published_utc and is not the emission",
+  "validity": "VIGENCIA line as reproduced by INDECI (dd-mm-yyyy (hh:mm h) al ...), America/Lima; date-only -> whole days, noted",
+  "departments_provinces": "department/province table read from page-1 word coordinates; provinces left null when the grouping is ambiguous",
+  "description": "'Perspectivas' text verbatim when present",
+  "precipitation_mm": "only when the text gives a mm figure",
+  "geometry": "level A not available from this channel; level B = administrative units as listed (representation, not footprint)"
+ },
+ "events": {
+  "tray": "registry.events (internal, requires human review)",
+  "notification_channel": "NOT_CONFIGURED: no external notification is sent",
+  "types": [
+   "NEW_AVISO",
+   "AVISO_REVISED",
+   "LEVEL_CHANGED",
+   "STATUS_CHANGED",
+   "PARSE_INCOMPLETE",
+   "PORTAL_FORMAT_CHANGED",
+   "SOURCE_LOST_DURING_ACTIVE_AVISO"
+  ],
+  "dedup": "stable event_id = hash(event, aviso_key, revision, status, post, document); ids already seen are never re-emitted"
+ }
 }
