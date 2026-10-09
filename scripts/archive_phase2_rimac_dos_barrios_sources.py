@@ -175,17 +175,58 @@ def term_hits(pages: list[str], terms: list[dict], layer: str) -> list[dict]:
     return hits
 
 
+def text_layers(data: bytes, notes: dict) -> dict:
+    layers = {}
+    try:
+        layers["pypdf_pages"] = pypdf_pages(data)
+    except Exception as exc:  # noqa: BLE001 - poppler may still read a file pypdf cannot
+        notes["pypdf_error"] = f"{type(exc).__name__}: {str(exc)[:160]}"
+    poppler = poppler_pages(data)
+    if poppler is not None:
+        layers["poppler_layout_pages"] = poppler
+    return layers
+
+
+def ingest_owner_copy(item: dict, base: dict, terms: list[dict]) -> dict:
+    """A copy downloaded by the repository owner in a browser, committed under owner_supplied/.
+
+    Its SHA-256 must equal the value fixed in the seeds; the agent never fetched it from the host.
+    """
+    copy = item["owner_supplied_copy"]
+    path = ROOT / copy["path"]
+    if not path.resolve().is_relative_to((ARCHIVE / "owner_supplied").resolve()):
+        raise SystemExit(f"owner copy for {item['id']} must live under {ARCHIVE.relative_to(ROOT)}/owner_supplied/")
+    data = path.read_bytes()
+    if sha256_bytes(data) != copy["sha256"] or len(data) != copy["bytes"]:
+        raise SystemExit(f"owner copy for {item['id']} does not match the SHA-256/bytes fixed in the seeds")
+    notes: dict = {}
+    layers = text_layers(data, notes)
+    text_path = ARCHIVE / "text" / f"{item['id']}.pages.json"
+    text_path.write_text(json.dumps(dict(document_id=item["id"], sha256_of_raw=sha256_bytes(data), **layers),
+                                    ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    hits = [h for layer, pages in layers.items() for h in term_hits(pages, terms, layer)]
+    return dict(base, status="ARCHIVED", acquisition="OWNER_SUPPLIED_COPY", owner_supplied_copy=copy,
+                not_fetched_by_agent_reason=item.get("not_captured_reason"), media="pdf", bytes=len(data),
+                sha256=sha256_bytes(data), page_count=len(next(iter(layers.values()))) if layers else 0,
+                text_layers=sorted(layers), extraction_notes=notes, raw_path=copy["path"],
+                text_path=str(text_path.relative_to(ROOT)), text_sha256=sha256_file(text_path),
+                terms_found=sorted({h["term"] for h in hits}), term_hits=hits)
+
+
 def capture() -> int:
     seeds = load_seeds()
     limits, terms = seeds["limits"], seeds["search_terms"]
-    if ARCHIVE.exists():
-        shutil.rmtree(ARCHIVE)  # a capture always starts from an empty archive: nothing stale stays unlisted
-    (ARCHIVE / "raw").mkdir(parents=True)
-    (ARCHIVE / "text").mkdir(parents=True)
+    for sub in ("raw", "text"):
+        if (ARCHIVE / sub).exists():
+            shutil.rmtree(ARCHIVE / sub)  # a capture starts from empty raw/ and text/: nothing stale stays unlisted
+        (ARCHIVE / sub).mkdir(parents=True)
     records = []
     for item in seeds["documents"]:
         base = dict(document_id=item["id"], institution=item["institution"], title_as_requested=item["title_as_requested"],
                     requested_url=item["url"], host_kind=item["host_kind"])
+        if not item.get("capture") and item.get("owner_supplied_copy"):
+            records.append(ingest_owner_copy(item, base, terms))
+            continue
         if not item.get("capture"):
             records.append(dict(base, status="NOT_CAPTURED", not_captured_reason=item["not_captured_reason"],
                                 not_captured_note=item["not_captured_note"]))
@@ -207,7 +248,10 @@ def capture() -> int:
             raw_path.write_bytes(data)
             layers = {}
             if is_pdf:
-                layers["pypdf_pages"] = pypdf_pages(data)
+                try:
+                    layers["pypdf_pages"] = pypdf_pages(data)
+                except Exception as exc:  # noqa: BLE001 - a broken page tree must not lose the bytes; poppler may still read it
+                    attempts[-1]["pypdf_error"] = f"{type(exc).__name__}: {str(exc)[:160]}"
                 poppler = poppler_pages(data)
                 if poppler is not None:
                     layers["poppler_layout_pages"] = poppler
@@ -221,7 +265,7 @@ def capture() -> int:
                           final_url=result.get("final_url"), http_status=result.get("http_status"),
                           content_type=result.get("content_type"), content_length_header=result.get("content_length_header"),
                           retrieved_at_utc=result["retrieved_at_utc"], media=ext[1:], bytes=len(data), sha256=sha256_bytes(data),
-                          page_count=len(next(iter(layers.values()))), text_layers=sorted(layers),
+                          page_count=len(next(iter(layers.values()))) if layers else 0, text_layers=sorted(layers),
                           raw_path=str(raw_path.relative_to(ROOT)), text_path=str(text_path.relative_to(ROOT)),
                           text_sha256=sha256_file(text_path), terms_found=sorted({h["term"] for h in hits}),
                           term_hits=hits, route_attempts=attempts)
@@ -275,7 +319,7 @@ def verify() -> list[str]:
             text = json.loads((ROOT / record["text_path"]).read_text(encoding="utf-8"))
             if text.get("sha256_of_raw") != record.get("sha256"):
                 errors.append(f"text extraction does not point at the archived bytes: {record['document_id']}")
-    for sub in ("raw", "text"):
+    for sub in ("raw", "text", "owner_supplied"):
         folder = ARCHIVE / sub
         for path in folder.glob("*") if folder.is_dir() else []:
             if path.resolve() not in listed:
