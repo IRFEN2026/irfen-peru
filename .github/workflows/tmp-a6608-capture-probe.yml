@@ -1,0 +1,54 @@
+# TEMPORARY probe branch (never for main): captures INGEMMET A6608 from the CENEPRED SIGRID route,
+# archives bytes + SHA-256 + text on this branch only, and reports hits as annotations.
+name: TMP A6608 capture probe
+
+on:
+  push:
+    branches:
+      - research/a6608-capture-probe
+    paths:
+      - .github/workflows/tmp-a6608-capture-probe.yml
+
+permissions:
+  contents: write
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - name: Fetch with Content-Length check (direct route only)
+        shell: bash
+        run: |
+          set -uo pipefail
+          D=data/phase2/source_archive/rimac_dos_barrios_a6608_probe
+          mkdir -p "$D/raw" "$D/text"
+          URL="https://sigrid.cenepred.gob.pe/sigridv3/documento/401/descargar"
+          ok=0
+          for i in 1 2 3; do
+            if curl -sS -L --max-time 300 -A "IRFEN-phase2-research-source-archive/1.0 (+https://github.com/IRFEN2026/irfen-peru)" \
+                 -D headers.txt -o body.bin -w '%{http_code} %{content_type} %{size_download} %{url_effective}\n' "$URL" > meta.txt; then
+              ok=1; break
+            fi
+            sleep 10
+          done
+          cat meta.txt headers.txt || true
+          if [[ $ok != 1 ]]; then echo "::error title=A6608_FETCH::unreachable after 3 attempts"; exit 1; fi
+          head -c 5 body.bin | grep -q '%PDF-' || { echo "::error title=A6608_NOT_PDF::$(cat meta.txt)"; exit 1; }
+          cl=$(grep -i '^content-length:' headers.txt | tail -1 | tr -dc '0-9')
+          sz=$(stat -c %s body.bin)
+          if [[ -n "$cl" && "$cl" != "$sz" ]]; then echo "::error title=A6608_TRUNCATED::declared $cl got $sz"; exit 1; fi
+          mv body.bin "$D/raw/sigrid-401.pdf"
+          sha=$(sha256sum "$D/raw/sigrid-401.pdf" | awk '{print $1}')
+          sudo apt-get install -y -qq poppler-utils >/dev/null 2>&1 || true
+          pdfinfo "$D/raw/sigrid-401.pdf" > "$D/text/sigrid-401.pdfinfo.txt" 2>&1 || true
+          pdftotext -layout "$D/raw/sigrid-401.pdf" "$D/text/sigrid-401.layout.txt" || true
+          printf '{"url":"%s","retrieved_at_utc":"%s","http_meta":"%s","sha256":"%s","bytes":%s,"content_length_header":"%s"}\n' \
+            "$URL" "$(date -u +%FT%TZ)" "$(cat meta.txt | tr -d '\n')" "$sha" "$sz" "$cl" > "$D/probe_manifest.json"
+          echo "::notice title=A6608_META::$(cat $D/probe_manifest.json) | $(head -20 $D/text/sigrid-401.pdfinfo.txt | tr '\n' ';')"
+          echo "::notice title=A6608_HITS::$(grep -n -i -E 'dos barrios|pablo patr|dos amigos|^ *5\.6' $D/text/sigrid-401.layout.txt | head -40 | tr '\n' ';' | sed 's/%/%25/g')"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$D"
+          git commit -m "Probe: archive INGEMMET A6608 candidate from CENEPRED SIGRID 401 (bytes + SHA-256)" && git push origin HEAD:research/a6608-capture-probe
