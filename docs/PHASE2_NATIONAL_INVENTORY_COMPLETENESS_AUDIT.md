@@ -10,11 +10,12 @@ Este documento es un inventario/backlog. No crea unidades hidrológicas, geometr
 
 ## 1. Qué se hizo y qué no
 
-- **400 filas deduplicadas** tomadas de fuentes de ANA, INGEMMET, INDECI, CENEPRED/SIGRID, IGP, ANIN, gobiernos regionales y municipalidades (más pistas de ONG/prensa, marcadas como tales).
+- **403 filas deduplicadas** tomadas de fuentes de ANA, INGEMMET, INDECI, CENEPRED/SIGRID, IGP, ANIN, gobiernos regionales y municipalidades (más pistas de ONG/prensa, marcadas como tales).
 - Cada fila se contrastó con `main`, con las 531 ramas y con los 41 PR abiertos antes de proponerla.
 - **0** filas `MAP_ELIGIBLE`, **0** geometrías nuevas, **0** outlets nuevos, **0** aliases fusionados, **0** cuencas padre asignadas.
-- **0** filas `EVENT_EVIDENCE`: las 41 filas con afirmaciones fechadas de evento quedan como `EVENT_LEAD_UNVERIFIED` hasta que su fuente se reabra, verifique y archive (0 de 24 fuentes tienen `source_text_verified=true`).
+- **0** filas `EVENT_EVIDENCE`: las 41 filas con afirmaciones fechadas de evento quedan como `EVENT_LEAD_UNVERIFIED` hasta que su fuente se reabra, verifique y archive (0 de 26 fuentes tienen `source_text_verified=true`).
 - **Advertencia de extracción.** Los documentos se leyeron con una herramienta automática de lectura web. Los nombres de archivo que entrega el servidor de SIGRID son identificadores fiables; las transcripciones de texto y tablas **no están verificadas byte a byte** y ningún archivo fuente se archivó ni se hasheó. Durante la auditoría se detectó y descartó una tabla fabricada por el lector (Áncash). QA independiente debe reabrir cada fuente antes de promover cualquier fila.
+- **Revisión r4 (2026-10-09, Pisco/Ica).** Se añadieron 3 filas `IDENTITY_ONLY`: La Polvareda (Humay, Pisco), La Pólvora y Higos Monte (distrito no indicado por la fuente). Proceden del estudio de factibilidad «Afianzamiento Hídrico en la Cuenca del Río Pisco» (convenio GORE Ica-ANA, marzo 2011; copia alojada por un tercero) y, para La Polvareda, del Plan de Competitividad Regional Ica 2014-2021. Ambos están archivados con SHA-256 en `data/phase2/source_archive/pisco_ica_polvareda/` (fuera de `site/`). La posible equivalencia La Polvareda / La Pólvora queda `UNRESOLVED`. Las obras citadas (presa, desarenador, recarga) son propuestas de diseño, no obras ejecutadas, y no se atribuye ningún evento. Registro: `config/phase2_pisco_ica_polvareda_polvora_higos_monte_identity_v0_1.json`. (La etiqueta r3 la usa el PR #365, aún fuera de `main`.)
 - **Aviso clean-room.** El JSON contiene afirmaciones con resultado sobre el evento del 23-03-2015 en Chosica; los trabajos sellados de `agent/chosica-2015-*` (PR #146, #149, #150, #151) no deben leerlo.
 
 ### Resumen
@@ -22,7 +23,7 @@ Este documento es un inventario/backlog. No crea unidades hidrológicas, geometr
 | Corredor | Filas | En main (registrada / nombrada) | Mención sin confirmar | Solo rama/PR | No está en IRFEN | P1 | P2 |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | 1. Carretera Central / Rímac / Chosica / Chaclacayo / Ricardo Palma / Santa Eulalia | 44 | 17 | 0 | 0 | 27 | 23 | 16 |
-| 2. Pisco / Ica | 48 | 12 | 3 | 2 | 31 | 0 | 1 |
+| 2. Pisco / Ica | 51 | 12 | 3 | 2 | 34 | 0 | 1 |
 | 3. Santa / Casma | 16 | 1 | 1 | 1 | 13 | 0 | 0 |
 | 4. Tumbes / Zorritos | 68 | 4 | 4 | 2 | 58 | 0 | 0 |
 | 5a. Otros valles de Lima y Lima Metropolitana | 73 | 4 | 9 | 1 | 59 | 0 | 0 |
@@ -32,7 +33,7 @@ Este documento es un inventario/backlog. No crea unidades hidrológicas, geometr
 | 5e. Áncash interior | 18 | 0 | 0 | 0 | 18 | 0 | 0 |
 | 5f. Piura interior | 38 | 0 | 0 | 0 | 38 | 0 | 0 |
 
-Estado sugerido (uno por fila): `EVENT_LEAD_UNVERIFIED` 28, `IDENTITY_ONLY` 349, `GEOMETRY_PENDING` 20, `GEOMETRY_REPRODUCIBLE` 3.
+Estado sugerido (uno por fila): `EVENT_LEAD_UNVERIFIED` 28, `IDENTITY_ONLY` 352, `GEOMETRY_PENDING` 20, `GEOMETRY_REPRODUCIBLE` 3.
 
 ### Regla de verificación de eventos
 
@@ -140,7 +141,7 @@ No hay columna de cuenca o sistema padre: ninguna fuente leída lo sustenta para
 | Shingolay | Chingolay | Santa Eulalia · Huarochirí | GEOMETRY | — | Sí (ya en main) | No | No afirmada | `GEOMETRY_REPRODUCIBLE` (+ OUTLET_PENDING) | main: unidad registrada `shingolay` · PR #136, #213, #326, #358 | EXISTING | IRFEN-REPO |
 | Cuchimachay | — | Surco · Huarochirí | FAJA | — | No · pista: faja ANA (hitos por extraer) | No | — | `GEOMETRY_PENDING` (+ OUTLET_PENDING) | no está | P1 | ANA-FAJA-RD-SIGRID (SIGRID 19619) |
 
-### 2. Pisco / Ica (48 filas)
+### 2. Pisco / Ica (51 filas)
 
 | Nombre documental | Variantes observadas (sin adjudicar) | Distrito · provincia | Evidencia | Fechas (pista sin verificar) | Geometría reproducible | Outlet | Relación con colector | Estado | En IRFEN | Prio. | Fuente e identificador |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -160,6 +161,7 @@ No hay columna de cuenca o sistema padre: ninguna fuente leída lo sustenta para
 | quebrada hoyada rancheria | — | Humay | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5618) |
 | quebrada huaya grande | — | Humay | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5620) |
 | quebrada humay ⚠ | — | Humay | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | main: mención sin confirmar · PR #213 | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5726) |
+| quebrada La Polvareda ⚠ | — | Humay · Pisco | IDENTITY | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | GORE-ICA-ANA-2011-AFIANZAMIENTO-PISCO-RE (p. 5); GORE-ICA-PLAN-COMPETITIVIDAD-2014-2021 (p. 64) |
 | quebrada montesierpe | — | Humay | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5727) |
 | quebrada el molino | — | Ingenio | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | solo rama/PR · PR #330 | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5637) |
 | quebrada la ayapana | — | Ingenio | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | solo rama/PR · PR #330 | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5638) |
@@ -192,6 +194,8 @@ No hay columna de cuenca o sistema padre: ninguna fuente leída lo sustenta para
 | quebrada nueva villa | — | Vista Alegre | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5634) |
 | quebrada nuevo vista alegre | — | Vista Alegre | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | main: nombrada como quebrada | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5633) |
 | quebrada virgen de chapi | — | Vista Alegre | CRITICAL_POINT | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS (SIGRID 5632) |
+| quebrada Higos Monte | Higosmonte | distrito no indicado | IDENTITY | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | GORE-ICA-ANA-2011-AFIANZAMIENTO-PISCO-RE (p. 5) |
+| quebrada La Pólvora ⚠ | — | distrito no indicado | IDENTITY | — | No | No | — | `IDENTITY_ONLY` | no está | P3 | GORE-ICA-ANA-2011-AFIANZAMIENTO-PISCO-RE (p. 5) |
 
 ### 3. Santa / Casma (16 filas)
 
@@ -604,7 +608,7 @@ No hay columna de cuenca o sistema padre: ninguna fuente leída lo sustenta para
 
 ## 5. Candidatos faltantes
 
-**324** filas no aparecen en `main`, ramas ni PR. Las de mayor prioridad:
+**327** filas no aparecen en `main`, ramas ni PR. Las de mayor prioridad:
 
 | Prio. | Nombre | Distrito | Estado | Fuente |
 |---|---|---|---|---|
@@ -663,6 +667,7 @@ Ninguna relación de nombres se resolvió en esta auditoría. Las variantes son 
 | La Tucilla · Tucillal · Tucillay | Ya adjudicado como NO fusionado en main y en el PR #351 (INGEMMET A7454 nombra Tucillal). | NOT_MERGED (site/data/phase2/sources/tumbes_zorritos_extended_identity_context_v0_1.json) | `TRACKED_IN_MAIN_AND_PR_351` | Nada por parte de esta auditoría. |
 | Charán · El Charán | ANA 2016 Cuadro 9: «Charán» (La Cruz); Andina 2024: «Charán» (sin distrito); MEF 2023: «El Charán» (sin distrito ni tipo de elemento). | not recorded | `PENDING_ADJUDICATION` | Reporte del COER Tumbes y anexo del D.S. 181-2023-EF. |
 | Luey (Lucy) · Luey | ANA 2016 Cuadro 9 escribe «Luey (Lucy)» (Tumbes, Andrés Araujo Morán); MEF 2023 escribe «Luey». | not recorded | `PENDING_ADJUDICATION` | Anexo del D.S. 181-2023-EF. |
+| La Polvareda · La Pólvora | The same 2011 study describes La Polvareda as a dry quebrada meeting the río Pisco near Cerro Colorado (Humay) and La Pólvora as the northern branch of the quebrada de Río Seco draining toward Lanchas. The different descriptions are recorded, not adjudicated: a misspelling, two labels for one channel, or two channels all remain possible. | not recorded | `PENDING_ADJUDICATION` | Georeferenced hydrography (ANA) or the study's maps/annexes placing both labels. Each label has its own row; equivalence UNRESOLVED. |
 
 **Misma etiqueta, distrito distinto o desconocido (no fusionadas):** rio seco (ancash: 2 filas); tomeque (ancash: 2 filas); utiyacu (lambayeque: 2 filas); huaycan (lima: 2 filas); ihuanco (lima: 2 filas); rio seco (lima: 6 filas); charan (tumbes: 2 filas); los cerezos (tumbes: 2 filas); luey (tumbes: 2 filas); pedregal (tumbes: 2 filas).
 
@@ -729,12 +734,14 @@ Las notas de acceso de cada fuente (qué parte se leyó y con qué límites) est
 | `PRESS-LEAD` | Prensa (Perú21 2024-01-07; La República 2024-02-08 y 2025-01-31; Infobae 2026-02-25) | Notas de prensa que citan a INGEMMET, COEN-INDECI, Contraloría o municipalidades | 2024-2026 | `NON_INSTITUTIONAL_LEAD` | `AUTOMATED_TEXT_EXTRACTION` | see per-evidence url |
 | `IRFEN-REPO` | IRFEN repository | Existing IRFEN contracts on main, or on the legacy branch named in the evidence detail | 2026-10-06 | `INTERNAL` | `REPO` | https://github.com/IRFEN2026/irfen-peru |
 | `INGEMMET-SIGRID-434-TITLE` | INGEMMET (SIGRID biblioteca) | Inestabilidad de rocas zona de Rosario, Chosica (revisión de informe) | unknown | `PRIMARY_INSTITUTIONAL` | `SERVER_TITLE_ONLY` | https://sigrid.cenepred.gob.pe/sigridv3/documento/434 · SIGRID 434 |
+| `GORE-ICA-ANA-2011-AFIANZAMIENTO-PISCO-RE` | Convenio Gobierno Regional de Ica - Autoridad Nacional del Agua (cover); copy hosted by www.juasvi.com (not a government host) | Afianzamiento Hídrico en la Cuenca del Río Pisco (Provincias Pisco-Ica / Región Ica). Estudio a nivel de factibilidad, Volumen I: El Proyecto. Resumen Ejecutivo | 2011-03 | `PRIMARY_INSTITUTIONAL_HOSTED_BY_THIRD_PARTY` | `ARCHIVED_BYTES_TEXT_LAYER_QUOTES_TESTED` | https://www.juasvi.com/ANEXO1_ResumenEjecutivoPolvareda.pdf |
+| `GORE-ICA-PLAN-COMPETITIVIDAD-2014-2021` | Gobierno Regional de Ica, Gerencia Regional de Desarrollo Económico | Primer Plan de Competitividad Regional Ica 2014 - 2021 | 2013-12 | `PRIMARY_INSTITUTIONAL` | `ARCHIVED_BYTES_TEXT_LAYER_QUOTES_TESTED` | https://www.regionica.gob.pe/pdf/grde/2014/plan_de_competitividad_2014_2021.pdf |
 
 ## 10. Prioridad sugerida para incorporación
 
 - **P1** (23 filas) — Unidad de Carretera Central / Rímac / Santa Eulalia que no es unidad local registrada en main y que tiene una pista institucional de evento (sin verificar) y/o una pista regulatoria de geometría.
 - **P2** (17 filas) — (a) Unidad de Pisco/Ica, Santa/Casma o Tumbes/Zorritos con pista institucional de evento (sin verificar) y/o pista de geometría; o (b) nombre de Carretera Central sustentado solo por identidad, obras, ONG/prensa o lectura no verificada, que necesita antes una fuente institucional primaria verificada.
-- **P3** (291 filas) — Solo evidencia de identidad o punto crítico, en un corredor prioritario o en un corredor ya presente en IRFEN (otros valles de Lima y Lima Metropolitana, costa de Piura, Lambayeque, La Libertad).
+- **P3** (294 filas) — Solo evidencia de identidad o punto crítico, en un corredor prioritario o en un corredor ya presente en IRFEN (otros valles de Lima y Lima Metropolitana, costa de Piura, Lambayeque, La Libertad).
 - **P4** (56 filas) — Filas de interior/sierra fuera de los corredores presentes o previstos en IRFEN; se conservan para no mutilar las tablas de la fuente.
 - **EXISTING** (13 filas) — Ya registrada en main (unidad local, sistema candidato o fuente citada). No requiere incorporación; la auditoría solo añade referencias cruzadas.
 
@@ -750,6 +757,7 @@ Orden de trabajo propuesto, sin tocar el mapa:
 - Serie de mapas ANA 2016 en SIGRID — rangos barridos: 5601-5643 (partial: 5602, 5609, 5610, 5612, 5613, 5615, 5616, 5636 timed out); 5700-5819 (complete except 5710 image-only); 5965-6018. **No barridos:** 5560-5600; 5644-5699; 5820-5964; any ids below 5560. Arequipa, Moquegua, Tacna y la mayor parte de La Libertad no se localizaron en los rangos barridos.
 - Informe nacional ANA 2016-2017 — tablas transcritas: Cuadro 9 Tumbes (44), Cuadro 11 Piura (79), Cuadro 17 Lambayeque (47). **No recuperables:** Cuadro 19 La Libertad, Cuadro 23 Ancash, Cuadro 29 Lima (97 centres), Cuadro 41 Ica, Cuadro 43 Arequipa, all remaining departments.
 - **Sin barrer:** inventario anual de puntos críticos de ANA; servicio GEOCATMIN de peligros geológicos de INGEMMET; reportes de emergencia COEN-INDECI/SINPAD por distrito; avisos SENAMHI de activación de quebradas; lista de estaciones de la red de monitoreo de huaicos del IGP; Arequipa, Moquegua, Tacna, La Libertad (más allá de 9 títulos de mapa) y Lima norte más allá de los títulos SIGRID; PPRRD municipales de Chaclacayo, Ricardo Palma y Santa Eulalia.
+- **Pisco/Ica, solicitud del 2026-10-09** — La Polvareda, La Pólvora, Higos Monte (GORE Ica-ANA 2011 feasibility study; Plan de Competitividad GORE Ica 2014-2021). Three named documents plus Ley 31070 captured on the GitHub runner and archived with SHA-256 in data/phase2/source_archive/pisco_ica_polvareda/; quotes checked on the archived text layer and on rendered pages. **No leído:** ANA 2018 LPN N.º 03-2018-ANA-PGIRH-BM bidding document: not read (host declined the agent's web tools; no workaround used).
 
 ### Conflictos e incidencias de extracción
 
