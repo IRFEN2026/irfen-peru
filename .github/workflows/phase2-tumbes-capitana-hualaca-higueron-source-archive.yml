@@ -1,0 +1,106 @@
+name: IRFEN - Phase2 Tumbes Capitana/Hualaca/Higueron source archive
+
+on:
+  pull_request:
+    paths:
+      - config/phase2_tumbes_capitana_hualaca_higueron_capture_seeds_v0_1.json
+      - config/phase2_tumbes_capitana_hualaca_higueron_identity_v0_1.json
+      - scripts/archive_phase2_tumbes_capitana_hualaca_higueron_sources.py
+      - scripts/validate_phase2_tumbes_capitana_hualaca_higueron_identity.py
+      - tests/test_phase2_tumbes_capitana_hualaca_higueron_identity.py
+      - data/phase2/source_archive/tumbes_capitana_hualaca_higueron/**
+      - .github/workflows/phase2-tumbes-capitana-hualaca-higueron-source-archive.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: phase2-tumbes-capitana-hualaca-higueron-${{ github.event.pull_request.number || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  archive-official-sources:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          fetch-depth: 0
+      - name: Refuse any copy of this archive inside the published site/
+        run: |
+          if [[ -e site/data/phase2/sources/tumbes_capitana_hualaca_higueron ]]; then
+            echo "::error title=PUBLIC_ARCHIVE::original sources must stay outside site/ (GitHub Pages artifact)"
+            exit 1
+          fi
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install bounded parsing dependencies
+        run: python -m pip install --disable-pip-version-check pypdf pytest
+      - name: Capture once (manifest missing or seed contract changed), otherwise verify offline
+        id: mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          MANIFEST=data/phase2/source_archive/tumbes_capitana_hualaca_higueron/archive_manifest_v0_1.json
+          SEEDS=config/phase2_tumbes_capitana_hualaca_higueron_capture_seeds_v0_1.json
+          current="$(sha256sum "$SEEDS" | awk '{print $1}')"
+          recorded=""
+          if [[ -f "$MANIFEST" ]]; then
+            recorded="$(python -c 'import json,sys; print(json.load(open(sys.argv[1])).get("seeds_sha256",""))' "$MANIFEST")"
+          fi
+          if [[ "$recorded" != "$current" ]]; then
+            echo "capture=true" >> "$GITHUB_OUTPUT"
+            mode="--capture"
+            if [[ -f "$MANIFEST" ]]; then mode="--capture-supplements"; fi
+            echo "capture mode: $mode"
+            if ! python scripts/archive_phase2_tumbes_capitana_hualaca_higueron_sources.py "$mode" > capture.log 2>&1; then
+              cat capture.log
+              python -c 'import sys; t=open("capture.log").read()[-6000:]; print("::error title=CAPTURE_FAILED::" + t.replace("%","%25").replace("\r","").replace("\n","%0A"))'
+              exit 1
+            fi
+            cat capture.log
+            python - <<'PY'
+          import json
+          m = json.load(open("data/phase2/source_archive/tumbes_capitana_hualaca_higueron/archive_manifest_v0_1.json"))
+          rows = [f"{r['document_id']}|{r['status']}|{r.get('http_status')}|{','.join(r.get('terms_found', []))}|{r.get('requested_url','')[:110]}" for r in m["records"]]
+          print("::notice title=CAPTURE_SUMMARY::" + "%0A".join(rows).replace("\r", ""))
+          for r in m["records"]:
+              if r.get("origin", {}).get("kind") == "supplement":
+                  print("::notice title=SUPPLEMENT_ROUTES::" + json.dumps({k: r.get(k) for k in ("document_id", "status", "served_by_route", "sha256", "page_count", "terms_found", "route_attempts")}, ensure_ascii=False).replace("%", "%25"))
+          PY
+          else
+            echo "capture=false" >> "$GITHUB_OUTPUT"
+          fi
+          if ! python scripts/archive_phase2_tumbes_capitana_hualaca_higueron_sources.py > verify.log 2>&1; then
+            cat verify.log
+            python -c 'import sys; t=open("verify.log").read()[-6000:]; print("::error title=VERIFY_FAILED::" + t.replace("%","%25").replace("\r","").replace("\n","%0A"))'
+            exit 1
+          fi
+          cat verify.log
+          rm -f capture.log verify.log
+      - name: Verify offline replay leaves the archive unchanged
+        if: steps.mode.outputs.capture == 'false'
+        run: git diff --exit-code -- data/phase2/source_archive/tumbes_capitana_hualaca_higueron
+      - name: Run fail-closed identity validator and tests
+        if: steps.mode.outputs.capture == 'false'
+        run: |
+          python scripts/validate_phase2_tumbes_capitana_hualaca_higueron_identity.py
+          python -m pytest tests/test_phase2_tumbes_capitana_hualaca_higueron_identity.py -q
+      - name: Commit captured bytes, hashes and text extractions once
+        if: steps.mode.outputs.capture == 'true' && github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A data/phase2/source_archive/tumbes_capitana_hualaca_higueron
+          if git diff --cached --quiet; then
+            echo "No archive changes to persist"
+          else
+            git commit -m "Archive official Tumbes Capitana/Hualaca/Higueron sources (bytes + SHA-256)"
+            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          fi
