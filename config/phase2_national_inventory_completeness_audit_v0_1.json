@@ -36,6 +36,11 @@
     "revision": "r2",
     "date": "2026-10-07",
     "note": "After independent QA on r1: dated event statements read through automated extraction are EVENT_LEAD_UNVERIFIED, not EVENT_EVIDENCE; source_text_verified added to every source and EVENT item; the validator is exercised by a pytest module in the PR gate. No row, source, geometry or priority was added or removed."
+   },
+   {
+    "revision": "r3",
+    "date": "2026-10-09",
+    "note": "Tumbes gap closure from ANA Anexo II DU 015-2023 (archived in PR #364): 12 rows added (10 of the 12 names flagged by independent review plus La Capitana and Higuerón from PR #364); 'Malvales' and '07 de Junio' attached as documentary variants of the existing Malval and Casa Blanqueada - I.E. 7 de Junio rows pending alias adjudication; 3 archived sources added with source_text_verified=false. No geometry, outlet, parent basin, merge, map promotion or event-ledger entry. Crosswalk: config/phase2_tumbes_inventory_anexo_ii_gap_v0_1.json."
    }
   ],
   "clean_room_notice": "This file contains outcome-bearing statements about the 2015-03-23 Chosica event and about named Chosica quebradas. It must not be read by the sealed Chosica 2015 clean-room predictor jobs (branches agent/chosica-2015-*, PRs #146, #149, #150, #151)."
@@ -118,12 +123,12 @@
   "map_eligible": "false on every row"
  },
  "summary": {
-  "candidate_rows": 400,
+  "candidate_rows": 412,
   "by_corridor": {
    "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA": 44,
    "PISCO_ICA": 48,
    "SANTA_CASMA": 16,
-   "TUMBES_ZORRITOS": 68,
+   "TUMBES_ZORRITOS": 80,
    "ANCASH_INTERIOR": 18,
    "LAMBAYEQUE": 46,
    "LA_LIBERTAD": 9,
@@ -132,30 +137,30 @@
    "PIURA_INTERIOR": 38
   },
   "by_suggested_state": {
-   "EVENT_LEAD_UNVERIFIED": 28,
-   "IDENTITY_ONLY": 349,
+   "EVENT_LEAD_UNVERIFIED": 31,
+   "IDENTITY_ONLY": 358,
    "GEOMETRY_PENDING": 20,
    "GEOMETRY_REPRODUCIBLE": 3
   },
   "by_irfen_presence": {
-   "NOT_FOUND_IN_REPO": 321,
+   "NOT_FOUND_IN_REPO": 326,
    "MAIN_REGISTERED_UNIT": 13,
-   "MAIN_NAME_CONTEXT_ONLY": 12,
+   "MAIN_NAME_CONTEXT_ONLY": 16,
    "MAIN_LABEL_MENTION_UNCONFIRMED": 24,
    "MAIN_NAMED_AS_QUEBRADA_WITH_CORRIDOR_CONTEXT": 16,
-   "BRANCH_OR_OPEN_PR_ONLY": 5,
+   "BRANCH_OR_OPEN_PR_ONLY": 8,
    "BRANCH_LABEL_MENTION_UNCONFIRMED": 6,
    "NOT_EVALUATED_NO_DISCRIMINATING_CONTEXT": 3
   },
   "by_priority": {
    "P1": 23,
-   "P2": 17,
+   "P2": 20,
    "EXISTING": 13,
-   "P3": 291,
+   "P3": 300,
    "P4": 56
   },
   "event_evidence_rows": 0,
-  "event_lead_unverified_rows": 41,
+  "event_lead_unverified_rows": 44,
   "sources_with_verified_text": 0,
   "map_eligible_rows": 0,
   "new_geometries": 0,
@@ -492,6 +497,49 @@
    "access_note": "Title only. Concerns rock instability in a zone called Rosario; it does not establish a quebrada identity.",
    "source_text_verified": false,
    "verification_record": null
+  },
+  "ANA-DU-015-2023-ANEXO-II": {
+   "institution": "Autoridad Nacional del Agua (ANA); anexo del Decreto de Urgencia N.° 015-2023 publicado por el MEF en gob.pe",
+   "title": "Anexo II — Listado de puntos críticos para limpieza y descolmatación (DU 015-2023)",
+   "date": "2023-06-16",
+   "url": "https://cdn.www.gob.pe/uploads/document/file/4704868/Anexo_II_DU015_2023.pdf?v=1687213880",
+   "alt_identifiers": [
+    "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/raw/ana-du-015-2023-anexo-ii.pdf (sha256 c00095672208cb0afbd368aa02fe8172c2661d0df629385fb91b9f464db883b9)",
+    "https://www.ana.gob.pe/sites/default/files/file_content/Anexo_II_DU015_2023.pdf (ANA-hosted copy, unreachable; byte identity not asserted)"
+   ],
+   "source_class": "PRIMARY_INSTITUTIONAL",
+   "access": "ARCHIVED_BYTES_TEXT_LAYER_QUOTES_TESTED",
+   "access_note": "Original bytes archived in data/phase2/source_archive/tumbes_capitana_hualaca_higueron/ (PR #364, outside site/) with SHA-256 c00095672208cb0afbd368aa02fe8172c2661d0df629385fb91b9f464db883b9. Rows cited here are verbatim quotes of the archived text layer, re-checked by tests/test_phase2_tumbes_inventory_anexo_ii_gap.py (config/phase2_tumbes_inventory_anexo_ii_gap_v0_1.json). source_text_verified stays false: promotion is left to independent QA, and the only event statements from this source are period-level (El Niño Costero 2017), not dated.",
+   "source_text_verified": false,
+   "verification_record": null
+  },
+  "INGEMMET-A6764-TUMBES-2017": {
+   "institution": "INGEMMET (SIGRID documento 3708)",
+   "title": "Informe Técnico N° A6764 — Evaluación geológica de las zonas afectadas por El Niño Costero 2017 en la región Tumbes",
+   "date": "2017",
+   "url": "http://sigrid.cenepred.gob.pe/docs/PARA%20PUBLICAR/INGEMMET/Informe_Tecnico_6764_Evaluacion_geologica_de_las_zonas_afectadas_por_el_nino_costero_Tumbes_2017.pdf",
+   "alt_identifiers": [
+    "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/raw/sigrid-3708-ingemmet-a6764-tumbes-2017.pdf (sha256 e32e0c506300368351e54d5d190219c764995b913f3604e466f8185edd7b5231)"
+   ],
+   "source_class": "PRIMARY_INSTITUTIONAL",
+   "access": "ARCHIVED_BYTES_TEXT_LAYER_QUOTES_TESTED",
+   "access_note": "Original bytes archived in data/phase2/source_archive/tumbes_capitana_hualaca_higueron/ (PR #364, outside site/) with SHA-256 e32e0c506300368351e54d5d190219c764995b913f3604e466f8185edd7b5231. Rows cited here are verbatim quotes of the archived text layer, re-checked by tests/test_phase2_tumbes_inventory_anexo_ii_gap.py (config/phase2_tumbes_inventory_anexo_ii_gap_v0_1.json). source_text_verified stays false: promotion is left to independent QA, and the only event statements from this source are period-level (El Niño Costero 2017), not dated.",
+   "source_text_verified": false,
+   "verification_record": null
+  },
+  "LEY-32573-LIMITES-TUMBES": {
+   "institution": "Congreso de la República (El Peruano, dispositivo 2502573-2)",
+   "title": "Ley N.° 32573 — saneamiento de límites de Contralmirante Villar, Tumbes y Zarumilla",
+   "date": "2026-04-01",
+   "url": "https://busquedas.elperuano.pe/dispositivo/NL/2502573-2",
+   "alt_identifiers": [
+    "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/raw/elperuano-ley-32573-limites-tumbes.html (sha256 af13a052b86bdfbd5c1153cb6ade854421a4230e29546b50bb6c25bebd879d4a)"
+   ],
+   "source_class": "PRIMARY_INSTITUTIONAL",
+   "access": "ARCHIVED_BYTES_TEXT_LAYER_QUOTES_TESTED",
+   "access_note": "Original bytes archived in data/phase2/source_archive/tumbes_capitana_hualaca_higueron/ (PR #364, outside site/) with SHA-256 af13a052b86bdfbd5c1153cb6ade854421a4230e29546b50bb6c25bebd879d4a. Rows cited here are verbatim quotes of the archived text layer, re-checked by tests/test_phase2_tumbes_inventory_anexo_ii_gap.py (config/phase2_tumbes_inventory_anexo_ii_gap_v0_1.json). source_text_verified stays false: promotion is left to independent QA, and the only event statements from this source are period-level (El Niño Costero 2017), not dated.",
+   "source_text_verified": false,
+   "verification_record": null
   }
  },
  "sweep_coverage": {
@@ -539,7 +587,17 @@
    "IGP huaico monitoring network station list",
    "Arequipa, Moquegua, Tacna, La Libertad (beyond 9 map titles), Lima norte beyond SIGRID titles",
    "Municipal PPRRD of Chaclacayo, Ricardo Palma, Santa Eulalia"
-  ]
+  ],
+  "ana_du_015_2023_anexo_ii": {
+   "method": "Archived bytes (PR #364); section I - TUMBES rows 1-29 read from the text layer and on the rendered page; each row crosswalked in config/phase2_tumbes_inventory_anexo_ii_gap_v0_1.json.",
+   "rows_covered": "Sección I - TUMBES, filas 1-29 (6 river points, 23 quebrada points); sección II fila 68 (Fernández, Máncora) noted as a homonym.",
+   "not_covered": "Sections II-X (Piura to Ica) were not crosswalked in r3."
+  },
+  "ana_plan_de_intervenciones": {
+   "url": "https://www.ana.gob.pe/sites/default/files/normatividad/files/PLAN%20DE%20INTERVENCIONES.pdf",
+   "result": "NOT_READ_SOURCE_INCOMPLETE",
+   "note": "The ANA host timed out from the GitHub runners. The only Wayback snapshot (20240112092222) streams 4 996 784 of 21 682 076 declared bytes and then refuses resumes; the received part has no page tree. Nothing from this plan is used in the inventory."
+  }
  },
  "extraction_conflicts": [
   {
@@ -853,6 +911,127 @@
     "main_status": "not recorded",
     "status": "PENDING_ADJUDICATION",
     "needed": "D.S. 181-2023-EF annex."
+   },
+   {
+    "labels": [
+     "Malval",
+     "Malvales"
+    ],
+    "inventory_ids": [
+     "tumbes_corrales_malval"
+    ],
+    "documentary_basis": "ANA 2016 Cuadro 9 / SIGRID 3743 fila 36: quebrada 'Malval', centro poblado Malval (Corrales); ANA Anexo II DU 015-2023 fila 29: 'Qda. Malvales', sector Malvales (Corrales); INGEMMET A6764 C-36: flows from the slopes of sector Malval; COEN RC 3755: sector Malvales.",
+    "main_status": "not recorded",
+    "status": "PENDING_ADJUDICATION",
+    "needed": "A source or geometry that places both labels on the same channel, or separates them. The Anexo II evidence sits on the Malval row as a variant and moves to its own row if adjudication rejects the relation.",
+    "added_in_revision": "r3"
+   },
+   {
+    "labels": [
+     "Casa Blanqueada - I.E. 7 de Junio",
+     "07 De Junio"
+    ],
+    "inventory_ids": [
+     "tumbes_san_jacinto_casa_blanqueada_i_e_7_de_junio"
+    ],
+    "documentary_basis": "ANA 2016 Cuadro 9 / SIGRID 3743 fila 21: quebrada 'Casa Blanqueada - I.E. 7 de Junio' (San Jacinto); ANA Anexo II DU 015-2023 fila 16: 'Qda. 07 De Junio', sector Casa Blanqueada (San Jacinto).",
+    "main_status": "not recorded",
+    "status": "PENDING_ADJUDICATION",
+    "needed": "Same channel or not; the Anexo II evidence sits on the existing row as a variant and moves to its own row if rejected.",
+    "added_in_revision": "r3"
+   },
+   {
+    "labels": [
+     "Seca",
+     "Hualtacal"
+    ],
+    "inventory_ids": [
+     "tumbes_canoas_de_punta_sal_seca",
+     "tumbes_san_jacinto_hualtacal"
+    ],
+    "documentary_basis": "Ley 32573: 'quebrada Seca (que aguas arriba cambia de nombre a quebrada Hualtacal)' on the Canoas de Punta Sal / Casitas / Zorritos limit. Anexo II places 'Qda. Seca' in Canoas de Punta Sal (sector Pajaritos) and 'Qda. Hualtacal' in San Jacinto (sector Rica Playa), so the San Jacinto Hualtacal point cannot be assumed to lie on that reach.",
+    "main_status": "not recorded",
+    "status": "PENDING_ADJUDICATION",
+    "needed": "Which quebrada Seca the law describes, and whether any Hualtacal label refers to its upper reach; georeferenced hydrography.",
+    "added_in_revision": "r3"
+   },
+   {
+    "labels": [
+     "Casitas",
+     "Cherrelique",
+     "El Ciénego",
+     "Bocapán",
+     "Panales-Casitas"
+    ],
+    "inventory_ids": [
+     "tumbes_casitas_casitas",
+     "tumbes_district_unknown_bocapan",
+     "tumbes_district_unknown_panales_casitas"
+    ],
+    "documentary_basis": "Ley 32573: 'quebrada Casitas (que aguas arriba cambia de nombre a quebrada Cherrelique y quebrada El Ciénego)' and 'la confluencia de la quebrada Seca y la quebrada Casitas (que dan origen a la quebrada Bocapan)'. Anexo II lists 'Qda. Casitas' (filas 10-11, CUENCA Bocapan) and 'Qda. Bocapán' (filas 12-14, one in sector 'Cherrelique Bellavista'). Andina 2024 names 'Panales-Casitas'. Main holds Casitas-Bocapán only as ANA hydrographic-unit context.",
+    "main_status": "Casitas-Bocapán drainage context (site/data/validation/phase2_discovery_contracts/tumbes_zorritos_bocapan_coastal_ravines.json)",
+    "status": "PENDING_ADJUDICATION",
+    "needed": "The confluence is source-stated, not adopted as a collector relation or parent basin; reach-name changes and 'Panales-Casitas' need adjudication with georeferenced data.",
+    "added_in_revision": "r3"
+   },
+   {
+    "labels": [
+     "Hualaca",
+     "Higuerón"
+    ],
+    "inventory_ids": [
+     "tumbes_san_jacinto_hualaca",
+     "tumbes_district_unknown_higueron"
+    ],
+    "documentary_basis": "Anexo II fila 17 gives 'Higueron' as the SECTOR of 'Qda. Hualaca'; INGEMMET A6764 and Ley 32573 name a 'quebrada Higuerón'. PR #364 keeps same_channel and hydraulically_independent UNRESOLVED.",
+    "main_status": "PR #364 (config/phase2_tumbes_capitana_hualaca_higueron_identity_v0_1.json)",
+    "status": "PENDING_ADJUDICATION",
+    "needed": "Georeferenced data.",
+    "added_in_revision": "r3"
+   },
+   {
+    "labels": [
+     "Fernández (Canoas de Punta Sal, Tumbes)",
+     "Fernández (Máncora, Piura)"
+    ],
+    "inventory_ids": [
+     "tumbes_canoas_de_punta_sal_fernandez"
+    ],
+    "documentary_basis": "Anexo II lists 'Qda. Fernández' in Tumbes (sección I filas 7-8, Canoas de Punta Sal) and in Piura (sección II fila 68, Talara / Máncora, ALA Tumbes). Main quarantines the same-name use for the Máncora child.",
+    "main_status": "SAME_NAME_QUARANTINE (config/phase2_mancora_fernandez_same_name_quarantine_v0_1.json)",
+    "status": "PENDING_ADJUDICATION",
+    "needed": "Whether one channel runs on both sides of the departmental limit; reproducible spatial crosswalk as required by the main quarantine.",
+    "added_in_revision": "r3"
+   },
+   {
+    "labels": [
+     "Santa Rosa (San Jacinto)",
+     "Barrio Santa Rosa-Uña de Gato (Papayal)",
+     "Quebrada Santa Rosa (distrito Tumbes, INGEMMET A6764)"
+    ],
+    "inventory_ids": [
+     "tumbes_san_jacinto_santa_rosa",
+     "tumbes_papayal_barrio_santa_rosa_una_de_gato"
+    ],
+    "documentary_basis": "Three Tumbes labels in three districts: Anexo II fila 21 (San Jacinto), ANA 2016 Cuadro 9 fila 10 (Papayal), INGEMMET A6764 conclusions (distrito Tumbes).",
+    "main_status": "not recorded",
+    "status": "PENDING_ADJUDICATION",
+    "needed": "Kept apart; different districts.",
+    "added_in_revision": "r3"
+   },
+   {
+    "labels": [
+     "Santa Maria (Pampas de Hospital)",
+     "Quebrada Santa María / Santa María de Dios (INGEMMET A6764)"
+    ],
+    "inventory_ids": [
+     "tumbes_pampas_de_hospital_santa_maria"
+    ],
+    "documentary_basis": "Anexo II fila 23: 'Qda Santa Maria', Pampas de Hospital. INGEMMET A6764: P-11 'Quebrada Santa María' (district not printed in the row) and, in the conclusions, 'Santa María de Dios' in distrito Tumbes.",
+    "main_status": "not recorded",
+    "status": "PENDING_ADJUDICATION",
+    "needed": "Kept apart; the INGEMMET 2017 statements are not attached to the Pampas de Hospital row.",
+    "added_in_revision": "r3"
    }
   ],
   "same_label_groups_not_merged": [
@@ -1002,6 +1181,39 @@
      "lima_calango_la_capilla"
     ],
     "note": "main already tracks a Quebrada La Capilla elsewhere; do not merge"
+   },
+   {
+    "label": "Santa María",
+    "inventory_ids": [
+     "tumbes_pampas_de_hospital_santa_maria",
+     "lima_lurigancho_santa_maria"
+    ],
+    "added_in_revision": "r3"
+   },
+   {
+    "label": "Nueva Esperanza",
+    "inventory_ids": [
+     "tumbes_pampas_de_hospital_nueva_esperanza",
+     "lambayeque_oyotun_nueva_esperanza"
+    ],
+    "added_in_revision": "r3"
+   },
+   {
+    "label": "Seca",
+    "inventory_ids": [
+     "tumbes_canoas_de_punta_sal_seca",
+     "la_libertad_viru_seca",
+     "lima_pucusana_quebrada_seca_rio_chilca"
+    ],
+    "added_in_revision": "r3"
+   },
+   {
+    "label": "Santa Rosa",
+    "inventory_ids": [
+     "tumbes_san_jacinto_santa_rosa",
+     "ica_rio_grande_santa_rosa"
+    ],
+    "added_in_revision": "r3"
    }
   ],
   "rows_with_documentary_variants": [
@@ -1019,7 +1231,9 @@
    "lima_lurigancho_huampani",
    "lima_huarochiri_matucana_payhua",
    "lima_santa_eulalia_cashahuacra",
-   "lima_santa_eulalia_shingolay"
+   "lima_santa_eulalia_shingolay",
+   "tumbes_corrales_malval",
+   "tumbes_san_jacinto_casa_blanqueada_i_e_7_de_junio"
   ]
  },
  "territorial_events_without_named_unit": [
@@ -1075,7 +1289,11 @@
    "lima_punta_hermosa_malanche",
    "lima_san_juan_de_lurigancho_jicamarca",
    "piura_colan_bolognesi",
-   "piura_colan_sucre"
+   "piura_colan_sucre",
+   "tumbes_canoas_de_punta_sal_fernandez",
+   "tumbes_canoas_de_punta_sal_seca",
+   "tumbes_casitas_casitas",
+   "tumbes_san_jacinto_la_capitana"
   ],
   "unconfirmed_label_mentions_in_main": [
    "ica_huancano_huancano",
@@ -1114,7 +1332,10 @@
    "piura_paita_9_de_diciembre",
    "piura_paita_centenario",
    "piura_paita_libertad",
-   "piura_paita_salaverry"
+   "piura_paita_salaverry",
+   "tumbes_san_jacinto_hualaca",
+   "tumbes_san_jacinto_hualtacal",
+   "tumbes_district_unknown_higueron"
   ],
   "missing_from_irfen": [
    "lima_ate_huaycan",
@@ -1440,7 +1661,12 @@
    "piura_san_miguel_el_faique_cerro_blanco",
    "piura_san_miguel_el_faique_el_algarrobo",
    "piura_san_miguel_el_faique_el_ceibo",
-   "piura_tambogrande_paccha"
+   "piura_tambogrande_paccha",
+   "tumbes_san_jacinto_carretas",
+   "tumbes_san_jacinto_plateros",
+   "tumbes_san_jacinto_santa_rosa",
+   "tumbes_pampas_de_hospital_santa_maria",
+   "tumbes_pampas_de_hospital_nueva_esperanza"
   ],
   "geometry_pending": [
    "lima_chaclacayo_cusipata",
@@ -1506,7 +1732,10 @@
    "lima_santa_eulalia_huayaringa",
    "lima_santa_eulalia_huayaringa_centro_portada",
    "lima_santa_eulalia_julio_cesar_tello",
-   "ica_huancano_huayanto"
+   "ica_huancano_huayanto",
+   "tumbes_san_jacinto_plateros",
+   "tumbes_san_jacinto_la_capitana",
+   "tumbes_district_unknown_higueron"
   ]
  },
  "candidates": [
@@ -1625,7 +1854,7 @@
   {"inventory_id": "tumbes_corrales_cristales", "row_role": "CANDIDATE_UNIT", "documentary_name": "Cristales", "label_caution": "LABEL_IS_A_RIVER_NAME_OR_EQUALS_A_PLACE_NAME_REPO_MATCH_CANNOT_CONFIRM_A_UNIT", "name_variants_observed": [], "department": "Tumbes", "province": "Tumbes", "district": "Corrales", "corridor": "TUMBES_ZORRITOS", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 9, fila 34: centro poblado 'Cristales', quebrada 'Cristales'", "table": "Cuadro 9", "row_number_as_read": 34, "source_reference_point": {"easting_m": 559787, "northing_m": 9598473}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
   {"inventory_id": "tumbes_corrales_el_rodeo", "row_role": "CANDIDATE_UNIT", "documentary_name": "El Rodeo", "label_caution": "LABEL_IS_A_RIVER_NAME_OR_EQUALS_A_PLACE_NAME_REPO_MATCH_CANNOT_CONFIRM_A_UNIT", "name_variants_observed": [], "department": "Tumbes", "province": "Tumbes", "district": "Corrales", "corridor": "TUMBES_ZORRITOS", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 9, fila 2: centro poblado 'El Rodeo', quebrada 'El Rodeo'", "table": "Cuadro 9", "row_number_as_read": 2, "source_reference_point": {"easting_m": 558806, "northing_m": 9599895}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
   {"inventory_id": "tumbes_corrales_la_arena", "row_role": "CANDIDATE_UNIT", "documentary_name": "La Arena", "name_variants_observed": [], "department": "Tumbes", "province": "Tumbes", "district": "Corrales", "corridor": "TUMBES_ZORRITOS", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 9, fila 1: centro poblado 'El Arenal', quebrada 'La Arena'", "table": "Cuadro 9", "row_number_as_read": 1, "source_reference_point": {"easting_m": 556926, "northing_m": 9601826}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
-  {"inventory_id": "tumbes_corrales_malval", "row_role": "CANDIDATE_UNIT", "documentary_name": "Malval", "label_caution": "LABEL_IS_A_RIVER_NAME_OR_EQUALS_A_PLACE_NAME_REPO_MATCH_CANNOT_CONFIRM_A_UNIT", "name_variants_observed": [], "department": "Tumbes", "province": "Tumbes", "district": "Corrales", "corridor": "TUMBES_ZORRITOS", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 9, fila 36: centro poblado 'Malval', quebrada 'Malval'", "table": "Cuadro 9", "row_number_as_read": 36, "source_reference_point": {"easting_m": 559076, "northing_m": 9599657}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
+  {"inventory_id": "tumbes_corrales_malval", "row_role": "CANDIDATE_UNIT", "documentary_name": "Malval", "label_caution": "LABEL_IS_A_RIVER_NAME_OR_EQUALS_A_PLACE_NAME_REPO_MATCH_CANNOT_CONFIRM_A_UNIT", "name_variants_observed": [{"label": "Malvales", "source_id": "ANA-DU-015-2023-ANEXO-II"}], "department": "Tumbes", "province": "Tumbes", "district": "Corrales", "corridor": "TUMBES_ZORRITOS", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 9, fila 36: centro poblado 'Malval', quebrada 'Malval'", "table": "Cuadro 9", "row_number_as_read": 36, "source_reference_point": {"easting_m": 559076, "northing_m": 9599657}}, {"evidence_type": "CRITICAL_POINT", "source_id": "ANA-DU-015-2023-ANEXO-II", "detail": "Anexo II DU 015-2023, sección I - TUMBES, fila 29: «29 Tumbes Quebrada Qda. Malvales Jequetepeque- Zarumilla Tumbes Tumbes Tumbes Corrales Malvales»", "table": "Anexo II (sección I - TUMBES)", "row_number_as_read": 29, "label_in_source": "Qda. Malvales", "variant_attachment": "PENDING_ALIAS_ADJUDICATION_MOVE_TO_OWN_ROW_IF_REJECTED"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "variant_evidence_added_in_revision": "r3"},
   {"inventory_id": "tumbes_corrales_relengal", "row_role": "CANDIDATE_UNIT", "documentary_name": "Relengal", "label_caution": "LABEL_IS_A_RIVER_NAME_OR_EQUALS_A_PLACE_NAME_REPO_MATCH_CANNOT_CONFIRM_A_UNIT", "name_variants_observed": [], "department": "Tumbes", "province": "Tumbes", "district": "Corrales", "corridor": "TUMBES_ZORRITOS", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 9, fila 3: centro poblado 'Relengal', quebrada 'Relengal'", "table": "Cuadro 9", "row_number_as_read": 3, "source_reference_point": {"easting_m": 558410, "northing_m": 9600570}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
   {"inventory_id": "tumbes_corrales_san_francisco", "row_role": "CANDIDATE_UNIT", "documentary_name": "San Francisco", "label_caution": "LABEL_IS_A_RIVER_NAME_OR_EQUALS_A_PLACE_NAME_REPO_MATCH_CANNOT_CONFIRM_A_UNIT", "name_variants_observed": [], "department": "Tumbes", "province": "Tumbes", "district": "Corrales", "corridor": "TUMBES_ZORRITOS", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 9, fila 33: centro poblado 'San Francisco', quebrada 'San Francisco'", "table": "Cuadro 9", "row_number_as_read": 33, "source_reference_point": {"easting_m": 558502, "northing_m": 9600512}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
   {"inventory_id": "tumbes_corrales_urcos", "row_role": "CANDIDATE_UNIT", "documentary_name": "Urcos", "label_caution": "LABEL_IS_A_RIVER_NAME_OR_EQUALS_A_PLACE_NAME_REPO_MATCH_CANNOT_CONFIRM_A_UNIT", "name_variants_observed": [], "department": "Tumbes", "province": "Tumbes", "district": "Corrales", "corridor": "TUMBES_ZORRITOS", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 9, fila 35: centro poblado 'Urcos', quebrada 'Urcos'", "table": "Cuadro 9", "row_number_as_read": 35, "source_reference_point": {"easting_m": 559363, "northing_m": 9599286}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
@@ -1646,7 +1875,7 @@
   {"inventory_id": "tumbes_papayal_la_palma", "row_role": "CANDIDATE_UNIT", "documentary_name": "La Palma", "label_caution": "LABEL_IS_A_RIVER_NAME_OR_EQUALS_A_PLACE_NAME_REPO_MATCH_CANNOT_CONFIRM_A_UNIT", "name_variants_observed": [], "department": "Tumbes", "province": "Zarumilla", "district": "Papayal", "corridor": "TUMBES_ZORRITOS", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 9, fila 6: centro poblado 'La Palma', quebrada 'La Palma'", "table": "Cuadro 9", "row_number_as_read": 6, "source_reference_point": {"easting_m": 587129, "northing_m": 9606427}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
   {"inventory_id": "tumbes_papayal_papayal", "row_role": "CANDIDATE_UNIT", "documentary_name": "Papayal", "label_caution": "LABEL_IS_A_RIVER_NAME_OR_EQUALS_A_PLACE_NAME_REPO_MATCH_CANNOT_CONFIRM_A_UNIT", "name_variants_observed": [], "department": "Tumbes", "province": "Zarumilla", "district": "Papayal", "corridor": "TUMBES_ZORRITOS", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 9, fila 5: centro poblado 'Papayal', quebrada 'Papayal'", "table": "Cuadro 9", "row_number_as_read": 5, "source_reference_point": {"easting_m": 584955, "northing_m": 9605432}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
   {"inventory_id": "tumbes_papayal_san_miguel", "row_role": "CANDIDATE_UNIT", "documentary_name": "San Miguel", "name_variants_observed": [], "department": "Tumbes", "province": "Zarumilla", "district": "Papayal", "corridor": "TUMBES_ZORRITOS", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 9, fila 9: centro poblado 'Barrio San Miguel-Uña de Gato', quebrada 'San Miguel'", "table": "Cuadro 9", "row_number_as_read": 9, "source_reference_point": {"easting_m": 585158, "northing_m": 9608736}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
-  {"inventory_id": "tumbes_san_jacinto_casa_blanqueada_i_e_7_de_junio", "row_role": "CANDIDATE_UNIT", "documentary_name": "Casa Blanqueada - I.E. 7 de Junio", "label_caution": "LABEL_IS_A_RIVER_NAME_OR_EQUALS_A_PLACE_NAME_REPO_MATCH_CANNOT_CONFIRM_A_UNIT", "name_variants_observed": [], "department": "Tumbes", "province": "Tumbes", "district": "San Jacinto", "corridor": "TUMBES_ZORRITOS", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 9, fila 21: centro poblado 'Casa Blanqueada - I.E. 7 de Junio', quebrada 'Casa Blanqueada - I.E. 7 de Junio'", "table": "Cuadro 9", "row_number_as_read": 21, "source_reference_point": {"easting_m": 560461, "northing_m": 9586339}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
+  {"inventory_id": "tumbes_san_jacinto_casa_blanqueada_i_e_7_de_junio", "row_role": "CANDIDATE_UNIT", "documentary_name": "Casa Blanqueada - I.E. 7 de Junio", "label_caution": "LABEL_IS_A_RIVER_NAME_OR_EQUALS_A_PLACE_NAME_REPO_MATCH_CANNOT_CONFIRM_A_UNIT", "name_variants_observed": [{"label": "07 De Junio", "source_id": "ANA-DU-015-2023-ANEXO-II"}], "department": "Tumbes", "province": "Tumbes", "district": "San Jacinto", "corridor": "TUMBES_ZORRITOS", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 9, fila 21: centro poblado 'Casa Blanqueada - I.E. 7 de Junio', quebrada 'Casa Blanqueada - I.E. 7 de Junio'", "table": "Cuadro 9", "row_number_as_read": 21, "source_reference_point": {"easting_m": 560461, "northing_m": 9586339}}, {"evidence_type": "CRITICAL_POINT", "source_id": "ANA-DU-015-2023-ANEXO-II", "detail": "Anexo II DU 015-2023, sección I - TUMBES, fila 16: «16 Tumbes Quebrada Qda. 07 De Junio Jequetepeque- Zarumilla Tumbes Tumbes Tumbes San Jacinto Casa Blanqueada»", "table": "Anexo II (sección I - TUMBES)", "row_number_as_read": 16, "label_in_source": "Qda. 07 De Junio", "variant_attachment": "PENDING_ALIAS_ADJUDICATION_MOVE_TO_OWN_ROW_IF_REJECTED"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "variant_evidence_added_in_revision": "r3"},
   {"inventory_id": "tumbes_san_jacinto_chorillos", "row_role": "CANDIDATE_UNIT", "documentary_name": "Chorillos", "name_variants_observed": [], "department": "Tumbes", "province": "Tumbes", "district": "San Jacinto", "corridor": "TUMBES_ZORRITOS", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 9, fila 44: centro poblado 'Casa Blanqueada', quebrada 'Chorillos'", "table": "Cuadro 9", "row_number_as_read": 44, "source_reference_point": {"easting_m": 560667, "northing_m": 9586743}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
   {"inventory_id": "tumbes_san_jacinto_la_urbina", "row_role": "CANDIDATE_UNIT", "documentary_name": "La Urbina", "name_variants_observed": [], "department": "Tumbes", "province": "Tumbes", "district": "San Jacinto", "corridor": "TUMBES_ZORRITOS", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 9, fila 43: centro poblado 'La Peña', quebrada 'La Urbina'", "table": "Cuadro 9", "row_number_as_read": 43, "source_reference_point": {"easting_m": 561009, "northing_m": 9593955}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
   {"inventory_id": "tumbes_san_jacinto_oidor", "row_role": "CANDIDATE_UNIT", "documentary_name": "Oidor", "label_caution": "LABEL_IS_A_RIVER_NAME_OR_EQUALS_A_PLACE_NAME_REPO_MATCH_CANNOT_CONFIRM_A_UNIT", "name_variants_observed": [], "department": "Tumbes", "province": "Tumbes", "district": "San Jacinto", "corridor": "TUMBES_ZORRITOS", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 9, fila 42: centro poblado 'Oidor', quebrada 'Oidor'", "table": "Cuadro 9", "row_number_as_read": 42, "source_reference_point": {"easting_m": 560452, "northing_m": 9588618}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
@@ -1909,6 +2138,18 @@
   {"inventory_id": "piura_san_miguel_el_faique_cerro_blanco", "row_role": "CANDIDATE_UNIT", "documentary_name": "Cerro Blanco", "name_variants_observed": [], "department": "Piura", "province": "Huancabamba", "district": "San Miguel El Faique", "corridor": "PIURA_INTERIOR", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 11, fila 58: centro poblado 'Caserío La Capilla', quebrada 'Cerro Blanco'", "table": "Cuadro 11", "row_number_as_read": 58, "source_reference_point": {"easting_m": 654676, "northing_m": 9398062}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P4", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
   {"inventory_id": "piura_san_miguel_el_faique_el_algarrobo", "row_role": "CANDIDATE_UNIT", "documentary_name": "El Algarrobo", "name_variants_observed": [], "department": "Piura", "province": "Huancabamba", "district": "San Miguel El Faique", "corridor": "PIURA_INTERIOR", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 11, fila 66: centro poblado 'Caserío Huacas Alta', quebrada 'El Algarrobo'", "table": "Cuadro 11", "row_number_as_read": 66, "source_reference_point": {"easting_m": 639209, "northing_m": 9399119}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P4", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
   {"inventory_id": "piura_san_miguel_el_faique_el_ceibo", "row_role": "CANDIDATE_UNIT", "documentary_name": "El Ceibo", "name_variants_observed": [], "department": "Piura", "province": "Huancabamba", "district": "San Miguel El Faique", "corridor": "PIURA_INTERIOR", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 11, fila 67: centro poblado 'Caserío Huacas Alta', quebrada 'El Ceibo'", "table": "Cuadro 11", "row_number_as_read": 67, "source_reference_point": {"easting_m": 639111, "northing_m": 9399029}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P4", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
-  {"inventory_id": "piura_tambogrande_paccha", "row_role": "CANDIDATE_UNIT", "documentary_name": "Paccha", "label_caution": "LABEL_IS_A_RIVER_NAME_OR_EQUALS_A_PLACE_NAME_REPO_MATCH_CANNOT_CONFIRM_A_UNIT", "name_variants_observed": [], "department": "Piura", "province": "Morropón", "district": "Tambogrande", "corridor": "PIURA_INTERIOR", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 11, fila 13: centro poblado 'Paccha', quebrada 'Paccha'", "table": "Cuadro 11", "row_number_as_read": 13, "source_reference_point": {"easting_m": 587557, "northing_m": 9445864}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P4", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []}
+  {"inventory_id": "piura_tambogrande_paccha", "row_role": "CANDIDATE_UNIT", "documentary_name": "Paccha", "label_caution": "LABEL_IS_A_RIVER_NAME_OR_EQUALS_A_PLACE_NAME_REPO_MATCH_CANNOT_CONFIRM_A_UNIT", "name_variants_observed": [], "department": "Piura", "province": "Morropón", "district": "Tambogrande", "corridor": "PIURA_INTERIOR", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 11, fila 13: centro poblado 'Paccha', quebrada 'Paccha'", "table": "Cuadro 11", "row_number_as_read": 13, "source_reference_point": {"easting_m": 587557, "northing_m": 9445864}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P4", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
+  {"inventory_id": "tumbes_canoas_de_punta_sal_fernandez", "row_role": "CANDIDATE_UNIT", "documentary_name": "Fernández", "label_caution": "SAME_NAME_ON_BOTH_SIDES_OF_THE_TUMBES_PIURA_LIMIT_QUARANTINE_ON_MAIN", "name_variants_observed": [], "department": "Tumbes", "province": "Contralmirante Villar", "district": "Canoas de Punta Sal", "corridor": "TUMBES_ZORRITOS", "evidence_types": ["CRITICAL_POINT", "IDENTITY"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-DU-015-2023-ANEXO-II", "detail": "Anexo II DU 015-2023, sección I - TUMBES, fila 7: «7 Fernández Quebrada Qda. Fernández Jequetepeque- Zarumilla Tumbes Tumbes Contralmirante Villar Canoas de Punta Sal Barrancos»", "table": "Anexo II (sección I - TUMBES)", "row_number_as_read": 7}, {"evidence_type": "CRITICAL_POINT", "source_id": "ANA-DU-015-2023-ANEXO-II", "detail": "Anexo II DU 015-2023, sección I - TUMBES, fila 8: «8 Fernández Quebrada Qda. Fernández Jequetepeque- Zarumilla Tumbes Tumbes Contralmirante Villar Canoas de Punta Sal Fernandez»", "table": "Anexo II (sección I - TUMBES)", "row_number_as_read": 8}, {"evidence_type": "IDENTITY", "source_id": "INGEMMET-A6764-TUMBES-2017", "detail": "Conclusions name 'Fernández' among main courses whose sectors affected road sections (period-level, El Niño Costero 2017; attribution to this row not asserted)", "quote_id": "A6764-CONCL-FERNANDEZ"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "MAIN_NAME_CONTEXT_ONLY", "match_tier": "BARE_LABEL", "main_paths_sample": ["config/phase2_mancora_fernandez_same_name_quarantine_v0_1.json", "site/data/phase2/sources/tumbes_zorritos_bocapan_official_evidence_v0_1.json"], "main_path_count": 2, "branches_with_additional_mentions": {}, "branch_count": 0, "open_prs_with_additional_mentions": []}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r3"},
+  {"inventory_id": "tumbes_canoas_de_punta_sal_seca", "row_role": "CANDIDATE_UNIT", "documentary_name": "Seca", "label_caution": "GENERIC_LABEL_SHARED_BY_SEVERAL_TUMBES_FEATURES", "name_variants_observed": [], "department": "Tumbes", "province": "Contralmirante Villar", "district": "Canoas de Punta Sal", "corridor": "TUMBES_ZORRITOS", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-DU-015-2023-ANEXO-II", "detail": "Anexo II DU 015-2023, sección I - TUMBES, fila 9: «9 Quebrada Seca Quebrada Qda. Seca Jequetepeque- Zarumilla Tumbes Tumbes Contralmirante Villar Canoas de Punta Sal Pajaritos»", "table": "Anexo II (sección I - TUMBES)", "row_number_as_read": 9, "label_in_source": "Qda. Seca"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "MAIN_NAME_CONTEXT_ONLY", "match_tier": "BARE_LABEL", "main_paths_sample": ["site/data/phase2/sources/tumbes_zorritos_bocapan_official_evidence_v0_1.json"], "main_path_count": 1, "branches_with_additional_mentions": {}, "branch_count": 0, "open_prs_with_additional_mentions": []}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r3"},
+  {"inventory_id": "tumbes_casitas_casitas", "row_role": "CANDIDATE_UNIT", "documentary_name": "Casitas", "label_caution": "LABEL_EQUALS_DISTRICT_NAME", "name_variants_observed": [], "department": "Tumbes", "province": "Contralmirante Villar", "district": "Casitas", "corridor": "TUMBES_ZORRITOS", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-DU-015-2023-ANEXO-II", "detail": "Anexo II DU 015-2023, sección I - TUMBES, fila 10: «10 Bocapan Quebrada Qda. Casitas Jequetepeque- Zarumilla Tumbes Tumbes Contralmirante Villar Casitas Casitas La rinconada»", "table": "Anexo II (sección I - TUMBES)", "row_number_as_read": 10}, {"evidence_type": "CRITICAL_POINT", "source_id": "ANA-DU-015-2023-ANEXO-II", "detail": "Anexo II DU 015-2023, sección I - TUMBES, fila 11: «11 Bocapan Quebrada Qda. Casitas Jequetepeque- Zarumilla Tumbes Tumbes Contralmirante Villar Casitas Huaquillas»", "table": "Anexo II (sección I - TUMBES)", "row_number_as_read": 11}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "MAIN_NAME_CONTEXT_ONLY", "match_tier": "BARE_LABEL", "main_paths_sample": ["site/data/phase2/sources/tumbes_zorritos_bocapan_official_evidence_v0_1.json", "site/data/validation/phase2_discovery_contracts/tumbes_zorritos_bocapan_coastal_ravines.json"], "main_path_count": 2, "branches_with_additional_mentions": {}, "branch_count": 0, "open_prs_with_additional_mentions": []}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r3"},
+  {"inventory_id": "tumbes_san_jacinto_carretas", "row_role": "CANDIDATE_UNIT", "documentary_name": "Carretas", "label_caution": "LABEL_EQUALS_A_PLACE_NAME", "name_variants_observed": [], "department": "Tumbes", "province": "Tumbes", "district": "San Jacinto", "corridor": "TUMBES_ZORRITOS", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-DU-015-2023-ANEXO-II", "detail": "Anexo II DU 015-2023, sección I - TUMBES, fila 15: «15 Tumbes Quebrada Qda Carretas Jequetepeque- Zarumilla Tumbes Tumbes Tumbes San Jacinto Carretas»", "table": "Anexo II (sección I - TUMBES)", "row_number_as_read": 15, "label_in_source": "Qda Carretas"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r3"},
+  {"inventory_id": "tumbes_san_jacinto_hualaca", "row_role": "CANDIDATE_UNIT", "documentary_name": "Hualaca", "name_variants_observed": [], "department": "Tumbes", "province": "Tumbes", "district": "San Jacinto", "corridor": "TUMBES_ZORRITOS", "location_note": "Sector printed by the source: 'Higueron'. Registered in PR #364 as unit tumbes_san_jacinto_quebrada_hualaca; relation to Higuerón UNRESOLVED.", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-DU-015-2023-ANEXO-II", "detail": "Anexo II DU 015-2023, sección I - TUMBES, fila 17: «17 Tumbes Quebrada Qda. Hualaca Jequetepeque- Zarumilla Tumbes Tumbes Tumbes San Jacinto Higueron»", "table": "Anexo II (sección I - TUMBES)", "row_number_as_read": 17, "label_in_source": "Qda. Hualaca"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "BRANCH_OR_OPEN_PR_ONLY", "match_tier": "NAMED_AS_QUEBRADA", "main_paths_sample": [], "main_path_count": 0, "branches_with_additional_mentions": {}, "branch_count": 0, "open_prs_with_additional_mentions": [364]}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r3"},
+  {"inventory_id": "tumbes_san_jacinto_hualtacal", "row_role": "CANDIDATE_UNIT", "documentary_name": "Hualtacal", "label_caution": "SAME_LABEL_IN_SEVERAL_TUMBES_CONTEXTS", "name_variants_observed": [], "department": "Tumbes", "province": "Tumbes", "district": "San Jacinto", "corridor": "TUMBES_ZORRITOS", "location_note": "Sector printed by the source: 'Rica Playa'. Named in PR #364 as a related context name, not a unit.", "evidence_types": ["CRITICAL_POINT", "IDENTITY"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-DU-015-2023-ANEXO-II", "detail": "Anexo II DU 015-2023, sección I - TUMBES, fila 18: «18 Tumbes Quebrada Qda. Hualtacal Jequetepeque- Zarumilla Tumbes Tumbes Tumbes San Jacinto Rica Playa»", "table": "Anexo II (sección I - TUMBES)", "row_number_as_read": 18, "label_in_source": "Qda. Hualtacal"}, {"evidence_type": "IDENTITY", "source_id": "LEY-32573-LIMITES-TUMBES", "detail": "Ley 32573 §1.2 lists 'quebrada Hualtacal' on the Contralmirante Villar–Tumbes divide (same channel as row 18 not asserted)", "quote_id": "LEY-32573-DIVIDE-HIGUERON-HUALTACAL"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "BRANCH_OR_OPEN_PR_ONLY", "match_tier": "NAMED_AS_QUEBRADA", "main_paths_sample": [], "main_path_count": 0, "branches_with_additional_mentions": {}, "branch_count": 0, "open_prs_with_additional_mentions": [364]}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r3"},
+  {"inventory_id": "tumbes_san_jacinto_plateros", "row_role": "CANDIDATE_UNIT", "documentary_name": "Plateros", "label_caution": "LABEL_EQUALS_A_PLACE_NAME", "name_variants_observed": [], "department": "Tumbes", "province": "Tumbes", "district": "San Jacinto", "corridor": "TUMBES_ZORRITOS", "evidence_types": ["CRITICAL_POINT", "EVENT", "IDENTITY"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-DU-015-2023-ANEXO-II", "detail": "Anexo II DU 015-2023, sección I - TUMBES, fila 20: «20 Tumbes Quebrada Qda. Plateros Jequetepeque- Zarumilla Tumbes Tumbes Tumbes San Jacinto Plateros»", "table": "Anexo II (sección I - TUMBES)", "row_number_as_read": 20, "label_in_source": "Qda. Plateros"}, {"evidence_type": "EVENT", "source_id": "INGEMMET-A6764-TUMBES-2017", "detail": "INGEMMET A6764 Cuadro 3.2 point C-34: road section affected by flows from the quebrada Plateros (El Niño Costero 2017; period only, no day)", "event_dates": ["2017"], "attribution_scale": "NAMED_PER_UNIT_IN_TABLE_ROW_PERIOD_ONLY", "event_lead_eligible": true, "source_text_verified": false, "verification": null, "quote_id": "A6764-C34-PLATEROS"}, {"evidence_type": "IDENTITY", "source_id": "INGEMMET-A6764-TUMBES-2017", "detail": "Cuadro 2.1 zone 10 'Carretera Plateros-Oidor (San Jacinto)' lists quebradas Plateros, La Peña, Tigre y Vaquería", "quote_id": "A6764-ZONA-10-PLATEROS"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "EVENT_LEAD_UNVERIFIED", "state_flags": ["EVENT_LEAD_UNVERIFIED"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P2", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": ["2017"], "added_in_revision": "r3"},
+  {"inventory_id": "tumbes_san_jacinto_santa_rosa", "row_role": "CANDIDATE_UNIT", "documentary_name": "Santa Rosa", "label_caution": "GENERIC_LABEL_SHARED_BY_SEVERAL_TUMBES_FEATURES", "name_variants_observed": [], "department": "Tumbes", "province": "Tumbes", "district": "San Jacinto", "corridor": "TUMBES_ZORRITOS", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-DU-015-2023-ANEXO-II", "detail": "Anexo II DU 015-2023, sección I - TUMBES, fila 21: «21 Tumbes Quebrada Qda. Santa Rosa Jequetepeque- Zarumilla Tumbes Tumbes Tumbes San Jacinto Santa Rosa»", "table": "Anexo II (sección I - TUMBES)", "row_number_as_read": 21, "label_in_source": "Qda. Santa Rosa"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r3"},
+  {"inventory_id": "tumbes_pampas_de_hospital_santa_maria", "row_role": "CANDIDATE_UNIT", "documentary_name": "Santa Maria", "label_caution": "GENERIC_LABEL_SHARED_BY_SEVERAL_FEATURES", "name_variants_observed": [], "department": "Tumbes", "province": "Tumbes", "district": "Pampas de Hospital", "corridor": "TUMBES_ZORRITOS", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-DU-015-2023-ANEXO-II", "detail": "Anexo II DU 015-2023, sección I - TUMBES, fila 23: «23 Tumbes Quebrada Qda Santa Maria Jequetepeque- Zarumilla Tumbes Tumbes Tumbes Pampas de Hospital Quebrada Santa Maria»", "table": "Anexo II (sección I - TUMBES)", "row_number_as_read": 23, "label_in_source": "Qda Santa Maria"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r3"},
+  {"inventory_id": "tumbes_pampas_de_hospital_nueva_esperanza", "row_role": "CANDIDATE_UNIT", "documentary_name": "Nueva Esperanza", "label_caution": "LABEL_EQUALS_A_PLACE_NAME", "name_variants_observed": [], "department": "Tumbes", "province": "Tumbes", "district": "Pampas de Hospital", "corridor": "TUMBES_ZORRITOS", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-DU-015-2023-ANEXO-II", "detail": "Anexo II DU 015-2023, sección I - TUMBES, fila 25: «25 Tumbes Quebrada Qda. Nueva Esperanz a Jequetepeque- Zarumilla Tumbes Tumbes Tumbes Pampas de Hospital Quebrada Nueva Esperanza»", "table": "Anexo II (sección I - TUMBES)", "row_number_as_read": 25, "label_in_source": "Qda. Nueva Esperanz a"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r3"},
+  {"inventory_id": "tumbes_san_jacinto_la_capitana", "row_role": "CANDIDATE_UNIT", "documentary_name": "La Capitana", "label_caution": "LABEL_EQUALS_A_PLACE_NAME", "name_variants_observed": [], "department": "Tumbes", "province": "Tumbes", "district": "San Jacinto", "corridor": "TUMBES_ZORRITOS", "location_note": "Main names La Capitana only as a centro poblado (INDECI 2024, Río Tumbes context). The quebrada is registered in PR #364 (unit tumbes_san_jacinto_quebrada_la_capitana); not in Anexo II.", "evidence_types": ["EVENT"], "evidence": [{"evidence_type": "EVENT", "source_id": "INGEMMET-A6764-TUMBES-2017", "detail": "INGEMMET A6764 Cuadro 3.2 point C-27: road section affected by flow from the quebrada La Capitana (El Niño Costero 2017; period only)", "event_dates": ["2017"], "attribution_scale": "NAMED_PER_UNIT_IN_TABLE_ROW_PERIOD_ONLY", "event_lead_eligible": true, "source_text_verified": false, "verification": null, "quote_id": "A6764-C27-CAPITANA"}, {"evidence_type": "EVENT", "source_id": "INGEMMET-A6764-TUMBES-2017", "detail": "INGEMMET A6764 Cuadro 3.2 point C-42: road affected by fluvial erosion in the quebrada La Capitana (El Niño Costero 2017; period only)", "event_dates": ["2017"], "attribution_scale": "NAMED_PER_UNIT_IN_TABLE_ROW_PERIOD_ONLY", "event_lead_eligible": true, "source_text_verified": false, "verification": null, "quote_id": "A6764-C42-CAPITANA"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "EVENT_LEAD_UNVERIFIED", "state_flags": ["EVENT_LEAD_UNVERIFIED"], "irfen_presence": {"status": "MAIN_NAME_CONTEXT_ONLY", "match_tier": "BARE_LABEL", "main_paths_sample": ["site/data/phase2/sources/tumbes_rio_tumbes_official_evidence_v0_1.json"], "main_path_count": 1, "branches_with_additional_mentions": {}, "branch_count": 0, "open_prs_with_additional_mentions": [364]}, "priority": "P2", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": ["2017"], "added_in_revision": "r3"},
+  {"inventory_id": "tumbes_district_unknown_higueron", "row_role": "CANDIDATE_UNIT", "documentary_name": "Higuerón", "label_caution": "LABEL_GROUP_NUMBER_OF_CHANNELS_UNRESOLVED", "name_variants_observed": [], "department": "Tumbes", "province": null, "district": null, "corridor": "TUMBES_ZORRITOS", "location_note": "PR #364 label group tumbes_quebrada_higueron_label_group: whether the attestations are one channel is UNRESOLVED; Anexo II uses 'Higueron' only as the SECTOR of Qda. Hualaca.", "evidence_types": ["EVENT", "IDENTITY"], "evidence": [{"evidence_type": "EVENT", "source_id": "INGEMMET-A6764-TUMBES-2017", "detail": "INGEMMET A6764 Cuadro 3.2 point C-28: road section affected by flow from the quebrada Higuerón (El Niño Costero 2017; period only; PR #364 attestation A only)", "event_dates": ["2017"], "attribution_scale": "NAMED_PER_UNIT_IN_TABLE_ROW_PERIOD_ONLY", "event_lead_eligible": true, "source_text_verified": false, "verification": null, "quote_id": "A6764-C28-HIGUERON"}, {"evidence_type": "IDENTITY", "source_id": "LEY-32573-LIMITES-TUMBES", "detail": "Ley 32573 §1.2: 'quebrada Higuerón' on the Contralmirante Villar–Tumbes divide (PR #364 attestation B)", "quote_id": "LEY-32573-DIVIDE-HIGUERON-HUALTACAL"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "EVENT_LEAD_UNVERIFIED", "state_flags": ["EVENT_LEAD_UNVERIFIED"], "irfen_presence": {"status": "BRANCH_OR_OPEN_PR_ONLY", "match_tier": "NAMED_AS_QUEBRADA", "main_paths_sample": [], "main_path_count": 0, "branches_with_additional_mentions": {}, "branch_count": 0, "open_prs_with_additional_mentions": [364]}, "priority": "P2", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": ["2017"], "added_in_revision": "r3"}
  ]
 }
