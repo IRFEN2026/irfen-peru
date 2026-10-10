@@ -1,0 +1,1271 @@
+{
+ "schema_version": "0.2",
+ "output_id": "irfen-v09-aviso-zone-links:v0.1",
+ "deployment_status": "RESEARCH_ONLY",
+ "test_mode": "TEST_ONLY",
+ "production_use": false,
+ "production_ready": false,
+ "operational_alerting_enabled": false,
+ "activation_gate": "BLOCKED",
+ "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+ "decision_thresholds": null,
+ "hydraulic_factors": null,
+ "map_publishable": false,
+ "inputs": {
+  "registry_sha256": "80768060455a9494ad8feb2e6fb2d791c8296335f3cc87a1818234fb69c21641",
+  "zones_sha256": "eaabb283bea369a0d3a07cb0d592c835c957732b677484694e8283fdfe849da4",
+  "overlay_sha256": "295f782d15b27575dd50ed6500b929a2f568475efc99c35ef749fec21ab4fa24"
+ },
+ "official_boundaries": "VERIFIED",
+ "overlay_notes": [],
+ "source_state": "AL_DIA",
+ "possibly_incomplete": false,
+ "statuses_valid_until_utc": "2026-10-10T18:00:00+00:00",
+ "reader_rule_es": "Los estados se calcularon con la vigencia documentada en el instante evaluated_at_utc. Después de statuses_valid_until_utc, o si la fuente no está AL_DIA, quien lea este archivo debe recalcular los estados con su reloj o mostrar la lista como desactualizada.",
+ "relation_methods": {
+  "BASIN_INTERSECTS_LISTED_PROVINCE": {
+   "rank": 1,
+   "kind": "SPATIAL_VERIFIED_PROVINCE",
+   "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales)",
+   "caveat_es": "Intersección con la representación administrativa del aviso, no con su huella real."
+  },
+  "BASIN_INTERSECTS_LISTED_DEPARTMENT": {
+   "rank": 2,
+   "kind": "SPATIAL_VERIFIED_DEPARTMENT",
+   "label_es": "La cuenca interseca un departamento enumerado en el aviso sin provincias (límites INEI referenciales)",
+   "caveat_es": "El aviso solo nombra el departamento; la intersección es con todo el departamento, no con la huella del aviso."
+  },
+  "LISTED_PROVINCE_CONTEXT_NO_BASIN": {
+   "rank": 3,
+   "kind": "ADMINISTRATIVE_PROVINCE",
+   "label_es": "Provincia enumerada en el aviso, sin cuenca validada",
+   "caveat_es": "Contexto territorial: no hay cuenca IRFEN validada en esta provincia."
+  },
+  "DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN": {
+   "rank": 4,
+   "kind": "ADMINISTRATIVE_DEPARTMENT",
+   "label_es": "El departamento figura en el aviso; relación provincial desconocida",
+   "caveat_es": "Coincidencia administrativa; la relación provincial es DESCONOCIDA (sin límites oficiales verificados o sin provincias en el aviso)."
+  },
+  "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES": {
+   "rank": 5,
+   "kind": "SPATIAL_VERIFIED_NEGATIVE",
+   "label_es": "La cuenca está en un departamento del aviso pero fuera de sus provincias enumeradas",
+   "caveat_es": "Resultado negativo con límites INEI referenciales que cubren toda la cuenca; se muestra para revisión."
+  }
+ },
+ "ordering_note_es": "El orden facilita la lectura (vigente, futuro, vigencia desconocida; relación más precisa primero). No es una puntuación de riesgo ni una probabilidad de activación.",
+ "surveillance_zones": [
+  {
+   "zone_id": "lalibertad_chaman",
+   "base_zone_id": "lalibertad_chaman",
+   "department": "CAJAMARCA",
+   "province": null,
+   "province_as_printed": null,
+   "avisos": [
+    {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-282",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-09T13:00:00-05:00",
+     "validity_end": "2026-10-10T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
+     "aviso_key": "SENAMHI-ACP-QUEBRADAS-2026-282",
+     "status": "VIGENTE",
+     "product": "ACP-QUEBRADAS",
+     "relation_method": "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES",
+     "relation_rank": 5,
+     "validity_start": "2026-10-09T13:00:00-05:00",
+     "validity_end": "2026-10-10T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    }
+   ],
+   "display_name": "Cuenca Chamán",
+   "zone_type": "BASIN_GEOMETRY",
+   "best_relation_rank": 1,
+   "best_relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+   "any_vigente": true,
+   "why_es": [
+    "La cuenca está en un departamento del aviso pero fuera de sus provincias enumeradas (SENAMHI-ACP-QUEBRADAS-2026-282, VIGENTE)",
+    "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
+   ],
+   "missing_data": []
+  },
+  {
+   "zone_id": "lalibertad_chicama",
+   "base_zone_id": "lalibertad_chicama",
+   "department": "CAJAMARCA",
+   "province": null,
+   "province_as_printed": null,
+   "avisos": [
+    {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-282",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-09T13:00:00-05:00",
+     "validity_end": "2026-10-10T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
+     "aviso_key": "SENAMHI-ACP-QUEBRADAS-2026-282",
+     "status": "VIGENTE",
+     "product": "ACP-QUEBRADAS",
+     "relation_method": "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES",
+     "relation_rank": 5,
+     "validity_start": "2026-10-09T13:00:00-05:00",
+     "validity_end": "2026-10-10T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    }
+   ],
+   "display_name": "Cuenca Chicama",
+   "zone_type": "BASIN_GEOMETRY",
+   "best_relation_rank": 1,
+   "best_relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+   "any_vigente": true,
+   "why_es": [
+    "La cuenca está en un departamento del aviso pero fuera de sus provincias enumeradas (SENAMHI-ACP-QUEBRADAS-2026-282, VIGENTE)",
+    "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
+   ],
+   "missing_data": []
+  },
+  {
+   "zone_id": "lalibertad_huamanzana",
+   "base_zone_id": "lalibertad_huamanzana",
+   "department": "LA LIBERTAD",
+   "province": null,
+   "province_as_printed": null,
+   "avisos": [
+    {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-282",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-09T13:00:00-05:00",
+     "validity_end": "2026-10-10T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    }
+   ],
+   "display_name": "Cuenca Huamanzaña",
+   "zone_type": "BASIN_GEOMETRY",
+   "best_relation_rank": 1,
+   "best_relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+   "any_vigente": true,
+   "why_es": [
+    "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
+   ],
+   "missing_data": []
+  },
+  {
+   "zone_id": "lalibertad_jequetepeque",
+   "base_zone_id": "lalibertad_jequetepeque",
+   "department": "CAJAMARCA",
+   "province": null,
+   "province_as_printed": null,
+   "avisos": [
+    {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-282",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-09T13:00:00-05:00",
+     "validity_end": "2026-10-10T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
+     "aviso_key": "SENAMHI-ACP-QUEBRADAS-2026-282",
+     "status": "VIGENTE",
+     "product": "ACP-QUEBRADAS",
+     "relation_method": "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES",
+     "relation_rank": 5,
+     "validity_start": "2026-10-09T13:00:00-05:00",
+     "validity_end": "2026-10-10T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    }
+   ],
+   "display_name": "Cuenca Jequetepeque",
+   "zone_type": "BASIN_GEOMETRY",
+   "best_relation_rank": 1,
+   "best_relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+   "any_vigente": true,
+   "why_es": [
+    "La cuenca está en un departamento del aviso pero fuera de sus provincias enumeradas (SENAMHI-ACP-QUEBRADAS-2026-282, VIGENTE)",
+    "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
+   ],
+   "missing_data": []
+  },
+  {
+   "zone_id": "lalibertad_moche",
+   "base_zone_id": "lalibertad_moche",
+   "department": "LA LIBERTAD",
+   "province": null,
+   "province_as_printed": null,
+   "avisos": [
+    {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-282",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-09T13:00:00-05:00",
+     "validity_end": "2026-10-10T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    }
+   ],
+   "display_name": "Cuenca Moche",
+   "zone_type": "BASIN_GEOMETRY",
+   "best_relation_rank": 1,
+   "best_relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+   "any_vigente": true,
+   "why_es": [
+    "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
+   ],
+   "missing_data": []
+  },
+  {
+   "zone_id": "lalibertad_viru",
+   "base_zone_id": "lalibertad_viru",
+   "department": "LA LIBERTAD",
+   "province": null,
+   "province_as_printed": null,
+   "avisos": [
+    {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-282",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-09T13:00:00-05:00",
+     "validity_end": "2026-10-10T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    }
+   ],
+   "display_name": "Cuenca Virú",
+   "zone_type": "BASIN_GEOMETRY",
+   "best_relation_rank": 1,
+   "best_relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+   "any_vigente": true,
+   "why_es": [
+    "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
+   ],
+   "missing_data": []
+  },
+  {
+   "zone_id": "lambayeque_chancay_lambayeque_chongoyape",
+   "base_zone_id": "lambayeque_chancay_lambayeque_chongoyape",
+   "department": "CAJAMARCA",
+   "province": null,
+   "province_as_printed": null,
+   "avisos": [
+    {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-282",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-09T13:00:00-05:00",
+     "validity_end": "2026-10-10T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
+     "aviso_key": "SENAMHI-ACP-QUEBRADAS-2026-282",
+     "status": "VIGENTE",
+     "product": "ACP-QUEBRADAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-09T13:00:00-05:00",
+     "validity_end": "2026-10-10T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    }
+   ],
+   "display_name": "Chancay-Lambayeque (Chongoyape)",
+   "zone_type": "BASIN_GEOMETRY",
+   "best_relation_rank": 1,
+   "best_relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+   "any_vigente": true,
+   "why_es": [
+    "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)",
+    "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales) (SENAMHI-ACP-QUEBRADAS-2026-282, VIGENTE)"
+   ],
+   "missing_data": []
+  },
+  {
+   "zone_id": "lambayeque_motupe",
+   "base_zone_id": "lambayeque_motupe",
+   "department": "CAJAMARCA",
+   "province": null,
+   "province_as_printed": null,
+   "avisos": [
+    {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-282",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-09T13:00:00-05:00",
+     "validity_end": "2026-10-10T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
+     "aviso_key": "SENAMHI-ACP-QUEBRADAS-2026-282",
+     "status": "VIGENTE",
+     "product": "ACP-QUEBRADAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-09T13:00:00-05:00",
+     "validity_end": "2026-10-10T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    }
+   ],
+   "display_name": "Cuenca Motupe (contexto hidrológico ANA)",
+   "zone_type": "BASIN_GEOMETRY",
+   "best_relation_rank": 1,
+   "best_relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+   "any_vigente": true,
+   "why_es": [
+    "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)",
+    "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales) (SENAMHI-ACP-QUEBRADAS-2026-282, VIGENTE)"
+   ],
+   "missing_data": []
+  },
+  {
+   "zone_id": "lambayeque_zana_oyotun",
+   "base_zone_id": "lambayeque_zana_oyotun",
+   "department": "CAJAMARCA",
+   "province": null,
+   "province_as_printed": null,
+   "avisos": [
+    {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-282",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-09T13:00:00-05:00",
+     "validity_end": "2026-10-10T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
+     "aviso_key": "SENAMHI-ACP-QUEBRADAS-2026-282",
+     "status": "VIGENTE",
+     "product": "ACP-QUEBRADAS",
+     "relation_method": "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES",
+     "relation_rank": 5,
+     "validity_start": "2026-10-09T13:00:00-05:00",
+     "validity_end": "2026-10-10T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    }
+   ],
+   "display_name": "Zaña (Oyotún)",
+   "zone_type": "BASIN_GEOMETRY",
+   "best_relation_rank": 1,
+   "best_relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+   "any_vigente": true,
+   "why_es": [
+    "La cuenca está en un departamento del aviso pero fuera de sus provincias enumeradas (SENAMHI-ACP-QUEBRADAS-2026-282, VIGENTE)",
+    "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
+   ],
+   "missing_data": []
+  },
+  {
+   "zone_id": "tumbes_bocapan",
+   "base_zone_id": "tumbes_bocapan",
+   "department": "TUMBES",
+   "province": null,
+   "province_as_printed": null,
+   "avisos": [
+    {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-282",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-09T13:00:00-05:00",
+     "validity_end": "2026-10-10T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    }
+   ],
+   "display_name": "Cuenca Bocapán",
+   "zone_type": "BASIN_GEOMETRY",
+   "best_relation_rank": 1,
+   "best_relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+   "any_vigente": true,
+   "why_es": [
+    "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
+   ],
+   "missing_data": []
+  },
+  {
+   "zone_id": "piura_province_context:AYABACA",
+   "base_zone_id": "piura_province_context",
+   "department": "PIURA",
+   "province": "AYABACA",
+   "province_as_printed": "Ayabaca",
+   "avisos": [
+    {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-282",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
+     "relation_rank": 3,
+     "validity_start": "2026-10-09T13:00:00-05:00",
+     "validity_end": "2026-10-10T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    }
+   ],
+   "display_name": "Piura (provincias listadas en el aviso) · Ayabaca",
+   "zone_type": "ADMINISTRATIVE_CONTEXT_NO_BASIN",
+   "best_relation_rank": 3,
+   "best_relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
+   "any_vigente": true,
+   "why_es": [
+    "Provincia enumerada en el aviso, sin cuenca validada (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
+   ],
+   "missing_data": [
+    "no validated basin geometry in this department"
+   ]
+  },
+  {
+   "zone_id": "piura_province_context:HUANCABAMBA",
+   "base_zone_id": "piura_province_context",
+   "department": "PIURA",
+   "province": "HUANCABAMBA",
+   "province_as_printed": "Huancabamba",
+   "avisos": [
+    {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-282",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
+     "relation_rank": 3,
+     "validity_start": "2026-10-09T13:00:00-05:00",
+     "validity_end": "2026-10-10T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    }
+   ],
+   "display_name": "Piura (provincias listadas en el aviso) · Huancabamba",
+   "zone_type": "ADMINISTRATIVE_CONTEXT_NO_BASIN",
+   "best_relation_rank": 3,
+   "best_relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
+   "any_vigente": true,
+   "why_es": [
+    "Provincia enumerada en el aviso, sin cuenca validada (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
+   ],
+   "missing_data": [
+    "no validated basin geometry in this department"
+   ]
+  },
+  {
+   "zone_id": "piura_province_context:MORROPON",
+   "base_zone_id": "piura_province_context",
+   "department": "PIURA",
+   "province": "MORROPON",
+   "province_as_printed": "Morropón",
+   "avisos": [
+    {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-282",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
+     "relation_rank": 3,
+     "validity_start": "2026-10-09T13:00:00-05:00",
+     "validity_end": "2026-10-10T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    }
+   ],
+   "display_name": "Piura (provincias listadas en el aviso) · Morropón",
+   "zone_type": "ADMINISTRATIVE_CONTEXT_NO_BASIN",
+   "best_relation_rank": 3,
+   "best_relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
+   "any_vigente": true,
+   "why_es": [
+    "Provincia enumerada en el aviso, sin cuenca validada (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
+   ],
+   "missing_data": [
+    "no validated basin geometry in this department"
+   ]
+  },
+  {
+   "zone_id": "piura_province_context:PIURA",
+   "base_zone_id": "piura_province_context",
+   "department": "PIURA",
+   "province": "PIURA",
+   "province_as_printed": "Piura",
+   "avisos": [
+    {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-282",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
+     "relation_rank": 3,
+     "validity_start": "2026-10-09T13:00:00-05:00",
+     "validity_end": "2026-10-10T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    }
+   ],
+   "display_name": "Piura (provincias listadas en el aviso) · Piura",
+   "zone_type": "ADMINISTRATIVE_CONTEXT_NO_BASIN",
+   "best_relation_rank": 3,
+   "best_relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
+   "any_vigente": true,
+   "why_es": [
+    "Provincia enumerada en el aviso, sin cuenca validada (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
+   ],
+   "missing_data": [
+    "no validated basin geometry in this department"
+   ]
+  },
+  {
+   "zone_id": "piura_province_context:SULLANA",
+   "base_zone_id": "piura_province_context",
+   "department": "PIURA",
+   "province": "SULLANA",
+   "province_as_printed": "Sullana",
+   "avisos": [
+    {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-282",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
+     "relation_rank": 3,
+     "validity_start": "2026-10-09T13:00:00-05:00",
+     "validity_end": "2026-10-10T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    }
+   ],
+   "display_name": "Piura (provincias listadas en el aviso) · Sullana",
+   "zone_type": "ADMINISTRATIVE_CONTEXT_NO_BASIN",
+   "best_relation_rank": 3,
+   "best_relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
+   "any_vigente": true,
+   "why_es": [
+    "Provincia enumerada en el aviso, sin cuenca validada (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
+   ],
+   "missing_data": [
+    "no validated basin geometry in this department"
+   ]
+  },
+  {
+   "zone_id": "lalibertad_san_ildefonso",
+   "base_zone_id": "lalibertad_san_ildefonso",
+   "department": "LA LIBERTAD",
+   "province": null,
+   "province_as_printed": null,
+   "avisos": [
+    {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-282",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES",
+     "relation_rank": 5,
+     "validity_start": "2026-10-09T13:00:00-05:00",
+     "validity_end": "2026-10-10T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    }
+   ],
+   "display_name": "Quebrada San Ildefonso (Trujillo)",
+   "zone_type": "BASIN_GEOMETRY",
+   "best_relation_rank": 5,
+   "best_relation_method": "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES",
+   "any_vigente": true,
+   "why_es": [
+    "La cuenca está en un departamento del aviso pero fuera de sus provincias enumeradas (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
+   ],
+   "missing_data": []
+  }
+ ],
+ "aviso_links": {
+  "SENAMHI-ACP-LLUVIAS-2026-282": {
+   "status": "VIGENTE",
+   "status_basis": "valid until 2026-10-10T13:00:00-05:00",
+   "product": "ACP-LLUVIAS",
+   "validity_start": "2026-10-09T13:00:00-05:00",
+   "validity_end": "2026-10-10T13:00:00-05:00",
+   "official_url": "https://portal.indeci.gob.pe/emergencias/boletin-informativo-de-aviso-de-corto-plazo-ante-lluvias-intensas-n281-2026-indeci-coen/",
+   "in_surveillance": true,
+   "links": [
+    {
+     "zone_id": "lalibertad_chaman",
+     "base_zone_id": "lalibertad_chaman",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "department": "CAJAMARCA",
+     "province": null,
+     "evidence": {
+      "intersections": [
+       {
+        "department": "CAJAMARCA",
+        "province": "SAN MIGUEL",
+        "area_km2": 459.06,
+        "zone_fraction": 0.3401
+       }
+      ],
+      "department_intersections": [],
+      "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
+      "boundary_coverage": 1.0
+     },
+     "relation_kind": "SPATIAL_VERIFIED_PROVINCE",
+     "relation_rank": 1,
+     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales)",
+     "caveat_es": "Intersección con la representación administrativa del aviso, no con su huella real."
+    },
+    {
+     "zone_id": "lalibertad_chicama",
+     "base_zone_id": "lalibertad_chicama",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "department": "CAJAMARCA",
+     "province": null,
+     "evidence": {
+      "intersections": [
+       {
+        "department": "CAJAMARCA",
+        "province": "CAJAMARCA",
+        "area_km2": 519.09,
+        "zone_fraction": 0.115
+       },
+       {
+        "department": "CAJAMARCA",
+        "province": "CONTUMAZA",
+        "area_km2": 597.04,
+        "zone_fraction": 0.1323
+       },
+       {
+        "department": "LA LIBERTAD",
+        "province": "GRAN CHIMU",
+        "area_km2": 1288.1,
+        "zone_fraction": 0.2853
+       },
+       {
+        "department": "LA LIBERTAD",
+        "province": "OTUZCO",
+        "area_km2": 1090.32,
+        "zone_fraction": 0.2415
+       },
+       {
+        "department": "LA LIBERTAD",
+        "province": "SANTIAGO DE CHUCO",
+        "area_km2": 50.31,
+        "zone_fraction": 0.0111
+       }
+      ],
+      "department_intersections": [],
+      "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
+      "boundary_coverage": 1.0
+     },
+     "relation_kind": "SPATIAL_VERIFIED_PROVINCE",
+     "relation_rank": 1,
+     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales)",
+     "caveat_es": "Intersección con la representación administrativa del aviso, no con su huella real."
+    },
+    {
+     "zone_id": "lalibertad_huamanzana",
+     "base_zone_id": "lalibertad_huamanzana",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "department": "LA LIBERTAD",
+     "province": null,
+     "evidence": {
+      "intersections": [
+       {
+        "department": "LA LIBERTAD",
+        "province": "JULCAN",
+        "area_km2": 104.34,
+        "zone_fraction": 0.0727
+       },
+       {
+        "department": "LA LIBERTAD",
+        "province": "SANTIAGO DE CHUCO",
+        "area_km2": 394.93,
+        "zone_fraction": 0.2751
+       },
+       {
+        "department": "LA LIBERTAD",
+        "province": "VIRU",
+        "area_km2": 936.09,
+        "zone_fraction": 0.6522
+       }
+      ],
+      "department_intersections": [],
+      "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
+      "boundary_coverage": 1.0
+     },
+     "relation_kind": "SPATIAL_VERIFIED_PROVINCE",
+     "relation_rank": 1,
+     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales)",
+     "caveat_es": "Intersección con la representación administrativa del aviso, no con su huella real."
+    },
+    {
+     "zone_id": "lalibertad_jequetepeque",
+     "base_zone_id": "lalibertad_jequetepeque",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "department": "CAJAMARCA",
+     "province": null,
+     "evidence": {
+      "intersections": [
+       {
+        "department": "CAJAMARCA",
+        "province": "CAJAMARCA",
+        "area_km2": 790.67,
+        "zone_fraction": 0.2
+       },
+       {
+        "department": "CAJAMARCA",
+        "province": "CONTUMAZA",
+        "area_km2": 1345.57,
+        "zone_fraction": 0.3403
+       },
+       {
+        "department": "CAJAMARCA",
+        "province": "SAN MIGUEL",
+        "area_km2": 937.03,
+        "zone_fraction": 0.237
+       },
+       {
+        "department": "CAJAMARCA",
+        "province": "SAN PABLO",
+        "area_km2": 664.54,
+        "zone_fraction": 0.1681
+       }
+      ],
+      "department_intersections": [],
+      "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
+      "boundary_coverage": 1.0
+     },
+     "relation_kind": "SPATIAL_VERIFIED_PROVINCE",
+     "relation_rank": 1,
+     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales)",
+     "caveat_es": "Intersección con la representación administrativa del aviso, no con su huella real."
+    },
+    {
+     "zone_id": "lalibertad_moche",
+     "base_zone_id": "lalibertad_moche",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "department": "LA LIBERTAD",
+     "province": null,
+     "evidence": {
+      "intersections": [
+       {
+        "department": "LA LIBERTAD",
+        "province": "JULCAN",
+        "area_km2": 111.25,
+        "zone_fraction": 0.0524
+       },
+       {
+        "department": "LA LIBERTAD",
+        "province": "OTUZCO",
+        "area_km2": 983.92,
+        "zone_fraction": 0.463
+       },
+       {
+        "department": "LA LIBERTAD",
+        "province": "SANTIAGO DE CHUCO",
+        "area_km2": 128.58,
+        "zone_fraction": 0.0605
+       }
+      ],
+      "department_intersections": [],
+      "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
+      "boundary_coverage": 1.0
+     },
+     "relation_kind": "SPATIAL_VERIFIED_PROVINCE",
+     "relation_rank": 1,
+     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales)",
+     "caveat_es": "Intersección con la representación administrativa del aviso, no con su huella real."
+    },
+    {
+     "zone_id": "lalibertad_viru",
+     "base_zone_id": "lalibertad_viru",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "department": "LA LIBERTAD",
+     "province": null,
+     "evidence": {
+      "intersections": [
+       {
+        "department": "LA LIBERTAD",
+        "province": "JULCAN",
+        "area_km2": 893.37,
+        "zone_fraction": 0.4652
+       },
+       {
+        "department": "LA LIBERTAD",
+        "province": "OTUZCO",
+        "area_km2": 2.66,
+        "zone_fraction": 0.0014
+       },
+       {
+        "department": "LA LIBERTAD",
+        "province": "SANTIAGO DE CHUCO",
+        "area_km2": 2.56,
+        "zone_fraction": 0.0013
+       },
+       {
+        "department": "LA LIBERTAD",
+        "province": "VIRU",
+        "area_km2": 868.77,
+        "zone_fraction": 0.4524
+       }
+      ],
+      "department_intersections": [],
+      "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
+      "boundary_coverage": 1.0
+     },
+     "relation_kind": "SPATIAL_VERIFIED_PROVINCE",
+     "relation_rank": 1,
+     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales)",
+     "caveat_es": "Intersección con la representación administrativa del aviso, no con su huella real."
+    },
+    {
+     "zone_id": "lambayeque_chancay_lambayeque_chongoyape",
+     "base_zone_id": "lambayeque_chancay_lambayeque_chongoyape",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "department": "CAJAMARCA",
+     "province": null,
+     "evidence": {
+      "intersections": [
+       {
+        "department": "CAJAMARCA",
+        "province": "CHOTA",
+        "area_km2": 983.45,
+        "zone_fraction": 0.2433
+       },
+       {
+        "department": "CAJAMARCA",
+        "province": "HUALGAYOC",
+        "area_km2": 104.7,
+        "zone_fraction": 0.0259
+       },
+       {
+        "department": "CAJAMARCA",
+        "province": "SAN MIGUEL",
+        "area_km2": 432.11,
+        "zone_fraction": 0.1069
+       },
+       {
+        "department": "CAJAMARCA",
+        "province": "SANTA CRUZ",
+        "area_km2": 1222.42,
+        "zone_fraction": 0.3024
+       },
+       {
+        "department": "LAMBAYEQUE",
+        "province": "CHICLAYO",
+        "area_km2": 1298.09,
+        "zone_fraction": 0.3211
+       }
+      ],
+      "department_intersections": [],
+      "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
+      "boundary_coverage": 1.0
+     },
+     "relation_kind": "SPATIAL_VERIFIED_PROVINCE",
+     "relation_rank": 1,
+     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales)",
+     "caveat_es": "Intersección con la representación administrativa del aviso, no con su huella real."
+    },
+    {
+     "zone_id": "lambayeque_motupe",
+     "base_zone_id": "lambayeque_motupe",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "department": "CAJAMARCA",
+     "province": null,
+     "evidence": {
+      "intersections": [
+       {
+        "department": "CAJAMARCA",
+        "province": "CHOTA",
+        "area_km2": 445.95,
+        "zone_fraction": 0.1214
+       },
+       {
+        "department": "LAMBAYEQUE",
+        "province": "CHICLAYO",
+        "area_km2": 248.06,
+        "zone_fraction": 0.0675
+       },
+       {
+        "department": "LAMBAYEQUE",
+        "province": "FERRENAFE",
+        "area_km2": 785.28,
+        "zone_fraction": 0.2138
+       },
+       {
+        "department": "LAMBAYEQUE",
+        "province": "LAMBAYEQUE",
+        "area_km2": 2194.15,
+        "zone_fraction": 0.5973
+       }
+      ],
+      "department_intersections": [],
+      "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
+      "boundary_coverage": 1.0
+     },
+     "relation_kind": "SPATIAL_VERIFIED_PROVINCE",
+     "relation_rank": 1,
+     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales)",
+     "caveat_es": "Intersección con la representación administrativa del aviso, no con su huella real."
+    },
+    {
+     "zone_id": "lambayeque_zana_oyotun",
+     "base_zone_id": "lambayeque_zana_oyotun",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "department": "CAJAMARCA",
+     "province": null,
+     "evidence": {
+      "intersections": [
+       {
+        "department": "CAJAMARCA",
+        "province": "SAN MIGUEL",
+        "area_km2": 706.85,
+        "zone_fraction": 0.4029
+       },
+       {
+        "department": "CAJAMARCA",
+        "province": "SANTA CRUZ",
+        "area_km2": 156.61,
+        "zone_fraction": 0.0893
+       },
+       {
+        "department": "LAMBAYEQUE",
+        "province": "CHICLAYO",
+        "area_km2": 875.47,
+        "zone_fraction": 0.499
+       }
+      ],
+      "department_intersections": [],
+      "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
+      "boundary_coverage": 1.0
+     },
+     "relation_kind": "SPATIAL_VERIFIED_PROVINCE",
+     "relation_rank": 1,
+     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales)",
+     "caveat_es": "Intersección con la representación administrativa del aviso, no con su huella real."
+    },
+    {
+     "zone_id": "tumbes_bocapan",
+     "base_zone_id": "tumbes_bocapan",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "department": "TUMBES",
+     "province": null,
+     "evidence": {
+      "intersections": [
+       {
+        "department": "TUMBES",
+        "province": "CONTRALMIRANTE VILLAR",
+        "area_km2": 903.36,
+        "zone_fraction": 0.997
+       },
+       {
+        "department": "TUMBES",
+        "province": "TUMBES",
+        "area_km2": 2.75,
+        "zone_fraction": 0.003
+       }
+      ],
+      "department_intersections": [],
+      "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
+      "boundary_coverage": 1.0
+     },
+     "relation_kind": "SPATIAL_VERIFIED_PROVINCE",
+     "relation_rank": 1,
+     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales)",
+     "caveat_es": "Intersección con la representación administrativa del aviso, no con su huella real."
+    },
+    {
+     "zone_id": "piura_province_context:AYABACA",
+     "base_zone_id": "piura_province_context",
+     "relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
+     "department": "PIURA",
+     "province": "AYABACA",
+     "province_as_printed": "Ayabaca",
+     "evidence": {
+      "aviso_lists_province": true
+     },
+     "relation_kind": "ADMINISTRATIVE_PROVINCE",
+     "relation_rank": 3,
+     "label_es": "Provincia enumerada en el aviso, sin cuenca validada",
+     "caveat_es": "Contexto territorial: no hay cuenca IRFEN validada en esta provincia."
+    },
+    {
+     "zone_id": "piura_province_context:HUANCABAMBA",
+     "base_zone_id": "piura_province_context",
+     "relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
+     "department": "PIURA",
+     "province": "HUANCABAMBA",
+     "province_as_printed": "Huancabamba",
+     "evidence": {
+      "aviso_lists_province": true
+     },
+     "relation_kind": "ADMINISTRATIVE_PROVINCE",
+     "relation_rank": 3,
+     "label_es": "Provincia enumerada en el aviso, sin cuenca validada",
+     "caveat_es": "Contexto territorial: no hay cuenca IRFEN validada en esta provincia."
+    },
+    {
+     "zone_id": "piura_province_context:MORROPON",
+     "base_zone_id": "piura_province_context",
+     "relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
+     "department": "PIURA",
+     "province": "MORROPON",
+     "province_as_printed": "Morropón",
+     "evidence": {
+      "aviso_lists_province": true
+     },
+     "relation_kind": "ADMINISTRATIVE_PROVINCE",
+     "relation_rank": 3,
+     "label_es": "Provincia enumerada en el aviso, sin cuenca validada",
+     "caveat_es": "Contexto territorial: no hay cuenca IRFEN validada en esta provincia."
+    },
+    {
+     "zone_id": "piura_province_context:PIURA",
+     "base_zone_id": "piura_province_context",
+     "relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
+     "department": "PIURA",
+     "province": "PIURA",
+     "province_as_printed": "Piura",
+     "evidence": {
+      "aviso_lists_province": true
+     },
+     "relation_kind": "ADMINISTRATIVE_PROVINCE",
+     "relation_rank": 3,
+     "label_es": "Provincia enumerada en el aviso, sin cuenca validada",
+     "caveat_es": "Contexto territorial: no hay cuenca IRFEN validada en esta provincia."
+    },
+    {
+     "zone_id": "piura_province_context:SULLANA",
+     "base_zone_id": "piura_province_context",
+     "relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
+     "department": "PIURA",
+     "province": "SULLANA",
+     "province_as_printed": "Sullana",
+     "evidence": {
+      "aviso_lists_province": true
+     },
+     "relation_kind": "ADMINISTRATIVE_PROVINCE",
+     "relation_rank": 3,
+     "label_es": "Provincia enumerada en el aviso, sin cuenca validada",
+     "caveat_es": "Contexto territorial: no hay cuenca IRFEN validada en esta provincia."
+    },
+    {
+     "zone_id": "lalibertad_san_ildefonso",
+     "base_zone_id": "lalibertad_san_ildefonso",
+     "relation_method": "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES",
+     "department": "LA LIBERTAD",
+     "province": null,
+     "evidence": {
+      "zone_departments": [
+       "LA LIBERTAD"
+      ],
+      "listed_provinces": {
+       "LA LIBERTAD": [
+        "GRAN CHIMU",
+        "BOLIVAR",
+        "JULCAN",
+        "OTUZCO",
+        "PATAZ",
+        "SANCHEZ CARRION",
+        "SANTIAGO DE CHUCO",
+        "VIRU"
+       ]
+      },
+      "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
+      "boundary_coverage": 1.0
+     },
+     "relation_kind": "SPATIAL_VERIFIED_NEGATIVE",
+     "relation_rank": 5,
+     "label_es": "La cuenca está en un departamento del aviso pero fuera de sus provincias enumeradas",
+     "caveat_es": "Resultado negativo con límites INEI referenciales que cubren toda la cuenca; se muestra para revisión."
+    }
+   ],
+   "rain_related": true
+  },
+  "SENAMHI-ACP-QUEBRADAS-2026-282": {
+   "status": "VIGENTE",
+   "status_basis": "valid until 2026-10-10T13:00:00-05:00",
+   "product": "ACP-QUEBRADAS",
+   "validity_start": "2026-10-09T13:00:00-05:00",
+   "validity_end": "2026-10-10T13:00:00-05:00",
+   "official_url": "https://portal.indeci.gob.pe/emergencias/boletin-informativo-de-aviso-de-corto-plazo-ante-posible-activacion-de-quebradas-n-184-2026-indeci-coen/",
+   "in_surveillance": true,
+   "links": [
+    {
+     "zone_id": "lambayeque_chancay_lambayeque_chongoyape",
+     "base_zone_id": "lambayeque_chancay_lambayeque_chongoyape",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "department": "CAJAMARCA",
+     "province": null,
+     "evidence": {
+      "intersections": [
+       {
+        "department": "CAJAMARCA",
+        "province": "CHOTA",
+        "area_km2": 983.45,
+        "zone_fraction": 0.2433
+       }
+      ],
+      "department_intersections": [],
+      "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
+      "boundary_coverage": 1.0
+     },
+     "relation_kind": "SPATIAL_VERIFIED_PROVINCE",
+     "relation_rank": 1,
+     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales)",
+     "caveat_es": "Intersección con la representación administrativa del aviso, no con su huella real."
+    },
+    {
+     "zone_id": "lambayeque_motupe",
+     "base_zone_id": "lambayeque_motupe",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "department": "CAJAMARCA",
+     "province": null,
+     "evidence": {
+      "intersections": [
+       {
+        "department": "CAJAMARCA",
+        "province": "CHOTA",
+        "area_km2": 445.95,
+        "zone_fraction": 0.1214
+       }
+      ],
+      "department_intersections": [],
+      "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
+      "boundary_coverage": 1.0
+     },
+     "relation_kind": "SPATIAL_VERIFIED_PROVINCE",
+     "relation_rank": 1,
+     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales)",
+     "caveat_es": "Intersección con la representación administrativa del aviso, no con su huella real."
+    },
+    {
+     "zone_id": "lalibertad_chaman",
+     "base_zone_id": "lalibertad_chaman",
+     "relation_method": "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES",
+     "department": "CAJAMARCA",
+     "province": null,
+     "evidence": {
+      "zone_departments": [
+       "CAJAMARCA",
+       "LA LIBERTAD"
+      ],
+      "listed_provinces": {
+       "CAJAMARCA": [
+        "CHOTA",
+        "CUTERVO"
+       ]
+      },
+      "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
+      "boundary_coverage": 1.0
+     },
+     "relation_kind": "SPATIAL_VERIFIED_NEGATIVE",
+     "relation_rank": 5,
+     "label_es": "La cuenca está en un departamento del aviso pero fuera de sus provincias enumeradas",
+     "caveat_es": "Resultado negativo con límites INEI referenciales que cubren toda la cuenca; se muestra para revisión."
+    },
+    {
+     "zone_id": "lalibertad_chicama",
+     "base_zone_id": "lalibertad_chicama",
+     "relation_method": "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES",
+     "department": "CAJAMARCA",
+     "province": null,
+     "evidence": {
+      "zone_departments": [
+       "CAJAMARCA",
+       "LA LIBERTAD"
+      ],
+      "listed_provinces": {
+       "CAJAMARCA": [
+        "CHOTA",
+        "CUTERVO"
+       ]
+      },
+      "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
+      "boundary_coverage": 1.0
+     },
+     "relation_kind": "SPATIAL_VERIFIED_NEGATIVE",
+     "relation_rank": 5,
+     "label_es": "La cuenca está en un departamento del aviso pero fuera de sus provincias enumeradas",
+     "caveat_es": "Resultado negativo con límites INEI referenciales que cubren toda la cuenca; se muestra para revisión."
+    },
+    {
+     "zone_id": "lalibertad_jequetepeque",
+     "base_zone_id": "lalibertad_jequetepeque",
+     "relation_method": "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES",
+     "department": "CAJAMARCA",
+     "province": null,
+     "evidence": {
+      "zone_departments": [
+       "CAJAMARCA",
+       "LA LIBERTAD"
+      ],
+      "listed_provinces": {
+       "CAJAMARCA": [
+        "CHOTA",
+        "CUTERVO"
+       ]
+      },
+      "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
+      "boundary_coverage": 1.0
+     },
+     "relation_kind": "SPATIAL_VERIFIED_NEGATIVE",
+     "relation_rank": 5,
+     "label_es": "La cuenca está en un departamento del aviso pero fuera de sus provincias enumeradas",
+     "caveat_es": "Resultado negativo con límites INEI referenciales que cubren toda la cuenca; se muestra para revisión."
+    },
+    {
+     "zone_id": "lambayeque_zana_oyotun",
+     "base_zone_id": "lambayeque_zana_oyotun",
+     "relation_method": "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES",
+     "department": "CAJAMARCA",
+     "province": null,
+     "evidence": {
+      "zone_departments": [
+       "CAJAMARCA",
+       "LA LIBERTAD",
+       "LAMBAYEQUE"
+      ],
+      "listed_provinces": {
+       "CAJAMARCA": [
+        "CHOTA",
+        "CUTERVO"
+       ]
+      },
+      "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
+      "boundary_coverage": 1.0
+     },
+     "relation_kind": "SPATIAL_VERIFIED_NEGATIVE",
+     "relation_rank": 5,
+     "label_es": "La cuenca está en un departamento del aviso pero fuera de sus provincias enumeradas",
+     "caveat_es": "Resultado negativo con límites INEI referenciales que cubren toda la cuenca; se muestra para revisión."
+    }
+   ],
+   "rain_related": true
+  }
+ },
+ "evaluated_at_utc": "2026-10-10T02:48:07.948772+00:00"
+}

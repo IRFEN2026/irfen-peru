@@ -1,0 +1,526 @@
+{
+ "schema_version": "0.1",
+ "overlay_id": "irfen-v09-zone-admin-overlay:v0.1",
+ "deployment_status": "RESEARCH_ONLY",
+ "test_mode": "TEST_ONLY",
+ "activation_gate": "BLOCKED",
+ "map_publishable": false,
+ "boundary_source": {
+  "institution": "INEI (límites censales referenciales), servidos por SERFOR",
+  "dataset_title": "Limites Censales Referenciales 2024",
+  "service_url": "https://geo.serfor.gob.pe/geoservicios/rest/services/Visor/Limites_Politicos_Administrativos/MapServer",
+  "layer_id": 1,
+  "layer_name": "Provincia_INEI",
+  "obtained_from": [
+   {
+    "query_url": "https://geo.serfor.gob.pe/geoservicios/rest/services/Visor/Limites_Politicos_Administrativos/MapServer/1/query?where=1%3D1&geometry=-80.9978078%2C-8.9689498%2C-77.9876057%2C-3.4561233&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=NOMBDEP%2CNOMBPROV%2CIDPROV%2CFUENTE%2CDOCREG%2CIDDPTO%2CFECREG%2COBSERV&returnGeometry=true&outSR=4326&f=geojson",
+    "response_sha256": "7ea1b8edb78269f83b44241f076780a81b8251a5a6a2ae82f82fa8ba999e86f6",
+    "features": 48
+   },
+   {
+    "query_url": "https://geo.serfor.gob.pe/geoservicios/rest/services/Visor/Limites_Politicos_Administrativos/MapServer/1/query?where=NOMBDEP+IN+%28%27TUMBES%27%2C+%27PIURA%27%2C+%27LAMBAYEQUE%27%2C+%27LA+LIBERTAD%27%29&outFields=NOMBDEP%2CNOMBPROV%2CIDPROV%2CFUENTE%2CDOCREG%2CIDDPTO%2CFECREG%2COBSERV&returnGeometry=true&outSR=4326&f=geojson",
+    "response_sha256": "c74484529bfd07a654550b6a536438a4885d515254f249bbd1c4ab1f3ac9cbab",
+    "features": 26
+   }
+  ],
+  "obtained_at_utc": "2026-10-10T02:48:07.415437+00:00",
+  "crs": "EPSG:4326",
+  "scale": "NOT_STATED_BY_SERVICE",
+  "legal_status": "REFERENTIAL_CENSUS_LIMITS_NOT_LEGAL_DEMARCATION",
+  "department_field": "NOMBDEP",
+  "province_field": "NOMBPROV",
+  "feature_source_values": [
+   "INEI"
+  ],
+  "feature_registration_documents": [
+   "OFICIO 033872-2025-INEI-DNCE"
+  ],
+  "features": 49,
+  "departments": [
+   "AMAZONAS",
+   "ANCASH",
+   "CAJAMARCA",
+   "LA LIBERTAD",
+   "LAMBAYEQUE",
+   "PIURA",
+   "TUMBES"
+  ],
+  "selection": "provinces intersecting the surveillance-basin envelope (+0.25 deg) plus all provinces of the priority departments",
+  "normalisation": "features re-serialised as one FeatureCollection keyed by IDPROV; coordinates as served",
+  "sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
+  "path": "data/v09/admin_boundaries/9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e.geojson"
+ },
+ "method": "shapely intersection of the official basin geometry with each official province polygon; geodesic area on WGS84",
+ "min_fraction": 0.001,
+ "zones": [
+  {
+   "zone_id": "tumbes_bocapan",
+   "geometry_sha256": "9f3473ee383cb1107a5c885b2cf4582b61b27feb61108aab0567bad9f7385edf",
+   "basin_area_km2": 906.11,
+   "intersections": [
+    {
+     "department": "TUMBES",
+     "province": "CONTRALMIRANTE VILLAR",
+     "area_km2": 903.36,
+     "zone_fraction": 0.997
+    },
+    {
+     "department": "TUMBES",
+     "province": "TUMBES",
+     "area_km2": 2.75,
+     "zone_fraction": 0.003
+    }
+   ],
+   "slivers_below_min_fraction": [],
+   "basin_fraction_covered_by_boundaries": 1.0,
+   "departments": [
+    "TUMBES"
+   ]
+  },
+  {
+   "zone_id": "lambayeque_motupe",
+   "geometry_sha256": "cde815f60f4901b767107ea024f81b313f58da59e5cc73829ecf375ce4905001",
+   "basin_area_km2": 3673.66,
+   "intersections": [
+    {
+     "department": "LAMBAYEQUE",
+     "province": "LAMBAYEQUE",
+     "area_km2": 2194.15,
+     "zone_fraction": 0.5973
+    },
+    {
+     "department": "LAMBAYEQUE",
+     "province": "FERRENAFE",
+     "area_km2": 785.28,
+     "zone_fraction": 0.2138
+    },
+    {
+     "department": "CAJAMARCA",
+     "province": "CHOTA",
+     "area_km2": 445.95,
+     "zone_fraction": 0.1214
+    },
+    {
+     "department": "LAMBAYEQUE",
+     "province": "CHICLAYO",
+     "area_km2": 248.06,
+     "zone_fraction": 0.0675
+    }
+   ],
+   "slivers_below_min_fraction": [
+    {
+     "department": "CAJAMARCA",
+     "province": "CUTERVO",
+     "area_km2": 0.22,
+     "zone_fraction": 0.0001
+    }
+   ],
+   "basin_fraction_covered_by_boundaries": 1.0,
+   "departments": [
+    "CAJAMARCA",
+    "LAMBAYEQUE"
+   ]
+  },
+  {
+   "zone_id": "lambayeque_chancay_lambayeque_chongoyape",
+   "geometry_sha256": "1f62d4ae26c692c36c5001271b25bb46cf44ad5d4720782e7a701e1df2025639",
+   "basin_area_km2": 4042.76,
+   "intersections": [
+    {
+     "department": "LAMBAYEQUE",
+     "province": "CHICLAYO",
+     "area_km2": 1298.09,
+     "zone_fraction": 0.3211
+    },
+    {
+     "department": "CAJAMARCA",
+     "province": "SANTA CRUZ",
+     "area_km2": 1222.42,
+     "zone_fraction": 0.3024
+    },
+    {
+     "department": "CAJAMARCA",
+     "province": "CHOTA",
+     "area_km2": 983.45,
+     "zone_fraction": 0.2433
+    },
+    {
+     "department": "CAJAMARCA",
+     "province": "SAN MIGUEL",
+     "area_km2": 432.11,
+     "zone_fraction": 0.1069
+    },
+    {
+     "department": "CAJAMARCA",
+     "province": "HUALGAYOC",
+     "area_km2": 104.7,
+     "zone_fraction": 0.0259
+    }
+   ],
+   "slivers_below_min_fraction": [
+    {
+     "department": "LAMBAYEQUE",
+     "province": "FERRENAFE",
+     "area_km2": 1.99,
+     "zone_fraction": 0.0005
+    }
+   ],
+   "basin_fraction_covered_by_boundaries": 1.0,
+   "departments": [
+    "CAJAMARCA",
+    "LAMBAYEQUE"
+   ]
+  },
+  {
+   "zone_id": "lambayeque_zana_oyotun",
+   "geometry_sha256": "b92123950eb08839d553d31262498faad95a42f572399bf60c41d0b1776ca73c",
+   "basin_area_km2": 1754.52,
+   "intersections": [
+    {
+     "department": "LAMBAYEQUE",
+     "province": "CHICLAYO",
+     "area_km2": 875.47,
+     "zone_fraction": 0.499
+    },
+    {
+     "department": "CAJAMARCA",
+     "province": "SAN MIGUEL",
+     "area_km2": 706.85,
+     "zone_fraction": 0.4029
+    },
+    {
+     "department": "CAJAMARCA",
+     "province": "SANTA CRUZ",
+     "area_km2": 156.61,
+     "zone_fraction": 0.0893
+    },
+    {
+     "department": "LA LIBERTAD",
+     "province": "CHEPEN",
+     "area_km2": 15.59,
+     "zone_fraction": 0.0089
+    }
+   ],
+   "slivers_below_min_fraction": [],
+   "basin_fraction_covered_by_boundaries": 1.0,
+   "departments": [
+    "CAJAMARCA",
+    "LA LIBERTAD",
+    "LAMBAYEQUE"
+   ]
+  },
+  {
+   "zone_id": "lalibertad_jequetepeque",
+   "geometry_sha256": "6972837f33c89d826d29abdbbc17667b84e475cb33a8edb94b8d82d82647c4fc",
+   "basin_area_km2": 3954.07,
+   "intersections": [
+    {
+     "department": "CAJAMARCA",
+     "province": "CONTUMAZA",
+     "area_km2": 1345.57,
+     "zone_fraction": 0.3403
+    },
+    {
+     "department": "CAJAMARCA",
+     "province": "SAN MIGUEL",
+     "area_km2": 937.03,
+     "zone_fraction": 0.237
+    },
+    {
+     "department": "CAJAMARCA",
+     "province": "CAJAMARCA",
+     "area_km2": 790.67,
+     "zone_fraction": 0.2
+    },
+    {
+     "department": "CAJAMARCA",
+     "province": "SAN PABLO",
+     "area_km2": 664.54,
+     "zone_fraction": 0.1681
+    },
+    {
+     "department": "LA LIBERTAD",
+     "province": "PACASMAYO",
+     "area_km2": 132.67,
+     "zone_fraction": 0.0336
+    },
+    {
+     "department": "LA LIBERTAD",
+     "province": "CHEPEN",
+     "area_km2": 83.51,
+     "zone_fraction": 0.0211
+    }
+   ],
+   "slivers_below_min_fraction": [
+    {
+     "department": "CAJAMARCA",
+     "province": "HUALGAYOC",
+     "area_km2": 0.08,
+     "zone_fraction": 0.0
+    },
+    {
+     "department": "LA LIBERTAD",
+     "province": "GRAN CHIMU",
+     "area_km2": 0.0,
+     "zone_fraction": 0.0
+    }
+   ],
+   "basin_fraction_covered_by_boundaries": 1.0,
+   "departments": [
+    "CAJAMARCA",
+    "LA LIBERTAD"
+   ]
+  },
+  {
+   "zone_id": "lalibertad_san_ildefonso",
+   "geometry_sha256": "7e928de38e1c144d2738e3fefcead4d5d945d94a2003a3533e56e4a530e699f9",
+   "basin_area_km2": 28.34,
+   "intersections": [
+    {
+     "department": "LA LIBERTAD",
+     "province": "TRUJILLO",
+     "area_km2": 28.34,
+     "zone_fraction": 1.0
+    }
+   ],
+   "slivers_below_min_fraction": [],
+   "basin_fraction_covered_by_boundaries": 1.0,
+   "departments": [
+    "LA LIBERTAD"
+   ]
+  },
+  {
+   "zone_id": "lalibertad_chaman",
+   "geometry_sha256": "6e30e546c9717719c5add310259c278c055d0c815ae81c883c4a1efa672b0fba",
+   "basin_area_km2": 1349.69,
+   "intersections": [
+    {
+     "department": "LA LIBERTAD",
+     "province": "CHEPEN",
+     "area_km2": 840.72,
+     "zone_fraction": 0.6229
+    },
+    {
+     "department": "CAJAMARCA",
+     "province": "SAN MIGUEL",
+     "area_km2": 459.06,
+     "zone_fraction": 0.3401
+    },
+    {
+     "department": "LA LIBERTAD",
+     "province": "PACASMAYO",
+     "area_km2": 49.06,
+     "zone_fraction": 0.0363
+    }
+   ],
+   "slivers_below_min_fraction": [
+    {
+     "department": "CAJAMARCA",
+     "province": "CONTUMAZA",
+     "area_km2": 0.35,
+     "zone_fraction": 0.0003
+    },
+    {
+     "department": "LAMBAYEQUE",
+     "province": "CHICLAYO",
+     "area_km2": 0.49,
+     "zone_fraction": 0.0004
+    }
+   ],
+   "basin_fraction_covered_by_boundaries": 1.0,
+   "departments": [
+    "CAJAMARCA",
+    "LA LIBERTAD"
+   ]
+  },
+  {
+   "zone_id": "lalibertad_chicama",
+   "geometry_sha256": "5b430e97df2e947564a0acf3d1d25906830b7362cffffa3e40523c0fa8065e01",
+   "basin_area_km2": 4514.15,
+   "intersections": [
+    {
+     "department": "LA LIBERTAD",
+     "province": "GRAN CHIMU",
+     "area_km2": 1288.1,
+     "zone_fraction": 0.2853
+    },
+    {
+     "department": "LA LIBERTAD",
+     "province": "OTUZCO",
+     "area_km2": 1090.32,
+     "zone_fraction": 0.2415
+    },
+    {
+     "department": "LA LIBERTAD",
+     "province": "ASCOPE",
+     "area_km2": 966.38,
+     "zone_fraction": 0.2141
+    },
+    {
+     "department": "CAJAMARCA",
+     "province": "CONTUMAZA",
+     "area_km2": 597.04,
+     "zone_fraction": 0.1323
+    },
+    {
+     "department": "CAJAMARCA",
+     "province": "CAJAMARCA",
+     "area_km2": 519.09,
+     "zone_fraction": 0.115
+    },
+    {
+     "department": "LA LIBERTAD",
+     "province": "SANTIAGO DE CHUCO",
+     "area_km2": 50.31,
+     "zone_fraction": 0.0111
+    }
+   ],
+   "slivers_below_min_fraction": [
+    {
+     "department": "CAJAMARCA",
+     "province": "CAJABAMBA",
+     "area_km2": 2.55,
+     "zone_fraction": 0.0006
+    },
+    {
+     "department": "LA LIBERTAD",
+     "province": "TRUJILLO",
+     "area_km2": 0.2,
+     "zone_fraction": 0.0
+    },
+    {
+     "department": "LA LIBERTAD",
+     "province": "SANCHEZ CARRION",
+     "area_km2": 0.18,
+     "zone_fraction": 0.0
+    }
+   ],
+   "basin_fraction_covered_by_boundaries": 1.0,
+   "departments": [
+    "CAJAMARCA",
+    "LA LIBERTAD"
+   ]
+  },
+  {
+   "zone_id": "lalibertad_moche",
+   "geometry_sha256": "1209f6b9028f7573919fa1a4a07d150a5084765ed923a948671d88bb4a1cd79d",
+   "basin_area_km2": 2124.91,
+   "intersections": [
+    {
+     "department": "LA LIBERTAD",
+     "province": "OTUZCO",
+     "area_km2": 983.92,
+     "zone_fraction": 0.463
+    },
+    {
+     "department": "LA LIBERTAD",
+     "province": "TRUJILLO",
+     "area_km2": 900.66,
+     "zone_fraction": 0.4239
+    },
+    {
+     "department": "LA LIBERTAD",
+     "province": "SANTIAGO DE CHUCO",
+     "area_km2": 128.58,
+     "zone_fraction": 0.0605
+    },
+    {
+     "department": "LA LIBERTAD",
+     "province": "JULCAN",
+     "area_km2": 111.25,
+     "zone_fraction": 0.0524
+    }
+   ],
+   "slivers_below_min_fraction": [
+    {
+     "department": "LA LIBERTAD",
+     "province": "ASCOPE",
+     "area_km2": 0.33,
+     "zone_fraction": 0.0002
+    },
+    {
+     "department": "LA LIBERTAD",
+     "province": "GRAN CHIMU",
+     "area_km2": 0.09,
+     "zone_fraction": 0.0
+    }
+   ],
+   "basin_fraction_covered_by_boundaries": 1.0,
+   "departments": [
+    "LA LIBERTAD"
+   ]
+  },
+  {
+   "zone_id": "lalibertad_viru",
+   "geometry_sha256": "290f1426f325ca2da8d241776113f669fa875983368d6f617e06edfb5af5a9dd",
+   "basin_area_km2": 1920.36,
+   "intersections": [
+    {
+     "department": "LA LIBERTAD",
+     "province": "JULCAN",
+     "area_km2": 893.37,
+     "zone_fraction": 0.4652
+    },
+    {
+     "department": "LA LIBERTAD",
+     "province": "VIRU",
+     "area_km2": 868.77,
+     "zone_fraction": 0.4524
+    },
+    {
+     "department": "LA LIBERTAD",
+     "province": "TRUJILLO",
+     "area_km2": 153.0,
+     "zone_fraction": 0.0797
+    },
+    {
+     "department": "LA LIBERTAD",
+     "province": "OTUZCO",
+     "area_km2": 2.66,
+     "zone_fraction": 0.0014
+    },
+    {
+     "department": "LA LIBERTAD",
+     "province": "SANTIAGO DE CHUCO",
+     "area_km2": 2.56,
+     "zone_fraction": 0.0013
+    }
+   ],
+   "slivers_below_min_fraction": [],
+   "basin_fraction_covered_by_boundaries": 1.0,
+   "departments": [
+    "LA LIBERTAD"
+   ]
+  },
+  {
+   "zone_id": "lalibertad_huamanzana",
+   "geometry_sha256": "ca2300dab163fe9a3cd8435aa4b324c8760857976a2fde81cd037ff4a9f3bc39",
+   "basin_area_km2": 1435.36,
+   "intersections": [
+    {
+     "department": "LA LIBERTAD",
+     "province": "VIRU",
+     "area_km2": 936.09,
+     "zone_fraction": 0.6522
+    },
+    {
+     "department": "LA LIBERTAD",
+     "province": "SANTIAGO DE CHUCO",
+     "area_km2": 394.93,
+     "zone_fraction": 0.2751
+    },
+    {
+     "department": "LA LIBERTAD",
+     "province": "JULCAN",
+     "area_km2": 104.34,
+     "zone_fraction": 0.0727
+    }
+   ],
+   "slivers_below_min_fraction": [],
+   "basin_fraction_covered_by_boundaries": 1.0,
+   "departments": [
+    "LA LIBERTAD"
+   ]
+  }
+ ]
+}
