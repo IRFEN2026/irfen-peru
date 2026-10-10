@@ -1,0 +1,175 @@
+name: IRFEN - Phase2 Santa ANA hydrography raw capture
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/phase2-santa-ana-hydrography-freeze.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  santa-hydrography-research-capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Contract tests and one bounded official-source capture
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/santa_ana_hydrography_capture.py <<'PY'
+          import hashlib
+          import json
+          import pathlib
+          import sys
+          import unittest
+          from datetime import datetime, timezone
+          from urllib.error import HTTPError, URLError
+          from urllib.parse import urlencode
+          from urllib.request import Request, urlopen
+
+          LAYER = 'https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0'
+          WHERE = "UPPER(NOMBRE_CA) LIKE '%SANTA%' OR UPPER(NOMBRE_UH) LIKE '%SANTA%'"
+          FIELDS = 'OBJECTID_1,CODIGO_CA,NOMBRE_CA,TIPO_CA,NOMBRE_UH,CODIGO_UH,LONG_KM'
+          PARAMS = {'where': WHERE, 'outFields': FIELDS, 'returnGeometry': 'true', 'outSR': '4326', 'f': 'geojson'}
+          URL = LAYER + '/query?' + urlencode(PARAMS)
+          OUT = pathlib.Path('artifacts/santa_ana_hydrography')
+          GUARDS = {
+              'deployment_status': 'RESEARCH_ONLY', 'test_mode': 'TEST_ONLY',
+              'production_use': False, 'production_ready': False,
+              'operational_alerting_enabled': False, 'activation_gate': 'BLOCKED',
+              'missing_data_rule': 'UNKNOWN_NOT_LOW_RISK',
+              'decision_thresholds': None, 'hydraulic_factors': None,
+              'map_publication_authorized': False,
+              'historical_2011_axis_equivalence': False,
+              'hydraulic_capacity_inferred': False,
+          }
+
+          def positions(node):
+              if isinstance(node, (list, tuple)):
+                  if len(node) >= 2 and all(type(v) in (int, float) for v in node[:2]):
+                      yield (float(node[0]), float(node[1]))
+                  else:
+                      for child in node:
+                          yield from positions(child)
+
+          def parse_response(raw):
+              doc = json.loads(raw)
+              if doc.get('type') != 'FeatureCollection' or not isinstance(doc.get('features'), list):
+                  raise ValueError('SOURCE_SCHEMA_UNEXPECTED: not a GeoJSON FeatureCollection')
+              if doc.get('exceededTransferLimit') is True:
+                  raise ValueError('SOURCE_TRUNCATED: server transfer limit')
+              if not doc['features']:
+                  raise ValueError('SOURCE_NO_MATCHES: no candidates; not a negative')
+              rows = []
+              for f in doc['features']:
+                  geom = f.get('geometry') or {}
+                  if geom.get('type') not in ('LineString', 'MultiLineString'):
+                      raise ValueError('SOURCE_GEOMETRY_UNEXPECTED')
+                  coords = list(positions(geom.get('coordinates')))
+                  if not coords or any(not (-180 <= x <= 180 and -90 <= y <= 90) for x, y in coords):
+                      raise ValueError('SOURCE_COORDINATES_UNEXPECTED')
+                  xs, ys = zip(*coords)
+                  attrs = f.get('properties') or {}
+                  rows.append({
+                      'attributes': {k: attrs.get(k) for k in FIELDS.split(',')},
+                      'geometry_type': geom['type'],
+                      'bbox_epsg4326': [min(xs), min(ys), max(xs), max(ys)],
+                      'coordinate_count': len(coords),
+                  })
+              return rows
+
+          class ContractTests(unittest.TestCase):
+              def test_fail_closed(self):
+                  self.assertEqual(GUARDS['activation_gate'], 'BLOCKED')
+                  self.assertEqual(GUARDS['missing_data_rule'], 'UNKNOWN_NOT_LOW_RISK')
+                  self.assertFalse(GUARDS['production_use'])
+                  self.assertFalse(GUARDS['production_ready'])
+                  self.assertFalse(GUARDS['operational_alerting_enabled'])
+                  self.assertFalse(GUARDS['map_publication_authorized'])
+                  self.assertIsNone(GUARDS['decision_thresholds'])
+                  self.assertIsNone(GUARDS['hydraulic_factors'])
+              def test_exact_source_query(self):
+                  self.assertTrue(URL.startswith(LAYER + '/query?'))
+                  self.assertIn('NOMBRE_CA', WHERE)
+                  self.assertIn('NOMBRE_UH', WHERE)
+                  self.assertEqual(PARAMS['f'], 'geojson')
+                  self.assertEqual(PARAMS['outSR'], '4326')
+              def test_empty_response_not_silently_accepted(self):
+                  with self.assertRaisesRegex(ValueError, 'SOURCE_NO_MATCHES'):
+                      parse_response(b'{"type":"FeatureCollection","features":[]}')
+              def test_esri_error_not_silently_accepted(self):
+                  with self.assertRaisesRegex(ValueError, 'SOURCE_SCHEMA_UNEXPECTED'):
+                      parse_response(b'{"error":{"code":500}}')
+              def test_raw_digest_uses_exact_bytes(self):
+                  self.assertEqual(hashlib.sha256(b'abc').hexdigest(),
+                                   'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad')
+
+          def capture():
+              OUT.mkdir(parents=True, exist_ok=True)
+              receipt = {
+                  'source': {'institution': 'Autoridad Nacional del Agua',
+                             'service': 'ONRH/Rios_Quebradas_AAVI/MapServer/0',
+                             'service_year': 2018,
+                             'source_metadata': LAYER + '?f=pjson',
+                             'query_url': URL,
+                             'spatial_reference': 'EPSG:4326'},
+                  'retrieved_at_utc': datetime.now(timezone.utc).isoformat(),
+                  'guards': GUARDS,
+                  'scientific_role': 'CURRENT_ANA_HYDROGRAPHY_CONTEXT_CANDIDATES_ONLY',
+                  'candidate_identity_adjudicated': False,
+                  '2011_datum_established': False,
+                  '2011_axis_transformed': False,
+                  'geometry_promoted_to_map': False,
+              }
+              try:
+                  request = Request(URL, headers={'User-Agent': 'IRFEN-RESEARCH-ONLY/0.1',
+                                                  'Accept': 'application/geo+json,application/json'})
+                  with urlopen(request, timeout=70) as response:
+                      raw = response.read(25_000_001)
+                  if len(raw) > 25_000_000:
+                      raise ValueError('SOURCE_TOO_LARGE_FOR_BOUNDED_CAPTURE')
+                  rows = parse_response(raw)
+              except (HTTPError, URLError, TimeoutError, OSError) as exc:
+                  receipt['status'] = 'SOURCE_ACCESS_UNAVAILABLE'
+                  receipt['access_error_type'] = type(exc).__name__
+              except (ValueError, UnicodeError, json.JSONDecodeError) as exc:
+                  receipt['status'] = 'SOURCE_VALIDATION_FAILED'
+                  receipt['validation_error'] = str(exc)
+                  (OUT / 'receipt.json').write_text(json.dumps(receipt, indent=2, ensure_ascii=False) + '\n')
+                  raise
+              else:
+                  (OUT / 'raw_response.geojson').write_bytes(raw)
+                  receipt.update({'status': 'RAW_CAPTURED_CANDIDATES_UNADJUDICATED',
+                                  'raw_sha256': hashlib.sha256(raw).hexdigest(),
+                                  'raw_size_bytes': len(raw),
+                                  'candidate_count': len(rows),
+                                  'candidates': rows})
+              (OUT / 'receipt.json').write_text(json.dumps(receipt, indent=2, ensure_ascii=False) + '\n')
+              print('SANTA_ANA_CAPTURE_STATUS=' + receipt['status'])
+              if 'raw_sha256' in receipt:
+                  print('SANTA_ANA_RAW_SHA256=' + receipt['raw_sha256'])
+
+          if __name__ == '__main__':
+              if sys.argv[1:] == ['--self-test']:
+                  unittest.main(argv=[sys.argv[0]], verbosity=2)
+              elif sys.argv[1:] == ['--capture']:
+                  capture()
+              else:
+                  raise SystemExit('usage: --self-test | --capture')
+          PY
+          python /tmp/santa_ana_hydrography_capture.py --self-test
+          python /tmp/santa_ana_hydrography_capture.py --capture
+      - name: Archive raw bytes and provenance receipt without publishing geometry
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: santa-ana-hydrography-raw-capture
+          path: artifacts/santa_ana_hydrography/
+          if-no-files-found: warn
+          retention-days: 90
