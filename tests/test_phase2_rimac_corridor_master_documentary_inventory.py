@@ -67,6 +67,36 @@ def test_pending_aliases_are_not_promoted_to_identity_equivalence():
         assert group["needed"]
         assert set(group["inventory_ids"]).issubset(ids)
     assert d["counts"]["possible_alias_double_count_unresolved"] is True
+    # Documentary role clues cannot silently adjudicate a shared channel,
+    # sector alias, outlet or map geometry, even when an IGP figure names both.
+    for group in groups:
+        for lead in group.get("role_evidence_leads", []):
+            assert lead["source_id"] and lead["source_url"]
+            assert lead["printed_page_locators"] and lead["observed_documentary_phrases"]
+            assert lead["source_text_verified"] is False
+            assert lead["original_pdf_bytes_archived_in_this_contract"] is False
+            assert lead["original_pdf_sha256"] is None
+            assert lead["adjudication"] == "DOCUMENTARY_ROLE_LEAD_ONLY_NO_ALIAS_OR_GEOMETRY_PROMOTION"
+            assert lead["map_publishable"] is False
+
+    corrales = next(g for g in groups if "lima_lurigancho_corrales" in g["inventory_ids"])
+    assert corrales["status"] == "PENDING_ADJUDICATION"
+    assert set(corrales["inventory_ids"]) == {
+        "lima_lurigancho_corrales", "lima_lurigancho_rayos_de_sol"
+    }
+    assert len(corrales["role_evidence_leads"]) == 1
+    role = corrales["role_evidence_leads"][0]
+    assert role["source_id"] == "IGP-IT-001-2023"
+    assert role["printed_page_locators"] == [50, 66]
+    assert role["observed_documentary_phrases"] == [
+        "Quebrada Corrales (Rayos del Sol)",
+        "Rayos del Sol (Quebrada Corrales)",
+    ]
+    for unit in d["units"]:
+        if unit["id"] in corrales["inventory_ids"]:
+            assert unit["map_publishable"] is False
+            assert unit["exact_confluence_coordinate"] is None
+            assert unit["outlet_coordinate"] is None
 
 
 def test_no_outlet_tau_capacity_overflow_or_new_map_publication():
