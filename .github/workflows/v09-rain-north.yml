@@ -1,0 +1,55 @@
+name: IRFEN v0.9 - Lluvia IMERG Early continua para zonas del norte (TEST_ONLY)
+
+on:
+  schedule:
+    - cron: "22,52 * * * *"
+  workflow_dispatch:
+  push:
+    branches:
+      - v09/rain-engine-dashboard
+    paths:
+      - scripts/v09_imerg_north_archive.py
+      - .github/workflows/v09-rain-north.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: v09-rain-north-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  imerg:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install dependencies (same as the v0.8 IMERG probe)
+        run: pip install -r requirements.txt
+      - name: Archive every missing half-hour of the last 30 h (bounded); failures are not zero rain
+        env:
+          EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
+        run: timeout --signal=TERM --kill-after=10s 900s python scripts/v09_imerg_north_archive.py
+      - name: Persist (bot commit, bounded retries)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/v09/rain
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "IRFEN v0.9: lluvia IMERG Early zonas norte (TEST_ONLY)"
+          BR="${GITHUB_REF_NAME}"
+          for attempt in 1 2 3 4; do
+            git fetch -q origin "$BR"
+            if ! git rebase -q "origin/$BR"; then git rebase --abort || true; echo "Real conflict; not overwriting" >&2; exit 1; fi
+            if git push -q origin "HEAD:$BR"; then exit 0; fi
+            sleep $((attempt * 3))
+          done
+          exit 1

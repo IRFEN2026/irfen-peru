@@ -26,6 +26,7 @@ A = load_module("v09_senamhi_avisos_for_crossing", "scripts/v09_senamhi_avisos.p
 O = load_module("v09_build_zone_admin_overlay", "scripts/v09_build_zone_admin_overlay.py")
 FIX = ROOT / "tests/fixtures/v09_senamhi_avisos"
 ZONES = json.loads((ROOT / "config/v09_north_surveillance_zones_v0_1.json").read_text(encoding="utf-8"))
+N_BASINS = 11  # 10 ANA basins + San Ildefonso (v0.8 validated DEM watershed)
 
 
 def aviso(name="acp_lluvias_282_2026", family="AVISO_CORTO_PLAZO_LLUVIAS", status="VIGENTE"):
@@ -40,7 +41,7 @@ def aviso(name="acp_lluvias_282_2026", family="AVISO_CORTO_PLAZO_LLUVIAS", statu
 class ZonesConfig(unittest.TestCase):
     def test_committed_zones_verify(self):
         self.assertEqual(X.check_zones(ZONES), [])
-        self.assertEqual(sum(z["zone_type"] == "BASIN_GEOMETRY" for z in ZONES["zones"]), 10)
+        self.assertEqual(sum(z["zone_type"] == "BASIN_GEOMETRY" for z in ZONES["zones"]), N_BASINS)
         for key, value in X.GUARDS.items():
             self.assertEqual(ZONES[key], value)
 
@@ -62,7 +63,7 @@ class CrossingWithoutOfficialBoundaries(unittest.TestCase):
             by_method.setdefault(l["relation_method"], []).append(l["zone_id"])
         self.assertEqual(sorted(by_method["LISTED_PROVINCE_CONTEXT_NO_BASIN"]),
                          ["piura_province_context:" + p for p in ("AYABACA", "HUANCABAMBA", "MORROPON", "PIURA", "SULLANA")])
-        self.assertEqual(len(by_method["DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN"]), 10)  # Tumbes, Lambayeque, La Libertad basins
+        self.assertEqual(len(by_method["DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN"]), N_BASINS)  # Tumbes, Lambayeque, La Libertad basins
         self.assertNotIn("BASIN_INTERSECTS_LISTED_PROVINCE", by_method)  # never claimed without official boundaries
         moche = next(l for l in links if l["zone_id"] == "lalibertad_moche")
         self.assertEqual(moche["evidence"]["official_boundaries"], "NOT_AVAILABLE_OR_UNVERIFIED")
@@ -111,7 +112,7 @@ class TemporalUpdate(unittest.TestCase):
         out = X.surveillance_list(reg, ZONES, None, after, "AL_DIA")
         self.assertEqual(out["surveillance_zones"], [])
         self.assertEqual(out["aviso_links"][a["aviso_key"]]["status"], "VENCIDO")
-        self.assertEqual(len(out["aviso_links"][a["aviso_key"]]["links"]), 15)  # history keeps its territorial links
+        self.assertEqual(len(out["aviso_links"][a["aviso_key"]]["links"]), N_BASINS + 5)  # history keeps its territorial links
         self.assertIsNone(out["statuses_valid_until_utc"])
         before = X.surveillance_list(reg, ZONES, None, datetime(2026, 10, 9, 17, 59, tzinfo=timezone.utc), "AL_DIA")
         self.assertEqual({a["status"] for r in before["surveillance_zones"] for a in r["avisos"]}, {"FUTURO"})
@@ -121,7 +122,7 @@ class TemporalUpdate(unittest.TestCase):
         a["current"].pop("validity_start")
         a["current"].pop("validity_end")
         out = X.surveillance_list(dict(avisos={a["aviso_key"]: a}), ZONES, None, NOW_VIGENTE, "AL_DIA")
-        self.assertEqual(len(out["surveillance_zones"]), 15)
+        self.assertEqual(len(out["surveillance_zones"]), N_BASINS + 5)
         self.assertTrue(all("DESCONOCIDO" in " ".join(r["missing_data"]) for r in out["surveillance_zones"]))
 
     def test_failed_source_marks_the_list_possibly_incomplete(self):
@@ -139,7 +140,7 @@ class RealOfficialOverlay(unittest.TestCase):
         overlay = json.loads((ROOT / "data/v09/zone_admin_overlay_v0_1.json").read_text(encoding="utf-8"))
         verified, notes = X.verify_overlay(overlay, ZONES["zones"])
         self.assertEqual(notes, [])
-        self.assertEqual(len(verified), 10)
+        self.assertEqual(len(verified), N_BASINS)
         self.assertTrue(all(v["negative_allowed"] for v in verified.values()))
         self.assertEqual(overlay["boundary_source"]["legal_status"], "REFERENTIAL_CENSUS_LIMITS_NOT_LEGAL_DEMARCATION")
 
