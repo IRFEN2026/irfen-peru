@@ -45,7 +45,7 @@ def geodesic_area_km2(geom) -> float:
     return abs(Geod(ellps="WGS84").geometry_area_perimeter(geom)[0]) / 1e6
 
 
-def build_overlay(boundaries: dict, provenance: dict, zones_cfg: dict, boundary_sha256: str) -> dict:
+def build_overlay(boundaries: dict, provenance: dict, zones_cfg: dict, boundary_sha256: str, boundary_path: str | None = None) -> dict:
     from shapely.geometry import shape
     from shapely.ops import unary_union
 
@@ -95,7 +95,7 @@ def build_overlay(boundaries: dict, provenance: dict, zones_cfg: dict, boundary_
                               departments=sorted({r["department"] for r in hits})))
     return dict(schema_version="0.1", overlay_id="irfen-v09-zone-admin-overlay:v0.1", deployment_status="RESEARCH_ONLY",
                 test_mode="TEST_ONLY", activation_gate="BLOCKED", map_publishable=False,
-                boundary_source=dict(provenance, sha256=boundary_sha256),
+                boundary_source=dict(provenance, sha256=boundary_sha256, path=boundary_path),
                 method="shapely intersection of the official basin geometry with each official province polygon; geodesic area on WGS84",
                 min_fraction=MIN_FRACTION, zones=out_zones)
 
@@ -111,7 +111,8 @@ def main(argv: list[str] | None = None) -> int:
     if provenance.get("sha256") not in (None, digest):
         print("FAIL: boundary file SHA-256 differs from its provenance record")
         return 1
-    overlay = build_overlay(json.loads(raw), provenance, json.loads(ZONES.read_text(encoding="utf-8")), digest)
+    rel = str(args.boundaries.resolve().relative_to(ROOT))  # the boundary file must be archived inside the repository
+    overlay = build_overlay(json.loads(raw), provenance, json.loads(ZONES.read_text(encoding="utf-8")), digest, rel)
     OVERLAY.parent.mkdir(parents=True, exist_ok=True)
     OVERLAY.write_text(json.dumps(overlay, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     for z in overlay["zones"]:
