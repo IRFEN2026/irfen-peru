@@ -1,0 +1,2388 @@
+{
+ "schema_version": "0.1",
+ "archive_id": "irfen-v09-imerg-early-north:v0.1",
+ "deployment_status": "RESEARCH_ONLY",
+ "test_mode": "TEST_ONLY",
+ "production_use": false,
+ "production_ready": false,
+ "operational_alerting_enabled": false,
+ "activation_gate": "BLOCKED",
+ "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+ "decision_thresholds": null,
+ "hydraulic_factors": null,
+ "map_publishable": false,
+ "source": {
+  "product": "GPM_3IMERGHHE",
+  "version": "07",
+  "provider": "NASA GES DISC via earthaccess",
+  "nature": "satellite estimate, half-hourly, Early run (hours of latency); not a real-time observation"
+ },
+ "policy": {
+  "window_hours": 30,
+  "max_downloads_per_run": 16,
+  "retain_hours": 96,
+  "sample": "area-weighted mean of 0.1° cells intersecting the target polygon (probe_imerg_early_live.polygon_mean)"
+ },
+ "targets": {
+  "tumbes_bocapan": {
+   "name": "Cuenca Bocapán",
+   "kind": "BASIN_POLYGON",
+   "geometry_sha256": "9f3473ee383cb1107a5c885b2cf4582b61b27feb61108aab0567bad9f7385edf"
+  },
+  "lambayeque_motupe": {
+   "name": "Cuenca Motupe (contexto hidrológico ANA)",
+   "kind": "BASIN_POLYGON",
+   "geometry_sha256": "cde815f60f4901b767107ea024f81b313f58da59e5cc73829ecf375ce4905001"
+  },
+  "lambayeque_chancay_lambayeque_chongoyape": {
+   "name": "Chancay-Lambayeque (Chongoyape)",
+   "kind": "BASIN_POLYGON",
+   "geometry_sha256": "1f62d4ae26c692c36c5001271b25bb46cf44ad5d4720782e7a701e1df2025639"
+  },
+  "lambayeque_zana_oyotun": {
+   "name": "Zaña (Oyotún)",
+   "kind": "BASIN_POLYGON",
+   "geometry_sha256": "b92123950eb08839d553d31262498faad95a42f572399bf60c41d0b1776ca73c"
+  },
+  "lalibertad_jequetepeque": {
+   "name": "Cuenca Jequetepeque",
+   "kind": "BASIN_POLYGON",
+   "geometry_sha256": "6972837f33c89d826d29abdbbc17667b84e475cb33a8edb94b8d82d82647c4fc"
+  },
+  "lalibertad_san_ildefonso": {
+   "name": "Quebrada San Ildefonso (Trujillo)",
+   "kind": "BASIN_POLYGON",
+   "geometry_sha256": "7e928de38e1c144d2738e3fefcead4d5d945d94a2003a3533e56e4a530e699f9"
+  },
+  "lalibertad_chaman": {
+   "name": "Cuenca Chamán",
+   "kind": "BASIN_POLYGON",
+   "geometry_sha256": "6e30e546c9717719c5add310259c278c055d0c815ae81c883c4a1efa672b0fba"
+  },
+  "lalibertad_chicama": {
+   "name": "Cuenca Chicama",
+   "kind": "BASIN_POLYGON",
+   "geometry_sha256": "5b430e97df2e947564a0acf3d1d25906830b7362cffffa3e40523c0fa8065e01"
+  },
+  "lalibertad_moche": {
+   "name": "Cuenca Moche",
+   "kind": "BASIN_POLYGON",
+   "geometry_sha256": "1209f6b9028f7573919fa1a4a07d150a5084765ed923a948671d88bb4a1cd79d"
+  },
+  "lalibertad_viru": {
+   "name": "Cuenca Virú",
+   "kind": "BASIN_POLYGON",
+   "geometry_sha256": "290f1426f325ca2da8d241776113f669fa875983368d6f617e06edfb5af5a9dd"
+  },
+  "lalibertad_huamanzana": {
+   "name": "Cuenca Huamanzaña",
+   "kind": "BASIN_POLYGON",
+   "geometry_sha256": "ca2300dab163fe9a3cd8435aa4b324c8760857976a2fde81cd037ff4a9f3bc39"
+  },
+  "piura_province_context:PIURA": {
+   "name": "Provincia Piura (Piura)",
+   "kind": "ADMIN_PROVINCE_POLYGON_INEI_REFERENTIAL",
+   "geometry_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e"
+  },
+  "piura_province_context:AYABACA": {
+   "name": "Provincia Ayabaca (Piura)",
+   "kind": "ADMIN_PROVINCE_POLYGON_INEI_REFERENTIAL",
+   "geometry_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e"
+  },
+  "piura_province_context:HUANCABAMBA": {
+   "name": "Provincia Huancabamba (Piura)",
+   "kind": "ADMIN_PROVINCE_POLYGON_INEI_REFERENTIAL",
+   "geometry_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e"
+  },
+  "piura_province_context:MORROPON": {
+   "name": "Provincia Morropon (Piura)",
+   "kind": "ADMIN_PROVINCE_POLYGON_INEI_REFERENTIAL",
+   "geometry_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e"
+  },
+  "piura_province_context:PAITA": {
+   "name": "Provincia Paita (Piura)",
+   "kind": "ADMIN_PROVINCE_POLYGON_INEI_REFERENTIAL",
+   "geometry_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e"
+  },
+  "piura_province_context:SULLANA": {
+   "name": "Provincia Sullana (Piura)",
+   "kind": "ADMIN_PROVINCE_POLYGON_INEI_REFERENTIAL",
+   "geometry_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e"
+  },
+  "piura_province_context:TALARA": {
+   "name": "Provincia Talara (Piura)",
+   "kind": "ADMIN_PROVINCE_POLYGON_INEI_REFERENTIAL",
+   "geometry_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e"
+  },
+  "piura_province_context:SECHURA": {
+   "name": "Provincia Sechura (Piura)",
+   "kind": "ADMIN_PROVINCE_POLYGON_INEI_REFERENTIAL",
+   "geometry_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e"
+  }
+ },
+ "granules": [
+  {
+   "granule": "3B-HHR-E.MS.MRG.3IMERG.20261009-S130000-E132959.0780.V07C.HDF5",
+   "time_utc": "2026-10-09T13:00:00+00:00",
+   "retrieved_at_utc": "2026-10-10T02:48:27.930418+00:00",
+   "units": "mm/hr",
+   "targets": {
+    "tumbes_bocapan": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 14,
+     "cells_intersected": 14,
+     "covered_pct": 100.0
+    },
+    "lambayeque_motupe": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "lambayeque_chancay_lambayeque_chongoyape": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 54,
+     "cells_intersected": 54,
+     "covered_pct": 100.0
+    },
+    "lambayeque_zana_oyotun": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 28,
+     "cells_intersected": 28,
+     "covered_pct": 100.0
+    },
+    "lalibertad_jequetepeque": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 53,
+     "cells_intersected": 53,
+     "covered_pct": 100.0
+    },
+    "lalibertad_san_ildefonso": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 2,
+     "cells_intersected": 2,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chaman": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 20,
+     "cells_intersected": 20,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chicama": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 58,
+     "cells_intersected": 58,
+     "covered_pct": 100.0
+    },
+    "lalibertad_moche": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 31,
+     "cells_intersected": 31,
+     "covered_pct": 100.0
+    },
+    "lalibertad_viru": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 30,
+     "cells_intersected": 30,
+     "covered_pct": 100.0
+    },
+    "lalibertad_huamanzana": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 25,
+     "cells_intersected": 25,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PIURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:AYABACA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 67,
+     "cells_intersected": 67,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:HUANCABAMBA": {
+     "rate_mm_hr": 0.0009,
+     "accum_30min_mm": 0.0005,
+     "valid_cells": 59,
+     "cells_intersected": 59,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:MORROPON": {
+     "rate_mm_hr": 0.0002,
+     "accum_30min_mm": 0.0001,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PAITA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 27,
+     "cells_intersected": 27,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SULLANA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 71,
+     "cells_intersected": 71,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:TALARA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 38,
+     "cells_intersected": 38,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SECHURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    }
+   }
+  },
+  {
+   "granule": "3B-HHR-E.MS.MRG.3IMERG.20261009-S133000-E135959.0810.V07C.HDF5",
+   "time_utc": "2026-10-09T13:30:00+00:00",
+   "retrieved_at_utc": "2026-10-10T02:48:27.930418+00:00",
+   "units": "mm/hr",
+   "targets": {
+    "tumbes_bocapan": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 14,
+     "cells_intersected": 14,
+     "covered_pct": 100.0
+    },
+    "lambayeque_motupe": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "lambayeque_chancay_lambayeque_chongoyape": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 54,
+     "cells_intersected": 54,
+     "covered_pct": 100.0
+    },
+    "lambayeque_zana_oyotun": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 28,
+     "cells_intersected": 28,
+     "covered_pct": 100.0
+    },
+    "lalibertad_jequetepeque": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 53,
+     "cells_intersected": 53,
+     "covered_pct": 100.0
+    },
+    "lalibertad_san_ildefonso": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 2,
+     "cells_intersected": 2,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chaman": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 20,
+     "cells_intersected": 20,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chicama": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 58,
+     "cells_intersected": 58,
+     "covered_pct": 100.0
+    },
+    "lalibertad_moche": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 31,
+     "cells_intersected": 31,
+     "covered_pct": 100.0
+    },
+    "lalibertad_viru": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 30,
+     "cells_intersected": 30,
+     "covered_pct": 100.0
+    },
+    "lalibertad_huamanzana": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 25,
+     "cells_intersected": 25,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PIURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:AYABACA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 67,
+     "cells_intersected": 67,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:HUANCABAMBA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 59,
+     "cells_intersected": 59,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:MORROPON": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PAITA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 27,
+     "cells_intersected": 27,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SULLANA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 71,
+     "cells_intersected": 71,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:TALARA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 38,
+     "cells_intersected": 38,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SECHURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    }
+   }
+  },
+  {
+   "granule": "3B-HHR-E.MS.MRG.3IMERG.20261009-S140000-E142959.0840.V07C.HDF5",
+   "time_utc": "2026-10-09T14:00:00+00:00",
+   "retrieved_at_utc": "2026-10-10T02:48:27.930418+00:00",
+   "units": "mm/hr",
+   "targets": {
+    "tumbes_bocapan": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 14,
+     "cells_intersected": 14,
+     "covered_pct": 100.0
+    },
+    "lambayeque_motupe": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "lambayeque_chancay_lambayeque_chongoyape": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 54,
+     "cells_intersected": 54,
+     "covered_pct": 100.0
+    },
+    "lambayeque_zana_oyotun": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 28,
+     "cells_intersected": 28,
+     "covered_pct": 100.0
+    },
+    "lalibertad_jequetepeque": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 53,
+     "cells_intersected": 53,
+     "covered_pct": 100.0
+    },
+    "lalibertad_san_ildefonso": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 2,
+     "cells_intersected": 2,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chaman": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 20,
+     "cells_intersected": 20,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chicama": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 58,
+     "cells_intersected": 58,
+     "covered_pct": 100.0
+    },
+    "lalibertad_moche": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 31,
+     "cells_intersected": 31,
+     "covered_pct": 100.0
+    },
+    "lalibertad_viru": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 30,
+     "cells_intersected": 30,
+     "covered_pct": 100.0
+    },
+    "lalibertad_huamanzana": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 25,
+     "cells_intersected": 25,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PIURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:AYABACA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 67,
+     "cells_intersected": 67,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:HUANCABAMBA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 59,
+     "cells_intersected": 59,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:MORROPON": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PAITA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 27,
+     "cells_intersected": 27,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SULLANA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 71,
+     "cells_intersected": 71,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:TALARA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 38,
+     "cells_intersected": 38,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SECHURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    }
+   }
+  },
+  {
+   "granule": "3B-HHR-E.MS.MRG.3IMERG.20261009-S143000-E145959.0870.V07C.HDF5",
+   "time_utc": "2026-10-09T14:30:00+00:00",
+   "retrieved_at_utc": "2026-10-10T02:48:27.930418+00:00",
+   "units": "mm/hr",
+   "targets": {
+    "tumbes_bocapan": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 14,
+     "cells_intersected": 14,
+     "covered_pct": 100.0
+    },
+    "lambayeque_motupe": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "lambayeque_chancay_lambayeque_chongoyape": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 54,
+     "cells_intersected": 54,
+     "covered_pct": 100.0
+    },
+    "lambayeque_zana_oyotun": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 28,
+     "cells_intersected": 28,
+     "covered_pct": 100.0
+    },
+    "lalibertad_jequetepeque": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 53,
+     "cells_intersected": 53,
+     "covered_pct": 100.0
+    },
+    "lalibertad_san_ildefonso": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 2,
+     "cells_intersected": 2,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chaman": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 20,
+     "cells_intersected": 20,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chicama": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 58,
+     "cells_intersected": 58,
+     "covered_pct": 100.0
+    },
+    "lalibertad_moche": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 31,
+     "cells_intersected": 31,
+     "covered_pct": 100.0
+    },
+    "lalibertad_viru": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 30,
+     "cells_intersected": 30,
+     "covered_pct": 100.0
+    },
+    "lalibertad_huamanzana": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 25,
+     "cells_intersected": 25,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PIURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:AYABACA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 67,
+     "cells_intersected": 67,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:HUANCABAMBA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 59,
+     "cells_intersected": 59,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:MORROPON": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PAITA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 27,
+     "cells_intersected": 27,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SULLANA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 71,
+     "cells_intersected": 71,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:TALARA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 38,
+     "cells_intersected": 38,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SECHURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    }
+   }
+  },
+  {
+   "granule": "3B-HHR-E.MS.MRG.3IMERG.20261009-S150000-E152959.0900.V07C.HDF5",
+   "time_utc": "2026-10-09T15:00:00+00:00",
+   "retrieved_at_utc": "2026-10-10T02:48:27.930418+00:00",
+   "units": "mm/hr",
+   "targets": {
+    "tumbes_bocapan": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 14,
+     "cells_intersected": 14,
+     "covered_pct": 100.0
+    },
+    "lambayeque_motupe": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "lambayeque_chancay_lambayeque_chongoyape": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 54,
+     "cells_intersected": 54,
+     "covered_pct": 100.0
+    },
+    "lambayeque_zana_oyotun": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 28,
+     "cells_intersected": 28,
+     "covered_pct": 100.0
+    },
+    "lalibertad_jequetepeque": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 53,
+     "cells_intersected": 53,
+     "covered_pct": 100.0
+    },
+    "lalibertad_san_ildefonso": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 2,
+     "cells_intersected": 2,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chaman": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 20,
+     "cells_intersected": 20,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chicama": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 58,
+     "cells_intersected": 58,
+     "covered_pct": 100.0
+    },
+    "lalibertad_moche": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 31,
+     "cells_intersected": 31,
+     "covered_pct": 100.0
+    },
+    "lalibertad_viru": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 30,
+     "cells_intersected": 30,
+     "covered_pct": 100.0
+    },
+    "lalibertad_huamanzana": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 25,
+     "cells_intersected": 25,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PIURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:AYABACA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 67,
+     "cells_intersected": 67,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:HUANCABAMBA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 59,
+     "cells_intersected": 59,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:MORROPON": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PAITA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 27,
+     "cells_intersected": 27,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SULLANA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 71,
+     "cells_intersected": 71,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:TALARA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 38,
+     "cells_intersected": 38,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SECHURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    }
+   }
+  },
+  {
+   "granule": "3B-HHR-E.MS.MRG.3IMERG.20261009-S153000-E155959.0930.V07C.HDF5",
+   "time_utc": "2026-10-09T15:30:00+00:00",
+   "retrieved_at_utc": "2026-10-10T02:48:27.930418+00:00",
+   "units": "mm/hr",
+   "targets": {
+    "tumbes_bocapan": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 14,
+     "cells_intersected": 14,
+     "covered_pct": 100.0
+    },
+    "lambayeque_motupe": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "lambayeque_chancay_lambayeque_chongoyape": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 54,
+     "cells_intersected": 54,
+     "covered_pct": 100.0
+    },
+    "lambayeque_zana_oyotun": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 28,
+     "cells_intersected": 28,
+     "covered_pct": 100.0
+    },
+    "lalibertad_jequetepeque": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 53,
+     "cells_intersected": 53,
+     "covered_pct": 100.0
+    },
+    "lalibertad_san_ildefonso": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 2,
+     "cells_intersected": 2,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chaman": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 20,
+     "cells_intersected": 20,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chicama": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 58,
+     "cells_intersected": 58,
+     "covered_pct": 100.0
+    },
+    "lalibertad_moche": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 31,
+     "cells_intersected": 31,
+     "covered_pct": 100.0
+    },
+    "lalibertad_viru": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 30,
+     "cells_intersected": 30,
+     "covered_pct": 100.0
+    },
+    "lalibertad_huamanzana": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 25,
+     "cells_intersected": 25,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PIURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:AYABACA": {
+     "rate_mm_hr": 0.0003,
+     "accum_30min_mm": 0.0001,
+     "valid_cells": 67,
+     "cells_intersected": 67,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:HUANCABAMBA": {
+     "rate_mm_hr": 0.0042,
+     "accum_30min_mm": 0.0021,
+     "valid_cells": 59,
+     "cells_intersected": 59,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:MORROPON": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PAITA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 27,
+     "cells_intersected": 27,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SULLANA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 71,
+     "cells_intersected": 71,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:TALARA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 38,
+     "cells_intersected": 38,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SECHURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    }
+   }
+  },
+  {
+   "granule": "3B-HHR-E.MS.MRG.3IMERG.20261009-S160000-E162959.0960.V07C.HDF5",
+   "time_utc": "2026-10-09T16:00:00+00:00",
+   "retrieved_at_utc": "2026-10-10T02:48:27.930418+00:00",
+   "units": "mm/hr",
+   "targets": {
+    "tumbes_bocapan": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 14,
+     "cells_intersected": 14,
+     "covered_pct": 100.0
+    },
+    "lambayeque_motupe": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "lambayeque_chancay_lambayeque_chongoyape": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 54,
+     "cells_intersected": 54,
+     "covered_pct": 100.0
+    },
+    "lambayeque_zana_oyotun": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 28,
+     "cells_intersected": 28,
+     "covered_pct": 100.0
+    },
+    "lalibertad_jequetepeque": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 53,
+     "cells_intersected": 53,
+     "covered_pct": 100.0
+    },
+    "lalibertad_san_ildefonso": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 2,
+     "cells_intersected": 2,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chaman": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 20,
+     "cells_intersected": 20,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chicama": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 58,
+     "cells_intersected": 58,
+     "covered_pct": 100.0
+    },
+    "lalibertad_moche": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 31,
+     "cells_intersected": 31,
+     "covered_pct": 100.0
+    },
+    "lalibertad_viru": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 30,
+     "cells_intersected": 30,
+     "covered_pct": 100.0
+    },
+    "lalibertad_huamanzana": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 25,
+     "cells_intersected": 25,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PIURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:AYABACA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 67,
+     "cells_intersected": 67,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:HUANCABAMBA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 59,
+     "cells_intersected": 59,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:MORROPON": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PAITA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 27,
+     "cells_intersected": 27,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SULLANA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 71,
+     "cells_intersected": 71,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:TALARA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 38,
+     "cells_intersected": 38,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SECHURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    }
+   }
+  },
+  {
+   "granule": "3B-HHR-E.MS.MRG.3IMERG.20261009-S163000-E165959.0990.V07C.HDF5",
+   "time_utc": "2026-10-09T16:30:00+00:00",
+   "retrieved_at_utc": "2026-10-10T02:48:27.930418+00:00",
+   "units": "mm/hr",
+   "targets": {
+    "tumbes_bocapan": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 14,
+     "cells_intersected": 14,
+     "covered_pct": 100.0
+    },
+    "lambayeque_motupe": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "lambayeque_chancay_lambayeque_chongoyape": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 54,
+     "cells_intersected": 54,
+     "covered_pct": 100.0
+    },
+    "lambayeque_zana_oyotun": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 28,
+     "cells_intersected": 28,
+     "covered_pct": 100.0
+    },
+    "lalibertad_jequetepeque": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 53,
+     "cells_intersected": 53,
+     "covered_pct": 100.0
+    },
+    "lalibertad_san_ildefonso": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 2,
+     "cells_intersected": 2,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chaman": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 20,
+     "cells_intersected": 20,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chicama": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 58,
+     "cells_intersected": 58,
+     "covered_pct": 100.0
+    },
+    "lalibertad_moche": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 31,
+     "cells_intersected": 31,
+     "covered_pct": 100.0
+    },
+    "lalibertad_viru": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 30,
+     "cells_intersected": 30,
+     "covered_pct": 100.0
+    },
+    "lalibertad_huamanzana": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 25,
+     "cells_intersected": 25,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PIURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:AYABACA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 67,
+     "cells_intersected": 67,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:HUANCABAMBA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 59,
+     "cells_intersected": 59,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:MORROPON": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PAITA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 27,
+     "cells_intersected": 27,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SULLANA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 71,
+     "cells_intersected": 71,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:TALARA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 38,
+     "cells_intersected": 38,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SECHURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    }
+   }
+  },
+  {
+   "granule": "3B-HHR-E.MS.MRG.3IMERG.20261009-S170000-E172959.1020.V07C.HDF5",
+   "time_utc": "2026-10-09T17:00:00+00:00",
+   "retrieved_at_utc": "2026-10-10T02:48:27.930418+00:00",
+   "units": "mm/hr",
+   "targets": {
+    "tumbes_bocapan": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 14,
+     "cells_intersected": 14,
+     "covered_pct": 100.0
+    },
+    "lambayeque_motupe": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "lambayeque_chancay_lambayeque_chongoyape": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 54,
+     "cells_intersected": 54,
+     "covered_pct": 100.0
+    },
+    "lambayeque_zana_oyotun": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 28,
+     "cells_intersected": 28,
+     "covered_pct": 100.0
+    },
+    "lalibertad_jequetepeque": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 53,
+     "cells_intersected": 53,
+     "covered_pct": 100.0
+    },
+    "lalibertad_san_ildefonso": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 2,
+     "cells_intersected": 2,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chaman": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 20,
+     "cells_intersected": 20,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chicama": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 58,
+     "cells_intersected": 58,
+     "covered_pct": 100.0
+    },
+    "lalibertad_moche": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 31,
+     "cells_intersected": 31,
+     "covered_pct": 100.0
+    },
+    "lalibertad_viru": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 30,
+     "cells_intersected": 30,
+     "covered_pct": 100.0
+    },
+    "lalibertad_huamanzana": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 25,
+     "cells_intersected": 25,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PIURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:AYABACA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 67,
+     "cells_intersected": 67,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:HUANCABAMBA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 59,
+     "cells_intersected": 59,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:MORROPON": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PAITA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 27,
+     "cells_intersected": 27,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SULLANA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 71,
+     "cells_intersected": 71,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:TALARA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 38,
+     "cells_intersected": 38,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SECHURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    }
+   }
+  },
+  {
+   "granule": "3B-HHR-E.MS.MRG.3IMERG.20261009-S173000-E175959.1050.V07C.HDF5",
+   "time_utc": "2026-10-09T17:30:00+00:00",
+   "retrieved_at_utc": "2026-10-10T02:48:27.930418+00:00",
+   "units": "mm/hr",
+   "targets": {
+    "tumbes_bocapan": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 14,
+     "cells_intersected": 14,
+     "covered_pct": 100.0
+    },
+    "lambayeque_motupe": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "lambayeque_chancay_lambayeque_chongoyape": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 54,
+     "cells_intersected": 54,
+     "covered_pct": 100.0
+    },
+    "lambayeque_zana_oyotun": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 28,
+     "cells_intersected": 28,
+     "covered_pct": 100.0
+    },
+    "lalibertad_jequetepeque": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 53,
+     "cells_intersected": 53,
+     "covered_pct": 100.0
+    },
+    "lalibertad_san_ildefonso": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 2,
+     "cells_intersected": 2,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chaman": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 20,
+     "cells_intersected": 20,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chicama": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 58,
+     "cells_intersected": 58,
+     "covered_pct": 100.0
+    },
+    "lalibertad_moche": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 31,
+     "cells_intersected": 31,
+     "covered_pct": 100.0
+    },
+    "lalibertad_viru": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 30,
+     "cells_intersected": 30,
+     "covered_pct": 100.0
+    },
+    "lalibertad_huamanzana": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 25,
+     "cells_intersected": 25,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PIURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:AYABACA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 67,
+     "cells_intersected": 67,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:HUANCABAMBA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 59,
+     "cells_intersected": 59,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:MORROPON": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PAITA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 27,
+     "cells_intersected": 27,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SULLANA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 71,
+     "cells_intersected": 71,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:TALARA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 38,
+     "cells_intersected": 38,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SECHURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    }
+   }
+  },
+  {
+   "granule": "3B-HHR-E.MS.MRG.3IMERG.20261009-S180000-E182959.1080.V07C.HDF5",
+   "time_utc": "2026-10-09T18:00:00+00:00",
+   "retrieved_at_utc": "2026-10-10T02:48:27.930418+00:00",
+   "units": "mm/hr",
+   "targets": {
+    "tumbes_bocapan": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 14,
+     "cells_intersected": 14,
+     "covered_pct": 100.0
+    },
+    "lambayeque_motupe": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "lambayeque_chancay_lambayeque_chongoyape": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 54,
+     "cells_intersected": 54,
+     "covered_pct": 100.0
+    },
+    "lambayeque_zana_oyotun": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 28,
+     "cells_intersected": 28,
+     "covered_pct": 100.0
+    },
+    "lalibertad_jequetepeque": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 53,
+     "cells_intersected": 53,
+     "covered_pct": 100.0
+    },
+    "lalibertad_san_ildefonso": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 2,
+     "cells_intersected": 2,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chaman": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 20,
+     "cells_intersected": 20,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chicama": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 58,
+     "cells_intersected": 58,
+     "covered_pct": 100.0
+    },
+    "lalibertad_moche": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 31,
+     "cells_intersected": 31,
+     "covered_pct": 100.0
+    },
+    "lalibertad_viru": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 30,
+     "cells_intersected": 30,
+     "covered_pct": 100.0
+    },
+    "lalibertad_huamanzana": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 25,
+     "cells_intersected": 25,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PIURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:AYABACA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 67,
+     "cells_intersected": 67,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:HUANCABAMBA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 59,
+     "cells_intersected": 59,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:MORROPON": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PAITA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 27,
+     "cells_intersected": 27,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SULLANA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 71,
+     "cells_intersected": 71,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:TALARA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 38,
+     "cells_intersected": 38,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SECHURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    }
+   }
+  },
+  {
+   "granule": "3B-HHR-E.MS.MRG.3IMERG.20261009-S183000-E185959.1110.V07C.HDF5",
+   "time_utc": "2026-10-09T18:30:00+00:00",
+   "retrieved_at_utc": "2026-10-10T02:48:27.930418+00:00",
+   "units": "mm/hr",
+   "targets": {
+    "tumbes_bocapan": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 14,
+     "cells_intersected": 14,
+     "covered_pct": 100.0
+    },
+    "lambayeque_motupe": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "lambayeque_chancay_lambayeque_chongoyape": {
+     "rate_mm_hr": 0.048,
+     "accum_30min_mm": 0.024,
+     "valid_cells": 54,
+     "cells_intersected": 54,
+     "covered_pct": 100.0
+    },
+    "lambayeque_zana_oyotun": {
+     "rate_mm_hr": 0.0586,
+     "accum_30min_mm": 0.0293,
+     "valid_cells": 28,
+     "cells_intersected": 28,
+     "covered_pct": 100.0
+    },
+    "lalibertad_jequetepeque": {
+     "rate_mm_hr": 0.0205,
+     "accum_30min_mm": 0.0102,
+     "valid_cells": 53,
+     "cells_intersected": 53,
+     "covered_pct": 100.0
+    },
+    "lalibertad_san_ildefonso": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 2,
+     "cells_intersected": 2,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chaman": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 20,
+     "cells_intersected": 20,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chicama": {
+     "rate_mm_hr": 0.0079,
+     "accum_30min_mm": 0.004,
+     "valid_cells": 58,
+     "cells_intersected": 58,
+     "covered_pct": 100.0
+    },
+    "lalibertad_moche": {
+     "rate_mm_hr": 0.0245,
+     "accum_30min_mm": 0.0122,
+     "valid_cells": 31,
+     "cells_intersected": 31,
+     "covered_pct": 100.0
+    },
+    "lalibertad_viru": {
+     "rate_mm_hr": 0.0035,
+     "accum_30min_mm": 0.0018,
+     "valid_cells": 30,
+     "cells_intersected": 30,
+     "covered_pct": 100.0
+    },
+    "lalibertad_huamanzana": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 25,
+     "cells_intersected": 25,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PIURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:AYABACA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 67,
+     "cells_intersected": 67,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:HUANCABAMBA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 59,
+     "cells_intersected": 59,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:MORROPON": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PAITA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 27,
+     "cells_intersected": 27,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SULLANA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 71,
+     "cells_intersected": 71,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:TALARA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 38,
+     "cells_intersected": 38,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SECHURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    }
+   }
+  },
+  {
+   "granule": "3B-HHR-E.MS.MRG.3IMERG.20261009-S190000-E192959.1140.V07C.HDF5",
+   "time_utc": "2026-10-09T19:00:00+00:00",
+   "retrieved_at_utc": "2026-10-10T02:48:27.930418+00:00",
+   "units": "mm/hr",
+   "targets": {
+    "tumbes_bocapan": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 14,
+     "cells_intersected": 14,
+     "covered_pct": 100.0
+    },
+    "lambayeque_motupe": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "lambayeque_chancay_lambayeque_chongoyape": {
+     "rate_mm_hr": 0.0829,
+     "accum_30min_mm": 0.0414,
+     "valid_cells": 54,
+     "cells_intersected": 54,
+     "covered_pct": 100.0
+    },
+    "lambayeque_zana_oyotun": {
+     "rate_mm_hr": 0.0503,
+     "accum_30min_mm": 0.0252,
+     "valid_cells": 28,
+     "cells_intersected": 28,
+     "covered_pct": 100.0
+    },
+    "lalibertad_jequetepeque": {
+     "rate_mm_hr": 0.0281,
+     "accum_30min_mm": 0.014,
+     "valid_cells": 53,
+     "cells_intersected": 53,
+     "covered_pct": 100.0
+    },
+    "lalibertad_san_ildefonso": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 2,
+     "cells_intersected": 2,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chaman": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 20,
+     "cells_intersected": 20,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chicama": {
+     "rate_mm_hr": 0.0254,
+     "accum_30min_mm": 0.0127,
+     "valid_cells": 58,
+     "cells_intersected": 58,
+     "covered_pct": 100.0
+    },
+    "lalibertad_moche": {
+     "rate_mm_hr": 0.0967,
+     "accum_30min_mm": 0.0484,
+     "valid_cells": 31,
+     "cells_intersected": 31,
+     "covered_pct": 100.0
+    },
+    "lalibertad_viru": {
+     "rate_mm_hr": 0.0075,
+     "accum_30min_mm": 0.0038,
+     "valid_cells": 30,
+     "cells_intersected": 30,
+     "covered_pct": 100.0
+    },
+    "lalibertad_huamanzana": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 25,
+     "cells_intersected": 25,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PIURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:AYABACA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 67,
+     "cells_intersected": 67,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:HUANCABAMBA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 59,
+     "cells_intersected": 59,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:MORROPON": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PAITA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 27,
+     "cells_intersected": 27,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SULLANA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 71,
+     "cells_intersected": 71,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:TALARA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 38,
+     "cells_intersected": 38,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SECHURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    }
+   }
+  },
+  {
+   "granule": "3B-HHR-E.MS.MRG.3IMERG.20261009-S193000-E195959.1170.V07C.HDF5",
+   "time_utc": "2026-10-09T19:30:00+00:00",
+   "retrieved_at_utc": "2026-10-10T02:48:27.930418+00:00",
+   "units": "mm/hr",
+   "targets": {
+    "tumbes_bocapan": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 14,
+     "cells_intersected": 14,
+     "covered_pct": 100.0
+    },
+    "lambayeque_motupe": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "lambayeque_chancay_lambayeque_chongoyape": {
+     "rate_mm_hr": 0.1437,
+     "accum_30min_mm": 0.0718,
+     "valid_cells": 54,
+     "cells_intersected": 54,
+     "covered_pct": 100.0
+    },
+    "lambayeque_zana_oyotun": {
+     "rate_mm_hr": 0.0451,
+     "accum_30min_mm": 0.0225,
+     "valid_cells": 28,
+     "cells_intersected": 28,
+     "covered_pct": 100.0
+    },
+    "lalibertad_jequetepeque": {
+     "rate_mm_hr": 0.0427,
+     "accum_30min_mm": 0.0214,
+     "valid_cells": 53,
+     "cells_intersected": 53,
+     "covered_pct": 100.0
+    },
+    "lalibertad_san_ildefonso": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 2,
+     "cells_intersected": 2,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chaman": {
+     "rate_mm_hr": 0.0057,
+     "accum_30min_mm": 0.0028,
+     "valid_cells": 20,
+     "cells_intersected": 20,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chicama": {
+     "rate_mm_hr": 0.0451,
+     "accum_30min_mm": 0.0225,
+     "valid_cells": 58,
+     "cells_intersected": 58,
+     "covered_pct": 100.0
+    },
+    "lalibertad_moche": {
+     "rate_mm_hr": 0.2025,
+     "accum_30min_mm": 0.1013,
+     "valid_cells": 31,
+     "cells_intersected": 31,
+     "covered_pct": 100.0
+    },
+    "lalibertad_viru": {
+     "rate_mm_hr": 0.0172,
+     "accum_30min_mm": 0.0086,
+     "valid_cells": 30,
+     "cells_intersected": 30,
+     "covered_pct": 100.0
+    },
+    "lalibertad_huamanzana": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 25,
+     "cells_intersected": 25,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PIURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:AYABACA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 67,
+     "cells_intersected": 67,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:HUANCABAMBA": {
+     "rate_mm_hr": 0.0009,
+     "accum_30min_mm": 0.0005,
+     "valid_cells": 59,
+     "cells_intersected": 59,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:MORROPON": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PAITA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 27,
+     "cells_intersected": 27,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SULLANA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 71,
+     "cells_intersected": 71,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:TALARA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 38,
+     "cells_intersected": 38,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SECHURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    }
+   }
+  },
+  {
+   "granule": "3B-HHR-E.MS.MRG.3IMERG.20261009-S200000-E202959.1200.V07C.HDF5",
+   "time_utc": "2026-10-09T20:00:00+00:00",
+   "retrieved_at_utc": "2026-10-10T02:48:27.930418+00:00",
+   "units": "mm/hr",
+   "targets": {
+    "tumbes_bocapan": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 14,
+     "cells_intersected": 14,
+     "covered_pct": 100.0
+    },
+    "lambayeque_motupe": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "lambayeque_chancay_lambayeque_chongoyape": {
+     "rate_mm_hr": 0.2249,
+     "accum_30min_mm": 0.1124,
+     "valid_cells": 54,
+     "cells_intersected": 54,
+     "covered_pct": 100.0
+    },
+    "lambayeque_zana_oyotun": {
+     "rate_mm_hr": 0.0156,
+     "accum_30min_mm": 0.0078,
+     "valid_cells": 28,
+     "cells_intersected": 28,
+     "covered_pct": 100.0
+    },
+    "lalibertad_jequetepeque": {
+     "rate_mm_hr": 0.4527,
+     "accum_30min_mm": 0.2264,
+     "valid_cells": 53,
+     "cells_intersected": 53,
+     "covered_pct": 100.0
+    },
+    "lalibertad_san_ildefonso": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 2,
+     "cells_intersected": 2,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chaman": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 20,
+     "cells_intersected": 20,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chicama": {
+     "rate_mm_hr": 0.0079,
+     "accum_30min_mm": 0.004,
+     "valid_cells": 58,
+     "cells_intersected": 58,
+     "covered_pct": 100.0
+    },
+    "lalibertad_moche": {
+     "rate_mm_hr": 0.069,
+     "accum_30min_mm": 0.0345,
+     "valid_cells": 31,
+     "cells_intersected": 31,
+     "covered_pct": 100.0
+    },
+    "lalibertad_viru": {
+     "rate_mm_hr": 0.004,
+     "accum_30min_mm": 0.002,
+     "valid_cells": 30,
+     "cells_intersected": 30,
+     "covered_pct": 100.0
+    },
+    "lalibertad_huamanzana": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 25,
+     "cells_intersected": 25,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PIURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:AYABACA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 67,
+     "cells_intersected": 67,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:HUANCABAMBA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 59,
+     "cells_intersected": 59,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:MORROPON": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PAITA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 27,
+     "cells_intersected": 27,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SULLANA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 71,
+     "cells_intersected": 71,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:TALARA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 38,
+     "cells_intersected": 38,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SECHURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    }
+   }
+  },
+  {
+   "granule": "3B-HHR-E.MS.MRG.3IMERG.20261009-S203000-E205959.1230.V07C.HDF5",
+   "time_utc": "2026-10-09T20:30:00+00:00",
+   "retrieved_at_utc": "2026-10-10T02:48:27.930418+00:00",
+   "units": "mm/hr",
+   "targets": {
+    "tumbes_bocapan": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 14,
+     "cells_intersected": 14,
+     "covered_pct": 100.0
+    },
+    "lambayeque_motupe": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "lambayeque_chancay_lambayeque_chongoyape": {
+     "rate_mm_hr": 0.2275,
+     "accum_30min_mm": 0.1137,
+     "valid_cells": 54,
+     "cells_intersected": 54,
+     "covered_pct": 100.0
+    },
+    "lambayeque_zana_oyotun": {
+     "rate_mm_hr": 0.0119,
+     "accum_30min_mm": 0.006,
+     "valid_cells": 28,
+     "cells_intersected": 28,
+     "covered_pct": 100.0
+    },
+    "lalibertad_jequetepeque": {
+     "rate_mm_hr": 0.5287,
+     "accum_30min_mm": 0.2644,
+     "valid_cells": 53,
+     "cells_intersected": 53,
+     "covered_pct": 100.0
+    },
+    "lalibertad_san_ildefonso": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 2,
+     "cells_intersected": 2,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chaman": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 20,
+     "cells_intersected": 20,
+     "covered_pct": 100.0
+    },
+    "lalibertad_chicama": {
+     "rate_mm_hr": 0.0025,
+     "accum_30min_mm": 0.0013,
+     "valid_cells": 58,
+     "cells_intersected": 58,
+     "covered_pct": 100.0
+    },
+    "lalibertad_moche": {
+     "rate_mm_hr": 0.0406,
+     "accum_30min_mm": 0.0203,
+     "valid_cells": 31,
+     "cells_intersected": 31,
+     "covered_pct": 100.0
+    },
+    "lalibertad_viru": {
+     "rate_mm_hr": 0.0008,
+     "accum_30min_mm": 0.0004,
+     "valid_cells": 30,
+     "cells_intersected": 30,
+     "covered_pct": 100.0
+    },
+    "lalibertad_huamanzana": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 25,
+     "cells_intersected": 25,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PIURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:AYABACA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 67,
+     "cells_intersected": 67,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:HUANCABAMBA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 59,
+     "cells_intersected": 59,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:MORROPON": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 52,
+     "cells_intersected": 52,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:PAITA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 27,
+     "cells_intersected": 27,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SULLANA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 71,
+     "cells_intersected": 71,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:TALARA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 38,
+     "cells_intersected": 38,
+     "covered_pct": 100.0
+    },
+    "piura_province_context:SECHURA": {
+     "rate_mm_hr": 0.0,
+     "accum_30min_mm": 0.0,
+     "valid_cells": 74,
+     "cells_intersected": 74,
+     "covered_pct": 100.0
+    }
+   }
+  }
+ ],
+ "status": {
+  "state": "AVAILABLE",
+  "latest_granule_start_utc": "2026-10-09T20:30:00+00:00",
+  "catalog_granules_in_window": 49,
+  "missing_in_window_after_run": 33,
+  "written_at_utc": "2026-10-10T02:48:27.930418+00:00"
+ }
+}
