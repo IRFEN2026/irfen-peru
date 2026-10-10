@@ -132,6 +132,47 @@ class TemporalUpdate(unittest.TestCase):
         self.assertIn("desactualizada", out["reader_rule_es"])
 
 
+class RealOfficialOverlay(unittest.TestCase):
+    """The committed overlay: INEI referential provinces (SERFOR service) archived with SHA-256."""
+
+    def test_committed_overlay_verifies_for_all_basins(self):
+        overlay = json.loads((ROOT / "data/v09/zone_admin_overlay_v0_1.json").read_text(encoding="utf-8"))
+        verified, notes = X.verify_overlay(overlay, ZONES["zones"])
+        self.assertEqual(notes, [])
+        self.assertEqual(len(verified), 10)
+        self.assertTrue(all(v["negative_allowed"] for v in verified.values()))
+        self.assertEqual(overlay["boundary_source"]["legal_status"], "REFERENTIAL_CENSUS_LIMITS_NOT_LEGAL_DEMARCATION")
+
+    def test_real_aviso_with_real_overlay(self):
+        overlay = json.loads((ROOT / "data/v09/zone_admin_overlay_v0_1.json").read_text(encoding="utf-8"))
+        links = {l["zone_id"]: l for l in X.links_for_aviso(aviso(), ZONES["zones"], overlay)}
+        jeq = links["lalibertad_jequetepeque"]  # registered in La Libertad, mostly in Cajamarca
+        self.assertEqual(jeq["relation_method"], "BASIN_INTERSECTS_LISTED_PROVINCE")
+        self.assertIn(("CAJAMARCA", "CONTUMAZA"), [(h["department"], h["province"]) for h in jeq["evidence"]["intersections"]])
+        moche = links["lalibertad_moche"]
+        self.assertEqual(sorted(h["province"] for h in moche["evidence"]["intersections"]), ["JULCAN", "OTUZCO", "SANTIAGO DE CHUCO"])
+
+    def test_department_only_rain_aviso_and_non_rain_aviso(self):
+        overlay = json.loads((ROOT / "data/v09/zone_admin_overlay_v0_1.json").read_text(encoding="utf-8"))
+        rain = dict(aviso_key="SENAMHI-AVISO-METEOROLOGICO-2026-403", product="AVISO-METEOROLOGICO", current=dict(
+            phenomenon="PRECIPITACIONES EN LA SIERRA NORTE Y COSTA NORTE", rain_related=True, official_level="NARANJA",
+            departments=["CAJAMARCA", "LA LIBERTAD", "LAMBAYEQUE", "PIURA"],
+            validity_start="2026-10-09T00:00:00-05:00", validity_end="2026-10-11T23:59:00-05:00"))
+        wind = dict(aviso_key="SENAMHI-AVISO-METEOROLOGICO-2026-499", product="AVISO-METEOROLOGICO", current=dict(
+            phenomenon="INCREMENTO DE LA VELOCIDAD DEL VIENTO EN LA COSTA NORTE", rain_related=False,
+            departments=["TUMBES", "PIURA"], validity_start="2026-10-09T00:00:00-05:00", validity_end="2026-10-11T23:59:00-05:00"))
+        links = {l["zone_id"]: l for l in X.links_for_aviso(rain, ZONES["zones"], overlay)}
+        self.assertEqual(links["lalibertad_moche"]["relation_method"], "BASIN_INTERSECTS_LISTED_DEPARTMENT")
+        self.assertNotIn("tumbes_bocapan", links)  # Tumbes is not in this aviso
+        self.assertEqual(links["piura_province_context"]["relation_method"], "DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN")
+        out = X.surveillance_list(dict(avisos={rain["aviso_key"]: rain, wind["aviso_key"]: wind}), ZONES, overlay, NOW_VIGENTE, "AL_DIA")
+        keys = {a["aviso_key"] for r in out["surveillance_zones"] for a in r["avisos"]}
+        self.assertEqual(keys, {rain["aviso_key"]})
+        self.assertFalse(out["aviso_links"][wind["aviso_key"]]["in_surveillance"])
+        self.assertIn("non-rain", out["aviso_links"][wind["aviso_key"]]["not_in_surveillance_reason"])
+        self.assertEqual(next(a for r in out["surveillance_zones"] for a in r["avisos"])["official_level"], "NARANJA")
+
+
 class CrossingWithOfficialOverlay(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

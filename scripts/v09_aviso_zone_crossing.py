@@ -28,6 +28,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import sys
 import unicodedata
 from pathlib import Path
@@ -50,22 +51,27 @@ GUARDS = {
 }
 RELATION_METHODS = {
     "BASIN_INTERSECTS_LISTED_PROVINCE": dict(
-        rank=1, kind="SPATIAL_VERIFIED_ADMINISTRATIVE",
-        label_es="La cuenca interseca una provincia enumerada en el aviso (límites oficiales)",
+        rank=1, kind="SPATIAL_VERIFIED_PROVINCE",
+        label_es="La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales)",
         caveat_es="Intersección con la representación administrativa del aviso, no con su huella real."),
+    "BASIN_INTERSECTS_LISTED_DEPARTMENT": dict(
+        rank=2, kind="SPATIAL_VERIFIED_DEPARTMENT",
+        label_es="La cuenca interseca un departamento enumerado en el aviso sin provincias (límites INEI referenciales)",
+        caveat_es="El aviso solo nombra el departamento; la intersección es con todo el departamento, no con la huella del aviso."),
     "LISTED_PROVINCE_CONTEXT_NO_BASIN": dict(
-        rank=2, kind="ADMINISTRATIVE_PROVINCE",
+        rank=3, kind="ADMINISTRATIVE_PROVINCE",
         label_es="Provincia enumerada en el aviso, sin cuenca validada",
         caveat_es="Contexto territorial: no hay cuenca IRFEN validada en esta provincia."),
     "DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN": dict(
-        rank=3, kind="ADMINISTRATIVE_DEPARTMENT",
-        label_es="El departamento registrado de la zona figura en el aviso",
-        caveat_es="Coincidencia administrativa; la relación provincial es DESCONOCIDA hasta disponer de límites oficiales."),
+        rank=4, kind="ADMINISTRATIVE_DEPARTMENT",
+        label_es="El departamento figura en el aviso; relación provincial desconocida",
+        caveat_es="Coincidencia administrativa; la relación provincial es DESCONOCIDA (sin límites oficiales verificados o sin provincias en el aviso)."),
     "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES": dict(
-        rank=4, kind="SPATIAL_VERIFIED_NEGATIVE",
+        rank=5, kind="SPATIAL_VERIFIED_NEGATIVE",
         label_es="La cuenca está en un departamento del aviso pero fuera de sus provincias enumeradas",
-        caveat_es="Se muestra para revisión; el aviso no enumera las provincias de esta cuenca."),
+        caveat_es="Resultado negativo con límites INEI referenciales que cubren toda la cuenca; se muestra para revisión."),
 }
+RAIN_PATTERN = re.compile(r"PRECIPITACION|LLUVIA|TORMENTA|CHUBASCO|QUEBRADA|HUAICO|INUNDACION")
 ACTIVE = ("VIGENTE", "FUTURO")
 SURVEILLED = ("VIGENTE", "FUTURO", "DESCONOCIDO")  # unknown validity is never treated as inactive
 MIN_BOUNDARY_COVERAGE = 0.99  # a negative spatial result needs the whole basin covered by the official provinces
@@ -152,10 +158,18 @@ def links_for_aviso(aviso: dict, zones: list[dict], overlay: dict | None, verifi
                     for (d, p), v in sorted(ov["rows"].items()) if p in provs.get(d, [])]
             zone_deps = sorted({d for d, _ in ov["rows"]} | {reg_dep})
             touched = [d for d in zone_deps if d in deps]
+            dep_only = [d for d in deps if d not in provs]  # departments the aviso names without provinces
+            dep_hits = [dict(department=d, zone_fraction=round(sum(v.get("zone_fraction") or 0 for (dd, _), v in ov["rows"].items() if dd == d), 4))
+                        for d in dep_only if any(dd == d for dd, _ in ov["rows"])]
             if hits:
                 links.append(dict(zone_id=zid, base_zone_id=zid, relation_method="BASIN_INTERSECTS_LISTED_PROVINCE",
                                   department=hits[0]["department"], province=None,
-                                  evidence=dict(intersections=hits, boundary_source_sha256=src_sha, boundary_coverage=ov["coverage"])))
+                                  evidence=dict(intersections=hits, department_intersections=dep_hits,
+                                                boundary_source_sha256=src_sha, boundary_coverage=ov["coverage"])))
+            elif dep_hits:
+                links.append(dict(zone_id=zid, base_zone_id=zid, relation_method="BASIN_INTERSECTS_LISTED_DEPARTMENT",
+                                  department=dep_hits[0]["department"], province=None,
+                                  evidence=dict(department_intersections=dep_hits, boundary_source_sha256=src_sha, boundary_coverage=ov["coverage"])))
             elif touched and ov["negative_allowed"] and all(d in provs for d in touched):
                 links.append(dict(zone_id=zid, base_zone_id=zid, relation_method="BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES",
                                   department=touched[0], province=None,
@@ -176,6 +190,13 @@ def links_for_aviso(aviso: dict, zones: list[dict], overlay: dict | None, verifi
         meta = RELATION_METHODS[link["relation_method"]]
         link.update(relation_kind=meta["kind"], relation_rank=meta["rank"], label_es=meta["label_es"], caveat_es=meta["caveat_es"])
     return sorted(links, key=lambda l: (l["relation_rank"], l["zone_id"]))
+
+
+def is_rain_related(aviso: dict) -> bool:
+    cur = aviso.get("current", {})
+    if cur.get("rain_related") is not None:
+        return bool(cur["rain_related"])
+    return aviso.get("product") in ("ACP-LLUVIAS", "ACP-QUEBRADAS") or bool(RAIN_PATTERN.search(fold(cur.get("phenomenon") or "")))
 
 
 def evaluate(aviso: dict, now) -> tuple[str, str]:
@@ -208,6 +229,12 @@ def surveillance_list(registry: dict, zones_cfg: dict, overlay: dict | None, now
                                 validity_start=aviso.get("current", {}).get("validity_start"),
                                 validity_end=aviso.get("current", {}).get("validity_end"),
                                 official_url=aviso.get("official_url"), in_surveillance=status in SURVEILLED, links=links)
+        rain = is_rain_related(aviso)
+        aviso_links[key]["rain_related"] = rain
+        if not rain:
+            aviso_links[key]["in_surveillance"] = False
+            aviso_links[key]["not_in_surveillance_reason"] = "non-rain aviso: official context only, never a rain or flood signal"
+            continue
         if status not in SURVEILLED:
             continue  # expired / cancelled / superseded: kept above as history, not as current surveillance
         for link in links:

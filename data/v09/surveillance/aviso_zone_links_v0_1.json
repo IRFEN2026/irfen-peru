@@ -25,27 +25,33 @@
  "relation_methods": {
   "BASIN_INTERSECTS_LISTED_PROVINCE": {
    "rank": 1,
-   "kind": "SPATIAL_VERIFIED_ADMINISTRATIVE",
-   "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites oficiales)",
+   "kind": "SPATIAL_VERIFIED_PROVINCE",
+   "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales)",
    "caveat_es": "Intersección con la representación administrativa del aviso, no con su huella real."
   },
-  "LISTED_PROVINCE_CONTEXT_NO_BASIN": {
+  "BASIN_INTERSECTS_LISTED_DEPARTMENT": {
    "rank": 2,
+   "kind": "SPATIAL_VERIFIED_DEPARTMENT",
+   "label_es": "La cuenca interseca un departamento enumerado en el aviso sin provincias (límites INEI referenciales)",
+   "caveat_es": "El aviso solo nombra el departamento; la intersección es con todo el departamento, no con la huella del aviso."
+  },
+  "LISTED_PROVINCE_CONTEXT_NO_BASIN": {
+   "rank": 3,
    "kind": "ADMINISTRATIVE_PROVINCE",
    "label_es": "Provincia enumerada en el aviso, sin cuenca validada",
    "caveat_es": "Contexto territorial: no hay cuenca IRFEN validada en esta provincia."
   },
   "DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN": {
-   "rank": 3,
+   "rank": 4,
    "kind": "ADMINISTRATIVE_DEPARTMENT",
-   "label_es": "El departamento registrado de la zona figura en el aviso",
-   "caveat_es": "Coincidencia administrativa; la relación provincial es DESCONOCIDA hasta disponer de límites oficiales."
+   "label_es": "El departamento figura en el aviso; relación provincial desconocida",
+   "caveat_es": "Coincidencia administrativa; la relación provincial es DESCONOCIDA (sin límites oficiales verificados o sin provincias en el aviso)."
   },
   "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES": {
-   "rank": 4,
+   "rank": 5,
    "kind": "SPATIAL_VERIFIED_NEGATIVE",
    "label_es": "La cuenca está en un departamento del aviso pero fuera de sus provincias enumeradas",
-   "caveat_es": "Se muestra para revisión; el aviso no enumera las provincias de esta cuenca."
+   "caveat_es": "Resultado negativo con límites INEI referenciales que cubren toda la cuenca; se muestra para revisión."
   }
  },
  "ordering_note_es": "El orden facilita la lectura (vigente, futuro, vigencia desconocida; relación más precisa primero). No es una puntuación de riesgo ni una probabilidad de activación.",
@@ -73,7 +79,7 @@
      "status": "VIGENTE",
      "product": "ACP-QUEBRADAS",
      "relation_method": "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES",
-     "relation_rank": 4,
+     "relation_rank": 5,
      "validity_start": "2026-10-09T13:00:00-05:00",
      "validity_end": "2026-10-10T13:00:00-05:00",
      "official_level": null,
@@ -87,7 +93,7 @@
    "any_vigente": true,
    "why_es": [
     "La cuenca está en un departamento del aviso pero fuera de sus provincias enumeradas (SENAMHI-ACP-QUEBRADAS-2026-282, VIGENTE)",
-    "La cuenca interseca una provincia enumerada en el aviso (límites oficiales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
+    "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
    ],
    "missing_data": []
   },
@@ -114,7 +120,7 @@
      "status": "VIGENTE",
      "product": "ACP-QUEBRADAS",
      "relation_method": "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES",
-     "relation_rank": 4,
+     "relation_rank": 5,
      "validity_start": "2026-10-09T13:00:00-05:00",
      "validity_end": "2026-10-10T13:00:00-05:00",
      "official_level": null,
@@ -128,7 +134,7 @@
    "any_vigente": true,
    "why_es": [
     "La cuenca está en un departamento del aviso pero fuera de sus provincias enumeradas (SENAMHI-ACP-QUEBRADAS-2026-282, VIGENTE)",
-    "La cuenca interseca una provincia enumerada en el aviso (límites oficiales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
+    "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
    ],
    "missing_data": []
   },
@@ -157,7 +163,7 @@
    "best_relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
    "any_vigente": true,
    "why_es": [
-    "La cuenca interseca una provincia enumerada en el aviso (límites oficiales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
+    "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
    ],
    "missing_data": []
   },
@@ -184,7 +190,7 @@
      "status": "VIGENTE",
      "product": "ACP-QUEBRADAS",
      "relation_method": "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES",
-     "relation_rank": 4,
+     "relation_rank": 5,
      "validity_start": "2026-10-09T13:00:00-05:00",
      "validity_end": "2026-10-10T13:00:00-05:00",
      "official_level": null,
@@ -198,7 +204,7 @@
    "any_vigente": true,
    "why_es": [
     "La cuenca está en un departamento del aviso pero fuera de sus provincias enumeradas (SENAMHI-ACP-QUEBRADAS-2026-282, VIGENTE)",
-    "La cuenca interseca una provincia enumerada en el aviso (límites oficiales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
+    "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
    ],
    "missing_data": []
   },
@@ -227,7 +233,7 @@
    "best_relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
    "any_vigente": true,
    "why_es": [
-    "La cuenca interseca una provincia enumerada en el aviso (límites oficiales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
+    "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
    ],
    "missing_data": []
   },
@@ -256,7 +262,7 @@
    "best_relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
    "any_vigente": true,
    "why_es": [
-    "La cuenca interseca una provincia enumerada en el aviso (límites oficiales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
+    "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
    ],
    "missing_data": []
   },
@@ -296,8 +302,8 @@
    "best_relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
    "any_vigente": true,
    "why_es": [
-    "La cuenca interseca una provincia enumerada en el aviso (límites oficiales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)",
-    "La cuenca interseca una provincia enumerada en el aviso (límites oficiales) (SENAMHI-ACP-QUEBRADAS-2026-282, VIGENTE)"
+    "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)",
+    "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales) (SENAMHI-ACP-QUEBRADAS-2026-282, VIGENTE)"
    ],
    "missing_data": []
   },
@@ -337,8 +343,8 @@
    "best_relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
    "any_vigente": true,
    "why_es": [
-    "La cuenca interseca una provincia enumerada en el aviso (límites oficiales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)",
-    "La cuenca interseca una provincia enumerada en el aviso (límites oficiales) (SENAMHI-ACP-QUEBRADAS-2026-282, VIGENTE)"
+    "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)",
+    "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales) (SENAMHI-ACP-QUEBRADAS-2026-282, VIGENTE)"
    ],
    "missing_data": []
   },
@@ -365,7 +371,7 @@
      "status": "VIGENTE",
      "product": "ACP-QUEBRADAS",
      "relation_method": "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES",
-     "relation_rank": 4,
+     "relation_rank": 5,
      "validity_start": "2026-10-09T13:00:00-05:00",
      "validity_end": "2026-10-10T13:00:00-05:00",
      "official_level": null,
@@ -379,7 +385,7 @@
    "any_vigente": true,
    "why_es": [
     "La cuenca está en un departamento del aviso pero fuera de sus provincias enumeradas (SENAMHI-ACP-QUEBRADAS-2026-282, VIGENTE)",
-    "La cuenca interseca una provincia enumerada en el aviso (límites oficiales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
+    "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
    ],
    "missing_data": []
   },
@@ -408,7 +414,7 @@
    "best_relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
    "any_vigente": true,
    "why_es": [
-    "La cuenca interseca una provincia enumerada en el aviso (límites oficiales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
+    "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales) (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
    ],
    "missing_data": []
   },
@@ -424,7 +430,7 @@
      "status": "VIGENTE",
      "product": "ACP-LLUVIAS",
      "relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
-     "relation_rank": 2,
+     "relation_rank": 3,
      "validity_start": "2026-10-09T13:00:00-05:00",
      "validity_end": "2026-10-10T13:00:00-05:00",
      "official_level": null,
@@ -433,7 +439,7 @@
    ],
    "display_name": "Piura (provincias listadas en el aviso) · Ayabaca",
    "zone_type": "ADMINISTRATIVE_CONTEXT_NO_BASIN",
-   "best_relation_rank": 2,
+   "best_relation_rank": 3,
    "best_relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
    "any_vigente": true,
    "why_es": [
@@ -455,7 +461,7 @@
      "status": "VIGENTE",
      "product": "ACP-LLUVIAS",
      "relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
-     "relation_rank": 2,
+     "relation_rank": 3,
      "validity_start": "2026-10-09T13:00:00-05:00",
      "validity_end": "2026-10-10T13:00:00-05:00",
      "official_level": null,
@@ -464,7 +470,7 @@
    ],
    "display_name": "Piura (provincias listadas en el aviso) · Huancabamba",
    "zone_type": "ADMINISTRATIVE_CONTEXT_NO_BASIN",
-   "best_relation_rank": 2,
+   "best_relation_rank": 3,
    "best_relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
    "any_vigente": true,
    "why_es": [
@@ -486,7 +492,7 @@
      "status": "VIGENTE",
      "product": "ACP-LLUVIAS",
      "relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
-     "relation_rank": 2,
+     "relation_rank": 3,
      "validity_start": "2026-10-09T13:00:00-05:00",
      "validity_end": "2026-10-10T13:00:00-05:00",
      "official_level": null,
@@ -495,7 +501,7 @@
    ],
    "display_name": "Piura (provincias listadas en el aviso) · Morropón",
    "zone_type": "ADMINISTRATIVE_CONTEXT_NO_BASIN",
-   "best_relation_rank": 2,
+   "best_relation_rank": 3,
    "best_relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
    "any_vigente": true,
    "why_es": [
@@ -517,7 +523,7 @@
      "status": "VIGENTE",
      "product": "ACP-LLUVIAS",
      "relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
-     "relation_rank": 2,
+     "relation_rank": 3,
      "validity_start": "2026-10-09T13:00:00-05:00",
      "validity_end": "2026-10-10T13:00:00-05:00",
      "official_level": null,
@@ -526,7 +532,7 @@
    ],
    "display_name": "Piura (provincias listadas en el aviso) · Piura",
    "zone_type": "ADMINISTRATIVE_CONTEXT_NO_BASIN",
-   "best_relation_rank": 2,
+   "best_relation_rank": 3,
    "best_relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
    "any_vigente": true,
    "why_es": [
@@ -548,7 +554,7 @@
      "status": "VIGENTE",
      "product": "ACP-LLUVIAS",
      "relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
-     "relation_rank": 2,
+     "relation_rank": 3,
      "validity_start": "2026-10-09T13:00:00-05:00",
      "validity_end": "2026-10-10T13:00:00-05:00",
      "official_level": null,
@@ -557,7 +563,7 @@
    ],
    "display_name": "Piura (provincias listadas en el aviso) · Sullana",
    "zone_type": "ADMINISTRATIVE_CONTEXT_NO_BASIN",
-   "best_relation_rank": 2,
+   "best_relation_rank": 3,
    "best_relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
    "any_vigente": true,
    "why_es": [
@@ -593,12 +599,13 @@
         "zone_fraction": 0.3401
        }
       ],
+      "department_intersections": [],
       "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
       "boundary_coverage": 1.0
      },
-     "relation_kind": "SPATIAL_VERIFIED_ADMINISTRATIVE",
+     "relation_kind": "SPATIAL_VERIFIED_PROVINCE",
      "relation_rank": 1,
-     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites oficiales)",
+     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales)",
      "caveat_es": "Intersección con la representación administrativa del aviso, no con su huella real."
     },
     {
@@ -640,12 +647,13 @@
         "zone_fraction": 0.0111
        }
       ],
+      "department_intersections": [],
       "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
       "boundary_coverage": 1.0
      },
-     "relation_kind": "SPATIAL_VERIFIED_ADMINISTRATIVE",
+     "relation_kind": "SPATIAL_VERIFIED_PROVINCE",
      "relation_rank": 1,
-     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites oficiales)",
+     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales)",
      "caveat_es": "Intersección con la representación administrativa del aviso, no con su huella real."
     },
     {
@@ -675,12 +683,13 @@
         "zone_fraction": 0.6522
        }
       ],
+      "department_intersections": [],
       "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
       "boundary_coverage": 1.0
      },
-     "relation_kind": "SPATIAL_VERIFIED_ADMINISTRATIVE",
+     "relation_kind": "SPATIAL_VERIFIED_PROVINCE",
      "relation_rank": 1,
-     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites oficiales)",
+     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales)",
      "caveat_es": "Intersección con la representación administrativa del aviso, no con su huella real."
     },
     {
@@ -716,12 +725,13 @@
         "zone_fraction": 0.1681
        }
       ],
+      "department_intersections": [],
       "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
       "boundary_coverage": 1.0
      },
-     "relation_kind": "SPATIAL_VERIFIED_ADMINISTRATIVE",
+     "relation_kind": "SPATIAL_VERIFIED_PROVINCE",
      "relation_rank": 1,
-     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites oficiales)",
+     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales)",
      "caveat_es": "Intersección con la representación administrativa del aviso, no con su huella real."
     },
     {
@@ -751,12 +761,13 @@
         "zone_fraction": 0.0605
        }
       ],
+      "department_intersections": [],
       "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
       "boundary_coverage": 1.0
      },
-     "relation_kind": "SPATIAL_VERIFIED_ADMINISTRATIVE",
+     "relation_kind": "SPATIAL_VERIFIED_PROVINCE",
      "relation_rank": 1,
-     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites oficiales)",
+     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales)",
      "caveat_es": "Intersección con la representación administrativa del aviso, no con su huella real."
     },
     {
@@ -792,12 +803,13 @@
         "zone_fraction": 0.4524
        }
       ],
+      "department_intersections": [],
       "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
       "boundary_coverage": 1.0
      },
-     "relation_kind": "SPATIAL_VERIFIED_ADMINISTRATIVE",
+     "relation_kind": "SPATIAL_VERIFIED_PROVINCE",
      "relation_rank": 1,
-     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites oficiales)",
+     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales)",
      "caveat_es": "Intersección con la representación administrativa del aviso, no con su huella real."
     },
     {
@@ -839,12 +851,13 @@
         "zone_fraction": 0.3211
        }
       ],
+      "department_intersections": [],
       "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
       "boundary_coverage": 1.0
      },
-     "relation_kind": "SPATIAL_VERIFIED_ADMINISTRATIVE",
+     "relation_kind": "SPATIAL_VERIFIED_PROVINCE",
      "relation_rank": 1,
-     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites oficiales)",
+     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales)",
      "caveat_es": "Intersección con la representación administrativa del aviso, no con su huella real."
     },
     {
@@ -880,12 +893,13 @@
         "zone_fraction": 0.5973
        }
       ],
+      "department_intersections": [],
       "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
       "boundary_coverage": 1.0
      },
-     "relation_kind": "SPATIAL_VERIFIED_ADMINISTRATIVE",
+     "relation_kind": "SPATIAL_VERIFIED_PROVINCE",
      "relation_rank": 1,
-     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites oficiales)",
+     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales)",
      "caveat_es": "Intersección con la representación administrativa del aviso, no con su huella real."
     },
     {
@@ -915,12 +929,13 @@
         "zone_fraction": 0.499
        }
       ],
+      "department_intersections": [],
       "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
       "boundary_coverage": 1.0
      },
-     "relation_kind": "SPATIAL_VERIFIED_ADMINISTRATIVE",
+     "relation_kind": "SPATIAL_VERIFIED_PROVINCE",
      "relation_rank": 1,
-     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites oficiales)",
+     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales)",
      "caveat_es": "Intersección con la representación administrativa del aviso, no con su huella real."
     },
     {
@@ -944,12 +959,13 @@
         "zone_fraction": 0.003
        }
       ],
+      "department_intersections": [],
       "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
       "boundary_coverage": 1.0
      },
-     "relation_kind": "SPATIAL_VERIFIED_ADMINISTRATIVE",
+     "relation_kind": "SPATIAL_VERIFIED_PROVINCE",
      "relation_rank": 1,
-     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites oficiales)",
+     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales)",
      "caveat_es": "Intersección con la representación administrativa del aviso, no con su huella real."
     },
     {
@@ -963,7 +979,7 @@
       "aviso_lists_province": true
      },
      "relation_kind": "ADMINISTRATIVE_PROVINCE",
-     "relation_rank": 2,
+     "relation_rank": 3,
      "label_es": "Provincia enumerada en el aviso, sin cuenca validada",
      "caveat_es": "Contexto territorial: no hay cuenca IRFEN validada en esta provincia."
     },
@@ -978,7 +994,7 @@
       "aviso_lists_province": true
      },
      "relation_kind": "ADMINISTRATIVE_PROVINCE",
-     "relation_rank": 2,
+     "relation_rank": 3,
      "label_es": "Provincia enumerada en el aviso, sin cuenca validada",
      "caveat_es": "Contexto territorial: no hay cuenca IRFEN validada en esta provincia."
     },
@@ -993,7 +1009,7 @@
       "aviso_lists_province": true
      },
      "relation_kind": "ADMINISTRATIVE_PROVINCE",
-     "relation_rank": 2,
+     "relation_rank": 3,
      "label_es": "Provincia enumerada en el aviso, sin cuenca validada",
      "caveat_es": "Contexto territorial: no hay cuenca IRFEN validada en esta provincia."
     },
@@ -1008,7 +1024,7 @@
       "aviso_lists_province": true
      },
      "relation_kind": "ADMINISTRATIVE_PROVINCE",
-     "relation_rank": 2,
+     "relation_rank": 3,
      "label_es": "Provincia enumerada en el aviso, sin cuenca validada",
      "caveat_es": "Contexto territorial: no hay cuenca IRFEN validada en esta provincia."
     },
@@ -1023,11 +1039,12 @@
       "aviso_lists_province": true
      },
      "relation_kind": "ADMINISTRATIVE_PROVINCE",
-     "relation_rank": 2,
+     "relation_rank": 3,
      "label_es": "Provincia enumerada en el aviso, sin cuenca validada",
      "caveat_es": "Contexto territorial: no hay cuenca IRFEN validada en esta provincia."
     }
-   ]
+   ],
+   "rain_related": true
   },
   "SENAMHI-ACP-QUEBRADAS-2026-282": {
    "status": "VIGENTE",
@@ -1053,12 +1070,13 @@
         "zone_fraction": 0.2433
        }
       ],
+      "department_intersections": [],
       "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
       "boundary_coverage": 1.0
      },
-     "relation_kind": "SPATIAL_VERIFIED_ADMINISTRATIVE",
+     "relation_kind": "SPATIAL_VERIFIED_PROVINCE",
      "relation_rank": 1,
-     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites oficiales)",
+     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales)",
      "caveat_es": "Intersección con la representación administrativa del aviso, no con su huella real."
     },
     {
@@ -1076,12 +1094,13 @@
         "zone_fraction": 0.1214
        }
       ],
+      "department_intersections": [],
       "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
       "boundary_coverage": 1.0
      },
-     "relation_kind": "SPATIAL_VERIFIED_ADMINISTRATIVE",
+     "relation_kind": "SPATIAL_VERIFIED_PROVINCE",
      "relation_rank": 1,
-     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites oficiales)",
+     "label_es": "La cuenca interseca una provincia enumerada en el aviso (límites INEI referenciales)",
      "caveat_es": "Intersección con la representación administrativa del aviso, no con su huella real."
     },
     {
@@ -1105,9 +1124,9 @@
       "boundary_coverage": 1.0
      },
      "relation_kind": "SPATIAL_VERIFIED_NEGATIVE",
-     "relation_rank": 4,
+     "relation_rank": 5,
      "label_es": "La cuenca está en un departamento del aviso pero fuera de sus provincias enumeradas",
-     "caveat_es": "Se muestra para revisión; el aviso no enumera las provincias de esta cuenca."
+     "caveat_es": "Resultado negativo con límites INEI referenciales que cubren toda la cuenca; se muestra para revisión."
     },
     {
      "zone_id": "lalibertad_chicama",
@@ -1130,9 +1149,9 @@
       "boundary_coverage": 1.0
      },
      "relation_kind": "SPATIAL_VERIFIED_NEGATIVE",
-     "relation_rank": 4,
+     "relation_rank": 5,
      "label_es": "La cuenca está en un departamento del aviso pero fuera de sus provincias enumeradas",
-     "caveat_es": "Se muestra para revisión; el aviso no enumera las provincias de esta cuenca."
+     "caveat_es": "Resultado negativo con límites INEI referenciales que cubren toda la cuenca; se muestra para revisión."
     },
     {
      "zone_id": "lalibertad_jequetepeque",
@@ -1155,9 +1174,9 @@
       "boundary_coverage": 1.0
      },
      "relation_kind": "SPATIAL_VERIFIED_NEGATIVE",
-     "relation_rank": 4,
+     "relation_rank": 5,
      "label_es": "La cuenca está en un departamento del aviso pero fuera de sus provincias enumeradas",
-     "caveat_es": "Se muestra para revisión; el aviso no enumera las provincias de esta cuenca."
+     "caveat_es": "Resultado negativo con límites INEI referenciales que cubren toda la cuenca; se muestra para revisión."
     },
     {
      "zone_id": "lambayeque_zana_oyotun",
@@ -1181,12 +1200,13 @@
       "boundary_coverage": 1.0
      },
      "relation_kind": "SPATIAL_VERIFIED_NEGATIVE",
-     "relation_rank": 4,
+     "relation_rank": 5,
      "label_es": "La cuenca está en un departamento del aviso pero fuera de sus provincias enumeradas",
-     "caveat_es": "Se muestra para revisión; el aviso no enumera las provincias de esta cuenca."
+     "caveat_es": "Resultado negativo con límites INEI referenciales que cubren toda la cuenca; se muestra para revisión."
     }
-   ]
+   ],
+   "rain_related": true
   }
  },
- "evaluated_at_utc": "2026-10-10T02:36:38.112620+00:00"
+ "evaluated_at_utc": "2026-10-10T02:42:37.266422+00:00"
 }
