@@ -1,0 +1,42 @@
+name: TMP v0.9 probe INEI / SERFOR boundary services (removed next commit)
+on:
+  push:
+    branches: [v09/territorial-crossing-v0-1]
+    paths: [.github/workflows/tmp-v09-admin-boundaries-probe.yml]
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Read-only probe (robots, service metadata, counts, one sample)
+        shell: python
+        run: |
+          import json, urllib.request, urllib.parse
+          UA = {"User-Agent": "IRFEN-v0.9-research-boundary-probe/1.0 (+https://github.com/IRFEN2026/irfen-peru)"}
+          def get(url, n=2_000_000):
+              try:
+                  with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=45) as r:
+                      return r.status, r.headers.get("Content-Type"), r.read(n).decode("utf-8", "replace")
+              except Exception as e:
+                  return getattr(e, "code", None), None, f"ERR {type(e).__name__}: {e}"
+          def note(t, s): print(f"::notice title={t}::{s[:3800]}")
+          for u in ("https://geo.serfor.gob.pe/robots.txt", "https://ide.inei.gob.pe/robots.txt", "https://ide.inei.gob.pe/"):
+              st, ct, b = get(u, 4000); note("reach", f"{u} {st} {ct} {b[:500]!r}")
+          svc = "https://geo.serfor.gob.pe/geoservicios/rest/services/Visor/Limites_Politicos_Administrativos/MapServer"
+          st, ct, b = get(svc + "?f=json")
+          try:
+              j = json.loads(b); note("serfor_service", f"{st} desc={j.get('serviceDescription','')[:400]!r} copyright={j.get('copyrightText')!r} sr={j.get('spatialReference')} layers={[(l['id'], l['name']) for l in j.get('layers', [])]}")
+          except Exception: note("serfor_service", f"{st} {b[:400]!r}")
+          for lid in (0, 1, 2):
+              st, ct, b = get(f"{svc}/{lid}?f=json")
+              try: L = json.loads(b)
+              except Exception: note(f"layer{lid}", f"{st} {b[:300]!r}"); continue
+              q = urllib.parse.urlencode({"where": "1=1", "returnCountOnly": "true", "f": "json"})
+              _, _, cnt = get(f"{svc}/{lid}/query?{q}")
+              q2 = urllib.parse.urlencode({"where": "1=1", "outFields": "*", "returnGeometry": "false", "resultRecordCount": "2", "f": "json"})
+              _, _, smp = get(f"{svc}/{lid}/query?{q2}")
+              try: attrs = [f["attributes"] for f in json.loads(smp).get("features", [])]
+              except Exception: attrs = smp[:300]
+              note(f"layer{lid}", f"name={L.get('name')} geom={L.get('geometryType')} desc={str(L.get('description'))[:300]!r} copyright={L.get('copyrightText')!r} fields={[f['name'] for f in L.get('fields', [])]} count={cnt[:60]} maxRec={L.get('maxRecordCount')} formats={L.get('supportedQueryFormats')} sr={L.get('extent',{}).get('spatialReference')} sample={json.dumps(attrs, ensure_ascii=False)[:800]}")
