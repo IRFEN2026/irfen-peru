@@ -14,7 +14,7 @@
  "inputs": {
   "registry_sha256": "80768060455a9494ad8feb2e6fb2d791c8296335f3cc87a1818234fb69c21641",
   "zones_sha256": "eaabb283bea369a0d3a07cb0d592c835c957732b677484694e8283fdfe849da4",
-  "overlay_sha256": "637a9a4e28240e6fbd42e1a9a7f02e54cab0c6d5861cffd32669d475e5488732"
+  "overlay_sha256": "295f782d15b27575dd50ed6500b929a2f568475efc99c35ef749fec21ab4fa24"
  },
  "official_boundaries": "VERIFIED",
  "overlay_notes": [],
@@ -584,8 +584,8 @@
      "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-282",
      "status": "VIGENTE",
      "product": "ACP-LLUVIAS",
-     "relation_method": "DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
-     "relation_rank": 4,
+     "relation_method": "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES",
+     "relation_rank": 5,
      "validity_start": "2026-10-09T13:00:00-05:00",
      "validity_end": "2026-10-10T13:00:00-05:00",
      "official_level": null,
@@ -594,15 +594,13 @@
    ],
    "display_name": "Quebrada San Ildefonso (Trujillo)",
    "zone_type": "BASIN_GEOMETRY",
-   "best_relation_rank": 4,
-   "best_relation_method": "DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
+   "best_relation_rank": 5,
+   "best_relation_method": "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES",
    "any_vigente": true,
    "why_es": [
-    "El departamento figura en el aviso; relación provincial desconocida (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
+    "La cuenca está en un departamento del aviso pero fuera de sus provincias enumeradas (SENAMHI-ACP-LLUVIAS-2026-282, VIGENTE)"
    ],
-   "missing_data": [
-    "official provincial boundaries not available or not verified: provincial relation unknown, and a basin crossing into another department is not detected"
-   ]
+   "missing_data": []
   }
  ],
  "aviso_links": {
@@ -1077,28 +1075,32 @@
     {
      "zone_id": "lalibertad_san_ildefonso",
      "base_zone_id": "lalibertad_san_ildefonso",
-     "relation_method": "DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
+     "relation_method": "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES",
      "department": "LA LIBERTAD",
      "province": null,
      "evidence": {
-      "aviso_lists_department": true,
-      "provinces_listed": true,
-      "listed_provinces": [
-       "GRAN CHIMU",
-       "BOLIVAR",
-       "JULCAN",
-       "OTUZCO",
-       "PATAZ",
-       "SANCHEZ CARRION",
-       "SANTIAGO DE CHUCO",
-       "VIRU"
+      "zone_departments": [
+       "LA LIBERTAD"
       ],
-      "official_boundaries": "NOT_AVAILABLE_OR_UNVERIFIED"
+      "listed_provinces": {
+       "LA LIBERTAD": [
+        "GRAN CHIMU",
+        "BOLIVAR",
+        "JULCAN",
+        "OTUZCO",
+        "PATAZ",
+        "SANCHEZ CARRION",
+        "SANTIAGO DE CHUCO",
+        "VIRU"
+       ]
+      },
+      "boundary_source_sha256": "9aa2c6e63bdc038310d1421ae053f16572939e6f1186c93e10eed4c8aef5ff6e",
+      "boundary_coverage": 1.0
      },
-     "relation_kind": "ADMINISTRATIVE_DEPARTMENT",
-     "relation_rank": 4,
-     "label_es": "El departamento figura en el aviso; relación provincial desconocida",
-     "caveat_es": "Coincidencia administrativa; la relación provincial es DESCONOCIDA (sin límites oficiales verificados o sin provincias en el aviso)."
+     "relation_kind": "SPATIAL_VERIFIED_NEGATIVE",
+     "relation_rank": 5,
+     "label_es": "La cuenca está en un departamento del aviso pero fuera de sus provincias enumeradas",
+     "caveat_es": "Resultado negativo con límites INEI referenciales que cubren toda la cuenca; se muestra para revisión."
     }
    ],
    "rain_related": true
@@ -1265,5 +1267,5 @@
    "rain_related": true
   }
  },
- "evaluated_at_utc": "2026-10-10T02:47:10.813746+00:00"
+ "evaluated_at_utc": "2026-10-10T02:48:07.948772+00:00"
 }
