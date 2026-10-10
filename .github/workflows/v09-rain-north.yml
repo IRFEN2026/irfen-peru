@@ -36,13 +36,19 @@ jobs:
         env:
           EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
         run: timeout --signal=TERM --kill-after=10s 900s python scripts/v09_imerg_north_archive.py
+      - name: Rain engine and dashboard bundle (written only when they change)
+        run: |
+          python scripts/v09_aviso_zone_crossing.py
+          python scripts/v09_zone_rain_engine.py
+          python scripts/v09_zone_rain_engine.py --check
+          python scripts/v09_build_dashboard_data.py
       - name: Persist (bot commit, bounded retries)
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/v09/rain
+          git add data/v09/rain data/v09/surveillance site/data/v09
           if git diff --cached --quiet; then echo "No changes"; exit 0; fi
           git commit -q -m "IRFEN v0.9: lluvia IMERG Early zonas norte (TEST_ONLY)"
           BR="${GITHUB_REF_NAME}"

@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IRFEN v0.9 · Vigilancia SENAMHI (experimental)</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{
+  color-scheme: light;
+  --surface:#fcfcfb; --surface-2:#f2f1ee; --border:#dcdbd6; --ink:#0b0b0b; --ink-2:#52514e; --ink-3:#7a7974;
+  --link:#1f63b8;
+  /* SENAMHI official levels: used ONLY for the official level */
+  --lv-rojo:#c62828; --lv-naranja:#ef6c00; --lv-amarillo:#f2c200; --lv-verde:#2e7d32; --lv-none:#9e9d98;
+  /* IRFEN internal review priority: one hue (violet), light -> dark; never a SENAMHI colour */
+  --r1:#3b2a8f; --r2:#5a49c9; --r3:#8a7fe0; --r4:#b7b0ee; --r5:#d9d7d2; --r6:#eeedea;
+  --obs:#2a78d6; --fc:#1baf7a; --warn-bg:#fff4d6; --warn-ink:#6b4e00; --bad-bg:#fde8e8; --bad-ink:#8a1c1c; --ok-bg:#e6f4ea; --ok-ink:#1e5631;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --surface:#1a1a19; --surface-2:#232321; --border:#3a3a37; --ink:#f0efec; --ink-2:#c3c2b7; --ink-3:#9a998f; --link:#7fb0ff;
+    --r1:#b9b0ff; --r2:#9085e9; --r3:#6f63d0; --r4:#4d4596; --r5:#3a3a37; --r6:#2a2a28;
+    --obs:#3987e5; --fc:#199e70; --warn-bg:#3d3215; --warn-ink:#f4d98a; --bad-bg:#40201f; --bad-ink:#f3b0ae; --ok-bg:#1f3527; --ok-ink:#a8dbb7;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --surface:#1a1a19; --surface-2:#232321; --border:#3a3a37; --ink:#f0efec; --ink-2:#c3c2b7; --ink-3:#9a998f; --link:#7fb0ff;
+  --r1:#b9b0ff; --r2:#9085e9; --r3:#6f63d0; --r4:#4d4596; --r5:#3a3a37; --r6:#2a2a28;
+  --obs:#3987e5; --fc:#199e70; --warn-bg:#3d3215; --warn-ink:#f4d98a; --bad-bg:#40201f; --bad-ink:#f3b0ae; --ok-bg:#1f3527; --ok-ink:#a8dbb7;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--link)}
+header{padding:14px 16px 10px;border-bottom:1px solid var(--border)}
+h1{font-size:18px;margin:0 0 4px}
+h2{font-size:16px;margin:0 0 10px}
+h3{font-size:14px;margin:12px 0 6px}
+.muted{color:var(--ink-2)} .small{font-size:12px}
+.banner{margin:10px 0 0;padding:8px 10px;border-radius:8px;background:var(--warn-bg);color:var(--warn-ink);font-size:13px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:999px;padding:3px 10px;font-size:12px;background:var(--surface-2)}
+.chip.bad{background:var(--bad-bg);color:var(--bad-ink);border-color:transparent}
+.chip.ok{background:var(--ok-bg);color:var(--ok-ink);border-color:transparent}
+.chip.warn{background:var(--warn-bg);color:var(--warn-ink);border-color:transparent}
+nav{display:flex;gap:4px;padding:8px 16px;border-bottom:1px solid var(--border);overflow-x:auto;position:sticky;top:0;background:var(--surface);z-index:1000}
+nav button{border:1px solid var(--border);background:var(--surface-2);color:var(--ink);padding:6px 12px;border-radius:8px;cursor:pointer;white-space:nowrap;font:inherit}
+nav button[aria-selected="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+main{padding:14px 16px 40px;max-width:1280px;margin:0 auto}
+section[hidden]{display:none}
+#map{height:560px;border:1px solid var(--border);border-radius:10px}
+.grid2{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:14px}
+@media (max-width:900px){.grid2{grid-template-columns:1fr} #map{height:420px}}
+.legend{border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:var(--surface-2);font-size:12px}
+.legend .row{display:flex;align-items:center;gap:8px;margin:3px 0}
+.sw{width:16px;height:12px;border-radius:3px;border:1px solid var(--border);flex:none}
+.sw.line{height:0;border:0;border-top:3px solid}
+.sw.dash{background:transparent;border:2px dashed var(--ink-2)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-weight:600;color:var(--ink-2);font-size:12px;background:var(--surface-2)}
+.tablewrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px}
+.lvl{display:inline-flex;align-items:center;gap:6px;font-weight:600}
+.lvl i{width:12px;height:12px;border-radius:3px;display:inline-block;border:1px solid rgba(0,0,0,.25)}
+.prio{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:6px;font-size:12px;font-weight:600;border:1px solid var(--border)}
+.status{font-weight:600}
+.status.VIGENTE{color:var(--bad-ink)} .status.FUTURO{color:var(--warn-ink)} .status.VENCIDO,.status.CANCELADO,.status.REEMPLAZADO{color:var(--ink-3)}
+.na{color:var(--ink-3);font-style:italic}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.card{border:1px solid var(--border);border-radius:10px;padding:12px;background:var(--surface)}
+.card h3{margin:0 0 4px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:13px}
+.kv dt{color:var(--ink-2)} .kv dd{margin:0}
+.spark{width:100%;height:56px;display:block}
+details summary{cursor:pointer;color:var(--ink-2)}
+ul.tight{margin:4px 0;padding-left:18px}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.toolbar label{font-size:12px;color:var(--ink-2)}
+select{font:inherit;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--ink)}
+.tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--surface);font-size:12px;padding:4px 7px;border-radius:5px;z-index:2000;display:none}
+footer{padding:16px;color:var(--ink-3);font-size:12px;border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+<header>
+  <h1>IRFEN v0.9 · Vigilancia SENAMHI — costa norte</h1>
+  <div class="muted small">Tumbes · Piura · Lambayeque · La Libertad. Hora de presentación: America/Lima (<span id="now"></span>).</div>
+  <div class="banner" id="disclaimer">Vista experimental de investigación (RESEARCH_ONLY / TEST_ONLY). No es un sistema de alerta.</div>
+  <div class="chips" id="chips"></div>
+</header>
+<nav role="tablist">
+  <button role="tab" data-tab="map" aria-selected="true">1 · Mapa de vigilancia</button>
+  <button role="tab" data-tab="avisos" aria-selected="false">2 · Avisos SENAMHI / INDECI</button>
+  <button role="tab" data-tab="rain" aria-selected="false">3 · Lluvia y previsión</button>
+  <button role="tab" data-tab="center" aria-selected="false">4 · Centro de seguimiento</button>
+</nav>
+<main>
+  <section id="tab-map">
+    <div class="grid2">
+      <div id="map" role="img" aria-label="Mapa de cuencas de vigilancia y provincias incluidas en avisos"></div>
+      <div>
+        <div class="legend" id="legend"></div>
+        <h3>Zonas relacionadas con avisos de lluvia activos</h3>
+        <div id="map-zones" class="small"></div>
+      </div>
+    </div>
+  </section>
+  <section id="tab-avisos" hidden>
+    <div class="toolbar">
+      <label>Mostrar <select id="aviso-filter">
+        <option value="active">Vigentes y próximos (lluvia y otros)</option>
+        <option value="rain">Solo relacionados con lluvia</option>
+        <option value="all">Todos, incluido el histórico</option>
+      </select></label>
+      <span class="small muted">Estado recalculado en este navegador con la vigencia documentada.</span>
+    </div>
+    <div class="tablewrap"><table id="avisos-table"></table></div>
+    <h3>Registro de cambios</h3>
+    <div id="changes" class="small"></div>
+  </section>
+  <section id="tab-rain" hidden>
+    <p class="small muted" id="rain-rules"></p>
+    <div class="cards" id="rain-cards"></div>
+  </section>
+  <section id="tab-center" hidden>
+    <p class="small muted">Orden de revisión interna IRFEN. No es un nivel SENAMHI, ni un riesgo, ni una probabilidad, ni una alerta. Un dato ausente nunca rebaja la prioridad.</p>
+    <div class="tablewrap"><table id="center-table"></table></div>
+    <h3>Bandeja interna de eventos (revisión humana)</h3>
+    <div class="tablewrap"><table id="events-table"></table></div>
+  </section>
+</main>
+<footer id="footer"></footer>
+<div class="tip" id="tip"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+"use strict";
+const DATA_URL = "../data/v09/dashboard_v0_1.json";
+const LEVEL_VAR = {ROJO:"--lv-rojo", NARANJA:"--lv-naranja", AMARILLO:"--lv-amarillo", VERDE:"--lv-verde"};
+const PRIO_VAR = {R1_REVISION_PRIORITARIA:"--r1", R2_VIGILANCIA_ACTIVA:"--r2", R3_PREPARAR_VIGILANCIA:"--r3",
+  R4_LLUVIA_OBSERVADA_SIN_AVISO:"--r4", R5_DATOS_INSUFICIENTES:"--r5", R6_SIN_SENAL_EN_DATOS_DISPONIBLES:"--r6"};
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const lima = iso => iso ? new Date(iso).toLocaleString("es-PE", {timeZone:"America/Lima", day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit"}) : "—";
+const ago = iso => { if(!iso) return "—"; const m = (Date.now() - new Date(iso)) / 60000; return m < 90 ? `hace ${Math.round(m)} min` : m < 2880 ? `hace ${(m/60).toFixed(1)} h` : `hace ${(m/1440).toFixed(1)} d`; };
+const na = (why) => `<span class="na" title="${esc(why||"")}">no disponible</span>`;
+
+function statusNow(a){ // same rule as the capturer: documented validity only
+  if (a.cancellation_text) return "CANCELADO";
+  if (a.superseded_by) return "REEMPLAZADO";
+  if (!a.validity_start || !a.validity_end) return "DESCONOCIDO";
+  const now = Date.now(), s = new Date(a.validity_start), e = new Date(a.validity_end);
+  if (e < s) return "DESCONOCIDO";
+  return now < s ? "FUTURO" : now <= e ? "VIGENTE" : "VENCIDO";
+}
+function hoursTo(iso){ return iso ? ((new Date(iso) - Date.now())/3.6e6) : null; }
+function levelBadge(a){
+  if (!a.official_level) return `<span class="lvl"><i style="background:var(--lv-none)"></i>No consta en el texto</span>`;
+  const src = a.official_level_source ? " · tabla diaria INDECI" : "";
+  return `<span class="lvl"><i style="background:var(${LEVEL_VAR[a.official_level]})"></i>${esc(a.official_level)}</span><span class="small muted">${src}</span>`;
+}
+function prioBadge(code, label){ return `<span class="prio" style="background:var(${PRIO_VAR[code]});color:${["R1_REVISION_PRIORITARIA","R2_VIGILANCIA_ACTIVA"].includes(code)?"#fff":"inherit"}">${esc(label)}</span>`; }
+
+let D, avisoByKey = {};
+fetch(DATA_URL, {cache:"no-store"}).then(r => { if(!r.ok) throw new Error(r.status); return r.json(); }).then(d => { D = d; init(); })
+  .catch(err => { document.getElementById("chips").innerHTML = `<span class="chip bad">No se pudo cargar el paquete de datos (${esc(err.message)}). No se muestra ningún estado: la ausencia de datos no significa ausencia de avisos.</span>`; });
+
+function sourceState(){
+  const h = D.source.health || {}, lim = D.source.viewer_stale_after_minutes || 180;
+  if (!h.last_check_utc) return "NO_SUCCESSFUL_CHECK_YET";
+  const age = (Date.now() - new Date(h.last_check_utc))/60000;
+  return age > lim ? "DESACTUALIZADA" : h.state;
+}
+function init(){
+  document.getElementById("now").textContent = new Date().toLocaleString("es-PE",{timeZone:"America/Lima"});
+  document.getElementById("disclaimer").textContent = D.disclaimer_es;
+  D.avisos.forEach(a => { a.now = statusNow(a); avisoByKey[a.aviso_key] = a; });
+  const st = sourceState(), h = D.source.health || {};
+  const active = D.avisos.filter(a => ["VIGENTE","FUTURO"].includes(a.now));
+  const rainActive = active.filter(a => a.rain_related !== false);
+  const chips = [];
+  chips.push(`<span class="chip ${st==="AL_DIA"?"ok":"bad"}">Fuente INDECI/COEN: ${esc(st)} · última consulta correcta ${lima(h.last_successful_check_utc)} (${ago(h.last_successful_check_utc)})</span>`);
+  chips.push(st==="AL_DIA" ? `<span class="chip">${active.length} avisos vigentes o próximos · ${rainActive.length} de lluvia</span>`
+                           : `<span class="chip warn">Se muestran los avisos de la última captura válida; puede haber avisos no capturados</span>`);
+  chips.push(`<span class="chip">Acceso directo a SENAMHI: no usado (robots)</span>`);
+  chips.push(`<span class="chip">Límites: ${D.official_boundaries==="VERIFIED"?"INEI referenciales verificados":"no verificados"}</span>`);
+  document.getElementById("chips").innerHTML = chips.join("");
+  document.getElementById("footer").innerHTML = `Paquete generado ${lima(D.built_at_utc)} (UTC ${esc(D.built_at_utc)}). Cruce territorial evaluado ${lima(D.links_evaluated_at_utc)}; lluvia evaluada ${lima(D.rain.evaluated_at_utc)}. `
+    + (D.boundary_source ? `Límites: ${esc(D.boundary_source.dataset_title)} (${esc(D.boundary_source.institution)}; ${esc(D.boundary_source.legal_status)}; SHA-256 ${esc((D.boundary_source.sha256||"").slice(0,12))}…). ` : "")
+    + `Guardas: production_use=false · operational_alerting_enabled=false · activation_gate=BLOCKED · decision_thresholds=null.`;
+  document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => {
+    document.querySelectorAll("nav button").forEach(x => x.setAttribute("aria-selected", x===b));
+    document.querySelectorAll("main section").forEach(s => s.hidden = s.id !== "tab-" + b.dataset.tab);
+    if (b.dataset.tab === "map" && window._map) window._map.invalidateSize();
+  }));
+  for (const [name, fn] of [["mapa", renderMap], ["avisos", renderAvisos], ["lluvia", renderRain], ["seguimiento", renderCenter]]) {
+    try { fn(); } catch (err) { console.error(name, err); document.getElementById("chips").insertAdjacentHTML("beforeend", `<span class="chip bad">Error al dibujar el módulo «${esc(name)}»: ${esc(err.message)}</span>`); }
+  }
+}
+
+/* ---------------- 1 · map ---------------- */
+function zoneTier(zoneId){
+  const z = D.rain.zones.find(r => r.zone_id === zoneId);
+  return z ? z.review_priority : null;
+}
+function provincesInActiveRainAvisos(){
+  const m = {}; // "DEP|PROV" -> {level, avisos}
+  D.avisos.filter(a => ["VIGENTE","FUTURO"].includes(a.now) && a.rain_related !== false).forEach(a => {
+    const lv = a.official_level;
+    if (a.provinces_by_department) {
+      Object.entries(a.provinces_by_department).forEach(([dep, ps]) => ps.forEach(p => {
+        const k = dep + "|" + p.normalize("NFD").replace(/[̀-ͯ]/g,"").toUpperCase().replace(/\./g,"").trim();
+        (m[k] = m[k] || {levels:[], avisos:[], dept_only:false}).avisos.push(a.aviso_key); if (lv) m[k].levels.push(lv);
+      }));
+    }
+    (a.departments||[]).filter(d => !(a.provinces_by_department||{})[d]).forEach(dep => {
+      const k = dep + "|*"; (m[k] = m[k] || {levels:[], avisos:[], dept_only:true}).avisos.push(a.aviso_key); if (lv) m[k].levels.push(lv);
+    });
+  });
+  return m;
+}
+const ORDER = ["ROJO","NARANJA","AMARILLO","VERDE"];
+function renderMap(){
+  if (!window.L) { document.getElementById("map").innerHTML = `<p class="muted" style="padding:12px">No se pudo cargar la librería del mapa (Leaflet). Los demás módulos funcionan.</p>`; renderLegendOnly(); return; }
+  const map = L.map("map", {scrollWheelZoom:false}).setView([-6.6, -79.6], 7);
+  window._map = map;
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {maxZoom:12, attribution:"© OpenStreetMap"}).addTo(map);
+  const listed = provincesInActiveRainAvisos();
+  const provs = D.geometries.features.filter(f => f.properties.kind === "PROVINCE");
+  L.geoJSON({type:"FeatureCollection", features:provs}, {
+    style: f => {
+      const p = f.properties, hit = listed[p.department + "|" + p.province] || listed[p.department + "|*"];
+      if (!hit) return {color:css("--ink-3"), weight:0.6, fillOpacity:0, opacity:0.6};
+      const lv = ORDER.find(l => hit.levels.includes(l));
+      return {color: lv ? css(LEVEL_VAR[lv]) : css("--ink-2"), weight: hit.dept_only ? 1.2 : 2, dashArray: lv ? null : "5 4",
+              fillColor: lv ? css(LEVEL_VAR[lv]) : css("--lv-none"), fillOpacity: hit.dept_only ? 0.06 : 0.16};
+    },
+    onEachFeature: (f, layer) => {
+      const p = f.properties, hit = listed[p.department + "|" + p.province] || listed[p.department + "|*"];
+      layer.bindPopup(`<b>${esc(p.province)}</b> (${esc(p.department)})<br>` + (hit
+        ? `${hit.dept_only ? "Departamento nombrado en" : "Provincia enumerada en"}: ${hit.avisos.map(esc).join(", ")}<br><span class="small">Representación administrativa del aviso, no su huella real.</span>`
+        : "No incluida en avisos de lluvia activos."));
+    }
+  }).addTo(map);
+  const basins = D.geometries.features.filter(f => f.properties.kind === "BASIN");
+  const basinLayer = L.geoJSON({type:"FeatureCollection", features:basins}, {
+    style: f => { const pr = zoneTier(f.properties.zone_id); const v = pr ? PRIO_VAR[pr.code] : "--r5";
+      return {color: css("--r1"), weight: 1.5, fillColor: css(v), fillOpacity: 0.55, dashArray: pr && pr.code === "R5_DATOS_INSUFICIENTES" ? "4 3" : null}; },
+    onEachFeature: (f, layer) => {
+      const z = D.rain.zones.find(r => r.zone_id === f.properties.zone_id) || {};
+      const sz = D.surveillance_zones.find(r => r.zone_id === f.properties.zone_id);
+      layer.bindPopup(`<b>${esc(f.properties.name)}</b><br>Prioridad interna IRFEN: ${esc(z.review_priority?.label_es || "—")}<br>`
+        + (sz ? `Relación con avisos: ${esc(sz.why_es.join("; "))}` : "Sin aviso de lluvia activo relacionado")
+        + `<br>Fuentes: IMERG ${esc(z.imerg?.status||"—")} · GOES ${esc(z.goes19?.status||"—")} · GEOS ${esc(z.geos_cf?.status||"—")}`
+        + `<br><span class="small">Geometría verificada: ${esc(f.properties.validation_status||"")}</span>`);
+    }
+  }).addTo(map);
+  try { map.fitBounds(basinLayer.getBounds().pad(0.6)); } catch(e) {}
+  renderLegendOnly();
+}
+function renderLegendOnly(){
+  const lg = [];
+  lg.push(`<b>Nivel oficial SENAMHI</b> (solo cuando consta; provincias o departamentos enumerados en avisos de lluvia activos)`);
+  ORDER.forEach(l => lg.push(`<div class="row"><span class="sw" style="background:var(${LEVEL_VAR[l]})"></span>${l}</div>`));
+  lg.push(`<div class="row"><span class="sw dash"></span>Nivel no consta en el texto del boletín</div>`);
+  lg.push(`<div class="row"><span class="sw" style="background:transparent;border:1px solid var(--ink-3)"></span>Provincia no incluida</div>`);
+  lg.push(`<hr style="border:0;border-top:1px solid var(--border)"><b>Prioridad interna de revisión IRFEN</b> (cuencas; no es nivel oficial)`);
+  (D.rain.review_priorities||[]).forEach(p => lg.push(`<div class="row"><span class="sw" style="background:var(${PRIO_VAR[p.code]})"></span>${esc(p.label_es)}</div>`));
+  lg.push(`<p class="small muted" style="margin:6px 0 0">Piura no tiene cuenca validada: se muestra como provincias de contexto. Las cuencas proceden de ANA (y San Ildefonso, de la validación v0.8).</p>`);
+  document.getElementById("legend").innerHTML = lg.join("");
+  const rows = D.surveillance_zones.map(z => `<li><b>${esc(z.display_name)}</b> — ${esc(D.relation_methods?.[z.best_relation_method]?.label_es || z.best_relation_method)}</li>`);
+  document.getElementById("map-zones").innerHTML = rows.length ? `<ul class="tight">${rows.join("")}</ul>` : `<p class="muted">Ninguna en la última evaluación.</p>`;
+}
+
+/* ---------------- 2 · avisos ---------------- */
+function renderAvisos(){
+  const sel = document.getElementById("aviso-filter");
+  const draw = () => {
+    const mode = sel.value;
+    let rows = D.avisos.slice();
+    if (mode !== "all") rows = rows.filter(a => ["VIGENTE","FUTURO","DESCONOCIDO"].includes(a.now));
+    if (mode === "rain") rows = rows.filter(a => a.rain_related !== false);
+    rows.sort((a,b) => ["VIGENTE","FUTURO","DESCONOCIDO","VENCIDO","REEMPLAZADO","CANCELADO"].indexOf(a.now) - ["VIGENTE","FUTURO","DESCONOCIDO","VENCIDO","REEMPLAZADO","CANCELADO"].indexOf(b.now) || (a.validity_start||"").localeCompare(b.validity_start||""));
+    const head = `<tr><th>Aviso</th><th>Fenómeno</th><th>Estado</th><th>Vigencia (Lima)</th><th>Nivel oficial</th><th>Ámbito</th><th>Fuente</th></tr>`;
+    const body = rows.map(a => {
+      const hs = hoursTo(a.validity_start), he = hoursTo(a.validity_end);
+      const timing = a.now === "FUTURO" ? `empieza en ${hs.toFixed(1)} h` : a.now === "VIGENTE" ? `termina en ${he.toFixed(1)} h` : "";
+      const scope = a.provinces_by_department ? Object.entries(a.provinces_by_department).map(([d,ps]) => `<b>${esc(d)}</b>: ${ps.map(esc).join(", ")}`).join("<br>")
+                                              : (a.departments||[]).map(esc).join(", ") + (a.departments?.length ? `<br><span class="small muted">sin provincias en la fuente</span>` : "");
+      return `<tr><td><b>${esc(a.aviso_number)}</b><br><span class="small muted">${esc(a.product)}</span></td>
+        <td>${esc(a.phenomenon || "—")}${a.rain_related === false ? `<br><span class="small muted">No es aviso de lluvia: contexto oficial</span>` : ""}${a.extends_aviso_number ? `<br><span class="small muted">Extensión del aviso ${esc(a.extends_aviso_number)}</span>` : ""}</td>
+        <td><span class="status ${a.now}">${a.now}</span><br><span class="small muted">${timing}</span></td>
+        <td>${lima(a.validity_start)} → ${lima(a.validity_end)}<br><span class="small muted">${esc(a.validity_text||"")}</span></td>
+        <td>${levelBadge(a)}</td><td class="small">${scope || "—"}</td>
+        <td>${a.official_url ? `<a href="${esc(a.official_url)}" target="_blank" rel="noopener">${a.official_url_kind==="INDECI_COEN_DAILY_MONITORING_TABLE"?"Tabla diaria INDECI":"Boletín INDECI"}</a>` : "—"}<br><span class="small muted">${a.revisions.length} revisión(es)</span></td></tr>`;
+    }).join("");
+    document.getElementById("avisos-table").innerHTML = head + (body || `<tr><td colspan="7" class="muted">Ningún aviso en esta selección${sourceState()!=="AL_DIA"?" (la fuente no está al día: puede haber avisos no capturados)":""}.</td></tr>`);
+  };
+  sel.addEventListener("change", draw); draw();
+  const changes = [];
+  D.avisos.forEach(a => a.revisions.filter(r => r.revision > 1).forEach(r => changes.push({a, r})));
+  D.avisos.forEach(a => (a.status_history||[]).slice(1).forEach(s => changes.push({a, s})));
+  changes.sort((x,y) => ((y.r?.observed_at_utc||y.s?.at_utc)||"").localeCompare((x.r?.observed_at_utc||x.s?.at_utc)||""));
+  document.getElementById("changes").innerHTML = changes.length ? `<ul class="tight">${changes.slice(0,40).map(c => c.r
+      ? `<li>${lima(c.r.observed_at_utc)} · ${esc(c.a.aviso_key)} · revisión ${c.r.revision}: ${esc(c.r.changed_fields.join(", "))}</li>`
+      : `<li>${lima(c.s.at_utc)} · ${esc(c.a.aviso_key)} · estado → ${esc(c.s.status)}</li>`).join("")}</ul>` : `<p class="muted">Sin revisiones ni cambios de estado registrados todavía.</p>`;
+}
+
+/* ---------------- 3 · rain ---------------- */
+function sparkSVG(series, color, label){
+  if (!series || !series.length) return "";
+  const w = 300, h = 56, n = series.length, bw = w / n, vals = series.map(s => s[1]), max = Math.max(0.5, ...vals.filter(v => v != null));
+  const bars = series.map((s,i) => s[1] == null
+    ? `<rect x="${i*bw}" y="${h-3}" width="${Math.max(1,bw-1)}" height="3" fill="${css("--border")}" data-t="${esc(lima(s[0]))}: sin dato (hueco)"></rect>`
+    : `<rect x="${i*bw}" y="${h - (s[1]/max)*(h-8) - 1}" width="${Math.max(1,bw-1)}" height="${Math.max(1,(s[1]/max)*(h-8))}" rx="1" fill="${color}" data-t="${esc(lima(s[0]))}: ${s[1]} mm"></rect>`).join("");
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="${esc(label)}"><line x1="0" x2="${w}" y1="${h-0.5}" y2="${h-0.5}" stroke="${css("--border")}"/>${bars}</svg>`;
+}
+function geosSums(g){
+  if (!g || g.status !== "CALCULADO") return null;
+  const now = Date.now(), fut = g.hourly.filter(x => new Date(x.valid_time_utc) >= now);
+  const sum = n => fut.length >= n ? fut.slice(0,n).reduce((s,x)=>s+x.precip_mm,0).toFixed(1) : null;
+  return {h6: sum(6), h24: sum(24), next: fut.slice(0,48)};
+}
+function renderRain(){
+  document.getElementById("rain-rules").textContent = (D.rain.rules_es||[]).join(" ");
+  const cards = D.rain.zones.map(z => {
+    const im = z.imerg, w = im.windows || {};
+    const cell = k => w[k]?.status === "CALCULADO" ? `<b>${w[k].accum_mm} mm</b>` : na(w[k]?.reason);
+    const age = im.window_end_utc ? `ventanas terminan ${lima(im.window_end_utc)} (${ago(im.window_end_utc)}; latencia IMERG Early)` : "sin muestras IMERG";
+    const g = z.goes19, f = geosSums(z.geos_cf);
+    return `<div class="card"><h3>${esc(z.display_name)}</h3><div class="small muted">${esc(z.department)} · ${z.zone_type==="BASIN_GEOMETRY"?"cuenca verificada":"provincia de contexto (sin cuenca)"}</div>
+      <h3>Observado · IMERG Early</h3>
+      <dl class="kv"><dt>1 h</dt><dd>${cell("1h")}</dd><dt>3 h</dt><dd>${cell("3h")}</dd><dt>6 h</dt><dd>${cell("6h")}</dd><dt>24 h</dt><dd>${cell("24h")}</dd>
+      <dt>Anomalía</dt><dd>${na(z.percentile?.reason)} <span class="small muted">(sin serie histórica homogénea)</span></dd></dl>
+      <div class="small muted">${esc(age)} · fuente ${esc(im.source||"—")}</div>
+      ${sparkSVG(im.series_24h_half_hourly_mm, css("--obs"), "IMERG Early, últimas 24 h por media hora")}<div class="small muted">Barras: últimas 24 h por media hora · gris = hueco sin dato</div>
+      <h3>Observado · GOES-19 RRQPE</h3>
+      <div>${g.status==="CALCULADO" ? `tasa media ${g.rate_mean_mm_h} mm/h (máx. ${g.rate_max_mm_h}) · escaneo ${lima(g.scan_end_utc)} (${ago(g.scan_end_utc)})<br><span class="small muted">${esc(g.uncertainty_es)}</span>` : na(g.reason)}</div>
+      <h3>Previsión · GEOS-CF (experimental)</h3>
+      <div>${f ? `próximas 6 h: <b>${f.h6 ?? "—"} mm</b> · 24 h: <b>${f.h24 ?? "—"} mm</b><br><span class="small muted">ciclo ${esc(z.geos_cf.dataset_time_start||"")}; sumas desde ahora</span>${sparkSVG(f.next.map(x=>[x.valid_time_utc,x.precip_mm]), css("--fc"), "GEOS-CF próximas 48 h")}` : na(z.geos_cf?.reason)}</div>
+      <h3>Río</h3><div>${na(z.river_level?.reason)}</div>
+      ${z.v08_source_caveat ? `<p class="small muted">${esc(z.v08_source_caveat)}</p>` : ""}</div>`;
+  });
+  document.getElementById("rain-cards").innerHTML = cards.join("");
+  const tip = document.getElementById("tip");
+  document.getElementById("rain-cards").addEventListener("mousemove", e => { const t = e.target.closest("[data-t]"); if (!t) { tip.style.display="none"; return; }
+    tip.textContent = t.dataset.t; tip.style.display = "block"; tip.style.left = (e.clientX + 12) + "px"; tip.style.top = (e.clientY + 12) + "px"; });
+  document.getElementById("rain-cards").addEventListener("mouseleave", () => tip.style.display = "none");
+}
+
+/* ---------------- 4 · follow-up centre ---------------- */
+function liveTier(z){ // re-evaluate R2/R3 with the reader's clock; other tiers come from the engine evidence
+  const av = (z.avisos||[]).filter(a => a.relation_method !== "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES")
+    .map(a => ({...a, now: statusNow(avisoByKey[a.aviso_key] || a)}));
+  const p = z.review_priority;
+  if (["R1_REVISION_PRIORITARIA","R2_VIGILANCIA_ACTIVA","R3_PREPARAR_VIGILANCIA"].includes(p.code)) {
+    if (p.code !== "R1_REVISION_PRIORITARIA" && av.some(a => a.now === "VIGENTE")) return {code:"R2_VIGILANCIA_ACTIVA", recalculated: p.code !== "R2_VIGILANCIA_ACTIVA"};
+    if (av.some(a => ["FUTURO","DESCONOCIDO"].includes(a.now))) return {code:"R3_PREPARAR_VIGILANCIA", recalculated: p.code !== "R3_PREPARAR_VIGILANCIA"};
+    if (!av.some(a => ["VIGENTE","FUTURO","DESCONOCIDO"].includes(a.now)) && p.code !== "R1_REVISION_PRIORITARIA") return {code:"R5_DATOS_INSUFICIENTES", recalculated:true, expired:true};
+  }
+  return {code:p.code, recalculated:false};
+}
+function renderCenter(){
+  const labels = Object.fromEntries((D.rain.review_priorities||[]).map(p => [p.code, p.label_es]));
+  const order = Object.keys(PRIO_VAR);
+  const rows = D.rain.zones.map(z => ({z, t: liveTier(z)})).sort((a,b) => order.indexOf(a.t.code) - order.indexOf(b.t.code));
+  const head = `<tr><th>Zona</th><th>Prioridad interna</th><th>Motivo</th><th>Evidencia disponible</th><th>Información pendiente</th></tr>`;
+  const body = rows.map(({z,t}) => {
+    const w = z.imerg.windows || {}, ev = [];
+    ["1h","3h","6h","24h"].forEach(k => { if (w[k]?.status === "CALCULADO") ev.push(`IMERG ${k}: ${w[k].accum_mm} mm (hasta ${lima(w[k].end_utc)})`); });
+    if (z.goes19.status === "CALCULADO") ev.push(`GOES-19: ${z.goes19.rate_mean_mm_h} mm/h (${lima(z.goes19.scan_end_utc)})`);
+    const f = geosSums(z.geos_cf); if (f && f.h24 != null) ev.push(`GEOS-CF 24 h: ${f.h24} mm (experimental)`);
+    const rm = D.relation_methods || {};
+    const reasons = (z.review_priority.reasons_es||[]).map(r => r.replace(/[A-Z_]{12,}/g, c => rm[c] ? rm[c].label_es : c));
+    if (t.recalculated) reasons.unshift(t.expired ? "Los avisos relacionados ya no están activos (recalculado en el navegador)." : "Estado del aviso recalculado en el navegador con la hora actual.");
+    return `<tr><td><b>${esc(z.display_name)}</b><br><span class="small muted">${esc(z.department)}</span></td>
+      <td>${prioBadge(t.code, labels[t.code])}</td><td class="small">${reasons.map(esc).join("<br>") || "—"}</td>
+      <td class="small">${ev.map(esc).join("<br>") || na()}</td><td class="small">${(z.review_priority.missing_es||[]).map(esc).join("<br>") || "—"}</td></tr>`;
+  }).join("");
+  document.getElementById("center-table").innerHTML = head + body;
+  const evHead = `<tr><th>Hora (Lima)</th><th>Evento</th><th>Aviso / documento</th><th>Detalle</th><th>Revisión humana</th></tr>`;
+  const evs = (D.events||[]).map(e => `<tr><td>${lima(e.observed_at_utc)}</td><td>${esc(e.event)}</td>
+      <td class="small">${esc(e.aviso_key || "")}${e.post_link && e.post_link.startsWith("http") ? `<br><a href="${esc(e.post_link)}" target="_blank" rel="noopener">fuente</a>` : ""}${e.document_sha256 ? `<br><span class="muted">SHA-256 ${esc(e.document_sha256.slice(0,12))}…</span>` : ""}</td>
+      <td class="small">${esc((e.changed_fields||e.detail||[]).join ? (e.changed_fields||e.detail||[]).join(", ") : "")}${e.to_status ? esc(` ${e.from_status} → ${e.to_status}`) : ""}</td>
+      <td>${e.requires_human_review ? "Sí" : "No"}</td></tr>`).join("");
+  document.getElementById("events-table").innerHTML = evHead + (evs || `<tr><td colspan="5" class="muted">Sin eventos.</td></tr>`);
+}
+</script>
+</body>
+</html>
