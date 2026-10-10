@@ -58,7 +58,7 @@ STORE = ROOT / "data/v09/senamhi_avisos"
 REGISTRY = STORE / "registry_v0_1.json"
 HEALTH = STORE / "health_v0_1.json"
 LIMA = ZoneInfo("America/Lima")
-PARSER_VERSION = "0.3"
+PARSER_VERSION = "0.4"
 USER_AGENT = "IRFEN-v0.9-research-aviso-archive/1.0 (+https://github.com/IRFEN2026/irfen-peru)"
 GUARDS = {
     "deployment_status": "RESEARCH_ONLY",
@@ -147,6 +147,16 @@ RANGE_HOUR_FIRST_RE = re.compile(
 MM_RE = re.compile(r"(?:acumulados?|valores?|alrededor|superiores?|cercanos?|entre)[^.\n]{0,60}?(\d{1,3}(?:[.,]\d)?)\s*(?:a\s*(\d{1,3}))?\s*mm(?:/d[ií]a)?", re.I)
 CANCEL_RE = re.compile(r"(deja\s+sin\s+efecto|cancela(?:do|ci[oó]n)?\s+(?:el\s+)?aviso)", re.I)
 UPDATE_RE = re.compile(r"(actualiza(?:ci[oó]n)?\s+(?:del?\s+)?aviso|ampl[ií]a(?:ci[oó]n)?\s+(?:del?\s+)?aviso)", re.I)
+WEEKDAY = r"(?:LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO)"
+MONTH_ALT = r"(?:ENERO|FEBRERO|MARZO|ABRIL|MAYO|JUNIO|JULIO|AGOSTO|SEPTIEMBRE|SETIEMBRE|OCTUBRE|NOVIEMBRE|DICIEMBRE)"
+# "VIGENCIA: DESDE EL DOMINGO 11 AL MARTES 13 DE OCTUBRE" (aviso meteorológico bulletins; folded text)
+VIGENCIA_DAYS_RE = re.compile(
+    rf"VIGENCIA\s*:?\s*(?:DESDE\s+)?(?:EL\s+)?(?:{WEEKDAY}\s+)?(\d{{1,2}})(?:\s+DE\s+({MONTH_ALT}))?(?:\s+(?:DE|DEL)\s+(\d{{4}}))?"
+    rf"\s+(?:AL|HASTA\s+EL|HASTA)\s+(?:{WEEKDAY}\s+)?(\d{{1,2}})\s+DE\s+({MONTH_ALT})(?:\s+(?:DE|DEL)\s+(\d{{4}}))?")
+AVISO_HEAD_RE = re.compile(r"AVISO\s*N\s*[°º]?\s*(\d{1,4})\s*:\s*(.+?)\n\s*VIGENCIA", re.I | re.S)
+EXTENSION_RE = re.compile(r"\(\s*EXTENSI[ÓO]N\s+DEL\s+AVISO\s*(?:N\s*[°º]?\s*)?(\d{1,4})\s*\)", re.I)
+EXPOSED_DEPS_RE = re.compile(r"DEPARTAMENTOS\s+(?:EXPUESTOS|DE\s+POSIBLE\s+AFECTACION)\s*:\s*(.+?)\.", re.S)
+CALLAO_RE = re.compile(r"(?:LA\s+)?PROV(?:\.|INCIA)\s*CONSTITUCIONAL\s+DEL\s+CALLAO", re.S)
 SUPERSEDES_RE = re.compile(r"(?:REEMPLAZA|SUSTITUYE)\s+(?:AL?\s+|EL\s+)?AVISO\s*N\s*[°º\.]*\s*(\d{1,4})")
 
 
@@ -251,6 +261,14 @@ def product_from_source_line(source_line: str | None) -> str | None:
     return None
 
 
+RAIN_PATTERN = re.compile(r"PRECIPITACION|LLUVIA|TORMENTA|CHUBASCO|QUEBRADA|HUAICO|INUNDACION")
+
+
+def rain_related(product: str | None, phenomenon: str | None) -> bool:
+    """Rain-related avisos feed rain surveillance; others are kept as official context, never as flood signals."""
+    return product in ("ACP-LLUVIAS", "ACP-QUEBRADAS") or bool(RAIN_PATTERN.search(fold(phenomenon or "")))
+
+
 def parse_bulletin(text: str, words: list[dict] | None, family: str, reference_year: int | None = None) -> dict:
     """Fields of one INDECI aviso bulletin (short-term or meteorological). Missing fields stay None."""
     t = text or ""
@@ -261,7 +279,7 @@ def parse_bulletin(text: str, words: list[dict] | None, family: str, reference_y
                official_level_note=None, senamhi_emission=None, bulletin_date=None, validity_text=None,
                validity_start=None, validity_end=None, validity_basis=None, departments=[], provinces_by_department=None,
                description=None, precipitation_mm=[], cancellation_text=None, update_text=None, supersedes_number=None,
-               source_line=None, parser_version=PARSER_VERSION, parse_notes=[])
+               source_line=None, extends_aviso_number=None, rain_related=None, parser_version=PARSER_VERSION, parse_notes=[])
     notes = out["parse_notes"]
     layout = layout_from_words(words) if words is not None else None
     b = BULLETIN_NUMBER_RE.search(folded)
@@ -272,6 +290,15 @@ def parse_bulletin(text: str, words: list[dict] | None, family: str, reference_y
         out["aviso_number"] = int(src.group(1))
         if src.group(2):
             out["aviso_year"], out["aviso_year_basis"] = int(src.group(2)), "STATED_IN_SOURCE_LINE"
+    elif not short_term and AVISO_HEAD_RE.search(t):
+        head = AVISO_HEAD_RE.search(t)
+        out["aviso_number"] = int(head.group(1))
+        phen = norm(head.group(2))
+        ext = EXTENSION_RE.search(phen)
+        if ext:
+            out["extends_aviso_number"] = int(ext.group(1))
+            phen = norm(EXTENSION_RE.sub("", phen))
+        out["phenomenon"] = phen or None
     elif not short_term:
         titles = [x for x in AVISO_TITLE_RE.finditer(folded) if not norm(x.group(3)).strip(" :-–").startswith(("INDECI", "COEN"))]
         if titles:
@@ -313,6 +340,23 @@ def parse_bulletin(text: str, words: list[dict] | None, family: str, reference_y
                 notes.append("validity hours not stated: whole days assumed (start 00:00, end 23:59 Lima)")
         except ValueError as exc:
             notes.append(f"validity not parseable: {exc}")
+    elif VIGENCIA_DAYS_RE.search(folded) and year:
+        vd = VIGENCIA_DAYS_RE.search(folded)
+        d1, mo1, y1, d2, mo2, y2 = vd.groups()
+        mo2n = month_number(mo2)
+        mo1n = month_number(mo1) or (mo2n if int(d1) <= int(d2) else (12 if mo2n == 1 else mo2n - 1))
+        y_end = int(y2) if y2 else year
+        y_start = int(y1) if y1 else (y_end - 1 if mo1n > mo2n else y_end)
+        try:
+            out["validity_start"] = iso(lima_dt(y_start, mo1n, int(d1), None, None, False))
+            out["validity_end"] = iso(lima_dt(y_end, mo2n, int(d2), None, None, True))
+            out["validity_text"] = norm(vd.group(0))
+            out["validity_basis"] = "VIGENCIA_DAY_RANGE_AS_REPRODUCED_BY_INDECI_COEN"
+            notes.append("validity gives days only: whole days assumed (start 00:00, end 23:59 Lima)")
+            if not y2:
+                notes.append(f"validity year not stated: taken from the aviso/bulletin year {year}")
+        except ValueError as exc:
+            notes.append(f"validity not parseable: {exc}")
     else:
         r = RANGE_HOUR_FIRST_RE.search(t)
         if r:
@@ -345,10 +389,24 @@ def parse_bulletin(text: str, words: list[dict] | None, family: str, reference_y
         if all(row["provinces"] is not None for row in layout["table"]):
             out["provinces_by_department"] = {row["department"]: row["provinces"] for row in layout["table"]}
         out["description"] = layout["perspectives"]
+    elif EXPOSED_DEPS_RE.search(CALLAO_RE.sub("CALLAO", folded)):
+        listed = re.split(r"\s*,\s*|\s+Y\s+", norm(EXPOSED_DEPS_RE.search(CALLAO_RE.sub("CALLAO", folded)).group(1)))
+        listed = [x for x in (norm(v) for v in listed) if x]
+        if listed and all(x in DEPARTMENTS for x in listed):
+            out["departments"] = listed
+            notes.append("departments from the bulletin's list of exposed departments")
+        else:
+            out["departments"] = departments_in(t)
+            notes.append(f"'departamentos expuestos' list not fully recognised ({listed}): departments taken from free text")
     else:
         out["departments"] = departments_in(t)
         notes.append("department table not found in the page layout: departments taken from free text "
                      "(may include mentions outside the aviso scope)")
+    if not short_term and out["description"] is None and out["validity_text"]:
+        para = re.search(r"VIGENCIA[^\n]*\n(.+?)(?:\n\s*Fuente:|\n\s*INDECI RECOMIENDA)", t, re.S | re.I)
+        if para:
+            out["description"] = norm(para.group(1)) or None
+    out["rain_related"] = rain_related(out["product"], out["phenomenon"])
     notes.append("SENAMHI emission date/time not stated in the INDECI bulletin")
     for mm in MM_RE.finditer(t):
         hi = mm.group(2)
@@ -387,6 +445,85 @@ def parse_monitoring_table(text: str) -> list[dict]:
     return rows
 
 
+DATE_TOKEN_RE = re.compile(r"^(\d{1,2})/(\d{1,2})/(\d{4})$")
+TABLE_FLAG_RE = re.compile(r"^\((VIGENTE|EMITIDO|VENCIDO|POR INICIAR)\)$")
+
+
+def parse_monitoring_table_words(words: list[dict] | None) -> tuple[list[dict], list[str]]:
+    """Rows of the 'AVISOS METEOROLÓGICOS EMITIDOS Y VIGENTES' table, read by column positions.
+
+    Columns come from the header words (DEPARTAMENTO, AVISO, N°, INICIO, FIN, NIVEL). Rows are blocks of lines
+    separated by vertical gaps; a block with other than exactly one aviso number, two dates and one level is
+    reported, not guessed.
+    """
+    notes = []
+    if not words:
+        return [], ["no page words"]
+    w = [x for x in words if x["x0"] >= 0]  # margin artefacts (rotated URLs) have negative x
+    head = {}
+    for name in ("DEPARTAMENTO", "N°", "INICIO", "FIN", "NIVEL"):
+        hit = [x for x in w if x["text"] == name]
+        if hit:
+            head[name] = min(hit, key=lambda x: x["top"])
+    aviso_hdr = [x for x in w if x["text"] == "AVISO" and "N°" in head and abs(x["top"] - head["N°"]["top"]) < 15]
+    if len(head) < 5 or not aviso_hdr:
+        return [], ["aviso table header not found (portal format change?)"]
+    top0 = max(h["top"] for h in head.values()) + 10
+    stop = [x["top"] for x in w if x["text"] == "NIVELES" and x["top"] > top0]
+    bottom = min(stop) if stop else 1e9
+    body = sorted([x for x in w if top0 < x["top"] < bottom], key=lambda x: (x["top"], x["x0"]))
+    blocks, cur, last = [], [], None
+    for x in body:
+        if last is not None and x["top"] - last > 18:
+            blocks.append(cur)
+            cur = []
+        cur.append(x)
+        last = x["top"]
+    if cur:
+        blocks.append(cur)
+    dep_limit = aviso_hdr[0]["x0"] - 43  # department names end before x~165; aviso text starts at x~173
+    num_lo, num_hi = head["N°"]["x0"] - 15, head["INICIO"]["x0"] - 5
+    rows = []
+    for blk in blocks:
+        nums = [x for x in blk if re.fullmatch(r"\d{3,4}", x["text"]) and num_lo <= x["x0"] <= num_hi]
+        dates = sorted([x for x in blk if DATE_TOKEN_RE.match(x["text"])], key=lambda x: x["x0"])
+        levels = [x for x in blk if x["text"] in LEVELS and x["x0"] >= head["FIN"]["x0"] + 30]
+        if len(nums) != 1 or len(dates) != 2 or len(levels) != 1:
+            notes.append(f"table block skipped (numbers={len(nums)}, dates={len(dates)}, levels={len(levels)}): "
+                         + norm(" ".join(x["text"] for x in blk))[:120])
+            continue
+        lines = _lines(blk)
+        dep_text = " ".join(x["text"] for line in lines for x in line if x["x0"] < dep_limit)
+        aviso_words = [x for line in lines for x in line if dep_limit <= x["x0"] < num_lo and not TABLE_FLAG_RE.match(fold(x["text"]))]
+        flags = [fold(x["text"]).strip("()") for x in blk if TABLE_FLAG_RE.match(fold(x["text"]))]
+        phen = norm(" ".join(x["text"] for x in aviso_words))
+        ext = EXTENSION_RE.search(phen)
+        if ext:
+            phen = norm(EXTENSION_RE.sub("", phen))
+        deps = [d for d in (norm(v) for v in re.split(r"\s*,\s*", fold(dep_text))) if d]
+        unknown = [d for d in deps if d not in DEPARTMENTS]
+        (d1, m1, y1), (d2, m2, y2) = (DATE_TOKEN_RE.match(dates[0]["text"]).groups(), DATE_TOKEN_RE.match(dates[1]["text"]).groups())
+        try:
+            start = lima_dt(int(y1), int(m1), int(d1), None, None, False)
+            end = lima_dt(int(y2), int(m2), int(d2), None, None, True)
+        except ValueError:
+            notes.append(f"aviso {nums[0]['text']}: dates not valid")
+            continue
+        row_notes = ["table gives dates only: whole days assumed (start 00:00, end 23:59 Lima)",
+                     "official level as stated in the INDECI/COEN daily monitoring table"]
+        if unknown:
+            row_notes.append(f"department names not recognised: {unknown}")
+        rows.append(dict(doc_type="INDECI_MONITORING_TABLE_ROW", product="AVISO-METEOROLOGICO", aviso_number=int(nums[0]["text"]),
+                         aviso_year=int(y1), aviso_year_basis="TABLE_VALIDITY_START_YEAR", phenomenon=phen or None,
+                         official_level=levels[0]["text"], official_level_source="INDECI_COEN_MONITORING_TABLE",
+                         validity_start=iso(start), validity_end=iso(end),
+                         validity_text=f"{dates[0]['text']} al {dates[1]['text']}", validity_basis="MONITORING_TABLE_DATES_ONLY",
+                         departments=[d for d in deps if d in DEPARTMENTS], monitoring_table_flag=flags[0] if flags else None,
+                         extends_aviso_number=int(ext.group(1)) if ext else None, rain_related=rain_related("AVISO-METEOROLOGICO", phen),
+                         parser_version=PARSER_VERSION, parse_notes=row_notes))
+    return rows, notes
+
+
 def aviso_key(product: str, number: int, year: int | None) -> str:
     return f"SENAMHI-{product}-{year if year else 'YEAR_UNKNOWN'}-{number:03d}"
 
@@ -412,7 +549,8 @@ def compute_status(fields: dict, now: datetime) -> tuple[str, str]:
 
 FIELDS_TRACKED = ("phenomenon", "official_level", "official_level_note", "validity_start", "validity_end", "validity_text",
                   "validity_basis", "departments", "provinces_by_department", "description", "precipitation_mm",
-                  "cancellation_text", "update_text", "supersedes_number", "indeci_bulletin_id", "source_line")
+                  "cancellation_text", "update_text", "supersedes_number", "indeci_bulletin_id", "source_line",
+                  "extends_aviso_number", "rain_related", "official_level_source", "monitoring_table_flag")
 
 
 def event_id(event: dict) -> str:
@@ -454,6 +592,8 @@ def merge_observation(registry: dict, obs: dict, document: dict, observed_at: da
     # A daily-table row only fills fields a dedicated bulletin did not give; it never overrides them.
     if obs["doc_type"] == "INDECI_MONITORING_TABLE_ROW":
         incoming = {k: v for k, v in incoming.items() if entry["current"].get(k) in (None, [], "")}
+        if "official_level" in incoming:
+            incoming["official_level_note"] = "STATED_IN_INDECI_COEN_MONITORING_TABLE (not in the aviso bulletin text)"
     changed = {k: v for k, v in incoming.items() if entry["current"].get(k) != v}
     events = []
     if changed:
@@ -750,8 +890,12 @@ def pdf_text(data: bytes) -> str:
     return "\f".join((p.extract_text() or "") for p in PdfReader(BytesIO(data)).pages)
 
 
-def pdf_words(data: bytes) -> list[dict] | None:
-    """Page-1 words with coordinates (pdfplumber). None when pdfplumber is unavailable or fails."""
+MONITORING_TABLE_MARKER = "AVISOS METEOROLÓGICOS EMITIDOS"
+
+
+def pdf_words(data: bytes, page_marker: str | None = None) -> list[dict] | None:
+    """Words with coordinates (pdfplumber) of page 1, or of the first page whose text contains `page_marker`.
+    Each word carries its page index. None when pdfplumber is unavailable, fails, or the marker is absent."""
     try:
         from io import BytesIO
 
@@ -760,10 +904,20 @@ def pdf_words(data: bytes) -> list[dict] | None:
         return None
     try:
         with pdfplumber.open(BytesIO(data)) as pdf:
-            return [dict(text=w["text"], x0=round(w["x0"], 1), x1=round(w["x1"], 1), top=round(w["top"], 1))
-                    for w in pdf.pages[0].extract_words()]
+            index = 0
+            if page_marker:
+                hits = [i for i, p in enumerate(pdf.pages) if page_marker in fold(p.extract_text() or "") or page_marker in (p.extract_text() or "")]
+                if not hits:
+                    return None
+                index = hits[0]
+            return [dict(text=w["text"], x0=round(w["x0"], 1), x1=round(w["x1"], 1), top=round(w["top"], 1), page=index)
+                    for w in pdf.pages[index].extract_words()]
     except Exception:  # noqa: BLE001 - a layout failure degrades to free-text parsing, recorded in parse_notes
         return None
+
+
+def words_marker_for(family: str | None) -> str | None:
+    return MONITORING_TABLE_MARKER if family == "MONITORING_BULLETIN" else None
 
 
 def discover(contract: dict, validators: dict) -> tuple[list[dict], list[dict], bool]:
@@ -801,15 +955,16 @@ def discover(contract: dict, validators: dict) -> tuple[list[dict], list[dict], 
     return unique[: limits["max_items_per_check"]], log, ok
 
 
-def write_words(registry_doc: dict, digest: str, words: list[dict]) -> None:
+def write_words(registry_doc: dict, digest: str, words: list[dict], marker: str | None = None) -> None:
     wp = STORE / "layout" / f"{digest}.words.json"
     wp.parent.mkdir(parents=True, exist_ok=True)
     wp.write_text(json.dumps(words, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
-    registry_doc.update(words_path=str(wp.relative_to(ROOT)), words_sha256=sha256_bytes(wp.read_bytes()))
+    registry_doc.update(words_path=str(wp.relative_to(ROOT)), words_sha256=sha256_bytes(wp.read_bytes()),
+                        words_page=words[0].get("page", 0) if words else None, words_page_marker=marker)
 
 
 def archive_document(registry: dict, data: bytes, suffix: str, kind: str, url: str, post_link: str, now: datetime,
-                     text: str, words: list[dict] | None) -> str:
+                     text: str, words: list[dict] | None, marker: str | None = None) -> str:
     digest = sha256_bytes(data)
     (STORE / "raw").mkdir(parents=True, exist_ok=True)
     (STORE / "text").mkdir(parents=True, exist_ok=True)
@@ -822,7 +977,7 @@ def archive_document(registry: dict, data: bytes, suffix: str, kind: str, url: s
                                                      retrieved_at_utc=iso(now), bytes=len(data))
     doc.update(raw_path=str(raw.relative_to(ROOT)), text_path=str(txt.relative_to(ROOT)), text_sha256=sha256_bytes(txt.read_bytes()))
     if words is not None:
-        write_words(doc, digest, words)
+        write_words(doc, digest, words, marker)
     registry["documents"][digest] = doc
     return digest
 
@@ -840,8 +995,15 @@ def observations_for_documents(registry: dict, post: dict, doc_shas: list[str]) 
     post_has_pdf = any(registry["documents"][s]["kind"] == "PDF" for s in post["document_sha256"])
     if post["family"] == "MONITORING_BULLETIN":
         for doc in pdfs:
-            for row in parse_monitoring_table((ROOT / doc["text_path"]).read_text(encoding="utf-8")):
+            if doc.get("words_path"):
+                rows, table_notes = parse_monitoring_table_words(json.loads((ROOT / doc["words_path"]).read_text(encoding="utf-8")))
+            else:
+                rows, table_notes = parse_monitoring_table((ROOT / doc["text_path"]).read_text(encoding="utf-8")), ["no page words: text fallback"]
+            for row in rows:
                 out.append((row, doc))
+            if table_notes or not rows:
+                out.append((dict(doc_type="INDECI_MONITORING_TABLE_NOTES", aviso_number=None, validity_start=None,
+                                 parse_notes=table_notes or ["no aviso rows read from the monitoring table"]), doc))
         return out, unparsed
     sources = pdfs if pdfs else ([d for d in docs if d["kind"] == "HTML_POST"] if not post_has_pdf else [])
     if not pdfs and post_has_pdf:
@@ -873,10 +1035,14 @@ def apply_documents(registry: dict, post: dict, doc_shas: list[str], priority_re
         events.append(dict(event="POST_TEXT_CHANGED_PDF_UNCHANGED", aviso_key=None, post_link=post["link"], document_sha256=sha,
                            observed_at_utc=registry["documents"][sha]["retrieved_at_utc"], requires_human_review=True,
                            detail=["the INDECI post text changed but its PDF did not; fields are not re-read from the page"]))
+    table = post["family"] == "MONITORING_BULLETIN"
     for entry in registry.get("avisos", {}).values():
-        if post["link"] in entry.get("indeci_posts", []) and not entry.get("official_url"):
+        if post["link"] not in entry.get("indeci_posts", []):
+            continue
+        # A dedicated bulletin is the better official link; the daily table is used until one is captured.
+        if not entry.get("official_url") or (not table and entry.get("official_url_kind") == "INDECI_COEN_DAILY_MONITORING_TABLE"):
             entry["official_url"] = post["link"]
-            entry["official_url_kind"] = "INDECI_COEN_POST_REPRODUCING_THE_SENAMHI_AVISO"
+            entry["official_url_kind"] = "INDECI_COEN_DAILY_MONITORING_TABLE" if table else "INDECI_COEN_POST_REPRODUCING_THE_SENAMHI_AVISO"
     return events
 
 
@@ -933,7 +1099,8 @@ def process_post(registry: dict, item: dict, now: datetime, contract: dict, vali
             continue
         sha = sha256_bytes(data)
         if sha not in known and sha not in new_docs:
-            archive_document(registry, data, ".pdf", "PDF", pdf_url, link, now, pdf_text(data), pdf_words(data))
+            marker = words_marker_for(item.get("family"))
+            archive_document(registry, data, ".pdf", "PDF", pdf_url, link, now, pdf_text(data), pdf_words(data, marker), marker)
             new_docs.append(sha)
         remember_validators(validators, pdf_url, pmeta)
     post = prev or dict(link=link, first_seen_utc=iso(now), document_sha256=[], parsed=[])
@@ -988,7 +1155,15 @@ def capture(now: datetime | None = None) -> dict:
     for k, v in empty_health().items():
         health.setdefault(k, v)
     validators = health["http_validators"]
-    events = refresh_statuses(registry, now)
+    events = []
+    if registry.get("avisos") and registry.get("parser_version") != PARSER_VERSION:
+        # Parser upgrade: re-read every archived document once (offline) before this check.
+        old_version = registry.get("parser_version")
+        registry, events = reparse_registry(registry, now, contract)
+        events.append(dict(event="PARSER_UPGRADED_ARCHIVE_REPARSED", aviso_key=None, post_link=f"parser:{old_version}->{PARSER_VERSION}",
+                           observed_at_utc=iso(now), requires_human_review=False,
+                           detail=[f"archived documents re-read with parser {PARSER_VERSION} (was {old_version})"]))
+    events += refresh_statuses(registry, now)
     candidates, log, discovery_ok = discover(contract, validators)
     stats = dict(requests=0, not_modified=0, errors=0, new_documents=0, new_posts=0, rechecked=0)
     work = []
@@ -1041,26 +1216,27 @@ def capture(now: datetime | None = None) -> dict:
     return result
 
 
-def reparse(now: datetime | None = None) -> dict:
-    """Rebuild the aviso registry from archived documents only (no network). Event ids keep notifications unique."""
-    contract = load_contract()
-    now = now or utc_now()
-    registry = load_json(REGISTRY)
+def reparse_registry(registry: dict, now: datetime, contract: dict) -> tuple[dict, list[dict]]:
+    """Rebuild avisos from archived documents only (no network). Status history and event ids are preserved, so a
+    reparse after a parser upgrade does not repeat notifications or forget earlier transitions."""
     for k, v in empty_registry().items():
         registry.setdefault(k, v)
     for k in ("source_health", "last_check", "summary"):
         registry.pop(k, None)
     registry["schema_version"] = "0.3"
+    family_of = {link: p.get("family") for link, p in registry["posts"].items()}
     for doc in registry["documents"].values():
-        if doc["kind"] == "PDF" and not doc.get("words_path"):
-            words = pdf_words((ROOT / doc["raw_path"]).read_bytes())
+        marker = words_marker_for(family_of.get(doc.get("post_link")))
+        if doc["kind"] == "PDF" and (not doc.get("words_path") or doc.get("words_page_marker") != marker):
+            words = pdf_words((ROOT / doc["raw_path"]).read_bytes(), marker)
             if words is not None:
-                write_words(doc, doc["sha256"], words)
+                write_words(doc, doc["sha256"], words, marker)
         if doc["kind"] == "HTML_POST":  # text is derived from the archived bytes; re-derive with the current extractor
             body, _ = post_content((ROOT / doc["raw_path"]).read_bytes().decode("utf-8", "replace"))
             txt = ROOT / doc["text_path"]
             txt.write_text(body or "", encoding="utf-8")
             doc["text_sha256"] = sha256_bytes(txt.read_bytes())
+    previous = registry.get("avisos", {})
     registry["avisos"] = {}
     events = []
     posts = sorted(registry["posts"].values(), key=lambda p: (min(registry["documents"][s]["retrieved_at_utc"] for s in p["document_sha256"]), p["link"]))
@@ -1070,12 +1246,22 @@ def reparse(now: datetime | None = None) -> dict:
         post.setdefault("last_changed_utc", post.pop("last_archived_utc", None) or max(registry["documents"][s]["retrieved_at_utc"] for s in post["document_sha256"]))
         post.pop("last_archived_utc", None)
         events += apply_documents(registry, post, post["document_sha256"], contract["priority_regions"])
-    for entry in registry["avisos"].values():
-        entry.pop("status", None)
+    for key, entry in registry["avisos"].items():
+        if key in previous:
+            entry["status"] = previous[key].get("status")
+            entry["status_history"] = previous[key].get("status_history", [])
+            if previous[key].get("status_changed_at_utc"):
+                entry["status_changed_at_utc"] = previous[key]["status_changed_at_utc"]
     events += refresh_statuses(registry, now)
-    add_events(registry, events)
     registry["parser_version"] = PARSER_VERSION
     registry["contract_sha256"] = sha256_bytes(CONTRACT.read_bytes())
+    return registry, events
+
+
+def reparse(now: datetime | None = None) -> dict:
+    contract = load_contract()
+    registry, events = reparse_registry(load_json(REGISTRY), now or utc_now(), contract)
+    add_events(registry, events)
     REGISTRY.write_bytes(serialize(registry))
     return registry
 

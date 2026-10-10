@@ -40,6 +40,8 @@ class FixtureIntegrity(unittest.TestCase):
         manifest = json.loads((FIX / "manifest.json").read_text(encoding="utf-8"))
         for name, meta in manifest["fixtures"].items():
             for suffix, key in ((".txt", "text_sha256"), (".words.json", "words_sha256")):
+                if key not in meta:
+                    continue
                 data = (FIX / f"{name}{suffix}").read_bytes()
                 self.assertEqual(hashlib.sha256(data).hexdigest(), meta[key], name + suffix)
 
@@ -99,6 +101,66 @@ class RealBulletinParsing(unittest.TestCase):
         self.assertEqual((o["validity_start"], o["validity_end"]), ("2025-12-30T10:00:00-05:00", "2026-01-01T23:59:00-05:00"))
 
 
+class MeteorologicalAvisosAndDailyTable(unittest.TestCase):
+    """Real INDECI bulletins archived on main on 2026-10-10 (avisos meteorológicos 406/407, daily table N°282)."""
+
+    def met(self, name):
+        return M.parse_bulletin((FIX / f"{name}.txt").read_text(encoding="utf-8"), None, "AVISO_METEOROLOGICO", 2026)
+
+    def test_day_range_validity_departments_and_phenomenon(self):
+        o = self.met("aviso_met_407_2026")
+        self.assertEqual((o["product"], o["aviso_number"]), ("AVISO-METEOROLOGICO", 407))
+        self.assertEqual(o["phenomenon"], "INCREMENTO DE LA VELOCIDAD DEL VIENTO EN LA SIERRA SUR")
+        self.assertEqual((o["validity_start"], o["validity_end"]), ("2026-10-11T00:00:00-05:00", "2026-10-13T23:59:00-05:00"))
+        self.assertEqual(o["departments"], ["APURIMAC", "AREQUIPA", "AYACUCHO", "CUSCO", "MOQUEGUA", "PUNO", "TACNA"])
+        self.assertTrue(o["description"].startswith("Desde el domingo 11 al martes 13 de octubre"))
+        self.assertFalse(o["rain_related"])  # wind: kept as official context, never a flood signal
+        self.assertIsNone(o["official_level"])
+        self.assertTrue(any("whole days" in n for n in o["parse_notes"]))
+
+    def test_posible_afectacion_wording_and_callao(self):
+        o = self.met("aviso_met_406_2026")
+        self.assertEqual(o["departments"], ["AREQUIPA", "ICA", "LIMA", "CALLAO"])
+
+    def table(self):
+        return M.parse_monitoring_table_words(json.loads((FIX / "monitoring_282_2026_table_page.words.json").read_text(encoding="utf-8")))
+
+    def test_daily_table_rows_with_official_levels(self):
+        rows, notes = self.table()
+        self.assertEqual(notes, [])
+        by = {r["aviso_number"]: r for r in rows}
+        self.assertEqual(sorted(by), [400, 401, 402, 403, 404])
+        r403 = by[403]
+        self.assertEqual(r403["phenomenon"], "PRECIPITACIONES EN LA SIERRA NORTE Y COSTA NORTE")
+        self.assertEqual((r403["official_level"], r403["monitoring_table_flag"]), ("NARANJA", "VIGENTE"))
+        self.assertEqual(r403["departments"], ["CAJAMARCA", "LA LIBERTAD", "LAMBAYEQUE", "PIURA"])
+        self.assertEqual((r403["validity_start"], r403["validity_end"]), ("2026-10-09T00:00:00-05:00", "2026-10-11T23:59:00-05:00"))
+        self.assertTrue(r403["rain_related"])
+        self.assertEqual((by[404]["official_level"], by[404]["monitoring_table_flag"]), ("ROJO", "EMITIDO"))
+        self.assertEqual(by[400]["extends_aviso_number"], 391)
+        self.assertNotIn("EXTENSI", by[400]["phenomenon"])
+
+    def test_table_fills_level_but_never_overrides_a_bulletin(self):
+        reg = M.empty_registry()
+        t0 = datetime(2026, 10, 10, 2, 32, tzinfo=UTC)
+        bulletin = dict(self.met("aviso_met_407_2026"), aviso_number=403, phenomenon="TEXTO DEL BOLETIN")
+        M.merge_observation(reg, bulletin, dict(sha256="a" * 64), t0)
+        row = next(r for r in self.table()[0] if r["aviso_number"] == 403)
+        M.merge_observation(reg, row, dict(sha256="b" * 64), t0)
+        cur = reg["avisos"]["SENAMHI-AVISO-METEOROLOGICO-2026-403"]["current"]
+        self.assertEqual(cur["phenomenon"], "TEXTO DEL BOLETIN")
+        self.assertEqual(cur["validity_end"], "2026-10-13T23:59:00-05:00")  # bulletin validity kept
+        self.assertEqual(cur["official_level"], "NARANJA")
+        self.assertEqual(cur["official_level_source"], "INDECI_COEN_MONITORING_TABLE")
+        self.assertTrue(cur["official_level_note"].startswith("STATED_IN_INDECI_COEN_MONITORING_TABLE"))
+
+    def test_missing_table_header_is_reported_not_guessed(self):
+        words = [w for w in json.loads((FIX / "monitoring_282_2026_table_page.words.json").read_text(encoding="utf-8")) if w["text"] != "NIVEL"]
+        rows, notes = M.parse_monitoring_table_words(words)
+        self.assertEqual(rows, [])
+        self.assertIn("header not found", notes[0])
+
+
 class FormatChangeAndAmbiguity(unittest.TestCase):
     def test_missing_table_header_degrades_to_free_text_with_a_note(self):
         text, words = fixture("acp_lluvias_282_2026")
@@ -106,7 +168,7 @@ class FormatChangeAndAmbiguity(unittest.TestCase):
         self.assertIsNone(M.layout_from_words(broken))
         o = M.parse_bulletin(text, broken, "AVISO_CORTO_PLAZO_LLUVIAS", 2026)
         self.assertIsNone(o["provinces_by_department"])
-        self.assertTrue(any("department table not found" in n for n in o["parse_notes"]))
+        self.assertTrue(any("free text" in n for n in o["parse_notes"]))
 
     def test_ambiguous_province_grouping_leaves_provinces_null(self):
         text, words = fixture("acp_lluvias_282_2026")
@@ -353,7 +415,7 @@ class CaptureEndToEnd(unittest.TestCase):
         self.assertNotEqual(text, revised)
         texts = {b"%PDF-1.4 version-1": text, b"%PDF-1.4 version-2": revised}
         M.pdf_text = lambda data: texts[data]
-        M.pdf_words = lambda data: words
+        M.pdf_words = lambda data, marker=None: words
         self.env = os.environ.get("V09_LIVE_DIR")
         os.environ["V09_LIVE_DIR"] = str(root / "live")
         self.t0 = datetime(2026, 10, 9, 19, 48, tzinfo=UTC)
@@ -459,3 +521,21 @@ class RecheckBound(unittest.TestCase):
         self.assertEqual(len(targets), 12)
         self.assertEqual(targets[0], recent)
         self.assertNotIn("https://portal.indeci.gob.pe/emergencias/p14/", targets)
+
+
+class ParserUpgrade(CaptureEndToEnd):
+    def test_full_cycle(self):  # the inherited cycle is covered above
+        pass
+
+    def test_parser_upgrade_reparses_once_without_duplicate_notifications(self):
+        self.run_at(0)
+        reg = self.registry()
+        reg["parser_version"] = "0.0"
+        M.REGISTRY.write_text(json.dumps(reg, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+        r = self.run_at(30)
+        self.assertIn("PARSER_UPGRADED_ARCHIVE_REPARSED:parser:0.0->" + M.PARSER_VERSION, r["events"])
+        reg = self.registry()
+        self.assertEqual(reg["parser_version"], M.PARSER_VERSION)
+        self.assertEqual([e["event"] for e in reg["events"]].count("NEW_AVISO"), 1)
+        self.assertEqual(reg["avisos"]["SENAMHI-ACP-LLUVIAS-2026-282"]["status_history"][0]["status"], "VIGENTE")
+        self.assertEqual(self.run_at(60)["events"], [])
