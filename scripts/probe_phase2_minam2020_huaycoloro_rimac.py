@@ -215,7 +215,9 @@ def _ids_from_find(data: dict, target: str):
             continue
         oid = attrs.get("OBJECTID")
         if oid is None:
-            oid = row.get("foundFieldName") == "OBJECTID" and row.get("value")
+            oid = row.get("featureId")
+        if oid is None and row.get("foundFieldName") == "OBJECTID":
+            oid = row.get("value")
         if oid is not None:
             try:
                 ids.append(int(oid))
@@ -247,6 +249,8 @@ def _secondary_ids_from_find(data: dict, target: str):
         if wanted not in name:
             continue
         oid = attrs.get("OBJECTID_1")
+        if oid is None:
+            oid = row.get("featureId")
         if oid is not None:
             try:
                 ids.append(int(oid))
@@ -675,6 +679,26 @@ def self_test():
     assert "searchFields=r_q_text%2Cnombre%2Cnomb_min" in secondary_find_url("HUAYCOLORO")
     assert "returnGeometry=false" in secondary_find_url("HUAYCOLORO")
     assert "objectIds=1%2C2" in secondary_geometry_query_url([2, 1])
+    primary_find_payload = {
+        "results": [{
+            "layerId": LAYER_ID,
+            "foundFieldName": "NOM_RIO",
+            "value": "HUAYCOLORO",
+            "featureId": "123",
+            "attributes": {"NOM_RIO": "HUAYCOLORO"},
+        }]
+    }
+    assert _ids_from_find(primary_find_payload, "HUAYCOLORO") == [123]
+    secondary_find_payload = {
+        "results": [{
+            "layerId": SECONDARY_LAYER_ID,
+            "foundFieldName": "r_q_text",
+            "value": "Rio Huaycoloro",
+            "featureId": "456",
+            "attributes": {"r_q_text": "Rio Huaycoloro"},
+        }]
+    }
+    assert _secondary_ids_from_find(secondary_find_payload, "HUAYCOLORO") == [456]
     a = {"type":"LineString","coordinates":[[0,0],[2,2]]}
     b = {"type":"LineString","coordinates":[[0,2],[2,0]]}
     assert exact_intersections(a,b) == [[1.0,1.0]]
