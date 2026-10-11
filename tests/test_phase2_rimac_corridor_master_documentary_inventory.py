@@ -30,6 +30,16 @@ def test_inventory_is_research_only_and_never_operational():
     assert d["counts"]["confirmed_unique_hydrologic_unit_count"] is None
     assert d["counts"]["possible_alias_double_count_unresolved"] is True
 
+    # Historical context is not a confirmed Cashahuacra event. Keep the
+    # 2015-03-23 attribution fail-closed until independently verified.
+    cash = next(u for u in d["units"] if u["id"] == "lima_santa_eulalia_cashahuacra")
+    assert cash["verified_event_refs"] == []
+    leads = [x for x in cash["unverified_event_leads"] if x["date_or_period"] == "2015-03-23"]
+    assert len(leads) == 1
+    assert leads[0]["source_text_verified"] is False
+    assert leads[0]["unit_attribution"] == "HISTORICAL_CONTEXT_REQUIRES_ATTRIBUTION_CHECK"
+    assert leads[0]["usable_as_confirmed_unit_event"] is False
+
 
 def test_documentary_rows_have_unique_ids_but_are_not_unique_catchments():
     d = load()
