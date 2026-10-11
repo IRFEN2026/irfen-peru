@@ -204,7 +204,7 @@ def run() -> dict:
             "paired_event_context_quarantine": ["leoncio_prado"],
             "spatial_crosswalk_quarantine": ["miramar"],
             "official_map_anchor_not_line_geometry_quarantine": ["la_tucilla"],
-            "scope_adjudication_quarantine": ["la_tucilla"],
+            "scope_adjudication_quarantine": list(plan["query_policy"]["scope_adjudication_quarantine"]),
             "distinct_entity_guard": [["la_tucilla", "tucillal"]],
             "lexical_neighbour_exclusions": LEXICAL_NEIGHBOUR_EXCLUSIONS,
             "absence_of_candidate_is_negative": False,
