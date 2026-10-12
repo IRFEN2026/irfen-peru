@@ -160,6 +160,8 @@ def goes_run() -> int:
 
 
 # --------------------------------------------------------------------------- GEOS-CF (polygon cell weights)
+GEOS_PROCESSING_VERSION = "0.2"  # 0.2: Spanish resolution notes; a version change reprocesses the current cycle once
+
 def geos_run() -> int:
     import numpy as np
     import xarray as xr
@@ -170,8 +172,8 @@ def geos_run() -> int:
     times = np.asarray(ds["time"].values).astype("datetime64[ns]")
     cycle = str(times[0])
     old = load(GEOS_OUT)
-    if old and old.get("dataset_time_start") == cycle:
-        print(f"::notice title=V09_GEOS_NORTH::cycle {cycle} already processed")
+    if old and old.get("dataset_time_start") == cycle and old.get("processing_version") == GEOS_PROCESSING_VERSION:
+        print(f"::notice title=V09_GEOS_NORTH::cycle {cycle} already processed (processing {GEOS_PROCESSING_VERSION})")
         return 0
     da = ds["tprec"]
     lat, lon = np.asarray(ds["lat"].values, dtype=float), np.asarray(ds["lon"].values, dtype=float)
@@ -211,6 +213,7 @@ def geos_run() -> int:
     out = dict(schema_version="0.1", archive_id="irfen-v09-geos-cf-north:v0.1", **GUARDS, map_publishable=False,
                source=dict(product="NASA GMAO GEOS-CF v2 forecast (tprec)", store=geos.STORE, grid_deg=[geos.grid_step(lat), geos.grid_step(lon)],
                            integration=f"tprec x {step} s", nature="experimental research forecast; not validated against observations"),
+               processing_version=GEOS_PROCESSING_VERSION,
                dataset_time_start=cycle, dataset_time_end=str(times[-1]), generated_at_utc=datetime.now(timezone.utc).isoformat(), zones=zones)
     write_if_changed(GEOS_OUT, out, volatile=("generated_at_utc",))
     print(f"::notice title=V09_GEOS_NORTH::cycle {cycle}; {len(zones)} zones")

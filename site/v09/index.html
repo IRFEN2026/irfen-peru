@@ -150,7 +150,7 @@ const PRIO_VAR = {R1_REVISION_PRIORITARIA:"--r1", R2_VIGILANCIA_ACTIVA:"--r2", R
   R4_LLUVIA_OBSERVADA_SIN_AVISO:"--r4", R5_DATOS_INSUFICIENTES:"--r5", R6_SIN_SENAL_EN_DATOS_DISPONIBLES:"--r6"};
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const lima = iso => iso ? new Date(iso).toLocaleString("es-PE", {timeZone:"America/Lima", day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit"}) : "—";
+const lima = iso => iso ? new Date(iso).toLocaleString("es-PE", {timeZone:"America/Lima", day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit", hourCycle:"h23"}) : "—";
 const ago = iso => { if(!iso) return "—"; const m = (Date.now() - new Date(iso)) / 60000; return m < 90 ? `hace ${Math.round(m)} min` : m < 2880 ? `hace ${(m/60).toFixed(1)} h` : `hace ${(m/1440).toFixed(1)} d`; };
 const isoFix = t => t ? String(t).replace(/\.\d+$/, "").replace(/Z?$/, "Z") : t; // numpy datetime64 strings -> ISO UTC
 const na = (why) => `<span class="na" title="${esc(why||"")}">no disponible</span>`;
@@ -277,7 +277,7 @@ function init(){
   chips.push(`<span class="chip">Acceso directo a SENAMHI: no usado (robots)</span>`);
   chips.push(`<span class="chip">Límites: ${D.official_boundaries==="VERIFIED"?"INEI referenciales verificados":"no verificados"}</span>`);
   document.getElementById("chips").innerHTML = chips.join("");
-  document.getElementById("footer").innerHTML = `Paquete generado ${lima(D.built_at_utc)} (UTC ${esc(D.built_at_utc)}). Cruce territorial evaluado ${lima(D.links_evaluated_at_utc)}; lluvia evaluada ${lima(D.rain.evaluated_at_utc)}. `
+  document.getElementById("footer").innerHTML = `Todas las horas en hora de Lima (UTC−5), formato 24 h. Paquete generado ${lima(D.built_at_utc)} (UTC ${esc(D.built_at_utc)}). Cruce territorial evaluado ${lima(D.links_evaluated_at_utc)}; lluvia evaluada ${lima(D.rain.evaluated_at_utc)}. `
     + (D.boundary_source ? `Límites: ${esc(D.boundary_source.dataset_title)} (${esc(D.boundary_source.institution)}; ${esc(D.boundary_source.legal_status)}; SHA-256 ${esc((D.boundary_source.sha256||"").slice(0,12))}…). ` : "")
     + `Guardas: production_use=false · operational_alerting_enabled=false · activation_gate=BLOCKED · decision_thresholds=null.`;
   document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => {
@@ -371,7 +371,7 @@ function selectZone(id, fromClick){
   const cell = k => w[k]?.status === "CALCULADO" ? `<b>${w[k].accum_mm} mm</b>` : na(w[k]?.reason);
   const g = z.goes19, f = geosWindowsAt(z.geos_cf, Date.now(), FR());
   el.innerHTML = `<h2>${esc(z.display_name)}</h2>
-    <div class="small muted">${esc(z.department)} · ${z.zone_type==="BASIN_GEOMETRY" ? "cuenca con geometría verificada" : "provincia de contexto (sin cuenca validada; polígono INEI referencial)"}</div>
+    <div class="small muted">${esc(z.department)} · ${z.zone_type==="BASIN_GEOMETRY" ? "cuenca con geometría verificada" : "provincia de contexto (sin cuenca validada; polígono INEI referencial)"} · horas de Lima (UTC−5)</div>
     <div style="margin-top:8px">${prioBadge(t.code, labels[t.code])}<span class="tag">prioridad interna IRFEN, no nivel oficial</span></div>
     <div class="blocks">
       <div class="block"><h3>Aviso oficial (SENAMHI vía INDECI/COEN)</h3>${avHtml}</div>
