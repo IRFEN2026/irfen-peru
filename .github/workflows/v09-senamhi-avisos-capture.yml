@@ -9,6 +9,8 @@ on:
       - v09/senamhi-avisos-capture-v0-1
     paths:
       - scripts/v09_senamhi_avisos.py
+      - scripts/v09_aviso_zone_crossing.py
+      - config/v09_north_surveillance_zones_v0_1.json
       - config/v09_senamhi_avisos_contract_v0_1.json
       - .github/workflows/v09-senamhi-avisos-capture.yml
 
@@ -57,13 +59,17 @@ jobs:
           key: v09-avisos-live-${{ github.ref_name }}-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Verify archive, hashes and guards
         run: python scripts/v09_senamhi_avisos.py
+      - name: Cross avisos with surveillance zones (written only when it changes)
+        run: |
+          python scripts/v09_aviso_zone_crossing.py
+          python scripts/v09_aviso_zone_crossing.py --check
       - name: Persist (idempotent, bounded retries)
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/v09/senamhi_avisos
+          git add data/v09/senamhi_avisos data/v09/surveillance
           if git diff --cached --quiet; then echo "No changes"; exit 0; fi
           git commit -q -m "IRFEN v0.9: avisos SENAMHI via INDECI/COEN (TEST_ONLY) - ${{ steps.capture.outputs.snapshot_reason }}"
           BR="${GITHUB_REF_NAME}"
