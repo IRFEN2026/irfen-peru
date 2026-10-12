@@ -155,14 +155,96 @@ const ago = iso => { if(!iso) return "—"; const m = (Date.now() - new Date(iso
 const isoFix = t => t ? String(t).replace(/\.\d+$/, "").replace(/Z?$/, "Z") : t; // numpy datetime64 strings -> ISO UTC
 const na = (why) => `<span class="na" title="${esc(why||"")}">no disponible</span>`;
 
-function statusNow(a){ // same rule as the capturer: documented validity only
-  if (a.cancellation_text) return "CANCELADO";
-  if (a.superseded_by) return "REEMPLAZADO";
-  if (!a.validity_start || !a.validity_end) return "DESCONOCIDO";
-  const now = Date.now(), s = new Date(a.validity_start), e = new Date(a.validity_end);
-  if (e < s) return "DESCONOCIDO";
-  return now < s ? "FUTURO" : now <= e ? "VIGENTE" : "VENCIDO";
+/* SHARED-RULES-BEGIN — mirror of scripts/v09_zone_rain_engine.py (aviso_status_at, imerg_usable_at, goes_usable_at,
+   geos_windows_at, review_priority, sort_key). Pure functions, no DOM: tests/test_v09_rule_parity.py runs them with
+   node against the Python engine on the same cases. A stale observation counts as missing, never as zero. */
+const NEGATIVE_RELATION = "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES";
+const PRIORITY_ORDER = ["R1_REVISION_PRIORITARIA","R2_VIGILANCIA_ACTIVA","R3_PREPARAR_VIGILANCIA","R4_LLUVIA_OBSERVADA_SIN_AVISO","R5_DATOS_INSUFICIENTES","R6_SIN_SENAL_EN_DATOS_DISPONIBLES"];
+const DEFAULT_FRESHNESS = {imerg_stale_after_h:12, goes_stale_after_min:90, geos_max_cycle_age_h:48};
+function tms(ts){ // ISO (any offset), "Z", or numpy datetime64 without zone (UTC) -> epoch ms
+  if (!ts) return null;
+  let t = String(ts).replace(/(\.\d{3})\d+/, "$1");
+  if (!/(Z|[+-]\d\d:\d\d)$/.test(t)) t += "Z";
+  const v = Date.parse(t); return isNaN(v) ? null : v;
 }
+function avisoStatusAt(a, t){
+  if (a.cancellation_text || a.status === "CANCELADO") return "CANCELADO";
+  if (a.superseded_by || a.status === "REEMPLAZADO") return "REEMPLAZADO";
+  const s = tms(a.validity_start), e = tms(a.validity_end);
+  if (s == null || e == null || e < s) return "DESCONOCIDO";
+  return t < s ? "FUTURO" : t <= e ? "VIGENTE" : "VENCIDO";
+}
+function imergUsableAt(im, t, F){ const e = tms(im && im.window_end_utc); return e != null && t - e <= F.imerg_stale_after_h * 3.6e6; }
+function goesUsableAt(g, t, F){ const e = tms(g && g.scan_end_utc); return !!g && g.status === "CALCULADO" && e != null && t - e <= F.goes_stale_after_min * 6e4; }
+function geosWindowsAt(g, t, F){
+  if (!g || g.status !== "CALCULADO") return {status:"NO_DISPONIBLE", reason:(g && g.reason) || "sin pronóstico GEOS-CF para esta zona"};
+  const start = tms(g.dataset_time_start);
+  if (start == null) return {status:"NO_DISPONIBLE", reason:"ciclo GEOS-CF sin fecha: no se puede comprobar su antigüedad"};
+  if (t - start > F.geos_max_cycle_age_h * 3.6e6) return {status:"DESACTUALIZADO", cycle_start_ms:start,
+    reason:`ciclo GEOS-CF que empieza el ${new Date(start).toISOString()}: más de ${F.geos_max_cycle_age_h} h antes de la evaluación`};
+  const fut = (g.hourly||[]).map(h => [tms(h.valid_time_utc), h.precip_mm]).filter(x => x[0] != null).sort((a,b) => a[0]-b[0]).filter(x => x[0] >= t);
+  const out = {status:"CALCULADO", cycle_start_ms:start, windows:{}, next: fut.slice(0,48)};
+  for (const [name, n] of [["6h",6],["24h",24]]) {
+    const seq = fut.slice(0,n);
+    const ok = seq.length === n && seq[0][0] - t < 3.6e6 && seq.every(x => x[1] != null) && seq.every((x,i) => i === 0 || x[0] - seq[i-1][0] === 3.6e6);
+    out.windows[name] = ok ? {status:"CALCULADO", accum_mm: Math.round(seq.reduce((s,x) => s + x[1], 0) * 10) / 10, start_ms:seq[0][0], end_ms:seq[n-1][0]}
+                           : {status:"NO_DISPONIBLE", reason:`el ciclo no cubre ${n} horas consecutivas desde la evaluación`};
+  }
+  return out;
+}
+function reviewPriorityAt(avisos, imerg, goes, percentile, t, F){
+  const live = (avisos||[]).filter(a => a.relation_method !== NEGATIVE_RELATION).map(a => Object.assign({}, a, {status_at: avisoStatusAt(a, t)}));
+  const vig = live.filter(a => a.status_at === "VIGENTE"), fut = live.filter(a => ["FUTURO","DESCONOCIDO"].includes(a.status_at));
+  const imOk = imergUsableAt(imerg, t, F), goOk = goesUsableAt(goes, t, F);
+  const w = (imerg && imerg.windows) || {}, w24 = w["24h"] || {};
+  const observedNonzero = (imOk && Object.values(w).some(v => v.status === "CALCULADO" && (v.accum_mm || 0) > 0)) || (goOk && (goes.rate_max_mm_h || 0) > 0);
+  const completeZero = imOk && goOk && w24.status === "CALCULADO" && w24.accum_mm === 0 && goes.rate_max_mm_h === 0;
+  const reasons = [], missing = [];
+  if (!imerg || !imerg.window_end_utc) missing.push("IMERG Early sin muestras para esta zona");
+  else if (!imOk) missing.push(`IMERG Early desactualizado: la última ventana termina el ${imerg.window_end_utc} (más de ${F.imerg_stale_after_h} h antes de la evaluación); no cuenta para la prioridad`);
+  else if (w24.status !== "CALCULADO") missing.push("IMERG 24 h incompleta");
+  if (!goes || goes.status !== "CALCULADO") missing.push("GOES-19 no disponible para esta zona");
+  else if (!goOk) missing.push(`GOES-19 desactualizado: último escaneo ${goes.scan_end_utc} (más de ${F.goes_stale_after_min} min antes de la evaluación); no cuenta para la prioridad`);
+  const pctOk = percentile && percentile.status === "CALCULADO";
+  if (!pctOk) missing.push("percentil histórico no disponible: anomalía no evaluable");
+  let code;
+  if (vig.length && pctOk && (percentile.percentile_24h || 0) >= 95) code = "R1_REVISION_PRIORITARIA";
+  else if (vig.length) code = "R2_VIGILANCIA_ACTIVA";
+  else if (fut.length) code = "R3_PREPARAR_VIGILANCIA";
+  else if (observedNonzero) code = "R4_LLUVIA_OBSERVADA_SIN_AVISO";
+  else if (completeZero) code = "R6_SIN_SENAL_EN_DATOS_DISPONIBLES";
+  else code = "R5_DATOS_INSUFICIENTES";
+  vig.concat(fut).forEach(a => reasons.push(`Aviso ${a.aviso_key} (${a.status_at}; nivel oficial: ${a.official_level || "no consta"}) — ${a.relation_method}`));
+  if (observedNonzero) reasons.push("Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida");
+  if (vig.length && !pctOk) reasons.push("Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables");
+  const edges = [];
+  live.forEach(a => { const s = tms(a.validity_start), e = tms(a.validity_end); if (s != null) edges.push(s); if (e != null) edges.push(e + 1000); });
+  if (imerg && imerg.window_end_utc) edges.push(tms(imerg.window_end_utc) + F.imerg_stale_after_h * 3.6e6 + 1000);
+  if (goes && goes.status === "CALCULADO" && goes.scan_end_utc) edges.push(tms(goes.scan_end_utc) + F.goes_stale_after_min * 6e4 + 1000);
+  const nxt = edges.filter(x => x > t).sort((a,b) => a-b)[0];
+  return {code, reasons_es:reasons, missing_es:missing, imerg_usable:imOk, goes_usable:goOk,
+          data_complete: imOk && goOk && w24.status === "CALCULADO", next_change_ms: nxt == null ? null : nxt};
+}
+function prioritySortKey(zoneId, imerg, rp){
+  const w = (imerg && imerg.windows) || {}, acc = (w["24h"]||{}).accum_mm, six = (w["6h"]||{}).accum_mm;
+  const obs = rp.imerg_usable ? (acc != null ? acc : (six != null ? six : null)) : null;
+  return [PRIORITY_ORDER.indexOf(rp.code), obs == null ? 0 : 1, -(obs || 0), zoneId];
+}
+function compareKeys(a, b){ for (let i = 0; i < a.length; i++) { if (a[i] < b[i]) return -1; if (a[i] > b[i]) return 1; } return 0; }
+/* SHARED-RULES-END */
+function statusNow(a){ return avisoStatusAt({...a, status: a.stored_status === "CANCELADO" || a.stored_status === "REEMPLAZADO" ? a.stored_status : undefined}, Date.now()); }
+const FR = () => (D && D.rain && D.rain.freshness) || DEFAULT_FRESHNESS;
+function zoneAvisos(z){ // link entries + permanent states from the registry (cancellation / supersession)
+  return (z.avisos||[]).map(a => { const f = avisoByKey[a.aviso_key] || {}; return {...a, cancellation_text: f.cancellation_text, superseded_by: f.superseded_by}; });
+}
+function liveTier(z){ // full R1–R6 re-evaluation with the reader's clock (same rule as the engine)
+  const r = reviewPriorityAt(zoneAvisos(z), z.imerg, z.goes19, z.percentile, Date.now(), FR());
+  return {...r, recalculated: r.code !== z.review_priority.code};
+}
+function zonesByLivePriority(){
+  return D.rain.zones.map(z => ({z, t: liveTier(z)})).sort((a,b) => compareKeys(prioritySortKey(a.z.zone_id, a.z.imerg, a.t), prioritySortKey(b.z.zone_id, b.z.imerg, b.t)));
+}
+const staleTag = why => `<span class="chip warn" style="display:inline-block;margin:2px 0">Dato antiguo · no cuenta para la prioridad</span>${why ? `<br><span class="small muted">${esc(why)}</span>` : ""}`;
 function hoursTo(iso){ return iso ? ((new Date(iso) - Date.now())/3.6e6) : null; }
 function levelBadge(a){
   if (!a.official_level) return `<span class="lvl"><i style="background:var(--lv-none)"></i>No consta en el texto</span>`;
@@ -268,7 +350,7 @@ function renderMap(){
   map.addEventListener("mouseleave", () => tip.style.display = "none");
   map.addEventListener("click", e => { const t = e.target.closest("[data-zone]"); if (t) selectZone(t.dataset.zone, true); });
   renderLegendOnly();
-  const first = D.rain.zones.map(z => ({z, t: liveTier(z)})).sort((a,b) => Object.keys(PRIO_VAR).indexOf(a.t.code) - Object.keys(PRIO_VAR).indexOf(b.t.code))[0];
+  const first = zonesByLivePriority()[0];
   if (first) selectZone(first.z.zone_id);
 }
 function selectZone(id, fromClick){
@@ -287,7 +369,7 @@ function selectZone(id, fromClick){
     : `<p class="muted">Ningún aviso de lluvia relacionado en la última evaluación.</p>`;
   const w = z.imerg.windows || {};
   const cell = k => w[k]?.status === "CALCULADO" ? `<b>${w[k].accum_mm} mm</b>` : na(w[k]?.reason);
-  const g = z.goes19, f = geosSums(z.geos_cf);
+  const g = z.goes19, f = geosWindowsAt(z.geos_cf, Date.now(), FR());
   el.innerHTML = `<h2>${esc(z.display_name)}</h2>
     <div class="small muted">${esc(z.department)} · ${z.zone_type==="BASIN_GEOMETRY" ? "cuenca con geometría verificada" : "provincia de contexto (sin cuenca validada; polígono INEI referencial)"}</div>
     <div style="margin-top:8px">${prioBadge(t.code, labels[t.code])}<span class="tag">prioridad interna IRFEN, no nivel oficial</span></div>
@@ -296,17 +378,17 @@ function selectZone(id, fromClick){
       <div class="block"><h3>Lluvia observada · IMERG Early</h3>
         <dl class="kv"><dt>1 h</dt><dd>${cell("1h")}</dd><dt>3 h</dt><dd>${cell("3h")}</dd><dt>6 h</dt><dd>${cell("6h")}</dd><dt>24 h</dt><dd>${cell("24h")}</dd></dl>
         <div class="small muted">${z.imerg.window_end_utc ? `Ventanas hasta ${lima(z.imerg.window_end_utc)} (${ago(z.imerg.window_end_utc)}; latencia propia de IMERG Early)` : "Sin muestras IMERG"}</div>
+        ${z.imerg.window_end_utc && !t.imerg_usable ? staleTag(`Más de ${FR().imerg_stale_after_h} h desde el final de la última ventana: no describe la situación actual.`) : ""}
         ${sparkSVG(z.imerg.series_24h_half_hourly_mm, css("--obs"), "IMERG Early, últimas 24 h")}<div class="small muted">Últimas 24 h por media hora · gris = hueco sin dato</div></div>
       <div class="block"><h3>Lluvia observada · GOES-19 RRQPE</h3>${g.status==="CALCULADO"
-        ? `Tasa media <b>${g.rate_mean_mm_h} mm/h</b> (máx. ${g.rate_max_mm_h}) · escaneo ${lima(g.scan_end_utc)} (${ago(g.scan_end_utc)})<br><span class="small muted">${esc(g.sampling_es||"")} ${esc(g.uncertainty_es||"")}</span>`
+        ? `Tasa media <b>${g.rate_mean_mm_h} mm/h</b> (máx. ${g.rate_max_mm_h}) · escaneo ${lima(g.scan_end_utc)} (${ago(g.scan_end_utc)})<br>${t.goes_usable ? "" : staleTag(`Más de ${FR().goes_stale_after_min} min desde el último escaneo muestreado.`) + "<br>"}<span class="small muted">${esc(g.sampling_es||"")} ${esc(g.uncertainty_es||"")}</span>`
           + (g.recent_scans_mm_h?.length ? sparkSVG(g.recent_scans_mm_h, css("--obs"), "GOES-19 tasas recientes") + `<div class="small muted">Tasas instantáneas de los últimos escaneos muestreados (no acumulado)</div>` : "")
         : na(g.reason)}</div>
-      <div class="block"><h3>Previsión · GEOS-CF (experimental)</h3>${f
-        ? `Próximas 6 h: <b>${f.h6 ?? "—"} mm</b> · 24 h: <b>${f.h24 ?? "—"} mm</b><br><span class="small muted">Ciclo del pronóstico ${lima(isoFix(z.geos_cf.dataset_time_start))} (${ago(isoFix(z.geos_cf.dataset_time_start))}). ${esc(z.geos_cf.resolution_note||"")}</span>${sparkSVG(f.next.map(x=>[x.valid_time_utc,x.precip_mm]), css("--fc"), "GEOS-CF próximas 48 h")}<div class="small muted">Próximas 48 h por hora</div>`
-        : na(z.geos_cf?.reason)}</div>
+      <div class="block"><h3>Previsión · GEOS-CF (experimental)</h3>${geosHtml(z, f, true)}</div>
       <div class="block"><h3>Río</h3>${na(z.river_level?.reason)}</div>
-      <div class="block"><h3>Por qué aparece · qué falta</h3><ul class="tight small">${(z.review_priority.reasons_es||[]).map(r => `<li>${esc(r.replace(/[A-Z_]{12,}/g, c => rm[c] ? rm[c].label_es : c))}</li>`).join("")}${t.recalculated ? `<li>Estado recalculado en el navegador con la hora actual.</li>` : ""}</ul>
-        <ul class="tight small muted">${(z.review_priority.missing_es||[]).map(m => `<li>${esc(m)}</li>`).join("")}</ul></div>
+      <div class="block"><h3>Por qué aparece · qué falta</h3><ul class="tight small">${(t.reasons_es||[]).map(r => `<li>${esc(r.replace(/[A-Z_]{12,}/g, c => rm[c] ? rm[c].label_es : c))}</li>`).join("")}</ul>
+        <ul class="tight small muted">${(t.missing_es||[]).map(m => `<li>${esc(m)}</li>`).join("")}</ul>
+        <div class="small muted">Prioridad evaluada ahora en el navegador con la regla del motor${t.recalculated ? ` (el motor dio «${esc(labels[z.review_priority.code])}» a las ${lima(D.rain.evaluated_at_utc)}; ha cambiado por la hora o por vencimientos)` : ""}.${t.next_change_ms ? ` Puede cambiar sin datos nuevos a partir de ${lima(new Date(t.next_change_ms).toISOString())}.` : ""}</div></div>
     </div>`;
   if (fromClick && window.innerWidth < 900) el.scrollIntoView({behavior:"smooth", block:"start"});
 }
@@ -365,11 +447,13 @@ function sparkSVG(series, color, label){
     : `<rect x="${i*bw}" y="${h - (s[1]/max)*(h-8) - 1}" width="${Math.max(1,bw-1)}" height="${Math.max(1,(s[1]/max)*(h-8))}" rx="1" fill="${color}" data-t="${esc(lima(s[0]))}: ${s[1]} mm"></rect>`).join("");
   return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="${esc(label)}"><line x1="0" x2="${w}" y1="${h-0.5}" y2="${h-0.5}" stroke="${css("--border")}"/>${bars}</svg>`;
 }
-function geosSums(g){
-  if (!g || g.status !== "CALCULADO") return null;
-  const now = Date.now(), fut = g.hourly.filter(x => new Date(x.valid_time_utc) >= now);
-  const sum = n => fut.length >= n ? fut.slice(0,n).reduce((s,x)=>s+x.precip_mm,0).toFixed(1) : null;
-  return {h6: sum(6), h24: sum(24), next: fut.slice(0,48)};
+function geosHtml(z, f, long){
+  if (f.status === "DESACTUALIZADO") return `<span class="na">desactualizado</span><br><span class="small muted">${esc(f.reason)}. No se muestran sumas.</span>`;
+  if (f.status !== "CALCULADO") return na(f.reason);
+  const cell = k => f.windows[k].status === "CALCULADO" ? `<b>${f.windows[k].accum_mm.toFixed(1)} mm</b>` : na(f.windows[k].reason);
+  const cyc = new Date(f.cycle_start_ms).toISOString();
+  return `Próximas 6 h: ${cell("6h")} · 24 h: ${cell("24h")}<br><span class="small muted">Ciclo que empieza ${lima(cyc)} (${ago(cyc)}; se usa hasta ${FR().geos_max_cycle_age_h} h). Sumas desde la hora actual, solo con horas consecutivas del ciclo.${long ? " " + esc(z.geos_cf.resolution_note||"") : ""}</span>`
+    + sparkSVG(f.next.map(x => [new Date(x[0]).toISOString(), x[1]]), css("--fc"), "GEOS-CF próximas 48 h") + `<div class="small muted">Próximas 48 h por hora</div>`;
 }
 function renderRain(){
   document.getElementById("rain-rules").textContent = (D.rain.rules_es||[]).join(" ");
@@ -377,17 +461,17 @@ function renderRain(){
     const im = z.imerg, w = im.windows || {};
     const cell = k => w[k]?.status === "CALCULADO" ? `<b>${w[k].accum_mm} mm</b>` : na(w[k]?.reason);
     const age = im.window_end_utc ? `ventanas terminan ${lima(im.window_end_utc)} (${ago(im.window_end_utc)}; latencia IMERG Early)` : "sin muestras IMERG";
-    const g = z.goes19, f = geosSums(z.geos_cf);
+    const g = z.goes19, f = geosWindowsAt(z.geos_cf, Date.now(), FR()), t = liveTier(z);
     return `<div class="card"><h3>${esc(z.display_name)}</h3><div class="small muted">${esc(z.department)} · ${z.zone_type==="BASIN_GEOMETRY"?"cuenca verificada":"provincia de contexto (sin cuenca)"}</div>
       <h3>Observado · IMERG Early</h3>
       <dl class="kv"><dt>1 h</dt><dd>${cell("1h")}</dd><dt>3 h</dt><dd>${cell("3h")}</dd><dt>6 h</dt><dd>${cell("6h")}</dd><dt>24 h</dt><dd>${cell("24h")}</dd>
       <dt>Anomalía</dt><dd>${na(z.percentile?.reason)} <span class="small muted">(sin serie histórica homogénea)</span></dd></dl>
-      <div class="small muted">${esc(age)} · fuente ${esc(im.source||"—")}</div>
+      <div class="small muted">${esc(age)} · fuente ${esc(im.source||"—")}</div>${im.window_end_utc && !t.imerg_usable ? staleTag() : ""}
       ${sparkSVG(im.series_24h_half_hourly_mm, css("--obs"), "IMERG Early, últimas 24 h por media hora")}<div class="small muted">Barras: últimas 24 h por media hora · gris = hueco sin dato</div>
       <h3>Observado · GOES-19 RRQPE</h3>
-      <div>${g.status==="CALCULADO" ? `tasa media ${g.rate_mean_mm_h} mm/h (máx. ${g.rate_max_mm_h}) · escaneo ${lima(g.scan_end_utc)} (${ago(g.scan_end_utc)})<br><span class="small muted">${esc(g.uncertainty_es)}</span>` : na(g.reason)}</div>
+      <div>${g.status==="CALCULADO" ? `tasa media ${g.rate_mean_mm_h} mm/h (máx. ${g.rate_max_mm_h}) · escaneo ${lima(g.scan_end_utc)} (${ago(g.scan_end_utc)})<br>${t.goes_usable ? "" : staleTag() + "<br>"}<span class="small muted">${esc(g.uncertainty_es)}</span>` : na(g.reason)}</div>
       <h3>Previsión · GEOS-CF (experimental)</h3>
-      <div>${f ? `próximas 6 h: <b>${f.h6 ?? "—"} mm</b> · 24 h: <b>${f.h24 ?? "—"} mm</b><br><span class="small muted">ciclo ${lima(isoFix(z.geos_cf.dataset_time_start))} (${ago(isoFix(z.geos_cf.dataset_time_start))}); sumas desde ahora</span>${sparkSVG(f.next.map(x=>[x.valid_time_utc,x.precip_mm]), css("--fc"), "GEOS-CF próximas 48 h")}` : na(z.geos_cf?.reason)}</div>
+      <div>${geosHtml(z, f, false)}</div>
       <h3>Río</h3><div>${na(z.river_level?.reason)}</div>
       ${z.v08_source_caveat ? `<p class="small muted">${esc(z.v08_source_caveat)}</p>` : ""}</div>`;
   });
@@ -399,33 +483,25 @@ function renderRain(){
 }
 
 /* ---------------- 4 · follow-up centre ---------------- */
-function liveTier(z){ // re-evaluate R2/R3 with the reader's clock; other tiers come from the engine evidence
-  const av = (z.avisos||[]).filter(a => a.relation_method !== "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES")
-    .map(a => ({...a, now: statusNow(avisoByKey[a.aviso_key] || a)}));
-  const p = z.review_priority;
-  if (["R1_REVISION_PRIORITARIA","R2_VIGILANCIA_ACTIVA","R3_PREPARAR_VIGILANCIA"].includes(p.code)) {
-    if (p.code !== "R1_REVISION_PRIORITARIA" && av.some(a => a.now === "VIGENTE")) return {code:"R2_VIGILANCIA_ACTIVA", recalculated: p.code !== "R2_VIGILANCIA_ACTIVA"};
-    if (av.some(a => ["FUTURO","DESCONOCIDO"].includes(a.now))) return {code:"R3_PREPARAR_VIGILANCIA", recalculated: p.code !== "R3_PREPARAR_VIGILANCIA"};
-    if (!av.some(a => ["VIGENTE","FUTURO","DESCONOCIDO"].includes(a.now)) && p.code !== "R1_REVISION_PRIORITARIA") return {code:"R5_DATOS_INSUFICIENTES", recalculated:true, expired:true};
-  }
-  return {code:p.code, recalculated:false};
-}
 function renderCenter(){
   const labels = Object.fromEntries((D.rain.review_priorities||[]).map(p => [p.code, p.label_es]));
   const order = Object.keys(PRIO_VAR);
-  const rows = D.rain.zones.map(z => ({z, t: liveTier(z)})).sort((a,b) => order.indexOf(a.t.code) - order.indexOf(b.t.code));
+  const rows = zonesByLivePriority();
   const head = `<tr><th>Zona</th><th>Prioridad interna</th><th>Motivo</th><th>Evidencia disponible</th><th>Información pendiente</th></tr>`;
   const body = rows.map(({z,t}) => {
     const w = z.imerg.windows || {}, ev = [];
-    ["1h","3h","6h","24h"].forEach(k => { if (w[k]?.status === "CALCULADO") ev.push(`IMERG ${k}: ${w[k].accum_mm} mm (hasta ${lima(w[k].end_utc)})`); });
-    if (z.goes19.status === "CALCULADO") ev.push(`GOES-19: ${z.goes19.rate_mean_mm_h} mm/h (${lima(z.goes19.scan_end_utc)})`);
-    const f = geosSums(z.geos_cf); if (f && f.h24 != null) ev.push(`GEOS-CF 24 h: ${f.h24} mm (experimental)`);
+    const old = t.imerg_usable ? "" : " — antiguo, no cuenta";
+    ["1h","3h","6h","24h"].forEach(k => { if (w[k]?.status === "CALCULADO") ev.push(`IMERG ${k}: ${w[k].accum_mm} mm (hasta ${lima(w[k].end_utc)})${old}`); });
+    if (z.goes19.status === "CALCULADO") ev.push(`GOES-19: ${z.goes19.rate_mean_mm_h} mm/h (${lima(z.goes19.scan_end_utc)})${t.goes_usable ? "" : " — antiguo, no cuenta"}`);
+    const f = geosWindowsAt(z.geos_cf, Date.now(), FR());
+    if (f.status === "CALCULADO" && f.windows["24h"].status === "CALCULADO") ev.push(`GEOS-CF 24 h: ${f.windows["24h"].accum_mm.toFixed(1)} mm (experimental)`);
+    else if (f.status === "DESACTUALIZADO") ev.push("GEOS-CF: ciclo desactualizado, sin sumas");
     const rm = D.relation_methods || {};
-    const reasons = (z.review_priority.reasons_es||[]).map(r => r.replace(/[A-Z_]{12,}/g, c => rm[c] ? rm[c].label_es : c));
-    if (t.recalculated) reasons.unshift(t.expired ? "Los avisos relacionados ya no están activos (recalculado en el navegador)." : "Estado del aviso recalculado en el navegador con la hora actual.");
+    const reasons = (t.reasons_es||[]).map(r => r.replace(/[A-Z_]{12,}/g, c => rm[c] ? rm[c].label_es : c));
+    if (t.recalculated) reasons.unshift(`Recalculado en el navegador con la hora actual (motor: ${labels[z.review_priority.code]}).`);
     return `<tr><td><b>${esc(z.display_name)}</b><br><span class="small muted">${esc(z.department)}</span></td>
       <td>${prioBadge(t.code, labels[t.code])}</td><td class="small">${reasons.map(esc).join("<br>") || "—"}</td>
-      <td class="small">${ev.map(esc).join("<br>") || na()}</td><td class="small">${(z.review_priority.missing_es||[]).map(esc).join("<br>") || "—"}</td></tr>`;
+      <td class="small">${ev.map(esc).join("<br>") || na()}</td><td class="small">${(t.missing_es||[]).map(esc).join("<br>") || "—"}</td></tr>`;
   }).join("");
   document.getElementById("center-table").innerHTML = head + body;
   const evHead = `<tr><th>Hora (Lima)</th><th>Evento</th><th>Aviso / documento</th><th>Detalle</th><th>Revisión humana</th></tr>`;

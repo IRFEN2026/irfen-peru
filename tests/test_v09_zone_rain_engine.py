@@ -13,6 +13,7 @@ SPEC = importlib.util.spec_from_file_location("v09_zone_rain_engine", ROOT / "sc
 E = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(E)
 T0 = datetime(2026, 10, 9, 20, 30, tzinfo=timezone.utc)
+AT = T0 + timedelta(hours=1)  # evaluation instant: IMERG windows end at T0+30 min, GOES scan at T0+50 min
 
 
 def synthetic_series(n, value=0.5, gaps=()):
@@ -69,9 +70,9 @@ class Goes(unittest.TestCase):
         self.assertEqual(E.goes_for_zone("a", dict(source_available=False))["status"], "NO_DISPONIBLE")
 
 
-def zone_row(zone_id, avisos, imerg, goes):
+def zone_row(zone_id, avisos, imerg, goes, at=AT):
     pct = dict(status="NO_DISPONIBLE")
-    return dict(zone_id=zone_id, imerg=imerg, goes19=goes, review_priority=E.review_priority(avisos, imerg, goes, pct))
+    return dict(zone_id=zone_id, imerg=imerg, goes19=goes, review_priority=E.review_priority(avisos, imerg, goes, pct, at))
 
 
 class NorthArchives(unittest.TestCase):
@@ -98,17 +99,21 @@ class NorthArchives(unittest.TestCase):
 
 
 class ReviewPriority(unittest.TestCase):
-    VIG = dict(aviso_key="A1", status="VIGENTE", relation_method="BASIN_INTERSECTS_LISTED_PROVINCE", official_level="NARANJA")
-    FUT = dict(aviso_key="A2", status="FUTURO", relation_method="DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN")
-    NEG = dict(aviso_key="A3", status="VIGENTE", relation_method="BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES")
+    VIG = dict(aviso_key="A1", status="VIGENTE", relation_method="BASIN_INTERSECTS_LISTED_PROVINCE", official_level="NARANJA",
+               validity_start="2026-10-09T00:00:00-05:00", validity_end="2026-10-10T23:59:00-05:00")
+    FUT = dict(aviso_key="A2", status="FUTURO", relation_method="DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
+               validity_start="2026-10-11T00:00:00-05:00", validity_end="2026-10-11T23:59:00-05:00")
+    NEG = dict(aviso_key="A3", status="VIGENTE", relation_method="BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES",
+               validity_start="2026-10-09T00:00:00-05:00", validity_end="2026-10-10T23:59:00-05:00")
     FULL_ZERO = E.windows(synthetic_series(48, 0.0))
     FULL_RAIN = E.windows(synthetic_series(48, 0.4))
     NONE = E.windows({})
-    GOES_ZERO = dict(status="CALCULADO", rate_max_mm_h=0.0)
+    GOES_ZERO = dict(status="CALCULADO", rate_max_mm_h=0.0, scan_end_utc=(T0 + timedelta(minutes=50)).isoformat())
+    GOES_RAIN = dict(status="CALCULADO", rate_max_mm_h=3.0, scan_end_utc=(T0 + timedelta(minutes=50)).isoformat())
     GOES_NA = dict(status="NO_DISPONIBLE")
 
-    def code(self, avisos, imerg, goes):
-        return E.review_priority(avisos, imerg, goes, dict(status="NO_DISPONIBLE"))["code"]
+    def code(self, avisos, imerg, goes, at=AT):
+        return E.review_priority(avisos, imerg, goes, dict(status="NO_DISPONIBLE"), at)["code"]
 
     def test_tiers(self):
         self.assertEqual(self.code([self.VIG], self.FULL_RAIN, self.GOES_ZERO), "R2_VIGILANCIA_ACTIVA")  # C not evaluable
@@ -119,9 +124,9 @@ class ReviewPriority(unittest.TestCase):
         self.assertEqual(self.code([self.NEG], self.FULL_ZERO, self.GOES_ZERO), "R6_SIN_SENAL_EN_DATOS_DISPONIBLES")
 
     def test_situation_c_needs_an_interpretable_percentile(self):
-        p = E.review_priority([self.VIG], self.FULL_RAIN, self.GOES_ZERO, dict(status="CALCULADO", percentile_24h=97))
+        p = E.review_priority([self.VIG], self.FULL_RAIN, self.GOES_ZERO, dict(status="CALCULADO", percentile_24h=97), AT)
         self.assertEqual(p["code"], "R1_REVISION_PRIORITARIA")
-        p = E.review_priority([self.VIG], self.FULL_RAIN, self.GOES_ZERO, dict(status="NO_DISPONIBLE"))
+        p = E.review_priority([self.VIG], self.FULL_RAIN, self.GOES_ZERO, dict(status="NO_DISPONIBLE"), AT)
         self.assertTrue(any("no evaluable" in r for r in p["reasons_es"]))
         self.assertTrue(any("percentil" in m for m in p["missing_es"]))
 
@@ -134,11 +139,83 @@ class ReviewPriority(unittest.TestCase):
         order = [r["zone_id"] for r in sorted(rows, key=E.sort_key)]
         self.assertEqual(order, ["missing", "rain", "zero", "no_aviso_missing", "no_aviso_zero"])
 
+    def test_stale_observations_count_as_missing_never_as_zero(self):
+        """SYNTHETIC: the same evidence evaluated 13 h later (IMERG > 12 h, GOES > 90 min)."""
+        late = AT + timedelta(hours=13)
+        self.assertEqual(self.code([], self.FULL_ZERO, self.GOES_ZERO), "R6_SIN_SENAL_EN_DATOS_DISPONIBLES")
+        self.assertEqual(self.code([], self.FULL_ZERO, self.GOES_ZERO, late), "R5_DATOS_INSUFICIENTES")
+        self.assertEqual(self.code([], self.FULL_RAIN, self.GOES_NA), "R4_LLUVIA_OBSERVADA_SIN_AVISO")
+        self.assertEqual(self.code([], self.FULL_RAIN, self.GOES_NA, late), "R5_DATOS_INSUFICIENTES")
+        p = E.review_priority([], self.FULL_ZERO, self.GOES_ZERO, dict(status="NO_DISPONIBLE"), late)
+        self.assertFalse(p["imerg_usable"] or p["goes_usable"])
+        self.assertTrue(any("IMERG Early desactualizado" in m for m in p["missing_es"]))
+        self.assertTrue(any("GOES-19 desactualizado" in m for m in p["missing_es"]))
+
+    def test_goes_alone_goes_stale_after_ninety_minutes(self):
+        just = T0 + timedelta(minutes=50 + 90)
+        self.assertEqual(self.code([], self.FULL_ZERO, self.GOES_RAIN, just), "R4_LLUVIA_OBSERVADA_SIN_AVISO")
+        self.assertEqual(self.code([], self.FULL_ZERO, self.GOES_RAIN, just + timedelta(seconds=1)), "R5_DATOS_INSUFICIENTES")
+
+    def test_aviso_status_follows_the_evaluation_instant(self):
+        before = datetime(2026, 10, 10, 12, tzinfo=timezone.utc)
+        during = datetime(2026, 10, 11, 12, tzinfo=timezone.utc)
+        after = datetime(2026, 10, 12, 12, tzinfo=timezone.utc)
+        fresh = lambda at: dict(self.GOES_ZERO, scan_end_utc=at.isoformat())
+        imerg_at = lambda at: dict(self.FULL_ZERO, window_end_utc=(at - timedelta(hours=5)).isoformat())
+        self.assertEqual(self.code([self.FUT], imerg_at(before), fresh(before), before), "R3_PREPARAR_VIGILANCIA")
+        self.assertEqual(self.code([self.FUT], imerg_at(during), fresh(during), during), "R2_VIGILANCIA_ACTIVA")
+        self.assertEqual(self.code([self.FUT], imerg_at(after), fresh(after), after), "R6_SIN_SENAL_EN_DATOS_DISPONIBLES")
+        self.assertEqual(self.code([dict(self.FUT, status="CANCELADO")], imerg_at(during), fresh(during), during), "R6_SIN_SENAL_EN_DATOS_DISPONIBLES")
+        self.assertEqual(self.code([dict(self.FUT, validity_end=None)], imerg_at(after), fresh(after), after), "R3_PREPARAR_VIGILANCIA")
+
+    def test_next_change_is_the_nearest_edge(self):
+        p = E.review_priority([self.VIG], self.FULL_ZERO, self.GOES_ZERO, dict(status="NO_DISPONIBLE"), AT)
+        self.assertEqual(p["next_change_utc"], (T0 + timedelta(minutes=50 + 90, seconds=1)).isoformat())  # GOES goes stale first
+        late = datetime(2026, 10, 11, 0, tzinfo=timezone.utc)
+        p = E.review_priority([self.VIG], self.FULL_ZERO, self.GOES_NA, dict(status="NO_DISPONIBLE"), late)
+        self.assertEqual(p["next_change_utc"], "2026-10-11T04:59:01+00:00")  # aviso end, 23:59 Lima
+
+    def test_stale_observation_sorts_as_missing(self):
+        fresh = zone_row("fresh_rain", [self.VIG], self.FULL_RAIN, self.GOES_ZERO)
+        old = zone_row("old_rain", [self.VIG], self.FULL_RAIN, self.GOES_ZERO, AT + timedelta(hours=13))
+        self.assertEqual([r["zone_id"] for r in sorted([fresh, old], key=E.sort_key)], ["old_rain", "fresh_rain"])
+
     def test_vocabulary_is_separate_from_senamhi_levels(self):
         codes = " ".join(p["code"] + p["label_es"] for p in E.REVIEW_PRIORITIES).upper()
         for level in ("ROJO", "NARANJA", "AMARILLO", "VERDE"):
             self.assertNotIn(level, codes)
         self.assertNotIn("PROBABILIDAD", codes)
+
+
+class GeosWindows(unittest.TestCase):
+    """SYNTHETIC hourly forecast (shape only), not a real GEOS-CF run."""
+    START = "2026-10-12T09:30:00.000000000"
+
+    def geos(self, hours, start=None, gaps=()):
+        h0 = datetime(2026, 10, 12, 14, 30, tzinfo=timezone.utc)
+        return dict(status="CALCULADO", dataset_time_start=start or self.START,
+                    hourly=[dict(valid_time_utc=(h0 + timedelta(hours=k)).isoformat().replace("+00:00", "Z"), precip_mm=0.25)
+                            for k in range(hours) if k not in gaps])
+
+    def test_sums_need_consecutive_hours_from_the_evaluation_instant(self):
+        at = datetime(2026, 10, 12, 14, 0, tzinfo=timezone.utc)
+        w = E.geos_windows_at(self.geos(48), at)
+        self.assertEqual((w["status"], w["windows"]["6h"]["accum_mm"], w["windows"]["24h"]["accum_mm"]), ("CALCULADO", 1.5, 6.0))
+        w = E.geos_windows_at(self.geos(48, gaps=(10,)), at)
+        self.assertEqual((w["windows"]["6h"]["status"], w["windows"]["24h"]["status"]), ("CALCULADO", "NO_DISPONIBLE"))
+        self.assertNotIn("accum_mm", w["windows"]["24h"])
+        w = E.geos_windows_at(self.geos(20), at)
+        self.assertEqual(w["windows"]["24h"]["status"], "NO_DISPONIBLE")
+        early = datetime(2026, 10, 12, 12, 0, tzinfo=timezone.utc)  # first forecast hour more than 1 h away: no sum
+        self.assertEqual(E.geos_windows_at(self.geos(48), early)["windows"]["6h"]["status"], "NO_DISPONIBLE")
+
+    def test_old_cycle_gives_no_sums(self):
+        at = datetime(2026, 10, 14, 9, 31, tzinfo=timezone.utc)  # 48 h + 1 min after the cycle start
+        w = E.geos_windows_at(self.geos(120), at)
+        self.assertEqual(w["status"], "DESACTUALIZADO")
+        self.assertNotIn("windows", w)
+        self.assertEqual(E.geos_windows_at(dict(status="NO_DISPONIBLE", reason="x"), at)["status"], "NO_DISPONIBLE")
+        self.assertEqual(E.geos_windows_at(dict(self.geos(48), dataset_time_start=None), at)["status"], "NO_DISPONIBLE")
 
 
 class CommittedState(unittest.TestCase):
@@ -155,6 +232,8 @@ class CommittedState(unittest.TestCase):
             self.assertEqual(z["river_level"]["status"], "NO_DISPONIBLE")
         codes = [z["review_priority"]["code"] for z in out["zones"]]
         self.assertEqual(codes, sorted(codes, key=lambda c: E.RANK[c]))
+        self.assertEqual(out["freshness"], E.FRESHNESS)
+        self.assertTrue(out["evaluated_at_utc"])
 
     def test_committed_state_replays_from_its_inputs(self):
         out = json.loads(E.OUT.read_text(encoding="utf-8"))

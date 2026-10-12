@@ -6,8 +6,9 @@ estado de lluvia por zona y geometrías simplificadas para el mapa (cuencas veri
 referenciales del norte). Las geometrías se simplifican solo para dibujar (Douglas–Peucker); los cálculos usan
 siempre las geometrías originales.
 
-El panel recalcula en el navegador los estados FUTURO/VIGENTE/VENCIDO con la vigencia documentada y la hora del
-lector, y marca la fuente como DESACTUALIZADA si la instantánea es antigua. No es un sistema de alertas.
+El panel recalcula en el navegador, con la hora del lector y la misma regla que el motor, los estados
+FUTURO/VIGENTE/VENCIDO, la frescura de IMERG/GOES-19, las sumas GEOS-CF y la prioridad interna R1–R6; marca la
+fuente de avisos como DESACTUALIZADA si la instantánea es antigua. No es un sistema de alertas.
 
   python scripts/v09_build_dashboard_data.py           # escribe site/data/v09/dashboard_v0_1.json si cambió
   python scripts/v09_build_dashboard_data.py --check
@@ -136,7 +137,8 @@ def build() -> dict:
                 relation_methods=links.get("relation_methods"), surveillance_zones=links.get("surveillance_zones", []),
                 links_evaluated_at_utc=links.get("evaluated_at_utc"), official_boundaries=links.get("official_boundaries"),
                 boundary_source=boundary_source,
-                rain=dict(evaluated_at_utc=rain.get("evaluated_at_utc"), review_priorities=rain.get("review_priorities"),
+                rain=dict(evaluated_at_utc=rain.get("evaluated_at_utc"), next_change_utc=rain.get("next_change_utc"),
+                          freshness=rain.get("freshness"), review_priorities=rain.get("review_priorities"),
                           rules_es=rain.get("rules_es"), zones=rain.get("zones", [])),
                 geometries=dict(type="FeatureCollection", features=geoms,
                                 note="Simplified for display only (Douglas-Peucker 0.002° basins, 0.005° provinces)."))

@@ -17,15 +17,26 @@ Reglas científicas:
   MIN_PERCENTILE_SAMPLES valores; hoy no existe, así que se declara NO_DISPONIBLE.
 * Sin umbrales de activación, caudales, cotas ni probabilidades. La prioridad interna de revisión es un
   vocabulario propio de IRFEN, separado del nivel oficial de SENAMHI, y un dato ausente nunca baja la prioridad.
+* Frescura (parámetros de calidad de dato, no umbrales de decisión): una ventana IMERG que termina más de
+  FRESHNESS["imerg_stale_after_h"] horas antes del instante evaluado, o un escaneo GOES-19 de más de
+  FRESHNESS["goes_stale_after_min"] minutos, se sigue mostrando con su fecha pero NO cuenta para la prioridad:
+  un dato antiguo equivale a un dato ausente (nunca a «sin lluvia»). Un ciclo GEOS-CF de más de
+  FRESHNESS["geos_max_cycle_age_h"] horas no da sumas de 6/24 h, y una suma solo existe si todas sus horas
+  consecutivas están en el ciclo.
+* La prioridad se evalúa en un instante explícito (``at``): el estado de cada aviso se recalcula con su vigencia
+  documentada y se publica ``next_change_utc``, el siguiente instante en que la evaluación puede cambiar sin datos
+  nuevos. El panel aplica la misma regla (site/v09/index.html, bloque SHARED-RULES) con la hora del lector; una
+  prueba comprueba que ambas implementaciones coinciden.
 
   python scripts/v09_zone_rain_engine.py           # escribe si el contenido cambió
-  python scripts/v09_zone_rain_engine.py --check   # reproduce la salida desde sus entradas (sin reloj)
+  python scripts/v09_zone_rain_engine.py --check   # reproduce la salida desde sus entradas en su evaluated_at_utc
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import re
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -61,6 +72,11 @@ REVIEW_PRIORITIES = [  # IRFEN internal vocabulary (never a SENAMHI level, never
          rule_es="Sin aviso de lluvia; ventana IMERG de 24 h completa y nula, y GOES válido y nulo. No significa ausencia de peligro."),
 ]
 RANK = {p["code"]: i for i, p in enumerate(REVIEW_PRIORITIES)}
+# Data-freshness parameters (quality of the evidence, not decision thresholds). IMERG Early: nominal latency ~4 h,
+# observed 5-6 h on the north archive, so 12 h tolerates one or two missed runs. GOES-19 full disk: a scan every
+# 10 min, so 90 min means several missed runs. GEOS-CF: one forecast cycle a day, observed ~28 h old before the next.
+FRESHNESS = dict(imerg_stale_after_h=12, goes_stale_after_min=90, geos_max_cycle_age_h=48)
+NEGATIVE_RELATION = "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES"
 
 
 def load(path: Path) -> dict | None:
@@ -197,20 +213,86 @@ def geos_for_zone(target: str | None, forecast: dict | None, zone_id: str | None
                 nature_es="Pronóstico experimental NASA GEOS-CF v2 (0.25°). Las sumas se calculan al mostrar, desde la hora actual.")
 
 
-# --------------------------------------------------------------------------- review priority (pure)
-def review_priority(avisos: list[dict], imerg: dict, goes: dict, percentile: dict) -> dict:
-    """Transparent internal review priority. Inputs are evidence; no thresholds on rain amounts."""
-    rain_vig = [a for a in avisos if a["status"] == "VIGENTE" and a["relation_method"] != "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES"]
-    rain_fut = [a for a in avisos if a["status"] in ("FUTURO", "DESCONOCIDO") and a["relation_method"] != "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES"]
-    w24 = imerg["windows"].get("24h", {})
-    observed_nonzero = any(v.get("status") == "CALCULADO" and v.get("accum_mm", 0) > 0 for v in imerg["windows"].values()) or \
-        (goes.get("status") == "CALCULADO" and goes.get("rate_max_mm_h", 0) > 0)
-    complete_zero = w24.get("status") == "CALCULADO" and w24.get("accum_mm") == 0 and goes.get("status") == "CALCULADO" and goes.get("rate_max_mm_h") == 0
+# --------------------------------------------------------------------------- shared rules (pure; mirrored in site/v09/index.html)
+def _t(ts: str | None) -> datetime | None:
+    if not ts:
+        return None
+    t = re.sub(r"(\.\d{6})\d+", r"\1", str(ts).replace("Z", "+00:00"))  # numpy datetime64: nanoseconds, no zone (UTC)
+    d = datetime.fromisoformat(t)
+    return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
+
+
+def aviso_status_at(a: dict, at: datetime) -> str:
+    """Same rule as the capturer and the viewer: documented validity only."""
+    if a.get("cancellation_text") or a.get("status") == "CANCELADO":
+        return "CANCELADO"
+    if a.get("superseded_by") or a.get("status") == "REEMPLAZADO":
+        return "REEMPLAZADO"
+    s, e = _t(a.get("validity_start")), _t(a.get("validity_end"))
+    if not s or not e or e < s:
+        return "DESCONOCIDO"
+    return "FUTURO" if at < s else "VIGENTE" if at <= e else "VENCIDO"
+
+
+def imerg_usable_at(imerg: dict, at: datetime) -> bool:
+    end = _t(imerg.get("window_end_utc"))
+    return bool(end) and at - end <= timedelta(hours=FRESHNESS["imerg_stale_after_h"])
+
+
+def goes_usable_at(goes: dict, at: datetime) -> bool:
+    end = _t(goes.get("scan_end_utc"))
+    return goes.get("status") == "CALCULADO" and bool(end) and at - end <= timedelta(minutes=FRESHNESS["goes_stale_after_min"])
+
+
+def geos_windows_at(geos: dict, at: datetime) -> dict:
+    """Forecast sums for the next 6/24 h from ``at``. Only for a cycle no older than geos_max_cycle_age_h and only
+    when every consecutive hour is in the cycle; otherwise NO_DISPONIBLE with the reason."""
+    if not geos or geos.get("status") != "CALCULADO":
+        return dict(status="NO_DISPONIBLE", reason=(geos or {}).get("reason") or "sin pronóstico GEOS-CF para esta zona")
+    start = _t(geos.get("dataset_time_start"))
+    if not start:
+        return dict(status="NO_DISPONIBLE", reason="ciclo GEOS-CF sin fecha: no se puede comprobar su antigüedad")
+    if at - start > timedelta(hours=FRESHNESS["geos_max_cycle_age_h"]):
+        return dict(status="DESACTUALIZADO", cycle_start_utc=start.isoformat(),
+                    reason=f"ciclo GEOS-CF que empieza el {start.isoformat()}: más de {FRESHNESS['geos_max_cycle_age_h']} h antes de la evaluación")
+    hours = sorted(((_t(h["valid_time_utc"]), h["precip_mm"]) for h in geos.get("hourly", [])), key=lambda x: x[0])
+    fut = [(t, v) for t, v in hours if t >= at]
+    out = dict(status="CALCULADO", cycle_start_utc=start.isoformat(), windows={})
+    for name, n in (("6h", 6), ("24h", 24)):
+        seq = fut[:n]
+        ok = (len(seq) == n and seq[0][0] - at < timedelta(hours=1) and all(v is not None for _, v in seq)
+              and all(seq[i + 1][0] - seq[i][0] == timedelta(hours=1) for i in range(n - 1)))
+        out["windows"][name] = (dict(status="CALCULADO", accum_mm=round(sum(v for _, v in seq), 1), start_utc=seq[0][0].isoformat(),
+                                     end_utc=seq[-1][0].isoformat()) if ok else
+                                dict(status="NO_DISPONIBLE", reason=f"el ciclo no cubre {n} horas consecutivas desde la evaluación"))
+    return out
+
+
+def review_priority(avisos: list[dict], imerg: dict, goes: dict, percentile: dict, at: datetime) -> dict:
+    """Transparent internal review priority evaluated at ``at``. Inputs are evidence; no thresholds on rain amounts.
+    Stale observations count as missing, never as zero."""
+    live = [dict(a, status_at=aviso_status_at(a, at)) for a in avisos if a.get("relation_method") != NEGATIVE_RELATION]
+    rain_vig = [a for a in live if a["status_at"] == "VIGENTE"]
+    rain_fut = [a for a in live if a["status_at"] in ("FUTURO", "DESCONOCIDO")]
+    im_ok, go_ok = imerg_usable_at(imerg, at), goes_usable_at(goes, at)
+    w = imerg.get("windows", {})
+    w24 = w.get("24h", {})
+    observed_nonzero = (im_ok and any(v.get("status") == "CALCULADO" and v.get("accum_mm", 0) > 0 for v in w.values())) or \
+        (go_ok and (goes.get("rate_max_mm_h") or 0) > 0)
+    complete_zero = im_ok and go_ok and w24.get("status") == "CALCULADO" and w24.get("accum_mm") == 0 and goes.get("rate_max_mm_h") == 0
     reasons, missing = [], []
-    if imerg["windows"].get("24h", {}).get("status") != "CALCULADO":
+    if not imerg.get("window_end_utc"):
+        missing.append("IMERG Early sin muestras para esta zona")
+    elif not im_ok:
+        missing.append(f"IMERG Early desactualizado: la última ventana termina el {imerg['window_end_utc']} "
+                       f"(más de {FRESHNESS['imerg_stale_after_h']} h antes de la evaluación); no cuenta para la prioridad")
+    elif w24.get("status") != "CALCULADO":
         missing.append("IMERG 24 h incompleta")
     if goes.get("status") != "CALCULADO":
         missing.append("GOES-19 no disponible para esta zona")
+    elif not go_ok:
+        missing.append(f"GOES-19 desactualizado: último escaneo {goes.get('scan_end_utc')} "
+                       f"(más de {FRESHNESS['goes_stale_after_min']} min antes de la evaluación); no cuenta para la prioridad")
     if percentile.get("status") != "CALCULADO":
         missing.append("percentil histórico no disponible: anomalía no evaluable")
     if rain_vig and percentile.get("status") == "CALCULADO" and (percentile.get("percentile_24h") or 0) >= 95:
@@ -226,22 +308,31 @@ def review_priority(avisos: list[dict], imerg: dict, goes: dict, percentile: dic
     else:
         code = "R5_DATOS_INSUFICIENTES"
     for a in rain_vig + rain_fut:
-        reasons.append(f"Aviso {a['aviso_key']} ({a['status']}; nivel oficial: {a.get('official_level') or 'no consta'}) — {a['relation_method']}")
+        reasons.append(f"Aviso {a['aviso_key']} ({a['status_at']}; nivel oficial: {a.get('official_level') or 'no consta'}) — {a['relation_method']}")
     if observed_nonzero:
         reasons.append("Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida")
     if rain_vig and percentile.get("status") != "CALCULADO":
         reasons.append("Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables")
+    edges = [t for a in live for t in (_t(a.get("validity_start")), _t(a.get("validity_end")) and _t(a.get("validity_end")) + timedelta(seconds=1)) if t]
+    if imerg.get("window_end_utc"):
+        edges.append(_t(imerg["window_end_utc"]) + timedelta(hours=FRESHNESS["imerg_stale_after_h"], seconds=1))
+    if goes.get("status") == "CALCULADO" and goes.get("scan_end_utc"):
+        edges.append(_t(goes["scan_end_utc"]) + timedelta(minutes=FRESHNESS["goes_stale_after_min"], seconds=1))
+    nxt = min((t for t in edges if t > at), default=None)
     p = REVIEW_PRIORITIES[RANK[code]]
     return dict(code=code, label_es=p["label_es"], rule_es=p["rule_es"], reasons_es=reasons, missing_es=missing,
-                data_complete=not missing[:2])
+                imerg_usable=im_ok, goes_usable=go_ok, data_complete=im_ok and go_ok and w24.get("status") == "CALCULADO",
+                next_change_utc=nxt.astimezone(timezone.utc).isoformat() if nxt else None)
 
 
 def sort_key(row: dict):
-    acc = row["imerg"]["windows"].get("24h", {}).get("accum_mm")
-    six = row["imerg"]["windows"].get("6h", {}).get("accum_mm")
-    obs = acc if acc is not None else six
-    # Missing observations sort before observed values inside a tier: a missing signal is never 'low'.
-    return (RANK[row["review_priority"]["code"]], 0 if obs is None else 1, -(obs or 0), row["zone_id"])
+    rp = row["review_priority"]
+    w = row["imerg"].get("windows", {})
+    acc = w.get("24h", {}).get("accum_mm")
+    six = w.get("6h", {}).get("accum_mm")
+    obs = (acc if acc is not None else six) if rp.get("imerg_usable", True) else None
+    # Missing or stale observations sort before observed values inside a tier: a missing signal is never 'low'.
+    return (RANK[rp["code"]], 0 if obs is None else 1, -(obs or 0), row["zone_id"])
 
 
 # --------------------------------------------------------------------------- build
@@ -261,7 +352,7 @@ def zone_universe(zones_cfg: dict, boundaries: dict | None) -> list[dict]:
     return out
 
 
-def build(now: datetime | None = None) -> dict:
+def build(at: datetime) -> dict:
     zones_cfg, links = load(ZONES), load(LINKS) or {}
     latest = load(BOUNDARIES_LATEST)
     boundaries = None
@@ -291,7 +382,7 @@ def build(now: datetime | None = None) -> dict:
                                                                               "(Piura Ñácara probe queries a SENAMHI host: owner decision pending)"),
                          documentary_antecedents=dict(status="NO_INTEGRADO", reason="documentary identity/event leads not yet linked to this zone"),
                          v08_source_caveat=z["v08"].get("caveat"),
-                         review_priority=review_priority(avisos, imerg, goes_row, percentile)))
+                         review_priority=review_priority(avisos, imerg, goes_row, percentile, at)))
     rows.sort(key=sort_key)
     return dict(schema_version="0.1", output_id="irfen-v09-zone-rain-state:v0.1", **GUARDS, map_publishable=False,
                 inputs={k: sha(p) for k, p in (("zones", ZONES), ("links", LINKS), ("imerg_north", IMERG_NORTH),
@@ -299,9 +390,12 @@ def build(now: datetime | None = None) -> dict:
                                                 ("goes19_north", GOES_NORTH), ("geos_cf_north", GEOS_NORTH))},
                 links_evaluated_at_utc=links.get("evaluated_at_utc"), links_statuses_valid_until_utc=links.get("statuses_valid_until_utc"),
                 aviso_source_state=links.get("source_state"),
-                review_priorities=REVIEW_PRIORITIES,
+                review_priorities=REVIEW_PRIORITIES, freshness=FRESHNESS,
+                next_change_utc=min((r["review_priority"]["next_change_utc"] for r in rows if r["review_priority"]["next_change_utc"]), default=None),
                 rules_es=["Ventanas solo con todas sus medias horas; si falta alguna, NO_DISPONIBLE.",
                           "IMERG Early tiene horas de latencia; la antigüedad de cada ventana se muestra siempre.",
+                          f"Un dato antiguo (IMERG > {FRESHNESS['imerg_stale_after_h']} h, GOES-19 > {FRESHNESS['goes_stale_after_min']} min) se muestra con su fecha pero cuenta como ausente, nunca como «sin lluvia».",
+                          f"GEOS-CF: sin sumas de 6/24 h si el ciclo tiene más de {FRESHNESS['geos_max_cycle_age_h']} h o le faltan horas consecutivas.",
                           "GOES-19 RRQPE solo con píxeles que pasan el control de calidad; uso exploratorio sin validación local.",
                           "Sin umbrales de lluvia, caudales, cotas ni probabilidades de huaico.",
                           "La prioridad interna de revisión no es un nivel SENAMHI, ni un riesgo, ni una alerta.",
@@ -316,24 +410,31 @@ def content_equal(a: dict, b: dict) -> bool:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true")
+    parser.add_argument("--at", help="evaluate at this ISO instant instead of now (replays and demos)")
     args = parser.parse_args(argv)
-    out = build()
     committed = load(OUT)
     if args.check:
-        if committed is None or not content_equal(committed, out):
-            print("FAIL: zone_rain_state does not match its inputs: run scripts/v09_zone_rain_engine.py")
+        if committed is None or not committed.get("evaluated_at_utc"):
+            print("FAIL: no committed zone_rain_state to replay")
             return 1
-        print(f"OK: {len(out['zones'])} zones")
+        out = build(_t(committed["evaluated_at_utc"]))
+        if not content_equal(committed, out):
+            print("FAIL: zone_rain_state does not match its inputs at its evaluated_at_utc: run scripts/v09_zone_rain_engine.py")
+            return 1
+        print(f"OK: {len(out['zones'])} zones at {committed['evaluated_at_utc']}")
         return 0
+    at = _t(args.at) if args.at else datetime.now(timezone.utc)
+    out = build(at)
     if committed is None or not content_equal(committed, out):
-        out["evaluated_at_utc"] = datetime.now(timezone.utc).isoformat()
+        out["evaluated_at_utc"] = at.isoformat()
         OUT.parent.mkdir(parents=True, exist_ok=True)
         OUT.write_text(json.dumps(out, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
         print("written")
     for r in out["zones"]:
         w = r["imerg"]["windows"]
         print(f"{r['review_priority']['code']:36s} {r['display_name'][:40]:40s} imerg={r['imerg']['source']} "
-              + " ".join(f"{k}={w[k].get('accum_mm', w[k]['status'])}" for k in WINDOWS) + f" goes={r['goes19'].get('rate_mean_mm_h', r['goes19']['status'])}")
+              + " ".join(f"{k}={w[k].get('accum_mm', w[k]['status'])}" for k in WINDOWS) + f" goes={r['goes19'].get('rate_mean_mm_h', r['goes19']['status'])}"
+              + ("" if r["review_priority"]["imerg_usable"] else " [IMERG antiguo]") + ("" if r["review_priority"]["goes_usable"] else " [GOES no usable]"))
     return 0
 
 
