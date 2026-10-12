@@ -35,7 +35,7 @@
     "total_documentary_rows": 51,
     "confirmed_unique_hydrologic_unit_count": null,
     "possible_alias_double_count_unresolved": true,
-    "missing_source_name_leads": 1
+    "missing_source_name_leads": 0
   },
   "pending_identity_groups": [
     {
@@ -59,8 +59,14 @@
           "institution": "Instituto Geofisico del Peru",
           "source_url": "https://repositorio.igp.gob.pe/bitstreams/7ab825b4-0aca-4275-95a8-4243998bbe4c/download",
           "document_title": "Analisis y evaluacion historica de precipitaciones en Chaclacayo, Chosica y areas aledanas",
-          "printed_page_locators": [50, 66],
-          "observed_documentary_phrases": ["Quebrada Corrales (Rayos del Sol)", "Rayos del Sol (Quebrada Corrales)"],
+          "printed_page_locators": [
+            50,
+            66
+          ],
+          "observed_documentary_phrases": [
+            "Quebrada Corrales (Rayos del Sol)",
+            "Rayos del Sol (Quebrada Corrales)"
+          ],
           "context": "IGP 2023 uses the first label in its 1987 historical damage table and the second in a 2015 figure caption. This supports a contextual sector/area reading of Rayos del Sol at Corrales, but not a global alias or catchment merger; a later CENEPRED source separately labels Quebrada Rayo del Sol.",
           "source_text_verified": false,
           "original_pdf_bytes_archived_in_this_contract": false,
@@ -155,7 +161,23 @@
         "lima_lurigancho_rosario_igp"
       ],
       "status": "PENDING_ADJUDICATION",
-      "needed": "INGEMMET A7459 table and municipal sector map."
+      "needed": "Adjudicate whether the 2026 INDECI name 'Laderas Virgen del Rosario' denotes a ravine, hillside sector, or a distinct channel relative to 'Virgen del Rosario' and IGP 'Rosario'. The 26-Feb-2026 official notice names it in a conditional possible-activation list while expressly distinguishing 25-Feb surface runoff from ravine activation. Do not merge labels, infer an activation or add geometry.",
+      "name_evidence_leads": [
+        {
+          "source_id": "INDECI-NOTA-036-2026-2026-02-26",
+          "institution": "Instituto Nacional de Defensa Civil (INDECI)",
+          "source_url": "https://www.gob.pe/institucion/indeci/noticias/1359263-indeci-realizo-visita-tecnica-en-lurigancho-chosica-y-coordino-acciones-de-preparacion-ante-lluvias-intensas",
+          "published_date": "2026-02-26",
+          "source_type": "OFFICIAL_NEWS_TEXT",
+          "observed_documentary_phrase": "Laderas Virgen del Rosario",
+          "source_text_verified": false,
+          "original_text_archived_in_this_contract": false,
+          "original_text_sha256": null,
+          "scope": "CONDITIONAL_LIST_OF_POSSIBLE_RAVINE_ACTIVATIONS_NOT_OBSERVED_EVENT",
+          "adjudication": "DOCUMENTARY_NAME_MENTION_ONLY_NO_CHANNEL_ALIAS_OR_EVENT_PROMOTION",
+          "map_publishable": false
+        }
+      ]
     },
     {
       "labels": [
@@ -260,14 +282,7 @@
       "needed": "A6608 names Mariscal Castilla as a barrio on the Dos Barrios fan; RIIGEO 2012 lists a quebrada Mariscal Castilla. A source or map placing the RIIGEO label is needed."
     }
   ],
-  "requested_unresolved_name_leads": [
-    {
-      "requested_name": "Laderas Virgen del Rosario",
-      "corridor": "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA",
-      "result": "ONLY_SHORTER_LABEL_FOUND",
-      "note": "Sources found use 'Virgen del Rosario' (INDECI DDI Lima 2023) and 'Rosario' (IGP 2023). The 'Laderas' prefix was not found in any source read; the three labels are kept as separate documentary labels pending adjudication."
-    }
-  ],
+  "requested_unresolved_name_leads": [],
   "collector_semantics": {
     "chain": "QUEBRADA_OR_LOCAL_CHILD -> OUTLET_OR_CONFLUENCE -> RECEIVING_RIVER -> POTENTIAL_OVERFLOW_REACH",
     "no_child_activation_implies_collector_overflow": true,
@@ -3370,6 +3385,19 @@
         "Both sources are now archived with SHA-256 (the earlier note had original_pdf_sha256=null).",
         "The primary source is INGEMMET A6608 (Zavala, Vílchez y Núñez, 2012), now archived; SENAMHI 2020 and the 2018 thesis repeat it."
       ]
+    },
+    {
+      "requested_name": "Laderas Virgen del Rosario",
+      "corridor": "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA",
+      "historical_sweep_result": "ONLY_SHORTER_LABEL_FOUND",
+      "resolution": "OFFICIAL_DOCUMENTARY_NAME_MENTION_FOUND_HYDROLOGIC_IDENTITY_UNADJUDICATED",
+      "inventory_id": null,
+      "source_ref": "INDECI-NOTA-036-2026-2026-02-26",
+      "source_url": "https://www.gob.pe/institucion/indeci/noticias/1359263-indeci-realizo-visita-tecnica-en-lurigancho-chosica-y-coordino-acciones-de-preparacion-ante-lluvias-intensas",
+      "source_published_date": "2026-02-26",
+      "relation_to_existing_virgen_del_rosario": "UNRESOLVED_NOT_AN_ALIAS",
+      "observed_event_attribution": "NONE_FROM_THIS_SOURCE",
+      "note": "INDECI 26-Feb-2026 lists this exact name as a hypothetical future activation location, explicitly reporting only surface runoff and no ravine activation at the inspection date. No new unique hydrologic unit is counted; no geometry, outlet, event, discharge, capacity, or map publication."
     }
   ]
 }
