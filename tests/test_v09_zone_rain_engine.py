@@ -74,6 +74,29 @@ def zone_row(zone_id, avisos, imerg, goes):
     return dict(zone_id=zone_id, imerg=imerg, goes19=goes, review_priority=E.review_priority(avisos, imerg, goes, pct))
 
 
+class NorthArchives(unittest.TestCase):
+    """SYNTHETIC v0.9 archive records (shape only), not real observations."""
+
+    def test_polygon_goes_preferred_and_qc_respected(self):
+        north = dict(scans=[dict(scan_end="2026-10-12T13:40:00+00:00", targets=dict(
+            z=dict(pixels=40, valid_pixels=31, valid_fraction=0.775, rate_mean_mm_h=1.2, rate_max_mm_h=4.0),
+            q=dict(pixels=12, valid_pixels=0, valid_fraction=0.0, rate_mean_mm_h=None, rate_max_mm_h=None)))])
+        g = E.goes_for_zone("v08target", Goes.PROBE, "z", north)
+        self.assertEqual((g["status"], g["source"], g["good_quality_pixels"]), ("CALCULADO", "GOES19_RRQPE_V09_POLYGON", 31))
+        q = E.goes_for_zone(None, None, "q", north)
+        self.assertEqual(q["status"], "NO_DISPONIBLE")
+        self.assertIn("DQF=0", q["reason"])
+        self.assertEqual(E.goes_for_zone("a", Goes.PROBE, "other", north)["source"], "GOES19_RRQPE_V08_PROBE:a")
+
+    def test_geos_north_carries_its_resolution_note(self):
+        north = dict(dataset_time_start="2026-10-12T00:30", zones=dict(z=dict(cells=1, resolution_note="zone smaller than one 0.25° cell",
+                                                                               hourly=[dict(valid_time="2026-10-12T14:30:00Z", precip_mm=0.2)])))
+        g = E.geos_for_zone(None, None, "z", north)
+        self.assertEqual((g["status"], g["cells"]), ("CALCULADO", 1))
+        self.assertIn("smaller", g["resolution_note"])
+        self.assertEqual(E.geos_for_zone(None, None, "missing", north)["status"], "NO_DISPONIBLE")
+
+
 class ReviewPriority(unittest.TestCase):
     VIG = dict(aviso_key="A1", status="VIGENTE", relation_method="BASIN_INTERSECTS_LISTED_PROVINCE", official_level="NARANJA")
     FUT = dict(aviso_key="A2", status="FUTURO", relation_method="DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN")
@@ -136,7 +159,8 @@ class CommittedState(unittest.TestCase):
     def test_committed_state_replays_from_its_inputs(self):
         out = json.loads(E.OUT.read_text(encoding="utf-8"))
         current = {k: E.sha(p) for k, p in (("zones", E.ZONES), ("links", E.LINKS), ("imerg_north", E.IMERG_NORTH),
-                                            ("imerg_v08", E.IMERG_V08), ("goes19", E.GOES), ("geos_cf", E.GEOS))}
+                                            ("imerg_v08", E.IMERG_V08), ("goes19", E.GOES), ("geos_cf", E.GEOS),
+                                            ("goes19_north", E.GOES_NORTH), ("geos_cf_north", E.GEOS_NORTH))}
         if out["inputs"] != current:
             self.skipTest("an input changed after the committed state; the v0.9 workflows regenerate and check it")
         self.assertEqual(E.main(["--check"]), 0)

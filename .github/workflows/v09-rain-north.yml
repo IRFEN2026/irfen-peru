@@ -9,6 +9,7 @@ on:
       - v09/rain-engine-dashboard
     paths:
       - scripts/v09_imerg_north_archive.py
+      - scripts/v09_goes_geos_north.py
       - .github/workflows/v09-rain-north.yml
 
 permissions:
@@ -30,12 +31,16 @@ jobs:
         with:
           python-version: "3.12"
           cache: "pip"
-      - name: Install dependencies (same as the v0.8 IMERG probe)
-        run: pip install -r requirements.txt
+      - name: Install dependencies (v0.8 IMERG/GOES probes + GEOS-CF reader)
+        run: |
+          pip install -r requirements.txt
+          pip install zarr s3fs fsspec
       - name: Archive every missing half-hour of the last 30 h (bounded); failures are not zero rain
         env:
           EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
         run: timeout --signal=TERM --kill-after=10s 900s python scripts/v09_imerg_north_archive.py
+      - name: GOES-19 RRQPE (polygon, DQF=0) and GEOS-CF (new cycle only) for the north zones
+        run: timeout --signal=TERM --kill-after=10s 600s python scripts/v09_goes_geos_north.py --goes --geos
       - name: Rain engine and dashboard bundle (written only when they change)
         run: |
           python scripts/v09_aviso_zone_crossing.py

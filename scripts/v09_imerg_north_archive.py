@@ -7,8 +7,8 @@ política: aquí se descarga cada media hora que falte en las últimas `WINDOW_H
 para que las ventanas de 1/3/6/24 h se puedan reconstruir sin huecos. Objetivos:
 
 * las cuencas con geometría verificada de config/v09_north_surveillance_zones_v0_1.json;
-* las provincias de Piura (polígonos INEI referenciales archivados), como contexto administrativo: la media sobre
-  la provincia no es la lluvia de ninguna quebrada.
+* las provincias de los departamentos sin cuenca validada fuera de Bocapán (Piura, Tumbes; polígonos INEI
+  referenciales archivados), como contexto administrativo: la media sobre la provincia no es la lluvia de ninguna quebrada.
 
 IMERG Early tiene horas de latencia: nunca se presenta como observación en tiempo real. Un fallo de Earthdata se
 registra y nunca se interpreta como lluvia cero. El archivo solo se reescribe cuando entra un gránulo nuevo o cambia
@@ -52,13 +52,14 @@ def load_targets() -> list[dict]:
             geom = unary_union([shape(f["geometry"]) for f in feats]).buffer(0)
             targets.append(dict(id=z["zone_id"], name=z["display_name"], kind="BASIN_POLYGON", geometry=geom,
                                 geometry_sha256=z["geometry_sha256"]))
+    context = {z["registered_department"]: z["zone_id"] for z in cfg["zones"] if z["zone_type"] == "ADMINISTRATIVE_CONTEXT_NO_BASIN"}
     if BOUNDARIES_LATEST.is_file():
         latest = json.loads(BOUNDARIES_LATEST.read_text(encoding="utf-8"))
         fc = json.loads((ROOT / latest["path"]).read_text(encoding="utf-8"))
         for f in fc["features"]:
             p = f["properties"]
-            if p["NOMBDEP"] == "PIURA":
-                targets.append(dict(id=f"piura_province_context:{p['NOMBPROV']}", name=f"Provincia {p['NOMBPROV'].title()} (Piura)",
+            if p["NOMBDEP"] in context:
+                targets.append(dict(id=f"{context[p['NOMBDEP']]}:{p['NOMBPROV']}", name=f"Provincia {p['NOMBPROV'].title()} ({p['NOMBDEP'].title()})",
                                     kind="ADMIN_PROVINCE_POLYGON_INEI_REFERENTIAL", geometry=shape(f["geometry"]).buffer(0),
                                     geometry_sha256=latest["sha256"]))
     return targets

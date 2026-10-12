@@ -23,7 +23,8 @@
  "rules": [
   "only geometries with a known official source and a validation file are used",
   "no basin polygon is drawn for Piura; listed provinces are administrative context",
-  "a relation to an aviso never states that a quebrada will activate"
+  "a relation to an aviso never states that a quebrada will activate",
+  "Tumbes outside Bocapán is handled like Piura: listed provinces are administrative context"
  ],
  "zones": [
   {
@@ -214,6 +215,16 @@
     "province": "PIURA",
     "caveat": "Catacaos/Bajo Piura v0.8 weighted sampling boxes (bajo Piura and middle basin): context for Piura province, not a provincial mean"
    }
+  },
+  {
+   "zone_id": "tumbes_province_context",
+   "zone_type": "ADMINISTRATIVE_CONTEXT_NO_BASIN",
+   "display_name": "Tumbes (provincias listadas en el aviso)",
+   "registered_department": "TUMBES",
+   "geometry_path": null,
+   "geometry_sha256": null,
+   "activation_gate": "BLOCKED",
+   "note": "Only the Bocapán component basin is validated in Tumbes. The Tumbes and Zarumilla river areas have no validated IRFEN basin geometry: each Tumbes province listed by an aviso becomes a context zone; no basin polygon is drawn or inferred."
   }
  ]
 }

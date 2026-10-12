@@ -37,6 +37,8 @@ IMERG_NORTH = ROOT / "data/v09/rain/imerg_early_north_v0_1.json"
 IMERG_V08 = ROOT / "site/data/calibration/imerg_early_live_archive.json"
 GOES = ROOT / "site/data/calibration/goes19_rrqpe_probe.json"
 GEOS = ROOT / "site/data/forecast/latest.json"
+GOES_NORTH = ROOT / "data/v09/rain/goes19_rrqpe_north_v0_1.json"
+GEOS_NORTH = ROOT / "data/v09/rain/geos_cf_north_v0_1.json"
 BOUNDARIES_LATEST = ROOT / "data/v09/admin_boundaries/latest.json"
 OUT = ROOT / "data/v09/surveillance/zone_rain_state_v0_1.json"
 WINDOWS = {"1h": 2, "3h": 6, "6h": 12, "24h": 48}
@@ -142,9 +144,24 @@ def imerg_for_zone(zone_id: str, v08_target: str | None, north: dict | None, v08
                 **best, alternatives=[c[0] for c in candidates if c[0] != name])
 
 
-def goes_for_zone(target: str | None, probe: dict | None) -> dict:
+def goes_for_zone(target: str | None, probe: dict | None, zone_id: str | None = None, north: dict | None = None) -> dict:
+    """Latest GOES-19 RRQPE rate. Prefers the v0.9 polygon sampling (all DQF=0 pixels inside the zone); falls back to
+    the v0.8 probe's 5×5-pixel point windows."""
+    scans = [s for s in (north or {}).get("scans", []) if zone_id and zone_id in s.get("targets", {})]
+    if scans:
+        last = scans[-1]
+        row = last["targets"][zone_id]
+        recent = [[s["scan_end"], s["targets"][zone_id].get("rate_mean_mm_h")] for s in scans[-24:]]
+        if row.get("valid_pixels"):
+            return dict(status="CALCULADO", source="GOES19_RRQPE_V09_POLYGON", rate_mean_mm_h=row["rate_mean_mm_h"],
+                        rate_max_mm_h=row["rate_max_mm_h"], scan_end_utc=last["scan_end"], good_quality_pixels=row["valid_pixels"],
+                        window_pixels=row["pixels"], valid_fraction=row.get("valid_fraction"), recent_scans_mm_h=recent,
+                        sampling_es=f"Tasa instantánea media de {row['valid_pixels']} píxeles DQF=0 (de {row['pixels']}) dentro del polígono; no es acumulado.",
+                        uncertainty_es="RRQPE no validado localmente contra IMERG ni pluviómetros: uso exploratorio.")
+        return dict(status="NO_DISPONIBLE", source="GOES19_RRQPE_V09_POLYGON", scan_end_utc=last["scan_end"], recent_scans_mm_h=recent,
+                    reason=f"no pixel passed quality control (DQF=0) in the last scan ({row.get('pixels', 0)} pixels in the polygon)")
     if not target:
-        return dict(status="NO_DISPONIBLE", reason="zone not sampled by the GOES-19 RRQPE probe")
+        return dict(status="NO_DISPONIBLE", reason="zone not sampled by any GOES-19 RRQPE archive")
     if not probe or not probe.get("source_available"):
         return dict(status="NO_DISPONIBLE", reason="GOES-19 probe has no available source in its last run")
     rows = [s for s in probe.get("samples", []) if s.get("target_id") == target]
@@ -155,19 +172,27 @@ def goes_for_zone(target: str | None, probe: dict | None) -> dict:
     mean = sum(float(s.get("weight", 1.0)) * s["rain_rate_summary_mm_h"]["mean"] for s in good) / wsum
     mx = max(s["rain_rate_summary_mm_h"]["max"] for s in good)
     lo = probe.get("latest_object") or {}
-    return dict(status="CALCULADO", rate_mean_mm_h=round(mean, 2), rate_max_mm_h=round(mx, 2), scan_end_utc=lo.get("scan_end"),
-                good_quality_pixels=sum(s["good_quality_pixel_count"] for s in good), window_pixels=sum(s["window_pixel_count"] for s in rows),
+    return dict(status="CALCULADO", source=f"GOES19_RRQPE_V08_PROBE:{target}", rate_mean_mm_h=round(mean, 2), rate_max_mm_h=round(mx, 2),
+                scan_end_utc=lo.get("scan_end"), good_quality_pixels=sum(s["good_quality_pixel_count"] for s in good),
+                window_pixels=sum(s["window_pixel_count"] for s in rows),
                 sampling_es="Tasa instantánea en ventanas de 5×5 píxeles (≈2 km) en puntos representativos; no es acumulado de cuenca.",
                 uncertainty_es="RRQPE no validado localmente contra IMERG ni pluviómetros: uso exploratorio.")
 
 
-def geos_for_zone(target: str | None, forecast: dict | None) -> dict:
+def geos_for_zone(target: str | None, forecast: dict | None, zone_id: str | None = None, north: dict | None = None) -> dict:
+    zn = (north or {}).get("zones", {}).get(zone_id) if zone_id else None
+    if zn and zn.get("hourly"):
+        return dict(status="CALCULADO", source="GEOS_CF_V09_POLYGON", generated_at_utc=north.get("generated_at_utc"),
+                    dataset_time_start=north.get("dataset_time_start"), cells=zn["cells"], resolution_note=zn["resolution_note"],
+                    hourly=[dict(valid_time_utc=h["valid_time"], precip_mm=h["precip_mm"]) for h in zn["hourly"]],
+                    nature_es="Pronóstico experimental NASA GEOS-CF v2 (celdas de 0,25°). Las sumas se calculan al mostrar, desde la hora actual.")
     if not target:
-        return dict(status="NO_DISPONIBLE", reason="zone not in the GEOS-CF experimental forecast run")
+        return dict(status="NO_DISPONIBLE", reason="zone not in any GEOS-CF experimental forecast run")
     zone = next((z for z in (forecast or {}).get("zones", []) if z.get("zone_id") == target), None)
     if not zone or not zone.get("hourly"):
         return dict(status="NO_DISPONIBLE", reason="GEOS-CF forecast has no hourly series for this zone")
-    return dict(status="CALCULADO", generated_at_utc=forecast.get("generated_at"), dataset_time_start=forecast.get("dataset_time_start"),
+    return dict(status="CALCULADO", source=f"GEOS_CF_V08:{target}", generated_at_utc=forecast.get("generated_at"),
+                dataset_time_start=forecast.get("dataset_time_start"),
                 hourly=[dict(valid_time_utc=h["valid_time"], precip_mm=h["precip_mm"]) for h in zone["hourly"][:120]],
                 nature_es="Pronóstico experimental NASA GEOS-CF v2 (0.25°). Las sumas se calculan al mostrar, desde la hora actual.")
 
@@ -228,9 +253,10 @@ def zone_universe(zones_cfg: dict, boundaries: dict | None) -> list[dict]:
             out.append(dict(zone_id=z["zone_id"], display_name=z["display_name"], department=z["registered_department"],
                             zone_type=z["zone_type"], geometry_path=z["geometry_path"], v08=v08))
         else:
-            for prov in (boundaries or {}).get("piura_provinces", []):
-                out.append(dict(zone_id=f"{z['zone_id']}:{prov}", display_name=f"Piura · {prov.title()}", department="PIURA",
-                                zone_type="ADMINISTRATIVE_CONTEXT_NO_BASIN", province=prov,
+            dep = z["registered_department"]
+            for prov in (boundaries or {}).get("provinces_by_department", {}).get(dep, []):
+                out.append(dict(zone_id=f"{z['zone_id']}:{prov}", base_zone_id=z["zone_id"], display_name=f"{dep.title()} · {prov.title()}",
+                                department=dep, zone_type="ADMINISTRATIVE_CONTEXT_NO_BASIN", province=prov,
                                 v08=v08 if v08.get("province") == prov else {}))
     return out
 
@@ -241,17 +267,21 @@ def build(now: datetime | None = None) -> dict:
     boundaries = None
     if latest:
         fc = load(ROOT / latest["path"])
-        boundaries = dict(piura_provinces=sorted(f["properties"]["NOMBPROV"] for f in fc["features"] if f["properties"]["NOMBDEP"] == "PIURA"))
+        by_dep: dict[str, list[str]] = {}
+        for f in fc["features"]:
+            by_dep.setdefault(f["properties"]["NOMBDEP"], []).append(f["properties"]["NOMBPROV"])
+        boundaries = dict(provinces_by_department={d: sorted(v) for d, v in by_dep.items()})
     north, v08, goes, geos = load(IMERG_NORTH), load(IMERG_V08), load(GOES), load(GEOS)
+    goes_north, geos_north = load(GOES_NORTH), load(GEOS_NORTH)
     by_zone = {r["zone_id"]: r for r in links.get("surveillance_zones", [])}
     rows = []
     for z in zone_universe(zones_cfg, boundaries):
         avisos = list(by_zone.get(z["zone_id"], {}).get("avisos", []))
         if z["zone_type"] == "ADMINISTRATIVE_CONTEXT_NO_BASIN":  # department-only links of the Piura context zone
-            avisos += [dict(a, relation_method=a["relation_method"]) for a in by_zone.get("piura_province_context", {}).get("avisos", [])]
+            avisos += [dict(a, relation_method=a["relation_method"]) for a in by_zone.get(z["base_zone_id"], {}).get("avisos", [])]
         imerg = imerg_for_zone(z["zone_id"], z["v08"].get("imerg_early"), north, v08)
-        goes_row = goes_for_zone(z["v08"].get("goes19_rrqpe"), goes)
-        geos_row = geos_for_zone(z["v08"].get("geos_cf"), geos)
+        goes_row = goes_for_zone(z["v08"].get("goes19_rrqpe"), goes, z["zone_id"], goes_north)
+        geos_row = geos_for_zone(z["v08"].get("geos_cf"), geos, z["zone_id"], geos_north)
         percentile = dict(status="NO_DISPONIBLE", min_samples=MIN_PERCENTILE_SAMPLES,
                           reason="no homogeneous historical series of IMERG Early 24 h windows for this target yet (archive keeps 96 h)")
         rows.append(dict(zone_id=z["zone_id"], display_name=z["display_name"], department=z["department"], zone_type=z["zone_type"],
@@ -265,7 +295,8 @@ def build(now: datetime | None = None) -> dict:
     rows.sort(key=sort_key)
     return dict(schema_version="0.1", output_id="irfen-v09-zone-rain-state:v0.1", **GUARDS, map_publishable=False,
                 inputs={k: sha(p) for k, p in (("zones", ZONES), ("links", LINKS), ("imerg_north", IMERG_NORTH),
-                                                ("imerg_v08", IMERG_V08), ("goes19", GOES), ("geos_cf", GEOS))},
+                                                ("imerg_v08", IMERG_V08), ("goes19", GOES), ("geos_cf", GEOS),
+                                                ("goes19_north", GOES_NORTH), ("geos_cf_north", GEOS_NORTH))},
                 links_evaluated_at_utc=links.get("evaluated_at_utc"), links_statuses_valid_until_utc=links.get("statuses_valid_until_utc"),
                 aviso_source_state=links.get("source_state"),
                 review_priorities=REVIEW_PRIORITIES,
