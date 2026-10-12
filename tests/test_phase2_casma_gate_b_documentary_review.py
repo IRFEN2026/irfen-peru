@@ -1,3 +1,4 @@
+import hashlib
 import json
 from pathlib import Path
 import unittest
@@ -38,6 +39,64 @@ class TestCasmaGateBDocumentaryReview(unittest.TestCase):
         self.assertFalse(ref["area_tolerance_authorized"])
         self.assertEqual(self.review["gate_b_result"], "NOT_ESTABLISHED")
         self.assertFalse(self.review["historical_geometry_equivalence_to_Uh_pfas100"])
+
+        # The 2026-09-29 review is immutable; the 2026-10-12 evidence is a separate recheck.
+        post = self.review["post_review_reconciliation"]
+        self.assertEqual(self.review["review_date_utc"], "2026-09-29")
+        self.assertEqual(post["reconciled_on_utc"], "2026-10-12")
+        self.assertTrue(post["original_review_requirements_and_missing_evidence_are_historical_snapshot"])
+        self.assertEqual(post["current_gate_b"], "NOT_ESTABLISHED")
+        self.assertEqual([x["satisfied"] for x in post["gate_b_requirement_recheck"]], [False, True, False])
+        self.assertFalse(post["historical_geometry_equivalence_to_Uh_pfas100"])
+        self.assertFalse(post["historical_2007_geometry_label_authorized"])
+        self.assertTrue(post["guards_unchanged"])
+        self.assertTrue(post["no_new_geometry_or_thresholds"])
+
+        evidence = post["current_evidence"]
+        def git_blob_sha(raw):
+            return hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest()
+        for path_key, sha_key in (
+            ("n7_manifest_path", "n7_manifest_blob_sha"),
+            ("map_decision_path", "map_decision_blob_sha"),
+        ):
+            self.assertEqual(
+                git_blob_sha((ROOT / evidence[path_key]).read_bytes()), evidence[sha_key]
+            )
+        n7 = load(ROOT / evidence["n7_manifest_path"])
+        self.assertEqual(n7["feature_count"], 9)
+        self.assertEqual(evidence["n7_count"], 9)
+        self.assertTrue(n7["all_nine_raw_hashes_frozen"])
+        self.assertEqual(
+            sorted(str(row["code"]) for row in n7["features"]),
+            [f"137596{i}" for i in range(1, 10)],
+        )
+        for row in n7["features"]:
+            for archive_key, hash_key in (
+                ("raw_archive_path", "raw_response_sha256"),
+                ("native_archive_path", "native_response_sha256"),
+            ):
+                self.assertEqual(
+                    hashlib.sha256((ROOT / row[archive_key]).read_bytes()).hexdigest(),
+                    row[hash_key],
+                )
+            self.assertEqual(row["gate_b_lineage_equivalence"], "NOT_ESTABLISHED")
+            self.assertFalse(row["historical_geometry_equivalence_to_Uh_pfas100"])
+        gate_c = load(ROOT / evidence["gate_c_adjudication_path"])
+        self.assertEqual(gate_c["gate_c_status"], "PASS")
+        self.assertEqual(gate_c["report_sha256"], evidence["gate_c_report_sha256"])
+        self.assertEqual(
+            hashlib.sha256((ROOT / gate_c["report_path"]).read_bytes()).hexdigest(),
+            evidence["gate_c_report_sha256"],
+        )
+        self.assertEqual(
+            gate_c["c6d_evidence_chain"]["raw_response_sha256"],
+            evidence["independent_parent_raw_sha256"],
+        )
+        self.assertEqual(gate_c["gate_b_lineage_equivalence"], "NOT_ESTABLISHED")
+        map_decision = load(ROOT / evidence["map_decision_path"])
+        self.assertEqual(map_decision["authorized_label"], "CURRENT_INSTITUTIONAL_N7_RESEARCH_CONTEXT")
+        self.assertFalse(map_decision["historical_geometry_equivalence_to_Uh_pfas100"])
+        self.assertFalse(map_decision["map_constraints"]["counts_as_operational_geometry"])
 
     def test_every_contract_requirement_assessed_and_unsatisfied(self):
         required = self.adj["gate_b_lineage_equivalence"]["required_for_exact_2007_geometry_claim"]
