@@ -2693,7 +2693,10 @@
     "tests/test_zana_oyotun_research_closeout.py::ZanaOyotunResearchCloseoutTests::test_positive_outcomes_are_independent_official_time_slices",
     "tests/test_zana_oyotun_research_closeout.py::ZanaOyotunResearchCloseoutTests::test_source_typo_is_preserved_not_silently_rewritten"
   ],
-  "this_change_justified_removed_node_ids": {},
+  "this_change_justified_removed_node_ids": {
+    "tests/test_v08_scheduler_fallback_workflow.py::V08SchedulerFallbackWorkflowTests::test_fallback_requires_four_hours_without_schedule_events": "Deliberate behaviour change (v0.9): the repository-wide 4 h schedule gate is removed so each workflow is judged on its own history; replaced by test_no_repository_wide_schedule_gate and the PerWorkflowDecision/Sweep tests.",
+    "tests/test_v08_scheduler_fallback_workflow.py::V08SchedulerFallbackWorkflowTests::test_only_closeout_collectors_are_dispatched_with_cooldowns": "The target list now also includes the v0.9 workflows and lives in scripts/scheduler_fallback.py; replaced by test_targets_and_cooldowns (same v0.8 cooldowns asserted exactly) and test_rain_north_is_dispatched_once_it_exists_on_main."
+  },
   "historical_removed_node_ids": {},
   "how_to_update": "Regenerate with --write-manifest only from a real clean collection. For deliberate removals, add a non-empty justification for each newly disappeared node ID in this_change_justified_removed_node_ids."
 }
