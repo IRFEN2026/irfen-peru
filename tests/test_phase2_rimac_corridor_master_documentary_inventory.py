@@ -40,6 +40,19 @@ def test_inventory_is_research_only_and_never_operational():
     assert leads[0]["unit_attribution"] == "HISTORICAL_CONTEXT_REQUIRES_ATTRIBUTION_CHECK"
     assert leads[0]["usable_as_confirmed_unit_event"] is False
 
+    # Apply the same fail-closed contract to every documentary event lead,
+    # not just Cashahuacra. A district list, station activation or historical
+    # table mention cannot silently become a verified per-quebrada event.
+    for unit in d["units"]:
+        for lead in unit["unverified_event_leads"]:
+            assert lead["date_or_period"] and lead["source_id"]
+            assert lead["source_text_verified"] is False
+            assert lead["usable_as_confirmed_unit_event"] is False
+            if "event_ledger_entry_allowed" in lead:
+                assert lead["event_ledger_entry_allowed"] is False
+            if "event_lead_state" in lead:
+                assert lead["event_lead_state"] == "EVENT_LEAD_UNVERIFIED"
+
 
 def test_documentary_rows_have_unique_ids_but_are_not_unique_catchments():
     d = load()
