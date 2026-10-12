@@ -89,11 +89,11 @@ class NorthArchives(unittest.TestCase):
         self.assertEqual(E.goes_for_zone("a", Goes.PROBE, "other", north)["source"], "GOES19_RRQPE_V08_PROBE:a")
 
     def test_geos_north_carries_its_resolution_note(self):
-        north = dict(dataset_time_start="2026-10-12T00:30", zones=dict(z=dict(cells=1, resolution_note="zone smaller than one 0.25° cell",
+        north = dict(dataset_time_start="2026-10-12T00:30", zones=dict(z=dict(cells=1, resolution_note="Zona más pequeña que una celda de 0,25°",
                                                                                hourly=[dict(valid_time="2026-10-12T14:30:00Z", precip_mm=0.2)])))
         g = E.geos_for_zone(None, None, "z", north)
         self.assertEqual((g["status"], g["cells"]), ("CALCULADO", 1))
-        self.assertIn("smaller", g["resolution_note"])
+        self.assertIn("más pequeña", g["resolution_note"])
         self.assertEqual(E.geos_for_zone(None, None, "missing", north)["status"], "NO_DISPONIBLE")
 
 

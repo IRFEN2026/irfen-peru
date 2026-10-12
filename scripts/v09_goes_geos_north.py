@@ -205,8 +205,8 @@ def geos_run() -> int:
 
         area_km2 = abs(Geod(ellps="WGS84").geometry_area_perimeter(p["geometry"])[0]) / 1e6
         zones[p["id"]] = dict(cells=p["cells"], zone_area_km2=round(area_km2, 1), approx_cell_area_km2=round(cell_km2),
-                              resolution_note=("zone smaller than one 0.25° cell: the value represents the cell(s), not the basin"
-                                               if area_km2 < cell_km2 else "area-weighted mean of 0.25° cells"),
+                              resolution_note=("Zona más pequeña que una celda de 0,25°: el valor representa la celda, no la zona."
+                                               if area_km2 < cell_km2 else "Media ponderada por área de celdas de 0,25°."),
                               hourly=hourly[:120])
     out = dict(schema_version="0.1", archive_id="irfen-v09-geos-cf-north:v0.1", **GUARDS, map_publishable=False,
                source=dict(product="NASA GMAO GEOS-CF v2 forecast (tprec)", store=geos.STORE, grid_deg=[geos.grid_step(lat), geos.grid_step(lon)],
