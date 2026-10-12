@@ -46,3 +46,10 @@ class Bundle(unittest.TestCase):
         self.assertIn("viewer_stale_after_minutes", html)
         self.assertIn("No es un nivel SENAMHI", html)
         self.assertIn('meta name="robots" content="noindex"', html)
+
+    def test_page_has_no_external_scripts_and_an_integrated_zone_view(self):
+        html = (ROOT / "site/v09/index.html").read_text(encoding="utf-8")
+        self.assertNotIn("<script src=", html)  # the map is inline SVG: no CDN dependency
+        for block in ("Aviso oficial (SENAMHI vía INDECI/COEN)", "Lluvia observada · IMERG Early", "Lluvia observada · GOES-19 RRQPE",
+                      "Previsión · GEOS-CF (experimental)", "prioridad interna IRFEN, no nivel oficial"):
+            self.assertIn(block, html)

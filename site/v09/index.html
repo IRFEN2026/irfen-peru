@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>IRFEN v0.9 · Vigilancia SENAMHI (experimental)</title>
 <meta name="robots" content="noindex">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root{
   color-scheme: light;
@@ -50,9 +49,19 @@ nav button{border:1px solid var(--border);background:var(--surface-2);color:var(
 nav button[aria-selected="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 main{padding:14px 16px 40px;max-width:1280px;margin:0 auto}
 section[hidden]{display:none}
-#map{height:560px;border:1px solid var(--border);border-radius:10px}
+#map{border:1px solid var(--border);border-radius:10px;background:var(--surface-2);position:relative}
+#map svg{display:block;width:100%;height:auto;max-height:640px}
+#map path{vector-effect:non-scaling-stroke;cursor:pointer}
+#map path.sel{stroke:var(--ink)!important;stroke-width:2.5px!important}
+#map text{font-size:11px;fill:var(--ink-2);pointer-events:none;paint-order:stroke;stroke:var(--surface-2);stroke-width:3px}
+.detail{border:1px solid var(--border);border-radius:10px;padding:12px;background:var(--surface)}
+.detail h2{margin:0 0 2px}
+.blocks{display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px}
+.block{border-top:1px solid var(--border);padding-top:8px}
+.block h3{margin:0 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.03em;color:var(--ink-2)}
+.tag{display:inline-block;font-size:11px;padding:1px 6px;border-radius:4px;border:1px solid var(--border);color:var(--ink-2);margin-left:4px}
 .grid2{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:14px}
-@media (max-width:900px){.grid2{grid-template-columns:1fr} #map{height:420px}}
+@media (max-width:900px){.grid2{grid-template-columns:1fr}}
 .legend{border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:var(--surface-2);font-size:12px}
 .legend .row{display:flex;align-items:center;gap:8px;margin:3px 0}
 .sw{width:16px;height:12px;border-radius:3px;border:1px solid var(--border);flex:none}
@@ -99,12 +108,12 @@ footer{padding:16px;color:var(--ink-3);font-size:12px;border-top:1px solid var(-
 <main>
   <section id="tab-map">
     <div class="grid2">
-      <div id="map" role="img" aria-label="Mapa de cuencas de vigilancia y provincias incluidas en avisos"></div>
       <div>
+        <div id="map" role="img" aria-label="Mapa de cuencas de vigilancia y provincias incluidas en avisos"></div>
+        <p class="small muted">Pulse una cuenca o una provincia de Piura/Tumbes para ver su ficha integrada. Mapa esquemático (lon/lat, sin mapa base); geometrías simplificadas solo para dibujar.</p>
         <div class="legend" id="legend"></div>
-        <h3>Zonas relacionadas con avisos de lluvia activos</h3>
-        <div id="map-zones" class="small"></div>
       </div>
+      <div class="detail" id="zone-detail" aria-live="polite"></div>
     </div>
   </section>
   <section id="tab-avisos" hidden>
@@ -133,7 +142,6 @@ footer{padding:16px;color:var(--ink-3);font-size:12px;border-top:1px solid var(-
 </main>
 <footer id="footer"></footer>
 <div class="tip" id="tip"></div>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 "use strict";
 const DATA_URL = "../data/v09/dashboard_v0_1.json";
@@ -144,6 +152,7 @@ const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const lima = iso => iso ? new Date(iso).toLocaleString("es-PE", {timeZone:"America/Lima", day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit"}) : "—";
 const ago = iso => { if(!iso) return "—"; const m = (Date.now() - new Date(iso)) / 60000; return m < 90 ? `hace ${Math.round(m)} min` : m < 2880 ? `hace ${(m/60).toFixed(1)} h` : `hace ${(m/1440).toFixed(1)} d`; };
+const isoFix = t => t ? String(t).replace(/\.\d+$/, "").replace(/Z?$/, "Z") : t; // numpy datetime64 strings -> ISO UTC
 const na = (why) => `<span class="na" title="${esc(why||"")}">no disponible</span>`;
 
 function statusNow(a){ // same rule as the capturer: documented validity only
@@ -192,25 +201,25 @@ function init(){
   document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => {
     document.querySelectorAll("nav button").forEach(x => x.setAttribute("aria-selected", x===b));
     document.querySelectorAll("main section").forEach(s => s.hidden = s.id !== "tab-" + b.dataset.tab);
-    if (b.dataset.tab === "map" && window._map) window._map.invalidateSize();
   }));
   for (const [name, fn] of [["mapa", renderMap], ["avisos", renderAvisos], ["lluvia", renderRain], ["seguimiento", renderCenter]]) {
     try { fn(); } catch (err) { console.error(name, err); document.getElementById("chips").insertAdjacentHTML("beforeend", `<span class="chip bad">Error al dibujar el módulo «${esc(name)}»: ${esc(err.message)}</span>`); }
   }
 }
 
-/* ---------------- 1 · map ---------------- */
+/* ---------------- 1 · map + integrated zone view ---------------- */
 function zoneTier(zoneId){
   const z = D.rain.zones.find(r => r.zone_id === zoneId);
-  return z ? z.review_priority : null;
+  return z ? liveTier(z).code : null;
 }
+const foldName = p => p.normalize("NFD").replace(/[̀-ͯ]/g,"").toUpperCase().replace(/\./g,"").trim();
 function provincesInActiveRainAvisos(){
-  const m = {}; // "DEP|PROV" -> {level, avisos}
+  const m = {}; // "DEP|PROV" or "DEP|*" -> {levels, avisos, dept_only}
   D.avisos.filter(a => ["VIGENTE","FUTURO"].includes(a.now) && a.rain_related !== false).forEach(a => {
     const lv = a.official_level;
     if (a.provinces_by_department) {
       Object.entries(a.provinces_by_department).forEach(([dep, ps]) => ps.forEach(p => {
-        const k = dep + "|" + p.normalize("NFD").replace(/[̀-ͯ]/g,"").toUpperCase().replace(/\./g,"").trim();
+        const k = dep + "|" + foldName(p);
         (m[k] = m[k] || {levels:[], avisos:[], dept_only:false}).avisos.push(a.aviso_key); if (lv) m[k].levels.push(lv);
       }));
     }
@@ -221,56 +230,96 @@ function provincesInActiveRainAvisos(){
   return m;
 }
 const ORDER = ["ROJO","NARANJA","AMARILLO","VERDE"];
+const CONTEXT_DEPTS = {PIURA:"piura_province_context", TUMBES:"tumbes_province_context"};
+function rings(geom){ return geom.type === "Polygon" ? [geom.coordinates] : geom.coordinates; }
 function renderMap(){
-  if (!window.L) { document.getElementById("map").innerHTML = `<p class="muted" style="padding:12px">No se pudo cargar la librería del mapa (Leaflet). Los demás módulos funcionan.</p>`; renderLegendOnly(); return; }
-  const map = L.map("map", {scrollWheelZoom:false}).setView([-6.6, -79.6], 7);
-  window._map = map;
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {maxZoom:12, attribution:"© OpenStreetMap"}).addTo(map);
+  const feats = D.geometries.features;
+  let minx=1e9,miny=1e9,maxx=-1e9,maxy=-1e9;
+  feats.forEach(f => rings(f.geometry).forEach(poly => poly[0].forEach(([x,y]) => { minx=Math.min(minx,x); maxx=Math.max(maxx,x); miny=Math.min(miny,y); maxy=Math.max(maxy,y); })));
+  const k = Math.cos((miny+maxy)/2*Math.PI/180), W = 760, sx = W/((maxx-minx)*k), H = Math.round((maxy-miny)*sx);
+  const P = ([x,y]) => `${((x-minx)*k*sx).toFixed(1)},${((maxy-y)*sx).toFixed(1)}`;
+  const d = geom => rings(geom).map(poly => poly.map(r => "M" + r.map(P).join("L") + "Z").join("")).join("");
   const listed = provincesInActiveRainAvisos();
-  const provs = D.geometries.features.filter(f => f.properties.kind === "PROVINCE");
-  L.geoJSON({type:"FeatureCollection", features:provs}, {
-    style: f => {
-      const p = f.properties, hit = listed[p.department + "|" + p.province] || listed[p.department + "|*"];
-      if (!hit) return {color:css("--ink-3"), weight:0.6, fillOpacity:0, opacity:0.6};
-      const lv = ORDER.find(l => hit.levels.includes(l));
-      return {color: lv ? css(LEVEL_VAR[lv]) : css("--ink-2"), weight: hit.dept_only ? 1.2 : 2, dashArray: lv ? null : "5 4",
-              fillColor: lv ? css(LEVEL_VAR[lv]) : css("--lv-none"), fillOpacity: hit.dept_only ? 0.06 : 0.16};
-    },
-    onEachFeature: (f, layer) => {
-      const p = f.properties, hit = listed[p.department + "|" + p.province] || listed[p.department + "|*"];
-      layer.bindPopup(`<b>${esc(p.province)}</b> (${esc(p.department)})<br>` + (hit
-        ? `${hit.dept_only ? "Departamento nombrado en" : "Provincia enumerada en"}: ${hit.avisos.map(esc).join(", ")}<br><span class="small">Representación administrativa del aviso, no su huella real.</span>`
-        : "No incluida en avisos de lluvia activos."));
-    }
-  }).addTo(map);
-  const basins = D.geometries.features.filter(f => f.properties.kind === "BASIN");
-  const basinLayer = L.geoJSON({type:"FeatureCollection", features:basins}, {
-    style: f => { const pr = zoneTier(f.properties.zone_id); const v = pr ? PRIO_VAR[pr.code] : "--r5";
-      return {color: css("--r1"), weight: 1.5, fillColor: css(v), fillOpacity: 0.55, dashArray: pr && pr.code === "R5_DATOS_INSUFICIENTES" ? "4 3" : null}; },
-    onEachFeature: (f, layer) => {
-      const z = D.rain.zones.find(r => r.zone_id === f.properties.zone_id) || {};
-      const sz = D.surveillance_zones.find(r => r.zone_id === f.properties.zone_id);
-      layer.bindPopup(`<b>${esc(f.properties.name)}</b><br>Prioridad interna IRFEN: ${esc(z.review_priority?.label_es || "—")}<br>`
-        + (sz ? `Relación con avisos: ${esc(sz.why_es.join("; "))}` : "Sin aviso de lluvia activo relacionado")
-        + `<br>Fuentes: IMERG ${esc(z.imerg?.status||"—")} · GOES ${esc(z.goes19?.status||"—")} · GEOS ${esc(z.geos_cf?.status||"—")}`
-        + `<br><span class="small">Geometría verificada: ${esc(f.properties.validation_status||"")}</span>`);
-    }
-  }).addTo(map);
-  try { map.fitBounds(basinLayer.getBounds().pad(0.6)); } catch(e) {}
+  const parts = [];
+  feats.filter(f => f.properties.kind === "PROVINCE").forEach(f => {
+    const p = f.properties, hit = listed[p.department + "|" + p.province] || listed[p.department + "|*"];
+    const lv = hit ? ORDER.find(l => hit.levels.includes(l)) : null;
+    const ctx = CONTEXT_DEPTS[p.department] ? `${CONTEXT_DEPTS[p.department]}:${p.province}` : null;
+    const tier = ctx ? zoneTier(ctx) : null;
+    const fill = hit ? (lv ? `var(${LEVEL_VAR[lv]})` : "var(--lv-none)") : "transparent";
+    const op = hit ? (hit.dept_only ? 0.14 : 0.28) : 0;
+    const stroke = tier && ["R1_REVISION_PRIORITARIA","R2_VIGILANCIA_ACTIVA","R3_PREPARAR_VIGILANCIA"].includes(tier) ? `var(${PRIO_VAR[tier]})` : "var(--ink-3)";
+    parts.push(`<path d="${d(f.geometry)}" fill="${fill}" fill-opacity="${op}" stroke="${stroke}" stroke-width="${ctx ? 1.6 : 0.6}" ${hit && !lv ? 'stroke-dasharray="4 3"' : ""}
+      ${ctx ? `data-zone="${esc(ctx)}"` : ""} data-t="${esc(p.province)} (${esc(p.department)})${hit ? " · en aviso " + hit.avisos.map(x=>x.split("-").slice(-2).join("-")).join(", ") : ""}"></path>`);
+  });
+  feats.filter(f => f.properties.kind === "BASIN").forEach(f => {
+    const tier = zoneTier(f.properties.zone_id) || "R5_DATOS_INSUFICIENTES";
+    parts.push(`<path d="${d(f.geometry)}" fill="var(${PRIO_VAR[tier]})" fill-opacity="0.85" stroke="var(--r1)" stroke-width="1" data-zone="${esc(f.properties.zone_id)}" data-t="${esc(f.properties.name)}"></path>`);
+  });
+  // department labels at the mean of their provinces' vertices
+  const dep = {};
+  feats.filter(f => f.properties.kind === "PROVINCE").forEach(f => rings(f.geometry).forEach(poly => poly[0].forEach(([x,y]) => { const a = dep[f.properties.department] = dep[f.properties.department] || [0,0,0]; a[0]+=x; a[1]+=y; a[2]++; })));
+  Object.entries(dep).forEach(([n,[x,y,c]]) => { const [px,py] = P([x/c,y/c]).split(","); parts.push(`<text x="${px}" y="${py}" text-anchor="middle">${esc(n)}</text>`); });
+  const map = document.getElementById("map");
+  map.innerHTML = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${parts.join("")}</svg>`;
+  const tip = document.getElementById("tip");
+  map.addEventListener("mousemove", e => { const t = e.target.closest("[data-t]"); if (!t) { tip.style.display="none"; return; }
+    tip.textContent = t.dataset.t; tip.style.display="block"; tip.style.left=(e.clientX+12)+"px"; tip.style.top=(e.clientY+12)+"px"; });
+  map.addEventListener("mouseleave", () => tip.style.display = "none");
+  map.addEventListener("click", e => { const t = e.target.closest("[data-zone]"); if (t) selectZone(t.dataset.zone, true); });
   renderLegendOnly();
+  const first = D.rain.zones.map(z => ({z, t: liveTier(z)})).sort((a,b) => Object.keys(PRIO_VAR).indexOf(a.t.code) - Object.keys(PRIO_VAR).indexOf(b.t.code))[0];
+  if (first) selectZone(first.z.zone_id);
+}
+function selectZone(id, fromClick){
+  document.querySelectorAll("#map path.sel").forEach(p => p.classList.remove("sel"));
+  document.querySelectorAll(`#map path[data-zone="${CSS.escape(id)}"]`).forEach(p => p.classList.add("sel"));
+  const z = D.rain.zones.find(r => r.zone_id === id);
+  const el = document.getElementById("zone-detail");
+  if (!z) { el.innerHTML = `<p class="muted">Zona sin datos de vigilancia.</p>`; return; }
+  const t = liveTier(z), labels = Object.fromEntries((D.rain.review_priorities||[]).map(p => [p.code, p.label_es]));
+  const rm = D.relation_methods || {};
+  const av = (z.avisos||[]).map(a => ({...a, full: avisoByKey[a.aviso_key] || {}})).map(a => ({...a, now: statusNow(a.full.aviso_key ? a.full : a)}));
+  const avHtml = av.length ? av.map(a => `<div style="margin-bottom:6px"><b>Aviso ${esc(a.full.aviso_number ?? a.aviso_key)}</b> · ${esc(a.full.phenomenon || a.product || "")}
+      <br><span class="status ${a.now}">${a.now}</span> · ${lima(a.validity_start)} → ${lima(a.validity_end)} · ${levelBadge(a.full.aviso_key ? a.full : a)}
+      <br><span class="small muted">${esc(rm[a.relation_method]?.label_es || a.relation_method)}. ${esc(rm[a.relation_method]?.caveat_es || "")}</span>
+      ${a.full.official_url ? `<br><a class="small" href="${esc(a.full.official_url)}" target="_blank" rel="noopener">Boletín oficial INDECI/COEN</a>` : ""}</div>`).join("")
+    : `<p class="muted">Ningún aviso de lluvia relacionado en la última evaluación.</p>`;
+  const w = z.imerg.windows || {};
+  const cell = k => w[k]?.status === "CALCULADO" ? `<b>${w[k].accum_mm} mm</b>` : na(w[k]?.reason);
+  const g = z.goes19, f = geosSums(z.geos_cf);
+  el.innerHTML = `<h2>${esc(z.display_name)}</h2>
+    <div class="small muted">${esc(z.department)} · ${z.zone_type==="BASIN_GEOMETRY" ? "cuenca con geometría verificada" : "provincia de contexto (sin cuenca validada; polígono INEI referencial)"}</div>
+    <div style="margin-top:8px">${prioBadge(t.code, labels[t.code])}<span class="tag">prioridad interna IRFEN, no nivel oficial</span></div>
+    <div class="blocks">
+      <div class="block"><h3>Aviso oficial (SENAMHI vía INDECI/COEN)</h3>${avHtml}</div>
+      <div class="block"><h3>Lluvia observada · IMERG Early</h3>
+        <dl class="kv"><dt>1 h</dt><dd>${cell("1h")}</dd><dt>3 h</dt><dd>${cell("3h")}</dd><dt>6 h</dt><dd>${cell("6h")}</dd><dt>24 h</dt><dd>${cell("24h")}</dd></dl>
+        <div class="small muted">${z.imerg.window_end_utc ? `Ventanas hasta ${lima(z.imerg.window_end_utc)} (${ago(z.imerg.window_end_utc)}; latencia propia de IMERG Early)` : "Sin muestras IMERG"}</div>
+        ${sparkSVG(z.imerg.series_24h_half_hourly_mm, css("--obs"), "IMERG Early, últimas 24 h")}<div class="small muted">Últimas 24 h por media hora · gris = hueco sin dato</div></div>
+      <div class="block"><h3>Lluvia observada · GOES-19 RRQPE</h3>${g.status==="CALCULADO"
+        ? `Tasa media <b>${g.rate_mean_mm_h} mm/h</b> (máx. ${g.rate_max_mm_h}) · escaneo ${lima(g.scan_end_utc)} (${ago(g.scan_end_utc)})<br><span class="small muted">${esc(g.sampling_es||"")} ${esc(g.uncertainty_es||"")}</span>`
+          + (g.recent_scans_mm_h?.length ? sparkSVG(g.recent_scans_mm_h, css("--obs"), "GOES-19 tasas recientes") + `<div class="small muted">Tasas instantáneas de los últimos escaneos muestreados (no acumulado)</div>` : "")
+        : na(g.reason)}</div>
+      <div class="block"><h3>Previsión · GEOS-CF (experimental)</h3>${f
+        ? `Próximas 6 h: <b>${f.h6 ?? "—"} mm</b> · 24 h: <b>${f.h24 ?? "—"} mm</b><br><span class="small muted">Ciclo del pronóstico ${lima(isoFix(z.geos_cf.dataset_time_start))} (${ago(isoFix(z.geos_cf.dataset_time_start))}). ${esc(z.geos_cf.resolution_note||"")}</span>${sparkSVG(f.next.map(x=>[x.valid_time_utc,x.precip_mm]), css("--fc"), "GEOS-CF próximas 48 h")}<div class="small muted">Próximas 48 h por hora</div>`
+        : na(z.geos_cf?.reason)}</div>
+      <div class="block"><h3>Río</h3>${na(z.river_level?.reason)}</div>
+      <div class="block"><h3>Por qué aparece · qué falta</h3><ul class="tight small">${(z.review_priority.reasons_es||[]).map(r => `<li>${esc(r.replace(/[A-Z_]{12,}/g, c => rm[c] ? rm[c].label_es : c))}</li>`).join("")}${t.recalculated ? `<li>Estado recalculado en el navegador con la hora actual.</li>` : ""}</ul>
+        <ul class="tight small muted">${(z.review_priority.missing_es||[]).map(m => `<li>${esc(m)}</li>`).join("")}</ul></div>
+    </div>`;
+  if (fromClick && window.innerWidth < 900) el.scrollIntoView({behavior:"smooth", block:"start"});
 }
 function renderLegendOnly(){
   const lg = [];
-  lg.push(`<b>Nivel oficial SENAMHI</b> (solo cuando consta; provincias o departamentos enumerados en avisos de lluvia activos)`);
+  lg.push(`<b>Nivel oficial SENAMHI</b> (relleno de provincias o departamentos enumerados en avisos de lluvia activos; solo cuando consta)`);
   ORDER.forEach(l => lg.push(`<div class="row"><span class="sw" style="background:var(${LEVEL_VAR[l]})"></span>${l}</div>`));
-  lg.push(`<div class="row"><span class="sw dash"></span>Nivel no consta en el texto del boletín</div>`);
-  lg.push(`<div class="row"><span class="sw" style="background:transparent;border:1px solid var(--ink-3)"></span>Provincia no incluida</div>`);
-  lg.push(`<hr style="border:0;border-top:1px solid var(--border)"><b>Prioridad interna de revisión IRFEN</b> (cuencas; no es nivel oficial)`);
+  lg.push(`<div class="row"><span class="sw dash"></span>En aviso, nivel no consta en el texto del boletín</div>`);
+  lg.push(`<div class="row"><span class="sw" style="background:transparent;border:1px solid var(--ink-3)"></span>No incluida en avisos de lluvia activos</div>`);
+  lg.push(`<hr style="border:0;border-top:1px solid var(--border)"><b>Prioridad interna de revisión IRFEN</b> (relleno de cuencas; contorno de provincias de contexto en Piura y Tumbes; no es nivel oficial)`);
   (D.rain.review_priorities||[]).forEach(p => lg.push(`<div class="row"><span class="sw" style="background:var(${PRIO_VAR[p.code]})"></span>${esc(p.label_es)}</div>`));
-  lg.push(`<p class="small muted" style="margin:6px 0 0">Piura no tiene cuenca validada: se muestra como provincias de contexto. Las cuencas proceden de ANA (y San Ildefonso, de la validación v0.8).</p>`);
+  lg.push(`<p class="small muted" style="margin:6px 0 0">Piura y Tumbes (salvo Bocapán) no tienen cuenca validada: sus provincias se muestran como contexto. Cuencas: ANA y, San Ildefonso, validación v0.8. Límites: INEI referenciales.</p>`);
   document.getElementById("legend").innerHTML = lg.join("");
-  const rows = D.surveillance_zones.map(z => `<li><b>${esc(z.display_name)}</b> — ${esc(D.relation_methods?.[z.best_relation_method]?.label_es || z.best_relation_method)}</li>`);
-  document.getElementById("map-zones").innerHTML = rows.length ? `<ul class="tight">${rows.join("")}</ul>` : `<p class="muted">Ninguna en la última evaluación.</p>`;
 }
 
 /* ---------------- 2 · avisos ---------------- */
@@ -338,7 +387,7 @@ function renderRain(){
       <h3>Observado · GOES-19 RRQPE</h3>
       <div>${g.status==="CALCULADO" ? `tasa media ${g.rate_mean_mm_h} mm/h (máx. ${g.rate_max_mm_h}) · escaneo ${lima(g.scan_end_utc)} (${ago(g.scan_end_utc)})<br><span class="small muted">${esc(g.uncertainty_es)}</span>` : na(g.reason)}</div>
       <h3>Previsión · GEOS-CF (experimental)</h3>
-      <div>${f ? `próximas 6 h: <b>${f.h6 ?? "—"} mm</b> · 24 h: <b>${f.h24 ?? "—"} mm</b><br><span class="small muted">ciclo ${esc(z.geos_cf.dataset_time_start||"")}; sumas desde ahora</span>${sparkSVG(f.next.map(x=>[x.valid_time_utc,x.precip_mm]), css("--fc"), "GEOS-CF próximas 48 h")}` : na(z.geos_cf?.reason)}</div>
+      <div>${f ? `próximas 6 h: <b>${f.h6 ?? "—"} mm</b> · 24 h: <b>${f.h24 ?? "—"} mm</b><br><span class="small muted">ciclo ${lima(isoFix(z.geos_cf.dataset_time_start))} (${ago(isoFix(z.geos_cf.dataset_time_start))}); sumas desde ahora</span>${sparkSVG(f.next.map(x=>[x.valid_time_utc,x.precip_mm]), css("--fc"), "GEOS-CF próximas 48 h")}` : na(z.geos_cf?.reason)}</div>
       <h3>Río</h3><div>${na(z.river_level?.reason)}</div>
       ${z.v08_source_caveat ? `<p class="small muted">${esc(z.v08_source_caveat)}</p>` : ""}</div>`;
   });
