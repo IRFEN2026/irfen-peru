@@ -1,0 +1,16 @@
+# IRFEN v0.9 external ticker (Cloudflare Workers Cron Trigger). See ops/external_ticker/README.md.
+name = "irfen-v09-external-ticker"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+workers_dev = false
+
+[triggers]
+crons = ["*/10 * * * *"]
+
+[vars]
+REPO = "IRFEN2026/irfen-peru"
+WORKFLOW = "v08-scheduler-fallback.yml"
+ENABLED = "false"  # set to "true" only after PR #372 is on main and the dry run logs look right
+
+[observability]
+enabled = true
