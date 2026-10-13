@@ -51,7 +51,8 @@ def basin_envelope(zones_cfg: dict) -> tuple[float, float, float, float]:
     for z in zones_cfg["zones"]:
         if z["zone_type"] != "BASIN_GEOMETRY":
             continue
-        for f in json.loads((ROOT / z["geometry_path"]).read_text(encoding="utf-8"))["features"]:
+        doc = json.loads((ROOT / z["geometry_path"]).read_text(encoding="utf-8"))
+        for f in doc.get("features") or [doc]:
             g = f["geometry"]
             polys = [g["coordinates"]] if g["type"] == "Polygon" else g["coordinates"]
             for poly in polys:

@@ -77,7 +77,8 @@ def build_overlay(boundaries: dict, provenance: dict, zones_cfg: dict, boundary_
         raw = (ROOT / z["geometry_path"]).read_bytes()
         if sha256_bytes(raw) != z["geometry_sha256"]:
             raise ValueError(f"{z['zone_id']}: geometry SHA-256 mismatch")
-        basin = unary_union([shape(f["geometry"]) for f in json.loads(raw)["features"]])
+        doc = json.loads(raw)
+        basin = unary_union([shape(f["geometry"]) for f in (doc.get("features") or [doc])])
         basin_area = geodesic_area_km2(basin)
         hits, slivers = [], []
         for dep, prov, g in provinces:
