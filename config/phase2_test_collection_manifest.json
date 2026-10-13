@@ -2,13 +2,13 @@
   "version": "phase2-test-collection-manifest-v0.4",
   "status": "REAL_PYTEST_COLLECTION",
   "purpose": "Identity-based forward-only pytest collection ratchet. Exact node IDs are recorded so silent additions/removals cannot hide behind aggregate counts.",
-  "measured_at": "2026-10-12",
-  "measured_against_commit": "e41eb7d3f1e53525d3d2fc82a01650b13f355d4c",
+  "measured_at": "2026-10-13",
+  "measured_against_commit": "f305c8189b4ba16c7af71f7470ae55c9fef426d3",
   "python_version": "3.12.15",
   "pytest_version": "9.0.3",
   "collection_command": "python -m pytest --collect-only -q --continue-on-collection-errors tests",
   "collection_method_used_to_generate_this_file": "Real pytest --collect-only output on the pinned pytest version; generation is refused for any non-zero collection return code.",
-  "total_test_item_count": 1590,
+  "total_test_item_count": 1593,
   "phase2_test_item_count": 995,
   "phase2_test_modules": [
     "tests/test_phase2_acari_canete_geometry.py",
@@ -2657,6 +2657,9 @@
     "tests/test_v09_aviso_zone_crossing.py::TemporalUpdate::test_unknown_validity_stays_under_surveillance_with_a_note",
     "tests/test_v09_aviso_zone_crossing.py::ZonesConfig::test_committed_zones_verify",
     "tests/test_v09_aviso_zone_crossing.py::ZonesConfig::test_tampered_or_invented_geometry_is_rejected",
+    "tests/test_v09_dashboard_browser.py::LiveDashboard::test_states_age_with_the_clock_and_refresh_keeps_history",
+    "tests/test_v09_dashboard_browser.py::StaticChecks::test_browser_workflow_runs_this_test",
+    "tests/test_v09_dashboard_browser.py::StaticChecks::test_refresh_contract_in_page",
     "tests/test_v09_dashboard_data.py::Bundle::test_content_is_traceable",
     "tests/test_v09_dashboard_data.py::Bundle::test_guards_and_disclaimer",
     "tests/test_v09_dashboard_data.py::Bundle::test_page_has_no_external_scripts_and_an_integrated_zone_view",
@@ -2753,10 +2756,7 @@
     "tests/test_zana_oyotun_research_closeout.py::ZanaOyotunResearchCloseoutTests::test_positive_outcomes_are_independent_official_time_slices",
     "tests/test_zana_oyotun_research_closeout.py::ZanaOyotunResearchCloseoutTests::test_source_typo_is_preserved_not_silently_rewritten"
   ],
-  "this_change_justified_removed_node_ids": {
-    "tests/test_v08_scheduler_fallback_workflow.py::V08SchedulerFallbackWorkflowTests::test_fallback_requires_four_hours_without_schedule_events": "Deliberate behaviour change (v0.9): the repository-wide 4 h schedule gate is removed so each workflow is judged on its own history; replaced by test_no_repository_wide_schedule_gate and the PerWorkflowDecision/Sweep tests.",
-    "tests/test_v08_scheduler_fallback_workflow.py::V08SchedulerFallbackWorkflowTests::test_only_closeout_collectors_are_dispatched_with_cooldowns": "The target list now also includes the v0.9 workflows and lives in scripts/scheduler_fallback.py; replaced by test_targets_and_cooldowns (same v0.8 cooldowns asserted exactly) and test_rain_north_is_dispatched_once_it_exists_on_main."
-  },
+  "this_change_justified_removed_node_ids": {},
   "historical_removed_node_ids": {},
   "how_to_update": "Regenerate with --write-manifest only from a real clean collection. For deliberate removals, add a non-empty justification for each newly disappeared node ID in this_change_justified_removed_node_ids."
 }
