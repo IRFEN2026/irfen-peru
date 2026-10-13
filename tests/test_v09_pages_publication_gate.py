@@ -1,5 +1,7 @@
 """IRFEN v0.9: merging the dashboard into main must not publish it on GitHub Pages until QA opens the gate."""
+import contextlib
 import importlib.util
+import io
 import json
 import tempfile
 import unittest
@@ -40,9 +42,11 @@ class Gate(unittest.TestCase):
             (root / "site/index.html").write_text("x")
             (root / "site/data/v09/dashboard_v0_1.json").write_text(json.dumps(BUNDLE_OK))
             (root / "config/v09_public_demo_v0_1.json").write_text(json.dumps(dict(OPEN, publish_v09_dashboard=False)))
-            G.main(["--dry-run"], root=root)
+            with contextlib.redirect_stdout(io.StringIO()):  # keep synthetic gate notices out of CI annotations
+                G.main(["--dry-run"], root=root)
             self.assertTrue((root / "site/v09").exists())
-            G.main([], root=root)
+            with contextlib.redirect_stdout(io.StringIO()):
+                G.main([], root=root)
             self.assertFalse((root / "site/v09").exists())
             self.assertFalse((root / "site/data/v09").exists())
             self.assertTrue((root / "site/index.html").exists())
@@ -55,7 +59,8 @@ class Gate(unittest.TestCase):
             (root / "config").mkdir()
             (root / "site/data/v09/dashboard_v0_1.json").write_text(json.dumps(BUNDLE_OK))
             (root / "config/v09_public_demo_v0_1.json").write_text(json.dumps(OPEN))
-            G.main([], root=root)
+            with contextlib.redirect_stdout(io.StringIO()):
+                G.main([], root=root)
             self.assertTrue((root / "site/v09").exists())
 
     def test_every_pages_workflow_runs_the_gate_before_upload(self):
