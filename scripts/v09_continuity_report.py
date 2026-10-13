@@ -20,9 +20,14 @@ import sys
 from datetime import datetime, timedelta, timezone
 from urllib.request import Request, urlopen
 
-WORKFLOWS = {"v09-senamhi-avisos-capture.yml": 30, "v09-rain-north.yml": 30, "v08-scheduler-fallback.yml": None}  # nominal minutes
-# Owner's continuity criterion (13-10-2026), fixed BEFORE the active 48 h trial. Applied to the v0.9 collectors.
-CRITERION = dict(share_intervals_within_min=90, required_share=0.95, max_gap_min=120, max_duplicates=0, duplicate_window_min=10)
+# Nominal minutes between runs (from each workflow's cron; the fallback is ticked every 10 min by the external Worker).
+WORKFLOWS = {"v09-senamhi-avisos-capture.yml": 30, "v09-rain-north.yml": 30, "imerg-early-probe.yml": 30,
+             "igp-cendehua-probe.yml": 60, "goes19-rrqpe-probe.yml": 60, "shadow-validation.yml": 160,
+             "geos-forecast.yml": 1440, "v08-scheduler-fallback.yml": 10}
+# Owner's continuity criterion, fixed 13-10-2026 before the active trial: no interval between successful runs above
+# 90 min and no improper duplicate (two runs created < 10 min apart, or overlapping). Applied to the v0.9 collectors;
+# the other workflows are reported against their own cadence for information.
+CRITERION = dict(share_intervals_within_min=90, required_share=1.0, max_gap_min=90, max_duplicates=0, duplicate_window_min=10)
 CRITERION_WORKFLOWS = ("v09-senamhi-avisos-capture.yml", "v09-rain-north.yml")
 
 
@@ -96,8 +101,8 @@ def evaluate(report: dict) -> dict:
         if "error" in s or not s.get("intervals"):
             out[wf] = dict(result="SIN_DATOS", detail=s.get("error") or "no successful runs in the window")
             continue
-        items = dict(share_within_90_min=s["share_intervals_within_90_min"] >= CRITERION["required_share"],
-                     max_gap_120_min=s["max_gap_min"] <= CRITERION["max_gap_min"],
+        items = dict(all_intervals_within_90_min=s["share_intervals_within_90_min"] >= CRITERION["required_share"]
+                     and s["max_gap_min"] <= CRITERION["max_gap_min"],
                      zero_duplicates=s["duplicates"] <= CRITERION["max_duplicates"])
         out[wf] = dict(result="PASA" if all(items.values()) else "NO_PASA", items=items)
     out["stale_data_visibility"] = dict(result="VERIFICAR", detail="tests/test_v09_dashboard_browser.py en CI + revisión del panel durante el ensayo")
@@ -105,27 +110,55 @@ def evaluate(report: dict) -> dict:
 
 
 def markdown(report: dict) -> str:
-    L = [f"# Continuidad v0.9 · {report['since_utc']} → {report['now_utc']}", "",
-         "| Workflow | Correctas | Esperadas (nominal) | Por origen | Hueco máx. | Mediana | P90 | Hueco abierto | Fallidas |",
+    f = lambda m: "—" if m is None else f"{m / 60:.1f} h" if m >= 90 else f"{m:.0f} min"
+    L = [f"# Continuidad v0.9 · {report['since_utc'][:16]} → {report['now_utc'][:16]} UTC", "",
+         f"Criterio (fijado por el propietario antes del ensayo): ningún intervalo entre ejecuciones correctas > "
+         f"{CRITERION['max_gap_min']} min (incluidos el inicial y el abierto) y {CRITERION['max_duplicates']} duplicados "
+         f"(creadas a < {CRITERION['duplicate_window_min']} min o solapadas). Se aplica a los colectores v0.9.", "",
+         "| Workflow | Frecuencia esperada | Ejecuciones esperadas | Ejecuciones reales (correctas) | Por origen | Hueco máximo | Duplicados | % intervalos ≤ 90 min | Resultado |",
          "|---|---|---|---|---|---|---|---|---|"]
+    crit = report.get("criterion") or {}
     for wf, s in report["workflows"].items():
         if "error" in s:
-            L.append(f"| {wf} | error: {s['error']} |||||||")
+            L.append(f"| {wf} | — | — | error: {s['error'][:60]} | | | | | SIN_DATOS |")
             continue
-        f = lambda m: "—" if m is None else f"{m / 60:.1f} h" if m >= 90 else f"{m:.0f} min"
-        L.append(f"| {wf} | {s['successful_runs']} | {s['expected_at_nominal'] or '—'} | {', '.join(f'{k} {v}' for k, v in s['by_event'].items()) or '—'} | "
-                 f"{f(s['max_gap_min'])} | {f(s['median_gap_min'])} | {f(s['p90_gap_min'])} | {f(s['open_gap_min'])} | {s['failed_runs']} |")
-    if report.get("criterion"):
-        L += ["", f"## Criterio de continuidad (fijado antes del ensayo): ≥{CRITERION['required_share']:.0%} de intervalos ≤ "
-              f"{CRITERION['share_intervals_within_min']} min, ningún hueco > {CRITERION['max_gap_min']} min, {CRITERION['max_duplicates']} duplicados", ""]
-        for wf, r in report["criterion"].items():
-            items = ", ".join(f"{k} {'sí' if v else 'NO'}" for k, v in (r.get("items") or {}).items())
-            L.append(f"- {wf}: **{r['result']}** {items} {r.get('detail', '')}".rstrip())
-        for wf in CRITERION_WORKFLOWS:
-            s = report["workflows"].get(wf) or {}
-            if "share_intervals_within_90_min" in s:
-                L.append(f"  - {wf}: {s['intervals']} intervalos, {s['share_intervals_within_90_min']:.1%} ≤ 90 min, duplicados {s['duplicates']}")
+        nominal = WORKFLOWS.get(wf)
+        share = s.get("share_intervals_within_90_min")
+        result = crit.get(wf, {}).get("result") if wf in CRITERION_WORKFLOWS else "informativo"
+        L.append(f"| {wf} | cada {f(nominal) if nominal else '—'} | {s['expected_at_nominal'] or '—'} | {s['successful_runs']} (fallidas {s['failed_runs']}) | "
+                 f"{', '.join(f'{k} {v}' for k, v in s['by_event'].items()) or '—'} | {f(s['max_gap_min'])} | {s['duplicates']} | "
+                 f"{'—' if share is None else f'{share:.1%}'} | **{result}** |")
+    if crit.get("stale_data_visibility"):
+        L += ["", f"Visibilidad de datos desactualizados: **{crit['stale_data_visibility']['result']}** — {crit['stale_data_visibility']['detail']}"]
+    trace = report.get("fallback_trace")
+    if trace is not None:
+        L += ["", "## Trazabilidad de los disparos del respaldo", "",
+              "| Creada (UTC) | Origen | Lanzada por | Resultado | Workflows despachados |", "|---|---|---|---|---|"]
+        for t in trace:
+            L.append(f"| {t['created_at'][:19]} | {t['event']} | {t.get('actor') or '—'} | {t.get('conclusion') or t.get('status')} | "
+                     f"{'; '.join(t['dispatched']) or '—'} |")
     return "\n".join(L) + "\n"
+
+
+def fallback_trace(repo: str, since: datetime, token: str, get=None) -> list[dict]:
+    """Every fallback run in the window with who started it and what it dispatched (FALLBACK_DISPATCH annotations)."""
+    def _get(path):
+        req = Request(f"https://api.github.com/repos/{repo}{path}", headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json",
+                                                                           "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "irfen-v09-continuity-report"})
+        with urlopen(req, timeout=30) as r:
+            return json.loads(r.read())
+    get = get or _get
+    out = []
+    runs = get(f"/actions/workflows/v08-scheduler-fallback.yml/runs?branch=main&per_page=100&created=>={since.strftime('%Y-%m-%dT%H:%M:%SZ')}")
+    for r in sorted(runs.get("workflow_runs", []), key=lambda x: x["created_at"]):
+        dispatched = []
+        for job in get(f"/actions/runs/{r['id']}/jobs").get("jobs", []):
+            for a in get(f"/check-runs/{job['id']}/annotations"):
+                if a.get("title") == "FALLBACK_DISPATCH":
+                    dispatched.append(a.get("message", ""))
+        out.append(dict(id=r["id"], created_at=r["created_at"], event=r["event"], actor=(r.get("triggering_actor") or {}).get("login"),
+                        status=r.get("status"), conclusion=r.get("conclusion"), dispatched=dispatched))
+    return out
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -145,6 +178,10 @@ def main(argv: list[str] | None = None) -> int:
         runs = fetch_runs(args.repo, wf, since, token)
         report["workflows"][wf] = runs[0] if runs and "error" in runs[0] else summarize(runs, since, now, nominal)
     report["criterion"] = evaluate(report)
+    try:
+        report["fallback_trace"] = fallback_trace(args.repo, since, token)
+    except Exception as exc:  # noqa: BLE001 - the trace is reported as unavailable, never invented
+        report["fallback_trace_error"] = f"{type(exc).__name__}: {exc}"[:200]
     if args.json:
         with open(args.json, "w", encoding="utf-8") as fh:
             json.dump(report, fh, ensure_ascii=False, indent=1)

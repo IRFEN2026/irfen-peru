@@ -41,15 +41,16 @@ class ContinuityReport(unittest.TestCase):
         self.assertEqual((s["successful_runs"], s["max_gap_min"], s["open_gap_min"]), (0, None, None))
 
     def test_owner_criterion(self):
-        """SYNTHETIC 48 h: runs every 30 min pass; one 130-min hole or a duplicate fails."""
+        """SYNTHETIC 48 h: runs every 30 min pass; a 100-min hole, a duplicate or a late start fail."""
         since = NOW - timedelta(hours=48)
         good = [run(m) for m in range(0, 48 * 60 + 30, 30)]
         rep = lambda runs: C.evaluate(dict(workflows={wf: C.summarize(runs, since, NOW, 30) for wf in C.CRITERION_WORKFLOWS}))
         self.assertEqual(rep(good)["v09-senamhi-avisos-capture.yml"]["result"], "PASA")
-        hole = [r for r in good if not 600 < int((NOW - C.parse(r["created_at"])).total_seconds() / 60) < 730]
+        hole = [r for r in good if not 600 < int((NOW - C.parse(r["created_at"])).total_seconds() / 60) < 700]  # 100-min gap
         r = rep(hole)["v09-rain-north.yml"]
-        self.assertEqual(r["result"], "NO_PASA")
-        self.assertFalse(r["items"]["max_gap_120_min"])
+        self.assertEqual((r["result"], r["items"]["all_intervals_within_90_min"]), ("NO_PASA", False))
+        edge = [r for r in good if not 600 < int((NOW - C.parse(r["created_at"])).total_seconds() / 60) < 690]  # exactly 90 min
+        self.assertEqual(rep(edge)["v09-rain-north.yml"]["result"], "PASA")
         dup = good + [run(301, event="workflow_dispatch")]  # 1 min after a scheduled run
         r = rep(dup)["v09-rain-north.yml"]
         self.assertEqual((r["result"], r["items"]["zero_duplicates"]), ("NO_PASA", False))
@@ -57,9 +58,36 @@ class ContinuityReport(unittest.TestCase):
         self.assertEqual(C.summarize(overlap, since, NOW, 30)["duplicates"], 1)
         self.assertEqual(rep([])["v09-rain-north.yml"]["result"], "SIN_DATOS")
         late_start = rep([run(5)])["v09-rain-north.yml"]  # one success 5 min ago, nothing before: 47 h 55 min gap
-        self.assertEqual((late_start["result"], late_start["items"]["max_gap_120_min"]), ("NO_PASA", False))
+        self.assertEqual(late_start["result"], "NO_PASA")
         self.assertEqual(rep(good)["stale_data_visibility"]["result"], "VERIFICAR")
-        self.assertEqual(C.CRITERION, dict(share_intervals_within_min=90, required_share=0.95, max_gap_min=120, max_duplicates=0, duplicate_window_min=10))
+        self.assertEqual(C.CRITERION, dict(share_intervals_within_min=90, required_share=1.0, max_gap_min=90, max_duplicates=0, duplicate_window_min=10))
+
+    def test_fallback_trace_and_table(self):
+        pages = {
+            "/actions/workflows/v08-scheduler-fallback.yml/runs": dict(workflow_runs=[
+                dict(id=2, created_at="2026-10-13T12:10:00Z", event="workflow_dispatch", triggering_actor=dict(login="IRFEN2026"), status="completed", conclusion="success"),
+                dict(id=1, created_at="2026-10-13T12:00:00Z", event="workflow_dispatch", triggering_actor=dict(login="IRFEN2026"), status="completed", conclusion="success")]),
+            "/actions/runs/1/jobs": dict(jobs=[dict(id=11)]), "/actions/runs/2/jobs": dict(jobs=[dict(id=22)]),
+            "/check-runs/11/annotations": [dict(title="FALLBACK_DISPATCH", message="v09-rain-north.yml | STALE: last run 4000s ago (schedule) >= 3600s"),
+                                          dict(title="SCHEDULER_FALLBACK", message="dispatched=1")],
+            "/check-runs/22/annotations": [dict(title="SCHEDULER_FALLBACK", message="dispatched=0")]}
+        get = lambda path: pages[path.split("?")[0]]
+        trace = C.fallback_trace("o/r", NOW - timedelta(hours=1), "t", get=get)
+        self.assertEqual([t["id"] for t in trace], [1, 2])
+        self.assertEqual(trace[0]["dispatched"], ["v09-rain-north.yml | STALE: last run 4000s ago (schedule) >= 3600s"])
+        self.assertEqual((trace[1]["dispatched"], trace[0]["actor"]), ([], "IRFEN2026"))
+        since = NOW - timedelta(hours=48)
+        report = dict(since_utc=since.isoformat(), now_utc=NOW.isoformat(),
+                      workflows={wf: C.summarize([run(m) for m in range(0, 48 * 60 + 30, 30)], since, NOW, C.WORKFLOWS[wf]) for wf in C.WORKFLOWS},
+                      fallback_trace=trace)
+        report["criterion"] = C.evaluate(report)
+        md = C.markdown(report)
+        for col in ("Frecuencia esperada", "Ejecuciones reales", "Hueco máximo", "Duplicados", "% intervalos ≤ 90 min", "Resultado"):
+            self.assertIn(col, md)
+        self.assertIn("| v09-rain-north.yml | cada 30 min |", md)
+        self.assertIn("**PASA**", md)
+        self.assertIn("**informativo**", md)
+        self.assertIn("v09-rain-north.yml | STALE", md)
 
     def test_report_is_read_only(self):
         text = (ROOT / "scripts/v09_continuity_report.py").read_text(encoding="utf-8")

@@ -30,6 +30,17 @@ no despacha). #372 ya está en `main`; el disparador **no se activa** hasta que 
 
 ## Instrucciones mínimas
 
+### 0 · Requisitos previos (comprobados por Claude el 13-10-2026)
+- [x] Ñácara (`senamhi-nacara-probe.yml`) deshabilitado en Actions (`disabled_manually`).
+- [ ] **PR #375 integrado en `main`.** Es obligatorio: el respaldo actual de `main` intentaría lanzar Ñácara
+      (ya deshabilitado) y ese intento hace fallar el barrido. #375 excluye además los workflows que consultan SENAMHI
+      directamente y la publicación en Pages, salta los workflows deshabilitados y anota cada disparo.
+- [x] Alcance del respaldo tras #375: solo colectores con `contents: write` sobre `main` y el secreto
+      `EARTHDATA_TOKEN` (IMERG). Ninguno publica Pages ni consulta SENAMHI (pruebas en CI).
+- [ ] El propietario comprueba en *Settings → Secrets and variables → Actions* que solo existen los secretos
+      esperados (`EARTHDATA_TOKEN`); el proxy de Claude no permite listarlos.
+- [x] El Worker solo hace `GET …/runs` y `POST …/dispatches` del respaldo; no registra el token ni datos.
+
 ### 1 · Token (propietario, una vez)
 1. GitHub → Settings → Developer settings → *Fine-grained tokens* → *Generate new token*.
    Resource owner `IRFEN2026`; *Only select repositories* → `irfen-peru`; permisos de repositorio: **Actions: Read
@@ -39,46 +50,50 @@ no despacha). #372 ya está en `main`; el disparador **no se activa** hasta que 
 3. Cuenta de Cloudflare con 2FA y sin otros miembros con acceso al Worker.
 4. Revocación inmediata si hay duda: GitHub → Fine-grained tokens → *Revoke*; el Worker deja de poder actuar.
 
-### 2 · Ensayo de 24 h con `ENABLED="false"` (sin despachos reales)
-Verificado antes del ensayo: la lógica del Worker contra la API real de GitHub, en modo ensayo, hace 5 lecturas
-(`GET …/runs`) y devuelve `DRY_RUN`, sin ningún `POST` (13-10-2026 00:58 UTC).
+### 2 · Comprobación corta sin despachos (recomendada, 30 min)
+Verificado antes: la lógica del Worker contra la API real, en modo ensayo, hace 5 lecturas y ningún `POST`.
 ```
 cd ops/external_ticker
 npx wrangler@4 login
 npx wrangler@4 secret put GITHUB_TOKEN        # pegar el token cuando lo pida
-grep 'ENABLED = "false"' wrangler.toml        # debe aparecer: ensayo sin despachos
-npx wrangler@4 deploy
+npx wrangler@4 deploy                         # ENABLED="false" en wrangler.toml: solo registra
 npx wrangler@4 tail                           # o Workers → irfen-v09-external-ticker → Logs
 ```
-Lista de comprobación a las 24 h:
-- [ ] unas 144 líneas `{"at":…,"dispatched":false,"reason":"DRY_RUN: …"}` (o `FALLBACK_ACTIVE`), una cada 10 min;
-- [ ] ninguna `LIST_FAILED` (token, permisos o red);
-- [ ] en Actions, ninguna ejecución del respaldo lanzada por el Worker (`workflow_dispatch` del token);
-- [ ] el token sigue limitado a `irfen-peru` y Actions R/W, con caducidad.
-Si algo falla, no activar.
+Deben aparecer 3 líneas `{"at":…,"dispatched":false,"reason":"DRY_RUN: …"}` en 30 min y ninguna `LIST_FAILED`.
 
-### 3 · Activación (solo con autorización del propietario)
-Cambiar `ENABLED = "true"` en `wrangler.toml` (cambio revisado en esta rama) y `npx wrangler@4 deploy`. Anotar la
-hora de activación: es el inicio de la ventana de 48 h. Marcha atrás: `ENABLED = "false"` + `deploy`, o
-`npx wrangler@4 delete`, y revocar el token.
+### 3 · Ensayo activo de 24 h (autorizado por el propietario el 13-10-2026)
+El archivo `wrangler.toml` del repositorio **sigue con `ENABLED="false"`**; el ensayo lo activa solo en el despliegue:
+```
+npx wrangler@4 deploy --var ENABLED:true      # anotar la hora UTC: inicio de la ventana de 24 h
+```
+Durante el ensayo: cada 10 min el Worker lanza el respaldo si no está en cola o en curso; el respaldo decide por
+workflow (en `main`, activo, sin ejecución en curso o en cola, enfriamiento cumplido) y anota cada disparo
+(`FALLBACK_DISPATCH`). Trazabilidad: registro del Worker → ejecución del respaldo (origen `workflow_dispatch`,
+lanzada por IRFEN2026) → ejecuciones despachadas (anotaciones).
 
-### 4 · Evaluación de 48 h tras activar
+Parada (al terminar o ante cualquier anomalía): `npx wrangler@4 deploy` (vuelve a `ENABLED="false"`) o
+`npx wrangler@4 delete`, y revocar el token si hay duda. La activación permanente requiere una autorización
+expresa posterior a la revisión de resultados.
+
+### 4 · Evaluación al terminar (24 h)
 ```
-GH_TOKEN=<token de solo lectura> python scripts/v09_continuity_report.py --hours 48 --json continuity_48h.json
+GH_TOKEN=<token de solo lectura> python scripts/v09_continuity_report.py --hours 24 --json continuity_24h.json
 ```
-**Criterio fijado por el propietario el 13-10-2026, antes del ensayo activo** (codificado en `CRITERION`), para
+**Criterio fijado por el propietario el 13-10-2026** (codificado en `CRITERION`), para
 `v09-senamhi-avisos-capture.yml` y `v09-rain-north.yml`:
 
 | Condición | Umbral |
 |---|---|
-| Intervalos entre ejecuciones correctas dentro de 90 min | ≥ 95 % |
-| Hueco máximo (incluido el abierto y el inicial) | ≤ 120 min |
-| Duplicados (dos ejecuciones creadas a < 10 min o con ejecución solapada) | 0 |
+| Intervalos entre ejecuciones correctas (incluidos el inicial y el abierto) | ninguno > 90 min (100 % ≤ 90 min) |
+| Duplicados indebidos (dos ejecuciones creadas a < 10 min o con ejecución solapada) | 0 |
 | Visibilidad de datos desactualizados | prueba de navegador en CI + revisión del panel durante el ensayo |
 
-El informe da `PASA` / `NO_PASA` por workflow. Línea base sin disparador (72 h hasta el 13-10 00:59 UTC): captura
-de avisos **NO_PASA** (6,2 % de intervalos ≤ 90 min, hueco máximo 9,1 h, 0 duplicados). No se comunica ninguna
-cadencia hasta tener la evaluación de 48 h.
+El informe da, por workflow: frecuencia esperada, ejecuciones esperadas y reales, hueco máximo, duplicados,
+porcentaje de intervalos ≤ 90 min y `PASA` / `NO_PASA` (los colectores v0.8 se muestran como informativos), más la
+traza de cada disparo del respaldo. Cualquier incumplimiento se reporta tal cual.
+
+Línea base sin disparador (24 h hasta el 13-10-2026 12:20 UTC): captura de avisos 5 ejecuciones correctas de 48
+esperadas, hueco máximo 9,1 h, **NO_PASA**; lluvia 2 de 48, hueco máximo 12,7 h, **NO_PASA**.
 
 ## Alternativa no elegida: cualquier cron externo
 
@@ -89,7 +104,7 @@ Depende de la disponibilidad de esa máquina.
 ## Lo que no resuelve
 
 * Si GitHub Actions está caído o degradado, nada se ejecuta: el panel lo muestra (fuente DESACTUALIZADA a los
-  180 min, IMERG > 12 h y GOES-19 > 90 min cuentan como ausentes, GEOS-CF > 48 h sin sumas).
+  180 min, IMERG > 12 h y GOES-19 > 90 min cuentan como ausentes, GEOS-CF fuera de su límite de frescura sin sumas).
 * No hay intervalo garantizado. Lo esperable con reloj de 10 min y enfriamiento de 60 min es un hueco máximo del
   orden de 70 min más la cola de Actions, **pendiente de verificar** con `scripts/v09_continuity_report.py`
   durante 48 h tras activarlo. No se debe comunicar ninguna cadencia antes de esa medición.
