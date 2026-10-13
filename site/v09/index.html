@@ -160,7 +160,7 @@ const na = (why) => `<span class="na" title="${esc(why||"")}">no disponible</spa
    node against the Python engine on the same cases. A stale observation counts as missing, never as zero. */
 const NEGATIVE_RELATION = "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES";
 const PRIORITY_ORDER = ["R1_REVISION_PRIORITARIA","R2_VIGILANCIA_ACTIVA","R3_PREPARAR_VIGILANCIA","R4_LLUVIA_OBSERVADA_SIN_AVISO","R5_DATOS_INSUFICIENTES","R6_SIN_SENAL_EN_DATOS_DISPONIBLES"];
-const DEFAULT_FRESHNESS = {imerg_stale_after_h:12, goes_stale_after_min:90, geos_max_cycle_age_h:48};
+const DEFAULT_FRESHNESS = {imerg_stale_after_h:12, goes_stale_after_min:90, geos_max_cycle_age_h:54};
 function tms(ts){ // ISO (any offset), "Z", or numpy datetime64 without zone (UTC) -> epoch ms
   if (!ts) return null;
   let t = String(ts).replace(/(\.\d{3})\d+/, "$1");
@@ -432,7 +432,8 @@ function selectZone(id, fromClick){
         <dl class="kv"><dt>1 h</dt><dd>${cell("1h")}</dd><dt>3 h</dt><dd>${cell("3h")}</dd><dt>6 h</dt><dd>${cell("6h")}</dd><dt>24 h</dt><dd>${cell("24h")}</dd></dl>
         <div class="small muted">${z.imerg.window_end_utc ? `Ventanas hasta ${lima(z.imerg.window_end_utc)} (${ago(z.imerg.window_end_utc)}; latencia propia de IMERG Early)` : "Sin muestras IMERG"}</div>
         ${z.imerg.window_end_utc && !t.imerg_usable ? staleTag(`Más de ${FR().imerg_stale_after_h} h desde el final de la última ventana: no describe la situación actual.`) : ""}
-        ${sparkSVG(z.imerg.series_24h_half_hourly_mm, css("--obs"), "IMERG Early, últimas 24 h")}<div class="small muted">Últimas 24 h por media hora · gris = hueco sin dato</div></div>
+        ${sparkSVG(z.imerg.series_24h_half_hourly_mm, css("--obs"), "IMERG Early, últimas 24 h")}<div class="small muted">Últimas 24 h por media hora · gris = hueco sin dato</div>
+        ${coverageLine(z.imerg)}</div>
       <div class="block"><h3>Lluvia observada · GOES-19 RRQPE</h3>${g.status==="CALCULADO"
         ? `Tasa media <b>${g.rate_mean_mm_h} mm/h</b> (máx. ${g.rate_max_mm_h}) · escaneo ${lima(g.scan_end_utc)} (${ago(g.scan_end_utc)})<br>${t.goes_usable ? "" : staleTag(`Más de ${FR().goes_stale_after_min} min desde el último escaneo muestreado.`) + "<br>"}<span class="small muted">${esc(g.sampling_es||"")} ${esc(g.uncertainty_es||"")}</span>`
           + (g.recent_scans_mm_h?.length ? sparkSVG(g.recent_scans_mm_h, css("--obs"), "GOES-19 tasas recientes") + `<div class="small muted">Tasas instantáneas de los últimos escaneos muestreados (no acumulado)</div>` : "")
@@ -497,6 +498,13 @@ function sparkSVG(series, color, label){
     ? `<rect x="${i*bw}" y="${h-3}" width="${Math.max(1,bw-1)}" height="3" fill="${css("--border")}" data-t="${esc(lima(s[0]))}: sin dato (hueco)"></rect>`
     : `<rect x="${i*bw}" y="${h - (s[1]/max)*(h-8) - 1}" width="${Math.max(1,bw-1)}" height="${Math.max(1,(s[1]/max)*(h-8))}" rx="1" fill="${color}" data-t="${esc(lima(s[0]))}: ${s[1]} mm"></rect>`).join("");
   return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="${esc(label)}"><line x1="0" x2="${w}" y1="${h-0.5}" y2="${h-0.5}" stroke="${css("--border")}"/>${bars}</svg>`;
+}
+function coverageLine(im){
+  const c = im && im.coverage_24h;
+  if (!c) return "";
+  const miss = c.missing_half_hours_utc || [];
+  return `<div class="small ${miss.length ? "" : "muted"}" data-coverage="${c.available_half_hours}/${c.required_half_hours}">Cobertura 24 h: ${c.available_half_hours}/${c.required_half_hours} medias horas`
+    + (miss.length ? ` · faltan ${miss.slice(0,6).map(t => esc(lima(t))).join(", ")}${miss.length > 6 ? ` y ${miss.length - 6} más` : ""} (sin dato, no es lluvia cero)` : "") + `</div>`;
 }
 function geosHtml(z, f, long){
   if (f.status === "DESACTUALIZADO") return `<span class="na">desactualizado</span><br><span class="small muted">${esc(f.reason)}. No se muestran sumas.</span>`;

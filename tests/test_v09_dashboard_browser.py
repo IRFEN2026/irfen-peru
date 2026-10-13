@@ -6,7 +6,7 @@ must re-evaluate on its own:
 
 * INDECI/COEN source: AL_DIA until 180 min after the last check, DESACTUALIZADA after;
 * GOES-19 (> 90 min), IMERG Early (> 12 h) tagged as old data and no longer counted for the priority;
-* GEOS-CF cycle older than 48 h: no sums;
+* GEOS-CF cycle older than 54 h: no sums (shown with its age before);
 * aviso past its documented end: VENCIDO, and the internal priority follows;
 * periodic re-download: a failed download keeps the data and says so, the event tray neither duplicates nor drops
   events, an older bundle is rejected.
@@ -164,8 +164,11 @@ class LiveDashboard(unittest.TestCase):
                 self.assertIn("Dato antiguo", block("IMERG"))
                 self.assertEqual(prio(), "Datos insuficientes")
 
-                # +18 h 05: GEOS-CF cycle started 48 h 05 ago -> no sums
+                # +18 h 05: GEOS-CF cycle started 48 h 05 ago -> still within 54 h: sums shown with the cycle age
                 at(1085)
+                self.assertIn("Próximas 6 h", block("GEOS-CF"))
+                # +24 h 05: GEOS-CF cycle started 54 h 05 ago -> no sums
+                at(1445)
                 self.assertIn("desactualizado", block("GEOS-CF"))
                 self.assertNotIn("Próximas 6 h", block("GEOS-CF"))
 
