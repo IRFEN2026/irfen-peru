@@ -54,7 +54,7 @@ class V08SchedulerFallbackWorkflowTests(unittest.TestCase):
         expected = {
             "igp-cendehua-probe.yml": 5400, "goes19-rrqpe-probe.yml": 5400,
             "imerg-early-probe.yml": 5400, "shadow-validation.yml": 7200,
-            "update-and-deploy.yml": 90000, "geos-forecast.yml": 90000,
+            "geos-forecast.yml": 90000,
             "v09-senamhi-avisos-capture.yml": 3600, "v09-rain-north.yml": 3600,
         }
         self.assertEqual(FB.TARGETS, expected)
@@ -74,6 +74,25 @@ class V08SchedulerFallbackWorkflowTests(unittest.TestCase):
         for wf in FB.EXCLUDED_DIRECT_SENAMHI:
             self.assertNotIn(wf, FB.TARGETS)
             self.assertEqual(FB.decide(wf, 60, True, [], NOW), (False, "EXCLUDED: direct SENAMHI queries are not automated"))
+
+    def test_fallback_never_publishes_pages(self):
+        for wf in FB.TARGETS:
+            self.assertNotIn("upload-pages-artifact", (ROOT / ".github/workflows" / wf).read_text(encoding="utf-8"), wf)
+        self.assertIn("update-and-deploy.yml", FB.EXCLUDED_PAGES_DEPLOY)
+        self.assertFalse(FB.decide("update-and-deploy.yml", 0, True, [], NOW)[0])
+
+    def test_each_dispatch_is_annotated(self):
+        import contextlib, io, os
+        from unittest import mock
+        buf = io.StringIO()
+        fake = [dict(workflow="v09-rain-north.yml", dispatched=True, would_dispatch=True, reason="STALE: x"),
+                dict(workflow="geos-forecast.yml", dispatched=False, would_dispatch=False, reason="COOLDOWN: y")]
+        with mock.patch.dict(os.environ, {"GH_TOKEN": "t", "GITHUB_REPOSITORY": "o/r"}), mock.patch.object(FB, "run", return_value=fake), \
+                contextlib.redirect_stdout(buf):
+            FB.main([])
+        out = buf.getvalue()
+        self.assertIn("::notice title=FALLBACK_DISPATCH::v09-rain-north.yml | STALE: x", out)
+        self.assertNotIn("FALLBACK_DISPATCH::geos-forecast.yml", out)
 
     def test_nacara_probe_has_no_automatic_trigger(self):
         text = (ROOT / ".github/workflows/senamhi-nacara-probe.yml").read_text(encoding="utf-8")
@@ -157,8 +176,8 @@ class Sweep(unittest.TestCase):
         report = FB.run(api, NOW, dry_run=True, workflows_dir=self.dir)
         self.assertEqual(api.dispatched, [])
         self.assertTrue(all(r["would_dispatch"] for r in report if r["workflow"] in FB.TARGETS and r["workflow"] != "v09-rain-north.yml"))
-        excluded = [r for r in report if r["workflow"] in FB.EXCLUDED_DIRECT_SENAMHI]
-        self.assertEqual(len(excluded), 3)
+        excluded = [r for r in report if r["workflow"] in FB.EXCLUDED_DIRECT_SENAMHI + FB.EXCLUDED_PAGES_DEPLOY]
+        self.assertEqual(len(excluded), 4)
         self.assertTrue(all(not r["would_dispatch"] and r["reason"].startswith("EXCLUDED") for r in excluded))
         self.assertTrue(set(FB.EXCLUDED_DIRECT_SENAMHI).isdisjoint(api.queried))
 
