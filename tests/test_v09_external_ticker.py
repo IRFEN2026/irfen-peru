@@ -19,8 +19,10 @@ NODE = shutil.which("node")
 NOW = datetime(2026, 10, 13, 12, 0, tzinfo=timezone.utc)
 
 
-def run(minutes_ago, conclusion="success", event="schedule"):
-    return dict(created_at=(NOW - timedelta(minutes=minutes_ago)).isoformat().replace("+00:00", "Z"), conclusion=conclusion, event=event)
+def run(minutes_ago, conclusion="success", event="schedule", duration=2):
+    t = (NOW - timedelta(minutes=minutes_ago)).isoformat().replace("+00:00", "Z")
+    end = (NOW - timedelta(minutes=minutes_ago - duration)).isoformat().replace("+00:00", "Z")
+    return dict(created_at=t, run_started_at=t, updated_at=end, conclusion=conclusion, event=event)
 
 
 class ContinuityReport(unittest.TestCase):
@@ -37,6 +39,27 @@ class ContinuityReport(unittest.TestCase):
     def test_no_success_at_all(self):
         s = C.summarize([run(30, "failure")], NOW - timedelta(hours=8), NOW, 30)
         self.assertEqual((s["successful_runs"], s["max_gap_min"], s["open_gap_min"]), (0, None, None))
+
+    def test_owner_criterion(self):
+        """SYNTHETIC 48 h: runs every 30 min pass; one 130-min hole or a duplicate fails."""
+        since = NOW - timedelta(hours=48)
+        good = [run(m) for m in range(0, 48 * 60 + 30, 30)]
+        rep = lambda runs: C.evaluate(dict(workflows={wf: C.summarize(runs, since, NOW, 30) for wf in C.CRITERION_WORKFLOWS}))
+        self.assertEqual(rep(good)["v09-senamhi-avisos-capture.yml"]["result"], "PASA")
+        hole = [r for r in good if not 600 < int((NOW - C.parse(r["created_at"])).total_seconds() / 60) < 730]
+        r = rep(hole)["v09-rain-north.yml"]
+        self.assertEqual(r["result"], "NO_PASA")
+        self.assertFalse(r["items"]["max_gap_120_min"])
+        dup = good + [run(301, event="workflow_dispatch")]  # 1 min after a scheduled run
+        r = rep(dup)["v09-rain-north.yml"]
+        self.assertEqual((r["result"], r["items"]["zero_duplicates"]), ("NO_PASA", False))
+        overlap = good + [run(316, duration=20)]  # starts 14 min before the 300-min run, still running when it starts
+        self.assertEqual(C.summarize(overlap, since, NOW, 30)["duplicates"], 1)
+        self.assertEqual(rep([])["v09-rain-north.yml"]["result"], "SIN_DATOS")
+        late_start = rep([run(5)])["v09-rain-north.yml"]  # one success 5 min ago, nothing before: 47 h 55 min gap
+        self.assertEqual((late_start["result"], late_start["items"]["max_gap_120_min"]), ("NO_PASA", False))
+        self.assertEqual(rep(good)["stale_data_visibility"]["result"], "VERIFICAR")
+        self.assertEqual(C.CRITERION, dict(share_intervals_within_min=90, required_share=0.95, max_gap_min=120, max_duplicates=0, duplicate_window_min=10))
 
     def test_report_is_read_only(self):
         text = (ROOT / "scripts/v09_continuity_report.py").read_text(encoding="utf-8")

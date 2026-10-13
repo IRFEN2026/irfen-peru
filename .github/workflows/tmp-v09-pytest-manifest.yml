@@ -28,5 +28,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add config/phase2_test_collection_manifest.json
           git diff --cached --quiet && exit 0
-          git commit -q -m "Regenerate pytest collection manifest on the pinned runner (v0.9 external ticker after PR 370)"
+          git commit -q -m "Regenerate pytest collection manifest on the pinned runner (v0.9 external ticker after PR 370, owner continuity criterion)"
           for i in 1 2 3; do git fetch -q origin "$GITHUB_REF_NAME" && git rebase -q "origin/$GITHUB_REF_NAME" && git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0; sleep 5; done; exit 1

@@ -39,30 +39,46 @@ no despacha). #372 ya está en `main`; el disparador **no se activa** hasta que 
 3. Cuenta de Cloudflare con 2FA y sin otros miembros con acceso al Worker.
 4. Revocación inmediata si hay duda: GitHub → Fine-grained tokens → *Revoke*; el Worker deja de poder actuar.
 
-### 2 · Ensayo de 24 h con `ENABLED="false"`
+### 2 · Ensayo de 24 h con `ENABLED="false"` (sin despachos reales)
+Verificado antes del ensayo: la lógica del Worker contra la API real de GitHub, en modo ensayo, hace 5 lecturas
+(`GET …/runs`) y devuelve `DRY_RUN`, sin ningún `POST` (13-10-2026 00:58 UTC).
 ```
 cd ops/external_ticker
 npx wrangler@4 login
 npx wrangler@4 secret put GITHUB_TOKEN        # pegar el token cuando lo pida
-npx wrangler@4 deploy                         # ENABLED="false" en wrangler.toml
+grep 'ENABLED = "false"' wrangler.toml        # debe aparecer: ensayo sin despachos
+npx wrangler@4 deploy
 npx wrangler@4 tail                           # o Workers → irfen-v09-external-ticker → Logs
 ```
-Cada 10 min debe aparecer una línea `{"at":…,"dispatched":false,"reason":"DRY_RUN: …"}` (o `FALLBACK_ACTIVE` si el
-respaldo estaba en marcha). A las 24 h comprobar: unas 144 líneas, ninguna `LIST_FAILED` (token o red) y ninguna
-ejecución del respaldo con origen `workflow_dispatch` lanzada por el Worker en Actions. Si algo falla, no activar.
+Lista de comprobación a las 24 h:
+- [ ] unas 144 líneas `{"at":…,"dispatched":false,"reason":"DRY_RUN: …"}` (o `FALLBACK_ACTIVE`), una cada 10 min;
+- [ ] ninguna `LIST_FAILED` (token, permisos o red);
+- [ ] en Actions, ninguna ejecución del respaldo lanzada por el Worker (`workflow_dispatch` del token);
+- [ ] el token sigue limitado a `irfen-peru` y Actions R/W, con caducidad.
+Si algo falla, no activar.
 
 ### 3 · Activación (solo con autorización del propietario)
-Cambiar `ENABLED = "true"` en `wrangler.toml` (cambio revisado en esta rama) y `npx wrangler@4 deploy`.
-Marcha atrás: `ENABLED = "false"` + `deploy`, o `npx wrangler@4 delete`, y revocar el token.
+Cambiar `ENABLED = "true"` en `wrangler.toml` (cambio revisado en esta rama) y `npx wrangler@4 deploy`. Anotar la
+hora de activación: es el inicio de la ventana de 48 h. Marcha atrás: `ENABLED = "false"` + `deploy`, o
+`npx wrangler@4 delete`, y revocar el token.
 
 ### 4 · Evaluación de 48 h tras activar
 ```
 GH_TOKEN=<token de solo lectura> python scripts/v09_continuity_report.py --hours 48 --json continuity_48h.json
 ```
-Para `v09-senamhi-avisos-capture.yml` y `v09-rain-north.yml`: ejecuciones correctas y por origen, hueco máximo,
-mediana, P90 y hueco abierto; para el respaldo, cuántas veces corrió. Comparar con la línea base (72 h sin
-disparador: 15 capturas de 144, máximo 9,1 h). El criterio de aceptación (por ejemplo, un hueco máximo aceptable)
-lo fija el propietario **antes** de mirar los datos; no se comunica ninguna cadencia hasta tener esta medición.
+**Criterio fijado por el propietario el 13-10-2026, antes del ensayo activo** (codificado en `CRITERION`), para
+`v09-senamhi-avisos-capture.yml` y `v09-rain-north.yml`:
+
+| Condición | Umbral |
+|---|---|
+| Intervalos entre ejecuciones correctas dentro de 90 min | ≥ 95 % |
+| Hueco máximo (incluido el abierto y el inicial) | ≤ 120 min |
+| Duplicados (dos ejecuciones creadas a < 10 min o con ejecución solapada) | 0 |
+| Visibilidad de datos desactualizados | prueba de navegador en CI + revisión del panel durante el ensayo |
+
+El informe da `PASA` / `NO_PASA` por workflow. Línea base sin disparador (72 h hasta el 13-10 00:59 UTC): captura
+de avisos **NO_PASA** (6,2 % de intervalos ≤ 90 min, hueco máximo 9,1 h, 0 duplicados). No se comunica ninguna
+cadencia hasta tener la evaluación de 48 h.
 
 ## Alternativa no elegida: cualquier cron externo
 
