@@ -21,7 +21,11 @@
     "public_report_url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/13851/descargar"
   },
   "survey": {
-    "field_dates": ["2020-03-04", "2020-03-05", "2020-03-06"],
+    "field_dates": [
+      "2020-03-04",
+      "2020-03-05",
+      "2020-03-06"
+    ],
     "aerial_photos": 1507,
     "ground_control_points": 17,
     "coordinate_reference": {
@@ -65,5 +69,45 @@
     "Recover the 2020 IGP DTM/orthomosaic/contour data assets or an institutional export with stable provenance.",
     "Use the 2020 WGS84 UTM 17 control only as independent modern topographic QA, not as proof of the 2011 ANA model datum.",
     "Keep the 2011 native-axis map transformation blocked until its own CRS/datum is explicitly resolved."
-  ]
+  ],
+  "source_internal_area_discrepancy": {
+    "status": "UNRESOLVED_SOURCE_INTERNAL_CONFLICT_NO_GEOMETRY_OR_AREA_REPLACEMENT",
+    "source_url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/13851/descargar",
+    "source_pdf_sha256": null,
+    "source_pdf_hash_status": "NOT_FROZEN_IN_THIS_QA_CHANGE",
+    "observations": [
+      {
+        "source_section": "1 INTRODUCCIÓN and 3.1 Objetivo general",
+        "area_ha": 1758,
+        "role": "reported total study area"
+      },
+      {
+        "source_section": "4.1.1 Plan del vuelo",
+        "area_ha": 1758,
+        "role": "reported study area for mission planning"
+      },
+      {
+        "source_section": "5.2 Procesamiento de fotografías aéreas",
+        "area_ha": 1597,
+        "role": "different total area stated in processing paragraph"
+      },
+      {
+        "source_section": "5.2 Procesamiento de fotografías aéreas and 6.2.1 Modelo digital del terreno",
+        "component_areas_ha": [
+          992,
+          766
+        ],
+        "component_sum_ha": 1758,
+        "role": "urban and river DTM processing zones"
+      }
+    ],
+    "discrepancy_ha": 161,
+    "interpretation": "The 1597 ha statement conflicts with the repeated 1758 ha total and the arithmetic sum of 992+766 ha. Do not silently correct the source, infer a footprint, choose a denominator for spatial QA, or infer which number is a typographical error.",
+    "qa_disposition": "PRESERVE_BOTH_TOTALS_PENDING_INSTITUTIONAL_CLARIFICATION",
+    "effects": {
+      "dtm_raster_recovered": false,
+      "proves_2011_ana_model_datum": false,
+      "map_publication_enabled": false
+    }
+  }
 }
