@@ -45,6 +45,11 @@ def test_inventory_is_research_only_and_never_operational():
     for unit_id in ("lima_huaycoloro", "jicamarca_rio_seco"):
         unit = next(u for u in d["units"] if u["id"] == unit_id)
         assert unit["verified_event_refs"] == []
+        assert unit["rainfall_observation_refs"] == []
+        assert unit["flow_or_stage_observation_refs"] == []
+        assert unit["station_activation_context_refs"] == [
+            "config/phase2_igp2023_jicamarca_station_activation_events_v0_1.json"
+        ]
         assert unit["collector_overflow_evidence"] is None
     for unit in d["units"]:
         for ref in unit["verified_event_refs"]:
