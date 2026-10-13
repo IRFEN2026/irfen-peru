@@ -40,6 +40,16 @@ def test_inventory_is_research_only_and_never_operational():
     assert leads[0]["unit_attribution"] == "HISTORICAL_CONTEXT_REQUIRES_ATTRIBUTION_CHECK"
     assert leads[0]["usable_as_confirmed_unit_event"] is False
 
+    # IGP station triggers are instrumental observations, not confirmed
+    # quebrada events, measured discharge, or collector overflow.
+    for unit_id in ("lima_huaycoloro", "jicamarca_rio_seco"):
+        unit = next(u for u in d["units"] if u["id"] == unit_id)
+        assert unit["verified_event_refs"] == []
+        assert unit["collector_overflow_evidence"] is None
+    for unit in d["units"]:
+        for ref in unit["verified_event_refs"]:
+            assert "phase2_igp2023_jicamarca_station_activation_events" not in str(ref)
+
     # Apply the same fail-closed contract to every documentary event lead,
     # not just Cashahuacra. A district list, station activation or historical
     # table mention cannot silently become a verified per-quebrada event.
