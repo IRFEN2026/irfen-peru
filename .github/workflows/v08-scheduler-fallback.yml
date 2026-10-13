@@ -1,4 +1,4 @@
-name: IRFEN - Respaldo controlado del planificador v0.8
+name: IRFEN - Respaldo controlado del planificador (v0.8 + v0.9)
 
 on:
   workflow_dispatch:
@@ -46,64 +46,22 @@ jobs:
           assert "phase-2 candidates remain RESEARCH_ONLY until their validation contracts close" in rules
           PY
 
-      - name: Comprobar inactividad del planificador y despachar colectores vencidos
+      - name: Verificar guardas v0.9 antes del respaldo
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          contract = json.loads(Path("config/v09_senamhi_avisos_contract_v0_1.json").read_text())
+          for key, value in {"production_use": False, "production_ready": False, "operational_alerting_enabled": False,
+                             "activation_gate": "BLOCKED", "decision_thresholds": None, "test_mode": "TEST_ONLY"}.items():
+              assert contract.get(key) == value, key
+          PY
+
+      - name: Comprobar la inactividad de cada workflow y despachar solo los vencidos
+        # Cada workflow se evalúa por separado: que otro se haya ejecutado hace poco no detiene este.
+        # No se despacha si el workflow no existe en main, si tiene una ejecución en curso o en cola,
+        # o si su última ejecución en main está dentro de su enfriamiento (scripts/scheduler_fallback.py).
         env:
           GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          now_epoch="$(date -u +%s)"
-          latest_schedule="$(
-            gh api "/repos/${GITHUB_REPOSITORY}/actions/runs?event=schedule&per_page=1" \
-              --jq '.workflow_runs[0].created_at // empty'
-          )"
-
-          if [[ -n "$latest_schedule" ]]; then
-            schedule_age_seconds=$((now_epoch - $(date -u -d "$latest_schedule" +%s)))
-            if (( schedule_age_seconds < 14400 )); then
-              echo "El planificador emitió un evento hace menos de 4 h; no se usa el respaldo."
-              exit 0
-            fi
-          fi
-
-          # Cada entrada es workflow:enfriamiento mínimo en segundos. Los
-          # enfriamientos consideran la cadencia normal y evitan despachos
-          # repetidos mientras el scheduler de GitHub se recupera.
-          targets=(
-            "igp-cendehua-probe.yml:5400"
-            "goes19-rrqpe-probe.yml:5400"
-            "senamhi-nacara-probe.yml:5400"
-            "imerg-early-probe.yml:5400"
-            "shadow-validation.yml:7200"
-            "official-outcome-evidence.yml:25200"
-            "piura-source-status.yml:90000"
-            "update-and-deploy.yml:90000"
-            "geos-forecast.yml:90000"
-          )
-
-          dispatched=0
-          for target in "${targets[@]}"; do
-            workflow="${target%%:*}"
-            cooldown="${target##*:}"
-            latest_run="$(
-              gh api "/repos/${GITHUB_REPOSITORY}/actions/workflows/${workflow}/runs?per_page=1" \
-                --jq '.workflow_runs[0].created_at // empty'
-            )"
-
-            if [[ -n "$latest_run" ]]; then
-              age_seconds=$((now_epoch - $(date -u -d "$latest_run" +%s)))
-              if (( age_seconds < cooldown )); then
-                echo "$workflow aún está dentro de su enfriamiento (${age_seconds}s < ${cooldown}s)."
-                continue
-              fi
-            fi
-
-            gh workflow run "$workflow" \
-              --repo "$GITHUB_REPOSITORY" \
-              --ref main
-            echo "Despachado: $workflow"
-            dispatched=$((dispatched + 1))
-          done
-
-          echo "Colectores despachados por respaldo: $dispatched"
+        run: python scripts/scheduler_fallback.py

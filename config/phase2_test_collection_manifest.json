@@ -3,12 +3,12 @@
   "status": "REAL_PYTEST_COLLECTION",
   "purpose": "Identity-based forward-only pytest collection ratchet. Exact node IDs are recorded so silent additions/removals cannot hide behind aggregate counts.",
   "measured_at": "2026-10-12",
-  "measured_against_commit": "9becbf60312be40f1550e1c15aa1b4ff2c212804",
+  "measured_against_commit": "e41eb7d3f1e53525d3d2fc82a01650b13f355d4c",
   "python_version": "3.12.15",
   "pytest_version": "9.0.3",
   "collection_command": "python -m pytest --collect-only -q --continue-on-collection-errors tests",
   "collection_method_used_to_generate_this_file": "Real pytest --collect-only output on the pinned pytest version; generation is refused for any non-zero collection return code.",
-  "total_test_item_count": 1554,
+  "total_test_item_count": 1562,
   "phase2_test_item_count": 995,
   "phase2_test_modules": [
     "tests/test_phase2_acari_canete_geometry.py",
@@ -2598,10 +2598,18 @@
     "tests/test_v08_recent_advances.py::RecentAdvancesTests::test_map_layers_records_are_unchanged_research_only_and_hidden_by_default",
     "tests/test_v08_recent_advances.py::RecentAdvancesTests::test_recent_filter_returns_only_those_three_and_respects_search",
     "tests/test_v08_recent_advances.py::RecentAdvancesTests::test_script_is_syntactically_valid",
-    "tests/test_v08_scheduler_fallback_workflow.py::V08SchedulerFallbackWorkflowTests::test_fallback_requires_four_hours_without_schedule_events",
-    "tests/test_v08_scheduler_fallback_workflow.py::V08SchedulerFallbackWorkflowTests::test_only_closeout_collectors_are_dispatched_with_cooldowns",
+    "tests/test_v08_scheduler_fallback_workflow.py::PerWorkflowDecision::test_active_or_queued_run_is_never_duplicated",
+    "tests/test_v08_scheduler_fallback_workflow.py::PerWorkflowDecision::test_cooldown_and_any_event_counts",
+    "tests/test_v08_scheduler_fallback_workflow.py::PerWorkflowDecision::test_never_run_but_present_is_dispatched",
+    "tests/test_v08_scheduler_fallback_workflow.py::PerWorkflowDecision::test_stale_workflow_is_dispatched",
+    "tests/test_v08_scheduler_fallback_workflow.py::PerWorkflowDecision::test_workflow_missing_on_main_is_not_dispatched",
+    "tests/test_v08_scheduler_fallback_workflow.py::Sweep::test_dry_run_dispatches_nothing",
+    "tests/test_v08_scheduler_fallback_workflow.py::Sweep::test_each_workflow_is_judged_on_its_own_history",
+    "tests/test_v08_scheduler_fallback_workflow.py::Sweep::test_rain_north_is_dispatched_once_it_exists_on_main",
+    "tests/test_v08_scheduler_fallback_workflow.py::V08SchedulerFallbackWorkflowTests::test_no_repository_wide_schedule_gate",
     "tests/test_v08_scheduler_fallback_workflow.py::V08SchedulerFallbackWorkflowTests::test_permissions_are_minimal_for_dispatch",
     "tests/test_v08_scheduler_fallback_workflow.py::V08SchedulerFallbackWorkflowTests::test_safety_contract_is_checked_before_dispatch",
+    "tests/test_v08_scheduler_fallback_workflow.py::V08SchedulerFallbackWorkflowTests::test_targets_and_cooldowns",
     "tests/test_v08_scheduler_fallback_workflow.py::V08SchedulerFallbackWorkflowTests::test_trigger_is_scoped_to_authenticated_owner_and_dedicated_issue",
     "tests/test_v08_scorecard.py::ExternalEvidenceQueueTests::test_fully_reviewed_evidence_is_removed_from_queue",
     "tests/test_v08_scorecard.py::ExternalEvidenceQueueTests::test_pending_evidence_is_exposed_without_automatic_acceptance",
@@ -2717,7 +2725,10 @@
     "tests/test_zana_oyotun_research_closeout.py::ZanaOyotunResearchCloseoutTests::test_positive_outcomes_are_independent_official_time_slices",
     "tests/test_zana_oyotun_research_closeout.py::ZanaOyotunResearchCloseoutTests::test_source_typo_is_preserved_not_silently_rewritten"
   ],
-  "this_change_justified_removed_node_ids": {},
+  "this_change_justified_removed_node_ids": {
+    "tests/test_v08_scheduler_fallback_workflow.py::V08SchedulerFallbackWorkflowTests::test_fallback_requires_four_hours_without_schedule_events": "Deliberate behaviour change (v0.9): the repository-wide 4 h schedule gate is removed so each workflow is judged on its own history; replaced by test_no_repository_wide_schedule_gate and the PerWorkflowDecision/Sweep tests.",
+    "tests/test_v08_scheduler_fallback_workflow.py::V08SchedulerFallbackWorkflowTests::test_only_closeout_collectors_are_dispatched_with_cooldowns": "The target list now also includes the v0.9 workflows and lives in scripts/scheduler_fallback.py; replaced by test_targets_and_cooldowns (same v0.8 cooldowns asserted exactly) and test_rain_north_is_dispatched_once_it_exists_on_main."
+  },
   "historical_removed_node_ids": {},
   "how_to_update": "Regenerate with --write-manifest only from a real clean collection. For deliberate removals, add a non-empty justification for each newly disappeared node ID in this_change_justified_removed_node_ids."
 }

@@ -23,24 +23,54 @@ el repositorio, versionada y probada:
 
 El reloj **no** contiene ciencia, no cambia datos, ramas ni guardas, y solo tiene permiso para lanzar workflows.
 
-### Opción A (recomendada): Cloudflare Workers Cron Trigger
+### Opción A (elegida para el piloto): Cloudflare Workers Cron Trigger
 
-`worker.js` + `wrangler.toml` (cron `*/10 * * * *`, `ENABLED="false"` = ensayo que solo registra).
+`worker.js` + `wrangler.toml` (cron `*/10 * * * *`, `ENABLED="false"` = ensayo: consulta, decide y registra, pero
+no despacha). #372 ya está en `main`; el disparador **no se activa** hasta que el propietario lo decida tras el ensayo.
 
-1. Token *fine-grained* del propietario: solo este repositorio, permiso **Actions: Read and write**, con caducidad.
-2. `wrangler secret put GITHUB_TOKEN` y `wrangler deploy` desde `ops/external_ticker/`.
-3. Ensayo 24 h con `ENABLED="false"`: revisar los registros del Worker.
-4. Tras integrar #372 en `main`, `ENABLED="true"` y `wrangler deploy`.
+## Instrucciones mínimas
 
-Condiciones de la cuenta y límites del plan: a comprobar por el propietario antes de usarlo.
+### 1 · Token (propietario, una vez)
+1. GitHub → Settings → Developer settings → *Fine-grained tokens* → *Generate new token*.
+   Resource owner `IRFEN2026`; *Only select repositories* → `irfen-peru`; permisos de repositorio: **Actions: Read
+   and write** (Metadata: read lo añade GitHub). Ningún otro permiso. Caducidad: 30 días (el piloto).
+2. El token solo se guarda como secreto cifrado del Worker (paso 2). Nunca en `wrangler.toml`, en el repositorio,
+   en una incidencia, en un chat ni en registros; `worker.js` no lo imprime.
+3. Cuenta de Cloudflare con 2FA y sin otros miembros con acceso al Worker.
+4. Revocación inmediata si hay duda: GitHub → Fine-grained tokens → *Revoke*; el Worker deja de poder actuar.
 
-### Opción B: cualquier cron externo
+### 2 · Ensayo de 24 h con `ENABLED="false"`
+```
+cd ops/external_ticker
+npx wrangler@4 login
+npx wrangler@4 secret put GITHUB_TOKEN        # pegar el token cuando lo pida
+npx wrangler@4 deploy                         # ENABLED="false" en wrangler.toml
+npx wrangler@4 tail                           # o Workers → irfen-v09-external-ticker → Logs
+```
+Cada 10 min debe aparecer una línea `{"at":…,"dispatched":false,"reason":"DRY_RUN: …"}` (o `FALLBACK_ACTIVE` si el
+respaldo estaba en marcha). A las 24 h comprobar: unas 144 líneas, ninguna `LIST_FAILED` (token o red) y ninguna
+ejecución del respaldo con origen `workflow_dispatch` lanzada por el Worker en Actions. Si algo falla, no activar.
+
+### 3 · Activación (solo con autorización del propietario)
+Cambiar `ENABLED = "true"` en `wrangler.toml` (cambio revisado en esta rama) y `npx wrangler@4 deploy`.
+Marcha atrás: `ENABLED = "false"` + `deploy`, o `npx wrangler@4 delete`, y revocar el token.
+
+### 4 · Evaluación de 48 h tras activar
+```
+GH_TOKEN=<token de solo lectura> python scripts/v09_continuity_report.py --hours 48 --json continuity_48h.json
+```
+Para `v09-senamhi-avisos-capture.yml` y `v09-rain-north.yml`: ejecuciones correctas y por origen, hueco máximo,
+mediana, P90 y hueco abierto; para el respaldo, cuántas veces corrió. Comparar con la línea base (72 h sin
+disparador: 15 capturas de 144, máximo 9,1 h). El criterio de aceptación (por ejemplo, un hueco máximo aceptable)
+lo fija el propietario **antes** de mirar los datos; no se comunica ninguna cadencia hasta tener esta medición.
+
+## Alternativa no elegida: cualquier cron externo
 
 `tick.sh` (curl) en un servidor propio o un programador en la nube:
 `*/10 * * * * GITHUB_TOKEN=… ENABLED=true /ruta/tick.sh >> /var/log/irfen-ticker.log 2>&1`.
 Depende de la disponibilidad de esa máquina.
 
-### Lo que no resuelve
+## Lo que no resuelve
 
 * Si GitHub Actions está caído o degradado, nada se ejecuta: el panel lo muestra (fuente DESACTUALIZADA a los
   180 min, IMERG > 12 h y GOES-19 > 90 min cuentan como ausentes, GEOS-CF > 48 h sin sumas).
