@@ -253,40 +253,97 @@ function levelBadge(a){
 }
 function prioBadge(code, label){ return `<span class="prio" style="background:var(${PRIO_VAR[code]});color:${["R1_REVISION_PRIORITARIA","R2_VIGILANCIA_ACTIVA"].includes(code)?"#fff":"inherit"}">${esc(label)}</span>`; }
 
-let D, avisoByKey = {};
-fetch(DATA_URL, {cache:"no-store"}).then(r => { if(!r.ok) throw new Error(r.status); return r.json(); }).then(d => { D = d; init(); })
-  .catch(err => { document.getElementById("chips").innerHTML = `<span class="chip bad">No se pudo cargar el paquete de datos (${esc(err.message)}). No se muestra ningún estado: la ausencia de datos no significa ausencia de avisos.</span>`; });
+/* ---------------- live refresh ----------------
+   The bundle is re-downloaded every REFRESH_MS and every clock-dependent state (source freshness, aviso status,
+   IMERG/GOES-19 freshness, GEOS-CF sums, R1–R6) is re-evaluated every TICK_MS, without reloading the page.
+   A failed or rejected download never replaces the data on screen: the last good bundle stays, its states keep
+   ageing with the clock, and the failure is shown. Events are kept in an in-memory history keyed by identity, so a
+   new bundle (which carries only its last 60 events) neither duplicates nor drops what was already shown. */
+const REFRESH_MS = 5 * 60 * 1000, TICK_MS = 60 * 1000;
+const BUNDLE_GUARDS = {production_use:false, operational_alerting_enabled:false, public_alerting:false, activation_gate:"BLOCKED"};
+let D = null, avisoByKey = {}, selectedZone = null, userSelected = false, bound = false, refreshing = false;
+const eventHistory = new Map();
+const fetchState = {last_ok_ms:null, last_attempt_ms:null, last_error:null, attempts:0, failures:0, accepted:0};
+function eventKey(e){ return [e.event, e.observed_at_utc, e.aviso_key || "", e.document_sha256 || "", e.from_status || "", e.to_status || "", e.post_link || ""].join("|"); }
+function acceptBundle(d){
+  if (!d || typeof d !== "object" || !d.rain || !Array.isArray(d.avisos) || !d.source) throw new Error("paquete con formato inesperado");
+  for (const [k, v] of Object.entries(BUNDLE_GUARDS)) if (d[k] !== v) throw new Error(`guarda ${k} alterada en el paquete`);
+  if (D && tms(d.built_at_utc) != null && tms(D.built_at_utc) != null && tms(d.built_at_utc) < tms(D.built_at_utc)) throw new Error("el paquete recibido es más antiguo que el mostrado");
+  (d.events || []).forEach(e => { const k = eventKey(e); if (!eventHistory.has(k)) eventHistory.set(k, e); });
+  D = d; fetchState.accepted++;
+}
+async function refresh(){
+  if (refreshing) return;
+  refreshing = true; fetchState.attempts++; fetchState.last_attempt_ms = Date.now();
+  try {
+    const r = await fetch(DATA_URL, {cache:"no-store"});
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    acceptBundle(await r.json());
+    fetchState.last_ok_ms = Date.now(); fetchState.last_error = null;
+  } catch (err) {
+    fetchState.failures++; fetchState.last_error = String((err && err.message) || err);
+  } finally { refreshing = false; }
+  renderAll();
+}
+function renderAll(){
+  if (!D) {
+    document.getElementById("chips").innerHTML = `<span class="chip bad">No se pudo cargar el paquete de datos (${esc(fetchState.last_error)}). No se muestra ningún estado: la ausencia de datos no significa ausencia de avisos. Nuevo intento automático en ${REFRESH_MS/60000} min.</span>`;
+    return;
+  }
+  bindOnce();
+  for (const [name, fn] of [["cabecera", renderHeader], ["mapa", renderMap], ["avisos", drawAvisos], ["lluvia", renderRain], ["seguimiento", renderCenter]]) {
+    try { fn(); } catch (err) { console.error(name, err); document.getElementById("chips").insertAdjacentHTML("beforeend", `<span class="chip bad">Error al dibujar el módulo «${esc(name)}»: ${esc(err.message)}</span>`); }
+  }
+}
+function bindOnce(){
+  if (bound) return; bound = true;
+  document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => {
+    document.querySelectorAll("nav button").forEach(x => x.setAttribute("aria-selected", x===b));
+    document.querySelectorAll("main section").forEach(s => s.hidden = s.id !== "tab-" + b.dataset.tab);
+  }));
+  document.getElementById("aviso-filter").addEventListener("change", drawAvisos);
+  const tip = document.getElementById("tip");
+  for (const id of ["map", "rain-cards"]) {
+    const el = document.getElementById(id);
+    el.addEventListener("mousemove", e => { const t = e.target.closest("[data-t]"); if (!t) { tip.style.display="none"; return; }
+      tip.textContent = t.dataset.t; tip.style.display="block"; tip.style.left=(e.clientX+12)+"px"; tip.style.top=(e.clientY+12)+"px"; });
+    el.addEventListener("mouseleave", () => tip.style.display = "none");
+  }
+  document.getElementById("map").addEventListener("click", e => { const t = e.target.closest("[data-zone]"); if (t) selectZone(t.dataset.zone, true); });
+  setInterval(refresh, REFRESH_MS);
+  setInterval(renderAll, TICK_MS);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+}
+refresh();
 
 function sourceState(){
   const h = D.source.health || {}, lim = D.source.viewer_stale_after_minutes || 180;
   if (!h.last_check_utc) return "NO_SUCCESSFUL_CHECK_YET";
-  const age = (Date.now() - new Date(h.last_check_utc))/60000;
+  const age = (Date.now() - tms(h.last_check_utc))/60000;
   return age > lim ? "DESACTUALIZADA" : h.state;
 }
-function init(){
-  document.getElementById("now").textContent = new Date().toLocaleString("es-PE",{timeZone:"America/Lima"});
+function renderHeader(){
+  document.getElementById("now").textContent = new Date().toLocaleString("es-PE",{timeZone:"America/Lima", hourCycle:"h23"});
   document.getElementById("disclaimer").textContent = D.disclaimer_es;
+  avisoByKey = {};
   D.avisos.forEach(a => { a.now = statusNow(a); avisoByKey[a.aviso_key] = a; });
   const st = sourceState(), h = D.source.health || {};
   const active = D.avisos.filter(a => ["VIGENTE","FUTURO"].includes(a.now));
   const rainActive = active.filter(a => a.rain_related !== false);
   const chips = [];
-  chips.push(`<span class="chip ${st==="AL_DIA"?"ok":"bad"}">Fuente INDECI/COEN: ${esc(st)} · última consulta correcta ${lima(h.last_successful_check_utc)} (${ago(h.last_successful_check_utc)})</span>`);
+  chips.push(`<span class="chip ${st==="AL_DIA"?"ok":"bad"}" id="source-chip" data-state="${esc(st)}">Fuente INDECI/COEN: ${esc(st)} · última consulta correcta ${lima(h.last_successful_check_utc)} (${ago(h.last_successful_check_utc)})</span>`);
   chips.push(st==="AL_DIA" ? `<span class="chip">${active.length} avisos vigentes o próximos · ${rainActive.length} de lluvia</span>`
                            : `<span class="chip warn">Se muestran los avisos de la última captura válida; puede haber avisos no capturados</span>`);
+  const okAt = fetchState.last_ok_ms ? new Date(fetchState.last_ok_ms).toISOString() : null;
+  chips.push(fetchState.last_error
+    ? `<span class="chip bad" id="refresh-chip" data-ok="false">No se pudo actualizar el panel (${esc(fetchState.last_error)}; intento ${lima(new Date(fetchState.last_attempt_ms).toISOString())}). Se mantienen los datos descargados ${okAt ? lima(okAt) : "antes"}; los estados siguen recalculándose con la hora actual.</span>`
+    : `<span class="chip" id="refresh-chip" data-ok="true">Panel comprobado ${lima(okAt)} · se vuelve a comprobar cada ${REFRESH_MS/60000} min sin recargar</span>`);
   chips.push(`<span class="chip">Acceso directo a SENAMHI: no usado (robots)</span>`);
   chips.push(`<span class="chip">Límites: ${D.official_boundaries==="VERIFIED"?"INEI referenciales verificados":"no verificados"}</span>`);
   document.getElementById("chips").innerHTML = chips.join("");
   document.getElementById("footer").innerHTML = `Todas las horas en hora de Lima (UTC−5), formato 24 h. Paquete generado ${lima(D.built_at_utc)} (UTC ${esc(D.built_at_utc)}). Cruce territorial evaluado ${lima(D.links_evaluated_at_utc)}; lluvia evaluada ${lima(D.rain.evaluated_at_utc)}. `
     + (D.boundary_source ? `Límites: ${esc(D.boundary_source.dataset_title)} (${esc(D.boundary_source.institution)}; ${esc(D.boundary_source.legal_status)}; SHA-256 ${esc((D.boundary_source.sha256||"").slice(0,12))}…). ` : "")
     + `Guardas: production_use=false · operational_alerting_enabled=false · activation_gate=BLOCKED · decision_thresholds=null.`;
-  document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => {
-    document.querySelectorAll("nav button").forEach(x => x.setAttribute("aria-selected", x===b));
-    document.querySelectorAll("main section").forEach(s => s.hidden = s.id !== "tab-" + b.dataset.tab);
-  }));
-  for (const [name, fn] of [["mapa", renderMap], ["avisos", renderAvisos], ["lluvia", renderRain], ["seguimiento", renderCenter]]) {
-    try { fn(); } catch (err) { console.error(name, err); document.getElementById("chips").insertAdjacentHTML("beforeend", `<span class="chip bad">Error al dibujar el módulo «${esc(name)}»: ${esc(err.message)}</span>`); }
-  }
 }
 
 /* ---------------- 1 · map + integrated zone view ---------------- */
@@ -342,18 +399,14 @@ function renderMap(){
   const dep = {};
   feats.filter(f => f.properties.kind === "PROVINCE").forEach(f => rings(f.geometry).forEach(poly => poly[0].forEach(([x,y]) => { const a = dep[f.properties.department] = dep[f.properties.department] || [0,0,0]; a[0]+=x; a[1]+=y; a[2]++; })));
   Object.entries(dep).forEach(([n,[x,y,c]]) => { const [px,py] = P([x/c,y/c]).split(","); parts.push(`<text x="${px}" y="${py}" text-anchor="middle">${esc(n)}</text>`); });
-  const map = document.getElementById("map");
-  map.innerHTML = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${parts.join("")}</svg>`;
-  const tip = document.getElementById("tip");
-  map.addEventListener("mousemove", e => { const t = e.target.closest("[data-t]"); if (!t) { tip.style.display="none"; return; }
-    tip.textContent = t.dataset.t; tip.style.display="block"; tip.style.left=(e.clientX+12)+"px"; tip.style.top=(e.clientY+12)+"px"; });
-  map.addEventListener("mouseleave", () => tip.style.display = "none");
-  map.addEventListener("click", e => { const t = e.target.closest("[data-zone]"); if (t) selectZone(t.dataset.zone, true); });
+  document.getElementById("map").innerHTML = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${parts.join("")}</svg>`;
   renderLegendOnly();
+  const keep = userSelected && D.rain.zones.some(z => z.zone_id === selectedZone);
   const first = zonesByLivePriority()[0];
-  if (first) selectZone(first.z.zone_id);
+  if (keep) selectZone(selectedZone); else if (first) selectZone(first.z.zone_id);
 }
 function selectZone(id, fromClick){
+  selectedZone = id; if (fromClick) userSelected = true;
   document.querySelectorAll("#map path.sel").forEach(p => p.classList.remove("sel"));
   document.querySelectorAll(`#map path[data-zone="${CSS.escape(id)}"]`).forEach(p => p.classList.add("sel"));
   const z = D.rain.zones.find(r => r.zone_id === id);
@@ -405,10 +458,9 @@ function renderLegendOnly(){
 }
 
 /* ---------------- 2 · avisos ---------------- */
-function renderAvisos(){
-  const sel = document.getElementById("aviso-filter");
-  const draw = () => {
-    const mode = sel.value;
+function drawAvisos(){
+  {
+    const mode = document.getElementById("aviso-filter").value;
     let rows = D.avisos.slice();
     if (mode !== "all") rows = rows.filter(a => ["VIGENTE","FUTURO","DESCONOCIDO"].includes(a.now));
     if (mode === "rain") rows = rows.filter(a => a.rain_related !== false);
@@ -427,8 +479,7 @@ function renderAvisos(){
         <td>${a.official_url ? `<a href="${esc(a.official_url)}" target="_blank" rel="noopener">${a.official_url_kind==="INDECI_COEN_DAILY_MONITORING_TABLE"?"Tabla diaria INDECI":"Boletín INDECI"}</a>` : "—"}<br><span class="small muted">${a.revisions.length} revisión(es)</span></td></tr>`;
     }).join("");
     document.getElementById("avisos-table").innerHTML = head + (body || `<tr><td colspan="7" class="muted">Ningún aviso en esta selección${sourceState()!=="AL_DIA"?" (la fuente no está al día: puede haber avisos no capturados)":""}.</td></tr>`);
-  };
-  sel.addEventListener("change", draw); draw();
+  }
   const changes = [];
   D.avisos.forEach(a => a.revisions.filter(r => r.revision > 1).forEach(r => changes.push({a, r})));
   D.avisos.forEach(a => (a.status_history||[]).slice(1).forEach(s => changes.push({a, s})));
@@ -476,10 +527,6 @@ function renderRain(){
       ${z.v08_source_caveat ? `<p class="small muted">${esc(z.v08_source_caveat)}</p>` : ""}</div>`;
   });
   document.getElementById("rain-cards").innerHTML = cards.join("");
-  const tip = document.getElementById("tip");
-  document.getElementById("rain-cards").addEventListener("mousemove", e => { const t = e.target.closest("[data-t]"); if (!t) { tip.style.display="none"; return; }
-    tip.textContent = t.dataset.t; tip.style.display = "block"; tip.style.left = (e.clientX + 12) + "px"; tip.style.top = (e.clientY + 12) + "px"; });
-  document.getElementById("rain-cards").addEventListener("mouseleave", () => tip.style.display = "none");
 }
 
 /* ---------------- 4 · follow-up centre ---------------- */
@@ -505,7 +552,8 @@ function renderCenter(){
   }).join("");
   document.getElementById("center-table").innerHTML = head + body;
   const evHead = `<tr><th>Hora (Lima)</th><th>Evento</th><th>Aviso / documento</th><th>Detalle</th><th>Revisión humana</th></tr>`;
-  const evs = (D.events||[]).map(e => `<tr><td>${lima(e.observed_at_utc)}</td><td>${esc(e.event)}</td>
+  const history = [...eventHistory.values()].sort((a,b) => String(b.observed_at_utc||"").localeCompare(String(a.observed_at_utc||""))).slice(0, 300);
+  const evs = history.map(e => `<tr><td>${lima(e.observed_at_utc)}</td><td>${esc(e.event)}</td>
       <td class="small">${esc(e.aviso_key || "")}${e.post_link && e.post_link.startsWith("http") ? `<br><a href="${esc(e.post_link)}" target="_blank" rel="noopener">fuente</a>` : ""}${e.document_sha256 ? `<br><span class="muted">SHA-256 ${esc(e.document_sha256.slice(0,12))}…</span>` : ""}</td>
       <td class="small">${esc((e.changed_fields||e.detail||[]).join ? (e.changed_fields||e.detail||[]).join(", ") : "")}${e.to_status ? esc(` ${e.from_status} → ${e.to_status}`) : ""}</td>
       <td>${e.requires_human_review ? "Sí" : "No"}</td></tr>`).join("");

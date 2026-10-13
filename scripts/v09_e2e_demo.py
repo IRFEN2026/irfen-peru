@@ -32,6 +32,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+class QuietHandler(http.server.SimpleHTTPRequestHandler):
+    def log_message(self, *args):  # keep test and demo output clean
+        pass
 DEFAULT_ZONES = ("tumbes_province_context:ZARUMILLA", "piura_province_context:PIURA")
 
 
@@ -117,8 +122,7 @@ def markdown(report: dict) -> str:
 def screenshots(out: Path, at: datetime, zones: list[str]) -> list[str]:
     from playwright.sync_api import sync_playwright
 
-    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(ROOT / "site"))
-    handler.log_message = lambda *a, **k: None
+    handler = functools.partial(QuietHandler, directory=str(ROOT / "site"))
     srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     files = []
