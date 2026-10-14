@@ -1,0 +1,61 @@
+name: TEMPORARY probe ANA Rios_Quebradas_AAVI (Quitasol, Paracas) - fail-closed, removed after one run
+on:
+  push:
+    branches: [probe/pisco-quitasol-paracas-ana-20261014]
+    paths: [.github/workflows/tmp-probe-quitasol-paracas.yml]
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Execute the committed probe contracts exactly (no fallback by proximity or district), archive raw bytes + SHA-256
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, time, urllib.parse, urllib.request
+          from datetime import datetime, timezone
+          from pathlib import Path
+          cfg = json.loads(Path("config/phase2_south_coast_ica_arequipa_discovery_v0_1.json").read_text(encoding="utf-8"))
+          def contracts(o):
+              if isinstance(o, dict):
+                  if o.get("child_name") in ("Quebrada Quitasol", "Quebrada Paracas") and "endpoint" in o: yield o
+                  for v in o.values(): yield from contracts(v)
+              elif isinstance(o, list):
+                  for v in o: yield from contracts(v)
+          out = Path("data/phase2/source_archive/pisco_quitasol_paracas_ana_probe"); (out / "raw").mkdir(parents=True, exist_ok=True)
+          rec = {"purpose": "One-off execution of the committed PLANNED_FAIL_CLOSED_NOT_EXECUTED contracts. Raw responses only; nothing is accepted, promoted or mapped by this run.",
+                 "executed_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"), "queries": []}
+          for c in contracts(cfg):
+              variants = [("CONTRACT_EXACT", c["where"]), ("DIAGNOSTIC_LIKE_UPPER", "UPPER(NOMBRE_CA) LIKE '%" + c["where"].split("'")[1].upper() + "%'")]
+              for kind, where in variants:
+                  params = {"where": where, "outFields": ",".join(c["out_fields"]), "returnGeometry": "true", "outSR": c["out_sr"], "f": c["format"]}
+                  url = c["endpoint"] + "?" + urllib.parse.urlencode(params)
+                  q = {"child_name": c["child_name"], "kind": kind, "where": where, "url": url, "expected_parent_uh_code": c["expected_parent_uh_code"]}
+                  for i in range(3):
+                      try:
+                          with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "IRFEN-research-probe/0.1 (RESEARCH_ONLY)"}), timeout=60) as r:
+                              b = r.read(50_000_000)
+                          name = f"{c['child_name'].split()[-1].lower()}_{kind.lower()}.geojson"
+                          (out / "raw" / name).write_bytes(b)
+                          q.update(status="OK", http_status=200, raw=f"raw/{name}", sha256=hashlib.sha256(b).hexdigest(), bytes=len(b))
+                          try:
+                              d = json.loads(b)
+                              feats = d.get("features", [])
+                              q["feature_count"] = len(feats)
+                              q["features"] = [{k: (f.get("properties") or {}).get(k) for k in c["out_fields"]} | {"geometry_type": (f.get("geometry") or {}).get("type")} for f in feats[:50]]
+                              q["error"] = d.get("error")
+                          except Exception as e:
+                              q["parse_error"] = str(e)[:200]
+                          break
+                      except Exception as e:
+                          q.update(status=f"{type(e).__name__}: {str(e)[:160]}", attempt=i + 1); time.sleep(5)
+                  rec["queries"].append(q)
+          (out / "probe_record_v0_1.json").write_text(json.dumps(rec, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+          print(json.dumps([{k: q.get(k) for k in ("child_name", "kind", "status", "feature_count", "features")} for q in rec["queries"]], ensure_ascii=False, indent=1)[:6000])
+          PY
+      - run: |
+          git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/phase2/source_archive/pisco_quitasol_paracas_ana_probe
+          git commit -q -m "Probe record: ANA Rios_Quebradas_AAVI for Quitasol and Paracas (raw responses + SHA-256; nothing accepted)" && git push -q || echo nothing
