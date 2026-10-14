@@ -33,28 +33,37 @@ TARGETS = {
     # v0.8 closeout collectors (unchanged cooldowns)
     "igp-cendehua-probe.yml": 5400,
     "goes19-rrqpe-probe.yml": 5400,
-    "senamhi-nacara-probe.yml": 5400,
     "imerg-early-probe.yml": 5400,
     "shadow-validation.yml": 7200,
-    "official-outcome-evidence.yml": 25200,
-    "piura-source-status.yml": 90000,
-    "update-and-deploy.yml": 90000,
     "geos-forecast.yml": 90000,
     # v0.9 pilot (cadence 30 min; one hour without any run on main is already a gap)
     "v09-senamhi-avisos-capture.yml": 3600,
     "v09-rain-north.yml": 3600,  # dispatched only once the workflow exists on main
 }
 ACTIVE_STATUSES = ("queued", "in_progress", "waiting", "requested", "pending")
+# Never dispatched by the fallback (owner decision 13-10-2026: no automated direct queries to SENAMHI hosts).
+# These workflows request www.senamhi.gob.pe directly; the aviso channel stays INDECI/COEN.
+EXCLUDED_DIRECT_SENAMHI = ("senamhi-nacara-probe.yml", "official-outcome-evidence.yml", "piura-source-status.yml")
+# Never dispatched by the fallback: it publishes GitHub Pages (owner decision 13-10-2026: the continuity trial must
+# not publish Pages). Its own schedule is unchanged.
+EXCLUDED_PAGES_DEPLOY = ("update-and-deploy.yml",)
 
 
 def parse(ts: str) -> datetime:
     return datetime.fromisoformat(ts.replace("Z", "+00:00"))
 
 
-def decide(workflow: str, cooldown: int, exists_on_main: bool, runs: list[dict], now: datetime) -> tuple[bool, str]:
-    """Pure decision for one workflow. `runs` are its most recent runs on main (any event, any status)."""
+def decide(workflow: str, cooldown: int, exists_on_main: bool, runs: list[dict], now: datetime, state: str = "active") -> tuple[bool, str]:
+    """Pure decision for one workflow. `runs` are its most recent runs on main (any event, any status);
+    `state` is the workflow state in GitHub Actions (a disabled workflow is never dispatched)."""
+    if workflow in EXCLUDED_DIRECT_SENAMHI:
+        return False, "EXCLUDED: direct SENAMHI queries are not automated"
+    if workflow in EXCLUDED_PAGES_DEPLOY:
+        return False, "EXCLUDED: publishes GitHub Pages; never dispatched by the fallback"
     if not exists_on_main:
         return False, "NOT_ON_MAIN: workflow file not present on main; not dispatched"
+    if state != "active":
+        return False, f"DISABLED: workflow state is {state}; not dispatched"
     active = [r for r in runs if r.get("status") in ACTIVE_STATUSES]
     if active:
         return False, f"ACTIVE_RUN: {len(active)} run(s) {sorted({r['status'] for r in active})}; no duplicate dispatch"
@@ -91,6 +100,12 @@ class GitHub:
                     raise
         return list(seen.values())
 
+    def state(self, workflow: str) -> str:
+        try:
+            return self._call(f"/actions/workflows/{workflow}").get("state", "unknown")
+        except HTTPError as exc:
+            return "not_found" if exc.code == 404 else f"error_{exc.code}"
+
     def dispatch(self, workflow: str) -> None:
         self._call(f"/actions/workflows/{workflow}/dispatches", method="POST", body={"ref": "main"})
 
@@ -99,11 +114,14 @@ def run(api, now: datetime, dry_run: bool, workflows_dir: Path = WORKFLOWS_DIR) 
     report = []
     for workflow, cooldown in TARGETS.items():
         exists = (workflows_dir / workflow).is_file()
-        runs = api.runs(workflow) if exists else []
-        go, reason = decide(workflow, cooldown, exists, runs, now)
+        state = api.state(workflow) if exists else "not_on_main"
+        runs = api.runs(workflow) if exists and state == "active" else []
+        go, reason = decide(workflow, cooldown, exists, runs, now, state)
         if go and not dry_run:
             api.dispatch(workflow)
         report.append(dict(workflow=workflow, dispatched=go and not dry_run, would_dispatch=go, reason=reason))
+    for workflow in EXCLUDED_DIRECT_SENAMHI + EXCLUDED_PAGES_DEPLOY:  # listed for traceability; never queried nor dispatched
+        report.append(dict(workflow=workflow, dispatched=False, would_dispatch=False, reason=decide(workflow, 0, True, [], now)[1]))
     return report
 
 
@@ -119,6 +137,9 @@ def main(argv: list[str] | None = None) -> int:
     for row in report:
         print(f"{'DISPATCHED' if row['dispatched'] else ('WOULD_DISPATCH' if row['would_dispatch'] else 'SKIPPED'):14s} "
               f"{row['workflow']:34s} {row['reason']}")
+    for row in report:  # one annotation per dispatch: traceable through the Actions API without reading the logs
+        if row["dispatched"]:
+            print(f"::notice title=FALLBACK_DISPATCH::{row['workflow']} | {row['reason']}")
     print(f"::notice title=SCHEDULER_FALLBACK::dispatched={sum(r['dispatched'] for r in report)} "
           f"skipped={sum(not r['would_dispatch'] for r in report)} dry_run={args.dry_run}")
     return 0

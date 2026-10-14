@@ -111,6 +111,18 @@ class TickerFiles(unittest.TestCase):
             for forbidden in ("/merges", "/git/refs", "contents/", "/pulls", "force"):
                 self.assertNotIn(forbidden, text)
 
+    def test_no_secret_can_be_committed_and_guide_is_safe(self):
+        ignore = (TICKER / ".gitignore").read_text(encoding="utf-8")
+        for pattern in (".dev.vars", ".env", ".wrangler/"):
+            self.assertIn(pattern, ignore)
+        guide = (TICKER / "GUIA_PROPIETARIO.md").read_text(encoding="utf-8")
+        self.assertIn("Actions → Read and write", guide)
+        self.assertIn("secret put GITHUB_TOKEN", guide)
+        self.assertIn("--var ENABLED:true", guide)
+        self.assertNotRegex(guide + (TICKER / "README.md").read_text(encoding="utf-8") + (TICKER / "wrangler.toml").read_text(encoding="utf-8"),
+                            r"(ghp_|github_pat_)[A-Za-z0-9_]{10,}")  # no token-shaped string anywhere
+        self.assertIn("workers_dev = false", (TICKER / "wrangler.toml").read_text(encoding="utf-8"))
+
     def test_fallback_workflow_exists_and_keeps_minimal_permissions(self):
         wf = (ROOT / ".github/workflows/v08-scheduler-fallback.yml").read_text(encoding="utf-8")
         self.assertIn("workflow_dispatch:", wf)

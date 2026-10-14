@@ -30,9 +30,11 @@ no despacha). #372 ya está en `main`; el disparador **no se activa** hasta que 
 
 ## Instrucciones mínimas
 
+Guía paso a paso para el propietario: [`GUIA_PROPIETARIO.md`](GUIA_PROPIETARIO.md).
+
 ### 0 · Requisitos previos (comprobados por Claude el 13-10-2026)
 - [x] Ñácara (`senamhi-nacara-probe.yml`) deshabilitado en Actions (`disabled_manually`).
-- [ ] **PR #375 integrado en `main`.** Es obligatorio: el respaldo actual de `main` intentaría lanzar Ñácara
+- [x] **PR #375 integrado en `main` (7e678dfd, 14-10-2026).** Era obligatorio: el respaldo actual de `main` intentaría lanzar Ñácara
       (ya deshabilitado) y ese intento hace fallar el barrido. #375 excluye además los workflows que consultan SENAMHI
       directamente y la publicación en Pages, salta los workflows deshabilitados y anota cada disparo.
 - [x] Alcance del respaldo tras #375: solo colectores con `contents: write` sobre `main` y el secreto

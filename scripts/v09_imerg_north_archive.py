@@ -22,6 +22,7 @@ import json
 import os
 import sys
 import tempfile
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -31,7 +32,11 @@ ZONES = ROOT / "config/v09_north_surveillance_zones_v0_1.json"
 BOUNDARIES_LATEST = ROOT / "data/v09/admin_boundaries/latest.json"
 OUT = ROOT / "data/v09/rain/imerg_early_north_v0_1.json"
 WINDOW_HOURS = 30
-MAX_DOWNLOADS_PER_RUN = 16
+# The whole window fits in one run (60 half-hours; 16 granules took 26 s on the runner). With 16, runs more than 8 h
+# apart left the oldest granules behind for good (newest-first starvation): 24 h windows stayed NO_DISPONIBLE.
+MAX_DOWNLOADS_PER_RUN = 60
+CONTACT_ATTEMPTS = 3          # bounded retries of the Earthdata contact (preflight, login, search)
+CONTACT_BACKOFF_S = (20, 60)  # waits between attempts
 RETAIN_HOURS = 96
 DAILY_HISTORY_MAX = 400
 GUARDS = dict(deployment_status="RESEARCH_ONLY", test_mode="TEST_ONLY", production_use=False, production_ready=False,
@@ -74,6 +79,44 @@ def empty_archive() -> dict:
                 targets={}, granules=[], status=dict(state="NEVER_CHECKED"))
 
 
+def contact_with_retries(probe, earthaccess, now: datetime, sleep=time.sleep):
+    """Earthdata preflight + login + search with bounded retries. Returns (granules, attempts); raises the last
+    error after CONTACT_ATTEMPTS failures. Every attempt is recorded for traceability."""
+    attempts, last = [], None
+    for i in range(CONTACT_ATTEMPTS):
+        try:
+            probe.earthdata_preflight()
+            earthaccess.login(strategy="environment")
+            found = earthaccess.search_data(short_name="GPM_3IMERGHHE", version="07",
+                                            temporal=((now - timedelta(hours=WINDOW_HOURS)).isoformat(), now.isoformat()), count=80)
+            attempts.append(dict(attempt=i + 1, ok=True))
+            return found, attempts
+        except Exception as exc:  # noqa: BLE001 - retried, then recorded as a source failure
+            last = exc
+            attempts.append(dict(attempt=i + 1, ok=False, error=f"{type(exc).__name__}: {str(exc)[:160]}"))
+            if i + 1 < CONTACT_ATTEMPTS:
+                sleep(CONTACT_BACKOFF_S[min(i, len(CONTACT_BACKOFF_S) - 1)])
+    exc = RuntimeError(attempts[-1]["error"])
+    exc.attempts = attempts
+    raise exc from last
+
+
+def missing_half_hours(catalog_times: list[datetime], archived: set[datetime], now: datetime) -> list[dict]:
+    """Half-hours of the last 24 h (up to the newest catalog granule) that are not archived, with the reason:
+    NOT_IN_CATALOG (NASA has not published it) or IN_CATALOG_NOT_ARCHIVED (download pending or failed).
+    A missing half-hour is never zero rain."""
+    if not catalog_times:
+        return []
+    newest = max(catalog_times)
+    in_catalog = set(catalog_times)
+    out, t = [], newest - timedelta(minutes=30 * 47)
+    while t <= newest:
+        if t not in archived:
+            out.append(dict(time_utc=t.isoformat(), reason="IN_CATALOG_NOT_ARCHIVED" if t in in_catalog else "NOT_IN_CATALOG"))
+        t += timedelta(minutes=30)
+    return out
+
+
 def main() -> int:
     if not os.getenv("EARTHDATA_TOKEN"):
         print("::warning::EARTHDATA_TOKEN missing: nothing captured (not a zero-rain result)")
@@ -88,12 +131,10 @@ def main() -> int:
     archive["targets"] = {t["id"]: dict(name=t["name"], kind=t["kind"], geometry_sha256=t["geometry_sha256"]) for t in targets}
     have = {g["granule"] for g in archive["granules"] if set(archive["targets"]) <= set(g["targets"])}
     try:
-        probe.earthdata_preflight()
-        earthaccess.login(strategy="environment")
-        found = earthaccess.search_data(short_name="GPM_3IMERGHHE", version="07",
-                                        temporal=((now - timedelta(hours=WINDOW_HOURS)).isoformat(), now.isoformat()), count=80)
+        found, attempts = contact_with_retries(probe, earthaccess, now)
     except Exception as exc:  # noqa: BLE001 - recorded as a source failure, never as zero rain
-        state = dict(state="SOURCE_UNREACHABLE", error=f"{type(exc).__name__}: {str(exc)[:200]}")
+        state = dict(state="SOURCE_UNREACHABLE", error=f"{type(exc).__name__}: {str(exc)[:200]}",
+                     contact_attempts=getattr(exc, "attempts", []))
         if archive.get("status", {}).get("state") != state["state"]:
             archive["status"] = dict(state, since_utc=now.isoformat())
             OUT.parent.mkdir(parents=True, exist_ok=True)
@@ -105,7 +146,7 @@ def main() -> int:
     selected = sorted(missing, key=lambda r: r[0], reverse=True)[:MAX_DOWNLOADS_PER_RUN]  # newest first, bounded
     new_rows = []
     with tempfile.TemporaryDirectory(prefix="irfen_v09_imerg_") as td:
-        paths = earthaccess.download([r[2] for r in selected], local_path=td, threads=2, show_progress=False) if selected else []
+        paths = earthaccess.download([r[2] for r in selected], local_path=td, threads=4, show_progress=False) if selected else []
         by_name = {Path(p).name: p for p in paths}
         for ts, name, _ in selected:
             path = by_name.get(name)
@@ -129,14 +170,17 @@ def main() -> int:
     horizon = (now - timedelta(hours=RETAIN_HOURS)).isoformat()
     archive["granules"] = sorted((g for g in by_name.values() if g["time_utc"] >= horizon), key=lambda g: g["time_utc"])
     latest = archive["granules"][-1]["time_utc"] if archive["granules"] else None
+    archived = {datetime.fromisoformat(g["time_utc"]) for g in archive["granules"]}
+    gaps = missing_half_hours([r[0] for r in indexed], archived, now)
     archive["status"] = dict(state="AVAILABLE" if latest else "NO_GRANULES", latest_granule_start_utc=latest,
-                             catalog_granules_in_window=len(indexed), missing_in_window_after_run=max(0, len(missing) - len(new_rows)))
+                             catalog_granules_in_window=len(indexed), missing_in_window_after_run=max(0, len(missing) - len(new_rows)),
+                             contact_attempts=attempts, missing_half_hours_24h=gaps)
     if json.dumps(archive, sort_keys=True) != before:
         archive["status"]["written_at_utc"] = now.isoformat()
         OUT.parent.mkdir(parents=True, exist_ok=True)
         OUT.write_text(json.dumps(archive, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(f"::notice title=V09_IMERG_NORTH::new={len(new_rows)} missing_after={archive['status']['missing_in_window_after_run']} "
-          f"latest={latest} targets={len(targets)}")
+          f"latest={latest} targets={len(targets)} attempts={len(attempts)} gaps_24h={[g['time_utc'][11:16] + ':' + g['reason'] for g in gaps]}")
     return 0
 
 
