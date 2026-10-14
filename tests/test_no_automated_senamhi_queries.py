@@ -113,6 +113,42 @@ class Workflows(unittest.TestCase):
             self.assertTrue(re.search(r"senamhi_direct_access_enabled\(\)", code))
 
 
+class IndirectRedirects(unittest.TestCase):
+    """An allowed source (INDECI, gob.pe, IGP, GORE Piura) that redirected to SENAMHI must not be followed."""
+
+    def test_urllib_redirect_to_senamhi_is_refused(self):
+        from urllib.error import URLError
+        from urllib.request import Request
+        h = OUTCOME.NoSenamhiRedirect()
+        req = Request("https://portal.indeci.gob.pe/emergencias/")
+        with mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("IRFEN_SENAMHI_DIRECT_ACCESS", None)
+            for target in ("https://www.senamhi.gob.pe/x", "http://senamhi.gob.pe/", "https://idesep.SENAMHI.gob.pe/a"):
+                with self.assertRaises(URLError):
+                    h.redirect_request(req, None, 302, "Found", {}, target)
+            self.assertIsNotNone(h.redirect_request(req, None, 302, "Found", {}, "https://portal.indeci.gob.pe/emergencias/page/2/"))
+            self.assertFalse(OUTCOME.is_senamhi_host("https://senamhi.gob.pe.example.org/"))
+
+    def test_requests_hook_refuses_senamhi_redirect(self):
+        class R:
+            is_redirect = True
+            url = "https://servicios.regionpiura.gob.pe/x"
+            def __init__(self, loc): self.headers = {"Location": loc}
+        with mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("IRFEN_SENAMHI_DIRECT_ACCESS", None)
+            with self.assertRaises(PIURA.requests.exceptions.InvalidURL):
+                PIURA.refuse_senamhi_redirect(R("https://www.senamhi.gob.pe/main.php"))
+            self.assertIsNotNone(PIURA.refuse_senamhi_redirect(R("/otra-ruta")))
+
+    def test_every_http_call_goes_through_a_guard(self):
+        code = (ROOT / "scripts/archive_official_outcome_sources.py").read_text(encoding="utf-8")
+        self.assertNotIn("from urllib.request import Request, urlopen", code)  # urlopen is the guarded opener
+        piura = (ROOT / "scripts/fetch_piura_source_status.py").read_text(encoding="utf-8")
+        ungated = piura[:piura.index("if not senamhi_direct_access_enabled():", piura.index("def main"))]
+        for call in re.findall(r"requests\.get\([^\n]*", ungated[ungated.index("def main"):]):
+            self.assertIn("refuse_senamhi_redirect", call)
+
+
 class EveryWorkflowThatCanReachSenamhi(unittest.TestCase):
     """A workflow that runs a script naming a SENAMHI host either goes through the policy gate (default disabled)
     or can only be started by hand (workflow_dispatch). Push triggers were removed on 14-10-2026: a push to main

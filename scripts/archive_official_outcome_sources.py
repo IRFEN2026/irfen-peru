@@ -16,7 +16,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
-from urllib.request import Request, urlopen
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 import argparse
 import json
 import os
@@ -61,6 +61,28 @@ SOURCES = (
 # IRFEN_SENAMHI_DIRECT_ACCESS=enabled is set explicitly (never in the workflows); otherwise each one is recorded as
 # NOT_QUERIED_POLICY, unknown and never zero. INDECI/COEN and the supplemental sources are unaffected.
 SENAMHI_DIRECT_SOURCE_IDS = frozenset({"senamhi_activation_quebradas", "senamhi_piura_24h"})
+
+
+def is_senamhi_host(url: str) -> bool:
+    host = (urlsplit(url).hostname or "").lower()
+    return host == "senamhi.gob.pe" or host.endswith(".senamhi.gob.pe")
+
+
+class NoSenamhiRedirect(HTTPRedirectHandler):
+    """An allowed source that redirects to a SENAMHI host is refused before the redirected request is sent
+    (unless direct access is explicitly enabled), so no automated query reaches SENAMHI indirectly."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if is_senamhi_host(newurl) and not senamhi_direct_access_enabled():
+            raise URLError(f"redirect to a SENAMHI host refused by policy: {newurl}")
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_OPENER = build_opener(NoSenamhiRedirect)
+
+
+def urlopen(request, timeout=35):
+    return _OPENER.open(request, timeout=timeout)
 
 
 def senamhi_direct_access_enabled() -> bool:

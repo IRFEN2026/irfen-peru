@@ -152,6 +152,17 @@ def inspect_bulletin(entry, headers):
     return result
 
 
+def refuse_senamhi_redirect(response, *args, **kwargs):
+    """requests response hook: refuse a redirect to a SENAMHI host before it is followed (policy 13-10-2026)."""
+    from urllib.parse import urljoin, urlsplit
+    location = response.headers.get('Location') if response.is_redirect else None
+    if location and not senamhi_direct_access_enabled():
+        host = (urlsplit(urljoin(response.url, location)).hostname or '').lower()
+        if host == 'senamhi.gob.pe' or host.endswith('.senamhi.gob.pe'):
+            raise requests.exceptions.InvalidURL(f'redirect to a SENAMHI host refused by policy: {location}')
+    return response
+
+
 def senamhi_direct_access_enabled():
     """Owner decision 13-10-2026: no automated direct queries to SENAMHI hosts unless explicitly enabled."""
     return os.environ.get('IRFEN_SENAMHI_DIRECT_ACCESS', 'disabled') == 'enabled'
@@ -237,7 +248,7 @@ def main():
     }
 
     try:
-        r=requests.get(url,timeout=35,headers={**headers,'Accept':'application/json,*/*'})
+        r=requests.get(url,timeout=35,headers={**headers,'Accept':'application/json,*/*'},hooks={'response':refuse_senamhi_redirect})
         r.raise_for_status(); obj=r.json(); items=obj if isinstance(obj,list) else obj.get('data',[]) if isinstance(obj,dict) else []
         valid=[x for x in items if isinstance(x,dict) and x.get('fkey')]
         valid.sort(key=lambda x:str(x.get('fkey')),reverse=True)
