@@ -1,4 +1,4 @@
-"""IRFEN v0.9 ECMWF ENS por provincia y su verificación en sombra: pruebas sin red.
+"""IRFEN v0.9 ECMWF ENS por provincia, recolector IMERG Late y evaluación en sombra: pruebas sin red.
 
 Las geometrías son las provincias INEI ya archivadas en el repositorio; el ensamble es sintético y conocido, de modo
 que cada probabilidad esperada se calcula a mano. La descarga y la lectura GRIB solo corren en el runner.
@@ -24,7 +24,8 @@ def load_module(name, rel):
 
 
 E = load_module("v09_ecmwf_ens_north", "scripts/v09_ecmwf_ens_north.py")
-V = load_module("v09_ecmwf_ens_verify", "scripts/v09_ecmwf_ens_verify.py")
+V = load_module("v09_fc_evaluate", "scripts/v09_fc_evaluate.py")
+I = load_module("v09_imerg_late_province_daily", "scripts/v09_imerg_late_province_daily.py")
 
 SQUARE = {"type": "Polygon", "coordinates": [[[0, 0], [4, 0], [4, 4], [0, 4], [0, 0]],
                                              [[1, 1], [3, 1], [3, 3], [1, 3], [1, 1]]]}
@@ -197,6 +198,93 @@ class Verification(unittest.TestCase):
         self.assertEqual({r["kind"] for r in results}, {"max", "mean"})
         self.assertFalse(any(r["enough_sample"] for r in results))
         self.assertEqual(len(results[0]["contingency"]), len(V.ALERT_PROBS))
+
+
+class ImergCollector(unittest.TestCase):
+    def test_rain_day_is_07_to_07_peru(self):
+        slots = I.rain_day_slots(datetime(2026, 10, 15).date())
+        self.assertEqual(len(slots), 48)
+        self.assertEqual(slots[0].isoformat(), "2026-10-14T12:00:00+00:00")
+        self.assertEqual(slots[-1].isoformat(), "2026-10-15T11:30:00+00:00")
+        self.assertTrue(all(I.rain_day_of(s) == datetime(2026, 10, 15).date() for s in slots))
+        self.assertEqual(I.rain_day_of(datetime(2026, 10, 15, 12, tzinfo=timezone.utc)).isoformat(), "2026-10-16")
+
+    def test_candidate_days_only_closed_days(self):
+        now = datetime(2026, 10, 15, 11, 59, tzinfo=timezone.utc)  # el día 15 aún no cierra
+        self.assertEqual(I.candidate_days(now, 3)[-1].isoformat(), "2026-10-14")
+        now = datetime(2026, 10, 15, 12, 0, tzinfo=timezone.utc)
+        self.assertEqual(I.candidate_days(now, 3)[-1].isoformat(), "2026-10-15")
+
+    def test_area_regrid_conserves_uniform_and_weights_partial_cells(self):
+        src_lat = np.round(np.arange(-3.05, -4.0, -0.1), 2)
+        src_lon = np.round(np.arange(-81.05, -80.0, 0.1), 2)
+        dst_lat, dst_lon = np.array([-3.25, -3.5]), np.array([-80.75, -80.5])
+        uniform = np.full((src_lat.size, src_lon.size), 7.0)
+        np.testing.assert_allclose(I.regrid_area_mean(uniform, src_lat, src_lon, dst_lat, dst_lon), 7.0)
+        w = I.overlap_matrix(np.array([-3.15, -3.25, -3.35]), 0.1, np.array([-3.25]), 0.25)
+        np.testing.assert_allclose(w, [[0.3, 0.4, 0.3]])  # bordes: 0,075° de 0,25°; los pesos suman 1
+        holes = uniform.copy()
+        holes[:, :] = np.nan
+        self.assertTrue(np.isnan(I.regrid_area_mean(holes, src_lat, src_lon, dst_lat, dst_lon)).all())
+
+    def test_accumulator_counts_each_half_hour_once_and_marks_gaps(self):
+        lat, lon = np.array([-3.05, -3.15]), np.array([-80.05])
+        acc = I.DayAccumulator(lat, lon)
+        rate = np.array([[2.0], [np.nan]])
+        for k in range(48):
+            self.assertTrue(acc.add(f"slot{k}", lat, lon, rate))
+        self.assertFalse(acc.add("slot0", lat, lon, rate))  # misma media hora: no suma dos veces
+        self.assertTrue(acc.complete)
+        f = acc.field()
+        self.assertAlmostEqual(f[0, 0], 48.0)  # 2 mm/h × 24 h
+        self.assertTrue(np.isnan(f[1, 0]))     # celda sin datos: faltante, nunca cero
+        with tempfile.TemporaryDirectory() as tmp:
+            acc.save(Path(tmp) / "d.npz")
+            back = I.DayAccumulator.load(Path(tmp) / "d.npz")
+        self.assertEqual(len(back.granules), 48)
+        np.testing.assert_allclose(back.field()[0, 0], 48.0, rtol=1e-6)
+
+    def test_province_rows_use_forecast_support_and_native_max(self):
+        provs = provinces()
+        lat = np.round(np.arange(-3.05, -9.6, -0.1), 2)
+        lon = np.round(np.arange(-81.65, -76.6, 0.1), 2)
+        field = np.zeros((lat.size, lon.size))
+        r = int(np.argmin(abs(lat - (-5.15))))
+        c = int(np.argmin(abs(lon - (-80.65))))
+        field[r, c] = 100.0  # un chubasco de 0,1° en la provincia de Piura
+        rows = {x["idprov"]: x for x in I.province_rows(datetime(2026, 10, 15).date(), field, lat, lon, provs)}
+        piura = rows["2001"]
+        self.assertEqual(float(piura["lluvia_max_nativo_mm"]), 100.0)
+        self.assertLess(float(piura["lluvia_max_mm"]), 100.0 * 0.25)  # en 0,25° el chubasco se diluye
+        self.assertGreater(float(piura["lluvia_max_mm"]), 0.0)
+        incomplete = field.copy()
+        incomplete[r, c] = np.nan
+        rows = {x["idprov"]: x for x in I.province_rows(datetime(2026, 10, 15).date(), incomplete, lat, lon, provs)}
+        self.assertEqual(rows["2001"]["lluvia_max_mm"], "")
+
+
+class EvaluationExtras(unittest.TestCase):
+    def test_brier_decomposition_and_auc(self):
+        probs = np.array([0.9, 0.9, 0.1, 0.1])
+        events = np.array([True, True, False, False])
+        d = V.brier_decomposition(probs, events)
+        self.assertAlmostEqual(d["uncertainty"], 0.25)
+        self.assertAlmostEqual(d["resolution"], 0.25)
+        self.assertAlmostEqual(d["reliability"], 0.01)
+        self.assertEqual(V.roc_auc(probs, events), 1.0)
+        self.assertEqual(V.roc_auc(np.array([0.5, 0.5]), np.array([True, False])), 0.5)
+        self.assertIsNone(V.roc_auc(probs, np.zeros(4, bool)))
+
+    def test_forecast_archived_after_window_is_excluded(self):
+        run = dict(thresholds_mm=[10.0], archived_at_utc="2026-10-16T13:00:00+00:00",
+                   days=[dict(day=1, valid_date_peru="2026-10-15", end_utc="2026-10-15T12:00:00+00:00"),
+                         dict(day=2, valid_date_peru="2026-10-16", end_utc="2026-10-16T12:00:00+00:00"),
+                         dict(day=3, valid_date_peru="2026-10-17", end_utc="2026-10-17T12:00:00+00:00")],
+                   provinces={"2001": dict(days=[dict(day=k, p_max={"10": 0.5}, p_mean={"10": 0.1}) for k in (1, 2, 3)])})
+        obs = {(f"2026-10-1{k}", "2001"): dict(max=20.0, mean=1.0) for k in (5, 6, 7)}
+        self.assertEqual(V.pairs([run], obs, 1, 10.0, "max")[0].size, 0)
+        self.assertEqual(V.pairs([run], obs, 2, 10.0, "max")[0].size, 0)
+        self.assertEqual(V.pairs([run], obs, 3, 10.0, "max")[0].size, 1)
 
 
 if __name__ == "__main__":

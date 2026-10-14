@@ -29,6 +29,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import sys
 import unicodedata
 from datetime import datetime, timedelta, timezone
@@ -37,7 +38,9 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT_DIR = ROOT / "data/v09/forecast"
+# Los resultados pueden vivir fuera del árbol de código (rama de datos aislada): IRFEN_FC_DATA apunta a esa copia.
+DATA_ROOT = Path(os.environ.get("IRFEN_FC_DATA") or ROOT)
+OUT_DIR = DATA_ROOT / "data/v09/forecast"
 LATEST_OUT = OUT_DIR / "ecmwf_ens_provinces_north_v0_1.json"
 LEDGER_OUT = OUT_DIR / "ecmwf_ens_provinces_ledger_v0_1.jsonl"
 BOUNDARIES_POINTER = ROOT / "data/v09/admin_boundaries/latest.json"
@@ -222,6 +225,17 @@ def subset_bbox(lats: np.ndarray, lons: np.ndarray, bbox: dict = BBOX):
     return ri, ci, lats[ri], lons[ci]
 
 
+def ens_grid(bbox: dict = BBOX, step: float = 0.25):
+    """Grilla canónica de ECMWF Open Data (0,25°, centros en múltiplos de 0,25°) recortada a la caja del norte.
+
+    Las observaciones se llevan a esta misma grilla para verificar con el mismo soporte espacial que el pronóstico.
+    """
+    lats = np.round(np.arange(90.0, -90.0 - 1e-9, -step), 4)
+    lons = np.round(np.arange(-180.0, 180.0 - 1e-9, step), 4)
+    _, _, la, lo = subset_bbox(lats, lons, bbox)
+    return la, lo
+
+
 def build_run_record(run_utc: datetime, tp_m: np.ndarray, steps_h, lats, lons, provinces: list[dict],
                      n_days: int = N_DAYS, thresholds=THRESHOLDS_MM) -> dict:
     """Registro completo de una corrida. ``tp_m`` [miembro, paso, lat, lon] ya recortado a ``lats``/``lons``."""
@@ -390,6 +404,9 @@ def main(argv=None) -> int:
             return 0
         record = build_run_record(run, tp_m, steps, lats, lons, provinces)
         record["grib_tp_messages_by_type"] = getattr(read_grib, "last_type_counts", None)
+        record["archived_at_utc"] = datetime.now(timezone.utc).isoformat()
+        cla, clo = ens_grid()
+        record["grid_matches_canonical"] = bool(np.array_equal(np.round(lats, 4), cla) and np.array_equal(np.round(lons, 4), clo))
     except Exception as exc:  # noqa: BLE001 - la falla se archiva como UNAVAILABLE, nunca como lluvia cero
         msg = f"{type(exc).__name__}: {str(exc)[:400]}"
         status = dict(state="UNAVAILABLE", error=msg, checked_at_utc=datetime.now(timezone.utc).isoformat(),

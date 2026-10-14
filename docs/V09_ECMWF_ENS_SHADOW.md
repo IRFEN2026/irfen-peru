@@ -19,12 +19,14 @@ de Tumbes, Piura, Lambayeque y La Libertad:
 Los días son ventanas de 24 h que cierran a las 12 UTC (07:00 en Perú), el cierre del día pluviométrico de las
 estaciones de SENAMHI. `valid_date_peru` es la fecha de ese cierre.
 
-Archivos (en `data/v09/forecast/`):
+Archivos (en `data/v09/forecast/` de la rama de resultados `v09/forecast-data`; ver
+`docs/V09_FORECAST_AUTOMATION.md`):
 
 - `ecmwf_ens_provinces_north_v0_1.json`: última corrida, con las guardas `TEST_ONLY` y el estado (`AVAILABLE` /
   `UNAVAILABLE`). Una falla de descarga nunca se registra como lluvia cero.
 - `ecmwf_ens_provinces_ledger_v0_1.jsonl`: una línea por corrida, solo agregado; es la base de la verificación.
-- `ecmwf_ens_verification_v0_1.json`: puntajes, cuando existe el archivo de observaciones.
+- `evaluacion_v0_1.json` y `evaluacion_resumen.md`: puntajes de `scripts/v09_fc_evaluate.py` contra IMERG Late
+  (`docs/V09_FORECAST_CORRESPONDENCE.md`) y, cuando exista su captura, estaciones SENAMHI.
 
 ## Observaciones para verificar
 
@@ -41,7 +43,8 @@ El máximo de pocas estaciones subestima el de la provincia, por lo que la detec
 ## Métricas
 
 Por día de anticipación (1–3), umbral y definición (`max`/`mean`): Brier y BSS frente a la frecuencia base de la
-muestra, POD/FAR/CSI para probabilidades de alerta 0,1 a 0,7 y tabla de fiabilidad. Con menos de 30 pares o sin
+muestra, descomposición de Brier (fiabilidad, resolución, incertidumbre), área ROC, POD/FAR/CSI para probabilidades
+de alerta 0,1 a 0,7 y tabla de fiabilidad. Con menos de 30 pares o sin
 eventos, `enough_sample` es `false` y los puntajes son solo indicativos.
 
 ## Lo que esta fase no hace

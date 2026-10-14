@@ -1,0 +1,30 @@
+name: IRFEN v0.9 - Disparador del motor de pronóstico (TEST_ONLY)
+
+# Único archivo destinado a main. No descarga código, no lee ni escribe el repositorio: solo pide a GitHub que ejecute
+# el workflow del motor en su propia rama (v09/forecast-engine), que escribe únicamente en v09/forecast-data.
+# Interruptor sin commit: la variable de repositorio IRFEN_FORECAST_ENGINE_ENABLED debe valer exactamente "true".
+# Reversión: borrar este archivo (o poner la variable en "false"); ver docs/V09_FORECAST_AUTOMATION.md.
+
+on:
+  schedule:
+    - cron: "40 8,20 * * *"   # tras la publicación abierta de las corridas ECMWF 00 y 12 UTC; IMERG Late del día anterior ya existe
+  workflow_dispatch:
+
+permissions:
+  actions: write
+
+concurrency:
+  group: v09-forecast-trigger
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    if: vars.IRFEN_FORECAST_ENGINE_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Dispatch the engine on its own branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh workflow run v09-forecast-engine.yml --ref v09/forecast-engine
