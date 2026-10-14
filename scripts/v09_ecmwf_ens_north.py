@@ -309,8 +309,20 @@ def latest_run_and_download(target: Path, sources=SOURCES, n_days: int = N_DAYS,
             client = Client(source=source)
             this_run = run or client.latest(stream="enfo", type="pf", param="tp", step=96)
             steps = sorted({s for w in day_windows(this_run.hour, n_days) for s in w if s > 0})
-            client.retrieve(date=this_run.strftime("%Y%m%d"), time=this_run.hour, stream="enfo", type=["cf", "pf"],
-                            param="tp", step=steps, target=str(target))
+            request = dict(date=this_run.strftime("%Y%m%d"), time=this_run.hour, stream="enfo", param="tp", step=steps)
+            # Pedir type=["cf","pf"] juntos devolvió solo los 50 perturbados en todas las corridas archivadas
+            # (grib_tp_messages_by_type = {"pf": ...}); el control se pide aparte y se concatena (GRIB es concatenable).
+            client.retrieve(type="pf", target=str(target), **request)
+            control = Path(f"{target}.cf")
+            control.unlink(missing_ok=True)
+            try:
+                client.retrieve(type="cf", target=str(control), **request)
+                with open(target, "ab") as out:
+                    out.write(control.read_bytes())
+            except Exception as exc:  # noqa: BLE001 - sin control quedan 50 miembros; se registra, no se inventa
+                print(f"::warning title=V09_ECMWF_ENS::control (cf) no disponible en {source}: {type(exc).__name__}")
+            finally:
+                control.unlink(missing_ok=True)
             return this_run.replace(tzinfo=timezone.utc), source
         except Exception as exc:  # noqa: BLE001 - se prueba la siguiente réplica y se reporta todo
             errors.append(f"{source}: {type(exc).__name__}: {str(exc)[:160]}")

@@ -44,8 +44,8 @@ El máximo de pocas estaciones subestima el de la provincia, por lo que la detec
 
 Por día de anticipación (1–3), umbral y definición (`max`/`mean`): Brier y BSS frente a la frecuencia base de la
 muestra, descomposición de Brier (fiabilidad, resolución, incertidumbre), área ROC, POD/FAR/CSI para probabilidades
-de alerta 0,1 a 0,7 y tabla de fiabilidad. Con menos de 30 pares o sin
-eventos, `enough_sample` es `false` y los puntajes son solo indicativos.
+de alerta 0,1 a 0,7 y tabla de fiabilidad. Con menos de 30 pares, menos de 10
+eventos o menos de 10 días sin evento, `enough_sample` es `false` y los puntajes son solo indicativos.
 
 ## Lo que esta fase no hace
 

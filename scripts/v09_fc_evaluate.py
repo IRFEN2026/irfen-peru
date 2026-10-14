@@ -62,6 +62,9 @@ OBSERVATIONS = {
 ALERT_PROBS = (0.1, 0.3, 0.5, 0.7)
 RELIABILITY_EDGES = (0.0, 0.05, 0.2, 0.4, 0.6, 0.8, 1.0)
 MIN_PAIRS_FOR_SCORES = 30
+# Con 3 eventos la primera evaluación salió «suficiente»: los puntajes de detección y calibración necesitan
+# al menos 10 eventos y 10 no-eventos para no depender de un par de días.
+MIN_EVENTS_FOR_SCORES = 10
 GUARDS = dict(deployment_status="RESEARCH_ONLY", test_mode="TEST_ONLY", production_use=False, production_ready=False,
               operational_alerting_enabled=False, activation_gate="BLOCKED", missing_data_rule="UNKNOWN_NOT_LOW_RISK",
               decision_thresholds=None, hydraulic_factors=None)
@@ -204,7 +207,8 @@ def reliability(probs: np.ndarray, events: np.ndarray, edges=RELIABILITY_EDGES) 
 
 def score_block(probs: np.ndarray, events: np.ndarray) -> dict:
     row = dict(pairs=int(probs.size), events=int(events.sum()),
-               enough_sample=bool(probs.size >= MIN_PAIRS_FOR_SCORES and 0 < events.sum() < probs.size))
+               enough_sample=bool(probs.size >= MIN_PAIRS_FOR_SCORES and events.sum() >= MIN_EVENTS_FOR_SCORES
+                                  and probs.size - events.sum() >= MIN_EVENTS_FOR_SCORES))
     row.update(brier(probs, events))
     row["brier_decomposition"] = brier_decomposition(probs, events)
     row["roc_auc"] = roc_auc(probs, events)
@@ -274,7 +278,7 @@ def main(argv=None) -> int:
                 runs_backfill=sum(1 for r in ledger if r.get("backfill")),
                 results=verify(ledger, obs, kinds, "realtime") + verify(ledger, obs, kinds, "backfill"))
     doc = dict(schema_version="0.1", archive_id="irfen-v09-forecast-evaluation:v0.1", **GUARDS,
-               map_publishable=False, min_pairs_for_scores=MIN_PAIRS_FOR_SCORES,
+               map_publishable=False, min_pairs_for_scores=MIN_PAIRS_FOR_SCORES, min_events_for_scores=MIN_EVENTS_FOR_SCORES,
                note="Muestra de la temporada en curso; con menos pares que el mínimo los puntajes son solo indicativos.",
                notes=sorted(set(notes)), evaluations=evaluations, generated_at_utc=datetime.now(timezone.utc).isoformat())
     args.out.parent.mkdir(parents=True, exist_ok=True)

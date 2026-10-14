@@ -275,6 +275,16 @@ class EvaluationExtras(unittest.TestCase):
         self.assertEqual(V.roc_auc(np.array([0.5, 0.5]), np.array([True, False])), 0.5)
         self.assertIsNone(V.roc_auc(probs, np.zeros(4, bool)))
 
+    def test_three_events_are_not_a_sufficient_sample(self):
+        probs = np.linspace(0, 1, 104)
+        few = np.zeros(104, bool)
+        few[-3:] = True  # el caso real del 14-10-2026: 104 pares, 3 eventos
+        self.assertFalse(V.score_block(probs, few)["enough_sample"])
+        enough = np.zeros(104, bool)
+        enough[-12:] = True
+        self.assertTrue(V.score_block(probs, enough)["enough_sample"])
+        self.assertFalse(V.score_block(probs, ~np.zeros(104, bool))["enough_sample"])  # sin días secos tampoco
+
     def test_backfill_runs_are_scored_apart_from_realtime(self):
         base = dict(thresholds_mm=[10.0], days=[dict(day=1, valid_date_peru="2026-10-10",
                                                       end_utc="2026-10-10T12:00:00+00:00")],
