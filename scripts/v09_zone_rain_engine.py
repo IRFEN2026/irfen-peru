@@ -74,8 +74,10 @@ REVIEW_PRIORITIES = [  # IRFEN internal vocabulary (never a SENAMHI level, never
 RANK = {p["code"]: i for i, p in enumerate(REVIEW_PRIORITIES)}
 # Data-freshness parameters (quality of the evidence, not decision thresholds). IMERG Early: nominal latency ~4 h,
 # observed 5-6 h on the north archive, so 12 h tolerates one or two missed runs. GOES-19 full disk: a scan every
-# 10 min, so 90 min means several missed runs. GEOS-CF: one forecast cycle a day, observed ~28 h old before the next.
-FRESHNESS = dict(imerg_stale_after_h=12, goes_stale_after_min=90, geos_max_cycle_age_h=48)
+# 10 min, so 90 min means several missed runs. GEOS-CF: one cycle a day (first hour 09:30 UTC) that the public store
+# publishes 21.6-28.5 h later (measured 12-13 Oct 2026), so the newest cycle reaches 45.6-52.5 h before the next one
+# arrives: 54 h = 24 h cadence + 28.5 h maximum observed lag, rounded up. Revisit with more cycles.
+FRESHNESS = dict(imerg_stale_after_h=12, goes_stale_after_min=90, geos_max_cycle_age_h=54)
 NEGATIVE_RELATION = "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES"
 
 
@@ -155,7 +157,10 @@ def imerg_for_zone(zone_id: str, v08_target: str | None, north: dict | None, v08
         for k in range(47, -1, -1):
             t = (parse(last) - timedelta(minutes=30 * k)).isoformat()
             tail.append([t, series.get(t)])
-    return dict(source=name, series_24h_half_hourly_mm=tail, status="CALCULADO" if any(v["status"] == "CALCULADO" for v in best["windows"].values()) else "NO_DISPONIBLE",
+    coverage = dict(required_half_hours=48, available_half_hours=sum(v is not None for _, v in tail),
+                    missing_half_hours_utc=[t for t, v in tail if v is None]) if tail else dict(required_half_hours=48, available_half_hours=0,
+                                                                                               missing_half_hours_utc=[])
+    return dict(source=name, series_24h_half_hourly_mm=tail, coverage_24h=coverage, status="CALCULADO" if any(v["status"] == "CALCULADO" for v in best["windows"].values()) else "NO_DISPONIBLE",
                 nature_es="Estimación satelital IMERG Early (30 min), con horas de latencia; no es una observación en tiempo real.",
                 **best, alternatives=[c[0] for c in candidates if c[0] != name])
 

@@ -210,7 +210,7 @@ class GeosWindows(unittest.TestCase):
         self.assertEqual(E.geos_windows_at(self.geos(48), early)["windows"]["6h"]["status"], "NO_DISPONIBLE")
 
     def test_old_cycle_gives_no_sums(self):
-        at = datetime(2026, 10, 14, 9, 31, tzinfo=timezone.utc)  # 48 h + 1 min after the cycle start
+        at = datetime(2026, 10, 14, 15, 31, tzinfo=timezone.utc)  # 54 h + 1 min after the cycle start
         w = E.geos_windows_at(self.geos(120), at)
         self.assertEqual(w["status"], "DESACTUALIZADO")
         self.assertNotIn("windows", w)
