@@ -1,0 +1,62 @@
+#!/usr/bin/env python3
+"""IRFEN v0.9 — puerta de publicación del panel experimental en GitHub Pages.
+
+Los workflows de Pages publican la carpeta site/ entera. Este script se ejecuta justo antes de subir el artefacto y,
+salvo que la puerta esté abierta (config/v09_public_demo_v0_1.json: publish_v09_dashboard=true con aprobación QA
+registrada) y el paquete conserve sus guardas, elimina site/v09 y site/data/v09 del espacio de trabajo del runner
+(no del repositorio). Así, integrar el panel en main no lo publica por sí solo.
+
+  python scripts/v09_pages_publication_gate.py           # aplica la puerta (runner de Pages)
+  python scripts/v09_pages_publication_gate.py --dry-run # solo informa
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import shutil
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+GATE = ROOT / "config/v09_public_demo_v0_1.json"
+BUNDLE = ROOT / "site/data/v09/dashboard_v0_1.json"
+PATHS = ("site/v09", "site/data/v09")
+REQUIRED_BUNDLE_GUARDS = dict(production_use=False, production_ready=False, operational_alerting_enabled=False, public_alerting=False,
+                              activation_gate="BLOCKED", decision_thresholds=None, hydraulic_factors=None,
+                              missing_data_rule="UNKNOWN_NOT_LOW_RISK")
+
+
+def decide(gate: dict | None, bundle: dict | None) -> tuple[bool, str]:
+    if not gate or gate.get("publish_v09_dashboard") is not True:
+        return False, "CLOSED: publish_v09_dashboard is not true"
+    if not gate.get("qa_approved_by") or not gate.get("qa_approved_at_utc"):
+        return False, "CLOSED: no QA approval recorded"
+    if gate.get("public_alerting") is not False:
+        return False, "CLOSED: public_alerting must stay false"
+    if not bundle:
+        return False, "CLOSED: dashboard bundle missing"
+    bad = {k: bundle.get(k) for k, v in REQUIRED_BUNDLE_GUARDS.items() if bundle.get(k) != v}
+    if bad:
+        return False, f"CLOSED: bundle guards not preserved {bad}"
+    return True, f"OPEN: approved by {gate['qa_approved_by']} at {gate['qa_approved_at_utc']}"
+
+
+def main(argv: list[str] | None = None, root: Path = ROOT) -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dry-run", action="store_true")
+    args = parser.parse_args(argv)
+    load = lambda p: json.loads(p.read_text(encoding="utf-8")) if p.is_file() else None
+    publish, why = decide(load(root / GATE.relative_to(ROOT)), load(root / BUNDLE.relative_to(ROOT)))
+    if publish:
+        print(f"::notice title=V09_PAGES_GATE::{why}; site/v09 published as experimental demo")
+        return 0
+    for rel in PATHS:
+        p = root / rel
+        if p.exists() and not args.dry_run:
+            shutil.rmtree(p)
+    print(f"::notice title=V09_PAGES_GATE::{why}; {', '.join(PATHS)} {'would be' if args.dry_run else ''} excluded from Pages")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

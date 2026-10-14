@@ -1,0 +1,40 @@
+# Pinned test-runner dependency for the mandatory PR-validation gate
+# (.github/workflows/pr-validation.yml) and for
+# scripts/verify_phase2_test_collection.py, which enforces this exact
+# version at runtime and fails closed on any mismatch.
+#
+# This is pinned, not left to "latest", for the same reason the Phase-2
+# test-collection manifest is identity-based rather than a floating count:
+# an unpinned `pip install pytest` could silently pick up a newer pytest
+# release with different collection or node-ID formatting behavior between
+# one CI run and the next, which would make the collection-identity ratchet
+# in scripts/verify_phase2_test_collection.py compare apples to oranges
+# without anyone deciding that on purpose. Bumping this version is a
+# deliberate, reviewed action, exactly like regenerating the collection
+# manifest itself -- never an incidental side effect of an unrelated PR.
+#
+# To upgrade: change the version below, then regenerate
+# config/phase2_test_collection_manifest.json with
+# `python scripts/verify_phase2_test_collection.py --write-manifest` on a
+# CI runner with this file's dependencies (and requirements.txt) installed,
+# and commit both changes together in the same PR.
+pytest==9.0.3
+
+# JSON-schema validation is mandatory in the PR-validation gate. Without this
+# package the schema tests skipped and the validators returned silently, which
+# hid a stale schema (spatial observation contracts) for several releases.
+# Pinned for the same reason as pytest: a floating validator could change what
+# "conforms" means between two CI runs. The gate checks the installed version
+# against this pin and sets IRFEN_REQUIRE_JSONSCHEMA=1.
+jsonschema==4.26.0
+
+# PDF discovery modules (scripts/discover_catacaos_evar_2017.py,
+# discover_chosica_local_catchments.py, discover_chosica_ingemmet_2015.py)
+# import pypdf at module level. Without it the gate skipped the four tests in
+# tests/test_discovery_script_exceptions.py that check how page-extraction
+# failures are recorded. Those tests use fake readers, so they exercise the
+# scripts' own exception handling, not pypdf's parsing; the pin only has to
+# provide PdfReader and pypdf.errors.PdfReadError. Kept as a CI-test dependency:
+# the discovery workflows install pypdf themselves and requirements.txt is not
+# changed. The gate checks the installed version against this pin.
+pypdf==6.19.0

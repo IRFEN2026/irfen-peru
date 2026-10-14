@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 import unittest
@@ -288,7 +289,9 @@ class SchemaAndValidatorTests(unittest.TestCase):
         try:
             import jsonschema
         except ImportError:
-            self.skipTest("jsonschema not installed")
+            if os.environ.get("IRFEN_REQUIRE_JSONSCHEMA", "").strip() == "1":
+                self.fail("jsonschema is not installed but IRFEN_REQUIRE_JSONSCHEMA=1 makes this schema test mandatory")
+            self.skipTest("jsonschema not installed (schema validation not mandatory in this environment)")
         schema = json.loads(
             (
                 ROOT

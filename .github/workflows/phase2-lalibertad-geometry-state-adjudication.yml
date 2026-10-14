@@ -1,0 +1,55 @@
+name: IRFEN - Phase2 La Libertad geometry-state test adjudication
+
+on:
+  pull_request:
+    paths:
+      - tests/test_phase2_chao_huamanzana_chorobal_discovery.py
+      - tests/test_phase2_jequetepeque_discovery_package.py
+      - scripts/replay_phase2_lalibertad_frozen_ana_geometry_live.py
+      - .github/workflows/phase2-lalibertad-geometry-state-adjudication.yml
+  push:
+    branches:
+      - phase2/la-libertad-geometry-state-test-adjudication-v0-1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frozen-replay-and-real-pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install pinned pytest
+        run: python -m pip install pytest==9.0.3
+      - name: Offline replay of the frozen ANA geometries (fail-closed)
+        run: |
+          python scripts/verify_phase2_chao_huamanzana_official_geometry.py
+          python scripts/verify_phase2_jequetepeque_official_geometry.py
+      - name: Real pytest on the adjudicated and dedicated modules
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m pytest -v -rfE -p no:cacheprovider \
+            tests/test_phase2_chao_huamanzana_chorobal_discovery.py \
+            tests/test_phase2_jequetepeque_discovery_package.py \
+            tests/test_phase2_chao_huamanzana_geometry.py \
+            tests/test_phase2_jequetepeque_official_geometry.py | tee /tmp/p.txt
+          grep -E '::test_.*(PASSED|FAILED|ERROR)' /tmp/p.txt | sed -E 's/ +\[.*//' | while read -r l; do echo "::notice title=pytest node::$l"; done
+          echo "::notice title=pytest summary::$(tail -1 /tmp/p.txt)"
+
+  live-official-replay:
+    # Independent corroboration only; never writes. Unavailable is not a negative.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Re-issue the exact frozen ANA/IDEP queries and compare
+        run: python scripts/replay_phase2_lalibertad_frozen_ana_geometry_live.py

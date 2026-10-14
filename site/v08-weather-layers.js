@@ -1,0 +1,148 @@
+(function(){
+  'use strict';
+
+  const NASA_WMS_BEST='https://gibs.earthdata.nasa.gov/wms/epsg3857/best/wms.cgi';
+  const NASA_WMS_NRT='https://gibs.earthdata.nasa.gov/wms/epsg3857/nrt/wms.cgi';
+  const SOURCE_NOTE='Contexto visual externo. No modifica el cálculo, estado, umbrales ni alertas IRFEN.';
+  const attached=new WeakSet();
+
+  function isoDay(offset){
+    const d=new Date();
+    d.setUTCDate(d.getUTCDate()+offset);
+    return d.toISOString().slice(0,10);
+  }
+
+  function makeWms(baseUrl,layerName,date,opacity){
+    return L.tileLayer.wms(baseUrl,{
+      layers:layerName,
+      styles:'',
+      format:'image/png',
+      transparent:true,
+      version:'1.3.0',
+      time:date,
+      opacity:opacity,
+      attribution:'NASA Earthdata GIBS'
+    });
+  }
+
+  function addControl(targetMap,label){
+    if(!targetMap || typeof L==='undefined' || attached.has(targetMap)) return;
+    attached.add(targetMap);
+
+    let rain=null;
+    let clouds=null;
+    let date=isoDay(-1);
+    let opacity=.62;
+
+    const Control=L.Control.extend({
+      options:{position:'topright'},
+      onAdd:function(){
+        const box=L.DomUtil.create('div','irfen-weather-control leaflet-bar');
+        box.innerHTML=
+          '<div class="iw-head"><b>Capas meteorológicas</b><span>'+label+'</span></div>'+
+          '<label class="iw-rain-label"><input type="checkbox" data-iw="rain"> NASA · lluvia IMERG NRT <span class="iw-active-pill" data-iw="rain-pill">APAGADA</span></label>'+
+          '<label><input type="checkbox" data-iw="clouds"> NASA · imagen satelital visible</label>'+
+          '<label class="iw-row">Fecha <select data-iw="day">'+
+            '<option value="-1" selected>Ayer UTC (predeterminado)</option><option value="0">Hoy UTC (si está disponible)</option><option value="-2">Hace 2 días</option>'+
+          '</select></label>'+
+          '<label class="iw-row">Opacidad <input data-iw="opacity" type="range" min="20" max="90" value="62"></label>'+
+          '<div class="iw-status" data-iw="status"><b>Conexión IMERG:</b> inactiva. Por defecto se usa ayer UTC para reducir falsos vacíos por latencia NRT.</div><div class="iw-rain-legend" data-iw="rain-legend" hidden><div><b>Precipitación IMERG</b> · contexto visual</div><div class="iw-empty">Los colores son los del mosaico publicado por NASA GIBS. Aquí no se muestra una escala cuantitativa. Sin color = sin precipitación representada en el mosaico visible.</div></div>'+
+          '<div class="iw-senamhi"><b>SENAMHI</b> · conector WMS preparado; se habilitará cuando quede fijado un endpoint/capa institucional estable.</div>'+
+          '<div class="iw-note">'+SOURCE_NOTE+'</div>';
+
+        L.DomEvent.disableClickPropagation(box);
+        L.DomEvent.disableScrollPropagation(box);
+
+        const rainInput=box.querySelector('[data-iw="rain"]');
+        const cloudInput=box.querySelector('[data-iw="clouds"]');
+        const dayInput=box.querySelector('[data-iw="day"]');
+        const opacityInput=box.querySelector('[data-iw="opacity"]');
+        const statusEl=box.querySelector('[data-iw="status"]');
+        const rainPill=box.querySelector('[data-iw="rain-pill"]');
+        const rainLegend=box.querySelector('[data-iw="rain-legend"]');
+
+        function rebuild(){
+          if(rainPill){rainPill.textContent=rainInput.checked?'ACTIVA':'APAGADA';rainPill.classList.toggle('on',rainInput.checked);}
+          if(rainLegend) rainLegend.hidden=!rainInput.checked;
+          if(rain){targetMap.removeLayer(rain);rain=null;}
+          if(clouds){targetMap.removeLayer(clouds);clouds=null;}
+
+          if(rainInput.checked){
+            if(statusEl) statusEl.innerHTML='<b>Conexión IMERG:</b> cargando '+date+'…';
+            rain=makeWms(NASA_WMS_NRT,'IMERG_Precipitation_Rate_30min_v7_NRT',date,opacity);
+            rain.on('load',function(){
+              if(statusEl) statusEl.innerHTML='<b>Conexión IMERG:</b> cargada · '+date+'. Si no aparece color, no hay precipitación representada en los mosaicos visibles.';
+            });
+            rain.on('tileerror',function(){
+              if(statusEl) statusEl.innerHTML='<b>Conexión IMERG:</b> error recuperando mosaicos NASA GIBS para '+date+'.';
+            });
+            rain.addTo(targetMap);
+          } else if(statusEl && !cloudInput.checked){
+            statusEl.innerHTML='<b>Conexión IMERG:</b> inactiva.';
+          }
+          if(cloudInput.checked){
+            clouds=makeWms(NASA_WMS_BEST,'VIIRS_SNPP_CorrectedReflectance_TrueColor',date,Math.min(opacity,.78));
+            clouds.addTo(targetMap);
+          }
+        }
+
+        rainInput.addEventListener('change',rebuild);
+        cloudInput.addEventListener('change',rebuild);
+        dayInput.addEventListener('change',function(){
+          date=isoDay(Number(dayInput.value)||0);
+          rebuild();
+        });
+        opacityInput.addEventListener('input',function(){
+          opacity=(Number(opacityInput.value)||62)/100;
+          if(rain) rain.setOpacity(opacity);
+          if(clouds) clouds.setOpacity(Math.min(opacity,.78));
+        });
+
+        return box;
+      }
+    });
+
+    new Control().addTo(targetMap);
+  }
+
+  function installStyles(){
+    if(document.getElementById('irfen-weather-style')) return;
+    const s=document.createElement('style');
+    s.id='irfen-weather-style';
+    s.textContent=
+      '.irfen-weather-control{background:#fff;width:260px;padding:10px 11px;border:1px solid #cfdbe4;border-radius:10px;box-shadow:0 2px 12px rgba(12,45,65,.16);font:12px/1.35 Arial,sans-serif;color:#213442}'+
+      '.irfen-weather-control label{display:block;margin:7px 0;cursor:pointer}'+
+      '.irfen-weather-control input[type=checkbox]{margin-right:6px}'+
+      '.iw-head{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #e2e9ee;padding-bottom:7px;margin-bottom:5px}'+
+      '.iw-head span{font-size:10px;color:#6d7f8c}.iw-row{display:flex!important;justify-content:space-between;align-items:center;gap:8px}'+
+      '.iw-row select{max-width:120px;padding:4px}.iw-row input[type=range]{width:120px}'+
+      '.iw-note,.iw-senamhi{margin-top:8px;padding-top:7px;border-top:1px solid #e2e9ee;color:#5c6f7d;font-size:10px}'+
+      '.iw-status{margin-top:8px;padding:7px;background:#eef6fb;border-radius:6px;color:#36586f;font-size:10px}'+
+      '.iw-rain-label{display:flex!important;align-items:center;gap:6px}.iw-active-pill{margin-left:auto;padding:2px 6px;border-radius:999px;background:#eef1f3;color:#667781;font-size:9px;font-weight:800}.iw-active-pill.on{background:#dff3e5;color:#1d6539}'+
+      '.iw-rain-legend{margin-top:8px;padding:8px;background:#f7fafc;border:1px solid #dfe8ee;border-radius:7px;color:#42596a;font-size:10px}.iw-empty{margin-top:5px;color:#687b8c}'+
+      '.iw-senamhi{background:#f5f8fa;padding:7px;border-radius:6px}'+
+      '@media(max-width:700px){.irfen-weather-control{width:220px}}';
+    document.head.appendChild(s);
+  }
+
+  installStyles();
+
+  // API estable para que cualquier mapa Leaflet de IRFEN pueda adjuntar
+  // explícitamente las capas meteorológicas sin depender del orden de eventos.
+  window.IRFENWeatherLayers = {
+    attach:function(targetMap,label){
+      addControl(targetMap,label||'Vista experta');
+    }
+  };
+
+  // Mapa operativo principal, definido en index.html.
+  try{
+    if(typeof map!=='undefined' && map) addControl(map,'Vista operativa');
+  }catch(_){}
+
+  // Otros mapas de la plataforma pueden anunciarse sin acoplar este módulo a su implementación.
+  window.addEventListener('irfen:map-ready',function(ev){
+    const d=ev.detail||{};
+    addControl(d.map,d.label||'Vista experta');
+  });
+})();
