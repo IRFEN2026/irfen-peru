@@ -113,5 +113,49 @@ class Workflows(unittest.TestCase):
             self.assertTrue(re.search(r"senamhi_direct_access_enabled\(\)", code))
 
 
+class EveryWorkflowThatCanReachSenamhi(unittest.TestCase):
+    """A workflow that runs a script naming a SENAMHI host either goes through the policy gate (default disabled)
+    or can only be started by hand (workflow_dispatch). Push triggers were removed on 14-10-2026: a push to main
+    touching e.g. site/data/latest.json started the WIS2 discovery without anyone deciding it."""
+
+    HOST = re.compile(r"https?://[\w.-]*senamhi\.gob\.pe")
+    # Scripts that only carry a SENAMHI URL as data (synthetic review fixtures), with no HTTP client.
+    URL_AS_DATA_ONLY = ("run_v08_regression_tests",)
+
+    def _workflows(self):
+        for wf in sorted((ROOT / ".github/workflows").glob("*.yml")):
+            text = wf.read_text(encoding="utf-8")
+            block = re.search(r"^on:[ \t]*(.*?)\n(.*?)(?=^\S)", text, re.S | re.M)  # no PyYAML in the CI image
+            inline = block.group(1).strip()
+            if inline:
+                triggers = set(re.findall(r"[\w]+", inline))
+            else:
+                triggers = set(re.findall(r"^  ([a-z_]+):", block.group(2), re.M))
+            scripts = [s for s in sorted(set(re.findall(r"scripts/(\w+)\.py", text))) if (ROOT / f"scripts/{s}.py").is_file()]
+            yield wf.name, triggers, [s for s in scripts if self.HOST.search((ROOT / f"scripts/{s}.py").read_text(encoding="utf-8"))]
+
+    def test_ungated_senamhi_scripts_are_manual_only(self):
+        seen = []
+        for name, triggers, scripts in self._workflows():
+            for s in scripts:
+                code = (ROOT / f"scripts/{s}.py").read_text(encoding="utf-8")
+                if "senamhi_direct_access_enabled()" in code:
+                    continue  # behind the policy gate, disabled by default
+                if s in self.URL_AS_DATA_ONLY:
+                    self.assertNotRegex(code, r"import requests|urllib\.request|urlopen|http\.client|httpx", s)
+                    continue
+                seen.append(name)
+                self.assertEqual(triggers, {"workflow_dispatch"}, f"{name} runs {s} (SENAMHI host) and can start without a person")
+        self.assertIn("senamhi-wis2-discovery.yml", seen)
+
+    def test_fallback_never_dispatches_them(self):
+        spec = importlib.util.spec_from_file_location("scheduler_fallback", ROOT / "scripts/scheduler_fallback.py")
+        fb = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(fb)
+        for name, _, scripts in self._workflows():
+            if scripts and name not in ("pr-validation.yml", "update-and-deploy.yml"):
+                self.assertNotIn(name, fb.TARGETS)
+
+
 if __name__ == "__main__":
     unittest.main()
