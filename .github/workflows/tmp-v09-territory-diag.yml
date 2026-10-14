@@ -44,7 +44,7 @@ jobs:
         run: |
           python -m pytest tests/test_v09_territory.py -q -rfE 2>&1 | tail -5 | sed 's/^/::notice title=alone::/'
           python -m pytest tests/ -q -rfE -p no:cacheprovider > full.log 2>&1 || true
-          grep -n "test_guards_and_reproducible\|^E \|Error\|FAIL" full.log | grep -v "ENOENT\|errno\|syscall" | head -40 | sed 's/^/::notice title=full::/'
+          grep -n "^____\|^FAILED\|^E  .*Error\|^E  .*assert" full.log | grep -v "ENOENT\|errno\|syscall\|node:" | head -30 | sed "s/^/::notice title=full::/"
           python -m pytest tests/ -q --collect-only 2>/dev/null | grep -n "test_v09_territory" | head -2 | sed 's/^/::notice title=order::/'
           git status --short | head -20 | sed 's/^/::notice title=dirty::/'
       - name: Build diff after the full suite
@@ -73,3 +73,4 @@ jobs:
           PY
 # rerun 0050
 # rerun2
+# rerun3
