@@ -67,6 +67,7 @@ PISCO_YEARS = range(1981, 2017)
 PISCO_FILE = "pisco_provincias_v0_2.csv.gz"
 PISCO_MAX_MM = 1000.0
 OISST_PSL = "https://psl.noaa.gov/thredds/dodsC/Datasets/noaa.oisst.v2.highres/sst.day.mean.{y}.nc"
+OISST_PSL_MON = "https://psl.noaa.gov/thredds/dodsC/Datasets/noaa.oisst.v2.highres/sst.mon.mean.nc"
 CPC_SSTOI = "https://www.cpc.ncep.noaa.gov/data/indices/sstoi.indices"
 IGP_EC = "http://met.igp.gob.pe/datos/EC.txt"
 R1 = "https://psl.noaa.gov/thredds/dodsC/Datasets/ncep.reanalysis.dailyavgs/{group}/{var}.{y}.nc"
@@ -150,10 +151,13 @@ def build_pisco(provinces, status: dict):
 
 
 def _step(lat, lon) -> float:
-    s = float(np.median(np.abs(np.diff(np.asarray(lat, float)))))
-    if abs(s - float(np.median(np.abs(np.diff(np.asarray(lon, float)))))) > 1e-6:
-        raise ValueError("grilla PISCO no cuadrada")
-    return s
+    """Paso común de una grilla regular. Las coordenadas de PISCO vienen en float32 (0,1° ≈ 0,0999999), por lo que
+    la tolerancia es relativa (0,1 % del paso), no de precisión doble."""
+    s_lat = float(np.median(np.abs(np.diff(np.asarray(lat, float)))))
+    s_lon = float(np.median(np.abs(np.diff(np.asarray(lon, float)))))
+    if not s_lat > 0 or abs(s_lat - s_lon) > 1e-3 * s_lat:
+        raise ValueError(f"grilla no cuadrada: paso lat {s_lat:.6f}°, lon {s_lon:.6f}°")
+    return round(s_lat, 6)
 
 
 def _open_dap(url: str, attempts: int = 3):
@@ -176,21 +180,62 @@ def _dap_days(ds):
                                                             only_use_python_datetimes=True)]
 
 
-def oisst_year(y: int) -> tuple[dict, dict]:
-    """TSM diaria media frente a Paita y media tropical muestreada (cada 10° y cada 30 días) de un año de OISST."""
-    ds = _open_dap(OISST_PSL.format(y=y))
-    lat = np.asarray(ds.variables["lat"][:], float)
-    lon = np.asarray(ds.variables["lon"][:], float)  # 0–360
-    days = _dap_days(ds)
-    sst = ds.variables["sst"]
-    ri = np.flatnonzero((lat >= PAITA_BOX["lat"][0]) & (lat <= PAITA_BOX["lat"][1]))
-    ci = np.flatnonzero((lon >= PAITA_BOX["lon"][0] % 360) & (lon <= PAITA_BOX["lon"][1] % 360))
-    box = np.ma.filled(np.ma.masked_invalid(sst[:, ri[0]:ri[-1] + 1, ci[0]:ci[-1] + 1]).astype(float), np.nan)
-    paita = {d: float(np.nanmean(box[k])) for k, d in enumerate(days) if np.isfinite(box[k]).any()}
-    ti = np.flatnonzero((lat >= -20.0) & (lat <= 20.0))
-    sample = np.ma.filled(np.ma.masked_invalid(sst[::30, ti[0]:ti[-1] + 1:40, ::40]).astype(float), np.nan)
-    trop = {days[30 * k]: float(np.nanmean(sample[k])) for k in range(sample.shape[0]) if np.isfinite(sample[k]).any()}
-    return paita, trop
+def _retry(fn, attempts: int = 4, wait_s: int = 15):
+    """Reintenta lecturas OPeNDAP: PSL corta respuestas grandes o concurrentes de forma intermitente."""
+    for attempt in range(attempts):
+        try:
+            return fn()
+        except (OSError, RuntimeError):
+            if attempt == attempts - 1:
+                raise
+            __import__("time").sleep(wait_s * (attempt + 1))
+
+
+def _filled(a) -> np.ndarray:
+    return np.ma.filled(np.ma.masked_invalid(a).astype(float), np.nan)
+
+
+def oisst_paita_year(y: int) -> dict:
+    """TSM diaria media frente a Paita de un año de OISST v2.1 (PSL), pedida mes a mes: cada pedido es una caja
+    de pocas celdas × ~30 días. La primera versión pedía el año completo junto con un muestreo global y PSL devolvía
+    «DAP failure» en 45 de 46 años."""
+    ds = _retry(lambda: _open_dap(OISST_PSL.format(y=y)))
+    try:
+        lat = np.asarray(ds.variables["lat"][:], float)
+        lon = np.asarray(ds.variables["lon"][:], float)  # 0–360
+        days = _dap_days(ds)
+        sst = ds.variables["sst"]
+        ri = np.flatnonzero((lat >= PAITA_BOX["lat"][0]) & (lat <= PAITA_BOX["lat"][1]))
+        ci = np.flatnonzero((lon >= PAITA_BOX["lon"][0] % 360) & (lon <= PAITA_BOX["lon"][1] % 360))
+        r0, r1, c0, c1 = int(ri[0]), int(ri[-1]) + 1, int(ci[0]), int(ci[-1]) + 1
+        out = {}
+        for month in range(1, 13):
+            ks = [k for k, d in enumerate(days) if int(d[5:7]) == month]
+            if not ks:
+                continue
+            k0, k1 = ks[0], ks[-1] + 1
+            box = _retry(lambda: _filled(sst[k0:k1, r0:r1, c0:c1]))
+            for j, k in enumerate(range(k0, k1)):
+                if np.isfinite(box[j]).any():
+                    out[days[k]] = float(np.nanmean(box[j]))
+        return out
+    finally:
+        ds.close()
+
+
+def oisst_tropical_monthly() -> dict:
+    """Media mensual de TSM 20° S–20° N (OISST v2.1 mensual de PSL, muestreo cada 5°), fechada a mitad de mes.
+    Es la referencia de la TSM relativa (H8): un pedido de ~500 meses × 9 × 72 valores."""
+    ds = _retry(lambda: _open_dap(OISST_PSL_MON))
+    try:
+        lat = np.asarray(ds.variables["lat"][:], float)
+        months = _dap_days(ds)
+        ti = np.flatnonzero((lat >= -20.0) & (lat <= 20.0))
+        sample = _retry(lambda: _filled(ds.variables["sst"][:, int(ti[0]):int(ti[-1]) + 1:20, ::20]))
+        return {f"{m[:7]}-15": float(np.nanmean(sample[k])) for k, m in enumerate(months)
+                if np.isfinite(sample[k]).any()}
+    finally:
+        ds.close()
 
 
 def build_ocean(status: dict, years=None):
@@ -210,12 +255,13 @@ def build_ocean(status: dict, years=None):
         if str(y) in have and y < this_year - (1 if datetime.now(timezone.utc).month == 1 else 0):
             continue
         try:
-            p, tr = oisst_year(y)
+            paita.update(oisst_paita_year(y))
         except Exception as exc:  # noqa: BLE001
             status.setdefault("ocean_errors", []).append(f"{y}: {type(exc).__name__}: {str(exc)[:160]}")
-            continue
-        paita.update(p)
-        trop.update(tr)
+    try:
+        trop = {d: v for d, v in trop.items() if d.endswith("-15")} | oisst_tropical_monthly()
+    except Exception as exc:  # noqa: BLE001 - sin media tropical, la TSM relativa queda vacía (nunca inventada)
+        status.setdefault("ocean_errors", []).append(f"media tropical: {type(exc).__name__}: {str(exc)[:160]}")
     tk = sorted(trop)
     tx = np.array([date.fromisoformat(d).toordinal() for d in tk], float)
     ty = np.array([trop[d] for d in tk])
@@ -360,7 +406,9 @@ def build_inputs(live_only: bool = False) -> int:
     for name, fn in steps:
         try:
             fn()
-            status[f"{name}_state"] = "OK"
+            errors = status.get(f"{name}_errors") or []
+            # un insumo con años fallidos no es «OK»: la versión anterior marcó OK con 45 de 46 años de OISST perdidos
+            status[f"{name}_state"] = f"PARTIAL ({len(errors)} errores)" if errors else "OK"
         except Exception as exc:  # noqa: BLE001 - cada insumo se informa por separado; nunca se rellena con ceros
             status[f"{name}_state"] = f"ERROR {type(exc).__name__}: {str(exc)[:200]}"
         print(f"::notice title=V09_OWN_MODEL_INPUTS::{name}: {status[f'{name}_state']}")
@@ -532,6 +580,22 @@ def season_of(d: date) -> int:
     return d.year if d.month >= 9 else d.year - 1
 
 
+# Temporadas El Niño dentro de PISCOp v2.1 (1981–2016): 1982–83 y 1997–98 (extraordinarios, ambos Niños fuertes) y
+# 2015–16 (Niño central fuerte con costa norte casi seca: el contraste que el modelo debe aprender). El Niño costero
+# 2017 y el de 2023 quedan fuera de PISCO v2.1; entran cuando haya lluvia de entrenamiento para esos años.
+NINO_SEASONS = (1982, 1997, 2015)
+MIN_NINO_EVENTS = 10  # con menos eventos en temporadas Niño no se elige el modelo «solo Niño»
+
+
+def _oof(Z: np.ndarray, y: np.ndarray, groups: np.ndarray) -> np.ndarray:
+    """Probabilidades fuera de muestra dejando fuera un grupo (temporada) cada vez."""
+    oof = np.full(y.size, np.nan)
+    for s in np.unique(groups):
+        tr, te = groups != s, groups == s
+        oof[te] = 0.0 if y[tr].sum() == 0 else predict_logistic(fit_logistic(Z[tr], y[tr]), Z[te])
+    return oof
+
+
 def design(inp: Inputs, issues, provinces_ids, lead: int, features, enso: str = "nino"):
     X, meta = [], []
     for issue in issues:
@@ -574,11 +638,20 @@ def train() -> int:
                             "Niño 1+2 y Niño 4 de CPC: el archivo E/C del IGP no está al día y no se mezclan fuentes"),
                  atmosphere_note="NCEP/NCAR R1 terminó el 17-03-2026: las variantes con atmósfera no aplican en operación",
                  climatologies=inp.clim, variants={})
-    cv = dict(schema_version="0.1", **GUARDS, scheme="dejar fuera una temporada setiembre–agosto", results=[])
+    model["nino_seasons"] = list(NINO_SEASONS)
+    model["selection_rule"] = ("por variante, umbral y día se usa el modelo «solo Niño» si su BSS fuera de muestra en las "
+                               "temporadas Niño supera al del modelo «todas» y hay al menos "
+                               f"{MIN_NINO_EVENTS} eventos en esas temporadas; si no, «todas»")
+    cv = dict(schema_version="0.1", **GUARDS, scheme="dejar fuera una temporada setiembre–agosto",
+              nino_seasons=list(NINO_SEASONS),
+              note=("training_set: con qué temporadas se ajusta; eval_subset: sobre qué temporadas se mide. "
+                    "El modelo es para escenario El Niño: la comparación que decide es eval_subset = nino."),
+              results=[])
     import v09_fc_evaluate as ev
 
+    keep = ("pairs", "events", "brier", "bss", "roc_auc", "brier_decomposition", "reliability", "contingency")
     for variant, feats in VARIANTS.items():
-        model["variants"][variant] = dict(features=list(feats), models={})
+        model["variants"][variant] = dict(features=list(feats), models={}, models_nino={}, selected={})
         for lead in LEADS:
             X, meta = design(inp, issues, provinces, lead, feats, enso)
             if X.size == 0:
@@ -587,27 +660,42 @@ def train() -> int:
             sd[sd == 0] = 1.0
             Z = (X - mu) / sd
             seasons = np.array([season_of(m[0]) for m in meta])
+            nino = np.isin(seasons, NINO_SEASONS)
             for kind in KINDS:
                 obs = np.array([m[2] if kind == "max" else m[3] for m in meta])
                 for u in THRESHOLDS_MM:
+                    key = f"{kind}|{u:g}|{lead}"
                     y = (obs >= u).astype(float)
                     beta = fit_logistic(Z, y)
-                    model["variants"][variant]["models"][f"{kind}|{u:g}|{lead}"] = dict(
+                    model["variants"][variant]["models"][key] = dict(
                         beta=[round(float(b), 6) for b in beta], mean=mu.round(6).tolist(), sd=sd.round(6).tolist(),
                         n=int(y.size), events=int(y.sum()))
-                    oof = np.full(y.size, np.nan)
-                    for s in np.unique(seasons):
-                        tr, te = seasons != s, seasons == s
-                        if y[tr].sum() == 0:
-                            oof[te] = 0.0
-                            continue
-                        oof[te] = predict_logistic(fit_logistic(Z[tr], y[tr]), Z[te])
-                    block = ev.score_block(oof, y.astype(bool))
-                    cv["results"].append(dict(variant=variant, kind=kind, threshold_mm=u, day=lead, **{
-                        k: block[k] for k in ("pairs", "events", "brier", "bss", "roc_auc", "brier_decomposition",
-                                              "reliability", "contingency")}))
-                    print(f"::notice title=V09_OWN_MODEL_CV::{variant} {kind}≥{u:g} día {lead}: n={y.size} "
-                          f"eventos={int(y.sum())} BSS={block['bss']} ROC={block['roc_auc']}")
+                    oof_all = _oof(Z, y, seasons)
+                    scores = {}
+                    for subset, mask in (("todas", np.ones(y.size, bool)), ("nino", nino)):
+                        block = ev.score_block(oof_all[mask], y[mask].astype(bool))
+                        scores[("todas", subset)] = block
+                        cv["results"].append(dict(variant=variant, kind=kind, threshold_mm=u, day=lead,
+                                                  training_set="todas", eval_subset=subset, **{k: block[k] for k in keep}))
+                    choice = "todas"
+                    if nino.any() and y[nino].sum() > 0:
+                        Zn, yn = Z[nino], y[nino]
+                        model["variants"][variant]["models_nino"][key] = dict(
+                            beta=[round(float(b), 6) for b in fit_logistic(Zn, yn)], mean=mu.round(6).tolist(),
+                            sd=sd.round(6).tolist(), n=int(yn.size), events=int(yn.sum()))
+                        block = ev.score_block(_oof(Zn, yn, seasons[nino]), yn.astype(bool))
+                        scores[("nino", "nino")] = block
+                        cv["results"].append(dict(variant=variant, kind=kind, threshold_mm=u, day=lead,
+                                                  training_set="nino", eval_subset="nino", **{k: block[k] for k in keep}))
+                        b_all, b_nino = scores[("todas", "nino")]["bss"], block["bss"]
+                        if (b_nino is not None and b_all is not None and b_nino > b_all
+                                and int(yn.sum()) >= MIN_NINO_EVENTS):
+                            choice = "nino"
+                    model["variants"][variant]["selected"][key] = choice
+                    s_all, s_n = scores[("todas", "nino")], scores.get(("nino", "nino"), {})
+                    print(f"::notice title=V09_OWN_MODEL_CV::{variant} {kind}≥{u:g} día {lead}: temporadas Niño "
+                          f"n={s_all['pairs']} eventos={s_all['events']}; BSS entrenado con todas={s_all['bss']} "
+                          f"solo Niño={s_n.get('bss')} → {choice}")
     MODEL_JSON.parent.mkdir(parents=True, exist_ok=True)
     ens.atomic_write_text(MODEL_JSON, json.dumps(model, ensure_ascii=False) + "\n", encoding="utf-8")
     ens.atomic_write_text(CV_JSON, json.dumps(cv, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
@@ -639,7 +727,10 @@ def forecast_record(model: dict, inp: Inputs, provinces: list[dict], issue_time:
                                 if spec.get("models") and all(f in row for f in spec["features"])), None)
             for kind in KINDS:
                 for u in THRESHOLDS_MM:
-                    m = model["variants"].get(variant or "", {}).get("models", {}).get(f"{kind}|{u:g}|{lead}")
+                    key = f"{kind}|{u:g}|{lead}"
+                    spec = model["variants"].get(variant or "", {})
+                    pool = "models_nino" if spec.get("selected", {}).get(key) == "nino" else "models"
+                    m = spec.get(pool, {}).get(key)
                     if row is None or m is None:
                         entry[f"p_{kind}"][f"{u:g}"] = None  # sin insumos: faltante, nunca probabilidad cero
                         continue

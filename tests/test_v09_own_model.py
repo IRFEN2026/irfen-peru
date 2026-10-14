@@ -194,5 +194,72 @@ class LandSupport(unittest.TestCase):
                                                     land=land)).all())
 
 
+class NinoSelection(unittest.TestCase):
+    def test_oof_never_uses_the_held_out_season(self):
+        rng = np.random.default_rng(1)
+        Z = rng.normal(size=(60, 2))
+        groups = np.repeat([1982, 1997, 2015], 20)
+        y = np.zeros(60)
+        y[groups == 1982] = 1.0  # solo una temporada tiene eventos
+        oof = M._oof(Z, y, groups)
+        self.assertTrue(np.all(oof[groups == 1982] == 0.0))  # entrenando sin 1982 no hay eventos: 0, no fuga
+
+    def test_forecast_uses_nino_model_only_where_selected(self):
+        inp = synthetic_inputs(400)
+        k = len(M.NO_RAIN)
+        low = dict(beta=[-9.0] + [0.0] * k, mean=[0.0] * k, sd=[1.0] * k)
+        high = dict(beta=[9.0] + [0.0] * k, mean=[0.0] * k, sd=[1.0] * k)
+        keys = [f"{kd}|{u:g}|{lead}" for kd in M.KINDS for u in M.THRESHOLDS_MM for lead in M.LEADS]
+        selected = {key: ("nino" if key.startswith("max|10|") else "todas") for key in keys}
+        model = dict(model_id="test", variants=dict(no_rain=dict(
+            features=list(M.NO_RAIN), models={key: low for key in keys}, models_nino={key: high for key in keys},
+            selected=selected)))
+        for pid in ("2001", "2003"):
+            inp.rain.pop(("1996-02-29", pid), None)
+        rec = M.forecast_record(model, inp, [dict(id="2001", name="PIURA", department="PIURA")],
+                                datetime(1996, 3, 1, 0, tzinfo=timezone.utc))
+        day1 = rec["provinces"]["2001"]["days"][0]
+        self.assertEqual(day1["p_max"]["10"], 1.0)   # clave elegida «solo Niño»
+        self.assertEqual(day1["p_max"]["25"], 0.0)   # el resto sigue con el modelo entrenado con todas
+        self.assertEqual(day1["p_mean"]["10"], 0.0)
+
+
+class InputRobustness(unittest.TestCase):
+    def test_float32_pisco_grid_is_square_but_a_real_mismatch_is_not(self):
+        lat = (np.arange(-18.35, 0.05, 0.1)).astype(np.float32)  # coordenadas PISCO en float32
+        lon = (np.arange(-81.35, -68.65, 0.1)).astype(np.float32)
+        self.assertAlmostEqual(M._step(lat, lon), 0.1, places=5)
+        with self.assertRaises(ValueError):
+            M._step(lat, np.arange(-81.0, -68.0, 0.25))
+
+    def test_partial_source_is_never_reported_ok(self):
+        calls = []
+
+        def fake_ocean(status, years=None):
+            calls.append("ocean")
+            status.setdefault("ocean_errors", []).append("1999: RuntimeError: NetCDF: DAP failure")
+
+        orig = (M.build_indices, M.build_ocean, M.PROBE_JSON, M.ens.load_provinces, M.ens.boundaries_paths)
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            try:
+                M.build_indices = lambda status: None
+                M.build_ocean = fake_ocean
+                M.PROBE_JSON = Path(tmp) / "estado.json"
+                M.ens.load_provinces = lambda path: []
+                M.ens.boundaries_paths = lambda: (Path(tmp), {})
+                import contextlib
+                import io
+                with contextlib.redirect_stdout(io.StringIO()):  # aviso sintético fuera de las anotaciones de CI
+                    M.build_inputs(live_only=True)
+                import json as _json
+                status = _json.loads(M.PROBE_JSON.read_text(encoding="utf-8"))["status"]
+            finally:
+                (M.build_indices, M.build_ocean, M.PROBE_JSON, M.ens.load_provinces, M.ens.boundaries_paths) = orig
+        self.assertEqual(calls, ["ocean"])
+        self.assertEqual(status["indices_state"], "OK")
+        self.assertEqual(status["ocean_state"], "PARTIAL (1 errores)")
+
+
 if __name__ == "__main__":
     unittest.main()
