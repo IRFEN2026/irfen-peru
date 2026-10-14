@@ -213,9 +213,19 @@ def main(argv=None) -> int:
         start = rain_day_slots(days[0])[0]
         end = rain_day_slots(days[-1])[-1] + timedelta(minutes=30)
         try:
-            earthaccess.login(strategy="environment")
-            found = earthaccess.search_data(short_name=PRODUCT, version=VERSION,
-                                            temporal=(start.isoformat(), end.isoformat()))
+            import time
+
+            for attempt, wait in enumerate((20, 60, None), start=1):  # contacto acotado con Earthdata
+                try:
+                    earthaccess.login(strategy="environment")
+                    found = earthaccess.search_data(short_name=PRODUCT, version=VERSION,
+                                                    temporal=(start.isoformat(), end.isoformat()))
+                    status["contact_attempts"] = attempt
+                    break
+                except Exception:  # noqa: BLE001
+                    if wait is None:
+                        raise
+                    time.sleep(wait)
         except Exception as exc:  # noqa: BLE001 - fuente no disponible, nunca lluvia cero
             status.update(state="SOURCE_UNREACHABLE", error=f"{type(exc).__name__}: {str(exc)[:200]}")
             STATUS_JSON.parent.mkdir(parents=True, exist_ok=True)

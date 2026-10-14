@@ -57,7 +57,6 @@ L2 = 1.0
 SST_THRESHOLD_C = 26.0
 SIERRA_M = 1000.0
 PAITA_BOX = dict(lat=(-5.6, -4.6), lon=(-81.9, -81.4))      # mar frente a Paita, fuera de la máscara de tierra
-N12_BOX = dict(lat=(-10.0, 0.0), lon=(-90.0, -80.0))
 ATMOS_BOX = dict(lat=(-12.5, 0.0), lon=(275.0, 285.0))       # NCEP R1 usa 0–360
 CLIM_YEARS = (1991, 2020)
 GUARDS = ens.GUARDS
@@ -65,7 +64,8 @@ GUARDS = ens.GUARDS
 PISCO_URL = ("https://iridl.ldeo.columbia.edu/SOURCES/.SENAMHI/.HSR/.PISCO/.Prec/.v2p1/.stable/.daily/.Prec/"
              "X/-81.75/-76.55/RANGEEDGES/Y/-9.65/-2.95/RANGEEDGES/T/(1%20Jan%20{y})/(31%20Dec%20{y})/RANGEEDGES/data.nc")
 PISCO_YEARS = range(1981, 2017)
-ERDDAP = "https://coastwatch.pfeg.noaa.gov/erddap/griddap/ncdcOisst21Agg_LonPM180.csv"
+ERDDAP = "https://coastwatch.pfeg.noaa.gov/erddap/griddap/{ds}.csv"
+OISST_DATASETS = (("ncdcOisst21Agg_LonPM180", False), ("ncdcOisst21Agg", True))  # (id, longitudes 0–360)
 CPC_SSTOI = "https://www.cpc.ncep.noaa.gov/data/indices/sstoi.indices"
 IGP_EC = "http://met.igp.gob.pe/datos/EC.txt"
 R1 = "https://psl.noaa.gov/thredds/dodsC/Datasets/ncep.reanalysis.dailyavgs/{group}/{var}.{y}.nc"
@@ -145,10 +145,25 @@ def build_pisco(provinces, status: dict):
     status["pisco_years"] = sorted({r["fecha"][:4] for r in rows})
 
 
-def erddap_series(var: str, t0: str, t1: str, box: dict, stride: int = 1, tstride: int = 1) -> dict[str, float]:
-    q = (f"{ERDDAP}?{var}[({t0}T12:00:00Z):{tstride}:({t1}T12:00:00Z)][(0.0)]"
-         f"[({box['lat'][0]}):{stride}:({box['lat'][1]})][({box['lon'][0]}):{stride}:({box['lon'][1]})]")
-    text = http_text(q, timeout=600)
+def erddap_series(var: str, t0: str, box: dict, stride: int = 1, tstride: int = 1, status: dict | None = None
+                  ) -> dict[str, float]:
+    """Serie diaria (media de la caja) de OISST v2.1 desde ERDDAP, hasta el último día publicado (``last``)."""
+    import requests
+
+    errors = []
+    for ds, lon360 in OISST_DATASETS:
+        lo0, lo1 = (x % 360 for x in box["lon"]) if lon360 else box["lon"]
+        q = (f"{ERDDAP.format(ds=ds)}?{var}[({t0}T12:00:00Z):{tstride}:(last)][(0.0)]"
+             f"[({box['lat'][0]}):{stride}:({box['lat'][1]})][({lo0}):{stride}:({lo1})]")
+        r = requests.get(q, timeout=900, headers={"User-Agent": "IRFEN-research/0.9 (TEST_ONLY)"})
+        if r.ok:
+            text = r.text
+            if status is not None:
+                status.setdefault("oisst_dataset", ds)
+            break
+        errors.append(f"{ds}: HTTP {r.status_code}: {r.text[:300]}")
+    else:
+        raise RuntimeError(" | ".join(errors))
     acc: dict[str, list] = {}
     for line in text.splitlines()[2:]:  # dos filas de encabezado (nombres y unidades)
         parts = line.split(",")
@@ -158,12 +173,16 @@ def erddap_series(var: str, t0: str, t1: str, box: dict, stride: int = 1, tstrid
     return {d: float(np.mean(v)) for d, v in acc.items()}
 
 
-def build_ocean(status: dict, end: date):
+def build_ocean(status: dict, end: date | None = None):
+    """TSM diaria frente a Paita y media tropical (20° S–20° N, muestreo cada 10° y cada 30 días, interpolada).
+
+    Niño 1+2 no se descarga diario: el modelo usa el índice mensual de CPC (``indices_mensuales``).
+    """
     out = INPUTS / "oceano_diario.csv.gz"
-    start, last = "1981-09-01", end.isoformat()
-    paita = erddap_series("sst", start, last, PAITA_BOX)
-    n12 = erddap_series("sst", start, last, N12_BOX, stride=4)
-    trop = erddap_series("sst", start, last, dict(lat=(-20.0, 20.0), lon=(-179.875, 179.875)), stride=20, tstride=30)
+    start = "1981-09-01"
+    paita = erddap_series("sst", start, PAITA_BOX, status=status)
+    trop = erddap_series("sst", start, dict(lat=(-19.875, 19.875), lon=(-179.875, 179.875)), stride=40, tstride=30,
+                         status=status)
     # media tropical muestreada cada 30 días: se interpola linealmente al día (varía lentamente)
     tk = sorted(trop)
     tx = np.array([date.fromisoformat(d).toordinal() for d in tk], float)
@@ -171,9 +190,9 @@ def build_ocean(status: dict, end: date):
     rows = []
     for d in sorted(paita):
         x = date.fromisoformat(d).toordinal()
-        rows.append(dict(fecha=d, sst_paita=f"{paita[d]:.3f}", sst_n12="" if d not in n12 else f"{n12[d]:.3f}",
-                         sst_trop=f"{np.interp(x, tx, ty):.3f}" if tx.size else ""))
-    write_csv_gz(out, rows, ("fecha", "sst_paita", "sst_n12", "sst_trop"))
+        rows.append(dict(fecha=d, sst_paita=f"{paita[d]:.3f}",
+                         sst_trop=f"{np.interp(x, tx, ty):.3f}" if tx.size and x <= tx[-1] + 45 else ""))
+    write_csv_gz(out, rows, ("fecha", "sst_paita", "sst_trop"))
     status["ocean_days"] = len(rows)
     status["ocean_last"] = rows[-1]["fecha"] if rows else None
 
@@ -283,7 +302,7 @@ def build_inputs(live_only: bool = False) -> int:
     status = dict(started_at_utc=datetime.now(timezone.utc).isoformat(), live_only=live_only)
     today = datetime.now(timezone.utc).date()
     steps = [("indices", lambda: build_indices(status)),
-             ("ocean", lambda: build_ocean(status, today - timedelta(days=1))),
+             ("ocean", lambda: build_ocean(status)),
              ("atmos", lambda: build_atmos(status, range(today.year - 1 if live_only else 1981, today.year + 1)))]
     if not live_only:
         steps += [("topography", lambda: build_topography(provinces, status)),

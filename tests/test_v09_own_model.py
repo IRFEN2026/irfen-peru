@@ -30,7 +30,7 @@ def synthetic_inputs(days=400, seed=0):
     for k in range(days):
         d = start + timedelta(days=k)
         sst = 24.0 + 3.0 * math.sin(2 * math.pi * k / 365) + rng.normal(0, 0.5)
-        ocean[d.isoformat()] = dict(sst_paita=f"{sst:.2f}", sst_n12=f"{sst - 0.5:.2f}", sst_trop="27.0")
+        ocean[d.isoformat()] = dict(sst_paita=f"{sst:.2f}", sst_trop="27.0")
         atmos[d.isoformat()] = dict(pw=f"{30 + rng.normal(0, 3):.2f}", u200=f"{rng.normal(0, 5):.2f}",
                                     u850=f"{rng.normal(-3, 2):.2f}", w500=f"{rng.normal(0, 0.02):.3f}")
         indices[d.strftime("%Y-%m")] = dict(nino12="1.0", nino4="0.5", nino34="0.8", E="", C="")
