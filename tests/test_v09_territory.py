@@ -155,8 +155,11 @@ class Bundle(unittest.TestCase):
 
 class Isolation(unittest.TestCase):
     def test_nothing_operational_reads_the_territory_view(self):
+        # the builder, the Pages publication gate (it removes the view) and the independent QA verifier (it reads
+        # the bundle) are the only scripts allowed to name it; none of them feeds the rain engine or the panel
+        allowed = {"v09_build_territory_bundle.py", "v09_pages_publication_gate.py", "v09_territory_independent_qa.py"}
         for path in (ROOT / "scripts").glob("*.py"):
-            if path.name != "v09_build_territory_bundle.py":
+            if path.name not in allowed:
                 text = path.read_text(encoding="utf-8")
                 self.assertNotIn("v09_build_territory_bundle", text, path.name)
                 self.assertNotIn("territory_v0_1.json", text, path.name)
