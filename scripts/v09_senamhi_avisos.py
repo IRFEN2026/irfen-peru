@@ -818,11 +818,45 @@ def pubdate_utc(value: str | None) -> str | None:
 
 
 # --------------------------------------------------------------------------- network capture (runner only)
+_UNICODE_DOTS = re.compile("[\u3002\uff0e\uff61]")
+
+
+def normalize_host(host: str | None) -> str:
+    """Canonical form of a host name for the SENAMHI policy check: percent-decoded, Unicode full stops mapped to ".",
+    lower-cased, IDNA-encoded labels and *no trailing dots* ("www.senamhi.gob.pe." is the same host as
+    "www.senamhi.gob.pe" for DNS and TLS)."""
+    from urllib.parse import unquote
+
+    h = _UNICODE_DOTS.sub(".", unquote(host or "")).strip().lower()
+    try:
+        h = ".".join(label.encode("idna").decode("ascii") if label and not label.isascii() else label for label in h.split("."))
+    except UnicodeError:
+        pass
+    return h.rstrip(".")
+
+
 def is_senamhi_host(url: str) -> bool:
+    """True when the URL targets senamhi.gob.pe or any subdomain, whatever the spelling. Checked against both urllib's
+    and urllib3's parse of the URL; a URL that cannot be parsed fails closed (treated as SENAMHI)."""
     from urllib.parse import urlsplit
 
-    host = (urlsplit(url).hostname or "").lower()
-    return host == "senamhi.gob.pe" or host.endswith(".senamhi.gob.pe")
+    url = (url or "").strip()
+    hosts = []
+    try:
+        hosts.append(urlsplit(url).hostname)
+    except ValueError:
+        return True
+    try:
+        from urllib3.util import parse_url
+
+        hosts.append(parse_url(url).host)
+    except Exception:  # noqa: BLE001 - urllib3 absent or unparseable: urllib's view is still checked
+        pass
+    for h in hosts:
+        h = normalize_host(h)
+        if h == "senamhi.gob.pe" or h.endswith(".senamhi.gob.pe"):
+            return True
+    return False
 
 
 class SenamhiRedirectRefused(Exception):
@@ -832,7 +866,7 @@ class SenamhiRedirectRefused(Exception):
 def _guarded_opener():
     """urllib opener that follows ordinary redirects (http->https, within INDECI or to other public hosts) but refuses,
     before sending it, any redirect whose target is a SENAMHI host. The capture only reads INDECI/COEN."""
-    from urllib.request import HTTPRedirectHandler, build_opener
+    from urllib.request import BaseHandler, HTTPRedirectHandler, build_opener
 
     class NoSenamhiRedirect(HTTPRedirectHandler):
         def redirect_request(self, req, fp, code, msg, headers, newurl):
@@ -840,7 +874,18 @@ def _guarded_opener():
                 raise SenamhiRedirectRefused(newurl)
             return super().redirect_request(req, fp, code, msg, headers, newurl)
 
-    return build_opener(NoSenamhiRedirect)
+    class SenamhiConnectGuard(BaseHandler):
+        """Last line of defence: runs before DNS/connect on every request the opener sends (first hop and each redirect)."""
+        handler_order = 100
+
+        def http_request(self, req):
+            if is_senamhi_host("//" + req.host):
+                raise SenamhiRedirectRefused(req.full_url)
+            return req
+
+        https_request = http_request
+
+    return build_opener(SenamhiConnectGuard, NoSenamhiRedirect)
 
 
 def http_get(url: str, timeout: int, max_bytes: int, headers: dict | None = None) -> tuple[bytes | None, dict]:
