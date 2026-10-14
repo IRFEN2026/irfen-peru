@@ -148,6 +148,17 @@ class GapCauses(unittest.TestCase):
         self.assertEqual(lag["run_to_published_min"]["max"], 1.0)
 
 
+class GapForensics(unittest.TestCase):
+    def test_missed_cron_slots(self):
+        spec = importlib.util.spec_from_file_location("v09_continuity_forensics", ROOT / "scripts/v09_continuity_forensics.py")
+        F = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(F)
+        a, b = datetime(2026, 10, 14, 1, 54, tzinfo=timezone.utc), datetime(2026, 10, 14, 7, 31, tzinfo=timezone.utc)
+        self.assertEqual(F.missed_slots(a, b, (7, 37)), 11)  # 02:07 ... 07:07
+        self.assertEqual(F.missed_slots(a, a + timedelta(minutes=20), (7, 37)), 1)
+        self.assertEqual(set(F.COLLECTORS), set(C.CRITERION_WORKFLOWS))
+
+
 class TickShellFailsClosed(unittest.TestCase):
     """QA 14-10-2026: tick.sh dispatched when the run listing failed (curl error swallowed by `|| true`)."""
 
