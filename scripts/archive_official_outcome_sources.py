@@ -19,6 +19,7 @@ from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 from urllib.request import Request, urlopen
 import argparse
 import json
+import os
 import re
 import time
 
@@ -56,6 +57,26 @@ SOURCES = (
         "historical_search_parameter": "s",
     },
 )
+# Owner decision 13-10-2026: no automated direct queries to SENAMHI hosts. These sources are only requested when
+# IRFEN_SENAMHI_DIRECT_ACCESS=enabled is set explicitly (never in the workflows); otherwise each one is recorded as
+# NOT_QUERIED_POLICY, unknown and never zero. INDECI/COEN and the supplemental sources are unaffected.
+SENAMHI_DIRECT_SOURCE_IDS = frozenset({"senamhi_activation_quebradas", "senamhi_piura_24h"})
+
+
+def senamhi_direct_access_enabled() -> bool:
+    return os.environ.get("IRFEN_SENAMHI_DIRECT_ACCESS", "disabled") == "enabled"
+
+
+def policy_skipped(source: dict) -> dict:
+    return {
+        "source_id": source["source_id"],
+        "url": source["url"],
+        "capture_status": "NOT_QUERIED_POLICY",
+        "unknown_not_zero": True,
+        "policy": "No automated direct queries to SENAMHI hosts (owner decision 13-10-2026)",
+    }
+
+
 SUPPLEMENTAL_SOURCES = (
     {
         "source_id": "anin_san_ildefonso_news",
@@ -584,6 +605,13 @@ def fetch_sources(sources: tuple[dict, ...], captured_at: datetime, snapshot_dat
         )
 
 
+def fetch_policy_sources(captured_at: datetime, snapshot_date: str) -> list[dict]:
+    """Fetch SOURCES in manifest order, skipping the SENAMHI ones unless direct access is explicitly enabled."""
+    allowed = tuple(s for s in SOURCES if senamhi_direct_access_enabled() or s["source_id"] not in SENAMHI_DIRECT_SOURCE_IDS)
+    fetched = {row["source_id"]: row for row in fetch_sources(allowed, captured_at, snapshot_date)}
+    return [fetched.get(s["source_id"]) or policy_skipped(s) for s in SOURCES]
+
+
 def load_archive():
     try:
         return json.loads(OUT.read_text(encoding="utf-8"))
@@ -679,7 +707,7 @@ def main():
         "counts_toward_closeout": False,
         "production_use": False,
         "safety_rule": "No automatic EVENT/NONE classification; missing evidence remains UNKNOWN_NOT_ZERO.",
-        "sources": fetch_sources(SOURCES, now, snapshot_day.isoformat()),
+        "sources": fetch_policy_sources(now, snapshot_day.isoformat()),
         "supplemental_sources": fetch_sources(
             SUPPLEMENTAL_SOURCES, now, snapshot_day.isoformat()
         ),

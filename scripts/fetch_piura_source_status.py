@@ -10,6 +10,7 @@ from io import BytesIO
 from pathlib import Path
 import html as html_lib
 import json
+import os
 import re
 import unicodedata
 import requests
@@ -151,6 +152,11 @@ def inspect_bulletin(entry, headers):
     return result
 
 
+def senamhi_direct_access_enabled():
+    """Owner decision 13-10-2026: no automated direct queries to SENAMHI hosts unless explicitly enabled."""
+    return os.environ.get('IRFEN_SENAMHI_DIRECT_ACCESS', 'disabled') == 'enabled'
+
+
 def carry_forward_verified_bulletin(current, previous, now, reason):
     """Conserva evidencia verificada como obsoleta ante fallas transitorias.
 
@@ -252,6 +258,17 @@ def main():
             except Exception: pass
     except Exception as exc:
         status['gore_piura'].update({'catalog_status':'access_error','error_type':type(exc).__name__,'error':str(exc)})
+
+    if not senamhi_direct_access_enabled():
+        status['senamhi'].update({
+            'forecast_page_access_status':'not_queried_policy',
+            'forecast_page_policy':'No automated direct queries to SENAMHI hosts (owner decision 13-10-2026)',
+        })
+        carry_forward_verified_bulletin(status['senamhi'], previous_senamhi, now, 'not_queried_policy')
+        OUT.parent.mkdir(parents=True,exist_ok=True)
+        OUT.write_text(json.dumps(status,ensure_ascii=False,indent=2),encoding='utf-8')
+        print(json.dumps(status,ensure_ascii=False,indent=2))
+        return 0
 
     try:
         r=requests.get(SEN_FORECAST,timeout=25,headers=headers)
