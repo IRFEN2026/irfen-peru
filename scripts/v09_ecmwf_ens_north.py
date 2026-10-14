@@ -301,6 +301,7 @@ def read_grib(path: Path, bbox: dict = BBOX):
     import eccodes
 
     fields, inventory, run, ri, ci, lats, lons, shape = {}, [], None, None, None, None, None, None
+    type_counts: dict[str, int] = {}
     with open(path, "rb") as fh:
         while True:
             gid = eccodes.codes_grib_new_from_file(fh)
@@ -312,6 +313,8 @@ def read_grib(path: Path, bbox: dict = BBOX):
                     inventory.append(f"{eccodes.codes_get(gid, 'dataType')}/{short}/{eccodes.codes_get(gid, 'stepRange')}")
                 if short != "tp":
                     continue
+                data_type = str(eccodes.codes_get(gid, "dataType"))
+                type_counts[data_type] = type_counts.get(data_type, 0) + 1
                 if shape is None:
                     shape = (eccodes.codes_get(gid, "Nj"), eccodes.codes_get(gid, "Ni"))
                     lat2 = np.asarray(eccodes.codes_get_array(gid, "latitudes"), float).reshape(shape)
@@ -327,6 +330,7 @@ def read_grib(path: Path, bbox: dict = BBOX):
     if not fields:
         raise ValueError(f"el GRIB no contiene 'tp'; primeros mensajes: {inventory}")
     tp_m, members, steps = assemble_members(fields)
+    read_grib.last_type_counts = dict(sorted(type_counts.items()))  # trazabilidad: mensajes 'tp' por tipo (cf/pf)
     return run, tp_m, steps, lats, lons
 
 
@@ -385,6 +389,7 @@ def main(argv=None) -> int:
             print(f"::notice title=V09_ECMWF_ENS::corrida {run.isoformat()} ya procesada")
             return 0
         record = build_run_record(run, tp_m, steps, lats, lons, provinces)
+        record["grib_tp_messages_by_type"] = getattr(read_grib, "last_type_counts", None)
     except Exception as exc:  # noqa: BLE001 - la falla se archiva como UNAVAILABLE, nunca como lluvia cero
         msg = f"{type(exc).__name__}: {str(exc)[:400]}"
         status = dict(state="UNAVAILABLE", error=msg, checked_at_utc=datetime.now(timezone.utc).isoformat(),
