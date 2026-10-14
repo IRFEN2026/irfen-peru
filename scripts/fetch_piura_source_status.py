@@ -152,14 +152,53 @@ def inspect_bulletin(entry, headers):
     return result
 
 
+_UNICODE_DOTS = re.compile("[。．｡]")
+
+
+def normalize_host(host):
+    """Canonical DNS name for a policy comparison: percent-decoding, Unicode full stops, IDNA (punycode), case and
+    the trailing root dot(s): "www.senamhi.gob.pe." and "WWW.SENAMHI.GOB.PE.." resolve to "www.senamhi.gob.pe"."""
+    from urllib.parse import unquote
+
+    h = _UNICODE_DOTS.sub(".", unquote(host or "")).strip().lower()
+    try:
+        h = ".".join(label.encode("idna").decode("ascii") if label and not label.isascii() else label for label in h.split("."))
+    except UnicodeError:
+        pass  # an undecodable label cannot be SENAMHI's ASCII name; it is compared as is
+    return h.rstrip(".")
+
+
+def is_senamhi_host(url):
+    """True when the standard library or urllib3 (the parser requests connects with) sees a SENAMHI host in url.
+    An unparseable URL is refused rather than guessed."""
+    from urllib.parse import urlsplit
+
+    url = (url or "").strip()
+    hosts = []
+    try:
+        hosts.append(urlsplit(url).hostname)
+    except ValueError:
+        return True
+    try:
+        from urllib3.util import parse_url
+
+        hosts.append(parse_url(url).host)
+    except Exception:  # noqa: BLE001 - a URL urllib3 cannot parse is never sent through requests either
+        pass
+    for h in hosts:
+        h = normalize_host(h)
+        if h == "senamhi.gob.pe" or h.endswith(".senamhi.gob.pe"):
+            return True
+    return False
+
+
 def refuse_senamhi_redirect(response, *args, **kwargs):
-    """requests response hook: refuse a redirect to a SENAMHI host before it is followed (policy 13-10-2026)."""
-    from urllib.parse import urljoin, urlsplit
+    """requests response hook, run on every hop before its Location is followed: refuse a redirect to a SENAMHI host
+    whatever its spelling (trailing dot, case, Unicode dots, percent-encoding, userinfo), policy 13-10-2026."""
+    from urllib.parse import urljoin
     location = response.headers.get('Location') if response.is_redirect else None
-    if location and not senamhi_direct_access_enabled():
-        host = (urlsplit(urljoin(response.url, location)).hostname or '').lower()
-        if host == 'senamhi.gob.pe' or host.endswith('.senamhi.gob.pe'):
-            raise requests.exceptions.InvalidURL(f'redirect to a SENAMHI host refused by policy: {location}')
+    if location and not senamhi_direct_access_enabled() and is_senamhi_host(urljoin(response.url, location)):
+        raise requests.exceptions.InvalidURL(f'redirect to a SENAMHI host refused by policy: {location}')
     return response
 
 

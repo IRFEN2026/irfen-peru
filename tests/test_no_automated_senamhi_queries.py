@@ -195,3 +195,151 @@ class EveryWorkflowThatCanReachSenamhi(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+SENAMHI_SPELLINGS = (
+    "https://www.senamhi.gob.pe./", "https://www.senamhi.gob.pe../x", "https://www.senamhi.gob.pe.../x",
+    "HTTPS://WWW.SENAMHI.GOB.PE./", "https://senamhi.gob.pe.", "https://a.b.senamhi.gob.pe./x",
+    "https://www%2Esenamhi%2Egob%2Epe/", "https://www．senamhi．gob．pe/", "https://www。senamhi。gob。pe/",
+    "https://portal.indeci.gob.pe@www.senamhi.gob.pe./", "https://www.senamhi.gob.pe.:443/main.php", " https://WwW.SeNaMhI.gOb.Pe./ ",
+)
+LEGITIMATE = ("https://portal.indeci.gob.pe/emergencias/feed/", "https://www.gob.pe/institucion/anin/noticias", "https://www.gob.pe/que/pechp",
+              "https://www.igp.gob.pe/servicios/", "https://servicios.regionpiura.gob.pe/datos/x", "https://senamhi.gob.pe.example.org/",
+              "https://notsenamhi.gob.pe/", "https://portal.indeci.gob.pe./emergencias/")
+
+
+class HostSpellings(unittest.TestCase):
+    """Independent review 14-10: 'https://www.senamhi.gob.pe./' (trailing root dot) passed the old check. Every
+    spelling that resolves to a SENAMHI host is now refused; INDECI, gob.pe, IGP and GORE Piura are not."""
+
+    def test_every_spelling_is_senamhi(self):
+        for mod in (OUTCOME, PIURA):
+            for url in SENAMHI_SPELLINGS:
+                self.assertTrue(mod.is_senamhi_host(url), (mod.__name__, url))
+            for url in LEGITIMATE:
+                self.assertFalse(mod.is_senamhi_host(url), (mod.__name__, url))
+
+
+class RedirectChains(unittest.TestCase):
+    """End to end against a local HTTP server: chained redirects (local -> local -> SENAMHI spelling) are cut before
+    any DNS lookup or connection to SENAMHI; legitimate chains still arrive. No external network."""
+
+    @classmethod
+    def setUpClass(cls):
+        import http.server
+        import threading
+
+        class H(http.server.BaseHTTPRequestHandler):
+            def log_message(self, *a):
+                pass
+
+            def do_GET(self):
+                if self.path == "/ok":
+                    body = b"ok"
+                    self.send_response(200)
+                    self.send_header("Content-Length", "2")
+                    self.end_headers()
+                    self.wfile.write(body)
+                    return
+                hops = {"/a": "/b", "/b": "/c", "/legit-a": "/legit-b", "/legit-b": "/ok"}
+                if self.path in hops:
+                    target = hops[self.path]
+                elif self.path.startswith("/c"):
+                    from urllib.parse import unquote
+                    target = unquote(self.path.split("?to=", 1)[1]) if "?to=" in self.path else self.server.final_target
+                else:
+                    target = "/ok"
+                from urllib.parse import quote
+                self.send_response(302)
+                # HTTP headers are Latin-1: a non-ASCII Location travels percent-encoded, as real servers send it
+                self.send_header("Location", quote(target, safe=":/?#[]@!$&'()*+,;=%~"))
+                self.end_headers()
+
+        cls.srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), H)
+        threading.Thread(target=cls.srv.serve_forever, daemon=True).start()
+        cls.base = f"http://127.0.0.1:{cls.srv.server_port}"
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.srv.shutdown()
+
+    def spy(self):
+        import socket
+
+        real_conn, real_gai = socket.create_connection, socket.getaddrinfo
+        self.touched = []
+
+        def conn(address, *a, **k):
+            self.touched.append(str(address[0]))
+            if "senamhi" in str(address[0]).lower():
+                raise AssertionError(f"connection to {address[0]}")
+            return real_conn(address, *a, **k)
+
+        def gai(host, *a, **k):
+            self.touched.append(str(host))
+            if "senamhi" in str(host).lower():
+                raise AssertionError(f"DNS lookup of {host}")
+            return real_gai(host, *a, **k)
+
+        import contextlib
+        import http.client
+
+        real_tunnel = http.client.HTTPConnection.set_tunnel
+
+        def tunnel(self_conn, host, *a, **k):  # an HTTPS request through a proxy (CONNECT host) never opens a socket to host
+            self.touched.append(str(host))
+            if "senamhi" in str(host).lower():
+                raise AssertionError(f"proxy tunnel to {host}")
+            return real_tunnel(self_conn, host, *a, **k)
+
+        stack = contextlib.ExitStack()
+        stack.enter_context(mock.patch("socket.create_connection", side_effect=conn))
+        stack.enter_context(mock.patch("socket.getaddrinfo", side_effect=gai))
+        stack.enter_context(mock.patch.object(http.client.HTTPConnection, "set_tunnel", tunnel))
+        return stack, contextlib.nullcontext()
+
+    def no_senamhi_touched(self):
+        self.assertFalse([h for h in self.touched if "senamhi" in h.lower()], self.touched)
+
+    def test_urllib_chain_to_any_spelling_is_cut(self):
+        from urllib.error import URLError
+        from urllib.request import Request
+        os.environ.pop("IRFEN_SENAMHI_DIRECT_ACCESS", None)
+        for target in SENAMHI_SPELLINGS[:10]:
+            self.srv.final_target = target.strip()
+            a, b = self.spy()
+            with a, b:
+                with self.assertRaises(URLError, msg=target):
+                    OUTCOME.urlopen(Request(self.base + "/a"), timeout=10)
+            self.no_senamhi_touched()
+
+    def test_urllib_direct_request_is_refused_before_dns(self):
+        from urllib.error import URLError
+        from urllib.request import Request
+        os.environ.pop("IRFEN_SENAMHI_DIRECT_ACCESS", None)
+        for target in ("https://www.senamhi.gob.pe./", "https://WWW.SENAMHI.GOB.PE../", "https://x.senamhi.gob.pe./"):
+            a, b = self.spy()
+            with a, b:
+                with self.assertRaises(URLError):
+                    OUTCOME.urlopen(Request(target), timeout=10)
+            self.no_senamhi_touched()
+
+    def test_requests_chain_to_any_spelling_is_cut(self):
+        os.environ.pop("IRFEN_SENAMHI_DIRECT_ACCESS", None)
+        for target in SENAMHI_SPELLINGS[:10]:
+            self.srv.final_target = target.strip()
+            a, b = self.spy()
+            with a, b:
+                with self.assertRaises(PIURA.requests.exceptions.InvalidURL, msg=target):
+                    PIURA.requests.get(self.base + "/a", timeout=10, hooks={"response": PIURA.refuse_senamhi_redirect})
+            self.no_senamhi_touched()
+
+    def test_legitimate_chains_still_arrive(self):
+        from urllib.request import Request
+        a, b = self.spy()
+        with a, b:
+            with OUTCOME.urlopen(Request(self.base + "/legit-a"), timeout=10) as r:
+                self.assertEqual(r.read(), b"ok")
+            r = PIURA.requests.get(self.base + "/legit-a", timeout=10, hooks={"response": PIURA.refuse_senamhi_redirect})
+            self.assertEqual((r.status_code, r.text), (200, "ok"))
+        self.no_senamhi_touched()

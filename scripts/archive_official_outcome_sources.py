@@ -16,7 +16,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
-from urllib.request import HTTPRedirectHandler, Request, build_opener
+from urllib.request import BaseHandler, HTTPRedirectHandler, Request, build_opener
 import argparse
 import json
 import os
@@ -63,9 +63,58 @@ SOURCES = (
 SENAMHI_DIRECT_SOURCE_IDS = frozenset({"senamhi_activation_quebradas", "senamhi_piura_24h"})
 
 
-def is_senamhi_host(url: str) -> bool:
-    host = (urlsplit(url).hostname or "").lower()
-    return host == "senamhi.gob.pe" or host.endswith(".senamhi.gob.pe")
+_UNICODE_DOTS = re.compile("[。．｡]")
+
+
+def normalize_host(host):
+    """Canonical DNS name for a policy comparison: percent-decoding, Unicode full stops, IDNA (punycode), case and
+    the trailing root dot(s): "www.senamhi.gob.pe." and "WWW.SENAMHI.GOB.PE.." resolve to "www.senamhi.gob.pe"."""
+    from urllib.parse import unquote
+
+    h = _UNICODE_DOTS.sub(".", unquote(host or "")).strip().lower()
+    try:
+        h = ".".join(label.encode("idna").decode("ascii") if label and not label.isascii() else label for label in h.split("."))
+    except UnicodeError:
+        pass  # an undecodable label cannot be SENAMHI's ASCII name; it is compared as is
+    return h.rstrip(".")
+
+
+def is_senamhi_host(url):
+    """True when the standard library or urllib3 (the parser requests connects with) sees a SENAMHI host in url.
+    An unparseable URL is refused rather than guessed."""
+    from urllib.parse import urlsplit
+
+    url = (url or "").strip()
+    hosts = []
+    try:
+        hosts.append(urlsplit(url).hostname)
+    except ValueError:
+        return True
+    try:
+        from urllib3.util import parse_url
+
+        hosts.append(parse_url(url).host)
+    except Exception:  # noqa: BLE001 - a URL urllib3 cannot parse is never sent through requests either
+        pass
+    for h in hosts:
+        h = normalize_host(h)
+        if h == "senamhi.gob.pe" or h.endswith(".senamhi.gob.pe"):
+            return True
+    return False
+
+
+class SenamhiConnectGuard(BaseHandler):
+    """Runs before every request the opener sends, including each hop of a redirect chain, on the host urllib will
+    actually connect to (req.host), so no URL spelling can route a request to SENAMHI."""
+
+    handler_order = 100
+
+    def http_request(self, req):
+        if is_senamhi_host("//" + req.host) and not senamhi_direct_access_enabled():
+            raise URLError(f"request to a SENAMHI host refused by policy: {req.full_url}")
+        return req
+
+    https_request = http_request
 
 
 class NoSenamhiRedirect(HTTPRedirectHandler):
@@ -78,7 +127,7 @@ class NoSenamhiRedirect(HTTPRedirectHandler):
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
-_OPENER = build_opener(NoSenamhiRedirect)
+_OPENER = build_opener(SenamhiConnectGuard, NoSenamhiRedirect)
 
 
 def urlopen(request, timeout=35):
