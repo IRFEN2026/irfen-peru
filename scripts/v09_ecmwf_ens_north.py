@@ -279,7 +279,9 @@ def build_run_record(run_utc: datetime, tp_m: np.ndarray, steps_h, lats, lons, p
         provs[pid] = dict(name=prov["name"], department=prov["department"], cells=int(assignment[pid]["idx"].size),
                           method=assignment[pid]["method"],
                           days=[dict(day=d + 1, **per_day[d][pid]) for d in range(n_days)])
-    return dict(run_utc=run_utc.isoformat(), processing_version=PROCESSING_VERSION, members=int(tp_m.shape[0]),
+    return dict(run_utc=run_utc.isoformat(),
+                deployment_status="RESEARCH_ONLY", test_mode="TEST_ONLY", operational_alerting_enabled=False,  # guardas en cada línea del registro (QA BAJA-6)
+                processing_version=PROCESSING_VERSION, members=int(tp_m.shape[0]),
                 grid_deg=grid, thresholds_mm=[float(u) for u in thresholds], days=days_meta, provinces=provs)
 
 

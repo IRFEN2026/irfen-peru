@@ -108,6 +108,7 @@ class TrainPredict(unittest.TestCase):
         rec = M.forecast_record(model, inp, provinces, issue_time)
         self.assertEqual([d["valid_date_peru"] for d in rec["days"]], ["1996-03-02", "1996-03-03", "1996-03-04"])
         self.assertEqual(rec["variants_used"], {"no_rain": 6})
+        self.assertEqual((rec["test_mode"], rec["operational_alerting_enabled"]), ("TEST_ONLY", False))
         p = rec["provinces"]["2001"]["days"][0]["p_max"]["10"]
         self.assertTrue(0.0 <= p <= 1.0)
         obs = {(d["valid_date_peru"], "2001"): dict(max=30.0, mean=5.0) for d in rec["days"]}

@@ -123,6 +123,8 @@ class Probabilities(unittest.TestCase):
         self.assertEqual(piura[0]["p_max"]["10"], 0.0)
         self.assertEqual(piura[1]["p_max"]["25"], round(26 / 51, 3))
         self.assertEqual(piura[2]["p_mean"]["10"], 0.0)
+        self.assertEqual((rec["test_mode"], rec["deployment_status"], rec["operational_alerting_enabled"]),
+                         ("TEST_ONLY", "RESEARCH_ONLY", False))  # cada línea del registro lleva sus guardas
         doc = E.latest_document(dict(state="AVAILABLE"), rec, {})
         self.assertEqual(doc["test_mode"], "TEST_ONLY")
         self.assertIs(doc["operational_alerting_enabled"], False)

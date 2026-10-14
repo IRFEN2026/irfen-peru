@@ -31,11 +31,11 @@ jobs:
       IRFEN_FC_DATA: ${{ github.workspace }}/_data
     steps:
       - name: Engine code (read-only, no stored credentials)
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
         with:
           persist-credentials: false
       - name: Results branch as working state (read-only, no stored credentials)
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
         with:
           ref: v09/forecast-data
           path: _data
@@ -66,9 +66,9 @@ jobs:
           bad=$(find "$OUT" -mindepth 1 ! -type f ! -type d -print)
           if [ -n "$bad" ]; then echo "::error::symlinks or special files in results: $bad"; exit 1; fi
       - name: Hand results to the persist job
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
-          name: model-results-${{ github.run_id }}-${{ github.run_attempt }}
+          name: model-results-${{ github.run_id }}
           path: ${{ runner.temp }}/results
           retention-days: 7
           if-no-files-found: error
@@ -85,17 +85,18 @@ jobs:
       cancel-in-progress: false
     env:
       BASE_SHA: ${{ needs.compute.outputs.data_sha }}
+      ALLOWED_DELETIONS: ^$
       ALLOWED: ^data/v09/model/
     steps:
       - name: Results branch at the exact base the compute job used
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
         with:
           ref: ${{ needs.compute.outputs.data_sha }}
           fetch-depth: 0
       - name: Receive results
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
         with:
-          name: model-results-${{ github.run_id }}-${{ github.run_attempt }}
+          name: model-results-${{ github.run_id }}
           path: ${{ runner.temp }}/results
       - name: Guard - only regular files, only data/v09/model, base unchanged
         id: guard
@@ -104,6 +105,9 @@ jobs:
           set -euo pipefail
           IN="$RUNNER_TEMP/results"
           test "$(git rev-parse HEAD)" = "$BASE_SHA"
+          # la base debe pertenecer a la rama de datos (QA BAJA-1), no solo coincidir con el checkout
+          git fetch -q origin "+refs/heads/$DATA_BRANCH:refs/remotes/origin/$DATA_BRANCH"
+          git merge-base --is-ancestor "$BASE_SHA" "origin/$DATA_BRANCH"
           bad=$(find "$IN" -mindepth 1 ! -type f ! -type d -print)
           if [ -n "$bad" ]; then echo "::error::symlinks or special files: $bad"; exit 1; fi
           for entry in "$IN"/*; do
@@ -111,6 +115,7 @@ jobs:
           done
           mkdir -p data/v09/model
           rsync -a --delete --checksum "$IN/model/" "data/v09/model/"
+          mkdir -p data/v09/model
           git add -A -- data/v09/model
           staged=$(git diff --cached --name-only --no-renames -z | tr '\0' '\n')
           outside=$(printf '%s\n' "$staged" | grep -v -E "$ALLOWED" | grep -v '^$' || true)
@@ -118,6 +123,15 @@ jobs:
           if [ -n "$(git status --porcelain=v1 --untracked-files=all -z -- . ':!data/v09/model')" ]; then
             echo "::error::unexpected working-tree changes outside data/v09/model"; exit 1
           fi
+          # Solo agregar (QA MEDIA-2): nada se borra salvo lo permitido y los registros JSONL solo crecen (el contenido
+          # de la base debe ser prefijo exacto del nuevo). Un script fallido o un paquete comprometido no puede truncar historia.
+          deleted=$(git diff --cached --name-only --no-renames --diff-filter=D | grep -v -E "$ALLOWED_DELETIONS" || true)
+          if [ -n "$deleted" ]; then echo "::error::deletions are not allowed: $deleted"; exit 1; fi
+          while IFS= read -r f; do
+            case "$f" in *.jsonl) ;; *) continue ;; esac
+            n=$(git cat-file -s "$BASE_SHA:$f")
+            if ! cmp -s -n "$n" <(git show "$BASE_SHA:$f") "$f"; then echo "::error::append-only ledger rewritten: $f"; exit 1; fi
+          done < <(git diff --cached --name-only --no-renames --diff-filter=M)
           test "$(git rev-parse HEAD)" = "$BASE_SHA"
       - name: Commit and push to the results branch only (bounded rebase, never --force)
         shell: bash

@@ -740,7 +740,9 @@ def forecast_record(model: dict, inp: Inputs, provinces: list[dict], issue_time:
             pdays.append(entry)
             variants_used[variant or "SIN_INSUMOS"] = variants_used.get(variant or "SIN_INSUMOS", 0) + 1
         provs[p["id"]] = dict(name=p["name"], department=p["department"], days=pdays)
-    return dict(run_utc=run0.isoformat(), model_id=model["model_id"], processing_version=MODEL_VERSION,
+    return dict(run_utc=run0.isoformat(),
+                deployment_status="RESEARCH_ONLY", test_mode="TEST_ONLY", operational_alerting_enabled=False,  # guardas en cada línea del registro (QA BAJA-6)
+                model_id=model["model_id"], processing_version=MODEL_VERSION,
                 thresholds_mm=[float(u) for u in THRESHOLDS_MM], days=days_meta, provinces=provs,
                 variants_used=variants_used, archived_at_utc=datetime.now(timezone.utc).isoformat())
 

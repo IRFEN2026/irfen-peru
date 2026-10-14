@@ -23,8 +23,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Dispatch the engine on its own branch
+      - name: Dispatch the engine on its own branch (skip, visibly, if a run is already waiting)
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-        run: gh workflow run v09-forecast-engine.yml --ref v09/forecast-engine
+        run: |
+          set -euo pipefail
+          # GitHub guarda una sola ejecución en espera por grupo de concurrencia y la reemplaza con la siguiente:
+          # despachar ahora podría anular en silencio un entrenamiento lanzado a mano (QA MEDIA-1).
+          busy=""
+          for wf in v09-own-model-train.yml v09-forecast-engine.yml; do
+            for st in queued pending waiting requested; do
+              n=$(gh run list --workflow "$wf" --status "$st" --limit 5 --json databaseId --jq 'length')
+              if [ "$n" != "0" ]; then busy="$busy $wf:$st"; fi
+            done
+          done
+          if [ -n "$busy" ]; then
+            echo "::warning title=V09_FORECAST_TRIGGER::ciclo omitido para no reemplazar una ejecución en espera:$busy"
+            exit 0
+          fi
+          gh workflow run v09-forecast-engine.yml --ref v09/forecast-engine
