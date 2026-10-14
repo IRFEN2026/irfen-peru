@@ -40,6 +40,7 @@ GOES_V08 = SITE / "data/calibration/goes19_rrqpe_probe.json"
 GEOS_V08 = SITE / "data/forecast/latest.json"
 CENDEHUA = SITE / "data/stations/igp_cendehua_access_probe.json"
 INVENTORY = ROOT / "config/phase2_national_inventory_completeness_audit_v0_1.json"
+REVIEW = ROOT / "config/phase2_inventory_completeness_review_v0_1.json"  # optional (inventory completeness review ledger)
 BOUNDARIES_LATEST = ROOT / "data/v09/admin_boundaries/latest.json"
 OUT = SITE / "data/v09/territory_v0_1.json"
 NORTH_DEPARTMENTS = ("TUMBES", "PIURA", "LAMBAYEQUE", "LA LIBERTAD")
@@ -65,7 +66,9 @@ EVIDENCE_CLASSES = {
     "PRONOSTICO": "Pronóstico experimental GEOS-CF",
     "GEOMETRIA_OFICIAL": "Geometría oficial (ANA, IGP, INEI)",
     "UBICACION_DOCUMENTAL": "Ubicación documental (punto o ámbito tomado de un documento, p. ej. monitoreo MML 2013 o visor SIGRID; no es outlet, confluencia ni geometría oficial)",
-    "GEOMETRIA_CANDIDATA": "Geometría candidata derivada (DEM D8; sin validación hidráulica)",
+    "GEOMETRIA_DERIVADA": "Geometría derivada reproducible (intersección D8 sobre DEM; nodo, no confluencia oficial)",
+    "GEOMETRIA_CANDIDATA": "Geometría candidata (delimitación DEM D8 sin validación hidráulica)",
+    "PENDIENTE": "Pendiente (no se dibuja: falta geometría reproducible admitida)",
 }
 
 
@@ -192,7 +195,7 @@ def layer_for(feature: dict) -> tuple[str, str]:
         ns = feature.get("node_semantics")
         # only an exact official node is official geometry; a monitoring anchor or a near-confluence point is a
         # location taken from a document, and a D8 intersection is derived
-        ev = "GEOMETRIA_CANDIDATA" if ns == "REPRODUCIBLE_DERIVED" else "GEOMETRIA_OFICIAL" if ns == "EXACT_OFFICIAL" else "UBICACION_DOCUMENTAL"
+        ev = "GEOMETRIA_DERIVADA" if ns == "REPRODUCIBLE_DERIVED" else "GEOMETRIA_OFICIAL" if ns == "EXACT_OFFICIAL" else "UBICACION_DOCUMENTAL"
         return ("impacto" if role == "COLLECTOR_CONTROL_POINT" else "descargas"), ev
     if cat == "ENGINEERED_OR_CRITICAL_REACH_CONTEXT":
         return "impacto", "GEOMETRIA_OFICIAL"
@@ -206,6 +209,7 @@ def rain_v09(row: dict) -> dict:
     im, g = row["imerg"], row["goes19"]
     return dict(
         source="v09_zone", zone_id=row["zone_id"],
+        area_es=f"polígono de la zona de vigilancia v0.9 «{row.get('display_name') or row['zone_id']}» (no la quebrada sola)",
         imerg=dict(evidence="ESTIMACION_SATELITAL", window_end_utc=im.get("window_end_utc"), coverage_24h=im.get("coverage_24h"),
                    windows={k: (dict(accum_mm=v["accum_mm"]) if v["status"] == "CALCULADO" else dict(status=v["status"], reason=v.get("reason")))
                             for k, v in im.get("windows", {}).items()}),
@@ -218,7 +222,7 @@ def rain_v09(row: dict) -> dict:
 
 
 def rain_v08(spec: dict, imerg: dict | None, goes: dict | None, geos: dict | None, cendehua: dict | None) -> dict:
-    out = dict(source="v08_targets")
+    out = dict(source="v08_targets", area_es="objetivos de lluvia v0.8 (polígonos de investigación de cada fuente; no la quebrada sola)")
     if spec.get("imerg_v08_target"):
         im = ENGINE.imerg_for_zone("__none__", spec["imerg_v08_target"], None, imerg)
         out["imerg"] = dict(evidence="ESTIMACION_SATELITAL", target=spec["imerg_v08_target"], window_end_utc=im.get("window_end_utc"),
@@ -242,6 +246,56 @@ def rain_v08(spec: dict, imerg: dict | None, goes: dict | None, geos: dict | Non
                                         for s in sig.get("observations", [])],
                               note_es="Estado de estaciones del IGP; no es etiqueta de evento ni medición de caudal. Sin coordenadas admitidas en el repositorio.")
     return out
+
+
+MISSING_ES = dict(imerg="sin serie IMERG Early propia", goes="sin GOES-19 propio", geos="sin pronóstico GEOS-CF propio",
+                  avisos="sin cruce con avisos oficiales (no es zona de vigilancia v0.9)", in_situ="sin estación in situ admitida")
+INVENTORY_REGIONS = ("Tumbes", "Piura", "Lambayeque", "La Libertad", "Rímac", "Pisco/Ica", "Santa/Casma")
+
+
+def inventory_region(r: dict, rimac_corridor: str) -> str | None:
+    if r.get("corridor") == rimac_corridor:
+        return "Rímac"
+    if r.get("corridor") == "SANTA_CASMA":
+        return "Santa/Casma"
+    return {"Tumbes": "Tumbes", "Piura": "Piura", "Lambayeque": "Lambayeque", "La Libertad": "La Libertad", "Ica": "Pisco/Ica"}.get(r.get("department"))
+
+
+def inventory_rows(national: dict, review: dict | None, rimac_corridor: str) -> list[dict]:
+    """Slim, filterable inventory: national rows (INVENTARIADO) and, when the review ledger is on this branch,
+    its candidates (CANDIDATO, not inventoried). Three states are kept apart; nothing here is drawn."""
+    rows = national.get("rows") or national["candidates"]
+    out = []
+    for r in rows:
+        reg = inventory_region(r, rimac_corridor)
+        if not reg:
+            continue
+        geo = (r.get("reproducible_geometry") or {}).get("exists")
+        out.append(dict(id=r["inventory_id"], name=r["documentary_name"], region=reg, department=r["department"], province=r.get("province"),
+                        district=r.get("district"), basin=r.get("parent_basin_or_system"), inventory_status="INVENTARIADO",
+                        evidence_state=r.get("suggested_state"), evidence_types=r.get("evidence_types", []),
+                        geometry="REPRODUCIBLE" if geo else "PENDIENTE" if "GEOMETRY_PENDING" in r.get("state_flags", []) else "SIN_GEOMETRIA",
+                        map_publishable=bool(r.get("map_eligible")), source="inventario nacional (main)"))
+    for c in (review or {}).get("new_candidates", []):
+        if c.get("region") not in INVENTORY_REGIONS:
+            continue
+        out.append(dict(id=c["candidate_id"], name=c["documentary_label"], region=c["region"], department=c["department"], province=c.get("province"),
+                        district=c.get("district"), basin=c.get("basin_as_printed"), inventory_status="CANDIDATO_NO_INTEGRADO",
+                        evidence_state=c["evidence_scale"], evidence_types=[], geometry="SIN_GEOMETRIA", map_publishable=False,
+                        relation=c["relation_to_inventory"], source="revisión de completitud 14-10 (" + ", ".join(sorted({x["source_id"] for x in c["sources"]})) + ")"))
+    return out
+
+
+def data_status(rain_state: dict, zone_rain: dict) -> dict:
+    """Latest timestamps per source, for the visible freshness strip (the page computes ages and staleness)."""
+    def latest(vals):
+        vals = [v for v in vals if v]
+        return max(vals) if vals else None
+    return dict(engine_evaluated_at_utc=rain_state.get("evaluated_at_utc"), avisos_links_evaluated_at_utc=rain_state.get("links_evaluated_at_utc"),
+                aviso_source_state=rain_state.get("aviso_source_state"),
+                imerg_latest_window_end_utc=latest(z["imerg"].get("window_end_utc") for z in zone_rain.values()),
+                goes_latest_scan_end_utc=latest(z["goes"].get("scan_end_utc") for z in zone_rain.values()),
+                geos_latest_cycle_start_utc=latest(z["geos"].get("dataset_time_start") for z in zone_rain.values()))
 
 
 # --------------------------------------------------------------------------- build
@@ -347,13 +401,16 @@ def build() -> dict:
         rain = rain_v09(rain_rows[spec["v09_zone"]]) if spec.get("v09_zone") in rain_rows else None
         v08 = rain_v08(spec, imerg_v08, goes_v08, geos_v08, cendehua) if any(k for k in spec if k != "v09_zone") else None
         status = {k: ("DIBUJADO" if comp[k]["drawn"] else "PENDIENTE") for k in ("catchment", "channel", "discharge", "exposure")}
-        quebradas.append(dict(q, components=comp, component_status=status, rain_v09=rain, rain_v08=v08,
+        have = {k for k in ("imerg", "goes", "geos", "in_situ") if (rain or {}).get(k) or (v08 or {}).get(k)} | ({"avisos"} if rain else set())
+        missing = [MISSING_ES[k] for k in ("imerg", "goes", "geos", "avisos", "in_situ") if k not in have]
+        quebradas.append(dict(q, components=comp, component_status=status, rain_v09=rain, rain_v08=v08, rain_missing_es=missing,
                               rain_status="CON_SERIE" if (rain or (v08 and len(v08) > 1)) else "SIN_SERIE_PROPIA"))
 
     # rain on zones (choropleth): north v0.9 zones, by zone id
     zone_rain = {zid: rain_v09(r) for zid, r in rain_rows.items()}
 
     inventory = build_inventory(features, quebradas, load(INVENTORY), zones_cfg, rain_rows, registry, withheld)
+    inv_rows = inventory_rows(load(INVENTORY), load(REVIEW), registry["regions"]["rimac"]["inventory_corridor"])
     for f in features:
         f["properties"].pop("_path", None)
     return dict(schema_version="0.1", bundle_id="irfen-v09-territory:v0.1", **GUARDS,
@@ -364,7 +421,8 @@ def build() -> dict:
                 rain_evaluated_at_utc=rain_state.get("evaluated_at_utc"), freshness=rain_state.get("freshness") or ENGINE.FRESHNESS,
                 layers=LAYERS, evidence_classes=EVIDENCE_CLASSES, regions=registry["regions"], rules_es=registry["rules_es"],
                 terminology_es=registry["terminology_es"], quebradas=quebradas, zone_rain=zone_rain,
-                pending=pending_items(registry, withheld), inventory=inventory,
+                pending=pending_items(registry, withheld), inventory=inventory, data_status=data_status(rain_state, zone_rain),
+                inventory_rows=inv_rows,
                 geometries=dict(type="FeatureCollection", features=features,
                                 note="Simplified for display only (Douglas-Peucker 0.0002° Rímac, 0.002° north, 0.005° provinces)."))
 

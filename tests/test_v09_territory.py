@@ -78,7 +78,7 @@ class Bundle(unittest.TestCase):
             if p["semantic_role"] == "DEM_CANDIDATE_ALTERNATIVE_NOT_SELECTED":
                 self.assertFalse(p["default_visible"])
             if p.get("node_semantics") == "REPRODUCIBLE_DERIVED":
-                self.assertEqual(p["evidence"], "GEOMETRIA_CANDIDATA")
+                self.assertEqual(p["evidence"], "GEOMETRIA_DERIVADA")  # a reproducible D8 node: derived, not official
             if p.get("node_semantics") in ("MONITORING_ANCHOR", "NEAR_CONFLUENCE", "UNRESOLVED") or p["map_category"] == "DOCUMENT_CONTEXT":
                 self.assertEqual(p["evidence"], "UBICACION_DOCUMENTAL")  # never presented as official geometry
             self.assertIn(p["region"], ("costa_norte", "rimac"))
@@ -117,6 +117,27 @@ class Bundle(unittest.TestCase):
         hua = next(q for q in BUNDLE["quebradas"] if q["quebrada_id"] == "huaycoloro")
         self.assertEqual(hua["rain_v08"]["in_situ"]["evidence"], "OBSERVACION_IN_SITU")
         self.assertIsNone(hua["rain_v08"]["in_situ"].get("coordinates"))
+
+    def test_filterable_inventory_keeps_three_states_apart(self):
+        national = {r["inventory_id"]: r for r in json.loads(T.INVENTORY.read_text(encoding="utf-8"))["candidates"]}
+        rows = BUNDLE["inventory_rows"]
+        self.assertEqual(len({r["id"] for r in rows}), len(rows))
+        for r in rows:
+            self.assertIn(r["region"], T.INVENTORY_REGIONS)
+            self.assertIs(r["map_publishable"], False)  # nothing in the inventory is map-eligible today
+            if r["inventory_status"] == "INVENTARIADO":
+                n = national[r["id"]]
+                self.assertEqual(r["geometry"] == "REPRODUCIBLE", bool(n["reproducible_geometry"].get("exists")))
+            else:
+                self.assertEqual((r["inventory_status"], r["geometry"]), ("CANDIDATO_NO_INTEGRADO", "SIN_GEOMETRIA"))
+                self.assertNotIn(r["id"], national)
+        self.assertEqual(sum(1 for r in rows if r["inventory_status"] == "INVENTARIADO"),
+                         sum(1 for r in national.values() if T.inventory_region(r, "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA")))
+
+    def test_data_status_for_the_freshness_strip(self):
+        s = BUNDLE["data_status"]
+        for k in ("engine_evaluated_at_utc", "imerg_latest_window_end_utc", "goes_latest_scan_end_utc", "geos_latest_cycle_start_utc", "aviso_source_state"):
+            self.assertIn(k, s)
 
     def test_inventory_matches_the_national_inventory(self):
         rows = json.loads(T.INVENTORY.read_text(encoding="utf-8"))
@@ -194,10 +215,37 @@ class Browser(unittest.TestCase):
                 self.assertIn("pendiente", detail)  # Quirio has no selected catchment: declared, not drawn
                 self.assertIn("no son el área colectora", detail)
                 self.assertEqual(page.locator("#map .hl").count(), 5)  # 3 alternatives + anchor + D8 node
+                self.assertGreater(page.locator("#map rect.hl").count(), 0)  # the D8 node is drawn as a derived (square) marker
                 page.click("[data-q=huaycoloro]")
-                self.assertIn("observación in situ", page.inner_text("#detail").lower())
+                detail = page.inner_text("#detail").lower()
+                self.assertIn("observación in situ", detail)
+                self.assertIn("calculada sobre", detail)  # what each rain value is computed over
+                self.assertIn("qué falta", detail)
+                # zoom and pan through the viewBox; region reset restores the full frame
+                vb = lambda: [float(x) for x in page.get_attribute("#map svg", "viewBox").split()]
+                page.click("#zfit"); full = vb()
+                page.click("#zin"); self.assertLess(vb()[2], full[2])
+                page.mouse.move(700, 400); page.mouse.wheel(0, 400); page.click("#zfit"); self.assertEqual(vb(), full)
+                # selection directly on the map: a quebrada label is clickable
+                page.click("#map [data-qpin=quirio]")
+                self.assertTrue(page.inner_text("#detail").startswith("Quebrada Quirio"))
+                self.assertLess(vb()[2], full[2])  # the view fits the selection
+                # freshness strip: one chip per source, each with an age
+                chips = page.locator("#status .st")
+                self.assertEqual(chips.count(), 5)
+                self.assertIn("IMERG Early", chips.nth(0).inner_text())
+                # inventory with filters; candidates (if the review ledger is present) are never "publicable"
                 page.click("nav [data-view=inventario]")
                 self.assertIn("quebradas identificadas", page.inner_text("#inv-table").lower())
+                total = int(page.inner_text("#f-count").split(" de ")[1].split()[0])
+                page.select_option("#f-region", "Rímac")
+                rimac = int(page.inner_text("#f-count").split()[0])
+                self.assertTrue(0 < rimac < total)
+                page.select_option("#f-geometry", "REPRODUCIBLE")
+                self.assertEqual(int(page.inner_text("#f-count").split()[0]), 3)
+                page.select_option("#f-geometry", ""); page.fill("#f-text", "huaycoloro")
+                self.assertIn("huaycoloro", page.inner_text("#rows-table").lower())
+                self.assertIn("publicables en mapa: 0", page.inner_text("#f-count"))
                 self.assertEqual(errors, [])
                 b.close()
         finally:
