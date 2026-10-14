@@ -140,7 +140,7 @@ const LAYER_STYLE = {
   contexto: {stroke:"--g-context", fill:"none", w:0.8},
 };
 const RAIN_BINS = [[0,"--q0","0 mm"],[1,"--q1","≤ 1 mm"],[5,"--q2","1–5 mm"],[10,"--q3","5–10 mm"],[Infinity,"--q4","> 10 mm"]];
-const EV_CLASS = {OBSERVACION_IN_SITU:"obs", AVISO_OFICIAL:"obs", ESTIMACION_SATELITAL:"est", ESTIMACION_NO_VALIDADA:"est unv", PRONOSTICO:"fc", GEOMETRIA_OFICIAL:"obs", GEOMETRIA_CANDIDATA:"est unv"};
+const EV_CLASS = {OBSERVACION_IN_SITU:"obs", AVISO_OFICIAL:"obs", ESTIMACION_SATELITAL:"est", ESTIMACION_NO_VALIDADA:"est unv", PRONOSTICO:"fc", GEOMETRIA_OFICIAL:"obs", UBICACION_DOCUMENTAL:"est", GEOMETRIA_CANDIDATA:"est unv"};
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const lima = iso => iso ? new Date(tms(iso)).toLocaleString("es-PE", {timeZone:"America/Lima", day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit", hourCycle:"h23"}) : "—";

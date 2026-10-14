@@ -71,6 +71,8 @@ class Bundle(unittest.TestCase):
                 self.assertFalse(p["default_visible"])
             if p.get("node_semantics") == "REPRODUCIBLE_DERIVED":
                 self.assertEqual(p["evidence"], "GEOMETRIA_CANDIDATA")
+            if p.get("node_semantics") in ("MONITORING_ANCHOR", "NEAR_CONFLUENCE", "UNRESOLVED") or p["map_category"] == "DOCUMENT_CONTEXT":
+                self.assertEqual(p["evidence"], "UBICACION_DOCUMENTAL")  # never presented as official geometry
             self.assertIn(p["region"], ("costa_norte", "rimac"))
         rimac_parents = {f["properties"]["parent_id"] for f in FEATS if f["properties"]["region"] == "rimac"}
         self.assertFalse({"lima_norte_chillon_bajo", "lima_sur_mala", "lima_este_lurin_cieneguilla"} & rimac_parents)

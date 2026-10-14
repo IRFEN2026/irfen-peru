@@ -64,6 +64,7 @@ EVIDENCE_CLASSES = {
     "ESTIMACION_NO_VALIDADA": "Estimación satelital instantánea GOES-19 RRQPE (no validada localmente)",
     "PRONOSTICO": "Pronóstico experimental GEOS-CF",
     "GEOMETRIA_OFICIAL": "Geometría oficial (ANA, IGP, INEI)",
+    "UBICACION_DOCUMENTAL": "Ubicación documental (punto o ámbito tomado de un documento, p. ej. monitoreo MML 2013 o visor SIGRID; no es outlet, confluencia ni geometría oficial)",
     "GEOMETRIA_CANDIDATA": "Geometría candidata derivada (DEM D8; sin validación hidráulica)",
 }
 
@@ -176,12 +177,16 @@ def layer_for(feature: dict) -> tuple[str, str]:
     if cat in ("LOCAL_CHANNEL", "COLLECTOR"):
         return "cauces", "GEOMETRIA_OFICIAL" if role.startswith("OFFICIAL") else "GEOMETRIA_CANDIDATA"
     if cat == "NODE":
-        if role == "COLLECTOR_CONTROL_POINT":
-            return "impacto", "GEOMETRIA_OFICIAL"
-        return "descargas", "GEOMETRIA_CANDIDATA" if feature.get("node_semantics") == "REPRODUCIBLE_DERIVED" else "GEOMETRIA_OFICIAL"
+        ns = feature.get("node_semantics")
+        # only an exact official node is official geometry; a monitoring anchor or a near-confluence point is a
+        # location taken from a document, and a D8 intersection is derived
+        ev = "GEOMETRIA_CANDIDATA" if ns == "REPRODUCIBLE_DERIVED" else "GEOMETRIA_OFICIAL" if ns == "EXACT_OFFICIAL" else "UBICACION_DOCUMENTAL"
+        return ("impacto" if role == "COLLECTOR_CONTROL_POINT" else "descargas"), ev
     if cat == "ENGINEERED_OR_CRITICAL_REACH_CONTEXT":
         return "impacto", "GEOMETRIA_OFICIAL"
-    return "contexto", "GEOMETRIA_OFICIAL"  # REGULATORY_FAJA_MARGINAL, DOCUMENT_CONTEXT
+    if cat == "DOCUMENT_CONTEXT":
+        return "contexto", "UBICACION_DOCUMENTAL"
+    return "contexto", "GEOMETRIA_OFICIAL"  # REGULATORY_FAJA_MARGINAL (ANA)
 
 
 # --------------------------------------------------------------------------- rain (pure over loaded inputs)
