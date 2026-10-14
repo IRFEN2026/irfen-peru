@@ -69,8 +69,20 @@ EVIDENCE_CLASSES = {
 }
 
 
+READS: dict[str, str | None] = {}  # every file a build reads -> its SHA-256 (None when absent)
+
+
 def load(path: Path):
-    return json.loads(path.read_text(encoding="utf-8")) if path.is_file() else None
+    path = Path(path)
+    data = path.read_bytes() if path.is_file() else None
+    if path.resolve() != OUT.resolve():
+        READS[path.resolve().relative_to(ROOT).as_posix()] = hashlib.sha256(data).hexdigest() if data is not None else None
+    return json.loads(data.decode("utf-8")) if data is not None else None
+
+
+def inputs_changed(recorded: dict) -> list[str]:
+    """Inputs whose current SHA-256 differs from the one recorded in a bundle."""
+    return sorted(k for k, v in recorded.items() if sha(ROOT / k) != v)
 
 
 def sha(path: Path) -> str | None:
@@ -234,6 +246,7 @@ def rain_v08(spec: dict, imerg: dict | None, goes: dict | None, geos: dict | Non
 
 # --------------------------------------------------------------------------- build
 def build() -> dict:
+    READS.clear()
     catalog = load(MAP_LAYERS)
     registry = load(REGISTRY)
     zones_cfg = load(ZONES)
@@ -346,9 +359,7 @@ def build() -> dict:
                 disclaimer_es=("Vista territorial experimental (RESEARCH_ONLY / TEST_ONLY). Muestra geometrías existentes y verificadas, su "
                                "procedencia y la lluvia disponible con su clase de evidencia. No es mapa de riesgo, ni de inundación, ni ruteo "
                                "de escurrimiento, ni sistema de alerta. Lo que no tiene geometría admitida se lista como pendiente."),
-                inputs={k: sha(p) for k, p in (("map_layers", MAP_LAYERS), ("registry", REGISTRY), ("zones", ZONES), ("rain_state", RAIN_STATE),
-                                                ("imerg_v08", IMERG_V08), ("goes_v08", GOES_V08), ("geos_v08", GEOS_V08), ("cendehua", CENDEHUA),
-                                                ("inventory", INVENTORY))},
+                inputs=dict(sorted(READS.items())),
                 rain_evaluated_at_utc=rain_state.get("evaluated_at_utc"), freshness=rain_state.get("freshness") or ENGINE.FRESHNESS,
                 layers=LAYERS, evidence_classes=EVIDENCE_CLASSES, regions=registry["regions"], rules_es=registry["rules_es"],
                 terminology_es=registry["terminology_es"], quebradas=quebradas, zone_rain=zone_rain,

@@ -33,12 +33,17 @@ class Bundle(unittest.TestCase):
     def test_guards_and_reproducible(self):
         for k, v in T.GUARDS.items():
             self.assertEqual(BUNDLE[k], v, k)
-        inputs_now = {k: T.sha(p) for k, p in (("map_layers", T.MAP_LAYERS), ("registry", T.REGISTRY), ("zones", T.ZONES), ("rain_state", T.RAIN_STATE),
-                                                ("imerg_v08", T.IMERG_V08), ("goes_v08", T.GOES_V08), ("geos_v08", T.GEOS_V08),
-                                                ("cendehua", T.CENDEHUA), ("inventory", T.INVENTORY))}
-        if BUNDLE["inputs"] != inputs_now:
-            self.skipTest("an input changed after the committed bundle; the v0.9 workflows rebuild it")
+        changed = T.inputs_changed(BUNDLE["inputs"])
+        if changed:  # the v0.9 rain and capture workflows rebuild the bundle when an input moves
+            self.skipTest(f"inputs changed after the committed bundle: {changed[:5]}")
         self.assertEqual(T.main(["--check"]), 0)
+
+    def test_inputs_cover_every_file_read(self):
+        for path in ("site/data/map_layers.json", "config/v09_territory_quebradas_v0_1.json", "data/v09/surveillance/zone_rain_state_v0_1.json",
+                     "config/phase2_national_inventory_completeness_audit_v0_1.json", "data/v09/admin_boundaries/latest.json"):
+            self.assertIn(path, BUNDLE["inputs"])
+        self.assertTrue(any(k.startswith("data/phase2/geometries/") or k.startswith("site/data/phase2/geometries/") for k in BUNDLE["inputs"]))
+        self.assertNotIn("site/data/v09/territory_v0_1.json", BUNDLE["inputs"])
 
     def test_only_admitted_or_verified_geometry_is_drawn(self):
         admitted = {f["entity_id"]: f for f in CATALOG["features"] if f.get("map_eligible")}
@@ -122,6 +127,24 @@ class Bundle(unittest.TestCase):
             self.assertEqual(r["geometrias_pendientes"]["quebradas_sin_geometria"],
                              r["quebradas_identificadas"] - r["quebradas_con_geometria_reproducible_en_inventario"])
         self.assertEqual([r["zone"] for r in BUNDLE["inventory"]], ["Tumbes", "Piura", "Lambayeque", "La Libertad", "Rímac (Carretera Central)"])
+
+
+class Isolation(unittest.TestCase):
+    def test_nothing_operational_reads_the_territory_view(self):
+        for path in (ROOT / "scripts").glob("*.py"):
+            if path.name != "v09_build_territory_bundle.py":
+                text = path.read_text(encoding="utf-8")
+                self.assertNotIn("v09_build_territory_bundle", text, path.name)
+                self.assertNotIn("territory_v0_1.json", text, path.name)
+        self.assertNotIn("territory_v0_1.json", (ROOT / "site/v09/index.html").read_text(encoding="utf-8"))
+
+    def test_workflows_rebuild_it_without_blocking_capture(self):
+        for wf in ("v09-rain-north.yml", "v09-senamhi-avisos-capture.yml"):
+            text = (ROOT / ".github/workflows" / wf).read_text(encoding="utf-8")
+            step = text[text.index("name: Territorial view bundle"):]
+            step = step[:step.index("- name:", 1)] if "- name:" in step[1:] else step
+            self.assertIn("continue-on-error: true", step, wf)
+            self.assertIn("v09_build_territory_bundle.py --check", step, wf)
 
 
 class Page(unittest.TestCase):
