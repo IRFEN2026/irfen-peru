@@ -15,6 +15,7 @@ Qué hace, en cada corrida del ensamble (51 miembros: control + 50 perturbados):
 * Para cada provincia, día y umbral calcula dos probabilidades (fracción de miembros):
     - ``p_mean``: la lluvia media de la provincia supera el umbral;
     - ``p_max``: alguna celda de la provincia supera el umbral (más cercano a "lluvia fuerte en algún punto").
+* Lee el GRIB con eccodes, mensaje por mensaje.
 * Archiva cada corrida en un registro JSONL de solo agregado y deja la última en un JSON con guardas TEST_ONLY.
 
 Si la descarga falla, el estado queda ``UNAVAILABLE`` y no se escriben probabilidades: un dato faltante no es lluvia
@@ -49,7 +50,7 @@ CLOSE_HOUR_UTC = 12  # 07:00 en Perú (UTC−5): cierre del día pluviométrico 
 BBOX = dict(lat_min=-9.6, lat_max=-3.0, lon_min=-81.7, lon_max=-76.6)  # 4 departamentos con margen de 1 celda
 MIN_CELLS = 3
 K_NEAREST = 4
-SOURCES = ("aws", "azure", "ecmwf")  # réplicas en la nube primero: el portal de ECMWF es lento para 153 campos
+SOURCES = ("azure", "aws", "ecmwf")  # réplicas en la nube primero (Azure fue la más rápida en la primera prueba)
 SOURCE_TIMEOUT_S = 360
 ATTRIBUTION = "Adaptado de ECMWF Open Data (IFS ENS), ECMWF, licencia CC BY 4.0, https://data.ecmwf.int/forecasts/"
 
@@ -265,6 +266,7 @@ def latest_run_and_download(target: Path, sources=SOURCES, n_days: int = N_DAYS,
     errors = []
     for source in sources:
         try:
+            Path(target).unlink(missing_ok=True)  # nunca mezclar restos de una réplica fallida
             _alarm(timeout_s)
             client = Client(source=source)
             run = client.latest(stream="enfo", type="pf", param="tp", step=96)
@@ -280,27 +282,52 @@ def latest_run_and_download(target: Path, sources=SOURCES, n_days: int = N_DAYS,
     raise RuntimeError("; ".join(errors))
 
 
-def read_grib(path: Path, bbox: dict = BBOX):
-    """Lee ``tp`` de control y perturbados → (corrida UTC, tp_m [miembro, paso, lat, lon], pasos_h, lats, lons)."""
-    import xarray as xr
+def assemble_members(fields: dict) -> tuple[np.ndarray, list[int], list[int]]:
+    """{(miembro, paso_h): campo 2D} → array [miembro, paso, lat, lon]; exige la malla completa miembro × paso."""
+    members = sorted({m for m, _ in fields})
+    steps = sorted({s for _, s in fields})
+    missing = [(m, s) for m in members for s in steps if (m, s) not in fields]
+    if missing:
+        raise ValueError(f"faltan {len(missing)} campos miembro×paso, p. ej. {missing[:3]}")
+    return np.stack([np.stack([fields[(m, s)] for s in steps]) for m in members]).astype(float), members, steps
 
-    parts, run, steps, lats, lons = [], None, None, None, None
-    for data_type in ("cf", "pf"):
-        ds = xr.open_dataset(path, engine="cfgrib",
-                             backend_kwargs={"filter_by_keys": {"dataType": data_type}, "indexpath": ""})
-        tp = ds["tp"]
-        if "step" not in tp.dims:
-            tp = tp.expand_dims("step")
-        if "number" not in tp.dims:
-            tp = tp.expand_dims("number")
-        tp = tp.transpose("number", "step", "latitude", "longitude")
-        if run is None:
-            run = datetime.fromisoformat(str(np.datetime_as_string(ds["time"].values, unit="s"))).replace(tzinfo=timezone.utc)
-            steps = (np.atleast_1d(ds["step"].values).astype("timedelta64[h]").astype(int)).tolist()
-            ri, ci, lats, lons = subset_bbox(np.asarray(ds["latitude"].values, float),
-                                             np.asarray(ds["longitude"].values, float), bbox)
-        parts.append(np.asarray(tp.values, dtype=float)[:, :, ri][:, :, :, ci])
-    return run, np.concatenate(parts, axis=0), steps, lats, lons
+
+def read_grib(path: Path, bbox: dict = BBOX):
+    """Lee ``tp`` de control y perturbados con eccodes → (corrida UTC, tp_m [miembro, paso, lat, lon], pasos_h, lats, lons).
+
+    Se recorren los mensajes uno a uno; la latitud y longitud de cada punto se toman del propio mensaje, en el mismo
+    orden que los valores, para no depender de la dirección de barrido de la grilla.
+    """
+    import eccodes
+
+    fields, inventory, run, ri, ci, lats, lons, shape = {}, [], None, None, None, None, None, None
+    with open(path, "rb") as fh:
+        while True:
+            gid = eccodes.codes_grib_new_from_file(fh)
+            if gid is None:
+                break
+            try:
+                short = eccodes.codes_get(gid, "shortName")
+                if len(inventory) < 6:
+                    inventory.append(f"{eccodes.codes_get(gid, 'dataType')}/{short}/{eccodes.codes_get(gid, 'stepRange')}")
+                if short != "tp":
+                    continue
+                if shape is None:
+                    shape = (eccodes.codes_get(gid, "Nj"), eccodes.codes_get(gid, "Ni"))
+                    lat2 = np.asarray(eccodes.codes_get_array(gid, "latitudes"), float).reshape(shape)
+                    lon2 = np.asarray(eccodes.codes_get_array(gid, "longitudes"), float).reshape(shape)
+                    ri, ci, lats, lons = subset_bbox(lat2[:, 0], lon2[0, :], bbox)
+                    date, hhmm = eccodes.codes_get(gid, "dataDate"), eccodes.codes_get(gid, "dataTime")
+                    run = datetime.strptime(f"{date}{int(hhmm):04d}", "%Y%m%d%H%M").replace(tzinfo=timezone.utc)
+                values = np.asarray(eccodes.codes_get_values(gid), float).reshape(shape)
+                key = (int(eccodes.codes_get(gid, "number")), int(eccodes.codes_get(gid, "endStep")))
+                fields[key] = values[np.ix_(ri, ci)]
+            finally:
+                eccodes.codes_release(gid)
+    if not fields:
+        raise ValueError(f"el GRIB no contiene 'tp'; primeros mensajes: {inventory}")
+    tp_m, members, steps = assemble_members(fields)
+    return run, tp_m, steps, lats, lons
 
 
 # --------------------------------------------------------------------------- archivo

@@ -127,6 +127,16 @@ class Probabilities(unittest.TestCase):
         self.assertIs(doc["operational_alerting_enabled"], False)
         self.assertIn("CC BY 4.0", doc["source"]["attribution"])
 
+    def test_assemble_members_orders_and_requires_full_grid(self):
+        fields = {(m, s): np.full((2, 2), 100 * m + s) for m in (2, 0, 1) for s in (48, 24)}
+        tp, members, steps = E.assemble_members(fields)
+        self.assertEqual((members, steps), ([0, 1, 2], [24, 48]))
+        self.assertEqual(tp.shape, (3, 2, 2, 2))
+        self.assertEqual(tp[2, 1, 0, 0], 248)
+        del fields[(1, 48)]
+        with self.assertRaises(ValueError):
+            E.assemble_members(fields)
+
     def test_ledger_is_append_only_and_idempotent(self):
         rec = dict(run_utc="2026-10-14T12:00:00+00:00", provinces={})
         with tempfile.TemporaryDirectory() as tmp:
