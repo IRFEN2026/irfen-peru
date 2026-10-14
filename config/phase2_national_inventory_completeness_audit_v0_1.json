@@ -36,6 +36,11 @@
     "revision": "r2",
     "date": "2026-10-07",
     "note": "After independent QA on r1: dated event statements read through automated extraction are EVENT_LEAD_UNVERIFIED, not EVENT_EVIDENCE; source_text_verified added to every source and EVENT item; the validator is exercised by a pytest module in the PR gate. No row, source, geometry or priority was added or removed."
+   },
+   {
+    "revision": "r6",
+    "date": "2026-10-14",
+    "note": "Active regions (Rímac/Carretera Central, Pisco/Ica, Santa/Casma): 19 rows: 18 from ANA DU 015-2023 Anexo III (11 Rímac works points) and Anexo II (Ica sección XV, Casma rows of sección IX), plus a link row for Quebrada Huarangal (Huancano/Pisco) to main unit ica_huarangal_pisco. Catambo and Huarangal are link rows (priority EXISTING) to units already in main; no unit is duplicated. Anexo II/III bytes are byte-identical copies of the PR #364 archive. Equivalences Condores 1/2-Los Cóndores, Milagros-Señor de los Milagros, Ines 1-2 and Huascata-U3 y P-P1 UNRESOLVED. No geometry, outlet, parent basin, merge, map promotion or event-ledger entry. Revision labels r3/r4/r5 are used by PRs #365/#366/#363, not yet in main. Crosswalk: config/phase2_inventory_r6_active_regions_du015_v0_1.json."
    }
   ],
   "clean_room_notice": "This file contains outcome-bearing statements about the 2015-03-23 Chosica event and about named Chosica quebradas. It must not be read by the sealed Chosica 2015 clean-room predictor jobs (branches agent/chosica-2015-*, PRs #146, #149, #150, #151)."
@@ -118,13 +123,13 @@
   "map_eligible": "false on every row"
  },
  "summary": {
-  "candidate_rows": 400,
+  "candidate_rows": 419,
   "by_corridor": {
-   "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA": 44,
-   "PISCO_ICA": 48,
-   "SANTA_CASMA": 16,
+   "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA": 55,
+   "PISCO_ICA": 54,
+   "SANTA_CASMA": 17,
    "TUMBES_ZORRITOS": 68,
-   "ANCASH_INTERIOR": 18,
+   "ANCASH_INTERIOR": 19,
    "LAMBAYEQUE": 46,
    "LA_LIBERTAD": 9,
    "LIMA_OTHER_VALLEYS_AND_METROPOLITAN": 73,
@@ -133,26 +138,26 @@
   },
   "by_suggested_state": {
    "EVENT_LEAD_UNVERIFIED": 28,
-   "IDENTITY_ONLY": 349,
+   "IDENTITY_ONLY": 368,
    "GEOMETRY_PENDING": 20,
    "GEOMETRY_REPRODUCIBLE": 3
   },
   "by_irfen_presence": {
-   "NOT_FOUND_IN_REPO": 321,
-   "MAIN_REGISTERED_UNIT": 13,
-   "MAIN_NAME_CONTEXT_ONLY": 12,
+   "NOT_FOUND_IN_REPO": 335,
+   "MAIN_REGISTERED_UNIT": 15,
+   "MAIN_NAME_CONTEXT_ONLY": 13,
    "MAIN_LABEL_MENTION_UNCONFIRMED": 24,
-   "MAIN_NAMED_AS_QUEBRADA_WITH_CORRIDOR_CONTEXT": 16,
+   "MAIN_NAMED_AS_QUEBRADA_WITH_CORRIDOR_CONTEXT": 17,
    "BRANCH_OR_OPEN_PR_ONLY": 5,
-   "BRANCH_LABEL_MENTION_UNCONFIRMED": 6,
+   "BRANCH_LABEL_MENTION_UNCONFIRMED": 7,
    "NOT_EVALUATED_NO_DISCRIMINATING_CONTEXT": 3
   },
   "by_priority": {
    "P1": 23,
-   "P2": 17,
-   "EXISTING": 13,
-   "P3": 291,
-   "P4": 56
+   "P2": 28,
+   "EXISTING": 15,
+   "P3": 296,
+   "P4": 57
   },
   "event_evidence_rows": 0,
   "event_lead_unverified_rows": 41,
@@ -490,6 +495,48 @@
    "source_class": "PRIMARY_INSTITUTIONAL",
    "access": "SERVER_TITLE_ONLY",
    "access_note": "Title only. Concerns rock instability in a zone called Rosario; it does not establish a quebrada identity.",
+   "source_text_verified": false,
+   "verification_record": null
+  },
+  "ANA-DU-015-2023-ANEXO-II": {
+   "institution": "Autoridad Nacional del Agua (ANA); anexo del Decreto de Urgencia N.° 015-2023 publicado por el MEF en gob.pe",
+   "title": "Anexo II — Listado de puntos críticos para limpieza y descolmatación (DU 015-2023)",
+   "date": "2023-06-16",
+   "url": "https://cdn.www.gob.pe/uploads/document/file/4704868/Anexo_II_DU015_2023.pdf?v=1687213880",
+   "alt_identifiers": [
+    "data/phase2/source_archive/ana_du015_2023/raw/ana-du-015-2023-anexo-ii.pdf (sha256 c00095672208cb0afbd368aa02fe8172c2661d0df629385fb91b9f464db883b9)",
+    "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/raw/ana-du-015-2023-anexo-ii.pdf (PR #364, same bytes)"
+   ],
+   "source_class": "PRIMARY_INSTITUTIONAL",
+   "access": "ARCHIVED_BYTES_TEXT_LAYER_QUOTES_TESTED",
+   "access_note": "Original bytes archived in data/phase2/source_archive/ana_du015_2023/ (outside site/) with SHA-256 c00095672208cb0afbd368aa02fe8172c2661d0df629385fb91b9f464db883b9; byte-identical copy of the PR #364 archive. Rows cited here are text-layer quotes re-checked by tests/test_phase2_inventory_r6_active_regions_du015.py (config/phase2_inventory_r6_active_regions_du015_v0_1.json). source_text_verified stays false: promotion is left to independent QA.",
+   "source_text_verified": false,
+   "verification_record": null
+  },
+  "ANA-DU-015-2023-ANEXO-III": {
+   "institution": "Autoridad Nacional del Agua (ANA); anexo del Decreto de Urgencia N.° 015-2023 publicado por el MEF en gob.pe",
+   "title": "Anexo III — Listado de quebradas a ser intervenidas (DU 015-2023)",
+   "date": "2023-06-16",
+   "url": "https://cdn.www.gob.pe/uploads/document/file/4704869/Anexo_III_DU015_2023.pdf",
+   "alt_identifiers": [
+    "data/phase2/source_archive/ana_du015_2023/raw/ana-du-015-2023-anexo-iii.pdf (sha256 5963b140cd49b8ee6599044ab094e7a511a77d5ad0d9efdebcad35f633ac1cad)",
+    "data/phase2/source_archive/tumbes_capitana_hualaca_higueron/raw/ana-du-015-2023-anexo-iii.pdf (PR #364, same bytes)"
+   ],
+   "source_class": "PRIMARY_INSTITUTIONAL",
+   "access": "ARCHIVED_BYTES_TEXT_LAYER_QUOTES_TESTED",
+   "access_note": "Original bytes archived in data/phase2/source_archive/ana_du015_2023/ (outside site/) with SHA-256 5963b140cd49b8ee6599044ab094e7a511a77d5ad0d9efdebcad35f633ac1cad; byte-identical copy of the PR #364 archive. Rows cited here are text-layer quotes re-checked by tests/test_phase2_inventory_r6_active_regions_du015.py (config/phase2_inventory_r6_active_regions_du015_v0_1.json). source_text_verified stays false: promotion is left to independent QA. Columns Este/Norte are copied only as source_reference_point (datum and zone not printed).",
+   "source_text_verified": false,
+   "verification_record": null
+  },
+  "ANA-PISCO-HUARANGAL-RA060-2018": {
+   "institution": "Autoridad Nacional del Agua (ANA), ALA Pisco",
+   "title": "R.A. N.° 060-2018-ANA-AAA.CHCH-ALA.P — Quebrada Huarangal, Huancano/Pisco",
+   "date": "2018",
+   "url": "https://www.ana.gob.pe/sites/default/files/normatividad/files/R.A.%20N%C2%B0%20060-2018-ANA-AAA-CH.CH_.ALA%20PISCO._1.PDF",
+   "alt_identifiers": [],
+   "source_class": "PRIMARY_INSTITUTIONAL",
+   "access": "CITED_BY_MAIN_RECORD_NOT_ARCHIVED",
+   "access_note": "Not archived: capture attempted on the GitHub runner on 2026-10-14 (official URL timed out 3 times; Internet Archive 404), record in data/phase2/source_archive/pisco_huarangal_ra060_2018/capture_record_v0_1.json. main's record ica_huarangal_pisco cites it (OFFICIAL_ANA_PDF_TEXT_VERIFIED_2026-09-26_NOT_ARCHIVED). Identity/location context only: not activation evidence, footprint, outlet, discharge or threshold evidence. source_text_verified stays false.",
    "source_text_verified": false,
    "verification_record": null
   }
@@ -853,6 +900,72 @@
     "main_status": "not recorded",
     "status": "PENDING_ADJUDICATION",
     "needed": "D.S. 181-2023-EF annex."
+   },
+   {
+    "labels": [
+     "Condores 1",
+     "Condores 2",
+     "Los Cóndores"
+    ],
+    "inventory_ids": [
+     "lima_chaclacayo_condores_1",
+     "lima_chaclacayo_condores_2",
+     "lima_chaclacayo_los_condores"
+    ],
+    "documentary_basis": "ANA DU 015-2023 Anexo III lists 'Condores 1' (sector Gracilazo de la Vega) and 'Condores 2' (sector Tres de Octubre) in Chaclacayo; the existing row carries Qda. Los Cóndores (faja R.D. 064-2021). One channel with two works points, two channels, or branches: all remain possible.",
+    "main_status": "not recorded",
+    "status": "PENDING_ADJUDICATION",
+    "needed": "Georeferenced hydrography or the intervention files placing each label.",
+    "equivalence": "UNRESOLVED",
+    "added_in_revision": "r6"
+   },
+   {
+    "labels": [
+     "Milagros",
+     "Señor de los Milagros"
+    ],
+    "inventory_ids": [
+     "lima_lurigancho_milagros",
+     "lima_lurigancho_senor_de_los_milagros"
+    ],
+    "documentary_basis": "Anexo III 'Milagros' (sector 'Milagros - MML', Lurigancho-Chosica) vs the existing Señor de los Milagros row: label similarity only.",
+    "main_status": "not recorded",
+    "status": "PENDING_ADJUDICATION",
+    "needed": "Georeferenced hydrography or the intervention files placing each label.",
+    "equivalence": "UNRESOLVED",
+    "added_in_revision": "r6"
+   },
+   {
+    "labels": [
+     "Ines 1",
+     "Ines 2"
+    ],
+    "inventory_ids": [
+     "lima_chaclacayo_ines_1",
+     "lima_chaclacayo_ines_2"
+    ],
+    "documentary_basis": "Both in sector Santa Ines, Chaclacayo, with different printed reference numbers.",
+    "main_status": "not recorded",
+    "status": "PENDING_ADJUDICATION",
+    "needed": "Georeferenced hydrography or the intervention files placing each label.",
+    "equivalence": "UNRESOLVED",
+    "added_in_revision": "r6"
+   },
+   {
+    "labels": [
+     "Huascata",
+     "U3 y P-P1"
+    ],
+    "inventory_ids": [
+     "lima_chaclacayo_huascata",
+     "lima_chaclacayo_u3_y_p_p1"
+    ],
+    "documentary_basis": "Adjacent Anexo III rows 6-7; row 6's sector is 'AA. HH. Cerro Vecino Huascata'.",
+    "main_status": "not recorded",
+    "status": "PENDING_ADJUDICATION",
+    "needed": "Georeferenced hydrography or the intervention files placing each label.",
+    "equivalence": "UNRESOLVED",
+    "added_in_revision": "r6"
    }
   ],
   "same_label_groups_not_merged": [
@@ -992,9 +1105,10 @@
    {
     "label": "Huarangal",
     "inventory_ids": [
-     "lima_mala_huarangal"
+     "lima_mala_huarangal",
+     "ica_huancano_huarangal"
     ],
-    "note": "main already tracks a different Quebrada Huarangal in Huancano/Pisco (ica_huarangal_pisco)"
+    "note": "Two Quebrada Huarangal rows, never merged by name: lima_mala_huarangal (Lima) and ica_huancano_huarangal (Huancano/Pisco, link row to main unit ica_huarangal_pisco, added r6). Arequipa's arequipa_huarangal is a third homonym outside this audit."
    },
    {
     "label": "La Capilla",
@@ -1075,7 +1189,11 @@
    "lima_punta_hermosa_malanche",
    "lima_san_juan_de_lurigancho_jicamarca",
    "piura_colan_bolognesi",
-   "piura_colan_sucre"
+   "piura_colan_sucre",
+   "ica_parcona_catambo",
+   "ica_llipata_piedras_gordas",
+   "ica_grocio_prado_topara",
+   "ica_huancano_huarangal"
   ],
   "unconfirmed_label_mentions_in_main": [
    "ica_huancano_huancano",
@@ -1114,7 +1232,8 @@
    "piura_paita_9_de_diciembre",
    "piura_paita_centenario",
    "piura_paita_libertad",
-   "piura_paita_salaverry"
+   "piura_paita_salaverry",
+   "ica_salas_rio_seco"
   ],
   "missing_from_irfen": [
    "lima_ate_huaycan",
@@ -1440,7 +1559,21 @@
    "piura_san_miguel_el_faique_cerro_blanco",
    "piura_san_miguel_el_faique_el_algarrobo",
    "piura_san_miguel_el_faique_el_ceibo",
-   "piura_tambogrande_paccha"
+   "piura_tambogrande_paccha",
+   "lima_chaclacayo_u3_y_p_p1",
+   "lima_chaclacayo_huascata",
+   "lima_chaclacayo_panorama",
+   "lima_lurigancho_caraponguillo",
+   "lima_chaclacayo_condores_2",
+   "lima_chaclacayo_condores_1",
+   "lima_chaclacayo_ines_1",
+   "lima_lurigancho_nana",
+   "lima_lurigancho_laguna",
+   "lima_lurigancho_milagros",
+   "lima_chaclacayo_ines_2",
+   "ica_llipata_rio_seco",
+   "ancash_yautan_bombon_poctao",
+   "ancash_pampas_grande_sen_sen"
   ],
   "geometry_pending": [
    "lima_chaclacayo_cusipata",
@@ -1506,7 +1639,18 @@
    "lima_santa_eulalia_huayaringa",
    "lima_santa_eulalia_huayaringa_centro_portada",
    "lima_santa_eulalia_julio_cesar_tello",
-   "ica_huancano_huayanto"
+   "ica_huancano_huayanto",
+   "lima_chaclacayo_u3_y_p_p1",
+   "lima_chaclacayo_huascata",
+   "lima_chaclacayo_panorama",
+   "lima_lurigancho_caraponguillo",
+   "lima_chaclacayo_condores_2",
+   "lima_chaclacayo_condores_1",
+   "lima_chaclacayo_ines_1",
+   "lima_lurigancho_nana",
+   "lima_lurigancho_laguna",
+   "lima_lurigancho_milagros",
+   "lima_chaclacayo_ines_2"
   ]
  },
  "candidates": [
@@ -1909,6 +2053,25 @@
   {"inventory_id": "piura_san_miguel_el_faique_cerro_blanco", "row_role": "CANDIDATE_UNIT", "documentary_name": "Cerro Blanco", "name_variants_observed": [], "department": "Piura", "province": "Huancabamba", "district": "San Miguel El Faique", "corridor": "PIURA_INTERIOR", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 11, fila 58: centro poblado 'Caserío La Capilla', quebrada 'Cerro Blanco'", "table": "Cuadro 11", "row_number_as_read": 58, "source_reference_point": {"easting_m": 654676, "northing_m": 9398062}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P4", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
   {"inventory_id": "piura_san_miguel_el_faique_el_algarrobo", "row_role": "CANDIDATE_UNIT", "documentary_name": "El Algarrobo", "name_variants_observed": [], "department": "Piura", "province": "Huancabamba", "district": "San Miguel El Faique", "corridor": "PIURA_INTERIOR", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 11, fila 66: centro poblado 'Caserío Huacas Alta', quebrada 'El Algarrobo'", "table": "Cuadro 11", "row_number_as_read": 66, "source_reference_point": {"easting_m": 639209, "northing_m": 9399119}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P4", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
   {"inventory_id": "piura_san_miguel_el_faique_el_ceibo", "row_role": "CANDIDATE_UNIT", "documentary_name": "El Ceibo", "name_variants_observed": [], "department": "Piura", "province": "Huancabamba", "district": "San Miguel El Faique", "corridor": "PIURA_INTERIOR", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 11, fila 67: centro poblado 'Caserío Huacas Alta', quebrada 'El Ceibo'", "table": "Cuadro 11", "row_number_as_read": 67, "source_reference_point": {"easting_m": 639111, "northing_m": 9399029}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P4", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
-  {"inventory_id": "piura_tambogrande_paccha", "row_role": "CANDIDATE_UNIT", "documentary_name": "Paccha", "label_caution": "LABEL_IS_A_RIVER_NAME_OR_EQUALS_A_PLACE_NAME_REPO_MATCH_CANNOT_CONFIRM_A_UNIT", "name_variants_observed": [], "department": "Piura", "province": "Morropón", "district": "Tambogrande", "corridor": "PIURA_INTERIOR", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 11, fila 13: centro poblado 'Paccha', quebrada 'Paccha'", "table": "Cuadro 11", "row_number_as_read": 13, "source_reference_point": {"easting_m": 587557, "northing_m": 9445864}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P4", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []}
+  {"inventory_id": "piura_tambogrande_paccha", "row_role": "CANDIDATE_UNIT", "documentary_name": "Paccha", "label_caution": "LABEL_IS_A_RIVER_NAME_OR_EQUALS_A_PLACE_NAME_REPO_MATCH_CANNOT_CONFIRM_A_UNIT", "name_variants_observed": [], "department": "Piura", "province": "Morropón", "district": "Tambogrande", "corridor": "PIURA_INTERIOR", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 11, fila 13: centro poblado 'Paccha', quebrada 'Paccha'", "table": "Cuadro 11", "row_number_as_read": 13, "source_reference_point": {"easting_m": 587557, "northing_m": 9445864}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P4", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
+  {"inventory_id": "lima_chaclacayo_u3_y_p_p1", "row_role": "CANDIDATE_UNIT", "documentary_name": "U3 y P-P1", "feature_class_as_named": "quebrada", "label_caution": "LABEL_AS_PRINTED_LOOKS_LIKE_A_WORKS_CODE_NOT_A_TOPONYM", "name_variants_observed": [], "department": "Lima", "province": "Lima", "district": "Chaclacayo", "corridor": "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA", "location_note": "Sector as printed: 'AA. HH. Cerro Vecino Huascata'. Relation to the Qda. Huascata row (fila 7) UNRESOLVED; not merged.", "evidence_types": ["WORKS"], "evidence": [{"evidence_type": "WORKS", "source_id": "ANA-DU-015-2023-ANEXO-III", "detail": "Anexo III DU 015-2023 (listado de quebradas a ser intervenidas), fila 6: «6 Rimac U3 y P‐P1 Cañete Fortaleza Chillon Rimac Lurin Lima Lima Chaclacayo AA. HH. Cerro Vecino Huascata 302061 8673102 PV ‐2017 Muy Alto No cuenta con barreras dinamicas»", "table": "Anexo III", "row_number_as_read": 6, "quote_id": "A3-P1-R6", "source_reference_point": {"easting_m": 302061, "northing_m": 8673102}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P2", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r6"},
+  {"inventory_id": "lima_chaclacayo_huascata", "row_role": "CANDIDATE_UNIT", "documentary_name": "Huascata", "feature_class_as_named": "quebrada", "name_variants_observed": [{"label": "Qda. Huascata", "source_id": "ANA-DU-015-2023-ANEXO-III"}], "department": "Lima", "province": "Lima", "district": "Chaclacayo", "corridor": "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA", "evidence_types": ["WORKS"], "evidence": [{"evidence_type": "WORKS", "source_id": "ANA-DU-015-2023-ANEXO-III", "detail": "Anexo III DU 015-2023 (listado de quebradas a ser intervenidas), fila 7: «7 Rimac Qda. Huascata Cañete Fortaleza Chillon Rimac Lurin Lima Lima Chaclacayo Huascata 302480 8673261 PV ‐2023 Muy Alto No cuenta con barreras dinamicas»", "table": "Anexo III", "row_number_as_read": 7, "quote_id": "A3-P1-R7", "source_reference_point": {"easting_m": 302480, "northing_m": 8673261}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P2", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r6"},
+  {"inventory_id": "lima_chaclacayo_panorama", "row_role": "CANDIDATE_UNIT", "documentary_name": "Panorama", "feature_class_as_named": "quebrada", "name_variants_observed": [], "department": "Lima", "province": "Lima", "district": "Chaclacayo", "corridor": "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA", "location_note": "Sector as printed: 'El Cuadro-Chaclacayo'.", "evidence_types": ["WORKS"], "evidence": [{"evidence_type": "WORKS", "source_id": "ANA-DU-015-2023-ANEXO-III", "detail": "Anexo III DU 015-2023 (listado de quebradas a ser intervenidas), fila 8: «8 Rimac Panorama Cañete Fortaleza Chillon Rimac Lurin Lima Lima Chaclacayo El Cuadro‐Chaclacayo 304153 8673516 PV ‐2017 Muy Alto No cuenta con barreras dinamicas»", "table": "Anexo III", "row_number_as_read": 8, "quote_id": "A3-P1-R8", "source_reference_point": {"easting_m": 304153, "northing_m": 8673516}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P2", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r6"},
+  {"inventory_id": "lima_lurigancho_caraponguillo", "row_role": "CANDIDATE_UNIT", "documentary_name": "Caraponguillo", "feature_class_as_named": "quebrada", "name_variants_observed": [], "department": "Lima", "province": "Lima", "district": "Lurigancho-Chosica", "corridor": "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA", "evidence_types": ["WORKS"], "evidence": [{"evidence_type": "WORKS", "source_id": "ANA-DU-015-2023-ANEXO-III", "detail": "Anexo III DU 015-2023 (listado de quebradas a ser intervenidas), fila 9: «9 Rimac Caraponguillo Cañete Fortaleza Chillon Rimac Lurin Lima Lima Lurigancho Chosica Caraponguillo 298124 8674154 PV ‐2023 Muy Alto No cuenta con barreras dinamicas»", "table": "Anexo III", "row_number_as_read": 9, "quote_id": "A3-P1-R9", "source_reference_point": {"easting_m": 298124, "northing_m": 8674154}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P2", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r6"},
+  {"inventory_id": "lima_chaclacayo_condores_2", "row_role": "CANDIDATE_UNIT", "documentary_name": "Condores 2", "feature_class_as_named": "quebrada", "label_caution": "NEAR_LABEL_OF_ANOTHER_ROW_EQUIVALENCE_UNRESOLVED", "name_variants_observed": [], "department": "Lima", "province": "Lima", "district": "Chaclacayo", "corridor": "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA", "location_note": "Sector as printed: 'Tres de Octubre'. Possible relation with lima_chaclacayo_los_condores (Qda. Los Cóndores, faja R.D. 064-2021) and with 'Condores 1' UNRESOLVED; not merged.", "evidence_types": ["WORKS"], "evidence": [{"evidence_type": "WORKS", "source_id": "ANA-DU-015-2023-ANEXO-III", "detail": "Anexo III DU 015-2023 (listado de quebradas a ser intervenidas), fila 11: «11 Rimac Condores 2 Cañete Fortaleza Chillon Rimac Lurin Lima Lima Chaclacayo Tres de Octubre 310402 8674427 PV ‐2023 Muy Alto No cuenta con barreras dinamicas»", "table": "Anexo III", "row_number_as_read": 11, "quote_id": "A3-P1-R11", "source_reference_point": {"easting_m": 310402, "northing_m": 8674427}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P2", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r6"},
+  {"inventory_id": "lima_chaclacayo_condores_1", "row_role": "CANDIDATE_UNIT", "documentary_name": "Condores 1", "feature_class_as_named": "quebrada", "label_caution": "NEAR_LABEL_OF_ANOTHER_ROW_EQUIVALENCE_UNRESOLVED", "name_variants_observed": [], "department": "Lima", "province": "Lima", "district": "Chaclacayo", "corridor": "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA", "location_note": "Sector as printed: 'Gracilazo de la Vega'. Possible relation with lima_chaclacayo_los_condores and with 'Condores 2' UNRESOLVED; not merged.", "evidence_types": ["WORKS"], "evidence": [{"evidence_type": "WORKS", "source_id": "ANA-DU-015-2023-ANEXO-III", "detail": "Anexo III DU 015-2023 (listado de quebradas a ser intervenidas), fila 13: «13 Rimac Condores 1 Cañete Fortaleza Chillon Rimac Lurin Lima Lima Chaclacayo Gracilazo de la Vega 311108 8674998 PV ‐2023 Muy Alto No cuenta con barreras dinamicas»", "table": "Anexo III", "row_number_as_read": 13, "quote_id": "A3-P1-R13", "source_reference_point": {"easting_m": 311108, "northing_m": 8674998}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P2", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r6"},
+  {"inventory_id": "lima_chaclacayo_ines_1", "row_role": "CANDIDATE_UNIT", "documentary_name": "Ines 1", "feature_class_as_named": "quebrada", "label_caution": "NEAR_LABEL_OF_ANOTHER_ROW_EQUIVALENCE_UNRESOLVED", "name_variants_observed": [], "department": "Lima", "province": "Lima", "district": "Chaclacayo", "corridor": "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA", "location_note": "Sector as printed: 'Santa Ines' (same sector as 'Ines 2'); relation UNRESOLVED.", "evidence_types": ["WORKS"], "evidence": [{"evidence_type": "WORKS", "source_id": "ANA-DU-015-2023-ANEXO-III", "detail": "Anexo III DU 015-2023 (listado de quebradas a ser intervenidas), fila 14: «14 Rimac Ines 1 Cañete Fortaleza Chillon Rimac Lurin Lima Lima Chaclacayo Santa Ines 308761 8675006 PV ‐2023 Muy Alto No cuenta con barreras dinamicas»", "table": "Anexo III", "row_number_as_read": 14, "quote_id": "A3-P1-R14", "source_reference_point": {"easting_m": 308761, "northing_m": 8675006}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P2", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r6"},
+  {"inventory_id": "lima_lurigancho_nana", "row_role": "CANDIDATE_UNIT", "documentary_name": "Ñaña", "feature_class_as_named": "quebrada", "label_caution": "LABEL_EQUALS_A_PLACE_NAME_REPO_MATCH_CANNOT_CONFIRM_A_UNIT", "name_variants_observed": [{"label": "Qda. Ñaña", "source_id": "ANA-DU-015-2023-ANEXO-III"}], "department": "Lima", "province": "Lima", "district": "Lurigancho-Chosica", "corridor": "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA", "evidence_types": ["WORKS"], "evidence": [{"evidence_type": "WORKS", "source_id": "ANA-DU-015-2023-ANEXO-III", "detail": "Anexo III DU 015-2023 (listado de quebradas a ser intervenidas), fila 15: «15 Rimac Qda. Ñaña Cañete Fortaleza Chillon Rimac Lurin Lima Lima Lurigancho Chosica Ñaña 300600 8675730 PV ‐2023 Muy Alto No cuenta con barreras dinamicas»", "table": "Anexo III", "row_number_as_read": 15, "quote_id": "A3-P1-R15", "source_reference_point": {"easting_m": 300600, "northing_m": 8675730}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P2", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r6"},
+  {"inventory_id": "lima_lurigancho_laguna", "row_role": "CANDIDATE_UNIT", "documentary_name": "Laguna", "feature_class_as_named": "quebrada", "name_variants_observed": [], "department": "Lima", "province": "Lima", "district": "Lurigancho-Chosica", "corridor": "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA", "location_note": "Sector as printed: 'La Laguna'.", "evidence_types": ["WORKS"], "evidence": [{"evidence_type": "WORKS", "source_id": "ANA-DU-015-2023-ANEXO-III", "detail": "Anexo III DU 015-2023 (listado de quebradas a ser intervenidas), fila 16: «16 Rimac Laguna Cañete Fortaleza Chillon Rimac Lurin Lima Lima Lurigancho Chosica La Laguna 299675 8676457 PV ‐2023 Muy Alto No cuenta con barreras dinamicas»", "table": "Anexo III", "row_number_as_read": 16, "quote_id": "A3-P1-R16", "source_reference_point": {"easting_m": 299675, "northing_m": 8676457}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P2", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r6"},
+  {"inventory_id": "lima_lurigancho_milagros", "row_role": "CANDIDATE_UNIT", "documentary_name": "Milagros", "feature_class_as_named": "quebrada", "label_caution": "NEAR_LABEL_OF_ANOTHER_ROW_EQUIVALENCE_UNRESOLVED", "name_variants_observed": [], "department": "Lima", "province": "Lima", "district": "Lurigancho-Chosica", "corridor": "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA", "location_note": "Sector as printed: 'Milagros - MML'. Possible relation with lima_lurigancho_senor_de_los_milagros UNRESOLVED; not merged.", "evidence_types": ["WORKS"], "evidence": [{"evidence_type": "WORKS", "source_id": "ANA-DU-015-2023-ANEXO-III", "detail": "Anexo III DU 015-2023 (listado de quebradas a ser intervenidas), fila 19: «19 Rimac Milagros Cañete Fortaleza Chillon Rimac Lurin Lima Lima Lurigancho Chosica Milagros ‐ MML 316826 8680207 PC ‐2023 Muy Alto No cuenta con barreras dinamicas»", "table": "Anexo III", "row_number_as_read": 19, "quote_id": "A3-P1-R19", "source_reference_point": {"easting_m": 316826, "northing_m": 8680207}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P2", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r6"},
+  {"inventory_id": "lima_chaclacayo_ines_2", "row_role": "CANDIDATE_UNIT", "documentary_name": "Ines 2", "feature_class_as_named": "quebrada", "label_caution": "NEAR_LABEL_OF_ANOTHER_ROW_EQUIVALENCE_UNRESOLVED", "name_variants_observed": [], "department": "Lima", "province": "Lima", "district": "Chaclacayo", "corridor": "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA", "location_note": "Sector as printed: 'Santa Ines' (same sector as 'Ines 1'); relation UNRESOLVED.", "evidence_types": ["WORKS"], "evidence": [{"evidence_type": "WORKS", "source_id": "ANA-DU-015-2023-ANEXO-III", "detail": "Anexo III DU 015-2023 (listado de quebradas a ser intervenidas), fila 22: «22 Rimac Ines 2 Cañete Fortaleza Chillon Rimac Lurin Lima Lima Chaclacayo Santa Ines 308368 8674911 PV ‐2023 Alto No cuenta con barreras dinamicas»", "table": "Anexo III", "row_number_as_read": 22, "quote_id": "A3-P1-R22", "source_reference_point": {"easting_m": 308368, "northing_m": 8674911}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P2", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r6"},
+  {"inventory_id": "ica_parcona_catambo", "row_role": "CANDIDATE_UNIT", "documentary_name": "Catambo", "feature_class_as_named": "quebrada", "name_variants_observed": [], "department": "Ica", "province": "Ica", "district": "Parcona", "corridor": "PISCO_ICA", "location_note": "Links the master inventory to the unit already registered in main as ica_catambo (ANA works TdR 2023); no new unit is created.", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-DU-015-2023-ANEXO-II", "detail": "Anexo II DU 015-2023, sección XV - ICA, fila 73: «73 Ica Quebrada Qda. Catambo Chaparra-Chincha Ica Ica Ica Parcona Quebrada Catambo»", "table": "Anexo II (sección XV - ICA)", "row_number_as_read": 73, "quote_id": "A2-P9-R73"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "MAIN_REGISTERED_UNIT", "match_tier": "NAMED_AS_QUEBRADA", "main_unit_id": "ica_catambo", "main_paths_sample": ["config/phase2_south_coast_ica_arequipa_discovery_v0_1.json"], "main_path_count": 1}, "priority": "EXISTING", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r6"},
+  {"inventory_id": "ica_salas_rio_seco", "row_role": "CANDIDATE_UNIT", "documentary_name": "Rio Seco", "feature_class_as_named": "quebrada", "label_caution": "LABEL_IS_A_RIVER_NAME_OR_EQUALS_A_PLACE_NAME_REPO_MATCH_CANNOT_CONFIRM_A_UNIT", "name_variants_observed": [], "department": "Ica", "province": "Ica", "district": "Salas", "corridor": "PISCO_ICA", "location_note": "Three Anexo II rows (filas 75-77, sectors 'Villacuri 1/2/3', basin as printed 'Rio Seco'). PR #366 cites a 'quebrada de Río Seco' recharge system draining toward Lanchas (GORE Ica-ANA 2011); relation UNRESOLVED, not merged.", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-DU-015-2023-ANEXO-II", "detail": "Anexo II DU 015-2023, sección XV - ICA, fila 75: «75 Rio Seco Quebrada Qda. Rio Seco Chaparra-Chincha Rio Seco Ica Ica Salas Villacuri 1»", "table": "Anexo II (sección XV - ICA)", "row_number_as_read": 75, "quote_id": "A2-P9-R75"}, {"evidence_type": "CRITICAL_POINT", "source_id": "ANA-DU-015-2023-ANEXO-II", "detail": "Anexo II DU 015-2023, sección XV - ICA, fila 76: «76 Rio Seco Quebrada Qda. Rio Seco Chaparra-Chincha Rio Seco Ica Ica Salas Villacuri 2»", "table": "Anexo II (sección XV - ICA)", "row_number_as_read": 76, "quote_id": "A2-P9-R76"}, {"evidence_type": "CRITICAL_POINT", "source_id": "ANA-DU-015-2023-ANEXO-II", "detail": "Anexo II DU 015-2023, sección XV - ICA, fila 77: «77 Rio Seco Quebrada Qda. Rio Seco Chaparra-Chincha Rio Seco Ica Ica Salas Villacuri 3»", "table": "Anexo II (sección XV - ICA)", "row_number_as_read": 77, "quote_id": "A2-P9-R77"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "BRANCH_LABEL_MENTION_UNCONFIRMED", "match_tier": "BARE_LABEL", "branches_with_additional_mentions": {"inventory/pisco-ica-polvareda-polvora-higos-monte-v0-1": ["config/phase2_pisco_ica_polvareda_polvora_higos_monte_identity_v0_1.json"]}, "branch_count": 1, "open_prs_with_additional_mentions": [366]}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r6"},
+  {"inventory_id": "ica_llipata_rio_seco", "row_role": "CANDIDATE_UNIT", "documentary_name": "Rio Seco", "feature_class_as_named": "quebrada", "label_caution": "LABEL_IS_A_RIVER_NAME_OR_EQUALS_A_PLACE_NAME_REPO_MATCH_CANNOT_CONFIRM_A_UNIT", "name_variants_observed": [], "department": "Ica", "province": "Palpa", "district": "Llipata", "corridor": "PISCO_ICA", "location_note": "Sector as printed: 'Carlos Tijero'; basin as printed 'Grande'. main names a 'Quebrada Carlos Tijero' in Llipata (config/phase2_ica_2019_named_events_v0_1.json); relation UNRESOLVED, not merged. Distinct from ica_salas_rio_seco (other province).", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-DU-015-2023-ANEXO-II", "detail": "Anexo II DU 015-2023, sección XV - ICA, fila 78: «78 Grande Quebrada Qda. Rio Seco Chaparra-Chincha Grande Ica Palpa Llipata Carlos Tijero»", "table": "Anexo II (sección XV - ICA)", "row_number_as_read": 78, "quote_id": "A2-P9-R78"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r6"},
+  {"inventory_id": "ica_llipata_piedras_gordas", "row_role": "CANDIDATE_UNIT", "documentary_name": "Piedras Gordas", "feature_class_as_named": "quebrada", "name_variants_observed": [], "department": "Ica", "province": "Palpa", "district": "Llipata", "corridor": "PISCO_ICA", "location_note": "main records 'Quebrada Piedras Gordas' (Llipata, Palpa) in a 2019-02-08 multi-named activation (config/phase2_ica_2019_named_events_v0_1.json). That record is not copied here: this row carries only the Anexo II critical point; linking the 2019 lead is left to the Pisco/Ica lane.", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-DU-015-2023-ANEXO-II", "detail": "Anexo II DU 015-2023, sección XV - ICA, fila 79: «79 Grande Quebrada Qda. Piedras Gordas Chaparra-Chincha Grande Ica Palpa Llipata Piedras Gordas»", "table": "Anexo II (sección XV - ICA)", "row_number_as_read": 79, "quote_id": "A2-P10-R79"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "MAIN_NAMED_AS_QUEBRADA_WITH_CORRIDOR_CONTEXT", "match_tier": "NAMED_AS_QUEBRADA", "main_paths_sample": ["config/phase2_ica_2019_named_events_v0_1.json"], "main_path_count": 1}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r6"},
+  {"inventory_id": "ica_grocio_prado_topara", "row_role": "CANDIDATE_UNIT", "documentary_name": "Topara", "feature_class_as_named": "quebrada", "label_caution": "LABEL_ALSO_NAMES_A_BASIN_REGISTERED_IN_MAIN", "name_variants_observed": [], "department": "Ica", "province": "Chincha", "district": "Grocio Prado", "corridor": "PISCO_ICA", "location_note": "Sector as printed: 'Chuspa'; basin as printed 'Topara'. main registers 'Cuenca Topará' (ica_topara) as a basin discovery; this row is the Anexo II quebrada label only. The same label on the Lima side (Cañete) is outside the active regions and not added.", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-DU-015-2023-ANEXO-II", "detail": "Anexo II DU 015-2023, sección XV - ICA, fila 80: «80 Topara Quebrada Qda. Topara Cañete-Fortaleza Mala-Omas-Cañete Ica Chincha Grocio Prado Chuspa»", "table": "Anexo II (sección XV - ICA)", "row_number_as_read": 80, "quote_id": "A2-P10-R80"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "MAIN_NAME_CONTEXT_ONLY", "match_tier": "NAMED_AS_BASIN", "main_paths_sample": ["config/phase2_south_coast_ica_arequipa_discovery_v0_1.json"], "main_path_count": 1}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r6"},
+  {"inventory_id": "ancash_yautan_bombon_poctao", "row_role": "CANDIDATE_UNIT", "documentary_name": "Bombon-Poctao", "feature_class_as_named": "quebrada", "name_variants_observed": [], "department": "Ancash", "province": "Casma", "district": "Yaután", "corridor": "SANTA_CASMA", "location_note": "Sector as printed: 'Quebrada Bombon-Poctao'. A main source file names 'Quebrada Bombon Matua' in Casma (site/data/phase2/sources/ancash_casma_sechin_yautan_official_evidence_v0_1.json); relation UNRESOLVED, not merged.", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-DU-015-2023-ANEXO-II", "detail": "Anexo II DU 015-2023, sección IX - ANCASH, fila 89: «89 Casma Quebrada Qda. Bombon-Poctao Huarmey-Chicama Casma-Huarmey Ancash Casma Yautan Quebrada Bombon-Poctao»", "table": "Anexo II (sección IX - ANCASH)", "row_number_as_read": 89, "quote_id": "A2-P7-R89"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r6"},
+  {"inventory_id": "ancash_pampas_grande_sen_sen", "row_role": "CANDIDATE_UNIT", "documentary_name": "Sen Sen", "feature_class_as_named": "quebrada", "name_variants_observed": [], "department": "Ancash", "province": "Huaraz", "district": "Pampas Grande", "corridor": "ANCASH_INTERIOR", "location_note": "Basin as printed: 'Casma' (headwaters, Huaraz province): kept in ANCASH_INTERIOR by the audit's corridor convention. The district cell wraps onto the next text line ('Pampas' / 'Grande').", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-DU-015-2023-ANEXO-II", "detail": "Anexo II DU 015-2023, sección IX - ANCASH, fila 88: «88 Casma Quebrada Qda. Sen Sen Huarmey-Chicama Casma-Huarmey Ancash Huaraz Pampas Grande Quebrada Sen Sen»", "table": "Anexo II (sección IX - ANCASH)", "row_number_as_read": 88, "quote_id": "A2-P7-R88"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P4", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r6"},
+  {"inventory_id": "ica_huancano_huarangal", "row_role": "CANDIDATE_UNIT", "documentary_name": "Huarangal", "feature_class_as_named": "quebrada", "label_caution": "SAME_NAME_IN_OTHER_DEPARTMENTS_NEVER_MERGE_BY_NAME", "name_variants_observed": [], "department": "Ica", "province": "Pisco", "district": "Huancano", "corridor": "PISCO_ICA", "location_note": "Master-inventory row that LINKS to the unit already registered in main (ica_huarangal_pisco, PR #313 lineage: config/phase2_south_coast_channel_identity_v0_1.json). It does not create a second unit. Homonyms kept apart: lima_mala_huarangal (Lima) and arequipa_huarangal (Quilca-Vítor-Chili).", "evidence_types": ["IDENTITY"], "evidence": [{"evidence_type": "IDENTITY", "source_id": "ANA-PISCO-HUARANGAL-RA060-2018", "detail": "ANA R.A. N.° 060-2018-ANA-AAA.CHCH-ALA.P names Quebrada Huarangal in Huáncano (Pisco); identity/location context only. Same source as main's channel identity record ica_huarangal_pisco."}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "MAIN_REGISTERED_UNIT", "match_tier": "NAMED_AS_QUEBRADA", "main_unit_id": "ica_huarangal_pisco", "main_paths_sample": ["config/phase2_south_coast_channel_identity_v0_1.json", "tests/test_phase2_south_coast_channel_identity.py"], "main_path_count": 2, "branches_with_additional_mentions": {"phase2/south-ica-arequipa-channel-identity-v0-1": ["config/phase2_south_coast_channel_identity_v0_1.json"]}, "branch_count": 1, "open_prs_with_additional_mentions": [313]}, "priority": "EXISTING", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r6"}
  ]
 }
