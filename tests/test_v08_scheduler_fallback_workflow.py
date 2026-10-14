@@ -70,7 +70,12 @@ class V08SchedulerFallbackWorkflowTests(unittest.TestCase):
                     continue
                 code = path.read_text(encoding="utf-8")
                 calls = re.search(r"urlopen|requests\.(get|post|Session)|session\.(get|post)|Request\(", code)
-                self.assertFalse(bool(calls) and "senamhi.gob.pe" in code, f"{wf} runs {script}, which requests a SENAMHI host")
+                # a SENAMHI *URL* in a script with an HTTP client is a query target; the bare host name may appear in a
+                # policy guard that refuses it (e.g. the redirect guard of the INDECI aviso capture)
+                url = re.search(r"https?://[\w.-]*senamhi\.gob\.pe", code)
+                self.assertFalse(bool(calls) and bool(url), f"{wf} runs {script}, which requests a SENAMHI host")
+                if "senamhi.gob.pe" in code and calls:
+                    self.assertIn("def is_senamhi_host", code, f"{script} names a SENAMHI host outside a policy guard")
         for wf in FB.EXCLUDED_DIRECT_SENAMHI:
             self.assertNotIn(wf, FB.TARGETS)
             self.assertEqual(FB.decide(wf, 60, True, [], NOW), (False, "EXCLUDED: direct SENAMHI queries are not automated"))
