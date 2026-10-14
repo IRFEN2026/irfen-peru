@@ -252,5 +252,61 @@ class Browser(unittest.TestCase):
             srv.shutdown()
 
 
+    def test_data_update_keeps_state_and_old_data_is_never_zero(self):
+        """A new bundle is picked up after 5 min without losing region, selection or zoom; when the IMERG window
+        is older than the freshness limit the values disappear (hatched, 'no disponible'), never 0."""
+        import shutil
+        import tempfile
+        from datetime import datetime, timedelta
+
+        class Quiet(http.server.SimpleHTTPRequestHandler):
+            def log_message(self, *a):
+                pass
+
+        with tempfile.TemporaryDirectory() as d:
+            site = Path(d) / "site"
+            shutil.copytree(ROOT / "site/v09", site / "v09")
+            (site / "data/v09").mkdir(parents=True)
+            target = site / "data/v09/territory_v0_1.json"
+            shutil.copy(T.OUT, target)
+            imerg_end = datetime.fromisoformat(BUNDLE["data_status"]["imerg_latest_window_end_utc"].replace("Z", "+00:00"))
+            start = imerg_end + timedelta(hours=1)  # one hour after the latest IMERG window: data current
+            srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Quiet, directory=str(site)))
+            threading.Thread(target=srv.serve_forever, daemon=True).start()
+            origin = f"http://127.0.0.1:{srv.server_port}/"
+            try:
+                with sync_playwright() as p:
+                    b = p.chromium.launch(args=["--no-proxy-server"])
+                    page = b.new_page(viewport=dict(width=1400, height=1000))
+                    errors = []
+                    page.on("pageerror", lambda e: errors.append(str(e)))
+                    page.route("**/*", lambda r: r.continue_() if r.request.url.startswith(origin) else r.abort())
+                    page.clock.install(time=start)
+                    page.goto(origin + "v09/territorio.html")
+                    page.wait_for_selector("#map svg path")
+                    page.click("[data-q=bocapan]")
+                    self.assertIn("mm acumulados", page.inner_text("#detail"))
+                    page.click("#zin"); vb = page.get_attribute("#map svg", "viewBox")
+                    # a new bundle appears on the server: the page picks it up at the next 5-min refresh
+                    newer = json.loads(target.read_text(encoding="utf-8"))
+                    newer["built_at_utc"] = (start + timedelta(minutes=4)).isoformat()
+                    target.write_text(json.dumps(newer), encoding="utf-8")
+                    page.clock.run_for(5 * 60 * 1000 + 2000)
+                    page.wait_for_function("document.querySelector('#status').innerText.includes('hace 1 min') || document.querySelector('#status').innerText.includes('hace 2 min')")
+                    self.assertTrue(page.inner_text("#detail").startswith("Quebrada Bocapán"))  # selection kept
+                    self.assertEqual(page.get_attribute("#map svg", "viewBox"), vb)  # zoom kept
+                    # 13 h later the IMERG window is past its freshness limit: no value, hatch, chip marked old
+                    page.clock.run_for(13 * 3600 * 1000)
+                    detail = page.inner_text("#detail")
+                    self.assertNotIn("mm acumulados", detail)
+                    self.assertIn("no disponible", detail)
+                    self.assertGreater(page.locator('#map path[fill="url(#hatch)"]').count(), 0)
+                    self.assertIn("old", page.get_attribute("#status .st:first-child", "class"))
+                    self.assertEqual(errors, [])
+                    b.close()
+            finally:
+                srv.shutdown()
+
+
 if __name__ == "__main__":
     unittest.main()
