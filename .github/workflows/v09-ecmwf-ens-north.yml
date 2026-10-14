@@ -1,0 +1,64 @@
+name: IRFEN v0.9 - Probabilidad de lluvia por provincia con ECMWF ENS (TEST_ONLY)
+
+# Modo sombra: archiva cada corrida del ensamble ECMWF para verificarla después contra lluvia observada.
+# No escribe en site/ ni activa alertas. Las ejecuciones programadas solo corren cuando este archivo está en la rama
+# por defecto; mientras viva en una rama de trabajo, corre en cada push a esa rama y a pedido (workflow_dispatch).
+
+on:
+  schedule:
+    - cron: "40 8,20 * * *"   # después de que ECMWF publica las corridas de 00 y 12 UTC
+  workflow_dispatch:
+  push:
+    branches:
+      - agent/claude-ecmwf-ens-shadow-v0.1-20261014
+    paths:
+      - scripts/v09_ecmwf_ens_north.py
+      - scripts/v09_ecmwf_ens_verify.py
+      - .github/workflows/v09-ecmwf-ens-north.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: v09-ecmwf-ens-north-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  ens:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install bounded dependencies (GRIB reader + ECMWF Open Data client)
+        run: |
+          python -m pip install --disable-pip-version-check "numpy>=1.26,<2" "xarray>=2024.1,<2027" \
+            "eccodes>=2.38,<3" "cfgrib>=0.9.14,<1" "ecmwf-opendata>=0.3,<1"
+          python -m eccodes selfcheck
+      - name: Latest ENS run → province probabilities (failure is archived as UNAVAILABLE, never as zero rain)
+        run: timeout --signal=TERM --kill-after=10s 900s python scripts/v09_ecmwf_ens_north.py --workdir "$RUNNER_TEMP"
+      - name: Shadow verification (only when an observation file exists)
+        run: python scripts/v09_ecmwf_ens_verify.py
+      - name: Persist (bot commit, bounded retries)
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/v09/forecast
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "IRFEN v0.9: ECMWF ENS por provincia, costa norte (TEST_ONLY)"
+          BR="${GITHUB_REF_NAME}"
+          for attempt in 1 2 3 4; do
+            git fetch -q origin "$BR"
+            if ! git rebase -q "origin/$BR"; then git rebase --abort || true; echo "Real conflict; not overwriting" >&2; exit 1; fi
+            if git push -q origin "HEAD:$BR"; then exit 0; fi
+            sleep $((attempt * 3))
+          done
+          exit 1
