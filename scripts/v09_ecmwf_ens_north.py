@@ -63,6 +63,29 @@ GUARDS = dict(deployment_status="RESEARCH_ONLY", test_mode="TEST_ONLY", producti
 
 
 # --------------------------------------------------------------------------- utilidades
+def atomic_write_bytes(path: Path, data: bytes) -> None:
+    """Escribe en un temporal del mismo directorio y lo renombra: un corte nunca deja un archivo a medias."""
+    import os
+    import tempfile
+
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    try:
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(data)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp, path)
+    except BaseException:
+        Path(tmp).unlink(missing_ok=True)
+        raise
+
+
+def atomic_write_text(path: Path, text: str, encoding: str = "utf-8") -> None:
+    atomic_write_bytes(path, text.encode(encoding))
+
+
 def load(path: Path) -> dict | None:
     return json.loads(path.read_text(encoding="utf-8")) if path.is_file() else None
 
@@ -72,8 +95,7 @@ def write_if_changed(path: Path, obj: dict, volatile: tuple = ()) -> bool:
     strip = lambda o: {k: v for k, v in (o or {}).items() if k not in volatile}  # noqa: E731
     if old is not None and strip(old) == strip(obj):
         return False
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(obj, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    atomic_write_text(path, json.dumps(obj, ensure_ascii=False, indent=1) + "\n")
     return True
 
 
@@ -356,9 +378,10 @@ def append_ledger(record: dict, path: Path = LEDGER_OUT) -> bool:
         for line in path.read_text(encoding="utf-8").splitlines():
             if line.strip() and json.loads(line).get("run_utc") == record["run_utc"]:
                 return False
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8") as fh:
-        fh.write(json.dumps(record, ensure_ascii=False, separators=(",", ":")) + "\n")
+    previous = path.read_text(encoding="utf-8") if path.is_file() else ""
+    if previous and not previous.endswith("\n"):
+        raise ValueError(f"{path.name}: la última línea está incompleta; no se agrega sobre un registro dañado")
+    atomic_write_text(path, previous + json.dumps(record, ensure_ascii=False, separators=(",", ":")) + "\n")
     return True
 
 

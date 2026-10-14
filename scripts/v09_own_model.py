@@ -83,7 +83,7 @@ def write_csv_gz(path: Path, rows: list[dict], fields):
     w = csv.DictWriter(buf, fieldnames=list(fields), lineterminator="\n")
     w.writeheader()
     w.writerows(rows)
-    path.write_bytes(gzip.compress(buf.getvalue().encode("utf-8"), mtime=0))
+    ens.atomic_write_bytes(path, gzip.compress(buf.getvalue().encode("utf-8"), mtime=0))
 
 
 def read_csv_gz(path: Path) -> list[dict]:
@@ -368,7 +368,7 @@ def build_inputs(live_only: bool = False) -> int:
     PROBE_JSON.parent.mkdir(parents=True, exist_ok=True)
     if live_only and PROBE_JSON.is_file():
         status = dict(json.loads(PROBE_JSON.read_text(encoding="utf-8")).get("status", {}), last_refresh=status)
-    PROBE_JSON.write_text(json.dumps(dict(**GUARDS, status=status), ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    ens.atomic_write_text(PROBE_JSON, json.dumps(dict(**GUARDS, status=status), ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     return 0
 
 
@@ -609,8 +609,8 @@ def train() -> int:
                     print(f"::notice title=V09_OWN_MODEL_CV::{variant} {kind}≥{u:g} día {lead}: n={y.size} "
                           f"eventos={int(y.sum())} BSS={block['bss']} ROC={block['roc_auc']}")
     MODEL_JSON.parent.mkdir(parents=True, exist_ok=True)
-    MODEL_JSON.write_text(json.dumps(model, ensure_ascii=False) + "\n", encoding="utf-8")
-    CV_JSON.write_text(json.dumps(cv, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    ens.atomic_write_text(MODEL_JSON, json.dumps(model, ensure_ascii=False) + "\n", encoding="utf-8")
+    ens.atomic_write_text(CV_JSON, json.dumps(cv, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     return 0
 
 

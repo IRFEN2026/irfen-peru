@@ -38,6 +38,9 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+import v09_ecmwf_ens_north as ens  # noqa: E402 - solo escritura atómica; ningún dato de pronóstico
+
 DATA_ROOT = Path(os.environ.get("IRFEN_FC_DATA") or ROOT)
 FC_DIR = DATA_ROOT / "data/v09/forecast"
 OUT = FC_DIR / "evaluacion_v0_1.json"
@@ -275,8 +278,8 @@ def main(argv=None) -> int:
                note="Muestra de la temporada en curso; con menos pares que el mínimo los puntajes son solo indicativos.",
                notes=sorted(set(notes)), evaluations=evaluations, generated_at_utc=datetime.now(timezone.utc).isoformat())
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(doc, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-    SUMMARY_MD.write_text(summary_markdown(doc), encoding="utf-8") if args.out == OUT else None
+    ens.atomic_write_text(args.out, json.dumps(doc, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    ens.atomic_write_text(SUMMARY_MD, summary_markdown(doc), encoding="utf-8") if args.out == OUT else None
     head = []
     for fc, by in evaluations.items():
         for mode in ("realtime", "backfill"):

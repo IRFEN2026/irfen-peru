@@ -177,7 +177,7 @@ class DayAccumulator:
         buf = io.BytesIO()
         np.savez_compressed(buf, lat=self.lat, lon=self.lon, total=self.total.astype(np.float32), valid=self.valid,
                             granules=np.array(self.granules))
-        path.write_bytes(buf.getvalue())
+        ens.atomic_write_bytes(path, buf.getvalue())
 
     @classmethod
     def load(cls, path: Path):
@@ -216,7 +216,7 @@ def write_csv(rows: list[dict], path: Path = OBS_CSV):
     w.writerows(rows)
     text = buf.getvalue()
     if not path.is_file() or path.read_text(encoding="utf-8") != text:
-        path.write_text(text, encoding="utf-8")
+        ens.atomic_write_text(path, text)
 
 
 def rebuild_csv(provinces: list[dict]):
@@ -268,7 +268,7 @@ def main(argv=None) -> int:
         except Exception as exc:  # noqa: BLE001 - fuente no disponible, nunca lluvia cero
             status.update(state="SOURCE_UNREACHABLE", error=f"{type(exc).__name__}: {str(exc)[:200]}")
             STATUS_JSON.parent.mkdir(parents=True, exist_ok=True)
-            STATUS_JSON.write_text(json.dumps(dict(**GUARDS, status=status), ensure_ascii=False, indent=1) + "\n",
+            ens.atomic_write_text(STATUS_JSON, json.dumps(dict(**GUARDS, status=status), ensure_ascii=False, indent=1) + "\n",
                                    encoding="utf-8")
             print(f"::warning title=V09_IMERG_LATE::{status['error']}")
             return 0
@@ -310,7 +310,7 @@ def main(argv=None) -> int:
     rows = rebuild_csv(provinces)
     status["days_complete"] = sorted({r["fecha_peru"] for r in rows})
     STATUS_JSON.parent.mkdir(parents=True, exist_ok=True)
-    STATUS_JSON.write_text(json.dumps(dict(schema_version="0.1", archive_id="irfen-v09-imerg-late-provinces:v0.1",
+    ens.atomic_write_text(STATUS_JSON, json.dumps(dict(schema_version="0.1", archive_id="irfen-v09-imerg-late-provinces:v0.1",
                                            **GUARDS, map_publishable=False, status=status,
                                            method=dict(rain_day="12:00 UTC D−1 → 12:00 UTC D (07:00–07:00 Perú)",
                                                        lluvia_max_mm="máximo de celdas 0,25° (media por área de IMERG)",

@@ -1,10 +1,12 @@
 name: IRFEN v0.9 - Motor de pronóstico costa norte (TEST_ONLY)
 
 # Aislamiento (ver docs/V09_FORECAST_AUTOMATION.md):
-# * corre SOLO desde la rama v09/forecast-engine (el job se niega con cualquier otra ref);
-# * el código se descarga SIN credenciales de escritura (persist-credentials: false);
-# * los resultados se escriben SOLO en la rama huérfana v09/forecast-data, montada en ./_data;
-# * antes de guardar se comprueba que nada cambió fuera de data/v09/{forecast,obs_imerg,model};
+# * corre SOLO desde la rama v09/forecast-engine (ambos jobs se niegan con cualquier otra ref);
+# * job "compute": ejecuta Python y paquetes de PyPI con permiso de SOLO LECTURA y sin credenciales guardadas;
+#   entrega sus resultados como artefacto;
+# * job "persist": otra máquina; no ejecuta Python ni paquetes externos, solo git. Aplica el artefacto sobre la
+#   misma base de v09/forecast-data, rechaza cualquier ruta fuera de data/v09/{forecast,obs_imerg,model}, enlaces o
+#   archivos especiales, y empuja solo a refs/heads/v09/forecast-data, sin --force;
 # * no publica en Pages, no toca site/ ni main, no activa alertas (guardas RESEARCH_ONLY / TEST_ONLY).
 # Lo lanza el disparador mínimo de main (v09-forecast-trigger.yml) o una persona con workflow_dispatch.
 
@@ -25,39 +27,48 @@ on:
       - scripts/v09_own_model.py
       - .github/workflows/v09-forecast-engine.yml
 
-permissions:
-  contents: write
+permissions: {}
 
+# Compartido solo con el entrenamiento (v09-own-model-train.yml), para que nunca calculen sobre la misma base a la vez.
 concurrency:
   group: v09-forecast-engine
   cancel-in-progress: false
 
 env:
   DATA_BRANCH: v09/forecast-data
-  IRFEN_FC_DATA: ${{ github.workspace }}/_data
-  BACKFILL_DAYS: ${{ inputs.backfill_days || '0' }}
 
 jobs:
-  engine:
+  compute:
     if: github.ref == 'refs/heads/v09/forecast-engine'
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    timeout-minutes: 150   # suma de los límites internos: 2400 + 3000 + 1260 + 1200 + 600 s = 141 min
+    permissions:
+      contents: read
+    outputs:
+      data_sha: ${{ steps.base.outputs.sha }}
+    env:
+      IRFEN_FC_DATA: ${{ github.workspace }}/_data
+      BACKFILL_DAYS: ${{ inputs.backfill_days || '0' }}
     steps:
-      - name: Engine code (read-only checkout)
+      - name: Engine code (read-only, no stored credentials)
         uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - name: Results branch (the only place this job may write)
+      - name: Results branch as working state (read-only, no stored credentials)
         uses: actions/checkout@v6
         with:
           ref: v09/forecast-data
           path: _data
           fetch-depth: 1
+          persist-credentials: false
+      - name: Record the results-branch base commit
+        id: base
+        run: echo "sha=$(git -C _data rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: "pip"
-      - name: Install bounded dependencies
+      - name: Install bounded dependencies (this job cannot write to the repository)
         run: |
           python -m pip install --disable-pip-version-check "numpy>=1.26,<2" "h5py>=3.10" "earthaccess>=0.15,<1" \
             "shapely>=2.0,<3" "requests>=2.31,<3" "eccodes>=2.38,<3" "ecmwf-opendata>=0.3,<1" "netCDF4>=1.6,<2"
@@ -79,11 +90,15 @@ jobs:
         continue-on-error: true
         shell: bash
         run: |
-          for k in $(seq "$BACKFILL_DAYS" -1 1); do
-            RUN=$(date -u -d "$k days ago" +%Y-%m-%dT00)
-            timeout --signal=TERM --kill-after=10s 900s python scripts/v09_ecmwf_ens_north.py --workdir "$RUNNER_TEMP" --run "$RUN" || \
-              echo "::warning title=V09_ECMWF_ENS::retrospectivo $RUN no disponible"
-          done
+          if [ "$BACKFILL_DAYS" -gt 0 ]; then
+            # retrospectivo: todas las corridas pasadas comparten un solo límite; cada una se archiva de forma atómica
+            timeout --signal=TERM --kill-after=10s 3000s bash -c '
+              for k in $(seq "$BACKFILL_DAYS" -1 1); do
+                RUN=$(date -u -d "$k days ago" +%Y-%m-%dT00)
+                python scripts/v09_ecmwf_ens_north.py --workdir "$RUNNER_TEMP" --run "$RUN" || \
+                  echo "::warning title=V09_ECMWF_ENS::retrospectivo $RUN no disponible"
+              done' || echo "::warning title=V09_ECMWF_ENS::retrospectivo cortado por tiempo; lo archivado se conserva"
+          fi
           timeout --signal=TERM --kill-after=10s 1260s python scripts/v09_ecmwf_ens_north.py --workdir "$RUNNER_TEMP"
       - name: Forecast - own statistical model (shadow)
         continue-on-error: true
@@ -91,31 +106,84 @@ jobs:
           timeout --signal=TERM --kill-after=10s 900s python scripts/v09_own_model.py refresh
           timeout --signal=TERM --kill-after=10s 300s python scripts/v09_own_model.py predict
       - name: Evaluation (Brier, BSS, decomposition, ROC, POD/FAR/CSI, reliability; 10/25/50 mm)
-        if: always()
-        run: python scripts/v09_fc_evaluate.py
-      - name: Guard - only results paths changed in the results branch
-        if: always()
+        continue-on-error: true
+        run: timeout --signal=TERM --kill-after=10s 600s python scripts/v09_fc_evaluate.py
+      - name: Stage results (regular files only, allowed directories only)
         shell: bash
         run: |
           set -euo pipefail
-          cd _data
-          bad=$(git status --porcelain --untracked-files=all | awk '{print $NF}' | grep -v -E '^data/v09/(forecast|obs_imerg|model)/' || true)
-          if [ -n "$bad" ]; then echo "::error::unexpected paths: $bad"; exit 1; fi
-          test "$(git rev-parse --abbrev-ref HEAD)" = "$DATA_BRANCH"
-      - name: Persist results (bot commit to the results branch only, bounded retries)
-        if: always()
+          OUT="$RUNNER_TEMP/results"
+          mkdir -p "$OUT"
+          for d in forecast obs_imerg model; do
+            if [ -d "_data/data/v09/$d" ]; then cp -a "_data/data/v09/$d" "$OUT/$d"; fi
+          done
+          bad=$(find "$OUT" -mindepth 1 ! -type f ! -type d -print)
+          if [ -n "$bad" ]; then echo "::error::symlinks or special files in results: $bad"; exit 1; fi
+      - name: Hand results to the persist job
+        uses: actions/upload-artifact@v4
+        with:
+          name: engine-results-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/results
+          retention-days: 7
+          if-no-files-found: error
+
+  persist:
+    needs: compute
+    if: ${{ !cancelled() && needs.compute.result == 'success' && github.ref == 'refs/heads/v09/forecast-engine' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    concurrency:
+      group: v09-forecast-data-write
+      cancel-in-progress: false
+    env:
+      BASE_SHA: ${{ needs.compute.outputs.data_sha }}
+      ALLOWED: ^data/v09/(forecast|obs_imerg|model)/
+    steps:
+      - name: Results branch at the exact base the compute job used
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.compute.outputs.data_sha }}
+          fetch-depth: 0
+      - name: Receive results
+        uses: actions/download-artifact@v4
+        with:
+          name: engine-results-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/results
+      - name: Guard - only regular files, only allowed directories, base unchanged
+        id: guard
         shell: bash
         run: |
           set -euo pipefail
-          cd _data
+          IN="$RUNNER_TEMP/results"
+          test "$(git rev-parse HEAD)" = "$BASE_SHA"
+          bad=$(find "$IN" -mindepth 1 ! -type f ! -type d -print)
+          if [ -n "$bad" ]; then echo "::error::symlinks or special files: $bad"; exit 1; fi
+          for entry in "$IN"/*; do
+            case "$(basename "$entry")" in forecast|obs_imerg|model) ;; *) echo "::error::unexpected top-level: $entry"; exit 1;; esac
+          done
+          for d in forecast obs_imerg model; do
+            if [ -d "$IN/$d" ]; then mkdir -p "data/v09/$d"; rsync -a --delete --checksum "$IN/$d/" "data/v09/$d/"; fi
+          done
+          git add -A -- data/v09/forecast data/v09/obs_imerg data/v09/model
+          staged=$(git diff --cached --name-only --no-renames -z | tr '\0' '\n')
+          outside=$(printf '%s\n' "$staged" | grep -v -E "$ALLOWED" | grep -v '^$' || true)
+          if [ -n "$outside" ]; then echo "::error::staged paths outside the allowed directories: $outside"; exit 1; fi
+          if [ -n "$(git status --porcelain=v1 --untracked-files=all -z -- . ':!data/v09/forecast' ':!data/v09/obs_imerg' ':!data/v09/model')" ]; then
+            echo "::error::unexpected working-tree changes outside the allowed directories"; exit 1
+          fi
+          test "$(git rev-parse HEAD)" = "$BASE_SHA"
+      - name: Commit and push to the results branch only (bounded rebase, never --force)
+        shell: bash
+        run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          mkdir -p data/v09/model
-          git add -A data/v09/forecast data/v09/obs_imerg data/v09/model
           if git diff --cached --quiet; then echo "No changes"; exit 0; fi
           git commit -q -m "IRFEN v0.9: motor de pronóstico costa norte, resultados en sombra (TEST_ONLY)"
           for attempt in 1 2 3 4; do
-            git fetch -q origin "$DATA_BRANCH"
+            git fetch -q origin "+refs/heads/$DATA_BRANCH:refs/remotes/origin/$DATA_BRANCH"
             if ! git rebase -q "origin/$DATA_BRANCH"; then git rebase --abort || true; echo "Real conflict; not overwriting" >&2; exit 1; fi
             if git push -q origin "HEAD:refs/heads/$DATA_BRANCH"; then exit 0; fi
             sleep $((attempt * 3))

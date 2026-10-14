@@ -24,7 +24,14 @@ de lectura de las estaciones convencionales.
   12 UTC, 0–24, 24–48 y 48–72 h. Se registra `valid_date_peru = D`.
 - IMERG: suma de los 48 gránulos cuyo inicio cae en `[D−1 12:00, D 12:00)` UTC; tasa (mm/h) × 0,5 h. Un día con menos
   de 48 gránulos queda **incompleto** y no se verifica.
-- SENAMHI: la lectura de las 07:00 del día D cubre las 24 h previas: coincide con D sin ajuste.
+- SENAMHI: el total diario de las estaciones va de las 07:00 locales de un día a las 07:00 del siguiente
+  ([SENAMHI](https://www.senamhi.gob.pe/load/file/03619SENA-24.pdf)), la misma ventana de 24 h. **La fecha con que se
+  etiqueta ese total no es uniforme entre productos** (fecha de cierre en los reportes "a las 07 horas del día D";
+  algunas planillas históricas pueden usar la fecha de inicio). Por eso:
+  - la captura de estaciones debe guardar la fecha de **cierre** de la ventana (`fecha_peru` = día de la lectura de
+    las 07:00), y si un archivo trae lecturas separadas de 07 h y 19 h, el día D se arma como 19 h de D−1 + 07 h de D;
+  - antes de usar una fuente nueva se comprueba el desfase: correlación de su serie con IMERG Late en desfases de
+    −1, 0 y +1 día; si el máximo no está en 0, la etiqueta está corrida y la fuente no se usa hasta corregirla.
 
 Regla anti-mirada al futuro: un pronóstico solo se verifica para ventanas que cierran después de su archivo
 (`archived_at_utc ≤ end_utc`). La lista de corridas archivadas no se filtra por resultado.
