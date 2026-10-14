@@ -264,6 +264,7 @@ def build() -> dict:
             continue
         path = SITE / f["path"]
         digest = sha(path)
+        READS[path.resolve().relative_to(ROOT).as_posix()] = digest  # also absent files: a deploy-time file must not go unnoticed
         if digest is None or (f.get("file_sha256") and digest != f["file_sha256"]):
             withheld.append(dict(entity=f["entity_id"], name=f["name"], department=None, reason_es=(
                 "Geometría generada en el despliegue v0.8, no versionada en el repositorio" if digest is None else "SHA-256 distinto del catálogo")))

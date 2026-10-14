@@ -44,6 +44,9 @@ class Bundle(unittest.TestCase):
             self.assertIn(path, BUNDLE["inputs"])
         self.assertTrue(any(k.startswith("data/phase2/geometries/") or k.startswith("site/data/phase2/geometries/") for k in BUNDLE["inputs"]))
         self.assertNotIn("site/data/v09/territory_v0_1.json", BUNDLE["inputs"])
+        # a geometry generated at deploy time (absent from the repository) is recorded as absent, so its later
+        # appearance in a workspace is a detected input change, never a silent difference
+        self.assertIn("site/data/hydrology/ana_catacaos_critical_segments_2026.geojson", BUNDLE["inputs"])
 
     def test_only_admitted_or_verified_geometry_is_drawn(self):
         admitted = {f["entity_id"]: f for f in CATALOG["features"] if f.get("map_eligible")}
