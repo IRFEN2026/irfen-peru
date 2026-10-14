@@ -1,0 +1,26 @@
+name: IRFEN v0.9 - Autoprueba del disparador (TEST_ONLY)
+
+# Prueba única, antes de fusionar el disparador en main: confirma que GITHUB_TOKEN (github-actions[bot]) puede pedir el
+# motor en su propia rama, igual que lo hará v09-forecast-trigger.yml. Mismos permisos y mismo comando que el
+# disparador; solo corre cuando cambia este archivo. Se elimina tras la prueba.
+
+on:
+  push:
+    branches:
+      - v09/forecast-engine
+    paths:
+      - .github/workflows/v09-forecast-trigger-selftest.yml
+
+permissions:
+  actions: write
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Dispatch the engine on its own branch (same command as the trigger)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh workflow run v09-forecast-engine.yml --ref v09/forecast-engine
