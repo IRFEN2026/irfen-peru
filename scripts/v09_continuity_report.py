@@ -71,6 +71,52 @@ def summarize(runs: list[dict], since: datetime, now: datetime, nominal_min: int
                 failed_runs=sum(1 for r in runs if r.get("conclusion") == "failure" and since <= parse(r["created_at"]) <= now))
 
 
+# Cron minutes of each collector, to measure how late GitHub created a scheduled run.
+CRON_MINUTES = {"v09-senamhi-avisos-capture.yml": (7, 37), "v09-rain-north.yml": (22, 52)}
+
+
+def classify_gaps(runs: list[dict], since: datetime, now: datetime, limit_min: float = 90) -> list[dict]:
+    """Pure. Every interval > limit between successful runs (and the open one), with its cause:
+    SIN_EJECUCION      no run was created in the interval: the scheduler did not fire (not a capture failure);
+    EJECUCION_FALLIDA  runs were created and failed: a capture failure;
+    CANCELADA          runs were created and cancelled or skipped.
+    A failed run inside an interval wins over 'no run'; the counts are always reported."""
+    ok = sorted(parse(r["created_at"]) for r in runs if r.get("conclusion") == "success")
+    before = [t for t in ok if t < since]
+    anchors = (before[-1:] or [since]) + [t for t in ok if since <= t <= now]
+    out = []
+    for a, b, is_open in [(x, y, False) for x, y in zip(anchors, anchors[1:])] + ([(anchors[-1], now, True)] if anchors else []):
+        gap = (b - a).total_seconds() / 60
+        if gap <= limit_min:
+            continue
+        inside = [r for r in runs if a < parse(r["created_at"]) < b and r.get("conclusion") != "success"]
+        failed = sum(1 for r in inside if r.get("conclusion") in ("failure", "timed_out", "startup_failure"))
+        cancelled = sum(1 for r in inside if r.get("conclusion") in ("cancelled", "skipped"))
+        running = sum(1 for r in inside if r.get("status") in ("queued", "in_progress", "waiting", "pending", "requested"))
+        cause = "EJECUCION_FALLIDA" if failed else "CANCELADA" if cancelled else "EN_CURSO" if running else "SIN_EJECUCION"
+        out.append(dict(start_utc=a.isoformat(), end_utc=b.isoformat(), minutes=round(gap, 1), open=is_open, cause=cause,
+                        failed_runs=failed, cancelled_runs=cancelled))
+    return out
+
+
+def schedule_lag(runs: list[dict], minutes: tuple[int, ...]) -> dict:
+    """Pure. For successful scheduled runs: minutes between the nominal cron slot and the run's creation (GitHub
+    queue delay), and between creation and completion (the run persists its data inside the run: this is the
+    publication delay of the repository data)."""
+    lags, durs = [], []
+    for r in runs:
+        if r.get("conclusion") != "success":
+            continue
+        t = parse(r["created_at"])
+        if r.get("event") == "schedule" and minutes:
+            slots = [t.replace(minute=m, second=0, microsecond=0) - timedelta(hours=h) for m in minutes for h in (0, 1)]
+            lags.append((t - max(x for x in slots if x <= t)).total_seconds() / 60)
+        if r.get("updated_at"):
+            durs.append((parse(r["updated_at"]) - t).total_seconds() / 60)
+    q = lambda v: dict(n=len(v), median=round(sorted(v)[len(v) // 2], 1), max=round(max(v), 1)) if v else dict(n=0)
+    return dict(cron_creation_lag_min=q(lags), run_to_published_min=q(durs))
+
+
 def fetch_runs(repo: str, workflow: str, since: datetime, token: str) -> list[dict]:
     out, page = [], 1
     while page <= 10:
@@ -130,6 +176,18 @@ def markdown(report: dict) -> str:
                  f"{'—' if share is None else f'{share:.1%}'} | **{result}** |")
     if crit.get("stale_data_visibility"):
         L += ["", f"Visibilidad de datos desactualizados: **{crit['stale_data_visibility']['result']}** — {crit['stale_data_visibility']['detail']}"]
+    for wf in CRITERION_WORKFLOWS:
+        s = report["workflows"].get(wf) or {}
+        if "gaps_over_90_min" not in s:
+            continue
+        lag = s["lags"]
+        L += ["", f"## {wf}: intervalos > 90 min", "",
+              f"Retraso del cron de GitHub al crear la ejecución: mediana {lag['cron_creation_lag_min'].get('median', '—')} min, máx. "
+              f"{lag['cron_creation_lag_min'].get('max', '—')} min. De la creación a los datos publicados en main: mediana "
+              f"{lag['run_to_published_min'].get('median', '—')} min, máx. {lag['run_to_published_min'].get('max', '—')} min.", "",
+              "| Desde (UTC) | Hasta (UTC) | Duración | Causa | Fallidas | Canceladas |", "|---|---|---|---|---|---|"]
+        for g in s["gaps_over_90_min"]:
+            L.append(f"| {g['start_utc'][:16]} | {g['end_utc'][:16]}{' (abierto)' if g['open'] else ''} | {f(g['minutes'])} | {g['cause']} | {g['failed_runs']} | {g['cancelled_runs']} |")
     trace = report.get("fallback_trace")
     if trace is not None:
         L += ["", "## Trazabilidad de los disparos del respaldo", "",
@@ -177,6 +235,9 @@ def main(argv: list[str] | None = None) -> int:
     for wf, nominal in WORKFLOWS.items():
         runs = fetch_runs(args.repo, wf, since, token)
         report["workflows"][wf] = runs[0] if runs and "error" in runs[0] else summarize(runs, since, now, nominal)
+        if wf in CRITERION_WORKFLOWS and not (runs and "error" in runs[0]):
+            report["workflows"][wf]["gaps_over_90_min"] = classify_gaps(runs, since, now)
+            report["workflows"][wf]["lags"] = schedule_lag(runs, CRON_MINUTES.get(wf, ()))
     report["criterion"] = evaluate(report)
     try:
         report["fallback_trace"] = fallback_trace(args.repo, since, token)

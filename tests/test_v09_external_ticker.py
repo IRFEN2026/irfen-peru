@@ -133,6 +133,21 @@ class TickerFiles(unittest.TestCase):
         self.assertIn("concurrency:", wf)
 
 
+class GapCauses(unittest.TestCase):
+    def test_gaps_are_classified_by_cause(self):
+        since, now = datetime(2026, 10, 14, 0, 0, tzinfo=timezone.utc), datetime(2026, 10, 14, 12, 0, tzinfo=timezone.utc)
+        r = lambda h, m, c="success", ev="schedule": dict(created_at=f"2026-10-14T{h:02d}:{m:02d}:00Z", event=ev, conclusion=c, status="completed",
+                                                         updated_at=f"2026-10-14T{h:02d}:{m + 1:02d}:00Z")
+        runs = [r(0, 10), r(0, 40), r(3, 10), r(4, 0, "failure"), r(6, 10), r(6, 40, "cancelled"), r(9, 40)]
+        gaps = C.classify_gaps(runs, since, now)
+        self.assertEqual([(g["start_utc"][11:16], g["cause"]) for g in gaps],
+                         [("00:40", "SIN_EJECUCION"), ("03:10", "EJECUCION_FALLIDA"), ("06:10", "CANCELADA"), ("09:40", "SIN_EJECUCION")])
+        self.assertTrue(gaps[-1]["open"])  # the stretch up to 'now' counts
+        lag = C.schedule_lag(runs, (7, 37))
+        self.assertEqual(lag["cron_creation_lag_min"]["n"], 5)
+        self.assertEqual(lag["run_to_published_min"]["max"], 1.0)
+
+
 class TickShellFailsClosed(unittest.TestCase):
     """QA 14-10-2026: tick.sh dispatched when the run listing failed (curl error swallowed by `|| true`)."""
 
