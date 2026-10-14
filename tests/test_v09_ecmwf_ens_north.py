@@ -275,6 +275,19 @@ class EvaluationExtras(unittest.TestCase):
         self.assertEqual(V.roc_auc(np.array([0.5, 0.5]), np.array([True, False])), 0.5)
         self.assertIsNone(V.roc_auc(probs, np.zeros(4, bool)))
 
+    def test_backfill_runs_are_scored_apart_from_realtime(self):
+        base = dict(thresholds_mm=[10.0], days=[dict(day=1, valid_date_peru="2026-10-10",
+                                                      end_utc="2026-10-10T12:00:00+00:00")],
+                    provinces={"2001": dict(days=[dict(day=1, p_max={"10": 0.7}, p_mean={"10": 0.2})])})
+        live = dict(base, run_utc="a", archived_at_utc="2026-10-09T09:00:00+00:00")
+        late = dict(base, run_utc="b", archived_at_utc="2026-10-14T20:00:00+00:00")
+        back = dict(late, run_utc="c", backfill=True)
+        obs = {("2026-10-10", "2001"): dict(max=12.0, mean=3.0)}
+        self.assertEqual(V.pairs([live, late, back], obs, 1, 10.0, "max", "realtime")[0].size, 1)
+        self.assertEqual(V.pairs([live, late, back], obs, 1, 10.0, "max", "backfill")[0].size, 1)
+        rows = V.verify([live, back], obs, ("max",), "backfill")
+        self.assertTrue(all(r["mode"] == "backfill" for r in rows))
+
     def test_forecast_archived_after_window_is_excluded(self):
         run = dict(thresholds_mm=[10.0], archived_at_utc="2026-10-16T13:00:00+00:00",
                    days=[dict(day=1, valid_date_peru="2026-10-15", end_utc="2026-10-15T12:00:00+00:00"),

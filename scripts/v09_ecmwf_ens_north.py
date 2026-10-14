@@ -272,7 +272,8 @@ def _alarm(seconds: int):
 
 
 def latest_run_and_download(target: Path, sources=SOURCES, n_days: int = N_DAYS,
-                            timeout_s: int = SOURCE_TIMEOUT_S) -> tuple[datetime, str]:
+                            timeout_s: int = SOURCE_TIMEOUT_S, run: datetime | None = None) -> tuple[datetime, str]:
+    """Descarga la corrida más reciente o, con ``run``, una corrida pasada (retrospectiva) de las réplicas en la nube."""
     import signal
 
     from ecmwf.opendata import Client
@@ -283,11 +284,11 @@ def latest_run_and_download(target: Path, sources=SOURCES, n_days: int = N_DAYS,
             Path(target).unlink(missing_ok=True)  # nunca mezclar restos de una réplica fallida
             _alarm(timeout_s)
             client = Client(source=source)
-            run = client.latest(stream="enfo", type="pf", param="tp", step=96)
-            steps = sorted({s for w in day_windows(run.hour, n_days) for s in w if s > 0})
-            client.retrieve(date=run.strftime("%Y%m%d"), time=run.hour, stream="enfo", type=["cf", "pf"],
+            this_run = run or client.latest(stream="enfo", type="pf", param="tp", step=96)
+            steps = sorted({s for w in day_windows(this_run.hour, n_days) for s in w if s > 0})
+            client.retrieve(date=this_run.strftime("%Y%m%d"), time=this_run.hour, stream="enfo", type=["cf", "pf"],
                             param="tp", step=steps, target=str(target))
-            return run.replace(tzinfo=timezone.utc), source
+            return this_run.replace(tzinfo=timezone.utc), source
         except Exception as exc:  # noqa: BLE001 - se prueba la siguiente réplica y se reporta todo
             errors.append(f"{source}: {type(exc).__name__}: {str(exc)[:160]}")
             print(f"::warning title=V09_ECMWF_ENS::réplica {errors[-1]}")
@@ -386,7 +387,18 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--grib", type=Path, help="procesar un GRIB ya descargado en lugar de descargar")
     parser.add_argument("--workdir", type=Path, default=Path("."), help="carpeta temporal para el GRIB")
+    parser.add_argument("--run", help="corrida pasada AAAA-MM-DDTHH (modo retrospectivo; se marca backfill=true)")
     args = parser.parse_args(argv)
+    backfill_run = None
+    if args.run:
+        backfill_run = datetime.strptime(args.run, "%Y-%m-%dT%H").replace(tzinfo=timezone.utc)
+        if backfill_run > datetime.now(timezone.utc) - timedelta(hours=12):
+            parser.error("--run debe ser una corrida de hace al menos 12 h")
+        if any(json.loads(line).get("run_utc") == backfill_run.isoformat()
+               for line in (LEDGER_OUT.read_text(encoding="utf-8").splitlines() if LEDGER_OUT.is_file() else [])
+               if line.strip()):
+            print(f"::notice title=V09_ECMWF_ENS::corrida {backfill_run.isoformat()} ya en el registro")
+            return 0
 
     geo_path, boundaries = boundaries_paths()
     provinces = load_provinces(geo_path)
@@ -396,8 +408,19 @@ def main(argv=None) -> int:
         grib = args.grib
         if grib is None:
             grib = args.workdir / "ecmwf_ens_tp.grib2"
-            _, source = latest_run_and_download(grib)
+            _, source = latest_run_and_download(grib, sources=("aws", "azure") if backfill_run else SOURCES,
+                                                run=None if backfill_run is None else backfill_run.replace(tzinfo=None))
         run, tp_m, steps, lats, lons = read_grib(grib)
+        if backfill_run is not None:
+            if run != backfill_run:
+                raise ValueError(f"se pidió {backfill_run.isoformat()} y el archivo es {run.isoformat()}")
+            record = build_run_record(run, tp_m, steps, lats, lons, provinces)
+            record.update(backfill=True, source_mirror=source, archived_at_utc=datetime.now(timezone.utc).isoformat(),
+                          grib_tp_messages_by_type=getattr(read_grib, "last_type_counts", None),
+                          note="retrospectivo: salida ECMWF fija desde su hora de inicio; se evalúa aparte del tiempo real")
+            appended = append_ledger(record)
+            print(f"::notice title=V09_ECMWF_ENS::retrospectivo {run.isoformat()} (nuevo={appended}, réplica {source})")
+            return 0
         if previous and (previous.get("latest_run") or {}).get("run_utc") == run.isoformat() \
                 and (previous.get("latest_run") or {}).get("processing_version") == PROCESSING_VERSION:
             print(f"::notice title=V09_ECMWF_ENS::corrida {run.isoformat()} ya procesada")

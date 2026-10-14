@@ -1,0 +1,82 @@
+name: IRFEN v0.9 - Entrenar modelo estadístico propio (TEST_ONLY)
+
+# Mismo aislamiento que el motor: solo desde v09/forecast-engine, código sin credenciales, escritura solo en
+# v09/forecast-data (data/v09/model). Descarga insumos históricos (PISCO SENAMHI, OISST, índices CPC/IGP,
+# NCEP/NCAR R1, ETOPO), reanudable por año, y ajusta el modelo con validación cruzada por temporada.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - v09/forecast-engine
+    paths:
+      - scripts/v09_own_model.py
+      - .github/workflows/v09-own-model-train.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: v09-forecast-engine   # comparte grupo con el motor: nunca escriben la rama de datos a la vez
+  cancel-in-progress: false
+
+env:
+  DATA_BRANCH: v09/forecast-data
+  IRFEN_FC_DATA: ${{ github.workspace }}/_data
+
+jobs:
+  train:
+    if: github.ref == 'refs/heads/v09/forecast-engine'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Engine code (read-only checkout)
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Results branch (the only place this job may write)
+        uses: actions/checkout@v6
+        with:
+          ref: v09/forecast-data
+          path: _data
+          fetch-depth: 1
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install bounded dependencies
+        run: python -m pip install --disable-pip-version-check "numpy>=1.26,<2" "shapely>=2.0,<3" "requests>=2.31,<3" "netCDF4>=1.6,<2"
+      - name: Build historical inputs (resumable; each source reported separately, never zero-filled)
+        continue-on-error: true
+        run: timeout --signal=TERM --kill-after=10s 4800s python scripts/v09_own_model.py build-inputs
+      - name: Train with leave-one-season-out validation
+        if: always()
+        run: timeout --signal=TERM --kill-after=10s 1800s python scripts/v09_own_model.py train
+      - name: Guard - only results paths changed in the results branch
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd _data
+          bad=$(git status --porcelain --untracked-files=all | awk '{print $NF}' | grep -v -E '^data/v09/(forecast|obs_imerg|model)/' || true)
+          if [ -n "$bad" ]; then echo "::error::unexpected paths: $bad"; exit 1; fi
+          test "$(git rev-parse --abbrev-ref HEAD)" = "$DATA_BRANCH"
+      - name: Persist (bot commit to the results branch only, bounded retries)
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd _data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p data/v09/model
+          git add -A data/v09/model
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -q -m "IRFEN v0.9: insumos y modelo estadístico propio (TEST_ONLY)"
+          for attempt in 1 2 3 4; do
+            git fetch -q origin "$DATA_BRANCH"
+            if ! git rebase -q "origin/$DATA_BRANCH"; then git rebase --abort || true; echo "Real conflict; not overwriting" >&2; exit 1; fi
+            if git push -q origin "HEAD:refs/heads/$DATA_BRANCH"; then exit 0; fi
+            sleep $((attempt * 3))
+          done
+          exit 1

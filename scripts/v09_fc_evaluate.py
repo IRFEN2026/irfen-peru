@@ -98,16 +98,23 @@ def read_observations(path: Path, max_col: str = "lluvia_max_mm", mean_col: str 
 
 
 # --------------------------------------------------------------------------- pares
-def pairs(ledger: list[dict], obs: dict, day: int, threshold: float, kind: str):
-    """(probabilidades, eventos) válidos para un día de anticipación, umbral y definición ('max' o 'mean')."""
+def pairs(ledger: list[dict], obs: dict, day: int, threshold: float, kind: str, mode: str = "realtime"):
+    """(probabilidades, eventos) válidos para un día de anticipación, umbral y definición ('max' o 'mean').
+
+    ``mode='realtime'``: solo corridas archivadas antes del cierre de cada ventana (anti-mirada al futuro).
+    ``mode='backfill'``: solo corridas retrospectivas (``backfill``), cuya salida ECMWF es fija desde su hora de
+    inicio; se informan aparte y nunca se mezclan con el tiempo real.
+    """
     key, ukey = f"p_{kind}", f"{threshold:g}"
     probs, events = [], []
     for run in ledger:
+        if bool(run.get("backfill")) != (mode == "backfill"):
+            continue
         meta = next((d for d in run["days"] if d["day"] == day), None)
         if meta is None:
             continue
         archived, end = run.get("archived_at_utc"), meta.get("end_utc")
-        if archived and end and archived > end:
+        if mode == "realtime" and archived and end and archived > end:
             continue  # emitido después del cierre de la ventana: no cuenta (anti-mirada al futuro)
         for pid, prov in run["provinces"].items():
             o = obs.get((meta["valid_date_peru"], pid))
@@ -203,7 +210,7 @@ def score_block(probs: np.ndarray, events: np.ndarray) -> dict:
     return row
 
 
-def verify(ledger: list[dict], obs: dict, kinds=("max", "mean")) -> list[dict]:
+def verify(ledger: list[dict], obs: dict, kinds=("max", "mean"), mode: str = "realtime") -> list[dict]:
     if not ledger:
         return []
     thresholds = ledger[-1]["thresholds_mm"]
@@ -212,8 +219,8 @@ def verify(ledger: list[dict], obs: dict, kinds=("max", "mean")) -> list[dict]:
     for kind in kinds:
         for day in days:
             for u in thresholds:
-                probs, events = pairs(ledger, obs, day, u, kind)
-                row = dict(event=f"{'alguna celda/estación' if kind == 'max' else 'media provincial'} ≥ {u:g} mm",
+                probs, events = pairs(ledger, obs, day, u, kind, mode)
+                row = dict(mode=mode, event=f"{'alguna celda/estación' if kind == 'max' else 'media provincial'} ≥ {u:g} mm",
                            kind=kind, day=day, threshold_mm=u)
                 row.update(score_block(probs, events))
                 results.append(row)
@@ -229,11 +236,14 @@ def summary_markdown(doc: dict) -> str:
             if not block["results"]:
                 continue
             lines += [f"## {fc} vs {ob}", f"Soporte de la observación: {block['support']}.", "",
-                      "| Día | Evento | Pares | Eventos | Brier | BSS | ROC | POD@0,3 | FAR@0,3 | Muestra suficiente |",
-                      "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
+                      "| Modo | Día | Evento | Pares | Eventos | Brier | BSS | ROC | POD@0,3 | FAR@0,3 | Muestra suficiente |",
+                      "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
             for r in block["results"]:
+                if r["pairs"] == 0:
+                    continue
                 c = next(x for x in r["contingency"] if x["alert_prob"] == 0.3)
-                lines.append(f"| {r['day']} | {r['event']} | {r['pairs']} | {r['events']} | {r['brier']} | {r['bss']} | "
+                mode = "tiempo real" if r["mode"] == "realtime" else "retrospectivo"
+                lines.append(f"| {mode} | {r['day']} | {r['event']} | {r['pairs']} | {r['events']} | {r['brier']} | {r['bss']} | "
                              f"{r['roc_auc']} | {c['pod']} | {c['far']} | {'sí' if r['enough_sample'] else 'no'} |")
             lines.append("")
     return "\n".join(lines) + "\n"
@@ -256,8 +266,10 @@ def main(argv=None) -> int:
                 continue
             obs = read_observations(path, max_col, mean_col)
             kinds = ("max", "mean") if mean_col else ("max",)
-            evaluations[fc_name][ob_name] = dict(support=support, observation_rows=len(obs),
-                                                 runs=len(ledger), results=verify(ledger, obs, kinds))
+            evaluations[fc_name][ob_name] = dict(
+                support=support, observation_rows=len(obs), runs=len(ledger),
+                runs_backfill=sum(1 for r in ledger if r.get("backfill")),
+                results=verify(ledger, obs, kinds, "realtime") + verify(ledger, obs, kinds, "backfill"))
     doc = dict(schema_version="0.1", archive_id="irfen-v09-forecast-evaluation:v0.1", **GUARDS,
                map_publishable=False, min_pairs_for_scores=MIN_PAIRS_FOR_SCORES,
                note="Muestra de la temporada en curso; con menos pares que el mínimo los puntajes son solo indicativos.",
@@ -267,10 +279,11 @@ def main(argv=None) -> int:
     SUMMARY_MD.write_text(summary_markdown(doc), encoding="utf-8") if args.out == OUT else None
     head = []
     for fc, by in evaluations.items():
-        r = next((x for x in by.get("imerg_025", {}).get("results", []) if x["kind"] == "max"
-                  and x["threshold_mm"] == 10.0 and x["day"] == 1), None)
-        if r:
-            head.append(f"{fc} día 1 ≥10 mm: {r['pairs']} pares, {r['events']} eventos, BSS {r['bss']}")
+        for mode in ("realtime", "backfill"):
+            r = next((x for x in by.get("imerg_025", {}).get("results", []) if x["kind"] == "max" and x["mode"] == mode
+                      and x["threshold_mm"] == 10.0 and x["day"] == 1), None)
+            if r and r["pairs"]:
+                head.append(f"{fc} [{mode}] día 1 ≥10 mm: {r['pairs']} pares, {r['events']} eventos, BSS {r['bss']}")
     print("::notice title=V09_FC_EVALUATE::" + ("; ".join(head) or "; ".join(sorted(set(notes)))))
     return 0
 

@@ -4,12 +4,17 @@ name: IRFEN v0.9 - Motor de pronóstico costa norte (TEST_ONLY)
 # * corre SOLO desde la rama v09/forecast-engine (el job se niega con cualquier otra ref);
 # * el código se descarga SIN credenciales de escritura (persist-credentials: false);
 # * los resultados se escriben SOLO en la rama huérfana v09/forecast-data, montada en ./_data;
-# * antes de guardar se comprueba que nada cambió fuera de data/v09/forecast y data/v09/obs_imerg;
+# * antes de guardar se comprueba que nada cambió fuera de data/v09/{forecast,obs_imerg,model};
 # * no publica en Pages, no toca site/ ni main, no activa alertas (guardas RESEARCH_ONLY / TEST_ONLY).
 # Lo lanza el disparador mínimo de main (v09-forecast-trigger.yml) o una persona con workflow_dispatch.
 
 on:
   workflow_dispatch:
+    inputs:
+      backfill_days:
+        description: "Días pasados a reprocesar (corridas ECMWF de 00 UTC + IMERG Late), 0-10; 0 = operación normal"
+        required: false
+        default: "0"
   push:
     branches:
       - v09/forecast-engine
@@ -30,12 +35,13 @@ concurrency:
 env:
   DATA_BRANCH: v09/forecast-data
   IRFEN_FC_DATA: ${{ github.workspace }}/_data
+  BACKFILL_DAYS: ${{ inputs.backfill_days || '0' }}
 
 jobs:
   engine:
     if: github.ref == 'refs/heads/v09/forecast-engine'
     runs-on: ubuntu-latest
-    timeout-minutes: 55
+    timeout-minutes: 150
     steps:
       - name: Engine code (read-only checkout)
         uses: actions/checkout@v6
@@ -54,24 +60,36 @@ jobs:
       - name: Install bounded dependencies
         run: |
           python -m pip install --disable-pip-version-check "numpy>=1.26,<2" "h5py>=3.10" "earthaccess>=0.15,<1" \
-            "shapely>=2.0,<3" "requests>=2.31,<3" "eccodes>=2.38,<3" "ecmwf-opendata>=0.3,<1"
+            "shapely>=2.0,<3" "requests>=2.31,<3" "eccodes>=2.38,<3" "ecmwf-opendata>=0.3,<1" "netCDF4>=1.6,<2"
           python -m eccodes selfcheck
+      - name: Validate inputs
+        shell: bash
+        run: |
+          if ! [[ "$BACKFILL_DAYS" =~ ^([0-9]|10)$ ]]; then echo "::error::backfill_days must be 0-10"; exit 1; fi
       - name: Observed rain - IMERG Late by province and rain-day (independent of every forecast)
         continue-on-error: true
         env:
           EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
-        run: timeout --signal=TERM --kill-after=10s 1200s python scripts/v09_imerg_late_province_daily.py
+        shell: bash
+        run: |
+          LB=$(( BACKFILL_DAYS > 0 ? BACKFILL_DAYS + 4 : 6 ))
+          timeout --signal=TERM --kill-after=10s 2400s python scripts/v09_imerg_late_province_daily.py \
+            --lookback "$LB" --max-downloads $(( LB * 48 > 150 ? LB * 48 : 150 ))
       - name: Forecast - ECMWF ENS province probabilities (failure archived as UNAVAILABLE, never zero rain)
         continue-on-error: true
-        run: timeout --signal=TERM --kill-after=10s 1260s python scripts/v09_ecmwf_ens_north.py --workdir "$RUNNER_TEMP"
+        shell: bash
+        run: |
+          for k in $(seq "$BACKFILL_DAYS" -1 1); do
+            RUN=$(date -u -d "$k days ago" +%Y-%m-%dT00)
+            timeout --signal=TERM --kill-after=10s 900s python scripts/v09_ecmwf_ens_north.py --workdir "$RUNNER_TEMP" --run "$RUN" || \
+              echo "::warning title=V09_ECMWF_ENS::retrospectivo $RUN no disponible"
+          done
+          timeout --signal=TERM --kill-after=10s 1260s python scripts/v09_ecmwf_ens_north.py --workdir "$RUNNER_TEMP"
       - name: Forecast - own statistical model (shadow)
         continue-on-error: true
         run: |
-          if [ -f scripts/v09_own_model.py ]; then
-            timeout --signal=TERM --kill-after=10s 600s python scripts/v09_own_model.py predict
-          else
-            echo "own model not present yet"
-          fi
+          timeout --signal=TERM --kill-after=10s 900s python scripts/v09_own_model.py refresh
+          timeout --signal=TERM --kill-after=10s 300s python scripts/v09_own_model.py predict
       - name: Evaluation (Brier, BSS, decomposition, ROC, POD/FAR/CSI, reliability; 10/25/50 mm)
         if: always()
         run: python scripts/v09_fc_evaluate.py
@@ -81,7 +99,7 @@ jobs:
         run: |
           set -euo pipefail
           cd _data
-          bad=$(git status --porcelain --untracked-files=all | awk '{print $NF}' | grep -v -E '^data/v09/(forecast|obs_imerg)/' || true)
+          bad=$(git status --porcelain --untracked-files=all | awk '{print $NF}' | grep -v -E '^data/v09/(forecast|obs_imerg|model)/' || true)
           if [ -n "$bad" ]; then echo "::error::unexpected paths: $bad"; exit 1; fi
           test "$(git rev-parse --abbrev-ref HEAD)" = "$DATA_BRANCH"
       - name: Persist results (bot commit to the results branch only, bounded retries)
@@ -92,7 +110,8 @@ jobs:
           cd _data
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A data/v09/forecast data/v09/obs_imerg
+          mkdir -p data/v09/model
+          git add -A data/v09/forecast data/v09/obs_imerg data/v09/model
           if git diff --cached --quiet; then echo "No changes"; exit 0; fi
           git commit -q -m "IRFEN v0.9: motor de pronóstico costa norte, resultados en sombra (TEST_ONLY)"
           for attempt in 1 2 3 4; do

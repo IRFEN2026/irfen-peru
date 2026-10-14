@@ -190,7 +190,13 @@ def rebuild_csv(provinces: list[dict]):
 
 
 # --------------------------------------------------------------------------- E/S (solo en el runner)
-def main() -> int:
+def main(argv=None) -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--lookback", type=int, default=LOOKBACK_DAYS, help="días pluviométricos cerrados a completar")
+    parser.add_argument("--max-downloads", type=int, default=MAX_DOWNLOADS)
+    args = parser.parse_args(argv)
     geo_path, _ = ens.boundaries_paths()
     provinces = ens.load_provinces(geo_path)
     now = datetime.now(timezone.utc)
@@ -201,7 +207,7 @@ def main() -> int:
 
     import probe_imerg_early_live as probe
 
-    days = [d for d in candidate_days(now) if not (FIELDS_DIR / f"{d.isoformat()}.npz").is_file()]
+    days = [d for d in candidate_days(now, args.lookback) if not (FIELDS_DIR / f"{d.isoformat()}.npz").is_file()]
     status = dict(state="AVAILABLE", checked_at_utc=now.isoformat(), product=f"{PRODUCT} v{VERSION}", days_pending=[])
     if days:
         start = rain_day_slots(days[0])[0]
@@ -226,7 +232,7 @@ def main() -> int:
             slot = ts.isoformat()  # identidad = media hora, no nombre: dos versiones del mismo gránulo no suman dos veces
             if d in wanted and (accs[d] is None or slot not in accs[d].granules):
                 by_slot[slot] = (ts, name, granule, d)  # el catálogo viene ordenado: queda la última versión listada
-        todo = sorted(by_slot.values(), key=lambda r: r[0])[:MAX_DOWNLOADS]  # el más antiguo primero: cierra días
+        todo = sorted(by_slot.values(), key=lambda r: r[0])[:args.max_downloads]  # el más antiguo primero: cierra días
         with tempfile.TemporaryDirectory(prefix="irfen_imerg_late_") as td:
             paths = earthaccess.download([r[2] for r in todo], local_path=td, threads=4, show_progress=False) if todo else []
             by_name = {Path(p).name: p for p in paths}

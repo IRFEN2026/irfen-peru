@@ -6,6 +6,7 @@
 | --- | --- | --- | --- |
 | `v09-forecast-trigger.yml` | `main` (único archivo a fusionar) | A las 08:40 y 20:40 UTC pide a GitHub ejecutar el motor en su rama. No descarga código ni datos | `actions: write`; nada más |
 | `v09-forecast-engine.yml` + scripts | Rama `v09/forecast-engine` | Recolecta IMERG Late, corre ECMWF ENS y el modelo propio, evalúa | `contents: write`, usado solo para empujar a la rama de datos |
+| `v09-own-model-train.yml` | Rama `v09/forecast-engine` | A pedido: descarga insumos históricos y entrena el modelo propio | Igual que el motor; comparte su grupo de concurrencia |
 | Resultados | Rama huérfana `v09/forecast-data` | Registros de pronóstico, observaciones IMERG, evaluación | Escrita solo por el motor |
 
 Interruptor sin commit: el disparador corre solo si la variable de repositorio `IRFEN_FORECAST_ENGINE_ENABLED` vale
@@ -16,10 +17,12 @@ exactamente `true` (Settings → Secrets and variables → Actions → Variables
 1. El job se niega a correr si la ref no es `refs/heads/v09/forecast-engine`.
 2. El código se descarga con `persist-credentials: false`: desde esa copia no se puede empujar.
 3. La única copia con credenciales es `./_data`, que es la rama `v09/forecast-data`.
-4. Antes de guardar, un paso falla si cambió algo fuera de `data/v09/forecast/` y `data/v09/obs_imerg/`, o si `_data`
+4. Antes de guardar, un paso falla si cambió algo fuera de `data/v09/forecast/`, `data/v09/obs_imerg/` y
+   `data/v09/model/`, o si `_data`
    no está en la rama de datos.
 5. El empuje va a `refs/heads/v09/forecast-data` explícitamente, con rebase acotado y sin `--force`.
-6. Grupo de concurrencia propio (`v09-forecast-engine`): no espera ni bloquea a los workflows de IRFEN.
+6. Grupo de concurrencia propio (`v09-forecast-engine`, compartido solo por el motor y el entrenamiento): no espera
+   ni bloquea a los workflows de IRFEN.
 7. No usa `upload-pages-artifact`, no toca `site/`, no escribe en `main` y todas las salidas llevan
    `RESEARCH_ONLY` / `TEST_ONLY` y `operational_alerting_enabled: false`.
 
@@ -34,6 +37,8 @@ exactamente `true` (Settings → Secrets and variables → Actions → Variables
 | `data/v09/obs_imerg/fields/AAAA-MM-DD.npz` | 1 por día pluviométrico completo (~10 kB) |
 | `data/v09/obs_imerg/partial/AAAA-MM-DD.npz` | Temporal hasta completar las 48 medias horas |
 | `data/v09/obs_imerg/imerg_late_provincias_v0_1.csv`, `imerg_late_status_v0_1.json` | Se reescriben |
+| `data/v09/model/inputs/*.csv.gz` | Insumos resumidos por provincia y día (pocos MB) |
+| `data/v09/model/modelo_propio_v0_1.json`, `modelo_propio_validacion_v0_1.json`, `insumos_estado_v0_1.json` | Se reescriben al entrenar |
 
 ## Recursos compartidos con IRFEN
 
