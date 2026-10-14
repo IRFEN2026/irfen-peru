@@ -6,6 +6,9 @@ on:
       - site/v09/**
       - site/data/v09/**
       - tests/test_v09_dashboard_browser.py
+      - tests/test_v09_territory.py
+      - scripts/v09_build_territory_bundle.py
+      - config/v09_territory_quebradas_v0_1.json
       - .github/workflows/v09-dashboard-browser-test.yml
   workflow_dispatch:
 
@@ -36,3 +39,8 @@ jobs:
         run: |
           grep -q "^OK$" browser.log
           if grep -q "skipped" browser.log; then echo "::error::the browser test was skipped"; exit 1; fi
+      - name: Visor territorial (costa norte y Rímac) en navegador
+        run: python -m unittest -v tests/test_v09_territory.py 2>&1 | tee territory.log; test "${PIPESTATUS[0]}" -eq 0
+        shell: bash
+      - name: Comprobar que la navegación territorial no se omitió
+        run: grep -q "test_navigation_both_regions .* ok$" territory.log

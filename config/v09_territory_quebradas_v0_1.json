@@ -1,0 +1,165 @@
+{
+ "schema_version": "0.1",
+ "registry_id": "irfen-v09-territory-quebradas:v0.1",
+ "deployment_status": "RESEARCH_ONLY",
+ "test_mode": "TEST_ONLY",
+ "production_use": false,
+ "operational_alerting_enabled": false,
+ "activation_gate": "BLOCKED",
+ "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+ "decision_thresholds": null,
+ "hydraulic_factors": null,
+ "map_publishable": false,
+ "rules_es": [
+  "Cada componente apunta a una entidad ya admitida por el catálogo canónico (site/data/map_layers.json, map_semantics) o se declara pendiente con su motivo. No se crea, aproxima ni recorta ninguna geometría.",
+  "El polígono de una cuenca principal nunca representa el área colectora de una quebrada individual.",
+  "Una faja marginal es un ámbito regulatorio: no es cauce ni zona afectada. Un ancla de monitoreo no es outlet. Una intersección D8 es un nodo derivado, no una confluencia oficial.",
+  "La topología se muestra solo donde está documentada; no es ruteo, ni tiempo de llegada, ni predicción de activación.",
+  "Ningún punto de exposición se dibuja si no está admitido; los asentamientos citados en documentos sin coordenadas verificadas quedan pendientes."
+ ],
+ "terminology_es": {
+  "area_colectora": "Área de drenaje propia de la quebrada (polígono). Oficial si procede de ANA/INEI; candidata si es una delimitación DEM D8 sin validación hidráulica.",
+  "cauce": "Línea del curso de la quebrada (LOCAL_CHANNEL) o eje del río receptor (COLLECTOR).",
+  "descarga": "Outlet, confluencia o nodo derivado donde la quebrada entrega al receptor.",
+  "punto_de_impacto": "Infraestructura, tramo crítico o asentamiento expuesto con ubicación admitida."
+ },
+ "regions": {
+  "costa_norte": {"label_es": "Costa norte (Tumbes, Piura, Lambayeque, La Libertad)", "departments": ["Tumbes", "Piura", "Lambayeque", "La Libertad"]},
+  "rimac": {"label_es": "Cuenca del Rímac (corredor Carretera Central)", "inventory_corridor": "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA"}
+ },
+ "quebradas": [
+  {
+   "quebrada_id": "huaycoloro",
+   "name_es": "Quebrada Huaycoloro",
+   "region": "rimac",
+   "catchment": ["huaycoloro_candidate_watershed"],
+   "channel": [],
+   "discharge": [],
+   "exposure": [],
+   "receiver": "Río Rímac",
+   "topology": {"state": "DOCUMENTED_TRIBUTARY_NOT_ROUTED", "text_es": "Tributaria del Rímac (documental). La confluencia no está admitida como geometría."},
+   "pending": {
+    "channel": "Sin línea de cauce reproducible admitida para Huaycoloro.",
+    "discharge": "Ancla QHuay1 (próxima a confluencia, ANA) pendiente del QA independiente de la línea Rímac/Jicamarca (#310); el eje del Rímac no tiene geometría reproducible.",
+    "exposure": "Sin puntos de exposición con ubicación admitida."
+   },
+   "rain": {"imerg_v08_target": "huaycoloro_main_channel", "goes_v08_target": "huaycoloro_main_channel", "geos_v08_zone": "chosica", "in_situ": "igp_cendehua_huaycoloro"}
+  },
+  {
+   "quebrada_id": "canto_grande_jicamarca",
+   "name_es": "Quebrada Canto Grande (Jicamarca)",
+   "region": "rimac",
+   "catchment": [],
+   "channel": ["jicamarca__canto_grande_channel__igp_15404", "jicamarca__canto_grande_channel__igp_18807"],
+   "discharge": [],
+   "exposure": [],
+   "receiver": "Sistema Jicamarca–Huaycoloro (relación sin resolver)",
+   "topology": {"state": "UNRESOLVED", "text_es": "Línea de cauce IGP. Su entrega al sistema Huaycoloro no está resuelta."},
+   "pending": {"catchment": "Área colectora no delimitada.", "discharge": "Confluencia no resuelta.", "exposure": "Sin puntos admitidos."},
+   "rain": {}
+  },
+  {
+   "quebrada_id": "media_luna_jicamarca",
+   "name_es": "Quebrada Media Luna (Jicamarca)",
+   "region": "rimac",
+   "catchment": [],
+   "channel": ["jicamarca__media_luna_channel__igp_3351", "jicamarca__media_luna_channel__igp_11823"],
+   "discharge": [],
+   "exposure": [],
+   "receiver": "Sistema Jicamarca–Huaycoloro (relación sin resolver)",
+   "topology": {"state": "UNRESOLVED", "text_es": "Línea de cauce IGP. Su entrega al sistema Huaycoloro no está resuelta."},
+   "pending": {"catchment": "Área colectora no delimitada.", "discharge": "Confluencia no resuelta.", "exposure": "Sin puntos admitidos."},
+   "rain": {}
+  },
+  {
+   "quebrada_id": "cashahuacra",
+   "name_es": "Quebrada Cashahuacra",
+   "region": "rimac",
+   "catchment": ["cashahuacra"],
+   "channel": [],
+   "discharge": [],
+   "exposure": [],
+   "receiver": "Río Santa Eulalia / Rímac (sin resolver)",
+   "topology": {"state": "NO_EVIDENCE", "text_es": "Acoplamiento con el receptor: sin evidencia (catálogo de colectores)."},
+   "pending": {"channel": "Sin línea de cauce admitida.", "discharge": "Outlet D8 de investigación sin punto congelado; confluencia receptora sin resolver.", "exposure": "Sin puntos admitidos."},
+   "rain": {"imerg_v08_target": "phase2_subunit:lima_este_santa_eulalia_rimac:cashahuacra"}
+  },
+  {
+   "quebrada_id": "shingolay",
+   "name_es": "Quebrada Shingolay",
+   "region": "rimac",
+   "catchment": ["shingolay"],
+   "channel": [],
+   "discharge": [],
+   "exposure": [],
+   "receiver": "Río Santa Eulalia / Rímac (sin resolver)",
+   "topology": {"state": "NO_EVIDENCE", "text_es": "Acoplamiento con el receptor: sin evidencia (catálogo de colectores)."},
+   "pending": {"channel": "Sin línea de cauce admitida.", "discharge": "Outlet D8 de investigación sin punto congelado; confluencia receptora sin resolver.", "exposure": "Sin puntos admitidos."},
+   "rain": {"imerg_v08_target": "phase2_subunit:lima_este_santa_eulalia_rimac:shingolay"}
+  },
+  {
+   "quebrada_id": "quirio",
+   "name_es": "Quebrada Quirio",
+   "region": "rimac",
+   "catchment_alternatives": ["quirio_0.5_3", "quirio_3_8", "quirio_8_20"],
+   "catchment": [],
+   "channel": [],
+   "discharge": ["quirio_r8_channel_anchor", "quirio_rimac_d8_intersection"],
+   "exposure": [],
+   "receiver": "Río Rímac",
+   "topology": {"state": "HYDROLOGICALLY_CONNECTED_D8", "text_es": "Conectada al Rímac según la intersección D8 reproducible (nodo derivado, no confluencia oficial)."},
+   "pending": {"catchment": "Tres delimitaciones DEM alternativas; ninguna seleccionada como área colectora.", "channel": "Sin línea de cauce admitida.", "exposure": "Sin puntos admitidos."},
+   "rain": {}
+  },
+  {
+   "quebrada_id": "pedregal_san_antonio",
+   "name_es": "Quebrada Pedregal / San Antonio",
+   "region": "rimac",
+   "catchment_alternatives": ["pedregal_0.5_3", "pedregal_3_8", "pedregal_8_20"],
+   "catchment": [],
+   "channel": [],
+   "discharge": ["pedregal_r7_channel_anchor", "pedregal_rimac_d8_intersection"],
+   "exposure": [],
+   "receiver": "Río Rímac",
+   "topology": {"state": "HYDROLOGICALLY_CONNECTED_D8", "text_es": "Conectada al Rímac según la intersección D8 reproducible (nodo derivado, no confluencia oficial)."},
+   "pending": {"catchment": "Tres delimitaciones DEM alternativas; ninguna seleccionada como área colectora.", "channel": "Sin línea de cauce admitida.", "exposure": "Sin puntos admitidos."},
+   "rain": {"imerg_v08_target": "pedregal_local"}
+  },
+  {
+   "quebrada_id": "san_ildefonso",
+   "name_es": "Quebrada San Ildefonso (Trujillo)",
+   "region": "costa_norte",
+   "catchment": ["san_ildefonso_candidate_watershed"],
+   "channel": [],
+   "discharge": [],
+   "exposure": [],
+   "receiver": "El Porvenir / Trujillo (zona de descarga sin geometría admitida)",
+   "topology": {"state": "DOCUMENTED_NOT_ROUTED", "text_es": "Descarga hacia el área urbana de Trujillo (documental). Sin outlet ni zona de descarga admitidos."},
+   "pending": {"channel": "Sin línea de cauce admitida.", "discharge": "Outlet D8 no admitido como nodo.", "exposure": "Sin puntos admitidos."},
+   "rain": {"v09_zone": "lalibertad_san_ildefonso", "imerg_v08_target": "san_ildefonso", "goes_v08_target": "san_ildefonso"}
+  },
+  {
+   "quebrada_id": "bocapan",
+   "name_es": "Quebrada Bocapán (Tumbes)",
+   "region": "costa_norte",
+   "catchment": ["tumbes_zorritos_bocapan_coastal_ravines__bocapan_casitas"],
+   "catchment_kind": "OFFICIAL_ANA_UNIT_NAMED_AFTER_THE_QUEBRADA",
+   "channel": [],
+   "discharge": [],
+   "exposure": [],
+   "receiver": "Océano Pacífico (desembocadura costera sin outlet exacto admitido)",
+   "topology": {"state": "DOCUMENTED_NOT_ROUTED", "text_es": "Quebrada costera que desemboca en el mar; la desembocadura no es un outlet exacto admitido."},
+   "pending": {"channel": "Sin línea de cauce admitida.", "discharge": "Desembocadura sin punto admitido.", "exposure": "Sin puntos admitidos (las anclas de Zorritos esperan el QA independiente de la línea ZORRITOS, #340)."},
+   "rain": {"v09_zone": "tumbes_bocapan"}
+  }
+ ],
+ "context_impact": [
+  {"entity": "rimac_r4_puente_colgante", "region": "rimac", "kind_es": "Puente sobre el colector (punto de control; no es outlet)"},
+  {"entity": "rimac_r9_puente_california", "region": "rimac", "kind_es": "Puente sobre el colector (punto de control; no es outlet)"}
+ ],
+ "pending_layers": [
+  {"entity": "catacaos_ana_critical_segments_2026", "region": "costa_norte", "department": "PIURA", "reason_es": "Tramos críticos ANA 2026 de Catacaos (río Piura): se generan en el despliegue v0.8 y no están versionados; se incorporarán cuando la geometría esté en el repositorio con su SHA-256."},
+  {"entity": "zorritos_point_anchors", "region": "costa_norte", "department": "TUMBES", "reason_es": "Anclas transcritas de mapas ANA 2016 y EVAR 2026 (Los Pozos y otras): pendientes del QA independiente de la línea ZORRITOS (#340)."},
+  {"entity": "rimac_mainstem_receiver", "region": "rimac", "department": "LIMA", "reason_es": "Eje del río Rímac sin geometría reproducible admitida; no se sustituye por la faja marginal."}
+ ]
+}
