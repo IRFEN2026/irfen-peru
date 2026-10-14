@@ -74,3 +74,9 @@ jobs:
 # rerun 0050
 # rerun2
 # rerun3
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fulllog
+          path: full.log
+          retention-days: 1
