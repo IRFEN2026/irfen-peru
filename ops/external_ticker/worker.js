@@ -38,14 +38,28 @@ export function decideTick(enabled, activeRuns) {
   return { dispatch: true, reason: "DISPATCH: fallback idle" };
 }
 
+export const ALLOWED = { REPO: "IRFEN2026/irfen-peru", WORKFLOW: "v08-scheduler-fallback.yml" };
+
+// Fail closed: any error, missing secret, unexpected configuration or unexpected API answer means no dispatch.
 export async function tick(env, fetchImpl = fetch) {
+  try {
+    return await tickUnsafe(env, fetchImpl);
+  } catch (e) {
+    return { dispatched: false, reason: `ERROR: ${String((e && e.message) || e).slice(0, 120)}` };
+  }
+}
+
+async function tickUnsafe(env, fetchImpl) {
+  if (!env.GITHUB_TOKEN) return { dispatched: false, reason: "MISSING_TOKEN" };
+  if (env.REPO !== ALLOWED.REPO || env.WORKFLOW !== ALLOWED.WORKFLOW) return { dispatched: false, reason: "CONFIG_REFUSED" };
   const base = `${API}/repos/${env.REPO}/actions/workflows/${env.WORKFLOW}`;
   const active = [];
   for (const status of ["queued", "in_progress", "waiting", "pending", "requested"]) {
     const r = await fetchImpl(`${base}/runs?branch=main&status=${status}&per_page=5`, { headers: headers(env.GITHUB_TOKEN) });
     if (!r.ok) return { dispatched: false, reason: `LIST_FAILED: HTTP ${r.status} for status=${status}` };
     const body = await r.json();
-    active.push(...(body.workflow_runs || []).filter((x) => ACTIVE.includes(x.status)));
+    if (!body || !Array.isArray(body.workflow_runs)) return { dispatched: false, reason: `LIST_UNEXPECTED for status=${status}` };
+    active.push(...body.workflow_runs.filter((x) => ACTIVE.includes(x.status)));
   }
   const d = decideTick(env.ENABLED === "true", active);
   if (!d.dispatch) return { dispatched: false, reason: d.reason };

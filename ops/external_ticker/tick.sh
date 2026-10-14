@@ -8,8 +8,14 @@ WORKFLOW="${WORKFLOW:-v08-scheduler-fallback.yml}"
 BASE="https://api.github.com/repos/$REPO/actions/workflows/$WORKFLOW"
 H1="Authorization: Bearer $GITHUB_TOKEN"; H2="Accept: application/vnd.github+json"; H3="X-GitHub-Api-Version: 2022-11-28"
 now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+[ "$WORKFLOW" = "v08-scheduler-fallback.yml" ] || { echo "$now CONFIG_REFUSED workflow=$WORKFLOW"; exit 1; }
+# Fail closed: a failed or unexpected listing never leads to a dispatch.
 for s in queued in_progress waiting pending requested; do
-  n="$(curl -fsS -H "$H1" -H "$H2" -H "$H3" "$BASE/runs?branch=main&status=$s&per_page=5" | grep -c '"id":' || true)"
+  if ! body="$(curl -fsS -H "$H1" -H "$H2" -H "$H3" "$BASE/runs?branch=main&status=$s&per_page=5")"; then
+    echo "$now LIST_FAILED status=$s"; exit 1
+  fi
+  case "$body" in *'"workflow_runs"'*) ;; *) echo "$now LIST_UNEXPECTED status=$s"; exit 1;; esac
+  n="$(printf '%s' "$body" | grep -c '"run_number"' || true)"
   if [ "${n:-0}" -gt 0 ]; then echo "$now FALLBACK_ACTIVE status=$s"; exit 0; fi
 done
 if [ "${ENABLED:-false}" != "true" ]; then echo "$now DRY_RUN"; exit 0; fi

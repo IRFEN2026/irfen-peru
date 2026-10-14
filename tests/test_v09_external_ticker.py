@@ -4,8 +4,10 @@ Runs below are SYNTHETIC (shape of the GitHub API), used only to exercise the ru
 """
 import importlib.util
 import json
+import os
 import shutil
 import subprocess
+import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -131,6 +133,41 @@ class TickerFiles(unittest.TestCase):
         self.assertIn("concurrency:", wf)
 
 
+class TickShellFailsClosed(unittest.TestCase):
+    """QA 14-10-2026: tick.sh dispatched when the run listing failed (curl error swallowed by `|| true`)."""
+
+    def run_tick(self, list_mode, env_extra=None):
+        with tempfile.TemporaryDirectory() as d:
+            bin_dir, log = Path(d) / "bin", Path(d) / "calls.log"
+            bin_dir.mkdir()
+            listing = {"fail": 'echo "curl: (22) 503" >&2; exit 22', "html": "echo '<html>maintenance</html>'",
+                       "empty": 'echo \'{"total_count":0,"workflow_runs":[]}\'',
+                       "active": 'echo \'{"total_count":1,"workflow_runs":[{"id":1,"run_number":7,"status":"queued"}]}\''}[list_mode]
+            (bin_dir / "curl").write_text("#!/bin/sh\n" f'echo "$*" >> "{log}"\n'
+                                          'case "$*" in *dispatches*) printf 204; exit 0;; esac\n' + listing + "\n", encoding="utf-8")
+            (bin_dir / "curl").chmod(0o755)
+            env = {**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}", "GITHUB_TOKEN": "x", "ENABLED": "true", **(env_extra or {})}
+            res = subprocess.run(["sh", str(TICKER / "tick.sh")], env=env, capture_output=True, text=True, timeout=30)
+            calls = log.read_text(encoding="utf-8") if log.exists() else ""
+            return res, calls.count("/dispatches")
+
+    def test_failed_or_unexpected_listing_never_dispatches(self):
+        for mode in ("fail", "html"):
+            res, posts = self.run_tick(mode)
+            self.assertEqual(posts, 0, mode)
+            self.assertNotEqual(res.returncode, 0, mode)
+
+    def test_idle_dispatches_once_and_active_skips(self):
+        self.assertEqual(self.run_tick("empty")[1], 1)
+        self.assertEqual(self.run_tick("active")[1], 0)
+        self.assertEqual(self.run_tick("empty", {"ENABLED": "false"})[1], 0)
+
+    def test_only_the_fallback_workflow(self):
+        res, posts = self.run_tick("empty", {"WORKFLOW": "update-and-deploy.yml"})
+        self.assertEqual(posts, 0)
+        self.assertIn("CONFIG_REFUSED", res.stdout)
+
+
 @unittest.skipUnless(NODE, "node not installed; runs on the GitHub runner")
 class TickerDecision(unittest.TestCase):
     def node(self, script):
@@ -150,7 +187,7 @@ class TickerDecision(unittest.TestCase):
           if (url.endsWith("/dispatches")) return {status:204, ok:true};
           const st = new URL(url).searchParams.get("status");
           return {ok:true, status:200, json: async () => ({workflow_runs: active && st === "in_progress" ? [{status:"in_progress"}] : []})}; };
-        const env = {REPO:"o/r", WORKFLOW:"v08-scheduler-fallback.yml", GITHUB_TOKEN:"t", ENABLED:"true"};
+        const env = {REPO:"IRFEN2026/irfen-peru", WORKFLOW:"v08-scheduler-fallback.yml", GITHUB_TOKEN:"t", ENABLED:"true"};
         (async () => {
           const a = await tick(env, mk(false)); const nA = calls.filter(c => c[0]==="POST").length;
           const b = await tick(env, mk(true)); const nB = calls.filter(c => c[0]==="POST").length;
@@ -162,7 +199,32 @@ class TickerDecision(unittest.TestCase):
         self.assertFalse(out["b"]["dispatched"])
         self.assertFalse(out["c"]["dispatched"])
         self.assertEqual((out["nA"], out["nB"], out["nC"]), (1, 1, 1))
-        self.assertEqual(out["post"], ["https://api.github.com/repos/o/r/actions/workflows/v08-scheduler-fallback.yml/dispatches"])
+        self.assertEqual(out["post"], ["https://api.github.com/repos/IRFEN2026/irfen-peru/actions/workflows/v08-scheduler-fallback.yml/dispatches"])
+
+    def test_worker_fails_closed(self):
+        script = r"""
+        let posts = 0;
+        const ok = async (url, opts={}) => { if (url.endsWith("/dispatches")) { posts++; return {status:204, ok:true}; }
+          return {ok:true, status:200, json: async () => ({workflow_runs: []})}; };
+        const env = {REPO:"IRFEN2026/irfen-peru", WORKFLOW:"v08-scheduler-fallback.yml", GITHUB_TOKEN:"t", ENABLED:"true"};
+        (async () => {
+          const r = {};
+          r.throws = await tick(env, async () => { throw new Error("network down"); });
+          r.badJson = await tick(env, async () => ({ok:true, status:200, json: async () => { throw new Error("bad json"); }}));
+          r.shape = await tick(env, async () => ({ok:true, status:200, json: async () => ({message:"x"})}));
+          r.noToken = await tick({...env, GITHUB_TOKEN: ""}, ok);
+          r.otherWf = await tick({...env, WORKFLOW: "update-and-deploy.yml"}, ok);
+          r.otherRepo = await tick({...env, REPO: "someone/else"}, ok);
+          console.log(JSON.stringify({r, posts}));
+        })();"""
+        out = self.node(script)
+        self.assertEqual(out["posts"], 0)
+        for k, v in out["r"].items():
+            self.assertFalse(v["dispatched"], k)
+        self.assertTrue(out["r"]["throws"]["reason"].startswith("ERROR"))
+        self.assertEqual(out["r"]["noToken"]["reason"], "MISSING_TOKEN")
+        self.assertEqual(out["r"]["otherWf"]["reason"], "CONFIG_REFUSED")
+        self.assertTrue(out["r"]["shape"]["reason"].startswith("LIST_UNEXPECTED"))
 
 
 if __name__ == "__main__":
