@@ -49,7 +49,8 @@ CLOSE_HOUR_UTC = 12  # 07:00 en Perú (UTC−5): cierre del día pluviométrico 
 BBOX = dict(lat_min=-9.6, lat_max=-3.0, lon_min=-81.7, lon_max=-76.6)  # 4 departamentos con margen de 1 celda
 MIN_CELLS = 3
 K_NEAREST = 4
-SOURCES = ("ecmwf", "aws", "azure")
+SOURCES = ("aws", "azure", "ecmwf")  # réplicas en la nube primero: el portal de ECMWF es lento para 153 campos
+SOURCE_TIMEOUT_S = 360
 ATTRIBUTION = "Adaptado de ECMWF Open Data (IFS ENS), ECMWF, licencia CC BY 4.0, https://data.ecmwf.int/forecasts/"
 
 GUARDS = dict(deployment_status="RESEARCH_ONLY", test_mode="TEST_ONLY", production_use=False, production_ready=False,
@@ -245,12 +246,26 @@ def build_run_record(run_utc: datetime, tp_m: np.ndarray, steps_h, lats, lons, p
 
 
 # --------------------------------------------------------------------------- E/S de ECMWF (solo en el runner)
-def latest_run_and_download(target: Path, sources=SOURCES, n_days: int = N_DAYS) -> tuple[datetime, str]:
+def _alarm(seconds: int):
+    import signal
+
+    def handler(signum, frame):  # noqa: ARG001
+        raise TimeoutError(f"réplica sin respuesta completa en {seconds} s")
+
+    signal.signal(signal.SIGALRM, handler)
+    signal.alarm(seconds)
+
+
+def latest_run_and_download(target: Path, sources=SOURCES, n_days: int = N_DAYS,
+                            timeout_s: int = SOURCE_TIMEOUT_S) -> tuple[datetime, str]:
+    import signal
+
     from ecmwf.opendata import Client
 
     errors = []
     for source in sources:
         try:
+            _alarm(timeout_s)
             client = Client(source=source)
             run = client.latest(stream="enfo", type="pf", param="tp", step=96)
             steps = sorted({s for w in day_windows(run.hour, n_days) for s in w if s > 0})
@@ -259,6 +274,9 @@ def latest_run_and_download(target: Path, sources=SOURCES, n_days: int = N_DAYS)
             return run.replace(tzinfo=timezone.utc), source
         except Exception as exc:  # noqa: BLE001 - se prueba la siguiente réplica y se reporta todo
             errors.append(f"{source}: {type(exc).__name__}: {str(exc)[:160]}")
+            print(f"::warning title=V09_ECMWF_ENS::réplica {errors[-1]}")
+        finally:
+            signal.alarm(0)
     raise RuntimeError("; ".join(errors))
 
 
