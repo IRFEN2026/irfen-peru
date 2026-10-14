@@ -539,3 +539,95 @@ class ParserUpgrade(CaptureEndToEnd):
         self.assertEqual([e["event"] for e in reg["events"]].count("NEW_AVISO"), 1)
         self.assertEqual(reg["avisos"]["SENAMHI-ACP-LLUVIAS-2026-282"]["status_history"][0]["status"], "VIGENTE")
         self.assertEqual(self.run_at(60)["events"], [])
+
+
+class NoSenamhiRedirect(unittest.TestCase):
+    """The INDECI/COEN capture never reaches a SENAMHI host, not even through a redirect; legitimate redirects
+    (same host, http->https, CDN) keep working. Local HTTP server only; no external network."""
+
+    @classmethod
+    def setUpClass(cls):
+        import http.server
+        import threading
+
+        class H(http.server.BaseHTTPRequestHandler):
+            def log_message(self, *a):
+                pass
+
+            def do_GET(self):
+                if self.path == "/ok":
+                    body = b"<rss>ok</rss>"
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/rss+xml")
+                    self.send_header("Content-Length", str(len(body)))
+                    self.end_headers()
+                    self.wfile.write(body)
+                elif self.path == "/same-host":
+                    self.send_response(302)
+                    self.send_header("Location", "/ok")
+                    self.end_headers()
+                elif self.path.startswith("/to-senamhi"):
+                    self.send_response(301)
+                    self.send_header("Location", "https://www.senamhi.gob.pe/main.php?dp=piura&p=aviso")
+                    self.end_headers()
+                elif self.path == "/not-modified":
+                    self.send_response(304)
+                    self.end_headers()
+
+        cls.srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), H)
+        threading.Thread(target=cls.srv.serve_forever, daemon=True).start()
+        cls.base = f"http://127.0.0.1:{cls.srv.server_port}"
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.srv.shutdown()
+
+    def guarded(self):
+        """Fail the test if any connection to a SENAMHI host is attempted."""
+        import socket
+        from unittest import mock
+
+        real = socket.create_connection
+        self.connections = []
+
+        def spy(address, *a, **k):
+            self.connections.append(address[0])
+            if "senamhi" in str(address[0]).lower():
+                raise AssertionError(f"connection to {address[0]} attempted")
+            return real(address, *a, **k)
+
+        return mock.patch("socket.create_connection", side_effect=spy)
+
+    def test_legitimate_redirect_is_followed_and_recorded(self):
+        with self.guarded():
+            data, meta = M.http_get(self.base + "/same-host", 10, 10_000)
+        self.assertEqual(data, b"<rss>ok</rss>")
+        self.assertEqual(meta["http_status"], 200)
+        self.assertTrue(meta["final_url"].endswith("/ok"))
+
+    def test_redirect_to_senamhi_is_refused_before_connecting_and_not_retried(self):
+        with self.guarded():
+            data, meta = M.http_get(self.base + "/to-senamhi", 10, 10_000)
+        self.assertIsNone(data)
+        self.assertEqual(meta["error"], "SENAMHI_REDIRECT_REFUSED_BY_POLICY")
+        self.assertEqual(meta["attempts"], 1)
+        self.assertFalse([h for h in self.connections if "senamhi" in str(h)])
+
+    def test_direct_senamhi_url_is_never_requested(self):
+        with self.guarded():
+            data, meta = M.http_get("https://idesep.senamhi.gob.pe/geonetwork/", 10, 10_000)
+        self.assertIsNone(data)
+        self.assertEqual((meta["error"], meta["attempts"]), ("SENAMHI_HOST_REFUSED_BY_POLICY", 0))
+        self.assertEqual(self.connections, [])
+
+    def test_not_modified_still_works(self):
+        with self.guarded():
+            data, meta = M.http_get(self.base + "/not-modified", 10, 10_000, {"If-None-Match": "x"})
+        self.assertIsNone(data)
+        self.assertTrue(meta.get("not_modified"))
+
+    def test_host_matching(self):
+        self.assertTrue(M.is_senamhi_host("https://WWW.SENAMHI.gob.pe/x"))
+        self.assertTrue(M.is_senamhi_host("http://senamhi.gob.pe/"))
+        self.assertFalse(M.is_senamhi_host("https://senamhi.gob.pe.example.org/"))
+        self.assertFalse(M.is_senamhi_host("https://portal.indeci.gob.pe/emergencias/feed/"))

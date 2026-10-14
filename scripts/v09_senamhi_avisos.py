@@ -818,20 +818,53 @@ def pubdate_utc(value: str | None) -> str | None:
 
 
 # --------------------------------------------------------------------------- network capture (runner only)
+class SenamhiHostRefused(Exception):
+    """Owner decision 13-10-2026: no automated direct queries to SENAMHI hosts. This channel reads INDECI/COEN only."""
+
+
+def is_senamhi_host(url: str) -> bool:
+    from urllib.parse import urlsplit
+
+    host = (urlsplit(url).hostname or "").lower()
+    return host == "senamhi.gob.pe" or host.endswith(".senamhi.gob.pe")
+
+
+def _opener():
+    """urllib opener whose redirect handler refuses a redirect to a SENAMHI host before the redirected request is
+    sent. Every other redirect (http->https, INDECI paths, CDN) is followed as before."""
+    from urllib.request import HTTPRedirectHandler, build_opener
+
+    class NoSenamhiRedirect(HTTPRedirectHandler):
+        def redirect_request(self, req, fp, code, msg, headers, newurl):
+            if is_senamhi_host(newurl):
+                raise SenamhiHostRefused(f"redirect to a SENAMHI host refused by policy: {newurl}")
+            return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+    return build_opener(NoSenamhiRedirect)
+
+
 def http_get(url: str, timeout: int, max_bytes: int, headers: dict | None = None) -> tuple[bytes | None, dict]:
-    """GET with bounded retries. A conditional request answered 304 returns (None, {not_modified: True})."""
+    """GET with bounded retries. A conditional request answered 304 returns (None, {not_modified: True}).
+    A SENAMHI host, requested directly or reached by redirect, is refused without sending the request and without
+    retrying; the refusal is recorded (it is a policy outcome, not a source failure)."""
     from urllib.error import HTTPError
-    from urllib.request import Request, urlopen
+    from urllib.request import Request
 
     meta = dict(url=url, requested_at_utc=iso(utc_now()))
+    if is_senamhi_host(url):
+        meta.update(error="SENAMHI_HOST_REFUSED_BY_POLICY", attempts=0)
+        return None, meta
+    opener = _opener()
     for attempt in range(3):
         try:
             req = Request(quote(url, safe=":/?#[]@!$&'()*+,;=%~"), headers={"User-Agent": USER_AGENT, **(headers or {})})
-            with urlopen(req, timeout=timeout) as r:
+            with opener.open(req, timeout=timeout) as r:
                 data = r.read(max_bytes + 1)
                 declared = r.headers.get("Content-Length")
                 meta.update(http_status=r.status, content_type=r.headers.get("Content-Type"), content_length=declared,
                             etag=r.headers.get("ETag"), last_modified=r.headers.get("Last-Modified"), attempts=attempt + 1)
+                if r.geturl() != req.full_url:
+                    meta["final_url"] = r.geturl()  # audit trail of any redirect that was followed
                 if len(data) > max_bytes:
                     meta["error"] = "TOO_LARGE"
                     return None, meta
@@ -841,6 +874,9 @@ def http_get(url: str, timeout: int, max_bytes: int, headers: dict | None = None
                     continue
                 meta.pop("error", None)
                 return data, meta
+        except SenamhiHostRefused as exc:
+            meta.update(error="SENAMHI_REDIRECT_REFUSED_BY_POLICY", detail=str(exc)[:200], attempts=attempt + 1)
+            return None, meta
         except HTTPError as exc:
             meta.update(http_status=exc.code, attempts=attempt + 1)
             if exc.code == 304:
