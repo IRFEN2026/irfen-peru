@@ -1,0 +1,38 @@
+name: IRFEN v0.9 - Prueba de navegador del panel (reloj simulado, TEST_ONLY)
+
+on:
+  pull_request:
+    paths:
+      - site/v09/**
+      - site/data/v09/**
+      - tests/test_v09_dashboard_browser.py
+      - .github/workflows/v09-dashboard-browser-test.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v09-dashboard-browser-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Instalar Playwright y Chromium
+        run: |
+          python -m pip install --disable-pip-version-check playwright==1.56.0
+          python -m playwright install --with-deps chromium
+      - name: Panel en navegador con reloj simulado (sin recargar)
+        run: python -m unittest -v tests/test_v09_dashboard_browser.py 2>&1 | tee browser.log; test "${PIPESTATUS[0]}" -eq 0
+        shell: bash
+      - name: Comprobar que la prueba de navegador no se omitió
+        run: |
+          grep -q "^OK$" browser.log
+          if grep -q "skipped" browser.log; then echo "::error::the browser test was skipped"; exit 1; fi

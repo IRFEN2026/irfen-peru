@@ -28,6 +28,7 @@ from __future__ import annotations
 import copy
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 import unittest
@@ -479,7 +480,9 @@ class SchemaConformanceTests(unittest.TestCase):
         try:
             import jsonschema
         except ImportError:
-            self.skipTest("jsonschema not installed in this environment")
+            if os.environ.get("IRFEN_REQUIRE_JSONSCHEMA", "").strip() == "1":
+                self.fail("jsonschema is not installed but IRFEN_REQUIRE_JSONSCHEMA=1 makes this schema test mandatory")
+            self.skipTest("jsonschema not installed (schema validation not mandatory in this environment)")
         schema = json.loads((ROOT / "config" / "phase2_climate_conditioned_activation_matrix.schema.json").read_text(encoding="utf-8"))
         matrix = cm.generate_climate_matrix(write=False)
         jsonschema.validate(matrix, schema)
@@ -488,7 +491,9 @@ class SchemaConformanceTests(unittest.TestCase):
         try:
             import jsonschema
         except ImportError:
-            self.skipTest("jsonschema not installed in this environment")
+            if os.environ.get("IRFEN_REQUIRE_JSONSCHEMA", "").strip() == "1":
+                self.fail("jsonschema is not installed but IRFEN_REQUIRE_JSONSCHEMA=1 makes this schema test mandatory")
+            self.skipTest("jsonschema not installed (schema validation not mandatory in this environment)")
         schema = json.loads((ROOT / "config" / "phase2_climate_conditioned_activation_matrix.schema.json").read_text(encoding="utf-8"))
         matrix = cm.generate_climate_matrix(write=False)
         tampered = copy.deepcopy(matrix)

@@ -78,10 +78,27 @@ def sha256_file(path: Path):
     return digest.hexdigest()
 
 
+REQUIRE_SCHEMA_ENV = "IRFEN_REQUIRE_JSONSCHEMA"
+
+
+def schema_validation_required() -> bool:
+    """True where schema validation is mandatory (the PR-validation gate sets this)."""
+    import os
+
+    return os.environ.get(REQUIRE_SCHEMA_ENV, "").strip() == "1"
+
+
+
 def check_schema(result, schema):
     try:
         import jsonschema
     except ImportError:
+        if schema_validation_required():
+            ERRORS.append(
+                f"schema: jsonschema is not installed but {REQUIRE_SCHEMA_ENV}=1 makes schema validation mandatory"
+            )
+        else:
+            print("WARNING: jsonschema is not installed; JSON-schema validation was NOT executed.")
         return
     validator = jsonschema.Draft202012Validator(schema)
     for error in sorted(validator.iter_errors(result), key=str):

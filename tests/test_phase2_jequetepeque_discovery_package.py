@@ -1,3 +1,4 @@
+import hashlib
 import json
 from pathlib import Path
 
@@ -41,11 +42,33 @@ def test_jequetepeque_identity_and_scientific_guards_are_frozen():
 def test_geometry_is_exact_ana_query_pending_and_not_fabricated():
     p = load(PACKAGE)
     g = p["assets"]["geometry"]
-    assert g["status"] == "MISSING_PENDING_EXACT_ANA_QUERY"
+    # Was MISSING_PENDING_EXACT_ANA_QUERY until the exact ANA replay was frozen
+    # (ba11681). Now accepted only as hash-linked official basin context equal
+    # to the single feature returned by the exact query; never fabricated.
+    assert g["status"] == "PARTIAL_OFFICIAL_BASIN_CONTEXT"
+    assert g["representation"] == "OFFICIAL_ANA_HYDROGRAPHIC_UNIT_CONTEXT"
+    assert g["source_query"]["endpoint"] == "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/MapServer/8/query"
     assert g["source_query"]["where"] == "CODIGO='13774'"
     assert g["source_query"]["out_sr"] == 4326
     assert g["source_query"]["format"] == "geojson"
-    assert not (ROOT / g["path"]).exists()
+    digest = lambda rel: hashlib.sha256((ROOT / rel).read_bytes()).hexdigest()
+    assert digest(g["path"]) == g["sha256"]
+    assert digest(g["source_path"]) == g["source_sha256"]
+    assert digest(g["validation_path"]) == g["validation_sha256"]
+    source = load(ROOT / g["source_path"])
+    assert len(source["features"]) == 1
+    assert source["features"][0]["properties"]["CODIGO"] == "13774"
+    frozen = load(ROOT / g["path"])
+    assert len(frozen["features"]) == 1
+    assert frozen["features"][0]["geometry"] == source["features"][0]["geometry"]
+    assert frozen["features"][0]["properties"]["official_unit_code"] == "13774"
+    assert frozen["features"][0]["properties"]["source_snapshot_sha256"] == g["source_sha256"]
+    validation = load(ROOT / g["validation_path"])
+    assert validation["status"] == "PASS_OFFICIAL_ANA_DISCOVERY_BASIN_GEOMETRY"
+    assert validation["approximate_geometry_used"] is False
+    assert validation["event_footprint_created"] is False
+    assert validation["thresholds_used"] is False
+    assert validation["hydraulic_capacity_read"] is False
     assert g["counts_as_operational_geometry"] is False
     assert g["counts_as_event_footprint"] is False
     assert p["map_policy"]["approximate_geometry_forbidden"] is True

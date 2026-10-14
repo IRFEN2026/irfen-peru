@@ -1,16 +1,9 @@
 name: IRFEN - Probar SENAMHI Puente Nacara numerico v0.8
 
+# Automatic triggers removed (owner decision 13-10-2026): no automated direct queries to SENAMHI hosts.
+# The workflow is also disabled in GitHub Actions. Only a deliberate manual run by the owner remains possible.
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "24 * * * *"
-  push:
-    branches:
-      - main
-    paths:
-      - scripts/probe_senamhi_nacara_numeric.py
-      - scripts/archive_senamhi_nacara_numeric_probe.py
-      - .github/workflows/senamhi-nacara-probe.yml
 
 permissions:
   contents: write

@@ -71,10 +71,26 @@ def load(path: Path):
         return None
 
 
+REQUIRE_SCHEMA_ENV = "IRFEN_REQUIRE_JSONSCHEMA"
+
+
+def schema_validation_required() -> bool:
+    """True where schema validation is mandatory (the PR-validation gate sets this)."""
+    import os
+
+    return os.environ.get(REQUIRE_SCHEMA_ENV, "").strip() == "1"
+
+
+
 def check_schema(matrix: dict, schema: dict) -> None:
     try:
         import jsonschema
     except ImportError:
+        if schema_validation_required():
+            ERRORS.append(
+                f"schema: el paquete 'jsonschema' no está instalado pero {REQUIRE_SCHEMA_ENV}=1 hace obligatoria la validación de esquema"
+            )
+            return
         ERRORS_LOCAL = []
         _check_guardrails_only(matrix, ERRORS_LOCAL)
         if ERRORS_LOCAL:

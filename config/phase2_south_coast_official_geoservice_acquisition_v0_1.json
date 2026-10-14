@@ -1,0 +1,70 @@
+{
+  "schema_version": "phase2-south-coast-official-geoservice-acquisition-v0.1",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "purpose": "Preregister official ANA/GeoIDEP geoservice acquisition for reproducible Ica and Arequipa hydrographic geometry without guessing endpoints or promoting unverified geometry.",
+  "official_registry_sources": [
+    {
+      "source_id": "GEOIDEP-ANA-UNIDADES-HIDROGRAFICAS-WFS-2026-09-26",
+      "institution": "GeoIDEP / Autoridad Nacional del Agua",
+      "official": true,
+      "registry_url": "https://www.geoidep.gob.pe/catalogo-nacional-de-servicios-web/servicio-de-descarga-wfs",
+      "registry_evidence": "GeoIDEP lists ANA Unidades Hidrográficas as available with OGC WMS and OGC WFS.",
+      "intended_use": "Acquire official hydrographic-unit geometry and parent-code attributes; freeze exact query, CRS, response bytes and SHA-256 before map publication.",
+      "endpoint_status": "OFFICIAL_REGISTRY_CONFIRMS_WFS_BUT_EXACT_SERVICE_ENDPOINT_NOT_FROZEN_IN_THIS_PACKAGE",
+      "exact_service_url": null,
+      "source_content_sha256": null,
+      "forbidden_use": "Do not invent an endpoint, infer local channel axes from basin polygons, or publish geometry without a reproducible service response and parent-code validation."
+    },
+    {
+      "source_id": "GEOIDEP-ANA-EVENTOS-EMERGENCIAS-HIDRICAS-WFS-2026-09-26",
+      "institution": "GeoIDEP / Autoridad Nacional del Agua",
+      "official": true,
+      "registry_url": "https://www.geoidep.gob.pe/catalogo-nacional-de-servicios-web/servicio-de-visualizacion-wms",
+      "registry_evidence": "GeoIDEP lists ANA Eventos emergencias hídricas as available with OGC WMS and OGC WFS; the catalog says records are sourced or verified from COE or INDECI reports.",
+      "intended_use": "Cross-check dated hydric-emergency records against bounded INDECI/COEN evidence while keeping event geometry separate from hydrographic geometry.",
+      "endpoint_status": "OFFICIAL_REGISTRY_CONFIRMS_WFS_BUT_EXACT_SERVICE_ENDPOINT_NOT_FROZEN_IN_THIS_PACKAGE",
+      "exact_service_url": null,
+      "source_content_sha256": null,
+      "forbidden_use": "An emergency record does not prove a ravine footprint, outlet, receiver overflow, activation threshold or negative control."
+    }
+  ],
+  "acquisition_contract": {
+    "exact_endpoint_must_be_frozen_before_query": true,
+    "getcapabilities_or_service_metadata_must_be_archived": true,
+    "response_bytes_sha256_required": true,
+    "query_parameters_must_be_recorded": true,
+    "crs_must_be_recorded": true,
+    "feature_schema_must_be_recorded": true,
+    "parent_uh_code_match_required_for_local_child_acceptance": true,
+    "same_name_cross_region_guard_required": true,
+    "geometry_must_not_be_approximated_from_map_image": true,
+    "emergency_record_geometry_must_not_be_used_as_channel_geometry": true,
+    "geometry_publish_requires_reproducible_query": true
+  },
+  "initial_targets": [
+    {"target":"ica_cansas","expected_parent_uh_code":"1374"},
+    {"target":"ica_quitasol","expected_parent_uh_code":"13752"},
+    {"target":"ica_paracas","expected_parent_uh_code":"13752"},
+    {"target":"ica_san_ignacio_palpa","expected_parent_uh_code":null},
+    {"target":"ica_sacramento_palpa","expected_parent_uh_code":null},
+    {"target":"arequipa_chullo","expected_parent_uh_code":"132"},
+    {"target":"arequipa_los_incas","expected_parent_uh_code":"132"},
+    {"target":"arequipa_anas_huayco","expected_parent_uh_code":"132"},
+    {"target":"arequipa_san_lazaro","expected_parent_uh_code":"132"},
+    {"target":"arequipa_el_pato","expected_parent_uh_code":"132"}
+  ],
+  "summary": {
+    "official_geoservice_registry_entries": 2,
+    "exact_service_endpoints_frozen": 0,
+    "geometry_assets_published": 0,
+    "new_operational_zones": 0
+  }
+}
