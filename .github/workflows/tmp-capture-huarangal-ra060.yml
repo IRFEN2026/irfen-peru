@@ -1,0 +1,58 @@
+name: TEMPORARY capture ANA R.A. 060-2018 (Quebrada Huarangal) - removed in the next commit
+on:
+  push:
+    branches: [inventory/active-regions-du015-r6]
+    paths: [.github/workflows/tmp-capture-huarangal-ra060.yml]
+permissions:
+  contents: write
+jobs:
+  capture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: command -v pdftotext || (sudo apt-get update -q && sudo apt-get install -y -q poppler-utils) || true
+      - name: Capture official ANA PDF (Wayback raw capture only as fallback), archive bytes, SHA-256 and text layer
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, subprocess, time, urllib.request
+          from datetime import datetime, timezone
+          from pathlib import Path
+          URL = "https://www.ana.gob.pe/sites/default/files/normatividad/files/R.A.%20N%C2%B0%20060-2018-ANA-AAA-CH.CH_.ALA%20PISCO._1.PDF"
+          tries = [("OFFICIAL_URL", URL), ("INTERNET_ARCHIVE_ID_", "https://web.archive.org/web/2id_/" + URL)]
+          d = Path("data/phase2/source_archive/pisco_huarangal_ra060_2018"); (d / "raw").mkdir(parents=True, exist_ok=True); (d / "text").mkdir(exist_ok=True)
+          rec = {"document_id": "ana-ra-060-2018-ala-pisco", "url": URL, "attempts": [], "captured_at_utc": None}
+          data = None
+          for route, u in tries:
+              for i in range(3):
+                  try:
+                      req = urllib.request.Request(u, headers={"User-Agent": "IRFEN-research-archiver/0.1 (RESEARCH_ONLY)"})
+                      with urllib.request.urlopen(req, timeout=60) as r:
+                          b = r.read(30_000_000); ct = r.headers.get("Content-Type"); final = r.geturl()
+                      rec["attempts"].append({"route": route, "status": "OK", "content_type": ct, "final_url": final, "bytes": len(b)})
+                      if b[:5] == b"%PDF-":
+                          data = b; rec["route"] = route; break
+                      rec["attempts"][-1]["status"] = "NOT_A_PDF"
+                  except Exception as e:
+                      rec["attempts"].append({"route": route, "status": f"{type(e).__name__}: {str(e)[:120]}"}); time.sleep(5)
+              if data: break
+          if data:
+              raw = d / "raw/ana-ra-060-2018-ala-pisco.pdf"; raw.write_bytes(data)
+              sha = hashlib.sha256(data).hexdigest()
+              rec.update(sha256=sha, captured_at_utc=datetime.now(timezone.utc).isoformat(timespec="seconds"))
+              pages = []
+              try:
+                  n = int([l for l in subprocess.run(["pdfinfo", str(raw)], capture_output=True, text=True).stdout.splitlines() if l.startswith("Pages:")][0].split()[1])
+                  for p in range(1, n + 1):
+                      pages.append(subprocess.run(["pdftotext", "-layout", "-f", str(p), "-l", str(p), str(raw), "-"], capture_output=True, text=True).stdout)
+              except Exception as e:
+                  rec["text_error"] = str(e)[:200]
+              (d / "text/ana-ra-060-2018-ala-pisco.pages.json").write_text(json.dumps({"document_id": rec["document_id"], "sha256_of_raw": sha, "pages": pages}, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+              rec["text_chars"] = sum(len(p) for p in pages)
+          (d / "capture_record_v0_1.json").write_text(json.dumps(rec, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+          print(json.dumps(rec, ensure_ascii=False))
+          PY
+      - run: |
+          git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/phase2/source_archive/pisco_huarangal_ra060_2018
+          git commit -q -m "Archive ANA R.A. 060-2018-ANA-AAA.CHCH-ALA.P (Quebrada Huarangal) bytes, SHA-256 and text layer captured on the runner" && git push -q || echo nothing
