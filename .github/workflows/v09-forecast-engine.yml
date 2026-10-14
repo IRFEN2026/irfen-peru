@@ -117,6 +117,7 @@ jobs:
           name: engine-results-${{ github.run_id }}
           path: ${{ runner.temp }}/results
           retention-days: 7
+          overwrite: true
           if-no-files-found: error
 
   persist:
@@ -174,6 +175,9 @@ jobs:
           # de la base debe ser prefijo exacto del nuevo). Un script fallido o un paquete comprometido no puede truncar historia.
           deleted=$(git diff --cached --name-only --no-renames --diff-filter=D | grep -v -E "$ALLOWED_DELETIONS" || true)
           if [ -n "$deleted" ]; then echo "::error::deletions are not allowed: $deleted"; exit 1; fi
+          # un día IMERG cerrado (fields/) es definitivo: el recolector nunca lo reprocesa; reescribirlo no es legítimo
+          rewritten=$(git diff --cached --name-only --no-renames --diff-filter=M | grep -E '^data/v09/obs_imerg/fields/' || true)
+          if [ -n "$rewritten" ]; then echo "::error::closed IMERG days cannot be rewritten: $rewritten"; exit 1; fi
           while IFS= read -r f; do
             case "$f" in *.jsonl) ;; *) continue ;; esac
             n=$(git cat-file -s "$BASE_SHA:$f")

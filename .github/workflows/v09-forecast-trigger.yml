@@ -34,7 +34,9 @@ jobs:
           busy=""
           for wf in v09-own-model-train.yml v09-forecast-engine.yml; do
             for st in queued pending waiting requested; do
-              n=$(gh run list --workflow "$wf" --status "$st" --limit 5 --json databaseId --jq 'length')
+              # si la API falla, se despacha igual (con aviso): perder el ciclo es peor que reemplazar una espera
+              n=$(gh run list --workflow "$wf" --status "$st" --limit 5 --json databaseId --jq 'length') || {
+                echo "::warning title=V09_FORECAST_TRIGGER::no se pudo consultar $wf:$st; se despacha igual"; n=0; }
               if [ "$n" != "0" ]; then busy="$busy $wf:$st"; fi
             done
           done

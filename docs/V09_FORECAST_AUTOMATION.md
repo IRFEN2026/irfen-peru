@@ -35,6 +35,7 @@ en `main`.
    - **solo agregar**: rechaza cualquier borrado salvo `data/v09/obs_imerg/partial/`, y exige que cada registro
      `*.jsonl` de la base sea prefijo exacto del nuevo. Un script fallido o un paquete comprometido no puede
      truncar ni reescribir historia.
+   - rechaza reescribir un día IMERG ya cerrado (`data/v09/obs_imerg/fields/`): el recolector nunca lo reprocesa.
 5. El empuje va a `refs/heads/v09/forecast-data` explícitamente, con rebase acotado; ante conflicto aborta sin
    sobrescribir. Nunca usa `--force`.
 6. Grupos de concurrencia propios (`v09-forecast-trigger`, `v09-forecast-engine`, `v09-forecast-data-write`); ninguno
@@ -59,6 +60,11 @@ GitHub mantiene una sola ejecución en espera por grupo y la reemplaza con la si
 - el disparador consulta primero si hay un entrenamiento o un motor en espera y, si lo hay, omite el ciclo con un
   aviso `V09_FORECAST_TRIGGER` en vez de reemplazarlo;
 - el entrenamiento debe lanzarse lejos de las 08:40 y 20:40 UTC.
+- si la consulta previa del disparador falla, despacha igual con aviso: perder un ciclo es peor que reemplazar una
+  espera.
+
+Los artefactos se suben con `overwrite: true`, así que «re-ejecutar todos los jobs» o solo `persist` funciona en la
+misma ejecución.
 
 ## Qué se fusionaría en `main`
 
