@@ -4,7 +4,7 @@
 Modelo A (independiente de ECMWF): regresión logística con penalización L2, una por día de anticipación (1–3),
 umbral (10, 25, 50 mm) y definición de evento (máximo o media provincial en celdas de 0,25°). Variables:
 
-* oceánicas: TSM costera de Paita (absoluta, anomalía, exceso sobre 26 °C — H1), TSM relativa a la media tropical
+* oceánicas (OISST v2.1 vía NOAA PSL): TSM costera de Paita (absoluta, anomalía, exceso sobre 26 °C — H1), TSM relativa a la media tropical
   (H8), Niño 1+2 y Niño 4 (o índices E y C del IGP si están disponibles) y su interacción (H9);
 * atmosféricas: agua precipitable y viento zonal en 200 y 850 hPa y omega 500 hPa sobre el norte (NCEP/NCAR R1);
 * topográficas: elevación media y máxima de las celdas de la provincia, fracción de celdas sobre 1000 m (sierra),
@@ -64,8 +64,9 @@ GUARDS = ens.GUARDS
 PISCO_URL = ("https://iridl.ldeo.columbia.edu/SOURCES/.SENAMHI/.HSR/.PISCO/.Prec/.v2p1/.stable/.daily/.Prec/"
              "X/-81.75/-76.55/RANGEEDGES/Y/-9.65/-2.95/RANGEEDGES/T/(1%20Jan%20{y})/(31%20Dec%20{y})/RANGEEDGES/data.nc")
 PISCO_YEARS = range(1981, 2017)
-ERDDAP = "https://coastwatch.pfeg.noaa.gov/erddap/griddap/{ds}.csv"
-OISST_DATASETS = (("ncdcOisst21Agg_LonPM180", False), ("ncdcOisst21Agg", True))  # (id, longitudes 0–360)
+PISCO_FILE = "pisco_provincias_v0_2.csv.gz"
+PISCO_MAX_MM = 1000.0
+OISST_PSL = "https://psl.noaa.gov/thredds/dodsC/Datasets/noaa.oisst.v2.highres/sst.day.mean.{y}.nc"
 CPC_SSTOI = "https://www.cpc.ncep.noaa.gov/data/indices/sstoi.indices"
 IGP_EC = "http://met.igp.gob.pe/datos/EC.txt"
 R1 = "https://psl.noaa.gov/thredds/dodsC/Datasets/ncep.reanalysis.dailyavgs/{group}/{var}.{y}.nc"
@@ -113,7 +114,8 @@ def build_pisco(provinces, status: dict):
 
     import v09_imerg_late_province_daily as imerg
 
-    out = INPUTS / "pisco_provincias.csv.gz"
+    out = INPUTS / PISCO_FILE
+    (INPUTS / "pisco_provincias.csv.gz").unlink(missing_ok=True)  # v0.1 contaminada por el relleno del mar (retirada)
     rows = read_csv_gz(out) if out.is_file() else []
     done = {r["fecha"][:4] for r in rows}
     ela, elo = ens.ens_grid()
@@ -129,12 +131,14 @@ def build_pisco(provinces, status: dict):
             t = ds.variables["T"]
             days = netCDF4.num2date(t[:], t.units, getattr(t, "calendar", "standard"),
                                     only_use_cftime_datetimes=False, only_use_python_datetimes=True)
-            prec = np.ma.filled(np.asarray(ds.variables["Prec"][:], float), np.nan)  # [T, Y, X]
+            prec = np.ma.filled(np.ma.masked_invalid(ds.variables["Prec"][:]).astype(float), np.nan)  # [T, Y, X]
+            prec[(prec < 0) | (prec > PISCO_MAX_MM)] = np.nan  # relleno del mar y valores imposibles = faltante
+            land = imerg.land_mask(lat, lon)
         except Exception as exc:  # noqa: BLE001 - se registra y se reintenta en la próxima corrida
             status.setdefault("pisco_errors", []).append(f"{y}: {type(exc).__name__}: {str(exc)[:160]}")
             continue
         for k, d in enumerate(days):
-            coarse = imerg.regrid_area_mean(prec[k], lat, lon, ela, elo).ravel()
+            coarse = imerg.regrid_area_mean(prec[k], lat, lon, ela, elo, src_step=_step(lat, lon), land=land).ravel()
             for p in provinces:
                 v = coarse[a025[p["id"]]["idx"]]
                 ok = np.isfinite(v).all()
@@ -145,45 +149,73 @@ def build_pisco(provinces, status: dict):
     status["pisco_years"] = sorted({r["fecha"][:4] for r in rows})
 
 
-def erddap_series(var: str, t0: str, box: dict, stride: int = 1, tstride: int = 1, status: dict | None = None
-                  ) -> dict[str, float]:
-    """Serie diaria (media de la caja) de OISST v2.1 desde ERDDAP, hasta el último día publicado (``last``)."""
-    import requests
-
-    errors = []
-    for ds, lon360 in OISST_DATASETS:
-        lo0, lo1 = (x % 360 for x in box["lon"]) if lon360 else box["lon"]
-        q = (f"{ERDDAP.format(ds=ds)}?{var}[({t0}T12:00:00Z):{tstride}:(last)][(0.0)]"
-             f"[({box['lat'][0]}):{stride}:({box['lat'][1]})][({lo0}):{stride}:({lo1})]")
-        r = requests.get(q, timeout=900, headers={"User-Agent": "IRFEN-research/0.9 (TEST_ONLY)"})
-        if r.ok:
-            text = r.text
-            if status is not None:
-                status.setdefault("oisst_dataset", ds)
-            break
-        errors.append(f"{ds}: HTTP {r.status_code}: {r.text[:300]}")
-    else:
-        raise RuntimeError(" | ".join(errors))
-    acc: dict[str, list] = {}
-    for line in text.splitlines()[2:]:  # dos filas de encabezado (nombres y unidades)
-        parts = line.split(",")
-        v = fnum(parts[-1])
-        if v is not None:
-            acc.setdefault(parts[0][:10], []).append(v)
-    return {d: float(np.mean(v)) for d, v in acc.items()}
+def _step(lat, lon) -> float:
+    s = float(np.median(np.abs(np.diff(np.asarray(lat, float)))))
+    if abs(s - float(np.median(np.abs(np.diff(np.asarray(lon, float)))))) > 1e-6:
+        raise ValueError("grilla PISCO no cuadrada")
+    return s
 
 
-def build_ocean(status: dict, end: date | None = None):
-    """TSM diaria frente a Paita y media tropical (20° S–20° N, muestreo cada 10° y cada 30 días, interpolada).
+def _open_dap(url: str, attempts: int = 3):
+    import netCDF4
+
+    for attempt in range(attempts):  # los servidores OPeNDAP fallan de forma intermitente
+        try:
+            return netCDF4.Dataset(url)
+        except OSError:
+            if attempt == attempts - 1:
+                raise
+            __import__("time").sleep(10 * (attempt + 1))
+
+
+def _dap_days(ds):
+    import netCDF4
+
+    t = ds.variables["time"]
+    return [d.date().isoformat() for d in netCDF4.num2date(t[:], t.units, only_use_cftime_datetimes=False,
+                                                            only_use_python_datetimes=True)]
+
+
+def oisst_year(y: int) -> tuple[dict, dict]:
+    """TSM diaria media frente a Paita y media tropical muestreada (cada 10° y cada 30 días) de un año de OISST."""
+    ds = _open_dap(OISST_PSL.format(y=y))
+    lat = np.asarray(ds.variables["lat"][:], float)
+    lon = np.asarray(ds.variables["lon"][:], float)  # 0–360
+    days = _dap_days(ds)
+    sst = ds.variables["sst"]
+    ri = np.flatnonzero((lat >= PAITA_BOX["lat"][0]) & (lat <= PAITA_BOX["lat"][1]))
+    ci = np.flatnonzero((lon >= PAITA_BOX["lon"][0] % 360) & (lon <= PAITA_BOX["lon"][1] % 360))
+    box = np.ma.filled(np.ma.masked_invalid(sst[:, ri[0]:ri[-1] + 1, ci[0]:ci[-1] + 1]).astype(float), np.nan)
+    paita = {d: float(np.nanmean(box[k])) for k, d in enumerate(days) if np.isfinite(box[k]).any()}
+    ti = np.flatnonzero((lat >= -20.0) & (lat <= 20.0))
+    sample = np.ma.filled(np.ma.masked_invalid(sst[::30, ti[0]:ti[-1] + 1:40, ::40]).astype(float), np.nan)
+    trop = {days[30 * k]: float(np.nanmean(sample[k])) for k in range(sample.shape[0]) if np.isfinite(sample[k]).any()}
+    return paita, trop
+
+
+def build_ocean(status: dict, years=None):
+    """TSM diaria frente a Paita y media tropical 20° S–20° N (OISST v2.1 vía NOAA PSL OPeNDAP), reanudable por año.
 
     Niño 1+2 no se descarga diario: el modelo usa el índice mensual de CPC (``indices_mensuales``).
     """
     out = INPUTS / "oceano_diario.csv.gz"
-    start = "1981-09-01"
-    paita = erddap_series("sst", start, PAITA_BOX, status=status)
-    trop = erddap_series("sst", start, dict(lat=(-19.875, 19.875), lon=(-179.875, 179.875)), stride=40, tstride=30,
-                         status=status)
-    # media tropical muestreada cada 30 días: se interpola linealmente al día (varía lentamente)
+    old = {r["fecha"]: r for r in read_csv_gz(out)} if out.is_file() else {}
+    raw_path = INPUTS / "oceano_tropical_muestras.csv.gz"
+    trop = {r["fecha"]: fnum(r["sst_trop"]) for r in read_csv_gz(raw_path)} if raw_path.is_file() else {}
+    paita = {d: fnum(r["sst_paita"]) for d, r in old.items()}
+    this_year = datetime.now(timezone.utc).year
+    years = years or range(1981, this_year + 1)
+    have = {d[:4] for d in paita}
+    for y in years:
+        if str(y) in have and y < this_year - (1 if datetime.now(timezone.utc).month == 1 else 0):
+            continue
+        try:
+            p, tr = oisst_year(y)
+        except Exception as exc:  # noqa: BLE001
+            status.setdefault("ocean_errors", []).append(f"{y}: {type(exc).__name__}: {str(exc)[:160]}")
+            continue
+        paita.update(p)
+        trop.update(tr)
     tk = sorted(trop)
     tx = np.array([date.fromisoformat(d).toordinal() for d in tk], float)
     ty = np.array([trop[d] for d in tk])
@@ -191,10 +223,13 @@ def build_ocean(status: dict, end: date | None = None):
     for d in sorted(paita):
         x = date.fromisoformat(d).toordinal()
         rows.append(dict(fecha=d, sst_paita=f"{paita[d]:.3f}",
-                         sst_trop=f"{np.interp(x, tx, ty):.3f}" if tx.size and x <= tx[-1] + 45 else ""))
+                         sst_trop=f"{np.interp(x, tx, ty):.3f}" if tx.size and tx[0] - 45 <= x <= tx[-1] + 45 else ""))
     write_csv_gz(out, rows, ("fecha", "sst_paita", "sst_trop"))
+    write_csv_gz(raw_path, [dict(fecha=d, sst_trop=f"{trop[d]:.3f}") for d in tk], ("fecha", "sst_trop"))
     status["ocean_days"] = len(rows)
     status["ocean_last"] = rows[-1]["fecha"] if rows else None
+    if not rows:
+        raise RuntimeError("sin TSM: " + "; ".join(status.get("ocean_errors", [])[:3]))
 
 
 def build_indices(status: dict):
@@ -223,18 +258,30 @@ def build_indices(status: dict):
     write_csv_gz(out, sorted(rows.values(), key=lambda r: r["ym"]), ("ym", "nino12", "nino4", "nino34", "E", "C"))
 
 
+R1_LAST_DAY = date(2026, 3, 17)  # NOAA PSL: NCEP/NCAR R1 dejó de producirse con esa última fecha
+
+
 def build_atmos(status: dict, years):
+    """NCEP/NCAR R1 diario (solo entrenamiento: la producción terminó el 17-03-2026, no sirve en operación)."""
     import netCDF4
 
     out = INPUTS / "atmosfera_diaria.csv.gz"
     rows = {r["fecha"]: r for r in read_csv_gz(out)} if out.is_file() else {}
     have_years = {f[:4] for f, r in rows.items() if all(r.get(k) for k in R1_VARS)}
     for y in years:
-        if str(y) in have_years and y < datetime.now(timezone.utc).year:
+        if str(y) in have_years or y > R1_LAST_DAY.year:
             continue
         for key, (group, fname, var, level) in R1_VARS.items():
             try:
-                ds = netCDF4.Dataset(R1.format(group=group, var=fname, y=y))
+                ds = None
+                for attempt in range(3):  # el servidor OPeNDAP de PSL falla de forma intermitente
+                    try:
+                        ds = netCDF4.Dataset(R1.format(group=group, var=fname, y=y))
+                        break
+                    except OSError:
+                        if attempt == 2:
+                            raise
+                        __import__("time").sleep(10 * (attempt + 1))
                 lat = np.asarray(ds.variables["lat"][:], float)
                 lon = np.asarray(ds.variables["lon"][:], float)
                 ri = np.flatnonzero((lat >= ATMOS_BOX["lat"][0]) & (lat <= ATMOS_BOX["lat"][1]))
@@ -259,6 +306,9 @@ def build_atmos(status: dict, years):
 
 def build_topography(provinces, status: dict):
     out = INPUTS / "topografia.csv.gz"
+    if out.is_file():  # estática: se descarga una sola vez
+        status["topography_points"] = "en caché"
+        return
     text = http_text(ETOPO, timeout=300)
     pts = []
     for line in text.splitlines()[2:]:
@@ -300,12 +350,12 @@ def build_inputs(live_only: bool = False) -> int:
     """Insumos completos (entrenamiento) o solo los que cambian a diario (``live_only``: operación)."""
     provinces = ens.load_provinces(ens.boundaries_paths()[0])
     status = dict(started_at_utc=datetime.now(timezone.utc).isoformat(), live_only=live_only)
-    today = datetime.now(timezone.utc).date()
     steps = [("indices", lambda: build_indices(status)),
-             ("ocean", lambda: build_ocean(status)),
-             ("atmos", lambda: build_atmos(status, range(today.year - 1 if live_only else 1981, today.year + 1)))]
-    if not live_only:
-        steps += [("topography", lambda: build_topography(provinces, status)),
+             ("ocean", lambda: build_ocean(status, range(datetime.now(timezone.utc).year - 1,
+                                                          datetime.now(timezone.utc).year + 1) if live_only else None))]
+    if not live_only:  # la atmósfera R1 ya no se actualiza: solo se completa el histórico
+        steps += [("atmos", lambda: build_atmos(status, range(1981, R1_LAST_DAY.year + 1))),
+                  ("topography", lambda: build_topography(provinces, status)),
                   ("pisco", lambda: build_pisco(provinces, status))]
     for name, fn in steps:
         try:
@@ -328,7 +378,16 @@ FEATURES = ("sin1", "cos1", "sin2", "cos2", "elev_mean", "elev_max", "frac_sierr
             "enso_e", "enso_c", "enso_ec",
             "pw_anom", "u200", "u850", "w500", "sierra_x_pw", "sierra_x_u200",
             "rain_max_lag1", "rain_mean_lag1", "rain_max_lag2")
-NO_RAIN = tuple(f for f in FEATURES if not f.startswith("rain_"))
+RAIN_FEATURES = ("rain_max_lag1", "rain_mean_lag1", "rain_max_lag2")
+ATMOS_FEATURES = ("pw_anom", "u200", "u850", "w500", "sierra_x_pw", "sierra_x_u200")
+NO_RAIN = tuple(f for f in FEATURES if f not in RAIN_FEATURES)
+# Variantes, de la más completa a la mínima; en operación se usa la primera cuyas variables existen todas.
+VARIANTS = {
+    "full": FEATURES,
+    "no_rain": NO_RAIN,
+    "no_atmos": tuple(f for f in FEATURES if f not in ATMOS_FEATURES),
+    "no_atmos_no_rain": tuple(f for f in NO_RAIN if f not in ATMOS_FEATURES),
+}
 
 
 class Inputs:
@@ -346,7 +405,7 @@ class Inputs:
         topo = {r["idprov"]: r for r in read_csv_gz(INPUTS / "topografia.csv.gz")}
         rain = {}
         if rain_source == "pisco":
-            for r in read_csv_gz(INPUTS / "pisco_provincias.csv.gz"):
+            for r in read_csv_gz(INPUTS / PISCO_FILE):
                 rain[(r["fecha"], r["idprov"])] = (fnum(r["max_mm"]), fnum(r["mean_mm"]))
         else:  # IMERG Late en operación (mismo soporte de 0,25°)
             if IMERG_CSV.is_file():
@@ -382,10 +441,12 @@ def _clim(coef, doy: int):
 
 
 def feature_row(inp: Inputs, issue: date, lead: int, idprov: str, atmos_max_age: int = 0,
-                ocean_max_age: int = 0) -> dict | None:
+                ocean_max_age: int = 0, enso: str = "nino") -> dict | None:
     """Variables para una provincia, emitidas el día ``issue`` con el estado del día ``issue − 1``.
 
-    Devuelve None si falta cualquier variable (falla cerrada: nunca se rellena con ceros).
+    Núcleo obligatorio (estación, topografía, océano, ENSO): si falta algo devuelve None. Bloques opcionales
+    (atmósfera, persistencia): si faltan, sus claves no aparecen y solo aplican las variantes que no los usan.
+    Nunca se rellena con ceros. ``enso``: "ec" (índices E y C del IGP) o "nino" (Niño 1+2 y Niño 4 de CPC).
     """
     state = issue - timedelta(days=1)
     target = issue + timedelta(days=lead)
@@ -406,12 +467,13 @@ def feature_row(inp: Inputs, issue: date, lead: int, idprov: str, atmos_max_age:
         atm = None
     prev_month = (state.replace(day=1) - timedelta(days=1)).strftime("%Y-%m")
     idx = inp.indices.get(prev_month)
-    if not (topo and oc and atm and idx) or inp.clim.get("sst_paita") is None or inp.clim.get("pw") is None:
+    if not (topo and oc and idx) or inp.clim.get("sst_paita") is None:
         return None
     sst = fnum(oc.get("sst_paita"))
     trop = fnum(oc.get("sst_trop"))
-    e, c = fnum(idx.get("E")), fnum(idx.get("C"))
-    if e is None or c is None:  # sin E/C oficiales: Niño 1+2 y Niño 4 (no ortogonales; se declara en el modelo)
+    if enso == "ec":
+        e, c = fnum(idx.get("E")), fnum(idx.get("C"))
+    else:
         e, c = fnum(idx.get("nino12")), fnum(idx.get("nino4"))
     if None in (sst, trop, e, c):
         return None
@@ -419,16 +481,16 @@ def feature_row(inp: Inputs, issue: date, lead: int, idprov: str, atmos_max_age:
     coast = 1.0 - frac_sierra
     sst_rel = sst - trop
     excess = max(sst - SST_THRESHOLD_C, 0.0)
-    pw = fnum(atm["pw"])
-    pw_anom = pw - _clim(inp.clim["pw"], state.timetuple().tm_yday)
     row = dict(sin1=np.sin(t), cos1=np.cos(t), sin2=np.sin(2 * t), cos2=np.cos(2 * t),
                elev_mean=fnum(topo["elev_mean"]), elev_max=fnum(topo["elev_max"]), frac_sierra=frac_sierra,
                coast_km=fnum(topo["coast_km"]),
                sst_paita_anom=sst - _clim(inp.clim["sst_paita"], state.timetuple().tm_yday), sst_excess=excess,
                sst_rel=sst_rel, coast_x_excess=coast * excess, coast_x_rel=coast * sst_rel,
-               enso_e=e, enso_c=c, enso_ec=e * c,
-               pw_anom=pw_anom, u200=fnum(atm["u200"]), u850=fnum(atm["u850"]), w500=fnum(atm["w500"]),
-               sierra_x_pw=frac_sierra * pw_anom, sierra_x_u200=frac_sierra * fnum(atm["u200"]))
+               enso_e=e, enso_c=c, enso_ec=e * c)
+    if atm and inp.clim.get("pw") is not None:
+        pw_anom = fnum(atm["pw"]) - _clim(inp.clim["pw"], state.timetuple().tm_yday)
+        row.update(pw_anom=pw_anom, u200=fnum(atm["u200"]), u850=fnum(atm["u850"]), w500=fnum(atm["w500"]),
+                   sierra_x_pw=frac_sierra * pw_anom, sierra_x_u200=frac_sierra * fnum(atm["u200"]))
     r1 = inp.rain.get((state.isoformat(), idprov))
     r2 = inp.rain.get(((state - timedelta(days=1)).isoformat(), idprov))
     if r1 and r2 and None not in (r1[0], r1[1], r2[0]):
@@ -470,11 +532,11 @@ def season_of(d: date) -> int:
     return d.year if d.month >= 9 else d.year - 1
 
 
-def design(inp: Inputs, issues, provinces_ids, lead: int, features):
+def design(inp: Inputs, issues, provinces_ids, lead: int, features, enso: str = "nino"):
     X, meta = [], []
     for issue in issues:
         for pid in provinces_ids:
-            row = feature_row(inp, issue, lead, pid)
+            row = feature_row(inp, issue, lead, pid, enso=enso)
             if row is None or any(f not in row for f in features):
                 continue
             target = inp.rain.get(((issue + timedelta(days=lead)).isoformat(), pid))
@@ -485,6 +547,16 @@ def design(inp: Inputs, issues, provinces_ids, lead: int, features):
     return np.asarray(X, float), meta
 
 
+def enso_source(indices: dict, today: date, max_age_months: int = 3) -> str:
+    """'ec' solo si el IGP publicó E y C en los últimos meses; si no, 'nino' para entrenar y operar igual."""
+    months = sorted(ym for ym, r in indices.items() if fnum(r.get("E")) is not None and fnum(r.get("C")) is not None)
+    if not months:
+        return "nino"
+    y, m = map(int, months[-1].split("-"))
+    age = (today.year - y) * 12 + today.month - m
+    return "ec" if age <= max_age_months else "nino"
+
+
 def train() -> int:
     inp = Inputs.load("pisco")
     provinces = sorted(inp.topo)
@@ -493,18 +565,22 @@ def train() -> int:
         print("::warning title=V09_OWN_MODEL::sin lluvia PISCO para entrenar")
         return 1
     issues = [d for d in days if d - timedelta(days=2) >= days[0]]
+    enso = enso_source(inp.indices, datetime.now(timezone.utc).date())
     model = dict(schema_version="0.1", model_id=f"irfen-v09-modelo-propio:v{MODEL_VERSION}", **GUARDS,
-                 trained_at_utc=datetime.now(timezone.utc).isoformat(), training_rain="PISCOp v2.1 diario (SENAMHI)",
-                 training_period=[days[0].isoformat(), days[-1].isoformat()], l2=L2,
-                 enso_indices="IGP E/C" if any(fnum(r.get("E")) is not None for r in inp.indices.values())
-                 else "Niño 1+2 y Niño 4 (CPC); sin E/C oficiales", climatologies=inp.clim, variants={})
+                 trained_at_utc=datetime.now(timezone.utc).isoformat(),
+                 training_rain="PISCOp v2.1 diario (SENAMHI), tierra peruana en celdas de 0,25°",
+                 training_period=[days[0].isoformat(), days[-1].isoformat()], l2=L2, enso_source=enso,
+                 enso_note=("índices E y C del IGP" if enso == "ec" else
+                            "Niño 1+2 y Niño 4 de CPC: el archivo E/C del IGP no está al día y no se mezclan fuentes"),
+                 atmosphere_note="NCEP/NCAR R1 terminó el 17-03-2026: las variantes con atmósfera no aplican en operación",
+                 climatologies=inp.clim, variants={})
     cv = dict(schema_version="0.1", **GUARDS, scheme="dejar fuera una temporada setiembre–agosto", results=[])
     import v09_fc_evaluate as ev
 
-    for variant, feats in (("full", FEATURES), ("no_rain", NO_RAIN)):
+    for variant, feats in VARIANTS.items():
         model["variants"][variant] = dict(features=list(feats), models={})
         for lead in LEADS:
-            X, meta = design(inp, issues, provinces, lead, feats)
+            X, meta = design(inp, issues, provinces, lead, feats, enso)
             if X.size == 0:
                 continue
             mu, sd = X.mean(axis=0), X.std(axis=0)
@@ -555,10 +631,12 @@ def forecast_record(model: dict, inp: Inputs, provinces: list[dict], issue_time:
         for meta in days_meta:
             lead = (date.fromisoformat(meta["valid_date_peru"]) - issue).days
             entry = dict(day=meta["day"], p_max={}, p_mean={})
-            row = feature_row(inp, issue, lead, p["id"], atmos_max_age=3, ocean_max_age=3)
+            row = feature_row(inp, issue, lead, p["id"], atmos_max_age=3, ocean_max_age=3,
+                              enso=model.get("enso_source", "nino"))
             variant = None
             if row is not None:
-                variant = "full" if all(f in row for f in model["variants"]["full"]["features"]) else "no_rain"
+                variant = next((v for v, spec in model["variants"].items()
+                                if spec.get("models") and all(f in row for f in spec["features"])), None)
             for kind in KINDS:
                 for u in THRESHOLDS_MM:
                     m = model["variants"].get(variant or "", {}).get("models", {}).get(f"{kind}|{u:g}|{lead}")

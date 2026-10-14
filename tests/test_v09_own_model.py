@@ -141,5 +141,58 @@ class Topography(unittest.TestCase):
         self.assertGreater(float(rows["2003"]["coast_km"]), float(rows["2005"]["coast_km"]))
 
 
+class VariantsAndSources(unittest.TestCase):
+    def test_missing_atmosphere_keeps_core_and_selects_no_atmos_variant(self):
+        inp = synthetic_inputs(400)
+        issue = date(1996, 3, 1)
+        for k in range(5):
+            inp.atmos.pop((issue - timedelta(days=1 + k)).isoformat(), None)
+        row = M.feature_row(inp, issue, 1, "2001", atmos_max_age=3)
+        self.assertIsNotNone(row)
+        self.assertFalse(any(f in row for f in M.ATMOS_FEATURES))
+        self.assertTrue(set(M.VARIANTS["no_atmos"]) <= set(row))
+        dummy = dict(beta=[0.0] * (len(M.VARIANTS["no_atmos"]) + 1), mean=[0.0] * len(M.VARIANTS["no_atmos"]),
+                     sd=[1.0] * len(M.VARIANTS["no_atmos"]))
+        model = dict(model_id="t", enso_source="nino", variants={
+            v: dict(features=list(f), models={f"{k}|{u:g}|{d}": dict(dummy, beta=[0.0] * (len(f) + 1),
+                                                                      mean=[0.0] * len(f), sd=[1.0] * len(f))
+                                              for k in M.KINDS for u in M.THRESHOLDS_MM for d in M.LEADS})
+            for v, f in M.VARIANTS.items()})
+        rec = M.forecast_record(model, inp, [dict(id="2001", name="P", department="PIURA")],
+                                datetime(1996, 3, 1, 0, tzinfo=timezone.utc))
+        self.assertEqual(rec["variants_used"], {"no_atmos": 3})
+        self.assertEqual(rec["provinces"]["2001"]["days"][0]["p_max"]["10"], 0.5)  # beta 0 → 0,5
+
+    def test_enso_source_requires_current_ec(self):
+        idx = {"2020-02": dict(E="0.1", C="0.2"), "2026-09": dict(E="", C="")}
+        self.assertEqual(M.enso_source(idx, date(2026, 10, 14)), "nino")
+        idx["2026-08"] = dict(E="0.5", C="0.1")
+        self.assertEqual(M.enso_source(idx, date(2026, 10, 14)), "ec")
+        inp = synthetic_inputs(400)
+        row_n = M.feature_row(inp, date(1996, 3, 1), 1, "2001", enso="nino")
+        self.assertEqual(row_n["enso_e"], 1.0)  # nino12 sintético
+        self.assertIsNone(M.feature_row(inp, date(1996, 3, 1), 1, "2001", enso="ec"))  # sin E/C: falla cerrada
+
+
+class LandSupport(unittest.TestCase):
+    def test_sea_fill_never_enters_land_means(self):
+        I = load_module("v09_imerg_for_land", "scripts/v09_imerg_late_province_daily.py")
+        lat = np.round(np.arange(-3.05, -3.6, -0.1), 2)
+        lon = np.round(np.arange(-81.05, -80.4, 0.1), 2)
+        field = np.full((lat.size, lon.size), 4.0)
+        land = np.ones_like(field, dtype=bool)
+        land[:, :2] = False                    # dos columnas de mar
+        field[:, :2] = -9.9e33                  # relleno de PISCO sobre el mar
+        field[field < 0] = np.nan
+        out = I.regrid_area_mean(field, lat, lon, np.array([-3.25]), np.array([-80.75]), land=land)
+        np.testing.assert_allclose(out, 4.0)
+        sea = I.regrid_area_mean(field, lat, lon, np.array([-3.25]), np.array([-81.0]), land=land)
+        self.assertTrue(np.isnan(sea).all() or np.allclose(sea, 4.0))
+        holes = field.copy()
+        holes[0:3, 3:6] = np.nan               # falta parte de la tierra: la celda queda faltante
+        self.assertTrue(np.isnan(I.regrid_area_mean(holes, lat, lon, np.array([-3.25]), np.array([-80.75]),
+                                                    land=land)).all())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -11,8 +11,9 @@ Correspondencia temporal
   no es lluvia cero.
 
 Correspondencia espacial (por provincia INEI, mismas celdas que el pronóstico)
-  * ``lluvia_max_mm`` / ``lluvia_media_mm``: IMERG promediado por área sobre cada celda de 0,25° de la grilla de ECMWF
-    y luego máximo / media sobre las celdas que el pronóstico asigna a la provincia. Es el soporte de ``p_max`` /
+  * ``lluvia_max_mm`` / ``lluvia_media_mm``: IMERG promediado por área sobre la tierra peruana de cada celda de 0,25°
+    de la grilla de ECMWF (misma máscara que PISCO en el entrenamiento del modelo propio) y luego máximo / media sobre
+    las celdas que el pronóstico asigna a la provincia. Es el soporte de ``p_max`` /
     ``p_mean``: compara lo que el modelo puede representar (~27 km), no un punto.
   * ``lluvia_max_nativo_mm``: máximo sobre las celdas IMERG de 0,1° (~11 km) de la provincia. Más cercano a un
     chubasco local, pero todavía no es la lluvia puntual de una quebrada ni de un pluviómetro.
@@ -82,19 +83,55 @@ def overlap_matrix(src_centres: np.ndarray, src_step: float, dst_centres: np.nda
     return np.clip(hi - lo, 0.0, None) / dst_step
 
 
+MIN_LAND_FRAC = 0.2   # una celda de 0,25° cuenta si al menos el 20 % de su área es tierra peruana
+
+
 def regrid_area_mean(field: np.ndarray, src_lat, src_lon, dst_lat, dst_lon,
-                     src_step: float = IMERG_STEP, dst_step: float = 0.25) -> np.ndarray:
-    """Media por área de ``field`` [lat, lon] sobre cada celda destino; NaN si falta más del 10 % del área."""
+                     src_step: float = IMERG_STEP, dst_step: float = 0.25, land: np.ndarray | None = None,
+                     min_land_frac: float = MIN_LAND_FRAC) -> np.ndarray:
+    """Media por área de ``field`` [lat, lon] sobre cada celda destino.
+
+    Sin ``land``: NaN si falta más del 10 % del área. Con ``land`` (máscara booleana en la grilla de origen): media
+    solo sobre la tierra; NaN si la tierra cubre menos de ``min_land_frac`` de la celda o si falta más del 10 % de la
+    tierra. Así PISCO (solo tierra) e IMERG (tierra y mar) se comparan sobre el mismo soporte.
+    """
     wl = overlap_matrix(np.asarray(src_lat), src_step, np.asarray(dst_lat), dst_step)
     wo = overlap_matrix(np.asarray(src_lon), src_step, np.asarray(dst_lon), dst_step)
-    valid = np.isfinite(field)
+    base = np.ones(field.shape, dtype=bool) if land is None else np.asarray(land, dtype=bool)
+    valid = np.isfinite(field) & base
     num = wl @ np.where(valid, field, 0.0) @ wo.T
     den = wl @ valid.astype(float) @ wo.T
     cover = wl.sum(axis=1)[:, None] * wo.sum(axis=1)[None, :]
+    support = wl @ base.astype(float) @ wo.T
     out = np.full(num.shape, np.nan)
-    ok = (cover > 0) & (den >= 0.9 * cover)
+    need = (0.0 if land is None else min_land_frac) * cover
+    ok = (cover > 0) & (support > 0) & (support >= need) & (den >= 0.9 * support)
     out[ok] = num[ok] / den[ok]
     return out
+
+
+_LAND_CACHE: dict = {}
+
+
+def land_mask(lat, lon) -> np.ndarray:
+    """Tierra = centro de celda dentro de alguna provincia INEI del archivo archivado (todas sus provincias)."""
+    key = (tuple(np.round(lat, 4)), tuple(np.round(lon, 4)))
+    if key not in _LAND_CACHE:
+        provinces = ens.load_provinces(ens.boundaries_paths()[0], departments=None)
+        glon, glat = np.meshgrid(np.asarray(lon, float), np.asarray(lat, float))
+        px, py = glon.ravel(), glat.ravel()
+        mask = np.zeros(px.size, dtype=bool)
+        for prov in provinces:
+            for poly in prov["polygons"]:
+                ext = poly[0]
+                box = ((px >= ext[:, 0].min()) & (px <= ext[:, 0].max()) &
+                       (py >= ext[:, 1].min()) & (py <= ext[:, 1].max()))
+                if box.any():
+                    sub = np.zeros(px.size, dtype=bool)
+                    sub[box] = ens.points_in_polygon(px[box], py[box], poly)
+                    mask |= sub
+        _LAND_CACHE[key] = mask.reshape(glat.shape)
+    return _LAND_CACHE[key]
 
 
 # --------------------------------------------------------------------------- acumulación
@@ -149,9 +186,11 @@ class DayAccumulator:
 
 
 # --------------------------------------------------------------------------- estadísticas por provincia
-def province_rows(valid: date, field: np.ndarray, lat, lon, provinces: list[dict]) -> list[dict]:
+def province_rows(valid: date, field: np.ndarray, lat, lon, provinces: list[dict], land: np.ndarray | None = None
+                  ) -> list[dict]:
     ela, elo = ens.ens_grid()
-    coarse = regrid_area_mean(field, lat, lon, ela, elo)
+    land = land_mask(lat, lon) if land is None else land
+    coarse = regrid_area_mean(field, lat, lon, ela, elo, land=land)
     a025 = ens.assign_cells(provinces, ela, elo)
     a01 = ens.assign_cells(provinces, np.asarray(lat), np.asarray(lon))
     cflat, fflat = coarse.ravel(), field.ravel()

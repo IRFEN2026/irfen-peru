@@ -118,13 +118,14 @@ def points_in_polygon(px: np.ndarray, py: np.ndarray, polygon: list[np.ndarray])
 
 
 def load_provinces(geojson_path: Path, departments=DEPARTMENTS) -> list[dict]:
+    """Provincias INEI de ``departments`` (``None`` = todas las del archivo, p. ej. para la máscara de tierra)."""
     data = json.loads(Path(geojson_path).read_text(encoding="utf-8"))
-    wanted = {norm(d) for d in departments}
+    wanted = None if departments is None else {norm(d) for d in departments}
     out = []
     for feat in data["features"]:
         props = feat.get("properties") or {}
         dept = norm(props.get("NOMBDEP"))
-        if dept not in wanted:
+        if wanted is not None and dept not in wanted:
             continue
         polygons = _rings_of(feat["geometry"])
         area, cx, cy = max(ring_area_centroid(p[0]) for p in polygons)
