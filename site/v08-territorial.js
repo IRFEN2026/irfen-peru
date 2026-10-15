@@ -42,11 +42,11 @@
   // "Avances recientes" es una agrupación de interfaz, NO una categoría científica.
   // Sólo referencia candidatos ya presentes en el catálogo; no aporta rutas, geometrías ni estados.
   const RECENT_ADVANCES = [
-    {candidateId:'ica_pisco_san_andres',
+    {candidateId:'ica_pisco_san_andres', plain:'Se ve la cuenca del río Pisco. Quitasol y Paracas aún no tienen contorno propio.',
       note:'Quitasol/Paracas siguen sin geometría local ni outlet; no se promueven como evento.'},
-    {candidateId:'arequipa_acari_san_agustin',
+    {candidateId:'arequipa_acari_san_agustin', plain:'Se ve la cuenca del río Acarí. Aún no se sabe cómo conecta San Agustín con el río.',
       note:'San Agustín sigue como componente local con identidad hidrológica no resuelta; sin routing al Río Acarí.'},
-    {candidateId:'ica_palpa_changuillo',
+    {candidateId:'ica_palpa_changuillo', plain:'Se ve la cuenca del río Grande. Algunos tramos locales siguen sin vincular.',
       note:'Palpa/Changuillo conserva tramos locales no resueltos; Yauca/Curis/Macchanga no se vinculan a UH 1372.'}
   ];
   const RECENT_CONTEXT = 'Cuenca oficial ANA · contexto de investigación';
@@ -392,9 +392,10 @@
     const el=document.getElementById('ti-recent');if(!el)return;
     const items=recentRecords(state.records);
     // El título procede del catálogo real; la ficha sólo añade contexto y pendientes.
-    el.innerHTML='<h3>Avances integrados recientemente</h3>'+(items.length?'<div class="ti-recent-grid">'+items.map(({advance,record})=>
-      '<button class="ti-recent-card" data-ti-record="'+esc(record.key)+'" aria-current="'+String(state.selected===record.key)+'"><b>'+esc(record.title)+'</b>'+
-      '<small>'+esc(RECENT_CONTEXT)+'</small><small>'+esc(RECENT_DISCLAIMER)+'</small><small>'+esc(advance.note)+'</small></button>').join('')+'</div>'
+    // Contexto y aviso legal una sola vez; cada ficha, una frase llana. La nota técnica queda en el título emergente y en el detalle.
+    el.innerHTML='<h3>Avances integrados recientemente</h3><p class="ti-note">'+esc(RECENT_CONTEXT)+'. '+esc(RECENT_DISCLAIMER)+'</p>'+(items.length?'<div class="ti-recent-grid">'+items.map(({advance,record})=>
+      '<button class="ti-recent-card" data-ti-record="'+esc(record.key)+'" aria-current="'+String(state.selected===record.key)+'" title="'+esc(advance.note)+'"><b>'+esc(record.title)+'</b>'+
+      '<small>'+esc(advance.plain)+'</small></button>').join('')+'</div>'
       :'<span class="ti-note">Catálogo sin estos candidatos; no se muestra ninguna ficha.</span>');
   }
   function showRecent() {
