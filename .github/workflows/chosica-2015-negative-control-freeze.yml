@@ -1,0 +1,52 @@
+name: IRFEN - Chosica 2015 negative-control freeze
+
+on:
+  pull_request:
+    paths:
+      - site/data/validation/chosica_2015_negative_control_candidate_pool.json
+      - config/chosica_2015_negative_control_candidate_pool_freeze_record_v0_1.json
+      - .github/workflows/chosica-2015-negative-control-freeze.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-freeze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Validate exact committed freeze and anti-leakage guards
+        run: |
+          python - <<'PY'
+          import hashlib, json, pathlib
+          poolp=pathlib.Path('site/data/validation/chosica_2015_negative_control_candidate_pool.json')
+          recp=pathlib.Path('config/chosica_2015_negative_control_candidate_pool_freeze_record_v0_1.json')
+          pool=json.loads(poolp.read_text(encoding='utf-8')); rec=json.loads(recp.read_text(encoding='utf-8'))
+          digest=hashlib.sha256(poolp.read_bytes()).hexdigest()
+          assert digest==rec['candidate_pool_sha256']==rec['workflow_provenance']['committed_canonical_json_sha256']
+          assert pool['status']=='PASS_PREUNBLIND_NEGATIVE_CONTROL_CANDIDATE_POOL'
+          assert pool['candidate_pool_frozen'] is True
+          assert pool['candidate_count']==rec['candidate_count']==29
+          assert len(pool['candidates'])==29
+          assert len({c['candidate_id'] for c in pool['candidates']})==29
+          guards={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          assert pool['guards']==rec['guards']==guards
+          assert pool['outcome_evidence_read'] is False
+          assert pool['a6680_numeric_reference_read'] is False
+          assert pool['post_anchor_predictor_read'] is False
+          assert pool['control_outcome_adjudication_performed'] is False
+          assert pool['candidate_selection_used_observed_2015_response'] is False
+          assert rec['anti_leakage']=={
+            'outcome_evidence_read':False,
+            'a6680_numeric_reference_read':False,
+            'post_anchor_predictor_read':False,
+            'control_outcome_adjudication_performed':False,
+            'candidate_selection_used_observed_2015_response':False}
+          assert rec['next_gate']['sealed_target_outcome_unblind_allowed'] is False
+          assert rec['next_gate']['control_outcome_adjudication_allowed_before_ranked_shortlist_freeze'] is False
+          print('PASS_NEGATIVE_CONTROL_CANDIDATE_POOL_FROZEN')
+          PY

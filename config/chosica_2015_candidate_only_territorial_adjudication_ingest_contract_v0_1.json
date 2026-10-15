@@ -1,0 +1,101 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_CANDIDATE_ONLY_ADJUDICATION_INGEST_CONTRACT",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "prerequisites": {
+    "cleanroom_recovery_freeze": "config/chosica_2015_cleanroom_recovery_freeze_record_v0_1.json",
+    "contamination_registry": "config/chosica_2015_control_adjudication_contamination_registry_v0_1.json",
+    "candidate_only_unblind_contract": "config/chosica_2015_candidate_only_territorial_unblind_contract_v0_1.json",
+    "candidate_review_packet": "site/data/validation/chosica_2015_cleanroom_candidate_review_packet_v0_1.json",
+    "candidate_review_packet_sha256": "18167fde96862f2d4c540923a1f5435a0ec294dfd7be65d8b39463c5d8d260a1",
+    "cleanroom_matching_sha256": "7fa4d488de385832f8b213b8fd314bcade01fda5495df2987d32be35a90ee5e2"
+  },
+  "selected_candidate_codes": [
+    "C_15cbc5db136d",
+    "C_19f0c525214f",
+    "C_51061f9f6857",
+    "C_636da855a58d",
+    "C_b903bae5d9c9",
+    "C_c767e4cea74e",
+    "C_d0274c1c4240"
+  ],
+  "input_artifact": "site/data/validation/chosica_2015_candidate_only_territorial_adjudication_v0_1.json",
+  "allowed_adjudications": [
+    "CONFIRMED_CONTROL",
+    "EXCLUDE_ACTIVATED",
+    "OUTCOME_UNKNOWN"
+  ],
+  "required_record_fields": [
+    "candidate_code",
+    "adjudication",
+    "source_locator",
+    "source_date_if_known",
+    "retrieved_at_utc",
+    "evidence_sha256_or_stable_source_identifier",
+    "evidence_basis",
+    "reviewer_attestation_no_target_outcome_access"
+  ],
+  "evidence_rules": {
+    "CONFIRMED_CONTROL": "requires affirmative independent evidence specifically supporting no activation or impact at the candidate during the frozen event window; silence, missing records, absence from a list, or failed search are insufficient",
+    "EXCLUDE_ACTIVATED": "requires affirmative independent evidence of activation or impact at the candidate during the frozen event window",
+    "OUTCOME_UNKNOWN": "required whenever affirmative evidence is insufficient or ambiguous",
+    "documentary_silence": "OUTCOME_UNKNOWN"
+  },
+  "review_attestation": {
+    "review_process_isolated_from_target_outcomes": true,
+    "candidate_membership_fixed_before_review": true,
+    "candidate_replacement_allowed": false,
+    "matching_recalculation_allowed": false,
+    "selection_feedback_allowed": false,
+    "target_unblind_allowed": false,
+    "a6680_allowed": false,
+    "post_event_target_evidence_allowed": false
+  },
+  "forbidden_content_tokens_case_insensitive": [
+    "cashahuacra",
+    "quirio",
+    "pedregal",
+    "san antonio",
+    "san_antonio",
+    "la libertad",
+    "la_libertad",
+    "carossio",
+    "carosio",
+    "rayos de sol",
+    "rayos_de_sol",
+    "corrales",
+    "official_outcome_evidence",
+    "a6680"
+  ],
+  "forbidden_provenance": [
+    "config/chosica_2015_blinding_incident_2026_09_09.json",
+    "config/chosica_2015_blinding_incident_2026_09_09_b.json",
+    "any note, snippet, exclusion, or label first observed during the contaminated adjudication stage",
+    "target outcome files or target post-event dossiers"
+  ],
+  "output_freeze": {
+    "artifact_name": "chosica-2015-candidate-only-control-set-freeze",
+    "file_name": "chosica_2015_candidate_only_control_set_freeze.json",
+    "must_record_input_sha256": true,
+    "must_record_candidate_membership_sha256": true,
+    "candidate_replacement_after_freeze": false,
+    "matching_recalculation_after_freeze": false
+  },
+  "fail_closed": [
+    "candidate set differs from the seven frozen candidate codes",
+    "review packet SHA-256 differs from the frozen value",
+    "any reviewer attestation is false or missing",
+    "any forbidden target token or A6680 token appears in the adjudication artifact",
+    "any candidate is CONFIRMED_CONTROL without affirmative evidence metadata",
+    "any candidate is implicitly converted from silence or missing evidence to CONFIRMED_CONTROL",
+    "contaminated adjudication becomes eligible for any downstream scientific use"
+  ],
+  "next_gate": "FREEZE_CANDIDATE_ONLY_CONTROL_SET_THEN_EVALUATE_SEPARATE_TARGET_UNBLIND_READINESS"
+}
