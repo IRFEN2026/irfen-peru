@@ -20,14 +20,14 @@ jobs:
     timeout-minutes: 6
     steps:
       - name: Checkout isolated research branch (read only)
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          persist-credentials: false
+          persist-credentials: true
       - name: Self-test matched comparison
         run: python3 scripts/v09_hybrid_feasibility_audit.py --self-test
       - name: Fetch historical validation (read only)
         run: |
-          git -c http.extraheader="AUTHORIZATION: basic $(printf 'x-access-token:%s' "${{ github.token }}" | base64 -w0)" fetch --no-tags --depth=1 origin "refs/heads/v09/forecast-data:refs/remotes/origin/v09/forecast-data"
+          git fetch --no-tags --depth=1 origin "refs/heads/v09/forecast-data:refs/remotes/origin/v09/forecast-data"
           echo "Validation source: $(git rev-parse refs/remotes/origin/v09/forecast-data)"
           git show refs/remotes/origin/v09/forecast-data:data/v09/model/modelo_propio_validacion_v0_1.json > "$RUNNER_TEMP/v09_validation.json"
       - name: Produce comparative report (not independent re-validation)
