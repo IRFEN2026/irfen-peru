@@ -148,6 +148,10 @@ def build_pisco(provinces, status: dict):
                                  mean_mm="" if not ok else f"{np.mean(v):.2f}"))
         write_csv_gz(out, rows, ("fecha", "idprov", "max_mm", "mean_mm"))  # guardado por año: reanudable
     status["pisco_years"] = sorted({r["fecha"][:4] for r in rows})
+    missing = [str(y) for y in PISCO_YEARS if str(y) not in status["pisco_years"]]
+    status["pisco_missing_years"] = missing
+    if missing:
+        status.setdefault("pisco_errors", []).append(f"años sin cargar: {missing[0]}–{missing[-1]} ({len(missing)})")
 
 
 def _step(lat, lon) -> float:
@@ -403,7 +407,22 @@ def build_inputs(live_only: bool = False) -> int:
         steps += [("atmos", lambda: build_atmos(status, range(1981, R1_LAST_DAY.year + 1))),
                   ("topography", lambda: build_topography(provinces, status)),
                   ("pisco", lambda: build_pisco(provinces, status))]
+    previous = (json.loads(PROBE_JSON.read_text(encoding="utf-8")).get("status", {})
+                if live_only and PROBE_JSON.is_file() else None)
+
+    def save(final: bool = False):
+        # Se guarda tras cada insumo: si el paso se corta por tiempo, el estado no queda viejo (pasó el 14-10-2026).
+        doc = status if not final else dict(status, finished_at_utc=datetime.now(timezone.utc).isoformat())
+        if previous is not None:
+            doc = dict(previous, last_refresh=doc)
+        PROBE_JSON.parent.mkdir(parents=True, exist_ok=True)
+        ens.atomic_write_text(PROBE_JSON, json.dumps(dict(**GUARDS, status=doc), ensure_ascii=False, indent=1) + "\n",
+                              encoding="utf-8")
+
     for name, fn in steps:
+        t0 = __import__("time").monotonic()
+        status[f"{name}_state"] = "EN_CURSO"
+        save()
         try:
             fn()
             errors = status.get(f"{name}_errors") or []
@@ -411,12 +430,10 @@ def build_inputs(live_only: bool = False) -> int:
             status[f"{name}_state"] = f"PARTIAL ({len(errors)} errores)" if errors else "OK"
         except Exception as exc:  # noqa: BLE001 - cada insumo se informa por separado; nunca se rellena con ceros
             status[f"{name}_state"] = f"ERROR {type(exc).__name__}: {str(exc)[:200]}"
-        print(f"::notice title=V09_OWN_MODEL_INPUTS::{name}: {status[f'{name}_state']}")
-    status["finished_at_utc"] = datetime.now(timezone.utc).isoformat()
-    PROBE_JSON.parent.mkdir(parents=True, exist_ok=True)
-    if live_only and PROBE_JSON.is_file():
-        status = dict(json.loads(PROBE_JSON.read_text(encoding="utf-8")).get("status", {}), last_refresh=status)
-    ens.atomic_write_text(PROBE_JSON, json.dumps(dict(**GUARDS, status=status), ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+        status[f"{name}_seconds"] = round(__import__("time").monotonic() - t0)
+        print(f"::notice title=V09_OWN_MODEL_INPUTS::{name}: {status[f'{name}_state']} ({status[f'{name}_seconds']} s)")
+        save()
+    save(final=True)
     return 0
 
 
@@ -742,7 +759,8 @@ def forecast_record(model: dict, inp: Inputs, provinces: list[dict], issue_time:
         provs[p["id"]] = dict(name=p["name"], department=p["department"], days=pdays)
     return dict(run_utc=run0.isoformat(),
                 deployment_status="RESEARCH_ONLY", test_mode="TEST_ONLY", operational_alerting_enabled=False,  # guardas en cada línea del registro (QA BAJA-6)
-                model_id=model["model_id"], processing_version=MODEL_VERSION,
+                model_id=model["model_id"], model_trained_at_utc=model.get("trained_at_utc"),
+                training_period=model.get("training_period"), processing_version=MODEL_VERSION,
                 thresholds_mm=[float(u) for u in THRESHOLDS_MM], days=days_meta, provinces=provs,
                 variants_used=variants_used, archived_at_utc=datetime.now(timezone.utc).isoformat())
 
