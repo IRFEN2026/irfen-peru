@@ -93,6 +93,29 @@ def test_documentary_rows_have_unique_ids_but_are_not_unique_catchments():
             assert source["source_id"]
             assert isinstance(source["source_text_verified"], bool)
 
+        # A work, a faja and a mapped exposure are different evidence
+        # categories. A repeated institutional source ID may represent
+        # separate documents, but only when their URLs are distinct.
+        works = unit.get("works_context_refs", [])
+        exposure = unit.get("exposure_refs", [])
+        assert not set(works).intersection(exposure)
+        for refs, accepted_types in (
+            (works, {"WORKS"}),
+            (exposure, {"FAJA", "CRITICAL_POINT"}),
+        ):
+            for source_id in set(refs):
+                matching = [
+                    src for src in unit["source_refs"]
+                    if src["source_id"] == source_id
+                ]
+                multiplicity = refs.count(source_id)
+                assert len(matching) >= multiplicity
+                assert all(src["evidence_type"] in accepted_types for src in matching)
+                if multiplicity > 1:
+                    urls = [src.get("source_url") for src in matching]
+                    assert all(urls)
+                    assert len(set(urls)) >= multiplicity
+
 
 def test_pending_aliases_are_not_promoted_to_identity_equivalence():
     d = load()
