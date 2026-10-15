@@ -196,6 +196,22 @@ class LandSupport(unittest.TestCase):
                                                     land=land)).all())
 
 
+class WarmStart(unittest.TestCase):
+    def test_warm_start_reaches_the_same_optimum(self):
+        rng = np.random.default_rng(3)
+        X = rng.normal(size=(2000, 4))
+        y = (rng.random(2000) < 1 / (1 + np.exp(-(X @ [1.0, -0.5, 0.0, 0.3] - 1)))).astype(float)
+        cold = M.fit_logistic(X, y)
+        warm = M.fit_logistic(X[:1500], y[:1500], beta0=cold)
+        ref = M.fit_logistic(X[:1500], y[:1500])
+        np.testing.assert_allclose(warm, ref, atol=1e-6)
+
+    def test_operational_variants_are_trained_first_but_preference_order_is_kept(self):
+        self.assertEqual(M.TRAIN_ORDER[:2], ("no_atmos", "no_atmos_no_rain"))
+        self.assertEqual(set(M.TRAIN_ORDER), set(M.VARIANTS))
+        self.assertEqual(list(M.VARIANTS)[0], "full")  # predict prefiere la más completa disponible
+
+
 class NinoSelection(unittest.TestCase):
     def test_oof_never_uses_the_held_out_season(self):
         rng = np.random.default_rng(1)

@@ -22,7 +22,7 @@ jobs:
   compute:
     if: github.ref == 'refs/heads/v09/forecast-engine'
     runs-on: ubuntu-latest
-    timeout-minutes: 210   # 9000 + 2700 s = 195 min de límites internos (PISCO: ~4-5 min por año)
+    timeout-minutes: 250   # 9000 + 5400 s = 240 min de límites internos
     permissions:
       contents: read
     outputs:
@@ -55,7 +55,7 @@ jobs:
         run: timeout --signal=TERM --kill-after=10s 9000s python scripts/v09_own_model.py build-inputs
       - name: Train with leave-one-season-out validation
         continue-on-error: true
-        run: timeout --signal=TERM --kill-after=10s 2700s python scripts/v09_own_model.py train
+        run: timeout --signal=TERM --kill-after=10s 5400s python scripts/v09_own_model.py train
       - name: Stage results (regular files only, data/v09/model only)
         shell: bash
         run: |

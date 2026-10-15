@@ -447,6 +447,7 @@ RAIN_FEATURES = ("rain_max_lag1", "rain_mean_lag1", "rain_max_lag2")
 ATMOS_FEATURES = ("pw_anom", "u200", "u850", "w500", "sierra_x_pw", "sierra_x_u200")
 NO_RAIN = tuple(f for f in FEATURES if f not in RAIN_FEATURES)
 # Variantes, de la más completa a la mínima; en operación se usa la primera cuyas variables existen todas.
+TRAIN_ORDER = ("no_atmos", "no_atmos_no_rain", "full", "no_rain")
 VARIANTS = {
     "full": FEATURES,
     "no_rain": NO_RAIN,
@@ -566,11 +567,12 @@ def feature_row(inp: Inputs, issue: date, lead: int, idprov: str, atmos_max_age:
 
 
 # =========================================================================== regresión logística L2 (IRLS)
-def fit_logistic(X: np.ndarray, y: np.ndarray, l2: float = L2, iters: int = 50, w: np.ndarray | None = None):
+def fit_logistic(X: np.ndarray, y: np.ndarray, l2: float = L2, iters: int = 50, w: np.ndarray | None = None,
+                 beta0: np.ndarray | None = None):
     """Coeficientes con intercepto sin penalizar; ``X`` ya estandarizada."""
     n, k = X.shape
     A = np.column_stack([np.ones(n), X])
-    beta = np.zeros(k + 1)
+    beta = np.zeros(k + 1) if beta0 is None else np.array(beta0, dtype=float)  # arranque en caliente: mismo óptimo
     pen = np.full(k + 1, l2)
     pen[0] = 0.0
     sw = np.ones(n) if w is None else np.asarray(w, float)
@@ -604,12 +606,12 @@ NINO_SEASONS = (1982, 1997, 2015)
 MIN_NINO_EVENTS = 10  # con menos eventos en temporadas Niño no se elige el modelo «solo Niño»
 
 
-def _oof(Z: np.ndarray, y: np.ndarray, groups: np.ndarray) -> np.ndarray:
+def _oof(Z: np.ndarray, y: np.ndarray, groups: np.ndarray, beta0: np.ndarray | None = None) -> np.ndarray:
     """Probabilidades fuera de muestra dejando fuera un grupo (temporada) cada vez."""
     oof = np.full(y.size, np.nan)
     for s in np.unique(groups):
         tr, te = groups != s, groups == s
-        oof[te] = 0.0 if y[tr].sum() == 0 else predict_logistic(fit_logistic(Z[tr], y[tr]), Z[te])
+        oof[te] = 0.0 if y[tr].sum() == 0 else predict_logistic(fit_logistic(Z[tr], y[tr], beta0=beta0), Z[te])
     return oof
 
 
@@ -667,8 +669,10 @@ def train() -> int:
     import v09_fc_evaluate as ev
 
     keep = ("pairs", "events", "brier", "bss", "roc_auc", "brier_decomposition", "reliability", "contingency")
-    for variant, feats in VARIANTS.items():
+    for variant, feats in VARIANTS.items():  # el orden de las claves fija la preferencia de predict (más completa primero)
         model["variants"][variant] = dict(features=list(feats), models={}, models_nino={}, selected={})
+    for variant in TRAIN_ORDER:  # se entrenan primero las variantes usables en operación (sin NCEP R1)
+        feats = VARIANTS[variant]
         for lead in LEADS:
             X, meta = design(inp, issues, provinces, lead, feats, enso)
             if X.size == 0:
@@ -687,7 +691,7 @@ def train() -> int:
                     model["variants"][variant]["models"][key] = dict(
                         beta=[round(float(b), 6) for b in beta], mean=mu.round(6).tolist(), sd=sd.round(6).tolist(),
                         n=int(y.size), events=int(y.sum()))
-                    oof_all = _oof(Z, y, seasons)
+                    oof_all = _oof(Z, y, seasons, beta0=beta)
                     scores = {}
                     for subset, mask in (("todas", np.ones(y.size, bool)), ("nino", nino)):
                         block = ev.score_block(oof_all[mask], y[mask].astype(bool))
@@ -713,9 +717,11 @@ def train() -> int:
                     print(f"::notice title=V09_OWN_MODEL_CV::{variant} {kind}≥{u:g} día {lead}: temporadas Niño "
                           f"n={s_all['pairs']} eventos={s_all['events']}; BSS entrenado con todas={s_all['bss']} "
                           f"solo Niño={s_n.get('bss')} → {choice}")
-    MODEL_JSON.parent.mkdir(parents=True, exist_ok=True)
-    ens.atomic_write_text(MODEL_JSON, json.dumps(model, ensure_ascii=False) + "\n", encoding="utf-8")
-    ens.atomic_write_text(CV_JSON, json.dumps(cv, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+        # guardado tras cada variante: un corte por tiempo conserva las variantes ya validadas (pasó el 15-10-2026)
+        model["variants_trained"] = [v for v in TRAIN_ORDER if model["variants"][v]["models"]]
+        MODEL_JSON.parent.mkdir(parents=True, exist_ok=True)
+        ens.atomic_write_text(MODEL_JSON, json.dumps(model, ensure_ascii=False) + "\n", encoding="utf-8")
+        ens.atomic_write_text(CV_JSON, json.dumps(cv, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     return 0
 
 
