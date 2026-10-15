@@ -73,7 +73,7 @@ def markdown(rows: list[dict], variant: str) -> str:
     parts = [
         "# Auditoria historica IRFEN: todos los anos vs. solo Nino",
         "",
-        f"Variante: \`{variant}\`. Eval subset: temporadas Nino. **No es validacion nueva.**",
+        f"Variante: `{variant}`. Eval subset: temporadas Nino. **No es validacion nueva.**",
         f"Comparaciones comparables: {len(valid)}/{len(rows)}; "
         f"ventajas todos los anos: {wins}; empates: {ties}.",
         "",
