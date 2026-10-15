@@ -119,5 +119,34 @@ class SharedBlockHygiene(unittest.TestCase):
             self.assertIn(f"{k}:{v}", js)
 
 
+class GeosSumRoundingParity(unittest.TestCase):
+    """Regression (15-10-2026): on 5 of 28 committed states (e.g. main 06142f05, 077fbcfc, dbf996a0, 73b04296,
+    607d4d83) the engine and the dashboard disagreed by 0.1 mm on a GEOS-CF window sum near a .x5 boundary, because
+    Python summed with compensation and rounded half-even while the browser summed naively and rounded half up.
+    Both now use the same IEEE-754 operations, so the results must be identical, not merely within a tolerance."""
+
+    @unittest.skipUnless(NODE, "node not installed")
+    def test_window_sums_are_bit_identical_near_half_tenths(self):
+        import random
+        rng = random.Random(20261015)
+        at = datetime(2026, 10, 15, 0, 0, tzinfo=timezone.utc)
+        series = [[0.05] + [0.0] * 23, [0.1, 0.2, 0.15] + [0.0] * 21, [0.35, 0.1] + [0.0] * 22]
+        series += [[round(rng.random() * rng.choice((0.05, 0.3, 2.0)), rng.choice((2, 3, 6))) for _ in range(24)] for _ in range(400)]
+        cases = []
+        for vals in series:
+            geos = dict(status="CALCULADO", dataset_time_start=(at - timedelta(hours=1)).isoformat(),
+                        hourly=[dict(valid_time_utc=(at + timedelta(hours=i)).isoformat(), precip_mm=v) for i, v in enumerate(vals)])
+            cases.append(dict(zone_id="synthetic", at=at.isoformat(), avisos=[], imerg=dict(windows={}), goes19=dict(status="NO_DISPONIBLE"),
+                              percentile=dict(status="NO_DISPONIBLE"), geos_cf=geos))
+        js = subprocess.run([NODE, "-e", shared_js() + RUNNER], input=json.dumps(dict(cases=cases, freshness=E.FRESHNESS)),
+                            capture_output=True, text=True, check=True, timeout=60)
+        for c, j in zip(cases, json.loads(js.stdout)):
+            g = E.geos_windows_at(c["geos_cf"], at)
+            for k in ("6h", "24h"):
+                self.assertEqual(g["windows"][k]["accum_mm"], j["geos"]["windows"][k]["accum_mm"], (k, c["geos_cf"]["hourly"][:6]))
+        self.assertEqual(E.sum_tenths([0.05]), 0.1)
+        self.assertEqual(E.sum_tenths([]), 0.0)
+
+
 if __name__ == "__main__":
     unittest.main()

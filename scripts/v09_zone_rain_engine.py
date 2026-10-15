@@ -36,6 +36,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import re
 import sys
 from datetime import datetime, timedelta, timezone
@@ -249,6 +250,16 @@ def goes_usable_at(goes: dict, at: datetime) -> bool:
     return goes.get("status") == "CALCULADO" and bool(end) and at - end <= timedelta(minutes=FRESHNESS["goes_stale_after_min"])
 
 
+def sum_tenths(values) -> float:
+    """Sum left to right and round half up to 0.1 mm with the same IEEE-754 operations the dashboard uses
+    (``Math.floor(acc * 10 + 0.5) / 10`` after a plain ``reduce``). Python's ``sum()`` (compensated since 3.12) and
+    ``round()`` (half-even on the binary value) could land on the other side of a .x5 boundary than the browser."""
+    acc = 0.0
+    for v in values:
+        acc += v
+    return math.floor(acc * 10 + 0.5) / 10
+
+
 def geos_windows_at(geos: dict, at: datetime) -> dict:
     """Forecast sums for the next 6/24 h from ``at``. Only for a cycle no older than geos_max_cycle_age_h and only
     when every consecutive hour is in the cycle; otherwise NO_DISPONIBLE with the reason."""
@@ -267,7 +278,7 @@ def geos_windows_at(geos: dict, at: datetime) -> dict:
         seq = fut[:n]
         ok = (len(seq) == n and seq[0][0] - at < timedelta(hours=1) and all(v is not None for _, v in seq)
               and all(seq[i + 1][0] - seq[i][0] == timedelta(hours=1) for i in range(n - 1)))
-        out["windows"][name] = (dict(status="CALCULADO", accum_mm=round(sum(v for _, v in seq), 1), start_utc=seq[0][0].isoformat(),
+        out["windows"][name] = (dict(status="CALCULADO", accum_mm=sum_tenths(v for _, v in seq), start_utc=seq[0][0].isoformat(),
                                      end_utc=seq[-1][0].isoformat()) if ok else
                                 dict(status="NO_DISPONIBLE", reason=f"el ciclo no cubre {n} horas consecutivas desde la evaluación"))
     return out
