@@ -193,6 +193,59 @@ class EveryWorkflowThatCanReachSenamhi(unittest.TestCase):
                 self.assertNotIn(name, fb.TARGETS)
 
 
+NESTED_OR_MALFORMED = ("https://www.senamhi.gob.pe%252e/", "https://www.senamhi.gob.pe%25252e/x", "https://www.senamhi.gob.pe%00.example.org/",
+                       "https://www.senamhi.gob.pe%2500.example.org/")
+
+
+class NestedEncodingAndMalformedHosts(unittest.TestCase):
+    """QA 15-10: double-encoded dots and NUL-padded hosts were not classified as SENAMHI. No packet reached SENAMHI
+    (urllib's pre-connect guard or URL validation stopped them), but requests resolved the literal name
+    'www.senamhi.gob.pe%252e'. Now: percent-decoding to a fixed point, and a malformed host naming SENAMHI fails closed."""
+
+    def test_classified_as_senamhi(self):
+        for mod in (OUTCOME, PIURA):
+            for url in NESTED_OR_MALFORMED:
+                self.assertTrue(mod.is_senamhi_host(url), (mod.__name__, url))
+            for url in LEGITIMATE + ("https://cdn.www.gob.pe/uploads/document/file/4704868/Anexo_II_DU015_2023.pdf",
+                                     "https://www.gob.pe/institucion/vivienda/noticias/569204", "https://sigrid.cenepred.gob.pe/sigridv3/documento/3766/descargar"):
+                self.assertFalse(mod.is_senamhi_host(url), (mod.__name__, url))
+
+    def test_no_lookup_or_connection_for_any_spelling(self):
+        import socket
+
+        seen = []
+
+        def spy(host, *a, **k):
+            seen.append(str(host))
+            raise OSError("network disabled in test")
+
+        os.environ.pop("IRFEN_SENAMHI_DIRECT_ACCESS", None)
+        from urllib.request import Request
+        import http.client
+
+        no_proxy = {k: v for k, v in os.environ.items() if k.lower() not in ("http_proxy", "https_proxy", "all_proxy")}
+        with mock.patch.dict(os.environ, no_proxy, clear=True), mock.patch("socket.getaddrinfo", side_effect=spy), \
+                mock.patch("socket.create_connection", side_effect=lambda addr, *a, **k: spy(addr[0])), \
+                mock.patch.object(http.client.HTTPConnection, "set_tunnel", lambda c, host, *a, **k: spy(host)):
+            for url in NESTED_OR_MALFORMED:
+                with self.assertRaises(Exception):
+                    OUTCOME.urlopen(Request(url), timeout=5)
+        self.assertFalse([h for h in seen if "senamhi" in h.lower()], seen)
+
+    def test_piura_redirect_hook_refuses_every_spelling(self):
+        # The Piura collector only requests fixed GORE URLs; SENAMHI can only be reached through a redirect, which
+        # the response hook must refuse before requests follows the Location header.
+        resp = PIURA.requests.models.Response()
+        resp.url = "https://servicios.regionpiura.gob.pe/datos/x"
+        resp.status_code = 302
+        for url in NESTED_OR_MALFORMED:
+            resp.headers["Location"] = url
+            with self.assertRaises(PIURA.requests.exceptions.InvalidURL, msg=url):
+                PIURA.refuse_senamhi_redirect(resp)
+        resp.headers["Location"] = "https://servicios.regionpiura.gob.pe/datos/y"
+        PIURA.refuse_senamhi_redirect(resp)  # a legitimate hop is not refused
+
+
 if __name__ == "__main__":
     unittest.main()
 
