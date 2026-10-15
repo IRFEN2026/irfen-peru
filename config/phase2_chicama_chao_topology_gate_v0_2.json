@@ -1,0 +1,134 @@
+{
+  "schema_version": "0.2",
+  "lane": "IRFEN_CHICAMA_CHAO",
+  "status": "RESEARCH_ONLY_TOPOLOGY_GATE_PREPARED_EXACT_FREEZE_PENDING",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "map_publish_enabled": false,
+  "source_roles": {
+    "regional_subunit_polygons": {
+      "source_id": "MINAM-ZEE-LALIBERTAD-UH-L39",
+      "role": "REGIONAL_HYDROGRAPHIC_SUBUNIT_CANDIDATE_CONTEXT_ONLY",
+      "layer_url": "https://geoservidorperu.minam.gob.pe/arcgis/rest/services/ZEE_VISOR/05_CARACTERIZACI%C3%93N_TERRITORIAL_LA_LIBERTAD/MapServer/39",
+      "expected_geometry": "POLYGON",
+      "exact_feature_freeze_required": true,
+      "identity_adjudicated": false
+    },
+    "regional_hydrography_50k": {
+      "source_id": "GORE-LL-MINAM-ZEE-HYDROGRAPHY-50K-L5",
+      "role": "LOCAL_CHANNEL_GEOMETRY_CANDIDATE_CONTEXT_ONLY",
+      "exact_feature_freeze_required": true,
+      "identity_adjudicated": false,
+      "topology_adjudicated": false
+    },
+    "national_hydrography_100k": {
+      "source_id": "MINAM-SERVICIO-ACTIVACION-QUEBRADA-RED100K-L36",
+      "role": "NATIONAL_CHANNEL_CONTRAST_CONTEXT_ONLY",
+      "exact_feature_freeze_required": true,
+      "identity_adjudicated": false,
+      "topology_adjudicated": false
+    },
+    "ana_documentary_topology": {
+      "source_id": "ANA-RD-0560-2023-AAA-HCH",
+      "date": "2023-09-29",
+      "role": "DOCUMENTARY_TOPOLOGY_AND_FAJA_CONTEXT_ONLY",
+      "counts_as_channel_centerline": false,
+      "counts_as_subcatchment": false,
+      "counts_as_event_footprint": false
+    }
+  },
+  "chicama": {
+    "parent_context_code": "13772",
+    "parent_role": "BASIN_CONTEXT",
+    "named_subunit_candidates": [
+      "Cuenca Quirripano",
+      "Cuenca Santanero",
+      "Cuenca Ochape",
+      "Cuenca Chuquillanqui",
+      "Cuenca Huancay"
+    ],
+    "intercuenca_candidates": [
+      "Intercuenca Chicama 137721",
+      "Intercuenca Chicama 137723",
+      "Intercuenca Chicama 137725",
+      "Intercuenca Chicama 137727"
+    ],
+    "exposure_nodes": {
+      "Cartavio": "EXPOSURE_NODE_NOT_BASIN",
+      "Santiago de Cao": "EXPOSURE_NODE_NOT_BASIN"
+    },
+    "named_tributary_routing_resolved": false,
+    "child_outlets_resolved": false,
+    "map_eligible_children": []
+  },
+  "chao": {
+    "parent_context_code": "137712",
+    "parent_role": "REGIONAL_CONTEXT",
+    "regional_polygon_candidates": [
+      "Cuenca Chao",
+      "Cuenca Tucumaca",
+      "Cuenca Tutumo",
+      "Unidad Hidrografica 137711"
+    ],
+    "channel_candidates": [
+      "Chorobal",
+      "Tutumo",
+      "Tucumaca"
+    ],
+    "documentary_relationships": [
+      {
+        "subject": "Tutumo",
+        "relation": "DERIVATION_FROM",
+        "object": "Chorobal",
+        "source_id": "ANA-RD-0560-2023-AAA-HCH",
+        "geometry_proof": false
+      },
+      {
+        "subject": "Tucumaca",
+        "relation": "TRIBUTARY_TO",
+        "object": "Chorobal",
+        "source_id": "ANA-RD-0560-2023-AAA-HCH",
+        "geometry_proof": false
+      },
+      {
+        "subject": "Huancaybito",
+        "relation": "WITHIN_FAJA_CONTEXT_OF",
+        "object": "Chorobal",
+        "source_id": "ANA-RD-0560-2023-AAA-HCH",
+        "geometry_proof": false
+      }
+    ],
+    "chorobal_standalone_basin_promotion_forbidden": true,
+    "chorobal_outlet_resolved": false,
+    "local_pluvial_drainage_separate": true,
+    "map_eligible_children": []
+  },
+  "acceptance_gate": {
+    "exact_source_features_frozen": false,
+    "source_hashes_recorded": false,
+    "parent_containment_qa_complete": false,
+    "line_continuity_qa_complete": false,
+    "confluence_qa_complete": false,
+    "outlet_qa_complete": false,
+    "regional_vs_national_contrast_complete": false,
+    "same_name_is_identity": false,
+    "nearest_feature_auto_selection": false,
+    "longest_feature_auto_selection": false,
+    "faja_is_channel_centerline": false,
+    "faja_is_subcatchment": false,
+    "faja_is_event_footprint": false,
+    "polygon_is_event_footprint": false,
+    "line_is_subcatchment": false,
+    "absence_is_negative": false,
+    "works_imply_capacity": false,
+    "map_publication_allowed": false
+  },
+  "next_safe_action": "Freeze exact regional polygon and 50k/100k channel candidates with immutable hashes, then run parent-containment, continuity, confluence and outlet QA before any child map promotion."
+}
