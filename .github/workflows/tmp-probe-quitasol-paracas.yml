@@ -1,0 +1,35 @@
+name: TEMPORARY probe ANA AAVI retry (Quitasol, Paracas) - one attempt each, removed after one run
+on:
+  push:
+    branches: [probe/pisco-quitasol-paracas-ana-20261014]
+    paths: [.github/workflows/tmp-probe-quitasol-paracas.yml]
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: One request per committed contract (curl, IPv4, 90 s), raw bytes + SHA-256, nothing accepted
+        run: |
+          set -u
+          d=data/phase2/source_archive/pisco_quitasol_paracas_ana_probe/retry_20261015; mkdir -p "$d"
+          base="https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query"
+          : > "$d/record.tsv"
+          for name in Quitasol Paracas; do
+            out="$d/${name,,}_contract_exact.geojson"
+            code=$(curl -4 -sS -m 90 -o "$out" -w '%{http_code}' -G "$base" \
+              --data-urlencode "where=NOMBRE_CA='${name}'" \
+              --data-urlencode "outFields=CODIGO_CA,NOMBRE_CA,TIPO_CA,LONG_KM,NOMBRE_UH,CODIGO_UH,NOMBRE_AAA" \
+              --data-urlencode "returnGeometry=true" --data-urlencode "outSR=4326" --data-urlencode "f=geojson" 2>"$d/${name,,}.stderr") || true
+            sha=$( [ -s "$out" ] && sha256sum "$out" | cut -d' ' -f1 || echo none)
+            printf '%s\t%s\t%s\t%s\t%s\n' "$(date -u +%FT%TZ)" "$name" "$code" "$sha" "$(head -c 300 "$d/${name,,}.stderr" | tr '\n\t' '  ')" >> "$d/record.tsv"
+            [ -s "$out" ] || rm -f "$out"
+          done
+          cat "$d/record.tsv"
+          for f in "$d"/*.geojson; do [ -f "$f" ] && python3 -c "import json,sys; d=json.load(open(sys.argv[1])); print(sys.argv[1], len(d.get('features',[])), [f.get('properties') for f in d.get('features',[])][:10], d.get('error'))" "$f"; done || true
+      - run: |
+          git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/phase2/source_archive/pisco_quitasol_paracas_ana_probe
+          git commit -q -m "Probe retry 15-10: ANA AAVI Quitasol/Paracas, one request each (raw + SHA-256; nothing accepted)" && git push -q || echo nothing
