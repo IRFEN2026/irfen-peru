@@ -166,8 +166,13 @@ def main() -> int:
         "deployment_status": "RESEARCH_ONLY",
         "test_mode": "TEST_ONLY",
         "production_use": False,
+        "production_ready": False,
         "operational_alerting_enabled": False,
         "activation_gate": "BLOCKED",
+        "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+        "decision_thresholds": None,
+        "hydraulic_factors": None,
+        "map_publication_enabled": False,
         "bitstreams": {},
         "mirrors": {},
     }
