@@ -1,0 +1,53 @@
+{
+  "version": "independent-basin-validation-v1",
+  "status": "RESEARCH_ONLY",
+  "test_only": true,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "relationship_to_v08": {
+    "modifies_v08_contract": false,
+    "modifies_scorecard": false,
+    "modifies_release": false,
+    "modifies_thresholds": false,
+    "modifies_event_none_labels": false,
+    "modifies_bias_correction": false,
+    "counts_toward_closeout": false
+  },
+  "research_states": ["REMOTE_EVENT_CANDIDATE", "REMOTE_NONE_CANDIDATE", "INSUFFICIENT_EVIDENCE", "CONFLICTING_EVIDENCE"],
+  "canonical_labels_forbidden": ["EVENT", "NONE"],
+  "evidence_levels": {
+    "E0": ["rainfall"],
+    "E1": ["rainfall", "basin_susceptibility"],
+    "E2": ["rainfall", "basin_susceptibility", "antecedent_moisture"],
+    "E3": ["rainfall", "basin_susceptibility", "antecedent_moisture", "post_event_remote_sensing"],
+    "E4": ["rainfall", "basin_susceptibility", "antecedent_moisture", "post_event_remote_sensing", "independent_territorial_evidence"],
+    "E5": ["rainfall", "basin_susceptibility", "antecedent_moisture", "post_event_remote_sensing", "independent_territorial_evidence", "instrumental_or_local_observation"],
+    "E6": ["rainfall", "basin_susceptibility", "antecedent_moisture", "post_event_remote_sensing", "independent_territorial_evidence", "instrumental_or_local_observation", "complete_institutional_validation"]
+  },
+  "phase_a": {
+    "priority_units": ["cashahuacra", "shingolay"],
+    "reference_only_units": ["san_ildefonso", "huaycoloro", "catacaos"],
+    "blocked_inventory_units": ["santa_eulalia", "rimac", "chillon", "lurin", "punta_hermosa", "mala", "canete"],
+    "blocked_reason": "No defensible hydrologic basin polygon is materialized in current main; territorial/faja/contract geometry is not silently promoted to a basin."
+  },
+  "data_contract": {
+    "imerg": {"preferred_version": "V07", "record_start": "2000-06-01", "resolution": "0.1deg/30min", "final_for_research": true, "early_for_latency_tests": true},
+    "smap": {"preferred_product": "SPL3SMP_E", "version": "6", "record_start": "2015-03-31", "resolution": "9km/daily"},
+    "sentinel1": {"operational_archive_start": "2014-10-03", "role": "pre_post_SAR_change"},
+    "sentinel2": {"systematic_supply_start": "2015-12-03", "role": "optical_change_when_cloud_permits"},
+    "dem": {"product": "Copernicus DEM GLO-30", "resolution": "30m", "role": "morphometry; DSM caveat applies"}
+  },
+  "modeling": {
+    "phase_a_models": ["logistic_regression"],
+    "later_required": ["random_forest", "gradient_boosting", "hierarchical_bayesian"],
+    "automatic_scientific_classification_forbidden": true,
+    "probability_output_required": true,
+    "uncertainty_required_for_claims": true
+  },
+  "negative_control_rule": {
+    "research_label_only": "REMOTE_NONE_CANDIDATE",
+    "requires": ["significant_rain", "known_antecedent_moisture", "pre_post_satellite", "no_relevant_change", "sufficient_territorial_sources", "defensible_absence_of_impact"],
+    "absence_of_news_is_none": false
+  }
+}
