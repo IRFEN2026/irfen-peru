@@ -221,5 +221,34 @@ class TrailingDotAndChains(unittest.TestCase):
         self.assert_no_senamhi()
 
 
+NESTED_OR_MALFORMED = ("https://www.senamhi.gob.pe%252e/", "https://www.senamhi.gob.pe%25252e/x", "https://www.senamhi.gob.pe%00.example.org/",
+                       "https://www.senamhi.gob.pe%2500.example.org/")
+
+
+class NestedEncodingAndMalformedHosts(TrailingDotAndChains):
+    """QA 15-10: double-encoded dots and NUL-padded hosts were not classified as SENAMHI and the capture resolved the
+    literal names (no SENAMHI server was contacted, but the policy is 'no lookup of a SENAMHI name')."""
+
+    def test_classified_as_senamhi_and_legitimate_sources_allowed(self):
+        for url in NESTED_OR_MALFORMED:
+            self.assertTrue(M.is_senamhi_host(url), url)
+        for url in LEGITIMATE + ("https://cdn.www.gob.pe/uploads/document/file/4704868/Anexo_II_DU015_2023.pdf",
+                                 "https://portal.indeci.gob.pe/wp-content/uploads/2024/01/REPORTE.pdf"):
+            self.assertFalse(M.is_senamhi_host(url), url)
+
+    def test_direct_and_chained_requests_never_resolve_a_senamhi_name(self):
+        for target in NESTED_OR_MALFORMED:
+            with self.guarded():
+                data, meta = M.http_get(target, 5, 10_000)
+            self.assertIsNone(data)
+            self.assertEqual((meta.get("error"), meta["attempts"]), ("SENAMHI_HOST_NOT_QUERIED_POLICY", 0), target)
+            self.assert_no_senamhi()
+            self.srv.final_target = target
+            with self.guarded():
+                data, meta = M.http_get(self.base + "/a", 5, 10_000)
+            self.assertEqual(meta.get("error"), "REDIRECT_TO_SENAMHI_REFUSED_POLICY", (target, meta))
+            self.assert_no_senamhi()
+
+
 if __name__ == "__main__":
     unittest.main()

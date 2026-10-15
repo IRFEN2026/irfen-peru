@@ -827,7 +827,13 @@ def normalize_host(host: str | None) -> str:
     "www.senamhi.gob.pe" for DNS and TLS)."""
     from urllib.parse import unquote
 
-    h = _UNICODE_DOTS.sub(".", unquote(host or "")).strip().lower()
+    h = host or ""
+    for _ in range(5):  # nested encodings (%252e -> %2e -> .) are decoded to a fixed point
+        decoded = unquote(h)
+        if decoded == h:
+            break
+        h = decoded
+    h = _UNICODE_DOTS.sub(".", h).strip().lower()
     try:
         h = ".".join(label.encode("idna").decode("ascii") if label and not label.isascii() else label for label in h.split("."))
     except UnicodeError:
@@ -854,6 +860,8 @@ def is_senamhi_host(url: str) -> bool:
         pass
     for h in hosts:
         h = normalize_host(h)
+        if "senamhi" in h and re.search(r"[^a-z0-9.\-]", h):
+            return True  # malformed host naming SENAMHI (control/percent characters left): fail closed
         if h == "senamhi.gob.pe" or h.endswith(".senamhi.gob.pe"):
             return True
     return False
