@@ -34,9 +34,10 @@ jobs:
           busy=""
           for wf in v09-own-model-train.yml v09-forecast-engine.yml; do
             for st in queued pending waiting requested; do
-              # si la API falla, se despacha igual (con aviso): perder el ciclo es peor que reemplazar una espera
+              # fail-closed: si la API falla no se sabe si hay un entrenamiento en espera, así que el ciclo se omite
+              # (un ciclo perdido se recupera en el siguiente; una espera reemplazada en silencio, no)
               n=$(gh run list --workflow "$wf" --status "$st" --limit 5 --json databaseId --jq 'length') || {
-                echo "::warning title=V09_FORECAST_TRIGGER::no se pudo consultar $wf:$st; se despacha igual"; n=0; }
+                echo "::warning title=V09_FORECAST_TRIGGER::no se pudo consultar $wf:$st; ciclo omitido"; n="API_ERROR"; }
               if [ "$n" != "0" ]; then busy="$busy $wf:$st"; fi
             done
           done
