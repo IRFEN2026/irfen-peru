@@ -1,0 +1,79 @@
+name: IRFEN - Chosica 2015 candidate Landsat 8 transport diagnostic
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_candidate_landsat8_transport_diagnostic_contract_v0_1.json
+      - scripts/diagnose_chosica_2015_candidate_landsat8_redirect.py
+      - .github/workflows/chosica-2015-candidate-landsat8-transport-diagnostic.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  redirect-diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_candidate_landsat8_transport_diagnostic_contract_v0_1.json
+            scripts/diagnose_chosica_2015_candidate_landsat8_redirect.py
+            .github/workflows/chosica-2015-candidate-landsat8-transport-diagnostic.yml
+      - name: Assert forbidden scientific paths absent
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_multibasin_validation_set_v0_1.json
+          test ! -e config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09_b.json
+      - name: Download exact frozen non-outcome inventory
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p sources artifacts
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/10172288298/zip" > /tmp/inventory.zip
+          unzip -q /tmp/inventory.zip -d sources
+          test "$(sha256sum sources/chosica_2015_candidate_landsat8_asset_inventory_v0_1.json | cut -d' ' -f1)" = "524e298aa313dffc0df2445e4f44cf7769c2fc0730d49bba7ff64cc8848b0659"
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install transport dependency only
+        run: pip install 'requests>=2.31,<3'
+      - name: Inspect redirect headers without reading bytes
+        run: |
+          set -euo pipefail
+          env -i PATH="$PATH" HOME=/tmp LANG=C.UTF-8 python -I scripts/diagnose_chosica_2015_candidate_landsat8_redirect.py \
+            --contract config/chosica_2015_candidate_landsat8_transport_diagnostic_contract_v0_1.json \
+            --inventory sources/chosica_2015_candidate_landsat8_asset_inventory_v0_1.json \
+            --output artifacts/chosica_2015_candidate_landsat8_transport_diagnostic_v0_1.json
+      - name: Enforce no body/no outcome boundary
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/chosica_2015_candidate_landsat8_transport_diagnostic_v0_1.json'))
+          assert d['status']=='PASS_TRANSPORT_REDIRECT_DIAGNOSTIC_HEADERS_ONLY'
+          assert d['response_body_read'] is False
+          assert d['redirect_followed'] is False
+          assert d['free_web_search_used'] is False
+          assert d['outcome_evidence_read'] is False
+          assert d['target_names_or_ids_read'] is False
+          assert d['a6680_read'] is False
+          assert d['contaminated_adjudication_used'] is False
+          assert d['scene_selection_modified'] is False
+          assert d['candidate_selection_modified'] is False
+          assert d['candidate_ranking_modified'] is False
+          assert d['qa_bits_or_thresholds_modified'] is False
+          assert d['control_labels_assigned'] is False
+          assert d['sealed_target_unblind_allowed'] is False
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-candidate-landsat8-transport-diagnostic
+          path: artifacts/chosica_2015_candidate_landsat8_transport_diagnostic_v0_1.json
+          if-no-files-found: error

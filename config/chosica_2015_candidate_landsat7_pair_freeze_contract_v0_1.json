@@ -1,0 +1,58 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PRE_EXECUTION_LANDSAT7_METADATA_ONLY_PAIR_SELECTION",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "availability_input": {
+    "workflow_run_id": 34548968563,
+    "artifact_id": 10180090979,
+    "file": "chosica_2015_candidate_landsat7_availability_mirror_v0_2.json",
+    "sha256": "32659a5d9201f793fb5fbb49af16d05580a8107124152b37cfe658ced1d6ea75",
+    "required_status": "PASS_CANDIDATE_ONLY_LANDSAT7_AVAILABILITY_TRANSPORT_MIRROR_METADATA_ONLY"
+  },
+  "event_anchor_utc": "2015-03-23T19:30:00Z",
+  "selection": {
+    "same_wrs_path_required": true,
+    "same_wrs_row_required": true,
+    "pre_before_anchor_required": true,
+    "post_at_or_after_anchor_required": true,
+    "sort_key": [
+      "sum_absolute_temporal_distance_to_anchor_seconds_ascending",
+      "maximum_temporal_distance_to_anchor_seconds_ascending",
+      "cloud_metadata_missing_rank_ascending",
+      "scene_cloud_cover_sum_ascending_when_both_present",
+      "pre_item_id_lexical",
+      "post_item_id_lexical"
+    ],
+    "one_pair_per_candidate": true,
+    "pair_replacement_after_pixel_read": false,
+    "surface_signal_used_for_selection": false
+  },
+  "expected": {
+    "candidate_count": 7,
+    "all_candidates_require_compatible_pair": true
+  },
+  "sensor_caution": {
+    "landsat7_slc_off": true,
+    "later_qa_must_treat_missing_or_fill_pixels_as_invalid": true,
+    "gap_imputation_allowed": false
+  },
+  "forbidden": [
+    "read asset hrefs or pixel bytes",
+    "read target names or outcomes",
+    "read A6680",
+    "read contaminated adjudication",
+    "use surface response for pair choice",
+    "change candidate matching or ranking",
+    "free web search",
+    "assign control labels"
+  ],
+  "sealed_target_unblind_allowed": false,
+  "next_gate": "FREEZE_REQUIRED_LANDSAT7_ASSET_METADATA_FOR_THE_FROZEN_PAIRS_BEFORE_ANY_PIXEL_READ"
+}

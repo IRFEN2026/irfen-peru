@@ -1,0 +1,62 @@
+name: IRFEN - Chosica 2015 candidate Landsat 8 transport mirror v2
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_candidate_landsat8_transport_mirror_contract_v0_2.json
+      - scripts/discover_chosica_2015_candidate_landsat8_transport_mirror_v2.py
+      - .github/workflows/chosica-2015-candidate-landsat8-transport-mirror-v2.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mirror-exact-items:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_candidate_landsat8_transport_mirror_contract_v0_2.json
+            scripts/discover_chosica_2015_candidate_landsat8_transport_mirror_v2.py
+            .github/workflows/chosica-2015-candidate-landsat8-transport-mirror-v2.yml
+      - name: Assert forbidden scientific paths absent
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_multibasin_validation_set_v0_1.json
+          test ! -e config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09_b.json
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install metadata dependency only
+        run: pip install 'requests>=2.31,<3'
+      - name: Resolve exact frozen USGS scenes on transport mirror
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          env -i PATH="$PATH" HOME=/tmp LANG=C.UTF-8 python -I scripts/discover_chosica_2015_candidate_landsat8_transport_mirror_v2.py \
+            --contract config/chosica_2015_candidate_landsat8_transport_mirror_contract_v0_2.json \
+            --output artifacts/chosica_2015_candidate_landsat8_transport_mirror_v0_2.json
+      - name: Enforce transport-only boundary
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/chosica_2015_candidate_landsat8_transport_mirror_v0_2.json'))
+          assert d['status']=='PASS_LANDSAT8_TRANSPORT_MIRROR_EXACT_ITEM_METADATA_ONLY'
+          assert d['mirror_role']=='TRANSPORT_ONLY_NOT_SCIENTIFIC_SOURCE'
+          assert d['item_count']==3
+          assert d['pixel_bytes_read'] is False and d['asset_href_requested'] is False
+          for k in ('outcome_evidence_read','target_names_or_ids_read','a6680_read','contaminated_adjudication_used','scene_selection_modified','candidate_selection_modified','candidate_ranking_modified','free_web_search_used','control_labels_assigned','sealed_target_unblind_allowed','asset_acceptance_authorized'):
+            assert d[k] is False
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: chosica-2015-candidate-landsat8-transport-mirror-v2
+          path: artifacts/chosica_2015_candidate_landsat8_transport_mirror_v0_2.json
+          if-no-files-found: warn

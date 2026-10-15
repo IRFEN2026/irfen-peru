@@ -1,0 +1,62 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_INFRASTRUCTURE_ONLY_INGEMMET_TLS_TRUST_RECOVERY",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "prerequisite": {
+    "tls_diagnostics_workflow_run_id": 34523837496,
+    "tls_diagnostics_artifact_id": 10170715620,
+    "tls_diagnostics_artifact_digest": "sha256:afc37609f6887e72fd727c5da69c0671f7bdaa79580a7be84c8d02ffa1ec6315",
+    "tls_diagnostics_output_sha256": "2e968829551a14b5f6d51364bfcc38a360ba799f7e01164193ff9e8eda4b421c",
+    "presented_leaf_pem_sha256": "179b91c4fb93b9af167a53ca4401c1b696d52cba4d4ea16b27b1f010aa6b1da0",
+    "leaf_subject": "C = PE, ST = Lima, O = \"Instituto Geologico, Minero y Metalurgico\", CN = *.ingemmet.gob.pe",
+    "leaf_issuer": "C = GB, O = Sectigo Limited, CN = Sectigo Public Server Authentication CA OV R36",
+    "aia_ca_issuers_uri": "http://crt.sectigo.com/SectigoPublicServerAuthenticationCAOVR36.crt",
+    "server_presented_certificate_count": 1,
+    "system_trust_verification_passed": false
+  },
+  "trust_recovery_policy": {
+    "exact_host": "geocatmin.ingemmet.gob.pe",
+    "exact_service_root": "https://geocatmin.ingemmet.gob.pe/arcgis/rest/services/SERV_PELIGROS_GEOLOGICOS/MapServer",
+    "system_ca_file": "/etc/ssl/certs/ca-certificates.crt",
+    "aia_transport": "HTTP_UNTRUSTED_TRANSPORT_ACCEPTABLE_ONLY_FOR_PUBLIC_CA_CERTIFICATE_BYTES_THAT_PASS_CRYPTOGRAPHIC_CHAIN_VERIFICATION",
+    "aia_exact_uri_only": true,
+    "aia_redirects_allowed": false,
+    "intermediate_must_verify_leaf_signature": true,
+    "intermediate_must_chain_to_system_trust_store": true,
+    "leaf_must_match_frozen_hash": true,
+    "leaf_hostname_verification_required": true,
+    "metadata_https_verification_required": true,
+    "disable_tls_verification_allowed": false
+  },
+  "allowed_after_chain_verification": [
+    "GET exact ArcGIS service metadata with f=pjson over verified HTTPS",
+    "GET numeric layer metadata with f=pjson over verified HTTPS",
+    "retain only layer ids, geometry type, query capability, record limit, safe field names/types and temporal hints"
+  ],
+  "forbidden": [
+    "feature queries",
+    "candidate territorial evidence read",
+    "persist raw HTTP bodies",
+    "persist layer names or descriptions",
+    "A6680",
+    "target outcomes or names",
+    "contaminated adjudication artifacts",
+    "search engines or free web search",
+    "curl -k or --insecure",
+    "verify=False or CERT_NONE",
+    "accepting an AIA certificate unless it cryptographically verifies the frozen leaf and chains to the system trust store"
+  ],
+  "scientific_state": {
+    "candidate_territorial_evidence_read": false,
+    "control_labels_assigned": false,
+    "sealed_target_unblind_allowed": false
+  },
+  "next_gate": "FREEZE_VERIFIED_INGEMMET_SERVICE_SCHEMA_THEN_BUILD_SEPARATE_CANDIDATE_BOUNDED_QUERY_MANIFEST_WITHOUT_EXECUTING_IT"
+}
