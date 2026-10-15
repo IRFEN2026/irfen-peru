@@ -40,6 +40,30 @@ def test_inventory_is_research_only_and_never_operational():
     assert leads[0]["unit_attribution"] == "HISTORICAL_CONTEXT_REQUIRES_ATTRIBUTION_CHECK"
     assert leads[0]["usable_as_confirmed_unit_event"] is False
 
+    # Quirio historical-table dates remain leads until unit attribution and
+    # original-source provenance are independently verified. Calendar dates
+    # in a regional table do not establish confirmed local events.
+    quirio = next(u for u in d["units"] if u["id"] == "lima_lurigancho_quirio")
+    assert quirio["verified_event_refs"] == []
+    historical_leads = [
+        lead for lead in quirio["unverified_event_leads"]
+        if lead["source_id"] == "IGP-IT-001-2023"
+    ]
+    assert historical_leads
+    assert all(
+        lead["unit_attribution"] == "REPORT_TABLE_UNVERIFIED_TERRITORIAL_CONTEXT_IN_MAIN"
+        and lead["source_text_verified"] is False
+        and lead["usable_as_confirmed_unit_event"] is False
+        for lead in historical_leads
+    )
+
+    # Media Luna's separately documented 2002 debris-flow event is not an
+    # IGP station-trigger record and must not be silently reattributed.
+    media_luna = next(u for u in d["units"] if u["id"] == "jicamarca_media_luna")
+    assert media_luna["verified_event_refs"] == [
+        "config/phase2_jicamarca_discovery_v0_1.json#/historical_evidence/0"
+    ]
+
     # IGP station triggers are instrumental observations, not confirmed
     # quebrada events, measured discharge, or collector overflow.
     for unit_id in ("lima_huaycoloro", "jicamarca_rio_seco"):
