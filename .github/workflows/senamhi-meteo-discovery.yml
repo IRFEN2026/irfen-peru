@@ -1,13 +1,9 @@
 name: IRFEN - Descubrir fuentes meteorológicas SENAMHI
 
 on:
+  # Owner decision 13-10-2026: no automated direct queries to SENAMHI hosts. Manual dispatch only
+  # (the push trigger fired on unrelated merges to main, e.g. site/data/latest.json).
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - .github/workflows/senamhi-meteo-discovery.yml
-      - scripts/discover_senamhi_meteo_sources.py
 
 permissions:
   contents: write
