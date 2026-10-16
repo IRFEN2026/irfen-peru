@@ -1,0 +1,86 @@
+{
+  "schema_version": "0.1",
+  "assessment_id": "santa_2011_chainage_label_adjudication_v0_1",
+  "status": "RESEARCH_ONLY_SOURCE_INTERNAL_CHAINAGE_CONTRADICTION_PRESERVED",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "target_component": "rio_santa_lower_reach_2011_axis",
+  "source": {
+    "institution": "Autoridad Nacional del Agua",
+    "title": "Tratamiento de cauce del rio para el control de inundaciones en la cuenca Santa",
+    "year": 2011,
+    "official_sigrid_pdf": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/14534_tratamiento-de-cauce-del-rio-para-el-control-de-inundaciones-en-la-cuenca-del-santa.pdf",
+    "printed_pages_reviewed": [
+      68,
+      69
+    ],
+    "normalized_source_path": "site/data/phase2/sources/ancash_santa_lower_reach_2011_normalization_v0_1.json"
+  },
+  "direct_source_observations": {
+    "prose_start": {
+      "chainage": "0+000",
+      "easting": 758969,
+      "northing": 9007565,
+      "source_location": "printed page 68, paragraph immediately above Figure 18"
+    },
+    "prose_end": {
+      "chainage": "50+000",
+      "easting": 788881,
+      "northing": 9038309,
+      "source_location": "printed page 68, paragraph immediately above Figure 18"
+    },
+    "table_title": "Cuadro 6. Coordenadas del eje del río Santa",
+    "table_first_row": {
+      "label": "1+000",
+      "easting": 758969,
+      "northing": 9007565
+    },
+    "table_penultimate_row": {
+      "label": "50+000",
+      "easting": 788372,
+      "northing": 9037490
+    },
+    "table_last_row": {
+      "label": "50+000",
+      "easting": 788881,
+      "northing": 9038309
+    },
+    "table_coordinate_record_count": 51
+  },
+  "adjudication": {
+    "contradiction_confirmed": true,
+    "start_coordinate_exactly_matches_prose_0_000_and_table_1_000": true,
+    "end_coordinate_exactly_matches_prose_50_000_and_last_table_50_000": true,
+    "duplicate_50_000_table_label_confirmed": true,
+    "expected_count_for_inclusive_kilometre_marks_0_through_50": 51,
+    "candidate_interpretation": "The table is internally consistent with a possible +1 km label shift from its first row through the penultimate row, while the final row matches the prose 50+000 endpoint. This is a source-error hypothesis only, not an authorized correction.",
+    "correction_applied": false,
+    "native_labels_preserved": true,
+    "corrected_chainages_emitted": false,
+    "transformed_geometry_emitted": false,
+    "map_publication_enabled": false
+  },
+  "scientific_policy": {
+    "source_internal_contradiction_must_remain_visible": true,
+    "silent_chainage_relabeling_forbidden": true,
+    "prose_endpoint_may_be_used_as_source_QA_control": true,
+    "table_rows_may_be_used_as_native_coordinate_controls": true,
+    "chainage_semantics_may_not_be_corrected_without_independent_corrobation": true,
+    "source_crs_datum_still_unresolved": true,
+    "hydraulic_capacity_inferred": false,
+    "event_footprint_created": false,
+    "threshold_created": false
+  },
+  "next_safe_gate": [
+    "Recover an original GIS/HEC-GeoRAS project, map sheet, cross-section ledger or another official Santa 2011 derivative that explicitly labels the 0+000 through 50+000 stations.",
+    "If an independent official artifact confirms the systematic one-kilometre label shift, publish a separate corrected chainage crosswalk while retaining the source-original labels unchanged.",
+    "Do not use the candidate correction to transform or publish map geometry before the CRS/datum gate is independently resolved."
+  ]
+}
