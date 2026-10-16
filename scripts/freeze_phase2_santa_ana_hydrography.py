@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
-from urllib.request import Request, urlopen
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 LAYER = "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0"
 WHERE = "UPPER(NOMBRE_CA) LIKE '%SANTA%' OR UPPER(NOMBRE_UH) LIKE '%SANTA%'"
@@ -27,6 +27,13 @@ GUARDS = {"deployment_status": "RESEARCH_ONLY", "test_mode": "TEST_ONLY",
           "operational_alerting_enabled": False, "activation_gate": "BLOCKED",
           "missing_data_rule": "UNKNOWN_NOT_LOW_RISK", "decision_thresholds": None,
           "hydraulic_factors": None, "map_publication_enabled": False}
+
+
+class RejectRedirects(HTTPRedirectHandler):
+    """Do not attribute redirected bytes to the declared ANA source."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
 
 
 def positions(geometry):
@@ -81,6 +88,7 @@ def freeze(raw, acquired_at):
     rows = inspect(raw)
     return {"schema_version": "0.1", "source": "ANA ONRH/Rios_Quebradas_AAVI MapServer/0",
             "source_url": URL, "retrieved_at_utc": acquired_at,
+            "source_redirect_policy": "REJECT_ALL_HTTP_REDIRECTS",
             "raw_response_sha256": hashlib.sha256(raw).hexdigest(),
             "raw_response_bytes": len(raw), "candidate_count": len(rows),
             "candidates": rows, "scientific_role": "CURRENT_ANA_HYDROGRAPHY_CONTEXT_CANDIDATES_ONLY",
@@ -103,6 +111,13 @@ class OfflineTests(unittest.TestCase):
         self.assertFalse(doc["production_use"])
         self.assertIsNone(doc["decision_thresholds"])
         self.assertFalse(doc["identity_adjudicated"])
+        self.assertEqual(doc["source_redirect_policy"], "REJECT_ALL_HTTP_REDIRECTS")
+
+    def test_redirect_is_rejected_offline(self):
+        # Synthetic redirect, not an assertion about the ANA service.
+        target = "https://example.invalid/not-the-ana-source"
+        self.assertIsNone(RejectRedirects().redirect_request(
+            Request(URL), None, 302, "Found", {"Location": target}, target))
 
     def test_rejects_unusable_responses(self):
         for obj in ({"error": {"code": 500}},
@@ -124,7 +139,7 @@ def main():
     request = Request(URL, headers={"User-Agent": "IRFEN-RESEARCH-ONLY/0.1",
                                     "Accept": "application/geo+json,application/json"})
     try:
-        with urlopen(request, timeout=90) as response:
+        with build_opener(RejectRedirects()).open(request, timeout=90) as response:
             raw = response.read(MAX_BYTES + 1)
         if len(raw) > MAX_BYTES:
             raise ValueError("response exceeds 8MB archive cap")
