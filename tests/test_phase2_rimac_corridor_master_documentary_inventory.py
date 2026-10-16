@@ -204,6 +204,37 @@ def test_no_outlet_tau_capacity_overflow_or_new_map_publication():
     ):
         assert semantics[key] is True
 
+    # Official SENACE road-chainage excerpts are unverified design leads,
+    # not geodetic outlets, built works, measured hydraulic capacity or
+    # evidence of a collector overflow. This augments an existing test node
+    # so the fixed pytest collection manifest needs no regeneration.
+    road = d["official_road_crossing_design_leads"]
+    assert road["source_text_verified"] is False
+    assert road["original_pdf_bytes_archived_in_this_contract"] is False
+    assert road["original_pdf_sha256"] is None
+    assert road["road_chainage_is_not_outlet_or_geodetic_coordinate"] is True
+    assert road["project_design_is_not_constructed_work_or_measured_hydraulic_capacity"] is True
+    assert road["no_alias_or_receiver_chain_adjudication"] is True
+    assert road["confirmed_unique_hydrologic_unit_count_increment"] == 0
+    assert road["documentary_row_count_increment"] == 0
+    assert road["candidates"]
+    inventory_ids = {u["id"] for u in d["units"]}
+    for crossing in road["candidates"]:
+        assert crossing["road_crossing_chainage_km_text"]
+        assert crossing["geometry_ref"] is None
+        assert crossing["outlet_coordinate"] is None
+        assert crossing["exact_confluence_coordinate"] is None
+        assert crossing["collector_connection_adjudication"] == "UNRESOLVED"
+        assert crossing["observed_event_evidence"] is None
+        assert crossing["measured_discharge"] is None
+        assert crossing["travel_time_tau"] is None
+        assert crossing["capacity_evidence"] is None
+        assert crossing["map_publishable"] is False
+        if crossing["existing_inventory_id"] is None:
+            assert crossing["status"].startswith("NEW_NAME_LEAD_NOT_COUNTED")
+        else:
+            assert crossing["existing_inventory_id"] in inventory_ids
+
     for unit in d["units"]:
         assert unit["map_publishable"] is False
         for field in (
