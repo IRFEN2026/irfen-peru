@@ -323,22 +323,49 @@
   function styles() {
     const s=document.createElement('style'); s.textContent=`
       .ti-shell{display:grid;gap:12px}.ti-banner{background:#eef5f9;border-left:5px solid #164e73;padding:14px;line-height:1.5}
-      .ti-grid{display:grid;grid-template-columns:340px 1fr;gap:14px}.ti-panel{background:white;border:1px solid var(--line,#d9e2ea);border-radius:12px;overflow:hidden}
+      .ti-grid{display:grid;grid-template-columns:300px minmax(0,1fr);gap:12px}.ti-panel{background:white;border:1px solid var(--line,#d9e2ea);border-radius:12px;overflow:hidden}
       .ti-header{padding:12px 14px;border-bottom:1px solid var(--line,#d9e2ea)}.ti-header h2,.ti-header h3{margin:0 0 6px}
       .ti-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.ti-tools input,.ti-tools select{max-width:100%;min-height:36px}
       #ti-list{max-height:700px;overflow:auto}.ti-row{display:block;width:100%;border:0;border-bottom:1px solid #e2e8ed;background:white;text-align:left;padding:12px;cursor:pointer;white-space:normal}
       .ti-row:hover,.ti-row[aria-current=true]{background:#edf6fc}.ti-row b{display:block;font-size:13px}.ti-row small{display:block;font-size:11px;color:#536776;line-height:1.4;margin-top:4px}
-      #ti-map{height:520px}.ti-note{font-size:12px;line-height:1.5;color:#486173}.ti-status{background:#f3f6f8;padding:10px;font-size:12px;line-height:1.6}
+      #ti-map{height:clamp(540px,74vh,860px)}.ti-note{font-size:12px;line-height:1.5;color:#486173}.ti-status{background:#f3f6f8;padding:10px;font-size:12px;line-height:1.6}
       .ti-badge{display:inline-block;background:#edf1f4;color:#354c5d;border-radius:5px;padding:3px 6px;font-size:11px;margin:3px 4px 3px 0}
       .ti-detail{padding:14px;line-height:1.5}.ti-detail h3{margin:0 0 6px}.ti-detail dl{display:grid;grid-template-columns:130px 1fr;gap:6px;font-size:12px}.ti-detail dt{font-weight:bold}.ti-detail dd{margin:0;overflow-wrap:anywhere}
       .ti-feature-list{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}.ti-feature-list button{font-size:11px;padding:5px 7px}
       .ti-error{color:#783f00;background:#fff1d8;padding:9px}.ti-legend{padding:10px;font-size:12px;line-height:1.5}.ti-legend span{margin-right:16px}
       .ti-popup{font-size:12px;line-height:1.45;max-width:290px}.ti-label{font-size:11px;font-weight:bold}
+      .ti-banner{padding:10px 14px;line-height:1.45;font-size:13px}.ti-banner-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+      .ti-flag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:4px;border:1px solid #164e73;color:#164e73;background:#fff}
+      .ti-flag-muted{border-color:#9fb4c3;color:#3f5869;font-weight:600;letter-spacing:0}
+      .ti-help{font-size:12px;color:#3f5869}.ti-help summary{cursor:pointer;color:#164e73;font-weight:600;margin-top:6px}.ti-help p{margin:6px 0 0}
+      .ti-shell>.ti-tools button{min-height:32px;padding:0 12px;border:1px solid #c9d5de;border-radius:8px;background:#fff;color:#1d2f3c;font-size:12px;font-weight:600;cursor:pointer}
+      .ti-shell>.ti-tools button:hover{background:#f1f6f9;border-color:#9fb4c3}
+      .ti-context{border:1px solid var(--line,#d9e2ea);border-radius:10px;background:#fff}
+      .ti-context>summary{cursor:pointer;padding:9px 14px;font-size:13px;font-weight:600;color:#1d2f3c}
+      .ti-context[open]>summary{border-bottom:1px solid var(--line,#d9e2ea)}.ti-context .ti-status,.ti-context #ti-recent{background:transparent}
+      .ti-maphead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:9px 14px;border-bottom:1px solid var(--line,#d9e2ea)}
+      .ti-maphead h3{margin:0;font-size:15px}.ti-maphead .ti-note{font-size:11px}
+      .ti-mapwrap{position:relative}
+      .ti-mapctl{position:absolute;top:10px;left:54px;z-index:1001}
+      .ti-ctlbtn{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 10px;background:#fff;color:#1d2f3c;border:1px solid #c9d5de;border-radius:8px;box-shadow:0 1px 4px rgba(12,45,65,.18);font:600 12px/1 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;cursor:pointer}
+      .ti-ctlbtn:hover,.ti-ctlbtn[aria-expanded=true]{background:#f1f6f9;border-color:#9fb4c3}
+      .ti-ctlbtn:focus-visible,.ti-x:focus-visible{outline:2px solid #1f63b8;outline-offset:2px}
+      .ti-count{padding:2px 7px;border-radius:999px;background:#e6f0f6;color:#164e73;font-size:10px;font-weight:700}
+      .ti-drawer{position:absolute;top:48px;left:54px;z-index:1001;width:290px;max-width:calc(100% - 70px);max-height:calc(100% - 64px);overflow:auto;background:#fff;border:1px solid #c9d5de;border-radius:10px;box-shadow:0 6px 20px rgba(12,45,65,.18);padding:10px 12px;font-size:12px}
+      .ti-drawer[hidden]{display:none}
+      .ti-drawer-head{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e2e9ee;padding-bottom:6px;margin-bottom:6px}
+      .ti-x{border:0;background:transparent;font-size:18px;line-height:1;color:#53687a;cursor:pointer;padding:0 2px}
+      .ti-drawer-actions{display:flex;gap:6px;margin:4px 0 6px}.ti-drawer-actions button{font-size:11px;padding:3px 8px;border:1px solid #c9d5de;border-radius:6px;background:#f7fafc;cursor:pointer}
+      .ti-layergroup{margin:8px 0 2px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#6d7f8c}
+      .ti-layerlist label{display:flex;align-items:center;gap:8px;padding:4px 2px;cursor:pointer;line-height:1.3}
+      .ti-layerlist input{margin:0}
+      .ti-drawer .ti-legend{padding:6px 0 0;font-size:11px}.ti-drawer .ti-legend span{display:flex;align-items:center;gap:6px;margin:2px 0}
+      .ti-mapbar{font-size:11px;line-height:1.5;padding:6px 14px;border-top:1px solid var(--line,#d9e2ea)}
       .ti-recent{background:#f3f6f8;padding:10px;font-size:12px;line-height:1.5}.ti-recent h3{margin:0 0 8px;font-size:13px}
       .ti-recent-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
       .ti-recent-card{display:block;width:100%;text-align:left;white-space:normal;cursor:pointer;background:white;color:inherit;border:1px solid var(--line,#d9e2ea);border-radius:8px;padding:10px}
       .ti-recent-card:hover,.ti-recent-card[aria-current=true]{background:#edf6fc}.ti-recent-card b{display:block;font-size:13px}.ti-recent-card small{display:block;font-size:11px;color:#536776;line-height:1.4;margin-top:4px}
-      @media(max-width:1000px){.ti-grid{grid-template-columns:1fr}#ti-list{max-height:300px}#ti-map{height:420px}.ti-recent-grid{grid-template-columns:1fr}}
+      @media(max-width:1000px){.ti-grid{grid-template-columns:1fr}#ti-list{max-height:300px}#ti-map{height:68vh;min-height:420px}.ti-grid>.ti-panel:last-child{order:-1}.ti-recent-grid{grid-template-columns:1fr}.ti-drawer{width:auto;right:10px}}
     `;document.head.appendChild(s);
   }
   function setup() {
@@ -347,15 +374,23 @@
     styles();
     const tab=document.createElement('div');tab.className='tab';tab.dataset.tab='territorial-inventory';tab.textContent='Mapa e inventario';tabs.prepend(tab);
     const section=document.createElement('section');section.id='territorial-inventory';section.className='section';
-    section.innerHTML=`<div class="ti-shell"><div class="ti-banner"><b>Inventario territorial completo · IRFEN v0.8</b><br>
-      Aquí aparecen los candidatos definidos, las subunidades de muestreo y las capas de los pilotos. Mostrar una geometría no exige que esté habilitada para NASA, pero sí una fuente cartográfica admisible.
-      <br><b>RESEARCH / TEST MODE.</b> Cuencas, quebradas/cauces locales, ríos colectores y nodos se dibujan en capas separadas; las fajas marginales, obras/tramos críticos y ámbitos documentales se identifican aparte. No son mapas de riesgo ni alertas.</div>
+    section.innerHTML=`<div class="ti-shell"><div class="ti-banner"><div class="ti-banner-row"><b>Inventario territorial completo · IRFEN v0.8</b><span class="ti-flag">RESEARCH_ONLY</span><span class="ti-flag">TEST_ONLY</span><span class="ti-flag ti-flag-muted">No es un mapa de riesgo ni de alertas</span></div>
+      <details class="ti-help"><summary>Qué muestra este mapa</summary><p>Aquí aparecen los candidatos definidos, las subunidades de muestreo y las capas de los pilotos. Mostrar una geometría no exige que esté habilitada para NASA, pero sí una fuente cartográfica admisible.</p>
+      <p><b>RESEARCH / TEST MODE.</b> Cuencas, quebradas/cauces locales, ríos colectores y nodos se dibujan en capas separadas; las fajas marginales, obras/tramos críticos y ámbitos documentales se identifican aparte. No son mapas de riesgo ni alertas.</p></details></div>
       <div class="ti-tools"><button id="ti-refresh">Actualizar inventario</button><button id="ti-all">Encuadrar capas visibles</button><button id="ti-monitor">Ir al monitoreo NASA</button><button id="ti-recent-btn">Ver avances recientes</button><span class="ti-note" id="ti-time"></span></div>
+      <details class="ti-context" id="ti-context"><summary>Resumen del inventario y avances recientes</summary>
       <div id="ti-summary" class="ti-status" role="status">Cargando catálogos…</div>
-      <div id="ti-recent" class="ti-recent" aria-label="Avances integrados recientemente"></div>
+      <div id="ti-recent" class="ti-recent" aria-label="Avances integrados recientemente"></div></details>
       <div class="ti-grid"><div class="ti-panel"><div class="ti-header"><h3>Buscar zona o capa</h3><div class="ti-tools"><input id="ti-search" type="search" aria-label="Buscar candidato o capa" placeholder="Malanche, Huaycoloro, Catacaos…"><select id="ti-filter" aria-label="Filtrar inventario"><option value="all">Todo el inventario</option><option value="candidate">Candidatos Phase-2</option><option value="recent">Avances recientes</option><option value="discovery">Discovery norte-costera</option><option value="monitored">Subunidades de muestreo</option><option value="technical">Capas de los pilotos v0.8</option><option value="withheld">Retenidas: colectores, nodos y unidades sin geometría</option><option value="pending">Sin geometría representable</option></select></div><p class="ti-note">Seleccionar una ficha muestra sus fuentes y pendientes, aunque aún no tenga contorno.</p></div><div id="ti-list"></div></div>
-      <div class="ti-panel"><div class="ti-header"><h3>Geometrías documentadas</h3><div class="ti-tools" id="ti-layer-toggles"><label><input type="checkbox" data-ti-layer="monitored" checked> Muestreo NASA</label><label><input type="checkbox" data-ti-layer="catchment" checked> A · Cuencas / subcuencas</label><label><input type="checkbox" data-ti-layer="local_channel" checked> B · Quebradas / cauces locales</label><label><input type="checkbox" data-ti-layer="collector" checked> C · Ríos colectores</label><label><input type="checkbox" data-ti-layer="node" checked> D · Outlets / confluencias / nodos</label><label><input type="checkbox" data-ti-layer="faja" checked> Fajas marginales</label><label><input type="checkbox" data-ti-layer="works" checked> Obras / tramos críticos</label><label><input type="checkbox" data-ti-layer="document" checked> Ámbitos documentales</label></div></div><div id="ti-map"></div>
-      <div class="ti-legend" id="ti-legend">Los colores identifican tipos de entidad, NO niveles de riesgo. No se crean marcadores para suplir geometrías faltantes.</div><div id="ti-map-status" class="ti-status"></div><div id="ti-detail" class="ti-detail">Selecciona una zona para ver sus características, fuentes y motivo de los pendientes.</div></div></div></div>`;
+      <div class="ti-panel"><div class="ti-maphead"><h3>Geometrías documentadas</h3><span class="ti-note">Colores = tipo de entidad, no nivel de riesgo</span></div>
+      <div class="ti-mapwrap"><div id="ti-map"></div>
+      <div class="ti-mapctl"><button type="button" class="ti-ctlbtn" id="ti-layers-btn" aria-expanded="false" aria-controls="ti-layers-panel">Capas <span class="ti-count" id="ti-layers-count">8/8</span></button></div>
+      <div class="ti-drawer" id="ti-layers-panel" role="dialog" aria-label="Capas geométricas y documentales" hidden>
+      <div class="ti-drawer-head"><b>Capas</b><button type="button" class="ti-x" id="ti-layers-close" aria-label="Cerrar">×</button></div>
+      <div class="ti-drawer-actions"><button type="button" data-ti-all-layers="on">Todas</button><button type="button" data-ti-all-layers="off">Ninguna</button></div>
+      <div class="ti-layerlist" id="ti-layer-toggles"><div class="ti-layergroup">Geometrías</div><label><input type="checkbox" data-ti-layer="monitored" checked> Muestreo NASA</label><label><input type="checkbox" data-ti-layer="catchment" checked> A · Cuencas / subcuencas</label><label><input type="checkbox" data-ti-layer="local_channel" checked> B · Quebradas / cauces locales</label><label><input type="checkbox" data-ti-layer="collector" checked> C · Ríos colectores</label><label><input type="checkbox" data-ti-layer="node" checked> D · Outlets / confluencias / nodos</label><div class="ti-layergroup">Contexto documental</div><label><input type="checkbox" data-ti-layer="faja" checked> Fajas marginales</label><label><input type="checkbox" data-ti-layer="works" checked> Obras / tramos críticos</label><label><input type="checkbox" data-ti-layer="document" checked> Ámbitos documentales</label></div>
+      <details class="ti-help" open><summary>Leyenda</summary><div class="ti-legend" id="ti-legend">Los colores identifican tipos de entidad, NO niveles de riesgo. No se crean marcadores para suplir geometrías faltantes.</div></details>
+      </div></div><div id="ti-map-status" class="ti-status ti-mapbar"></div><div id="ti-detail" class="ti-detail">Selecciona una zona para ver sus características, fuentes y motivo de los pendientes.</div></div></div></div>`;
     first.before(section);
     function activate() {
       document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===tab));
@@ -375,6 +410,21 @@
     document.getElementById('ti-detail').addEventListener('click',e=>{const b=e.target.closest('[data-ti-feature]');if(b){const f=state.features.get(b.dataset.tiFeature);if(f&&state.map){state.map.fitBounds(f.layer.getBounds().pad(.12),{maxZoom:16});f.layer.openPopup();}}});
     const selectedSection = section;
     selectedSection.querySelectorAll('[data-ti-layer]').forEach(input=>input.addEventListener('change',applyVisibility));
+    // Panel «Capas»: cerrado por defecto; solo agrupa los mismos interruptores (presentación).
+    const layersBtn=document.getElementById('ti-layers-btn'),layersPanel=document.getElementById('ti-layers-panel');
+    const layerInputs=[...selectedSection.querySelectorAll('[data-ti-layer]')];
+    const updateLayerCount=()=>{document.getElementById('ti-layers-count').textContent=layerInputs.filter(i=>i.checked).length+'/'+layerInputs.length;};
+    const setLayersOpen=open=>{layersPanel.hidden=!open;layersBtn.setAttribute('aria-expanded',String(open));
+      if(open)layersPanel.dispatchEvent(new CustomEvent('irfen:map-panel-open',{bubbles:true}));};
+    document.addEventListener('irfen:map-panel-open',e=>{if(!layersPanel.contains(e.target)&&!layersPanel.hidden)setLayersOpen(false);});
+    layersBtn.addEventListener('click',()=>setLayersOpen(layersPanel.hidden));
+    document.getElementById('ti-layers-close').addEventListener('click',()=>{setLayersOpen(false);layersBtn.focus();});
+    layersPanel.addEventListener('keydown',e=>{if(e.key==='Escape'){setLayersOpen(false);layersBtn.focus();}});
+    layerInputs.forEach(input=>input.addEventListener('change',updateLayerCount));
+    layersPanel.querySelectorAll('[data-ti-all-layers]').forEach(b=>b.addEventListener('click',()=>{
+      const on=b.dataset.tiAllLayers==='on';layerInputs.forEach(i=>{i.checked=on;});updateLayerCount();applyVisibility();}));
+    updateLayerCount();
+    document.getElementById('ti-recent-btn').addEventListener('click',()=>{document.getElementById('ti-context').open=true;});
     return true;
   }
   function categoryOn(kind) {const el=document.querySelector('[data-ti-layer="'+kind+'"]');return !!el&&el.checked;}
