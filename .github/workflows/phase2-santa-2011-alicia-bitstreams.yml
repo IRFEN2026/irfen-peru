@@ -1,0 +1,222 @@
+name: IRFEN - Phase2 Santa 2011 ALICIA bitstreams
+
+on:
+  pull_request:
+    paths:
+      - site/data/phase2/source_assessments/santa_2011_*.json
+      - scripts/freeze_phase2_santa_2011_alicia_bitstreams.py
+      - tests/test_phase2_santa_2011_*.py
+      - .github/workflows/phase2-santa-2011-alicia-bitstreams.yml
+  push:
+    branches:
+      - phase2/santa-2011-alicia-integration-v0-1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Santa 2011 contract tests (stdlib unittest)
+        run: python -m unittest discover -s tests -p 'test_phase2_santa_2011_*.py' -v
+
+  freeze-official-source-bytes:
+    # Network to ANA may be unavailable; that yields SOURCE_ACCESS_UNAVAILABLE,
+    # never a negative.  A size/MD5 mismatch fails the job (fail-closed).
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Freeze ANA ALICIA bitstreams (ORIGINAL PDF + extracted text)
+        run: |
+          pip install pypdf==3.17.4
+          python scripts/freeze_phase2_santa_2011_alicia_bitstreams.py --out santa_2011_alicia_freeze_receipt.json --timeout 60
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: santa-2011-alicia-freeze-receipt
+          path: santa_2011_alicia_freeze_receipt.json
+          if-no-files-found: warn
+
+  probe-ana-current-hydrography:
+    # Independent CURRENT ANA context only; never the 2011 model, datum or floodplain.
+    # One bounded network query; transient access failure remains UNKNOWN.
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Freeze Santa ANA current-hydrography candidate response and provenance
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import math
+          from datetime import datetime, timezone
+          from pathlib import Path
+          from urllib.error import HTTPError, URLError
+          from urllib.parse import urlencode
+          from urllib.request import Request, urlopen
+
+          root = Path("santa_ana_current_hydrography_probe")
+          root.mkdir(exist_ok=True)
+          endpoint = "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0/query"
+          where = "UPPER(NOMBRE_CA) LIKE '%SANTA%' OR UPPER(NOMBRE_UH) LIKE '%SANTA%'"
+          params = {
+              "where": where,
+              "outFields": "OBJECTID_1,CODIGO_CA,NOMBRE_CA,TIPO_CA,NOMBRE_UH,CODIGO_UH,LONG_KM",
+              "returnGeometry": "true",
+              "returnZ": "false",
+              "returnM": "false",
+              "outSR": "4326",
+              "f": "geojson",
+          }
+          url = endpoint + "?" + urlencode(params)
+          receipt = {
+              "schema_version": "0.1",
+              "source": "ANA ONRH/Rios_Quebradas_AAVI/MapServer/0",
+              "source_contract": "config/phase2_ana_national_hydrography_service_v0_1.json",
+              "query_url": url,
+              "retrieved_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+              "deployment_status": "RESEARCH_ONLY",
+              "test_mode": "TEST_ONLY",
+              "production_use": False,
+              "production_ready": False,
+              "operational_alerting_enabled": False,
+              "activation_gate": "BLOCKED",
+              "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+              "decision_thresholds": None,
+              "hydraulic_factors": None,
+              "map_publication_authorized": False,
+              "equivalent_to_ANA_2011_axis_or_model": False,
+              "candidate_name_query_is_not_identity_proof": True,
+              "response_status": "SOURCE_ACCESS_UNAVAILABLE",
+              "raw_sha256": None,
+          }
+
+          def positions(value):
+              if isinstance(value, list):
+                  if len(value) >= 2 and all(type(x) in (int, float) and math.isfinite(x) for x in value[:2]):
+                      yield float(value[0]), float(value[1])
+                  else:
+                      for item in value:
+                          yield from positions(item)
+
+          def validate(doc):
+              if not isinstance(doc, dict) or doc.get("type") != "FeatureCollection":
+                  raise ValueError("Not a GeoJSON FeatureCollection")
+              features = doc.get("features")
+              if not isinstance(features, list):
+                  raise ValueError("Missing feature list")
+              rows = []
+              for feature in features:
+                  if not isinstance(feature, dict) or feature.get("type") != "Feature":
+                      raise ValueError("Invalid feature")
+                  geom = feature.get("geometry")
+                  if not isinstance(geom, dict) or geom.get("type") not in ("LineString", "MultiLineString"):
+                      raise ValueError("Non-polyline feature")
+                  xy = list(positions(geom.get("coordinates")))
+                  if not xy or any(not (-180 <= x <= 180 and -90 <= y <= 90) for x, y in xy):
+                      raise ValueError("Missing/out-of-bounds coordinates")
+                  props = feature.get("properties")
+                  if not isinstance(props, dict):
+                      raise ValueError("Missing feature attributes")
+                  rows.append({
+                      "objectid": props.get("OBJECTID_1"),
+                      "codigo_ca": props.get("CODIGO_CA"),
+                      "nombre_ca": props.get("NOMBRE_CA"),
+                      "tipo_ca": props.get("TIPO_CA"),
+                      "nombre_uh": props.get("NOMBRE_UH"),
+                      "codigo_uh": props.get("CODIGO_UH"),
+                      "long_km": props.get("LONG_KM"),
+                      "geometry_type": geom["type"],
+                      "bbox_wgs84": [min(x for x, _ in xy), min(y for _, y in xy),
+                                     max(x for x, _ in xy), max(y for _, y in xy)],
+                  })
+              return rows
+
+          # Deterministic offline checks for the fail-closed validator.
+          fixture = {"type": "FeatureCollection", "features": [
+              {"type": "Feature", "properties": {"CODIGO_CA": "TEST"},
+               "geometry": {"type": "LineString", "coordinates": [[-78, -9], [-77, -8]]}}
+          ]}
+          assert len(validate(fixture)) == 1
+          for invalid in (
+              {"type": "FeatureCollection", "features": [{"type": "Feature",
+                "properties": {}, "geometry": {"type": "Polygon", "coordinates": []}}]},
+              {"type": "FeatureCollection", "features": [{"type": "Feature",
+                "properties": {}, "geometry": {"type": "LineString", "coordinates": [[181, 0]]}}]},
+          ):
+              try:
+                  validate(invalid)
+              except ValueError:
+                  pass
+              else:
+                  raise AssertionError("Invalid geometry was accepted")
+
+          try:
+              req = Request(url, headers={
+                  "User-Agent": "IRFEN-RESEARCH-ONLY/0.1",
+                  "Accept": "application/geo+json,application/json",
+              })
+              with urlopen(req, timeout=55) as response:
+                  raw = response.read(30_000_001)
+                  receipt["http_status"] = response.status
+                  receipt["final_url"] = response.geturl()
+                  receipt["http_date"] = response.headers.get("Date")
+                  receipt["etag"] = response.headers.get("ETag")
+                  receipt["content_type"] = response.headers.get("Content-Type")
+              if len(raw) > 30_000_000:
+                  receipt["response_status"] = "RESPONSE_TOO_LARGE_NOT_FROZEN"
+              else:
+                  receipt["raw_size_bytes"] = len(raw)
+                  receipt["raw_sha256"] = hashlib.sha256(raw).hexdigest()
+                  (root / "santa_ana_current_hydrography_raw.geojson").write_bytes(raw)
+                  try:
+                      doc = json.loads(raw)
+                      rows = validate(doc)
+                      receipt["candidate_count"] = len(rows)
+                      receipt["candidate_attributes_and_bboxes"] = rows
+                      receipt["exceeded_transfer_limit"] = doc.get("exceededTransferLimit")
+                      receipt["response_status"] = (
+                          "FROZEN_CANDIDATES_COMPLETENESS_UNVERIFIED"
+                          if rows and doc.get("exceededTransferLimit") is not True
+                          else "FROZEN_RAW_NO_ADJUDICATED_CANDIDATE_SET"
+                      )
+                      receipt["completeness_warning"] = (
+                          "No count/pagination audit; candidates are not an exhaustive network inventory."
+                      )
+                  except (ValueError, TypeError) as exc:
+                      receipt["response_status"] = "FROZEN_RAW_SCHEMA_UNVERIFIED"
+                      receipt["schema_error"] = str(exc)
+          except (HTTPError, URLError, TimeoutError, OSError) as exc:
+              receipt["response_status"] = "SOURCE_ACCESS_UNAVAILABLE"
+              receipt["access_error_type"] = type(exc).__name__
+
+          (root / "receipt.json").write_text(
+              json.dumps(receipt, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print("SANTA_ANA_CURRENT_HYDROGRAPHY_RECEIPT=" +
+                json.dumps({k: receipt.get(k) for k in
+                  ("response_status", "candidate_count", "raw_size_bytes", "raw_sha256",
+                   "access_error_type")}, sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: santa-ana-current-hydrography-probe
+          path: santa_ana_current_hydrography_probe/
+          if-no-files-found: warn
