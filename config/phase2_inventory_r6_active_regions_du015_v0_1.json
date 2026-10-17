@@ -1,0 +1,443 @@
+{
+ "schema_version": "phase2-inventory-r6-active-regions-du015-v0.1",
+ "registry_id": "phase2_inventory_r6_active_regions_du015_v0_1",
+ "status": "RESEARCH_ONLY_INVENTORY_INCREMENT_PENDING_INDEPENDENT_QA",
+ "deployment_status": "RESEARCH_ONLY",
+ "test_mode": "TEST_ONLY",
+ "production_use": false,
+ "production_ready": false,
+ "operational_alerting_enabled": false,
+ "activation_gate": "BLOCKED",
+ "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+ "decision_thresholds": null,
+ "hydraulic_factors": null,
+ "map_publishable": false,
+ "purpose": "Master-inventory revision r6 for the active regions (Rímac/Carretera Central, Pisco/Ica, Santa/Casma): rows named in ANA DU 015-2023 Anexo II/III that the master inventory did not carry, plus a link row for Quebrada Huarangal (Pisco) to the unit main already registers. Documentary identity only: no geometry, outlet, confluence, parent basin, event, merge or map promotion. Tumbes is covered by PR #365 (r3) and is not touched.",
+ "provenance": {
+  "base_ref": "main",
+  "review_ledger": "PR #378 config/phase2_inventory_completeness_review_v0_1.json (draft): candidate list reviewed, every row re-read on the archived text layer",
+  "archive_note": "data/phase2/source_archive/ana_du015_2023/ holds byte-identical copies (same git blobs) of the Anexo II/III PDFs and text layers archived by PR #364 under data/phase2/source_archive/tumbes_capitana_hualaca_higueron/, so these rows are testable from main.",
+  "quote_rule": "Each quote is one text-layer line (Anexo II row 88: two lines) with runs of whitespace (including NBSP) collapsed to one space; the validator re-reads the archived text layer."
+ },
+ "sources": {
+  "ANA-DU-015-2023-ANEXO-II": {
+   "title": "Anexo II — Listado de puntos críticos para limpieza y descolmatación (DU 015-2023)",
+   "url": "https://cdn.www.gob.pe/uploads/document/file/4704868/Anexo_II_DU015_2023.pdf?v=1687213880",
+   "archive_raw": "data/phase2/source_archive/ana_du015_2023/raw/ana-du-015-2023-anexo-ii.pdf",
+   "archive_text": "data/phase2/source_archive/ana_du015_2023/text/ana-du-015-2023-anexo-ii.pages.json",
+   "sha256": "c00095672208cb0afbd368aa02fe8172c2661d0df629385fb91b9f464db883b9"
+  },
+  "ANA-DU-015-2023-ANEXO-III": {
+   "title": "Anexo III — Listado de quebradas a ser intervenidas (DU 015-2023)",
+   "url": "https://cdn.www.gob.pe/uploads/document/file/4704869/Anexo_III_DU015_2023.pdf",
+   "archive_raw": "data/phase2/source_archive/ana_du015_2023/raw/ana-du-015-2023-anexo-iii.pdf",
+   "archive_text": "data/phase2/source_archive/ana_du015_2023/text/ana-du-015-2023-anexo-iii.pages.json",
+   "sha256": "5963b140cd49b8ee6599044ab094e7a511a77d5ad0d9efdebcad35f633ac1cad"
+  },
+  "ANA-PISCO-HUARANGAL-RA060-2018": {
+   "title": "R.A. N.° 060-2018-ANA-AAA.CHCH-ALA.P — Quebrada Huarangal, Huancano/Pisco",
+   "url": "https://www.ana.gob.pe/sites/default/files/normatividad/files/R.A.%20N%C2%B0%20060-2018-ANA-AAA-CH.CH_.ALA%20PISCO._1.PDF",
+   "archive_raw": null,
+   "archive_text": null,
+   "sha256": null,
+   "capture_route": null,
+   "capture_attempt": {
+    "record": "data/phase2/source_archive/pisco_huarangal_ra060_2018/capture_record_v0_1.json",
+    "outcome": "NOT_ARCHIVED: official URL timed out from the GitHub runner (3 tries) and the Internet Archive has no capture (404); no third-party copy used"
+   }
+  }
+ },
+ "quotes": {
+  "A3-P1-R6": {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "page": 1,
+   "row_number_as_read": 6,
+   "text": "6 Rimac U3 y P‐P1 Cañete Fortaleza Chillon Rimac Lurin Lima Lima Chaclacayo AA. HH. Cerro Vecino Huascata 302061 8673102 PV ‐2017 Muy Alto No cuenta con barreras dinamicas"
+  },
+  "A3-P1-R7": {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "page": 1,
+   "row_number_as_read": 7,
+   "text": "7 Rimac Qda. Huascata Cañete Fortaleza Chillon Rimac Lurin Lima Lima Chaclacayo Huascata 302480 8673261 PV ‐2023 Muy Alto No cuenta con barreras dinamicas"
+  },
+  "A3-P1-R8": {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "page": 1,
+   "row_number_as_read": 8,
+   "text": "8 Rimac Panorama Cañete Fortaleza Chillon Rimac Lurin Lima Lima Chaclacayo El Cuadro‐Chaclacayo 304153 8673516 PV ‐2017 Muy Alto No cuenta con barreras dinamicas"
+  },
+  "A3-P1-R9": {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "page": 1,
+   "row_number_as_read": 9,
+   "text": "9 Rimac Caraponguillo Cañete Fortaleza Chillon Rimac Lurin Lima Lima Lurigancho Chosica Caraponguillo 298124 8674154 PV ‐2023 Muy Alto No cuenta con barreras dinamicas"
+  },
+  "A3-P1-R11": {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "page": 1,
+   "row_number_as_read": 11,
+   "text": "11 Rimac Condores 2 Cañete Fortaleza Chillon Rimac Lurin Lima Lima Chaclacayo Tres de Octubre 310402 8674427 PV ‐2023 Muy Alto No cuenta con barreras dinamicas"
+  },
+  "A3-P1-R13": {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "page": 1,
+   "row_number_as_read": 13,
+   "text": "13 Rimac Condores 1 Cañete Fortaleza Chillon Rimac Lurin Lima Lima Chaclacayo Gracilazo de la Vega 311108 8674998 PV ‐2023 Muy Alto No cuenta con barreras dinamicas"
+  },
+  "A3-P1-R14": {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "page": 1,
+   "row_number_as_read": 14,
+   "text": "14 Rimac Ines 1 Cañete Fortaleza Chillon Rimac Lurin Lima Lima Chaclacayo Santa Ines 308761 8675006 PV ‐2023 Muy Alto No cuenta con barreras dinamicas"
+  },
+  "A3-P1-R15": {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "page": 1,
+   "row_number_as_read": 15,
+   "text": "15 Rimac Qda. Ñaña Cañete Fortaleza Chillon Rimac Lurin Lima Lima Lurigancho Chosica Ñaña 300600 8675730 PV ‐2023 Muy Alto No cuenta con barreras dinamicas"
+  },
+  "A3-P1-R16": {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "page": 1,
+   "row_number_as_read": 16,
+   "text": "16 Rimac Laguna Cañete Fortaleza Chillon Rimac Lurin Lima Lima Lurigancho Chosica La Laguna 299675 8676457 PV ‐2023 Muy Alto No cuenta con barreras dinamicas"
+  },
+  "A3-P1-R19": {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "page": 1,
+   "row_number_as_read": 19,
+   "text": "19 Rimac Milagros Cañete Fortaleza Chillon Rimac Lurin Lima Lima Lurigancho Chosica Milagros ‐ MML 316826 8680207 PC ‐2023 Muy Alto No cuenta con barreras dinamicas"
+  },
+  "A3-P1-R22": {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "page": 1,
+   "row_number_as_read": 22,
+   "text": "22 Rimac Ines 2 Cañete Fortaleza Chillon Rimac Lurin Lima Lima Chaclacayo Santa Ines 308368 8674911 PV ‐2023 Alto No cuenta con barreras dinamicas"
+  },
+  "A2-P9-R73": {
+   "source_id": "ANA-DU-015-2023-ANEXO-II",
+   "page": 9,
+   "row_number_as_read": 73,
+   "text": "73 Ica Quebrada Qda. Catambo Chaparra-Chincha Ica Ica Ica Parcona Quebrada Catambo"
+  },
+  "A2-P9-R75": {
+   "source_id": "ANA-DU-015-2023-ANEXO-II",
+   "page": 9,
+   "row_number_as_read": 75,
+   "text": "75 Rio Seco Quebrada Qda. Rio Seco Chaparra-Chincha Rio Seco Ica Ica Salas Villacuri 1"
+  },
+  "A2-P9-R76": {
+   "source_id": "ANA-DU-015-2023-ANEXO-II",
+   "page": 9,
+   "row_number_as_read": 76,
+   "text": "76 Rio Seco Quebrada Qda. Rio Seco Chaparra-Chincha Rio Seco Ica Ica Salas Villacuri 2"
+  },
+  "A2-P9-R77": {
+   "source_id": "ANA-DU-015-2023-ANEXO-II",
+   "page": 9,
+   "row_number_as_read": 77,
+   "text": "77 Rio Seco Quebrada Qda. Rio Seco Chaparra-Chincha Rio Seco Ica Ica Salas Villacuri 3"
+  },
+  "A2-P9-R78": {
+   "source_id": "ANA-DU-015-2023-ANEXO-II",
+   "page": 9,
+   "row_number_as_read": 78,
+   "text": "78 Grande Quebrada Qda. Rio Seco Chaparra-Chincha Grande Ica Palpa Llipata Carlos Tijero"
+  },
+  "A2-P10-R79": {
+   "source_id": "ANA-DU-015-2023-ANEXO-II",
+   "page": 10,
+   "row_number_as_read": 79,
+   "text": "79 Grande Quebrada Qda. Piedras Gordas Chaparra-Chincha Grande Ica Palpa Llipata Piedras Gordas"
+  },
+  "A2-P10-R80": {
+   "source_id": "ANA-DU-015-2023-ANEXO-II",
+   "page": 10,
+   "row_number_as_read": 80,
+   "text": "80 Topara Quebrada Qda. Topara Cañete-Fortaleza Mala-Omas-Cañete Ica Chincha Grocio Prado Chuspa"
+  },
+  "A2-P7-R89": {
+   "source_id": "ANA-DU-015-2023-ANEXO-II",
+   "page": 7,
+   "row_number_as_read": 89,
+   "text": "89 Casma Quebrada Qda. Bombon-Poctao Huarmey-Chicama Casma-Huarmey Ancash Casma Yautan Quebrada Bombon-Poctao"
+  },
+  "A2-P7-R88": {
+   "source_id": "ANA-DU-015-2023-ANEXO-II",
+   "page": 7,
+   "row_number_as_read": 88,
+   "text": "88 Casma Quebrada Qda. Sen Sen Huarmey-Chicama Casma-Huarmey Ancash Huaraz Pampas Grande Quebrada Sen Sen"
+  }
+ },
+ "new_rows": [
+  "lima_chaclacayo_u3_y_p_p1",
+  "lima_chaclacayo_huascata",
+  "lima_chaclacayo_panorama",
+  "lima_lurigancho_caraponguillo",
+  "lima_chaclacayo_condores_2",
+  "lima_chaclacayo_condores_1",
+  "lima_chaclacayo_ines_1",
+  "lima_lurigancho_nana",
+  "lima_lurigancho_laguna",
+  "lima_lurigancho_milagros",
+  "lima_chaclacayo_ines_2",
+  "ica_parcona_catambo",
+  "ica_salas_rio_seco",
+  "ica_llipata_rio_seco",
+  "ica_llipata_piedras_gordas",
+  "ica_grocio_prado_topara",
+  "ancash_yautan_bombon_poctao",
+  "ancash_pampas_grande_sen_sen",
+  "ica_huancano_huarangal"
+ ],
+ "crosswalk": [
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-II",
+   "row_number_as_read": 73,
+   "relation": "LINK_ROW_R6_TO_MAIN_UNIT",
+   "inventory_id": "ica_parcona_catambo"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-II",
+   "row_number_as_read": 74,
+   "relation": "EXISTING_ROW_UNCHANGED",
+   "inventory_id": "ica_tinguina_cansas"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-II",
+   "row_number_as_read": 75,
+   "relation": "NEW_ROW_R6",
+   "inventory_id": "ica_salas_rio_seco"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-II",
+   "row_number_as_read": 76,
+   "relation": "NEW_ROW_R6",
+   "inventory_id": "ica_salas_rio_seco"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-II",
+   "row_number_as_read": 77,
+   "relation": "NEW_ROW_R6",
+   "inventory_id": "ica_salas_rio_seco"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-II",
+   "row_number_as_read": 78,
+   "relation": "NEW_ROW_R6",
+   "inventory_id": "ica_llipata_rio_seco"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-II",
+   "row_number_as_read": 79,
+   "relation": "NEW_ROW_R6",
+   "inventory_id": "ica_llipata_piedras_gordas"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-II",
+   "row_number_as_read": 80,
+   "relation": "NEW_ROW_R6",
+   "inventory_id": "ica_grocio_prado_topara"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-II",
+   "row_number_as_read": 81,
+   "relation": "EXISTING_ROW_UNCHANGED",
+   "inventory_id": "ica_huancano_quitasol"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-II",
+   "row_number_as_read": 82,
+   "relation": "EXISTING_ROW_UNCHANGED",
+   "inventory_id": "ica_huancano_paracas"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-II",
+   "row_number_as_read": 88,
+   "relation": "NEW_ROW_R6",
+   "inventory_id": "ancash_pampas_grande_sen_sen"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-II",
+   "row_number_as_read": 89,
+   "relation": "NEW_ROW_R6",
+   "inventory_id": "ancash_yautan_bombon_poctao"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-II",
+   "row_number_as_read": 90,
+   "relation": "EXISTING_ROW_UNCHANGED",
+   "inventory_id": "ancash_yautan_tomeque"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "row_number_as_read": 1,
+   "relation": "EXISTING_ROW_UNCHANGED",
+   "inventory_id": "lima_lurigancho_la_ronda"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "row_number_as_read": 2,
+   "relation": "EXISTING_ROW_UNCHANGED",
+   "inventory_id": "lima_lurigancho_quirio"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "row_number_as_read": 3,
+   "relation": "EXISTING_ROW_UNCHANGED",
+   "inventory_id": "lima_santa_eulalia_cashahuacra"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "row_number_as_read": 4,
+   "relation": "EXISTING_ROW_UNCHANGED",
+   "inventory_id": "ica_palpa_saramarca"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "row_number_as_read": 5,
+   "relation": "EXISTING_ROW_UNCHANGED",
+   "inventory_id": "lima_cieneguilla_rio_seco"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "row_number_as_read": 6,
+   "relation": "NEW_ROW_R6",
+   "inventory_id": "lima_chaclacayo_u3_y_p_p1"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "row_number_as_read": 7,
+   "relation": "NEW_ROW_R6",
+   "inventory_id": "lima_chaclacayo_huascata"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "row_number_as_read": 8,
+   "relation": "NEW_ROW_R6",
+   "inventory_id": "lima_chaclacayo_panorama"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "row_number_as_read": 9,
+   "relation": "NEW_ROW_R6",
+   "inventory_id": "lima_lurigancho_caraponguillo"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "row_number_as_read": 10,
+   "relation": "EXISTING_ROW_UNCHANGED",
+   "inventory_id": "lima_chaclacayo_huascaran"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "row_number_as_read": 11,
+   "relation": "NEW_ROW_R6",
+   "inventory_id": "lima_chaclacayo_condores_2"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "row_number_as_read": 12,
+   "relation": "EXISTING_ROW_UNCHANGED",
+   "inventory_id": "lima_chaclacayo_cusipata"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "row_number_as_read": 13,
+   "relation": "NEW_ROW_R6",
+   "inventory_id": "lima_chaclacayo_condores_1"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "row_number_as_read": 14,
+   "relation": "NEW_ROW_R6",
+   "inventory_id": "lima_chaclacayo_ines_1"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "row_number_as_read": 15,
+   "relation": "NEW_ROW_R6",
+   "inventory_id": "lima_lurigancho_nana"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "row_number_as_read": 16,
+   "relation": "NEW_ROW_R6",
+   "inventory_id": "lima_lurigancho_laguna"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "row_number_as_read": 17,
+   "relation": "EXISTING_ROW_UNCHANGED",
+   "inventory_id": "lima_lurigancho_chacrasana"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "row_number_as_read": 18,
+   "relation": "EXISTING_ROW_UNCHANGED",
+   "inventory_id": "lima_lurigancho_yanacoto"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "row_number_as_read": 19,
+   "relation": "NEW_ROW_R6",
+   "inventory_id": "lima_lurigancho_milagros"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "row_number_as_read": 20,
+   "relation": "EXISTING_ROW_UNCHANGED",
+   "inventory_id": "lima_ricardo_palma_cupiche"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "row_number_as_read": 21,
+   "relation": "EXISTING_ROW_UNCHANGED",
+   "inventory_id": "lima_santa_eulalia_huayaringa"
+  },
+  {
+   "source_id": "ANA-DU-015-2023-ANEXO-III",
+   "row_number_as_read": 22,
+   "relation": "NEW_ROW_R6",
+   "inventory_id": "lima_chaclacayo_ines_2"
+  }
+ ],
+ "review_ledger_corrections": [
+  {
+   "candidate_id": "rev20261014_a2_ica_la_tinguina_cansas",
+   "ledger_said": "SAME_NAME_OTHER_DISTRICT_SEPARATE_CANDIDATE",
+   "finding": "Anexo II fila 74 names Qda. Cansas in La Tinguiña (Ica), the district of the existing row ica_tinguina_cansas (main unit ica_cansas). No new row; existing row unchanged."
+  },
+  {
+   "candidate_id": "rev20261014_a2_ica_salas_rio_seco",
+   "ledger_said": "one Anexo II row (75)",
+   "finding": "Filas 75, 76 and 77 all name Qda. Rio Seco in Salas (sectors Villacuri 1/2/3); one row ica_salas_rio_seco carries all three."
+  },
+  {
+   "candidate_id": "rev20261014_a2_ica_parcona_catambo",
+   "ledger_said": "NAMED_ON_MAIN_OUTSIDE_INVENTORY",
+   "finding": "main registers the unit ica_catambo; the master row is a link row (priority EXISTING), not a new unit."
+  }
+ ],
+ "not_added": [
+  {
+   "label": "Topara (Lima, Cañete)",
+   "reason": "outside the active regions of this revision; kept as a #378 candidate"
+  },
+  {
+   "label": "Tumbes Anexo II names",
+   "reason": "covered by PR #365 (r3)"
+  }
+ ],
+ "blockers": [
+  "Geometry, outlet and confluence: UNKNOWN for every row; Anexo III coordinates are source-printed reference numbers (datum/zone not printed), not outlets or geometry.",
+  "Equivalences UNRESOLVED (curated_relationships, added_in_revision r6): Condores 1/2 vs Los Cóndores; Milagros vs Señor de los Milagros; Ines 1 vs Ines 2; Huascata vs U3 y P-P1.",
+  "Source text not promoted: source_text_verified stays false on every source; promotion is left to independent QA."
+ ],
+ "map_updates": {
+  "rows_made_map_eligible": 0,
+  "new_geometries": 0,
+  "new_outlets": 0,
+  "events_written": 0
+ }
+}
