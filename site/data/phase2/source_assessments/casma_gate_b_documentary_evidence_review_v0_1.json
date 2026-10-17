@@ -119,5 +119,54 @@
     "threshold_created": false,
     "hydraulic_capacity_inferred": false,
     "negative_control_created": false
+  },
+  "post_review_reconciliation": {
+    "reconciled_on_utc": "2026-10-12",
+    "reconciliation_scope": "CORRECT_CURRENT_READER_INTERPRETATION_WITHOUT_REWRITING_2026_09_29_SNAPSHOT",
+    "original_review_date_utc": "2026-09-29",
+    "original_review_requirements_and_missing_evidence_are_historical_snapshot": true,
+    "as_of_main_commit": "453d2c93c48b6edda56fe8dcfca0a0e2a1706721",
+    "current_gate_a": "PASS_FROZEN_NINE_EXACT_CODE_INSTITUTIONAL_DESCENDANT_FEATURES",
+    "current_gate_b": "NOT_ESTABLISHED",
+    "current_gate_c": "PASS_FROZEN_TOPOLOGY_AND_INDEPENDENT_PARENT_QA",
+    "current_map_decision": "PUBLISHED_CURRENT_INSTITUTIONAL_N7_RESEARCH_CONTEXT_ONLY_BY_SEPARATE_OWNER_DECISION",
+    "historical_geometry_equivalence_to_Uh_pfas100": false,
+    "historical_2007_geometry_label_authorized": false,
+    "current_evidence": {
+      "n7_manifest_path": "site/data/phase2/source_assessments/casma_minam_n7_recovery_manifest_v0_1.json",
+      "n7_manifest_blob_sha": "89b8c93c6e58ae7f9c79e8bb7c40d1a677eb8627",
+      "n7_count": 9,
+      "all_nine_raw_response_sha256_frozen": true,
+      "raw_source_archive_root": "data/phase2/source_archive/casma_minam_n7",
+      "gate_c_adjudication_path": "site/data/phase2/source_assessments/casma_n7_gate_c_adjudication_v0_1.json",
+      "gate_c_report_sha256": "088bb9637b3f81dfa39e5ef7a5be1ac364cfbbb3f40353c7c79a23724e83cd0f",
+      "independent_parent_raw_sha256": "99cd59cacac11123092fa3f941618f42338e47070c6c6ae7ff76c1c2dd54c26d",
+      "map_decision_path": "site/data/phase2/source_assessments/casma_n7_map_promotion_v0_1.json",
+      "map_decision_blob_sha": "6ba06a84a2f761f08d1341c07869afb5b30539ac"
+    },
+    "gate_b_requirement_recheck": [
+      {
+        "requirement": "original Uh_pfas100 bytes or direct institutional lineage evidence",
+        "satisfied": false,
+        "reason": "Original vector bytes and an explicit unbroken institutional lineage statement remain unavailable."
+      },
+      {
+        "requirement": "preserved comparison of every current/historical name and area delta",
+        "satisfied": true,
+        "reason": "Frozen current institutional per-code responses and the N7 recovery manifest now preserve exact codes, names, areas, deltas and raw SHA-256 for all nine units; this did not exist on 2026-09-29."
+      },
+      {
+        "requirement": "independent evidence sufficient to establish geometric equivalence",
+        "satisfied": false,
+        "reason": "Current N7-to-N6 parent topology is not a comparison to original INRENA Uh_pfas100 bytes. No historical polygon equivalence is asserted."
+      }
+    ],
+    "remaining_gate_b_source_gap": [
+      "Original institutional Uh_pfas100 vector components (.shp/.shx/.dbf/.prj) with provenance and SHA-256, or authoritative lineage documentation specifying whether later MINAM geometry was redelineated",
+      "With original vector bytes, preregister and run a geometric comparison without post-hoc tolerances"
+    ],
+    "guards_unchanged": true,
+    "test_contract": "tests/test_phase2_casma_gate_b_documentary_review.py; tests/test_phase2_casma_n7_gate_c_topology.py; tests/test_phase2_casma_n7_map_research_context.py",
+    "no_new_geometry_or_thresholds": true
   }
 }
