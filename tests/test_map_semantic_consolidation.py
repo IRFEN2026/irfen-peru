@@ -373,7 +373,12 @@ def test_every_feature_carries_non_operational_guards(sem):
 
 def test_operational_pipeline_does_not_read_map_semantics():
     allowed = {"build_map_layer_catalog.py", "build_map_layer_catalog_core.py", "build_map_semantic_layers.py",
-               "build_jicamarca_discovery_map_layers.py", "finalize_mala_official_basin.py", "run_v08_regression_tests.py"}
+               "build_jicamarca_discovery_map_layers.py", "finalize_mala_official_basin.py", "run_v08_regression_tests.py",
+               # v0.9 territorial view: a display bundle built downstream of the rain engine; nothing operational
+               # reads it (checked in tests/test_v09_territory.py).
+               "v09_build_territory_bundle.py",
+               # independent QA of that view: re-reads the catalogue to verify provenance; produces no data.
+               "v09_territory_independent_qa.py"}
     for path in (ROOT / "scripts").glob("*.py"):
         text = path.read_text(encoding="utf-8")
         if path.name in allowed:
