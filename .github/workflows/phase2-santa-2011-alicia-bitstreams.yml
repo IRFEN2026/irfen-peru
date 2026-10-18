@@ -68,7 +68,7 @@ jobs:
           from pathlib import Path
           from urllib.error import HTTPError, URLError
           from urllib.parse import urlencode
-          from urllib.request import Request, urlopen
+          from urllib.request import HTTPRedirectHandler, Request, build_opener
 
           root = Path("santa_ana_current_hydrography_probe")
           root.mkdir(exist_ok=True)
@@ -104,7 +104,12 @@ jobs:
               "candidate_name_query_is_not_identity_proof": True,
               "response_status": "SOURCE_ACCESS_UNAVAILABLE",
               "raw_sha256": None,
+              "source_redirect_policy": "REJECT_ALL_HTTP_REDIRECTS",
           }
+
+          class RejectRedirects(HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
 
           def positions(value):
               if isinstance(value, list):
@@ -153,6 +158,11 @@ jobs:
                "geometry": {"type": "LineString", "coordinates": [[-78, -9], [-77, -8]]}}
           ]}
           assert len(validate(fixture)) == 1
+          # Offline negative control: redirected bytes must not inherit ANA provenance.
+          other = "https://example.invalid/not-ana"
+          assert RejectRedirects().redirect_request(
+              Request(url), None, 302, "Found", {"Location": other}, other
+          ) is None
           for invalid in (
               {"type": "FeatureCollection", "features": [{"type": "Feature",
                 "properties": {}, "geometry": {"type": "Polygon", "coordinates": []}}]},
@@ -171,7 +181,9 @@ jobs:
                   "User-Agent": "IRFEN-RESEARCH-ONLY/0.1",
                   "Accept": "application/geo+json,application/json",
               })
-              with urlopen(req, timeout=55) as response:
+              with build_opener(RejectRedirects()).open(req, timeout=55) as response:
+                  if response.status != 200 or response.geturl() != url:
+                      raise ValueError("Unexpected HTTP status or source URL")
                   raw = response.read(30_000_001)
                   receipt["http_status"] = response.status
                   receipt["final_url"] = response.geturl()
@@ -201,7 +213,7 @@ jobs:
                   except (ValueError, TypeError) as exc:
                       receipt["response_status"] = "FROZEN_RAW_SCHEMA_UNVERIFIED"
                       receipt["schema_error"] = str(exc)
-          except (HTTPError, URLError, TimeoutError, OSError) as exc:
+          except (HTTPError, URLError, TimeoutError, OSError, ValueError) as exc:
               receipt["response_status"] = "SOURCE_ACCESS_UNAVAILABLE"
               receipt["access_error_type"] = type(exc).__name__
 
