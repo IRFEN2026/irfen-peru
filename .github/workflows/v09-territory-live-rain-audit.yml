@@ -11,7 +11,7 @@ permissions:
 jobs:
   rain-rebuild:
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 20
     steps:
       - name: Checkout de la rama aislada
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -59,3 +59,17 @@ jobs:
           PY
       - name: QA científica independiente, sin subir artefactos
         run: python3 scripts/v09_territory_independent_qa.py
+
+      - name: Instalar Playwright y Chromium para comprobar la vista real
+        run: |
+          python3 -m pip install --disable-pip-version-check playwright==1.56.0
+          python3 -m playwright install --with-deps chromium
+      - name: Probar navegador con paquete actualizado y reloj simulado
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest -v tests/test_v09_territory.py 2>&1 | tee "$RUNNER_TEMP/v09-territory-browser.log"
+          grep -q "^OK$" "$RUNNER_TEMP/v09-territory-browser.log"
+          if grep -q "skipped" "$RUNNER_TEMP/v09-territory-browser.log"; then
+            echo "::error::browser tests skipped"; exit 1
+          fi
