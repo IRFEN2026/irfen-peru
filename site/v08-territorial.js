@@ -342,7 +342,7 @@
       .ti-shell>.ti-tools button:hover{background:#f1f6f9;border-color:#9fb4c3}
       .ti-context{border:1px solid var(--line,#d9e2ea);border-radius:10px;background:#fff}
       .ti-context>summary{cursor:pointer;padding:9px 14px;font-size:13px;font-weight:600;color:#1d2f3c}
-      .ti-context[open]>summary{border-bottom:1px solid var(--line,#d9e2ea)}.ti-context .ti-status,.ti-context #ti-recent{background:transparent}
+      .ti-context[open]>summary{border-bottom:1px solid var(--line,#d9e2ea)}.ti-context .ti-status{background:transparent}
       .ti-maphead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:9px 14px;border-bottom:1px solid var(--line,#d9e2ea)}
       .ti-maphead h3{margin:0;font-size:15px}.ti-maphead .ti-note{font-size:11px}
       .ti-mapwrap{position:relative}
@@ -361,11 +361,11 @@
       .ti-layerlist input{margin:0}
       .ti-drawer .ti-legend{padding:6px 0 0;font-size:11px}.ti-drawer .ti-legend span{display:flex;align-items:center;gap:6px;margin:2px 0}
       .ti-mapbar{font-size:11px;line-height:1.5;padding:6px 14px;border-top:1px solid var(--line,#d9e2ea)}
-      .ti-recent{background:#f3f6f8;padding:10px;font-size:12px;line-height:1.5}.ti-recent h3{margin:0 0 8px;font-size:13px}
-      .ti-recent-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-      .ti-recent-card{display:block;width:100%;text-align:left;white-space:normal;cursor:pointer;background:white;color:inherit;border:1px solid var(--line,#d9e2ea);border-radius:8px;padding:10px}
-      .ti-recent-card:hover,.ti-recent-card[aria-current=true]{background:#edf6fc}.ti-recent-card b{display:block;font-size:13px}.ti-recent-card small{display:block;font-size:11px;color:#536776;line-height:1.4;margin-top:4px}
-      @media(max-width:1000px){.ti-grid{grid-template-columns:1fr}#ti-list{max-height:300px}#ti-map{height:68vh;min-height:420px}.ti-grid>.ti-panel:last-child{order:-1}.ti-recent-grid{grid-template-columns:1fr}.ti-drawer{width:auto;right:10px}}
+      .ti-recent{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;min-width:0;max-width:100%;background:#f3f6f8;border:1px solid var(--line,#d9e2ea);border-radius:10px;padding:7px 10px;font-size:12px;line-height:1.4}.ti-recent h3{margin:0;font-size:12px;color:#1d2f3c}.ti-recent>p{margin:0;font-size:11px}
+      .ti-recent-grid{flex:1 1 100%;min-width:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+      .ti-recent-card{display:block;width:100%;text-align:left;white-space:normal;cursor:pointer;background:white;color:inherit;border:1px solid var(--line,#d9e2ea);border-radius:8px;padding:6px 9px}
+      .ti-recent-card:hover,.ti-recent-card[aria-current=true]{background:#edf6fc;border-color:#9fb4c3}.ti-recent-card b{display:block;font-size:12px}.ti-recent-card small{display:block;font-size:11px;color:#536776;line-height:1.35;margin-top:2px}
+      @media(max-width:1000px){.ti-grid{grid-template-columns:1fr}#ti-list{max-height:300px}#ti-map{height:68vh;min-height:420px}.ti-grid>.ti-panel:last-child{order:-1}.ti-recent-grid{display:flex;overflow-x:auto;padding-bottom:2px}.ti-recent-card{flex:0 0 78%}.ti-drawer{width:auto;right:10px}}
     `;document.head.appendChild(s);
   }
   function setup() {
@@ -378,9 +378,9 @@
       <details class="ti-help"><summary>Qué muestra este mapa</summary><p>Aquí aparecen los candidatos definidos, las subunidades de muestreo y las capas de los pilotos. Mostrar una geometría no exige que esté habilitada para NASA, pero sí una fuente cartográfica admisible.</p>
       <p><b>RESEARCH / TEST MODE.</b> Cuencas, quebradas/cauces locales, ríos colectores y nodos se dibujan en capas separadas; las fajas marginales, obras/tramos críticos y ámbitos documentales se identifican aparte. No son mapas de riesgo ni alertas.</p></details></div>
       <div class="ti-tools"><button id="ti-refresh">Actualizar inventario</button><button id="ti-all">Encuadrar capas visibles</button><button id="ti-monitor">Ir al monitoreo NASA</button><button id="ti-recent-btn">Ver avances recientes</button><span class="ti-note" id="ti-time"></span></div>
-      <details class="ti-context" id="ti-context"><summary>Resumen del inventario y avances recientes</summary>
-      <div id="ti-summary" class="ti-status" role="status">Cargando catálogos…</div>
-      <div id="ti-recent" class="ti-recent" aria-label="Avances integrados recientemente"></div></details>
+      <details class="ti-context" id="ti-context"><summary>Resumen del inventario</summary>
+      <div id="ti-summary" class="ti-status" role="status">Cargando catálogos…</div></details>
+      <div id="ti-recent" class="ti-recent" aria-label="Avances integrados recientemente"></div>
       <div class="ti-grid"><div class="ti-panel"><div class="ti-header"><h3>Buscar zona o capa</h3><div class="ti-tools"><input id="ti-search" type="search" aria-label="Buscar candidato o capa" placeholder="Malanche, Huaycoloro, Catacaos…"><select id="ti-filter" aria-label="Filtrar inventario"><option value="all">Todo el inventario</option><option value="candidate">Candidatos Phase-2</option><option value="recent">Avances recientes</option><option value="discovery">Discovery norte-costera</option><option value="monitored">Subunidades de muestreo</option><option value="technical">Capas de los pilotos v0.8</option><option value="withheld">Retenidas: colectores, nodos y unidades sin geometría</option><option value="pending">Sin geometría representable</option></select></div><p class="ti-note">Seleccionar una ficha muestra sus fuentes y pendientes, aunque aún no tenga contorno.</p></div><div id="ti-list"></div></div>
       <div class="ti-panel"><div class="ti-maphead"><h3>Geometrías documentadas</h3><span class="ti-note">Colores = tipo de entidad, no nivel de riesgo</span></div>
       <div class="ti-mapwrap"><div id="ti-map"></div>
@@ -424,7 +424,6 @@
     layersPanel.querySelectorAll('[data-ti-all-layers]').forEach(b=>b.addEventListener('click',()=>{
       const on=b.dataset.tiAllLayers==='on';layerInputs.forEach(i=>{i.checked=on;});updateLayerCount();applyVisibility();}));
     updateLayerCount();
-    document.getElementById('ti-recent-btn').addEventListener('click',()=>{document.getElementById('ti-context').open=true;});
     return true;
   }
   function categoryOn(kind) {const el=document.querySelector('[data-ti-layer="'+kind+'"]');return !!el&&el.checked;}

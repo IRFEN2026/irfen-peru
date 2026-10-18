@@ -169,8 +169,8 @@ class RecentAdvancesTests(unittest.TestCase):
             *(note for _, note in RECENT.values()),
         ):
             self.assertIn(text, js)
-        # Section sits right below ti-summary.
-        self.assertRegex(js, r'<div id="ti-summary"[^>]*>[^<]*</div>\s*<div id="ti-recent" class="ti-recent"')
+        # Section sits right below ti-summary (the summary folds; the compact strip stays visible).
+        self.assertRegex(js, r'<div id="ti-summary"[^>]*>[^<]*</div></details>\s*<div id="ti-recent" class="ti-recent"')
         # Cards reuse the existing selection path with focus=true.
         self.assertIn(
             "document.getElementById('ti-recent').addEventListener('click',e=>{const b=e.target.closest('[data-ti-record]');"
