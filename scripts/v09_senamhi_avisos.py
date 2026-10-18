@@ -818,18 +818,104 @@ def pubdate_utc(value: str | None) -> str | None:
 
 
 # --------------------------------------------------------------------------- network capture (runner only)
+_UNICODE_DOTS = re.compile("[\u3002\uff0e\uff61]")
+
+
+def normalize_host(host: str | None) -> str:
+    """Canonical form of a host name for the SENAMHI policy check: percent-decoded, Unicode full stops mapped to ".",
+    lower-cased, IDNA-encoded labels and *no trailing dots* ("www.senamhi.gob.pe." is the same host as
+    "www.senamhi.gob.pe" for DNS and TLS)."""
+    from urllib.parse import unquote
+
+    h = host or ""
+    for _ in range(5):  # nested encodings (%252e -> %2e -> .) are decoded to a fixed point
+        decoded = unquote(h)
+        if decoded == h:
+            break
+        h = decoded
+    h = _UNICODE_DOTS.sub(".", h).strip().lower()
+    try:
+        h = ".".join(label.encode("idna").decode("ascii") if label and not label.isascii() else label for label in h.split("."))
+    except UnicodeError:
+        pass
+    return h.rstrip(".")
+
+
+def is_senamhi_host(url: str) -> bool:
+    """True when the URL targets senamhi.gob.pe or any subdomain, whatever the spelling. Checked against both urllib's
+    and urllib3's parse of the URL; a URL that cannot be parsed fails closed (treated as SENAMHI)."""
+    from urllib.parse import urlsplit
+
+    url = (url or "").strip()
+    hosts = []
+    try:
+        hosts.append(urlsplit(url).hostname)
+    except ValueError:
+        return True
+    try:
+        from urllib3.util import parse_url
+
+        hosts.append(parse_url(url).host)
+    except Exception:  # noqa: BLE001 - urllib3 absent or unparseable: urllib's view is still checked
+        pass
+    for h in hosts:
+        h = normalize_host(h)
+        if "senamhi" in h and re.search(r"[^a-z0-9.\-]", h):
+            return True  # malformed host naming SENAMHI (control/percent characters left): fail closed
+        if h == "senamhi.gob.pe" or h.endswith(".senamhi.gob.pe"):
+            return True
+    return False
+
+
+class SenamhiRedirectRefused(Exception):
+    """An INDECI URL redirected to a SENAMHI host; the redirected request is never sent (owner decision 13-10-2026)."""
+
+
+def _guarded_opener():
+    """urllib opener that follows ordinary redirects (http->https, within INDECI or to other public hosts) but refuses,
+    before sending it, any redirect whose target is a SENAMHI host. The capture only reads INDECI/COEN."""
+    from urllib.request import BaseHandler, HTTPRedirectHandler, build_opener
+
+    class NoSenamhiRedirect(HTTPRedirectHandler):
+        def redirect_request(self, req, fp, code, msg, headers, newurl):
+            if is_senamhi_host(newurl):
+                raise SenamhiRedirectRefused(newurl)
+            return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+    class SenamhiConnectGuard(BaseHandler):
+        """Last line of defence: runs before DNS/connect on every request the opener sends (first hop and each redirect)."""
+        handler_order = 100
+
+        def http_request(self, req):
+            if is_senamhi_host("//" + req.host):
+                raise SenamhiRedirectRefused(req.full_url)
+            return req
+
+        https_request = http_request
+
+    return build_opener(SenamhiConnectGuard, NoSenamhiRedirect)
+
+
 def http_get(url: str, timeout: int, max_bytes: int, headers: dict | None = None) -> tuple[bytes | None, dict]:
-    """GET with bounded retries. A conditional request answered 304 returns (None, {not_modified: True})."""
+    """GET with bounded retries. A conditional request answered 304 returns (None, {not_modified: True}).
+    A redirect to a SENAMHI host is refused, recorded and not retried; the final URL of any redirect is recorded."""
     from urllib.error import HTTPError
-    from urllib.request import Request, urlopen
+    from urllib.request import Request
 
     meta = dict(url=url, requested_at_utc=iso(utc_now()))
+    if is_senamhi_host(url):
+        meta.update(error="SENAMHI_HOST_NOT_QUERIED_POLICY", attempts=0)
+        return None, meta
+    opener = _guarded_opener()
     for attempt in range(3):
         try:
             req = Request(quote(url, safe=":/?#[]@!$&'()*+,;=%~"), headers={"User-Agent": USER_AGENT, **(headers or {})})
-            with urlopen(req, timeout=timeout) as r:
+            with opener.open(req, timeout=timeout) as r:
                 data = r.read(max_bytes + 1)
                 declared = r.headers.get("Content-Length")
+                final = r.geturl() if hasattr(r, "geturl") else None
+                if final and final != req.full_url:
+                    meta["redirected_to"] = final
                 meta.update(http_status=r.status, content_type=r.headers.get("Content-Type"), content_length=declared,
                             etag=r.headers.get("ETag"), last_modified=r.headers.get("Last-Modified"), attempts=attempt + 1)
                 if len(data) > max_bytes:
@@ -841,6 +927,9 @@ def http_get(url: str, timeout: int, max_bytes: int, headers: dict | None = None
                     continue
                 meta.pop("error", None)
                 return data, meta
+        except SenamhiRedirectRefused as exc:
+            meta.update(error="REDIRECT_TO_SENAMHI_REFUSED_POLICY", redirect_target=str(exc)[:300], attempts=attempt + 1)
+            return None, meta  # policy, not a transient failure: never retried
         except HTTPError as exc:
             meta.update(http_status=exc.code, attempts=attempt + 1)
             if exc.code == 304:
