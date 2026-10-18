@@ -50,6 +50,12 @@ TARGETS = {
 MIRRORS = {
     "SIGRID_14534_PDF": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/"
     "14534_tratamiento-de-cauce-del-rio-para-el-control-de-inundaciones-en-la-cuenca-del-santa.pdf",
+    # Additional official ANA public-host locator, indexed as the 2011 Santa study.
+    # Treat as an independent acquisition candidate, NOT as verified-identical
+    # bytes: the shared mirror loop must check original repository size + MD5
+    # before pinning any SHA-256 or using the PDF for the text probe.
+    "ANA_PUBLIC_HOST_2011_PDF":
+    "https://www.ana.gob.pe/sites/default/files/normatividad/files/estudio_tratamiento_santa_0_2.pdf",
 }
 TERMS = {
     "WGS": r"\bWGS\b",
