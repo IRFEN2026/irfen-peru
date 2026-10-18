@@ -16,9 +16,10 @@ from html.parser import HTMLParser
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
-from urllib.request import Request, urlopen
+from urllib.request import BaseHandler, HTTPRedirectHandler, Request, build_opener
 import argparse
 import json
+import os
 import re
 import time
 
@@ -56,6 +57,105 @@ SOURCES = (
         "historical_search_parameter": "s",
     },
 )
+# Owner decision 13-10-2026: no automated direct queries to SENAMHI hosts. These sources are only requested when
+# IRFEN_SENAMHI_DIRECT_ACCESS=enabled is set explicitly (never in the workflows); otherwise each one is recorded as
+# NOT_QUERIED_POLICY, unknown and never zero. INDECI/COEN and the supplemental sources are unaffected.
+SENAMHI_DIRECT_SOURCE_IDS = frozenset({"senamhi_activation_quebradas", "senamhi_piura_24h"})
+
+
+_UNICODE_DOTS = re.compile("[。．｡]")
+
+
+def normalize_host(host):
+    """Canonical DNS name for a policy comparison: percent-decoding, Unicode full stops, IDNA (punycode), case and
+    the trailing root dot(s): "www.senamhi.gob.pe." and "WWW.SENAMHI.GOB.PE.." resolve to "www.senamhi.gob.pe"."""
+    from urllib.parse import unquote
+
+    h = host or ""
+    for _ in range(5):  # nested encodings (%252e -> %2e -> .) are decoded to a fixed point
+        decoded = unquote(h)
+        if decoded == h:
+            break
+        h = decoded
+    h = _UNICODE_DOTS.sub(".", h).strip().lower()
+    try:
+        h = ".".join(label.encode("idna").decode("ascii") if label and not label.isascii() else label for label in h.split("."))
+    except UnicodeError:
+        pass  # an undecodable label cannot be SENAMHI's ASCII name; it is compared as is
+    return h.rstrip(".")
+
+
+def is_senamhi_host(url):
+    """True when the standard library or urllib3 (the parser requests connects with) sees a SENAMHI host in url.
+    An unparseable URL is refused rather than guessed."""
+    from urllib.parse import urlsplit
+
+    url = (url or "").strip()
+    hosts = []
+    try:
+        hosts.append(urlsplit(url).hostname)
+    except ValueError:
+        return True
+    try:
+        from urllib3.util import parse_url
+
+        hosts.append(parse_url(url).host)
+    except Exception:  # noqa: BLE001 - a URL urllib3 cannot parse is never sent through requests either
+        pass
+    for h in hosts:
+        h = normalize_host(h)
+        if "senamhi" in h and re.search(r"[^a-z0-9.\-]", h):
+            return True  # malformed host naming SENAMHI (control/percent characters left): fail closed
+        if h == "senamhi.gob.pe" or h.endswith(".senamhi.gob.pe"):
+            return True
+    return False
+
+
+class SenamhiConnectGuard(BaseHandler):
+    """Runs before every request the opener sends, including each hop of a redirect chain, on the host urllib will
+    actually connect to (req.host), so no URL spelling can route a request to SENAMHI."""
+
+    handler_order = 100
+
+    def http_request(self, req):
+        if is_senamhi_host("//" + req.host) and not senamhi_direct_access_enabled():
+            raise URLError(f"request to a SENAMHI host refused by policy: {req.full_url}")
+        return req
+
+    https_request = http_request
+
+
+class NoSenamhiRedirect(HTTPRedirectHandler):
+    """An allowed source that redirects to a SENAMHI host is refused before the redirected request is sent
+    (unless direct access is explicitly enabled), so no automated query reaches SENAMHI indirectly."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if is_senamhi_host(newurl) and not senamhi_direct_access_enabled():
+            raise URLError(f"redirect to a SENAMHI host refused by policy: {newurl}")
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_OPENER = build_opener(SenamhiConnectGuard, NoSenamhiRedirect)
+
+
+def urlopen(request, timeout=35):
+    return _OPENER.open(request, timeout=timeout)
+
+
+def senamhi_direct_access_enabled() -> bool:
+    return os.environ.get("IRFEN_SENAMHI_DIRECT_ACCESS", "disabled") == "enabled"
+
+
+def policy_skipped(source: dict) -> dict:
+    return {
+        "source_id": source["source_id"],
+        "url": source["url"],
+        "capture_status": "NOT_QUERIED_POLICY",
+        "unknown_not_zero": True,
+        "policy": "No automated direct queries to SENAMHI hosts (owner decision 13-10-2026)",
+    }
+
+
 SUPPLEMENTAL_SOURCES = (
     {
         "source_id": "anin_san_ildefonso_news",
@@ -584,6 +684,13 @@ def fetch_sources(sources: tuple[dict, ...], captured_at: datetime, snapshot_dat
         )
 
 
+def fetch_policy_sources(captured_at: datetime, snapshot_date: str) -> list[dict]:
+    """Fetch SOURCES in manifest order, skipping the SENAMHI ones unless direct access is explicitly enabled."""
+    allowed = tuple(s for s in SOURCES if senamhi_direct_access_enabled() or s["source_id"] not in SENAMHI_DIRECT_SOURCE_IDS)
+    fetched = {row["source_id"]: row for row in fetch_sources(allowed, captured_at, snapshot_date)}
+    return [fetched.get(s["source_id"]) or policy_skipped(s) for s in SOURCES]
+
+
 def load_archive():
     try:
         return json.loads(OUT.read_text(encoding="utf-8"))
@@ -679,7 +786,7 @@ def main():
         "counts_toward_closeout": False,
         "production_use": False,
         "safety_rule": "No automatic EVENT/NONE classification; missing evidence remains UNKNOWN_NOT_ZERO.",
-        "sources": fetch_sources(SOURCES, now, snapshot_day.isoformat()),
+        "sources": fetch_policy_sources(now, snapshot_day.isoformat()),
         "supplemental_sources": fetch_sources(
             SUPPLEMENTAL_SOURCES, now, snapshot_day.isoformat()
         ),

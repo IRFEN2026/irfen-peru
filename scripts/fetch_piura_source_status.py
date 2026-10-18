@@ -10,6 +10,7 @@ from io import BytesIO
 from pathlib import Path
 import html as html_lib
 import json
+import os
 import re
 import unicodedata
 import requests
@@ -151,6 +152,69 @@ def inspect_bulletin(entry, headers):
     return result
 
 
+_UNICODE_DOTS = re.compile("[。．｡]")
+
+
+def normalize_host(host):
+    """Canonical DNS name for a policy comparison: percent-decoding, Unicode full stops, IDNA (punycode), case and
+    the trailing root dot(s): "www.senamhi.gob.pe." and "WWW.SENAMHI.GOB.PE.." resolve to "www.senamhi.gob.pe"."""
+    from urllib.parse import unquote
+
+    h = host or ""
+    for _ in range(5):  # nested encodings (%252e -> %2e -> .) are decoded to a fixed point
+        decoded = unquote(h)
+        if decoded == h:
+            break
+        h = decoded
+    h = _UNICODE_DOTS.sub(".", h).strip().lower()
+    try:
+        h = ".".join(label.encode("idna").decode("ascii") if label and not label.isascii() else label for label in h.split("."))
+    except UnicodeError:
+        pass  # an undecodable label cannot be SENAMHI's ASCII name; it is compared as is
+    return h.rstrip(".")
+
+
+def is_senamhi_host(url):
+    """True when the standard library or urllib3 (the parser requests connects with) sees a SENAMHI host in url.
+    An unparseable URL is refused rather than guessed."""
+    from urllib.parse import urlsplit
+
+    url = (url or "").strip()
+    hosts = []
+    try:
+        hosts.append(urlsplit(url).hostname)
+    except ValueError:
+        return True
+    try:
+        from urllib3.util import parse_url
+
+        hosts.append(parse_url(url).host)
+    except Exception:  # noqa: BLE001 - a URL urllib3 cannot parse is never sent through requests either
+        pass
+    for h in hosts:
+        h = normalize_host(h)
+        if "senamhi" in h and re.search(r"[^a-z0-9.\-]", h):
+            return True  # malformed host naming SENAMHI (control/percent characters left): fail closed
+        if h == "senamhi.gob.pe" or h.endswith(".senamhi.gob.pe"):
+            return True
+    return False
+
+
+def refuse_senamhi_redirect(response, *args, **kwargs):
+    """requests response hook, run on every hop before its Location is followed: refuse a redirect to a SENAMHI host
+    whatever its spelling (trailing dot, case, Unicode dots, percent-encoding, userinfo), policy 13-10-2026."""
+    from urllib.parse import urljoin
+    location = response.headers.get('Location') if response.is_redirect else None
+    if location and not senamhi_direct_access_enabled() and is_senamhi_host(urljoin(response.url, location)):
+        raise requests.exceptions.InvalidURL(f'redirect to a SENAMHI host refused by policy: {location}')
+    return response
+
+
+def senamhi_direct_access_enabled():
+    """Owner decision 13-10-2026: no automated direct queries to SENAMHI hosts unless explicitly enabled."""
+    return os.environ.get('IRFEN_SENAMHI_DIRECT_ACCESS', 'disabled') == 'enabled'
+
+
 def carry_forward_verified_bulletin(current, previous, now, reason):
     """Conserva evidencia verificada como obsoleta ante fallas transitorias.
 
@@ -231,7 +295,7 @@ def main():
     }
 
     try:
-        r=requests.get(url,timeout=35,headers={**headers,'Accept':'application/json,*/*'})
+        r=requests.get(url,timeout=35,headers={**headers,'Accept':'application/json,*/*'},hooks={'response':refuse_senamhi_redirect})
         r.raise_for_status(); obj=r.json(); items=obj if isinstance(obj,list) else obj.get('data',[]) if isinstance(obj,dict) else []
         valid=[x for x in items if isinstance(x,dict) and x.get('fkey')]
         valid.sort(key=lambda x:str(x.get('fkey')),reverse=True)
@@ -252,6 +316,17 @@ def main():
             except Exception: pass
     except Exception as exc:
         status['gore_piura'].update({'catalog_status':'access_error','error_type':type(exc).__name__,'error':str(exc)})
+
+    if not senamhi_direct_access_enabled():
+        status['senamhi'].update({
+            'forecast_page_access_status':'not_queried_policy',
+            'forecast_page_policy':'No automated direct queries to SENAMHI hosts (owner decision 13-10-2026)',
+        })
+        carry_forward_verified_bulletin(status['senamhi'], previous_senamhi, now, 'not_queried_policy')
+        OUT.parent.mkdir(parents=True,exist_ok=True)
+        OUT.write_text(json.dumps(status,ensure_ascii=False,indent=2),encoding='utf-8')
+        print(json.dumps(status,ensure_ascii=False,indent=2))
+        return 0
 
     try:
         r=requests.get(SEN_FORECAST,timeout=25,headers=headers)

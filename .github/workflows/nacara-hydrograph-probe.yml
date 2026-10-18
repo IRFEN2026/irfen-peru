@@ -1,12 +1,9 @@
 name: IRFEN - Probar hidrograma Puente Nacara
 
 on:
+  # Owner decision 13-10-2026: no automated direct queries to SENAMHI hosts. Manual dispatch only
+  # (the push trigger fired on unrelated merges to main, e.g. site/data/latest.json).
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - scripts/probe_nacara_hydrograph.py
-      - .github/workflows/nacara-hydrograph-probe.yml
 
 permissions:
   contents: write

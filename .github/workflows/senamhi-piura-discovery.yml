@@ -1,13 +1,9 @@
 name: IRFEN - Explorar hidrología SENAMHI Piura v0.8
 
 on:
+  # Owner decision 13-10-2026: no automated direct queries to SENAMHI hosts. Manual dispatch only
+  # (the push trigger fired on unrelated merges to main, e.g. site/data/latest.json).
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - scripts/discover_senamhi_piura.py
-      - .github/workflows/senamhi-piura-discovery.yml
 
 permissions:
   contents: write
