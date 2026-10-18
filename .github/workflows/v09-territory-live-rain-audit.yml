@@ -1,0 +1,61 @@
+name: IRFEN v0.9 - Prueba aislada con lluvia actual (TEST_ONLY)
+on:
+  push:
+    branches:
+      - review/v09-territory-current-rain-20261018
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rain-rebuild:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout de la rama aislada
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: true
+      - name: Obtener la lluvia vigente en main (solo lectura)
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin main
+          git show FETCH_HEAD:data/v09/surveillance/zone_rain_state_v0_1.json > data/v09/surveillance/zone_rain_state_v0_1.json
+      - name: Regenerar exclusivamente el paquete territorial en el runner
+        run: |
+          set -euo pipefail
+          python3 scripts/v09_build_territory_bundle.py
+          python3 scripts/v09_build_territory_bundle.py --check
+      - name: Comprobar paridad de lluvia 6 h y 24 h por zona
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          state=json.loads(Path("data/v09/surveillance/zone_rain_state_v0_1.json").read_text())
+          bundle=json.loads(Path("site/data/v09/territory_v0_1.json").read_text())
+          assert state["evaluated_at_utc"] == bundle["rain_evaluated_at_utc"], "date mismatch"
+          actual={z["zone_id"]:z for z in state["zones"]}
+          assert len(actual)==22 and len(bundle["zone_rain"])==22
+          for zid, z in actual.items():
+              b=bundle["zone_rain"][zid]
+              for window in ("6h","24h"):
+                  a=z["imerg"]["windows"][window]
+                  x=b["imerg"]["windows"][window]
+                  assert ("accum_mm" in x)==(a["status"]=="CALCULADO"), (zid,window,"missing semantics")
+                  if a["status"]=="CALCULADO":
+                      assert a["accum_mm"]==x["accum_mm"], (zid,window,"value mismatch")
+                  else:
+                      assert x["status"]==a["status"], (zid,window,"status mismatch")
+          totals={w:sum(z["imerg"]["windows"][w].get("accum_mm",0)>0 for z in bundle["zone_rain"].values()) for w in ("6h","24h")}
+          print("Matched rain snapshot",state["evaluated_at_utc"],"22/22 zones",totals)
+          if not all(v>0 for v in totals.values()):
+              print("NOTICE: no non-zero rain in one window; not a failure if source reports calculated zero")
+          assert bundle["production_use"] is False
+          assert bundle["operational_alerting_enabled"] is False
+          assert bundle["map_publishable"] is False
+          gate=json.loads(Path("config/v09_public_demo_v0_1.json").read_text())
+          assert gate["publish_v09_dashboard"] is False
+          PY
+      - name: QA científica independiente, sin subir artefactos
+        run: python3 scripts/v09_territory_independent_qa.py
