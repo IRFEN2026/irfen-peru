@@ -67,6 +67,20 @@ class StaticContract(unittest.TestCase):
         self.assertNotIn("rain.on('tileerror',function(){\n              setRainState", WEATHER)
 
     def check_absence_is_never_presented_as_no_rain(self):
+        # Every user-facing sentence that could read an empty or missing tile as "no rain" is banned.
+        lower = WEATHER.lower()
+        for claim in ("no hay precipitación", "no hay lluvia", "sin lluvia", "no llovió", "sin precipitación representada",
+                      "precipitación nula", "lluvia: 0", "0 mm"):
+            self.assertNotIn(claim, lower, claim)
+        # Availability is never asserted, least of all from the interval's age.
+        for claim in ("disponible", "ya está publicado", "ya publicado", "datos confirmados", "intervalo publicado:"):
+            self.assertNotIn(claim, lower, claim)
+        self.assertIn("La antigüedad de un intervalo no garantiza que esté publicado", WEATHER)
+        self.assertIn("Recibir mosaicos no confirma que haya datos de ese intervalo", WEATHER)
+        load = WEATHER[WEATHER.index("rain.on('load'"):WEATHER.index("rain.addTo(targetMap);")]
+        # Each verdict carries its own "absence is not no-rain" sentence; none depends on s.recent.
+        self.assertEqual(load.count("ausencia de lluvia"), 3)
+        self.assertNotIn("recent", load.replace("caveat", ""))
         for stale in ("Si no aparece color, no hay precipitación", "Sin color = sin precipitación"):
             self.assertNotIn(stale, WEATHER)
         legend = re.search(r'data-iw="rain-legend" hidden>(.*?)</div></div>', WEATHER, re.S).group(1)
@@ -100,7 +114,10 @@ class StaticContract(unittest.TestCase):
     def check_recent_strip_is_compact_and_outside_the_folded_summary(self):
         # Layout only: the strip sits below the folded summary and is always visible. Card content (renderRecent)
         # is not changed here; the plain-language cards belong to the demo PR (#386).
-        self.assertRegex(TERR, r'<div id="ti-summary"[^>]*>[^<]*</div></details>\s*<div id="ti-recent" class="ti-recent"')
+        self.assertRegex(TERR, r'<div id="ti-summary"[^>]*>[^<]*</div></details>\s*<details class="ti-recent-box" id="ti-recent-box" open><summary>Avances integrados recientemente</summary>\s*<div id="ti-recent" class="ti-recent"')
+        # Open by default (desktop, and without JS); folded at start only on narrow screens.
+        self.assertIn("const narrow=window.matchMedia?window.matchMedia('(max-width:1000px)'):null;", TERR)
+        self.assertIn("if(narrow&&narrow.matches)recentBox.open=false;", TERR)
         self.assertNotIn("document.getElementById('ti-context').open=true", TERR)
         detail = TERR[TERR.index("function selectRecord(key,focus)"):TERR.index("function applyVisibility()")]
         self.assertIn("esc(advance.note)", detail)
@@ -295,8 +312,15 @@ class InBrowser(unittest.TestCase):
                         self.assertEqual(page.inner_text(self.W.format("rain-pill")), pill, status)
                         self.assertTrue(seen["imerg"])
                         self.assertTrue(all(re.fullmatch(r"\d{4}-\d\d-\d\dT\d\d:[03]0:00Z", t) for t in seen["imerg"]), seen["imerg"][:3])
-                        if gibs != "ok":
-                            self.assertIn("no", status.lower())
+                        status = page.inner_text(self.W.format("status"))
+                        low = status.lower()
+                        # Absence of tiles (or an empty tile) is never presented as absence of rain.
+                        self.assertRegex(low, r"no (equivale|significa) a?\s?ausencia de lluvia")
+                        for claim in ("no hay precipitación", "sin lluvia", "no hay lluvia", "disponible"):
+                            self.assertNotIn(claim, low)
+                        if gibs == "ok":
+                            self.assertIn("Recibir mosaicos no confirma que haya datos de ese intervalo", status)
+                        else:
                             self.assertNotIn("mosaicos recibidos", status)
                         # The closed button names the requested interval (desktop; on mobile it is in the panel only).
                         tag_text = page.text_content(self.W.format("time-tag"))
@@ -326,6 +350,16 @@ class InBrowser(unittest.TestCase):
             self.set_checked(page, self.W.format("clouds"), True)
             self.until(page, lambda: bool(seen["viirs"]))
             self.assertTrue(seen["viirs"] and all(re.fullmatch(r"\d{4}-\d\d-\d\d", t) for t in seen["viirs"]), seen["viirs"][:3])
+            # A recent interval (< 6 h) is flagged and never presented as published, whatever the tiles do.
+            page.select_option(self.W.format("day"), "0")
+            recent = page.evaluate(f"[...document.querySelector('{self.W.format('slot')}').options].filter(o=>!o.disabled&&o.textContent.includes('<6 h')).map(o=>o.value)")
+            if recent:
+                page.select_option(self.W.format("slot"), recent[-1])
+                page.wait_for_function(f"document.querySelector('{self.W.format('rain-pill')}').textContent==='ACTIVA'")
+                self.assertIn("puede no estar publicado todavía", page.inner_text(self.W.format("status")))
+            # The labels are UTC and PET (Peru, UTC-5), never a claim of availability.
+            labels = page.evaluate(f"[...document.querySelector('{self.W.format('slot')}').options].map(o=>o.textContent)")
+            self.assertTrue(all(re.fullmatch(r"\d\d:[03]0 UTC · \d\d:[03]0 PET( · futuro| · <6 h)?", x) for x in labels), labels[:4])
             # Future intervals of today cannot be chosen.
             page.select_option(self.W.format("day"), "0")
             disabled = page.evaluate(f"[...document.querySelector('{self.W.format('slot')}').options].filter(o=>o.disabled).map(o=>o.value)")
@@ -337,12 +371,29 @@ class InBrowser(unittest.TestCase):
     def check_recent_strip_is_compact_and_selects_the_record(self):
         from playwright.sync_api import sync_playwright
 
+        is_open = "document.getElementById('ti-recent-box').open"
         with sync_playwright() as p:
             for tag, vp in VIEWPORTS.items():
                 with self.subTest(viewport=tag):
                     b, page, errors, _ = self.open(p, vp)
-                    page.wait_for_selector("#ti-recent .ti-recent-card")
+                    page.wait_for_selector("#ti-recent .ti-recent-card", state="attached")
                     self.assertEqual(page.evaluate("document.querySelectorAll('#ti-recent .ti-recent-card').length"), 3)
+                    summary_visible = page.is_visible("#ti-recent-box > summary")
+                    map_top = page.evaluate("document.getElementById('ti-map').getBoundingClientRect().top - "
+                                            "document.getElementById('territorial-inventory').getBoundingClientRect().top")
+                    if tag == "mobile":
+                        # Folded at first on narrow screens: one summary line, the map starts higher.
+                        self.assertFalse(page.evaluate(is_open))
+                        self.assertTrue(summary_visible)
+                        self.assertFalse(page.is_visible("#ti-recent .ti-recent-card"))
+                        self.assertLess(map_top, 430, map_top)  # 516 px with the strip open (sprint 18-10)
+                        self.tap(page, "#ti-recent-box > summary")
+                        self.assertTrue(page.evaluate(is_open))
+                    else:
+                        # Desktop: compact strip, always open, no extra summary line.
+                        self.assertTrue(page.evaluate(is_open))
+                        self.assertFalse(summary_visible)
+                    self.assertTrue(page.is_visible("#ti-recent .ti-recent-card"))
                     h = page.evaluate("document.getElementById('ti-recent').getBoundingClientRect().height")
                     # Before: «Ver avances recientes» unfolded the whole summary (≈330 px desktop, ≈815 px mobile).
                     self.assertLess(h, 190, f"recent strip too tall on {tag}: {h}")
@@ -354,13 +405,20 @@ class InBrowser(unittest.TestCase):
                     self.assertTrue(any(note in detail for note in (
                         "Quitasol/Paracas siguen sin geometría local ni outlet", "San Agustín sigue como componente local",
                         "Palpa/Changuillo conserva tramos locales")), detail)
+                    # The full inventory summary stays reachable (folded, one click away).
                     self.assertFalse(page.evaluate("document.getElementById('ti-context').open"))
+                    self.tap(page, "#ti-context > summary")
+                    self.assertTrue(page.evaluate("document.getElementById('ti-context').open"))
+                    self.assertGreater(len(page.inner_text("#ti-summary")), 40)
+                    # «Ver avances recientes» filters the list and unfolds the strip (mobile too).
+                    if tag == "mobile":
+                        self.tap(page, "#ti-recent-box > summary")
+                        self.assertFalse(page.evaluate(is_open))
                     self.tap(page, "#ti-recent-btn")
                     self.assertEqual(page.evaluate("document.getElementById('ti-filter').value"), "recent")
-                    self.assertFalse(page.evaluate("document.getElementById('ti-context').open"))
+                    self.assertTrue(page.evaluate(is_open))
                     self.assertEqual(errors, [])
                     b.close()
-
 
 if __name__ == "__main__":
     unittest.main()

@@ -13,7 +13,7 @@
   // NASA GIBS exige fecha y hora completas (YYYY-MM-DDTHH:MI:SSZ) para capas subdiarias.
   const SLOT_MIN=30;
   const RECENT_MARGIN_H=6; // convención de esta interfaz; no es una latencia medida ni consultada a NASA
-  const PERU_OFFSET_H=-5;  // Perú: UTC-5 todo el año
+  const PERU_OFFSET_H=-5;  // PET (hora de Perú): UTC-5 todo el año, sin horario de verano
   function pad2(n){return String(n).padStart(2,'0');}
   function dayStartMs(offset,nowMs){const d=new Date(nowMs);return Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()+offset);}
   function isoDayAt(offset,nowMs){return new Date(dayStartMs(offset,nowMs)).toISOString().slice(0,10);}
@@ -75,14 +75,14 @@
           '<label class="iw-rain-label"><input type="checkbox" data-iw="rain"> NASA · lluvia IMERG NRT (tasa de 30 min)</label>'+
           '<label class="iw-check"><input type="checkbox" data-iw="clouds"> NASA · imagen satelital visible</label>'+
           '<label class="iw-row">Fecha <select data-iw="day">'+
-            '<option value="-1" selected>Ayer UTC (predeterminado)</option><option value="0">Hoy UTC (si está disponible)</option><option value="-2">Hace 2 días</option>'+
+            '<option value="-1" selected>Ayer UTC (predeterminado)</option><option value="0">Hoy UTC (puede no estar publicado)</option><option value="-2">Hace 2 días</option>'+
           '</select></label>'+
-          '<label class="iw-row">Hora <select data-iw="slot" aria-label="Intervalo IMERG de 30 minutos (hora UTC y hora de Perú)"></select></label>'+
+          '<label class="iw-row">Hora <select data-iw="slot" aria-label="Intervalo IMERG de 30 minutos (hora UTC y hora de Perú, PET)"></select></label>'+
           '<label class="iw-row">Opacidad <input data-iw="opacity" type="range" min="20" max="90" value="62" aria-label="Opacidad de las capas meteorológicas"></label>'+
           '<div class="iw-status" data-iw="status"><b>IMERG 30 min:</b> inactiva.</div><div class="iw-rain-legend" data-iw="rain-legend" hidden><div><b>Precipitación IMERG</b> · contexto visual</div><div class="iw-empty">Los colores son los del mosaico publicado por NASA GIBS. Aquí no se muestra una escala cuantitativa. Sin color puede ser ausencia de precipitación o un intervalo aún no publicado: no equivale a riesgo bajo.</div></div>'+
           '<details class="iw-more"><summary>Notas metodológicas</summary>'+
             '<p>La lluvia IMERG es una tasa de 30 min: se pide un intervalo concreto (fecha y hora UTC), no un día completo. Por defecto: ayer UTC, último intervalo con al menos '+RECENT_MARGIN_H+' h de antigüedad.</p>'+
-            '<p>Ese margen es una convención de esta vista para reducir vacíos por latencia NRT; no se consulta a NASA GIBS qué intervalo está publicado. GIBS sirve el intervalo publicado más cercano a la hora pedida. La imagen visible VIIRS es diaria y usa solo la fecha.</p>'+
+            '<p>Ese margen es una convención de esta vista para reducir vacíos por latencia NRT; no se consulta a NASA GIBS qué intervalo está publicado. La antigüedad de un intervalo no garantiza que esté publicado. GIBS sirve el intervalo publicado más cercano a la hora pedida. PET = hora de Perú (UTC-5). La imagen visible VIIRS es diaria y usa solo la fecha.</p>'+
             '<div class="iw-senamhi"><b>SENAMHI</b> · conector WMS preparado; se habilitará cuando quede fijado un endpoint/capa institucional estable.</div>'+
             '<div class="iw-note">'+SOURCE_NOTE+'</div>'+
           '</details>'+
@@ -130,7 +130,7 @@
         }
 
         function currentSlot(){return slots.find(s=>s.minute===slotMinute)||slots[0];}
-        function slotLabel(s){return isoDayAt(dayOffset,nowMs)+' '+s.utc+' UTC ('+s.peru+' Perú)';}
+        function slotLabel(s){return isoDayAt(dayOffset,nowMs)+' '+s.utc+' UTC ('+s.peru+' PET)';}
         let nowMs=Date.now();
         // Rellena el selector de hora; conserva la elección si sigue siendo válida.
         function fillSlots(keep){
@@ -139,7 +139,7 @@
           const kept=keep&&slots.find(s=>s.minute===slotMinute&&!s.future);
           slotMinute=kept?slotMinute:defaultSlot(slots);
           slotInput.innerHTML=slots.map(s=>'<option value="'+s.minute+'"'+(s.future?' disabled':'')+(s.minute===slotMinute?' selected':'')+'>'+
-            s.utc+' UTC · '+s.peru+' Perú'+(s.future?' · futuro':s.recent?' · reciente':'')+'</option>').join('');
+            s.utc+' UTC · '+s.peru+' PET'+(s.future?' · futuro':s.recent?' · <'+RECENT_MARGIN_H+' h':'')+'</option>').join('');
         }
 
         function rebuild(){
@@ -168,7 +168,7 @@
               if(g!==gen) return;
               if(!bad){
                 setRainState('on');
-                if(statusEl) statusEl.innerHTML='<b>IMERG 30 min:</b> mosaicos recibidos para '+slotLabel(s)+'. GIBS sirve el intervalo publicado más cercano a esa hora; esta vista no comprueba cuál.'+caveat;
+                if(statusEl) statusEl.innerHTML='<b>IMERG 30 min:</b> mosaicos recibidos para '+slotLabel(s)+'. Recibir mosaicos no confirma que haya datos de ese intervalo: GIBS sirve el intervalo publicado más cercano y esta vista no comprueba cuál. Sin color no equivale a ausencia de lluvia.'+caveat;
               } else if(ok){
                 setRainState('partial');
                 if(statusEl) statusEl.innerHTML='<b>IMERG 30 min:</b> fallaron '+bad+' de '+(ok+bad)+' mosaicos para '+slotLabel(s)+'. Donde falta mosaico no hay dato; no significa ausencia de lluvia.';

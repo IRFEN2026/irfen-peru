@@ -361,11 +361,14 @@
       .ti-layerlist input{margin:0}
       .ti-drawer .ti-legend{padding:6px 0 0;font-size:11px}.ti-drawer .ti-legend span{display:flex;align-items:center;gap:6px;margin:2px 0}
       .ti-mapbar{font-size:11px;line-height:1.5;padding:6px 14px;border-top:1px solid var(--line,#d9e2ea)}
+      .ti-recent-box{min-width:0}.ti-recent-box>summary{cursor:pointer;padding:8px 12px;font-size:12px;font-weight:600;color:#1d2f3c;background:#f3f6f8;border:1px solid var(--line,#d9e2ea);border-radius:10px}
+      .ti-recent-box[open]>summary{border-radius:10px 10px 0 0;border-bottom:0}.ti-recent-box[open]>summary+.ti-recent{border-radius:0 0 10px 10px}
+      @media(min-width:1001px){.ti-recent-box>summary{display:none}}
       .ti-recent{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;min-width:0;max-width:100%;background:#f3f6f8;border:1px solid var(--line,#d9e2ea);border-radius:10px;padding:7px 10px;font-size:12px;line-height:1.4}.ti-recent h3{margin:0;font-size:12px;color:#1d2f3c}.ti-recent>p{margin:0;font-size:11px}
       .ti-recent-grid{flex:1 1 100%;min-width:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
       .ti-recent-card{display:block;width:100%;text-align:left;white-space:normal;cursor:pointer;background:white;color:inherit;border:1px solid var(--line,#d9e2ea);border-radius:8px;padding:6px 9px}
       .ti-recent-card:hover,.ti-recent-card[aria-current=true]{background:#edf6fc;border-color:#9fb4c3}.ti-recent-card b{display:block;font-size:12px}.ti-recent-card small{display:block;font-size:11px;color:#536776;line-height:1.35;margin-top:2px}
-      @media(max-width:1000px){.ti-grid{grid-template-columns:1fr}#ti-list{max-height:300px}#ti-map{height:68vh;min-height:420px}.ti-grid>.ti-panel:last-child{order:-1}.ti-recent-grid{display:flex;overflow-x:auto;padding-bottom:2px}.ti-recent-card{flex:0 0 78%}.ti-drawer{width:auto;right:10px}}
+      @media(max-width:1000px){.ti-grid{grid-template-columns:1fr}#ti-list{max-height:300px}#ti-map{height:68vh;min-height:420px}.ti-grid>.ti-panel:last-child{order:-1}.ti-recent-grid{display:flex;overflow-x:auto;padding-bottom:2px}.ti-recent-box .ti-recent h3{display:none}.ti-recent-card{flex:0 0 78%}.ti-drawer{width:auto;right:10px}}
     `;document.head.appendChild(s);
   }
   function setup() {
@@ -380,7 +383,8 @@
       <div class="ti-tools"><button id="ti-refresh">Actualizar inventario</button><button id="ti-all">Encuadrar capas visibles</button><button id="ti-monitor">Ir al monitoreo NASA</button><button id="ti-recent-btn">Ver avances recientes</button><span class="ti-note" id="ti-time"></span></div>
       <details class="ti-context" id="ti-context"><summary>Resumen del inventario</summary>
       <div id="ti-summary" class="ti-status" role="status">Cargando catálogos…</div></details>
-      <div id="ti-recent" class="ti-recent" aria-label="Avances integrados recientemente"></div>
+      <details class="ti-recent-box" id="ti-recent-box" open><summary>Avances integrados recientemente</summary>
+      <div id="ti-recent" class="ti-recent" aria-label="Avances integrados recientemente"></div></details>
       <div class="ti-grid"><div class="ti-panel"><div class="ti-header"><h3>Buscar zona o capa</h3><div class="ti-tools"><input id="ti-search" type="search" aria-label="Buscar candidato o capa" placeholder="Malanche, Huaycoloro, Catacaos…"><select id="ti-filter" aria-label="Filtrar inventario"><option value="all">Todo el inventario</option><option value="candidate">Candidatos Phase-2</option><option value="recent">Avances recientes</option><option value="discovery">Discovery norte-costera</option><option value="monitored">Subunidades de muestreo</option><option value="technical">Capas de los pilotos v0.8</option><option value="withheld">Retenidas: colectores, nodos y unidades sin geometría</option><option value="pending">Sin geometría representable</option></select></div><p class="ti-note">Seleccionar una ficha muestra sus fuentes y pendientes, aunque aún no tenga contorno.</p></div><div id="ti-list"></div></div>
       <div class="ti-panel"><div class="ti-maphead"><h3>Geometrías documentadas</h3><span class="ti-note">Colores = tipo de entidad, no nivel de riesgo</span></div>
       <div class="ti-mapwrap"><div id="ti-map"></div>
@@ -407,6 +411,12 @@
     document.getElementById('ti-list').addEventListener('click',e=>{const b=e.target.closest('[data-ti-record]');if(b)selectRecord(b.dataset.tiRecord,true);});
     document.getElementById('ti-recent').addEventListener('click',e=>{const b=e.target.closest('[data-ti-record]');if(b)selectRecord(b.dataset.tiRecord,true);});
     document.getElementById('ti-recent-btn').onclick=showRecent;
+    // «Avances recientes»: franja compacta abierta en escritorio; plegada al inicio en pantallas estrechas para que el mapa empiece antes.
+    const recentBox=document.getElementById('ti-recent-box');
+    const narrow=window.matchMedia?window.matchMedia('(max-width:1000px)'):null;
+    if(narrow&&narrow.matches)recentBox.open=false;
+    if(narrow&&narrow.addEventListener)narrow.addEventListener('change',e=>{if(!e.matches)recentBox.open=true;});
+    document.getElementById('ti-recent-btn').addEventListener('click',()=>{recentBox.open=true;});
     document.getElementById('ti-detail').addEventListener('click',e=>{const b=e.target.closest('[data-ti-feature]');if(b){const f=state.features.get(b.dataset.tiFeature);if(f&&state.map){state.map.fitBounds(f.layer.getBounds().pad(.12),{maxZoom:16});f.layer.openPopup();}}});
     const selectedSection = section;
     selectedSection.querySelectorAll('[data-ti-layer]').forEach(input=>input.addEventListener('change',applyVisibility));
