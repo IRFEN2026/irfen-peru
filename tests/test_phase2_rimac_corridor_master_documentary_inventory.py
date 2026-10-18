@@ -264,6 +264,13 @@ def test_no_outlet_tau_capacity_overflow_or_new_map_publication():
 
     for unit in d["units"]:
         assert unit["map_publishable"] is False
+        # The master documentary inventory has no independently frozen,
+        # local measured rainfall, discharge or stage observations. IGP
+        # station triggers are context, and IMERG is regional context only.
+        # Future observations require explicit source/provenance review and
+        # an intentional update of this fail-closed contract.
+        assert unit["rainfall_observation_refs"] == []
+        assert unit["flow_or_stage_observation_refs"] == []
         for field in (
             "outlet_coordinate",
             "exact_confluence_coordinate",
