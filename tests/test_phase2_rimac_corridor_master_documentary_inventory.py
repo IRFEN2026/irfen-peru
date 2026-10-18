@@ -79,6 +79,21 @@ def test_inventory_is_research_only_and_never_operational():
         for ref in unit["verified_event_refs"]:
             assert "phase2_igp2023_jicamarca_station_activation_events" not in str(ref)
 
+    # No documentary row may silently gain a verified event merely because
+    # a historical table, station trigger or district report names the area.
+    # Media Luna has a separate, explicitly cited 2002 debris-flow contract;
+    # adding any other confirmed event requires evidence review and test update.
+    for unit in d["units"]:
+        if unit["id"] != "jicamarca_media_luna":
+            assert unit["verified_event_refs"] == []
+        station_refs = set(unit.get("station_activation_context_refs", []))
+        for evidence_field in (
+            "verified_event_refs",
+            "rainfall_observation_refs",
+            "flow_or_stage_observation_refs",
+        ):
+            assert station_refs.isdisjoint(unit[evidence_field])
+
     # Apply the same fail-closed contract to every documentary event lead,
     # not just Cashahuacra. A district list, station activation or historical
     # table mention cannot silently become a verified per-quebrada event.
