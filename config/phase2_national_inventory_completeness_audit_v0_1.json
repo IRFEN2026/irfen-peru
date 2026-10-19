@@ -36,6 +36,11 @@
     "revision": "r2",
     "date": "2026-10-07",
     "note": "After independent QA on r1: dated event statements read through automated extraction are EVENT_LEAD_UNVERIFIED, not EVENT_EVIDENCE; source_text_verified added to every source and EVENT item; the validator is exercised by a pytest module in the PR gate. No row, source, geometry or priority was added or removed."
+   },
+   {
+    "revision": "r7",
+    "date": "2026-10-15",
+    "note": "La Cruz (Tumbes), owner-cited sources: 3 rows. Banchero and Mariátegui (INDECI RC 1951, 27/02/2024: activation of 'quebradas Banchero y Mariátegui' on 11/01/2024) carry IDENTITY plus an EVENT item, state EVENT_LEAD_UNVERIFIED (archived and quote-tested; promotion left to independent QA). Banchero Rossi (MVCS 2021 note; MD La Cruz R.A. 128-2023, variant 'Luis Banchero Rossi') carries WORKS only, IDENTITY_ONLY. Banchero vs Banchero Rossi UNRESOLVED; Mariátegui (Tumbes) not equated with AH José Carlos Mariátegui (Piura). Geometry and outlet UNKNOWN; no map promotion or event-ledger entry. Revision labels r3-r6 are used by PRs #365/#366/#363/#381, not yet in main. Registry: config/phase2_tumbes_la_cruz_banchero_mariategui_v0_1.json."
    }
   ],
   "clean_room_notice": "This file contains outcome-bearing statements about the 2015-03-23 Chosica event and about named Chosica quebradas. It must not be read by the sealed Chosica 2015 clean-room predictor jobs (branches agent/chosica-2015-*, PRs #146, #149, #150, #151)."
@@ -118,12 +123,12 @@
   "map_eligible": "false on every row"
  },
  "summary": {
-  "candidate_rows": 400,
+  "candidate_rows": 403,
   "by_corridor": {
    "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA": 44,
    "PISCO_ICA": 48,
    "SANTA_CASMA": 16,
-   "TUMBES_ZORRITOS": 68,
+   "TUMBES_ZORRITOS": 71,
    "ANCASH_INTERIOR": 18,
    "LAMBAYEQUE": 46,
    "LA_LIBERTAD": 9,
@@ -132,13 +137,13 @@
    "PIURA_INTERIOR": 38
   },
   "by_suggested_state": {
-   "EVENT_LEAD_UNVERIFIED": 28,
-   "IDENTITY_ONLY": 349,
+   "EVENT_LEAD_UNVERIFIED": 30,
+   "IDENTITY_ONLY": 350,
    "GEOMETRY_PENDING": 20,
    "GEOMETRY_REPRODUCIBLE": 3
   },
   "by_irfen_presence": {
-   "NOT_FOUND_IN_REPO": 321,
+   "NOT_FOUND_IN_REPO": 324,
    "MAIN_REGISTERED_UNIT": 13,
    "MAIN_NAME_CONTEXT_ONLY": 12,
    "MAIN_LABEL_MENTION_UNCONFIRMED": 24,
@@ -149,13 +154,13 @@
   },
   "by_priority": {
    "P1": 23,
-   "P2": 17,
+   "P2": 19,
    "EXISTING": 13,
-   "P3": 291,
+   "P3": 292,
    "P4": 56
   },
   "event_evidence_rows": 0,
-  "event_lead_unverified_rows": 41,
+  "event_lead_unverified_rows": 43,
   "sources_with_verified_text": 0,
   "map_eligible_rows": 0,
   "new_geometries": 0,
@@ -490,6 +495,49 @@
    "source_class": "PRIMARY_INSTITUTIONAL",
    "access": "SERVER_TITLE_ONLY",
    "access_note": "Title only. Concerns rock instability in a zone called Rosario; it does not establish a quebrada identity.",
+   "source_text_verified": false,
+   "verification_record": null
+  },
+  "INDECI-RC-1951-2024-TUMBES": {
+   "institution": "Centro de Operaciones de Emergencia Nacional (COEN) - INDECI",
+   "title": "Reporte Complementario N.° 1951 - 27/2/2024 / COEN-INDECI / 15:30 horas (Reporte N.° 3): Lluvias intensas en el departamento de Tumbes",
+   "date": "2024-02-27",
+   "url": "https://portal.indeci.gob.pe/wp-content/uploads/2024/01/REPORTE-COMPLEMENTARIO-N.%C2%BA-1951-27FEB2024-LLUVIAS-INTENSAS-EN-EL-DEPARTAMENTO-DE-TUMBES-3-1.pdf",
+   "alt_identifiers": [
+    "data/phase2/source_archive/tumbes_la_cruz_banchero_mariategui/raw/indeci-rc-1951-2024-02-27-tumbes.pdf (sha256 2fa3621f0b7c13456c277d65f5393c1c8a372c2ac5d9f7bf9e2dc18eb80fa005)"
+   ],
+   "source_class": "PRIMARY_INSTITUTIONAL",
+   "access": "ARCHIVED_BYTES_TEXT_LAYER_QUOTES_TESTED",
+   "access_note": "Captured on the GitHub runner 2026-10-15T14:57:17+00:00 and archived in data/phase2/source_archive/tumbes_la_cruz_banchero_mariategui/ (outside site/). Quotes are substrings of the archived text layer, re-checked by tests/test_phase2_tumbes_la_cruz_banchero_mariategui.py (config/phase2_tumbes_la_cruz_banchero_mariategui_v0_1.json). source_text_verified stays false: promotion is left to independent QA.",
+   "source_text_verified": false,
+   "verification_record": null
+  },
+  "MVCS-NOTA-569204-2021": {
+   "institution": "Ministerio de Vivienda, Construcción y Saneamiento (MVCS), gob.pe",
+   "title": "Tumbes: Ministerio de Vivienda inicia limpieza y descolmatación de la quebrada Banchero Rossi (nota de prensa)",
+   "date": "2021-12-11",
+   "url": "https://www.gob.pe/institucion/vivienda/noticias/569204-tumbes-ministerio-de-vivienda-inicia-limpieza-y-descolmatacion-de-la-quebrada-banchero-rossi",
+   "alt_identifiers": [
+    "data/phase2/source_archive/tumbes_la_cruz_banchero_mariategui/raw/vivienda-noticia-569204-banchero-rossi.html (sha256 bd4861084f5a9747a3db6876c6ed72f8902db3efe6516023caa1b63396aa03c7)"
+   ],
+   "source_class": "PRIMARY_INSTITUTIONAL",
+   "access": "ARCHIVED_BYTES_TEXT_LAYER_QUOTES_TESTED",
+   "access_note": "Captured on the GitHub runner 2026-10-15T14:57:20+00:00 and archived in data/phase2/source_archive/tumbes_la_cruz_banchero_mariategui/ (outside site/). Quotes are substrings of the archived text layer, re-checked by tests/test_phase2_tumbes_la_cruz_banchero_mariategui.py (config/phase2_tumbes_la_cruz_banchero_mariategui_v0_1.json). source_text_verified stays false: promotion is left to independent QA.",
+   "source_text_verified": false,
+   "verification_record": null
+  },
+  "MDLC-RA-128-2023": {
+   "institution": "Municipalidad Distrital de La Cruz (Tumbes), gob.pe",
+   "title": "Resolución de Alcaldía N.° 128-2023/MDLC-ALC",
+   "date": "2023-04-05",
+   "url": "https://www.gob.pe/institucion/munilacruz/normas-legales/4742023-128-2023-mdlc-alc",
+   "alt_identifiers": [
+    "data/phase2/source_archive/tumbes_la_cruz_banchero_mariategui/raw/munilacruz-ra-128-2023-page0.html (sha256 49cf55092c5e0cc451586aedbf978fd7b0049ad46effa41139b125cbdf1b264e)",
+    "data/phase2/source_archive/tumbes_la_cruz_banchero_mariategui/raw/munilacruz-ra-128-2023-doc00.pdf (sha256 98032fcfcd1bd316993e3e6d9ad4c3b5af9217fcd3366e105bc6e46b45f6d373; scanned resolution, https://cdn.www.gob.pe/uploads/document/file/5276927/4742023-resolucion-de-alcaldia-128-2023.pdf?v=1697216421)"
+   ],
+   "source_class": "PRIMARY_INSTITUTIONAL",
+   "access": "ARCHIVED_BYTES_TEXT_LAYER_QUOTES_TESTED",
+   "access_note": "Captured on the GitHub runner 2026-10-15T14:57:26+00:00 and archived in data/phase2/source_archive/tumbes_la_cruz_banchero_mariategui/ (outside site/). Quotes are substrings of the archived text layer, re-checked by tests/test_phase2_tumbes_la_cruz_banchero_mariategui.py (config/phase2_tumbes_la_cruz_banchero_mariategui_v0_1.json). source_text_verified stays false: promotion is left to independent QA.",
    "source_text_verified": false,
    "verification_record": null
   }
@@ -853,6 +901,22 @@
     "main_status": "not recorded",
     "status": "PENDING_ADJUDICATION",
     "needed": "D.S. 181-2023-EF annex."
+   },
+   {
+    "labels": [
+     "Banchero",
+     "Banchero Rossi"
+    ],
+    "inventory_ids": [
+     "tumbes_la_cruz_banchero",
+     "tumbes_la_cruz_banchero_rossi"
+    ],
+    "documentary_basis": "INDECI RC 1951 (2024) names 'quebradas Banchero y Mariátegui'; MVCS 2021 and MD La Cruz R.A. 128-2023 name 'quebrada (Luis) Banchero Rossi', all in La Cruz. Same district and shared surname; no georeferenced evidence links them.",
+    "main_status": "not recorded",
+    "status": "PENDING_ADJUDICATION",
+    "needed": "Georeferenced works file (expediente técnico of R.A. 128-2023) or ANA hydrography placing both labels.",
+    "equivalence": "UNRESOLVED",
+    "added_in_revision": "r7"
    }
   ],
   "same_label_groups_not_merged": [
@@ -1440,7 +1504,10 @@
    "piura_san_miguel_el_faique_cerro_blanco",
    "piura_san_miguel_el_faique_el_algarrobo",
    "piura_san_miguel_el_faique_el_ceibo",
-   "piura_tambogrande_paccha"
+   "piura_tambogrande_paccha",
+   "tumbes_la_cruz_banchero",
+   "tumbes_la_cruz_mariategui",
+   "tumbes_la_cruz_banchero_rossi"
   ],
   "geometry_pending": [
    "lima_chaclacayo_cusipata",
@@ -1506,7 +1573,9 @@
    "lima_santa_eulalia_huayaringa",
    "lima_santa_eulalia_huayaringa_centro_portada",
    "lima_santa_eulalia_julio_cesar_tello",
-   "ica_huancano_huayanto"
+   "ica_huancano_huayanto",
+   "tumbes_la_cruz_banchero",
+   "tumbes_la_cruz_mariategui"
   ]
  },
  "candidates": [
@@ -1909,6 +1978,9 @@
   {"inventory_id": "piura_san_miguel_el_faique_cerro_blanco", "row_role": "CANDIDATE_UNIT", "documentary_name": "Cerro Blanco", "name_variants_observed": [], "department": "Piura", "province": "Huancabamba", "district": "San Miguel El Faique", "corridor": "PIURA_INTERIOR", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 11, fila 58: centro poblado 'Caserío La Capilla', quebrada 'Cerro Blanco'", "table": "Cuadro 11", "row_number_as_read": 58, "source_reference_point": {"easting_m": 654676, "northing_m": 9398062}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P4", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
   {"inventory_id": "piura_san_miguel_el_faique_el_algarrobo", "row_role": "CANDIDATE_UNIT", "documentary_name": "El Algarrobo", "name_variants_observed": [], "department": "Piura", "province": "Huancabamba", "district": "San Miguel El Faique", "corridor": "PIURA_INTERIOR", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 11, fila 66: centro poblado 'Caserío Huacas Alta', quebrada 'El Algarrobo'", "table": "Cuadro 11", "row_number_as_read": 66, "source_reference_point": {"easting_m": 639209, "northing_m": 9399119}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P4", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
   {"inventory_id": "piura_san_miguel_el_faique_el_ceibo", "row_role": "CANDIDATE_UNIT", "documentary_name": "El Ceibo", "name_variants_observed": [], "department": "Piura", "province": "Huancabamba", "district": "San Miguel El Faique", "corridor": "PIURA_INTERIOR", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 11, fila 67: centro poblado 'Caserío Huacas Alta', quebrada 'El Ceibo'", "table": "Cuadro 11", "row_number_as_read": 67, "source_reference_point": {"easting_m": 639111, "northing_m": 9399029}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P4", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
-  {"inventory_id": "piura_tambogrande_paccha", "row_role": "CANDIDATE_UNIT", "documentary_name": "Paccha", "label_caution": "LABEL_IS_A_RIVER_NAME_OR_EQUALS_A_PLACE_NAME_REPO_MATCH_CANNOT_CONFIRM_A_UNIT", "name_variants_observed": [], "department": "Piura", "province": "Morropón", "district": "Tambogrande", "corridor": "PIURA_INTERIOR", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 11, fila 13: centro poblado 'Paccha', quebrada 'Paccha'", "table": "Cuadro 11", "row_number_as_read": 13, "source_reference_point": {"easting_m": 587557, "northing_m": 9445864}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P4", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []}
+  {"inventory_id": "piura_tambogrande_paccha", "row_role": "CANDIDATE_UNIT", "documentary_name": "Paccha", "label_caution": "LABEL_IS_A_RIVER_NAME_OR_EQUALS_A_PLACE_NAME_REPO_MATCH_CANNOT_CONFIRM_A_UNIT", "name_variants_observed": [], "department": "Piura", "province": "Morropón", "district": "Tambogrande", "corridor": "PIURA_INTERIOR", "evidence_types": ["CRITICAL_POINT"], "evidence": [{"evidence_type": "CRITICAL_POINT", "source_id": "ANA-2016-COMPLEMENTACION-NACIONAL", "detail": "Cuadro 11, fila 13: centro poblado 'Paccha', quebrada 'Paccha'", "table": "Cuadro 11", "row_number_as_read": 13, "source_reference_point": {"easting_m": 587557, "northing_m": 9445864}}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P4", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": []},
+  {"inventory_id": "tumbes_la_cruz_banchero", "row_role": "CANDIDATE_UNIT", "documentary_name": "Banchero", "feature_class_as_named": "quebrada", "label_caution": "LABEL_ALSO_NAMES_A_STREET_IN_THE_SAME_SOURCE", "name_variants_observed": [], "department": "Tumbes", "province": "Tumbes", "district": "La Cruz", "corridor": "TUMBES_ZORRITOS", "location_note": "Source names 'quebradas Banchero y Mariátegui' and, as damaged infrastructure, 'calle Banchero, sector Mariátegui y calle Palmeras'. The quebrada and the street are recorded as different things; the street is not evidence of the channel. Relation with 'Banchero Rossi' (tumbes_la_cruz_banchero_rossi) UNRESOLVED.", "evidence_types": ["EVENT", "IDENTITY"], "evidence": [{"evidence_type": "IDENTITY", "source_id": "INDECI-RC-1951-2024-TUMBES", "detail": "Named as a quebrada: «Distrito de La Cruz Inundación y huaico por la activación de las quebradas 11/01/2024 Banchero y Mariátegui, ocasionando daños a la infraestructura 22:00 Horas de transporte en la calle Banchero, sector Mariátegui y calle Palmeras.»", "quote_id": "RC1951-LA-CRUZ-EVENT"}, {"evidence_type": "EVENT", "source_id": "INDECI-RC-1951-2024-TUMBES", "detail": "INDECI RC N.° 1951 (27/02/2024), 1. HECHOS, Distrito de La Cruz, 11/01/2024 22:00: 'Inundación y huaico por la activación de las quebradas Banchero y Mariátegui'. Two quebradas named in one dated statement; damage is described on streets/sector of the same names. Archived and quote-tested; not promoted to EVENT_EVIDENCE (independent QA required).", "quote_id": "RC1951-LA-CRUZ-EVENT", "event_dates": ["2024-01-11"], "attribution_scale": "NAMED_UNIT_DATED", "event_lead_eligible": true, "source_text_verified": false, "verification": null}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "EVENT_LEAD_UNVERIFIED", "state_flags": ["EVENT_LEAD_UNVERIFIED"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P2", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": ["2024-01-11"], "added_in_revision": "r7"},
+  {"inventory_id": "tumbes_la_cruz_mariategui", "row_role": "CANDIDATE_UNIT", "documentary_name": "Mariátegui", "feature_class_as_named": "quebrada", "label_caution": "LABEL_ALSO_NAMES_A_SECTOR_IN_THE_SAME_SOURCE", "name_variants_observed": [], "department": "Tumbes", "province": "Tumbes", "district": "La Cruz", "corridor": "TUMBES_ZORRITOS", "location_note": "Source names 'quebradas Banchero y Mariátegui' and the damaged 'sector Mariátegui'. No equivalence with the Piura settlement 'AH José Carlos Mariátegui' (ANA 2016 Piura table, row of Qda. Cieneguillo, Sullana): different department, and that source names a settlement, not a quebrada.", "evidence_types": ["EVENT", "IDENTITY"], "evidence": [{"evidence_type": "IDENTITY", "source_id": "INDECI-RC-1951-2024-TUMBES", "detail": "Named as a quebrada: «Distrito de La Cruz Inundación y huaico por la activación de las quebradas 11/01/2024 Banchero y Mariátegui, ocasionando daños a la infraestructura 22:00 Horas de transporte en la calle Banchero, sector Mariátegui y calle Palmeras.»", "quote_id": "RC1951-LA-CRUZ-EVENT"}, {"evidence_type": "EVENT", "source_id": "INDECI-RC-1951-2024-TUMBES", "detail": "INDECI RC N.° 1951 (27/02/2024), 1. HECHOS, Distrito de La Cruz, 11/01/2024 22:00: 'Inundación y huaico por la activación de las quebradas Banchero y Mariátegui'. Two quebradas named in one dated statement; damage is described on streets/sector of the same names. Archived and quote-tested; not promoted to EVENT_EVIDENCE (independent QA required).", "quote_id": "RC1951-LA-CRUZ-EVENT", "event_dates": ["2024-01-11"], "attribution_scale": "NAMED_UNIT_DATED", "event_lead_eligible": true, "source_text_verified": false, "verification": null}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "EVENT_LEAD_UNVERIFIED", "state_flags": ["EVENT_LEAD_UNVERIFIED"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P2", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": ["2024-01-11"], "added_in_revision": "r7"},
+  {"inventory_id": "tumbes_la_cruz_banchero_rossi", "row_role": "CANDIDATE_UNIT", "documentary_name": "Banchero Rossi", "feature_class_as_named": "quebrada", "name_variants_observed": [{"label": "Luis Banchero Rossi", "source_id": "MDLC-RA-128-2023"}], "department": "Tumbes", "province": "Tumbes", "district": "La Cruz", "corridor": "TUMBES_ZORRITOS", "location_note": "Two works documents name the channel: MVCS 2021 (preventive cleaning of 'la quebrada Banchero Rossi, en el distrito de La Cruz') and MD La Cruz R.A. 128-2023 ('cauce de la quebrada Luis Banchero Rossi del distrito de La Cruz'). Works are not events; no activation date is stated by either. Relation with 'Banchero' (INDECI 2024) UNRESOLVED.", "evidence_types": ["WORKS"], "evidence": [{"evidence_type": "WORKS", "source_id": "MVCS-NOTA-569204-2021", "detail": "MVCS press note 11/12/2021: «inició los trabajos de limpieza y descolmatación de la quebrada Banchero Rossi, en el distrito de La Cruz, en la provincia y región de Tumbes.» (preventive cleaning; no event stated)", "quote_id": "MVCS-WORKS"}, {"evidence_type": "WORKS", "source_id": "MDLC-RA-128-2023", "detail": "R.A. N.° 128-2023/MDLC-ALC (05/04/2023) approves the technical file of the emergency activity «LIMPIEZA Y DESCOLMATACióN DEL CAUCE DE LA QUEBRADA LUIS BANCHERO ROSSI DEL DISTRITO DE LA CRUZ, 5 de abril de 2023» (scanned PDF archived and read visually)", "quote_id": "RA128-PROJECT"}], "reproducible_geometry": {"exists": false}, "reproducible_outlet_or_confluence": {"exists": false}, "collector_relation": null, "suggested_state": "IDENTITY_ONLY", "state_flags": ["IDENTITY_ONLY"], "irfen_presence": {"status": "NOT_FOUND_IN_REPO"}, "priority": "P3", "map_eligible": false, "parent_basin_or_system": null, "verified_event_dates": [], "event_lead_dates_unverified": [], "added_in_revision": "r7"}
  ]
 }
