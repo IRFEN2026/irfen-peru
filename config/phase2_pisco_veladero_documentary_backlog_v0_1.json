@@ -1,0 +1,121 @@
+{
+  "schema_version": "0.1",
+  "record_id": "phase2-pisco-veladero-documentary-lead:2026-10-16",
+  "role": "DOCUMENTARY_BACKLOG_NOT_MAP_UNIT",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "candidate": {
+    "inventory_id_proposed": "ica_huancano_veladero",
+    "documentary_name": "Quebrada Veladero",
+    "aliases_confirmed": [],
+    "unresolved_name_relationships": [
+      {
+        "name": "Veladero Chico",
+        "relation": "UNRESOLVED_NOT_ASSUMED_ALIAS",
+        "source_url": "https://www3.congreso.gob.pe/Docs/comisiones2021/CES-emergencias-desastres-covid19/files/ppt2025/estrategias_para_enfrentar_el_peligro_inminente%2C_el_impacto_y_respuesta._ds-007-2025-pcm._gore_ica.pdf"
+      },
+      {
+        "name": "Quebrada Quitasol",
+        "relation": "SECTOR_NAME_IS_NOT_A_CAUCE_ALIAS",
+        "source_url": "https://www.ana.gob.pe/sites/default/files/normatividad/files/70-RD-0663-2024-06.pdf"
+      }
+    ],
+    "department": "Ica",
+    "province": "Pisco",
+    "district": "Huancano",
+    "sector_documented": "Quitasol",
+    "corridor": "PISCO_ICA",
+    "documentary_parent_basin_lead": "río Pisco (Ministerio de Cultura; textual confluence lead, not reproducible outlet)",
+    "parent_basin_or_system_verified": null,
+    "evidence_types": [
+      "IDENTITY",
+      "WORKS"
+    ],
+    "dates_documented": [
+      {
+        "date": "2024-06-14",
+        "kind": "ANA_FIELD_INSPECTION_NOT_EVENT"
+      },
+      {
+        "date": "2024-07-31",
+        "kind": "ANA_RESOLUTION_SIGNATURE_NOT_EVENT"
+      }
+    ],
+    "event_dates": [],
+    "events_verified": false,
+    "geometry": {
+      "exists": false,
+      "source_geometry": null,
+      "reason": "ANA worksite inspection points are not channel geometry or flood footprint; do not polygonize or infer centerline."
+    },
+    "outlet_or_confluence": {
+      "reproducible": false,
+      "coordinates": null,
+      "status": "UNKNOWN",
+      "documentary_lead": "Ministerio de Cultura mentions confluence with río Pisco near Humay border; requires independent source-byte QA and GIS."
+    },
+    "suggested_state": "IDENTITY_ONLY",
+    "state_flags": [
+      "IDENTITY_ONLY"
+    ],
+    "map_publishable": false,
+    "map_blockers": [
+      "No verified reproducible channel geometry",
+      "No verified outlet or confluence coordinates",
+      "Primary source PDFs not byte-frozen or SHA-256 verified",
+      "Veladero / Veladero Chico and Quitasol names require identity adjudication"
+    ],
+    "irfen_presence_at_review": "NOT_FOUND_IN_MAIN_OR_PR378_TEXT_SEARCH"
+  },
+  "sources": [
+    {
+      "source_id": "ANA-RD-0663-2024",
+      "institution": "Autoridad Nacional del Agua",
+      "type": "PRIMARY_ADMINISTRATIVE_INSPECTION_AND_WORKS",
+      "url": "https://www.ana.gob.pe/sites/default/files/normatividad/files/70-RD-0663-2024-06.pdf",
+      "document_locator": "RD 0663-2024, p.2 of 6, ocular inspection dated 14 June 2024; document signed 31 July 2024",
+      "indexed_evidence": "Quebrada Veladero, sector Quitasol, distrito Huancano, provincia Pisco, Ica; proposed maintenance works and inspected worksite points.",
+      "source_text_verified": false,
+      "source_pdf_sha256": null,
+      "archived_original_bytes": false,
+      "verification_level": "PUBLIC_SEARCH_INDEX_EXCERPT_ONLY",
+      "limitations": "No bytes accessible in this run; no coordinates promoted."
+    },
+    {
+      "source_id": "CULTURA-QHAPAQ-NAN-HUANCANO-PAMPANO",
+      "institution": "Ministerio de Cultura",
+      "type": "PRIMARY_INSTITUTIONAL_TERRITORIAL_DESCRIPTION",
+      "url": "https://repositorio.cultura.gob.pe/bitstream/handle/CULTURA/484/Pueblos%20y%20culturas%20en%20las%20rutas%20del%20Qhapaq%20%C3%91an.pdf?isAllowed=y&sequence=1",
+      "document_locator": "Huáncano y Pámpano (Pisco-Ica), pp.250-251",
+      "indexed_evidence": "Names quebrada Veladero and reports confluence with río Pisco near Humay district border.",
+      "source_text_verified": false,
+      "source_pdf_sha256": null,
+      "archived_original_bytes": false,
+      "verification_level": "PUBLIC_SEARCH_INDEX_EXCERPT_ONLY",
+      "limitations": "Textual confluence is not a surveyed outlet coordinate."
+    }
+  ],
+  "scientific_checks": {
+    "not_an_event": true,
+    "not_an_outlet": true,
+    "not_an_approved_geometry": true,
+    "worksite_coordinates_excluded": true,
+    "no_alias_merge": true,
+    "no_negative_claim": true,
+    "no_thresholds": true,
+    "no_hydraulic_capacity_claim": true
+  },
+  "pending_actions": [
+    "Freeze both institutional PDFs as raw bytes with SHA-256 and page-level verification.",
+    "Adjudicate Veladero versus Veladero Chico; preserve independent identities pending proof.",
+    "Check ANA Rios_Quebradas_AAVI exact NOMBRE_CA and UH 13752 before any GIS promotion.",
+    "Only then reconcile this backlog entry into the national master, without map promotion."
+  ]
+}
