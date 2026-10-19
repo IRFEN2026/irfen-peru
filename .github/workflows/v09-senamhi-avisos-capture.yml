@@ -70,6 +70,11 @@ jobs:
           python scripts/v09_zone_rain_engine.py
           python scripts/v09_zone_rain_engine.py --check
           python scripts/v09_build_dashboard_data.py
+      - name: Territorial view bundle (display only; a failure here never blocks persisting the capture)
+        continue-on-error: true
+        run: |
+          python scripts/v09_build_territory_bundle.py > /dev/null
+          python scripts/v09_build_territory_bundle.py --check
       - name: Persist (idempotent, bounded retries)
         shell: bash
         run: |

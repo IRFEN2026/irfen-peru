@@ -6,6 +6,12 @@ on:
       - site/v09/**
       - site/data/v09/**
       - tests/test_v09_dashboard_browser.py
+      - tests/test_v09_territory.py
+      - tests/test_v09_territory_independent_qa.py
+      - scripts/v09_territory_independent_qa.py
+      - scripts/v09_pages_publication_gate.py
+      - scripts/v09_build_territory_bundle.py
+      - config/v09_territory_quebradas_v0_1.json
       - .github/workflows/v09-dashboard-browser-test.yml
   workflow_dispatch:
 
@@ -36,3 +42,12 @@ jobs:
         run: |
           grep -q "^OK$" browser.log
           if grep -q "skipped" browser.log; then echo "::error::the browser test was skipped"; exit 1; fi
+      - name: Visor territorial (costa norte y Rímac) en navegador
+        run: python -m unittest -v tests/test_v09_territory.py 2>&1 | tee territory.log; test "${PIPESTATUS[0]}" -eq 0
+        shell: bash
+      - name: Comprobar que las pruebas de navegador territoriales no se omitieron
+        run: |
+          grep -q "test_navigation_both_regions .* ok$" territory.log
+          grep -A1 "test_data_update_keeps_state_and_old_data_is_never_zero" territory.log | grep -q "ok$"
+      - name: QA científica independiente del visor (no importa el constructor)
+        run: python scripts/v09_territory_independent_qa.py
