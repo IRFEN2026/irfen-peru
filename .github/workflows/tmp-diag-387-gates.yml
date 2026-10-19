@@ -78,3 +78,32 @@ jobs:
             echo "$res" | tail -n +2 | while IFS= read -r line; do echo "::warning title=$where diff::$(echo "$line" | sed 's/%/%25/g' | cut -c1-600)"; done
             for f in hyd/hydrology/*; do echo "::notice title=hydrated::$f $(sha256sum "$f" | cut -c1-16) $(stat -c %s "$f")"; done
           done
+      - name: Confirm cause - versions and the bytes rewritten by build_lambayeque_hydrologic_units --check-only
+        shell: bash
+        run: |
+          set +e
+          echo "::warning title=versions::$(python -c 'import shapely,pyproj,numpy,sys;print(sys.version.split()[0],"shapely",shapely.__version__,"geos",shapely.geos_version_string,"pyproj",pyproj.__version__,"proj",pyproj.proj_version_str,"numpy",numpy.__version__)')"
+          cd ../mainwt
+          F=site/data/phase2/geometries/lambayeque_chongoyape_oyotun_official_critical_reaches_review_only.geojson
+          git checkout -q -- .
+          echo "::warning title=before::$(sha256sum $F | cut -c1-64) (committed)"
+          python scripts/build_lambayeque_hydrologic_units.py --check-only >/dev/null 2>&1; echo "::warning title=after check-only::$(sha256sum $F | cut -c1-64)"
+          echo "::warning title=files rewritten by check-only::$(git status --porcelain | tr '\n' ' ' | cut -c1-600)"
+          python - "$F" <<'PY'
+          import json, subprocess, sys
+          f = sys.argv[1]
+          old = json.loads(subprocess.run(["git", "show", "HEAD:" + f], capture_output=True, text=True).stdout)
+          new = json.load(open(f))
+          diffs = []
+          for i, (a, b) in enumerate(zip(old["features"], new["features"])):
+              if a != b:
+                  ca, cb = a["geometry"]["coordinates"], b["geometry"]["coordinates"]
+                  if ca != cb:
+                      diffs.append(f"feature {i}: {json.dumps(ca)[:150]} -> {json.dumps(cb)[:150]}")
+                  else:
+                      ks = [k for k in set(a["properties"]) | set(b["properties"]) if a["properties"].get(k) != b["properties"].get(k)]
+                      diffs.append(f"feature {i}: properties differ {ks[:5]}")
+          print(f"::warning title=geojson diff::{len(diffs)} of {len(old['features'])} features differ")
+          for d in diffs[:3]:
+              print(f"::warning title=geojson sample::{d}")
+          PY
