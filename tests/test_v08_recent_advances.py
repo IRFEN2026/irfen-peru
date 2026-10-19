@@ -61,7 +61,12 @@ class RecentAdvancesTests(unittest.TestCase):
     def test_exactly_the_three_integrated_candidates_with_catalog_titles(self):
         out = run_node(r'''
         assert.deepEqual(m.RECENT_ADVANCES.map(a=>a.candidateId),IDS);
-        assert.deepEqual(Object.keys(m.RECENT_ADVANCES[0]).sort(),['candidateId','note']);
+        // Each card: candidate id, one plain-language line (demo 15-10) and the technical note kept on demand.
+        for(const a of m.RECENT_ADVANCES){
+          assert.deepEqual(Object.keys(a).sort(),['candidateId','note','plain']);
+          assert(a.plain.length<=90,'plain line stays short');
+          assert(!/riesgo|alerta|umbral|probab|nivel/i.test(a.plain),'plain line carries no risk semantics');
+        }
         const items=m.recentRecords(records);
         assert.equal(items.length,3);
         assert.deepEqual(items.map(x=>x.record.candidateId),IDS);
