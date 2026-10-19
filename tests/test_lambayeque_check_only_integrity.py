@@ -53,6 +53,17 @@ class StaticContract(unittest.TestCase):
         self.assertIn('raise ValueError(f"{name}: SHA-256 no coincide")', text)
         self.assertIn('"output_sha256": output_sha256(REACHES_OUT),', text)
 
+    def test_gate_and_publication_jobs_pin_a_reproducing_runner_image(self):
+        # ubuntu-latest (Ubuntu 26.04, glibc 2.43) does not reproduce the committed bytes; 24.04 does.
+        import re
+        for wf, job in ((".github/workflows/pr-validation.yml", "validate"),
+                        (".github/workflows/publish-committed-data.yml", "publish"),
+                        (".github/workflows/update-and-deploy.yml", "build")):
+            text = (ROOT / wf).read_text(encoding="utf-8")
+            block = re.search(rf"\n  {job}:\n(.*?)(?=\n  [a-z_-]+:\n|\Z)", text, re.S).group(1)
+            self.assertRegex(block, r"\n    runs-on: ubuntu-24\.04\n", wf)
+            self.assertNotIn("runs-on: ubuntu-latest", block, wf)
+
 
 @unittest.skipUnless(HAVE_GEO, "shapely/pyproj not installed")
 class CheckOnlyOnTheRepository(unittest.TestCase):
@@ -72,6 +83,7 @@ class CheckOnlyOnTheRepository(unittest.TestCase):
             self.assertIn("CHECK_FAILED", r.stderr)
             self.assertRegex(r.stderr, r"committed sha256=[0-9a-f]{64} computed sha256=[0-9a-f]{64}")
             self.assertIn('"pyproj"', r.stderr)
+            self.assertIn('"libc"', r.stderr)
         else:
             self.assertIn('"critical_reach_count": 14', r.stdout)
 

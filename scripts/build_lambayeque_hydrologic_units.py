@@ -658,8 +658,10 @@ def library_versions() -> dict:
     import numpy
     import pyproj
     import shapely
+    import platform
     return {"shapely": shapely.__version__, "geos": shapely.geos_version_string, "pyproj": pyproj.__version__,
-            "proj": pyproj.proj_version_str, "numpy": numpy.__version__}
+            "proj": pyproj.proj_version_str, "numpy": numpy.__version__, "python": platform.python_version(),
+            "platform": platform.platform(), "libc": " ".join(platform.libc_ver())}
 
 
 def _numeric_differences(old: object, new: object, path: str = "$", out: list | None = None) -> list:
@@ -722,7 +724,8 @@ def main() -> int:
         if mismatches:
             print("CHECK_FAILED: the outputs computed now differ from the committed artefacts. Nothing was written; "
                   "the committed files and their hashes are left untouched.", file=sys.stderr)
-            print(f"libraries: {json.dumps(library_versions(), sort_keys=True)}", file=sys.stderr)
+            # The same libraries can differ in the last bit across system libm versions (e.g. glibc 2.39 vs 2.43).
+            print(f"environment: {json.dumps(library_versions(), sort_keys=True)}", file=sys.stderr)
             for item in mismatches:
                 print(item, file=sys.stderr)
             return 1
