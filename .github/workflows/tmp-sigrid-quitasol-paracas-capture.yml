@@ -1,4 +1,4 @@
-name: TMP capture SIGRID 5729/5733 ANA maps (Quitasol, Paracas) - one run, raw bytes only, removed next commit
+name: TMP capture (r2) SIGRID 5729/5733 ANA maps (Quitasol, Paracas) - one run, raw bytes only, removed next commit
 on:
   push:
     branches: [probe/pisco-quitasol-paracas-sigrid-20261019]
@@ -14,7 +14,7 @@ jobs:
       - name: Capture (fail-closed; public pages only; no parsing, nothing accepted)
         shell: bash
         run: |
-          set -u
+          set +e +o pipefail
           OUT=data/phase2/source_archive/pisco_quitasol_paracas_sigrid_20261019
           mkdir -p "$OUT"
           UA="IRFEN-research-archive/0.1 (+https://github.com/IRFEN2026/irfen-peru; one-off documentary capture)"
@@ -46,7 +46,9 @@ jobs:
             done
           done
           (cd "$OUT" && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
-          cat "$OUT/capture_log.tsv"
+          while IFS= read -r line; do echo "::notice title=capture::$(echo "$line" | tr '\t' ' ' | sed 's/%/%25/g' | cut -c1-600)"; done < "$OUT/capture_log.tsv"
+          ls -la "$OUT" "$OUT"/* 2>/dev/null | sed 's/^/::notice title=files::/' | head -20
+          exit 0
       - name: Commit raw capture (github-actions[bot]); nothing is accepted or parsed
         run: |
           git config user.name "github-actions[bot]"
