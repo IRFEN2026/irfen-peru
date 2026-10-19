@@ -44,3 +44,37 @@ jobs:
               if [ $rc -ne 0 ]; then echo "::error title=$where rc=$rc ${g%% *}::$msg"; else echo "::notice title=$where OK ${g%% *}::$(echo "$out" | tail -1 | cut -c1-200)"; fi
             done
           done
+      - name: Exact diff of map_layers.json vs rebuilt catalog (PR and MAIN), as annotations
+        shell: bash
+        run: |
+          set +e
+          cat > /tmp/mapdiff.py <<'PY'
+          import json, sys
+          sys.path.insert(0, "scripts")
+          import build_map_layer_catalog as b
+          import build_map_layer_catalog_core as core
+          cur = b.comparable(core.load_json(core.OUT_PATH)); new = b.comparable(b.build_catalog())
+          out = []
+          def walk(a, c, path):
+              if type(a) != type(c): out.append(f"{path}: type {type(a).__name__}->{type(c).__name__}"); return
+              if isinstance(a, dict):
+                  for k in sorted(set(a) | set(c)):
+                      if k not in a: out.append(f"{path}.{k}: ADDED {json.dumps(c[k], ensure_ascii=False)[:160]}")
+                      elif k not in c: out.append(f"{path}.{k}: REMOVED {json.dumps(a[k], ensure_ascii=False)[:160]}")
+                      else: walk(a[k], c[k], f"{path}.{k}")
+              elif isinstance(a, list):
+                  if len(a) != len(c): out.append(f"{path}: len {len(a)}->{len(c)}")
+                  for i, (x, y) in enumerate(zip(a, c)):
+                      walk(x, y, f"{path}[{i}]")
+              elif a != c: out.append(f"{path}: {json.dumps(a, ensure_ascii=False)[:120]} -> {json.dumps(c, ensure_ascii=False)[:120]}")
+          walk(cur, new, "$")
+          print(len(out)); print("\n".join(out[:25]))
+          PY
+          for where in PR MAIN; do
+            dir=../prwt; [ "$where" = MAIN ] && dir=../mainwt
+            res=$(cd "$dir" && python /tmp/mapdiff.py 2>&1 | head -26)
+            n=$(echo "$res" | head -1)
+            echo "::warning title=$where map_layers diff count::$n"
+            echo "$res" | tail -n +2 | while IFS= read -r line; do echo "::warning title=$where diff::$(echo "$line" | sed 's/%/%25/g' | cut -c1-600)"; done
+            for f in hyd/hydrology/*; do echo "::notice title=hydrated::$f $(sha256sum "$f" | cut -c1-16) $(stat -c %s "$f")"; done
+          done
