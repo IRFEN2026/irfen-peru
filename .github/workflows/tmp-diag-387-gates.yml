@@ -1,0 +1,43 @@
+name: TMP diagnose v0.8 scientific gates for #387 merge vs main (read-only, no commits)
+on:
+  push:
+    branches: [diag/387-scientific-gates-20261019]
+    paths: [.github/workflows/tmp-diag-387-gates.yml]
+permissions:
+  contents: read
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: |
+          pip install -q -r requirements.txt
+          pip install -q -r requirements-ci-test.txt
+      - name: Hydrate published transient evidence (same list as pr-validation)
+        shell: bash
+        run: |
+          BASE="https://irfen2026.github.io/irfen-peru/data"
+          for file in latest.json experimental_state.json test_report.json forecast/archive.json forecast/historical_daily.json forecast/verification.json calibration/historical_replay.json hydrology/piura_reference_model.json hydrology/ana_catacaos_critical_segments_2026.geojson hydrology/ana_catacaos_critical_segments_2026_validation.json hydrology/glofas_catacaos_current.json; do
+            mkdir -p "site/data/$(dirname "$file")" hyd/$(dirname "$file")
+            curl -fsSL --connect-timeout 10 --max-time 35 --retry 3 --retry-all-errors "$BASE/$file?diag=${{ github.run_id }}" -o "hyd/$file" && cp "hyd/$file" "site/data/$file" || echo "::warning::hydrate failed $file"
+          done
+          git worktree add -q ../mainwt origin/main
+          (cd hyd && find . -type f -exec cp --parents {} ../../mainwt/site/data/ \;)
+      - name: Run each gate on PR merge and on main; report as annotations
+        shell: bash
+        run: |
+          gates=("scripts/build_lambayeque_hydrologic_units.py --check-only" "scripts/build_phase2_catalog.py --check-only" "scripts/build_map_layer_catalog.py --check-only" "scripts/validate_scientific_assets.py" "scripts/validate_pedregal_clean_room.py")
+          for where in PR MAIN; do
+            dir=.; [ "$where" = MAIN ] && dir=../mainwt
+            for g in "${gates[@]}"; do
+              out=$(cd "$dir" && python $g 2>&1); rc=$?
+              msg=$(echo "$out" | tail -12 | tr '\n' ' ' | cut -c1-900)
+              if [ $rc -ne 0 ]; then echo "::error title=$where rc=$rc ${g%% *}::$msg"; else echo "::notice title=$where OK ${g%% *}::$(echo "$out" | tail -1 | cut -c1-200)"; fi
+            done
+          done
