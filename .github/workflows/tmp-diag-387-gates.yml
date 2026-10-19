@@ -32,12 +32,15 @@ jobs:
       - name: Run each gate on PR merge and on main; report as annotations
         shell: bash
         run: |
+          set +e
+          git fetch -q origin "+refs/pull/387/merge:refs/remotes/pr387merge" && git worktree add -q ../prwt refs/remotes/pr387merge && (cd hyd && find . -type f -exec cp --parents {} ../../prwt/site/data/ \;)
+          echo "::notice title=states::PR=$(git -C ../prwt rev-parse --short HEAD) MAIN=$(git -C ../mainwt rev-parse --short HEAD)"
           gates=("scripts/build_lambayeque_hydrologic_units.py --check-only" "scripts/build_phase2_catalog.py --check-only" "scripts/build_map_layer_catalog.py --check-only" "scripts/validate_scientific_assets.py" "scripts/validate_pedregal_clean_room.py")
           for where in PR MAIN; do
-            dir=.; [ "$where" = MAIN ] && dir=../mainwt
+            dir=../prwt; [ "$where" = MAIN ] && dir=../mainwt
             for g in "${gates[@]}"; do
               out=$(cd "$dir" && python $g 2>&1); rc=$?
-              msg=$(echo "$out" | tail -12 | tr '\n' ' ' | cut -c1-900)
+              msg=$(echo "$out" | grep -vE '^[[:space:]]*$' | tail -8 | tr '\n' ' ' | sed 's/%/%25/g' | cut -c1-900)
               if [ $rc -ne 0 ]; then echo "::error title=$where rc=$rc ${g%% *}::$msg"; else echo "::notice title=$where OK ${g%% *}::$(echo "$out" | tail -1 | cut -c1-200)"; fi
             done
           done
