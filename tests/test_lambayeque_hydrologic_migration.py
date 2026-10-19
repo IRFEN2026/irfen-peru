@@ -189,7 +189,9 @@ class LambayequeHydrologicMigrationTests(unittest.TestCase):
                 *hydrology.CONTRACT_DIR.glob("*.json"),
             ]
         }
-        hydrology.build_outputs()
+        # Recompute in memory and compare byte for byte; the check itself never rewrites the committed artefacts.
+        _, mismatches = hydrology.check_outputs()
+        self.assertEqual(mismatches, [], "\n".join(mismatches))
         self.assertEqual(before, {path: digest(path) for path in before})
 
 

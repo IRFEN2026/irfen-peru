@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import sys
 from pathlib import Path
 from urllib.request import Request, urlopen
 
@@ -282,9 +283,24 @@ def canonical_bytes(value: object) -> bytes:
     return (json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
 
 
+# --check-only computes every output in memory (path -> bytes) and never writes; see check_outputs().
+_PLANNED: dict[Path, bytes] | None = None
+
+
 def write_json(path: Path, value: object) -> None:
+    data = canonical_bytes(value)
+    if _PLANNED is not None:
+        _PLANNED[path] = data
+        return
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(canonical_bytes(value))
+    path.write_bytes(data)
+
+
+def output_sha256(path: Path) -> str:
+    """SHA-256 of an output as produced in this run (in memory under --check-only, on disk otherwise)."""
+    if _PLANNED is not None and path in _PLANNED:
+        return hashlib.sha256(_PLANNED[path]).hexdigest()
+    return sha256(path)
 
 
 def sha256(path: Path) -> str:
@@ -512,7 +528,7 @@ def build_outputs() -> dict:
             "geodesic_area_km2": round(calculated_area, 4),
             "area_relative_difference_pct": round(abs(calculated_area - official_area) / official_area * 100, 4),
             "output_path": child["geometry_path"],
-            "output_sha256": sha256(path),
+            "output_sha256": output_sha256(path),
         })
         write_json(CONTRACT_DIR / f"{child['candidate_id']}.json", child_contract(child))
 
@@ -627,7 +643,7 @@ def build_outputs() -> dict:
         "critical_reaches": {
             "feature_count": len(reach_features),
             "output_path": str(REACHES_OUT.relative_to(ROOT)),
-            "output_sha256": sha256(REACHES_OUT),
+            "output_sha256": output_sha256(REACHES_OUT),
             "all_inside_assigned_ana_unit": all(row["inside_assigned_ana_unit"] for row in reach_validation),
             "max_crs_roundtrip_error_m": max(row["crs_roundtrip_max_error_m"] for row in reach_validation),
             "validations": reach_validation,
@@ -638,16 +654,85 @@ def build_outputs() -> dict:
     return report
 
 
+def library_versions() -> dict:
+    import numpy
+    import pyproj
+    import shapely
+    import platform
+    return {"shapely": shapely.__version__, "geos": shapely.geos_version_string, "pyproj": pyproj.__version__,
+            "proj": pyproj.proj_version_str, "numpy": numpy.__version__, "python": platform.python_version(),
+            "platform": platform.platform(), "libc": " ".join(platform.libc_ver())}
+
+
+def _numeric_differences(old: object, new: object, path: str = "$", out: list | None = None) -> list:
+    """(json path, committed value, computed value) for every differing leaf."""
+    out = [] if out is None else out
+    if isinstance(old, dict) and isinstance(new, dict):
+        for key in sorted(set(old) | set(new)):
+            _numeric_differences(old.get(key), new.get(key), f"{path}.{key}", out)
+    elif isinstance(old, list) and isinstance(new, list) and len(old) == len(new):
+        for i, (a, b) in enumerate(zip(old, new)):
+            _numeric_differences(a, b, f"{path}[{i}]", out)
+    elif old != new:
+        out.append((path, old, new))
+    return out
+
+
+def describe_mismatch(path: Path, committed: bytes, computed: bytes) -> str:
+    rel = path.relative_to(ROOT)
+    lines = [f"{rel}: committed sha256={hashlib.sha256(committed).hexdigest()} computed sha256="
+             f"{hashlib.sha256(computed).hexdigest()} ({len(committed)} vs {len(computed)} bytes)"]
+    try:
+        diffs = _numeric_differences(json.loads(committed), json.loads(computed))
+    except ValueError:
+        return lines[0] + " [not JSON]"
+    numeric = [abs(b - a) for _, a, b in diffs
+               if isinstance(a, (int, float)) and isinstance(b, (int, float)) and not isinstance(a, bool)]
+    lines.append(f"  {len(diffs)} differing value(s); max |numeric difference| = {max(numeric) if numeric else 'n/a'}")
+    lines += [f"  {p}: {json.dumps(a, ensure_ascii=False)[:90]} -> {json.dumps(b, ensure_ascii=False)[:90]}" for p, a, b in diffs[:5]]
+    return "\n".join(lines)
+
+
+def check_outputs() -> tuple[dict, list[str]]:
+    """Recompute every output in memory and compare it byte for byte with the committed artefact. Writes nothing."""
+    global _PLANNED
+    _PLANNED = {}
+    try:
+        report = build_outputs()
+        planned = dict(_PLANNED)
+    finally:
+        _PLANNED = None
+    mismatches = []
+    for path, data in sorted(planned.items()):
+        if not path.is_file():
+            mismatches.append(f"{path.relative_to(ROOT)}: committed artefact missing")
+        elif path.read_bytes() != data:
+            mismatches.append(describe_mismatch(path, path.read_bytes(), data))
+    return report, mismatches
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--refresh-source", action="store_true")
     parser.add_argument("--check-only", action="store_true")
     args = parser.parse_args()
-    if args.refresh_source:
-        fetch_raw_sources()
-    report = build_outputs()
+    if args.check_only and args.refresh_source:
+        parser.error("--check-only never downloads or writes; do not combine it with --refresh-source")
     if args.check_only:
         validate_raw_sources()
+        report, mismatches = check_outputs()
+        if mismatches:
+            print("CHECK_FAILED: the outputs computed now differ from the committed artefacts. Nothing was written; "
+                  "the committed files and their hashes are left untouched.", file=sys.stderr)
+            # The same libraries can differ in the last bit across system libm versions (e.g. glibc 2.39 vs 2.43).
+            print(f"environment: {json.dumps(library_versions(), sort_keys=True)}", file=sys.stderr)
+            for item in mismatches:
+                print(item, file=sys.stderr)
+            return 1
+    else:
+        if args.refresh_source:
+            fetch_raw_sources()
+        report = build_outputs()
     print(json.dumps({
         "status": report["status"],
         "phase2_registered_candidates_after": report["phase2_registered_candidates_after"],
