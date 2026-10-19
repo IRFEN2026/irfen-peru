@@ -10,3 +10,10 @@ Rama huérfana solo con imágenes, para el PR `ui/map-panels-v0-1`. No contiene 
 | `02_mobile_antes_despues.png` | 390×844 |
 | `03_paneles_abiertos.png` | Paneles «Capas» y «Meteorología» abiertos |
 | `04_mapa_operativo_antes_despues.png` | Mapa de la pestaña «Legado v0.7.1» |
+
+## 20261019/ — #387 sobre #386 (cabeza `da26f6ad`)
+Capturas locales con Leaflet 1.9.4. Los mosaicos de OSM y NASA GIBS se sustituyen por una tesela neutra: el entorno de captura no accede a ellos. «Fallidos» = todas las peticiones a GIBS abortadas.
+- `01_escritorio_antes_despues.png`: `main` frente a #387 (1440×900).
+- `02_movil_antes_despues.png`: `main` frente a #387 (390×844), con «Avances» plegado y desplegado.
+- `03_meteo_mosaicos_fallidos.png`: con todos los mosaicos fallidos, `main` dice «cargada… no hay precipitación»; #387 dice SIN MOSAICOS.
+- `04_movil_meteo_fallidos.png`: lo mismo en móvil.
