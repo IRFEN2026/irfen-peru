@@ -89,6 +89,16 @@ ul.tight{margin:4px 0;padding-left:18px}
 .toolbar label{font-size:12px;color:var(--ink-2)}
 select{font:inherit;padding:4px 6px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--ink)}
 .tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--surface);font-size:12px;padding:4px 7px;border-radius:5px;z-index:2000;display:none}
+.flags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.flag{font-size:11px;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:4px;border:1px solid var(--ink-2);color:var(--ink)}
+.summary{margin-top:12px;border:1px solid var(--border);border-radius:10px;padding:12px 14px;background:var(--surface)}
+.summary h2{margin:0 0 6px}
+.summary ul{margin:4px 0 10px;padding-left:18px}
+.summary li{margin:3px 0}
+.fresh{display:grid;grid-template-columns:minmax(0,1.6fr) auto minmax(0,1.2fr);gap:4px 12px;align-items:center;font-size:13px}
+.fresh .chip{justify-self:start}
+.chip.absent{background:var(--surface-2);color:var(--ink-3);border-style:dashed}
+.scope{display:inline-block;font-size:11px;padding:0 6px;border-radius:4px;background:var(--surface-2);color:var(--ink-2);margin-left:4px}
 footer{padding:16px;color:var(--ink-3);font-size:12px;border-top:1px solid var(--border)}
 </style>
 </head>
@@ -97,7 +107,9 @@ footer{padding:16px;color:var(--ink-3);font-size:12px;border-top:1px solid var(-
   <h1>IRFEN v0.9 · Vigilancia SENAMHI — costa norte</h1>
   <div class="muted small">Tumbes · Piura · Lambayeque · La Libertad. Hora de presentación: America/Lima (<span id="now"></span>).</div>
   <div class="banner" id="disclaimer">Vista experimental de investigación (RESEARCH_ONLY / TEST_ONLY). No es un sistema de alerta.</div>
+  <div class="flags" aria-label="Estado del prototipo"><span class="flag">RESEARCH_ONLY</span><span class="flag">TEST_ONLY</span><span class="flag">DEMO PRIVADA · NO PUBLICADA</span><span class="flag">NO ES UN SISTEMA DE ALERTA</span></div>
   <div class="chips" id="chips"></div>
+  <section class="summary" id="summary" aria-live="polite"></section>
 </header>
 <nav role="tablist">
   <button role="tab" data-tab="map" aria-selected="true">1 · Mapa de vigilancia</button>
@@ -232,6 +244,31 @@ function prioritySortKey(zoneId, imerg, rp){
 }
 function compareKeys(a, b){ for (let i = 0; i < a.length; i++) { if (a[i] < b[i]) return -1; if (a[i] > b[i]) return 1; } return 0; }
 /* SHARED-RULES-END */
+/* DEMO-HELPERS-BEGIN — pure presentation helpers (no DOM, no network, no rule change); tests/test_v09_demo_summary.py
+   runs them with node. They only decide how an aviso or a source is DESCRIBED, never the internal priority. */
+const SCOPE_WORDS = ["COSTA", "SIERRA", "SELVA"];
+function avisoScope(a){
+  const up = x => String(x || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+  const ph = up(a && a.phenomenon), desc = up(a && a.description);
+  let regions = SCOPE_WORDS.filter(w => new RegExp("\\b" + w + "\\b").test(ph)), basis = "PHENOMENON";
+  if (!regions.length) { regions = SCOPE_WORDS.filter(w => new RegExp("(^|[.;\\s])" + w + "\\s*:").test(desc)); basis = "DESCRIPTION_SECTIONS"; }
+  if (!regions.length) basis = "NOT_STATED";
+  return {regions, basis, selvaOnly: regions.length === 1 && regions[0] === "SELVA"};
+}
+function scopeLabel(sc){
+  return sc.regions.length ? "ámbito: " + sc.regions.map(r => r.toLowerCase()).join(" · ") : "ámbito natural no indicado";
+}
+function freshnessState(lastIso, nowMs, staleAfterMin){
+  const t = lastIso ? Date.parse(lastIso) : NaN;
+  if (!Number.isFinite(t)) return {state: "AUSENTE", age_min: null};
+  const age = (nowMs - t) / 60000;
+  return {state: age > staleAfterMin ? "RETRASADA" : "DISPONIBLE", age_min: age};
+}
+function latestIso(values){
+  const ok = values.filter(v => v && Number.isFinite(Date.parse(v)));
+  return ok.length ? ok.reduce((a, b) => Date.parse(b) > Date.parse(a) ? b : a) : null;
+}
+/* DEMO-HELPERS-END */
 function statusNow(a){ return avisoStatusAt({...a, status: a.stored_status === "CANCELADO" || a.stored_status === "REEMPLAZADO" ? a.stored_status : undefined}, Date.now()); }
 const FR = () => (D && D.rain && D.rain.freshness) || DEFAULT_FRESHNESS;
 function zoneAvisos(z){ // link entries + permanent states from the registry (cancellation / supersession)
@@ -344,6 +381,46 @@ function renderHeader(){
   document.getElementById("footer").innerHTML = `Todas las horas en hora de Lima (UTC−5), formato 24 h. Paquete generado ${lima(D.built_at_utc)} (UTC ${esc(D.built_at_utc)}). Cruce territorial evaluado ${lima(D.links_evaluated_at_utc)}; lluvia evaluada ${lima(D.rain.evaluated_at_utc)}. `
     + (D.boundary_source ? `Límites: ${esc(D.boundary_source.dataset_title)} (${esc(D.boundary_source.institution)}; ${esc(D.boundary_source.legal_status)}; SHA-256 ${esc((D.boundary_source.sha256||"").slice(0,12))}…). ` : "")
     + `Guardas: production_use=false · operational_alerting_enabled=false · activation_gate=BLOCKED · decision_thresholds=null.`;
+  renderSummary();
+}
+const NORTH_DEPTS = ["TUMBES", "PIURA", "LAMBAYEQUE", "LA LIBERTAD"];
+const STATE_UI = {DISPONIBLE: ["ok", "Disponible"], RETRASADA: ["warn", "Retrasada"], AUSENTE: ["absent", "Ausente"]};
+function renderSummary(){
+  const now = Date.now(), fr = FR(), zones = D.rain.zones;
+  // Avisos actually related to at least one surveillance zone (the engine's territorial crossing), active now.
+  const related = new Map();
+  zones.forEach(z => (z.avisos||[]).forEach(r => { const a = avisoByKey[r.aviso_key]; if (a && ["VIGENTE","FUTURO"].includes(a.now) && a.rain_related !== false)
+    (related.get(a.aviso_key) || related.set(a.aviso_key, {a, basins: 0, zones: 0}).get(a.aviso_key)).zones++; }));
+  zones.filter(z => z.zone_type === "BASIN_GEOMETRY").forEach(z => (z.avisos||[]).forEach(r => { const x = related.get(r.aviso_key); if (x) x.basins++; }));
+  const rainNow = [...related.values()].map(x => x.a);
+  const selva = rainNow.filter(a => avisoScope(a).selvaOnly), applicable = rainNow.filter(a => !avisoScope(a).selvaOnly);
+  const deptOnly = applicable.filter(a => (a.departments||[]).some(d => NORTH_DEPTS.includes(d) && !(((a.provinces_by_department||{})[d])||[]).length));
+  const labels = Object.fromEntries((D.rain.review_priorities||[]).map(p => [p.code, p.label_es]));
+  const tiers = {}; zones.forEach(z => { const c = liveTier(z).code; tiers[c] = (tiers[c]||0) + 1; });
+  const withRain = zones.filter(z => liveTier(z).imerg_usable && Object.values(z.imerg.windows||{}).some(w => w.status === "CALCULADO")).length;
+  const num = a => esc(a.aviso_number ?? a.aviso_key) + " · " + esc(String(a.phenomenon || a.product || "").split("(")[0].trim().toLowerCase());
+  const items = [];
+  items.push(`<b>Avisos oficiales de lluvia</b> (SENAMHI, reproducidos por INDECI/COEN): ${applicable.length ? `${applicable.length} vigente(s) o próximo(s) relacionados con las zonas del norte (n.º ${applicable.map(num).join("; ")}).` : "ninguno vigente relacionado con las zonas del norte en la última captura."}`
+    + (deptOnly.length ? ` ${deptOnly.length} de ellos solo nombran departamentos, no provincias: por eso se marcan zonas enteras.` : ""));
+  if (selva.length) items.push(`${selva.length} aviso(s) para la <b>selva</b> (n.º ${selva.map(num).join("; ")}) alcanzan a cuencas de la costa solo porque su cabecera toca un departamento enumerado (por ejemplo, Cajamarca). En las fichas de esas cuencas se muestran aparte: no son avisos específicos de ellas.`);
+  items.push(`<b>Prioridad interna de revisión IRFEN</b> (orden de trabajo del equipo, no es un nivel oficial): ` + Object.entries(tiers).sort().map(([c, n]) => `${n} en «${esc(labels[c] || c)}»`).join(" · ") + ".");
+  items.push(`<b>Lluvia observada por satélite</b> (IMERG): calculable ahora en ${withRain} de ${zones.length} zonas. En las demás faltan datos recientes; lo que falta se muestra como «no disponible», nunca como cero.`);
+  items.push(`<b>Qué es esto</b>: una demo privada de investigación. No es un sistema de alerta, no predice huaicos ni desbordes y no sustituye a SENAMHI, INDECI ni a las autoridades.`);
+  const h = D.source.health || {}, avState = sourceState();
+  const rows = [
+    ["Avisos SENAMHI vía INDECI/COEN", h.last_successful_check_utc, avState === "AL_DIA" ? "DISPONIBLE" : h.last_successful_check_utc ? "RETRASADA" : "AUSENTE", `se considera retrasada tras ${D.source.viewer_stale_after_minutes || 180} min`],
+    ["Lluvia observada · IMERG Early", latestIso(zones.map(z => z.imerg && z.imerg.window_end_utc)), null, `estimación satelital con horas de latencia; retrasada tras ${fr.imerg_stale_after_h} h`],
+    ["Lluvia instantánea · GOES-19", latestIso(zones.map(z => z.goes19 && z.goes19.scan_end_utc)), null, `retrasada tras ${fr.goes_stale_after_min} min`],
+    ["Previsión experimental · GEOS-CF", latestIso(zones.map(z => z.geos_cf && z.geos_cf.dataset_time_start)), null, `ciclo; no se usa si tiene más de ${fr.geos_max_cycle_age_h} h`],
+  ];
+  const limits = [D.source.viewer_stale_after_minutes || 180, fr.imerg_stale_after_h * 60, fr.goes_stale_after_min, fr.geos_max_cycle_age_h * 60];
+  const fresh = rows.map(([name, last, forced, note], i) => {
+    const st = forced || freshnessState(last, now, limits[i]).state, [cls, txt] = STATE_UI[st];
+    return `<div>${esc(name)}<br><span class="small muted">${esc(note)}</span></div><span class="chip ${cls}" data-fresh="${st}">${txt}</span><div class="small">${last ? `${lima(last)} (${ago(last)})` : "sin dato"}</div>`;
+  }).join("");
+  document.getElementById("summary").innerHTML = `<h2>Resumen en lenguaje sencillo</h2><ul>${items.map(x => `<li>${x}</li>`).join("")}</ul>
+    <h3 style="margin:6px 0">Última actualización por fuente</h3><div class="fresh">${fresh}</div>
+    <p class="small muted" style="margin:8px 0 0">Disponible = dentro de su plazo normal · Retrasada = más antigua de lo esperado (no describe la situación actual) · Ausente = sin dato. Hora de Lima.</p>`;
 }
 
 /* ---------------- 1 · map + integrated zone view ---------------- */
@@ -415,11 +492,17 @@ function selectZone(id, fromClick){
   const t = liveTier(z), labels = Object.fromEntries((D.rain.review_priorities||[]).map(p => [p.code, p.label_es]));
   const rm = D.relation_methods || {};
   const av = (z.avisos||[]).map(a => ({...a, full: avisoByKey[a.aviso_key] || {}})).map(a => ({...a, now: statusNow(a.full.aviso_key ? a.full : a)}));
-  const avHtml = av.length ? av.map(a => `<div style="margin-bottom:6px"><b>Aviso ${esc(a.full.aviso_number ?? a.aviso_key)}</b> · ${esc(a.full.phenomenon || a.product || "")}
+  const isBasin = z.zone_type === "BASIN_GEOMETRY";
+  const otherScope = isBasin ? av.filter(a => avisoScope(a.full.aviso_key ? a.full : a).selvaOnly) : [];
+  const avMain = av.filter(a => !otherScope.includes(a));
+  const otherHtml = otherScope.length ? `<details class="small" style="margin-top:6px"><summary>Otros avisos relacionados, con ámbito distinto (${otherScope.length})</summary>`
+    + otherScope.map(a => `<div style="margin:4px 0"><b>Aviso ${esc(a.full.aviso_number ?? a.aviso_key)}</b> · ${esc(a.full.phenomenon || "")} <span class="scope">${esc(scopeLabel(avisoScope(a.full)))}</span> · <span class="status ${a.now}">${a.now}</span></div>`).join("")
+    + `<p class="muted" style="margin:4px 0 0">Son avisos para la selva: se relacionan con esta cuenca solo porque parte de ella está en un departamento que el aviso enumera, y la cuenca drena al Pacífico. No se presentan como avisos de la zona. (La prioridad interna del motor aún los cuenta: pendiente de decisión.)</p></details>` : "";
+  const avHtml = (avMain.length ? avMain.map(a => `<div style="margin-bottom:6px"><b>Aviso ${esc(a.full.aviso_number ?? a.aviso_key)}</b> · ${esc(a.full.phenomenon || a.product || "")} <span class="scope">${esc(scopeLabel(avisoScope(a.full.aviso_key ? a.full : a)))}</span>
       <br><span class="status ${a.now}">${a.now}</span> · ${lima(a.validity_start)} → ${lima(a.validity_end)} · ${levelBadge(a.full.aviso_key ? a.full : a)}
       <br><span class="small muted">${esc(rm[a.relation_method]?.label_es || a.relation_method)}. ${esc(rm[a.relation_method]?.caveat_es || "")}</span>
       ${a.full.official_url ? `<br><a class="small" href="${esc(a.full.official_url)}" target="_blank" rel="noopener">Boletín oficial INDECI/COEN</a>` : ""}</div>`).join("")
-    : `<p class="muted">Ningún aviso de lluvia relacionado en la última evaluación.</p>`;
+    : `<p class="muted">Ningún aviso de lluvia específico de esta zona en la última evaluación.</p>`) + otherHtml;
   const w = z.imerg.windows || {};
   const cell = k => w[k]?.status === "CALCULADO" ? `<b>${w[k].accum_mm} mm</b>` : na(w[k]?.reason);
   const g = z.goes19, f = geosWindowsAt(z.geos_cf, Date.now(), FR());
@@ -454,6 +537,8 @@ function renderLegendOnly(){
   lg.push(`<div class="row"><span class="sw" style="background:transparent;border:1px solid var(--ink-3)"></span>No incluida en avisos de lluvia activos</div>`);
   lg.push(`<hr style="border:0;border-top:1px solid var(--border)"><b>Prioridad interna de revisión IRFEN</b> (relleno de cuencas; contorno de provincias de contexto en Piura y Tumbes; no es nivel oficial)`);
   (D.rain.review_priorities||[]).forEach(p => lg.push(`<div class="row"><span class="sw" style="background:var(${PRIO_VAR[p.code]})"></span>${esc(p.label_es)}</div>`));
+  const nBasins = D.geometries.features.filter(f => f.properties.kind === "BASIN").length;
+  lg.push(`<p class="small" style="margin:6px 0 0"><b>Qué se dibuja:</b> ${nBasins} cuencas con geometría verificada. Las quebradas del inventario documental que aún no tienen un contorno reproducible no se dibujan aquí, aunque estén inventariadas.</p>`);
   lg.push(`<p class="small muted" style="margin:6px 0 0">Piura y Tumbes (salvo Bocapán) no tienen cuenca validada: sus provincias se muestran como contexto. Cuencas: ANA y, San Ildefonso, validación v0.8. Límites: INEI referenciales.</p>`);
   document.getElementById("legend").innerHTML = lg.join("");
 }
@@ -473,7 +558,7 @@ function drawAvisos(){
       const scope = a.provinces_by_department ? Object.entries(a.provinces_by_department).map(([d,ps]) => `<b>${esc(d)}</b>: ${ps.map(esc).join(", ")}`).join("<br>")
                                               : (a.departments||[]).map(esc).join(", ") + (a.departments?.length ? `<br><span class="small muted">sin provincias en la fuente</span>` : "");
       return `<tr><td><b>${esc(a.aviso_number)}</b><br><span class="small muted">${esc(a.product)}</span></td>
-        <td>${esc(a.phenomenon || "—")}${a.rain_related === false ? `<br><span class="small muted">No es aviso de lluvia: contexto oficial</span>` : ""}${a.extends_aviso_number ? `<br><span class="small muted">Extensión del aviso ${esc(a.extends_aviso_number)}</span>` : ""}</td>
+        <td>${esc(a.phenomenon || "—")} <span class="scope">${esc(scopeLabel(avisoScope(a)))}</span>${a.rain_related === false ? `<br><span class="small muted">No es aviso de lluvia: contexto oficial</span>` : ""}${a.extends_aviso_number ? `<br><span class="small muted">Extensión del aviso ${esc(a.extends_aviso_number)}</span>` : ""}</td>
         <td><span class="status ${a.now}">${a.now}</span><br><span class="small muted">${timing}</span></td>
         <td>${lima(a.validity_start)} → ${lima(a.validity_end)}<br><span class="small muted">${esc(a.validity_text||"")}</span></td>
         <td>${levelBadge(a)}</td><td class="small">${scope || "—"}</td>
