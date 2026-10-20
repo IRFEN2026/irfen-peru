@@ -1,0 +1,27 @@
+name: TMP read-only real-browser QA of the public site (no commits)
+on:
+  push:
+    branches: [diag/public-site-qa-20261020]
+    paths: [.github/workflows/tmp-public-site-qa.yml, .github/diag/public_site_qa.py]
+permissions:
+  contents: read
+jobs:
+  qa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: |
+          pip install -q playwright
+          python -m playwright install --with-deps chromium >/dev/null
+          echo "::notice title=playwright::$(python -m playwright --version)"
+      - run: python .github/diag/public_site_qa.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: public-site-shots
+          path: /tmp/shots
+          retention-days: 7
