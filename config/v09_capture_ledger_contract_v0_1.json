@@ -1,0 +1,78 @@
+{
+  "schema_version": "0.1",
+  "contract_id": "irfen-v09-capture-ledger-contract:v0.1",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "purpose": "Registro de intervalos esperados de IMERG Early (30 min) y GOES-19 RRQPEF (escaneos de 10 min): para cada intervalo, si IRFEN lo capturó y qué dice el catálogo de la fuente. Solo metadatos de catálogo: nunca descarga gránulos ni escaneos y nunca registra valores de precipitación.",
+  "execution": "MANUAL_ONLY",
+  "states": {
+    "CAPTURED": "Un archivo de IRFEN en este repositorio contiene el gránulo o escaneo (evidencia: ruta, commit y nombre del gránulo o clave).",
+    "PENDING_SOURCE_LATENCY": "No capturado y no listado por un catálogo que respondió completo, pero el intervalo aún está dentro del horizonte de latencia de la fuente en el momento de la consulta.",
+    "MISSING_RETRYING": "No capturado y el catálogo de la fuente lo lista: existe en origen y sería recuperable. En v0.1 no hay ningún reintento activo (retry_active=false).",
+    "ABSENT_AT_SOURCE": "No capturado; el catálogo respondió HTTP 200, completo (sin paginación pendiente), no vacío, con entradas válidas, y lista intervalos anteriores y posteriores a éste, pero no éste; además el intervalo ya superó el horizonte de latencia. Es una ausencia en la fecha de la consulta, no permanente.",
+    "UNRECOVERABLE": "No capturado y fuera de una retención de la fuente documentada y verificada. Mientras la retención no esté verificada (retention.status != VERIFIED) este estado no se asigna nunca.",
+    "UNKNOWN": "Cualquier otro caso: catálogo no consultado, error HTTP, tiempo agotado, respuesta vacía, malformada o incompleta, cambio de modo de escaneo, o intervalo sin intervalos listados a ambos lados. Una respuesta vacía o un error nunca se convierten en ausencia confirmada."
+  },
+  "products": {
+    "IMERG_EARLY_HH": {
+      "label": "NASA GPM IMERG Early, precipitación de 30 min",
+      "catalog": "NASA CMR",
+      "catalog_endpoint": "https://cmr.earthdata.nasa.gov/search/granules.json",
+      "short_name": "GPM_3IMERGHHE",
+      "version": "07",
+      "interval_minutes": 30,
+      "pending_horizon_hours": 24,
+      "pending_horizon_basis": "Horizonte operativo de clasificación, no umbral científico. En site/data/calibration/imerg_early_live_archive.json (main 9e2d8b64), la antigüedad del gránulo más reciente al consultar fue como máximo 12,47 h (n=211, 09-09 a 20-10-2026). Se usa 24 h, aproximadamente el doble, para no declarar ausente un gránulo simplemente tardío.",
+      "retention": {"status": "NOT_VERIFIED", "hours": null, "note": "No se ha verificado documentalmente cuánto tiempo conserva GES DISC los gránulos Early; UNRECOVERABLE queda desactivado."},
+      "local_archives": [
+        {"path": "data/v09/rain/imerg_early_north_v0_1.json", "list": "granules", "time_field": "time_utc", "id_field": "granule", "retrieved_field": "retrieved_at_utc"},
+        {"path": "site/data/calibration/imerg_early_live_archive.json", "list": "granules", "time_field": "time_utc", "id_field": "granule", "retrieved_field": null}
+      ]
+    },
+    "GOES19_RRQPEF": {
+      "label": "NOAA GOES-19 ABI-L2-RRQPEF, tasa de lluvia instantánea de disco completo",
+      "catalog": "NOAA Open Data Dissemination, bucket público de AWS S3 noaa-goes19 (ListObjectsV2)",
+      "catalog_endpoint": "https://noaa-goes19.s3.amazonaws.com/",
+      "product_prefix": "ABI-L2-RRQPEF",
+      "version": "clave de objeto NOAA (modo, satélite y horas de inicio, fin y creación); sin número de versión publicado",
+      "interval_minutes": 10,
+      "expected_scan_mode": "M6",
+      "pending_horizon_hours": 2,
+      "pending_horizon_basis": "Horizonte operativo de clasificación, no umbral científico. En site/data/calibration/goes19_rrqpe_archive.json (main 9e2d8b64), el retraso entre el fin del escaneo y su captura fue como máximo 15,7 min (n=613). Se usa 2 h.",
+      "retention": {"status": "NOT_VERIFIED", "hours": null, "note": "No se ha verificado documentalmente la retención del bucket; UNRECOVERABLE queda desactivado."},
+      "local_archives": [
+        {"path": "data/v09/rain/goes19_rrqpe_north_v0_1.json", "list": "scans", "key_field": "key", "retrieved_field": "sampled_at_utc"},
+        {"path": "site/data/calibration/goes19_rrqpe_archive.json", "list": "records", "key_field": "source_object_key", "require_true": "source_available", "retrieved_field": "generated_at"}
+      ]
+    }
+  },
+  "limits": {
+    "max_window_hours": 192,
+    "timeout_seconds": 30,
+    "attempts": 2,
+    "backoff_seconds": 3,
+    "pause_between_requests_seconds": 0.2,
+    "cmr_page_size": 2000,
+    "max_cmr_pages": 5,
+    "max_response_bytes": 20000000,
+    "history_lookback_days_before_window": 2
+  },
+  "allowed_url_patterns": [
+    "^https://cmr\\.earthdata\\.nasa\\.gov/search/granules\\.json\\?short_name=GPM_3IMERGHHE&version=07&temporal%5B%5D=[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z,[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z&page_size=[0-9]+&sort_key=start_date$",
+    "^https://noaa-goes19\\.s3\\.amazonaws\\.com/\\?list-type=2&prefix=ABI-L2-RRQPEF/[0-9]{4}/[0-9]{3}/[0-9]{2}/&max-keys=1000(&continuation-token=[A-Za-z0-9%._~+/=-]+)?$"
+  ],
+  "never": [
+    "descargar gránulos IMERG o escaneos GOES (solo búsqueda de catálogo y listado de objetos)",
+    "registrar valores de precipitación",
+    "convertir una respuesta vacía, un error HTTP o un tiempo agotado en ABSENT_AT_SOURCE",
+    "modificar archivos científicos existentes",
+    "ejecutarse por cron, push o encadenamiento: solo workflow_dispatch manual"
+  ]
+}

@@ -1,0 +1,50 @@
+name: IRFEN v0.9 - Registro de intervalos esperados IMERG/GOES-19 (manual, solo catálogo, TEST_ONLY)
+# Ejecución exclusivamente manual. Consulta solo el catálogo NASA CMR y el listado del bucket público NOAA noaa-goes19
+# (metadatos); no descarga gránulos ni escaneos, no registra precipitación y no escribe en el repositorio: el registro
+# se entrega como artefacto del job. RESEARCH_ONLY / TEST_ONLY.
+on:
+  workflow_dispatch:
+    inputs:
+      from_utc:
+        description: "Inicio UTC (p. ej. 2026-10-13T00:00:00Z)"
+        required: true
+      to_utc:
+        description: "Fin UTC, exclusivo; como máximo 192 h después del inicio y no en el futuro"
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: v09-capture-ledger-manual
+  cancel-in-progress: false
+jobs:
+  ledger:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Construir el registro (solo catálogo; sin descargas)
+        env:
+          FROM_UTC: ${{ inputs.from_utc }}
+          TO_UTC: ${{ inputs.to_utc }}
+        run: |
+          out="${RUNNER_TEMP}/capture-ledger"
+          python scripts/v09_capture_ledger.py run --from "$FROM_UTC" --to "$TO_UTC" --out "$out"
+          python - "$out/ledger_v0_1.json" >> "$GITHUB_STEP_SUMMARY" <<'PY'
+          import json, sys
+          d = json.load(open(sys.argv[1]))
+          print("## Registro de intervalos esperados (RESEARCH_ONLY / TEST_ONLY)")
+          print(f"Ventana {d['window']['from_utc']} a {d['window']['to_utc']}; commit {d['built_from_commit']}.")
+          print("Sin captura = UNKNOWN, nunca ausencia de lluvia.\n")
+          for prod, s in d["summary"].items():
+              print(f"- **{prod}**: {s['intervals']} intervalos; " + ", ".join(f"{k}={v}" for k, v in s["by_state"].items()))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: capture-ledger
+          path: ${{ runner.temp }}/capture-ledger
+          retention-days: 30
