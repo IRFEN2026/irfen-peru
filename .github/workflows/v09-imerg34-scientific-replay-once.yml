@@ -1,0 +1,39 @@
+name: IRFEN QA - Repeticion cientifica IMERG Early (4 HDF5, TEST_ONLY)
+# Authorized research verification; no writes to live data, no publish.
+on:
+  push:
+    branches:
+      - research/imerg34-scientific-replay-20261020
+    paths:
+      - .github/workflows/v09-imerg34-scientific-replay-once.yml
+permissions:
+  contents: read
+concurrency:
+  group: irfen-imerg34-replay-oneoff
+  cancel-in-progress: false
+jobs:
+  replay:
+    if: github.ref == 'refs/heads/research/imerg34-scientific-replay-20261020'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install original science processing dependencies
+        run: pip install -r requirements.txt
+      - name: Compare original hashes and independent zonal means
+        env:
+          EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
+        run: |
+          set -euo pipefail
+          timeout --signal=TERM --kill-after=10s 1100s python qa/replay_tools/v09_imerg34_scientific_replay.py
+      - name: Preserve report even if comparison fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scientific-replay-four-HDF5
+          path: /tmp/irfen-scientific-replay/report.json
+          if-no-files-found: warn
+          retention-days: 30
