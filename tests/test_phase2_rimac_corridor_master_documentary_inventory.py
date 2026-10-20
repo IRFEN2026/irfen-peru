@@ -143,6 +143,18 @@ def test_documentary_rows_have_unique_ids_but_are_not_unique_catchments():
         for source in unit["source_refs"]:
             assert source["source_id"]
             assert isinstance(source["source_text_verified"], bool)
+            # Only an existing, separately reviewed research contract may
+            # carry source_text_verified=True without primary bytes in this
+            # crosswalk. An unarchived external lead must never silently gain
+            # the status of independently verified source text or map evidence.
+            if source["source_text_verified"]:
+                assert source["evidence_type"] == "EXISTING_RESEARCH_CONTRACT"
+                assert source["source_id"].startswith("config/phase2_")
+                assert source["detail_locator"] == source["source_id"]
+                assert source.get("source_url") is None
+            if source.get("original_pdf_bytes_archived_in_this_contract") is False:
+                assert source.get("original_pdf_sha256") is None
+            assert source.get("map_publishable") is not True
 
         # A work, a faja and a mapped exposure are different evidence
         # categories. A repeated institutional source ID may represent
