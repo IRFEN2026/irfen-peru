@@ -1,0 +1,45 @@
+name: IRFEN QA - Conservar IMERG 34 recuperados solo investigacion
+# One-time archive branch only; reads the existing Actions artifacts, NO NASA/NOAA network requests.
+on:
+  push:
+    branches:
+      - research/imerg-34-audited-archive-20261020
+    paths:
+      - .github/workflows/v09-freeze-imerg34-once.yml
+permissions:
+  contents: write
+  actions: read
+jobs:
+  freeze:
+    if: github.ref == 'refs/heads/research/imerg-34-audited-archive-20261020'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Leer tres artefactos JSON del run autorizado
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 39479168177
+          github-token: ${{ github.token }}
+          pattern: imerg-early-recovery-shard-*
+          path: ${{ runner.temp }}/imerg34-input
+          merge-multiple: true
+      - name: Auditar y congelar solo en archivo separado de investigacion
+        run: |
+          set -euo pipefail
+          python qa/replay_tools/freeze_imerg34_research.py ${{ runner.temp }}/imerg34-input/shard-0.json ${{ runner.temp }}/imerg34-input/shard-1.json ${{ runner.temp }}/imerg34-input/shard-2.json
+          echo '## IMERG 34: QA estructural, sin validacion cientifica independiente' >> "$GITHUB_STEP_SUMMARY"
+          sha256sum data/v09/rain/recovered_research/imerg_early_20261015_20261016_34_recovered_v0_1.json >> "$GITHUB_STEP_SUMMARY"
+      - name: Commit en rama investigacion, NUNCA main
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "research/imerg-34-audited-archive-20261020"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/v09/rain/recovered_research/
+          git diff --cached --quiet && exit 1
+          git commit -m 'research: preserve 34 IMERG Early recovery results (QA structural only)'
+          git push origin HEAD:research/imerg-34-audited-archive-20261020
