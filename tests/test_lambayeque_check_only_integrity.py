@@ -64,6 +64,38 @@ class StaticContract(unittest.TestCase):
             self.assertRegex(block, r"\n    runs-on: ubuntu-24\.04\n", wf)
             self.assertNotIn("runs-on: ubuntu-latest", block, wf)
 
+    def test_no_workflow_regenerates_lambayeque_geometry(self):
+        # Pages must never publish Lambayeque geometry recomputed on the runner: every workflow invocation of the
+        # builder is --check-only (in memory, fails with CHECK_FAILED on any byte difference, writes nothing).
+        import re
+        calls = []
+        for wf in sorted((ROOT / ".github/workflows").glob("*.yml")):
+            for line in wf.read_text(encoding="utf-8").splitlines():
+                m = re.search(r"python3?\s+scripts/build_lambayeque_hydrologic_units\.py(.*)$", line)
+                if m:
+                    calls.append((wf.name, m.group(1)))
+                    self.assertIn("--check-only", m.group(1).split(), f"{wf.name}: {line.strip()}")
+                    self.assertNotIn("--refresh-source", m.group(1), f"{wf.name}: {line.strip()}")
+        self.assertIn("update-and-deploy.yml", {name for name, _ in calls})
+
+    def test_deploy_cannot_publish_when_the_lambayeque_check_fails(self):
+        # The check runs inside the build job, without continue-on-error, and deploy depends on build.
+        import re
+        text = (ROOT / ".github/workflows/update-and-deploy.yml").read_text(encoding="utf-8")
+        build = re.search(r"\n  build:\n(.*?)(?=\n  [a-z_-]+:\n|\Z)", text, re.S).group(1)
+        deploy = re.search(r"\n  deploy:\n(.*?)(?=\n  [a-z_-]+:\n|\Z)", text, re.S).group(1)
+        at = build.index("python scripts/build_lambayeque_hydrologic_units.py --check-only")
+        start = build.rindex("\n      - name:", 0, at)
+        end = build.find("\n      - name:", at)
+        step = build[start:end if end != -1 else len(build)]
+        self.assertNotIn("continue-on-error", step)
+        self.assertNotRegex(step, r"\|\|\s*(true|:|exit 0)")
+        self.assertNotIn("set +e", step)
+        self.assertRegex(deploy, r"\n    needs: build\n")
+        # The Pages artifact is assembled later in the same job, so a failed check stops it before upload.
+        self.assertLess(build.index("build_lambayeque_hydrologic_units.py --check-only"),
+                        build.index("actions/upload-pages-artifact"))
+
 
 @unittest.skipUnless(HAVE_GEO, "shapely/pyproj not installed")
 class CheckOnlyOnTheRepository(unittest.TestCase):
