@@ -1,0 +1,44 @@
+name: TMP one-off source-retention QA snapshot (catalog metadata and documentation only; removed next commit)
+on:
+  push:
+    branches: [v09/source-retention-check-v0-1]
+    paths: [.github/workflows/tmp-v09-source-retention-snapshot.yml]
+permissions:
+  contents: write
+jobs:
+  snapshot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Catalog and documentation evidence (no granule or scan downloads)
+        run: |
+          python scripts/v09_source_retention_check.py run --out data/v09/source_retention/snapshots/20261020
+          python - <<'PY'
+          import json
+          d = json.load(open("data/v09/source_retention/snapshots/20261020/evidence_v0_1.json"))
+          m = json.load(open("data/v09/source_retention/snapshots/20261020/requests.json"))
+          bad = [r for r in m["requests"] if not r["ok"]]
+          print(f"::notice title=retention requests::total={len(m['requests'])} not_ok={len(bad)} {[(r['request_id'], r['kind'], r['error']) for r in bad[:8]]}")
+          print(f"::notice title=retention assessment::{json.dumps(d['assessment'], sort_keys=True)[:1800]}")
+          i = d["imerg"]
+          print(f"::notice title=imerg years::" + " ".join(f"{y['year']}:{y['cmr_hits']}/{y['expected']}" for y in i["per_year"]))
+          print(f"::notice title=imerg incomplete days::" + " | ".join(f"{r['day']} {r['status']} {r.get('cmr_hits')} {r.get('slots_not_listed', '')}" for r in i["per_day"] if r["status"] != "COMPLETE_AT_SOURCE")[:1800])
+          g = d["goes"]
+          print(f"::notice title=goes years::{json.dumps(g['per_year'])[:1800]} oldest={g['oldest_object']}")
+          print(f"::notice title=goes incomplete days::" + " | ".join(f"{r['day']} {r['status']} {r['objects']} {r['by_mode']} missing={len(r.get('bins_not_listed', []))}" for r in g["per_day"] if r["status"] != "COMPLETE_AT_SOURCE")[:1800])
+          for doc in d["documents"]:
+              print(f"::notice title=doc {doc['id']}::{doc['status']} quotes={doc.get('expected_quotes')} statements={[s['context'][:160] for s in doc.get('retention_statements', [])][:4]}")
+          for col in i["collection"].get("CMR_COLLECTION_ALL_VERSIONS", {}).get("collections", []):
+              print(f"::notice title=cmr collection {col['version']}::{col['concept_id']} {col['collection_progress']} {col['beginning']} {[s['context'][:200] for s in col['abstract_retention_statements']]}")
+          PY
+      - name: Commit the frozen snapshot (raw responses gzip + SHA-256 + evidence)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/v09/source_retention/snapshots/20261020
+          git commit -q -m "Source-retention QA snapshot 2026-10-20: NASA CMR, NOAA S3 listings and official documentation (metadata only) and evidence"
+          for i in 1 2 3; do git fetch -q origin "$GITHUB_REF_NAME" && git rebase -q "origin/$GITHUB_REF_NAME" && git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0; sleep 5; done; exit 1

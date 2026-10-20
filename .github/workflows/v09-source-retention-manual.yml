@@ -1,0 +1,38 @@
+name: IRFEN v0.9 - Verificar disponibilidad y retención de fuentes IMERG/GOES-19 (manual, solo catálogo, TEST_ONLY)
+# Paso 1 del diseño de recuperación. Ejecución exclusivamente manual. Solo catálogos (NASA CMR, listados del bucket
+# público NOAA noaa-goes19) y documentación oficial; no descarga gránulos ni escaneos y no escribe en el repositorio:
+# la evidencia se entrega como artefacto del job. RESEARCH_ONLY / TEST_ONLY.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: v09-source-retention-manual
+  cancel-in-progress: false
+jobs:
+  retention:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Evidencia de disponibilidad y retención (solo catálogo y documentación; sin descargas)
+        run: |
+          out="${RUNNER_TEMP}/source-retention"
+          python scripts/v09_source_retention_check.py run --out "$out"
+          python - "$out/evidence_v0_1.json" >> "$GITHUB_STEP_SUMMARY" <<'PY'
+          import json, sys
+          d = json.load(open(sys.argv[1]))
+          a = d["assessment"]
+          print("## Disponibilidad y retención de fuentes (RESEARCH_ONLY / TEST_ONLY)")
+          print(f"- IMERG Early v07: más antiguo {a['imerg_observed']['oldest']}; ventana {a['imerg_observed']['window']}")
+          print(f"- GOES-19 RRQPEF: más antiguo {a['goes_observed']['oldest']}; ventana {a['goes_observed']['window']}")
+          print(f"- UNRECOVERABLE asignable: {a['unrecoverable_assignable']} ({a['unrecoverable_reason']})")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-retention
+          path: ${{ runner.temp }}/source-retention
+          retention-days: 30
