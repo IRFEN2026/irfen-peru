@@ -22,7 +22,7 @@ RECORDS = [
   "sha256_hdf5_from_recovery":"3274414c48a5c1c4e27b493c81647caa861e8e95bbbb789b2ce7bdf7bf67bc6c"}
 ]
 BASE = "https://cmr.earthdata.nasa.gov/search/granules.json"
-OUTPUT = Path("qa/evidence/imerg34_cmr_identity_20261020.json")
+OUTPUT = Path("qa/evidence/imerg34_cmr_identity_20261020_v2.json")
 MAX_BODY = 2_000_000
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
