@@ -33,12 +33,11 @@ def fetch_catalog(url):
     if not allowed or parsed.username or parsed.password or parsed.port not in (None, 443):
         raise ValueError("URL_DENIED: catalog allowlist")
     req = urllib.request.Request(url, headers={"User-Agent": "IRFEN-research-retention-probe/0.1", "Accept": "application/json, application/xml"})
-    opener = urllib.request.build_opener(urllib.request.ProxyHandler(), urllib.request.HTTPHandler(), urllib.request.HTTPSHandler())
     # Redirects require a new allowlist check: reject them rather than following.
     class NoRedirect(urllib.request.HTTPRedirectHandler):
         def redirect_request(self, req, fp, code, msg, headers, newurl):
             raise ValueError("REDIRECT_DENIED")
-    opener.add_handler(NoRedirect())
+    opener = urllib.request.build_opener(NoRedirect())
     with opener.open(req, timeout=TIMEOUT) as response:
         if response.status != 200:
             raise RuntimeError("CATALOG_HTTP_" + str(response.status))
