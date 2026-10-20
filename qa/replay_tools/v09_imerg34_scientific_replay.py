@@ -12,7 +12,7 @@ import tempfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-ROOT=Path(__file__).resolve().parents[1]
+ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/"scripts"))
 ARCHIVE=ROOT/"data/v09/rain/recovered_research/imerg_early_20261015_20261016_34_recovered_v0_1.json"
 BRANCH="research/imerg34-scientific-replay-20261020"
