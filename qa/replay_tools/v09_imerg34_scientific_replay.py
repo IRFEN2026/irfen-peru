@@ -95,7 +95,10 @@ def run():
         for r in chosen:
             ts=datetime.fromisoformat(r["time_utc"].replace("Z","+00:00"))
             matches=[g for g in indexed if g[0]==ts and g[1]==r["granule"]]
-            if len(matches)!=1:raise SystemExit("CATALOG_ID_MISMATCH")
+            if len(matches)!=1:
+                same_t=[(g[0].isoformat(),g[1]) for g in indexed if g[0]==ts]
+                print(json.dumps({"requested_time":r["time_utc"],"expected_name":r["granule"],"matching_exact":len(matches),"same_time_candidates":same_t[:8],"catalog_count":len(indexed)}))
+                raise SystemExit("CATALOG_ID_MISMATCH")
             paths=earthaccess.download([matches[0][2]],local_path=td,threads=1,show_progress=False)
             p=next((Path(x) for x in paths if Path(x).name==r["granule"]),None)
             if p is None or not p.is_file():raise SystemExit("DOWNLOAD_FAILED")
