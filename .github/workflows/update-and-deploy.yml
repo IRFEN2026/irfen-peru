@@ -226,9 +226,12 @@ jobs:
       - name: Construir reanálisis fail-closed de eventos Phase 2
         run: python scripts/build_phase2_event_reanalysis.py
 
-      - name: Reconstruir catálogo territorial RESEARCH_ONLY
+      - name: Verificar geometrías Lambayeque comprometidas (--check-only) y reconstruir catálogo territorial RESEARCH_ONLY
+        # Las geometrías Lambayeque no se regeneran en el despliegue: se recalculan en memoria y se comparan byte a
+        # byte con los archivos comprometidos. Si difieren (p. ej. otra imagen del runner o de libm), el paso sale con
+        # CHECK_FAILED, el job build falla y deploy (needs: build) no publica nada. No se escribe ningún archivo.
         run: |
-          python scripts/build_lambayeque_hydrologic_units.py
+          python scripts/build_lambayeque_hydrologic_units.py --check-only
           python scripts/build_phase2_catalog.py
 
       - name: Construir contratos espaciales Phase-2 (RESEARCH_ONLY/TEST_ONLY)
