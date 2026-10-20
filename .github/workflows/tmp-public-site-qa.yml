@@ -2,7 +2,7 @@ name: TMP read-only real-browser QA of the public site (no commits)
 on:
   push:
     branches: [diag/public-site-qa-20261020]
-    paths: [.github/workflows/tmp-public-site-qa.yml, .github/diag/public_site_qa.py]
+    paths: [.github/workflows/tmp-public-site-qa.yml, .github/diag/public_site_qa.py, .github/diag/pages_vs_repo_geometry.py]
 permissions:
   contents: read
 jobs:
@@ -25,3 +25,15 @@ jobs:
           name: public-site-shots
           path: /tmp/shots
           retention-days: 7
+  pages-vs-repo:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: diag
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          path: main
+      - run: cd main && python3 ../diag/.github/diag/pages_vs_repo_geometry.py
