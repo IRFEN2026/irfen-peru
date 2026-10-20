@@ -1,0 +1,100 @@
+{
+  "schema_version": "0.1",
+  "case_id": "IRFEN-PIURA-2026-10-19",
+  "record_type": "POST_EVENT_EVIDENCE_ONLY",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "operational_alerting_enabled": false,
+  "training_label_authorized": false,
+  "forecast_verification_ready": false,
+  "date_local": "2026-10-19",
+  "time_zone": "America/Lima",
+  "summary_es": "Lluvias reportadas en la tarde-noche del 19-oct-2026 en la ciudad de Piura, Castilla, Tambogrande y Chulucanas; aniegos reportados. Hay evidencia periodística y atribución a ASISMET, pero no una serie instrumental primaria SENAMHI validada en este expediente.",
+  "locations": [
+    {
+      "name": "Ciudad de Piura",
+      "evidence": "reportado por medios + ASISMET",
+      "airport_accumulation_mm_reported": 2,
+      "airport_report_as_of_local": "2026-10-19T21:00:00-05:00",
+      "airport_measurement_primary_source_independently_verified": false
+    },
+    {
+      "name": "Castilla, Piura",
+      "evidence": "reportes de aniegos y lluvia, sin mm verificados"
+    },
+    {
+      "name": "Tambogrande, Piura",
+      "evidence": "reportes de precipitaciones, sin mm verificados"
+    },
+    {
+      "name": "Chulucanas, provincia de Morropón",
+      "evidence": "lluvias, aniegos y procesión suspendida, sin mm verificados"
+    }
+  ],
+  "published_evidence": [
+    {
+      "publisher": "El Comercio",
+      "published_date": "2026-10-19",
+      "url": "https://elcomercio.pe/peru/piura/fenomeno-el-nino-intensa-lluvia-se-registra-en-chulucanas-tambogrande-y-otras-zonas-de-piura-ultimas-noticia/",
+      "claim": "Lluvia en ciudad de Piura, Chulucanas, Tambogrande y Castilla; ASISMET atribuye 2 mm al aeropuerto hasta 21:00 PET"
+    },
+    {
+      "publisher": "RPP",
+      "published_date": "2026-10-19",
+      "url": "https://rpp.pe/peru/piura/lluvias-en-piura-provocan-aniegos-y-suspension-de-procesion-en-chulucanas-noticia-1713460",
+      "claim": "Anegamientos y suspensión de procesión en Chulucanas"
+    },
+    {
+      "publisher": "Gestion",
+      "published_date": "2026-10-20",
+      "url": "https://gestion.pe/peru/piura-lluvias-de-fuerte-intesidad-se-registran-en-diversas-partes-de-la-region-noticia/",
+      "claim": "Ciudad Piura, Tambogrande y Chulucanas; ASISMET 2 mm aeropuerto hasta 21:00 PET"
+    }
+  ],
+  "irfen_snapshots": [
+    {
+      "ref": "main:data/v09/rain/imerg_early_north_v0_1.json",
+      "blob_sha": "a75a91b18be798bc6aea87b429825b24b3bbfa0c",
+      "max_archived_granule_start_utc": "2026-10-19T23:30:00+00:00",
+      "max_archived_granule_start_pet": "2026-10-19T18:30:00-05:00",
+      "missing_granule_start_utc": [
+        "2026-10-19T15:00:00+00:00",
+        "2026-10-19T15:30:00+00:00"
+      ],
+      "source_status": "SOURCE_UNREACHABLE",
+      "source_error_observed_at_utc": "2026-10-20T10:28:28.961214+00:00"
+    },
+    {
+      "ref": "main:data/v09/surveillance/zone_rain_state_v0_1.json",
+      "blob_sha": "60656d45168f7fbba0ab41cb9482796d3d4b3a77",
+      "evaluated_at_utc": "2026-10-20T12:11:18.637004+00:00",
+      "rain_window_end_utc": "2026-10-20T00:00:00+00:00",
+      "rain_window_end_pet": "2026-10-19T19:00:00-05:00",
+      "windows": {
+        "piura_province_context:PIURA": {
+          "6h": 0.06,
+          "24h": "NO_DISPONIBLE"
+        },
+        "piura_province_context:MORROPON": {
+          "6h": 0.66,
+          "24h": "NO_DISPONIBLE"
+        },
+        "piura_province_context:AYABACA": {
+          "6h": 0.33,
+          "24h": "NO_DISPONIBLE"
+        }
+      },
+      "units": "mm",
+      "support": "area-weighted provincial estimates, NOT city/airport observations"
+    }
+  ],
+  "finding": "La lluvia vespertina/nocturna comunicada en Piura (incluido aeropuerto hasta 21:00 PET) queda fuera de la última ventana satelital archivada (fin 19:00 PET). La aparente discrepancia NO es prueba de falso negativo del modelo ni lluvia cero; el caso revela una brecha de captura/frescura y limitación espacial.",
+  "next_steps": [
+    "Recuperar granulos IMERG 19-oct >=19:00 PET y 20-oct madrugada, si existen, manteniendo trazabilidad",
+    "Obtener IMERG Late y observaciones primarias del aeropuerto o estaciones SENAMHI para ciudad y Chulucanas",
+    "Revisar temporalidad y escala del episodio antes de cuantificar POD/FAR o añadir etiquetas",
+    "Cotejar solo predicciones ENS/GEFS/propias archivadas antes de la lluvia; si no existen, NO_VERIFICABLE"
+  ],
+  "source_issue": "https://github.com/IRFEN2026/irfen-peru/issues/392"
+}
