@@ -123,6 +123,41 @@ def test_documentary_rows_have_unique_ids_but_are_not_unique_catchments():
         "config/phase2_national_inventory_completeness_audit_v0_1.json"
     )
     assert d["counts"]["confirmed_unique_hydrologic_unit_count"] is None
+
+    # Reconcile the documentary crosswalk against the national audit by stable
+    # IDs, not names: dropping a row, counting an alias twice or importing a
+    # same-name unit from another basin must fail even if totals still match.
+    audit = json.loads(
+        (ROOT / "config/phase2_national_inventory_completeness_audit_v0_1.json")
+        .read_text(encoding="utf-8")
+    )
+    corridor = "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA"
+    national_rows = [row for row in audit["candidates"] if row["corridor"] == corridor]
+    national_ids = [row["inventory_id"] for row in national_rows]
+    assert len(national_ids) == len(set(national_ids))
+    assert len(national_ids) == (
+        audit["summary"]["by_corridor"][corridor]
+        == d["counts"]["national_audit_corridor_documentary_rows"]
+    )
+    national_by_id = {row["inventory_id"]: row for row in national_rows}
+    master_by_id = {unit["id"]: unit for unit in units}
+    assert set(national_ids).issubset(master_by_id)
+    assert set(master_by_id) - set(national_ids) == {
+        "jicamarca_rio_seco",
+        "jicamarca_canto_grande_upper_branch",
+        "jicamarca_media_luna",
+        "jicamarca_colca",
+        "jicamarca_el_silencio",
+        "jicamarca_named_channel_label",
+    }
+    for inventory_id, row in national_by_id.items():
+        unit = master_by_id[inventory_id]
+        assert unit["documentary_label"] == row["documentary_name"]
+        assert unit["map_publishable"] is False
+        assert row["map_eligible"] is False
+        assert unit["outlet_coordinate"] is None
+        assert unit["exact_confluence_coordinate"] is None
+
     for unit in units:
         assert unit["id"] and unit["documentary_label"]
         assert unit["record_role"] and unit["identity_adjudication"]
