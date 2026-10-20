@@ -79,7 +79,7 @@ def audit():
         end=(start+dt.timedelta(minutes=31)).strftime("%Y-%m-%dT%H:%M:%SZ")
         queries={
             "by_original_concept":fetch({"concept_id":historic["concept_id"],"page_size":100}),
-            "by_original_title":fetch({"producer_granule_id":historic["title"],"page_size":100}),
+            "by_original_title":fetch({"short_name":"GPM_3IMERGHHE","version":"07","producer_granule_id[]":historic["title"],"page_size":100}),
             "by_time_and_product":fetch({"short_name":"GPM_3IMERGHHE","version":"07",
                                          "temporal[]":beg+","+end,"page_size":2000,
                                          "sort_key":"start_date"})
