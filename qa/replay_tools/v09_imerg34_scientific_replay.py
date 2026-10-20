@@ -91,14 +91,23 @@ def run():
              temporal=("2026-10-15T00:00:00Z","2026-10-17T00:00:00Z"),count=140)
     indexed=probe.index_granules(found)
     records=[]
+    catalog_unavailable=[]
     with tempfile.TemporaryDirectory(prefix="irfen_replay_") as td:
         for r in chosen:
             ts=datetime.fromisoformat(r["time_utc"].replace("Z","+00:00"))
             matches=[g for g in indexed if g[0]==ts and g[1]==r["granule"]]
             if len(matches)!=1:
-                same_t=[(g[0].isoformat(),g[1]) for g in indexed if g[0]==ts]
-                print(json.dumps({"requested_time":r["time_utc"],"expected_name":r["granule"],"matching_exact":len(matches),"same_time_candidates":same_t[:8],"catalog_count":len(indexed)}))
-                raise SystemExit("CATALOG_ID_MISMATCH")
+                # One bounded, targeted CMR search for the original interval.
+                # Do not replace an absent or changed gránule by a different one.
+                narrow=earthaccess.search_data(short_name="GPM_3IMERGHHE",version="07",
+                    temporal=(ts.isoformat(),(ts+timedelta(minutes=30)).isoformat()),count=12)
+                matches=[g for g in probe.index_granules(narrow)
+                         if g[0]==ts and g[1]==r["granule"]]
+                if len(matches)!=1:
+                    catalog_unavailable.append({"time_utc":r["time_utc"],"granule":r["granule"],
+                       "status":"UNKNOWN_NOT_CURRENTLY_LISTED_EXACTLY_ONCE",
+                       "broad_candidates":len(indexed),"narrow_candidates":len(narrow)})
+                    continue
             paths=earthaccess.download([matches[0][2]],local_path=td,threads=1,show_progress=False)
             p=next((Path(x) for x in paths if Path(x).name==r["granule"]),None)
             if p is None or not p.is_file():raise SystemExit("DOWNLOAD_FAILED")
@@ -135,10 +144,14 @@ def run():
             "sampling_scope":"4 of 34 October 15/16 2026 IMERG Early v07",
             "source_archive_path":str(ARCHIVE.relative_to(ROOT)),
             "records":records,
+            "catalog_unavailable":catalog_unavailable,
+            "granules_requested":len(chosen),
             "granules_compared":len(records),
             "zone_interval_comparisons":sum(r["compared_zones"] for r in records),
             "zones_matching":sum(r["matching_zones"] for r in records),
-            "validation_status":"SAMPLE_MATCH" if all(not r["differences"] for r in records) else "SAMPLE_DIFFERENCES",
+            "validation_status":("SAMPLE_MATCH" if len(records)==4 and all(not r["differences"] for r in records)
+                                 else "PARTIAL_CATALOG_UNAVAILABLE" if catalog_unavailable and all(not r["differences"] for r in records)
+                                 else "SAMPLE_DIFFERENCES"),
             "limitation":"Only four of 34 intervals independently replayed; not full 34/34 scientific revalidation. No risk assessment."}
     output=Path("/tmp/irfen-scientific-replay/report.json")
     output.parent.mkdir(parents=True,exist_ok=True)
@@ -146,7 +159,7 @@ def run():
     print(json.dumps({"validation_status":report["validation_status"],"granules":len(records),
                       "zone_matches":report["zones_matching"],"zone_total":report["zone_interval_comparisons"]}))
     if report["validation_status"]!="SAMPLE_MATCH":
-        raise SystemExit("REPLAY_DIFFERENCES_REQUIRE_REVIEW")
+        raise SystemExit("REPLAY_NOT_FULLY_VALIDATED")
 
 if __name__=="__main__":
     run()
