@@ -1,0 +1,27 @@
+name: IRFEN Piura - paired gauge IMERG dry QA (TEST_ONLY)
+
+on:
+  push:
+    branches:
+      - research/piura-gauge-imerg-calibration-20261021
+    paths:
+      - scripts/piura_gauge_imerg_offline_eval.py
+      - .github/workflows/piura-gauge-imerg-offline-qa.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout of isolated research code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Python syntax check
+        run: python3 -m py_compile scripts/piura_gauge_imerg_offline_eval.py
+      - name: Offline synthetic checks (no external weather providers)
+        run: python3 scripts/piura_gauge_imerg_offline_eval.py --self-test
