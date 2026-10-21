@@ -110,6 +110,7 @@ footer{padding:16px;color:var(--ink-3);font-size:12px;border-top:1px solid var(-
   <div class="flags" aria-label="Estado del prototipo"><span class="flag">RESEARCH_ONLY</span><span class="flag">TEST_ONLY</span><span class="flag">DEMO PRIVADA · NO PUBLICADA</span><span class="flag">NO ES UN SISTEMA DE ALERTA</span></div>
   <div class="chips" id="chips"></div>
   <section class="summary" id="summary" aria-live="polite"></section>
+  <div class="chips" id="continuity-chips" aria-label="Completitud de IMERG en el archivo; no continuidad de GitHub Actions"></div>
 </header>
 <nav role="tablist">
   <button role="tab" data-tab="map" aria-selected="true">1 · Mapa de vigilancia</button>
@@ -359,6 +360,23 @@ function sourceState(){
   const age = (Date.now() - tms(h.last_check_utc))/60000;
   return age > lim ? "DESACTUALIZADA" : h.state;
 }
+function imergCoverageSummary(zones){
+  const entries = (zones || []).map(z => z.imerg && z.imerg.coverage_24h).filter(Boolean);
+  const known = entries.filter(c => Number.isInteger(c.available_half_hours) && Number.isInteger(c.required_half_hours)
+    && c.required_half_hours > 0 && c.available_half_hours >= 0 && c.available_half_hours <= c.required_half_hours);
+  return {known:known.length, unknown:(zones||[]).length-known.length,
+    incomplete:known.filter(c => c.available_half_hours < c.required_half_hours).length,
+    full:known.filter(c => c.available_half_hours === c.required_half_hours).length};
+}
+function renderContinuityEvidence(){
+  const zones = (D && D.rain && D.rain.zones) || [];
+  const result = imergCoverageSummary(zones);
+  const label = document.getElementById("continuity-chips");
+  if (!label) return;
+  label.innerHTML = `<span class="chip ${result.incomplete || result.unknown ? "warn" : "ok"}" data-continuity-known="${result.known}" data-continuity-incomplete="${result.incomplete}">
+    IMERG · cobertura de archivo 24 h: ${result.full} zonas completas, ${result.incomplete} incompletas, ${result.unknown} sin evidencia de cobertura
+  </span><span class="chip">La cobertura por zona NO mide la puntualidad de GitHub Actions; un hueco es dato desconocido, nunca lluvia cero</span>`;
+}
 function renderHeader(){
   document.getElementById("now").textContent = new Date().toLocaleString("es-PE",{timeZone:"America/Lima", hourCycle:"h23"});
   document.getElementById("disclaimer").textContent = D.disclaimer_es;
@@ -378,6 +396,7 @@ function renderHeader(){
   chips.push(`<span class="chip">Acceso directo a SENAMHI: no usado (robots)</span>`);
   chips.push(`<span class="chip">Límites: ${D.official_boundaries==="VERIFIED"?"INEI referenciales verificados":"no verificados"}</span>`);
   document.getElementById("chips").innerHTML = chips.join("");
+  renderContinuityEvidence();
   document.getElementById("footer").innerHTML = `Todas las horas en hora de Lima (UTC−5), formato 24 h. Paquete generado ${lima(D.built_at_utc)} (UTC ${esc(D.built_at_utc)}). Cruce territorial evaluado ${lima(D.links_evaluated_at_utc)}; lluvia evaluada ${lima(D.rain.evaluated_at_utc)}. `
     + (D.boundary_source ? `Límites: ${esc(D.boundary_source.dataset_title)} (${esc(D.boundary_source.institution)}; ${esc(D.boundary_source.legal_status)}; SHA-256 ${esc((D.boundary_source.sha256||"").slice(0,12))}…). ` : "")
     + `Guardas: production_use=false · operational_alerting_enabled=false · activation_gate=BLOCKED · decision_thresholds=null.`;
@@ -641,7 +660,7 @@ function renderCenter(){
     if (t.recalculated) reasons.unshift(`Recalculado en el navegador con la hora actual (motor: ${labels[z.review_priority.code]}).`);
     return `<tr><td><b>${esc(z.display_name)}</b><br><span class="small muted">${esc(z.department)}</span></td>
       <td>${prioBadge(t.code, labels[t.code])}</td><td class="small">${reasons.map(esc).join("<br>") || "—"}</td>
-      <td class="small">${ev.map(esc).join("<br>") || na()}</td><td class="small">${(t.missing_es||[]).map(esc).join("<br>") || "—"}</td></tr>`;
+      <td class="small">${ev.map(esc).join("<br>") || na()}${coverageLine(z.imerg)}</td><td class="small">${(t.missing_es||[]).map(esc).join("<br>") || "—"}</td></tr>`;
   }).join("");
   document.getElementById("center-table").innerHTML = head + body;
   const evHead = `<tr><th>Hora (Lima)</th><th>Evento</th><th>Aviso / documento</th><th>Detalle</th><th>Revisión humana</th></tr>`;
