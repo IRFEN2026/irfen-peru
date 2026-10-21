@@ -163,11 +163,21 @@ def test_documentary_rows_have_unique_ids_but_are_not_unique_catchments():
         assert unit["record_role"] and unit["identity_adjudication"]
         assert isinstance(unit["source_refs"], list)
         assert isinstance(unit["documentary_variants"], list)
+        # Each variant must cite evidence attached to its own documentary
+        # row. Two labels may coexist, but neither may be introduced by an
+        # orphan source ID or silently duplicated under the same source.
+        source_ids = {source["source_id"] for source in unit["source_refs"]}
+        variant_keys = [
+            (variant["label"].casefold(), variant["source_id"])
+            for variant in unit["documentary_variants"]
+        ]
+        assert len(variant_keys) == len(set(variant_keys))
         # Every documentary variant remains a non-adjudicated label. A
         # shared name or sector mention cannot become a hydrologic alias
         # merely because it appears in the master crosswalk.
         for variant in unit["documentary_variants"]:
             assert variant["label"] and variant["source_id"]
+            assert variant["source_id"] in source_ids
             assert variant["alias_adjudication"] == "PENDING_NOT_MERGED"
 
         # Event leads must be traceable to a source on this same row;
