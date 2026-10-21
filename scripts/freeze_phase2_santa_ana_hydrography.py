@@ -76,6 +76,11 @@ def inspect(raw):
         points = positions(feature.get("geometry") or {})
         xs, ys = zip(*points)
         p = feature["properties"]
+        # Recheck the server-side WHERE locally. A wrong/stale service response
+        # must not be archived as a Santa-name match or as negative evidence.
+        if not any(isinstance(p.get(field), str) and "santa" in p[field].casefold()
+                   for field in ("NOMBRE_CA", "NOMBRE_UH")):
+            raise ValueError("ANA candidate does not satisfy the declared Santa-name query")
         rows.append({"objectid": p.get("OBJECTID_1"), "codigo_ca": p.get("CODIGO_CA"),
                      "nombre_ca": p.get("NOMBRE_CA"), "tipo_ca": p.get("TIPO_CA"),
                      "nombre_uh": p.get("NOMBRE_UH"), "codigo_uh": p.get("CODIGO_UH"),
@@ -102,7 +107,7 @@ class OfflineTests(unittest.TestCase):
     def test_freeze_and_guards(self):
         # Synthetic software fixture, not Santa coordinates or evidence.
         raw = json.dumps({"type": "FeatureCollection", "features": [
-            {"type": "Feature", "properties": {"NOMBRE_CA": "synthetic"},
+            {"type": "Feature", "properties": {"NOMBRE_CA": "synthetic Santa"},
              "geometry": {"type": "LineString", "coordinates": [[0, 0], [1, 1]]}}
         ]}).encode()
         doc = freeze(raw, "TEST_ONLY")
@@ -112,6 +117,17 @@ class OfflineTests(unittest.TestCase):
         self.assertIsNone(doc["decision_thresholds"])
         self.assertFalse(doc["identity_adjudicated"])
         self.assertEqual(doc["source_redirect_policy"], "REJECT_ALL_HTTP_REDIRECTS")
+
+    def test_rejects_nonmatching_or_unverifiable_name(self):
+        # Synthetic software fixture: never an observation or geographic claim.
+        for props in ({"NOMBRE_CA": "Río distinto"}, {"NOMBRE_UH": None},
+                      {"NOMBRE_CA": 123}, {}):
+            with self.subTest(props=props), self.assertRaises(ValueError):
+                inspect(json.dumps({"type": "FeatureCollection", "features": [
+                    {"type": "Feature", "properties": props,
+                     "geometry": {"type": "LineString",
+                                  "coordinates": [[0, 0], [1, 1]]}}
+                ]}).encode())
 
     def test_redirect_is_rejected_offline(self):
         # Synthetic redirect, not an assertion about the ANA service.
