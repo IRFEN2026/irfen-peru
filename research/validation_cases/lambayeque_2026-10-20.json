@@ -1,0 +1,103 @@
+{
+  "schema_version": "0.1",
+  "case_id": "IRFEN-LAMBAYEQUE-2026-10-20",
+  "record_type": "EVENT_REPORTED_LIVE_UNCONFIRMED_BY_GAUGE",
+  "research_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "operational_alerting_enabled": false,
+  "event_date_local": "2026-10-20",
+  "timezone": "America/Lima",
+  "report_time_local": "2026-10-20T20:34:08-05:00",
+  "event_report": "User reports rain currently in some areas of Lambayeque; exact towns, mm and event start/end unverified.",
+  "independent_gauge_readings_mm": null,
+  "snapshots": [
+    {
+      "source": "NASA IMERG Early V07",
+      "repo_ref": "data/v09/rain/imerg_early_north_v0_1.json",
+      "sha": "fc8d7bb5975d92514b46dae93760d4f88655cff1",
+      "latest_granule_start_utc": "2026-10-20T19:30:00Z",
+      "latest_granule_end_pet": "2026-10-20T15:00:00-05:00",
+      "zones": [
+        {
+          "zone": "lambayeque_zana_oyotun",
+          "name": "Zaña–Oyotún",
+          "accum_1h_mm": 0.08,
+          "accum_3h_mm": 0.18,
+          "accum_6h_mm": 0.18,
+          "accum_24h_status": "NO_DISPONIBLE"
+        },
+        {
+          "zone": "lambayeque_chancay_lambayeque_chongoyape",
+          "name": "Chancay-Lambayeque (Chongoyape)",
+          "accum_1h_mm": 0.09,
+          "accum_3h_mm": 0.13,
+          "accum_6h_mm": 0.13,
+          "accum_24h_status": "NO_DISPONIBLE"
+        },
+        {
+          "zone": "lambayeque_motupe",
+          "name": "Motupe",
+          "accum_1h_mm": 0,
+          "accum_3h_mm": 0,
+          "accum_6h_mm": 0,
+          "accum_24h_status": "NO_DISPONIBLE"
+        }
+      ],
+      "notes": "Values are area-weighted basin estimates, not station readings; 24h windows incomplete with 20 missing half-hours."
+    },
+    {
+      "source": "NOAA GOES-19 ABI-L2-RRQPEF",
+      "repo_ref": "data/v09/rain/goes19_rrqpe_north_v0_1.json",
+      "sha": "4af146837d3087c9a9368b6a2bdfcf035da10051",
+      "latest_scan_start_utc": "2026-10-21T00:50:21Z",
+      "latest_scan_end_utc": "2026-10-21T00:59:51.900Z",
+      "latest_scan_end_pet": "2026-10-20T19:59:51.900-05:00",
+      "zones": [
+        {
+          "zone": "lambayeque_zana_oyotun",
+          "rate_mean_mm_h": 0,
+          "rate_max_mm_h": 0
+        },
+        {
+          "zone": "lambayeque_chancay_lambayeque_chongoyape",
+          "rate_mean_mm_h": 0.011,
+          "rate_max_mm_h": 0.916
+        },
+        {
+          "zone": "lambayeque_motupe",
+          "rate_mean_mm_h": 0,
+          "rate_max_mm_h": 0
+        }
+      ],
+      "notes": "Instantaneous unvalidated satellite rainfall-rate estimate; not an accumulation and no physical gauge confirmation."
+    },
+    {
+      "source": "Official advisories via INDECI/COEN",
+      "repo_ref": "data/v09/surveillance/zone_rain_state_v0_1.json",
+      "sha": "9534a6d9ac1c474a1a09e32204e9b0b038062629",
+      "evaluated_at_utc": "2026-10-21T01:03:40.919424Z",
+      "advisories": [
+        "SENAMHI-ACP-LLUVIAS-2026-293",
+        "SENAMHI-ACP-QUEBRADAS-2026-293",
+        "SENAMHI-AVISO-METEOROLOGICO-2026-425",
+        "SENAMHI-AVISO-METEOROLOGICO-2026-426"
+      ],
+      "note": "Advisory is not direct gauge observation."
+    }
+  ],
+  "limits": [
+    "No observed station precipitation received or verified; this is a reported weather event, not a validated ground-truth label",
+    "IMERG lags reports by ~5 h and cannot be assumed to measure rainfall at report time",
+    "GOES at 19:59 PET has small nonzero basin-average intensity at Chongoyape and max in at least a subregion; not independently validated",
+    "Do not label a false negative from spatially averaged near-zero fields; rain can be localized",
+    "Unknown towns/municipalities prevent event footprint assessment"
+  ],
+  "next_steps": [
+    "Capture exact location/time of rain from verified reports or ground gauges",
+    "Freeze and compare later satellite observations and station accumulation over matched spatial/temporal supports",
+    "Inspect IMERG 24h gap: 20 missing half hours, not zero",
+    "Confirm station networks PECHP, WeatherLink or authorized WIS2; no automated SENAMHI requests without consent",
+    "Evaluate whether archived GOES rate and later IMERG align with verified event; do not train from anecdotal report"
+  ]
+}
