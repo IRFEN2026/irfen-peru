@@ -1,0 +1,90 @@
+{
+  "schema_version": "0.1",
+  "created_on": "2026-10-21",
+  "purpose": "PIURA_POINT_GAUGE_VS_IMERG_CELL_TEST_ONLY",
+  "guards": {
+    "deployment_status": "RESEARCH_ONLY",
+    "test_mode": "TEST_ONLY",
+    "production_use": false,
+    "operational_alerting_enabled": false,
+    "automatic_senamhi_http_enabled": false,
+    "publication_allowed": false
+  },
+  "sources": [
+    {
+      "id": "wmo_wis2_senamhi",
+      "platform": "WMO WIS2 SYNOP",
+      "source_class": "PHYSICAL_STATION_OBSERVATIONS",
+      "catalog_uri": "https://wis.senamhi.gob.pe/oapi/collections/stations/items?f=html",
+      "observation_uri": "https://wis.senamhi.gob.pe/oapi/collections/urn%3Awmo%3Amd%3Ape-senamhi%3Asynop-hourly?f=html",
+      "possible_stations": [
+        {
+          "name": "CHULUCANAS",
+          "wigos": "0-604-1-08602104"
+        },
+        {
+          "name": "LANCONES",
+          "wigos": "0-604-1-07610101"
+        },
+        {
+          "name": "PAIMAS",
+          "wigos": "0-604-1-09615102"
+        },
+        {
+          "name": "TONGORRAPE",
+          "wigos": "0-604-1-09582002"
+        }
+      ],
+      "access_state": "CATALOG_VISIBLE_LIVE_RAIN_UNVERIFIED",
+      "last_observation_utc": null,
+      "precipitation_mm_verified": false,
+      "polling_authorized": false,
+      "notes": "Index had 31 stations; live endpoint timed out in inspection. Do not call SENAMHI domains automatically without authorization."
+    },
+    {
+      "id": "davis_weatherlink",
+      "platform": "Davis WeatherLink v2",
+      "source_class": "PRIVATE_NETWORK_PHYSICAL_GAUGES",
+      "catalog_uri": "https://weatherlink.github.io/v2-api/",
+      "possible_stations": [],
+      "access_state": "OWNER_CONSENT_REQUIRED",
+      "last_observation_utc": null,
+      "precipitation_mm_verified": false,
+      "polling_authorized": false,
+      "notes": "Must locate verified gauge in Piura and obtain share/API credentials under permitted tier. Never commit secrets."
+    },
+    {
+      "id": "piura_pechp",
+      "platform": "Gobierno Regional Proyecto Especial Chira Piura",
+      "source_class": "OFFICIAL_REGIONAL_GAUGES_DAILY",
+      "catalog_uri": "https://servicios.regionpiura.gob.pe/datosh",
+      "possible_stations": [],
+      "access_state": "PUBLIC_DAILY_CATALOG_NO_LIVE_FEED_VERIFIED",
+      "last_observation_utc": null,
+      "precipitation_mm_verified": false,
+      "polling_authorized": false
+    },
+    {
+      "id": "piura_airport_metars",
+      "platform": "AviationWeather API / IEM SPUR",
+      "source_class": "AIRPORT_WEATHER_REPORTS",
+      "catalog_uri": "https://aviationweather.gov/data/api/",
+      "station": "SPUR",
+      "access_state": "PUBLIC_API_RAIN_MM_MISSING_20261019_IEM",
+      "last_observation_utc": null,
+      "precipitation_mm_verified": false,
+      "polling_authorized": false,
+      "notes": "METAR present-weather codes cannot be converted into rain mm. IEM 2026-10-19 shows precipitation M (missing)."
+    },
+    {
+      "id": "nasa_imerg_early",
+      "platform": "NASA IMERG V07 Early",
+      "source_class": "SATELLITE_GRID_ESTIMATE_NOT_GAUGE",
+      "catalog_uri": "https://gpm.nasa.gov/data/imerg",
+      "input_ref": "data/v09/rain/imerg_early_north_v0_1.json",
+      "access_state": "GAPS_PRESENT_AS_OF_20261020",
+      "precipitation_mm_verified": false,
+      "notes": "Use HDF5 pixel/cell containing gauge; existing archive stores polygon averages, NOT valid collocation."
+    }
+  ]
+}
