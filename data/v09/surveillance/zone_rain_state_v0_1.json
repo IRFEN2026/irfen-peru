@@ -13,15 +13,15 @@
  "map_publishable": false,
  "inputs": {
   "zones": "df91718569e8d689fbdbb285674ca30cce49421e602c8ab40e5b2a14c09142c1",
-  "links": "7bcbeb3ac10c593b1aa32e6321ec223c278ad208666c36007d3aeb40cc0e94d1",
+  "links": "7ef1b5360ac7ca3288d6152b5791df1612347f849688fee99a0d9551a58cbc4e",
   "imerg_north": "ee5f5aa90a5b75c2d24186973f2619a76902008d5703e3fe3c1044f5c26b9761",
-  "imerg_v08": "0f6c9942dc83b309b61d9f0c11cdb396eeb98f9d56b62855602fab6f0406e693",
-  "goes19": "30e909f45004af7b9c61981fc08c2802edb9f419be07bba257470771bd56b6e9",
+  "imerg_v08": "a35f5f362a0d19882f94d32244d5a51d752cd20fbaed3d61fb52668106675a6f",
+  "goes19": "48291f436c2e8598245705ef3ac52e46765f33583e2bb3c9be2c72c7a46ab34e",
   "geos_cf": "c0178ae2ca8a6edf460522b81192694bdebc0af450f5da745cade178b0b81c7a",
   "goes19_north": "b61504b3b257c1e8f5efa2051ac9096135b77c9d28f069364ee8376a93b3605b",
   "geos_cf_north": "ed405f4d75099524c09d46fafe42d0c06212c8df8c6e95593f9cd7b152e47d7b"
  },
- "links_evaluated_at_utc": "2026-10-22T18:03:15.959721+00:00",
+ "links_evaluated_at_utc": "2026-10-22T20:50:40.118472+00:00",
  "links_statuses_valid_until_utc": "2026-10-23T04:59:00+00:00",
  "aviso_source_state": "AL_DIA",
  "review_priorities": [
@@ -61,7 +61,7 @@
   "goes_stale_after_min": 90,
   "geos_max_cycle_age_h": 54
  },
- "next_change_utc": "2026-10-22T19:29:53+00:00",
+ "next_change_utc": "2026-10-23T01:00:01+00:00",
  "rules_es": [
   "Ventanas solo con todas sus medias horas; si falta alguna, NO_DISPONIBLE.",
   "IMERG Early tiene horas de latencia; la antigüedad de cada ventana se muestra siempre.",
@@ -810,12 +810,13 @@
      "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-22T17:59:52+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-22T19:29:53+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-23T01:00:01+00:00"
    }
   },
   {
@@ -1555,12 +1556,13 @@
      "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-22T17:59:52+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-22T19:29:53+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-23T01:00:01+00:00"
    }
   },
   {
@@ -1570,6 +1572,28 @@
    "zone_type": "BASIN_GEOMETRY",
    "province": null,
    "avisos": [
+    {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-295",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-22T13:00:00-05:00",
+     "validity_end": "2026-10-23T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
+     "aviso_key": "SENAMHI-ACP-QUEBRADAS-2026-295",
+     "status": "VIGENTE",
+     "product": "ACP-QUEBRADAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-22T13:00:00-05:00",
+     "validity_end": "2026-10-23T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-426",
      "status": "VIGENTE",
@@ -2294,18 +2318,21 @@
     "label_es": "Vigilancia activa",
     "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
+     "Aviso SENAMHI-ACP-LLUVIAS-2026-295 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
+     "Aviso SENAMHI-ACP-QUEBRADAS-2026-295 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
      "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-426 (VIGENTE; nivel oficial: NARANJA) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-430 (FUTURO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
      "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-22T17:59:52+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-22T19:29:53+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-23T01:00:01+00:00"
    }
   },
   {
@@ -2315,6 +2342,28 @@
    "zone_type": "BASIN_GEOMETRY",
    "province": null,
    "avisos": [
+    {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-295",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-22T13:00:00-05:00",
+     "validity_end": "2026-10-23T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
+     "aviso_key": "SENAMHI-ACP-QUEBRADAS-2026-295",
+     "status": "VIGENTE",
+     "product": "ACP-QUEBRADAS",
+     "relation_method": "BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES",
+     "relation_rank": 5,
+     "validity_start": "2026-10-22T13:00:00-05:00",
+     "validity_end": "2026-10-23T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-426",
      "status": "VIGENTE",
@@ -3039,18 +3088,20 @@
     "label_es": "Vigilancia activa",
     "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
+     "Aviso SENAMHI-ACP-LLUVIAS-2026-295 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
      "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-426 (VIGENTE; nivel oficial: NARANJA) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-430 (FUTURO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
      "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-22T17:59:52+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-22T19:29:53+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-23T01:00:01+00:00"
    }
   },
   {
@@ -3060,6 +3111,17 @@
    "zone_type": "ADMINISTRATIVE_CONTEXT_NO_BASIN",
    "province": "AYABACA",
    "avisos": [
+    {
+     "aviso_key": "SENAMHI-ACP-QUEBRADAS-2026-295",
+     "status": "VIGENTE",
+     "product": "ACP-QUEBRADAS",
+     "relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
+     "relation_rank": 3,
+     "validity_start": "2026-10-22T13:00:00-05:00",
+     "validity_end": "2026-10-23T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-426",
      "status": "VIGENTE",
@@ -3784,18 +3846,20 @@
     "label_es": "Vigilancia activa",
     "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
+     "Aviso SENAMHI-ACP-QUEBRADAS-2026-295 (VIGENTE; nivel oficial: no consta) — LISTED_PROVINCE_CONTEXT_NO_BASIN",
      "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-426 (VIGENTE; nivel oficial: NARANJA) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
      "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-430 (FUTURO; nivel oficial: no consta) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
      "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
      "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-22T17:59:52+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-22T19:29:53+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-23T01:00:01+00:00"
    }
   },
   {
@@ -3805,6 +3869,28 @@
    "zone_type": "BASIN_GEOMETRY",
    "province": null,
    "avisos": [
+    {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-295",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-22T13:00:00-05:00",
+     "validity_end": "2026-10-23T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
+     "aviso_key": "SENAMHI-ACP-QUEBRADAS-2026-295",
+     "status": "VIGENTE",
+     "product": "ACP-QUEBRADAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-22T13:00:00-05:00",
+     "validity_end": "2026-10-23T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-426",
      "status": "VIGENTE",
@@ -4529,18 +4615,21 @@
     "label_es": "Vigilancia activa",
     "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
+     "Aviso SENAMHI-ACP-LLUVIAS-2026-295 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
+     "Aviso SENAMHI-ACP-QUEBRADAS-2026-295 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
      "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-426 (VIGENTE; nivel oficial: NARANJA) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-430 (FUTURO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
      "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-22T17:59:52+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-22T19:29:53+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-23T01:00:01+00:00"
    }
   },
   {
@@ -4550,6 +4639,28 @@
    "zone_type": "BASIN_GEOMETRY",
    "province": null,
    "avisos": [
+    {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-295",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-22T13:00:00-05:00",
+     "validity_end": "2026-10-23T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
+     "aviso_key": "SENAMHI-ACP-QUEBRADAS-2026-295",
+     "status": "VIGENTE",
+     "product": "ACP-QUEBRADAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-22T13:00:00-05:00",
+     "validity_end": "2026-10-23T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-426",
      "status": "VIGENTE",
@@ -5274,18 +5385,21 @@
     "label_es": "Vigilancia activa",
     "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
+     "Aviso SENAMHI-ACP-LLUVIAS-2026-295 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
+     "Aviso SENAMHI-ACP-QUEBRADAS-2026-295 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
      "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-426 (VIGENTE; nivel oficial: NARANJA) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-430 (FUTURO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
      "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-22T17:59:52+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-22T19:29:53+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-23T01:00:01+00:00"
    }
   },
   {
@@ -6025,12 +6139,13 @@
      "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-22T17:59:52+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-22T19:29:53+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-23T01:00:01+00:00"
    }
   },
   {
@@ -6770,12 +6885,13 @@
      "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-22T17:59:52+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-22T19:29:53+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-23T01:00:01+00:00"
    }
   },
   {
@@ -6785,6 +6901,28 @@
    "zone_type": "BASIN_GEOMETRY",
    "province": null,
    "avisos": [
+    {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-295",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-22T13:00:00-05:00",
+     "validity_end": "2026-10-23T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
+     "aviso_key": "SENAMHI-ACP-QUEBRADAS-2026-295",
+     "status": "VIGENTE",
+     "product": "ACP-QUEBRADAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-22T13:00:00-05:00",
+     "validity_end": "2026-10-23T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-426",
      "status": "VIGENTE",
@@ -7511,18 +7649,21 @@
     "label_es": "Vigilancia activa",
     "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
+     "Aviso SENAMHI-ACP-LLUVIAS-2026-295 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
+     "Aviso SENAMHI-ACP-QUEBRADAS-2026-295 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
      "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-426 (VIGENTE; nivel oficial: NARANJA) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-430 (FUTURO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
      "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-22T17:59:52+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-22T19:29:53+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-23T01:00:01+00:00"
    }
   },
   {
@@ -7532,6 +7673,28 @@
    "zone_type": "BASIN_GEOMETRY",
    "province": null,
    "avisos": [
+    {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-295",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-22T13:00:00-05:00",
+     "validity_end": "2026-10-23T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
+     "aviso_key": "SENAMHI-ACP-QUEBRADAS-2026-295",
+     "status": "VIGENTE",
+     "product": "ACP-QUEBRADAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-22T13:00:00-05:00",
+     "validity_end": "2026-10-23T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-426",
      "status": "VIGENTE",
@@ -8256,18 +8419,21 @@
     "label_es": "Vigilancia activa",
     "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
+     "Aviso SENAMHI-ACP-LLUVIAS-2026-295 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
+     "Aviso SENAMHI-ACP-QUEBRADAS-2026-295 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
      "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-426 (VIGENTE; nivel oficial: NARANJA) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-430 (FUTURO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
      "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-22T17:59:52+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-22T19:29:53+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-23T01:00:01+00:00"
    }
   },
   {
@@ -8277,6 +8443,28 @@
    "zone_type": "BASIN_GEOMETRY",
    "province": null,
    "avisos": [
+    {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-295",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-22T13:00:00-05:00",
+     "validity_end": "2026-10-23T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
+     "aviso_key": "SENAMHI-ACP-QUEBRADAS-2026-295",
+     "status": "VIGENTE",
+     "product": "ACP-QUEBRADAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-22T13:00:00-05:00",
+     "validity_end": "2026-10-23T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-426",
      "status": "VIGENTE",
@@ -9001,18 +9189,21 @@
     "label_es": "Vigilancia activa",
     "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
+     "Aviso SENAMHI-ACP-LLUVIAS-2026-295 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
+     "Aviso SENAMHI-ACP-QUEBRADAS-2026-295 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
      "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-426 (VIGENTE; nivel oficial: NARANJA) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-430 (FUTURO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
      "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-22T17:59:52+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-22T19:29:53+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-23T01:00:01+00:00"
    }
   },
   {
@@ -9752,12 +9943,13 @@
      "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-22T17:59:52+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-22T19:29:53+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-23T01:00:01+00:00"
    }
   },
   {
@@ -9767,6 +9959,17 @@
    "zone_type": "ADMINISTRATIVE_CONTEXT_NO_BASIN",
    "province": "MORROPON",
    "avisos": [
+    {
+     "aviso_key": "SENAMHI-ACP-QUEBRADAS-2026-295",
+     "status": "VIGENTE",
+     "product": "ACP-QUEBRADAS",
+     "relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
+     "relation_rank": 3,
+     "validity_start": "2026-10-22T13:00:00-05:00",
+     "validity_end": "2026-10-23T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-426",
      "status": "VIGENTE",
@@ -10491,18 +10694,20 @@
     "label_es": "Vigilancia activa",
     "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
+     "Aviso SENAMHI-ACP-QUEBRADAS-2026-295 (VIGENTE; nivel oficial: no consta) — LISTED_PROVINCE_CONTEXT_NO_BASIN",
      "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-426 (VIGENTE; nivel oficial: NARANJA) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
      "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-430 (FUTURO; nivel oficial: no consta) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
      "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
      "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-22T17:59:52+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-22T19:29:53+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-23T01:00:01+00:00"
    }
   },
   {
@@ -10512,6 +10717,28 @@
    "zone_type": "BASIN_GEOMETRY",
    "province": null,
    "avisos": [
+    {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-295",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-22T13:00:00-05:00",
+     "validity_end": "2026-10-23T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
+     "aviso_key": "SENAMHI-ACP-QUEBRADAS-2026-295",
+     "status": "VIGENTE",
+     "product": "ACP-QUEBRADAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-22T13:00:00-05:00",
+     "validity_end": "2026-10-23T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-426",
      "status": "VIGENTE",
@@ -11238,18 +11465,21 @@
     "label_es": "Vigilancia activa",
     "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
+     "Aviso SENAMHI-ACP-LLUVIAS-2026-295 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
+     "Aviso SENAMHI-ACP-QUEBRADAS-2026-295 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
      "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-426 (VIGENTE; nivel oficial: NARANJA) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-430 (FUTURO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
      "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-22T17:59:52+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-22T19:29:53+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-23T01:00:01+00:00"
    }
   },
   {
@@ -11259,6 +11489,17 @@
    "zone_type": "ADMINISTRATIVE_CONTEXT_NO_BASIN",
    "province": "HUANCABAMBA",
    "avisos": [
+    {
+     "aviso_key": "SENAMHI-ACP-QUEBRADAS-2026-295",
+     "status": "VIGENTE",
+     "product": "ACP-QUEBRADAS",
+     "relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
+     "relation_rank": 3,
+     "validity_start": "2026-10-22T13:00:00-05:00",
+     "validity_end": "2026-10-23T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-426",
      "status": "VIGENTE",
@@ -11983,18 +12224,20 @@
     "label_es": "Vigilancia activa",
     "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
+     "Aviso SENAMHI-ACP-QUEBRADAS-2026-295 (VIGENTE; nivel oficial: no consta) — LISTED_PROVINCE_CONTEXT_NO_BASIN",
      "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-426 (VIGENTE; nivel oficial: NARANJA) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
      "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-430 (FUTURO; nivel oficial: no consta) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
      "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
      "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-22T17:59:52+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-22T19:29:53+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-23T01:00:01+00:00"
    }
   },
   {
@@ -12004,6 +12247,28 @@
    "zone_type": "BASIN_GEOMETRY",
    "province": null,
    "avisos": [
+    {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-295",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-22T13:00:00-05:00",
+     "validity_end": "2026-10-23T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
+     "aviso_key": "SENAMHI-ACP-QUEBRADAS-2026-295",
+     "status": "VIGENTE",
+     "product": "ACP-QUEBRADAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-22T13:00:00-05:00",
+     "validity_end": "2026-10-23T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-426",
      "status": "VIGENTE",
@@ -12730,18 +12995,21 @@
     "label_es": "Vigilancia activa",
     "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
+     "Aviso SENAMHI-ACP-LLUVIAS-2026-295 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
+     "Aviso SENAMHI-ACP-QUEBRADAS-2026-295 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
      "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-426 (VIGENTE; nivel oficial: NARANJA) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-430 (FUTURO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
      "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-22T17:59:52+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-22T19:29:53+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-23T01:00:01+00:00"
    }
   },
   {
@@ -13483,12 +13751,13 @@
      "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-22T17:59:52+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-22T19:29:53+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-23T01:00:01+00:00"
    }
   },
   {
@@ -14228,12 +14497,13 @@
      "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-22T17:59:52+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-22T19:29:53+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-23T01:00:01+00:00"
    }
   },
   {
@@ -14973,12 +15243,13 @@
      "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-22T17:59:52+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-22T19:29:53+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-23T01:00:01+00:00"
    }
   },
   {
@@ -14988,6 +15259,28 @@
    "zone_type": "BASIN_GEOMETRY",
    "province": null,
    "avisos": [
+    {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-295",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-22T13:00:00-05:00",
+     "validity_end": "2026-10-23T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
+     "aviso_key": "SENAMHI-ACP-QUEBRADAS-2026-295",
+     "status": "VIGENTE",
+     "product": "ACP-QUEBRADAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-22T13:00:00-05:00",
+     "validity_end": "2026-10-23T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-426",
      "status": "VIGENTE",
@@ -15712,18 +16005,21 @@
     "label_es": "Vigilancia activa",
     "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
+     "Aviso SENAMHI-ACP-LLUVIAS-2026-295 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
+     "Aviso SENAMHI-ACP-QUEBRADAS-2026-295 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
      "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-426 (VIGENTE; nivel oficial: NARANJA) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-430 (FUTURO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
      "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-22T17:59:52+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-22T19:29:53+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-23T01:00:01+00:00"
    }
   },
   {
@@ -16463,14 +16759,15 @@
      "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-22T17:59:52+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-22T19:29:53+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-23T01:00:01+00:00"
    }
   }
  ],
- "evaluated_at_utc": "2026-10-22T18:03:16.029429+00:00"
+ "evaluated_at_utc": "2026-10-22T20:50:40.338170+00:00"
 }
