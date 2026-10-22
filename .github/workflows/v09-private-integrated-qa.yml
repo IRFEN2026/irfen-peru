@@ -86,4 +86,14 @@ jobs:
           git add site/data/v09/territory_v0_1.json data/v09/surveillance/zone_rain_state_v0_1.json config/phase2_test_collection_manifest.json
           if git diff --cached --quiet; then echo "No bundle change"; exit 0; fi
           git commit -m "research: freeze tested v0.9 integrated private map snapshot (TEST_ONLY)"
-          git push origin "HEAD:integration/v09-territory-private-map-20261022"
+          BR="integration/v09-territory-private-map-20261022"
+          for attempt in 1 2 3 4; do
+            git fetch -q origin "$BR"
+            if ! git rebase -q "origin/$BR"; then
+              git rebase --abort || true
+              echo "::error::Real conflict while preserving integrated snapshot; refusing overwrite"; exit 1
+            fi
+            if git push -q origin "HEAD:$BR"; then echo "Frozen bundle pushed (non-force)"; exit 0; fi
+            sleep $((attempt * 2))
+          done
+          echo "::error::Non-fast-forward persists after 4 bounded retries"; exit 1
