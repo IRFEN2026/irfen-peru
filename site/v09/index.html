@@ -434,7 +434,13 @@ function imergCoverageState(im, windowMin = COVERAGE_WINDOW_MIN, slotMin = IMERG
   if (r.outside_window) problems.push(`${r.outside_window} intervalos fuera de ventana`);
   if (!r.declared_matches) problems.push(`cobertura declarada ${r.declared}, verificada ${r.valid}/${expected}`);
   if (listProblem) problems.push(listProblem);
-  if (problems.length) { r.reason = "evidencia contradictoria: " + problems.join(" · "); return r; }
+  if (problems.length) {
+    // A verified subset is PARTIAL (always amber), even when declared metadata disagrees.
+    // Malformed readings/timestamps or a nominally complete contradictory window remain UNKNOWN.
+    if (r.valid > 0 && r.valid < expected && r.malformed === 0) r.state = "PARTIAL";
+    r.reason = "evidencia contradictoria: " + problems.join(" · ");
+    return r;
+  }
   r.state = r.valid === expected ? "COMPLETE" : r.valid === 0 ? "NO_DATA" : "PARTIAL";
   r.reason = r.state === "COMPLETE" ? "" : `${r.valid}/${expected} medias horas válidas`;
   return r;
