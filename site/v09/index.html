@@ -105,11 +105,13 @@ footer{padding:16px;color:var(--ink-3);font-size:12px;border-top:1px solid var(-
 <body>
 <header>
   <h1>IRFEN v0.9 · Vigilancia SENAMHI — costa norte</h1>
+  <p class="small"><a href="territorio.html" aria-label="Abrir visor territorial experimental">Ver territorio · cuencas y quebradas (experimental, no publicado)</a></p>
   <div class="muted small">Tumbes · Piura · Lambayeque · La Libertad. Hora de presentación: America/Lima (<span id="now"></span>).</div>
   <div class="banner" id="disclaimer">Vista experimental de investigación (RESEARCH_ONLY / TEST_ONLY). No es un sistema de alerta.</div>
   <div class="flags" aria-label="Estado del prototipo"><span class="flag">RESEARCH_ONLY</span><span class="flag">TEST_ONLY</span><span class="flag">DEMO PRIVADA · NO PUBLICADA</span><span class="flag">NO ES UN SISTEMA DE ALERTA</span></div>
   <div class="chips" id="chips"></div>
   <section class="summary" id="summary" aria-live="polite"></section>
+  <div class="chips" id="continuity-chips" aria-label="Completitud de IMERG en el archivo; no continuidad de GitHub Actions"></div>
 </header>
 <nav role="tablist">
   <button role="tab" data-tab="map" aria-selected="true">1 · Mapa de vigilancia</button>
@@ -359,6 +361,107 @@ function sourceState(){
   const age = (Date.now() - tms(h.last_check_utc))/60000;
   return age > lim ? "DESACTUALIZADA" : h.state;
 }
+/* IMERG coverage is verified from the per-slot series itself, never from self-reported counts alone.
+   The number of expected slots comes from the window and slot lengths (24 h / 30 min = 48); it is not a
+   universal constant. COMPLETE requires every expected slot exactly once, inside the window, with a valid
+   value, and a declared coverage that agrees. Missing or contradictory evidence is NO_DATA / UNKNOWN,
+   never a satisfactory state (UNKNOWN_NOT_LOW_RISK). */
+const IMERG_SLOT_MIN = 30, COVERAGE_WINDOW_MIN = 24 * 60;
+function expectedSlots(windowMin, slotMin){
+  return Number.isInteger(windowMin) && Number.isInteger(slotMin) && slotMin > 0 && windowMin > 0 && windowMin % slotMin === 0
+    ? windowMin / slotMin : null;
+}
+function imergCoverageState(im, windowMin = COVERAGE_WINDOW_MIN, slotMin = IMERG_SLOT_MIN){
+  const expected = expectedSlots(windowMin, slotMin);
+  const r = {state:"UNKNOWN", expected, valid:0, registered_without_value:0, not_listed:0, duplicates:0, outside_window:0, malformed:0,
+             declared:null, declared_matches:false, missing_list_matches:false, reason:""};
+  if (!expected) { r.reason = "ventana o intervalo no válidos"; return r; }
+  if (im === null || im === undefined) { r.state = "NO_DATA"; r.reason = "sin bloque IMERG en el paquete"; return r; }
+  if (typeof im !== "object" || Array.isArray(im)) { r.reason = "bloque IMERG malformado"; return r; }
+  if (!im.source) { r.state = "NO_DATA"; r.reason = "zona sin archivo IMERG"; return r; }
+  const c = im.coverage_24h, series = im.series_24h_half_hourly_mm, slotMs = slotMin * 60000;
+  const end = Date.parse(im.window_end_utc || "");
+  if (!c || !Array.isArray(series)) { r.reason = "sin cobertura o serie verificable"; return r; }
+  r.declared = `${c.available_half_hours}/${c.required_half_hours}`;
+  const declaredMissing = c.missing_half_hours_utc;
+  if (!series.length) {
+    r.declared_matches = c.available_half_hours === 0;
+    r.missing_list_matches = Array.isArray(declaredMissing) && declaredMissing.length === 0;  // engine: no tail, no list
+    r.state = r.declared_matches && r.missing_list_matches ? "NO_DATA" : "UNKNOWN";
+    r.reason = r.state === "NO_DATA" ? "ninguna media hora con dato" : "la cobertura declarada no coincide con una serie vacía";
+    return r;
+  }
+  if (!Number.isFinite(end) || end % slotMs !== 0) { r.reason = "fin de ventana ausente o no alineado"; return r; }
+  const start = end - windowMin * 60000, seen = new Set();
+  for (const e of series) {
+    const t = Array.isArray(e) && e.length >= 2 ? Date.parse(e[0]) : NaN;
+    if (!Number.isFinite(t) || t % slotMs !== 0) { r.malformed++; continue; }
+    if (t < start || t + slotMs > end) { r.outside_window++; continue; }
+    if (seen.has(t)) { r.duplicates++; continue; }
+    seen.add(t);
+    const v = e[1];
+    if (v === null) r.registered_without_value++;
+    else if (typeof v === "number" && Number.isFinite(v) && v >= 0) r.valid++;
+    else r.malformed++;
+  }
+  r.not_listed = expected - seen.size;
+  r.declared_matches = c.required_half_hours === expected && c.available_half_hours === r.valid;
+  // The declared missing list must name exactly the window slots without a valid value (never trusted when empty):
+  // every entry a valid, aligned, in-window slot, listed once.
+  const validSlots = new Set(series.filter(e => Array.isArray(e) && typeof e[1] === "number" && Number.isFinite(e[1]) && e[1] >= 0)
+    .map(e => Date.parse(e[0])));
+  const derivedMissing = [];
+  for (let k = 0; k < expected; k++) { const t = start + k * slotMs; if (!validSlots.has(t)) derivedMissing.push(t); }
+  let listProblem = "";
+  if (!Array.isArray(declaredMissing)) listProblem = "lista de faltantes ausente";
+  else {
+    const listed = new Set();
+    for (const m of declaredMissing) {
+      const t = typeof m === "string" ? Date.parse(m) : NaN;
+      if (!Number.isFinite(t) || t % slotMs !== 0) { listProblem = "faltante con fecha no válida"; break; }
+      if (t < start || t + slotMs > end) { listProblem = "faltante fuera de la ventana"; break; }
+      if (listed.has(t)) { listProblem = "faltante duplicado"; break; }
+      listed.add(t);
+    }
+    if (!listProblem && (listed.size !== derivedMissing.length || derivedMissing.some(t => !listed.has(t))))
+      listProblem = `la lista declara ${listed.size} faltantes y la serie implica ${derivedMissing.length}`;
+  }
+  r.missing_list_matches = !listProblem;
+  // Any documentary contradiction is UNKNOWN: never COMPLETE, never green, never read as zero rain.
+  const problems = [];
+  if (r.malformed) problems.push(`${r.malformed} entradas no válidas`);
+  if (r.duplicates) problems.push(`${r.duplicates} intervalos duplicados`);
+  if (r.outside_window) problems.push(`${r.outside_window} intervalos fuera de ventana`);
+  if (!r.declared_matches) problems.push(`cobertura declarada ${r.declared}, verificada ${r.valid}/${expected}`);
+  if (listProblem) problems.push(listProblem);
+  if (problems.length) { r.reason = "evidencia contradictoria: " + problems.join(" · "); return r; }
+  r.state = r.valid === expected ? "COMPLETE" : r.valid === 0 ? "NO_DATA" : "PARTIAL";
+  r.reason = r.state === "COMPLETE" ? "" : `${r.valid}/${expected} medias horas válidas`;
+  return r;
+}
+function imergCoverageSummary(zones){
+  const all = Array.isArray(zones) ? zones : [];
+  const states = all.map(z => imergCoverageState(z && z.imerg).state);
+  const n = s => states.filter(x => x === s).length;
+  const out = {zones: all.length, complete: n("COMPLETE"), partial: n("PARTIAL"), no_data: n("NO_DATA"), unknown: n("UNKNOWN")};
+  out.overall = !all.length ? "NO_DATA" : out.complete === all.length ? "COMPLETE"
+    : (out.complete + out.partial) ? "PARTIAL" : out.unknown ? "UNKNOWN" : "NO_DATA";
+  return out;
+}
+const COVERAGE_UI = {COMPLETE: ["ok", "COMPLETA"], PARTIAL: ["warn", "PARCIAL"], NO_DATA: ["absent", "SIN DATOS (NO_DATA)"], UNKNOWN: ["warn", "DESCONOCIDA (UNKNOWN)"]};
+// A zone's IMERG block for display, or null when it is absent or not an object (imerg: null must never break a view).
+function imergOf(z){ const im = z && z.imerg; return im && typeof im === "object" && !Array.isArray(im) ? im : null; }
+function renderContinuityEvidence(){
+  const zones = (D && D.rain && D.rain.zones) || [];
+  const s = imergCoverageSummary(zones), [cls, txt] = COVERAGE_UI[s.overall];
+  const label = document.getElementById("continuity-chips");
+  if (!label) return;
+  const detail = s.zones ? `${s.complete} completas, ${s.partial} parciales, ${s.no_data} sin datos, ${s.unknown} desconocidas de ${s.zones} zonas`
+    : "el paquete no contiene zonas: no hay evidencia";
+  label.innerHTML = `<span class="chip ${cls}" data-coverage-overall="${s.overall}" data-zones="${s.zones}" data-complete="${s.complete}">
+    IMERG · cobertura 24 h verificada en el archivo: ${txt} · ${detail}
+  </span><span class="chip">La cobertura por zona NO mide la puntualidad de GitHub Actions; un hueco es dato desconocido, nunca lluvia cero ni riesgo bajo</span>`;
+}
 function renderHeader(){
   document.getElementById("now").textContent = new Date().toLocaleString("es-PE",{timeZone:"America/Lima", hourCycle:"h23"});
   document.getElementById("disclaimer").textContent = D.disclaimer_es;
@@ -378,6 +481,7 @@ function renderHeader(){
   chips.push(`<span class="chip">Acceso directo a SENAMHI: no usado (robots)</span>`);
   chips.push(`<span class="chip">Límites: ${D.official_boundaries==="VERIFIED"?"INEI referenciales verificados":"no verificados"}</span>`);
   document.getElementById("chips").innerHTML = chips.join("");
+  renderContinuityEvidence();
   document.getElementById("footer").innerHTML = `Todas las horas en hora de Lima (UTC−5), formato 24 h. Paquete generado ${lima(D.built_at_utc)} (UTC ${esc(D.built_at_utc)}). Cruce territorial evaluado ${lima(D.links_evaluated_at_utc)}; lluvia evaluada ${lima(D.rain.evaluated_at_utc)}. `
     + (D.boundary_source ? `Límites: ${esc(D.boundary_source.dataset_title)} (${esc(D.boundary_source.institution)}; ${esc(D.boundary_source.legal_status)}; SHA-256 ${esc((D.boundary_source.sha256||"").slice(0,12))}…). ` : "")
     + `Guardas: production_use=false · operational_alerting_enabled=false · activation_gate=BLOCKED · decision_thresholds=null.`;
@@ -397,14 +501,16 @@ function renderSummary(){
   const deptOnly = applicable.filter(a => (a.departments||[]).some(d => NORTH_DEPTS.includes(d) && !(((a.provinces_by_department||{})[d])||[]).length));
   const labels = Object.fromEntries((D.rain.review_priorities||[]).map(p => [p.code, p.label_es]));
   const tiers = {}; zones.forEach(z => { const c = liveTier(z).code; tiers[c] = (tiers[c]||0) + 1; });
-  const withRain = zones.filter(z => liveTier(z).imerg_usable && Object.values(z.imerg.windows||{}).some(w => w.status === "CALCULADO")).length;
+  const withRain = zones.filter(z => liveTier(z).imerg_usable && Object.values((imergOf(z) || {}).windows || {}).some(w => w.status === "CALCULADO")).length;
   const num = a => esc(a.aviso_number ?? a.aviso_key) + " · " + esc(String(a.phenomenon || a.product || "").split("(")[0].trim().toLowerCase());
   const items = [];
   items.push(`<b>Avisos oficiales de lluvia</b> (SENAMHI, reproducidos por INDECI/COEN): ${applicable.length ? `${applicable.length} vigente(s) o próximo(s) relacionados con las zonas del norte (n.º ${applicable.map(num).join("; ")}).` : "ninguno vigente relacionado con las zonas del norte en la última captura."}`
     + (deptOnly.length ? ` ${deptOnly.length} de ellos solo nombran departamentos, no provincias: por eso se marcan zonas enteras.` : ""));
   if (selva.length) items.push(`${selva.length} aviso(s) para la <b>selva</b> (n.º ${selva.map(num).join("; ")}) alcanzan a cuencas de la costa solo porque su cabecera toca un departamento enumerado (por ejemplo, Cajamarca). En las fichas de esas cuencas se muestran aparte: no son avisos específicos de ellas.`);
   items.push(`<b>Prioridad interna de revisión IRFEN</b> (orden de trabajo del equipo, no es un nivel oficial): ` + Object.entries(tiers).sort().map(([c, n]) => `${n} en «${esc(labels[c] || c)}»`).join(" · ") + ".");
-  items.push(`<b>Lluvia observada por satélite</b> (IMERG): calculable ahora en ${withRain} de ${zones.length} zonas. En las demás faltan datos recientes; lo que falta se muestra como «no disponible», nunca como cero.`);
+  items.push(zones.length
+    ? `<b>Lluvia observada por satélite</b> (IMERG): calculable ahora en ${withRain} de ${zones.length} zonas. En las demás faltan datos recientes; lo que falta se muestra como «no disponible», nunca como cero.`
+    : `<b>Sin zonas en el paquete</b>: no hay evidencia de lluvia ni de cobertura (NO_DATA). No significa ausencia de lluvia ni riesgo bajo.`);
   items.push(`<b>Qué es esto</b>: una demo privada de investigación. No es un sistema de alerta, no predice huaicos ni desbordes y no sustituye a SENAMHI, INDECI ni a las autoridades.`);
   const h = D.source.health || {}, avState = sourceState();
   const rows = [
@@ -503,7 +609,7 @@ function selectZone(id, fromClick){
       <br><span class="small muted">${esc(rm[a.relation_method]?.label_es || a.relation_method)}. ${esc(rm[a.relation_method]?.caveat_es || "")}</span>
       ${a.full.official_url ? `<br><a class="small" href="${esc(a.full.official_url)}" target="_blank" rel="noopener">Boletín oficial INDECI/COEN</a>` : ""}</div>`).join("")
     : `<p class="muted">Ningún aviso de lluvia específico de esta zona en la última evaluación.</p>`) + otherHtml;
-  const w = z.imerg.windows || {};
+  const im = imergOf(z) || {}, w = im.windows || {};
   const cell = k => w[k]?.status === "CALCULADO" ? `<b>${w[k].accum_mm} mm</b>` : na(w[k]?.reason);
   const g = z.goes19, f = geosWindowsAt(z.geos_cf, Date.now(), FR());
   el.innerHTML = `<h2>${esc(z.display_name)}</h2>
@@ -513,9 +619,9 @@ function selectZone(id, fromClick){
       <div class="block"><h3>Aviso oficial (SENAMHI vía INDECI/COEN)</h3>${avHtml}</div>
       <div class="block"><h3>Lluvia observada · IMERG Early</h3>
         <dl class="kv"><dt>1 h</dt><dd>${cell("1h")}</dd><dt>3 h</dt><dd>${cell("3h")}</dd><dt>6 h</dt><dd>${cell("6h")}</dd><dt>24 h</dt><dd>${cell("24h")}</dd></dl>
-        <div class="small muted">${z.imerg.window_end_utc ? `Ventanas hasta ${lima(z.imerg.window_end_utc)} (${ago(z.imerg.window_end_utc)}; latencia propia de IMERG Early)` : "Sin muestras IMERG"}</div>
-        ${z.imerg.window_end_utc && !t.imerg_usable ? staleTag(`Más de ${FR().imerg_stale_after_h} h desde el final de la última ventana: no describe la situación actual.`) : ""}
-        ${sparkSVG(z.imerg.series_24h_half_hourly_mm, css("--obs"), "IMERG Early, últimas 24 h")}<div class="small muted">Últimas 24 h por media hora · gris = hueco sin dato</div>
+        <div class="small muted">${im.window_end_utc ? `Ventanas hasta ${lima(im.window_end_utc)} (${ago(im.window_end_utc)}; latencia propia de IMERG Early)` : "Sin muestras IMERG"}</div>
+        ${im.window_end_utc && !t.imerg_usable ? staleTag(`Más de ${FR().imerg_stale_after_h} h desde el final de la última ventana: no describe la situación actual.`) : ""}
+        ${sparkSVG(im.series_24h_half_hourly_mm, css("--obs"), "IMERG Early, últimas 24 h")}<div class="small muted">Últimas 24 h por media hora · gris = hueco sin dato</div>
         ${coverageLine(z.imerg)}</div>
       <div class="block"><h3>Lluvia observada · GOES-19 RRQPE</h3>${g.status==="CALCULADO"
         ? `Tasa media <b>${g.rate_mean_mm_h} mm/h</b> (máx. ${g.rate_max_mm_h}) · escaneo ${lima(g.scan_end_utc)} (${ago(g.scan_end_utc)})<br>${t.goes_usable ? "" : staleTag(`Más de ${FR().goes_stale_after_min} min desde el último escaneo muestreado.`) + "<br>"}<span class="small muted">${esc(g.sampling_es||"")} ${esc(g.uncertainty_es||"")}</span>`
@@ -585,10 +691,12 @@ function sparkSVG(series, color, label){
   return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="${esc(label)}"><line x1="0" x2="${w}" y1="${h-0.5}" y2="${h-0.5}" stroke="${css("--border")}"/>${bars}</svg>`;
 }
 function coverageLine(im){
-  const c = im && im.coverage_24h;
-  if (!c) return "";
-  const miss = c.missing_half_hours_utc || [];
-  return `<div class="small ${miss.length ? "" : "muted"}" data-coverage="${c.available_half_hours}/${c.required_half_hours}">Cobertura 24 h: ${c.available_half_hours}/${c.required_half_hours} medias horas`
+  // Always states coverage, also for an absent or malformed block (NO_DATA / UNKNOWN), never an empty line.
+  const r = imergCoverageState(im), [cls] = COVERAGE_UI[r.state];
+  const c = (im && typeof im === "object" && im.coverage_24h) || {};
+  const miss = Array.isArray(c.missing_half_hours_utc) ? c.missing_half_hours_utc : [];
+  return `<div class="small" data-coverage-state="${r.state}" data-coverage="${r.valid}/${r.expected}"><span class="chip ${cls}">Cobertura 24 h: ${COVERAGE_UI[r.state][1]}</span> `
+    + `${r.valid}/${r.expected} medias horas válidas${r.reason && r.state !== "COMPLETE" ? ` (${esc(r.reason)})` : ""}`
     + (miss.length ? ` · faltan ${miss.slice(0,6).map(t => esc(lima(t))).join(", ")}${miss.length > 6 ? ` y ${miss.length - 6} más` : ""} (sin dato, no es lluvia cero)` : "") + `</div>`;
 }
 function geosHtml(z, f, long){
@@ -602,7 +710,7 @@ function geosHtml(z, f, long){
 function renderRain(){
   document.getElementById("rain-rules").textContent = (D.rain.rules_es||[]).join(" ");
   const cards = D.rain.zones.map(z => {
-    const im = z.imerg, w = im.windows || {};
+    const im = imergOf(z) || {}, w = im.windows || {};
     const cell = k => w[k]?.status === "CALCULADO" ? `<b>${w[k].accum_mm} mm</b>` : na(w[k]?.reason);
     const age = im.window_end_utc ? `ventanas terminan ${lima(im.window_end_utc)} (${ago(im.window_end_utc)}; latencia IMERG Early)` : "sin muestras IMERG";
     const g = z.goes19, f = geosWindowsAt(z.geos_cf, Date.now(), FR()), t = liveTier(z);
@@ -612,6 +720,7 @@ function renderRain(){
       <dt>Anomalía</dt><dd>${na(z.percentile?.reason)} <span class="small muted">(sin serie histórica homogénea)</span></dd></dl>
       <div class="small muted">${esc(age)} · fuente ${esc(im.source||"—")}</div>${im.window_end_utc && !t.imerg_usable ? staleTag() : ""}
       ${sparkSVG(im.series_24h_half_hourly_mm, css("--obs"), "IMERG Early, últimas 24 h por media hora")}<div class="small muted">Barras: últimas 24 h por media hora · gris = hueco sin dato</div>
+      ${coverageLine(z.imerg)}
       <h3>Observado · GOES-19 RRQPE</h3>
       <div>${g.status==="CALCULADO" ? `tasa media ${g.rate_mean_mm_h} mm/h (máx. ${g.rate_max_mm_h}) · escaneo ${lima(g.scan_end_utc)} (${ago(g.scan_end_utc)})<br>${t.goes_usable ? "" : staleTag() + "<br>"}<span class="small muted">${esc(g.uncertainty_es)}</span>` : na(g.reason)}</div>
       <h3>Previsión · GEOS-CF (experimental)</h3>
@@ -629,7 +738,7 @@ function renderCenter(){
   const rows = zonesByLivePriority();
   const head = `<tr><th>Zona</th><th>Prioridad interna</th><th>Motivo</th><th>Evidencia disponible</th><th>Información pendiente</th></tr>`;
   const body = rows.map(({z,t}) => {
-    const w = z.imerg.windows || {}, ev = [];
+    const w = (imergOf(z) || {}).windows || {}, ev = [];
     const old = t.imerg_usable ? "" : " — antiguo, no cuenta";
     ["1h","3h","6h","24h"].forEach(k => { if (w[k]?.status === "CALCULADO") ev.push(`IMERG ${k}: ${w[k].accum_mm} mm (hasta ${lima(w[k].end_utc)})${old}`); });
     if (z.goes19.status === "CALCULADO") ev.push(`GOES-19: ${z.goes19.rate_mean_mm_h} mm/h (${lima(z.goes19.scan_end_utc)})${t.goes_usable ? "" : " — antiguo, no cuenta"}`);
@@ -641,7 +750,7 @@ function renderCenter(){
     if (t.recalculated) reasons.unshift(`Recalculado en el navegador con la hora actual (motor: ${labels[z.review_priority.code]}).`);
     return `<tr><td><b>${esc(z.display_name)}</b><br><span class="small muted">${esc(z.department)}</span></td>
       <td>${prioBadge(t.code, labels[t.code])}</td><td class="small">${reasons.map(esc).join("<br>") || "—"}</td>
-      <td class="small">${ev.map(esc).join("<br>") || na()}</td><td class="small">${(t.missing_es||[]).map(esc).join("<br>") || "—"}</td></tr>`;
+      <td class="small">${ev.map(esc).join("<br>") || na()}${coverageLine(z.imerg)}</td><td class="small">${(t.missing_es||[]).map(esc).join("<br>") || "—"}</td></tr>`;
   }).join("");
   document.getElementById("center-table").innerHTML = head + body;
   const evHead = `<tr><th>Hora (Lima)</th><th>Evento</th><th>Aviso / documento</th><th>Detalle</th><th>Revisión humana</th></tr>`;
