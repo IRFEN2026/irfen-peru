@@ -53,6 +53,10 @@ jobs:
           grep -q "^OK$" browser.log
           if grep -q "skipped" browser.log; then echo "::error::the browser test was skipped"; exit 1; fi
 
+      - name: Regenerar paquete territorial SOLO en el runner para evitar QA sobre paquete obsoleto
+        run: |
+          python scripts/v09_build_territory_bundle.py
+          python scripts/v09_build_territory_bundle.py --check
       - name: Visor territorial (costa norte / Rímac), Playwright real
         run: python -m unittest -v tests/test_v09_territory.py 2>&1 | tee territory.log; test "${PIPESTATUS[0]}" -eq 0
         shell: bash
