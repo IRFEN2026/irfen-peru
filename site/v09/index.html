@@ -375,7 +375,9 @@ function imergCoverageState(im, windowMin = COVERAGE_WINDOW_MIN, slotMin = IMERG
   const r = {state:"UNKNOWN", expected, valid:0, registered_without_value:0, not_listed:0, duplicates:0, outside_window:0, malformed:0,
              declared:null, declared_matches:false, reason:""};
   if (!expected) { r.reason = "ventana o intervalo no válidos"; return r; }
-  if (!im || typeof im !== "object" || !im.source) { r.state = "NO_DATA"; r.reason = "zona sin archivo IMERG"; return r; }
+  if (im === null || im === undefined) { r.state = "NO_DATA"; r.reason = "sin bloque IMERG en el paquete"; return r; }
+  if (typeof im !== "object" || Array.isArray(im)) { r.reason = "bloque IMERG malformado"; return r; }
+  if (!im.source) { r.state = "NO_DATA"; r.reason = "zona sin archivo IMERG"; return r; }
   const c = im.coverage_24h, series = im.series_24h_half_hourly_mm, slotMs = slotMin * 60000;
   const end = Date.parse(im.window_end_utc || "");
   if (!c || !Array.isArray(series)) { r.reason = "sin cobertura o serie verificable"; return r; }
@@ -421,6 +423,8 @@ function imergCoverageSummary(zones){
   return out;
 }
 const COVERAGE_UI = {COMPLETE: ["ok", "COMPLETA"], PARTIAL: ["warn", "PARCIAL"], NO_DATA: ["absent", "SIN DATOS (NO_DATA)"], UNKNOWN: ["warn", "DESCONOCIDA (UNKNOWN)"]};
+// A zone's IMERG block for display, or null when it is absent or not an object (imerg: null must never break a view).
+function imergOf(z){ const im = z && z.imerg; return im && typeof im === "object" && !Array.isArray(im) ? im : null; }
 function renderContinuityEvidence(){
   const zones = (D && D.rain && D.rain.zones) || [];
   const s = imergCoverageSummary(zones), [cls, txt] = COVERAGE_UI[s.overall];
@@ -471,7 +475,7 @@ function renderSummary(){
   const deptOnly = applicable.filter(a => (a.departments||[]).some(d => NORTH_DEPTS.includes(d) && !(((a.provinces_by_department||{})[d])||[]).length));
   const labels = Object.fromEntries((D.rain.review_priorities||[]).map(p => [p.code, p.label_es]));
   const tiers = {}; zones.forEach(z => { const c = liveTier(z).code; tiers[c] = (tiers[c]||0) + 1; });
-  const withRain = zones.filter(z => liveTier(z).imerg_usable && Object.values(z.imerg.windows||{}).some(w => w.status === "CALCULADO")).length;
+  const withRain = zones.filter(z => liveTier(z).imerg_usable && Object.values((imergOf(z) || {}).windows || {}).some(w => w.status === "CALCULADO")).length;
   const num = a => esc(a.aviso_number ?? a.aviso_key) + " · " + esc(String(a.phenomenon || a.product || "").split("(")[0].trim().toLowerCase());
   const items = [];
   items.push(`<b>Avisos oficiales de lluvia</b> (SENAMHI, reproducidos por INDECI/COEN): ${applicable.length ? `${applicable.length} vigente(s) o próximo(s) relacionados con las zonas del norte (n.º ${applicable.map(num).join("; ")}).` : "ninguno vigente relacionado con las zonas del norte en la última captura."}`
@@ -579,7 +583,7 @@ function selectZone(id, fromClick){
       <br><span class="small muted">${esc(rm[a.relation_method]?.label_es || a.relation_method)}. ${esc(rm[a.relation_method]?.caveat_es || "")}</span>
       ${a.full.official_url ? `<br><a class="small" href="${esc(a.full.official_url)}" target="_blank" rel="noopener">Boletín oficial INDECI/COEN</a>` : ""}</div>`).join("")
     : `<p class="muted">Ningún aviso de lluvia específico de esta zona en la última evaluación.</p>`) + otherHtml;
-  const w = z.imerg.windows || {};
+  const im = imergOf(z) || {}, w = im.windows || {};
   const cell = k => w[k]?.status === "CALCULADO" ? `<b>${w[k].accum_mm} mm</b>` : na(w[k]?.reason);
   const g = z.goes19, f = geosWindowsAt(z.geos_cf, Date.now(), FR());
   el.innerHTML = `<h2>${esc(z.display_name)}</h2>
@@ -589,9 +593,9 @@ function selectZone(id, fromClick){
       <div class="block"><h3>Aviso oficial (SENAMHI vía INDECI/COEN)</h3>${avHtml}</div>
       <div class="block"><h3>Lluvia observada · IMERG Early</h3>
         <dl class="kv"><dt>1 h</dt><dd>${cell("1h")}</dd><dt>3 h</dt><dd>${cell("3h")}</dd><dt>6 h</dt><dd>${cell("6h")}</dd><dt>24 h</dt><dd>${cell("24h")}</dd></dl>
-        <div class="small muted">${z.imerg.window_end_utc ? `Ventanas hasta ${lima(z.imerg.window_end_utc)} (${ago(z.imerg.window_end_utc)}; latencia propia de IMERG Early)` : "Sin muestras IMERG"}</div>
-        ${z.imerg.window_end_utc && !t.imerg_usable ? staleTag(`Más de ${FR().imerg_stale_after_h} h desde el final de la última ventana: no describe la situación actual.`) : ""}
-        ${sparkSVG(z.imerg.series_24h_half_hourly_mm, css("--obs"), "IMERG Early, últimas 24 h")}<div class="small muted">Últimas 24 h por media hora · gris = hueco sin dato</div>
+        <div class="small muted">${im.window_end_utc ? `Ventanas hasta ${lima(im.window_end_utc)} (${ago(im.window_end_utc)}; latencia propia de IMERG Early)` : "Sin muestras IMERG"}</div>
+        ${im.window_end_utc && !t.imerg_usable ? staleTag(`Más de ${FR().imerg_stale_after_h} h desde el final de la última ventana: no describe la situación actual.`) : ""}
+        ${sparkSVG(im.series_24h_half_hourly_mm, css("--obs"), "IMERG Early, últimas 24 h")}<div class="small muted">Últimas 24 h por media hora · gris = hueco sin dato</div>
         ${coverageLine(z.imerg)}</div>
       <div class="block"><h3>Lluvia observada · GOES-19 RRQPE</h3>${g.status==="CALCULADO"
         ? `Tasa media <b>${g.rate_mean_mm_h} mm/h</b> (máx. ${g.rate_max_mm_h}) · escaneo ${lima(g.scan_end_utc)} (${ago(g.scan_end_utc)})<br>${t.goes_usable ? "" : staleTag(`Más de ${FR().goes_stale_after_min} min desde el último escaneo muestreado.`) + "<br>"}<span class="small muted">${esc(g.sampling_es||"")} ${esc(g.uncertainty_es||"")}</span>`
@@ -661,8 +665,9 @@ function sparkSVG(series, color, label){
   return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="${esc(label)}"><line x1="0" x2="${w}" y1="${h-0.5}" y2="${h-0.5}" stroke="${css("--border")}"/>${bars}</svg>`;
 }
 function coverageLine(im){
-  if (!im) return "";
-  const r = imergCoverageState(im), [cls] = COVERAGE_UI[r.state], c = im.coverage_24h || {};
+  // Always states coverage, also for an absent or malformed block (NO_DATA / UNKNOWN), never an empty line.
+  const r = imergCoverageState(im), [cls] = COVERAGE_UI[r.state];
+  const c = (im && typeof im === "object" && im.coverage_24h) || {};
   const miss = Array.isArray(c.missing_half_hours_utc) ? c.missing_half_hours_utc : [];
   return `<div class="small" data-coverage-state="${r.state}" data-coverage="${r.valid}/${r.expected}"><span class="chip ${cls}">Cobertura 24 h: ${COVERAGE_UI[r.state][1]}</span> `
     + `${r.valid}/${r.expected} medias horas válidas${r.reason && r.state !== "COMPLETE" ? ` (${esc(r.reason)})` : ""}`
@@ -679,7 +684,7 @@ function geosHtml(z, f, long){
 function renderRain(){
   document.getElementById("rain-rules").textContent = (D.rain.rules_es||[]).join(" ");
   const cards = D.rain.zones.map(z => {
-    const im = z.imerg, w = im.windows || {};
+    const im = imergOf(z) || {}, w = im.windows || {};
     const cell = k => w[k]?.status === "CALCULADO" ? `<b>${w[k].accum_mm} mm</b>` : na(w[k]?.reason);
     const age = im.window_end_utc ? `ventanas terminan ${lima(im.window_end_utc)} (${ago(im.window_end_utc)}; latencia IMERG Early)` : "sin muestras IMERG";
     const g = z.goes19, f = geosWindowsAt(z.geos_cf, Date.now(), FR()), t = liveTier(z);
@@ -689,6 +694,7 @@ function renderRain(){
       <dt>Anomalía</dt><dd>${na(z.percentile?.reason)} <span class="small muted">(sin serie histórica homogénea)</span></dd></dl>
       <div class="small muted">${esc(age)} · fuente ${esc(im.source||"—")}</div>${im.window_end_utc && !t.imerg_usable ? staleTag() : ""}
       ${sparkSVG(im.series_24h_half_hourly_mm, css("--obs"), "IMERG Early, últimas 24 h por media hora")}<div class="small muted">Barras: últimas 24 h por media hora · gris = hueco sin dato</div>
+      ${coverageLine(z.imerg)}
       <h3>Observado · GOES-19 RRQPE</h3>
       <div>${g.status==="CALCULADO" ? `tasa media ${g.rate_mean_mm_h} mm/h (máx. ${g.rate_max_mm_h}) · escaneo ${lima(g.scan_end_utc)} (${ago(g.scan_end_utc)})<br>${t.goes_usable ? "" : staleTag() + "<br>"}<span class="small muted">${esc(g.uncertainty_es)}</span>` : na(g.reason)}</div>
       <h3>Previsión · GEOS-CF (experimental)</h3>
@@ -706,7 +712,7 @@ function renderCenter(){
   const rows = zonesByLivePriority();
   const head = `<tr><th>Zona</th><th>Prioridad interna</th><th>Motivo</th><th>Evidencia disponible</th><th>Información pendiente</th></tr>`;
   const body = rows.map(({z,t}) => {
-    const w = z.imerg.windows || {}, ev = [];
+    const w = (imergOf(z) || {}).windows || {}, ev = [];
     const old = t.imerg_usable ? "" : " — antiguo, no cuenta";
     ["1h","3h","6h","24h"].forEach(k => { if (w[k]?.status === "CALCULADO") ev.push(`IMERG ${k}: ${w[k].accum_mm} mm (hasta ${lima(w[k].end_utc)})${old}`); });
     if (z.goes19.status === "CALCULADO") ev.push(`GOES-19: ${z.goes19.rate_mean_mm_h} mm/h (${lima(z.goes19.scan_end_utc)})${t.goes_usable ? "" : " — antiguo, no cuenta"}`);

@@ -131,6 +131,8 @@ class CoverageCases(unittest.TestCase):
         good = imerg([[t, 0.1] for t in slots(48)])
         cases = {
             "no imerg block": None,
+            "malformed block (string)": "x",
+            "malformed block (array)": [1, 2],
             "zone without archive": {"source": None, "status": "NO_DISPONIBLE"},
             "no coverage block": {k: v for k, v in good.items() if k != "coverage_24h"},
             "no series": {k: v for k, v in good.items() if k != "series_24h_half_hourly_mm"},
@@ -150,7 +152,7 @@ class CoverageCases(unittest.TestCase):
             self.assertNotEqual(st, "COMPLETE", name)
         for name in ("no imerg block", "zone without archive", "all gaps", "empty series"):
             self.assertEqual(got[name], "NO_DATA", name)
-        for name in ("no coverage block", "no series", "no window end", "negative value", "text value", "NaN-like", "bad timestamp",
+        for name in ("malformed block (string)", "malformed block (array)", "no coverage block", "no series", "no window end", "negative value", "text value", "NaN-like", "bad timestamp",
                      "series 48, declared 47"):
             self.assertEqual(got[name], "UNKNOWN", name)
         mixed = run_js(f"const out = imergCoverageSummary([{{imerg: null}}, {{imerg: {json.dumps(good)}}}]);")
@@ -240,6 +242,8 @@ class InBrowser(unittest.TestCase):
         page = self.browser.new_page()
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e)))
+        # renderAll() catches module errors: they surface only as console.error and an "Error al dibujar" chip.
+        page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
 
         def route(r):
             url = r.request.url
@@ -254,13 +258,57 @@ class InBrowser(unittest.TestCase):
         chip = page.locator("#continuity-chips [data-coverage-overall]")
         res = dict(overall=chip.get_attribute("data-coverage-overall"), cls=chip.get_attribute("class"), text=chip.inner_text(),
                    lines=page.eval_on_selector_all("#center-table [data-coverage-state]", "els => els.map(e => e.getAttribute('data-coverage-state'))"),
-                   summary=page.inner_text("#summary"), errors=errors, panel={})
+                   summary=page.inner_text("#summary"), errors=errors, panel={}, panel_text={},
+                   module_errors=page.eval_on_selector_all("#chips .chip", "els => els.map(e => e.textContent).filter(t => t.includes('Error al dibujar'))"),
+                   center_rows=page.eval_on_selector_all("#center-table tr", "els => els.map(e => e.innerText)")[1:],
+                   rain_cards=page.eval_on_selector_all("#rain-cards .card", "els => els.map(e => ({text: e.innerText, cov: [...e.querySelectorAll('[data-coverage-state]')].map(x => x.getAttribute('data-coverage-state'))}))"))
         for i in range(len(zones_imerg)):
             page.evaluate(f"selectZone('z{i}')")
-            res["panel"][f"z{i}"] = page.eval_on_selector_all("[data-coverage-state]:not(#center-table *)",
+            res["panel"][f"z{i}"] = page.eval_on_selector_all("[data-coverage-state]:not(#center-table *):not(#rain-cards *)",
                                                               "els => els.map(e => e.getAttribute('data-coverage-state'))")
+            res["panel_text"][f"z{i}"] = page.inner_text("#zone-detail") if page.query_selector("#zone-detail") else ""
         page.close()
         return res
+
+    def assert_rendered_cleanly(self, r):
+        self.assertEqual(r["errors"], [], "no JavaScript errors (including errors caught by renderAll)")
+        self.assertEqual(r["module_errors"], [], "every module rendered")
+
+    def test_null_imerg_zone_next_to_a_valid_zone(self):
+        """imerg: null must not break any view, must read NO_DATA, never complete, green or zero rain."""
+        full = imerg([[t, 0.4] for t in slots(48)])
+        r = self.render([None, full])
+        self.assert_rendered_cleanly(r)
+        self.assertEqual(r["overall"], "PARTIAL")
+        self.assertNotIn(" ok", f" {r['cls']} ")
+        self.assertIn("1 completas, 0 parciales, 1 sin datos, 0 desconocidas de 2 zonas", r["text"])
+        # Summary: rendered, explicit, no "no rain" reading.
+        self.assertIn("Lluvia observada por satélite", r["summary"])
+        self.assertIn("nunca como cero", r["summary"])
+        # Tracking centre: both zones listed; the null zone shows NO_DATA and the missing IMERG, no mm values.
+        self.assertEqual(len(r["center_rows"]), 2)
+        self.assertEqual(sorted(r["lines"]), ["COMPLETE", "NO_DATA"])
+        null_row = next(x for x in r["center_rows"] if "Zona 0" in x)
+        self.assertIn("SIN DATOS (NO_DATA)", null_row)
+        self.assertIn("IMERG Early sin muestras para esta zona", null_row)
+        self.assertNotIn("IMERG 24h:", null_row)
+        self.assertIn("Zona 1", next(x for x in r["center_rows"] if "COMPLETA" in x))
+        # Rain cards: both present, each with its verified coverage state; the null zone has no IMERG amounts.
+        self.assertEqual(len(r["rain_cards"]), 2)
+        cards = {("Zona 0" if "Zona 0" in c["text"] else "Zona 1"): c for c in r["rain_cards"]}
+        self.assertEqual(cards["Zona 0"]["cov"], ["NO_DATA"])
+        self.assertEqual(cards["Zona 1"]["cov"], ["COMPLETE"])
+        self.assertIn("sin muestras IMERG", cards["Zona 0"]["text"])
+        self.assertNotRegex(cards["Zona 0"]["text"].split("Observado · GOES-19")[0], r"\b\d+(\.\d+)? mm\b")
+        # Zone panels: each selectable, with its own state.
+        self.assertEqual(r["panel"], {"z0": ["NO_DATA"], "z1": ["COMPLETE"]})
+        self.assertIn("Sin muestras IMERG", r["panel_text"]["z0"])
+
+    def test_malformed_imerg_block_is_unknown_and_does_not_break_views(self):
+        r = self.render(["no es un objeto", imerg([[t, 0.1] for t in slots(48)])])
+        self.assert_rendered_cleanly(r)
+        self.assertEqual(sorted(r["lines"]), ["COMPLETE", "UNKNOWN"])
+        self.assertNotIn(" ok", f" {r['cls']} ")
 
     def test_zero_zones_render_no_data_not_green(self):
         r = self.render([])
@@ -268,7 +316,7 @@ class InBrowser(unittest.TestCase):
         self.assertNotIn(" ok", f" {r['cls']} ")
         self.assertIn("no hay evidencia", r["text"])
         self.assertIn("Sin zonas en el paquete", r["summary"])
-        self.assertEqual(r["errors"], [])
+        self.assert_rendered_cleanly(r)
 
     def test_ui_reflects_each_zone_state(self):
         full = imerg([[t, 0.1] for t in slots(48)])
@@ -280,7 +328,7 @@ class InBrowser(unittest.TestCase):
         self.assertEqual(r["overall"], "PARTIAL")
         self.assertNotIn(" ok", f" {r['cls']} ")
         self.assertIn("1 completas, 2 parciales, 1 sin datos, 0 desconocidas de 4 zonas", r["text"])
-        self.assertEqual(r["errors"], [])
+        self.assert_rendered_cleanly(r)
         # Each zone's coverage line (tracking centre and selected-zone panel) shows the verified state, never the self-report.
         self.assertTrue(r["lines"])
         self.assertEqual(sorted(r["lines"]), sorted(["COMPLETE", "PARTIAL", "PARTIAL", "NO_DATA"]), "tracking centre, one line per zone")
@@ -290,6 +338,7 @@ class InBrowser(unittest.TestCase):
         r = self.render([imerg([[t, 0.0] for t in slots(48)])] * 2)
         self.assertEqual(r["overall"], "COMPLETE")
         self.assertIn(" ok", f" {r['cls']} ")
+        self.assert_rendered_cleanly(r)
 
 
 if __name__ == "__main__":
