@@ -47,6 +47,28 @@ jobs:
                       assert a["accum_mm"]==x["accum_mm"], (zid,window,"value mismatch")
                   else:
                       assert x["status"]==a["status"], (zid,window,"status mismatch")
+          # A successful capture job does not guarantee that every half-hour exists.
+          # This check catches inconsistent "CALCULADO"/coverage metadata even if
+          # the two snapshots happen to agree on the numeric accumulation.
+          for zid, z in actual.items():
+              cov=z["imerg"]["coverage_24h"]
+              b_cov=bundle["zone_rain"][zid]["imerg"]["coverage_24h"]
+              assert b_cov == cov, (zid, "coverage_not_propagated")
+              req, avail=cov["required_half_hours"], cov["available_half_hours"]
+              missing=cov["missing_half_hours_utc"]
+              assert req==48 and type(avail) is int and 0<=avail<=48, (zid, "bad_coverage")
+              assert isinstance(missing,list) and len(missing)==48-avail, (zid, "missing_count")
+              assert len(set(missing))==len(missing), (zid, "duplicate_missing_intervals")
+              w=z["imerg"]["windows"]["24h"]
+              if avail==48:
+                  assert w["status"]=="CALCULADO", (zid, "full_window_not_computed")
+                  assert "accum_mm" in w, (zid, "full_window_lacks_accumulation")
+              else:
+                  assert w["status"]=="NO_DISPONIBLE", (zid, "incomplete_window_marked_computed")
+                  assert "accum_mm" not in w, (zid, "missing_window_faked_as_zero")
+          print("Verified 24h coverage metadata across",len(actual),"zones",
+                "full",sum(z["imerg"]["coverage_24h"]["available_half_hours"]==48
+                for z in actual.values()))
           totals={w:sum(z["imerg"]["windows"][w].get("accum_mm",0)>0 for z in bundle["zone_rain"].values()) for w in ("6h","24h")}
           print("Matched rain snapshot",state["evaluated_at_utc"],"22/22 zones",totals)
           if not all(v>0 for v in totals.values()):
