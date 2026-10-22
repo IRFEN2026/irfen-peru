@@ -32,12 +32,26 @@ def slots(n, end=END, minutes=30):
     return [(end - timedelta(minutes=minutes * (n - k))).isoformat() for k in range(n)]
 
 
-def imerg(series, available=None, required=48, end=END, source="IMERG_EARLY_V09_NORTH_CONTINUOUS"):
-    """A zone's IMERG block shaped like the engine output; the declared coverage defaults to what the series really has."""
-    valid = sum(1 for _, v in series if v is not None)
+def imerg(series, available=None, required=48, end=END, source="IMERG_EARLY_V09_NORTH_CONTINUOUS", missing=None, window_slots=48):
+    """A zone's IMERG block shaped like the engine output. By default the declared coverage is coherent with the series,
+    as the engine writes it: available = valid values, missing = every window slot without a valid value (empty when the
+    series is empty). `available`, `required` and `missing` can be overridden to build contradictions."""
+    good = lambda v: isinstance(v, (int, float)) and not isinstance(v, bool) and v >= 0  # noqa: E731
+    valid_at = {datetime.fromisoformat(t.replace("Z", "+00:00")) for t, v in series
+                if isinstance(t, str) and _parses(t) and good(v)}
+    derived = [] if not series else [t for t in slots(window_slots, end) if datetime.fromisoformat(t) not in valid_at]
     return {"source": source, "window_end_utc": end.isoformat(), "series_24h_half_hourly_mm": series,
-            "coverage_24h": {"required_half_hours": required, "available_half_hours": valid if available is None else available,
-                             "missing_half_hours_utc": [t for t, v in series if v is None]}}
+            "coverage_24h": {"required_half_hours": required,
+                             "available_half_hours": sum(1 for _, v in series if good(v)) if available is None else available,
+                             "missing_half_hours_utc": derived if missing is None else missing}}
+
+
+def _parses(t):
+    try:
+        datetime.fromisoformat(t.replace("Z", "+00:00"))
+        return True
+    except ValueError:
+        return False
 
 
 def coverage_js():
@@ -80,13 +94,16 @@ class CoverageCases(unittest.TestCase):
             self.assertEqual((s["zones"], s["overall"]), (0, "NO_DATA"))
 
     def test_02_one_of_one_is_incomplete(self):
+        # A self-reported 1/1 contradicts the 24 h window: UNKNOWN. With coherent metadata, 1 of 48 is PARTIAL.
         st = states([imerg([[slots(1)[0], 0.1]], available=1, required=1)])[0]
-        self.assertEqual((st["state"], st["valid"], st["expected"]), ("PARTIAL", 1, 48))
+        self.assertEqual((st["state"], st["valid"], st["expected"]), ("UNKNOWN", 1, 48))
         self.assertFalse(st["declared_matches"])
+        self.assertEqual(states([imerg([[slots(1)[0], 0.1]])])[0]["state"], "PARTIAL")
 
     def test_03_twenty_four_of_twenty_four_is_incomplete(self):
         st = states([imerg([[t, 0.2] for t in slots(24)], available=24, required=24)])[0]
-        self.assertEqual((st["state"], st["valid"]), ("PARTIAL", 24))
+        self.assertEqual((st["state"], st["valid"]), ("UNKNOWN", 24))
+        self.assertEqual(states([imerg([[t, 0.2] for t in slots(24)])])[0]["state"], "PARTIAL")
 
     def test_04_twenty_eight_of_forty_eight_is_incomplete(self):
         series = [[t, (0.1 if k % 12 < 7 else None)] for k, t in enumerate(slots(48))]
@@ -110,7 +127,7 @@ class CoverageCases(unittest.TestCase):
         ts = slots(48)
         dup = [[t, 0.1] for t in ts[:47]] + [[ts[0], 0.1]]  # 48 records, 47 distinct slots
         st = states([imerg(dup, available=48)])[0]
-        self.assertEqual((st["state"], st["valid"], st["duplicates"]), ("PARTIAL", 47, 1))
+        self.assertEqual((st["state"], st["valid"], st["duplicates"]), ("UNKNOWN", 47, 1))
         extra = [[t, 0.1] for t in ts] + [[ts[5], 0.1]]  # 48 distinct + 1 duplicate: contradictory, never complete
         self.assertEqual(states([imerg(extra, available=48)])[0]["state"], "UNKNOWN")
         # Same instant written differently is still the same slot.
@@ -121,7 +138,7 @@ class CoverageCases(unittest.TestCase):
         ts = slots(48)
         shifted = [[t, 0.1] for t in ts[1:]] + [[END.isoformat(), 0.1]]  # last one starts at the window end
         st = states([imerg(shifted, available=48)])[0]
-        self.assertEqual((st["state"], st["outside_window"]), ("PARTIAL", 1))
+        self.assertEqual((st["state"], st["outside_window"]), ("UNKNOWN", 1))
         extra = [[t, 0.1] for t in ts] + [[(END - timedelta(hours=30)).isoformat(), 0.1]]
         self.assertEqual(states([imerg(extra, available=48)])[0]["state"], "UNKNOWN")
         misaligned = [[t, 0.1] for t in ts[:47]] + [[(END - timedelta(minutes=10)).isoformat(), 0.1]]
@@ -161,11 +178,85 @@ class CoverageCases(unittest.TestCase):
         self.assertEqual(only_unknown["overall"], "UNKNOWN")
 
     def test_expected_slots_follow_the_window_length(self):
-        six_h = imerg([[t, 0.1] for t in slots(12)], required=12)
+        six_h = imerg([[t, 0.1] for t in slots(12)], required=12, window_slots=12)
         self.assertEqual(states([six_h], window_min=360)[0]["state"], "COMPLETE")
-        self.assertEqual(states([six_h])[0]["state"], "PARTIAL", "12 slots are complete for 6 h, never for 24 h")
+        self.assertEqual(states([six_h])[0]["state"], "UNKNOWN", "12 slots are complete for 6 h, never for 24 h")
         self.assertEqual(run_js("const out = [expectedSlots(1440, 30), expectedSlots(360, 30), expectedSlots(100, 30), expectedSlots(1440, 0)];"),
                          [48, 12, None, None])
+
+
+class MissingListCoherence(unittest.TestCase):
+    """coverage_24h.missing_half_hours_utc must name exactly the window slots without a valid value."""
+
+    def st(self, im):
+        return states([im])[0]
+
+    def test_full_series_with_empty_list_is_complete(self):
+        r = self.st(imerg([[t, 0.1] for t in slots(48)], missing=[]))
+        self.assertEqual((r["state"], r["missing_list_matches"]), ("COMPLETE", True))
+
+    def test_full_series_with_a_declared_missing_slot_is_unknown(self):
+        ts = slots(48)
+        r = self.st(imerg([[t, 0.1] for t in ts], missing=[ts[10]]))
+        self.assertEqual((r["state"], r["valid"], r["missing_list_matches"]), ("UNKNOWN", 48, False))
+        self.assertIn("contradictoria", r["reason"])
+
+    def test_one_gap_with_the_right_slot_listed_is_partial(self):
+        ts = slots(48)
+        series = [[t, None if k == 10 else 0.1] for k, t in enumerate(ts)]
+        self.assertEqual(self.st(imerg(series, missing=[ts[10]]))["state"], "PARTIAL")
+        self.assertEqual(self.st(imerg(series, missing=[ts[10].replace("+00:00", "Z")]))["state"], "PARTIAL", "same instant, other notation")
+
+    def test_one_gap_with_an_empty_list_is_unknown(self):
+        ts = slots(48)
+        series = [[t, None if k == 10 else 0.1] for k, t in enumerate(ts)]
+        self.assertEqual(self.st(imerg(series, missing=[]))["state"], "UNKNOWN", "an empty list never proves completeness")
+        self.assertEqual(self.st(imerg([[t, 0.1] for t in ts[1:]], missing=[]))["state"], "UNKNOWN", "an unlisted slot must be declared")
+
+    def test_one_gap_with_the_wrong_slot_listed_is_unknown(self):
+        ts = slots(48)
+        series = [[t, None if k == 10 else 0.1] for k, t in enumerate(ts)]
+        self.assertEqual(self.st(imerg(series, missing=[ts[11]]))["state"], "UNKNOWN")
+        self.assertEqual(self.st(imerg(series, missing=[ts[10], ts[11]]))["state"], "UNKNOWN")
+
+    def test_duplicated_entries_in_the_list_are_unknown(self):
+        ts = slots(48)
+        series = [[t, None if k == 10 else 0.1] for k, t in enumerate(ts)]
+        for missing in ([ts[10], ts[10]], [ts[10], ts[10].replace("+00:00", "Z")]):
+            self.assertEqual(self.st(imerg(series, missing=missing))["state"], "UNKNOWN", missing)
+
+    def test_invalid_or_out_of_window_entries_are_unknown(self):
+        ts = slots(48)
+        series = [[t, None if k == 10 else 0.1] for k, t in enumerate(ts)]
+        bad = {"text": "ayer", "number": 1760990400000, "misaligned": (END - timedelta(minutes=10)).isoformat(),
+               "at window end": END.isoformat(), "before window": (END - timedelta(hours=25)).isoformat(), "null": None}
+        for name, m in bad.items():
+            self.assertEqual(self.st(imerg(series, missing=[ts[10], m]))["state"], "UNKNOWN", name)
+        no_list = imerg(series)
+        del no_list["coverage_24h"]["missing_half_hours_utc"]
+        self.assertEqual(self.st(no_list)["state"], "UNKNOWN", "absent list")
+        self.assertEqual(self.st(imerg(series, missing="2026-10-20T03:00:00+00:00"))["state"], "UNKNOWN", "not a list")
+
+    def test_all_gaps_and_empty_series_stay_no_data_only_when_coherent(self):
+        gaps = [[t, None] for t in slots(48)]
+        self.assertEqual(self.st(imerg(gaps))["state"], "NO_DATA")
+        self.assertEqual(self.st(imerg(gaps, missing=[]))["state"], "UNKNOWN")
+        self.assertEqual(self.st(imerg([]))["state"], "NO_DATA")
+        self.assertEqual(self.st(imerg([], missing=slots(1)))["state"], "UNKNOWN")
+
+    def test_no_contradiction_ever_turns_the_summary_green(self):
+        ts = slots(48)
+        good = imerg([[t, 0.1] for t in ts])
+        contradictions = [imerg([[t, 0.1] for t in ts], missing=[ts[0]]),
+                          imerg([[t, None if k == 3 else 0.1] for k, t in enumerate(ts)], missing=[]),
+                          imerg([[t, None if k == 3 else 0.1] for k, t in enumerate(ts)], missing=[ts[3], ts[3]])]
+        for c in contradictions:
+            for zones in ([c], [good, c], [c, good, good]):
+                s = run_js(f"const out = imergCoverageSummary({json.dumps([{'imerg': z} for z in zones])});")
+                self.assertNotEqual(s["overall"], "COMPLETE")
+                self.assertGreaterEqual(s["unknown"], 1)
+        only = run_js(f"const out = imergCoverageSummary({json.dumps([{'imerg': c} for c in contradictions])});")
+        self.assertEqual(only["overall"], "UNKNOWN")
 
 
 class BackendAgreement(unittest.TestCase):
@@ -190,6 +281,7 @@ class BackendAgreement(unittest.TestCase):
             self.assertEqual(st["state"], expected_state, len(present))
             self.assertEqual(st["valid"], im["coverage_24h"]["available_half_hours"])
             self.assertTrue(st["declared_matches"])
+            self.assertTrue(st["missing_list_matches"], "the engine's missing list is exactly the slots without a value")
 
     def test_registered_files_without_valid_cells_are_not_observations(self):
         im = json.loads(json.dumps(self.zone(set(range(0, 48, 2)))))  # all 48 granules registered, half with no valid cells
@@ -207,6 +299,8 @@ class BackendAgreement(unittest.TestCase):
             c = (z.get("imerg") or {}).get("coverage_24h") or {}
             if st["state"] == "COMPLETE":
                 self.assertEqual((c.get("required_half_hours"), c.get("available_half_hours")), (48, 48), z["zone_id"])
+                self.assertEqual(c.get("missing_half_hours_utc"), [], z["zone_id"])
+            self.assertNotIn("contradictoria", st["reason"], f"committed bundle must be coherent: {z['zone_id']} {st['reason']}")
 
 
 @unittest.skipIf(os.environ.get("IRFEN_SKIP_BROWSER") == "1", "browser explicitly disabled")
@@ -304,6 +398,21 @@ class InBrowser(unittest.TestCase):
         self.assertEqual(r["panel"], {"z0": ["NO_DATA"], "z1": ["COMPLETE"]})
         self.assertIn("Sin muestras IMERG", r["panel_text"]["z0"])
 
+    def test_contradictory_missing_list_is_unknown_in_every_view(self):
+        ts = slots(48)
+        contradictory = imerg([[t, 0.1] for t in ts], missing=[ts[5]])
+        r = self.render([contradictory, imerg([[t, 0.1] for t in ts])])
+        self.assert_rendered_cleanly(r)
+        self.assertEqual(r["overall"], "PARTIAL")
+        self.assertNotIn(" ok", f" {r['cls']} ")
+        self.assertIn("1 completas, 0 parciales, 0 sin datos, 1 desconocidas de 2 zonas", r["text"])
+        self.assertEqual(r["panel"]["z0"], ["UNKNOWN"])
+        self.assertEqual(sorted(r["lines"]), ["COMPLETE", "UNKNOWN"])
+        self.assertEqual(sorted(c["cov"][0] for c in r["rain_cards"]), ["COMPLETE", "UNKNOWN"])
+        row = next(x for x in r["center_rows"] if "Zona 0" in x)
+        self.assertIn("DESCONOCIDA (UNKNOWN)", row)
+        self.assertIn("evidencia contradictoria", row)
+
     def test_malformed_imerg_block_is_unknown_and_does_not_break_views(self):
         r = self.render(["no es un objeto", imerg([[t, 0.1] for t in slots(48)])])
         self.assert_rendered_cleanly(r)
@@ -327,12 +436,12 @@ class InBrowser(unittest.TestCase):
         r = self.render([full, one, dup, no_archive])
         self.assertEqual(r["overall"], "PARTIAL")
         self.assertNotIn(" ok", f" {r['cls']} ")
-        self.assertIn("1 completas, 2 parciales, 1 sin datos, 0 desconocidas de 4 zonas", r["text"])
+        self.assertIn("1 completas, 0 parciales, 1 sin datos, 2 desconocidas de 4 zonas", r["text"])
         self.assert_rendered_cleanly(r)
         # Each zone's coverage line (tracking centre and selected-zone panel) shows the verified state, never the self-report.
         self.assertTrue(r["lines"])
-        self.assertEqual(sorted(r["lines"]), sorted(["COMPLETE", "PARTIAL", "PARTIAL", "NO_DATA"]), "tracking centre, one line per zone")
-        self.assertEqual(r["panel"], {"z0": ["COMPLETE"], "z1": ["PARTIAL"], "z2": ["PARTIAL"], "z3": ["NO_DATA"]}, "selected-zone panel")
+        self.assertEqual(sorted(r["lines"]), sorted(["COMPLETE", "UNKNOWN", "UNKNOWN", "NO_DATA"]), "tracking centre, one line per zone")
+        self.assertEqual(r["panel"], {"z0": ["COMPLETE"], "z1": ["UNKNOWN"], "z2": ["UNKNOWN"], "z3": ["NO_DATA"]}, "selected-zone panel")
 
     def test_only_full_verified_evidence_is_green(self):
         r = self.render([imerg([[t, 0.0] for t in slots(48)])] * 2)

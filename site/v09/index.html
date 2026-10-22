@@ -373,7 +373,7 @@ function expectedSlots(windowMin, slotMin){
 function imergCoverageState(im, windowMin = COVERAGE_WINDOW_MIN, slotMin = IMERG_SLOT_MIN){
   const expected = expectedSlots(windowMin, slotMin);
   const r = {state:"UNKNOWN", expected, valid:0, registered_without_value:0, not_listed:0, duplicates:0, outside_window:0, malformed:0,
-             declared:null, declared_matches:false, reason:""};
+             declared:null, declared_matches:false, missing_list_matches:false, reason:""};
   if (!expected) { r.reason = "ventana o intervalo no válidos"; return r; }
   if (im === null || im === undefined) { r.state = "NO_DATA"; r.reason = "sin bloque IMERG en el paquete"; return r; }
   if (typeof im !== "object" || Array.isArray(im)) { r.reason = "bloque IMERG malformado"; return r; }
@@ -382,10 +382,12 @@ function imergCoverageState(im, windowMin = COVERAGE_WINDOW_MIN, slotMin = IMERG
   const end = Date.parse(im.window_end_utc || "");
   if (!c || !Array.isArray(series)) { r.reason = "sin cobertura o serie verificable"; return r; }
   r.declared = `${c.available_half_hours}/${c.required_half_hours}`;
+  const declaredMissing = c.missing_half_hours_utc;
   if (!series.length) {
     r.declared_matches = c.available_half_hours === 0;
-    r.state = r.declared_matches ? "NO_DATA" : "UNKNOWN";
-    r.reason = r.declared_matches ? "ninguna media hora con dato" : "la cobertura declarada no coincide con una serie vacía";
+    r.missing_list_matches = Array.isArray(declaredMissing) && declaredMissing.length === 0;  // engine: no tail, no list
+    r.state = r.declared_matches && r.missing_list_matches ? "NO_DATA" : "UNKNOWN";
+    r.reason = r.state === "NO_DATA" ? "ninguna media hora con dato" : "la cobertura declarada no coincide con una serie vacía";
     return r;
   }
   if (!Number.isFinite(end) || end % slotMs !== 0) { r.reason = "fin de ventana ausente o no alineado"; return r; }
@@ -403,14 +405,37 @@ function imergCoverageState(im, windowMin = COVERAGE_WINDOW_MIN, slotMin = IMERG
   }
   r.not_listed = expected - seen.size;
   r.declared_matches = c.required_half_hours === expected && c.available_half_hours === r.valid;
-  if (r.malformed) { r.reason = `${r.malformed} entradas no válidas`; return r; }
-  if (r.valid === expected && (r.duplicates || r.outside_window || !r.declared_matches)) {
-    r.reason = "serie con duplicados, fuera de ventana o en desacuerdo con la cobertura declarada"; return r;
+  // The declared missing list must name exactly the window slots without a valid value (never trusted when empty):
+  // every entry a valid, aligned, in-window slot, listed once.
+  const validSlots = new Set(series.filter(e => Array.isArray(e) && typeof e[1] === "number" && Number.isFinite(e[1]) && e[1] >= 0)
+    .map(e => Date.parse(e[0])));
+  const derivedMissing = [];
+  for (let k = 0; k < expected; k++) { const t = start + k * slotMs; if (!validSlots.has(t)) derivedMissing.push(t); }
+  let listProblem = "";
+  if (!Array.isArray(declaredMissing)) listProblem = "lista de faltantes ausente";
+  else {
+    const listed = new Set();
+    for (const m of declaredMissing) {
+      const t = typeof m === "string" ? Date.parse(m) : NaN;
+      if (!Number.isFinite(t) || t % slotMs !== 0) { listProblem = "faltante con fecha no válida"; break; }
+      if (t < start || t + slotMs > end) { listProblem = "faltante fuera de la ventana"; break; }
+      if (listed.has(t)) { listProblem = "faltante duplicado"; break; }
+      listed.add(t);
+    }
+    if (!listProblem && (listed.size !== derivedMissing.length || derivedMissing.some(t => !listed.has(t))))
+      listProblem = `la lista declara ${listed.size} faltantes y la serie implica ${derivedMissing.length}`;
   }
+  r.missing_list_matches = !listProblem;
+  // Any documentary contradiction is UNKNOWN: never COMPLETE, never green, never read as zero rain.
+  const problems = [];
+  if (r.malformed) problems.push(`${r.malformed} entradas no válidas`);
+  if (r.duplicates) problems.push(`${r.duplicates} intervalos duplicados`);
+  if (r.outside_window) problems.push(`${r.outside_window} intervalos fuera de ventana`);
+  if (!r.declared_matches) problems.push(`cobertura declarada ${r.declared}, verificada ${r.valid}/${expected}`);
+  if (listProblem) problems.push(listProblem);
+  if (problems.length) { r.reason = "evidencia contradictoria: " + problems.join(" · "); return r; }
   r.state = r.valid === expected ? "COMPLETE" : r.valid === 0 ? "NO_DATA" : "PARTIAL";
-  r.reason = r.state === "COMPLETE" ? "" : `${r.valid}/${expected} medias horas válidas`
-    + (r.duplicates ? ` · ${r.duplicates} duplicadas` : "") + (r.outside_window ? ` · ${r.outside_window} fuera de ventana` : "")
-    + (r.declared_matches ? "" : ` · declarada ${r.declared}`);
+  r.reason = r.state === "COMPLETE" ? "" : `${r.valid}/${expected} medias horas válidas`;
   return r;
 }
 function imergCoverageSummary(zones){
