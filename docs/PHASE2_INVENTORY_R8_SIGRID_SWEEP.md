@@ -20,7 +20,7 @@ Los estados describen la cobertura documental, nunca ausencia hidrológica.
 |---|---|---|---|---|
 | Carretera Central / Rímac / Huaycoloro | AUDITADO_PARCIAL | 44 | #381 +11; #363 (inventario propio) | 0. Todos los mapas ANA hallados ya están en `main` o en #381; una variante ortográfica pendiente |
 | Pisco / Ica (incl. Quitasol y Paracas) | AUDITADO_PARCIAL | 48 (46 sin provincia) | #366 +3; #381 +6 | 4 |
-| Santa / Casma | AUDITADO_PARCIAL | 16 | #381 +1 | 8 |
+| Santa / Casma | AUDITADO_PARCIAL | 16 | #381 +1 | 9 (de 8 mapas) |
 | Tumbes / Zorritos | AUDITADO_PARCIAL | 68 | #365 +14; #385 +3; #364; #378 | 0 (se deja a esos carriles) |
 | Arequipa, Moquegua, Tacna | NO_AUDITADO | — | — | — |
 
@@ -30,7 +30,7 @@ Los estados describen la cobertura documental, nunca ausencia hidrológica.
 - Cada evidencia añade `record_page_sha256` y `record_page_archive`.
 - La prueba aplica el **validador del propio maestro** a «maestro + r8» y exige cero errores. También verifica que las manipulaciones (fila publicable, coordenadas, cuenca padre, evento sin evidencia, id duplicado) se rechazan.
 
-## C · Nuevos candidatos (12)
+## C · Nuevos candidatos (13 identidades documentales)
 - **Pisco / Ica:**
   - Pallasca y Pantayco (Humay, Pisco; SIGRID 5615);
   - Cabeza de Cura y Cerro Blanco (Nasca; 5636).
@@ -39,14 +39,37 @@ Los estados describen la cobertura documental, nunca ausencia hidrológica.
   - Cayhuamarca y Tablones (Chimbote; 5838);
   - La Cantera (5839);
   - San Juan (5840);
-  - El Establo 1 y El Establo 2 (5841, una fila según lo impreso);
+  - El Establo 1 y El Establo 2 (5841): dos identidades independientes desde el 23-10-2026;
   - s/n (Nepeña; 5864);
   - s/n (Moro; 5865).
+
+Las filas divididas a partir de un mismo mapa llevan `split_basis`:
+- el texto de la ficha archivada que lo justifica;
+- las filas hermanas;
+- la decisión (`SOURCE_PLURAL_ENUMERATION`, o `OWNER_DIRECTED_SPLIT_OF_EXPLICIT_ENUMERATION` para El Establo);
+- la fila sustituida (`ancash_chimbote_el_establo_1_el_establo_2`).
+
+Las hermanas comparten fuente SIGRID, SHA-256 y archivo. Que sean cauces hidrológicamente independientes no se adjudica, y no se infiere geometría, outlet ni relación de cuenca.
 
 ## D · Duplicidades e incertidumbres
 - **Pendiente de adjudicar, no fusionada:** «Yanocoto (Santa María)» (5842) frente a `lima_lurigancho_yanacoto`.
 - **Mismo nombre en otro distrito, no fusionada:** «Cabeza de Cura» (Nasca) frente a la de Vista Alegre.
 - **Homónimos de otros departamentos:** Cerro Blanco, La Cantera, San Juan y Pallasca.
+- **Denominaciones compuestas:** `scripts/phase2_inventory_compound_name_audit.py` clasifica las 51 del maestro y de r8 (`compound_name_audit`). Solo lee el texto de evidencia de cada fila y **no divide, fusiona ni renombra nada**.
+
+  | Categoría | Nº | Qué requiere |
+  |---|---|---|
+  | `SOURCE_TEXT_NOT_READ` (nombre tomado de un nombre de archivo o de una lectura automática) | 21 | leer y archivar la fuente |
+  | `PARENTHETICAL_ALIAS_OR_SUBNAME_PENDING` | 8 | adjudicar el alias |
+  | `SPLIT_RECORDED_WITH_BASIS` (r8) | 8 | nada |
+  | `SOURCE_TABLE_SINGLE_CELL_COMPOUND` | 4 | releer la tabla archivada |
+  | `SOURCE_TABLE_LOCALITY_LABEL` | 3 | conservar tal como se imprimió |
+  | `SECONDARY_OR_LIST_SOURCE_ONLY` | 2 | buscar una fuente primaria |
+  | `ENUMERATED_DISTINCT_NAMES_IN_SOURCE` (Huayaringa Centro y Portada de Huayaringa) | 1 | revisar la división |
+  | `NUMBERED_SERIES_IN_SOURCE` (Centro Santa Eulalia 1, 2 y 3) | 1 | revisar la división, mismo patrón que El Establo |
+  | `DISTRICT_QUALIFIER`, `LOCALITY_QUALIFIER`, `LABEL_COMPONENT_ALREADY_FLAGGED` | 3 | nada |
+
+  `el progreso 1 - el progreso 2` (main) no se divide: su nombre no aparece en el texto de fuente registrado.
 - **Mapas adicionales para filas ya existentes:** California, Huampaní, Quirio, La Libertad y Huascarán. Quedan como referencias cruzadas que se incorporarán al integrar.
 - **Ya cubiertos por PR abiertos:** Panorama y «U3 y P-P1» (#381), y Cabuyal / Casitas Bocapán (#378).
 

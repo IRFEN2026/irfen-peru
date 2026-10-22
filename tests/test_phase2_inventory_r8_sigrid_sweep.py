@@ -24,6 +24,7 @@ def _load(name, rel):
 
 SWEEP = _load("phase2_sigrid_ana2016_sweep", "scripts/phase2_sigrid_ana2016_sweep.py")
 MASTER_VALIDATOR = _load("validate_phase2_national_inventory_audit", "scripts/validate_phase2_national_inventory_audit.py")
+COMPOUND_AUDIT = _load("phase2_inventory_compound_name_audit", "scripts/phase2_inventory_compound_name_audit.py")
 MASTER = ROOT / "config/phase2_national_inventory_completeness_audit_v0_1.json"
 R8 = ROOT / "config/phase2_national_inventory_r8_sigrid_sweep_v0_1.json"
 SWEEP_DIR = ROOT / "data/phase2/source_archive/sigrid_ana2016_sweep_20261022"
@@ -150,6 +151,35 @@ class Rows(Base):
                 self.assertEqual(ev["evidence_type"], "CRITICAL_POINT", "a vulnerable-population map is not an event")
                 for k in ("event_dates", "source_text_verified", "verification"):
                     self.assertNotIn(k, ev)
+        # Rows split from one map: every sibling exists, cites the same record, hash and archive, and the source text
+        # that justifies the split is printed on that archived record.
+        by_id = {r["inventory_id"]: r for r in self.r8["candidates"]}
+        for row in self.r8["candidates"]:
+            basis = row.get("split_basis")
+            if not basis:
+                continue
+            self.assertIn(row["inventory_id"], basis["sibling_inventory_ids"])
+            rec = self.records[basis["sigrid_id"]]
+            printed = " ".join(rec["fields"][k] or "" for k in ("title", "description", "scope"))
+            self.assertIn(norm(basis["source_text"]), norm(printed), row["inventory_id"])
+            for sib in basis["sibling_inventory_ids"]:
+                other = by_id[sib]["evidence"][0]
+                mine = row["evidence"][0]
+                self.assertEqual((other["sigrid_id"], other["record_page_sha256"], other["record_page_archive"]),
+                                 (mine["sigrid_id"], mine["record_page_sha256"], mine["record_page_archive"]))
+                self.assertEqual(other["sigrid_id"], basis["sigrid_id"])
+                self.assertEqual(by_id[sib]["split_basis"]["sibling_inventory_ids"], basis["sibling_inventory_ids"])
+        # El Establo 1 and El Establo 2: two independent documentary identities from SIGRID 5841 (owner decision 2026-10-23).
+        self.assertNotIn("ancash_chimbote_el_establo_1_el_establo_2", by_id)
+        e1, e2 = by_id["ancash_chimbote_el_establo_1"], by_id["ancash_chimbote_el_establo_2"]
+        self.assertEqual(e1["evidence"][0]["label_in_source"], e2["evidence"][0]["label_in_source"], "same printed enumeration")
+        self.assertEqual((e1["documentary_name"], e2["documentary_name"]), ("El Establo 1", "El Establo 2"))
+        self.assertEqual(e1["evidence"][0]["sigrid_id"], 5841)
+        self.assertEqual(e1["evidence"][0]["record_page_sha256"], self.records[5841]["sha256"])
+        for e in (e1, e2):
+            self.assertEqual((e["split_basis"]["decision"], e["split_basis"]["replaces_inventory_id"]),
+                             ("OWNER_DIRECTED_SPLIT_OF_EXPLICIT_ENUMERATION", "ancash_chimbote_el_establo_1_el_establo_2"))
+            self.assertEqual((e["district"], e["province"], e["department"]), ("Chimbote", "Santa", "Ancash"))
 
     def test_rows_are_identity_only_and_never_publishable(self):
         for row in self.r8["candidates"]:
@@ -161,6 +191,12 @@ class Rows(Base):
             self.assertEqual((row["verified_event_dates"], row["event_lead_dates_unverified"]), ([], []))
         s = self.r8["summary"]
         self.assertEqual(s["candidate_rows"], len(self.r8["candidates"]))
+        self.assertEqual(s["by_corridor"], dict(Counter(r["corridor"] for r in self.r8["candidates"])))
+        self.assertEqual(s["by_suggested_state"], {"IDENTITY_ONLY": len(self.r8["candidates"])})
+        self.assertEqual(s["by_priority"], {"P3": len(self.r8["candidates"])})
+        diag = {c["corridor"]: c for c in self.r8["completeness_diagnosis"]["priority_corridors"]}
+        for corridor in PRIORITY:
+            self.assertEqual(diag[corridor]["r8_new_rows"], s["by_corridor"].get(corridor, 0), corridor)
         for k in ("map_eligible_rows", "new_geometries", "new_outlets", "new_events_written_to_any_event_ledger", "event_evidence_rows"):
             self.assertEqual(s[k], 0)
         self.assertEqual(set(self.r8["map_updates"].values()), {0})
@@ -180,12 +216,34 @@ class Rows(Base):
         self.assertTrue(all("NOT_MERGED" in g["main_status"] for g in alias["curated_relationships"]))
         self.assertTrue(all("NOT_MERGED" in g["status"] for g in alias["same_label_groups_not_merged"] + alias["cross_department_homonyms_noted"]))
         self.assertEqual(self.master["strict_rules"], self.r8["strict_rules"])
+        # Compound names: the embedded audit is exactly what the tool derives from the master and r8, it never splits,
+        # and master rows stay as they are (a split needs evidence plus a recorded decision, as split_basis on the rows).
+        cna = self.r8["compound_name_audit"]
+        self.assertEqual(cna["entries"], COMPOUND_AUDIT.audit(self.master, self.r8))
+        self.assertEqual(cna["summary"]["entries"], len(cna["entries"]))
+        self.assertEqual(cna["summary"]["by_category"], dict(sorted(Counter(e["category"] for e in cna["entries"]).items())))
+        self.assertEqual(self.r8["summary"]["compound_name_audit_entries"], len(cna["entries"]))
+        self.assertLessEqual({e["category"] for e in cna["entries"]}, set(COMPOUND_AUDIT.CATEGORIES))
+        self.assertFalse(any(e["split_performed_by_this_audit"] for e in cna["entries"]))
+        self.assertFalse(any(r.get("split_basis") for r in self.master["candidates"]))
+        audited = {e["inventory_id"] for e in cna["entries"]}
+        for row in self.master["candidates"] + self.r8["candidates"]:
+            if COMPOUND_AUDIT.is_compound(row["documentary_name"]) or row.get("split_basis"):
+                self.assertIn(row["inventory_id"], audited)
+        for e in cna["entries"]:
+            if e["category"] in ("ENUMERATED_DISTINCT_NAMES_IN_SOURCE", "NUMBERED_SERIES_IN_SOURCE"):
+                self.assertEqual(e["recommendation"], "REVIEW_SPLIT_WITH_ARCHIVED_SOURCE")
+            if e["origin"] == "main":
+                self.assertNotEqual(e["category"], "SPLIT_RECORDED_WITH_BASIS")
+        progreso = next(e for e in cna["entries"] if e["inventory_id"] == "ancash_chimbote_el_progreso_1_el_progreso_2")
+        self.assertEqual(progreso["category"], "SOURCE_TEXT_NOT_READ", "the main analogue is not split without its source text")
 
     def test_no_publication_path_reads_the_delta(self):
         name = R8.name
+        qa_tools = {"phase2_sigrid_ana2016_sweep.py", "phase2_inventory_compound_name_audit.py"}  # read-only QA, print only
         for base in ("site", "scripts"):
             for p in (ROOT / base).rglob("*"):
-                if p.is_file() and p.suffix in (".py", ".js", ".html", ".json") and p.name != "phase2_sigrid_ana2016_sweep.py":
+                if p.is_file() and p.suffix in (".py", ".js", ".html", ".json") and p.name not in qa_tools:
                     self.assertNotIn(name, p.read_text(encoding="utf-8", errors="ignore"), str(p))
 
     def test_diagnosis_never_claims_completeness_or_absence(self):
