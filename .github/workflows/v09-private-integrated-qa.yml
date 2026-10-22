@@ -3,6 +3,16 @@ on:
   push:
     branches:
       - integration/v09-territory-private-map-20261022
+    paths:
+      - .github/workflows/v09-private-integrated-qa.yml
+      - site/v09/**
+      - scripts/v09_build_territory_bundle.py
+      - scripts/v09_territory_independent_qa.py
+      - scripts/v09_pages_publication_gate.py
+      - tests/test_v09_territory.py
+      - tests/test_v09_territory_independent_qa.py
+      - tests/test_v09_pages_publication_gate.py
+      - qa/replay_tools/test_v09_continuity_evidence.py
   workflow_dispatch:
 permissions:
   contents: write
