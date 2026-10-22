@@ -361,19 +361,24 @@ function sourceState(){
   return age > lim ? "DESACTUALIZADA" : h.state;
 }
 function imergCoverageSummary(zones){
-  const entries = (zones || []).map(z => z.imerg && z.imerg.coverage_24h).filter(Boolean);
-  const known = entries.filter(c => Number.isInteger(c.available_half_hours) && Number.isInteger(c.required_half_hours)
-    && c.required_half_hours > 0 && c.available_half_hours >= 0 && c.available_half_hours <= c.required_half_hours);
-  return {known:known.length, unknown:(zones||[]).length-known.length,
-    incomplete:known.filter(c => c.available_half_hours < c.required_half_hours).length,
-    full:known.filter(c => c.available_half_hours === c.required_half_hours).length};
+  // A 24-hour IMERG half-hourly archive has exactly 48 slots.
+  // A self-reported 1/1 or 24/24 must never be called 24-hour complete.
+  const allZones = Array.isArray(zones) ? zones : [];
+  const expectedHalfHours = 48;
+  const entries = allZones.map(z => z && z.imerg && z.imerg.coverage_24h);
+  const known = entries.filter(c => c && Number.isInteger(c.available_half_hours)
+    && c.required_half_hours === expectedHalfHours
+    && c.available_half_hours >= 0 && c.available_half_hours <= expectedHalfHours);
+  return {known:known.length, unknown:allZones.length-known.length,
+    incomplete:known.filter(c => c.available_half_hours < expectedHalfHours).length,
+    full:known.filter(c => c.available_half_hours === expectedHalfHours).length};
 }
 function renderContinuityEvidence(){
   const zones = (D && D.rain && D.rain.zones) || [];
   const result = imergCoverageSummary(zones);
   const label = document.getElementById("continuity-chips");
   if (!label) return;
-  label.innerHTML = `<span class="chip ${result.incomplete || result.unknown ? "warn" : "ok"}" data-continuity-known="${result.known}" data-continuity-incomplete="${result.incomplete}">
+  label.innerHTML = `<span class="chip ${result.known > 0 && result.full === result.known && !result.incomplete && !result.unknown ? "ok" : "warn"}" data-continuity-known="${result.known}" data-continuity-incomplete="${result.incomplete}">
     IMERG · cobertura de archivo 24 h: ${result.full} zonas completas, ${result.incomplete} incompletas, ${result.unknown} sin evidencia de cobertura
   </span><span class="chip">La cobertura por zona NO mide la puntualidad de GitHub Actions; un hueco es dato desconocido, nunca lluvia cero</span>`;
 }
