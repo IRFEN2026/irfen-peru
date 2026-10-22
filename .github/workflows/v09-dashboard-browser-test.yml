@@ -36,8 +36,12 @@ jobs:
       - name: Panel en navegador con reloj simulado (sin recargar)
         run: python -m unittest -v tests/test_v09_dashboard_browser.py tests/test_v09_demo_summary.py 2>&1 | tee browser.log; test "${PIPESTATUS[0]}" -eq 0
         shell: bash
-      - name: Probar cobertura observada frente a desconocida (sin red)
-        run: python -m unittest -v qa/replay_tools/test_v09_continuity_evidence.py
+      - name: Probar cobertura IMERG verificada y ausencia de falsos estados verdes (sin red; incluye navegador)
+        run: |
+          python -m unittest -v qa/replay_tools/test_v09_continuity_evidence.py 2>&1 | tee continuity.log; test "${PIPESTATUS[0]}" -eq 0
+          grep -q "^OK$" continuity.log
+          if grep -q "skipped" continuity.log; then echo "::error::a continuity/coverage test was skipped"; exit 1; fi
+        shell: bash
       - name: Comprobar que la prueba de navegador no se omitió
         run: |
           grep -q "^OK$" browser.log

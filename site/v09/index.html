@@ -360,27 +360,77 @@ function sourceState(){
   const age = (Date.now() - tms(h.last_check_utc))/60000;
   return age > lim ? "DESACTUALIZADA" : h.state;
 }
-function imergCoverageSummary(zones){
-  // A 24-hour IMERG half-hourly archive has exactly 48 slots.
-  // A self-reported 1/1 or 24/24 must never be called 24-hour complete.
-  const allZones = Array.isArray(zones) ? zones : [];
-  const expectedHalfHours = 48;
-  const entries = allZones.map(z => z && z.imerg && z.imerg.coverage_24h);
-  const known = entries.filter(c => c && Number.isInteger(c.available_half_hours)
-    && c.required_half_hours === expectedHalfHours
-    && c.available_half_hours >= 0 && c.available_half_hours <= expectedHalfHours);
-  return {known:known.length, unknown:allZones.length-known.length,
-    incomplete:known.filter(c => c.available_half_hours < expectedHalfHours).length,
-    full:known.filter(c => c.available_half_hours === expectedHalfHours).length};
+/* IMERG coverage is verified from the per-slot series itself, never from self-reported counts alone.
+   The number of expected slots comes from the window and slot lengths (24 h / 30 min = 48); it is not a
+   universal constant. COMPLETE requires every expected slot exactly once, inside the window, with a valid
+   value, and a declared coverage that agrees. Missing or contradictory evidence is NO_DATA / UNKNOWN,
+   never a satisfactory state (UNKNOWN_NOT_LOW_RISK). */
+const IMERG_SLOT_MIN = 30, COVERAGE_WINDOW_MIN = 24 * 60;
+function expectedSlots(windowMin, slotMin){
+  return Number.isInteger(windowMin) && Number.isInteger(slotMin) && slotMin > 0 && windowMin > 0 && windowMin % slotMin === 0
+    ? windowMin / slotMin : null;
 }
+function imergCoverageState(im, windowMin = COVERAGE_WINDOW_MIN, slotMin = IMERG_SLOT_MIN){
+  const expected = expectedSlots(windowMin, slotMin);
+  const r = {state:"UNKNOWN", expected, valid:0, registered_without_value:0, not_listed:0, duplicates:0, outside_window:0, malformed:0,
+             declared:null, declared_matches:false, reason:""};
+  if (!expected) { r.reason = "ventana o intervalo no válidos"; return r; }
+  if (!im || typeof im !== "object" || !im.source) { r.state = "NO_DATA"; r.reason = "zona sin archivo IMERG"; return r; }
+  const c = im.coverage_24h, series = im.series_24h_half_hourly_mm, slotMs = slotMin * 60000;
+  const end = Date.parse(im.window_end_utc || "");
+  if (!c || !Array.isArray(series)) { r.reason = "sin cobertura o serie verificable"; return r; }
+  r.declared = `${c.available_half_hours}/${c.required_half_hours}`;
+  if (!series.length) {
+    r.declared_matches = c.available_half_hours === 0;
+    r.state = r.declared_matches ? "NO_DATA" : "UNKNOWN";
+    r.reason = r.declared_matches ? "ninguna media hora con dato" : "la cobertura declarada no coincide con una serie vacía";
+    return r;
+  }
+  if (!Number.isFinite(end) || end % slotMs !== 0) { r.reason = "fin de ventana ausente o no alineado"; return r; }
+  const start = end - windowMin * 60000, seen = new Set();
+  for (const e of series) {
+    const t = Array.isArray(e) && e.length >= 2 ? Date.parse(e[0]) : NaN;
+    if (!Number.isFinite(t) || t % slotMs !== 0) { r.malformed++; continue; }
+    if (t < start || t + slotMs > end) { r.outside_window++; continue; }
+    if (seen.has(t)) { r.duplicates++; continue; }
+    seen.add(t);
+    const v = e[1];
+    if (v === null) r.registered_without_value++;
+    else if (typeof v === "number" && Number.isFinite(v) && v >= 0) r.valid++;
+    else r.malformed++;
+  }
+  r.not_listed = expected - seen.size;
+  r.declared_matches = c.required_half_hours === expected && c.available_half_hours === r.valid;
+  if (r.malformed) { r.reason = `${r.malformed} entradas no válidas`; return r; }
+  if (r.valid === expected && (r.duplicates || r.outside_window || !r.declared_matches)) {
+    r.reason = "serie con duplicados, fuera de ventana o en desacuerdo con la cobertura declarada"; return r;
+  }
+  r.state = r.valid === expected ? "COMPLETE" : r.valid === 0 ? "NO_DATA" : "PARTIAL";
+  r.reason = r.state === "COMPLETE" ? "" : `${r.valid}/${expected} medias horas válidas`
+    + (r.duplicates ? ` · ${r.duplicates} duplicadas` : "") + (r.outside_window ? ` · ${r.outside_window} fuera de ventana` : "")
+    + (r.declared_matches ? "" : ` · declarada ${r.declared}`);
+  return r;
+}
+function imergCoverageSummary(zones){
+  const all = Array.isArray(zones) ? zones : [];
+  const states = all.map(z => imergCoverageState(z && z.imerg).state);
+  const n = s => states.filter(x => x === s).length;
+  const out = {zones: all.length, complete: n("COMPLETE"), partial: n("PARTIAL"), no_data: n("NO_DATA"), unknown: n("UNKNOWN")};
+  out.overall = !all.length ? "NO_DATA" : out.complete === all.length ? "COMPLETE"
+    : (out.complete + out.partial) ? "PARTIAL" : out.unknown ? "UNKNOWN" : "NO_DATA";
+  return out;
+}
+const COVERAGE_UI = {COMPLETE: ["ok", "COMPLETA"], PARTIAL: ["warn", "PARCIAL"], NO_DATA: ["absent", "SIN DATOS (NO_DATA)"], UNKNOWN: ["warn", "DESCONOCIDA (UNKNOWN)"]};
 function renderContinuityEvidence(){
   const zones = (D && D.rain && D.rain.zones) || [];
-  const result = imergCoverageSummary(zones);
+  const s = imergCoverageSummary(zones), [cls, txt] = COVERAGE_UI[s.overall];
   const label = document.getElementById("continuity-chips");
   if (!label) return;
-  label.innerHTML = `<span class="chip ${result.known > 0 && result.full === result.known && !result.incomplete && !result.unknown ? "ok" : "warn"}" data-continuity-known="${result.known}" data-continuity-incomplete="${result.incomplete}">
-    IMERG · cobertura de archivo 24 h: ${result.full} zonas completas, ${result.incomplete} incompletas, ${result.unknown} sin evidencia de cobertura
-  </span><span class="chip">La cobertura por zona NO mide la puntualidad de GitHub Actions; un hueco es dato desconocido, nunca lluvia cero</span>`;
+  const detail = s.zones ? `${s.complete} completas, ${s.partial} parciales, ${s.no_data} sin datos, ${s.unknown} desconocidas de ${s.zones} zonas`
+    : "el paquete no contiene zonas: no hay evidencia";
+  label.innerHTML = `<span class="chip ${cls}" data-coverage-overall="${s.overall}" data-zones="${s.zones}" data-complete="${s.complete}">
+    IMERG · cobertura 24 h verificada en el archivo: ${txt} · ${detail}
+  </span><span class="chip">La cobertura por zona NO mide la puntualidad de GitHub Actions; un hueco es dato desconocido, nunca lluvia cero ni riesgo bajo</span>`;
 }
 function renderHeader(){
   document.getElementById("now").textContent = new Date().toLocaleString("es-PE",{timeZone:"America/Lima", hourCycle:"h23"});
@@ -428,7 +478,9 @@ function renderSummary(){
     + (deptOnly.length ? ` ${deptOnly.length} de ellos solo nombran departamentos, no provincias: por eso se marcan zonas enteras.` : ""));
   if (selva.length) items.push(`${selva.length} aviso(s) para la <b>selva</b> (n.º ${selva.map(num).join("; ")}) alcanzan a cuencas de la costa solo porque su cabecera toca un departamento enumerado (por ejemplo, Cajamarca). En las fichas de esas cuencas se muestran aparte: no son avisos específicos de ellas.`);
   items.push(`<b>Prioridad interna de revisión IRFEN</b> (orden de trabajo del equipo, no es un nivel oficial): ` + Object.entries(tiers).sort().map(([c, n]) => `${n} en «${esc(labels[c] || c)}»`).join(" · ") + ".");
-  items.push(`<b>Lluvia observada por satélite</b> (IMERG): calculable ahora en ${withRain} de ${zones.length} zonas. En las demás faltan datos recientes; lo que falta se muestra como «no disponible», nunca como cero.`);
+  items.push(zones.length
+    ? `<b>Lluvia observada por satélite</b> (IMERG): calculable ahora en ${withRain} de ${zones.length} zonas. En las demás faltan datos recientes; lo que falta se muestra como «no disponible», nunca como cero.`
+    : `<b>Sin zonas en el paquete</b>: no hay evidencia de lluvia ni de cobertura (NO_DATA). No significa ausencia de lluvia ni riesgo bajo.`);
   items.push(`<b>Qué es esto</b>: una demo privada de investigación. No es un sistema de alerta, no predice huaicos ni desbordes y no sustituye a SENAMHI, INDECI ni a las autoridades.`);
   const h = D.source.health || {}, avState = sourceState();
   const rows = [
@@ -609,10 +661,11 @@ function sparkSVG(series, color, label){
   return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="${esc(label)}"><line x1="0" x2="${w}" y1="${h-0.5}" y2="${h-0.5}" stroke="${css("--border")}"/>${bars}</svg>`;
 }
 function coverageLine(im){
-  const c = im && im.coverage_24h;
-  if (!c) return "";
-  const miss = c.missing_half_hours_utc || [];
-  return `<div class="small ${miss.length ? "" : "muted"}" data-coverage="${c.available_half_hours}/${c.required_half_hours}">Cobertura 24 h: ${c.available_half_hours}/${c.required_half_hours} medias horas`
+  if (!im) return "";
+  const r = imergCoverageState(im), [cls] = COVERAGE_UI[r.state], c = im.coverage_24h || {};
+  const miss = Array.isArray(c.missing_half_hours_utc) ? c.missing_half_hours_utc : [];
+  return `<div class="small" data-coverage-state="${r.state}" data-coverage="${r.valid}/${r.expected}"><span class="chip ${cls}">Cobertura 24 h: ${COVERAGE_UI[r.state][1]}</span> `
+    + `${r.valid}/${r.expected} medias horas válidas${r.reason && r.state !== "COMPLETE" ? ` (${esc(r.reason)})` : ""}`
     + (miss.length ? ` · faltan ${miss.slice(0,6).map(t => esc(lima(t))).join(", ")}${miss.length > 6 ? ` y ${miss.length - 6} más` : ""} (sin dato, no es lluvia cero)` : "") + `</div>`;
 }
 function geosHtml(z, f, long){

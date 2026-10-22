@@ -41,3 +41,27 @@ Solo en el visor **privado** `site/v09/index.html`:
 4. Antes de cualquier publicación de v0.9, resolver autenticación, permisos, georreferencias y requisitos de privacidad. El visor sigue experimental.
 
 No hacer merges sin autorización específica y CI verde. No activar servidor, publicador, alertas, modelo predictivo ni capturas adicionales.
+
+## Corrección 22-10-2026: cobertura verificada y sin falsos estados verdes
+
+**Causa raíz.**
+- **A.** El visor clasificaba la cobertura con los recuentos autodeclarados de `coverage_24h` (`available_half_hours` / `required_half_hours`), sin mirar la serie:
+  - antes de `2b929b8d`, 1/1 o 24/24 contaban como «completas»;
+  - después, 48 registros con un intervalo duplicado, un intervalo fuera de la ventana, o 48 intervalos registrados sin valor válido, seguían contando como «completos» si declaraban 48/48.
+- **B.** El indicador se calculaba sobre conjuntos vacíos: con 0 zonas no había nada «incompleto» ni «desconocido» y salía verde. Además, el texto no explicitaba la falta de evidencia.
+
+**Corrección** (`site/v09/index.html`, solo presentación):
+- `imergCoverageState` deriva el estado de la propia serie `series_24h_half_hourly_mm`.
+  - Cuenta los intervalos distintos, alineados a 30 min, dentro de `[window_end_utc − 24 h, window_end_utc)` y con valor numérico válido ≥ 0.
+  - Los intervalos registrados sin valor no cuentan. Los duplicados y los que caen fuera de ventana se detectan aparte.
+- Los intervalos esperados se derivan de la ventana y del paso (`expectedSlots`, 24 h / 30 min = 48); el 48 no está fijado en el código.
+- `COMPLETE` exige todos los intervalos esperados, sin duplicados, dentro de la ventana y con una cobertura declarada coincidente.
+- En los demás casos: `PARTIAL`, `NO_DATA` o `UNKNOWN`.
+- El indicador global solo es verde si **todas** las zonas están `COMPLETE` y hay al menos una. Con 0 zonas muestra `NO_DATA` («el paquete no contiene zonas: no hay evidencia»), y el resumen dice que eso no significa ausencia de lluvia ni riesgo bajo.
+- El motor (`scripts/v09_zone_rain_engine.py`) ya calculaba bien la cobertura y no cambia. No cambian datos, reglas, prioridades, umbrales, alertas ni la puerta de publicación.
+
+**Pruebas:** `qa/replay_tools/test_v09_continuity_evidence.py`, 18 pruebas.
+- Los 9 casos obligatorios con la lógica real de la página ejecutada en node.
+- La concordancia con la salida real del motor.
+- Un navegador (Playwright) que comprueba el indicador, la tabla del Centro de seguimiento y la ficha de zona.
+- Se ejecutan en el workflow de navegador, que falla si alguna se omite.
