@@ -1,0 +1,124 @@
+name: IRFEN - Santa hydrography candidate source capture
+
+on:
+  pull_request:
+    paths:
+      - scripts/freeze_phase2_santa_ana_hydrography.py
+      - tests/test_phase2_santa_ana_hydrography_live_probe.py
+      - .github/workflows/phase2-santa-hydrography-mirror-capture.yml
+
+permissions:
+  contents: read
+
+jobs:
+  offline-contract:
+    if: github.event.pull_request.head.ref == 'phase2-santa-lower-normalization-v02-20260926'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Test fail-closed candidate parsing and provenance
+        run: python scripts/freeze_phase2_santa_ana_hydrography.py --self-test
+
+  capture-candidates:
+    needs: offline-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Attempt one bounded query per declared source
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="santa_hydrography_research_capture"
+          for src in ana_official arcgis_copy_2025 arcgis_copy_2026; do
+            mkdir -p "$root/$src"
+            set +e
+            python scripts/freeze_phase2_santa_ana_hydrography.py \
+              --source "$src" --out-dir "$root"
+            rc=$?
+            set -e
+            if [ "$rc" -eq 2 ]; then
+              # Unavailable or invalid is UNKNOWN, never a negative or low risk.
+              python - "$src" "$root/$src/receipt.json" <<'PY'
+          import json
+          import runpy
+          import sys
+          from pathlib import Path
+          src, dest = sys.argv[1:]
+          script = runpy.run_path("scripts/freeze_phase2_santa_ana_hydrography.py")
+          receipt = {
+              "source": src,
+              "source_url": script["source_url"](src),
+              "source_custody": script["SOURCES"][src]["custody"],
+              "capture_status": "UNKNOWN_SOURCE_ACCESS_UNAVAILABLE_OR_INVALID",
+              "raw_response_sha256": None,
+              "candidate_count": None,
+              "identity_adjudicated": False,
+              "official_ana_byte_equivalence_established": False,
+              "2011_axis_equivalence": False,
+              "2011_datum_resolved": False,
+              "geometry_map_published": False,
+              **script["GUARDS"],
+          }
+          Path(dest).write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
+          PY
+            elif [ "$rc" -ne 0 ]; then
+              echo "::error::Unexpected freezer failure for $src (exit $rc)"
+              exit "$rc"
+            fi
+          done
+      - name: Verify archived bytes, custody, and fail-closed guards
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+          root = Path("santa_hydrography_research_capture")
+          expected_custody = {
+              "ana_official": "ANA_OFFICIAL_SERVICE",
+              "arcgis_copy_2025": "THIRD_PARTY_HOSTED_ANA_ATTRIBUTED_COPY_UNVERIFIED",
+              "arcgis_copy_2026": "THIRD_PARTY_HOSTED_ANA_ATTRIBUTED_COPY_UNVERIFIED",
+          }
+          for src, custody in expected_custody.items():
+              folder = root / src
+              manifest = folder / "santa_ana_hydrography_manifest.json"
+              raw = folder / "santa_ana_hydrography_raw.geojson"
+              if manifest.exists():
+                  assert raw.is_file(), src
+                  m = json.loads(manifest.read_text())
+                  b = raw.read_bytes()
+                  assert m["source"] == src and m["source_custody"] == custody
+                  assert hashlib.sha256(b).hexdigest() == m["raw_response_sha256"]
+                  assert len(b) == m["raw_response_bytes"]
+                  assert m["candidate_count"] > 0
+              else:
+                  assert not raw.exists(), src
+                  m = json.loads((folder / "receipt.json").read_text())
+                  assert m["source"] == src and m["source_custody"] == custody
+                  assert m["capture_status"] == "UNKNOWN_SOURCE_ACCESS_UNAVAILABLE_OR_INVALID"
+                  assert m["raw_response_sha256"] is None
+              for key in ("production_use", "production_ready", "operational_alerting_enabled",
+                          "identity_adjudicated", "official_ana_byte_equivalence_established",
+                          "2011_axis_equivalence", "geometry_map_published"):
+                  assert m[key] is False, (src, key)
+              assert m["deployment_status"] == "RESEARCH_ONLY"
+              assert m["test_mode"] == "TEST_ONLY"
+              assert m["activation_gate"] == "BLOCKED"
+              assert m["missing_data_rule"] == "UNKNOWN_NOT_LOW_RISK"
+              assert m["decision_thresholds"] is None and m["hydraulic_factors"] is None
+              print(f"{src}: {m.get('raw_response_sha256') or 'UNKNOWN_SOURCE_ACCESS_UNAVAILABLE_OR_INVALID'}")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: santa-hydrography-research-candidates
+          path: santa_hydrography_research_capture/
+          if-no-files-found: warn
+          retention-days: 30
