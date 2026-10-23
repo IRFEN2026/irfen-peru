@@ -38,6 +38,13 @@ def test_documentary_rows_are_not_a_deduplicated_hydrologic_census():
     assert len(ids) == d["counts"]["total_documentary_rows"]
     assert d["counts"]["confirmed_unique_hydrologic_unit_count"] is None
     assert d["counts"]["possible_alias_double_count_unresolved"] is True
+    # Pending name relationships are evidence leads, never implicit alias merges.
+    ids_set = set(ids)
+    for group in d["pending_identity_groups"]:
+        assert set(group["inventory_ids"]) <= ids_set
+        assert ("PENDING" in group["status"] or "CONFLICT" in group["status"])
+    for unit in units:
+        assert unit["identity_adjudication"] != "CONFIRMED_HYDROLOGIC_UNIT"
     assert d["counts"]["national_audit_corridor_documentary_rows"] + (
         d["counts"]["jicamarca_additional_documentary_rows"]
     ) == len(units)
@@ -78,6 +85,20 @@ def test_no_documentary_unit_is_map_publishable_or_has_inferred_routing():
         assert u["collector_capacity"] is None, u["id"]
         assert u["collector_overflow_evidence"] is None, u["id"]
         # Frozen documentary line references are not permission to publish.
+    # Documentary receiver links, engineering works and monitoring triggers
+    # cannot silently become hydraulic routing, capacity or overflow evidence.
+    semantics = d["collector_semantics"]
+    for flag in (
+        "no_child_activation_implies_collector_overflow",
+        "works_are_not_capacity",
+        "design_is_not_measured_capacity",
+        "regulatory_faja_is_not_channel_or_event_footprint",
+        "station_activation_is_not_discharge",
+        "imerg_context_only",
+        "missing_data_is_not_negative",
+        "all_exact_outlets_unresolved_in_this_inventory",
+    ):
+        assert semantics[flag] is True, flag
     assert d["map_updates"]["new_geometries_published"] == 0
     assert d["map_updates"]["new_outlets_published"] == 0
     assert d["map_updates"]["new_collector_reaches_published"] == 0
