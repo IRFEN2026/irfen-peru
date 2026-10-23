@@ -118,7 +118,19 @@ def test_ambiguous_names_and_administrative_conflicts_remain_unresolved():
     assert by_id["lima_district_unknown_dos_barrios"]["receiver_relation"] == (
         "UNKNOWN_NOT_ASSUMED"
     )
-    assert by_id["lima_district_unknown_dos_barrios"]["verified_event_refs"] == []
+    dos_barrios = by_id["lima_district_unknown_dos_barrios"]
+    assert dos_barrios["verified_event_refs"] == []
+    # The primary-source archive is in a separate, unmerged PR (#363).
+    # A reference to its hashes is provenance, not independent validation
+    # within this replay, and cannot promote hydrologic identity or events.
+    dependency = dos_barrios["evidence_archive_dependency"]
+    assert dependency["status"] == "UNMERGED_PR_363_EXTERNAL_TO_THIS_REPLAY"
+    assert dependency["pull_request"] == 363
+    assert dependency["archive_bundled_in_this_replay"] is False
+    assert dependency["archive_hashes_are_external_provenance_not_independent_replay_validation"] is True
+    assert dependency["does_not_promote_hydrologic_identity_or_event"] is True
+    assert dos_barrios["identity_adjudication"] != "CONFIRMED_HYDROLOGIC_UNIT"
+    assert dos_barrios["map_publishable"] is False
     assert any(
         "Dos Barrios" in g["labels"]
         and "Pablo Patrón/Dos Amigos" in g["labels"]
