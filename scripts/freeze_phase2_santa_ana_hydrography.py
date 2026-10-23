@@ -67,6 +67,23 @@ class RejectRedirects(HTTPRedirectHandler):
         return None
 
 
+def capture_http_provenance(response, requested_url):
+    """Reject non-200 or silently changed endpoints before freezing any bytes."""
+    status = getattr(response, "status", None)
+    final_url = response.geturl()
+    if status != 200 or final_url != requested_url:
+        raise ValueError("HTTP status or final URL differs from requested source")
+    return {
+        "requested_url": requested_url,
+        "final_url": final_url,
+        "http_status": status,
+        "content_type": response.headers.get("Content-Type"),
+        "http_date": response.headers.get("Date"),
+        "etag": response.headers.get("ETag"),
+        "last_modified": response.headers.get("Last-Modified"),
+    }
+
+
 def positions(geometry):
     typ = geometry.get("type")
     coords = geometry.get("coordinates")
@@ -125,7 +142,7 @@ def inspect(raw, source_key="ana_official"):
     return rows
 
 
-def freeze(raw, acquired_at, source_key="ana_official"):
+def freeze(raw, acquired_at, source_key="ana_official", http_provenance=None):
     rows = inspect(raw, source_key)
     source = SOURCES[source_key]
     return {"schema_version": "0.2", "source": source_key,
@@ -134,6 +151,8 @@ def freeze(raw, acquired_at, source_key="ana_official"):
             "official_ana_byte_equivalence_established": False,
             "source_metadata_observed_utc_date": "2026-10-23",
             "retrieved_at_utc": acquired_at,
+            "http_provenance": http_provenance,
+            "http_provenance_verified": http_provenance is not None,
             "source_redirect_policy": "REJECT_ALL_HTTP_REDIRECTS",
             "raw_response_sha256": hashlib.sha256(raw).hexdigest(),
             "raw_response_bytes": len(raw), "candidate_count": len(rows),
@@ -157,6 +176,8 @@ class OfflineTests(unittest.TestCase):
         self.assertEqual(doc["raw_response_sha256"], hashlib.sha256(raw).hexdigest())
         self.assertEqual(doc["candidate_count"], 1)
         self.assertFalse(doc["production_use"])
+        self.assertIsNone(doc["http_provenance"])
+        self.assertFalse(doc["http_provenance_verified"])
         self.assertIsNone(doc["decision_thresholds"])
         self.assertEqual(doc["scientific_role"], "CURRENT_ANA_HYDROGRAPHY_CONTEXT_CANDIDATES_ONLY")
         self.assertFalse(doc["identity_adjudicated"])
@@ -186,6 +207,23 @@ class OfflineTests(unittest.TestCase):
             with self.subTest(candidate=candidate), self.assertRaises(ValueError):
                 inspect(json.dumps({"type": "FeatureCollection",
                                     "features": [candidate]}).encode())
+
+    def test_http_source_provenance_is_exact_and_fail_closed(self):
+        # Synthetic HTTP response: no claim that ANA or a mirror was reachable.
+        from types import SimpleNamespace
+        requested = source_url("ana_official")
+        good = SimpleNamespace(status=200, geturl=lambda: requested,
+                               headers={"Content-Type": "application/geo+json",
+                                        "Date": "synthetic-test-date"})
+        evidence = capture_http_provenance(good, requested)
+        self.assertEqual(evidence["http_status"], 200)
+        self.assertEqual(evidence["requested_url"], evidence["final_url"])
+        self.assertEqual(evidence["content_type"], "application/geo+json")
+        for status, final in ((206, requested), (200, "https://example.invalid/redirect")):
+            bad = SimpleNamespace(status=status, geturl=lambda final=final: final,
+                                  headers={})
+            with self.subTest(status=status, final=final), self.assertRaises(ValueError):
+                capture_http_provenance(bad, requested)
 
     def test_redirect_is_rejected_offline(self):
         # Synthetic redirect, not an assertion about the ANA service.
@@ -234,10 +272,12 @@ def main():
                                     "Accept": "application/geo+json,application/json"})
     try:
         with build_opener(RejectRedirects()).open(request, timeout=90) as response:
+            provenance = capture_http_provenance(response, source_url(args.source))
             raw = response.read(MAX_BYTES + 1)
         if len(raw) > MAX_BYTES:
             raise ValueError("response exceeds 8MB archive cap")
-        manifest = freeze(raw, datetime.now(timezone.utc).isoformat(), args.source)
+        manifest = freeze(raw, datetime.now(timezone.utc).isoformat(), args.source,
+                          http_provenance=provenance)
     except (HTTPError, URLError, TimeoutError, ValueError, json.JSONDecodeError) as exc:
         print(f"UNKNOWN/SOURCE_ACCESS_UNAVAILABLE_OR_INVALID: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 2
