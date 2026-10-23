@@ -71,9 +71,12 @@ def inspect(raw):
         raise ValueError("missing nonempty GeoJSON FeatureCollection")
     rows = []
     for feature in features:
-        if feature.get("type") != "Feature" or not isinstance(feature.get("properties"), dict):
+        if not isinstance(feature, dict) or feature.get("type") != "Feature" or not isinstance(feature.get("properties"), dict):
             raise ValueError("malformed feature")
-        points = positions(feature.get("geometry") or {})
+        geometry = feature.get("geometry")
+        if not isinstance(geometry, dict):
+            raise ValueError("malformed geometry")
+        points = positions(geometry)
         xs, ys = zip(*points)
         p = feature["properties"]
         # Recheck the server-side WHERE locally. A wrong/stale service response
@@ -84,7 +87,7 @@ def inspect(raw):
         rows.append({"objectid": p.get("OBJECTID_1"), "codigo_ca": p.get("CODIGO_CA"),
                      "nombre_ca": p.get("NOMBRE_CA"), "tipo_ca": p.get("TIPO_CA"),
                      "nombre_uh": p.get("NOMBRE_UH"), "codigo_uh": p.get("CODIGO_UH"),
-                     "long_km": p.get("LONG_KM"), "geometry_type": feature["geometry"]["type"],
+                     "long_km": p.get("LONG_KM"), "geometry_type": geometry["type"],
                      "bbox_wgs84": [min(xs), min(ys), max(xs), max(ys)]})
     return rows
 
@@ -128,6 +131,20 @@ class OfflineTests(unittest.TestCase):
                      "geometry": {"type": "LineString",
                                   "coordinates": [[0, 0], [1, 1]]}}
                 ]}).encode())
+
+    def test_rejects_malformed_feature_and_geometry_fail_closed(self):
+        # Synthetic fixtures only: malformed ANA responses are UNKNOWN, never evidence.
+        malformed = [None, [], "not-a-feature",
+                     {"type": "Feature", "properties": {"NOMBRE_CA": "synthetic Santa"},
+                      "geometry": []},
+                     {"type": "Feature", "properties": {"NOMBRE_CA": "synthetic Santa"},
+                      "geometry": "LineString"},
+                     {"type": "Feature", "properties": {"NOMBRE_CA": "synthetic Santa"},
+                      "geometry": {"type": "MultiLineString", "coordinates": None}}]
+        for candidate in malformed:
+            with self.subTest(candidate=candidate), self.assertRaises(ValueError):
+                inspect(json.dumps({"type": "FeatureCollection",
+                                    "features": [candidate]}).encode())
 
     def test_redirect_is_rejected_offline(self):
         # Synthetic redirect, not an assertion about the ANA service.
