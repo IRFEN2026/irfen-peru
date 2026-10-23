@@ -231,6 +231,44 @@ def test_capture_attempt_log_records_blockers_and_no_geometry():
     assert all(row["outlet_status"] == "UNRESOLVED" for row in matrix["targets"].values())
 
 
+def test_replay_rejects_inconsistent_canonical_hash(tmp_path):
+    """A correct raw-byte digest cannot authenticate an incorrect canonical digest."""
+    manifest, files = freezer.build_capture(
+        freezer.load_plan(), make_fetch({"POZOS": fc(line(3, "Quebrada Los Pozos"))})
+    )
+    manifest["targets"]["los_pozos"]["requests"][0]["canonical_sha256"] = "0" * 64
+    freezer.write_capture(manifest, files, tmp_path)
+    with raises(freezer.FreezeError, match="CANONICAL_HASH_MISMATCH"):
+        freezer.check_capture(tmp_path)
+
+
+def test_replay_rejects_stale_plan_digest(tmp_path):
+    """A capture must bind to the exact versioned query plan, not only raw rows."""
+    manifest, files = freezer.build_capture(freezer.load_plan(), make_fetch({}))
+    manifest["plan_sha256"] = "0" * 64
+    freezer.write_capture(manifest, files, tmp_path)
+    with raises(freezer.FreezeError, match="PLAN_HASH_MISMATCH"):
+        freezer.check_capture(tmp_path)
+
+
+def test_replay_rejects_inconsistent_row_and_candidate_counts(tmp_path):
+    """Manifest counts must be recomputed from authenticated raw responses."""
+    for field, value, expected in (
+        ("row_count", 99, "ROW_COUNT_MISMATCH"),
+        ("candidate_row_count", 99, "CANDIDATE_COUNT_MISMATCH"),
+    ):
+        manifest, files = freezer.build_capture(
+            freezer.load_plan(), make_fetch({"POZOS": fc(line(3, "Quebrada Los Pozos"))})
+        )
+        if field == "row_count":
+            manifest["targets"]["los_pozos"]["requests"][0][field] = value
+        else:
+            manifest["targets"]["los_pozos"][field] = value
+        freezer.write_capture(manifest, files, tmp_path)
+        with raises(freezer.FreezeError, match=expected):
+            freezer.check_capture(tmp_path)
+
+
 class _ModuleFunctionTests(unittest.TestCase):
     """Expose the module-level test functions to `unittest discover` (pr-validation)."""
 
