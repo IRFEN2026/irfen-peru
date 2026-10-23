@@ -267,6 +267,24 @@ def test_pending_aliases_are_not_promoted_to_identity_equivalence():
             assert unit["exact_confluence_coordinate"] is None
             assert unit["outlet_coordinate"] is None
 
+    # La Ronda has conflicting documentary district leads. The historical
+    # inventory ID is a stable key, not a proven location in Lurigancho.
+    # Do not resolve the conflict to Ricardo Palma either without exact
+    # reproducible channel evidence and independent administrative QA.
+    ronda = next(u for u in d["units"] if u["id"] == "lima_lurigancho_la_ronda")
+    ronda_group = next(g for g in groups if ronda["id"] in g["inventory_ids"])
+    assert ronda_group["status"] == "DISTRICT_CONFLICT_PENDING"
+    assert ronda["district"] is None and ronda["province"] is None
+    assert ronda["administrative_assignment"] == "UNRESOLVED_CONFLICTING_DOCUMENTARY_LOCATIONS"
+    leads = ronda["administrative_location_leads"]
+    assert any(x.get("district") == "Lurigancho-Chosica" for x in leads)
+    assert any(x.get("district_lead") == "Ricardo Palma" for x in leads)
+    assert all(x["adjudication"] != "CONFIRMED_CHANNEL_LOCATION" for x in leads)
+    assert ronda["reproducible_geometry_ref"] is None
+    assert ronda["outlet_coordinate"] is None
+    assert ronda["exact_confluence_coordinate"] is None
+    assert ronda["map_publishable"] is False
+
 
 def test_no_outlet_tau_capacity_overflow_or_new_map_publication():
     d = load()
