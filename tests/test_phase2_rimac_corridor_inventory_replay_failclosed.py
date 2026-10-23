@@ -41,6 +41,28 @@ def test_documentary_rows_are_not_a_deduplicated_hydrologic_census():
     assert d["counts"]["national_audit_corridor_documentary_rows"] + (
         d["counts"]["jicamarca_additional_documentary_rows"]
     ) == len(units)
+    # Official name leads are retained for discovery but never inflate the
+    # count of adjudicated catchments or documentary inventory rows.
+    for lead in d["official_unmaterialized_name_leads"]:
+        assert lead["map_publishable"] is False
+        assert lead["counted_as_confirmed_unique_hydrologic_unit"] is False
+        assert lead["outlet_coordinate"] is None
+        assert lead["exact_confluence_coordinate"] is None
+    design = d["official_road_crossing_design_leads"]
+    assert design["source_text_verified"] is False
+    assert design["original_pdf_sha256"] is None
+    assert design["documentary_row_count_increment"] == 0
+    assert design["confirmed_unique_hydrologic_unit_count_increment"] == 0
+    assert design["road_chainage_is_not_outlet_or_geodetic_coordinate"] is True
+    assert design["project_design_is_not_constructed_work_or_measured_hydraulic_capacity"] is True
+    for candidate in design["candidates"]:
+        assert candidate["map_publishable"] is False
+        assert candidate["geometry_ref"] is None
+        assert candidate["outlet_coordinate"] is None
+        assert candidate["exact_confluence_coordinate"] is None
+        assert candidate["measured_discharge"] is None
+        assert candidate["travel_time_tau"] is None
+        assert candidate["capacity_evidence"] is None
 
 
 def test_no_documentary_unit_is_map_publishable_or_has_inferred_routing():
@@ -50,6 +72,9 @@ def test_no_documentary_unit_is_map_publishable_or_has_inferred_routing():
         assert u["outlet_coordinate"] is None, u["id"]
         assert u["exact_confluence_coordinate"] is None, u["id"]
         assert u["travel_time_tau"] is None, u["id"]
+        assert u["discharge_q_i"] is None, u["id"]
+        assert u["rainfall_observation_refs"] == [], u["id"]
+        assert u["flow_or_stage_observation_refs"] == [], u["id"]
         assert u["collector_capacity"] is None, u["id"]
         assert u["collector_overflow_evidence"] is None, u["id"]
         # Frozen documentary line references are not permission to publish.
