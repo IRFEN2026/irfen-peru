@@ -1,0 +1,567 @@
+{
+  "schema_version": "1.0",
+  "case_id": "IRFEN-NORTH-2026-10-21-22-CORROBORATION",
+  "created_on_utc": "2026-10-23",
+  "research_guards": {
+    "deployment_status": "RESEARCH_ONLY",
+    "test_mode": "TEST_ONLY",
+    "production_use": false,
+    "operational_alerting_enabled": false,
+    "ingest_into_live_map": false,
+    "automated_senamhi_http": false,
+    "forecast_engine_72h_enabled": false
+  },
+  "purpose_es": "Evidencia cruzada de lluvias notificadas por prensa 21–22 oct 2026 vs capturas satelitales IRFEN; archivo científico sin verdad terreno.",
+  "source_snapshots": {
+    "rain_state": {
+      "path": "data/v09/surveillance/zone_rain_state_v0_1.json",
+      "git_blob_sha": "ab105e2c4fb480d05cd2a13f110bb51616062b6f",
+      "evaluated_at_utc": "2026-10-23T00:13:59.102114+00:00"
+    },
+    "imerg": {
+      "path": "data/v09/rain/imerg_early_north_v0_1.json",
+      "git_blob_sha": "9d6e2cf6bc29c41fc6f916de8096f9c4ffa2cfea",
+      "status_at_snapshot": "AVAILABLE",
+      "latest_granule_start_utc": "2026-10-22T18:30:00+00:00",
+      "missing_half_hours_24h": []
+    },
+    "goes19": {
+      "path": "data/v09/rain/goes19_rrqpe_north_v0_1.json",
+      "git_blob_sha": "5418a43e52837a95b889b81d8caa95c888a5f476",
+      "status_at_snapshot": "AVAILABLE",
+      "latest_scan_end_utc": "2026-10-23T00:09:52.100000+00:00"
+    }
+  },
+  "satellite_common_24h_window_utc": {
+    "start": "2026-10-21T19:00:00.000Z",
+    "end": "2026-10-22T19:00:00.000Z",
+    "native_source": "NASA_IMERG_EARLY_V07_HALF_HOURLY",
+    "coverage_policy": "48 distinct half-hours required; never impute missing as 0"
+  },
+  "satellite_zone_count": 22,
+  "spatial_semantics": "AREA_WEIGHTED_ESTIMATE_NOT_PLUVIOMETER",
+  "zones": [
+    {
+      "zone_id": "tumbes_province_context:TUMBES",
+      "department": "TUMBES",
+      "label": "Tumbes · Tumbes",
+      "imerg_window_end_utc": "2026-10-22T19:00:00+00:00",
+      "imerg_complete_halfhours_24h": 48,
+      "imerg_expected_halfhours_24h": 48,
+      "imerg_missing_halfhours_24h": 0,
+      "satellite_estimated_mm_by_window": {
+        "1h": 0,
+        "3h": 0.07,
+        "6h": 1.43,
+        "24h": 13.83
+      },
+      "goes19_scan_end_utc": "2026-10-23T00:09:52.100000+00:00",
+      "goes19_instantaneous_rate_mean_mm_h": 0,
+      "goes19_instantaneous_rate_max_mm_h": 0
+    },
+    {
+      "zone_id": "tumbes_province_context:ZARUMILLA",
+      "department": "TUMBES",
+      "label": "Tumbes · Zarumilla",
+      "imerg_window_end_utc": "2026-10-22T19:00:00+00:00",
+      "imerg_complete_halfhours_24h": 48,
+      "imerg_expected_halfhours_24h": 48,
+      "imerg_missing_halfhours_24h": 0,
+      "satellite_estimated_mm_by_window": {
+        "1h": 0,
+        "3h": 0.1,
+        "6h": 2.08,
+        "24h": 12.82
+      },
+      "goes19_scan_end_utc": "2026-10-23T00:09:52.100000+00:00",
+      "goes19_instantaneous_rate_mean_mm_h": 0,
+      "goes19_instantaneous_rate_max_mm_h": 0
+    },
+    {
+      "zone_id": "lalibertad_huamanzana",
+      "department": "LA LIBERTAD",
+      "label": "Cuenca Huamanzaña",
+      "imerg_window_end_utc": "2026-10-22T19:00:00+00:00",
+      "imerg_complete_halfhours_24h": 48,
+      "imerg_expected_halfhours_24h": 48,
+      "imerg_missing_halfhours_24h": 0,
+      "satellite_estimated_mm_by_window": {
+        "1h": 0.36,
+        "3h": 0.36,
+        "6h": 0.36,
+        "24h": 9.17
+      },
+      "goes19_scan_end_utc": "2026-10-23T00:09:52.100000+00:00",
+      "goes19_instantaneous_rate_mean_mm_h": 0,
+      "goes19_instantaneous_rate_max_mm_h": 0
+    },
+    {
+      "zone_id": "piura_province_context:AYABACA",
+      "department": "PIURA",
+      "label": "Piura · Ayabaca",
+      "imerg_window_end_utc": "2026-10-22T19:00:00+00:00",
+      "imerg_complete_halfhours_24h": 48,
+      "imerg_expected_halfhours_24h": 48,
+      "imerg_missing_halfhours_24h": 0,
+      "satellite_estimated_mm_by_window": {
+        "1h": 0,
+        "3h": 0.36,
+        "6h": 0.56,
+        "24h": 8.75
+      },
+      "goes19_scan_end_utc": "2026-10-23T00:09:52.100000+00:00",
+      "goes19_instantaneous_rate_mean_mm_h": 0,
+      "goes19_instantaneous_rate_max_mm_h": 0
+    },
+    {
+      "zone_id": "tumbes_bocapan",
+      "department": "TUMBES",
+      "label": "Cuenca Bocapán",
+      "imerg_window_end_utc": "2026-10-22T19:00:00+00:00",
+      "imerg_complete_halfhours_24h": 48,
+      "imerg_expected_halfhours_24h": 48,
+      "imerg_missing_halfhours_24h": 0,
+      "satellite_estimated_mm_by_window": {
+        "1h": 0,
+        "3h": 0,
+        "6h": 0.43,
+        "24h": 6.93
+      },
+      "goes19_scan_end_utc": "2026-10-23T00:09:52.100000+00:00",
+      "goes19_instantaneous_rate_mean_mm_h": 0,
+      "goes19_instantaneous_rate_max_mm_h": 0
+    },
+    {
+      "zone_id": "lalibertad_jequetepeque",
+      "department": "LA LIBERTAD",
+      "label": "Cuenca Jequetepeque",
+      "imerg_window_end_utc": "2026-10-22T19:00:00+00:00",
+      "imerg_complete_halfhours_24h": 48,
+      "imerg_expected_halfhours_24h": 48,
+      "imerg_missing_halfhours_24h": 0,
+      "satellite_estimated_mm_by_window": {
+        "1h": 0.92,
+        "3h": 0.92,
+        "6h": 0.92,
+        "24h": 6.69
+      },
+      "goes19_scan_end_utc": "2026-10-23T00:09:52.100000+00:00",
+      "goes19_instantaneous_rate_mean_mm_h": 0,
+      "goes19_instantaneous_rate_max_mm_h": 0
+    },
+    {
+      "zone_id": "piura_province_context:SULLANA",
+      "department": "PIURA",
+      "label": "Piura · Sullana",
+      "imerg_window_end_utc": "2026-10-22T19:00:00+00:00",
+      "imerg_complete_halfhours_24h": 48,
+      "imerg_expected_halfhours_24h": 48,
+      "imerg_missing_halfhours_24h": 0,
+      "satellite_estimated_mm_by_window": {
+        "1h": 0,
+        "3h": 0.01,
+        "6h": 0.09,
+        "24h": 6.51
+      },
+      "goes19_scan_end_utc": "2026-10-23T00:09:52.100000+00:00",
+      "goes19_instantaneous_rate_mean_mm_h": 0,
+      "goes19_instantaneous_rate_max_mm_h": 0
+    },
+    {
+      "zone_id": "lalibertad_viru",
+      "department": "LA LIBERTAD",
+      "label": "Cuenca Virú",
+      "imerg_window_end_utc": "2026-10-22T19:00:00+00:00",
+      "imerg_complete_halfhours_24h": 48,
+      "imerg_expected_halfhours_24h": 48,
+      "imerg_missing_halfhours_24h": 0,
+      "satellite_estimated_mm_by_window": {
+        "1h": 0.16,
+        "3h": 0.16,
+        "6h": 0.16,
+        "24h": 5.89
+      },
+      "goes19_scan_end_utc": "2026-10-23T00:09:52.100000+00:00",
+      "goes19_instantaneous_rate_mean_mm_h": 0,
+      "goes19_instantaneous_rate_max_mm_h": 0
+    },
+    {
+      "zone_id": "tumbes_province_context:CONTRALMIRANTE VILLAR",
+      "department": "TUMBES",
+      "label": "Tumbes · Contralmirante Villar",
+      "imerg_window_end_utc": "2026-10-22T19:00:00+00:00",
+      "imerg_complete_halfhours_24h": 48,
+      "imerg_expected_halfhours_24h": 48,
+      "imerg_missing_halfhours_24h": 0,
+      "satellite_estimated_mm_by_window": {
+        "1h": 0,
+        "3h": 0,
+        "6h": 0.28,
+        "24h": 5.39
+      },
+      "goes19_scan_end_utc": "2026-10-23T00:09:52.100000+00:00",
+      "goes19_instantaneous_rate_mean_mm_h": 0,
+      "goes19_instantaneous_rate_max_mm_h": 0
+    },
+    {
+      "zone_id": "lalibertad_chicama",
+      "department": "LA LIBERTAD",
+      "label": "Cuenca Chicama",
+      "imerg_window_end_utc": "2026-10-22T19:00:00+00:00",
+      "imerg_complete_halfhours_24h": 48,
+      "imerg_expected_halfhours_24h": 48,
+      "imerg_missing_halfhours_24h": 0,
+      "satellite_estimated_mm_by_window": {
+        "1h": 0.03,
+        "3h": 0.03,
+        "6h": 0.03,
+        "24h": 5.25
+      },
+      "goes19_scan_end_utc": "2026-10-23T00:09:52.100000+00:00",
+      "goes19_instantaneous_rate_mean_mm_h": 0,
+      "goes19_instantaneous_rate_max_mm_h": 0
+    },
+    {
+      "zone_id": "lalibertad_moche",
+      "department": "LA LIBERTAD",
+      "label": "Cuenca Moche",
+      "imerg_window_end_utc": "2026-10-22T19:00:00+00:00",
+      "imerg_complete_halfhours_24h": 48,
+      "imerg_expected_halfhours_24h": 48,
+      "imerg_missing_halfhours_24h": 0,
+      "satellite_estimated_mm_by_window": {
+        "1h": 0.01,
+        "3h": 0.01,
+        "6h": 0.01,
+        "24h": 5.1
+      },
+      "goes19_scan_end_utc": "2026-10-23T00:09:52.100000+00:00",
+      "goes19_instantaneous_rate_mean_mm_h": 0,
+      "goes19_instantaneous_rate_max_mm_h": 0
+    },
+    {
+      "zone_id": "lalibertad_chaman",
+      "department": "LA LIBERTAD",
+      "label": "Cuenca Chamán",
+      "imerg_window_end_utc": "2026-10-22T19:00:00+00:00",
+      "imerg_complete_halfhours_24h": 48,
+      "imerg_expected_halfhours_24h": 48,
+      "imerg_missing_halfhours_24h": 0,
+      "satellite_estimated_mm_by_window": {
+        "1h": 1.59,
+        "3h": 1.59,
+        "6h": 1.59,
+        "24h": 4.65
+      },
+      "goes19_scan_end_utc": "2026-10-23T00:09:52.100000+00:00",
+      "goes19_instantaneous_rate_mean_mm_h": 0,
+      "goes19_instantaneous_rate_max_mm_h": 0
+    },
+    {
+      "zone_id": "lalibertad_san_ildefonso",
+      "department": "LA LIBERTAD",
+      "label": "Quebrada San Ildefonso (Trujillo)",
+      "imerg_window_end_utc": "2026-10-22T19:00:00+00:00",
+      "imerg_complete_halfhours_24h": 48,
+      "imerg_expected_halfhours_24h": 48,
+      "imerg_missing_halfhours_24h": 0,
+      "satellite_estimated_mm_by_window": {
+        "1h": 0,
+        "3h": 0,
+        "6h": 0,
+        "24h": 3.69
+      },
+      "goes19_scan_end_utc": "2026-10-23T00:09:52.100000+00:00",
+      "goes19_instantaneous_rate_mean_mm_h": 0,
+      "goes19_instantaneous_rate_max_mm_h": 0
+    },
+    {
+      "zone_id": "piura_province_context:MORROPON",
+      "department": "PIURA",
+      "label": "Piura · Morropon",
+      "imerg_window_end_utc": "2026-10-22T19:00:00+00:00",
+      "imerg_complete_halfhours_24h": 48,
+      "imerg_expected_halfhours_24h": 48,
+      "imerg_missing_halfhours_24h": 0,
+      "satellite_estimated_mm_by_window": {
+        "1h": 0,
+        "3h": 0.01,
+        "6h": 0.07,
+        "24h": 3.18
+      },
+      "goes19_scan_end_utc": "2026-10-23T00:09:52.100000+00:00",
+      "goes19_instantaneous_rate_mean_mm_h": 0,
+      "goes19_instantaneous_rate_max_mm_h": 0
+    },
+    {
+      "zone_id": "lambayeque_zana_oyotun",
+      "department": "LAMBAYEQUE",
+      "label": "Zaña (Oyotún)",
+      "imerg_window_end_utc": "2026-10-22T19:00:00+00:00",
+      "imerg_complete_halfhours_24h": 48,
+      "imerg_expected_halfhours_24h": 48,
+      "imerg_missing_halfhours_24h": 0,
+      "satellite_estimated_mm_by_window": {
+        "1h": 0.23,
+        "3h": 0.23,
+        "6h": 0.23,
+        "24h": 2.88
+      },
+      "goes19_scan_end_utc": "2026-10-23T00:09:52.100000+00:00",
+      "goes19_instantaneous_rate_mean_mm_h": 0,
+      "goes19_instantaneous_rate_max_mm_h": 0
+    },
+    {
+      "zone_id": "piura_province_context:PIURA",
+      "department": "PIURA",
+      "label": "Piura · Piura",
+      "imerg_window_end_utc": "2026-10-22T19:00:00+00:00",
+      "imerg_complete_halfhours_24h": 48,
+      "imerg_expected_halfhours_24h": 48,
+      "imerg_missing_halfhours_24h": 0,
+      "satellite_estimated_mm_by_window": {
+        "1h": 0,
+        "3h": 0,
+        "6h": 0,
+        "24h": 2.54
+      },
+      "goes19_scan_end_utc": "2026-10-23T00:09:52.100000+00:00",
+      "goes19_instantaneous_rate_mean_mm_h": 0,
+      "goes19_instantaneous_rate_max_mm_h": 0
+    },
+    {
+      "zone_id": "piura_province_context:TALARA",
+      "department": "PIURA",
+      "label": "Piura · Talara",
+      "imerg_window_end_utc": "2026-10-22T19:00:00+00:00",
+      "imerg_complete_halfhours_24h": 48,
+      "imerg_expected_halfhours_24h": 48,
+      "imerg_missing_halfhours_24h": 0,
+      "satellite_estimated_mm_by_window": {
+        "1h": 0,
+        "3h": 0,
+        "6h": 0,
+        "24h": 1.85
+      },
+      "goes19_scan_end_utc": "2026-10-23T00:09:52.100000+00:00",
+      "goes19_instantaneous_rate_mean_mm_h": 0,
+      "goes19_instantaneous_rate_max_mm_h": 0
+    },
+    {
+      "zone_id": "lambayeque_chancay_lambayeque_chongoyape",
+      "department": "LAMBAYEQUE",
+      "label": "Chancay-Lambayeque (Chongoyape)",
+      "imerg_window_end_utc": "2026-10-22T19:00:00+00:00",
+      "imerg_complete_halfhours_24h": 48,
+      "imerg_expected_halfhours_24h": 48,
+      "imerg_missing_halfhours_24h": 0,
+      "satellite_estimated_mm_by_window": {
+        "1h": 0.01,
+        "3h": 0.01,
+        "6h": 0.01,
+        "24h": 1.54
+      },
+      "goes19_scan_end_utc": "2026-10-23T00:09:52.100000+00:00",
+      "goes19_instantaneous_rate_mean_mm_h": 0,
+      "goes19_instantaneous_rate_max_mm_h": 0
+    },
+    {
+      "zone_id": "piura_province_context:HUANCABAMBA",
+      "department": "PIURA",
+      "label": "Piura · Huancabamba",
+      "imerg_window_end_utc": "2026-10-22T19:00:00+00:00",
+      "imerg_complete_halfhours_24h": 48,
+      "imerg_expected_halfhours_24h": 48,
+      "imerg_missing_halfhours_24h": 0,
+      "satellite_estimated_mm_by_window": {
+        "1h": 0.01,
+        "3h": 0.01,
+        "6h": 0.01,
+        "24h": 1.16
+      },
+      "goes19_scan_end_utc": "2026-10-23T00:09:52.100000+00:00",
+      "goes19_instantaneous_rate_mean_mm_h": 0,
+      "goes19_instantaneous_rate_max_mm_h": 0
+    },
+    {
+      "zone_id": "piura_province_context:PAITA",
+      "department": "PIURA",
+      "label": "Piura · Paita",
+      "imerg_window_end_utc": "2026-10-22T19:00:00+00:00",
+      "imerg_complete_halfhours_24h": 48,
+      "imerg_expected_halfhours_24h": 48,
+      "imerg_missing_halfhours_24h": 0,
+      "satellite_estimated_mm_by_window": {
+        "1h": 0,
+        "3h": 0,
+        "6h": 0,
+        "24h": 0.47
+      },
+      "goes19_scan_end_utc": "2026-10-23T00:09:52.100000+00:00",
+      "goes19_instantaneous_rate_mean_mm_h": 0,
+      "goes19_instantaneous_rate_max_mm_h": 0
+    },
+    {
+      "zone_id": "piura_province_context:SECHURA",
+      "department": "PIURA",
+      "label": "Piura · Sechura",
+      "imerg_window_end_utc": "2026-10-22T19:00:00+00:00",
+      "imerg_complete_halfhours_24h": 48,
+      "imerg_expected_halfhours_24h": 48,
+      "imerg_missing_halfhours_24h": 0,
+      "satellite_estimated_mm_by_window": {
+        "1h": 0,
+        "3h": 0,
+        "6h": 0,
+        "24h": 0.07
+      },
+      "goes19_scan_end_utc": "2026-10-23T00:09:52.100000+00:00",
+      "goes19_instantaneous_rate_mean_mm_h": 0,
+      "goes19_instantaneous_rate_max_mm_h": 0
+    },
+    {
+      "zone_id": "lambayeque_motupe",
+      "department": "LAMBAYEQUE",
+      "label": "Cuenca Motupe (contexto hidrológico ANA)",
+      "imerg_window_end_utc": "2026-10-22T19:00:00+00:00",
+      "imerg_complete_halfhours_24h": 48,
+      "imerg_expected_halfhours_24h": 48,
+      "imerg_missing_halfhours_24h": 0,
+      "satellite_estimated_mm_by_window": {
+        "1h": 0,
+        "3h": 0,
+        "6h": 0,
+        "24h": 0.03
+      },
+      "goes19_scan_end_utc": "2026-10-23T00:09:52.100000+00:00",
+      "goes19_instantaneous_rate_mean_mm_h": 0,
+      "goes19_instantaneous_rate_max_mm_h": 0
+    }
+  ],
+  "reported_events": [
+    {
+      "case_id": "NORTH-2026-10-21-SULLANA-REPORT",
+      "kind": "MEDIA_REPORTED_RAIN",
+      "reported_local_time": "2026-10-21T19:15:00-05:00",
+      "reported_time_semantics": "time_on_news_live_feed_NOT_START_OF_RAIN",
+      "location_label": "Sullana, provincia de Sullana, Piura",
+      "administrative_precision": "PROVINCE",
+      "station_id": null,
+      "rainfall_gauge_mm": null,
+      "description_es": "Un seguimiento periodístico reportó lluvia y descargas eléctricas en la provincia de Sullana a las 19:15 PET del 21-oct; indicó 15 mm/h como INTENSIDAD ESPERADA para 18:00–19:00, no medición instrumental.",
+      "forecast_quantity_quoted_but_not_observed": {
+        "intensity_mm_h": 15,
+        "validity_local": "2026-10-21T18:00:00-05:00/2026-10-21T19:00:00-05:00",
+        "nature": "FORECAST_NOT_OBSERVATION"
+      },
+      "source_urls": [
+        "https://elcomercio.pe/peru/piura-y-el-norte-del-peru-bajo-lluvias-intensas-ultimas-noticias-alerta-por-el-nino-e-informe-del-coen-en-vivo-lbposting-noticia/?outputType=amp"
+      ],
+      "area_match": {
+        "zone_id": "piura_province_context:SULLANA",
+        "support": "PROVINCIAL_AREA_ESTIMATE_NOT_POINT_GAUGE"
+      },
+      "temporal_overlap_with_24h_snapshot": true,
+      "independent_gauge_verified": false
+    },
+    {
+      "case_id": "NORTH-2026-10-21-22-ZARUMILLA-NIGHT",
+      "kind": "MEDIA_REPORTED_RAIN",
+      "reported_local_time": "2026-10-22T10:12:00-05:00",
+      "reported_time_semantics": "PUBLICATION_TIME_EVENT_OCCURRED_PREVIOUS_NIGHT_NOT_EXACT_START",
+      "approximate_event_window_local": "2026-10-21 evening through 2026-10-22 morning; unconfirmed exact start/end",
+      "location_label": "Zarumilla, Tumbes",
+      "administrative_precision": "PROVINCE",
+      "station_id": null,
+      "rainfall_gauge_mm": null,
+      "description_es": "Gestión / Canal N informó lluvia durante la noche y madrugada en Tumbes, más fuerte en Zarumilla, con tormenta eléctrica; no publicó acumulado de pluviómetro.",
+      "source_urls": [
+        "https://gestion.pe/peru/fenomeno-el-nino-lluvias-intensas-inundan-calles-de-tumbes-noticia/"
+      ],
+      "area_match": {
+        "zone_id": "tumbes_province_context:ZARUMILLA",
+        "support": "PROVINCIAL_AREA_ESTIMATE_NOT_POINT_GAUGE"
+      },
+      "temporal_overlap_with_24h_snapshot": true,
+      "independent_gauge_verified": false
+    },
+    {
+      "case_id": "NORTH-2026-10-22-TUMBES-REGIONAL",
+      "kind": "MEDIA_REPORTED_RAIN",
+      "reported_local_time": "2026-10-22T10:12:00-05:00",
+      "reported_time_semantics": "PUBLICATION_TIME_NOT_RAIN_START",
+      "location_label": "Tumbes (departamento), incluyendo calles afectadas",
+      "administrative_precision": "DEPARTMENT",
+      "station_id": null,
+      "rainfall_gauge_mm": null,
+      "description_es": "Prensa reporta lluvia nocturna 21-22, aniegos y hogares afectados en Tumbes. Precisión insuficiente para asignarla a una celda o estación concreta.",
+      "source_urls": [
+        "https://gestion.pe/peru/fenomeno-el-nino-lluvias-intensas-inundan-calles-de-tumbes-noticia/"
+      ],
+      "area_match": {
+        "zone_id": null,
+        "support": "DEPARTMENT_NOT_COLLOCATABLE"
+      },
+      "temporal_overlap_with_24h_snapshot": "POSSIBLE_NOT_PROVABLE_BY_LOCATION",
+      "independent_gauge_verified": false
+    }
+  ],
+  "official_forecast_advisories": [
+    {
+      "number": 426,
+      "category": "OFFICIAL_METEOROLOGICAL_FORECAST",
+      "level_official_as_in_irfen": "NARANJA",
+      "validity_local_start": "2026-10-20T00:00:00-05:00",
+      "validity_local_end": "2026-10-22T23:59:00-05:00",
+      "scope": "Costa norte y sierra; aviso preventivo",
+      "forecast_mm_day_coast_north": {
+        "min": 2,
+        "max": 16
+      },
+      "source_urls": [
+        "https://www.gob.pe/institucion/indeci/noticias/1459288-indeci-recomienda-medidas-de-preparacion-ante-las-precipitaciones-en-la-costa-norte-y-sierra"
+      ]
+    },
+    {
+      "number": 430,
+      "category": "OFFICIAL_METEOROLOGICAL_FORECAST",
+      "level_official_as_in_irfen": null,
+      "validity_local_start": "2026-10-23T00:00:00-05:00",
+      "validity_local_end": "2026-10-25T23:59:00-05:00",
+      "scope": "Costa norte / sierra norte; Tumbes y costa interior de Piura",
+      "forecast_mm_day_coast_north": [
+        {
+          "date_local": "2026-10-23",
+          "min": 2,
+          "max": 14
+        },
+        {
+          "date_local": "2026-10-24",
+          "min": 2,
+          "max": 15
+        },
+        {
+          "date_local": "2026-10-25",
+          "max": 17
+        }
+      ],
+      "source_urls": [
+        "https://elcomercio.pe/peru/piura/piura-lluvias-intensas-con-descargas-electricas-seguiran-desde-hoy-hasta-el-domingo-25-de-octubre-segun-senamhi-apuesplan-ultimas-noticia/?outputType=amp"
+      ],
+      "note": "El medio periodístico lo describe como nivel naranja, pero IRFEN señala NOT_STATED_IN_TEXT para el campo official_level en el inventario de fuentes; mantener nulo en este archivo, no sobreescribir fuente oficial."
+    }
+  ],
+  "conclusions_es": [
+    "21-oct en Sullana y noche 21→22 en Zarumilla tienen respaldo periodístico y se superponen parcialmente con el intervalo satelital de 24h, pero NO cuentan con pluviómetros puntuales.",
+    "Los acumulados IMERG son promedios de superficie provincial o cuencas, con hasta horas de retardo; nunca equivalen a lluvia caída en un barrio ni a 15 mm/h previstos.",
+    "Un escaneo GOES con tasa instantánea 0 posterior NO contradice lluvia nocturna previa.",
+    "Una noticia de afectaciones no mide caudal, altura ni riesgo de quebrada; los avisos oficiales son pronósticos, no observaciones.",
+    "Datos suficientes para construir casos de validación; insuficientes para ajustar una correlación SENAMHI–IMERG o activar alertas."
+  ],
+  "pending_validation": [
+    "Obtener pluviómetro por ubicación/hora con autorización y lat/lon, mm, periodo exacto, calidad",
+    "Recalcular gránulos de celda coincidentes con estación, no promedios de provincia",
+    "Separar eventos nocturnos 21→22 en ventanas locales PET y no sumar tasa GOES como acumulado",
+    "Calcular acuerdo de ocurrencia/errores solo con mediciones primarias y ventanas idénticas"
+  ]
+}
