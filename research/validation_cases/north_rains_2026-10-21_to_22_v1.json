@@ -552,6 +552,7 @@
     }
   ],
   "conclusions_es": [
+    "El desglose 30 min de un único archivo congelado corrobora señal satelital en las franjas exploratorias de Sullana (18–21 PET del 21-oct) y Zarumilla (20–06 PET del 21→22); el inicio exacto de las precipitaciones informadas no está verificado.",
     "21-oct en Sullana y noche 21→22 en Zarumilla tienen respaldo periodístico y se superponen parcialmente con el intervalo satelital de 24h, pero NO cuentan con pluviómetros puntuales.",
     "Los acumulados IMERG son promedios de superficie provincial o cuencas, con hasta horas de retardo; nunca equivalen a lluvia caída en un barrio ni a 15 mm/h previstos.",
     "Un escaneo GOES con tasa instantánea 0 posterior NO contradice lluvia nocturna previa.",
@@ -563,5 +564,83 @@
     "Recalcular gránulos de celda coincidentes con estación, no promedios de provincia",
     "Separar eventos nocturnos 21→22 en ventanas locales PET y no sumar tasa GOES como acumulado",
     "Calcular acuerdo de ocurrencia/errores solo con mediciones primarias y ventanas idénticas"
+  ],
+  "diagnostic_temporal_slices": [
+    {
+      "id": "SULLANA_21_OCT_EVENING",
+      "zone_id": "piura_province_context:SULLANA",
+      "local_start": "2026-10-21T18:00:00-05:00",
+      "local_end": "2026-10-21T21:00:00-05:00",
+      "semantic": "fixed 3h exploratory window around 19:15 media report; not exact event duration",
+      "intervals_utc": {
+        "start": "2026-10-21T23:00:00.000Z",
+        "end": "2026-10-22T02:00:00.000Z"
+      },
+      "expected_halfhours": 6,
+      "available_halfhours": 6,
+      "missing_halfhours": 0,
+      "area_weighted_imerg_accum_mm": 4.114,
+      "max_area_weighted_halfhour_mm": 1.1446,
+      "nonzero_halfhours": 6,
+      "observation_type": "SATELLITE_AREA_ESTIMATE_NOT_GROUND_TRUTH",
+      "validation_status": "TEMPORAL_ALIGNMENT_ONLY_NOT_STATION_VERIFIED"
+    },
+    {
+      "id": "PIURA_PROVINCE_CONTROL_21_OCT_EVENING",
+      "zone_id": "piura_province_context:PIURA",
+      "local_start": "2026-10-21T18:00:00-05:00",
+      "local_end": "2026-10-21T21:00:00-05:00",
+      "semantic": "contextual comparison of a DIFFERENT province, not a validation of Sullana station",
+      "intervals_utc": {
+        "start": "2026-10-21T23:00:00.000Z",
+        "end": "2026-10-22T02:00:00.000Z"
+      },
+      "expected_halfhours": 6,
+      "available_halfhours": 6,
+      "missing_halfhours": 0,
+      "area_weighted_imerg_accum_mm": 2.056,
+      "max_area_weighted_halfhour_mm": 1.0897,
+      "nonzero_halfhours": 5,
+      "observation_type": "SATELLITE_AREA_ESTIMATE_NOT_GROUND_TRUTH",
+      "validation_status": "TEMPORAL_ALIGNMENT_ONLY_NOT_STATION_VERIFIED"
+    },
+    {
+      "id": "ZARUMILLA_21_TO_22_NIGHT",
+      "zone_id": "tumbes_province_context:ZARUMILLA",
+      "local_start": "2026-10-21T20:00:00-05:00",
+      "local_end": "2026-10-22T06:00:00-05:00",
+      "semantic": "fixed 10h exploratory window around reported night/morning; exact rain beginning/ending unconfirmed",
+      "intervals_utc": {
+        "start": "2026-10-22T01:00:00.000Z",
+        "end": "2026-10-22T11:00:00.000Z"
+      },
+      "expected_halfhours": 20,
+      "available_halfhours": 20,
+      "missing_halfhours": 0,
+      "area_weighted_imerg_accum_mm": 6.636,
+      "max_area_weighted_halfhour_mm": 1.2668,
+      "nonzero_halfhours": 15,
+      "observation_type": "SATELLITE_AREA_ESTIMATE_NOT_GROUND_TRUTH",
+      "validation_status": "TEMPORAL_ALIGNMENT_ONLY_NOT_STATION_VERIFIED"
+    },
+    {
+      "id": "TUMBES_21_TO_22_NIGHT",
+      "zone_id": "tumbes_province_context:TUMBES",
+      "local_start": "2026-10-21T20:00:00-05:00",
+      "local_end": "2026-10-22T06:00:00-05:00",
+      "semantic": "province-context summary, separate from Zarumilla",
+      "intervals_utc": {
+        "start": "2026-10-22T01:00:00.000Z",
+        "end": "2026-10-22T11:00:00.000Z"
+      },
+      "expected_halfhours": 20,
+      "available_halfhours": 20,
+      "missing_halfhours": 0,
+      "area_weighted_imerg_accum_mm": 7.348,
+      "max_area_weighted_halfhour_mm": 1.2673,
+      "nonzero_halfhours": 19,
+      "observation_type": "SATELLITE_AREA_ESTIMATE_NOT_GROUND_TRUTH",
+      "validation_status": "TEMPORAL_ALIGNMENT_ONLY_NOT_STATION_VERIFIED"
+    }
   ]
 }
