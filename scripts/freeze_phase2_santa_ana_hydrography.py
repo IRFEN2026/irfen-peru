@@ -137,7 +137,9 @@ def freeze(raw, acquired_at, source_key="ana_official"):
             "source_redirect_policy": "REJECT_ALL_HTTP_REDIRECTS",
             "raw_response_sha256": hashlib.sha256(raw).hexdigest(),
             "raw_response_bytes": len(raw), "candidate_count": len(rows),
-            "candidates": rows, "scientific_role": ("CURRENT_ANA_HYDROGRAPHY_CONTEXT_CANDIDATES_ONLY"\n                                if source_key == "ana_official" else\n                                "THIRD_PARTY_ANA_ATTRIBUTED_HYDROGRAPHY_UNVERIFIED_CANDIDATES_ONLY"),
+            "candidates": rows, "scientific_role": ("CURRENT_ANA_HYDROGRAPHY_CONTEXT_CANDIDATES_ONLY"
+                                if source_key == "ana_official" else
+                                "THIRD_PARTY_ANA_ATTRIBUTED_HYDROGRAPHY_UNVERIFIED_CANDIDATES_ONLY"),
             "identity_adjudicated": False, "2011_axis_equivalence": False,
             "2011_datum_resolved": False, "geometry_map_published": False,
             "completeness_claim": "NONE; name query is not exhaustive hydrographic identification",
@@ -156,7 +158,8 @@ class OfflineTests(unittest.TestCase):
         self.assertEqual(doc["candidate_count"], 1)
         self.assertFalse(doc["production_use"])
         self.assertIsNone(doc["decision_thresholds"])
-        self.assertEqual(doc["scientific_role"], "CURRENT_ANA_HYDROGRAPHY_CONTEXT_CANDIDATES_ONLY")\n        self.assertFalse(doc["identity_adjudicated"])
+        self.assertEqual(doc["scientific_role"], "CURRENT_ANA_HYDROGRAPHY_CONTEXT_CANDIDATES_ONLY")
+        self.assertFalse(doc["identity_adjudicated"])
         self.assertEqual(doc["source_redirect_policy"], "REJECT_ALL_HTTP_REDIRECTS")
 
     def test_rejects_nonmatching_or_unverifiable_name(self):
@@ -198,7 +201,9 @@ class OfflineTests(unittest.TestCase):
         doc = freeze(raw, "TEST_ONLY", "arcgis_copy_2026")
         self.assertEqual(doc["candidates"][0]["objectid"], 42)
         self.assertIn("FID", doc["source_url"])
-        self.assertEqual(doc["source_custody"], "THIRD_PARTY_HOSTED_ANA_ATTRIBUTED_COPY_UNVERIFIED")\n        self.assertEqual(doc["scientific_role"],\n                         "THIRD_PARTY_ANA_ATTRIBUTED_HYDROGRAPHY_UNVERIFIED_CANDIDATES_ONLY")
+        self.assertEqual(doc["source_custody"], "THIRD_PARTY_HOSTED_ANA_ATTRIBUTED_COPY_UNVERIFIED")
+        self.assertEqual(doc["scientific_role"],
+                         "THIRD_PARTY_ANA_ATTRIBUTED_HYDROGRAPHY_UNVERIFIED_CANDIDATES_ONLY")
         self.assertFalse(doc["official_ana_byte_equivalence_established"])
         self.assertFalse(doc["identity_adjudicated"])
         self.assertFalse(doc["2011_axis_equivalence"])
