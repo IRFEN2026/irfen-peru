@@ -145,3 +145,31 @@ def test_unverified_events_and_station_triggers_do_not_become_flow():
     assert by_id["jicamarca_media_luna"]["verified_event_refs"] == [
         "config/phase2_jicamarca_discovery_v0_1.json#/historical_evidence/0"
     ]
+
+    # The 2017 COEN annex is a documentary name sweep, not a measured
+    # per-ravine event ledger or proof of collector overflow. Preserve the
+    # separate annex labels even where spelling or geography is disputed.
+    coen = d["official_2017_coen_ravine_name_sweep"]
+    names = coen["names"]
+    assert coen["row_count"] == len(names) == 20
+    assert [n["annex_row"] for n in names] == list(range(1, 21))
+    assert len({n["printed_label"] for n in names}) == len(names)
+    assert sum(n["reconciliation"].startswith("EXACT_DOCUMENTARY_LABEL_MATCH") for n in names) == coen["existing_exact_documentary_label_match_count"] == 5
+    assert sum(n["reconciliation"] == "POSSIBLE_NAME_VARIANT_UNRESOLVED" for n in names) == coen["unresolved_variant_or_abbreviation_count"] == 6
+    assert sum(n["reconciliation"] == "UNMATERIALIZED_NAME_LEAD" for n in names) == coen["unmaterialized_new_name_lead_count"] == 9
+    assert coen["per_unit_activation_dates"] is None
+    assert coen["observed_flow_or_stage_measurements"] is None
+    assert coen["report_is_not_per_unit_event_confirmation"] is True
+    assert coen["reported_time_difference_is_not_travel_time_or_causality"] is True
+    assert coen["no_child_activation_implies_collector_overflow"] is True
+    assert coen["no_alias_merge_or_geographic_adjudication"] is True
+    assert coen["original_pdf_sha256"] is None
+    assert coen["source_text_verified"] is False
+    assert coen["documentary_row_count_increment"] == 0
+    assert coen["confirmed_unique_hydrologic_unit_count_increment"] == 0
+    assert coen["map_publishable"] is False
+    for row in names:
+        assert row["exact_outlet"] is None
+        assert row["exact_confluence"] is None
+        assert row["verified_unit_event"] is False
+        assert row["map_publishable"] is False
