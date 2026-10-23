@@ -242,22 +242,70 @@ def write_capture(manifest: dict, files: dict[str, bytes], out_dir: Path) -> Non
 
 
 def check_capture(out_dir: Path) -> str:
+    """Replay the exact plan, bytes, canonical digests and row adjudication.
+
+    This is an integrity check only, never geometry or identity promotion.
+    """
     manifest_path = out_dir / "manifest_v0_1.json"
     if not manifest_path.exists():
         return "NO_CAPTURE_PRESENT"
+    plan = load_plan()
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     for key, expected in SAFE.items():
         if manifest.get(key) != expected:
             raise FreezeError(f"UNSAFE_MANIFEST_GUARD_{key}")
-    if sha256((out_dir / manifest["metadata_raw_file"]).read_bytes()) != manifest["metadata_raw_sha256"]:
+    if manifest.get("schema_version") != "0.1" or manifest.get("status") != "RESEARCH_ONLY_EXACT_CAPTURE_NOT_ADJUDICATED":
+        raise FreezeError("UNEXPECTED_CAPTURE_MANIFEST_STATUS")
+    if manifest.get("plan") != str(PLAN.relative_to(ROOT)) or manifest.get("plan_sha256") != sha256(PLAN.read_bytes()):
+        raise FreezeError("CAPTURE_PLAN_HASH_OR_PATH_MISMATCH")
+    if (manifest.get("service") != plan["service"] or
+            manifest.get("layer_id") != plan["layer_id"] or
+            manifest.get("metadata_url") != metadata_url(plan) or
+            manifest.get("promotion_policy") != plan["promotion_policy"]):
+        raise FreezeError("CAPTURE_PLAN_CONTRACT_MISMATCH")
+    if manifest.get("metadata_raw_file") != "layer_metadata.raw.json":
+        raise FreezeError("UNEXPECTED_METADATA_FILE")
+    metadata_raw = (out_dir / "layer_metadata.raw.json").read_bytes()
+    if sha256(metadata_raw) != manifest.get("metadata_raw_sha256"):
         raise FreezeError("METADATA_HASH_MISMATCH")
+    validate_metadata(parse(metadata_raw, "METADATA_REPLAY"), plan)
+
+    expected_targets = {t["component_id"]: t for t in plan["priority_targets"]}
+    if not isinstance(manifest.get("targets"), dict) or set(manifest["targets"]) != set(expected_targets):
+        raise FreezeError("CAPTURE_TARGET_SET_MISMATCH")
     for cid, target in manifest["targets"].items():
-        if target["map_publishable"] is not False or target["identity_adjudicated"] is not False:
+        expected = expected_targets[cid]
+        if (target.get("map_publishable") is not False or
+                target.get("identity_adjudicated") is not False or
+                target.get("outlet_verified") is not False):
             raise FreezeError(f"PROMOTION_FLAG_SET_{cid}")
-        for req in target["requests"]:
-            raw = (out_dir / req["raw_file"]).read_bytes()
-            if sha256(raw) != req["raw_sha256"]:
-                raise FreezeError(f"RAW_HASH_MISMATCH_{req['raw_file']}")
+        if (target.get("priority") != expected["priority"] or
+                target.get("reference_anchor_ids") != expected["reference_anchor_ids"]):
+            raise FreezeError(f"TARGET_PLAN_CONTEXT_MISMATCH_{cid}")
+        requests = target.get("requests")
+        if not isinstance(requests, list) or len(requests) != len(expected["tokens"]):
+            raise FreezeError(f"CAPTURE_REQUEST_SET_MISMATCH_{cid}")
+        candidate_count = 0
+        for req, token in zip(requests, expected["tokens"]):
+            filename = f"{cid}__{token.lower()}.raw.geojson"
+            if (req.get("token") != token or req.get("url") != query_url(plan, token) or
+                    req.get("raw_file") != filename):
+                raise FreezeError(f"CAPTURE_QUERY_CONTRACT_MISMATCH_{cid}")
+            raw = (out_dir / filename).read_bytes()
+            if sha256(raw) != req.get("raw_sha256"):
+                raise FreezeError(f"RAW_HASH_MISMATCH_{filename}")
+            fc = parse(raw, f"REPLAY_{cid}_{token}")
+            if sha256(canonical(fc)) != req.get("canonical_sha256"):
+                raise FreezeError(f"CANONICAL_HASH_MISMATCH_{filename}")
+            candidates, quarantine = classify_rows(fc, plan, expected, f"REPLAY_{cid}_{token}")
+            if req.get("row_count") != len(fc.get("features") or []):
+                raise FreezeError(f"ROW_COUNT_MISMATCH_{filename}")
+            if req.get("candidate_rows") != candidates or req.get("lexical_neighbour_quarantine") != quarantine:
+                raise FreezeError(f"ROW_CLASSIFICATION_MISMATCH_{filename}")
+            candidate_count += len(candidates)
+        expected_status = "ROWS_CAPTURED_NOT_ADJUDICATED" if candidate_count else "NO_ROWS_NOT_NEGATIVE"
+        if target.get("candidate_row_count") != candidate_count or target.get("capture_status") != expected_status:
+            raise FreezeError(f"TARGET_COUNT_OR_STATUS_MISMATCH_{cid}")
     return "PASS_CAPTURE_REPLAY_HASHES_MATCH"
 
 
