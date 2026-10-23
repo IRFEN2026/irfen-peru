@@ -21,6 +21,37 @@ WHERE = "UPPER(NOMBRE_CA) LIKE '%SANTA%' OR UPPER(NOMBRE_UH) LIKE '%SANTA%'"
 FIELDS = "OBJECTID_1,CODIGO_CA,NOMBRE_CA,TIPO_CA,NOMBRE_UH,CODIGO_UH,LONG_KM"
 PARAMS = {"where": WHERE, "outFields": FIELDS, "returnGeometry": "true", "outSR": "4326", "f": "geojson"}
 URL = LAYER + "/query?" + urlencode(PARAMS)
+# Alternative third-party-hosted copies of ANA-attributed 2018 hydrography.
+# Similar attribution/schema is NOT evidence of identical bytes, version or lineage.
+# Sources observed from public ArcGIS REST layer metadata on 2026-10-23.
+SOURCES = {
+    "ana_official": {
+        "layer": LAYER, "oid_field": "OBJECTID_1",
+        "custody": "ANA_OFFICIAL_SERVICE",
+        "metadata_url": LAYER,
+    },
+    "arcgis_copy_2025": {
+        "layer": "https://services.arcgis.com/evjBQsNzjm2hdraL/ArcGIS/rest/services/Rios/FeatureServer/0",
+        "oid_field": "OBJECTID_1",
+        "custody": "THIRD_PARTY_HOSTED_ANA_ATTRIBUTED_COPY_UNVERIFIED",
+        "metadata_url": "https://services.arcgis.com/evjBQsNzjm2hdraL/ArcGIS/rest/services/Rios/FeatureServer/0",
+    },
+    "arcgis_copy_2026": {
+        "layer": "https://services1.arcgis.com/RTK5Unh1Z71JKIiR/ArcGIS/rest/services/R%C3%ADos/FeatureServer/2",
+        "oid_field": "FID",
+        "custody": "THIRD_PARTY_HOSTED_ANA_ATTRIBUTED_COPY_UNVERIFIED",
+        "metadata_url": "https://services1.arcgis.com/RTK5Unh1Z71JKIiR/ArcGIS/rest/services/R%C3%ADos/FeatureServer/2",
+    },
+}
+
+
+def source_url(source_key):
+    source = SOURCES[source_key]
+    params = dict(PARAMS)
+    params["outFields"] = FIELDS.replace("OBJECTID_1", source["oid_field"], 1)
+    return source["layer"] + "/query?" + urlencode(params)
+
+
 MAX_BYTES = 8_000_000
 GUARDS = {"deployment_status": "RESEARCH_ONLY", "test_mode": "TEST_ONLY",
           "production_use": False, "production_ready": False,
@@ -62,11 +93,13 @@ def positions(geometry):
     return result
 
 
-def inspect(raw):
+def inspect(raw, source_key="ana_official"):
     obj = json.loads(raw)
     if not isinstance(obj, dict) or obj.get("error") or obj.get("exceededTransferLimit"):
         raise ValueError("ArcGIS error or truncated result")
     features = obj.get("features")
+    if isinstance(features, list) and len(features) >= 2000:
+        raise ValueError("candidate count reaches ArcGIS maxRecordCount; pagination not adjudicated")
     if obj.get("type") != "FeatureCollection" or not isinstance(features, list) or not features:
         raise ValueError("missing nonempty GeoJSON FeatureCollection")
     rows = []
@@ -84,7 +117,7 @@ def inspect(raw):
         if not any(isinstance(p.get(field), str) and "santa" in p[field].casefold()
                    for field in ("NOMBRE_CA", "NOMBRE_UH")):
             raise ValueError("ANA candidate does not satisfy the declared Santa-name query")
-        rows.append({"objectid": p.get("OBJECTID_1"), "codigo_ca": p.get("CODIGO_CA"),
+        rows.append({"objectid": p.get(SOURCES[source_key]["oid_field"]), "codigo_ca": p.get("CODIGO_CA"),
                      "nombre_ca": p.get("NOMBRE_CA"), "tipo_ca": p.get("TIPO_CA"),
                      "nombre_uh": p.get("NOMBRE_UH"), "codigo_uh": p.get("CODIGO_UH"),
                      "long_km": p.get("LONG_KM"), "geometry_type": geometry["type"],
@@ -92,10 +125,15 @@ def inspect(raw):
     return rows
 
 
-def freeze(raw, acquired_at):
-    rows = inspect(raw)
-    return {"schema_version": "0.1", "source": "ANA ONRH/Rios_Quebradas_AAVI MapServer/0",
-            "source_url": URL, "retrieved_at_utc": acquired_at,
+def freeze(raw, acquired_at, source_key="ana_official"):
+    rows = inspect(raw, source_key)
+    source = SOURCES[source_key]
+    return {"schema_version": "0.2", "source": source_key,
+            "source_url": source_url(source_key), "source_metadata_url": source["metadata_url"],
+            "source_custody": source["custody"],
+            "official_ana_byte_equivalence_established": False,
+            "source_metadata_observed_utc_date": "2026-10-23",
+            "retrieved_at_utc": acquired_at,
             "source_redirect_policy": "REJECT_ALL_HTTP_REDIRECTS",
             "raw_response_sha256": hashlib.sha256(raw).hexdigest(),
             "raw_response_bytes": len(raw), "candidate_count": len(rows),
@@ -152,6 +190,22 @@ class OfflineTests(unittest.TestCase):
         self.assertIsNone(RejectRedirects().redirect_request(
             Request(URL), None, 302, "Found", {"Location": target}, target))
 
+    def test_mirror_custody_and_source_specific_oid_fail_closed(self):
+        raw = json.dumps({"type": "FeatureCollection", "features": [
+            {"type": "Feature", "properties": {"NOMBRE_CA": "synthetic Santa", "FID": 42},
+             "geometry": {"type": "LineString", "coordinates": [[0, 0], [1, 1]]}}
+        ]}).encode()
+        doc = freeze(raw, "TEST_ONLY", "arcgis_copy_2026")
+        self.assertEqual(doc["candidates"][0]["objectid"], 42)
+        self.assertIn("FID", doc["source_url"])
+        self.assertEqual(doc["source_custody"], "THIRD_PARTY_HOSTED_ANA_ATTRIBUTED_COPY_UNVERIFIED")
+        self.assertFalse(doc["official_ana_byte_equivalence_established"])
+        self.assertFalse(doc["identity_adjudicated"])
+        self.assertFalse(doc["2011_axis_equivalence"])
+        self.assertFalse(doc["geometry_map_published"])
+        self.assertEqual(doc["activation_gate"], "BLOCKED")
+        self.assertIsNone(doc["hydraulic_factors"])
+
     def test_rejects_unusable_responses(self):
         for obj in ({"error": {"code": 500}},
                     {"type": "FeatureCollection", "features": []},
@@ -164,28 +218,31 @@ class OfflineTests(unittest.TestCase):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--self-test", action="store_true")
+    parser.add_argument("--source", choices=sorted(SOURCES), default="ana_official",
+                        help="Explicit source selection; mirrors are unverified copies, not ANA official service")
     parser.add_argument("--out-dir", default="data/phase2/source_archive/santa_ana_hydrography_probe")
     args = parser.parse_args()
     if args.self_test:
         suite = unittest.defaultTestLoader.loadTestsFromTestCase(OfflineTests)
         return 0 if unittest.TextTestRunner().run(suite).wasSuccessful() else 1
-    request = Request(URL, headers={"User-Agent": "IRFEN-RESEARCH-ONLY/0.1",
+    request = Request(source_url(args.source), headers={"User-Agent": "IRFEN-RESEARCH-ONLY/0.1",
                                     "Accept": "application/geo+json,application/json"})
     try:
         with build_opener(RejectRedirects()).open(request, timeout=90) as response:
             raw = response.read(MAX_BYTES + 1)
         if len(raw) > MAX_BYTES:
             raise ValueError("response exceeds 8MB archive cap")
-        manifest = freeze(raw, datetime.now(timezone.utc).isoformat())
+        manifest = freeze(raw, datetime.now(timezone.utc).isoformat(), args.source)
     except (HTTPError, URLError, TimeoutError, ValueError, json.JSONDecodeError) as exc:
         print(f"UNKNOWN/SOURCE_ACCESS_UNAVAILABLE_OR_INVALID: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 2
-    root = Path(args.out_dir)
+    root = Path(args.out_dir) / args.source
     root.mkdir(parents=True, exist_ok=True)
     (root / "santa_ana_hydrography_raw.geojson").write_bytes(raw)
     (root / "santa_ana_hydrography_manifest.json").write_text(
         json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print("SANTA_ANA_HYDROGRAPHY_SHA256=" + manifest["raw_response_sha256"])
+    print("SANTA_HYDROGRAPHY_CANDIDATE_SHA256=" + manifest["raw_response_sha256"])
+    print("SOURCE_CUSTODY=" + manifest["source_custody"])
     return 0
 
 
