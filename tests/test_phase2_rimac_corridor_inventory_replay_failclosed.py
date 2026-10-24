@@ -236,3 +236,57 @@ def test_unverified_events_and_station_triggers_do_not_become_flow():
         assert row["exact_confluence"] is None
         assert row["verified_unit_event"] is False
         assert row["map_publishable"] is False
+
+    # INDECI/PNUD 2005 is a name-only sweep without original PDF bytes.
+    # Preserve nine labels, six new leads and the pre-existing Acopaya
+    # entry without claiming hydrologic identity or vector geometry.
+    indeci = d["official_2005_indeci_santa_eulalia_name_sweep"]
+    labels_2005 = indeci["labels"]
+    assert indeci["documentary_label_count"] == len(labels_2005) == 9
+    assert len({row["printed_label"] for row in labels_2005}) == 9
+    assert sum(row["reconciliation"] == "EXISTING_DOCUMENTARY_ROW_NO_NEW_UNIT"
+               for row in labels_2005) == indeci["existing_inventory_label_count"] == 2
+    assert sum(row["reconciliation"] == "EXISTING_UNMATERIALIZED_NAME_LEAD_NO_DUPLICATE"
+               for row in labels_2005) == indeci["existing_name_lead_count"] == 1
+    new_labels = {
+        row["printed_label"] for row in labels_2005
+        if row["reconciliation"].startswith("NEW_UNMATERIALIZED_NAME_LEAD")
+    }
+    assert len(new_labels) == indeci["new_name_lead_count"] == 6
+    new_leads = [
+        lead for lead in d["official_unmaterialized_name_leads"]
+        if lead.get("source_id") == indeci["source_id"]
+    ]
+    assert len(new_leads) == 6
+    assert {lead["documentary_name"] for lead in new_leads} == new_labels
+    assert any(
+        lead["documentary_name"] == "Acopaya"
+        and lead["source_id"] == coen["source_id"]
+        for lead in d["official_unmaterialized_name_leads"]
+    )
+    assert indeci["source_text_verified"] is False
+    assert indeci["original_pdf_bytes_archived_in_this_contract"] is False
+    assert indeci["original_pdf_sha256"] is None
+    assert indeci["name_only_evidence_not_vector"] is True
+    assert indeci["no_individually_verified_event_dates"] is True
+    assert indeci["documentary_bank_descriptions_not_exact_outlets"] is True
+    assert indeci["simultaneous_infiernillo_alcula_blockage_is_hypothesis_not_event"] is True
+    assert indeci["confirmed_unique_hydrologic_unit_count_increment"] == 0
+    assert indeci["documentary_row_count_increment"] == 0
+    assert indeci["map_publishable"] is False
+    for lead in new_leads:
+        assert lead["source_text_verified"] is False
+        assert lead["original_pdf_bytes_archived_in_this_contract"] is False
+        assert lead["original_pdf_sha256"] is None
+        assert lead["map_publishable"] is False
+        assert lead["counted_as_confirmed_unique_hydrologic_unit"] is False
+        assert lead["outlet_coordinate"] is None
+        assert lead["exact_confluence_coordinate"] is None
+        assert lead["verified_event_refs"] == []
+        assert lead["flow_or_stage_observation_refs"] == []
+    vizcacha = next(lead for lead in new_leads
+                    if lead["documentary_name"] == "Vizcacha")
+    assert vizcacha["possible_existing_inventory_id_unadjudicated"] == (
+        "lima_lurigancho_vizcachera"
+    )
+    assert vizcacha["alias_adjudication"].startswith("UNRESOLVED")
