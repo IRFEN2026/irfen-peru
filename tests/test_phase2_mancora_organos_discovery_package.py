@@ -88,3 +88,25 @@ def test_missing_observations_and_response_works_do_not_become_low_risk_or_capac
     assert s["qa"]["critical_point_used_as_event"] is False
     assert s["qa"]["works_are_historical_capacity"] is False
     assert s["qa"]["absence_of_report_is_negative"] is False
+
+
+def test_fernandez_2023_report_is_child_bounded_and_not_a_hydrograph():
+    p = load(PACKAGE)
+    e = p["assets"]["event_ledger"]["2023"]
+    assert e["status"] == "CONFIRMED_CHILD_LEVEL_ACTIVE_HIGH_FLOW_REPORTED_AS_OF_2023_03_26"
+    assert e["natural_component"] == "quebrada_fernandez"
+    assert e["natural_component_response"] == "ACTIVE_HIGH_FLOW_REPORTED"
+    assert e["exact_event_start_time_available"] is False
+    assert e["exact_event_footprint_available"] is False
+    assert e["discharge_available"] is False
+    assert e["transfer_to_other_components_forbidden"] is True
+    assert e["operational_threshold_inferred"] is False
+
+def test_fernandez_documentary_outlet_and_topology_are_not_map_geometry():
+    p = load(PACKAGE)
+    f = p["hydrologic_components"]["quebrada_fernandez"]
+    assert f["outlet_status"] == "DOCUMENTARY_SEA_OUTLET_CONFIRMED_GEOMETRY_UNRESOLVED"
+    topo = f["documentary_topology"]
+    assert topo["flow_direction_context"] == "EAST_TO_WEST_TO_PACIFIC"
+    assert topo["use_as_map_geometry"] is False
+    assert topo["use_as_hydraulic_capacity"] is False
