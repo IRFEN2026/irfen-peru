@@ -45,6 +45,11 @@ def test_documentary_rows_are_not_a_deduplicated_hydrologic_census():
         assert ("PENDING" in group["status"] or "CONFLICT" in group["status"])
     for unit in units:
         assert unit["identity_adjudication"] != "CONFIRMED_HYDROLOGIC_UNIT"
+        # Documentary spelling/sector variants must never silently become
+        # adjudicated aliases or additional hydrologic units.
+        for variant in unit.get("documentary_variants", []):
+            assert variant["alias_adjudication"] == "PENDING_NOT_MERGED", unit["id"]
+            assert variant["source_id"], unit["id"]
         # A verified internal JSON contract is not equivalent to verified
         # original source bytes. External source-text promotion requires an
         # explicit original SHA-256; the hash claim itself still needs a
