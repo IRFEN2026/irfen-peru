@@ -64,11 +64,27 @@ def test_documentary_rows_are_not_a_deduplicated_hydrologic_census():
     ) == len(units)
     # Official name leads are retained for discovery but never inflate the
     # count of adjudicated catchments or documentary inventory rows.
-    for lead in d["official_unmaterialized_name_leads"]:
+    # Name-only leads are retained without silently acquiring event, flow,
+    # receiver, geometry or routing evidence. Missing GIS is not absence.
+    leads = d["official_unmaterialized_name_leads"]
+    assert len({lead["documentary_name"] for lead in leads}) == len(leads)
+    for lead in leads:
+        assert lead["source_text_verified"] is False
+        assert lead["original_pdf_bytes_archived_in_this_contract"] is False
+        assert lead["original_pdf_sha256"] is None
         assert lead["map_publishable"] is False
         assert lead["counted_as_confirmed_unique_hydrologic_unit"] is False
+        assert lead["catchment_geometry"] is None
+        assert lead["channel_geometry"] is None
         assert lead["outlet_coordinate"] is None
         assert lead["exact_confluence_coordinate"] is None
+        assert lead["receiver_chain_adjudicated"] is False
+        assert lead["verified_event_refs"] == []
+        assert lead["rainfall_observation_refs"] == []
+        assert lead["flow_or_stage_observation_refs"] == []
+        assert lead["travel_time_tau"] is None
+        assert lead["collector_capacity"] is None
+        assert lead["collector_overflow_evidence"] is None
     design = d["official_road_crossing_design_leads"]
     assert design["source_text_verified"] is False
     assert design["original_pdf_sha256"] is None
