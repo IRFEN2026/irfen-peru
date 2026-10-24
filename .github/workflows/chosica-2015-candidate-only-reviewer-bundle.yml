@@ -1,0 +1,107 @@
+name: IRFEN - Chosica 2015 candidate-only reviewer bundle
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_candidate_only_reviewer_bundle_contract_v0_1.json
+      - site/data/validation/chosica_2015_cleanroom_candidate_review_packet_v0_1.json
+      - site/data/validation/chosica_2015_candidate_only_territorial_adjudication_template_v0_1.json
+      - scripts/build_chosica_2015_candidate_only_reviewer_bundle.py
+      - .github/workflows/chosica-2015-candidate-only-reviewer-bundle.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            .github/workflows/chosica-2015-candidate-only-reviewer-bundle.yml
+            config/chosica_2015_candidate_only_reviewer_bundle_contract_v0_1.json
+            site/data/validation/chosica_2015_cleanroom_candidate_review_packet_v0_1.json
+            site/data/validation/chosica_2015_candidate_only_territorial_adjudication_template_v0_1.json
+            scripts/build_chosica_2015_candidate_only_reviewer_bundle.py
+      - name: Prove target and contaminated sources are absent from workspace
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09_b.json
+          test ! -e config/chosica_2015_outlet_freeze_registry_v0_1.json
+          python - <<'PY'
+          from pathlib import Path
+          allowed={
+            '.github/workflows/chosica-2015-candidate-only-reviewer-bundle.yml',
+            'config/chosica_2015_candidate_only_reviewer_bundle_contract_v0_1.json',
+            'site/data/validation/chosica_2015_cleanroom_candidate_review_packet_v0_1.json',
+            'site/data/validation/chosica_2015_candidate_only_territorial_adjudication_template_v0_1.json',
+            'scripts/build_chosica_2015_candidate_only_reviewer_bundle.py',
+          }
+          present={str(p) for p in Path('.').rglob('*') if p.is_file() and '.git/' not in str(p) and not str(p).startswith('.git/')}
+          extra=sorted(present-allowed)
+          assert not extra, f'FAIL_CLOSED_UNEXPECTED_REVIEWER_BUNDLE_WORKSPACE_FILES:{extra}'
+          print('PASS_CANDIDATE_ONLY_REVIEWER_BUNDLE_SPARSE_WORKSPACE')
+          PY
+      - name: Enforce network-free builder source
+        run: |
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+          p=Path('scripts/build_chosica_2015_candidate_only_reviewer_bundle.py')
+          tree=ast.parse(p.read_text(encoding='utf-8'))
+          forbidden={'requests','urllib','http','socket','subprocess','selenium','playwright','aiohttp','httpx'}
+          seen=set()
+          for node in ast.walk(tree):
+              if isinstance(node, ast.Import):
+                  seen.update(alias.name.split('.')[0] for alias in node.names)
+              elif isinstance(node, ast.ImportFrom) and node.module:
+                  seen.add(node.module.split('.')[0])
+          bad=sorted(seen & forbidden)
+          assert not bad, f'NETWORK_CAPABLE_IMPORTS_FORBIDDEN:{bad}'
+          PY
+      - name: Build deterministic reviewer bundle
+        run: |
+          mkdir -p artifacts
+          python scripts/build_chosica_2015_candidate_only_reviewer_bundle.py \
+            --contract config/chosica_2015_candidate_only_reviewer_bundle_contract_v0_1.json \
+            --packet site/data/validation/chosica_2015_cleanroom_candidate_review_packet_v0_1.json \
+            --template site/data/validation/chosica_2015_candidate_only_territorial_adjudication_template_v0_1.json \
+            --bundle artifacts/chosica_2015_candidate_only_reviewer_bundle.json \
+            --manifest artifacts/chosica_2015_candidate_only_reviewer_bundle_manifest.json
+      - name: Enforce clean-room output boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          c=json.load(open('config/chosica_2015_candidate_only_reviewer_bundle_contract_v0_1.json',encoding='utf-8'))
+          b=json.load(open('artifacts/chosica_2015_candidate_only_reviewer_bundle.json',encoding='utf-8'))
+          m=json.load(open('artifacts/chosica_2015_candidate_only_reviewer_bundle_manifest.json',encoding='utf-8'))
+          assert b['status']=='FROZEN_CANDIDATE_ONLY_REVIEWER_BUNDLE'
+          assert b['candidate_count']==7
+          assert m['status']=='PASS_CANDIDATE_ONLY_REVIEWER_BUNDLE_BUILD'
+          assert m['candidate_count']==7
+          assert m['contains_forbidden_token'] is False
+          assert m['contains_target_identifiers'] is False
+          assert m['contains_target_outcomes'] is False
+          assert m['contains_external_reference_morphometry'] is False
+          assert m['contains_contaminated_stage_material'] is False
+          assert m['network_access_performed'] is False
+          assert m['selection_feedback_used'] is False
+          assert m['candidate_replacement_performed'] is False
+          text=Path('artifacts/chosica_2015_candidate_only_reviewer_bundle.json').read_text(encoding='utf-8').lower()
+          for token in c['forbidden_tokens_case_insensitive']:
+              assert token.lower() not in text, f'FORBIDDEN_TOKEN:{token}'
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-candidate-only-reviewer-bundle
+          path: |
+            artifacts/chosica_2015_candidate_only_reviewer_bundle.json
+            artifacts/chosica_2015_candidate_only_reviewer_bundle_manifest.json
+          if-no-files-found: error

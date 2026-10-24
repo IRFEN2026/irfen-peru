@@ -1,0 +1,63 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PREUNBLIND_NEGATIVE_CONTROL_IMERG_EXECUTION",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "inherits_target_imerg_execution": "config/chosica_2015_preunblind_imerg_execution_v0_2.json",
+  "inherits_time_plan": "config/chosica_2015_preunblind_predictor_time_plan_v0_1.json",
+  "geometry_freeze_record": "config/chosica_2015_negative_control_shortlist_geometry_freeze_record_v0_1.json",
+  "geometry_contract": "config/chosica_2015_negative_control_shortlist_geometry_contract_v0_1.json",
+  "candidate_ids": ["NC_001","NC_007","NC_017","NC_019","NC_023","NC_024","NC_027"],
+  "geometry": {
+    "required_geojson_sha256": "7fc3db40f7163a7b8019640ffbaa4564e54e09fc769b9de0c4554bcec382c412",
+    "candidate_count": 7,
+    "no_geometry_refit": true,
+    "no_candidate_replacement": true,
+    "no_pour_point_change": true
+  },
+  "scientific_semantics": {
+    "source_product": "GPM_3IMERGHH Final V07",
+    "source_service_inherit_exactly": true,
+    "temporal_resolution_minutes": 30,
+    "spatial_resolution_deg": 0.1,
+    "spatial_aggregation_inherit_exactly": true,
+    "time_grid_inherit_exactly": true,
+    "window_definitions_inherit_exactly": true,
+    "anchor_exclusive": true,
+    "slot_accumulation_rule": "area_weighted_rate_mm_hr * 0.5 h",
+    "partial_cell_missingness": "UNKNOWN/null for entire candidate slot; do not renormalize to available cells",
+    "zero_imputation": false
+  },
+  "output": {
+    "required_candidate_count": 7,
+    "required_slot_count_per_candidate": 720,
+    "required_valid_slot_count_per_candidate": 720,
+    "all_frozen_windows_must_be_complete": true,
+    "retain_full_series": true,
+    "retain_spatial_weights": true,
+    "retain_request_and_missingness_audit": true,
+    "outcome_evidence_read": false,
+    "candidate_outcome_evidence_read": false,
+    "a6680_numeric_reference_read": false,
+    "post_anchor_predictor_read": false
+  },
+  "forbidden": [
+    "read sealed target outcomes",
+    "read candidate 2015 activation or damage outcomes",
+    "read A6680 numeric morphometry",
+    "query or retain any timestamp at or after the frozen anchor",
+    "shift windows to rainfall peaks",
+    "change windows by candidate",
+    "renormalize weights under missingness",
+    "zero-impute missing precipitation",
+    "move candidate pour points or alter frozen catchments based on rainfall",
+    "drop or replace a candidate based on rainfall or outcome",
+    "derive operational thresholds"
+  ]
+}

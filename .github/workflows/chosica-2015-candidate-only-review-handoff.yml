@@ -1,0 +1,70 @@
+name: IRFEN - Chosica 2015 candidate-only review handoff
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_candidate_only_independent_review_handoff_v0_1.json
+      - config/chosica_2015_candidate_only_review_capsule_freeze_record_v0_1.json
+      - scripts/validate_chosica_2015_candidate_only_review_handoff.py
+      - .github/workflows/chosica-2015-candidate-only-review-handoff.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-detached-handoff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            .github/workflows/chosica-2015-candidate-only-review-handoff.yml
+            config/chosica_2015_candidate_only_independent_review_handoff_v0_1.json
+            config/chosica_2015_candidate_only_review_capsule_freeze_record_v0_1.json
+            scripts/validate_chosica_2015_candidate_only_review_handoff.py
+      - name: Prove minimal workspace
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09_b.json
+          python - <<'PY'
+          from pathlib import Path
+          allowed={
+            '.github/workflows/chosica-2015-candidate-only-review-handoff.yml',
+            'config/chosica_2015_candidate_only_independent_review_handoff_v0_1.json',
+            'config/chosica_2015_candidate_only_review_capsule_freeze_record_v0_1.json',
+            'scripts/validate_chosica_2015_candidate_only_review_handoff.py',
+          }
+          present={str(p) for p in Path('.').rglob('*') if p.is_file() and not str(p).startswith('.git/') and '.git/' not in str(p)}
+          extra=sorted(present-allowed)
+          assert not extra, f'FAIL_CLOSED_UNEXPECTED_REVIEW_HANDOFF_FILES:{extra}'
+          PY
+      - name: Validate exact capsule linkage and isolation policy
+        run: |
+          mkdir -p artifacts
+          python scripts/validate_chosica_2015_candidate_only_review_handoff.py \
+            --handoff config/chosica_2015_candidate_only_independent_review_handoff_v0_1.json \
+            --capsule-freeze config/chosica_2015_candidate_only_review_capsule_freeze_record_v0_1.json \
+            --output artifacts/chosica_2015_candidate_only_review_handoff_validation.json
+      - name: Enforce fail-closed waiting state
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/chosica_2015_candidate_only_review_handoff_validation.json',encoding='utf-8'))
+          assert d['status']=='PASS_CANDIDATE_ONLY_INDEPENDENT_REVIEW_HANDOFF'
+          assert d['candidate_count']==7
+          assert d['detached_capsule_only'] is True
+          assert d['target_identifiers_present'] is False
+          assert d['target_unblind_allowed'] is False
+          assert d['scientific_use_allowed'] is False
+          assert d['guards']=={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-candidate-only-review-handoff-validation
+          path: artifacts/chosica_2015_candidate_only_review_handoff_validation.json
+          if-no-files-found: error
