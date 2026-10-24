@@ -1,0 +1,4647 @@
+{
+ "schema_version": "0.1",
+ "registry_id": "phase2-national-inventory-r8-sigrid-ana2016-sweep:v0.1",
+ "status": "RESEARCH_ONLY_INVENTORY_BACKLOG_PENDING_INDEPENDENT_QA",
+ "deployment_status": "RESEARCH_ONLY",
+ "test_mode": "TEST_ONLY",
+ "production_use": false,
+ "production_ready": false,
+ "operational_alerting_enabled": false,
+ "activation_gate": "BLOCKED",
+ "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+ "decision_thresholds": null,
+ "hydraulic_factors": null,
+ "purpose": "Round r8 of the national completeness inventory: rows found by a reproducible sweep of the SIGRID id gaps recorded in the master's sweep_coverage. Same row schema as the master; kept as a compatible delta (not a second master) because five open PRs (#363, #365, #366, #381, #385) edit the master file.",
+ "extends": {
+  "registry": "config/phase2_national_inventory_completeness_audit_v0_1.json",
+  "base_commit": "c259d48e9e4ae08d65e1248c24e384a9d9cde940",
+  "integration": "Append candidates, aliases and cross-references to the master once the open inventory PRs are integrated; until then this file is read together with the master by tests only.",
+  "map_and_site_effect": "none: not read by any site, map, catalog or engine builder"
+ },
+ "sweep": {
+  "ledger": "data/phase2/source_archive/sigrid_ana2016_sweep_20261022/sweep_ledger_v0_1.json",
+  "ledger_sha256": "e2dcdf7443053f74bdc748ea479fe1b6fe30eaea3cd6d4e199daff770d629caa",
+  "tool": "scripts/phase2_sigrid_ana2016_sweep.py",
+  "ids_requested": 310,
+  "outcomes": {
+   "ERROR": 52,
+   "OTHER_RECORD": 53,
+   "QUEBRADA_RECORD": 205,
+   "UNPARSED": 0
+  },
+  "ranges": "5500-5600, 5602, 5609, 5610, 5612, 5613, 5615, 5616, 5636, 5644-5699, 5820-5964",
+  "captured_by": "github-actions[bot] on ubuntu-24.04 (one-off workflow, removed afterwards)",
+  "started_at_utc": "2026-10-22T16:45:49Z",
+  "finished_at_utc": "2026-10-22T16:54:31Z",
+  "error_meaning": "HTTP 404 ids have no public record; they are not evidence that no quebrada exists"
+ },
+ "strict_rules": {
+  "aliases_inferred": false,
+  "similar_names_assumed_same_unit": false,
+  "parent_basin_inferred_by_proximity": false,
+  "critical_point_converted_to_event": false,
+  "faja_marginal_converted_to_footprint": false,
+  "works_or_design_converted_to_historical_capacity": false,
+  "geometry_or_outlet_invented": false,
+  "missing_data_treated_as_hydrologic_absence": false,
+  "merges_performed": 0,
+  "map_promotions_performed": 0
+ },
+ "summary": {
+  "candidate_rows": 13,
+  "by_corridor": {
+   "PISCO_ICA": 4,
+   "SANTA_CASMA": 9
+  },
+  "by_suggested_state": {
+   "IDENTITY_ONLY": 13
+  },
+  "by_priority": {
+   "P3": 13
+  },
+  "event_evidence_rows": 0,
+  "event_lead_unverified_rows": 0,
+  "map_eligible_rows": 0,
+  "new_geometries": 0,
+  "new_outlets": 0,
+  "new_events_written_to_any_event_ledger": 0,
+  "cross_references_to_main_rows": 5,
+  "cross_references_to_open_prs": 3,
+  "alias_pending": 1,
+  "national_backlog_records": 187,
+  "compound_name_audit_entries": 51
+ },
+ "map_updates": {
+  "new_geometries_published": 0,
+  "new_nodes_published": 0,
+  "new_local_units_published": 0,
+  "new_event_ledger_entries": 0
+ },
+ "completeness_diagnosis": {
+  "rule": "Coverage states describe documentary audit coverage, never hydrological absence: NOT_AUDITED never means 'no quebradas'.",
+  "vocabulary": {
+   "AUDITED_PARTIAL": "Some primary series swept; known unswept sources remain",
+   "NOT_AUDITED": "No systematic sweep yet"
+  },
+  "priority_corridors": [
+   {
+    "corridor": "CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA",
+    "state": "AUDITED_PARTIAL",
+    "main_rows": 44,
+    "open_pr_rows": "#381 +11; #363 corridor inventory (separate file)",
+    "r8_new_rows": 0,
+    "r8_finding": "Every ANA 2016 map found in the swept gaps for Lurigancho/Chaclacayo is already in main or in #381; one spelling variant (Yanocoto) recorded as pending alias.",
+    "pending": [
+     "INGEMMET reports (repository blocks automated access: manual capture needed)",
+     "municipal PPRRD of Chaclacayo, Ricardo Palma and Santa Eulalia",
+     "ANA Cuadro 29 (Lima, 97 centres) never transcribed"
+    ]
+   },
+   {
+    "corridor": "PISCO_ICA",
+    "state": "AUDITED_PARTIAL",
+    "main_rows": 48,
+    "open_pr_rows": "#366 +3; #381 +6",
+    "r8_new_rows": 4,
+    "r8_finding": "SIGRID 5615 (Humay: Pallasca, Pantayco) had timed out in the first sweep; 5636 (Nasca: Cabeza de Cura, Cerro Blanco) too.",
+    "pending": [
+     "46 of 48 main rows lack a province (territorial gap)",
+     "ANA Cuadro 41 (Ica) never transcribed",
+     "COER Ica reports name populated centres, not quebradas (e.g. RC 051-2025 Changuillo)",
+     "ANA faja marginal resolutions for Ica not swept"
+    ]
+   },
+   {
+    "corridor": "SANTA_CASMA",
+    "state": "AUDITED_PARTIAL",
+    "main_rows": 16,
+    "open_pr_rows": "#381 +1",
+    "r8_new_rows": 9,
+    "r8_finding": "The swept gap 5820-5964 holds 8 ANA 2016 maps for Chimbote, Samanco, Nepeña and Moro absent from main and from every open PR (9 documentary identities: El Establo 1 and El Establo 2 are separate rows).",
+    "pending": [
+     "ANA Cuadro 23 (Ancash) never transcribed",
+     "Casma maps beyond the SIGRID series",
+     "ANA faja marginal resolutions for Santa/Casma not swept"
+    ]
+   },
+   {
+    "corridor": "TUMBES_ZORRITOS",
+    "state": "AUDITED_PARTIAL",
+    "main_rows": 68,
+    "open_pr_rows": "#365 +14; #385 +3; #364 identity; #378 triage",
+    "r8_new_rows": 0,
+    "r8_finding": "Only one Tumbes record in the swept gaps (ANA 2018 critical-point sheets, SIGRID 5936), already covered by open lanes.",
+    "pending": [
+     "leave to the Tumbes lanes (#364 #365 #378 #385) to avoid duplication"
+    ]
+   }
+  ],
+  "other_regions": [
+   {
+    "region": "Lima other valleys (Huaral, Huaura/Sayán, Barranca/Paramonga/Pativilca, Oyón, Yauyos)",
+    "state": "AUDITED_PARTIAL",
+    "note": "r8 sweep found ANA 2016 maps listed in national_backlog"
+   },
+   {
+    "region": "Ancash interior (Huaraz, Huari, Huaylas, Yungay, Carhuaz)",
+    "state": "AUDITED_PARTIAL",
+    "note": "ANA 2016 maps listed in national_backlog"
+   },
+   {
+    "region": "La Libertad",
+    "state": "AUDITED_PARTIAL",
+    "note": "50 quebrada map records in the swept gaps (backlog); main has 9 rows"
+   },
+   {
+    "region": "Lambayeque",
+    "state": "AUDITED_PARTIAL",
+    "note": "16 quebrada map records in the swept gaps (backlog)"
+   },
+   {
+    "region": "Piura",
+    "state": "AUDITED_PARTIAL",
+    "note": "1 quebrada map record(s) in the swept gaps (backlog)"
+   },
+   {
+    "region": "Arequipa, Moquegua, Tacna",
+    "state": "NOT_AUDITED",
+    "note": "not located in any swept SIGRID range; never read as absence"
+   },
+   {
+    "region": "Disabled lanes (SENAMHI-related, Piura source status, etc.)",
+    "state": "NOT_AUDITED",
+    "note": "recorded for the national sweep only; nothing reactivated"
+   }
+  ]
+ },
+ "candidates": [
+  {
+   "inventory_id": "ica_humay_pallasca",
+   "row_role": "CANDIDATE_UNIT",
+   "documentary_name": "Pallasca",
+   "feature_class_as_named": "quebrada",
+   "name_variants_observed": [],
+   "department": "Ica",
+   "province": "Pisco",
+   "district": "Humay",
+   "corridor": "PISCO_ICA",
+   "evidence_types": [
+    "CRITICAL_POINT"
+   ],
+   "evidence": [
+    {
+     "evidence_type": "CRITICAL_POINT",
+     "source_id": "ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS",
+     "detail": "SIGRID record title: 'Mapa de ubicación de poblaciones vulnerables por inundación des las quebradas: Pallasca y Pantayco, distrito Humay, Ica'. One ANA map names two quebradas; recorded as two rows, nothing merged",
+     "sigrid_id": 5615,
+     "label_in_source": "quebradas: Pallasca y Pantayco",
+     "extraction_basis": "SIGRID_RECORD_PAGE_ARCHIVED",
+     "record_page_archive": "data/phase2/source_archive/sigrid_ana2016_sweep_20261022/pages/5615.html.gz",
+     "record_page_sha256": "715d1291e97fe5b70dd4893bef9677679a9304cf64c03606ed476ccbcd3bf5eb",
+     "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/5615"
+    }
+   ],
+   "reproducible_geometry": {
+    "exists": false
+   },
+   "reproducible_outlet_or_confluence": {
+    "exists": false
+   },
+   "collector_relation": null,
+   "suggested_state": "IDENTITY_ONLY",
+   "state_flags": [
+    "IDENTITY_ONLY"
+   ],
+   "irfen_presence": {
+    "status": "NOT_FOUND_IN_REPO"
+   },
+   "priority": "P3",
+   "map_eligible": false,
+   "parent_basin_or_system": null,
+   "verified_event_dates": [],
+   "event_lead_dates_unverified": [],
+   "last_reviewed": "2026-10-22",
+   "label_caution": "Same label as the Ancash province Pallasca; this row is the Ica (Humay) quebrada named by the ANA map, no relation implied",
+   "split_basis": {
+    "decision": "SOURCE_PLURAL_ENUMERATION",
+    "decided_on": "2026-10-22",
+    "sigrid_id": 5615,
+    "source_text": "las quebradas: Pallasca y Pantayco",
+    "sibling_inventory_ids": [
+     "ica_humay_pallasca",
+     "ica_humay_pantayco"
+    ],
+    "replaces_inventory_id": null
+   }
+  },
+  {
+   "inventory_id": "ica_humay_pantayco",
+   "row_role": "CANDIDATE_UNIT",
+   "documentary_name": "Pantayco",
+   "feature_class_as_named": "quebrada",
+   "name_variants_observed": [],
+   "department": "Ica",
+   "province": "Pisco",
+   "district": "Humay",
+   "corridor": "PISCO_ICA",
+   "evidence_types": [
+    "CRITICAL_POINT"
+   ],
+   "evidence": [
+    {
+     "evidence_type": "CRITICAL_POINT",
+     "source_id": "ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS",
+     "detail": "SIGRID record title: 'Mapa de ubicación de poblaciones vulnerables por inundación des las quebradas: Pallasca y Pantayco, distrito Humay, Ica'. One ANA map names two quebradas; recorded as two rows, nothing merged",
+     "sigrid_id": 5615,
+     "label_in_source": "quebradas: Pallasca y Pantayco",
+     "extraction_basis": "SIGRID_RECORD_PAGE_ARCHIVED",
+     "record_page_archive": "data/phase2/source_archive/sigrid_ana2016_sweep_20261022/pages/5615.html.gz",
+     "record_page_sha256": "715d1291e97fe5b70dd4893bef9677679a9304cf64c03606ed476ccbcd3bf5eb",
+     "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/5615"
+    }
+   ],
+   "reproducible_geometry": {
+    "exists": false
+   },
+   "reproducible_outlet_or_confluence": {
+    "exists": false
+   },
+   "collector_relation": null,
+   "suggested_state": "IDENTITY_ONLY",
+   "state_flags": [
+    "IDENTITY_ONLY"
+   ],
+   "irfen_presence": {
+    "status": "NOT_FOUND_IN_REPO"
+   },
+   "priority": "P3",
+   "map_eligible": false,
+   "parent_basin_or_system": null,
+   "verified_event_dates": [],
+   "event_lead_dates_unverified": [],
+   "last_reviewed": "2026-10-22",
+   "split_basis": {
+    "decision": "SOURCE_PLURAL_ENUMERATION",
+    "decided_on": "2026-10-22",
+    "sigrid_id": 5615,
+    "source_text": "las quebradas: Pallasca y Pantayco",
+    "sibling_inventory_ids": [
+     "ica_humay_pallasca",
+     "ica_humay_pantayco"
+    ],
+    "replaces_inventory_id": null
+   }
+  },
+  {
+   "inventory_id": "ica_nasca_cabeza_de_cura",
+   "row_role": "CANDIDATE_UNIT",
+   "documentary_name": "Cabeza de Cura",
+   "feature_class_as_named": "quebrada",
+   "name_variants_observed": [],
+   "department": "Ica",
+   "province": "Nasca",
+   "district": "Nasca",
+   "corridor": "PISCO_ICA",
+   "evidence_types": [
+    "CRITICAL_POINT"
+   ],
+   "evidence": [
+    {
+     "evidence_type": "CRITICAL_POINT",
+     "source_id": "ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS",
+     "detail": "SIGRID record title: 'Mapa de ubicación de poblaciones vulnerables por inundación de las quebradas: Cabeza de Cura y Cerro Blanco, distrito Nasca, Ica'. One ANA map names two quebradas; recorded as two rows, nothing merged",
+     "sigrid_id": 5636,
+     "label_in_source": "quebradas: Cabeza de Cura y Cerro Blanco",
+     "extraction_basis": "SIGRID_RECORD_PAGE_ARCHIVED",
+     "record_page_archive": "data/phase2/source_archive/sigrid_ana2016_sweep_20261022/pages/5636.html.gz",
+     "record_page_sha256": "f5194efc657f0b4eb3360e069954d43621cee57e93d0b75232f57a312e6542c0",
+     "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/5636"
+    }
+   ],
+   "reproducible_geometry": {
+    "exists": false
+   },
+   "reproducible_outlet_or_confluence": {
+    "exists": false
+   },
+   "collector_relation": null,
+   "suggested_state": "IDENTITY_ONLY",
+   "state_flags": [
+    "IDENTITY_ONLY"
+   ],
+   "irfen_presence": {
+    "status": "NOT_FOUND_IN_REPO"
+   },
+   "priority": "P3",
+   "map_eligible": false,
+   "parent_basin_or_system": null,
+   "verified_event_dates": [],
+   "event_lead_dates_unverified": [],
+   "last_reviewed": "2026-10-22",
+   "label_caution": "Same label as ica_vista_alegre_cabeza_de_cura (SIGRID 5635, district Vista Alegre); different district in the source: not merged",
+   "split_basis": {
+    "decision": "SOURCE_PLURAL_ENUMERATION",
+    "decided_on": "2026-10-22",
+    "sigrid_id": 5636,
+    "source_text": "las quebradas: Cabeza de Cura y Cerro Blanco",
+    "sibling_inventory_ids": [
+     "ica_nasca_cabeza_de_cura",
+     "ica_nasca_cerro_blanco"
+    ],
+    "replaces_inventory_id": null
+   }
+  },
+  {
+   "inventory_id": "ica_nasca_cerro_blanco",
+   "row_role": "CANDIDATE_UNIT",
+   "documentary_name": "Cerro Blanco",
+   "feature_class_as_named": "quebrada",
+   "name_variants_observed": [],
+   "department": "Ica",
+   "province": "Nasca",
+   "district": "Nasca",
+   "corridor": "PISCO_ICA",
+   "evidence_types": [
+    "CRITICAL_POINT"
+   ],
+   "evidence": [
+    {
+     "evidence_type": "CRITICAL_POINT",
+     "source_id": "ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS",
+     "detail": "SIGRID record title: 'Mapa de ubicación de poblaciones vulnerables por inundación de las quebradas: Cabeza de Cura y Cerro Blanco, distrito Nasca, Ica'. One ANA map names two quebradas; recorded as two rows, nothing merged",
+     "sigrid_id": 5636,
+     "label_in_source": "quebradas: Cabeza de Cura y Cerro Blanco",
+     "extraction_basis": "SIGRID_RECORD_PAGE_ARCHIVED",
+     "record_page_archive": "data/phase2/source_archive/sigrid_ana2016_sweep_20261022/pages/5636.html.gz",
+     "record_page_sha256": "f5194efc657f0b4eb3360e069954d43621cee57e93d0b75232f57a312e6542c0",
+     "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/5636"
+    }
+   ],
+   "reproducible_geometry": {
+    "exists": false
+   },
+   "reproducible_outlet_or_confluence": {
+    "exists": false
+   },
+   "collector_relation": null,
+   "suggested_state": "IDENTITY_ONLY",
+   "state_flags": [
+    "IDENTITY_ONLY"
+   ],
+   "irfen_presence": {
+    "status": "NOT_FOUND_IN_REPO"
+   },
+   "priority": "P3",
+   "map_eligible": false,
+   "parent_basin_or_system": null,
+   "verified_event_dates": [],
+   "event_lead_dates_unverified": [],
+   "last_reviewed": "2026-10-22",
+   "label_caution": "Common label (also a quebrada in Piura, San Miguel El Faique, and in Lima, Sayán): not merged",
+   "split_basis": {
+    "decision": "SOURCE_PLURAL_ENUMERATION",
+    "decided_on": "2026-10-22",
+    "sigrid_id": 5636,
+    "source_text": "las quebradas: Cabeza de Cura y Cerro Blanco",
+    "sibling_inventory_ids": [
+     "ica_nasca_cabeza_de_cura",
+     "ica_nasca_cerro_blanco"
+    ],
+    "replaces_inventory_id": null
+   }
+  },
+  {
+   "inventory_id": "ancash_samanco_s_n_los_chimus",
+   "row_role": "CANDIDATE_UNIT",
+   "documentary_name": "s/n (centro poblado Los Chimús)",
+   "feature_class_as_named": "quebrada",
+   "name_variants_observed": [],
+   "department": "Ancash",
+   "province": "Santa",
+   "district": "Samanco",
+   "corridor": "SANTA_CASMA",
+   "evidence_types": [
+    "CRITICAL_POINT"
+   ],
+   "evidence": [
+    {
+     "evidence_type": "CRITICAL_POINT",
+     "source_id": "ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS",
+     "detail": "SIGRID record title: 'Mapa de ubicación de poblaciones vulnerables por activación de la quebrada s/n del centro poblado Los Chimús, departamento de Ancash.'. Unnamed quebrada identified by its populated centre",
+     "sigrid_id": 5665,
+     "label_in_source": "quebrada s/n del centro poblado Los Chimús",
+     "extraction_basis": "SIGRID_RECORD_PAGE_ARCHIVED",
+     "record_page_archive": "data/phase2/source_archive/sigrid_ana2016_sweep_20261022/pages/5665.html.gz",
+     "record_page_sha256": "1d997ec7102bb80a1857e76c4b5a115d27f78af0f9d6a6887fcf3be9e9fdd2be",
+     "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/5665"
+    }
+   ],
+   "reproducible_geometry": {
+    "exists": false
+   },
+   "reproducible_outlet_or_confluence": {
+    "exists": false
+   },
+   "collector_relation": null,
+   "suggested_state": "IDENTITY_ONLY",
+   "state_flags": [
+    "IDENTITY_ONLY"
+   ],
+   "irfen_presence": {
+    "status": "NOT_FOUND_IN_REPO"
+   },
+   "priority": "P3",
+   "map_eligible": false,
+   "parent_basin_or_system": null,
+   "verified_event_dates": [],
+   "event_lead_dates_unverified": [],
+   "last_reviewed": "2026-10-22"
+  },
+  {
+   "inventory_id": "ancash_chimbote_cayhuamarca",
+   "row_role": "CANDIDATE_UNIT",
+   "documentary_name": "Cayhuamarca",
+   "feature_class_as_named": "quebrada",
+   "name_variants_observed": [],
+   "department": "Ancash",
+   "province": "Santa",
+   "district": "Chimbote",
+   "corridor": "SANTA_CASMA",
+   "evidence_types": [
+    "CRITICAL_POINT"
+   ],
+   "evidence": [
+    {
+     "evidence_type": "CRITICAL_POINT",
+     "source_id": "ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS",
+     "detail": "SIGRID record title: 'Mapa de ubicación de poblaciones vulnerables por activación de la quebrada Cayhuamarca - Tablones, distrito Chimbote, Ancash'. The map names two quebradas with separate populated centres (Suchiman and Tablones); recorded as two rows",
+     "sigrid_id": 5838,
+     "label_in_source": "quebradas Cayhuamarca y Tablones, centro poblado Suchiman",
+     "extraction_basis": "SIGRID_RECORD_PAGE_ARCHIVED",
+     "record_page_archive": "data/phase2/source_archive/sigrid_ana2016_sweep_20261022/pages/5838.html.gz",
+     "record_page_sha256": "eefe2dcdc92bfa5f20097e9de37cb84ea7567e051fa1fed884da8c8233fded08",
+     "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/5838"
+    }
+   ],
+   "reproducible_geometry": {
+    "exists": false
+   },
+   "reproducible_outlet_or_confluence": {
+    "exists": false
+   },
+   "collector_relation": null,
+   "suggested_state": "IDENTITY_ONLY",
+   "state_flags": [
+    "IDENTITY_ONLY"
+   ],
+   "irfen_presence": {
+    "status": "NOT_FOUND_IN_REPO"
+   },
+   "priority": "P3",
+   "map_eligible": false,
+   "parent_basin_or_system": null,
+   "verified_event_dates": [],
+   "event_lead_dates_unverified": [],
+   "last_reviewed": "2026-10-22",
+   "split_basis": {
+    "decision": "SOURCE_PLURAL_ENUMERATION",
+    "decided_on": "2026-10-22",
+    "sigrid_id": 5838,
+    "source_text": "las quebradas Cayhuamarca y Tablones, centro poblado Suchiman y Tablones respectivamente",
+    "sibling_inventory_ids": [
+     "ancash_chimbote_cayhuamarca",
+     "ancash_chimbote_tablones"
+    ],
+    "replaces_inventory_id": null
+   }
+  },
+  {
+   "inventory_id": "ancash_chimbote_tablones",
+   "row_role": "CANDIDATE_UNIT",
+   "documentary_name": "Tablones",
+   "feature_class_as_named": "quebrada",
+   "name_variants_observed": [],
+   "department": "Ancash",
+   "province": "Santa",
+   "district": "Chimbote",
+   "corridor": "SANTA_CASMA",
+   "evidence_types": [
+    "CRITICAL_POINT"
+   ],
+   "evidence": [
+    {
+     "evidence_type": "CRITICAL_POINT",
+     "source_id": "ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS",
+     "detail": "SIGRID record title: 'Mapa de ubicación de poblaciones vulnerables por activación de la quebrada Cayhuamarca - Tablones, distrito Chimbote, Ancash'. The map names two quebradas with separate populated centres (Suchiman and Tablones); recorded as two rows",
+     "sigrid_id": 5838,
+     "label_in_source": "quebradas Cayhuamarca y Tablones, centro poblado Tablones",
+     "extraction_basis": "SIGRID_RECORD_PAGE_ARCHIVED",
+     "record_page_archive": "data/phase2/source_archive/sigrid_ana2016_sweep_20261022/pages/5838.html.gz",
+     "record_page_sha256": "eefe2dcdc92bfa5f20097e9de37cb84ea7567e051fa1fed884da8c8233fded08",
+     "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/5838"
+    }
+   ],
+   "reproducible_geometry": {
+    "exists": false
+   },
+   "reproducible_outlet_or_confluence": {
+    "exists": false
+   },
+   "collector_relation": null,
+   "suggested_state": "IDENTITY_ONLY",
+   "state_flags": [
+    "IDENTITY_ONLY"
+   ],
+   "irfen_presence": {
+    "status": "NOT_FOUND_IN_REPO"
+   },
+   "priority": "P3",
+   "map_eligible": false,
+   "parent_basin_or_system": null,
+   "verified_event_dates": [],
+   "event_lead_dates_unverified": [],
+   "last_reviewed": "2026-10-22",
+   "split_basis": {
+    "decision": "SOURCE_PLURAL_ENUMERATION",
+    "decided_on": "2026-10-22",
+    "sigrid_id": 5838,
+    "source_text": "las quebradas Cayhuamarca y Tablones, centro poblado Suchiman y Tablones respectivamente",
+    "sibling_inventory_ids": [
+     "ancash_chimbote_cayhuamarca",
+     "ancash_chimbote_tablones"
+    ],
+    "replaces_inventory_id": null
+   }
+  },
+  {
+   "inventory_id": "ancash_chimbote_la_cantera",
+   "row_role": "CANDIDATE_UNIT",
+   "documentary_name": "La Cantera",
+   "feature_class_as_named": "quebrada",
+   "name_variants_observed": [],
+   "department": "Ancash",
+   "province": "Santa",
+   "district": "Chimbote",
+   "corridor": "SANTA_CASMA",
+   "evidence_types": [
+    "CRITICAL_POINT"
+   ],
+   "evidence": [
+    {
+     "evidence_type": "CRITICAL_POINT",
+     "source_id": "ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS",
+     "detail": "SIGRID record title: 'Mapa de ubicación de poblaciones vulnerables por activación de la quebrada La Cantera, distrito Chimbote, Ancash'",
+     "sigrid_id": 5839,
+     "label_in_source": "quebrada La Cantera, centro poblado La Cantera - Vinzos",
+     "extraction_basis": "SIGRID_RECORD_PAGE_ARCHIVED",
+     "record_page_archive": "data/phase2/source_archive/sigrid_ana2016_sweep_20261022/pages/5839.html.gz",
+     "record_page_sha256": "8aa2a71ce7ed9f3cbaf700416d18ded925be62ce538ab8726608ec48bc013ec5",
+     "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/5839"
+    }
+   ],
+   "reproducible_geometry": {
+    "exists": false
+   },
+   "reproducible_outlet_or_confluence": {
+    "exists": false
+   },
+   "collector_relation": null,
+   "suggested_state": "IDENTITY_ONLY",
+   "state_flags": [
+    "IDENTITY_ONLY"
+   ],
+   "irfen_presence": {
+    "status": "NOT_FOUND_IN_REPO"
+   },
+   "priority": "P3",
+   "map_eligible": false,
+   "parent_basin_or_system": null,
+   "verified_event_dates": [],
+   "event_lead_dates_unverified": [],
+   "last_reviewed": "2026-10-22",
+   "label_caution": "Same label as a Lima (Cieneguilla) row: different department, not merged"
+  },
+  {
+   "inventory_id": "ancash_chimbote_san_juan",
+   "row_role": "CANDIDATE_UNIT",
+   "documentary_name": "San Juan",
+   "feature_class_as_named": "quebrada",
+   "name_variants_observed": [],
+   "department": "Ancash",
+   "province": "Santa",
+   "district": "Chimbote",
+   "corridor": "SANTA_CASMA",
+   "evidence_types": [
+    "CRITICAL_POINT"
+   ],
+   "evidence": [
+    {
+     "evidence_type": "CRITICAL_POINT",
+     "source_id": "ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS",
+     "detail": "SIGRID record title: 'Mapa de ubicación de poblaciones vulnerables por activación de la quebrada San Juan, distrito Chimbote, Ancash'",
+     "sigrid_id": 5840,
+     "label_in_source": "quebrada San Juan, centro poblado Ancash y Pampa de Vinzos",
+     "extraction_basis": "SIGRID_RECORD_PAGE_ARCHIVED",
+     "record_page_archive": "data/phase2/source_archive/sigrid_ana2016_sweep_20261022/pages/5840.html.gz",
+     "record_page_sha256": "1170ca6d515bc6f866b916e41dda0793627551d200eb735a7035af922773188a",
+     "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/5840"
+    }
+   ],
+   "reproducible_geometry": {
+    "exists": false
+   },
+   "reproducible_outlet_or_confluence": {
+    "exists": false
+   },
+   "collector_relation": null,
+   "suggested_state": "IDENTITY_ONLY",
+   "state_flags": [
+    "IDENTITY_ONLY"
+   ],
+   "irfen_presence": {
+    "status": "NOT_FOUND_IN_REPO"
+   },
+   "priority": "P3",
+   "map_eligible": false,
+   "parent_basin_or_system": null,
+   "verified_event_dates": [],
+   "event_lead_dates_unverified": [],
+   "last_reviewed": "2026-10-22",
+   "label_caution": "Common label (also a Lima, Mala, row): not merged; also the name of the populated centre in SIGRID 5841, which is a different record"
+  },
+  {
+   "inventory_id": "ancash_chimbote_el_establo_1",
+   "row_role": "CANDIDATE_UNIT",
+   "documentary_name": "El Establo 1",
+   "feature_class_as_named": "quebrada",
+   "name_variants_observed": [],
+   "department": "Ancash",
+   "province": "Santa",
+   "district": "Chimbote",
+   "corridor": "SANTA_CASMA",
+   "evidence_types": [
+    "CRITICAL_POINT"
+   ],
+   "evidence": [
+    {
+     "evidence_type": "CRITICAL_POINT",
+     "source_id": "ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS",
+     "detail": "SIGRID record title: 'Mapa de ubicación de poblaciones vulnerables por activación de la quebrada El Establo 1 y El Establo 2, distrito Chimbote, Ancash'. The map enumerates two numbered quebradas; this row is 'El Establo 1'. Same map, hash and archive as ancash_chimbote_el_establo_2",
+     "sigrid_id": 5841,
+     "label_in_source": "quebrada El Establo 1 y El Establo 2, centro poblado San Juan",
+     "extraction_basis": "SIGRID_RECORD_PAGE_ARCHIVED",
+     "record_page_archive": "data/phase2/source_archive/sigrid_ana2016_sweep_20261022/pages/5841.html.gz",
+     "record_page_sha256": "263cbd6df538a2df64f3bad50e6ffc713bae62d37e1474c7548f21f355a684b1",
+     "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/5841"
+    }
+   ],
+   "reproducible_geometry": {
+    "exists": false
+   },
+   "reproducible_outlet_or_confluence": {
+    "exists": false
+   },
+   "collector_relation": null,
+   "suggested_state": "IDENTITY_ONLY",
+   "state_flags": [
+    "IDENTITY_ONLY"
+   ],
+   "irfen_presence": {
+    "status": "NOT_FOUND_IN_REPO"
+   },
+   "priority": "P3",
+   "map_eligible": false,
+   "parent_basin_or_system": null,
+   "verified_event_dates": [],
+   "event_lead_dates_unverified": [],
+   "last_reviewed": "2026-10-23",
+   "label_caution": "Numbered sibling of ancash_chimbote_el_establo_2, both named on SIGRID 5841. Recorded as two documentary identities; whether they are hydrologically independent channels is not adjudicated, and no geometry, outlet or parent relation is inferred",
+   "split_basis": {
+    "decision": "OWNER_DIRECTED_SPLIT_OF_EXPLICIT_ENUMERATION",
+    "decided_on": "2026-10-23",
+    "sigrid_id": 5841,
+    "source_text": "quebrada El Establo 1 y El Establo 2, centro poblado San Juan",
+    "sibling_inventory_ids": [
+     "ancash_chimbote_el_establo_1",
+     "ancash_chimbote_el_establo_2"
+    ],
+    "replaces_inventory_id": "ancash_chimbote_el_establo_1_el_establo_2",
+    "note": "The source enumerates 'El Establo 1 y El Establo 2' (singular 'quebrada' in the description); split into two identities by owner decision, evidence unchanged"
+   }
+  },
+  {
+   "inventory_id": "ancash_chimbote_el_establo_2",
+   "row_role": "CANDIDATE_UNIT",
+   "documentary_name": "El Establo 2",
+   "feature_class_as_named": "quebrada",
+   "name_variants_observed": [],
+   "department": "Ancash",
+   "province": "Santa",
+   "district": "Chimbote",
+   "corridor": "SANTA_CASMA",
+   "evidence_types": [
+    "CRITICAL_POINT"
+   ],
+   "evidence": [
+    {
+     "evidence_type": "CRITICAL_POINT",
+     "source_id": "ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS",
+     "detail": "SIGRID record title: 'Mapa de ubicación de poblaciones vulnerables por activación de la quebrada El Establo 1 y El Establo 2, distrito Chimbote, Ancash'. The map enumerates two numbered quebradas; this row is 'El Establo 2'. Same map, hash and archive as ancash_chimbote_el_establo_1",
+     "sigrid_id": 5841,
+     "label_in_source": "quebrada El Establo 1 y El Establo 2, centro poblado San Juan",
+     "extraction_basis": "SIGRID_RECORD_PAGE_ARCHIVED",
+     "record_page_archive": "data/phase2/source_archive/sigrid_ana2016_sweep_20261022/pages/5841.html.gz",
+     "record_page_sha256": "263cbd6df538a2df64f3bad50e6ffc713bae62d37e1474c7548f21f355a684b1",
+     "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/5841"
+    }
+   ],
+   "reproducible_geometry": {
+    "exists": false
+   },
+   "reproducible_outlet_or_confluence": {
+    "exists": false
+   },
+   "collector_relation": null,
+   "suggested_state": "IDENTITY_ONLY",
+   "state_flags": [
+    "IDENTITY_ONLY"
+   ],
+   "irfen_presence": {
+    "status": "NOT_FOUND_IN_REPO"
+   },
+   "priority": "P3",
+   "map_eligible": false,
+   "parent_basin_or_system": null,
+   "verified_event_dates": [],
+   "event_lead_dates_unverified": [],
+   "last_reviewed": "2026-10-23",
+   "label_caution": "Numbered sibling of ancash_chimbote_el_establo_1, both named on SIGRID 5841. Recorded as two documentary identities; whether they are hydrologically independent channels is not adjudicated, and no geometry, outlet or parent relation is inferred",
+   "split_basis": {
+    "decision": "OWNER_DIRECTED_SPLIT_OF_EXPLICIT_ENUMERATION",
+    "decided_on": "2026-10-23",
+    "sigrid_id": 5841,
+    "source_text": "quebrada El Establo 1 y El Establo 2, centro poblado San Juan",
+    "sibling_inventory_ids": [
+     "ancash_chimbote_el_establo_1",
+     "ancash_chimbote_el_establo_2"
+    ],
+    "replaces_inventory_id": "ancash_chimbote_el_establo_1_el_establo_2",
+    "note": "The source enumerates 'El Establo 1 y El Establo 2' (singular 'quebrada' in the description); split into two identities by owner decision, evidence unchanged"
+   }
+  },
+  {
+   "inventory_id": "ancash_nepena_s_n",
+   "row_role": "CANDIDATE_UNIT",
+   "documentary_name": "s/n",
+   "feature_class_as_named": "quebrada",
+   "name_variants_observed": [],
+   "department": "Ancash",
+   "province": "Santa",
+   "district": "Nepeña",
+   "corridor": "SANTA_CASMA",
+   "evidence_types": [
+    "CRITICAL_POINT"
+   ],
+   "evidence": [
+    {
+     "evidence_type": "CRITICAL_POINT",
+     "source_id": "ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS",
+     "detail": "SIGRID record title: 'Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada s/n, distrito Nepeña, Ancash'. Unnamed quebrada; distinct from ancash_nepena_san_cristobal_y_solivin (SIGRID 5988)",
+     "sigrid_id": 5864,
+     "label_in_source": "quebrada s/n",
+     "extraction_basis": "SIGRID_RECORD_PAGE_ARCHIVED",
+     "record_page_archive": "data/phase2/source_archive/sigrid_ana2016_sweep_20261022/pages/5864.html.gz",
+     "record_page_sha256": "0551955bc265a12b25e893bc19ee260a1fdd5cf5b9ab5830686b5fc1a33e6f8e",
+     "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/5864"
+    }
+   ],
+   "reproducible_geometry": {
+    "exists": false
+   },
+   "reproducible_outlet_or_confluence": {
+    "exists": false
+   },
+   "collector_relation": null,
+   "suggested_state": "IDENTITY_ONLY",
+   "state_flags": [
+    "IDENTITY_ONLY"
+   ],
+   "irfen_presence": {
+    "status": "NOT_FOUND_IN_REPO"
+   },
+   "priority": "P3",
+   "map_eligible": false,
+   "parent_basin_or_system": null,
+   "verified_event_dates": [],
+   "event_lead_dates_unverified": [],
+   "last_reviewed": "2026-10-22"
+  },
+  {
+   "inventory_id": "ancash_moro_s_n",
+   "row_role": "CANDIDATE_UNIT",
+   "documentary_name": "s/n",
+   "feature_class_as_named": "quebrada",
+   "name_variants_observed": [],
+   "department": "Ancash",
+   "province": "Santa",
+   "district": "Moro",
+   "corridor": "SANTA_CASMA",
+   "evidence_types": [
+    "CRITICAL_POINT"
+   ],
+   "evidence": [
+    {
+     "evidence_type": "CRITICAL_POINT",
+     "source_id": "ANA-2016-SIGRID-VULNERABLE-POPULATION-MAPS",
+     "detail": "SIGRID record title: 'Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada s/n, distrito Moro, Ancash'. Unnamed quebrada; distinct from ancash_moro_de_chumpi (SIGRID 5981)",
+     "sigrid_id": 5865,
+     "label_in_source": "quebrada s/n",
+     "extraction_basis": "SIGRID_RECORD_PAGE_ARCHIVED",
+     "record_page_archive": "data/phase2/source_archive/sigrid_ana2016_sweep_20261022/pages/5865.html.gz",
+     "record_page_sha256": "cd42bb5fbe83c5dbfbb72828a2fe626deba2a505e36fe85816a3c7fbc93c3ddb",
+     "url": "https://sigrid.cenepred.gob.pe/sigridv3/documento/5865"
+    }
+   ],
+   "reproducible_geometry": {
+    "exists": false
+   },
+   "reproducible_outlet_or_confluence": {
+    "exists": false
+   },
+   "collector_relation": null,
+   "suggested_state": "IDENTITY_ONLY",
+   "state_flags": [
+    "IDENTITY_ONLY"
+   ],
+   "irfen_presence": {
+    "status": "NOT_FOUND_IN_REPO"
+   },
+   "priority": "P3",
+   "map_eligible": false,
+   "parent_basin_or_system": null,
+   "verified_event_dates": [],
+   "event_lead_dates_unverified": [],
+   "last_reviewed": "2026-10-22"
+  }
+ ],
+ "aliases_pending_adjudication": {
+  "curated_relationships": [
+   {
+    "labels": [
+     "Yanocoto (Santa Maria)",
+     "Yanacoto"
+    ],
+    "inventory_ids": [
+     "lima_lurigancho_yanacoto"
+    ],
+    "sigrid_id": 5842,
+    "documentary_basis": "ANA 2016 map title 'quebrada Yanocoto (Santa Maria), distrito Lurigancho' (SIGRID 5842); the existing row uses 'Yanacoto' (ANA faja RD, SIGRID 6068). Spelling differs by one letter in the same district.",
+    "main_status": "SPELLING_VARIANT_PENDING_ADJUDICATION_NOT_MERGED",
+    "record_page_sha256": "ab1973c0acdbd564ecbefbf4339a5a0ff43cbabd2664dbad254561c80b794e51"
+   }
+  ],
+  "same_label_groups_not_merged": [
+   {
+    "department": "ica",
+    "normalized_label": "cabeza de cura",
+    "inventory_ids": [
+     "ica_vista_alegre_cabeza_de_cura",
+     "ica_nasca_cabeza_de_cura"
+    ],
+    "status": "SAME_LABEL_DIFFERENT_DISTRICT_OR_UNKNOWN_DISTRICT_NOT_MERGED"
+   }
+  ],
+  "cross_department_homonyms_noted": [
+   {
+    "normalized_label": "cerro blanco",
+    "inventory_ids": [
+     "ica_nasca_cerro_blanco"
+    ],
+    "other_rows": "Piura San Miguel El Faique (main); Lima Sayán (SIGRID 5861, backlog)",
+    "status": "HOMONYM_NOT_MERGED"
+   },
+   {
+    "normalized_label": "la cantera",
+    "inventory_ids": [
+     "ancash_chimbote_la_cantera"
+    ],
+    "other_rows": "Lima Cieneguilla (main)",
+    "status": "HOMONYM_NOT_MERGED"
+   },
+   {
+    "normalized_label": "san juan",
+    "inventory_ids": [
+     "ancash_chimbote_san_juan"
+    ],
+    "other_rows": "Lima Mala (main)",
+    "status": "HOMONYM_NOT_MERGED"
+   },
+   {
+    "normalized_label": "pallasca",
+    "inventory_ids": [
+     "ica_humay_pallasca"
+    ],
+    "other_rows": "Ancash province name (not an inventory row)",
+    "status": "HOMONYM_NOT_MERGED"
+   }
+  ]
+ },
+ "evidence_cross_references": {
+  "main_rows": [
+   {
+    "inventory_id": "lima_lurigancho_california",
+    "sigrid_id": 5829,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada California, distrito Lurigancho, Lima",
+    "record_page_archive": "data/phase2/source_archive/sigrid_ana2016_sweep_20261022/pages/5829.html.gz",
+    "record_page_sha256": "4c424e00fe502663433685db90cc84c45c3edb568bebdbd342b157d054dac965",
+    "status": "ADDITIONAL_ANA_2016_MAP_FOR_EXISTING_ROW_NOT_YET_FOLDED",
+    "note": "Same label and district as the existing row; to be added as CRITICAL_POINT evidence when the delta is folded into the master"
+   },
+   {
+    "inventory_id": "lima_lurigancho_huampani",
+    "sigrid_id": 5852,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Huampaní, distrito Lurigancho, Lima",
+    "record_page_archive": "data/phase2/source_archive/sigrid_ana2016_sweep_20261022/pages/5852.html.gz",
+    "record_page_sha256": "cb36e3d4e45f1960816461e4df655325f59f6b11b62ad1c6665a616deabc7d25",
+    "status": "ADDITIONAL_ANA_2016_MAP_FOR_EXISTING_ROW_NOT_YET_FOLDED",
+    "note": "Same label and district as the existing row; to be added as CRITICAL_POINT evidence when the delta is folded into the master"
+   },
+   {
+    "inventory_id": "lima_lurigancho_quirio",
+    "sigrid_id": 5853,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Quirio, distrito Lurigancho, Lima",
+    "record_page_archive": "data/phase2/source_archive/sigrid_ana2016_sweep_20261022/pages/5853.html.gz",
+    "record_page_sha256": "ea1a0d53cf6176920138ae22000f8e9445dda54f9ea6b904d60f299339227042",
+    "status": "ADDITIONAL_ANA_2016_MAP_FOR_EXISTING_ROW_NOT_YET_FOLDED",
+    "note": "Same label and district as the existing row; to be added as CRITICAL_POINT evidence when the delta is folded into the master"
+   },
+   {
+    "inventory_id": "lima_lurigancho_la_libertad",
+    "sigrid_id": 5854,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada La Libertad, distrito Lurigancho, Lima",
+    "record_page_archive": "data/phase2/source_archive/sigrid_ana2016_sweep_20261022/pages/5854.html.gz",
+    "record_page_sha256": "db19c9421ce6c04f29e9e7b308d2e3ea7b85eb754ee858e6c44260c1941d089d",
+    "status": "ADDITIONAL_ANA_2016_MAP_FOR_EXISTING_ROW_NOT_YET_FOLDED",
+    "note": "Same label and district as the existing row; to be added as CRITICAL_POINT evidence when the delta is folded into the master"
+   },
+   {
+    "inventory_id": "lima_chaclacayo_huascaran",
+    "sigrid_id": 5858,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Huascaran, distrito Chaclacayo, Lima",
+    "record_page_archive": "data/phase2/source_archive/sigrid_ana2016_sweep_20261022/pages/5858.html.gz",
+    "record_page_sha256": "7f0c265c424cc7fb6c3b98a28b48b80d4e7c2f3a54ed51e74c137474067ad51b",
+    "status": "ADDITIONAL_ANA_2016_MAP_FOR_EXISTING_ROW_NOT_YET_FOLDED",
+    "note": "Same label and district as the existing row; to be added as CRITICAL_POINT evidence when the delta is folded into the master"
+   }
+  ],
+  "open_pull_requests": [
+   {
+    "sigrid_id": 5856,
+    "label_in_source": "quebrada MZ-G, X5-X6, U3 y P-P1, distrito Chaclacayo",
+    "pending_in": "#381 (row 'U3 y P-P1')",
+    "status": "COVERED_BY_OPEN_PR_NOT_DUPLICATED",
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada MZ-G, X5-X6, U3 y P-P1, distrito Chaclacayo, Lima",
+    "record_page_archive": "data/phase2/source_archive/sigrid_ana2016_sweep_20261022/pages/5856.html.gz",
+    "record_page_sha256": "a158ca4e1aa87241157e0efa8ce487802905994355db225716009ae0b9de73a8"
+   },
+   {
+    "sigrid_id": 5859,
+    "label_in_source": "quebrada Panorama, distrito Chaclacayo",
+    "pending_in": "#381 (row 'Panorama'); also #378 review",
+    "status": "COVERED_BY_OPEN_PR_NOT_DUPLICATED",
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Panorama, distrito Chaclacayo, Lima",
+    "record_page_archive": "data/phase2/source_archive/sigrid_ana2016_sweep_20261022/pages/5859.html.gz",
+    "record_page_sha256": "2902102196c8a329be30330ffa1c357c1517ccfe0d7e725f00ba3ff097c1d32e"
+   },
+   {
+    "sigrid_id": 5936,
+    "label_in_source": "puntos críticos ... quebrada Cabuyal; sector Tacna Libre – Cherrellique de la quebrada Casitas Bocapan",
+    "pending_in": "#378 triage (Cabuyal); main has tumbes_district_unknown_bocapan",
+    "status": "CRITICAL_POINT_RECORD_NOT_A_NEW_ROW_PENDING_REVIEW",
+    "note": "ANA 2018 critical-point sheets for río Tumbes sectors (OTROS record). 'Casitas Bocapan' is not merged with the existing Bocapán row.",
+    "title": "Fichas técnicas: fichas de identificación de puntos críticos en el río Tumbes, provincias Tumbes y Contralmirante Villar",
+    "record_page_archive": "data/phase2/source_archive/sigrid_ana2016_sweep_20261022/pages/5936.html.gz",
+    "record_page_sha256": "1dfdb56e64b1b6e3ac48ab17f7fe9a0b67395739693476475588a09e61cbac16"
+   }
+  ]
+ },
+ "national_backlog": {
+  "from_sweep": [
+   {
+    "sigrid_id": 5832,
+    "title": "Mapa de ubicación de poblaciones vulnerables por activación de la quebrada Uchuyacu I y Uchuyacu II, distrito Tarica, Ancash",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Ancash",
+    "province": "Huaraz",
+    "district": "Tarica",
+    "irfen_scope": "ANCASH_INTERIOR",
+    "main_rows_in_same_district": 1,
+    "record_page_sha256": "e639c6b663131f4a53a8d9c6b87fffef8ae244b6dd5d2acc3e55d149603325f1",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5833,
+    "title": "Mapa de ubicación de poblaciones vulnerables por activación de la quebrada Gangash-Carhuayoc, distrito San Marcos, Ancash",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Ancash",
+    "province": "Huari",
+    "district": "San Marcos",
+    "irfen_scope": "ANCASH_INTERIOR",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "bf5653dd4cad616425ad00570b36864c575ad2ed741849081c9435f86aaaff7f",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5834,
+    "title": "Mapa de ubicación de poblaciones vulnerables por activación de la quebrada Soca, distrito Caraz, Ancash",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Ancash",
+    "province": "Huaylas",
+    "district": "Caraz",
+    "irfen_scope": "ANCASH_INTERIOR",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "6ed79eefd585e1e2b56514f85a2c308b965e1a4f10bacebc918a2475ebe1d24d",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5835,
+    "title": "Mapa de ubicación de poblaciones vulnerables por activación de la quebrada Santo Toribio, distrito Shupluy, Ancash",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Ancash",
+    "province": "Yungay",
+    "district": "Shupluy",
+    "irfen_scope": "ANCASH_INTERIOR",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "5deaa11ddaa97b9f14618e10e39232d01acd0e918de7df788256867242e9ac77",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5836,
+    "title": "Mapa de ubicación de poblaciones vulnerables por activación de la quebrada Acoshewa, distrito Independencia, Ancash",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Ancash",
+    "province": "Huaraz",
+    "district": "Independencia",
+    "irfen_scope": "ANCASH_INTERIOR",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "97ab201b8d71e51e3411060b5d186889084d4c3f18fc4975f6687d86c8bd1b4d",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5837,
+    "title": "Mapa de ubicación de poblaciones vulnerables por activación de la quebrada Piñi Uran, distrito Marcara, Ancash",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Ancash",
+    "province": "Carhuaz",
+    "district": "Marcara",
+    "irfen_scope": "ANCASH_INTERIOR",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "e97ad19a77fe042a7d42b0109f38b5785ba63cac31ac035e79f2ecf5d1ce6d00",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5866,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Huarco, distrito Cochabamba, Ancash",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Ancash",
+    "province": "Huaraz",
+    "district": "Cochabamba",
+    "irfen_scope": "ANCASH_INTERIOR",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "3e3dce7af0fde96acf54109a0072d7d8523542807fb3e00d2d337848f9c1a62a",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5867,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de las quebradas Añashragra y Shogusragra, distrito Uco, Ancash",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Ancash",
+    "province": "Huari",
+    "district": "Uco",
+    "irfen_scope": "ANCASH_INTERIOR",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "4579dcb0df4f81b4617c8543ddde1e6fe976bebf9f99d36267d86a346ffdc4a6",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5868,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada s/n, distrito Pampas Grande, Ancash",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Ancash",
+    "province": "Huaraz",
+    "district": "Pampas Grande",
+    "irfen_scope": "ANCASH_INTERIOR",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "059327bd050a9b9ddcd11cbb4bb25f6851dec1abf29c5eaae4c98470b2117e14",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5869,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Llachuar-Cohocchi, distrito Pariacoto, Ancash",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Ancash",
+    "province": "Huaraz",
+    "district": "Pariacoto",
+    "irfen_scope": "ANCASH_INTERIOR",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "d442439bb8eeb355e11bd9a0f0c305bf265d43f1341d9ba3e110d0481359310b",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5609,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada s/n, distrito Patapo, Lambayeque",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lambayeque",
+    "province": "Chiclayo",
+    "district": "Patapo",
+    "irfen_scope": "LAMBAYEQUE",
+    "main_rows_in_same_district": 2,
+    "record_page_sha256": "7cd95dd92175cc144ed24fde2b44846ee5afdb21dbc90802b3273a858e7f7c74",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5610,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Utiyacu, distrito Patapo, Lambayeque",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lambayeque",
+    "province": "Chiclayo",
+    "district": "Patapo",
+    "irfen_scope": "LAMBAYEQUE",
+    "main_rows_in_same_district": 2,
+    "record_page_sha256": "93c0efc85a1407ca11f04b604653ff31f1bdbd7b48c3751119475c3698e105f7",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5612,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Chumillan, distrito Chongoyape, Lambayeque",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lambayeque",
+    "province": "Chiclayo",
+    "district": "Chongoyape",
+    "irfen_scope": "LAMBAYEQUE",
+    "main_rows_in_same_district": 2,
+    "record_page_sha256": "8dc1502bbd596b6fa2566b8e53fb43b6d27fa71a6aa8c8b6697322659daa6938",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5613,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Sonolipe, distrito Motupe, Lambayeque",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lambayeque",
+    "province": "Y",
+    "district": "Motupe",
+    "irfen_scope": "LAMBAYEQUE",
+    "main_rows_in_same_district": 12,
+    "record_page_sha256": "a3b9b438ee82a53e41e99237a28400021cae3596deae755895842b2cbba0c24f",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5652,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Chochope, caserío Chaupiaco, departamento de Lambayeque",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lambayeque",
+    "province": "Y",
+    "district": "Chochope",
+    "irfen_scope": "LAMBAYEQUE",
+    "main_rows_in_same_district": 5,
+    "record_page_sha256": "b1650b61d1ee7e4768fa074bca13c1142f6ceaa06296e0a500174f810d897335",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5653,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Insculas, centro poblado Insculas, departamento de Lambayeque.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lambayeque",
+    "province": "Y",
+    "district": "Olmos",
+    "irfen_scope": "LAMBAYEQUE",
+    "main_rows_in_same_district": 11,
+    "record_page_sha256": "1a8f67d3f65f53ad9ab52e55da80c5934869e0bd2f1945a8eafb820ffb3d9449",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5654,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Los Positos, AAHH. Alan García, departamento de Lambayeque.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lambayeque",
+    "province": "Y",
+    "district": "Olmos",
+    "irfen_scope": "LAMBAYEQUE",
+    "main_rows_in_same_district": 11,
+    "record_page_sha256": "269474a4de8c8b568f976c41ee8f62a0fd15608c84dcc530ddcb685bad1e8f99",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5655,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Piedra del Toro, centro poblado Tongorrape, departamento de Lambayeque.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lambayeque",
+    "province": "Y",
+    "district": "Motupe",
+    "irfen_scope": "LAMBAYEQUE",
+    "main_rows_in_same_district": 12,
+    "record_page_sha256": "a9f2ac1c93c32bf0b73979c1b1142b7113b8015675aa1aab2b8e82e55de30d14",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5656,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Sonolipe, Centro poblado Sonolipe, departamento de Lambayeque.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lambayeque",
+    "province": "Y",
+    "district": "Motupe",
+    "irfen_scope": "LAMBAYEQUE",
+    "main_rows_in_same_district": 12,
+    "record_page_sha256": "d2c22a83986b5ba31e53821cba996dd760e453bc85e496f3b02764109f4ad714",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5657,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada La Guitarra, Centro poblado Mocupe Nuevo, departamento de Lambayeque.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lambayeque",
+    "province": "Chiclayo",
+    "district": "Lagunas",
+    "irfen_scope": "LAMBAYEQUE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "d6a247fd5f3d5d937f9fe17f86f122865e70b0cbd042286af61d8dd8d895844f",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5660,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de las quebradas : La Mónica-Piedra Molino, distrito Chicama, La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lambayeque",
+    "province": "Ascope",
+    "district": "Chicama",
+    "irfen_scope": "LAMBAYEQUE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "faa4e8b7f76d1b4e3fa9abf4ccdeb8c599785319207d123a4e93866132296428",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5666,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada San Nicolás, Centro poblado San Nicolás, departamento de Lambayeque.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lambayeque",
+    "province": "Chiclayo",
+    "district": "Saña",
+    "irfen_scope": "LAMBAYEQUE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "cb32d2f8ca9c0ce9c5b3d30218fb9b24eaca056888741d6d7362cb7a65260446",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5667,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Guayaquil, Centro poblado Guayaquil, departamento de Lambayeque.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lambayeque",
+    "province": "Chiclayo",
+    "district": "Cayalti",
+    "irfen_scope": "LAMBAYEQUE",
+    "main_rows_in_same_district": 3,
+    "record_page_sha256": "341e995750f9f575af4834c353951ae7c66b783192a3fa7fbda7a1955fd4e75b",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5668,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada La Curva, Centro poblado La Curva, departamento de Lambayeque.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lambayeque",
+    "province": "Chiclayo",
+    "district": "Cayalti",
+    "irfen_scope": "LAMBAYEQUE",
+    "main_rows_in_same_district": 3,
+    "record_page_sha256": "b525d829a7764b26d7801c5118982d41ffeed8d0bb0afed9ef1314ec6b33f188",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5669,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Leque Leque, Centro poblado Dos Corrales, departamento de Lambayeque.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lambayeque",
+    "province": "Chiclayo",
+    "district": "Nueva Arica",
+    "irfen_scope": "LAMBAYEQUE",
+    "main_rows_in_same_district": 3,
+    "record_page_sha256": "5520be2932ee76ff76c542f83064fa04f8fc3e7b022cfc6f08ebed05a2354510",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5670,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada La Compuerta, Centro poblado La Compuerta, departamento de Lambayeque.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lambayeque",
+    "province": "Chiclayo",
+    "district": "Oyotún",
+    "irfen_scope": "LAMBAYEQUE",
+    "main_rows_in_same_district": 4,
+    "record_page_sha256": "3a111fa38448e7fde78fead619f043eb6c49cb884b1233d4ec809fb32bca1c21",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5508,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada La Culebra - El Higuerón, distrito Casa Grande - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Ascope",
+    "district": "Casa Grande",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "77079aadbf986ebd133bc967cfa108b5df2cf53436eff883ab133b35ee3d57af",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5509,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Progreso, distrito Cascas - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Gran Chimú",
+    "district": "Cascas",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "16e6a08dcc4987074a6aeb47cfa50025228aede3ad9c38c103d5cba05295567c",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5510,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Gasñape, distrito Chicama - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Ascope",
+    "district": "Chicama",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 2,
+    "record_page_sha256": "09a3e32cd6ebf959439b0c1a96398792706fec32dcb4334fb34306effb19224c",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5511,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada La Arenita, distrito Paijan - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Ascope",
+    "district": "Paijan",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "7701ae1bd9e4719c81f46e85dd448ed8d36cbb8f8672e5e886f2fa7345e6eb85",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5534,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada León, distrito Chicama - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Ascope",
+    "district": "Chicama",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 2,
+    "record_page_sha256": "3ba23160cc48d7d344defb27d09556059ab674a7221415a301f5fd2793cd6409",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5535,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Mala Alma, distrito Chicama - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Ascope",
+    "district": "Chicama",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 2,
+    "record_page_sha256": "0a1eaa855a0b7b4883071b876833459fa2b38ef4a708fd84fa72a2eb66408bde",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5536,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada León - Río Seco, distrito Huanchaco - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Trujillo",
+    "district": "Huanchaco",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "76305fd562e3e899dacd84155a7f63776fe3aa5b07d10f56e61d39ffaa80d139",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5537,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada San Carlos y Las Uvas, distrito Laredo - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Trujillo",
+    "district": "Laredo",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 1,
+    "record_page_sha256": "3d3855185979cb9bd488e9e92eb0ffddb42416ab3142e11b2c3bbe849a361e67",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5538,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada San Idelfonso, distrito El Porvenir - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Trujillo",
+    "district": "El Porvenir",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "323b0b9762b3e62d91efc105f4616326ff73c562c4e1cfa86b2081169318d8a3",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5553,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Shiracball, distrito Santiago de Chuco - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Santiago De Chuco",
+    "district": "Santiago De Chuco",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 1,
+    "record_page_sha256": "41b0af7825518f465296704e59695cee32ce9ef46dd140dbc21978aa34fda2d3",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5554,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Muycan (Moycar), distrito Mollebamba - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Santiago De Chuco",
+    "district": "Mollebamba",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "961a44beef329b5b5c7c3d6f7282e92533841ed0ec109ae0f93f968ee448a73c",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5555,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Muycan (Moycar), distrito Santiago de Chuco - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Santiago De Chuco",
+    "district": "Santiago De Chuco",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 1,
+    "record_page_sha256": "dd24e1a6bd6d51ea2ec756db14f7a6072057fe6558bb0b8ca9fa29faa1848e54",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5556,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada San Francisco, distrito Santa Cruz de Chuca - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Santiago De Chuco",
+    "district": "Santa Cruz De Chuca",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "c56370e82cb9af036d3a9199e8d086fbb4fa501b4c2a03f1458ebe918d0887f6",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5557,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Cushipe, distrito Santa Cruz de Chuca - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Santiago De Chuco",
+    "district": "Santa Cruz De Chuca",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "007ac0b5d54c21afe59e1052ea7face662a5eddcc2b81e9aecce46009451e9d7",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5558,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Llaturpamba, distrito Santa Cruz de Chuca - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Santiago De Chuco",
+    "district": "Santa Cruz De Chuca",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "fb639037e9c9d4f3982604618db5e44e99068642cfd579553777ba7923424ef1",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5559,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Mullipamba, distrito Angasmarca - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Santiago De Chuco",
+    "district": "Angasmarca",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "92a6e630a93c0327b41b02b9bc8d9b9a25ad68f717d90271502c84e263f2852e",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5560,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Ingacorral, distrito Cachicadan - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Santiago De Chuco",
+    "district": "Cachicadan",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "9b173797279be0dda79ff094b5b65d7ed251235641518d836a42c6a0017b2a9b",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5562,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Colpa Seca, distrito Angasmarca - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Santiago De Chuco",
+    "district": "Angasmarca",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "57c7eef69820e2be48b8f9844e862cb96886ce20eca75021d07049c9810623dd",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5563,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada s/n, distrito Angasmarca - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Santiago De Chuco",
+    "district": "Angasmarca",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "7cf25a768ee9b6cee0ce9663d5e3c0b3efcd5918b82aad280803171d97b506d5",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5571,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Huabal, distrito Chepén - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Santiago Chepén",
+    "district": "Chepén",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "bde8d9fb836c7aee2d6bce33b43574511849497ed073e050021874dac74722c1",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5572,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Del Tingo, distrito Pataz - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Pataz",
+    "district": "Pataz",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "156885cd2e245ad4f3f3c489b65d1d0f10ce09cdbec7514efbc4b81da966b6d0",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5573,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada La Paccha, distrito Longotea - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Bolivar",
+    "district": "Longotea",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "e18a83a955e8707a389fe546ce64e96c748170eafe75355606717aec549177e4",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5574,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Sacurco, distrito Longotea - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Bolivar",
+    "district": "Longotea",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "a793ad2de79c850542b61fb7f4c2884b84ffe706399203cb3ab1fb1d91158207",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5575,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Duendehuayco, distrito Longotea - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Bolivar",
+    "district": "Longotea",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "57213f803dff85a19bd80e5c6bfbbc200ef9af26dceaa0096068c00d77787432",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5576,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Río Llaray, distrito Quiruvilca - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Santiago De Chuco",
+    "district": "Quiruvilca",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "177cf153d3da78a3acee9b756dba37e15399971290d4425ca5e622a8f6bd648b",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5577,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Río Perejil, distrito Quiruvilca - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Santiago De Chuco",
+    "district": "Quiruvilca",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "b2d5fb718eaccfd236ffc3b24b5d4eb9482bc9702de3b7debcb95caba6189d38",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5578,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Agua Fría (Angla), distrito Cachicadan - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Santiago De Chuco",
+    "district": "Cachicadan",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "c77123c5e9fab750f7a7daff066b1b6971d1f6f0a34b78f8fd5de1134b6d4979",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5580,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Cancate, distrito Santiago de Chuco - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Santiago De Chuco",
+    "district": "Santiago De Chuco",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 1,
+    "record_page_sha256": "fbbaa73574a60d21d4504bf212bf5fcbeb31630ac58d4b0689552deb66a44f36",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5581,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Kauma, distrito Santiago de Chuco - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Santiago De Chuco",
+    "district": "Santiago De Chuco",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 1,
+    "record_page_sha256": "805c49b10d6b8cb7ba1b52bdaccd37b93bf6799473b622ff3ee1ccd245efd299",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5582,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Con Con 1, Con Con 2 y Con Con 3, distrito Poroto - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Trujillo",
+    "district": "Poroto",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 1,
+    "record_page_sha256": "200391a2ec00409440e225144876ee6901a69413455d9d422ea20d65aaa3ac6d",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5583,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada El Consejo, distrito Poroto - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Trujillo",
+    "district": "Poroto",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 1,
+    "record_page_sha256": "adb720e84bb4341bcce586b37da9be767e6dd919c97e421ea894916b727f76ad",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5584,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada León, distrito Laredo - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Trujillo",
+    "district": "Laredo",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 1,
+    "record_page_sha256": "a67e9574a640319db6324b43ad6298afaacefbfe5340169e865ef6fe0ad563c4",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5585,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Piedra Azul, distrito Poroto - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Trujillo",
+    "district": "Poroto",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 1,
+    "record_page_sha256": "1b8c0086fcdafeed8d2766d660e640873576bae6a18fac33047ef106c5cfab20",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5586,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Bello Horizonte (La Portada), distrito Laredo - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Trujillo",
+    "district": "Laredo",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 1,
+    "record_page_sha256": "a4db27aeebcb1e676424e2a62230d6df8ec3199af99b1abb5448d20ae1fdac92",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5587,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Sangal, distrito Poroto - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Trujillo",
+    "district": "Poroto",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 1,
+    "record_page_sha256": "845485d0fdbdf1d9f364bd544304ea7be9774c303c2f23ed6703d9a44041428a",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5588,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Arranca Machete, distrito Marmot - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Gran Chimú",
+    "district": "Marmot",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "bad29623c586f3586a859568d440bd6ba351fef4e91dd893a65b0cbe1b2072c1",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5589,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Wil, distrito Chicama - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Ascope",
+    "district": "Chicama",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 2,
+    "record_page_sha256": "258909a651da3a194d7fb0acaa783ffaee516595ac2aa1d5e4928529675eb182",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5590,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Gashpa - La Botella, distrito Chicama - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Ascope",
+    "district": "Chicama",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 2,
+    "record_page_sha256": "ca9bc69bdd8072720531995c320dea553927ac067f64f0660110fc3d8153c813",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5591,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Cuculiza, distrito Chicama - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Ascope",
+    "district": "Chicama",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 2,
+    "record_page_sha256": "df7321aaa2c4f6fd1547a612a7f604370a96c76f2b7db8cc64ef201875d24860",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5592,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de las quebradas: Luis Alberto Sánchez, Catan,Santa Rosa, Víctor Raul 1, Víctor Raul 2 y Vista Alegre, distrito Ascope - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Ascope",
+    "district": "Ascope",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "d801298204c31f0fbc49d64c868b3e501217aaf357a04996150ff9f609752461",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5593,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Pampa Hermosa, distrito Chicama - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Ascope",
+    "district": "Chicama",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 2,
+    "record_page_sha256": "19b4e812b93846cc3d491ec1952746f947f1429eb913db8d5bcb4419a6c7c588",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5594,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Quirripano, distrito Chicama - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Ascope",
+    "district": "Chicama",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 2,
+    "record_page_sha256": "db34a8f84ee71ddfda951935121d8fb73666f1e0601c105655b612a65aa9deda",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5595,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada La Cumbre, distrito Chicama - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Ascope",
+    "district": "Chicama",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 2,
+    "record_page_sha256": "a807bcf23244b8bea47871ee6e313157a43dcee20cb931473973355f1187fe72",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5596,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Machasen, distrito Jolluco - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Gran Chimú",
+    "district": "Jolluco",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "ba895caf3aff9ff3f0fe9554ef66e75fcd631c4710d2f5401e243c3ad3376eda",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5597,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de las quebradas: Licapa y Miraflores, distrito Paijan - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Ascope",
+    "district": "Paijan",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "e63af4b07f4f2378df5e8e37bfc57768b98ef018e3ca795d716359cf2d1394b7",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5598,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada La Pampa - Lagunas, distrito Cascas - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Gran Chimú",
+    "district": "Cascas",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "59a9b60481ef6a2dbc7c6706f00776cdd1ef851e2570280d776ce0dcd060199c",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5599,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Calvayuque, distrito Cascas - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Gran Chimú",
+    "district": "Cascas",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "e3e84f93c3242f502bf0ad2961dbe47e1cfa2198ab88b712fdf295d014863f55",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5600,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Sinupe, distrito Cascas - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Gran Chimú",
+    "district": "Cascas",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "e49367ca50ebdbdf426b791abb84a48deef441edb0a35c12452f4d464692ab0a",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5602,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Río Marañon, distrito Pataz, La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Pataz",
+    "district": "Pataz",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "605fb3386460cedc84253ead82faf6e8d6ba2ba7594ca5f299c869344cadcd11",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5661,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de las quebradas: El Platanar 1 y El Platanar 2 - El Panteón y La Peña de Cushmun, distrito Poroto, La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "La Libertad",
+    "province": "Trujillo",
+    "district": "Poroto",
+    "irfen_scope": "LA_LIBERTAD",
+    "main_rows_in_same_district": 1,
+    "record_page_sha256": "706d14d13c775da254c174e3673df33b8b788a7fc6c21c76badaec4664072df2",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5695,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Huáncar, centro poblado Huáncar, departamento de Lima.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lima",
+    "province": "Barranca",
+    "district": "Paramonga",
+    "irfen_scope": "LIMA_OTHER_VALLEYS_AND_METROPOLITAN",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "ad91b73b404856a4456d05718e8585b3ab778db0f5aa62b4aa177a6826adbfc3",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5696,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Sauce Grande, centro poblado Sauce Grande, departamento de Lima.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lima",
+    "province": "Barranca",
+    "district": "Paramonga",
+    "irfen_scope": "LIMA_OTHER_VALLEYS_AND_METROPOLITAN",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "8d0412faf78ad8ef38139996049710854b2a4df7d0db8deb01cc6ea3306d1e8d",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5697,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Huanca Pampa, centro poblado Huaricanga, departamento de Lima",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lima",
+    "province": "Barranca",
+    "district": "Paramonga",
+    "irfen_scope": "LIMA_OTHER_VALLEYS_AND_METROPOLITAN",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "7ab45659e620cfe8e8a073a9c81857e10ac80edb6a7441209b03b329f313bc74",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5698,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Hoya Chica, centro poblado Hoya Chica, departamento de Lima.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lima",
+    "province": "Barranca",
+    "district": "Paramonga",
+    "irfen_scope": "LIMA_OTHER_VALLEYS_AND_METROPOLITAN",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "c18693ebb7ae4b52bb8c8288b056b98add88ab1e9d9e45955026802fbf620858",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5699,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Naranjal, centro poblado Naranjal, departamento de Lima.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lima",
+    "province": "Barranca",
+    "district": "Paramonga",
+    "irfen_scope": "LIMA_OTHER_VALLEYS_AND_METROPOLITAN",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "3310fdfffda172ec84d62cf5e1f0294c4b041af15dfe1701a1d038e1fdaa4b54",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5843,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Quintay, distrito Sayán, Lima",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lima",
+    "province": "Huaura",
+    "district": "Sayán",
+    "irfen_scope": "LIMA_OTHER_VALLEYS_AND_METROPOLITAN",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "785fc6d64215b92cd942b64c6ca9a75c45760915ea48a9631ec992d67281f740",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5844,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Costa Verde, distrito Sayán, Lima",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lima",
+    "province": "Huaura",
+    "district": "Sayán",
+    "irfen_scope": "LIMA_OTHER_VALLEYS_AND_METROPOLITAN",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "24cbb250a0534fb8d72eec5384f8dc292960379c3544f84fa15ba9128161dc74",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5845,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Shulus, distrito Sayán, Lima",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lima",
+    "province": "Huaura",
+    "district": "Sayán",
+    "irfen_scope": "LIMA_OTHER_VALLEYS_AND_METROPOLITAN",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "598d425901f170118c6d681a24c2fde533258c4b58841ccbceb97d1046479f87",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5846,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Seca Tres Montones, distrito Sayán, Lima",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lima",
+    "province": "Huaura",
+    "district": "Sayán",
+    "irfen_scope": "LIMA_OTHER_VALLEYS_AND_METROPOLITAN",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "2660288809900426c88f3e5890dcb34cdf5fe7b86f577896cf6a21909de3ab50",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5847,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Quilca (Río Yarucaya), distrito Cochamarca, Lima",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lima",
+    "province": "Oyón",
+    "district": "Cochamarca",
+    "irfen_scope": "LIMA_OTHER_VALLEYS_AND_METROPOLITAN",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "a45190608b7ec4272de5c01550bd5764bfa4d4b998c832066ac4f0c789de9c6b",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5848,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Chambara, distrito Sayán, Lima",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lima",
+    "province": "Huaura",
+    "district": "Sayán",
+    "irfen_scope": "LIMA_OTHER_VALLEYS_AND_METROPOLITAN",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "75871131f0d93f6a7878826fef946070490aff49c899a0e5259dfd88fea3902d",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5849,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Cabracancha (Río Huaura), distrito Andajes, Lima",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lima",
+    "province": "Oyón",
+    "district": "Andajes",
+    "irfen_scope": "LIMA_OTHER_VALLEYS_AND_METROPOLITAN",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "82f17a76c9d531041b9d5b981e465fcdf507958860beb4da7ca7be11e506e670",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5850,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Ayarpongo, distrito Pachangara, Lima",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lima",
+    "province": "Oyón",
+    "district": "Pachangara",
+    "irfen_scope": "LIMA_OTHER_VALLEYS_AND_METROPOLITAN",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "1a00211b3af2a75dc1315139129bdb9cbb901eb569be18aacbdb1a1134c4c21c",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5851,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Churlín, distrito Pativilca, Lima",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lima",
+    "province": "Barranca",
+    "district": "Pativilca",
+    "irfen_scope": "LIMA_OTHER_VALLEYS_AND_METROPOLITAN",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "14c6c3b5ba2f86c3cf43fd5ba9b6579163bc0f212373399556447e764672d9e6",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5860,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Mandahuaz, distrito Paramonga, Lima",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lima",
+    "province": "Barranca",
+    "district": "Paramonga",
+    "irfen_scope": "LIMA_OTHER_VALLEYS_AND_METROPOLITAN",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "3bf1eb54e94ad9754b657f1e3a2c6aad921f0d5839261f72883b86d2360845c7",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5861,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Cerro Blanco, distrito Sayan, Lima",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lima",
+    "province": "Huaura",
+    "district": "Sayan",
+    "irfen_scope": "LIMA_OTHER_VALLEYS_AND_METROPOLITAN",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "3a9adef9262cdae9c6e72f95422e4aa309caa83e9bb30c9344903ef327c8d3c0",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5862,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Antaparca, distrito Huancaya, Lima",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lima",
+    "province": "Yauyos",
+    "district": "Huancaya",
+    "irfen_scope": "LIMA_OTHER_VALLEYS_AND_METROPOLITAN",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "09b3d57f986014101ecddd102f5fabfb6531cb7a051ae4108ba682cc66f8e212",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5863,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Río Yauyos, distrito Yauyos, Lima",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Lima",
+    "province": "Yauyos",
+    "district": "Yauyos",
+    "irfen_scope": "LIMA_OTHER_VALLEYS_AND_METROPOLITAN",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "297b5574f19be79bbaea09080f7bea1c7cb2a834893c983d2381b6c19432cb2a",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5519,
+    "title": "Resolución Administrativa N° 077-2010-ANA-ALAMBP - Delimitación de la faja marginal del Río Piura",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2010",
+    "department": null,
+    "province": null,
+    "district": null,
+    "irfen_scope": "LOCATION_NOT_PARSED",
+    "main_rows_in_same_district": null,
+    "record_page_sha256": "e8a112e7e822b5d2241833ce4aff4396c400414ae1ccfe9b7ed41a61773f5451",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5539,
+    "title": "Resolución Ministerial N° 284-2018-VIVIENDA - Modifica los Mapas P2, P4 y P6 zonas de riesgo no mitigable dentro de los departamentos de Lima y Ancash",
+    "corporate_author": "MINISTERIO DE VIVIENDA, CONSTRUCCION Y SANEAMIENTO (MVCS)",
+    "year": "2018",
+    "department": null,
+    "province": null,
+    "district": null,
+    "irfen_scope": "LOCATION_NOT_PARSED",
+    "main_rows_in_same_district": null,
+    "record_page_sha256": "3880476839d86a2062390f35c176b0b12b456aa26b6664b73d3366bce2e2badc",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5561,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Chusgon - La Libertad",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": null,
+    "province": null,
+    "district": null,
+    "irfen_scope": "LOCATION_NOT_PARSED",
+    "main_rows_in_same_district": null,
+    "record_page_sha256": "d2b933982846e6281116b1f905e3657de686af347a6212ee2318e204bfe299e5",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5648,
+    "title": "Informe Técnico N° A6837 Evaluación Geológica y Geodinámica del Deslizamiento Activo de Supayhuayco, distrito de Lucre, provincia Quispicanchis, región Cusco",
+    "corporate_author": "INSTITUTO GEOLOGICO MINERO Y METALURGICO (INGEMMET)",
+    "year": "2018",
+    "department": null,
+    "province": null,
+    "district": null,
+    "irfen_scope": "LOCATION_NOT_PARSED",
+    "main_rows_in_same_district": null,
+    "record_page_sha256": "67182d742d27da9f78ee1431fb71ad1b81de148fd7e49f46bebac3d37e62b057",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5651,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Zaragoza, centro poblado Nauta, departamento de Loreto.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": null,
+    "province": null,
+    "district": null,
+    "irfen_scope": "LOCATION_NOT_PARSED",
+    "main_rows_in_same_district": null,
+    "record_page_sha256": "bf1472f5ce5320ce001134f7bb04c12fe62a082c879598ca8f699074b4b2995f",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5659,
+    "title": "Ficha Técnica: Identificación de quebradas con asentamiento de poblaciones vulnerables ante las inundaciones y huaycos. Quebrada Huanacahuere, distrito San Jerónimo, provincia y departamento Cusco",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA) MUNICIPALIDAD DISTRITAL DE SAN JERONIMO, CUSCO, CUSCO (MD SAN JERONIMO 080104)",
+    "year": "2018",
+    "department": null,
+    "province": null,
+    "district": null,
+    "irfen_scope": "LOCATION_NOT_PARSED",
+    "main_rows_in_same_district": null,
+    "record_page_sha256": "0c0cb18a891869c319879e3d9183cf2fb28d0788c45b4bd7eff2f92a023d1dba",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5681,
+    "title": "Informe Técnico N° 007-2018-ANA-AAA.M-ALA-UTC-AT/VAQCH - Puntos críticos en la quebrada Miraflores, distrito Bagua Grande, provincia Utcubamba - Amazonas",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2018",
+    "department": null,
+    "province": null,
+    "district": null,
+    "irfen_scope": "LOCATION_NOT_PARSED",
+    "main_rows_in_same_district": null,
+    "record_page_sha256": "e525482df6b0e13137d2b0a0a24f09babc58e6c72460ece1dc6ecf041c6f1b0d",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5940,
+    "title": "Oficio N° 896-2018-ANA-J/DPDRH - Fichas de identificación de puntos críticos en el río Arma y el río Huinchullay, distrito Arma - Huancavelica",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2018",
+    "department": "Huancavelica",
+    "province": "Castrovirreyna",
+    "district": "Arma",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "42fb8e3ff4ddf4dccdbc70b16ad88f7d51ff96a73a8ed7723058ae5efd8b9585",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5898,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada s/n, distrito El Tambo, Junin",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2015",
+    "department": "Junin",
+    "province": "Huancayo",
+    "district": "El Tambo",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "9c9a38ca15f50127511fd3f24870fe024749b0a8b77cd4e4783441aed69f6b46",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5899,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Guayabal, distrito San Ramon, Junin",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junin",
+    "province": "Chanchamayo",
+    "district": "San Ramon",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "ad798bb933b7486469c390df9d21a3b62af54ec209bd1a159400903528b12bd3",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5900,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada S/n-Río Ulcumayo, distrito Ulcumayo, Junin",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junin",
+    "province": "Junin",
+    "district": "Ulcumayo",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "dac58ff1e5d8d6e5f4ce09f052adefad74d0f878f7025a941d07314e94d5ea6a",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5901,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada s/n, distrito Tapo, Junin",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junin",
+    "province": "Tarma",
+    "district": "Tapo",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "66383bce6bc93a7e954d8dcd34ea225b105609bacde7d2bc3286cd2ce8e4a175",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5902,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Morococha, distrito Tapo, Junin",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junin",
+    "province": "Tarma",
+    "district": "Tapo",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "0d20f585201dfc8003b32d9149a1500a42c19540d0ae6447d501c1dd790d6152",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5903,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Chimechorro, distrito Rio Tambo, Junin",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junin",
+    "province": "Satipo",
+    "district": "Rio Tambo",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "71bec27805018d1ead69833c750894120dac058b3279ea411c9b5bd7ee3dac84",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5904,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Río Mazamari (Arpaya), distrito Mazamari, Junin",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junin",
+    "province": "Satipo",
+    "district": "Mazamari",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "7b018693dd7370c28a6ae44ef6bdaacac7ea9f7b4598012d0e29f5f7f8c7de12",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5905,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Agua Blanca-Riachuelo Njandaris, distrito Chanchamayo, Junin",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junin",
+    "province": "Chanchamayo",
+    "district": "Chanchamayo",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "02ce5636c280c995c32e5c7615aaf371a90374bb81e013ccbc752b79ed018dd2",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5906,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Río Coriviali (Río Dos de Mayo), distrito Coviriali, Junin",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junin",
+    "province": "Satipo",
+    "district": "Coviriali",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "f0ab905159ee5856d5a4430ad34cb39be8f211110ac29ddd850f2be34ebd12f0",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5907,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Casablanca, distrito Pomacancha, Junin",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junin",
+    "province": "Juaja",
+    "district": "Pomacancha",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "0ff9752dd6087a49abee3654adf9430f89d1c3459787c11fd77bf20cd1c632c7",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5908,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Andamarca, distrito Andamarca, Junin",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junin",
+    "province": "Concepción",
+    "district": "Andamarca",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "a89c34f8cf8e9cb526ae12010d464ea593c2486e59eec0a61777d59e339b7f01",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5909,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de las quebradas Vitas y Achavita , distrito San Jeronimo de Tunan, Junin",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junin",
+    "province": "Huancayo",
+    "district": "San Jeronimo De Tunan",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "37403b8b28c9fa52eb5ebd355efe881bc7a21d574ac2c67d87ab0f969d5f421f",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5910,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada s/n, distrito Ahuac, Junin",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junin",
+    "province": "Chupaca",
+    "district": "Ahuac",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "b278550074419d7e32d9c2bd8ca6f13c3cdf4dfc5be39545e452340870da4d7f",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5917,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Punpunya, distrito Chongos Bajo, Junin",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junin",
+    "province": "Chupaca",
+    "district": "Chongos Bajo",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "6515baef2fe61b88d1e9cecfe2871f2466dca72420cb304a90939cc9a4318e91",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5918,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada s/n, distrito San Juan de Iscos, Junin",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junin",
+    "province": "Chupaca",
+    "district": "San Juan De Iscos",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "c83a9149ef6cf79d6342ae0aa42ae9be0273a9d548edc93db536e4a840cd7c7d",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5919,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Las Rosas, distrito Huancayo, Junin",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junin",
+    "province": "Huancayo",
+    "district": "Huancayo",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "92d0166a558478a1cc93e00f1563e45f9c4e6746df9cac37f7ce355672ce31e5",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5920,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Fortaleza, distrito Chilca, Junin",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junin",
+    "province": "Huancayo",
+    "district": "Chilca",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "f7772c21b2ec39f653fa6d3781a44e3d89355f3126e1877876ee7619c765cf9a",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5921,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de las quebradas Canal Alto Peru y Buenos Aires , distrito La Oroya, Junin",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junin",
+    "province": "Yauli",
+    "district": "La Oroya",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "705e3abace0c54eb71ea800461e2474e7a9ab4850e6fa204e68c701d0603e555",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5922,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Tupac Amaru, distrito La Oroya, Junin",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junin",
+    "province": "Yauli",
+    "district": "La Oroya",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "2a3128756243b900b4a4ed881508eef499a63f4dffef7deb379eeb2d81265e10",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5923,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de las quebradas El Porvenir y Maracana - Cuchimachay, distrito La Oroya, Junin",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junin",
+    "province": "Yauli",
+    "district": "La Oroya",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "eda8df4083fb522654b5d20f2f50a185d75dcb70f249373091d5c72587d41eb5",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5820,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Hantay (río Tarma), centro poblado Barrio Mantarana, departamento de Junín.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junín",
+    "province": "Tarma",
+    "district": "Tarma",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "13e605d1cddd0ade0a34ea487e39d85f685bcaa6b008f62ee86ef62cfab45c31",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5821,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Maniaco (Angorajra), centro poblado Barrio Mantarana, departamento de Junín.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junín",
+    "province": "Tarma",
+    "district": "Tarma",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "44c275b68db6ccd1a742f5800d445b1007b76706cd4871b2939a74f2060ea7c8",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5822,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Malambo (Pacchapata) y río Huasahuasi, centro poblado Huasahuasi, departamento de Junín.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junín",
+    "province": "Tarma",
+    "district": "Huasahuasi",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "397dc5724e9b24b1f6b320644da3b6a2bd877d48af09fc33a99c161a4775de81",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5823,
+    "title": "Mapa de ubicación de poblaciones vulnerables de las quebradas Pando, Huarango y río Tigrillo, centro poblado Naranjal, departamento de Junín.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junín",
+    "province": "Chanchamayo",
+    "district": "San Ramón",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "e550a719e16a71da614b7cf50b741c9f3ada4d8da92742fa1e1ce317268f9fbd",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5824,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Muruhuay (Muruhuhuayrajra), centro poblado Muruhuay, departamento de Junín.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junín",
+    "province": "Tarma",
+    "district": "Acobamba",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "ab694c76ef069e518a593c7a19b6813a4acdf1360e36582f4e33cc9738429f63",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5825,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Rosas Puquio, centro poblado Rosas Puquio, departamento de Junín.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junín",
+    "province": "Tarma",
+    "district": "Acobamba",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "afbd7ff34db7a9d44dd609d1f6a7ee07580c0dc5cdee21db1151496026b546fa",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5826,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Tupin (Shuto), centro poblado Tupin, departamento de Junín.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junín",
+    "province": "Tarma",
+    "district": "Acobamba",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "4f529ec27ca1538f90fb5f8f99b406ae9f6e881dd53d36cfdcb23f46eed602fc",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5827,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Picuybamba y río Tarma, centro poblado Pasaje Flores, departamento de Junín.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junín",
+    "province": "Tarma",
+    "district": "Acobamba",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "b3af7fa082759f46ef415b964256a937bcbd52da6badaf5a4b5eece10033861d",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5873,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la Quebrada Jancamayo (Ancamayo), centro poblado Yuracmayo, departamento de Junín.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junín",
+    "province": "Tarma",
+    "district": "Tapo",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "4af98dfbd03c7793aa0903fe12812f1ceba55fe299694909fea0547ebac9b676",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5874,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Atocshay, centro poblado río Tapo, departamento de Junín.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junín",
+    "province": "Tarma",
+    "district": "Tapo",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "228fc78a5da738b1d653c08a53c211bebae3666269118ffa3f1bb7c80a5f1597",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5875,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la Quebrada Limonpata, centro poblado Limonpata, departamento de Junín.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junín",
+    "province": "Chanchamayo",
+    "district": "Chanchamayo",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "16a880e503e67de35662a350c3cd709ee84e66b5016ae1865e9a915b8aa6a027",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5876,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la Quebrada Quisque, centro poblado San Carlos, departamento de Junín.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junín",
+    "province": "Chanchamayo",
+    "district": "Chanchamayo",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "bc6c4dad8ac0eeef2b32c06f694951d6f52824a7864fda216abf8e206939de0d",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5941,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Reither, centro poblado Bella Vista, departamento de Junín.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junín",
+    "province": "Chanchamayo",
+    "district": "Chanchamayo",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "39b97a5182a0dac2d631bc432d0fe11e9e3c584c1fe087b15e812a4231643a68",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5942,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Toro, centro poblado San Carlos, departamento de Junín.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junín",
+    "province": "Chanchamayo",
+    "district": "Chanchamayo",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "c2f07bbe7f5c99c196296d4c2edbee98a0661e3a912939e2d894758b7546d011",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5943,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada s/n, centro poblado Chilca, departamento de Junín.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junín",
+    "province": "Huancayo",
+    "district": "Chilca",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "18fc99b7f8a03820afd8f12cd4fd91669176bb8f46d068bf4f030771a04b0156",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5944,
+    "title": "Mapa de ubicación de poblaciones vulnerables de las Quebradas El Mirador, Torre Torre, Cerro Hermosa y Santa Isabel, centro poblado El Mirador, Torre Torre, Cerro Hermosa, Santa Isabel, departamento de Junín.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Junín",
+    "province": "Huancayo",
+    "district": "Huancayo",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "1ccd4589ec2f454833e652843003ec1d114fdfdac0282d426501724ba3fa47ae",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5649,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Cuiparillo, centro poblado Libertad de Cuiparillo, departamento de Loreto.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Loreto",
+    "province": "Alto Amazonas",
+    "district": "Teniente Cesar López Rojas",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "901c0a9bdf446bbcecd88f3269b5e95c5d137c2c9653c7afee6372dd6585e25b",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5650,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Armanayacu, centro poblado Nueva Arica, departamento de Loreto.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Loreto",
+    "province": "Alto Amazonas",
+    "district": "Balsapuerto",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "d20b4a0d6a40d92a41af65e61de261164bbfed15a19b589b6b2e1e1490761605",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5686,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Loreto, centro poblado Barrio Loreto, departamento de Puno.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "Sandia",
+    "district": "Yanahuaya",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "a9b05558fd1e42fcfd769e487c04e4e6bd22b74f5db4f43c5f1ab043a0d79892",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5690,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Ccoñaqta, centro poblado Cupi, departamento de Puno.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "Melgar",
+    "district": "Cupi",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "509efbb38c0e1ee1c113c1a8c50e42bcb9b0cc172f73ab7d3693432d66b41340",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5878,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Río Tambopata, distrito San Juan del Oro, Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "Sandia",
+    "district": "San Juan Del Oro",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "96274c5e67d2d4f16337befa88c03db817460360c3e6e6c07a71e347ef4f94a8",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5879,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Río Tambopata, Ccpp. Yanamayo, distrito San Juan del Oro, Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "Sandia",
+    "district": "San Juan Del Oro",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "4cf7134ca709f0c0557e5df6a9251936228020cf160dfc423dac7a36003e3ccf",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5880,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Jilari, distrito Cuyocuyo, Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "Sandia",
+    "district": "Cuyocuyo",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "15972ff40d0148d3dc9f5cceb5d2cb71fa36f2bb2829e231d37acfe832dc6515",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5881,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Ccoñaqata, distrito Cupi, Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "Melgar",
+    "district": "Cupi",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "5fe7b6a2eb2940106a0a9909082aff5d372594b4ac2219803411b5e72c83a55f",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5882,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Rural Alianza, distrito Nuñoa, Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "Melgar",
+    "district": "Nuñoa",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "26f7260f0f0b6345ca6ad46a80c4281b1f4f80eea0ff30dcfcdca137e8c06b99",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5883,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Ocuviri, distrito Ocuviri, Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "Lampa",
+    "district": "Ocuviri",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "7181067e95c66c15ab57e01263acad63545ea2a7b9d23cdb0835f84081ebee42",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5884,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Río Puncune, distrito Putina, Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "San Antonio De Putina",
+    "district": "Putina",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "b80d542cd570b408f98ca7413497d3dfb2b2a871892b98114629d8c38d285f0d",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5885,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Umuchi, distrito Moho, Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "Moho",
+    "district": "Y",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "e4b92af1a3495a2bb4bc7a04908b1ebcfc63dd0b8ab5bcc64a3ea0f6c63b3750",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5886,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Chejecheje, distrito Moho, Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "Moho",
+    "district": "Y",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "a2439f12eb4f70ae3d541e2b2abe7ce6217cd1ab3b003a5a652c2d13601a9e1e",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5887,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Jacha Paru, distrito Moho, Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "Moho",
+    "district": "Y",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "baa2260f633366f8ff7c2450cff2be9c12e28ef18713aa05fbe967f83afb2d8a",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5888,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Jipata, distrito Moho, Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "Moho",
+    "district": "Y",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "837a7d9b9abaf26089f96b279fe6cfe8a6702d1fa95fa179011e903e5279ec2d",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5889,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Jacantaya, distrito Moho, Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "Moho",
+    "district": "Y",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "79e2f7599d5413ada216a992dc898ecbc6008e4581e8d96693d1e9d764a3577d",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5890,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Río Chejolla Jahuira, distrito Inchupalla, Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "Huancané",
+    "district": "Inchupalla",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "6d2545269cd76d2cfc864c33aef9dc801153feff3bc0be9b9779031290217d94",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5891,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Illpa Mayo, distrito Cabanilla, Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "Lampa",
+    "district": "Cabanilla",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "18375a028d2bdfa8e4233d3b0a827b1ba00eb71512e502ad57a237fe068eb3b0",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5892,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Cara Cara, distrito Cabanilla, Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "Lampa",
+    "district": "Cabanilla",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "3d3c01587547220922e9d30afcecf135930d97de7205582a0a3f927b8a1bb514",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5893,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de las quebradas Santa Barbara y Río Pisacoma, distrito Pisacoma, Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "Chucuito",
+    "district": "Pisacoma",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "e0fae2f95df3f88e216aa69aaa09f7e8b67a16e84ed2d4fceccffac3a8daeb65",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5894,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de las quebradas El Mirador y Río Pisacoma, distrito Pisacoma, Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "Chucuito",
+    "district": "Pisacoma",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "5011b44447e7cad423668beedddccc47ef8f7ec0f51bc5805650d0cd68988869",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5895,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Tujsaphujo, distrito Conduriri, Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "El Collao",
+    "district": "Conduriri",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "0c90a1c8f7dc065b1308068c38db06ca15d4e36e4c91294bb9b72fe40ab440e5",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5896,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Sales Chico, distrito Conduriri, Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "El Collao",
+    "district": "Conduriri",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "de19661e9e4b5bd3e0cbb1ba3e81cc5e2e9fb15b231cb74f1b1705043df4156e",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5897,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de las quebradas s/n, distrito Macari, Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "Melgar",
+    "district": "Macari",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "942d89f3f79d260b06c04621d7e576bbee47d496000e2109bda890458322ee93",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5913,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Ancohaque, centro poblado Ancohaque, departamento de Puno.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "Chucuito",
+    "district": "Juli",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "238c2cd15df6ccaaedba493b9a83cb9e27d589c3fc64037aec587908e235c6a3",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5914,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Sampe Laya, centro poblado Jarani, departamento de Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "El Collao",
+    "district": "Ilave",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "a385c62d9bc587a108201de2e431f519ce55323944cf1e0e48b5cb8e5134729f",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5915,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Lluju Llujuni, centro poblado Jarani, departamento de Puno.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "El Collao",
+    "district": "Ilave",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "65eac4288570d719db5c92d56e232f4722b0df23da84182280643bbf5e6a6782",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5916,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Checacollo, centro poblado Jarani, departamento de Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "El Collao",
+    "district": "Ilave",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "50095d0f4fc945dbc8c0379b8f9b3a2e7812c6b71b047f192b2157ff04c4a00b",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5924,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Aychuta, distrito Macari, Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "Melgar",
+    "district": "Macari",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "cc73aa4e5030f0330fe52a6ca7e7dfcaa57b1e1849c3dfddc85778277b6c85fc",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5925,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Río Juliaca, distrito San Miguel, Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "San Román",
+    "district": "San Miguel",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "ac32a6a23b41d611a9ce774f8bcb660e8474b3ee7919e190ec748e512b773325",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5926,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Río Vilavila, distrito Palca, Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "Lampa",
+    "district": "Palca",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "f40968e36f43ecc56c033225de7e9689a39d2595f27033a4bbb24b4ee18fb0f3",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5927,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Huasaruma, distrito Vilavila, Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "Lampa",
+    "district": "Vilavila",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "1c9f0ee2fffb24d981c2a5c3cfd14d66fa8373a37147068c259ba547fd728732",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5928,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Casani, distrito Moho, Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "Moho",
+    "district": "Y",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "514b6e96dafc681b3e3eb70d0f711c8049a8b55d5d9c84116857462882857cca",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5929,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Ollaraya Jahuira, centro poblado Ollaraya, departamento de Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "Yunguyo",
+    "district": "Ollaraya",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "2fe44b56854178b57966a4b46f01fa689b049bbbb8741084104b548de45d64ba",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5930,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Calacruz Ccaccallinca centro poblado Sector de Cotaña, departamento de Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "Lampa",
+    "district": "Cabanilla",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "2ec665ddf34b22331d9e3767d4858e77bf2eecc670aac6208dd3fc9394e29683",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5931,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Vilinacuyo, distrito Huayrapata, Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "Moho",
+    "district": "Huayrapata",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "3e8e26f5f3b855c1bc67c620da7af4893ca389c18cabb21f5d9fb85edbdc55ce",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5932,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Callanca, distrito Huayrapata, Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "Moho",
+    "district": "Huayrapata",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "d9ada607b933d370a808f371120e66b4f15064198dc174f93300ec8453dce11d",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5933,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Hauyllatojo, distrito Putina, Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "San Antonio De Putina",
+    "district": "Putina",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "ab1a3fb969ad141e9f399ce30d4402b173ddef269d87e4e3b248ac0b2d27ceef",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5934,
+    "title": "Mapa de ubicación de poblaciones vulnerables por inundación de la quebrada Kesanani, distrito Zepita, Puno",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Puno",
+    "province": "Chucuito",
+    "district": "Zepita",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "4f2ab520b4abb5e5a05d0850285bdc2ccaa2528710d94e30b00786bddefbb416",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5672,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Shambo, centro poblado Shambo, departamento de Ucayali.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Ucayali",
+    "province": "Padre Abad",
+    "district": "Padre Abad",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "4c8edf0ff9e176c8f2074f6d7809f54c93b5a841c7dbf59c6a9d64e7c9d01c98",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5673,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Rio Negro, centro poblado Villa Aguaytia, departamento de Ucayali.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Ucayali",
+    "province": "Padre Abad",
+    "district": "Padre Abad",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "e947ef1ca8b573a582d6d6961b11ea602bd6d7e08cc2cf199db0c5d688baaac7",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5674,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Campo Plata, centro poblado Atalaya, JJ.VV. Aviación, JJ.VV. Señor de los Milagros y Sarita Colonia; departamento de Ucayali.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Ucayali",
+    "province": "Atalaya",
+    "district": "Raymondi",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "17590bfe8c369dc08fec136353919f9b1d068b688a2f35f4418d1c65486783df",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5675,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Aviación, centro poblado Atalaya, departamento de Ucayali.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Ucayali",
+    "province": "Atalaya",
+    "district": "Raymondi",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "3ffbdc561e863b26de768ff82b780d33ffc67146f101fe2f0dd20aaf0fdf0fd6",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5676,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Chismechoro- Los Perez, centro poblado Atalaya, departamento de Ucayali.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Ucayali",
+    "province": "Atalaya",
+    "district": "Raymondi",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "c423eb6350db72fff7864409ca6b9e01457e8698b880ffd3ace0a58ce7ff2731",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5677,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Maranquiari, centro poblado Atalaya, departamento de Ucayali.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Ucayali",
+    "province": "Atalaya",
+    "district": "Raymondi",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "1be3f4c3abb42c92ab4042e3a57846db12d963896c16a42cefaccd1e9d8c1c49",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5678,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Vinuya, centro poblado Bolognesi, departamento de Ucayali.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Ucayali",
+    "province": "Atalaya",
+    "district": "Tahuania",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "8587d1c34621b88d2d37b13a4b2ad1d3298b3f478fe797bbe40cbc8363c5d025",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5679,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Aerija, centro poblado CC.NN. Aerija, departamento de Ucayali.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Ucayali",
+    "province": "Atalaya",
+    "district": "Raymondi",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "631942e7d7978a8d2ca5d13657241a682faf19eab7bdf8085082642d8c3f5211",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5680,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada Panama, centro poblado Maldonadillo, departamento de Ucayali.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Ucayali",
+    "province": "Atalaya",
+    "district": "Raymondi",
+    "irfen_scope": "OUTSIDE_CURRENT_IRFEN_SCOPE",
+    "main_rows_in_same_district": 0,
+    "record_page_sha256": "6ecf1d7904e554115ab44f348973f40a2542b3098bd6b4959606f4beaba671e7",
+    "status": "TO_REVIEW_PHASE_2"
+   },
+   {
+    "sigrid_id": 5671,
+    "title": "Mapa de ubicación de poblaciones vulnerables de la quebrada El Virrey, Centro poblado El Virrey, departamento de Piura.",
+    "corporate_author": "AUTORIDAD NACIONAL DEL AGUA (ANA)",
+    "year": "2016",
+    "department": "Piura",
+    "province": "Morropón",
+    "district": "La Matanza",
+    "irfen_scope": "PIURA",
+    "main_rows_in_same_district": 2,
+    "record_page_sha256": "c63d9bc145cbf7614db2b6302c41a4cfeb9c59cff2b64faa3d410088640b3fc1",
+    "status": "TO_REVIEW_PHASE_2"
+   }
+  ],
+  "other_records_in_sweep": [
+   {
+    "sigrid_id": 5505,
+    "doc_type": "NORMA",
+    "title": "Resolución Directoral N° 435-2018-ANA-AAA-JZ-V - Delimitación de la faja marginal del Río Chira"
+   },
+   {
+    "sigrid_id": 5506,
+    "doc_type": "NORMA",
+    "title": "Resolución Directoral N° 827-2018-ANA-AAA-JZ-V - Delimitación de la faja marginal del Río Piura"
+   },
+   {
+    "sigrid_id": 5507,
+    "doc_type": "INFORME",
+    "title": "Escenarios de riesgo ante la temporada de bajas temperaturas 2018 (Aviso Meteorológico por descensos de temperatura para la Sierra del 17 al 20 de Septiembre 20"
+   },
+   {
+    "sigrid_id": 5514,
+    "doc_type": "PLAN",
+    "title": "Plan de contingencia ante heladas, distrito de Ocobamba, Chincheros, Apurímac, 2018."
+   },
+   {
+    "sigrid_id": 5529,
+    "doc_type": "OTROS",
+    "title": "Manual de usuario SIGRID v3"
+   },
+   {
+    "sigrid_id": 5530,
+    "doc_type": "INFORME",
+    "title": "Informe Técnico N A6832 Evaluación de peligros volcánicos de la concesión minera a Hualca Hualca I, provincia Caylloma, región Arequipa"
+   },
+   {
+    "sigrid_id": 5531,
+    "doc_type": "INFORME",
+    "title": "Informe Técnico N A6833. Peligro por deslizamientos en el sector de Matarani, distrito Quilahuani, provincia Candarave, región Tacna"
+   },
+   {
+    "sigrid_id": 5532,
+    "doc_type": "NORMA",
+    "title": "Resolución Directoral N° 981-2018-ANA-AAA-JZ-V - Delimitación de la faja marginal del Río Olmos"
+   },
+   {
+    "sigrid_id": 5533,
+    "doc_type": "NORMA",
+    "title": "Resolución Directoral N° 1089-2018-ANA-AAA-JZ-V - Delimitación de la faja marginal del Río La Leche"
+   },
+   {
+    "sigrid_id": 5564,
+    "doc_type": "PLAN",
+    "title": "Plan de contingencia por bajas temperaturas en la Región Apurímac - 2018"
+   },
+   {
+    "sigrid_id": 5565,
+    "doc_type": "PLAN",
+    "title": "Plan de contingencia ante bajas temperaturas - Distrito de Capaya, provincia de Aymaraes, departamento de Apurímac"
+   },
+   {
+    "sigrid_id": 5566,
+    "doc_type": "PLAN",
+    "title": "Plan de contingencia ante heladas del distrito de Ocobamba, provincia de Chincheros, departamento de Apurímac."
+   },
+   {
+    "sigrid_id": 5567,
+    "doc_type": "PLAN",
+    "title": "Plan de contingencia ante la ocurrencia de heladas y bajas temperaturas del distrito Progreso, provincia de Grau, departamento de Apurímac."
+   },
+   {
+    "sigrid_id": 5568,
+    "doc_type": "PLAN",
+    "title": "Plan de contingencia ante bajas temperaturas del distrito de San Antonio, provincia de Grau, departamento de Apurímac."
+   },
+   {
+    "sigrid_id": 5569,
+    "doc_type": "PLAN",
+    "title": "Plan de contingencia ante bajas temperaturas del distrito de Turpay, provincia de Grau, departamento de Apurímac."
+   },
+   {
+    "sigrid_id": 5570,
+    "doc_type": "PPRRD",
+    "title": "Plan de prevención y reducción del riesgo de desastres al 2021 de la provincia de Chincheros, departamento de Apurímac."
+   },
+   {
+    "sigrid_id": 5579,
+    "doc_type": "INFORME",
+    "title": "Informe N° 063 - 2018/GORE-ICA/SGRD/FEMM - Zona inundable entre los sectores Puerto Pellejo - Puente Vizcas del río Vizcas, distrito y provincia Palpa departame"
+   },
+   {
+    "sigrid_id": 5616,
+    "doc_type": "DIAGNOSTICO",
+    "title": "Análisis de la vulnerabilidad ante riesgos originados por fenómenos naturales de los barrios de la microcuenca Camino Real de la ciudad de Cusco"
+   },
+   {
+    "sigrid_id": 5644,
+    "doc_type": "NORMA",
+    "title": "Resolución Administrativa N° 113-2008-GRLL-GRA-ATDRMVCH - Delimitación de la faja marginal del Río Chota"
+   },
+   {
+    "sigrid_id": 5645,
+    "doc_type": "NORMA",
+    "title": "Resolución Administrativa N° 200-2012-ANA-ALA MOCHE-VIRU-CHAO - Delimitación de la faja marginal del Río Seco"
+   },
+   {
+    "sigrid_id": 5646,
+    "doc_type": "NORMA",
+    "title": "Resolución Administrativa N° 382-2012-ANA-ALA MOCHE-VIRU-CHAO - Delimitación de la faja marginal del Río Moche, sector Barraza"
+   },
+   {
+    "sigrid_id": 5647,
+    "doc_type": "NORMA",
+    "title": "Resolución Administrativa N° 261-2013-ANA-ALA MOCHE-VIRU-CHAO - Delimitación de la faja marginal del Río Moche, sector La Encalada"
+   },
+   {
+    "sigrid_id": 5662,
+    "doc_type": "ESCENARIO CON BASE EN PRONÓSTICO TRIMESTRAL",
+    "title": "Escenarios de riesgo por lluvias para el verano 2019"
+   },
+   {
+    "sigrid_id": 5683,
+    "doc_type": "INFORME",
+    "title": "Informe Técnico N° A6840 Evaluación Geológica por inundación en los sectores de Villa Ancayo y Unión Progreso, distrito Pampa Hermosa, provincia Satipo - Junín"
+   },
+   {
+    "sigrid_id": 5684,
+    "doc_type": "INFORME",
+    "title": "Escenarios de Riesgo ante la Temporada de Lluvias 2018 - 2019 (Aviso Meteorológico de Precipitaciones para la Selva del 12 al 15 de Noviembre 2018)"
+   },
+   {
+    "sigrid_id": 5685,
+    "doc_type": "INFORME",
+    "title": "Escenarios de Riesgo ante la Temporada de Lluvias 2018 - 2019 (Aviso Meteorológico de Precipitaciones para la Sierra del 12 al 15 de Noviembre 2018)"
+   },
+   {
+    "sigrid_id": 5692,
+    "doc_type": "INFORME",
+    "title": "Informe N° 119-2017-ANA-AAA-ALA-AM-AT/JGOR - Puntos críticos en el río Carhuacocha, distrito Queropalca, provincia Lauricocha - Huánuco"
+   },
+   {
+    "sigrid_id": 5694,
+    "doc_type": "INFORME",
+    "title": "Informe Técnico N° A6839 Evaluación Geológica y Geodinámica en el sector de San Dionicio, distrito Pampa Hermosa, provincia Satipo - Junín"
+   },
+   {
+    "sigrid_id": 5828,
+    "doc_type": "MAPA",
+    "title": "Mapa de ubicación de poblaciones vulnerables del río Cocon (Curcun), centro poblado Molino, departamento de Junín."
+   },
+   {
+    "sigrid_id": 5830,
+    "doc_type": "INFORME",
+    "title": "Escenarios de Riesgo ante la Temporada de Lluvias 2018 - 2019 (Aviso Meteorológico de Precipitaciones para la Selva del 05 al 08 de diciembre 2018)"
+   },
+   {
+    "sigrid_id": 5831,
+    "doc_type": "INFORME",
+    "title": "Escenarios de Riesgo ante la Temporada de Lluvias 2018 - 2019 (Aviso Meteorológico de Precipitaciones para la Sierra del 06 al 10 de diciembre 2018)"
+   },
+   {
+    "sigrid_id": 5855,
+    "doc_type": "INFORME",
+    "title": "Informe Técnico N° A6844 Evaluación de Peligros Geológicos en el sector Puente Paucartambo, Distrito Villa Rica, Provincia Oxapampa, Región Pasco"
+   },
+   {
+    "sigrid_id": 5857,
+    "doc_type": "INFORME",
+    "title": "Informe Técnico N° A6845 Evaluación de peligros geológicos en los sectores Crispín - Villa Oyón y Barrio Industrial Villa Rica, distrito Villa Rica, provincia O"
+   },
+   {
+    "sigrid_id": 5870,
+    "doc_type": "MAPA",
+    "title": "Mapa de ubicación de poblaciones vulnerables del río Palcamayo (río Shaca), centro poblado Tingo, departamento de Junín."
+   },
+   {
+    "sigrid_id": 5871,
+    "doc_type": "MAPA",
+    "title": "Mapa de ubicación de poblaciones vulnerables del río Tarma, centro poblado Chipocayo, departamento de Junín."
+   },
+   {
+    "sigrid_id": 5872,
+    "doc_type": "MAPA",
+    "title": "Mapa de ubicación de poblaciones vulnerables del río Tarma, centro poblado Zona Urbana, Altura Colegio, Barrio Esperanza, departamento de Junín"
+   },
+   {
+    "sigrid_id": 5911,
+    "doc_type": "INFORME",
+    "title": "Escenarios de Riesgo ante la Temporada de Lluvias 2018 - 2019 (Aviso Meteorológico de Precipitaciones para la Selva del 15 al 17 de diciembre 2018)"
+   },
+   {
+    "sigrid_id": 5912,
+    "doc_type": "INFORME",
+    "title": "Escenarios de Riesgo ante la Temporada de Lluvias 2018 - 2019 (Aviso Meteorológico de Precipitaciones para la Sierra del 17 al 19 de diciembre 2018)"
+   },
+   {
+    "sigrid_id": 5935,
+    "doc_type": "MAPA",
+    "title": "Carta de Inundación en caso de Tsunami de Punta Bombón - Arequipa"
+   },
+   {
+    "sigrid_id": 5937,
+    "doc_type": "INFORME",
+    "title": "Informe Técnico N° A6838 Deslizamiento – Flujo de detritos en el Sector Cancal, Distrito Huasta, Provincia Bolognesi, Región Ancash."
+   },
+   {
+    "sigrid_id": 5938,
+    "doc_type": "INFORME",
+    "title": "Informe Técnico N° A6848 Peligros geológicos en la localidad de Miraflores, Distrito Choros, Provincia Cutervo, Región Cajamarca"
+   },
+   {
+    "sigrid_id": 5939,
+    "doc_type": "INFORME",
+    "title": "Informe Técnico N° 009-2018-ANA-DPDRH-UEPH/JSQR - Puntos críticos en el río Antabamba, distrito Tapairihua, provincia Aymaraes - Apurímac"
+   },
+   {
+    "sigrid_id": 5945,
+    "doc_type": "MAPA",
+    "title": "Carta de Inundación en caso de Tsunami en la Caleta Quilca - Arequipa"
+   },
+   {
+    "sigrid_id": 5946,
+    "doc_type": "MAPA",
+    "title": "Carta de Inundación en caso de Tsunami en la Caleta Vila Vila - Tacna"
+   },
+   {
+    "sigrid_id": 5947,
+    "doc_type": "MAPA",
+    "title": "Carta de Inundación en caso de Tsunami en el Balneario Mejía - Arequipa"
+   },
+   {
+    "sigrid_id": 5948,
+    "doc_type": "MAPA",
+    "title": "Carta de Inundación en caso de Tsunami en la Caleta Grau - Tacna"
+   },
+   {
+    "sigrid_id": 5949,
+    "doc_type": "MAPA",
+    "title": "Carta de Inundación en caso de Tsunami en la Caleta Lomas - Arequipa"
+   },
+   {
+    "sigrid_id": 5950,
+    "doc_type": "MAPA",
+    "title": "Carta de Inundación en caso de Tsunami en el Puerto Chala - Arequipa"
+   },
+   {
+    "sigrid_id": 5951,
+    "doc_type": "INFORME",
+    "title": "Escenarios de Riesgo ante la Temporada de Lluvias 2018 - 2019 (Aviso Meteorológico de Precipitaciones para la Sierra y Costa Norte del 21 al 23 de diciembre 201"
+   },
+   {
+    "sigrid_id": 5955,
+    "doc_type": "MAPA",
+    "title": "Carta de Inundación en caso de Tsunami en el Puerto Matarani - Arequipa"
+   },
+   {
+    "sigrid_id": 5957,
+    "doc_type": "MAPA",
+    "title": "Carta de Inundación en caso de Tsunami en el Puerto Mollendo - Arequipa"
+   },
+   {
+    "sigrid_id": 5958,
+    "doc_type": "INFORME",
+    "title": "Escenarios de Riesgo ante la Temporada de Lluvias 2018 - 2019 (Aviso Meteorológico de Precipitaciones para la Sierra y Costa Norte del 25 al 28 de diciembre 201"
+   },
+   {
+    "sigrid_id": 5959,
+    "doc_type": "INFORME",
+    "title": "Escenarios de Riesgo ante la Temporada de Lluvias 2018 - 2019 (Aviso Meteorológico de Precipitaciones para la Selva del 24 al 27 de diciembre 2018)"
+   }
+  ],
+  "ids_without_public_record": [
+   {
+    "sigrid_id": 5500,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5501,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5502,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5503,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5504,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5512,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5513,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5515,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5516,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5517,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5518,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5520,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5521,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5522,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5523,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5524,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5525,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5526,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5527,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5528,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5540,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5541,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5542,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5543,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5544,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5545,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5546,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5547,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5548,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5549,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5550,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5551,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5552,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5658,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5663,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5664,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5682,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5687,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5688,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5689,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5691,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5693,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5877,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5952,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5953,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5954,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5956,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5960,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5961,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5962,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5963,
+    "http_status": 404,
+    "error": "HTTP_404"
+   },
+   {
+    "sigrid_id": 5964,
+    "http_status": 404,
+    "error": "HTTP_404"
+   }
+  ],
+  "sources_to_consult": [
+   {
+    "source": "INGEMMET repositorio (informes técnicos por distrito)",
+    "status": "BLOCKED_FOR_AUTOMATED_ACCESS",
+    "note": "Anubis bot protection; not circumvented. Manual capture by the owner, then archive with SHA-256."
+   },
+   {
+    "source": "ANA 2016 national report, Cuadros 23 (Ancash), 29 (Lima), 41 (Ica)",
+    "status": "NOT_READ",
+    "note": "automated text extraction stops before these tables; needs the archived PDF"
+   },
+   {
+    "source": "ANA faja marginal resolutions in SIGRID for Ica, Santa and Casma",
+    "status": "NOT_SWEPT"
+   },
+   {
+    "source": "SIGRID ids above 6018 and below 5500",
+    "status": "NOT_SWEPT"
+   },
+   {
+    "source": "COER Ica / COEN-INDECI emergency reports",
+    "status": "NOT_SWEPT",
+    "note": "often name populated centres, not quebradas: territorial events without named unit"
+   },
+   {
+    "source": "Municipal PPRRD of Chaclacayo, Ricardo Palma, Santa Eulalia",
+    "status": "NOT_SWEPT"
+   }
+  ],
+  "duplicate_risks": [
+   "Yanocoto (Santa Maria) vs Yanacoto (Lurigancho): spelling variant pending",
+   "Cabeza de Cura: Nasca vs Vista Alegre",
+   "Casitas Bocapan vs Bocapán (Tumbes)",
+   "numbered channels: El Establo 1 / El Establo 2 recorded as two identities (owner decision 2026-10-23); El Progreso 1 / 2 in main not split (see compound_name_audit)"
+  ],
+  "priorities": [
+   "P-A: fold r8 and pending r3–r7 into the master after their PRs are reviewed",
+   "P-B: archive the ANA 2016 PDFs of the r8 rows (SHA-256) to raise access level",
+   "P-C: La Libertad / Lambayeque backlog (66 records)",
+   "P-D: Lima other valleys and Ancash interior backlog",
+   "P-E: Arequipa, Moquegua, Tacna not audited"
+  ]
+ },
+ "last_reviewed": "2026-10-23",
+ "compound_name_audit": {
+  "tool": "scripts/phase2_inventory_compound_name_audit.py",
+  "audited_on": "2026-10-23",
+  "rule": "Classification uses only the text recorded in each row's evidence. This audit splits, merges or renames nothing; a split needs explicit source evidence and a reviewed decision recorded as split_basis on the rows.",
+  "categories": {
+   "SPLIT_RECORDED_WITH_BASIS": "Already recorded as separate rows, each carrying split_basis (source text + decision).",
+   "LABEL_COMPONENT_ALREADY_FLAGGED": "The row itself says it is a component of a compound label; nothing to decide here.",
+   "DISTRICT_QUALIFIER": "Parentheses carry the district name, not an alias.",
+   "LOCALITY_QUALIFIER": "Parentheses carry the populated centre that identifies an unnamed or ambiguous quebrada, not an alias.",
+   "PARENTHETICAL_ALIAS_OR_SUBNAME_PENDING": "Parentheses carry a second name (alias, sub-name, river or sector); not adjudicated.",
+   "SOURCE_TABLE_LOCALITY_LABEL": "The source table prints the same compound as populated centre and quebrada: a locality label, kept as printed.",
+   "SOURCE_TABLE_SINGLE_CELL_COMPOUND": "The source table prints the compound in one quebrada cell: kept as one row until the table is reread.",
+   "ENUMERATED_DISTINCT_NAMES_IN_SOURCE": "The recorded source text enumerates the names with plural 'quebradas': explicit split candidate.",
+   "NUMBERED_SERIES_IN_SOURCE": "The recorded source text names a numbered series (1, 2, 3 / I, II): split candidate, same pattern as El Establo.",
+   "SOURCE_TEXT_NOT_READ": "The compound comes from a file name or an automated title reading; the source text naming it was not recorded.",
+   "SECONDARY_OR_LIST_SOURCE_ONLY": "Only a press item or a district list carries the compound: needs a primary source first."
+  },
+  "recommendations": {
+   "SPLIT_RECORDED_WITH_BASIS": "NONE",
+   "LABEL_COMPONENT_ALREADY_FLAGGED": "NONE",
+   "DISTRICT_QUALIFIER": "NONE",
+   "LOCALITY_QUALIFIER": "NONE",
+   "PARENTHETICAL_ALIAS_OR_SUBNAME_PENDING": "ADJUDICATE_ALIAS_FROM_PRIMARY_SOURCE",
+   "SOURCE_TABLE_LOCALITY_LABEL": "KEEP_AS_PRINTED",
+   "SOURCE_TABLE_SINGLE_CELL_COMPOUND": "REREAD_ARCHIVED_TABLE_BEFORE_ANY_SPLIT",
+   "ENUMERATED_DISTINCT_NAMES_IN_SOURCE": "REVIEW_SPLIT_WITH_ARCHIVED_SOURCE",
+   "NUMBERED_SERIES_IN_SOURCE": "REVIEW_SPLIT_WITH_ARCHIVED_SOURCE",
+   "SOURCE_TEXT_NOT_READ": "READ_AND_ARCHIVE_SOURCE_FIRST",
+   "SECONDARY_OR_LIST_SOURCE_ONLY": "FIND_PRIMARY_SOURCE_FIRST"
+  },
+  "summary": {
+   "entries": 51,
+   "main": 42,
+   "r8": 9,
+   "by_category": {
+    "DISTRICT_QUALIFIER": 1,
+    "ENUMERATED_DISTINCT_NAMES_IN_SOURCE": 1,
+    "LABEL_COMPONENT_ALREADY_FLAGGED": 1,
+    "LOCALITY_QUALIFIER": 1,
+    "NUMBERED_SERIES_IN_SOURCE": 1,
+    "PARENTHETICAL_ALIAS_OR_SUBNAME_PENDING": 8,
+    "SECONDARY_OR_LIST_SOURCE_ONLY": 2,
+    "SOURCE_TABLE_LOCALITY_LABEL": 3,
+    "SOURCE_TABLE_SINGLE_CELL_COMPOUND": 4,
+    "SOURCE_TEXT_NOT_READ": 21,
+    "SPLIT_RECORDED_WITH_BASIS": 8
+   }
+  },
+  "entries": [
+   {
+    "inventory_id": "ancash_anta_pina_uran_y_esperanza",
+    "origin": "main",
+    "documentary_name": "piña urán y esperanza",
+    "department": "Ancash",
+    "district": "Anta",
+    "category": "SOURCE_TEXT_NOT_READ",
+    "evidence_basis": " Mapa de ubicación de poblaciones vulnerables – centro poblado Barrio Piña Urán y La Esperanza",
+    "recommendation": "READ_AND_ARCHIVE_SOURCE_FIRST",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "ancash_chimbote_el_progreso_1_el_progreso_2",
+    "origin": "main",
+    "documentary_name": "el progreso 1 - el progreso 2",
+    "department": "Ancash",
+    "district": "Chimbote",
+    "category": "SOURCE_TEXT_NOT_READ",
+    "evidence_basis": " Mapa de ubicación de poblaciones vulnerables – centro poblado El Progreso - Rinconada",
+    "recommendation": "READ_AND_ARCHIVE_SOURCE_FIRST",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "ancash_coishco_virgen_del_carmen_luis_a_sanchez",
+    "origin": "main",
+    "documentary_name": "virgen del carmen - luis a. sánchez",
+    "department": "Ancash",
+    "district": "Coishco",
+    "category": "SOURCE_TEXT_NOT_READ",
+    "evidence_basis": " Mapa de ubicación de poblaciones vulnerables – centro poblado Coishco",
+    "recommendation": "READ_AND_ARCHIVE_SOURCE_FIRST",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "ancash_nepena_san_cristobal_y_solivin",
+    "origin": "main",
+    "documentary_name": "san cristóbal y solivin",
+    "department": "Ancash",
+    "district": "Nepeña",
+    "category": "SOURCE_TEXT_NOT_READ",
+    "evidence_basis": " Mapa de ubicación de poblaciones vulnerables – centro poblado San Jacinto",
+    "recommendation": "READ_AND_ARCHIVE_SOURCE_FIRST",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "ancash_pomabamba_colpa_aylahuallon",
+    "origin": "main",
+    "documentary_name": "colpa (aylahuallon)",
+    "department": "Ancash",
+    "district": "Pomabamba",
+    "category": "PARENTHETICAL_ALIAS_OR_SUBNAME_PENDING",
+    "evidence_basis": "(aylahuallon)",
+    "recommendation": "ADJUDICATE_ALIAS_FROM_PRIMARY_SOURCE",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "ancash_pomabamba_jatun_parco_y_ichic_parco",
+    "origin": "main",
+    "documentary_name": "jatun parco y ichic parco",
+    "department": "Ancash",
+    "district": "Pomabamba",
+    "category": "SOURCE_TEXT_NOT_READ",
+    "evidence_basis": " Mapa de ubicación de poblaciones vulnerables – centro poblado Parco Grande y Parco Chico",
+    "recommendation": "READ_AND_ARCHIVE_SOURCE_FIRST",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "ancash_rahuapampa_masin_pariahuanca_vincocota_huaytuna_y_collpu_uran",
+    "origin": "main",
+    "documentary_name": "vincocota, huaytuna y collpu uran",
+    "department": "Ancash",
+    "district": "Rahuapampa, Masin, Pariahuanca",
+    "category": "SOURCE_TEXT_NOT_READ",
+    "evidence_basis": " Mapa de ubicación de poblaciones vulnerables",
+    "recommendation": "READ_AND_ARCHIVE_SOURCE_FIRST",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "ancash_sihuas_pachacutec_manco_capac_chuna_colpa_chirimoyo_pingullo_alto_bajo_chico_huitron",
+    "origin": "main",
+    "documentary_name": "pachacutec-manco capac-chuna-colpa chirimoyo-pingullo alto/bajo-chico huitron",
+    "department": "Ancash",
+    "district": "Sihuas",
+    "category": "SOURCE_TEXT_NOT_READ",
+    "evidence_basis": " Mapa de ubicación de poblaciones vulnerables",
+    "recommendation": "READ_AND_ARCHIVE_SOURCE_FIRST",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "ica_huancano_huayanto_pampano",
+    "origin": "main",
+    "documentary_name": "huayanto-pampano",
+    "department": "Ica",
+    "district": "Huancano",
+    "category": "SOURCE_TEXT_NOT_READ",
+    "evidence_basis": " Mapa de ubicación de poblaciones vulnerables",
+    "recommendation": "READ_AND_ARCHIVE_SOURCE_FIRST",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "ica_rio_grande_cardal_sanjon",
+    "origin": "main",
+    "documentary_name": "cardal-sanjon",
+    "department": "Ica",
+    "district": "Río Grande",
+    "category": "SOURCE_TEXT_NOT_READ",
+    "evidence_basis": " Mapa de ubicación de poblaciones vulnerables",
+    "recommendation": "READ_AND_ARCHIVE_SOURCE_FIRST",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "la_libertad_chicama_gashpa_la_botella",
+    "origin": "main",
+    "documentary_name": "gashpa - la botella",
+    "department": "La Libertad",
+    "district": "Chicama",
+    "category": "SOURCE_TEXT_NOT_READ",
+    "evidence_basis": " Mapa de ubicación de poblaciones vulnerables",
+    "recommendation": "READ_AND_ARCHIVE_SOURCE_FIRST",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "la_libertad_chicama_la_monica_piedra_molino",
+    "origin": "main",
+    "documentary_name": "la monica - piedra molino",
+    "department": "La Libertad",
+    "district": "Chicama",
+    "category": "SOURCE_TEXT_NOT_READ",
+    "evidence_basis": " Mapa de ubicación de poblaciones vulnerables",
+    "recommendation": "READ_AND_ARCHIVE_SOURCE_FIRST",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "la_libertad_cochorco_corrales_muyque",
+    "origin": "main",
+    "documentary_name": "corrales-muyque",
+    "department": "La Libertad",
+    "district": "Cochorco",
+    "category": "SOURCE_TEXT_NOT_READ",
+    "evidence_basis": " Mapa de ubicación de poblaciones vulnerables",
+    "recommendation": "READ_AND_ARCHIVE_SOURCE_FIRST",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "lambayeque_chochope_el_espinal_tres_puntas",
+    "origin": "main",
+    "documentary_name": "El Espinal (Tres Puntas)",
+    "department": "Lambayeque",
+    "district": "Chochope",
+    "category": "PARENTHETICAL_ALIAS_OR_SUBNAME_PENDING",
+    "evidence_basis": "(Tres Puntas)",
+    "recommendation": "ADJUDICATE_ALIAS_FROM_PRIMARY_SOURCE",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "lima_ambar_chipial_lashcamayo",
+    "origin": "main",
+    "documentary_name": "chipial / lashcamayo",
+    "department": "Lima",
+    "district": "Ámbar",
+    "category": "SOURCE_TEXT_NOT_READ",
+    "evidence_basis": " Mapa de ubicación de poblaciones vulnerables – centro poblado Gantuyoc",
+    "recommendation": "READ_AND_ARCHIVE_SOURCE_FIRST",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "lima_atavillos_bajo_rampe_i_y_ii_huayopampa",
+    "origin": "main",
+    "documentary_name": "rampe i y ii - huayopampa",
+    "department": "Lima",
+    "district": "Atavillos Bajo",
+    "category": "SOURCE_TEXT_NOT_READ",
+    "evidence_basis": " Mapa de ubicación de poblaciones vulnerables",
+    "recommendation": "READ_AND_ARCHIVE_SOURCE_FIRST",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "lima_ate_huaycan",
+    "origin": "main",
+    "documentary_name": "Huaycán (Ate)",
+    "department": "Lima",
+    "district": "Ate",
+    "category": "DISTRICT_QUALIFIER",
+    "evidence_basis": "(Ate)",
+    "recommendation": "NONE",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "lima_calango_la_vuelta_yuncaviri",
+    "origin": "main",
+    "documentary_name": "la vuelta-yuncaviri",
+    "department": "Lima",
+    "district": "Calango",
+    "category": "SOURCE_TEXT_NOT_READ",
+    "evidence_basis": " Mapa de ubicación de poblaciones vulnerables",
+    "recommendation": "READ_AND_ARCHIVE_SOURCE_FIRST",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "lima_district_not_in_title_guengue_y_rio_quichas_tramo_2",
+    "origin": "main",
+    "documentary_name": "guengue y río quichas tramo 2",
+    "department": "Lima",
+    "district": null,
+    "category": "SOURCE_TEXT_NOT_READ",
+    "evidence_basis": " Mapa de ubicación de poblaciones vulnerables – centro poblado Guengue y Quichas",
+    "recommendation": "READ_AND_ARCHIVE_SOURCE_FIRST",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "lima_district_not_in_title_pomaca_y_rio_quichas_tramo_1",
+    "origin": "main",
+    "documentary_name": "pomaca y río quichas tramo 1",
+    "department": "Lima",
+    "district": null,
+    "category": "SOURCE_TEXT_NOT_READ",
+    "evidence_basis": " Mapa de ubicación de poblaciones vulnerables – centro poblado Pomaca y Quichas",
+    "recommendation": "READ_AND_ARCHIVE_SOURCE_FIRST",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "lima_lurigancho_nicolas_de_pierola_label",
+    "origin": "main",
+    "documentary_name": "Nicolás de Piérola (label component)",
+    "department": "Lima",
+    "district": "Lurigancho-Chosica",
+    "category": "LABEL_COMPONENT_ALREADY_FLAGGED",
+    "evidence_basis": " Appears only inside the compound label 'Quirio – Nicolás de Piérola'. No source found that names a separate quebrada Nicolás de Piérola.",
+    "recommendation": "NONE",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "lima_nuevo_imperial_cantera_y_cantera_alta",
+    "origin": "main",
+    "documentary_name": "cantera y cantera alta",
+    "department": "Lima",
+    "district": "Nuevo Imperial",
+    "category": "SOURCE_TEXT_NOT_READ",
+    "evidence_basis": " Mapa de ubicación de poblaciones vulnerables",
+    "recommendation": "READ_AND_ARCHIVE_SOURCE_FIRST",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "lima_oyon_michimachay_rio_quichas_cp_michimachay",
+    "origin": "main",
+    "documentary_name": "michimachay (río quichas) CP Michimachay",
+    "department": "Lima",
+    "district": "Oyón",
+    "category": "PARENTHETICAL_ALIAS_OR_SUBNAME_PENDING",
+    "evidence_basis": "(río quichas)",
+    "recommendation": "ADJUDICATE_ALIAS_FROM_PRIMARY_SOURCE",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "lima_pachacamac_tinajas_cosanche",
+    "origin": "main",
+    "documentary_name": "Tinajas-Cosanche",
+    "department": "Lima",
+    "district": "Pachacámac",
+    "category": "SECONDARY_OR_LIST_SOURCE_ONLY",
+    "evidence_basis": " Listed among quebradas activadas, Pachacámac, March 2023",
+    "recommendation": "FIND_PRIMARY_SOURCE_FIRST",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "lima_punta_hermosa_rio_seco_malanche",
+    "origin": "main",
+    "documentary_name": "Río Seco (Malanche)",
+    "department": "Lima",
+    "district": "Punta Hermosa",
+    "category": "PARENTHETICAL_ALIAS_OR_SUBNAME_PENDING",
+    "evidence_basis": "(Malanche)",
+    "recommendation": "ADJUDICATE_ALIAS_FROM_PRIMARY_SOURCE",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "lima_quilmana_roldan_la_capilla",
+    "origin": "main",
+    "documentary_name": "roldan-la capilla",
+    "department": "Lima",
+    "district": "Quilmaná",
+    "category": "SOURCE_TEXT_NOT_READ",
+    "evidence_basis": " Mapa de ubicación de poblaciones vulnerables",
+    "recommendation": "READ_AND_ARCHIVE_SOURCE_FIRST",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "lima_santa_eulalia_centro_1_2_3",
+    "origin": "main",
+    "documentary_name": "Centro Santa Eulalia 1, 2 y 3",
+    "department": "Lima",
+    "district": "Santa Eulalia",
+    "category": "NUMBERED_SERIES_IN_SOURCE",
+    "evidence_basis": " Mapa de poblaciones vulnerables – quebrada Centro Santa Eulalia 1, 2 y 3, distrito Santa Eulalia",
+    "recommendation": "REVIEW_SPLIT_WITH_ARCHIVED_SOURCE",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "lima_santa_eulalia_huayaringa_centro_portada",
+    "origin": "main",
+    "documentary_name": "Huayaringa Centro y Portada de Huayaringa",
+    "department": "Lima",
+    "district": "Santa Eulalia",
+    "category": "ENUMERATED_DISTINCT_NAMES_IN_SOURCE",
+    "evidence_basis": " Mapa de poblaciones vulnerables – quebradas Huayaringa Centro y Portada de Huayaringa, distrito Santa Eulalia (separate map from 5772)",
+    "recommendation": "REVIEW_SPLIT_WITH_ARCHIVED_SOURCE",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "lima_sumbilca_ayrancho_llancay_y_chhuichihui",
+    "origin": "main",
+    "documentary_name": "ayrancho, llancay y chhuichihui",
+    "department": "Lima",
+    "district": "Sumbilca",
+    "category": "SOURCE_TEXT_NOT_READ",
+    "evidence_basis": " Mapa de ubicación de poblaciones vulnerables",
+    "recommendation": "READ_AND_ARCHIVE_SOURCE_FIRST",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "lima_sumbilca_colca_huandaro",
+    "origin": "main",
+    "documentary_name": "colca-huandaro",
+    "department": "Lima",
+    "district": "Sumbilca",
+    "category": "SOURCE_TEXT_NOT_READ",
+    "evidence_basis": " Mapa de ubicación de poblaciones vulnerables",
+    "recommendation": "READ_AND_ARCHIVE_SOURCE_FIRST",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "piura_canchaque_la_sabana_chorro_blanco",
+    "origin": "main",
+    "documentary_name": "La Sabana (Chorro Blanco)",
+    "department": "Piura",
+    "district": "Canchaque",
+    "category": "PARENTHETICAL_ALIAS_OR_SUBNAME_PENDING",
+    "evidence_basis": "(Chorro Blanco)",
+    "recommendation": "ADJUDICATE_ALIAS_FROM_PRIMARY_SOURCE",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "piura_huamarca_algarrobos_rio_limon",
+    "origin": "main",
+    "documentary_name": "Algarrobos (Río Limón)",
+    "department": "Piura",
+    "district": "Huamarca",
+    "category": "PARENTHETICAL_ALIAS_OR_SUBNAME_PENDING",
+    "evidence_basis": "(Río Limón)",
+    "recommendation": "ADJUDICATE_ALIAS_FROM_PRIMARY_SOURCE",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "piura_lalaquiz_la_loma_la_hoyada",
+    "origin": "main",
+    "documentary_name": "La Loma-La Hoyada",
+    "department": "Piura",
+    "district": "Lalaquiz",
+    "category": "SOURCE_TABLE_SINGLE_CELL_COMPOUND",
+    "evidence_basis": " Cuadro 11, fila 53: centro poblado 'Caraveli', quebrada 'La Loma-La Hoyada'",
+    "recommendation": "REREAD_ARCHIVED_TABLE_BEFORE_ANY_SPLIT",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "piura_sechura_puerto_rico_bayovar",
+    "origin": "main",
+    "documentary_name": "Puerto Rico-Bayovar",
+    "department": "Piura",
+    "district": "Sechura",
+    "category": "SOURCE_TABLE_SINGLE_CELL_COMPOUND",
+    "evidence_basis": " Cuadro 11, fila 25: centro poblado 'Puerto Rico -Buzon', quebrada 'Puerto Rico-Bayovar'",
+    "recommendation": "REREAD_ARCHIVED_TABLE_BEFORE_ANY_SPLIT",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "piura_tambogrande_salinas_pueblo_nuevo",
+    "origin": "main",
+    "documentary_name": "Salinas (Pueblo Nuevo)",
+    "department": "Piura",
+    "district": "Tambogrande",
+    "category": "PARENTHETICAL_ALIAS_OR_SUBNAME_PENDING",
+    "evidence_basis": "(Pueblo Nuevo)",
+    "recommendation": "ADJUDICATE_ALIAS_FROM_PRIMARY_SOURCE",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "piura_vice_don_juan_y_san_jose_vice",
+    "origin": "main",
+    "documentary_name": "Don Juan y San José Vice",
+    "department": "Piura",
+    "district": "Vice",
+    "category": "SOURCE_TABLE_SINGLE_CELL_COMPOUND",
+    "evidence_basis": " Cuadro 11, fila 15: centro poblado 'Vice', quebrada 'Don Juan y San José Vice'",
+    "recommendation": "REREAD_ARCHIVED_TABLE_BEFORE_ANY_SPLIT",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "tumbes_district_unknown_panales_casitas",
+    "origin": "main",
+    "documentary_name": "Panales-Casitas",
+    "department": "Tumbes",
+    "district": null,
+    "category": "SECONDARY_OR_LIST_SOURCE_ONLY",
+    "evidence_basis": " Named among quebradas activated on 2024-02-21; district not reliably stated in the text read – secondary",
+    "recommendation": "FIND_PRIMARY_SOURCE_FIRST",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "tumbes_papayal_barrio_san_jose_una_de_gato",
+    "origin": "main",
+    "documentary_name": "Barrio San José-Uña de Gato",
+    "department": "Tumbes",
+    "district": "Papayal",
+    "category": "SOURCE_TABLE_LOCALITY_LABEL",
+    "evidence_basis": "centro poblado 'Barrio San José-Uña de Gato', quebrada 'Barrio San José-Uña de Gato'",
+    "recommendation": "KEEP_AS_PRINTED",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "tumbes_papayal_barrio_santa_rosa_una_de_gato",
+    "origin": "main",
+    "documentary_name": "Barrio Santa Rosa-Uña de Gato",
+    "department": "Tumbes",
+    "district": "Papayal",
+    "category": "SOURCE_TABLE_LOCALITY_LABEL",
+    "evidence_basis": "centro poblado 'Barrio Santa Rosa-Uña de Gato', quebrada 'Barrio Santa Rosa-Uña de Gato'",
+    "recommendation": "KEEP_AS_PRINTED",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "tumbes_san_jacinto_casa_blanqueada_i_e_7_de_junio",
+    "origin": "main",
+    "documentary_name": "Casa Blanqueada - I.E. 7 de Junio",
+    "department": "Tumbes",
+    "district": "San Jacinto",
+    "category": "SOURCE_TABLE_LOCALITY_LABEL",
+    "evidence_basis": "centro poblado 'Casa Blanqueada - I.E. 7 de Junio', quebrada 'Casa Blanqueada - I.E. 7 de Junio'",
+    "recommendation": "KEEP_AS_PRINTED",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "tumbes_tumbes_luey_lucy",
+    "origin": "main",
+    "documentary_name": "Luey (Lucy)",
+    "department": "Tumbes",
+    "district": "Tumbes",
+    "category": "PARENTHETICAL_ALIAS_OR_SUBNAME_PENDING",
+    "evidence_basis": "(Lucy)",
+    "recommendation": "ADJUDICATE_ALIAS_FROM_PRIMARY_SOURCE",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "tumbes_zarumilla_zarumilla_tecnologico_zarumilla",
+    "origin": "main",
+    "documentary_name": "Zarumilla Tecnológico-Zarumilla",
+    "department": "Tumbes",
+    "district": "Zarumilla",
+    "category": "SOURCE_TABLE_SINGLE_CELL_COMPOUND",
+    "evidence_basis": " Cuadro 9, fila 20: centro poblado 'Sector 3', quebrada 'Zarumilla Tecnológico-Zarumilla'",
+    "recommendation": "REREAD_ARCHIVED_TABLE_BEFORE_ANY_SPLIT",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "ancash_chimbote_cayhuamarca",
+    "origin": "r8",
+    "documentary_name": "Cayhuamarca",
+    "department": "Ancash",
+    "district": "Chimbote",
+    "category": "SPLIT_RECORDED_WITH_BASIS",
+    "evidence_basis": "las quebradas Cayhuamarca y Tablones, centro poblado Suchiman y Tablones respectivamente",
+    "recommendation": "NONE",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "ancash_chimbote_el_establo_1",
+    "origin": "r8",
+    "documentary_name": "El Establo 1",
+    "department": "Ancash",
+    "district": "Chimbote",
+    "category": "SPLIT_RECORDED_WITH_BASIS",
+    "evidence_basis": "quebrada El Establo 1 y El Establo 2, centro poblado San Juan",
+    "recommendation": "NONE",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "ancash_chimbote_el_establo_2",
+    "origin": "r8",
+    "documentary_name": "El Establo 2",
+    "department": "Ancash",
+    "district": "Chimbote",
+    "category": "SPLIT_RECORDED_WITH_BASIS",
+    "evidence_basis": "quebrada El Establo 1 y El Establo 2, centro poblado San Juan",
+    "recommendation": "NONE",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "ancash_chimbote_tablones",
+    "origin": "r8",
+    "documentary_name": "Tablones",
+    "department": "Ancash",
+    "district": "Chimbote",
+    "category": "SPLIT_RECORDED_WITH_BASIS",
+    "evidence_basis": "las quebradas Cayhuamarca y Tablones, centro poblado Suchiman y Tablones respectivamente",
+    "recommendation": "NONE",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "ancash_samanco_s_n_los_chimus",
+    "origin": "r8",
+    "documentary_name": "s/n (centro poblado Los Chimús)",
+    "department": "Ancash",
+    "district": "Samanco",
+    "category": "LOCALITY_QUALIFIER",
+    "evidence_basis": "(centro poblado Los Chimús)",
+    "recommendation": "NONE",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "ica_humay_pallasca",
+    "origin": "r8",
+    "documentary_name": "Pallasca",
+    "department": "Ica",
+    "district": "Humay",
+    "category": "SPLIT_RECORDED_WITH_BASIS",
+    "evidence_basis": "las quebradas: Pallasca y Pantayco",
+    "recommendation": "NONE",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "ica_humay_pantayco",
+    "origin": "r8",
+    "documentary_name": "Pantayco",
+    "department": "Ica",
+    "district": "Humay",
+    "category": "SPLIT_RECORDED_WITH_BASIS",
+    "evidence_basis": "las quebradas: Pallasca y Pantayco",
+    "recommendation": "NONE",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "ica_nasca_cabeza_de_cura",
+    "origin": "r8",
+    "documentary_name": "Cabeza de Cura",
+    "department": "Ica",
+    "district": "Nasca",
+    "category": "SPLIT_RECORDED_WITH_BASIS",
+    "evidence_basis": "las quebradas: Cabeza de Cura y Cerro Blanco",
+    "recommendation": "NONE",
+    "split_performed_by_this_audit": false
+   },
+   {
+    "inventory_id": "ica_nasca_cerro_blanco",
+    "origin": "r8",
+    "documentary_name": "Cerro Blanco",
+    "department": "Ica",
+    "district": "Nasca",
+    "category": "SPLIT_RECORDED_WITH_BASIS",
+    "evidence_basis": "las quebradas: Cabeza de Cura y Cerro Blanco",
+    "recommendation": "NONE",
+    "split_performed_by_this_audit": false
+   }
+  ]
+ }
+}
