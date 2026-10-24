@@ -1,0 +1,193 @@
+name: IRFEN - Casma ANA public vector ZIP custody probe
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/phase2-casma-ana-public-vector-zip-probe.yml
+
+permissions:
+  contents: read
+
+jobs:
+  source-custody:
+    if: github.event.pull_request.head.ref == 'phase2/casma-gate-b-snapshot-reconciliation-20261012'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Verify offline ZIP inspection contract, then attempt one bounded official download
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p casma_ana_public_vector_probe
+          cat > /tmp/casma_ana_zip_probe.py <<'PY'
+          import hashlib
+          import io
+          import json
+          import pathlib
+          import tempfile
+          import unittest
+          import urllib.error
+          import urllib.request
+          import zipfile
+          from datetime import datetime, timezone
+
+          SOURCE = "https://geosnirh.ana.gob.pe/Repositorio/Shape/UnidadesHidrograficas.zip"
+          CATALOG = "https://catalogo.geoidep.gob.pe/metadatos/srv/api/records/7479fd98-28a4-4a33-8ee8-01b55dfc1108"
+          OUT = pathlib.Path("casma_ana_public_vector_probe")
+          MAX_BYTES = 256 * 1024 * 1024
+          GUARDS = dict(deployment_status="RESEARCH_ONLY", test_mode="TEST_ONLY",
+                        production_use=False, production_ready=False,
+                        operational_alerting_enabled=False, activation_gate="BLOCKED",
+                        missing_data_rule="UNKNOWN_NOT_LOW_RISK",
+                        decision_thresholds=None, hydraulic_factors=None,
+                        historical_geometry_equivalence_to_Uh_pfas100=False,
+                        gate_b="NOT_ESTABLISHED", geometry_map_published=False,
+                        source_identity_adjudicated=False, exact_n7_codes_verified=False)
+
+          class NoRedirects(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+
+          def inspect_archive(blob):
+              with zipfile.ZipFile(io.BytesIO(blob)) as z:
+                  members = z.infolist()
+                  if len(members) > 10000:
+                      raise ValueError("too many ZIP members")
+                  names = set()
+                  groups = {}
+                  total_uncompressed = 0
+                  for member in members:
+                      name = member.filename
+                      p = pathlib.PurePosixPath(name)
+                      if (not name or name.startswith("/") or "\\" in name
+                              or ".." in p.parts or name in names
+                              or member.flag_bits & 1):
+                          raise ValueError("unsafe, duplicate, or encrypted ZIP member")
+                      names.add(name)
+                      total_uncompressed += member.file_size
+                      if total_uncompressed > 2 * 1024 * 1024 * 1024:
+                          raise ValueError("ZIP expanded-size bound exceeded")
+                      if not member.is_dir():
+                          key = str(p.with_suffix("")).casefold()
+                          groups.setdefault(key, set()).add(p.suffix.casefold())
+                  complete = [k for k, extensions in groups.items()
+                              if {".shp", ".shx", ".dbf", ".prj"} <= extensions]
+                  return {
+                      "zip_member_count": len(members),
+                      "zip_uncompressed_size_claimed": total_uncompressed,
+                      "complete_shapefile_group_count": len(complete),
+                      "complete_shapefile_member_stems": sorted(complete),
+                      "member_inventory": [
+                          dict(name=m.filename, compressed_size=m.compress_size,
+                               uncompressed_size=m.file_size, crc32=format(m.CRC, "08x"))
+                          for m in members],
+                      "uh_pfas100_filename_seen": any(
+                          pathlib.PurePosixPath(m.filename).stem.casefold() == "uh_pfas100"
+                          for m in members),
+                  }
+
+          class ContractTests(unittest.TestCase):
+              def make_zip(self, names):
+                  buf = io.BytesIO()
+                  with zipfile.ZipFile(buf, "w") as z:
+                      for name in names:
+                          z.writestr(name, b"synthetic-test-only")
+                  return buf.getvalue()
+
+              def test_complete_group_is_only_member_level_not_geometry(self):
+                  result = inspect_archive(self.make_zip(
+                      ["folder/sample.shp", "folder/sample.shx",
+                       "folder/sample.dbf", "folder/sample.prj"]))
+                  self.assertEqual(result["complete_shapefile_group_count"], 1)
+                  self.assertFalse(result["uh_pfas100_filename_seen"])
+                  self.assertFalse(GUARDS["exact_n7_codes_verified"])
+                  self.assertFalse(GUARDS["historical_geometry_equivalence_to_Uh_pfas100"])
+
+              def test_reject_zip_slip(self):
+                  with self.assertRaises(ValueError):
+                      inspect_archive(self.make_zip(["../outside.shp"]))
+
+              def test_incomplete_group_does_not_prove_historical_absence(self):
+                  result = inspect_archive(self.make_zip(["folder/sample.shp"]))
+                  self.assertEqual(result["complete_shapefile_group_count"], 0)
+                  self.assertEqual(GUARDS["gate_b"], "NOT_ESTABLISHED")
+
+          def main():
+              if not unittest.TextTestRunner(verbosity=2).run(
+                  unittest.defaultTestLoader.loadTestsFromTestCase(ContractTests)
+              ).wasSuccessful():
+                  raise SystemExit(1)
+              receipt = dict(source=SOURCE, catalogue=CATALOG,
+                             checked_at_utc=datetime.now(timezone.utc).isoformat(),
+                             capture_status="UNKNOWN_SOURCE_ACCESS_UNAVAILABLE",
+                             raw_zip_sha256=None, raw_zip_bytes=None,
+                             original_2006_Uh_pfas100_proven=False,
+                             independent_institutional_vector_candidate_only=True,
+                             **GUARDS)
+              try:
+                  req = urllib.request.Request(
+                      SOURCE, headers={"User-Agent": "IRFEN-RESEARCH-ONLY/0.1"})
+                  with urllib.request.build_opener(NoRedirects()).open(req, timeout=120) as r:
+                      if r.status != 200 or r.geturl() != SOURCE:
+                          raise ValueError("unexpected status or redirected URL")
+                      length = r.headers.get("Content-Length")
+                      if length is not None and int(length) > MAX_BYTES:
+                          raise ValueError("Content-Length exceeds bounded capture limit")
+                      with tempfile.TemporaryFile() as tmp:
+                          digest = hashlib.sha256()
+                          size = 0
+                          while True:
+                              chunk = r.read(1024 * 1024)
+                              if not chunk:
+                                  break
+                              size += len(chunk)
+                              if size > MAX_BYTES:
+                                  raise ValueError("bounded capture limit exceeded")
+                              digest.update(chunk)
+                              tmp.write(chunk)
+                          tmp.seek(0)
+                          blob = tmp.read()
+                  inventory = inspect_archive(blob)
+                  (OUT / "ana_unidades_hidrograficas_source.zip").write_bytes(blob)
+                  receipt.update(
+                      capture_status="PUBLIC_ANA_ZIP_BYTES_FROZEN_RESEARCH_ONLY",
+                      raw_zip_sha256=digest.hexdigest(), raw_zip_bytes=size,
+                      http_status=200, final_url=SOURCE,
+                      **inventory)
+              except (urllib.error.URLError, urllib.error.HTTPError,
+                      TimeoutError, OSError, ValueError, zipfile.BadZipFile) as exc:
+                  receipt["capture_status"] = "UNKNOWN_SOURCE_ACCESS_UNAVAILABLE_OR_INVALID"
+                  receipt["access_error_type"] = type(exc).__name__
+                  receipt["raw_zip_sha256"] = None
+                  receipt["raw_zip_bytes"] = None
+                  print("UNKNOWN/SOURCE_ACCESS_UNAVAILABLE_OR_INVALID", type(exc).__name__)
+              (OUT / "receipt.json").write_text(
+                  json.dumps(receipt, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+                  encoding="utf-8")
+              assert receipt["gate_b"] == "NOT_ESTABLISHED"
+              assert receipt["activation_gate"] == "BLOCKED"
+              assert receipt["historical_geometry_equivalence_to_Uh_pfas100"] is False
+              assert receipt["exact_n7_codes_verified"] is False
+              if receipt["raw_zip_sha256"]:
+                  b = (OUT / "ana_unidades_hidrograficas_source.zip").read_bytes()
+                  assert hashlib.sha256(b).hexdigest() == receipt["raw_zip_sha256"]
+                  assert len(b) == receipt["raw_zip_bytes"]
+              print("CASMA_ANA_ZIP_CAPTURE_STATUS=" + receipt["capture_status"])
+              print("CASMA_ANA_ZIP_SHA256=" + str(receipt["raw_zip_sha256"]))
+
+          if __name__ == "__main__":
+              main()
+          PY
+          python /tmp/casma_ana_zip_probe.py
+      - name: Retain exact raw public bytes and custody receipt for independent review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: casma-ana-public-vector-research-probe
+          path: casma_ana_public_vector_probe/
+          if-no-files-found: warn
+          retention-days: 30
