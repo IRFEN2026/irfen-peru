@@ -114,7 +114,35 @@ def test_no_documentary_unit_is_map_publishable_or_has_inferred_routing():
         assert u["flow_or_stage_observation_refs"] == [], u["id"]
         assert u["collector_capacity"] is None, u["id"]
         assert u["collector_overflow_evidence"] is None, u["id"]
-        # Frozen documentary line references are not permission to publish.
+        # Only the two frozen IGP line-context components may reference a
+    # reproducible line contract. A line reference is not a catchment
+    # polygon, geodetic outlet, validated junction or publishable layer.
+    frozen_line_ids = {
+        "jicamarca_canto_grande_upper_branch",
+        "jicamarca_media_luna",
+    }
+    with_line = {
+        u["id"] for u in d["units"]
+        if u["reproducible_geometry_ref"] is not None
+    }
+    assert with_line == frozen_line_ids
+    for u in d["units"]:
+        if u["id"] in frozen_line_ids:
+            assert u["reproducible_geometry_ref"] == (
+                "config/phase2_jicamarca_igp_channel_line_freeze_v0_1.json"
+            )
+            assert u["channel_or_catchment_geometry"] == (
+                "OFFICIAL_IGP_LINE_CONTEXT_NOT_CATCHMENT"
+            )
+            assert u["identity_adjudication"] == (
+                "SEPARATE_DOCUMENTARY_COMPONENT_NO_EXACT_BOUNDARY"
+            )
+        else:
+            assert u["reproducible_geometry_ref"] is None, u["id"]
+        assert u["map_publishable"] is False, u["id"]
+        assert u["exact_confluence_coordinate"] is None, u["id"]
+        assert u["outlet_coordinate"] is None, u["id"]
+    # Frozen documentary line references are not permission to publish.
     # Documentary receiver links, engineering works and monitoring triggers
     # cannot silently become hydraulic routing, capacity or overflow evidence.
     semantics = d["collector_semantics"]
