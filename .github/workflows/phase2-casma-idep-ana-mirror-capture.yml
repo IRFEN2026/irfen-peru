@@ -1,0 +1,125 @@
+name: IRFEN - Casma IDEP ANA-attributed N7 independent capture
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/phase2-casma-idep-ana-mirror-capture.yml
+      - tests/test_phase2_casma_idep_ana_mirror_probe.py
+
+permissions:
+  contents: read
+
+jobs:
+  offline-contract:
+    if: github.event.pull_request.head.ref == 'phase2/casma-gate-b-snapshot-reconciliation-20261012'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Check exact-code, structural and fail-closed contracts
+        run: python -m unittest discover -s tests -p 'test_phase2_casma_idep_ana_mirror_probe.py' -v
+
+  bounded-source-capture:
+    needs: offline-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Capture nine independent IDEP-hosted ANA-attributed candidate responses
+        shell: bash
+        run: |
+          set -uo pipefail
+          out="casma_idep_n7_independent_capture"
+          # GitHub Actions invokes bash with -e. Disable it only around this
+          # bounded probe so unavailable public data produces an UNKNOWN receipt.
+          set +e
+          python tests/test_phase2_casma_idep_ana_mirror_probe.py --capture --out-dir "$out"
+          rc=$?
+          set -e
+          if [ "$rc" -ne 0 ]; then
+            # No partial candidate is represented as a complete nine-code capture.
+            # Failure is UNKNOWN, never a negative, low risk, or source absence.
+            mkdir -p "$out"
+            python - "$out/receipt.json" "$rc" <<'PY'
+          import json
+          import sys
+          from datetime import datetime, timezone
+          from pathlib import Path
+          dest, rc = sys.argv[1:]
+          receipt = {
+              "source_metadata_url": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/FeatureServer/7",
+              "source_custody": "IDEP_GOV_HOSTED_ANA_ATTRIBUTED_LINEAGE_UNVERIFIED",
+              "checked_at_utc": datetime.now(timezone.utc).isoformat(),
+              "capture_status": "UNKNOWN_SOURCE_ACCESS_UNAVAILABLE_OR_INVALID",
+              "capture_process_exit_code": int(rc),
+              "raw_response_sha256": None,
+              "independent_n7_capture_count": None,
+              "original_Uh_pfas100_identity_proven": False,
+              "official_ANA_source_byte_equivalence_proven": False,
+              "historical_geometry_equivalence_to_Uh_pfas100": False,
+              "gate_b": "NOT_ESTABLISHED",
+              "topology_gate_c_changed": False,
+              "map_publication_enabled": False,
+              "deployment_status": "RESEARCH_ONLY",
+              "test_mode": "TEST_ONLY",
+              "production_use": False,
+              "production_ready": False,
+              "operational_alerting_enabled": False,
+              "activation_gate": "BLOCKED",
+              "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+              "decision_thresholds": None,
+              "hydraulic_factors": None,
+          }
+          Path(dest).write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
+          PY
+            echo "CASMA_IDEP_CAPTURE=UNKNOWN_SOURCE_ACCESS_UNAVAILABLE_OR_INVALID"
+          else
+            # Verify byte-level custody after the all-or-nothing source capture.
+            python - "$out" <<'PY'
+          import hashlib
+          import json
+          import sys
+          from pathlib import Path
+          out = Path(sys.argv[1])
+          m = json.loads((out / "manifest.json").read_text())
+          codes = {f"137596{i}" for i in range(1, 10)}
+          assert m["independent_n7_capture_count"] == 9
+          assert {f["code"] for f in m["features"]} == codes
+          assert len(m["features"]) == 9
+          for f in m["features"]:
+              raw = (out / f["raw_path"]).read_bytes()
+              assert hashlib.sha256(raw).hexdigest() == f["raw_response_sha256"]
+              assert len(raw) == f["raw_response_bytes"]
+              assert f["http_provenance"]["status"] == 200
+              assert f["http_provenance"]["final_url"] == f["http_provenance"]["requested_url"]
+              assert f["lineage_established"] is False
+              assert f["topology_validated"] is False
+          assert m["historical_geometry_equivalence_to_Uh_pfas100"] is False
+          assert m["original_Uh_pfas100_identity_proven"] is False
+          assert m["official_ANA_source_byte_equivalence_proven"] is False
+          assert m["gate_b"] == "NOT_ESTABLISHED"
+          assert m["map_publication_enabled"] is False
+          assert m["production_use"] is False
+          assert m["production_ready"] is False
+          assert m["operational_alerting_enabled"] is False
+          assert m["activation_gate"] == "BLOCKED"
+          assert m["missing_data_rule"] == "UNKNOWN_NOT_LOW_RISK"
+          assert m["decision_thresholds"] is None
+          assert m["hydraulic_factors"] is None
+          print("CASMA_IDEP_CAPTURE=NINE_RAW_RESPONSES_SHA256_VERIFIED_RESEARCH_ONLY")
+          PY
+          fi
+      - name: Archive bounded independent-source evidence, not a map layer
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: casma-idep-n7-independent-source-capture
+          retention-days: 30
+          if-no-files-found: error
+          path: casma_idep_n7_independent_capture/
