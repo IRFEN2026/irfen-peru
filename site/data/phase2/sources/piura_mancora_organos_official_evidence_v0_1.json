@@ -120,6 +120,40 @@
         "all Talara ravines form one catchment",
         "a territorial road impact defines hydrologic geometry"
       ]
+    },
+    {
+      "source_id": "IGP-PAITA-GEODYNAMIC-2022-036",
+      "institution": "Instituto Geofisico del Peru / CENEPRED SIGRID",
+      "document": "Inspeccion Geodinamica en los A.H. Vista al Mar, Cerro Lloron y Playa Cangrejos (Distrito y Provincia de Paita - Region Piura)",
+      "url": "https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/14893_inspeccion-geodinamica-en-los-ah-vista-al-mar-cerro-lloron-y-playa-cangrejos-distrito-y-provincia-de-paita-region-piura.pdf",
+      "role": "CROSS_PROVINCE_SAME_NAME_CARTOGRAPHIC_CONTEXT_ONLY",
+      "admissible_claims": [
+        "a Paita-context official geodynamic mapping source contains a same-name Quebrada Vichayito cartographic label in the broader Paita coastal-ravine context",
+        "the same-name label creates a cross-province identity conflict that must be resolved before any geometry binding to the Los Organos/Talara child"
+      ],
+      "forbidden_inferences": [
+        "the Paita-labelled feature is the Los Organos/Talara Quebrada Vichayito",
+        "the source supplies Talara Vichayito catchment, channel or outlet geometry",
+        "the cartographic label is a verified Talara activation event",
+        "name coincidence resolves hydrologic continuity or separation"
+      ]
+    },
+    {
+      "source_id": "MINCETUR-PLAYA-VICHAYITO-5374",
+      "institution": "Ministerio de Comercio Exterior y Turismo - Inventario Nacional de Recursos Turisticos",
+      "document": "Playa Vichayito - ficha de inventario codigo 5374",
+      "url": "https://consultasenlinea.mincetur.gob.pe/fichaInventario/index.aspx?cod_Ficha=5374",
+      "role": "OFFICIAL_TERRITORIAL_IDENTITY_AND_NAMED_LOCAL_RAVINE_CONTEXT",
+      "admissible_claims": [
+        "the official inventory places Playa Vichayito in Los Organos district, Talara province",
+        "the official inventory states that Playa Vichayito has two named ravines: Quebrada del Chino and Quebrada Vichayito"
+      ],
+      "forbidden_inferences": [
+        "the tourism inventory supplies reproducible channel, catchment or outlet geometry",
+        "the named ravines have a verified dated activation event from this source",
+        "the source resolves the Paita/Talara same-name geometry conflict without a coordinate-level hydrologic crosswalk",
+        "territorial identity alone establishes hydraulic connectivity, capacity or IRFEN thresholds"
+      ]
     }
   ],
   "qa_artifacts": [
@@ -127,6 +161,12 @@
       "path": "config/phase2_mancora_fernandez_same_name_quarantine_v0_1.json",
       "role": "CROSS_REGION_SAME_NAME_GEOMETRY_QUARANTINE",
       "may_supply_mancora_geometry": false,
+      "may_bind_same_name_source_without_coordinate_crosswalk": false
+    },
+    {
+      "path": "config/phase2_vichayito_same_name_quarantine_v0_1.json",
+      "role": "CROSS_PROVINCE_SAME_NAME_GEOMETRY_QUARANTINE",
+      "may_supply_talara_vichayito_geometry": false,
       "may_bind_same_name_source_without_coordinate_crosswalk": false
     }
   ],
@@ -141,6 +181,9 @@
     "absence_of_report_is_negative": false,
     "same_name_cross_region_geometry_binding_allowed": false,
     "vichayito_named_ravine_confirmed": true,
-    "vichayito_activation_verified": false
+    "vichayito_activation_verified": false,
+    "vichayito_cross_province_same_name_binding_allowed": false,
+    "vichayito_talara_territorial_identity_independently_supported": true,
+    "vichayito_talara_local_named_ravines_independently_supported": true
   }
 }
