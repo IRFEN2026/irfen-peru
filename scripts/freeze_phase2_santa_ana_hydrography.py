@@ -114,6 +114,15 @@ def inspect(raw, source_key="ana_official"):
     obj = json.loads(raw)
     if not isinstance(obj, dict) or obj.get("error") or obj.get("exceededTransferLimit"):
         raise ValueError("ArcGIS error or truncated result")
+    # RFC 7946 defaults to WGS84 lon/lat. An explicit conflicting legacy CRS
+    # overrides that assumption and must not be archived as EPSG:4326.
+    if "crs" in obj:
+        crs = obj["crs"]
+        allowed = {"EPSG:4326", "OGC:CRS84", "urn:ogc:def:crs:OGC::CRS84"}
+        if not (isinstance(crs, dict) and crs.get("type") == "name"
+                and isinstance(crs.get("properties"), dict)
+                and crs["properties"].get("name") in allowed):
+            raise ValueError("explicit GeoJSON CRS is not adjudicated WGS84 lon/lat")
     features = obj.get("features")
     if isinstance(features, list) and len(features) >= 2000:
         raise ValueError("candidate count reaches ArcGIS maxRecordCount; pagination not adjudicated")
@@ -268,6 +277,23 @@ class OfflineTests(unittest.TestCase):
                                     "features": [feature(oid) for oid in ids]}).encode())
         self.assertEqual(len(inspect(json.dumps({"type": "FeatureCollection",
                                                 "features": [feature(1), feature(2)]}).encode())), 2)
+
+    def test_explicit_geojson_crs_must_be_wgs84_lonlat(self):
+        # Synthetic metadata fixtures only, not observed ANA geometry.
+        obj = {"type": "FeatureCollection", "features": [
+            {"type": "Feature",
+             "properties": {"NOMBRE_CA": "synthetic Santa", "OBJECTID_1": 1},
+             "geometry": {"type": "LineString", "coordinates": [[0, 0], [1, 1]]}}
+        ]}
+        for crs in (None, {"type": "name", "properties": {"name": "EPSG:3857"}},
+                    {"type": "name", "properties": {"name": "EPSG:32717"}},
+                    {"type": "link", "properties": {"href": "unknown"}}):
+            with self.subTest(crs=crs), self.assertRaises(ValueError):
+                inspect(json.dumps({**obj, "crs": crs}).encode())
+        for name in ("EPSG:4326", "OGC:CRS84", "urn:ogc:def:crs:OGC::CRS84"):
+            with self.subTest(name=name):
+                self.assertEqual(len(inspect(json.dumps({**obj, "crs": {
+                    "type": "name", "properties": {"name": name}}}).encode())), 1)
 
     def test_rejects_unusable_responses(self):
         for obj in ({"error": {"code": 500}},
