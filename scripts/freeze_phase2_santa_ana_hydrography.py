@@ -120,6 +120,7 @@ def inspect(raw, source_key="ana_official"):
     if obj.get("type") != "FeatureCollection" or not isinstance(features, list) or not features:
         raise ValueError("missing nonempty GeoJSON FeatureCollection")
     rows = []
+    seen_objectids = set()
     for feature in features:
         if not isinstance(feature, dict) or feature.get("type") != "Feature" or not isinstance(feature.get("properties"), dict):
             raise ValueError("malformed feature")
@@ -134,7 +135,13 @@ def inspect(raw, source_key="ana_official"):
         if not any(isinstance(p.get(field), str) and "santa" in p[field].casefold()
                    for field in ("NOMBRE_CA", "NOMBRE_UH")):
             raise ValueError("ANA candidate does not satisfy the declared Santa-name query")
-        rows.append({"objectid": p.get(SOURCES[source_key]["oid_field"]), "codigo_ca": p.get("CODIGO_CA"),
+        oid = p.get(SOURCES[source_key]["oid_field"])
+        # Stable per-source object IDs are necessary to trace a captured candidate.
+        # Missing, invalid or duplicate IDs mean UNKNOWN, never an adjudicated line.
+        if isinstance(oid, bool) or not isinstance(oid, int) or oid < 0 or oid in seen_objectids:
+            raise ValueError("missing, invalid or duplicate source object ID")
+        seen_objectids.add(oid)
+        rows.append({"objectid": oid, "codigo_ca": p.get("CODIGO_CA"),
                      "nombre_ca": p.get("NOMBRE_CA"), "tipo_ca": p.get("TIPO_CA"),
                      "nombre_uh": p.get("NOMBRE_UH"), "codigo_uh": p.get("CODIGO_UH"),
                      "long_km": p.get("LONG_KM"), "geometry_type": geometry["type"],
@@ -169,7 +176,7 @@ class OfflineTests(unittest.TestCase):
     def test_freeze_and_guards(self):
         # Synthetic software fixture, not Santa coordinates or evidence.
         raw = json.dumps({"type": "FeatureCollection", "features": [
-            {"type": "Feature", "properties": {"NOMBRE_CA": "synthetic Santa"},
+            {"type": "Feature", "properties": {"NOMBRE_CA": "synthetic Santa", "OBJECTID_1": 1},
              "geometry": {"type": "LineString", "coordinates": [[0, 0], [1, 1]]}}
         ]}).encode()
         doc = freeze(raw, "TEST_ONLY")
@@ -248,6 +255,19 @@ class OfflineTests(unittest.TestCase):
         self.assertFalse(doc["geometry_map_published"])
         self.assertEqual(doc["activation_gate"], "BLOCKED")
         self.assertIsNone(doc["hydraulic_factors"])
+
+    def test_source_object_ids_are_required_and_unique(self):
+        # Synthetic software fixtures only, never Santa hydrographic evidence.
+        def feature(oid):
+            return {"type": "Feature",
+                    "properties": {"NOMBRE_CA": "synthetic Santa", "OBJECTID_1": oid},
+                    "geometry": {"type": "LineString", "coordinates": [[0, 0], [1, 1]]}}
+        for ids in ([None], [True], [-1], [1, 1], ["1"]):
+            with self.subTest(ids=ids), self.assertRaises(ValueError):
+                inspect(json.dumps({"type": "FeatureCollection",
+                                    "features": [feature(oid) for oid in ids]}).encode())
+        self.assertEqual(len(inspect(json.dumps({"type": "FeatureCollection",
+                                                "features": [feature(1), feature(2)]}).encode())), 2)
 
     def test_rejects_unusable_responses(self):
         for obj in ({"error": {"code": 500}},
