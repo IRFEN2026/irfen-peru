@@ -45,6 +45,15 @@ def test_documentary_rows_are_not_a_deduplicated_hydrologic_census():
         assert ("PENDING" in group["status"] or "CONFLICT" in group["status"])
     for unit in units:
         assert unit["identity_adjudication"] != "CONFIRMED_HYDROLOGIC_UNIT"
+        # A verified internal JSON contract is not equivalent to verified
+        # original source bytes. External source-text promotion requires an
+        # explicit original SHA-256; the hash claim itself still needs a
+        # separate byte-level verification before any scientific promotion.
+        for source in unit["source_refs"]:
+            if source["source_text_verified"] is True and not source["source_id"].startswith("config/"):
+                digest = source.get("original_pdf_sha256")
+                assert isinstance(digest, str) and len(digest) == 64, unit["id"]
+                assert all(c in "0123456789abcdef" for c in digest.lower()), unit["id"]
     assert d["counts"]["national_audit_corridor_documentary_rows"] + (
         d["counts"]["jicamarca_additional_documentary_rows"]
     ) == len(units)
