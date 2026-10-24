@@ -180,6 +180,43 @@ def test_unverified_events_and_station_triggers_do_not_become_flow():
     assert coen["documentary_row_count_increment"] == 0
     assert coen["confirmed_unique_hydrologic_unit_count_increment"] == 0
     assert coen["map_publishable"] is False
+
+    # COEN Annex 06 has 15 unresolved/non-exact names, all preserved in
+    # the separate lead ledger. Neither a variant nor a name-only row may
+    # disappear, be double-counted, or turn into a measured unit event.
+    annex_unresolved = {
+        row["printed_label"]
+        for row in names
+        if not row["reconciliation"].startswith("EXACT_DOCUMENTARY_LABEL_MATCH")
+    }
+    coen_leads = [
+        lead for lead in d["official_unmaterialized_name_leads"]
+        if lead.get("source_id") == coen["source_id"]
+    ]
+    lead_labels = [lead["documentary_name"] for lead in coen_leads]
+    assert len(lead_labels) == len(set(lead_labels)) == len(annex_unresolved) == 15
+    assert set(lead_labels) == annex_unresolved
+    for lead in coen_leads:
+        assert lead["map_publishable"] is False
+        assert lead["verified_event_refs"] == []
+        assert lead["flow_or_stage_observation_refs"] == []
+        assert lead["outlet_coordinate"] is None
+        assert lead["exact_confluence_coordinate"] is None
+        assert lead["counted_as_confirmed_unique_hydrologic_unit"] is False
+        assert all(
+            event["usable_as_confirmed_unit_event"] is False
+            for event in lead["unverified_event_leads"]
+        )
+    # Two separate documentary mentions of Buenos Aires (COEN annex
+    # and SENACE road design) cannot establish an outlet, identity or
+    # constructed hydraulic connection.
+    crossing_buenos_aires = [
+        c for c in d["official_road_crossing_design_leads"]["candidates"]
+        if c["documentary_label"] == "Buenos Aires"
+    ]
+    assert len(crossing_buenos_aires) == 1
+    assert crossing_buenos_aires[0]["existing_inventory_id"] is None
+    assert crossing_buenos_aires[0]["collector_connection_adjudication"] == "UNRESOLVED"
     for row in names:
         assert row["exact_outlet"] is None
         assert row["exact_confluence"] is None
