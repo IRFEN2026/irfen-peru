@@ -1,0 +1,62 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PRE_EXECUTION_LANDSAT7_FROZEN_PAIR_ASSET_METADATA_INVENTORY",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "pair_input": {
+    "workflow_run_id": 34549180642,
+    "artifact_id": 10180152726,
+    "file": "chosica_2015_candidate_landsat7_pairs_v0_1.json",
+    "sha256": "266d608d8e41b02513a6445bd8140d2612fbf2f05bddbf3e2b5a7318fdd3050b",
+    "required_status": "FROZEN_LANDSAT7_METADATA_ONLY_SCENE_PAIRS"
+  },
+  "scientific_source": {
+    "institution": "U.S. Geological Survey",
+    "product_family": "Landsat Collection 2 Level-2 Surface Reflectance",
+    "sensor": "Landsat 7 ETM+"
+  },
+  "transport_mirror": {
+    "provider": "Microsoft Planetary Computer",
+    "role": "TRANSPORT_ONLY_NOT_SCIENTIFIC_SOURCE",
+    "item_endpoint_template": "https://planetarycomputer.microsoft.com/api/stac/v1/collections/landsat-c2-l2/items/{item_id}",
+    "endpoint_host": "planetarycomputer.microsoft.com",
+    "collection": "landsat-c2-l2",
+    "tls_verify": true,
+    "redirects_allowed": false,
+    "free_web_search_allowed": false
+  },
+  "required_asset_keys": ["qa_pixel", "qa_radsat", "red", "nir08", "swir16", "swir22"],
+  "retention": {
+    "item_fields": ["item_id", "datetime", "platform", "landsat_wrs_path", "landsat_wrs_row", "item_response_sha256"],
+    "asset_fields": ["asset_key", "href", "href_host", "href_path", "href_query_present", "file:checksum", "type"],
+    "pixel_bytes_allowed": false,
+    "asset_request_allowed": false
+  },
+  "identity_gate": {
+    "returned_item_id_exact_pair_match": true,
+    "collection_exactly_landsat_c2_l2": true,
+    "platform_landsat7_required": true,
+    "wrs_path_row_exact_pair_match": true,
+    "acquisition_datetime_exact_pair_match": true,
+    "all_required_asset_keys_present": true
+  },
+  "forbidden": [
+    "request any asset href",
+    "read pixel bytes",
+    "read target names or outcomes",
+    "read A6680",
+    "read contaminated adjudication",
+    "replace frozen scenes",
+    "modify candidate matching or ranking",
+    "free web search",
+    "assign control labels"
+  ],
+  "sealed_target_unblind_allowed": false,
+  "next_gate": "FREEZE_LANDSAT7_QA_PIXEL_AND_SLC_OFF_HANDLING_RULES_USING_ONLY_FROZEN_PAIR_AND_ASSET_METADATA_BEFORE_ANY_ASSET_TRANSFER"
+}

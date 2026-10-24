@@ -1,0 +1,78 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PRE_PIXEL_LANDSAT8_CANDIDATE_QA_GATE",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "inputs": {
+    "candidate_geometry": {
+      "artifact_id": 10171108859,
+      "file": "chosica_2015_cleanroom_candidate_geometries_v0_1.geojson",
+      "sha256": "9a23644c191c88fb66722b368773251051b4098ddd74e4d5861c3a37dbfbb1ca"
+    },
+    "asset_inventory": {
+      "artifact_id": 10172288298,
+      "file": "chosica_2015_candidate_landsat8_asset_inventory_v0_1.json",
+      "sha256": "524e298aa313dffc0df2445e4f44cf7769c2fc0730d49bba7ff64cc8848b0659"
+    },
+    "frozen_items": {
+      "reference": "LC08_L2SP_007068_20150214_20200910_02_T1_SR",
+      "pre": "LC08_L2SP_007068_20150318_20200909_02_T1_SR",
+      "post": "LC08_L2SP_007068_20150403_20200909_02_T1_SR"
+    }
+  },
+  "asset_policy": {
+    "allowed_asset_key": "qa_pixel",
+    "full_file_download_required": true,
+    "checksum_policy": "STAC file:checksum must be multihash sha2-512 encoded as hex prefix 1340 followed by 64-byte digest; verify full file before raster read",
+    "all_other_asset_keys_forbidden_in_this_gate": true,
+    "asset_host_required": "landsatlook.usgs.gov",
+    "redirects_allowed": false
+  },
+  "qa_pixel": {
+    "invalid_bits": {
+      "0": "fill",
+      "1": "dilated_cloud",
+      "2": "cirrus",
+      "3": "cloud",
+      "4": "cloud_shadow",
+      "5": "snow",
+      "7": "water"
+    },
+    "valid_rule": "all invalid bits are zero",
+    "rasterization": "candidate polygon pixel-center inclusion; all_touched=false"
+  },
+  "alignment": {
+    "reference_grid": "frozen immediate-pre qa_pixel raster grid",
+    "reference_and_post_masks": "nearest-neighbor reproject to immediate-pre grid before overlap statistics",
+    "outside_source_extent": "invalid",
+    "candidate_geometry": "transform WGS84 candidate polygon to immediate-pre raster CRS and rasterize on immediate-pre grid",
+    "categorical_resampling": "nearest only"
+  },
+  "quality_gate": {
+    "minimum_candidate_pixels": 100,
+    "minimum_clear_land_fraction_each_scene": 0.50,
+    "minimum_three_scene_common_clear_land_fraction": 0.40,
+    "candidate_status_if_pass": "QA_USABLE_FOR_PREPRE_AND_EVENT_CHANGE",
+    "candidate_status_if_fail": "QA_INSUFFICIENT_NO_SCENE_REPLACEMENT",
+    "minimum_usable_candidates_to_continue": 1,
+    "scene_replacement_allowed": false
+  },
+  "forbidden": [
+    "read reflectance bands in this QA stage",
+    "replace a frozen scene because of QA",
+    "read target outcomes or names",
+    "read A6680",
+    "read contaminated adjudication",
+    "change candidate selection or ranking",
+    "interpret QA failure or clear pixels as control outcome",
+    "free web search"
+  ],
+  "sealed_target_unblind_allowed": false,
+  "next_gate": "IF_AT_LEAST_ONE_CANDIDATE_PASSES_QA_FREEZE_QA_OUTPUT_THEN_EXECUTE_PRE_REGISTERED_REFLECTANCE_CHANGE_METRICS_ON_FROZEN_SCENES_ONLY"
+}

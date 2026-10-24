@@ -1,0 +1,62 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_CANDIDATE_ONLY_EVIDENCE_ADJUDICATION_NO_SELECTION_FEEDBACK",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "candidate_membership": {
+    "matching_path": "site/data/validation/cleanroom/chosica_2015_cleanroom_matching_v0_1.json",
+    "matching_sha256": "108faf9d525929cdab10b5cfaa4325a0b806ca1705c6a36fa3e3a1d082821d73",
+    "candidate_count": 7
+  },
+  "allowed_frozen_evidence_records": [
+    {
+      "path": "config/chosica_2015_ingemmet_candidate_event_day_freeze_record_v0_1.json",
+      "required_status": "FROZEN_CANDIDATE_ONLY_INGEMMET_EVENT_DAY_BY_EXACT_HASH",
+      "label_capability": "NONE_WHEN_NO_LOCAL_RECORD"
+    },
+    {
+      "path": "config/chosica_2015_candidate_sentinel1_availability_freeze_record_v0_1.json",
+      "required_status": "FROZEN_CANDIDATE_ONLY_SENTINEL1_AVAILABILITY_NO_SCENES",
+      "label_capability": "NONE"
+    },
+    {
+      "path": "config/chosica_2015_candidate_landsat8_qa_failure_freeze_record_v0_1.json",
+      "required_status": "FROZEN_LANDSAT8_QA_QUALITY_BLOCKED_NO_USABLE_CANDIDATES",
+      "label_capability": "NONE"
+    },
+    {
+      "path": "config/chosica_2015_candidate_landsat7_change_freeze_record_v0_1.json",
+      "required_status": "FROZEN_LANDSAT7_DESCRIPTIVE_CHANGE_BY_EXACT_HASH",
+      "label_capability": "NONE_DESCRIPTIVE_SUPPORT_ONLY"
+    }
+  ],
+  "adjudication_rule": {
+    "allowed_labels": ["CONTROL_CONFIRMED", "EXCLUDED_ACTIVE", "OUTCOME_UNKNOWN"],
+    "control_confirmed_requires_affirmative_candidate_local_nonactivation_record": true,
+    "excluded_active_requires_affirmative_candidate_local_activation_record": true,
+    "silence_or_no_record_is_unknown": true,
+    "no_scene_is_unknown": true,
+    "qa_failure_is_unknown": true,
+    "spectral_no_change_is_not_control": true,
+    "spectral_change_is_not_activation": true,
+    "default_without_affirmative_label_capable_source": "OUTCOME_UNKNOWN"
+  },
+  "forbidden": [
+    "read target names or outcomes",
+    "read A6680",
+    "read contaminated adjudication",
+    "read free-web or search-engine snippets",
+    "change candidate membership, matching, ranking, or shortlists",
+    "derive a label from documentary silence",
+    "derive a label from satellite no-scene, QA failure, or descriptive spectral magnitude",
+    "feed any adjudication result back into matching"
+  ],
+  "sealed_target_unblind_allowed": false,
+  "next_gate": "FREEZE_CANDIDATE_ONLY_ADJUDICATION_AND_EVALUATE_PSEUDONYMOUS_TARGET_READINESS_WITHOUT_READING_TARGET_OUTCOMES"
+}

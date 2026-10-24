@@ -1,0 +1,78 @@
+name: IRFEN - Chosica 2015 candidate Landsat 8 pair freeze
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_candidate_landsat8_pair_freeze_contract_v0_1.json
+      - scripts/freeze_chosica_2015_candidate_landsat8_pairs.py
+      - .github/workflows/chosica-2015-candidate-landsat8-pair-freeze.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  freeze-pairs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_candidate_landsat8_pair_freeze_contract_v0_1.json
+            scripts/freeze_chosica_2015_candidate_landsat8_pairs.py
+            .github/workflows/chosica-2015-candidate-landsat8-pair-freeze.yml
+      - name: Assert forbidden scientific paths absent
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_multibasin_validation_set_v0_1.json
+          test ! -e config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09_b.json
+      - name: Download frozen Landsat availability artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p sources artifacts/run1 artifacts/run2
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/10172034215/zip" > /tmp/availability.zip
+          unzip -q /tmp/availability.zip -d sources
+          test "$(sha256sum sources/chosica_2015_candidate_landsat8_availability_v0_1.json | cut -d' ' -f1)" = "f909c2d79d9422cae3290275fd8b582b49404e52a6c040e26b9380cc965ca4c3"
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Freeze pair manifest twice
+        run: |
+          set -euo pipefail
+          env -i PATH="$PATH" HOME=/tmp LANG=C.UTF-8 python -I scripts/freeze_chosica_2015_candidate_landsat8_pairs.py \
+            --contract config/chosica_2015_candidate_landsat8_pair_freeze_contract_v0_1.json \
+            --availability sources/chosica_2015_candidate_landsat8_availability_v0_1.json \
+            --output artifacts/run1/chosica_2015_candidate_landsat8_pairs_v0_1.json
+          env -i PATH="$PATH" HOME=/tmp LANG=C.UTF-8 python -I scripts/freeze_chosica_2015_candidate_landsat8_pairs.py \
+            --contract config/chosica_2015_candidate_landsat8_pair_freeze_contract_v0_1.json \
+            --availability sources/chosica_2015_candidate_landsat8_availability_v0_1.json \
+            --output artifacts/run2/chosica_2015_candidate_landsat8_pairs_v0_1.json
+          cmp artifacts/run1/chosica_2015_candidate_landsat8_pairs_v0_1.json artifacts/run2/chosica_2015_candidate_landsat8_pairs_v0_1.json
+      - name: Enforce pair-freeze guards
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/run1/chosica_2015_candidate_landsat8_pairs_v0_1.json'))
+          assert d['status']=='FROZEN_LANDSAT8_METADATA_ONLY_SCENE_PAIRS'
+          assert d['candidate_count']==7
+          assert len(d['pairs'])==7
+          for k in ['pixel_assets_read','outcome_evidence_read','target_names_or_ids_read','a6680_read','contaminated_adjudication_used','surface_signal_used_for_selection','candidate_selection_modified','candidate_ranking_modified','free_web_search_used','sealed_target_unblind_allowed']:
+            assert d[k] is False, (k,d[k])
+          for p in d['pairs']:
+            assert p['pre']['landsat_wrs_path']==p['post']['landsat_wrs_path']
+            assert p['pre']['landsat_wrs_row']==p['post']['landsat_wrs_row']
+          PY
+          ! grep -Eiq 'pedregal|quirio|carossio|carosio|rayos de sol|cashahuacra|la libertad|official_outcome_evidence|CONTROL_CONFIRMED|EXCLUDED_ACTIVE' artifacts/run1/chosica_2015_candidate_landsat8_pairs_v0_1.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-candidate-landsat8-pairs
+          path: artifacts/run1/chosica_2015_candidate_landsat8_pairs_v0_1.json
+          if-no-files-found: error

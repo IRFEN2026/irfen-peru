@@ -1,0 +1,68 @@
+{
+  "schema_version": "0.2",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_TRANSPORT_ONLY_TLS_EXCEPTION_DIAGNOSTIC_NO_PIXEL_READ",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "revision_basis": {
+    "supersedes": "config/chosica_2015_candidate_landsat8_transport_diagnostic_contract_v0_1.json",
+    "failed_workflow_run_id": 34544631012,
+    "failure_class": "ORIGIN_TLS_CERTIFICATE_EXPIRED",
+    "pixel_bytes_read": false,
+    "redirect_followed": false,
+    "scientific_quantity_observed": false,
+    "scene_selection_modified": false,
+    "candidate_selection_modified": false,
+    "candidate_ranking_modified": false,
+    "qa_bits_or_thresholds_modified": false,
+    "outcome_evidence_read": false,
+    "a6680_read": false,
+    "contaminated_adjudication_used": false
+  },
+  "input": {
+    "asset_inventory_artifact_id": 10172288298,
+    "asset_inventory_file": "chosica_2015_candidate_landsat8_asset_inventory_v0_1.json",
+    "asset_inventory_sha256": "524e298aa313dffc0df2445e4f44cf7769c2fc0730d49bba7ff64cc8848b0659",
+    "asset_key": "qa_pixel",
+    "expected_origin_scheme": "https",
+    "expected_origin_host": "landsatlook.usgs.gov"
+  },
+  "network_semantics": {
+    "method": "HTTPS GET with stream=true, allow_redirects=false and certificate verification disabled only for the frozen landsatlook.usgs.gov origin because the runner observed an expired origin certificate; inspect response status/headers only and never iterate the body",
+    "tls_certificate_verification": false,
+    "tls_exception_scope": "landsatlook.usgs.gov only",
+    "maximum_requests": 3,
+    "free_web_search_allowed": false,
+    "search_engine_queries_allowed": false,
+    "unrestricted_url_following_allowed": false,
+    "redirect_following_allowed": false,
+    "response_body_read_allowed": false,
+    "record_full_location_header": false,
+    "record_location_sha256": true,
+    "record_location_components": ["scheme", "hostname", "path", "query_present"]
+  },
+  "integrity_boundary": {
+    "tls_exception_does_not_authorize_asset_acceptance": true,
+    "later_asset_use_requires_frozen_redirect_allowlist": true,
+    "later_asset_use_requires_valid_tls_on_redirect_target": true,
+    "later_asset_use_requires_exact_stac_sha512_before_raster_access": true,
+    "origin_response_body_must_remain_unread": true
+  },
+  "scientific_semantics": {
+    "scene_selection_modified": false,
+    "candidate_selection_modified": false,
+    "candidate_ranking_modified": false,
+    "qa_bits_or_thresholds_modified": false,
+    "outcome_evidence_read": false,
+    "target_names_or_ids_read": false,
+    "a6680_read": false,
+    "contaminated_adjudication_used": false,
+    "control_labels_assigned": false,
+    "sealed_target_unblind_allowed": false
+  }
+}
