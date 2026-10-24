@@ -36,8 +36,12 @@ jobs:
         run: |
           set -uo pipefail
           out="casma_idep_n7_independent_capture"
+          # GitHub Actions invokes bash with -e. Disable it only around this
+          # bounded probe so unavailable public data produces an UNKNOWN receipt.
+          set +e
           python tests/test_phase2_casma_idep_ana_mirror_probe.py --capture --out-dir "$out"
           rc=$?
+          set -e
           if [ "$rc" -ne 0 ]; then
             # No partial candidate is represented as a complete nine-code capture.
             # Failure is UNKNOWN, never a negative, low risk, or source absence.
