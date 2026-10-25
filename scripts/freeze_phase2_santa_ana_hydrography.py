@@ -112,7 +112,11 @@ def positions(geometry):
 
 def inspect(raw, source_key="ana_official"):
     obj = json.loads(raw)
-    if not isinstance(obj, dict) or obj.get("error") or obj.get("exceededTransferLimit"):
+    # A valid JSON scalar/array is not an ArcGIS GeoJSON response. Preserve
+    # UNKNOWN rather than raising an unclassified AttributeError in live CI.
+    if not isinstance(obj, dict):
+        raise ValueError("GeoJSON root is not an object")
+    if obj.get("error") or obj.get("exceededTransferLimit"):
         raise ValueError("ArcGIS error or truncated result")
     # RFC 7946 defaults to WGS84 lon/lat. An explicit conflicting legacy CRS
     # overrides that assumption and must not be archived as EPSG:4326.
@@ -294,6 +298,13 @@ class OfflineTests(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertEqual(len(inspect(json.dumps({**obj, "crs": {
                     "type": "name", "properties": {"name": name}}}).encode())), 1)
+
+    def test_nonobject_json_is_fail_closed_unknown(self):
+        # Syntactically valid but structurally invalid source responses must
+        # be classified as UNKNOWN, never as missing Santa features.
+        for raw in (b"null", b"[]", b"123", b'"not-geojson"'):
+            with self.subTest(raw=raw), self.assertRaises(ValueError):
+                inspect(raw)
 
     def test_rejects_unusable_responses(self):
         for obj in ({"error": {"code": 500}},
