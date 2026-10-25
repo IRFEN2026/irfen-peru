@@ -306,6 +306,50 @@ class OfflineTests(unittest.TestCase):
             with self.subTest(raw=raw), self.assertRaises(ValueError):
                 inspect(raw)
 
+    def test_oct25_mirror_replay_provenance_remains_fail_closed(self):
+        # Regression contract for the documented 2026-10-25 GitHub artifact.
+        # This tests the provenance ledger, NOT the unavailable original ANA
+        # bytes or the time-limited mirror GeoJSON; no geometry is promoted.
+        ledger_path = (Path(__file__).resolve().parents[1] /
+                       "site/data/phase2/source_assessments/"
+                       "santa_20261025_mirror_hydrography_replay_v0_1.json")
+        ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+        capture = ledger["source_capture"]
+        self.assertEqual(capture["github_run_id"], 40236836542)
+        self.assertFalse(capture["archive_is_permanent"])
+        self.assertEqual(capture["artifact_retention_days"], 30)
+        sources = {row["source"]: row for row in ledger["sources"]}
+        self.assertEqual(set(sources), set(SOURCES))
+        official = sources["ana_official"]
+        self.assertEqual(official["custody"], "ANA_OFFICIAL_SERVICE")
+        self.assertEqual(official["capture_status"],
+                         "UNKNOWN_SOURCE_ACCESS_UNAVAILABLE_OR_INVALID")
+        self.assertIsNone(official["raw_sha256"])
+        self.assertIsNone(official["candidate_count"])
+        self.assertFalse(official["absence_claim"])
+        for key in ("arcgis_copy_2025", "arcgis_copy_2026"):
+            with self.subTest(source=key):
+                row = sources[key]
+                self.assertEqual(row["source_url"], SOURCES[key]["layer"])
+                self.assertEqual(row["custody"],
+                                 "THIRD_PARTY_HOSTED_ANA_ATTRIBUTED_COPY_UNVERIFIED")
+                self.assertEqual(row["capture_status"], "CAPTURED_UNVERIFIED_MIRROR")
+                self.assertEqual(row["candidate_count"], 36)
+                self.assertEqual(len(row["raw_response_sha256"]), 64)
+                self.assertEqual(len(row["manifest_sha256"]), 64)
+        replay = ledger["replay_qa"]
+        self.assertFalse(replay["mirror_geometry_equivalence_established"])
+        self.assertFalse(replay["mirror_length_attribute_equivalence_established"])
+        self.assertFalse(replay["river_2011_axis_equivalence_established"])
+        self.assertFalse(replay["query_completeness_established"])
+        self.assertFalse(replay["length_units_adjudicated"])
+        for key, expected in GUARDS.items():
+            self.assertEqual(ledger[key], expected, key)
+        for key in ("official_ana_byte_equivalence_established",
+                    "historical_santa_2011_datum_resolved",
+                    "geometry_map_published", "identity_adjudicated"):
+            self.assertIs(ledger[key], False, key)
+
     def test_rejects_unusable_responses(self):
         for obj in ({"error": {"code": 500}},
                     {"type": "FeatureCollection", "features": []},
