@@ -59,6 +59,20 @@ def test_documentary_rows_are_not_a_deduplicated_hydrologic_census():
                 digest = source.get("original_pdf_sha256")
                 assert isinstance(digest, str) and len(digest) == 64, unit["id"]
                 assert all(c in "0123456789abcdef" for c in digest.lower()), unit["id"]
+    # This isolated replay does not include the primary-source PDF bytes from
+    # the separate, unmerged archive PR. A declared SHA-256 is a provenance
+    # pointer, not proof that this branch independently verified those bytes.
+    # Keep all external citations documentary-only until source recovery and
+    # explicit independent QA. Internal config contracts are not PDF evidence.
+    for unit in units:
+        for source in unit["source_refs"]:
+            if source["source_id"].startswith("config/"):
+                continue
+            assert source["source_text_verified"] is False, unit["id"]
+            assert source.get("original_pdf_bytes_archived_in_this_contract") is not True, unit["id"]
+            if source.get("original_pdf_sha256") is not None:
+                assert source["original_pdf_bytes_archived_in_this_contract"] is False, unit["id"]
+                assert source["map_publishable"] is False, unit["id"]
     assert d["counts"]["national_audit_corridor_documentary_rows"] + (
         d["counts"]["jicamarca_additional_documentary_rows"]
     ) == len(units)
