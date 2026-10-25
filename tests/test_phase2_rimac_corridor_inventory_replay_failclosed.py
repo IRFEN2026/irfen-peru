@@ -216,6 +216,20 @@ def test_unverified_events_and_station_triggers_do_not_become_flow():
         "config/phase2_jicamarca_discovery_v0_1.json#/historical_evidence/0"
     ]
 
+    # Closed-world gate for this documentary snapshot: an added unit or
+    # unreviewed historical lead must not silently gain verified-event status.
+    # Media Luna 2002 is a named historical reference, not measured flow or
+    # evidence of a downstream Rímac collector overflow.
+    verified_by_unit = {
+        unit["id"]: unit["verified_event_refs"]
+        for unit in d["units"] if unit["verified_event_refs"]
+    }
+    assert verified_by_unit == {
+        "jicamarca_media_luna": [
+            "config/phase2_jicamarca_discovery_v0_1.json#/historical_evidence/0"
+        ]
+    }
+
     # The 2017 COEN annex is a documentary name sweep, not a measured
     # per-ravine event ledger or proof of collector overflow. Preserve the
     # separate annex labels even where spelling or geography is disputed.
