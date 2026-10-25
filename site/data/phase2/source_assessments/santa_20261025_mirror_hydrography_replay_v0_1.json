@@ -1,0 +1,137 @@
+{
+  "schema_version": "0.1",
+  "assessment_id": "santa_20261025_mirror_hydrography_replay_v0_1",
+  "reviewed_at_utc": "2026-10-25",
+  "source_capture": {
+    "github_run_id": 40236836542,
+    "github_run_url": "https://github.com/IRFEN2026/irfen-peru/actions/runs/40236836542",
+    "github_artifact_id": 12615331858,
+    "artifact_name": "santa-hydrography-research-candidates",
+    "artifact_retention_days": 30,
+    "archive_is_permanent": false,
+    "source_capture_script": "scripts/freeze_phase2_santa_ana_hydrography.py",
+    "source_capture_script_commit": "4034d9d25a14b104f075f4b03b9d429e1926d9e6",
+    "offline_contract_job": "SUCCESS",
+    "candidate_capture_job": "SUCCESS"
+  },
+  "sources": [
+    {
+      "source": "ana_official",
+      "custody": "ANA_OFFICIAL_SERVICE",
+      "source_url": "https://geosnirh.ana.gob.pe/server/rest/services/ONRH/Rios_Quebradas_AAVI/MapServer/0",
+      "capture_status": "UNKNOWN_SOURCE_ACCESS_UNAVAILABLE_OR_INVALID",
+      "observed_error": "URLError timeout",
+      "raw_sha256": null,
+      "candidate_count": null,
+      "absence_claim": false
+    },
+    {
+      "source": "arcgis_copy_2025",
+      "custody": "THIRD_PARTY_HOSTED_ANA_ATTRIBUTED_COPY_UNVERIFIED",
+      "source_url": "https://services.arcgis.com/evjBQsNzjm2hdraL/ArcGIS/rest/services/Rios/FeatureServer/0",
+      "capture_status": "CAPTURED_UNVERIFIED_MIRROR",
+      "http_status": 200,
+      "http_last_modified": "2025-08-20T16:04:57Z",
+      "retrieved_at_utc": "2026-10-25T21:45:22.721558Z",
+      "raw_response_sha256": "45902d1480bd99a1b2e48cb64a9923af0589bfa541d1d85d3620756a72ba236f",
+      "raw_response_bytes": 982025,
+      "manifest_sha256": "b7acc8c7698f63e69fb22f1ca39ea28df14a8c83b89ccf8c51ab0a36971e7b5b",
+      "candidate_count": 36
+    },
+    {
+      "source": "arcgis_copy_2026",
+      "custody": "THIRD_PARTY_HOSTED_ANA_ATTRIBUTED_COPY_UNVERIFIED",
+      "source_url": "https://services1.arcgis.com/RTK5Unh1Z71JKIiR/ArcGIS/rest/services/R%C3%ADos/FeatureServer/2",
+      "capture_status": "CAPTURED_UNVERIFIED_MIRROR",
+      "http_status": 200,
+      "http_last_modified": "2026-08-23T14:29:05Z",
+      "retrieved_at_utc": "2026-10-25T21:45:23.222355Z",
+      "raw_response_sha256": "35e537c688a5de3c4dd60e7e5c85c5f0257e09f31003bb85d7725be9a78032d6",
+      "raw_response_bytes": 981482,
+      "manifest_sha256": "983a99b3ef372c826c96872a8dd3be188a6c5cd7ec042e53c9965dd340a00058",
+      "candidate_count": 36
+    }
+  ],
+  "replay_qa": {
+    "method": "Compare raw GeoJSON in workflow artifact by (CODIGO_CA,NOMBRE_CA) multiset; for keys unique in both, compare ordered LineString/MultiLineString vertices and LONG_KM without assuming units or equivalence.",
+    "source_pair": "arcgis_copy_2025_vs_arcgis_copy_2026",
+    "same_code_name_multiset": true,
+    "features_each": 36,
+    "unique_code_name_keys": 34,
+    "unambiguous_one_to_one_keys": 32,
+    "ambiguous_duplicate_keys": [
+      {
+        "codigo_ca": "137696",
+        "nombre_ca": "Río Quellcayhuanca",
+        "count_each": 2
+      },
+      {
+        "codigo_ca": "13762",
+        "nombre_ca": "Quebrada Palo Redondo",
+        "count_each": 2
+      }
+    ],
+    "nombre_ca_rio_santa_features_each": 12,
+    "nombre_uh_cuenca_santa_features_each": 27,
+    "rio_santa_codes": [
+      "13761",
+      "13763",
+      "13765",
+      "13767",
+      "137691",
+      "137693",
+      "137695",
+      "137697",
+      "1376991",
+      "1376993",
+      "1376995",
+      "1376997"
+    ],
+    "unambiguous_pairs_with_same_vertex_count": 32,
+    "unambiguous_pairs_exact_coordinate_equality": 0,
+    "unambiguous_pairs_with_max_absolute_coordinate_delta_below_1e_minus_8_degrees": 31,
+    "large_coordinate_disagreement": {
+      "codigo_ca": "49294",
+      "nombre_ca": "Río Santa Rosa",
+      "max_absolute_coordinate_delta_degrees": 0.05416531004789249,
+      "other_basin_not_santa_axis": true
+    },
+    "other_31_pairs_max_absolute_coordinate_delta_degrees": 8.986944521893747e-10,
+    "raw_LONG_KM_ratio_2025_over_2026_unique_pairs": {
+      "minimum": 954.5210482977727,
+      "median": 1003.0485865264002,
+      "maximum": 1005.4138948197713
+    },
+    "length_units_adjudicated": false,
+    "mirror_geometry_equivalence_established": false,
+    "mirror_length_attribute_equivalence_established": false,
+    "source_query_is_name_candidate_only": true,
+    "query_completeness_established": false,
+    "river_2011_axis_equivalence_established": false
+  },
+  "validation": {
+    "artifact_zip_replayed_locally": true,
+    "raw_sha256_verified_for_both_mirrors": true,
+    "manifest_sha256_verified_for_both_mirrors": true,
+    "metadata_counts_verified": true,
+    "comparison_calculated_from_raw_vertices": true,
+    "verification_note": "Results reproduce from GitHub Actions artifact ID 12615331858; source raw remains a time-limited CI artifact, not immutable committed evidence. The two third-party mirrors are not accepted as ANA official bytes."
+  },
+  "scientific_role": "UNVERIFIED_THIRD_PARTY_HYDROGRAPHY_CANDIDATE_COMPARISON_ONLY",
+  "identity_adjudicated": false,
+  "official_ana_byte_equivalence_established": false,
+  "historical_santa_2011_datum_resolved": false,
+  "geometry_map_published": false,
+  "map_publication_enabled": false,
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "no_geometry_created": true,
+  "no_discharge_capacity_or_threshold_inferred": true
+}
