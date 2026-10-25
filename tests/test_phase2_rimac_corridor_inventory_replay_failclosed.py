@@ -186,6 +186,23 @@ def test_ambiguous_names_and_administrative_conflicts_remain_unresolved():
         "UNRESOLVED_CONFLICTING_DOCUMENTARY_LOCATIONS"
     )
     assert len(ronda["administrative_location_leads"]) >= 2
+    # Conflicting district mentions remain separate documentary leads.
+    # The inherited audit location is not independently adjudicated;
+    # neither archived report title establishes a geodetic channel location.
+    locations = ronda["administrative_location_leads"]
+    assert any(
+        row.get("kind") == "LEGACY_NATIONAL_AUDIT_CROSSWALK"
+        and row.get("district") == "Lurigancho-Chosica"
+        and row.get("adjudication") == "UNVERIFIED_INHERITED_ROW_LABEL_NOT_EXACT_CHANNEL_LOCATION"
+        for row in locations
+    )
+    assert any(
+        row.get("source_id") == "IGP-2020-SIGRID-13867"
+        and row.get("district_lead") == "Ricardo Palma"
+        and row.get("source_text_verified") is False
+        and row.get("adjudication") == "LOCATION_LEAD_ONLY_NOT_IDENTITY_OR_CHANNEL_GEOMETRY"
+        for row in locations
+    )
     assert ronda["exact_confluence_coordinate"] is None
     assert by_id["lima_district_unknown_dos_barrios"]["receiver_relation"] == (
         "UNKNOWN_NOT_ASSUMED"
