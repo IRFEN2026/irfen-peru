@@ -1,6 +1,13 @@
 name: IRFEN - Santa hydrography candidate source capture
 
 on:
+  push:
+    branches:
+      - phase2-santa-lower-normalization-v02-20260926
+    paths:
+      - scripts/freeze_phase2_santa_ana_hydrography.py
+      - tests/test_phase2_santa_ana_hydrography_live_probe.py
+      - .github/workflows/phase2-santa-hydrography-mirror-capture.yml
   pull_request:
     paths:
       - scripts/freeze_phase2_santa_ana_hydrography.py
@@ -12,7 +19,9 @@ permissions:
 
 jobs:
   offline-contract:
-    if: github.event.pull_request.head.ref == 'phase2-santa-lower-normalization-v02-20260926'
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/phase2-santa-lower-normalization-v02-20260926') ||
+      (github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'phase2-santa-lower-normalization-v02-20260926')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
