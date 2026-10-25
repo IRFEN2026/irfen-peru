@@ -151,8 +151,11 @@ def classify_rows(fc: dict, plan: dict, target: dict, label: str) -> tuple[list,
         raise FreezeError(f"NOT_FEATURE_COLLECTION_{label}")
     if fc.get("exceededTransferLimit") or (fc.get("properties") or {}).get("exceededTransferLimit"):
         raise FreezeError(f"EXCEEDED_TRANSFER_LIMIT_{label}")
+    features = fc.get("features")
+    if not isinstance(features, list):
+        raise FreezeError(f"MISSING_FEATURES_ARRAY_{label}")
     candidates, quarantine = [], []
-    for feature in fc.get("features") or []:
+    for feature in features:
         props = feature.get("properties") or {}
         geom = feature.get("geometry") or {}
         if geom.get("type") not in {"LineString", "MultiLineString"} or not geom.get("coordinates"):
