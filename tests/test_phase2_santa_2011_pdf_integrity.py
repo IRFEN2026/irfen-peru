@@ -47,6 +47,14 @@ class Santa2011PdfIntegrityTests(unittest.TestCase):
         tp = self.d["pdf_text_probe"]
         self.assertFalse(tp["findings"]["explicit_datum_statement_found_in_extracted_text"])
         self.assertIn("not proof", tp["inference_limit"])
+        # Positive workflow term counts never establish custody or existence of
+        # separate native project/workspace assets. Preserve this scientific gate.
+        self.assertGreater(tp["term_counts"]["HEC_RAS"], 0)
+        self.assertGreater(tp["term_counts"]["HEC_GEORAS"], 0)
+        self.assertFalse(tp["findings"]["term_counts_prove_native_asset_existence"])
+        self.assertFalse(tp["findings"]["term_counts_prove_native_asset_production"])
+        self.assertIn("not the existence or production", tp["inference_limit"])
+        self.assertIn("do not establish", self.d["native_asset_inventory"]["interpretation"])
         use = self.d["scientific_use"]
         self.assertFalse(use["native_hydraulic_geometry_recovered"])
         self.assertFalse(use["map_publication_authorized"])
