@@ -146,6 +146,9 @@ INVALID_RESPONSES = [
     ({"meta": {**META, "fields": [{"name": "NOMBRE_CA"}]}}, "MISSING_FIELDS"),
     ({"POZOS": fc(line(3, "Los Pozos"), exceededTransferLimit=True)}, "EXCEEDED_TRANSFER_LIMIT"),
     ({"POZOS": fc({**line(3, "Los Pozos"), "geometry": {"type": "Point", "coordinates": [-80.68, -3.68]}})}, "NON_LINE_OR_EMPTY_GEOMETRY"),
+    ({"POZOS": {"type": "FeatureCollection"}}, "MISSING_FEATURES_ARRAY"),
+    ({"POZOS": {"type": "FeatureCollection", "features": None}}, "MISSING_FEATURES_ARRAY"),
+    ({"POZOS": {"type": "FeatureCollection", "features": {}}}, "MISSING_FEATURES_ARRAY"),
     ({"SECHURITA": {"error": {"code": 400}}}, "SERVICE_ERROR"),
 ]
 
