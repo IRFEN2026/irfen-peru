@@ -348,3 +348,36 @@ def test_unverified_events_and_station_triggers_do_not_become_flow():
         "lima_lurigancho_vizcachera"
     )
     assert vizcacha["alias_adjudication"].startswith("UNRESOLVED")
+
+    # ANA 2025 regulatory faja catalog entries are documentary receiver
+    # claims, not geodetically validated outlets or channel geometries.
+    # Infiernillo's 2005 homonym must not silently become a merged unit.
+    ana_2025 = d["official_2025_ana_santa_eulalia_faja_name_leads"]
+    assert ana_2025["source_text_verified"] is False
+    assert ana_2025["original_resolution_pdf_bytes_archived_in_this_contract"] is False
+    assert ana_2025["original_pdf_sha256"] is None
+    assert ana_2025["documentary_row_count_increment"] == 0
+    assert ana_2025["confirmed_unique_hydrologic_unit_count_increment"] == 0
+    assert ana_2025["receiver_chain_adjudicated"] is False
+    assert ana_2025["exact_outlet"] is None
+    assert ana_2025["exact_confluence"] is None
+    assert ana_2025["travel_time_tau"] is None
+    assert ana_2025["discharge_q_i"] is None
+    assert ana_2025["collector_capacity"] is None
+    assert ana_2025["collector_overflow_evidence"] is None
+    assert ana_2025["map_publishable"] is False
+    assert {"Infiernillo", "San Juan"} <= {
+        row["documentary_label"] for row in ana_2025["records"]
+    }
+    for row in ana_2025["records"]:
+        assert row["identity_relation_to_prior_lead"] == "PENDING_HOMONYM_NOT_MERGED"
+        assert row["receiver_adjudication"] == (
+            "DOCUMENTARY_CLAIM_ONLY_NOT_GEODETICALLY_VERIFIED"
+        )
+        assert row["outlet_coordinate"] is None
+        assert row["exact_confluence_coordinate"] is None
+        assert row["channel_geometry"] is None
+        assert row["catchment_geometry"] is None
+        assert row["verified_event_refs"] == []
+        assert row["flow_or_stage_observation_refs"] == []
+        assert row["map_publishable"] is False
