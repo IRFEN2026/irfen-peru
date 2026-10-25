@@ -122,6 +122,15 @@ jobs:
           def validate(doc):
               if not isinstance(doc, dict) or doc.get("type") != "FeatureCollection":
                   raise ValueError("Not a GeoJSON FeatureCollection")
+              # An explicit legacy GeoJSON CRS must not override outSR=4326
+              # silently. Unknown/contradictory CRS is not WGS84 evidence.
+              if "crs" in doc:
+                  crs = doc["crs"]
+                  allowed = {"EPSG:4326", "OGC:CRS84", "urn:ogc:def:crs:OGC::CRS84"}
+                  if not (isinstance(crs, dict) and crs.get("type") == "name"
+                          and isinstance(crs.get("properties"), dict)
+                          and crs["properties"].get("name") in allowed):
+                      raise ValueError("Explicit GeoJSON CRS not verified as WGS84 lon/lat")
               features = doc.get("features")
               if not isinstance(features, list):
                   raise ValueError("Missing feature list")
@@ -158,6 +167,17 @@ jobs:
                "geometry": {"type": "LineString", "coordinates": [[-78, -9], [-77, -8]]}}
           ]}
           assert len(validate(fixture)) == 1
+          assert len(validate({**fixture, "crs": {"type": "name",
+              "properties": {"name": "EPSG:4326"}}})) == 1
+          for bad_crs in (None, {"type": "name", "properties": {"name": "EPSG:3857"}},
+                          {"type": "name", "properties": {"name": "EPSG:32717"}},
+                          {"type": "link", "properties": {"href": "unknown"}}):
+              try:
+                  validate({**fixture, "crs": bad_crs})
+              except ValueError:
+                  pass
+              else:
+                  raise AssertionError("Conflicting/unknown GeoJSON CRS was accepted")
           # Offline negative control: redirected bytes must not inherit ANA provenance.
           other = "https://example.invalid/not-ana"
           assert RejectRedirects().redirect_request(
