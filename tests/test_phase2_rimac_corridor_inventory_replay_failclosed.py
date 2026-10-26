@@ -491,3 +491,42 @@ def test_unverified_events_and_station_triggers_do_not_become_flow():
         assert row["verified_event_refs"] == []
         assert row["flow_or_stage_observation_refs"] == []
         assert row["map_publishable"] is False
+
+    # ANA RD 1226-2025 is regulatory/inspection evidence, not a vector
+    # outlet, a proven 2023 Montalvo alias, measured capacity or a huaico.
+    # Its own Paihua/San Pedro-Montalvo discrepancy must remain visible.
+    montalvo_leads = [
+        lead for lead in d["official_unmaterialized_name_leads"]
+        if lead["documentary_name"] == "Montalvo"
+    ]
+    assert len(montalvo_leads) == 1
+    montalvo = montalvo_leads[0]
+    assert montalvo["alias_adjudication"].startswith("UNRESOLVED")
+    assert montalvo["verified_event_refs"] == []
+    assert montalvo["map_publishable"] is False
+    regulatory = montalvo["additional_official_2025_regulatory_receiver_context"]
+    assert regulatory["source_document"] == "Resolución Directoral N.° 1226-2025-ANA-AAA.CF"
+    assert regulatory["named_watercourse_in_resolution"] == "Quebrada San Pedro – Montalvo"
+    assert regulatory["relation_to_2023_montalvo_name_lead"] == (
+        "UNRESOLVED_NO_HYDROLOGIC_ALIAS_ADJUDICATION"
+    )
+    assert "Paihua" in regulatory["source_internal_name_discrepancy"]
+    assert regulatory["outlet_field_observation_date"] == "2025-09-05"
+    assert regulatory["outlet_observation_is_not_current_hydraulic_measurement"] is True
+    assert regulatory["regulatory_faja_length_km"] == 2.74
+    assert regulatory["regulatory_faja_boundary_marker_count"] == 61
+    assert regulatory["boundary_markers_are_not_reproducible_channel_geometry"] is True
+    assert regulatory["original_pdf_bytes_archived_in_this_contract"] is False
+    assert regulatory["original_pdf_sha256"] is None
+    assert regulatory["source_text_verified"] is False
+    assert regulatory["receiver_chain_adjudicated"] is False
+    assert regulatory["work_or_design_not_capacity_or_event"] is True
+    for field in (
+        "exact_outlet_coordinate", "exact_confluence_coordinate",
+        "catchment_geometry", "channel_geometry", "measured_discharge",
+        "travel_time_tau", "collector_capacity", "collector_overflow_evidence",
+    ):
+        assert regulatory[field] is None, field
+    assert regulatory["map_publishable"] is False
+    assert regulatory["documentary_row_count_increment"] == 0
+    assert regulatory["confirmed_unique_hydrologic_unit_count_increment"] == 0
