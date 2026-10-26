@@ -1,0 +1,104 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "irfen.gauge_imerg.cell_series/1.0.0",
+ "title": "Serie de celdas IMERG por estación",
+ "type": "object",
+ "required": [
+  "schema",
+  "schema_version",
+  "stations",
+  "granules"
+ ],
+ "properties": {
+  "schema": {
+   "const": "irfen.gauge_imerg.cell_series"
+  },
+  "schema_version": {
+   "const": "1.0.0"
+  },
+  "stations": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "required": [
+     "lat",
+     "lon",
+     "cell",
+     "location_flags",
+     "neighbourhood"
+    ]
+   }
+  },
+  "granules": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "granule",
+     "run",
+     "version",
+     "start_utc",
+     "end_utc",
+     "family",
+     "units",
+     "values"
+    ],
+    "properties": {
+     "granule": {
+      "type": "string",
+      "pattern": "^3B-HHR(-E|-L)?\\.MS\\.MRG\\.3IMERG\\."
+     },
+     "run": {
+      "enum": [
+       "EARLY",
+       "LATE",
+       "FINAL"
+      ]
+     },
+     "version": {
+      "type": "string",
+      "pattern": "^V07[A-Z]$"
+     },
+     "units": {
+      "const": "mm/hr"
+     },
+     "sha256": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "values": {
+      "type": "object",
+      "additionalProperties": {
+       "type": "object",
+       "required": [
+        "center_mm_hr",
+        "nbhd_mm_hr"
+       ],
+       "properties": {
+        "center_mm_hr": {
+         "type": [
+          "number",
+          "null"
+         ],
+         "minimum": 0
+        },
+        "nbhd_mm_hr": {
+         "type": "array",
+         "items": {
+          "type": [
+           "number",
+           "null"
+          ],
+          "minimum": 0
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

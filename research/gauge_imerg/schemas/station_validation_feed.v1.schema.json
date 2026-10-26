@@ -1,0 +1,145 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "irfen.gauge_imerg.station_validation_feed/1.0.0",
+ "title": "Contrato futuro (no activo): validación pluviómetro–IMERG para consulta del visor",
+ "description": "Producto de solo lectura que un visor podría mostrar como capa de evidencia. No contiene probabilidades, umbrales, niveles de riesgo ni alertas, y no modifica ninguna interfaz existente.",
+ "type": "object",
+ "required": [
+  "schema",
+  "schema_version",
+  "guards",
+  "generated_at_utc",
+  "records"
+ ],
+ "properties": {
+  "schema": {
+   "const": "irfen.gauge_imerg.station_validation_feed"
+  },
+  "schema_version": {
+   "const": "1.0.0"
+  },
+  "guards": {
+   "type": "object",
+   "required": [
+    "deployment_status",
+    "operational_alerting_enabled",
+    "map_publishable"
+   ],
+   "properties": {
+    "deployment_status": {
+     "const": "RESEARCH_ONLY"
+    },
+    "operational_alerting_enabled": {
+     "const": false
+    },
+    "map_publishable": {
+     "const": false
+    }
+   }
+  },
+  "generated_at_utc": {
+   "type": "string",
+   "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})$"
+  },
+  "records": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "station_id",
+     "window_start_utc",
+     "window_end_utc",
+     "status",
+     "gauge_mm",
+     "imerg_cell_mm",
+     "imerg_run",
+     "evidence_class",
+     "pair_id"
+    ],
+    "properties": {
+     "station_id": {
+      "type": "string"
+     },
+     "window_start_utc": {
+      "anyOf": [
+       {
+        "type": "string",
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})$"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "window_end_utc": {
+      "anyOf": [
+       {
+        "type": "string",
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})$"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "status": {
+      "enum": [
+       "PAIRED",
+       "REJECTED_INCOMPLETE_SATELLITE",
+       "REJECTED_GAUGE_NOT_ELIGIBLE",
+       "PENDING_SOURCE"
+      ]
+     },
+     "gauge_mm": {
+      "type": [
+       "number",
+       "null"
+      ]
+     },
+     "imerg_cell_mm": {
+      "type": [
+       "number",
+       "null"
+      ]
+     },
+     "imerg_3x3_range_mm": {
+      "type": [
+       "array",
+       "null"
+      ],
+      "items": {
+       "type": "number"
+      },
+      "minItems": 2,
+      "maxItems": 2
+     },
+     "imerg_run": {
+      "enum": [
+       "EARLY",
+       "LATE",
+       "FINAL",
+       null
+      ]
+     },
+     "evidence_class": {
+      "enum": [
+       "exploratory",
+       "metrics",
+       "calibration"
+      ]
+     },
+     "pair_id": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "note": {
+      "type": "string"
+     }
+    }
+   }
+  }
+ }
+}
