@@ -1,0 +1,131 @@
+{
+  "schema_version": "1.0",
+  "case_id": "IRFEN_TUMBES_20261024_25_STATION_VS_IMERG",
+  "status": "RESEARCH_ONLY_NON_OPERATIONAL",
+  "event_window_local": {
+    "start": "2026-10-24T07:00:00-05:00",
+    "end": "2026-10-25T07:00:00-05:00",
+    "basis": "News report explicitly dates observed station period"
+  },
+  "event_window_utc": {
+    "start": "2026-10-24T12:00:00Z",
+    "end": "2026-10-25T12:00:00Z"
+  },
+  "satellite_archive": {
+    "repository": "IRFEN2026/irfen-peru",
+    "path": "data/v09/rain/imerg_early_north_v0_1.json",
+    "git_blob_sha": "17a8527eaa1f74d110b56029130d4a93cc31deb6",
+    "source_state_at_retrieval": "AVAILABLE",
+    "precipitation_units": "mm / half hour (accum_30min_mm)",
+    "area_aggregation": "Sum of 48 area-mean 30-minute estimates",
+    "temporal_validation": "48 distinct slots with all positive valid-cell counts"
+  },
+  "reported_station_observations": [
+    {
+      "station_label_as_reported": "Campamento Sede",
+      "accum_24h_mm": 12.4,
+      "location_coordinates": null,
+      "report_attribution": "SENAMHI via Exitosa (secondary account with reproduced SENAMHI social post)",
+      "original_station_export_verified": false,
+      "station_id_verified": false,
+      "context_area_candidate": "tumbes_province_context:TUMBES",
+      "spatial_match_verified": false
+    },
+    {
+      "station_label_as_reported": "Matapalo",
+      "accum_24h_mm": 11,
+      "location_coordinates": null,
+      "report_attribution": "SENAMHI via Exitosa",
+      "original_station_export_verified": false,
+      "station_id_verified": false,
+      "context_area_candidate": "tumbes_province_context:ZARUMILLA",
+      "spatial_match_verified": false
+    },
+    {
+      "station_label_as_reported": "Rica Playa",
+      "accum_24h_mm": 3.1,
+      "location_coordinates": null,
+      "report_attribution": "SENAMHI via Exitosa",
+      "original_station_export_verified": false,
+      "station_id_verified": false,
+      "context_area_candidate": "tumbes_province_context:TUMBES",
+      "spatial_match_verified": false
+    }
+  ],
+  "satellite_area_context": [
+    {
+      "zone_id": "tumbes_province_context:ZARUMILLA",
+      "area_type": "PROVINCE_CONTEXT",
+      "accum_24h_mm": 58.245,
+      "source": "NASA IMERG Early V07 satellite area mean",
+      "half_hours_available": 48,
+      "half_hours_expected": 48,
+      "covered_pct_min": 100,
+      "native_semantics": "area_mean_not_station_collocated_pixel"
+    },
+    {
+      "zone_id": "tumbes_province_context:TUMBES",
+      "area_type": "PROVINCE_CONTEXT",
+      "accum_24h_mm": 32.103,
+      "source": "NASA IMERG Early V07 satellite area mean",
+      "half_hours_available": 48,
+      "half_hours_expected": 48,
+      "covered_pct_min": 100,
+      "native_semantics": "area_mean_not_station_collocated_pixel"
+    },
+    {
+      "zone_id": "tumbes_province_context:CONTRALMIRANTE VILLAR",
+      "area_type": "PROVINCE_CONTEXT",
+      "accum_24h_mm": 6.915,
+      "source": "NASA IMERG Early V07 satellite area mean",
+      "half_hours_available": 48,
+      "half_hours_expected": 48,
+      "covered_pct_min": 100,
+      "native_semantics": "area_mean_not_station_collocated_pixel"
+    },
+    {
+      "zone_id": "tumbes_bocapan",
+      "area_type": "BASIN_CONTEXT",
+      "accum_24h_mm": 10.055,
+      "source": "NASA IMERG Early V07 satellite area mean",
+      "half_hours_available": 48,
+      "half_hours_expected": 48,
+      "covered_pct_min": 100,
+      "native_semantics": "area_mean_not_station_collocated_pixel"
+    }
+  ],
+  "sources": [
+    {
+      "url": "https://www.exitosanoticias.pe/actualidad/tumbes-senamhi-reporta-lluvias-frontera-matapalo-acumula-11-mm-precipitaciones-n186796",
+      "date": "2026-10-25",
+      "type": "SECONDARY_REPRODUCES_SENAMHI_STATION_REPORT"
+    },
+    {
+      "url": "https://x.com/Senamhiperu/status/2114342412411695124",
+      "date": "2026-10-25",
+      "type": "ATTRIBUTED_SENAMHI_SOCIAL_POST_DIRECT_FETCH_NOT_VERIFIED"
+    }
+  ],
+  "interpretation": {
+    "coincident_intervals": true,
+    "coincident_locations_at_station_pixel": false,
+    "acceptable_for_model_calibration": false,
+    "gauge_raw_file_present": false,
+    "warning": "The satellite quantities are area means for provinces/basins, not measurements of the stations or their containing 0.1 degree grid cells. Differences are not bias, error, correlation, or sensitivity metrics. Do not ascribe confirmed natural hazard outcome to rainfall alone."
+  },
+  "research_guards": {
+    "deployment_status": "RESEARCH_ONLY",
+    "test_mode": "TEST_ONLY",
+    "production_use": false,
+    "operational_alerting_enabled": false,
+    "publish": false,
+    "add_to_live_map": false,
+    "change_thresholds": false
+  },
+  "next_steps": [
+    "Validate original SENAMHI timestamped station records and metadata with authorized access; station names/identities and coordinates still unresolved.",
+    "Extract native 0.1 degree IMERG pixel, verify pixel/grid spatial match and 24-hour accumulation, then compare directly to station gauge data.",
+    "Check contemporaneous GOES RRQPE scans independently as instantaneous mm/h; do not treat as accumulation.",
+    "Only then quantify error/skill or consider model correction."
+  ]
+}
