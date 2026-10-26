@@ -129,6 +129,41 @@ def validate_capture_candidate(raw, code):
         raise ValueError(f"source candidate rejected code={code}: {exc}") from exc
 
 
+# Only expose fixed, preregistered validator diagnostics in CI logs.
+# Unrecognized ValueError messages may contain untrusted source data.
+SAFE_CANDIDATE_REASONS = frozenset({
+    "error or truncated response",
+    "not a GeoJSON FeatureCollection",
+    "explicit incompatible or unverified CRS",
+    "unknown candidate cardinality, not negative evidence",
+    "invalid feature",
+    "missing attributes",
+    "NIVEL7/CODIGO identity mismatch; no tolerance",
+    "missing stable source object id",
+    "not a polygon",
+    "missing polygon coordinates",
+    "missing rings",
+    "invalid or unclosed ring",
+    "invalid position",
+    "nonfinite position",
+    "position outside global lon/lat range",
+    "empty geometry",
+})
+
+
+def bounded_failure_detail(exc):
+    if not isinstance(exc, ValueError):
+        return type(exc).__name__
+    msg = str(exc)
+    if msg in {"source status/URL mismatch", "response size bound exceeded"}:
+        return msg
+    prefix, sep, reason = msg.partition(": ")
+    if (sep and prefix in {f"source candidate rejected code={code}" for code in CODES}
+            and reason in SAFE_CANDIDATE_REASONS):
+        return msg
+    return type(exc).__name__
+
+
 def capture(out_dir):
     """All nine must validate before ANY archive is written to out_dir."""
     opener = build_opener(NoRedirects())
@@ -228,6 +263,19 @@ class TestCasmaIDEPIndependentMirrorContract(unittest.TestCase):
                 b'{"type":"FeatureCollection","features":[]}', CODES[0]
             )
 
+    def test_bounded_failure_detail_redacts_untrusted_source_text(self):
+        msg = "source candidate rejected code=1375961: NIVEL7/CODIGO identity mismatch; no tolerance"
+        self.assertEqual(bounded_failure_detail(ValueError(msg)), msg)
+        self.assertEqual(bounded_failure_detail(ValueError("source status/URL mismatch")),
+                         "source status/URL mismatch")
+        self.assertEqual(bounded_failure_detail(ValueError(
+            "source candidate rejected code=1375961: untrusted https://private.example")),
+            "ValueError")
+        self.assertEqual(bounded_failure_detail(URLError("untrusted network response")),
+                         "URLError")
+        self.assertEqual(bounded_failure_detail(ValueError("raw source response")),
+                         "ValueError")
+
     def test_source_custody_and_fail_closed_guards(self):
         self.assertIn("idep.gob.pe", LAYER)
         self.assertIn("ANA_WMS", LAYER)
@@ -255,9 +303,7 @@ if __name__ == "__main__":
             print(json.dumps(capture(args.out_dir), ensure_ascii=False, sort_keys=True))
         except (HTTPError, URLError, TimeoutError, OSError, ValueError) as exc:
             # Preserve UNKNOWN and expose only bounded validator diagnostics.
-            detail = (str(exc) if isinstance(exc, ValueError) and
-                      str(exc).startswith("source candidate rejected code=")
-                      else type(exc).__name__)
+            detail = bounded_failure_detail(exc)
             raise SystemExit("UNKNOWN_SOURCE_ACCESS_UNAVAILABLE_OR_INVALID: "
                              + detail) from exc
     else:
