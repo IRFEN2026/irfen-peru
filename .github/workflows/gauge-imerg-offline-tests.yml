@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - research/gauge-imerg-pairing-v1-20261026
+      - research/gauge-imerg-tumbes-real-pairs-20261026
     paths:
       - research/gauge_imerg/**
       - .github/workflows/gauge-imerg-offline-tests.yml
@@ -22,7 +23,7 @@ concurrency:
 
 jobs:
   offline:
-    if: github.ref == 'refs/heads/research/gauge-imerg-pairing-v1-20261026'
+    if: github.ref == 'refs/heads/research/gauge-imerg-pairing-v1-20261026' || github.ref == 'refs/heads/research/gauge-imerg-tumbes-real-pairs-20261026'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:

@@ -39,6 +39,15 @@ class Eligibility(unittest.TestCase):
         self.assertIn("INTENSITY_OUT_OF_PHYSICAL_RANGE", e["reasons"])
         self.assertFalse(eligibility(S.obs("u", 3.0, *DAY, verified=False))["exploratory"])
 
+    def test_coarse_coordinates_block_pairing(self):
+        o = S.obs("c", 3.0, *DAY)
+        o["station"]["coordinate_precision_deg"] = 0.1
+        e = eligibility(o)
+        self.assertFalse(e["exploratory"])
+        self.assertIn("COORDINATE_PRECISION_INSUFFICIENT:0.1deg", e["reasons"])
+        o["station"]["coordinate_precision_deg"] = 0.0001
+        self.assertTrue(eligibility(o)["calibration"])
+
     def test_source_hierarchy(self):
         sec = eligibility(S.obs("s", 3.0, *DAY, source_class="SECONDARY_MEDIA_ATTRIBUTED",
                                 precision="STATED_BY_SECONDARY", official=False))

@@ -30,6 +30,7 @@ PERU_OFFSET = timedelta(hours=-5)  # Perú no aplica horario de verano
 MAX_MM = 1000.0
 MAX_MM_PER_HOUR = 150.0
 EXTREME_REVIEW_MM = 100.0
+MAX_COORD_PRECISION_DEG = 0.02  # coordenadas redondeadas a 0,1° no permiten elegir la celda IMERG de 0,1°
 
 
 class LedgerError(ValueError):
@@ -84,6 +85,9 @@ def eligibility(obs: dict) -> dict:
     st = obs.get("station") or {}
     if not st.get("coordinate_verified") or st.get("lat") is None or st.get("lon") is None:
         r.append("COORDINATES_NOT_VERIFIED")
+    prec_deg = st.get("coordinate_precision_deg")
+    if prec_deg is not None and float(prec_deg) > MAX_COORD_PRECISION_DEG:
+        r.append(f"COORDINATE_PRECISION_INSUFFICIENT:{prec_deg}deg")  # ±media celda o peor: píxel no asignable
     s, e, wr = window_utc(obs)
     r.extend(wr)
     prec = (obs.get("window") or {}).get("precision")

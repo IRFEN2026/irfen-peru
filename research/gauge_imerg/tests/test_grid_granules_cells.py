@@ -113,3 +113,55 @@ class Cells(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Block(unittest.TestCase):
+    """Bloque regional SINTÉTICO → serie de celdas por estación (recuperación previa a conocer coordenadas)."""
+
+    def _block(self, value=2.0, missing_center=False):
+        from irfen_gauge_imerg.granules import iso
+        b = {"i0": 990, "i1": 1001, "j0": 857, "j1": 868}
+        t = datetime(2026, 1, 10, 12, tzinfo=timezone.utc)
+        rates = [[0.0 for _ in range(b["j1"] - b["j0"])] for _ in range(b["i1"] - b["i0"])]
+        rates[994 - 990][863 - 857] = None if missing_center else value  # celda de (−80,55; −3,65)
+        return {"schema": "irfen.gauge_imerg.imerg_block", "block_global_indices": b, "SYNTHETIC": True,
+                "granules": [{"granule": S.name(t), "units": "mm/hr", "fill_value": -9999.9, "sha256": "SYN",
+                              "internal_start_utc": iso(t), "retrieved_at_utc": "2026-01-10T17:00:00Z",
+                              "rates_mm_hr_lon_lat": rates}]}
+
+    def test_station_cell_from_block(self):
+        from irfen_gauge_imerg.imerg_cells import build_series_from_block
+        st = {"SYN-T": {"lat": -3.65, "lon": -80.55, "coordinate_verified": True}}
+        # −80,55 y −3,65 son centros: dentro de la celda (994, 863) sin borde
+        doc = build_series_from_block(self._block(), st)
+        self.assertEqual(doc["read_errors"], [])
+        v = doc["granules"][0]["values"]["SYN-T"]
+        self.assertEqual(v["center_mm_hr"], 2.0)
+        self.assertEqual(doc["granules"][0]["retrieved_at_utc"], "2026-01-10T17:00:00Z")
+        doc = build_series_from_block(self._block(missing_center=True), st)
+        self.assertIsNone(doc["granules"][0]["values"]["SYN-T"]["center_mm_hr"])
+
+    def test_station_outside_block_rejected(self):
+        from irfen_gauge_imerg.imerg_cells import build_series_from_block
+        with self.assertRaises(GridError):
+            build_series_from_block(self._block(), {"FAR": {"lat": -5.18, "lon": -80.63}})
+
+
+class InternalTime(unittest.TestCase):
+    """Decodificación genérica de la hora interna (fallo real del 26-oct: la época no era la esperada)."""
+
+    def test_cf_epochs(self):
+        from irfen_gauge_imerg.imerg_cells import decode_time
+        t = datetime(2026, 10, 21, 12, tzinfo=timezone.utc)
+        self.assertEqual(decode_time(t.timestamp(), "seconds since 1970-01-01 00:00:00 UTC"), t)
+        gps = (t - datetime(1980, 1, 6, tzinfo=timezone.utc)).total_seconds()
+        self.assertEqual(decode_time(gps, "seconds since 1980-01-06 00:00:00 UTC"), t)
+        self.assertEqual(decode_time(gps / 60, "minutes since 1980-01-06T00:00:00Z"), t)
+        self.assertIsNone(decode_time(5, "days since 2000-01-01"))
+        self.assertIsNone(decode_time(5, ""))
+
+    def test_file_header(self):
+        from irfen_gauge_imerg.imerg_cells import file_header_start
+        h = "AlgorithmID=3IMERGHH;\nStartGranuleDateTime=2026-10-21T12:00:00.000Z;\nStopGranuleDateTime=2026-10-21T12:29:59.999Z;"
+        self.assertEqual(file_header_start(h), datetime(2026, 10, 21, 12, tzinfo=timezone.utc))
+        self.assertIsNone(file_header_start("sin cabecera"))

@@ -13,6 +13,7 @@ HERE = Path(__file__).resolve().parents[1]
 REQUIRE = os.environ.get("IRFEN_REQUIRE_JSONSCHEMA") == "1"
 CASES = [
     ("observation_ledger", "evidence/north_gauge_reports_2026-10-22_25_v1.json"),
+    ("observation_ledger", "evidence/tumbes_2026-10/north_gauge_reports_2026-10-21_26_v2.json"),
     ("observation_ledger", "examples/SYNTHETIC_observation_ledger.json"),
     ("cell_series", "examples/SYNTHETIC_cell_series.json"),
     ("pairs", "examples/SYNTHETIC_pairs.json"),
@@ -50,7 +51,7 @@ class Schemas(unittest.TestCase):
             jsonschema.validate(doc, s)
 
     def test_examples_are_marked_synthetic(self):
-        for _, doc in CASES[1:]:
+        for _, doc in CASES[2:]:
             d = json.loads((HERE / doc).read_text(encoding="utf-8"))
             self.assertTrue(d.get("SYNTHETIC"), doc)
             self.assertIn("SINTÉTICO", d.get("_SYNTHETIC_NOTICE", ""))

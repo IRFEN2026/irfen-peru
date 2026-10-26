@@ -1,0 +1,118 @@
+name: IRFEN investigación - recuperación ÚNICA autorizada Tumbes 21–25 oct (TEST_ONLY)
+
+# Recuperación única y acotada autorizada por el propietario el 26-oct-2026 (ver
+# research/gauge_imerg/retrieval/retrieve_once_20261026.py). No es un sondeo:
+# * solo se dispara con un push de esta rama que cambie la solicitud o este flujo, y
+#   se NIEGA a ejecutar si el resultado ya existe en la rama (idempotente, una sola vez);
+# * sin schedule; no toca main, site/, config/ ni ramas de datos operativas; sin Pages ni alertas;
+# * "compute" corre Python/PyPI con permiso de solo lectura; "persist" solo usa git y escribe
+#   exclusivamente research/gauge_imerg/retrieval/output_20261026/ en ESTA rama, sin --force;
+# * los HDF5 se borran tras extraer el bloque de celdas; no se suben binarios.
+
+on:
+  push:
+    branches:
+      - research/gauge-imerg-tumbes-real-pairs-20261026
+    paths:
+      - research/gauge_imerg/retrieval/REQUEST_20261026.json
+      - .github/workflows/gauge-imerg-one-shot-retrieval.yml
+
+permissions: {}
+
+concurrency:
+  group: gauge-imerg-one-shot-retrieval
+  cancel-in-progress: false
+
+env:
+  BRANCH: research/gauge-imerg-tumbes-real-pairs-20261026
+  OUT: research/gauge_imerg/retrieval/output_20261026
+
+jobs:
+  compute:
+    if: github.ref == 'refs/heads/research/gauge-imerg-tumbes-real-pairs-20261026'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    outputs:
+      skip: ${{ steps.once.outputs.skip }}
+      base: ${{ steps.once.outputs.base }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        with:
+          persist-credentials: false
+      - name: Una sola vez (no repetir si el resultado ya existe)
+        id: once
+        shell: bash
+        run: |
+          echo "base=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          if [ -f "$OUT/retrieval_log.json" ]; then echo "skip=true" >> "$GITHUB_OUTPUT"; echo "Ya recuperado: no se repite"; exit 0; fi
+          test -f research/gauge_imerg/retrieval/REQUEST_20261026.json
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-python@v6
+        if: steps.once.outputs.skip == 'false'
+        with:
+          python-version: "3.12"
+      - name: Dependencias fijadas
+        if: steps.once.outputs.skip == 'false'
+        run: python -m pip install --disable-pip-version-check "numpy==2.2.6" "h5py==3.14.0" "requests>=2.31,<3" "earthaccess>=0.15,<1"
+      - name: Recuperación única (metadatos, registros, CMR, 192 gránulos → bloque de celdas)
+        if: steps.once.outputs.skip == 'false'
+        env:
+          EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
+        run: timeout --signal=TERM --kill-after=15s 6600s python research/gauge_imerg/retrieval/retrieve_once_20261026.py --out "$RUNNER_TEMP/out"
+      - name: Sin binarios ni secretos en la salida
+        if: steps.once.outputs.skip == 'false'
+        shell: bash
+        run: |
+          set -euo pipefail
+          bad=$(find "$RUNNER_TEMP/out" -type f \( -iname '*.hdf5' -o -iname '*.h5' -o -iname '*.nc4' -o -size +20M \) -print)
+          if [ -n "$bad" ]; then echo "::error::binarios o archivos grandes: $bad"; exit 1; fi
+          if [ -n "${EARTHDATA_TOKEN:-}" ] && grep -R -F -q "$EARTHDATA_TOKEN" "$RUNNER_TEMP/out"; then echo "::error::token en la salida"; exit 1; fi
+          find "$RUNNER_TEMP/out" -mindepth 1 ! -type f ! -type d -print | grep -q . && { echo "::error::archivos especiales"; exit 1; } || true
+        env:
+          EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        if: steps.once.outputs.skip == 'false'
+        with:
+          name: one-shot-retrieval-${{ github.run_id }}
+          path: ${{ runner.temp }}/out
+          retention-days: 7
+          if-no-files-found: error
+
+  persist:
+    needs: compute
+    if: ${{ !cancelled() && needs.compute.result == 'success' && needs.compute.outputs.skip == 'false' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        with:
+          ref: ${{ env.BRANCH }}
+          fetch-depth: 0
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
+        with:
+          name: one-shot-retrieval-${{ github.run_id }}
+          path: ${{ runner.temp }}/in
+      - name: Escribir solo en la carpeta de salida de esta rama (sin --force)
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e "$OUT/retrieval_log.json"
+          mkdir -p "$OUT"
+          cp -a "$RUNNER_TEMP/in/." "$OUT/"
+          git add -- "$OUT"
+          outside=$(git diff --cached --name-only | grep -v "^$OUT/" || true)
+          if [ -n "$outside" ]; then echo "::error::rutas fuera de $OUT: $outside"; exit 1; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -q -m "research: resultado de la recuperación única autorizada (Tumbes 21–25 oct, TEST_ONLY)"
+          for attempt in 1 2 3; do
+            git fetch -q origin "+refs/heads/$BRANCH:refs/remotes/origin/$BRANCH"
+            git rebase -q "origin/$BRANCH" || { git rebase --abort; exit 1; }
+            git push -q origin "HEAD:refs/heads/$BRANCH" && exit 0
+            sleep $((attempt * 3))
+          done
+          exit 1

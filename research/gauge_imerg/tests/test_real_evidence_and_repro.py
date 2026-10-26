@@ -107,7 +107,8 @@ class Hdf5(unittest.TestCase):
                 raise
             self.skipTest("h5py/numpy no instalados (en CI son obligatorios: IRFEN_REQUIRE_H5PY=1)")
 
-    def _write(self, path, *, dims="time,lon,lat", order="lonlat", square=False, units="mm/hr", t=None):
+    def _write(self, path, *, dims="time,lon,lat", order="lonlat", square=False, units="mm/hr", t=None,
+               time_units="unix"):
         import h5py
         import numpy as np
         lat, lon, i0, j0 = S.axes(n=8)
@@ -127,8 +128,15 @@ class Hdf5(unittest.TestCase):
             ds.attrs["_FillValue"] = np.float32(-9999.9)
             if dims:
                 ds.attrs["DimensionNames"] = dims
-            tm = g.create_dataset("time", data=np.array([int(t.timestamp())]))
-            tm.attrs["units"] = "seconds since 1970-01-01 00:00:00 UTC"
+            if time_units == "gps":
+                gps = int((t - datetime(1980, 1, 6, tzinfo=timezone.utc)).total_seconds())
+                tm = g.create_dataset("time", data=np.array([gps]))
+                tm.attrs["units"] = np.bytes_(b"seconds since 1980-01-06 00:00:00 UTC")
+            elif time_units == "header":
+                f.attrs["FileHeader"] = np.bytes_(f"StartGranuleDateTime={t:%Y-%m-%dT%H:%M:%S}.000Z;".encode())
+            else:
+                tm = g.create_dataset("time", data=np.array([int(t.timestamp())]))
+                tm.attrs["units"] = "seconds since 1970-01-01 00:00:00 UTC"
 
     def test_read_with_dimension_names_and_inferred(self):
         from irfen_gauge_imerg.imerg_cells import build_series
@@ -143,6 +151,18 @@ class Hdf5(unittest.TestCase):
         for g in doc["granules"]:
             self.assertEqual(g["values"]["SYN-A"]["center_mm_hr"], 3.0)
             self.assertEqual(len(g["sha256"]), 64)
+
+    def test_other_epochs_and_file_header(self):
+        from irfen_gauge_imerg.imerg_cells import build_series
+        with tempfile.TemporaryDirectory() as td:
+            t = datetime(2026, 1, 10, 12, tzinfo=timezone.utc)
+            p1 = Path(td, S.name(t))
+            self._write(p1, time_units="gps")
+            p2 = Path(td, S.name(t.replace(minute=30)))
+            self._write(p2, time_units="header", t=t.replace(minute=30))
+            doc = build_series([p1, p2], S.SYN_STATION)
+        self.assertEqual(doc["read_errors"], [])
+        self.assertEqual([g["content_flags"] for g in doc["granules"]], [[], []])
 
     def test_ambiguous_or_wrong_files_are_rejected_not_guessed(self):
         from irfen_gauge_imerg.imerg_cells import build_series
