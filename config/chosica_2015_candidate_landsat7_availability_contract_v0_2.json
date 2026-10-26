@@ -1,0 +1,102 @@
+{
+  "schema_version": "0.2",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PRE_EXECUTION_CANDIDATE_ONLY_LANDSAT7_AVAILABILITY_TRANSPORT_RECOVERY",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "revision_basis": {
+    "supersedes": "config/chosica_2015_candidate_landsat7_availability_contract_v0_1.json",
+    "failed_workflow_run_id": 34548637017,
+    "failure_class": "USGS_STAC_TLS_CERTIFICATE_EXPIRED_BEFORE_RESPONSE",
+    "scientific_response_observed": false,
+    "pixel_bytes_read": false,
+    "surface_signal_observed": false,
+    "scene_selection_performed": false,
+    "candidate_selection_modified": false,
+    "candidate_ranking_modified": false,
+    "outcome_evidence_read": false,
+    "a6680_read": false,
+    "contaminated_adjudication_used": false,
+    "scientific_query_semantics_changed": false,
+    "fixed_windows_changed": false,
+    "reason_for_revision": "Recover only the metadata transport path after the USGS STAC TLS certificate expired before any response. Microsoft Planetary Computer is used solely as an HTTPS transport mirror for USGS Landsat Collection 2 Level-2 metadata. Candidate geometries, fixed windows, sensor, pairing rule, and all scientific guards remain unchanged."
+  },
+  "scientific_source": {
+    "institution": "U.S. Geological Survey",
+    "mission": "Landsat 7 ETM+",
+    "product_family": "Landsat Collection 2 Level-2 Surface Reflectance",
+    "scene_identity_basis": "USGS Landsat Collection 2 naming plus immutable acquisition metadata",
+    "transport_mirror_is_scientific_source": false
+  },
+  "transport_mirror": {
+    "provider": "Microsoft Planetary Computer",
+    "role": "TRANSPORT_ONLY_NOT_SCIENTIFIC_SOURCE",
+    "stac_search_endpoint": "https://planetarycomputer.microsoft.com/api/stac/v1/search",
+    "endpoint_host": "planetarycomputer.microsoft.com",
+    "collection": "landsat-c2-l2",
+    "http_method": "POST",
+    "content_type": "application/json",
+    "tls_verify": true,
+    "redirects_allowed": false,
+    "free_web_search_allowed": false,
+    "search_engine_allowed": false
+  },
+  "candidate_geometry": {
+    "workflow_run_id": 34524860992,
+    "artifact_id": 10171108859,
+    "artifact_digest": "sha256:6290b2018770acf1332f7a6680d85d9a5b179d82c2e9f95155ef628d8b445c61",
+    "file": "chosica_2015_cleanroom_candidate_geometries_v0_1.geojson",
+    "sha256": "9a23644c191c88fb66722b368773251051b4098ddd74e4d5861c3a37dbfbb1ca",
+    "candidate_count": 7
+  },
+  "event_anchor_utc": "2015-03-23T19:30:00Z",
+  "fixed_windows": {
+    "pre": {"start": "2015-02-01T00:00:00Z", "end": "2015-03-23T19:29:59Z"},
+    "post": {"start": "2015-03-23T19:30:00Z", "end": "2015-05-15T23:59:59Z"},
+    "window_shift_allowed": false
+  },
+  "query": {
+    "one_query_per_candidate_per_window": true,
+    "spatial_filter": "exact candidate polygon GeoJSON geometry",
+    "max_results": 100,
+    "metadata_only": true,
+    "sensor_filter_after_response": "item ID prefix LE07_ and platform metadata consistent with Landsat 7",
+    "science_fields_retained": [
+      "candidate_code", "window", "item_id", "datetime", "platform", "instruments",
+      "eo_cloud_cover", "landsat_wrs_path", "landsat_wrs_row", "landsat_scene_id"
+    ],
+    "transport_audit_fields_retained": ["metadata_response_sha256", "mirror_collection"]
+  },
+  "pairing_policy_after_availability_freeze": {
+    "pairing_deferred_until_availability_is_frozen": true,
+    "same_wrs_path_required": true,
+    "same_wrs_row_required": true,
+    "pre_scene_datetime_must_precede_anchor": true,
+    "post_scene_datetime_must_follow_or_equal_anchor": true,
+    "scene_pair_selection": "minimize sum of absolute temporal distance to anchor; then minimize maximum of the two distances; then lower scene-level cloud-cover sum when both values are present; then lexical item IDs",
+    "surface_signal_must_not_be_read_before_pair_freeze": true,
+    "candidate_specific_pair_replacement_after_pixel_read": false
+  },
+  "sensor_caution": {
+    "landsat7_slc_off": true,
+    "rule": "SLC-off gaps are invalid/missing pixels in later QA. They must never be filled, inferred as no change, interpreted as inactivity, or used as CONTROL evidence."
+  },
+  "forbidden": [
+    "disable TLS verification for an unfrozen metadata response",
+    "read or download pixel assets in this availability stage",
+    "read target outcomes or names",
+    "read A6680",
+    "read contaminated adjudication",
+    "modify candidate shortlist or matching",
+    "use observed surface response to select a scene",
+    "free web search",
+    "interpret no imagery, SLC-off gaps, or no detected change as CONTROL_CONFIRMED"
+  ],
+  "sealed_target_unblind_allowed": false,
+  "next_gate": "IF_LANDSAT7_BRACKETING_METADATA_EXIST_FREEZE_DETERMINISTIC_SCENE_PAIRS_BEFORE_ANY_LANDSAT7_PIXEL_ASSET_READ"
+}

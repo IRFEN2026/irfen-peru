@@ -1,0 +1,104 @@
+name: IRFEN - Chosica 2015 candidate territorial packet
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_candidate_territorial_unblind_contract_v0_1.json
+      - config/chosica_2015_cleanroom_freeze_record_v0_1.json
+      - site/data/validation/cleanroom/chosica_2015_cleanroom_input_v0_1.json
+      - site/data/validation/cleanroom/chosica_2015_cleanroom_matching_v0_1.json
+      - scripts/build_chosica_2015_candidate_territorial_packet.py
+      - .github/workflows/chosica-2015-candidate-territorial-packet.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  freeze-candidate-territorial-packet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Sparse checkout frozen clean-room surface only
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_candidate_territorial_unblind_contract_v0_1.json
+            config/chosica_2015_cleanroom_freeze_record_v0_1.json
+            site/data/validation/cleanroom/chosica_2015_cleanroom_input_v0_1.json
+            site/data/validation/cleanroom/chosica_2015_cleanroom_matching_v0_1.json
+            scripts/build_chosica_2015_candidate_territorial_packet.py
+            .github/workflows/chosica-2015-candidate-territorial-packet.yml
+
+      - name: Assert prohibited sources are absent
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09_b.json
+          test ! -e config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+
+      - name: Build immutable candidate-only packet
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          python -I scripts/build_chosica_2015_candidate_territorial_packet.py \
+            --contract config/chosica_2015_candidate_territorial_unblind_contract_v0_1.json \
+            --freeze-record config/chosica_2015_cleanroom_freeze_record_v0_1.json \
+            --input site/data/validation/cleanroom/chosica_2015_cleanroom_input_v0_1.json \
+            --matching site/data/validation/cleanroom/chosica_2015_cleanroom_matching_v0_1.json \
+            --output artifacts/chosica_2015_candidate_territorial_packet_v0_1.json | tee artifacts/packet_build_summary.json
+
+      - name: Validate packet isolation and freeze hash
+        run: |
+          set -euo pipefail
+          python -I - <<'PY'
+          import hashlib,json,pathlib
+          p=pathlib.Path('artifacts/chosica_2015_candidate_territorial_packet_v0_1.json')
+          d=json.loads(p.read_text(encoding='utf-8'))
+          guards={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          assert d['guards']==guards
+          assert d['status']=='PASS_FROZEN_CANDIDATE_ONLY_TERRITORIAL_PACKET'
+          assert d['candidate_count']==7==len(d['candidates'])
+          assert d['selection_is_immutable'] is True
+          assert d['source_allowlisting_required_before_read'] is True
+          assert d['free_web_search_allowed'] is False
+          assert d['target_outcome_sources_allowed'] is False
+          assert d['candidate_replacement_allowed'] is False
+          assert d['candidate_reranking_allowed'] is False
+          assert d['feedback_to_matching_allowed'] is False
+          assert d['sealed_target_unblind_allowed'] is False
+          codes=[c['candidate_code'] for c in d['candidates']]
+          assert codes==sorted(codes) and len(codes)==len(set(codes))
+          allowed={'candidate_code','mainstem_confluence_x_m','mainstem_confluence_y_m','analysis_crs','area_km2','relief_m','mean_basin_slope_deg','preanchor_mm'}
+          assert all(set(c)==allowed for c in d['candidates'])
+          text=p.read_text(encoding='utf-8').lower()
+          for token in ('target_name','target_id','a6680','damage','severity','activation','shortlists','matching_score'):
+              assert token not in text, token
+          h=hashlib.sha256(p.read_bytes()).hexdigest()
+          freeze={
+            'schema_version':'0.1',
+            'status':'PASS_CANDIDATE_ONLY_TERRITORIAL_PACKET_FREEZE',
+            'guards':guards,
+            'candidate_count':7,
+            'packet_sha256':h,
+            'candidate_territorial_evidence_read':False,
+            'control_labels_assigned':False,
+            'candidate_selection_modified':False,
+            'candidate_territorial_unblind_allowed_next':True,
+            'sealed_target_unblind_allowed':False,
+            'operational_use_allowed':False
+          }
+          pathlib.Path('artifacts/chosica_2015_candidate_territorial_packet_freeze_v0_1.json').write_text(json.dumps(freeze,sort_keys=True,separators=(',',':'))+'\n',encoding='utf-8')
+          print(json.dumps(freeze,sort_keys=True))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chosica-2015-candidate-territorial-packet
+          path: |
+            artifacts/chosica_2015_candidate_territorial_packet_v0_1.json
+            artifacts/chosica_2015_candidate_territorial_packet_freeze_v0_1.json
+            artifacts/packet_build_summary.json
+          if-no-files-found: error

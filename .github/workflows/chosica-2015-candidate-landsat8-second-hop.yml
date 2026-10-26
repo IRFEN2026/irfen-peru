@@ -1,0 +1,74 @@
+name: IRFEN - Chosica 2015 candidate Landsat 8 second hop
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_candidate_landsat8_transport_second_hop_contract_v0_1.json
+      - config/chosica_2015_candidate_landsat8_transport_redirect_freeze_record_v0_1.json
+      - scripts/diagnose_chosica_2015_candidate_landsat8_second_hop.py
+      - .github/workflows/chosica-2015-candidate-landsat8-second-hop.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  second-hop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            config/chosica_2015_candidate_landsat8_transport_second_hop_contract_v0_1.json
+            config/chosica_2015_candidate_landsat8_transport_redirect_freeze_record_v0_1.json
+            scripts/diagnose_chosica_2015_candidate_landsat8_second_hop.py
+            .github/workflows/chosica-2015-candidate-landsat8-second-hop.yml
+      - name: Assert forbidden scientific paths absent
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_multibasin_validation_set_v0_1.json
+          test ! -e config/chosica_2015_control_adjudication_contamination_registry_v0_1.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09_b.json
+      - name: Download exact frozen non-outcome inventory
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p sources artifacts
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/10172288298/zip" > /tmp/inventory.zip
+          unzip -q /tmp/inventory.zip -d sources
+          test "$(sha256sum sources/chosica_2015_candidate_landsat8_asset_inventory_v0_1.json | cut -d' ' -f1)" = "524e298aa313dffc0df2445e4f44cf7769c2fc0730d49bba7ff64cc8848b0659"
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install transport dependency only
+        run: pip install 'requests>=2.31,<3'
+      - name: Inspect frozen second hop without reading bodies
+        run: |
+          set -euo pipefail
+          env -i PATH="$PATH" HOME=/tmp LANG=C.UTF-8 python -I scripts/diagnose_chosica_2015_candidate_landsat8_second_hop.py \
+            --contract config/chosica_2015_candidate_landsat8_transport_second_hop_contract_v0_1.json \
+            --inventory sources/chosica_2015_candidate_landsat8_asset_inventory_v0_1.json \
+            --freeze config/chosica_2015_candidate_landsat8_transport_redirect_freeze_record_v0_1.json \
+            --output artifacts/chosica_2015_candidate_landsat8_second_hop_v0_1.json
+      - name: Enforce clean-room transport boundary
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('artifacts/chosica_2015_candidate_landsat8_second_hop_v0_1.json'))
+          assert d['status']=='PASS_TRANSPORT_SECOND_HOP_HEADERS_ONLY'
+          assert d['response_body_read'] is False and d['pixel_bytes_read'] is False
+          for k in ('free_web_search_used','outcome_evidence_read','target_names_or_ids_read','a6680_read','contaminated_adjudication_used','scene_selection_modified','candidate_selection_modified','candidate_ranking_modified','qa_bits_or_thresholds_modified','control_labels_assigned','sealed_target_unblind_allowed','asset_acceptance_authorized'):
+            assert d[k] is False
+          assert all(x['second_tls_verification'] is True for x in d['responses'])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: chosica-2015-candidate-landsat8-second-hop
+          path: artifacts/chosica_2015_candidate_landsat8_second_hop_v0_1.json
+          if-no-files-found: warn

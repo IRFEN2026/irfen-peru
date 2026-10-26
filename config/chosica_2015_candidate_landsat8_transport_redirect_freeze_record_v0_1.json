@@ -1,0 +1,46 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_TRANSPORT_FIRST_HOP_PATTERN_HEADERS_ONLY",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "provenance": {
+    "workflow_run_id": 34544841665,
+    "workflow_artifact_id": 10178624733,
+    "workflow_artifact_digest": "sha256:c30b8459236e6f66335103ce268dccaf79e3a7caf75843ec6467ba1602b70a47",
+    "diagnostic_contract_sha256": "4c9d41e13e8e81e3abc08d75f48580b72c999a579a1e0a67f51244bf6143e89a",
+    "inventory_sha256": "524e298aa313dffc0df2445e4f44cf7769c2fc0730d49bba7ff64cc8848b0659"
+  },
+  "observed_first_hop": {
+    "request_count": 3,
+    "origin_scheme": "https",
+    "origin_host": "landsatlook.usgs.gov",
+    "origin_tls_verification": false,
+    "origin_certificate_failure_basis": "GitHub Actions run 34544631012 observed SSL certificate expired before any response body or pixel read",
+    "http_status": 302,
+    "redirect_scheme": "https",
+    "redirect_host": "ers.cr.usgs.gov",
+    "redirect_path": "/",
+    "redirect_query_present": true,
+    "location_sha256_by_item": {
+      "LC08_L2SP_007068_20150214_20200910_02_T1_SR": "f21556399a18fa9732256cf5f01f59a75ed717b80ab43da7d0ea816f51589454",
+      "LC08_L2SP_007068_20150318_20200909_02_T1_SR": "2e27511ef863c3f02f02c29312cf7864b21c3b2b080cfc6a6bacc9a7f2f48e22",
+      "LC08_L2SP_007068_20150403_20200909_02_T1_SR": "458dcfcf8ee5666262438587d065041c4ea8b86c872c81ee7ac14c85dbac7350"
+    }
+  },
+  "authorization": {
+    "next_transport_step": "Re-request each exact frozen origin URL, require the first-hop structure above, then connect to that returned ers.cr.usgs.gov URL with normal TLS verification and inspect headers only with redirects disabled.",
+    "allow_response_body_read": false,
+    "allow_second_redirect_following": false,
+    "allow_free_web_search": false,
+    "allow_target_outcome_read": false,
+    "allow_candidate_selection_change": false,
+    "allow_qa_semantics_change": false,
+    "asset_acceptance_authorized": false
+  }
+}

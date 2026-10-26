@@ -1,0 +1,46 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_INFRASTRUCTURE_ONLY_INGEMMET_TLS_DIAGNOSTICS",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "source_host": "geocatmin.ingemmet.gob.pe",
+  "port": 443,
+  "source_service_root": "https://geocatmin.ingemmet.gob.pe/arcgis/rest/services/SERV_PELIGROS_GEOLOGICOS/MapServer",
+  "prior_verified_tls_failure": {
+    "workflow_run_id": 34513602746,
+    "artifact_id": 10166761898,
+    "artifact_digest": "sha256:b63ef1a67d520fd7da74b9efc952c798cf3305725aabc633ad357d46a5ccf4d5",
+    "error_class": "RuntimeError",
+    "curl_error": 60,
+    "classification": "UNABLE_TO_GET_LOCAL_ISSUER_CERTIFICATE"
+  },
+  "allowed_operations": [
+    "TLS handshake to exact allowlisted host",
+    "read peer certificate chain only",
+    "parse subject issuer validity SAN and AIA CA-Issuers URIs",
+    "hash peer certificates",
+    "verify presented chain against system CA store"
+  ],
+  "forbidden_operations": [
+    "HTTP request to ArcGIS service",
+    "disable TLS verification",
+    "accept an unverified certificate",
+    "fetch AIA URI in this stage",
+    "read candidate territorial evidence",
+    "read outcomes",
+    "read A6680",
+    "free web search"
+  ],
+  "scientific_state": {
+    "candidate_territorial_evidence_read": false,
+    "control_labels_assigned": false,
+    "sealed_target_unblind_allowed": false
+  },
+  "next_gate": "IF_AND_ONLY_IF_TRUST_CHAIN_CAN_BE_REPAIRED_WITH_VERIFIABLE_CERTIFICATE_MATERIAL_FREEZE_A_SEPARATE_TLS_TRUST_RECOVERY_CONTRACT"
+}

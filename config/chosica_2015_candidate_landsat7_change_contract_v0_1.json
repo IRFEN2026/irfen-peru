@@ -1,0 +1,89 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PRE_REFLECTANCE_LANDSAT7_DESCRIPTIVE_CHANGE_METRICS",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "inputs": {
+    "qa": {
+      "artifact_id": 10180279058,
+      "file": "chosica_2015_candidate_landsat7_qa_v0_1.json",
+      "sha256": "31719ba2ca44a33e71c8f57271ed6bc0d0478325f2053a17a7e3ee3dcb4f80d7",
+      "required_status": "PASS_LANDSAT7_CANDIDATE_QA_GATE",
+      "usable_candidate_codes": ["C_19f0c525214f", "C_b903bae5d9c9", "C_c767e4cea74e", "C_d0274c1c4240"]
+    },
+    "asset_inventory": {
+      "artifact_id": 10180217499,
+      "file": "chosica_2015_candidate_landsat7_asset_inventory_v0_1.json",
+      "sha256": "f10c4442ffe6bb12992b342e78140eb89f0e5db95abd2ab05304d8f399952cda"
+    },
+    "candidate_geometry": {
+      "artifact_id": 10171108859,
+      "file": "chosica_2015_cleanroom_candidate_geometries_v0_1.geojson",
+      "sha256": "9a23644c191c88fb66722b368773251051b4098ddd74e4d5861c3a37dbfbb1ca"
+    },
+    "frozen_items": {
+      "pre": "LE07_L2SP_007068_20150310_02_T1",
+      "post": "LE07_L2SP_007068_20150326_02_T1"
+    }
+  },
+  "transport": {
+    "provider": "Microsoft Planetary Computer",
+    "role": "TRANSPORT_ONLY_NOT_SCIENTIFIC_SOURCE",
+    "unsigned_asset_host": "landsateuwest.blob.core.windows.net",
+    "ephemeral_signing_library": "planetary-computer",
+    "signed_url_may_be_persisted": false,
+    "signed_url_may_be_logged": false,
+    "redirects_allowed": false,
+    "full_file_sha512_before_raster_read": true,
+    "qa_asset_sha512_must_exactly_match_frozen_qa_output": true,
+    "canonical_usgs_byte_checksum_available": false
+  },
+  "reflectance": {
+    "asset_keys": ["red", "nir08", "swir22"],
+    "landsat_collection2_level2_scale": 0.0000275,
+    "landsat_collection2_level2_offset": -0.2,
+    "post_to_pre_resampling": "bilinear",
+    "qa_post_to_pre_resampling": "nearest",
+    "rasterization": "candidate polygon pixel-center inclusion; all_touched=false",
+    "spectral_zero_raw_is_invalid": true
+  },
+  "indices": {
+    "NDVI": "(nir08-red)/(nir08+red)",
+    "NBR": "(nir08-swir22)/(nir08+swir22)",
+    "denominator_absolute_minimum": 0.000001
+  },
+  "reported_statistics": {
+    "bands": ["pre_median", "post_median", "delta_median", "delta_p10", "delta_p25", "delta_p75", "delta_p90"],
+    "indices": ["pre_median", "post_median", "delta_median", "delta_p10", "delta_p25", "delta_p75", "delta_p90"],
+    "classification_thresholds": null,
+    "outcome_label_from_metrics": false
+  },
+  "interpretation_policy": {
+    "metrics_are_descriptive_supporting_evidence_only": true,
+    "no_change_can_confirm_control": false,
+    "large_change_can_confirm_activation": false,
+    "candidate_reranking_allowed": false,
+    "candidate_replacement_allowed": false,
+    "feedback_to_matching_allowed": false
+  },
+  "forbidden": [
+    "compute reflectance metrics for QA-insufficient candidates",
+    "change scenes after seeing QA or reflectance",
+    "change QA thresholds",
+    "add or drop spectral metrics after observing their values",
+    "assign CONTROL_CONFIRMED or EXCLUDED_ACTIVE from these metrics alone",
+    "read target outcomes or names",
+    "read A6680",
+    "read contaminated adjudication",
+    "modify candidate matching or ranking",
+    "free web search"
+  ],
+  "sealed_target_unblind_allowed": false,
+  "next_gate": "FREEZE_DESCRIPTIVE_CHANGE_OUTPUT_BY_EXACT_HASH_AND_EXPOSE_IT_ONLY_AS_CANDIDATE_ONLY_SUPPORTING_EVIDENCE_TO_THE_ALREADY_FROZEN_TERRITORIAL_ADJUDICATION_STAGE"
+}

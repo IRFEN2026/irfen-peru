@@ -1,0 +1,52 @@
+{
+  "schema_version": "0.1",
+  "batch_id": "CHOSICA_2015_MULTIBASIN_VALIDATION_SET_v0.1",
+  "status": "FROZEN_PRE_EXECUTION_LANDSAT8_SCENE_PAIR_SELECTION",
+  "guards": {
+    "RESEARCH_ONLY": true,
+    "TEST_ONLY": true,
+    "production_use": false,
+    "production_ready": false,
+    "operational_alerting_enabled": false
+  },
+  "availability_input": {
+    "workflow_run_id": 34527233199,
+    "artifact_id": 10172034215,
+    "artifact_digest": "sha256:49cb1b15750e3556b4a796e2164e52ea6f0af6c62f523be729b96378ca357022",
+    "file": "chosica_2015_candidate_landsat8_availability_v0_1.json",
+    "sha256": "f909c2d79d9422cae3290275fd8b582b49404e52a6c040e26b9380cc965ca4c3",
+    "candidate_count": 7
+  },
+  "event_anchor_utc": "2015-03-23T19:30:00Z",
+  "selection": {
+    "candidate_specific": true,
+    "require_same_wrs_path": true,
+    "require_same_wrs_row": true,
+    "pre_datetime_strictly_before_anchor": true,
+    "post_datetime_at_or_after_anchor": true,
+    "primary_key": "minimum sum of pre-anchor and post-anchor temporal distance in seconds",
+    "secondary_key": "minimum maximum of the two temporal distances in seconds",
+    "tertiary_key": "minimum scene-level cloud-cover sum only when both scenes report cloud cover; complete cloud metadata ranks before missing cloud metadata",
+    "final_key": "lexical pre item_id then lexical post item_id",
+    "surface_reflectance_or_QA_pixels_allowed_for_selection": false,
+    "candidate_replacement_allowed": false,
+    "pair_replacement_after_pixel_read": false
+  },
+  "expected": {
+    "candidate_count": 7,
+    "exactly_one_pair_per_candidate": true,
+    "selection_deterministic": true,
+    "repeat_execution_byte_identical": true
+  },
+  "forbidden": [
+    "read any Landsat asset or pixel before pair manifest is frozen",
+    "read target outcomes or names",
+    "read A6680",
+    "read contaminated adjudication",
+    "use surface change, cloud mask at candidate pixels, damage, activation, or event evidence to select or replace a pair",
+    "modify the frozen candidate shortlist",
+    "free web search"
+  ],
+  "sealed_target_unblind_allowed": false,
+  "next_gate": "FREEZE_PAIR_MANIFEST_BY_EXACT_SHA256_THEN_RESOLVE_ONLY_THE_FROZEN_ITEMS_ASSET_METADATA"
+}
