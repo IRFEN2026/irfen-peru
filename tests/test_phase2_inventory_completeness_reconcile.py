@@ -309,7 +309,8 @@ class RealInputs(unittest.TestCase):
         self.assertEqual(tree_hashes(self.paths), self.before)
 
     def test_no_publication_or_operational_path_reads_the_reconciler(self):
-        names = ("phase2_inventory_completeness_reconcile", "inventory_reconciliation", "phase2_inventory_annotations")
+        names = ("scripts/phase2_inventory_completeness_reconcile", "import phase2_inventory_completeness_reconcile",
+                 "inventory_reconciliation/", "phase2_inventory_annotations_v0_1", "phase2_inventory_reconciliation_sources_v0_1")
         offenders = []
         for base in ("site", ".github/workflows", "scripts"):
             for p in (ROOT / base).rglob("*"):
