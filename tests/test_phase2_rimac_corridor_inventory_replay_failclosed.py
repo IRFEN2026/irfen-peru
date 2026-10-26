@@ -108,6 +108,34 @@ def test_documentary_rows_are_not_a_deduplicated_hydrologic_census():
     # receiver, geometry or routing evidence. Missing GIS is not absence.
     leads = d["official_unmaterialized_name_leads"]
     assert len({lead["documentary_name"] for lead in leads}) == len(leads)
+    # ANA's plan supplies eight separate *name leads*, not eight validated
+    # catchments. Freeze their exact documentary labels in this replay so
+    # later inventory revisions cannot silently drop them or merge numbered
+    # Condores labels into the existing Los Condores unit.
+    ana_plan_labels = {
+        "Huascata", "Panorama", "Caraponguillo", "Los Cóndores 2",
+        "Cóndores 1", "Santa Inés 1", "Ñaña", "La Laguna",
+    }
+    ana_plan_leads = [
+        lead for lead in leads
+        if lead.get("source_title") == (
+            "Plan de intervenciones — identificación de quebradas con población vulnerable"
+        )
+    ]
+    assert {lead["documentary_name"] for lead in ana_plan_leads} == ana_plan_labels
+    assert len(ana_plan_leads) == len(ana_plan_labels) == 8
+    for lead in ana_plan_leads:
+        assert lead["source_text_verified"] is False
+        assert lead["original_pdf_sha256"] is None
+        assert lead["counted_as_confirmed_unique_hydrologic_unit"] is False
+        assert lead["receiver_chain_adjudicated"] is False
+        assert lead["map_publishable"] is False
+    for name in ("Los Cóndores 2", "Cóndores 1"):
+        candidate = next(x for x in ana_plan_leads if x["documentary_name"] == name)
+        assert candidate["possible_existing_inventory_id_unadjudicated"] == (
+            "lima_chaclacayo_los_condores"
+        )
+        assert candidate["alias_adjudication"].startswith("UNRESOLVED")
     for lead in leads:
         assert lead["source_text_verified"] is False
         assert lead["original_pdf_bytes_archived_in_this_contract"] is False
