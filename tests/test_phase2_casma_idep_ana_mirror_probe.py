@@ -263,7 +263,9 @@ class TestCasmaIDEPIndependentMirrorContract(unittest.TestCase):
                 b'{"type":"FeatureCollection","features":[]}', CODES[0]
             )
 
-    def test_bounded_failure_detail_redacts_untrusted_source_text(self):
+    def test_source_custody_and_fail_closed_guards(self):
+        # The bounded diagnostic regression stays in the existing custody test;
+        # preserve the exact pytest collection manifest without weakening coverage.
         msg = "source candidate rejected code=1375961: NIVEL7/CODIGO identity mismatch; no tolerance"
         self.assertEqual(bounded_failure_detail(ValueError(msg)), msg)
         self.assertEqual(bounded_failure_detail(ValueError("source status/URL mismatch")),
@@ -276,7 +278,6 @@ class TestCasmaIDEPIndependentMirrorContract(unittest.TestCase):
         self.assertEqual(bounded_failure_detail(ValueError("raw source response")),
                          "ValueError")
 
-    def test_source_custody_and_fail_closed_guards(self):
         self.assertIn("idep.gob.pe", LAYER)
         self.assertIn("ANA_WMS", LAYER)
         self.assertFalse(GUARDS["historical_geometry_equivalence_to_Uh_pfas100"])
