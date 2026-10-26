@@ -8,7 +8,9 @@ import copy
 import hashlib
 import importlib.util
 import json
+import os
 import random
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -44,7 +46,7 @@ def national(rows, **extra):
     return d
 
 
-def run(master_rows, deltas=(), sidecar=None, logs=(), master_extra=None, shuffle_seed=None):
+def run(master_rows, deltas=(), sidecar=None, logs=(), master_extra=None, shuffle_seed=None, root=ROOT):
     inputs = [dict(label="master", role="MASTER", adapter="national_inventory", doc=national(master_rows, **(master_extra or {})))]
     for label, doc in deltas:
         inputs.append(dict(label=label, role="DELTA", adapter=R.detect_adapter(doc), doc=doc))
@@ -57,7 +59,7 @@ def run(master_rows, deltas=(), sidecar=None, logs=(), master_extra=None, shuffl
         for i in inputs:
             if "candidates" in i["doc"]:
                 rnd.shuffle(i["doc"]["candidates"])
-    return R.finalize(R.reconcile(inputs, sidecar, ROOT, validator=NoValidator))
+    return R.finalize(R.reconcile(inputs, sidecar, root, validator=NoValidator))
 
 
 def types(rep, ids=None):
@@ -255,6 +257,124 @@ class SourcesAndDeltas(unittest.TestCase):
         rep = run([row("syn_a", "Synthetic Uno")], deltas=[("syn_pr", delta)])
         self.assertIn("GUARD_VIOLATION", {f["type"] for f in rep["blocking_errors"]})
         self.assertEqual(rep["guards"], R.GUARDS)
+
+
+class FailClosedEvidence(unittest.TestCase):
+    """QA #6428929895: exact positive event states (no substring matching) and real SHA-256 verification, with primary
+    provenance and confined paths, for COASTAL_IMPACT_DOCUMENTED. Temporary repositories hold SYNTHETIC test files only."""
+
+    MEDIA_LUNA = "config/phase2_jicamarca_discovery_v0_1.json#/historical_evidence/0"
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self._tmp.name)
+        (self.root / "config").mkdir()
+        (self.root / "data/phase2/source_archive/syn").mkdir(parents=True)
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def write_events(self, records, catalog=True):
+        doc = dict(historical_evidence=records)
+        if catalog:
+            doc["source_catalog"] = {"SYN-EVENT-SOURCE": "https://example.invalid/syn-event.pdf"}
+        (self.root / "config/syn_events.json").write_text(json.dumps(doc), encoding="utf-8")
+
+    def event(self, **kw):
+        e = dict(event_id="SYN-1", status="CONFIRMED_POSITIVE_HISTORICAL_ACTIVATION", research_state="IMPACT_CONFIRMED",
+                 source_id="SYN-EVENT-SOURCE", supported_claim="SYNTHETIC")
+        e.update(kw)
+        return e
+
+    def test_event_states_are_matched_exactly_and_need_a_catalogued_source(self):
+        negatives = [self.event(status="UNVERIFIED"), self.event(status="NOT_CONFIRMED"), self.event(status="UNCONFIRMED"),
+                     self.event(research_state="UNVERIFIED"), self.event(verification_status="not confirmed"),
+                     self.event(status="CONFIRMED", research_state="PENDING_CONFIRMATION"),
+                     self.event(source_text_verified=False), self.event(source_id=None), self.event(source_id="NOT-IN-CATALOG"),
+                     self.event(status=None, research_state=None), self.event(status="CONFIRMED_BY_PRESS_LEAD")]
+        positives = [self.event(), self.event(status="confirmed", research_state=None), self.event(status="Verified", research_state=None)]
+        self.write_events(negatives + positives)
+        ref = lambda i: f"config/syn_events.json#/historical_evidence/{i}"
+        for i, e in enumerate(negatives):
+            self.assertFalse(R.event_ref_supported(ref(i), self.root), e)
+        for i, e in enumerate(positives, len(negatives)):
+            self.assertTrue(R.event_ref_supported(ref(i), self.root), e)
+        for bad in ("../config/syn_events.json#/historical_evidence/11", "/etc/passwd#/x", "config/missing.json#/a/0",
+                    "config/syn_events.json#/historical_evidence/99"):
+            self.assertFalse(R.event_ref_supported(bad, self.root), bad)
+        self.write_events([self.event()], catalog=False)  # no source catalogue in the file: not traceable
+        self.assertFalse(R.event_ref_supported(ref(0), self.root))
+        # the real confirmed Media Luna record in main is accepted (and only as a repository record)
+        self.assertTrue(R.event_ref_supported(self.MEDIA_LUNA, ROOT))
+
+    def test_unverified_pointer_blocks_and_confirmed_pointer_does_not(self):
+        self.write_events([self.event(status="UNVERIFIED"), self.event()])
+        bad = row("syn_e", "Synthetic Evento", verified_event_dates=["config/syn_events.json#/historical_evidence/0"])
+        rep = run([bad], root=self.root)
+        self.assertIn("EVENT_EVIDENCE_WITHOUT_VERIFIED_SOURCE", {f["type"] for f in rep["blocking_errors"]})
+        self.assertIn("REFERENTIAL_INTEGRITY", types(rep, ["syn_e"]))
+        ok = row("syn_e", "Synthetic Evento", verified_event_dates=["config/syn_events.json#/historical_evidence/1"])
+        self.assertEqual(run([ok], root=self.root)["blocking_errors"], [])
+        real = row("syn_m", "Synthetic Media Luna pointer", verified_event_dates=[self.MEDIA_LUNA])
+        self.assertEqual(run([real])["blocking_errors"], [])
+
+    def archive(self, rel="data/phase2/source_archive/syn/coastal.pdf", data=b"SYNTHETIC TEST BYTES - not a real document"):
+        path = self.root / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+        return rel, hashlib.sha256(data).hexdigest()
+
+    def documented(self, **src):
+        rel, digest = self.archive()
+        source = dict(institution="Synthetic Institution", identifier="SYN-DOC-1", url="https://example.invalid/syn-doc-1",
+                      source_class="PRIMARY_INSTITUTIONAL", read_status="VERIFIED", locator="SYNTHETIC page 1",
+                      archive=rel, sha256=digest)
+        source.update(src)
+        return dict(R.GUARDS, annotations=[dict(inventory_id="syn_a", field="coastal_connection", state="KNOWN",
+                                                value="COASTAL_IMPACT_DOCUMENTED", basis="SYNTHETIC test annotation", sources=[source])])
+
+    def coastal(self, sidecar):
+        return run([row("syn_a", "Synthetic Uno")], sidecar=sidecar, root=self.root)
+
+    def test_documented_coastal_impact_needs_the_real_digest_of_safe_archived_bytes(self):
+        rep = self.coastal(self.documented())
+        self.assertEqual(rep["blocking_errors"], [], [f["reason"] for f in rep["blocking_errors"]])
+        self.assertEqual(rep["summary"]["coastal_connection"]["COASTAL_IMPACT_DOCUMENTED"], 1)
+        outside = self.root.parent / (self.root.name + "_outside.pdf")
+        outside.write_bytes(b"SYNTHETIC outside")
+        self.addCleanup(outside.unlink)
+        os.symlink(outside, self.root / "data/phase2/source_archive/syn/link.pdf")
+        rel_cfg, digest_cfg = self.archive("config/coastal.pdf")
+        cases = {
+            "fake 64-hex digest with an existing file": dict(sha256="0" * 64),
+            "digest of other bytes": dict(sha256=hashlib.sha256(b"other").hexdigest()),
+            "no digest": dict(sha256=None),
+            "no archive": dict(archive=None),
+            "archive outside data/ or site/data/": dict(archive=rel_cfg, sha256=digest_cfg),
+            "parent traversal": dict(archive="data/../config/coastal.pdf", sha256=digest_cfg),
+            "absolute path": dict(archive=str(self.root / "data/phase2/source_archive/syn/coastal.pdf")),
+            "symlink escaping the repository": dict(archive="data/phase2/source_archive/syn/link.pdf",
+                                                    sha256=hashlib.sha256(b"SYNTHETIC outside").hexdigest()),
+            "directory instead of a file": dict(archive="data/phase2/source_archive/syn"),
+            "not read as VERIFIED": dict(read_status="REFERENCE_ONLY"),
+            "secondary source": dict(source_class="STATE_NEWS_AGENCY_SECONDARY"),
+            "no institution": dict(institution=""),
+            "no identifier nor URL": dict(identifier=None, url=None),
+            "no locator": dict(locator=None),
+        }
+        for name, change in cases.items():
+            with self.subTest(case=name):
+                rep = self.coastal(self.documented(**change))
+                self.assertIn("SIDECAR_REJECTED", {f["type"] for f in rep["blocking_errors"]}, name)
+                self.assertEqual(rep["summary"]["coastal_connection"]["COASTAL_IMPACT_DOCUMENTED"], 0, name)
+
+    def test_any_declared_digest_in_the_sidecar_is_checked_against_its_bytes(self):
+        rel, digest = self.archive()
+        ann = lambda **src: dict(R.GUARDS, annotations=[dict(inventory_id="syn_a", field="identity_distinctness", state="PENDING_VERIFICATION",
+                                                             basis="SYNTHETIC", sources=[dict(institution="Synthetic", **src)])])
+        self.assertEqual(self.coastal(ann(archive=rel, sha256=digest))["blocking_errors"], [])
+        for src in (dict(archive=rel, sha256="f" * 64), dict(sha256=digest), dict(archive="../outside.pdf", sha256=digest)):
+            self.assertIn("SIDECAR_REJECTED", {f["type"] for f in self.coastal(ann(**src))["blocking_errors"]}, src)
 
 
 def tree_hashes(paths):

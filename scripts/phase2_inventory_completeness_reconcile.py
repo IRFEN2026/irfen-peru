@@ -352,14 +352,51 @@ def check_guards(doc: dict, label: str, out: Collector):
                 action="restore the guard values; nothing in this lane may enable production or alerting")
 
 
-CONFIRMED_MARKERS = ("CONFIRMED", "VERIFIED")
+# Exact positive states (after normalisation). Matching is by equality, never by substring: "UNVERIFIED",
+# "NOT_CONFIRMED" or "UNCONFIRMED" contain a positive word and must not pass.
+POSITIVE_EVENT_STATES = frozenset({"CONFIRMED", "VERIFIED", "CONFIRMED_POSITIVE_HISTORICAL_ACTIVATION", "IMPACT_CONFIRMED",
+                                   "EVENT_CONFIRMED", "VERIFIED_EVENT"})
+EVENT_STATE_KEYS = ("status", "research_state", "verification_status")
+NEGATION = re.compile(r"(^|_)(UN|NOT|NON|NO|PENDING|UNKNOWN|UNVERIFIED|UNCONFIRMED|REJECTED|RETRACTED|DISPUTED|LEAD)(_|$)|^UN|^NON")
+ARCHIVE_ROOTS = ("data", "site/data")  # where frozen source bytes live in this repository
+
+
+def norm_state(value) -> str:
+    return re.sub(r"[\s\-]+", "_", str(value or "").strip().upper())
+
+
+def safe_repo_path(rel, root: Path, roots: tuple[str, ...] | None = None) -> Path | None:
+    """Repository-relative path confined to `root` (and to `roots` when given): no absolute paths, no '..', no
+    escape through symlinks; it must be an existing regular file. Anything else -> None."""
+    if not isinstance(rel, str) or not rel.strip() or "\x00" in rel or "\\" in rel:
+        return None
+    pure = Path(rel)
+    if pure.is_absolute() or ".." in pure.parts or rel.startswith("~"):
+        return None
+    base = root.resolve()
+    try:
+        full = (root / pure).resolve(strict=True)
+        rel_parts = full.relative_to(base).parts
+    except (OSError, ValueError):
+        return None
+    if roots is not None and not any(rel_parts[:len(Path(r).parts)] == Path(r).parts for r in roots):
+        return None
+    return full if full.is_file() else None
+
+
+def file_sha256(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
 
 
 def resolve_pointer(ref: str, root: Path):
     """'path.json#/a/0' inside the repository -> object, or None when the file or the pointer does not exist."""
     path, _, ptr = str(ref).partition("#")
-    p = root / path
-    if not path.endswith(".json") or not p.is_file():
+    p = safe_repo_path(path, root)
+    if not path.endswith(".json") or p is None:
         return None
     node = json.loads(p.read_text(encoding="utf-8"))
     for part in [x for x in ptr.split("/") if x]:
@@ -373,13 +410,29 @@ def resolve_pointer(ref: str, root: Path):
 
 
 def event_ref_supported(ref, root: Path) -> bool:
-    """A verified event given as a repository pointer counts only if the pointed record exists and itself states a
-    confirmed / verified status (the reconciler does not re-verify that record's source)."""
+    """A verified event given as a repository pointer counts only when, fail-closed:
+    * the pointer resolves inside the repository to an object;
+    * every state field present (status, research_state, verification_status) is, after normalisation, EXACTLY one
+      of POSITIVE_EVENT_STATES and none carries a negation (UNVERIFIED, NOT_CONFIRMED, UNCONFIRMED, PENDING…);
+    * source_text_verified, if present, is True;
+    * the record names its source_id and that id is catalogued in the same file (source_catalog / sources).
+    A nominal state is not a re-verification of the primary document: the reconciler only accepts the repository
+    record as the documented basis and says so."""
+    path = str(ref).partition("#")[0]
     obj = resolve_pointer(ref, root) if "#" in str(ref) else None
     if not isinstance(obj, dict):
         return False
-    marks = " ".join(str(obj.get(k) or "") for k in ("status", "research_state", "verification_status")).upper()
-    return obj.get("source_text_verified") is True or any(m in marks for m in CONFIRMED_MARKERS)
+    states = [norm_state(obj[k]) for k in EVENT_STATE_KEYS if obj.get(k) not in (None, "")]
+    if not states or any(st not in POSITIVE_EVENT_STATES or NEGATION.search(st) for st in states):
+        return False
+    if "source_text_verified" in obj and obj["source_text_verified"] is not True:
+        return False
+    sid = obj.get("source_id")
+    if not isinstance(sid, str) or not sid.strip():
+        return False
+    container = resolve_pointer(path + "#", root)
+    catalogs = [container.get(k) for k in ("source_catalog", "sources")] if isinstance(container, dict) else []
+    return any(isinstance(c, dict) and c.get(sid) for c in catalogs)
 
 
 def row_rules(rec: dict, sources: dict, out: Collector, root: Path = ROOT):
@@ -487,6 +540,37 @@ def block_reasons(rec: dict, fields: dict, ctx: dict) -> list[str]:
     return rs
 
 
+def archive_problems(s: dict, root: Path) -> list[str]:
+    """The archive must be a regular file confined to data/ or site/data/ of the repository, and its computed SHA-256
+    must equal the declared one. A digest without bytes cannot be checked and is rejected."""
+    if not s.get("archive"):
+        return ["a SHA-256 without an archived file cannot be verified"]
+    path = safe_repo_path(s["archive"], root, ARCHIVE_ROOTS)
+    if path is None:
+        return [f"archive '{s['archive']}' is not a regular file under {'/ or '.join(ARCHIVE_ROOTS)}/ of the repository"]
+    if not SHA_RE.match(str(s.get("sha256") or "")):
+        return ["archived file without its declared SHA-256"]
+    actual = file_sha256(path)
+    return [] if actual == s["sha256"] else [f"declared SHA-256 {s['sha256'][:12]}… does not match the archived bytes ({actual[:12]}…)"]
+
+
+def documented_source_problems(s: dict, root: Path) -> list[str]:
+    if not isinstance(s, dict):
+        return ["source is not an object"]
+    probs = []
+    if s.get("read_status") != "VERIFIED":
+        probs.append("read_status is not VERIFIED")
+    if s.get("source_class") != "PRIMARY_INSTITUTIONAL":
+        probs.append("source_class is not PRIMARY_INSTITUTIONAL")
+    if not str(s.get("institution") or "").strip():
+        probs.append("no institution")
+    if not str(s.get("identifier") or s.get("url") or "").strip():
+        probs.append("no identifier or URL")
+    if not str(s.get("locator") or "").strip():
+        probs.append("no locator (page, table, sheet or section)")
+    return probs + archive_problems(s, root)
+
+
 def validate_sidecar(sidecar: dict | None, known_ids: set, out: Collector, root: Path) -> dict:
     by_id = {}
     if not sidecar:
@@ -502,11 +586,11 @@ def validate_sidecar(sidecar: dict | None, known_ids: set, out: Collector, root:
             if a.get("value") not in COASTAL_STATES:
                 problems.append(f"coastal value '{a.get('value')}' not in vocabulary")
             if a.get("value") == "COASTAL_IMPACT_DOCUMENTED":
-                srcs = a.get("sources") or []
-                ok = any(s.get("read_status") == "VERIFIED" and SHA_RE.match(str(s.get("sha256") or "")) and s.get("archive")
-                         and (root / s["archive"]).is_file() for s in srcs)
-                if not ok:
-                    problems.append("COASTAL_IMPACT_DOCUMENTED needs a VERIFIED source with a real SHA-256 and an archived file")
+                why = [documented_source_problems(s, root) for s in (a.get("sources") or [])]
+                if not any(w == [] for w in why):
+                    problems.append("COASTAL_IMPACT_DOCUMENTED needs a primary institutional source read as VERIFIED, with institution, "
+                                    "identifier or URL, locator, an archive under data/ or site/data/ and the SHA-256 of its bytes: "
+                                    + (" | ".join("; ".join(w) for w in why) if why else "no source given"))
             if a.get("value") == "COASTAL_IMPACT_CANDIDATE" and not a.get("basis"):
                 problems.append("a coastal candidate needs its basis")
         if state not in VALUE_STATES:
@@ -522,6 +606,8 @@ def validate_sidecar(sidecar: dict | None, known_ids: set, out: Collector, root:
         for s in a.get("sources") or []:
             if s.get("sha256") and not SHA_RE.match(str(s["sha256"])):
                 problems.append("malformed SHA-256 (never write a hash that was not computed)")
+            elif s.get("sha256") or s.get("archive"):  # any declared digest must match real bytes in a safe archive path
+                problems += [p for p in archive_problems(s, root) if p not in problems]
         if problems:
             out.add("SIDECAR_REJECTED", [rid], f"{where}: " + "; ".join(problems), key=where)
             continue
