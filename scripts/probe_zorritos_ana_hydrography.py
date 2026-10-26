@@ -97,6 +97,45 @@ def query_url(field: str, token: str) -> str:
     }
     return f"{SERVICE}/{LAYER}/query?" + urlencode(params)
 
+def validated_geojson_features(payload: dict, context: str) -> list[dict]:
+    """Reject malformed ANA responses instead of treating them as empty matches."""
+    if not isinstance(payload, dict) or payload.get("type") != "FeatureCollection":
+        raise ValueError(f"non-GeoJSON FeatureCollection for {context}")
+    if "features" not in payload or not isinstance(payload["features"], list):
+        raise ValueError(f"invalid or missing GeoJSON features array for {context}")
+    for index, feature in enumerate(payload["features"]):
+        if not isinstance(feature, dict) or feature.get("type") != "Feature":
+            raise ValueError(f"invalid GeoJSON feature at {context}[{index}]")
+        if feature.get("properties") is not None and not isinstance(feature["properties"], dict):
+            raise ValueError(f"invalid GeoJSON properties at {context}[{index}]")
+        if feature.get("geometry") is not None and not isinstance(feature["geometry"], dict):
+            raise ValueError(f"invalid GeoJSON geometry at {context}[{index}]")
+    return payload["features"]
+
+
+def check_geojson_payload_guard() -> None:
+    """Offline regression smoke test, exercised by --check-plan-only in CI."""
+    invalid = (
+        {"type": "FeatureCollection"},
+        {"type": "FeatureCollection", "features": None},
+        {"type": "FeatureCollection", "features": False},
+        {"type": "FeatureCollection", "features": {}},
+        {"type": "FeatureCollection", "features": ""},
+        {"type": "FeatureCollection", "features": "[]"},
+        {"type": "FeatureCollection", "features": [None]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": []}]},
+    )
+    for payload in invalid:
+        try:
+            validated_geojson_features(payload, "offline-regression")
+        except ValueError:
+            continue
+        raise AssertionError(f"malformed GeoJSON accepted: {payload!r}")
+    assert validated_geojson_features(
+        {"type": "FeatureCollection", "features": []}, "offline-regression"
+    ) == []
+
+
 def normalize_feature(feature: dict) -> dict:
     geometry = feature.get("geometry")
     if geometry is not None and geometry.get("type") not in {"LineString", "MultiLineString"}:
@@ -140,9 +179,9 @@ def run() -> dict:
             for token in tokens:
                 url = query_url(field, token)
                 payload, raw = fetch(url)
-                if payload.get("type") != "FeatureCollection":
-                    raise ValueError(f"non-GeoJSON response for {component_id}/{field}/{token}")
-                rows = payload.get("features") or []
+                rows = validated_geojson_features(
+                    payload, f"{component_id}/{field}/{token}"
+                )
                 requests.append({
                     "field": field,
                     "token": token,
@@ -220,6 +259,7 @@ def main() -> int:
     parser.add_argument("--check-plan-only", action="store_true")
     args = parser.parse_args()
     if args.check_plan_only:
+        check_geojson_payload_guard()
         plan = json.loads(PLAN.read_text(encoding="utf-8"))
         for key, expected in SAFE.items():
             assert plan.get(key) == expected
