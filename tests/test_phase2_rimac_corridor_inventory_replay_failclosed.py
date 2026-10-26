@@ -153,6 +153,31 @@ def test_documentary_rows_are_not_a_deduplicated_hydrologic_census():
         assert lead["travel_time_tau"] is None
         assert lead["collector_capacity"] is None
         assert lead["collector_overflow_evidence"] is None
+    # ANA's Ricardo Palma field-verification news names four candidate
+    # ravines; it is neither an activation ledger nor evidence that the
+    # announced barriers/diques were built or have measured capacity.
+    # In particular, Velasco must not be merged with COEN's Juan Velasco.
+    ana_ricardo_palma_names = [
+        lead for lead in leads
+        if lead.get("source_title") == (
+            "Huarochirí: ANA intervendrá con barreras dinámicas y diques en quebradas "
+            "Cupiche y La Ronda en distrito Ricardo Palma"
+        )
+    ]
+    assert {lead["documentary_name"] for lead in ana_ricardo_palma_names} == {
+        "Montalvo", "Velasco", "La Pascana", "Sol y Campo"
+    }
+    assert len(ana_ricardo_palma_names) == 4
+    for lead in ana_ricardo_palma_names:
+        assert lead["source_text_verified"] is False
+        assert lead["original_web_text_sha256"] is None
+        assert lead["verified_event_refs"] == []
+        assert lead["receiver_chain_adjudicated"] is False
+        assert lead["map_publishable"] is False
+    velasco = next(lead for lead in ana_ricardo_palma_names
+                   if lead["documentary_name"] == "Velasco")
+    assert velasco["alias_adjudication"] == "UNRESOLVED_NO_EQUIVALENCE_TO_COEN_JUAN_VELASCO"
+
     design = d["official_road_crossing_design_leads"]
     assert design["source_text_verified"] is False
     assert design["original_pdf_sha256"] is None
