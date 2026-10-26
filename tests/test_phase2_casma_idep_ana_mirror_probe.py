@@ -117,6 +117,18 @@ def candidate(raw, code):
     }
 
 
+def validate_capture_candidate(raw, code):
+    """Keep rejected source candidates UNKNOWN but expose a bounded reason for QA.
+
+    Only the preregistered code and static validator message enter CI logs;
+    never log raw response bytes or treat a rejection as a negative observation.
+    """
+    try:
+        return candidate(raw, code)
+    except ValueError as exc:
+        raise ValueError(f"source candidate rejected code={code}: {exc}") from exc
+
+
 def capture(out_dir):
     """All nine must validate before ANY archive is written to out_dir."""
     opener = build_opener(NoRedirects())
@@ -140,7 +152,7 @@ def capture(out_dir):
                 "http_date": response.headers.get("Date"),
                 "etag": response.headers.get("ETag"),
             }
-        record = candidate(raw, code)
+        record = validate_capture_candidate(raw, code)
         record.update({
             "raw_response_sha256": hashlib.sha256(raw).hexdigest(),
             "raw_response_bytes": len(raw), "http_provenance": http,
@@ -209,6 +221,12 @@ class TestCasmaIDEPIndependentMirrorContract(unittest.TestCase):
                 candidate(json.dumps(obj).encode(), CODES[0])
         with self.assertRaises(ValueError):
             candidate(b'{"error":{"message":"unavailable"}}', CODES[0])
+        with self.assertRaisesRegex(
+            ValueError, "source candidate rejected code=1375961: unknown candidate cardinality"
+        ):
+            validate_capture_candidate(
+                b'{"type":"FeatureCollection","features":[]}', CODES[0]
+            )
 
     def test_source_custody_and_fail_closed_guards(self):
         self.assertIn("idep.gob.pe", LAYER)
@@ -236,7 +254,11 @@ if __name__ == "__main__":
         try:
             print(json.dumps(capture(args.out_dir), ensure_ascii=False, sort_keys=True))
         except (HTTPError, URLError, TimeoutError, OSError, ValueError) as exc:
+            # Preserve UNKNOWN and expose only bounded validator diagnostics.
+            detail = (str(exc) if isinstance(exc, ValueError) and
+                      str(exc).startswith("source candidate rejected code=")
+                      else type(exc).__name__)
             raise SystemExit("UNKNOWN_SOURCE_ACCESS_UNAVAILABLE_OR_INVALID: "
-                             + type(exc).__name__) from exc
+                             + detail) from exc
     else:
         unittest.main(argv=["test_phase2_casma_idep_ana_mirror_probe.py"] + remaining)
