@@ -13,15 +13,15 @@
  "map_publishable": false,
  "inputs": {
   "zones": "df91718569e8d689fbdbb285674ca30cce49421e602c8ab40e5b2a14c09142c1",
-  "links": "5e0798162fecab74825cebfa37db4238c45807de96a4db6d4acadbcf284eafc4",
+  "links": "89bc873ab9a6b3a3cc397b703426607523d34960fe03db6e0d2a4ad60a64c4c3",
   "imerg_north": "b04c5e111a7aaca95fd2ccd63b4aa56249c1e8d71bbb4514f59a4b75680dcd65",
-  "imerg_v08": "ea3893112b480a701d09d149b29fb886fa8ea877d170761b835103fc94196383",
-  "goes19": "370f13b18050efc508c17421c3d8790db00d7f8e28b55673d16f9fb703a85c3b",
+  "imerg_v08": "7bc46cc441099ea8b4d22045d7e6bc161f4456942e77cba65c45749fb62cd32c",
+  "goes19": "bc23b51ac337ab5d9feecdb08e74625d2d874482a0cae5a0aec48ff9bc821cac",
   "geos_cf": "924bcf941c0a200c94ee76df3720352d172483a861419e30c2f0ab02f8890be6",
   "goes19_north": "414f0dd460cfd1ea4c1f588f61fdae65726656faab06c59e2506b8da5b6f129f",
   "geos_cf_north": "4e701361a4787afaeda617a1e97f998c1dfc8e62e8c2e1dbc1221013faf4335b"
  },
- "links_evaluated_at_utc": "2026-10-26T19:36:45.228764+00:00",
+ "links_evaluated_at_utc": "2026-10-26T22:37:21.621609+00:00",
  "links_statuses_valid_until_utc": "2026-10-27T04:59:00+00:00",
  "aviso_source_state": "AL_DIA",
  "review_priorities": [
@@ -61,7 +61,7 @@
   "goes_stale_after_min": 90,
   "geos_max_cycle_age_h": 54
  },
- "next_change_utc": "2026-10-26T20:59:52.100000+00:00",
+ "next_change_utc": "2026-10-27T02:00:01+00:00",
  "rules_es": [
   "Ventanas solo con todas sus medias horas; si falta alguna, NO_DISPONIBLE.",
   "IMERG Early tiene horas de latencia; la antigüedad de cada ventana se muestra siempre.",
@@ -82,14 +82,14 @@
    "avisos": [
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-435",
-     "status": "DESCONOCIDO",
+     "status": "VIGENTE",
      "product": "AVISO-METEOROLOGICO",
      "relation_method": "DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
      "relation_rank": 4,
-     "validity_start": null,
-     "validity_end": null,
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "validity_start": "2026-10-26T00:00:00-05:00",
+     "validity_end": "2026-10-26T23:59:00-05:00",
+     "official_level": "ROJO",
+     "official_level_note": null
     },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-440",
@@ -99,8 +99,8 @@
      "relation_rank": 4,
      "validity_start": "2026-10-27T00:00:00-05:00",
      "validity_end": "2026-10-29T23:59:00-05:00",
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "official_level": "ROJO",
+     "official_level_note": null
     }
    ],
    "imerg": {
@@ -800,21 +800,23 @@
    },
    "v08_source_caveat": null,
    "review_priority": {
-    "code": "R3_PREPARAR_VIGILANCIA",
-    "label_es": "Preparar vigilancia",
-    "rule_es": "Aviso de lluvia FUTURO (o de vigencia desconocida) relacionado con la zona.",
+    "code": "R2_VIGILANCIA_ACTIVA",
+    "label_es": "Vigilancia activa",
+    "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (DESCONOCIDO; nivel oficial: no consta) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: no consta) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
-     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida"
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (VIGENTE; nivel oficial: ROJO) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: ROJO) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
+     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
+     "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-26T19:29:51.100000+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-26T20:59:52.100000+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-27T02:00:01+00:00"
    }
   },
   {
@@ -826,14 +828,14 @@
    "avisos": [
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-435",
-     "status": "DESCONOCIDO",
+     "status": "VIGENTE",
      "product": "AVISO-METEOROLOGICO",
      "relation_method": "DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
      "relation_rank": 4,
-     "validity_start": null,
-     "validity_end": null,
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "validity_start": "2026-10-26T00:00:00-05:00",
+     "validity_end": "2026-10-26T23:59:00-05:00",
+     "official_level": "ROJO",
+     "official_level_note": null
     },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-440",
@@ -843,8 +845,8 @@
      "relation_rank": 4,
      "validity_start": "2026-10-27T00:00:00-05:00",
      "validity_end": "2026-10-29T23:59:00-05:00",
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "official_level": "ROJO",
+     "official_level_note": null
     }
    ],
    "imerg": {
@@ -1544,21 +1546,23 @@
    },
    "v08_source_caveat": null,
    "review_priority": {
-    "code": "R3_PREPARAR_VIGILANCIA",
-    "label_es": "Preparar vigilancia",
-    "rule_es": "Aviso de lluvia FUTURO (o de vigencia desconocida) relacionado con la zona.",
+    "code": "R2_VIGILANCIA_ACTIVA",
+    "label_es": "Vigilancia activa",
+    "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (DESCONOCIDO; nivel oficial: no consta) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: no consta) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
-     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida"
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (VIGENTE; nivel oficial: ROJO) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: ROJO) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
+     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
+     "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-26T19:29:51.100000+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-26T20:59:52.100000+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-27T02:00:01+00:00"
    }
   },
   {
@@ -1569,15 +1573,26 @@
    "province": "AYABACA",
    "avisos": [
     {
+     "aviso_key": "SENAMHI-ACP-QUEBRADAS-2026-299",
+     "status": "VIGENTE",
+     "product": "ACP-QUEBRADAS",
+     "relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
+     "relation_rank": 3,
+     "validity_start": "2026-10-26T13:00:00-05:00",
+     "validity_end": "2026-10-27T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-435",
-     "status": "DESCONOCIDO",
+     "status": "VIGENTE",
      "product": "AVISO-METEOROLOGICO",
      "relation_method": "DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
      "relation_rank": 4,
-     "validity_start": null,
-     "validity_end": null,
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "validity_start": "2026-10-26T00:00:00-05:00",
+     "validity_end": "2026-10-26T23:59:00-05:00",
+     "official_level": "ROJO",
+     "official_level_note": null
     },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-440",
@@ -1587,8 +1602,8 @@
      "relation_rank": 4,
      "validity_start": "2026-10-27T00:00:00-05:00",
      "validity_end": "2026-10-29T23:59:00-05:00",
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "official_level": "ROJO",
+     "official_level_note": null
     }
    ],
    "imerg": {
@@ -2288,21 +2303,24 @@
    },
    "v08_source_caveat": null,
    "review_priority": {
-    "code": "R3_PREPARAR_VIGILANCIA",
-    "label_es": "Preparar vigilancia",
-    "rule_es": "Aviso de lluvia FUTURO (o de vigencia desconocida) relacionado con la zona.",
+    "code": "R2_VIGILANCIA_ACTIVA",
+    "label_es": "Vigilancia activa",
+    "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (DESCONOCIDO; nivel oficial: no consta) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: no consta) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
-     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida"
+     "Aviso SENAMHI-ACP-QUEBRADAS-2026-299 (VIGENTE; nivel oficial: no consta) — LISTED_PROVINCE_CONTEXT_NO_BASIN",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (VIGENTE; nivel oficial: ROJO) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: ROJO) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
+     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
+     "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-26T19:29:51.100000+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-26T20:59:52.100000+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-27T02:00:01+00:00"
    }
   },
   {
@@ -2314,14 +2332,14 @@
    "avisos": [
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-435",
-     "status": "DESCONOCIDO",
+     "status": "VIGENTE",
      "product": "AVISO-METEOROLOGICO",
      "relation_method": "BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "relation_rank": 2,
-     "validity_start": null,
-     "validity_end": null,
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "validity_start": "2026-10-26T00:00:00-05:00",
+     "validity_end": "2026-10-26T23:59:00-05:00",
+     "official_level": "ROJO",
+     "official_level_note": null
     },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-440",
@@ -2331,8 +2349,8 @@
      "relation_rank": 2,
      "validity_start": "2026-10-27T00:00:00-05:00",
      "validity_end": "2026-10-29T23:59:00-05:00",
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "official_level": "ROJO",
+     "official_level_note": null
     }
    ],
    "imerg": {
@@ -3032,21 +3050,23 @@
    },
    "v08_source_caveat": null,
    "review_priority": {
-    "code": "R3_PREPARAR_VIGILANCIA",
-    "label_es": "Preparar vigilancia",
-    "rule_es": "Aviso de lluvia FUTURO (o de vigencia desconocida) relacionado con la zona.",
+    "code": "R2_VIGILANCIA_ACTIVA",
+    "label_es": "Vigilancia activa",
+    "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (DESCONOCIDO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
-     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida"
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (VIGENTE; nivel oficial: ROJO) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: ROJO) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
+     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
+     "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-26T19:29:51.100000+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-26T20:59:52.100000+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-27T02:00:01+00:00"
    }
   },
   {
@@ -3058,14 +3078,14 @@
    "avisos": [
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-435",
-     "status": "DESCONOCIDO",
+     "status": "VIGENTE",
      "product": "AVISO-METEOROLOGICO",
      "relation_method": "DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
      "relation_rank": 4,
-     "validity_start": null,
-     "validity_end": null,
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "validity_start": "2026-10-26T00:00:00-05:00",
+     "validity_end": "2026-10-26T23:59:00-05:00",
+     "official_level": "ROJO",
+     "official_level_note": null
     },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-440",
@@ -3075,8 +3095,8 @@
      "relation_rank": 4,
      "validity_start": "2026-10-27T00:00:00-05:00",
      "validity_end": "2026-10-29T23:59:00-05:00",
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "official_level": "ROJO",
+     "official_level_note": null
     }
    ],
    "imerg": {
@@ -3776,21 +3796,23 @@
    },
    "v08_source_caveat": null,
    "review_priority": {
-    "code": "R3_PREPARAR_VIGILANCIA",
-    "label_es": "Preparar vigilancia",
-    "rule_es": "Aviso de lluvia FUTURO (o de vigencia desconocida) relacionado con la zona.",
+    "code": "R2_VIGILANCIA_ACTIVA",
+    "label_es": "Vigilancia activa",
+    "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (DESCONOCIDO; nivel oficial: no consta) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: no consta) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
-     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida"
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (VIGENTE; nivel oficial: ROJO) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: ROJO) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
+     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
+     "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-26T19:29:51.100000+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-26T20:59:52.100000+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-27T02:00:01+00:00"
    }
   },
   {
@@ -3801,15 +3823,37 @@
    "province": null,
    "avisos": [
     {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-299",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-26T13:00:00-05:00",
+     "validity_end": "2026-10-27T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
+     "aviso_key": "SENAMHI-ACP-QUEBRADAS-2026-299",
+     "status": "VIGENTE",
+     "product": "ACP-QUEBRADAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-26T13:00:00-05:00",
+     "validity_end": "2026-10-27T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-435",
-     "status": "DESCONOCIDO",
+     "status": "VIGENTE",
      "product": "AVISO-METEOROLOGICO",
      "relation_method": "BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "relation_rank": 2,
-     "validity_start": null,
-     "validity_end": null,
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "validity_start": "2026-10-26T00:00:00-05:00",
+     "validity_end": "2026-10-26T23:59:00-05:00",
+     "official_level": "ROJO",
+     "official_level_note": null
     },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-440",
@@ -3819,8 +3863,8 @@
      "relation_rank": 2,
      "validity_start": "2026-10-27T00:00:00-05:00",
      "validity_end": "2026-10-29T23:59:00-05:00",
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "official_level": "ROJO",
+     "official_level_note": null
     }
    ],
    "imerg": {
@@ -4520,21 +4564,25 @@
    },
    "v08_source_caveat": null,
    "review_priority": {
-    "code": "R3_PREPARAR_VIGILANCIA",
-    "label_es": "Preparar vigilancia",
-    "rule_es": "Aviso de lluvia FUTURO (o de vigencia desconocida) relacionado con la zona.",
+    "code": "R2_VIGILANCIA_ACTIVA",
+    "label_es": "Vigilancia activa",
+    "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (DESCONOCIDO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
-     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida"
+     "Aviso SENAMHI-ACP-LLUVIAS-2026-299 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
+     "Aviso SENAMHI-ACP-QUEBRADAS-2026-299 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (VIGENTE; nivel oficial: ROJO) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: ROJO) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
+     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
+     "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-26T19:29:51.100000+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-26T20:59:52.100000+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-27T02:00:01+00:00"
    }
   },
   {
@@ -4545,15 +4593,26 @@
    "province": null,
    "avisos": [
     {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-299",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-26T13:00:00-05:00",
+     "validity_end": "2026-10-27T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-435",
-     "status": "DESCONOCIDO",
+     "status": "VIGENTE",
      "product": "AVISO-METEOROLOGICO",
      "relation_method": "BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "relation_rank": 2,
-     "validity_start": null,
-     "validity_end": null,
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "validity_start": "2026-10-26T00:00:00-05:00",
+     "validity_end": "2026-10-26T23:59:00-05:00",
+     "official_level": "ROJO",
+     "official_level_note": null
     },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-440",
@@ -4563,8 +4622,8 @@
      "relation_rank": 2,
      "validity_start": "2026-10-27T00:00:00-05:00",
      "validity_end": "2026-10-29T23:59:00-05:00",
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "official_level": "ROJO",
+     "official_level_note": null
     }
    ],
    "imerg": {
@@ -5264,21 +5323,24 @@
    },
    "v08_source_caveat": null,
    "review_priority": {
-    "code": "R3_PREPARAR_VIGILANCIA",
-    "label_es": "Preparar vigilancia",
-    "rule_es": "Aviso de lluvia FUTURO (o de vigencia desconocida) relacionado con la zona.",
+    "code": "R2_VIGILANCIA_ACTIVA",
+    "label_es": "Vigilancia activa",
+    "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (DESCONOCIDO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
-     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida"
+     "Aviso SENAMHI-ACP-LLUVIAS-2026-299 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (VIGENTE; nivel oficial: ROJO) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: ROJO) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
+     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
+     "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-26T19:29:51.100000+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-26T20:59:52.100000+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-27T02:00:01+00:00"
    }
   },
   {
@@ -5289,15 +5351,26 @@
    "province": "MORROPON",
    "avisos": [
     {
+     "aviso_key": "SENAMHI-ACP-QUEBRADAS-2026-299",
+     "status": "VIGENTE",
+     "product": "ACP-QUEBRADAS",
+     "relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
+     "relation_rank": 3,
+     "validity_start": "2026-10-26T13:00:00-05:00",
+     "validity_end": "2026-10-27T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-435",
-     "status": "DESCONOCIDO",
+     "status": "VIGENTE",
      "product": "AVISO-METEOROLOGICO",
      "relation_method": "DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
      "relation_rank": 4,
-     "validity_start": null,
-     "validity_end": null,
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "validity_start": "2026-10-26T00:00:00-05:00",
+     "validity_end": "2026-10-26T23:59:00-05:00",
+     "official_level": "ROJO",
+     "official_level_note": null
     },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-440",
@@ -5307,8 +5380,8 @@
      "relation_rank": 4,
      "validity_start": "2026-10-27T00:00:00-05:00",
      "validity_end": "2026-10-29T23:59:00-05:00",
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "official_level": "ROJO",
+     "official_level_note": null
     }
    ],
    "imerg": {
@@ -6008,21 +6081,24 @@
    },
    "v08_source_caveat": null,
    "review_priority": {
-    "code": "R3_PREPARAR_VIGILANCIA",
-    "label_es": "Preparar vigilancia",
-    "rule_es": "Aviso de lluvia FUTURO (o de vigencia desconocida) relacionado con la zona.",
+    "code": "R2_VIGILANCIA_ACTIVA",
+    "label_es": "Vigilancia activa",
+    "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (DESCONOCIDO; nivel oficial: no consta) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: no consta) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
-     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida"
+     "Aviso SENAMHI-ACP-QUEBRADAS-2026-299 (VIGENTE; nivel oficial: no consta) — LISTED_PROVINCE_CONTEXT_NO_BASIN",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (VIGENTE; nivel oficial: ROJO) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: ROJO) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
+     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
+     "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-26T19:29:51.100000+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-26T20:59:52.100000+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-27T02:00:01+00:00"
    }
   },
   {
@@ -6033,15 +6109,37 @@
    "province": null,
    "avisos": [
     {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-299",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-26T13:00:00-05:00",
+     "validity_end": "2026-10-27T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
+     "aviso_key": "SENAMHI-ACP-QUEBRADAS-2026-299",
+     "status": "VIGENTE",
+     "product": "ACP-QUEBRADAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-26T13:00:00-05:00",
+     "validity_end": "2026-10-27T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-435",
-     "status": "DESCONOCIDO",
+     "status": "VIGENTE",
      "product": "AVISO-METEOROLOGICO",
      "relation_method": "BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "relation_rank": 2,
-     "validity_start": null,
-     "validity_end": null,
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "validity_start": "2026-10-26T00:00:00-05:00",
+     "validity_end": "2026-10-26T23:59:00-05:00",
+     "official_level": "ROJO",
+     "official_level_note": null
     },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-440",
@@ -6051,8 +6149,8 @@
      "relation_rank": 2,
      "validity_start": "2026-10-27T00:00:00-05:00",
      "validity_end": "2026-10-29T23:59:00-05:00",
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "official_level": "ROJO",
+     "official_level_note": null
     }
    ],
    "imerg": {
@@ -6752,21 +6850,25 @@
    },
    "v08_source_caveat": null,
    "review_priority": {
-    "code": "R3_PREPARAR_VIGILANCIA",
-    "label_es": "Preparar vigilancia",
-    "rule_es": "Aviso de lluvia FUTURO (o de vigencia desconocida) relacionado con la zona.",
+    "code": "R2_VIGILANCIA_ACTIVA",
+    "label_es": "Vigilancia activa",
+    "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (DESCONOCIDO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
-     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida"
+     "Aviso SENAMHI-ACP-LLUVIAS-2026-299 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
+     "Aviso SENAMHI-ACP-QUEBRADAS-2026-299 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (VIGENTE; nivel oficial: ROJO) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: ROJO) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
+     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
+     "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-26T19:29:51.100000+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-26T20:59:52.100000+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-27T02:00:01+00:00"
    }
   },
   {
@@ -6777,15 +6879,26 @@
    "province": null,
    "avisos": [
     {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-299",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-26T13:00:00-05:00",
+     "validity_end": "2026-10-27T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-435",
-     "status": "DESCONOCIDO",
+     "status": "VIGENTE",
      "product": "AVISO-METEOROLOGICO",
      "relation_method": "BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "relation_rank": 2,
-     "validity_start": null,
-     "validity_end": null,
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "validity_start": "2026-10-26T00:00:00-05:00",
+     "validity_end": "2026-10-26T23:59:00-05:00",
+     "official_level": "ROJO",
+     "official_level_note": null
     },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-440",
@@ -6795,8 +6908,8 @@
      "relation_rank": 2,
      "validity_start": "2026-10-27T00:00:00-05:00",
      "validity_end": "2026-10-29T23:59:00-05:00",
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "official_level": "ROJO",
+     "official_level_note": null
     }
    ],
    "imerg": {
@@ -7496,21 +7609,24 @@
    },
    "v08_source_caveat": null,
    "review_priority": {
-    "code": "R3_PREPARAR_VIGILANCIA",
-    "label_es": "Preparar vigilancia",
-    "rule_es": "Aviso de lluvia FUTURO (o de vigencia desconocida) relacionado con la zona.",
+    "code": "R2_VIGILANCIA_ACTIVA",
+    "label_es": "Vigilancia activa",
+    "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (DESCONOCIDO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
-     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida"
+     "Aviso SENAMHI-ACP-LLUVIAS-2026-299 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (VIGENTE; nivel oficial: ROJO) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: ROJO) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
+     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
+     "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-26T19:29:51.100000+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-26T20:59:52.100000+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-27T02:00:01+00:00"
    }
   },
   {
@@ -7521,15 +7637,26 @@
    "province": null,
    "avisos": [
     {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-299",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-26T13:00:00-05:00",
+     "validity_end": "2026-10-27T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-435",
-     "status": "DESCONOCIDO",
+     "status": "VIGENTE",
      "product": "AVISO-METEOROLOGICO",
      "relation_method": "BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "relation_rank": 2,
-     "validity_start": null,
-     "validity_end": null,
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "validity_start": "2026-10-26T00:00:00-05:00",
+     "validity_end": "2026-10-26T23:59:00-05:00",
+     "official_level": "ROJO",
+     "official_level_note": null
     },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-440",
@@ -7539,8 +7666,8 @@
      "relation_rank": 2,
      "validity_start": "2026-10-27T00:00:00-05:00",
      "validity_end": "2026-10-29T23:59:00-05:00",
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "official_level": "ROJO",
+     "official_level_note": null
     }
    ],
    "imerg": {
@@ -8240,21 +8367,24 @@
    },
    "v08_source_caveat": null,
    "review_priority": {
-    "code": "R3_PREPARAR_VIGILANCIA",
-    "label_es": "Preparar vigilancia",
-    "rule_es": "Aviso de lluvia FUTURO (o de vigencia desconocida) relacionado con la zona.",
+    "code": "R2_VIGILANCIA_ACTIVA",
+    "label_es": "Vigilancia activa",
+    "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (DESCONOCIDO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
-     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida"
+     "Aviso SENAMHI-ACP-LLUVIAS-2026-299 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (VIGENTE; nivel oficial: ROJO) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: ROJO) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
+     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
+     "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-26T19:29:51.100000+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-26T20:59:52.100000+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-27T02:00:01+00:00"
    }
   },
   {
@@ -8265,15 +8395,26 @@
    "province": "HUANCABAMBA",
    "avisos": [
     {
+     "aviso_key": "SENAMHI-ACP-QUEBRADAS-2026-299",
+     "status": "VIGENTE",
+     "product": "ACP-QUEBRADAS",
+     "relation_method": "LISTED_PROVINCE_CONTEXT_NO_BASIN",
+     "relation_rank": 3,
+     "validity_start": "2026-10-26T13:00:00-05:00",
+     "validity_end": "2026-10-27T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-435",
-     "status": "DESCONOCIDO",
+     "status": "VIGENTE",
      "product": "AVISO-METEOROLOGICO",
      "relation_method": "DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
      "relation_rank": 4,
-     "validity_start": null,
-     "validity_end": null,
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "validity_start": "2026-10-26T00:00:00-05:00",
+     "validity_end": "2026-10-26T23:59:00-05:00",
+     "official_level": "ROJO",
+     "official_level_note": null
     },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-440",
@@ -8283,8 +8424,8 @@
      "relation_rank": 4,
      "validity_start": "2026-10-27T00:00:00-05:00",
      "validity_end": "2026-10-29T23:59:00-05:00",
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "official_level": "ROJO",
+     "official_level_note": null
     }
    ],
    "imerg": {
@@ -8984,21 +9125,24 @@
    },
    "v08_source_caveat": null,
    "review_priority": {
-    "code": "R3_PREPARAR_VIGILANCIA",
-    "label_es": "Preparar vigilancia",
-    "rule_es": "Aviso de lluvia FUTURO (o de vigencia desconocida) relacionado con la zona.",
+    "code": "R2_VIGILANCIA_ACTIVA",
+    "label_es": "Vigilancia activa",
+    "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (DESCONOCIDO; nivel oficial: no consta) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: no consta) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
-     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida"
+     "Aviso SENAMHI-ACP-QUEBRADAS-2026-299 (VIGENTE; nivel oficial: no consta) — LISTED_PROVINCE_CONTEXT_NO_BASIN",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (VIGENTE; nivel oficial: ROJO) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: ROJO) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
+     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
+     "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-26T19:29:51.100000+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-26T20:59:52.100000+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-27T02:00:01+00:00"
    }
   },
   {
@@ -9009,15 +9153,37 @@
    "province": null,
    "avisos": [
     {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-299",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-26T13:00:00-05:00",
+     "validity_end": "2026-10-27T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
+     "aviso_key": "SENAMHI-ACP-QUEBRADAS-2026-299",
+     "status": "VIGENTE",
+     "product": "ACP-QUEBRADAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-26T13:00:00-05:00",
+     "validity_end": "2026-10-27T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-435",
-     "status": "DESCONOCIDO",
+     "status": "VIGENTE",
      "product": "AVISO-METEOROLOGICO",
      "relation_method": "BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "relation_rank": 2,
-     "validity_start": null,
-     "validity_end": null,
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "validity_start": "2026-10-26T00:00:00-05:00",
+     "validity_end": "2026-10-26T23:59:00-05:00",
+     "official_level": "ROJO",
+     "official_level_note": null
     },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-440",
@@ -9027,8 +9193,8 @@
      "relation_rank": 2,
      "validity_start": "2026-10-27T00:00:00-05:00",
      "validity_end": "2026-10-29T23:59:00-05:00",
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "official_level": "ROJO",
+     "official_level_note": null
     }
    ],
    "imerg": {
@@ -9730,21 +9896,25 @@
    },
    "v08_source_caveat": null,
    "review_priority": {
-    "code": "R3_PREPARAR_VIGILANCIA",
-    "label_es": "Preparar vigilancia",
-    "rule_es": "Aviso de lluvia FUTURO (o de vigencia desconocida) relacionado con la zona.",
+    "code": "R2_VIGILANCIA_ACTIVA",
+    "label_es": "Vigilancia activa",
+    "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (DESCONOCIDO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
-     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida"
+     "Aviso SENAMHI-ACP-LLUVIAS-2026-299 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
+     "Aviso SENAMHI-ACP-QUEBRADAS-2026-299 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (VIGENTE; nivel oficial: ROJO) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: ROJO) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
+     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
+     "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-26T19:29:51.100000+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-26T20:59:52.100000+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-27T02:00:01+00:00"
    }
   },
   {
@@ -9756,14 +9926,14 @@
    "avisos": [
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-435",
-     "status": "DESCONOCIDO",
+     "status": "VIGENTE",
      "product": "AVISO-METEOROLOGICO",
      "relation_method": "DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
      "relation_rank": 4,
-     "validity_start": null,
-     "validity_end": null,
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "validity_start": "2026-10-26T00:00:00-05:00",
+     "validity_end": "2026-10-26T23:59:00-05:00",
+     "official_level": "ROJO",
+     "official_level_note": null
     },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-440",
@@ -9773,8 +9943,8 @@
      "relation_rank": 4,
      "validity_start": "2026-10-27T00:00:00-05:00",
      "validity_end": "2026-10-29T23:59:00-05:00",
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "official_level": "ROJO",
+     "official_level_note": null
     }
    ],
    "imerg": {
@@ -10474,21 +10644,23 @@
    },
    "v08_source_caveat": null,
    "review_priority": {
-    "code": "R3_PREPARAR_VIGILANCIA",
-    "label_es": "Preparar vigilancia",
-    "rule_es": "Aviso de lluvia FUTURO (o de vigencia desconocida) relacionado con la zona.",
+    "code": "R2_VIGILANCIA_ACTIVA",
+    "label_es": "Vigilancia activa",
+    "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (DESCONOCIDO; nivel oficial: no consta) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: no consta) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
-     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida"
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (VIGENTE; nivel oficial: ROJO) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: ROJO) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
+     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
+     "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-26T19:29:51.100000+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-26T20:59:52.100000+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-27T02:00:01+00:00"
    }
   },
   {
@@ -10499,15 +10671,37 @@
    "province": null,
    "avisos": [
     {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-299",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-26T13:00:00-05:00",
+     "validity_end": "2026-10-27T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
+     "aviso_key": "SENAMHI-ACP-QUEBRADAS-2026-299",
+     "status": "VIGENTE",
+     "product": "ACP-QUEBRADAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-26T13:00:00-05:00",
+     "validity_end": "2026-10-27T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-435",
-     "status": "DESCONOCIDO",
+     "status": "VIGENTE",
      "product": "AVISO-METEOROLOGICO",
      "relation_method": "BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "relation_rank": 2,
-     "validity_start": null,
-     "validity_end": null,
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "validity_start": "2026-10-26T00:00:00-05:00",
+     "validity_end": "2026-10-26T23:59:00-05:00",
+     "official_level": "ROJO",
+     "official_level_note": null
     },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-440",
@@ -10517,8 +10711,8 @@
      "relation_rank": 2,
      "validity_start": "2026-10-27T00:00:00-05:00",
      "validity_end": "2026-10-29T23:59:00-05:00",
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "official_level": "ROJO",
+     "official_level_note": null
     }
    ],
    "imerg": {
@@ -11218,21 +11412,25 @@
    },
    "v08_source_caveat": null,
    "review_priority": {
-    "code": "R3_PREPARAR_VIGILANCIA",
-    "label_es": "Preparar vigilancia",
-    "rule_es": "Aviso de lluvia FUTURO (o de vigencia desconocida) relacionado con la zona.",
+    "code": "R2_VIGILANCIA_ACTIVA",
+    "label_es": "Vigilancia activa",
+    "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (DESCONOCIDO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
-     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida"
+     "Aviso SENAMHI-ACP-LLUVIAS-2026-299 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
+     "Aviso SENAMHI-ACP-QUEBRADAS-2026-299 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (VIGENTE; nivel oficial: ROJO) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: ROJO) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
+     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
+     "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-26T19:29:51.100000+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-26T20:59:52.100000+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-27T02:00:01+00:00"
    }
   },
   {
@@ -11243,15 +11441,37 @@
    "province": null,
    "avisos": [
     {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-299",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-26T13:00:00-05:00",
+     "validity_end": "2026-10-27T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
+     "aviso_key": "SENAMHI-ACP-QUEBRADAS-2026-299",
+     "status": "VIGENTE",
+     "product": "ACP-QUEBRADAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-26T13:00:00-05:00",
+     "validity_end": "2026-10-27T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-435",
-     "status": "DESCONOCIDO",
+     "status": "VIGENTE",
      "product": "AVISO-METEOROLOGICO",
      "relation_method": "BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "relation_rank": 2,
-     "validity_start": null,
-     "validity_end": null,
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "validity_start": "2026-10-26T00:00:00-05:00",
+     "validity_end": "2026-10-26T23:59:00-05:00",
+     "official_level": "ROJO",
+     "official_level_note": null
     },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-440",
@@ -11261,8 +11481,8 @@
      "relation_rank": 2,
      "validity_start": "2026-10-27T00:00:00-05:00",
      "validity_end": "2026-10-29T23:59:00-05:00",
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "official_level": "ROJO",
+     "official_level_note": null
     }
    ],
    "imerg": {
@@ -11964,21 +12184,25 @@
    },
    "v08_source_caveat": null,
    "review_priority": {
-    "code": "R3_PREPARAR_VIGILANCIA",
-    "label_es": "Preparar vigilancia",
-    "rule_es": "Aviso de lluvia FUTURO (o de vigencia desconocida) relacionado con la zona.",
+    "code": "R2_VIGILANCIA_ACTIVA",
+    "label_es": "Vigilancia activa",
+    "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (DESCONOCIDO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
-     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida"
+     "Aviso SENAMHI-ACP-LLUVIAS-2026-299 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
+     "Aviso SENAMHI-ACP-QUEBRADAS-2026-299 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (VIGENTE; nivel oficial: ROJO) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: ROJO) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
+     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
+     "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-26T19:29:51.100000+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-26T20:59:52.100000+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-27T02:00:01+00:00"
    }
   },
   {
@@ -11989,15 +12213,37 @@
    "province": null,
    "avisos": [
     {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-299",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-26T13:00:00-05:00",
+     "validity_end": "2026-10-27T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
+     "aviso_key": "SENAMHI-ACP-QUEBRADAS-2026-299",
+     "status": "VIGENTE",
+     "product": "ACP-QUEBRADAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-26T13:00:00-05:00",
+     "validity_end": "2026-10-27T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-435",
-     "status": "DESCONOCIDO",
+     "status": "VIGENTE",
      "product": "AVISO-METEOROLOGICO",
      "relation_method": "BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "relation_rank": 2,
-     "validity_start": null,
-     "validity_end": null,
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "validity_start": "2026-10-26T00:00:00-05:00",
+     "validity_end": "2026-10-26T23:59:00-05:00",
+     "official_level": "ROJO",
+     "official_level_note": null
     },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-440",
@@ -12007,8 +12253,8 @@
      "relation_rank": 2,
      "validity_start": "2026-10-27T00:00:00-05:00",
      "validity_end": "2026-10-29T23:59:00-05:00",
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "official_level": "ROJO",
+     "official_level_note": null
     }
    ],
    "imerg": {
@@ -12708,21 +12954,25 @@
    },
    "v08_source_caveat": null,
    "review_priority": {
-    "code": "R3_PREPARAR_VIGILANCIA",
-    "label_es": "Preparar vigilancia",
-    "rule_es": "Aviso de lluvia FUTURO (o de vigencia desconocida) relacionado con la zona.",
+    "code": "R2_VIGILANCIA_ACTIVA",
+    "label_es": "Vigilancia activa",
+    "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (DESCONOCIDO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
-     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida"
+     "Aviso SENAMHI-ACP-LLUVIAS-2026-299 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
+     "Aviso SENAMHI-ACP-QUEBRADAS-2026-299 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (VIGENTE; nivel oficial: ROJO) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: ROJO) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
+     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
+     "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-26T19:29:51.100000+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-26T20:59:52.100000+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-27T02:00:01+00:00"
    }
   },
   {
@@ -12734,14 +12984,14 @@
    "avisos": [
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-435",
-     "status": "DESCONOCIDO",
+     "status": "VIGENTE",
      "product": "AVISO-METEOROLOGICO",
      "relation_method": "DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
      "relation_rank": 4,
-     "validity_start": null,
-     "validity_end": null,
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "validity_start": "2026-10-26T00:00:00-05:00",
+     "validity_end": "2026-10-26T23:59:00-05:00",
+     "official_level": "ROJO",
+     "official_level_note": null
     },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-440",
@@ -12751,8 +13001,8 @@
      "relation_rank": 4,
      "validity_start": "2026-10-27T00:00:00-05:00",
      "validity_end": "2026-10-29T23:59:00-05:00",
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "official_level": "ROJO",
+     "official_level_note": null
     }
    ],
    "imerg": {
@@ -13454,21 +13704,23 @@
    },
    "v08_source_caveat": "Catacaos/Bajo Piura v0.8 weighted sampling boxes (bajo Piura and middle basin): context for Piura province, not a provincial mean",
    "review_priority": {
-    "code": "R3_PREPARAR_VIGILANCIA",
-    "label_es": "Preparar vigilancia",
-    "rule_es": "Aviso de lluvia FUTURO (o de vigencia desconocida) relacionado con la zona.",
+    "code": "R2_VIGILANCIA_ACTIVA",
+    "label_es": "Vigilancia activa",
+    "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (DESCONOCIDO; nivel oficial: no consta) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: no consta) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
-     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida"
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (VIGENTE; nivel oficial: ROJO) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: ROJO) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
+     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
+     "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-26T19:29:51.100000+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-26T20:59:52.100000+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-27T02:00:01+00:00"
    }
   },
   {
@@ -13480,14 +13732,14 @@
    "avisos": [
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-435",
-     "status": "DESCONOCIDO",
+     "status": "VIGENTE",
      "product": "AVISO-METEOROLOGICO",
      "relation_method": "DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
      "relation_rank": 4,
-     "validity_start": null,
-     "validity_end": null,
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "validity_start": "2026-10-26T00:00:00-05:00",
+     "validity_end": "2026-10-26T23:59:00-05:00",
+     "official_level": "ROJO",
+     "official_level_note": null
     },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-440",
@@ -13497,8 +13749,8 @@
      "relation_rank": 4,
      "validity_start": "2026-10-27T00:00:00-05:00",
      "validity_end": "2026-10-29T23:59:00-05:00",
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "official_level": "ROJO",
+     "official_level_note": null
     }
    ],
    "imerg": {
@@ -14198,21 +14450,23 @@
    },
    "v08_source_caveat": null,
    "review_priority": {
-    "code": "R3_PREPARAR_VIGILANCIA",
-    "label_es": "Preparar vigilancia",
-    "rule_es": "Aviso de lluvia FUTURO (o de vigencia desconocida) relacionado con la zona.",
+    "code": "R2_VIGILANCIA_ACTIVA",
+    "label_es": "Vigilancia activa",
+    "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (DESCONOCIDO; nivel oficial: no consta) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: no consta) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
-     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida"
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (VIGENTE; nivel oficial: ROJO) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: ROJO) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
+     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
+     "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-26T19:29:51.100000+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-26T20:59:52.100000+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-27T02:00:01+00:00"
    }
   },
   {
@@ -14224,14 +14478,14 @@
    "avisos": [
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-435",
-     "status": "DESCONOCIDO",
+     "status": "VIGENTE",
      "product": "AVISO-METEOROLOGICO",
      "relation_method": "DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
      "relation_rank": 4,
-     "validity_start": null,
-     "validity_end": null,
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "validity_start": "2026-10-26T00:00:00-05:00",
+     "validity_end": "2026-10-26T23:59:00-05:00",
+     "official_level": "ROJO",
+     "official_level_note": null
     },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-440",
@@ -14241,8 +14495,8 @@
      "relation_rank": 4,
      "validity_start": "2026-10-27T00:00:00-05:00",
      "validity_end": "2026-10-29T23:59:00-05:00",
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "official_level": "ROJO",
+     "official_level_note": null
     }
    ],
    "imerg": {
@@ -14942,21 +15196,23 @@
    },
    "v08_source_caveat": null,
    "review_priority": {
-    "code": "R3_PREPARAR_VIGILANCIA",
-    "label_es": "Preparar vigilancia",
-    "rule_es": "Aviso de lluvia FUTURO (o de vigencia desconocida) relacionado con la zona.",
+    "code": "R2_VIGILANCIA_ACTIVA",
+    "label_es": "Vigilancia activa",
+    "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (DESCONOCIDO; nivel oficial: no consta) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: no consta) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
-     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida"
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (VIGENTE; nivel oficial: ROJO) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: ROJO) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
+     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida",
+     "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-26T19:29:51.100000+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-26T20:59:52.100000+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-27T02:00:01+00:00"
    }
   },
   {
@@ -14967,15 +15223,26 @@
    "province": null,
    "avisos": [
     {
+     "aviso_key": "SENAMHI-ACP-LLUVIAS-2026-299",
+     "status": "VIGENTE",
+     "product": "ACP-LLUVIAS",
+     "relation_method": "BASIN_INTERSECTS_LISTED_PROVINCE",
+     "relation_rank": 1,
+     "validity_start": "2026-10-26T13:00:00-05:00",
+     "validity_end": "2026-10-27T13:00:00-05:00",
+     "official_level": null,
+     "official_level_note": "NOT_STATED_IN_TEXT"
+    },
+    {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-435",
-     "status": "DESCONOCIDO",
+     "status": "VIGENTE",
      "product": "AVISO-METEOROLOGICO",
      "relation_method": "BASIN_INTERSECTS_LISTED_DEPARTMENT",
      "relation_rank": 2,
-     "validity_start": null,
-     "validity_end": null,
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "validity_start": "2026-10-26T00:00:00-05:00",
+     "validity_end": "2026-10-26T23:59:00-05:00",
+     "official_level": "ROJO",
+     "official_level_note": null
     },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-440",
@@ -14985,8 +15252,8 @@
      "relation_rank": 2,
      "validity_start": "2026-10-27T00:00:00-05:00",
      "validity_end": "2026-10-29T23:59:00-05:00",
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "official_level": "ROJO",
+     "official_level_note": null
     }
    ],
    "imerg": {
@@ -15688,20 +15955,23 @@
    },
    "v08_source_caveat": null,
    "review_priority": {
-    "code": "R3_PREPARAR_VIGILANCIA",
-    "label_es": "Preparar vigilancia",
-    "rule_es": "Aviso de lluvia FUTURO (o de vigencia desconocida) relacionado con la zona.",
+    "code": "R2_VIGILANCIA_ACTIVA",
+    "label_es": "Vigilancia activa",
+    "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (DESCONOCIDO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_DEPARTMENT"
+     "Aviso SENAMHI-ACP-LLUVIAS-2026-299 (VIGENTE; nivel oficial: no consta) — BASIN_INTERSECTS_LISTED_PROVINCE",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (VIGENTE; nivel oficial: ROJO) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: ROJO) — BASIN_INTERSECTS_LISTED_DEPARTMENT",
+     "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-26T19:29:51.100000+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-26T20:59:52.100000+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-27T02:00:01+00:00"
    }
   },
   {
@@ -15713,14 +15983,14 @@
    "avisos": [
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-435",
-     "status": "DESCONOCIDO",
+     "status": "VIGENTE",
      "product": "AVISO-METEOROLOGICO",
      "relation_method": "DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
      "relation_rank": 4,
-     "validity_start": null,
-     "validity_end": null,
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "validity_start": "2026-10-26T00:00:00-05:00",
+     "validity_end": "2026-10-26T23:59:00-05:00",
+     "official_level": "ROJO",
+     "official_level_note": null
     },
     {
      "aviso_key": "SENAMHI-AVISO-METEOROLOGICO-2026-440",
@@ -15730,8 +16000,8 @@
      "relation_rank": 4,
      "validity_start": "2026-10-27T00:00:00-05:00",
      "validity_end": "2026-10-29T23:59:00-05:00",
-     "official_level": null,
-     "official_level_note": "NOT_STATED_IN_TEXT"
+     "official_level": "ROJO",
+     "official_level_note": null
     }
    ],
    "imerg": {
@@ -16431,23 +16701,24 @@
    },
    "v08_source_caveat": null,
    "review_priority": {
-    "code": "R3_PREPARAR_VIGILANCIA",
-    "label_es": "Preparar vigilancia",
-    "rule_es": "Aviso de lluvia FUTURO (o de vigencia desconocida) relacionado con la zona.",
+    "code": "R2_VIGILANCIA_ACTIVA",
+    "label_es": "Vigilancia activa",
+    "rule_es": "Aviso de lluvia VIGENTE relacionado con la zona.",
     "reasons_es": [
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (DESCONOCIDO; nivel oficial: no consta) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
-     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: no consta) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
-     "Lluvia observada no nula en la última ventana completa de IMERG o en la última muestra GOES válida"
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-435 (VIGENTE; nivel oficial: ROJO) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
+     "Aviso SENAMHI-AVISO-METEOROLOGICO-2026-440 (FUTURO; nivel oficial: ROJO) — DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN",
+     "Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables"
     ],
     "missing_es": [
+     "GOES-19 desactualizado: último escaneo 2026-10-26T19:29:51.100000+00:00 (más de 90 min antes de la evaluación); no cuenta para la prioridad",
      "percentil histórico no disponible: anomalía no evaluable"
     ],
     "imerg_usable": true,
-    "goes_usable": true,
-    "data_complete": true,
-    "next_change_utc": "2026-10-26T20:59:52.100000+00:00"
+    "goes_usable": false,
+    "data_complete": false,
+    "next_change_utc": "2026-10-27T02:00:01+00:00"
    }
   }
  ],
- "evaluated_at_utc": "2026-10-26T19:36:45.351523+00:00"
+ "evaluated_at_utc": "2026-10-26T22:37:21.782301+00:00"
 }
