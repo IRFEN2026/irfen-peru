@@ -113,3 +113,35 @@ class Cells(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Block(unittest.TestCase):
+    """Bloque regional SINTÉTICO → serie de celdas por estación (recuperación previa a conocer coordenadas)."""
+
+    def _block(self, value=2.0, missing_center=False):
+        from irfen_gauge_imerg.granules import iso
+        b = {"i0": 990, "i1": 1001, "j0": 857, "j1": 868}
+        t = datetime(2026, 1, 10, 12, tzinfo=timezone.utc)
+        rates = [[0.0 for _ in range(b["j1"] - b["j0"])] for _ in range(b["i1"] - b["i0"])]
+        rates[994 - 990][863 - 857] = None if missing_center else value  # celda de (−80,55; −3,65)
+        return {"schema": "irfen.gauge_imerg.imerg_block", "block_global_indices": b, "SYNTHETIC": True,
+                "granules": [{"granule": S.name(t), "units": "mm/hr", "fill_value": -9999.9, "sha256": "SYN",
+                              "internal_start_utc": iso(t), "retrieved_at_utc": "2026-01-10T17:00:00Z",
+                              "rates_mm_hr_lon_lat": rates}]}
+
+    def test_station_cell_from_block(self):
+        from irfen_gauge_imerg.imerg_cells import build_series_from_block
+        st = {"SYN-T": {"lat": -3.65, "lon": -80.55, "coordinate_verified": True}}
+        # −80,55 y −3,65 son centros: dentro de la celda (994, 863) sin borde
+        doc = build_series_from_block(self._block(), st)
+        self.assertEqual(doc["read_errors"], [])
+        v = doc["granules"][0]["values"]["SYN-T"]
+        self.assertEqual(v["center_mm_hr"], 2.0)
+        self.assertEqual(doc["granules"][0]["retrieved_at_utc"], "2026-01-10T17:00:00Z")
+        doc = build_series_from_block(self._block(missing_center=True), st)
+        self.assertIsNone(doc["granules"][0]["values"]["SYN-T"]["center_mm_hr"])
+
+    def test_station_outside_block_rejected(self):
+        from irfen_gauge_imerg.imerg_cells import build_series_from_block
+        with self.assertRaises(GridError):
+            build_series_from_block(self._block(), {"FAR": {"lat": -5.18, "lon": -80.63}})

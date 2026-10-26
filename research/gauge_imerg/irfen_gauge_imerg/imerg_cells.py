@@ -181,16 +181,59 @@ def build_series(paths: list[Path], stations: dict, retrieval: dict | None = Non
                            "extracted_at_utc": iso(datetime.now(timezone.utc))}}
 
 
+def build_series_from_block(block_doc: dict, stations: dict) -> dict:
+    """Serie de celdas a partir de un bloque regional ya extraído (``irfen.gauge_imerg.imerg_block``).
+
+    Permite recuperar los gránulos una sola vez antes de conocer las coordenadas exactas: cada estación toma su celda
+    y su vecindad del bloque. Una estación cuya vecindad sale del bloque se rechaza (no se rellena).
+    """
+    if block_doc.get("schema") != "irfen.gauge_imerg.imerg_block":
+        raise GranuleContentError("documento no es un imerg_block")
+    b = block_doc["block_global_indices"]
+    cells = station_cells(stations)
+    for sid, c in cells.items():
+        for i, j in c["neighbourhood"]:
+            if not (b["i0"] <= i < b["i1"] and b["j0"] <= j < b["j1"]):
+                raise GridError(f"estación {sid}: celda ({i},{j}) fuera del bloque recuperado")
+    lon = [round(-179.95 + 0.1 * i, 4) for i in range(b["i0"], b["i1"])]
+    lat = [round(-89.95 + 0.1 * j, 4) for j in range(b["j0"], b["j1"])]
+    granules, errors = [], []
+    for g in block_doc.get("granules", []):
+        try:
+            internal = g.get("internal_start_utc")
+            internal = datetime.fromisoformat(internal.replace("Z", "+00:00")) if internal else None
+            field = [[-1.0 if v is None else v for v in row] for row in g["rates_mm_hr_lon_lat"]]
+            rec = extract_from_arrays(g["granule"], lat, lon, field, g["units"], g.get("fill_value"), cells,
+                                      internal_start_utc=internal, sha256=g.get("sha256"))
+            for k in ("retrieved_at_utc", "url"):
+                if g.get(k):
+                    rec[k] = g[k]
+            granules.append(rec)
+        except Exception as exc:  # noqa: BLE001
+            errors.append({"file": g.get("granule"), "error": f"{type(exc).__name__}: {exc}"})
+    return {"schema": "irfen.gauge_imerg.cell_series", "schema_version": SCHEMA_VERSION, "guards": GUARDS,
+            "data_nature": "SATELLITE_ESTIMATE_NOT_GAUGE_OBSERVATION",
+            "stations": cells, "granules": granules, "read_errors": errors,
+            "provenance": {"tool": "irfen_gauge_imerg.imerg_cells.build_series_from_block",
+                           "block_granules": len(block_doc.get("granules", []))}}
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("files", nargs="+", type=Path)
+    ap.add_argument("files", nargs="*", type=Path)
+    ap.add_argument("--block", type=Path, help="bloque regional ya extraído (en lugar de archivos HDF5)")
     ap.add_argument("--stations", required=True, type=Path, help="JSON {id: {lat, lon, coordinate_verified, ...}}")
     ap.add_argument("--retrieval", type=Path, help="JSON opcional {archivo: retrieved_at_utc} para medir latencia")
     ap.add_argument("--out", required=True, type=Path)
     a = ap.parse_args(argv)
     stations = json.loads(a.stations.read_text(encoding="utf-8"))
     retrieval = json.loads(a.retrieval.read_text(encoding="utf-8")) if a.retrieval else None
-    doc = build_series(a.files, stations, retrieval)
+    if a.block:
+        doc = build_series_from_block(json.loads(a.block.read_text(encoding="utf-8")), stations)
+    elif a.files:
+        doc = build_series(a.files, stations, retrieval)
+    else:
+        ap.error("se requieren archivos HDF5 o --block")
     a.out.write_text(json.dumps(doc, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"{len(doc['granules'])} gránulos leídos, {len(doc['read_errors'])} con error → {a.out}")
 
