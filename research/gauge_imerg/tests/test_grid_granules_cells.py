@@ -145,3 +145,23 @@ class Block(unittest.TestCase):
         from irfen_gauge_imerg.imerg_cells import build_series_from_block
         with self.assertRaises(GridError):
             build_series_from_block(self._block(), {"FAR": {"lat": -5.18, "lon": -80.63}})
+
+
+class InternalTime(unittest.TestCase):
+    """Decodificación genérica de la hora interna (fallo real del 26-oct: la época no era la esperada)."""
+
+    def test_cf_epochs(self):
+        from irfen_gauge_imerg.imerg_cells import decode_time
+        t = datetime(2026, 10, 21, 12, tzinfo=timezone.utc)
+        self.assertEqual(decode_time(t.timestamp(), "seconds since 1970-01-01 00:00:00 UTC"), t)
+        gps = (t - datetime(1980, 1, 6, tzinfo=timezone.utc)).total_seconds()
+        self.assertEqual(decode_time(gps, "seconds since 1980-01-06 00:00:00 UTC"), t)
+        self.assertEqual(decode_time(gps / 60, "minutes since 1980-01-06T00:00:00Z"), t)
+        self.assertIsNone(decode_time(5, "days since 2000-01-01"))
+        self.assertIsNone(decode_time(5, ""))
+
+    def test_file_header(self):
+        from irfen_gauge_imerg.imerg_cells import file_header_start
+        h = "AlgorithmID=3IMERGHH;\nStartGranuleDateTime=2026-10-21T12:00:00.000Z;\nStopGranuleDateTime=2026-10-21T12:29:59.999Z;"
+        self.assertEqual(file_header_start(h), datetime(2026, 10, 21, 12, tzinfo=timezone.utc))
+        self.assertIsNone(file_header_start("sin cabecera"))

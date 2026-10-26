@@ -18,7 +18,8 @@ import argparse
 import hashlib
 import json
 import math
-from datetime import datetime, timezone
+import re
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from . import GUARDS, SCHEMA_VERSION
@@ -42,6 +43,39 @@ def normalise_units(raw) -> str:
     if u not in ACCEPTED_UNITS:
         raise UnitError(f"unidades {u!r} no aceptadas para IMERG HHR (se esperaba tasa en mm/h)")
     return "mm/hr"
+
+
+def attr_str(v) -> str:
+    """Atributo HDF5 como texto (bytes, numpy.bytes_, arreglos de un elemento o None)."""
+    if v is None:
+        return ""
+    try:
+        import numpy as np  # noqa: PLC0415 — opcional: solo existe cuando se leen HDF5 reales
+        if isinstance(v, np.ndarray):
+            v = v.ravel()[0] if v.size else ""
+    except ImportError:
+        pass
+    return v.decode(errors="ignore") if isinstance(v, (bytes, bytearray)) else str(v)
+
+
+_EPOCH_RE = re.compile(r"^\s*(seconds?|minutes?|hours?)\s+since\s+(\d{4}-\d{2}-\d{2})[ T]?(\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?)?",
+                       re.IGNORECASE)
+
+
+def decode_time(value: float, units: str) -> datetime | None:
+    """``<unidad> since <época>`` (CF) → datetime UTC; ``None`` si las unidades no se reconocen (no se adivina)."""
+    m = _EPOCH_RE.match(units or "")
+    if not m:
+        return None
+    epoch = datetime.fromisoformat(f"{m[2]}T{m[3] or '00:00:00'}").replace(tzinfo=timezone.utc)
+    mult = {"s": 1, "m": 60, "h": 3600}[m[1][0].lower()]
+    return epoch + timedelta(seconds=float(value) * mult)
+
+
+def file_header_start(header: str) -> datetime | None:
+    """``StartGranuleDateTime=…`` del atributo ``FileHeader`` de los HDF5 GPM; ``None`` si no está."""
+    m = re.search(r"StartGranuleDateTime=(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})", header or "")
+    return datetime.fromisoformat(m[1]).replace(tzinfo=timezone.utc) if m else None
 
 
 def sha256_file(path: Path) -> str:
@@ -136,11 +170,9 @@ def read_granule(path: Path, cells: dict) -> dict:
         units_raw = pd.attrs.get("units", "")
         internal = None
         if "time" in g:
-            secs = float(np.asarray(g["time"][:]).ravel()[0])
-            tunits = g["time"].attrs.get("units", b"")
-            tunits = tunits.decode() if isinstance(tunits, (bytes, bytearray)) else str(tunits)
-            if "1970-01-01" in tunits and "second" in tunits:
-                internal = datetime.fromtimestamp(secs, tz=timezone.utc)
+            internal = decode_time(float(np.asarray(g["time"][:]).ravel()[0]), attr_str(g["time"].attrs.get("units")))
+        if internal is None:
+            internal = file_header_start(attr_str(f.attrs.get("FileHeader")))
         il, ia = names.index("lon"), names.index("lat")
 
         def raw(i_local, j_local):

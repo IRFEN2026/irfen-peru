@@ -33,7 +33,7 @@ PKG_ROOT = HERE.parent
 sys.path.insert(0, str(PKG_ROOT))
 from irfen_gauge_imerg.granules import iso, parse  # noqa: E402
 from irfen_gauge_imerg.grid import verify_axis  # noqa: E402
-from irfen_gauge_imerg.imerg_cells import normalise_units, sha256_file  # noqa: E402
+from irfen_gauge_imerg.imerg_cells import attr_str, decode_time, file_header_start, normalise_units, sha256_file  # noqa: E402
 
 UA = {"User-Agent": "IRFEN-research/0.9 one-shot authorized retrieval (+https://github.com/IRFEN2026/irfen-peru/issues/400)"}
 TIMEOUT = (10, 60)
@@ -185,13 +185,17 @@ def read_block(path: Path) -> dict:
         units = normalise_units(pd.attrs.get("units", ""))
         fill = float(np.asarray(pd.attrs.get("_FillValue")).ravel()[0])
         sub = np.asarray(pd[0, BLOCK["i0"]:BLOCK["i1"], BLOCK["j0"]:BLOCK["j1"]], dtype=float)
-        secs = float(np.asarray(g["time"][:]).ravel()[0])
-        tunits = g["time"].attrs.get("units", b"")
-        tunits = tunits.decode() if isinstance(tunits, (bytes, bytearray)) else str(tunits)
-    internal = datetime.fromtimestamp(secs, tz=timezone.utc) if "1970-01-01" in tunits else None
+        secs = float(np.asarray(g["time"][:]).ravel()[0]) if "time" in g else None
+        tunits = attr_str(g["time"].attrs.get("units")) if "time" in g else ""
+        header_start = file_header_start(attr_str(f.attrs.get("FileHeader")))
+    by_time = decode_time(secs, tunits) if secs is not None else None
+    internal = by_time or header_start
     vals = [[None if (not np.isfinite(v) or v < 0 or abs(v - fill) < 1e-3) else round(float(v), 5) for v in row]
             for row in sub]
     return {"units": units, "fill_value": fill, "internal_start_utc": iso(internal) if internal else None,
+            "internal_time_source": "Grid/time" if by_time else ("FileHeader" if header_start else None),
+            "time_raw": {"value": secs, "units": tunits,
+                         "file_header_start_utc": iso(header_start) if header_start else None},
             "rates_mm_hr_lon_lat": vals}
 
 
@@ -236,9 +240,15 @@ def imerg(out: Path, names: list[str], cmr_info: dict) -> dict:
                        "download_seconds": round(time.monotonic() - t0, 1)}
                 gid = parse(fname)
                 block = read_block(p)
-                if block["internal_start_utc"] != iso(gid.start_utc):
-                    raise ValueError(f"hora interna {block['internal_start_utc']} ≠ nombre {iso(gid.start_utc)}")
-                rec.update(gid.as_dict(), family=gid.family, **block)
+                # Corrección del 27-oct: la primera ejecución descartó los 192 bloques porque exigía la época 1970 en
+                # Grid/time. Ahora la hora interna se decodifica de forma genérica (CF o FileHeader); si no se puede
+                # decodificar se CONSERVA el bloque con bandera y se verifica offline; solo una contradicción real lo invalida.
+                flags = []
+                if block["internal_start_utc"] is None:
+                    flags.append("INTERNAL_TIME_UNDECODED_VERIFY_OFFLINE")
+                elif block["internal_start_utc"] != iso(gid.start_utc):
+                    flags.append("INTERNAL_TIME_CONTRADICTS_NAME")
+                rec.update(gid.as_dict(), family=gid.family, retrieval_flags=flags, **block)
                 res["granules"].append(rec)
             except Exception as exc:  # noqa: BLE001
                 res["errors"].append({"granule": fname, "error": f"{type(exc).__name__}: {exc}"[:300]})
