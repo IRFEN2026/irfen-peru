@@ -178,6 +178,61 @@ def test_documentary_rows_are_not_a_deduplicated_hydrologic_census():
                    if lead["documentary_name"] == "Velasco")
     assert velasco["alias_adjudication"] == "UNRESOLVED_NO_EQUIVALENCE_TO_COEN_JUAN_VELASCO"
 
+    # ANA's 6-Nov-2023 press note is an announcement, not evidence of
+    # completed protection works, channel identity or observed activation.
+    # Keep its two *printed leads* separate from the earlier Santa Ines 1
+    # and from any inferred four-catchment split of the grouped label.
+    announcement_title = (
+        "Ante peligro de huaicos, ANA instalará barreras dinámicas y "
+        "diques de contención en 21 quebradas de Lima"
+    )
+    announcement_leads = [
+        lead for lead in leads if lead.get("source_title") == announcement_title
+    ]
+    assert len(announcement_leads) == 2
+    assert {lead["documentary_name"] for lead in announcement_leads} == {
+        "Santa Inés 2", "MZ-G, X5-X6, U3 y P-P1"
+    }
+    assert not any(
+        u["documentary_label"] in {"Santa Inés 1", "Santa Inés 2"}
+        for u in units
+    )
+    santa_ines_2 = next(
+        lead for lead in announcement_leads
+        if lead["documentary_name"] == "Santa Inés 2"
+    )
+    assert santa_ines_2["alias_adjudication"] == (
+        "UNRESOLVED_NOT_MERGED_WITH_SANTA_INES_1"
+    )
+    grouped = next(
+        lead for lead in announcement_leads
+        if lead["documentary_name"] == "MZ-G, X5-X6, U3 y P-P1"
+    )
+    assert grouped["alias_adjudication"] == (
+        "UNRESOLVED_GROUPED_PROJECT_LABEL_NOT_FOUR_CONFIRMED_HYDROLOGIC_UNITS"
+    )
+    assert grouped["documentary_label_as_printed"] == grouped["documentary_name"]
+    assert grouped["related_procurement_resolution_url"].endswith(
+        "/5878759-0303-2024-ana"
+    )
+    for lead in announcement_leads:
+        assert lead["source_published_date"] == "2023-11-06"
+        assert lead["evidence_role"] == (
+            "ANNOUNCED_INTERVENTION_AND_DOCUMENTARY_NAME_ONLY_NOT_COMPLETED_WORK_OR_HYDROLOGIC_EVENT"
+        )
+        assert lead["source_capture_status"] == (
+            "OFFICIAL_WEB_TEXT_READ_ORIGINAL_PAGE_BYTES_NOT_FROZEN"
+        )
+        assert lead["original_web_text_sha256"] is None
+        assert lead["source_text_verified"] is False
+        assert lead["verified_event_refs"] == []
+        assert lead["flow_or_stage_observation_refs"] == []
+        assert lead["receiver_chain_adjudicated"] is False
+        assert lead["collector_capacity"] is None
+        assert lead["collector_overflow_evidence"] is None
+        assert lead["map_publishable"] is False
+        assert lead["counted_as_confirmed_unique_hydrologic_unit"] is False
+
     design = d["official_road_crossing_design_leads"]
     assert design["source_text_verified"] is False
     assert design["original_pdf_sha256"] is None
