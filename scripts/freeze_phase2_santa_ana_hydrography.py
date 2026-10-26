@@ -5,6 +5,9 @@ Name-search matches do not establish Santa identity or ANA 2011 equivalence.
 Run --self-test offline; live acquisition requires public ANA access.
 """
 import argparse
+import zipfile
+from collections import Counter
+from tempfile import TemporaryDirectory
 import hashlib
 import json
 import math
@@ -185,6 +188,89 @@ def freeze(raw, acquired_at, source_key="ana_official", http_provenance=None):
             **GUARDS}
 
 
+# Immutable GitHub Actions artifact checksum (run 40236836542, artifact 12615331858).
+# The artifact expires 2026-11-24; this verifier does not make it permanent.
+# These bytes are third-party mirrors, never original ANA hydrography or 2011 axis.
+ARTIFACT_ZIP_SHA256_20261025 = "6560c170dcf2919706df8db946745fddce5f2a277310bdef8d0fbe10cabda1c2"
+ARTIFACT_MEMBERS_20261025 = {
+    "ana_official/receipt.json",
+    "arcgis_copy_2025/santa_ana_hydrography_raw.geojson",
+    "arcgis_copy_2025/santa_ana_hydrography_manifest.json",
+    "arcgis_copy_2026/santa_ana_hydrography_raw.geojson",
+    "arcgis_copy_2026/santa_ana_hydrography_manifest.json",
+}
+
+
+def replay_oct25_artifact_zip(archive_path):
+    """Independently replay the exact time-limited capture ZIP; never promote a map."""
+    path = Path(archive_path)
+    if hashlib.sha256(path.read_bytes()).hexdigest() != ARTIFACT_ZIP_SHA256_20261025:
+        raise ValueError("GitHub artifact ZIP SHA-256 mismatch")
+    ledger_path = (Path(__file__).resolve().parents[1] /
+                   "site/data/phase2/source_assessments/" /
+                   "santa_20261025_mirror_hydrography_replay_v0_1.json")
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    if ledger["source_capture"]["github_artifact_id"] != 12615331858:
+        raise ValueError("artifact provenance mismatch")
+    by_source = {item["source"]: item for item in ledger["sources"]}
+    with zipfile.ZipFile(path) as archive:
+        names = archive.namelist()
+        if len(names) != len(ARTIFACT_MEMBERS_20261025) or set(names) != ARTIFACT_MEMBERS_20261025:
+            raise ValueError("unexpected, missing or duplicate archive member")
+        receipt = json.loads(archive.read("ana_official/receipt.json"))
+        official = by_source["ana_official"]
+        if (receipt.get("source") != "ana_official" or
+                receipt.get("source_custody") != "ANA_OFFICIAL_SERVICE" or
+                receipt.get("capture_status") != "UNKNOWN_SOURCE_ACCESS_UNAVAILABLE_OR_INVALID" or
+                receipt.get("raw_response_sha256") is not None or
+                receipt.get("candidate_count") is not None or
+                official.get("absence_claim") is not False):
+            raise ValueError("official ANA unavailability misrepresented")
+        for key, expected in GUARDS.items():
+            if receipt.get(key) != expected:
+                raise ValueError("official ANA receipt guard changed: " + key)
+        identity_multisets = {}
+        for source_key in ("arcgis_copy_2025", "arcgis_copy_2026"):
+            source = by_source[source_key]
+            raw = archive.read(source_key + "/santa_ana_hydrography_raw.geojson")
+            manifest_bytes = archive.read(source_key + "/santa_ana_hydrography_manifest.json")
+            manifest = json.loads(manifest_bytes)
+            if (len(raw) != source["raw_response_bytes"] or
+                    hashlib.sha256(raw).hexdigest() != source["raw_response_sha256"] or
+                    hashlib.sha256(manifest_bytes).hexdigest() != source["manifest_sha256"]):
+                raise ValueError("mirror bytes or SHA-256 mismatch: " + source_key)
+            if (manifest.get("source") != source_key or
+                    manifest.get("source_url") != source_url(source_key) or
+                    manifest.get("source_custody") != "THIRD_PARTY_HOSTED_ANA_ATTRIBUTED_COPY_UNVERIFIED" or
+                    manifest.get("candidate_count") != source["candidate_count"] or
+                    manifest.get("raw_response_sha256") != source["raw_response_sha256"] or
+                    manifest.get("raw_response_bytes") != len(raw) or
+                    manifest.get("http_provenance_verified") is not True):
+                raise ValueError("mirror manifest provenance mismatch: " + source_key)
+            for key, expected in GUARDS.items():
+                if manifest.get(key) != expected:
+                    raise ValueError("mirror guard changed: " + source_key + ":" + key)
+            for key in ("official_ana_byte_equivalence_established", "identity_adjudicated",
+                        "2011_axis_equivalence", "2011_datum_resolved", "geometry_map_published"):
+                if manifest.get(key) is not False:
+                    raise ValueError("unsupported mirror promotion: " + source_key + ":" + key)
+            rows = inspect(raw, source_key)
+            if rows != manifest.get("candidates") or len(rows) != source["candidate_count"]:
+                raise ValueError("mirror feature parsing no longer reproducible: " + source_key)
+            features = json.loads(raw)["features"]
+            identity_multisets[source_key] = Counter(
+                (feature["properties"].get("CODIGO_CA"), feature["properties"].get("NOMBRE_CA"))
+                for feature in features)
+        if identity_multisets["arcgis_copy_2025"] != identity_multisets["arcgis_copy_2026"]:
+            raise ValueError("mirror code/name multisets disagree")
+    return {"artifact_zip_sha256": ARTIFACT_ZIP_SHA256_20261025,
+            "mirror_candidate_count_each": by_source["arcgis_copy_2025"]["candidate_count"],
+            "official_ana": "UNKNOWN_SOURCE_ACCESS_UNAVAILABLE_OR_INVALID",
+            "third_party_mirrors_not_equivalent_to_ana": True,
+            "historical_santa_2011_datum_resolved": False,
+            **GUARDS}
+
+
 class OfflineTests(unittest.TestCase):
     def test_freeze_and_guards(self):
         # Synthetic software fixture, not Santa coordinates or evidence.
@@ -350,6 +436,14 @@ class OfflineTests(unittest.TestCase):
                     "geometry_map_published", "identity_adjudicated"):
             self.assertIs(ledger[key], False, key)
 
+    def test_oct25_artifact_zip_digest_mismatch_is_fail_closed(self):
+        # Synthetic invalid bytes: this test never claims source absence.
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "synthetic.zip"
+            path.write_bytes(b"not the captured artifact")
+            with self.assertRaisesRegex(ValueError, "ZIP SHA-256 mismatch"):
+                replay_oct25_artifact_zip(path)
+
     def test_rejects_unusable_responses(self):
         for obj in ({"error": {"code": 500}},
                     {"type": "FeatureCollection", "features": []},
@@ -362,10 +456,15 @@ class OfflineTests(unittest.TestCase):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--self-test", action="store_true")
+    parser.add_argument("--verify-artifact-zip", metavar="PATH",
+                        help="Replay the pinned 2026-10-25 research-only ZIP without network")
     parser.add_argument("--source", choices=sorted(SOURCES), default="ana_official",
                         help="Explicit source selection; mirrors are unverified copies, not ANA official service")
     parser.add_argument("--out-dir", default="data/phase2/source_archive/santa_ana_hydrography_probe")
     args = parser.parse_args()
+    if args.verify_artifact_zip:
+        print(json.dumps(replay_oct25_artifact_zip(args.verify_artifact_zip), sort_keys=True))
+        return 0
     if args.self_test:
         suite = unittest.defaultTestLoader.loadTestsFromTestCase(OfflineTests)
         return 0 if unittest.TextTestRunner().run(suite).wasSuccessful() else 1
