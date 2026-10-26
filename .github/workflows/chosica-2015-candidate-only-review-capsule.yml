@@ -1,0 +1,105 @@
+name: IRFEN - Chosica 2015 candidate-only review capsule
+
+on:
+  pull_request:
+    paths:
+      - config/chosica_2015_candidate_only_review_capsule_contract_v0_1.json
+      - config/chosica_2015_candidate_only_reviewer_geometry_freeze_record_v0_1.json
+      - config/chosica_2015_candidate_only_reviewer_geometry_contract_v0_1.json
+      - config/chosica_2015_candidate_only_geometry_fingerprint_freeze_v0_1.json
+      - site/data/validation/chosica_2015_candidate_only_reviewer_bundle_v0_2.json
+      - site/data/validation/chosica_2015_candidate_only_territorial_adjudication_template_v0_2.json
+      - scripts/build_chosica_2015_candidate_only_reviewer_geometry.py
+      - scripts/build_chosica_2015_candidate_only_review_capsule.py
+      - .github/workflows/chosica-2015-candidate-only-review-capsule.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  build-detached-capsule:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            .github/workflows/chosica-2015-candidate-only-review-capsule.yml
+            config/chosica_2015_candidate_only_review_capsule_contract_v0_1.json
+            config/chosica_2015_candidate_only_reviewer_geometry_freeze_record_v0_1.json
+            config/chosica_2015_candidate_only_reviewer_geometry_contract_v0_1.json
+            config/chosica_2015_candidate_only_geometry_fingerprint_freeze_v0_1.json
+            site/data/validation/chosica_2015_candidate_only_reviewer_bundle_v0_2.json
+            site/data/validation/chosica_2015_candidate_only_territorial_adjudication_template_v0_2.json
+            scripts/build_chosica_2015_candidate_only_reviewer_geometry.py
+            scripts/build_chosica_2015_candidate_only_review_capsule.py
+      - name: Prove sealed and contaminated sources are absent
+        run: |
+          set -euo pipefail
+          test ! -e site/data/validation/official_outcome_evidence.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09.json
+          test ! -e config/chosica_2015_blinding_incident_2026_09_09_b.json
+          test ! -e config/chosica_2015_multibasin_validation_set_v0_1.json
+      - name: Download exact preincident candidate geometry only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p source build capsule
+          gh run download 34375704757 -n chosica-2015-negative-control-shortlist-geometry -D source
+      - name: Rebuild and verify frozen anonymized geometry
+        run: |
+          set -euo pipefail
+          env -i PATH="$PATH" PYTHONHASHSEED=0 python scripts/build_chosica_2015_candidate_only_reviewer_geometry.py \
+            --contract config/chosica_2015_candidate_only_reviewer_geometry_contract_v0_1.json \
+            --fingerprints config/chosica_2015_candidate_only_geometry_fingerprint_freeze_v0_1.json \
+            --bundle site/data/validation/chosica_2015_candidate_only_reviewer_bundle_v0_2.json \
+            --source-geojson source/chosica_2015_negative_control_shortlist.geojson \
+            --output-geojson build/candidate_geometry.geojson \
+            --manifest build/geometry_manifest.json
+          python - <<'PY'
+          import hashlib,json,pathlib
+          fr=json.load(open('config/chosica_2015_candidate_only_reviewer_geometry_freeze_record_v0_1.json',encoding='utf-8'))
+          p=pathlib.Path('build/candidate_geometry.geojson')
+          assert hashlib.sha256(p.read_bytes()).hexdigest()==fr['frozen_outputs']['reviewer_geometry']['sha256']
+          print('PASS_REVIEWER_GEOMETRY_FREEZE_FOR_CAPSULE')
+          PY
+      - name: Build detached review capsule offline
+        run: |
+          set -euo pipefail
+          env -i PATH="$PATH" PYTHONHASHSEED=0 python scripts/build_chosica_2015_candidate_only_review_capsule.py \
+            --contract config/chosica_2015_candidate_only_review_capsule_contract_v0_1.json \
+            --bundle site/data/validation/chosica_2015_candidate_only_reviewer_bundle_v0_2.json \
+            --geometry build/candidate_geometry.geojson \
+            --template site/data/validation/chosica_2015_candidate_only_territorial_adjudication_template_v0_2.json \
+            --output-dir capsule
+      - name: Enforce detached clean-room review boundary
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          m=json.load(open('capsule/capsule_manifest.json',encoding='utf-8'))
+          guards={'RESEARCH_ONLY':True,'TEST_ONLY':True,'production_use':False,'production_ready':False,'operational_alerting_enabled':False}
+          assert m['status']=='PASS_CANDIDATE_ONLY_REVIEW_CAPSULE'
+          assert m['guards']==guards
+          assert m['candidate_count']==7
+          assert m['repository_access_required'] is False
+          assert m['target_identifiers_included'] is False
+          assert m['target_outcomes_included'] is False
+          assert m['contaminated_stage_material_included'] is False
+          assert m['external_reference_morphometry_included'] is False
+          assert m['matching_feedback_included'] is False
+          assert m['candidate_replacement_allowed'] is False
+          assert m['matching_recalculation_allowed'] is False
+          assert m['selection_feedback_allowed'] is False
+          assert m['target_unblind_allowed'] is False
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: irfen-candidate-only-review-capsule-v0-1
+          path: capsule/*
+          if-no-files-found: error
