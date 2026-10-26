@@ -29,6 +29,32 @@ def test_replay_is_nonoperational_and_unknown_is_not_low_risk():
     assert d["decision_thresholds"] is None
     assert d["hydraulic_factors"] is None
 
+    # An official Esri /find request that completed with zero extracted IDs
+    # is a parser/source diagnostic, NOT evidence of hydrologic absence.
+    # Freeze that distinction without adding a new pytest collection node.
+    probe_refs = [
+        (unit["id"], source)
+        for unit in d["units"]
+        for source in unit["source_refs"]
+        if source["source_id"] == "MINAM-MAPSERVER36-FEATUREID-PROBE-2026-10-14"
+    ]
+    assert len(probe_refs) == 1
+    unit_id, probe = probe_refs[0]
+    assert unit_id == "lima_huaycoloro"
+    assert probe["effective_layer"] == "ServicioActivacionQuebrada/MapServer/36"
+    assert probe["query_completed"] is True
+    assert probe["find_requests_status"] == "SUCCESS"
+    assert probe["huaycoloro_candidate_count"] == 0
+    assert probe["rimac_candidate_count"] == 0
+    assert probe["zero_candidates_inferred_as_hydrologic_absence"] is False
+    assert probe["find_feature_ids_promoted_to_hydrologic_identity"] is False
+    assert probe["source_text_verified"] is False
+    assert probe["original_source_bytes_archived_in_this_contract"] is False
+    assert probe["map_publishable"] is False
+    for key in ("artifact_zip_sha256", "raw_payload_sha256", "canonical_payload_sha256"):
+        digest = probe[key]
+        assert len(digest) == 64 and all(ch in "0123456789abcdef" for ch in digest)
+
 
 def test_documentary_rows_are_not_a_deduplicated_hydrologic_census():
     d = _inventory()
