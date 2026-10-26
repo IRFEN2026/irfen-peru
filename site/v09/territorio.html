@@ -192,7 +192,7 @@ const EV_CLASS = {OBSERVACION_IN_SITU:"obs", AVISO_OFICIAL:"obs", ESTIMACION_SAT
   GEOMETRIA_OFICIAL:"obs", UBICACION_DOCUMENTAL:"est", GEOMETRIA_DERIVADA:"est unv", GEOMETRIA_CANDIDATA:"est unv", PENDIENTE:"pend"};
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const lima = iso => tms(iso) != null ? new Date(tms(iso)).toLocaleString("es-PE", {timeZone:"America/Lima", day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit", hourCycle:"h23"}) : "—";
-const ago = iso => { const t = tms(iso); if (t == null) return "—"; const m = (Date.now() - t) / 60000; return m < 90 ? `hace ${Math.round(m)} min` : m < 2880 ? `hace ${(m/60).toFixed(1)} h` : `hace ${(m/1440).toFixed(1)} d`; };
+const ago = iso => { const t = tms(iso); if (t == null) return "—"; const m = (Date.now() - t) / 60000; if (m < 0) return `fecha posterior a la hora de este equipo (+${Math.ceil(-m)} min)`; return m < 90 ? `hace ${Math.round(m)} min` : m < 2880 ? `hace ${(m/60).toFixed(1)} h` : `hace ${(m/1440).toFixed(1)} d`; };
 const na = why => `<span class="na" title="${esc(why||"")}">no disponible</span>`;
 let D = null, region = "costa_norte", selected = null, visible = {}, proj = null, view = null, invLimit = 150;
 const FR = () => (D && D.freshness) || DEFAULT_FRESHNESS;
@@ -242,14 +242,15 @@ function renderStatus(){
        `Se considera antiguo después de ${F.imerg_stale_after_h} h (latencia normal de IMERG Early: unas 4–6 h).`);
   chip(goesUsableAt({status:"CALCULADO", scan_end_utc:s.goes_latest_scan_end_utc}, now, F), `GOES-19 <b>${lima(s.goes_latest_scan_end_utc)}</b> (${ago(s.goes_latest_scan_end_utc)})`,
        `Antiguo después de ${F.goes_stale_after_min} min.`);
+  // An age below zero means a timestamp later than this device's clock: never shown as current.
   const gAge = tms(s.geos_latest_cycle_start_utc) != null ? (now - tms(s.geos_latest_cycle_start_utc)) / 3.6e6 : null;
-  chip(gAge != null && gAge <= F.geos_max_cycle_age_h, `GEOS-CF ciclo <b>${lima(s.geos_latest_cycle_start_utc)}</b> (${ago(s.geos_latest_cycle_start_utc)})`,
+  chip(gAge != null && gAge >= 0 && gAge <= F.geos_max_cycle_age_h, `GEOS-CF ciclo <b>${lima(s.geos_latest_cycle_start_utc)}</b> (${ago(s.geos_latest_cycle_start_utc)})`,
        `Un ciclo se usa hasta ${F.geos_max_cycle_age_h} h después de su inicio.`);
   const lAge = tms(s.avisos_links_evaluated_at_utc) != null ? (now - tms(s.avisos_links_evaluated_at_utc)) / 3.6e6 : null;
-  chip(s.aviso_source_state === "AL_DIA" && lAge != null && lAge <= 3, `Avisos: fuente ${esc((s.aviso_source_state || "desconocida").toLowerCase().replace("_", " "))} · último cruce ${ago(s.avisos_links_evaluated_at_utc)}`,
+  chip(s.aviso_source_state === "AL_DIA" && lAge != null && lAge >= 0 && lAge <= 3, `Avisos: fuente ${esc((s.aviso_source_state || "desconocida").toLowerCase().replace("_", " "))} · último cruce ${ago(s.avisos_links_evaluated_at_utc)}`,
        "Avisos oficiales de SENAMHI obtenidos vía INDECI/COEN. Más de 3 h sin cruce: la captura no ha corrido (ver continuidad); los estados de vigencia se recalculan igualmente con la hora actual.");
   const built = D.built_at_utc, bAge = tms(built) != null ? (now - tms(built)) / 3.6e6 : null;
-  chip(bAge != null && bAge <= 3, `Paquete generado <b>${lima(built)}</b> (${ago(built)})`, "El paquete se reconstruye en cada ejecución de lluvia o captura de avisos. Más de 3 h sin reconstruirse: revisar la continuidad.");
+  chip(bAge != null && bAge >= 0 && bAge <= 3, `Paquete generado <b>${lima(built)}</b> (${ago(built)})`, "El paquete se reconstruye en cada ejecución de lluvia o captura de avisos. Más de 3 h sin reconstruirse: revisar la continuidad.");
   document.getElementById("status").innerHTML = out.join("");
 }
 
@@ -270,6 +271,7 @@ function render(){ renderList(); renderMap(); if (!selected) renderRegionSummary
 function imergWindow(imerg, key){
   if (!imerg) return {state:"NO_DISPONIBLE", reason:"sin serie IMERG para esta geometría"};
   const w = (imerg.windows || {})[key];
+  if (afterEvaluation(imerg.window_end_utc, Date.now())) return {state:"FECHA_FUTURA", reason:`ventana IMERG hasta ${lima(imerg.window_end_utc)}: ${ago(imerg.window_end_utc)}; no describe el momento actual`};
   if (!imergUsableAt(imerg, Date.now(), FR())) return {state:"ANTIGUO", reason:`ventana IMERG hasta ${lima(imerg.window_end_utc)} (${ago(imerg.window_end_utc)}): más de ${FR().imerg_stale_after_h} h`};
   if (!w || w.accum_mm == null) return {state:"NO_DISPONIBLE", reason:(w && w.reason) || "ventana incompleta"};
   return {state:"OK", mm:w.accum_mm};
@@ -285,7 +287,7 @@ function rainFill(props){
   const im = rainFor(props);
   if (!im) return null;
   const w = imergWindow(im, mode);
-  if (w.state !== "OK") return {fill:"url(#hatch)", label:`${w.state === "ANTIGUO" ? "dato antiguo" : "sin dato"} — no es lluvia cero`};
+  if (w.state !== "OK") return {fill:"url(#hatch)", label:`${w.state === "ANTIGUO" ? "dato antiguo" : w.state === "FECHA_FUTURA" ? "fecha posterior a este reloj" : "sin dato"} — no es lluvia cero`};
   const bin = RAIN_BINS.find(([max]) => w.mm <= max);
   return {fill:`var(${bin[1]})`, label:`IMERG ${mode}: ${w.mm} mm sobre este polígono (estimación satelital)`};
 }

@@ -306,6 +306,29 @@ class Browser(unittest.TestCase):
                     self.assertGreater(page.locator('#map path[fill="url(#hatch)"]').count(), 0)
                     self.assertIn("old", page.get_attribute("#status .st:first-child", "class"))
                     self.assertEqual(errors, [])
+                    # Clock BEHIND the data (observations stamped after this device's time): nothing is shown as
+                    # current, no negative age, no rain value; the strip says why.
+                    shutil.copy(ROOT / "site/data/v09/dashboard_v0_1.json", site / "data/v09/dashboard_v0_1.json")
+                    goes_end = datetime.fromisoformat(BUNDLE["data_status"]["goes_latest_scan_end_utc"].replace("Z", "+00:00"))
+                    early = b.new_page(viewport=dict(width=1400, height=1000))
+                    early.on("pageerror", lambda e: errors.append(str(e)))
+                    early.route("**/*", lambda r: r.continue_() if r.request.url.startswith(origin) else r.abort())
+                    early.clock.install(time=goes_end - timedelta(hours=2))
+                    early.goto(origin + "v09/territorio.html")
+                    early.wait_for_selector("#status .st")
+                    strip = early.inner_text("#status")
+                    self.assertNotIn("hace -", strip)
+                    self.assertIn("fecha posterior a la hora de este equipo", strip)
+                    for chip in early.query_selector_all("#status .st"):
+                        if "posterior" in chip.inner_text():
+                            self.assertIn("old", chip.get_attribute("class"), chip.inner_text())
+                    early.goto(origin + "v09/index.html")
+                    early.wait_for_selector("#chips .chip")
+                    early.wait_for_timeout(500)
+                    body = early.inner_text("body")
+                    self.assertNotIn("hace -", body)
+                    self.assertGreater(early.locator("[data-future='1']").count(), 0)
+                    self.assertEqual(errors, [])
                     b.close()
             finally:
                 srv.shutdown()

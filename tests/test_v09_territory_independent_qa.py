@@ -49,11 +49,18 @@ class NegativeControls(unittest.TestCase):
         self.assertEqual(run(Q.check_dem, self.mutate(fn))["result"], "FAIL")
 
     def test_zone_rain_on_another_polygon_fails(self):
-        def fn(b):
-            f = self.feature(b, "OFFICIAL_ANA_HYDROGRAPHIC_UNIT")
-            other = next(z for z in b["zone_rain"] if z != f["properties"].get("v09_zone"))
-            f["properties"]["v09_zone"] = other
-        self.assertEqual(run(Q.check_rain_polygon, self.mutate(fn))["result"], "FAIL")
+        """Both kinds of foreign zone must fail, whatever order the engine gives zone_rain (it sorts by review
+        priority, so the first key changes with the data): another registered basin, and a zone without a
+        registered polygon (INEI province context)."""
+        registered = {z["zone_id"] for z in json.loads((ROOT / "config/v09_north_surveillance_zones_v0_1.json").read_text(encoding="utf-8"))["zones"]}
+        own = self.feature(BUNDLE, "OFFICIAL_ANA_HYDROGRAPHIC_UNIT")["properties"].get("v09_zone")
+        others = sorted(z for z in BUNDLE["zone_rain"] if z != own)
+        foreign = {"registered": next(z for z in others if z in registered), "unregistered": next(z for z in others if z not in registered)}
+        for kind, other in foreign.items():
+            with self.subTest(kind=kind, zone=other):
+                def fn(b):
+                    self.feature(b, "OFFICIAL_ANA_HYDROGRAPHIC_UNIT")["properties"]["v09_zone"] = other
+                self.assertEqual(run(Q.check_rain_polygon, self.mutate(fn))["result"], "FAIL")
 
     def test_value_on_missing_window_fails(self):
         def fn(b):

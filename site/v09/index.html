@@ -165,7 +165,7 @@ const PRIO_VAR = {R1_REVISION_PRIORITARIA:"--r1", R2_VIGILANCIA_ACTIVA:"--r2", R
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const lima = iso => iso ? new Date(iso).toLocaleString("es-PE", {timeZone:"America/Lima", day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit", hourCycle:"h23"}) : "—";
-const ago = iso => { if(!iso) return "—"; const m = (Date.now() - new Date(iso)) / 60000; return m < 90 ? `hace ${Math.round(m)} min` : m < 2880 ? `hace ${(m/60).toFixed(1)} h` : `hace ${(m/1440).toFixed(1)} d`; };
+const ago = iso => { if(!iso) return "—"; const m = (Date.now() - new Date(iso)) / 60000; if (m < 0) return `fecha posterior a la hora de este equipo (+${Math.ceil(-m)} min)`; return m < 90 ? `hace ${Math.round(m)} min` : m < 2880 ? `hace ${(m/60).toFixed(1)} h` : `hace ${(m/1440).toFixed(1)} d`; };
 const isoFix = t => t ? String(t).replace(/\.\d+$/, "").replace(/Z?$/, "Z") : t; // numpy datetime64 strings -> ISO UTC
 const na = (why) => `<span class="na" title="${esc(why||"")}">no disponible</span>`;
 
@@ -188,12 +188,16 @@ function avisoStatusAt(a, t){
   if (s == null || e == null || e < s) return "DESCONOCIDO";
   return t < s ? "FUTURO" : t <= e ? "VIGENTE" : "VENCIDO";
 }
-function imergUsableAt(im, t, F){ const e = tms(im && im.window_end_utc); return e != null && t - e <= F.imerg_stale_after_h * 3.6e6; }
-function goesUsableAt(g, t, F){ const e = tms(g && g.scan_end_utc); return !!g && g.status === "CALCULADO" && e != null && t - e <= F.goes_stale_after_min * 6e4; }
+// An observation stamped after the evaluation instant cannot describe it (clock or source error): not usable, neither as
+// rain nor as 'no rain' (UNKNOWN_NOT_LOW_RISK). No tolerance is added: none is documented.
+function afterEvaluation(ts, t){ const v = tms(ts); return v != null && v > t; }
+function imergUsableAt(im, t, F){ const e = tms(im && im.window_end_utc); return e != null && e <= t && t - e <= F.imerg_stale_after_h * 3.6e6; }
+function goesUsableAt(g, t, F){ const e = tms(g && g.scan_end_utc); return !!g && g.status === "CALCULADO" && e != null && e <= t && t - e <= F.goes_stale_after_min * 6e4; }
 function geosWindowsAt(g, t, F){
   if (!g || g.status !== "CALCULADO") return {status:"NO_DISPONIBLE", reason:(g && g.reason) || "sin pronóstico GEOS-CF para esta zona"};
   const start = tms(g.dataset_time_start);
   if (start == null) return {status:"NO_DISPONIBLE", reason:"ciclo GEOS-CF sin fecha: no se puede comprobar su antigüedad"};
+  if (start > t) return {status:"NO_DISPONIBLE", reason:"ciclo GEOS-CF con inicio posterior a la evaluación: fecha no verificable"};
   if (t - start > F.geos_max_cycle_age_h * 3.6e6) return {status:"DESACTUALIZADO", cycle_start_ms:start,
     reason:`ciclo GEOS-CF que empieza el ${new Date(start).toISOString()}: más de ${F.geos_max_cycle_age_h} h antes de la evaluación`};
   const fut = (g.hourly||[]).map(h => [tms(h.valid_time_utc), h.precip_mm]).filter(x => x[0] != null).sort((a,b) => a[0]-b[0]).filter(x => x[0] >= t);
@@ -215,9 +219,11 @@ function reviewPriorityAt(avisos, imerg, goes, percentile, t, F){
   const completeZero = imOk && goOk && w24.status === "CALCULADO" && w24.accum_mm === 0 && goes.rate_max_mm_h === 0;
   const reasons = [], missing = [];
   if (!imerg || !imerg.window_end_utc) missing.push("IMERG Early sin muestras para esta zona");
+  else if (afterEvaluation(imerg.window_end_utc, t)) missing.push(`IMERG Early con fecha posterior a la evaluación: la ventana termina el ${imerg.window_end_utc}; no cuenta para la prioridad`);
   else if (!imOk) missing.push(`IMERG Early desactualizado: la última ventana termina el ${imerg.window_end_utc} (más de ${F.imerg_stale_after_h} h antes de la evaluación); no cuenta para la prioridad`);
   else if (w24.status !== "CALCULADO") missing.push("IMERG 24 h incompleta");
   if (!goes || goes.status !== "CALCULADO") missing.push("GOES-19 no disponible para esta zona");
+  else if (afterEvaluation(goes.scan_end_utc, t)) missing.push(`GOES-19 con fecha posterior a la evaluación: escaneo ${goes.scan_end_utc}; no cuenta para la prioridad`);
   else if (!goOk) missing.push(`GOES-19 desactualizado: último escaneo ${goes.scan_end_utc} (más de ${F.goes_stale_after_min} min antes de la evaluación); no cuenta para la prioridad`);
   const pctOk = percentile && percentile.status === "CALCULADO";
   if (!pctOk) missing.push("percentil histórico no disponible: anomalía no evaluable");
@@ -233,8 +239,8 @@ function reviewPriorityAt(avisos, imerg, goes, percentile, t, F){
   if (vig.length && !pctOk) reasons.push("Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables");
   const edges = [];
   live.forEach(a => { const s = tms(a.validity_start), e = tms(a.validity_end); if (s != null) edges.push(s); if (e != null) edges.push(e + 1000); });
-  if (imerg && imerg.window_end_utc) edges.push(tms(imerg.window_end_utc) + F.imerg_stale_after_h * 3.6e6 + 1000);
-  if (goes && goes.status === "CALCULADO" && goes.scan_end_utc) edges.push(tms(goes.scan_end_utc) + F.goes_stale_after_min * 6e4 + 1000);
+  if (imerg && imerg.window_end_utc) edges.push(tms(imerg.window_end_utc), tms(imerg.window_end_utc) + F.imerg_stale_after_h * 3.6e6 + 1000);  // usable at its end, then stale
+  if (goes && goes.status === "CALCULADO" && goes.scan_end_utc) edges.push(tms(goes.scan_end_utc), tms(goes.scan_end_utc) + F.goes_stale_after_min * 6e4 + 1000);
   const nxt = edges.filter(x => x > t).sort((a,b) => a-b)[0];
   return {code, reasons_es:reasons, missing_es:missing, imerg_usable:imOk, goes_usable:goOk,
           data_complete: imOk && goOk && w24.status === "CALCULADO", next_change_ms: nxt == null ? null : nxt};
@@ -264,6 +270,7 @@ function freshnessState(lastIso, nowMs, staleAfterMin){
   const t = lastIso ? Date.parse(lastIso) : NaN;
   if (!Number.isFinite(t)) return {state: "AUSENTE", age_min: null};
   const age = (nowMs - t) / 60000;
+  if (age < 0) return {state: "FECHA_FUTURA", age_min: age};
   return {state: age > staleAfterMin ? "RETRASADA" : "DISPONIBLE", age_min: age};
 }
 function latestIso(values){
@@ -284,6 +291,9 @@ function zonesByLivePriority(){
   return D.rain.zones.map(z => ({z, t: liveTier(z)})).sort((a,b) => compareKeys(prioritySortKey(a.z.zone_id, a.z.imerg, a.t), prioritySortKey(b.z.zone_id, b.z.imerg, b.t)));
 }
 const staleTag = why => `<span class="chip warn" style="display:inline-block;margin:2px 0">Dato antiguo · no cuenta para la prioridad</span>${why ? `<br><span class="small muted">${esc(why)}</span>` : ""}`;
+// Not usable because the timestamp is later than this device's clock: never shown as current, never as zero.
+const futureTag = () => `<span class="chip bad" data-future="1" style="display:inline-block;margin:2px 0">Fecha posterior a la hora de este equipo · no cuenta para la prioridad</span><br><span class="small muted">Revise el reloj del equipo o la marca temporal de la fuente.</span>`;
+const notUsableTag = (iso, why) => afterEvaluation(iso, Date.now()) ? futureTag() : staleTag(why);
 function hoursTo(iso){ return iso ? ((new Date(iso) - Date.now())/3.6e6) : null; }
 function levelBadge(a){
   if (!a.official_level) return `<span class="lvl"><i style="background:var(--lv-none)"></i>No consta en el texto</span>`;
@@ -359,6 +369,7 @@ function sourceState(){
   const h = D.source.health || {}, lim = D.source.viewer_stale_after_minutes || 180;
   if (!h.last_check_utc) return "NO_SUCCESSFUL_CHECK_YET";
   const age = (Date.now() - tms(h.last_check_utc))/60000;
+  if (age < 0) return "FECHA_FUTURA";
   return age > lim ? "DESACTUALIZADA" : h.state;
 }
 /* IMERG coverage is verified from the per-slot series itself, never from self-reported counts alone.
@@ -494,7 +505,7 @@ function renderHeader(){
   renderSummary();
 }
 const NORTH_DEPTS = ["TUMBES", "PIURA", "LAMBAYEQUE", "LA LIBERTAD"];
-const STATE_UI = {DISPONIBLE: ["ok", "Disponible"], RETRASADA: ["warn", "Retrasada"], AUSENTE: ["absent", "Ausente"]};
+const STATE_UI = {DISPONIBLE: ["ok", "Disponible"], RETRASADA: ["warn", "Retrasada"], AUSENTE: ["absent", "Ausente"], FECHA_FUTURA: ["bad", "Fecha posterior a este reloj"]};
 function renderSummary(){
   const now = Date.now(), fr = FR(), zones = D.rain.zones;
   // Avisos actually related to at least one surveillance zone (the engine's territorial crossing), active now.
@@ -626,11 +637,11 @@ function selectZone(id, fromClick){
       <div class="block"><h3>Lluvia observada · IMERG Early</h3>
         <dl class="kv"><dt>1 h</dt><dd>${cell("1h")}</dd><dt>3 h</dt><dd>${cell("3h")}</dd><dt>6 h</dt><dd>${cell("6h")}</dd><dt>24 h</dt><dd>${cell("24h")}</dd></dl>
         <div class="small muted">${im.window_end_utc ? `Ventanas hasta ${lima(im.window_end_utc)} (${ago(im.window_end_utc)}; latencia propia de IMERG Early)` : "Sin muestras IMERG"}</div>
-        ${im.window_end_utc && !t.imerg_usable ? staleTag(`Más de ${FR().imerg_stale_after_h} h desde el final de la última ventana: no describe la situación actual.`) : ""}
+        ${im.window_end_utc && !t.imerg_usable ? notUsableTag(im.window_end_utc, `Más de ${FR().imerg_stale_after_h} h desde el final de la última ventana: no describe la situación actual.`) : ""}
         ${sparkSVG(im.series_24h_half_hourly_mm, css("--obs"), "IMERG Early, últimas 24 h")}<div class="small muted">Últimas 24 h por media hora · gris = hueco sin dato</div>
         ${coverageLine(z.imerg)}</div>
       <div class="block"><h3>Lluvia observada · GOES-19 RRQPE</h3>${g.status==="CALCULADO"
-        ? `Tasa media <b>${g.rate_mean_mm_h} mm/h</b> (máx. ${g.rate_max_mm_h}) · escaneo ${lima(g.scan_end_utc)} (${ago(g.scan_end_utc)})<br>${t.goes_usable ? "" : staleTag(`Más de ${FR().goes_stale_after_min} min desde el último escaneo muestreado.`) + "<br>"}<span class="small muted">${esc(g.sampling_es||"")} ${esc(g.uncertainty_es||"")}</span>`
+        ? `Tasa media <b>${g.rate_mean_mm_h} mm/h</b> (máx. ${g.rate_max_mm_h}) · escaneo ${lima(g.scan_end_utc)} (${ago(g.scan_end_utc)})<br>${t.goes_usable ? "" : notUsableTag(g.scan_end_utc, `Más de ${FR().goes_stale_after_min} min desde el último escaneo muestreado.`) + "<br>"}<span class="small muted">${esc(g.sampling_es||"")} ${esc(g.uncertainty_es||"")}</span>`
           + (g.recent_scans_mm_h?.length ? sparkSVG(g.recent_scans_mm_h, css("--obs"), "GOES-19 tasas recientes") + `<div class="small muted">Tasas instantáneas de los últimos escaneos muestreados (no acumulado)</div>` : "")
         : na(g.reason)}</div>
       <div class="block"><h3>Previsión · GEOS-CF (experimental)</h3>${geosHtml(z, f, true)}</div>
@@ -724,11 +735,11 @@ function renderRain(){
       <h3>Observado · IMERG Early</h3>
       <dl class="kv"><dt>1 h</dt><dd>${cell("1h")}</dd><dt>3 h</dt><dd>${cell("3h")}</dd><dt>6 h</dt><dd>${cell("6h")}</dd><dt>24 h</dt><dd>${cell("24h")}</dd>
       <dt>Anomalía</dt><dd>${na(z.percentile?.reason)} <span class="small muted">(sin serie histórica homogénea)</span></dd></dl>
-      <div class="small muted">${esc(age)} · fuente ${esc(im.source||"—")}</div>${im.window_end_utc && !t.imerg_usable ? staleTag() : ""}
+      <div class="small muted">${esc(age)} · fuente ${esc(im.source||"—")}</div>${im.window_end_utc && !t.imerg_usable ? notUsableTag(im.window_end_utc) : ""}
       ${sparkSVG(im.series_24h_half_hourly_mm, css("--obs"), "IMERG Early, últimas 24 h por media hora")}<div class="small muted">Barras: últimas 24 h por media hora · gris = hueco sin dato</div>
       ${coverageLine(z.imerg)}
       <h3>Observado · GOES-19 RRQPE</h3>
-      <div>${g.status==="CALCULADO" ? `tasa media ${g.rate_mean_mm_h} mm/h (máx. ${g.rate_max_mm_h}) · escaneo ${lima(g.scan_end_utc)} (${ago(g.scan_end_utc)})<br>${t.goes_usable ? "" : staleTag() + "<br>"}<span class="small muted">${esc(g.uncertainty_es)}</span>` : na(g.reason)}</div>
+      <div>${g.status==="CALCULADO" ? `tasa media ${g.rate_mean_mm_h} mm/h (máx. ${g.rate_max_mm_h}) · escaneo ${lima(g.scan_end_utc)} (${ago(g.scan_end_utc)})<br>${t.goes_usable ? "" : notUsableTag(g.scan_end_utc) + "<br>"}<span class="small muted">${esc(g.uncertainty_es)}</span>` : na(g.reason)}</div>
       <h3>Previsión · GEOS-CF (experimental)</h3>
       <div>${geosHtml(z, f, false)}</div>
       <h3>Río</h3><div>${na(z.river_level?.reason)}</div>

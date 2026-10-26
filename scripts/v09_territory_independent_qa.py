@@ -161,7 +161,11 @@ def check_rain_polygon(bundle: dict, out: list) -> None:
     for f in bundle["geometries"]["features"]:
         p = f["properties"]
         zid = p.get("v09_zone")
-        if not zid or zid not in zones or p["semantic_role"] == "INEI_REFERENTIAL_PROVINCE":
+        if not zid or p["semantic_role"] == "INEI_REFERENTIAL_PROVINCE":
+            continue
+        if zid not in zones:  # fail closed: rain of a zone without a registered polygon cannot be checked against this one
+            fails.append(f"{p['id']} ({p['semantic_role']}) is coloured with the rain of zone {zid}, which has no registered "
+                         f"polygon in config/v09_north_surveillance_zones_v0_1.json")
             continue
         own = (p.get("file_sha256") or (catalog.get(p["id"]) or {}).get("file_sha256"))
         if p["semantic_role"] == "V09_SURVEILLANCE_BASIN":

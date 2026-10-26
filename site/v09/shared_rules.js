@@ -19,12 +19,16 @@ function avisoStatusAt(a, t){
   if (s == null || e == null || e < s) return "DESCONOCIDO";
   return t < s ? "FUTURO" : t <= e ? "VIGENTE" : "VENCIDO";
 }
-function imergUsableAt(im, t, F){ const e = tms(im && im.window_end_utc); return e != null && t - e <= F.imerg_stale_after_h * 3.6e6; }
-function goesUsableAt(g, t, F){ const e = tms(g && g.scan_end_utc); return !!g && g.status === "CALCULADO" && e != null && t - e <= F.goes_stale_after_min * 6e4; }
+// An observation stamped after the evaluation instant cannot describe it (clock or source error): not usable, neither as
+// rain nor as 'no rain' (UNKNOWN_NOT_LOW_RISK). No tolerance is added: none is documented.
+function afterEvaluation(ts, t){ const v = tms(ts); return v != null && v > t; }
+function imergUsableAt(im, t, F){ const e = tms(im && im.window_end_utc); return e != null && e <= t && t - e <= F.imerg_stale_after_h * 3.6e6; }
+function goesUsableAt(g, t, F){ const e = tms(g && g.scan_end_utc); return !!g && g.status === "CALCULADO" && e != null && e <= t && t - e <= F.goes_stale_after_min * 6e4; }
 function geosWindowsAt(g, t, F){
   if (!g || g.status !== "CALCULADO") return {status:"NO_DISPONIBLE", reason:(g && g.reason) || "sin pronóstico GEOS-CF para esta zona"};
   const start = tms(g.dataset_time_start);
   if (start == null) return {status:"NO_DISPONIBLE", reason:"ciclo GEOS-CF sin fecha: no se puede comprobar su antigüedad"};
+  if (start > t) return {status:"NO_DISPONIBLE", reason:"ciclo GEOS-CF con inicio posterior a la evaluación: fecha no verificable"};
   if (t - start > F.geos_max_cycle_age_h * 3.6e6) return {status:"DESACTUALIZADO", cycle_start_ms:start,
     reason:`ciclo GEOS-CF que empieza el ${new Date(start).toISOString()}: más de ${F.geos_max_cycle_age_h} h antes de la evaluación`};
   const fut = (g.hourly||[]).map(h => [tms(h.valid_time_utc), h.precip_mm]).filter(x => x[0] != null).sort((a,b) => a[0]-b[0]).filter(x => x[0] >= t);
@@ -46,9 +50,11 @@ function reviewPriorityAt(avisos, imerg, goes, percentile, t, F){
   const completeZero = imOk && goOk && w24.status === "CALCULADO" && w24.accum_mm === 0 && goes.rate_max_mm_h === 0;
   const reasons = [], missing = [];
   if (!imerg || !imerg.window_end_utc) missing.push("IMERG Early sin muestras para esta zona");
+  else if (afterEvaluation(imerg.window_end_utc, t)) missing.push(`IMERG Early con fecha posterior a la evaluación: la ventana termina el ${imerg.window_end_utc}; no cuenta para la prioridad`);
   else if (!imOk) missing.push(`IMERG Early desactualizado: la última ventana termina el ${imerg.window_end_utc} (más de ${F.imerg_stale_after_h} h antes de la evaluación); no cuenta para la prioridad`);
   else if (w24.status !== "CALCULADO") missing.push("IMERG 24 h incompleta");
   if (!goes || goes.status !== "CALCULADO") missing.push("GOES-19 no disponible para esta zona");
+  else if (afterEvaluation(goes.scan_end_utc, t)) missing.push(`GOES-19 con fecha posterior a la evaluación: escaneo ${goes.scan_end_utc}; no cuenta para la prioridad`);
   else if (!goOk) missing.push(`GOES-19 desactualizado: último escaneo ${goes.scan_end_utc} (más de ${F.goes_stale_after_min} min antes de la evaluación); no cuenta para la prioridad`);
   const pctOk = percentile && percentile.status === "CALCULADO";
   if (!pctOk) missing.push("percentil histórico no disponible: anomalía no evaluable");
@@ -64,8 +70,8 @@ function reviewPriorityAt(avisos, imerg, goes, percentile, t, F){
   if (vig.length && !pctOk) reasons.push("Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables");
   const edges = [];
   live.forEach(a => { const s = tms(a.validity_start), e = tms(a.validity_end); if (s != null) edges.push(s); if (e != null) edges.push(e + 1000); });
-  if (imerg && imerg.window_end_utc) edges.push(tms(imerg.window_end_utc) + F.imerg_stale_after_h * 3.6e6 + 1000);
-  if (goes && goes.status === "CALCULADO" && goes.scan_end_utc) edges.push(tms(goes.scan_end_utc) + F.goes_stale_after_min * 6e4 + 1000);
+  if (imerg && imerg.window_end_utc) edges.push(tms(imerg.window_end_utc), tms(imerg.window_end_utc) + F.imerg_stale_after_h * 3.6e6 + 1000);  // usable at its end, then stale
+  if (goes && goes.status === "CALCULADO" && goes.scan_end_utc) edges.push(tms(goes.scan_end_utc), tms(goes.scan_end_utc) + F.goes_stale_after_min * 6e4 + 1000);
   const nxt = edges.filter(x => x > t).sort((a,b) => a-b)[0];
   return {code, reasons_es:reasons, missing_es:missing, imerg_usable:imOk, goes_usable:goOk,
           data_complete: imOk && goOk && w24.status === "CALCULADO", next_change_ms: nxt == null ? null : nxt};

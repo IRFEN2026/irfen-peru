@@ -62,6 +62,10 @@ def cases() -> list[dict]:
                         imerg=z["imerg"], goes19=goes_fresh, percentile=dict(status="NO_DISPONIBLE"), geos_cf=z["geos_cf"]))
         out.append(dict(zone_id="synthetic_r1", at=fresh_at, avisos=z["avisos"], imerg=z["imerg"], goes19=goes_fresh,
                         percentile=dict(status="CALCULADO", percentile_24h=97), geos_cf=z["geos_cf"]))
+        # Evidence stamped after the evaluation instant (clock behind the data): both sides must call it unusable.
+        early_at = (E._t(end) - timedelta(minutes=20)).isoformat()
+        out.append(dict(zone_id="synthetic_future_stamped", at=early_at, avisos=[], imerg=z["imerg"], goes19=goes_fresh,
+                        percentile=dict(status="NO_DISPONIBLE"), geos_cf=z["geos_cf"]))
     if z["geos_cf"].get("hourly"):
         gapped = dict(z["geos_cf"], hourly=[h for i, h in enumerate(z["geos_cf"]["hourly"]) if i != 8])
         out.append(dict(zone_id="synthetic_geos_gap", at=base.isoformat(), avisos=[], imerg=dict(windows={}), goes19=dict(status="NO_DISPONIBLE"),
@@ -95,6 +99,9 @@ class RuleParity(unittest.TestCase):
                 self.assertEqual(w["status"], j["geos"]["windows"][k]["status"], f"GEOS {k} differs for {label}")
                 if w["status"] == "CALCULADO":
                     self.assertAlmostEqual(w["accum_mm"], j["geos"]["windows"][k]["accum_mm"], delta=0.051)
+            if c["zone_id"] == "synthetic_future_stamped":
+                self.assertFalse(p["imerg_usable"] or p["goes_usable"], label)
+                self.assertNotEqual(p["code"], "R6_SIN_SENAL_EN_DATOS_DISPONIBLES", label)
             seen_codes.add(p["code"])
             stale += not p["imerg_usable"]
         self.assertGreaterEqual(len(seen_codes), 3, "cases should exercise several tiers")
