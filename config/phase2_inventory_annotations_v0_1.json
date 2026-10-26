@@ -1,0 +1,37 @@
+{
+ "schema_version": "phase2_inventory_annotations_v0_1",
+ "deployment_status": "RESEARCH_ONLY",
+ "test_mode": "TEST_ONLY",
+ "production_use": false,
+ "production_ready": false,
+ "operational_alerting_enabled": false,
+ "activation_gate": "BLOCKED",
+ "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+ "decision_thresholds": null,
+ "hydraulic_factors": null,
+ "purpose": "Versioned documentary annotations linked by inventory_id. They complement the national master without changing its rows or its validator. Read by scripts/phase2_inventory_completeness_reconcile.py.",
+ "rules": [
+  "state is one of KNOWN, UNKNOWN, PENDING_VERIFICATION, CONFLICT, NOT_EVALUATED; an unknown value is never written as a negative one",
+  "KNOWN needs a source with institution, url or identifier, and read_status; geometry and outlet can never be set KNOWN here",
+  "coastal_connection values: COASTAL_IMPACT_DOCUMENTED (only with a VERIFIED source, its real SHA-256 and the archived file), COASTAL_IMPACT_CANDIDATE (with basis), COASTAL_IMPACT_UNKNOWN, COASTAL_IMPACT_NOT_ASSESSED (default for every row without annotation)",
+  "map_eligible, suggested_state, coordinates, thresholds, discharges or travel times are never annotated here",
+  "an annotation may target a row of an open PR delta (expected_in); it is applied only when that delta is loaded"
+ ],
+ "annotations": [
+  {"inventory_id": "ancash_chimbote_el_establo_1", "field": "hydrologic_independence", "state": "PENDING_VERIFICATION",
+   "basis": "SIGRID 5841 prints 'quebrada El Establo 1 y El Establo 2' (singular 'quebrada'). PR #404 records two documentary identities by owner decision (2026-10-23, split_basis); whether they are two independent channels is not adjudicated.",
+   "expected_in": "PR #404 config/phase2_national_inventory_r8_sigrid_sweep_v0_1.json"},
+  {"inventory_id": "ancash_chimbote_el_establo_2", "field": "hydrologic_independence", "state": "PENDING_VERIFICATION",
+   "basis": "Same record as ancash_chimbote_el_establo_1 (SIGRID 5841); independence not adjudicated.",
+   "expected_in": "PR #404 config/phase2_national_inventory_r8_sigrid_sweep_v0_1.json"},
+  {"inventory_id": "ancash_nepena_s_n", "field": "identity_distinctness", "state": "UNKNOWN",
+   "basis": "SIGRID 5864 prints 's/n' (no individual name). One documentary mention; it does not prove a quebrada distinct from, or identical to, any other row.",
+   "expected_in": "PR #404 config/phase2_national_inventory_r8_sigrid_sweep_v0_1.json"},
+  {"inventory_id": "ancash_moro_s_n", "field": "identity_distinctness", "state": "UNKNOWN",
+   "basis": "SIGRID 5865 prints 's/n'. Being a different map from 5864 does not by itself prove a different channel.",
+   "expected_in": "PR #404 config/phase2_national_inventory_r8_sigrid_sweep_v0_1.json"},
+  {"inventory_id": "ancash_samanco_s_n_los_chimus", "field": "identity_distinctness", "state": "UNKNOWN",
+   "basis": "SIGRID 5665 prints 's/n' qualified by the populated centre Los Chimús; the label names a locality, not a channel.",
+   "expected_in": "PR #404 config/phase2_national_inventory_r8_sigrid_sweep_v0_1.json"}
+ ]
+}
