@@ -201,6 +201,84 @@ ARTIFACT_MEMBERS_20261025 = {
 }
 
 
+
+def recompute_mirror_pair_qa(features_2025, features_2026):
+    """Recompute descriptive mirror deltas from archived bytes, not from the ledger.
+
+    This is NOT a geometry-equivalence or length-unit gate. The 1e-8 diagnostic
+    is inherited verbatim from the frozen 2026-10-25 ledger; it authorizes no
+    coordinate snapping, area tolerance, map layer or 2011-axis equivalence.
+    """
+    from statistics import median
+
+    def keyed(features):
+        by_key = {}
+        for feature in features:
+            p = feature["properties"]
+            key = (p.get("CODIGO_CA"), p.get("NOMBRE_CA"))
+            if not all(isinstance(value, str) and value for value in key):
+                raise ValueError("mirror code/name missing")
+            by_key.setdefault(key, []).append(feature)
+        return by_key
+
+    a, b = keyed(features_2025), keyed(features_2026)
+    counts_a = Counter({key: len(rows) for key, rows in a.items()})
+    counts_b = Counter({key: len(rows) for key, rows in b.items()})
+    if counts_a != counts_b:
+        raise ValueError("mirror code/name multiset differs")
+    unique = [key for key in a if len(a[key]) == len(b[key]) == 1]
+    deltas, ratios = [], []
+    equal_vertices = equal_coordinates = below_existing_diagnostic = 0
+    for key in unique:
+        fa, fb = a[key][0], b[key][0]
+        pa, pb = positions(fa["geometry"]), positions(fb["geometry"])
+        if len(pa) != len(pb):
+            continue  # reported mismatch, never silently aligned or interpolated
+        equal_vertices += 1
+        delta = max(abs(v - w) for va, vb in zip(pa, pb) for v, w in zip(va, vb))
+        deltas.append((key, delta, fa, fb))
+        equal_coordinates += delta == 0
+        below_existing_diagnostic += delta < 1e-8
+        la, lb = fa["properties"].get("LONG_KM"), fb["properties"].get("LONG_KM")
+        if any(isinstance(x, bool) or not isinstance(x, (int, float)) or
+               not math.isfinite(x) or x <= 0 for x in (la, lb)):
+            raise ValueError("mirror LONG_KM not comparable; units unadjudicated")
+        ratios.append(la / lb)
+    if len(deltas) != len(unique) or len(deltas) < 2:
+        raise ValueError("cannot reproduce mirror vertex/length comparison")
+    deltas.sort(key=lambda row: row[1], reverse=True)
+    largest_key, largest_delta, largest_a, largest_b = deltas[0]
+    other_basin = all(
+        feature["properties"].get("NOMBRE_UH") != "Cuenca Santa"
+        for feature in (largest_a, largest_b))
+    return {
+        "features_each": len(features_2025),
+        "unique_code_name_keys": len(a),
+        "unambiguous_one_to_one_keys": len(unique),
+        "ambiguous_duplicate_keys": [
+            {"codigo_ca": key[0], "nombre_ca": key[1], "count_each": len(a[key])}
+            for key in a if len(a[key]) > 1],
+        "nombre_ca_rio_santa_features_each": sum(
+            row["properties"].get("NOMBRE_CA") == "Río Santa" for row in features_2025),
+        "nombre_uh_cuenca_santa_features_each": sum(
+            row["properties"].get("NOMBRE_UH") == "Cuenca Santa" for row in features_2025),
+        "rio_santa_codes": sorted({
+            row["properties"].get("CODIGO_CA") for row in features_2025
+            if row["properties"].get("NOMBRE_CA") == "Río Santa"}),
+        "unambiguous_pairs_with_same_vertex_count": equal_vertices,
+        "unambiguous_pairs_exact_coordinate_equality": equal_coordinates,
+        "unambiguous_pairs_with_max_absolute_coordinate_delta_below_1e_minus_8_degrees":
+            below_existing_diagnostic,
+        "large_coordinate_disagreement": {
+            "codigo_ca": largest_key[0], "nombre_ca": largest_key[1],
+            "max_absolute_coordinate_delta_degrees": largest_delta,
+            "other_basin_not_santa_axis": other_basin},
+        "other_31_pairs_max_absolute_coordinate_delta_degrees": deltas[1][1],
+        "raw_LONG_KM_ratio_2025_over_2026_unique_pairs": {
+            "minimum": min(ratios), "median": median(ratios), "maximum": max(ratios)},
+    }
+
+
 def replay_oct25_artifact_zip(archive_path):
     """Independently replay the exact time-limited capture ZIP; never promote a map."""
     path = Path(archive_path)
@@ -230,6 +308,7 @@ def replay_oct25_artifact_zip(archive_path):
             if receipt.get(key) != expected:
                 raise ValueError("official ANA receipt guard changed: " + key)
         identity_multisets = {}
+        raw_features = {}
         for source_key in ("arcgis_copy_2025", "arcgis_copy_2026"):
             source = by_source[source_key]
             raw = archive.read(source_key + "/santa_ana_hydrography_raw.geojson")
@@ -258,11 +337,27 @@ def replay_oct25_artifact_zip(archive_path):
             if rows != manifest.get("candidates") or len(rows) != source["candidate_count"]:
                 raise ValueError("mirror feature parsing no longer reproducible: " + source_key)
             features = json.loads(raw)["features"]
+            raw_features[source_key] = features
             identity_multisets[source_key] = Counter(
                 (feature["properties"].get("CODIGO_CA"), feature["properties"].get("NOMBRE_CA"))
                 for feature in features)
         if identity_multisets["arcgis_copy_2025"] != identity_multisets["arcgis_copy_2026"]:
             raise ValueError("mirror code/name multisets disagree")
+        measured = recompute_mirror_pair_qa(
+            raw_features["arcgis_copy_2025"], raw_features["arcgis_copy_2026"])
+        recorded = ledger["replay_qa"]
+        for field, observed in measured.items():
+            expected = recorded.get(field)
+            if field == "ambiguous_duplicate_keys":
+                observed = sorted(observed, key=lambda x: (x["codigo_ca"], x["nombre_ca"]))
+                expected = sorted(expected, key=lambda x: (x["codigo_ca"], x["nombre_ca"]))
+            if observed != expected:
+                raise ValueError("frozen mirror QA not reproducible: " + field)
+        if (recorded.get("mirror_geometry_equivalence_established") is not False or
+                recorded.get("mirror_length_attribute_equivalence_established") is not False or
+                recorded.get("river_2011_axis_equivalence_established") is not False or
+                recorded.get("length_units_adjudicated") is not False):
+            raise ValueError("unjustified mirror equivalence promotion")
     return {"artifact_zip_sha256": ARTIFACT_ZIP_SHA256_20261025,
             "mirror_candidate_count_each": by_source["arcgis_copy_2025"]["candidate_count"],
             "official_ana": "UNKNOWN_SOURCE_ACCESS_UNAVAILABLE_OR_INVALID",
@@ -431,10 +526,29 @@ class OfflineTests(unittest.TestCase):
         self.assertFalse(replay["length_units_adjudicated"])
         for key, expected in GUARDS.items():
             self.assertEqual(ledger[key], expected, key)
+        self.mirror_pair_recomputation_synthetic_check()
         for key in ("official_ana_byte_equivalence_established",
                     "historical_santa_2011_datum_resolved",
                     "geometry_map_published", "identity_adjudicated"):
             self.assertIs(ledger[key], False, key)
+
+    def mirror_pair_recomputation_synthetic_check(self):
+        # Synthetic fixtures only; no claimed ANA geometry, thresholds or units.
+        def feature(code, length, last_lat):
+            return {"type": "Feature",
+                    "properties": {"CODIGO_CA": code, "NOMBRE_CA": "Río Santa",
+                                   "NOMBRE_UH": "Cuenca Santa", "LONG_KM": length},
+                    "geometry": {"type": "LineString",
+                                 "coordinates": [[0, 0], [1, last_lat]]}}
+        a = [feature("synthetic-A", 1000, 1), feature("synthetic-B", 2000, 1)]
+        b = [feature("synthetic-A", 1, 1), feature("synthetic-B", 2, 1.1)]
+        qa = recompute_mirror_pair_qa(a, b)
+        self.assertEqual(qa["unambiguous_pairs_with_same_vertex_count"], 2)
+        self.assertEqual(qa["unambiguous_pairs_exact_coordinate_equality"], 1)
+        self.assertEqual(qa["raw_LONG_KM_ratio_2025_over_2026_unique_pairs"]["median"], 1000)
+        self.assertFalse(qa["large_coordinate_disagreement"]["other_basin_not_santa_axis"])
+        with self.assertRaisesRegex(ValueError, "multiset differs"):
+            recompute_mirror_pair_qa(a, b[:1])
 
     def test_oct25_artifact_zip_digest_mismatch_is_fail_closed(self):
         # Synthetic invalid bytes: this test never claims source absence.
