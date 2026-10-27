@@ -58,9 +58,20 @@ def reject_nonstandard_json_constant(_token):
     raise ValueError("nonstandard JSON numeric constant")
 
 
+def reject_duplicate_json_keys(pairs):
+    """Reject ambiguous duplicate keys at every JSON object nesting level."""
+    obj = {}
+    for key, value in pairs:
+        if key in obj:
+            raise ValueError("duplicate JSON object key")
+        obj[key] = value
+    return obj
+
+
 def candidate(raw, code):
     """Check only capture identity/structure; NOT GEOS topology or lineage."""
-    doc = json.loads(raw, parse_constant=reject_nonstandard_json_constant)
+    doc = json.loads(raw, parse_constant=reject_nonstandard_json_constant,
+                     object_pairs_hook=reject_duplicate_json_keys)
     if not isinstance(doc, dict) or doc.get("error") or doc.get("exceededTransferLimit"):
         raise ValueError("error or truncated response")
     if doc.get("type") != "FeatureCollection":
@@ -144,6 +155,7 @@ def validate_capture_candidate(raw, code):
 SAFE_CANDIDATE_REASONS = frozenset({
     "malformed JSON or encoding",
     "nonstandard JSON numeric constant",
+    "duplicate JSON object key",
     "error or truncated response",
     "not a GeoJSON FeatureCollection",
     "explicit incompatible or unverified CRS",
@@ -317,6 +329,20 @@ class TestCasmaIDEPIndependentMirrorContract(unittest.TestCase):
                 bounded_failure_detail(rejected.exception),
                 "source candidate rejected code=1375961: nonstandard JSON numeric constant",
             )
+
+        # A duplicate JSON identity key is ambiguous: default json.loads keeps
+        # the last value and could silently mask a conflicting source code.
+        duplicated = self.sample().replace(
+            b'"CODIGO": "1375961"',
+            b'"CODIGO": "1375962", "CODIGO": "1375961"',
+        )
+        self.assertNotEqual(duplicated, self.sample())
+        with self.assertRaisesRegex(ValueError, "duplicate JSON object key") as rejected:
+            validate_capture_candidate(duplicated, CODES[0])
+        self.assertEqual(
+            bounded_failure_detail(rejected.exception),
+            "source candidate rejected code=1375961: duplicate JSON object key",
+        )
 
         self.assertIn("idep.gob.pe", LAYER)
         self.assertIn("ANA_WMS", LAYER)
