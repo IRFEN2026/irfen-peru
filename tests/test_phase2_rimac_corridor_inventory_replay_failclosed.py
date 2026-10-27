@@ -1045,3 +1045,50 @@ def test_unverified_events_and_station_triggers_do_not_become_flow():
         assert unit["collector_capacity"] is None
         assert unit["collector_overflow_evidence"] is None
         assert unit["map_publishable"] is False
+
+    # SIGRID 3642 catalog conflict: its title says 2015-03-23 but the
+    # descriptive body says 2013-03-23. The same documentary reference is
+    # attached to three existing rows, NOT three confirmed flood events.
+    # Preserve both dates and block event, alias, routing and map promotion.
+    sigrid_id = "INGEMMET-SIGRID-3642-CATALOG-2015"
+    sigrid_units = {
+        "lima_lurigancho_quirio",
+        "lima_lurigancho_rayos_de_sol",
+        "lima_santa_eulalia_cashahuacra",
+    }
+    assert {
+        unit["id"] for unit in d["units"]
+        if any(s.get("source_id") == sigrid_id for s in unit["source_refs"])
+    } == sigrid_units
+    for unit_id in sigrid_units:
+        unit = by_id[unit_id]
+        refs = [s for s in unit["source_refs"] if s.get("source_id") == sigrid_id]
+        assert len(refs) == 1, unit_id
+        source = refs[0]
+        assert source["evidence_type"] == "EVENT_LEAD"
+        assert source["catalog_title_date"] == "2015-03-23"
+        assert source["catalog_body_date_as_published"] == "2013-03-23"
+        assert source["catalog_publication_year"] == 2015
+        assert source["date_discrepancy_state"] == (
+            "UNRESOLVED_CATALOG_TITLE_VS_BODY_CONFLICT"
+        )
+        assert source["adjudication"] == (
+            "OFFICIAL_CATALOG_LEAD_ONLY_NO_EVENT_GEOMETRY_OR_RECEIVER_PROMOTION"
+        )
+        assert source["source_text_verified"] is False
+        assert source["original_pdf_bytes_archived_in_this_contract"] is False
+        assert source["original_pdf_sha256"] is None
+        assert source["map_publishable"] is False
+        assert unit["verified_event_refs"] == []
+        assert unit["reproducible_geometry_ref"] is None
+        assert unit["outlet_coordinate"] is None
+        assert unit["exact_confluence_coordinate"] is None
+        assert unit["travel_time_tau"] is None
+        assert unit["discharge_q_i"] is None
+        assert unit["collector_capacity"] is None
+        assert unit["collector_overflow_evidence"] is None
+        assert unit["map_publishable"] is False
+        for event in unit["unverified_event_leads"]:
+            if event.get("date_or_period") in ("2015-03-23", "2013-03-23"):
+                assert event["source_text_verified"] is False
+                assert event["usable_as_confirmed_unit_event"] is False
