@@ -28,6 +28,7 @@ jobs:
           import io
           import json
           import pathlib
+          import stat
           import tempfile
           import unittest
           import urllib.error
@@ -58,16 +59,23 @@ jobs:
                   if len(members) > 10000:
                       raise ValueError("too many ZIP members")
                   names = set()
+                  canonical_names = set()
                   groups = {}
                   total_uncompressed = 0
                   for member in members:
                       name = member.filename
                       p = pathlib.PurePosixPath(name)
+                      canonical = str(p).casefold()
+                      unix_mode = member.external_attr >> 16
                       if (not name or name.startswith("/") or "\\" in name
                               or ".." in p.parts or name in names
+                              or canonical in canonical_names
+                              or (p.parts and ":" in p.parts[0])
+                              or stat.S_IFMT(unix_mode) == stat.S_IFLNK
                               or member.flag_bits & 1):
-                          raise ValueError("unsafe, duplicate, or encrypted ZIP member")
+                          raise ValueError("unsafe, aliased, duplicate, linked, or encrypted ZIP member")
                       names.add(name)
+                      canonical_names.add(canonical)
                       total_uncompressed += member.file_size
                       if total_uncompressed > 2 * 1024 * 1024 * 1024:
                           raise ValueError("ZIP expanded-size bound exceeded")
@@ -126,6 +134,24 @@ jobs:
               def test_reject_zip_slip(self):
                   with self.assertRaises(ValueError):
                       inspect_archive(self.make_zip(["../outside.shp"]))
+
+              def test_reject_casefold_and_normalized_aliases(self):
+                  for names in (["folder/sample.shp", "FOLDER/SAMPLE.SHP"],
+                                ["folder//sample.shp", "folder/sample.shp"]):
+                      with self.subTest(names=names), self.assertRaises(ValueError):
+                          inspect_archive(self.make_zip(names))
+
+              def test_reject_symlink_and_windows_drive_path(self):
+                  linked = zipfile.ZipInfo("folder/linked.shp")
+                  linked.create_system = 3
+                  linked.external_attr = (stat.S_IFLNK | 0o777) << 16
+                  buf = io.BytesIO()
+                  with zipfile.ZipFile(buf, "w") as z:
+                      z.writestr(linked, b"../other.shp")
+                  with self.assertRaises(ValueError):
+                      inspect_archive(buf.getvalue())
+                  with self.assertRaises(ValueError):
+                      inspect_archive(self.make_zip(["C:/folder/sample.shp"]))
 
               def test_incomplete_group_does_not_prove_historical_absence(self):
                   result = inspect_archive(self.make_zip(["folder/sample.shp"]))
