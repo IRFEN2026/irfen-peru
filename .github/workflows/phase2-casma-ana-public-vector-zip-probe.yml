@@ -74,6 +74,14 @@ jobs:
                       if not member.is_dir():
                           key = str(p.with_suffix("")).casefold()
                           groups.setdefault(key, set()).add(p.suffix.casefold())
+                  # CRC-check every declared member before calling the archive inventory valid.
+                  # This verifies ZIP transport integrity only, never shapefile geometry or lineage.
+                  for member in members:
+                      if member.is_dir():
+                          continue
+                      with z.open(member) as stream:
+                          while stream.read(1024 * 1024):
+                              pass
                   complete = [k for k, extensions in groups.items()
                               if {".shp", ".shx", ".dbf", ".prj"} <= extensions]
                   return {
@@ -106,6 +114,14 @@ jobs:
                   self.assertFalse(result["uh_pfas100_filename_seen"])
                   self.assertFalse(GUARDS["exact_n7_codes_verified"])
                   self.assertFalse(GUARDS["historical_geometry_equivalence_to_Uh_pfas100"])
+
+              def test_reject_corrupt_member_crc(self):
+                  blob = self.make_zip(["folder/sample.shp", "folder/sample.shx",
+                                        "folder/sample.dbf", "folder/sample.prj"])
+                  corrupted = blob.replace(b"synthetic-test-only", b"synthetic-test-ONLY", 1)
+                  self.assertNotEqual(corrupted, blob)
+                  with self.assertRaises(zipfile.BadZipFile):
+                      inspect_archive(corrupted)
 
               def test_reject_zip_slip(self):
                   with self.assertRaises(ValueError):
