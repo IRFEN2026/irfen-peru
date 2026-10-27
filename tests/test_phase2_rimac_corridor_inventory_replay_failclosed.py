@@ -739,7 +739,7 @@ def test_unverified_events_and_station_triggers_do_not_become_flow():
     }
     new_leads = [
         row for row in d["official_unmaterialized_name_leads"]
-        if row["source_id"] == municipal["source_id"]
+        if row.get("source_id") == municipal["source_id"]
     ]
     assert {row["documentary_name"] for row in new_leads} == new_labels
     assert len(new_leads) == len(new_labels) == 7
