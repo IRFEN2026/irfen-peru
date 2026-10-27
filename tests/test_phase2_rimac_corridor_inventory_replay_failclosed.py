@@ -715,3 +715,86 @@ def test_unverified_events_and_station_triggers_do_not_become_flow():
     assert anin["decision_thresholds"] is None
     assert anin["hydraulic_factors"] is None
     assert anin["map_publishable"] is False
+
+    # Santa Eulalia's 2023 twelve-name announcement is an intervention
+    # scope, not twelve independently mapped catchments or a works ledger.
+    # Protect the seven new leads without duplicating pre-existing labels.
+    municipal = d["official_2023_santa_eulalia_twelve_ravines_announcement"]
+    assert municipal["source_id"] == "MDSE-GOBPE-2023-09-04-12-QUEBRADAS-DESCOLMATACION-PLAN"
+    assert municipal["publication_date"] == "2023-09-04"
+    assert municipal["announced_scope_label_count"] == 12
+    printed = [row["documentary_label"] for row in municipal["named_labels"]]
+    assert printed == [
+        "Lúcuma Seca", "Santa Rosa", "Nueva Esperanza", "Cashahuacra",
+        "La Portada", "Santa María", "Huayaringa", "Acopaya",
+        "Palle", "Huaynani", "Chingolay", "Las Tres Cruces",
+    ]
+    assert len(printed) == len(set(printed)) == 12
+    assert municipal["new_unmaterialized_name_lead_count"] == 7
+    assert municipal["existing_unmaterialized_name_lead_count"] == 2
+    assert municipal["existing_inventory_label_count"] == 3
+    new_labels = {
+        "Lúcuma Seca", "Nueva Esperanza", "La Portada", "Palle",
+        "Huaynani", "Chingolay", "Las Tres Cruces",
+    }
+    new_leads = [
+        row for row in d["official_unmaterialized_name_leads"]
+        if row["source_id"] == municipal["source_id"]
+    ]
+    assert {row["documentary_name"] for row in new_leads} == new_labels
+    assert len(new_leads) == len(new_labels) == 7
+    assert len(d["official_unmaterialized_name_leads"]) == 46
+    assert d["counts"]["total_documentary_rows"] == 51
+    assert d["counts"]["confirmed_unique_hydrologic_unit_count"] is None
+    for lead in new_leads:
+        assert lead["alias_adjudication"].startswith("UNRESOLVED")
+        assert lead["source_published_date"] == "2023-09-04"
+        assert lead["source_text_verified"] is False
+        assert lead["original_source_bytes_archived_in_this_contract"] is False
+        assert lead["original_web_text_sha256"] is None
+        assert lead["verified_event_refs"] == []
+        assert lead["rainfall_observation_refs"] == []
+        assert lead["flow_or_stage_observation_refs"] == []
+        assert lead["catchment_geometry"] is None
+        assert lead["channel_geometry"] is None
+        assert lead["outlet_coordinate"] is None
+        assert lead["exact_confluence_coordinate"] is None
+        assert lead["receiver_chain_adjudicated"] is False
+        assert lead["travel_time_tau"] is None
+        assert lead["collector_capacity"] is None
+        assert lead["collector_overflow_evidence"] is None
+        assert lead["map_publishable"] is False
+        assert lead["counted_as_confirmed_unique_hydrologic_unit"] is False
+    assert "LUCUMASECA" in next(
+        row["alias_adjudication"] for row in new_leads
+        if row["documentary_name"] == "Lúcuma Seca"
+    )
+    assert "HUAYARINGA_CENTRO_PORTADA" in next(
+        row["alias_adjudication"] for row in new_leads
+        if row["documentary_name"] == "La Portada"
+    )
+    assert "SHINGOLAY_OR_CHINGALOY" in next(
+        row["alias_adjudication"] for row in new_leads
+        if row["documentary_name"] == "Chingolay"
+    )
+    assert "TRES_CRUCES" in next(
+        row["alias_adjudication"] for row in new_leads
+        if row["documentary_name"] == "Las Tres Cruces"
+    )
+    assert municipal["source_text_verified"] is False
+    assert municipal["original_source_bytes_archived_in_this_contract"] is False
+    assert municipal["original_web_text_sha256"] is None
+    assert municipal["reported_announced_financing_is_not_proof_of_completed_works"] is True
+    assert municipal["separately_reported_cashahuacra_huayaringa_geodynamic_barrier_claims_not_verified_as_built"] is True
+    assert municipal["official_2023_district_scope_is_not_geodetic_channel_location"] is True
+    assert municipal["possible_name_variants_are_not_hydrologic_alias_adjudications"] is True
+    assert municipal["no_individually_verified_activation_dates"] is True
+    assert municipal["verified_event_refs"] == []
+    assert municipal["measured_discharge_or_stage_refs"] == []
+    assert municipal["receiver_chain_adjudicated"] is False
+    for key in ("exact_outlet", "exact_confluence", "travel_time_tau",
+                "collector_capacity", "collector_overflow_evidence"):
+        assert municipal[key] is None
+    assert municipal["documentary_row_count_increment"] == 0
+    assert municipal["confirmed_unique_hydrologic_unit_count_increment"] == 0
+    assert municipal["map_publishable"] is False
