@@ -58,6 +58,14 @@ def reject_nonstandard_json_constant(_token):
     raise ValueError("nonstandard JSON numeric constant")
 
 
+def reject_nonfinite_json_float(token):
+    """A valid JSON exponent (1e999) can overflow Python float to Infinity."""
+    value = float(token)
+    if not math.isfinite(value):
+        raise ValueError("nonfinite JSON numeric value")
+    return value
+
+
 def reject_duplicate_json_keys(pairs):
     """Reject ambiguous duplicate keys at every JSON object nesting level."""
     obj = {}
@@ -71,6 +79,7 @@ def reject_duplicate_json_keys(pairs):
 def candidate(raw, code):
     """Check only capture identity/structure; NOT GEOS topology or lineage."""
     doc = json.loads(raw, parse_constant=reject_nonstandard_json_constant,
+                     parse_float=reject_nonfinite_json_float,
                      object_pairs_hook=reject_duplicate_json_keys)
     if not isinstance(doc, dict) or doc.get("error") or doc.get("exceededTransferLimit"):
         raise ValueError("error or truncated response")
@@ -155,6 +164,7 @@ def validate_capture_candidate(raw, code):
 SAFE_CANDIDATE_REASONS = frozenset({
     "malformed JSON or encoding",
     "nonstandard JSON numeric constant",
+    "nonfinite JSON numeric value",
     "duplicate JSON object key",
     "error or truncated response",
     "not a GeoJSON FeatureCollection",
@@ -329,6 +339,17 @@ class TestCasmaIDEPIndependentMirrorContract(unittest.TestCase):
                 bounded_failure_detail(rejected.exception),
                 "source candidate rejected code=1375961: nonstandard JSON numeric constant",
             )
+
+        # JSON-compliant exponents can overflow float without using NaN/Infinity
+        # tokens. Reject before archiving attributes or serializing a manifest.
+        overflow = self.sample().replace(b'"AREA_KM2": null', b'"AREA_KM2": 1e999')
+        self.assertNotEqual(overflow, self.sample())
+        with self.assertRaisesRegex(ValueError, "nonfinite JSON numeric value") as rejected:
+            validate_capture_candidate(overflow, CODES[0])
+        self.assertEqual(
+            bounded_failure_detail(rejected.exception),
+            "source candidate rejected code=1375961: nonfinite JSON numeric value",
+        )
 
         # A duplicate JSON identity key is ambiguous: default json.loads keeps
         # the last value and could silently mask a conflicting source code.
