@@ -408,6 +408,68 @@ def test_ambiguous_names_and_administrative_conflicts_remain_unresolved():
     )
 
 
+    # Name-only official leads must not be silently converted into a unit,
+    # a confirmed activation, or a hydrologic alias. In particular, a COEN
+    # *simulacro* is not an observed 2017 debris flow at Mariscal Caceres.
+    # This extends an existing test: no collection-manifest edit required.
+    leads_by_name = {
+        row["documentary_name"]: row
+        for row in d["official_unmaterialized_name_leads"]
+    }
+    caceres = leads_by_name["Mariscal Cáceres"]
+    assert caceres["source_institution"] == "COEN / Ministerio de Defensa (Perú)"
+    assert caceres["source_title"] == "Segundo Boletín N.º 604, 07-12-2017, 16:00"
+    assert "simulacro" in caceres["observed_short_phrase"]
+    assert "NOT an observed huaico" in caceres["historical_context"]
+    assert caceres["alias_adjudication"] == (
+        "MARISCAL_CACERES_VS_MARISCAL_CASTILLA_UNRESOLVED_NOT_MERGED"
+    )
+    assert any(
+        {"Mariscal Cáceres", "Mariscal Castilla"} <= set(group["labels"])
+        and group["status"] == "PENDING_ADJUDICATION"
+        for group in d["pending_identity_groups"]
+    )
+    assert by_id["lima_lurigancho_mariscal_castilla"]["verified_event_refs"] == []
+    assert caceres["source_text_verified"] is False
+    assert caceres["original_pdf_sha256"] is None
+    assert caceres["verified_event_refs"] == []
+    assert caceres["counted_as_confirmed_unique_hydrologic_unit"] is False
+
+    # The COEN annex groups Santa Eulalia and Chosica, not individual
+    # districts or confluences. Rayo de Sol is a possible spelling variant,
+    # not an adjudicated alias of the Rayos de Sol documentary unit.
+    rayo = leads_by_name["Rayo de Sol"]
+    assert rayo["possible_existing_inventory_id_unadjudicated"] == (
+        "lima_lurigancho_rayos_de_sol"
+    )
+    assert rayo["alias_adjudication"] == (
+        "UNRESOLVED_NO_EQUIVALENCE_FROM_SPELLING_OR_LOCATION"
+    )
+    assert rayo["source_report_date"] == "2017-12-06"
+    assert rayo["unverified_event_leads"][0]["year"] == 2017
+    assert rayo["unverified_event_leads"][0]["per_unit_event_date"] is None
+    assert rayo["unverified_event_leads"][0]["usable_as_confirmed_unit_event"] is False
+    assert rayo["verified_event_refs"] == []
+    assert by_id["lima_lurigancho_rayos_de_sol"]["map_publishable"] is False
+
+    # INGEMMET's Santa Eulalia locality context for Redonda does not
+    # attribute its collective historical years to a dated unit event.
+    redonda = leads_by_name["Redonda"]
+    assert redonda["source_institution"] == "INGEMMET"
+    assert "Cuadro 6, item 68" in redonda["source_locator"]
+    assert "San José de Palle" in redonda["exposure_context"]
+    assert "none is attributed to Redonda" in redonda["historical_context"]
+    for lead_row in (caceres, rayo, redonda):
+        assert lead_row["source_text_verified"] is False
+        assert lead_row["original_pdf_bytes_archived_in_this_contract"] is False
+        assert lead_row["original_pdf_sha256"] is None
+        assert lead_row["verified_event_refs"] == []
+        assert lead_row["outlet_coordinate"] is None
+        assert lead_row["exact_confluence_coordinate"] is None
+        assert lead_row["receiver_chain_adjudicated"] is False
+        assert lead_row["collector_overflow_evidence"] is None
+        assert lead_row["map_publishable"] is False
+
     # ANA dated works and border reports must remain documentary evidence,
     # not hydraulic measurements or an adjudicated La Ronda location.
     d = _inventory()
