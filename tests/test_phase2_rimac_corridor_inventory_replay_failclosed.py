@@ -64,6 +64,36 @@ def test_documentary_rows_are_not_a_deduplicated_hydrologic_census():
     assert len(ids) == d["counts"]["total_documentary_rows"]
     assert d["counts"]["confirmed_unique_hydrologic_unit_count"] is None
     assert d["counts"]["possible_alias_double_count_unresolved"] is True
+    # Crosswalk accounting must not turn the legacy 45-row audit figure
+    # into 45 rows already present in the national master. Exact inventory
+    # IDs partition this documentary replay into 44 main-master records,
+    # one external Dos Barrios record and six Jicamarca context records.
+    # These are provenance classes, NOT hydrologic identity adjudications.
+    membership_counts = {
+        "PRESENT_IN_NATIONAL_MASTER_BY_EXACT_INVENTORY_ID": 44,
+        "EXTERNAL_DOS_BARRIOS_DOCUMENTARY_ROW_NOT_IN_MAIN_NATIONAL_MASTER": 1,
+        "JICAMARCA_CONTEXT_ROW_NOT_IN_MAIN_NATIONAL_MASTER": 6,
+    }
+    actual_membership_counts = {
+        key: sum(u["national_master_membership"] == key for u in units)
+        for key in membership_counts
+    }
+    assert actual_membership_counts == membership_counts
+    assert sum(actual_membership_counts.values()) == len(units) == 51
+    assert d["counts"]["national_master_corridor_documentary_rows"] == 44
+    assert d["counts"]["additional_dos_barrios_documentary_rows_not_in_main"] == 1
+    assert d["counts"]["jicamarca_context_documentary_rows_not_in_national_master"] == 6
+    assert d["counts"]["national_audit_corridor_documentary_rows"] == 44 + 1
+    assert d["counts"]["jicamarca_additional_documentary_rows"] == 6
+    assert d["counts"]["national_master_membership_by_exact_id_verified"] is True
+    assert d["provenance"]["national_master_reconciliation"]["match_method"] == (
+        "EXACT_INVENTORY_ID_NOT_NAME_OR_ALIAS"
+    )
+    external = [u for u in units if u["national_master_membership"] == (
+        "EXTERNAL_DOS_BARRIOS_DOCUMENTARY_ROW_NOT_IN_MAIN_NATIONAL_MASTER"
+    )]
+    assert [u["id"] for u in external] == ["lima_district_unknown_dos_barrios"]
+    assert all(u["identity_adjudication"] != "CONFIRMED_HYDROLOGIC_UNIT" for u in units)
     # Pending name relationships are evidence leads, never implicit alias merges.
     ids_set = set(ids)
     for group in d["pending_identity_groups"]:
