@@ -952,3 +952,96 @@ def test_unverified_events_and_station_triggers_do_not_become_flow():
     assert california["collector_capacity"] is None
     assert california["collector_overflow_evidence"] is None
     assert california["map_publishable"] is False
+
+    # RIIGEO/FIGMMG-UNMSM (2012): freeze the independently checked
+    # bibliographic locators without turning the academic narrative into an
+    # INGEMMET institutional report or a confirmed per-unit event.
+    # All three sections begin on printed p. 81 / PDF p. 12; the Corrales
+    # description continues on printed p. 82 (not a separate catchment).
+    academic = d["academic_2012_riigeo_right_bank_field_narratives"]
+    academic_id = "RIIGEO-FIGMMG-UNMSM-2012-CHOSICA-RIGHT-BANK-NARRATIVES"
+    assert academic["source_id"] == academic_id
+    assert academic["source_type"] == (
+        "UNMSM_ACADEMIC_ARTICLE_HOSTED_BY_INGEMMET_NOT_INGEMMET_INSTITUTIONAL_REPORT"
+    )
+    assert academic["external_archive_dependency"] == (
+        "UNMERGED_PR_363_NOT_INCLUDED_IN_THIS_REPLAY"
+    )
+    external_sha = "761cfed38ba8388e529616c77766881c22de689495b9d5499c6ac123bf3b5973"
+    assert academic["external_archive_reported_sha256"] == external_sha
+    assert academic["original_pdf_bytes_archived_in_this_contract"] is False
+    assert academic["original_pdf_sha256"] is None
+    assert academic["source_text_verified"] is False
+    assert academic["date_of_reported_event"] == "2012-04-05"
+    assert academic["reported_length_slope_are_descriptive_not_reproducible_geometry_or_routing"] is True
+    assert academic["later_2023_carossio_road_interception_not_resolved_by_2012_right_bank_label"] is True
+    assert academic["no_hydrologic_alias_adjudication"] is True
+    assert academic["no_verified_per_unit_event_promotion"] is True
+    assert academic["no_child_activation_implies_collector_overflow"] is True
+    assert academic["receiver_chain_adjudicated"] is False
+    assert academic["map_publishable"] is False
+    assert academic["verified_event_refs"] == []
+    assert academic["rainfall_observation_refs"] == []
+    assert academic["flow_or_stage_observation_refs"] == []
+    for field in ("exact_outlet", "exact_confluence", "travel_time_tau",
+                  "measured_discharge", "collector_capacity",
+                  "collector_overflow_evidence"):
+        assert academic[field] is None, field
+    assert academic["documentary_row_count_increment"] == 0
+    assert academic["confirmed_unique_hydrologic_unit_count_increment"] == 0
+
+    expected_sections = {
+        "lima_lurigancho_la_libertad": "6.2.3 QUEBRADA LIBERTAD",
+        "lima_lurigancho_carossio": "6.2.4 QUEBRADA CAROSSIO",
+        "lima_lurigancho_corrales": "6.2.5 QUEBRADA CORRALES",
+    }
+    cases_2012 = {case["inventory_id"]: case for case in academic["cases"]}
+    assert len(academic["cases"]) == len(cases_2012) == 3
+    assert set(cases_2012) == set(expected_sections)
+    for unit_id, section in expected_sections.items():
+        case = cases_2012[unit_id]
+        assert case["section"] == section
+        assert case["pdf_page_1_based"] == 12
+        assert case["printed_page"] == 81
+        assert case["source_text_verified"] is False
+        assert case["verified_event_refs"] == []
+        assert case["outlet_coordinate"] is None
+        assert case["exact_confluence_coordinate"] is None
+        assert case["travel_time_tau"] is None
+        assert case["collector_capacity"] is None
+        assert case["collector_overflow_evidence"] is None
+        assert case["map_publishable"] is False
+        unit = by_id[unit_id]
+        sources = [s for s in unit["source_refs"] if s.get("source_id") == academic_id]
+        assert len(sources) == 1, unit_id
+        source = sources[0]
+        assert source["section"] == section
+        assert source["pdf_page_1_based"] == case["pdf_page_1_based"]
+        assert source["external_archive_reported_sha256"] == external_sha
+        assert source["source_text_verified"] is False
+        assert source["original_pdf_bytes_archived_in_this_contract"] is False
+        assert source["original_pdf_sha256"] is None
+        assert source["reported_morphometry_not_routing"] is True
+        assert source["receiver_relation_adjudicated"] is False
+        assert source["map_publishable"] is False
+        leads_2012 = [
+            e for e in unit["unverified_event_leads"]
+            if e.get("source_id") == academic_id
+        ]
+        assert len(leads_2012) == 1, unit_id
+        lead = leads_2012[0]
+        assert lead["date_or_period"] == "2012-04-05"
+        assert lead["event_lead_state"] == "EVENT_LEAD_UNVERIFIED"
+        assert lead["source_text_verified"] is False
+        assert lead["usable_as_confirmed_unit_event"] is False
+        assert lead["event_ledger_entry_allowed"] is False
+        assert lead["measured_discharge"] is None
+        assert lead["collector_overflow_evidence"] is None
+        assert unit["verified_event_refs"] == []
+        assert unit["receiver_relation"] == "UNKNOWN_NOT_ASSUMED"
+        assert unit["outlet_coordinate"] is None
+        assert unit["exact_confluence_coordinate"] is None
+        assert unit["travel_time_tau"] is None
+        assert unit["collector_capacity"] is None
+        assert unit["collector_overflow_evidence"] is None
+        assert unit["map_publishable"] is False
