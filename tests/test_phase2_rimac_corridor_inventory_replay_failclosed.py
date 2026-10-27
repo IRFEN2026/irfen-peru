@@ -886,3 +886,69 @@ def test_unverified_events_and_station_triggers_do_not_become_flow():
     assert event["event_ledger_entry_allowed"] is False
     assert event["measured_discharge"] is None
     assert event["collector_overflow_evidence"] is None
+
+    # MVCS 2022 California: a reported completed desilting campaign is not
+    # a dated flood event, observed discharge, as-built capacity or outlet.
+    # Extend this existing test; the frozen pytest collection manifest is
+    # intentionally unchanged.
+    mvcs = d["official_2022_mvcs_california_completed_desilting_work"]
+    mvcs_id = "MVCS-GOBPE-2022-05-29-CALIFORNIA-DESCOLMATACION"
+    assert mvcs["source_id"] == mvcs_id
+    assert mvcs["inventory_id"] == "lima_lurigancho_california"
+    assert mvcs["publication_date"] == "2022-05-29"
+    assert mvcs["reported_intervention"] == "COMPLETED_CLEANING_AND_DESILTING_ANNOUNCEMENT"
+    assert mvcs["reported_work_duration_calendar_days"] == 22
+    assert mvcs["reported_removed_sediment_m3"] == 11229
+    assert mvcs["reported_approximate_beneficiaries"] == 930
+    assert "Rinconada de California" in mvcs["reported_location"]
+    assert mvcs["source_text_verified"] is False
+    assert mvcs["source_original_bytes_frozen"] is False
+    assert mvcs["original_html_bytes_archived_in_this_contract"] is False
+    assert mvcs["original_html_sha256"] is None
+    for flag in (
+        "work_report_not_independent_as_built_verification",
+        "removed_sediment_volume_is_not_hydrologic_discharge",
+        "approximate_beneficiaries_not_georeferenced_exposure",
+        "reported_work_does_not_prove_future_capacity_or_no_flooding",
+    ):
+        assert mvcs[flag] is True, flag
+    for key in (
+        "exact_intervention_reach_geometry", "reproducible_channel_geometry",
+        "outlet_coordinate", "exact_confluence_coordinate", "observed_rainfall",
+        "measured_flood_discharge", "travel_time_tau", "collector_capacity",
+        "collector_overflow_evidence",
+    ):
+        assert mvcs[key] is None, key
+    assert mvcs["documentary_row_count_increment"] == 0
+    assert mvcs["confirmed_unique_hydrologic_unit_count_increment"] == 0
+    assert mvcs["receiver_chain_adjudicated"] is False
+    assert mvcs["map_publishable"] is False
+
+    california = by_id["lima_lurigancho_california"]
+    works_refs = [s for s in california["source_refs"] if s.get("source_id") == mvcs_id]
+    assert len(works_refs) == 1
+    work = works_refs[0]
+    assert work["evidence_type"] == (
+        "OFFICIAL_COMPLETED_DESILTING_WORKS_ANNOUNCEMENT_NOT_HYDROLOGIC_EVENT"
+    )
+    assert work["publication_date"] == mvcs["publication_date"]
+    assert work["source_text_verified"] is False
+    assert work["original_html_bytes_archived_in_this_contract"] is False
+    assert work["original_html_sha256"] is None
+    assert work["removed_sediment_volume_not_measured_discharge"] is True
+    assert work["reported_beneficiaries_not_hydrologic_exposure_geometry"] is True
+    assert work["map_publishable"] is False
+    assert mvcs_id in california["works_context_refs"]
+    assert all(e.get("source_id") != mvcs_id for e in california["unverified_event_leads"])
+    assert california["verified_event_refs"] == []
+    assert california["rainfall_observation_refs"] == []
+    assert california["flow_or_stage_observation_refs"] == []
+    assert california["reproducible_geometry_ref"] is None
+    assert california["outlet_coordinate"] is None
+    assert california["exact_confluence_coordinate"] is None
+    assert california["receiver_relation"] == "UNKNOWN_NOT_ASSUMED"
+    assert california["travel_time_tau"] is None
+    assert california["discharge_q_i"] is None
+    assert california["collector_capacity"] is None
+    assert california["collector_overflow_evidence"] is None
+    assert california["map_publishable"] is False
