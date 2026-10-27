@@ -274,6 +274,12 @@ class TestCasmaIDEPIndependentMirrorContract(unittest.TestCase):
         # preserve the exact pytest collection manifest without weakening coverage.
         msg = "source candidate rejected code=1375961: NIVEL7/CODIGO identity mismatch; no tolerance"
         self.assertEqual(bounded_failure_detail(ValueError(msg)), msg)
+        # End-to-end fail-closed identity diagnostic, not a synthetic positive source.
+        mismatched = json.loads(self.sample())
+        mismatched["features"][0]["properties"]["CODIGO"] = CODES[1]
+        with self.assertRaisesRegex(ValueError, "NIVEL7/CODIGO identity mismatch; no tolerance") as rejected:
+            validate_capture_candidate(json.dumps(mismatched).encode(), CODES[0])
+        self.assertEqual(bounded_failure_detail(rejected.exception), msg)
         self.assertEqual(bounded_failure_detail(ValueError("source status/URL mismatch")),
                          "source status/URL mismatch")
         self.assertEqual(bounded_failure_detail(ValueError(
