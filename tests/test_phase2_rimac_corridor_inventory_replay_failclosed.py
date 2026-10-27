@@ -1230,3 +1230,41 @@ def test_unverified_events_and_station_triggers_do_not_become_flow():
             if event.get("date_or_period") in ("2015-03-23", "2013-03-23"):
                 assert event["source_text_verified"] is False
                 assert event["usable_as_confirmed_unit_event"] is False
+
+    # The same source_id can describe distinct documentary roles or catalog
+    # entries. Do not deduplicate citations by source_id alone, and do not
+    # inflate the hydrologic-unit census because one row has two citations.
+    # La Cantuta has two ANA catalog URLs for the same faja source label;
+    # Santa Maria uses the same INGEMMET report for EVENT and IDENTITY
+    # context. Neither pairing resolves outlet, alias or unit identity.
+    citation_groups = {}
+    for unit in d["units"]:
+        for ref in unit["source_refs"]:
+            citation_groups.setdefault((unit["id"], ref["source_id"]), []).append(ref)
+    repeated = {key: refs for key, refs in citation_groups.items() if len(refs) > 1}
+    assert set(repeated) == {
+        ("lima_lurigancho_la_cantuta", "ANA-FAJA-RD-SIGRID"),
+        ("lima_lurigancho_santa_maria", "INGEMMET-A7437"),
+    }
+    cantuta_refs = repeated[("lima_lurigancho_la_cantuta", "ANA-FAJA-RD-SIGRID")]
+    assert {ref["source_url"] for ref in cantuta_refs} == {
+        "https://sigrid.cenepred.gob.pe/sigridv3/documento/6074",
+        "https://sigrid.cenepred.gob.pe/sigridv3/documento/19341",
+    }
+    assert {ref["evidence_type"] for ref in cantuta_refs} == {"FAJA"}
+    santa_maria_refs = repeated[("lima_lurigancho_santa_maria", "INGEMMET-A7437")]
+    assert {ref["evidence_type"] for ref in santa_maria_refs} == {"EVENT", "IDENTITY"}
+    assert {ref["source_url"] for ref in santa_maria_refs} == {
+        "https://sigrid.cenepred.gob.pe/sigridv3/documento/16610"
+    }
+    for unit_id, _ in repeated:
+        unit = by_id[unit_id]
+        assert unit["identity_adjudication"] != "CONFIRMED_HYDROLOGIC_UNIT"
+        assert unit["verified_event_refs"] == []
+        assert unit["outlet_coordinate"] is None
+        assert unit["exact_confluence_coordinate"] is None
+        assert unit["map_publishable"] is False
+    for refs in repeated.values():
+        assert all(ref["source_text_verified"] is False for ref in refs)
+    assert d["counts"]["total_documentary_rows"] == len(d["units"]) == 51
+    assert d["counts"]["confirmed_unique_hydrologic_unit_count"] is None
