@@ -1,0 +1,131 @@
+{
+ "schema": "irfen.gauge_imerg.download_budget",
+ "schema_version": "1.0.0",
+ "status": "PROPOSAL_NOT_AUTHORIZED",
+ "deployment_status": "RESEARCH_ONLY",
+ "test_mode": "TEST_ONLY",
+ "precondition": "Requiere el CSV horario de SENAMHI con cobertura, zona horaria y acumulación confirmadas; sin él no se fija ninguna fecha ni se descarga nada.",
+ "stations": [
+  {
+   "name": "LANCONES",
+   "wigos": "0-604-1-07610101",
+   "lat": -4.642897,
+   "lon": -80.547161,
+   "cell": [
+    994,
+    853
+   ],
+   "cell_center": [
+    -80.55,
+    -4.65
+   ],
+   "edge_margin_deg": 0.042897,
+   "oscar_status": "Operational"
+  },
+  {
+   "name": "CHULUCANAS",
+   "wigos": "0-604-1-08602104",
+   "lat": -5.108444,
+   "lon": -80.169539,
+   "cell": [
+    998,
+    848
+   ],
+   "cell_center": [
+    -80.15,
+    -5.15
+   ],
+   "edge_margin_deg": 0.008444,
+   "oscar_status": "Operational",
+   "note": "a 0,008° (≈0,9 km) del borde de celda: informar también la celda vecina"
+  },
+  {
+   "name": "TONGORRAPE",
+   "wigos": "0-604-1-09582002",
+   "lat": -6.06692,
+   "lon": -79.68203,
+   "cell": [
+    1003,
+    839
+   ],
+   "cell_center": [
+    -79.65,
+    -6.05
+   ],
+   "edge_margin_deg": 0.01797,
+   "oscar_status": "Operational"
+  },
+  {
+   "name": "TINAJONES",
+   "wigos": "0-604-1-10575101",
+   "lat": -6.654889,
+   "lon": -79.427919,
+   "cell": [
+    1005,
+    833
+   ],
+   "cell_center": [
+    -79.45,
+    -6.65
+   ],
+   "edge_margin_deg": 0.027919,
+   "oscar_status": "Silent (en OSCAR, 26-oct-2026)"
+  }
+ ],
+ "spatial_block": {
+  "i0": 993,
+  "i1": 1007,
+  "j0": 832,
+  "j1": 855,
+  "cells": 322,
+  "lon_range": [
+   -80.7,
+   -79.3
+  ],
+  "lat_range": [
+   -6.8,
+   -4.5
+  ],
+  "note": "incluye la vecindad 3×3 de las 4 estaciones"
+ },
+ "date_selection_rule_preregistered": [
+  "1. Inventariar el CSV y elegir el MES CALENDARIO con mayor precipitación acumulada sumando las 4 estaciones, solo entre meses con ≥90 % de horas válidas en ≥3 estaciones (decisión basada solo en pluviómetros, nunca en IMERG).",
+  "2. Ventanas: día pluviométrico 07–07 hora Perú (12–12 UTC) si la hora del CSV es local; si es UTC, días 12–12 UTC igualmente. Un día solo entra si tiene 24/24 horas válidas en la estación.",
+  "3. Se usan todos los días del mes (húmedos y secos) para evitar sesgo de selección.",
+  "4. Producto: IMERG Late V07 medio-horario (GPM_3IMERGHHL); se verifica en CMR nombre y subversión antes de descargar. Final (GPM_3IMERGHH) no se usa como prueba independiente por su ajuste GPCC."
+ ],
+ "options": [
+  {
+   "id": "A_minima",
+   "days": 10,
+   "granules": 480,
+   "est_mb_per_granule": 7.0,
+   "est_transfer_gb": 3.4,
+   "est_runner_minutes": 15,
+   "expected_pairs_max": 40,
+   "expected_status": "DESCRIPTIVE_ONLY_SMALL_SAMPLE (10 días)",
+   "calibration": "BLOQUEADA por diseño"
+  },
+  {
+   "id": "B_recomendada_un_mes",
+   "days": 31,
+   "granules": 1488,
+   "est_mb_per_granule": 7.0,
+   "est_transfer_gb": 10.4,
+   "est_runner_minutes": 45,
+   "expected_pairs_max": 124,
+   "expected_status": "EVALUABLE para métricas si hay ≥30 pares y ≥10 días válidos",
+   "calibration": "compuertas posiblemente alcanzables solo como calibración local; generalización futura NO evaluable (una sola temporada)"
+  },
+  {
+   "id": "C_diario_UTC",
+   "days": 31,
+   "granules": 31,
+   "product": "GPM_3IMERGDL (diario UTC)",
+   "est_transfer_gb": "≈0,3–0,6 (a confirmar en CMR)",
+   "note": "requiere sumar el pluviómetro horario por día UTC (00–24 Z = 19–19 PET) y una extensión menor del analizador de gránulos; no sirve para ventanas 07–07"
+  }
+ ],
+ "basis_for_sizes": "tamaño medido de los gránulos IMERG Early V07C del 21–25 oct 2026 en CMR (≈7,0 MB); el de Late se confirmará en CMR",
+ "storage": "solo el bloque de 322 celdas por gránulo (≈1–3 MB JSON por opción B); HDF5 borrados tras extraer"
+}
