@@ -585,3 +585,69 @@ def test_unverified_events_and_station_triggers_do_not_become_flow():
     assert regulatory["map_publishable"] is False
     assert regulatory["documentary_row_count_increment"] == 0
     assert regulatory["confirmed_unique_hydrologic_unit_count_increment"] == 0
+
+
+def test_la_ronda_dated_ana_works_reports_do_not_adjudicate_hydrology():
+    """Dated ANA works/border reports are not measurements or channel geometry."""
+    d = _inventory()
+    ronda = next(u for u in d["units"] if u["id"] == "lima_lurigancho_la_ronda")
+    by_source = {row["source_id"]: row for row in ronda["source_refs"]}
+    expected = {
+        "ANA-GOBPE-2025-01-06-LA-RONDA-DESCOLMATACION": (
+            "2025-01-06",
+            "DATED_OFFICIAL_WORKS_STATUS_REPORT_NOT_HYDROLOGIC_EVENT",
+            "ANA_REPORTED_CRITICAL_POINT_DESCOLMATATION_COMPLETED_AS_OF_2025_01_06_NOT_CURRENT_CONDITION",
+        ),
+        "ANA-GOBPE-2026-03-04-LA-RONDA-DIQUES-BOUNDARY": (
+            "2026-03-04",
+            "DATED_OFFICIAL_WORKS_STATUS_AND_ADMINISTRATIVE_BOUNDARY_REPORT_NOT_HYDROLOGIC_EVENT",
+            "ANA_REPORTED_FIRST_DIKE_COMPLETED_SECOND_UNDER_EXECUTION_AS_OF_2026_03_04_NOT_CURRENT_CONDITION",
+        ),
+    }
+    assert set(expected).issubset(by_source)
+    assert set(expected).issubset(set(ronda["works_context_refs"]))
+    for source_id, (published, role, works_state) in expected.items():
+        row = by_source[source_id]
+        assert row["source_published_date"] == published
+        assert row["evidence_type"] == role
+        assert row["reported_work_status"] == works_state
+        assert row["source_capture_status"] == (
+            "OFFICIAL_WEB_SEARCH_EXCERPT_READ_ORIGINAL_PAGE_BYTES_NOT_FROZEN"
+        )
+        assert row["source_text_verified"] is False
+        assert row["original_web_text_sha256"] is None
+        assert row["original_source_bytes_archived_in_this_contract"] is False
+        assert row["measured_discharge"] is None
+        assert row["collector_capacity"] is None
+        assert row["verified_event"] is False
+        assert row["map_publishable"] is False
+
+    border = by_source["ANA-GOBPE-2026-03-04-LA-RONDA-DIQUES-BOUNDARY"]
+    assert border["reported_location_context"] == (
+        "Lurigancho-Chosica (límite con Ricardo Palma)"
+    )
+    border_leads = [
+        row for row in ronda["administrative_location_leads"]
+        if row.get("source_id") == border["source_id"]
+    ]
+    assert len(border_leads) == 1
+    assert border_leads[0]["adjudication"] == (
+        "BORDER_CONTEXT_ONLY_NO_EXACT_CHANNEL_OR_DISTRICT_ADJUDICATION"
+    )
+    assert border_leads[0]["source_text_verified"] is False
+    assert border_leads[0]["original_web_text_sha256"] is None
+    assert ronda["district"] is None
+    assert ronda["province"] is None
+    assert ronda["administrative_assignment"] == (
+        "UNRESOLVED_CONFLICTING_DOCUMENTARY_LOCATIONS"
+    )
+    assert ronda["receiver_relation"] == "UNKNOWN_NOT_ASSUMED"
+    assert ronda["verified_event_refs"] == []
+    assert ronda["flow_or_stage_observation_refs"] == []
+    assert ronda["reproducible_geometry_ref"] is None
+    assert ronda["outlet_coordinate"] is None
+    assert ronda["exact_confluence_coordinate"] is None
+    assert ronda["travel_time_tau"] is None
+    assert ronda["collector_capacity"] is None
+    assert ronda["collector_overflow_evidence"] is None
+    assert ronda["map_publishable"] is False
