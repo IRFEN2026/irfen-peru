@@ -1,16 +1,16 @@
 name: IRFEN - Casma ANA public vector ZIP custody probe
 
 on:
-  pull_request:
-    paths:
-      - .github/workflows/phase2-casma-ana-public-vector-zip-probe.yml
+  push:
+    branches:
+      - phase2/casma-gate-b-snapshot-reconciliation-20261012
 
 permissions:
   contents: read
 
 jobs:
   source-custody:
-    if: github.event.pull_request.head.ref == 'phase2/casma-gate-b-snapshot-reconciliation-20261012'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/phase2/casma-gate-b-snapshot-reconciliation-20261012'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
