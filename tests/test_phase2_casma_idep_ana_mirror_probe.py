@@ -53,9 +53,14 @@ def query_url(code):
     return LAYER + "/query?" + urlencode(params)
 
 
+def reject_nonstandard_json_constant(_token):
+    """Python's permissive JSON decoder otherwise accepts NaN and Infinity."""
+    raise ValueError("nonstandard JSON numeric constant")
+
+
 def candidate(raw, code):
     """Check only capture identity/structure; NOT GEOS topology or lineage."""
-    doc = json.loads(raw)
+    doc = json.loads(raw, parse_constant=reject_nonstandard_json_constant)
     if not isinstance(doc, dict) or doc.get("error") or doc.get("exceededTransferLimit"):
         raise ValueError("error or truncated response")
     if doc.get("type") != "FeatureCollection":
@@ -138,6 +143,7 @@ def validate_capture_candidate(raw, code):
 # Unrecognized ValueError messages may contain untrusted source data.
 SAFE_CANDIDATE_REASONS = frozenset({
     "malformed JSON or encoding",
+    "nonstandard JSON numeric constant",
     "error or truncated response",
     "not a GeoJSON FeatureCollection",
     "explicit incompatible or unverified CRS",
@@ -299,6 +305,18 @@ class TestCasmaIDEPIndependentMirrorContract(unittest.TestCase):
                     bounded_failure_detail(exc),
                     "source candidate rejected code=1375961: malformed JSON or encoding",
                 )
+
+        # A permissive Python JSON decoder accepts NaN/Infinity by default.
+        # Reject these nonstandard source bytes before recording an archival manifest.
+        for token in (b"NaN", b"Infinity", b"-Infinity"):
+            raw = self.sample().replace(b'"AREA_KM2": null', b'"AREA_KM2": ' + token)
+            self.assertNotEqual(raw, self.sample())
+            with self.assertRaisesRegex(ValueError, "nonstandard JSON numeric constant") as rejected:
+                validate_capture_candidate(raw, CODES[0])
+            self.assertEqual(
+                bounded_failure_detail(rejected.exception),
+                "source candidate rejected code=1375961: nonstandard JSON numeric constant",
+            )
 
         self.assertIn("idep.gob.pe", LAYER)
         self.assertIn("ANA_WMS", LAYER)
