@@ -1268,3 +1268,64 @@ def test_unverified_events_and_station_triggers_do_not_become_flow():
         assert all(ref["source_text_verified"] is False for ref in refs)
     assert d["counts"]["total_documentary_rows"] == len(d["units"]) == 51
     assert d["counts"]["confirmed_unique_hydrologic_unit_count"] is None
+
+    # Santa Eulalia PPRRD 2025-2030, table 22 (printed p. 45): six
+    # documentary labels for *planned corrective works*, not six new
+    # hydrologic units, completed structures, observed activations or
+    # confirmed Rímac/Santa Eulalia receiver-chain edges.
+    pprrd = d["official_2025_santa_eulalia_pprrd_corrective_works_name_leads"]
+    assert pprrd["source_id"] == "MDSE-SIGRID-PPRRD-SANTA-EULALIA-2025-2030-TABLE22"
+    assert pprrd["plan_horizon"] == "2025-2030"
+    assert "Tabla 22" in pprrd["source_locator"]
+    assert "45" in pprrd["source_locator"]
+    assert pprrd["source_text_verified"] is False
+    assert pprrd["original_pdf_bytes_archived_in_this_contract"] is False
+    assert pprrd["original_pdf_sha256"] is None
+    assert pprrd["named_label_count"] == 6
+    assert pprrd["new_documentary_name_leads_pending_materialization"] == 3
+    assert pprrd["new_documentary_names"] == [
+        "El Descanso", "Parca", "San Jerónimo de Punan"
+    ]
+    expected_labels = {
+        "Las Cruces": "EXISTING_UNMATERIALIZED_DOCUMENTARY_NAME_LEAD_NO_HYDROLOGIC_IDENTITY",
+        "El Descanso": "NEW_DOCUMENTARY_NAME_LEAD_NOT_YET_ADDED_TO_MASTER_LEAD_ROWS",
+        "Parca": "NEW_DOCUMENTARY_NAME_LEAD_NOT_YET_ADDED_TO_MASTER_LEAD_ROWS",
+        "Huayaringa": "EXACT_EXISTING_DOCUMENTARY_LABEL_NOT_HYDROLOGIC_IDENTITY",
+        "Pedregal": "HOMONYM_OR_DISTINCT_UNIT_UNRESOLVED_NOT_LURIGANCHO_PEDREGAL",
+        "San Jerónimo de Punan": "NEW_DOCUMENTARY_NAME_LEAD_NOT_YET_ADDED_TO_MASTER_LEAD_ROWS",
+    }
+    named = pprrd["named_labels"]
+    assert len(named) == len(expected_labels)
+    assert {item["normalized_search_label"] for item in named} == set(expected_labels)
+    for item in named:
+        assert item["reconciliation"] == expected_labels[item["normalized_search_label"]]
+        assert item["alias_adjudication"] == "PENDING_NOT_MERGED"
+        assert item["exact_channel_geometry"] is None
+        assert item["exact_outlet"] is None
+        assert item["exact_confluence"] is None
+        assert item["receiver_chain_adjudicated"] is False
+        assert item["map_publishable"] is False
+    by_label = {item["normalized_search_label"]: item for item in named}
+    assert by_label["Huayaringa"]["possible_existing_inventory_id_not_identity_adjudicated"] == (
+        "lima_santa_eulalia_huayaringa"
+    )
+    assert by_label["Pedregal"]["possible_existing_inventory_id_not_identity_adjudicated"] == (
+        "lima_lurigancho_pedregal_san_antonio"
+    )
+    assert pprrd["planning_vs_construction"] == (
+        "TABLE_LISTS_CORRECTIVE_ACTIONS_NO_INDEPENDENT_AS_BUILT_OR_COMPLETION_EVIDENCE"
+    )
+    assert pprrd["construction_completion_evidence"] is None
+    assert pprrd["constructed_dike_or_wall_geometry"] is None
+    assert pprrd["measured_hydraulic_capacity"] is None
+    assert pprrd["verified_unit_events"] == []
+    for field in ("observed_rainfall", "observed_flow_or_stage",
+                  "travel_time_tau", "exact_outlet", "exact_confluence",
+                  "collector_overflow_evidence"):
+        assert pprrd[field] is None, field
+    assert pprrd["no_child_activation_implies_collector_overflow"] is True
+    assert pprrd["map_publishable"] is False
+    assert pprrd["documentary_row_count_increment"] == 0
+    assert pprrd["confirmed_unique_hydrologic_unit_count_increment"] == 0
+    assert d["counts"]["total_documentary_rows"] == 51
+    assert d["counts"]["confirmed_unique_hydrologic_unit_count"] is None
