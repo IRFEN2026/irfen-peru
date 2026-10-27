@@ -113,8 +113,24 @@ def positions(geometry):
     return result
 
 
+def reject_nonstandard_json_constant(_token):
+    """ArcGIS GeoJSON must not contain Python-permissive NaN or Infinity."""
+    raise ValueError("nonstandard JSON numeric constant")
+
+
+def reject_duplicate_json_keys(pairs):
+    """Ambiguous keys, including nested source identities, fail closed."""
+    obj = {}
+    for key, value in pairs:
+        if key in obj:
+            raise ValueError("duplicate JSON object key")
+        obj[key] = value
+    return obj
+
+
 def inspect(raw, source_key="ana_official"):
-    obj = json.loads(raw)
+    obj = json.loads(raw, parse_constant=reject_nonstandard_json_constant,
+                     object_pairs_hook=reject_duplicate_json_keys)
     # A valid JSON scalar/array is not an ArcGIS GeoJSON response. Preserve
     # UNKNOWN rather than raising an unclassified AttributeError in live CI.
     if not isinstance(obj, dict):
@@ -485,6 +501,27 @@ class OfflineTests(unittest.TestCase):
         # be classified as UNKNOWN, never as missing Santa features.
         for raw in (b"null", b"[]", b"123", b'"not-geojson"'):
             with self.subTest(raw=raw), self.assertRaises(ValueError):
+                inspect(raw)
+
+        # Synthetic source only: the standard Python decoder accepts duplicate
+        # keys and NaN/Infinity, which would corrupt frozen source provenance.
+        valid = (b'{"type":"FeatureCollection","features":[{"type":"Feature",'
+                 b'"properties":{"NOMBRE_CA":"synthetic Santa","OBJECTID_1":1},'
+                 b'"geometry":{"type":"LineString","coordinates":[[0,0],[1,1]]}}]}')
+        self.assertEqual(len(inspect(valid)), 1)
+        for before, after, reason in (
+            (b'"OBJECTID_1":1', b'"OBJECTID_1":2,"OBJECTID_1":1',
+             "duplicate JSON object key"),
+            (b'"OBJECTID_1":1', b'"OBJECTID_1":NaN',
+             "nonstandard JSON numeric constant"),
+            (b'"OBJECTID_1":1', b'"OBJECTID_1":Infinity',
+             "nonstandard JSON numeric constant"),
+            (b'"OBJECTID_1":1', b'"OBJECTID_1":-Infinity',
+             "nonstandard JSON numeric constant"),
+        ):
+            raw = valid.replace(before, after)
+            self.assertNotEqual(raw, valid)
+            with self.subTest(raw=raw), self.assertRaisesRegex(ValueError, reason):
                 inspect(raw)
 
     def test_oct25_mirror_replay_provenance_remains_fail_closed(self):
