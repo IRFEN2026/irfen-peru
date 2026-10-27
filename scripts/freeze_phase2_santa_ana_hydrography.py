@@ -118,6 +118,14 @@ def reject_nonstandard_json_constant(_token):
     raise ValueError("nonstandard JSON numeric constant")
 
 
+def reject_nonfinite_json_float(token):
+    """Reject valid JSON exponents overflowing Python floats to infinity."""
+    value = float(token)
+    if not math.isfinite(value):
+        raise ValueError("nonfinite JSON numeric value")
+    return value
+
+
 def reject_duplicate_json_keys(pairs):
     """Ambiguous keys, including nested source identities, fail closed."""
     obj = {}
@@ -130,6 +138,7 @@ def reject_duplicate_json_keys(pairs):
 
 def inspect(raw, source_key="ana_official"):
     obj = json.loads(raw, parse_constant=reject_nonstandard_json_constant,
+                     parse_float=reject_nonfinite_json_float,
                      object_pairs_hook=reject_duplicate_json_keys)
     # A valid JSON scalar/array is not an ArcGIS GeoJSON response. Preserve
     # UNKNOWN rather than raising an unclassified AttributeError in live CI.
@@ -518,11 +527,18 @@ class OfflineTests(unittest.TestCase):
              "nonstandard JSON numeric constant"),
             (b'"OBJECTID_1":1', b'"OBJECTID_1":-Infinity',
              "nonstandard JSON numeric constant"),
+            (b'"OBJECTID_1":1', b'"OBJECTID_1":1,"LONG_KM":1e999',
+             "nonfinite JSON numeric value"),
+            (b'"OBJECTID_1":1', b'"OBJECTID_1":1,"LONG_KM":-1e999',
+             "nonfinite JSON numeric value"),
         ):
             raw = valid.replace(before, after)
             self.assertNotEqual(raw, valid)
             with self.subTest(raw=raw), self.assertRaisesRegex(ValueError, reason):
                 inspect(raw)
+        # A finite exponent remains valid JSON and does not change source custody.
+        finite = valid.replace(b'"OBJECTID_1":1', b'"OBJECTID_1":1,"LONG_KM":1e-3')
+        self.assertEqual(len(inspect(finite)), 1)
 
     def test_oct25_mirror_replay_provenance_remains_fail_closed(self):
         # Regression contract for the documented 2026-10-25 GitHub artifact.
