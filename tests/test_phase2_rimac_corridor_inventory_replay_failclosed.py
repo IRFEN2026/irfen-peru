@@ -798,3 +798,91 @@ def test_unverified_events_and_station_triggers_do_not_become_flow():
     assert municipal["documentary_row_count_increment"] == 0
     assert municipal["confirmed_unique_hydrologic_unit_count_increment"] == 0
     assert municipal["map_publishable"] is False
+
+    # INGEMMET A7459 receiver observations remain non-routing evidence.
+    # Preserve distinct Carossio road interception and Corrales riverward
+    # direction without inferring exact outlets, permanent disconnection,
+    # a Corrales/Rayos de Sol alias or downstream collector overflow.
+    ingemmet = d["official_2023_ingemmet_a7459_carossio_corrales_receiver_field_leads"]
+    source_id = "INGEMMET-A7459-2023-CAROSSIO-CORRALES-RECEIVER-FIELD-CONTEXT"
+    assert ingemmet["source_id"] == source_id
+    assert ingemmet["report_year"] == 2023
+    assert ingemmet["source_text_verified"] is False
+    assert ingemmet["original_pdf_bytes_archived_in_this_contract"] is False
+    assert ingemmet["original_pdf_sha256"] is None
+    assert ingemmet["interpretation"] == (
+        "TWO_DISTINCT_DOCUMENTARY_RECEIVER_PATH_OBSERVATIONS_NOT_GIS_TOPOLOGY"
+    )
+    for flag in (
+        "photo_site_coordinates_are_not_outlets",
+        "photo_caption_is_not_reproducible_channel_geometry",
+        "road_interception_does_not_prove_permanent_disconnection",
+        "reported_riverward_mouth_does_not_establish_exact_confluence",
+        "rayos_del_sol_sector_label_does_not_adjudicate_alias",
+        "no_child_activation_implies_collector_overflow",
+    ):
+        assert ingemmet[flag] is True, flag
+    assert ingemmet["documentary_row_count_increment"] == 0
+    assert ingemmet["confirmed_unique_hydrologic_unit_count_increment"] == 0
+    assert ingemmet["receiver_chain_adjudicated"] is False
+    assert ingemmet["map_publishable"] is False
+    for field in (
+        "exact_outlet", "exact_confluence", "travel_time_tau",
+        "measured_discharge", "collector_capacity", "collector_overflow_evidence",
+    ):
+        assert ingemmet[field] is None, field
+
+    cases = {row["inventory_id"]: row for row in ingemmet["cases"]}
+    assert set(cases) == {
+        "lima_lurigancho_carossio", "lima_lurigancho_corrales"
+    }
+    carossio = cases["lima_lurigancho_carossio"]
+    corrales = cases["lima_lurigancho_corrales"]
+    assert carossio["critical_zone"] == "15-045"
+    assert carossio["field_photo_date"] == "2023-10-05"
+    assert carossio["reported_event_date_lead"] == "2023-03-14"
+    assert carossio["relation_to_receiver"] == (
+        "ROAD_INTERCEPTION_FIELD_DESCRIPTION_NOT_PROOF_OF_DISCONNECTION_OR_EXACT_OUTLET"
+    )
+    assert corrales["critical_zone"] == "15-046"
+    assert corrales["field_photo_date"] == "2022-11-24"
+    assert corrales["reported_event_date_lead"] is None
+    assert corrales["relation_to_receiver"] == (
+        "DOCUMENTARY_DIRECTION_TOWARD_RIMAC_NOT_EXACT_CONFLUENCE_OR_VERIFIED_HYDROLOGIC_EDGE"
+    )
+    by_id = {unit["id"]: unit for unit in d["units"]}
+    for unit_id, case in cases.items():
+        unit = by_id[unit_id]
+        refs = [s for s in unit["source_refs"] if s.get("source_id") == source_id]
+        assert len(refs) == 1, unit_id
+        source = refs[0]
+        assert source["critical_zone"] == case["critical_zone"]
+        assert source["field_photo_date"] == case["field_photo_date"]
+        assert source["source_text_verified"] is False
+        assert source["original_pdf_bytes_archived_in_this_contract"] is False
+        assert source["original_pdf_sha256"] is None
+        assert source["receiver_relation_adjudicated"] is False
+        assert source["map_publishable"] is False
+        assert case["source_text_verified"] is False
+        assert case["source_original_bytes_frozen"] is False
+        assert case["verified_event_refs"] == []
+        assert case["exact_outlet"] is None
+        assert case["exact_confluence"] is None
+        assert case["map_publishable"] is False
+        assert unit["receiver_relation"] == "UNKNOWN_NOT_ASSUMED"
+        assert unit["outlet_coordinate"] is None
+        assert unit["exact_confluence_coordinate"] is None
+        assert unit["collector_overflow_evidence"] is None
+        assert unit["map_publishable"] is False
+    event_leads = [
+        row for row in by_id["lima_lurigancho_carossio"]["unverified_event_leads"]
+        if row.get("source_id") == source_id
+    ]
+    assert len(event_leads) == 1
+    event = event_leads[0]
+    assert event["date_or_period"] == "2023-03-14"
+    assert event["source_text_verified"] is False
+    assert event["usable_as_confirmed_unit_event"] is False
+    assert event["event_ledger_entry_allowed"] is False
+    assert event["measured_discharge"] is None
+    assert event["collector_overflow_evidence"] is None
