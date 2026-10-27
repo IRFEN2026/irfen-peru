@@ -172,6 +172,15 @@ class Isolation(unittest.TestCase):
             step = step[:step.index("- name:", 1)] if "- name:" in step[1:] else step
             self.assertIn("continue-on-error: true", step, wf)
             self.assertIn("v09_build_territory_bundle.py --check", step, wf)
+        # The private integration QA checks rebuilt artifacts and never commits: a bot commit would become the PR head
+        # and every pull_request workflow of the PR would wait as `action_required` (the loop seen on #403).
+        qa = (ROOT / ".github/workflows/v09-private-integrated-qa.yml").read_text(encoding="utf-8")
+        self.assertIn("permissions:\n  contents: read\n", qa)
+        for forbidden in ("contents: write", "git push", "git commit", "git config user", "--write-manifest", "github-actions[bot]@"):
+            self.assertNotIn(forbidden, qa, forbidden)
+        self.assertIn("python scripts/verify_phase2_test_collection.py", qa)
+        self.assertIn("actions/upload-artifact@", qa)
+        self.assertIn("v09_build_territory_bundle.py --check", qa)
 
 
 class Page(unittest.TestCase):

@@ -14,8 +14,10 @@ on:
       - tests/test_v09_pages_publication_gate.py
       - qa/replay_tools/test_v09_continuity_evidence.py
   workflow_dispatch:
+# Read-only by design: the QA rebuilds and checks artifacts, it never commits to the branch. A bot commit would
+# become the PR head and GitHub would hold every pull_request workflow of #403 as `action_required`.
 permissions:
-  contents: write
+  contents: read
 concurrency:
   group: v09-private-integration-${{ github.ref }}
   cancel-in-progress: false
@@ -55,10 +57,8 @@ jobs:
         run: |
           python scripts/v09_build_territory_bundle.py
           python scripts/v09_build_territory_bundle.py --check
-      - name: Recolección real de pruebas y manifiesto forward-only (en rama aislada)
-        run: |
-          python scripts/verify_phase2_test_collection.py --write-manifest
-          python scripts/verify_phase2_test_collection.py
+      - name: Manifiesto pytest verificado (sin reescribirlo; si cambia, se regenera en un commit humano revisable)
+        run: python scripts/verify_phase2_test_collection.py
       - name: QA científica independiente de geometrías y datos
         run: python scripts/v09_territory_independent_qa.py
       - name: Suite territorial, publicación cerrada y cobertura IMERG
@@ -75,35 +75,37 @@ jobs:
           python -m unittest -v tests/test_v09_dashboard_browser.py tests/test_v09_demo_summary.py 2>&1 | tee "$RUNNER_TEMP/browser.log"
           grep -q "^OK$" "$RUNNER_TEMP/browser.log"
           if grep -q "skipped" "$RUNNER_TEMP/browser.log"; then echo "::error::browser tests skipped"; exit 1; fi
-      - name: Comprobar interruptores y conservar paquete SOLO en rama de integración
+      - name: Comprobar interruptores y comparar con el paquete confirmado (sin commits)
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
-          import json
+          import json, subprocess
           from pathlib import Path
           c=json.loads(Path("config/v09_public_demo_v0_1.json").read_text())
           t=json.loads(Path("site/data/v09/territory_v0_1.json").read_text())
           assert not c.get("publish_v09_dashboard") and not c.get("publish_v09_territory")
           assert t["deployment_status"]=="RESEARCH_ONLY" and t["test_mode"]=="TEST_ONLY"
-          assert t["production_use"] is False and t["map_publishable"] is False
-          assert t["operational_alerting_enabled"] is False
+          assert t["production_use"] is False and t["production_ready"] is False and t["map_publishable"] is False
+          assert t["operational_alerting_enabled"] is False and t["public_alerting"] is False and t["activation_gate"]=="BLOCKED"
+          assert t["missing_data_rule"]=="UNKNOWN_NOT_LOW_RISK" and t["decision_thresholds"] is None and t["hydraulic_factors"] is None
           assert len(t["zone_rain"])==22
+          committed=json.loads(subprocess.run(["git","show","HEAD:site/data/v09/territory_v0_1.json"],capture_output=True,check=True).stdout)
+          same = {k:v for k,v in committed.items() if k!="built_at_utc"} == {k:v for k,v in t.items() if k!="built_at_utc"}
+          print("::notice title=V09_PRIVATE_QA::" + ("rebuilt bundle equals the committed one" if same else
+                "rebuilt from newer main rain state; the committed bundle is older (refresh it in a reviewable human commit if needed)"))
           print("INTEGRATED_PRIVATE_QA_PASS")
           PY
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add site/data/v09/territory_v0_1.json data/v09/surveillance/zone_rain_state_v0_1.json config/phase2_test_collection_manifest.json
-          if git diff --cached --quiet; then echo "No bundle change"; exit 0; fi
-          git commit -m "research: freeze tested v0.9 integrated private map snapshot (TEST_ONLY)"
-          BR="integration/v09-territory-private-map-20261022"
-          for attempt in 1 2 3 4; do
-            git fetch -q origin "$BR"
-            if ! git rebase -q "origin/$BR"; then
-              git rebase --abort || true
-              echo "::error::Real conflict while preserving integrated snapshot; refusing overwrite"; exit 1
-            fi
-            if git push -q origin "HEAD:$BR"; then echo "Frozen bundle pushed (non-force)"; exit 0; fi
-            sleep $((attempt * 2))
-          done
-          echo "::error::Non-fast-forward persists after 4 bounded retries"; exit 1
+          git diff --quiet -- . ':!site/data/v09/territory_v0_1.json' ':!data/v09/surveillance/zone_rain_state_v0_1.json' ':!config/v09_public_demo_v0_1.json' \
+            || { echo "::error::the QA modified tracked files other than the rebuilt artifacts"; git diff --stat; exit 1; }
+      - name: Conservar el paquete reconstruido como artefacto de la ejecución (no como commit)
+        uses: actions/upload-artifact@v4
+        with:
+          name: v09-private-map-${{ github.sha }}
+          path: |
+            site/data/v09/territory_v0_1.json
+            data/v09/surveillance/zone_rain_state_v0_1.json
+            ${{ runner.temp }}/integrated.log
+            ${{ runner.temp }}/browser.log
+          retention-days: 14
+          if-no-files-found: error
