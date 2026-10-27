@@ -1,0 +1,108 @@
+name: IRFEN investigación - consulta ÚNICA servicios geográficos de estaciones SENAMHI (TEST_ONLY)
+
+# Consulta única del Repositorio Institucional SENAMHI (hdl 20.500.12542/3635); no consulta datosabiertos.gob.pe. No es un sondeo: solo se dispara con un
+# push de esta rama que cambie la solicitud o este flujo, y se NIEGA a ejecutar si el resultado ya existe.
+# Sin schedule ni secretos; no toca main, site/, config/ ni ramas de datos; sin Pages ni alertas.
+# "compute" corre Python con permiso de solo lectura; "persist" solo usa git y escribe exclusivamente
+# research/gauge_imerg/station_catalog/geoservices_20261027/ en ESTA rama, sin --force.
+
+on:
+  push:
+    branches:
+      - research/senamhi-station-catalog-20261027
+    paths:
+      - research/gauge_imerg/station_catalog/REQUEST_geoservices_20261027.json
+      - .github/workflows/senamhi-geoservices-once.yml
+
+permissions: {}
+
+concurrency:
+  group: senamhi-geoservices-once
+  cancel-in-progress: false
+
+env:
+  BRANCH: research/senamhi-station-catalog-20261027
+  OUT: research/gauge_imerg/station_catalog/geoservices_20261027
+
+jobs:
+  compute:
+    if: github.ref == 'refs/heads/research/senamhi-station-catalog-20261027'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      skip: ${{ steps.once.outputs.skip }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        with:
+          persist-credentials: false
+      - name: Una sola vez
+        id: once
+        shell: bash
+        run: |
+          if [ -f "$OUT/query_log.json" ]; then echo "skip=true" >> "$GITHUB_OUTPUT"; echo "Ya descargado"; exit 0; fi
+          test -f research/gauge_imerg/station_catalog/REQUEST_geoservices_20261027.json
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-python@v6
+        if: steps.once.outputs.skip == 'false'
+        with:
+          python-version: "3.12"
+      - name: Dependencias
+        if: steps.once.outputs.skip == 'false'
+        run: python -m pip install --disable-pip-version-check "requests>=2.31,<3"
+      - name: Descarga única
+        if: steps.once.outputs.skip == 'false'
+        run: timeout --signal=TERM --kill-after=15s 1200s python research/gauge_imerg/station_catalog/fetch_geoservices_once.py "$RUNNER_TEMP/out"
+      - name: Sin archivos especiales ni excesivos
+        if: steps.once.outputs.skip == 'false'
+        shell: bash
+        run: |
+          set -euo pipefail
+          bad=$(find "$RUNNER_TEMP/out" -type f -size +16M -print)
+          if [ -n "$bad" ]; then echo "::error::archivo grande: $bad"; exit 1; fi
+          if find "$RUNNER_TEMP/out" -mindepth 1 ! -type f ! -type d -print | grep -q .; then echo "::error::especiales"; exit 1; fi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        if: steps.once.outputs.skip == 'false'
+        with:
+          name: geoservices-${{ github.run_id }}
+          path: ${{ runner.temp }}/out
+          retention-days: 7
+          if-no-files-found: error
+
+  persist:
+    needs: compute
+    if: ${{ !cancelled() && needs.compute.result == 'success' && needs.compute.outputs.skip == 'false' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        with:
+          ref: ${{ env.BRANCH }}
+          fetch-depth: 0
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
+        with:
+          name: geoservices-${{ github.run_id }}
+          path: ${{ runner.temp }}/in
+      - name: Escribir solo la carpeta de salida en esta rama (sin --force)
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e "$OUT/query_log.json"
+          mkdir -p "$OUT"
+          cp -a "$RUNNER_TEMP/in/." "$OUT/"
+          git add -- "$OUT"
+          outside=$(git diff --cached --name-only | grep -v "^$OUT/" || true)
+          if [ -n "$outside" ]; then echo "::error::rutas fuera de $OUT: $outside"; exit 1; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -q -m "research: consulta única servicios geográficos de estaciones (TEST_ONLY)"
+          for attempt in 1 2 3; do
+            git fetch -q origin "+refs/heads/$BRANCH:refs/remotes/origin/$BRANCH"
+            git rebase -q "origin/$BRANCH" || { git rebase --abort; exit 1; }
+            git push -q origin "HEAD:refs/heads/$BRANCH" && exit 0
+            sleep $((attempt * 3))
+          done
+          exit 1
