@@ -82,14 +82,20 @@ jobs:
                       if not member.is_dir():
                           key = str(p.with_suffix("")).casefold()
                           groups.setdefault(key, set()).add(p.suffix.casefold())
-                  # CRC-check every declared member before calling the archive inventory valid.
-                  # This verifies ZIP transport integrity only, never shapefile geometry or lineage.
+                  # CRC-check and SHA-256 hash each uncompressed member's exact bytes.
+                  # These are component custody hashes, NOT geometry or lineage QA.
+                  member_sha256 = {}
                   for member in members:
                       if member.is_dir():
                           continue
+                      digest = hashlib.sha256()
                       with z.open(member) as stream:
-                          while stream.read(1024 * 1024):
-                              pass
+                          while True:
+                              chunk = stream.read(1024 * 1024)
+                              if not chunk:
+                                  break
+                              digest.update(chunk)
+                      member_sha256[member.filename] = digest.hexdigest()
                   complete = [k for k, extensions in groups.items()
                               if {".shp", ".shx", ".dbf", ".prj"} <= extensions]
                   return {
@@ -99,7 +105,8 @@ jobs:
                       "complete_shapefile_member_stems": sorted(complete),
                       "member_inventory": [
                           dict(name=m.filename, compressed_size=m.compress_size,
-                               uncompressed_size=m.file_size, crc32=format(m.CRC, "08x"))
+                               uncompressed_size=m.file_size, crc32=format(m.CRC, "08x"),
+                               sha256_uncompressed=(None if m.is_dir() else member_sha256[m.filename]))
                           for m in members],
                       "uh_pfas100_filename_seen": any(
                           pathlib.PurePosixPath(m.filename).stem.casefold() == "uh_pfas100"
@@ -122,6 +129,22 @@ jobs:
                   self.assertFalse(result["uh_pfas100_filename_seen"])
                   self.assertFalse(GUARDS["exact_n7_codes_verified"])
                   self.assertFalse(GUARDS["historical_geometry_equivalence_to_Uh_pfas100"])
+
+              def test_member_hashes_are_exact_uncompressed_bytes(self):
+                  original = b"synthetic-test-only"
+                  result = inspect_archive(self.make_zip(["folder/sample.shp"]))
+                  self.assertEqual(result["member_inventory"][0]["sha256_uncompressed"],
+                                   hashlib.sha256(original).hexdigest())
+                  self.assertEqual(result["complete_shapefile_group_count"], 0)
+                  buf = io.BytesIO()
+                  with zipfile.ZipFile(buf, "w") as z:
+                      z.writestr("folder/sample.shp", original + b"-changed")
+                  changed = inspect_archive(buf.getvalue())
+                  self.assertEqual(changed["member_inventory"][0]["sha256_uncompressed"],
+                                   hashlib.sha256(original + b"-changed").hexdigest())
+                  self.assertNotEqual(result["member_inventory"][0]["sha256_uncompressed"],
+                                      changed["member_inventory"][0]["sha256_uncompressed"])
+                  self.assertFalse(GUARDS["exact_n7_codes_verified"])
 
               def test_reject_corrupt_member_crc(self):
                   blob = self.make_zip(["folder/sample.shp", "folder/sample.shx",
