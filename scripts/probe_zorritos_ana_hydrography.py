@@ -262,7 +262,7 @@ def run() -> dict:
             "paired_event_context_quarantine": ["leoncio_prado"],
             "spatial_crosswalk_quarantine": ["miramar"],
             "official_map_anchor_not_line_geometry_quarantine": ["la_tucilla"],
-            "scope_adjudication_quarantine": ["la_tucilla"],
+            "scope_adjudication_quarantine": list(plan["query_policy"]["scope_adjudication_quarantine"]),
             "distinct_entity_guard": [["la_tucilla", "tucillal"]],
             "lexical_neighbour_exclusions": LEXICAL_NEIGHBOUR_EXCLUSIONS,
             "absence_of_candidate_is_negative": False,
@@ -287,6 +287,7 @@ def main() -> int:
         assert "la_tucilla" in TARGETS
         assert "la_tucilla" in plan["query_policy"]["official_map_anchor_not_line_geometry_quarantine"]
         assert "la_tucilla" not in plan["query_policy"]["scope_adjudication_quarantine"]
+        assert plan["query_policy"]["scope_adjudication_quarantine"] == []
         assert plan["target_context"]["la_tucilla"]["official_coordinates"]["easting_m"] == 538042
         assert plan["target_context"]["la_tucilla"]["official_coordinates"]["northing_m"] == 9594412
         assert plan["query_policy"]["lexical_neighbour_exclusions"] == LEXICAL_NEIGHBOUR_EXCLUSIONS
