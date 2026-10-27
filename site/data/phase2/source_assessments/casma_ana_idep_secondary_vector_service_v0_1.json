@@ -69,12 +69,15 @@
   "recovery_gate": {
     "query_each_code_exactly": true,
     "require_single_feature_per_code": true,
-    "require_name_match_to_ana_inrena_2007": true,
-    "require_area_match_to_one_decimal_ana_inrena_2007": true,
+    "require_name_match_to_ana_inrena_2007": false,
+    "require_area_match_to_one_decimal_ana_inrena_2007": false,
     "require_nonempty_polygon_geometry": true,
     "require_raw_response_archive_and_sha256": true,
     "cross_source_geometry_comparison_required_before_preferred_source_adjudication": true,
-    "map_registry_modification_allowed": false
+    "map_registry_modification_allowed": false,
+    "require_valid_bounded_polygon_geometry": true,
+    "require_exact_codigo_and_nivel7_identity": true,
+    "historical_name_area_deltas_must_be_preserved_not_used_as_capture_gate": true
   },
   "scientific_disposition": {
     "metadata_is_geometry": false,
@@ -83,11 +86,73 @@
     "outlet_inference_allowed": false,
     "event_or_activation_geometry_created": false,
     "routing_enabled": false,
-    "map_eligible": false
+    "map_eligible": false,
+    "historical_geometry_equivalence_to_Uh_pfas100": false
   },
   "next_safe_gate": [
-    "Freeze exact IDEP/ANA feature responses for the nine Casma N7 codes with raw-response SHA-256.",
-    "Compare identity, one-decimal area and polygon geometry against the frozen MINAM descendant responses when available.",
-    "Prefer original INRENA Uh_pfas100 bytes if an institutional public copy is recovered; otherwise document descendant-source adjudication explicitly."
-  ]
+    "Retry exact independent IDEP/ANA-attributed per-code queries when public access returns; classify failures UNKNOWN_SOURCE_ACCESS_UNAVAILABLE and do not invent negative observations.",
+    "Freeze all nine raw response bytes and SHA-256 after exact CODIGO/NIVEL7, one-feature and valid bounded polygon checks; do not require 2007 display-name or rounded-area equality.",
+    "Preserve every historical/current name and area delta for Gate B; compare independent IDEP geometry with frozen MINAM only after immutable capture, without asserting Uh_pfas100 equivalence.",
+    "Run independent IDEP Gate C topology/union/parent QA before any additional map decision; preserve RESEARCH_ONLY, TEST_ONLY and activation BLOCKED."
+  ],
+  "legacy_gate_reconciliation_2026_10_27": {
+    "status": "HISTORICAL_GATE_A_ATTRIBUTE_CONFLATION_CORRECTED",
+    "observed_source_metadata_date_utc": "2026-09-26",
+    "original_recovery_gate_snapshot": {
+      "query_each_code_exactly": true,
+      "require_single_feature_per_code": true,
+      "require_name_match_to_ana_inrena_2007": true,
+      "require_area_match_to_one_decimal_ana_inrena_2007": true,
+      "require_nonempty_polygon_geometry": true,
+      "require_raw_response_archive_and_sha256": true,
+      "cross_source_geometry_comparison_required_before_preferred_source_adjudication": true,
+      "map_registry_modification_allowed": false
+    },
+    "reason": "The 2026-09-26 draft required exact 2007 names and rounded areas before capturing a current IDEP institutional descendant. Those attributes are Gate B comparison evidence, not Gate A acceptance predicates. Original snapshot preserved here; no post-hoc area tolerance or CI bypass.",
+    "current_authoritative_contract": "site/data/phase2/source_assessments/casma_minam_recovery_gate_adjudication_v0_1.json",
+    "original_vector_provenance": "site/data/phase2/source_assessments/casma_inrena_uh_pfas100_original_vector_provenance_v0_1.json",
+    "institutional_service_metadata": "https://www.idep.gob.pe/geoportal/rest/services/INSTITUCIONALES/ANA_WMS/FeatureServer/7",
+    "independent_source_raw_bytes_recovered": false,
+    "independent_source_raw_sha256": null,
+    "historical_geometry_equivalence_to_Uh_pfas100": false,
+    "source_access_state": "UNKNOWN_SOURCE_ACCESS_UNAVAILABLE",
+    "regression_test_path": "tests/test_phase2_casma_ana_idep_secondary_source.py"
+  },
+  "gate_a_idep_independent_capture": {
+    "status": "PENDING_VERIFIABLE_RAW_CAPTURE",
+    "required": [
+      "exact preregistered CODIGO and NIVEL7 for each of 1375961-1375969",
+      "exactly one feature per code",
+      "valid nonempty bounded Polygon/MultiPolygon with verifiable CRS; do not invent a study-area bbox",
+      "immutable per-code raw response bytes and SHA-256"
+    ],
+    "historical_name_equality_required": false,
+    "historical_area_equality_required": false,
+    "comparison_of_deltas_preserved": true,
+    "no_source_response_means": "UNKNOWN_SOURCE_ACCESS_UNAVAILABLE",
+    "not_a_negative_observation": true
+  },
+  "gate_b_historical_lineage": {
+    "status": "NOT_ESTABLISHED",
+    "original_Uh_pfas100_bytes_recovered": false,
+    "historical_geometry_equivalence_to_Uh_pfas100": false,
+    "original_bytes_or_direct_lineage_evidence_required": true,
+    "all_name_and_area_deltas_must_be_recorded": true,
+    "area_tolerance_authorized": false,
+    "post_hoc_attribute_bypass_authorized": false
+  },
+  "gate_c_idep_independent_topology": {
+    "status": "NOT_ADJUDICATED_FOR_IDEP",
+    "requires": [
+      "validity",
+      "pairwise overlap",
+      "gaps and union",
+      "independent parent coherence",
+      "hash stability"
+    ],
+    "distinct_from_frozen_minam_gate_c_pass": true,
+    "map_publication_authorized": false,
+    "authorized_label_if_independently_passed": "CURRENT_INSTITUTIONAL_N7_RESEARCH_CONTEXT",
+    "never_label_as_exact_2007_geometry_without_gate_b": true
+  }
 }
