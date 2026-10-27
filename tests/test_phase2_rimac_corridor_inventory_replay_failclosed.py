@@ -651,3 +651,67 @@ def test_unverified_events_and_station_triggers_do_not_become_flow():
     assert regulatory["map_publishable"] is False
     assert regulatory["documentary_row_count_increment"] == 0
     assert regulatory["confirmed_unique_hydrologic_unit_count_increment"] == 0
+
+    # ANIN 2026 design scope must remain distinct from works, observed
+    # capacity, unique ravine counts and downstream collector overflow.
+    # Append to an existing test to avoid altering the frozen pytest manifest.
+    anin = d["official_2026_anin_rimac_design_status"]
+    source_id = "ANIN-GOBPE-2026-02-27-RIMAC-23-QUEBRADAS-DESIGN"
+    assert anin["source_id"] == source_id
+    assert anin["publication_date"] == "2026-02-27"
+    assert anin["source_text_verified"] is False
+    assert anin["original_source_bytes_archived_in_this_contract"] is False
+    assert anin["original_web_text_sha256"] is None
+    assert anin["source_semantics"] == (
+        "SEPARATE_RIVER_AND_RAVINE_PROJECT_DESIGN_SCOPES_NOT_AS_BUILT_NOT_MEASURED_HYDRAULICS"
+    )
+    river = anin["rimac_river_project"]
+    assert river["reported_design_reach_count"] == 10
+    assert river["reported_approximate_scope_length_km"] == 63.5
+    assert river["exact_reach_geometries"] is None
+    assert river["observed_overflow_reaches"] is None
+    assert river["measured_hydraulic_capacity"] is None
+    assert river["adjudication"] == "DESIGN_EXTENT_ONLY_NOT_OVERFLOW_REACH_GEOMETRY"
+    ravines = anin["ravine_protection_project"]
+    assert ravines["reported_design_scope_ravine_count"] == 23
+    assert ravines["complete_named_list_available"] is False
+    assert ravines["scope_count_is_confirmed_unique_catchments"] is False
+    assert ravines["works_completed_inferred"] is False
+    assert ravines["exact_outlets"] is None
+    assert ravines["measured_capacity"] is None
+    assert len(ravines["named_examples"]) == 5
+    expected_labels = {
+        "Quirio": "lima_lurigancho_quirio",
+        "Pedregal": "lima_lurigancho_pedregal_san_antonio",
+        "Cusipata": "lima_chaclacayo_cusipata",
+        "Huascarán": "lima_chaclacayo_huascaran",
+        "Cóndores": "lima_chaclacayo_los_condores",
+    }
+    assert {
+        example["documentary_label"]: example["inventory_id"]
+        for example in ravines["named_examples"]
+    } == expected_labels
+    by_id = {unit["id"]: unit for unit in d["units"]}
+    for example in ravines["named_examples"]:
+        unit = by_id[example["inventory_id"]]
+        source = [s for s in unit["source_refs"] if s["source_id"] == source_id]
+        assert len(source) == 1
+        assert source_id in unit["works_context_refs"]
+        assert source[0]["evidence_type"] == "OFFICIAL_DESIGN_SCOPE_NOT_AS_BUILT"
+        assert source[0]["relation_to_inventory_label"] == example["relation_to_inventory_label"]
+        assert source[0]["source_text_verified"] is False
+        assert source[0]["original_web_text_sha256"] is None
+        assert source[0]["map_publishable"] is False
+        assert unit["outlet_coordinate"] is None
+        assert unit["exact_confluence_coordinate"] is None
+        assert unit["map_publishable"] is False
+    cond = next(e for e in ravines["named_examples"] if e["documentary_label"] == "Cóndores")
+    assert cond["relation_to_inventory_label"] == "POSSIBLE_VARIANT_NOT_ALIAS_ADJUDICATED"
+    assert anin["identity_adjudicated"] is False
+    assert anin["cross_project_receiver_edges_adjudicated"] is False
+    assert anin["documentary_row_count_increment"] == 0
+    assert anin["confirmed_unique_hydrologic_unit_count_increment"] == 0
+    assert anin["collector_overflow_evidence"] is None
+    assert anin["decision_thresholds"] is None
+    assert anin["hydraulic_factors"] is None
+    assert anin["map_publishable"] is False
