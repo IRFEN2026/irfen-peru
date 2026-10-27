@@ -881,7 +881,15 @@ def test_unverified_events_and_station_triggers_do_not_become_flow():
     ]
     assert {row["documentary_name"] for row in new_leads} == new_labels
     assert len(new_leads) == len(new_labels) == 7
-    assert len(d["official_unmaterialized_name_leads"]) == 46
+    # Two atomic documentary states are valid across one-write cycles:
+    # 46 pre-existing leads, or those same 46 plus all three PPRRD labels.
+    # Partial addition, accidental deduplication and invented hydrologic
+    # units must fail rather than silently change the census.
+    pprrd_new_names = {"El Descanso", "Parca", "San Jerónimo de Punan"}
+    all_leads = d["official_unmaterialized_name_leads"]
+    pprrd_added = pprrd_new_names & {row["documentary_name"] for row in all_leads}
+    assert pprrd_added in (set(), pprrd_new_names)
+    assert len(all_leads) == 46 + len(pprrd_added)
     assert d["counts"]["total_documentary_rows"] == 51
     assert d["counts"]["confirmed_unique_hydrologic_unit_count"] is None
     for lead in new_leads:
@@ -1282,17 +1290,46 @@ def test_unverified_events_and_station_triggers_do_not_become_flow():
     assert pprrd["original_pdf_bytes_archived_in_this_contract"] is False
     assert pprrd["original_pdf_sha256"] is None
     assert pprrd["named_label_count"] == 6
-    assert pprrd["new_documentary_name_leads_pending_materialization"] == 3
+    # Transition guard for the next single-file inventory commit: the
+    # three newly discovered labels must be added together, with exact
+    # provenance and no hydrologic or construction evidence promoted.
+    newly_named = {"El Descanso", "Parca", "San Jerónimo de Punan"}
+    added = [
+        row for row in d["official_unmaterialized_name_leads"]
+        if row["documentary_name"] in newly_named
+    ]
+    assert len(added) in (0, 3)
+    assert {row["documentary_name"] for row in added} in (set(), newly_named)
+    assert pprrd["new_documentary_name_leads_pending_materialization"] == 3 - len(added)
+    for row in added:
+        assert row["source_id"] == pprrd["source_id"]
+        assert row["source_url"] == pprrd["source_url"]
+        assert row["source_locator"] == pprrd["source_locator"]
+        assert row["plan_horizon"] == pprrd["plan_horizon"]
+        assert row["evidence_role"] == (
+            "PLANNED_CORRECTIVE_WORK_NOT_AS_BUILT_NOT_OBSERVED_ACTIVATION"
+        )
+        assert row["unverified_event_leads"] == []
+        assert row["alias_adjudication"].startswith("UNRESOLVED")
     assert pprrd["new_documentary_names"] == [
         "El Descanso", "Parca", "San Jerónimo de Punan"
     ]
     expected_labels = {
         "Las Cruces": "EXISTING_UNMATERIALIZED_DOCUMENTARY_NAME_LEAD_NO_HYDROLOGIC_IDENTITY",
-        "El Descanso": "NEW_DOCUMENTARY_NAME_LEAD_NOT_YET_ADDED_TO_MASTER_LEAD_ROWS",
-        "Parca": "NEW_DOCUMENTARY_NAME_LEAD_NOT_YET_ADDED_TO_MASTER_LEAD_ROWS",
+        "El Descanso": (
+            "EXISTING_UNMATERIALIZED_DOCUMENTARY_NAME_LEAD_NO_HYDROLOGIC_IDENTITY"
+            if added else "NEW_DOCUMENTARY_NAME_LEAD_NOT_YET_ADDED_TO_MASTER_LEAD_ROWS"
+        ),
+        "Parca": (
+            "EXISTING_UNMATERIALIZED_DOCUMENTARY_NAME_LEAD_NO_HYDROLOGIC_IDENTITY"
+            if added else "NEW_DOCUMENTARY_NAME_LEAD_NOT_YET_ADDED_TO_MASTER_LEAD_ROWS"
+        ),
         "Huayaringa": "EXACT_EXISTING_DOCUMENTARY_LABEL_NOT_HYDROLOGIC_IDENTITY",
         "Pedregal": "HOMONYM_OR_DISTINCT_UNIT_UNRESOLVED_NOT_LURIGANCHO_PEDREGAL",
-        "San Jerónimo de Punan": "NEW_DOCUMENTARY_NAME_LEAD_NOT_YET_ADDED_TO_MASTER_LEAD_ROWS",
+        "San Jerónimo de Punan": (
+            "EXISTING_UNMATERIALIZED_DOCUMENTARY_NAME_LEAD_NO_HYDROLOGIC_IDENTITY"
+            if added else "NEW_DOCUMENTARY_NAME_LEAD_NOT_YET_ADDED_TO_MASTER_LEAD_ROWS"
+        ),
     }
     named = pprrd["named_labels"]
     assert len(named) == len(expected_labels)
