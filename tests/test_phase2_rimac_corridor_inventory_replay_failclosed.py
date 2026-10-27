@@ -310,6 +310,52 @@ def test_no_documentary_unit_is_map_publishable_or_has_inferred_routing():
     assert d["map_updates"]["new_collector_reaches_published"] == 0
 
 
+    # The inventory's highest-priority ravines have different *documentary*
+    # receiver roles. Freeze those roles without promoting any to a routed
+    # child -> geodetic outlet -> collector -> overflow connection. In
+    # particular QHuay1 is a near-confluence monitoring anchor, not the
+    # Huaycoloro outlet, and the Santa Eulalia labels do not fix junctions.
+    receiver_role_contract = {
+        "lima_lurigancho_quirio": "RIMAC_DOCUMENTARY_RECEIVER",
+        "lima_lurigancho_pedregal_san_antonio": "RIMAC_DOCUMENTARY_RECEIVER",
+        "lima_huaycoloro": "RIMAC_DOCUMENTARY_NEAR_CONFLUENCE_ANCHOR_NOT_OUTLET",
+        "lima_santa_eulalia_cashahuacra": "SANTA_EULALIA_DOCUMENTARY_RIGHT_BANK_CONTEXT",
+        "lima_santa_eulalia_shingolay": "SANTA_EULALIA_CORRIDOR_UNRESOLVED_LOCAL_CONFLUENCE",
+        "lima_lurigancho_california": "UNKNOWN_NOT_ASSUMED",
+        "lima_lurigancho_rayos_de_sol": "UNKNOWN_NOT_ASSUMED",
+        "lima_lurigancho_carossio": "UNKNOWN_NOT_ASSUMED",
+        "lima_lurigancho_corrales": "UNKNOWN_NOT_ASSUMED",
+        "lima_lurigancho_la_libertad": "UNKNOWN_NOT_ASSUMED",
+        "lima_lurigancho_santo_domingo": "UNKNOWN_NOT_ASSUMED",
+    }
+    by_id = {unit["id"]: unit for unit in d["units"]}
+    assert set(receiver_role_contract) <= set(by_id)
+    for unit_id, role in receiver_role_contract.items():
+        unit = by_id[unit_id]
+        assert unit["receiver_relation"] == role, unit_id
+        assert unit["identity_adjudication"] != "CONFIRMED_HYDROLOGIC_UNIT", unit_id
+        assert unit["outlet_coordinate"] is None, unit_id
+        assert unit["exact_confluence_coordinate"] is None, unit_id
+        assert unit["travel_time_tau"] is None, unit_id
+        assert unit["discharge_q_i"] is None, unit_id
+        assert unit["collector_capacity"] is None, unit_id
+        assert unit["collector_overflow_evidence"] is None, unit_id
+        assert unit["map_publishable"] is False, unit_id
+    pending = d["pending_identity_groups"]
+    for labels in (
+        {"Corrales", "Rayos de Sol"},
+        {"Quirio", "Quirio – Nicolás de Piérola"},
+        {"Pedregal", "San Antonio"},
+        {"Cashahuacra", "Casahuacra"},
+        {"Shingolay", "Chingolay", "Chingaloy"},
+    ):
+        assert any(
+            labels <= set(group["labels"])
+            and "PENDING" in group["status"]
+            for group in pending
+        ), labels
+
+
 def test_ambiguous_names_and_administrative_conflicts_remain_unresolved():
     d = _inventory()
     by_id = {u["id"]: u for u in d["units"]}
