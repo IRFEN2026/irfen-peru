@@ -103,6 +103,16 @@ def validated_geojson_features(payload: dict, context: str) -> list[dict]:
         raise ValueError(f"non-GeoJSON FeatureCollection for {context}")
     if "features" not in payload or not isinstance(payload["features"], list):
         raise ValueError(f"invalid or missing GeoJSON features array for {context}")
+    # ANA may return a truncated FeatureCollection. Never treat it as a
+    # complete candidate search (or as evidence that a child is absent).
+    for location in (payload, payload.get("properties")):
+        if location is None:
+            continue
+        if not isinstance(location, dict):
+            raise ValueError(f"invalid GeoJSON transfer metadata for {context}")
+        if ("exceededTransferLimit" in location
+                and location["exceededTransferLimit"] is not False):
+            raise ValueError(f"incomplete ANA result exceededTransferLimit for {context}")
     for index, feature in enumerate(payload["features"]):
         if not isinstance(feature, dict) or feature.get("type") != "Feature":
             raise ValueError(f"invalid GeoJSON feature at {context}[{index}]")
@@ -124,6 +134,12 @@ def check_geojson_payload_guard() -> None:
         {"type": "FeatureCollection", "features": "[]"},
         {"type": "FeatureCollection", "features": [None]},
         {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": []}]},
+        {"type": "FeatureCollection", "features": [], "exceededTransferLimit": True},
+        {"type": "FeatureCollection", "features": [], "exceededTransferLimit": None},
+        {"type": "FeatureCollection", "features": [], "exceededTransferLimit": "false"},
+        {"type": "FeatureCollection", "features": [], "properties": {"exceededTransferLimit": True}},
+        {"type": "FeatureCollection", "features": [], "properties": {"exceededTransferLimit": None}},
+        {"type": "FeatureCollection", "features": [], "properties": []},
     )
     for payload in invalid:
         try:
@@ -131,9 +147,12 @@ def check_geojson_payload_guard() -> None:
         except ValueError:
             continue
         raise AssertionError(f"malformed GeoJSON accepted: {payload!r}")
-    assert validated_geojson_features(
-        {"type": "FeatureCollection", "features": []}, "offline-regression"
-    ) == []
+    for valid in (
+        {"type": "FeatureCollection", "features": []},
+        {"type": "FeatureCollection", "features": [], "exceededTransferLimit": False},
+        {"type": "FeatureCollection", "features": [], "properties": {"exceededTransferLimit": False}},
+    ):
+        assert validated_geojson_features(valid, "offline-regression") == []
 
 
 def normalize_feature(feature: dict) -> dict:
