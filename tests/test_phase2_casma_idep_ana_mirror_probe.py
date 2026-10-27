@@ -125,6 +125,11 @@ def validate_capture_candidate(raw, code):
     """
     try:
         return candidate(raw, code)
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        # Bounded parser diagnosis only: never echo untrusted source bytes.
+        raise ValueError(
+            f"source candidate rejected code={code}: malformed JSON or encoding"
+        ) from exc
     except ValueError as exc:
         raise ValueError(f"source candidate rejected code={code}: {exc}") from exc
 
@@ -132,6 +137,7 @@ def validate_capture_candidate(raw, code):
 # Only expose fixed, preregistered validator diagnostics in CI logs.
 # Unrecognized ValueError messages may contain untrusted source data.
 SAFE_CANDIDATE_REASONS = frozenset({
+    "malformed JSON or encoding",
     "error or truncated response",
     "not a GeoJSON FeatureCollection",
     "explicit incompatible or unverified CRS",
@@ -277,6 +283,16 @@ class TestCasmaIDEPIndependentMirrorContract(unittest.TestCase):
                          "URLError")
         self.assertEqual(bounded_failure_detail(ValueError("raw source response")),
                          "ValueError")
+        for invalid_raw in (b"not JSON", b"\xff"):
+            with self.assertRaisesRegex(ValueError, "malformed JSON or encoding"):
+                validate_capture_candidate(invalid_raw, CODES[0])
+            try:
+                validate_capture_candidate(invalid_raw, CODES[0])
+            except ValueError as exc:
+                self.assertEqual(
+                    bounded_failure_detail(exc),
+                    "source candidate rejected code=1375961: malformed JSON or encoding",
+                )
 
         self.assertIn("idep.gob.pe", LAYER)
         self.assertIn("ANA_WMS", LAYER)
