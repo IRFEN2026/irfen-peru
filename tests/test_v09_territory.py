@@ -320,6 +320,13 @@ class Browser(unittest.TestCase):
             finally:
                 srv.shutdown()
                 srv.server_close()  # no open socket left to warn inside the next test's output
+                # collect what Playwright / the server leave behind now, so no ResourceWarning lands in the output of
+                # the next test (the browser workflow checks that output line by line)
+                import gc
+                import warnings
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", ResourceWarning)
+                    gc.collect()
 
     def test_navigation_both_regions(self):
         class Quiet(http.server.SimpleHTTPRequestHandler):
