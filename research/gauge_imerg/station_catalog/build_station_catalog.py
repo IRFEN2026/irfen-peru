@@ -30,6 +30,7 @@ from irfen_gauge_imerg.grid import locate  # noqa: E402
 ATLAS = HERE / "senamhi_atlas_annex1_north_v1.json"
 OSCAR = PKG / "retrieval/output_20261026/raw_metadata/oscar_search_PER.json"
 QC = HERE / "qc_codes_seen_v1.json"
+QC_RES = HERE / "qc_resolution/qc_resolution.csv"  # resolución qc → estación (rama 28-oct)
 NORTH = (-7.3, -3.2, -78.8)
 ATLAS_URL = "https://www.senamhi.gob.pe/pdf/anexos-atlas-climatico.pdf"
 OSCAR_URL = "https://oscar.wmo.int/surface/rest/api/search/station?territoryName=PER"
@@ -64,6 +65,12 @@ def main():
     atlas = json.loads(ATLAS.read_text(encoding="utf-8"))
     oscar = json.loads(OSCAR.read_text(encoding="utf-8"))["stationSearchResults"]
     qc = json.loads(QC.read_text(encoding="utf-8"))
+    links = {}  # código Atlas → fila de resolución, SOLO para correspondencias confirmadas por el usuario y corroboradas
+    if QC_RES.is_file():
+        with QC_RES.open(encoding="utf-8") as fh:
+            for r in csv.DictReader(fh):
+                if r["status"] == "CONFIRMADO_USUARIO_CORROBORADO" and r.get("e3_atlas_code"):
+                    links[r["e3_atlas_code"]] = r
     confirmed = []
     for r in atlas["rows"]:
         confirmed.append({
@@ -78,6 +85,13 @@ def main():
             "evidence_retrieved": atlas["source"]["retrieved_on"],
             "evidence_integrity": "TRANSCRIPCIÓN DE LECTURA WEB; PDF original no archivado (sin SHA-256)",
             "notes": "'Ð' corregido a 'Ñ' (artefacto de codificación del PDF)"})
+        lk = links.get(r["code"])
+        if lk:
+            confirmed[-1].update(
+                qc_file_code=lk["qc_file_code"], qc_link_status="CONFIRMADO_USUARIO_CORROBORADO",
+                notes=confirmed[-1]["notes"] + f"; qc ↔ estación: E1 usuario (descarga desde la página de la estación "
+                      f"en el portal) + E2 catálogo de terceros senamhiR 2018, ID {lk['rule_station_id']} "
+                      f"(lat {lk['lat']}, lon {lk['lon']}, {lk['altitude_m']} m) + E3 esta fila; ver qc_resolution/")
     for it in oscar:
         la, lo = float(it["latitude"]), float(it["longitude"])
         if not (NORTH[0] <= la <= NORTH[1] and lo <= NORTH[2]) or it.get("stationTypeCode") != "landOceanSurface":
@@ -117,9 +131,14 @@ def main():
                                         "mismo nombre; coordenadas compatibles con el redondeo a 0,1°"),
                              "blocking": "falta documento SENAMHI que relacione el código del Atlas con el WIGOS; "
                                          "puede tratarse de una estación convencional y otra automática en el mismo sitio"})
+    resolved_codes = set()
+    if QC_RES.is_file():
+        with QC_RES.open(encoding="utf-8") as fh:
+            resolved_codes = {r["qc_file_code"]: r["status"] for r in csv.DictReader(fh)}
     pending = [{"qc_file_code": q["code"], "file_name_example": q["file_name"], "seen_in": q["seen_in"],
                 "searched_in": "códigos del Anexo 1 del Atlas SENAMHI; identificadores WIGOS de OSCAR (norte)",
-                "match_found": False, "status": "NO_IDENTIFICADO",
+                "match_found": q["code"] in resolved_codes,
+                "status": resolved_codes.get(q["code"], "NO_IDENTIFICADO"),
                 "note": "el nombre del archivo no prueba estación, ubicación ni departamento"} for q in qc["codes"]]
     for name, rows, cols in (("catalog_confirmed.csv", confirmed, COLS),
                              ("catalog_candidates.csv", cand, list(cand[0]) if cand else ["status"]),
