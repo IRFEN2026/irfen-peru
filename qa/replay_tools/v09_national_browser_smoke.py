@@ -32,7 +32,7 @@ def check(page, origin: str, width: int, height: int) -> None:
     assert page.locator("#zones [data-zone]").count() > 0, (width, "Tumbes evidence")
     assert "400" in page.inner_text("#stats"), (width, "inventario")
     assert "22" in page.inner_text("#stats"), (width, "zonas")
-    assert "vigilancia" in page.get_attribute('#irfen-nav a[aria-current="page"]', "data-section"), width
+    assert page.get_attribute('#irfen-nav a[aria-current="page"]', "data-section") == "nacional", width
     assert page.locator("main svg, main canvas").count() == 0, (width, "no invented coordinates")
     page.click('button[data-dep="Áncash"]')
     assert "34 registros documentales" in page.inner_text("#dept-summary"), (width, "Áncash")
