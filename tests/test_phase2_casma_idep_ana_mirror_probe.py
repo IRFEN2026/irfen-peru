@@ -130,6 +130,11 @@ def candidate(raw, code):
                 if not (-180 <= x <= 180 and -90 <= y <= 90):
                     raise ValueError("position outside global lon/lat range")
                 xy.append((x, y))
+            # A closed four-position ring can still contain only two distinct
+            # vertices. Reject this structurally degenerate candidate at Gate A;
+            # this is not a substitute for independent GEOS Gate C topology QA.
+            if len({tuple(point[:2]) for point in ring}) < 3:
+                raise ValueError("degenerate polygon ring")
     if not xy:
         raise ValueError("empty geometry")
     return {
@@ -178,6 +183,7 @@ SAFE_CANDIDATE_REASONS = frozenset({
     "missing polygon coordinates",
     "missing rings",
     "invalid or unclosed ring",
+    "degenerate polygon ring",
     "invalid position",
     "nonfinite position",
     "position outside global lon/lat range",
@@ -276,6 +282,8 @@ class TestCasmaIDEPIndependentMirrorContract(unittest.TestCase):
         for geometry in (
             {"type": "LineString", "coordinates": [[0, 0], [1, 1]]},
             {"type": "Polygon", "coordinates": [[[0, 0], [1, 1], [0, 1]]]},
+            # Closed and four positions, but only two distinct vertices.
+            {"type": "Polygon", "coordinates": [[[0, 0], [1, 1], [0, 0], [0, 0]]]},
         ):
             obj = json.loads(self.sample())
             obj["features"][0]["geometry"] = geometry
