@@ -1,5 +1,5 @@
 """Local review smoke test of the private v0.9 map (RESEARCH_ONLY / TEST_ONLY). Serves site/ on 127.0.0.1 only, opens
-the panel and the territorial viewer in Chromium (Playwright) at desktop and mobile size, walks the main interactions
+the cover, the panel, the territorial viewer and the national inventory in Chromium (Playwright) at desktop and mobile size, walks the main interactions
 and reports JavaScript errors, failed or external requests, horizontal overflow and forbidden states.
 
     python qa/replay_tools/v09_local_review_smoke.py            # prints a JSON report; exit 1 on any problem
@@ -116,6 +116,22 @@ def review(page, origin: str, name: str) -> dict:
     page.click("a[href='index.html']")
     page.wait_for_selector("#chips .chip", timeout=20000)
     c["nav_viewer_to_panel"] = page.url.endswith("index.html")
+    # national documentary inventory (inventario.html): every master row, fichas also without GIS, nothing drawn
+    page.click("#irfen-nav a[data-section=inventario]")
+    page.wait_for_selector("body[data-ready='1']", timeout=20000)
+    c["national_rows"] = int(page.inner_text("#n-shown"))
+    c["national_map_eligible"] = int(page.inner_text("#n-map"))
+    page.select_option("#f-geo", "REPRODUCIBLE")
+    c["national_reproducible"] = int(page.inner_text("#n-shown"))
+    page.click("#f-clear")
+    page.select_option("#f-geo", "SIN_GEOMETRIA")
+    page.click("#rows [data-open]")
+    page.wait_for_selector("#ficha:not([hidden])")
+    c["national_ficha_no_gis_sections"] = page.locator("#ficha [data-section]").count()
+    c["national_ficha_reasons"] = page.locator("#ficha-reasons li").count()
+    c["national_drawn_elements"] = page.locator("main svg, main canvas, #ficha svg, #ficha canvas").count()
+    c["national_overflow_px"] = overflow()
+    page.keyboard.press("Escape")
 
     out["js_errors"], out["failed_local_requests"], out["external_requests_blocked"] = errors, failed, sorted(set(external))
     if errors:
@@ -126,7 +142,9 @@ def review(page, origin: str, name: str) -> dict:
         out["problems"].append("negative age shown")
     if c["cover_indicators"] != 3 or not c["cover_shapes"] or not c["cover_no_negative_age"]:
         out["problems"].append("cover page")
-    if c["panel_overflow_px"] > 0 or c["viewer_overflow_px"] > 0 or c["cover_overflow_px"] > 0:
+    if c["national_rows"] != 400 or c["national_map_eligible"] or c["national_drawn_elements"] or c["national_ficha_no_gis_sections"] < 9:
+        out["problems"].append("national inventory page")
+    if c["panel_overflow_px"] > 0 or c["viewer_overflow_px"] > 0 or c["cover_overflow_px"] > 0 or c["national_overflow_px"] > 0:
         out["problems"].append("horizontal overflow")
     if not c["legend_present"]:
         out["problems"].append("legend missing")

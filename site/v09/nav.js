@@ -3,7 +3,7 @@
    Cinco secciones sobre las páginas existentes, sin cambiar sus URL:
      Resumen               -> resumen.html
      Mapa                  -> territorio.html
-     Quebradas e inventario-> territorio.html#inventario
+     Quebradas e inventario-> inventario.html (inventario documental nacional; el visor conserva su listado regional)
      Lluvia y avisos       -> index.html
      Evidencia y avances   -> resumen.html#avances
    Solo enlaces: no lee datos, no calcula estados. Un enlace cuya página no está disponible (p. ej. la puerta de
@@ -12,14 +12,15 @@
   const SECTIONS = [
     {id: "resumen", label: "Resumen", href: "resumen.html"},
     {id: "mapa", label: "Mapa", href: "territorio.html"},
-    {id: "inventario", label: "Quebradas e inventario", href: "territorio.html#inventario"},
+    {id: "inventario", label: "Quebradas e inventario", href: "inventario.html"},
     {id: "lluvia", label: "Lluvia y avisos", href: "index.html"},
     {id: "avances", label: "Evidencia y avances", href: "resumen.html#avances"},
   ];
   function current() {
     const page = (location.pathname.split("/").pop() || "index.html").toLowerCase();
     const hash = location.hash.replace("#", "").toLowerCase();
-    if (page === "territorio.html") return hash === "inventario" ? "inventario" : "mapa";
+    if (page === "territorio.html") return "mapa";
+    if (page === "inventario.html") return "inventario";
     if (page === "resumen.html") return hash === "avances" ? "avances" : "resumen";
     return "lluvia";
   }

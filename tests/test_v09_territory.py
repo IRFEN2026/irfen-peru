@@ -282,6 +282,145 @@ process.stdout.write(JSON.stringify(out));"""
         self.assertNotIn("hourly:[]", cover.replace(" ", ""))  # never fake an empty forecast to read a status
 
 
+INV_SPEC = importlib.util.spec_from_file_location("v09_build_inventory_view", ROOT / "scripts/v09_build_inventory_view.py")
+INV = importlib.util.module_from_spec(INV_SPEC)
+INV_SPEC.loader.exec_module(INV)
+INV_VIEW = json.loads(INV.OUT.read_text(encoding="utf-8"))
+MASTER = json.loads(INV.MASTER.read_text(encoding="utf-8"))
+INV_HTML = (ROOT / "site/v09/inventario.html").read_text(encoding="utf-8")
+
+
+class InventoryMasterView(unittest.TestCase):
+    """P0-B: read-only view of the national documentary inventory (site/v09/inventario.html). Every row of the master
+    in main, nothing added from open PRs, no geometry or coordinates, nothing publishable."""
+
+    def test_view_is_rebuilt_from_the_master_only(self):
+        import contextlib
+        import io
+        with contextlib.redirect_stdout(io.StringIO()):  # keep the verbose test log one line per test
+            self.assertEqual(INV.main(["--check"]), 0)
+        self.assertEqual(INV_VIEW["source"]["path"], "config/phase2_national_inventory_completeness_audit_v0_1.json")
+        self.assertEqual(INV_VIEW["source"]["sha256"], hashlib.sha256(INV.MASTER.read_bytes()).hexdigest())
+        self.assertEqual(INV_VIEW["other_inputs"], [])
+        code = (ROOT / "scripts/v09_build_inventory_view.py").read_text(encoding="utf-8").split('"""', 2)[2]  # code, not docstring
+        self.assertEqual(sorted(re.findall(r'ROOT / "([^"]+)"', code)),
+                         ["config/phase2_national_inventory_completeness_audit_v0_1.json", "site/data/v09/inventory_master_v0_1.json"])
+        for other in ("reconciliation", "ledger", "territory_v0_1", "inventory_annotations", "write_text(json.dumps(doc"):
+            self.assertFalse(other in code, other)
+        self.assertEqual(code.count(".write_text("), 1)  # only the view is written; the master is never touched
+
+    def test_every_master_row_once_and_nothing_else(self):
+        ids = [r["inventory_id"] for r in MASTER["candidates"]]
+        self.assertEqual(len(ids), 400)
+        self.assertEqual([r["id"] for r in INV_VIEW["rows"]], ids)
+        self.assertEqual(len(set(ids)), len(ids))
+        s = INV_VIEW["summary"]
+        self.assertEqual(s["rows"], 400)
+        count = lambda k: {v: sum(1 for r in MASTER["candidates"] if r[k] == v) for v in {r[k] for r in MASTER["candidates"]}}
+        self.assertEqual(s["corridors"], count("corridor"))
+        self.assertEqual(s["departments"], count("department"))
+        self.assertEqual(s["identity_state"], count("suggested_state"))
+        alias_ids = {i for g in INV_VIEW["alias_groups"] for i in g["inventory_ids"]}
+        self.assertLessEqual(alias_ids, set(ids))  # alias groups never introduce rows
+
+    def test_fields_are_copied_not_reinterpreted(self):
+        for m, r in zip(MASTER["candidates"], INV_VIEW["rows"]):
+            self.assertEqual(r["name"], m["documentary_name"])
+            self.assertEqual(r["variants"], m.get("name_variants_observed") or [])
+            for a, b in (("department", "department"), ("province", "province"), ("district", "district"), ("corridor", "corridor"),
+                         ("parent_basin_or_system", "parent_basin_or_system"), ("row_role", "row_role")):
+                self.assertEqual(r[a], m.get(b), (r["id"], a))
+            self.assertEqual(r["identity"]["state"], m["suggested_state"])
+            self.assertEqual(r["identity"]["flags"], m.get("state_flags") or [])
+            self.assertEqual(r["events"]["verified"], m.get("verified_event_dates") or [])
+            self.assertEqual(r["events"]["leads_unverified"], m.get("event_lead_dates_unverified") or [])
+            self.assertEqual([e["source_id"] for e in r["evidence"]], [e.get("source_id") for e in m.get("evidence") or []])
+            self.assertEqual([e["url"] for e in r["evidence"]], [e.get("url") for e in m.get("evidence") or []])
+            self.assertEqual([e["text_verified"] for e in r["evidence"]], [e.get("source_text_verified") is True for e in m.get("evidence") or []])
+            for e in r["evidence"]:
+                self.assertIn(e["source_id"], INV_VIEW["sources"])
+
+    def test_nothing_publishable_no_coordinates_no_priority(self):
+        for k, v in INV.EXPECTED.items():
+            self.assertEqual(INV_VIEW[k], v, k)
+        self.assertIs(INV_VIEW["map_publishable"], False)
+        self.assertIs(INV_VIEW["public_alerting"], False)
+        self.assertEqual(INV_VIEW["summary"]["map_eligible"], 0)
+        self.assertTrue(all(r["map"]["eligible"] is False for r in INV_VIEW["rows"]))
+        forbidden = {"coordinates", "geometry_coordinates", "geojson", "easting_m", "northing_m", "latitude", "longitude", "lat", "lon",
+                     "source_reference_point", "priority", "bbox", "centroid"}
+        def walk(node):
+            if isinstance(node, dict):
+                self.assertFalse(forbidden & set(node), forbidden & set(node))
+                for v in node.values():
+                    walk(v)
+            elif isinstance(node, list):
+                for v in node:
+                    walk(v)
+        walk(INV_VIEW)
+        # the master has ANA population reference points; the view only says the source gives one
+        with_point = sum(1 for m in MASTER["candidates"] for e in m.get("evidence") or [] if e.get("source_reference_point"))
+        self.assertGreater(with_point, 0)
+        self.assertEqual(sum(1 for r in INV_VIEW["rows"] for e in r["evidence"] if e["source_gives_reference_point"]), with_point)
+
+    def test_geometry_outlet_and_blocking_are_separate_and_agree_with_the_viewer(self):
+        geo = INV_VIEW["summary"]["geometry"]
+        self.assertEqual(geo, {"REPRODUCIBLE": 3, "SOLO_INDICIO": 20, "SIN_GEOMETRIA": 377})
+        same = {"REPRODUCIBLE": "REPRODUCIBLE", "SOLO_INDICIO": "PENDIENTE", "SIN_GEOMETRIA": "SIN_GEOMETRIA"}
+        viewer = {r["id"]: r for r in BUNDLE["inventory_rows"]}
+        rows = {r["id"]: r for r in INV_VIEW["rows"]}
+        self.assertLessEqual(set(viewer), set(rows))
+        for i, v in viewer.items():
+            self.assertEqual(same[rows[i]["geometry"]["state"]], v["geometry"], i)
+        for m in MASTER["candidates"]:
+            r = rows[m["inventory_id"]]
+            self.assertEqual(r["geometry"]["state"] == "REPRODUCIBLE", (m.get("reproducible_geometry") or {}).get("exists") is True)
+            self.assertEqual(r["outlet"]["state"] == "ACREDITADO", (m.get("reproducible_outlet_or_confluence") or {}).get("exists") is True)
+            reasons = r["map"]["blocking_reasons"]
+            self.assertTrue(reasons, r["id"])
+            self.assertLessEqual(set(reasons), set(INV_VIEW["blocking_reasons_es"]))
+            self.assertIn("QA_INDEPENDIENTE_PENDIENTE", reasons)
+            self.assertEqual("SIN_GEOMETRIA_REPRODUCIBLE" in reasons, r["geometry"]["state"] == "SIN_GEOMETRIA")
+            self.assertEqual("GEOMETRIA_SOLO_INDICIO" in reasons, r["geometry"]["state"] == "SOLO_INDICIO")
+            self.assertEqual("OUTLET_NO_ACREDITADO" in reasons, r["outlet"]["state"] != "ACREDITADO")
+            self.assertEqual("CUENCA_PADRE_NO_DOCUMENTADA" in reasons, not m.get("parent_basin_or_system"))
+            if r["identity"]["alias_groups"] or r["unnamed_in_source"]:
+                self.assertIn("IDENTIDAD_POR_ADJUDICAR", reasons)
+
+    def test_builder_refuses_a_master_with_changed_guards(self):
+        import tempfile
+        doc = dict(MASTER, production_use=True)
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "master.json"
+            p.write_text(json.dumps(doc), encoding="utf-8")
+            with self.assertRaises(SystemExit):
+                INV.build(p)
+
+    def test_page_is_static_read_only_and_draws_nothing(self):
+        page = INV_HTML
+        self.assertIn('<script src="nav.js"></script>', page)
+        self.assertIn('<div id="irfen-nav"></div>', page)
+        self.assertIn('name="robots" content="noindex"', page)
+        self.assertIn("../data/v09/inventory_master_v0_1.json", page)
+        self.assertNotRegex(page, r"https?://(?!/)")  # no external resource; source URLs come from the data
+        for drawn in ("<svg", "<canvas", "leaflet", "L.map", "<img", "getContext("):
+            self.assertNotIn(drawn, page)
+        self.assertNotIn("no es alerta", page.lower())  # shown once, by the shared bar
+        self.assertNotRegex(page.lower(), r"inventario (nacional |territorial )?completo|censo completo|todas las quebradas del per")
+        self.assertIn("map_publishable", page)
+        for key in INV.GUARD_KEYS:
+            self.assertIn(f'"{key}"', page)
+        self.assertNotIn("priority", page)
+        self.assertIn('rel="noopener noreferrer"', page)
+        nav = (ROOT / "site/v09/nav.js").read_text(encoding="utf-8")
+        self.assertIn('href: "inventario.html"', nav)
+        spec = importlib.util.spec_from_file_location("gate", ROOT / "scripts/v09_pages_publication_gate.py")
+        gate = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(gate)
+        self.assertIn("site/v09/inventario.html", gate.TERRITORY_PATHS)
+        self.assertIn("site/data/v09/inventory_master_v0_1.json", gate.TERRITORY_PATHS)
+
+
 @unittest.skipUnless(BROWSER, "Playwright/Chromium not installed; runs in workflow v09-dashboard-browser-test.yml")
 class Browser(unittest.TestCase):
     def test_cover_page_states_map_and_navigation(self):
@@ -307,6 +446,7 @@ class Browser(unittest.TestCase):
             (site / "data/v09").mkdir(parents=True)
             shutil.copy(T.OUT, site / "data/v09/territory_v0_1.json")
             shutil.copy(ROOT / "site/data/v09/dashboard_v0_1.json", site / "data/v09/dashboard_v0_1.json")
+            shutil.copy(INV.OUT, site / "data/v09/inventory_master_v0_1.json")
             srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Quiet, directory=str(site)))
             threading.Thread(target=srv.serve_forever, daemon=True).start()
             origin = f"http://127.0.0.1:{srv.server_port}/"
@@ -362,9 +502,13 @@ class Browser(unittest.TestCase):
                     self.assertEqual(imerg_state(page), "old")
                     # navigation: inventory deep link, searches with and without geometry, region link, panel
                     page.click("#irfen-nav a[data-section=inventario]")
+                    page.wait_for_selector("body[data-ready='1']")
+                    self.assertTrue(page.url.endswith("v09/inventario.html"))
+                    self.assertEqual(page.get_attribute("#irfen-nav a[data-section=inventario]", "aria-current"), "page")
+                    page.goto(origin + "v09/territorio.html#inventario")  # the viewer keeps its regional list
                     page.wait_for_selector("#rows-table tr")
                     self.assertFalse(page.is_hidden("#view-inventario"))
-                    self.assertEqual(page.get_attribute("#irfen-nav a[data-section=inventario]", "aria-current"), "page")
+                    self.assertEqual(page.get_attribute("#irfen-nav a[data-section=mapa]", "aria-current"), "page")
                     for row, label in ((with_geo, "reproducible"), (no_geo, "sin geometr")):
                         page.fill("#f-text", row["id"].split("_")[-1])
                         page.wait_for_timeout(150)
@@ -534,6 +678,145 @@ class Browser(unittest.TestCase):
             finally:
                 srv.shutdown()
 
+    def test_national_inventory_rows_filters_and_fichas(self):
+        """P0-B en escritorio y móvil: las 400 filas del maestro, búsqueda y filtros, ficha de una fila con geometría
+        reproducible y de una sin GIS (fuera del visor), alias por comprobar enlazados, enlace profundo, paginación,
+        nada dibujado y nada publicable. Funciona también si la puerta retira el paquete territorial."""
+        import shutil
+        import tempfile
+
+        class Quiet(http.server.SimpleHTTPRequestHandler):
+            def log_message(self, *a):
+                pass
+
+        rows = INV_VIEW["rows"]
+        viewer_ids = {r["id"] for r in BUNDLE["inventory_rows"]}
+        with_geo = next(r for r in rows if r["geometry"]["state"] == "REPRODUCIBLE")
+        no_gis = next(r for r in rows if r["geometry"]["state"] == "SIN_GEOMETRIA" and r["id"] not in viewer_ids
+                      and any(e["url"] for e in r["evidence"]))
+        aliased = next(r for r in rows if r["identity"]["alias_groups"])
+        group = INV_VIEW["alias_groups"][aliased["identity"]["alias_groups"][0]]
+        other = next(i for i in group["inventory_ids"] if i != aliased["id"])
+        leads = sum(1 for r in rows if r["events"]["leads_unverified"])
+        lima = INV_VIEW["summary"]["departments"]["Lima"]
+        with tempfile.TemporaryDirectory() as d:
+            site = Path(d) / "site"
+            shutil.copytree(ROOT / "site/v09", site / "v09")
+            (site / "data/v09").mkdir(parents=True)
+            for name in ("territory_v0_1.json", "dashboard_v0_1.json", "inventory_master_v0_1.json"):
+                shutil.copy(ROOT / "site/data/v09" / name, site / "data/v09" / name)
+            srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Quiet, directory=str(site)))
+            threading.Thread(target=srv.serve_forever, daemon=True).start()
+            origin = f"http://127.0.0.1:{srv.server_port}/"
+            try:
+                with sync_playwright() as p:
+                    b = p.chromium.launch(args=["--no-proxy-server"])
+                    errors = []
+
+                    def open_inv(viewport, hash_="", track=True):
+                        page = b.new_page(viewport=viewport)
+                        if track:
+                            page.on("pageerror", lambda e: errors.append(str(e)))
+                            page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+                        page.route("**/*", lambda r: r.continue_() if r.request.url.startswith(origin) else r.abort())
+                        page.goto(origin + "v09/inventario.html" + hash_)
+                        page.wait_for_selector("body[data-ready='1']")
+                        return page
+
+                    shown = lambda page: int(page.inner_text("#n-shown"))
+                    overflow = lambda page: page.evaluate("document.documentElement.scrollWidth - window.innerWidth")
+                    drawn_in = lambda page, sel: page.locator(f"{sel} svg, {sel} canvas, {sel} img").count()
+                    for name, vp in (("desktop", dict(width=1440, height=900)), ("mobile", dict(width=390, height=844))):
+                        page = open_inv(vp)
+                        self.assertEqual(shown(page), 400, name)
+                        self.assertIn("de 400 registros documentales", page.inner_text("#count"))
+                        self.assertEqual(page.inner_text("#n-map"), "0")
+                        self.assertEqual(page.locator("#rows tbody tr").count(), 50, name)  # paginated
+                        self.assertEqual(page.get_attribute("#irfen-nav a[data-section=inventario]", "aria-current"), "page")
+                        self.assertEqual(page.inner_text("body").lower().count("no es alerta"), 1, name)
+                        self.assertLessEqual(overflow(page), 1, name)
+                        self.assertEqual(drawn_in(page, "main"), 0, name)
+                        self.assertEqual(page.text_content("[data-guard=map_publishable]"), "false")  # inside the closed <details>
+                        # filters
+                        page.select_option("#f-geo", "REPRODUCIBLE")
+                        self.assertEqual(shown(page), 3, name)
+                        page.click("#f-clear")
+                        self.assertEqual(shown(page), 400)
+                        page.select_option("#f-dep", "Lima")
+                        self.assertEqual(shown(page), lima)
+                        page.select_option("#f-evt", "LEAD")
+                        self.assertEqual(shown(page), sum(1 for r in rows if r["department"] == "Lima" and r["events"]["leads_unverified"]))
+                        page.click("#f-clear")
+                        page.select_option("#f-evt", "LEAD")
+                        self.assertEqual(shown(page), leads)
+                        page.select_option("#f-block", "SIN_GEOMETRIA_REPRODUCIBLE")
+                        self.assertEqual(shown(page), sum(1 for r in rows if r["events"]["leads_unverified"]
+                                                          and "SIN_GEOMETRIA_REPRODUCIBLE" in r["map"]["blocking_reasons"]))
+                        page.click("#f-clear")
+                        page.click("#next")
+                        self.assertIn("Página 2", page.inner_text("#pager"))
+                        self.assertEqual(page.get_attribute("#rows tbody tr", "data-id"), rows[50]["id"])
+                        # ficha of a row with reproducible geometry, opened from a search
+                        page.fill("#f-q", with_geo["name"])
+                        page.click(f"#rows [data-open='{with_geo['id']}']")
+                        page.wait_for_selector("#ficha:not([hidden])")
+                        self.assertIn(with_geo["id"], page.url)
+                        geo_txt = page.inner_text("#ficha [data-section=geometria]")
+                        self.assertIn("Reproducible", geo_txt)
+                        reasons = page.eval_on_selector_all("#ficha-reasons li", "els => els.map(e => e.dataset.reason)")
+                        self.assertEqual(reasons, with_geo["map"]["blocking_reasons"])
+                        self.assertNotIn("SIN_GEOMETRIA_REPRODUCIBLE", reasons)
+                        self.assertEqual(page.locator("#ficha [data-viewer-link]").count(), 1)
+                        self.assertEqual(drawn_in(page, "#ficha"), 0)
+                        self.assertLessEqual(overflow(page), 1, name)
+                        page.keyboard.press("Escape")
+                        self.assertTrue(page.is_hidden("#ficha"))
+                        self.assertNotIn("#id=", page.url)
+                        page.close()
+                        # deep link: a row without GIS, outside the viewer regions
+                        page = open_inv(vp, "#id=" + no_gis["id"])
+                        self.assertTrue(page.is_visible("#ficha"))
+                        self.assertEqual(page.inner_text("#ficha-title"), no_gis["name"])
+                        self.assertEqual(page.locator("#ficha [data-section=procedencia] .ev").count(), len(no_gis["evidence"]))
+                        self.assertGreater(page.locator("#ficha [data-section=procedencia] a[rel='noopener noreferrer']").count(), 0)
+                        reasons = page.eval_on_selector_all("#ficha-reasons li", "els => els.map(e => e.dataset.reason)")
+                        self.assertIn("SIN_GEOMETRIA_REPRODUCIBLE", reasons)
+                        self.assertIn("OUTLET_NO_ACREDITADO", reasons)
+                        self.assertIn("Fuera de las regiones del visor", page.inner_text("#ficha [data-section=visor]"))
+                        self.assertIn("Sin geometría", page.inner_text("#ficha [data-section=geometria]"))
+                        self.assertEqual(drawn_in(page, "#ficha"), 0)
+                        for section in ("identidad", "ubicacion", "procedencia", "alias", "geometria", "outlet", "eventos", "bloqueo", "visor"):
+                            self.assertEqual(page.locator(f"#ficha [data-section={section}]").count(), 1, section)
+                        page.close()
+                        # pending aliases: shown as «por comprobar» and linked, never merged
+                        page = open_inv(vp, "#id=" + aliased["id"])
+                        self.assertGreater(page.locator("#ficha [data-alias-group]").count(), 0)
+                        page.click(f"#ficha [data-section=alias] a[href='#id={other}']")
+                        page.wait_for_function(f"document.getElementById('ficha-title').textContent !== {json.dumps(aliased['name'])}")
+                        self.assertEqual(page.inner_text("#ficha-title"), next(r["name"] for r in rows if r["id"] == other))
+                        self.assertEqual(shown(page), 400)  # still 400: an alias is not a new row
+                        page.close()
+                    # the territorial bundle withheld by the publication gate: the inventory still works, nothing in the viewer
+                    page = open_inv(dict(width=1440, height=900), track=False)
+                    page.close()
+                    page = b.new_page()
+                    page.route("**/territory_v0_1.json", lambda r: r.fulfill(status=404, body=""))
+                    page.route("**/*", lambda r: r.fallback() if r.request.url.startswith(origin) else r.abort())
+                    page.goto(origin + "v09/inventario.html#id=" + with_geo["id"])
+                    page.wait_for_selector("body[data-ready='1']")
+                    self.assertEqual(shown(page), 400)
+                    self.assertIn("Fuera de las regiones del visor", page.inner_text("#ficha [data-section=visor]"))
+                    self.assertIn("(0)", page.inner_text("#f-viewer option[value=IN]"))
+                    self.assertEqual(errors, [])
+                    b.close()
+            finally:
+                srv.shutdown()
+                srv.server_close()
+                import gc
+                import warnings
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", ResourceWarning)
+                    gc.collect()
 
 if __name__ == "__main__":
     unittest.main()
