@@ -1841,3 +1841,38 @@ def test_cross_source_santa_eulalia_names_do_not_inherit_events_or_identity():
     assert d["counts"]["total_documentary_rows"] == 51
     assert len(d["official_unmaterialized_name_leads"]) == 50
     assert d["counts"]["confirmed_unique_hydrologic_unit_count"] is None
+
+    # The 2016 La Ronda terrain and surface models are TWO complementary
+    # catalog products for ONE flight coverage, not two new ravines.
+    # Do not silently merge them into the six original catalog products.
+    supplementary = rpas["supplementary_terrain_products"]
+    assert len(supplementary) == 2
+    by_supplementary_id = {p["catalog_id"]: p for p in supplementary}
+    assert len(by_supplementary_id) == 2
+    assert set(by_supplementary_id) == {6739, 6740}
+    assert set(by_supplementary_id).isdisjoint(by_catalog_id)
+    assert by_supplementary_id[6739]["product"] == "DIGITAL_TERRAIN_MODEL"
+    assert by_supplementary_id[6740]["product"] == "DIGITAL_SURFACE_MODEL"
+    for catalog_id, product in by_supplementary_id.items():
+        assert product["url"] == (
+            f"https://sigrid.cenepred.gob.pe/sigridv3/documento/{catalog_id}"
+        )
+        assert product["documentary_scope"] == "La Ronda-Chosica, distrito Lurigancho"
+        assert product["flight_date"] == "2016-06-07"
+        assert product["catalog_area_ha"] == 89.68
+        assert product["spatial_resolution_cm"] == 6.34
+        assert product["catalog_format"] == "SID"
+        assert product["ground_control_points_reported"] is True
+    assert rpas["supplementary_products_source_role"] == (
+        "SIGRID_CATALOG_ONLY_SAME_LA_RONDA_2016_COVERAGE_NOT_NEW_HYDROLOGIC_UNITS"
+    )
+    assert rpas["supplementary_original_bytes_or_sha256"] is None
+    assert rpas["supplementary_reproducible_channel_or_outlet_geometry"] is None
+    assert rpas["supplementary_count_increment"] == 0
+    # Catalog district labels do not resolve La Ronda's conflicting
+    # administrative attributions, receiver chain, or exact confluence.
+    assert rpas["receiver_chain_adjudicated"] is False
+    assert rpas["exact_confluence"] is None
+    assert rpas["map_publishable"] is False
+    assert d["counts"]["total_documentary_rows"] == 51
+    assert d["counts"]["confirmed_unique_hydrologic_unit_count"] is None
