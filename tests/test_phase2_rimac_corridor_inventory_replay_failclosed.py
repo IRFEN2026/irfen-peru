@@ -1666,6 +1666,52 @@ def test_cross_source_santa_eulalia_names_do_not_inherit_events_or_identity():
     assert evar["aggregate_historical_years_mentioned"] == [2012, 2015, 2017, 2023]
     assert evar["aggregate_years_are_not_verified_unit_events"] is True
     assert evar["verified_unit_event_dates"] == []
+    # The printed UTM point locates the EVAR study area, NOT the stream,
+    # catchment, outlet or junction. Its source PDF bytes are not frozen.
+    study_point = evar["study_area_reference_coordinate_not_outlet"]
+    assert "p. 18" in study_point["source_locator"]
+    assert study_point["source_pdf_text_read_via_web_index"] is True
+    assert study_point["source_pdf_bytes_archived"] is False
+    assert study_point["coordinate_role"] == (
+        "STUDY_AREA_REFERENCE_POINT_NOT_CHANNEL_OR_CATCHMENT_GEOMETRY_NOT_OUTLET_NOT_CONFLUENCE"
+    )
+    assert study_point["crs_as_printed"] == "UTM WGS84 Zona 18L"
+    assert study_point["easting_m_as_printed"] == 305694.74
+    assert study_point["northing_m_as_printed"] == 8678671.62
+    assert study_point["not_valid_for_map_publishable_channel"] is True
+
+    # Secondary retrospective text says eleven activations but lists only
+    # ten names; do not manufacture an eleventh unit or ten verified events.
+    history = evar["secondary_2012_historical_activation_narrative"]
+    assert "p. 14" in history["source_locator"]
+    assert history["source_pdf_text_read_via_web_index"] is True
+    assert history["original_pdf_sha256"] is None
+    assert history["reported_event_date"] == "2012-04-05"
+    assert history["reported_corridor_chainage_km_range"] == [27, 42]
+    assert history["reported_activated_ravines_total"] == 11
+    assert history["names_listed_as_left_bank_of_rimac"] == [
+        "La Cantuta", "Santo Domingo", "Mariscal Castilla", "La Ronda", "California"
+    ]
+    assert history["names_listed_as_right_bank_of_rimac"] == [
+        "Quirio", "Pedregal", "Libertad", "Carosio", "Corrales"
+    ]
+    listed = (history["names_listed_as_left_bank_of_rimac"]
+              + history["names_listed_as_right_bank_of_rimac"])
+    assert len(listed) == history["explicitly_listed_name_count"] == 10
+    assert history["reported_activated_ravines_total"] != len(listed)
+    assert history["reported_count_vs_listed_names_mismatch"] == (
+        "UNRESOLVED_11_REPORTED_VS_10_NAMES_LISTED_DO_NOT_INFER_MISSING_NAME"
+    )
+    assert history["evidence_role"] == (
+        "SECONDARY_RETROSPECTIVE_EVENT_LEAD_NOT_PRIMARY_UNIT_EVENT_VERIFICATION"
+    )
+    assert history["per_named_ravine_event_verified"] is False
+    assert history["alias_adjudication_from_this_source"] == "NONE_SECTOR_AND_SPELLING_NOT_IDENTITY"
+    assert history["independent_outlet_or_confluence_evidence"] is None
+    assert history["new_confirmed_hydrologic_unit_count_increment"] == 0
+    assert history["new_verified_unit_event_count_increment"] == 0
+    assert history["map_publishable"] is False
+    assert evar["verified_unit_event_dates"] == []
     afluentes = evar["numbered_affluent_design_refs"]
     assert len(afluentes) == 7
     assert [row["label"] for row in afluentes] == [
