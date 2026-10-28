@@ -319,6 +319,7 @@ class Browser(unittest.TestCase):
                     b.close()
             finally:
                 srv.shutdown()
+                srv.server_close()  # no open socket left to warn inside the next test's output
 
     def test_navigation_both_regions(self):
         class Quiet(http.server.SimpleHTTPRequestHandler):
