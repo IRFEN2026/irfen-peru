@@ -117,6 +117,9 @@ def valid_geojson_ring(ring: object) -> bool:
         and len(ring) >= 4
         and all(valid_geojson_position(position) for position in ring)
         and ring[0] == ring[-1]
+        # Four positions can still describe a zero-width ring. A polygon
+        # retained as context must have at least three distinct XY vertices.
+        and len({(position[0], position[1]) for position in ring[:-1]}) >= 3
     )
 
 
@@ -252,6 +255,9 @@ def check_geojson_payload_guard() -> None:
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "GeometryCollection", "geometries": [{"type": "Point", "coordinates": [181, -3.1]}]}}]},
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "GeometryCollection", "geometries": [{"type": "LineString", "coordinates": [[-80.1, -3.1]]}]}}]},
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "GeometryCollection", "geometries": [{"type": "GeometryCollection", "geometries": [{"type": "Point", "coordinates": [True, -3.1]}]}]}}]},
+        # Closed but degenerate rings are not defensible context geometry.
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-80.1, -3.1], [-80.1, -3.1], [-80.1, -3.1], [-80.1, -3.1]]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "MultiPolygon", "coordinates": [[[[-80.1, -3.1], [-80.2, -3.1], [-80.1, -3.1], [-80.1, -3.1]]]]}}]},
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Polygon", "coordinates": []}}]},
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-80.1, -3.1], [-80.2, -3.1], [-80.1, -3.1]]]}}]},
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-80.1, -3.1], [-80.2, -3.1], [-80.2, -3.2], [-80.1, -3.3]]]}}]},
