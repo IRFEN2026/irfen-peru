@@ -386,6 +386,57 @@ def test_no_documentary_unit_is_map_publishable_or_has_inferred_routing():
         ), labels
 
 
+
+    # Documentary works topology is not a validated routing graph. An ARCC
+    # mention of a paired confluence must remain symmetric *as a citation*,
+    # never as a geodetic outlet, routed link or collector overflow.
+    expected_pairs = {
+        ("lima_lurigancho_california", "lima_lurigancho_yanacoto"),
+        ("lima_lurigancho_yanacoto", "lima_lurigancho_california"),
+        ("lima_lurigancho_carossio", "lima_lurigancho_corrales"),
+        ("lima_lurigancho_corrales", "lima_lurigancho_carossio"),
+    }
+    by_id = {unit["id"]: unit for unit in d["units"]}
+    cited_pairs = set()
+    for unit in d["units"]:
+        source_ids = {source["source_id"] for source in unit["source_refs"]}
+        for lead in unit.get("documentary_topology_leads", []):
+            pair = (unit["id"], lead["paired_inventory_id"])
+            cited_pairs.add(pair)
+            assert lead["paired_inventory_id"] in by_id, pair
+            assert lead["source_id"] in source_ids, pair
+            assert lead["source_id"] in unit.get("works_context_refs", []), pair
+            assert lead["relation_class"] == "DOCUMENTARY_WORKS_CONFLUENCE_MENTION", pair
+            assert lead["adjudication"] == (
+                "UNLOCATED_JUNCTION_NO_VECTOR_NO_OUTLET_NO_RECEIVER_ASSIGNMENT"
+            ), pair
+            assert lead["source_text_verified"] is False, pair
+            assert lead["original_html_sha256"] is None, pair
+            for field in (
+                "exact_confluence_coordinate", "outlet_coordinate",
+                "receiver_relation", "travel_time_tau", "discharge_q_i",
+                "collector_capacity", "collector_overflow_evidence",
+            ):
+                assert lead[field] is None, (pair, field)
+            assert lead["map_publishable"] is False, pair
+            assert unit["exact_confluence_coordinate"] is None, pair
+            assert unit["map_publishable"] is False, pair
+    assert expected_pairs <= cited_pairs
+    for left, right in expected_pairs:
+        assert (right, left) in cited_pairs
+        left_refs = by_id[left]["documentary_topology_leads"]
+        right_refs = by_id[right]["documentary_topology_leads"]
+        assert any(
+            a["paired_inventory_id"] == right
+            and any(
+                b["paired_inventory_id"] == left
+                and a["source_id"] == b["source_id"]
+                and a["observed_official_phrase"] == b["observed_official_phrase"]
+                for b in right_refs
+            )
+            for a in left_refs
+        )
+
 def test_ambiguous_names_and_administrative_conflicts_remain_unresolved():
     d = _inventory()
     by_id = {u["id"]: u for u in d["units"]}
