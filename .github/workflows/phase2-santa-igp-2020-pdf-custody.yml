@@ -1,0 +1,172 @@
+name: IRFEN - Santa IGP 2020 public report custody
+
+on:
+  push:
+    branches:
+      - phase2-santa-lower-normalization-v02-20260926
+    paths:
+      - .github/workflows/phase2-santa-igp-2020-pdf-custody.yml
+
+permissions:
+  contents: read
+
+jobs:
+  report-custody:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/phase2-santa-lower-normalization-v02-20260926'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Verify offline custody contract and attempt bounded official PDF capture
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p santa_igp_2020_report_custody
+          cat > /tmp/santa_igp_2020_report_custody.py <<'PY'
+          import hashlib
+          import json
+          import pathlib
+          import unittest
+          import urllib.error
+          import urllib.request
+          from datetime import datetime, timezone
+
+          SOURCE = ("https://sigrid.cenepred.gob.pe/sigridv3/storage/biblioteca/"
+                    "13851_levantamiento-topografico-mediante-fotogrametria-aerea-"
+                    "con-dron-y-mediciones-gps-en-la-localidad-de-santa-ancash.pdf")
+          CATALOG = "https://sigrid.cenepred.gob.pe/sigridv3/documento/13851"
+          OUT = pathlib.Path("santa_igp_2020_report_custody")
+          MAX_BYTES = 50 * 1024 * 1024
+          GUARDS = {
+              "deployment_status": "RESEARCH_ONLY",
+              "test_mode": "TEST_ONLY",
+              "production_use": False,
+              "production_ready": False,
+              "operational_alerting_enabled": False,
+              "activation_gate": "BLOCKED",
+              "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+              "decision_thresholds": None,
+              "hydraulic_factors": None,
+              "map_publication_enabled": False,
+              "ana_2011_datum_established": False,
+              "igp_2020_dtm_raster_recovered": False,
+              "igp_2020_orthomosaic_recovered": False,
+              "igp_2020_contour_vector_recovered": False,
+              "ana_2011_hydraulic_model_equivalence_proven": False,
+          }
+
+          class NoRedirects(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+
+          def validate_pdf_container(raw):
+              # Structural plausibility only, not PDF contents/author verification.
+              if not raw.startswith(b"%PDF-"):
+                  raise ValueError("missing PDF signature")
+              if b"%%EOF" not in raw[-4096:]:
+                  raise ValueError("missing PDF trailer")
+              return {"raw_sha256": hashlib.sha256(raw).hexdigest(),
+                      "raw_bytes": len(raw)}
+
+          class ContractTests(unittest.TestCase):
+              def test_exact_bytes_are_hashed(self):
+                  a = b"%PDF-1.7\nsynthetic report\n%%EOF\n"
+                  b = b"%PDF-1.7\nsynthetic report changed\n%%EOF\n"
+                  self.assertEqual(validate_pdf_container(a)["raw_sha256"],
+                                   hashlib.sha256(a).hexdigest())
+                  self.assertNotEqual(validate_pdf_container(a)["raw_sha256"],
+                                      validate_pdf_container(b)["raw_sha256"])
+
+              def test_reject_html_and_truncated_pdf(self):
+                  for raw in (b"<html>Unavailable</html>",
+                              b"%PDF-1.7\ntruncated",
+                              b""):
+                      with self.subTest(raw=raw), self.assertRaises(ValueError):
+                          validate_pdf_container(raw)
+
+              def test_report_cannot_promote_2011_datum_or_2020_data_assets(self):
+                  self.assertEqual(GUARDS["activation_gate"], "BLOCKED")
+                  self.assertEqual(GUARDS["missing_data_rule"], "UNKNOWN_NOT_LOW_RISK")
+                  self.assertFalse(GUARDS["production_use"])
+                  self.assertFalse(GUARDS["production_ready"])
+                  self.assertFalse(GUARDS["operational_alerting_enabled"])
+                  self.assertFalse(GUARDS["ana_2011_datum_established"])
+                  self.assertFalse(GUARDS["igp_2020_dtm_raster_recovered"])
+                  self.assertFalse(GUARDS["igp_2020_orthomosaic_recovered"])
+                  self.assertFalse(GUARDS["igp_2020_contour_vector_recovered"])
+                  self.assertFalse(GUARDS["ana_2011_hydraulic_model_equivalence_proven"])
+                  self.assertIsNone(GUARDS["decision_thresholds"])
+                  self.assertIsNone(GUARDS["hydraulic_factors"])
+
+          def main():
+              tests = unittest.defaultTestLoader.loadTestsFromTestCase(ContractTests)
+              if not unittest.TextTestRunner(verbosity=2).run(tests).wasSuccessful():
+                  raise SystemExit(1)
+              receipt = {
+                  "source": SOURCE,
+                  "catalogue": CATALOG,
+                  "checked_at_utc": datetime.now(timezone.utc).isoformat(),
+                  "capture_status": "UNKNOWN_SOURCE_ACCESS_UNAVAILABLE",
+                  "raw_sha256": None,
+                  "raw_bytes": None,
+                  "document_identity_validated_from_content": False,
+                  "scientific_role": "IGP_2020_REPORT_DOCUMENTARY_QA_ONLY",
+                  **GUARDS,
+              }
+              try:
+                  req = urllib.request.Request(
+                      SOURCE, headers={"User-Agent": "IRFEN-RESEARCH-ONLY/0.1",
+                                       "Accept": "application/pdf"})
+                  with urllib.request.build_opener(NoRedirects()).open(req, timeout=60) as r:
+                      if r.status != 200 or r.geturl() != SOURCE:
+                          raise ValueError("unexpected HTTP status or redirect")
+                      length = r.headers.get("Content-Length")
+                      if length is not None and int(length) > MAX_BYTES:
+                          raise ValueError("source exceeds bounded capture size")
+                      raw = r.read(MAX_BYTES + 1)
+                      if len(raw) > MAX_BYTES:
+                          raise ValueError("source exceeds bounded capture size")
+                      http = {"status": r.status, "final_url": r.geturl(),
+                              "content_type": r.headers.get("Content-Type"),
+                              "http_date": r.headers.get("Date"),
+                              "etag": r.headers.get("ETag")}
+                  custody = validate_pdf_container(raw)
+                  (OUT / "igp_santa_2020_report_raw.pdf").write_bytes(raw)
+                  receipt.update(
+                      capture_status="PUBLIC_IGP_2020_REPORT_BYTES_FROZEN_PENDING_CONTENT_QA",
+                      raw_sha256=custody["raw_sha256"],
+                      raw_bytes=custody["raw_bytes"],
+                      http_provenance=http)
+              except (urllib.error.URLError, urllib.error.HTTPError,
+                      TimeoutError, OSError, ValueError) as exc:
+                  receipt["capture_status"] = "UNKNOWN_SOURCE_ACCESS_UNAVAILABLE_OR_INVALID"
+                  receipt["access_error_type"] = type(exc).__name__
+                  print("SANTA_IGP_REPORT_UNKNOWN", type(exc).__name__)
+              (OUT / "receipt.json").write_text(
+                  json.dumps(receipt, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+                  encoding="utf-8")
+              assert receipt["activation_gate"] == "BLOCKED"
+              assert receipt["ana_2011_datum_established"] is False
+              assert receipt["igp_2020_dtm_raster_recovered"] is False
+              if receipt["raw_sha256"] is not None:
+                  raw = (OUT / "igp_santa_2020_report_raw.pdf").read_bytes()
+                  assert hashlib.sha256(raw).hexdigest() == receipt["raw_sha256"]
+                  assert len(raw) == receipt["raw_bytes"]
+              print("SANTA_IGP_2020_REPORT_STATUS=" + receipt["capture_status"])
+              print("SANTA_IGP_2020_REPORT_SHA256=" + str(receipt["raw_sha256"]))
+
+          if __name__ == "__main__":
+              main()
+          PY
+          python /tmp/santa_igp_2020_report_custody.py
+      - name: Preserve raw public report candidate and SHA-256 custody receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: santa-igp-2020-public-report-research-custody
+          path: santa_igp_2020_report_custody/
+          if-no-files-found: warn
+          retention-days: 30
