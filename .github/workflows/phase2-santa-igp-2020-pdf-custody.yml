@@ -6,6 +6,8 @@ on:
       - phase2-santa-lower-normalization-v02-20260926
     paths:
       - .github/workflows/phase2-santa-igp-2020-pdf-custody.yml
+      - site/data/phase2/source_assessments/santa_2020_igp_highres_topography_v0_1.json
+      - tests/test_phase2_santa_2020_igp_topography.py
 
 permissions:
   contents: read
@@ -20,6 +22,21 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+      - name: Verify committed IGP 2020 source custody and scientific QA without network dependencies
+        shell: bash
+        run: |
+          python - <<'PY'
+          import runpy
+          checks = runpy.run_path('tests/test_phase2_santa_2020_igp_topography.py')
+          tests = [(name, fn) for name, fn in checks.items()
+                   if name.startswith('test_') and callable(fn)]
+          if not tests:
+              raise SystemExit('No Santa IGP 2020 scientific QA tests discovered')
+          for name, fn in tests:
+              fn()
+              print('PASS', name)
+          print('Santa IGP 2020 scientific QA passed:', len(tests))
+          PY
       - name: Verify offline custody contract and attempt bounded official PDF capture
         shell: bash
         run: |
