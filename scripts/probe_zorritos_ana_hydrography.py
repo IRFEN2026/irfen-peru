@@ -98,6 +98,18 @@ def query_url(field: str, token: str) -> str:
     }
     return f"{SERVICE}/{LAYER}/query?" + urlencode(params)
 
+def valid_geojson_position(position: object) -> bool:
+    """WGS84 longitude/latitude and any extra ordinates must be finite numbers."""
+    return (
+        isinstance(position, list)
+        and len(position) >= 2
+        and all(isinstance(v, (int, float)) and not isinstance(v, bool)
+                and math.isfinite(v) for v in position)
+        and -180 <= position[0] <= 180
+        and -90 <= position[1] <= 90
+    )
+
+
 def validated_geojson_features(payload: dict, context: str) -> list[dict]:
     """Reject malformed ANA responses instead of treating them as empty matches."""
     if not isinstance(payload, dict) or payload.get("type") != "FeatureCollection":
@@ -138,6 +150,12 @@ def validated_geojson_features(payload: dict, context: str) -> list[dict]:
                     raise ValueError(f"invalid ANA geometry collection at {context}[{index}]")
             elif not isinstance(geometry.get("coordinates"), list):
                 raise ValueError(f"invalid ANA geometry coordinates at {context}[{index}]")
+            if geometry_type == "Point" and not valid_geojson_position(geometry["coordinates"]):
+                raise ValueError(f"invalid ANA point position at {context}[{index}]")
+            if geometry_type == "MultiPoint":
+                points = geometry["coordinates"]
+                if not points or any(not valid_geojson_position(p) for p in points):
+                    raise ValueError(f"invalid ANA multipoint positions at {context}[{index}]")
         if geometry is not None and geometry.get("type") in {"LineString", "MultiLineString"}:
             kind = geometry["type"]
             coordinates = geometry.get("coordinates")
@@ -148,10 +166,7 @@ def validated_geojson_features(payload: dict, context: str) -> list[dict]:
                 raise ValueError(f"invalid ANA line structure at {context}[{index}]")
             for line in lines:
                 for position in line:
-                    if (not isinstance(position, list) or len(position) < 2
-                            or any(isinstance(v, bool) or not isinstance(v, (int, float))
-                                   or not math.isfinite(v) for v in position)
-                            or not (-180 <= position[0] <= 180 and -90 <= position[1] <= 90)):
+                    if not valid_geojson_position(position):
                         raise ValueError(f"invalid ANA line position at {context}[{index}]")
     return payload["features"]
 
@@ -185,6 +200,11 @@ def check_geojson_payload_guard() -> None:
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {}}]},
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Unknown", "coordinates": []}}]},
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Point", "coordinates": None}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Point", "coordinates": [True, -3.1]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Point", "coordinates": [-80.1, 91]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Point", "coordinates": [-80.1, -3.1, float("nan")]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "MultiPoint", "coordinates": []}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "MultiPoint", "coordinates": [[-80.1, -3.1], ["bad", -3.2]]}}]},
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "GeometryCollection", "geometries": None}}]},
         {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": []}]},
         {"type": "FeatureCollection", "features": [], "exceededTransferLimit": True},
@@ -213,6 +233,7 @@ def check_geojson_payload_guard() -> None:
         {"type": "LineString", "coordinates": [[-180, -90], [180, 90]]},
         {"type": "MultiLineString", "coordinates": [[[-80.1, -3.1, 1.5], [-80.2, -3.2, 2.5]]]},
         {"type": "Point", "coordinates": [-80.1, -3.1]},
+        {"type": "MultiPoint", "coordinates": [[-80.1, -3.1], [-80.2, -3.2, 4.0]]},
         {"type": "GeometryCollection", "geometries": []},
     ):
         payload = {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": geometry}]}
