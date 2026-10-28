@@ -1504,4 +1504,32 @@ def test_cross_source_santa_eulalia_names_do_not_inherit_events_or_identity():
     assert cash_parent["verified_event_refs"] == []
     assert cash_parent["map_publishable"] is False
     assert d["counts"]["total_documentary_rows"] == 51
+    # Three official/documentary spellings are NOT an adjudicated identity:
+    # COEN 2017 Chingaloy, municipal 2023 Chingolay, and Shingolay row.
+    # Neither a 2017 annex listing nor a planned 2023 intervention is
+    # a dated unit event, completed work, or hydrologic outlet.
+    coen_chingaloy = leads["Chingaloy"]
+    municipal_chingolay = leads["Chingolay"]
+    shingolay = by_id["lima_santa_eulalia_shingolay"]
+    assert coen_chingaloy["source_id"] == "COEN-INDECI-IE844-2017-12-06-ANNEX06"
+    assert coen_chingaloy["possible_existing_inventory_id_unadjudicated"] == shingolay["id"]
+    assert coen_chingaloy["alias_adjudication"] == "UNRESOLVED_NO_EQUIVALENCE_FROM_SPELLING_OR_LOCATION"
+    assert len(coen_chingaloy["unverified_event_leads"]) == 1
+    coen_event = coen_chingaloy["unverified_event_leads"][0]
+    assert coen_event["per_unit_event_date"] is None
+    assert coen_event["source_text_verified"] is False
+    assert coen_event["usable_as_confirmed_unit_event"] is False
+    assert municipal_chingolay["source_id"] == "MDSE-GOBPE-2023-09-04-12-QUEBRADAS-DESCOLMATACION-PLAN"
+    assert municipal_chingolay["alias_adjudication"] == "UNRESOLVED_NOT_MERGED_WITH_SHINGOLAY_OR_CHINGALOY"
+    assert municipal_chingolay["verified_event_refs"] == []
+    assert municipal_chingolay["source_text_verified"] is False
+    assert any(v["label"] == "Chingolay" and v["alias_adjudication"] == "PENDING_NOT_MERGED"
+               for v in shingolay["documentary_variants"])
+    assert shingolay["exact_confluence_coordinate"] is None
+    assert shingolay["map_publishable"] is False
+    for lead in (coen_chingaloy, municipal_chingolay):
+        assert lead["exact_confluence_coordinate"] is None
+        assert lead["receiver_chain_adjudicated"] is False
+        assert lead["map_publishable"] is False
+
     assert d["counts"]["confirmed_unique_hydrologic_unit_count"] is None
