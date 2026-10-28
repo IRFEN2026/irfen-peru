@@ -110,6 +110,24 @@ def valid_geojson_position(position: object) -> bool:
     )
 
 
+def valid_geojson_ring(ring: object) -> bool:
+    """A context-only polygon ring must be closed with finite WGS84 positions."""
+    return (
+        isinstance(ring, list)
+        and len(ring) >= 4
+        and all(valid_geojson_position(position) for position in ring)
+        and ring[0] == ring[-1]
+    )
+
+
+def valid_geojson_polygon(polygon: object) -> bool:
+    return (
+        isinstance(polygon, list)
+        and bool(polygon)
+        and all(valid_geojson_ring(ring) for ring in polygon)
+    )
+
+
 def validated_geojson_features(payload: dict, context: str) -> list[dict]:
     """Reject malformed ANA responses instead of treating them as empty matches."""
     if not isinstance(payload, dict) or payload.get("type") != "FeatureCollection":
@@ -156,6 +174,12 @@ def validated_geojson_features(payload: dict, context: str) -> list[dict]:
                 points = geometry["coordinates"]
                 if not points or any(not valid_geojson_position(p) for p in points):
                     raise ValueError(f"invalid ANA multipoint positions at {context}[{index}]")
+            if geometry_type == "Polygon" and not valid_geojson_polygon(geometry["coordinates"]):
+                raise ValueError(f"invalid ANA polygon rings at {context}[{index}]")
+            if geometry_type == "MultiPolygon":
+                polygons = geometry["coordinates"]
+                if not polygons or any(not valid_geojson_polygon(p) for p in polygons):
+                    raise ValueError(f"invalid ANA multipolygon rings at {context}[{index}]")
         if geometry is not None and geometry.get("type") in {"LineString", "MultiLineString"}:
             kind = geometry["type"]
             coordinates = geometry.get("coordinates")
@@ -206,6 +230,12 @@ def check_geojson_payload_guard() -> None:
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "MultiPoint", "coordinates": []}}]},
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "MultiPoint", "coordinates": [[-80.1, -3.1], ["bad", -3.2]]}}]},
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "GeometryCollection", "geometries": None}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Polygon", "coordinates": []}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-80.1, -3.1], [-80.2, -3.1], [-80.1, -3.1]]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-80.1, -3.1], [-80.2, -3.1], [-80.2, -3.2], [-80.1, -3.3]]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-80.1, -3.1], [-80.2, -3.1], [-80.2, -3.2], [float("nan"), -3.1]]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "MultiPolygon", "coordinates": []}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "MultiPolygon", "coordinates": [[[[-80.1, -3.1], [-80.2, -3.1], [-80.2, -3.2], [-80.1, 91]]]]}}]},
         {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": []}]},
         {"type": "FeatureCollection", "features": [], "exceededTransferLimit": True},
         {"type": "FeatureCollection", "features": [], "exceededTransferLimit": None},
@@ -235,6 +265,8 @@ def check_geojson_payload_guard() -> None:
         {"type": "Point", "coordinates": [-80.1, -3.1]},
         {"type": "MultiPoint", "coordinates": [[-80.1, -3.1], [-80.2, -3.2, 4.0]]},
         {"type": "GeometryCollection", "geometries": []},
+        {"type": "Polygon", "coordinates": [[[-80.1, -3.1], [-80.2, -3.1], [-80.2, -3.2], [-80.1, -3.1]]]},
+        {"type": "MultiPolygon", "coordinates": [[[[-80.1, -3.1], [-80.2, -3.1], [-80.2, -3.2], [-80.1, -3.1]]]]},
     ):
         payload = {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": geometry}]}
         assert len(validated_geojson_features(payload, "offline-regression")) == 1
