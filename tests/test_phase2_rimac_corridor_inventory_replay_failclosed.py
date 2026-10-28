@@ -889,17 +889,15 @@ def test_unverified_events_and_station_triggers_do_not_become_flow():
     lead_names = [row["documentary_name"] for row in all_leads]
     pprrd_added = pprrd_new_names & set(lead_names)
     assert pprrd_added == pprrd_new_names
-    # Transition gate for a 2026 ANA/SIGRID catalog lead: Lúcuma is
-    # separately documented from the 2023 municipal label Lúcuma Seca.
-    # Both the pre-materialization (49) and one-lead (50) states are valid;
-    # no source-to-source alias or exact confluence is adjudicated.
+    # Post-materialization regression gate: ANA/SIGRID Lúcuma is a mandatory
+    # documentary lead distinct from the municipal Lúcuma Seca label.
+    # Neither spelling establishes an alias, channel, or exact confluence.
     assert len(all_leads) == len(set(lead_names))
     lucuma = [row for row in all_leads if row["documentary_name"] == "Lúcuma"]
-    assert len(lucuma) in (0, 1)
-    assert len(all_leads) == 49 + len(lucuma)
+    assert len(lucuma) == 1
+    assert len(all_leads) == 50
     assert "Lúcuma Seca" in lead_names
-    if lucuma:
-        row = lucuma[0]
+    for row in lucuma:
         assert row["source_id"] == "ANA-SIGRID-22156-LUCUMA-RD0546-2026"
         assert row["source_url"] == "https://sigrid.cenepred.gob.pe/sigridv3/documento/22156"
         assert row["source_institution"].startswith("Autoridad Nacional del Agua")
@@ -1347,7 +1345,7 @@ def test_unverified_events_and_station_triggers_do_not_become_flow():
     assert len(added) == 3
     assert {row["documentary_name"] for row in added} == newly_named
     assert pprrd["new_documentary_name_leads_pending_materialization"] == 0
-    assert len(d["official_unmaterialized_name_leads"]) in (49, 50)
+    assert len(d["official_unmaterialized_name_leads"]) == 50
     for row in added:
         assert row["source_id"] == pprrd["source_id"]
         assert row["source_url"] == pprrd["source_url"]
