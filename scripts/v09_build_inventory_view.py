@@ -31,6 +31,8 @@ EXPECTED = dict(deployment_status="RESEARCH_ONLY", test_mode="TEST_ONLY", produc
                 operational_alerting_enabled=False, activation_gate="BLOCKED", missing_data_rule="UNKNOWN_NOT_LOW_RISK",
                 decision_thresholds=None, hydraulic_factors=None)
 UNNAMED = re.compile(r"^\s*(s/?n|sin nombre)\b", re.I)
+# A link is only a plain http(s) URL: no template placeholders, spaces or markup (never build or complete a URL).
+LINK_OK = re.compile(r"^https?://[^\s{}<>\"'`]+$")
 SOURCE_FIELDS = ("institution", "title", "date", "url", "source_class", "access", "source_text_verified")
 # Cartographic blocking reasons are DERIVED here from the master's own fields (the master does not record them).
 REASONS_ES = {
@@ -69,17 +71,28 @@ def alias_groups(doc: dict) -> list[dict]:
     return out
 
 
-def evidence_item(e: dict) -> dict:
+def evidence_link(e: dict, sources: dict) -> dict:
+    """The evidence's own URL when the master gives one; otherwise the URL of its bibliographic source, marked as a
+    general link to the source document (not an exact locator of this row). Never invented: none → no link."""
+    own, src = e.get("url"), (sources.get(e.get("source_id")) or {}).get("url")
+    if isinstance(own, str) and LINK_OK.match(own):
+        return dict(url=own, kind="EVIDENCE")
+    if isinstance(src, str) and LINK_OK.match(src):
+        return dict(url=src, kind="SOURCE_DOCUMENT_GENERAL")
+    return dict(url=None, kind=None)
+
+
+def evidence_item(e: dict, sources: dict) -> dict:
     locator = " · ".join(str(x) for x in (e.get("table"), e.get("row_number_as_read") and f"fila {e['row_number_as_read']}") if x) or None
     return dict(type=e.get("evidence_type"), source_id=e.get("source_id"), detail=e.get("detail"), url=e.get("url"),
                 sigrid_id=e.get("sigrid_id"), locator=locator, label_in_source=e.get("label_in_source"),
                 extraction_basis=e.get("extraction_basis"), text_verified=e.get("source_text_verified") is True,
                 event_dates=e.get("event_dates") or [], lead_event_dates=e.get("lead_event_dates") or [],
                 attribution_scale=e.get("attribution_scale"),
-                source_gives_reference_point=bool(e.get("source_reference_point")))
+                source_gives_reference_point=bool(e.get("source_reference_point")), link=evidence_link(e, sources))
 
 
-def row_view(r: dict, groups: list[dict]) -> dict:
+def row_view(r: dict, groups: list[dict], sources: dict) -> dict:
     rid = r["inventory_id"]
     in_groups = [i for i, g in enumerate(groups) if rid in g["inventory_ids"]]
     geo = r.get("reproducible_geometry") or {}
@@ -107,7 +120,7 @@ def row_view(r: dict, groups: list[dict]) -> dict:
         row_role=r.get("row_role"),
         identity=dict(state=r.get("suggested_state"), flags=list(r.get("state_flags") or []),
                       repository_presence=(r.get("irfen_presence") or {}).get("status"), alias_groups=in_groups),
-        evidence=[evidence_item(e) for e in r.get("evidence") or []],
+        evidence=[evidence_item(e, sources) for e in r.get("evidence") or []],
         geometry=dict(state=geometry, main=geo.get("main"), legacy_or_branch=geo.get("legacy_or_branch")),
         outlet=dict(state=outlet),
         parent_basin_or_system=r.get("parent_basin_or_system"),
@@ -127,7 +140,7 @@ def build(master_path: Path = MASTER) -> dict:
     if bad:
         raise SystemExit(f"master guards changed, refusing to build: {bad}")
     groups = alias_groups(doc)
-    rows = [row_view(r, groups) for r in doc["candidates"]]
+    rows = [row_view(r, groups, doc.get("sources") or {}) for r in doc["candidates"]]
     used = sorted({e["source_id"] for r in rows for e in r["evidence"] if e["source_id"]})
     sources = {sid: {k: (doc.get("sources") or {}).get(sid, {}).get(k) for k in SOURCE_FIELDS} for sid in used}
     count = lambda key: {k: sum(1 for r in rows if key(r) == k) for k in sorted({str(key(r)) for r in rows})}
@@ -142,6 +155,8 @@ def build(master_path: Path = MASTER) -> dict:
         repository_status="INTEGRADO_EN_MAIN",
         repository_status_es=("Todas las filas proceden del inventario maestro integrado en main. Las filas de PR abiertos "
                               "(#378, #404, #407, #418…) no se suman aquí."),
+        link_kinds_es=dict(EVIDENCE="Enlace de esta evidencia",
+                           SOURCE_DOCUMENT_GENERAL="Documento fuente (enlace general; no localizador exacto de esta fila)"),
         blocking_reasons_es=REASONS_ES, blocking_reasons_basis="DERIVED_FROM_MASTER_FIELDS_BY_THIS_VIEW",
         summary=dict(rows=len(rows), corridors=count(lambda r: r["corridor"]), departments=count(lambda r: r["department"]),
                      geometry=count(lambda r: r["geometry"]["state"]), outlet=count(lambda r: r["outlet"]["state"]),

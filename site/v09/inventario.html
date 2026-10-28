@@ -240,11 +240,15 @@ function ficha(id){
   if (!r) return false;
   const el = document.getElementById("ficha");
   const evid = r.evidence.length ? r.evidence.map(e => {
-    const url = safeUrl(e.url);
+    // the evidence's own link, else the general link of its source document (said so); never a constructed URL
+    const link = e.link || {}, url = safeUrl(link.url), general = link.kind === "SOURCE_DOCUMENT_GENERAL";
+    const linkHtml = url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" data-link-kind="${esc(link.kind)}">${esc(url)}</a>` +
+      (general ? `<div class="note" data-link-note>Documento fuente (enlace general; no localizador exacto de esta fila).${e.locator || e.sigrid_id != null ? " Busque el registro con el localizador indicado." : ""}</div>` : "")
+      : `<span class="none" data-no-link>Sin enlace en el maestro</span>`;
     return `<div class="ev" data-evidence="${esc(e.type)}"><b>${esc(label(EVIDENCE_ES, e.type))}</b>
-      ${dl([["Fuente", sourceLine(e)], ["Detalle", esc(e.detail)], ["Etiqueta en la fuente", e.label_in_source ? esc(e.label_in_source) : null],
+      ${dl([["Fuente", sourceLine(e)], ["Identificador de fuente", e.source_id ? `<code>${esc(e.source_id)}</code>` : null], ["Detalle", esc(e.detail)], ["Etiqueta en la fuente", e.label_in_source ? esc(e.label_in_source) : null],
         ["Localizador", [e.locator, e.sigrid_id != null ? `SIGRID ${e.sigrid_id}` : null].filter(Boolean).map(esc).join(" · ") || null],
-        ["Enlace", url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(url)}</a>` : null],
+        [general ? "Documento fuente" : "Enlace", linkHtml],
         ["Extracción", e.extraction_basis ? esc(e.extraction_basis) : null],
         ["Texto verificado", e.text_verified ? "Sí" : "No: lectura pendiente"]])}
       ${e.source_gives_reference_point ? `<div class="note">La fuente da el punto de una población vulnerable. No es la ubicación de la quebrada ni de su desembocadura y no se muestra.</div>` : ""}</div>`;

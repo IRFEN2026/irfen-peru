@@ -387,6 +387,40 @@ class InventoryMasterView(unittest.TestCase):
             if r["identity"]["alias_groups"] or r["unnamed_in_source"]:
                 self.assertIn("IDENTIDAD_POR_ADJUDICAR", reasons)
 
+    def test_evidence_links_come_from_the_master_and_say_what_they_are(self):
+        """QA #6477102730: own URL → EVIDENCE; none → the source document URL as SOURCE_DOCUMENT_GENERAL; neither →
+        no link. Every link is a URL written in the master (never built); identifiers and locators are kept."""
+        kinds = {}
+        for m, r in zip(MASTER["candidates"], INV_VIEW["rows"]):
+            for me, e in zip(m.get("evidence") or [], r["evidence"]):
+                src = (MASTER["sources"].get(me.get("source_id")) or {}).get("url")
+                if me.get("url"):
+                    self.assertEqual(e["link"], dict(url=me["url"], kind="EVIDENCE"), r["id"])
+                elif src:
+                    self.assertEqual(e["link"], dict(url=src, kind="SOURCE_DOCUMENT_GENERAL"), r["id"])
+                else:
+                    self.assertEqual(e["link"], dict(url=None, kind=None), r["id"])
+                self.assertEqual(e["url"], me.get("url"))  # the evidence's own URL is never overwritten
+                self.assertEqual(e["sigrid_id"], me.get("sigrid_id"))
+                self.assertEqual(e["source_id"], me.get("source_id"))
+                kinds[e["link"]["kind"]] = kinds.get(e["link"]["kind"], 0) + 1
+        self.assertGreater(kinds.get("EVIDENCE", 0), 0)
+        self.assertGreater(kinds.get("SOURCE_DOCUMENT_GENERAL", 0), 0)
+        self.assertEqual(sum(kinds.values()), sum(len(m.get("evidence") or []) for m in MASTER["candidates"]))  # none added
+        self.assertIn("no localizador exacto", INV_VIEW["link_kinds_es"]["SOURCE_DOCUMENT_GENERAL"])
+
+    def test_evidence_link_negative_cases(self):
+        srcs = {"S1": {"url": "https://example.org/doc.pdf"}, "S2": {"url": None}, "S3": {"url": "https://x.org/{id}"}, "S4": {}}
+        link = INV.evidence_link
+        self.assertEqual(link({"source_id": "S2", "url": None}, srcs), dict(url=None, kind=None))
+        self.assertEqual(link({"source_id": "S4"}, srcs), dict(url=None, kind=None))
+        self.assertEqual(link({"source_id": "missing"}, srcs), dict(url=None, kind=None))
+        self.assertEqual(link({"source_id": "S3"}, srcs), dict(url=None, kind=None))  # a template is never completed
+        self.assertEqual(link({"source_id": "S2", "url": "javascript:alert(1)"}, srcs), dict(url=None, kind=None))
+        self.assertEqual(link({"source_id": "S1", "url": None}, srcs), dict(url="https://example.org/doc.pdf", kind="SOURCE_DOCUMENT_GENERAL"))
+        self.assertEqual(link({"source_id": "S1", "url": "https://sigrid.example/documento/1"}, srcs),
+                         dict(url="https://sigrid.example/documento/1", kind="EVIDENCE"))
+
     def test_builder_refuses_a_master_with_changed_guards(self):
         import tempfile
         doc = dict(MASTER, production_use=True)
@@ -678,6 +712,122 @@ class Browser(unittest.TestCase):
             finally:
                 srv.shutdown()
 
+    def test_full_journey_with_and_without_gis_on_stale_data(self):
+        """Recorrido completo en escritorio y móvil con un paquete de 30 h de antigüedad:
+        Inicio → Mapa → Inventario nacional → Buscar quebrada → Abrir ficha → Consultar fuente → Volver al mapa →
+        Lluvia y avisos, con una quebrada con geometría reproducible y otra sin GIS. Nada antiguo se presenta como
+        observación actual. Las páginas externas de las fuentes se sustituyen por una página local (sin red)."""
+        import shutil
+        import tempfile
+        from datetime import datetime, timedelta
+
+        class Quiet(http.server.SimpleHTTPRequestHandler):
+            def log_message(self, *a):
+                pass
+
+        built = datetime.fromisoformat(BUNDLE["built_at_utc"].replace("Z", "+00:00"))
+        stale_clock = built + timedelta(hours=30)
+        rows = INV_VIEW["rows"]
+        viewer_ids = {r["id"] for r in BUNDLE["inventory_rows"]}
+        regions_drawn = {"Tumbes", "Piura", "Lambayeque", "La Libertad", "Rímac"}
+        region_of = {r["id"]: r["region"] for r in BUNDLE["inventory_rows"]}
+        with_geo = next(r for r in rows if r["geometry"]["state"] == "REPRODUCIBLE" and region_of.get(r["id"]) in regions_drawn)
+        no_gis = next(r for r in rows if r["geometry"]["state"] == "SIN_GEOMETRIA" and r["id"] not in viewer_ids and r["evidence"]
+                      and r["evidence"][0]["link"]["url"] and not r["unnamed_in_source"])
+        with tempfile.TemporaryDirectory() as d:
+            site = Path(d) / "site"
+            shutil.copytree(ROOT / "site/v09", site / "v09")
+            (site / "data/v09").mkdir(parents=True)
+            for name in ("territory_v0_1.json", "dashboard_v0_1.json", "inventory_master_v0_1.json"):
+                shutil.copy(ROOT / "site/data/v09" / name, site / "data/v09" / name)
+            srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Quiet, directory=str(site)))
+            threading.Thread(target=srv.serve_forever, daemon=True).start()
+            origin = f"http://127.0.0.1:{srv.server_port}/"
+            stub = "<!doctype html><title>fuente (sustituida en la prueba)</title><p>stub</p>"
+            try:
+                with sync_playwright() as p:
+                    b = p.chromium.launch(args=["--no-proxy-server"])
+                    for name, vp in (("desktop", dict(width=1440, height=900)), ("mobile", dict(width=390, height=844))):
+                        for row in (with_geo, no_gis):
+                            ctx = b.new_context(viewport=vp)
+                            errors = []
+                            ctx.route("**/*", lambda r: r.continue_() if r.request.url.startswith(origin)
+                                      else r.fulfill(status=200, content_type="text/html", body=stub))
+                            page = ctx.new_page()
+                            page.on("pageerror", lambda e: errors.append(str(e)))
+                            page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+                            page.clock.install(time=stale_clock)
+                            where = f"{name}/{row['id']}"
+                            overflow = lambda: page.evaluate("document.documentElement.scrollWidth - window.innerWidth")
+                            # 1. Inicio: a 30 h old package is never «al día»
+                            page.goto(origin + "v09/resumen.html")
+                            page.wait_for_selector("#status .st")
+                            states = page.eval_on_selector_all("#status .st", "els => els.map(e => e.dataset.state)")
+                            self.assertEqual(len(states), 3, where)
+                            self.assertNotIn("ok", states, where)
+                            self.assertNotIn("Al día", page.inner_text("#status"), where)
+                            self.assertNotIn("hace -", page.inner_text("body"))
+                            self.assertLessEqual(overflow(), 1, where)
+                            # 2. Mapa: every freshness chip of the viewer is marked old
+                            page.click("#irfen-nav a[data-section=mapa]")
+                            page.wait_for_selector("#map svg path")
+                            chips = page.eval_on_selector_all("#status .st", "els => els.map(e => e.className)")
+                            self.assertTrue(chips and all("old" in c for c in chips), (where, chips))
+                            self.assertLessEqual(overflow(), 1, where)
+                            # 3. Inventario nacional → 4. buscar → 5. ficha
+                            page.click("#irfen-nav a[data-section=inventario]")
+                            page.wait_for_selector("body[data-ready='1']")
+                            self.assertIn("de 400 registros documentales", page.inner_text("#count"))
+                            page.fill("#f-q", row["name"])
+                            page.click(f"#rows [data-open='{row['id']}']")
+                            page.wait_for_selector("#ficha:not([hidden])")
+                            self.assertEqual(page.inner_text("#ficha-title"), row["name"])
+                            self.assertEqual(page.locator("#ficha svg, #ficha canvas, #ficha img").count(), 0, where)
+                            self.assertLessEqual(overflow(), 1, where)
+                            # 6. consultar fuente: opens in a new tab, the exact URL of the master (stubbed here)
+                            link = page.locator("#ficha [data-section=procedencia] a[data-link-kind]").first
+                            href = link.get_attribute("href")
+                            self.assertEqual(href, row["evidence"][0]["link"]["url"], where)
+                            with ctx.expect_page() as pop:
+                                link.click()
+                            src = pop.value
+                            src.wait_for_load_state()
+                            self.assertEqual(src.url, href, where)
+                            self.assertEqual(src.evaluate("window.opener"), None)  # noopener
+                            src.close()
+                            # 7. volver al mapa: the region of the row when the viewer draws it, else the shared bar
+                            if row is with_geo:
+                                page.click("#ficha [data-viewer-link]")
+                                page.wait_for_selector("#map svg path")
+                                key = "rimac" if region_of[row["id"]] == "Rímac" else "costa_norte"
+                                self.assertTrue(page.url.endswith(f"territorio.html#{key}"), where)
+                                self.assertEqual(page.get_attribute(f'nav [data-region="{key}"]', "aria-selected"), "true")
+                            else:
+                                self.assertEqual(page.locator("#ficha [data-viewer-link]").count(), 0, where)
+                                self.assertIn("Fuera de las regiones del visor", page.inner_text("#ficha [data-section=visor]"))
+                                page.keyboard.press("Escape")
+                                page.click("#irfen-nav a[data-section=mapa]")
+                                page.wait_for_selector("#map svg path")
+                            # 8. Lluvia y avisos: old sources are «retrasada», never «disponible»
+                            page.click("#irfen-nav a[data-section=lluvia]")
+                            page.wait_for_selector("#chips .chip")
+                            page.wait_for_selector("[data-fresh]")
+                            fresh = page.eval_on_selector_all("[data-fresh]", "els => els.map(e => e.dataset.fresh)")
+                            self.assertNotIn("DISPONIBLE", fresh, (where, fresh))
+                            self.assertNotIn("hace -", page.inner_text("body"))
+                            self.assertLessEqual(overflow(), 1, where)
+                            self.assertEqual(errors, [], where)
+                            ctx.close()
+                    b.close()
+            finally:
+                srv.shutdown()
+                srv.server_close()
+                import gc
+                import warnings
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", ResourceWarning)
+                    gc.collect()
+
     def test_national_inventory_rows_filters_and_fichas(self):
         """P0-B en escritorio y móvil: las 400 filas del maestro, búsqueda y filtros, ficha de una fila con geometría
         reproducible y de una sin GIS (fuera del visor), alias por comprobar enlazados, enlace profundo, paginación,
@@ -699,6 +849,11 @@ class Browser(unittest.TestCase):
         other = next(i for i in group["inventory_ids"] if i != aliased["id"])
         leads = sum(1 for r in rows if r["events"]["leads_unverified"])
         lima = INV_VIEW["summary"]["departments"]["Lima"]
+        # QA #6477102730: an evidence without its own URL links to its source document, said to be a general link
+        general = next(r for r in rows if r["id"] not in viewer_ids and r["evidence"]
+                       and all(e["link"]["kind"] == "SOURCE_DOCUMENT_GENERAL" for e in r["evidence"]))
+        general_urls = [INV_VIEW["sources"][e["source_id"]]["url"] for e in general["evidence"]]
+        own_urls = [e["url"] for e in with_geo["evidence"] if e["link"]["kind"] == "EVIDENCE"]
         with tempfile.TemporaryDirectory() as d:
             site = Path(d) / "site"
             shutil.copytree(ROOT / "site/v09", site / "v09")
@@ -788,6 +943,24 @@ class Browser(unittest.TestCase):
                         for section in ("identidad", "ubicacion", "procedencia", "alias", "geometria", "outlet", "eventos", "bloqueo", "visor"):
                             self.assertEqual(page.locator(f"#ficha [data-section={section}]").count(), 1, section)
                         page.close()
+                        # source links: the evidence's own URL, else the general URL of its source document, labelled
+                        page = open_inv(vp, "#id=" + general["id"])
+                        links = page.locator("#ficha [data-section=procedencia] a[data-link-kind]")
+                        self.assertEqual(links.count(), len(general["evidence"]))
+                        self.assertEqual([links.nth(i).get_attribute("href") for i in range(links.count())], general_urls)
+                        self.assertEqual({links.nth(i).get_attribute("data-link-kind") for i in range(links.count())}, {"SOURCE_DOCUMENT_GENERAL"})
+                        self.assertEqual({links.nth(i).get_attribute("rel") for i in range(links.count())}, {"noopener noreferrer"})
+                        self.assertEqual(page.locator("#ficha [data-link-note]").count(), len(general["evidence"]))
+                        proc = page.inner_text("#ficha [data-section=procedencia]")
+                        self.assertIn("enlace general; no localizador exacto de esta fila", proc)
+                        self.assertIn(general["evidence"][0]["source_id"], proc)  # identifier kept
+                        self.assertIn("No: lectura pendiente" if not general["evidence"][0]["text_verified"] else "Sí", proc)
+                        page.goto(origin + "v09/inventario.html#id=" + with_geo["id"])
+                        page.wait_for_selector("#ficha:not([hidden])")
+                        own = page.locator("#ficha a[data-link-kind=EVIDENCE]")
+                        self.assertEqual([own.nth(i).get_attribute("href") for i in range(own.count())], own_urls)
+                        self.assertTrue(own_urls)
+                        page.close()
                         # pending aliases: shown as «por comprobar» and linked, never merged
                         page = open_inv(vp, "#id=" + aliased["id"])
                         self.assertGreater(page.locator("#ficha [data-alias-group]").count(), 0)
@@ -807,6 +980,24 @@ class Browser(unittest.TestCase):
                     self.assertEqual(shown(page), 400)
                     self.assertIn("Fuera de las regiones del visor", page.inner_text("#ficha [data-section=visor]"))
                     self.assertIn("(0)", page.inner_text("#f-viewer option[value=IN]"))
+                    page.close()
+                    # negative: evidence and source without URL -> «Sin enlace», no anchor; an unsafe URL is never linked
+                    mutated = json.loads(INV.OUT.read_text(encoding="utf-8"))
+                    row = next(r for r in mutated["rows"] if r["id"] == general["id"])
+                    for i, e in enumerate(row["evidence"]):
+                        e["url"] = None
+                        mutated["sources"][e["source_id"]]["url"] = None
+                        e["link"] = dict(url=None, kind=None) if i else dict(url="javascript:alert(1)", kind="EVIDENCE")
+                    page = b.new_page()
+                    page.on("pageerror", lambda e: errors.append(str(e)))
+                    page.route("**/inventory_master_v0_1.json", lambda r: r.fulfill(status=200, content_type="application/json",
+                                                                               body=json.dumps(mutated)))
+                    page.route("**/*", lambda r: r.fallback() if r.request.url.startswith(origin) else r.abort())
+                    page.goto(origin + "v09/inventario.html#id=" + general["id"])
+                    page.wait_for_selector("#ficha:not([hidden])")
+                    self.assertEqual(page.locator("#ficha [data-section=procedencia] a").count(), 0)
+                    self.assertEqual(page.locator("#ficha [data-no-link]").count(), len(general["evidence"]))
+                    self.assertEqual(page.locator("#ficha [data-link-note]").count(), 0)
                     self.assertEqual(errors, [])
                     b.close()
             finally:
