@@ -57,6 +57,9 @@ jobs:
           CATALOG = "https://sigrid.cenepred.gob.pe/sigridv3/documento/13851"
           OUT = pathlib.Path("santa_igp_2020_report_custody")
           MAX_BYTES = 50 * 1024 * 1024
+          INVENTORY_PATH = pathlib.Path(
+              "site/data/phase2/source_assessments/santa_2020_igp_highres_topography_v0_1.json"
+          )
           GUARDS = {
               "deployment_status": "RESEARCH_ONLY",
               "test_mode": "TEST_ONLY",
@@ -88,6 +91,27 @@ jobs:
               return {"raw_sha256": hashlib.sha256(raw).hexdigest(),
                       "raw_bytes": len(raw)}
 
+          def pinned_reference():
+              """Read independently verified 2026-10-28 bytes from committed inventory."""
+              inventory = json.loads(INVENTORY_PATH.read_text(encoding="utf-8"))
+              reference = inventory["source_pdf_custody"]
+              if reference["source_url"] != SOURCE:
+                  raise ValueError("official source locator differs from pinned inventory")
+              sha = reference["raw_pdf_sha256"]
+              size = reference["raw_pdf_bytes"]
+              if (not isinstance(sha, str) or len(sha) != 64
+                      or any(ch not in "0123456789abcdef" for ch in sha)
+                      or type(size) is not int or size <= 0):
+                  raise ValueError("invalid pinned source digest or byte count")
+              if reference["document_content_qa"]["identity_confirmed_from_pdf_content"] is not True:
+                  raise ValueError("pinned source has no independent document identity QA")
+              return sha, size
+
+          def classify_source_bytes(custody, reference):
+              matched = (custody["raw_sha256"], custody["raw_bytes"]) == reference
+              return ("PUBLIC_IGP_2020_REPORT_BYTES_MATCH_VERIFIED_REFERENCE"
+                      if matched else "SOURCE_CONTENT_DRIFT_PENDING_INDEPENDENT_QA"), matched
+
           class ContractTests(unittest.TestCase):
               def test_exact_bytes_are_hashed(self):
                   a = b"%PDF-1.7\nsynthetic report\n%%EOF\n"
@@ -96,6 +120,22 @@ jobs:
                                    hashlib.sha256(a).hexdigest())
                   self.assertNotEqual(validate_pdf_container(a)["raw_sha256"],
                                       validate_pdf_container(b)["raw_sha256"])
+
+              def test_pinned_source_reference_and_drift_are_fail_closed(self):
+                  sha, size = pinned_reference()
+                  self.assertEqual(
+                      sha, "e33870604c5b874fbd40c911c793fe0bbe835038c8644f91f15db5f2434d8fa4")
+                  self.assertEqual(size, 3614432)
+                  matched_status, matched = classify_source_bytes(
+                      {"raw_sha256": sha, "raw_bytes": size}, (sha, size))
+                  self.assertTrue(matched)
+                  self.assertEqual(
+                      matched_status, "PUBLIC_IGP_2020_REPORT_BYTES_MATCH_VERIFIED_REFERENCE")
+                  for changed in ({"raw_sha256": "0" * 64, "raw_bytes": size},
+                                  {"raw_sha256": sha, "raw_bytes": size + 1}):
+                      status, matched = classify_source_bytes(changed, (sha, size))
+                      self.assertFalse(matched)
+                      self.assertEqual(status, "SOURCE_CONTENT_DRIFT_PENDING_INDEPENDENT_QA")
 
               def test_reject_html_and_truncated_pdf(self):
                   for raw in (b"<html>Unavailable</html>",
@@ -122,8 +162,12 @@ jobs:
               tests = unittest.defaultTestLoader.loadTestsFromTestCase(ContractTests)
               if not unittest.TextTestRunner(verbosity=2).run(tests).wasSuccessful():
                   raise SystemExit(1)
+              reference = pinned_reference()
               receipt = {
                   "source": SOURCE,
+                  "verified_reference_sha256": reference[0],
+                  "verified_reference_bytes": reference[1],
+                  "source_bytes_match_verified_reference": None,
                   "catalogue": CATALOG,
                   "checked_at_utc": datetime.now(timezone.utc).isoformat(),
                   "capture_status": "UNKNOWN_SOURCE_ACCESS_UNAVAILABLE",
@@ -151,9 +195,13 @@ jobs:
                               "http_date": r.headers.get("Date"),
                               "etag": r.headers.get("ETag")}
                   custody = validate_pdf_container(raw)
+                  capture_status, matched = classify_source_bytes(custody, reference)
+                  # Archive changed bytes for investigation, but never label them
+                  # identical to the independently verified IGP 2020 PDF.
                   (OUT / "igp_santa_2020_report_raw.pdf").write_bytes(raw)
                   receipt.update(
-                      capture_status="PUBLIC_IGP_2020_REPORT_BYTES_FROZEN_PENDING_CONTENT_QA",
+                      capture_status=capture_status,
+                      source_bytes_match_verified_reference=matched,
                       raw_sha256=custody["raw_sha256"],
                       raw_bytes=custody["raw_bytes"],
                       http_provenance=http)
@@ -169,6 +217,7 @@ jobs:
               assert receipt["ana_2011_datum_established"] is False
               assert receipt["igp_2020_dtm_raster_recovered"] is False
               if receipt["raw_sha256"] is not None:
+                  assert receipt["source_bytes_match_verified_reference"] is not None
                   raw = (OUT / "igp_santa_2020_report_raw.pdf").read_bytes()
                   assert hashlib.sha256(raw).hexdigest() == receipt["raw_sha256"]
                   assert len(raw) == receipt["raw_bytes"]
