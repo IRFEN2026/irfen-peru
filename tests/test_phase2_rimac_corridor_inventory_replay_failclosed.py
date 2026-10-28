@@ -1408,3 +1408,60 @@ def test_cross_source_santa_eulalia_names_do_not_inherit_events_or_identity():
     assert centro["exact_confluence_coordinate"] is None
     assert all(item["map_publishable"] is False for item in labels.values())
     assert d["counts"]["confirmed_unique_hydrologic_unit_count"] is None
+
+
+    # ANA RD 1634-2015 documents a regulatory tributary relationship only.
+    # Neither the printed 0+950 station nor the faja coordinates define a
+    # geodetic junction, routed channel, basin, or observed flood event.
+    cash_alta = d["official_2015_ana_cashahuacra_alta_regulatory_tributary_context"]
+    cash_parent = by_id["lima_santa_eulalia_cashahuacra"]
+    source_id = "ANA-RD-1634-2015-CASHAHUACRA-FAJA-ALTA"
+    assert cash_alta["source_id"] == source_id
+    assert cash_alta["parent_inventory_id"] == cash_parent["id"]
+    assert cash_alta["upstream_documentary_label"] == "Cashahuacra parte Alta"
+    assert cash_alta["upstream_relation"] == (
+        "ANA_ARTICLE_2_CALLS_CASHAHUACRA_PARTE_ALTA_APORTANTE_A_CASHAHUACRA"
+    )
+    assert cash_alta["reported_parent_progressiva_at_upstream_relation"] == "0+950"
+    assert cash_alta["progressiva_is_not_geodetic_junction"] is True
+    assert cash_alta["documentary_upstream_label_pending_separate_name_lead_materialization"] is True
+    refs = [ref for ref in cash_parent["source_refs"] if ref["source_id"] == source_id]
+    assert len(refs) == 1
+    ref = refs[0]
+    assert ref["source_url"] == cash_alta["source_url"]
+    assert ref["secondary_catalog_url"] == cash_alta["catalog_url"]
+    assert ref["evidence_type"] == (
+        "REGULATORY_FAJA_AND_DOCUMENTARY_UPSTREAM_TRIBUTARY_NOT_ROUTING"
+    )
+    for source in (cash_alta, ref):
+        assert source["source_text_verified"] is False
+        assert source["original_pdf_bytes_archived_in_this_contract"] is False
+        assert source["original_pdf_sha256"] is None
+        assert source["map_publishable"] is False
+    faja = cash_alta["parent_faja_regulatory_table"]
+    assert faja["printed_progressiva"] == "0+000 hasta 2+180"
+    assert faja["printed_tramo_km"] == 2.145
+    assert faja["printed_progressiva_and_tramo_length_not_assumed_equivalent"] is True
+    assert faja["coordinate_crs_and_utm_zone_not_independently_verified"] is True
+    assert faja["points_are_regulatory_faja_references_not_outlet_or_channel_geometry"] is True
+    assert cash_alta["identity_adjudicated_as_distinct_hydrologic_unit"] is False
+    assert cash_alta["receiver_chain_adjudicated"] is False
+    assert ref["receiver_chain_adjudicated"] is False
+    for field in (
+        "exact_tributary_junction_coordinate", "exact_outlet_coordinate",
+        "exact_receiver_confluence_coordinate", "reproducible_channel_geometry",
+        "catchment_geometry", "travel_time_tau", "measured_discharge",
+        "collector_capacity", "collector_overflow_evidence",
+    ):
+        assert cash_alta[field] is None, field
+    assert cash_alta["existing_documentary_row_count_increment"] == 0
+    assert cash_alta["official_unmaterialized_name_lead_count_increment"] == 0
+    assert cash_alta["confirmed_unique_hydrologic_unit_count_increment"] == 0
+    assert cash_alta["operational_use"] is False
+    assert cash_alta["activation_gate"] == "BLOCKED"
+    assert cash_parent["exact_confluence_coordinate"] is None
+    assert cash_parent["outlet_coordinate"] is None
+    assert cash_parent["verified_event_refs"] == []
+    assert cash_parent["map_publishable"] is False
+    assert d["counts"]["total_documentary_rows"] == 51
+    assert d["counts"]["confirmed_unique_hydrologic_unit_count"] is None
