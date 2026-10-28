@@ -203,6 +203,10 @@ def validated_geojson_features(payload: dict, context: str) -> list[dict]:
                 for position in line:
                     if not valid_geojson_position(position):
                         raise ValueError(f"invalid ANA line position at {context}[{index}]")
+                # A zero-length XY line is not a defensible watercourse
+                # candidate, even if its Z ordinates differ.
+                if len({(position[0], position[1]) for position in line}) < 2:
+                    raise ValueError(f"degenerate ANA line at {context}[{index}]")
     return payload["features"]
 
 
@@ -219,6 +223,8 @@ def check_geojson_payload_guard() -> None:
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "LineString", "coordinates": None}}]},
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "LineString", "coordinates": "not-an-array"}}]},
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "LineString", "coordinates": [[-80.1, -3.1]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "LineString", "coordinates": [[-80.1, -3.1], [-80.1, -3.1]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "MultiLineString", "coordinates": [[[-80.1, -3.1, 1.0], [-80.1, -3.1, 2.0]]]}}]},
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "LineString", "coordinates": [[True, -3.1], [-80.2, -3.2]]}}]},
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "LineString", "coordinates": [[-80.1, -3.1, float("nan")], [-80.2, -3.2]]}}]},
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "LineString", "coordinates": [[-80.1, -3.1, float("inf")], [-80.2, -3.2]]}}]},
@@ -274,6 +280,7 @@ def check_geojson_payload_guard() -> None:
         assert validated_geojson_features(valid, "offline-regression") == []
     for geometry in (
         {"type": "LineString", "coordinates": [[-80.1, -3.1], [-80.2, -3.2]]},
+        {"type": "LineString", "coordinates": [[-80.1, -3.1], [-80.2, -3.2], [-80.1, -3.1]]},
         {"type": "MultiLineString", "coordinates": [[[-80.1, -3.1], [-80.2, -3.2]]]},
         {"type": "LineString", "coordinates": [[-80.1, -3.1, 1.5], [-80.2, -3.2, 2.5]]},
         {"type": "LineString", "coordinates": [[-180, -90], [180, 90]]},
