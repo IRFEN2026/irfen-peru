@@ -34,6 +34,7 @@ jobs:
           import urllib.error
           import urllib.request
           import zipfile
+          import xml.etree.ElementTree as ET
           from datetime import datetime, timezone
 
           SOURCE = "https://geosnirh.ana.gob.pe/Repositorio/Shape/UnidadesHidrograficas.zip"
@@ -118,6 +119,26 @@ jobs:
                           for stem in complete),
                   }
 
+          WFS = "https://geosnirh.ana.gob.pe/server/services/ws_UnidadesHidro/MapServer/WFSServer?request=GetCapabilities&service=WFS"
+          WFS_TYPENAME = "ws_UnidadesHidro:UnidadesHidrograficas"
+          WFS_MAX_BYTES = 4 * 1024 * 1024
+          
+          def parse_wfs_capabilities(raw):
+              if b"<!DOCTYPE" in raw.upper() or b"<!ENTITY" in raw.upper():
+                  raise ValueError("DTD and entity declarations forbidden")
+              root = ET.fromstring(raw)
+              if root.tag.rsplit("}", 1)[-1] != "WFS_Capabilities":
+                  raise ValueError("not a WFS capabilities document")
+              types = []
+              for feature_type in root.iter():
+                  if feature_type.tag.rsplit("}", 1)[-1] != "FeatureType":
+                      continue
+                  for child in feature_type:
+                      if child.tag.rsplit("}", 1)[-1] == "Name":
+                          types.append((child.text or "").strip())
+              return {"wfs_feature_type_names": sorted(set(types)),
+                      "wfs_advertised_typename_seen": WFS_TYPENAME in types}
+
           class ContractTests(unittest.TestCase):
               def make_zip(self, names):
                   buf = io.BytesIO()
@@ -199,6 +220,20 @@ jobs:
                   self.assertEqual(result["complete_shapefile_group_count"], 0)
                   self.assertEqual(GUARDS["gate_b"], "NOT_ESTABLISHED")
 
+              def test_wfs_capabilities_are_metadata_not_n7_features(self):
+                  xml = (b'<WFS_Capabilities xmlns="http://www.opengis.net/wfs">'
+                         b'<FeatureTypeList><FeatureType>'
+                         b'<Name>ws_UnidadesHidro:UnidadesHidrograficas</Name>'
+                         b'</FeatureType></FeatureTypeList></WFS_Capabilities>')
+                  info = parse_wfs_capabilities(xml)
+                  self.assertTrue(info["wfs_advertised_typename_seen"])
+                  self.assertFalse(GUARDS["exact_n7_codes_verified"])
+                  self.assertFalse(GUARDS["historical_geometry_equivalence_to_Uh_pfas100"])
+                  with self.assertRaises(ValueError):
+                      parse_wfs_capabilities(b"<html><body>Unavailable</body></html>")
+                  with self.assertRaises(ValueError):
+                      parse_wfs_capabilities(b'<!DOCTYPE WFS_Capabilities><WFS_Capabilities/>')
+
           def main():
               if not unittest.TextTestRunner(verbosity=2).run(
                   unittest.defaultTestLoader.loadTestsFromTestCase(ContractTests)
@@ -248,6 +283,35 @@ jobs:
                   receipt["raw_zip_sha256"] = None
                   receipt["raw_zip_bytes"] = None
                   print("UNKNOWN/SOURCE_ACCESS_UNAVAILABLE_OR_INVALID", type(exc).__name__)
+              # Independent WFS metadata custody attempt; never a substitute for
+              # nine exact-code features or original Uh_pfas100 lineage.
+              receipt.update(wfs_capabilities_url=WFS,
+                             wfs_capabilities_status="UNKNOWN_SOURCE_ACCESS_UNAVAILABLE",
+                             wfs_raw_sha256=None, wfs_raw_bytes=None,
+                             wfs_advertised_typename_seen=False)
+              try:
+                  req = urllib.request.Request(
+                      WFS, headers={"User-Agent": "IRFEN-RESEARCH-ONLY/0.1",
+                                    "Accept": "application/xml,text/xml"})
+                  with urllib.request.build_opener(NoRedirects()).open(req, timeout=60) as r:
+                      if r.status != 200 or r.geturl() != WFS:
+                          raise ValueError("unexpected WFS status or redirected URL")
+                      length = r.headers.get("Content-Length")
+                      if length is not None and int(length) > WFS_MAX_BYTES:
+                          raise ValueError("WFS capabilities length exceeds bound")
+                      wfs_raw = r.read(WFS_MAX_BYTES + 1)
+                  if len(wfs_raw) > WFS_MAX_BYTES:
+                      raise ValueError("WFS capabilities bytes exceed bound")
+                  wfs_info = parse_wfs_capabilities(wfs_raw)
+                  (OUT / "ana_wfs_capabilities.xml").write_bytes(wfs_raw)
+                  receipt.update(wfs_capabilities_status="PUBLIC_ANA_WFS_METADATA_FROZEN_RESEARCH_ONLY",
+                                 wfs_raw_sha256=hashlib.sha256(wfs_raw).hexdigest(),
+                                 wfs_raw_bytes=len(wfs_raw), **wfs_info)
+              except (urllib.error.URLError, urllib.error.HTTPError,
+                      TimeoutError, OSError, ValueError, ET.ParseError) as exc:
+                  receipt["wfs_capabilities_status"] = "UNKNOWN_SOURCE_ACCESS_UNAVAILABLE_OR_INVALID"
+                  receipt["wfs_access_error_type"] = type(exc).__name__
+                  print("UNKNOWN/WFS_CAPABILITIES_UNAVAILABLE_OR_INVALID", type(exc).__name__)
               (OUT / "receipt.json").write_text(
                   json.dumps(receipt, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
                   encoding="utf-8")
