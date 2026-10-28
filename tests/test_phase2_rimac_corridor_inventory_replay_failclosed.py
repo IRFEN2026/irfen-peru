@@ -1581,3 +1581,79 @@ def test_cross_source_santa_eulalia_names_do_not_inherit_events_or_identity():
         assert lead["map_publishable"] is False
 
     assert d["counts"]["confirmed_unique_hydrologic_unit_count"] is None
+
+# SIGRID 21376: Vizcachera EVAR is a documentary design/exposure lead,
+    # not seven new hydrologic basins, built dikes, dated unit events, or
+    # a reproducible Rímac confluence. The original PDF is not hash-frozen.
+    viscachera = leads["Viscachera"]
+    vizcacha_eulalia = leads["Vizcacha"]
+    evar = viscachera["additional_official_2026_lurigancho_vizcachera_evar_context"]
+    vizcachera_unit = by_id["lima_lurigancho_vizcachera"]
+    assert evar["source_id"] == "MD-LURIGANCHO-SIGRID-21376-EVAR-VIZCACHERA-2026"
+    assert evar["catalog_url"] == "https://sigrid.cenepred.gob.pe/sigridv3/documento/21376"
+    assert evar["source_publication_year"] == 2026
+    assert evar["source_catalog_metadata_verified"] is True
+    assert evar["source_text_verified"] is False
+    assert evar["original_pdf_bytes_archived_in_this_contract"] is False
+    assert evar["original_pdf_sha256"] is None
+    assert evar["documentary_label_as_printed"] == "Quebrada Vizcachera"
+    assert evar["relation_to_existing_viscachera_spelling"].startswith("PENDING_")
+    assert evar["relation_to_santa_eulalia_vizcacha"].startswith("PENDING_")
+    assert viscachera["alias_adjudication"].startswith("VISCACHERA_VS_VIZCACHA_UNRESOLVED")
+    assert vizcacha_eulalia["alias_adjudication"].startswith("UNRESOLVED")
+    assert vizcacha_eulalia["documentary_receiver_context"] == (
+        "SANTA_EULALIA_LEFT_BANK_DOCUMENTARY_ONLY"
+    )
+    assert evar["documentary_receiver_context"] == (
+        "RIMAC_RIGHT_BANK_AREA_NARRATIVE_NOT_EXACT_GEODETIC_OUTLET_OR_CONFLUENCE"
+    )
+    exposure = evar["exposure_reference"]
+    assert exposure["survey_year"] == 2025
+    assert exposure["reported_residents"] == 4539
+    assert exposure["reported_dwellings"] == 1646
+    assert exposure["not_whole_catchment_population"] is True
+    assert evar["aggregate_historical_years_mentioned"] == [2012, 2015, 2017, 2023]
+    assert evar["aggregate_years_are_not_verified_unit_events"] is True
+    assert evar["verified_unit_event_dates"] == []
+    afluentes = evar["numbered_affluent_design_refs"]
+    assert len(afluentes) == 7
+    assert [row["label"] for row in afluentes] == [
+        f"Afluente {i}" for i in range(1, 8)
+    ]
+    assert [row["printed_page"] for row in afluentes] == list(range(87, 94))
+    assert [row["proposed_desilting_m"] for row in afluentes] == [
+        750, 350, 100, 150, 400, 400, 220
+    ]
+    assert [row["proposed_transverse_dikes"] for row in afluentes] == [
+        2, 2, 1, 1, 1, 2, 2
+    ]
+    assert evar["main_channel_proposed_work"] == {
+        "printed_page": 94, "proposed_desilting_m": 850,
+        "proposed_transverse_dikes": 2,
+    }
+    assert evar["design_not_as_built_or_verified_hydraulic_capacity"] is True
+    assert evar["numbered_design_labels_not_independent_hydrologic_unit_census"] is True
+    assert "0007-2025" in evar["internal_ftr_reference_discrepancy"]
+    assert "0006-2025" in evar["internal_ftr_reference_discrepancy"]
+    for field in (
+        "independent_vector_or_geodetic_channel_geometry",
+        "exact_outlet_coordinate", "exact_confluence_coordinate",
+        "measured_flow_or_stage", "travel_time_tau", "collector_capacity",
+        "collector_overflow_evidence",
+    ):
+        assert evar[field] is None, field
+    assert evar["map_publishable"] is False
+    for field in (
+        "documentary_row_count_increment",
+        "official_unmaterialized_name_lead_count_increment",
+        "confirmed_unique_hydrologic_unit_count_increment",
+    ):
+        assert evar[field] == 0, field
+    assert vizcachera_unit["identity_adjudication"] != "CONFIRMED_HYDROLOGIC_UNIT"
+    assert vizcachera_unit["verified_event_refs"] == []
+    assert vizcachera_unit["exact_confluence_coordinate"] is None
+    assert vizcachera_unit["map_publishable"] is False
+    assert d["counts"]["total_documentary_rows"] == 51
+    assert len(d["official_unmaterialized_name_leads"]) == 50
+    assert d["counts"]["confirmed_unique_hydrologic_unit_count"] is None
+
