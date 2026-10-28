@@ -167,6 +167,17 @@ def test_documentary_rows_are_not_a_deduplicated_hydrologic_census():
         )
         assert candidate["alias_adjudication"].startswith("UNRESOLVED")
     for lead in leads:
+        # Every non-materialized name must remain individually traceable to
+        # a named source and an exact document locator. A catalog/URL pointer
+        # is documentary provenance, NOT verification of the original bytes.
+        assert isinstance(lead["documentary_name"], str) and lead["documentary_name"].strip()
+        assert isinstance(lead["documentary_label_as_printed"], str)
+        assert lead["documentary_label_as_printed"].strip()
+        assert isinstance(lead["source_institution"], str) and lead["source_institution"].strip()
+        assert isinstance(lead["source_title"], str) and lead["source_title"].strip()
+        assert isinstance(lead["source_locator"], str) and lead["source_locator"].strip()
+        assert isinstance(lead["source_url"], str) and lead["source_url"].startswith("https://")
+        assert lead["alias_adjudication"]
         assert lead["source_text_verified"] is False
         assert lead["original_pdf_bytes_archived_in_this_contract"] is False
         assert lead["original_pdf_sha256"] is None
