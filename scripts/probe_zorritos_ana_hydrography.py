@@ -110,6 +110,17 @@ def valid_geojson_position(position: object) -> bool:
     )
 
 
+def nonzero_xy_ring_area(ring: list) -> bool:
+    """Reject zero signed XY area without imposing a hydraulic threshold."""
+    x0, y0 = ring[0][:2]
+    twice_area = math.fsum(
+        (ring[i][0] - x0) * (ring[i + 1][1] - y0)
+        - (ring[i + 1][0] - x0) * (ring[i][1] - y0)
+        for i in range(len(ring) - 1)
+    )
+    return twice_area != 0
+
+
 def valid_geojson_ring(ring: object) -> bool:
     """A context-only polygon ring must be closed with finite WGS84 positions."""
     return (
@@ -117,9 +128,10 @@ def valid_geojson_ring(ring: object) -> bool:
         and len(ring) >= 4
         and all(valid_geojson_position(position) for position in ring)
         and ring[0] == ring[-1]
-        # Four positions can still describe a zero-width ring. A polygon
-        # retained as context must have at least three distinct XY vertices.
+        # Three distinct XY vertices can still be collinear or self-crossing
+        # with zero signed area; neither is defensible polygon context.
         and len({(position[0], position[1]) for position in ring[:-1]}) >= 3
+        and nonzero_xy_ring_area(ring)
     )
 
 
@@ -255,6 +267,10 @@ def check_geojson_payload_guard() -> None:
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "GeometryCollection", "geometries": [{"type": "Point", "coordinates": [181, -3.1]}]}}]},
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "GeometryCollection", "geometries": [{"type": "LineString", "coordinates": [[-80.1, -3.1]]}]}}]},
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "GeometryCollection", "geometries": [{"type": "GeometryCollection", "geometries": [{"type": "Point", "coordinates": [True, -3.1]}]}]}}]},
+        # Distinct XY vertices do not imply nonzero area (collinear or bowtie).
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-80, -3], [-81, -3], [-82, -3], [-80, -3]]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "MultiPolygon", "coordinates": [[[[-80, -3], [-81, -4], [-82, -5], [-80, -3]]]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-80, -3], [-81, -4], [-80, -4], [-81, -3], [-80, -3]]]}}]},
         # Closed but degenerate rings are not defensible context geometry.
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-80.1, -3.1], [-80.1, -3.1], [-80.1, -3.1], [-80.1, -3.1]]]}}]},
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "MultiPolygon", "coordinates": [[[[-80.1, -3.1], [-80.2, -3.1], [-80.1, -3.1], [-80.1, -3.1]]]]}}]},
@@ -297,6 +313,7 @@ def check_geojson_payload_guard() -> None:
         {"type": "GeometryCollection", "geometries": [{"type": "Point", "coordinates": [-80.1, -3.1]}, {"type": "LineString", "coordinates": [[-80.1, -3.1], [-80.2, -3.2]]}]},
         {"type": "GeometryCollection", "geometries": [{"type": "GeometryCollection", "geometries": [{"type": "Point", "coordinates": [-80.1, -3.1]}]}]},
         {"type": "Polygon", "coordinates": [[[-80.1, -3.1], [-80.2, -3.1], [-80.2, -3.2], [-80.1, -3.1]]]},
+        {"type": "Polygon", "coordinates": [[[-80, -3, 0], [-81, -3, 0], [-81, -4, 0], [-80, -3, 0]]]},
         {"type": "MultiPolygon", "coordinates": [[[[-80.1, -3.1], [-80.2, -3.1], [-80.2, -3.2], [-80.1, -3.1]]]]},
     ):
         payload = {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": geometry}]}
