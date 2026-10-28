@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 import json
+import math
 import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
@@ -120,6 +121,23 @@ def validated_geojson_features(payload: dict, context: str) -> list[dict]:
             raise ValueError(f"invalid GeoJSON properties at {context}[{index}]")
         if feature.get("geometry") is not None and not isinstance(feature["geometry"], dict):
             raise ValueError(f"invalid GeoJSON geometry at {context}[{index}]")
+        # Validate line coordinate structure before preserving any ANA candidate.
+        # Other geometry types remain context-only, never promoted to line geometry.
+        geometry = feature.get("geometry")
+        if geometry is not None and geometry.get("type") in {"LineString", "MultiLineString"}:
+            kind = geometry["type"]
+            coordinates = geometry.get("coordinates")
+            if not isinstance(coordinates, list) or not coordinates:
+                raise ValueError(f"invalid ANA line coordinates at {context}[{index}]")
+            lines = [coordinates] if kind == "LineString" else coordinates
+            if any(not isinstance(line, list) or len(line) < 2 for line in lines):
+                raise ValueError(f"invalid ANA line structure at {context}[{index}]")
+            for line in lines:
+                for position in line:
+                    if (not isinstance(position, list) or len(position) < 2
+                            or any(isinstance(v, bool) or not isinstance(v, (int, float))
+                                   or not math.isfinite(v) for v in position[:2])):
+                        raise ValueError(f"invalid ANA line position at {context}[{index}]")
     return payload["features"]
 
 
@@ -133,6 +151,12 @@ def check_geojson_payload_guard() -> None:
         {"type": "FeatureCollection", "features": ""},
         {"type": "FeatureCollection", "features": "[]"},
         {"type": "FeatureCollection", "features": [None]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "LineString", "coordinates": None}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "LineString", "coordinates": "not-an-array"}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "LineString", "coordinates": [[-80.1, -3.1]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "LineString", "coordinates": [[True, -3.1], [-80.2, -3.2]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "MultiLineString", "coordinates": [[[0, 0]]]}}]},
+
         {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": []}]},
         {"type": "FeatureCollection", "features": [], "exceededTransferLimit": True},
         {"type": "FeatureCollection", "features": [], "exceededTransferLimit": None},
@@ -153,6 +177,12 @@ def check_geojson_payload_guard() -> None:
         {"type": "FeatureCollection", "features": [], "properties": {"exceededTransferLimit": False}},
     ):
         assert validated_geojson_features(valid, "offline-regression") == []
+    for geometry in (
+        {"type": "LineString", "coordinates": [[-80.1, -3.1], [-80.2, -3.2]]},
+        {"type": "MultiLineString", "coordinates": [[[-80.1, -3.1], [-80.2, -3.2]]]},
+    ):
+        payload = {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": geometry}]}
+        assert len(validated_geojson_features(payload, "offline-regression")) == 1
 
 
 def normalize_feature(feature: dict) -> dict:
