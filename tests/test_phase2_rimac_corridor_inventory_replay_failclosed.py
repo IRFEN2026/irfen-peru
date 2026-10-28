@@ -1765,3 +1765,79 @@ def test_cross_source_santa_eulalia_names_do_not_inherit_events_or_identity():
     assert len(d["official_unmaterialized_name_leads"]) == 50
     assert d["counts"]["confirmed_unique_hydrologic_unit_count"] is None
 
+
+    # RPAS catalogue candidates must not become mapped channels. These are
+    # six product records, NOT six newly identified ravines: three products
+    # describe the same 2018 flight coverage and two describe Huaycoloro.
+    # No SID bytes, raster georeferencing or channel vectors were frozen.
+    rpas = d["official_cenepred_rpas_catalog_geometry_leads"]
+    assert rpas["source_catalog"] == "CENEPRED SIGRID documentary RPAS catalog"
+    assert rpas["retrieval_date"] == "2026-10-28"
+    assert rpas["catalog_pages_verified"] is True
+    assert rpas["original_product_bytes_retrieved"] is False
+    assert rpas["original_product_sha256"] is None
+    assert rpas["product_crs_georeferencing_and_footprint_not_verified"] is True
+    for flag in (
+        "flight_coverage_not_equivalent_to_hydrologic_catchment",
+        "three_2018_products_are_one_named_area_not_three_confirmed_ravines",
+        "ground_control_catalog_claim_not_independent_geodetic_validation",
+        "reported_spatial_resolution_not_hydrologic_accuracy",
+        "sid_raster_or_contour_catalog_not_verified_vector_cauce",
+        "road_bridge_orthomosaic_not_confluence_point",
+        "source_author_not_uniform_across_products",
+    ):
+        assert rpas[flag] is True, flag
+    assert rpas["evidence_role"] == (
+        "CATALOG_METADATA_ONLY_POTENTIAL_GEODATA_RECOVERY_NOT_REPRODUCIBLE_CHANNEL"
+    )
+    products = rpas["products"]
+    assert len(products) == 6
+    by_catalog_id = {p["catalog_id"]: p for p in products}
+    assert len(by_catalog_id) == len(products)
+    assert set(by_catalog_id) == {5352, 5321, 5282, 6741, 5294, 5278}
+    for catalog_id, product in by_catalog_id.items():
+        assert product["url"] == (
+            f"https://sigrid.cenepred.gob.pe/sigridv3/documento/{catalog_id}"
+        )
+        assert product["catalog_format"] == "SID"
+        assert product["catalog_area_ha"] > 0
+    for catalog_id in (5352, 5321, 5282):
+        product = by_catalog_id[catalog_id]
+        assert product["documentary_scope"] == (
+            "Qda. Mariscal Castilla, Qda. Santo Domingo, Sector Virgen del Rosario"
+        )
+        assert product["flight_date"] == "2018-03-13"
+        assert product["catalog_area_ha"] == 106.69
+        assert product["ground_control_points_reported"] is True
+    assert by_catalog_id[5352]["product"] == "CONTOURS"
+    assert by_catalog_id[5321]["product"] == "DIGITAL_SURFACE_MODEL"
+    assert by_catalog_id[5282]["product"] == "ORTHOMOSAIC"
+    assert by_catalog_id[5321]["spatial_resolution_cm"] == 3.66
+    assert by_catalog_id[5282]["spatial_resolution_cm"] == 3.66
+    assert by_catalog_id[6741]["documentary_scope"] == "La Ronda-Chosica"
+    assert by_catalog_id[6741]["catalog_year"] == 2016
+    assert by_catalog_id[6741]["product"] == "CONTOURS"
+    assert by_catalog_id[6741]["ground_control_points_reported"] is True
+    for catalog_id in (5294, 5278):
+        assert by_catalog_id[catalog_id]["product"] == "ORTHOMOSAIC"
+        assert by_catalog_id[catalog_id]["ground_control_points_reported"] is False
+        assert "Huaycoloro" in by_catalog_id[catalog_id]["documentary_scope"]
+    for key in (
+        "exact_outlet", "exact_confluence", "reproducible_channel_geometry",
+        "travel_time_tau", "collector_capacity", "collector_overflow_evidence",
+        "hydraulic_factors", "decision_thresholds",
+    ):
+        assert rpas[key] is None, key
+    assert rpas["receiver_chain_adjudicated"] is False
+    assert rpas["map_publishable"] is False
+    assert rpas["operational_alerting_enabled"] is False
+    assert rpas["activation_gate"] == "BLOCKED"
+    for key in (
+        "documentary_row_count_increment",
+        "official_unmaterialized_name_lead_count_increment",
+        "confirmed_unique_hydrologic_unit_count_increment",
+    ):
+        assert rpas[key] == 0, key
+    assert d["counts"]["total_documentary_rows"] == 51
+    assert len(d["official_unmaterialized_name_leads"]) == 50
+    assert d["counts"]["confirmed_unique_hydrologic_unit_count"] is None
