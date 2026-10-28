@@ -1,7 +1,8 @@
 "use strict";
 /* IRFEN v0.9 · navegación común (RESEARCH_ONLY / TEST_ONLY).
-   Cinco secciones sobre las páginas existentes, sin cambiar sus URL:
+   Secciones sobre las páginas existentes, sin cambiar sus URL:
      Resumen               -> resumen.html
+     Radar nacional        -> vigilancia_nacional.html (sin predicción de riesgo)
      Mapa                  -> territorio.html
      Quebradas e inventario-> inventario.html (inventario documental nacional; el visor conserva su listado regional)
      Lluvia y avisos       -> index.html
@@ -11,6 +12,7 @@
 (function () {
   const SECTIONS = [
     {id: "resumen", label: "Resumen", href: "resumen.html"},
+    {id: "nacional", label: "Vigilancia nacional", href: "vigilancia_nacional.html"},
     {id: "mapa", label: "Mapa", href: "territorio.html"},
     {id: "inventario", label: "Quebradas e inventario", href: "inventario.html"},
     {id: "lluvia", label: "Lluvia y avisos", href: "index.html"},
@@ -19,6 +21,7 @@
   function current() {
     const page = (location.pathname.split("/").pop() || "index.html").toLowerCase();
     const hash = location.hash.replace("#", "").toLowerCase();
+    if (page === "vigilancia_nacional.html") return "nacional";
     if (page === "territorio.html") return "mapa";
     if (page === "inventario.html") return "inventario";
     if (page === "resumen.html") return hash === "avances" ? "avances" : "resumen";
