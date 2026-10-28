@@ -889,7 +889,49 @@ def test_unverified_events_and_station_triggers_do_not_become_flow():
     lead_names = [row["documentary_name"] for row in all_leads]
     pprrd_added = pprrd_new_names & set(lead_names)
     assert pprrd_added == pprrd_new_names
-    assert len(all_leads) == len(set(lead_names)) == 49
+    # Transition gate for a 2026 ANA/SIGRID catalog lead: Lúcuma is
+    # separately documented from the 2023 municipal label Lúcuma Seca.
+    # Both the pre-materialization (49) and one-lead (50) states are valid;
+    # no source-to-source alias or exact confluence is adjudicated.
+    assert len(all_leads) == len(set(lead_names))
+    lucuma = [row for row in all_leads if row["documentary_name"] == "Lúcuma"]
+    assert len(lucuma) in (0, 1)
+    assert len(all_leads) == 49 + len(lucuma)
+    assert "Lúcuma Seca" in lead_names
+    if lucuma:
+        row = lucuma[0]
+        assert row["source_id"] == "ANA-SIGRID-22156-LUCUMA-RD0546-2026"
+        assert row["source_url"] == "https://sigrid.cenepred.gob.pe/sigridv3/documento/22156"
+        assert row["source_institution"].startswith("Autoridad Nacional del Agua")
+        assert row["documentary_label_as_printed"] == "Quebrada Lúcuma"
+        assert row["documentary_receiver_context"] == (
+            "SANTA_EULALIA_RIGHT_BANK_TRIBUTARY_CATALOG_ONLY_NO_EXACT_NODE"
+        )
+        assert row["relation_to_lucuma_seca"] == "UNRESOLVED_NO_EQUIVALENCE"
+        assert row["regulatory_resolution"] == "0546-2026-ANA-AAA.CF"
+        assert row["regulatory_faja_length_km"] == 0.98
+        assert row["regulatory_hitos_total"] == 16
+        assert row["regulatory_hitos_by_bank"] == {"right": 8, "left": 8}
+        assert row["faja_markers_are_not_channel_geometry"] is True
+        assert row["source_catalog_metadata_verified"] is True
+        assert row["source_text_verified"] is False
+        assert row["original_pdf_bytes_archived_in_this_contract"] is False
+        assert row["original_pdf_sha256"] is None
+        assert row["alias_adjudication"].startswith("UNRESOLVED")
+        assert row["receiver_chain_adjudicated"] is False
+        assert row["counted_as_confirmed_unique_hydrologic_unit"] is False
+        for field in (
+            "catchment_geometry", "channel_geometry", "outlet_coordinate",
+            "exact_confluence_coordinate", "travel_time_tau",
+            "collector_capacity", "collector_overflow_evidence",
+        ):
+            assert row[field] is None, field
+        for field in (
+            "verified_event_refs", "rainfall_observation_refs",
+            "flow_or_stage_observation_refs",
+        ):
+            assert row[field] == [], field
+        assert row["map_publishable"] is False
     assert sum(
         row.get("source_id") == "MDSE-SIGRID-PPRRD-SANTA-EULALIA-2025-2030-TABLE22"
         for row in all_leads
@@ -1305,7 +1347,7 @@ def test_unverified_events_and_station_triggers_do_not_become_flow():
     assert len(added) == 3
     assert {row["documentary_name"] for row in added} == newly_named
     assert pprrd["new_documentary_name_leads_pending_materialization"] == 0
-    assert len(d["official_unmaterialized_name_leads"]) == 49
+    assert len(d["official_unmaterialized_name_leads"]) in (49, 50)
     for row in added:
         assert row["source_id"] == pprrd["source_id"]
         assert row["source_url"] == pprrd["source_url"]
