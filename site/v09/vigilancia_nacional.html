@@ -32,7 +32,7 @@ section.card{background:#fff;border:1px solid #dde5ec;border-radius:14px;padding
 .controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:12px 0}
 select{border:1px solid #bfcdd8;border-radius:8px;background:#fff;padding:9px;max-width:100%}
 .zones{display:grid;gap:9px;margin-top:12px}
-.zone{border:1px solid #e0e7ed;padding:12px;border-radius:10px}
+.zone{border:1px solid #e0e7ed;padding:12px;border-radius:10px;min-width:0;overflow-wrap:anywhere}
 .zone p{margin:5px 0;font-size:13px}
 .zone h3{margin-bottom:6px}
 #docs{max-height:310px;overflow:auto;padding-left:19px;font-size:13px;line-height:1.8}
@@ -87,6 +87,7 @@ const S=window.IRFEN_SCREENING,esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":
 let T=null,V=null,selection="Tumbes",computed=[];
 const peruTime=x=>{const ms=S.ms(x);return ms===null?"sin fecha":new Date(ms).toLocaleString("es-PE",{timeZone:"America/Lima",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})+" (Perú)"};
 const keyLabel={"CONCURRENCIA":"first","AVISO_OFICIAL":"official","LLUVIA_SATELITAL":"rain","AVISO_SIN_CRUCE_RECIENTE":"stale","LECTURA_DISPONIBLE":"neutral","SIN_LECTURA_VIGENTE":"stale"};
+const relationLabels={BASIN_INTERSECTS_LISTED_PROVINCE:"Cuenca cruza provincia mencionada",BASIN_INTERSECTS_LISTED_DEPARTMENT:"Cuenca en departamento mencionado",LISTED_PROVINCE_CONTEXT_NO_BASIN:"Provincia mencionada; no equivale a cuenca",DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN:"Departamento mencionado; vínculo provincial sin confirmar",BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES:"Cuenca fuera de las provincias expresamente citadas"};
 function render(){
  const totals=new Map(S.DEPARTMENTS.map(d=>[d,0])),groups=new Map(S.DEPARTMENTS.map(d=>[d,[]]));
  V.rows.forEach(r=>{const d=S.department(r.department);if(d)totals.set(d,totals.get(d)+1)});
@@ -129,7 +130,7 @@ function drawSelection(totals,groups){
   const title=x.id.includes(":")?x.id.split(":").pop().replaceAll("_"," "):x.id.replaceAll("_"," ");
   const rain=s.rain.available?"IMERG 24 h: "+s.rain.mm24.toFixed(2)+" mm (ventana completa)":"IMERG 24 h: incompleta o fuera de vigencia; no es cero";
   const aviso=s.warn.verifiedCurrent?s.warn.verifiedCurrent+" avisos relacionados, cruce reciente":s.warn.observedInPackage?s.warn.observedInPackage+" avisos registrados; cruce sin actualización reciente":"Sin aviso asociado vigente y recientemente comprobado; no significa ausencia de amenaza";
-  return '<div class="zone" data-zone="'+esc(x.id)+'"><h3>'+esc(title)+'</h3><span class="pill '+keyLabel[s.key]+'">'+esc(S.LABELS[s.key])+'</span><p>'+esc(context)+'</p><p>'+esc(rain)+'</p><p>'+esc(aviso)+'</p><p class="small">Última ventana IMERG: '+esc(peruTime(s.rain.end))+'. Relación del aviso: '+esc(s.warn.relationMethods.join(", ")||"sin relación vigente")+'.</p></div>';
+  return '<div class="zone" data-zone="'+esc(x.id)+'"><h3>'+esc(title)+'</h3><span class="pill '+keyLabel[s.key]+'">'+esc(S.LABELS[s.key])+'</span><p>'+esc(context)+'</p><p>'+esc(rain)+'</p><p>'+esc(aviso)+'</p><p class="small">Última ventana IMERG: '+esc(peruTime(s.rain.end))+'. Relación del aviso: '+esc(s.warn.relationMethods.length?s.warn.relationMethods.map(k=>relationLabels[k]||"Relación por comprobar").join("; "):"sin relación vigente")+'.</p></div>';
  }).join(""):'<p class="note">Sin zona meteorológica incorporada para este departamento en el paquete v0.9. No interpretes el vacío como riesgo bajo. El inventario es documental.</p>';
  const rows=V.rows.filter(r=>S.department(r.department)===selection);
  document.getElementById("docs").innerHTML=rows.slice(0,25).map(r=>'<li><a href="inventario.html#id='+encodeURIComponent(r.id)+'">'+esc(r.name)+'</a> <span class="small">('+esc(r.province||"provincia sin dato")+')</span></li>').join("")||'<li>Sin registros incorporados en este maestro; inventario no exhaustivo.</li>';
