@@ -773,6 +773,7 @@ class Browser(unittest.TestCase):
                             page.wait_for_selector("#map svg path")
                             chips = page.eval_on_selector_all("#status .st", "els => els.map(e => e.className)")
                             self.assertTrue(chips and all("old" in c for c in chips), (where, chips))
+                            self.assertNotRegex(page.inner_text("#status").lower(), r"al d[ií]a", where)  # an old stored state is not repeated as current
                             self.assertLessEqual(overflow(), 1, where)
                             # 3. Inventario nacional → 4. buscar → 5. ficha
                             page.click("#irfen-nav a[data-section=inventario]")
@@ -812,8 +813,18 @@ class Browser(unittest.TestCase):
                             page.click("#irfen-nav a[data-section=lluvia]")
                             page.wait_for_selector("#chips .chip")
                             page.wait_for_selector("[data-fresh]")
+                            if name == "mobile":  # the current section stays visible in the sideways-scrolling bar
+                                visible = page.evaluate("""() => { const a = document.querySelector('#irfen-nav [aria-current]'),
+                                    c = a.parentElement.getBoundingClientRect(), r = a.getBoundingClientRect();
+                                    return r.left >= c.left - 1 && r.right <= c.right + 1; }""")
+                                self.assertTrue(visible, where)
                             fresh = page.eval_on_selector_all("[data-fresh]", "els => els.map(e => e.dataset.fresh)")
                             self.assertNotIn("DISPONIBLE", fresh, (where, fresh))
+                            # a complete IMERG archive whose newest window is old is not green (coverage ≠ freshness)
+                            cov = page.locator("#continuity-chips [data-coverage-overall]")
+                            self.assertEqual(cov.get_attribute("data-latest-usable"), "0", where)
+                            self.assertNotIn(" ok", f" {cov.get_attribute('class')} ", where)
+                            self.assertIn("no describe la situación actual", cov.inner_text(), where)
                             self.assertNotIn("hace -", page.inner_text("body"))
                             self.assertLessEqual(overflow(), 1, where)
                             self.assertEqual(errors, [], where)

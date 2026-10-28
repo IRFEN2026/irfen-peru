@@ -257,7 +257,11 @@ function renderStatus(){
   chip(gAge != null && gAge >= 0 && gAge <= F.geos_max_cycle_age_h, `GEOS-CF ciclo <b>${lima(s.geos_latest_cycle_start_utc)}</b> (${ago(s.geos_latest_cycle_start_utc)})`,
        `Un ciclo se usa hasta ${F.geos_max_cycle_age_h} h después de su inicio.`);
   const lAge = tms(s.avisos_links_evaluated_at_utc) != null ? (now - tms(s.avisos_links_evaluated_at_utc)) / 3.6e6 : null;
-  chip(s.aviso_source_state === "AL_DIA" && lAge != null && lAge >= 0 && lAge <= 3, `Avisos: fuente ${esc((s.aviso_source_state || "desconocida").toLowerCase().replace("_", " "))} · último cruce ${ago(s.avisos_links_evaluated_at_utc)}`,
+  // The stored source state is only repeated while the last crossing is recent: an old «al día» is not current.
+  const avOk = s.aviso_source_state === "AL_DIA" && lAge != null && lAge >= 0 && lAge <= 3;
+  const avTxt = avOk ? "fuente al día" : lAge == null ? "sin cruce registrado" : lAge < 0 ? "fecha de cruce posterior a este reloj"
+    : s.aviso_source_state === "AL_DIA" ? "sin cruce reciente; puede haber avisos no capturados" : `fuente ${esc((s.aviso_source_state || "desconocida").toLowerCase().replace("_", " "))}`;
+  chip(avOk, `Avisos: ${avTxt} · último cruce ${ago(s.avisos_links_evaluated_at_utc)}`,
        "Avisos oficiales de SENAMHI obtenidos vía INDECI/COEN. Más de 3 h sin cruce: la captura no ha corrido (ver continuidad); los estados de vigencia se recalculan igualmente con la hora actual.");
   const built = D.built_at_utc, bAge = tms(built) != null ? (now - tms(built)) / 3.6e6 : null;
   chip(bAge != null && bAge >= 0 && bAge <= 3, `Paquete generado <b>${lima(built)}</b> (${ago(built)})`, "El paquete se reconstruye en cada ejecución de lluvia o captura de avisos. Más de 3 h sin reconstruirse: revisar la continuidad.");

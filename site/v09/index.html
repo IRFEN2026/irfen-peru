@@ -476,8 +476,13 @@ function renderContinuityEvidence(){
   if (!label) return;
   const detail = s.zones ? `${s.complete} completas, ${s.partial} parciales, ${s.no_data} sin datos, ${s.unknown} desconocidas de ${s.zones} zonas`
     : "el paquete no contiene zonas: no hay evidencia";
-  label.innerHTML = `<span class="chip ${cls}" data-coverage-overall="${s.overall}" data-zones="${s.zones}" data-complete="${s.complete}">
-    IMERG · cobertura 24 h verificada en el archivo: ${txt} · ${detail}
+  // Coverage of the archive is not freshness: a complete but old (or future-dated) archive is never shown green.
+  const latest = latestIso(zones.map(z => { const im = imergOf(z); return im && im.window_end_utc; })), now = Date.now();
+  const usable = latest != null && imergUsableAt({window_end_utc: latest}, now, FR());
+  const when = latest == null || usable ? "" : ` · ventana más reciente ${lima(latest)} (${ago(latest)}): ${tms(latest) > now
+    ? "fecha posterior a este reloj, no cuenta" : "antigua, no describe la situación actual"}`;
+  label.innerHTML = `<span class="chip ${cls === "ok" && !usable ? "warn" : cls}" data-coverage-overall="${s.overall}" data-zones="${s.zones}" data-complete="${s.complete}" data-latest-usable="${usable ? 1 : 0}">
+    IMERG · cobertura 24 h verificada en el archivo: ${txt} · ${detail}${when}
   </span><span class="chip">La cobertura por zona NO mide la puntualidad de GitHub Actions; un hueco es dato desconocido, nunca lluvia cero ni riesgo bajo</span>`;
 }
 function renderHeader(){

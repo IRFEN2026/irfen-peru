@@ -233,7 +233,7 @@ class InBrowser(unittest.TestCase):
         cls.srv.shutdown()
         cls.srv.server_close()
 
-    def render(self, zones_imerg):
+    def render(self, zones_imerg, clock=None):
         bundle = json.loads(BUNDLE.read_text(encoding="utf-8"))
         template = bundle["rain"]["zones"][0]
         bundle["rain"]["zones"] = [dict(copy.deepcopy(template), zone_id=f"z{i}", display_name=f"Zona {i}", imerg=im)
@@ -253,6 +253,8 @@ class InBrowser(unittest.TestCase):
                 return r.continue_()
             return r.abort()  # no external requests
         page.route("**/*", route)
+        if clock is not None:
+            page.clock.install(time=clock)
         page.goto(self.origin + "v09/index.html")
         page.wait_for_selector("#continuity-chips [data-coverage-overall]", timeout=15000)
         chip = page.locator("#continuity-chips [data-coverage-overall]")
@@ -335,10 +337,17 @@ class InBrowser(unittest.TestCase):
         self.assertEqual(r["panel"], {"z0": ["COMPLETE"], "z1": ["PARTIAL"], "z2": ["PARTIAL"], "z3": ["NO_DATA"]}, "selected-zone panel")
 
     def test_only_full_verified_evidence_is_green(self):
-        r = self.render([imerg([[t, 0.0] for t in slots(48)])] * 2)
+        # green only while the newest window is still usable (coverage of the archive is not freshness)
+        r = self.render([imerg([[t, 0.0] for t in slots(48)])] * 2, clock=END + timedelta(hours=1))
         self.assertEqual(r["overall"], "COMPLETE")
         self.assertIn(" ok", f" {r['cls']} ")
         self.assert_rendered_cleanly(r)
+        for late in (END + timedelta(hours=30), END - timedelta(hours=2)):  # old, and later than this device's clock
+            r = self.render([imerg([[t, 0.0] for t in slots(48)])] * 2, clock=late)
+            self.assertEqual(r["overall"], "COMPLETE")
+            self.assertNotIn(" ok", f" {r['cls']} ")
+            self.assertIn("ventana más reciente", r["text"])
+            self.assert_rendered_cleanly(r)
 
 
 if __name__ == "__main__":

@@ -34,6 +34,9 @@
         `<a href="${s.href}" data-section="${s.id}"${s.id === cur ? ' aria-current="page"' : ""}>${s.label}</a>`).join("")}</div>
       <span class="irfen-tag" title="Versión experimental de investigación. No emite alertas.">Experimental · no es alerta</span>
     </nav>`;
+    // on narrow screens the links scroll sideways: keep the current section in view
+    const links = host.querySelector(".irfen-links"), here = links.querySelector("[aria-current]");
+    if (here && links.scrollWidth > links.clientWidth) links.scrollLeft = Math.max(0, here.offsetLeft - links.offsetLeft - (links.clientWidth - here.offsetWidth) / 2);
     // hide links whose page is not served (never send the reader to a 404)
     const seen = {};
     host.querySelectorAll("a[data-section]").forEach(a => {
