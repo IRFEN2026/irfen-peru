@@ -164,8 +164,19 @@ def validated_geojson_features(payload: dict, context: str) -> list[dict]:
             }:
                 raise ValueError(f"invalid ANA geometry type at {context}[{index}]")
             if geometry_type == "GeometryCollection":
-                if not isinstance(geometry.get("geometries"), list):
+                geometries = geometry.get("geometries")
+                if not isinstance(geometries, list):
                     raise ValueError(f"invalid ANA geometry collection at {context}[{index}]")
+                # Nested collection members must pass the same fail-closed
+                # validation as top-level features, including their coordinates.
+                for child_index, child in enumerate(geometries):
+                    if not isinstance(child, dict):
+                        raise ValueError(f"invalid ANA collection member at {context}[{index}]")
+                    validated_geojson_features(
+                        {"type": "FeatureCollection",
+                         "features": [{"type": "Feature", "geometry": child}]},
+                        f"{context}[{index}].geometries[{child_index}]",
+                    )
             elif not isinstance(geometry.get("coordinates"), list):
                 raise ValueError(f"invalid ANA geometry coordinates at {context}[{index}]")
             if geometry_type == "Point" and not valid_geojson_position(geometry["coordinates"]):
@@ -230,6 +241,11 @@ def check_geojson_payload_guard() -> None:
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "MultiPoint", "coordinates": []}}]},
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "MultiPoint", "coordinates": [[-80.1, -3.1], ["bad", -3.2]]}}]},
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "GeometryCollection", "geometries": None}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "GeometryCollection", "geometries": [None]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "GeometryCollection", "geometries": [{"type": "Unknown", "coordinates": []}]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "GeometryCollection", "geometries": [{"type": "Point", "coordinates": [181, -3.1]}]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "GeometryCollection", "geometries": [{"type": "LineString", "coordinates": [[-80.1, -3.1]]}]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "GeometryCollection", "geometries": [{"type": "GeometryCollection", "geometries": [{"type": "Point", "coordinates": [True, -3.1]}]}]}}]},
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Polygon", "coordinates": []}}]},
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-80.1, -3.1], [-80.2, -3.1], [-80.1, -3.1]]]}}]},
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-80.1, -3.1], [-80.2, -3.1], [-80.2, -3.2], [-80.1, -3.3]]]}}]},
@@ -265,6 +281,8 @@ def check_geojson_payload_guard() -> None:
         {"type": "Point", "coordinates": [-80.1, -3.1]},
         {"type": "MultiPoint", "coordinates": [[-80.1, -3.1], [-80.2, -3.2, 4.0]]},
         {"type": "GeometryCollection", "geometries": []},
+        {"type": "GeometryCollection", "geometries": [{"type": "Point", "coordinates": [-80.1, -3.1]}, {"type": "LineString", "coordinates": [[-80.1, -3.1], [-80.2, -3.2]]}]},
+        {"type": "GeometryCollection", "geometries": [{"type": "GeometryCollection", "geometries": [{"type": "Point", "coordinates": [-80.1, -3.1]}]}]},
         {"type": "Polygon", "coordinates": [[[-80.1, -3.1], [-80.2, -3.1], [-80.2, -3.2], [-80.1, -3.1]]]},
         {"type": "MultiPolygon", "coordinates": [[[[-80.1, -3.1], [-80.2, -3.1], [-80.2, -3.2], [-80.1, -3.1]]]]},
     ):
