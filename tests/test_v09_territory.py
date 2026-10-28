@@ -233,6 +233,55 @@ class Page(unittest.TestCase):
         self.assertNotIn("site/v09/nav.js", gate.TERRITORY_PATHS)  # the panel uses it too
 
 
+    def test_cover_indicators_need_real_window_coverage(self):
+        """QA #6476218149: a recent timestamp alone never makes the cover indicators green. IMERG needs complete 6 h
+        and 24 h windows per zone; GEOS-CF needs the hours that are actually available from now. SYNTHETIC zones."""
+        import shutil
+        import subprocess
+        node = shutil.which("node")
+        self.assertIsNotNone(node, "node is required (GitHub runners provide it)")
+        cover = (ROOT / "site/v09/resumen.html").read_text(encoding="utf-8")
+        block = cover[cover.index("/* COVER-RULES-BEGIN"):cover.index("/* COVER-RULES-END */")]
+        rules = (ROOT / "site/v09/shared_rules.js").read_text(encoding="utf-8")
+        now = "2026-10-27T15:00:00Z"
+        full = lambda **w: dict(windows={"6h": dict(accum_mm=1.2), "24h": dict(accum_mm=0.0), **w})
+        im = lambda end, **w: dict(imerg=dict(window_end_utc=end, **full(**w)))
+        hours = lambda first, n: [dict(valid_time_utc=f"2026-10-27T{h:02d}:30:00Z" if h < 24 else f"2026-10-28T{h - 24:02d}:30:00Z", precip_mm=0.1)
+                                  for h in range(first, first + n)]
+        ge = lambda start, hrs: dict(geos=dict(status="CALCULADO", dataset_time_start=start, hourly=hrs))
+        cases = {
+            "imerg_complete": ("imerg", [im("2026-10-27T10:00:00Z")] * 3, "2026-10-27T10:00:00Z", "COMPLETE"),
+            "imerg_partial_24h": ("imerg", [im("2026-10-27T10:00:00Z"), im("2026-10-27T10:00:00Z", **{"24h": dict(status="NO_DISPONIBLE")})],
+                                  "2026-10-27T10:00:00Z", "PARTIAL"),
+            "imerg_no_complete_window": ("imerg", [im("2026-10-27T10:00:00Z", **{"6h": dict(status="NO_DISPONIBLE"), "24h": dict(status="NO_DISPONIBLE")})] * 2,
+                                         "2026-10-27T10:00:00Z", "NO_COMPLETE_WINDOW"),
+            "imerg_zero_is_complete_only_if_calculated": ("imerg", [im("2026-10-27T10:00:00Z", **{"24h": dict(accum_mm=0.0, status="NO_DISPONIBLE")})],
+                                                          "2026-10-27T10:00:00Z", "PARTIAL"),
+            "imerg_zone_window_in_future": ("imerg", [im("2026-10-27T10:00:00Z"), im("2026-10-27T18:00:00Z")], "2026-10-27T10:00:00Z", "PARTIAL"),
+            "imerg_latest_in_future": ("imerg", [im("2026-10-27T18:00:00Z")], "2026-10-27T18:00:00Z", "FUTURE"),
+            "imerg_stale": ("imerg", [im("2026-10-26T10:00:00Z")], "2026-10-26T10:00:00Z", "STALE"),
+            "imerg_no_date": ("imerg", [im("2026-10-27T10:00:00Z")], None, "NO_DATE"),
+            "geos_recent_cycle_zero_hours": ("geos", [ge("2026-10-27T09:30:00Z", [])] * 2, "2026-10-27T09:30:00Z", "NO_USABLE_FORECAST"),
+            "geos_recent_cycle_full": ("geos", [ge("2026-10-27T09:30:00Z", hours(15, 30))] * 2, "2026-10-27T09:30:00Z", "COMPLETE"),
+            "geos_recent_cycle_short": ("geos", [ge("2026-10-27T09:30:00Z", hours(15, 30)), ge("2026-10-27T09:30:00Z", hours(15, 8))],
+                                        "2026-10-27T09:30:00Z", "PARTIAL"),
+            "geos_hours_not_from_now": ("geos", [ge("2026-10-27T09:30:00Z", hours(18, 30))], "2026-10-27T09:30:00Z", "NO_USABLE_FORECAST"),
+            "geos_cycle_in_future": ("geos", [ge("2026-10-27T20:30:00Z", hours(21, 30))], "2026-10-27T20:30:00Z", "FUTURE"),
+            "geos_cycle_stale": ("geos", [ge("2026-10-24T09:30:00Z", hours(15, 30))], "2026-10-24T09:30:00Z", "STALE"),
+            "geos_no_date": ("geos", [ge("2026-10-27T09:30:00Z", hours(15, 30))], None, "NO_DATE"),
+        }
+        runner = """
+const input = JSON.parse(require("fs").readFileSync(0, "utf8")), t = Date.parse(input.now), out = {};
+for (const [name, [kind, zones, ts]] of Object.entries(input.cases))
+  out[name] = (kind === "imerg" ? coverImergState : coverGeosState)(zones, ts, t, DEFAULT_FRESHNESS).state;
+process.stdout.write(JSON.stringify(out));"""
+        res = subprocess.run([node, "-e", rules + "\n" + block + runner], input=json.dumps(dict(now=now, cases={k: v[:3] for k, v in cases.items()})),
+                             capture_output=True, text=True, check=True, timeout=60)
+        got = json.loads(res.stdout)
+        self.assertEqual(got, {k: v[3] for k, v in cases.items()})
+        self.assertNotIn("hourly:[]", cover.replace(" ", ""))  # never fake an empty forecast to read a status
+
+
 @unittest.skipUnless(BROWSER, "Playwright/Chromium not installed; runs in workflow v09-dashboard-browser-test.yml")
 class Browser(unittest.TestCase):
     def test_cover_page_states_map_and_navigation(self):
@@ -293,6 +342,22 @@ class Browser(unittest.TestCase):
                     self.assertEqual(imerg_state(page), "bad")
                     self.assertIn("fecha posterior a la hora de este equipo", page.inner_text("#status"))
                     page.close()
+                    # SYNTHETIC degraded bundle: recent IMERG with incomplete windows and a recent GEOS-CF cycle without
+                    # hours: neither indicator may read as available
+                    degraded = json.loads(T.OUT.read_text(encoding="utf-8"))
+                    for i, z in enumerate(degraded["zone_rain"].values()):
+                        if i % 2:
+                            z["imerg"]["windows"]["24h"] = {"status": "NO_DISPONIBLE", "reason": "SYNTHETIC: half hour missing"}
+                        z["geos"]["hourly"] = []
+                    cycle = parse(ds["geos_latest_cycle_start_utc"])
+                    (site / "data/v09/territory_v0_1.json").write_text(json.dumps(degraded), encoding="utf-8")
+                    page = open_cover(max(imerg_end, cycle) + timedelta(hours=1), dict(width=1440, height=900))
+                    self.assertEqual(imerg_state(page), "partial")
+                    self.assertIn("no es cero", page.inner_text("#status .st:nth-child(2)"))
+                    self.assertEqual(page.get_attribute("#status .st:nth-child(3)", "data-state"), "none")
+                    self.assertIn("Sin previsión utilizable", page.inner_text("#status .st:nth-child(3)"))
+                    page.close()
+                    shutil.copy(T.OUT, site / "data/v09/territory_v0_1.json")
                     page = open_cover(imerg_end + timedelta(days=2), dict(width=1440, height=900))
                     self.assertEqual(imerg_state(page), "old")
                     # navigation: inventory deep link, searches with and without geometry, region link, panel

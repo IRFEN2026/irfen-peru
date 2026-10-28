@@ -42,6 +42,7 @@ main{max-width:1180px;margin:0 auto;padding:0 16px 40px}
 .st .pill{align-self:flex-start;font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px}
 .st.ok .pill{background:var(--ok-bg);color:var(--ok-ink)} .st.old .pill{background:var(--warn-bg);color:var(--warn-ink)}
 .st.bad .pill{background:var(--bad-bg);color:var(--bad-ink)} .st.none .pill{background:var(--surface-2);color:var(--ink-3)}
+.st.partial .pill{background:var(--warn-bg);color:var(--warn-ink)}
 .cta{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
 .cta a{display:inline-block;padding:9px 14px;border-radius:10px;text-decoration:none;font-weight:600;border:1px solid var(--border);color:var(--ink);background:var(--card)}
 .cta a.primary{background:var(--ink);color:var(--surface);border-color:var(--ink)}
@@ -166,6 +167,44 @@ const ago = iso => { const t = tms(iso); if (t == null) return "sin fecha"; cons
 let T = null, DB = null;
 
 /* ---------- three freshness indicators (same rules as the viewer; future timestamps are never current) ---------- */
+/* COVER-RULES-BEGIN — pure functions (no DOM) over the bundle zones, built on shared_rules.js; run with node by
+   tests/test_v09_territory.py. A recent timestamp alone never makes an indicator green. */
+function completeWindow(w){ return !!w && typeof w.accum_mm === "number" && Number.isFinite(w.accum_mm) && w.accum_mm >= 0 && (w.status == null || w.status === "CALCULADO"); }
+function coverImergState(zones, latestEnd, now, F){
+  const end = tms(latestEnd), n = zones.length;
+  if (end == null) return {state:"NO_DATE", n, c6:0, c24:0, end:latestEnd};
+  if (end > now) return {state:"FUTURE", n, c6:0, c24:0, end:latestEnd};
+  if (!imergUsableAt({window_end_utc: latestEnd}, now, F)) return {state:"STALE", n, c6:0, c24:0, end:latestEnd};
+  let c6 = 0, c24 = 0;
+  zones.forEach(z => {
+    const im = z && z.imerg;
+    if (!im || !imergUsableAt(im, now, F)) return;  // a zone's own window must be usable (not old, not future)
+    const w = im.windows || {};
+    if (completeWindow(w["6h"])) c6++;
+    if (completeWindow(w["24h"])) c24++;
+  });
+  const state = n && c6 === n && c24 === n ? "COMPLETE" : c6 + c24 === 0 ? "NO_COMPLETE_WINDOW" : "PARTIAL";
+  return {state, n, c6, c24, end:latestEnd};
+}
+function coverGeosState(zones, cycleStart, now, F){
+  const start = tms(cycleStart), n = zones.length;
+  if (start == null) return {state:"NO_DATE", n, c6:0, c24:0, start:cycleStart};
+  if (start > now) return {state:"FUTURE", n, c6:0, c24:0, start:cycleStart};
+  if (now - start > F.geos_max_cycle_age_h * 3.6e6) return {state:"STALE", n, c6:0, c24:0, start:cycleStart};
+  let c6 = 0, c24 = 0;
+  zones.forEach(z => {
+    const g = z && z.geos;
+    if (!g) return;
+    const f = geosWindowsAt({status:g.status, dataset_time_start:g.dataset_time_start, reason:g.reason,
+                             hourly:(g.hourly || []).map(h => ({valid_time_utc:h.valid_time_utc, precip_mm:h.precip_mm}))}, now, F);
+    if (f.status !== "CALCULADO") return;
+    if (f.windows["6h"].status === "CALCULADO") c6++;
+    if (f.windows["24h"].status === "CALCULADO") c24++;
+  });
+  const state = n && c6 === n && c24 === n ? "COMPLETE" : c6 + c24 === 0 ? "NO_USABLE_FORECAST" : "PARTIAL";
+  return {state, n, c6, c24, start:cycleStart};
+}
+/* COVER-RULES-END */
 function indicator(name, iso, usable, staleWhy){
   const t = tms(iso);
   if (t == null) return {cls:"none", pill:"Sin dato", name, text:"Sin fecha de observación: no se usa."};
@@ -190,16 +229,25 @@ function renderStatus(){
     }
     out.push(ind);
   }
-  // 2. observed rain: IMERG Early
-  const s = (T && T.data_status) || {};
-  out.push(indicator("Lluvia observada · IMERG Early (satélite)", s.imerg_latest_window_end_utc,
-    imergUsableAt({window_end_utc: s.imerg_latest_window_end_utc}, now, F),
-    `Más de ${F.imerg_stale_after_h} h: no describe la situación actual.`));
-  // 3. experimental forecast: GEOS-CF
-  const g = geosWindowsAt({status:"CALCULADO", dataset_time_start: s.geos_latest_cycle_start_utc, hourly:[]}, now, F);
-  out.push(indicator("Previsión experimental · GEOS-CF", s.geos_latest_cycle_start_utc, g.status === "CALCULADO",
-    `Ciclo de más de ${F.geos_max_cycle_age_h} h: no se usa.`));
-  out[2].text = out[2].text.replace("(hora de Lima)", "(inicio del ciclo, hora de Lima)");
+  // 2. observed rain: IMERG Early — source freshness AND complete 6 h / 24 h windows per zone, never one without the other
+  const s = (T && T.data_status) || {}, zones = Object.values((T && T.zone_rain) || {});
+  const im = coverImergState(zones, s.imerg_latest_window_end_utc, now, F), imName = "Lluvia observada · IMERG Early (satélite)";
+  const counts = `6 h completas en ${im.c6}/${im.n} zonas · 24 h en ${im.c24}/${im.n}`;
+  out.push(im.state === "NO_DATE" ? {cls:"none", pill:"Sin dato", name:imName, text:"Sin fecha de observación: no se usa."}
+    : im.state === "FUTURE" ? {cls:"bad", pill:"Fecha no válida", name:imName, text:`Última ventana ${lima(im.end)} · ${ago(im.end)}. No cuenta como dato actual.`}
+    : im.state === "STALE" ? {cls:"old", pill:"Antiguo", name:imName, text:`Última ventana ${lima(im.end)} · ${ago(im.end)}. Más de ${F.imerg_stale_after_h} h: no describe la situación actual.`}
+    : im.state === "COMPLETE" ? {cls:"ok", pill:"Al día", name:imName, text:`Fuente reciente: ventana hasta ${lima(im.end)} (${ago(im.end)}) · ${counts}.`}
+    : im.state === "PARTIAL" ? {cls:"partial", pill:"Parcial", name:imName, text:`Fuente reciente (${ago(im.end)}), ventanas incompletas: ${counts}. El resto, sin dato (no es cero).`}
+    : {cls:"none", pill:"Sin ventanas completas", name:imName, text:`Fuente reciente (${ago(im.end)}), pero ninguna ventana de 6 h ni de 24 h completa en las ${im.n} zonas. Sin dato, no es cero.`});
+  // 3. experimental forecast: GEOS-CF — cycle date AND hours actually available from now, per zone
+  const ge = coverGeosState(zones, s.geos_latest_cycle_start_utc, now, F), geName = "Previsión experimental · GEOS-CF";
+  const gcounts = `6 h calculable en ${ge.c6}/${ge.n} zonas · 24 h en ${ge.c24}/${ge.n}`;
+  out.push(ge.state === "NO_DATE" ? {cls:"none", pill:"Sin dato", name:geName, text:"Ciclo sin fecha: no se usa."}
+    : ge.state === "FUTURE" ? {cls:"bad", pill:"Fecha no válida", name:geName, text:`Ciclo ${lima(ge.start)} · ${ago(ge.start)}. No se usa.`}
+    : ge.state === "STALE" ? {cls:"old", pill:"Antiguo", name:geName, text:`Ciclo que empieza ${lima(ge.start)} · ${ago(ge.start)}. Más de ${F.geos_max_cycle_age_h} h: no se usa.`}
+    : ge.state === "COMPLETE" ? {cls:"ok", pill:"Disponible", name:geName, text:`Ciclo ${lima(ge.start)} (${ago(ge.start)}) · ${gcounts}. Previsión de celda, no del cauce.`}
+    : ge.state === "PARTIAL" ? {cls:"partial", pill:"Parcial", name:geName, text:`Ciclo reciente (${ago(ge.start)}), horas insuficientes en parte de las zonas: ${gcounts}.`}
+    : {cls:"none", pill:"Sin previsión utilizable", name:geName, text:`Ciclo reciente (${ago(ge.start)}), pero sin horas suficientes desde ahora: no hay previsión de 6 h ni de 24 h.`});
   document.getElementById("status").innerHTML = out.map(i =>
     `<div class="st ${i.cls}" data-state="${i.cls}"><span class="pill">${esc(i.pill)}</span><b>${esc(i.name)}</b><span>${esc(i.text)}</span></div>`).join("");
 }
