@@ -277,10 +277,17 @@ def publish_capture(out_dir, payloads, manifest):
         stage = Path(tmp) / "complete"
         stage.mkdir()
         for code, raw in payloads.items():
-            (stage / f"{code}.geojson").write_bytes(raw)
-        (stage / "manifest.json").write_text(
-            json.dumps(manifest, indent=2, ensure_ascii=False, sort_keys=True) + "\n",
-            encoding="utf-8")
+            staged_raw = stage / f"{code}.geojson"
+            staged_raw.write_bytes(raw)
+            # An acknowledged write is not proof of identical source bytes.
+            # Fail closed before publication if the staged bytes have drifted.
+            if hashlib.sha256(staged_raw.read_bytes()).digest() != hashlib.sha256(raw).digest():
+                raise OSError("staged source bytes differ from captured response")
+        staged_manifest = stage / "manifest.json"
+        manifest_text = json.dumps(manifest, indent=2, ensure_ascii=False, sort_keys=True) + "\n"
+        staged_manifest.write_text(manifest_text, encoding="utf-8")
+        if staged_manifest.read_text(encoding="utf-8") != manifest_text:
+            raise OSError("staged manifest differs from capture receipt")
         if out.exists():
             raise FileExistsError("refuse overwrite of archived evidence")
         stage.rename(out)
@@ -414,6 +421,20 @@ class TestCasmaIDEPIndependentMirrorContract(unittest.TestCase):
                     with self.assertRaises(OSError):
                         publish_capture(dest, payloads, manifest)
                 self.assertFalse(dest.exists())
+            # A successful write call that silently changes bytes must not
+            # promote the incomplete evidence directory.
+            original_write_bytes = Path.write_bytes
+            with patch.object(Path, "write_bytes",
+                              lambda p, raw: original_write_bytes(p, raw + b"synthetic-drift")):
+                with self.assertRaisesRegex(OSError, "staged source bytes differ"):
+                    publish_capture(dest, payloads, manifest)
+            self.assertFalse(dest.exists())
+            original_write_text = Path.write_text
+            with patch.object(Path, "write_text",
+                              lambda p, txt, **kw: original_write_text(p, txt + "drift", **kw)):
+                with self.assertRaisesRegex(OSError, "staged manifest differs"):
+                    publish_capture(dest, payloads, manifest)
+            self.assertFalse(dest.exists())
             publish_capture(dest, payloads, manifest)
             self.assertEqual((dest / f"{CODES[0]}.geojson").read_bytes(), self.sample())
             self.assertEqual(json.loads((dest / "manifest.json").read_text()), manifest)
