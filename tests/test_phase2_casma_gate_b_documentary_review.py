@@ -134,5 +134,54 @@ class TestCasmaGateBDocumentaryReview(unittest.TestCase):
         )
 
 
+    def test_third_party_legacy_vector_locator_is_not_historical_lineage(self):
+        # Public third-party processing metadata identifies a possible ANA archive,
+        # not recovered source geometry or an attestation of 2006 equivalence.
+        row = self.review["post_review_third_party_ana_legacy_vector_locator_2026_10_28"]
+        self.assertEqual(
+            row["status"],
+            "PUBLIC_THIRD_PARTY_METADATA_POINTS_TO_ANA_INTERNAL_LEGACY_SHAPEFILE_NO_VECTOR_BYTES",
+        )
+        self.assertEqual(row["gate_b"], "NOT_ESTABLISHED")
+        self.assertFalse(row["historical_geometry_equivalence_to_Uh_pfas100"])
+        self.assertFalse(row["locator_current_existence_verified"])
+        self.assertFalse(row["original_Uh_pfas100_2006_identity_established"])
+        self.assertFalse(row["_5_suffix_equivalence_to_original_established"])
+        self.assertFalse(row["geometry_or_sidecar_bytes_recovered"])
+        self.assertFalse(row["geometry_or_area_equivalence_established"])
+        self.assertFalse(row["third_party_derived_AESTUDIO_BOAT_is_original"])
+        self.assertFalse(row["independent_institutional_attestation"])
+        self.assertFalse(row["map_publication_changed"])
+        self.assertTrue(row["gate_a_frozen_current_nine_features_unchanged"])
+        self.assertTrue(row["gate_c_frozen_topology_unchanged"])
+        self.assertIn("NOT_PUBLIC_HTTP_DOWNLOAD", row["locator_access"])
+
+        evidence = row["public_evidence"]
+        self.assertEqual(len(evidence), 2)
+        self.assertEqual(
+            {x["path"] for x in evidence},
+            {"Shp/AESTUDIO_BOAT.shp.xml", "Shp/ao_test.qmd"},
+        )
+        for item in evidence:
+            self.assertEqual(item["repository"], "cymsglae/app_contingencia")
+            self.assertEqual(len(item["git_blob_sha1"]), 40)
+            self.assertTrue(all(c in "0123456789abcdef" for c in item["git_blob_sha1"]))
+            self.assertIn(
+                "github.com/cymsglae/app_contingencia/blob/"
+                "43ace08e8df0ff938f6a58f2f5a0e6c5abad33c5/",
+                item["url"],
+            )
+            self.assertTrue(item["url"].endswith(item["path"]))
+
+        guards = row["guards"]
+        self.assertEqual(guards["deployment_status"], "RESEARCH_ONLY")
+        self.assertEqual(guards["test_mode"], "TEST_ONLY")
+        for key in ("production_use", "production_ready", "operational_alerting_enabled"):
+            self.assertFalse(guards[key])
+        self.assertEqual(guards["activation_gate"], "BLOCKED")
+        self.assertEqual(guards["missing_data_rule"], "UNKNOWN_NOT_LOW_RISK")
+        self.assertIsNone(guards["decision_thresholds"])
+        self.assertIsNone(guards["hydraulic_factors"])
+
 if __name__ == "__main__":
     unittest.main()
