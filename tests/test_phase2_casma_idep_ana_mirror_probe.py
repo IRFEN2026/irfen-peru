@@ -16,6 +16,7 @@ import json
 import math
 import tempfile
 import unittest
+from unittest.mock import patch
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.error import HTTPError, URLError
@@ -258,17 +259,31 @@ def capture(out_dir):
         "capture_utc": datetime.now(timezone.utc).isoformat(),
         "features": records, **GUARDS,
     }
+    publish_capture(out_dir, payloads, manifest)
+    return manifest
+
+
+def publish_capture(out_dir, payloads, manifest):
+    """Publish only a complete, byte-written archive; never leave a partial final dir.
+
+    Staging and final rename are on the same filesystem. A failed write removes
+    the staging directory and keeps the intended evidence path absent.
+    """
     out = Path(out_dir)
     if out.exists():
         raise FileExistsError("refuse overwrite of archived evidence")
-    # Only publish output after complete validation; no partial successful codes.
-    out.mkdir(parents=True, exist_ok=False)
-    for code, raw in payloads.items():
-        (out / f"{code}.geojson").write_bytes(raw)
-    (out / "manifest.json").write_text(
-        json.dumps(manifest, indent=2, ensure_ascii=False, sort_keys=True) + "\n",
-        encoding="utf-8")
-    return manifest
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=".casma_n7_stage_", dir=out.parent) as tmp:
+        stage = Path(tmp) / "complete"
+        stage.mkdir()
+        for code, raw in payloads.items():
+            (stage / f"{code}.geojson").write_bytes(raw)
+        (stage / "manifest.json").write_text(
+            json.dumps(manifest, indent=2, ensure_ascii=False, sort_keys=True) + "\n",
+            encoding="utf-8")
+        if out.exists():
+            raise FileExistsError("refuse overwrite of archived evidence")
+        stage.rename(out)
 
 
 class TestCasmaIDEPIndependentMirrorContract(unittest.TestCase):
@@ -387,6 +402,23 @@ class TestCasmaIDEPIndependentMirrorContract(unittest.TestCase):
             bounded_failure_detail(rejected.exception),
             "source candidate rejected code=1375961: duplicate JSON object key",
         )
+
+        # Publishing is atomic with respect to the final evidence path.
+        # Synthetic disk failures must never expose partial source archives.
+        with tempfile.TemporaryDirectory() as tmp:
+            dest = Path(tmp) / "capture"
+            payloads = {CODES[0]: self.sample()}
+            manifest = {"capture_status": "SYNTHETIC_TEST_ONLY"}
+            for method in ("write_bytes", "write_text"):
+                with patch.object(Path, method, side_effect=OSError("synthetic disk failure")):
+                    with self.assertRaises(OSError):
+                        publish_capture(dest, payloads, manifest)
+                self.assertFalse(dest.exists())
+            publish_capture(dest, payloads, manifest)
+            self.assertEqual((dest / f"{CODES[0]}.geojson").read_bytes(), self.sample())
+            self.assertEqual(json.loads((dest / "manifest.json").read_text()), manifest)
+            with self.assertRaises(FileExistsError):
+                publish_capture(dest, payloads, manifest)
 
         self.assertIn("idep.gob.pe", LAYER)
         self.assertIn("ANA_WMS", LAYER)
