@@ -111,6 +111,11 @@ jobs:
                       "uh_pfas100_filename_seen": any(
                           pathlib.PurePosixPath(m.filename).stem.casefold() == "uh_pfas100"
                           for m in members),
+                      # A matching basename alone (even a .txt) does not prove
+                      # that the original vector components were recovered.
+                      "uh_pfas100_complete_shapefile_group_seen": any(
+                          pathlib.PurePosixPath(stem).name.casefold() == "uh_pfas100"
+                          for stem in complete),
                   }
 
           class ContractTests(unittest.TestCase):
@@ -127,8 +132,21 @@ jobs:
                        "folder/sample.dbf", "folder/sample.prj"]))
                   self.assertEqual(result["complete_shapefile_group_count"], 1)
                   self.assertFalse(result["uh_pfas100_filename_seen"])
+                  self.assertFalse(result["uh_pfas100_complete_shapefile_group_seen"])
                   self.assertFalse(GUARDS["exact_n7_codes_verified"])
                   self.assertFalse(GUARDS["historical_geometry_equivalence_to_Uh_pfas100"])
+
+              def test_original_vector_name_requires_complete_component_group(self):
+                  only_name = inspect_archive(self.make_zip(
+                      ["folder/uh_pfas100.txt", "folder/uh_pfas100.shp"]))
+                  self.assertTrue(only_name["uh_pfas100_filename_seen"])
+                  self.assertFalse(only_name["uh_pfas100_complete_shapefile_group_seen"])
+                  complete = inspect_archive(self.make_zip(
+                      ["folder/Uh_pfas100.shp", "folder/Uh_pfas100.shx",
+                       "folder/Uh_pfas100.dbf", "folder/Uh_pfas100.prj"]))
+                  self.assertTrue(complete["uh_pfas100_complete_shapefile_group_seen"])
+                  self.assertFalse(GUARDS["historical_geometry_equivalence_to_Uh_pfas100"])
+                  self.assertFalse(GUARDS["exact_n7_codes_verified"])
 
               def test_member_hashes_are_exact_uncompressed_bytes(self):
                   original = b"synthetic-test-only"
