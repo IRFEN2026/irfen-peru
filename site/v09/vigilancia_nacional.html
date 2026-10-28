@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IRFEN v0.9 · Radar nacional de vigilancia preliminar</title>
+<meta name="robots" content="noindex,nofollow">
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;color:#172536;background:#f6f8fa;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0}a{color:#205c85}button,select{font:inherit}button{cursor:pointer}
+main{max-width:1240px;margin:0 auto;padding:24px 22px 64px}
+.hero{background:#fff;border:1px solid #dce4ea;border-radius:16px;padding:24px;margin-bottom:18px}
+h1{font-size:clamp(23px,3vw,34px);line-height:1.18;margin:0 0 10px}h2{font-size:19px;margin:0 0 12px}h3{font-size:16px;margin:0 0 8px}
+p{line-height:1.55;margin:6px 0 12px}.sub{color:#526477;font-size:14px}.small{color:#526477;font-size:12px;line-height:1.5}
+.note{border-left:3px solid #b77c22;padding:10px 14px;background:#fff8eb;color:#624316;border-radius:0 8px 8px 0}
+section.card{background:#fff;border:1px solid #dde5ec;border-radius:14px;padding:19px;min-width:0}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,400px);gap:16px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.stat{background:#fff;border:1px solid #dfe7ee;border-radius:12px;padding:13px;min-width:0}
+.stat strong{display:block;font-size:25px;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:#526477}
+.tiles{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin-top:14px}
+.tile{border:1px solid #cfdbe4;background:#f0f4f7;padding:9px 4px;min-height:58px;border-radius:8px;font-size:11px;text-align:center;color:#25445a;line-height:1.2}
+.tile strong{display:block;font-size:16px;margin-top:3px;font-variant-numeric:tabular-nums}
+.tile.hasdocs{background:#eaf3fb;border-color:#93b8d7}.tile.monitored{box-shadow:inset 0 0 0 2px #16829c}
+.tile.active{outline:3px solid #1e5483;outline-offset:1px;background:#d7eafb}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;color:#475a6d;font-size:12px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:middle}
+.pill{display:inline-block;border:1px solid #cdd7e1;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:600}
+.pill.first{background:#fff0d2;border-color:#e5bb67;color:#6a4206}
+.pill.official{background:#e5efff;border-color:#a4badc;color:#294c80}
+.pill.rain{background:#e3f5fb;border-color:#8ec9dd;color:#145d77}
+.pill.stale{background:#f2f2f2;border-color:#dadada;color:#5b5e63}
+.pill.neutral{background:#f2f7f2;color:#48604b}
+.controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:12px 0}
+select{border:1px solid #bfcdd8;border-radius:8px;background:#fff;padding:9px;max-width:100%}
+.zones{display:grid;gap:9px;margin-top:12px}
+.zone{border:1px solid #e0e7ed;padding:12px;border-radius:10px;min-width:0;overflow-wrap:anywhere}
+.zone p{margin:5px 0;font-size:13px}
+.zone h3{margin-bottom:6px}
+#docs{max-height:310px;overflow:auto;padding-left:19px;font-size:13px;line-height:1.8}
+.biglink{display:inline-block;margin-top:12px;padding:10px 14px;background:#1b577d;color:#fff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:600}
+.biglink:hover{background:#123c57}
+footer{margin-top:18px;font-size:12px;color:#586c7e;line-height:1.6}
+#fatal{color:#8c2424;padding:20px}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:500px){main{padding:15px 12px 40px}.hero{padding:17px}.tiles{grid-template-columns:repeat(3,minmax(0,1fr))}.tile{font-size:10px}.stats{gap:7px}}
+</style></head>
+<body><div id="irfen-nav"></div>
+<main>
+  <header class="hero">
+    <h1>Radar nacional · vigilancia preliminar</h1>
+    <p>Buscamos <strong>señales para investigar posibles activaciones de quebradas, inundaciones y desbordes</strong>. Podemos visualizar registros aunque su geometría exacta no esté delimitada. Ninguna señal de este radar equivale a una predicción hidráulica validada.</p>
+    <p class="note"><strong>Investigación experimental: no es una alerta.</strong> «Priorizar revisión» indica coincidencia documental/meteorológica, no probabilidad de daño ni riesgo alto. La ausencia de señales, datos o cartografía <strong>nunca significa riesgo bajo</strong>. Ante una emergencia, acudir a los avisos oficiales de SENAMHI, INDECI y autoridades locales.</p>
+    <p class="small" id="cutoff">Leyendo paquetes de investigación…</p>
+  </header>
+  <div class="stats" id="stats" aria-live="polite"></div>
+  <div class="layout">
+    <section class="card" aria-label="Cobertura nacional por departamento">
+      <h2>Panorama de todo el Perú</h2>
+      <p class="sub">Matriz territorial de 25 unidades administrativas (incluye Callao). <strong>No representa límites ni posiciones a escala.</strong> Selecciona un departamento para revisar sus registros y las zonas que IRFEN monitorea. No confundimos el número de documentos con el peligro.</p>
+      <div class="tiles" id="tiles"></div>
+      <div class="legend"><span><i class="dot" style="background:#eaf3fb;border:1px solid #93b8d7"></i>Registros documentales</span><span><i class="dot" style="background:#fff;border:2px solid #16829c"></i>Zonas meteorológicas</span><span><i class="dot" style="background:#f0f4f7"></i>Sin inventario incorporado</span></div>
+      <p class="small">Fuente del inventario: maestro documental de IRFEN. La presencia de un departamento en el esquema no acredita cobertura de vigilancia nacional.</p>
+    </section>
+    <section class="card">
+      <h2 id="dept-title">Selecciona un departamento</h2>
+      <div class="controls"><label for="department">Territorio</label><select id="department" aria-label="Elegir departamento"></select></div>
+      <p id="dept-summary" class="sub"></p>
+      <h3>Señales observables por zona</h3>
+      <div id="zones" class="zones" aria-live="polite"></div>
+      <h3 style="margin-top:17px">Identidades documentadas</h3>
+      <p class="small">Se ubican solo en la unidad administrativa reportada por su fuente, no mediante coordenadas fabricadas. Alias y homónimos siguen sin fusionarse.</p>
+      <ol id="docs"></ol>
+      <a class="biglink" id="inventory-link" href="inventario.html">Abrir inventario y fichas</a>
+    </section>
+  </div>
+  <section class="card" style="margin-top:16px">
+    <h2>Cómo debe funcionar la futura priorización</h2>
+    <p>Este radar es una <strong>primera etapa de cribado</strong>: conserva avisos meteorológicos oficiales con su ámbito literal, ventanas IMERG completas y recientes y la diferencia entre cuenca y provincia. A continuación podremos incorporar lluvias acumuladas previas, pendiente y respuesta hidrológica de cuenca, suelos, cauce receptor, reportes de campo y validación contra episodios documentados.</p>
+    <p class="sub">No asigna niveles «alto/medio/bajo» de riesgo, probabilidad de activación ni umbrales operativos. Su clasificación preliminar ordena qué señales leer primero, nunca decide evacuaciones. La capa cartográfica nacional de límites departamentales se incorporará como contexto independiente con fuente y condiciones de reutilización verificadas.</p>
+  </section>
+  <footer>IRFEN v0.9 · RESEARCH_ONLY · TEST_ONLY · public_alerting=false · activation_gate=BLOCKED · UNKNOWN_NOT_LOW_RISK. Fuentes meteorológicas: IMERG Early, GOES-19 y avisos SENAMHI vía INDECI/COEN según el paquete disponible. Un reporte de lluvia no demuestra por sí solo activación, inundación ni desborde.</footer>
+  <div id="fatal" hidden role="alert"></div>
+</main>
+<script src="nav.js"></script><script src="screening_rules.js"></script>
+<script>
+"use strict";
+const S=window.IRFEN_SCREENING,esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let T=null,V=null,selection="Tumbes",computed=[];
+const peruTime=x=>{const ms=S.ms(x);return ms===null?"sin fecha":new Date(ms).toLocaleString("es-PE",{timeZone:"America/Lima",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})+" (Perú)"};
+const keyLabel={"CONCURRENCIA":"first","AVISO_OFICIAL":"official","LLUVIA_SATELITAL":"rain","AVISO_SIN_CRUCE_RECIENTE":"stale","LECTURA_DISPONIBLE":"neutral","SIN_LECTURA_VIGENTE":"stale"};
+const relationLabels={BASIN_INTERSECTS_LISTED_PROVINCE:"Cuenca cruza provincia mencionada",BASIN_INTERSECTS_LISTED_DEPARTMENT:"Cuenca en departamento mencionado",LISTED_PROVINCE_CONTEXT_NO_BASIN:"Provincia mencionada; no equivale a cuenca",DEPARTMENT_LISTED_PROVINCIAL_RELATION_UNKNOWN:"Departamento mencionado; vínculo provincial sin confirmar",BASIN_IN_LISTED_DEPARTMENT_OUTSIDE_LISTED_PROVINCES:"Cuenca fuera de las provincias expresamente citadas"};
+function render(){
+ const totals=new Map(S.DEPARTMENTS.map(d=>[d,0])),groups=new Map(S.DEPARTMENTS.map(d=>[d,[]]));
+ V.rows.forEach(r=>{const d=S.department(r.department);if(d)totals.set(d,totals.get(d)+1)});
+ computed=Object.entries(T.zone_rain).map(([id,z])=>({id,z,dep:S.zoneDepartment(id),signal:S.screenZone(z,Date.now(),T.freshness||{},T.data_status.avisos_links_evaluated_at_utc)}));
+ computed.forEach(x=>{if(x.dep)groups.get(x.dep).push(x)});
+ document.getElementById("stats").innerHTML=[
+ [S.DEPARTMENTS.length,"unidades administrativas en panorama"],
+ [V.rows.length,"registros documentales; no equivalen a quebradas validadas"],
+ [computed.length,"zonas meteorológicas examinadas"],
+ [S.DEPARTMENTS.filter(d=>groups.get(d).length>0).length,"departamentos con zonas monitoreadas"]
+ ].map(p=>'<div class="stat"><strong>'+p[0]+'</strong><span>'+esc(p[1])+'</span></div>').join("");
+ const opt=document.getElementById("department"); opt.innerHTML=S.DEPARTMENTS.map(d=>'<option value="'+esc(d)+'">'+esc(d)+'</option>').join("");
+ const q=new URLSearchParams(location.search).get("departamento");
+ selection=S.department(q)||selection;
+ opt.value=selection;
+ opt.onchange=()=>choose(opt.value);
+ document.getElementById("tiles").innerHTML=S.DEPARTMENTS.map(d=>{
+  const count=totals.get(d),n=groups.get(d).length;
+  return '<button type="button" class="tile '+(count?"hasdocs ":"")+(n?"monitored ":"")+(d===selection?"active":"")+'" data-dep="'+esc(d)+'" aria-pressed="'+(d===selection?'true':'false')+'">'+esc(d)+'<strong>'+count+'</strong>'+(n?' <small>• '+n+' zonas</small>':'')+'</button>';
+ }).join("");
+ document.querySelectorAll("button[data-dep]").forEach(b=>b.onclick=()=>choose(b.dataset.dep));
+ document.getElementById("cutoff").textContent="Corte del paquete territorial: "+peruTime(T.rain_evaluated_at_utc)+"; IMERG hasta "+peruTime(T.data_status.imerg_latest_window_end_utc)+". Estos datos pueden estar antiguos: el radar no se actualiza en directo.";
+ drawSelection(totals,groups);
+}
+function choose(name){
+ selection=name;
+ document.getElementById("department").value=name;
+ document.querySelectorAll("button[data-dep]").forEach(b=>{const active=b.dataset.dep===name;b.classList.toggle("active",active);b.setAttribute("aria-pressed",String(active))});
+ history.replaceState(null,"",location.pathname+"?departamento="+encodeURIComponent(name));
+ const totals=new Map(S.DEPARTMENTS.map(d=>[d,V.rows.filter(r=>S.department(r.department)===d).length]));
+ const groups=new Map(S.DEPARTMENTS.map(d=>[d,computed.filter(x=>x.dep===d)]));
+ drawSelection(totals,groups);
+}
+function drawSelection(totals,groups){
+ document.getElementById("dept-title").textContent=selection;
+ const count=totals.get(selection),zones=groups.get(selection).slice().sort((a,b)=>a.signal.order-b.signal.order||a.id.localeCompare(b.id));
+ document.getElementById("dept-summary").textContent=count+" registros documentales · "+zones.length+" zonas con mediciones en este paquete. No es recuento de quebradas cartografiadas ni evaluación completa del departamento.";
+ document.getElementById("zones").innerHTML=zones.length?zones.map(x=>{
+  const s=x.signal,context=x.id.includes("_province_context:")?"Ámbito provincial de investigación; no cuenca individual":"Cuenca o zona de vigilancia del paquete";
+  const title=x.id.includes(":")?x.id.split(":").pop().replaceAll("_"," "):x.id.replaceAll("_"," ");
+  const rain=s.rain.available?"IMERG 24 h: "+s.rain.mm24.toFixed(2)+" mm (ventana completa)":"IMERG 24 h: incompleta o fuera de vigencia; no es cero";
+  const aviso=s.warn.verifiedCurrent?s.warn.verifiedCurrent+" avisos relacionados, cruce reciente":s.warn.observedInPackage?s.warn.observedInPackage+" avisos registrados; cruce sin actualización reciente":"Sin aviso asociado vigente y recientemente comprobado; no significa ausencia de amenaza";
+  return '<div class="zone" data-zone="'+esc(x.id)+'"><h3>'+esc(title)+'</h3><span class="pill '+keyLabel[s.key]+'">'+esc(S.LABELS[s.key])+'</span><p>'+esc(context)+'</p><p>'+esc(rain)+'</p><p>'+esc(aviso)+'</p><p class="small">Última ventana IMERG: '+esc(peruTime(s.rain.end))+'. Relación del aviso: '+esc(s.warn.relationMethods.length?s.warn.relationMethods.map(k=>relationLabels[k]||"Relación por comprobar").join("; "):"sin relación vigente")+'.</p></div>';
+ }).join(""):'<p class="note">Sin zona meteorológica incorporada para este departamento en el paquete v0.9. No interpretes el vacío como riesgo bajo. El inventario es documental.</p>';
+ const rows=V.rows.filter(r=>S.department(r.department)===selection);
+ document.getElementById("docs").innerHTML=rows.slice(0,25).map(r=>'<li><a href="inventario.html#id='+encodeURIComponent(r.id)+'">'+esc(r.name)+'</a> <span class="small">('+esc(r.province||"provincia sin dato")+')</span></li>').join("")||'<li>Sin registros incorporados en este maestro; inventario no exhaustivo.</li>';
+ if(rows.length>25)document.getElementById("docs").innerHTML+='<li class="small">Y '+(rows.length-25)+' registros adicionales en el inventario.</li>';
+}
+(async()=>{
+ try{
+  if(!S)throw Error("No se cargaron las reglas de cribado.");
+  const [a,b]=await Promise.all([fetch("../data/v09/territory_v0_1.json",{cache:"no-store"}),fetch("../data/v09/inventory_master_v0_1.json",{cache:"no-store"})]);
+  if(!a.ok||!b.ok)throw Error("No se pudo cargar el paquete de investigación.");
+  T=await a.json();V=await b.json();
+  if(!S.accept(T)||!S.accept(V))throw Error("Guardas de investigación inválidas; visualización bloqueada.");
+  if(!T.zone_rain||!Array.isArray(V.rows))throw Error("Esquema de datos incompatible.");
+  render();
+ }catch(e){document.getElementById("stats").textContent="Sin datos verificables";const f=document.getElementById("fatal");f.hidden=false;f.textContent="No se pueden mostrar señales: "+e.message;}
+})();
+</script></body></html>

@@ -88,6 +88,7 @@ footer{max-width:1180px;margin:0 auto;padding:16px;color:var(--ink-3);font-size:
   <section class="hero">
     <h1>Inventario documental de quebradas</h1>
     <p>Cada fila es un <strong>registro documental</strong> del inventario maestro integrado en <code>main</code>: un nombre que aparece en una fuente institucional. No es una quebrada hidrológica confirmada ni un inventario exhaustivo del país, y nada de esta página se dibuja en un mapa.</p>
+    <p>Un registro sin trazado no queda fuera de la vigilancia: <a href="vigilancia_nacional.html">consúltalo por departamento en el radar nacional</a>. La falta de validación cartográfica <strong>no implica riesgo bajo</strong>.</p>
     <p class="meta" id="meta">Cargando inventario…</p>
   </section>
 
@@ -122,7 +123,7 @@ footer{max-width:1180px;margin:0 auto;padding:16px;color:var(--ink-3);font-size:
       <li><strong>Faja marginal ≠ huella de inundación.</strong> Una resolución de faja marginal es un indicio de geometría, no un trazado reproducible.</li>
       <li><strong>Sin coordenadas.</strong> Algunas fuentes dan el punto de una población vulnerable; no es la ubicación de la quebrada ni de su desembocadura y no se exporta.</li>
       <li><strong>Cuenca padre</strong> solo cuando la fuente la documenta; nunca se infiere por cercanía.</li>
-      <li><strong>Motivos de bloqueo</strong>: los calcula esta vista a partir de los campos del maestro. Ninguna fila es apta para el mapa ni para alertas.</li>
+      <li><strong>Motivos de bloqueo</strong>: los calcula esta vista a partir de los campos del maestro. Ninguna fila se habilita como geometría cartográfica validada ni como alerta operativa; esto no impide consultar sus indicios documentales.</li>
     </ul>
     <div class="tablewrap" style="margin-top:8px"><table id="guards"></table></div>
   </details>
@@ -213,8 +214,8 @@ function evtTag(r){ const k = eventsKind(r); return `<span class="tag ${k === "V
 function renderRows(){
   const n = filtered.length, total = V.rows.length, pages = Math.max(1, Math.ceil(n / PAGE));
   page = Math.min(page, pages - 1);
-  document.getElementById("count").innerHTML = `Mostrando <b id="n-shown">${n}</b> de <b>${total}</b> registros documentales · aptos para el mapa: <b id="n-map">${filtered.filter(r => r.map.eligible).length}</b>`;
-  const head = `<thead><tr><th>Nombre en la fuente</th><th>Ubicación</th><th>Corredor</th><th>Evidencia</th><th>Identidad</th><th>Geometría</th><th>Eventos</th><th>Mapa</th></tr></thead>`;
+  document.getElementById("count").innerHTML = `Mostrando <b id="n-shown">${n}</b> de <b>${total}</b> registros documentales · habilitados para cartografía validada: <b id="n-map">${filtered.filter(r => r.map.eligible).length}</b>`;
+  const head = `<thead><tr><th>Nombre en la fuente</th><th>Ubicación</th><th>Corredor</th><th>Evidencia</th><th>Identidad</th><th>Geometría</th><th>Eventos</th><th>Estado cartográfico</th></tr></thead>`;
   const body = filtered.slice(page * PAGE, page * PAGE + PAGE).map(r => `<tr data-id="${esc(r.id)}">
     <td data-l="Nombre"><button type="button" class="open" data-open="${esc(r.id)}">${esc(r.name)}</button>${r.identity.alias_groups.length ? ` <span class="tag warn">alias por comprobar</span>` : ""}${r.unnamed_in_source ? ` <span class="tag warn">sin nombre individual</span>` : ""}</td>
     <td data-l="Ubicación">${esc([r.district, r.province, r.department].filter(Boolean).join(", "))}</td>
@@ -223,7 +224,7 @@ function renderRows(){
     <td data-l="Identidad">${esc(label(IDENTITY_ES, r.identity.state))}</td>
     <td data-l="Geometría">${geoTag(r)}</td>
     <td data-l="Eventos">${evtTag(r)}</td>
-    <td data-l="Mapa"><span class="tag bad">No apto</span></td></tr>`).join("");
+    <td data-l="Estado cartográfico"><span class="tag warn">Pendiente de validación</span></td></tr>`).join("");
   document.getElementById("rows").innerHTML = n ? head + `<tbody>${body}</tbody>` :
     `<tbody><tr><td>Ningún registro coincide con los filtros. Un nombre que no aparece aquí no está en el inventario maestro de <code>main</code>; eso no significa que la quebrada no exista.</td></tr></tbody>`;
   document.getElementById("pager").innerHTML = pages > 1 ? `<button type="button" class="btn" id="prev"${page ? "" : " disabled"}>Anterior</button>
@@ -265,7 +266,7 @@ function ficha(id){
   const pres = r.identity.repository_presence;
   const viewer = VIEWER.get(r.id);
   el.innerHTML = `<header><h2 id="ficha-title">${esc(r.name)}</h2><button type="button" class="btn" id="ficha-close" aria-label="Cerrar la ficha">Cerrar</button></header>
-    <p class="sub">Registro documental <code>${esc(r.id)}</code> · <span class="tag">integrado en main</span> <span class="tag bad">No apto para el mapa</span></p>
+    <p class="sub">Registro documental <code>${esc(r.id)}</code> · <span class="tag">integrado en main</span> <span class="tag warn">Cartografía no habilitada</span></p>
     <section data-section="identidad"><h3>Identidad documental</h3>${dl([
       ["Nombre en la fuente", esc(r.name)], ["Clase según la fuente", r.feature_class ? esc(r.feature_class) : null],
       ["Estado", esc(label(IDENTITY_ES, r.identity.state))],
