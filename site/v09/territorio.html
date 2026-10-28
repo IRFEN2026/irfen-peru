@@ -96,6 +96,7 @@ footer{padding:16px;color:var(--ink-3);font-size:12px;border-top:1px solid var(-
 </style>
 </head>
 <body>
+<div id="irfen-nav"></div>
 <header>
   <h1>IRFEN v0.9 · Territorio: cuencas, quebradas y lluvia</h1>
   <p class="small"><a href="index.html" aria-label="Volver al panel privado de vigilancia">← Panel de vigilancia v0.9</a></p>
@@ -171,6 +172,7 @@ footer{padding:16px;color:var(--ink-3);font-size:12px;border-top:1px solid var(-
     <rect width="6" height="6" fill="var(--surface-2)"/><line x1="0" y1="0" x2="0" y2="6" stroke="var(--nodata)" stroke-width="2"/></pattern></defs>
 </svg>
 <script src="shared_rules.js"></script>
+<script src="nav.js"></script>
 <script>
 "use strict";
 const DATA_URL = "../data/v09/territory_v0_1.json";
@@ -225,8 +227,15 @@ function init(){
   document.getElementById("footer").textContent = "Guardas: production_use=false · operational_alerting_enabled=false · public_alerting=false · activation_gate=BLOCKED · " +
     "decision_thresholds=null · missing_data_rule=UNKNOWN_NOT_LOW_RISK. El paquete se vuelve a leer cada 5 min sin perder la selección.";
   renderInventory(); render(); renderStatus();
+  applyHash(); window.addEventListener("hashchange", applyHash);
   setInterval(() => load(false), REFRESH_MS);
   setInterval(() => { renderStatus(); if (selected?.quebrada) renderQuebrada(D.quebradas.find(q => q.quebrada_id === selected.quebrada)); }, TICK_MS);
+}
+// Deep links from the shared navigation: #inventario / #mapa open a view, #costa_norte / #rimac open a region.
+function applyHash(){
+  const h = decodeURIComponent(location.hash.slice(1));
+  if (h === "inventario" || h === "mapa") document.querySelector(`nav [data-view="${h}"]`)?.click();
+  else if (D && D.regions && D.regions[h]) document.querySelector(`nav [data-region="${h}"]`)?.click();
 }
 function refresh(){ // new bundle: keep region, view, selection and filters
   renderStatus(); renderInventory(); renderMap();

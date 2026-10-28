@@ -22,7 +22,8 @@ GATE = ROOT / "config/v09_public_demo_v0_1.json"
 BUNDLE = ROOT / "site/data/v09/dashboard_v0_1.json"
 PATHS = ("site/v09", "site/data/v09")
 # The territorial viewer lives under site/v09 but has its own gate: opening the panel demo never publishes it.
-TERRITORY_PATHS = ("site/v09/territorio.html", "site/v09/shared_rules.js", "site/data/v09/territory_v0_1.json")
+# resumen.html (portada v0.9) reads the territorial bundle, so it follows the territorial gate.
+TERRITORY_PATHS = ("site/v09/territorio.html", "site/v09/resumen.html", "site/v09/shared_rules.js", "site/data/v09/territory_v0_1.json")
 TERRITORY_BUNDLE = ROOT / "site/data/v09/territory_v0_1.json"
 REQUIRED_BUNDLE_GUARDS = dict(production_use=False, production_ready=False, operational_alerting_enabled=False, public_alerting=False,
                               activation_gate="BLOCKED", decision_thresholds=None, hydraulic_factors=None,

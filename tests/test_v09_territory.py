@@ -6,6 +6,7 @@ import hashlib
 import http.server
 import importlib.util
 import json
+import re
 import threading
 import unittest
 from pathlib import Path
@@ -199,8 +200,126 @@ class Page(unittest.TestCase):
         self.assertIn("imergUsableAt(", HTML)
 
 
+    def test_cover_page_and_shared_navigation_are_static_and_honest(self):
+        """Portada v0.9 (resumen.html) + navegación común (nav.js): mismas URL, sin dependencias externas, sin
+        afirmaciones de completitud, guardas leídas de los datos y la portada sujeta a la puerta territorial."""
+        cover = (ROOT / "site/v09/resumen.html").read_text(encoding="utf-8")
+        nav = (ROOT / "site/v09/nav.js").read_text(encoding="utf-8")
+        index = (ROOT / "site/v09/index.html").read_text(encoding="utf-8")
+        for page in (cover, HTML, index):
+            self.assertIn('<script src="nav.js"></script>', page)
+            self.assertIn('<div id="irfen-nav"></div>', page)
+        for href in re.findall(r'href: "([^"#]+)', nav):
+            self.assertTrue((ROOT / "site/v09" / href).is_file(), href)
+        for text in (cover, nav):
+            self.assertNotIn("https://", text)
+            self.assertNotIn("http://", text.replace("http://www.w3.org/2000/svg", ""))
+            self.assertNotRegex(text.lower(), r"inventario (nacional |territorial )?completo|(?<!no un )censo completo")
+        self.assertEqual(nav.count("no es alerta"), 1)
+        self.assertNotIn("no es alerta", cover.lower())  # the notice is shown once, by the shared bar
+        self.assertIn('name="robots" content="noindex"', cover)
+        self.assertIn('<script src="shared_rules.js"></script>', cover)
+        for rule in ("imergUsableAt(", "geosWindowsAt(", "avisoStatusAt("):
+            self.assertIn(rule, cover)
+        self.assertIn("territory_v0_1.json", cover)
+        self.assertNotIn("territory_v0_1.json", nav)
+        for key in T.GUARDS:
+            self.assertIn(f'"{key}"', cover)
+        self.assertIn("no es un nivel oficial", cover)
+        spec = importlib.util.spec_from_file_location("gate", ROOT / "scripts/v09_pages_publication_gate.py")
+        gate = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(gate)
+        self.assertIn("site/v09/resumen.html", gate.TERRITORY_PATHS)
+        self.assertNotIn("site/v09/nav.js", gate.TERRITORY_PATHS)  # the panel uses it too
+
+
 @unittest.skipUnless(BROWSER, "Playwright/Chromium not installed; runs in workflow v09-dashboard-browser-test.yml")
 class Browser(unittest.TestCase):
+    def test_cover_page_states_map_and_navigation(self):
+        """Portada en escritorio y móvil: tres indicadores con estados al día / antiguo / fecha posterior al reloj /
+        sin dato; mapas de cobertura dibujados solo con geometrías del paquete; navegación a mapa, inventario y panel."""
+        import shutil
+        import tempfile
+        from datetime import datetime, timedelta
+
+        class Quiet(http.server.SimpleHTTPRequestHandler):
+            def log_message(self, *a):
+                pass
+
+        ds = BUNDLE["data_status"]
+        parse = lambda s: datetime.fromisoformat(str(s).replace("Z", "+00:00")[:26] + ("" if "+" in str(s)[19:] else "+00:00"))
+        imerg_end = parse(ds["imerg_latest_window_end_utc"])
+        feature_ids = {f["properties"]["id"] for f in BUNDLE["geometries"]["features"]}
+        no_geo = next(r for r in BUNDLE["inventory_rows"] if r["geometry"] == "SIN_GEOMETRIA")
+        with_geo = next(r for r in BUNDLE["inventory_rows"] if r["geometry"] == "REPRODUCIBLE")
+        with tempfile.TemporaryDirectory() as d:
+            site = Path(d) / "site"
+            shutil.copytree(ROOT / "site/v09", site / "v09")
+            (site / "data/v09").mkdir(parents=True)
+            shutil.copy(T.OUT, site / "data/v09/territory_v0_1.json")
+            shutil.copy(ROOT / "site/data/v09/dashboard_v0_1.json", site / "data/v09/dashboard_v0_1.json")
+            srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Quiet, directory=str(site)))
+            threading.Thread(target=srv.serve_forever, daemon=True).start()
+            origin = f"http://127.0.0.1:{srv.server_port}/"
+            try:
+                with sync_playwright() as p:
+                    b = p.chromium.launch(args=["--no-proxy-server"])
+                    errors = []
+                    def open_cover(at, viewport):
+                        page = b.new_page(viewport=viewport)
+                        page.on("pageerror", lambda e: errors.append(str(e)))
+                        page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+                        page.route("**/*", lambda r: r.continue_() if r.request.url.startswith(origin) else r.abort())
+                        page.clock.install(time=at)
+                        page.goto(origin + "v09/resumen.html")
+                        page.wait_for_selector("#status .st")
+                        page.wait_for_selector("#maps svg")
+                        return page
+                    imerg_state = lambda page: page.get_attribute("#status .st:nth-child(2)", "data-state")
+                    for name, vp in (("desktop", dict(width=1440, height=900)), ("mobile", dict(width=390, height=844))):
+                        page = open_cover(imerg_end + timedelta(hours=1), vp)
+                        self.assertEqual(page.locator("#status .st").count(), 3, name)
+                        self.assertEqual(imerg_state(page), "ok", name)
+                        self.assertEqual(page.inner_text("body").lower().count("no es alerta"), 1, name)
+                        self.assertNotIn("hace -", page.inner_text("body"))
+                        drawn = page.eval_on_selector_all("#maps [data-feature]", "els => els.map(e => e.dataset.feature)")
+                        self.assertTrue(drawn and set(drawn) <= feature_ids, name)  # nothing outside the bundle geometries
+                        self.assertNotIn(no_geo["id"], drawn)
+                        self.assertEqual(page.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth"), 0, name)
+                        self.assertEqual(page.text_content("[data-guard=map_publishable]"), "false")  # inside the closed «Método» block
+                        page.close()
+                    # observation stamped after this device's clock: never shown as current; old data: "Antiguo"
+                    page = open_cover(imerg_end - timedelta(hours=2), dict(width=1440, height=900))
+                    self.assertEqual(imerg_state(page), "bad")
+                    self.assertIn("fecha posterior a la hora de este equipo", page.inner_text("#status"))
+                    page.close()
+                    page = open_cover(imerg_end + timedelta(days=2), dict(width=1440, height=900))
+                    self.assertEqual(imerg_state(page), "old")
+                    # navigation: inventory deep link, searches with and without geometry, region link, panel
+                    page.click("#irfen-nav a[data-section=inventario]")
+                    page.wait_for_selector("#rows-table tr")
+                    self.assertFalse(page.is_hidden("#view-inventario"))
+                    self.assertEqual(page.get_attribute("#irfen-nav a[data-section=inventario]", "aria-current"), "page")
+                    for row, label in ((with_geo, "reproducible"), (no_geo, "sin geometr")):
+                        page.fill("#f-text", row["id"].split("_")[-1])
+                        page.wait_for_timeout(150)
+                        hit = page.locator("#rows-table tr", has_text=row["id"])
+                        self.assertEqual(hit.count(), 1, row["id"])
+                        self.assertIn(label, hit.inner_text().lower())
+                    self.assertIn("publicables en mapa: 0", page.inner_text("#f-count"))
+                    page.goto(origin + "v09/resumen.html")
+                    page.wait_for_selector("#maps a[data-region=rimac]")
+                    page.click("#maps a[data-region=rimac]")
+                    page.wait_for_selector("#map svg path")
+                    self.assertEqual(page.get_attribute('nav [data-region="rimac"]', "aria-selected"), "true")
+                    page.click("#irfen-nav a[data-section=lluvia]")
+                    page.wait_for_selector("#chips .chip")
+                    self.assertTrue(page.url.endswith("index.html"))
+                    self.assertEqual(errors, [])
+                    b.close()
+            finally:
+                srv.shutdown()
+
     def test_navigation_both_regions(self):
         class Quiet(http.server.SimpleHTTPRequestHandler):
             def log_message(self, *a):

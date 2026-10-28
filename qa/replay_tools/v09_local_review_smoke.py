@@ -29,18 +29,27 @@ def review(page, origin: str, name: str) -> dict:
     errors, failed, external = [], [], []
     page.on("pageerror", lambda e: errors.append(str(e)))
     page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
-    page.on("requestfailed", lambda r: failed.append(r.url) if r.url.startswith(origin) else None)
+    # a request cancelled by a page navigation (net::ERR_ABORTED, e.g. nav.js availability checks) is not a missing resource
+    page.on("requestfailed", lambda r: failed.append(f"{r.failure} {r.url}") if r.url.startswith(origin) and "ERR_ABORTED" not in str(r.failure) else None)
     page.on("response", lambda r: failed.append(f"{r.status} {r.url}") if r.url.startswith(origin) and r.status >= 400 else None)
     page.route("**/*", lambda r: r.continue_() if r.request.url.startswith(origin) else (external.append(r.request.url), r.abort()))
 
     def overflow():
         return page.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth")
 
+    # cover page (resumen.html): three freshness indicators and coverage maps drawn from the bundle only
+    page.goto(origin + "v09/resumen.html")
+    page.wait_for_selector("#maps svg", timeout=20000)
+    c = out["checks"]
+    c["cover_indicators"] = page.locator("#status .st").count()
+    c["cover_shapes"] = page.locator("#maps [data-feature]").count()
+    c["cover_no_negative_age"] = "hace -" not in page.inner_text("body")
+    c["cover_overflow_px"] = overflow()
+    page.click("#irfen-nav a[data-section=lluvia]")
     # panel
-    page.goto(origin + "v09/index.html")
+    page.wait_for_url("**/v09/index.html")
     page.wait_for_selector("#chips .chip", timeout=20000)
     body = page.inner_text("body")
-    c = out["checks"]
     c["panel_guards_visible"] = "RESEARCH_ONLY" in body or "TEST_ONLY" in body or "production_use=false" in body
     c["panel_no_negative_age"] = "hace -" not in body
     c["panel_overflow_px"] = overflow()
@@ -115,7 +124,9 @@ def review(page, origin: str, name: str) -> dict:
         out["problems"].append("missing local resources")
     if not (c["panel_no_negative_age"] and c["viewer_no_negative_age"]):
         out["problems"].append("negative age shown")
-    if c["panel_overflow_px"] > 0 or c["viewer_overflow_px"] > 0:
+    if c["cover_indicators"] != 3 or not c["cover_shapes"] or not c["cover_no_negative_age"]:
+        out["problems"].append("cover page")
+    if c["panel_overflow_px"] > 0 or c["viewer_overflow_px"] > 0 or c["cover_overflow_px"] > 0:
         out["problems"].append("horizontal overflow")
     if not c["legend_present"]:
         out["problems"].append("legend missing")
