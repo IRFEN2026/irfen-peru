@@ -1,0 +1,114 @@
+{
+  "schema_version": "0.1",
+  "event_id": "irfen-v09-field-chulucanas-urban-ponding-2026-10-27",
+  "purpose": "Preserve attributed, dated field-impact evidence for experimental false-negative review; not a hydrological activation adjudication.",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "map_publishable": false,
+  "event": {
+    "country": "PERU",
+    "department": "PIURA",
+    "province": "MORROPON",
+    "locality": "CHULUCANAS",
+    "phenomenon": "URBAN_STREET_PONDING_REPORTED_AFTER_RAIN",
+    "observed_local_date": "2026-10-27",
+    "reported_onset_local": "2026-10-27T20:15:00-05:00",
+    "onset_precision": "APPROXIMATE_REPORTED_BY_LOCAL_MEDIA",
+    "observed_end_local": null,
+    "observation_class": "SECONDARY_MEDIA_FIELD_IMPACT_REPORT",
+    "described_effects": [
+      "urban street ponding / aniegos",
+      "affected vehicle and pedestrian circulation"
+    ],
+    "attributed_watercourse": null,
+    "quebrada_activation_confirmed": false,
+    "quebrada_activation_status": "UNVERIFIED_NOT_NEGATIVE",
+    "outlet": null,
+    "catchment": null,
+    "geometry": null,
+    "coordinates": null,
+    "note": "Neither urban ponding nor a media report of river-like street runoff proves a natural quebrada activation, overflow, or a specific drainage mechanism."
+  },
+  "sources": [
+    {
+      "publisher": "Exitosa Noticias",
+      "published_local_date": "2026-10-28",
+      "url": "https://www.exitosanoticias.pe/actualidad/piura-lluvias-intensas-inundan-calles-chulucanas-senamhi-alerta-mas-precipitaciones-n187014",
+      "type": "SECONDARY_MEDIA_REPORT",
+      "report": "Rain started approximately 20:15 local Tuesday 27 October; street ponding in Chulucanas; reports of videos and SENAMHI radar reflectivity.",
+      "original_html_bytes_archived": false,
+      "raw_sha256": null
+    },
+    {
+      "publisher": "El Comercio",
+      "published_local": "2026-10-28T10:21:00-05:00",
+      "updated_local": "2026-10-28T10:24:00-05:00",
+      "url": "https://elcomercio.pe/peru/piura/lluvia-en-piura-calles-inundadas-y-precipitaciones-intensas-persisten-en-chulucanas-apuesplan-ultimas-noticia/",
+      "type": "SECONDARY_MEDIA_REPUBLICATION",
+      "report": "Street ponding in Chulucanas; reports 20:15 onset and 3.2 mm in first hour, without identifying a station or exact instrument period.",
+      "original_html_bytes_archived": false,
+      "raw_sha256": null,
+      "editorial_caveat": "Article says 'martes 28 de octubre', although 2026-10-28 was Wednesday. Exitosa explicitly places the episode on Tuesday 27. Treat El Comercio as potentially derivative, not independent confirmation."
+    }
+  ],
+  "meteorological_context": {
+    "reported_hourly_precip_mm": 3.2,
+    "source": "El Comercio and Exitosa attributing information to SENAMHI",
+    "exact_hour_start_utc": null,
+    "station_id": null,
+    "station_coordinates": null,
+    "measurement_instrument_verified": false,
+    "official_raw_record_archived": false,
+    "comparability_to_imerg_area_mean": "NOT_ESTABLISHED",
+    "radar_reflectivity_reported": true,
+    "radar_raw_bytes_archived": false,
+    "interpretation": "Reported rainfall and radar context, not an independently archived SENAMHI station observation."
+  },
+  "satellite_context": {
+    "product": "NASA GPM IMERG Early V07",
+    "source_path": "data/v09/rain/imerg_early_north_v0_1.json",
+    "source_github_blob_sha": "f5edb8f9e1a304a3a5d15b0103e51f7a6967319e",
+    "source_state_path": "data/v09/surveillance/zone_rain_state_v0_1.json",
+    "source_state_github_blob_sha": "8de5a347cabd64e615408b2fa777f94f863b1905",
+    "administrative_zone": "piura_province_context:MORROPON",
+    "province_area_mean_24h_mm": 1.92,
+    "area_mean_window_start_utc": "2026-10-27T16:00:00+00:00",
+    "area_mean_window_end_utc": "2026-10-28T16:00:00+00:00",
+    "coverage_half_hours_available": 48,
+    "coverage_half_hours_required": 48,
+    "last_imerg_granule_start_utc": "2026-10-28T15:30:00+00:00",
+    "note": "Province-wide areal mean only. The 24-hour window contains the approximate event onset, but neither its spatial footprint nor a point-level IMERG sample is known. Do not infer satellite underestimation or a false negative from this number."
+  },
+  "quality_and_followup": {
+    "source_provenance_class": "DATED_SECONDARY_REPORTS_NOT_PRIMARY_SENSOR_BYTES",
+    "original_media_bytes_sha256": null,
+    "independent_field_verification": "UNRESOLVED",
+    "station_identity_and_coordinates": "UNRESOLVED",
+    "point_sample_imerg": "NOT_PERFORMED",
+    "spatial_temporal_pairing": "UNRESOLVED",
+    "confirmed_model_false_negative": false,
+    "false_negative_qa_candidate": true,
+    "no_hydraulic_threshold_or_event_transfer": true,
+    "review_steps": [
+      "Seek original SENAMHI observation and exact timestamp/instrument ID if available.",
+      "Confirm location and time of photographed ponding independently.",
+      "Only after verified coordinates and timing, sample matching IMERG Early grid cell and assess detection uncertainty.",
+      "Do not transfer urban ponding to a named quebrada, Bocapán, Zorritos, Tumbes, or Zarumilla."
+    ]
+  },
+  "scientific_guards": {
+    "research_only": true,
+    "test_only": true,
+    "unknown_not_low_risk": true,
+    "no_operational_alert": true,
+    "no_geometry_inference": true,
+    "no_station_to_province_bias_inference": true
+  }
+}
