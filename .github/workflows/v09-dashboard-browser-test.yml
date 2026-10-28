@@ -8,6 +8,7 @@ on:
       - tests/test_v09_dashboard_browser.py
       - tests/test_v09_demo_summary.py
       - qa/replay_tools/test_v09_continuity_evidence.py
+      - qa/replay_tools/v09_national_screening_smoke.js
       - scripts/v09_build_territory_bundle.py
       - scripts/v09_build_inventory_view.py
       - config/phase2_national_inventory_completeness_audit_v0_1.json
@@ -37,6 +38,8 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+      - name: Cribado nacional: controles sintéticos offline (sin niveles de riesgo)
+        run: node qa/replay_tools/v09_national_screening_smoke.js
       - name: Instalar Playwright y Chromium
         run: |
           python -m pip install --disable-pip-version-check playwright==1.56.0
