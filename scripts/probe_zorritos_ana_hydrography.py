@@ -124,6 +124,20 @@ def validated_geojson_features(payload: dict, context: str) -> list[dict]:
         # Validate line coordinate structure before preserving any ANA candidate.
         # Other geometry types remain context-only, never promoted to line geometry.
         geometry = feature.get("geometry")
+        if geometry is not None:
+            # Preserve valid non-line geometry as context only, but never
+            # classify malformed GeoJSON geometry objects as ANA candidates.
+            geometry_type = geometry.get("type")
+            if not isinstance(geometry_type, str) or geometry_type not in {
+                "Point", "MultiPoint", "LineString", "MultiLineString",
+                "Polygon", "MultiPolygon", "GeometryCollection",
+            }:
+                raise ValueError(f"invalid ANA geometry type at {context}[{index}]")
+            if geometry_type == "GeometryCollection":
+                if not isinstance(geometry.get("geometries"), list):
+                    raise ValueError(f"invalid ANA geometry collection at {context}[{index}]")
+            elif not isinstance(geometry.get("coordinates"), list):
+                raise ValueError(f"invalid ANA geometry coordinates at {context}[{index}]")
         if geometry is not None and geometry.get("type") in {"LineString", "MultiLineString"}:
             kind = geometry["type"]
             coordinates = geometry.get("coordinates")
@@ -168,6 +182,10 @@ def check_geojson_payload_guard() -> None:
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "LineString", "coordinates": [[-80.1, 91], [-80.2, -3.2]]}}]},
         {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "MultiLineString", "coordinates": [[[-80.1, -91], [-80.2, -3.2]]]}}]},
 
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Unknown", "coordinates": []}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Point", "coordinates": None}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "GeometryCollection", "geometries": None}}]},
         {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": []}]},
         {"type": "FeatureCollection", "features": [], "exceededTransferLimit": True},
         {"type": "FeatureCollection", "features": [], "exceededTransferLimit": None},
@@ -194,6 +212,8 @@ def check_geojson_payload_guard() -> None:
         {"type": "LineString", "coordinates": [[-80.1, -3.1, 1.5], [-80.2, -3.2, 2.5]]},
         {"type": "LineString", "coordinates": [[-180, -90], [180, 90]]},
         {"type": "MultiLineString", "coordinates": [[[-80.1, -3.1, 1.5], [-80.2, -3.2, 2.5]]]},
+        {"type": "Point", "coordinates": [-80.1, -3.1]},
+        {"type": "GeometryCollection", "geometries": []},
     ):
         payload = {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": geometry}]}
         assert len(validated_geojson_features(payload, "offline-regression")) == 1
