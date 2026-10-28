@@ -768,6 +768,37 @@ def test_unverified_events_and_station_triggers_do_not_become_flow():
         assert row["flow_or_stage_observation_refs"] == []
         assert row["map_publishable"] is False
 
+    # Cross-source receiver claims for Infiernillo are NOT an identity join.
+    # INDECI/PNUD 2005 describes a right-bank Santa Eulalia context,
+    # while ANA 2025 SIGRID describes a right-bank Rimac tributary.
+    # Without original bytes and an adjudicated geodetic channel, these
+    # may be homonyms or distinct documentary roles, not one routed edge.
+    indeci_infiernillo = [
+        lead for lead in d["official_unmaterialized_name_leads"]
+        if lead["documentary_name"] == "Infiernillo"
+        and lead["source_id"] == "INDECI-PNUD-PER-02-051-SANTA-EULALIA-2005"
+    ]
+    assert len(indeci_infiernillo) == 1
+    indeci_infiernillo = indeci_infiernillo[0]
+    ana_infiernillo = faja_by_name["Infiernillo"]
+    assert indeci_infiernillo["documentary_receiver_context"] == (
+        "SANTA_EULALIA_RIGHT_BANK_DOCUMENTARY_ONLY"
+    )
+    assert ana_infiernillo["reported_receiver_text"] == "RIO_RIMAC"
+    assert ana_infiernillo["identity_relation_to_prior_lead"] == (
+        "PENDING_HOMONYM_NOT_MERGED"
+    )
+    assert indeci_infiernillo["source_text_verified"] is False
+    assert indeci_infiernillo["original_pdf_sha256"] is None
+    assert ana_2025["original_pdf_sha256"] is None
+    assert indeci_infiernillo["receiver_chain_adjudicated"] is False
+    assert indeci_infiernillo["verified_event_refs"] == []
+    assert ana_infiernillo["verified_event_refs"] == []
+    assert indeci_infiernillo["exact_confluence_coordinate"] is None
+    assert ana_infiernillo["exact_confluence_coordinate"] is None
+    assert indeci_infiernillo["map_publishable"] is False
+    assert ana_infiernillo["map_publishable"] is False
+
     # ANA RD 1226-2025 is regulatory/inspection evidence, not a vector
     # outlet, a proven 2023 Montalvo alias, measured capacity or a huaico.
     # Its own Paihua/San Pedro-Montalvo discrepancy must remain visible.
