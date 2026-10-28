@@ -19,12 +19,15 @@ def rows(name):
 
 
 class Catalog(unittest.TestCase):
-    def test_no_qc_code_is_linked_or_located(self):
+    def test_only_user_confirmed_and_corroborated_qc_is_linked(self):
+        linked = [r for r in rows("catalog_confirmed.csv") if r["qc_file_code"]]
+        self.assertEqual([(r["catalog_id"], r["qc_file_code"], r["qc_link_status"]) for r in linked],
+                         [("SENAMHI-ATLAS:106046", "qc00000332", "CONFIRMADO_USUARIO_CORROBORADO")])
         for r in rows("catalog_confirmed.csv"):
-            self.assertEqual(r["qc_file_code"], "")
-            self.assertEqual(r["qc_link_status"], "NO_DOCUMENTADO")
+            if not r["qc_file_code"]:
+                self.assertEqual(r["qc_link_status"], "NO_DOCUMENTADO")
         for r in rows("qc_codes_pending.csv"):
-            self.assertEqual(r["status"], "NO_IDENTIFICADO")
+            self.assertNotEqual(r["status"], "CONFIRMADO_USUARIO_CORROBORADO")
             self.assertNotIn("lat", r)
 
     def test_rounded_atlas_coordinates_never_assignable(self):
