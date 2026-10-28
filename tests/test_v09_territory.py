@@ -688,7 +688,14 @@ class Browser(unittest.TestCase):
                     # Clock BEHIND the data (observations stamped after this device's time): nothing is shown as
                     # current, no negative age, no rain value; the strip says why.
                     shutil.copy(ROOT / "site/data/v09/dashboard_v0_1.json", site / "data/v09/dashboard_v0_1.json")
-                    goes_end = datetime.fromisoformat(BUNDLE["data_status"]["goes_latest_scan_end_utc"].replace("Z", "+00:00"))
+                    # The two pages may come from different snapshots (the private integrated QA rebuilds the territorial
+                    # bundle from newer main rain while the panel bundle stays committed): put the clock before the
+                    # newest GOES scan of BOTH bundles so each page has data stamped after it.
+                    iso = lambda x: datetime.fromisoformat(str(x).replace("Z", "+00:00"))
+                    dash = json.loads((ROOT / "site/data/v09/dashboard_v0_1.json").read_text(encoding="utf-8"))
+                    dash_goes = [iso(z["goes19"]["scan_end_utc"]) for z in dash["rain"]["zones"]
+                                 if isinstance(z.get("goes19"), dict) and z["goes19"].get("scan_end_utc")]
+                    goes_end = min([iso(BUNDLE["data_status"]["goes_latest_scan_end_utc"])] + ([max(dash_goes)] if dash_goes else []))
                     early = b.new_page(viewport=dict(width=1400, height=1000))
                     early.on("pageerror", lambda e: errors.append(str(e)))
                     early.route("**/*", lambda r: r.continue_() if r.request.url.startswith(origin) else r.abort())
