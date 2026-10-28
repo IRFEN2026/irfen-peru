@@ -135,6 +135,18 @@ def candidate(raw, code):
             # this is not a substitute for independent GEOS Gate C topology QA.
             if len({tuple(point[:2]) for point in ring}) < 3:
                 raise ValueError("degenerate polygon ring")
+            # Three distinct positions can still lie on one straight line.
+            # Reject exactly collinear rings at source-capture Gate A, without
+            # an area tolerance or a claim of independent Gate C topology.
+            anchor = ring[0][:2]
+            second = next(point[:2] for point in ring[1:] if point[:2] != anchor)
+            ax, ay = anchor
+            bx, by = second
+            if not any(
+                (bx - ax) * (point[1] - ay) != (by - ay) * (point[0] - ax)
+                for point in ring[1:]
+            ):
+                raise ValueError("collinear polygon ring")
     if not xy:
         raise ValueError("empty geometry")
     return {
@@ -184,6 +196,7 @@ SAFE_CANDIDATE_REASONS = frozenset({
     "missing rings",
     "invalid or unclosed ring",
     "degenerate polygon ring",
+    "collinear polygon ring",
     "invalid position",
     "nonfinite position",
     "position outside global lon/lat range",
@@ -284,6 +297,8 @@ class TestCasmaIDEPIndependentMirrorContract(unittest.TestCase):
             {"type": "Polygon", "coordinates": [[[0, 0], [1, 1], [0, 1]]]},
             # Closed and four positions, but only two distinct vertices.
             {"type": "Polygon", "coordinates": [[[0, 0], [1, 1], [0, 0], [0, 0]]]},
+            # Three distinct vertices but all collinear: zero-area ring.
+            {"type": "Polygon", "coordinates": [[[0, 0], [1, 1], [2, 2], [0, 0]]]},
         ):
             obj = json.loads(self.sample())
             obj["features"][0]["geometry"] = geometry
