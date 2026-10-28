@@ -1362,3 +1362,49 @@ def test_unverified_events_and_station_triggers_do_not_become_flow():
     assert pprrd["confirmed_unique_hydrologic_unit_count_increment"] == 0
     assert d["counts"]["total_documentary_rows"] == 51
     assert d["counts"]["confirmed_unique_hydrologic_unit_count"] is None
+
+
+def test_cross_source_santa_eulalia_names_do_not_inherit_events_or_identity():
+    """A shared label is not a source-to-source identity or event join."""
+    d = _inventory()
+    by_id = {unit["id"]: unit for unit in d["units"]}
+    leads = {lead["documentary_name"]: lead
+             for lead in d["official_unmaterialized_name_leads"]}
+    plan = d["official_2025_santa_eulalia_pprrd_corrective_works_name_leads"]
+    labels = {item["normalized_search_label"]: item
+              for item in plan["named_labels"]}
+
+    # COEN 2017 and the municipal 2025-2030 works plan mention Las Cruces,
+    # but no source establishes they describe the same geodetic catchment.
+    # The annex's 2017 classification has no per-unit event date.
+    cruces = leads["Las Cruces"]
+    assert cruces["source_id"] == "COEN-INDECI-IE844-2017-12-06-ANNEX06"
+    assert cruces["source_url"] != plan["source_url"]
+    assert labels["Las Cruces"]["existing_unmaterialized_name_lead"] == "Las Cruces"
+    assert labels["Las Cruces"]["alias_adjudication"] == "PENDING_NOT_MERGED"
+    assert cruces["verified_event_refs"] == []
+    assert len(cruces["unverified_event_leads"]) == 1
+    event = cruces["unverified_event_leads"][0]
+    assert event["year"] == 2017
+    assert event["per_unit_event_date"] is None
+    assert event["source_text_verified"] is False
+    assert event["usable_as_confirmed_unit_event"] is False
+    assert plan["verified_unit_events"] == []
+    assert plan["construction_completion_evidence"] is None
+
+    # The plan's Pedregal is not the Lurigancho-Chosica Pedregal/San Antonio.
+    # Huayaringa is also not silently merged with its Centro/Portada label.
+    pedregal = by_id["lima_lurigancho_pedregal_san_antonio"]
+    assert pedregal["district"] == "Lurigancho-Chosica"
+    assert labels["Pedregal"]["reconciliation"] == (
+        "HOMONYM_OR_DISTINCT_UNIT_UNRESOLVED_NOT_LURIGANCHO_PEDREGAL"
+    )
+    assert labels["Pedregal"]["exact_confluence"] is None
+    assert labels["Huayaringa"]["possible_existing_inventory_id_not_identity_adjudicated"] == (
+        "lima_santa_eulalia_huayaringa"
+    )
+    centro = by_id["lima_santa_eulalia_huayaringa_centro_portada"]
+    assert centro["identity_adjudication"] != "CONFIRMED_HYDROLOGIC_UNIT"
+    assert centro["exact_confluence_coordinate"] is None
+    assert all(item["map_publishable"] is False for item in labels.values())
+    assert d["counts"]["confirmed_unique_hydrologic_unit_count"] is None
