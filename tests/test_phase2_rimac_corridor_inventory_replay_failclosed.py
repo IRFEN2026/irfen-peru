@@ -738,6 +738,23 @@ def test_unverified_events_and_station_triggers_do_not_become_flow():
     assert {"Infiernillo", "San Juan"} <= {
         row["documentary_label"] for row in ana_2025["records"]
     }
+    # ANA's 2025 catalogs call BOTH ravines tributaries of the Rímac,
+    # despite their administrative location in Santa Eulalia district.
+    # Administrative location is not a Santa Eulalia river confluence.
+    # These are unverified regulatory receiver claims, not routed edges.
+    faja_by_name = {row["documentary_label"]: row
+                    for row in ana_2025["records"]}
+    assert set(faja_by_name) == {"Infiernillo", "San Juan"}
+    assert faja_by_name["Infiernillo"]["resolution"] == "RD 1107-2025-ANA-AAA.CF"
+    assert faja_by_name["San Juan"]["resolution"] == "RD 1143-2025-ANA-AAA.CF"
+    assert faja_by_name["Infiernillo"]["regulatory_faja_length_km"] == 4.68
+    assert faja_by_name["San Juan"]["regulatory_faja_length_km"] == 4.67
+    assert faja_by_name["Infiernillo"]["regulatory_boundary_markers"] == 52
+    assert faja_by_name["San Juan"]["regulatory_boundary_markers"] == 173
+    for row in ana_2025["records"]:
+        assert row["reported_receiver_text"] == "RIO_RIMAC"
+        assert "Rio Rimac" in row["catalog_claim"]
+        assert row["receiver_adjudication"] != "GEODETICALLY_VERIFIED"
     for row in ana_2025["records"]:
         assert row["identity_relation_to_prior_lead"] == "PENDING_HOMONYM_NOT_MERGED"
         assert row["receiver_adjudication"] == (
