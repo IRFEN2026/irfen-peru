@@ -1,0 +1,168 @@
+{
+  "schema_version": "0.1",
+  "dataset_id": "irfen-v09-tumbes-puerto-pizarro-matapalo-historical-qa",
+  "purpose": "Station-scale historical rainfall QA for the Tumbes/Piura 2026 research replay; retained as evidence, NOT operational risk classification.",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "public_alerting": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "map_publishable": false,
+  "origin": "User-supplied SENAMHI Histogram/Descarga TXT files and screenshots, 29 October 2026",
+  "import_assumptions": {
+    "columns": [
+      "year",
+      "month",
+      "day",
+      "precipitation_mm",
+      "tmax_c",
+      "tmin_c"
+    ],
+    "missing_value_marker": -99.9,
+    "missing_value_interpretation": "MISSING_NOT_ZERO",
+    "data_resolution": "daily",
+    "source_daily_accumulation_clock": "UNVERIFIED",
+    "temperature_units": "degrees C",
+    "rainfall_units": "mm",
+    "raw_bytes_archived_in_repo": false,
+    "source_file_sha256_provided": true,
+    "station_coordinates": "NOT_INCLUDED_IN_SCREENSHOTS",
+    "station_datum": "UNVERIFIED",
+    "histogram_is_not_current_daily_data": true
+  },
+  "stations": [
+    {
+      "name": "PUERTO PIZARRO",
+      "code": "000132",
+      "district": "TUMBES",
+      "province": "TUMBES",
+      "department": "TUMBES",
+      "filename": "qc00000132(1).txt",
+      "sha256": "dd8ecf629dc24adac7e7fa50ed1285f658cd9d813f1720cc7b36ae428b8dfd5a",
+      "size_bytes": 405963,
+      "first_day": "1963-09-01",
+      "last_day": "2015-10-31",
+      "number_of_rows": 19054,
+      "invalid_dates": 0,
+      "duplicate_dates": 0,
+      "missing_calendar_days": 0,
+      "precip_valid_days": 18612,
+      "precip_missing_days": 442,
+      "precip_missing_pct": 2.32,
+      "precip_positive_days": 1829,
+      "precip_explicit_zero_days": 16783,
+      "tmax_valid_days": 18615,
+      "tmin_valid_days": 17785,
+      "qc_exception": [
+        {
+          "date": "2014-10-10",
+          "type": "TMAX_LT_TMIN",
+          "tmax_c": 21,
+          "tmin_c": 26.5,
+          "action": "FLAG_NOT_CORRECTED"
+        }
+      ],
+      "largest_daily_precipitation": {
+        "date": "1983-03-24",
+        "mm": 166
+      },
+      "october_historical": {
+        "valid_observations": 1626,
+        "missing_observations": 17,
+        "largest_daily_precipitation": {
+          "date": "1990-10-01",
+          "mm": 6
+        }
+      },
+      "count_daily_precip_at_least_102_mm": 17,
+      "location_provenance": "User screenshot label: Dep. TUMBES, Prov. TUMBES, Dist. TUMBES. Exact coordinates and datum not supplied."
+    },
+    {
+      "name": "MATAPALO",
+      "code": "00150112",
+      "district": "MATAPALO",
+      "province": "ZARUMILLA",
+      "department": "TUMBES",
+      "filename": "qc00150112(1).txt",
+      "sha256": "6860a1ef5f41ed9f37d59cbb43e43e85985f7b331a9ff9853597264a1545c7b3",
+      "size_bytes": 305491,
+      "first_day": "1981-01-01",
+      "last_day": "2013-12-31",
+      "number_of_rows": 12053,
+      "invalid_dates": 0,
+      "duplicate_dates": 0,
+      "missing_calendar_days": 0,
+      "precip_valid_days": 9527,
+      "precip_missing_days": 2526,
+      "precip_missing_pct": 20.96,
+      "precip_positive_days": 3262,
+      "precip_explicit_zero_days": 6265,
+      "tmax_valid_days": 0,
+      "tmin_valid_days": 0,
+      "qc_exception": [
+        {
+          "type": "ALL_TEMPERATURE_FIELDS_MISSING",
+          "action": "NO_TEMPERATURE_INFERENCE"
+        }
+      ],
+      "largest_daily_precipitation": {
+        "date": "1998-02-08",
+        "mm": 276.4
+      },
+      "october_historical": {
+        "valid_observations": 806,
+        "missing_observations": 217,
+        "largest_daily_precipitation": {
+          "date": "1997-10-27",
+          "mm": 22.3
+        }
+      },
+      "count_daily_precip_at_least_102_mm": 8,
+      "location_provenance": "User screenshot label: Dep. TUMBES, Prov. ZARUMILLA, Dist. MATAPALO. This is a station named MATAPALO; not the station EL SALTO in Zarumilla district."
+    }
+  ],
+  "illustrative_same_date_comparison": {
+    "date": "1998-02-08",
+    "observations_mm": [
+      {
+        "name": "MATAPALO",
+        "mm": 276.4
+      },
+      {
+        "name": "EL SALTO",
+        "mm": 227.9,
+        "reference_pr": 444
+      },
+      {
+        "name": "PUERTO PIZARRO",
+        "mm": 110
+      }
+    ],
+    "interpretation": "Demonstrates spatial variability at station scale on the same reporting date, NOT basin rainfall, a cloudburst footprint, or quantified flow risk. Measurement clock and station coordinates must be audited."
+  },
+  "link_to_2026_event": {
+    "source_pr": 443,
+    "reported_station_accumulations": "Secondary-reported October 2026 SENAMHI values only; historical TXT ends in 2015 and 2013 respectively",
+    "same_station_direct_crosswalk": "NOT_YET_GEOREFERENCED",
+    "historical_october_record_claim": "BLOCKED_BY_2016_2025_MISSING_AND_HOURLY_INTERVAL_UNCERTAINTY"
+  },
+  "methodological_guardrails": [
+    "Never use -99.9 as 0 or interpolate it silently.",
+    "October maxima are maxima among available historical October dates only; missing years 2016–2025 prohibit all-time record claims.",
+    "No compare province-average IMERG directly with station point rain; use station coordinates and a validated pixel matchup with matching accumulation window.",
+    "No hydraulic inference, thresholds, probabilities, or activation predictions derived from a single rainfall peak.",
+    "A plausible station identity does not establish catchment/outlet linkage; preserve independent named features."
+  ],
+  "next_steps": [
+    "Obtain original October 2026 XLSX/CSV for station-level near-term validation where possible.",
+    "Get SENAMHI station metadata and coordinates for Puerto Pizarro and Matapalo; fix station identity and datum.",
+    "Verify station daily rainfall accumulation hour for historical and 2026 series.",
+    "Match IMERG Early pixel/cell to each station after verifying location and time, then perform controlled sensitivity checks for point-vs-area dilution.",
+    "Use several strong historical events for detection QA without defining operational activation thresholds."
+  ]
+}
