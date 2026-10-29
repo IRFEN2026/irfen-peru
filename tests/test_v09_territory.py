@@ -2,6 +2,7 @@
 components are drawn or declared pending with a reason; observations, estimates and forecasts are labelled apart;
 missing or old rain is never shown as zero. Offline; the browser part runs where Chromium is available."""
 import functools
+import gzip
 import hashlib
 import http.server
 import importlib.util
@@ -19,6 +20,19 @@ BUNDLE = json.loads(T.OUT.read_text(encoding="utf-8"))
 CATALOG = json.loads(T.MAP_LAYERS.read_text(encoding="utf-8"))["map_semantics"]
 FEATS = BUNDLE["geometries"]["features"]
 HTML = (ROOT / "site/v09/territorio.html").read_text(encoding="utf-8")
+# Frozen REAL bundles (#403 head fea649ae: data evaluated 2026-10-28T16:10Z, complete IMERG windows in the 22 zones) for
+# the two browser tests whose assertions need complete windows (cover «al día»/«parcial», «mm acumulados» then ageing).
+# The live bundle follows the real sources: after an outage at the source (NASA GES DISC ingest migration, 28-30 Oct
+# 2026) it legitimately has no complete window and the UI says so; that must not turn these UI tests red.
+FIXTURES = ROOT / "tests/fixtures/v09"
+UI_SNAPSHOT = "fea649ae"
+
+
+def ui_fixture(name: str) -> bytes:
+    return gzip.decompress((FIXTURES / f"{name}_v0_1_{UI_SNAPSHOT}.json.gz").read_bytes())
+
+
+UI_BUNDLE = json.loads(ui_fixture("territory"))
 
 try:
     from playwright.sync_api import sync_playwright
@@ -139,6 +153,22 @@ class Bundle(unittest.TestCase):
         s = BUNDLE["data_status"]
         for k in ("engine_evaluated_at_utc", "imerg_latest_window_end_utc", "goes_latest_scan_end_utc", "geos_latest_cycle_start_utc", "aviso_source_state"):
             self.assertIn(k, s)
+
+    def test_ui_fixtures_are_frozen_real_snapshots(self):
+        """The two UI browser tests read frozen copies of real committed bundles (tests/fixtures/v09/README.md). They
+        must be byte-exact copies, keep the guards, match the live schema and zones, and have complete IMERG windows."""
+        expected = {"territory": "17a9ca3bb7a6b821cfe9865ec91b3893c4c1f87a64f8dd6117e2bffa58228c57",
+                    "dashboard": "6c601f2b1b22ba8260299ad580ec3960a694ffb664074a860a557def845fbdcb"}
+        for name, digest in expected.items():
+            self.assertEqual(hashlib.sha256(ui_fixture(name)).hexdigest(), digest, name)
+        for k, v in T.GUARDS.items():
+            self.assertEqual(UI_BUNDLE[k], v, k)
+        self.assertEqual(set(UI_BUNDLE), set(BUNDLE))  # same schema as the live bundle (regenerate the fixture if not)
+        self.assertEqual(set(UI_BUNDLE["zone_rain"]), set(BUNDLE["zone_rain"]))
+        complete = [z for z in UI_BUNDLE["zone_rain"].values() if all("accum_mm" in w for w in z["imerg"]["windows"].values())]
+        self.assertEqual(len(complete), len(UI_BUNDLE["zone_rain"]))
+        dash = json.loads(ui_fixture("dashboard"))
+        self.assertFalse(dash.get("production_use", False))
 
     def test_inventory_matches_the_national_inventory(self):
         rows = json.loads(T.INVENTORY.read_text(encoding="utf-8"))
@@ -468,18 +498,18 @@ class Browser(unittest.TestCase):
             def log_message(self, *a):
                 pass
 
-        ds = BUNDLE["data_status"]
+        ds = UI_BUNDLE["data_status"]
         parse = lambda s: datetime.fromisoformat(str(s).replace("Z", "+00:00")[:26] + ("" if "+" in str(s)[19:] else "+00:00"))
         imerg_end = parse(ds["imerg_latest_window_end_utc"])
-        feature_ids = {f["properties"]["id"] for f in BUNDLE["geometries"]["features"]}
-        no_geo = next(r for r in BUNDLE["inventory_rows"] if r["geometry"] == "SIN_GEOMETRIA")
-        with_geo = next(r for r in BUNDLE["inventory_rows"] if r["geometry"] == "REPRODUCIBLE")
+        feature_ids = {f["properties"]["id"] for f in UI_BUNDLE["geometries"]["features"]}
+        no_geo = next(r for r in UI_BUNDLE["inventory_rows"] if r["geometry"] == "SIN_GEOMETRIA")
+        with_geo = next(r for r in UI_BUNDLE["inventory_rows"] if r["geometry"] == "REPRODUCIBLE")
         with tempfile.TemporaryDirectory() as d:
             site = Path(d) / "site"
             shutil.copytree(ROOT / "site/v09", site / "v09")
             (site / "data/v09").mkdir(parents=True)
-            shutil.copy(T.OUT, site / "data/v09/territory_v0_1.json")
-            shutil.copy(ROOT / "site/data/v09/dashboard_v0_1.json", site / "data/v09/dashboard_v0_1.json")
+            (site / "data/v09/territory_v0_1.json").write_bytes(ui_fixture("territory"))
+            (site / "data/v09/dashboard_v0_1.json").write_bytes(ui_fixture("dashboard"))
             shutil.copy(INV.OUT, site / "data/v09/inventory_master_v0_1.json")
             srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Quiet, directory=str(site)))
             threading.Thread(target=srv.serve_forever, daemon=True).start()
@@ -518,7 +548,7 @@ class Browser(unittest.TestCase):
                     page.close()
                     # SYNTHETIC degraded bundle: recent IMERG with incomplete windows and a recent GEOS-CF cycle without
                     # hours: neither indicator may read as available
-                    degraded = json.loads(T.OUT.read_text(encoding="utf-8"))
+                    degraded = json.loads(ui_fixture("territory"))
                     for i, z in enumerate(degraded["zone_rain"].values()):
                         if i % 2:
                             z["imerg"]["windows"]["24h"] = {"status": "NO_DISPONIBLE", "reason": "SYNTHETIC: half hour missing"}
@@ -531,7 +561,7 @@ class Browser(unittest.TestCase):
                     self.assertEqual(page.get_attribute("#status .st:nth-child(3)", "data-state"), "none")
                     self.assertIn("Sin previsión utilizable", page.inner_text("#status .st:nth-child(3)"))
                     page.close()
-                    shutil.copy(T.OUT, site / "data/v09/territory_v0_1.json")
+                    (site / "data/v09/territory_v0_1.json").write_bytes(ui_fixture("territory"))
                     page = open_cover(imerg_end + timedelta(days=2), dict(width=1440, height=900))
                     self.assertEqual(imerg_state(page), "old")
                     # navigation: inventory deep link, searches with and without geometry, region link, panel
@@ -650,8 +680,8 @@ class Browser(unittest.TestCase):
             shutil.copytree(ROOT / "site/v09", site / "v09")
             (site / "data/v09").mkdir(parents=True)
             target = site / "data/v09/territory_v0_1.json"
-            shutil.copy(T.OUT, target)
-            imerg_end = datetime.fromisoformat(BUNDLE["data_status"]["imerg_latest_window_end_utc"].replace("Z", "+00:00"))
+            target.write_bytes(ui_fixture("territory"))
+            imerg_end = datetime.fromisoformat(UI_BUNDLE["data_status"]["imerg_latest_window_end_utc"].replace("Z", "+00:00"))
             start = imerg_end + timedelta(hours=1)  # one hour after the latest IMERG window: data current
             srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Quiet, directory=str(site)))
             threading.Thread(target=srv.serve_forever, daemon=True).start()
@@ -687,15 +717,15 @@ class Browser(unittest.TestCase):
                     self.assertEqual(errors, [])
                     # Clock BEHIND the data (observations stamped after this device's time): nothing is shown as
                     # current, no negative age, no rain value; the strip says why.
-                    shutil.copy(ROOT / "site/data/v09/dashboard_v0_1.json", site / "data/v09/dashboard_v0_1.json")
+                    (site / "data/v09/dashboard_v0_1.json").write_bytes(ui_fixture("dashboard"))
                     # The two pages may come from different snapshots (the private integrated QA rebuilds the territorial
                     # bundle from newer main rain while the panel bundle stays committed): put the clock before the
                     # newest GOES scan of BOTH bundles so each page has data stamped after it.
                     iso = lambda x: datetime.fromisoformat(str(x).replace("Z", "+00:00"))
-                    dash = json.loads((ROOT / "site/data/v09/dashboard_v0_1.json").read_text(encoding="utf-8"))
+                    dash = json.loads(ui_fixture("dashboard"))
                     dash_goes = [iso(z["goes19"]["scan_end_utc"]) for z in dash["rain"]["zones"]
                                  if isinstance(z.get("goes19"), dict) and z["goes19"].get("scan_end_utc")]
-                    goes_end = min([iso(BUNDLE["data_status"]["goes_latest_scan_end_utc"])] + ([max(dash_goes)] if dash_goes else []))
+                    goes_end = min([iso(UI_BUNDLE["data_status"]["goes_latest_scan_end_utc"])] + ([max(dash_goes)] if dash_goes else []))
                     early = b.new_page(viewport=dict(width=1400, height=1000))
                     early.on("pageerror", lambda e: errors.append(str(e)))
                     early.route("**/*", lambda r: r.continue_() if r.request.url.startswith(origin) else r.abort())
