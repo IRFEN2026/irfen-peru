@@ -146,6 +146,9 @@ INVALID_RESPONSES = [
     ({"meta": {**META, "fields": [{"name": "NOMBRE_CA"}]}}, "MISSING_FIELDS"),
     ({"POZOS": fc(line(3, "Los Pozos"), exceededTransferLimit=True)}, "EXCEEDED_TRANSFER_LIMIT"),
     ({"POZOS": fc({**line(3, "Los Pozos"), "geometry": {"type": "Point", "coordinates": [-80.68, -3.68]}})}, "NON_LINE_OR_EMPTY_GEOMETRY"),
+    ({"POZOS": {"type": "FeatureCollection"}}, "MISSING_FEATURES_ARRAY"),
+    ({"POZOS": {"type": "FeatureCollection", "features": None}}, "MISSING_FEATURES_ARRAY"),
+    ({"POZOS": {"type": "FeatureCollection", "features": {}}}, "MISSING_FEATURES_ARRAY"),
     ({"SECHURITA": {"error": {"code": 400}}}, "SERVICE_ERROR"),
 ]
 
@@ -229,6 +232,44 @@ def test_capture_attempt_log_records_blockers_and_no_geometry():
     matrix = json.loads(MATRIX.read_text(encoding="utf-8"))
     assert matrix["unresolved_review"]["capture_attempt_log"].endswith("zorritos_priority_ana_capture_attempts_v0_1.json")
     assert all(row["outlet_status"] == "UNRESOLVED" for row in matrix["targets"].values())
+
+
+def test_replay_rejects_inconsistent_canonical_hash(tmp_path):
+    """A correct raw-byte digest cannot authenticate an incorrect canonical digest."""
+    manifest, files = freezer.build_capture(
+        freezer.load_plan(), make_fetch({"POZOS": fc(line(3, "Quebrada Los Pozos"))})
+    )
+    manifest["targets"]["los_pozos"]["requests"][0]["canonical_sha256"] = "0" * 64
+    freezer.write_capture(manifest, files, tmp_path)
+    with raises(freezer.FreezeError, match="CANONICAL_HASH_MISMATCH"):
+        freezer.check_capture(tmp_path)
+
+
+def test_replay_rejects_stale_plan_digest(tmp_path):
+    """A capture must bind to the exact versioned query plan, not only raw rows."""
+    manifest, files = freezer.build_capture(freezer.load_plan(), make_fetch({}))
+    manifest["plan_sha256"] = "0" * 64
+    freezer.write_capture(manifest, files, tmp_path)
+    with raises(freezer.FreezeError, match="PLAN_HASH_MISMATCH"):
+        freezer.check_capture(tmp_path)
+
+
+def test_replay_rejects_inconsistent_row_and_candidate_counts(tmp_path):
+    """Manifest counts must be recomputed from authenticated raw responses."""
+    for field, value, expected in (
+        ("row_count", 99, "ROW_COUNT_MISMATCH"),
+        ("candidate_row_count", 99, "CANDIDATE_COUNT_MISMATCH"),
+    ):
+        manifest, files = freezer.build_capture(
+            freezer.load_plan(), make_fetch({"POZOS": fc(line(3, "Quebrada Los Pozos"))})
+        )
+        if field == "row_count":
+            manifest["targets"]["los_pozos"]["requests"][0][field] = value
+        else:
+            manifest["targets"]["los_pozos"][field] = value
+        freezer.write_capture(manifest, files, tmp_path)
+        with raises(freezer.FreezeError, match=expected):
+            freezer.check_capture(tmp_path)
 
 
 class _ModuleFunctionTests(unittest.TestCase):
