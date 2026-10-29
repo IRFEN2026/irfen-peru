@@ -1,0 +1,122 @@
+{
+  "schema_version": "0.1",
+  "profile_id": "irfen-v09-senamhi-el-salto-1968-2015-research-qa",
+  "purpose": "Historical station reference to evaluate unusual daily rain observations. Observed station totals, not activation thresholds or hydraulic model parameters.",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "public_alerting": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "map_publishable": false,
+  "station": {
+    "display_name": "EL SALTO",
+    "senamhi_station_code": "000135",
+    "department": "TUMBES",
+    "province": "ZARUMILLA",
+    "district": "ZARUMILLA",
+    "station_type": "CONVENCIONAL_METEOROLOGICA",
+    "latitude_dd": -3.4517083333333334,
+    "longitude_dd": -80.2802,
+    "altitude_m": 4,
+    "metadata_provenance": "User-provided SENAMHI station screenshot. Geodetic datum not specified; coordinates are not verified against independent registry.",
+    "coordinate_text_original": "Latitud 3°27′6.15″; Longitud 80°16′48.72″; country hemisphere assumed S/W from Peru"
+  },
+  "raw_source": {
+    "filename": "qc00000135(1).txt",
+    "source_type": "User-downloaded SENAMHI historical station histogram TXT; screenshot of Histogram/Descarga EL SALTO",
+    "sha256": "4ae1a77e5729b3e3119785167d1541ddada40551ab126fa15f13b83ac9bff441",
+    "bytes": 372059,
+    "raw_bytes_archived_in_git": false,
+    "source_url_unverified": true,
+    "file_columns_order": [
+      "year",
+      "month",
+      "day",
+      "precipitation_mm",
+      "tmax_c",
+      "tmin_c"
+    ],
+    "missing_numeric_code": -99.9,
+    "observed_first_date": "1968-05-01",
+    "observed_last_date": "2015-10-31"
+  },
+  "validation": {
+    "n_rows": 17350,
+    "calendar_sequence_complete": true,
+    "invalid_dates": 0,
+    "duplicated_dates": 0,
+    "precipitation_valid_rows": 15415,
+    "precipitation_missing_rows": 1935,
+    "precipitation_missing_pct": 11.15,
+    "tmax_valid_rows": 16272,
+    "tmax_missing_rows": 1078,
+    "tmin_valid_rows": 16342,
+    "tmin_missing_rows": 1008,
+    "physical_check_tmax_below_tmin": 0,
+    "negative_precipitation_excluding_missing": 0
+  },
+  "daily_precipitation": {
+    "historical_max_mm": 313.7,
+    "historical_max_date": "1998-02-26",
+    "selected_extremes": [
+      {
+        "date": "1998-02-26",
+        "mm": 313.7
+      },
+      {
+        "date": "1998-02-08",
+        "mm": 227.9
+      },
+      {
+        "date": "1998-04-11",
+        "mm": 213.3
+      },
+      {
+        "date": "1983-06-04",
+        "mm": 168
+      },
+      {
+        "date": "1997-03-16",
+        "mm": 162.7
+      }
+    ],
+    "days_at_or_above_102mm": 21,
+    "total_days_with_valid_precipitation": 15415,
+    "exceedance_102mm_interpretation": "Raw descriptive count, not a return-period, risk threshold, forecast or probability of quebrada activation."
+  },
+  "october_precipitation": {
+    "valid_daily_rows": 1366,
+    "missing_daily_rows": 122,
+    "max_daily_mm": 10,
+    "max_daily_date": "1997-10-03",
+    "coverage_period": "October dates present 1968–2015; excludes 2016–2026.",
+    "missing_2016_2025": true
+  },
+  "cross_reference_current_event": {
+    "research_pr": 443,
+    "observed_station_report_mm": 102,
+    "reported_24h_window_local": "2026-10-27 07:00 to 2026-10-28 07:00 America/Lima",
+    "reported_source": "SENAMHI via secondary republication; not station-original raw record",
+    "direct_daily_observation_available": false,
+    "same_station_identity_candidate": true,
+    "record_claim_status": "UNVERIFIED_2016_2025_GAP_AND_OBSERVATION_INTERVAL",
+    "quality_warning": "Historic daily report timestamp/measurement convention unknown; no conclusion of October record or direct historical percentile until daily accumulation window, raw 2026 observation, station stability and intervening years 2016–2025 are checked."
+  },
+  "interpretation": {
+    "station_extreme_not_hydrological_activation": true,
+    "station_and_areal_imerg_not_directly_comparable": true,
+    "land_use_or_instrument_changes_unverified": true,
+    "quality_gate": "RESEARCH_EVIDENCE_ONLY",
+    "next_steps": [
+      "Get October 2026 original daily XLSX/CSV and exact timestamp for El Salto.",
+      "Verify historical conventions and station metadata, and obtain missing 2016–2025 years.",
+      "Match IMERG Early 0.1° grid at screenshot location, respecting spatial uncertainty and accumulation window.",
+      "Use historical percentiles only after quality control and completeness testing; do not create activation thresholds without separate basin-specific hydrological validation."
+    ]
+  }
+}
