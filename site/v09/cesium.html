@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>IRFEN v0.9 · Globo territorial 2D/3D (TEST_ONLY)</title>
+<link rel="stylesheet" href="https://cesium.com/downloads/cesiumjs/releases/1.146/Build/Cesium/Widgets/widgets.css">
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#142433;background:#f6f8fa}
+*{box-sizing:border-box}body{margin:0}header{padding:12px 18px;background:#fff;border-bottom:1px solid #dce4ea}
+h1{font-size:19px;margin:0 0 4px}h2{font-size:15px;margin:0 0 10px}p{line-height:1.45}
+header p{font-size:12px;color:#4a6073;margin:4px 0}
+a{color:#235c94}
+.notice{padding:9px 12px;background:#fff7df;border-bottom:1px solid #e5d8a9;font-size:13px;color:#634b15}
+main{display:grid;grid-template-columns:265px minmax(0,1fr) 295px;gap:12px;padding:12px;min-height:calc(100vh - 175px)}
+aside{background:#fff;border:1px solid #dbe4ed;border-radius:10px;padding:13px;align-self:stretch}
+aside p,aside li{font-size:12px;color:#455c71}label{font-size:13px;display:block;margin:8px 0}
+select,input{font:inherit}select,input[type="text"]{width:100%;padding:8px;border:1px solid #bccbd8;border-radius:6px;background:#fff}
+button{background:#f1f6fc;border:1px solid #b6c9d9;border-radius:7px;padding:7px 10px;color:#133452;cursor:pointer;font:inherit}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #5e9dde}
+button:hover{background:#e0efff}button[aria-pressed="true"]{background:#16486f;color:white;border-color:#16486f}
+.pair{display:flex;gap:5px;flex-wrap:wrap}.pair button{flex:1}
+small,.small{font-size:11px;color:#60778a}
+.check{display:flex;gap:7px;align-items:start;margin:8px 0;font-size:12px}
+.check input{margin-top:3px}
+#mapbox{position:relative;min-height:550px;border:1px solid #c5d4df;border-radius:11px;overflow:hidden;background:#121a24}
+#cesiumContainer{position:absolute;inset:0}
+#status{position:absolute;left:12px;bottom:12px;z-index:2;max-width:calc(100% - 24px);border-radius:6px;background:rgba(255,255,255,.92);font-size:12px;padding:8px 10px;color:#19354b;box-shadow:0 2px 6px #0002;pointer-events:none}
+#selection{white-space:pre-line;overflow-wrap:anywhere;font-size:13px;line-height:1.55;color:#345}
+.note{padding:9px;background:#f5f8fb;border:1px solid #e0eaf2;border-radius:8px;font-size:12px;color:#39566a}
+#layerCount{font-size:12px;font-weight:600;color:#265274;margin:12px 0}
+footer{padding:10px 18px;border-top:1px solid #dbe4ed;font-size:11px;background:#fff;color:#567}
+@media(max-width:1050px){main{grid-template-columns:minmax(200px,260px) minmax(0,1fr)}#detailPanel{grid-column:1/-1}#mapbox{min-height:500px}}
+@media(max-width:700px){main{display:flex;flex-direction:column}#mapbox{height:58vh;min-height:380px}aside{align-self:auto}}
+</style>
+<script src="https://cesium.com/downloads/cesiumjs/releases/1.146/Build/Cesium/Cesium.js"></script>
+</head>
+<body>
+<header>
+<h1>IRFEN v0.9 · Globo territorial 2D/3D</h1>
+<p>Vista de investigación de cuencas, quebradas y cauces existentes · Perú</p>
+<p><a href="territorio.html">Volver al visor territorial v0.9</a> · <a href="index.html">Panel meteorológico</a></p>
+</header>
+<div class="notice"><b>RESEARCH_ONLY · TEST_ONLY.</b> Este globo no predice inundaciones ni activaciones y no emite alertas. Las geometrías candidatas no están validadas hidráulicamente. La ausencia de elementos dibujados no implica ausencia de peligro.</div>
+<main>
+<aside aria-label="Controles del globo">
+<h2>Explorar el territorio</h2>
+<label for="region">Enfoque territorial</label>
+<select id="region">
+<option value="peru">Perú completo</option>
+<option value="costa_norte" selected>Costa norte</option>
+<option value="rimac">Cuenca del Rímac</option>
+</select>
+<label>Perspectiva</label>
+<div class="pair" role="group" aria-label="Modo del mapa">
+<button type="button" id="mode2d" aria-pressed="false">2D</button>
+<button type="button" id="mode3d" aria-pressed="true">3D</button>
+</div>
+<p class="small">El globo 3D sin terreno activo es un elipsoide sin relieve de montañas.</p>
+<div class="pair"><button type="button" id="fit">Encuadrar región</button><button type="button" id="reset">Perú completo</button></div>
+<div class="pair" style="margin-top:8px"><button type="button" id="tilt" title="Inclinar la cámara para ver las laderas y el valle">Ver relieve inclinado</button><button type="button" id="overhead" title="Volver a la vista desde arriba">Vista desde arriba</button></div>
+<hr>
+<h2>Relieve real (opcional)</h2>
+<p>Para visualizar pendientes y valles, activa <b>Cesium World Terrain</b>. Necesita una cuenta Cesium ion y un token de lectura autorizado.</p>
+<label for="ionToken">Token de Cesium ion (solo en esta sesión)</label>
+<input id="ionToken" type="text" autocomplete="off" spellcheck="false" placeholder="Pegar token aquí, no en GitHub">
+<div class="pair" style="margin-top:8px">
+<button type="button" id="enableTerrain">Activar relieve</button>
+<button type="button" id="disableTerrain">Desactivar</button>
+</div>
+<p class="small" id="terrainState">Sin token: globo 2D/3D disponible; relieve de elevación no activo.</p>
+<hr>
+<h2>Capas geográficas</h2>
+<div id="layers"><p class="small">Cargando fuentes existentes…</p></div>
+<p id="layerCount" aria-live="polite">—</p>
+<div class="note">Solo aparecen geometrías ya presentes en el paquete territorial de IRFEN. Las quebradas aún sin geometría se consultan en el visor documental existente.</div>
+</aside>
+<div id="mapbox"><div id="cesiumContainer" aria-label="Globo navegable de Perú con capas geográficas de IRFEN"></div><div id="status" aria-live="polite">Preparando CesiumJS y las capas IRFEN…</div></div>
+<aside id="detailPanel" aria-label="Ficha de entidad">
+<h2>Información territorial</h2>
+<div id="selection" aria-live="polite">Selecciona una cuenca, línea o punto en el globo para consultar su identidad y procedencia.</div>
+<hr>
+<div class="note">Las categorías <b>oficial, documental, derivada y candidata</b> se presentan por separado. Ninguna capa constituye por sí misma una delimitación de amenaza o inundación.</div>
+<p class="small" id="sourceTime"></p>
+</aside>
+</main>
+<footer>IRFEN v0.9 — visualizador local experimental. CesiumJS © Cesium GS. Cartografía base: © OpenStreetMap contributors. Crédito adicional y condiciones en los servicios de terreno que se activen. Sin publicación pública autorizada.</footer>
+<script id="irfen-app">
+"use strict";
+(function(){
+ const DATA_URL = "../data/v09/territory_v0_1.json";
+ const COLORS = {cuencas:"#2865d8",areas_colectoras:"#9b56d2",cauces:"#0f8f9b",descargas:"#bd781c",impacto:"#ca395d",contexto:"#6b8595"};
+ const EVIDENCE = {GEOMETRIA_OFICIAL:"Geometría oficial",UBICACION_DOCUMENTAL:"Ubicación documental",GEOMETRIA_DERIVADA:"Geometría derivada",GEOMETRIA_CANDIDATA:"Geometría candidata"};
+ const VIEW = {peru:[-81.9,-18.7,-68.1,1.0],costa_norte:[-82.2,-9.3,-76.5,-2.0],rimac:[-77.6,-12.5,-76.0,-11.0]};
+ const $ = id => document.getElementById(id);
+ const status = msg => { $("status").textContent=msg; };
+ let viewer, data, layerSources={}, visible={}, region="costa_norte", terrainOn=false;
+ const guard = d => d && d.deployment_status==="RESEARCH_ONLY" && d.test_mode==="TEST_ONLY"
+   && d.activation_gate==="BLOCKED" && d.operational_alerting_enabled===false
+   && d.public_alerting===false && d.production_use===false && d.map_publishable===false;
+ function fit(place){const b=VIEW[place]||VIEW.peru;
+   viewer.camera.flyTo({destination:Cesium.Rectangle.fromDegrees(b[0],b[1],b[2],b[3]),duration:1.3});}
+ // Camera must be tilted to make elevation visible. A 3D globe viewed from above looks 2D.
+ function viewTerrain(){
+   if(viewer.scene.mode!==Cesium.SceneMode.SCENE3D){viewer.scene.morphTo3D(0.7);}
+   const camera=viewer.camera;
+   const v=region==="rimac"?[-76.70,-11.92,35000]:region==="costa_norte"?[-79.65,-5.2,100000]:[-76.70,-11.92,150000];
+   // Orientation has a negative pitch: look diagonally toward the terrain from above.
+   camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(v[0],v[1],v[2]),
+     orientation:{heading:Cesium.Math.toRadians(25),pitch:Cesium.Math.toRadians(-38),roll:0},
+     duration:2.0});
+   $("mode2d").setAttribute("aria-pressed","false");
+   $("mode3d").setAttribute("aria-pressed","true");
+   status(terrainOn?"Vista inclinada del relieve 3D. Arrastra para explorar las laderas.":"Cámara inclinada, pero el relieve real aún no está habilitado.");
+ }
+ function displaySelected(p){
+   if(!p){$("selection").textContent="Selecciona una cuenca, línea o punto para consultar su identidad y procedencia.";return;}
+   const source=(p.source_ids||[]).join(", ")||"No indicada";
+   $("selection").textContent=[
+     p.name||p.id||"Sin nombre", "Capa: "+(data.layers[p.layer]?.label_es||p.layer),
+     "Evidencia: "+(EVIDENCE[p.evidence]||p.evidence||"No indicada"),
+     "Región: "+(data.regions[p.region]?.label_es||p.region),
+     "Origen: "+source,"Referencia de geometría: "+(p.file_sha256||"No disponible"),
+     "Validez: "+(p.confidence||"sin nivel declarado"),
+     p.disclaimer_es||"No es una predicción de riesgo."
+   ].join("\n");
+ }
+ async function loadLayers(){
+   const resp=await fetch(DATA_URL,{cache:"no-store"});
+   if(!resp.ok)throw new Error("Paquete territorial HTTP "+resp.status);
+   data=await resp.json();
+   if(!guard(data))throw new Error("Guardas de investigación inválidas. No se muestran capas.");
+   $("sourceTime").textContent="Paquete territorial: "+(data.built_at_utc||"sin fecha")+"; lluvia archivada: "+(data.rain_evaluated_at_utc||"sin fecha")+". Datos no necesariamente actuales.";
+   const layerNames=Object.keys(COLORS);const keys=[];
+   for(const layer of layerNames){visible[layer]=data.layers[layer]?.default!==false;
+     const label=document.createElement("label");label.className="check";
+     const input=document.createElement("input");input.type="checkbox";input.checked=visible[layer];
+     input.addEventListener("change",()=>{visible[layer]=input.checked;applyVisibility();});
+     label.append(input,document.createTextNode(data.layers[layer]?.label_es||layer));keys.push(label);
+   }
+   $("layers").replaceChildren(...keys);
+   for(const place of ["costa_norte","rimac"]){
+     for(const layer of layerNames){
+       const features=(data.geometries?.features||[]).filter(f=>
+         f.properties?.region===place && f.properties?.layer===layer
+         && f.properties.default_visible!==false);
+       if(!features.length)continue;
+       const geo={type:"FeatureCollection",features};
+       const source=await Cesium.GeoJsonDataSource.load(geo,{
+          clampToGround:true,markerColor:Cesium.Color.fromCssColorString(COLORS[layer]),
+          stroke:Cesium.Color.fromCssColorString(COLORS[layer]),strokeWidth:2,
+          fill:Cesium.Color.fromCssColorString(COLORS[layer]).withAlpha(0.14)
+       });
+       source.name="IRFEN "+place+" "+layer;
+       source.entities.values.forEach(e=>{
+         const p=features.find(f=>f.properties?.id===(e.properties?.id?.getValue?.()||""))?.properties;
+         if(p)e.irfenProps=p;
+         if(e.polygon){e.polygon.material=Cesium.Color.fromCssColorString(COLORS[layer]).withAlpha(0.12);
+          e.polygon.outline=true;e.polygon.outlineColor=Cesium.Color.fromCssColorString(COLORS[layer]);}
+         if(e.polyline){e.polyline.width=3;e.polyline.material=Cesium.Color.fromCssColorString(COLORS[layer]);}
+         if(e.billboard){e.billboard.color=Cesium.Color.fromCssColorString(COLORS[layer]);}
+       });
+       await viewer.dataSources.add(source);
+       layerSources[place+":"+layer]=source;
+     }
+   }
+   viewer.selectedEntityChanged.addEventListener(e=>{if(e)displaySelected(e.irfenProps||null);});
+   applyVisibility();
+   status("Capas cargadas. Selecciona un elemento o cambia entre 2D y 3D.");
+ }
+ function applyVisibility(){
+   let shown=0, groups=0;
+   for(const [key,source] of Object.entries(layerSources)){
+     const [place,layer]=key.split(":");const active=(region==="peru"||place===region)&&visible[layer];
+     source.show=active;if(active){shown+=source.entities.values.length;groups++;}
+   }
+   $("layerCount").textContent=shown+" elementos geométricos visibles · "+groups+" grupos de capas.";
+   viewer.scene.requestRender();
+ }
+ async function enableTerrain(){
+   const token=$("ionToken").value.trim();
+   if(!token){$("terrainState").textContent="Introduce tu token de Cesium ion (solo lectura). No lo envíes por chat ni lo guardes en el repositorio.";return;}
+   $("enableTerrain").disabled=true;$("terrainState").textContent="Conectando con Cesium World Terrain…";
+   try{
+     Cesium.Ion.defaultAccessToken=token;
+     const provider=await Cesium.CesiumTerrainProvider.fromIonAssetId(1);
+     viewer.terrainProvider=provider;terrainOn=true;
+     viewer.scene.globe.enableLighting=false;
+     $("terrainState").textContent="Relieve real activado con Cesium World Terrain. Calidad y resolución variables según zona.";
+     status("Cesium World Terrain cargado. Acercando e inclinando la cámara para apreciar el relieve…");
+     viewTerrain();
+   }catch(e){
+     viewer.terrainProvider=new Cesium.EllipsoidTerrainProvider();terrainOn=false;
+     $("terrainState").textContent="No se pudo activar el terreno: verifica permisos, cuota y acceso de red en Cesium ion. No se modificaron las capas.";
+     status("No se cargó el relieve: "+(e?.message||"error de proveedor"));
+   }finally{$("enableTerrain").disabled=false;}
+ }
+ function mode(two){
+   if(two)viewer.scene.morphTo2D(1.0);else viewer.scene.morphTo3D(1.0);
+   $("mode2d").setAttribute("aria-pressed",String(two));
+   $("mode3d").setAttribute("aria-pressed",String(!two));
+ }
+ async function init(){
+   if(!window.Cesium){status("No se pudo cargar CesiumJS; comprueba la conexión al CDN.");return;}
+   try{
+     viewer=new Cesium.Viewer("cesiumContainer",{
+       baseLayerPicker:false,baseLayer:false,terrainProvider:new Cesium.EllipsoidTerrainProvider(),
+       geocoder:false,animation:false,timeline:false,homeButton:false,fullscreenButton:false,
+       infoBox:false,sceneModePicker:false,sceneMode:Cesium.SceneMode.SCENE3D,
+       selectionIndicator:false,navigationHelpButton:true
+     });
+     viewer.imageryLayers.add(new Cesium.ImageryLayer(
+       new Cesium.OpenStreetMapImageryProvider({
+         url:"https://tile.openstreetmap.org/",maximumLevel:16,
+         credit:new Cesium.Credit("© OpenStreetMap contributors")
+       })));
+     viewer.scene.globe.depthTestAgainstTerrain=false;
+     $("region").addEventListener("change",()=>{region=$("region").value;applyVisibility();fit(region);});
+     $("fit").addEventListener("click",()=>fit(region));
+     $("tilt").addEventListener("click",viewTerrain);
+     $("overhead").addEventListener("click",()=>fit(region));
+     $("reset").addEventListener("click",()=>{$("region").value="peru";region="peru";applyVisibility();fit("peru");});
+     $("mode2d").addEventListener("click",()=>mode(true));
+     $("mode3d").addEventListener("click",()=>mode(false));
+     $("enableTerrain").addEventListener("click",enableTerrain);
+     $("disableTerrain").addEventListener("click",()=>{
+       viewer.terrainProvider=new Cesium.EllipsoidTerrainProvider();terrainOn=false;
+       $("terrainState").textContent="Terreno desactivado: globo sin relieve de elevación.";
+       status("Globo sin relieve real; geometrías experimentales disponibles.");
+     });
+     await loadLayers();fit(region);
+   }catch(e){status("No se pudo preparar el visor experimental: "+(e?.message||"error desconocido"));}
+ }
+ window.addEventListener("DOMContentLoaded",init);
+})();
+</script>
+</body>
+</html>
