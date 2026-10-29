@@ -1,0 +1,41 @@
+name: TMP diag IMERG Early CMR catalog (read-only, no credentials, branch deleted after)
+on:
+  push:
+    branches: [diag/imerg-cmr-catalog-20261030]
+    paths: [.github/workflows/tmp-diag-imerg-cmr.yml]
+permissions:
+  contents: read
+jobs:
+  cmr:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Query NASA CMR (public, unauthenticated) for IMERG Early/Late granules
+        shell: python
+        run: |
+          import json, urllib.request, datetime as dt
+          now = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
+          def get(url):
+              with urllib.request.urlopen(url, timeout=60) as r:
+                  return json.load(r), r.headers.get("CMR-Hits")
+          print(f"::notice title=DIAG_NOW::{now.isoformat()}")
+          base = "https://cmr.earthdata.nasa.gov/search"
+          cols, _ = get(f"{base}/collections.json?short_name=GPM_3IMERGHHE&page_size=50")
+          print("::notice title=DIAG_COLLECTIONS_HHE::" + "; ".join(f"{c.get('version_id')} {c.get('id')} {c.get('data_center')} cloud={c.get('cloud_hosted')}" for c in cols["feed"]["entry"]))
+          for short, ver in (("GPM_3IMERGHHE", "07"), ("GPM_3IMERGHHE", None), ("GPM_3IMERGHHL", "07")):
+              q = f"{base}/granules.json?short_name={short}" + (f"&version={ver}" if ver else "") + \
+                  f"&temporal=2026-10-27T00:00:00Z,{now.strftime('%Y-%m-%dT%H:%M:%SZ')}&sort_key=-start_date&page_size=200"
+              d, hits = get(q)
+              e = d["feed"]["entry"]
+              newest = e[:4]
+              print(f"::notice title=DIAG_{short}_{ver or 'ANY'}::hits={hits} newest=" + " | ".join(
+                  f"{g.get('time_start')} {g.get('producer_granule_id') or g.get('title')} updated={g.get('updated')}" for g in newest))
+              starts = sorted({g["time_start"][:16] for g in e})
+              # half-hour slots present per day, and the first missing slot after 2026-10-28T12:00
+              t = dt.datetime(2026, 10, 28, 12, 0, tzinfo=dt.timezone.utc); present = set(starts); miss = []
+              while t < now - dt.timedelta(hours=4):
+                  if t.strftime("%Y-%m-%dT%H:%M") not in present: miss.append(t.strftime("%dT%H:%M"))
+                  t += dt.timedelta(minutes=30)
+              print(f"::notice title=DIAG_{short}_{ver or 'ANY'}_GAPS::missing_after_28T12={len(miss)} first={miss[:3]} last={miss[-3:]}")
+              upd = sorted(g.get("updated") or "" for g in e)[-3:]
+              print(f"::notice title=DIAG_{short}_{ver or 'ANY'}_LAST_INGEST::{upd}")
