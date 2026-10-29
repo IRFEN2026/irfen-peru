@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 import json
+import math
 import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
@@ -97,6 +98,228 @@ def query_url(field: str, token: str) -> str:
     }
     return f"{SERVICE}/{LAYER}/query?" + urlencode(params)
 
+def valid_geojson_position(position: object) -> bool:
+    """WGS84 longitude/latitude and any extra ordinates must be finite numbers."""
+    return (
+        isinstance(position, list)
+        and len(position) >= 2
+        and all(isinstance(v, (int, float)) and not isinstance(v, bool)
+                and math.isfinite(v) for v in position)
+        and -180 <= position[0] <= 180
+        and -90 <= position[1] <= 90
+    )
+
+
+def nonzero_xy_ring_area(ring: list) -> bool:
+    """Reject zero signed XY area without imposing a hydraulic threshold."""
+    x0, y0 = ring[0][:2]
+    twice_area = math.fsum(
+        (ring[i][0] - x0) * (ring[i + 1][1] - y0)
+        - (ring[i + 1][0] - x0) * (ring[i][1] - y0)
+        for i in range(len(ring) - 1)
+    )
+    return twice_area != 0
+
+
+def valid_geojson_ring(ring: object) -> bool:
+    """A context-only polygon ring must be closed with finite WGS84 positions."""
+    return (
+        isinstance(ring, list)
+        and len(ring) >= 4
+        and all(valid_geojson_position(position) for position in ring)
+        and ring[0] == ring[-1]
+        # Three distinct XY vertices can still be collinear or self-crossing
+        # with zero signed area; neither is defensible polygon context.
+        and len({(position[0], position[1]) for position in ring[:-1]}) >= 3
+        and nonzero_xy_ring_area(ring)
+    )
+
+
+def valid_geojson_polygon(polygon: object) -> bool:
+    return (
+        isinstance(polygon, list)
+        and bool(polygon)
+        and all(valid_geojson_ring(ring) for ring in polygon)
+    )
+
+
+def validated_geojson_features(payload: dict, context: str) -> list[dict]:
+    """Reject malformed ANA responses instead of treating them as empty matches."""
+    if not isinstance(payload, dict) or payload.get("type") != "FeatureCollection":
+        raise ValueError(f"non-GeoJSON FeatureCollection for {context}")
+    if "features" not in payload or not isinstance(payload["features"], list):
+        raise ValueError(f"invalid or missing GeoJSON features array for {context}")
+    # ANA may return a truncated FeatureCollection. Never treat it as a
+    # complete candidate search (or as evidence that a child is absent).
+    for location in (payload, payload.get("properties")):
+        if location is None:
+            continue
+        if not isinstance(location, dict):
+            raise ValueError(f"invalid GeoJSON transfer metadata for {context}")
+        if ("exceededTransferLimit" in location
+                and location["exceededTransferLimit"] is not False):
+            raise ValueError(f"incomplete ANA result exceededTransferLimit for {context}")
+    for index, feature in enumerate(payload["features"]):
+        if not isinstance(feature, dict) or feature.get("type") != "Feature":
+            raise ValueError(f"invalid GeoJSON feature at {context}[{index}]")
+        if feature.get("properties") is not None and not isinstance(feature["properties"], dict):
+            raise ValueError(f"invalid GeoJSON properties at {context}[{index}]")
+        if feature.get("geometry") is not None and not isinstance(feature["geometry"], dict):
+            raise ValueError(f"invalid GeoJSON geometry at {context}[{index}]")
+        # Validate line coordinate structure before preserving any ANA candidate.
+        # Other geometry types remain context-only, never promoted to line geometry.
+        geometry = feature.get("geometry")
+        if geometry is not None:
+            # Preserve valid non-line geometry as context only, but never
+            # classify malformed GeoJSON geometry objects as ANA candidates.
+            geometry_type = geometry.get("type")
+            if not isinstance(geometry_type, str) or geometry_type not in {
+                "Point", "MultiPoint", "LineString", "MultiLineString",
+                "Polygon", "MultiPolygon", "GeometryCollection",
+            }:
+                raise ValueError(f"invalid ANA geometry type at {context}[{index}]")
+            if geometry_type == "GeometryCollection":
+                geometries = geometry.get("geometries")
+                if not isinstance(geometries, list):
+                    raise ValueError(f"invalid ANA geometry collection at {context}[{index}]")
+                # Nested collection members must pass the same fail-closed
+                # validation as top-level features, including their coordinates.
+                for child_index, child in enumerate(geometries):
+                    if not isinstance(child, dict):
+                        raise ValueError(f"invalid ANA collection member at {context}[{index}]")
+                    validated_geojson_features(
+                        {"type": "FeatureCollection",
+                         "features": [{"type": "Feature", "geometry": child}]},
+                        f"{context}[{index}].geometries[{child_index}]",
+                    )
+            elif not isinstance(geometry.get("coordinates"), list):
+                raise ValueError(f"invalid ANA geometry coordinates at {context}[{index}]")
+            if geometry_type == "Point" and not valid_geojson_position(geometry["coordinates"]):
+                raise ValueError(f"invalid ANA point position at {context}[{index}]")
+            if geometry_type == "MultiPoint":
+                points = geometry["coordinates"]
+                if not points or any(not valid_geojson_position(p) for p in points):
+                    raise ValueError(f"invalid ANA multipoint positions at {context}[{index}]")
+            if geometry_type == "Polygon" and not valid_geojson_polygon(geometry["coordinates"]):
+                raise ValueError(f"invalid ANA polygon rings at {context}[{index}]")
+            if geometry_type == "MultiPolygon":
+                polygons = geometry["coordinates"]
+                if not polygons or any(not valid_geojson_polygon(p) for p in polygons):
+                    raise ValueError(f"invalid ANA multipolygon rings at {context}[{index}]")
+        if geometry is not None and geometry.get("type") in {"LineString", "MultiLineString"}:
+            kind = geometry["type"]
+            coordinates = geometry.get("coordinates")
+            if not isinstance(coordinates, list) or not coordinates:
+                raise ValueError(f"invalid ANA line coordinates at {context}[{index}]")
+            lines = [coordinates] if kind == "LineString" else coordinates
+            if any(not isinstance(line, list) or len(line) < 2 for line in lines):
+                raise ValueError(f"invalid ANA line structure at {context}[{index}]")
+            for line in lines:
+                for position in line:
+                    if not valid_geojson_position(position):
+                        raise ValueError(f"invalid ANA line position at {context}[{index}]")
+                # A zero-length XY line is not a defensible watercourse
+                # candidate, even if its Z ordinates differ.
+                if len({(position[0], position[1]) for position in line}) < 2:
+                    raise ValueError(f"degenerate ANA line at {context}[{index}]")
+    return payload["features"]
+
+
+def check_geojson_payload_guard() -> None:
+    """Offline regression smoke test, exercised by --check-plan-only in CI."""
+    invalid = (
+        {"type": "FeatureCollection"},
+        {"type": "FeatureCollection", "features": None},
+        {"type": "FeatureCollection", "features": False},
+        {"type": "FeatureCollection", "features": {}},
+        {"type": "FeatureCollection", "features": ""},
+        {"type": "FeatureCollection", "features": "[]"},
+        {"type": "FeatureCollection", "features": [None]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "LineString", "coordinates": None}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "LineString", "coordinates": "not-an-array"}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "LineString", "coordinates": [[-80.1, -3.1]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "LineString", "coordinates": [[-80.1, -3.1], [-80.1, -3.1]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "MultiLineString", "coordinates": [[[-80.1, -3.1, 1.0], [-80.1, -3.1, 2.0]]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "LineString", "coordinates": [[True, -3.1], [-80.2, -3.2]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "LineString", "coordinates": [[-80.1, -3.1, float("nan")], [-80.2, -3.2]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "LineString", "coordinates": [[-80.1, -3.1, float("inf")], [-80.2, -3.2]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "LineString", "coordinates": [[-80.1, -3.1, "invalid"], [-80.2, -3.2]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "MultiLineString", "coordinates": [[[-80.1, -3.1, True], [-80.2, -3.2]]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "MultiLineString", "coordinates": [[[0, 0]]]}}]},
+        # ANA query requests outSR=4326: finite but out-of-range
+        # longitude/latitude are invalid GeoJSON positions, not candidates.
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "LineString", "coordinates": [[181, -3.1], [-80.2, -3.2]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "LineString", "coordinates": [[-181, -3.1], [-80.2, -3.2]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "LineString", "coordinates": [[-80.1, 91], [-80.2, -3.2]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "MultiLineString", "coordinates": [[[-80.1, -91], [-80.2, -3.2]]]}}]},
+
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Unknown", "coordinates": []}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Point", "coordinates": None}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Point", "coordinates": [True, -3.1]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Point", "coordinates": [-80.1, 91]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Point", "coordinates": [-80.1, -3.1, float("nan")]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "MultiPoint", "coordinates": []}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "MultiPoint", "coordinates": [[-80.1, -3.1], ["bad", -3.2]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "GeometryCollection", "geometries": None}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "GeometryCollection", "geometries": [None]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "GeometryCollection", "geometries": [{"type": "Unknown", "coordinates": []}]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "GeometryCollection", "geometries": [{"type": "Point", "coordinates": [181, -3.1]}]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "GeometryCollection", "geometries": [{"type": "LineString", "coordinates": [[-80.1, -3.1]]}]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "GeometryCollection", "geometries": [{"type": "GeometryCollection", "geometries": [{"type": "Point", "coordinates": [True, -3.1]}]}]}}]},
+        # Distinct XY vertices do not imply nonzero area (collinear or bowtie).
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-80, -3], [-81, -3], [-82, -3], [-80, -3]]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "MultiPolygon", "coordinates": [[[[-80, -3], [-81, -4], [-82, -5], [-80, -3]]]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-80, -3], [-81, -4], [-80, -4], [-81, -3], [-80, -3]]]}}]},
+        # Closed but degenerate rings are not defensible context geometry.
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-80.1, -3.1], [-80.1, -3.1], [-80.1, -3.1], [-80.1, -3.1]]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "MultiPolygon", "coordinates": [[[[-80.1, -3.1], [-80.2, -3.1], [-80.1, -3.1], [-80.1, -3.1]]]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Polygon", "coordinates": []}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-80.1, -3.1], [-80.2, -3.1], [-80.1, -3.1]]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-80.1, -3.1], [-80.2, -3.1], [-80.2, -3.2], [-80.1, -3.3]]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-80.1, -3.1], [-80.2, -3.1], [-80.2, -3.2], [float("nan"), -3.1]]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "MultiPolygon", "coordinates": []}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "MultiPolygon", "coordinates": [[[[-80.1, -3.1], [-80.2, -3.1], [-80.2, -3.2], [-80.1, 91]]]]}}]},
+        {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": []}]},
+        {"type": "FeatureCollection", "features": [], "exceededTransferLimit": True},
+        {"type": "FeatureCollection", "features": [], "exceededTransferLimit": None},
+        {"type": "FeatureCollection", "features": [], "exceededTransferLimit": "false"},
+        {"type": "FeatureCollection", "features": [], "properties": {"exceededTransferLimit": True}},
+        {"type": "FeatureCollection", "features": [], "properties": {"exceededTransferLimit": None}},
+        {"type": "FeatureCollection", "features": [], "properties": []},
+    )
+    for payload in invalid:
+        try:
+            validated_geojson_features(payload, "offline-regression")
+        except ValueError:
+            continue
+        raise AssertionError(f"malformed GeoJSON accepted: {payload!r}")
+    for valid in (
+        {"type": "FeatureCollection", "features": []},
+        {"type": "FeatureCollection", "features": [], "exceededTransferLimit": False},
+        {"type": "FeatureCollection", "features": [], "properties": {"exceededTransferLimit": False}},
+    ):
+        assert validated_geojson_features(valid, "offline-regression") == []
+    for geometry in (
+        {"type": "LineString", "coordinates": [[-80.1, -3.1], [-80.2, -3.2]]},
+        {"type": "LineString", "coordinates": [[-80.1, -3.1], [-80.2, -3.2], [-80.1, -3.1]]},
+        {"type": "MultiLineString", "coordinates": [[[-80.1, -3.1], [-80.2, -3.2]]]},
+        {"type": "LineString", "coordinates": [[-80.1, -3.1, 1.5], [-80.2, -3.2, 2.5]]},
+        {"type": "LineString", "coordinates": [[-180, -90], [180, 90]]},
+        {"type": "MultiLineString", "coordinates": [[[-80.1, -3.1, 1.5], [-80.2, -3.2, 2.5]]]},
+        {"type": "Point", "coordinates": [-80.1, -3.1]},
+        {"type": "MultiPoint", "coordinates": [[-80.1, -3.1], [-80.2, -3.2, 4.0]]},
+        {"type": "GeometryCollection", "geometries": []},
+        {"type": "GeometryCollection", "geometries": [{"type": "Point", "coordinates": [-80.1, -3.1]}, {"type": "LineString", "coordinates": [[-80.1, -3.1], [-80.2, -3.2]]}]},
+        {"type": "GeometryCollection", "geometries": [{"type": "GeometryCollection", "geometries": [{"type": "Point", "coordinates": [-80.1, -3.1]}]}]},
+        {"type": "Polygon", "coordinates": [[[-80.1, -3.1], [-80.2, -3.1], [-80.2, -3.2], [-80.1, -3.1]]]},
+        {"type": "Polygon", "coordinates": [[[-80, -3, 0], [-81, -3, 0], [-81, -4, 0], [-80, -3, 0]]]},
+        {"type": "MultiPolygon", "coordinates": [[[[-80.1, -3.1], [-80.2, -3.1], [-80.2, -3.2], [-80.1, -3.1]]]]},
+    ):
+        payload = {"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": geometry}]}
+        assert len(validated_geojson_features(payload, "offline-regression")) == 1
+
+
 def normalize_feature(feature: dict) -> dict:
     geometry = feature.get("geometry")
     if geometry is not None and geometry.get("type") not in {"LineString", "MultiLineString"}:
@@ -140,9 +363,9 @@ def run() -> dict:
             for token in tokens:
                 url = query_url(field, token)
                 payload, raw = fetch(url)
-                if payload.get("type") != "FeatureCollection":
-                    raise ValueError(f"non-GeoJSON response for {component_id}/{field}/{token}")
-                rows = payload.get("features") or []
+                rows = validated_geojson_features(
+                    payload, f"{component_id}/{field}/{token}"
+                )
                 requests.append({
                     "field": field,
                     "token": token,
@@ -204,7 +427,7 @@ def run() -> dict:
             "paired_event_context_quarantine": ["leoncio_prado"],
             "spatial_crosswalk_quarantine": ["miramar"],
             "official_map_anchor_not_line_geometry_quarantine": ["la_tucilla"],
-            "scope_adjudication_quarantine": ["la_tucilla"],
+            "scope_adjudication_quarantine": list(plan["query_policy"]["scope_adjudication_quarantine"]),
             "distinct_entity_guard": [["la_tucilla", "tucillal"]],
             "lexical_neighbour_exclusions": LEXICAL_NEIGHBOUR_EXCLUSIONS,
             "absence_of_candidate_is_negative": False,
@@ -220,6 +443,7 @@ def main() -> int:
     parser.add_argument("--check-plan-only", action="store_true")
     args = parser.parse_args()
     if args.check_plan_only:
+        check_geojson_payload_guard()
         plan = json.loads(PLAN.read_text(encoding="utf-8"))
         for key, expected in SAFE.items():
             assert plan.get(key) == expected
@@ -228,6 +452,7 @@ def main() -> int:
         assert "la_tucilla" in TARGETS
         assert "la_tucilla" in plan["query_policy"]["official_map_anchor_not_line_geometry_quarantine"]
         assert "la_tucilla" not in plan["query_policy"]["scope_adjudication_quarantine"]
+        assert plan["query_policy"]["scope_adjudication_quarantine"] == []
         assert plan["target_context"]["la_tucilla"]["official_coordinates"]["easting_m"] == 538042
         assert plan["target_context"]["la_tucilla"]["official_coordinates"]["northing_m"] == 9594412
         assert plan["query_policy"]["lexical_neighbour_exclusions"] == LEXICAL_NEIGHBOUR_EXCLUSIONS
