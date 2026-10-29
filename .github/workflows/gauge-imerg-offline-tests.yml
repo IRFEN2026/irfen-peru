@@ -1,0 +1,64 @@
+name: IRFEN investigación - pluviómetro vs IMERG, pruebas offline (TEST_ONLY)
+
+# Solo pruebas del paquete research/gauge_imerg: sin consultas a proveedores meteorológicos (SENAMHI, NASA, NOAA…),
+# sin secretos, sin escritura en el repositorio, sin Pages ni alertas. La única red usada es pip para instalar
+# dependencias fijadas; las pruebas bloquean cualquier conexión de red (tests/_synth.py).
+
+on:
+  push:
+    branches:
+      - research/gauge-imerg-pairing-v1-20261026
+    paths:
+      - research/gauge_imerg/**
+      - .github/workflows/gauge-imerg-offline-tests.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gauge-imerg-offline-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline:
+    if: github.ref == 'refs/heads/research/gauge-imerg-pairing-v1-20261026'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      IRFEN_REQUIRE_H5PY: "1"
+      IRFEN_REQUIRE_JSONSCHEMA: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Código de investigación (solo lectura, sin credenciales guardadas)
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Dependencias fijadas
+        run: python -m pip install --disable-pip-version-check "numpy==2.2.6" "h5py==3.14.0" "jsonschema==4.26.0" "pytest==9.0.3" "pyflakes==3.4.0"
+      - name: Análisis estático
+        working-directory: research/gauge_imerg
+        run: python -m pyflakes irfen_gauge_imerg tests examples
+      - name: Pruebas (HDF5 y esquemas obligatorios, red bloqueada)
+        working-directory: research/gauge_imerg
+        run: python -m pytest tests -v -rfE -p no:cacheprovider
+      - name: Ejemplos sintéticos regenerables sin cambios
+        working-directory: research/gauge_imerg
+        run: |
+          python examples/make_synthetic_examples.py
+          git diff --exit-code -- examples/
+      - name: Guardas - el paquete no abre red ni toca el visor
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -R -n -E "import (requests|urllib|httpx|earthaccess)|from urllib|socket\.create_connection" research/gauge_imerg/irfen_gauge_imerg; then
+            echo "::error::el paquete científico no debe usar red"; exit 1
+          fi
+          if grep -R -n -E "site/|config/v09_public_demo|operational_alerting_enabled\"?: *true" research/gauge_imerg/irfen_gauge_imerg; then
+            echo "::error::el paquete no debe referirse al visor ni activar alertas"; exit 1
+          fi
+          echo "OFFLINE_AND_DECOUPLED_OK"

@@ -1,0 +1,73 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "irfen.gauge_imerg.pairs/1.0.0",
+ "title": "Pares pluviómetro–IMERG con linaje",
+ "type": "object",
+ "required": [
+  "schema",
+  "schema_version",
+  "policy",
+  "summary",
+  "pairs",
+  "rejected"
+ ],
+ "properties": {
+  "schema": {
+   "const": "irfen.gauge_imerg.pairs"
+  },
+  "schema_version": {
+   "const": "1.0.0"
+  },
+  "pairs": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "pair_id",
+     "obs_id",
+     "station_id",
+     "cell",
+     "window_start_utc",
+     "window_end_utc",
+     "gauge_mm",
+     "imerg_cell_mm",
+     "coverage",
+     "product",
+     "lineage",
+     "use_class"
+    ],
+    "properties": {
+     "coverage": {
+      "const": 1.0
+     },
+     "gauge_mm": {
+      "type": "number",
+      "minimum": 0
+     },
+     "imerg_cell_mm": {
+      "type": "number",
+      "minimum": 0
+     },
+     "use_class": {
+      "enum": [
+       "exploratory",
+       "metrics",
+       "calibration"
+      ]
+     }
+    }
+   }
+  },
+  "rejected": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "obs_id",
+     "stage",
+     "reasons"
+    ]
+   }
+  }
+ }
+}

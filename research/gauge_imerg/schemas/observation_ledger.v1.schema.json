@@ -1,0 +1,267 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "irfen.gauge_imerg.observation_ledger/1.0.0",
+ "title": "Registro de lecturas de pluviómetro (IRFEN)",
+ "type": "object",
+ "required": [
+  "schema",
+  "schema_version",
+  "observations"
+ ],
+ "properties": {
+  "schema": {
+   "const": "irfen.gauge_imerg.observation_ledger"
+  },
+  "schema_version": {
+   "const": "1.0.0"
+  },
+  "observations": {
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/obs"
+   }
+  },
+  "search_log": {
+   "type": "array"
+  }
+ },
+ "$defs": {
+  "obs": {
+   "type": "object",
+   "required": [
+    "obs_id",
+    "data_kind",
+    "station",
+    "window",
+    "value",
+    "source"
+   ],
+   "properties": {
+    "obs_id": {
+     "type": "string",
+     "minLength": 1
+    },
+    "data_kind": {
+     "enum": [
+      "OBSERVATION",
+      "FORECAST",
+      "WARNING"
+     ]
+    },
+    "region": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "station": {
+     "type": "object",
+     "required": [
+      "name_as_reported",
+      "coordinate_verified",
+      "lat",
+      "lon"
+     ],
+     "properties": {
+      "name_as_reported": {
+       "type": "string"
+      },
+      "station_key": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
+      "official_id": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
+      "lat": {
+       "type": [
+        "number",
+        "null"
+       ],
+       "minimum": -90,
+       "maximum": 90
+      },
+      "lon": {
+       "type": [
+        "number",
+        "null"
+       ],
+       "minimum": -180,
+       "exclusiveMaximum": 180
+      },
+      "coordinate_verified": {
+       "type": "boolean"
+      },
+      "coordinate_source": {
+       "type": [
+        "string",
+        "null"
+       ]
+      }
+     }
+    },
+    "window": {
+     "type": "object",
+     "required": [
+      "start",
+      "end",
+      "timezone",
+      "precision"
+     ],
+     "properties": {
+      "start": {
+       "anyOf": [
+        {
+         "type": "string",
+         "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})$"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "end": {
+       "anyOf": [
+        {
+         "type": "string",
+         "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})$"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "timezone": {
+       "type": "string"
+      },
+      "precision": {
+       "enum": [
+        "EXACT",
+        "STATED_BY_SECONDARY",
+        "INFERRED",
+        "UNKNOWN"
+       ]
+      }
+     }
+    },
+    "value": {
+     "type": "object",
+     "required": [
+      "status",
+      "mm"
+     ],
+     "properties": {
+      "status": {
+       "enum": [
+        "VALUE",
+        "MISSING",
+        "NOT_REPORTED"
+       ]
+      },
+      "mm": {
+       "type": [
+        "number",
+        "null"
+       ],
+       "minimum": 0
+      },
+      "qualifier": {
+       "enum": [
+        "=",
+        "<",
+        ">",
+        "~"
+       ]
+      }
+     }
+    },
+    "quality": {
+     "type": "object",
+     "properties": {
+      "qc_level": {
+       "enum": [
+        "RAW_UNVERIFIED",
+        "PROVISIONAL",
+        "QC_PASSED"
+       ]
+      }
+     }
+    },
+    "source": {
+     "type": "object",
+     "required": [
+      "class",
+      "urls"
+     ],
+     "properties": {
+      "class": {
+       "enum": [
+        "PRIMARY_INSTRUMENT_EXPORT",
+        "OFFICIAL_PRODUCER_PUBLICATION",
+        "OFFICIAL_SOCIAL_POST_VIA_SECONDARY",
+        "SECONDARY_MEDIA_ATTRIBUTED",
+        "THIRD_PARTY_UNCONTROLLED",
+        "UNATTRIBUTED_OR_OPINION"
+       ]
+      },
+      "urls": {
+       "type": "array",
+       "items": {
+        "type": "string",
+        "pattern": "^https://"
+       }
+      }
+     }
+    },
+    "conflicts_with": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    }
+   },
+   "allOf": [
+    {
+     "if": {
+      "properties": {
+       "value": {
+        "properties": {
+         "status": {
+          "const": "VALUE"
+         }
+        }
+       }
+      }
+     },
+     "then": {
+      "properties": {
+       "value": {
+        "properties": {
+         "mm": {
+          "type": "number"
+         }
+        }
+       }
+      }
+     },
+     "else": {
+      "properties": {
+       "value": {
+        "properties": {
+         "mm": {
+          "type": "null"
+         }
+        }
+       }
+      }
+     }
+    }
+   ]
+  }
+ }
+}
