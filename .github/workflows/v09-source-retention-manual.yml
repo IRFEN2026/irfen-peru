@@ -1,0 +1,33 @@
+name: IRFEN v0.9 - Verificación de retención de fuentes (manual, solo catálogo, TEST_ONLY)
+# Only metadata from NASA CMR and NOAA S3 ListObjectsV2. Never downloads
+# granules/scans, never changes the repository, never infers retention guarantee.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: v09-retention-catalog-manual
+  cancel-in-progress: false
+jobs:
+  catalog-retention:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Verificar sintaxis y pruebas offline
+        run: |
+          python -m py_compile qa/replay_tools/v09_source_retention_readonly.py
+          python -m unittest discover -s qa/replay_tools -p 'test_v09_retention_readonly.py' -v
+      - name: Consultar únicamente metadatos de catálogo
+        run: |
+          python qa/replay_tools/v09_source_retention_readonly.py --out /tmp/irfen-retention/retention_report.json
+          echo '## IRFEN v0.9 — Retención documental (RESEARCH_ONLY / TEST_ONLY)' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Consulta manual de metadatos; no se descargaron archivos meteorológicos. Retención: NOT_VERIFIED.' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v09-retention-catalog-evidence
+          path: /tmp/irfen-retention/retention_report.json
+          retention-days: 30
