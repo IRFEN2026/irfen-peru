@@ -1,0 +1,71 @@
+{
+  "schema_version": "0.1",
+  "evidence_id": "lalibertad_chicama_chao_subunit_geometry_sources_20260925",
+  "status": "RESEARCH_ONLY_SOURCE_ADJUDICATION",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "production_ready": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "findings": [
+    {
+      "finding_id": "chicama_regional_subbasin_geometry_source",
+      "claim": "MINAM Geoservidor ZEE La Libertad layer 39 exposes named polygon classes for Chicama tributary-scale units including Quirripano, Santanero, Ochape, Chuquillanqui and Huancay.",
+      "source_id": "MINAM-ZEE-LALIBERTAD-UH-L39",
+      "use": "CANDIDATE_REPRODUCIBLE_SUBUNIT_GEOMETRY_SOURCE_PENDING_EXACT_QUERY_AND_PARENT_TOPOLOGY_QA",
+      "map_eligible": false,
+      "reason_withheld": "Exact candidate features must be frozen and checked against ANA Cuenca Chicama 13772; no candidate is an event footprint or operational geometry."
+    },
+    {
+      "finding_id": "chorobal_microcuenca_and_named_tributaries",
+      "claim": "Municipal Ordinance 14-2018-MPSCH explicitly lists Rio Chorobal as a microcuenca and Calipuy, Lamball and Caypanda as its principal quebradas.",
+      "source_id": "MPSCH-OM-14-2018-CHOROBAL",
+      "use": "OFFICIAL_LOCAL_NOMENCLATURE_FOR_CHILD_DISCOVERY",
+      "map_eligible": false,
+      "reason_withheld": "The ordinance supplies nomenclature but not a reproducible GIS boundary for the microcuenca or tributary channels."
+    },
+    {
+      "finding_id": "chorobal_cross_unit_sector_context",
+      "claim": "Decreto de Urgencia 015-2023 tables associate Rio Chorobal intervention sectors with both Cuenca Huamanzaña and Intercuenca 137711.",
+      "source_id": "DU-015-2023-CHAO-SECTORS",
+      "use": "TOPOLOGY_CONFLICT_AND_ROUTING_QA",
+      "map_eligible": false,
+      "reason_withheld": "The mixed official sector attribution forbids collapsing all Chorobal reaches into one assumed parent polygon before exact routing/outlet adjudication."
+    },
+    {
+      "finding_id": "chicama_2013_rainfall_runoff_context",
+      "claim": "SENAMHI 2013 provides basin-scale hydroclimatic/water-balance and rainfall-runoff model context for Cuenca Chicama.",
+      "source_id": "SENAMHI-CHICAMA-BALANCE-2013",
+      "use": "BASIN_SCALE_MODEL_AND_STATION_CONTEXT_ONLY",
+      "map_eligible": false,
+      "reason_withheld": "Basin-scale relations cannot be transferred directly to named ravine activation or converted into IRFEN thresholds."
+    },
+    {
+      "finding_id": "galaxia_pampa_hermosa_secondary_hydraulics",
+      "claim": "The 2022 UPAO thesis supplies secondary hydraulic/floodplain modelling context for the Galaxia-Pampa Hermosa reach.",
+      "source_id": "UPAO-CHICAMA-GALAXIA-PAMPA-HERMOSA-2022",
+      "use": "SECONDARY_REACH_HYDRAULIC_CONTEXT_ONLY",
+      "map_eligible": false,
+      "reason_withheld": "Modelled floodplain/design values are not observed event footprints, current capacity or operational thresholds."
+    }
+  ],
+  "next_safe_actions": [
+    "freeze exact MINAM ZEE layer-39 candidate polygons by name with full source attributes and SHA-256",
+    "test each Chicama candidate polygon is spatially contained by or topologically consistent with ANA 13772 before map publication",
+    "adjudicate Rio Chorobal reach topology against Huamanzaña 137712 and Intercuenca 137711 before defining an outlet or subcatchment",
+    "seek reproducible channel geometry for Calipuy, Lamball and Caypanda independently",
+    "extract SENAMHI 2013 station/model metadata without transferring basin-scale calibration to local ravines",
+    "keep MasterGIS as methodology reference only"
+  ],
+  "qa": {
+    "map_changed": false,
+    "event_footprint_created": false,
+    "threshold_created": false,
+    "capacity_inferred": false,
+    "absence_used_as_negative": false
+  }
+}
