@@ -59,6 +59,7 @@ footer{padding:10px 18px;border-top:1px solid #dbe4ed;font-size:11px;background:
 </div>
 <p class="small">El globo 3D sin terreno activo es un elipsoide sin relieve de montañas.</p>
 <div class="pair"><button type="button" id="fit">Encuadrar región</button><button type="button" id="reset">Perú completo</button></div>
+<div class="pair" style="margin-top:8px"><button type="button" id="tilt" title="Inclinar la cámara para ver las laderas y el valle">Ver relieve inclinado</button><button type="button" id="overhead" title="Volver a la vista desde arriba">Vista desde arriba</button></div>
 <hr>
 <h2>Relieve real (opcional)</h2>
 <p>Para visualizar pendientes y valles, activa <b>Cesium World Terrain</b>. Necesita una cuenta Cesium ion y un token de lectura autorizado.</p>
@@ -100,6 +101,19 @@ footer{padding:10px 18px;border-top:1px solid #dbe4ed;font-size:11px;background:
    && d.public_alerting===false && d.production_use===false && d.map_publishable===false;
  function fit(place){const b=VIEW[place]||VIEW.peru;
    viewer.camera.flyTo({destination:Cesium.Rectangle.fromDegrees(b[0],b[1],b[2],b[3]),duration:1.3});}
+ // Camera must be tilted to make elevation visible. A 3D globe viewed from above looks 2D.
+ function viewTerrain(){
+   if(viewer.scene.mode!==Cesium.SceneMode.SCENE3D){viewer.scene.morphTo3D(0.7);}
+   const camera=viewer.camera;
+   const v=region==="rimac"?[-76.70,-11.92,35000]:region==="costa_norte"?[-79.65,-5.2,100000]:[-76.70,-11.92,150000];
+   // Orientation has a negative pitch: look diagonally toward the terrain from above.
+   camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(v[0],v[1],v[2]),
+     orientation:{heading:Cesium.Math.toRadians(25),pitch:Cesium.Math.toRadians(-38),roll:0},
+     duration:2.0});
+   $("mode2d").setAttribute("aria-pressed","false");
+   $("mode3d").setAttribute("aria-pressed","true");
+   status(terrainOn?"Vista inclinada del relieve 3D. Arrastra para explorar las laderas.":"Cámara inclinada, pero el relieve real aún no está habilitado.");
+ }
  function displaySelected(p){
    if(!p){$("selection").textContent="Selecciona una cuenca, línea o punto para consultar su identidad y procedencia.";return;}
    const source=(p.source_ids||[]).join(", ")||"No indicada";
@@ -172,8 +186,10 @@ footer{padding:10px 18px;border-top:1px solid #dbe4ed;font-size:11px;background:
      Cesium.Ion.defaultAccessToken=token;
      const provider=await Cesium.CesiumTerrainProvider.fromIonAssetId(1);
      viewer.terrainProvider=provider;terrainOn=true;
+     viewer.scene.globe.enableLighting=false;
      $("terrainState").textContent="Relieve real activado con Cesium World Terrain. Calidad y resolución variables según zona.";
-     status("Relieve 3D disponible. Las geometrías siguen siendo evidencia, no resultados hidráulicos.");
+     status("Cesium World Terrain cargado. Acercando e inclinando la cámara para apreciar el relieve…");
+     viewTerrain();
    }catch(e){
      viewer.terrainProvider=new Cesium.EllipsoidTerrainProvider();terrainOn=false;
      $("terrainState").textContent="No se pudo activar el terreno: verifica permisos, cuota y acceso de red en Cesium ion. No se modificaron las capas.";
@@ -202,6 +218,8 @@ footer{padding:10px 18px;border-top:1px solid #dbe4ed;font-size:11px;background:
      viewer.scene.globe.depthTestAgainstTerrain=false;
      $("region").addEventListener("change",()=>{region=$("region").value;applyVisibility();fit(region);});
      $("fit").addEventListener("click",()=>fit(region));
+     $("tilt").addEventListener("click",viewTerrain);
+     $("overhead").addEventListener("click",()=>fit(region));
      $("reset").addEventListener("click",()=>{$("region").value="peru";region="peru";applyVisibility();fit("peru");});
      $("mode2d").addEventListener("click",()=>mode(true));
      $("mode3d").addEventListener("click",()=>mode(false));
