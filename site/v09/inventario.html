@@ -349,7 +349,7 @@ async function init(){
     const a = await fetch("../data/v09/ana2017_coastal_points_v0_1.json", {cache: "no-store"});
     if (a.ok) { const A = await a.json();
       (A.points || []).filter(p => p.status === "ADMITIDA_UBICACION_DOCUMENTAL").forEach(p => (p.inventory_links || []).forEach(l => {
-        if (!ANA.has(l.inventory_id)) ANA.set(l.inventory_id, []); ANA.get(l.inventory_id).push({id: p.id, basis: l.basis, centro: p.centro_poblado_ocr}); })); }
+        if (!ANA.has(l.inventory_id)) ANA.set(l.inventory_id, []); ANA.get(l.inventory_id).push({id: p.id, basis: l.basis, centro: p.centro_poblado_display || p.centro_poblado_ocr}); })); }
   } catch (e) { /* optional */ }
   V.rows.forEach(r => { r._h = haystack(r); });
   renderHead(); buildFilters();

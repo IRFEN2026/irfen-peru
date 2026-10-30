@@ -94,7 +94,7 @@ async function addAnaPoints(features){
  anaLayer=L.layerGroup(admitted.map(x=>{
    const m=L.circleMarker([x.lat,x.lon],{radius:5,color,weight:2,fillColor:"#fff",fillOpacity:.9,dashArray:"2,2"});
    const inv=(x.inventory_links||[]).map(l=>'<a href="inventario.html#id='+encodeURIComponent(l.inventory_id)+'">'+safe(l.inventory_id)+"</a>"+(l.basis==="MISMO_NOMBRE_EN_EL_DEPARTAMENTO_POR_COMPROBAR"?" (mismo nombre, por comprobar)":"")).join(", ");
-   m.bindPopup("<strong>Centro poblado: "+safe(x.centro_poblado_ocr||"sin nombre")+"</strong><br>Quebrada (según ANA): "+safe(x.quebrada_ocr||"s/n")+
+   m.bindPopup("<strong>Centro poblado: "+safe(x.centro_poblado_display||x.centro_poblado_ocr||"sin nombre")+"</strong><br>Quebrada (según ANA): "+safe(x.quebrada_display||x.quebrada_ocr||"s/n")+
      "<br>"+safe(x.district_ocr||"")+" · provincia "+safe(x.province_inei||x.province_ocr)+" · "+safe(x.department)+
      "<br>UTM WGS 84 zona "+safe(x.utm.zone)+"S: E "+safe(x.utm.easting_m)+" · N "+safe(x.utm.northing_m)+" ("+safe(x.utm.epsg)+")"+
      "<br>Expuestos según ANA: "+safe(x.exposure.viviendas??"s/d")+" viviendas, "+safe(x.exposure.habitantes_directos??"s/d")+" habitantes directos"+
@@ -125,7 +125,7 @@ async function addAnaPoints(features){
 function fromHash(){
  const h=decodeURIComponent(location.hash.slice(1));
  if(h.startsWith("dep=")){const b=deptBoxes[h.slice(4)]?.bbox;if(Array.isArray(b)&&b.length===4){map.fitBounds([[b[0],b[1]],[b[2],b[3]]],{padding:[16,16]});$("dept").value=h.slice(4);}}
- else if(h.startsWith("punto=")){const m=anaById[h.slice(6)];if(m){if(anaLayer&&!map.hasLayer(anaLayer)){map.addLayer(anaLayer);const t=$("toggle-ana");if(t)t.checked=true;}map.setView(m.getLatLng(),11);m.openPopup();}}
+ else if(h.startsWith("punto=")){const m=anaById[h.slice(6)];if(m){$("dept").value="";if(anaLayer&&!map.hasLayer(anaLayer)){map.addLayer(anaLayer);const t=$("toggle-ana");if(t)t.checked=true;}map.setView(m.getLatLng(),11);m.openPopup();}}
 }
 })();
 </script></body></html>
