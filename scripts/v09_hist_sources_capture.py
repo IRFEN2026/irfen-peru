@@ -38,7 +38,7 @@ KNOWN_PECHP = {  # found by web search on 30/31-10-2026 (fallback if the collect
     "2016-01": "https://cdn.www.gob.pe/uploads/document/file/3274104/Informes%20T%C3%A9cnicos%20hidro%20N%C2%B0%2000001-2016.pdf",
     "2016-03": "https://cdn.www.gob.pe/uploads/document/file/3274110/Informes%20T%C3%A9cnicos%20hidro%20N%C2%B0%2000003-2016.pdf",
 }
-WANTED = [f"{y}-{m:02d}" for y in (2016, 2017, 2018) for m in (1, 2, 3, 4)]
+WANTED = [f"{y}-{m:02d}" for y in (2016, 2017, 2018, 2019) for m in (1, 2, 3, 4)]
 EMSR_API = "https://rapidmapping.emergency.copernicus.eu/backend/dashboard-api/public-activations/?code=EMSR199"
 PIURA_AOI = re.compile(r"piura|ejidos|catacaos|castilla|sechura|parachique|tambogrande|chulucanas", re.I)
 CHIRA_AOI = re.compile(r"sullana", re.I)
@@ -49,11 +49,14 @@ def checkpoint() -> None:
     (OUT / f"requests_{STAGE['name']}.json").write_text(json.dumps(LOG, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
 
 
-def get(url: str, save: Path | None = None, timeout: int = 90) -> bytes | None:
+def get(url: str, save: Path | None = None, timeout: int = 90, headers: dict | None = None) -> bytes | None:
     t0 = time.time()
     rec = dict(url=url, requested_at_utc=datetime.now(timezone.utc).replace(microsecond=0).isoformat())
+    if save is not None and save.is_file() and save.stat().st_size > 0 and save.suffix in (".pdf", ".zip"):
+        LOG.append(dict(rec, status="ALREADY_ARCHIVED", file=str(save.relative_to(OUT))))
+        return save.read_bytes()
     try:
-        with urlopen(Request(url, headers={"User-Agent": UA}), timeout=timeout) as r:
+        with urlopen(Request(url, headers=headers or {"User-Agent": UA}), timeout=timeout) as r:
             raw = r.read()
             rec.update(status="OK", http=r.status, content_type=r.headers.get("content-type"), final_url=r.geturl(),
                        last_modified=r.headers.get("last-modified"))
@@ -84,8 +87,12 @@ def robots_allows(url: str) -> bool:
 
 
 def month_key(title: str) -> str | None:
-    """«Informe Hidrometeorológico N° 00003-2017» or «… Marzo 2017» -> 2017-03."""
+    """«Informes Técnicos hidro N° 00003-2017», its slug «…-hidro-n-00003-2017», or «… Marzo 2017» -> 2017-03.
+    The PECHP numbering is monthly (N° 00003-2017 is the March 2017 report, checked against its own title page)."""
     t = unescape(title)
+    m = re.search(r"hidro[\s-]+n[\s-]+0*(\d{1,2})[\s-]+(20\d{2})", t, re.I)
+    if m and 1 <= int(m.group(1)) <= 12:
+        return f"{m.group(2)}-{int(m.group(1)):02d}"
     m = re.search(r"N[°º]?\s*0*(\d{1,2})\s*-\s*(20\d{2})", t)
     if m and 1 <= int(m.group(1)) <= 12:
         return f"{m.group(2)}-{int(m.group(1)):02d}"
@@ -117,7 +124,7 @@ def stage_pechp() -> dict:
     summary = dict(collection_document_pages=len(pages))
     for p in sorted(pages):
         slug = p.rsplit("/", 1)[-1]
-        key = month_key(slug.replace("-", " "))
+        key = month_key(slug)
         if key not in WANTED or key in found:
             continue
         html = get(urljoin("https://www.gob.pe", p), OUT / "pechp" / f"doc_{key}.html")
@@ -137,10 +144,14 @@ def stage_pechp() -> dict:
 
 
 def stage_emsr() -> dict:
-    raw = get(EMSR_API, OUT / "emsr199" / "activation_api.json")
+    browser = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+               "Accept": "application/json, text/plain, */*", "Referer": "https://rapidmapping.emergency.copernicus.eu/EMSR199"}
+    raw = get(EMSR_API, OUT / "emsr199" / "activation_api.json") or get(EMSR_API, OUT / "emsr199" / "activation_api.json", headers=browser)
     summary: dict = {}
     if not raw:
-        return dict(status="API_UNAVAILABLE")
+        for alt in ("https://rapidmapping.emergency.copernicus.eu/EMSR199", "https://emergency.copernicus.eu/mapping/list-of-components/EMSR199"):
+            get(alt, OUT / "emsr199" / (re.sub(r"[^A-Za-z0-9]+", "_", alt)[-60:] + ".html"), headers=browser)
+        return dict(status="API_UNAVAILABLE", alternatives_tried=2)
     doc = json.loads(raw)
     results = doc.get("results", doc if isinstance(doc, list) else [])
     act = results[0] if results else {}
