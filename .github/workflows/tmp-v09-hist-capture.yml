@@ -1,4 +1,4 @@
-name: TMP historical flood validation sources (PECHP, EMSR199, IMERG Final daily; round 2 — missing months and absent days, one bounded retry)
+name: TMP historical flood validation sources (round 3 — PECHP PDF link pattern fixed; EMSR products zip; IMERG not retried again)
 on:
   push:
     branches: [research/v09-piura-2017-flood-validation-20261031]
@@ -34,6 +34,7 @@ jobs:
         continue-on-error: true
         run: python scripts/v09_hist_sources_capture.py --stage emsr
       - name: IMERG Final V07 daily (antecedent + episode + control seasons)
+        if: false  # round 3: no further retries of the 15 absent days (bounded-retry policy)
         timeout-minutes: 45
         continue-on-error: true
         env:

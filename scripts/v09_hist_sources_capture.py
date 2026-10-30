@@ -130,7 +130,7 @@ def stage_pechp() -> dict:
         html = get(urljoin("https://www.gob.pe", p), OUT / "pechp" / f"doc_{key}.html")
         if not html:
             continue
-        pdfs = re.findall(r'href="(https://cdn\.www\.gob\.pe/uploads/document/file/[^"]+\.pdf)"', html.decode("utf-8", "replace"))
+        pdfs = re.findall(r'href="(https://cdn\.www\.gob\.pe/uploads/document/file/[^"?]+\.pdf)(?:\?[^"]*)?"', html.decode("utf-8", "replace"))
         if pdfs:
             found[key] = unescape(pdfs[0])
     for k, u in KNOWN_PECHP.items():
@@ -151,7 +151,10 @@ def stage_emsr() -> dict:
     if not raw:
         for alt in ("https://rapidmapping.emergency.copernicus.eu/EMSR199", "https://emergency.copernicus.eu/mapping/list-of-components/EMSR199"):
             get(alt, OUT / "emsr199" / (re.sub(r"[^A-Za-z0-9]+", "_", alt)[-60:] + ".html"), headers=browser)
-        return dict(status="API_UNAVAILABLE", alternatives_tried=2)
+        z = get("https://rapidmapping.emergency.copernicus.eu/backend/EMSR199/EMSR199_products.zip",
+                OUT / "emsr199" / "EMSR199_products.zip", timeout=300, headers=browser)
+        get("https://mapping.emergency.copernicus.eu/terms-and-conditions/", OUT / "emsr199" / "terms_and_conditions.html", headers=browser)
+        return dict(status="API_UNAVAILABLE", alternatives_tried=2, products_zip=bool(z and z[:2] == b"PK"))
     doc = json.loads(raw)
     results = doc.get("results", doc if isinstance(doc, list) else [])
     act = results[0] if results else {}
