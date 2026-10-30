@@ -2,7 +2,7 @@ name: TMP capture ANA 2016-2017 quebradas document (source snapshot; removed nex
 on:
   push:
     branches: [data/v09-ana2017-coastal-points-20261030]
-    paths: [.github/workflows/tmp-ana2017-capture.yml, scripts/v09_ana2017_table_images.py]
+    paths: [.github/workflows/tmp-ana2017-capture.yml, scripts/v09_coast_provinces_capture.py]
 permissions:
   contents: write
 jobs:
@@ -15,11 +15,11 @@ jobs:
         with: {python-version: "3.12"}
       - run: pip install -q pypdf==6.19.0
       - run: pip install -q pillow && sudo apt-get install -y -q poppler-utils >/dev/null
-      - run: python scripts/v09_ana2017_table_images.py
+      - run: python scripts/v09_coast_provinces_capture.py
       - name: Commit the source snapshot (text + record) to this branch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/v09/sources/ana2017_complementacion_quebradas
-          git commit -q -m "Source snapshot: ANA 2016-2017 coastal table pages rendered at 300 dpi (PDF with the recorded SHA-256)"
+          git add data/v09/sources/inei_coastal_provinces
+          git commit -q -m "Source snapshot: INEI referential provinces of the coastal departments (SERFOR service)"
           git push -q origin HEAD:data/v09-ana2017-coastal-points-20261030
