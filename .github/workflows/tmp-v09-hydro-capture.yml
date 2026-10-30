@@ -1,0 +1,23 @@
+name: TMP capture official hydrographic units and channel lines (source snapshot; removed next commit)
+on:
+  push:
+    branches: [research/v09-hydro-units-ana-20261030]
+    paths: [.github/workflows/tmp-v09-hydro-capture.yml, scripts/v09_hydro_units_capture.py]
+permissions:
+  contents: write
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with: {python-version: "3.12"}
+      - run: python scripts/v09_hydro_units_capture.py
+      - name: Commit the source snapshot to this branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/v09/sources/ana_hydrographic_units
+          git commit -q -m "Source snapshot: ANA hydrographic units (Pacific), ANA rivers/quebradas and IGN streams for Tumbes and Piura"
+          git push -q origin HEAD:research/v09-hydro-units-ana-20261030
