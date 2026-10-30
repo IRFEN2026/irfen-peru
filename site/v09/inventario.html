@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IRFEN v0.9 · Inventario documental</title>
+<meta name="robots" content="noindex">
+<style>
+:root{
+  color-scheme: light;
+  --surface:#fcfcfb; --surface-2:#f2f1ee; --card:#ffffff; --border:#dcdbd6; --ink:#0b0b0b; --ink-2:#52514e; --ink-3:#7a7974; --link:#1f63b8;
+  --warn-bg:#fff4d6; --warn-ink:#6b4e00; --bad-bg:#fde8e8; --bad-ink:#8a1c1c; --ok-bg:#e6f4ea; --ok-ink:#1e5631; --info-bg:#e8eefb; --info-ink:#1b3d78;
+  --scrim:rgba(11,11,11,.42);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --surface:#1a1a19; --surface-2:#232321; --card:#20201f; --border:#3a3a37; --ink:#f0efec; --ink-2:#c3c2b7; --ink-3:#9a998f; --link:#7fb0ff;
+    --warn-bg:#3d3215; --warn-ink:#f4d98a; --bad-bg:#40201f; --bad-ink:#f3b0ae; --ok-bg:#1f3527; --ok-ink:#a8dbb7; --info-bg:#1e2a40; --info-ink:#b7cdf5;
+    --scrim:rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --surface:#1a1a19; --surface-2:#232321; --card:#20201f; --border:#3a3a37; --ink:#f0efec; --ink-2:#c3c2b7; --ink-3:#9a998f; --link:#7fb0ff;
+  --warn-bg:#3d3215; --warn-ink:#f4d98a; --bad-bg:#40201f; --bad-ink:#f3b0ae; --ok-bg:#1f3527; --ok-ink:#a8dbb7; --info-bg:#1e2a40; --info-ink:#b7cdf5;
+  --scrim:rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--link)}
+main{max-width:1180px;margin:0 auto;padding:0 16px 40px}
+.hero{padding:24px 0 12px}
+.hero h1{font-size:clamp(22px,3.2vw,30px);line-height:1.15;margin:0 0 8px;letter-spacing:-.01em}
+.hero p{margin:0 0 6px;color:var(--ink-2);max-width:820px}
+.meta{font-size:12px;color:var(--ink-3)}
+.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:14px 0}
+.kpi{border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:var(--card);min-width:0}
+.kpi .n{font-size:24px;font-weight:700;line-height:1.1}.kpi .l{font-size:12px;color:var(--ink-2)}
+.filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px 12px;padding:12px;border:1px solid var(--border);border-radius:14px;background:var(--card)}
+.filters label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--ink-2);min-width:0}
+.filters input,.filters select{font:inherit;font-size:14px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--ink);min-width:0;width:100%}
+.filters .q{grid-column:span 2}
+.filters .actions{display:flex;align-items:flex-end;gap:8px}
+button{font:inherit;cursor:pointer}
+.btn{padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--ink)}
+.count{margin:12px 0 6px;font-size:14px;color:var(--ink-2)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-weight:600;color:var(--ink-2);background:var(--surface)}
+.tablewrap{overflow-x:auto;border:1px solid var(--border);border-radius:12px;background:var(--card)}
+td .open{all:unset;cursor:pointer;color:var(--link);font-weight:600;text-decoration:underline;text-underline-offset:2px}
+td .open:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+.sub{color:var(--ink-3);font-size:12px}
+.tag{display:inline-block;font-size:11px;padding:1px 6px;border-radius:6px;margin:1px 2px 1px 0;background:var(--surface-2);color:var(--ink-2);white-space:nowrap}
+.tag.ok{background:var(--ok-bg);color:var(--ok-ink)}.tag.warn{background:var(--warn-bg);color:var(--warn-ink)}
+.tag.bad{background:var(--bad-bg);color:var(--bad-ink)}.tag.info{background:var(--info-bg);color:var(--info-ink)}
+.pager{display:flex;align-items:center;gap:8px;justify-content:flex-end;margin-top:8px;font-size:13px;color:var(--ink-2)}
+.pager button[disabled]{opacity:.45;cursor:default}
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:20}
+.ficha{position:fixed;top:0;right:0;bottom:0;width:min(640px,100%);background:var(--card);border-left:1px solid var(--border);z-index:21;
+  overflow-y:auto;padding:0 18px 28px;box-shadow:-8px 0 24px rgba(0,0,0,.12)}
+.ficha header{position:sticky;top:0;background:var(--card);padding:14px 0 10px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start}
+.ficha header h2{font-size:20px;margin:0;flex:1;min-width:0;overflow-wrap:anywhere}
+.ficha h3{font-size:14px;margin:18px 0 6px;text-transform:none;color:var(--ink)}
+.ficha dl{display:grid;grid-template-columns:minmax(120px,34%) 1fr;gap:4px 12px;margin:0;font-size:13px}
+.ficha dt{color:var(--ink-3)}.ficha dd{margin:0;overflow-wrap:anywhere}
+.ficha .ev{border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin:6px 0;font-size:13px}
+.ficha .none{color:var(--ink-3);font-style:italic}
+.ficha ul{margin:4px 0;padding-left:18px;font-size:13px}
+.note{font-size:12px;color:var(--ink-2);background:var(--surface-2);border-radius:8px;padding:6px 8px;margin-top:6px}
+details.method{margin-top:24px;border:1px solid var(--border);border-radius:14px;background:var(--card);padding:12px 16px}
+details.method summary{cursor:pointer;font-weight:700}
+details.method li{margin:4px 0;font-size:14px}
+code{font-size:12px;background:var(--surface-2);padding:1px 4px;border-radius:4px;overflow-wrap:anywhere}
+.err{padding:12px;border-radius:10px;background:var(--bad-bg);color:var(--bad-ink)}
+footer{max-width:1180px;margin:0 auto;padding:16px;color:var(--ink-3);font-size:12px;border-top:1px solid var(--border)}
+@media (max-width:900px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.filters{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){.kpis{grid-template-columns:1fr 1fr}.filters{grid-template-columns:1fr}.filters .q{grid-column:auto}
+  .stack tr{display:block;padding:8px 10px;border-bottom:1px solid var(--border)}.stack thead{display:none}
+  .stack td{display:block;border:0;padding:1px 0}.stack td[data-l]::before{content:attr(data-l) ": ";color:var(--ink-3);font-size:12px}
+  .ficha dl{grid-template-columns:1fr}.ficha dt{margin-top:4px}}
+</style>
+</head>
+<body>
+<div id="irfen-nav"></div>
+<main>
+  <section class="hero">
+    <h1>Inventario documental de quebradas</h1>
+    <p>Cada fila es un <strong>registro documental</strong> del inventario maestro integrado en <code>main</code>: un nombre que aparece en una fuente institucional. No es una quebrada hidrológica confirmada ni un inventario exhaustivo del país, y nada de esta página se dibuja en un mapa.</p>
+    <p class="meta" id="meta">Cargando inventario…</p>
+  </section>
+
+  <div class="kpis" id="kpis" aria-label="Recuentos del inventario maestro"></div>
+
+  <form class="filters" id="filters" role="search" aria-label="Buscar y filtrar el inventario" onsubmit="return false">
+    <label class="q">Nombre, variante o lugar<input id="f-q" type="search" placeholder="p. ej. Huaycoloro, Zarumilla, Ate…" autocomplete="off"></label>
+    <label>Departamento<select id="f-dep"></select></label>
+    <label>Provincia<select id="f-prov"></select></label>
+    <label>Corredor<select id="f-cor"></select></label>
+    <label>Tipo de evidencia<select id="f-ev"></select></label>
+    <label>Estado de identidad<select id="f-id"></select></label>
+    <label>Alias<select id="f-alias"></select></label>
+    <label>Geometría<select id="f-geo"></select></label>
+    <label>Outlet o confluencia<select id="f-out"></select></label>
+    <label>Eventos<select id="f-evt"></select></label>
+    <label>Motivo de bloqueo<select id="f-block"></select></label>
+    <label>Visor territorial<select id="f-viewer"></select></label>
+    <div class="actions"><button type="button" class="btn" id="f-clear">Limpiar filtros</button></div>
+  </form>
+
+  <p class="count" id="count" aria-live="polite"></p>
+  <div class="tablewrap"><table id="rows" class="stack"></table></div>
+  <div class="pager" id="pager"></div>
+
+  <details class="method" id="metodo">
+    <summary>Cómo leer este inventario</summary>
+    <ul>
+      <li><strong>Solo lectura.</strong> Esta página lee una vista generada del inventario maestro (<code>config/phase2_national_inventory_completeness_audit_v0_1.json</code>) y no lo modifica. Las filas propuestas en PR abiertos no se suman aquí como quebradas nuevas.</li>
+      <li><strong>Nombre tal como aparece en la fuente.</strong> Las variantes observadas y los alias son <em>por comprobar</em> mientras no haya adjudicación documental.</li>
+      <li><strong>Punto crítico ≠ evento.</strong> Una mención en una lista de puntos críticos no prueba que la quebrada se activara. Las fechas de evento sin verificar se muestran como <em>indicio sin verificar</em>.</li>
+      <li><strong>Faja marginal ≠ huella de inundación.</strong> Una resolución de faja marginal es un indicio de geometría, no un trazado reproducible.</li>
+      <li><strong>Sin coordenadas.</strong> Algunas fuentes dan el punto de una población vulnerable; no es la ubicación de la quebrada ni de su desembocadura y no se exporta.</li>
+      <li><strong>Cuenca padre</strong> solo cuando la fuente la documenta; nunca se infiere por cercanía.</li>
+      <li><strong>Motivos de bloqueo</strong>: los calcula esta vista a partir de los campos del maestro. Ninguna fila es apta para el mapa ni para alertas.</li>
+    </ul>
+    <div class="tablewrap" style="margin-top:8px"><table id="guards"></table></div>
+  </details>
+</main>
+<footer id="foot">IRFEN v0.9 · investigación (RESEARCH_ONLY / TEST_ONLY). Para decisiones de protección civil, consulte a SENAMHI, ANA, CENEPRED e INDECI.</footer>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="ficha" id="ficha" role="dialog" aria-modal="true" aria-labelledby="ficha-title" hidden tabindex="-1"></aside>
+
+<script src="nav.js"></script>
+<script>
+"use strict";
+const GUARD_KEYS = ["deployment_status","test_mode","production_use","production_ready","operational_alerting_enabled","public_alerting",
+  "activation_gate","missing_data_rule","decision_thresholds","hydraulic_factors","map_publishable"];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const safeUrl = u => /^https?:\/\//i.test(String(u || "")) ? String(u) : null;
+const PAGE = 50;
+const EVIDENCE_ES = {CRITICAL_POINT:"Punto crítico (no es evento)", EVENT:"Reporte de evento", WORKS:"Obra o intervención", IDENTITY:"Identidad",
+  FAJA:"Faja marginal (no es huella de inundación)", GEOMETRY:"Geometría"};
+const IDENTITY_ES = {IDENTITY_ONLY:"Solo identidad documental", EVENT_LEAD_UNVERIFIED:"Indicio de evento sin verificar",
+  GEOMETRY_PENDING:"Indicio de geometría pendiente", GEOMETRY_REPRODUCIBLE:"Geometría reproducible"};
+const GEOMETRY_ES = {REPRODUCIBLE:"Reproducible en el repositorio", SOLO_INDICIO:"Solo indicio (pendiente)", SIN_GEOMETRIA:"Sin geometría"};
+const OUTLET_ES = {ACREDITADO:"Acreditado", PENDIENTE:"Pendiente", SIN_DATO:"Sin dato"};
+const PRESENCE_ES = {NOT_FOUND_IN_REPO:"No aparece en el repositorio", MAIN_REGISTERED_UNIT:"Unidad registrada en main",
+  MAIN_NAMED_AS_QUEBRADA_WITH_CORRIDOR_CONTEXT:"Nombrada en main como quebrada, con contexto de corredor",
+  MAIN_LABEL_MENTION_UNCONFIRMED:"Mención del nombre en main sin confirmar", MAIN_NAME_CONTEXT_ONLY:"Nombre en main solo como contexto",
+  BRANCH_LABEL_MENTION_UNCONFIRMED:"Mención en rama sin confirmar", BRANCH_OR_OPEN_PR_ONLY:"Solo en ramas o PR abiertos (no en main)",
+  NOT_EVALUATED_NO_DISCRIMINATING_CONTEXT:"Sin evaluar: el nombre no discrimina"};
+const CORRIDOR_ES = {LIMA_OTHER_VALLEYS_AND_METROPOLITAN:"Lima: otros valles y área metropolitana", TUMBES_ZORRITOS:"Tumbes – Zorritos",
+  PISCO_ICA:"Pisco – Ica", LAMBAYEQUE:"Lambayeque", CARRETERA_CENTRAL_RIMAC_SANTA_EULALIA:"Carretera Central: Rímac – Santa Eulalia",
+  PIURA_COAST:"Piura costa", PIURA_INTERIOR:"Piura interior", ANCASH_INTERIOR:"Áncash interior", SANTA_CASMA:"Santa – Casma", LA_LIBERTAD:"La Libertad"};
+const EVENTS_ES = {VERIFIED:"Con fecha verificada", LEAD:"Solo indicio sin verificar", NONE:"Sin fecha de evento"};
+const label = (map, k) => map[k] || k || "—";
+let V = null, T = null, VIEWER = new Map(), filtered = [], page = 0, lastFocus = null;
+
+function eventsKind(r){ return r.events.verified.length ? "VERIFIED" : r.events.leads_unverified.length ? "LEAD" : "NONE"; }
+function inViewer(r){ return VIEWER.has(r.id); }
+function haystack(r){
+  return [r.name, ...(r.variants || []), r.district, r.province, r.department, r.id, label(CORRIDOR_ES, r.corridor),
+    ...(r.evidence || []).map(e => e.label_in_source)].filter(Boolean).join(" ")
+    .normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+}
+const norm = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+
+function options(id, pairs, all){
+  document.getElementById(id).innerHTML = `<option value="">${esc(all)}</option>` +
+    pairs.map(([v, l, n]) => `<option value="${esc(v)}">${esc(l)}${n != null ? ` (${n})` : ""}</option>`).join("");
+}
+function countBy(fn){ const m = new Map(); V.rows.forEach(r => [].concat(fn(r)).forEach(k => m.set(k, (m.get(k) || 0) + 1))); return m; }
+function sorted(m, lab){ return [...m.entries()].sort((a, b) => String(lab(a[0])).localeCompare(String(lab(b[0])), "es")).map(([k, n]) => [k, lab(k), n]); }
+
+function buildFilters(){
+  options("f-dep", sorted(countBy(r => r.department), k => k), "Todos");
+  provinces();
+  options("f-cor", sorted(countBy(r => r.corridor), k => label(CORRIDOR_ES, k)), "Todos");
+  options("f-ev", sorted(countBy(r => [...new Set(r.evidence.map(e => e.type))]), k => label(EVIDENCE_ES, k)), "Cualquiera");
+  options("f-id", sorted(countBy(r => r.identity.state), k => label(IDENTITY_ES, k)), "Todos");
+  const al = countBy(r => r.identity.alias_groups.length ? "PENDING" : "NONE");
+  options("f-alias", [["PENDING", "Con alias por adjudicar", al.get("PENDING") || 0], ["NONE", "Sin alias registrados", al.get("NONE") || 0]], "Todos");
+  options("f-geo", ["REPRODUCIBLE", "SOLO_INDICIO", "SIN_GEOMETRIA"].map(k => [k, GEOMETRY_ES[k], countBy(r => r.geometry.state).get(k) || 0]), "Todas");
+  options("f-out", ["ACREDITADO", "PENDIENTE", "SIN_DATO"].map(k => [k, OUTLET_ES[k], countBy(r => r.outlet.state).get(k) || 0]), "Todos");
+  options("f-evt", ["VERIFIED", "LEAD", "NONE"].map(k => [k, EVENTS_ES[k], countBy(eventsKind).get(k) || 0]), "Todos");
+  options("f-block", sorted(countBy(r => r.map.blocking_reasons), k => V.blocking_reasons_es[k] || k), "Cualquiera");
+  const vw = countBy(r => inViewer(r) ? "IN" : "OUT");
+  options("f-viewer", [["IN", "Dentro de las regiones del visor", vw.get("IN") || 0], ["OUT", "Fuera: solo ficha", vw.get("OUT") || 0]], "Todos");
+}
+function provinces(){
+  const dep = val("f-dep"), cur = val("f-prov");
+  const m = new Map(); V.rows.filter(r => !dep || r.department === dep).forEach(r => m.set(r.province || "—", (m.get(r.province || "—") || 0) + 1));
+  options("f-prov", sorted(m, k => k), "Todas");
+  if ([...m.keys()].includes(cur)) document.getElementById("f-prov").value = cur;
+}
+const val = id => document.getElementById(id).value;
+
+function apply(){
+  const q = norm(val("f-q")), f = {dep: val("f-dep"), prov: val("f-prov"), cor: val("f-cor"), ev: val("f-ev"), id: val("f-id"),
+    alias: val("f-alias"), geo: val("f-geo"), out: val("f-out"), evt: val("f-evt"), block: val("f-block"), viewer: val("f-viewer")};
+  filtered = V.rows.filter(r => (!q || r._h.includes(q)) && (!f.dep || r.department === f.dep) && (!f.prov || (r.province || "—") === f.prov) &&
+    (!f.cor || r.corridor === f.cor) && (!f.ev || r.evidence.some(e => e.type === f.ev)) && (!f.id || r.identity.state === f.id) &&
+    (!f.alias || (f.alias === "PENDING") === (r.identity.alias_groups.length > 0)) && (!f.geo || r.geometry.state === f.geo) &&
+    (!f.out || r.outlet.state === f.out) && (!f.evt || eventsKind(r) === f.evt) && (!f.block || r.map.blocking_reasons.includes(f.block)) &&
+    (!f.viewer || (f.viewer === "IN") === inViewer(r)));
+  page = 0; renderRows();
+}
+
+function geoTag(r){ const s = r.geometry.state; return `<span class="tag ${s === "REPRODUCIBLE" ? "info" : s === "SOLO_INDICIO" ? "warn" : ""}">${esc(GEOMETRY_ES[s])}</span>`; }
+function evtTag(r){ const k = eventsKind(r); return `<span class="tag ${k === "VERIFIED" ? "ok" : k === "LEAD" ? "warn" : ""}">${esc(EVENTS_ES[k])}</span>`; }
+function renderRows(){
+  const n = filtered.length, total = V.rows.length, pages = Math.max(1, Math.ceil(n / PAGE));
+  page = Math.min(page, pages - 1);
+  document.getElementById("count").innerHTML = `Mostrando <b id="n-shown">${n}</b> de <b>${total}</b> registros documentales · aptos para el mapa: <b id="n-map">${filtered.filter(r => r.map.eligible).length}</b>`;
+  const head = `<thead><tr><th>Nombre en la fuente</th><th>Ubicación</th><th>Corredor</th><th>Evidencia</th><th>Identidad</th><th>Geometría</th><th>Eventos</th><th>Mapa</th></tr></thead>`;
+  const body = filtered.slice(page * PAGE, page * PAGE + PAGE).map(r => `<tr data-id="${esc(r.id)}">
+    <td data-l="Nombre"><button type="button" class="open" data-open="${esc(r.id)}">${esc(r.name)}</button>${r.identity.alias_groups.length ? ` <span class="tag warn">alias por comprobar</span>` : ""}${r.unnamed_in_source ? ` <span class="tag warn">sin nombre individual</span>` : ""}</td>
+    <td data-l="Ubicación">${esc([r.district, r.province, r.department].filter(Boolean).join(", "))}</td>
+    <td data-l="Corredor">${esc(label(CORRIDOR_ES, r.corridor))}</td>
+    <td data-l="Evidencia">${[...new Set(r.evidence.map(e => e.type))].map(t => `<span class="tag">${esc(label(EVIDENCE_ES, t))}</span>`).join("")}</td>
+    <td data-l="Identidad">${esc(label(IDENTITY_ES, r.identity.state))}</td>
+    <td data-l="Geometría">${geoTag(r)}</td>
+    <td data-l="Eventos">${evtTag(r)}</td>
+    <td data-l="Mapa"><span class="tag bad">No apto</span></td></tr>`).join("");
+  document.getElementById("rows").innerHTML = n ? head + `<tbody>${body}</tbody>` :
+    `<tbody><tr><td>Ningún registro coincide con los filtros. Un nombre que no aparece aquí no está en el inventario maestro de <code>main</code>; eso no significa que la quebrada no exista.</td></tr></tbody>`;
+  document.getElementById("pager").innerHTML = pages > 1 ? `<button type="button" class="btn" id="prev"${page ? "" : " disabled"}>Anterior</button>
+    <span>Página ${page + 1} de ${pages}</span><button type="button" class="btn" id="next"${page < pages - 1 ? "" : " disabled"}>Siguiente</button>` : "";
+}
+
+function dl(pairs){ return `<dl>${pairs.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v == null || v === "" ? '<span class="none">Sin dato en el maestro</span>' : v}</dd>`).join("")}</dl>`; }
+function sourceLine(e){
+  const s = V.sources[e.source_id] || {};
+  return [s.institution, s.title, s.date].filter(Boolean).map(esc).join(" · ") || esc(e.source_id);
+}
+function ficha(id){
+  const r = V.rows.find(x => x.id === id);
+  if (!r) return false;
+  const el = document.getElementById("ficha");
+  const evid = r.evidence.length ? r.evidence.map(e => {
+    // the evidence's own link, else the general link of its source document (said so); never a constructed URL
+    const link = e.link || {}, url = safeUrl(link.url), general = link.kind === "SOURCE_DOCUMENT_GENERAL";
+    const linkHtml = url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" data-link-kind="${esc(link.kind)}">${esc(url)}</a>` +
+      (general ? `<div class="note" data-link-note>Documento fuente (enlace general; no localizador exacto de esta fila).${e.locator || e.sigrid_id != null ? " Busque el registro con el localizador indicado." : ""}</div>` : "")
+      : `<span class="none" data-no-link>Sin enlace en el maestro</span>`;
+    return `<div class="ev" data-evidence="${esc(e.type)}"><b>${esc(label(EVIDENCE_ES, e.type))}</b>
+      ${dl([["Fuente", sourceLine(e)], ["Identificador de fuente", e.source_id ? `<code>${esc(e.source_id)}</code>` : null], ["Detalle", esc(e.detail)], ["Etiqueta en la fuente", e.label_in_source ? esc(e.label_in_source) : null],
+        ["Localizador", [e.locator, e.sigrid_id != null ? `SIGRID ${e.sigrid_id}` : null].filter(Boolean).map(esc).join(" · ") || null],
+        [general ? "Documento fuente" : "Enlace", linkHtml],
+        ["Extracción", e.extraction_basis ? esc(e.extraction_basis) : null],
+        ["Texto verificado", e.text_verified ? "Sí" : "No: lectura pendiente"]])}
+      ${e.source_gives_reference_point ? `<div class="note">La fuente da el punto de una población vulnerable. No es la ubicación de la quebrada ni de su desembocadura y no se muestra.</div>` : ""}</div>`;
+  }).join("") : `<p class="none">Sin evidencia registrada.</p>`;
+  const groups = r.identity.alias_groups.map(i => V.alias_groups[i]).filter(Boolean);
+  const aliases = (r.variants.length ? `<p>Variantes observadas (por comprobar): ${r.variants.map(v => `<span class="tag warn">${esc(v)}</span>`).join(" ")}</p>` : "") +
+    (groups.length ? groups.map(g => `<div class="ev" data-alias-group>${dl([
+      ["Etiquetas", g.labels.map(esc).join(" · ")],
+      ["Registros relacionados", g.inventory_ids.filter(x => x !== r.id).map(x => { const o = V.rows.find(y => y.id === x);
+        return `<a href="#id=${encodeURIComponent(x)}">${esc(o ? o.name : x)}</a>`; }).join(", ") || null],
+      ["Estado", esc(g.status || "Pendiente de adjudicar")], ["Falta", g.needed ? esc(g.needed) : null], ["Base documental", g.basis ? esc(g.basis) : null]])}</div>`).join("") : "") ||
+    `<p class="none">Sin alias registrados en el maestro.</p>`;
+  const ev = r.events, evSrc = r.evidence.filter(e => e.type === "EVENT").map(sourceLine);
+  const pres = r.identity.repository_presence;
+  const viewer = VIEWER.get(r.id);
+  el.innerHTML = `<header><h2 id="ficha-title">${esc(r.name)}</h2><button type="button" class="btn" id="ficha-close" aria-label="Cerrar la ficha">Cerrar</button></header>
+    <p class="sub">Registro documental <code>${esc(r.id)}</code> · <span class="tag">integrado en main</span> <span class="tag bad">No apto para el mapa</span></p>
+    <section data-section="identidad"><h3>Identidad documental</h3>${dl([
+      ["Nombre en la fuente", esc(r.name)], ["Clase según la fuente", r.feature_class ? esc(r.feature_class) : null],
+      ["Estado", esc(label(IDENTITY_ES, r.identity.state))],
+      ["Marcas", r.identity.flags.length ? r.identity.flags.map(f => `<code>${esc(f)}</code>`).join(" ") : null],
+      ["Papel de la fila", r.row_role === "CANDIDATE_UNIT" ? "Unidad candidata" : esc(r.row_role)],
+      ["Presencia en IRFEN", esc(label(PRESENCE_ES, pres)) + (r.repository_presence && r.repository_presence.main_unit_id ? ` · <code>${esc(r.repository_presence.main_unit_id)}</code>` : "")],
+      ["Precaución", r.label_caution ? esc(r.label_caution) : null]])}
+      ${r.unnamed_in_source ? `<div class="note">La fuente no da un nombre individual: no puede identificarse como una quebrada concreta.</div>` : ""}</section>
+    <section data-section="ubicacion"><h3>Ubicación administrativa</h3>${dl([
+      ["Departamento", esc(r.department)], ["Provincia", r.province ? esc(r.province) : null], ["Distrito", r.district ? esc(r.district) : null],
+      ["Corredor", esc(label(CORRIDOR_ES, r.corridor))], ["Nota", r.location_note ? esc(r.location_note) : null],
+      ["Cuenca o sistema padre", r.parent_basin_or_system ? esc(r.parent_basin_or_system) : `<span class="none">No documentada (no se infiere por cercanía)</span>`],
+      ["Relación con colector", r.collector_relation ? esc(r.collector_relation.statement) + (r.collector_relation.status ? ` <span class="sub">(${esc(r.collector_relation.status)})</span>` : "") : null]])}</section>
+    <section data-section="procedencia"><h3>Procedencia y fuentes (${r.evidence.length})</h3>${evid}</section>
+    <section data-section="alias"><h3>Alias por comprobar</h3>${aliases}</section>
+    <section data-section="geometria"><h3>Geometría</h3>${dl([["Estado", esc(GEOMETRY_ES[r.geometry.state])],
+      ["En main", r.geometry.main ? esc(r.geometry.main) : null], ["En rama o legado", r.geometry.legacy_or_branch && r.geometry.legacy_or_branch !== "n/a" ? esc(r.geometry.legacy_or_branch) : null]])}
+      <div class="note">Esta página no dibuja geometrías ni puntos. ${r.geometry.state === "REPRODUCIBLE" ? "Lo que existe en el repositorio se revisa en el mapa territorial." : "Sin geometría reproducible no se traza nada."}</div></section>
+    <section data-section="outlet"><h3>Outlet o confluencia</h3>${dl([["Estado", esc(OUTLET_ES[r.outlet.state])]])}</section>
+    <section data-section="eventos"><h3>Evidencia de eventos</h3>${dl([
+      ["Fechas verificadas", ev.verified.length ? ev.verified.map(esc).join(", ") : `<span class="none">Ninguna verificada</span>`],
+      ["Indicios sin verificar", ev.leads_unverified.length ? ev.leads_unverified.map(d => `<span class="tag warn">${esc(d)} · lead sin verificar</span>`).join(" ") : null],
+      ["Excluidas por la regla de main", ev.excluded_by_main_rule.length ? ev.excluded_by_main_rule.map(esc).join(", ") : null],
+      ["Fuentes de evento", evSrc.length ? evSrc.join("<br>") : null]])}
+      <div class="note">Un punto crítico o una obra no prueban un evento. Un dato ausente no significa ausencia de amenaza.</div></section>
+    <section data-section="bloqueo"><h3>Aptitud cartográfica</h3>${dl([["map_publishable", "<code>false</code>"]])}
+      <ul id="ficha-reasons">${r.map.blocking_reasons.map(k => `<li data-reason="${esc(k)}">${esc(V.blocking_reasons_es[k] || k)}</li>`).join("")}</ul></section>
+    <section data-section="visor"><h3>En el visor territorial</h3>${viewer ?
+      `<p>Incluido en el inventario del visor (región ${esc(viewer.region)}). El visor no enlaza este registro con un trazo concreto. ${viewer.regionKey ?
+        `<a href="territorio.html#${viewer.regionKey}" data-viewer-link>Abrir el mapa de la región</a>` :
+        `Esta región no tiene mapa en el visor; <a href="territorio.html#inventario" data-viewer-link>ver su listado</a>.`}</p>` :
+      `<p class="none">Fuera de las regiones del visor: solo ficha, sin trazado.</p>`}</section>`;
+  document.getElementById("scrim").hidden = false;
+  el.hidden = false;
+  el.focus();
+  document.getElementById("ficha-close").onclick = closeFicha;
+  return true;
+}
+function closeFicha(){
+  document.getElementById("ficha").hidden = true;
+  document.getElementById("scrim").hidden = true;
+  if (location.hash.startsWith("#id=")) history.replaceState(null, "", location.pathname + location.search);
+  if (lastFocus && document.contains(lastFocus)) lastFocus.focus();
+}
+function fromHash(){
+  const m = location.hash.match(/^#id=(.+)$/);
+  if (m) { if (!ficha(decodeURIComponent(m[1]))) closeFicha(); }
+  else if (!document.getElementById("ficha").hidden) closeFicha();
+}
+
+function renderHead(){
+  const s = V.summary;
+  document.getElementById("meta").innerHTML = `Inventario maestro <code>${esc(V.source.registry_id || V.source.schema_version || "")}</code>` +
+    (V.source.audit_performed ? ` · auditoría ${esc(V.source.audit_performed)}` : "") + ` · SHA-256 <code title="${esc(V.source.sha256)}">${esc(V.source.sha256.slice(0, 12))}</code> · <span class="tag">integrado en main</span>`;
+  const k = [[s.rows, "registros documentales"], [Object.keys(s.corridors).length, "corredores"], [Object.keys(s.departments).length, "departamentos"],
+    [s.geometry.REPRODUCIBLE || 0, "con geometría reproducible"], [V.alias_groups.length, "grupos de alias por adjudicar"], [s.map_eligible, "aptos para el mapa"]];
+  document.getElementById("kpis").innerHTML = k.map(([n, l]) => `<div class="kpi"><div class="n">${esc(n)}</div><div class="l">${esc(l)}</div></div>`).join("");
+  document.getElementById("guards").innerHTML = `<tbody>` + GUARD_KEYS.map(g => `<tr><td><code>${g}</code></td><td><code data-guard="${g}">${esc(JSON.stringify(V[g]))}</code></td></tr>`).join("") + `</tbody>`;
+}
+
+async function init(){
+  try {
+    const r = await fetch("../data/v09/inventory_master_v0_1.json", {cache: "no-store"});
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    V = await r.json();
+  } catch (e) {
+    document.getElementById("meta").innerHTML = `<span class="err">No se pudo cargar la vista del inventario (${esc(e.message)}). No se muestra nada en su lugar.</span>`;
+    return;
+  }
+  try {  // optional: which rows are also listed by the territorial viewer (same master ids; no geometry is taken from it)
+    const t = await fetch("../data/v09/territory_v0_1.json", {cache: "no-store"});
+    if (t.ok) { T = await t.json();
+      const NORTH = ["Tumbes", "Piura", "Lambayeque", "La Libertad"];  // regions drawn by the viewer; the rest are list-only there
+      const key = reg => reg === "Rímac" ? "rimac" : NORTH.includes(reg) ? "costa_norte" : null;
+      (T.inventory_rows || []).forEach(x => VIEWER.set(x.id, {region: x.region, regionKey: key(x.region)})); }
+  } catch (e) { /* the viewer may be withheld by the publication gate: the inventory works without it */ }
+  V.rows.forEach(r => { r._h = haystack(r); });
+  renderHead(); buildFilters();
+  document.getElementById("f-q").addEventListener("input", apply);
+  document.getElementById("f-dep").addEventListener("change", () => { provinces(); apply(); });
+  document.querySelectorAll("#filters select:not(#f-dep)").forEach(s => s.addEventListener("change", apply));
+  document.getElementById("f-clear").addEventListener("click", () => { document.getElementById("filters").reset(); provinces(); apply(); });
+  document.getElementById("rows").addEventListener("click", ev => { const b = ev.target.closest("[data-open]");
+    if (b) { lastFocus = b; location.hash = "id=" + encodeURIComponent(b.dataset.open); } });
+  document.getElementById("pager").addEventListener("click", ev => {
+    if (ev.target.id === "prev") page--; else if (ev.target.id === "next") page++; else return; renderRows();
+    document.getElementById("count").scrollIntoView({block: "start"}); });
+  document.getElementById("scrim").addEventListener("click", closeFicha);
+  document.addEventListener("keydown", ev => { if (ev.key === "Escape" && !document.getElementById("ficha").hidden) closeFicha(); });
+  window.addEventListener("hashchange", fromHash);
+  apply(); fromHash();
+  document.body.dataset.ready = "1";
+}
+init();
+</script>
+</body>
+</html>

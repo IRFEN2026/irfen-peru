@@ -240,14 +240,21 @@ def aviso_status_at(a: dict, at: datetime) -> str:
     return "FUTURO" if at < s else "VIGENTE" if at <= e else "VENCIDO"
 
 
+def after_evaluation(ts, at: datetime) -> bool:
+    """An observation stamped after the evaluation instant cannot describe it (clock or source error): it is not usable,
+    neither as rain nor as 'no rain' (UNKNOWN_NOT_LOW_RISK). No tolerance is added: none is documented."""
+    t = _t(ts)
+    return bool(t) and t > at
+
+
 def imerg_usable_at(imerg: dict, at: datetime) -> bool:
     end = _t(imerg.get("window_end_utc"))
-    return bool(end) and at - end <= timedelta(hours=FRESHNESS["imerg_stale_after_h"])
+    return bool(end) and end <= at and at - end <= timedelta(hours=FRESHNESS["imerg_stale_after_h"])
 
 
 def goes_usable_at(goes: dict, at: datetime) -> bool:
     end = _t(goes.get("scan_end_utc"))
-    return goes.get("status") == "CALCULADO" and bool(end) and at - end <= timedelta(minutes=FRESHNESS["goes_stale_after_min"])
+    return goes.get("status") == "CALCULADO" and bool(end) and end <= at and at - end <= timedelta(minutes=FRESHNESS["goes_stale_after_min"])
 
 
 def sum_tenths(values) -> float:
@@ -268,6 +275,8 @@ def geos_windows_at(geos: dict, at: datetime) -> dict:
     start = _t(geos.get("dataset_time_start"))
     if not start:
         return dict(status="NO_DISPONIBLE", reason="ciclo GEOS-CF sin fecha: no se puede comprobar su antigüedad")
+    if start > at:
+        return dict(status="NO_DISPONIBLE", reason="ciclo GEOS-CF con inicio posterior a la evaluación: fecha no verificable")
     if at - start > timedelta(hours=FRESHNESS["geos_max_cycle_age_h"]):
         return dict(status="DESACTUALIZADO", cycle_start_utc=start.isoformat(),
                     reason=f"ciclo GEOS-CF que empieza el {start.isoformat()}: más de {FRESHNESS['geos_max_cycle_age_h']} h antes de la evaluación")
@@ -299,6 +308,9 @@ def review_priority(avisos: list[dict], imerg: dict, goes: dict, percentile: dic
     reasons, missing = [], []
     if not imerg.get("window_end_utc"):
         missing.append("IMERG Early sin muestras para esta zona")
+    elif after_evaluation(imerg["window_end_utc"], at):
+        missing.append(f"IMERG Early con fecha posterior a la evaluación: la ventana termina el {imerg['window_end_utc']}; "
+                       "no cuenta para la prioridad")
     elif not im_ok:
         missing.append(f"IMERG Early desactualizado: la última ventana termina el {imerg['window_end_utc']} "
                        f"(más de {FRESHNESS['imerg_stale_after_h']} h antes de la evaluación); no cuenta para la prioridad")
@@ -306,6 +318,8 @@ def review_priority(avisos: list[dict], imerg: dict, goes: dict, percentile: dic
         missing.append("IMERG 24 h incompleta")
     if goes.get("status") != "CALCULADO":
         missing.append("GOES-19 no disponible para esta zona")
+    elif after_evaluation(goes.get("scan_end_utc"), at):
+        missing.append(f"GOES-19 con fecha posterior a la evaluación: escaneo {goes.get('scan_end_utc')}; no cuenta para la prioridad")
     elif not go_ok:
         missing.append(f"GOES-19 desactualizado: último escaneo {goes.get('scan_end_utc')} "
                        f"(más de {FRESHNESS['goes_stale_after_min']} min antes de la evaluación); no cuenta para la prioridad")
@@ -330,10 +344,10 @@ def review_priority(avisos: list[dict], imerg: dict, goes: dict, percentile: dic
     if rain_vig and percentile.get("status") != "CALCULADO":
         reasons.append("Situación C (aviso vigente + anomalía) no evaluable: no hay percentiles interpretables")
     edges = [t for a in live for t in (_t(a.get("validity_start")), _t(a.get("validity_end")) and _t(a.get("validity_end")) + timedelta(seconds=1)) if t]
-    if imerg.get("window_end_utc"):
-        edges.append(_t(imerg["window_end_utc"]) + timedelta(hours=FRESHNESS["imerg_stale_after_h"], seconds=1))
+    if imerg.get("window_end_utc"):  # a future-stamped window becomes usable at its own end, then goes stale
+        edges += [_t(imerg["window_end_utc"]), _t(imerg["window_end_utc"]) + timedelta(hours=FRESHNESS["imerg_stale_after_h"], seconds=1)]
     if goes.get("status") == "CALCULADO" and goes.get("scan_end_utc"):
-        edges.append(_t(goes["scan_end_utc"]) + timedelta(minutes=FRESHNESS["goes_stale_after_min"], seconds=1))
+        edges += [_t(goes["scan_end_utc"]), _t(goes["scan_end_utc"]) + timedelta(minutes=FRESHNESS["goes_stale_after_min"], seconds=1)]
     nxt = min((t for t in edges if t > at), default=None)
     p = REVIEW_PRIORITIES[RANK[code]]
     return dict(code=code, label_es=p["label_es"], rule_es=p["rule_es"], reasons_es=reasons, missing_es=missing,

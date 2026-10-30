@@ -1,5 +1,6 @@
 """IRFEN v0.9 dashboard bundle (site/data/v09/dashboard_v0_1.json): guards and content. Offline."""
 import importlib.util
+import re
 import unittest
 from pathlib import Path
 
@@ -49,7 +50,10 @@ class Bundle(unittest.TestCase):
 
     def test_page_has_no_external_scripts_and_an_integrated_zone_view(self):
         html = (ROOT / "site/v09/index.html").read_text(encoding="utf-8")
-        self.assertNotIn("<script src=", html)  # the map is inline SVG: no CDN dependency
+        # the map is inline SVG: no CDN dependency. The only scripts loaded by URL are the site's own local files
+        # (nav.js, the shared navigation bar of #438), never an external host.
+        self.assertEqual(set(re.findall(r'<script src="([^"]+)"', html)), {"nav.js"})
+        self.assertTrue((ROOT / "site/v09/nav.js").is_file())
         for block in ("Aviso oficial (SENAMHI vía INDECI/COEN)", "Lluvia observada · IMERG Early", "Lluvia observada · GOES-19 RRQPE",
                       "Previsión · GEOS-CF (experimental)", "prioridad interna IRFEN, no nivel oficial"):
             self.assertIn(block, html)
