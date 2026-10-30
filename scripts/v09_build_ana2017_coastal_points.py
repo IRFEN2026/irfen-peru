@@ -16,7 +16,9 @@ Regla de admisión (todas obligatorias):
 2. el datum y la zona UTM se leen del pie del propio cuadro («WGS 84 - ZONA nn SUR»);
 3. el punto transformado (EPSG:327nn → WGS84) cae dentro de la provincia INEI que declara la fila.
 Lo que no cumple queda en la lista con su motivo y no se dibuja. Nada se corrige a mano en silencio: las revisiones
-visuales, si las hay, se registran en REVIEWS con la página y el motivo.
+visuales se registran en data/v09/sources/ana2017_complementacion_quebradas/visual_review_v0_1.json (página, recorte con
+SHA-256, valor impreso, motivo y tres relecturas OCR de la franja; scripts/v09_ana2017_visual_review.py). Una coordenada
+revisada solo se usa si al menos dos relecturas coinciden con lo impreso.
 
     python scripts/v09_build_ana2017_coastal_points.py           # escribe site/data/v09/ana2017_coastal_points_v0_1.json
     python scripts/v09_build_ana2017_coastal_points.py --check   # reconstruye y compara
@@ -50,9 +52,40 @@ GUARDS = dict(deployment_status="RESEARCH_ONLY", test_mode="TEST_ONLY", producti
 DECLARED_ROWS = {9: 44, 11: 79, 17: 47, 19: 69, 23: 67, 29: 97, 41: 53, 43: 120, 47: 37, 49: 25}
 CUADROS = {9: "TUMBES", 11: "PIURA", 17: "LAMBAYEQUE", 19: "LA LIBERTAD", 23: "ANCASH", 29: "LIMA", 41: "ICA",
            43: "AREQUIPA", 47: "MOQUEGUA", 49: "TACNA"}
-# Manual visual reviews of single cells (page image read by a person). Empty unless a review is recorded:
-# {(cuadro, n): {"field": value, "reason": "...", "reviewed_page": 35}}
-REVIEWS: dict[tuple[int, int], dict] = {}
+VISUAL = SRC / "visual_review_v0_1.json"
+NUMERIC_KEYS = ("este", "norte", "n", "viviendas", "hab_directos", "hab_indirectos", "hab_total")
+
+
+def load_reviews() -> dict[tuple[int, int], dict]:
+    """(cuadro, n) -> visual review entry (printed values + OCR re-reads of the isolated row band)."""
+    if not VISUAL.is_file():
+        return {}
+    return {(e["cuadro"], e["row"]): e for e in json.loads(VISUAL.read_text(encoding="utf-8"))["entries"]}
+
+
+REVIEWS = load_reviews()
+
+
+def coord(s: str | None):
+    """Printed UTM value: integer metres, or the decimal exactly as printed (never rounded)."""
+    if not s:
+        return None
+    return float(s) if "." in s else int(s)
+
+
+def coord_digits(s: str | None) -> int:
+    return len((s or "").split(".")[0]) if s and re.fullmatch(r"\d+(\.\d+)?", s) else 0
+
+
+def reviewed_cells(entry: dict) -> dict:
+    """Cells of an unread row rebuilt from its visual transcription (numbers as printed, OCR-confirmed separately)."""
+    cells = {}
+    for k, v in entry["printed"].items():
+        cells[k] = dict(consensus=re.sub(r"[^0-9]", "", v)) if k in NUMERIC_KEYS else dict(text=v)
+    if not entry.get("coordinates_confirmed_by_two_reads"):
+        cells.pop("este", None)
+        cells.pop("norte", None)
+    return cells
 
 
 # ---------- geodesy: UTM (WGS84, southern hemisphere) -> lon/lat; Karney/Krüger series, sub-millimetre ----------
@@ -169,20 +202,38 @@ def build() -> dict:
         seen = [abs(v) for v in nums if v is not None]
         declared = DECLARED_ROWS.get(cu)
         stats["rows_declared"] = declared
-        stats["rows_not_read"] = sorted(set(range(1, (declared or 0) + 1)) - set(seen))
+        stats["rows_not_read"] = sorted(set(range(1, (declared or 0) + 1)) - set(seen))  # by the OCR grid
         stats["number_inferred"] = sum(1 for v in nums if v is not None and v < 0)
+        # rows the OCR grid missed and a person transcribed from the page (visual_review_v0_1.json)
+        visual = [n for n in stats["rows_not_read"] if REVIEWS.get((cu, n), {}).get("kind") == "FILA_NO_LEIDA_TRANSCRITA"]
+        stats["rows_visual_review"] = visual
+        stats["rows_missing"] = [n for n in stats["rows_not_read"] if n not in visual]
+        for n in visual:
+            data.append(dict(row_index=None, cells=reviewed_cells(REVIEWS[(cu, n)])))
+            nums.append(n)
+        order = sorted(range(len(data)), key=lambda i: abs(nums[i]) if nums[i] is not None else 10 ** 6)
+        data, nums = [data[i] for i in order], [nums[i] for i in order]
         for row, nv in zip(data, nums):
             c = row["cells"]
             if nv is None:
                 stats["rows_unnumbered"] = stats.get("rows_unnumbered", 0) + 1
                 continue
-            n, n_read = abs(nv), (nv if nv > 0 else None)
+            n, n_read = abs(nv), (nv if nv > 0 and row["row_index"] is not None else None)
             rv = REVIEWS.get((cu, n), {})
-            e_raw = rv.get("este") or c.get("este", {}).get("consensus")
-            n_raw = rv.get("norte") or c.get("norte", {}).get("consensus")
+            fix = rv.get("printed", {}) if rv.get("kind") == "CELDA_CORREGIDA" else {}
+            e_raw = c.get("este", {}).get("consensus")
+            n_raw = c.get("norte", {}).get("consensus")
+            if fix.get("este") and rv.get("coordinates_confirmed_by_two_reads"):
+                e_raw = fix["este"]
+            if fix.get("norte") and rv.get("coordinates_confirmed_by_two_reads"):
+                n_raw = fix["norte"]
             # second independent reading: the master's own transcription of this row (Tumbes, Piura, Lambayeque). If the
             # OCR has no consensus but one of its three reads equals the master value, two independent reads agree.
             coord_basis = "OCR_2_DE_3"
+            if row["row_index"] is None:
+                coord_basis = "REVISION_VISUAL_MAS_2_RELECTURAS_OCR"
+            elif fix.get("este") or fix.get("norte"):
+                coord_basis = "OCR_MAS_REVISION_VISUAL_DE_LA_CELDA"
             mpts = [m["point"] for m in master_rows.get((cu, n), []) if m.get("point")]
             if mpts and (not e_raw or not n_raw):
                 me, mn = str(mpts[0]["easting_m"]), str(mpts[0]["northing_m"])
@@ -197,11 +248,12 @@ def build() -> dict:
                 else:
                     sums[key] += v
             prov_ocr = c.get("prov", {}).get("text", "")
-            best = max(cands, key=lambda f: similar(f["properties"]["NOMBPROV"], prov_ocr), default=None)
-            prov_score = similar(best["properties"]["NOMBPROV"], prov_ocr) if best else 0
+            prov_read = fix.get("prov") or prov_ocr  # a visually reviewed province name replaces the OCR text
+            best = max(cands, key=lambda f: similar(f["properties"]["NOMBPROV"], prov_read), default=None)
+            prov_score = similar(best["properties"]["NOMBPROV"], prov_read) if best else 0
             prov_name = best["properties"]["NOMBPROV"] if best and prov_score >= 0.6 else None
             reasons = []
-            if not (e_raw and n_raw and len(e_raw) == 6 and len(n_raw) == 7):
+            if not (coord_digits(e_raw) == 6 and coord_digits(n_raw) == 7):
                 reasons.append("OCR_COORDENADAS_SIN_CONSENSO")
             if not zone:
                 reasons.append("DATUM_NO_LEIDO")
@@ -211,7 +263,7 @@ def build() -> dict:
             in_prov = None
             found_in = None
             if "OCR_COORDENADAS_SIN_CONSENSO" not in reasons and zone:
-                lon, lat = utm_to_lonlat(int(e_raw), int(n_raw), zone)
+                lon, lat = utm_to_lonlat(coord(e_raw), coord(n_raw), zone)
                 found_in = next((f"{f['properties']['NOMBDEP']}/{f['properties']['NOMBPROV']}" for f in provinces
                                  if in_geometry(lon, lat, f["geometry"])), None)
                 if prov_name:
@@ -230,9 +282,9 @@ def build() -> dict:
             links, check = [], None
             for m in master_rows.get((cu, n), []):
                 links.append(dict(inventory_id=m["inventory_id"], basis="MISMA_FILA_DEL_CUADRO_EN_EL_MAESTRO"))
-                if m.get("point") and e_raw and n_raw and coord_basis == "OCR_2_DE_3":  # independent check only
+                if m.get("point") and e_raw and n_raw and coord_basis in ("OCR_2_DE_3", "REVISION_VISUAL_MAS_2_RELECTURAS_OCR"):
                     check = dict(master_easting=m["point"]["easting_m"], master_northing=m["point"]["northing_m"],
-                                 matches=(int(e_raw), int(n_raw)) == (m["point"]["easting_m"], m["point"]["northing_m"]))
+                                 matches=(coord(e_raw), coord(n_raw)) == (m["point"]["easting_m"], m["point"]["northing_m"]))
             if not links and fold(quebrada) not in ("", "s n", "sn"):
                 for r in master_by_dep.get(fold(dep), []):
                     names = [r["documentary_name"], *(r.get("name_variants_observed") or [])]
@@ -241,18 +293,23 @@ def build() -> dict:
             points.append(dict(
                 id=f"ANA2017-C{cu:02d}-{n:03d}", cuadro=cu, row=n, ocr_row_index=row["row_index"], row_number_ocr=n_read, row_number_inferred=nv < 0,
                 pdf_page=page, department=dep,
-                province_ocr=prov_ocr, province_inei=prov_name, province_match=round(prov_score, 2),
+                province_ocr=prov_ocr, province_reviewed=fix.get("prov") or (c["prov"]["text"] if row["row_index"] is None and "prov" in c else None),
+                province_inei=prov_name, province_match=round(prov_score, 2),
+                text_basis="OCR" if row["row_index"] is not None else "TRANSCRIPCION_VISUAL",
                 district_ocr=c.get("distrito", {}).get("text", ""), centro_poblado_ocr=c.get("centro", {}).get("text", ""),
                 quebrada_ocr=quebrada, quebrada_display=display_name(quebrada),
                 centro_poblado_display=display_name(c.get("centro", {}).get("text", "")), unnamed_quebrada=fold(quebrada) in ("s n", "sn", ""),
-                utm=dict(easting_m=int(e_raw) if e_raw and e_raw.isdigit() else None, northing_m=int(n_raw) if n_raw and n_raw.isdigit() else None,
+                utm=dict(easting_m=coord(e_raw) if coord_digits(e_raw) else None, northing_m=coord(n_raw) if coord_digits(n_raw) else None,
                          zone=zone, hemisphere="S", epsg=f"EPSG:327{zone}" if zone else None, datum="WGS 84"),
                 lon=round(lon, 6) if lon is not None else None, lat=round(lat, 6) if lat is not None else None,
                 in_declared_province=in_prov, point_in_inei_province=found_in, coordinate_basis=coord_basis if e_raw else None,
                 status=status, reasons=reasons,
                 exposure=dict(viviendas=number(c.get("viviendas")), habitantes_directos=number(c.get("hab_directos")),
                               habitantes_indirectos=number(c.get("hab_indirectos"))),
-                inventory_links=links, master_transcription_check=check, manual_review=rv or None))
+                inventory_links=links, master_transcription_check=check,
+                manual_review=dict(kind=rv["kind"], crop=rv["crop"], crop_sha256=rv["crop_sha256"], reason=rv["reason"],
+                                   fields=sorted(rv["printed"]), coordinates_confirmed_by_two_reads=rv["coordinates_confirmed_by_two_reads"])
+                if rv else None))
         tot = t.get("total_row") or {}
         totals = {k: number(tot.get(k)) for k in sums}
         col_ok = {k: sums_ok_cols.get(k, False) and totals[k] is not None and totals[k] == sums[k] for k in sums}
@@ -298,7 +355,7 @@ def build() -> dict:
                            "*_display solo corrige «8/&/Ei/EI + Mayúscula» → «El» (confusión conocida de Tesseract); "
                            "la lectura en bruto se conserva en *_ocr."),
                     master_cross_check=dict(rows=len(checks), coordinates_identical=sum(1 for c in checks if c["matches"])),
-                    manual_reviews=len(REVIEWS)),
+                    manual_reviews=len(REVIEWS), visual_review=f"{VISUAL.relative_to(ROOT)} (sha256 {sha(VISUAL)})" if VISUAL.is_file() else None),
         departments=departments, departments_note="bbox [lat_min, lon_min, lat_max, lon_max] de las provincias INEI "
         "referenciales: solo para acercar el mapa; no se dibuja.", tables=tables, points=points)
 
@@ -320,7 +377,8 @@ def main(argv=None) -> int:
     d = json.loads(text)
     for t in d["tables"]:
         print(f"C{t['cuadro']:>2} {t['department']:<12} zona {t['datum_zone']} filas {t['rows']:>3}/{t['rows_declared']} admitidas {t['admitted']:>3} "
-              f"OCR {t['ocr_review']:>2} fuera {t['outside_province']:>2} no leídas {t['rows_not_read']} sumas {t['checksums']['columns_ok']}")
+              f"OCR {t['ocr_review']:>2} fuera {t['outside_province']:>2} no leídas por OCR {t['rows_not_read']} revisadas {t['rows_visual_review']} "
+              f"sin leer {t['rows_missing']} sumas {t['checksums']['columns_ok']}")
     print("master cross-check", d["method"]["master_cross_check"])
     return 0
 
