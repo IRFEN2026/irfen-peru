@@ -17,9 +17,11 @@ jobs:
         with: {python-version: "3.12", cache: pip}
       - run: pip install -q -r requirements.txt
       - name: Snapshot of the operational avisos registry and IMERG north archive from main (read only)
+        continue-on-error: true
         run: |
           git fetch -q origin main
           d=data/v09/research/uh_rain
+          mkdir -p $d
           git show origin/main:data/v09/senamhi_avisos/registry_v0_1.json > $d/avisos_registry_main_snapshot.json
           git show origin/main:data/v09/rain/imerg_early_north_v0_1.json > $d/imerg_north_archive_main_snapshot.json
           printf '{"main_commit":"%s","files":["avisos_registry_main_snapshot.json","imerg_north_archive_main_snapshot.json"]}\n' "$(git rev-parse origin/main)" > $d/main_snapshot_origin.json
