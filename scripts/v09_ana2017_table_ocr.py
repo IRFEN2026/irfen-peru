@@ -39,11 +39,11 @@ NUMERIC = {"n", "este", "norte", "viviendas", "hab_directos", "hab_indirectos", 
 LANG = "eng"
 
 
-def tess(img: np.ndarray, digits: bool) -> str:
+def tess(img: np.ndarray, digits: bool, psm: str = "7") -> str:
     with tempfile.TemporaryDirectory() as d:
         p = Path(d) / "c.png"
         cv2.imwrite(str(p), img)
-        cfg = ["--psm", "7", "-l", "eng" if digits else LANG]
+        cfg = ["--psm", psm, "-l", "eng" if digits else LANG]
         if digits:
             cfg += ["-c", "tessedit_char_whitelist=0123456789,."]
         out = subprocess.run(["tesseract", str(p), "stdout", *cfg], capture_output=True, text=True).stdout
@@ -80,12 +80,16 @@ def cell(gray, x0, x1, y0, y1, pad=3):
     return gray[y0 + pad:y1 - pad + 1, x0 + pad:x1 - pad + 1]
 
 
-def read_numeric(c: np.ndarray) -> tuple[str, str]:
+def read_numeric(c: np.ndarray) -> tuple[str, str, str]:
+    """Three independent reads (different scaling / binarisation / segmentation mode)."""
     a = cv2.resize(c, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
     _, a = cv2.threshold(a, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     b = cv2.resize(c, None, fx=3, fy=3, interpolation=cv2.INTER_LANCZOS4)
     b = cv2.normalize(b, None, 0, 255, cv2.NORM_MINMAX)
-    return tess(a, True), tess(b, True)
+    d = cv2.resize(c, None, fx=4, fy=4, interpolation=cv2.INTER_CUBIC)
+    d = cv2.adaptiveThreshold(d, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 31, 15)
+    d = cv2.copyMakeBorder(d, 12, 12, 12, 12, cv2.BORDER_CONSTANT, value=255)
+    return tess(a, True), tess(b, True), tess(d, True, psm="8")
 
 
 def read_text(c: np.ndarray) -> str:
@@ -116,6 +120,14 @@ def process(png: Path) -> dict:
         if "este" in found and "norte" in found:
             header_idx, colmap = ri, found
             break
+    if header_idx is None and len(cols) >= 11:
+        # same 11-column layout in every cuadro: N°, Este, Norte, Prov., Distrito, Centro Poblado, Quebrada, viviendas,
+        # habitantes directos, indirectos, total. Header = the row before the first 6-digit «Este».
+        colmap = dict(zip(("n", "este", "norte", "prov", "distrito", "centro", "quebrada"), range(7)))
+        for ri, (y0, y1) in enumerate(rows[:6]):
+            if len(digits(read_numeric(cell(gray, *cols[1], y0, y1))[0])) == 6:
+                header_idx = ri - 1
+                break
     if header_idx is None:
         return dict(file=png.name, error="header with Este/Norte not found", xs=xs, ys=ys)
     # the multi-line headers of the numeric columns OCR poorly: after «Quebrada» the cuadro has, in this order,
@@ -135,9 +147,13 @@ def process(png: Path) -> dict:
             if c.size == 0:
                 continue
             if key in NUMERIC:
-                a, b = read_numeric(c)
-                rec[key] = dict(read_a=a, read_b=b, agree=digits(a) == digits(b) and digits(a) != "")
-                if not rec[key]["agree"] and (digits(a) or digits(b)):
+                a, b, d = read_numeric(c)
+                votes = [digits(x) for x in (a, b, d) if digits(x)]
+                best = max(set(votes), key=votes.count) if votes else ""
+                n_best = votes.count(best) if best else 0
+                rec[key] = dict(read_a=a, read_b=b, read_c=d, consensus=best if n_best >= 2 else None, votes=n_best,
+                                agree=n_best >= 2)
+                if not rec[key]["agree"] and votes:
                     review.append(key)
             else:
                 rec[key] = dict(text=read_text(c))
@@ -147,8 +163,9 @@ def process(png: Path) -> dict:
             continue
         if total is not None:  # rows after TOTAL: source and datum notes (full table width)
             continue
-        if not digits(rec.get("n", {}).get("read_a", "")) and not digits(rec.get("este", {}).get("read_a", "")):
-            continue
+        if not (rec.get("este", {}).get("consensus") or "") and not (rec.get("n", {}).get("consensus") or ""):
+            if len(digits(rec.get("este", {}).get("read_a", ""))) < 5:
+                continue  # notes / blank rows, not data
         out_rows.append(dict(row_index=ri, y=[y0, y1], cells=rec, needs_review=review))
     # notes inside the table frame after TOTAL («Fuente: …», «Datum: WGS 84-ZONA 17 SUR») and just below it
     notes = []
@@ -186,7 +203,7 @@ def main(argv=None) -> int:
     for png, t in zip(pngs, tables):
         print(png.name, len(t.get("rows", [])), "rows;", sum(1 for r in t.get("rows", []) if r["needs_review"]), "need review;",
               "datum zone", t.get("datum_zone_ocr"), t.get("error", ""))
-    doc = dict(text_language=LANG, method="cell-wise Tesseract OCR, two independent reads per numeric cell", tesseract=version,
+    doc = dict(text_language=LANG, method="cell-wise Tesseract OCR, three independent reads per numeric cell, value accepted with at least two identical reads", tesseract=version,
                opencv=cv2.__version__, tables=tables)
     OUT.write_text(json.dumps(doc, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     return 0
