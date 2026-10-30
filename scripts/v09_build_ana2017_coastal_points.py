@@ -103,6 +103,15 @@ def similar(a: str, b: str) -> float:
     return SequenceMatcher(None, fold(a), fold(b)).ratio()
 
 
+# The only display normalisation: Tesseract reads the article «El» before a capitalised word as «8», «&», «Ei» or
+# «EI». The raw OCR text is always kept next to the displayed one.
+EL_MISREAD = re.compile(r"(^|(?<=[\s(\-]))(?:8|&|Ei|EI|E1)\s+(?=[A-ZÁÉÍÓÚÑ][a-záéíóúñ])")
+
+
+def display_name(raw: str) -> str:
+    return EL_MISREAD.sub("El ", " ".join((raw or "").split()))
+
+
 def digits(s: str) -> str:
     return re.sub(r"[^0-9]", "", s or "")
 
@@ -234,7 +243,8 @@ def build() -> dict:
                 pdf_page=page, department=dep,
                 province_ocr=prov_ocr, province_inei=prov_name, province_match=round(prov_score, 2),
                 district_ocr=c.get("distrito", {}).get("text", ""), centro_poblado_ocr=c.get("centro", {}).get("text", ""),
-                quebrada_ocr=quebrada, unnamed_quebrada=fold(quebrada) in ("s n", "sn", ""),
+                quebrada_ocr=quebrada, quebrada_display=display_name(quebrada),
+                centro_poblado_display=display_name(c.get("centro", {}).get("text", "")), unnamed_quebrada=fold(quebrada) in ("s n", "sn", ""),
                 utm=dict(easting_m=int(e_raw) if e_raw and e_raw.isdigit() else None, northing_m=int(n_raw) if n_raw and n_raw.isdigit() else None,
                          zone=zone, hemisphere="S", epsg=f"EPSG:327{zone}" if zone else None, datum="WGS 84"),
                 lon=round(lon, 6) if lon is not None else None, lat=round(lat, 6) if lat is not None else None,
@@ -284,7 +294,9 @@ def build() -> dict:
                     ocr=f"{ocr.get('method')} · {ocr.get('tesseract')} · lengua {ocr.get('text_language')}",
                     ocr_sha256=sha(OCR), crs="UTM WGS 84 zona según el pie de cada cuadro → WGS 84 geográficas (Krüger)",
                     jurisdiction_check=f"punto dentro de la provincia INEI declarada ({PROVINCES.relative_to(ROOT)}, sha256 {sha(PROVINCES)})",
-                    names="Nombres tal como los lee el OCR (pueden faltar tildes o haber errores de lectura): por comprobar.",
+                    names=("Nombres tal como los lee el OCR (pueden faltar tildes o haber errores de lectura): por comprobar. "
+                           "*_display solo corrige «8/&/Ei/EI + Mayúscula» → «El» (confusión conocida de Tesseract); "
+                           "la lectura en bruto se conserva en *_ocr."),
                     master_cross_check=dict(rows=len(checks), coordinates_identical=sum(1 for c in checks if c["matches"])),
                     manual_reviews=len(REVIEWS)),
         departments=departments, departments_note="bbox [lat_min, lon_min, lat_max, lon_max] de las provincias INEI "

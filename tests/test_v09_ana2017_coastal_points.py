@@ -109,6 +109,18 @@ class Admission(unittest.TestCase):
                 else:
                     self.assertEqual(t["checksums"]["sums_of_rows"][col], t["checksums"]["totals_in_cuadro"][col])
 
+    def test_display_names_only_fix_the_el_misread_and_keep_the_raw_text(self):
+        for p in D["points"]:
+            for raw_key, shown_key in (("quebrada_ocr", "quebrada_display"), ("centro_poblado_ocr", "centro_poblado_display")):
+                raw, shown = p[raw_key], p[shown_key]
+                self.assertEqual(shown, B.display_name(raw))
+                r_tok, s_tok = raw.split(), shown.split()
+                self.assertEqual(len(r_tok), len(s_tok), p["id"])
+                for r, d in zip(r_tok, s_tok):
+                    if r != d:  # the only allowed change: a misread article becomes «El»
+                        self.assertIn(r, ("8", "&", "Ei", "EI", "E1"), p["id"])
+                        self.assertEqual(d, "El", p["id"])
+
     def test_inventory_links_never_add_rows(self):
         master = json.loads(B.MASTER.read_text(encoding="utf-8"))
         ids = {r["inventory_id"] for r in master["candidates"]}
