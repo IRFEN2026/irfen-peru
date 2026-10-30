@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data/v09/sources/ana2017_complementacion_quebradas"
 URL = "https://sinia.minam.gob.pe/sites/default/files/sial-sialtrujillo/archivos/public/docs/ana2017.pdf"
 # Same document registered in CENEPRED SIGRID (alt identifier «SIGRID 2799» in the master inventory); tried if SINIA fails.
-MIRRORS = ["https://sigrid.cenepred.gob.pe/sigridv3/documento/2799", URL]
+MIRRORS = ["https://sigrid.cenepred.gob.pe/sigridv3/documento/2799/descargar", "https://sigrid.cenepred.gob.pe/sigridv3/documento/2799", URL]
 
 
 def main() -> int:
