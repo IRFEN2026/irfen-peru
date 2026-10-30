@@ -100,7 +100,7 @@ async function addAnaPoints(features){
      "<br>Expuestos según ANA: "+safe(x.exposure.viviendas??"s/d")+" viviendas, "+safe(x.exposure.habitantes_directos??"s/d")+" habitantes directos"+
      '<br>Fuente: ANA 2016-2017, Cuadro '+safe(x.cuadro)+", fila "+safe(x.row)+", pág. "+safe(x.pdf_page)+' del PDF · <a href="'+safe(A.source.registry_url)+'" target="_blank" rel="noopener noreferrer">SIGRID 2799</a>'+
      (inv?"<br>Inventario: "+inv:"<br>Sin registro enlazado en el inventario maestro")+
-     "<br><em>Ubicación documental del centro poblado expuesto: no es la quebrada, su cauce ni una zona de inundación. Nombres leídos por OCR, por comprobar.</em>");
+     "<br><em>Ubicación documental del centro poblado expuesto: no es la quebrada, su cauce ni una zona de inundación. "+(x.text_basis==="TRANSCRIPCION_VISUAL"?"Fila transcrita de la página (revisión visual trazable).":"Nombres leídos por OCR, por comprobar.")+"</em>");
    m.feature={properties:{id:x.id}};anaById[x.id]=m;return m;}));
  anaLayer.addTo(map);
  const label=document.createElement("label"),cb=document.createElement("input");
@@ -118,7 +118,7 @@ async function addAnaPoints(features){
  $("coverage").innerHTML='<div class="covwrap"><table class="cov"><tr><th>Departamento</th><th class="n">Inventario</th><th class="n">ANA admitidos / filas del cuadro</th><th class="n">Elementos IRFEN</th><th>Estado</th></tr>'+
    deps.map(k=>{const g=drawn[k]||0,a=adm[k]||0;const st=g?'<span class="okc">geometrías IRFEN</span>':(a?'<span class="pend">solo ubicaciones documentales</span>':'<span class="pend">cobertura pendiente</span>');
      return '<tr data-dep="'+safe(k)+'" data-pending="'+(g?0:1)+'"><td>'+safe(k.charAt(0)+k.slice(1).toLowerCase())+'</td><td class="n">'+(inv[k]||0)+'</td><td class="n">'+(rows[k]!==undefined?a+" / "+rows[k]:"—")+'</td><td class="n">'+g+'</td><td>'+st+'</td></tr>';}).join("")+"</table></div>"+
-   (okGuards?'<p class="note">ANA: centros poblados con coordenadas UTM publicadas en el cuadro de cada departamento; se admiten solo si dos lecturas OCR coinciden y el punto cae en la provincia declarada. Las demás filas siguen en revisión y no se dibujan.</p>':'<p class="note">No se pudieron cargar las ubicaciones documentales ANA.</p>');
+   (okGuards?'<p class="note">ANA: centros poblados con coordenadas UTM publicadas en el cuadro de cada departamento; se admiten solo si dos lecturas independientes coinciden (OCR, o transcripción visual de la página confirmada por dos relecturas OCR) y el punto cae en la provincia declarada. Las demás filas no se dibujan.</p>':'<p class="note">No se pudieron cargar las ubicaciones documentales ANA.</p>');
  const sel=$("dept");Object.keys(deptBoxes).forEach(k=>{const o=document.createElement("option");o.value=k;o.textContent=k.charAt(0)+k.slice(1).toLowerCase();sel.append(o);});
  sel.addEventListener("change",()=>{if(sel.value)location.hash="dep="+encodeURIComponent(sel.value);});
 }

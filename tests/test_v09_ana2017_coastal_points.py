@@ -15,6 +15,7 @@ SPEC.loader.exec_module(B)
 D = json.loads(B.OUT.read_text(encoding="utf-8"))
 OCR = json.loads(B.OCR.read_text(encoding="utf-8"))
 PROVINCES = json.loads(B.PROVINCES.read_text(encoding="utf-8"))["features"]
+REVIEW = json.loads(B.VISUAL.read_text(encoding="utf-8"))
 EXPECTED_ZONE = {"TUMBES": 17, "PIURA": 17, "LAMBAYEQUE": 17, "LA LIBERTAD": 17, "ANCASH": 18, "LIMA": 18, "ICA": 18,
                  "AREQUIPA": 18, "MOQUEGUA": 19, "TACNA": 19}
 
@@ -48,12 +49,13 @@ class Admission(unittest.TestCase):
         prov = {(f["properties"]["NOMBDEP"], f["properties"]["NOMBPROV"]): f for f in PROVINCES}
         for p in admitted:
             u = p["utm"]
-            self.assertEqual(len(str(u["easting_m"])), 6, p["id"])
-            self.assertEqual(len(str(u["northing_m"])), 7, p["id"])
+            self.assertEqual(len(str(int(u["easting_m"]))), 6, p["id"])  # a printed decimal is kept as printed
+            self.assertEqual(len(str(int(u["northing_m"]))), 7, p["id"])
             self.assertEqual(u["zone"], EXPECTED_ZONE[p["department"]], p["id"])  # datum read from the cuadro footer
             self.assertEqual(u["epsg"], f"EPSG:327{u['zone']}")
             self.assertEqual(p["reasons"], [])
-            self.assertIn(p["coordinate_basis"], ("OCR_2_DE_3", "OCR_1_DE_3_MAS_TRANSCRIPCION_DEL_MAESTRO"))
+            self.assertIn(p["coordinate_basis"], ("OCR_2_DE_3", "OCR_1_DE_3_MAS_TRANSCRIPCION_DEL_MAESTRO",
+                                                  "REVISION_VISUAL_MAS_2_RELECTURAS_OCR", "OCR_MAS_REVISION_VISUAL_DE_LA_CELDA"))
             # re-derive the position and the jurisdiction from the original UTM values
             lon, lat = B.utm_to_lonlat(u["easting_m"], u["northing_m"], u["zone"])
             self.assertAlmostEqual(lon, p["lon"], places=5)
@@ -66,8 +68,18 @@ class Admission(unittest.TestCase):
 
     def test_each_value_is_backed_by_two_independent_reads(self):
         tables = {int(re.search(r"cuadro(\d+)", t["file"]).group(1)): t for t in OCR["tables"]}
+        reviews = {(e["cuadro"], e["row"]): e for e in REVIEW["entries"]}
         for p in D["points"]:
             if p["status"] != "ADMITIDA_UBICACION_DOCUMENTAL":
+                continue
+            if p["coordinate_basis"] in ("REVISION_VISUAL_MAS_2_RELECTURAS_OCR", "OCR_MAS_REVISION_VISUAL_DE_LA_CELDA"):
+                # printed value read by a person + at least two of three OCR re-reads of the isolated row band agree
+                e = reviews[(p["cuadro"], p["row"])]
+                self.assertTrue(e["coordinates_confirmed_by_two_reads"], p["id"])
+                for k, v in e["ocr_recheck"].items():
+                    if k in ("este", "norte"):
+                        self.assertGreaterEqual(v["ocr_reads_agreeing"], 2, (p["id"], k))
+                        self.assertEqual(float(v["printed"]), float(p["utm"]["easting_m" if k == "este" else "northing_m"]))
                 continue
             row = next(r for r in tables[p["cuadro"]]["rows"] if r["row_index"] == p["ocr_row_index"])
             reads_e = [B.digits(row["cells"]["este"].get(k, "")) for k in ("read_a", "read_b", "read_c")]
@@ -94,7 +106,8 @@ class Admission(unittest.TestCase):
                 self.assertTrue(p["reasons"], p["id"])
         for t in D["tables"]:
             self.assertEqual(t["rows_declared"], B.DECLARED_ROWS[t["cuadro"]])
-            self.assertEqual(t["rows"] + len(t["rows_not_read"]), t["rows_declared"], t["department"])
+            self.assertEqual(t["rows"] + len(t["rows_missing"]), t["rows_declared"], t["department"])
+            self.assertEqual(sorted(t["rows_visual_review"] + t["rows_missing"]), t["rows_not_read"], t["department"])
             self.assertIn(t["datum_zone"], (17, 18, 19))
         ids = [p["id"] for p in D["points"]]
         self.assertEqual(len(ids), len(set(ids)))  # one point per cuadro row
@@ -145,6 +158,57 @@ class Admission(unittest.TestCase):
             lon, lat = B.utm_to_lonlat(e, n, zone)
             self.assertAlmostEqual(lon, x, places=7)
             self.assertAlmostEqual(lat, y, places=7)
+
+
+class VisualReviewAndReconciliation(unittest.TestCase):
+    """Every row the OCR grid missed is transcribed from the page with a hashed crop, confirmed by OCR re-reads, and the
+    declared rows reconcile exactly: declared = admitted + outside province + pending + not read."""
+
+    def test_every_review_is_traceable_to_a_hashed_crop_of_the_page(self):
+        for e in REVIEW["entries"]:
+            crop = B.SRC / e["crop"]
+            self.assertEqual(hashlib.sha256(crop.read_bytes()).hexdigest(), e["crop_sha256"], e["crop"])
+            self.assertTrue(e["reason"])
+            self.assertIn(e["kind"], ("FILA_NO_LEIDA_TRANSCRITA", "CELDA_CORREGIDA"))
+            self.assertEqual(e["page_file"][:3], f"p{e['pdf_page']:02d}")
+        for c in REVIEW["control_sample"]["points"]:
+            self.assertEqual(hashlib.sha256((B.SRC / c["crop"]).read_bytes()).hexdigest(), c["crop_sha256"])
+
+    def test_reviewed_rows_are_exactly_the_rows_the_ocr_missed(self):
+        missed = {(t["cuadro"], n) for t in D["tables"] for n in t["rows_not_read"]}
+        transcribed = {(e["cuadro"], e["row"]) for e in REVIEW["entries"] if e["kind"] == "FILA_NO_LEIDA_TRANSCRITA"}
+        self.assertEqual(transcribed, missed)
+        by_id = {p["id"]: p for p in D["points"]}
+        for cu, n in transcribed:
+            p = by_id[f"ANA2017-C{cu:02d}-{n:03d}"]
+            self.assertEqual(p["text_basis"], "TRANSCRIPCION_VISUAL")
+            self.assertIsNone(p["ocr_row_index"])
+            self.assertEqual(p["manual_review"]["kind"], "FILA_NO_LEIDA_TRANSCRITA")
+
+    def test_control_sample_outside_the_master_departments_matches(self):
+        cs = REVIEW["control_sample"]
+        self.assertEqual(cs["coincide"], len(cs["points"]))
+        self.assertGreaterEqual(len(cs["points"]), 28)
+        by_id = {p["id"]: p for p in D["points"]}
+        self.assertTrue({"LA LIBERTAD", "ANCASH", "LIMA", "ICA", "AREQUIPA", "MOQUEGUA", "TACNA"} <= {c["department"] for c in cs["points"]})
+        for c in cs["points"]:
+            p = by_id[c["id"]]
+            self.assertEqual((c["easting_m"], c["northing_m"]), (p["utm"]["easting_m"], p["utm"]["northing_m"]))
+            self.assertEqual(p["coordinate_basis"], "OCR_2_DE_3")
+
+    def test_declared_rows_reconcile_without_adjusting_figures(self):
+        from collections import Counter
+        status = Counter(p["status"] for p in D["points"])
+        declared = sum(B.DECLARED_ROWS.values())
+        missing = sum(len(t["rows_missing"]) for t in D["tables"])
+        self.assertEqual(declared, 638)
+        self.assertEqual(status["ADMITIDA_UBICACION_DOCUMENTAL"] + status["FUERA_DE_PROVINCIA"] + status["REVISION_PENDIENTE"]
+                         + missing, declared)
+        for t in D["tables"]:
+            pts = [p for p in D["points"] if p["cuadro"] == t["cuadro"]]
+            self.assertEqual(len(pts), t["rows"])
+            self.assertEqual(t["admitted"], sum(p["status"] == "ADMITIDA_UBICACION_DOCUMENTAL" for p in pts))
+            self.assertEqual(t["outside_province"], sum(p["status"] == "FUERA_DE_PROVINCIA" for p in pts))
 
 
 class Isolation(unittest.TestCase):
