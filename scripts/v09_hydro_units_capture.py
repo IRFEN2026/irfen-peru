@@ -59,6 +59,11 @@ def get(url: str, params: dict | None = None, name: str | None = None, timeout: 
                 rec["file"] = path.name
             LOG.append(rec)
             rec["seconds"] = round(time.time() - t0, 1)
+            err = js(raw).get("error") if raw[:1] == b"{" and isinstance(js(raw), dict) else None
+            if err:  # HTTP 200 carrying an ArcGIS error document: recorded, never treated as data
+                rec.update(status="SERVICE_ERROR", error=f"{err.get('code')}: {str(err.get('message', '')).strip()}"[:200])
+                checkpoint()
+                return None
             checkpoint()
             return raw
         except Exception as e:  # noqa: BLE001 - recorded, never hidden

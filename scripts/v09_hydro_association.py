@@ -225,7 +225,8 @@ def build() -> dict:
                             "oficiales ANA; candidatos de cauce oficial por nombre en Tumbes y Piura. Inferencias de "
                             "investigación: no son conectividad hidráulica, ni huella de inundación, ni prioridad."),
                 inputs=dict(points=f"{POINTS.relative_to(ROOT)} sha256 {B.sha(POINTS)}", uh=uh_files,
-                            channels=channel_files, provenance=f"{(SRC / 'provenance.json').relative_to(ROOT)}"),
+                            channels=channel_files,
+                            provenance=sorted(str(p.relative_to(ROOT)) for p in SRC.glob("provenance_*.json"))),
                 parameters=dict(border_m=BORDER_M, near_m=NEAR_M, imerg_cell_deg=0.1, imerg_subsample=25,
                                 name_rule="nombre normalizado (sin tildes, sin «Quebrada/Qda/Río» ni artículo inicial) idéntico"),
                 uh_features=len(uh), summary_by_department=summary, uh_with_documented_points=uh_table,

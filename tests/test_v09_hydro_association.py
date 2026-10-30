@@ -12,7 +12,7 @@ SPEC = importlib.util.spec_from_file_location("v09_hydro_association", ROOT / "s
 H = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(H)
 D = json.loads(H.OUT.read_text(encoding="utf-8"))
-PROV = json.loads((H.SRC / "provenance.json").read_text(encoding="utf-8"))
+REQUESTS = [r for p in sorted(H.SRC.glob("requests_*.json")) for r in json.loads(p.read_text(encoding="utf-8"))]
 UH_REL = {"UH_QUE_CONTIENE_AL_CENTRO_POBLADO", "FUERA_DE_TODA_UH_DEL_PACIFICO"}
 CH_REL = {"NOMBRE_COINCIDE_CERCA", "NOMBRE_COINCIDE_LEJOS", "SIN_LINEA_OFICIAL_CON_ESE_NOMBRE",
           "QUEBRADA_SIN_NOMBRE_EN_EL_CUADRO", "FUENTE_NO_DISPONIBLE"}
@@ -24,7 +24,7 @@ class Reproducible(unittest.TestCase):
         import io
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(H.main(["--check"]), 0)
-        archived = {r["file"]: r for r in PROV["requests"] if r.get("file")}
+        archived = {r["file"]: r for r in REQUESTS if r.get("file")}
         for p in sorted(H.SRC.glob("*.gz")):
             self.assertIn(p.name, archived)
             self.assertEqual(hashlib.sha256(gzip.decompress(p.read_bytes())).hexdigest(), archived[p.name]["sha256"], p.name)
@@ -59,6 +59,33 @@ class Vocabulary(unittest.TestCase):
         self.assertEqual(len(D["points"]), len(admitted))
         for dep, s in D["summary_by_department"].items():
             self.assertEqual(s["admitted"], s["in_uh"] + s["outside_uh"], dep)
+
+
+class SourceRegistry(unittest.TestCase):
+    def test_registry_is_derived_from_the_request_logs(self):
+        R = importlib.util.module_from_spec(importlib.util.spec_from_file_location(
+            "reg", ROOT / "scripts/v09_hydro_source_registry.py"))
+        R.__spec__.loader.exec_module(R)
+        import contextlib
+        import io
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(R.main(["--check"]), 0)
+        reg = json.loads(R.OUT.read_text(encoding="utf-8"))
+        by = {s["stage"]: s for s in reg["sources"]}
+        self.assertEqual(by["uh"]["verdict"], "UTILIZABLE")
+        self.assertEqual(by["uh"]["features_recovered"], D["uh_features"])
+        for s in reg["sources"]:
+            for k in ("service", "crs", "license", "represents", "coverage", "request_log"):
+                self.assertTrue(s[k], (s["stage"], k))
+            if s["verdict"] != "UTILIZABLE":  # a blocked source contributes nothing and is never read as a negative
+                self.assertEqual(s["features_recovered"], 0)
+                self.assertEqual(s["data_files"], [])
+
+    def test_unavailable_channel_sources_are_unknown_not_negative(self):
+        for r in D["points"]:
+            for src, v in (r.get("official_channel_by_name") or {}).items():
+                if v["relation"] == "FUENTE_NO_DISPONIBLE":
+                    self.assertNotIn("distance_m", v)
 
 
 class Isolation(unittest.TestCase):
