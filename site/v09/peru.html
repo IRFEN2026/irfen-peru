@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
+<title>IRFEN v0.9 · Perú completo (investigación)</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzx6GvMMJVqRaLkOFWKK8+9+50=" crossorigin="">
+<style>
+*{box-sizing:border-box}body{font-family:system-ui,Arial,sans-serif;margin:0;background:#f3f6f9;color:#1e3446}header{padding:12px 18px;background:#fff;border-bottom:1px solid #d7e1ea}h1{font-size:19px;margin:0 0 6px}header p{font-size:12px;margin:5px 0}a{color:#225985}.warning{background:#fff4d7;color:#704d10;padding:9px 18px;font-size:12px;border-bottom:1px solid #ebd49b}.layout{display:grid;grid-template-columns:285px minmax(0,1fr);gap:12px;padding:12px}.panel{background:white;border:1px solid #d7e1e9;border-radius:8px;padding:14px}.panel h2{font-size:15px;margin:0 0 10px}#map{height:calc(100vh - 195px);min-height:480px;border-radius:8px;background:#cbdde9}label{display:block;font-size:12px;margin:8px 0;line-height:1.4}.count{font-size:13px;color:#286184;font-weight:700}.note{font-size:12px;color:#495b6d;line-height:1.55}.buttons{display:flex;gap:6px;flex-wrap:wrap}.buttons button{font-size:12px;padding:8px;border:1px solid #a8bbc9;border-radius:6px;cursor:pointer;background:#f4f8fa}.buttons button:focus-visible{outline:2px solid #3676a5}.hint{background:#eef5fa;padding:10px;border-radius:6px}.leaflet-popup-content{font-size:12px;line-height:1.5}footer{font-size:11px;padding:8px 18px;color:#456}#message{font-size:12px;color:#894f17;margin-top:8px}@media(max-width:800px){.layout{display:flex;flex-direction:column}#map{height:60vh;min-height:370px}}
+</style>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+</head><body>
+<header><h1>IRFEN v0.9 · Mapa completo del Perú</h1><p><a href="resumen.html">Resumen</a> · <a href="territorio.html">Mapa detallado costa norte / Rímac</a> · <a href="inventario.html">Inventario documental</a> · <a href="index.html">Lluvia y avisos</a></p></header>
+<div class="warning"><b>RESEARCH_ONLY · TEST_ONLY.</b> Base cartográfica nacional para orientación. Las geometrías IRFEN existentes se concentran en dos regiones: fuera de ellas, <b>sin cobertura geométrica no significa sin peligro</b>. No es una alerta ni un mapa validado de riesgos.</div>
+<main class="layout"><aside class="panel">
+<h2>Explorar Perú</h2><div class="buttons"><button id="all">Todo el Perú</button><button id="north">Costa norte</button><button id="rimac">Rímac</button></div>
+<p class="note hint">Puedes acercar con la rueda del ratón o los botones del mapa. Pulsa las geometrías para ver su procedencia y clasificación.</p>
+<h2>Capas de investigación</h2><div id="layerToggles">Cargando…</div>
+<p class="count" id="count"></p>
+<p class="note">**Cobertura:** no están geolocalizadas todas las quebradas inventariadas. El mapa presenta únicamente elementos de ubicación admitida en el paquete de investigación.</p>
+<p class="note">Los registros sin geometría se consultan en el <a href="inventario.html">inventario documental</a>. No hemos asignado coordenadas aproximadas ni generado cuencas nuevas.</p>
+<p id="message" role="status" aria-live="polite"></p>
+</aside><div class="panel" style="padding:8px"><div id="map" aria-label="Mapa interactivo del Perú con zonas de investigación IRFEN"></div></div></main>
+<footer>Mapa base © OpenStreetMap contributors. Solo exploración interactiva de baja frecuencia; no descarga masiva ni uso operativo. Guardas: production_use=false · public_alerting=false · activation_gate=BLOCKED.</footer>
+<script id="app">
+"use strict";
+(async function(){
+const $=id=>document.getElementById(id);
+const colors={cuencas:"#2468ac",areas_colectoras:"#9559ae",cauces:"#008d9f",descargas:"#cc8620",impacto:"#b73e5d",contexto:"#6b8294"};
+const safe=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+if(!window.L){$("message").textContent="No se pudo cargar el mapa base. Comprueba si tu red permite Leaflet.";return;}
+const map=L.map("map",{zoomControl:true,scrollWheelZoom:true}).setView([-9.2,-75.1],5);
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:17,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'}).addTo(map);
+const box={peru:[[-18.5,-81.7],[-0.02,-68.6]],north:[[-9.5,-82.5],[-2.0,-76.0]],rimac:[[-12.6,-77.7],[-10.8,-75.7]]};
+const go=k=>map.fitBounds(box[k],{padding:[22,22]});
+$("all").onclick=()=>go("peru");$("north").onclick=()=>go("north");$("rimac").onclick=()=>go("rimac");
+try{
+ const resp=await fetch("../data/v09/territory_v0_1.json",{cache:"no-store"});
+ if(!resp.ok)throw Error("HTTP "+resp.status);
+ const d=await resp.json();
+ if(d.deployment_status!=="RESEARCH_ONLY"||d.test_mode!=="TEST_ONLY"||d.activation_gate!=="BLOCKED"||d.production_use!==false||d.public_alerting!==false||d.map_publishable!==false)throw Error("Guardas científicas no válidas");
+ let layers={};const features=d.geometries?.features||[];
+ for(const [id,color] of Object.entries(colors)){
+   const admitted=features.filter(f=>f.properties?.layer===id && f.properties?.default_visible!==false);
+   const layer=L.geoJSON({type:"FeatureCollection",features:admitted},{
+      style:f=>({color,weight:f.properties?.evidence==="GEOMETRIA_CANDIDATA"?2:2.5,
+        dashArray:f.properties?.evidence==="GEOMETRIA_CANDIDATA"?"6,4":null,fillColor:color,fillOpacity:.12}),
+      pointToLayer:(f,latlng)=>L.circleMarker(latlng,{color,fillColor:color,fillOpacity:.7,radius:6}),
+      onEachFeature:(f,l)=>{
+        const p=f.properties||{},name=p.name||p.id||"Elemento sin nombre";
+        l.bindPopup("<strong>"+safe(name)+"</strong><br>Capa: "+safe(d.layers?.[id]?.label_es||id)+"<br>Evidencia: "+safe(p.evidence||"Sin especificar")+"<br>Región: "+safe(p.region)+"<br>Confianza: "+safe(p.confidence||"Sin calificar")+"<br>Fuente: "+safe((p.source_ids||[]).join(", "))+"<br><em>No constituye alerta ni zona de inundación validada.</em>");
+      }
+   }).addTo(map);layers[id]=layer;
+   const label=document.createElement("label"),cb=document.createElement("input");
+   cb.type="checkbox";cb.checked=true;cb.addEventListener("change",()=>{if(cb.checked)map.addLayer(layer);else map.removeLayer(layer);});
+   label.append(cb,document.createTextNode(" "+(d.layers?.[id]?.label_es||id)+" ("+admitted.length+")"));
+   $("layerToggles").append(label);
+ }
+ $("layerToggles").firstChild?.nodeType===3 && $("layerToggles").removeChild($("layerToggles").firstChild);
+ $("count").textContent=features.length+" geometrías en el catálogo · "+Object.values(layers).reduce((n,l)=>n+l.getLayers().length,0)+" visibles de forma predeterminada";
+ $("message").textContent="Paquete de "+(d.built_at_utc||"fecha no declarada")+". No implica cobertura nacional.";
+}catch(e){$("message").textContent="No se pudieron mostrar las geometrías IRFEN ("+String(e.message)+"). El mapa base no sustituye los datos ausentes.";}
+go("peru");
+})();
+</script></body></html>
