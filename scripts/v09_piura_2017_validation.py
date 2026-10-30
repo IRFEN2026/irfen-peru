@@ -30,6 +30,9 @@ UNIT = "1378"
 K_DAYS = (1, 3, 5, 7, 10, 15, 30)
 LAGS_P_Q = range(0, 11)
 LAGS_Q_Q = range(0, 6)
+PIURA_STATIONS = ("PUENTE_NACARA", "TAMBOGRANDE", "PUENTE_SANCHEZ_CERRO", "EL_PAPAYO")  # upstream -> downstream
+CANALS = ("CURUMUY", "CANAL_EJIDOS")  # operated canals: context only (transfer in / diversion out), never correlated
+GAUGES = ("CHULUCANAS", "TAMBOGRANDE", "CPTO_PIURA")
 MIN_COVER = 0.95
 GUARDS = dict(deployment_status="RESEARCH_ONLY", test_mode="TEST_ONLY", production_use=False, production_ready=False,
               operational_alerting_enabled=False, activation_gate="BLOCKED", missing_data_rule="UNKNOWN_NOT_LOW_RISK",
@@ -39,6 +42,38 @@ POLYGON_FLAG = "POLIGONO_NO_EQUIVALENTE_A_LA_CUENCA_DE_LA_ESTACION"
 
 
 # ------------------------------------------------------------------ rain
+def clean_attr(v: str) -> str:
+    """netCDF4 string attributes arrive as "['mm/day']": keep the text."""
+    v = str(v or "").strip()
+    return v[2:-2] if v.startswith("['") and v.endswith("']") else v
+
+
+def internal_day(units: str, value) -> str | None:
+    import re
+    m = re.match(r"(days|seconds) since (\d{4}-\d{2}-\d{2})", clean_attr(units))
+    if not m or value is None:
+        return None
+    base = date.fromisoformat(m.group(2))
+    return (base + timedelta(days=float(value) if m.group(1) == "days" else float(value) / 86400)).isoformat()
+
+
+def integrity(imerg: dict) -> dict:
+    rows = []
+    for day, d in imerg["days"].items():
+        cnts = [c for row in (d.get("cnt_lon_by_lat") or []) for c in row if c is not None]
+        rows.append(dict(day=day, version=d["version"], units=clean_attr(d["units"]), internal_day=internal_day(d["time_units"], d["time_value"]),
+                         name_day_matches=d["granule"].split(".")[4][:8] == day.replace("-", ""),
+                         cnt_min=min(cnts) if cnts else None, cnt_max=max(cnts) if cnts else None))
+    return dict(days=len(rows), versions=sorted({r["version"] for r in rows}), units=sorted({r["units"] for r in rows}),
+                internal_day_matches=sum(1 for r in rows if r["internal_day"] == r["day"]),
+                name_day_matches=sum(1 for r in rows if r["name_day_matches"]),
+                cells_with_fewer_than_48_half_hours=sum(1 for r in rows if r["cnt_min"] is not None and r["cnt_min"] < 48),
+                cnt_range=[min((r["cnt_min"] for r in rows if r["cnt_min"] is not None), default=None),
+                           max((r["cnt_max"] for r in rows if r["cnt_max"] is not None), default=None)],
+                sha256_recorded=sum(1 for d in imerg["days"].values() if len(d.get("file_sha256", "")) == 64),
+                mismatches=[r for r in rows if r["internal_day"] != r["day"] or not r["name_day_matches"]][:10])
+
+
 def basin_series(imerg: dict, fractions: dict) -> dict[str, dict]:
     out = {}
     for day, d in imerg["days"].items():
@@ -59,7 +94,7 @@ def basin_series(imerg: dict, fractions: dict) -> dict[str, dict]:
                     sv += f * v
         cover = sw / tot if tot else 0.0
         out[day] = dict(p_mm=round(sv / sw, 3) if sw and cover >= MIN_COVER else None, coverage=round(cover, 4),
-                        min_valid_half_hours_in_cell=cnt_min, units=d["units"], version=d["version"])
+                        min_valid_half_hours_in_cell=cnt_min, units=clean_attr(d["units"]), version=d["version"])
     return dict(sorted(out.items()))
 
 
@@ -145,13 +180,35 @@ def lagged(x: dict, y: dict, lags, days: list[str], exclude: set[str] = frozense
                 xs.append(a)
                 ys.append(b)
         out.append(dict(lag_days=L, n=len(xs), spearman=spearman(xs, ys),
-                        pearson_log=pearson([math.log1p(v) for v in xs], [math.log1p(v) for v in ys]) if xs else None))
+                        pearson_log=(pearson([math.log1p(v) for v in xs], [math.log1p(v) for v in ys])
+                                     if xs and min(xs + ys) >= 0 else None)))  # a negative source value: no log, never clipped
     return out
 
 
 def best(curve: list[dict], key="spearman") -> dict | None:
     c = [r for r in curve if r[key] is not None]
     return max(c, key=lambda r: r[key]) if c else None
+
+
+def gauges_vs_imerg(pechp: dict, p: dict, year: int) -> dict:
+    """Point gauges (PECHP) vs the IMERG basin mean: descriptive only (point vs area, unknown day convention)."""
+    m = next((x for x in pechp["months"] if x["month"] == f"{year}-03"), None)
+    rg = (m or {}).get("tables", {}).get("rain_gauges", {})
+    if rg.get("status") != "OK":
+        return dict(status="SIN_TABLA_DE_PLUVIOMETROS_EN_TEXTO")
+    out = dict(status="OK", note="Comparación punto–área y convención de día desconocida: descriptiva, no mide la precisión de IMERG. "
+                                 "Celda vacía del informe = desconocido (no se distingue de 0) y se excluye.",
+               imerg_basin_total_mm=round(sum(v for d, v in p.items() if d.startswith(f"{year}-03") and v is not None), 1), gauges={})
+    for g in GAUGES:
+        series = {date(year, 3, int(dd)).isoformat(): r["values"][g] for dd, r in rg["days"].items()
+                  if r["readers"] == "DOS_LECTORES" and r["values"].get(g) is not None}
+        out["gauges"][g] = dict(days_with_value=len(series), total_mm_of_days_with_value=round(sum(series.values()), 1),
+                                spearman_by_day_shift={str(sh): spearman([series[d] for d in sorted(series) if p.get(
+                                    (date.fromisoformat(d) + timedelta(days=sh)).isoformat()) is not None],
+                                    [p[(date.fromisoformat(d) + timedelta(days=sh)).isoformat()] for d in sorted(series) if p.get(
+                                        (date.fromisoformat(d) + timedelta(days=sh)).isoformat()) is not None])
+                                    for sh in (-1, 0, 1)})
+    return out
 
 
 # ------------------------------------------------------------------ build
@@ -168,7 +225,7 @@ def build() -> dict:
     seasons = {}
     for year, role in ((2017, "EPISODIO"), (2018, "CONTROL"), (2016, "CONTROL")):
         days = [d for d in rain if d.startswith(f"{year}-03")]
-        stations = {s: {d: v for d, v in q.items() if d.startswith(f"{year}-")} for s, q in flow.items()}
+        stations = {s: {d: v for d, v in flow.get(s, {}).items() if d.startswith(f"{year}-")} for s in PIURA_STATIONS}
         stations = {s: q for s, q in stations.items() if q}
         if not stations:
             seasons[str(year)] = dict(role=role, status="SIN_CAUDALES_DIARIOS_EXTRAIDOS",
@@ -182,7 +239,8 @@ def build() -> dict:
                           all_zero=all(q[d] == 0 for d in qd) if qd else None)
             if qd and not st_res["all_zero"]:
                 st_res["p_vs_q"] = lagged(p, q, LAGS_P_Q, days)
-                st_res["acc_vs_q"] = {f"A{k}": best(lagged(acc[k], q, LAGS_P_Q, days)) for k in K_DAYS}
+                st_res["acc_vs_q"] = {f"A{k}": lagged(acc[k], q, LAGS_P_Q, days) for k in K_DAYS}
+                st_res["acc_vs_q_best_for_reading_only"] = {k: best(v) for k, v in st_res["acc_vs_q"].items()}
                 excl = {(date.fromisoformat(peak) + timedelta(days=i)).isoformat() for i in range(-3, 4)}
                 st_res["p_vs_q_excluding_peak_pm3d"] = lagged(p, q, LAGS_P_Q, days, exclude=excl)
                 st_res["peak_chronology"] = {f"A{k}": dict(max_day=max((d for d in days if acc[k].get(d) is not None),
@@ -200,6 +258,17 @@ def build() -> dict:
                 curve = lagged(stations[up], stations[down], LAGS_Q_Q, sorted(stations[up]))
                 chain[f"{up}->{down}"] = dict(curve=curve, best=best(curve))
         res["flow_to_flow"] = chain
+        canal = {}
+        for c in CANALS:
+            q = {d: v for d, v in flow.get(c, {}).items() if d.startswith(f"{year}-03") and v is not None}
+            if q:
+                canal[c] = dict(days=len(q), mean_m3s=round(sum(q.values()) / len(q), 1),
+                                volume_mmc=round(sum(q.values()) * 86400 / 1e6, 1))
+        sc = {d: v for d, v in flow.get("PUENTE_SANCHEZ_CERRO", {}).items() if d.startswith(f"{year}-03") and v is not None}
+        res["operated_canals_context"] = dict(canals=canal, sanchez_cerro_volume_mmc=round(sum(sc.values()) * 86400 / 1e6, 1) if sc else None,
+                                             note="Curumuy = trasvase Chira→Piura que entra al río; canal Ejidos = derivación en Los Ejidos. "
+                                                  "Contexto de regulación: no se correlacionan con la lluvia.")
+        res["gauges_vs_imerg"] = gauges_vs_imerg(pechp, p, year)
         seasons[str(year)] = res
     absent = imerg.get("absent", {})
     return dict(
@@ -221,8 +290,10 @@ def build() -> dict:
                   versions=sorted({r["version"] for r in rain.values()}),
                   min_valid_half_hours_in_any_cell=min((r["min_valid_half_hours_in_cell"] for r in rain.values()
                                                         if r["min_valid_half_hours_in_cell"] is not None), default=None),
-                  series=rain, accumulations={f"A{k}": v for k, v in acc.items()}),
-        flow=dict(source="PECHP, caudal medio diario (m³/s), filas con dos lectores coincidentes", stations=flow),
+                  integrity=integrity(imerg), series=rain, accumulations={f"A{k}": v for k, v in acc.items()}),
+        flow=dict(source="PECHP, caudal medio diario (m³/s), filas con dos lectores coincidentes", stations=flow,
+                  source_anomalies=[dict(station=st, day=d, value=v, note="valor negativo impreso en el informe; se conserva tal cual")
+                                    for st, q in flow.items() for d, v in q.items() if v is not None and v < 0]),
         seasons=seasons)
 
 
@@ -249,7 +320,11 @@ def main(argv=None) -> int:
         for st, r in s.get("stations", {}).items():
             b = best(r["p_vs_q"]) if r.get("p_vs_q") else None
             print("  ", st, r["n_days"], r["max_daily_mean_m3s"], r["max_day"], "best P→Q", b,
-                  {k: (v["lag_days"], v["spearman"]) for k, v in (r.get("acc_vs_q") or {}).items() if v})
+                  {k: (v["lag_days"], v["spearman"]) for k, v in (r.get("acc_vs_q_best_for_reading_only") or {}).items() if v})
+            if r.get("p_vs_q_excluding_peak_pm3d"):
+                print("      excl. peak:", [(c["lag_days"], c["spearman"]) for c in r["p_vs_q_excluding_peak_pm3d"][:4]])
+        print("  canals", s.get("operated_canals_context"))
+        print("  gauges", json.dumps(s.get("gauges_vs_imerg"))[:500])
         for k, v in s.get("flow_to_flow", {}).items():
             print("  ", k, v["best"])
     return 0
