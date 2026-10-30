@@ -157,6 +157,7 @@ const CORRIDOR_ES = {LIMA_OTHER_VALLEYS_AND_METROPOLITAN:"Lima: otros valles y �
 const EVENTS_ES = {VERIFIED:"Con fecha verificada", LEAD:"Solo indicio sin verificar", NONE:"Sin fecha de evento"};
 const label = (map, k) => map[k] || k || "—";
 let V = null, T = null, VIEWER = new Map(), filtered = [], page = 0, lastFocus = null;
+let ANA = new Map();  // inventory id -> admitted ANA 2016-17 documentary points (centro poblado), from the national map data
 
 function eventsKind(r){ return r.events.verified.length ? "VERIFIED" : r.events.leads_unverified.length ? "LEAD" : "NONE"; }
 function inViewer(r){ return VIEWER.has(r.id); }
@@ -297,7 +298,9 @@ function ficha(id){
       `<p>Incluido en el inventario del visor (región ${esc(viewer.region)}). El visor no enlaza este registro con un trazo concreto. ${viewer.regionKey ?
         `<a href="territorio.html#${viewer.regionKey}" data-viewer-link>Abrir el mapa de la región</a>` :
         `Esta región no tiene mapa en el visor; <a href="territorio.html#inventario" data-viewer-link>ver su listado</a>.`}</p>` :
-      `<p class="none">Fuera de las regiones del visor: solo ficha, sin trazado.</p>`}</section>`;
+      `<p class="none">Fuera de las regiones del visor: solo ficha, sin trazado.</p>`}
+      ${ANA.has(r.id) ? `<p data-ana-links>Ubicación documental ANA 2016-17 (centro poblado expuesto, no la quebrada): ${ANA.get(r.id).map(x =>
+        `<a href="peru.html#punto=${encodeURIComponent(x.id)}" data-ana-point="${esc(x.id)}">${esc(x.centro || x.id)}</a>${x.basis === "MISMO_NOMBRE_EN_EL_DEPARTAMENTO_POR_COMPROBAR" ? " (mismo nombre, por comprobar)" : ""}`).join(", ")}</p>` : ""}</section>`;
   document.getElementById("scrim").hidden = false;
   el.hidden = false;
   el.focus();
@@ -342,6 +345,12 @@ async function init(){
       const key = reg => reg === "Rímac" ? "rimac" : NORTH.includes(reg) ? "costa_norte" : null;
       (T.inventory_rows || []).forEach(x => VIEWER.set(x.id, {region: x.region, regionKey: key(x.region)})); }
   } catch (e) { /* the viewer may be withheld by the publication gate: the inventory works without it */ }
+  try {  // optional: ANA 2016-17 documentary points linked to master rows (national map); nothing is drawn here
+    const a = await fetch("../data/v09/ana2017_coastal_points_v0_1.json", {cache: "no-store"});
+    if (a.ok) { const A = await a.json();
+      (A.points || []).filter(p => p.status === "ADMITIDA_UBICACION_DOCUMENTAL").forEach(p => (p.inventory_links || []).forEach(l => {
+        if (!ANA.has(l.inventory_id)) ANA.set(l.inventory_id, []); ANA.get(l.inventory_id).push({id: p.id, basis: l.basis, centro: p.centro_poblado_display || p.centro_poblado_ocr}); })); }
+  } catch (e) { /* optional */ }
   V.rows.forEach(r => { r._h = haystack(r); });
   renderHead(); buildFilters();
   document.getElementById("f-q").addEventListener("input", apply);
