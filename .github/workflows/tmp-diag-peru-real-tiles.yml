@@ -1,0 +1,31 @@
+name: TMP diag peru.html with real unpkg Leaflet and real OSM tiles (no deploy; branch to be deleted)
+on:
+  push:
+    branches: [diag/v09-peru-real-tiles-20261030]
+    paths: [.github/workflows/tmp-diag-peru-real-tiles.yml, qa_tmp/**]
+permissions:
+  contents: write
+jobs:
+  real:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with: {fetch-depth: 0}
+      - uses: actions/setup-python@v6
+        with: {python-version: "3.12"}
+      - run: |
+          python -m pip install --disable-pip-version-check playwright==1.56.0
+          python -m playwright install --with-deps chromium
+      - name: Before (80e788ac, current #403) and after (fix branch) with real network
+        run: |
+          mkdir -p shots
+          python qa_tmp/peru_real.py site site/v09/peru.html shots costa
+      - name: Keep the screenshots on the UX assets branch (not a PR branch)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch -q origin ux-assets/v09-portal-20261028
+          git worktree add -q /tmp/assets origin/ux-assets/v09-portal-20261028
+          mkdir -p /tmp/assets/peru-coast && cp shots/*.png /tmp/assets/peru-coast/
+          cd /tmp/assets && git add peru-coast && git commit -q -m "UX assets: national map with ANA 2016-17 coastal documentary points (real Leaflet and OSM tiles)" && git push -q origin HEAD:ux-assets/v09-portal-20261028
