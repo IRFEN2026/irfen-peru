@@ -1,12 +1,14 @@
 """IRFEN v0.9 territorial view (costa norte and Rímac): only admitted, SHA-verified geometry is drawn; quebrada
 components are drawn or declared pending with a reason; observations, estimates and forecasts are labelled apart;
 missing or old rain is never shown as zero. Offline; the browser part runs where Chromium is available."""
+import base64
 import functools
 import gzip
 import hashlib
 import http.server
 import importlib.util
 import json
+import os
 import re
 import threading
 import unittest
@@ -483,6 +485,47 @@ class InventoryMasterView(unittest.TestCase):
         spec.loader.exec_module(gate)
         self.assertIn("site/v09/inventario.html", gate.TERRITORY_PATHS)
         self.assertIn("site/data/v09/inventory_master_v0_1.json", gate.TERRITORY_PATHS)
+
+
+# Leaflet 1.9.4 SRI as published on https://leafletjs.com/download (unpkg). A wrong CSS hash makes the browser drop
+# leaflet.css: panes and tiles lose their absolute positioning and stack outside the map (peru.html, 30-10-2026).
+LEAFLET_CSS_SRI = "sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+LEAFLET_JS_SRI = "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+PERU = (ROOT / "site/v09/peru.html").read_text(encoding="utf-8")
+
+
+def png_tile(z: int, x: int, y: int) -> bytes:
+    """A plain 256x256 PNG whose colour depends on z/x/y (stand-in for an OSM tile; no network, not map data)."""
+    import struct
+    import zlib
+    rgb = bytes(((60 + 37 * x) % 200 + 40, (90 + 53 * y) % 200 + 40, (30 * z) % 200 + 40))
+    raw = b"".join(b"\x00" + rgb * 256 for _ in range(256))
+    chunk = lambda t, d: struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d) & 0xFFFFFFFF)
+    return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", 256, 256, 8, 2, 0, 0, 0)) + \
+        chunk(b"IDAT", zlib.compress(raw, 9)) + chunk(b"IEND", b"")
+
+
+class PeruMap(unittest.TestCase):
+    def test_leaflet_is_loaded_with_the_published_integrity(self):
+        css = re.search(r'<link rel="stylesheet" href="https://unpkg\.com/leaflet@1\.9\.4/dist/leaflet\.css" integrity="([^"]+)" crossorigin', PERU)
+        js = re.search(r'<script src="https://unpkg\.com/leaflet@1\.9\.4/dist/leaflet\.js" integrity="([^"]+)" crossorigin', PERU)
+        self.assertIsNotNone(css)
+        self.assertIsNotNone(js)
+        self.assertEqual(css.group(1), LEAFLET_CSS_SRI)
+        self.assertEqual(js.group(1), LEAFLET_JS_SRI)
+        leaf = os.environ.get("IRFEN_LEAFLET_DIR")
+        if leaf and (Path(leaf) / "leaflet.css").is_file():  # a local copy of the official file, when provided
+            digest = base64.b64encode(hashlib.sha256((Path(leaf) / "leaflet.css").read_bytes()).digest()).decode()
+            self.assertEqual("sha256-" + digest, LEAFLET_CSS_SRI)
+
+    def test_page_keeps_tiles_inside_the_map_and_says_when_leaflet_css_is_missing(self):
+        self.assertIn("#map{position:relative;overflow:hidden}", PERU)
+        self.assertIn('getComputedStyle(map.getPane("tilePane")).position!=="absolute"', PERU)
+        self.assertIn('dataset.leafletCss="missing"', PERU)
+        for forbidden in ("cesium", "Cesium", "<img src=", "static-map"):
+            self.assertNotIn(forbidden, PERU)  # no globe, no static image in place of the map
+        for flag in ("RESEARCH_ONLY", "TEST_ONLY", "activation_gate=BLOCKED"):
+            self.assertIn(flag, PERU)
 
 
 @unittest.skipUnless(BROWSER, "Playwright/Chromium not installed; runs in workflow v09-dashboard-browser-test.yml")
@@ -1047,6 +1090,157 @@ class Browser(unittest.TestCase):
                     self.assertEqual(page.locator("#ficha [data-no-link]").count(), len(general["evidence"]))
                     self.assertEqual(page.locator("#ficha [data-link-note]").count(), 0)
                     self.assertEqual(errors, [])
+                    b.close()
+            finally:
+                srv.shutdown()
+                srv.server_close()
+                import gc
+                import warnings
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", ResourceWarning)
+                    gc.collect()
+    def test_peru_map_tiles_form_a_continuous_grid_inside_the_map(self):
+        """Mapa nacional (peru.html) en escritorio y móvil: leaflet.css aplicado con su SRI publicado; los mosaicos
+        forman una rejilla continua de 256 px sin solapes, cubren el mapa y no se ven fuera de él, al cargar, tras
+        arrastrar, acercar/alejar, Perú / costa norte / Rímac y al apagar/encender capas. Con un leaflet.css alterado
+        (SRI falla) la página lo dice y nada sale del contenedor. Leaflet: unpkg (CI) o IRFEN_LEAFLET_DIR; mosaicos
+        OSM sustituidos por PNG locales (sin red, no son datos)."""
+        import shutil
+        import tempfile
+
+        class Quiet(http.server.SimpleHTTPRequestHandler):
+            def log_message(self, *a):
+                pass
+
+        leaf = os.environ.get("IRFEN_LEAFLET_DIR")
+        html = PERU
+        if leaf:
+            js = (Path(leaf) / "leaflet.js").read_bytes()
+            js_sri = "sha256-" + base64.b64encode(hashlib.sha256(js).digest()).decode()
+            html = html.replace(LEAFLET_JS_SRI, js_sri)  # a local build of the script; the CSS integrity is never touched
+        geom = """() => { const m=document.getElementById('map').getBoundingClientRect();
+          // the current zoom level is the tile container Leaflet puts on top (highest z-index)
+          const levels=[...document.querySelectorAll('#map .leaflet-tile-container')];
+          const top=levels.reduce((a,c)=>(+c.style.zIndex>+(a?a.style.zIndex:-1e9)?c:a),null);
+          const tiles=top?[...top.querySelectorAll('img.leaflet-tile.leaflet-tile-loaded')]:[];
+          const z=tiles.length?+tiles[0].src.split('/').slice(-3)[0]:null;
+          const r=tiles.map(t=>t.getBoundingClientRect());
+          let overlap=0; for(let i=0;i<r.length;i++)for(let j=i+1;j<r.length;j++){const a=r[i],b=r[j];
+            if(Math.min(a.right,b.right)-Math.max(a.left,b.left)>1 && Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>1)overlap++;}
+          const off=r.filter(b=>Math.abs(((b.left-r[0].left)%256+256)%256%256)>0.6&&Math.abs(((b.left-r[0].left)%256+256)%256-256)>0.6
+                             ||Math.abs(((b.top-r[0].top)%256+256)%256%256)>0.6&&Math.abs(((b.top-r[0].top)%256+256)%256-256)>0.6).length;
+          let uncovered=0; for(let i=0;i<=8;i++)for(let j=0;j<=8;j++){const x=m.left+2+(m.width-4)*i/8,y=m.top+2+(m.height-4)*j/8;
+            if(!r.some(b=>x>=b.left&&x<=b.right&&y>=b.top&&y<=b.bottom))uncovered++;}
+          let leaked=0; for(const [x,y] of [[m.left-4,m.top+m.height/2],[m.right+4,m.top+m.height/2],[m.left+m.width/2,m.top-4],[m.left+m.width/2,m.bottom+4]]){
+            const e=document.elementFromPoint(x,y); if(e&&e.classList&&e.classList.contains('leaflet-tile'))leaked++;}
+          return {css:document.getElementById('map').dataset.leafletCss, pane:getComputedStyle(document.querySelector('#map .leaflet-tile-pane')).position,
+            sizes:[...new Set(r.map(b=>Math.round(b.width)+'x'+Math.round(b.height)))], tiles:r.length, overlap, off_grid:off, uncovered, leaked,
+            overflow:getComputedStyle(document.getElementById('map')).overflow, zoom:z, paths:document.querySelectorAll('#map .leaflet-overlay-pane path').length}; }"""
+        settle = "document.querySelectorAll('#map img.leaflet-tile:not(.leaflet-tile-loaded)').length===0"
+        with tempfile.TemporaryDirectory() as d:
+            site = Path(d) / "site"
+            shutil.copytree(ROOT / "site/v09", site / "v09")
+            (site / "data/v09").mkdir(parents=True)
+            shutil.copy(T.OUT, site / "data/v09/territory_v0_1.json")
+            srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Quiet, directory=str(site)))
+            threading.Thread(target=srv.serve_forever, daemon=True).start()
+            origin = f"http://127.0.0.1:{srv.server_port}/"
+            cors = {"Access-Control-Allow-Origin": "*"}
+
+            def router(tamper_css=False):
+                def route(r):
+                    u = r.request.url
+                    if u == origin + "v09/peru.html":
+                        return r.fulfill(status=200, content_type="text/html; charset=utf-8", body=html)
+                    if u.startswith(origin):
+                        return r.continue_()
+                    if u.startswith("https://unpkg.com/leaflet@1.9.4/dist/"):
+                        name = u.rsplit("/dist/", 1)[1]
+                        if tamper_css and name == "leaflet.css":
+                            body = (Path(leaf) / name).read_bytes() if leaf else r.fetch().body()
+                            return r.fulfill(status=200, content_type="text/css", headers=cors, body=body + b"\n/* altered */")
+                        if leaf:
+                            return r.fulfill(status=200, headers=cors, path=str(Path(leaf) / name))
+                        return r.continue_()  # the real CDN: the browser checks the SRI itself
+                    m = re.match(r"https://tile\.openstreetmap\.org/(\d+)/(\d+)/(\d+)\.png$", u)
+                    if m:
+                        return r.fulfill(status=200, content_type="image/png", headers=cors, body=png_tile(*map(int, m.groups())))
+                    return r.abort()
+                return route
+
+            try:
+                with sync_playwright() as p:
+                    b = p.chromium.launch(args=["--no-proxy-server"])
+                    for name, vp in (("desktop", dict(width=1440, height=900)), ("mobile", dict(width=390, height=844))):
+                        ctx = b.new_context(viewport=vp)
+                        ctx.route("**/*", router())
+                        page = ctx.new_page()
+                        errors = []
+                        page.on("pageerror", lambda e: errors.append(str(e)))
+                        page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+                        page.goto(origin + "v09/peru.html")
+                        if not page.evaluate("typeof L !== 'undefined'"):
+                            self.skipTest("Leaflet 1.9.4 not reachable (set IRFEN_LEAFLET_DIR to a local build)")
+                        page.wait_for_function("document.querySelectorAll('#map .leaflet-overlay-pane path').length > 0", timeout=20000)
+                        page.locator("#map").scroll_into_view_if_needed()
+
+                        def check(step):
+                            page.wait_for_function(settle, timeout=15000)
+                            page.wait_for_timeout(350)  # zoom/pan animations end
+                            # tiles of the new level keep arriving for a moment: wait (bounded) for a complete view
+                            page.wait_for_function(f"(({geom})()).uncovered === 0", timeout=8000)
+                            g = page.evaluate(geom)
+                            where = f"{name}/{step}"
+                            self.assertEqual(g["css"], "ok", where)
+                            self.assertEqual(g["pane"], "absolute", where)
+                            self.assertEqual(g["sizes"], ["256x256"], (where, g))
+                            self.assertEqual(g["overlap"], 0, (where, g))
+                            self.assertEqual(g["off_grid"], 0, (where, g))
+                            self.assertEqual(g["uncovered"], 0, (where, g))  # a continuous map, no holes
+                            self.assertEqual(g["leaked"], 0, (where, g))     # nothing visible outside the map
+                            self.assertEqual(g["overflow"], "hidden", where)
+                            return g
+
+                        start = check("load")
+                        box = page.locator("#map").bounding_box()
+                        cx, cy = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+                        page.mouse.move(cx, cy)
+                        page.mouse.down()
+                        page.mouse.move(cx - 137, cy - 91, steps=8)
+                        page.mouse.up()
+                        check("drag")
+                        page.click("#map .leaflet-control-zoom-in")
+                        self.assertEqual(check("zoom-in")["zoom"], start["zoom"] + 1, name)
+                        page.click("#map .leaflet-control-zoom-out")
+                        check("zoom-out")
+                        for button in ("north", "rimac", "all"):
+                            page.click(f"#{button}")
+                            check(button)
+                        before = page.evaluate("document.querySelectorAll('#map .leaflet-overlay-pane path').length")
+                        boxes = page.locator("#layerToggles input[type=checkbox]")
+                        self.assertGreaterEqual(boxes.count(), 6, name)
+                        for i in range(boxes.count()):
+                            boxes.nth(i).uncheck()
+                        self.assertEqual(page.evaluate("document.querySelectorAll('#map .leaflet-overlay-pane path').length"), 0, name)
+                        for i in range(boxes.count()):
+                            boxes.nth(i).check()
+                        self.assertEqual(page.evaluate("document.querySelectorAll('#map .leaflet-overlay-pane path').length"), before, name)
+                        check("layers")
+                        self.assertEqual(errors, [], name)
+                        ctx.close()
+                    # negative: an altered leaflet.css fails its SRI → the page says so and nothing leaves the map box
+                    ctx = b.new_context(viewport=dict(width=1440, height=900))
+                    ctx.route("**/*", router(tamper_css=True))
+                    page = ctx.new_page()
+                    page.goto(origin + "v09/peru.html")
+                    page.wait_for_function("document.getElementById('map').dataset.leafletCss", timeout=15000)
+                    page.wait_for_timeout(1200)
+                    g = page.evaluate(geom)
+                    self.assertEqual(g["css"], "missing")
+                    self.assertNotEqual(g["pane"], "absolute")
+                    self.assertEqual(g["leaked"], 0, g)
+                    self.assertIn("hoja de estilos de Leaflet", page.inner_text("#message"))
+                    ctx.close()
                     b.close()
             finally:
                 srv.shutdown()

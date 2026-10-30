@@ -1,17 +1,12 @@
 <!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
 <title>IRFEN v0.9 · Perú completo (investigación)</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzx6GvMMJVqRaLkOFWKK8+9+50=" crossorigin="">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <style>
-body{font-family:system-ui,Arial,sans-serif;margin:0;background:#f3f6f9;color:#1e3446}header{padding:12px 18px;background:#fff;border-bottom:1px solid #d7e1ea}h1{font-size:19px;margin:0 0 6px}header p{font-size:12px;margin:5px 0}a{color:#225985}.warning{background:#fff4d7;color:#704d10;padding:9px 18px;font-size:12px;border-bottom:1px solid #ebd49b}.layout{display:grid;grid-template-columns:285px minmax(0,1fr);gap:12px;padding:12px}.panel{background:white;border:1px solid #d7e1e9;border-radius:8px;padding:14px}.panel h2{font-size:15px;margin:0 0 10px}#map{height:calc(100vh - 195px);min-height:480px;border-radius:8px;background:#cbdde9}label{display:block;font-size:12px;margin:8px 0;line-height:1.4}.count{font-size:13px;color:#286184;font-weight:700}.note{font-size:12px;color:#495b6d;line-height:1.55}.buttons{display:flex;gap:6px;flex-wrap:wrap}.buttons button{font-size:12px;padding:8px;border:1px solid #a8bbc9;border-radius:6px;cursor:pointer;background:#f4f8fa}.buttons button:focus-visible{outline:2px solid #3676a5}.hint{background:#eef5fa;padding:10px;border-radius:6px}/* App-wide CSS resets must not override Leaflet tile and control positioning. */
-#map .leaflet-pane,
-#map .leaflet-tile,
-#map .leaflet-marker-icon,
-#map .leaflet-marker-shadow,
-#map .leaflet-tile-container,
-#map .leaflet-zoom-animated{max-width:none!important;max-height:none!important}
-#map .leaflet-tile{box-sizing:content-box!important}
-#map .leaflet-container img{max-width:none!important}
+body{font-family:system-ui,Arial,sans-serif;margin:0;background:#f3f6f9;color:#1e3446}header{padding:12px 18px;background:#fff;border-bottom:1px solid #d7e1ea}h1{font-size:19px;margin:0 0 6px}header p{font-size:12px;margin:5px 0}a{color:#225985}.warning{background:#fff4d7;color:#704d10;padding:9px 18px;font-size:12px;border-bottom:1px solid #ebd49b}.layout{display:grid;grid-template-columns:285px minmax(0,1fr);gap:12px;padding:12px}.panel{background:white;border:1px solid #d7e1e9;border-radius:8px;padding:14px}.panel h2{font-size:15px;margin:0 0 10px}#map{height:calc(100vh - 195px);min-height:480px;border-radius:8px;background:#cbdde9}label{display:block;font-size:12px;margin:8px 0;line-height:1.4}.count{font-size:13px;color:#286184;font-weight:700}.note{font-size:12px;color:#495b6d;line-height:1.55}.buttons{display:flex;gap:6px;flex-wrap:wrap}.buttons button{font-size:12px;padding:8px;border:1px solid #a8bbc9;border-radius:6px;cursor:pointer;background:#f4f8fa}.buttons button:focus-visible{outline:2px solid #3676a5}.hint{background:#eef5fa;padding:10px;border-radius:6px}
+/* Leaflet positions panes and tiles with leaflet.css (loaded with SRI above). If that stylesheet is ever blocked
+   (wrong integrity hash, network, CSP), tiles fall back to static layout: keep them inside the map box and say why. */
+#map{position:relative;overflow:hidden}
 .leaflet-popup-content{font-size:12px;line-height:1.5}footer{font-size:11px;padding:8px 18px;color:#456}#message{font-size:12px;color:#894f17;margin-top:8px}@media(max-width:800px){.layout{display:flex;flex-direction:column}#map{height:60vh;min-height:370px}}
 </style>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -36,6 +31,13 @@ const colors={cuencas:"#2468ac",areas_colectoras:"#9559ae",cauces:"#008d9f",desc
 const safe=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 if(!window.L){$("message").textContent="No se pudo cargar el mapa base. Comprueba si tu red permite Leaflet.";return;}
 const map=L.map("map",{zoomControl:true,scrollWheelZoom:true}).setView([-9.2,-75.1],5);
+// leaflet.css must be applied (panes absolutely positioned); otherwise the tiles would stack in normal flow.
+let notice="";
+if(getComputedStyle(map.getPane("tilePane")).position!=="absolute"){
+  $("map").dataset.leafletCss="missing";
+  notice="No se pudo aplicar la hoja de estilos de Leaflet (integridad, red o política de seguridad): el mapa base no se muestra correctamente. No es un problema de los datos. ";
+  $("message").textContent=notice;
+}else{$("map").dataset.leafletCss="ok";}
 L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:17,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'}).addTo(map);
 const box={peru:[[-18.5,-81.7],[-0.02,-68.6]],north:[[-9.5,-82.5],[-2.0,-76.0]],rimac:[[-12.6,-77.7],[-10.8,-75.7]]};
 const go=k=>map.fitBounds(box[k],{padding:[22,22]});
@@ -64,8 +66,8 @@ try{
  }
  $("layerToggles").firstChild?.nodeType===3 && $("layerToggles").removeChild($("layerToggles").firstChild);
  $("count").textContent=features.length+" geometrías en el catálogo · "+Object.values(layers).reduce((n,l)=>n+l.getLayers().length,0)+" visibles de forma predeterminada";
- $("message").textContent="Paquete de "+(d.built_at_utc||"fecha no declarada")+". No implica cobertura nacional.";
-}catch(e){$("message").textContent="No se pudieron mostrar las geometrías IRFEN ("+String(e.message)+"). El mapa base no sustituye los datos ausentes.";}
+ $("message").textContent=notice+"Paquete de "+(d.built_at_utc||"fecha no declarada")+". No implica cobertura nacional.";
+}catch(e){$("message").textContent=notice+"No se pudieron mostrar las geometrías IRFEN ("+String(e.message)+"). El mapa base no sustituye los datos ausentes.";}
 go("peru");
 })();
 </script></body></html>
