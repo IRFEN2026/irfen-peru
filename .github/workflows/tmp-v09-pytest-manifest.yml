@@ -20,7 +20,7 @@ jobs:
       - run: |
           pip install -q -r requirements.txt
           pip install -q -r requirements-ci-test.txt
-      - run: sudo apt-get install -y -q tesseract-ocr >/dev/null && python scripts/v09_ana2017_visual_review.py --check
+      - run: sudo apt-get install -y -q tesseract-ocr >/dev/null && pip install -q opencv-python-headless && python scripts/v09_ana2017_visual_review.py --check
       - run: python scripts/verify_phase2_test_collection.py --write-manifest
       - run: python -m pytest tests/test_v09_ana2017_coastal_points.py tests/test_v09_territory.py -q -rs --junitxml=j.xml || { python scripts/report_pytest_junit_annotations.py j.xml; exit 1; }
       - name: Commit the regenerated manifest (real collection on the pinned runner)
