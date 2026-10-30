@@ -29,6 +29,21 @@ def main() -> int:
         print(f"::error title=ANA2017_SHA::downloaded {digest} != recorded {record['sha256']}")
         return 1
     reader = PdfReader(io.BytesIO(data))
+    import subprocess
+    import tempfile
+    pdf = Path(tempfile.mkdtemp()) / "ana2017.pdf"
+    pdf.write_bytes(data)
+    out_r = SRC / "table_pages_300dpi"
+    out_r.mkdir(parents=True, exist_ok=True)
+    rendered = []
+    for page_no, (cuadro, dept) in TABLES.items():
+        stem = out_r / f"p{page_no:02d}_cuadro{cuadro}_{dept.lower().replace(' ', '_')}"
+        subprocess.run(["pdftoppm", "-r", "300", "-gray", "-png", "-singlefile", "-f", str(page_no), "-l", str(page_no), str(pdf), str(stem)], check=True)
+        png = stem.with_suffix(".png")
+        rendered.append(dict(file=png.name, pdf_page=page_no, cuadro=cuadro, department=dept, dpi=300, renderer="poppler pdftoppm -gray",
+                             bytes=png.stat().st_size, sha256=hashlib.sha256(png.read_bytes()).hexdigest()))
+    (SRC / "table_pages_index.json").write_text(json.dumps(dict(pdf_sha256=digest, pages=rendered), ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    print(f"::notice title=ANA2017_RENDER::{[(r['file'], r['bytes']) for r in rendered]}")
     out = SRC / "table_images"
     out.mkdir(parents=True, exist_ok=True)
     index = []
