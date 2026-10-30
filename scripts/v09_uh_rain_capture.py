@@ -116,7 +116,7 @@ def direct_read(path: str, units_geo: list, codes: tuple) -> dict:
         shape = list(p.shape)
         out = dict(dataset_shape=shape, dims_attr=attrs.get("DimensionNames"), units=attrs.get("units"),
                    fill_value=attrs.get("_FillValue"), time_units=time_units, time_value=tval,
-                   time_utc=(datetime(1970, 1, 1, tzinfo=timezone.utc) + timedelta(seconds=tval)).isoformat(),
+                   time_utc=epoch_from_units(time_units, tval),
                    lat_first=float(lat[0]), lat_step=float(lat[1] - lat[0]), lon_first=float(lon[0]), lon_step=float(lon[1] - lon[0]),
                    units_cells={})
         for feat in units_geo:
@@ -137,6 +137,14 @@ def bbox(geom) -> list[float]:
     xs = [pt[0] for p in polys for pt in p[0]]
     ys = [pt[1] for p in polys for pt in p[0]]
     return [min(xs), min(ys), max(xs), max(ys)]
+
+
+def epoch_from_units(units: str, value: int) -> str | None:
+    """IMERG V07 declares «seconds since 1980-01-06 00:00:00 UTC» (GPS epoch): use the epoch the file declares."""
+    m = re.match(r"seconds since (\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})", units or "")
+    if not m:
+        return None
+    return (datetime.fromisoformat(f"{m.group(1)}T{m.group(2)}+00:00") + timedelta(seconds=int(value))).isoformat()
 
 
 def sha256_file(path: str) -> str:

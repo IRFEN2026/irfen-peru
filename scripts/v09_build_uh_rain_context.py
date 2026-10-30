@@ -118,6 +118,20 @@ def window(slots: dict, absent: dict, catalog_known: set, end: datetime, hours: 
                 missing=missing[:12], missing_count=len(missing))
 
 
+def blocks(slots: dict, first: datetime, end: datetime, hours: int) -> list[dict]:
+    """Consecutive blocks of `hours` ending at `end` (series for timing, e.g. rain upstream before a flood). A block
+    with any missing half-hour has accumulation null."""
+    out, t = [], end
+    while t - HALF_H * hours * 2 >= first:
+        starts = [t - HALF_H * (k + 1) for k in range(hours * 2)]
+        vals = [slots[s]["depth_mm"] for s in starts if s in slots and slots[s]["depth_mm"] is not None]
+        out.append(dict(start_utc=iso(t - HALF_H * hours * 2), end_utc=iso(t),
+                        accumulation_mm=round(sum(vals), 2) if len(vals) == hours * 2 else None,
+                        availability_pct=round(100 * len(vals) / (hours * 2), 1)))
+        t -= HALF_H * hours * 2
+    return out[::-1]
+
+
 def latest_complete(slots: dict, end: datetime, first: datetime, hours: int) -> dict | None:
     t = end
     while t - HALF_H * hours * 2 >= first:
@@ -198,6 +212,16 @@ def avisos_for(shares: dict, registry: dict, as_of: datetime, span_start: dateti
 
 
 # ---------------------------------------------------------------- validation
+def time_from_units(units: str, value: int) -> datetime | None:
+    """CF-style «seconds since YYYY-MM-DD HH:MM:SS UTC». IMERG V07 declares the GPS epoch 1980-01-06 and counts UTC
+    seconds (no leap-second offset is applied here; a mismatch would show up against the file name)."""
+    m = re.match(r"seconds since (\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})", units or "")
+    if not m:
+        return None
+    epoch = datetime.fromisoformat(f"{m.group(1)}T{m.group(2)}+00:00")
+    return epoch + timedelta(seconds=int(value))
+
+
 def validate(half: dict, sample: dict, units: dict) -> dict:
     # fraction of each 0.1° cell inside each unit (10×10 sub-sampling, pure Python; uh_units_v0_1.json)
     fractions = {u["code"]: {(round(c["lon_center"], 2), round(c["lat_center"], 2)): c["fraction_inside"] for c in u["imerg"]["cells"]}
@@ -210,11 +234,18 @@ def validate(half: dict, sample: dict, units: dict) -> dict:
         if not d or not g:
             checks.append(dict(granule=s["granule"], ok=False, error=s.get("error", "sin lectura directa")))
             continue
-        c = dict(granule=s["granule"],
-                 time_matches_filename=d["time_utc"] == g["start_utc"],
+        internal = time_from_units(d["time_units"], d["time_value"])
+        c = dict(granule=s["granule"], time_units=d["time_units"], time_value=d["time_value"],
+                 time_internal_utc=iso(internal) if internal else None,
+                 time_matches_filename=internal is not None and iso(internal) == g["start_utc"],
+                 capture_time_interpretation_note=("La captura interpretó el valor con época 1970 (error del script de "
+                                                   "captura, sin efecto en las medias); aquí se usa la época declarada en las unidades")
+                 if d.get("time_utc") and internal and d["time_utc"] != iso(internal) else None,
                  units=d["units"], units_ok=str(d["units"]).lower() in ("mm/hr", "mm h-1", "mm/hour"),
                  grid_ok=(abs(d["lat_first"] + 89.95) < 1e-4 and abs(d["lon_first"] + 179.95) < 1e-4
-                          and abs(d["lat_step"] - 0.1) < 1e-6 and abs(d["lon_step"] - 0.1) < 1e-6),
+                          and abs(d["lat_step"] - 0.1) < 1e-4 and abs(d["lon_step"] - 0.1) < 1e-4),
+                 grid=dict(lat_first=d["lat_first"], lon_first=d["lon_first"], lat_step=d["lat_step"], lon_step=d["lon_step"],
+                           note="coordenadas de centro de celda en float32 (−89,95 / −179,95, paso 0,1°)"),
                  dims=d.get("dims_attr"), fill_value=d.get("fill_value"), units_means={})
         for code, cells in d["units_cells"].items():
             sw = sv = 0.0
@@ -238,12 +269,25 @@ def validate(half: dict, sample: dict, units: dict) -> dict:
     control = [abs(v["rate_mm_hr"] - v["control_rate_mm_hr"]) for g in half["granules"] for v in g["units_values"].values()
                if v["rate_mm_hr"] is not None and v["control_rate_mm_hr"] is not None]
     lengths = {(ts(g["end_utc"]) - ts(g["start_utc"])).total_seconds() for g in half["granules"]}
+    rel = sorted(abs(v["rate_mm_hr"] - v["control_rate_mm_hr"]) / max(v["rate_mm_hr"], v["control_rate_mm_hr"])
+                 for g in half["granules"] for v in g["units_values"].values()
+                 if v["rate_mm_hr"] is not None and v["control_rate_mm_hr"] is not None and max(v["rate_mm_hr"], v["control_rate_mm_hr"]) > 0.1)
+    worst_unit = {}
+    for g in half["granules"]:
+        for code, v in g["units_values"].items():
+            if v["rate_mm_hr"] is not None and v["control_rate_mm_hr"] is not None:
+                worst_unit[code] = max(worst_unit.get(code, 0.0), abs(v["rate_mm_hr"] - v["control_rate_mm_hr"]))
     return dict(direct_granule_checks=checks,
                 duplicate_starts_in_series=len(starts) - len(set(starts)),
                 duplicates_dropped_from_catalog=half["catalog"]["duplicates"],
                 interval_lengths_s=sorted(lengths),
                 units_seen=sorted({g["units"] for g in half["granules"]}),
                 primary_vs_control=dict(n=len(control), max_abs_diff_mm_hr=round(max(control), 5) if control else None,
+                                        relative_diff_when_rate_gt_0_1=dict(
+                                            n=len(rel), median=round(rel[len(rel) // 2], 4) if rel else None,
+                                            p95=round(rel[int(0.95 * len(rel))], 4) if rel else None,
+                                            max=round(rel[-1], 4) if rel else None),
+                                        max_abs_diff_by_unit_mm_hr={k: round(v, 4) for k, v in sorted(worst_unit.items())},
                                         note="Muestreador existente (área celda∩polígono en grados²) frente a control "
                                              "(10×10 sub-puntos, cos(lat)); mide el efecto de celdas parciales y de la ponderación"))
 
@@ -321,6 +365,7 @@ def build() -> dict:
             headwaters_outside_peru=u["international_boundary"]["headwaters_outside_peru"],
             international_note=u["international_boundary"]["note"],
             observation=dict(windows=wins, latest_complete_windows=[x for x in latest if x],
+                             blocks_6h=blocks(slots, span_start, as_of, 6) if as_of else [],
                              note="IMERG Early (estimación satelital casi en tiempo real); no es medición de pluviómetro"),
             territorial_inference=dict(relation=u["settlements"]["relation"], settlements=u["settlements"]["count"],
                                        near_uh_boundary=u["settlements"]["near_uh_boundary"],
