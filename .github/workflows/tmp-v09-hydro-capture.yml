@@ -7,17 +7,32 @@ permissions:
   contents: write
 jobs:
   capture:
-    runs-on: ubuntu-latest
-    timeout-minutes: 40
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with: {python-version: "3.12"}
-      - run: python scripts/v09_hydro_units_capture.py
-      - name: Commit the source snapshot to this branch
+      - name: ANA hydrographic units (IDEP layer 8, Pacific)
+        timeout-minutes: 15
+        continue-on-error: true
+        run: python scripts/v09_hydro_units_capture.py --stage uh
+      - name: ANA rivers and quebradas (SNIRH), Tumbes and Piura
+        timeout-minutes: 15
+        continue-on-error: true
+        run: python scripts/v09_hydro_units_capture.py --stage rq
+      - name: IGN streams (IDEP), Tumbes and Piura
+        timeout-minutes: 12
+        continue-on-error: true
+        run: python scripts/v09_hydro_units_capture.py --stage ign
+      - name: Commit whatever was captured (with its request log)
+        if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/v09/sources/ana_hydrographic_units
+          git add data/v09/sources/ana_hydrographic_units || true
+          git diff --cached --quiet && { echo "::warning::nothing captured"; exit 0; }
+          n=$(ls data/v09/sources/ana_hydrographic_units | wc -l)
+          echo "::notice title=captured_files::$n $(du -sh data/v09/sources/ana_hydrographic_units | cut -f1)"
           git commit -q -m "Source snapshot: ANA hydrographic units (Pacific), ANA rivers/quebradas and IGN streams for Tumbes and Piura"
           git push -q origin HEAD:research/v09-hydro-units-ana-20261030

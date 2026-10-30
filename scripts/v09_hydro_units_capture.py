@@ -33,12 +33,20 @@ IGN = "https://www.idep.gob.pe/geoportal/rest/services/DATOS_ESPACIALES/TEMA_BAS
 UA = {"User-Agent": "Mozilla/5.0 (IRFEN research TEST_ONLY; bounded official-source capture)"}
 FUNCTIONAL = ("TUMBES", "PIURA")
 LOG: list[dict] = []
+STAGE = {"name": "unknown"}
 
 
-def get(url: str, params: dict | None = None, name: str | None = None, timeout: int = 180) -> bytes | None:
+def checkpoint() -> None:
+    """Request log written after every request, so a step timeout still leaves an auditable record."""
+    OUT.mkdir(parents=True, exist_ok=True)
+    (OUT / f"requests_{STAGE['name']}.json").write_text(json.dumps(LOG, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+
+
+def get(url: str, params: dict | None = None, name: str | None = None, timeout: int = 75) -> bytes | None:
     full = f"{url}?{urlencode(params)}" if params else url
     last = ""
-    for attempt in range(3):
+    for attempt in range(2):
+        t0 = time.time()
         try:
             with urlopen(Request(full, headers=UA), timeout=timeout) as r:
                 raw = r.read()
@@ -50,9 +58,13 @@ def get(url: str, params: dict | None = None, name: str | None = None, timeout: 
                 path.write_bytes(gzip.compress(raw, mtime=0))
                 rec["file"] = path.name
             LOG.append(rec)
+            rec["seconds"] = round(time.time() - t0, 1)
+            checkpoint()
             return raw
         except Exception as e:  # noqa: BLE001 - recorded, never hidden
             last = f"{type(e).__name__}: {e}"
+            LOG.append(dict(url=full, status="RETRY", error=last[:200], seconds=round(time.time() - t0, 1)))
+            checkpoint()
             time.sleep(5 * (attempt + 1))
     LOG.append(dict(url=full, status="UNAVAILABLE", error=last[:300]))
     print(f"::warning title=SOURCE_UNAVAILABLE::{full[:200]} {last[:200]}")
@@ -114,9 +126,25 @@ def stats(layer_url: str, where: str, group: str, extra: dict | None = None, nam
     return {str(f["attributes"].get(group)): f["attributes"].get("n") for f in doc["features"]}
 
 
-def main() -> int:
+def main(argv=None) -> int:
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--stage", choices=("uh", "rq", "ign"), required=True)
+    stage = ap.parse_args(argv).stage
+    STAGE["name"] = stage
     OUT.mkdir(parents=True, exist_ok=True)
     summary: dict = {}
+    boxes = dept_bboxes()
+    if stage == "uh":
+        stage_uh(summary)
+    elif stage == "rq":
+        stage_rq(summary, boxes)
+    else:
+        stage_ign(summary, boxes)
+    return finish(stage, summary, boxes)
+
+
+def stage_uh(summary: dict) -> None:
     # 1 · unidades hidrográficas ANA (IDEP)
     get(f"{UH}", dict(f="pjson"), name="uh_service_metadata.json")
     for layer in (7, 8):
@@ -131,6 +159,9 @@ def main() -> int:
         summary.setdefault(f"uh_layer{layer}", {})["count_all"] = (cnt or {}).get("count")
     summary["uh_layer8_pacific"] = fetch_by_ids(f"{UH}/8", "NIVEL1='1'", {}, "uh_layer8_pacific")
     summary["uh_layer7_pacific_count"] = (js(get(f"{UH}/7/query", dict(where="NIVEL1='1'", returnCountOnly="true", f="json"))) or {}).get("count")
+
+
+def stage_rq(summary: dict, boxes: dict) -> None:
     # 2 · ríos y quebradas ANA (SNIRH)
     get(f"{RQ}", dict(f="pjson"), name="rq_service_metadata.json")
     m = js(get(f"{RQ}/0", dict(f="pjson"), name="rq_layer0_metadata.json"))
@@ -143,13 +174,15 @@ def main() -> int:
     summary["rq_by_tipo"] = stats(f"{RQ}/0", "1=1", "TIPO_CA", name="rq_stats_by_tipo.json")
     summary["rq_by_categoria"] = stats(f"{RQ}/0", "1=1", "CATEGORIA", name="rq_stats_by_categoria.json")
     summary["rq_by_uh_pacific"] = stats(f"{RQ}/0", "CODIGO_UH LIKE '13%'", "NOMBRE_UH", name="rq_stats_by_uh_pacific.json")
-    boxes = dept_bboxes()
     for dep in FUNCTIONAL:
         b = boxes[dep]
-        summary[f"rq_{dep.lower()}"] = fetch_by_ids(f"{RQ}/0", "1=1", envelope(b), f"rq_{dep.lower()}", batch=200)
+        summary[f"rq_{dep.lower()}"] = fetch_by_ids(f"{RQ}/0", "1=1", envelope(b), f"rq_{dep.lower()}", batch=100)
         named = js(get(f"{RQ}/0/query", dict(where="NOMBRE_CA IS NOT NULL AND NOMBRE_CA <> ''", returnCountOnly="true",
                                              f="json", **envelope(b))))
         summary[f"rq_{dep.lower()}"]["named"] = (named or {}).get("count")
+
+
+def stage_ign(summary: dict, boxes: dict) -> None:
     # 3 · corriente de agua IGN (IDEP)
     m = js(get(f"{IGN}/5", dict(f="pjson"), name="ign_layer5_metadata.json"))
     if m:
@@ -161,15 +194,18 @@ def main() -> int:
         n = js(get(f"{IGN}/5/query", dict(where="NOMBRE IS NOT NULL AND NOMBRE <> ''", returnCountOnly="true", f="json", **envelope(b))))
         summary[f"ign_{dep.lower()}"] = dict(count=(c or {}).get("count"), named=(n or {}).get("count"))
         summary[f"ign_{dep.lower()}"].update(fetch_by_ids(f"{IGN}/5", "NOMBRE IS NOT NULL AND NOMBRE <> ''", envelope(b),
-                                                          f"ign_{dep.lower()}_named", batch=200))
-    prov = dict(purpose="Official hydrographic units and channel lines for associating documentary territorial evidence; "
+                                                          f"ign_{dep.lower()}_named", batch=100))
+
+
+def finish(stage: str, summary: dict, boxes: dict) -> int:
+    prov = dict(stage=stage, purpose="Official hydrographic units and channel lines for associating documentary territorial evidence; "
                         "RESEARCH_ONLY / TEST_ONLY; not used by rain, priority or map.",
                 obtained_at_utc=datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
                 department_bboxes={d: boxes[d] for d in FUNCTIONAL}, summary=summary, requests=LOG)
-    (OUT / "provenance.json").write_text(json.dumps(prov, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    (OUT / f"provenance_{stage}.json").write_text(json.dumps(prov, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     for k, v in summary.items():
         print(f"::notice title={k}::{json.dumps(v, ensure_ascii=False)[:1800]}")
-    unavailable = [r["url"][:120] for r in LOG if r["status"] != "OK"]
+    unavailable = [r["url"][:120] for r in LOG if r["status"] == "UNAVAILABLE"]
     print(f"::notice title=requests::ok={sum(r['status'] == 'OK' for r in LOG)} unavailable={len(unavailable)} {unavailable[:5]}")
     return 0
 
