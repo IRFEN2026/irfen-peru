@@ -61,6 +61,16 @@ class PechpExtraction(unittest.TestCase):
         self.assertEqual(m["tables"]["rivers"]["statistic"], "CAUDAL_MEDIO_DIARIO")
         self.assertNotIn("PUENTE_SANCHEZ_CERRO", {x["station"] for x in m["instantaneous"]})  # not published for Piura
 
+    def test_source_inconsistencies_are_recorded_not_corrected(self):
+        m = next(x for x in PX["months"] if x["month"] == "2017-04")
+        period = [n for n in m["notes"] if n["kind"] == "VOLUMEN_DE_PERIODO_SANCHEZ_CERRO_DECLARADO"]
+        self.assertEqual(period[0]["mmc"], 5489.3)
+        self.assertIn("2016", period[0]["source_inconsistency"])  # the April 2017 report labels the period «2016»
+        self.assertGreater(m["checks"]["el_papayo_two_tables"]["days_different"], 0)
+
+    def test_visual_check_image_is_archived(self):
+        self.assertTrue((X.SRC / "visual_check_2017-03_p6_days23-31.png").is_file())
+
     def test_image_only_tables_are_declared_not_guessed(self):
         m = next(x for x in PX["months"] if x["month"] == "2017-02")
         self.assertIn("TABLA_EN_IMAGEN", m["tables"]["rivers"]["status"])

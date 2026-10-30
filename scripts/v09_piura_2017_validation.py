@@ -185,6 +185,25 @@ def lagged(x: dict, y: dict, lags, days: list[str], exclude: set[str] = frozense
     return out
 
 
+def differences(series: dict) -> dict:
+    """Day-to-day change (removes the shared seasonal trend that inflates correlations of autocorrelated series)."""
+    out = {}
+    for d, v in series.items():
+        prev = series.get((date.fromisoformat(d) - timedelta(days=1)).isoformat())
+        if v is not None and prev is not None:
+            out[d] = v - prev
+    return out
+
+
+def lagged_plain(x: dict, y: dict, lags, days: list[str]) -> list[dict]:
+    out = []
+    for L in lags:
+        pairs = [(x[d], y[(date.fromisoformat(d) + timedelta(days=L)).isoformat()]) for d in days
+                 if x.get(d) is not None and y.get((date.fromisoformat(d) + timedelta(days=L)).isoformat()) is not None]
+        out.append(dict(lag_days=L, n=len(pairs), spearman=spearman([a for a, _ in pairs], [b for _, b in pairs])))
+    return out
+
+
 def best(curve: list[dict], key="spearman") -> dict | None:
     c = [r for r in curve if r[key] is not None]
     return max(c, key=lambda r: r[key]) if c else None
@@ -224,14 +243,14 @@ def build() -> dict:
     flow = flow_series(pechp)
     seasons = {}
     for year, role in ((2017, "EPISODIO"), (2018, "CONTROL"), (2016, "CONTROL")):
-        days = [d for d in rain if d.startswith(f"{year}-03")]
+        days = [d for d in rain if f"{year}-01-01" <= d <= f"{year}-04-30"]
         stations = {s: {d: v for d, v in flow.get(s, {}).items() if d.startswith(f"{year}-")} for s in PIURA_STATIONS}
         stations = {s: q for s, q in stations.items() if q}
         if not stations:
             seasons[str(year)] = dict(role=role, status="SIN_CAUDALES_DIARIOS_EXTRAIDOS",
                                       rain_days=len(days), note="El informe del mes no trae la tabla diaria como texto, o no se ha archivado")
             continue
-        res = dict(role=role, status="OK", window=f"{year}-03-01..{year}-03-31 (días con caudal y lluvia)", stations={})
+        res = dict(role=role, status="OK", window=f"{year}-01-01..{year}-04-30 (solo los días con caudal y lluvia)", stations={})
         for st, q in stations.items():
             qd = [d for d in sorted(q) if q[d] is not None]
             peak = max(qd, key=lambda d: q[d]) if qd else None
@@ -243,6 +262,7 @@ def build() -> dict:
                 st_res["acc_vs_q_best_for_reading_only"] = {k: best(v) for k, v in st_res["acc_vs_q"].items()}
                 excl = {(date.fromisoformat(peak) + timedelta(days=i)).isoformat() for i in range(-3, 4)}
                 st_res["p_vs_q_excluding_peak_pm3d"] = lagged(p, q, LAGS_P_Q, days, exclude=excl)
+                st_res["dp_vs_dq_first_differences"] = lagged_plain(differences(p), differences(q), LAGS_P_Q, days)
                 st_res["peak_chronology"] = {f"A{k}": dict(max_day=max((d for d in days if acc[k].get(d) is not None),
                                                                           key=lambda d: acc[k][d], default=None))
                                              for k in K_DAYS}
@@ -321,6 +341,8 @@ def main(argv=None) -> int:
             b = best(r["p_vs_q"]) if r.get("p_vs_q") else None
             print("  ", st, r["n_days"], r["max_daily_mean_m3s"], r["max_day"], "best P→Q", b,
                   {k: (v["lag_days"], v["spearman"]) for k, v in (r.get("acc_vs_q_best_for_reading_only") or {}).items() if v})
+            if r.get("dp_vs_dq_first_differences"):
+                print("      diffs:", [(c["lag_days"], c["spearman"]) for c in r["dp_vs_dq_first_differences"][:4]])
             if r.get("p_vs_q_excluding_peak_pm3d"):
                 print("      excl. peak:", [(c["lag_days"], c["spearman"]) for c in r["p_vs_q_excluding_peak_pm3d"][:4]])
         print("  canals", s.get("operated_canals_context"))

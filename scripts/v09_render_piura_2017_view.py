@@ -21,59 +21,59 @@ def _panel(doc: dict, year: int) -> str:
     days = _days(f"{year}-02-15", f"{year}-04-05")
     rain = doc["rain"]["series"]
     flow = doc["flow"]["stations"]
-    W, H1, H2, L, R = 760, 120, 200, 56, 12
+    W, H1, H2, L, R, T = 760, 130, 200, 56, 12, 22
     n = len(days)
     bw = (W - L - R) / n
     x = lambda i: L + i * bw  # noqa: E731
     pmax = max([rain.get(d, {}).get("p_mm") or 0 for d in days] + [1])
     qmax = max([flow.get(s, {}).get(d) or 0 for s, _, _ in STATIONS for d in days] + [1])
-    out = [f'<svg viewBox="0 0 {W} {H1 + H2 + 40}" role="img" aria-label="Lluvia y caudal {year}">']
+    out = [f'<svg viewBox="0 0 {W} {H1 + H2 + 56}" role="img" aria-label="Lluvia y caudal {year}">']
     for t in (0, pmax / 2, pmax):
-        y = H1 - t / pmax * (H1 - 10)
+        y = H1 - t / pmax * (H1 - T)
         out.append(f'<line class="grid" x1="{L}" x2="{W - R}" y1="{y:.1f}" y2="{y:.1f}"/><text class="ax" x="{L - 6}" y="{y + 4:.1f}" text-anchor="end">{t:.0f}</text>')
-    out.append(f'<text class="ax" x="4" y="12">mm/día</text>')
+    out.append(f'<text class="ax" x="{L}" y="11">mm/día</text>')
     for i, d in enumerate(days):
         r = rain.get(d, {})
         v = r.get("p_mm")
         if v is None:
-            out.append(f'<rect class="unk" x="{x(i) + 1:.1f}" y="10" width="{bw - 2:.1f}" height="{H1 - 10}"><title>{d}: sin dato (no 0)</title></rect>')
+            out.append(f'<rect class="unk" x="{x(i) + 1:.1f}" y="{T}" width="{bw - 2:.1f}" height="{H1 - T}"><title>{d}: sin dato (no 0)</title></rect>')
         else:
-            h = max(0.5, v / pmax * (H1 - 10))
+            h = max(0.5, v / pmax * (H1 - T))
             out.append(f'<rect class="rain" x="{x(i) + 1:.1f}" y="{H1 - h:.1f}" width="{bw - 2:.1f}" height="{h:.1f}"><title>{d}: {v:.1f} mm (IMERG Final, UH 1378)</title></rect>')
-    y0 = H1 + 30
+    y0 = H1 + 34
     for t in (0, qmax / 2, qmax):
-        y = y0 + H2 - t / qmax * (H2 - 10)
+        y = y0 + H2 - t / qmax * (H2 - T)
         out.append(f'<line class="grid" x1="{L}" x2="{W - R}" y1="{y:.1f}" y2="{y:.1f}"/><text class="ax" x="{L - 6}" y="{y + 4:.1f}" text-anchor="end">{t:,.0f}</text>')
-    out.append(f'<text class="ax" x="4" y="{y0 - 4}">m³/s</text>')
+    out.append(f'<text class="ax" x="{L}" y="{y0 + 9}">m³/s</text>')
     for st, label, var in STATIONS:
         q = flow.get(st, {})
-        pts = [(x(i) + bw / 2, y0 + H2 - q[d] / qmax * (H2 - 10)) for i, d in enumerate(days) if q.get(d) is not None]
+        pts = [(x(i) + bw / 2, y0 + H2 - q[d] / qmax * (H2 - T)) for i, d in enumerate(days) if q.get(d) is not None]
         if pts:
             out.append(f'<polyline fill="none" stroke="var({var})" stroke-width="2" points="{" ".join(f"{a:.1f},{b:.1f}" for a, b in pts)}"/>')
             for (a, b), d in zip(pts, [d for d in days if q.get(d) is not None]):
                 out.append(f'<circle cx="{a:.1f}" cy="{b:.1f}" r="5" fill="transparent"><title>{E(label)} {d}: {q[d]:,.1f} m³/s</title></circle>')
     for i, d in enumerate(days):
         if d.endswith("-01") or d.endswith("-15"):
-            out.append(f'<text class="ax" x="{x(i):.1f}" y="{y0 + H2 + 16}">{d[5:]}</text>')
+            out.append(f'<text class="ax" x="{x(i):.1f}" y="{y0 + H2 + 18}">{d[8:]}/{d[5:7]}</text>')
     out.append("</svg>")
     legend = "".join(f'<span class="lg"><i style="background:var({v})"></i>{E(l)}</span>' for _, l, v in STATIONS)
     return "".join(out) + f'<div class="legend"><span class="lg"><i class="rainkey"></i>Lluvia diaria IMERG (UH 1378, día UTC)</span>{legend}</div>'
 
 
-def _lag_table(season: dict) -> str:
+def _lag_table(season: dict, key: str = "p_vs_q", title: str = "ρ Spearman · lluvia(d) → caudal(d+L)") -> str:
     rows = []
     for st, label, _ in STATIONS:
         r = season.get("stations", {}).get(st)
         if not r:
             rows.append(f"<tr><th>{E(label)}</th><td colspan=11>sin caudales extraídos</td></tr>")
             continue
-        if not r.get("p_vs_q"):
+        if not r.get(key):
             rows.append(f"<tr><th>{E(label)}</th><td colspan=11>{E(r.get('note', 'sin correlación definida'))}</td></tr>")
             continue
-        cells = "".join("<td>—</td>" if c["spearman"] is None else f"<td>{c['spearman']:+.2f}</td>" for c in r["p_vs_q"])
+        cells = "".join("<td>—</td>" if c["spearman"] is None else f"<td>{c['spearman']:+.2f}</td>" for c in r[key])
         rows.append(f"<tr><th>{E(label)}</th>{cells}</tr>")
     head = "".join(f"<th>{L}</th>" for L in range(0, 11))
-    return f'<table class="lag"><thead><tr><th>ρ Spearman · lluvia(d) → caudal(d+L)</th>{head}</tr></thead><tbody>{"".join(rows)}</tbody></table>'
+    return f'<table class="lag"><thead><tr><th>{E(title)}</th>{head}</tr></thead><tbody>{"".join(rows)}</tbody></table>'
 
 
 def render(doc: dict) -> str:
@@ -93,17 +93,19 @@ h1{{font-size:1.3rem}} h2{{font-size:1.05rem;margin-top:1.4rem}} .card{{backgrou
 svg{{width:100%;height:auto}} .grid{{stroke:var(--line);stroke-width:1}} .ax{{font-size:11px;fill:var(--mut)}} .rain{{fill:var(--rain)}}
 rect.unk{{fill:none;stroke:var(--warn);stroke-dasharray:2 2}} .legend{{display:flex;flex-wrap:wrap;gap:12px;color:var(--mut);font-size:12px}}
 .lg i{{display:inline-block;width:14px;height:3px;margin-right:6px;vertical-align:middle}} .rainkey{{background:var(--rain);height:10px!important}}
-.tw{{overflow-x:auto}} table.lag{{border-collapse:collapse;min-width:640px}} .lag th,.lag td{{border:1px solid var(--line);padding:.25rem .4rem;text-align:right}} .lag th:first-child{{text-align:left}}
-.warn{{color:var(--warn)}}
+.tw{{overflow-x:auto;max-width:100%}} table.lag{{border-collapse:collapse;min-width:640px;margin-bottom:.6rem}} h1{{overflow-wrap:anywhere}} .lag th,.lag td{{border:1px solid var(--line);padding:.25rem .4rem;text-align:right}} .lag th:first-child{{text-align:left}}
+.warn{{color:var(--warn);overflow-wrap:anywhere}}
 </style></head><body><main>
 <h1>Río Piura · lluvia IMERG y caudales observados (marzo de 2017 y control de 2018)</h1>
 <p class="card"><b>Investigación (RESEARCH_ONLY / TEST_ONLY). Sin umbrales ni capacidad predictiva.</b>
-Lluvia: IMERG Final V07 diario, media de la UH ANA {E(pol['unit'])} (día UTC). Caudal: medias diarias del Proyecto Especial
+Lluvia: IMERG Final V07 diario, media de la {E(pol['unit'])} (día UTC). Caudal: medias diarias del Proyecto Especial
 Chira-Piura (dos lectores coinciden). <span class="warn">{E(pol['flag'])}</span>: {E(' '.join(pol['reasons']))} {E(pol['consequence'])}</p>
 <h2>2017 (episodio)</h2><div class="card">{_panel(doc, 2017)}</div>
-<div class="card tw">{_lag_table(s17)}<p><small>Desfase entre estaciones (caudal → caudal):</small></p><ul>{chain}</ul></div>
+<div class="card tw">{_lag_table(s17)}{_lag_table(s17, "dp_vs_dq_first_differences", "ρ con diferencias diarias · Δlluvia(d) → Δcaudal(d+L)")}
+<p><small>Las diferencias diarias quitan la tendencia estacional común que infla las correlaciones de series autocorrelacionadas.
+L = días de desfase (lluvia antes del caudal).</small></p><p><small>Desfase entre estaciones (caudal → caudal):</small></p><ul>{chain}</ul></div>
 <h2>2018 (control)</h2><div class="card">{_panel(doc, 2018)}</div>
-<div class="card tw">{_lag_table(s18)}</div>
+<div class="card tw">{_lag_table(s18)}{_lag_table(s18, "dp_vs_dq_first_differences", "ρ con diferencias diarias · Δlluvia(d) → Δcaudal(d+L)")}</div>
 <p><small>Fuente: data/v09/research/historical/piura_2017_validation_v0_1.json · protocolo qa/V09_FLOOD_VALIDATION_PROTOCOL_20261031.md.
 Cuadro vacío discontinuo = día sin dato (desconocido, no 0).</small></p>
 </main></body></html>

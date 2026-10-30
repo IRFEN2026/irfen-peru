@@ -146,16 +146,20 @@ def extract(month: str) -> dict:
         rec["tables"]["nacara_tambogrande"] = dict(status="TABLA_NO_ENCONTRADA_EN_TEXTO (posible TABLA_EN_IMAGEN)")
     else:
         off = lines[j].rfind("DIA")
+        units_line = lines[j + 1] if j + 1 < len(lines) else ""
+        ncols = max(2, units_line[off:].count("[M3/S]"))
+        names = ["PUENTE_NACARA", "TAMBOGRANDE"] + (["EL_PAPAYO_TABLA_MIRAFLORES"] if ncols == 3 and "PAPAYO" in
+                                                       " ".join(lines[j - 1:j + 1]).upper() else [f"COLUMNA_{k + 1}_SIN_IDENTIFICAR" for k in range(2, ncols)])
         rows = day_rows(lines, j, r"^\s*(Total|SUMA)", offset=off)
-        table, centres = assign(rows, 2)
+        rows = [r for r in rows if r[2]]  # a day row with no value at all is a gap, kept as absent
+        table, centres = assign(rows, ncols)
         if table is None:
             rec["tables"]["nacara_tambogrande"] = dict(status="COLUMNAS_NO_RESUELTAS", column_edges=centres)
         else:
             days = {}
             for day, _, toks in rows:
                 agree = second_reader(pyp, day, [t for _, _, t in toks])
-                days[day] = dict(values=dict(PUENTE_NACARA=table[day][0], TAMBOGRANDE=table[day][1]),
-                                 readers="DOS_LECTORES" if agree else "UN_LECTOR")
+                days[day] = dict(values=dict(zip(names, table[day])), readers="DOS_LECTORES" if agree else "UN_LECTOR")
             rec["tables"]["nacara_tambogrande"] = dict(status="OK", unit="m3/s", statistic="CAUDAL_MEDIO_DIARIO", days=days)
     # 3 · daily rain gauges
     k0 = next((k for k, ln in enumerate(lines) if re.search(r"^\s*PRECIPITACIONES \(mm\)", ln)), None)
@@ -182,8 +186,13 @@ def extract(month: str) -> dict:
                                          "instant" in flat[m.end():m.end() + 160].lower().replace("á", "a"),
                                          max_m3s=value(m.group(4).rstrip(".")), min_m3s=value(m.group(5).rstrip(".")),
                                          max_day=int(m.group(6)), min_day=int(m.group(7)), text=m.group(0)[:240]))
-    for m in re.finditer(r"Puente\s+Sanchez\s+Cerro[^.]{0,60}?([\d,.]+)\s*MMC", flat, re.I):
+    for m in re.finditer(r"Puente\s+Sanchez\s+Cerro\s*\(Piura\)\s*(?:se\s+)?acumul[oó]\s+un\s+volumen\s+de\s+([\d,.]+)\s*MMC", flat, re.I):
         rec["notes"].append(dict(kind="VOLUMEN_MENSUAL_SANCHEZ_CERRO_DECLARADO", mmc=value(m.group(1).rstrip("."))))
+    for m in re.finditer(r"([\d,.]+)\s*MMC,?\s+en\s+Puente\s+Sanchez\s+Cerro\s+para\s+el\s+periodo\s+de\s+Avenidas\s+([A-Za-z]+-[A-Za-z]+\s+\d{4})", flat, re.I):
+        rec["notes"].append(dict(kind="VOLUMEN_DE_PERIODO_SANCHEZ_CERRO_DECLARADO", mmc=value(m.group(1).rstrip(".")),
+                                 period_as_printed=m.group(2),
+                                 source_inconsistency=None if m.group(2).endswith(month[:4]) else
+                                 f"el informe de {month} rotula el periodo como «{m.group(2)}»"))
     return rec
 
 
@@ -198,6 +207,16 @@ def build() -> dict:
             if all(v is not None for v in q):
                 r["checks"] = dict(sanchez_cerro_volume_from_daily_means_mmc=round(sum(q) * 86400 / 1e6, 1),
                                    declared=[n["mmc"] for n in r["notes"] if n["kind"] == "VOLUMEN_MENSUAL_SANCHEZ_CERRO_DECLARADO"])
+    for r in out:  # two tables of the same report naming El Papayo: compare, never merge
+        rv = r["tables"].get("rivers", {}).get("days", {})
+        mt = r["tables"].get("nacara_tambogrande", {}).get("days", {})
+        pairs = [(d, rv[d]["values"].get("R_PIURA_2"), mt[d]["values"].get("EL_PAPAYO_TABLA_MIRAFLORES")) for d in mt if d in rv
+                 and mt[d]["values"].get("EL_PAPAYO_TABLA_MIRAFLORES") is not None and rv[d]["values"].get("R_PIURA_2") is not None]
+        if pairs:
+            diff = [p for p in pairs if abs(p[1] - p[2]) > 0.05]
+            r.setdefault("checks", {})["el_papayo_two_tables"] = dict(
+                days_compared=len(pairs), days_different=len(diff), examples=[dict(day=d, rivers_table=a, miraflores_table=b) for d, a, b in diff[:5]],
+                note="Dos tablas del mismo informe dan valores distintos para El Papayo: se conservan ambos; el análisis usa la tabla de ríos.")
     return dict(schema_version="irfen_v09_pechp_daily_v0_1", **GUARDS,
                 source="Proyecto Especial Chira-Piura, informes hidrometeorológicos mensuales (gob.pe), archivados con SHA-256",
                 caveats=["La convención de día de las medias diarias no está declarada en los informes.",
