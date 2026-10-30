@@ -17,15 +17,32 @@ from urllib.request import Request, urlopen
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data/v09/sources/ana2017_complementacion_quebradas"
 URL = "https://sinia.minam.gob.pe/sites/default/files/sial-sialtrujillo/archivos/public/docs/ana2017.pdf"
+# Same document registered in CENEPRED SIGRID (alt identifier «SIGRID 2799» in the master inventory); tried if SINIA fails.
+MIRRORS = [URL, "https://sigrid.cenepred.gob.pe/sigridv3/documento/2799"]
 
 
 def main() -> int:
     from pypdf import PdfReader
-    req = Request(URL, headers={"User-Agent": "IRFEN-research/0.9 (+https://github.com/IRFEN2026/irfen-peru; TEST_ONLY)"})
-    with urlopen(req, timeout=180) as r:
-        data = r.read()
-        headers = {k.lower(): v for k, v in r.headers.items() if k.lower() in ("content-type", "content-length", "last-modified", "etag", "date")}
-        final_url = r.geturl()
+    errors, data = [], None
+    for url in MIRRORS:
+        try:
+            req = Request(url, headers={"User-Agent": "Mozilla/5.0 (IRFEN research TEST_ONLY; +https://github.com/IRFEN2026/irfen-peru)"})
+            with urlopen(req, timeout=180) as r:
+                body = r.read()
+                headers = {k.lower(): v for k, v in r.headers.items() if k.lower() in ("content-type", "content-length", "last-modified", "etag", "date")}
+                final_url = r.geturl()
+            if not body.startswith(b"%PDF"):
+                errors.append(f"{url}: not a PDF ({headers.get('content-type')}, {len(body)} bytes, starts {body[:60]!r})")
+                continue
+            data = body
+            break
+        except Exception as exc:  # noqa: BLE001
+            errors.append(f"{url}: {type(exc).__name__}: {str(exc)[:200]}")
+    for e in errors:
+        print(f"::warning title=ANA2017_MIRROR::{e}")
+    if data is None:
+        print("::error title=ANA2017_FAIL::no mirror returned the PDF")
+        return 1
     reader = PdfReader(io.BytesIO(data))
     pages = []
     for i, page in enumerate(reader.pages, start=1):
