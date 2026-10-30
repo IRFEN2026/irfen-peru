@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data/v09/sources/ana2017_complementacion_quebradas"
 URL = "https://sinia.minam.gob.pe/sites/default/files/sial-sialtrujillo/archivos/public/docs/ana2017.pdf"
 # Same document registered in CENEPRED SIGRID (alt identifier «SIGRID 2799» in the master inventory); tried if SINIA fails.
-MIRRORS = [URL, "https://sigrid.cenepred.gob.pe/sigridv3/documento/2799"]
+MIRRORS = ["https://sigrid.cenepred.gob.pe/sigridv3/documento/2799", URL]
 
 
 def main() -> int:
@@ -31,6 +31,19 @@ def main() -> int:
                 body = r.read()
                 headers = {k.lower(): v for k, v in r.headers.items() if k.lower() in ("content-type", "content-length", "last-modified", "etag", "date")}
                 final_url = r.geturl()
+            if not body.startswith(b"%PDF") and b"storage/biblioteca" in body:
+                import re
+                from urllib.parse import urljoin
+                links = sorted(set(re.findall(rb'[^"\'\s>]*storage/biblioteca/[^"\'\s<>]+\.pdf', body)))
+                print(f"::notice title=ANA2017_SIGRID_LINKS::{[l.decode('utf-8', 'replace') for l in links][:5]}")
+                for link in links[:2]:
+                    target = urljoin(final_url, link.decode("utf-8", "replace"))
+                    with urlopen(Request(target, headers={"User-Agent": "Mozilla/5.0 (IRFEN research TEST_ONLY)", "Referer": url}), timeout=240) as r2:
+                        body2 = r2.read()
+                        if body2.startswith(b"%PDF"):
+                            body, final_url = body2, r2.geturl()
+                            headers = {k.lower(): v for k, v in r2.headers.items() if k.lower() in ("content-type", "content-length", "last-modified", "etag", "date")}
+                            break
             if not body.startswith(b"%PDF"):
                 errors.append(f"{url}: not a PDF ({headers.get('content-type')}, {len(body)} bytes, starts {body[:60]!r})")
                 continue
