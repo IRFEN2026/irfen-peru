@@ -212,14 +212,16 @@ def check_pages(out: list) -> None:
             root = Path(d)
             for rel in ("scripts/v09_pages_publication_gate.py", "site/v09/territorio.html", "site/v09/resumen.html", "site/v09/inventario.html",
                         "site/v09/shared_rules.js", "site/v09/index.html", "site/data/v09/territory_v0_1.json",
-                        "site/data/v09/inventory_master_v0_1.json", "site/data/v09/dashboard_v0_1.json"):
+                        "site/data/v09/inventory_master_v0_1.json", "site/data/v09/dashboard_v0_1.json",
+                        "site/v09/peru.html", "site/data/v09/ana2017_coastal_points_v0_1.json"):
                 (root / rel).parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy(ROOT / rel, root / rel)
             (root / "config").mkdir()
             (root / "config/v09_public_demo_v0_1.json").write_text(json.dumps(gate), encoding="utf-8")
             subprocess.run([sys.executable, str(root / "scripts/v09_pages_publication_gate.py")], cwd=root, capture_output=True, check=True)
             left = [rel for rel in ("site/v09/territorio.html", "site/v09/resumen.html", "site/v09/inventario.html", "site/v09/shared_rules.js",
-                                    "site/data/v09/territory_v0_1.json", "site/data/v09/inventory_master_v0_1.json") if (root / rel).exists()]
+                                    "site/data/v09/territory_v0_1.json", "site/data/v09/inventory_master_v0_1.json",
+                                    "site/v09/peru.html", "site/data/v09/ana2017_coastal_points_v0_1.json") if (root / rel).exists()]
             if left:
                 fails.append(f"{label}: {left} would be published")
     for wf in (ROOT / ".github/workflows").glob("*.yml"):

@@ -518,6 +518,22 @@ class PeruMap(unittest.TestCase):
             digest = base64.b64encode(hashlib.sha256((Path(leaf) / "leaflet.css").read_bytes()).digest()).decode()
             self.assertEqual("sha256-" + digest, LEAFLET_CSS_SRI)
 
+    def test_coastal_documentary_points_are_labelled_and_gated(self):
+        """ANA 2016-17 centros poblados (site/data/v09/ana2017_coastal_points_v0_1.json): drawn only when admitted, said not
+        to be the quebrada, linked from the inventory, and withheld by the Pages gate with the rest of the territory."""
+        self.assertIn("../data/v09/ana2017_coastal_points_v0_1.json", PERU)
+        self.assertIn('x.status==="ADMITIDA_UBICACION_DOCUMENTAL"', PERU)
+        self.assertIn("no es la quebrada", PERU)
+        self.assertIn('A.activation_gate==="BLOCKED"', PERU)
+        self.assertIn("cobertura pendiente", PERU)
+        inv = (ROOT / "site/v09/inventario.html").read_text(encoding="utf-8")
+        self.assertIn('peru.html#punto=', inv)
+        spec = importlib.util.spec_from_file_location("gate", ROOT / "scripts/v09_pages_publication_gate.py")
+        gate = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(gate)
+        for path in ("site/v09/peru.html", "site/data/v09/ana2017_coastal_points_v0_1.json"):
+            self.assertIn(path, gate.TERRITORY_PATHS)
+
     def test_page_keeps_tiles_inside_the_map_and_says_when_leaflet_css_is_missing(self):
         self.assertIn("#map{position:relative;overflow:hidden}", PERU)
         self.assertIn('getComputedStyle(map.getPane("tilePane")).position!=="absolute"', PERU)
@@ -554,6 +570,7 @@ class Browser(unittest.TestCase):
             (site / "data/v09/territory_v0_1.json").write_bytes(ui_fixture("territory"))
             (site / "data/v09/dashboard_v0_1.json").write_bytes(ui_fixture("dashboard"))
             shutil.copy(INV.OUT, site / "data/v09/inventory_master_v0_1.json")
+            shutil.copy(ROOT / "site/data/v09/ana2017_coastal_points_v0_1.json", site / "data/v09/ana2017_coastal_points_v0_1.json")
             srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Quiet, directory=str(site)))
             threading.Thread(target=srv.serve_forever, daemon=True).start()
             origin = f"http://127.0.0.1:{srv.server_port}/"
@@ -818,7 +835,7 @@ class Browser(unittest.TestCase):
             site = Path(d) / "site"
             shutil.copytree(ROOT / "site/v09", site / "v09")
             (site / "data/v09").mkdir(parents=True)
-            for name in ("territory_v0_1.json", "dashboard_v0_1.json", "inventory_master_v0_1.json"):
+            for name in ("territory_v0_1.json", "dashboard_v0_1.json", "inventory_master_v0_1.json", "ana2017_coastal_points_v0_1.json"):
                 shutil.copy(ROOT / "site/data/v09" / name, site / "data/v09" / name)
             srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Quiet, directory=str(site)))
             threading.Thread(target=srv.serve_forever, daemon=True).start()
@@ -949,7 +966,7 @@ class Browser(unittest.TestCase):
             site = Path(d) / "site"
             shutil.copytree(ROOT / "site/v09", site / "v09")
             (site / "data/v09").mkdir(parents=True)
-            for name in ("territory_v0_1.json", "dashboard_v0_1.json", "inventory_master_v0_1.json"):
+            for name in ("territory_v0_1.json", "dashboard_v0_1.json", "inventory_master_v0_1.json", "ana2017_coastal_points_v0_1.json"):
                 shutil.copy(ROOT / "site/data/v09" / name, site / "data/v09" / name)
             srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Quiet, directory=str(site)))
             threading.Thread(target=srv.serve_forever, daemon=True).start()
@@ -1142,6 +1159,8 @@ class Browser(unittest.TestCase):
             shutil.copytree(ROOT / "site/v09", site / "v09")
             (site / "data/v09").mkdir(parents=True)
             shutil.copy(T.OUT, site / "data/v09/territory_v0_1.json")
+            for extra in ("ana2017_coastal_points_v0_1.json", "inventory_master_v0_1.json"):  # read by peru.html too
+                shutil.copy(ROOT / "site/data/v09" / extra, site / "data/v09" / extra)
             srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Quiet, directory=str(site)))
             threading.Thread(target=srv.serve_forever, daemon=True).start()
             origin = f"http://127.0.0.1:{srv.server_port}/"
@@ -1241,6 +1260,113 @@ class Browser(unittest.TestCase):
                     self.assertEqual(g["leaked"], 0, g)
                     self.assertIn("hoja de estilos de Leaflet", page.inner_text("#message"))
                     ctx.close()
+                    b.close()
+            finally:
+                srv.shutdown()
+                srv.server_close()
+                import gc
+                import warnings
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", ResourceWarning)
+                    gc.collect()
+    def test_peru_map_coastal_documentary_points_coverage_and_links(self):
+        """Mapa nacional con las ubicaciones documentales ANA 2016-17 (escritorio y móvil): una marca por punto admitido
+        y ninguna para los no admitidos, capa conmutable, matriz por departamento con «cobertura pendiente» donde no hay
+        geometría IRFEN, zoom por departamento, enlace profundo a un punto con fuente y advertencia, enlace desde la
+        ficha del inventario, sin errores JS ni desbordamiento. Leaflet: unpkg (CI) o IRFEN_LEAFLET_DIR; mosaicos locales."""
+        import shutil
+        import tempfile
+
+        class Quiet(http.server.SimpleHTTPRequestHandler):
+            def log_message(self, *a):
+                pass
+
+        ana = json.loads((ROOT / "site/data/v09/ana2017_coastal_points_v0_1.json").read_text(encoding="utf-8"))
+        admitted = [p for p in ana["points"] if p["status"] == "ADMITIDA_UBICACION_DOCUMENTAL"]
+        rejected = [p for p in ana["points"] if p["status"] != "ADMITIDA_UBICACION_DOCUMENTAL"]
+        linked = next(p for p in admitted if p["inventory_links"] and p["department"] == "LIMA")
+        leaf = os.environ.get("IRFEN_LEAFLET_DIR")
+        html = PERU
+        if leaf:
+            js = (Path(leaf) / "leaflet.js").read_bytes()
+            html = html.replace(LEAFLET_JS_SRI, "sha256-" + base64.b64encode(hashlib.sha256(js).digest()).decode())
+        with tempfile.TemporaryDirectory() as d:
+            site = Path(d) / "site"
+            shutil.copytree(ROOT / "site/v09", site / "v09")
+            (site / "data/v09").mkdir(parents=True)
+            for name in ("territory_v0_1.json", "ana2017_coastal_points_v0_1.json", "inventory_master_v0_1.json"):
+                shutil.copy(ROOT / "site/data/v09" / name, site / "data/v09" / name)
+            srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Quiet, directory=str(site)))
+            threading.Thread(target=srv.serve_forever, daemon=True).start()
+            origin = f"http://127.0.0.1:{srv.server_port}/"
+            cors = {"Access-Control-Allow-Origin": "*"}
+
+            def route(r):
+                u = r.request.url
+                if u.split("#")[0] == origin + "v09/peru.html":
+                    return r.fulfill(status=200, content_type="text/html; charset=utf-8", body=html)
+                if u.startswith(origin):
+                    return r.continue_()
+                if u.startswith("https://unpkg.com/leaflet@1.9.4/dist/"):
+                    return r.fulfill(status=200, headers=cors, path=str(Path(leaf) / u.rsplit("/dist/", 1)[1])) if leaf else r.continue_()
+                m = re.match(r"https://tile\.openstreetmap\.org/(\d+)/(\d+)/(\d+)\.png$", u)
+                if m:
+                    return r.fulfill(status=200, content_type="image/png", headers=cors, body=png_tile(*map(int, m.groups())))
+                return r.abort()
+
+            try:
+                with sync_playwright() as p:
+                    b = p.chromium.launch(args=["--no-proxy-server"])
+                    for name, vp in (("desktop", dict(width=1440, height=900)), ("mobile", dict(width=390, height=844))):
+                        ctx = b.new_context(viewport=vp)
+                        ctx.route("**/*", route)
+                        page = ctx.new_page()
+                        errors = []
+                        page.on("pageerror", lambda e: errors.append(str(e)))
+                        page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+                        page.goto(origin + "v09/peru.html")
+                        if not page.evaluate("typeof L !== 'undefined'"):
+                            self.skipTest("Leaflet 1.9.4 not reachable (set IRFEN_LEAFLET_DIR to a local build)")
+                        page.wait_for_selector("body[data-ready='1']", timeout=20000)
+                        paths = lambda: page.evaluate("document.querySelectorAll('#map .leaflet-overlay-pane path').length")
+                        with_ana = paths()
+                        page.uncheck("#toggle-ana")
+                        without = paths()
+                        self.assertEqual(with_ana - without, len(admitted), name)  # one mark per admitted point, none for the rest
+                        page.check("#toggle-ana")
+                        self.assertEqual(paths(), with_ana, name)
+                        self.assertIn(f"({len(admitted)})", page.inner_text("#layerToggles"))
+                        self.assertIn("no es la quebrada", page.inner_text("#layerToggles"))
+                        rows = {r: s for r, s in (x.split("|") for x in page.eval_on_selector_all(
+                            "#coverage tr[data-dep]", "e=>e.map(x=>x.dataset.dep+'|'+x.cells[4].innerText)"))}
+                        self.assertEqual(len(rows), 11, name)
+                        self.assertEqual(rows["CALLAO"], "cobertura pendiente")
+                        for dep in ("ANCASH", "ICA", "AREQUIPA", "MOQUEGUA", "TACNA"):
+                            self.assertEqual(rows[dep], "solo ubicaciones documentales", dep)  # no IRFEN geometry claimed
+                        self.assertIn("no significa ausencia de peligro", page.inner_text("aside"))
+                        # department zoom: the map centre falls inside the department box
+                        page.select_option("#dept", "AREQUIPA")
+                        page.wait_for_timeout(600)
+                        lat0, lon0, lat1, lon1 = ana["departments"]["AREQUIPA"]["bbox"]
+                        box = page.locator("#map").bounding_box()
+                        self.assertTrue(page.url.endswith("#dep=AREQUIPA"))
+                        # deep link to a documentary point: popup with source, coordinates and the warning
+                        page.goto(origin + "v09/peru.html#punto=" + linked["id"])
+                        page.wait_for_selector(".leaflet-popup-content", timeout=10000)
+                        pop = page.inner_text(".leaflet-popup-content")
+                        for text in (f"Cuadro {linked['cuadro']}", f"fila {linked['row']}", str(linked["utm"]["easting_m"]),
+                                     "SIGRID 2799", "no es la quebrada"):
+                            self.assertIn(text, pop, name)
+                        self.assertNotIn(rejected[0]["id"], page.content())
+                        self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth-window.innerWidth"), 1, name)
+                        # inventory ficha -> national map
+                        inv_id = linked["inventory_links"][0]["inventory_id"]
+                        page.goto(origin + "v09/inventario.html#id=" + inv_id)
+                        page.wait_for_selector("#ficha [data-ana-point]")
+                        hrefs = page.eval_on_selector_all("#ficha [data-ana-point]", "e=>e.map(x=>x.getAttribute('href'))")
+                        self.assertIn("peru.html#punto=" + linked["id"], hrefs)
+                        self.assertEqual(errors, [], name)
+                        ctx.close()
                     b.close()
             finally:
                 srv.shutdown()
