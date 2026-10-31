@@ -80,6 +80,26 @@ def day_rows(lines: list[str], start: int, stop_pat: str, offset: int = 0) -> li
     return rows
 
 
+def day_rows_last(lines: list[str], start: int, stop_pat: str):
+    """Variant layout (e.g. January 2019): the day number is the LAST token of the row."""
+    rows = []
+    for i in range(start, min(start + 60, len(lines))):
+        ln = lines[i]
+        if re.search(stop_pat, ln):
+            break
+        toks = [(t.start(), t.end(), t.group()) for t in NUM.finditer(ln)]
+        if len(toks) < 3 or not re.fullmatch(r"\d{1,2}", toks[-1][2]) or not 1 <= int(toks[-1][2]) <= 31:
+            continue
+        if sum("." in t for _, _, t in toks[:-1]) < max(2, (len(toks) - 1) // 2):
+            continue  # unit lines such as «[M3/S]» split by the text layer are not data rows
+        rows.append((int(toks[-1][2]), i, toks[:-1]))
+    return rows
+
+
+RIVERS_DAYLAST = ["PRESA_SULLANA_RIO_CHIRA", "PRESA_SULLANA_CANAL_NORTE", "PRESA_SULLANA_TOTAL", "R_PIURA_1", "CURUMUY",
+                  "CANAL_EJIDOS", "R_PIURA_2"]
+
+
 def assign(rows, ncols: int):
     """Cluster right edges of the numbers; fail closed if the clusters do not equal the expected columns."""
     ends = sorted({e for _, _, toks in rows for _, e, _ in toks})
@@ -110,7 +130,11 @@ def second_reader(pypdf_lines: list[str], day: int, seq: list[str]) -> bool:
         return False
     for ln in pypdf_lines:
         toks = ln.split()
-        if toks and toks[0] == f"{day:02d}" and want in "".join(toks[1:]).replace(",", ""):
+        if not toks:
+            continue
+        if toks[0] == f"{day:02d}" and want in "".join(toks[1:]).replace(",", ""):
+            return True
+        if toks[-1] in (str(day), f"{day:02d}") and want in "".join(toks[:-1]).replace(",", ""):
             return True
     return False
 
@@ -126,8 +150,11 @@ def extract(month: str) -> dict:
     if i is None:
         rec["tables"]["rivers"] = dict(status="TABLA_NO_ENCONTRADA_EN_TEXTO (posible TABLA_EN_IMAGEN)")
     else:
-        rows = day_rows(lines, i, r"^\s*SUMA")
-        table, centres = assign(rows, len(RIVERS))
+        header = lines[i:i + 8]
+        day_last = any(re.search(r"\bDIA\s*$", h) for h in header)
+        cols = RIVERS_DAYLAST if day_last else RIVERS
+        rows = day_rows_last(lines, i, r"^\s*SUMA|SUMA\s*$|Total\s+Mensual") if day_last else day_rows(lines, i, r"^\s*SUMA")
+        table, centres = assign(rows, len(cols))
         n1 = re.search(r"\(\s*1\s*\)\s*PUENTE\s+SANCHEZ\s+CERRO", lay, re.I)
         n2 = re.search(r"\(\s*2\s*\)\s*ESTACION\s+EL\s+PAPAYO", lay, re.I)
         ident = dict(R_PIURA_1="PUENTE_SANCHEZ_CERRO" if n1 else None, R_PIURA_2="EL_PAPAYO" if n2 else None)
@@ -137,8 +164,20 @@ def extract(month: str) -> dict:
             days = {}
             for day, ln_i, toks in rows:
                 agree = second_reader(pyp, day, [t for _, _, t in toks])
-                days[day] = dict(values=dict(zip(RIVERS, table[day])), readers="DOS_LECTORES" if agree else "UN_LECTOR")
+                days[day] = dict(values=dict(zip(cols, table[day])), readers="DOS_LECTORES" if agree else "UN_LECTOR")
+            # column checksum: the printed SUMA / «Total Mensual» row against the sum of the extracted daily values
+            last = max(ln_i for _, ln_i, _ in rows)
+            srow = next((ln for ln in lines[last + 1:last + 6] if re.search(r"^\s*SUMA|Total\s+Mensual", ln)), None)
+            colsum = {}
+            if srow:
+                stoks = [(t.end(), value(t.group())) for t in NUM.finditer(srow)]
+                for e, v in stoks:
+                    k = min(range(len(cols)), key=lambda j: abs(centres[j] - e))
+                    if abs(centres[k] - e) <= 3:
+                        tot = sum(d["values"][cols[k]] or 0 for d in days.values())
+                        colsum[cols[k]] = dict(printed=v, sum_of_days=round(tot, 2), matches=abs(tot - v) <= 0.05 * len(days))  # one-decimal daily rounding
             rec["tables"]["rivers"] = dict(status="OK", unit="m3/s", statistic="CAUDAL_MEDIO_DIARIO", column_edges=centres,
+                                           layout="DIA_AL_FINAL" if day_last else "DIA_AL_INICIO", column_checksums=colsum,
                                            column_identity_from_report_notes=ident, days=days)
     # 2 · Ñácara / Tambogrande (right part of the Miraflores table)
     j = next((k for k, ln in enumerate(lines) if re.search(r"DIA\s.*DIA\s+ÑACARA", ln)), None)
