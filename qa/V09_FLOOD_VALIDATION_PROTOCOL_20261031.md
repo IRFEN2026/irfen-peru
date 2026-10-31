@@ -99,3 +99,48 @@ Motivo: la revisión de #458 identificó cuatro riesgos de interpretación. La a
    - explicación retrospectiva: ρ parcial(Q(d), A3(d) | Q(d−1));
    - anticipación: ρ parcial(Q(d+L), A3(d) | Q(d)), con L = 1–3.
 7. **Réplica:** un desfase observado en 2017 solo se considera replicado si aparece en otro episodio de régimen natural no usado para elegirlo (2023). Nunca se fijan umbrales con 2017.
+
+---
+
+## Versión 0.3 (31-10-2026): anticipación real. Fijada **antes** de cualquier comparación subdiaria
+
+Las reglas que se pueden ejecutar están en `config/v09_anticipation_protocol_v0_3.json`; el arnés `scripts/v09_anticipation_harness.py` las lee y no admite otras.
+Motivo: el objetivo deja de ser explicar el caudal a posteriori y pasa a medir si la lluvia **disponible en el instante de emisión** mejora la anticipación del caudal o nivel **medido**.
+
+1. **Pregunta:** en un instante de emisión t, con todo lo publicado hasta t, ¿mejora la lluvia observada la predicción de Q o H en t + h, para h = 3, 6, 12 y 24 h, frente a una línea base que solo usa caudales y niveles?
+2. **Cuatro categorías que no se mezclan:**
+   - lluvia registrada;
+   - caudal o nivel medido;
+   - caudal aproximado, que nunca es objetivo ni predictor de la línea base;
+   - operación hidráulica (Poechos, Los Ejidos, Curumuy, canal Daniel Escobar), que solo entra como predictor si estaba publicada en t.
+3. **Resolución mínima del objetivo:** serie con un paso de 1 h o menos, con hora y zona horaria declaradas.
+   - Las medias diarias del PECHP **no permiten** evaluar ningún horizonte de 3 a 24 h. Su resultado es `NO_EVALUABLE`.
+   - No se desagregan medias diarias.
+4. **Latencias de disponibilidad:**
+   - IMERG Early: 4 h; IMERG Late: 14 h; telemetría de estación: 1 h por defecto, que se sustituye por la latencia documentada del operador cuando exista. Sensibilidad: +0 y +2 h.
+   - **IMERG Final queda excluido como predictor.** Se publica meses después y su calibración mensual con pluviómetros usa información posterior a t. Solo se admite como cota superior etiquetada `ORACULO_NO_OPERATIVO`.
+5. **Modelos fijados:**
+   - B0: persistencia.
+   - B1: tendencia hidrométrica local.
+   - **B2: B1 más la estación aguas arriba.** Es la línea base de referencia.
+   - M: B2 más ln(1 + R_k), con k = 6 y 24 h. Se informan las dos acumulaciones y la multiplicidad se corrige con Holm.
+6. **Episodios:**
+   - se definen con ventanas de calendario antes de abrir los datos;
+   - validación dejando un episodio fuera, con 7 días de separación si comparten temporada;
+   - ningún parámetro ni escalado se calcula con el episodio de evaluación;
+   - los desfases diarios descritos en #458 y #459 no sirven para elegir hiperparámetros.
+7. **Decisión:** la mejora solo es **demostrable** si se cumplen las cuatro condiciones siguientes. En caso contrario se informa como `RESULTADO_NEGATIVO_O_NO_CONCLUYENTE`.
+   - el IC 95 % de ΔMSE = MSE_B2 − MSE_M, por bootstrap de bloques de 48 h, es mayor que 0 en dos o más episodios de evaluación independientes y en los dos sentidos de la validación cruzada;
+   - supera el percentil 95 de un placebo de lluvia desplazada al menos 7 días;
+   - se mantiene con +2 h de latencia;
+   - el p ajustado por Holm es menor que 0,05.
+8. **Chira:**
+   - el objetivo natural es El Ciruelo, aguas arriba de Poechos, con Puente Internacional Macará como estación aguas arriba;
+   - todo lo que queda aguas abajo de Poechos depende de las descargas del embalse y queda **fuera de alcance** como problema lluvia–caudal.
+9. **Tumbes:** el objetivo es El Tigre. La estación aguas arriba en Ecuador (Puyango, INAMHI) está por confirmar.
+10. **Prohibido:** umbrales, alertas, uso operativo, mezclar caudal aproximado con caudal medido y reconstruir series horarias.
+11. **Episodios fijados el 31-10-2026, antes de disponer de ningún dato subdiario de caudal o nivel** (detalle en `episodes_fixed_before_data`):
+    - Piura: 2017 (15-01 a 30-04), 2019 (01-02 a 31-03) y 2023 (15-02 a 15-05).
+    - Chira en El Ciruelo: 2017 y 2023, con las mismas ventanas que Piura.
+    - Tumbes en El Tigre: temporadas 2015 a 2019, del 15-01 al 30-04, y 2023, del 01-02 al 31-05.
+    - Una ventana solo se acorta si la serie oficial no la cubre, y lo que falte es desconocido.
