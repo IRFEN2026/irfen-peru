@@ -1,0 +1,82 @@
+{
+ "activation_gate": "BLOCKED",
+ "archived_flow_columns": [
+  "ALIVIADERO",
+  "ARDILLA",
+  "CANAL_EJIDOS",
+  "CHECK_KM_29_90",
+  "CHULUCANAS",
+  "CPTO_PIURA",
+  "CURUMUY",
+  "EL_CIRUELO",
+  "EL_PAPAYO_TABLA_MIRAFLORES",
+  "PARAJE_GRANDE",
+  "PRESA_SULLANA_CANAL_NORTE",
+  "PRESA_SULLANA_RIO_CHIRA",
+  "PRESA_SULLANA_TOTAL",
+  "PTE_INTERNACIONAL",
+  "PUENTE_INTERNACIONAL",
+  "PUENTE_NACARA",
+  "R_PIURA_1",
+  "R_PIURA_2",
+  "SULLANA",
+  "TAMBOGRANDE"
+ ],
+ "conclusion": "Ningún horizonte de 3, 6, 12 o 24 h es evaluable con los datos archivados: solo hay medias diarias. No se ha hecho ninguna comparación de anticipación; la mejora no está demostrada ni refutada.",
+ "decision_thresholds": null,
+ "deployment_status": "RESEARCH_ONLY",
+ "hydraulic_factors": null,
+ "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+ "next_experiment": "Ejecutar evaluate_pair() con series horarias oficiales (SENAMHI/PECHP) y lluvia IMERG Early V07 de 30 min sobre las cuencas VALIDADA_EXPERIMENTAL, con los episodios fijados antes de abrir los datos.",
+ "operational_alerting_enabled": false,
+ "production_use": false,
+ "protocol": "v0.3",
+ "schema_version": "irfen_v09_anticipation_evaluation_v0_1",
+ "targets": [
+  {
+   "archived_resolution": "MEDIA_DIARIA (PECHP) o sin serie",
+   "horizons_h": [
+    3,
+    6,
+    12,
+    24
+   ],
+   "reason": "MEDIAS_DIARIAS: no permiten horizontes de 3–24 h y no se desagregan",
+   "status": "NO_EVALUABLE",
+   "target": "PUENTE_SANCHEZ_CERRO",
+   "upstream": "PUENTE_NACARA"
+  },
+  {
+   "archived_resolution": "MEDIA_DIARIA (PECHP) o sin serie",
+   "horizons_h": [
+    3,
+    6,
+    12,
+    24
+   ],
+   "reason": "MEDIAS_DIARIAS: no permiten horizontes de 3–24 h y no se desagregan",
+   "status": "NO_EVALUABLE",
+   "target": "EL_TIGRE",
+   "upstream": "ESTACION_ECUATORIANA_PUYANGO_POR_CONFIRMAR"
+  },
+  {
+   "archived_resolution": "MEDIA_DIARIA (PECHP) o sin serie",
+   "horizons_h": [
+    3,
+    6,
+    12,
+    24
+   ],
+   "reason": "MEDIAS_DIARIAS: no permiten horizontes de 3–24 h y no se desagregan",
+   "status": "NO_EVALUABLE",
+   "target": "EL_CIRUELO",
+   "upstream": "PUENTE_INTERNACIONAL_MACARA"
+  },
+  {
+   "reason": "FUERA_DE_ALCANCE: depende de la operación de Poechos; no es un problema lluvia–caudal natural",
+   "status": "FUERA_DE_ALCANCE",
+   "target": "AGUAS_ABAJO_DE_POECHOS"
+  }
+ ],
+ "test_mode": "TEST_ONLY"
+}
