@@ -38,7 +38,11 @@ KNOWN_PECHP = {  # found by web search on 30/31-10-2026 (fallback if the collect
     "2016-01": "https://cdn.www.gob.pe/uploads/document/file/3274104/Informes%20T%C3%A9cnicos%20hidro%20N%C2%B0%2000001-2016.pdf",
     "2016-03": "https://cdn.www.gob.pe/uploads/document/file/3274110/Informes%20T%C3%A9cnicos%20hidro%20N%C2%B0%2000003-2016.pdf",
 }
-WANTED = [f"{y}-{m:02d}" for y in (2016, 2017, 2018, 2019) for m in (1, 2, 3, 4)]
+WANTED = [f"{y}-{m:02d}" for y in (2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023) for m in (1, 2, 3, 4)]
+DOCS = {  # documents with station metadata (coordinates, drainage areas, regulation), archived as-is
+    "pnud_ctar_piura_2000_apendice_d.pdf": "https://siar.regionpiura.gob.pe/documentos/normativa/204.pdf",
+    "plan_gestion_rrhh_cuenca_chira_piura.pdf": "https://cdn.www.gob.pe/uploads/document/file/4433253/Plan%20de%20gesti%C3%B3n%20de%20los%20recursos%20h%C3%ADdricos%20de%20la%20cuenca%20Chira%20-%20Piura.pdf",
+}
 EMSR_API = "https://rapidmapping.emergency.copernicus.eu/backend/dashboard-api/public-activations/?code=EMSR199"
 PIURA_AOI = re.compile(r"piura|ejidos|catacaos|castilla|sechura|parachique|tambogrande|chulucanas", re.I)
 CHIRA_AOI = re.compile(r"sullana", re.I)
@@ -143,6 +147,18 @@ def stage_pechp() -> dict:
     return summary
 
 
+def stage_docs() -> dict:
+    got = {}
+    for name, url in DOCS.items():
+        if not robots_allows(url):
+            LOG.append(dict(url=url, status="ROBOTS_DISALLOWED"))
+            got[name] = "ROBOTS_DISALLOWED"
+            continue
+        raw = get(url, OUT / "docs" / name, timeout=300)
+        got[name] = "OK" if raw and raw[:4] == b"%PDF" else "NO_PDF"
+    return dict(documents=got)
+
+
 def stage_emsr() -> dict:
     browser = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
                "Accept": "application/json, text/plain, */*", "Referer": "https://rapidmapping.emergency.copernicus.eu/EMSR199"}
@@ -185,10 +201,10 @@ def stage_emsr() -> dict:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--stage", choices=("pechp", "emsr"), required=True)
+    ap.add_argument("--stage", choices=("pechp", "emsr", "docs"), required=True)
     stage = ap.parse_args(argv).stage
     STAGE["name"] = stage
-    summary = stage_pechp() if stage == "pechp" else stage_emsr()
+    summary = stage_pechp() if stage == "pechp" else stage_emsr() if stage == "emsr" else stage_docs()
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / f"summary_{stage}.json").write_text(json.dumps(summary, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(f"::notice title={stage}::{json.dumps(summary, ensure_ascii=False)[:1800]}")
