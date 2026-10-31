@@ -124,7 +124,7 @@ def flow_series(pechp: dict) -> dict[str, dict[str, float | None]]:
             for col, st in (("R_PIURA_1", ident.get("R_PIURA_1")), ("R_PIURA_2", ident.get("R_PIURA_2")), ("CURUMUY", "CURUMUY"),
                             ("CANAL_EJIDOS", "CANAL_EJIDOS"), ("EL_CIRUELO", "EL_CIRUELO")):
                 if st:
-                    out.setdefault(st, {})[ds] = row["values"][col]
+                    out.setdefault(st, {})[ds] = row["values"].get(col)
         nt = m["tables"].get("nacara_tambogrande", {})
         for day, row in (nt.get("days") or {}).items():
             if row["readers"] != "DOS_LECTORES":

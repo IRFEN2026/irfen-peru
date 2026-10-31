@@ -70,3 +70,32 @@ Mientras no se resuelva:
 - La resolución temporal es diaria, y la convención de día no está declarada.
 - Si las métricas cumplen 4(a)–(c), el resultado admisible es: «hay o no hay una **señal temporal** de acumulados antecedentes que precede al caudal observado, con un desfase de L días, en esta estación y estos años».
 - Siempre se acompaña de las limitaciones del §4.
+
+---
+
+## Versión 0.2 (31-10-2026, después de #458): añadidos fijados en el código **antes** de la primera ejecución
+
+Las reglas se fijaron en el commit `cc64da9fa` (`scripts/v09_piura_robustness.py`), antes de ejecutarlo por primera vez, y se documentan aquí después.
+Motivo: la revisión de #458 identificó cuatro riesgos de interpretación. La autocorrelación y la estacionalidad inflan ρ. Elegir el desfase con el máximo de ρ sesga el resultado. La convención de día es incierta. Y la correlación se confundía con anticipación.
+
+1. **Polígono:** la comparación lluvia–caudal solo se recalcula con una cuenca **validada hasta la estación**:
+   - coordenada documentada;
+   - área de la delimitación dentro de ±10 % del área documentada;
+   - topología D8 sin ciclos y sin cortes por el recorte;
+   - contraste independiente de área (HydroRIVERS) dentro de ±15 %.
+
+   Una cuenca experimental se etiqueta como no oficial y no sustituye a la UH ANA.
+2. **Régimen:** se define R = (Curumuy + canal Ejidos)/(Q_SC + canal Ejidos) y se clasifica cada mes:
+   - regulado: mediana de R > 0,5 o mediana de Q_SC < 5 m³/s;
+   - natural: mediana de R < 0,1;
+   - mixto: el resto.
+
+   Solo los meses naturales o mixtos son controles hidrológicamente comparables.
+3. **Autocorrelación:** se calcula con diferencias diarias y con preblanqueo AR(1).
+4. **Selección del desfase:** la significación del máximo sobre L = 0…10 se mide con todos los desplazamientos circulares de la lluvia de al menos 7 días. Es determinista: p = (k+1)/(N+1).
+5. **Convención de día:** se prueba la lluvia desplazada −1, 0 y +1 días, y la aproximación 12–12 UTC.
+6. **Tres preguntas distintas:**
+   - correlación;
+   - explicación retrospectiva: ρ parcial(Q(d), A3(d) | Q(d−1));
+   - anticipación: ρ parcial(Q(d+L), A3(d) | Q(d)), con L = 1–3.
+7. **Réplica:** un desfase observado en 2017 solo se considera replicado si aparece en otro episodio de régimen natural no usado para elegirlo (2023). Nunca se fijan umbrales con 2017.

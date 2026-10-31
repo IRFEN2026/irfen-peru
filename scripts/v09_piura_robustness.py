@@ -125,7 +125,8 @@ def shift_null(P, Q, observed):
             vals.append(m)
     if observed is None or not vals:
         return dict(shifts=len(vals), p_value=None)
-    return dict(shifts=len(vals), p_value=round(sum(v >= observed for v in vals) / len(vals), 3),
+    return dict(shifts=len(vals), p_value=round((sum(v >= observed for v in vals) + 1) / (len(vals) + 1), 3),
+                p_value_rule="(k+1)/(N+1): nunca 0 con N desplazamientos",
                 null_p95=round(float(np.percentile(vals, 95)), 3))
 
 
@@ -138,10 +139,11 @@ def acc_series(P, k):
     return out
 
 
-def three_questions(P, Q):
+def three_questions(P, Q, acc_full: dict | None = None, days=None):
     res = {}
     for k in K:
-        A = acc_series(P, k)
+        A = (np.array([np.nan if acc_full[k].get(d2s(d)) is None else acc_full[k][d2s(d)] for d in days], float)
+             if acc_full is not None else acc_series(P, k))  # antecedent rain from the full series, not truncated at the window
         corr = lag_curve(A, Q)
         m = ~np.isnan(A[1:]) & ~np.isnan(Q[1:]) & ~np.isnan(Q[:-1])
         retro = partial_spear(Q[1:][m], A[1:][m], Q[:-1][m])
@@ -193,11 +195,14 @@ def build() -> dict:
         fr = {(round(x["lon_center"], 2), round(x["lat_center"], 2)): x["fraction_inside"] for x in c["imerg_cells"]}
         rain = V.basin_series(imerg, fr)
         p = {d: r["p_mm"] for d, r in rain.items()}
+        acc_full = {k: V.accumulations(rain, k) for k in K}
         station_flow = {"PUENTE_SANCHEZ_CERRO": flow.get("PUENTE_SANCHEZ_CERRO", {}),
                         "APORTACION_NATURAL_APROX": reg["natural_component_approx"]}.get(c["station"]) or flow.get(c["station"], {})
         targets = {"Q_observado": station_flow}
         if c["station"] == "PUENTE_SANCHEZ_CERRO":
             targets["Q_natural_aprox"] = reg["natural_component_approx"]
+            comparable_days = {d for d in station_flow if reg["months"].get(d[:7], {}).get("regime") in ("APORTACION_NATURAL_DOMINANTE", "MIXTO")}
+            targets["Q_observado_solo_meses_comparables"] = {d: v for d, v in station_flow.items() if d in comparable_days}
         seasons = {}
         for y in sorted({d[:4] for d in station_flow}):
             months = sorted({d[:7] for d in station_flow if d.startswith(y)})
@@ -207,8 +212,11 @@ def build() -> dict:
                        hydrologically_comparable_months=comparable, targets={})
             for tname, q in targets.items():
                 days, P, Q = season_arrays(p, q, start, end)
-                if np.isnan(Q).all() or np.nanstd(Q) == 0:
-                    res["targets"][tname] = dict(status="SERIE_NULA_O_CONSTANTE")
+                if np.isnan(Q).all():
+                    res["targets"][tname] = dict(status="SIN_DATOS_EN_LA_VENTANA (p. ej., ningún mes comparable)")
+                    continue
+                if np.nanstd(Q) == 0:
+                    res["targets"][tname] = dict(status="SERIE_CONSTANTE (río seco o caudal fijado por la operación)")
                     continue
                 lev = lag_curve(P, Q)
                 dP, dQ = np.diff(P), np.diff(Q)
@@ -226,7 +234,7 @@ def build() -> dict:
                     prewhitened_ar1=dict(phi_rain=r3(phi), curve=pw),
                     lag_selection_null_levels=shift_null(P, Q, max_rho(lev)),
                     lag_selection_null_differences=shift_null(dP, dQ, max_rho(diff)),
-                    day_convention_sensitivity=conv, three_questions=three_questions(P, Q))
+                    day_convention_sensitivity=conv, three_questions=three_questions(P, Q, acc_full, days))
             seasons[y] = res
         analyses[c["station"]] = dict(status="RECALCULADO", catchment_area_km2=c["area_km2_pixels"], polygon="HydroSHEDS v1 15″ (no oficial)",
                                       seasons=seasons)

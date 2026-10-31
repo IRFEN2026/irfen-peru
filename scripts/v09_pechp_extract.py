@@ -72,10 +72,12 @@ def day_rows(lines: list[str], start: int, stop_pat: str, offset: int = 0) -> li
         if re.search(stop_pat, ln):
             break
         seg = ln[offset:] if offset else ln
-        m = re.match(r"\s*(\d{2})\s", seg)
+        m = re.match(r"\s*(\d{1,2})\s", seg)  # «01» or «1» (2020-2023 reports)
         if not m or not 1 <= int(m.group(1)) <= 31:
             continue
         toks = [(offset + t.start(), offset + t.end(), t.group()) for t in NUM.finditer(seg)][1:]
+        if not toks:
+            continue
         rows.append((int(m.group(1)), i, toks))
     return rows
 
@@ -132,7 +134,7 @@ def second_reader(pypdf_lines: list[str], day: int, seq: list[str]) -> bool:
         toks = ln.split()
         if not toks:
             continue
-        if toks[0] == f"{day:02d}" and want in "".join(toks[1:]).replace(",", ""):
+        if toks[0] in (f"{day:02d}", str(day)) and want in "".join(toks[1:]).replace(",", ""):
             return True
         if toks[-1] in (str(day), f"{day:02d}") and want in "".join(toks[:-1]).replace(",", ""):
             return True

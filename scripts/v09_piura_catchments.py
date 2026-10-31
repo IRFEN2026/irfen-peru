@@ -5,7 +5,7 @@ no supere la validación: el resultado es un candidato con su estado de validaci
 
 Entradas:
 * data/v09/sources/hydrosheds_piura/dir15.npy.gz y acc15.npy.gz (HydroSHEDS v1, 15″, recorte; procedencia en provenance.json);
-* data/v09/sources/hydrosheds_piura/hybas12.geojson.gz (HydroBASINS nivel 12, para contraste independiente del área);
+* data/v09/sources/hydrosheds_piura/rivers.geojson.gz (HydroRIVERS, UPLAND_SKM como contraste independiente del área);
 * config/v09_piura_station_points_v0_1.json (estaciones con coordenadas y área de drenaje DOCUMENTADAS y su fuente);
 * data/v09/research/uh_units_v0_1.geojson (UH ANA 1378, para medir el solape).
 
@@ -14,10 +14,10 @@ Método:
    registra la distancia de ajuste). Si no hay coordenada documentada, la estación NO se delimita.
 2. Cuenca: todas las celdas cuyo camino D8 (códigos ESRI 1…128) llega al punto de salida (búsqueda aguas arriba).
 3. Comprobaciones de topología: sin ciclos en el recorte, cuenca contigua, el recorte no corta la cuenca (ninguna
-   celda de la cuenca toca el borde), área por celdas (cos φ) frente a ACC×área y frente al área documentada,
-   contraste con HydroBASINS nivel 12 (agregación aguas arriba por NEXT_DOWN) y solape con la UH ANA 1378.
+   celda de la cuenca toca el borde), área por celdas (cos φ) frente al área documentada, contraste con el área
+   aguas arriba de HydroRIVERS (UPLAND_SKM) y solape con la UH ANA 1378.
 4. Estado: VALIDADA_EXPERIMENTAL solo si el área queda dentro de ±TOL_AREA del área documentada, la topología es
-   correcta y HydroBASINS coincide dentro de ±TOL_HYBAS; si no, CANDIDATA_NO_VALIDADA con los motivos.
+   correcta y HydroRIVERS coincide dentro de ±TOL_HYBAS; si no, CANDIDATA_NO_VALIDADA con los motivos.
 5. Fracción de cada celda IMERG de 0,1° dentro de la cuenca, contando píxeles de 15″ (24 × 24 por celda).
 
     python scripts/v09_piura_catchments.py [--check]
@@ -105,31 +105,27 @@ def has_cycles(dirs: np.ndarray) -> int:
     return cycles
 
 
-def hybas_area(lon: float, lat: float) -> dict:
-    p = HS / "hybas12.geojson.gz"
+def hydrorivers_check(olon: float, olat: float) -> dict:
+    """Independent area estimate: UPLAND_SKM of the nearest HydroRIVERS reach to the snapped outlet (HydroRIVERS is
+    derived from the same HydroSHEDS DEM but by a separate, published processing chain)."""
+    p = HS / "rivers.geojson.gz"
     if not p.is_file():
-        return dict(status="SIN_HYDROBASINS")
-    spec = __import__("importlib.util").util.spec_from_file_location("u", ROOT / "scripts/v09_build_research_uh_units.py")
-    U = __import__("importlib.util").util.module_from_spec(spec)
-    spec.loader.exec_module(U)
-    feats = json.loads(gzip.decompress(p.read_bytes()))["features"]
-    by = {f["properties"]["HYBAS_ID"]: f for f in feats}
-    hit = next((f for f in feats if U.contains(f["geometry"], lon, lat)), None)
-    if not hit:
-        return dict(status="PUNTO_FUERA_DE_HYDROBASINS")
-    target = hit["properties"]["HYBAS_ID"]
-    ups = {target}
-    changed = True
-    while changed:
-        changed = False
-        for f in feats:
-            h = f["properties"]["HYBAS_ID"]
-            if h not in ups and f["properties"]["NEXT_DOWN"] in ups:
-                ups.add(h)
-                changed = True
-    return dict(status="OK", hybas_id=target, basins=len(ups), sub_area_sum_km2=round(sum(by[h]["properties"]["SUB_AREA"] for h in ups), 1),
-                up_area_of_containing_basin_km2=hit["properties"].get("UP_AREA"),
-                note="Agregación de unidades nivel 12 aguas arriba de la que contiene el punto: la salida real queda dentro de esa unidad")
+        return dict(status="SIN_HYDRORIVERS")
+    best = None
+    for f in json.loads(gzip.decompress(p.read_bytes()))["features"]:
+        g = f["geometry"]
+        lines = [g["coordinates"]] if g["type"] == "LineString" else g["coordinates"]
+        for ln in lines:
+            for x, y in ln:
+                dkm = math.hypot((x - olon) * 111.32 * math.cos(math.radians(olat)), (y - olat) * 110.57)
+                if best is None or dkm < best[0]:
+                    best = (dkm, f["properties"])
+    if best is None:
+        return dict(status="SIN_TRAMOS")
+    pr = best[1]
+    return dict(status="OK", nearest_reach_km=round(best[0], 2), hyriv_id=pr.get("HYRIV_ID"), upland_skm=pr.get("UPLAND_SKM"),
+                main_riv=pr.get("MAIN_RIV"), dis_av_cms_modelled=pr.get("DIS_AV_CMS"),
+                note="UPLAND_SKM del tramo más cercano: área aguas arriba de su extremo final (no exactamente del punto)")
 
 
 def overlap_with_uh(mask, tr, dlon, dlat) -> dict:
@@ -185,13 +181,20 @@ def build() -> dict:
         olon, olat = centre(tr, rs, cs)
         snap_km = math.hypot((olon - st["lon"]) * 111.32 * math.cos(math.radians(st["lat"])), (olat - st["lat"]) * 110.57)
         mask = upstream(dirs, rs, cs)
+        sens = []
+        for k in range(0, SNAP_CELLS + 1):  # stability of the outlet choice
+            w = acc[max(0, r0 - k):r0 + k + 1, max(0, c0 - k):c0 + k + 1]
+            a_r, a_c = np.unravel_index(int(np.argmax(w)), w.shape)
+            m2 = upstream(dirs, max(0, r0 - k) + a_r, max(0, c0 - k) + a_c)
+            r2, c2 = np.nonzero(m2)
+            sens.append(dict(snap_cells=k, area_km2=round(sum(cell_area_km2(centre(tr, r, c)[1], dlon, dlat) for r, c in zip(r2, c2)), 1)))
         rr, cc = np.nonzero(mask)
         area = sum(cell_area_km2(centre(tr, r, c)[1], dlon, dlat) for r, c in zip(rr, cc))
         touches_edge = bool(mask[0, :].any() or mask[-1, :].any() or mask[:, 0].any() or mask[:, -1].any())
         acc_cells = int(acc[rs, cs])
         documented = st.get("drainage_area_km2_documented") or []
         ref = documented[0]["value"] if documented else None
-        hy = hybas_area(st["lon"], st["lat"])
+        hy = hydrorivers_check(olon, olat)
         reasons = []
         if cycles:
             reasons.append(f"CICLOS_D8_EN_EL_RECORTE ({cycles})")
@@ -201,15 +204,17 @@ def build() -> dict:
             reasons.append("SIN_AREA_DOCUMENTADA_PARA_CONTRASTAR")
         elif abs(area / ref - 1) > TOL_AREA:
             reasons.append(f"AREA_FUERA_DE_TOLERANCIA ({area:.0f} km² frente a {ref} km² documentados)")
-        if hy.get("status") == "OK" and abs(hy["sub_area_sum_km2"] / area - 1) > TOL_HYBAS:
-            reasons.append(f"HYDROBASINS_DISCREPA ({hy['sub_area_sum_km2']} km²)")
+        if hy.get("status") != "OK":
+            reasons.append("SIN_CONTRASTE_INDEPENDIENTE_DE_AREA")
+        elif abs(hy["upland_skm"] / area - 1) > TOL_HYBAS:
+            reasons.append(f"HYDRORIVERS_DISCREPA ({hy['upland_skm']} km²)")
         rec.update(
             status="VALIDADA_EXPERIMENTAL" if not reasons else "CANDIDATA_NO_VALIDADA", reasons=reasons,
             documented_point=dict(lon=st["lon"], lat=st["lat"], source=st["coordinate_source"]),
             outlet=dict(lon=round(olon, 5), lat=round(olat, 5), snap_km=round(snap_km, 2), acc_cells=acc_cells),
             area_km2_pixels=round(area, 1), documented_areas=documented,
             area_ratio_to_documented=round(area / ref, 3) if ref else None,
-            hydrobasins_lev12=hy, contiguous=True, touches_crop_edge=touches_edge, pixels=int(mask.sum()),
+            hydrorivers=hy, snap_sensitivity=sens, contiguous=True, touches_crop_edge=touches_edge, pixels=int(mask.sum()),
             overlap=overlap_with_uh(mask, tr, dlon, dlat), imerg_cells=imerg_fractions(mask, tr))
         res.append(rec)
     return dict(schema_version="irfen_v09_piura_catchments_v0_1", **GUARDS,
@@ -234,7 +239,7 @@ def main(argv=None) -> int:
     OUT.write_text(text, encoding="utf-8")
     for c in json.loads(text)["catchments"]:
         print(c["station"], c["status"], c.get("area_km2_pixels"), c.get("area_ratio_to_documented"), c.get("outlet"), c.get("reasons"),
-              c.get("hydrobasins_lev12", {}).get("sub_area_sum_km2"), c.get("overlap"))
+              c.get("hydrorivers", {}), c.get("overlap"))
     return 0
 
 
