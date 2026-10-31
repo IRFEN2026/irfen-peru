@@ -139,3 +139,8 @@ Motivo: el objetivo deja de ser explicar el caudal a posteriori y pasa a medir s
    - todo lo que queda aguas abajo de Poechos depende de las descargas del embalse y queda **fuera de alcance** como problema lluvia–caudal.
 9. **Tumbes:** el objetivo es El Tigre. La estación aguas arriba en Ecuador (Puyango, INAMHI) está por confirmar.
 10. **Prohibido:** umbrales, alertas, uso operativo, mezclar caudal aproximado con caudal medido y reconstruir series horarias.
+11. **Episodios fijados el 31-10-2026, antes de disponer de ningún dato subdiario de caudal o nivel** (detalle en `episodes_fixed_before_data`):
+    - Piura: 2017 (15-01 a 30-04), 2019 (01-02 a 31-03) y 2023 (15-02 a 15-05).
+    - Chira en El Ciruelo: 2017 y 2023, con las mismas ventanas que Piura.
+    - Tumbes en El Tigre: temporadas 2015 a 2019, del 15-01 al 30-04, y 2023, del 01-02 al 31-05.
+    - Una ventana solo se acorta si la serie oficial no la cubre, y lo que falte es desconocido.
