@@ -1,0 +1,47 @@
+name: TMP anticipation feasibility capture (binational HydroSHEDS, ANA Tumbes layer, IMERG 30-min CMR counts and one-day pilot; removed after capture)
+on:
+  push:
+    branches: [research/v09-flood-anticipation-feasibility-20261031]
+    paths: [.github/workflows/tmp-v09-anticipation-capture.yml]
+permissions:
+  contents: write
+concurrency: {group: tmp-v09-antic, cancel-in-progress: false}
+jobs:
+  capture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with: {python-version: "3.12", cache: pip}
+      - run: pip install -q -r requirements.txt && pip install -q rasterio geopandas pyogrio
+      - name: IMERG V07 30-min granule counts and declared sizes (CMR only, no download)
+        timeout-minutes: 10
+        continue-on-error: true
+        env:
+          EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
+        run: python scripts/v09_anticipation_capture.py --stage imerg_cmr
+      - name: IMERG V07 30-min one-day pilot (2017-03-26, Final HH and Early HHE)
+        timeout-minutes: 15
+        continue-on-error: true
+        env:
+          EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
+        run: python scripts/v09_anticipation_capture.py --stage imerg_pilot
+      - name: ANA Tumbes basin layer (one query)
+        timeout-minutes: 4
+        continue-on-error: true
+        run: python scripts/v09_anticipation_capture.py --stage ana_tumbes
+      - name: HydroSHEDS v1 15s DIR/ACC and HydroRIVERS cropped to the binational basins
+        timeout-minutes: 30
+        continue-on-error: true
+        run: python scripts/v09_anticipation_capture.py --stage hydrosheds
+      - name: Commit whatever was captured
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/v09/sources/hydrosheds_binational data/v09/research/anticipation || true
+          git diff --cached --quiet && { echo "::warning::nothing captured"; exit 0; }
+          echo "::notice title=captured::$(git diff --cached --stat | tail -1)"
+          git commit -q -m "Research snapshot: binational HydroSHEDS crops, ANA Tumbes layer and IMERG 30-min feasibility pilot"
+          for i in 1 2 3; do git fetch -q origin "$GITHUB_REF_NAME" && git rebase -q "origin/$GITHUB_REF_NAME" && git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0; sleep 5; done; exit 1
