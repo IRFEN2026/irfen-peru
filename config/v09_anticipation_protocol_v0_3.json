@@ -1,0 +1,75 @@
+{
+  "schema_version": "irfen_v09_anticipation_protocol_v0_3",
+  "fixed_at": "2026-10-31",
+  "fixed_before_any_subdaily_comparison": true,
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "operational_alerting_enabled": false,
+  "activation_gate": "BLOCKED",
+  "missing_data_rule": "UNKNOWN_NOT_LOW_RISK",
+  "decision_thresholds": null,
+  "hydraulic_factors": null,
+  "question": "¿Mejora la lluvia observada disponible en el instante de emisión t la anticipación del caudal o nivel medido en t+h, respecto de una línea base que solo usa caudales y niveles disponibles en t?",
+  "horizons_hours": [3, 6, 12, 24],
+  "data_categories": {
+    "LLUVIA_REGISTRADA": "Precipitación por satélite (IMERG) o pluviómetro, con su hora de observación y su latencia de disponibilidad.",
+    "CAUDAL_O_NIVEL_MEDIDO": "Serie de estación con marca de tiempo explícita y zona horaria; el caudal procede de la curva de gasto del operador y se marca como tal.",
+    "CAUDAL_APROXIMADO": "Cualquier caudal reconstruido (p. ej. Qn = Q_SC + Ejidos − Curumuy). Nunca es objetivo ni predictor de la línea base.",
+    "OPERACION_HIDRAULICA": "Descargas de Poechos, Los Ejidos, Curumuy, canal Daniel Escobar. Solo entra como predictor si estaba publicada en t."
+  },
+  "target_requirements": {
+    "category": "CAUDAL_O_NIVEL_MEDIDO",
+    "max_time_step_hours": 1,
+    "timestamp_and_timezone_declared": true,
+    "daily_means_allowed": false,
+    "disaggregation_of_daily_values_allowed": false,
+    "if_not_met": "NO_EVALUABLE"
+  },
+  "availability_latency_hours": {
+    "IMERG_EARLY": 4,
+    "IMERG_LATE": 14,
+    "IMERG_FINAL": null,
+    "GAUGE_TELEMETRY_DEFAULT": 1,
+    "sensitivity_extra_hours": [0, 2],
+    "notes": "IMERG Final no es predictor: se publica meses después y su calibración mensual con pluviómetros usa información posterior a t. Solo se admite como cota superior etiquetada ORACULO_NO_OPERATIVO. La latencia de telemetría real del operador sustituye al valor por defecto cuando esté documentada."
+  },
+  "rain_accumulations_hours": [6, 24],
+  "rain_accumulation_selection": "Ambas acumulaciones se informan; no se elige la mejor. La multiplicidad (2 acumulaciones × 4 horizontes) se controla con Holm.",
+  "models": {
+    "B0": "Persistencia: x̂(t+h) = x(t), con x = ln(1 + Q) o el nivel H en metros.",
+    "B1": "Hidrométrica local: Δx = a_h + b_h·[x(t) − x(t−h)] + c_h·[x(t) − x(t−24 h)], MCO en entrenamiento.",
+    "B2": "B1 + d_h·[x_up(t) − x_up(t−h)] + e_h·x_up(t) con la estación aguas arriba declarada (solo datos disponibles en t). Es la línea base de referencia.",
+    "M": "B2 + f_h·ln(1 + R_k(t − latencia)), con R_k la media areal de la lluvia acumulada en k horas sobre la cuenca validada hasta la estación objetivo."
+  },
+  "upstream_pairs": [
+    {"target": "PUENTE_SANCHEZ_CERRO", "upstream": "PUENTE_NACARA", "secondary_upstream": "TAMBOGRANDE", "regime_rule": "v0.2 §2; solo meses natural o mixto"},
+    {"target": "EL_TIGRE", "upstream": "ESTACION_ECUATORIANA_PUYANGO_POR_CONFIRMAR", "regime_rule": "natural (sin embalses documentados aguas arriba)"},
+    {"target": "EL_CIRUELO", "upstream": "PUENTE_INTERNACIONAL_MACARA", "regime_rule": "natural aguas arriba de Poechos"},
+    {"target": "AGUAS_ABAJO_DE_POECHOS", "upstream": null, "regime_rule": "FUERA_DE_ALCANCE: depende de la operación de Poechos; no es un problema lluvia–caudal natural"}
+  ],
+  "episodes_rule": "Episodios definidos por ventanas de calendario antes de abrir los datos subdiarios; sin solape; 7 días de separación mínima entre entrenamiento y evaluación de una misma temporada; validación dejando un episodio fuera; ningún parámetro se estima con el episodio de evaluación.",
+  "metrics": {
+    "primary": "Diferencia de error cuadrático medio de x entre M y B2 en el episodio de evaluación (ΔMSE = MSE_B2 − MSE_M) y habilidad SS = 1 − MSE_M / MSE_B2.",
+    "secondary": ["MAE de x", "ΔMSE en la rama ascendente observada (x(t+h) > x(t))", "ΔMSE en el decil superior de x(t+h) del propio episodio (estrato de análisis, no umbral de decisión)"],
+    "uncertainty": "Bootstrap por bloques móviles de 48 h, 2000 réplicas, semilla 20261031; IC 95 %.",
+    "placebo": "Lluvia desplazada circularmente ≥ 7 días: distribución nula de ΔMSE."
+  },
+  "decision_rule": {
+    "improvement_demonstrable_if_all": [
+      "IC 95 % de ΔMSE > 0 en al menos dos episodios de evaluación independientes y en ambos sentidos de la validación cruzada",
+      "ΔMSE observado por encima del percentil 95 del placebo",
+      "se mantiene con la latencia +2 h",
+      "p ajustado por Holm < 0,05"
+    ],
+    "otherwise": "RESULTADO_NEGATIVO_O_NO_CONCLUYENTE: se informa tal cual."
+  },
+  "leakage_controls": [
+    "Toda variable se construye solo con registros cuya hora de disponibilidad ≤ t; el código lo comprueba con una aserción por fila.",
+    "IMERG Final excluido como predictor.",
+    "Sin normalizaciones ni escalados calculados con el episodio de evaluación.",
+    "Sin selección de k, h o estación a la vista de los resultados de evaluación.",
+    "Los episodios de 2017 y 2023 usados en #458/#459 para describir desfases diarios no pueden usarse para elegir hiperparámetros del ensayo horario."
+  ],
+  "forbidden": ["umbrales", "alertas", "uso operativo", "reconstruir series horarias a partir de medias diarias", "mezclar caudal aproximado con caudal medido"]
+}
