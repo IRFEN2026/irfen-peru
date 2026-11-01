@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
+<title>IRFEN v0.9 · Perú completo (investigación)</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<style>
+body{font-family:system-ui,Arial,sans-serif;margin:0;background:#f3f6f9;color:#1e3446}header{padding:12px 18px;background:#fff;border-bottom:1px solid #d7e1ea}h1{font-size:19px;margin:0 0 6px}header p{font-size:12px;margin:5px 0}a{color:#225985}.warning{background:#fff4d7;color:#704d10;padding:9px 18px;font-size:12px;border-bottom:1px solid #ebd49b}.layout{display:grid;grid-template-columns:285px minmax(0,1fr);gap:12px;padding:12px}.panel{background:white;border:1px solid #d7e1e9;border-radius:8px;padding:14px}.panel h2{font-size:15px;margin:0 0 10px}#map{height:calc(100vh - 195px);min-height:480px;border-radius:8px;background:#cbdde9}label{display:block;font-size:12px;margin:8px 0;line-height:1.4}.count{font-size:13px;color:#286184;font-weight:700}.note{font-size:12px;color:#495b6d;line-height:1.55}.buttons{display:flex;gap:6px;flex-wrap:wrap}.buttons button{font-size:12px;padding:8px;border:1px solid #a8bbc9;border-radius:6px;cursor:pointer;background:#f4f8fa}.buttons button:focus-visible{outline:2px solid #3676a5}.hint{background:#eef5fa;padding:10px;border-radius:6px}
+/* Leaflet positions panes and tiles with leaflet.css (loaded with SRI above). If that stylesheet is ever blocked
+   (wrong integrity hash, network, CSP), tiles fall back to static layout: keep them inside the map box and say why. */
+#map{position:relative;overflow:hidden}
+.leaflet-popup-content{font-size:12px;line-height:1.5}
+select{font:inherit;font-size:13px;padding:6px;border:1px solid #a8bbc9;border-radius:6px;width:100%;background:#fff}
+.covwrap{overflow-x:auto;max-width:100%}.cov{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:8px}.cov th,.cov td{text-align:left;padding:4px 3px;border-bottom:1px solid #e1e8ee;vertical-align:top}
+.cov th{color:#495b6d;font-weight:600}.cov td.n{text-align:right}.cov tr[data-pending="1"] td:first-child::after{content:" ·";color:#b5651d}
+.pend{display:inline-block;font-size:10.5px;padding:1px 5px;border-radius:5px;background:#fbead6;color:#7a4510;white-space:nowrap}
+.okc{display:inline-block;font-size:10.5px;padding:1px 5px;border-radius:5px;background:#e3f1e6;color:#1e5631;white-space:nowrap}footer{font-size:11px;padding:8px 18px;color:#456}#message{font-size:12px;color:#894f17;margin-top:8px}@media(max-width:800px){.layout{display:flex;flex-direction:column}#map{height:60vh;min-height:370px}}
+</style>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+</head><body>
+<header><h1>IRFEN v0.9 · Mapa completo del Perú</h1><p><a href="resumen.html">Resumen</a> · <a href="territorio.html">Mapa detallado costa norte / Rímac</a> · <a href="inventario.html">Inventario documental</a> · <a href="index.html">Lluvia y avisos</a></p></header>
+<div class="warning"><b>RESEARCH_ONLY · TEST_ONLY.</b> Base cartográfica nacional para orientación. Las geometrías IRFEN existentes se concentran en dos regiones; en el resto de la costa solo hay ubicaciones documentales de centros poblados vulnerables (ANA 2016-17), que no son la quebrada. <b>Sin cobertura geométrica no significa sin peligro</b>. No es una alerta ni un mapa validado de riesgos.</div>
+<main class="layout"><aside class="panel">
+<h2>Explorar Perú</h2><div class="buttons"><button id="all">Todo el Perú</button><button id="north">Costa norte</button><button id="rimac">Rímac</button></div>
+<label for="dept" style="margin-top:10px">Departamento de la costa</label><select id="dept"><option value="">Elegir departamento…</option></select>
+<p class="note hint">Puedes acercar con la rueda del ratón o los botones del mapa. Pulsa las geometrías para ver su procedencia y clasificación.</p>
+<h2>Capas de investigación</h2><div id="layerToggles">Cargando…</div>
+<p class="count" id="count"></p>
+<h2 style="margin-top:14px">Cobertura por departamento</h2>
+<p class="note">Registros del inventario documental, centros poblados vulnerables con coordenadas ANA admitidas y elementos geométricos IRFEN dibujados. <b>Cobertura geométrica pendiente</b> no significa ausencia de peligro.</p>
+<div id="coverage">Cargando…</div>
+<p class="note">**Cobertura:** no están geolocalizadas todas las quebradas inventariadas. El mapa presenta únicamente elementos de ubicación admitida en el paquete de investigación.</p>
+<p class="note">Los registros sin geometría se consultan en el <a href="inventario.html">inventario documental</a>. No hemos asignado coordenadas aproximadas ni generado cuencas nuevas.</p>
+<p id="message" role="status" aria-live="polite"></p>
+</aside><div class="panel" style="padding:8px"><div id="map" aria-label="Mapa interactivo del Perú con zonas de investigación IRFEN"></div></div></main>
+<footer>Mapa base © OpenStreetMap contributors. Solo exploración interactiva de baja frecuencia; no descarga masiva ni uso operativo. Guardas: production_use=false · public_alerting=false · activation_gate=BLOCKED.</footer>
+<script id="app">
+"use strict";
+(async function(){
+const $=id=>document.getElementById(id);
+const colors={cuencas:"#2468ac",areas_colectoras:"#9559ae",cauces:"#008d9f",descargas:"#cc8620",impacto:"#b73e5d",contexto:"#6b8294"};
+const safe=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+if(!window.L){$("message").textContent="No se pudo cargar el mapa base. Comprueba si tu red permite Leaflet.";return;}
+const map=L.map("map",{zoomControl:true,scrollWheelZoom:true}).setView([-9.2,-75.1],5);
+// leaflet.css must be applied (panes absolutely positioned); otherwise the tiles would stack in normal flow.
+let notice="";
+if(getComputedStyle(map.getPane("tilePane")).position!=="absolute"){
+  $("map").dataset.leafletCss="missing";
+  notice="No se pudo aplicar la hoja de estilos de Leaflet (integridad, red o política de seguridad): el mapa base no se muestra correctamente. No es un problema de los datos. ";
+  $("message").textContent=notice;
+}else{$("map").dataset.leafletCss="ok";}
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:17,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'}).addTo(map);
+const box={peru:[[-18.5,-81.7],[-0.02,-68.6]],north:[[-9.5,-82.5],[-2.0,-76.0]],rimac:[[-12.6,-77.7],[-10.8,-75.7]]};
+const go=k=>map.fitBounds(box[k],{padding:[22,22]});
+let anaById={},anaLayer=null,deptBoxes={};  // ANA 2016-17 documentary points (filled by addAnaPoints)
+$("all").onclick=()=>go("peru");$("north").onclick=()=>go("north");$("rimac").onclick=()=>go("rimac");
+try{
+ const resp=await fetch("../data/v09/territory_v0_1.json",{cache:"no-store"});
+ if(!resp.ok)throw Error("HTTP "+resp.status);
+ const d=await resp.json();
+ if(d.deployment_status!=="RESEARCH_ONLY"||d.test_mode!=="TEST_ONLY"||d.activation_gate!=="BLOCKED"||d.production_use!==false||d.public_alerting!==false||d.map_publishable!==false)throw Error("Guardas científicas no válidas");
+ let layers={};const features=d.geometries?.features||[];
+ for(const [id,color] of Object.entries(colors)){
+   const admitted=features.filter(f=>f.properties?.layer===id && f.properties?.default_visible!==false);
+   const layer=L.geoJSON({type:"FeatureCollection",features:admitted},{
+      style:f=>({color,weight:f.properties?.evidence==="GEOMETRIA_CANDIDATA"?2:2.5,
+        dashArray:f.properties?.evidence==="GEOMETRIA_CANDIDATA"?"6,4":null,fillColor:color,fillOpacity:.12}),
+      pointToLayer:(f,latlng)=>L.circleMarker(latlng,{color,fillColor:color,fillOpacity:.7,radius:6}),
+      onEachFeature:(f,l)=>{
+        const p=f.properties||{},name=p.name||p.id||"Elemento sin nombre";
+        l.bindPopup("<strong>"+safe(name)+"</strong><br>Capa: "+safe(d.layers?.[id]?.label_es||id)+"<br>Evidencia: "+safe(p.evidence||"Sin especificar")+"<br>Región: "+safe(p.region)+"<br>Confianza: "+safe(p.confidence||"Sin calificar")+"<br>Fuente: "+safe((p.source_ids||[]).join(", "))+"<br><em>No constituye alerta ni zona de inundación validada.</em>");
+      }
+   }).addTo(map);layers[id]=layer;
+   const label=document.createElement("label"),cb=document.createElement("input");
+   cb.type="checkbox";cb.checked=true;cb.addEventListener("change",()=>{if(cb.checked)map.addLayer(layer);else map.removeLayer(layer);});
+   label.append(cb,document.createTextNode(" "+(d.layers?.[id]?.label_es||id)+" ("+admitted.length+")"));
+   $("layerToggles").append(label);
+ }
+ $("layerToggles").firstChild?.nodeType===3 && $("layerToggles").removeChild($("layerToggles").firstChild);
+ $("count").textContent=features.length+" geometrías en el catálogo · "+Object.values(layers).reduce((n,l)=>n+l.getLayers().length,0)+" visibles de forma predeterminada";
+ await addAnaPoints(features);
+ $("message").textContent=notice+"Paquete de "+(d.built_at_utc||"fecha no declarada")+". No implica cobertura nacional.";
+}catch(e){$("message").textContent=notice+"No se pudieron mostrar las geometrías IRFEN ("+String(e.message)+"). El mapa base no sustituye los datos ausentes.";}
+go("peru");
+fromHash();window.addEventListener("hashchange",fromHash);
+document.body.dataset.ready="1";
+
+/* ---------- ANA 2016-2017: centros poblados vulnerables con coordenadas publicadas (ubicación documental) ---------- */
+async function addAnaPoints(features){
+ let A=null,I=null;
+ try{const r=await fetch("../data/v09/ana2017_coastal_points_v0_1.json",{cache:"no-store"});if(r.ok)A=await r.json();}catch(e){}
+ try{const r=await fetch("../data/v09/inventory_master_v0_1.json",{cache:"no-store"});if(r.ok)I=await r.json();}catch(e){}
+ const okGuards=A&&A.deployment_status==="RESEARCH_ONLY"&&A.test_mode==="TEST_ONLY"&&A.activation_gate==="BLOCKED"&&A.production_use===false&&A.map_publishable===false;
+ const admitted=okGuards?A.points.filter(x=>x.status==="ADMITIDA_UBICACION_DOCUMENTAL"&&Number.isFinite(x.lat)&&Number.isFinite(x.lon)):[];
+ const color="#9a4f12";
+ anaLayer=L.layerGroup(admitted.map(x=>{
+   const m=L.circleMarker([x.lat,x.lon],{radius:5,color,weight:2,fillColor:"#fff",fillOpacity:.9,dashArray:"2,2"});
+   const inv=(x.inventory_links||[]).map(l=>'<a href="inventario.html#id='+encodeURIComponent(l.inventory_id)+'">'+safe(l.inventory_id)+"</a>"+(l.basis==="MISMO_NOMBRE_EN_EL_DEPARTAMENTO_POR_COMPROBAR"?" (mismo nombre, por comprobar)":"")).join(", ");
+   m.bindPopup("<strong>Centro poblado: "+safe(x.centro_poblado_display||x.centro_poblado_ocr||"sin nombre")+"</strong><br>Quebrada (según ANA): "+safe(x.quebrada_display||x.quebrada_ocr||"s/n")+
+     "<br>"+safe(x.district_ocr||"")+" · provincia "+safe(x.province_inei||x.province_ocr)+" · "+safe(x.department)+
+     "<br>UTM WGS 84 zona "+safe(x.utm.zone)+"S: E "+safe(x.utm.easting_m)+" · N "+safe(x.utm.northing_m)+" ("+safe(x.utm.epsg)+")"+
+     "<br>Expuestos según ANA: "+safe(x.exposure.viviendas??"s/d")+" viviendas, "+safe(x.exposure.habitantes_directos??"s/d")+" habitantes directos"+
+     '<br>Fuente: ANA 2016-2017, Cuadro '+safe(x.cuadro)+", fila "+safe(x.row)+", pág. "+safe(x.pdf_page)+' del PDF · <a href="'+safe(A.source.registry_url)+'" target="_blank" rel="noopener noreferrer">SIGRID 2799</a>'+
+     (inv?"<br>Inventario: "+inv:"<br>Sin registro enlazado en el inventario maestro")+
+     "<br><em>Ubicación documental del centro poblado expuesto: no es la quebrada, su cauce ni una zona de inundación. Nombres leídos por OCR, por comprobar.</em>");
+   m.feature={properties:{id:x.id}};anaById[x.id]=m;return m;}));
+ anaLayer.addTo(map);
+ const label=document.createElement("label"),cb=document.createElement("input");
+ cb.type="checkbox";cb.checked=true;cb.id="toggle-ana";cb.addEventListener("change",()=>{if(cb.checked)map.addLayer(anaLayer);else map.removeLayer(anaLayer);});
+ label.append(cb,document.createTextNode(" Centros poblados vulnerables · ANA 2016-17, ubicación documental, no es la quebrada ("+admitted.length+")"));
+ $("layerToggles").append(label);
+ // coverage matrix: inventory records, ANA points (admitted / table rows), IRFEN drawn elements, per coastal department
+ const depKey=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().trim();
+ const deps=["TUMBES","PIURA","LAMBAYEQUE","LA LIBERTAD","ANCASH","LIMA","CALLAO","ICA","AREQUIPA","MOQUEGUA","TACNA"];
+ const inv={},drawn={},rows={},adm={};
+ (I?.rows||[]).forEach(r=>{const k=depKey(r.department);inv[k]=(inv[k]||0)+1;});
+ features.forEach(f=>{const k=depKey(f.properties?.department);if(k)drawn[k]=(drawn[k]||0)+1;});
+ (okGuards?A.tables:[]).forEach(t=>{rows[t.department]=t.rows_declared;adm[t.department]=t.admitted;});
+ deptBoxes=okGuards?A.departments:{};
+ $("coverage").innerHTML='<div class="covwrap"><table class="cov"><tr><th>Departamento</th><th class="n">Inventario</th><th class="n">ANA admitidos / filas del cuadro</th><th class="n">Elementos IRFEN</th><th>Estado</th></tr>'+
+   deps.map(k=>{const g=drawn[k]||0,a=adm[k]||0;const st=g?'<span class="okc">geometrías IRFEN</span>':(a?'<span class="pend">solo ubicaciones documentales</span>':'<span class="pend">cobertura pendiente</span>');
+     return '<tr data-dep="'+safe(k)+'" data-pending="'+(g?0:1)+'"><td>'+safe(k.charAt(0)+k.slice(1).toLowerCase())+'</td><td class="n">'+(inv[k]||0)+'</td><td class="n">'+(rows[k]!==undefined?a+" / "+rows[k]:"—")+'</td><td class="n">'+g+'</td><td>'+st+'</td></tr>';}).join("")+"</table></div>"+
+   (okGuards?'<p class="note">ANA: centros poblados con coordenadas UTM publicadas en el cuadro de cada departamento; se admiten solo si dos lecturas OCR coinciden y el punto cae en la provincia declarada. Las demás filas siguen en revisión y no se dibujan.</p>':'<p class="note">No se pudieron cargar las ubicaciones documentales ANA.</p>');
+ const sel=$("dept");Object.keys(deptBoxes).forEach(k=>{const o=document.createElement("option");o.value=k;o.textContent=k.charAt(0)+k.slice(1).toLowerCase();sel.append(o);});
+ sel.addEventListener("change",()=>{if(sel.value)location.hash="dep="+encodeURIComponent(sel.value);});
+}
+function fromHash(){
+ const h=decodeURIComponent(location.hash.slice(1));
+ if(h.startsWith("dep=")){const b=deptBoxes[h.slice(4)]?.bbox;if(Array.isArray(b)&&b.length===4){map.fitBounds([[b[0],b[1]],[b[2],b[3]]],{padding:[16,16]});$("dept").value=h.slice(4);}}
+ else if(h.startsWith("punto=")){const m=anaById[h.slice(6)];if(m){$("dept").value="";if(anaLayer&&!map.hasLayer(anaLayer)){map.addLayer(anaLayer);const t=$("toggle-ana");if(t)t.checked=true;}map.setView(m.getLatLng(),11);m.openPopup();}}
+}
+})();
+</script></body></html>
