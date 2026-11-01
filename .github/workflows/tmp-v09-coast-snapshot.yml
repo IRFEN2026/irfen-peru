@@ -1,0 +1,37 @@
+name: TMP coast snapshot for the private surveillance view (INEI coastal limits, IMERG Early 72 h; removed after capture)
+on:
+  push:
+    branches: [integration/v09-private-surveillance-view-20261101]
+    paths: [.github/workflows/tmp-v09-coast-snapshot.yml]
+permissions:
+  contents: write
+concurrency: {group: tmp-v09-coast, cancel-in-progress: false}
+jobs:
+  capture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with: {python-version: "3.12", cache: pip}
+      - run: pip install -q -r requirements.txt
+      - name: INEI coastal departments and provinces (SERFOR service, one pass)
+        timeout-minutes: 8
+        continue-on-error: true
+        run: python scripts/v09_coast_snapshot_capture.py --stage inei
+      - name: IMERG Early V07 last ~78 h over the Peruvian coast
+        timeout-minutes: 25
+        continue-on-error: true
+        env:
+          EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
+        run: python scripts/v09_coast_snapshot_capture.py --stage imerg
+      - name: Commit whatever was captured
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/v09/sources/inei_coast_tumbes_tacna data/v09/research/coast_rain || true
+          git diff --cached --quiet && { echo "::warning::nothing captured"; exit 0; }
+          echo "::notice title=captured::$(git diff --cached --stat | tail -1)"
+          git commit -q -m "Research snapshot: INEI coastal limits and IMERG Early 72 h over the Peruvian coast (private surveillance view)"
+          for i in 1 2 3; do git fetch -q origin "$GITHUB_REF_NAME" && git rebase -q "origin/$GITHUB_REF_NAME" && git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0; sleep 5; done; exit 1
