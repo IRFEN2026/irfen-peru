@@ -16,7 +16,7 @@ a{color:var(--accent)}header.top{padding:12px max(16px,env(safe-area-inset-right
 h1{font-size:18px;margin:0 0 2px}h2{font-size:15px;margin:0 0 8px}h3{font-size:13.5px;margin:12px 0 6px}
 .sub{color:var(--ink-2);font-size:12.5px;margin:0}.guard{background:var(--warn-bg);color:var(--warn-ink);padding:8px 16px;font-size:12.5px;border-bottom:1px solid var(--border)}
 .chips{display:flex;gap:6px;flex-wrap:wrap;padding:8px 16px;background:var(--surface);border-bottom:1px solid var(--border)}
-.chip{font-size:12px;border-radius:999px;padding:3px 9px;border:1px solid var(--border);background:var(--surface-2);color:var(--ink-2);white-space:nowrap}
+.chip{font-size:12px;border-radius:999px;padding:3px 9px;border:1px solid var(--border);background:var(--surface-2);color:var(--ink-2);max-width:100%}
 .chip b{color:var(--ink)}.chip.ok{background:var(--ok-bg);color:var(--ok-ink);border-color:transparent}.chip.old{background:var(--bad-bg);color:var(--bad-ink);border-color:transparent}
 .chip.na{background:var(--na-bg);color:var(--na-ink);border-color:transparent}
 .layout{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:12px;padding:12px 16px}
@@ -50,9 +50,11 @@ svg.chart{width:100%;height:auto;display:block}svg.chart .ax{stroke:var(--border
 @media (max-width:900px){.layout{display:flex;flex-direction:column;padding:8px 16px}#map{height:58vh;min-height:340px}.panel{max-height:none}}
 </style></head><body>
 <header class="top"><h1>IRFEN v0.9 · Vigilancia científica de la costa peruana (Tumbes–Tacna)</h1>
+<p class="sub"><b>Research Preview 1</b> · versión congelada de investigación</p>
 <p class="sub">Vista <b>privada</b> de investigación · <a href="resumen.html">Resumen</a> · <a href="peru.html">Mapa del Perú</a> · <a href="territorio.html">Visor costa norte / Rímac</a> · <a href="inventario.html">Inventario</a> · <a href="index.html">Lluvia y avisos (zonas)</a></p></header>
 <div class="guard" id="guard"><b>RESEARCH_ONLY · TEST_ONLY.</b> No es un sistema de alerta, no predice crecidas, huaicos ni inundaciones y no sustituye a SENAMHI, INDECI ni a las autoridades. <b>La ausencia de datos no significa ausencia de peligro.</b></div>
 <div class="chips" id="chips" aria-live="polite">Cargando datos…</div>
+<div class="guard" id="frozen" hidden></div>
 <main class="layout">
 <section class="mapcard" aria-label="Mapa">
  <div class="controls">
@@ -107,6 +109,14 @@ $("chips").innerHTML=chip("Avisos INDECI/COEN",S.avisos?.updated_at_utc,S.avisos
  chip("IMERG norte (22 zonas)",S.imerg_north?.data_end_utc,S.imerg_north?.stale_after_minutes,"fin de ventana")+
  chip("IMERG costa (instantánea)",S.imerg_coast?.data_end_utc,S.imerg_coast?.stale_after_minutes,"fin de ventana")+
  '<span class="chip"><b>Paquete</b> · '+safe(fmt(D.built_from_dashboard_at_utc))+'</span><span class="chip na"><b>Caudal en tiempo real</b> · no disponible</span>';
+// ---------- frozen data: never present an old snapshot as current information
+const staleOf=(iso,min)=>{const h=age(iso);return h===null||h<-0.1||(min&&h*60>min);};
+const STALE={avisos:staleOf(S.avisos?.updated_at_utc,S.avisos?.stale_after_minutes),coast:staleOf(S.imerg_coast?.data_end_utc,S.imerg_coast?.stale_after_minutes),
+ north:staleOf(S.imerg_north?.data_end_utc,S.imerg_north?.stale_after_minutes)};
+const AVCUT=S.avisos?.updated_at_utc;
+if(STALE.avisos||STALE.coast||STALE.north){$("frozen").hidden=false;$("frozen").innerHTML="<b>Datos congelados, no actuales.</b> Avisos comprobados por última vez: "+safe(fmt(AVCUT))+
+ " · lluvia costera hasta "+safe(fmt(S.imerg_coast?.data_end_utc))+" · lluvia norte hasta "+safe(fmt(S.imerg_north?.data_end_utc))+
+ ". Los avisos emitidos después no aparecen y el estado «vigente» se refiere solo a los boletines capturados. Para la situación actual consulte SENAMHI e INDECI.";}
 // ---------- map
 if(!window.L){$("msg").textContent="No se pudo cargar la biblioteca del mapa (Leaflet). Las pestañas siguen disponibles.";}
 const map=window.L?L.map("map",{preferCanvas:true,zoomSnap:.5}).setView([-10.5,-77],5):null;
@@ -122,7 +132,7 @@ const deps=D.admin?.departments?.features||[];
 if(map&&base)addLayer("base","Mapa base OpenStreetMap (opcional)",base,true);
 const BASEMSG=SINGLE?"Vista de un solo archivo: sin mapa base externo; se muestran los límites INEI y las capas IRFEN.":"";
 if(map&&deps.length){const dl=L.geoJSON({type:"FeatureCollection",features:deps},{style:{color:"#5b6b78",weight:1.4,fill:true,fillOpacity:0.02},
-  onEachFeature:(f,l)=>{deptLayer[f.properties.id]=l;l.on("click",()=>selectDept(f.properties.id));l.bindTooltip(title(f.properties.name),{sticky:true});}});
+  onEachFeature:(f,l)=>{deptLayer[f.properties.id]=l;l.on("click",()=>selectDept(f.properties.id));l.bindTooltip(safe(title(f.properties.name)),{sticky:true});}});
  addLayer("deps","Departamentos costeros (INEI referencial)",dl,true);}
 if(map&&D.admin?.provinces?.features?.length)addLayer("provs","Provincias (INEI referencial)",L.geoJSON(D.admin.provinces,{style:{color:"#8a99a6",weight:.6,fill:false,dashArray:"2,3"},interactive:false}),false);
 // rain
@@ -136,7 +146,7 @@ function drawRain(){if(!map)return;rainCoast.clearLayers();rainZones.clearLayers
  if(C?.status==="OK"){const w=C.windows[WIN];
   if(w?.status==="COMPLETA"&&w.values){const h=C.cell_deg/2;
    C.cells.forEach(([i,j],k)=>{const v=w.values[k];if(v===null||v===undefined)return;const col=binColor(v);if(!col)return;
-    const x=C.lon[i],y=C.lat[j];L.rectangle([[y-h,x-h],[y+h,x+h]],{stroke:false,fillColor:col,fillOpacity:.72}).bindTooltip(v.toFixed(1).replace(".",",")+" mm en "+WIN.replace("h"," h")+" · "+title(C.cell_department[k]),{sticky:true}).addTo(rainCoast);});
+    const x=C.lon[i],y=C.lat[j];L.rectangle([[y-h,x-h],[y+h,x+h]],{stroke:false,fillColor:col,fillOpacity:.72}).bindTooltip(v.toFixed(1).replace(".",",")+" mm en "+WIN.replace("h"," h")+" · "+safe(title(C.cell_department[k])),{sticky:true}).addTo(rainCoast);});
   }else msg="Lluvia costera: la ventana de "+WIN.replace("h"," h")+" no está completa (faltan medias horas): no se dibuja.";
  }else msg="Lluvia costera: sin instantánea archivada.";
  const Z=D.rain?.north_zones;
@@ -147,7 +157,7 @@ function drawRain(){if(!map)return;rainCoast.clearLayers();rainZones.clearLayers
 function renderLegend(){const C=D.rain?.coast,w=C?.windows?.[WIN];
  $("legend").innerHTML="<span>Lluvia "+safe(WIN.replace("h"," h"))+" (mm) · intervalos de visualización, no umbrales:</span>"+BINS.map((b,i)=>'<span><i class="sw" style="background:'+css(b[1])+'"></i>'+(i<BINS.length-1?String(b[0]).replace(".",",")+"–"+BINS[i+1][0]:"≥ "+b[0])+"</span>").join("")+
   '<span><i class="sw" style="background:transparent"></i>&lt; 0,1 mm o sin dato: sin color</span>'+
-  (w?'<span>Ventana costa: '+safe(fmt(w.start_utc))+' → '+safe(fmt(w.end_utc))+'</span>':"");}
+  (w?'<span>Ventana costa: '+safe(fmt(w.start_utc))+' → '+safe(fmt(w.end_utc))+(STALE.coast?' · <b>antigua ('+safe(ageTxt(w.end_utc))+')</b>':"")+'</span>':"");}
 const wb=$("win");["1h","3h","6h","24h","72h"].forEach(k=>{const b=document.createElement("button");b.type="button";b.textContent=k.replace("h"," h");b.setAttribute("aria-pressed",String(k===WIN));
  b.onclick=()=>{WIN=k;wb.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));drawRain();renderRainTab();renderSummary($("dept").value);};wb.append(b);});
 // rivers
@@ -198,12 +208,12 @@ function renderSummary(k){
  let card="";
  if(k){const s=DS[k]||{};const va=avNow(k,"VIGENTE"),fa=avNow(k,"FUTURO");
   card='<div class="card"><h2>'+safe(title(k))+'</h2>'+
-  '<p><b>Avisos vigentes ahora:</b> '+(va.length?va.map(a=>'<span class="tag">'+safe(CAT[a.category]||a.product)+(a.level?" · "+safe(a.level):"")+'</span>').join(""):'<span class="note">ninguno en los boletines capturados</span>')+(fa.length?'<br><b>Próximos:</b> '+fa.length:"")+'</p>'+
+  '<p><b>Avisos vigentes ahora'+(STALE.avisos?' (solo boletines capturados hasta '+safe(fmt(AVCUT))+')':'')+':</b> '+(va.length?va.map(a=>'<span class="tag">'+safe(CAT[a.category]||a.product)+(a.level?" · "+safe(a.level):"")+'</span>').join(""):'<span class="note">ninguno en los boletines capturados</span>')+(fa.length?'<br><b>Próximos:</b> '+fa.length:"")+'</p>'+
   '<p><b>Lluvia IMERG (media / máx. de celdas, mm, '+safe(WIN.replace("h"," h"))+'):</b> '+safe(r24(k))+'<br><span class="note">Media de todo el departamento, incluida la sierra.</span></p>'+
   '<p><b>Zonas del norte con archivo continuo:</b> '+(s.north_rain_zones||0)+' · <b>Centros poblados ANA:</b> '+(s.ana_points||0)+' · <b>Inventario de quebradas:</b> '+(s.inventory_rows||0)+' · <b>Geometrías IRFEN:</b> '+(s.irfen_geometries||0)+'</p>'+
   '<p><b>Crecidas de ríos:</b> '+(s.river_flood_research?'histórico PECHP y cuencas experimentales (pestaña «Crecidas de ríos»); sin caudal en tiempo real.':'<span class="note">sin información de crecidas integrada para este departamento.</span>')+'</p></div>';}
- $("tab-resumen").innerHTML=card+'<h2>Costa por departamento</h2><div class="tw"><table><thead><tr><th>Departamento</th><th class="n">Avisos vigentes</th><th class="n">Lluvia '+safe(WIN.replace("h"," h"))+' (mm) media / máx.</th><th class="n">Centros ANA</th><th class="n">Quebradas inv.</th><th>Ríos</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
-  '<p class="note">Avisos: estado calculado ahora con la vigencia oficial. Lluvia: IMERG Early (estimación satelital), instantánea del '+safe(fmt(D.rain?.coast?.end_utc))+'. «No disponible» significa sin dato válido, nunca «sin lluvia».</p>'+
+ $("tab-resumen").innerHTML=card+'<h2>Costa por departamento</h2><div class="tw"><table><thead><tr><th>Departamento</th><th class="n">Avisos vigentes'+(STALE.avisos?'*':'')+'</th><th class="n">Lluvia '+safe(WIN.replace("h"," h"))+' (mm) media / máx.</th><th class="n">Centros ANA</th><th class="n">Quebradas inv.</th><th>Ríos</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+  (STALE.avisos?'<p class="note">* Solo boletines capturados hasta '+safe(fmt(AVCUT))+'; los avisos emitidos después no están incluidos.</p>':'')+'<p class="note">Avisos: estado calculado ahora con la vigencia oficial. Lluvia: IMERG Early (estimación satelital), instantánea del '+safe(fmt(D.rain?.coast?.end_utc))+'. «No disponible» significa sin dato válido, nunca «sin lluvia».</p>'+
   '<h2>Tres fenómenos distintos</h2>'+(D.phenomena||[]).map(p=>'<div class="card ph '+safe(p.id)+'"><b>'+safe(p.label)+'</b> <span class="note">('+safe(p.examples)+')</span><br><span class="note">Capas: '+safe(p.layers.join(", "))+'<br>Tiempo real: '+safe(p.realtime)+'<br>Avisos: '+safe(p.avisos)+'</span></div>').join("");
  $("tab-resumen").querySelectorAll("a[data-dep]").forEach(a=>a.onclick=e=>{e.preventDefault();selectDept(a.dataset.dep);});}
 // ---------- rain tab
@@ -221,7 +231,7 @@ function renderAvisos(){const list=AV.filter(a=>(fCat==="ALL"||a.category===fCat
  $("tab-avisos").innerHTML='<h2>Avisos oficiales</h2><p class="note">Avisos de <b>SENAMHI</b> reproducidos por <b>INDECI/COEN</b> en sus boletines informativos. IRFEN no emite avisos; el nivel se muestra solo cuando está escrito en el texto. Consulte siempre el boletín oficial.</p>'+
  '<div class="filters"><label>Tipo <select id="fcat"><option value="ALL">Todos</option><option value="LLUVIA_INTENSA">Lluvias intensas</option><option value="ACTIVACION_QUEBRADAS">Activación de quebradas</option><option value="METEOROLOGICO">Meteorológico</option></select></label>'+
  '<label>Estado <select id="fst"><option value="ACTIVO">Vigentes y próximos</option><option value="VIGENTE">Vigentes</option><option value="FUTURO">Próximos</option><option value="VENCIDO">Vencidos</option><option value="ALL">Todos</option></select></label></div>'+
- '<p class="note">'+list.length+' avisos · los avisos hidrológicos de crecidas de ríos de SENAMHI no están integrados.</p>'+
+ '<p class="note">'+list.length+' avisos · última comprobación de boletines: '+safe(fmt(AVCUT))+(STALE.avisos?' (<b>antigua: los avisos posteriores no aparecen</b>)':'')+' · los avisos hidrológicos de crecidas de ríos de SENAMHI no están integrados.</p>'+
  (list.length?list.map((a,i)=>'<div class="card"><span class="tag st-'+safe(a.st)+'">'+safe(a.st==="FUTURO"?"PRÓXIMO":a.st)+'</span>'+(a.level?'<span class="tag lv-'+safe(a.level)+'">Nivel '+safe(a.level)+'</span>':'<span class="tag" title="'+safe(a.level_note)+'">nivel no indicado en el texto</span>')+'<span class="tag">'+safe(CAT[a.category]||a.product)+'</span>'+(a.rain_related===false?'<span class="tag">no relacionado con lluvia</span>':"")+
   '<div><b>'+safe(a.phenomenon)+'</b> · Nº '+safe(a.number)+'</div><div class="note">Vigencia: '+safe(fmt(a.validity_start))+' → '+safe(fmt(a.validity_end))+'</div>'+
   '<div class="note">Departamentos costeros: '+(a.coastal_departments.length?safe(a.coastal_departments.map(title).join(", ")):"ninguno")+' · total en el aviso: '+safe(a.departments.length)+'</div>'+

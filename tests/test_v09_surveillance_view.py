@@ -31,6 +31,12 @@ class Bundle(unittest.TestCase):
     def test_rebuilds_byte_for_byte(self):
         with redirect_stdout(io.StringIO()):
             self.assertEqual(B.main(["--check"]), 0)
+        # Research Preview 1 freeze: every released file still matches the SHA-256 recorded in the manifest
+        import hashlib
+        man = json.loads((ROOT / "research/v09/RESEARCH_PREVIEW_1_MANIFEST.json").read_text(encoding="utf-8"))
+        for rel, sha in man["files"].items():
+            self.assertEqual(hashlib.sha256((ROOT / rel).read_bytes()).hexdigest(), sha, rel)
+        self.assertFalse(man["public_alerting"] or man["predictive_engine_enabled"] or man["merged_into_main"])
 
     def test_guards(self):
         for k, v in B.GUARDS.items():
