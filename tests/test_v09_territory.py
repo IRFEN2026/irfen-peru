@@ -190,7 +190,7 @@ class Isolation(unittest.TestCase):
     def test_nothing_operational_reads_the_territory_view(self):
         # the builder, the Pages publication gate (it removes the view) and the independent QA verifier (it reads
         # the bundle) are the only scripts allowed to name it; none of them feeds the rain engine or the panel
-        # + the private surveillance view builder (#463): a viewer bundle withheld by the same territorial gate
+        # + the private surveillance view builder (#464): a viewer bundle withheld by the same territorial gate
         allowed = {"v09_build_territory_bundle.py", "v09_pages_publication_gate.py", "v09_territory_independent_qa.py",
                    "v09_build_surveillance_view.py"}
         for path in (ROOT / "scripts").glob("*.py"):
