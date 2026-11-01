@@ -190,13 +190,18 @@ class Isolation(unittest.TestCase):
     def test_nothing_operational_reads_the_territory_view(self):
         # the builder, the Pages publication gate (it removes the view) and the independent QA verifier (it reads
         # the bundle) are the only scripts allowed to name it; none of them feeds the rain engine or the panel
-        allowed = {"v09_build_territory_bundle.py", "v09_pages_publication_gate.py", "v09_territory_independent_qa.py"}
+        # + the private surveillance view builder (#463): a viewer bundle withheld by the same territorial gate
+        allowed = {"v09_build_territory_bundle.py", "v09_pages_publication_gate.py", "v09_territory_independent_qa.py",
+                   "v09_build_surveillance_view.py"}
         for path in (ROOT / "scripts").glob("*.py"):
             if path.name not in allowed:
                 text = path.read_text(encoding="utf-8")
                 self.assertNotIn("v09_build_territory_bundle", text, path.name)
                 self.assertNotIn("territory_v0_1.json", text, path.name)
         self.assertNotIn("territory_v0_1.json", (ROOT / "site/v09/index.html").read_text(encoding="utf-8"))
+        for path in (ROOT / "scripts").glob("*.py"):  # and nothing else reads the surveillance view bundle
+            if path.name not in ("v09_build_surveillance_view.py", "v09_pages_publication_gate.py"):
+                self.assertNotIn("surveillance_view_v0_1.json", path.read_text(encoding="utf-8"), path.name)
 
     def test_workflows_rebuild_it_without_blocking_capture(self):
         for wf in ("v09-rain-north.yml", "v09-senamhi-avisos-capture.yml"):
