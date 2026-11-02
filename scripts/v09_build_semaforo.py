@@ -235,12 +235,16 @@ def rain_refs(dash, nz, cr):
         z = zones.get(zid) or {}
         g = z.get("goes19") or {}
         refs["zone:" + zid] = dict(kind="zone", label=f"Zona {f['properties']['name']} (polígono del panel de zonas)",
+                                   connection="CONTINUA",
                                    imerg=dict(end_utc=nz["end_utc"], windows={k: v["mm"] if v["status"] == "COMPLETA" else None
                                                                               for k, v in f["properties"]["windows"].items()},
-                                              source="IMERG Early V07 · archivo continuo de 30 min por zona"),
+                                              source="IMERG Early V07 · archivo continuo de 30 min por zona (workflow v09-rain-north de main)",
+                                              capture_state=nz.get("capture_state"), catalog_lag_hours=nz.get("catalog_lag_hours"),
+                                              quality="media areal del polígono; una ventana con alguna media hora ausente no se usa"),
                                    goes=dict(scan_end_utc=g.get("scan_end_utc"),
                                              rate_mm_h=g.get("rate_mean_mm_h") if g.get("status") == "CALCULADO" else None,
-                                             valid_fraction=g.get("valid_fraction"), source="GOES-19 RRQPE · media sobre el polígono")
+                                             valid_fraction=g.get("valid_fraction"), pixels=[g.get("good_quality_pixels"), g.get("window_pixels")],
+                                             source="GOES-19 RRQPE · media sobre el polígono, solo DQF=0 (workflow v09-rain-north de main)")
                                    if g.get("status") else None)
     return refs, zones
 
@@ -259,7 +263,7 @@ def coast_cell_ref(cr, lon, lat):
         return None, None
     _, idx, x, y = best
     key = f"cell:{x:.2f},{y:.2f}"
-    return key, dict(kind="cell", label=f"Celda IMERG de 0,1° centrada en {y:.2f}, {x:.2f} (instantánea costera)",
+    return key, dict(kind="cell", connection="INSTANTANEA", label=f"Celda IMERG de 0,1° centrada en {y:.2f}, {x:.2f} (instantánea costera, no conectada)",
                      imerg=dict(end_utc=cr["end_utc"], windows={k: (w["values"][idx] if w["values"] is not None else None)
                                                                  for k, w in cr["windows"].items()},
                                 source="IMERG Early V07 · instantánea de investigación (no se actualiza sola)"),

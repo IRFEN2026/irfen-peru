@@ -203,7 +203,8 @@ def north_zone_rain(dash, admin=None):
         feats.append(dict(type="Feature", properties=props, geometry=simplify_geom(g["geometry"], 0.003) if g else None))
     return dict(status="OK", source="IMERG Early V07 (GPM_3IMERGHHE) · archivo continuo IRFEN de 30 min por zona (main)",
                 end_utc=end.isoformat(), latest_half_hour_start_utc=last.isoformat(),
-                written_at_utc=arch["status"].get("written_at_utc"), catalog_lag_hours=(arch["status"].get("catalog_freshness") or {}).get("lag_hours"),
+                written_at_utc=arch["status"].get("written_at_utc"), capture_state=arch["status"].get("state"),
+                capture_error=(arch["status"].get("error") or "")[:160] or None, catalog_lag_hours=(arch["status"].get("catalog_freshness") or {}).get("lag_hours"),
                 method=arch["policy"]["sample"], zones=dict(type="FeatureCollection", features=[f for f in feats if f["geometry"]]),
                 zones_without_geometry=[f["properties"]["zone_id"] for f in feats if not f["geometry"]])
 
@@ -487,7 +488,8 @@ def build() -> dict:
              quality="Texto oficial reproducido; el nivel solo cuando está escrito; relación con zonas por límites INEI referenciales",
              stale_after_minutes=dash["source"]["snapshot"].get("viewer_stale_after_minutes")),
         dict(id="imerg_north", label="IMERG Early 30 min · 22 zonas del norte (archivo continuo)", updated_at_utc=nz.get("written_at_utc"),
-             data_end_utc=nz.get("end_utc"), quality="Estimación satelital (no pluviómetro); latencia de horas; ventana incompleta = no disponible",
+             data_end_utc=nz.get("end_utc"), capture_state=nz.get("capture_state"), capture_error=nz.get("capture_error"),
+             quality="Estimación satelital (no pluviómetro); latencia de horas; ventana incompleta = no disponible",
              stale_after_minutes=12 * 60),
         dict(id="imerg_coast", label="IMERG Early · instantánea costera Tumbes–Tacna", updated_at_utc=cr.get("captured_at_utc"),
              data_end_utc=cr.get("end_utc"), quality="Instantánea de investigación (no se actualiza sola); celdas de 0,1° ≈ 11 km",

@@ -18,6 +18,8 @@ SOURCES = (
     dict(id="imerg_early_north", label="NASA IMERG Early · zonas norte",
          path="data/v09/rain/imerg_early_north_v0_1.json",
          time_path=("status", "latest_granule_start_utc"),
+         # when the last capture failed the status block carries only the error: use the newest archived granule
+         fallback_list=("granules", "time_utc"),
          freshness_minutes=720, coverage="zonas norte archivadas", mode="REPEATED"),
     dict(id="goes19_rrqpe_north", label="NOAA GOES-19 RRQPE · zonas norte",
          path="data/v09/rain/goes19_rrqpe_north_v0_1.json",
@@ -63,6 +65,17 @@ def examine(spec, root, now):
         row["reason"] = "Contratos de investigación no satisfechos"
         return row
     timestamp = pick(payload, spec["time_path"])
+    state = pick(payload, ("status", "state"))
+    if isinstance(state, str):
+        row["capture_state"] = state
+    if timestamp is None and spec.get("fallback_list"):
+        lst, key = spec["fallback_list"]
+        items = payload.get(lst) if isinstance(payload.get(lst), list) else []
+        times = [parse_time(x.get(key)) for x in items if isinstance(x, dict)]
+        times = [t for t in times if t]
+        if times:
+            timestamp = max(times).isoformat()
+            row["time_basis"] = "última media hora archivada (la última captura no dejó estado)"
     # Coast snapshot stores per-window timestamps as a mapping; choose the
     # newest valid ending time solely for the SOURCE, not for each rain window.
     if isinstance(timestamp, dict):

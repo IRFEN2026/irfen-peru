@@ -106,7 +106,13 @@ const safe=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"
 const url=u=>/^https:\/\//.test(String(u||""))?safe(u):null;
 const NOW=Date.now();
 const SINGLE=!!document.getElementById("bundle");  // single-file demo: no external tiles, no hash routing
-const pageLink=(href,text)=>SINGLE?safe(text):'<a href="'+safe(href)+'">'+safe(text)+"</a>";
+// live research mode (v0.9.1): ?live=<folder> or <meta name="irfen-live" content="<folder>">; the folder holds current/manifest.json
+const LIVE_BASE=(()=>{if(SINGLE)return null;const q=new URLSearchParams(location.search).get("live");const m=document.querySelector('meta[name="irfen-live"]')?.content;
+ const v=q!==null?(q===""||q==="1"?"current/":q):(m||null);return v&&!/^(javascript|data):/i.test(v)?(v.endsWith("/")?v:v+"/"):null;})();
+const LIVE=!!LIVE_BASE;
+const pageLink=(href,text)=>(SINGLE||LIVE)?safe(text):'<a href="'+safe(href)+'">'+safe(text)+"</a>";
+const sget=k=>{try{return JSON.parse(sessionStorage.getItem(k)||"null");}catch(e){return null;}};
+const sset=(k,v)=>{try{sessionStorage.setItem(k,JSON.stringify(v));}catch(e){}};
 const title=s=>String(s||"").toLowerCase().replace(/(^|\s|-)(\p{L})/gu,(m,a,b)=>a+b.toUpperCase());
 const norm=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim();
 function fmt(iso){if(!iso)return"sin fecha";const d=new Date(iso);if(isNaN(d))return"fecha no válida";
@@ -116,7 +122,7 @@ function ageTxt(iso){const h=age(iso);if(h===null)return"sin fecha";if(h<-0.1)re
 // ---------- bundle (inline in the single-file copy, otherwise from the data folder)
 let D;
 try{const inline=document.getElementById("bundle");
- if(inline)D=JSON.parse(inline.textContent);else{const r=await fetch("../data/v09/surveillance_view_v0_1.json",{cache:"no-store"});if(!r.ok)throw Error("HTTP "+r.status);D=await r.json();}
+ if(inline)D=JSON.parse(inline.textContent);else{const r=await fetch(LIVE?LIVE_BASE+"surveillance_view_v0_1.json":"../data/v09/surveillance_view_v0_1.json",{cache:"no-store"});if(!r.ok)throw Error("HTTP "+r.status);D=await r.json();}
 }catch(e){$("state").textContent="No se pudo cargar el paquete de datos ("+e.message+"). Sin datos no se muestra nada: no significa ausencia de peligro.";return;}
 const G=["production_use","public_alerting","operational_alerting_enabled","predictive_engine_enabled","notifications_enabled"];
 if(D.deployment_status!=="RESEARCH_ONLY"||D.test_mode!=="TEST_ONLY"||D.activation_gate!=="BLOCKED"||G.some(k=>D[k]!==false)||D.decision_thresholds!==null){
@@ -126,11 +132,14 @@ const S=Object.fromEntries(D.sources.map(s=>[s.id,s]));
 const staleOf=(iso,min)=>{const h=age(iso);return h===null||h<-0.1||(min&&h*60>min);};
 const STALE={avisos:staleOf(S.avisos?.updated_at_utc,S.avisos?.stale_after_minutes),coast:staleOf(S.imerg_coast?.data_end_utc,S.imerg_coast?.stale_after_minutes),
  north:staleOf(S.imerg_north?.data_end_utc,S.imerg_north?.stale_after_minutes)};
-const AVCUT=S.avisos?.updated_at_utc;const ANY=STALE.avisos||STALE.coast||STALE.north;
+const AVCUT=S.avisos?.updated_at_utc;const LV=LIVE?D.live:null;
+// in live mode the coast layer is a frozen snapshot (not connected): it is flagged on its own and does not mark the live sources as old
+const ANY=STALE.avisos||STALE.north||(!LV&&STALE.coast);
 const short=iso=>{const d=new Date(iso);return isNaN(d)?"sin fecha":d.toLocaleString("es-PE",{timeZone:"America/Lima",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});};
 $("cutoff").innerHTML="<b>Corte</b> "+safe(short(AVCUT))+" (Lima)";$("cutoff").title="Última comprobación de avisos: "+fmt(AVCUT);
 $("state").className="chip "+(ANY?"old":"ok");
-$("state").innerHTML=ANY?"<b>Datos congelados</b> · corte "+safe(short(AVCUT)):"<b>Al día</b> · "+safe(ageTxt(AVCUT));
+$("state").innerHTML=LV?("<b>"+(ANY?"Actualización automática · fuentes antiguas":"Actualización automática")+"</b> · paquete "+safe(short(LV.built_at_utc))):
+ (ANY?"<b>Datos congelados</b> · corte "+safe(short(AVCUT)):"<b>Al día</b> · "+safe(ageTxt(AVCUT)));
 $("state").title="Avisos "+ageTxt(AVCUT)+" · lluvia costa hasta "+fmt(S.imerg_coast?.data_end_utc)+" · lluvia norte hasta "+fmt(S.imerg_north?.data_end_utc);
 // ---------- map
 
@@ -183,7 +192,8 @@ let WIN="24h";
 const rainCoast=map?L.layerGroup():null,rainZones=map?L.layerGroup():null;
 const coastSub=()=>{const w=D.rain?.coast?.windows?.[WIN];return w?("IMERG Early "+WIN.replace("h"," h")+" hasta "+fmt(w.end_utc)+(STALE.coast?" · congelada ("+ageTxt(w.end_utc)+")":" · "+ageTxt(w.end_utc))):"sin instantánea";};
 const northSub=()=>"IMERG Early "+WIN.replace("h"," h")+" hasta "+fmt(D.rain?.north_zones?.end_utc)+(STALE.north?" · congelada ("+ageTxt(D.rain?.north_zones?.end_utc)+")":"");
-if(map){register("rainCoast","Lluvia estimada · costa completa (celdas 0,1°)",rainCoast,true,coastSub);register("rainZones","Lluvia estimada · 22 zonas del norte",rainZones,false,northSub);}
+if(map){register("rainCoast",LV?"Lluvia estimada · costa completa (instantánea 01-11, no conectada)":"Lluvia estimada · costa completa (celdas 0,1°)",rainCoast,!LV,coastSub);
+ register("rainZones",LV?"Lluvia estimada · 22 zonas del norte (actualización automática)":"Lluvia estimada · 22 zonas del norte",rainZones,!!LV,northSub);}
 function drawRain(){if(!map)return;rainCoast.clearLayers();rainZones.clearLayers();const C=D.rain?.coast;let m="";
  if(C?.status==="OK"){const w=C.windows[WIN];
   if(w?.status==="COMPLETA"&&w.values){const h=C.cell_deg/2;
@@ -305,7 +315,8 @@ const mm=v=>v===null||v===undefined?"n/d":v.toFixed(1).replace(".",",");
 const smScope=(k,dep)=>SMS.avisos[k].scope_by_department?.[dep]==="PROVINCIA"?"provincias "+(SMS.avisos[k].provinces[dep]||[]).map(title).join(", "):"todo el departamento (el aviso no enumera provincias)";
 const smAv=(k,dep)=>{const a=SMS.avisos[k];return safe(a.product)+" Nº "+safe(a.number)+(a.level?" (nivel "+safe(a.level)+")":"")+" · "+safe(short(a.start))+"→"+safe(short(a.end))+" · "+safe(smScope(k,dep));};
 function smRain(r){const fr=SMS.rules.freshness;if(!r.rr)return["Lluvia local: sin dato asociado a este punto."];
- return["Lluvia IMERG 24 h: "+(r.iFresh?(r.i24===null?"<b>no disponible</b> (ventana incompleta; no es cero)":mm(r.i24)+" mm (fin "+safe(short(r.rr.imerg.end_utc))+")"):"<b>antigua o ausente</b> (fin de ventana "+safe(fmt(r.rr.imerg.end_utc))+"; máx. "+fr.imerg_max_age_hours+" h): no se usa"),
+ const con=r.rr.connection==="CONTINUA"?"actualización automática (archivo continuo de main"+(r.rr.imerg.capture_state&&r.rr.imerg.capture_state!=="AVAILABLE"?"; última captura fallida: "+safe(r.rr.imerg.capture_state):"")+")":"instantánea del 01-11, <b>no conectada</b>";
+ return["Fuente de lluvia: "+con+(r.rr.goes?.pixels?.[1]?" · GOES-19 "+safe(r.rr.goes.pixels[0])+"/"+safe(r.rr.goes.pixels[1])+" píxeles DQF=0":""),"Lluvia IMERG 24 h: "+(r.iFresh?(r.i24===null?"<b>no disponible</b> (ventana incompleta; no es cero)":mm(r.i24)+" mm (fin "+safe(short(r.rr.imerg.end_utc))+")"):"<b>antigua o ausente</b> (fin de ventana "+safe(fmt(r.rr.imerg.end_utc))+"; máx. "+fr.imerg_max_age_hours+" h): no se usa"),
   "GOES-19: "+(!r.gApp?"no integrado para este punto":r.gFresh?(r.gRate===null?"sin muestra válida":mm(r.gRate)+" mm/h"):"<b>antiguo o ausente</b> (último barrido "+safe(fmt(r.rr.goes.scan_end_utc))+"; máx. "+fr.goes_max_age_minutes+" min): no se usa")];}
 function smLocal(cp,r){const out=[];
  if(r.state==="ROJO")r.conf.forEach(c=>out.push("<b>Evento reportado y verificado</b>: "+safe(c.event_es||"evento")+" · ocurrido "+safe(fmt(c.observed_at_utc))+(c.location_es?" · "+safe(c.location_es):"")+" · fuente: "+(url(c.source_url)?'<a href="'+url(c.source_url)+'" target="_blank" rel="noopener noreferrer">'+safe(c.source_title||"fuente")+"</a>":safe(c.source_title||"sin título"))+" ("+safe(c.source_kind==="OFICIAL"?"oficial":"registro verificado")+"). <b>Indica que el evento ocurrió; no garantiza que siga activo.</b>"));
@@ -360,7 +371,7 @@ function renderSemaforo(){const box=$("tab-semaforo");if(!SM){box.innerHTML='<p 
   '<h2 style="margin-top:10px">Semáforo de seguimiento</h2>'+
   '<div class="seg" role="group" aria-label="Momento de evaluación"><button type="button" data-smmode="AHORA" aria-pressed="'+(smMode==="AHORA")+'">Ahora</button><button type="button" data-smmode="CORTE" aria-pressed="'+(smMode==="CORTE")+'">Al corte de datos</button></div>'+
   '<p class="note">Evaluado: <b>'+safe(fmt(new Date(t).toISOString()))+'</b>'+(smMode==="CORTE"?' · <b>reconstrucción en la fecha del corte, no es el estado actual.</b>':(ANY?' · los datos locales están congelados y antiguos: por eso los puntos salen grises.':''))+'</p>'+
-  '<p>'+order.map(c=>'<span class="tag"><i class="sw" style="background:'+SMC[c].color+'"></i>'+safe(SMC[c].label_es)+': '+cnt(c)+'</span>').join(" ")+'</p>'+ctxHtml+
+  '<p id="smCounts">'+order.map(c=>'<span class="tag"><i class="sw" style="background:'+SMC[c].color+'"></i>'+safe(SMC[c].label_es)+': '+cnt(c)+'</span>').join(" ")+'</p>'+ctxHtml+
   '<p class="note"><b>Evidencia de posible crecida o activación</b> (caudal, nivel, reportes de campo): no disponible en esta vista. La lluvia satelital no la sustituye.</p>'+
   '<details'+(window.matchMedia("(min-width:901px)").matches?" open":"")+'><summary><b>Qué significa cada color y cada símbolo</b></summary>'+order.map(c=>'<p class="note"><i class="sw" style="background:'+SMC[c].color+'"></i><b>'+safe(SMC[c].label_es)+'.</b> '+safe(SMC[c].rule_es)+'</p>').join("")+
   '<p class="note"><b>● Círculo</b>: punto de cauce sobre la red IGN 1:500.000 (borde azul). <b>■ Cuadrado</b>: población expuesta documentada por ANA 2016-17, <b>no</b> un punto del cauce (borde marrón; morado si un río piloto pasa a ≤ 1 km). '+safe(SM.rules.orange_es)+'</p></details>'+
@@ -471,13 +482,19 @@ $("infoBody").innerHTML='<p class="note">Vista privada de vigilancia científica
  '<h3>Tres fenómenos distintos</h3>'+(D.phenomena||[]).map(p=>'<div class="card ph '+safe(p.id)+'"><b>'+safe(p.label)+'</b> <span class="note">('+safe(p.examples)+')</span><br><span class="note">Capas: '+safe(p.layers.join(", "))+'<br>Tiempo real: '+safe(p.realtime)+'<br>Avisos: '+safe(p.avisos)+'</span></div>').join("")+
  '<h3>Cómo usarla</h3><ul class="note"><li>«Capas» activa y desactiva cada capa; el recuadro «Estás viendo» indica qué se muestra y de qué fecha.</li><li>Busca una ciudad o un departamento en la barra superior.</li><li>Pulsa un departamento en el mapa o en la tabla del panel para ver su resumen.</li><li>La lluvia es una estimación satelital (IMERG Early) con horas de retraso; en esta versión está congelada.</li></ul>'+
  '<p class="note">Guardas: deployment_status='+safe(D.deployment_status)+' · test_mode='+safe(D.test_mode)+' · activation_gate='+safe(D.activation_gate)+' · production_use=false · public_alerting=false · notifications_enabled=false · predictive_engine_enabled=false · decision_thresholds=null</p>';
-$("navLinks").innerHTML=SINGLE?"Copia privada de un solo archivo; las demás páginas v0.9 están en la rama del repositorio.":
+$("navLinks").innerHTML=SINGLE?"Copia privada de un solo archivo; las demás páginas v0.9 están en la rama del repositorio.":LIVE?"Vista privada con actualización automática (investigación); las demás páginas v0.9 están en la rama del repositorio.":
  'Otras páginas v0.9: <a href="resumen.html">Resumen</a> · <a href="peru.html">Mapa del Perú</a> · <a href="territorio.html">Visor costa norte / Rímac</a> · <a href="inventario.html">Inventario</a> · <a href="index.html">Lluvia y avisos (zonas)</a>';
 const SRC=D.sources.map(s=>{const h=age(s.updated_at_utc);const st=!s.updated_at_utc?"archivo estático":(s.stale_after_minutes&&h*60>s.stale_after_minutes?"antigua · "+ageTxt(s.updated_at_utc):ageTxt(s.updated_at_utc));
- return '<tr><td>'+safe(s.label)+'</td><td>'+(s.updated_at_utc?safe(fmt(s.updated_at_utc))+'<br><span class="note">'+safe(st)+'</span>':'<span class="note">archivo estático</span>')+(s.data_end_utc?'<br><span class="note">fin de datos '+safe(fmt(s.data_end_utc))+'</span>':"")+'</td><td class="note">'+safe(s.quality)+'</td></tr>';}).join("");
+ return '<tr><td>'+safe(s.label)+(s.capture_state&&s.capture_state!=="AVAILABLE"?'<br><span class="note"><b>Última captura fallida</b>: '+safe(s.capture_state)+' (se muestran los datos anteriores)</span>':"")+'</td><td>'+(s.updated_at_utc?safe(fmt(s.updated_at_utc))+'<br><span class="note">'+safe(st)+'</span>':'<span class="note">archivo estático</span>')+(s.data_end_utc?'<br><span class="note">fin de datos '+safe(fmt(s.data_end_utc))+'</span>':"")+'</td><td class="note">'+safe(s.quality)+'</td></tr>';}).join("");
 $("sourcesBody").innerHTML='<div class="tw"><table><thead><tr><th>Fuente</th><th>Actualización</th><th>Calidad</th></tr></thead><tbody>'+SRC+
  (REF.status==="OK"?'<tr><td>Referencia cartográfica (contorno, departamentos, ciudades)</td><td><span class="note">archivo estático</span></td><td class="note">'+safe(REF.provenance.dataset)+' · '+safe(REF.provenance.licence)+' · orientación, no límite oficial</td></tr>':"")+
  (SM?'<tr><td>Semáforo de seguimiento (experimental)</td><td><span class="note">derivado; se evalúa al abrir la vista</span></td><td class="note">Reglas '+safe(SM.rules.schema_version)+' sobre avisos, IMERG y GOES-19 ya listados; puntos sobre IGN 1:500.000 y ANA 2016-17. No es una alerta oficial.</td></tr>':"")+(SINGLE?"":'<tr><td>Mapa base</td><td><span class="note">teselas externas</span></td><td class="note">CARTO Voyager / OpenStreetMap; solo orientación</td></tr>')+'</tbody></table></div>';
+if(LV){const FS={RECENT_ARCHIVED:"reciente",STALE:"antigua",SNAPSHOT_ONLY:"instantánea (no conectada)",UNKNOWN:"desconocido",INVALID_TIME:"fecha no válida",INVALID_GUARD:"guardas no válidas"};
+ $("sourcesBody").innerHTML='<div class="card"><b>Actualización automática</b> · paquete '+safe(LV.cycle_id)+' construido '+safe(fmt(LV.built_at_utc))+' a partir de main '+safe((LV.main_sha||"").slice(0,8))+
+  (LV.previous_cycle_id?' · paquete anterior '+safe(LV.previous_cycle_id)+' (recuperable)':'')+'<br><span class="note">'+safe(LV.note_es)+'</span>'+
+  '<div class="tw"><table><thead><tr><th>Fuente</th><th>Estado al construir</th><th>Hora de la fuente</th></tr></thead><tbody>'+(LV.feed?.sources||[]).map(x=>'<tr><td>'+safe(x.label)+'</td><td>'+safe(FS[x.status]||x.status)+'</td><td class="note">'+(x.source_time_utc?safe(fmt(x.source_time_utc)):"sin hora")+'</td></tr>').join("")+'</tbody></table></div>'+
+  '<p class="note">Entradas: '+Object.entries(LV.inputs||{}).map(([k,v])=>safe(k.split("/").pop())+" "+safe(v.used==="MAIN"?"de main":v.used==="ULTIMA_ACEPTADA"?"última versión aceptada ("+v.status+")":"no disponible ("+v.status+")")).join(" · ")+'</p>'+
+  '<p class="note"><b>Aún no conectado:</b> '+(LV.not_connected_es||[]).map(safe).join(" ")+'</p></div>'+$("sourcesBody").innerHTML;}
 $("limitsBody").innerHTML=(ANY?'<div class="guard"><b>Datos congelados, no actuales.</b> Avisos comprobados por última vez: '+safe(fmt(AVCUT))+' · lluvia costera hasta '+safe(fmt(S.imerg_coast?.data_end_utc))+' · lluvia norte hasta '+safe(fmt(S.imerg_north?.data_end_utc))+'. Los avisos emitidos después no aparecen. Para la situación actual consulte SENAMHI e INDECI.</div>':"")+
  '<h3>No disponible en esta vista</h3>'+(D.layers_unavailable||[]).map(u=>'<div class="card"><b>'+safe(u.label)+'</b><br><span class="note">'+safe(u.reason)+'</span></div>').join("")+
  '<h3>Pendiente o insuficiente</h3>'+(D.pending||[]).map(p=>'<div class="card"><b>'+safe(p.item)+'</b><br><span class="note">'+safe(p.reason)+'</span></div>').join("");
@@ -503,6 +520,14 @@ if(window.matchMedia("(min-width:901px)").matches){$("layers").hidden=false;$("b
 fitPeru();cityZoom();hydroZoom();if(map)map.attributionControl.addAttribution("Natural Earth · INEI (SERFOR)");
 function fromHash(){const h=decodeURIComponent(location.hash.slice(1));if(h.startsWith("dep=")){const k=h.slice(4);if(DEPS.includes(k))selectDept(k);}}
 if(!SINGLE){fromHash();window.addEventListener("hashchange",fromHash);}
+// live mode: restore the view after an automatic reload, then poll the manifest; a new package reloads the page itself
+if(LIVE){const st=sget("irfen_live_view");if(st&&map&&Array.isArray(st.c)){map.setView(st.c,st.z,{animate:false});if(st.tab&&$("tab-"+st.tab))showTab(st.tab);}
+ const save=()=>sset("irfen_live_view",{c:map?[map.getCenter().lat,map.getCenter().lng]:null,z:map?map.getZoom():null,tab:TABS.map(t=>t[0]).find(t=>!$("tab-"+t).hidden)});
+ const POLL=Math.max(30,+(new URLSearchParams(location.search).get("poll")||300))*1000;let fails=0;
+ document.body.dataset.liveCycle=LV?.cycle_id||"";
+ setInterval(async()=>{try{const r=await fetch(LIVE_BASE+"manifest.json",{cache:"no-store"});if(!r.ok)throw Error("HTTP "+r.status);const m=await r.json();fails=0;
+   if(m.cycle_id&&LV&&m.cycle_id!==LV.cycle_id){save();msg="Nuevo paquete "+m.cycle_id+": actualizando…";renderViewing();location.reload();}}
+  catch(e){fails++;msg="Sin conexión con el paquete vivo ("+e.message+"): se mantiene el paquete "+(LV?.cycle_id||"")+".";renderViewing();}},POLL);}
 document.body.dataset.ready="1";
 })();
 </script></body></html>

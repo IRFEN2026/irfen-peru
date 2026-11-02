@@ -1,0 +1,31 @@
+{
+  "schema_version": "irfen_v091_live_refresh_v0_1",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "public_alerting": false,
+  "notifications_enabled": false,
+  "predictive": false,
+  "merged_into_main": false,
+  "enabled": true,
+  "expires_at_utc": "2026-11-09T00:00:00Z",
+  "poll_minutes": 20,
+  "max_hops_per_chain": 600,
+  "data_branch": "research/v091-live-data",
+  "purpose_es": "Reconstruir el paquete del visor privado después de cada captura válida de los workflows existentes de main (IMERG Early norte, GOES-19 RRQPE norte y avisos INDECI/COEN). No captura nada: lee los archivos que esos workflows ya escriben en main.",
+  "stop_es": "Para detener el ciclo: poner enabled=false (o adelantar expires_at_utc) en esta rama. El ciclo también se detiene solo en la fecha de caducidad. No hace falta ningún secreto.",
+  "inputs_from_main": [
+    {"path": "site/data/v09/dashboard_v0_1.json", "role": "avisos INDECI/COEN, zonas, GOES-19 por zona, salud de avisos", "producer": ".github/workflows/v09-rain-north.yml y v09-senamhi-avisos-capture.yml",
+     "time_fields": [["built_at_utc"], ["source", "health", "last_successful_check_utc"]]},
+    {"path": "data/v09/rain/imerg_early_north_v0_1.json", "role": "IMERG Early 30 min, 22 zonas del norte", "producer": ".github/workflows/v09-rain-north.yml",
+     "time_fields": [["status", "written_at_utc"]]},
+    {"path": "data/v09/rain/goes19_rrqpe_north_v0_1.json", "role": "GOES-19 RRQPE por zona", "producer": ".github/workflows/v09-rain-north.yml",
+     "time_fields": [["status", "latest_scan_end"]]},
+    {"path": "data/v09/senamhi_avisos/health_v0_1.json", "role": "salud de la captura de avisos", "producer": ".github/workflows/v09-senamhi-avisos-capture.yml",
+     "time_fields": [["source_health", "last_successful_check_utc"]]}
+  ],
+  "not_connected_es": [
+    "IMERG para la costa centro y sur (La Libertad–Tacna): solo existe la instantánea de investigación del 01-11; no hay un workflow de main que la actualice.",
+    "Imágenes de nubosidad GOES-19: no hay recolector existente; no se crea uno nuevo en esta etapa.",
+    "Caudal y nivel de ríos y avisos hidrológicos de SENAMHI: sin acceso automático permitido."
+  ]
+}
