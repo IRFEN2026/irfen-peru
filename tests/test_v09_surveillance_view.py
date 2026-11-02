@@ -68,8 +68,13 @@ class Bundle(unittest.TestCase):
                 self.assertIs(sm["rules"].get(k, False), False, k)
             self.assertEqual((sm["deployment_status"], sm["test_mode"]), ("RESEARCH_ONLY", "TEST_ONLY"))
             self.assertEqual([x["code"] for x in sm["rules"]["states"]], ["ROJO", "AMARILLO", "VERDE", "GRIS"])
-            self.assertIn("Sin confirmación no hay rojo", sm["rules"]["states"][0]["rule_es"])
+            self.assertIn("Ni la lluvia ni un aviso producen rojo", sm["rules"]["states"][0]["rule_es"])
+            self.assertIn("no garantiza", PAGE)  # a verified report says the event happened, not that it is still active
+            self.assertIn("no evidencia de crecida ni de activación", sm["rules"]["states"][1]["rule_es"])
+            self.assertIn("Un aviso regional vigente no cambia el gris", sm["rules"]["states"][3]["rule_es"])
             self.assertIn("nunca se convierte en verde", sm["rules"]["states"][3]["rule_es"])
+            self.assertIs(sm["rules"]["territorial_context"]["affects_colour"], False)
+            self.assertEqual(sm["rules"]["flood_evidence"]["status"], "NO_DISPONIBLE")
             for c in sm["confirmations"]["confirmations"]:  # the only way to red: a sourced, verified record
                 self.assertTrue(c.get("source_url") and c.get("source_title") and c.get("observed_at_utc"), c)
             self.assertIn("no es una alerta oficial", PAGE)
@@ -166,6 +171,11 @@ class Bundle(unittest.TestCase):
         lam = [c for c in sm["checkpoints"] if c["department"] == "LAMBAYEQUE"]
         self.assertEqual({c["system_id"] for c in lam if c["type"] == "rio"}, {"LA_LECHE", "CHANCAY_REQUE", "ZANA"})
         self.assertEqual({c["sector"] for c in lam if c["type"] == "rio"}, {"alto", "medio", "bajo"})
+        for s in next(c for c in sm["coverage"] if c["department"] == "LAMBAYEQUE")["river_systems"]:
+            # upstream/downstream only from physical evidence (mouth on the coast or HydroSHEDS flow accumulation), never east→west
+            self.assertTrue(s["orientation"]["status"].startswith("VERIFICADA"), s)
+            self.assertTrue(set(s["orientation"]["evidence"]) <= {"DESEMBOCADURA", "RED_DE_FLUJO_HYDROSHEDS"} and s["orientation"]["evidence"])
+        self.assertTrue(all(c["sector_verified"] for c in lam if c["type"] == "rio"))
         self.assertTrue(any(c["type"] in ("quebrada", "mixto") for c in lam))
         self.assertLessEqual(len(sm["checkpoints"]), 60)  # not saturating the map
         for c in sm["checkpoints"]:
@@ -173,6 +183,9 @@ class Bundle(unittest.TestCase):
                 self.assertIn(k, c)
             self.assertIn(c["type"], ("rio", "quebrada", "mixto"))
             self.assertIn((c["lon"], c["lat"]), verts if c["type"] == "rio" else ana, c["id"])
+            self.assertEqual(c["location_kind"], "CAUCE_IGN" if c["type"] == "rio" else "POBLADO_ANA")
+            if c["location_kind"] == "POBLADO_ANA":
+                self.assertIn("no un punto del cauce", c["location_basis"])
             if c["type"] != "rio":
                 self.assertTrue(c["members"] and all(m.startswith("ANA2017-") for m in c["members"]))
         self.assertEqual({c["department"] for c in sm["coverage"]}, set(D["coast_departments"]))
@@ -180,13 +193,21 @@ class Bundle(unittest.TestCase):
         sem = _load("sem", "scripts/v09_build_semaforo.py")
         S = dict(rules=sm["rules"], confirmations=[], aviso_check_utc=sm["aviso_check_utc"], avisos=sm["avisos"], rain_refs=sm["rain_refs"])
         cut = sem.iso(sm["cutoff_utc"])
+        regional_stale = 0
         for c in sm["checkpoints"]:
             self.assertEqual(sem.evaluate(c, S, cut)["state"], c["state_at_cutoff"]["state"])
-            for h in (13, 72, 24 * 40):
-                bare = dict(c, avisos=[])
-                self.assertEqual(sem.evaluate(bare, S, cut + timedelta(hours=h))["state"], "GRIS", (c["id"], h))
+            for h in (0, 13, 72, 24 * 40):
+                t = cut + timedelta(hours=h)
+                full, bare = sem.evaluate(c, S, t), sem.evaluate(dict(c, avisos=[]), S, t)
+                self.assertEqual(full["state"], bare["state"], (c["id"], h))  # avisos are context: they never change the colour
+                if h:
+                    self.assertEqual(full["state"], "GRIS", (c["id"], h))  # stale local data → grey, even with a regional aviso in force
+                    regional_stale += bool(full["context"]["vigentes"])
+                if full["state"] == "AMARILLO":
+                    self.assertEqual(full["rule"], "LLUVIA_SATELITAL")
             self.assertNotEqual(sem.evaluate(dict(c, avisos=[], rain_ref=None), S, cut)["state"], "VERDE")
             self.assertNotEqual(sem.evaluate(c, S, cut + timedelta(days=40))["state"], "ROJO")
+        self.assertGreater(regional_stale, 0)  # the audited case (regional aviso in force, local data stale) is exercised
         river = next(c for c in sm["checkpoints"] if c["type"] == "rio")
         fake = dict(system_id=river["system_id"], verified=True, source_kind="OFICIAL", observed_at_utc=cut.isoformat())
         self.assertEqual(sem.evaluate(river, dict(S, confirmations=[fake]), cut)["state"], "ROJO")

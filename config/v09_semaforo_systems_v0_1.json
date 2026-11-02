@@ -1,6 +1,6 @@
 {
   "schema_version": "irfen_v09_semaforo_systems_v0_1",
-  "rule": "Los puntos se colocan SOLO sobre geometrías documentadas: vértices de la red IGN 1:500.000 (ríos) o ubicaciones documentales de centros poblados expuestos a quebradas (ANA 2016-17). No se inventan coordenadas.",
+  "rule": "Los puntos se colocan SOLO sobre geometrías documentadas: vértices de la red IGN 1:500.000 (puntos de cauce) o ubicaciones documentales de centros poblados expuestos a quebradas (ANA 2016-17, puntos de población, no del cauce). No se inventan coordenadas.",
   "river_positions": [
     {
       "sector": "alto",
@@ -28,7 +28,8 @@
             688
           ],
           "rain_zone": null,
-          "rain_zone_note": null
+          "rain_zone_note": null,
+          "rain_proxy_note": "La Leche no tiene zona de lluvia propia en el panel de zonas: cada punto toma la zona que lo contiene (en la práctica, la cuenca Motupe, usada como aproximación y no como área de aportación del río) o, si no hay, su celda IMERG."
         },
         {
           "id": "CHANCAY_REQUE",
@@ -115,6 +116,13 @@
     }
   ],
   "quebrada_cluster_km": 2.0,
-  "quebrada_rule": "Las ubicaciones ANA a ≤ 2 km se agrupan en un solo punto (coordenada del primer registro del grupo, no un centroide) para no saturar el mapa. Si el grupo está a ≤ 1 km de un cauce piloto IGN, el punto es «mixto».",
-  "extend_es": "Para ampliar a otro departamento: cambiar su estado a PILOTO_ACTIVO, listar sus sistemas fluviales con los OBJECTID IGN verificados (y, si existe, la zona de lluvia de su cuenca) y la fuente documental de quebradas. Ejecutar scripts/v09_build_semaforo.py y luego scripts/v09_build_surveillance_view.py."
+  "quebrada_rule": "Las ubicaciones ANA a ≤ 2 km se agrupan en un solo punto de población expuesta (coordenada del primer registro del grupo, no un centroide) para no saturar el mapa. Si el grupo está a ≤ 1 km de un cauce piloto IGN, el punto es «mixto». Ninguno de estos puntos está sobre el cauce de la quebrada.",
+  "extend_es": "Para ampliar a otro departamento: cambiar su estado a PILOTO_ACTIVO, listar sus sistemas fluviales con los OBJECTID IGN verificados (y, si existe, la zona de lluvia de su cuenca) y la fuente documental de quebradas. Ejecutar scripts/v09_build_semaforo.py y luego scripts/v09_build_surveillance_view.py.",
+  "orientation_rule": "El sentido del flujo NO se presume de este a oeste. Se acepta solo con evidencia física: (A) desembocadura: un extremo del cauce a ≤ 5 km de la línea de costa (Natural Earth) y el otro a ≥ 30 km; (B) red de flujo: la acumulación de flujo HydroSHEDS 15\" muestreada en los vértices crece de forma monótona hacia un extremo (|ρ de Spearman| ≥ 0,8 con ≥ 80 % de vértices cubiertos). Si hay evidencia y no se contradice, los sectores se llaman alto / medio / bajo «del tramo dentro del departamento»; si falta o se contradice, se rotulan tramo oeste / centro / este (orientación no verificada). El sentido de digitalización del IGN no se usa (es inconsistente entre líneas).",
+  "orientation_thresholds": {
+    "mouth_max_km": 5.0,
+    "inland_min_km": 30.0,
+    "flow_min_abs_spearman": 0.8,
+    "flow_min_coverage": 0.8
+  }
 }
