@@ -24,6 +24,8 @@ SOURCES = (
     dict(id="goes19_rrqpe_north", label="NOAA GOES-19 RRQPE · zonas norte",
          path="data/v09/rain/goes19_rrqpe_north_v0_1.json",
          time_path=("status", "latest_scan_end"),
+         # a failed sampling run (e.g. NO_RECENT_RRQPE_OBJECTS, 02-11 20:24 UTC) leaves only the error: use the newest archived scan
+         fallback_list=("scans", "scan_end"),
          freshness_minutes=90, coverage="zonas norte archivadas", mode="REPEATED"),
     dict(id="imerg_early_coast_snapshot", label="NASA IMERG Early · toda la costa",
          path="data/v09/research/coast_rain/imerg_early_coast_snapshot_v0_1.json",
@@ -75,7 +77,7 @@ def examine(spec, root, now):
         times = [t for t in times if t]
         if times:
             timestamp = max(times).isoformat()
-            row["time_basis"] = "última media hora archivada (la última captura no dejó estado)"
+            row["time_basis"] = "último dato archivado (la última captura no dejó estado)"
     # Coast snapshot stores per-window timestamps as a mapping; choose the
     # newest valid ending time solely for the SOURCE, not for each rain window.
     if isinstance(timestamp, dict):

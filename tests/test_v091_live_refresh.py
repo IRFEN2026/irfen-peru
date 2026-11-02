@@ -242,7 +242,8 @@ class Refresh(unittest.TestCase):
         S = dict(rules=sm["rules"], confirmations=unverified, aviso_check_utc="2026-11-05T11:59:00+00:00", avisos=sm["avisos"], rain_refs=sm["rain_refs"])
         for cp in sm["checkpoints"]:
             res = sem.evaluate(cp, S, t)
-            self.assertEqual((res["state"], res["rule"]), ("AMARILLO", "LLUVIA_SATELITAL"), cp["id"])  # rain alone is never red
+            expect = ("AMARILLO", "LLUVIA_SATELITAL") if cp.get("rain_ref") else ("GRIS", "NO_EVALUABLE")  # no connected rain: grey
+            self.assertEqual((res["state"], res["rule"]), expect, cp["id"])  # rain alone is never red
             self.assertEqual(sem.evaluate(dict(cp, avisos=[]), S, t)["state"], res["state"])  # avisos never colour
         self.assertIs(sm["rules"]["territorial_context"]["affects_colour"], False)
         verified = dict(checkpoint_id=sm["checkpoints"][0]["id"], verified=True, source_url="https://example.org/evento",

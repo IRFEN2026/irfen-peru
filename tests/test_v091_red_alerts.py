@@ -222,8 +222,9 @@ class Gates(unittest.TestCase):
         for r in b["semaforo"]["rain_refs"].values():
             r["imerg"].update(end_utc="2026-11-05T11:00:00+00:00", windows=dict(r["imerg"]["windows"], **{"24h": 900.0, "72h": 2000.0}))
         S = RA.S_of(b["semaforo"], [])
-        states = {RA.SEM.evaluate(cp, S, NOW)["state"] for cp in b["semaforo"]["checkpoints"]}
+        states = {RA.SEM.evaluate(cp, S, NOW)["state"] for cp in b["semaforo"]["checkpoints"] if cp.get("rain_ref")}
         self.assertEqual(states, {"AMARILLO"})
+        self.assertEqual({RA.SEM.evaluate(cp, S, NOW)["state"] for cp in b["semaforo"]["checkpoints"] if not cp.get("rain_ref")}, {"GRIS"})
         with mock.patch.object(RA, "sending_enabled", lambda: True):
             for t in (NOW, NOW + timedelta(hours=13)):  # yellow, then grey once stale
                 s = RA.run_once(b, t, CFG, sender=self.send, confirmations=[])

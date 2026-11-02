@@ -178,7 +178,21 @@ class Bundle(unittest.TestCase):
             self.assertTrue(set(s["orientation"]["evidence"]) <= {"DESEMBOCADURA", "RED_DE_FLUJO_HYDROSHEDS"} and s["orientation"]["evidence"])
         self.assertTrue(all(c["sector_verified"] for c in lam if c["type"] == "rio"))
         self.assertTrue(any(c["type"] in ("quebrada", "mixto") for c in lam))
-        self.assertLessEqual(len(sm["checkpoints"]), 60)  # not saturating the map
+        for dep in {c["department"] for c in sm["checkpoints"]}:  # not saturating the map: points are grouped per department
+            self.assertLessEqual(sum(c["department"] == dep for c in sm["checkpoints"]), 60, dep)
+        zone_kind = {f["properties"]["zone_id"]: f["properties"].get("kind") for f in D["rain"]["north_zones"]["zones"]["features"]}
+        for c in sm["checkpoints"]:  # an administrative (province) mean never colours a point
+            if (c.get("rain_ref") or "").startswith("zone:"):
+                self.assertEqual(zone_kind[c["rain_ref"][5:]], "BASIN", c["id"])
+        for dep, rivers in (("TUMBES", {"TUMBES", "ZARUMILLA"}), ("PIURA", {"PIURA", "CHIRA"})):
+            pts = [c for c in sm["checkpoints"] if c["department"] == dep and c["type"] == "rio"]
+            if not pts:
+                continue
+            self.assertEqual({c["system_id"] for c in pts}, rivers)
+            for c in pts:  # no connected catchment rain yet: grey with the reason, never the local cell
+                self.assertIsNone(c["rain_ref"], c["id"])
+                self.assertEqual(c["state_at_cutoff"]["state"], "GRIS", c["id"])
+                self.assertTrue(any("gris" in x for x in c["limitations"]), c["id"])
         for c in sm["checkpoints"]:
             for k in ("id", "name", "type", "system", "department", "lat", "lon", "sources", "limitations", "location_basis", "state_at_cutoff"):
                 self.assertIn(k, c)

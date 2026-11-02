@@ -391,6 +391,8 @@ def build():
     refs, _ = rain_refs(dash, nz, cr)
     zone_geoms = {f["properties"]["zone_id"]: f["geometry"] for f in (nz.get("zones") or {}).get("features", []) if f.get("geometry")}
     zone_dep = {f["properties"]["zone_id"]: f["properties"].get("department") for f in (nz.get("zones") or {}).get("features", [])}
+    # only hydrological units colour a point: province-context zones are administrative means (they would hide a local storm)
+    basin_zone = {f["properties"]["zone_id"]: f["properties"].get("kind") == "BASIN" for f in (nz.get("zones") or {}).get("features", [])}
     checkpoints, coverage = [], []
     for dcfg in systems["departments"]:
         dep = dcfg["department"]
@@ -419,12 +421,19 @@ def build():
             cp["department"] = dep
             cp["province"] = province_of(admin, dep, cp["lon"], cp["lat"])
             zid = cp.pop("rain_zone", None)
-            if not zid:
-                zid = next((z for z, g in zone_geoms.items() if zone_dep.get(z) == dep and SV.inside(g, cp["lon"], cp["lat"])), None)
-                cp["rain_basis"] = "Polígono de la zona que contiene el punto." if zid else None
+            sysc = next((x for x in dcfg["river_systems"] if x["id"] == cp.get("system_id")), {}) if cp["type"] == "rio" else {}
+            if cp["type"] == "rio" and not zid and sysc.get("require_catchment_rain"):
+                cp["rain_ref"] = None  # no connected rain for the catchment that feeds this reach: grey, never the local cell
+                cp["rain_basis"] = sysc.get("rain_zone_note") or "Sin lluvia conectada de la cuenca de aportación."
+                zid = "__NONE__"
+            elif not zid:
+                zid = next((z for z, g in zone_geoms.items() if zone_dep.get(z) == dep and basin_zone.get(z) and SV.inside(g, cp["lon"], cp["lat"])), None)
+                cp["rain_basis"] = "Polígono de la cuenca (zona del panel) que contiene el punto." if zid else None
             else:
                 cp["rain_basis"] = next((s.get("rain_zone_note") for s in dcfg["river_systems"] if s["id"] == cp["system_id"]), None)
-            if zid and "zone:" + zid in refs:
+            if zid == "__NONE__":
+                pass
+            elif zid and "zone:" + zid in refs:
                 cp["rain_ref"] = "zone:" + zid
             else:
                 key, ref = coast_cell_ref(cr, cp["lon"], cp["lat"])
@@ -437,7 +446,7 @@ def build():
                   ["ANA 2016-17 · centros poblados vulnerables por activación de quebradas (posición de la población expuesta y nombres)"]
             if cp["type"] == "mixto":
                 src.append("IGN · Hidrografía 1:500.000 (cauce a ≤ 1 km)")
-            src += ["NASA GPM IMERG Early V07 (lluvia local)", "SENAMHI vía INDECI/COEN · avisos de lluvia (solo contexto territorial)"]
+            src += (["NASA GPM IMERG Early V07 (lluvia local)"] if cp["rain_ref"] else []) + ["SENAMHI vía INDECI/COEN · avisos de lluvia (solo contexto territorial)"]
             if cp["rain_ref"] and refs[cp["rain_ref"]].get("goes"):
                 src.append("NOAA GOES-19 RRQPE")
             cp["sources"] = src
@@ -446,6 +455,10 @@ def build():
                    "Los avisos son contexto territorial (límites INEI referenciales, no la huella del aviso) y no cambian el color."]
             if cp["rain_ref"] and cp["rain_ref"].startswith("cell:"):
                 lim.append("Lluvia de una celda de ~11 km de una instantánea de investigación: queda antigua enseguida (gris).")
+            if not cp["rain_ref"]:
+                lim.append("Sin lluvia conectada para este punto: queda gris (no evaluable) hasta que se conecte la lluvia de su cuenca.")
+            for note in (sysc.get("limitations_es") or []):
+                lim.append(note)
             if cp["type"] == "rio":
                 lim.append("La lluvia se toma de la zona indicada; puede no representar todo el tramo ni su área de aportación.")
             else:

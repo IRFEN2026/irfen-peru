@@ -56,15 +56,71 @@
     },
     {
       "department": "TUMBES",
-      "status": "PENDIENTE",
-      "river_systems": [],
-      "quebradas_source": null
+      "status": "PILOTO_ACTIVO",
+      "river_systems": [
+        {
+          "id": "TUMBES",
+          "name": "Río Tumbes",
+          "ign_objectids": [
+            23,
+            281,
+            3498
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "El río Tumbes nace en Ecuador (Puyango): en torno al 68 % de su cuenca está fuera del Perú (HydroSHEDS, #460). Ninguna zona del panel representa esa cuenca: los puntos quedan grises hasta conectar la lluvia de la cuenca completa (TUMBES_DESEMBOCADURA, validada experimentalmente).",
+          "limitations_es": [
+            "Cabecera en Ecuador (Puyango): la lluvia del lado peruano no basta para el río."
+          ]
+        },
+        {
+          "id": "ZARUMILLA",
+          "name": "Río Zarumilla",
+          "ign_objectids": [
+            3287
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Río fronterizo con Ecuador; su cuenca no está delimitada en IRFEN. Los puntos quedan grises hasta conectar la lluvia de su cuenca.",
+          "limitations_es": [
+            "Río fronterizo: parte de la cuenca está en Ecuador."
+          ]
+        }
+      ],
+      "quebradas_source": "ANA2016_17_CENTROS_POBLADOS"
     },
     {
       "department": "PIURA",
-      "status": "PENDIENTE",
-      "river_systems": [],
-      "quebradas_source": null
+      "status": "PILOTO_ACTIVO",
+      "river_systems": [
+        {
+          "id": "PIURA",
+          "name": "Río Piura",
+          "ign_objectids": [
+            3504
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona del panel representa la cuenca del río Piura (las zonas de Piura son provincias). Los puntos quedan grises hasta conectar la lluvia de la cuenca hasta Puente Sánchez Cerro (HydroSHEDS, validada experimentalmente, #459).",
+          "limitations_es": [
+            "Caudal regulado por la presa derivadora Los Ejidos y el trasvase Chira–Piura."
+          ]
+        },
+        {
+          "id": "CHIRA",
+          "name": "Río Chira",
+          "ign_objectids": [
+            3501
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "La cuenca Catamayo-Chira está en un 41 % en Ecuador y el río está regulado por el embalse de Poechos y la presa Sullana. Ninguna zona del panel representa la cuenca: los puntos quedan grises hasta conectar la lluvia de la cuenca (CHIRA_DESEMBOCADURA, validada experimentalmente).",
+          "limitations_es": [
+            "Caudal regulado por el embalse de Poechos y la presa Sullana: la lluvia no se traduce directamente en caudal."
+          ]
+        }
+      ],
+      "quebradas_source": "ANA2016_17_CENTROS_POBLADOS"
     },
     {
       "department": "LA LIBERTAD",
@@ -117,7 +173,7 @@
   ],
   "quebrada_cluster_km": 2.0,
   "quebrada_rule": "Las ubicaciones ANA a ≤ 2 km se agrupan en un solo punto de población expuesta (coordenada del primer registro del grupo, no un centroide) para no saturar el mapa. Si el grupo está a ≤ 1 km de un cauce piloto IGN, el punto es «mixto». Ninguno de estos puntos está sobre el cauce de la quebrada.",
-  "extend_es": "Para ampliar a otro departamento: cambiar su estado a PILOTO_ACTIVO, listar sus sistemas fluviales con los OBJECTID IGN verificados (y, si existe, la zona de lluvia de su cuenca) y la fuente documental de quebradas. Ejecutar scripts/v09_build_semaforo.py y luego scripts/v09_build_surveillance_view.py.",
+  "extend_es": "Para ampliar a otro departamento: cambiar su estado a PILOTO_ACTIVO, listar sus sistemas fluviales con los OBJECTID IGN verificados (y, si existe, la zona de lluvia de su cuenca) y la fuente documental de quebradas. Ejecutar scripts/v09_build_semaforo.py y luego scripts/v09_build_surveillance_view.py. Desde la revisión del 02-11-2026: solo las zonas del panel que son cuencas (kind=BASIN) colorean un punto; las provincias son contexto. Un sistema fluvial con require_catchment_rain=true y sin zona de cuenca queda gris (sin usar la celda local).",
   "orientation_rule": "El sentido del flujo NO se presume de este a oeste. Se acepta solo con evidencia física: (A) desembocadura: un extremo del cauce a ≤ 5 km de la línea de costa (Natural Earth) y el otro a ≥ 30 km; (B) red de flujo: la acumulación de flujo HydroSHEDS 15\" muestreada en los vértices crece de forma monótona hacia un extremo (|ρ de Spearman| ≥ 0,8 con ≥ 80 % de vértices cubiertos). Si hay evidencia y no se contradice, los sectores se llaman alto / medio / bajo «del tramo dentro del departamento»; si falta o se contradice, se rotulan tramo oeste / centro / este (orientación no verificada). El sentido de digitalización del IGN no se usa (es inconsistente entre líneas).",
   "orientation_thresholds": {
     "mouth_max_km": 5.0,

@@ -82,7 +82,7 @@ def semaforo_checks(page, out, name) -> dict:
     page.select_option("#smState", "ATENCION")
     r["rows_attention"] = page.locator("#tab-semaforo tbody tr").count()
     page.select_option("#smState", "ALL")
-    page.select_option("#smDep", "PIURA")
+    page.select_option("#smDep", "LA LIBERTAD")  # still pending (Tumbes and Piura joined the pilot on 02-11)
     r["pending_dep_msg"] = "pendiente" in page.locator("#tab-semaforo .empty").inner_text()
     page.select_option("#smDep", "LAMBAYEQUE")
     page.locator("#tab-semaforo button[data-smmode=CORTE]").click()
