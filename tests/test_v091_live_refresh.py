@@ -30,6 +30,23 @@ INPUTS = [s["path"] for s in CFG["inputs_from_main"]]
 OUTPUTS = ["data/v09/research/semaforo/semaforo_v0_1.json", "site/data/v09/surveillance_view_v0_1.json"]
 
 
+def _base_time():
+    """Evaluation times are derived from the committed inputs (CI validates this branch merged with a newer main)."""
+    times = []
+    for spec in CFG["inputs_from_main"]:
+        raw = LR.git_show("HEAD", spec["path"])
+        if raw:
+            times += [LR.iso(v) for v in LR.validate(raw, spec, LR.iso("2100-01-01T00:00:00+00:00"))[1].values()]
+    return max(times) + timedelta(minutes=30)
+
+
+T0 = _base_time()
+
+
+def at(minutes):
+    return (T0 + timedelta(minutes=minutes)).isoformat()
+
+
 class Refresh(unittest.TestCase):
     """Runs the real builders on this branch's archived inputs; every touched file is restored afterwards."""
 
@@ -44,9 +61,9 @@ class Refresh(unittest.TestCase):
             (ROOT / p).write_bytes(b)
         shutil.rmtree(self.dir, ignore_errors=True)
 
-    def refresh(self, *extra, as_of="2026-11-01T17:00:00+00:00"):
+    def refresh(self, *extra, as_of=None):
         with redirect_stdout(io.StringIO()) as out:
-            rc = LR.main(["--main-ref", "HEAD", "--fallback-ref", "HEAD", "--data-dir", str(self.dir), "--as-of", as_of, *extra])
+            rc = LR.main(["--main-ref", "HEAD", "--fallback-ref", "HEAD", "--data-dir", str(self.dir), "--as-of", as_of or at(0), *extra])
         return rc, out.getvalue()
 
     def fake_main(self, broken=None, missing=None):
@@ -69,9 +86,9 @@ class Refresh(unittest.TestCase):
         self.assertFalse(b["live"]["public_alerting"] or b["live"]["notifications_enabled"] or b["live"]["predictive"])
         self.assertTrue(all(v["status"] == "ACEPTADA" and v["used"] == "MAIN" for v in m["inputs"].values()))
         self.assertTrue(b["live"]["not_connected_es"])
-        rc2, out = self.refresh(as_of="2026-11-01T17:20:00+00:00")
+        rc2, out = self.refresh(as_of=at(20))
         self.assertEqual(rc2, 10, out)  # same inputs: nothing rebuilt, nothing published
-        rc3, _ = self.refresh("--force", as_of="2026-11-01T17:40:00+00:00")
+        rc3, _ = self.refresh("--force", as_of=at(40))
         self.assertEqual(rc3, 0)
         m3 = json.loads((self.dir / "current/manifest.json").read_text(encoding="utf-8"))
         self.assertEqual(m3["previous"]["cycle_id"], m["cycle_id"])  # the previous package stays recoverable
@@ -81,7 +98,7 @@ class Refresh(unittest.TestCase):
         self.fake_main(broken="site/data/v09/dashboard_v0_1.json", missing="data/v09/rain/imerg_early_north_v0_1.json")
         with redirect_stdout(io.StringIO()):
             rc = LR.main(["--main-ref", "HEAD~main", "--fallback-ref", "NO_SUCH_REF", "--data-dir", str(self.dir),
-                          "--as-of", "2026-11-01T17:00:00+00:00"])
+                          "--as-of", at(0)])
         self.assertEqual(rc, 2)  # dashboard broken and no accepted version → no package; the viewer keeps the previous one
         self.assertFalse((self.dir / "current/manifest.json").exists())
         LR.git_show = self.real_show
@@ -90,7 +107,7 @@ class Refresh(unittest.TestCase):
         self.fake_main(missing="data/v09/rain/imerg_early_north_v0_1.json")
         with redirect_stdout(io.StringIO()):
             rc = LR.main(["--main-ref", "HEAD~main", "--fallback-ref", "NO_SUCH_REF", "--data-dir", str(self.dir),
-                          "--as-of", "2026-11-01T17:00:00+00:00"])
+                          "--as-of", at(0)])
         self.assertEqual(rc, 0)  # one source failing does not take the map down
         b = json.loads((self.dir / "current/surveillance_view_v0_1.json").read_text(encoding="utf-8"))
         self.assertEqual(b["live"]["inputs"]["data/v09/rain/imerg_early_north_v0_1.json"]["used"], "NINGUNA")
@@ -99,7 +116,7 @@ class Refresh(unittest.TestCase):
         sem = _load("sem_t", "scripts/v09_build_semaforo.py")
         sm = b["semaforo"]
         S = dict(rules=sm["rules"], confirmations=[], aviso_check_utc=sm["aviso_check_utc"], avisos=sm["avisos"], rain_refs=sm["rain_refs"])
-        t = sem.iso("2026-11-01T17:00:00+00:00")
+        t = sem.iso(at(0))
         for cp in sm["checkpoints"]:
             if not (cp.get("rain_ref") or "").startswith("cell:"):
                 self.assertEqual(sem.evaluate(cp, S, t)["state"], "GRIS", cp["id"])  # no rain source → grey, not green
@@ -107,7 +124,7 @@ class Refresh(unittest.TestCase):
         self.fake_main(broken="site/data/v09/dashboard_v0_1.json")
         with redirect_stdout(io.StringIO()):
             rc = LR.main(["--main-ref", "HEAD~main", "--fallback-ref", "HEAD", "--data-dir", str(self.dir),
-                          "--as-of", "2026-11-01T17:30:00+00:00", "--force"])
+                          "--as-of", at(30), "--force"])
         self.assertEqual(rc, 0)
         m = json.loads((self.dir / "current/manifest.json").read_text(encoding="utf-8"))
         self.assertEqual((m["inputs"]["site/data/v09/dashboard_v0_1.json"]["status"], m["inputs"]["site/data/v09/dashboard_v0_1.json"]["used"]),
