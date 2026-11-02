@@ -7,7 +7,7 @@
 /* Layout: compact bar · map takes the screen · side panel (desktop) or below (phone) · dialogs for long text */
 :root{--bg:#eef2f5;--surface:#fff;--surface-2:#f1f4f7;--ink:#13212e;--ink-2:#4b5b69;--ink-3:#6c7a86;--border:#d8e0e7;--accent:#1f5f8b;
 --warn-bg:#fff4d6;--warn-ink:#6b4e00;--ok-bg:#e3f1e6;--ok-ink:#1e5631;--bad-bg:#fbe4e0;--bad-ink:#8a2a17;--na-bg:#eceff2;--na-ink:#4b5b69;
---r1:#e8f1fa;--r2:#bcd6ee;--r3:#86b6df;--r4:#4f8fc9;--r5:#2563a6;--r6:#123f73;--sea:#cfe0ec;--land:#f7f5ef;--land-2:#ece8dd;--line:#7d8b96}
+--r1:#fff176;--r2:#ffcc33;--r3:#ff922b;--r4:#e84d2a;--r5:#b12e8f;--r6:#5d2183;--sea:#cfe0ec;--land:#f7f5ef;--land-2:#ece8dd;--line:#7d8b96}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#11161b;--surface:#1a2129;--surface-2:#222b35;--ink:#e8edf2;--ink-2:#b5c1cc;--ink-3:#93a1ad;--border:#33404c;--accent:#7cb5e3;
 --warn-bg:#3b3014;--warn-ink:#f2d58a;--ok-bg:#1d3526;--ok-ink:#9fd8b0;--bad-bg:#3d211b;--bad-ink:#f3b2a3;--na-bg:#2a333c;--na-ink:#b5c1cc;--sea:#16232e;--land:#232a31;--land-2:#1d242a;--line:#8796a3;color-scheme:dark}}
 :root[data-theme="dark"]{--bg:#11161b;--surface:#1a2129;--surface-2:#222b35;--ink:#e8edf2;--ink-2:#b5c1cc;--ink-3:#93a1ad;--border:#33404c;--accent:#7cb5e3;
@@ -173,6 +173,7 @@ if(map&&deps.length)register("deps","Departamentos costeros (INEI)",L.geoJSON({t
 if(map&&D.admin?.provinces?.features?.length)register("provs","Provincias costeras (INEI)",L.geoJSON(D.admin.provinces,{style:{color:"#6c7a86",weight:.7,fill:false,dashArray:"2,3"},interactive:false}),false,()=>"límites censales referenciales · "+fmt(inei));
 register("cities","Ciudades de referencia (Natural Earth)",null,true,()=>CITIES.length+" ciudades; las menores aparecen al acercar");
 // rain
+// Paleta de contraste alta, NO representa umbrales de peligro. Datos históricos congelados.
 const BINS=[[0.1,"--r1"],[1,"--r2"],[5,"--r3"],[10,"--r4"],[25,"--r5"],[50,"--r6"]];
 const binColor=mm=>{let c=null;for(const [t,col] of BINS){if(mm>=t)c=col;}return c?css(c):null;};
 let WIN="24h";
@@ -184,12 +185,12 @@ function drawRain(){if(!map)return;rainCoast.clearLayers();rainZones.clearLayers
  if(C?.status==="OK"){const w=C.windows[WIN];
   if(w?.status==="COMPLETA"&&w.values){const h=C.cell_deg/2;
    C.cells.forEach(([i,j],k)=>{const v=w.values[k];if(v===null||v===undefined)return;const col=binColor(v);if(!col)return;
-    const x=C.lon[i],y=C.lat[j];L.rectangle([[y-h,x-h],[y+h,x+h]],{stroke:false,fillColor:col,fillOpacity:.72}).bindTooltip(v.toFixed(1).replace(".",",")+" mm en "+WIN.replace("h"," h")+" · "+safe(title(C.cell_department[k])),{sticky:true}).addTo(rainCoast);});
+    const x=C.lon[i],y=C.lat[j];L.rectangle([[y-h,x-h],[y+h,x+h]],{stroke:true,color:"#343943",weight:0.45,opacity:.72,fillColor:col,fillOpacity:.88}).bindTooltip(v.toFixed(1).replace(".",",")+" mm en "+WIN.replace("h"," h")+" · "+safe(title(C.cell_department[k])),{sticky:true}).addTo(rainCoast);});
   }else m="Lluvia costera: la ventana de "+WIN.replace("h"," h")+" no está completa (faltan medias horas): no se dibuja.";
  }else m="Lluvia costera: sin instantánea archivada.";
  const Z=D.rain?.north_zones;
  if(Z?.status==="OK")L.geoJSON(Z.zones,{style:f=>{const w=f.properties.windows[WIN];const c=w?.status==="COMPLETA"?binColor(w.mm):null;
-   return {color:"#1f5f8b",weight:1,fillColor:c||"#999",fillOpacity:w?.status==="COMPLETA"?(c?.55:0.03):0.15,dashArray:w?.status==="COMPLETA"?null:"3,3"};},
+   return {color:"#1f5f8b",weight:1,fillColor:c||"#999",fillOpacity:w?.status==="COMPLETA"?(c?.76:0.03):0.15,dashArray:w?.status==="COMPLETA"?null:"3,3"};},
    onEachFeature:(f,l)=>{const w=f.properties.windows[WIN];l.bindPopup("<b>"+safe(f.properties.name)+"</b><br>IMERG Early, "+safe(WIN.replace("h"," h"))+": "+(w?.status==="COMPLETA"?safe(w.mm.toFixed(1).replace(".",","))+" mm (media areal)":"<b>no disponible</b> (ventana incompleta; no es cero)")+"<br>Fin de ventana: "+safe(fmt(Z.end_utc))+"<br><em>Estimación satelital, no pluviómetro.</em>");}}).addTo(rainZones);
  msg=m;renderViewing();}
 // rivers
