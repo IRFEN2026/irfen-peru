@@ -1,0 +1,110 @@
+{
+ "schema_version": "irfen_v091_live_manifest_v0_1",
+ "deployment_status": "RESEARCH_ONLY",
+ "test_mode": "TEST_ONLY",
+ "public_alerting": false,
+ "notifications_enabled": false,
+ "predictive": false,
+ "official_alert": false,
+ "merged_into_main": false,
+ "cycle_id": "20261102T074559Z",
+ "built_at_utc": "2026-11-02T07:45:59.598654+00:00",
+ "main_ref": "origin/main",
+ "main_sha": "14cd95b4614d1bcce0644929fc3a482aedde4118",
+ "inputs_fingerprint": "6e8ca1951d77fe88f51fea65ee00698614bb6f0e1684a26782fb82ac1e397df5",
+ "inputs": {
+  "site/data/v09/dashboard_v0_1.json": {
+   "status": "ACEPTADA",
+   "used": "MAIN",
+   "sha256": "71efb2ed81f990887bf7d42d50441bfff1cadc7f0b22a64454ab0cc64c86f0f8",
+   "source_times": {
+    "built_at_utc": "2026-11-02T07:38:08.329853+00:00",
+    "source.health.last_successful_check_utc": "2026-11-02T07:37:49.362358+00:00"
+   },
+   "role": "avisos INDECI/COEN, zonas, GOES-19 por zona, salud de avisos",
+   "producer": ".github/workflows/v09-rain-north.yml y v09-senamhi-avisos-capture.yml"
+  },
+  "data/v09/rain/imerg_early_north_v0_1.json": {
+   "status": "ACEPTADA",
+   "used": "MAIN",
+   "sha256": "8d8ec62ddd76854ea1e27d4fc5184508061f906172ae35296ac298a095a7ab1d",
+   "source_times": {},
+   "role": "IMERG Early 30 min, 22 zonas del norte",
+   "producer": ".github/workflows/v09-rain-north.yml"
+  },
+  "data/v09/rain/goes19_rrqpe_north_v0_1.json": {
+   "status": "ACEPTADA",
+   "used": "MAIN",
+   "sha256": "46bcd37641479bb01c7f3c360318d626290c4ee3fb86ce3c9cb42d19ebd254f6",
+   "source_times": {
+    "status.latest_scan_end": "2026-11-02T02:29:51.700000+00:00"
+   },
+   "role": "GOES-19 RRQPE por zona",
+   "producer": ".github/workflows/v09-rain-north.yml"
+  },
+  "data/v09/senamhi_avisos/health_v0_1.json": {
+   "status": "ACEPTADA",
+   "used": "MAIN",
+   "sha256": "79553fe2c5beab45370e2da42797c5be253c94024733e6ed39c75be4b47c431b",
+   "source_times": {
+    "source_health.last_successful_check_utc": "2026-11-02T07:37:49.362358+00:00"
+   },
+   "role": "salud de la captura de avisos",
+   "producer": ".github/workflows/v09-senamhi-avisos-capture.yml"
+  }
+ },
+ "steps": {
+  "semaforo": {
+   "rc": 0,
+   "log": [
+    "98 kB · checkpoints=39 · types={'rio': 9, 'quebrada': 28, 'mixto': 2} · at cutoff={'GRIS': 39}"
+   ]
+  },
+  "bundle": {
+   "rc": 0,
+   "log": [
+    "1.65 MB · admin=OK · coast_rain=OK · north=OK · avisos=96 · ana=619 · geoms=53 · uh=10"
+   ]
+  },
+  "feed": {
+   "rc": 0,
+   "log": [
+    "{\"output\": \"/home/runner/work/irfen-peru/irfen-peru/../live-data/.staging/observation_feed_v0_1.json\", \"statuses\": {\"avisos_indeci_coen\": \"RECENT_ARCHIVED\", \"imerg_early_north\": \"STALE\", \"goes19_rrqpe_north\": \"STALE\", \"imerg_early_coast_snapshot\": \"SNAPSHOT_ONLY\"}}"
+   ]
+  }
+ },
+ "sources": {
+  "avisos_indeci_coen": {
+   "status": "RECENT_ARCHIVED",
+   "source_time_utc": "2026-11-02T07:37:49.362358Z",
+   "age_minutes": 8.2
+  },
+  "imerg_early_north": {
+   "status": "STALE",
+   "source_time_utc": "2026-11-01T17:30:00Z",
+   "age_minutes": 856.0
+  },
+  "goes19_rrqpe_north": {
+   "status": "STALE",
+   "source_time_utc": "2026-11-02T02:29:51.700000Z",
+   "age_minutes": 316.1
+  },
+  "imerg_early_coast_snapshot": {
+   "status": "SNAPSHOT_ONLY",
+   "source_time_utc": "2026-11-01T12:00:00Z",
+   "age_minutes": 1186.0
+  }
+ },
+ "semaforo_at_build": {
+  "GRIS": 39
+ },
+ "bundle": {
+  "path": "current/surveillance_view_v0_1.json",
+  "sha256": "7ed445442df8a2c8799d46a19ab923c77c19f28bb7d0be742d2dc8ebfd23b72e",
+  "bytes": 1655314
+ },
+ "previous": {
+  "cycle_id": "20261102T031848Z",
+  "bundle_sha256": "91be0fcf53db4073a957628180366a985ee641f0c85be6d8e34e438611467807"
+ }
+}
