@@ -41,7 +41,9 @@ class Bundle(unittest.TestCase):
                    "scripts/v09_build_surveillance_demo.py", "qa/replay_tools/v09_surveillance_view_smoke.py",
                    "scripts/v09_extract_reference_basemap.py", "data/v09/sources/natural_earth_reference/peru_reference_v0_1.json",
                    "research/v09/private_demo/irfen_vigilancia_privada_v091.html", "scripts/v09_ign_hydrography_capture.py",
-                   "scripts/v09_ign_hydro_coverage_report.py", "data/v09/research/hydro/ign_coastal_coverage_v0_1.json"}
+                   "scripts/v09_ign_hydro_coverage_report.py", "data/v09/research/hydro/ign_coastal_coverage_v0_1.json",
+                   "scripts/v09_build_semaforo.py", "data/v09/research/semaforo/semaforo_v0_1.json", "config/v09_semaforo_rules_v0_1.json",
+                   "config/v09_semaforo_systems_v0_1.json", "config/v09_semaforo_confirmations_v0_1.json"}
         sha = {rel: hashlib.sha256((ROOT / rel).read_bytes()).hexdigest() for rel in man["files"]}
         moved = [rel for rel in man["files"] if rel not in outputs and sha[rel] != man["files"][rel]]
         if moved:
@@ -49,6 +51,8 @@ class Bundle(unittest.TestCase):
         for rel in man["files"]:
             self.assertEqual(sha[rel], man["files"][rel], rel)
         with redirect_stdout(io.StringIO()):
+            if (ROOT / "scripts/v09_build_semaforo.py").is_file():
+                self.assertEqual(_load("sem", "scripts/v09_build_semaforo.py").main(["--check"]), 0)
             self.assertEqual(B.main(["--check"]), 0)
 
     def test_guards(self):
@@ -57,6 +61,20 @@ class Bundle(unittest.TestCase):
         self.assertFalse(D["predictive_engine_enabled"])
         self.assertFalse(D["notifications_enabled"])
         self.assertIn("no significa ausencia de peligro", D["disclaimer_es"])
+        sm = D.get("semaforo", {})
+        if sm.get("status") == "OK":  # experimental semáforo: never an official alert, never predictive, no thresholds
+            for k in ("official_alert", "public_alerting", "notifications_enabled", "predictive", "merged_into_main"):
+                self.assertIs(sm[k], False, k)
+                self.assertIs(sm["rules"].get(k, False), False, k)
+            self.assertEqual((sm["deployment_status"], sm["test_mode"]), ("RESEARCH_ONLY", "TEST_ONLY"))
+            self.assertEqual([x["code"] for x in sm["rules"]["states"]], ["ROJO", "AMARILLO", "VERDE", "GRIS"])
+            self.assertIn("Sin confirmación no hay rojo", sm["rules"]["states"][0]["rule_es"])
+            self.assertIn("nunca se convierte en verde", sm["rules"]["states"][3]["rule_es"])
+            for c in sm["confirmations"]["confirmations"]:  # the only way to red: a sourced, verified record
+                self.assertTrue(c.get("source_url") and c.get("source_title") and c.get("observed_at_utc"), c)
+            self.assertIn("no es una alerta oficial", PAGE)
+            self.assertIn('register("semaforo","Semáforo de seguimiento (experimental, no oficial)"', PAGE)
+            self.assertIn("window.IRFEN_SEMAFORO_EVAL", PAGE)
 
     def test_whole_coast_tumbes_to_tacna(self):
         self.assertEqual(D["coast_departments"][0], "TUMBES")
@@ -135,6 +153,45 @@ class Bundle(unittest.TestCase):
     def test_settlements_are_documentary_locations(self):
         self.assertIn("no es la quebrada", D["quebradas"]["ana_source"]["note"])
         self.assertGreater(len(D["quebradas"]["ana_points"]), 500)
+        sm = D.get("semaforo", {})
+        if sm.get("status") != "OK":
+            return
+        # semáforo checkpoints sit on documented geometry only: an IGN vertex (rivers) or an ANA documentary point (quebradas)
+        import gzip
+        from datetime import timedelta
+        ign = json.loads(gzip.decompress((ROOT / "data/v09/sources/ign_hidrografia_500k/rios_quebradas_costa.geojson.gz").read_bytes()))
+        verts = {(round(x, 5), round(y, 5)) for f in ign["features"] for ln in ([f["geometry"]["coordinates"]] if f["geometry"]["type"] == "LineString"
+                                                                                   else f["geometry"]["coordinates"]) for x, y, *_ in ln}
+        ana = {(p["lon"], p["lat"]) for p in D["quebradas"]["ana_points"]}
+        lam = [c for c in sm["checkpoints"] if c["department"] == "LAMBAYEQUE"]
+        self.assertEqual({c["system_id"] for c in lam if c["type"] == "rio"}, {"LA_LECHE", "CHANCAY_REQUE", "ZANA"})
+        self.assertEqual({c["sector"] for c in lam if c["type"] == "rio"}, {"alto", "medio", "bajo"})
+        self.assertTrue(any(c["type"] in ("quebrada", "mixto") for c in lam))
+        self.assertLessEqual(len(sm["checkpoints"]), 60)  # not saturating the map
+        for c in sm["checkpoints"]:
+            for k in ("id", "name", "type", "system", "department", "lat", "lon", "sources", "limitations", "location_basis", "state_at_cutoff"):
+                self.assertIn(k, c)
+            self.assertIn(c["type"], ("rio", "quebrada", "mixto"))
+            self.assertIn((c["lon"], c["lat"]), verts if c["type"] == "rio" else ana, c["id"])
+            if c["type"] != "rio":
+                self.assertTrue(c["members"] and all(m.startswith("ANA2017-") for m in c["members"]))
+        self.assertEqual({c["department"] for c in sm["coverage"]}, set(D["coast_departments"]))
+        # logic: red only with a verified confirmation; missing or stale data never turns green
+        sem = _load("sem", "scripts/v09_build_semaforo.py")
+        S = dict(rules=sm["rules"], confirmations=[], aviso_check_utc=sm["aviso_check_utc"], avisos=sm["avisos"], rain_refs=sm["rain_refs"])
+        cut = sem.iso(sm["cutoff_utc"])
+        for c in sm["checkpoints"]:
+            self.assertEqual(sem.evaluate(c, S, cut)["state"], c["state_at_cutoff"]["state"])
+            for h in (13, 72, 24 * 40):
+                bare = dict(c, avisos=[])
+                self.assertEqual(sem.evaluate(bare, S, cut + timedelta(hours=h))["state"], "GRIS", (c["id"], h))
+            self.assertNotEqual(sem.evaluate(dict(c, avisos=[], rain_ref=None), S, cut)["state"], "VERDE")
+            self.assertNotEqual(sem.evaluate(c, S, cut + timedelta(days=40))["state"], "ROJO")
+        river = next(c for c in sm["checkpoints"] if c["type"] == "rio")
+        fake = dict(system_id=river["system_id"], verified=True, source_kind="OFICIAL", observed_at_utc=cut.isoformat())
+        self.assertEqual(sem.evaluate(river, dict(S, confirmations=[fake]), cut)["state"], "ROJO")
+        self.assertNotEqual(sem.evaluate(river, dict(S, confirmations=[dict(fake, verified=False)]), cut)["state"], "ROJO")
+        self.assertNotEqual(sem.evaluate(river, dict(S, confirmations=[fake]), cut + timedelta(hours=73))["state"], "ROJO")
 
 
 class Page(unittest.TestCase):
@@ -190,6 +247,11 @@ class Browser(unittest.TestCase):
             self.assertTrue(r["checks"]["leaflet"], "Leaflet not loaded (network to unpkg?)")
             self.assertGreater(r["checks"]["aviso_highlight_links"], 0)
             self.assertEqual(r["checks"]["river_chart"], 1)
+            sm = r["checks"].get("semaforo")
+            if sm:
+                self.assertEqual(sm["js_vs_python"]["mismatches"], 0, sm["js_vs_python"]["first"])
+                self.assertEqual(len(set(sm["selfcheck"].split("/"))), 1, sm["selfcheck"])
+                self.assertTrue(sm["guard"] and sm["popup_fields"] and sm["pending_dep_msg"])
 
 
 if __name__ == "__main__":

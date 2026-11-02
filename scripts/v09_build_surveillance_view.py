@@ -38,6 +38,7 @@ PECHP = ROOT / "data/v09/research/historical/pechp_daily_v0_1.json"
 EVAL = ROOT / "data/v09/research/anticipation/anticipation_evaluation_v0_1.json"
 REFERENCE = ROOT / "data/v09/sources/natural_earth_reference/peru_reference_v0_1.json"
 IGN_DIR = ROOT / "data/v09/sources/ign_hidrografia_500k"
+SEMAFORO = ROOT / "data/v09/research/semaforo/semaforo_v0_1.json"  # built by scripts/v09_build_semaforo.py (run it first)
 IGN_CLASS = {"Río Principal": "RP", "Río Secundario": "RS", "Quebrada Húmeda": "QH", "Quebrada Seca": "QS", "Río Seco": "RX"}
 TUMBES_EV = ROOT / "site/data/validation/phase2_discovery_evidence/tumbes_rio_tumbes_initial_context_2019_2026.json"
 COAST = ["TUMBES", "PIURA", "LAMBAYEQUE", "LA LIBERTAD", "ANCASH", "LIMA", "CALLAO", "ICA", "AREQUIPA", "MOQUEGUA", "TACNA"]
@@ -528,8 +529,10 @@ def build() -> dict:
         dict(id="goes_rrqpe", label="GOES-19 tasa de lluvia (RRQPE)", reason="Solo existe para zonas del norte en el panel «Lluvia y avisos (zonas)»; no se incluye aquí."),
         dict(id="caudal", label="Caudal o nivel de ríos en tiempo real", reason="No disponible (sin acceso automático permitido ni serie publicada)."),
     ]
+    sem = load(SEMAFORO)
+    semaforo = dict(status="PENDIENTE") if not sem or sem.get("built_from_dashboard_at_utc") != dash["built_at_utc"] else dict(status="OK", **sem)
     return dict(schema_version="irfen_v09_surveillance_view_v0_1", **GUARDS, built_from_dashboard_at_utc=dash["built_at_utc"],
-                reference=reference, layers_unavailable=layers_unavailable, hydro_ign=hydro,
+                semaforo=semaforo, reference=reference, layers_unavailable=layers_unavailable, hydro_ign=hydro,
                 disclaimer_es=("Vista privada de vigilancia científica (RESEARCH_ONLY / TEST_ONLY). No es un sistema de alerta, no predice crecidas, "
                                "huaicos ni inundaciones, y no sustituye a SENAMHI, INDECI ni a las autoridades. La ausencia de datos no significa ausencia de peligro."),
                 coast_departments=COAST, sources=sources, admin=admin, rain=dict(north_zones=nz, coast=cr, windows_h=WINDOWS), avisos=av,

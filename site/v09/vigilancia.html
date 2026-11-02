@@ -84,6 +84,7 @@ dialog .dh h2{margin:0}dialog .db{padding:10px 14px 14px;max-height:70vh;overflo
  <section class="panel" aria-label="Información por pestañas">
   <div class="tabs" role="tablist" id="tabs"></div>
   <div class="tabpanel" id="tab-resumen" role="tabpanel"></div>
+  <div class="tabpanel" id="tab-semaforo" role="tabpanel" hidden></div>
   <div class="tabpanel" id="tab-lluvia" role="tabpanel" hidden></div>
   <div class="tabpanel" id="tab-avisos" role="tabpanel" hidden></div>
   <div class="tabpanel" id="tab-rios" role="tabpanel" hidden></div>
@@ -262,11 +263,108 @@ function highlight(list,label){if(!map)return;hl.clearLayers();const fs=deps.fil
  if(!fs.length){msg=label+": ningún departamento costero en la lista del aviso.";renderViewing();return;}
  const l=L.geoJSON({type:"FeatureCollection",features:fs},{style:{color:"#b3261e",weight:2.5,dashArray:"6,4",fill:false},interactive:false}).addTo(hl);
  map.fitBounds(l.getBounds(),{padding:[20,20]});msg=label+": departamentos costeros enumerados en el aviso (representación administrativa, no la huella del fenómeno).";renderViewing();}
+// ---------- semáforo de seguimiento (experimental, no oficial): the colour is evaluated HERE, at view time, with the rules in
+// config/v09_semaforo_rules_v0_1.json. smEval mirrors evaluate() in scripts/v09_build_semaforo.py (checked below at the cutoff).
+const SM=D.semaforo?.status==="OK"?D.semaforo:null;
+const SMS=SM?{rules:SM.rules,confirmations:SM.confirmations?.confirmations||[],aviso_check_utc:SM.aviso_check_utc,avisos:SM.avisos||{},rain_refs:SM.rain_refs||{}}:null;
+const SMC=SM?Object.fromEntries(SM.rules.states.map(x=>[x.code,x])):{};
+const SMT={rio:"Río",quebrada:"Quebrada",mixto:"Mixto (quebrada junto a un río)"},SMRING={rio:"#1d4f91",quebrada:"#8a4b14",mixto:"#5b3a8a"};
+const SMSHORT={ROJO:"Rojo",AMARILLO:"Amarillo",VERDE:"Verde",GRIS:"Gris"};
+const SMRULE={CONFIRMACION:"Confirmación documentada",R2:"R2 · aviso de lluvia vigente",R3:"R3 · aviso futuro o de vigencia desconocida",R4:"R4 · lluvia estimada no nula",R6:"R6 · sin señal en datos al día",R5:"R5 · datos insuficientes"};
+function smEval(cp,S,t){const fr=S.rules.freshness,res=S.rules.rain_signal.display_resolution_mm,P=x=>Date.parse(x),HR=36e5;
+ const win=fr.confirmation_window_hours*HR;
+ const conf=S.confirmations.filter(c=>c.verified&&c.observed_at_utc&&(c.checkpoint_id===cp.id||(cp.type==="rio"&&c.system_id&&c.system_id===cp.system_id))&&t-win<=P(c.observed_at_utc)&&P(c.observed_at_utc)<=t);
+ const chk=S.aviso_check_utc?P(S.aviso_check_utc):null;const avFresh=chk!==null&&t-chk>=0&&t-chk<=fr.avisos_source_max_age_minutes*6e4;
+ const vig=[],fut=[];let unk=[];
+ for(const k of cp.avisos){const a=S.avisos[k];if(!a.start||!a.end)unk.push(k);else if(P(a.start)<=t&&t<=P(a.end))vig.push(k);else if(P(a.start)>t)fut.push(k);}
+ if(!avFresh)unk=[];
+ const rr=S.rain_refs[cp.rain_ref||""];let i24=null,iFresh=null;
+ if(rr&&rr.imerg.end_utc){const ag=t-P(rr.imerg.end_utc);iFresh=ag>=0&&ag<=fr.imerg_max_age_hours*HR;i24=iFresh?(rr.imerg.windows["24h"]??null):null;}
+ const gApp=!!(rr&&rr.goes);let gRate=null,gFresh=null;
+ if(gApp&&rr.goes.scan_end_utc){const ag=t-P(rr.goes.scan_end_utc);gFresh=ag>=0&&ag<=fr.goes_max_age_minutes*6e4;gRate=gFresh&&(rr.goes.valid_fraction||0)>0?(rr.goes.rate_mm_h??null):null;}
+ let state,rule;
+ if(conf.length){state="ROJO";rule="CONFIRMACION";}
+ else if(vig.length){state="AMARILLO";rule="R2";}
+ else if(fut.length||unk.length){state="AMARILLO";rule="R3";}
+ else if((i24!==null&&i24>=res)||(gRate!==null&&gRate>0)){state="AMARILLO";rule="R4";}
+ else if(avFresh&&i24!==null&&(!gApp||gRate!==null)){state="VERDE";rule="R6";}
+ else{state="GRIS";rule="R5";}
+ const fresh=[avFresh,!!iFresh].concat(gApp?[!!gFresh]:[]);
+ let confidence=state==="GRIS"?"BAJA":(fresh.every(Boolean)?"ALTA":fresh.some(Boolean)?"MEDIA":"BAJA");
+ if(state==="ROJO")confidence=conf.some(c=>c.source_kind==="OFICIAL")?"ALTA":"MEDIA";
+ return {state,rule,confidence,conf,vig,fut,unk,avFresh,i24,iFresh,gApp,gRate,gFresh,rr};}
+window.IRFEN_SEMAFORO_EVAL=(cp,S,iso)=>{const r=smEval(cp,S,Date.parse(iso));return {state:r.state,rule:r.rule,confidence:r.confidence};};
+let smMode="AHORA",smType="ALL",smState="ALL",smDep="ALL";const smT=()=>smMode==="AHORA"?NOW:Date.parse(SM.cutoff_utc);
+const smLayer=map&&SM?L.layerGroup():null,smMarks={};
+if(map&&SM){map.createPane("sema");map.getPane("sema").style.zIndex=640;}
+const smRenderer=map&&SM?L.svg({pane:"sema"}):null;
+const smPass=cp=>(smDep==="ALL"||cp.department===smDep)&&(smType==="ALL"||(smType==="rio"?cp.type!=="quebrada":cp.type!=="rio"));
+const mm=v=>v===null||v===undefined?"n/d":v.toFixed(1).replace(".",",");
+function smExplain(cp,r,t){const out=[],A=SMS.avisos,fr=SMS.rules.freshness;
+ const avTxt=k=>{const a=A[k];return safe(a.product)+" Nº "+safe(a.number)+(a.level?" (nivel "+safe(a.level)+")":"")+" · "+safe(short(a.start))+"→"+safe(short(a.end));};
+ if(r.state==="ROJO")out.push("Confirmación documentada en las últimas "+fr.confirmation_window_hours+" h: "+r.conf.map(c=>safe(c.event_es)+" ("+safe(fmt(c.observed_at_utc))+") · "+(url(c.source_url)?'<a href="'+url(c.source_url)+'" target="_blank" rel="noopener noreferrer">'+safe(c.source_title||"fuente")+"</a>":safe(c.source_title))).join("; "));
+ if(r.vig.length)out.push("Aviso de lluvia <b>vigente</b> según las fechas de su texto, relacionado por departamento/provincia: "+r.vig.map(avTxt).join("; "));
+ if(r.fut.length)out.push("Aviso de lluvia futuro relacionado: "+r.fut.map(avTxt).join("; "));
+ if(r.unk.length)out.push("Aviso de vigencia desconocida relacionado: "+r.unk.map(avTxt).join("; "));
+ if(!r.avFresh)out.push("La comprobación de avisos es de "+safe(fmt(SMS.aviso_check_utc))+" (más de "+fr.avisos_source_max_age_minutes+" min antes de la evaluación): un aviso pudo cancelarse o ampliarse y los posteriores no aparecen.");
+ if(!r.rr)out.push("Sin lluvia estimada asociada a este punto.");
+ else{out.push("IMERG 24 h: "+(r.iFresh?(r.i24===null?"<b>no disponible</b> (ventana incompleta; no es cero)":mm(r.i24)+" mm"):"<b>antigua o ausente</b> (fin de ventana "+safe(fmt(r.rr.imerg.end_utc))+"; máx. "+fr.imerg_max_age_hours+" h): no se usa"));
+  out.push("GOES-19: "+(!r.gApp?"no integrado para este punto":r.gFresh?(r.gRate===null?"sin muestra válida":mm(r.gRate)+" mm/h"):"<b>antigua o ausente</b> (último barrido "+safe(fmt(r.rr.goes.scan_end_utc))+"; máx. "+fr.goes_max_age_minutes+" min): no se usa"));}
+ if(r.state==="GRIS")out.push("Sin aviso vigente conocido y sin datos de lluvia completos y al día: <b>no evaluable</b>. No significa que no haya peligro.");
+ if(r.state==="VERDE")out.push("Sin señal en los datos disponibles. <b>No significa ausencia de peligro.</b>");
+ return out;}
+function smPopup(cp){const t=smT(),r=smEval(cp,SMS,t),st=SMC[r.state],rr=SMS.rain_refs[cp.rain_ref||""];
+ const wins=rr?["1h","3h","6h","24h","72h"].map(k=>safe(k.replace("h"," h"))+": "+mm(rr.imerg.windows[k])).join(" · "):"";
+ return '<div style="max-width:300px"><b>'+safe(cp.name)+'</b><br><span class="note">'+safe(SMT[cp.type])+' · '+safe(cp.system)+(cp.province?' · '+safe(title(cp.province)):"")+', '+safe(title(cp.department))+'</span>'+
+  '<p style="margin:6px 0"><i class="sw" style="background:'+st.color+'"></i><b>'+safe(st.label_es)+'</b> · '+safe(SMRULE[r.rule])+' · confianza '+safe(r.confidence.toLowerCase())+'<br><span class="note">Evaluado '+safe(fmt(new Date(t).toISOString()))+(smMode==="CORTE"?" · <b>reconstrucción al corte, no es el estado actual</b>":"")+'</span></p>'+
+  '<ul style="margin:4px 0;padding-left:16px">'+smExplain(cp,r,t).map(x=>"<li>"+x+"</li>").join("")+'</ul>'+
+  (rr?'<p class="note" style="margin:4px 0">Lluvia: '+safe(rr.label)+' · '+wins+' mm, hasta '+safe(fmt(rr.imerg.end_utc))+(cp.rain_basis?'<br>'+safe(cp.rain_basis):"")+'</p>':"")+
+  '<details><summary class="note">Ubicación, fuentes y limitaciones</summary><p class="note">'+safe(cp.location_basis)+' '+safe(cp.location_confidence_note)+'</p>'+
+  (cp.centros_poblados?.length?'<p class="note">Centros poblados (ANA): '+safe(cp.centros_poblados.join(", "))+'</p>':"")+
+  '<p class="note"><b>Fuentes:</b> '+safe(cp.sources.join(" · "))+'</p><ul class="note" style="padding-left:16px">'+cp.limitations.map(x=>"<li>"+safe(x)+"</li>").join("")+'</ul></details>'+
+  '<p class="note" style="margin:4px 0 0"><b>Experimental · no es una alerta oficial.</b></p></div>';}
+function drawSemaforo(){if(!smLayer)return;smLayer.clearLayers();Object.keys(smMarks).forEach(k=>delete smMarks[k]);const t=smT();
+ SM.checkpoints.filter(smPass).forEach(cp=>{const r=smEval(cp,SMS,t);if(smState==="ATENCION"&&r.state!=="AMARILLO"&&r.state!=="ROJO")return;
+  L.circleMarker([cp.lat,cp.lon],{renderer:smRenderer,pane:"sema",radius:(cp.type==="rio"?7.5:6)+2.5,stroke:false,fillColor:"#fff",fillOpacity:.9,interactive:false}).addTo(smLayer);
+  const m=L.circleMarker([cp.lat,cp.lon],{renderer:smRenderer,pane:"sema",radius:cp.type==="rio"?7.5:6,color:SMRING[cp.type],weight:2.5,fillColor:SMC[r.state].color,fillOpacity:.95,className:"sm-pt sm-"+r.state});
+  m.bindPopup(()=>smPopup(cp),{maxWidth:320});m.bindTooltip(safe(cp.name)+" · "+safe(SMC[r.state].label_es),{direction:"top",offset:[0,-6]});m.addTo(smLayer);smMarks[cp.id]=m;});}
+if(map&&SM)register("semaforo","Semáforo de seguimiento (experimental, no oficial)",smLayer,true,()=>SM.checkpoints.length+" puntos · piloto Lambayeque · evaluado "+(smMode==="AHORA"?"ahora":"al corte")+" · no es alerta oficial");
+function renderSemaforo(){const box=$("tab-semaforo");if(!SM){box.innerHTML='<p class="empty">Semáforo no disponible en este paquete.</p>';return;}
+ const t=smT(),list=SM.checkpoints.filter(smPass).map(cp=>({cp,r:smEval(cp,SMS,t)})).filter(x=>smState==="ALL"||x.r.state==="AMARILLO"||x.r.state==="ROJO");
+ const all=SM.checkpoints.map(cp=>smEval(cp,SMS,t));const cnt=c=>all.filter(r=>r.state===c).length;
+ const order=["ROJO","AMARILLO","VERDE","GRIS"];const TO=["rio","mixto","quebrada"];list.sort((a,b)=>order.indexOf(a.r.state)-order.indexOf(b.r.state)||TO.indexOf(a.cp.type)-TO.indexOf(b.cp.type)||a.cp.id.localeCompare(b.cp.id));
+ const cov=SM.coverage||[];const covDep=cov.find(c=>c.department===smDep);
+ const self=SM.checkpoints.filter(cp=>{const r=smEval(cp,SMS,Date.parse(SM.cutoff_utc)),e=cp.state_at_cutoff;return r.state===e.state&&r.rule===e.rule&&r.confidence===e.confidence;}).length;
+ document.body.dataset.semaforoSelfcheck=self+"/"+SM.checkpoints.length;
+ box.innerHTML='<div class="guard"><b>Capa experimental · no es una alerta oficial.</b> Ordena el seguimiento de ríos y quebradas con avisos oficiales y lluvia estimada. No predice crecidas ni huaicos y no sustituye a SENAMHI, INDECI ni a las autoridades. <b>Un dato ausente nunca se pinta de verde.</b></div>'+
+  '<h2 style="margin-top:10px">Semáforo de seguimiento</h2>'+
+  '<div class="seg" role="group" aria-label="Momento de evaluación"><button type="button" data-smmode="AHORA" aria-pressed="'+(smMode==="AHORA")+'">Ahora</button><button type="button" data-smmode="CORTE" aria-pressed="'+(smMode==="CORTE")+'">Al corte de datos</button></div>'+
+  '<p class="note">Evaluado: <b>'+safe(fmt(new Date(t).toISOString()))+'</b>'+(smMode==="CORTE"?' · <b>reconstrucción en la fecha del corte, no es el estado actual.</b>':(ANY?' · los datos están congelados: las fuentes antiguas no cuentan, por eso aparece gris o confianza baja.':''))+'</p>'+
+  '<p>'+order.map(c=>'<span class="tag"><i class="sw" style="background:'+SMC[c].color+'"></i>'+safe(SMC[c].label_es)+': '+cnt(c)+'</span>').join(" ")+'</p>'+
+  '<details'+(window.matchMedia("(min-width:901px)").matches?" open":"")+'><summary><b>Qué significa cada color</b></summary>'+order.map(c=>'<p class="note"><i class="sw" style="background:'+SMC[c].color+'"></i><b>'+safe(SMC[c].label_es)+'.</b> '+safe(SMC[c].rule_es)+'</p>').join("")+
+  '<p class="note">Borde del círculo: <b style="color:'+SMRING.rio+'">azul</b> río · <b style="color:'+SMRING.quebrada+'">marrón</b> quebrada · <b style="color:'+SMRING.mixto+'">morado</b> mixto. '+safe(SM.rules.orange_es)+'</p></details>'+
+  '<div class="filters" style="margin-top:8px"><label>Mostrar <select id="smType"><option value="ALL">Todos</option><option value="rio">Ríos</option><option value="quebrada">Quebradas</option></select></label>'+
+  '<label>Estado <select id="smState"><option value="ALL">Todos</option><option value="ATENCION">Amarillos y rojos</option></select></label>'+
+  '<label>Departamento <select id="smDep"><option value="ALL">Toda la costa</option>'+cov.map(c=>'<option value="'+safe(c.department)+'">'+safe(title(c.department))+(c.status==="PILOTO_ACTIVO"?" (piloto)":" (pendiente)")+'</option>').join("")+'</select></label></div>'+
+  (covDep&&covDep.status!=="PILOTO_ACTIVO"?'<p class="empty">'+safe(title(smDep))+': sin puntos todavía (departamento pendiente). La estructura está preparada: basta con declarar sus sistemas fluviales IGN y su fuente documental de quebradas.</p>':
+  (list.length?'<div class="tw"><table><thead><tr><th>Estado</th><th>Punto</th><th>Tipo</th><th>Confianza</th></tr></thead><tbody>'+list.map(x=>'<tr data-state="'+safe(x.r.state)+'"><td style="white-space:nowrap" title="'+safe(SMC[x.r.state].label_es+" · "+SMRULE[x.r.rule])+'"><i class="sw" style="background:'+SMC[x.r.state].color+'"></i>'+safe(SMSHORT[x.r.state])+' <span class="note">'+safe(x.r.rule==="CONFIRMACION"?"conf.":x.r.rule)+'</span></td><td><a href="#" data-sm="'+safe(x.cp.id)+'">'+safe(x.cp.name)+'</a></td><td>'+safe(SMT[x.cp.type].split(" ")[0])+'</td><td>'+safe(x.r.confidence.toLowerCase())+'</td></tr>').join("")+'</tbody></table></div>':'<p class="empty">Ningún punto con estos filtros.</p>'))+
+  '<details><summary class="note">Cómo se colocan los puntos y de dónde salen los datos</summary><p class="note">'+safe(SM.placement_rule_es)+' '+safe(SM.quebrada_rule_es||"")+'</p><p class="note">'+safe(SM.rules.aviso_relation)+'</p><p class="note">'+safe(SM.evaluation_es)+'</p>'+
+  '<p class="note">Cobertura: '+cov.map(c=>safe(title(c.department))+" "+(c.status==="PILOTO_ACTIVO"?c.checkpoints+" puntos":"pendiente")).join(" · ")+'</p></details>'+
+  '<details><summary class="note">Qué no usa</summary><ul class="note">'+SM.rules.not_used_es.map(x=>"<li>"+safe(x)+"</li>").join("")+'</ul></details>'+
+  '<p class="note">Comprobación interna: la evaluación de esta página al corte coincide con la del generador en '+self+' de '+SM.checkpoints.length+' puntos'+(self!==SM.checkpoints.length?' · <b>discrepancia: no use esta capa</b>':'')+'.</p>';
+ $("smType").value=smType;$("smState").value=smState;$("smDep").value=smDep;
+ const redo=()=>{drawSemaforo();renderSemaforo();renderViewing();if($("layers").innerHTML)renderLayers();};
+ box.querySelectorAll("button[data-smmode]").forEach(b=>b.onclick=()=>{smMode=b.dataset.smmode;redo();});
+ $("smType").onchange=e=>{smType=e.target.value;redo();};$("smState").onchange=e=>{smState=e.target.value;redo();};
+ $("smDep").onchange=e=>{smDep=e.target.value;redo();if(map){const pts=SM.checkpoints.filter(smPass);if(smDep!=="ALL"&&pts.length){const wide=window.matchMedia("(min-width:901px)").matches&&!$("layers").hidden;map.fitBounds(L.latLngBounds(pts.map(c=>[c.lat,c.lon])),{paddingTopLeft:[wide?330:20,20],paddingBottomRight:[20,wide?40:20],maxZoom:10,animate:false});}}};
+ box.querySelectorAll("a[data-sm]").forEach(a=>a.onclick=e=>{e.preventDefault();const cp=SM.checkpoints.find(c=>c.id===a.dataset.sm),m=smMarks[cp.id];
+  if(map&&m){if(!R.semaforo.on){toggle("semaforo",true);if($("layers").innerHTML)renderLayers();}map.setView([cp.lat,cp.lon],Math.max(map.getZoom(),10),{animate:false});m.openPopup();}});}
 // ---------- layer panel
 function renderLayers(){const box=$("layers");const row=id=>R[id]?'<label><input type="checkbox" data-layer="'+id+'"'+(R[id].on?" checked":"")+'> <span>'+safe(R[id].label)+'<small>'+safe(R[id].sub())+'</small></span></label>':"";
  const bases=SINGLE?'<p class="note">La copia privada no puede cargar mapas externos: se usa la referencia vectorial (contorno del Perú, departamentos y ciudades de Natural Earth). La página del repositorio sí incluye mapa base con nombres.</p>':
   Object.entries(BASES).map(([k,b])=>'<label><input type="radio" name="base" value="'+k+'"'+(BASE===k?" checked":"")+'> <span>'+safe(b.label)+'</span></label>').join("")+'<label><input type="radio" name="base" value="vector"'+(BASE==="vector"?" checked":"")+'> <span>Solo referencia vectorial<small>contorno, departamentos y ciudades (Natural Earth)</small></span></label>';
  box.innerHTML='<h3>Mapa base</h3>'+bases+'<h3>Referencia territorial</h3>'+row("deps")+row("provs")+row("cities")+
+  (R.semaforo?'<h3>Semáforo de seguimiento (experimental)</h3>'+row("semaforo")+'<p class="note" style="margin:0 0 0 22px">No es una alerta oficial. Colores y filtros en la pestaña «Semáforo».</p>':'')+
   '<h3>Lluvia estimada (IMERG Early)</h3><div class="seg" id="win" role="group" aria-label="Ventana de lluvia acumulada">'+["1h","3h","6h","24h","72h"].map(k=>'<button type="button" data-win="'+k+'" aria-pressed="'+(k===WIN)+'">'+k.replace("h"," h")+'</button>').join("")+'</div>'+row("rainCoast")+row("rainZones")+
   '<h3>Avisos oficiales (INDECI/COEN)</h3>'+row("avisos")+'<h3>Red hidrográfica de referencia (IGN)</h3>'+row("hydro")+row("hydroIGN")+'<h3>Crecidas de ríos</h3>'+row("uh")+row("stations")+'<h3>Quebradas IRFEN y exposición documentada</h3>'+row("qgeo")+row("ana")+
   '<h3>No disponibles en esta vista</h3>'+(D.layers_unavailable||[]).map(u=>'<div class="na-item"><b>'+safe(u.label)+'</b><small>'+safe(u.reason)+'</small></div>').join("");
@@ -280,10 +378,10 @@ function renderViewing(){const on=Object.entries(R).filter(([k,r])=>r.on);
  $("viewSummary").textContent="Estás viendo "+(on.length)+" capas"+(rainOn&&w?" · lluvia "+WIN.replace("h"," h")+" hasta "+short(w.end_utc)+(STALE.coast?" (congelada)":""):"")+" · detalle";
  $("viewList").innerHTML='<li>'+safe(base)+'</li>'+on.map(([k,r])=>'<li>'+safe(r.label)+(r.sub()?' <span class="note">· '+safe(r.sub())+'</span>':"")+'</li>').join("");
  const hyOn=R.hydro?.on;
- $("viewLegend").innerHTML=(hyOn?'<div class="legend"><span>Red IGN:</span>'+Object.entries(HYC).filter(([k])=>k!=="RX").map(([k,c])=>'<span><svg width="22" height="8" aria-hidden="true"><line x1="1" y1="4" x2="21" y2="4" stroke="'+c.color+'" stroke-width="'+Math.max(1.5,c.w)+'"'+(c.dash?' stroke-dasharray="'+c.dash+'"':'')+'/></svg> '+safe(c.label)+'</span>').join("")+'<span>discontinuo = intermitente</span></div>':"")+(rainOn?'<div class="legend"><span>Lluvia '+safe(WIN.replace("h"," h"))+' (mm) · intervalos de visualización, no umbrales:</span>'+BINS.map((b,i)=>'<span><i class="sw" style="background:'+css(b[1])+'"></i>'+(i<BINS.length-1?String(b[0]).replace(".",",")+"–"+BINS[i+1][0]:"≥ "+b[0])+"</span>").join("")+'</div>':"")+
+ $("viewLegend").innerHTML=(R.semaforo?.on&&SM?'<div class="legend"><span>Semáforo (experimental, '+(smMode==="AHORA"?"ahora":"al corte")+'):</span>'+["ROJO","AMARILLO","VERDE","GRIS"].map(c=>'<span><i class="sw" style="background:'+SMC[c].color+'"></i>'+safe(SMC[c].label_es)+'</span>').join("")+'</div>':"")+(hyOn?'<div class="legend"><span>Red IGN:</span>'+Object.entries(HYC).filter(([k])=>k!=="RX").map(([k,c])=>'<span><svg width="22" height="8" aria-hidden="true"><line x1="1" y1="4" x2="21" y2="4" stroke="'+c.color+'" stroke-width="'+Math.max(1.5,c.w)+'"'+(c.dash?' stroke-dasharray="'+c.dash+'"':'')+'/></svg> '+safe(c.label)+'</span>').join("")+'<span>discontinuo = intermitente</span></div>':"")+(rainOn?'<div class="legend"><span>Lluvia '+safe(WIN.replace("h"," h"))+' (mm) · intervalos de visualización, no umbrales:</span>'+BINS.map((b,i)=>'<span><i class="sw" style="background:'+css(b[1])+'"></i>'+(i<BINS.length-1?String(b[0]).replace(".",",")+"–"+BINS[i+1][0]:"≥ "+b[0])+"</span>").join("")+'</div>':"")+
   (msg?'<p id="msg">'+safe(msg)+'</p>':'<p id="msg"></p>');}
 // ---------- tabs
-const TABS=[["resumen","Resumen"],["lluvia","Lluvia"],["avisos","Avisos"],["rios","Crecidas de ríos"],["quebradas","Quebradas"]];
+const TABS=[["resumen","Resumen"],["semaforo","Semáforo"],["lluvia","Lluvia"],["avisos","Avisos"],["rios","Crecidas de ríos"],["quebradas","Quebradas"]];
 TABS.forEach(([id,label])=>{const b=document.createElement("button");b.type="button";b.role="tab";b.id="t-"+id;b.textContent=label;b.setAttribute("aria-controls","tab-"+id);b.onclick=()=>showTab(id);$("tabs").append(b);});
 function showTab(id){TABS.forEach(([t])=>{$("tab-"+t).hidden=t!==id;$("t-"+t).setAttribute("aria-selected",String(t===id));});}
 const DEPS=D.coast_departments||[];const DS=D.departments||{};
@@ -348,7 +446,7 @@ function renderQuebradas(){$("tab-quebradas").innerHTML='<div class="card ph ACT
  '<p class="note">'+safe(Q.ana_source?.note)+' Actívalas en «Capas». Las quebradas sin geometría reproducible no se dibujan: consulta el '+pageLink("inventario.html","inventario documental")+' ('+safe(Q.inventory_rows)+' registros).</p>'+
  '<div class="card ph INUNDACION_PLUVIAL"><b>Inundación pluvial</b><br><span class="note">Lluvia local intensa en ciudades y llanuras. Se vigila solo con lluvia IMERG y avisos de lluvias; no hay una fuente gratuita integrada de inundaciones urbanas observadas.</span></div>';}
 // ---------- dialogs: information, sources, limitations
-$("infoBody").innerHTML='<p class="note">Vista privada de vigilancia científica de la costa (Tumbes–Tacna) · <b>v0.9.1 candidata</b> (posterior a Research Preview 1: añade la red hidrográfica IGN y la paleta de lluvia de alto contraste). '+safe(D.disclaimer_es)+'</p>'+
+$("infoBody").innerHTML='<p class="note">Vista privada de vigilancia científica de la costa (Tumbes–Tacna) · <b>v0.9.1 candidata</b> (posterior a Research Preview 1: añade la red hidrográfica IGN, la paleta de lluvia de alto contraste y un semáforo de seguimiento experimental, no oficial, con piloto en Lambayeque). '+safe(D.disclaimer_es)+'</p>'+
  '<h3>Tres fenómenos distintos</h3>'+(D.phenomena||[]).map(p=>'<div class="card ph '+safe(p.id)+'"><b>'+safe(p.label)+'</b> <span class="note">('+safe(p.examples)+')</span><br><span class="note">Capas: '+safe(p.layers.join(", "))+'<br>Tiempo real: '+safe(p.realtime)+'<br>Avisos: '+safe(p.avisos)+'</span></div>').join("")+
  '<h3>Cómo usarla</h3><ul class="note"><li>«Capas» activa y desactiva cada capa; el recuadro «Estás viendo» indica qué se muestra y de qué fecha.</li><li>Busca una ciudad o un departamento en la barra superior.</li><li>Pulsa un departamento en el mapa o en la tabla del panel para ver su resumen.</li><li>La lluvia es una estimación satelital (IMERG Early) con horas de retraso; en esta versión está congelada.</li></ul>'+
  '<p class="note">Guardas: deployment_status='+safe(D.deployment_status)+' · test_mode='+safe(D.test_mode)+' · activation_gate='+safe(D.activation_gate)+' · production_use=false · public_alerting=false · notifications_enabled=false · predictive_engine_enabled=false · decision_thresholds=null</p>';
@@ -358,7 +456,7 @@ const SRC=D.sources.map(s=>{const h=age(s.updated_at_utc);const st=!s.updated_at
  return '<tr><td>'+safe(s.label)+'</td><td>'+(s.updated_at_utc?safe(fmt(s.updated_at_utc))+'<br><span class="note">'+safe(st)+'</span>':'<span class="note">archivo estático</span>')+(s.data_end_utc?'<br><span class="note">fin de datos '+safe(fmt(s.data_end_utc))+'</span>':"")+'</td><td class="note">'+safe(s.quality)+'</td></tr>';}).join("");
 $("sourcesBody").innerHTML='<div class="tw"><table><thead><tr><th>Fuente</th><th>Actualización</th><th>Calidad</th></tr></thead><tbody>'+SRC+
  (REF.status==="OK"?'<tr><td>Referencia cartográfica (contorno, departamentos, ciudades)</td><td><span class="note">archivo estático</span></td><td class="note">'+safe(REF.provenance.dataset)+' · '+safe(REF.provenance.licence)+' · orientación, no límite oficial</td></tr>':"")+
- (SINGLE?"":'<tr><td>Mapa base</td><td><span class="note">teselas externas</span></td><td class="note">CARTO Voyager / OpenStreetMap; solo orientación</td></tr>')+'</tbody></table></div>';
+ (SM?'<tr><td>Semáforo de seguimiento (experimental)</td><td><span class="note">derivado; se evalúa al abrir la vista</span></td><td class="note">Reglas '+safe(SM.rules.schema_version)+' sobre avisos, IMERG y GOES-19 ya listados; puntos sobre IGN 1:500.000 y ANA 2016-17. No es una alerta oficial.</td></tr>':"")+(SINGLE?"":'<tr><td>Mapa base</td><td><span class="note">teselas externas</span></td><td class="note">CARTO Voyager / OpenStreetMap; solo orientación</td></tr>')+'</tbody></table></div>';
 $("limitsBody").innerHTML=(ANY?'<div class="guard"><b>Datos congelados, no actuales.</b> Avisos comprobados por última vez: '+safe(fmt(AVCUT))+' · lluvia costera hasta '+safe(fmt(S.imerg_coast?.data_end_utc))+' · lluvia norte hasta '+safe(fmt(S.imerg_north?.data_end_utc))+'. Los avisos emitidos después no aparecen. Para la situación actual consulte SENAMHI e INDECI.</div>':"")+
  '<h3>No disponible en esta vista</h3>'+(D.layers_unavailable||[]).map(u=>'<div class="card"><b>'+safe(u.label)+'</b><br><span class="note">'+safe(u.reason)+'</span></div>').join("")+
  '<h3>Pendiente o insuficiente</h3>'+(D.pending||[]).map(p=>'<div class="card"><b>'+safe(p.item)+'</b><br><span class="note">'+safe(p.reason)+'</span></div>').join("");
@@ -379,7 +477,7 @@ $("searchForm").onsubmit=e=>{e.preventDefault();const q=norm($("search").value);
  if(hit.dep)selectDept(hit.dep);else if(map){map.setView([hit.city.lat,hit.city.lon],10);msg="";renderViewing();}};
 // ---------- init
 function fitPeru(){if(!map)return;const wide=window.matchMedia("(min-width:901px)").matches&&!$("layers").hidden;map.fitBounds([[-18.4,-81.4],[-0.1,-68.7]],{paddingTopLeft:[wide?320:8,8],paddingBottomRight:[8,wide?60:90],animate:false});}
-setBase(BASE);drawRain();renderLayers();renderSummary();renderRainTab();renderAvisos();renderRivers();renderQuebradas();showTab("resumen");
+setBase(BASE);drawRain();drawSemaforo();renderLayers();renderSummary();renderSemaforo();renderRainTab();renderAvisos();renderRivers();renderQuebradas();showTab("resumen");
 if(window.matchMedia("(min-width:901px)").matches){$("layers").hidden=false;$("bLayers").setAttribute("aria-pressed","true");}
 fitPeru();cityZoom();hydroZoom();if(map)map.attributionControl.addAttribution("Natural Earth · INEI (SERFOR)");
 function fromHash(){const h=decodeURIComponent(location.hash.slice(1));if(h.startsWith("dep=")){const k=h.slice(4);if(DEPS.includes(k))selectDept(k);}}

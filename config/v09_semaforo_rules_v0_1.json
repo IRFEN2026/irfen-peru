@@ -1,0 +1,76 @@
+{
+  "schema_version": "irfen_v09_semaforo_rules_v0_1",
+  "name": "Semáforo de seguimiento (experimental)",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "official_alert": false,
+  "public_alerting": false,
+  "notifications_enabled": false,
+  "predictive": false,
+  "purpose_es": "Ordenar visualmente el seguimiento de ríos y quebradas con los datos disponibles. No es una alerta oficial, no predice crecidas ni huaicos y no sustituye a SENAMHI, INDECI ni a las autoridades.",
+  "based_on": "Reglas de prioridad interna de revisión R1–R6 de la vista de lluvia v0.9 (site/data/v09/dashboard_v0_1.json, rain.review_priorities), más confirmación documentada.",
+  "freshness": {
+    "imerg_max_age_hours": 12,
+    "goes_max_age_minutes": 90,
+    "avisos_source_max_age_minutes": 180,
+    "confirmation_window_hours": 72
+  },
+  "rain_signal": {
+    "window_for_signal": "24h",
+    "display_resolution_mm": 0.1,
+    "note_es": "«Lluvia no nula» significa ≥ 0,1 mm en la ventana completa de 24 h (resolución de presentación), o tasa GOES-19 válida > 0. No es un umbral de peligro: cualquier lluvia estimada pide atención."
+  },
+  "rain_related_products": [
+    "ACP-LLUVIAS",
+    "ACP-QUEBRADAS",
+    "AVISO-METEOROLOGICO"
+  ],
+  "aviso_relation": "Aviso de lluvia (producto de la lista y marcado como relacionado con lluvia, sin cancelación ni sustitución) que enumera el departamento del punto y, si para ese departamento enumera provincias, también su provincia (límites INEI referenciales). Es la representación administrativa del aviso, no su huella.",
+  "states": [
+    {
+      "code": "ROJO",
+      "color": "#c62828",
+      "label_es": "Evento confirmado",
+      "rule_es": "Hay una confirmación documentada (fuente oficial o registro verificado) de un evento en ese río o quebrada dentro de las últimas 72 h. Sin confirmación no hay rojo: ni la lluvia ni un aviso, por intensos que sean, lo producen."
+    },
+    {
+      "code": "AMARILLO",
+      "color": "#f2c230",
+      "label_es": "Vigilancia / señal de atención",
+      "rule_es": "Al menos una de: (R2) aviso oficial de lluvia VIGENTE relacionado con el punto, según las fechas de su texto; (R3) aviso FUTURO relacionado, o de vigencia desconocida si la comprobación de avisos está al día; (R4) lluvia estimada no nula en la última ventana completa de 24 h de IMERG o en la última muestra GOES-19 válida, con datos dentro de su antigüedad máxima."
+    },
+    {
+      "code": "VERDE",
+      "color": "#2e9e5b",
+      "label_es": "Sin señal en los datos disponibles",
+      "rule_es": "(R6) Todo a la vez: comprobación de avisos al día y sin aviso de lluvia vigente ni futuro relacionado; ventana IMERG de 24 h completa, al día y nula; y, donde exista GOES-19, muestra válida, al día y nula. No significa ausencia de peligro."
+    },
+    {
+      "code": "GRIS",
+      "color": "#8a949c",
+      "label_es": "Sin datos suficientes / no evaluable",
+      "rule_es": "(R5) Cualquier otro caso: datos ausentes, incompletos o antiguos, o comprobación de avisos antigua sin aviso vigente conocido. Un dato ausente nunca se convierte en verde."
+    }
+  ],
+  "precedence": [
+    "ROJO",
+    "AMARILLO",
+    "VERDE",
+    "GRIS"
+  ],
+  "confidence_es": {
+    "ALTA": "Todas las fuentes aplicables al punto (comprobación de avisos, IMERG y, donde exista, GOES-19) están al día.",
+    "MEDIA": "Al menos una fuente aplicable está al día y otra falta o está antigua (p. ej. aviso vigente por su texto, pero la comprobación de cancelaciones es antigua).",
+    "BAJA": "Estado GRIS, o ninguna fuente aplicable está al día."
+  },
+  "not_used_es": [
+    "Umbrales de lluvia en milímetros, caudales, niveles o probabilidades de huaico (no validados para IRFEN).",
+    "Percentiles históricos (no hay serie homogénea suficiente: la señal fuerte R1 no es evaluable y no produce un color propio).",
+    "Modelos predictivos."
+  ],
+  "orange_es": "No se usa naranja: no hay una regla validada que distinga una señal intermedia sin inventar umbrales.",
+  "modes_es": {
+    "AHORA": "Evaluación con la hora del dispositivo al abrir la vista: con datos congelados casi todo queda gris salvo avisos todavía vigentes por su texto.",
+    "AL_CORTE": "Evaluación en la fecha del corte de datos. Es una reconstrucción, no el estado actual."
+  }
+}
