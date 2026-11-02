@@ -209,8 +209,10 @@ class Bundle(unittest.TestCase):
             self.assertNotEqual(sem.evaluate(c, S, cut + timedelta(days=40))["state"], "ROJO")
         self.assertGreater(regional_stale, 0)  # the audited case (regional aviso in force, local data stale) is exercised
         river = next(c for c in sm["checkpoints"] if c["type"] == "rio")
-        fake = dict(system_id=river["system_id"], verified=True, source_kind="OFICIAL", observed_at_utc=cut.isoformat())
+        fake = dict(system_id=river["system_id"], verified=True, source_kind="OFICIAL", observed_at_utc=cut.isoformat(),
+                    source_url="https://portal.indeci.gob.pe/ejemplo")
         self.assertEqual(sem.evaluate(river, dict(S, confirmations=[fake]), cut)["state"], "ROJO")
+        self.assertNotEqual(sem.evaluate(river, dict(S, confirmations=[dict(fake, source_url=None)]), cut)["state"], "ROJO")  # no source: pending
         self.assertNotEqual(sem.evaluate(river, dict(S, confirmations=[dict(fake, verified=False)]), cut)["state"], "ROJO")
         self.assertNotEqual(sem.evaluate(river, dict(S, confirmations=[fake]), cut + timedelta(hours=73))["state"], "ROJO")
 

@@ -81,6 +81,25 @@ def expiry(page, bundle: dict, built: str) -> dict:
     return res
 
 
+def registry_parity(page, bundle: dict, built: str) -> dict:
+    """Red only from a verified, https-sourced, located entry; unverified or unsourced entries stay «pendiente» (JS = Python)."""
+    sm = bundle.get("semaforo") or {}
+    if sm.get("status") != "OK":
+        return dict(checked=False, ok=True)
+    river = next(c for c in sm["checkpoints"] if c["type"] == "rio")
+    base = dict(system_id=river["system_id"], observed_at_utc=built, event_es="prueba")
+    b = json.loads(json.dumps(bundle))
+    b["semaforo"]["confirmations"]["confirmations"] = [dict(base, verified=False, source_url="https://example.org/a"),
+                                                        dict(base, verified=True, source_url="http://example.org/b")]
+    pending_only = parity(page, b, built)
+    b["semaforo"]["confirmations"]["confirmations"].append(dict(base, verified=True, source_url="https://example.org/c"))
+    verified = parity(page, b, built)
+    n = sum(1 for c in sm["checkpoints"] if c["type"] == "rio" and c["system_id"] == river["system_id"])
+    ok = (pending_only["mismatches"] == verified["mismatches"] == 0 and "ROJO" not in pending_only["states"]
+          and verified["states"].get("ROJO") == n)
+    return dict(pending_only=pending_only["states"], with_verified=verified["states"], ok=ok)
+
+
 def run(data_dir: Path, next_cycle: Path | None, local_leaflet: Path | None, out: Path, cross_origin: bool = False) -> dict:
     """cross_origin: the page is the deployable private site (scripts/v091_build_private_site.py) and the data come from
     another origin with CORS, as with raw.githubusercontent.com/<repo>/research/v091-live-data/current/."""
@@ -140,7 +159,8 @@ def run(data_dir: Path, next_cycle: Path | None, local_leaflet: Path | None, out
                          north_rain_end=bundle["rain"]["north_zones"].get("end_utc"),
                          avisos_check=(bundle.get("semaforo") or {}).get("aviso_check_utc"),
                          parity_at_cycle=parity(page, bundle, man["built_at_utc"]),
-                         expiry=expiry(page, bundle, man["built_at_utc"]))
+                         expiry=expiry(page, bundle, man["built_at_utc"]),
+                         registry=registry_parity(page, bundle, man["built_at_utc"]))
                 page.locator("#bSources").click()
                 r["sources_dialog"] = page.locator("dialog[open] .db").inner_text()[:400]
                 r["live_sources"] = page.evaluate("""[...document.querySelectorAll('#liveSources tbody tr')].map(tr=>({id:tr.dataset.src,
@@ -171,7 +191,7 @@ def run(data_dir: Path, next_cycle: Path | None, local_leaflet: Path | None, out
             dhttpd.shutdown()
     r1 = rep["runs"][0]
     rep["ok"] = (not rep["errors"] and all(x["page_cycle"] == x["manifest_cycle"] and x["parity_at_cycle"]["mismatches"] == 0
-                                          and x["expiry"].get("ok", True) is True
+                                          and x["expiry"].get("ok", True) is True and x["registry"].get("ok") is True
                                           and len(set(x["selfcheck"].split("/"))) == 1 for x in rep["runs"])
                  and (not next_cycle or (rep["runs"][1]["page_cycle"] != r1["page_cycle"] and rep.get("tab_after_reload") == "t-avisos")))
     return rep

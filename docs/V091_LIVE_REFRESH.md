@@ -91,6 +91,14 @@ Las capturas son más frecuentes solo si las ejecuta un reloj autorizado por el 
 
 Los avisos se muestran como contexto territorial y no cambian el color.
 
+## 3 bis. Registro de eventos y correo privado en rojo
+
+El registro de eventos (`config/v09_semaforo_confirmations_v0_1.json`) y las reglas forman parte de la comprobación de cambios de cada ciclo. Una entrada nueva, verificada o pendiente, publica un paquete `REGISTRO_DE_EVENTOS` en unos 20 minutos.
+
+El rojo exige `verified: true`, un enlace `https://`, fecha y lugar. Las entradas sin verificar aparecen como «pendiente de verificación» y no cambian el color.
+
+El correo privado al pasar a rojo se describe en [`V091_RED_ALERTS.md`](V091_RED_ALERTS.md).
+
 ## 4. Fallos de fuentes y caducidad (comprobado)
 
 | Situación | Qué pasa | Prueba |

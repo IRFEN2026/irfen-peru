@@ -290,6 +290,20 @@ def related_avisos(avisos_idx, dep, prov):
 
 
 # ---------------------------------------------------------------- evaluation (mirrors smEval in site/v09/vigilancia.html)
+def confirmation_applies(c, cp):
+    """A registry entry is located on this checkpoint (or, for river points, on its river system) and is dated."""
+    return bool(c.get("observed_at_utc")) and (c.get("checkpoint_id") == cp["id"] or (
+        cp["type"] == "rio" and bool(c.get("system_id")) and c.get("system_id") == cp.get("system_id")))
+
+
+def pending_reports(cp, S, t):
+    """Unconfirmed reports (verified is not true, or no https source) within the window: shown as «pendiente de
+    verificación», never red and never e-mailed."""
+    win = timedelta(hours=S["rules"]["freshness"]["confirmation_window_hours"])
+    return [c for c in S["confirmations"] if confirmation_applies(c, cp) and t - win <= iso(c["observed_at_utc"]) <= t
+            and not (c.get("verified") is True and str(c.get("source_url") or "").startswith("https://"))]
+
+
 def evaluate(cp, S, t):
     """Local state of one checkpoint at time t. Avisos are territorial CONTEXT and never change the colour."""
     R = S["rules"]
@@ -297,9 +311,8 @@ def evaluate(cp, S, t):
     res = R["rain_signal"]["display_resolution_mm"]
     win = timedelta(hours=fr["confirmation_window_hours"])
     # a confirmation names one checkpoint, or a whole river system (then it applies to that system's river points only)
-    conf = [c for c in S["confirmations"] if c.get("verified") and c.get("observed_at_utc")
-            and (c.get("checkpoint_id") == cp["id"] or (cp["type"] == "rio" and c.get("system_id") and c.get("system_id") == cp.get("system_id")))
-            and t - win <= iso(c["observed_at_utc"]) <= t]
+    conf = [c for c in S["confirmations"] if confirmation_applies(c, cp) and c.get("verified") is True
+            and str(c.get("source_url") or "").startswith("https://") and t - win <= iso(c["observed_at_utc"]) <= t]
     rr = S["rain_refs"].get(cp.get("rain_ref") or "")
     i24 = i_fresh = None
     if rr and rr["imerg"]["end_utc"]:

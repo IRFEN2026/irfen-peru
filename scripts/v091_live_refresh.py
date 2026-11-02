@@ -35,6 +35,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CFG = ROOT / "config/v091_live_refresh.json"
 BUNDLE = ROOT / "site/data/v09/surveillance_view_v0_1.json"
 SEMAFORO = ROOT / "data/v09/research/semaforo/semaforo_v0_1.json"
+REGISTRY = ("config/v09_semaforo_confirmations_v0_1.json", "config/v09_semaforo_rules_v0_1.json")
 GUARDS = dict(deployment_status="RESEARCH_ONLY", test_mode="TEST_ONLY", public_alerting=False, notifications_enabled=False,
               predictive=False, official_alert=False, merged_into_main=False)
 
@@ -295,8 +296,11 @@ def main(argv=None) -> int:
         run_info = (att_doc or {}).get("workflows", {}).get(spec["workflow"])
         attempts[spec["source_id"]] = attempt_status(spec, git_show(a.main_ref, spec["file"]), run_info)
     # a new capture attempt (even a failed one) is published, so the viewer says explicitly that the last capture failed
+    # the event registry and the rules live in this branch: a new verified (or pending) report is a new cycle
+    registry = {p: sha((ROOT / p).read_bytes()) for p in REGISTRY if (ROOT / p).is_file()}
     fingerprint = sha(json.dumps(dict(inputs={p: v["sha256"] for p, v in inputs.items()},
-                                      attempts={k: (v["run_id"], v["result"]) for k, v in attempts.items()}), sort_keys=True).encode())
+                                      attempts={k: (v["run_id"], v["result"]) for k, v in attempts.items()},
+                                      registry=registry), sort_keys=True).encode())
     if prev and prev.get("inputs_fingerprint") == fingerprint and not a.force:
         print(json.dumps(dict(result="SIN_CAMBIOS", fingerprint=fingerprint, previous_cycle=prev.get("cycle_id")), ensure_ascii=False))
         return 10
@@ -333,6 +337,7 @@ def main(argv=None) -> int:
         if s.get("source_time_utc") and old and iso(s["source_time_utc"]) > iso(old):
             new_obs.append(s["id"])
     change = "PRIMER_CICLO" if not prev else ("OBSERVACIONES_NUEVAS" if new_obs else
+                                             "REGISTRO_DE_EVENTOS" if prev.get("registry") and prev.get("registry") != registry else
                                              ("SOLO_INTENTO_DE_CAPTURA" if any(prev.get("attempts", {}).get(k, {}).get("run_id") != v["run_id"]
                                                                               for k, v in attempts.items()) else "ENTRADAS_REVISADAS"))
     (a.data_dir / ".staging/observation_feed_v0_1.json").write_text(json.dumps(feed, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
@@ -354,6 +359,7 @@ def main(argv=None) -> int:
     text = json.dumps(bundle, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n"
     manifest = dict(schema_version="irfen_v091_live_manifest_v0_1", **GUARDS, cycle_id=cycle_id, built_at_utc=now.isoformat(), main_ref=a.main_ref,
                     main_sha=main_sha, inputs_fingerprint=fingerprint, inputs=inputs, steps=steps, change_kind=change, new_observations=new_obs,
+                    registry=registry,
                     attempts=attempts,
                     sources={s["id"]: dict(status=s["status"], source_time_utc=s["source_time_utc"], age_minutes=s["age_minutes"],
                                            last_attempt_utc=s.get("last_attempt_utc"), attempt_result=s.get("attempt_result")) for s in feed["sources"]},
