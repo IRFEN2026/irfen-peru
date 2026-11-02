@@ -67,12 +67,13 @@ class Bundle(unittest.TestCase):
                 self.assertIs(sm[k], False, k)
                 self.assertIs(sm["rules"].get(k, False), False, k)
             self.assertEqual((sm["deployment_status"], sm["test_mode"]), ("RESEARCH_ONLY", "TEST_ONLY"))
-            self.assertEqual([x["code"] for x in sm["rules"]["states"]], ["ROJO", "AMARILLO", "VERDE", "GRIS"])
+            self.assertEqual([x["code"] for x in sm["rules"]["states"]], ["ROJO", "NARANJA", "AMARILLO", "VERDE", "GRIS"])
+            self.assertIs(next(x for x in sm["rules"]["states"] if x["code"] == "NARANJA")["operational"], False)
             self.assertIn("Ni la lluvia ni un aviso producen rojo", sm["rules"]["states"][0]["rule_es"])
             self.assertIn("no garantiza", PAGE)  # a verified report says the event happened, not that it is still active
-            self.assertIn("no evidencia de crecida ni de activación", sm["rules"]["states"][1]["rule_es"])
-            self.assertIn("Un aviso regional vigente no cambia el gris", sm["rules"]["states"][3]["rule_es"])
-            self.assertIn("nunca se convierte en verde", sm["rules"]["states"][3]["rule_es"])
+            self.assertIn("no evidencia de crecida ni de activación", next(x for x in sm["rules"]["states"] if x["code"] == "AMARILLO")["rule_es"])
+            self.assertIn("Un aviso regional vigente no cambia el gris", next(x for x in sm["rules"]["states"] if x["code"] == "GRIS")["rule_es"])
+            self.assertIn("nunca se convierte en verde", next(x for x in sm["rules"]["states"] if x["code"] == "GRIS")["rule_es"])
             self.assertIs(sm["rules"]["territorial_context"]["affects_colour"], False)
             self.assertEqual(sm["rules"]["flood_evidence"]["status"], "NO_DISPONIBLE")
             for c in sm["confirmations"]["confirmations"]:  # the only way to red: a sourced, verified record

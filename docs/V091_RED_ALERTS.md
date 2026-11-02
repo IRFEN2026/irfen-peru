@@ -1,5 +1,22 @@
 # IRFEN v0.9.1 · correo privado cuando un punto pasa a ROJO (RESEARCH_ONLY / TEST_ONLY)
 
+> **Estado actual: envío real DESHABILITADO** hasta tu autorización (`config/v091_owner_notifications.json`, con `sending_enabled: false`). Mientras siga así:
+> - el script no abre ninguna conexión SMTP;
+> - genera las hojas y los `.eml` de simulación;
+> - anota `NO_ENVIADO_ENVIO_DESHABILITADO` en el historial.
+>
+> Los eventos rojos que sigan vigentes se enviarán al habilitarlo.
+>
+> **Destinatario único:** solo se acepta la dirección cuya huella SHA-256 figura en esa configuración (la tuya).
+
+| Estado | Correo |
+|---|---|
+| ROJO | Sí: evento reportado y verificado |
+| NARANJA | Solo con una regla de anticipación **validada**. Hoy no hay ninguna (`docs/V091_ANTICIPATION.md`) |
+| AMARILLO, VERDE, GRIS | **Nunca** |
+
+**Para habilitarlo** hace falta tu autorización expresa: un commit propio que ponga `sending_enabled: true` y rellene `authorized_by` y `authorized_at_utc`. Después, primero la prueba controlada `--test-email`.
+
 Avisa por correo **a una sola persona** cuando un punto del semáforo pasa a rojo.
 - No es una alerta pública.
 - No publica nada.
@@ -58,6 +75,10 @@ El estado se guarda en `~/.irfen_alerts/state.json` y el historial en `~/.irfen_
 | Deja de estar en rojo (pasan las 72 h o se retira la entrada o su verificación) | Se **rearma** | `REARMADO` |
 | Vuelve a ponerse en rojo después del rearme | 1 correo nuevo | `ALERTA_ENVIADA` |
 | El envío falla | Se reintenta en las siguientes comprobaciones, como máximo 3 veces por versión del evento | `ERROR_DE_ENVIO` (sin credenciales) |
+| Envío deshabilitado | Se generan la hoja y el `.eml`, no se marca como enviado y se enviará al habilitarlo | `NO_ENVIADO_ENVIO_DESHABILITADO` (una vez) |
+| El ordenador se apaga a mitad de un envío | Antes de enviar se anota el envío en curso; en la siguiente comprobación se reenvía con la nota «posible repetición» | — |
+| El evento se detecta tarde (más de 6 h después de ocurrir) | Se envía con la nota «detectado con retraso». No se pierde mientras siga dentro de las 72 h | — |
+| Un punto pasa de NARANJA a ROJO | Correo de ROJO aparte (otra clave) | `ALERTA_ENVIADA` |
 | Reporte sin verificar | Nada | `PENDIENTE_DE_VERIFICACION` (una vez) |
 
 **Rearme manual:** el rearme ocurre solo. Para forzar el reenvío de un evento sin cambiarlo, borra su clave de `active` en `~/.irfen_alerts/state.json`.
@@ -90,12 +111,12 @@ Gmail permite enviar por SMTP con una **contraseña de aplicación**: un código
    python3 -m pip install "numpy>=1.26,<2" playwright
    python3 -m playwright install chromium     # para el PNG; sin esto se adjunta el HTML
    ```
-5. Prueba el envío:
+5. Prueba el envío (solo después de habilitarlo; antes, el script responde «No se envió nada» y sale con el código 3):
    ```bash
    python3 scripts/v091_red_alerts.py --test-email            # correo de prueba de la configuración
-   python3 scripts/v091_red_alerts.py --example --send        # SIMULACRO marcado: hoja + correo de ejemplo
+   python3 scripts/v091_red_alerts.py --example [--send]      # SIMULACROS con datos históricos reales (río Piura, 2017): NARANJA y ROJO
    ```
-   El simulacro lleva «SIMULACRO · NO ES UN EVENTO REAL · NO COMPARTIR» en la imagen, en el asunto y en el texto para redes. No se guarda como alerta enviada.
+   Los simulacros llevan la marca SIMULACRO en la imagen, en el asunto y en el texto para redes. Usan valores reales de IMERG Final y el desborde documentado del 27-03-2017, y no se guardan como alertas enviadas.
 6. Ponlo en marcha:
    ```bash
    python3 scripts/v091_red_alerts.py --watch 10   # comprueba cada 10 min mientras esté abierto

@@ -1,0 +1,22 @@
+{
+  "schema_version": "irfen_v091_owner_notifications_v0_1",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "activation_gate": "BLOCKED",
+  "public_alerting": false,
+  "notifications_enabled": false,
+  "sending_enabled": false,
+  "authorized_by": null,
+  "authorized_at_utc": null,
+  "recipient_sha256": "aa49899c6a23d37783dab0a41583200e6097d782933f92d0ac16e406fd643fb7",
+  "recipient_note_es": "Solo se guarda la huella SHA-256 del único destinatario autorizado (el repositorio es público). El script rechaza cualquier otra dirección.",
+  "email_by_state": {
+    "ROJO": "SI_EVENTO_REPORTADO_Y_VERIFICADO",
+    "NARANJA": "SOLO_CON_REGLA_VALIDADA",
+    "AMARILLO": "NUNCA",
+    "VERDE": "NUNCA",
+    "GRIS": "NUNCA"
+  },
+  "enable_es": "Para habilitar el envío real hace falta autorización expresa del propietario: cambiar sending_enabled a true, rellenar authorized_by y authorized_at_utc en un commit propio, y hacer primero la prueba controlada (--test-email). Mientras sea false, el script solo genera hojas y correos .eml de simulación y no abre ninguna conexión SMTP; los eventos rojos que sigan vigentes se enviarán al habilitarlo."
+}

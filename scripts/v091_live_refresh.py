@@ -232,8 +232,8 @@ def qa(bundle: dict, now: datetime) -> list[str]:
                                 and timedelta(0) <= now - iso(rr["goes"]["scan_end_utc"]) <= timedelta(minutes=fr["goes_max_age_minutes"]))
             if not (i_ok and (rr["imerg"]["windows"].get("24h") or 0) >= sm["rules"]["rain_signal"]["display_resolution_mm"]) and not g_fresh_rain:
                 errs.append(f"{cp['id']}: yellow from an expired or absent observation")
-        if r["state"] not in ("ROJO", "AMARILLO", "VERDE", "GRIS"):
-            errs.append(f"{cp['id']}: unknown state {r['state']}")
+        if r["state"] not in ("ROJO", "AMARILLO", "VERDE", "GRIS"):  # NARANJA is not operational (no validated rule)
+            errs.append(f"{cp['id']}: state {r['state']} not allowed in the operational layer")
     return errs
 
 

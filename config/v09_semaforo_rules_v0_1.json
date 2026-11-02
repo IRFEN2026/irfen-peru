@@ -29,6 +29,14 @@
       "rule_es": "Hay en el registro una entrada reportada y verificada (verified=true, fuente https, fecha y lugar) de un evento (desborde, huaico, activación) en ese punto —o en ese río, para sus puntos de cauce— ocurrido en las últimas 72 h. Indica que el evento ocurrió, no que siga activo. Los reportes sin verificar quedan «pendientes de verificación» y no pintan rojo. Ni la lluvia ni un aviso producen rojo."
     },
     {
+      "code": "NARANJA",
+      "color": "#e8711a",
+      "label_es": "Precaución anticipada (experimental)",
+      "rule": "ANTICIPACION_VALIDADA",
+      "operational": false,
+      "rule_es": "Solo cuando una regla de anticipación haya superado la validación histórica reproducible, la revisión independiente y la autorización del propietario (config/v091_anticipation_protocol_v0_1.json). Hoy ninguna regla está validada: este estado no se produce en el mapa operativo y no envía correos. Las señales candidatas se muestran solo en la capa de simulación de investigación."
+    },
+    {
       "code": "AMARILLO",
       "color": "#f2c230",
       "label_es": "Lluvia satelital detectada (no es activación)",
@@ -52,6 +60,7 @@
   ],
   "precedence": [
     "ROJO",
+    "NARANJA",
     "AMARILLO",
     "VERDE",
     "GRIS"

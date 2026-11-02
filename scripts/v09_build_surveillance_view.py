@@ -16,6 +16,7 @@ Salida: site/data/v09/surveillance_view_v0_1.json (determinista; `--check` compa
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import math
 import sys
@@ -461,6 +462,27 @@ def ign_hydro(admin):
                 lines=dict(type="FeatureCollection", features=out), per_department=per_dep)
 
 
+def anticipation_section(semaforo: dict, nz: dict) -> dict:
+    """Research-only anticipation (NARANJA) block: rule verdicts from the archived historical validation and the
+    simulation at the semáforo cutoff. Never operational: no validated rule, no colour, no e-mail."""
+    val_path = ROOT / "data/v09/research/anticipation/v091_anticipation_validation_v0_1.json"
+    if semaforo.get("status") != "OK" or not val_path.is_file():
+        return dict(status="PENDIENTE")
+    spec = importlib.util.spec_from_file_location("v091_anticipation_view", ROOT / "scripts/v091_anticipation.py")
+    an = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(an)
+    val = json.loads(val_path.read_text(encoding="utf-8"))
+    sim = an.live_simulation(dict(semaforo=semaforo, rain=dict(north_zones=nz)), an.datetime.fromisoformat(semaforo["cutoff_utc"]))
+    rules = [dict(rule=r["rule"], phenomenon=r["phenomenon"], status=r["status"], verdict=r["verdict"], events=r["events"], hits=r.get("hits"),
+                  pod=r.get("pod"), pod_wilson90=r.get("pod_wilson90"), median_lead_days=r.get("median_lead_days"),
+                  false_alarm_ratio_upper_bound=r.get("false_alarm_ratio_upper_bound"),
+                  failed=[k for k, v in (r.get("criteria") or {}).items() if not v]) for r in val["results"]]
+    return dict(status="OK", operational=False, validated_rules=[r["rule"] for r in val["results"] if r["verdict"] == "VALIDADA"],
+                protocol=val["protocol"], rain_product=val["rain_product"], rules=rules, summary_es=val["summary_es"], simulation=sim,
+                note_es=("Investigación experimental. Ninguna regla de anticipación está validada: el estado NARANJA no se muestra en el mapa "
+                         "operativo y no envía correos. Las cifras proceden de una validación histórica con IMERG Final (cota superior)."))
+
+
 def build() -> dict:
     dash = load(DASH)
     ref = iso(dash["built_at_utc"])
@@ -533,8 +555,9 @@ def build() -> dict:
     ]
     sem = load(SEMAFORO)
     semaforo = dict(status="PENDIENTE") if not sem or sem.get("built_from_dashboard_at_utc") != dash["built_at_utc"] else dict(status="OK", **sem)
+    anticipation = anticipation_section(semaforo, nz)
     return dict(schema_version="irfen_v09_surveillance_view_v0_1", **GUARDS, built_from_dashboard_at_utc=dash["built_at_utc"],
-                semaforo=semaforo, reference=reference, layers_unavailable=layers_unavailable, hydro_ign=hydro,
+                semaforo=semaforo, anticipation=anticipation, reference=reference, layers_unavailable=layers_unavailable, hydro_ign=hydro,
                 disclaimer_es=("Vista privada de vigilancia científica (RESEARCH_ONLY / TEST_ONLY). No es un sistema de alerta, no predice crecidas, "
                                "huaicos ni inundaciones, y no sustituye a SENAMHI, INDECI ni a las autoridades. La ausencia de datos no significa ausencia de peligro."),
                 coast_departments=COAST, sources=sources, admin=admin, rain=dict(north_zones=nz, coast=cr, windows_h=WINDOWS), avisos=av,

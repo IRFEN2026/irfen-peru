@@ -325,8 +325,16 @@ def evaluate(cp, S, t):
         age = t - iso(rr["goes"]["scan_end_utc"])
         g_fresh = timedelta(0) <= age <= timedelta(minutes=fr["goes_max_age_minutes"])
         g_rate = rr["goes"].get("rate_mm_h") if g_fresh and (rr["goes"].get("valid_fraction") or 0) > 0 else None
+    # NARANJA (precaución anticipada) only from a VALIDATED anticipation rule with a fresh signal for this point.
+    # No rule is validated (config/v091_anticipation_protocol_v0_1.json): validated_rules is empty, so this never fires.
+    ant = S.get("anticipation") or {}
+    sig = (ant.get("signals") or {}).get(cp["id"]) or {}
+    orange = bool(sig.get("signal") is True and sig.get("rule") in (ant.get("validated_rules") or []) and sig.get("evaluated_at_utc")
+                  and timedelta(0) <= t - iso(sig["evaluated_at_utc"]) <= timedelta(hours=fr["imerg_max_age_hours"]))
     if conf:
         state, rule = "ROJO", "CONFIRMACION"
+    elif orange:
+        state, rule = "NARANJA", "ANTICIPACION_VALIDADA"
     elif (i24 is not None and i24 >= res) or (g_rate is not None and g_rate > 0):
         state, rule = "AMARILLO", "LLUVIA_SATELITAL"
     elif i24 is not None and (not g_app or g_rate is not None):
