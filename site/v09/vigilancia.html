@@ -1,13 +1,13 @@
 <!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
-<title>Vigilancia costera IRFEN</title>
+<title>Vigilancia costera IRFEN v0.9.1</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <style>
 /* Layout: compact bar · map takes the screen · side panel (desktop) or below (phone) · dialogs for long text */
 :root{--bg:#eef2f5;--surface:#fff;--surface-2:#f1f4f7;--ink:#13212e;--ink-2:#4b5b69;--ink-3:#6c7a86;--border:#d8e0e7;--accent:#1f5f8b;
 --warn-bg:#fff4d6;--warn-ink:#6b4e00;--ok-bg:#e3f1e6;--ok-ink:#1e5631;--bad-bg:#fbe4e0;--bad-ink:#8a2a17;--na-bg:#eceff2;--na-ink:#4b5b69;
---r1:#e8f1fa;--r2:#bcd6ee;--r3:#86b6df;--r4:#4f8fc9;--r5:#2563a6;--r6:#123f73;--sea:#cfe0ec;--land:#f7f5ef;--land-2:#ece8dd;--line:#7d8b96}
+--r1:#fff176;--r2:#ffcc33;--r3:#ff922b;--r4:#e84d2a;--r5:#b12e8f;--r6:#5d2183;--sea:#cfe0ec;--land:#f7f5ef;--land-2:#ece8dd;--line:#7d8b96}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#11161b;--surface:#1a2129;--surface-2:#222b35;--ink:#e8edf2;--ink-2:#b5c1cc;--ink-3:#93a1ad;--border:#33404c;--accent:#7cb5e3;
 --warn-bg:#3b3014;--warn-ink:#f2d58a;--ok-bg:#1d3526;--ok-ink:#9fd8b0;--bad-bg:#3d211b;--bad-ink:#f3b2a3;--na-bg:#2a333c;--na-ink:#b5c1cc;--sea:#16232e;--land:#232a31;--land-2:#1d242a;--line:#8796a3;color-scheme:dark}}
 :root[data-theme="dark"]{--bg:#11161b;--surface:#1a2129;--surface-2:#222b35;--ink:#e8edf2;--ink-2:#b5c1cc;--ink-3:#93a1ad;--border:#33404c;--accent:#7cb5e3;
@@ -66,10 +66,12 @@ dialog .dh h2{margin:0}dialog .db{padding:10px 14px 14px;max-height:70vh;overflo
  .stage{display:flex;flex-direction:column;height:auto}.mapwrap{height:calc(100dvh - 96px);min-height:380px}.panel{border-left:0;border-top:1px solid var(--border)}
  .stage.nopanel .panel{display:none}#layers{left:10px;top:10px;width:min(300px,calc(100% - 20px));max-height:calc(100% - 90px)}.search input{width:150px}
  #viewing{bottom:10px;font-size:11.5px}}
+.sm-sq i{display:block;width:13px;height:13px;border:2.5px solid;box-shadow:0 0 0 2px rgba(255,255,255,.9);box-sizing:border-box}
+.ctx{border-left:4px dashed #7a5a00;background:var(--warn-bg);color:var(--warn-ink);padding:6px 8px;border-radius:4px;font-size:12.5px;margin:6px 0}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style></head><body>
 <header class="bar" id="bar">
- <span class="brand">IRFEN · Vigilancia costera <small>Research Preview 1</small></span>
+ <span class="brand">IRFEN · Vigilancia costera <small>v0.9.1 candidata</small></span>
  <span class="chip" id="cutoff">Corte: …</span><span class="chip" id="state">Cargando…</span>
  <span class="grow"></span>
  <form class="search" id="searchForm" role="search"><input id="search" list="places" placeholder="Buscar ciudad o departamento" aria-label="Buscar ciudad o departamento" autocomplete="off"><datalist id="places"></datalist><button class="btn" type="submit">Ir</button></form>
@@ -84,6 +86,7 @@ dialog .dh h2{margin:0}dialog .db{padding:10px 14px 14px;max-height:70vh;overflo
  <section class="panel" aria-label="Información por pestañas">
   <div class="tabs" role="tablist" id="tabs"></div>
   <div class="tabpanel" id="tab-resumen" role="tabpanel"></div>
+  <div class="tabpanel" id="tab-semaforo" role="tabpanel" hidden></div>
   <div class="tabpanel" id="tab-lluvia" role="tabpanel" hidden></div>
   <div class="tabpanel" id="tab-avisos" role="tabpanel" hidden></div>
   <div class="tabpanel" id="tab-rios" role="tabpanel" hidden></div>
@@ -164,7 +167,7 @@ function cityZoom(){if(!map)return;const z=map.getZoom();const on=R.cities?.on;
  [[cityLayer,on&&z>=5],[cityLayerMinor,on&&z>=7],[depLabels,R.deps?.on&&z>=6&&z<9]].forEach(([l,v])=>{if(!l)return;v?map.addLayer(l):map.removeLayer(l);});}
 if(map)map.on("zoomend",cityZoom);
 function register(id,label,layer,on,sub){R[id]={layer,label,on:!!on,sub:sub||(()=>"")};if(on&&map&&layer)layer.addTo(map);}
-function toggle(id,v){const r=R[id];if(!r)return;r.on=v;if(map&&r.layer){v?map.addLayer(r.layer):map.removeLayer(r.layer);}if(id==="cities"||id==="deps")cityZoom();renderViewing();}
+function toggle(id,v){const r=R[id];if(!r)return;r.on=v;if(map&&r.layer){v?map.addLayer(r.layer):map.removeLayer(r.layer);}if(id==="cities"||id==="deps")cityZoom();if(id==="hydro")hydroZoom();renderViewing();}
 // INEI coastal departments and provinces
 const deps=D.admin?.departments?.features||[];const deptLayer={};
 const inei=S.inei?.updated_at_utc;
@@ -173,6 +176,7 @@ if(map&&deps.length)register("deps","Departamentos costeros (INEI)",L.geoJSON({t
 if(map&&D.admin?.provinces?.features?.length)register("provs","Provincias costeras (INEI)",L.geoJSON(D.admin.provinces,{style:{color:"#6c7a86",weight:.7,fill:false,dashArray:"2,3"},interactive:false}),false,()=>"límites censales referenciales · "+fmt(inei));
 register("cities","Ciudades de referencia (Natural Earth)",null,true,()=>CITIES.length+" ciudades; las menores aparecen al acercar");
 // rain
+// Paleta de contraste alta, NO representa umbrales de peligro. Datos históricos congelados.
 const BINS=[[0.1,"--r1"],[1,"--r2"],[5,"--r3"],[10,"--r4"],[25,"--r5"],[50,"--r6"]];
 const binColor=mm=>{let c=null;for(const [t,col] of BINS){if(mm>=t)c=col;}return c?css(c):null;};
 let WIN="24h";
@@ -184,14 +188,51 @@ function drawRain(){if(!map)return;rainCoast.clearLayers();rainZones.clearLayers
  if(C?.status==="OK"){const w=C.windows[WIN];
   if(w?.status==="COMPLETA"&&w.values){const h=C.cell_deg/2;
    C.cells.forEach(([i,j],k)=>{const v=w.values[k];if(v===null||v===undefined)return;const col=binColor(v);if(!col)return;
-    const x=C.lon[i],y=C.lat[j];L.rectangle([[y-h,x-h],[y+h,x+h]],{stroke:false,fillColor:col,fillOpacity:.72}).bindTooltip(v.toFixed(1).replace(".",",")+" mm en "+WIN.replace("h"," h")+" · "+safe(title(C.cell_department[k])),{sticky:true}).addTo(rainCoast);});
+    const x=C.lon[i],y=C.lat[j];L.rectangle([[y-h,x-h],[y+h,x+h]],{stroke:true,color:"#343943",weight:0.4,opacity:.35,fillColor:col,fillOpacity:.88}).bindTooltip(v.toFixed(1).replace(".",",")+" mm en "+WIN.replace("h"," h")+" · "+safe(title(C.cell_department[k])),{sticky:true}).addTo(rainCoast);});
   }else m="Lluvia costera: la ventana de "+WIN.replace("h"," h")+" no está completa (faltan medias horas): no se dibuja.";
  }else m="Lluvia costera: sin instantánea archivada.";
  const Z=D.rain?.north_zones;
  if(Z?.status==="OK")L.geoJSON(Z.zones,{style:f=>{const w=f.properties.windows[WIN];const c=w?.status==="COMPLETA"?binColor(w.mm):null;
-   return {color:"#1f5f8b",weight:1,fillColor:c||"#999",fillOpacity:w?.status==="COMPLETA"?(c?.55:0.03):0.15,dashArray:w?.status==="COMPLETA"?null:"3,3"};},
+   return {color:"#1f5f8b",weight:1,fillColor:c||"#999",fillOpacity:w?.status==="COMPLETA"?(c?.76:0.03):0.15,dashArray:w?.status==="COMPLETA"?null:"3,3"};},
    onEachFeature:(f,l)=>{const w=f.properties.windows[WIN];l.bindPopup("<b>"+safe(f.properties.name)+"</b><br>IMERG Early, "+safe(WIN.replace("h"," h"))+": "+(w?.status==="COMPLETA"?safe(w.mm.toFixed(1).replace(".",","))+" mm (media areal)":"<b>no disponible</b> (ventana incompleta; no es cero)")+"<br>Fin de ventana: "+safe(fmt(Z.end_utc))+"<br><em>Estimación satelital, no pluviómetro.</em>");}}).addTo(rainZones);
  msg=m;renderViewing();}
+// Nationwide IGN cartographic reference (public WMS, manually enabled, not a risk layer).
+// Not added to the self-contained Claude artifact: that host cannot fetch external tiles.
+// Source: Instituto Geográfico Nacional, HIDROGRAFIA_500K/MapServer, layer 1.
+if(map&&!SINGLE){
+ map.createPane("hydroIGN");map.getPane("hydroIGN").style.zIndex=420;
+ const ign=L.tileLayer.wms("https://www.idep.gob.pe/geoportal/services/SERVICIOS_IGN/HIDROGRAFIA_500K/MapServer/WMSServer",{
+  layers:"1",version:"1.1.1",format:"image/png",transparent:true,pane:"hydroIGN",
+  opacity:.95,attribution:"Hidrografía 1:500.000 © Instituto Geográfico Nacional del Perú (IGN)"});
+ let ignErrors=0;
+ ign.on("tileerror",()=>{if(++ignErrors>=4&&R.hydroIGN?.on){toggle("hydroIGN",false);
+  msg="No se pudo cargar el servicio WMS de ríos y quebradas del IGN. La capa se desactivó; no significa ausencia de cauces.";
+  renderViewing();}});
+ register("hydroIGN","IGN WMS en línea (misma capa, servidor del IGN)",ign,false,
+  ()=>"IGN 1:500.000 · líneas nacionales, permanentes o intermitentes; WMS online no validado en esta sesión; no indica zonas inundables");
+}
+// IGN «Ríos y Quebradas» 1:500.000, embedded in the bundle (works offline and in the single-file copy).
+// Cartographic reference: course, IGN name and class; not a flood zone, a basin or a hazard level.
+const HY=D.hydro_ign||{};
+const HYC={RP:{label:"Río principal",color:"#1d5fa8",w:2.6},RS:{label:"Río secundario",color:"#2f7cc4",w:1.6},QH:{label:"Quebrada húmeda",color:"#178a7e",w:1.3},
+ QS:{label:"Quebrada seca",color:"#8c6d3f",w:1.2,dash:"4,3"},RX:{label:"Río seco",color:"#8c6d3f",w:1.4,dash:"4,3"}};
+const hyTier=f=>{const p=f.properties;if(p.c==="RP")return 0;if(p.c==="RS"||(p.c==="QH"&&p.n))return 1;return 2;};
+const hyGroups=[0,1,2].map(()=>map?L.layerGroup():null);
+if(map&&HY.status==="OK"){
+ map.createPane("hydro");map.getPane("hydro").style.zIndex=430;const hyRenderer=L.canvas({pane:"hydro",tolerance:6});
+ [0,1,2].forEach(t=>L.geoJSON({type:"FeatureCollection",features:HY.lines.features.filter(f=>hyTier(f)===t)},{pane:"hydro",renderer:hyRenderer,
+  style:f=>{const c=HYC[f.properties.c]||HYC.RS;return {color:c.color,weight:c.w,opacity:f.properties.n?.95:.6,dashArray:c.dash||(f.properties.r==="I"?"6,4":null)};},
+  onEachFeature:(f,l)=>{const p=f.properties,c=HYC[p.c]||{label:p.c};const nm=p.n?safe(p.n):"<i>sin nombre en IGN</i>";
+   l.bindTooltip(p.n?safe(p.n):"Curso sin nombre (IGN)",{sticky:true});
+   l.bindPopup("<b>"+nm+"</b><br>Clase IGN: "+safe(c.label)+" · régimen: "+safe(p.r==="P"?"perenne":p.r==="I"?"intermitente":"no indicado")+
+    "<br>Departamento(s): "+safe((p.d||[]).map(title).join(", "))+" · "+safe(p.km)+" km (tramo IGN)"+(p.raw?"<br>Nombre en la fuente: "+safe(p.raw):"")+
+    "<br>Fuente: IGN, Ríos y Quebradas 1:500.000 (OBJECTID "+safe(p.id)+"), capturado "+safe(fmt(HY.source?.captured_at_utc))+
+    "<br><em>Recorrido cartográfico de referencia: no es zona inundable ni indicador de peligro.</em>");}}).addTo(hyGroups[t]));
+ register("hydro","Ríos y quebradas IGN 1:500.000 (incorporados)",null,true,()=>HY.lines.features.length+" tramos en la costa · ríos principales a escala nacional, más detalle al acercar · capturado "+fmt(HY.source?.captured_at_utc));
+}
+function hydroZoom(){if(!map||HY.status!=="OK")return;const z=map.getZoom(),on=R.hydro?.on;
+ hyGroups.forEach((g,t)=>{const v=on&&(t===0||(t===1&&z>=7)||(t===2&&z>=9));v?map.addLayer(g):map.removeLayer(g);});}
+if(map)map.on("zoomend",hydroZoom);
 // rivers
 const RV=D.rivers||{};
 if(map&&RV.uh?.features?.length)register("uh","Cuencas / UH ANA (ríos del norte)",L.geoJSON(RV.uh,{style:{color:"#2563a6",weight:1.5,fill:true,fillOpacity:.04},
@@ -204,7 +245,7 @@ if(map&&RV.stations?.length){const g=L.layerGroup();RV.stations.filter(s=>Number
   "<br><em>Sin caudal en tiempo real integrado.</em>").addTo(g);});register("stations","Estaciones hidrométricas documentadas",g,true,()=>"ubicación documentada · sin caudal en tiempo real");}
 // quebradas and settlements
 const Q=D.quebradas||{};const LC={cuencas:"#2468ac",areas_colectoras:"#9559ae",cauces:"#008d9f",descargas:"#cc8620",impacto:"#b73e5d",contexto:"#6b8294"};
-if(map&&Q.geometries?.features?.length)register("qgeo","Quebradas · geometrías IRFEN (costa norte, Rímac)",L.geoJSON(Q.geometries,{
+if(map&&Q.geometries?.features?.length)register("qgeo","Quebradas IRFEN · geometrías documentadas (costa norte, Rímac)",L.geoJSON(Q.geometries,{
  style:f=>({color:LC[f.properties.layer]||"#666",weight:2,fillOpacity:.1,dashArray:f.properties.evidence==="GEOMETRIA_CANDIDATA"?"5,4":null}),
  pointToLayer:(f,ll)=>L.circleMarker(ll,{radius:5,color:LC[f.properties.layer]||"#666"}),
  onEachFeature:(f,l)=>l.bindPopup("<b>"+safe(f.properties.name||f.properties.id)+"</b><br>Capa: "+safe(f.properties.layer)+"<br>Evidencia: "+safe(f.properties.evidence)+"<br>Fuente: "+safe((f.properties.sources||[]).join(", "))+"<br><em>Contexto de activación de quebradas; no es mancha de inundación ni alerta.</em>")}),false,()=>"paquete territorial "+fmt(Q.territory_built_at_utc));
@@ -224,13 +265,129 @@ function highlight(list,label){if(!map)return;hl.clearLayers();const fs=deps.fil
  if(!fs.length){msg=label+": ningún departamento costero en la lista del aviso.";renderViewing();return;}
  const l=L.geoJSON({type:"FeatureCollection",features:fs},{style:{color:"#b3261e",weight:2.5,dashArray:"6,4",fill:false},interactive:false}).addTo(hl);
  map.fitBounds(l.getBounds(),{padding:[20,20]});msg=label+": departamentos costeros enumerados en el aviso (representación administrativa, no la huella del fenómeno).";renderViewing();}
+// ---------- semáforo de seguimiento (experimental, no oficial): the colour is evaluated HERE, at view time, with the rules in
+// config/v09_semaforo_rules_v0_1.json (revision 0.2). smEval mirrors evaluate() in scripts/v09_build_semaforo.py (checked below).
+// The colour is the LOCAL state of each point; official avisos are territorial CONTEXT and never change it.
+const SM=D.semaforo?.status==="OK"?D.semaforo:null;
+const SMS=SM?{rules:SM.rules,confirmations:SM.confirmations?.confirmations||[],aviso_check_utc:SM.aviso_check_utc,avisos:SM.avisos||{},rain_refs:SM.rain_refs||{}}:null;
+const SMC=SM?Object.fromEntries(SM.rules.states.map(x=>[x.code,x])):{};
+const SMT={rio:"Río",quebrada:"Quebrada",mixto:"Mixto"},SMRING={rio:"#1d4f91",quebrada:"#8a4b14",mixto:"#5b3a8a"};
+const SMK={CAUCE_IGN:"Punto de cauce (IGN)",POBLADO_ANA:"Población expuesta (ANA)"};
+const SMSHORT={ROJO:"Rojo",AMARILLO:"Amarillo",VERDE:"Verde",GRIS:"Gris"};
+const SMRULE={CONFIRMACION:"evento reportado y verificado",LLUVIA_SATELITAL:"lluvia satelital detectada",SIN_LLUVIA_SATELITAL:"sin lluvia satelital reciente",NO_EVALUABLE:"datos locales antiguos o ausentes"};
+function smEval(cp,S,t){const fr=S.rules.freshness,res=S.rules.rain_signal.display_resolution_mm,P=x=>Date.parse(x),HR=36e5;
+ const win=fr.confirmation_window_hours*HR;
+ const conf=S.confirmations.filter(c=>c.verified&&c.observed_at_utc&&(c.checkpoint_id===cp.id||(cp.type==="rio"&&c.system_id&&c.system_id===cp.system_id))&&t-win<=P(c.observed_at_utc)&&P(c.observed_at_utc)<=t);
+ const rr=S.rain_refs[cp.rain_ref||""];let i24=null,iFresh=null;
+ if(rr&&rr.imerg.end_utc){const ag=t-P(rr.imerg.end_utc);iFresh=ag>=0&&ag<=fr.imerg_max_age_hours*HR;i24=iFresh?(rr.imerg.windows["24h"]??null):null;}
+ const gApp=!!(rr&&rr.goes);let gRate=null,gFresh=null;
+ if(gApp&&rr.goes.scan_end_utc){const ag=t-P(rr.goes.scan_end_utc);gFresh=ag>=0&&ag<=fr.goes_max_age_minutes*6e4;gRate=gFresh&&(rr.goes.valid_fraction||0)>0?(rr.goes.rate_mm_h??null):null;}
+ let state,rule;
+ if(conf.length){state="ROJO";rule="CONFIRMACION";}
+ else if((i24!==null&&i24>=res)||(gRate!==null&&gRate>0)){state="AMARILLO";rule="LLUVIA_SATELITAL";}
+ else if(i24!==null&&(!gApp||gRate!==null)){state="VERDE";rule="SIN_LLUVIA_SATELITAL";}
+ else{state="GRIS";rule="NO_EVALUABLE";}
+ const fresh=[!!iFresh].concat(gApp?[!!gFresh]:[]);
+ let confidence=state==="GRIS"?"BAJA":(fresh.every(Boolean)?"ALTA":"MEDIA");
+ if(state==="ROJO")confidence=conf.some(c=>c.source_kind==="OFICIAL")?"ALTA":"MEDIA";
+ // territorial context: never changes the colour
+ const chk=S.aviso_check_utc?P(S.aviso_check_utc):null;const avFresh=chk!==null&&t-chk>=0&&t-chk<=fr.avisos_source_max_age_minutes*6e4;
+ const vigentes=[],futuros=[];
+ for(const k of cp.avisos){const a=S.avisos[k];if(a.start&&a.end&&P(a.start)<=t&&t<=P(a.end))vigentes.push(k);else if(a.start&&P(a.start)>t)futuros.push(k);}
+ return {state,rule,confidence,conf,i24,iFresh,gApp,gRate,gFresh,rr,context:{vigentes,futuros,avisos_check_fresh:avFresh}};}
+window.IRFEN_SEMAFORO_EVAL=(cp,S,iso)=>{const r=smEval(cp,S,Date.parse(iso));return {state:r.state,rule:r.rule,confidence:r.confidence,context:r.context};};
+let smMode="AHORA",smType="ALL",smState="ALL",smDep="ALL";const smT=()=>smMode==="AHORA"?NOW:Date.parse(SM.cutoff_utc);
+const smLayer=map&&SM?L.layerGroup():null,smCtx=map&&SM?L.layerGroup():null,smMarks={};
+if(map&&SM){map.createPane("sema");map.getPane("sema").style.zIndex=640;smCtx.addTo(smLayer);}
+const smRenderer=map&&SM?L.svg({pane:"sema"}):null;
+const smPass=cp=>(smDep==="ALL"||cp.department===smDep)&&(smType==="ALL"||(smType==="rio"?cp.type!=="quebrada":cp.type!=="rio"));
+const mm=v=>v===null||v===undefined?"n/d":v.toFixed(1).replace(".",",");
+const smScope=(k,dep)=>SMS.avisos[k].scope_by_department?.[dep]==="PROVINCIA"?"provincias "+(SMS.avisos[k].provinces[dep]||[]).map(title).join(", "):"todo el departamento (el aviso no enumera provincias)";
+const smAv=(k,dep)=>{const a=SMS.avisos[k];return safe(a.product)+" Nº "+safe(a.number)+(a.level?" (nivel "+safe(a.level)+")":"")+" · "+safe(short(a.start))+"→"+safe(short(a.end))+" · "+safe(smScope(k,dep));};
+function smRain(r){const fr=SMS.rules.freshness;if(!r.rr)return["Lluvia local: sin dato asociado a este punto."];
+ return["Lluvia IMERG 24 h: "+(r.iFresh?(r.i24===null?"<b>no disponible</b> (ventana incompleta; no es cero)":mm(r.i24)+" mm (fin "+safe(short(r.rr.imerg.end_utc))+")"):"<b>antigua o ausente</b> (fin de ventana "+safe(fmt(r.rr.imerg.end_utc))+"; máx. "+fr.imerg_max_age_hours+" h): no se usa"),
+  "GOES-19: "+(!r.gApp?"no integrado para este punto":r.gFresh?(r.gRate===null?"sin muestra válida":mm(r.gRate)+" mm/h"):"<b>antiguo o ausente</b> (último barrido "+safe(fmt(r.rr.goes.scan_end_utc))+"; máx. "+fr.goes_max_age_minutes+" min): no se usa")];}
+function smLocal(cp,r){const out=[];
+ if(r.state==="ROJO")r.conf.forEach(c=>out.push("<b>Evento reportado y verificado</b>: "+safe(c.event_es||"evento")+" · ocurrido "+safe(fmt(c.observed_at_utc))+(c.location_es?" · "+safe(c.location_es):"")+" · fuente: "+(url(c.source_url)?'<a href="'+url(c.source_url)+'" target="_blank" rel="noopener noreferrer">'+safe(c.source_title||"fuente")+"</a>":safe(c.source_title||"sin título"))+" ("+safe(c.source_kind==="OFICIAL"?"oficial":"registro verificado")+"). <b>Indica que el evento ocurrió; no garantiza que siga activo.</b>"));
+ out.push(...smRain(r));
+ if(r.state==="AMARILLO")out.push("<b>Lluvia observada por satélite</b>: no es evidencia de crecida ni de activación, y no hay umbral de peligro.");
+ if(r.state==="VERDE")out.push("Sin lluvia satelital en los datos recientes. <b>No significa ausencia de peligro.</b>");
+ if(r.state==="GRIS")out.push("Sin datos locales recientes: <b>no evaluable</b>. Un aviso regional vigente no cambia este estado.");
+ out.push("Evidencia de posible crecida o activación (caudal, nivel, reportes de campo): <b>no disponible</b> en esta vista.");
+ return out;}
+function smContext(cp,r){const c=r.context;if(!c.vigentes.length&&!c.futuros.length)return '<p class="note" style="margin:4px 0"><b>Contexto territorial:</b> sin avisos de lluvia vigentes o próximos relacionados en los boletines capturados.</p>';
+ return '<div class="ctx"><b>Contexto territorial · no cambia el color</b>'+(c.vigentes.length?'<br>Vigente: '+c.vigentes.map(k=>smAv(k,cp.department)).join("; "):"")+(c.futuros.length?'<br>Próximo: '+c.futuros.map(k=>smAv(k,cp.department)).join("; "):"")+
+  (c.avisos_check_fresh?"":'<br><span class="note">Vigente según el texto archivado; la comprobación de avisos es de '+safe(fmt(SMS.aviso_check_utc))+': pudo cancelarse, ampliarse o reemplazarse.</span>')+'</div>';}
+function smPopup(cp){const t=smT(),r=smEval(cp,SMS,t),st=SMC[r.state],rr=r.rr;
+ const wins=rr?["1h","3h","6h","24h","72h"].map(k=>safe(k.replace("h"," h"))+": "+mm(rr.imerg.windows[k])).join(" · "):"";
+ return '<div style="max-width:310px"><b>'+safe(cp.name)+'</b><br><span class="note">'+safe(SMK[cp.location_kind])+(cp.location_kind==="POBLADO_ANA"?" · no es un punto del cauce":"")+' · '+safe(cp.system)+(cp.province?' · '+safe(title(cp.province)):"")+', '+safe(title(cp.department))+'</span>'+
+  '<p style="margin:6px 0"><i class="sw" style="background:'+st.color+'"></i><b>'+safe(st.label_es)+'</b> · confianza '+safe(r.confidence.toLowerCase())+'<br><span class="note">Evaluado '+safe(fmt(new Date(t).toISOString()))+(smMode==="CORTE"?" · <b>reconstrucción al corte, no es el estado actual</b>":"")+'</span></p>'+
+  '<ul style="margin:4px 0;padding-left:16px">'+smLocal(cp,r).map(x=>"<li>"+x+"</li>").join("")+'</ul>'+smContext(cp,r)+
+  (rr?'<p class="note" style="margin:4px 0">Lluvia local: '+safe(rr.label)+' · '+wins+' mm, hasta '+safe(fmt(rr.imerg.end_utc))+(cp.rain_basis?'<br>'+safe(cp.rain_basis):"")+'</p>':"")+
+  '<details><summary class="note">Ubicación, fuentes y limitaciones</summary><p class="note">'+safe(cp.location_basis)+' '+safe(cp.location_confidence_note)+'</p>'+
+  (cp.centros_poblados?.length?'<p class="note">Centros poblados (ANA): '+safe(cp.centros_poblados.join(", "))+'</p>':"")+
+  '<p class="note"><b>Fuentes:</b> '+safe(cp.sources.join(" · "))+'</p><ul class="note" style="padding-left:16px">'+cp.limitations.map(x=>"<li>"+safe(x)+"</li>").join("")+'</ul></details>'+
+  '<p class="note" style="margin:4px 0 0"><b>Experimental · no es una alerta oficial.</b></p></div>';}
+function smContextShapes(rows){if(!smCtx)return;smCtx.clearLayers();const seen=new Set();
+ rows.forEach(({cp,r})=>r.context.vigentes.forEach(k=>{const a=SMS.avisos[k],dep=cp.department,scope=a.scope_by_department?.[dep];
+  const key=dep+"|"+(scope==="PROVINCIA"?(a.provinces[dep]||[]).join(","):"*");if(seen.has(key))return;seen.add(key);
+  const fs=scope==="PROVINCIA"?(D.admin?.provinces?.features||[]).filter(f=>f.properties.dep===dep&&(a.provinces[dep]||[]).includes(f.properties.prov)):deps.filter(f=>f.properties.id===dep);
+  if(fs.length)L.geoJSON({type:"FeatureCollection",features:fs},{style:{color:"#7a5a00",weight:2,dashArray:"2,6",fill:false},interactive:false}).addTo(smCtx);}));}
+function drawSemaforo(){if(!smLayer)return;smLayer.eachLayer(l=>{if(l!==smCtx)smLayer.removeLayer(l);});Object.keys(smMarks).forEach(k=>delete smMarks[k]);const t=smT(),rows=[];
+ SM.checkpoints.filter(smPass).forEach(cp=>{const r=smEval(cp,SMS,t);if(smState==="ATENCION"&&r.state!=="AMARILLO"&&r.state!=="ROJO")return;rows.push({cp,r});
+  const fill=SMC[r.state].color,ring=SMRING[cp.type];let m;
+  if(cp.location_kind==="CAUCE_IGN"){L.circleMarker([cp.lat,cp.lon],{renderer:smRenderer,pane:"sema",radius:10,stroke:false,fillColor:"#fff",fillOpacity:.9,interactive:false}).addTo(smLayer);
+   m=L.circleMarker([cp.lat,cp.lon],{renderer:smRenderer,pane:"sema",radius:7.5,color:ring,weight:2.5,fillColor:fill,fillOpacity:.95,className:"sm-pt sm-"+r.state});}
+  else m=L.marker([cp.lat,cp.lon],{pane:"sema",keyboard:false,icon:L.divIcon({className:"sm-pt sm-sq sm-"+r.state,iconSize:[13,13],html:'<i style="background:'+fill+';border-color:'+ring+'"></i>'})});
+  m.bindPopup(()=>smPopup(cp),{maxWidth:330});m.bindTooltip(safe(cp.name)+" · "+safe(SMC[r.state].label_es),{direction:"top",offset:[0,-6]});m.addTo(smLayer);smMarks[cp.id]=m;});
+ smContextShapes(rows);}
+if(map&&SM)register("semaforo","Semáforo de seguimiento (experimental, no oficial)",smLayer,true,()=>SM.checkpoints.length+" puntos · piloto Lambayeque · estado local evaluado "+(smMode==="AHORA"?"ahora":"al corte")+" · avisos solo como contexto");
+function renderSemaforo(){const box=$("tab-semaforo");if(!SM){box.innerHTML='<p class="empty">Semáforo no disponible en este paquete.</p>';return;}
+ const t=smT(),list=SM.checkpoints.filter(smPass).map(cp=>({cp,r:smEval(cp,SMS,t)})).filter(x=>smState==="ALL"||x.r.state==="AMARILLO"||x.r.state==="ROJO");
+ const all=SM.checkpoints.map(cp=>({cp,r:smEval(cp,SMS,t)}));const cnt=c=>all.filter(x=>x.r.state===c).length;
+ const order=["ROJO","AMARILLO","VERDE","GRIS"],TO=["rio","mixto","quebrada"],SO=id=>["ALTO","MEDIO","BAJO"].findIndex(x=>id.endsWith("-"+x));list.sort((a,b)=>order.indexOf(a.r.state)-order.indexOf(b.r.state)||TO.indexOf(a.cp.type)-TO.indexOf(b.cp.type)||(a.cp.system_id||"").localeCompare(b.cp.system_id||"")||SO(a.cp.id)-SO(b.cp.id)||a.cp.id.localeCompare(b.cp.id));
+ const cov=SM.coverage||[];const covDep=cov.find(c=>c.department===smDep);
+ const self=SM.checkpoints.filter(cp=>{const r=smEval(cp,SMS,Date.parse(SM.cutoff_utc)),e=cp.state_at_cutoff;return r.state===e.state&&r.rule===e.rule&&r.confidence===e.confidence&&r.context.vigentes.join()===e.context.vigentes.join();}).length;
+ document.body.dataset.semaforoSelfcheck=self+"/"+SM.checkpoints.length;
+ // territorial context, grouped by aviso (shown once, not per point)
+ const ctx={};all.forEach(({cp,r})=>r.context.vigentes.forEach(k=>{(ctx[k]=ctx[k]||{deps:new Set(),n:0}).deps.add(cp.department);ctx[k].n++;}));
+ const ctxHtml=Object.keys(ctx).length?'<div class="ctx" id="smCtx"><b>Contexto territorial · no cambia el color de los puntos</b>'+Object.entries(ctx).map(([k,v])=>'<br>Aviso vigente '+[...v.deps].map(d=>smAv(k,d)).join("; ")+' <span class="note">('+v.n+' puntos dentro)</span>').join("")+
+  '<br><span class="note">Un aviso departamental abarca todos los puntos del departamento por igual: no indica en qué cauce o quebrada habrá efectos. Se dibuja como contorno discontinuo.'+(all[0]&&!all[0].r.context.avisos_check_fresh?' Vigente según el texto archivado: la comprobación de avisos es de '+safe(fmt(SMS.aviso_check_utc))+' y pudo cancelarse o reemplazarse.':'')+'</span></div>':
+  '<p class="note" id="smCtx"><b>Contexto territorial:</b> sin avisos de lluvia vigentes relacionados en los boletines capturados hasta '+safe(fmt(SMS.aviso_check_utc))+'.</p>';
+ const rainCell=r=>r.iFresh?(r.i24===null?"n/d":mm(r.i24)+" mm"):'<span class="note">antigua</span>';
+ const ori=cov.flatMap(c=>(c.river_systems||[]).map(s=>safe(s.id.replace("_"," "))+": "+safe(s.orientation?.status||"sin dato")+(s.orientation?.flow_spearman!==undefined?" (ρ="+safe(s.orientation.flow_spearman)+")":"")+(s.orientation?.coast_km?" · extremos a "+safe(s.orientation.coast_km.join(" y "))+" km de la costa":""))).join("<br>");
+ box.innerHTML='<div class="guard"><b>Capa experimental · no es una alerta oficial.</b> El color resume los <b>datos locales</b> de cada punto (lluvia satelital y eventos verificados). Los avisos oficiales se muestran aparte como contexto territorial. No predice crecidas ni huaicos y no sustituye a SENAMHI, INDECI ni a las autoridades. <b>Un dato ausente nunca se pinta de verde.</b></div>'+
+  '<h2 style="margin-top:10px">Semáforo de seguimiento</h2>'+
+  '<div class="seg" role="group" aria-label="Momento de evaluación"><button type="button" data-smmode="AHORA" aria-pressed="'+(smMode==="AHORA")+'">Ahora</button><button type="button" data-smmode="CORTE" aria-pressed="'+(smMode==="CORTE")+'">Al corte de datos</button></div>'+
+  '<p class="note">Evaluado: <b>'+safe(fmt(new Date(t).toISOString()))+'</b>'+(smMode==="CORTE"?' · <b>reconstrucción en la fecha del corte, no es el estado actual.</b>':(ANY?' · los datos locales están congelados y antiguos: por eso los puntos salen grises.':''))+'</p>'+
+  '<p>'+order.map(c=>'<span class="tag"><i class="sw" style="background:'+SMC[c].color+'"></i>'+safe(SMC[c].label_es)+': '+cnt(c)+'</span>').join(" ")+'</p>'+ctxHtml+
+  '<p class="note"><b>Evidencia de posible crecida o activación</b> (caudal, nivel, reportes de campo): no disponible en esta vista. La lluvia satelital no la sustituye.</p>'+
+  '<details'+(window.matchMedia("(min-width:901px)").matches?" open":"")+'><summary><b>Qué significa cada color y cada símbolo</b></summary>'+order.map(c=>'<p class="note"><i class="sw" style="background:'+SMC[c].color+'"></i><b>'+safe(SMC[c].label_es)+'.</b> '+safe(SMC[c].rule_es)+'</p>').join("")+
+  '<p class="note"><b>● Círculo</b>: punto de cauce sobre la red IGN 1:500.000 (borde azul). <b>■ Cuadrado</b>: población expuesta documentada por ANA 2016-17, <b>no</b> un punto del cauce (borde marrón; morado si un río piloto pasa a ≤ 1 km). '+safe(SM.rules.orange_es)+'</p></details>'+
+  '<div class="filters" style="margin-top:8px"><label>Mostrar <select id="smType"><option value="ALL">Todos</option><option value="rio">Ríos</option><option value="quebrada">Quebradas</option></select></label>'+
+  '<label>Estado <select id="smState"><option value="ALL">Todos</option><option value="ATENCION">Amarillos y rojos</option></select></label>'+
+  '<label>Departamento <select id="smDep"><option value="ALL">Toda la costa</option>'+cov.map(c=>'<option value="'+safe(c.department)+'">'+safe(title(c.department))+(c.status==="PILOTO_ACTIVO"?" (piloto)":" (pendiente)")+'</option>').join("")+'</select></label></div>'+
+  (covDep&&covDep.status!=="PILOTO_ACTIVO"?'<p class="empty">'+safe(title(smDep))+': sin puntos todavía (departamento pendiente). La estructura está preparada: basta con declarar sus sistemas fluviales IGN y su fuente documental de quebradas.</p>':
+  (list.length?'<div class="tw"><table><thead><tr><th>Estado</th><th>Punto</th><th>Ubicación</th><th class="n">Lluvia 24 h</th><th>Conf.</th></tr></thead><tbody>'+list.map(x=>'<tr data-state="'+safe(x.r.state)+'" data-kind="'+safe(x.cp.location_kind)+'"><td style="white-space:nowrap" title="'+safe(SMC[x.r.state].label_es)+'"><i class="sw" style="background:'+SMC[x.r.state].color+'"></i>'+safe(SMSHORT[x.r.state])+'</td><td><a href="#" data-sm="'+safe(x.cp.id)+'">'+safe(x.cp.name)+'</a></td><td>'+(x.cp.location_kind==="CAUCE_IGN"?"● cauce IGN":"■ población ANA")+'</td><td class="n">'+rainCell(x.r)+'</td><td>'+safe(x.r.confidence.toLowerCase())+'</td></tr>').join("")+'</tbody></table></div>':'<p class="empty">Ningún punto con estos filtros.</p>'))+
+  '<details><summary class="note">Cómo se colocan los puntos y cómo se orienta cada río</summary><p class="note">'+safe(SM.placement_rule_es)+' '+safe(SM.quebrada_rule_es||"")+'</p><p class="note">'+safe(SM.orientation_rule_es||"")+'</p><p class="note">'+ori+'</p><p class="note">'+safe(SM.rules.territorial_context?.relation_es)+'</p><p class="note">'+safe(SM.evaluation_es)+'</p>'+
+  '<p class="note">Cobertura: '+cov.map(c=>safe(title(c.department))+" "+(c.status==="PILOTO_ACTIVO"?c.checkpoints+" puntos":"pendiente")).join(" · ")+'</p></details>'+
+  '<details><summary class="note">Qué no usa</summary><ul class="note">'+SM.rules.not_used_es.map(x=>"<li>"+safe(x)+"</li>").join("")+'</ul></details>'+
+  '<p class="note">Comprobación interna: la evaluación de esta página al corte coincide con la del generador en '+self+' de '+SM.checkpoints.length+' puntos'+(self!==SM.checkpoints.length?' · <b>discrepancia: no use esta capa</b>':'')+'.</p>';
+ $("smType").value=smType;$("smState").value=smState;$("smDep").value=smDep;
+ const redo=()=>{drawSemaforo();renderSemaforo();renderViewing();if($("layers").innerHTML)renderLayers();};
+ box.querySelectorAll("button[data-smmode]").forEach(b=>b.onclick=()=>{smMode=b.dataset.smmode;redo();});
+ $("smType").onchange=e=>{smType=e.target.value;redo();};$("smState").onchange=e=>{smState=e.target.value;redo();};
+ $("smDep").onchange=e=>{smDep=e.target.value;redo();if(map){const pts=SM.checkpoints.filter(smPass);if(smDep!=="ALL"&&pts.length){const wide=window.matchMedia("(min-width:901px)").matches&&!$("layers").hidden;map.fitBounds(L.latLngBounds(pts.map(c=>[c.lat,c.lon])),{paddingTopLeft:[wide?330:20,20],paddingBottomRight:[20,wide?40:20],maxZoom:10,animate:false});}}};
+ box.querySelectorAll("a[data-sm]").forEach(a=>a.onclick=e=>{e.preventDefault();const cp=SM.checkpoints.find(c=>c.id===a.dataset.sm),m=smMarks[cp.id];
+  if(map&&m){if(!R.semaforo.on){toggle("semaforo",true);if($("layers").innerHTML)renderLayers();}map.setView([cp.lat,cp.lon],Math.max(map.getZoom(),10),{animate:false});m.openPopup();}});}
 // ---------- layer panel
 function renderLayers(){const box=$("layers");const row=id=>R[id]?'<label><input type="checkbox" data-layer="'+id+'"'+(R[id].on?" checked":"")+'> <span>'+safe(R[id].label)+'<small>'+safe(R[id].sub())+'</small></span></label>':"";
  const bases=SINGLE?'<p class="note">La copia privada no puede cargar mapas externos: se usa la referencia vectorial (contorno del Perú, departamentos y ciudades de Natural Earth). La página del repositorio sí incluye mapa base con nombres.</p>':
   Object.entries(BASES).map(([k,b])=>'<label><input type="radio" name="base" value="'+k+'"'+(BASE===k?" checked":"")+'> <span>'+safe(b.label)+'</span></label>').join("")+'<label><input type="radio" name="base" value="vector"'+(BASE==="vector"?" checked":"")+'> <span>Solo referencia vectorial<small>contorno, departamentos y ciudades (Natural Earth)</small></span></label>';
  box.innerHTML='<h3>Mapa base</h3>'+bases+'<h3>Referencia territorial</h3>'+row("deps")+row("provs")+row("cities")+
+  (R.semaforo?'<h3>Semáforo de seguimiento (experimental)</h3>'+row("semaforo")+'<p class="note" style="margin:0 0 0 22px">No es una alerta oficial. El color es el estado local del punto; los avisos se dibujan solo como contexto. Detalle en la pestaña «Semáforo».</p>':'')+
   '<h3>Lluvia estimada (IMERG Early)</h3><div class="seg" id="win" role="group" aria-label="Ventana de lluvia acumulada">'+["1h","3h","6h","24h","72h"].map(k=>'<button type="button" data-win="'+k+'" aria-pressed="'+(k===WIN)+'">'+k.replace("h"," h")+'</button>').join("")+'</div>'+row("rainCoast")+row("rainZones")+
-  '<h3>Avisos oficiales (INDECI/COEN)</h3>'+row("avisos")+'<h3>Crecidas de ríos</h3>'+row("uh")+row("stations")+'<h3>Quebradas</h3>'+row("qgeo")+row("ana")+
+  '<h3>Avisos oficiales (INDECI/COEN)</h3>'+row("avisos")+'<h3>Red hidrográfica de referencia (IGN)</h3>'+row("hydro")+row("hydroIGN")+'<h3>Crecidas de ríos</h3>'+row("uh")+row("stations")+'<h3>Quebradas IRFEN y exposición documentada</h3>'+row("qgeo")+row("ana")+
   '<h3>No disponibles en esta vista</h3>'+(D.layers_unavailable||[]).map(u=>'<div class="na-item"><b>'+safe(u.label)+'</b><small>'+safe(u.reason)+'</small></div>').join("");
  box.querySelectorAll("input[data-layer]").forEach(i=>i.onchange=()=>toggle(i.dataset.layer,i.checked));
  box.querySelectorAll("input[name=base]").forEach(i=>i.onchange=()=>setBase(i.value));
@@ -241,10 +398,11 @@ function renderViewing(){const on=Object.entries(R).filter(([k,r])=>r.on);
  const rainOn=R.rainCoast?.on||R.rainZones?.on;const w=D.rain?.coast?.windows?.[WIN];
  $("viewSummary").textContent="Estás viendo "+(on.length)+" capas"+(rainOn&&w?" · lluvia "+WIN.replace("h"," h")+" hasta "+short(w.end_utc)+(STALE.coast?" (congelada)":""):"")+" · detalle";
  $("viewList").innerHTML='<li>'+safe(base)+'</li>'+on.map(([k,r])=>'<li>'+safe(r.label)+(r.sub()?' <span class="note">· '+safe(r.sub())+'</span>':"")+'</li>').join("");
- $("viewLegend").innerHTML=(rainOn?'<div class="legend"><span>Lluvia '+safe(WIN.replace("h"," h"))+' (mm) · intervalos de visualización, no umbrales:</span>'+BINS.map((b,i)=>'<span><i class="sw" style="background:'+css(b[1])+'"></i>'+(i<BINS.length-1?String(b[0]).replace(".",",")+"–"+BINS[i+1][0]:"≥ "+b[0])+"</span>").join("")+'</div>':"")+
+ const hyOn=R.hydro?.on;
+ $("viewLegend").innerHTML=(R.semaforo?.on&&SM?'<div class="legend"><span>Semáforo (experimental, estado local '+(smMode==="AHORA"?"ahora":"al corte")+'):</span>'+["ROJO","AMARILLO","VERDE","GRIS"].map(c=>'<span><i class="sw" style="background:'+SMC[c].color+'"></i>'+safe(SMC[c].label_es)+'</span>').join("")+'<span>● cauce IGN · ■ población ANA · contorno punteado = aviso (contexto)</span></div>':"")+(hyOn?'<div class="legend"><span>Red IGN:</span>'+Object.entries(HYC).filter(([k])=>k!=="RX").map(([k,c])=>'<span><svg width="22" height="8" aria-hidden="true"><line x1="1" y1="4" x2="21" y2="4" stroke="'+c.color+'" stroke-width="'+Math.max(1.5,c.w)+'"'+(c.dash?' stroke-dasharray="'+c.dash+'"':'')+'/></svg> '+safe(c.label)+'</span>').join("")+'<span>discontinuo = intermitente</span></div>':"")+(rainOn?'<div class="legend"><span>Lluvia '+safe(WIN.replace("h"," h"))+' (mm) · intervalos de visualización, no umbrales:</span>'+BINS.map((b,i)=>'<span><i class="sw" style="background:'+css(b[1])+'"></i>'+(i<BINS.length-1?String(b[0]).replace(".",",")+"–"+BINS[i+1][0]:"≥ "+b[0])+"</span>").join("")+'</div>':"")+
   (msg?'<p id="msg">'+safe(msg)+'</p>':'<p id="msg"></p>');}
 // ---------- tabs
-const TABS=[["resumen","Resumen"],["lluvia","Lluvia"],["avisos","Avisos"],["rios","Crecidas de ríos"],["quebradas","Quebradas"]];
+const TABS=[["resumen","Resumen"],["semaforo","Semáforo"],["lluvia","Lluvia"],["avisos","Avisos"],["rios","Crecidas de ríos"],["quebradas","Quebradas"]];
 TABS.forEach(([id,label])=>{const b=document.createElement("button");b.type="button";b.role="tab";b.id="t-"+id;b.textContent=label;b.setAttribute("aria-controls","tab-"+id);b.onclick=()=>showTab(id);$("tabs").append(b);});
 function showTab(id){TABS.forEach(([t])=>{$("tab-"+t).hidden=t!==id;$("t-"+t).setAttribute("aria-selected",String(t===id));});}
 const DEPS=D.coast_departments||[];const DS=D.departments||{};
@@ -309,7 +467,7 @@ function renderQuebradas(){$("tab-quebradas").innerHTML='<div class="card ph ACT
  '<p class="note">'+safe(Q.ana_source?.note)+' Actívalas en «Capas». Las quebradas sin geometría reproducible no se dibujan: consulta el '+pageLink("inventario.html","inventario documental")+' ('+safe(Q.inventory_rows)+' registros).</p>'+
  '<div class="card ph INUNDACION_PLUVIAL"><b>Inundación pluvial</b><br><span class="note">Lluvia local intensa en ciudades y llanuras. Se vigila solo con lluvia IMERG y avisos de lluvias; no hay una fuente gratuita integrada de inundaciones urbanas observadas.</span></div>';}
 // ---------- dialogs: information, sources, limitations
-$("infoBody").innerHTML='<p class="note">Vista privada de vigilancia científica de la costa (Tumbes–Tacna) · <b>Research Preview 1</b>. '+safe(D.disclaimer_es)+'</p>'+
+$("infoBody").innerHTML='<p class="note">Vista privada de vigilancia científica de la costa (Tumbes–Tacna) · <b>v0.9.1 candidata</b> (posterior a Research Preview 1: añade la red hidrográfica IGN, la paleta de lluvia de alto contraste y un semáforo de seguimiento experimental, no oficial, con piloto en Lambayeque). '+safe(D.disclaimer_es)+'</p>'+
  '<h3>Tres fenómenos distintos</h3>'+(D.phenomena||[]).map(p=>'<div class="card ph '+safe(p.id)+'"><b>'+safe(p.label)+'</b> <span class="note">('+safe(p.examples)+')</span><br><span class="note">Capas: '+safe(p.layers.join(", "))+'<br>Tiempo real: '+safe(p.realtime)+'<br>Avisos: '+safe(p.avisos)+'</span></div>').join("")+
  '<h3>Cómo usarla</h3><ul class="note"><li>«Capas» activa y desactiva cada capa; el recuadro «Estás viendo» indica qué se muestra y de qué fecha.</li><li>Busca una ciudad o un departamento en la barra superior.</li><li>Pulsa un departamento en el mapa o en la tabla del panel para ver su resumen.</li><li>La lluvia es una estimación satelital (IMERG Early) con horas de retraso; en esta versión está congelada.</li></ul>'+
  '<p class="note">Guardas: deployment_status='+safe(D.deployment_status)+' · test_mode='+safe(D.test_mode)+' · activation_gate='+safe(D.activation_gate)+' · production_use=false · public_alerting=false · notifications_enabled=false · predictive_engine_enabled=false · decision_thresholds=null</p>';
@@ -319,7 +477,7 @@ const SRC=D.sources.map(s=>{const h=age(s.updated_at_utc);const st=!s.updated_at
  return '<tr><td>'+safe(s.label)+'</td><td>'+(s.updated_at_utc?safe(fmt(s.updated_at_utc))+'<br><span class="note">'+safe(st)+'</span>':'<span class="note">archivo estático</span>')+(s.data_end_utc?'<br><span class="note">fin de datos '+safe(fmt(s.data_end_utc))+'</span>':"")+'</td><td class="note">'+safe(s.quality)+'</td></tr>';}).join("");
 $("sourcesBody").innerHTML='<div class="tw"><table><thead><tr><th>Fuente</th><th>Actualización</th><th>Calidad</th></tr></thead><tbody>'+SRC+
  (REF.status==="OK"?'<tr><td>Referencia cartográfica (contorno, departamentos, ciudades)</td><td><span class="note">archivo estático</span></td><td class="note">'+safe(REF.provenance.dataset)+' · '+safe(REF.provenance.licence)+' · orientación, no límite oficial</td></tr>':"")+
- (SINGLE?"":'<tr><td>Mapa base</td><td><span class="note">teselas externas</span></td><td class="note">CARTO Voyager / OpenStreetMap; solo orientación</td></tr>')+'</tbody></table></div>';
+ (SM?'<tr><td>Semáforo de seguimiento (experimental)</td><td><span class="note">derivado; se evalúa al abrir la vista</span></td><td class="note">Reglas '+safe(SM.rules.schema_version)+' sobre avisos, IMERG y GOES-19 ya listados; puntos sobre IGN 1:500.000 y ANA 2016-17. No es una alerta oficial.</td></tr>':"")+(SINGLE?"":'<tr><td>Mapa base</td><td><span class="note">teselas externas</span></td><td class="note">CARTO Voyager / OpenStreetMap; solo orientación</td></tr>')+'</tbody></table></div>';
 $("limitsBody").innerHTML=(ANY?'<div class="guard"><b>Datos congelados, no actuales.</b> Avisos comprobados por última vez: '+safe(fmt(AVCUT))+' · lluvia costera hasta '+safe(fmt(S.imerg_coast?.data_end_utc))+' · lluvia norte hasta '+safe(fmt(S.imerg_north?.data_end_utc))+'. Los avisos emitidos después no aparecen. Para la situación actual consulte SENAMHI e INDECI.</div>':"")+
  '<h3>No disponible en esta vista</h3>'+(D.layers_unavailable||[]).map(u=>'<div class="card"><b>'+safe(u.label)+'</b><br><span class="note">'+safe(u.reason)+'</span></div>').join("")+
  '<h3>Pendiente o insuficiente</h3>'+(D.pending||[]).map(p=>'<div class="card"><b>'+safe(p.item)+'</b><br><span class="note">'+safe(p.reason)+'</span></div>').join("");
@@ -340,9 +498,9 @@ $("searchForm").onsubmit=e=>{e.preventDefault();const q=norm($("search").value);
  if(hit.dep)selectDept(hit.dep);else if(map){map.setView([hit.city.lat,hit.city.lon],10);msg="";renderViewing();}};
 // ---------- init
 function fitPeru(){if(!map)return;const wide=window.matchMedia("(min-width:901px)").matches&&!$("layers").hidden;map.fitBounds([[-18.4,-81.4],[-0.1,-68.7]],{paddingTopLeft:[wide?320:8,8],paddingBottomRight:[8,wide?60:90],animate:false});}
-setBase(BASE);drawRain();renderLayers();renderSummary();renderRainTab();renderAvisos();renderRivers();renderQuebradas();showTab("resumen");
+setBase(BASE);drawRain();drawSemaforo();renderLayers();renderSummary();renderSemaforo();renderRainTab();renderAvisos();renderRivers();renderQuebradas();showTab("resumen");
 if(window.matchMedia("(min-width:901px)").matches){$("layers").hidden=false;$("bLayers").setAttribute("aria-pressed","true");}
-fitPeru();cityZoom();if(map)map.attributionControl.addAttribution("Natural Earth · INEI (SERFOR)");
+fitPeru();cityZoom();hydroZoom();if(map)map.attributionControl.addAttribution("Natural Earth · INEI (SERFOR)");
 function fromHash(){const h=decodeURIComponent(location.hash.slice(1));if(h.startsWith("dep=")){const k=h.slice(4);if(DEPS.includes(k))selectDept(k);}}
 if(!SINGLE){fromHash();window.addEventListener("hashchange",fromHash);}
 document.body.dataset.ready="1";

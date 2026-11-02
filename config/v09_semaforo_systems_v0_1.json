@@ -1,0 +1,128 @@
+{
+  "schema_version": "irfen_v09_semaforo_systems_v0_1",
+  "rule": "Los puntos se colocan SOLO sobre geometrías documentadas: vértices de la red IGN 1:500.000 (puntos de cauce) o ubicaciones documentales de centros poblados expuestos a quebradas (ANA 2016-17, puntos de población, no del cauce). No se inventan coordenadas.",
+  "river_positions": [
+    {
+      "sector": "alto",
+      "fraction": 0.15
+    },
+    {
+      "sector": "medio",
+      "fraction": 0.5
+    },
+    {
+      "sector": "bajo",
+      "fraction": 0.85
+    }
+  ],
+  "mixto_max_distance_km": 1.0,
+  "departments": [
+    {
+      "department": "LAMBAYEQUE",
+      "status": "PILOTO_ACTIVO",
+      "river_systems": [
+        {
+          "id": "LA_LECHE",
+          "name": "Río La Leche",
+          "ign_objectids": [
+            688
+          ],
+          "rain_zone": null,
+          "rain_zone_note": null,
+          "rain_proxy_note": "La Leche no tiene zona de lluvia propia en el panel de zonas: cada punto toma la zona que lo contiene (en la práctica, la cuenca Motupe, usada como aproximación y no como área de aportación del río) o, si no hay, su celda IMERG."
+        },
+        {
+          "id": "CHANCAY_REQUE",
+          "name": "Chancay-Lambayeque / Reque",
+          "ign_objectids": [
+            291,
+            588
+          ],
+          "rain_zone": "lambayeque_chancay_lambayeque_chongoyape",
+          "rain_zone_note": "Lluvia de la cuenca del Chancay-Lambayeque aguas arriba de Chongoyape (polígono del panel de zonas): es la lluvia que alimenta el tramo."
+        },
+        {
+          "id": "ZANA",
+          "name": "Río Zaña (Saña en IGN)",
+          "ign_objectids": [
+            292,
+            3523
+          ],
+          "rain_zone": "lambayeque_zana_oyotun",
+          "rain_zone_note": "Lluvia de la cuenca del Zaña aguas arriba de Oyotún (polígono del panel de zonas): es la lluvia que alimenta el tramo."
+        }
+      ],
+      "quebradas_source": "ANA2016_17_CENTROS_POBLADOS"
+    },
+    {
+      "department": "TUMBES",
+      "status": "PENDIENTE",
+      "river_systems": [],
+      "quebradas_source": null
+    },
+    {
+      "department": "PIURA",
+      "status": "PENDIENTE",
+      "river_systems": [],
+      "quebradas_source": null
+    },
+    {
+      "department": "LA LIBERTAD",
+      "status": "PENDIENTE",
+      "river_systems": [],
+      "quebradas_source": null
+    },
+    {
+      "department": "ANCASH",
+      "status": "PENDIENTE",
+      "river_systems": [],
+      "quebradas_source": null
+    },
+    {
+      "department": "LIMA",
+      "status": "PENDIENTE",
+      "river_systems": [],
+      "quebradas_source": null
+    },
+    {
+      "department": "CALLAO",
+      "status": "PENDIENTE",
+      "river_systems": [],
+      "quebradas_source": null
+    },
+    {
+      "department": "ICA",
+      "status": "PENDIENTE",
+      "river_systems": [],
+      "quebradas_source": null
+    },
+    {
+      "department": "AREQUIPA",
+      "status": "PENDIENTE",
+      "river_systems": [],
+      "quebradas_source": null
+    },
+    {
+      "department": "MOQUEGUA",
+      "status": "PENDIENTE",
+      "river_systems": [],
+      "quebradas_source": null
+    },
+    {
+      "department": "TACNA",
+      "status": "PENDIENTE",
+      "river_systems": [],
+      "quebradas_source": null
+    }
+  ],
+  "quebrada_cluster_km": 2.0,
+  "quebrada_rule": "Las ubicaciones ANA a ≤ 2 km se agrupan en un solo punto de población expuesta (coordenada del primer registro del grupo, no un centroide) para no saturar el mapa. Si el grupo está a ≤ 1 km de un cauce piloto IGN, el punto es «mixto». Ninguno de estos puntos está sobre el cauce de la quebrada.",
+  "extend_es": "Para ampliar a otro departamento: cambiar su estado a PILOTO_ACTIVO, listar sus sistemas fluviales con los OBJECTID IGN verificados (y, si existe, la zona de lluvia de su cuenca) y la fuente documental de quebradas. Ejecutar scripts/v09_build_semaforo.py y luego scripts/v09_build_surveillance_view.py.",
+  "orientation_rule": "El sentido del flujo NO se presume de este a oeste. Se acepta solo con evidencia física: (A) desembocadura: un extremo del cauce a ≤ 5 km de la línea de costa (Natural Earth) y el otro a ≥ 30 km; (B) red de flujo: la acumulación de flujo HydroSHEDS 15\" muestreada en los vértices crece de forma monótona hacia un extremo (|ρ de Spearman| ≥ 0,8 con ≥ 80 % de vértices cubiertos). Si hay evidencia y no se contradice, los sectores se llaman alto / medio / bajo «del tramo dentro del departamento»; si falta o se contradice, se rotulan tramo oeste / centro / este (orientación no verificada). El sentido de digitalización del IGN no se usa (es inconsistente entre líneas).",
+  "orientation_thresholds": {
+    "mouth_max_km": 5.0,
+    "inland_min_km": 30.0,
+    "flow_min_abs_spearman": 0.8,
+    "flow_min_coverage": 0.8
+  }
+}

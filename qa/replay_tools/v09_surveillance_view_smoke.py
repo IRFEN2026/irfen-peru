@@ -3,7 +3,8 @@
 
 Sirve `site/` en 127.0.0.1, abre la página con Chromium (Playwright) y comprueba:
 0 errores JS, página lista, guardas visibles, pestañas, ventanas de lluvia, selección de departamento, «Ver en el mapa» de
-un aviso, enlaces internos que responden 200 y ausencia de desbordamiento horizontal. Peticiones externas: se registran;
+un aviso, enlaces internos que responden 200, ausencia de desbordamiento horizontal y el semáforo experimental (pestaña,
+filtros, ventana emergente y misma evaluación en el navegador que en scripts/v09_build_semaforo.py sobre casos sintéticos). Peticiones externas: se registran;
 el mapa base OSM se bloquea en la prueba. `--local-leaflet DIR` sirve Leaflet desde DIR (entornos sin acceso a unpkg) y
 retira el atributo integrity SOLO en la copia servida a la prueba.
 
@@ -30,6 +31,82 @@ def serve():
     httpd = socketserver.TCPServer(("127.0.0.1", 0), handler)
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
     return httpd, f"http://127.0.0.1:{httpd.server_address[1]}"
+
+
+def semaforo_cases():
+    """Synthetic evaluation cases (times × confirmations × aviso links) with the generator's evaluate() as reference."""
+    import copy
+    import importlib.util
+    from datetime import timedelta
+    spec = importlib.util.spec_from_file_location("sem", ROOT / "scripts/v09_build_semaforo.py")
+    sem = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(sem)
+    D = json.loads((ROOT / "site/data/v09/surveillance_view_v0_1.json").read_text(encoding="utf-8"))["semaforo"]
+    base = dict(rules=D["rules"], confirmations=[], aviso_check_utc=D["aviso_check_utc"], avisos=D["avisos"], rain_refs=D["rain_refs"])
+    cut = sem.iso(D["cutoff_utc"])
+    river = next(c for c in D["checkpoints"] if c["type"] == "rio")
+    queb = next(c for c in D["checkpoints"] if c["type"] == "quebrada")
+    confs = [[], [dict(system_id=river["system_id"], verified=True, source_kind="OFICIAL", observed_at_utc=(cut - timedelta(hours=1)).isoformat())],
+             [dict(checkpoint_id=queb["id"], verified=True, source_kind="REGISTRO_VERIFICADO", observed_at_utc=(cut - timedelta(hours=2)).isoformat()),
+              dict(checkpoint_id=river["id"], verified=False, observed_at_utc=cut.isoformat())]]
+    cases = []
+    for h in (0, 1, 3, 13, 50, 24 * 30):
+        t = cut + timedelta(hours=h)
+        for ci, cf in enumerate(confs):
+            for strip in (False, True):
+                S = dict(base, confirmations=cf)
+                for cp in D["checkpoints"]:
+                    c = copy.deepcopy(cp)
+                    if strip:
+                        c["avisos"] = []
+                    r = sem.evaluate(c, S, t)
+                    cases.append(dict(cp=c, S=S, t=t.isoformat(), expect=[r["state"], r["rule"], r["confidence"], r["context"]]))
+    return cases
+
+
+def semaforo_checks(page, out, name) -> dict:
+    r = {}
+    page.locator("#t-semaforo").click()
+    r["selfcheck"] = page.evaluate("document.body.dataset.semaforoSelfcheck")
+    r["guard"] = "no es una alerta oficial" in page.locator("#tab-semaforo .guard").inner_text()
+    r["rows_now"] = page.locator("#tab-semaforo tbody tr").count()
+    r["states_now"] = sorted(set(page.eval_on_selector_all("#tab-semaforo tbody tr", "rs=>rs.map(x=>x.dataset.state)")))
+    r["map_points"] = page.locator(".leaflet-sema-pane .sm-pt").count()
+    r["map_squares_ana"] = page.locator(".leaflet-sema-pane .sm-sq").count()
+    r["context_box"] = page.locator("#smCtx").inner_text()[:160]
+    page.select_option("#smType", "rio")
+    r["rows_rios"] = page.locator("#tab-semaforo tbody tr").count()
+    page.select_option("#smType", "quebrada")
+    r["rows_quebradas"] = page.locator("#tab-semaforo tbody tr").count()
+    page.select_option("#smType", "ALL")
+    page.select_option("#smState", "ATENCION")
+    r["rows_attention"] = page.locator("#tab-semaforo tbody tr").count()
+    page.select_option("#smState", "ALL")
+    page.select_option("#smDep", "PIURA")
+    r["pending_dep_msg"] = "pendiente" in page.locator("#tab-semaforo .empty").inner_text()
+    page.select_option("#smDep", "LAMBAYEQUE")
+    page.locator("#tab-semaforo button[data-smmode=CORTE]").click()
+    r["states_cutoff"] = sorted(set(page.eval_on_selector_all("#tab-semaforo tbody tr", "rs=>rs.map(x=>x.dataset.state)")))
+    page.locator("#tab-semaforo a[data-sm]").first.click()
+    page.wait_for_selector(".leaflet-popup-content", timeout=5000)
+    page.wait_for_timeout(400)  # popup fade-in
+    pop = page.locator(".leaflet-popup-content").inner_text()
+    r["popup_fields"] = all(k in pop for k in ("confianza", "Evaluado", "IMERG 24 h", "GOES-19", "no es una alerta oficial",
+                                                "Contexto territorial", "posible crecida"))
+    page.screenshot(path=str(out / f"{name}_semaforo_popup.png"), full_page=False)
+    page.locator(".leaflet-popup-close-button").click()
+    page.locator("#tab-semaforo button[data-smmode=AHORA]").click()
+    page.select_option("#smDep", "ALL")
+    cases = semaforo_cases()
+    got = page.evaluate("cs=>cs.map(c=>{const r=window.IRFEN_SEMAFORO_EVAL(c.cp,c.S,c.t);return [r.state,r.rule,r.confidence,r.context];})",
+                        [dict(cp=c["cp"], S=c["S"], t=c["t"]) for c in cases])
+    bad = [(c["cp"]["id"], c["t"], c["expect"], g) for c, g in zip(cases, got) if g != c["expect"]]
+    from collections import Counter
+    # the audited case: a regional aviso is in force but the point's local data are stale → grey, aviso kept as context
+    reg = [c for c in cases if c["expect"][3]["vigentes"] and c["expect"][1] == "NO_EVALUABLE"]
+    r["js_vs_python"] = dict(cases=len(cases), mismatches=len(bad), first=bad[:3], states=dict(Counter(c["expect"][0] for c in cases)),
+                             regional_aviso_with_stale_local_data=dict(cases=len(reg), all_grey=all(c["expect"][0] == "GRIS" for c in reg)))
+    return r
 
 
 def run(out: Path, local_leaflet: Path | None) -> dict:
@@ -89,7 +166,8 @@ def run(out: Path, local_leaflet: Path | None) -> dict:
                 page.locator("#win button", has_text=w).click()
             page.locator("#layers input[data-layer=ana]").check()
             page.locator("#layers input[data-layer=uh]").check()
-            chk["legend"] = page.locator("#viewing .legend").inner_text()[:80]
+            chk["legend"] = page.locator("#viewing .legend").last.inner_text()[:80]
+            chk["hydro_legend"] = page.locator("#viewing .legend").first.inner_text()[:60]
             page.screenshot(path=str(out / f"{name}_layers.png"), full_page=False)
             page.locator("#bLayers").click()
             page.fill("#search", "Chiclayo")
@@ -108,6 +186,7 @@ def run(out: Path, local_leaflet: Path | None) -> dict:
                 page.locator(f"#t-{t}").click()
                 tabs[t] = len(page.locator(f"#tab-{t}").inner_text())
             chk["tabs_text_len"] = tabs
+            chk["semaforo"] = semaforo_checks(page, out, name)
             page.locator("#t-avisos").click()
             page.select_option("#fst", "ALL")
             hl = page.locator("#tab-avisos a[data-hl]")
@@ -132,7 +211,8 @@ def run(out: Path, local_leaflet: Path | None) -> dict:
         b.close()
     httpd.shutdown()
     report["ok"] = all(not r["errors"] and not r["broken_internal_links"] and not r["checks"]["overflow_x"] and r["checks"]["guard_visible"]
-                       and r["checks"]["summary_rows"] == 11 and r["checks"]["map_share_of_viewport"] >= 55 for r in report["runs"])
+                       and r["checks"]["summary_rows"] == 11 and r["checks"]["map_share_of_viewport"] >= 55
+                       and r["checks"]["semaforo"]["js_vs_python"]["mismatches"] == 0 for r in report["runs"])
     return report
 
 

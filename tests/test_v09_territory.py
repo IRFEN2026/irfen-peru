@@ -200,7 +200,8 @@ class Isolation(unittest.TestCase):
                 self.assertNotIn("territory_v0_1.json", text, path.name)
         self.assertNotIn("territory_v0_1.json", (ROOT / "site/v09/index.html").read_text(encoding="utf-8"))
         for path in (ROOT / "scripts").glob("*.py"):  # and nothing else reads the surveillance view bundle
-            if path.name not in ("v09_build_surveillance_view.py", "v09_build_surveillance_demo.py", "v09_pages_publication_gate.py"):
+            if path.name not in ("v09_build_surveillance_view.py", "v09_build_surveillance_demo.py", "v09_pages_publication_gate.py",
+                                 "v09_ign_hydro_coverage_report.py"):
                 self.assertNotIn("surveillance_view_v0_1.json", path.read_text(encoding="utf-8"), path.name)
 
     def test_workflows_rebuild_it_without_blocking_capture(self):
