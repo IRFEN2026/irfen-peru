@@ -262,3 +262,34 @@ class MainRunOffline(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FakeDownloader:
+    """SYNTHETIC: bulk download raises (as earthaccess DownloadFailure did on 02-11-2026); `bad` granules fail alone."""
+    def __init__(self, bad):
+        self.bad, self.calls = set(bad), []
+
+    def download(self, granules, local_path, threads, show_progress):
+        self.calls.append(list(granules))
+        if any(g in self.bad for g in granules):
+            raise RuntimeError("DownloadFailure: Download failed ... Status code: 400")
+        return [f"{local_path}/{g}.HDF5" for g in granules]
+
+
+class DownloadFailures(unittest.TestCase):
+    ROWS = [(NOW - timedelta(minutes=30 * i), f"G{i}", f"G{i}") for i in range(3)]
+
+    def test_one_bad_granule_does_not_lose_the_others(self):
+        paths, failures = A.download_granules(FakeDownloader(bad={"G1"}), self.ROWS, "/tmp/x")
+        self.assertEqual([p.rsplit("/", 1)[1] for p in paths], ["G0.HDF5", "G2.HDF5"])
+        self.assertEqual([f["granule"] for f in failures], ["G1"])
+        self.assertIn("400", failures[0]["error"])
+
+    def test_all_bad_is_reported_not_raised(self):
+        paths, failures = A.download_granules(FakeDownloader(bad={"G0", "G1", "G2"}), self.ROWS, "/tmp/x")
+        self.assertEqual((paths, len(failures)), ([], 3))
+
+    def test_nothing_selected_downloads_nothing(self):
+        d = FakeDownloader(bad=set())
+        self.assertEqual(A.download_granules(d, [], "/tmp/x"), ([], []))
+        self.assertEqual(d.calls, [])

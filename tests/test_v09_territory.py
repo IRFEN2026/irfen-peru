@@ -829,6 +829,10 @@ class Browser(unittest.TestCase):
                 pass
 
         built = datetime.fromisoformat(BUNDLE["built_at_utc"].replace("Z", "+00:00"))
+        # 30 h after the newest of the two packages the pages read (validated with a newer main, the panel bundle is newer)
+        dash_built = json.loads((ROOT / "site/data/v09/dashboard_v0_1.json").read_text(encoding="utf-8")).get("built_at_utc")
+        if dash_built:
+            built = max(built, datetime.fromisoformat(dash_built.replace("Z", "+00:00")))
         stale_clock = built + timedelta(hours=30)
         rows = INV_VIEW["rows"]
         viewer_ids = {r["id"] for r in BUNDLE["inventory_rows"]}
