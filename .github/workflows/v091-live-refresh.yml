@@ -5,6 +5,9 @@ name: IRFEN v0.9.1 - actualización automática del visor privado (RESEARCH_ONLY
 # No captura nada, no escribe en main, no publica una web, no envía notificaciones ni alertas.
 # Reloj: cada ejecución termina programando la siguiente (workflow_dispatch con GITHUB_TOKEN en esta rama), con
 # parada por config/v091_live_refresh.json (enabled=false o expires_at_utc). Sin secretos adicionales.
+# Una sola cadena: el grupo de concurrencia admite una ejecución en curso y una pendiente; GitHub cancela la pendiente
+# anterior si llega otra (p. ej. un push mientras la cadena duerme), así que dos cadenas se reducen a una.
+# Coste: la espera de 20 min ocupa un runner (repositorio público: 0 minutos facturables, comprobado con /timing).
 
 on:
   push:
@@ -45,18 +48,8 @@ jobs:
         env:
           HOP: ${{ inputs.hop || '0' }}
         run: |
-          python3 - <<'PY'
-          import json, os
-          from datetime import datetime, timezone
-          c = json.load(open("config/v091_live_refresh.json"))
-          hop = int(os.environ.get("HOP") or 0)
-          exp = datetime.fromisoformat(c["expires_at_utc"].replace("Z", "+00:00"))
-          ok = c["enabled"] is True and datetime.now(timezone.utc) < exp and hop < c["max_hops_per_chain"] \
-               and c["public_alerting"] is False and c["notifications_enabled"] is False and c["merged_into_main"] is False
-          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-              f.write(f"run={'true' if ok else 'false'}\npoll={int(c['poll_minutes'])}\nnext={hop + 1}\ndata_branch={c['data_branch']}\n")
-          print(f"enabled={c['enabled']} expires={c['expires_at_utc']} hop={hop} -> run={ok}")
-          PY
+          set -euo pipefail
+          python3 scripts/v091_live_refresh.py --control --hop "$HOP" | tee -a "$GITHUB_OUTPUT"
 
       - uses: actions/setup-python@v6
         if: steps.ctl.outputs.run == 'true'
@@ -86,12 +79,20 @@ jobs:
             git -C ../live-data rm -rfq .
           fi
 
-      - name: Reconstruir si hay una captura nueva y válida
+      - name: Último intento de captura de cada fuente en main (solo lectura)
+        if: steps.ctl.outputs.run == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/v091_live_refresh.py --fetch-attempts "$RUNNER_TEMP/attempts.json" --repo "$GITHUB_REPOSITORY" \
+            || echo "::warning::capture attempts not available; shown as unknown"
+
+      - name: Reconstruir si hay una captura nueva y válida (o un intento de captura nuevo)
         id: build
         if: steps.ctl.outputs.run == 'true'
         run: |
           set +e
-          python scripts/v091_live_refresh.py --main-ref origin/main --data-dir ../live-data | tee "$RUNNER_TEMP/refresh.json"
+          python scripts/v091_live_refresh.py --main-ref origin/main --data-dir ../live-data --attempts "$RUNNER_TEMP/attempts.json" | tee "$RUNNER_TEMP/refresh.json"
           rc=${PIPESTATUS[0]}
           echo "rc=$rc" >> "$GITHUB_OUTPUT"
           echo "### Ciclo: código $rc" >> "$GITHUB_STEP_SUMMARY"
@@ -151,6 +152,7 @@ jobs:
           name: v091-live-refresh-${{ github.run_id }}
           path: |
             ${{ runner.temp }}/refresh.json
+            ${{ runner.temp }}/attempts.json
             ${{ runner.temp }}/page_check
           retention-days: 7
           if-no-files-found: ignore

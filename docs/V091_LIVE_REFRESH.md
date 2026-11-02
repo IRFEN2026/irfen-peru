@@ -58,7 +58,15 @@ Las capturas son más frecuentes solo si las ejecuta un reloj autorizado por el 
    **Cada paquete anterior es recuperable** en el historial de esa rama.
 8. **Reloj.** El segundo job espera `poll_minutes` (20 min) y programa la siguiente ejecución de este mismo workflow en esta rama con `GITHUB_TOKEN`.
    - No hay cron, no hay secretos nuevos y no escribe en main.
-   - Repositorio público: los minutos de Actions no tienen coste.
+   - **Parada comprobada:** `scripts/v091_live_refresh.py --control` (probado en `tests/test_v091_live_refresh.py`) devuelve `run=false` desde el 09-11-2026 00:00 UTC, con `enabled=false`, al llegar a `max_hops_per_chain` (600; la fecha llega antes) o si se altera una guarda. Sin `run=true` no se programa la siguiente ejecución: la última ejecución posible es una de unos 20 s a las 00:20 UTC del 09-11. La vigencia no se amplía sin autorización.
+   - **Sin duplicados:** el grupo de concurrencia `v091-live-refresh` admite una ejecución en curso y una pendiente; si llega otra (por ejemplo, un push mientras la cadena duerme), GitHub cancela la pendiente anterior. Medido el 02-11: 32 ejecuciones seguidas, separadas entre 20,4 y 21,1 min, sin dos ciclos a la vez.
+   - **Consumo:** cada eslabón dura unos 20,6 min (20 min de espera + ~30 s de trabajo), así que la cadena ocupa un runner de forma continua: ~1.450 min de runner al día. **Coste facturable 0** (repositorio público; la API `/timing` devuelve `billable: 0 ms`). Para no mantener un runner esperando hay dos alternativas, ambas requieren autorización (§6).
+9. **Último intento de captura.** Antes de reconstruir, el workflow lee (solo GET) la última ejecución terminada en main de cada productor y el resultado de su paso: IMERG («Archive every missing half-hour…»), GOES-19 («GOES-19 RRQPE…») y avisos (ejecución completa), con la línea de error si falló. Cada fuente muestra por separado:
+   - **última observación** (hora del dato válido más reciente);
+   - **último intento de captura** (hora de la ejecución);
+   - **resultado del intento:** correcto, fallido (con el motivo), no ejecutado (falló un paso anterior) o desconocido.
+
+   Un intento nuevo, aunque falle, publica un paquete marcado `SOLO_INTENTO_DE_CAPTURA` con las mismas observaciones válidas: la página dice explícitamente «última captura fallida» sin borrar la observación anterior, que sigue coloreando solo mientras sea reciente.
 
 **Parada:** poner `enabled: false` en `config/v091_live_refresh.json`. Además se detiene sola en `expires_at_utc` (09-11-2026) o al llegar a `max_hops_per_chain`.
 
@@ -83,7 +91,19 @@ Las capturas son más frecuentes solo si las ejecuta un reloj autorizado por el 
 
 Los avisos se muestran como contexto territorial y no cambian el color.
 
-## 4. Aún no conectado
+## 4. Fallos de fuentes y caducidad (comprobado)
+
+| Situación | Qué pasa | Prueba |
+|---|---|---|
+| Falla la captura de IMERG, GOES-19 o avisos (workflow de main con error) | main no cambia: se mantiene el último paquete validado; se publica el intento fallido | `test_failed_capture_attempt_is_published_explicitly_with_previous_observation`; caso real del 02-11 10:04 UTC |
+| Archivo de una fuente dañado en main | Se usa la última versión aceptada; el mapa se publica | `test_each_source_failure_keeps_last_package_and_expires_to_grey` (IMERG, GOES-19, avisos) |
+| Fuente ausente sin versión aceptada | Esa fuente queda ausente (gris), nunca la copia congelada | `test_invalid_input_uses_last_accepted_and_missing_source_is_grey` |
+| Observación caducada (IMERG > 12 h, GOES-19 > 90 min) | Los puntos afectados pasan a gris, aunque no llegue paquete nuevo: la página evalúa a la hora actual | mismas pruebas + `v091_live_page_check.py` (paridad JS/Python a +0, +2 h, caducado y +72 h; todo gris tras caducar) |
+| GOES-19 caducado con IMERG reciente y seco | Gris, nunca verde | `test_goes_expiry_forbids_green_even_with_fresh_imerg` |
+| Lluvia satelital extrema + todos los avisos en vigor | Amarillo «lluvia satelital detectada»; nunca rojo; los avisos no cambian el color | `test_avisos_rain_and_events_stay_separate` |
+| Evento verificado y localizado | Rojo solo en ese punto | ídem |
+
+## 5. Aún no conectado
 
 - **IMERG en la costa centro y sur** (La Libertad–Tacna, y los 5 puntos del semáforo que usan una celda costera): solo existe la instantánea del 01-11. Ningún workflow de main la actualiza, y no se ha creado un recolector nuevo.
 - **Imágenes de nubosidad GOES-19:** no existe un recolector y no se ha creado.
@@ -91,13 +111,27 @@ Los avisos se muestran como contexto territorial y no cambian el color.
 - **Registro de eventos verificados (rojo):** es manual y está vacío.
 - **Frecuencia de las capturas de main:** depende de los cron de GitHub (3–8 h reales). Mejorarla requiere un reloj autorizado por el propietario.
 
-## 5. Alojamiento privado: propuesta pendiente de autorización (no desplegado)
+## 6. Vista privada conectada a la rama de datos: propuesta pendiente de autorización (no desplegada)
 
-| Opción | Coste | Control de acceso | Actualización | Recomendación |
+`scripts/v091_build_private_site.py --out <carpeta>` genera la vista desplegable:
+- `index.html`: la misma página, con `<meta name="irfen-live">` apuntando a `https://raw.githubusercontent.com/IRFEN2026/irfen-peru/research/v091-live-data/current/`. Carga el último paquete validado, consulta `manifest.json` cada 5 min y se recarga sola al aparecer un ciclo nuevo, conservando la vista. Si la consulta falla, mantiene el paquete y lo indica.
+- `_headers`: `noindex`, `no-referrer`, `nosniff`, sin marcos y una política de contenido que solo permite leer datos de `raw.githubusercontent.com`.
+- La página **no se vuelve a desplegar en cada ciclo**: los datos llegan solos desde la rama de datos. Solo se sube de nuevo si cambia el código de la página.
+- Probado sin desplegar: `v091_live_page_check.py --cross-origin` sirve la carpeta y los datos desde dos orígenes distintos (como Cloudflare y GitHub) y comprueba la carga, el cambio de ciclo sin intervención y la conservación de la pestaña.
+- `?live=` en la URL solo admite carpetas relativas: nadie puede hacer que la página cargue datos de otro sitio cambiando la URL.
+
+| Opción | Coste | Control de acceso | Qué tiene que hacer el propietario | Recomendación |
 |---|---|---|---|---|
-| **A. Visor local** (`scripts/v091_private_viewer.py`) | 0 | Solo escucha en 127.0.0.1 (el propio ordenador). Sin cuentas ni secretos | Descarga la rama de datos cada 10 min. La página se recarga sola | **Para empezar**: privado por construcción. Requiere un ordenador encendido con Python y git |
-| **B. Cloudflare Pages + Cloudflare Access** (plan Zero Trust gratuito, hasta 50 usuarios) | 0 | Aplicación de Access sobre `<proyecto>.pages.dev` **y** `*.<proyecto>.pages.dev` (vistas previas). Política «Allow» solo para los correos autorizados, inicio con código de un solo uso, sesión de 24 h, sin `workers_dev` ni rutas públicas | El workflow sube página y paquete con `wrangler pages deploy` tras cada ciclo válido. Para eso el propietario crea un token de Cloudflare limitado a «Pages: Edit» y lo guarda como secreto `CLOUDFLARE_API_TOKEN` | Para acceso desde el móvil o para varias personas. **Requiere autorización expresa** y que el propietario cree la cuenta, la política y el token |
-| GitHub Pages | 0 | Sería pública (repositorio público; Pages privadas exigen Enterprise) | — | **No** |
-| Página alojada en Claude | 0 | Privada | Estática: no puede descargar paquetes nuevos | Se mantiene como demostración histórica |
+| **B. Cloudflare Pages (subida directa) + Cloudflare Access** (Zero Trust gratuito, hasta 50 usuarios) | 0 | Dos aplicaciones de Access, siguiendo el procedimiento de Cloudflare «Enable Access on your `*.pages.dev` domain» (Pages, *Known issues*): una para `<proyecto>.pages.dev` y otra para las vistas previas `*.<proyecto>.pages.dev`. Política «Allow» solo con los correos autorizados; método «One-time PIN» por correo; sesión de 24 h; sin tokens de servicio ni reglas «Bypass»; sin dominio propio (si se añade uno, necesita su propia aplicación de Access) | 1) Crear el proyecto de Pages y subir la carpeta generada (una vez). 2) Crear la aplicación de Access y la política. 3) Comprobar en una ventana privada que sin código no se ve nada. **No hace falta ningún token ni secreto en GitHub**: la página lee los datos ella sola | **Recomendada** para verla desde el móvil o con varias personas |
+| **A. Visor local** (`scripts/v091_private_viewer.py`) | 0 | Solo escucha en 127.0.0.1 | Ejecutarlo en un ordenador con Python y git | Alternativa sin cuentas |
+| GitHub Pages | 0 | Sería pública (Pages privadas exigen Enterprise) | — | **No** |
+| Página alojada en Claude | 0 | Privada | Estática: no puede leer paquetes nuevos | Solo demostración histórica |
 
-Nota: la rama de datos está en un repositorio público. Contiene el mismo tipo de datos que main ya publica, pero ninguna página web. La interfaz solo se sirve mediante A o B.
+Límite: el control de acceso protege la **interfaz**. Los datos de `research/v091-live-data` están en un repositorio público, igual que los que main ya publica. Si los datos también deben ser privados, habría que hacer privado el repositorio (los minutos de Actions dejarían de ser gratuitos) o servirlos desde el propio Pages con un token de despliegue: ambas cosas requieren otra autorización.
+
+## 7. Bloqueos y decisiones pendientes
+
+1. **La captura de lluvia de main se cae entera cuando falla una descarga de IMERG.** 02-11 10:04 UTC: `earthaccess.exceptions.DownloadFailure … Status code: 400` en `scripts/v09_imerg_north_archive.py` (la descarga no está dentro del `try` que sí cubre la búsqueda). El job termina con error, **GOES-19 no se ejecuta** y no se guarda nada. Arreglo propuesto, sin fusionar: capturar el error de descarga como fallo de la fuente (como ya se hace con `SOURCE_UNREACHABLE`) para que GOES-19 siga. Requiere autorización para cambiar main. Si el 400 persiste, revisar también la validez de `EARTHDATA_TOKEN` (solo el propietario puede verlo; no se pide aquí).
+2. **Frecuencia de las capturas de main:** 3–8 h reales por los retrasos del cron de GitHub. Mejorarla requiere el reloj externo (#373), no activado.
+3. **Reloj sin runner esperando** (opcional, para no ocupar un runner 24 h): *a)* que los workflows de captura de main lancen `v091-live-refresh` al terminar (un paso de una línea; ciclo ~1 min después de cada captura, ~10 ejecuciones cortas al día); o *b)* un entorno de GitHub con temporizador de espera («wait timer») de 20 min en lugar de `sleep`: el job no empieza, ni ocupa runner, hasta que vence el temporizador. *a)* cambia main y *b)* cambia la configuración del repositorio: ninguna se ha hecho.
+4. **Alojamiento B:** pendiente de autorización y de que el propietario cree el proyecto y la política de acceso.

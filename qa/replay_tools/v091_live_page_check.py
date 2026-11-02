@@ -4,7 +4,7 @@
 Sirve en 127.0.0.1 la página `site/v09/vigilancia.html` junto a una carpeta de datos con `current/` (la rama
 `research/v091-live-data` o un directorio local), la abre con `?live=current/` en Chromium y comprueba:
 0 errores JS, ciclo mostrado = ciclo del manifiesto, chip de estado, autocomprobación del semáforo, y paridad
-Python/JS del semáforo en la hora del ciclo. Con `--next-cycle DIR` sustituye después `current/` por otro ciclo y
+Python/JS del semáforo en la hora del ciclo y más tarde (caducidad: todo gris). Con `--next-cycle DIR` sustituye después `current/` por otro ciclo y
 verifica que la página detecta el paquete nuevo y se recarga sola (sin intervención), conservando la vista.
 
     python qa/replay_tools/v091_live_page_check.py --data-dir LIVE [--next-cycle LIVE2] [--local-leaflet DIR] [--out DIR]
@@ -27,8 +27,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def serve(root: Path):
-    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(root))
+class _CORS(http.server.SimpleHTTPRequestHandler):
+    def end_headers(self):  # like raw.githubusercontent.com: readable from another origin
+        self.send_header("Access-Control-Allow-Origin", "*")
+        super().end_headers()
+
+
+def serve(root: Path, cors: bool = False):
+    handler = functools.partial(_CORS if cors else http.server.SimpleHTTPRequestHandler, directory=str(root))
     handler.log_message = lambda *a, **k: None
     httpd = socketserver.TCPServer(("127.0.0.1", 0), handler)
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
@@ -53,15 +59,53 @@ def parity(page, bundle: dict, at: str) -> dict:
     return dict(cases=len(exp), mismatches=len(bad), first=bad[:3], states=dict(Counter(e["state"] for e in exp)))
 
 
-def run(data_dir: Path, next_cycle: Path | None, local_leaflet: Path | None, out: Path) -> dict:
+def expiry(page, bundle: dict, built: str) -> dict:
+    """Same package evaluated later in the browser (no new cycle): JS = Python, and once every local observation has
+    expired (> 12 h IMERG, > 90 min GOES-19) nothing stays yellow or green; only a verified event could be red."""
+    from datetime import timedelta
+    spec = importlib.util.spec_from_file_location("sem_page_check2", ROOT / "scripts/v09_build_semaforo.py")
+    sem = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(sem)
+    sm = bundle.get("semaforo") or {}
+    if sm.get("status") != "OK":
+        return dict(checked=False)
+    fr = sm["rules"]["freshness"]
+    t0 = sem.iso(built)
+    late = t0 + timedelta(hours=fr["imerg_max_age_hours"], minutes=5)
+    res = {}
+    for label, t in (("+0", t0), ("+2h", t0 + timedelta(hours=2)), ("caducado", late), ("+72h", t0 + timedelta(hours=72))):
+        res[label] = parity(page, bundle, t.isoformat())
+    confirmed = any(c.get("verified") for c in sm["confirmations"]["confirmations"])
+    res["all_grey_after_expiry"] = set(res["caducado"]["states"]) <= ({"GRIS", "ROJO"} if confirmed else {"GRIS"})
+    res["ok"] = res["all_grey_after_expiry"] and all(v["mismatches"] == 0 for k, v in res.items() if isinstance(v, dict))
+    return res
+
+
+def run(data_dir: Path, next_cycle: Path | None, local_leaflet: Path | None, out: Path, cross_origin: bool = False) -> dict:
+    """cross_origin: the page is the deployable private site (scripts/v091_build_private_site.py) and the data come from
+    another origin with CORS, as with raw.githubusercontent.com/<repo>/research/v091-live-data/current/."""
     from playwright.sync_api import sync_playwright
     out.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix="irfen_live_view_") as td:
+    with tempfile.TemporaryDirectory(prefix="irfen_live_view_") as td, tempfile.TemporaryDirectory(prefix="irfen_live_data_") as dd:
         root = Path(td)
-        shutil.copy(ROOT / "site/v09/vigilancia.html", root / "vigilancia.html")
-        shutil.copytree(data_dir / "current", root / "current")
+        droot = Path(dd) if cross_origin else root
+        shutil.copytree(data_dir / "current", droot / "current")
+        dhttpd = None
+        if cross_origin:
+            dhttpd, dorigin = serve(droot, cors=True)
+            spec = importlib.util.spec_from_file_location("v091_site", ROOT / "scripts/v091_build_private_site.py")
+            site = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(site)
+            site.build(root, dorigin + "/current/")
+            shutil.copy(root / "index.html", root / "vigilancia.html")
+        else:
+            dorigin = None
+            shutil.copy(ROOT / "site/v09/vigilancia.html", root / "vigilancia.html")
+        if local_leaflet:  # local Leaflet build (sandbox without unpkg): its bytes differ from the pinned SRI hashes
+            pg = root / "vigilancia.html"
+            pg.write_text(re.sub(r'\s+integrity="[^"]+"', "", pg.read_text(encoding="utf-8")), encoding="utf-8")
         httpd, origin = serve(root)
-        rep = dict(origin=origin, runs=[])
+        rep = dict(origin=origin, data_origin=dorigin, cross_origin=cross_origin, runs=[])
         with sync_playwright() as p:
             b = p.chromium.launch()
             ctx = b.new_context(viewport=dict(width=1440, height=900))
@@ -73,10 +117,9 @@ def run(data_dir: Path, next_cycle: Path | None, local_leaflet: Path | None, out
 
             def route(r):
                 u = r.request.url
-                if u.startswith(origin):
-                    if local_leaflet and u.split("?")[0].endswith("/vigilancia.html"):
-                        resp = r.fetch()
-                        return r.fulfill(response=resp, body=re.sub(r'\s+integrity="[^"]+"', "", resp.text()))
+                if dorigin and u.startswith(dorigin + "/"):
+                    return r.continue_()
+                if u.startswith(origin + "/"):
                     return r.continue_()
                 if local_leaflet and u.startswith("https://unpkg.com/leaflet@1.9.4/dist/"):
                     f = local_leaflet / u.rsplit("/dist/", 1)[1]
@@ -88,30 +131,33 @@ def run(data_dir: Path, next_cycle: Path | None, local_leaflet: Path | None, out
             page.route("**/*", route)
 
             def snapshot(tag):
-                man = json.loads((root / "current/manifest.json").read_text(encoding="utf-8"))
-                bundle = json.loads((root / "current/surveillance_view_v0_1.json").read_text(encoding="utf-8"))
+                man = json.loads((droot / "current/manifest.json").read_text(encoding="utf-8"))
+                bundle = json.loads((droot / "current/surveillance_view_v0_1.json").read_text(encoding="utf-8"))
                 page.locator("#t-semaforo").click()
                 r = dict(tag=tag, manifest_cycle=man["cycle_id"], page_cycle=page.evaluate("document.body.dataset.liveCycle"),
                          chip=page.locator("#state").inner_text(), selfcheck=page.evaluate("document.body.dataset.semaforoSelfcheck"),
                          semaforo_counts=page.locator("#smCounts").inner_text()[:220],
                          north_rain_end=bundle["rain"]["north_zones"].get("end_utc"),
                          avisos_check=(bundle.get("semaforo") or {}).get("aviso_check_utc"),
-                         parity_at_cycle=parity(page, bundle, man["built_at_utc"]))
+                         parity_at_cycle=parity(page, bundle, man["built_at_utc"]),
+                         expiry=expiry(page, bundle, man["built_at_utc"]))
                 page.locator("#bSources").click()
                 r["sources_dialog"] = page.locator("dialog[open] .db").inner_text()[:400]
+                r["live_sources"] = page.evaluate("""[...document.querySelectorAll('#liveSources tbody tr')].map(tr=>({id:tr.dataset.src,
+                    attempt:tr.dataset.attempt,cells:[...tr.cells].map(c=>c.innerText.replace(/\\s+/g,' ').trim())}))""")
                 page.locator("dialog[open] [data-close]").click()
                 page.screenshot(path=str(out / f"live_{tag}.png"))
                 return r
 
-            page.goto(origin + "/vigilancia.html?live=current/&poll=30", wait_until="load")
+            page.goto(origin + ("/vigilancia.html?poll=30" if cross_origin else "/vigilancia.html?live=current/&poll=30"), wait_until="load")
             page.wait_for_selector("body[data-ready='1']", timeout=30000)
             rep["runs"].append(snapshot("ciclo_1"))
             if next_cycle:
                 page.locator("#t-avisos").click()  # a view state that must survive the automatic reload
-                staged = root / ".next"
+                staged = droot / ".next"
                 shutil.copytree(next_cycle / "current", staged)
                 for n in ("surveillance_view_v0_1.json", "observation_feed_v0_1.json", "manifest.json"):  # manifest last
-                    (staged / n).replace(root / "current" / n)
+                    (staged / n).replace(droot / "current" / n)
                 before = len(loads)
                 page.wait_for_function("(c)=>document.body.dataset.ready==='1'&&document.body.dataset.liveCycle&&document.body.dataset.liveCycle!==c",
                                        arg=rep["runs"][0]["page_cycle"], timeout=120000)
@@ -121,8 +167,11 @@ def run(data_dir: Path, next_cycle: Path | None, local_leaflet: Path | None, out
             rep["errors"] = errors
             b.close()
         httpd.shutdown()
+        if dhttpd:
+            dhttpd.shutdown()
     r1 = rep["runs"][0]
     rep["ok"] = (not rep["errors"] and all(x["page_cycle"] == x["manifest_cycle"] and x["parity_at_cycle"]["mismatches"] == 0
+                                          and x["expiry"].get("ok", True) is True
                                           and len(set(x["selfcheck"].split("/"))) == 1 for x in rep["runs"])
                  and (not next_cycle or (rep["runs"][1]["page_cycle"] != r1["page_cycle"] and rep.get("tab_after_reload") == "t-avisos")))
     return rep
@@ -134,8 +183,9 @@ def main(argv=None) -> int:
     ap.add_argument("--next-cycle", type=Path)
     ap.add_argument("--local-leaflet", type=Path)
     ap.add_argument("--out", type=Path, default=Path("/tmp/irfen_live_check"))
+    ap.add_argument("--cross-origin", action="store_true", help="test the deployable private site reading data from another origin")
     a = ap.parse_args(argv)
-    rep = run(a.data_dir, a.next_cycle, a.local_leaflet, a.out)
+    rep = run(a.data_dir, a.next_cycle, a.local_leaflet, a.out, a.cross_origin)
     (a.out / "live_page_check.json").write_text(json.dumps(rep, ensure_ascii=False, indent=1), encoding="utf-8")
     print(json.dumps(rep, ensure_ascii=False, indent=1)[:5000])
     return 0 if rep["ok"] else 1

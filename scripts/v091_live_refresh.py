@@ -91,6 +91,98 @@ def validate(raw: bytes | None, spec: dict, now: datetime) -> tuple[str, dict]:
     return "ACEPTADA", times
 
 
+def control(cfg: dict, now: datetime, hop: int) -> dict:
+    """Whether this link of the 20-min chain may run (and schedule the next one). Never extends the expiry."""
+    exp = iso(cfg["expires_at_utc"])
+    reasons = []
+    if cfg.get("enabled") is not True:
+        reasons.append("enabled=false")
+    if now >= exp:
+        reasons.append("caducado " + cfg["expires_at_utc"])
+    if hop >= int(cfg["max_hops_per_chain"]):
+        reasons.append("max_hops_per_chain")
+    for k in ("public_alerting", "notifications_enabled", "merged_into_main", "predictive"):
+        if cfg.get(k) is not False:
+            reasons.append(f"guarda {k}")
+    return dict(run="false" if reasons else "true", poll=int(cfg["poll_minutes"]), next=hop + 1, data_branch=cfg["data_branch"],
+                reason="; ".join(reasons) or "ok")
+
+
+def gh_json(path: str):
+    r = subprocess.run(["gh", "api", path], capture_output=True, text=True)
+    if r.returncode != 0:
+        raise RuntimeError(r.stderr.strip()[:200])
+    return json.loads(r.stdout)
+
+
+def fetch_attempts(cfg: dict, repo: str) -> dict:
+    """Read-only: last completed run on main of each producer workflow, with its step results."""
+    out = dict(fetched_at_utc=datetime.now(timezone.utc).isoformat(), repo=repo, workflows={}, errors={})
+    for wf in sorted({s["workflow"] for s in cfg["capture_attempts"]}):
+        try:
+            runs = gh_json(f"repos/{repo}/actions/workflows/{wf}/runs?branch=main&status=completed&per_page=1")["workflow_runs"]
+            if not runs:
+                continue
+            r = runs[0]
+            jobs = gh_json(f"repos/{repo}/actions/runs/{r['id']}/jobs")["jobs"]
+            info = dict(run_id=r["id"], created_at_utc=r["created_at"], started_at_utc=r.get("run_started_at"),
+                        conclusion=r["conclusion"], event=r["event"], html_url=r["html_url"],
+                        steps=[dict(name=s["name"], conclusion=s.get("conclusion")) for j in jobs for s in j.get("steps", [])])
+            if r["conclusion"] != "success":  # best effort: the error line of the failed step, so the failure is explicit
+                failed = [j for j in jobs if j.get("conclusion") == "failure"]
+                if failed:
+                    lg = subprocess.run(["gh", "api", f"repos/{repo}/actions/jobs/{failed[0]['id']}/logs"], capture_output=True, text=True)
+                    lines = [ln[29:] if len(ln) > 29 and ln[4] == "-" else ln for ln in lg.stdout.splitlines()]
+                    errs = [ln.strip() for ln in lines if ("Error" in ln or "Exception" in ln or "Failure" in ln) and not ln.strip().startswith(("File ", "raise", "^"))
+                            and "Process completed with exit code" not in ln]
+                    info["error_excerpt"] = errs[-1][:240] if errs else None
+            out["workflows"][wf] = info
+        except Exception as exc:  # noqa: BLE001 - attempts unknown is shown as such, never as success
+            out["errors"][wf] = f"{type(exc).__name__}: {exc}"[:200]
+    return out
+
+
+def attempt_status(spec: dict, raw: bytes | None, run_info: dict | None) -> dict:
+    """Last capture attempt of one source: when, and its result. CORRECTO / FALLIDO / NO_EJECUTADO / DESCONOCIDO."""
+    doc = None
+    try:
+        doc = json.loads(raw) if raw else None
+    except ValueError:
+        pass
+    ok_val = pick(doc, spec["ok_field"]) if doc else None
+    err = pick(doc, spec.get("error_field", [])) if doc and spec.get("error_field") else None
+    file_ok = ok_val in spec["ok_values"]
+    res = dict(source_id=spec["source_id"], producer=spec["workflow"], basis=None, attempt_utc=None, result="DESCONOCIDO",
+               detail_es=None, run_id=None, run_url=None)
+    if run_info:
+        res.update(basis="ACTIONS", attempt_utc=run_info.get("started_at_utc") or run_info.get("created_at_utc"),
+                   run_id=run_info.get("run_id"), run_url=run_info.get("html_url"))
+        if spec.get("step_match"):
+            st = next((s for s in run_info.get("steps", []) if spec["step_match"] in s["name"]), None)
+            concl = st["conclusion"] if st else None
+        else:
+            concl = run_info.get("conclusion")
+        if concl == "success":
+            if file_ok:
+                res.update(result="CORRECTO", detail_es="captura terminada y guardada")
+            else:
+                res.update(result="FALLIDO", detail_es=f"la captura terminó sin datos nuevos: {ok_val}" + (f" ({str(err)[:160]})" if err else ""))
+        elif concl == "skipped":
+            res.update(result="NO_EJECUTADO", detail_es="no se ejecutó porque falló un paso anterior del mismo workflow; no se guardó nada")
+        elif concl in ("failure", "cancelled", "timed_out"):
+            exc = run_info.get("error_excerpt")
+            res.update(result="FALLIDO", detail_es=f"el paso de captura terminó con error ({concl}); no se guardó nada" + (f": {exc}" if exc else ""))
+        else:
+            res.update(detail_es=f"resultado del paso no disponible ({concl})")
+    elif doc is not None:
+        since = pick(doc, spec["since_field"]) if spec.get("since_field") else None
+        res.update(basis="ARCHIVO", attempt_utc=since if not file_ok else None,
+                   result="CORRECTO" if file_ok else "FALLIDO",
+                   detail_es=("según el estado guardado por la captura" if file_ok else f"según el estado guardado por la captura: {ok_val}"
+                              + (f" ({str(err)[:160]})" if err else "")) + "; sin consulta a Actions")
+    return res
+
+
 def run(cmd: list[str]) -> tuple[int, str]:
     r = subprocess.run([sys.executable, *cmd], cwd=ROOT, capture_output=True, text=True)
     return r.returncode, (r.stdout + r.stderr)[-1500:]
@@ -132,6 +224,13 @@ def qa(bundle: dict, now: datetime) -> list[str]:
             errs.append(f"{cp['id']}: red without a verified, sourced confirmation")
         if r["state"] == "AMARILLO" and r["rule"] != "LLUVIA_SATELITAL":
             errs.append(f"{cp['id']}: yellow not from satellite rain")
+        if r["state"] == "AMARILLO":
+            g_fresh_rain = bool(rr and rr.get("goes") and rr["goes"].get("scan_end_utc") and (rr["goes"].get("rate_mm_h") or 0) > 0
+                                and timedelta(0) <= now - iso(rr["goes"]["scan_end_utc"]) <= timedelta(minutes=fr["goes_max_age_minutes"]))
+            if not (i_ok and (rr["imerg"]["windows"].get("24h") or 0) >= sm["rules"]["rain_signal"]["display_resolution_mm"]) and not g_fresh_rain:
+                errs.append(f"{cp['id']}: yellow from an expired or absent observation")
+        if r["state"] not in ("ROJO", "AMARILLO", "VERDE", "GRIS"):
+            errs.append(f"{cp['id']}: unknown state {r['state']}")
     return errs
 
 
@@ -139,12 +238,27 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--main-ref", default="origin/main")
     ap.add_argument("--fallback-ref", help="ref with the last accepted inputs (defaults to the main sha of the previous cycle)")
-    ap.add_argument("--data-dir", type=Path, required=True)
+    ap.add_argument("--data-dir", type=Path)
     ap.add_argument("--as-of", help="evaluation time (tests); default now")
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--record-failure", help="only write status/last_failure.json (the previous package stays in current/)")
     ap.add_argument("--log", type=Path)
+    ap.add_argument("--attempts", type=Path, help="JSON written by --fetch-attempts (last capture attempt of each producer)")
+    ap.add_argument("--fetch-attempts", type=Path, help="only fetch the producers' last runs on main (read-only) into this file")
+    ap.add_argument("--repo", default="IRFEN2026/irfen-peru")
+    ap.add_argument("--control", action="store_true", help="only print the chain control outputs (key=value)")
+    ap.add_argument("--hop", type=int, default=0)
     a = ap.parse_args(argv)
+    if a.control:
+        c = control(json.loads(CFG.read_text(encoding="utf-8")), iso(a.as_of) if a.as_of else datetime.now(timezone.utc), a.hop)
+        print("\n".join(f"{k}={v}" for k, v in c.items()))
+        return 0
+    if a.fetch_attempts:
+        a.fetch_attempts.write_text(json.dumps(fetch_attempts(json.loads(CFG.read_text(encoding="utf-8")), a.repo), ensure_ascii=False, indent=1) + "\n",
+                                    encoding="utf-8")
+        return 0
+    if a.data_dir is None:
+        ap.error("--data-dir is required")
     if a.record_failure:
         (a.data_dir / "status").mkdir(parents=True, exist_ok=True)
         log = a.log.read_text(encoding="utf-8", errors="replace")[-2000:] if a.log and a.log.is_file() else None
@@ -173,7 +287,14 @@ def main(argv=None) -> int:
                 raw, used = None, "NINGUNA"
         inputs[p] = dict(status=status, used=used, sha256=sha(raw) if raw else None, source_times=times, role=spec["role"], producer=spec["producer"])
         blobs[p] = raw
-    fingerprint = sha(json.dumps({p: v["sha256"] for p, v in inputs.items()}, sort_keys=True).encode())
+    att_doc = json.loads(a.attempts.read_text(encoding="utf-8")) if a.attempts and a.attempts.is_file() else None
+    attempts = {}
+    for spec in cfg.get("capture_attempts", []):
+        run_info = (att_doc or {}).get("workflows", {}).get(spec["workflow"])
+        attempts[spec["source_id"]] = attempt_status(spec, git_show(a.main_ref, spec["file"]), run_info)
+    # a new capture attempt (even a failed one) is published, so the viewer says explicitly that the last capture failed
+    fingerprint = sha(json.dumps(dict(inputs={p: v["sha256"] for p, v in inputs.items()},
+                                      attempts={k: (v["run_id"], v["result"]) for k, v in attempts.items()}), sort_keys=True).encode())
     if prev and prev.get("inputs_fingerprint") == fingerprint and not a.force:
         print(json.dumps(dict(result="SIN_CAMBIOS", fingerprint=fingerprint, previous_cycle=prev.get("cycle_id")), ensure_ascii=False))
         return 10
@@ -197,6 +318,22 @@ def main(argv=None) -> int:
         print(json.dumps(dict(result="CALIDAD_FALLIDA", errors=errs[:20]), ensure_ascii=False))
         return 3
     feed = json.loads((a.data_dir / ".staging/observation_feed_v0_1.json").read_text(encoding="utf-8"))
+    prev_src = (prev or {}).get("sources") or {}
+    new_obs = []
+    for s in feed["sources"]:
+        # three separate facts: last observation (data time), last capture attempt (when), and that attempt's result
+        s["last_observation_utc"] = s.get("source_time_utc")
+        at = attempts.get(s["id"])
+        if at:
+            s.update(last_attempt_utc=at["attempt_utc"], attempt_result=at["result"], attempt_detail_es=at["detail_es"],
+                     attempt_basis=at["basis"], attempt_run_url=at["run_url"])
+        old = (prev_src.get(s["id"]) or {}).get("source_time_utc")
+        if s.get("source_time_utc") and old and iso(s["source_time_utc"]) > iso(old):
+            new_obs.append(s["id"])
+    change = "PRIMER_CICLO" if not prev else ("OBSERVACIONES_NUEVAS" if new_obs else
+                                             ("SOLO_INTENTO_DE_CAPTURA" if any(prev.get("attempts", {}).get(k, {}).get("run_id") != v["run_id"]
+                                                                              for k, v in attempts.items()) else "ENTRADAS_REVISADAS"))
+    (a.data_dir / ".staging/observation_feed_v0_1.json").write_text(json.dumps(feed, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     spec = importlib.util.spec_from_file_location("sem_live_counts", ROOT / "scripts/v09_build_semaforo.py")
     sem = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(sem)
@@ -208,13 +345,16 @@ def main(argv=None) -> int:
             st = sem.evaluate(cp, S, now)["state"]
             counts[st] = counts.get(st, 0) + 1
     live = dict(mode="LIVE_RESEARCH", **GUARDS, cycle_id=cycle_id, built_at_utc=now.isoformat(), main_sha=main_sha,
-                previous_cycle_id=(prev or {}).get("cycle_id"), inputs=inputs, feed=feed, not_connected_es=cfg["not_connected_es"],
+                previous_cycle_id=(prev or {}).get("cycle_id"), inputs=inputs, feed=feed, attempts=attempts, change_kind=change,
+                new_observations=new_obs, not_connected_es=cfg["not_connected_es"],
                 note_es="Paquete reconstruido automáticamente tras una captura de los workflows existentes de main. Investigación privada: no es una alerta.")
     bundle["live"] = live
     text = json.dumps(bundle, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n"
     manifest = dict(schema_version="irfen_v091_live_manifest_v0_1", **GUARDS, cycle_id=cycle_id, built_at_utc=now.isoformat(), main_ref=a.main_ref,
-                    main_sha=main_sha, inputs_fingerprint=fingerprint, inputs=inputs, steps=steps,
-                    sources={s["id"]: dict(status=s["status"], source_time_utc=s["source_time_utc"], age_minutes=s["age_minutes"]) for s in feed["sources"]},
+                    main_sha=main_sha, inputs_fingerprint=fingerprint, inputs=inputs, steps=steps, change_kind=change, new_observations=new_obs,
+                    attempts=attempts,
+                    sources={s["id"]: dict(status=s["status"], source_time_utc=s["source_time_utc"], age_minutes=s["age_minutes"],
+                                           last_attempt_utc=s.get("last_attempt_utc"), attempt_result=s.get("attempt_result")) for s in feed["sources"]},
                     semaforo_at_build=counts, bundle=dict(path="current/surveillance_view_v0_1.json", sha256=sha(text.encode()), bytes=len(text.encode())),
                     previous=dict(cycle_id=(prev or {}).get("cycle_id"), bundle_sha256=((prev or {}).get("bundle") or {}).get("sha256")))
     # atomic publication: write to staging, then rename into current/
@@ -228,7 +368,7 @@ def main(argv=None) -> int:
         (stg / n).replace(cur / n)  # manifest last: a reader never sees a manifest pointing to a bundle not yet written
     (a.data_dir / "cycles" / f"{cycle_id}.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     stg.rmdir()
-    print(json.dumps(dict(result="PUBLICADO", cycle_id=cycle_id, semaforo=counts, sources=manifest["sources"],
+    print(json.dumps(dict(result="PUBLICADO", cycle_id=cycle_id, change_kind=change, new_observations=new_obs, semaforo=counts, sources=manifest["sources"],
                           inputs={p: (v["status"], v["used"]) for p, v in inputs.items()}), ensure_ascii=False))
     return 0
 
