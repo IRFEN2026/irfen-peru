@@ -37,7 +37,8 @@ class Bundle(unittest.TestCase):
         self.assertFalse(man["public_alerting"] or man["predictive_engine_enabled"] or man["merged_into_main"])
         outputs = {"site/v09/vigilancia.html", "site/data/v09/surveillance_view_v0_1.json",
                    "research/v09/private_demo/irfen_vigilancia_privada.html", "scripts/v09_build_surveillance_view.py",
-                   "scripts/v09_build_surveillance_demo.py", "qa/replay_tools/v09_surveillance_view_smoke.py"}
+                   "scripts/v09_build_surveillance_demo.py", "qa/replay_tools/v09_surveillance_view_smoke.py",
+                   "scripts/v09_extract_reference_basemap.py", "data/v09/sources/natural_earth_reference/peru_reference_v0_1.json"}
         sha = {rel: hashlib.sha256((ROOT / rel).read_bytes()).hexdigest() for rel in man["files"]}
         moved = [rel for rel in man["files"] if rel not in outputs and sha[rel] != man["files"][rel]]
         if moved:

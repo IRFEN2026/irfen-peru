@@ -13,6 +13,28 @@
 | Manifiesto | `research/v09/RESEARCH_PREVIEW_1_MANIFEST.json`, con el SHA-256 de cada archivo publicado y de sus datos de entrada |
 | Copia privada alojada | Página privada de claude.ai «Vigilancia costera IRFEN», propiedad de la cuenta del propietario. Es una comodidad, **no la fuente de verdad**. |
 
+## Interfaz (revisión UX del 02-11-2026)
+
+**Barra superior compacta**
+- nombre de la vista;
+- fecha y hora de corte;
+- estado («Datos congelados» o «Al día»);
+- búsqueda de ciudad o departamento;
+- botones Capas, Información, Fuentes, Limitaciones y Panel.
+
+**Distribución**
+- El mapa ocupa casi toda la pantalla y el panel lateral se puede ocultar.
+- Los textos largos pasan a ventanas de diálogo.
+
+**Mapa base**
+- En la página del repositorio: CARTO Voyager con nombres u OpenStreetMap.
+- En la copia de un solo archivo, o si las teselas no cargan: referencia vectorial de Natural Earth v5.1.2 (dominio público), con el contorno del Perú, los países vecinos, los 26 departamentos y 89 ciudades. Se extrae con `scripts/v09_extract_reference_basemap.py` y queda en `data/v09/sources/natural_earth_reference/`. Sirve de orientación; no es un límite oficial.
+
+**Capas**
+- Un panel único con la fecha de cada capa.
+- Un recuadro «Estás viendo» con las capas activas y la leyenda de lluvia.
+- Lista explícita de lo que no está disponible: nubosidad, lluvia en tiempo real, GOES-19 RRQPE y caudal en tiempo real.
+
 ## Fecha del último dato (UTC)
 
 | Fuente | Último dato |

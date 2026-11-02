@@ -36,6 +36,7 @@ STATIONS = ROOT / "config/v09_north_hydrometric_stations_v0_1.json"
 CATCH = ROOT / "data/v09/research/anticipation/north_catchments_v0_1.json"
 PECHP = ROOT / "data/v09/research/historical/pechp_daily_v0_1.json"
 EVAL = ROOT / "data/v09/research/anticipation/anticipation_evaluation_v0_1.json"
+REFERENCE = ROOT / "data/v09/sources/natural_earth_reference/peru_reference_v0_1.json"
 TUMBES_EV = ROOT / "site/data/validation/phase2_discovery_evidence/tumbes_rio_tumbes_initial_context_2019_2026.json"
 COAST = ["TUMBES", "PIURA", "LAMBAYEQUE", "LA LIBERTAD", "ANCASH", "LIMA", "CALLAO", "ICA", "AREQUIPA", "MOQUEGUA", "TACNA"]
 WINDOWS = [1, 3, 6, 24, 72]
@@ -424,7 +425,17 @@ def build() -> dict:
              layers=["inventario", "centros poblados ANA", "geometrías IRFEN"], realtime="Sin observación directa",
              avisos="ACP-QUEBRADAS (INDECI/COEN)"),
     ]
+    ref = load(REFERENCE)
+    reference = dict(status="PENDIENTE") if not ref else dict(status="OK", provenance=ref["provenance"], countries=ref["countries"],
+                                                            departments=ref["departments"], cities_fields=ref["cities_fields"], cities=ref["cities"])
+    layers_unavailable = [
+        dict(id="nubosidad", label="Nubosidad / imagen de nubes", reason="No integrada en esta vista (no hay producto de nubes archivado)."),
+        dict(id="lluvia_tiempo_real", label="Lluvia en tiempo real", reason="No disponible: IMERG Early llega con horas de retraso y en esta versión está congelado."),
+        dict(id="goes_rrqpe", label="GOES-19 tasa de lluvia (RRQPE)", reason="Solo existe para zonas del norte en el panel «Lluvia y avisos (zonas)»; no se incluye aquí."),
+        dict(id="caudal", label="Caudal o nivel de ríos en tiempo real", reason="No disponible (sin acceso automático permitido ni serie publicada)."),
+    ]
     return dict(schema_version="irfen_v09_surveillance_view_v0_1", **GUARDS, built_from_dashboard_at_utc=dash["built_at_utc"],
+                reference=reference, layers_unavailable=layers_unavailable,
                 disclaimer_es=("Vista privada de vigilancia científica (RESEARCH_ONLY / TEST_ONLY). No es un sistema de alerta, no predice crecidas, "
                                "huaicos ni inundaciones, y no sustituye a SENAMHI, INDECI ni a las autoridades. La ausencia de datos no significa ausencia de peligro."),
                 coast_departments=COAST, sources=sources, admin=admin, rain=dict(north_zones=nz, coast=cr, windows_h=WINDOWS), avisos=av,

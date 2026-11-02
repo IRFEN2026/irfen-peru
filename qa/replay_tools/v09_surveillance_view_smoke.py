@@ -67,22 +67,46 @@ def run(out: Path, local_leaflet: Path | None) -> dict:
             page.goto(origin + "/v09/vigilancia.html", wait_until="load")
             page.wait_for_selector("body[data-ready='1']", timeout=20000)
             chk = {}
-            chk["guard_visible"] = page.locator("#guard").is_visible()
-            chk["chips"] = page.locator("#chips .chip").count()
-            chk["summary_rows"] = page.locator("#tab-resumen tbody tr").count()
+            page.screenshot(path=str(out / f"{name}_load.png"), full_page=False)
+            chk["map_share_of_viewport"] = page.evaluate("(()=>{const r=document.getElementById('map').getBoundingClientRect();"
+                                                         "return Math.round(100*Math.max(0,Math.min(r.bottom,innerHeight)-Math.max(r.top,0))*r.width/(innerWidth*innerHeight))})()")
+            chk["bar_height"] = page.evaluate("Math.round(document.getElementById('bar').getBoundingClientRect().height)")
+            chk["state_chip"] = page.locator("#state").inner_text()
+            chk["viewing_box"] = page.locator("#viewing").inner_text()[:160]
             chk["leaflet"] = page.evaluate("!!window.L")
-            chk["layers"] = page.locator("#layerBox input").count()
+            page.locator("#bInfo").click()
+            chk["guard_visible"] = page.locator("#guard").is_visible()
+            page.locator("#dlg-info [data-close]").click()
+            for btn in ("bSources", "bLimits"):
+                page.locator(f"#{btn}").click()
+                chk[btn] = page.locator("dialog[open] .db").inner_text()[:60]
+                page.locator("dialog[open] [data-close]").click()
+            if not page.locator("#layers").is_visible():
+                page.locator("#bLayers").click()
+            chk["layers"] = page.locator("#layers input").count()
+            chk["layers_unavailable"] = page.locator("#layers .na-item").count()
             for w in ("1 h", "3 h", "6 h", "72 h", "24 h"):
                 page.locator("#win button", has_text=w).click()
-            chk["legend"] = page.locator("#legend").inner_text()[:80]
-            page.select_option("#dept", "PIURA")
+            page.locator("#layers input[data-layer=ana]").check()
+            page.locator("#layers input[data-layer=uh]").check()
+            chk["legend"] = page.locator("#viewing .legend").inner_text()[:80]
+            page.screenshot(path=str(out / f"{name}_layers.png"), full_page=False)
+            page.locator("#bLayers").click()
+            page.fill("#search", "Chiclayo")
+            page.locator("#searchForm button").click()
+            chk["search_zoom"] = page.evaluate("document.querySelector('.leaflet-container') && Math.round(window.__z||0)")
+            page.screenshot(path=str(out / f"{name}_chiclayo.png"), full_page=False)
+            page.fill("#search", "Arequipa (departamento)")
+            page.locator("#searchForm button").click()
+            chk["summary_rows"] = page.locator("#tab-resumen tbody tr").count()
             chk["dept_card"] = page.locator("#tab-resumen .card h2").first.inner_text()
+            page.select_option("#dept", "PIURA")
+            chk["dept_card_select"] = page.locator("#tab-resumen .card h2").first.inner_text()
             page.screenshot(path=str(out / f"{name}_piura.png"), full_page=False)
             tabs = {}
-            for t in ("lluvia", "avisos", "rios", "quebradas", "datos"):
+            for t in ("lluvia", "avisos", "rios", "quebradas"):
                 page.locator(f"#t-{t}").click()
                 tabs[t] = len(page.locator(f"#tab-{t}").inner_text())
-                page.screenshot(path=str(out / f"{name}_{t}.png"), full_page=False)
             chk["tabs_text_len"] = tabs
             page.locator("#t-avisos").click()
             page.select_option("#fst", "ALL")
@@ -108,7 +132,7 @@ def run(out: Path, local_leaflet: Path | None) -> dict:
         b.close()
     httpd.shutdown()
     report["ok"] = all(not r["errors"] and not r["broken_internal_links"] and not r["checks"]["overflow_x"] and r["checks"]["guard_visible"]
-                       and r["checks"]["summary_rows"] == 11 for r in report["runs"])
+                       and r["checks"]["summary_rows"] == 11 and r["checks"]["map_share_of_viewport"] >= 55 for r in report["runs"])
     return report
 
 

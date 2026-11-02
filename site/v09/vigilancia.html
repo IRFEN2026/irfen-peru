@@ -4,79 +4,97 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <style>
-:root{--bg:#f4f6f8;--surface:#fff;--surface-2:#f1f4f7;--ink:#13212e;--ink-2:#4b5b69;--ink-3:#6c7a86;--border:#d8e0e7;--accent:#1f5f8b;
+/* Layout: compact bar · map takes the screen · side panel (desktop) or below (phone) · dialogs for long text */
+:root{--bg:#eef2f5;--surface:#fff;--surface-2:#f1f4f7;--ink:#13212e;--ink-2:#4b5b69;--ink-3:#6c7a86;--border:#d8e0e7;--accent:#1f5f8b;
 --warn-bg:#fff4d6;--warn-ink:#6b4e00;--ok-bg:#e3f1e6;--ok-ink:#1e5631;--bad-bg:#fbe4e0;--bad-ink:#8a2a17;--na-bg:#eceff2;--na-ink:#4b5b69;
---r1:#e8f1fa;--r2:#bcd6ee;--r3:#86b6df;--r4:#4f8fc9;--r5:#2563a6;--r6:#123f73;--map:#dfe8ef}
+--r1:#e8f1fa;--r2:#bcd6ee;--r3:#86b6df;--r4:#4f8fc9;--r5:#2563a6;--r6:#123f73;--sea:#cfe0ec;--land:#f7f5ef;--land-2:#ece8dd;--line:#7d8b96}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#11161b;--surface:#1a2129;--surface-2:#222b35;--ink:#e8edf2;--ink-2:#b5c1cc;--ink-3:#93a1ad;--border:#33404c;--accent:#7cb5e3;
---warn-bg:#3b3014;--warn-ink:#f2d58a;--ok-bg:#1d3526;--ok-ink:#9fd8b0;--bad-bg:#3d211b;--bad-ink:#f3b2a3;--na-bg:#2a333c;--na-ink:#b5c1cc;--map:#1e2830;color-scheme:dark}}
+--warn-bg:#3b3014;--warn-ink:#f2d58a;--ok-bg:#1d3526;--ok-ink:#9fd8b0;--bad-bg:#3d211b;--bad-ink:#f3b2a3;--na-bg:#2a333c;--na-ink:#b5c1cc;--sea:#16232e;--land:#232a31;--land-2:#1d242a;--line:#8796a3;color-scheme:dark}}
 :root[data-theme="dark"]{--bg:#11161b;--surface:#1a2129;--surface-2:#222b35;--ink:#e8edf2;--ink-2:#b5c1cc;--ink-3:#93a1ad;--border:#33404c;--accent:#7cb5e3;
---warn-bg:#3b3014;--warn-ink:#f2d58a;--ok-bg:#1d3526;--ok-ink:#9fd8b0;--bad-bg:#3d211b;--bad-ink:#f3b2a3;--na-bg:#2a333c;--na-ink:#b5c1cc;--map:#1e2830;color-scheme:dark}
-*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-a{color:var(--accent)}header.top{padding:12px max(16px,env(safe-area-inset-right,0px)) 8px max(16px,env(safe-area-inset-left,0px));background:var(--surface);border-bottom:1px solid var(--border)}
-h1{font-size:18px;margin:0 0 2px}h2{font-size:15px;margin:0 0 8px}h3{font-size:13.5px;margin:12px 0 6px}
-.sub{color:var(--ink-2);font-size:12.5px;margin:0}.guard{background:var(--warn-bg);color:var(--warn-ink);padding:8px 16px;font-size:12.5px;border-bottom:1px solid var(--border)}
-.chips{display:flex;gap:6px;flex-wrap:wrap;padding:8px 16px;background:var(--surface);border-bottom:1px solid var(--border)}
+--warn-bg:#3b3014;--warn-ink:#f2d58a;--ok-bg:#1d3526;--ok-ink:#9fd8b0;--bad-bg:#3d211b;--bad-ink:#f3b2a3;--na-bg:#2a333c;--na-ink:#b5c1cc;--sea:#16232e;--land:#232a31;--land-2:#1d242a;--line:#8796a3;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent)}button{font:inherit}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:6px max(16px,env(safe-area-inset-right,0px)) 6px max(16px,env(safe-area-inset-left,0px));background:var(--surface);border-bottom:1px solid var(--border);min-height:48px}
+.brand{font-weight:700;font-size:15px;white-space:nowrap}.brand small{font-weight:600;font-size:11px;color:var(--ink-2);margin-left:4px;padding:1px 6px;border:1px solid var(--border);border-radius:999px}
 .chip{font-size:12px;border-radius:999px;padding:3px 9px;border:1px solid var(--border);background:var(--surface-2);color:var(--ink-2);max-width:100%}
-.chip b{color:var(--ink)}.chip.ok{background:var(--ok-bg);color:var(--ok-ink);border-color:transparent}.chip.old{background:var(--bad-bg);color:var(--bad-ink);border-color:transparent}
-.chip.na{background:var(--na-bg);color:var(--na-ink);border-color:transparent}
-.layout{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:12px;padding:12px 16px}
-.mapcard,.panel{background:var(--surface);border:1px solid var(--border);border-radius:8px;min-width:0}
-.mapcard{padding:8px;display:flex;flex-direction:column;gap:8px}
-#map{height:calc(100vh - 250px);min-height:460px;border-radius:6px;background:var(--map);position:relative;overflow:hidden}
-.controls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:12.5px}
-.seg{display:inline-flex;border:1px solid var(--border);border-radius:6px;overflow:hidden}.seg button{border:0;background:var(--surface);color:var(--ink-2);padding:6px 10px;font:inherit;cursor:pointer}
-.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}.seg button:focus-visible,.tabs button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-select{font:inherit;font-size:13px;padding:6px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--ink);max-width:100%}
-details.layers summary{cursor:pointer;font-weight:600}details.layers label{display:block;margin:4px 0}
-.legend{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12px;color:var(--ink-2);align-items:center}.sw{display:inline-block;width:14px;height:12px;border-radius:2px;vertical-align:-2px;margin-right:3px;border:1px solid rgba(0,0,0,.15)}
-.panel{display:flex;flex-direction:column;max-height:calc(100vh - 150px)}
-.tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--border);padding:6px 6px 0;flex:0 0 auto}
-.tabs button{border:0;background:none;color:var(--ink-2);font:inherit;font-size:13px;padding:8px 10px;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap}
+.chip b{color:var(--ink)}.chip.ok{background:var(--ok-bg);color:var(--ok-ink);border-color:transparent}.chip.old{background:var(--bad-bg);color:var(--bad-ink);border-color:transparent}.chip.na{background:var(--na-bg);color:var(--na-ink);border-color:transparent}
+.grow{flex:1 1 auto}.search{display:flex;gap:4px;align-items:center}.search input{font:inherit;font-size:13px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;width:180px;max-width:40vw;background:var(--surface);color:var(--ink)}
+.btns{display:flex;gap:4px;flex-wrap:wrap}.btn{border:1px solid var(--border);background:var(--surface);color:var(--ink);border-radius:6px;padding:5px 9px;font-size:13px;cursor:pointer}
+.btn[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}.btn:focus-visible,.seg button:focus-visible,.tabs button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 380px;height:calc(100dvh - 49px);min-height:520px}
+.stage.nopanel{grid-template-columns:minmax(0,1fr) 0}.stage.nopanel .panel{display:none}
+.mapwrap{position:relative;min-width:0}#map{position:absolute;inset:0;background:var(--sea);overflow:hidden}
+.panel{background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;min-width:0;min-height:0}
+.tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--border);padding:4px 6px 0;flex:0 0 auto}
+.tabs button{border:0;background:none;color:var(--ink-2);font-size:13px;padding:7px 9px;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap}
 .tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink);font-weight:600}
-.tabpanel{padding:12px 14px;overflow:auto;flex:1 1 auto}.tabpanel[hidden]{display:none}
-table{border-collapse:collapse;width:100%;font-size:12.5px}th,td{text-align:left;padding:5px 4px;border-bottom:1px solid var(--border);vertical-align:top}
+.tabpanel{padding:10px 12px;overflow:auto;flex:1 1 auto;min-height:0}.tabpanel[hidden]{display:none}
+/* map overlays */
+.ov{position:absolute;z-index:500;background:var(--surface);color:var(--ink);border:1px solid var(--border);border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.15);font-size:12.5px}
+#layers{top:10px;left:56px;width:300px;max-height:calc(100% - 150px);overflow:auto;padding:8px 10px}#layers[hidden]{display:none}
+#layers h3{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-3);margin:10px 0 4px}#layers h3:first-child{margin-top:2px}
+#layers label{display:flex;gap:6px;align-items:flex-start;margin:4px 0;line-height:1.3}#layers label small,.na-item small{display:block;color:var(--ink-3);font-size:11px}
+.na-item{margin:4px 0 4px 22px;color:var(--ink-3)}.na-item b{color:var(--ink-2);font-weight:600}
+#viewing{left:10px;bottom:22px;max-width:min(430px,calc(100% - 20px));padding:6px 10px}#viewing summary{cursor:pointer;font-weight:600;font-size:12px}
+#viewing ul{margin:4px 0 0;padding-left:16px;max-height:30vh;overflow:auto}#viewing li{margin:1px 0}
+
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;margin:2px 0 4px}.seg button{border:0;background:var(--surface);color:var(--ink-2);padding:4px 8px;font-size:12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.legend{display:flex;flex-wrap:wrap;gap:3px 8px;align-items:center;font-size:11.5px;color:var(--ink-2);margin-top:4px}.sw{display:inline-block;width:13px;height:11px;border-radius:2px;vertical-align:-2px;margin-right:3px;border:1px solid rgba(0,0,0,.15)}
+#msg{font-size:12px;color:var(--warn-ink);margin:0}
+.city-label{background:transparent;border:0;box-shadow:none;color:var(--ink);font-weight:600;font-size:11.5px;text-shadow:0 0 3px var(--land),0 0 3px var(--land),0 0 2px var(--land);padding:0}
+.city-label::before{display:none}.dep-label{background:transparent;border:0;box-shadow:none;color:var(--ink-3);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;padding:0}.dep-label::before{display:none}
+/* panel content */
+h2{font-size:15px;margin:0 0 8px}h3{font-size:13.5px;margin:12px 0 6px}
+table{border-collapse:collapse;width:100%;font-size:12.5px}th,td{text-align:left;padding:4px 4px;border-bottom:1px solid var(--border);vertical-align:top}
 th{color:var(--ink-2);font-weight:600}td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}.tw{overflow-x:auto}
 .note{font-size:12px;color:var(--ink-2)}.empty{font-size:12.5px;background:var(--na-bg);color:var(--na-ink);border-radius:6px;padding:8px 10px}
-.card{border:1px solid var(--border);border-radius:6px;padding:9px 10px;margin:8px 0;background:var(--surface)}
+.card{border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin:8px 0;background:var(--surface)}
 .tag{display:inline-block;font-size:11px;border-radius:4px;padding:1px 6px;margin-right:4px;background:var(--surface-2);color:var(--ink-2);border:1px solid var(--border)}
 .tag.lv-ROJO{background:#b3261e;color:#fff;border-color:#b3261e}.tag.lv-NARANJA{background:#e0761c;color:#1b1206;border-color:#e0761c}.tag.lv-AMARILLO{background:#f2c94c;color:#2a2205;border-color:#f2c94c}
-.tag.st-VIGENTE{background:var(--ok-bg);color:var(--ok-ink);border-color:transparent}.tag.st-FUTURO{background:var(--warn-bg);color:var(--warn-ink);border-color:transparent}
-.tag.st-VENCIDO{background:var(--na-bg);color:var(--na-ink);border-color:transparent}
+.tag.st-VIGENTE{background:var(--ok-bg);color:var(--ok-ink);border-color:transparent}.tag.st-FUTURO{background:var(--warn-bg);color:var(--warn-ink);border-color:transparent}.tag.st-VENCIDO{background:var(--na-bg);color:var(--na-ink);border-color:transparent}
 .ph{border-left:4px solid var(--border);padding-left:8px}.ph.CRECIDA_RIO{border-color:#2563a6}.ph.INUNDACION_PLUVIAL{border-color:#0f8a7e}.ph.ACTIVACION_QUEBRADAS{border-color:#a0522d}
 .filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}.filters label{font-size:12px}
+select{font:inherit;font-size:13px;padding:5px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--ink);max-width:100%}
 svg.chart{width:100%;height:auto;display:block}svg.chart .ax{stroke:var(--border)}svg.chart text{fill:var(--ink-3);font-size:10px}svg.chart path.l{fill:none;stroke:#2563a6;stroke-width:1.6}
-#msg{font-size:12px;color:var(--warn-ink)}footer{font-size:11.5px;color:var(--ink-3);padding:6px 16px 16px}
+dialog{border:1px solid var(--border);border-radius:10px;padding:0;max-width:min(680px,calc(100vw - 32px));width:100%;background:var(--surface);color:var(--ink)}
+dialog::backdrop{background:rgba(10,20,30,.45)}dialog .dh{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border)}
+dialog .dh h2{margin:0}dialog .db{padding:10px 14px 14px;max-height:70vh;overflow:auto}
+.guard{background:var(--warn-bg);color:var(--warn-ink);padding:8px 10px;border-radius:6px;font-size:12.5px}
 .leaflet-popup-content{font-size:12.5px;line-height:1.45}.leaflet-container{font:inherit}
-@media (max-width:900px){.layout{display:flex;flex-direction:column;padding:8px 16px}#map{height:58vh;min-height:340px}.panel{max-height:none}}
+@media (max-width:900px){.bar{gap:4px 6px;padding-block:5px}#cutoff{display:none}.brand small{display:none}.search input{width:120px}.btns{flex:1 1 0;min-width:0;flex-wrap:nowrap;overflow-x:auto}.btn{padding:4px 8px;white-space:nowrap}
+ .stage{display:flex;flex-direction:column;height:auto}.mapwrap{height:calc(100dvh - 96px);min-height:380px}.panel{border-left:0;border-top:1px solid var(--border)}
+ .stage.nopanel .panel{display:none}#layers{left:10px;top:10px;width:min(300px,calc(100% - 20px));max-height:calc(100% - 90px)}.search input{width:150px}
+ #viewing{bottom:10px;font-size:11.5px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style></head><body>
-<header class="top"><h1>IRFEN v0.9 · Vigilancia científica de la costa peruana (Tumbes–Tacna)</h1>
-<p class="sub"><b>Research Preview 1</b> · versión congelada de investigación</p>
-<p class="sub">Vista <b>privada</b> de investigación · <a href="resumen.html">Resumen</a> · <a href="peru.html">Mapa del Perú</a> · <a href="territorio.html">Visor costa norte / Rímac</a> · <a href="inventario.html">Inventario</a> · <a href="index.html">Lluvia y avisos (zonas)</a></p></header>
-<div class="guard" id="guard"><b>RESEARCH_ONLY · TEST_ONLY.</b> No es un sistema de alerta, no predice crecidas, huaicos ni inundaciones y no sustituye a SENAMHI, INDECI ni a las autoridades. <b>La ausencia de datos no significa ausencia de peligro.</b></div>
-<div class="chips" id="chips" aria-live="polite">Cargando datos…</div>
-<div class="guard" id="frozen" hidden></div>
-<main class="layout">
-<section class="mapcard" aria-label="Mapa">
- <div class="controls">
-  <span>Lluvia IMERG:</span><span class="seg" id="win" role="group" aria-label="Ventana de lluvia acumulada"></span>
-  <label>Departamento <select id="dept"><option value="">Toda la costa</option></select></label>
-  <details class="layers"><summary>Capas</summary><div id="layerBox"></div></details>
- </div>
- <div id="map" aria-label="Mapa de la costa del Perú con capas de investigación"></div>
- <div class="legend" id="legend"></div>
- <p id="msg" role="status"></p>
-</section>
-<section class="panel" aria-label="Información">
- <div class="tabs" role="tablist" id="tabs"></div>
- <div class="tabpanel" id="tab-resumen" role="tabpanel"></div>
- <div class="tabpanel" id="tab-lluvia" role="tabpanel" hidden></div>
- <div class="tabpanel" id="tab-avisos" role="tabpanel" hidden></div>
- <div class="tabpanel" id="tab-rios" role="tabpanel" hidden></div>
- <div class="tabpanel" id="tab-quebradas" role="tabpanel" hidden></div>
- <div class="tabpanel" id="tab-datos" role="tabpanel" hidden></div>
-</section>
+<header class="bar" id="bar">
+ <span class="brand">IRFEN · Vigilancia costera <small>Research Preview 1</small></span>
+ <span class="chip" id="cutoff">Corte: …</span><span class="chip" id="state">Cargando…</span>
+ <span class="grow"></span>
+ <form class="search" id="searchForm" role="search"><input id="search" list="places" placeholder="Buscar ciudad o departamento" aria-label="Buscar ciudad o departamento" autocomplete="off"><datalist id="places"></datalist><button class="btn" type="submit">Ir</button></form>
+ <span class="btns"><button class="btn" id="bLayers" type="button" aria-pressed="false" aria-controls="layers">Capas</button><button class="btn" id="bInfo" type="button">Información</button><button class="btn" id="bSources" type="button">Fuentes</button><button class="btn" id="bLimits" type="button">Limitaciones</button><button class="btn" id="bPanel" type="button" aria-pressed="true">Panel</button></span>
+</header>
+<main class="stage" id="stage">
+ <section class="mapwrap" aria-label="Mapa">
+  <div id="map" aria-label="Mapa del Perú con capas de investigación IRFEN"></div>
+  <div class="ov" id="layers" hidden aria-label="Capas del mapa"></div>
+  <div class="ov" id="viewing" aria-live="polite"><details id="viewDetails"><summary id="viewSummary">Estás viendo</summary><ul id="viewList"></ul></details><div id="viewLegend"></div></div>
+ </section>
+ <section class="panel" aria-label="Información por pestañas">
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <div class="tabpanel" id="tab-resumen" role="tabpanel"></div>
+  <div class="tabpanel" id="tab-lluvia" role="tabpanel" hidden></div>
+  <div class="tabpanel" id="tab-avisos" role="tabpanel" hidden></div>
+  <div class="tabpanel" id="tab-rios" role="tabpanel" hidden></div>
+  <div class="tabpanel" id="tab-quebradas" role="tabpanel" hidden></div>
+ </section>
 </main>
-<footer>Mapa base © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> (opcional). Límites INEI referenciales (SERFOR). Lluvia: NASA GPM IMERG Early V07. Avisos: SENAMHI reproducidos por INDECI/COEN. Guardas: production_use=false · public_alerting=false · activation_gate=BLOCKED · motor predictivo desactivado.</footer>
+<dialog id="dlg-info" aria-labelledby="h-info"><div class="dh"><h2 id="h-info">Información</h2><button class="btn" data-close type="button">Cerrar</button></div><div class="db">
+ <div class="guard" id="guard"><b>RESEARCH_ONLY · TEST_ONLY.</b> No es un sistema de alerta, no predice crecidas, huaicos ni inundaciones y no sustituye a SENAMHI, INDECI ni a las autoridades. <b>La ausencia de datos no significa ausencia de peligro.</b></div>
+ <div id="infoBody"></div><p class="note" id="navLinks"></p></div></dialog>
+<dialog id="dlg-sources" aria-labelledby="h-sources"><div class="dh"><h2 id="h-sources">Fuentes, fecha y calidad</h2><button class="btn" data-close type="button">Cerrar</button></div><div class="db" id="sourcesBody"></div></dialog>
+<dialog id="dlg-limits" aria-labelledby="h-limits"><div class="dh"><h2 id="h-limits">Limitaciones y datos pendientes</h2><button class="btn" data-close type="button">Cerrar</button></div><div class="db" id="limitsBody"></div></dialog>
 <script id="app">
 "use strict";
 (async function(){
@@ -86,146 +104,176 @@ const url=u=>/^https:\/\//.test(String(u||""))?safe(u):null;
 const NOW=Date.now();
 const SINGLE=!!document.getElementById("bundle");  // single-file demo: no external tiles, no hash routing
 const pageLink=(href,text)=>SINGLE?safe(text):'<a href="'+safe(href)+'">'+safe(text)+"</a>";
-if(SINGLE)document.querySelector("header.top .sub").textContent="Vista privada de investigación · versión de un solo archivo (las demás páginas v0.9 están en la rama del repositorio).";
 const title=s=>String(s||"").toLowerCase().replace(/(^|\s|-)(\p{L})/gu,(m,a,b)=>a+b.toUpperCase());
+const norm=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim();
 function fmt(iso){if(!iso)return"sin fecha";const d=new Date(iso);if(isNaN(d))return"fecha no válida";
  return d.toLocaleString("es-PE",{timeZone:"America/Lima",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})+" (Lima)";}
 function age(iso){if(!iso)return null;const t=Date.parse(iso);if(isNaN(t))return null;return (NOW-t)/3600000;}
 function ageTxt(iso){const h=age(iso);if(h===null)return"sin fecha";if(h<-0.1)return"fecha futura (no válida)";if(h<1)return"hace "+Math.round(h*60)+" min";if(h<48)return"hace "+h.toFixed(1).replace(".",",")+" h";return"hace "+Math.round(h/24)+" días";}
-// ---------- load the bundle (inline for the single-file demo, otherwise from the data folder)
+// ---------- bundle (inline in the single-file copy, otherwise from the data folder)
 let D;
 try{const inline=document.getElementById("bundle");
  if(inline)D=JSON.parse(inline.textContent);else{const r=await fetch("../data/v09/surveillance_view_v0_1.json",{cache:"no-store"});if(!r.ok)throw Error("HTTP "+r.status);D=await r.json();}
-}catch(e){$("chips").textContent="No se pudo cargar el paquete de datos ("+e.message+"). Sin datos no se muestra nada: no significa ausencia de peligro.";return;}
+}catch(e){$("state").textContent="No se pudo cargar el paquete de datos ("+e.message+"). Sin datos no se muestra nada: no significa ausencia de peligro.";return;}
 const G=["production_use","public_alerting","operational_alerting_enabled","predictive_engine_enabled","notifications_enabled"];
 if(D.deployment_status!=="RESEARCH_ONLY"||D.test_mode!=="TEST_ONLY"||D.activation_gate!=="BLOCKED"||G.some(k=>D[k]!==false)||D.decision_thresholds!==null){
- $("chips").textContent="Guardas científicas no válidas: la vista no se muestra.";return;}
-// ---------- freshness chips
-const chip=(label,iso,staleMin,extra)=>{const h=age(iso);let cls="na",st="sin fecha de actualización";
- if(iso&&h!==null){if(h<-0.1){cls="old";st="fecha no válida";}else if(staleMin&&h*60>staleMin){cls="old";st="antiguo · "+ageTxt(iso);}else{cls="ok";st=ageTxt(iso);}}
- return '<span class="chip '+cls+'" title="'+safe(fmt(iso))+'"><b>'+safe(label)+'</b> · '+safe(st)+(extra?" · "+safe(extra):"")+"</span>";};
+ $("state").textContent="Guardas científicas no válidas: la vista no se muestra.";return;}
 const S=Object.fromEntries(D.sources.map(s=>[s.id,s]));
-$("chips").innerHTML=chip("Avisos INDECI/COEN",S.avisos?.updated_at_utc,S.avisos?.stale_after_minutes)+
- chip("IMERG norte (22 zonas)",S.imerg_north?.data_end_utc,S.imerg_north?.stale_after_minutes,"fin de ventana")+
- chip("IMERG costa (instantánea)",S.imerg_coast?.data_end_utc,S.imerg_coast?.stale_after_minutes,"fin de ventana")+
- '<span class="chip"><b>Paquete</b> · '+safe(fmt(D.built_from_dashboard_at_utc))+'</span><span class="chip na"><b>Caudal en tiempo real</b> · no disponible</span>';
-// ---------- frozen data: never present an old snapshot as current information
+// ---------- freshness: an old snapshot is never presented as current
 const staleOf=(iso,min)=>{const h=age(iso);return h===null||h<-0.1||(min&&h*60>min);};
 const STALE={avisos:staleOf(S.avisos?.updated_at_utc,S.avisos?.stale_after_minutes),coast:staleOf(S.imerg_coast?.data_end_utc,S.imerg_coast?.stale_after_minutes),
  north:staleOf(S.imerg_north?.data_end_utc,S.imerg_north?.stale_after_minutes)};
-const AVCUT=S.avisos?.updated_at_utc;
-if(STALE.avisos||STALE.coast||STALE.north){$("frozen").hidden=false;$("frozen").innerHTML="<b>Datos congelados, no actuales.</b> Avisos comprobados por última vez: "+safe(fmt(AVCUT))+
- " · lluvia costera hasta "+safe(fmt(S.imerg_coast?.data_end_utc))+" · lluvia norte hasta "+safe(fmt(S.imerg_north?.data_end_utc))+
- ". Los avisos emitidos después no aparecen y el estado «vigente» se refiere solo a los boletines capturados. Para la situación actual consulte SENAMHI e INDECI.";}
+const AVCUT=S.avisos?.updated_at_utc;const ANY=STALE.avisos||STALE.coast||STALE.north;
+const short=iso=>{const d=new Date(iso);return isNaN(d)?"sin fecha":d.toLocaleString("es-PE",{timeZone:"America/Lima",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});};
+$("cutoff").innerHTML="<b>Corte</b> "+safe(short(AVCUT))+" (Lima)";$("cutoff").title="Última comprobación de avisos: "+fmt(AVCUT);
+$("state").className="chip "+(ANY?"old":"ok");
+$("state").innerHTML=ANY?"<b>Datos congelados</b> · corte "+safe(short(AVCUT)):"<b>Al día</b> · "+safe(ageTxt(AVCUT));
+$("state").title="Avisos "+ageTxt(AVCUT)+" · lluvia costa hasta "+fmt(S.imerg_coast?.data_end_utc)+" · lluvia norte hasta "+fmt(S.imerg_north?.data_end_utc);
 // ---------- map
-if(!window.L){$("msg").textContent="No se pudo cargar la biblioteca del mapa (Leaflet). Las pestañas siguen disponibles.";}
-const map=window.L?L.map("map",{preferCanvas:true,zoomSnap:.5}).setView([-10.5,-77],5):null;
-let tileErr=0;
-const base=map&&!SINGLE?L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:16,attribution:'&copy; OpenStreetMap'}):null;
-if(base){base.on("tileerror",()=>{if(++tileErr===4)$("msg").textContent="El mapa base OpenStreetMap no carga en esta red; los límites y datos IRFEN siguen visibles.";});base.addTo(map);
- if(getComputedStyle(map.getPane("tilePane")).position!=="absolute"){$("map").dataset.leafletCss="missing";$("msg").textContent="No se aplicó la hoja de estilos de Leaflet: el mapa puede verse mal (no es un problema de los datos).";}}
-const layers={};const deptLayer={};
-function addLayer(id,label,layer,on){layers[id]={layer,label};const lab=document.createElement("label"),cb=document.createElement("input");cb.type="checkbox";cb.checked=!!on;cb.dataset.layer=id;
- cb.addEventListener("change",()=>{if(!map)return;cb.checked?map.addLayer(layer):map.removeLayer(layer);});lab.append(cb," "+label);$("layerBox").append(lab);if(on&&map)layer.addTo(map);}
-// departments
-const deps=D.admin?.departments?.features||[];
-if(map&&base)addLayer("base","Mapa base OpenStreetMap (opcional)",base,true);
-const BASEMSG=SINGLE?"Vista de un solo archivo: sin mapa base externo; se muestran los límites INEI y las capas IRFEN.":"";
-if(map&&deps.length){const dl=L.geoJSON({type:"FeatureCollection",features:deps},{style:{color:"#5b6b78",weight:1.4,fill:true,fillOpacity:0.02},
-  onEachFeature:(f,l)=>{deptLayer[f.properties.id]=l;l.on("click",()=>selectDept(f.properties.id));l.bindTooltip(safe(title(f.properties.name)),{sticky:true});}});
- addLayer("deps","Departamentos costeros (INEI referencial)",dl,true);}
-if(map&&D.admin?.provinces?.features?.length)addLayer("provs","Provincias (INEI referencial)",L.geoJSON(D.admin.provinces,{style:{color:"#8a99a6",weight:.6,fill:false,dashArray:"2,3"},interactive:false}),false);
+
+const map=window.L?L.map("map",{preferCanvas:true,zoomSnap:.5,minZoom:4,maxZoom:15}).setView([-9.2,-75.5],5):null;
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim()||"#888";
+const R={};  // registered layers: id -> {layer, label, sub(), on}
+let msg=window.L?"":"No se pudo cargar la biblioteca del mapa (Leaflet). El panel sigue disponible.";
+// base maps (external tiles only in the repository page)
+const BASES=(SINGLE||!window.L)?{}:{
+ voyager:{label:"Mapa con nombres (CARTO Voyager)",layer:L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",{subdomains:"abcd",maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'})},
+ osm:{label:"OpenStreetMap estándar",layer:L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:17,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'})}};
+let BASE=SINGLE?"vector":"voyager",tileErr=0;
+Object.values(BASES).forEach(b=>b.layer.on("tileerror",()=>{if(++tileErr===6){msg="El mapa base externo no carga en esta red: se usa la referencia vectorial (contorno, departamentos y ciudades).";setBase("vector");}}));
+// vector reference (always available, also in the single-file copy)
+const REF=D.reference||{};
+if(map){map.createPane("ref");map.getPane("ref").style.zIndex=250;}
+const refRenderer=map?L.canvas({pane:"ref"}):null;
+const refBase=map?L.layerGroup():null,cityLayer=map?L.layerGroup():null,cityLayerMinor=map?L.layerGroup():null,depLabels=map?L.layerGroup():null;
+if(map&&REF.status==="OK"){
+ L.geoJSON(REF.countries,{pane:"ref",renderer:refRenderer,style:f=>({color:css("--line"),weight:f.properties.iso==="PER"?1.6:.8,fillColor:f.properties.iso==="PER"?css("--land"):css("--land-2"),fillOpacity:1}),interactive:false}).addTo(refBase);
+ L.geoJSON(REF.departments,{pane:"ref",renderer:refRenderer,style:{color:css("--line"),weight:.6,fill:false,dashArray:"3,3"},interactive:false,onEachFeature:(f,l)=>{
+  const c=l.getBounds().getCenter();L.tooltip({permanent:true,direction:"center",className:"dep-label",interactive:false}).setLatLng(c).setContent(safe(f.properties.name)).addTo(depLabels);}}).addTo(refBase);
+}
+const CITIES=(REF.cities||[]).map(c=>({name:c[0],lat:c[1],lon:c[2],rank:c[3],kind:c[4]}));
+// primary labels: rank ≤ 6 and not within ~25 km of a larger city already labelled (avoids Lima/Callao overprinting)
+const primary=[];[...CITIES].sort((a,b)=>a.rank-b.rank).forEach(c=>{if(c.rank<=6&&!primary.some(p=>Math.hypot(p.lat-c.lat,p.lon-c.lon)<0.25))primary.push(c);});
+if(map)CITIES.forEach(c=>{const g=primary.includes(c)?cityLayer:cityLayerMinor;
+ const m=L.circleMarker([c.lat,c.lon],{radius:c.rank<=3?4:3,color:"#222",weight:1,fillColor:"#fff",fillOpacity:1,interactive:false});
+ m.bindTooltip(safe(c.name),{permanent:true,direction:"right",offset:[5,0],className:"city-label"});g.addLayer(m);});
+function setBase(k){if(!map)return;Object.values(BASES).forEach(b=>map.removeLayer(b.layer));
+ if(k!=="vector"&&BASES[k]){BASES[k].layer.addTo(map);map.removeLayer(refBase);}else{refBase.addTo(map);}
+ BASE=k;if(R.cities){R.cities.on=(k==="vector");cityZoom();}if($("layers").innerHTML)renderLayers();document.querySelectorAll('input[name=base]').forEach(i=>i.checked=i.value===k);renderViewing();}
+function cityZoom(){if(!map)return;const z=map.getZoom();const on=R.cities?.on;
+ [[cityLayer,on&&z>=5],[cityLayerMinor,on&&z>=7],[depLabels,R.deps?.on&&z>=6&&z<9]].forEach(([l,v])=>{if(!l)return;v?map.addLayer(l):map.removeLayer(l);});}
+if(map)map.on("zoomend",cityZoom);
+function register(id,label,layer,on,sub){R[id]={layer,label,on:!!on,sub:sub||(()=>"")};if(on&&map&&layer)layer.addTo(map);}
+function toggle(id,v){const r=R[id];if(!r)return;r.on=v;if(map&&r.layer){v?map.addLayer(r.layer):map.removeLayer(r.layer);}if(id==="cities"||id==="deps")cityZoom();renderViewing();}
+// INEI coastal departments and provinces
+const deps=D.admin?.departments?.features||[];const deptLayer={};
+const inei=S.inei?.updated_at_utc;
+if(map&&deps.length)register("deps","Departamentos costeros (INEI)",L.geoJSON({type:"FeatureCollection",features:deps},{style:{color:"#3d4f5d",weight:1.6,fill:true,fillOpacity:0},
+ onEachFeature:(f,l)=>{deptLayer[f.properties.id]=l;l.on("click",()=>selectDept(f.properties.id));l.bindTooltip(safe(title(f.properties.name)),{sticky:true});}}),true,()=>"límites censales referenciales · "+fmt(inei));
+if(map&&D.admin?.provinces?.features?.length)register("provs","Provincias costeras (INEI)",L.geoJSON(D.admin.provinces,{style:{color:"#6c7a86",weight:.7,fill:false,dashArray:"2,3"},interactive:false}),false,()=>"límites censales referenciales · "+fmt(inei));
+register("cities","Ciudades de referencia (Natural Earth)",null,true,()=>CITIES.length+" ciudades; las menores aparecen al acercar");
 // rain
-const BINS=[[0.1,"var(--r1)"],[1,"var(--r2)"],[5,"var(--r3)"],[10,"var(--r4)"],[25,"var(--r5)"],[50,"var(--r6)"]];
-const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v.slice(4,-1)).trim()||"#888";
+const BINS=[[0.1,"--r1"],[1,"--r2"],[5,"--r3"],[10,"--r4"],[25,"--r5"],[50,"--r6"]];
 const binColor=mm=>{let c=null;for(const [t,col] of BINS){if(mm>=t)c=col;}return c?css(c):null;};
-let WIN=(location.hash.match(/v=(\d+)h/)||[])[1]?((location.hash.match(/v=(\d+)h/))[1]+"h"):"24h";if(!["1h","3h","6h","24h","72h"].includes(WIN))WIN="24h";
+let WIN="24h";
 const rainCoast=map?L.layerGroup():null,rainZones=map?L.layerGroup():null;
-if(map){addLayer("rainCoast","Lluvia IMERG · celdas 0,1° en la costa (instantánea)",rainCoast,true);addLayer("rainZones","Lluvia IMERG · 22 zonas del norte (archivo continuo)",rainZones,false);}
-function drawRain(){if(!map)return;rainCoast.clearLayers();rainZones.clearLayers();const C=D.rain?.coast;let msg="";
+const coastSub=()=>{const w=D.rain?.coast?.windows?.[WIN];return w?("IMERG Early "+WIN.replace("h"," h")+" hasta "+fmt(w.end_utc)+(STALE.coast?" · congelada ("+ageTxt(w.end_utc)+")":" · "+ageTxt(w.end_utc))):"sin instantánea";};
+const northSub=()=>"IMERG Early "+WIN.replace("h"," h")+" hasta "+fmt(D.rain?.north_zones?.end_utc)+(STALE.north?" · congelada ("+ageTxt(D.rain?.north_zones?.end_utc)+")":"");
+if(map){register("rainCoast","Lluvia estimada · costa completa (celdas 0,1°)",rainCoast,true,coastSub);register("rainZones","Lluvia estimada · 22 zonas del norte",rainZones,false,northSub);}
+function drawRain(){if(!map)return;rainCoast.clearLayers();rainZones.clearLayers();const C=D.rain?.coast;let m="";
  if(C?.status==="OK"){const w=C.windows[WIN];
   if(w?.status==="COMPLETA"&&w.values){const h=C.cell_deg/2;
    C.cells.forEach(([i,j],k)=>{const v=w.values[k];if(v===null||v===undefined)return;const col=binColor(v);if(!col)return;
     const x=C.lon[i],y=C.lat[j];L.rectangle([[y-h,x-h],[y+h,x+h]],{stroke:false,fillColor:col,fillOpacity:.72}).bindTooltip(v.toFixed(1).replace(".",",")+" mm en "+WIN.replace("h"," h")+" · "+safe(title(C.cell_department[k])),{sticky:true}).addTo(rainCoast);});
-  }else msg="Lluvia costera: la ventana de "+WIN.replace("h"," h")+" no está completa (faltan medias horas): no se dibuja.";
- }else msg="Lluvia costera: sin instantánea archivada.";
+  }else m="Lluvia costera: la ventana de "+WIN.replace("h"," h")+" no está completa (faltan medias horas): no se dibuja.";
+ }else m="Lluvia costera: sin instantánea archivada.";
  const Z=D.rain?.north_zones;
  if(Z?.status==="OK")L.geoJSON(Z.zones,{style:f=>{const w=f.properties.windows[WIN];const c=w?.status==="COMPLETA"?binColor(w.mm):null;
    return {color:"#1f5f8b",weight:1,fillColor:c||"#999",fillOpacity:w?.status==="COMPLETA"?(c?.55:0.03):0.15,dashArray:w?.status==="COMPLETA"?null:"3,3"};},
    onEachFeature:(f,l)=>{const w=f.properties.windows[WIN];l.bindPopup("<b>"+safe(f.properties.name)+"</b><br>IMERG Early, "+safe(WIN.replace("h"," h"))+": "+(w?.status==="COMPLETA"?safe(w.mm.toFixed(1).replace(".",","))+" mm (media areal)":"<b>no disponible</b> (ventana incompleta; no es cero)")+"<br>Fin de ventana: "+safe(fmt(Z.end_utc))+"<br><em>Estimación satelital, no pluviómetro.</em>");}}).addTo(rainZones);
- $("msg").textContent=msg||BASEMSG;renderLegend();}
-function renderLegend(){const C=D.rain?.coast,w=C?.windows?.[WIN];
- $("legend").innerHTML="<span>Lluvia "+safe(WIN.replace("h"," h"))+" (mm) · intervalos de visualización, no umbrales:</span>"+BINS.map((b,i)=>'<span><i class="sw" style="background:'+css(b[1])+'"></i>'+(i<BINS.length-1?String(b[0]).replace(".",",")+"–"+BINS[i+1][0]:"≥ "+b[0])+"</span>").join("")+
-  '<span><i class="sw" style="background:transparent"></i>&lt; 0,1 mm o sin dato: sin color</span>'+
-  (w?'<span>Ventana costa: '+safe(fmt(w.start_utc))+' → '+safe(fmt(w.end_utc))+(STALE.coast?' · <b>antigua ('+safe(ageTxt(w.end_utc))+')</b>':"")+'</span>':"");}
-const wb=$("win");["1h","3h","6h","24h","72h"].forEach(k=>{const b=document.createElement("button");b.type="button";b.textContent=k.replace("h"," h");b.setAttribute("aria-pressed",String(k===WIN));
- b.onclick=()=>{WIN=k;wb.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));drawRain();renderRainTab();renderSummary($("dept").value);};wb.append(b);});
+ msg=m;renderViewing();}
 // rivers
-const R=D.rivers||{};
-if(map&&R.uh?.features?.length)addLayer("uh","Unidades hidrográficas ANA (ríos del norte)",L.geoJSON(R.uh,{style:{color:"#2563a6",weight:1.5,fill:true,fillOpacity:.04},
- onEachFeature:(f,l)=>l.bindPopup("<b>"+safe(f.properties.name)+"</b> (UH "+safe(f.properties.code)+")<br>Fuente: "+safe(f.properties.source)+"<br><em>Polígono oficial del lado peruano; contexto de crecidas fluviales, no zona inundable.</em>")}),false);
-if(map&&R.stations?.length){const g=L.layerGroup();R.stations.filter(s=>Number.isFinite(s.lat)&&Number.isFinite(s.lon)).forEach(s=>{
+const RV=D.rivers||{};
+if(map&&RV.uh?.features?.length)register("uh","Cuencas / UH ANA (ríos del norte)",L.geoJSON(RV.uh,{style:{color:"#2563a6",weight:1.5,fill:true,fillOpacity:.04},
+ onEachFeature:(f,l)=>l.bindPopup("<b>"+safe(f.properties.name)+"</b> (UH "+safe(f.properties.code)+")<br>Fuente: "+safe(f.properties.source)+"<br><em>Polígono oficial del lado peruano; contexto de crecidas fluviales, no zona inundable.</em>")}),false,()=>"ANA, lado peruano · contexto, no zona inundable");
+if(map&&RV.stations?.length){const g=L.layerGroup();RV.stations.filter(s=>Number.isFinite(s.lat)&&Number.isFinite(s.lon)).forEach(s=>{
   L.circleMarker([s.lat,s.lon],{radius:6,color:"#123f73",weight:2,fillColor:"#fff",fillOpacity:1}).bindPopup("<b>"+safe(s.name)+"</b> · río "+safe(s.river)+
   "<br>Operador: "+safe(s.operator)+"<br>Coordenada documentada ("+safe(s.coordinate_source)+"), datum no declarado"+
   "<br>Serie subdiaria: "+safe(s.subdaily||"desconocida")+(s.reading_time?"<br>Hora de lectura: "+safe(s.reading_time):"")+
   "<br>Cuenca experimental: "+safe(s.catchment_status||"—")+(s.catchment_area_km2?" ("+safe(s.catchment_area_km2)+" km²)":"")+
-  "<br><em>Sin caudal en tiempo real integrado.</em>").addTo(g);});addLayer("stations","Estaciones hidrométricas documentadas",g,true);}
+  "<br><em>Sin caudal en tiempo real integrado.</em>").addTo(g);});register("stations","Estaciones hidrométricas documentadas",g,true,()=>"ubicación documentada · sin caudal en tiempo real");}
 // quebradas and settlements
 const Q=D.quebradas||{};const LC={cuencas:"#2468ac",areas_colectoras:"#9559ae",cauces:"#008d9f",descargas:"#cc8620",impacto:"#b73e5d",contexto:"#6b8294"};
-if(map&&Q.geometries?.features?.length)addLayer("qgeo","Geometrías IRFEN de quebradas (costa norte, Rímac)",L.geoJSON(Q.geometries,{
+if(map&&Q.geometries?.features?.length)register("qgeo","Quebradas · geometrías IRFEN (costa norte, Rímac)",L.geoJSON(Q.geometries,{
  style:f=>({color:LC[f.properties.layer]||"#666",weight:2,fillOpacity:.1,dashArray:f.properties.evidence==="GEOMETRIA_CANDIDATA"?"5,4":null}),
  pointToLayer:(f,ll)=>L.circleMarker(ll,{radius:5,color:LC[f.properties.layer]||"#666"}),
- onEachFeature:(f,l)=>l.bindPopup("<b>"+safe(f.properties.name||f.properties.id)+"</b><br>Capa: "+safe(f.properties.layer)+"<br>Evidencia: "+safe(f.properties.evidence)+"<br>Fuente: "+safe((f.properties.sources||[]).join(", "))+"<br><em>Contexto de activación de quebradas; no es mancha de inundación ni alerta.</em>")}),false);
+ onEachFeature:(f,l)=>l.bindPopup("<b>"+safe(f.properties.name||f.properties.id)+"</b><br>Capa: "+safe(f.properties.layer)+"<br>Evidencia: "+safe(f.properties.evidence)+"<br>Fuente: "+safe((f.properties.sources||[]).join(", "))+"<br><em>Contexto de activación de quebradas; no es mancha de inundación ni alerta.</em>")}),false,()=>"paquete territorial "+fmt(Q.territory_built_at_utc));
 if(map&&Q.ana_points?.length){const g=L.layerGroup();Q.ana_points.forEach(p=>L.circleMarker([p.lat,p.lon],{radius:4,color:"#9a4f12",weight:1.5,fillColor:"#fff",fillOpacity:.9}).bindPopup(
  "<b>Centro poblado: "+safe(p.name||"sin nombre")+"</b><br>Quebrada (según ANA): "+safe(p.quebrada||"s/n")+"<br>"+safe(title(p.province))+" · "+safe(title(p.department))+
  "<br>Expuestos según ANA: "+safe(p.viviendas??"s/d")+" viviendas, "+safe(p.habitantes??"s/d")+" habitantes<br>Fuente: ANA 2016-2017, cuadro "+safe(p.cuadro)+", fila "+safe(p.row)+
- "<br><em>Ubicación documental del centro poblado: no es la quebrada ni una zona de inundación.</em>").addTo(g));addLayer("ana","Centros poblados vulnerables ANA 2016-17 ("+Q.ana_points.length+")",g,false);}
-// aviso highlight layer
-const hl=map?L.layerGroup().addTo(map):null;
-function highlight(depsList,label){if(!map)return;hl.clearLayers();const fs=deps.filter(f=>depsList.includes(f.properties.id));
- if(!fs.length){$("msg").textContent=label+": ningún departamento costero en la lista del aviso.";return;}
- const l=L.geoJSON({type:"FeatureCollection",features:fs},{style:{color:"#b3261e",weight:2.5,dashArray:"6,4",fill:false},interactive:false}).addTo(hl);
- map.fitBounds(l.getBounds(),{padding:[20,20]});$("msg").textContent=label+": departamentos costeros enumerados en el aviso (representación administrativa, no la huella del fenómeno).";}
-// ---------- tabs
-const TABS=[["resumen","Resumen"],["lluvia","Lluvia"],["avisos","Avisos"],["rios","Crecidas de ríos"],["quebradas","Quebradas"],["datos","Datos y vacíos"]];
-TABS.forEach(([id,label])=>{const b=document.createElement("button");b.type="button";b.role="tab";b.id="t-"+id;b.textContent=label;b.setAttribute("aria-controls","tab-"+id);
- b.onclick=()=>showTab(id);$("tabs").append(b);});
-function showTab(id){TABS.forEach(([t])=>{$("tab-"+t).hidden=t!==id;$("t-"+t).setAttribute("aria-selected",String(t===id));});}
-// ---------- avisos (status computed now, from the official validity)
+ "<br><em>Ubicación documental del centro poblado: no es la quebrada ni una zona de inundación.</em>").addTo(g));register("ana","Centros poblados vulnerables ANA ("+Q.ana_points.length+")",g,false,()=>"ANA 2016-2017 · ubicación documental, no es la quebrada");}
+// avisos: status computed now from the official validity; only bulletins captured up to AVCUT
 const AV=(D.avisos||[]).map(a=>{let st="VIGENCIA_DESCONOCIDA";const s=Date.parse(a.validity_start),e=Date.parse(a.validity_end);
  if(!isNaN(s)&&!isNaN(e))st=NOW<s?"FUTURO":(NOW>e?"VENCIDO":"VIGENTE");return Object.assign({},a,{st});});
 const CAT={LLUVIA_INTENSA:"Lluvias intensas",ACTIVACION_QUEBRADAS:"Activación de quebradas",METEOROLOGICO:"Meteorológico"};
-// ---------- department table and card
+const avisoLayer=map?L.layerGroup():null,hl=map?L.layerGroup().addTo(map):null;
+const vigCoast=[...new Set(AV.filter(a=>a.st==="VIGENTE").flatMap(a=>a.coastal_departments||[]))];
+if(map){deps.filter(f=>vigCoast.includes(f.properties.id)).forEach(f=>L.geoJSON(f,{style:{color:"#b3261e",weight:2.2,dashArray:"6,4",fill:false},interactive:false}).addTo(avisoLayer));
+ register("avisos","Avisos vigentes ahora · departamentos citados",avisoLayer,false,()=>vigCoast.length+" departamentos costeros con aviso vigente según boletines capturados hasta "+fmt(AVCUT)+(STALE.avisos?" (antiguos)":""));}
+function highlight(list,label){if(!map)return;hl.clearLayers();const fs=deps.filter(f=>list.includes(f.properties.id));
+ if(!fs.length){msg=label+": ningún departamento costero en la lista del aviso.";renderViewing();return;}
+ const l=L.geoJSON({type:"FeatureCollection",features:fs},{style:{color:"#b3261e",weight:2.5,dashArray:"6,4",fill:false},interactive:false}).addTo(hl);
+ map.fitBounds(l.getBounds(),{padding:[20,20]});msg=label+": departamentos costeros enumerados en el aviso (representación administrativa, no la huella del fenómeno).";renderViewing();}
+// ---------- layer panel
+function renderLayers(){const box=$("layers");const row=id=>R[id]?'<label><input type="checkbox" data-layer="'+id+'"'+(R[id].on?" checked":"")+'> <span>'+safe(R[id].label)+'<small>'+safe(R[id].sub())+'</small></span></label>':"";
+ const bases=SINGLE?'<p class="note">La copia privada no puede cargar mapas externos: se usa la referencia vectorial (contorno del Perú, departamentos y ciudades de Natural Earth). La página del repositorio sí incluye mapa base con nombres.</p>':
+  Object.entries(BASES).map(([k,b])=>'<label><input type="radio" name="base" value="'+k+'"'+(BASE===k?" checked":"")+'> <span>'+safe(b.label)+'</span></label>').join("")+'<label><input type="radio" name="base" value="vector"'+(BASE==="vector"?" checked":"")+'> <span>Solo referencia vectorial<small>contorno, departamentos y ciudades (Natural Earth)</small></span></label>';
+ box.innerHTML='<h3>Mapa base</h3>'+bases+'<h3>Referencia territorial</h3>'+row("deps")+row("provs")+row("cities")+
+  '<h3>Lluvia estimada (IMERG Early)</h3><div class="seg" id="win" role="group" aria-label="Ventana de lluvia acumulada">'+["1h","3h","6h","24h","72h"].map(k=>'<button type="button" data-win="'+k+'" aria-pressed="'+(k===WIN)+'">'+k.replace("h"," h")+'</button>').join("")+'</div>'+row("rainCoast")+row("rainZones")+
+  '<h3>Avisos oficiales (INDECI/COEN)</h3>'+row("avisos")+'<h3>Crecidas de ríos</h3>'+row("uh")+row("stations")+'<h3>Quebradas</h3>'+row("qgeo")+row("ana")+
+  '<h3>No disponibles en esta vista</h3>'+(D.layers_unavailable||[]).map(u=>'<div class="na-item"><b>'+safe(u.label)+'</b><small>'+safe(u.reason)+'</small></div>').join("");
+ box.querySelectorAll("input[data-layer]").forEach(i=>i.onchange=()=>toggle(i.dataset.layer,i.checked));
+ box.querySelectorAll("input[name=base]").forEach(i=>i.onchange=()=>setBase(i.value));
+ box.querySelectorAll("#win button").forEach(b=>b.onclick=()=>{WIN=b.dataset.win;box.querySelectorAll("#win button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));drawRain();renderRainTab();renderSummary($("dept")?.value);renderLayers();});}
+// "what am I looking at": visible layers with their date
+function renderViewing(){const on=Object.entries(R).filter(([k,r])=>r.on);
+ const base=SINGLE||BASE==="vector"?"Referencia vectorial (Natural Earth, dominio público)":BASES[BASE]?.label;
+ const rainOn=R.rainCoast?.on||R.rainZones?.on;const w=D.rain?.coast?.windows?.[WIN];
+ $("viewSummary").textContent="Estás viendo "+(on.length)+" capas"+(rainOn&&w?" · lluvia "+WIN.replace("h"," h")+" hasta "+short(w.end_utc)+(STALE.coast?" (congelada)":""):"")+" · detalle";
+ $("viewList").innerHTML='<li>'+safe(base)+'</li>'+on.map(([k,r])=>'<li>'+safe(r.label)+(r.sub()?' <span class="note">· '+safe(r.sub())+'</span>':"")+'</li>').join("");
+ $("viewLegend").innerHTML=(rainOn?'<div class="legend"><span>Lluvia '+safe(WIN.replace("h"," h"))+' (mm) · intervalos de visualización, no umbrales:</span>'+BINS.map((b,i)=>'<span><i class="sw" style="background:'+css(b[1])+'"></i>'+(i<BINS.length-1?String(b[0]).replace(".",",")+"–"+BINS[i+1][0]:"≥ "+b[0])+"</span>").join("")+'</div>':"")+
+  (msg?'<p id="msg">'+safe(msg)+'</p>':'<p id="msg"></p>');}
+// ---------- tabs
+const TABS=[["resumen","Resumen"],["lluvia","Lluvia"],["avisos","Avisos"],["rios","Crecidas de ríos"],["quebradas","Quebradas"]];
+TABS.forEach(([id,label])=>{const b=document.createElement("button");b.type="button";b.role="tab";b.id="t-"+id;b.textContent=label;b.setAttribute("aria-controls","tab-"+id);b.onclick=()=>showTab(id);$("tabs").append(b);});
+function showTab(id){TABS.forEach(([t])=>{$("tab-"+t).hidden=t!==id;$("t-"+t).setAttribute("aria-selected",String(t===id));});}
 const DEPS=D.coast_departments||[];const DS=D.departments||{};
-DEPS.forEach(k=>{const o=document.createElement("option");o.value=k;o.textContent=title(k);$("dept").append(o);});
-$("dept").onchange=()=>selectDept($("dept").value);
 const r24=k=>{const s=DS[k]?.rain_coast?.[WIN];return s?.status==="COMPLETA"&&s.mean_mm!==null?s.mean_mm.toFixed(1).replace(".",",")+" / "+s.max_mm.toFixed(1).replace(".",","):"no disponible";};
 const avNow=(k,st)=>AV.filter(a=>a.st===st&&(a.departments||[]).includes(k));
-function selectDept(k){$("dept").value=k||"";if(!k){if(map)map.setView([-10.5,-77],5);renderSummary();return;}
- const l=deptLayer[k];if(map&&l)map.fitBounds(l.getBounds(),{padding:[16,16]});if(!SINGLE)location.hash="dep="+encodeURIComponent(k);renderSummary(k);showTab("resumen");}
+function selectDept(k){if($("dept"))$("dept").value=k||"";if(!k){fitPeru();renderSummary();return;}
+ const l=deptLayer[k];if(map&&l)map.fitBounds(l.getBounds(),{padding:[16,16]});if(!SINGLE)history.replaceState(null,"","#dep="+encodeURIComponent(k));renderSummary(k);showTab("resumen");if(PANEL_HIDDEN())togglePanel(true);}
 function renderSummary(k){
- const rows=DEPS.map(d=>{const v=avNow(d,"VIGENTE").length,f=avNow(d,"FUTURO").length;return '<tr><td><a href="#dep='+encodeURIComponent(d)+'" data-dep="'+safe(d)+'">'+safe(title(d))+'</a></td><td class="n">'+v+(f?' <span class="note">(+'+f+' próx.)</span>':"")+'</td><td class="n">'+safe(r24(d))+'</td><td class="n">'+(DS[d]?.ana_points||0)+'</td><td class="n">'+(DS[d]?.inventory_rows||0)+'</td><td>'+(DS[d]?.river_flood_research?"histórico":'<span class="note">—</span>')+'</td></tr>';}).join("");
+ const rows=DEPS.map(d=>{const v=avNow(d,"VIGENTE").length,f=avNow(d,"FUTURO").length;return '<tr><td><a href="#" data-dep="'+safe(d)+'">'+safe(title(d))+'</a></td><td class="n">'+v+(f?' <span class="note">(+'+f+')</span>':"")+'</td><td class="n">'+safe(r24(d))+'</td><td class="n">'+(DS[d]?.ana_points||0)+'</td><td class="n">'+(DS[d]?.inventory_rows||0)+'</td></tr>';}).join("");
  let card="";
  if(k){const s=DS[k]||{};const va=avNow(k,"VIGENTE"),fa=avNow(k,"FUTURO");
   card='<div class="card"><h2>'+safe(title(k))+'</h2>'+
   '<p><b>Avisos vigentes ahora'+(STALE.avisos?' (solo boletines capturados hasta '+safe(fmt(AVCUT))+')':'')+':</b> '+(va.length?va.map(a=>'<span class="tag">'+safe(CAT[a.category]||a.product)+(a.level?" · "+safe(a.level):"")+'</span>').join(""):'<span class="note">ninguno en los boletines capturados</span>')+(fa.length?'<br><b>Próximos:</b> '+fa.length:"")+'</p>'+
-  '<p><b>Lluvia IMERG (media / máx. de celdas, mm, '+safe(WIN.replace("h"," h"))+'):</b> '+safe(r24(k))+'<br><span class="note">Media de todo el departamento, incluida la sierra.</span></p>'+
-  '<p><b>Zonas del norte con archivo continuo:</b> '+(s.north_rain_zones||0)+' · <b>Centros poblados ANA:</b> '+(s.ana_points||0)+' · <b>Inventario de quebradas:</b> '+(s.inventory_rows||0)+' · <b>Geometrías IRFEN:</b> '+(s.irfen_geometries||0)+'</p>'+
+  '<p><b>Lluvia IMERG (media / máx. de celdas, mm, '+safe(WIN.replace("h"," h"))+'):</b> '+safe(r24(k))+'<br><span class="note">Media de todo el departamento, incluida la sierra · '+safe(coastSub())+'.</span></p>'+
+  '<p><b>Centros poblados ANA:</b> '+(s.ana_points||0)+' · <b>Inventario de quebradas:</b> '+(s.inventory_rows||0)+' · <b>Geometrías IRFEN:</b> '+(s.irfen_geometries||0)+' · <b>Zonas del norte con archivo continuo:</b> '+(s.north_rain_zones||0)+'</p>'+
   '<p><b>Crecidas de ríos:</b> '+(s.river_flood_research?'histórico PECHP y cuencas experimentales (pestaña «Crecidas de ríos»); sin caudal en tiempo real.':'<span class="note">sin información de crecidas integrada para este departamento.</span>')+'</p></div>';}
- $("tab-resumen").innerHTML=card+'<h2>Costa por departamento</h2><div class="tw"><table><thead><tr><th>Departamento</th><th class="n">Avisos vigentes'+(STALE.avisos?'*':'')+'</th><th class="n">Lluvia '+safe(WIN.replace("h"," h"))+' (mm) media / máx.</th><th class="n">Centros ANA</th><th class="n">Quebradas inv.</th><th>Ríos</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
-  (STALE.avisos?'<p class="note">* Solo boletines capturados hasta '+safe(fmt(AVCUT))+'; los avisos emitidos después no están incluidos.</p>':'')+'<p class="note">Avisos: estado calculado ahora con la vigencia oficial. Lluvia: IMERG Early (estimación satelital), instantánea del '+safe(fmt(D.rain?.coast?.end_utc))+'. «No disponible» significa sin dato válido, nunca «sin lluvia».</p>'+
-  '<h2>Tres fenómenos distintos</h2>'+(D.phenomena||[]).map(p=>'<div class="card ph '+safe(p.id)+'"><b>'+safe(p.label)+'</b> <span class="note">('+safe(p.examples)+')</span><br><span class="note">Capas: '+safe(p.layers.join(", "))+'<br>Tiempo real: '+safe(p.realtime)+'<br>Avisos: '+safe(p.avisos)+'</span></div>').join("");
+ $("tab-resumen").innerHTML='<label class="note">Departamento <select id="dept"><option value="">Toda la costa</option>'+DEPS.map(d=>'<option value="'+safe(d)+'"'+(d===k?" selected":"")+'>'+safe(title(d))+'</option>').join("")+'</select></label>'+card+
+  '<h2 style="margin-top:10px">Costa por departamento</h2><div class="tw"><table><thead><tr><th>Departamento</th><th class="n">Avisos vigentes'+(STALE.avisos?'*':'')+'</th><th class="n">Lluvia '+safe(WIN.replace("h"," h"))+' (mm) media / máx.</th><th class="n">Centros ANA</th><th class="n">Quebradas inv.</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+  (STALE.avisos?'<p class="note">* Solo boletines capturados hasta '+safe(fmt(AVCUT))+'; los avisos emitidos después no están incluidos.</p>':'')+
+  '<p class="note">Lluvia: '+safe(coastSub())+'. «No disponible» significa sin dato válido, nunca «sin lluvia». (+n) = avisos próximos.</p>';
+ $("dept").onchange=e=>selectDept(e.target.value);
  $("tab-resumen").querySelectorAll("a[data-dep]").forEach(a=>a.onclick=e=>{e.preventDefault();selectDept(a.dataset.dep);});}
-// ---------- rain tab
 function renderRainTab(){const C=D.rain?.coast,Z=D.rain?.north_zones;
  const zrows=(Z?.zones?.features||[]).map(f=>{const w=f.properties.windows;return "<tr><td>"+safe(f.properties.name)+"</td>"+["1h","3h","6h","24h","72h"].map(k=>'<td class="n">'+(w[k]?.status==="COMPLETA"?safe(w[k].mm.toFixed(1).replace(".",",")):'<span class="note">n/d</span>')+"</td>").join("")+"</tr>";}).join("");
- $("tab-lluvia").innerHTML='<h2>Lluvia estimada por satélite (IMERG Early)</h2><p class="note">Estimación de NASA con horas de latencia; no es un pluviómetro ni una observación en tiempo real. Una ventana con alguna media hora ausente se marca como no disponible (nunca cero). Sin umbrales.</p>'+
- '<h3>Costa completa · instantánea</h3>'+(C?.status==="OK"?'<p>Fin de ventana: <b>'+safe(fmt(C.end_utc))+'</b> ('+safe(ageTxt(C.end_utc))+'); capturada '+safe(fmt(C.captured_at_utc))+'. '+safe(C.cells.length)+' celdas de 0,1° en los 11 departamentos.</p><p class="note">'+safe(C.method)+' Se actualiza solo cuando se vuelve a capturar (no es continua).</p>'+
- '<div class="tw"><table><thead><tr><th>Ventana</th><th>Estado</th><th>Medias horas</th></tr></thead><tbody>'+Object.entries(C.windows).sort((a,b)=>parseInt(a[0])-parseInt(b[0])).map(([k,w])=>'<tr><td>'+safe(k.replace("h"," h"))+'</td><td>'+safe(w.status)+'</td><td class="n">'+safe(w.half_hours.join(" / "))+'</td></tr>').join("")+'</tbody></table></div>'
+ $("tab-lluvia").innerHTML='<h2>Lluvia estimada por satélite (IMERG Early)</h2><p class="note">Estimación de NASA con horas de latencia; <b>no es lluvia en tiempo real</b> ni un pluviómetro. Una ventana con alguna media hora ausente no se muestra (nunca cero). Sin umbrales. Nubosidad: no disponible en esta vista.</p>'+
+ '<h3>Costa completa · instantánea</h3>'+(C?.status==="OK"?'<p>Fin de ventana: <b>'+safe(fmt(C.end_utc))+'</b> ('+safe(ageTxt(C.end_utc))+(STALE.coast?', <b>congelada</b>':'')+'); capturada '+safe(fmt(C.captured_at_utc))+'. '+safe(C.cells.length)+' celdas de 0,1° en los 11 departamentos.</p><p class="note">'+safe(C.method)+' No se actualiza sola.</p>'+
+ '<div class="tw"><table><thead><tr><th>Ventana</th><th>Estado</th><th class="n">Medias horas</th></tr></thead><tbody>'+Object.entries(C.windows).sort((a,b)=>parseInt(a[0])-parseInt(b[0])).map(([k,w])=>'<tr><td>'+safe(k.replace("h"," h"))+'</td><td>'+safe(w.status)+'</td><td class="n">'+safe(w.half_hours.join(" / "))+'</td></tr>').join("")+'</tbody></table></div>'
  :'<p class="empty">Sin instantánea costera archivada.</p>')+
- '<h3>22 zonas del norte · archivo continuo (mm, media areal)</h3>'+(Z?.status==="OK"?'<p>Fin de ventana: <b>'+safe(fmt(Z.end_utc))+'</b> ('+safe(ageTxt(Z.end_utc))+'). Latencia del catálogo: '+safe(Z.catalog_lag_hours??"s/d")+' h.</p><div class="tw"><table><thead><tr><th>Zona</th><th class="n">1 h</th><th class="n">3 h</th><th class="n">6 h</th><th class="n">24 h</th><th class="n">72 h</th></tr></thead><tbody>'+zrows+'</tbody></table></div>':'<p class="empty">Sin archivo continuo.</p>')+
- '<p class="note">Costa centro y sur: solo la instantánea; el archivo continuo cubre el norte. Ver «Datos y vacíos».</p>';}
-// ---------- avisos tab
+ '<h3>22 zonas del norte (mm, media areal)</h3>'+(Z?.status==="OK"?'<p>Fin de ventana: <b>'+safe(fmt(Z.end_utc))+'</b> ('+safe(ageTxt(Z.end_utc))+(STALE.north?', <b>congelada</b>':'')+').</p><div class="tw"><table><thead><tr><th>Zona</th><th class="n">1 h</th><th class="n">3 h</th><th class="n">6 h</th><th class="n">24 h</th><th class="n">72 h</th></tr></thead><tbody>'+zrows+'</tbody></table></div>':'<p class="empty">Sin archivo.</p>');}
 let fCat="ALL",fSt="ACTIVO";
 function renderAvisos(){const list=AV.filter(a=>(fCat==="ALL"||a.category===fCat)&&(fSt==="ALL"||(fSt==="ACTIVO"?(a.st==="VIGENTE"||a.st==="FUTURO"):a.st===fSt)));
  $("tab-avisos").innerHTML='<h2>Avisos oficiales</h2><p class="note">Avisos de <b>SENAMHI</b> reproducidos por <b>INDECI/COEN</b> en sus boletines informativos. IRFEN no emite avisos; el nivel se muestra solo cuando está escrito en el texto. Consulte siempre el boletín oficial.</p>'+
@@ -240,38 +288,63 @@ function renderAvisos(){const list=AV.filter(a=>(fCat==="ALL"||a.category===fCat
   (a.coastal_departments.length&&map?' · <a href="#" data-hl="'+i+'">Ver en el mapa</a>':"")+'</div></div>').join(""):'<p class="empty">No hay avisos con estos filtros en los boletines capturados. No significa que no haya peligro.</p>');
  $("fcat").value=fCat;$("fst").value=fSt;$("fcat").onchange=e=>{fCat=e.target.value;renderAvisos();};$("fst").onchange=e=>{fSt=e.target.value;renderAvisos();};
  $("tab-avisos").querySelectorAll("a[data-hl]").forEach(x=>x.onclick=e=>{e.preventDefault();const a=list[+x.dataset.hl];highlight(a.coastal_departments,(CAT[a.category]||a.product)+" Nº "+a.number);});}
-// ---------- rivers tab
 function chart(days){if(!days.length)return'<p class="empty">Sin datos.</p>';const W=400,H=130,p=28;const ys=days.map(d=>d[1]);const mx=Math.max(...ys,1);
  const X=i=>p+i*(W-p-6)/Math.max(1,days.length-1),Y=v=>H-18-(v/mx)*(H-30);
  let path="",prev=null;days.forEach((d,i)=>{const t=Date.parse(d[0]);const gap=prev!==null&&t-prev>1.5*864e5;path+=(i===0||gap?"M":"L")+X(i).toFixed(1)+","+Y(d[1]).toFixed(1);prev=t;});
  return '<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Caudal medio diario"><line class="ax" x1="'+p+'" y1="'+(H-18)+'" x2="'+W+'" y2="'+(H-18)+'"/><line class="ax" x1="'+p+'" y1="8" x2="'+p+'" y2="'+(H-18)+'"/>'+
  '<text x="2" y="14">'+Math.round(mx)+'</text><text x="2" y="'+(H-20)+'">0</text><text x="'+p+'" y="'+(H-4)+'">'+safe(days[0][0])+'</text><text x="'+(W-70)+'" y="'+(H-4)+'">'+safe(days[days.length-1][0])+'</text><path class="l" d="'+path+'"/></svg>';}
 let hSt=null,hY=null;
-function renderRivers(){const H=R.history||[];if(!hSt&&H.length)hSt=H[0].id;const cur=H.find(h=>h.id===hSt);
+function renderRivers(){const H=RV.history||[];if(!hSt&&H.length)hSt=H[0].id;const cur=H.find(h=>h.id===hSt);
  const years=cur?[...new Set(cur.days.map(d=>d[0].slice(0,4)))]:[];if(!hY||!years.includes(hY))hY=years.includes("2017")?"2017":years[0];
  const sel=cur?cur.days.filter(d=>d[0].startsWith(hY)):[];
- $("tab-rios").innerHTML='<div class="card ph CRECIDA_RIO"><b>Crecidas de ríos (Tumbes, Chira, Piura)</b><br><span class="note">'+safe(R.realtime_flow)+'<br>'+safe(R.hydrological_avisos)+'</span></div>'+
+ $("tab-rios").innerHTML='<div class="card ph CRECIDA_RIO"><b>Crecidas de ríos (Tumbes, Chira, Piura)</b><br><span class="note">'+safe(RV.realtime_flow)+'<br>'+safe(RV.hydrological_avisos)+'</span></div>'+
  '<h3>Histórico medido · caudal medio diario (PECHP)</h3>'+(H.length?'<div class="filters"><label>Estación <select id="hst">'+H.map(h=>'<option value="'+safe(h.id)+'">'+safe(h.label)+'</option>').join("")+'</select></label><label>Año <select id="hy">'+years.map(y=>'<option>'+safe(y)+'</option>').join("")+'</select></label></div>'+chart(sel)+
-  '<p class="note">'+safe(cur?.statistic)+'. Solo meses con tabla legible (enero–abril; 2016, ene–feb 2017 y feb–abr 2019 solo traen gráficos y quedan sin dato). Los huecos no se interpolan.</p>':'<p class="empty">Sin series archivadas.</p>')+
- '<h3>Eventos documentados</h3>'+(R.events||[]).map(e=>'<div class="card"><b>Río '+safe(e.river)+'</b> · '+safe(e.date)+' · '+safe(e.kind.replaceAll("_"," ").toLowerCase())+'<br>'+safe(e.value)+'<br><span class="note">'+safe(e.source)+(url(e.url)?' · <a href="'+url(e.url)+'" target="_blank" rel="noopener noreferrer">fuente</a>':"")+'</span></div>').join("")+
- '<h3>Resultados experimentales</h3><ul>'+(R.findings||[]).map(f=>'<li class="note">'+safe(f)+'</li>').join("")+'</ul>'+
- '<h3>Cuencas binacionales experimentales (HydroSHEDS, no oficiales)</h3><div class="tw"><table><thead><tr><th>Cuenca</th><th class="n">km²</th><th class="n">≈ Ecuador</th><th>Estado</th></tr></thead><tbody>'+(R.binational_basins||[]).map(b=>'<tr><td>'+safe(b.id.replace("_DESEMBOCADURA","").replace("_"," "))+'</td><td class="n">'+safe(Math.round(b.area_km2))+'</td><td class="n">'+safe(Math.round((b.outside_peruvian_uh||0)*100))+' %</td><td>'+safe(b.status)+'</td></tr>').join("")+'</tbody></table></div>'+
- '<h3>Estaciones</h3><div class="tw"><table><thead><tr><th>Estación</th><th>Serie subdiaria</th><th>Cuenca experimental</th></tr></thead><tbody>'+(R.stations||[]).map(s=>'<tr><td>'+safe(s.name)+'<br><span class="note">río '+safe(s.river)+(Number.isFinite(s.lat)?"":" · sin coordenada documentada")+'</span></td><td>'+safe(s.subdaily||"desconocida")+'</td><td>'+safe(s.catchment_status||"—")+'</td></tr>').join("")+'</tbody></table></div>';
+  '<p class="note">'+safe(cur?.statistic)+'. Solo meses con tabla legible; los huecos no se interpolan.</p>':'<p class="empty">Sin series archivadas.</p>')+
+ '<h3>Eventos documentados</h3>'+(RV.events||[]).map(e=>'<div class="card"><b>Río '+safe(e.river)+'</b> · '+safe(e.date)+' · '+safe(e.kind.replaceAll("_"," ").toLowerCase())+'<br>'+safe(e.value)+'<br><span class="note">'+safe(e.source)+(url(e.url)?' · <a href="'+url(e.url)+'" target="_blank" rel="noopener noreferrer">fuente</a>':"")+'</span></div>').join("")+
+ '<h3>Resultados experimentales</h3><ul>'+(RV.findings||[]).map(f=>'<li class="note">'+safe(f)+'</li>').join("")+'</ul>'+
+ '<h3>Cuencas binacionales experimentales (HydroSHEDS, no oficiales)</h3><div class="tw"><table><thead><tr><th>Cuenca</th><th class="n">km²</th><th class="n">≈ Ecuador</th><th>Estado</th></tr></thead><tbody>'+(RV.binational_basins||[]).map(b=>'<tr><td>'+safe(b.id.replace("_DESEMBOCADURA","").replace("_"," "))+'</td><td class="n">'+safe(Math.round(b.area_km2))+'</td><td class="n">'+safe(Math.round((b.outside_peruvian_uh||0)*100))+' %</td><td>'+safe(b.status)+'</td></tr>').join("")+'</tbody></table></div>';
  if($("hst")){$("hst").value=hSt;$("hy").value=hY;$("hst").onchange=e=>{hSt=e.target.value;hY=null;renderRivers();};$("hy").onchange=e=>{hY=e.target.value;renderRivers();};}}
-// ---------- quebradas tab
 function renderQuebradas(){$("tab-quebradas").innerHTML='<div class="card ph ACTIVACION_QUEBRADAS"><b>Activación de quebradas (huaicos, flujos de detritos)</b><br><span class="note">Fenómeno distinto de la crecida de un río principal. Avisos: ACP-QUEBRADAS (INDECI/COEN). Sin observación directa en tiempo real.</span></div>'+
  '<div class="tw"><table><thead><tr><th>Departamento</th><th class="n">Inventario documental</th><th class="n">Centros poblados ANA</th><th class="n">Geometrías IRFEN</th></tr></thead><tbody>'+DEPS.map(d=>'<tr><td>'+safe(title(d))+'</td><td class="n">'+(DS[d]?.inventory_rows||0)+'</td><td class="n">'+(DS[d]?.ana_points||0)+'</td><td class="n">'+(DS[d]?.irfen_geometries||0)+'</td></tr>').join("")+'</tbody></table></div>'+
- '<p class="note">'+safe(Q.ana_source?.note)+' Activa las capas «Centros poblados ANA» y «Geometrías IRFEN» en el mapa. Las quebradas sin geometría reproducible no se dibujan: consulta el '+pageLink("inventario.html","inventario documental")+' ('+safe(Q.inventory_rows)+' registros).</p>'+
+ '<p class="note">'+safe(Q.ana_source?.note)+' Actívalas en «Capas». Las quebradas sin geometría reproducible no se dibujan: consulta el '+pageLink("inventario.html","inventario documental")+' ('+safe(Q.inventory_rows)+' registros).</p>'+
  '<div class="card ph INUNDACION_PLUVIAL"><b>Inundación pluvial</b><br><span class="note">Lluvia local intensa en ciudades y llanuras. Se vigila solo con lluvia IMERG y avisos de lluvias; no hay una fuente gratuita integrada de inundaciones urbanas observadas.</span></div>';}
-// ---------- data and gaps tab
-function renderData(){$("tab-datos").innerHTML='<h2>Fuentes, fecha y calidad</h2><div class="tw"><table><thead><tr><th>Fuente</th><th>Actualización</th><th>Calidad</th></tr></thead><tbody>'+D.sources.map(s=>'<tr><td>'+safe(s.label)+'</td><td>'+(s.updated_at_utc?safe(fmt(s.updated_at_utc))+'<br><span class="note">'+safe(ageTxt(s.updated_at_utc))+'</span>':'<span class="note">archivo estático</span>')+(s.data_end_utc?'<br><span class="note">fin de datos '+safe(fmt(s.data_end_utc))+'</span>':"")+'</td><td class="note">'+safe(s.quality)+'</td></tr>').join("")+'</tbody></table></div>'+
- '<h2>Pendiente o insuficiente</h2>'+(D.pending||[]).map(p=>'<div class="card"><b>'+safe(p.item)+'</b><br><span class="note">'+safe(p.reason)+'</span></div>').join("")+
- '<h2>Guardas</h2><p class="note">deployment_status='+safe(D.deployment_status)+' · test_mode='+safe(D.test_mode)+' · activation_gate='+safe(D.activation_gate)+' · production_use=false · public_alerting=false · notifications_enabled=false · predictive_engine_enabled=false · decision_thresholds=null</p><p class="note">'+safe(D.disclaimer_es)+'</p>';}
+// ---------- dialogs: information, sources, limitations
+$("infoBody").innerHTML='<p class="note">Vista privada de vigilancia científica de la costa (Tumbes–Tacna) · <b>Research Preview 1</b>. '+safe(D.disclaimer_es)+'</p>'+
+ '<h3>Tres fenómenos distintos</h3>'+(D.phenomena||[]).map(p=>'<div class="card ph '+safe(p.id)+'"><b>'+safe(p.label)+'</b> <span class="note">('+safe(p.examples)+')</span><br><span class="note">Capas: '+safe(p.layers.join(", "))+'<br>Tiempo real: '+safe(p.realtime)+'<br>Avisos: '+safe(p.avisos)+'</span></div>').join("")+
+ '<h3>Cómo usarla</h3><ul class="note"><li>«Capas» activa y desactiva cada capa; el recuadro «Estás viendo» indica qué se muestra y de qué fecha.</li><li>Busca una ciudad o un departamento en la barra superior.</li><li>Pulsa un departamento en el mapa o en la tabla del panel para ver su resumen.</li><li>La lluvia es una estimación satelital (IMERG Early) con horas de retraso; en esta versión está congelada.</li></ul>'+
+ '<p class="note">Guardas: deployment_status='+safe(D.deployment_status)+' · test_mode='+safe(D.test_mode)+' · activation_gate='+safe(D.activation_gate)+' · production_use=false · public_alerting=false · notifications_enabled=false · predictive_engine_enabled=false · decision_thresholds=null</p>';
+$("navLinks").innerHTML=SINGLE?"Copia privada de un solo archivo; las demás páginas v0.9 están en la rama del repositorio.":
+ 'Otras páginas v0.9: <a href="resumen.html">Resumen</a> · <a href="peru.html">Mapa del Perú</a> · <a href="territorio.html">Visor costa norte / Rímac</a> · <a href="inventario.html">Inventario</a> · <a href="index.html">Lluvia y avisos (zonas)</a>';
+const SRC=D.sources.map(s=>{const h=age(s.updated_at_utc);const st=!s.updated_at_utc?"archivo estático":(s.stale_after_minutes&&h*60>s.stale_after_minutes?"antigua · "+ageTxt(s.updated_at_utc):ageTxt(s.updated_at_utc));
+ return '<tr><td>'+safe(s.label)+'</td><td>'+(s.updated_at_utc?safe(fmt(s.updated_at_utc))+'<br><span class="note">'+safe(st)+'</span>':'<span class="note">archivo estático</span>')+(s.data_end_utc?'<br><span class="note">fin de datos '+safe(fmt(s.data_end_utc))+'</span>':"")+'</td><td class="note">'+safe(s.quality)+'</td></tr>';}).join("");
+$("sourcesBody").innerHTML='<div class="tw"><table><thead><tr><th>Fuente</th><th>Actualización</th><th>Calidad</th></tr></thead><tbody>'+SRC+
+ (REF.status==="OK"?'<tr><td>Referencia cartográfica (contorno, departamentos, ciudades)</td><td><span class="note">archivo estático</span></td><td class="note">'+safe(REF.provenance.dataset)+' · '+safe(REF.provenance.licence)+' · orientación, no límite oficial</td></tr>':"")+
+ (SINGLE?"":'<tr><td>Mapa base</td><td><span class="note">teselas externas</span></td><td class="note">CARTO Voyager / OpenStreetMap; solo orientación</td></tr>')+'</tbody></table></div>';
+$("limitsBody").innerHTML=(ANY?'<div class="guard"><b>Datos congelados, no actuales.</b> Avisos comprobados por última vez: '+safe(fmt(AVCUT))+' · lluvia costera hasta '+safe(fmt(S.imerg_coast?.data_end_utc))+' · lluvia norte hasta '+safe(fmt(S.imerg_north?.data_end_utc))+'. Los avisos emitidos después no aparecen. Para la situación actual consulte SENAMHI e INDECI.</div>':"")+
+ '<h3>No disponible en esta vista</h3>'+(D.layers_unavailable||[]).map(u=>'<div class="card"><b>'+safe(u.label)+'</b><br><span class="note">'+safe(u.reason)+'</span></div>').join("")+
+ '<h3>Pendiente o insuficiente</h3>'+(D.pending||[]).map(p=>'<div class="card"><b>'+safe(p.item)+'</b><br><span class="note">'+safe(p.reason)+'</span></div>').join("");
+const openDlg=id=>{const d=$(id);if(d.showModal)d.showModal();else d.setAttribute("open","");};
+$("bInfo").onclick=()=>openDlg("dlg-info");$("bSources").onclick=()=>openDlg("dlg-sources");$("bLimits").onclick=()=>openDlg("dlg-limits");
+document.querySelectorAll("dialog [data-close]").forEach(b=>b.onclick=()=>b.closest("dialog").close());
+// ---------- layer panel and side panel toggles
+$("bLayers").onclick=()=>{const box=$("layers");box.hidden=!box.hidden;$("bLayers").setAttribute("aria-pressed",String(!box.hidden));};
+const PANEL_HIDDEN=()=>$("stage").classList.contains("nopanel");
+function togglePanel(show){$("stage").classList.toggle("nopanel",!show);$("bPanel").setAttribute("aria-pressed",String(show));if(map)setTimeout(()=>map.invalidateSize(),50);}
+$("bPanel").onclick=()=>togglePanel(PANEL_HIDDEN());
+// ---------- search: coastal departments (INEI) and cities (Natural Earth)
+const PLACES=[...DEPS.map(d=>({label:title(d)+" (departamento)",dep:d})),...CITIES.map(c=>({label:c.name,city:c}))];
+$("places").innerHTML=PLACES.map(p=>'<option value="'+safe(p.label)+'"></option>').join("");
+$("searchForm").onsubmit=e=>{e.preventDefault();const q=norm($("search").value);if(!q)return;
+ const hit=PLACES.find(p=>norm(p.label)===q)||PLACES.find(p=>norm(p.label).startsWith(q))||PLACES.find(p=>norm(p.label).includes(q));
+ if(!hit){msg="Sin resultados para «"+$("search").value+"» (se buscan departamentos costeros y ciudades de referencia).";renderViewing();return;}
+ if(hit.dep)selectDept(hit.dep);else if(map){map.setView([hit.city.lat,hit.city.lon],10);msg="";renderViewing();}};
 // ---------- init
-drawRain();renderSummary();renderRainTab();renderAvisos();renderRivers();renderQuebradas();renderData();showTab("resumen");
-function fromHash(){const h=decodeURIComponent(location.hash.slice(1));if(h.startsWith("dep=")){const k=h.slice(4);if(DEPS.includes(k)&&$("dept").value!==k)selectDept(k);}else if(h.startsWith("tab=")){const t=h.slice(4);if(TABS.some(x=>x[0]===t))showTab(t);}}
-fromHash();window.addEventListener("hashchange",fromHash);
-if(map&&deps.length&&!location.hash.startsWith("#dep=")){const all=L.geoJSON({type:"FeatureCollection",features:deps});map.fitBounds(all.getBounds(),{padding:[10,10]});}
+function fitPeru(){if(!map)return;const wide=window.matchMedia("(min-width:901px)").matches&&!$("layers").hidden;map.fitBounds([[-18.4,-81.4],[-0.1,-68.7]],{paddingTopLeft:[wide?320:8,8],paddingBottomRight:[8,wide?60:90],animate:false});}
+setBase(BASE);drawRain();renderLayers();renderSummary();renderRainTab();renderAvisos();renderRivers();renderQuebradas();showTab("resumen");
+if(window.matchMedia("(min-width:901px)").matches){$("layers").hidden=false;$("bLayers").setAttribute("aria-pressed","true");}
+fitPeru();cityZoom();if(map)map.attributionControl.addAttribution("Natural Earth · INEI (SERFOR)");
+function fromHash(){const h=decodeURIComponent(location.hash.slice(1));if(h.startsWith("dep=")){const k=h.slice(4);if(DEPS.includes(k))selectDept(k);}}
+if(!SINGLE){fromHash();window.addEventListener("hashchange",fromHash);}
 document.body.dataset.ready="1";
 })();
 </script></body></html>
