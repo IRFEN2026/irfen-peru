@@ -1,0 +1,27 @@
+name: TMP v0.9.1 - probe self-dispatch on a research branch (no data)
+on:
+  push:
+    branches: [research/v091-live-integration-20261102]
+    paths: [.github/workflows/tmp-v091-dispatch-probe.yml]
+  workflow_dispatch:
+    inputs:
+      hop:
+        description: hop number
+        default: "0"
+permissions:
+  contents: read
+  actions: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Re-dispatch once on the same branch with GITHUB_TOKEN
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run tmp-v091-dispatch-probe.yml --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME" -f hop=1 && echo DISPATCH_OK || echo DISPATCH_FAILED
+      - name: Dispatched hop
+        if: github.event_name == 'workflow_dispatch'
+        run: echo "hop=${{ inputs.hop }} ref=$GITHUB_REF_NAME"
