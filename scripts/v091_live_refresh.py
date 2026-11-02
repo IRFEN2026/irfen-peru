@@ -136,6 +136,8 @@ def fetch_attempts(cfg: dict, repo: str) -> dict:
                     errs = [ln.strip() for ln in lines if ("Error" in ln or "Exception" in ln or "Failure" in ln) and not ln.strip().startswith(("File ", "raise", "^"))
                             and "Process completed with exit code" not in ln]
                     info["error_excerpt"] = errs[-1][:240] if errs else None
+                    if lg.returncode != 0 or not errs:  # diagnostic only: the attempt is still reported as failed
+                        info["error_excerpt_note"] = f"log rc={lg.returncode} lines={len(lines)} {lg.stderr.strip()[:120]}"
             out["workflows"][wf] = info
         except Exception as exc:  # noqa: BLE001 - attempts unknown is shown as such, never as success
             out["errors"][wf] = f"{type(exc).__name__}: {exc}"[:200]
