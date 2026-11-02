@@ -89,7 +89,8 @@ def run(out: Path, local_leaflet: Path | None) -> dict:
                 page.locator("#win button", has_text=w).click()
             page.locator("#layers input[data-layer=ana]").check()
             page.locator("#layers input[data-layer=uh]").check()
-            chk["legend"] = page.locator("#viewing .legend").inner_text()[:80]
+            chk["legend"] = page.locator("#viewing .legend").last.inner_text()[:80]
+            chk["hydro_legend"] = page.locator("#viewing .legend").first.inner_text()[:60]
             page.screenshot(path=str(out / f"{name}_layers.png"), full_page=False)
             page.locator("#bLayers").click()
             page.fill("#search", "Chiclayo")

@@ -37,6 +37,8 @@ CATCH = ROOT / "data/v09/research/anticipation/north_catchments_v0_1.json"
 PECHP = ROOT / "data/v09/research/historical/pechp_daily_v0_1.json"
 EVAL = ROOT / "data/v09/research/anticipation/anticipation_evaluation_v0_1.json"
 REFERENCE = ROOT / "data/v09/sources/natural_earth_reference/peru_reference_v0_1.json"
+IGN_DIR = ROOT / "data/v09/sources/ign_hidrografia_500k"
+IGN_CLASS = {"Río Principal": "RP", "Río Secundario": "RS", "Quebrada Húmeda": "QH", "Quebrada Seca": "QS", "Río Seco": "RX"}
 TUMBES_EV = ROOT / "site/data/validation/phase2_discovery_evidence/tumbes_rio_tumbes_initial_context_2019_2026.json"
 COAST = ["TUMBES", "PIURA", "LAMBAYEQUE", "LA LIBERTAD", "ANCASH", "LIMA", "CALLAO", "ICA", "AREQUIPA", "MOQUEGUA", "TACNA"]
 WINDOWS = [1, 3, 6, 24, 72]
@@ -366,6 +368,97 @@ def quebradas():
                 inventory_by_department=by_dep, inventory_rows=len(inv.get("rows", [])))
 
 
+# ---------------------------------------------------------------- IGN hydrography (cartographic reference)
+def ign_name(raw):
+    """IGN stores some names with upper-case accented letters inside words ('RÍo CaÑete'); show them in normal case.
+    The original string is kept as `raw`. Blank names stay blank (unnamed course)."""
+    import re
+    t = re.sub(r"\s+", " ", str(raw or "")).strip()
+    if not t:
+        return None
+    return " ".join(w[0] + "".join(c.lower() if c in "ÁÉÍÓÚÑÜ" else c for c in w[1:]) if w else w for w in t.split(" "))
+
+
+def raster_departments(admin, res=0.01):
+    """Even–odd scanline raster of the INEI coastal departments: grid value = index + 1 (0 = outside)."""
+    import numpy as np
+    feats = admin["departments"]["features"]
+    x0, y0, x1, y1 = -81.5, -18.6, -68.6, -3.3
+    nx, ny = int((x1 - x0) / res) + 1, int((y1 - y0) / res) + 1
+    grid = np.zeros((ny, nx), np.uint8)
+    for k, f in enumerate(feats, start=1):
+        rings = [poly[0] for poly in rings_of(f["geometry"])]
+        edges = np.array([(a[0], a[1], b[0], b[1]) for r in rings for a, b in zip(r[:-1], r[1:])], float)
+        ys = y0 + (np.arange(ny) + 0.5) * res
+        for j, y in enumerate(ys):
+            m = (edges[:, 1] > y) != (edges[:, 3] > y)
+            if not m.any():
+                continue
+            e = edges[m]
+            xi = np.sort(e[:, 0] + (y - e[:, 1]) * (e[:, 2] - e[:, 0]) / (e[:, 3] - e[:, 1]))
+            for a, b in zip(xi[0::2], xi[1::2]):
+                i0, i1 = int(np.ceil((a - x0) / res - 0.5)), int(np.floor((b - x0) / res - 0.5))
+                if i1 >= i0:
+                    grid[j, max(0, i0):min(nx, i1 + 1)] = k
+    return grid, (x0, y0, res), [f["properties"]["id"] for f in feats]
+
+
+def ign_hydro(admin):
+    import gzip
+    prov = load(IGN_DIR / "provenance.json")
+    gzp = IGN_DIR / "rios_quebradas_costa.geojson.gz"
+    if not prov or not gzp.is_file() or not admin.get("departments"):
+        return dict(status="PENDIENTE", note="Sin captura IGN archivada.")
+    gj = json.loads(gzip.decompress(gzp.read_bytes()))
+    grid, (x0, y0, res), ids = raster_departments(admin)
+    ny, nx = grid.shape
+    out, per_dep = [], {d: {} for d in COAST}
+    for f in gj["features"]:
+        g = f["geometry"]
+        lines = [g["coordinates"]] if g["type"] == "LineString" else g["coordinates"]
+        deps = set()
+        for ln in lines:
+            for x, y, *_ in ln:
+                i, j = int((x - x0) / res), int((y - y0) / res)
+                if 0 <= i < nx and 0 <= j < ny and grid[j, i]:
+                    deps.add(ids[grid[j, i] - 1])
+        if not deps:
+            continue
+        simp = [r for r in (dp([p[:2] for p in ln], 0.0015) for ln in lines) if len(r) >= 2]
+        if not simp:
+            continue
+        pr = f["properties"]
+        name = ign_name(pr.get("Nombre"))
+        km = sum(math.hypot((b[0] - a[0]) * 111.32 * math.cos(math.radians(a[1])), (b[1] - a[1]) * 110.57)
+                 for ln in lines for a, b in zip(ln[:-1], ln[1:]))
+        cls = IGN_CLASS.get(pr.get("Rasgo_Prin"), "OT")
+        out.append(dict(type="Feature", geometry=dict(type="MultiLineString" if len(simp) > 1 else "LineString",
+                                                      coordinates=rnd(simp if len(simp) > 1 else simp[0])),
+                        properties=dict(id=pr.get("OBJECTID"), n=name, raw=pr.get("Nombre") if name and pr.get("Nombre", "").strip() != name else None,
+                                        c=cls, r="P" if pr.get("Rasgo_Secu") == "Perenne" else "I" if pr.get("Rasgo_Secu") == "Intermitente" else None,
+                                        d=sorted(deps), km=round(km, 1))))
+        for d in deps:
+            st = per_dep[d]
+            st.setdefault("by_class", {}).setdefault(cls, 0)
+            st["by_class"][cls] += 1
+            st.setdefault("unnamed", 0)
+            if not name:
+                st["unnamed"] += 1
+            else:
+                st.setdefault("named", {}).setdefault(name, 0)
+                st["named"][name] = round(st["named"][name] + km, 1)
+    out.sort(key=lambda f: f["properties"]["id"])
+    return dict(status="OK", source=dict(institution="Instituto Geográfico Nacional (IGN), Perú", layer="Ríos y Quebradas, Hidrografía 1:500.000",
+                                         service=prov["layer_url"], captured_at_utc=prov["finished_at_utc"], features_in_bbox=prov["count_in_bbox"],
+                                         complete=prov["complete"], geojson_sha256=prov.get("geojson_sha256"),
+                                         copyright=(prov.get("layer_meta") or {}).get("copyrightText") or "no declarado por el servicio",
+                                         classes=dict(RP="Río principal", RS="Río secundario", QH="Quebrada húmeda", QS="Quebrada seca", RX="Río seco"),
+                                         regime=dict(P="Perenne", I="Intermitente"),
+                                         note="Referencia cartográfica 1:500.000: recorrido de cauces con el nombre y la clase que asigna el IGN. "
+                                              "No es zona inundable, ni cuenca, ni indicador de peligro. Simplificado ~150 m para visualización."),
+                lines=dict(type="FeatureCollection", features=out), per_department=per_dep)
+
+
 def build() -> dict:
     dash = load(DASH)
     ref = iso(dash["built_at_utc"])
@@ -425,6 +518,7 @@ def build() -> dict:
              layers=["inventario", "centros poblados ANA", "geometrías IRFEN"], realtime="Sin observación directa",
              avisos="ACP-QUEBRADAS (INDECI/COEN)"),
     ]
+    hydro = ign_hydro(admin)
     ref = load(REFERENCE)
     reference = dict(status="PENDIENTE") if not ref else dict(status="OK", provenance=ref["provenance"], countries=ref["countries"],
                                                             departments=ref["departments"], cities_fields=ref["cities_fields"], cities=ref["cities"])
@@ -435,7 +529,7 @@ def build() -> dict:
         dict(id="caudal", label="Caudal o nivel de ríos en tiempo real", reason="No disponible (sin acceso automático permitido ni serie publicada)."),
     ]
     return dict(schema_version="irfen_v09_surveillance_view_v0_1", **GUARDS, built_from_dashboard_at_utc=dash["built_at_utc"],
-                reference=reference, layers_unavailable=layers_unavailable,
+                reference=reference, layers_unavailable=layers_unavailable, hydro_ign=hydro,
                 disclaimer_es=("Vista privada de vigilancia científica (RESEARCH_ONLY / TEST_ONLY). No es un sistema de alerta, no predice crecidas, "
                                "huaicos ni inundaciones, y no sustituye a SENAMHI, INDECI ni a las autoridades. La ausencia de datos no significa ausencia de peligro."),
                 coast_departments=COAST, sources=sources, admin=admin, rain=dict(north_zones=nz, coast=cr, windows_h=WINDOWS), avisos=av,

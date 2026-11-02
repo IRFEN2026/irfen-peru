@@ -33,12 +33,15 @@ class Bundle(unittest.TestCase):
         # When the PR is validated merged with a newer `main`, the bot's captures change some inputs: that is not the
         # frozen release, so the reproducibility checks are skipped (they hold on the tag itself).
         import hashlib
-        man = json.loads((ROOT / "research/v09/RESEARCH_PREVIEW_1_MANIFEST.json").read_text(encoding="utf-8"))
+        cand = ROOT / "research/v09/V091_CANDIDATE_MANIFEST.json"  # v0.9.1 candidate (post-freeze branch) takes precedence
+        man = json.loads((cand if cand.is_file() else ROOT / "research/v09/RESEARCH_PREVIEW_1_MANIFEST.json").read_text(encoding="utf-8"))
         self.assertFalse(man["public_alerting"] or man["predictive_engine_enabled"] or man["merged_into_main"])
         outputs = {"site/v09/vigilancia.html", "site/data/v09/surveillance_view_v0_1.json",
                    "research/v09/private_demo/irfen_vigilancia_privada.html", "scripts/v09_build_surveillance_view.py",
                    "scripts/v09_build_surveillance_demo.py", "qa/replay_tools/v09_surveillance_view_smoke.py",
-                   "scripts/v09_extract_reference_basemap.py", "data/v09/sources/natural_earth_reference/peru_reference_v0_1.json"}
+                   "scripts/v09_extract_reference_basemap.py", "data/v09/sources/natural_earth_reference/peru_reference_v0_1.json",
+                   "research/v09/private_demo/irfen_vigilancia_privada_v091.html", "scripts/v09_ign_hydrography_capture.py",
+                   "scripts/v09_ign_hydro_coverage_report.py", "data/v09/research/hydro/ign_coastal_coverage_v0_1.json"}
         sha = {rel: hashlib.sha256((ROOT / rel).read_bytes()).hexdigest() for rel in man["files"]}
         moved = [rel for rel in man["files"] if rel not in outputs and sha[rel] != man["files"][rel]]
         if moved:
@@ -63,6 +66,29 @@ class Bundle(unittest.TestCase):
         if D["admin"]["status"] == "OK":
             self.assertEqual({f["properties"]["id"] for f in D["admin"]["departments"]["features"]}, set(D["coast_departments"]))
             self.assertEqual(D["admin"]["source"]["legal_status"], "REFERENTIAL_CENSUS_LIMITS_NOT_LEGAL_DEMARCATION")
+
+    def test_ign_hydrography_is_reference_not_hazard(self):
+        h = D["hydro_ign"]
+        if h["status"] != "OK":
+            self.skipTest("no IGN capture")
+        self.assertTrue(h["source"]["complete"])
+        self.assertIn("No es zona inundable", h["source"]["note"])
+        feats = h["lines"]["features"]
+        self.assertGreater(len(feats), 500)
+        for f in feats:
+            p = f["properties"]
+            self.assertIn(p["c"], ("RP", "RS", "QH", "QS", "RX"))
+            self.assertTrue(set(p["d"]) <= set(D["coast_departments"]) and p["d"])
+            self.assertIn(p["r"], ("P", "I"))
+            if p["n"]:
+                self.assertNotRegex(p["n"], r"[a-zñ][ÁÉÍÓÚÑ]")  # IGN casing normalised for display; raw name kept
+        for dep in ("LA LIBERTAD", "ANCASH", "LIMA", "ICA", "AREQUIPA", "MOQUEGUA", "TACNA"):
+            self.assertGreater(sum(h["per_department"][dep]["by_class"].values()), 20, dep)
+        cov = _load("cov", "scripts/v09_ign_hydro_coverage_report.py")
+        with redirect_stdout(io.StringIO()):
+            self.assertEqual(cov.main(["--check"]), 0)
+        self.assertIn('register("hydro","Ríos y quebradas IGN 1:500.000 (incorporados)"', PAGE)
+        self.assertIn("no es zona inundable ni indicador de peligro", PAGE)
 
     def test_rain_windows_never_invent_zeros(self):
         self.assertEqual(D["rain"]["windows_h"], [1, 3, 6, 24, 72])
