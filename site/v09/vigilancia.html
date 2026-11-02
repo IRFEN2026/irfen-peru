@@ -193,6 +193,21 @@ function drawRain(){if(!map)return;rainCoast.clearLayers();rainZones.clearLayers
    return {color:"#1f5f8b",weight:1,fillColor:c||"#999",fillOpacity:w?.status==="COMPLETA"?(c?.76:0.03):0.15,dashArray:w?.status==="COMPLETA"?null:"3,3"};},
    onEachFeature:(f,l)=>{const w=f.properties.windows[WIN];l.bindPopup("<b>"+safe(f.properties.name)+"</b><br>IMERG Early, "+safe(WIN.replace("h"," h"))+": "+(w?.status==="COMPLETA"?safe(w.mm.toFixed(1).replace(".",","))+" mm (media areal)":"<b>no disponible</b> (ventana incompleta; no es cero)")+"<br>Fin de ventana: "+safe(fmt(Z.end_utc))+"<br><em>Estimación satelital, no pluviómetro.</em>");}}).addTo(rainZones);
  msg=m;renderViewing();}
+// Nationwide IGN cartographic reference (public WMS, manually enabled, not a risk layer).
+// Not added to the self-contained Claude artifact: that host cannot fetch external tiles.
+// Source: Instituto Geográfico Nacional, HIDROGRAFIA_500K/MapServer, layer 1.
+if(map&&!SINGLE){
+ map.createPane("hydroIGN");map.getPane("hydroIGN").style.zIndex=420;
+ const ign=L.tileLayer.wms("https://www.idep.gob.pe/geoportal/services/SERVICIOS_IGN/HIDROGRAFIA_500K/MapServer/WMSServer",{
+  layers:"1",version:"1.1.1",format:"image/png",transparent:true,pane:"hydroIGN",
+  opacity:.95,attribution:"Hidrografía 1:500.000 © Instituto Geográfico Nacional del Perú (IGN)"});
+ let ignErrors=0;
+ ign.on("tileerror",()=>{if(++ignErrors>=4&&R.hydroIGN?.on){toggle("hydroIGN",false);
+  msg="No se pudo cargar el servicio WMS de ríos y quebradas del IGN. La capa se desactivó; no significa ausencia de cauces.";
+  renderViewing();}});
+ register("hydroIGN","Ríos y quebradas IGN · toda la costa (referencia online)",ign,false,
+  ()=>"IGN 1:500.000 · líneas nacionales, permanentes o intermitentes; WMS online no validado en esta sesión; no indica zonas inundables");
+}
 // rivers
 const RV=D.rivers||{};
 if(map&&RV.uh?.features?.length)register("uh","Cuencas / UH ANA (ríos del norte)",L.geoJSON(RV.uh,{style:{color:"#2563a6",weight:1.5,fill:true,fillOpacity:.04},
@@ -231,7 +246,7 @@ function renderLayers(){const box=$("layers");const row=id=>R[id]?'<label><input
   Object.entries(BASES).map(([k,b])=>'<label><input type="radio" name="base" value="'+k+'"'+(BASE===k?" checked":"")+'> <span>'+safe(b.label)+'</span></label>').join("")+'<label><input type="radio" name="base" value="vector"'+(BASE==="vector"?" checked":"")+'> <span>Solo referencia vectorial<small>contorno, departamentos y ciudades (Natural Earth)</small></span></label>';
  box.innerHTML='<h3>Mapa base</h3>'+bases+'<h3>Referencia territorial</h3>'+row("deps")+row("provs")+row("cities")+
   '<h3>Lluvia estimada (IMERG Early)</h3><div class="seg" id="win" role="group" aria-label="Ventana de lluvia acumulada">'+["1h","3h","6h","24h","72h"].map(k=>'<button type="button" data-win="'+k+'" aria-pressed="'+(k===WIN)+'">'+k.replace("h"," h")+'</button>').join("")+'</div>'+row("rainCoast")+row("rainZones")+
-  '<h3>Avisos oficiales (INDECI/COEN)</h3>'+row("avisos")+'<h3>Crecidas de ríos</h3>'+row("uh")+row("stations")+'<h3>Quebradas</h3>'+row("qgeo")+row("ana")+
+  '<h3>Avisos oficiales (INDECI/COEN)</h3>'+row("avisos")+'<h3>Red hidrográfica de referencia (IGN)</h3>'+row("hydroIGN")+'<h3>Crecidas de ríos</h3>'+row("uh")+row("stations")+'<h3>Quebradas</h3>'+row("qgeo")+row("ana")+
   '<h3>No disponibles en esta vista</h3>'+(D.layers_unavailable||[]).map(u=>'<div class="na-item"><b>'+safe(u.label)+'</b><small>'+safe(u.reason)+'</small></div>').join("");
  box.querySelectorAll("input[data-layer]").forEach(i=>i.onchange=()=>toggle(i.dataset.layer,i.checked));
  box.querySelectorAll("input[name=base]").forEach(i=>i.onchange=()=>setBase(i.value));
