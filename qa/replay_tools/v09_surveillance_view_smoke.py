@@ -60,7 +60,7 @@ def semaforo_cases():
                     if strip:
                         c["avisos"] = []
                     r = sem.evaluate(c, S, t)
-                    cases.append(dict(cp=c, S=S, t=t.isoformat(), expect=[r["state"], r["rule"], r["confidence"]]))
+                    cases.append(dict(cp=c, S=S, t=t.isoformat(), expect=[r["state"], r["rule"], r["confidence"], r["context"]]))
     return cases
 
 
@@ -71,7 +71,9 @@ def semaforo_checks(page, out, name) -> dict:
     r["guard"] = "no es una alerta oficial" in page.locator("#tab-semaforo .guard").inner_text()
     r["rows_now"] = page.locator("#tab-semaforo tbody tr").count()
     r["states_now"] = sorted(set(page.eval_on_selector_all("#tab-semaforo tbody tr", "rs=>rs.map(x=>x.dataset.state)")))
-    r["map_points"] = page.locator(".leaflet-sema-pane path.sm-pt").count()
+    r["map_points"] = page.locator(".leaflet-sema-pane .sm-pt").count()
+    r["map_squares_ana"] = page.locator(".leaflet-sema-pane .sm-sq").count()
+    r["context_box"] = page.locator("#smCtx").inner_text()[:160]
     page.select_option("#smType", "rio")
     r["rows_rios"] = page.locator("#tab-semaforo tbody tr").count()
     page.select_option("#smType", "quebrada")
@@ -89,17 +91,21 @@ def semaforo_checks(page, out, name) -> dict:
     page.wait_for_selector(".leaflet-popup-content", timeout=5000)
     page.wait_for_timeout(400)  # popup fade-in
     pop = page.locator(".leaflet-popup-content").inner_text()
-    r["popup_fields"] = all(k in pop for k in ("confianza", "Evaluado", "IMERG 24 h", "GOES-19", "no es una alerta oficial"))
+    r["popup_fields"] = all(k in pop for k in ("confianza", "Evaluado", "IMERG 24 h", "GOES-19", "no es una alerta oficial",
+                                                "Contexto territorial", "posible crecida"))
     page.screenshot(path=str(out / f"{name}_semaforo_popup.png"), full_page=False)
     page.locator(".leaflet-popup-close-button").click()
     page.locator("#tab-semaforo button[data-smmode=AHORA]").click()
     page.select_option("#smDep", "ALL")
     cases = semaforo_cases()
-    got = page.evaluate("cs=>cs.map(c=>{const r=window.IRFEN_SEMAFORO_EVAL(c.cp,c.S,c.t);return [r.state,r.rule,r.confidence];})",
+    got = page.evaluate("cs=>cs.map(c=>{const r=window.IRFEN_SEMAFORO_EVAL(c.cp,c.S,c.t);return [r.state,r.rule,r.confidence,r.context];})",
                         [dict(cp=c["cp"], S=c["S"], t=c["t"]) for c in cases])
     bad = [(c["cp"]["id"], c["t"], c["expect"], g) for c, g in zip(cases, got) if g != c["expect"]]
     from collections import Counter
-    r["js_vs_python"] = dict(cases=len(cases), mismatches=len(bad), first=bad[:3], states=dict(Counter(c["expect"][0] for c in cases)))
+    # the audited case: a regional aviso is in force but the point's local data are stale → grey, aviso kept as context
+    reg = [c for c in cases if c["expect"][3]["vigentes"] and c["expect"][1] == "NO_EVALUABLE"]
+    r["js_vs_python"] = dict(cases=len(cases), mismatches=len(bad), first=bad[:3], states=dict(Counter(c["expect"][0] for c in cases)),
+                             regional_aviso_with_stale_local_data=dict(cases=len(reg), all_grey=all(c["expect"][0] == "GRIS" for c in reg)))
     return r
 
 

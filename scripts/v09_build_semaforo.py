@@ -4,16 +4,18 @@
 Coloca puntos de seguimiento SOLO sobre geometrías documentadas y les asocia las entradas con las que la vista privada
 evalúa el color en el navegador (reglas en config/v09_semaforo_rules_v0_1.json):
 
-* ríos: vértices reales de la red IGN 1:500.000 (sectores alto / medio / bajo a una fracción de la longitud dentro del
-  departamento; el sentido aguas abajo se toma de este a oeste, que es como drenan los ríos de la vertiente del Pacífico);
-* quebradas: ubicaciones documentales de centros poblados expuestos (ANA 2016-17), agrupadas a ≤ 2 km para no saturar
-  el mapa; la coordenada es la del punto documental del grupo, nunca un centroide.
+* puntos de cauce: vértices reales de la red IGN 1:500.000, en sectores a una fracción de la longitud dentro del
+  departamento. El sentido del flujo NO se presume de este a oeste: se acepta solo con evidencia física (desembocadura en
+  la costa o acumulación de flujo HydroSHEDS); sin ella los sectores se rotulan oeste / centro / este;
+* puntos de población expuesta: ubicaciones documentales de centros poblados expuestos a quebradas (ANA 2016-17),
+  agrupadas a ≤ 2 km; la coordenada es la del punto documental del grupo, nunca un centroide. No están sobre el cauce.
 
-Para cada punto guarda: zona de lluvia (polígono de cuenca del panel de zonas o celda IMERG de 0,1° de la instantánea
-costera), avisos de lluvia relacionados (departamento + provincia si el aviso lista provincias) y fuentes. También
-evalúa el estado «al corte» con la misma lógica que el navegador, para comprobar que ambos coinciden.
+Para cada punto guarda: lluvia local (polígono de cuenca del panel de zonas o celda IMERG de 0,1° de la instantánea
+costera), avisos de lluvia relacionados como CONTEXTO TERRITORIAL (no cambian el color) y fuentes. También evalúa el
+estado «al corte» con la misma lógica que el navegador, para comprobar que ambos coinciden.
 
-No emite alertas, no notifica, no predice. Sin confirmación documentada no hay rojo; sin datos no hay verde.
+No emite alertas, no notifica, no predice. Rojo solo con un evento reportado y verificado; sin datos locales recientes,
+gris; la lluvia satelital es lluvia observada, no activación.
 
     python3 scripts/v09_build_semaforo.py            # escribe data/v09/research/semaforo/semaforo_v0_1.json
     python3 scripts/v09_build_semaforo.py --check    # 0 si el archivo está al día
@@ -56,24 +58,80 @@ def iso(s):
 
 # ---------------------------------------------------------------- river chains on IGN vertices
 def chain(parts, join_km=2.0):
-    """Join IGN line parts into one upstream→downstream chain (east→west). Uses original vertices only."""
-    parts = [p if p[0][0] >= p[-1][0] else p[::-1] for p in parts if len(p) >= 2]
+    """Join IGN line parts into one path, using original vertices only and NO assumption about flow direction.
+    Starts at the free end (not within join_km of another part) of the longest part and greedily appends the nearest
+    part by either of its ends (ties: the longest). Returns the path in arbitrary order; orient() decides the direction."""
+    parts = [p for p in parts if len(p) >= 2]
     if not parts:
         return []
-    cur = max(parts, key=lambda p: p[0][0])
-    used, out = {id(cur)}, list(cur)
-    while True:
-        end = out[-1]
-        cand = [(km(end, p[0]), -len(p), i) for i, p in enumerate(parts) if id(p) not in used and km(end, p[0]) <= join_km]
-        if not cand:
-            break
-        _, _, i = min(cand)
-        used.add(id(parts[i]))
-        out.extend(parts[i][1:] if km(end, parts[i][0]) < 1e-6 else parts[i])
+    longest = max(parts, key=len)
+
+    def free(pt):
+        return not any(km(pt, e) <= join_km for q in parts if q is not longest for e in (q[0], q[-1]))
+    cur = longest if free(longest[0]) or not free(longest[-1]) else longest[::-1]
+    used, out = {id(longest)}, list(cur)
+    for head in (True, False):  # extend from the end, then from the start
+        while True:
+            end = out[-1]
+            cand = []
+            for i, q in enumerate(parts):
+                if id(q) in used:
+                    continue
+                for rev in (False, True):
+                    qq = q[::-1] if rev else q
+                    d = km(end, qq[0])
+                    if d <= join_km:
+                        cand.append((round(d, 6), -len(q), i, rev))
+            if not cand:
+                break
+            _, _, i, rev = min(cand)
+            used.add(id(parts[i]))
+            qq = parts[i][::-1] if rev else parts[i]
+            out.extend(qq[1:] if km(end, qq[0]) < 1e-6 else qq)
+        out.reverse()
     return out
 
 
-def river_checkpoints(dep, system, ign_by_id, in_dep, positions):
+def spearman(xs, ys):
+    import numpy as np
+    rx = np.argsort(np.argsort(xs)).astype(float)
+    ry = np.argsort(np.argsort(ys)).astype(float)
+    if rx.std() == 0 or ry.std() == 0:
+        return 0.0
+    return float(np.corrcoef(rx, ry)[0, 1])
+
+
+def orient(path, coast_km, flow_acc, thr):
+    """Decide which end of `path` is downstream, from physical evidence only. Returns (path_upstream_first, evidence)."""
+    ev = dict(ign_digitisation="no usado (inconsistente entre líneas IGN)")
+    votes = []
+    d0, d1 = coast_km(path[0]), coast_km(path[-1])
+    ev["coast_km"] = [round(d0, 1), round(d1, 1)]
+    if min(d0, d1) <= thr["mouth_max_km"] and max(d0, d1) >= thr["inland_min_km"]:
+        votes.append(("DESEMBOCADURA", 1 if d1 < d0 else 0))
+    if flow_acc is not None:
+        vals = [flow_acc(x, y) for x, y in path]
+        ok = [(i, v) for i, v in enumerate(vals) if v is not None]
+        cov = len(ok) / len(path)
+        ev["flow_coverage"] = round(cov, 2)
+        if cov >= thr["flow_min_coverage"] and len(ok) >= 10:
+            rho = spearman([i for i, _ in ok], [v for _, v in ok])
+            ev["flow_spearman"] = round(rho, 3)
+            if abs(rho) >= thr["flow_min_abs_spearman"]:
+                votes.append(("RED_DE_FLUJO_HYDROSHEDS", 1 if rho > 0 else 0))
+    downstream = {v for _, v in votes}
+    ev["evidence"] = [k for k, _ in votes]
+    if len(downstream) == 1:
+        ev["status"] = "VERIFICADA_" + ("DOS_FUENTES" if len(votes) > 1 else votes[0][0])
+        return (path if downstream == {1} else path[::-1]), ev
+    ev["status"] = "CONTRADICTORIA" if len(downstream) > 1 else "NO_VERIFICADA"
+    return (path if path[0][0] >= path[-1][0] else path[::-1]), ev  # display order only (east first); not a flow claim
+
+
+NEUTRAL = {"alto": "este", "medio": "centro", "bajo": "oeste"}
+
+
+def river_checkpoints(dep, system, ign_by_id, in_dep, positions, coast_km, flow_acc, thr):
     parts, used_ids = [], []
     for oid in system["ign_objectids"]:
         f = ign_by_id.get(oid)
@@ -82,7 +140,8 @@ def river_checkpoints(dep, system, ign_by_id, in_dep, positions):
         g = f["geometry"]
         used_ids.append(oid)
         parts += [[p[:2] for p in ln] for ln in ([g["coordinates"]] if g["type"] == "LineString" else g["coordinates"])]
-    path = chain(parts)
+    path, orient_ev = orient(chain(parts), coast_km, flow_acc, thr)
+    verified = orient_ev["status"].startswith("VERIFICADA")
     inside = [p for p in path if in_dep(p)]
     if len(inside) < 3:
         return [], dict(id=system["id"], status="SIN_TRAMO_EN_DEPARTAMENTO", ign_objectids=used_ids)
@@ -96,16 +155,22 @@ def river_checkpoints(dep, system, ign_by_id, in_dep, positions):
         target = pos["fraction"] * total
         k = min(range(len(inside)), key=lambda i: abs(cum[i] - target))
         x, y = inside[k]
-        out.append(dict(id=f"{dep[:3]}-R-{system['id']}-{pos['sector'].upper()}", name=f"{system['name']} · sector {pos['sector']}",
-                        type="rio", system_id=system["id"], system=system["name"], sector=pos["sector"],
-                        lat=round(y, 5), lon=round(x, 5),
+        sector = pos["sector"] if verified else NEUTRAL[pos["sector"]]
+        label = f"tramo {sector} en {dep.title()}" if verified else f"tramo {sector} (orientación no verificada)"
+        basis = ("aguas abajo según " + " y ".join({"DESEMBOCADURA": "la desembocadura en la costa",
+                                                   "RED_DE_FLUJO_HYDROSHEDS": "la acumulación de flujo HydroSHEDS"}[e] for e in orient_ev["evidence"])) \
+            if verified else "orden geográfico, sin sentido de flujo verificado"
+        out.append(dict(id=f"{dep[:3]}-R-{system['id']}-{pos['sector'].upper()}", name=f"{system['name']} · {label}",
+                        type="rio", location_kind="CAUCE_IGN", system_id=system["id"], system=system["name"], sector=sector,
+                        sector_verified=verified, lat=round(y, 5), lon=round(x, 5),
                         location_basis=f"Vértice de la línea IGN 1:500.000 (OBJECTID {', '.join(map(str, used_ids))}) a ~{round(cum[k])} km "
-                                       f"de {round(total)} km del cauce dentro del departamento (sentido este→oeste).",
+                                       f"del extremo superior de {round(total)} km de cauce dentro del departamento ({basis}). "
+                                       f"Representa un sector del tramo departamental, no la cabecera ni un punto de control.",
                         location_confidence="MEDIA",
                         location_confidence_note="Posición sobre el cauce cartográfico 1:500.000 (generalizado); no es una estación ni un punto de aforo.",
                         rain_zone=system.get("rain_zone")))
     return out, dict(id=system["id"], status="OK", ign_objectids=used_ids, km_in_department=round(total, 1), vertices=len(inside),
-                     rain_zone=system.get("rain_zone"), rain_zone_note=system.get("rain_zone_note"))
+                     orientation=orient_ev, rain_zone=system.get("rain_zone"), rain_zone_note=system.get("rain_zone_note") or system.get("rain_proxy_note"))
 
 
 # ---------------------------------------------------------------- documented quebradas (ANA 2016-17) clustered
@@ -145,13 +210,14 @@ def quebrada_checkpoints(dep, ana_pts, river_paths, max_km, mixto_km):
             d = min((km((p["lon"], p["lat"]), v) for p in g for v in path), default=1e9)
             if d <= mixto_km and (near is None or d < near[2]):
                 near = (sid, sname, d)
-        label = ("Quebrada " if len(names) == 1 else "Quebradas ") + ", ".join(names[:3]) + (" y otras" if len(names) > 3 else "")
-        out.append(dict(id=f"{dep[:3]}-Q-{n:03d}", name=label + (f" ({towns[0]})" if towns else ""),
-                        type="mixto" if near else "quebrada", system_id=near[0] if near else None,
+        qs = ("quebrada " if len(names) == 1 else "quebradas ") + ", ".join(names[:3]) + (" y otras" if len(names) > 3 else "")
+        out.append(dict(id=f"{dep[:3]}-Q-{n:03d}", name=f"Poblado expuesto {towns[0] if towns else 'sin nombre'} · {qs}",
+                        type="mixto" if near else "quebrada", location_kind="POBLADO_ANA", system_id=near[0] if near else None,
                         system=(near[1] if near else "Quebradas documentadas ANA 2016-17"), sector=None,
                         lat=round(rep["lat"], 5), lon=round(rep["lon"], 5),
                         location_basis=f"Ubicación documental del centro poblado expuesto {rep['id']} (ANA 2016-17, coordenada UTM leída "
-                                       f"{rep.get('coordinate_basis') or 'sin base declarada'}). Es el lugar expuesto, no el cauce de la quebrada.",
+                                       f"{rep.get('coordinate_basis') or 'sin base declarada'}). Es la población expuesta, no un punto del cauce de la quebrada"
+                                       + (f"; el cauce IGN de {near[1]} pasa a {round(near[2], 2)} km." if near else "."),
                         location_confidence="MEDIA" if (rep.get("coordinate_basis") or "").startswith("OCR_2") or rep.get("manual_review") else "BAJA",
                         location_confidence_note="Coordenada documental del poblado; los nombres proceden de OCR del cuadro ANA y pueden tener errores de lectura.",
                         quebradas=names, centros_poblados=towns, district=rep.get("district_ocr"),
@@ -219,31 +285,17 @@ def related_avisos(avisos_idx, dep, prov):
     return sorted(out)
 
 
-# ---------------------------------------------------------------- evaluation (mirrors the JS in site/v09/vigilancia.html)
+# ---------------------------------------------------------------- evaluation (mirrors smEval in site/v09/vigilancia.html)
 def evaluate(cp, S, t):
+    """Local state of one checkpoint at time t. Avisos are territorial CONTEXT and never change the colour."""
     R = S["rules"]
     fr = R["freshness"]
     res = R["rain_signal"]["display_resolution_mm"]
-    reasons, basis = [], []
-    # confirmations (ROJO)
     win = timedelta(hours=fr["confirmation_window_hours"])
     # a confirmation names one checkpoint, or a whole river system (then it applies to that system's river points only)
     conf = [c for c in S["confirmations"] if c.get("verified") and c.get("observed_at_utc")
             and (c.get("checkpoint_id") == cp["id"] or (cp["type"] == "rio" and c.get("system_id") and c.get("system_id") == cp.get("system_id")))
             and t - win <= iso(c["observed_at_utc"]) <= t]
-    chk = iso(S["aviso_check_utc"]) if S.get("aviso_check_utc") else None
-    av_fresh = chk is not None and timedelta(0) <= t - chk <= timedelta(minutes=fr["avisos_source_max_age_minutes"])
-    vig, fut, unk = [], [], []
-    for k in cp["avisos"]:
-        a = S["avisos"][k]
-        if not a["start"] or not a["end"]:
-            unk.append(k)
-        elif iso(a["start"]) <= t <= iso(a["end"]):
-            vig.append(k)
-        elif iso(a["start"]) > t:
-            fut.append(k)
-    if not av_fresh:
-        unk = []  # an aviso of unknown validity only counts while the aviso check is fresh
     rr = S["rain_refs"].get(cp.get("rain_ref") or "")
     i24 = i_fresh = None
     if rr and rr["imerg"]["end_utc"]:
@@ -258,28 +310,29 @@ def evaluate(cp, S, t):
         g_rate = rr["goes"].get("rate_mm_h") if g_fresh and (rr["goes"].get("valid_fraction") or 0) > 0 else None
     if conf:
         state, rule = "ROJO", "CONFIRMACION"
-        reasons.append(f"{len(conf)} confirmación(es) documentada(s) en las últimas {fr['confirmation_window_hours']} h")
-    elif vig:
-        state, rule = "AMARILLO", "R2"
-        reasons.append(f"Aviso de lluvia vigente relacionado: {', '.join(vig)}")
-    elif fut or unk:
-        state, rule = "AMARILLO", "R3"
-        reasons.append(f"Aviso de lluvia {'futuro' if fut else 'de vigencia desconocida'} relacionado: {', '.join(fut + unk)}")
     elif (i24 is not None and i24 >= res) or (g_rate is not None and g_rate > 0):
-        state, rule = "AMARILLO", "R4"
-        reasons.append("Lluvia estimada no nula en la última ventana de 24 h de IMERG o en la última muestra GOES-19")
-    elif av_fresh and i24 is not None and (not g_app or g_rate is not None):
-        state, rule = "VERDE", "R6"
-        reasons.append("Sin aviso de lluvia y lluvia estimada nula en los datos disponibles y al día")
+        state, rule = "AMARILLO", "LLUVIA_SATELITAL"
+    elif i24 is not None and (not g_app or g_rate is not None):
+        state, rule = "VERDE", "SIN_LLUVIA_SATELITAL"
     else:
-        state, rule = "GRIS", "R5"
-        reasons.append("Datos ausentes, incompletos o antiguos: no evaluable")
-    fresh = [av_fresh, bool(i_fresh)] + ([bool(g_fresh)] if g_app else [])
-    conf_level = "BAJA" if state == "GRIS" else ("ALTA" if all(fresh) else "MEDIA" if any(fresh) else "BAJA")
+        state, rule = "GRIS", "NO_EVALUABLE"
+    fresh = [bool(i_fresh)] + ([bool(g_fresh)] if g_app else [])
+    level = "BAJA" if state == "GRIS" else ("ALTA" if all(fresh) else "MEDIA")
     if state == "ROJO":
-        conf_level = "ALTA" if any(c.get("source_kind") == "OFICIAL" for c in conf) else "MEDIA"
-    return dict(state=state, rule=rule, confidence=conf_level, reasons=reasons,
-                fresh=dict(avisos=av_fresh, imerg=i_fresh, goes=g_fresh if g_app else "NO_APLICA"))
+        level = "ALTA" if any(c.get("source_kind") == "OFICIAL" for c in conf) else "MEDIA"
+    # territorial context (does not affect the colour)
+    chk = iso(S["aviso_check_utc"]) if S.get("aviso_check_utc") else None
+    av_fresh = chk is not None and timedelta(0) <= t - chk <= timedelta(minutes=fr["avisos_source_max_age_minutes"])
+    vig, fut = [], []
+    for k in cp["avisos"]:
+        a = S["avisos"][k]
+        if a["start"] and a["end"] and iso(a["start"]) <= t <= iso(a["end"]):
+            vig.append(k)
+        elif a["start"] and iso(a["start"]) > t:
+            fut.append(k)
+    return dict(state=state, rule=rule, confidence=level,
+                context=dict(vigentes=vig, futuros=fut, avisos_check_fresh=av_fresh),
+                fresh=dict(imerg=i_fresh, goes=g_fresh if g_app else "NO_APLICA"))
 
 
 # ---------------------------------------------------------------- build
@@ -295,7 +348,9 @@ def build():
     ign_by_id = {f["properties"]["OBJECTID"]: f for f in gj["features"]}
     grid, (x0, y0, res), ids = SV.raster_departments(admin)
     ana = SV.load(SV.ANA)
-    products = set(rules["rain_related_products"])
+    coast_km = coast_distance()
+    flow_acc = hydrosheds_acc()
+    products = set(rules["territorial_context"]["products"])
     avisos_idx = {}
     for a in dash["avisos"]:
         if a["product"] not in products or not a.get("rain_related") or a.get("cancellation_text") or a.get("superseded_by"):
@@ -306,6 +361,8 @@ def build():
                                           level=a.get("official_level"), url=a.get("official_url"), departments=a.get("departments") or [],
                                           provinces={SV.norm(k): [SV.norm(p) for p in v] for k, v in (a.get("provinces_by_department") or {}).items()},
                                           phenomenon=(a.get("phenomenon") or "")[:160])
+        provs = avisos_idx[a["aviso_key"]]["provinces"]
+        avisos_idx[a["aviso_key"]]["scope_by_department"] = {d: ("PROVINCIA" if provs.get(d) else "DEPARTAMENTO") for d in avisos_idx[a["aviso_key"]]["departments"]}
     refs, _ = rain_refs(dash, nz, cr)
     zone_geoms = {f["properties"]["zone_id"]: f["geometry"] for f in (nz.get("zones") or {}).get("features", []) if f.get("geometry")}
     zone_dep = {f["properties"]["zone_id"]: f["properties"].get("department") for f in (nz.get("zones") or {}).get("features", [])}
@@ -322,7 +379,7 @@ def build():
             return 0 <= j < grid.shape[0] and 0 <= i < grid.shape[1] and grid[j, i] == k
         sys_out, river_paths, cps = [], [], []
         for s in dcfg["river_systems"]:
-            pts, info = river_checkpoints(dep, s, ign_by_id, in_dep, systems["river_positions"])
+            pts, info = river_checkpoints(dep, s, ign_by_id, in_dep, systems["river_positions"], coast_km, flow_acc, systems["orientation_thresholds"])
             sys_out.append(info)
             cps += pts
             parts = []
@@ -352,20 +409,22 @@ def build():
                 cp["rain_basis"] = "Celda IMERG de 0,1° que contiene el punto (lluvia local, no de la cuenca aguas arriba)." if key else None
             cp["avisos"] = related_avisos(avisos_idx, dep, cp["province"])
             src = ["IGN · Hidrografía 1:500.000 (posición del cauce)"] if cp["type"] == "rio" else \
-                  ["ANA 2016-17 · centros poblados vulnerables por activación de quebradas (posición y nombres)"]
+                  ["ANA 2016-17 · centros poblados vulnerables por activación de quebradas (posición de la población expuesta y nombres)"]
             if cp["type"] == "mixto":
                 src.append("IGN · Hidrografía 1:500.000 (cauce a ≤ 1 km)")
-            src += ["SENAMHI vía INDECI/COEN · avisos de lluvia", "NASA GPM IMERG Early V07"]
+            src += ["NASA GPM IMERG Early V07 (lluvia local)", "SENAMHI vía INDECI/COEN · avisos de lluvia (solo contexto territorial)"]
             if cp["rain_ref"] and refs[cp["rain_ref"]].get("goes"):
                 src.append("NOAA GOES-19 RRQPE")
             cp["sources"] = src
             lim = ["Experimental: no es una alerta oficial ni predice crecidas o huaicos.",
-                   "Sin caudal, nivel ni observación en campo: el color resume lluvia estimada y avisos, no el estado del cauce.",
-                   "Relación con avisos por límites administrativos referenciales (INEI), no por la huella del aviso."]
+                   "Sin caudal, nivel ni observación en campo: el color resume la lluvia satelital local, no el estado del cauce; no hay evidencia integrada de posible crecida.",
+                   "Los avisos son contexto territorial (límites INEI referenciales, no la huella del aviso) y no cambian el color."]
             if cp["rain_ref"] and cp["rain_ref"].startswith("cell:"):
                 lim.append("Lluvia de una celda de ~11 km de una instantánea de investigación: queda antigua enseguida (gris).")
             if cp["type"] == "rio":
-                lim.append("La lluvia se toma de la cuenca de la zona indicada; puede no representar todo el tramo.")
+                lim.append("La lluvia se toma de la zona indicada; puede no representar todo el tramo ni su área de aportación.")
+            else:
+                lim.append("Punto de población expuesta (ANA), no un punto del cauce: la quebrada puede activarse sin lluvia detectada aquí.")
             cp["limitations"] = lim
         n_r = sum(1 for c in cps if c["type"] == "rio")
         coverage.append(dict(department=dep, status=dcfg["status"], checkpoints=len(cps), rios=n_r,
@@ -381,11 +440,57 @@ def build():
     cutoff = iso(dash["rain"]["evaluated_at_utc"])
     for cp in checkpoints:
         cp["state_at_cutoff"] = evaluate(cp, S, cutoff)
-    return dict(schema_version="irfen_v09_semaforo_v0_1", **GUARDS, name=rules["name"], built_from_dashboard_at_utc=dash["built_at_utc"],
+    return dict(schema_version="irfen_v09_semaforo_v0_1", rules_revision=rules.get("rules_revision"), orientation_rule_es=systems["orientation_rule"], **GUARDS, name=rules["name"], built_from_dashboard_at_utc=dash["built_at_utc"],
                 cutoff_utc=dash["rain"]["evaluated_at_utc"], rules=rules, confirmations=confirm, aviso_check_utc=S["aviso_check_utc"],
                 avisos=avisos_idx, rain_refs=refs, checkpoints=checkpoints, coverage=coverage,
-                placement_rule_es=systems["rule"], quebrada_rule_es=systems["quebrada_rule"], extend_es=systems["extend_es"], evaluation_es=("El color se evalúa en el navegador al abrir la vista («ahora») con estas "
-                                                                   "entradas y reglas; «al corte» repite la evaluación en la fecha del corte de datos."))
+                placement_rule_es=systems["rule"], quebrada_rule_es=systems["quebrada_rule"], extend_es=systems["extend_es"], evaluation_es=("El color se evalúa en el navegador al abrir la vista («ahora») con los datos locales del punto; «al corte» "
+                                                                   "repite la evaluación en la fecha del corte de datos. Los avisos se muestran como contexto territorial."))
+
+
+def coast_distance():
+    """km from a point to the Pacific coastline (Natural Earth 1:50m Peru polygon minus land borders shared with neighbours)."""
+    ref = SV.load(SV.REFERENCE)
+    feats = ref["countries"]["features"]
+    per = next(f for f in feats if f["properties"].get("iso") == "PER")
+    rings = lambda g: [p[0] for p in (g["coordinates"] if g["type"] == "MultiPolygon" else [g["coordinates"]])]
+    other = {(round(x, 4), round(y, 4)) for f in feats if f["properties"].get("iso") != "PER" for r in rings(f["geometry"]) for x, y in r}
+    segs = [(a, b) for r in rings(per["geometry"]) for a, b in zip(r[:-1], r[1:])
+            if not ((round(a[0], 4), round(a[1], 4)) in other and (round(b[0], 4), round(b[1], 4)) in other)]
+
+    def d(p):
+        cx, cy = 111.32 * math.cos(math.radians(p[1])), 110.57
+        best = 1e9
+        for a, b in segs:
+            ax, ay, bx, by = (a[0] - p[0]) * cx, (a[1] - p[1]) * cy, (b[0] - p[0]) * cx, (b[1] - p[1]) * cy
+            dx, dy = bx - ax, by - ay
+            u = max(0.0, min(1.0, -(ax * dx + ay * dy) / ((dx * dx + dy * dy) or 1)))
+            best = min(best, math.hypot(ax + u * dx, ay + u * dy))
+        return best
+    return d
+
+
+def hydrosheds_acc():
+    """HydroSHEDS 15\" flow accumulation already archived in the repository (binational box). Returns f(x, y) -> max
+    accumulation in a ±3-cell window (snaps the 1:500k IGN line to the modelled channel), or None outside coverage."""
+    import io
+    import numpy as np
+    d = ROOT / "data/v09/sources/hydrosheds_binational"
+    prov = SV.load(d / "provenance.json")
+    if not prov or not (d / "acc15.npy.gz").is_file():
+        return None
+    acc = np.load(io.BytesIO(gzip.decompress((d / "acc15.npy.gz").read_bytes())))
+    t = prov["acc15"]["transform"]
+    nod = prov["acc15"].get("nodata")
+
+    def f(x, y, w=3):
+        c, r = int((x - t[2]) / t[0]), int((y - t[5]) / t[4])
+        if not (w <= r < acc.shape[0] - w and w <= c < acc.shape[1] - w):
+            return None
+        win = acc[r - w:r + w + 1, c - w:c + w + 1].astype(float)
+        if nod is not None:
+            win = win[win != nod]
+        return float(win.max()) if win.size else None
+    return f
 
 
 def main(argv=None) -> int:

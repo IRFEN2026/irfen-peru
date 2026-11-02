@@ -16,7 +16,7 @@
     "Red hidrográfica IGN Ríos y Quebradas 1:500.000 incorporada (captura del 02-11-2026)",
     "Paleta de lluvia de alto contraste (#466)",
     "Capa WMS IGN opcional (#466)",
-    "Semáforo de seguimiento experimental (no oficial): 39 puntos piloto en Lambayeque (La Leche, Chancay-Lambayeque/Reque, Zaña y quebradas documentadas ANA), evaluado en el navegador; sin rojo sin confirmación documentada, sin verde sin datos"
+    "Semáforo de seguimiento experimental (no oficial), revisión 0.2 tras la auditoría de #466: color = estado local del punto (lluvia satelital reciente o evento verificado); avisos regionales solo como contexto territorial; gris con datos locales antiguos; orientación de ríos por evidencia física; cauce IGN (●) distinto de población ANA (■)"
   ],
   "data_cutoff_utc": {
     "avisos_last_successful_check": "2026-11-01T16:47:51Z",
@@ -35,11 +35,11 @@
     "note": "CSS embedded in the single-file version after SRI verification; JS loaded from unpkg with SRI"
   },
   "files": {
-    "site/v09/vigilancia.html": "9a34c751e22873aa375d43b0d8c5ab9f323925e658d223f2e7e896db079351b8",
-    "site/data/v09/surveillance_view_v0_1.json": "f3682383fca6940039180b6e7f28bed17fafdb49e90a5850d461d68add308d07",
+    "site/v09/vigilancia.html": "06354e443df77312613793567fcc28f76d0a4d99bd1858be1abb65337e4a8035",
+    "site/data/v09/surveillance_view_v0_1.json": "b4980c29c3e0764f987a9d6659e879f11cf80480bead67ba0fcf0fa46b03e917",
     "scripts/v09_build_surveillance_view.py": "aa955f2a44d2d01e2842a5aff04952f645b3c61069ef2232d57b23e8f81c672b",
     "scripts/v09_build_surveillance_demo.py": "75a56637612f709d919b30fae243de34e141c6ef49711a4dc110b57cdf155440",
-    "qa/replay_tools/v09_surveillance_view_smoke.py": "8a2b6773da976025a4d72f89ca1c9bb532e721531de0aba21cf929d2fb6ca61a",
+    "qa/replay_tools/v09_surveillance_view_smoke.py": "916d9046651316d599de9487149686e600071689a28bfdcaafa986567354305e",
     "site/data/v09/dashboard_v0_1.json": "fdbbbcbd3879377391aad308e37062e8eb45f4ce9b0e2d090f0d494981655856",
     "site/data/v09/territory_v0_1.json": "5cd617fd9b9efb67b329146185164be33f87a2c4a359d3ae725983a328e897af",
     "site/data/v09/inventory_master_v0_1.json": "91ea693260c81db05ae416f7859e669b47ecb8eaf7df619aff48f91dc3eaea9c",
@@ -56,23 +56,25 @@
     "config/v09_public_demo_v0_1.json": "697474f9b76b49af39dfb2de4ccd339545b578741baeb57d2efe3980c14b52ee",
     "data/v09/sources/natural_earth_reference/peru_reference_v0_1.json": "d07acd1ab5554b2ba9582541a63b93fc261008c5524e55c586436ad6192a6d0d",
     "scripts/v09_extract_reference_basemap.py": "4547757b0d8db9ff7fe1822e1180db8baad6a0dd6f32030666f29a91b970e7fe",
-    "research/v09/private_demo/irfen_vigilancia_privada_v091.html": "8eed8e5e997972599cc86f6e397179c64feb598866686f736aa52a94794768af",
+    "research/v09/private_demo/irfen_vigilancia_privada_v091.html": "ce76dcec434c101f35b0d4f6c6407114f516b09124034c791a9d8e3cefad466d",
     "data/v09/sources/ign_hidrografia_500k/rios_quebradas_costa.geojson.gz": "c1f1632db84a0a711e43e41fc220cd534cdbac6c78511586b41b8e76d4cadc4c",
     "data/v09/sources/ign_hidrografia_500k/provenance.json": "b7d93f8f9d21fb122332cd2c843be8c0610424d0b8398a3773d2626263957b85",
     "scripts/v09_ign_hydrography_capture.py": "c5ea6480a3b35cd7637d0fdf34f586e454f2c3cfe88a6e0125b9740cee3c5df4",
     "scripts/v09_ign_hydro_coverage_report.py": "e1bc66df9937164dbf4fe0a50b54524e47d8c5dc0ec3588840ffd80ee082a52a",
     "data/v09/research/hydro/ign_coastal_coverage_v0_1.json": "deaf807e97437e0be61a03a14e42d680d139cc33eaa46942f950484e1eeadf8a",
-    "scripts/v09_build_semaforo.py": "d06c46f5ed185b48412849442d9b9b64f2c1c66923599b3e3ba4734ba72bb240",
-    "config/v09_semaforo_rules_v0_1.json": "da935e94424f921330b8e939d909f81956ecffc02f65a2cfdc45c7c84fb165dd",
-    "config/v09_semaforo_systems_v0_1.json": "b1377a4b0ddf724f93a0db96026f8f6879a4852e29bbc57d6a6871320ce74743",
-    "config/v09_semaforo_confirmations_v0_1.json": "aad4d135a9c567599de9e78c08cd8763875074ef868a8d2526d07f4a868d0217",
-    "data/v09/research/semaforo/semaforo_v0_1.json": "91343f88941b9584146e6b9484e89e36bceaefa394c6730aff3d4105fc21c6cf"
+    "scripts/v09_build_semaforo.py": "e058b91b8ae9ed081d9c5cdef067caf9e92ec409f07caa1b8629bcff14d51996",
+    "config/v09_semaforo_rules_v0_1.json": "d7d57ce05101b665c4d8760ee91f358ebac6e484586e125c31ea48a7bca55f88",
+    "config/v09_semaforo_systems_v0_1.json": "86f5d0023104019bded2cb4f97de211f5113a99f0aa66cc3cdf9965321e9f9b1",
+    "config/v09_semaforo_confirmations_v0_1.json": "dd5e20e7df75aca377a6de65636318fceff2b3768572f772d66b40a1b975c7b7",
+    "data/v09/research/semaforo/semaforo_v0_1.json": "6fb49a27ac017708e9c64d309843eeada5cab3bd972a3d08e0c50d0fea2abcde"
   },
   "semaforo": {
     "rules": "config/v09_semaforo_rules_v0_1.json",
+    "rules_revision": "0.2",
     "official_alert": false,
     "checkpoints": 39,
     "pilot": "LAMBAYEQUE",
-    "confirmations_registered": 0
+    "confirmations_registered": 0,
+    "avisos_affect_colour": false
   }
 }
