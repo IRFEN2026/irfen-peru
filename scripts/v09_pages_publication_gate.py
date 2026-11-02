@@ -25,7 +25,8 @@ PATHS = ("site/v09", "site/data/v09")
 # resumen.html (portada v0.9) reads the territorial bundle, so it follows the territorial gate.
 TERRITORY_PATHS = ("site/v09/territorio.html", "site/v09/resumen.html", "site/v09/inventario.html", "site/v09/shared_rules.js",
                    "site/data/v09/territory_v0_1.json", "site/data/v09/inventory_master_v0_1.json",
-                   "site/v09/peru.html", "site/data/v09/ana2017_coastal_points_v0_1.json")
+                   "site/v09/peru.html", "site/data/v09/ana2017_coastal_points_v0_1.json",
+                   "site/v09/vigilancia.html", "site/data/v09/surveillance_view_v0_1.json")
 TERRITORY_BUNDLE = ROOT / "site/data/v09/territory_v0_1.json"
 REQUIRED_BUNDLE_GUARDS = dict(production_use=False, production_ready=False, operational_alerting_enabled=False, public_alerting=False,
                               activation_gate="BLOCKED", decision_thresholds=None, hydraulic_factors=None,
