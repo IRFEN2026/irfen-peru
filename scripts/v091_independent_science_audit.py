@@ -138,8 +138,12 @@ def audit(inventory, archive=None, config=None, geometry_raw=None):
         # Windows are strict UTC half-hour sequences. A complete spatial grid is needed
         # for each checkpoint independently; no interpolation and no missing=zero.
         from datetime import timedelta
-        by_time = {dt(g["time_utc"]): g for g in archive["granules"] if isinstance(g.get("time_utc"), str)
-                   and g["time_utc"].count(":") >= 2}
+        by_time = {}
+        for g in archive["granules"]:
+            try:
+                by_time[dt(g["time_utc"])] = g
+            except (KeyError, TypeError, ValueError, AttributeError):
+                pass  # already flagged INVALID_UTC_GRANULE_TIME above; do not crash QA
         complete_by_window = {}
         if seen:
             latest = max(seen)
