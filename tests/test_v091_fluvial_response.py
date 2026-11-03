@@ -54,6 +54,15 @@ class FluvialLagQA(unittest.TestCase):
         self.assertIsNone(d["spearman"])
         self.assertEqual(d["interpretation"],"FUTURE_RAIN_NEGATIVE_CONTROL_NOT_PREDICTIVE")
 
+    def test_persistence_uses_same_matched_days_and_no_fill(self):
+        d=date(2022,1,1)
+        rain={d+timedelta(days=i):float(i%5) for i in range(100)}
+        flows={d+timedelta(days=i):float(i%7) for i in range(100)}
+        p=F.persistence_control(rain,flows,3,2,(2021,2023),minimum=30)
+        self.assertTrue(p["same_matched_days"])
+        self.assertEqual(p["n"],96)
+        self.assertIsNotNone(p["previous_day_flow_vs_current_flow_spearman"])
+
     def test_documentary_gauge_identity_blocks_unlabeled_months(self):
         doc={"months":[{"month":"2017-03","tables":{"rivers":{
             "column_identity_from_report_notes":{},
