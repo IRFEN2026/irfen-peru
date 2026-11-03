@@ -31,7 +31,7 @@ class RainWindows(unittest.TestCase):
         self.assertEqual(d["observation_end_utc"], END.isoformat())
 
     def test_missing_half_hour_makes_window_null_not_zero(self):
-        d = A.summarize(archive(missing={59}), "PIU-R-PIURA-BAJO", END.isoformat())
+        d = A.summarize(archive(missing={58}), "PIU-R-PIURA-BAJO", END.isoformat())
         self.assertIsNone(d["windows"]["1h"]["mm"])
         self.assertIsNone(d["windows"]["24h"]["mm"])
 
