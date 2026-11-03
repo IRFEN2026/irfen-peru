@@ -25,7 +25,14 @@ Una correlación estadística no es un pronóstico. Para **Chira el desfase 0** 
 
 El control no causal con lluvia **posterior** al caudal obtiene una correlación en el periodo reservado de **0,284 (Chira)** y **0,403 (Piura)**, lo cual respalda la necesidad de no interpretar la correlación de Piura como causal o predictiva. Los controles de desfase circular entre pares observados se consideran descriptivos (los días faltantes impiden tomarlos como desplazamientos reales del calendario).
 
-Se añadió también una comparación con la **persistencia del caudal del día anterior**, construida sobre los mismos días de prueba; sus resultados quedan en el artefacto JSON de CI y requieren revisión antes de cualquier pretensión de pronóstico.
+La comparación con la **persistencia del caudal observado el día anterior**, calculada sobre exactamente los mismos días de prueba, obtuvo los siguientes resultados ([CI #41688940703](https://github.com/IRFEN2026/irfen-peru/actions/runs/41688940703)):
+
+| Estación | Pares observados comunes | Lluvia previa vs caudal actual | Caudal de ayer vs caudal actual |
+| --- | ---: | ---: | ---: |
+| Chira / El Ciruelo | 357 | 0,662 | **0,935** |
+| Piura / Sánchez Cerro | 357 | 0,676 | **0,971** |
+
+Los valores altos de persistencia muestran que **el módulo de lluvia no ha demostrado mejorar la información hidrológica disponible con el caudal observado ayer**. Estos son diagnósticos de correlación, no una comparación de error de pronóstico operativo, ni una evaluación de crecida/desborde. Se requieren modelos prospectivos contrastados con fechas de publicación real y ensayos fuera de muestra adicionales antes de formular cualquier promesa de anticipación.
 
 ## Limitaciones decisivas
 
