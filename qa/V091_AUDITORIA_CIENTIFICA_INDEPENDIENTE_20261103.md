@@ -21,6 +21,16 @@ La afirmación previa «134 puntos coinciden ±1 % con HydroRIVERS» queda **rec
 | LAM-R-LA_LECHE-ALTO | 0,810 | −19,0 % |
 | TAC-R-CAPLINA-ALTO | 0,877 | −12,3 % |
 
+**Inspección cuantitativa del inventario (CI #41658006659):**
+
+| Checkpoint | HydroSHEDS km² | HydroRIVERS km² | HYRIV_ID | Distancia al HydroRIVERS cercano | Ajuste IGN → HydroSHEDS |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| LIM-R-SUPE-ALTO | 95,3 | 146,2 | 61037912 | 0,46 km | 0,13 km |
+| LAM-R-LA_LECHE-ALTO | 123,6 | 152,6 | 60803066 | 0,46 km | 0,28 km |
+| TAC-R-CAPLINA-ALTO | 89,4 | 101,9 | 61252468 | 0,46 km | 0,11 km |
+
+Estas cifras son las asociadas al **tramo HydroRIVERS más cercano** en el inventario; la distancia de 0,46 km en los tres casos indica que todavía se debe demostrar que el HYRIV_ID representa la misma sección hidráulica. No puede atribuirse automáticamente la diferencia a un error del modelo ni corregirse mediante escalado de áreas.
+
 Revisar en primer término si el `HYRIV_ID` usado corresponde a la misma confluencia y sector, si el ajuste al cauce modelado desplazó el checkpoint aguas arriba, si hay bifurcaciones/trasvases o discrepancias de escala. Conservar la asociación como **experimental pendiente de revisión**, no corregir el área arbitrariamente.
 
 ## Otras discrepancias para revisión
