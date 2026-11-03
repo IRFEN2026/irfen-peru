@@ -473,7 +473,7 @@ def checkpoint_hydrology(semaforo: dict) -> dict:
     rows = sorted((c["id"], c["lat"], c["lon"]) for c in semaforo["checkpoints"])
     if hashlib.sha256(json.dumps(rows, separators=(",", ":")).encode()).hexdigest() != h.get("checkpoints_fingerprint"):
         return dict(status="DESACTUALIZADO", note_es="El inventario hidrológico no corresponde a estos checkpoints: regenérelo.")
-    from scripts import v091_catchment_live_view as CL
+    import v091_catchment_live_view as CL
     live_archive = CL.load()
     live = CL.build(live_archive, [r["id"] for r in h["checkpoints"]], semaforo["cutoff_utc"])["points"]
     out = {}
