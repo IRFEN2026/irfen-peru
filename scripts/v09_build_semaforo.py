@@ -111,9 +111,13 @@ def orient(path, coast_km, flow_acc, thr):
         votes.append(("DESEMBOCADURA", 1 if d1 < d0 else 0))
     if flow_acc is not None:
         vals = [flow_acc(x, y) for x, y in path]
-        ok = [(i, v) for i, v in enumerate(vals) if v is not None]
+        # only vertices lying on a modelled channel count: where the 1:500k line leaves the HydroSHEDS channel (flat
+        # lower reaches, e.g. Bajo Piura) the sampled accumulation is that of a hillslope cell, not of the river
+        min_cells = thr.get("flow_min_channel_cells", 0)
+        ok = [(i, v) for i, v in enumerate(vals) if v is not None and v >= min_cells]
         cov = len(ok) / len(path)
         ev["flow_coverage"] = round(cov, 2)
+        ev["flow_off_channel_vertices"] = sum(1 for v in vals if v is not None and v < min_cells)
         if cov >= thr["flow_min_coverage"] and len(ok) >= 10:
             rho = spearman([i for i, _ in ok], [v for _, v in ok])
             ev["flow_spearman"] = round(rho, 3)
@@ -512,7 +516,9 @@ def hydrosheds_acc():
     accumulation in a ±3-cell window (snaps the 1:500k IGN line to the modelled channel), or None outside coverage."""
     import io
     import numpy as np
-    d = ROOT / "data/v09/sources/hydrosheds_binational"
+    # the coast crop (Tumbes–Tacna, same HydroSHEDS release and origin as the binational one) supersedes it when present
+    d = next((p for p in (ROOT / "data/v09/sources/hydrosheds_coast", ROOT / "data/v09/sources/hydrosheds_binational")
+              if (p / "acc15.npy.gz").is_file()), ROOT / "data/v09/sources/hydrosheds_binational")
     prov = SV.load(d / "provenance.json")
     if not prov or not (d / "acc15.npy.gz").is_file():
         return None
@@ -521,13 +527,22 @@ def hydrosheds_acc():
     nod = prov["acc15"].get("nodata")
 
     def f(x, y, w=3):
+        # accumulation of the nearest cell of the dominant channel in the window (≥ half the window maximum). The plain
+        # window maximum jumps to the most downstream cell of the window and to nearby larger rivers, which blurs the
+        # monotonic trend along meandering or flat lower reaches (río Piura: ρ = −0,6 with the maximum).
         c, r = int((x - t[2]) / t[0]), int((y - t[5]) / t[4])
         if not (w <= r < acc.shape[0] - w and w <= c < acc.shape[1] - w):
             return None
         win = acc[r - w:r + w + 1, c - w:c + w + 1].astype(float)
         if nod is not None:
-            win = win[win != nod]
-        return float(win.max()) if win.size else None
+            win[win == nod] = -1
+        mx = win.max()
+        if mx <= 0:
+            return None
+        ii, jj = np.nonzero(win >= 0.5 * mx)
+        d2 = (ii - w) ** 2 + (jj - w) ** 2
+        k = np.lexsort((-win[ii, jj], d2))[0]
+        return float(win[ii[k], jj[k]])
     return f
 
 
