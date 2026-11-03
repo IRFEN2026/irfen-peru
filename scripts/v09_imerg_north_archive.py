@@ -40,6 +40,10 @@ sys.path.insert(0, str(ROOT / "scripts"))
 ZONES = ROOT / "config/v09_north_surveillance_zones_v0_1.json"
 BOUNDARIES_LATEST = ROOT / "data/v09/admin_boundaries/latest.json"
 OUT = ROOT / "data/v09/rain/imerg_early_north_v0_1.json"
+# v0.9.1 (research): contributing areas of the coastal river checkpoints (HydroSHEDS, experimental). Sampled from the
+# same downloaded granules (no extra Earthdata traffic) into a separate compact archive that nothing published reads.
+CATCHMENT_TARGETS = ROOT / "config/v091_catchment_rain_targets_v0_1.json"
+CATCHMENT_OUT = ROOT / "data/v09/rain/imerg_early_catchments_v0_1.json"
 WINDOW_HOURS = 30
 # The whole window fits in one run (60 half-hours; 16 granules took 26 s on the runner). With 16, runs more than 8 h
 # apart left the oldest granules behind for good (newest-first starvation): 24 h windows stayed NO_DISPONIBLE.
@@ -86,6 +90,79 @@ def load_targets() -> list[dict]:
                                     kind="ADMIN_PROVINCE_POLYGON_INEI_REFERENTIAL", geometry=shape(f["geometry"]).buffer(0),
                                     geometry_sha256=latest["sha256"]))
     return targets
+
+
+def load_catchment_targets() -> list[dict]:
+    """Contributing-area polygons of the river checkpoints (config/v091_catchment_rain_targets_v0_1.json). The geometry
+    file must match its recorded SHA-256; otherwise nothing is sampled (never a silently different area)."""
+    import hashlib
+
+    from shapely.geometry import shape
+
+    if not CATCHMENT_TARGETS.is_file():
+        return []
+    cfg = json.loads(CATCHMENT_TARGETS.read_text(encoding="utf-8"))
+    raw = (ROOT / cfg["geometry_path"]).read_bytes()
+    if hashlib.sha256(raw).hexdigest() != cfg["geometry_sha256"]:
+        print("::warning::catchment geometry does not match its SHA-256: catchment rain not sampled")
+        return []
+    feats = {f["properties"]["checkpoint_id"]: f for f in json.loads(raw)["features"]}
+    return [dict(id=cfg["id_prefix"] + cid, checkpoint_id=cid, area_km2=feats[cid]["properties"]["area_km2"],
+                 geometry=shape(feats[cid]["geometry"]).buffer(0), geometry_sha256=cfg["geometry_sha256"])
+            for cid in cfg["targets"] if cid in feats]
+
+
+def cell_weights(geom, lat, lon) -> dict:
+    """Area of the intersection of `geom` with each 0.1° IMERG cell: the weights of probe_imerg_early_live.polygon_mean,
+    computed once per run (the IMERG grid is fixed) instead of once per granule."""
+    import numpy as np
+    from shapely.geometry import box
+
+    dx = float(np.median(np.abs(np.diff(lon))))
+    dy = float(np.median(np.abs(np.diff(lat))))
+    minx, miny, maxx, maxy = geom.bounds
+    xs = np.where((lon >= minx - dx / 2) & (lon <= maxx + dx / 2))[0]
+    ys = np.where((lat >= miny - dy / 2) & (lat <= maxy + dy / 2))[0]
+    rows, cols, areas = [], [], []
+    for r in ys:
+        for c in xs:
+            inter = geom.intersection(box(float(lon[c]) - dx / 2, float(lat[r]) - dy / 2, float(lon[c]) + dx / 2, float(lat[r]) + dy / 2))
+            if not inter.is_empty and inter.area > 0:
+                rows.append(int(r))
+                cols.append(int(c))
+                areas.append(inter.area)
+    return dict(rows=np.array(rows, dtype=int), cols=np.array(cols, dtype=int), areas=np.array(areas), geom_area=geom.area)
+
+
+def weighted_mean(w: dict, values):
+    """Same result as polygon_mean: area-weighted mean over the finite cells; None when no cell is valid (unknown,
+    never 0 mm). Returns (mean, covered_pct)."""
+    import numpy as np
+
+    if not len(w["areas"]):
+        return None, 0.0
+    v = values[w["rows"], w["cols"]]
+    ok = np.isfinite(v)
+    sw = float(w["areas"][ok].sum())
+    if not sw:
+        return None, 0.0
+    return float((w["areas"][ok] * v[ok]).sum() / sw), round(min(100.0, 100.0 * sw / max(w["geom_area"], 1e-15)), 1)
+
+
+def empty_catchment_archive(targets: list[dict]) -> dict:
+    import hashlib
+
+    tid = [t["id"] for t in targets]
+    return dict(schema_version="0.1", archive_id="irfen-v091-imerg-early-catchments:v0.1", **GUARDS, map_publishable=False,
+                public_alerting=False, notifications_enabled=False,
+                source=dict(product="GPM_3IMERGHHE", version="07", provider="NASA GES DISC via earthaccess",
+                            nature="satellite estimate, half-hourly, Early run (hours of latency); not a real-time observation"),
+                sample=("area-weighted mean of the 0.1° cells intersecting each HydroSHEDS contributing area (weights identical "
+                        "to probe_imerg_early_live.polygon_mean); rate_mm_hr null = no valid cell (unknown, never 0 mm)"),
+                geometry_sha256=targets[0]["geometry_sha256"] if targets else None,
+                targets=[dict(id=t["id"], checkpoint_id=t["checkpoint_id"], area_km2=t["area_km2"]) for t in targets],
+                targets_sha256=hashlib.sha256(json.dumps(tid).encode()).hexdigest(), retain_hours=RETAIN_HOURS,
+                granules=[], status=dict(state="NEVER_CHECKED"))
 
 
 def empty_archive() -> dict:
@@ -201,6 +278,15 @@ def main() -> int:
     targets = load_targets()
     archive["targets"] = {t["id"]: dict(name=t["name"], kind=t["kind"], geometry_sha256=t["geometry_sha256"]) for t in targets}
     have = {g["granule"] for g in archive["granules"] if set(archive["targets"]) <= set(g["targets"])}
+    ctargets = load_catchment_targets()
+    carchive = None
+    if ctargets:
+        fresh = empty_catchment_archive(ctargets)
+        carchive = json.loads(CATCHMENT_OUT.read_text(encoding="utf-8")) if CATCHMENT_OUT.is_file() else fresh
+        if carchive.get("targets_sha256") != fresh["targets_sha256"] or carchive.get("geometry_sha256") != fresh["geometry_sha256"]:
+            carchive = fresh  # other areas: earlier means are not comparable; the window is re-sampled from the granules
+        cbefore = json.dumps(carchive, sort_keys=True)
+        have &= {g["granule"] for g in carchive["granules"]}  # a granule missing in either archive is downloaded again
     try:
         found, attempts = contact_with_retries(probe, earthaccess, now)
     except Exception as exc:  # noqa: BLE001 - recorded as a source failure, never as zero rain
@@ -235,6 +321,13 @@ def main() -> int:
             if not any(u in units.lower() for u in ("mm/hr", "mm h-1", "mm/hour")):
                 print(f"::warning::{name}: unexpected units {units!r}; not archived")
                 continue
+            if carchive is not None:
+                if "_w" not in carchive:
+                    carchive["_w"] = [cell_weights(t["geometry"], lat, lon) for t in ctargets]
+                means = [weighted_mean(w, values) for w in carchive["_w"]]
+                carchive.setdefault("_new", []).append(dict(granule=name, time_utc=ts.isoformat(), retrieved_at_utc=now.isoformat(),
+                                                            rate_mm_hr=[None if m is None else round(m, 4) for m, _ in means],
+                                                            covered_pct=[c for _, c in means]))
             rows = {}
             for t in targets:
                 value, meta = probe.polygon_mean(t["geometry"], lat, lon, values)
@@ -263,6 +356,19 @@ def main() -> int:
         print(f"::warning title=V09_IMERG_NORTH_SOURCE_DELAY::NASA catalog has no IMERG Early granule after "
               f"{freshness['newest_catalog_granule_start_utc']} (lag {freshness['lag_hours']} h > {CATALOG_DELAY_H} h). "
               "Delay at the source, not a download failure; missing half-hours are unknown, never 0 mm.")
+    if carchive is not None:
+        carchive.pop("_w", None)
+        cby = {g["granule"]: g for g in carchive["granules"]}
+        for row in carchive.pop("_new", []):
+            cby[row["granule"]] = row
+        carchive["granules"] = sorted((g for g in cby.values() if g["time_utc"] >= horizon), key=lambda g: g["time_utc"])
+        carchive["status"] = dict(state=archive["status"]["state"],
+                                  latest_granule_start_utc=carchive["granules"][-1]["time_utc"] if carchive["granules"] else None,
+                                  source_status_in="data/v09/rain/imerg_early_north_v0_1.json")
+        if json.dumps(carchive, sort_keys=True) != cbefore:
+            carchive["status"]["written_at_utc"] = now.isoformat()
+            CATCHMENT_OUT.parent.mkdir(parents=True, exist_ok=True)
+            CATCHMENT_OUT.write_text(json.dumps(carchive, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
     if json.dumps(archive, sort_keys=True) != before:
         archive["status"]["written_at_utc"] = now.isoformat()
         OUT.parent.mkdir(parents=True, exist_ok=True)

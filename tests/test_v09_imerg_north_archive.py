@@ -219,6 +219,7 @@ class MainRunOffline(unittest.TestCase):
                     mock.patch.object(A, "OUT", out), mock.patch.object(A, "datetime", clock), \
                     mock.patch.object(A, "load_targets", lambda: [dict(id="tumbes_bocapan", name="Bocapán", kind="BASIN_POLYGON",
                                                                        geometry=None, geometry_sha256="x")]), \
+                    mock.patch.object(A, "load_catchment_targets", lambda: []), \
                     mock.patch.dict("os.environ", {"EARTHDATA_TOKEN": "fake-token-for-offline-test"}):
                 self.assertEqual(A.main(), 0)
             return json.loads(out.read_text(encoding="utf-8")), downloaded, name
@@ -259,6 +260,115 @@ class MainRunOffline(unittest.TestCase):
         self.assertEqual(got["status"]["state"], "AVAILABLE")  # 6.5 h behind: within normal latency
         reasons = {g["time_utc"]: g["reason"] for g in got["status"]["missing_half_hours_24h"]}
         self.assertEqual(reasons["2026-10-29T16:00:00+00:00"], "NOT_IN_CATALOG")
+
+class CatchmentTargets(unittest.TestCase):
+    """v0.9.1 research: rain over the contributing areas of the river checkpoints, from the same granules."""
+
+    def test_weighted_mean_is_unknown_without_valid_cells_never_zero(self):
+        import numpy as np
+        w = dict(rows=np.array([0, 0, 1]), cols=np.array([0, 1, 1]), areas=np.array([0.01, 0.005, 0.0025]), geom_area=0.0175)
+        v = np.array([[2.0, np.nan], [9.0, 4.0]])
+        mean, cov = A.weighted_mean(w, v)
+        self.assertAlmostEqual(mean, (2.0 * 0.01 + 4.0 * 0.0025) / 0.0125)
+        self.assertAlmostEqual(cov, round(100 * 0.0125 / 0.0175, 1))
+        self.assertEqual(A.weighted_mean(w, np.full((2, 2), np.nan)), (None, 0.0))
+        self.assertEqual(A.weighted_mean(dict(rows=np.array([], int), cols=np.array([], int), areas=np.array([]), geom_area=1.0), v), (None, 0.0))
+
+    @unittest.skipUnless(importlib.util.find_spec("shapely"), "shapely (requirements.txt) not installed")
+    def test_weights_match_polygon_mean_and_config_is_hash_locked(self):
+        import json
+        import numpy as np
+        from shapely.geometry import Polygon, box
+        lat = np.arange(-5.95, -4.95, 0.1)
+        lon = np.arange(-80.95, -79.95, 0.1)
+        geom = Polygon([(-80.73, -5.62), (-80.21, -5.71), (-80.12, -5.18), (-80.66, -5.08)])
+        rng = np.random.default_rng(7)
+        vals = rng.gamma(0.6, 2.0, (lat.size, lon.size))
+        vals[3, 4] = np.nan
+        # brute force (the semantics of probe_imerg_early_live.polygon_mean): area of every cell intersection
+        sw = sv = 0.0
+        for r in range(lat.size):
+            for c in range(lon.size):
+                a = geom.intersection(box(lon[c] - 0.05, lat[r] - 0.05, lon[c] + 0.05, lat[r] + 0.05)).area
+                if a > 0 and np.isfinite(vals[r, c]):
+                    sw, sv = sw + a, sv + a * vals[r, c]
+        mean, cov = A.weighted_mean(A.cell_weights(geom, lat, lon), vals)
+        self.assertAlmostEqual(mean, sv / sw, places=9)
+        self.assertLess(cov, 100.0)
+        cfg = json.loads(A.CATCHMENT_TARGETS.read_text(encoding="utf-8"))
+        targets = A.load_catchment_targets()
+        self.assertEqual([t["checkpoint_id"] for t in targets], cfg["targets"])
+        self.assertGreater(len(targets), 100)
+        self.assertTrue(all(t["id"].startswith("cp:") and t["geometry"].is_valid and t["geometry"].area > 0 for t in targets))
+        from unittest import mock
+        with mock.patch.object(A, "CATCHMENT_TARGETS", A.CATCHMENT_TARGETS.with_name("missing.json")):
+            self.assertEqual(A.load_catchment_targets(), [])
+        bad = dict(cfg, geometry_sha256="0" * 64)
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / "cfg.json"
+            f.write_text(json.dumps(bad), encoding="utf-8")
+            with mock.patch.object(A, "CATCHMENT_TARGETS", f):
+                self.assertEqual(A.load_catchment_targets(), [])  # a different geometry is never sampled silently
+
+    def test_config_is_research_only(self):
+        import json
+        cfg = json.loads(A.CATCHMENT_TARGETS.read_text(encoding="utf-8"))
+        for k, v in dict(deployment_status="RESEARCH_ONLY", test_mode="TEST_ONLY", production_use=False, public_alerting=False,
+                         notifications_enabled=False, activation_gate="BLOCKED", map_publishable=False).items():
+            self.assertEqual(cfg[k], v)
+        self.assertEqual(len(cfg["targets"]), len(set(cfg["targets"])))
+
+    def test_main_samples_the_same_granules_into_a_separate_archive(self):
+        import json
+        import sys
+        import tempfile
+        import types
+        import numpy as np
+        from unittest import mock
+
+        now = datetime(2026, 11, 3, 12, 0, tzinfo=timezone.utc)
+        catalog = half_hours(datetime(2026, 11, 3, 5, 30, tzinfo=timezone.utc), 4)
+        grid = np.array([[1.0, np.nan], [3.0, 5.0]])
+        downloaded = []
+        fake_ea = types.SimpleNamespace(login=lambda strategy: True, search_data=lambda **kw: [name(t) for t in catalog],
+                                        download=lambda names, local_path, threads, show_progress: (downloaded.extend(names) or names))
+        fake_probe = types.SimpleNamespace(
+            earthdata_preflight=lambda: 401,
+            index_granules=lambda found: sorted((datetime.strptime(n.split(".")[4][:16], "%Y%m%d-S%H%M%S").replace(tzinfo=timezone.utc), n, n)
+                                                for n in found),
+            read_grid=lambda path: (np.array([-5.05, -4.95]), np.array([-80.05, -79.95]), grid, "mm/hr"),
+            polygon_mean=lambda geom, lat, lon, values: (0.4, dict(valid_cells=3, cells_intersected=3, covered_geometry_pct=100.0)))
+        ct = [dict(id="cp:A", checkpoint_id="A", area_km2=10.0, geometry="gA", geometry_sha256="h"),
+              dict(id="cp:B", checkpoint_id="B", area_km2=5.0, geometry="gB", geometry_sha256="h")]
+        weights = {"gA": dict(rows=np.array([0, 1]), cols=np.array([0, 1]), areas=np.array([1.0, 3.0]), geom_area=4.0),
+                   "gB": dict(rows=np.array([0]), cols=np.array([1]), areas=np.array([1.0]), geom_area=1.0)}  # only the NaN cell
+        north = A.empty_archive()
+        north["granules"] = [dict(granule=name(t), time_utc=t.isoformat(), retrieved_at_utc=now.isoformat(), units="mm/hr",
+                                  targets=dict(z=dict(rate_mm_hr=0.1))) for t in catalog]  # north complete, catchments missing
+        with tempfile.TemporaryDirectory() as d:
+            out, cout = Path(d) / "north.json", Path(d) / "catch.json"
+            out.write_text(json.dumps(north), encoding="utf-8")
+            clock = mock.Mock(wraps=datetime)
+            clock.now = lambda tz=None: now
+            with mock.patch.dict(sys.modules, {"earthaccess": fake_ea, "probe_imerg_early_live": fake_probe}), \
+                    mock.patch.object(A, "OUT", out), mock.patch.object(A, "CATCHMENT_OUT", cout), mock.patch.object(A, "datetime", clock), \
+                    mock.patch.object(A, "load_targets", lambda: [dict(id="z", name="Z", kind="BASIN_POLYGON", geometry=None, geometry_sha256="x")]), \
+                    mock.patch.object(A, "load_catchment_targets", lambda: ct), \
+                    mock.patch.object(A, "cell_weights", lambda geom, lat, lon: weights[geom]), \
+                    mock.patch.dict("os.environ", {"EARTHDATA_TOKEN": "fake-token-for-offline-test"}):
+                self.assertEqual(A.main(), 0)
+            got = json.loads(cout.read_text(encoding="utf-8"))
+        self.assertEqual(sorted(downloaded), sorted(name(t) for t in catalog))  # backfilled from the same granules
+        self.assertEqual([t["id"] for t in got["targets"]], ["cp:A", "cp:B"])
+        self.assertEqual(len(got["granules"]), len(catalog))
+        g = got["granules"][-1]
+        self.assertEqual(g["rate_mm_hr"], [round((1.0 * 1 + 5.0 * 3) / 4, 4), None])  # B: no valid cell -> unknown, not 0
+        self.assertEqual(g["covered_pct"], [100.0, 0.0])
+        for k, v in A.GUARDS.items():
+            self.assertEqual(got[k], v)
+        self.assertFalse(got["map_publishable"] or got["public_alerting"] or got["notifications_enabled"])
+
 
 if __name__ == "__main__":
     unittest.main()
