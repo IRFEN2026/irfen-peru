@@ -1,0 +1,30 @@
+name: TMP v0.9.1 HydroSHEDS coast capture (DIR/ACC 15s + HydroRIVERS, Tumbes-Tacna; removed after capture)
+on:
+  push:
+    branches: [research/v091-coast-checkpoints-20261103]
+    paths: [.github/workflows/tmp-v091-hydrosheds-coast.yml]
+permissions:
+  contents: write
+concurrency: {group: tmp-v091-hydrosheds-coast, cancel-in-progress: false}
+jobs:
+  capture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with: {python-version: "3.12"}
+      - run: pip install -q "numpy>=1.26,<2" rasterio geopandas pyogrio shapely
+      - name: HydroSHEDS v1 15s DIR/ACC and HydroRIVERS (>=100 km2) cropped to the Pacific slope of Peru
+        timeout-minutes: 30
+        run: python scripts/v091_hydrosheds_coast_capture.py
+      - name: Commit the capture
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/v09/sources/hydrosheds_coast || true
+          git diff --cached --quiet && { echo "::warning::nothing captured"; exit 0; }
+          echo "::notice title=captured::$(git diff --cached --stat | tail -1)"
+          git commit -q -m "Research snapshot: HydroSHEDS v1 15s DIR/ACC and HydroRIVERS for the Pacific slope of Peru (Tumbes-Tacna)"
+          for i in 1 2 3; do git fetch -q origin "$GITHUB_REF_NAME" && git rebase -q "origin/$GITHUB_REF_NAME" && git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0; sleep 5; done; exit 1
