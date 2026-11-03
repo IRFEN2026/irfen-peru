@@ -67,6 +67,13 @@ dialog .dh h2{margin:0}dialog .db{padding:10px 14px 14px;max-height:70vh;overflo
  .stage.nopanel .panel{display:none}#layers{left:10px;top:10px;width:min(300px,calc(100% - 20px));max-height:calc(100% - 90px)}.search input{width:150px}
  #viewing{bottom:10px;font-size:11.5px}}
 .sm-sq i{display:block;width:13px;height:13px;border:2.5px solid;box-shadow:0 0 0 2px rgba(255,255,255,.9);box-sizing:border-box}
+.sm-diamond i{width:11px;height:11px;transform:rotate(45deg);margin:1px}
+#shapeKey{position:absolute;right:10px;bottom:32px;z-index:520;display:flex;align-items:center;gap:9px;max-width:calc(100% - 20px);padding:4px 7px;background:var(--surface);border:1px solid var(--border);border-radius:7px;box-shadow:0 1px 5px #0002;color:var(--ink-2);font-size:11px;white-space:nowrap}
+#shapeKey[hidden]{display:none}#shapeKey .symbol{font-size:16px;line-height:1;color:var(--ink);vertical-align:-1px}
+#shapeKey button{font:inherit;color:var(--accent);background:transparent;border:0;border-left:1px solid var(--border);padding:0 0 0 7px;cursor:pointer;text-decoration:underline}
+#shapeKey button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media(max-width:560px){#shapeKey{right:7px;bottom:33px;gap:6px;font-size:10px;padding:4px 6px}#shapeKey .symbol{font-size:14px}}
+
 .sm-agg{background:none;border:0}.sm-agg b{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);color:#fff;font:700 12px/1 system-ui,sans-serif;cursor:pointer}
 .ctx{border-left:4px dashed #7a5a00;background:var(--warn-bg);color:var(--warn-ink);padding:6px 8px;border-radius:4px;font-size:12.5px;margin:6px 0}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
@@ -83,6 +90,10 @@ dialog .dh h2{margin:0}dialog .db{padding:10px 14px 14px;max-height:70vh;overflo
   <div id="map" aria-label="Mapa del Perú con capas de investigación IRFEN"></div>
   <div class="ov" id="layers" hidden aria-label="Capas del mapa"></div>
   <div class="ov" id="viewing" aria-live="polite"><details id="viewDetails"><summary id="viewSummary">Estás viendo</summary><ul id="viewList"></ul><div id="viewLegend"></div></details></div>
+  <div id="shapeKey" aria-label="Tipos de checkpoints; el color indica estado, no el tipo" hidden>
+   <span><span class="symbol">○</span> Río</span><span><span class="symbol">□</span> Población</span><span><span class="symbol">◇</span> Mixto</span>
+   <button id="bLegend" type="button" aria-haspopup="dialog" aria-controls="dlg-legend" title="Cómo interpretar símbolos y colores">Leyenda</button>
+  </div>
  </section>
  <section class="panel" aria-label="Información por pestañas">
   <div class="tabs" role="tablist" id="tabs"></div>
@@ -94,6 +105,17 @@ dialog .dh h2{margin:0}dialog .db{padding:10px 14px 14px;max-height:70vh;overflo
   <div class="tabpanel" id="tab-quebradas" role="tabpanel" hidden></div>
  </section>
 </main>
+<dialog id="dlg-legend" aria-labelledby="h-legend"><div class="dh"><h2 id="h-legend">Cómo interpretar el mapa</h2><button class="btn" data-close type="button">Cerrar</button></div>
+<div class="db"><h3>Forma = naturaleza del punto</h3>
+<p><b>○ Círculo · río / cauce IGN (138):</b> ubicación sobre un cauce cartográfico; no representa un asentamiento.</p>
+<p><b>□ Cuadrado · población ANA con exposición a quebradas (287):</b> localización documental de un centro poblado, <b>no</b> una medición en el cauce ni una cuenca delimitada.</p>
+<p><b>◇ Rombo · población ANA mixta (111):</b> exposición documental relacionada con río y quebrada; tampoco equivale a un aforo.</p>
+<h3>Color = estado de seguimiento, no tipo de punto</h3>
+<p><span class="sw" style="background:#808080"></span>Gris: sin datos suficientes o no evaluable. <span class="sw" style="background:#f2c94c"></span>Amarillo: señal de lluvia satelital, <b>no</b> crecida confirmada.</p>
+<p>Rojo solo correspondería a un evento respaldado por evidencia verificada. El naranja predictivo sigue <b>desactivado</b>. Un punto verde requiere datos recientes completos; nunca implica seguridad absoluta.</p>
+<p>En la vista nacional, los círculos con cifras agrupan varios checkpoints por departamento; al acercar o seleccionar departamento aparecen los símbolos individuales. Los contornos discontinuos de avisos y cuencas son capas contextuales independientes.</p>
+<p class="note"><b>IRFEN RESEARCH_ONLY / TEST_ONLY.</b> No es una alerta oficial ni reemplaza a INDECI o SENAMHI. La ausencia de datos no implica ausencia de peligro.</p>
+</div></dialog>
 <dialog id="dlg-info" aria-labelledby="h-info"><div class="dh"><h2 id="h-info">Información</h2><button class="btn" data-close type="button">Cerrar</button></div><div class="db">
  <div class="guard" id="guard"><b>RESEARCH_ONLY · TEST_ONLY.</b> No es un sistema de alerta, no predice crecidas, huaicos ni inundaciones y no sustituye a SENAMHI, INDECI ni a las autoridades. <b>La ausencia de datos no significa ausencia de peligro.</b></div>
  <div id="infoBody"></div><p class="note" id="navLinks"></p></div></dialog>
@@ -414,7 +436,7 @@ function drawSemaforo(){if(!smLayer)return;smLayer.eachLayer(l=>{if(l!==smCtx)sm
   const fill=SMC[r.state].color,ring=SMRING[cp.type];let m;
   if(cp.location_kind==="CAUCE_IGN"){L.circleMarker([cp.lat,cp.lon],{renderer:smRenderer,pane:"sema",radius:10,stroke:false,fillColor:"#fff",fillOpacity:.9,interactive:false}).addTo(smLayer);
    m=L.circleMarker([cp.lat,cp.lon],{renderer:smRenderer,pane:"sema",radius:7.5,color:ring,weight:2.5,fillColor:fill,fillOpacity:.95,className:"sm-pt sm-"+r.state});}
-  else m=L.marker([cp.lat,cp.lon],{pane:"sema",keyboard:false,icon:L.divIcon({className:"sm-pt sm-sq sm-"+r.state,iconSize:[13,13],html:'<i style="background:'+fill+';border-color:'+ring+'"></i>'})});
+  else m=L.marker([cp.lat,cp.lon],{pane:"sema",keyboard:false,icon:L.divIcon({className:"sm-pt sm-sq "+(cp.type==="mixto"?"sm-diamond ":"")+"sm-"+r.state,iconSize:[13,13],html:'<i style="background:'+fill+';border-color:'+ring+'"></i>'})});
   m.bindPopup(()=>smPopup(cp),{maxWidth:330});m.on("popupopen",()=>hyShow(cp)).on("popupclose",()=>hyOutline&&hyOutline.clearLayers());m.bindTooltip(safe(cp.name)+" · "+safe(SMC[r.state].label_es),{direction:"top",offset:[0,-6]});m.addTo(smLayer);smMarks[cp.id]=m;});
  smContextShapes(rows);}
 if(map&&SM)map.on("zoomend",()=>{const agg=smDep==="ALL"&&map.getZoom()<SM_DETAIL_ZOOM;if((document.body.dataset.semaforoAgg==="1")!==agg)drawSemaforo();});
@@ -443,8 +465,8 @@ function renderSemaforo(){const box=$("tab-semaforo");if(!SM){box.innerHTML='<p 
   '<p id="smCounts">'+order.map(c=>'<span class="tag"><i class="sw" style="background:'+SMC[c].color+'"></i>'+safe(SMC[c].label_es)+': '+cnt(c)+'</span>').join(" ")+'</p>'+ctxHtml+
   '<p class="note"><b>Evidencia de posible crecida o activación</b> (caudal, nivel, reportes de campo): no disponible en esta vista. La lluvia satelital no la sustituye.</p>'+antHtml()+
   '<details'+(window.matchMedia("(min-width:901px)").matches?" open":"")+'><summary><b>Qué significa cada color y cada símbolo</b></summary>'+order.map(c=>'<p class="note"><i class="sw" style="background:'+SMC[c].color+'"></i><b>'+safe(SMC[c].label_es)+'.</b> '+safe(SMC[c].rule_es)+'</p>').join("")+
-  '<p class="note"><b>● Círculo</b>: punto de cauce sobre la red IGN 1:500.000 (borde azul). <b>■ Cuadrado</b>: población expuesta documentada por ANA 2016-17, <b>no</b> un punto del cauce (borde marrón; morado si un río piloto pasa a ≤ 1 km). '+safe(SM.rules.orange_es)+'</p></details>'+
-  '<div class="filters" style="margin-top:8px"><label>Mostrar <select id="smType"><option value="ALL">Todos</option><option value="rio">Ríos</option><option value="quebrada">Quebradas</option></select></label>'+
+  '<p class="note"><b>○ Círculo</b>: cauce IGN. <b>□ Cuadrado</b>: población ANA expuesta a quebradas. <b>◇ Rombo</b>: población ANA mixta. La forma identifica el tipo, el color identifica el estado. '+safe(SM.rules.orange_es)+'</p></details>'+
+  '<div class="filters" style="margin-top:8px"><label>Mostrar <select id="smType"><option value="ALL">Todos</option><option value="rio">Ríos</option><option value="quebrada">Quebradas / población</option><option value="mixto">Mixtos</option></select></label>'+
   '<label>Estado <select id="smState"><option value="ALL">Todos</option><option value="ATENCION">Amarillos, naranjas y rojos</option></select></label>'+
   '<label>Departamento <select id="smDep"><option value="ALL">Toda la costa</option>'+cov.map(c=>'<option value="'+safe(c.department)+'">'+safe(title(c.department))+(c.status==="PILOTO_ACTIVO"?" (piloto)":" (pendiente)")+'</option>').join("")+'</select></label></div>'+
   (covDep&&covDep.status!=="PILOTO_ACTIVO"?'<p class="empty">'+safe(title(smDep))+': sin puntos todavía (departamento pendiente). La estructura está preparada: basta con declarar sus sistemas fluviales IGN y su fuente documental de quebradas.</p>':
@@ -473,13 +495,13 @@ function renderLayers(){const box=$("layers");const row=id=>R[id]?'<label><input
  box.querySelectorAll("input[name=base]").forEach(i=>i.onchange=()=>setBase(i.value));
  box.querySelectorAll("#win button").forEach(b=>b.onclick=()=>{WIN=b.dataset.win;box.querySelectorAll("#win button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));drawRain();renderRainTab();renderSummary($("dept")?.value);renderLayers();});}
 // "what am I looking at": visible layers with their date
-function renderViewing(){const on=Object.entries(R).filter(([k,r])=>r.on);
+function renderViewing(){const on=Object.entries(R).filter(([k,r])=>r.on);$("shapeKey").hidden=!(R.semaforo?.on&&SM);
  const base=SINGLE||BASE==="vector"?"Referencia vectorial (Natural Earth, dominio público)":BASES[BASE]?.label;
  const rainOn=R.rainCoast?.on||R.rainZones?.on;const w=D.rain?.coast?.windows?.[WIN];
  $("viewSummary").textContent="Estás viendo "+(on.length)+" capas"+(rainOn&&w?" · lluvia "+WIN.replace("h"," h")+" hasta "+short(w.end_utc)+(STALE.coast?" (congelada)":""):"")+" · detalle";
  $("viewList").innerHTML='<li>'+safe(base)+'</li>'+on.map(([k,r])=>'<li>'+safe(r.label)+(r.sub()?' <span class="note">· '+safe(r.sub())+'</span>':"")+'</li>').join("");
  const hyOn=R.hydro?.on;
- $("viewLegend").innerHTML=(R.semaforo?.on&&SM?'<div class="legend"><span>Semáforo (experimental, estado local '+(smMode==="AHORA"?"ahora":"al corte")+'):</span>'+["ROJO","AMARILLO","VERDE","GRIS"].map(c=>'<span><i class="sw" style="background:'+SMC[c].color+'"></i>'+safe(SMC[c].label_es)+'</span>').join("")+'<span>● cauce IGN · ■ población ANA · contorno punteado = aviso (contexto) · círculo con número = puntos de un departamento (vista nacional) · línea azul discontinua = área aportante del punto abierto</span></div>':"")+(hyOn?'<div class="legend"><span>Red IGN:</span>'+Object.entries(HYC).filter(([k])=>k!=="RX").map(([k,c])=>'<span><svg width="22" height="8" aria-hidden="true"><line x1="1" y1="4" x2="21" y2="4" stroke="'+c.color+'" stroke-width="'+Math.max(1.5,c.w)+'"'+(c.dash?' stroke-dasharray="'+c.dash+'"':'')+'/></svg> '+safe(c.label)+'</span>').join("")+'<span>discontinuo = intermitente</span></div>':"")+(rainOn?'<div class="legend"><span>Lluvia '+safe(WIN.replace("h"," h"))+' (mm) · intervalos de visualización, no umbrales:</span>'+BINS.map((b,i)=>'<span><i class="sw" style="background:'+css(b[1])+'"></i>'+(i<BINS.length-1?String(b[0]).replace(".",",")+"–"+BINS[i+1][0]:"≥ "+b[0])+"</span>").join("")+'</div>':"")+
+ $("viewLegend").innerHTML=(R.semaforo?.on&&SM?'<div class="legend"><span>Semáforo (experimental, estado local '+(smMode==="AHORA"?"ahora":"al corte")+'):</span>'+["ROJO","AMARILLO","VERDE","GRIS"].map(c=>'<span><i class="sw" style="background:'+SMC[c].color+'"></i>'+safe(SMC[c].label_es)+'</span>').join("")+'<span>○ cauce IGN · □ población ANA (quebradas) · ◇ población ANA mixta · contorno punteado = aviso (contexto) · círculo con número = puntos de un departamento (vista nacional) · línea azul discontinua = área aportante del punto abierto</span></div>':"")+(hyOn?'<div class="legend"><span>Red IGN:</span>'+Object.entries(HYC).filter(([k])=>k!=="RX").map(([k,c])=>'<span><svg width="22" height="8" aria-hidden="true"><line x1="1" y1="4" x2="21" y2="4" stroke="'+c.color+'" stroke-width="'+Math.max(1.5,c.w)+'"'+(c.dash?' stroke-dasharray="'+c.dash+'"':'')+'/></svg> '+safe(c.label)+'</span>').join("")+'<span>discontinuo = intermitente</span></div>':"")+(rainOn?'<div class="legend"><span>Lluvia '+safe(WIN.replace("h"," h"))+' (mm) · intervalos de visualización, no umbrales:</span>'+BINS.map((b,i)=>'<span><i class="sw" style="background:'+css(b[1])+'"></i>'+(i<BINS.length-1?String(b[0]).replace(".",",")+"–"+BINS[i+1][0]:"≥ "+b[0])+"</span>").join("")+'</div>':"")+
   (msg?'<p id="msg">'+safe(msg)+'</p>':'<p id="msg"></p>');}
 // ---------- tabs
 const TABS=[["resumen","Resumen"],["semaforo","Semáforo"],["lluvia","Lluvia"],["avisos","Avisos"],["rios","Crecidas de ríos"],["quebradas","Quebradas"]];
@@ -569,6 +591,7 @@ $("limitsBody").innerHTML=(ANY?'<div class="guard"><b>Datos congelados, no actua
  '<h3>No disponible en esta vista</h3>'+(D.layers_unavailable||[]).map(u=>'<div class="card"><b>'+safe(u.label)+'</b><br><span class="note">'+safe(u.reason)+'</span></div>').join("")+
  '<h3>Pendiente o insuficiente</h3>'+(D.pending||[]).map(p=>'<div class="card"><b>'+safe(p.item)+'</b><br><span class="note">'+safe(p.reason)+'</span></div>').join("");
 const openDlg=id=>{const d=$(id);if(d.showModal)d.showModal();else d.setAttribute("open","");};
+$("bLegend").onclick=()=>openDlg("dlg-legend");
 $("bInfo").onclick=()=>openDlg("dlg-info");$("bSources").onclick=()=>openDlg("dlg-sources");$("bLimits").onclick=()=>openDlg("dlg-limits");
 document.querySelectorAll("dialog [data-close]").forEach(b=>b.onclick=()=>b.closest("dialog").close());
 // ---------- layer panel and side panel toggles
