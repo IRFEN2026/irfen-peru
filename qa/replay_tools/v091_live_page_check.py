@@ -170,7 +170,25 @@ def run(data_dir: Path, next_cycle: Path | None, local_leaflet: Path | None, out
                 return r
 
             page.goto(origin + ("/vigilancia.html?poll=30" if cross_origin else "/vigilancia.html?live=current/&poll=30"), wait_until="load")
-            page.wait_for_selector("body[data-ready='1']", timeout=30000)
+            try:
+                page.wait_for_selector("body[data-ready='1']", timeout=30000)
+            except Exception:
+                # Diagnostics are essential: a failed dynamic bundle must never be promoted,
+                # but the QA log must explain *why* it failed rather than only reporting a timeout.
+                diagnostic = dict(
+                    page_errors=errors[-30:],
+                    page_url=page.url,
+                    ready=page.evaluate("document.body.dataset.ready||null"),
+                    state=page.locator("#state").inner_text(timeout=3000),
+                    javascript_loaded=page.evaluate("!!document.getElementById('app')"),
+                    live_cycle=page.evaluate("document.body.dataset.liveCycle||null"),
+                    semaforo_check=page.evaluate("document.body.dataset.semaforoSelfcheck||null"),
+                    load_events=len(loads),
+                    manifest_cycle=json.loads((droot / "current/manifest.json").read_text(encoding="utf-8")).get("cycle_id"))
+                (out / "failure_diagnostics.json").write_text(json.dumps(diagnostic, ensure_ascii=False, indent=2), encoding="utf-8")
+                page.screenshot(path=str(out / "failed_page.png"), full_page=False, timeout=5000)
+                print("IRFEN_PRIVATE_VIEW_FAILURE " + json.dumps(diagnostic, ensure_ascii=False), flush=True)
+                raise
             rep["runs"].append(snapshot("ciclo_1"))
             if next_cycle:
                 page.locator("#t-avisos").click()  # a view state that must survive the automatic reload
