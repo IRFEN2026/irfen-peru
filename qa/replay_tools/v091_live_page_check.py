@@ -179,7 +179,8 @@ def run(data_dir: Path, next_cycle: Path | None, local_leaflet: Path | None, out
                         text = popup.inner_text()
                         if ("IMERG Early por cuenca" not in text or
                                 not all(k in text for k in ("1h:", "3h:", "6h:", "24h:", "72h:")) or
-                                "Cinco preguntas" not in text):
+                                "Cinco preguntas" not in text or
+                                "requiere añadirla a la captura de main" in text):
                             raise AssertionError("River popup missing catchment rainfall/complete-window labels: " + text[:500])
                         r["catchment_popup"] = dict(checkpoint=cid, rain_detail_present=True,
                                                     text_preview=text[:800])
