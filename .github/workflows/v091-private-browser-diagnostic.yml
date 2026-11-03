@@ -20,6 +20,10 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+      - name: Detectar sintaxis del JavaScript del visor con Node
+        run: |
+          python -c 'from pathlib import Path; s=Path("site/v09/vigilancia.html").read_text(); Path("/tmp/irfen-app.js").write_text(s.split("<script id=\\"app\\">")[1].split("</script>")[0])'
+          node --check /tmp/irfen-app.js
       - name: Instalar dependencias de reconstruccion privada
         run: |
           python -m pip install -q "numpy>=1.26,<2" "playwright==1.48.0"
