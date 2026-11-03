@@ -111,9 +111,13 @@ def orient(path, coast_km, flow_acc, thr):
         votes.append(("DESEMBOCADURA", 1 if d1 < d0 else 0))
     if flow_acc is not None:
         vals = [flow_acc(x, y) for x, y in path]
-        ok = [(i, v) for i, v in enumerate(vals) if v is not None]
+        # only vertices lying on a modelled channel count: where the 1:500k line leaves the HydroSHEDS channel (flat
+        # lower reaches, e.g. Bajo Piura) the sampled accumulation is that of a hillslope cell, not of the river
+        min_cells = thr.get("flow_min_channel_cells", 0)
+        ok = [(i, v) for i, v in enumerate(vals) if v is not None and v >= min_cells]
         cov = len(ok) / len(path)
         ev["flow_coverage"] = round(cov, 2)
+        ev["flow_off_channel_vertices"] = sum(1 for v in vals if v is not None and v < min_cells)
         if cov >= thr["flow_min_coverage"] and len(ok) >= 10:
             rho = spearman([i for i, _ in ok], [v for _, v in ok])
             ev["flow_spearman"] = round(rho, 3)
@@ -140,7 +144,12 @@ def river_checkpoints(dep, system, ign_by_id, in_dep, positions, coast_km, flow_
         g = f["geometry"]
         used_ids.append(oid)
         parts += [[p[:2] for p in ln] for ln in ([g["coordinates"]] if g["type"] == "LineString" else g["coordinates"])]
-    path, orient_ev = orient(chain(parts), coast_km, flow_acc, thr)
+    path = chain(parts)
+    on_path = sum(1 for q in parts if len(q) >= 2 and q[0] in path and q[-1] in path)
+    continuity = dict(parts=len(parts), parts_on_path=on_path, path_km=round(sum(km(a, b) for a, b in zip(path, path[1:])), 1),
+                      parts_km=round(sum(km(a, b) for q in parts for a, b in zip(q, q[1:])), 1))
+    continuity["status"] = "CONTINUO" if on_path == len(parts) else "PARTES_NO_UNIDAS"
+    path, orient_ev = orient(path, coast_km, flow_acc, thr)
     verified = orient_ev["status"].startswith("VERIFICADA")
     inside = [p for p in path if in_dep(p)]
     if len(inside) < 3:
@@ -151,7 +160,8 @@ def river_checkpoints(dep, system, ign_by_id, in_dep, positions, coast_km, flow_
         total += km(a, b)
         cum.append(total)
     out = []
-    for pos in positions:
+    prefix = system.get("_id_prefix") or dep[:3]
+    for pos in system.get("positions") or positions:
         target = pos["fraction"] * total
         k = min(range(len(inside)), key=lambda i: abs(cum[i] - target))
         x, y = inside[k]
@@ -160,7 +170,7 @@ def river_checkpoints(dep, system, ign_by_id, in_dep, positions, coast_km, flow_
         basis = ("aguas abajo según " + " y ".join({"DESEMBOCADURA": "la desembocadura en la costa",
                                                    "RED_DE_FLUJO_HYDROSHEDS": "la acumulación de flujo HydroSHEDS"}[e] for e in orient_ev["evidence"])) \
             if verified else "orden geográfico, sin sentido de flujo verificado"
-        out.append(dict(id=f"{dep[:3]}-R-{system['id']}-{pos['sector'].upper()}", name=f"{system['name']} · {label}",
+        out.append(dict(id=f"{prefix}-R-{system['id']}-{pos['sector'].upper()}", name=f"{system['name']} · {label}",
                         type="rio", location_kind="CAUCE_IGN", system_id=system["id"], system=system["name"], sector=sector,
                         sector_verified=verified, lat=round(y, 5), lon=round(x, 5),
                         location_basis=f"Vértice de la línea IGN 1:500.000 (OBJECTID {', '.join(map(str, used_ids))}) a ~{round(cum[k])} km "
@@ -169,7 +179,7 @@ def river_checkpoints(dep, system, ign_by_id, in_dep, positions, coast_km, flow_
                         location_confidence="MEDIA",
                         location_confidence_note="Posición sobre el cauce cartográfico 1:500.000 (generalizado); no es una estación ni un punto de aforo.",
                         rain_zone=system.get("rain_zone")))
-    return out, dict(id=system["id"], status="OK", ign_objectids=used_ids, km_in_department=round(total, 1), vertices=len(inside),
+    return out, dict(id=system["id"], status="OK", ign_objectids=used_ids, km_in_department=round(total, 1), vertices=len(inside), continuity=continuity,
                      orientation=orient_ev, rain_zone=system.get("rain_zone"), rain_zone_note=system.get("rain_zone_note") or system.get("rain_proxy_note"))
 
 
@@ -191,8 +201,9 @@ def qname(p):
     return None if q.lower() in ("", "s/n", "s/n.") else q
 
 
-def quebrada_checkpoints(dep, ana_pts, river_paths, max_km, mixto_km):
+def quebrada_checkpoints(dep, ana_pts, river_paths, max_km, mixto_km, prefix=None):
     out = []
+    prefix = prefix or dep[:3]
     for n, g in enumerate(sorted(clusters(ana_pts, max_km), key=lambda g: (-g[0]["lat"], g[0]["id"])), start=1):
         rep = g[0]  # documentary coordinate of the first ANA row of the group (no centroid)
         names = []
@@ -211,7 +222,7 @@ def quebrada_checkpoints(dep, ana_pts, river_paths, max_km, mixto_km):
             if d <= mixto_km and (near is None or d < near[2]):
                 near = (sid, sname, d)
         qs = ("quebrada " if len(names) == 1 else "quebradas ") + ", ".join(names[:3]) + (" y otras" if len(names) > 3 else "")
-        out.append(dict(id=f"{dep[:3]}-Q-{n:03d}", name=f"Poblado expuesto {towns[0] if towns else 'sin nombre'} · {qs}",
+        out.append(dict(id=f"{prefix}-Q-{n:03d}", name=f"Poblado expuesto {towns[0] if towns else 'sin nombre'} · {qs}",
                         type="mixto" if near else "quebrada", location_kind="POBLADO_ANA", system_id=near[0] if near else None,
                         system=(near[1] if near else "Quebradas documentadas ANA 2016-17"), sector=None,
                         lat=round(rep["lat"], 5), lon=round(rep["lon"], 5),
@@ -406,6 +417,7 @@ def build():
             return 0 <= j < grid.shape[0] and 0 <= i < grid.shape[1] and grid[j, i] == k
         sys_out, river_paths, cps = [], [], []
         for s in dcfg["river_systems"]:
+            s["_id_prefix"] = dcfg.get("id_prefix")
             pts, info = river_checkpoints(dep, s, ign_by_id, in_dep, systems["river_positions"], coast_km, flow_acc, systems["orientation_thresholds"])
             sys_out.append(info)
             cps += pts
@@ -416,7 +428,7 @@ def build():
             river_paths.append((s["id"], s["name"], [p for p in parts if in_dep(p)]))
         if dcfg.get("quebradas_source") == "ANA2016_17_CENTROS_POBLADOS":
             pts = [p for p in ana["points"] if p["department"] == dep and p.get("status") == "ADMITIDA_UBICACION_DOCUMENTAL"]
-            cps += quebrada_checkpoints(dep, pts, river_paths, systems["quebrada_cluster_km"], systems["mixto_max_distance_km"])
+            cps += quebrada_checkpoints(dep, pts, river_paths, systems["quebrada_cluster_km"], systems["mixto_max_distance_km"], dcfg.get("id_prefix"))
         for cp in cps:
             cp["department"] = dep
             cp["province"] = province_of(admin, dep, cp["lon"], cp["lat"])
@@ -512,7 +524,9 @@ def hydrosheds_acc():
     accumulation in a ±3-cell window (snaps the 1:500k IGN line to the modelled channel), or None outside coverage."""
     import io
     import numpy as np
-    d = ROOT / "data/v09/sources/hydrosheds_binational"
+    # the coast crop (Tumbes–Tacna, same HydroSHEDS release and origin as the binational one) supersedes it when present
+    d = next((p for p in (ROOT / "data/v09/sources/hydrosheds_coast", ROOT / "data/v09/sources/hydrosheds_binational")
+              if (p / "acc15.npy.gz").is_file()), ROOT / "data/v09/sources/hydrosheds_binational")
     prov = SV.load(d / "provenance.json")
     if not prov or not (d / "acc15.npy.gz").is_file():
         return None
@@ -521,13 +535,22 @@ def hydrosheds_acc():
     nod = prov["acc15"].get("nodata")
 
     def f(x, y, w=3):
+        # accumulation of the nearest cell of the dominant channel in the window (≥ half the window maximum). The plain
+        # window maximum jumps to the most downstream cell of the window and to nearby larger rivers, which blurs the
+        # monotonic trend along meandering or flat lower reaches (río Piura: ρ = −0,6 with the maximum).
         c, r = int((x - t[2]) / t[0]), int((y - t[5]) / t[4])
         if not (w <= r < acc.shape[0] - w and w <= c < acc.shape[1] - w):
             return None
         win = acc[r - w:r + w + 1, c - w:c + w + 1].astype(float)
         if nod is not None:
-            win = win[win != nod]
-        return float(win.max()) if win.size else None
+            win[win == nod] = -1
+        mx = win.max()
+        if mx <= 0:
+            return None
+        ii, jj = np.nonzero(win >= 0.5 * mx)
+        d2 = (ii - w) ** 2 + (jj - w) ** 2
+        k = np.lexsort((-win[ii, jj], d2))[0]
+        return float(win[ii[k], jj[k]])
     return f
 
 

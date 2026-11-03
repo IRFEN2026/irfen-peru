@@ -39,7 +39,8 @@ PECHP = ROOT / "data/v09/research/historical/pechp_daily_v0_1.json"
 EVAL = ROOT / "data/v09/research/anticipation/anticipation_evaluation_v0_1.json"
 REFERENCE = ROOT / "data/v09/sources/natural_earth_reference/peru_reference_v0_1.json"
 IGN_DIR = ROOT / "data/v09/sources/ign_hidrografia_500k"
-SEMAFORO = ROOT / "data/v09/research/semaforo/semaforo_v0_1.json"  # built by scripts/v09_build_semaforo.py (run it first)
+SEMAFORO = ROOT / "data/v09/research/semaforo/semaforo_v0_1.json"
+HYDROLOGY = ROOT / "data/v09/research/semaforo/checkpoint_hydrology_v0_1.json"  # scripts/v091_checkpoint_hydrology.py  # built by scripts/v09_build_semaforo.py (run it first)
 IGN_CLASS = {"Río Principal": "RP", "Río Secundario": "RS", "Quebrada Húmeda": "QH", "Quebrada Seca": "QS", "Río Seco": "RX"}
 TUMBES_EV = ROOT / "site/data/validation/phase2_discovery_evidence/tumbes_rio_tumbes_initial_context_2019_2026.json"
 COAST = ["TUMBES", "PIURA", "LAMBAYEQUE", "LA LIBERTAD", "ANCASH", "LIMA", "CALLAO", "ICA", "AREQUIPA", "MOQUEGUA", "TACNA"]
@@ -462,6 +463,45 @@ def ign_hydro(admin):
                 lines=dict(type="FeatureCollection", features=out), per_department=per_dep)
 
 
+def checkpoint_hydrology(semaforo: dict) -> dict:
+    """Compact per-checkpoint answers to the five questions + simplified contributing-area outlines, only when the static
+    inventory was built for exactly these checkpoints (same ids and coordinates)."""
+    import hashlib
+    h = load(HYDROLOGY)
+    if semaforo.get("status") != "OK" or not h:
+        return dict(status="NO_DISPONIBLE")
+    rows = sorted((c["id"], c["lat"], c["lon"]) for c in semaforo["checkpoints"])
+    if hashlib.sha256(json.dumps(rows, separators=(",", ":")).encode()).hexdigest() != h.get("checkpoints_fingerprint"):
+        return dict(status="DESACTUALIZADO", note_es="El inventario hidrológico no corresponde a estos checkpoints: regenérelo.")
+    import v091_catchment_live_view as CL
+    live_archive = CL.load()
+    live = CL.build(live_archive, [r["id"] for r in h["checkpoints"]], semaforo["cutoff_utc"])["points"]
+    out = {}
+    for r in h["checkpoints"]:
+        q3, q4 = r["q3_contributing_area"], r["q4_rain"]
+        sn = q4.get("catchment_rain_snapshot") or {}
+        w = sn.get("windows") or {}
+        out[r["id"]] = dict(ev=r["evaluation_status"], why=r.get("not_evaluable_reason_es"), q1=r["q1_coordinate"]["source"],
+                            q3=q3["status"], q3r=q3.get("reason_es"), a=q3.get("area_km2"), out=q3.get("fraction_outside_peru"),
+                            snap=(q3.get("snap") or {}).get("snap_km"), hr=q3.get("hydrorivers_ratio"), conn=q3.get("connectivity"),
+                            infra=q3.get("infrastructure_es") or [], z=q4["association"], rc=r["rain_class"],
+                            zf=([q4["zone_overlap"]["fraction_of_catchment_in_zone"], q4["zone_overlap"]["fraction_of_zone_in_catchment"]]
+                                if q4.get("zone_overlap") else None),
+                            snapw=({k: [v["mean_mm"], v["checkpoint_cell_mm"]] for k, v in w.items() if v["status"] == "COMPLETA"} or None),
+                            snap_end=sn.get("windows_end_utc"), live=live.get(r["id"]), miss=r["q5_missing"])
+    feats = []
+    for f in h["catchment_outlines"]["features"]:
+        g = f["geometry"]
+        polys = g["coordinates"] if g["type"] == "MultiPolygon" else [g["coordinates"]]
+        polys = [[[[round(x, 3), round(y, 3)] for x, y in ring[::2] + ring[-1:]] for ring in poly if len(ring) >= 8] for poly in polys]
+        polys = [p for p in polys if p]
+        feats.append(dict(type="Feature", properties=dict(id=f["properties"]["checkpoint_id"], a=f["properties"]["area_km2"]),
+                          geometry=dict(type="MultiPolygon", coordinates=polys)))
+    return dict(status="OK", source="data/v09/research/semaforo/checkpoint_hydrology_v0_1.json", coverage=h["coverage"],
+                rules=h["rules"], note_es=h["hydrosheds"]["note_es"], points=out,
+                outlines=dict(type="FeatureCollection", features=feats))
+
+
 def anticipation_section(semaforo: dict, nz: dict) -> dict:
     """Research-only anticipation (NARANJA) block: rule verdicts from the archived historical validation and the
     simulation at the semáforo cutoff. Never operational: no validated rule, no colour, no e-mail."""
@@ -557,7 +597,7 @@ def build() -> dict:
     semaforo = dict(status="PENDIENTE") if not sem or sem.get("built_from_dashboard_at_utc") != dash["built_at_utc"] else dict(status="OK", **sem)
     anticipation = anticipation_section(semaforo, nz)
     return dict(schema_version="irfen_v09_surveillance_view_v0_1", **GUARDS, built_from_dashboard_at_utc=dash["built_at_utc"],
-                semaforo=semaforo, anticipation=anticipation, reference=reference, layers_unavailable=layers_unavailable, hydro_ign=hydro,
+                semaforo=semaforo, checkpoint_hydrology=checkpoint_hydrology(semaforo), anticipation=anticipation, reference=reference, layers_unavailable=layers_unavailable, hydro_ign=hydro,
                 disclaimer_es=("Vista privada de vigilancia científica (RESEARCH_ONLY / TEST_ONLY). No es un sistema de alerta, no predice crecidas, "
                                "huaicos ni inundaciones, y no sustituye a SENAMHI, INDECI ni a las autoridades. La ausencia de datos no significa ausencia de peligro."),
                 coast_departments=COAST, sources=sources, admin=admin, rain=dict(north_zones=nz, coast=cr, windows_h=WINDOWS), avisos=av,
