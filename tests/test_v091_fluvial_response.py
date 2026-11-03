@@ -38,6 +38,22 @@ class FluvialLagQA(unittest.TestCase):
         self.assertIsNotNone(out["selected_on_train"])
         self.assertEqual(out["holdout"]["status"],"INSUFFICIENT_HOLDOUT_PAIRS")
 
+    def test_monthly_anomaly_excludes_groups_with_fewer_than_four_observations(self):
+        x=[1,3,5,7,9,11]
+        y=[11,9,7,5,3,1]
+        dates=["2021-01-01","2021-01-02","2021-01-03",
+               "2021-02-01","2021-02-02","2021-02-03"]
+        self.assertEqual(F.monthly_anomaly_spearman(x,y,dates,minimum=2)["status"],
+                         "INSUFFICIENT_WITHIN_MONTH")
+
+    def test_future_rain_is_explicitly_noncausal_control(self):
+        day=date(2022,2,1)
+        rain={day+timedelta(days=i):float(i) for i in range(1,10)}
+        flows={day:5.}
+        d=F.future_rain_falsification(rain,flows,3,(2021,2023),minimum=5)
+        self.assertIsNone(d["spearman"])
+        self.assertEqual(d["interpretation"],"FUTURE_RAIN_NEGATIVE_CONTROL_NOT_PREDICTIVE")
+
     def test_documentary_gauge_identity_blocks_unlabeled_months(self):
         doc={"months":[{"month":"2017-03","tables":{"rivers":{
             "column_identity_from_report_notes":{},
