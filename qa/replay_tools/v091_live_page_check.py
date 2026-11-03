@@ -161,6 +161,32 @@ def run(data_dir: Path, next_cycle: Path | None, local_leaflet: Path | None, out
                          parity_at_cycle=parity(page, bundle, man["built_at_utc"]),
                          expiry=expiry(page, bundle, man["built_at_utc"]),
                          registry=registry_parity(page, bundle, man["built_at_utc"]))
+                if tag == "ciclo_1":
+                    # Compact legend must never take over the map; detailed guidance is on demand.
+                    legend = page.locator("#shapeKey")
+                    if not legend.is_visible() or legend.bounding_box()["width"] > 300:
+                        raise AssertionError("Shape legend hidden or wider than 300 px")
+                    if page.locator("#layers").is_visible():
+                        raise AssertionError("Large layers panel must start collapsed")
+                    if not all(x in legend.inner_text() for x in ("Río", "Población", "Mixto")):
+                        raise AssertionError("Three checkpoint shapes not explained in compact legend")
+                    page.locator("#bLegend").click()
+                    modal = page.locator("#dlg-legend")
+                    if not modal.is_visible() or not all(x in modal.inner_text() for x in ("Círculo", "Cuadrado", "Rombo", "estado")):
+                        raise AssertionError("Full modal legend missing semantics")
+                    modal.locator("[data-close]").click()
+                    if not page.locator("#dlg-legend").is_hidden():
+                        raise AssertionError("Legend modal failed to close")
+                    r["compact_legend"] = dict(width_px=round(legend.bounding_box()["width"]),
+                                                 detailed_modal_working=True, large_panel_initially_closed=True)
+                    if bundle.get("semaforo", {}).get("status") == "OK":
+                        page.locator("#smType").select_option("mixto")
+                        shown = page.locator('#tab-semaforo a[data-sm]').count()
+                        expected = sum(cp["type"] == "mixto" for cp in bundle["semaforo"]["checkpoints"])
+                        if shown != expected:
+                            raise AssertionError(f"Mixed filter returned {shown}, expected {expected}")
+                        page.locator("#smType").select_option("ALL")
+                        r["compact_legend"]["mixed_filter_count"] = shown
                 page.locator("#bSources").click()
                 r["sources_dialog"] = page.locator("dialog[open] .db").inner_text()[:400]
                 r["live_sources"] = page.evaluate("""[...document.querySelectorAll('#liveSources tbody tr')].map(tr=>({id:tr.dataset.src,
