@@ -32,7 +32,8 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 SEMAFORO = ROOT / "data/v09/research/semaforo/semaforo_v0_1.json"
 SYSTEMS = ROOT / "config/v09_semaforo_systems_v0_1.json"
-BUNDLE = ROOT / "site/data/v09/surveillance_view_v0_1.json"
+REFERENCE = ROOT / "data/v09/sources/natural_earth_reference/peru_reference_v0_1.json"
+ZONES = ROOT / "config/v09_north_surveillance_zones_v0_1.json"  # basin zones of the live rain capture (geometry_path)
 NORTH = ROOT / "data/v09/research/anticipation/north_catchments_v0_1.json"
 SNAPSHOT = ROOT / "data/v09/research/coast_rain/imerg_early_coast_snapshot_v0_1.json"
 IMERG_FINAL = ROOT / "data/v09/research/historical/imerg_final_daily_piura_chira_v0_1.json"
@@ -80,6 +81,13 @@ def zone_mask(g, geom) -> np.ndarray:
             ins ^= cond & (x < xin)
         m[r0:r1 + 1, c0:c1 + 1] |= ins
     return m
+
+
+def fingerprint(checkpoints) -> str:
+    """SHA-256 of the sorted (id, lat, lon) of the checkpoints: the inventory applies only to exactly these points."""
+    import hashlib
+    rows = sorted((c["id"], c["lat"], c["lon"]) for c in checkpoints)
+    return hashlib.sha256(json.dumps(rows, separators=(",", ":")).encode()).hexdigest()
 
 
 def zone_association(frac_catchment_in_zone: float, frac_zone_in_catchment: float) -> str:
@@ -146,15 +154,20 @@ def no_eval_reason(r) -> str:
 
 
 def hydrorivers_near(rivers, lon, lat, max_km=1.0):
-    best = None
+    cand = []
     for f in rivers:
         bb = f["_bbox"]
         if not (bb[0] - 0.02 <= lon <= bb[2] + 0.02 and bb[1] - 0.02 <= lat <= bb[3] + 0.02):
             continue
-        for p in f["_pts"]:
-            d = km((lon, lat), p)
-            if d <= max_km and (best is None or d < best[0]):
-                best = (d, f["properties"])
+        d = min(km((lon, lat), p) for p in f["_pts"])
+        if d <= max_km:
+            cand.append((d, f["properties"]))
+    best = None
+    if cand:
+        # at a confluence the tributary's last vertex is also on the main stem: among the reaches within 0.5 km of the
+        # nearest one, take the largest (the main stem), never a farther river
+        dmin = min(c[0] for c in cand)
+        best = max((c for c in cand if c[0] <= dmin + 0.5), key=lambda c: c[1]["UPLAND_SKM"])
     return None if best is None else dict(distance_km=round(best[0], 2), hyriv_id=best[1]["HYRIV_ID"], upland_km2=best[1]["UPLAND_SKM"],
                                           main_riv=best[1]["MAIN_RIV"])
 
@@ -162,14 +175,22 @@ def hydrorivers_near(rivers, lon, lat, max_km=1.0):
 def build() -> dict:
     sem = json.loads(SEMAFORO.read_text(encoding="utf-8"))
     systems = json.loads(SYSTEMS.read_text(encoding="utf-8"))
-    bundle = json.loads(BUNDLE.read_text(encoding="utf-8"))
+    reference = json.loads(REFERENCE.read_text(encoding="utf-8"))
     north = {c["id"]: c for c in json.loads(NORTH.read_text(encoding="utf-8"))["catchments"]}
     imf = json.loads(IMERG_FINAL.read_text(encoding="utf-8"))
     imf_box = imf["box"]
     snap = json.loads(SNAPSHOT.read_text(encoding="utf-8"))
     g = C.grid()
-    outside = C.outside_peru_fn(bundle["reference"])
-    zones = {f["properties"]["zone_id"]: f for f in bundle["rain"]["north_zones"]["zones"]["features"] if f.get("geometry")}
+    outside = C.outside_peru_fn(reference)
+    zones = {}
+    for z in json.loads(ZONES.read_text(encoding="utf-8"))["zones"]:
+        if z["zone_type"] == "BASIN_GEOMETRY":
+            gj = json.loads((ROOT / z["geometry_path"]).read_text(encoding="utf-8"))
+            polys = []
+            for f in gj.get("features") or [gj]:
+                geo = f["geometry"]
+                polys += geo["coordinates"] if geo["type"] == "MultiPolygon" else [geo["coordinates"]]
+            zones[z["zone_id"]] = dict(geometry=dict(type="MultiPolygon", coordinates=polys))
     zone_masks = {}
     rv = json.loads(gzip.decompress((g.src / "rivers.geojson.gz").read_bytes()))["features"]
     for f in rv:
@@ -177,7 +198,6 @@ def build() -> dict:
         f["_pts"] = pts
         f["_bbox"] = [min(p[0] for p in pts), min(p[1] for p in pts), max(p[0] for p in pts), max(p[1] for p in pts)]
     sys_cfg = {s["id"]: dict(s, department=d["department"]) for d in systems["departments"] for s in d.get("river_systems", [])}
-    rr_refs = sem.get("rain_refs") or {}
     records, masks, polygons = [], {}, []
     for cp in sem["checkpoints"]:
         rec = dict(id=cp["id"], department=cp["department"], province=cp.get("province"), district=cp.get("district"), name=cp["name"],
@@ -231,47 +251,67 @@ def build() -> dict:
             missing.append("Geometría documentada del cauce de la quebrada y de su microcuenca.")
         rec["q3_contributing_area"] = q3
         records.append(rec)
-    # nesting along each river system: upstream points must lie inside the catchment of downstream points
+    # nesting along each river system (all its departments): of any two points of the same river, one must drain into
+    # the other. Points incompatible with the rest (e.g. a 1:500k vertex on a delta branch that HydroSHEDS routes
+    # elsewhere) are removed one at a time, the most incompatible first, and flagged ASOCIACION_INCONSISTENTE.
     by_sys = {}
     for r in records:
         if r["q3_contributing_area"]["status"] == "APORTACION_DELIMITADA_EXPERIMENTAL":
             by_sys.setdefault(r["q2_water_body"]["system_id"], []).append(r)
     system_summary = []
+
+    def inside(a, b):
+        sa = a["q3_contributing_area"]["snap"]
+        return bool(masks[b["id"]][sa["row"], sa["col"]])
     for sid, rs in sorted(by_sys.items()):
-        rs.sort(key=lambda r: r["q3_contributing_area"]["area_km2"])
-        chain_ok = True
-        for a, b in zip(rs, rs[1:]):
-            sa = a["q3_contributing_area"]["snap"]
-            nested = bool(masks[b["id"]][sa["row"], sa["col"]])
-            a["q3_contributing_area"]["nested_in_downstream"] = dict(downstream_checkpoint=b["id"], nested=nested)
-            chain_ok &= nested
-        sectors = [r["q2_water_body"]["sector"] for r in rs]
+        keep, flagged = list(rs), []
+        while True:
+            bad = {r["id"]: sum(1 for q in keep if q is not r and not (inside(r, q) or inside(q, r))) for r in keep}
+            worst = max(keep, key=lambda r: (bad[r["id"]], -r["q3_contributing_area"]["area_km2"]))
+            if bad[worst["id"]] == 0:
+                break
+            keep.remove(worst)
+            flagged.append(worst)
+        keep.sort(key=lambda r: r["q3_contributing_area"]["area_km2"])
+        for x, y in zip(keep, keep[1:]):
+            x["q3_contributing_area"]["nested_in_downstream"] = dict(downstream_checkpoint=y["id"], nested=inside(x, y))
+        for r in keep:
+            r["q3_contributing_area"]["connectivity"] = "ANIDADA_CON_EL_RESTO_DEL_SISTEMA"
+        for r in flagged:
+            q3 = r["q3_contributing_area"]
+            q3["connectivity"] = "NO_ANIDADA"
+            q3["status"] = "ASOCIACION_INCONSISTENTE"
+            q3["reason_es"] = ("El área aportante HydroSHEDS de este vértice no contiene ni drena a la de los demás puntos del mismo río "
+                               "(posible brazo de delta, bifurcación o desvío del cauce cartográfico respecto al modelado).")
+        # sector order inside each department, among consistent points with verified sectors
+        order_ok = True
+        for dep in sorted({r["department"] for r in keep}):
+            sec = [r["q2_water_body"]["sector"] for r in keep if r["department"] == dep and r["q2_water_body"].get("sector_verified")]
+            if sec != [x for x in ("alto", "medio", "bajo") if x in sec]:
+                order_ok = False
+        areas = [r["q3_contributing_area"]["area_km2"] for r in keep]
         cfg = sys_cfg.get(sid, {})
-        areas = [r["q3_contributing_area"]["area_km2"] for r in rs]
-        system_summary.append(dict(flow_direction_evidence=("HydroSHEDS: el área aportante crece estrictamente en el orden "
-                                                            + " → ".join(r["id"] for r in rs) + " y cada punto está anidado en el siguiente")
-                                   if chain_ok and all(a < b for a, b in zip(areas, areas[1:])) else "NO_VERIFICADA",
-                                   system_id=sid, department=cfg.get("department"), name=cfg.get("name"), checkpoints=[r["id"] for r in rs],
-                                   areas_km2=[r["q3_contributing_area"]["area_km2"] for r in rs], sectors_upstream_to_downstream=sectors,
-                                   nested_chain=chain_ok,
-                                   sector_order_consistent=(sectors == [s for s in ("alto", "medio", "bajo") if s in sectors]) if all(sectors) else None))
-        for r in rs:
-            r["q3_contributing_area"]["connectivity"] = "ANIDADA_CON_EL_RESTO_DEL_SISTEMA" if chain_ok else "NO_ANIDADA"
-            if not chain_ok:
-                r["q3_contributing_area"]["status"] = "ASOCIACION_INCONSISTENTE"
+        system_summary.append(dict(system_id=sid, name=cfg.get("name"), departments=sorted({r["department"] for r in rs}),
+                                   checkpoints=[r["id"] for r in keep], areas_km2=areas,
+                                   sectors_upstream_to_downstream=[r["q2_water_body"]["sector"] for r in keep],
+                                   nested_chain=all(inside(x, y) for x, y in zip(keep, keep[1:])),
+                                   inconsistent_checkpoints=[r["id"] for r in flagged],
+                                   sector_order_consistent=order_ok,
+                                   flow_direction_evidence=("HydroSHEDS: el área aportante crece estrictamente en el orden "
+                                                            + " → ".join(r["id"] for r in keep) + " y cada punto está anidado en el siguiente")
+                                   if len(keep) > 1 and all(x < y for x, y in zip(areas, areas[1:])) else
+                                   ("UN_SOLO_PUNTO" if len(keep) == 1 else "NO_VERIFICADA")))
     # Q4 · rain over the contributing area (live zone overlap, historical archive) and Q5 · what is missing
     for r in records:
         cp = next(c for c in sem["checkpoints"] if c["id"] == r["id"])
         q3 = r["q3_contributing_area"]
         ref = cp.get("rain_ref")
-        rr = rr_refs.get(ref or "") or {}
         q4 = dict(rain_ref=ref, rain_basis=cp.get("rain_basis"))
         if ref and ref.startswith("zone:"):
             zid = ref[5:]
             q4["live_product"] = "IMERG Early V07 (30 min) + GOES-19 RRQPE, workflow v09-rain-north de main"
-            q4["connection"] = rr.get("connection")
-            q4["windows"] = sorted((rr.get("imerg") or {}).get("windows", {}), key=lambda w: int(w[:-1]))
-            q4["last_observation_window_end_utc"] = (rr.get("imerg") or {}).get("end_utc")
+            q4["live_windows_note_es"] = ("Ventanas 1/3/6/24 h (y 72 h si hay archivo) del ciclo en vivo; la hora de la última observación y la "
+                                          "antigüedad están en el semáforo de cada ciclo, no en este inventario estático.")
             if r["id"] in masks and zid in zones:
                 if zid not in zone_masks:
                     zone_masks[zid] = zone_mask(g, zones[zid]["geometry"])
@@ -286,8 +326,7 @@ def build() -> dict:
             else:
                 q4["association"] = "ZONA_QUE_CONTIENE_EL_PUNTO (aproximación local)" if cp["type"] != "rio" else "ZONA_SIN_COMPROBAR"
         elif ref and ref.startswith("cell:"):
-            q4.update(live_product=None, connection=rr.get("connection"), association="CELDA_LOCAL_INSTANTANEA_NO_CONECTADA",
-                      last_observation_window_end_utc=(rr.get("imerg") or {}).get("end_utc"))
+            q4.update(live_product=None, association="CELDA_LOCAL_INSTANTANEA_NO_CONECTADA")
         else:
             q4.update(live_product=None, association="SIN_LLUVIA_CONECTADA")
         cells = q3.get("imerg_cells") or []
@@ -342,7 +381,7 @@ def build() -> dict:
             polygons.append(dict(type="Feature", properties=dict(checkpoint_id=r["id"], area_km2=r["q3_contributing_area"]["area_km2"],
                                                                  status=r["q3_contributing_area"]["status"]), geometry=geom))
     cov = coverage(records)
-    return dict(schema_version="irfen_v091_checkpoint_hydrology_v0_1", **GUARDS, semaforo_built_from=sem.get("built_from_dashboard_at_utc"),
+    return dict(schema_version="irfen_v091_checkpoint_hydrology_v0_1", **GUARDS, checkpoints_fingerprint=fingerprint(sem["checkpoints"]),
                 hydrosheds=dict(source=str(g.src.relative_to(ROOT)), box=g.prov["box"], release_check=g.prov["dir15"].get("same_release_as_binational", True),
                                 note_es="HydroSHEDS v1 (WWF/USGS, SRTM): áreas experimentales, no oficiales."),
                 rules=dict(snap_max_km=SNAP_MAX_KM, min_channel_km2=MIN_CHANNEL_KM2, documented_station_max_km=DOC_STATION_MAX_KM,

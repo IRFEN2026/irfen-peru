@@ -178,21 +178,25 @@ class Bundle(unittest.TestCase):
             self.assertTrue(set(s["orientation"]["evidence"]) <= {"DESEMBOCADURA", "RED_DE_FLUJO_HYDROSHEDS"} and s["orientation"]["evidence"])
         self.assertTrue(all(c["sector_verified"] for c in lam if c["type"] == "rio"))
         self.assertTrue(any(c["type"] in ("quebrada", "mixto") for c in lam))
-        for dep in {c["department"] for c in sm["checkpoints"]}:  # not saturating the map: points are grouped per department
-            self.assertLessEqual(sum(c["department"] == dep for c in sm["checkpoints"]), 60, dep)
+        # the whole coast is in the pilot (Tumbes–Tacna); saturation is handled in the page (department aggregates at national
+        # zoom, checked in the browser test), never by dropping documented points
+        self.assertEqual({c["department"] for c in sm["checkpoints"]}, set(D["coast_departments"]))
+        self.assertTrue(all(c["status"] == "PILOTO_ACTIVO" for c in sm["coverage"]))
         zone_kind = {f["properties"]["zone_id"]: f["properties"].get("kind") for f in D["rain"]["north_zones"]["zones"]["features"]}
         for c in sm["checkpoints"]:  # an administrative (province) mean never colours a point
             if (c.get("rain_ref") or "").startswith("zone:"):
                 self.assertEqual(zone_kind[c["rain_ref"][5:]], "BASIN", c["id"])
         for dep, rivers in (("TUMBES", {"TUMBES", "ZARUMILLA"}), ("PIURA", {"PIURA", "CHIRA"})):
             pts = [c for c in sm["checkpoints"] if c["department"] == dep and c["type"] == "rio"]
-            if not pts:
-                continue
             self.assertEqual({c["system_id"] for c in pts}, rivers)
-            for c in pts:  # no connected catchment rain yet: grey with the reason, never the local cell
-                self.assertIsNone(c["rain_ref"], c["id"])
-                self.assertEqual(c["state_at_cutoff"]["state"], "GRIS", c["id"])
-                self.assertTrue(any("gris" in x for x in c["limitations"]), c["id"])
+        for c in sm["checkpoints"]:
+            if c["type"] != "rio" or c["department"] in ("LAMBAYEQUE", "LA LIBERTAD"):
+                continue
+            # Tumbes, Piura and south of La Libertad: no live zone covers a river catchment yet: grey with the reason,
+            # never the local cell
+            self.assertIsNone(c["rain_ref"], c["id"])
+            self.assertEqual(c["state_at_cutoff"]["state"], "GRIS", c["id"])
+            self.assertTrue(any("gris" in x for x in c["limitations"]), c["id"])
         for c in sm["checkpoints"]:
             for k in ("id", "name", "type", "system", "department", "lat", "lon", "sources", "limitations", "location_basis", "state_at_cutoff"):
                 self.assertIn(k, c)
@@ -290,6 +294,12 @@ class Browser(unittest.TestCase):
                 self.assertEqual(sm["js_vs_python"]["mismatches"], 0, sm["js_vs_python"]["first"])
                 self.assertEqual(len(set(sm["selfcheck"].split("/"))), 1, sm["selfcheck"])
                 self.assertTrue(sm["guard"] and sm["popup_fields"] and sm["pending_dep_msg"])
+                # national scale: one aggregate per department, no individual points; a department shows its points
+                ndep = len({c["department"] for c in D["semaforo"]["checkpoints"]})
+                self.assertEqual((sm["national_aggregates"], sm["national_points"]), (ndep, 0))
+                self.assertEqual(sm["dep_aggregates"], 0)
+                self.assertEqual(sm["dep_points"], sum(c["department"] == "LIMA" for c in D["semaforo"]["checkpoints"]))
+                self.assertGreater(sm["catchment_outline"], 0)
 
 
 if __name__ == "__main__":

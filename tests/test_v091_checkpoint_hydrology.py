@@ -78,9 +78,32 @@ class CheckpointHydrology(unittest.TestCase):
                 self.assertEqual(q3["cells_15s"], q3["snap"]["acc_cells"])
 
     def test_rejected_vertex_stays_not_evaluable(self):
-        r = self.rows["TUM-R-ZARUMILLA-MEDIO"]
-        self.assertEqual(r["q3_contributing_area"]["status"], "NO_VERIFICADA")
+        for cid in ("TUM-R-ZARUMILLA-MEDIO", "LIM-R-RIMAC-ALTO", "ARE-R-TAMBO-BAJO"):
+            r = self.rows[cid]
+            self.assertEqual(r["q3_contributing_area"]["status"], "NO_VERIFICADA", cid)
+            self.assertNotIn("area_km2", r["q3_contributing_area"])
+            self.assertEqual(r["evaluation_status"], "NO_EVALUABLE", cid)
+
+    def test_delta_branch_vertex_is_flagged_not_associated(self):
+        # Matagente (lower San Juan / Chincha, IGN) does not drain the upstream points in HydroSHEDS: delta branch
+        r = self.rows["ICA-R-SAN_JUAN-BAJO"]
+        self.assertEqual(r["q3_contributing_area"]["status"], "ASOCIACION_INCONSISTENTE")
         self.assertEqual(r["evaluation_status"], "NO_EVALUABLE")
+        s = next(x for x in self.d["systems"] if x["system_id"] == "SAN_JUAN")
+        self.assertEqual(s["inconsistent_checkpoints"], ["ICA-R-SAN_JUAN-BAJO"])
+
+    def test_whole_coast_is_covered(self):
+        deps = {"TUMBES", "PIURA", "LAMBAYEQUE", "LA LIBERTAD", "ANCASH", "LIMA", "CALLAO", "ICA", "AREQUIPA", "MOQUEGUA", "TACNA"}
+        self.assertEqual(set(self.d["coverage"]["by_department"]), deps)
+        for dep, c in self.d["coverage"]["by_department"].items():
+            self.assertGreater(c["rios"], 0, dep)
+            self.assertGreater(c["cuenca_identificada"], 0, dep)
+        # every delineated river point lies on a river of its own department's configuration
+        cfg = json.loads(H.SYSTEMS.read_text(encoding="utf-8"))
+        allowed = {(d["department"], s["id"]) for d in cfg["departments"] for s in d.get("river_systems", [])}
+        for r in self.rows.values():
+            if r["type"] == "rio":
+                self.assertIn((r["department"], r["q2_water_body"]["system_id"]), allowed, r["id"])
 
     def test_reaches_are_nested_and_grow_downstream(self):
         self.assertTrue(self.d["systems"])
@@ -88,10 +111,8 @@ class CheckpointHydrology(unittest.TestCase):
             self.assertTrue(s["nested_chain"], s["system_id"])
             self.assertEqual(s["areas_km2"], sorted(s["areas_km2"]))
             self.assertNotEqual(s["flow_direction_evidence"], "NO_VERIFICADA", s["system_id"])
-        # verified sectors (alto/medio/bajo from the semaforo orientation rule) agree with the nesting
-        for s in self.d["systems"]:
-            if set(s["sectors_upstream_to_downstream"]) <= {"alto", "medio", "bajo"}:
-                self.assertTrue(s["sector_order_consistent"], s["system_id"])
+            # verified sectors (alto/medio/bajo from the semaforo orientation rule) agree with the nesting in every department
+            self.assertTrue(s["sector_order_consistent"], s["system_id"])
 
     def test_areas_agree_with_hydrorivers_and_documented_catchments(self):
         for r in self.rows.values():

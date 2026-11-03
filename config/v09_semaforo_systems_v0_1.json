@@ -39,7 +39,7 @@
             588
           ],
           "rain_zone": "lambayeque_chancay_lambayeque_chongoyape",
-          "rain_zone_note": "Lluvia de la cuenca del Chancay-Lambayeque aguas arriba de Chongoyape (polígono del panel de zonas): es la lluvia que alimenta el tramo."
+          "rain_zone_note": "Lluvia de la cuenca del Chancay-Lambayeque aguas arriba de Chongoyape (polígono del panel de zonas). Representa el área aportante de los tramos medio y bajo; para el tramo alto es más amplia que su área aportante (aproximación documentada, no validada; data/v09/research/semaforo/checkpoint_hydrology_v0_1.json)."
         },
         {
           "id": "ZANA",
@@ -49,7 +49,7 @@
             3523
           ],
           "rain_zone": "lambayeque_zana_oyotun",
-          "rain_zone_note": "Lluvia de la cuenca del Zaña aguas arriba de Oyotún (polígono del panel de zonas): es la lluvia que alimenta el tramo."
+          "rain_zone_note": "Lluvia de la cuenca del Zaña aguas arriba de Oyotún (polígono del panel de zonas). Representa el área aportante de los tramos medio y bajo; para el tramo alto es más amplia que su área aportante (aproximación documentada, no validada; data/v09/research/semaforo/checkpoint_hydrology_v0_1.json)."
         }
       ],
       "quebradas_source": "ANA2016_17_CENTROS_POBLADOS"
@@ -124,51 +124,606 @@
     },
     {
       "department": "LA LIBERTAD",
-      "status": "PENDIENTE",
-      "river_systems": [],
-      "quebradas_source": null
+      "status": "PILOTO_ACTIVO",
+      "river_systems": [
+        {
+          "id": "JEQUETEPEQUE",
+          "name": "Río Jequetepeque",
+          "ign_objectids": [
+            242
+          ],
+          "rain_zone": "lalibertad_jequetepeque",
+          "require_catchment_rain": true,
+          "rain_zone_note": "Lluvia de la cuenca Jequetepeque (polígono del panel de zonas). Su correspondencia con el área aportante de cada punto se comprueba en data/v09/research/semaforo/checkpoint_hydrology_v0_1.json: si la zona es más amplia que esa área, es una aproximación documentada, no una asociación validada.",
+          "limitations_es": [
+            "Caudal regulado por el embalse Gallito Ciego (aguas arriba del tramo departamental).",
+            "Lista de infraestructura no exhaustiva."
+          ],
+          "positions": [
+            {
+              "sector": "medio",
+              "fraction": 0.5
+            }
+          ]
+        },
+        {
+          "id": "CHAMAN",
+          "name": "Río Chamán",
+          "ign_objectids": [
+            267
+          ],
+          "rain_zone": "lalibertad_chaman",
+          "require_catchment_rain": true,
+          "rain_zone_note": "Lluvia de la cuenca Chamán (polígono del panel de zonas). Su correspondencia con el área aportante de cada punto se comprueba en data/v09/research/semaforo/checkpoint_hydrology_v0_1.json: si la zona es más amplia que esa área, es una aproximación documentada, no una asociación validada."
+        },
+        {
+          "id": "CHICAMA",
+          "name": "Río Chicama",
+          "ign_objectids": [
+            3522
+          ],
+          "rain_zone": "lalibertad_chicama",
+          "require_catchment_rain": true,
+          "rain_zone_note": "Lluvia de la cuenca Chicama (polígono del panel de zonas). Su correspondencia con el área aportante de cada punto se comprueba en data/v09/research/semaforo/checkpoint_hydrology_v0_1.json: si la zona es más amplia que esa área, es una aproximación documentada, no una asociación validada.",
+          "limitations_es": [
+            "Valle abastecido también por el canal del proyecto Chavimochic (agua del Santa): el agua disponible no depende solo de la lluvia.",
+            "Lista de infraestructura no exhaustiva."
+          ]
+        },
+        {
+          "id": "MOCHE",
+          "name": "Río Moche",
+          "ign_objectids": [
+            32
+          ],
+          "rain_zone": "lalibertad_moche",
+          "require_catchment_rain": true,
+          "rain_zone_note": "Lluvia de la cuenca Moche (polígono del panel de zonas). Su correspondencia con el área aportante de cada punto se comprueba en data/v09/research/semaforo/checkpoint_hydrology_v0_1.json: si la zona es más amplia que esa área, es una aproximación documentada, no una asociación validada.",
+          "limitations_es": [
+            "Valle abastecido también por el canal del proyecto Chavimochic (agua del Santa).",
+            "Lista de infraestructura no exhaustiva."
+          ],
+          "positions": [
+            {
+              "sector": "medio",
+              "fraction": 0.5
+            }
+          ]
+        },
+        {
+          "id": "VIRU",
+          "name": "Río Virú",
+          "ign_objectids": [
+            3473
+          ],
+          "rain_zone": "lalibertad_viru",
+          "require_catchment_rain": true,
+          "rain_zone_note": "Lluvia de la cuenca Virú (polígono del panel de zonas). Su correspondencia con el área aportante de cada punto se comprueba en data/v09/research/semaforo/checkpoint_hydrology_v0_1.json: si la zona es más amplia que esa área, es una aproximación documentada, no una asociación validada.",
+          "limitations_es": [
+            "Valle abastecido también por el canal del proyecto Chavimochic (agua del Santa).",
+            "Lista de infraestructura no exhaustiva."
+          ],
+          "positions": [
+            {
+              "sector": "medio",
+              "fraction": 0.5
+            }
+          ]
+        },
+        {
+          "id": "HUAMANZANA",
+          "name": "Río Huamanzaña",
+          "ign_objectids": [
+            3656
+          ],
+          "rain_zone": "lalibertad_huamanzana",
+          "require_catchment_rain": true,
+          "rain_zone_note": "Lluvia de la cuenca Huamanzaña (polígono del panel de zonas). Su correspondencia con el área aportante de cada punto se comprueba en data/v09/research/semaforo/checkpoint_hydrology_v0_1.json: si la zona es más amplia que esa área, es una aproximación documentada, no una asociación validada.",
+          "positions": [
+            {
+              "sector": "medio",
+              "fraction": 0.5
+            }
+          ]
+        }
+      ],
+      "quebradas_source": "ANA2016_17_CENTROS_POBLADOS",
+      "id_prefix": "LIB"
     },
     {
       "department": "ANCASH",
-      "status": "PENDIENTE",
-      "river_systems": [],
-      "quebradas_source": null
+      "status": "PILOTO_ACTIVO",
+      "river_systems": [
+        {
+          "id": "SANTA",
+          "name": "Río Santa",
+          "ign_objectids": [
+            41
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura.",
+          "limitations_es": [
+            "Captaciones de los proyectos Chavimochic y Chinecas en el tramo bajo; centrales hidroeléctricas en el Callejón de Huaylas (lista no exhaustiva).",
+            "Cuenca glaciar (Cordillera Blanca): parte del caudal no procede de la lluvia reciente."
+          ]
+        },
+        {
+          "id": "NEPENA",
+          "name": "Río Nepeña (Samanco en el tramo bajo, IGN)",
+          "ign_objectids": [
+            610,
+            531
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura."
+        },
+        {
+          "id": "CASMA",
+          "name": "Río Casma – Grande (IGN)",
+          "ign_objectids": [
+            505,
+            3697
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura."
+        },
+        {
+          "id": "SECHIN",
+          "name": "Río Sechín",
+          "ign_objectids": [
+            730
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura."
+        },
+        {
+          "id": "CULEBRAS",
+          "name": "Río Culebras",
+          "ign_objectids": [
+            745
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura."
+        },
+        {
+          "id": "HUARMEY",
+          "name": "Río Huarmey",
+          "ign_objectids": [
+            27
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura."
+        },
+        {
+          "id": "FORTALEZA",
+          "name": "Río Fortaleza",
+          "ign_objectids": [
+            26
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura."
+        },
+        {
+          "id": "PATIVILCA",
+          "name": "Río Pativilca",
+          "ign_objectids": [
+            305,
+            306,
+            581
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura.",
+          "limitations_es": [
+            "Derivación de la central hidroeléctrica Cahua en el tramo medio (lista no exhaustiva)."
+          ]
+        }
+      ],
+      "quebradas_source": "ANA2016_17_CENTROS_POBLADOS"
     },
     {
       "department": "LIMA",
-      "status": "PENDIENTE",
-      "river_systems": [],
-      "quebradas_source": null
+      "status": "PILOTO_ACTIVO",
+      "river_systems": [
+        {
+          "id": "PATIVILCA",
+          "name": "Río Pativilca",
+          "ign_objectids": [
+            305,
+            306,
+            581
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura.",
+          "limitations_es": [
+            "Derivación de la central hidroeléctrica Cahua en el tramo medio (lista no exhaustiva)."
+          ]
+        },
+        {
+          "id": "FORTALEZA",
+          "name": "Río Fortaleza",
+          "ign_objectids": [
+            26
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura."
+        },
+        {
+          "id": "SUPE",
+          "name": "Río Supe",
+          "ign_objectids": [
+            504
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura."
+        },
+        {
+          "id": "HUAURA",
+          "name": "Río Huaura",
+          "ign_objectids": [
+            29
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura."
+        },
+        {
+          "id": "CHANCAY_HUARAL",
+          "name": "Río Chancay-Huaral",
+          "ign_objectids": [
+            502
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura.",
+          "limitations_es": [
+            "Lagunas reguladas en la cabecera (lista no exhaustiva)."
+          ]
+        },
+        {
+          "id": "CHILLON",
+          "name": "Río Chillón",
+          "ign_objectids": [
+            3618
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura."
+        },
+        {
+          "id": "RIMAC",
+          "name": "Río Rímac",
+          "ign_objectids": [
+            503
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura.",
+          "limitations_es": [
+            "Caudal regulado por lagunas y el trasvase Marcapomacocha desde la cuenca del Mantaro; centrales hidroeléctricas en serie (lista no exhaustiva)."
+          ]
+        },
+        {
+          "id": "LURIN",
+          "name": "Río Lurín",
+          "ign_objectids": [
+            40
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura."
+        },
+        {
+          "id": "MALA",
+          "name": "Río Mala",
+          "ign_objectids": [
+            510
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura."
+        },
+        {
+          "id": "CANETE",
+          "name": "Río Cañete",
+          "ign_objectids": [
+            511
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura.",
+          "limitations_es": [
+            "Central hidroeléctrica El Platanal y su embalse (lista no exhaustiva)."
+          ]
+        }
+      ],
+      "quebradas_source": "ANA2016_17_CENTROS_POBLADOS"
     },
     {
       "department": "CALLAO",
-      "status": "PENDIENTE",
-      "river_systems": [],
-      "quebradas_source": null
+      "status": "PILOTO_ACTIVO",
+      "river_systems": [
+        {
+          "id": "RIMAC",
+          "name": "Río Rímac (desembocadura)",
+          "ign_objectids": [
+            503
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura.",
+          "limitations_es": [
+            "Caudal regulado aguas arriba (trasvase Marcapomacocha, lagunas, centrales)."
+          ],
+          "positions": [
+            {
+              "sector": "bajo",
+              "fraction": 0.5
+            }
+          ]
+        },
+        {
+          "id": "CHILLON",
+          "name": "Río Chillón (desembocadura)",
+          "ign_objectids": [
+            3618
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura.",
+          "positions": [
+            {
+              "sector": "bajo",
+              "fraction": 0.5
+            }
+          ]
+        }
+      ],
+      "quebradas_source": "ANA2016_17_CENTROS_POBLADOS"
     },
     {
       "department": "ICA",
-      "status": "PENDIENTE",
-      "river_systems": [],
-      "quebradas_source": null
+      "status": "PILOTO_ACTIVO",
+      "river_systems": [
+        {
+          "id": "SAN_JUAN",
+          "name": "Río San Juan (Chincha; Matagente en el tramo bajo, IGN)",
+          "ign_objectids": [
+            537,
+            536
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura."
+        },
+        {
+          "id": "PISCO",
+          "name": "Río Pisco",
+          "ign_objectids": [
+            597
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura."
+        },
+        {
+          "id": "ICA",
+          "name": "Río Ica",
+          "ign_objectids": [
+            594
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura.",
+          "limitations_es": [
+            "Recibe el trasvase Choclococha desde la cuenca del Pampas: el caudal no depende solo de la lluvia de su cuenca (lista no exhaustiva)."
+          ]
+        },
+        {
+          "id": "GRANDE_NAZCA",
+          "name": "Río Grande (Nazca)",
+          "ign_objectids": [
+            515
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura."
+        }
+      ],
+      "quebradas_source": "ANA2016_17_CENTROS_POBLADOS"
     },
     {
       "department": "AREQUIPA",
-      "status": "PENDIENTE",
-      "river_systems": [],
-      "quebradas_source": null
+      "status": "PILOTO_ACTIVO",
+      "river_systems": [
+        {
+          "id": "ACARI",
+          "name": "Río Acarí",
+          "ign_objectids": [
+            528
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura."
+        },
+        {
+          "id": "YAUCA",
+          "name": "Río Yauca",
+          "ign_objectids": [
+            557
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura."
+        },
+        {
+          "id": "CHAPARRA",
+          "name": "Río Chaparra",
+          "ign_objectids": [
+            84
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura."
+        },
+        {
+          "id": "ATICO",
+          "name": "Río Atico",
+          "ign_objectids": [
+            3776,
+            3777
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura."
+        },
+        {
+          "id": "OCONA",
+          "name": "Río Ocoña",
+          "ign_objectids": [
+            558
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura."
+        },
+        {
+          "id": "MAJES_CAMANA",
+          "name": "Río Majes – Camaná",
+          "ign_objectids": [
+            3590,
+            3594,
+            325,
+            555
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura.",
+          "limitations_es": [
+            "Cuenca Colca-Majes regulada por el embalse Condoroma y la derivación del proyecto Majes (lista no exhaustiva)."
+          ]
+        },
+        {
+          "id": "CHILI_VITOR_QUILCA",
+          "name": "Río Chili – Vítor – Quilca",
+          "ign_objectids": [
+            598,
+            562,
+            561
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura.",
+          "limitations_es": [
+            "Caudal del Chili regulado por los embalses El Frayle, Aguada Blanca y otros (lista no exhaustiva)."
+          ]
+        },
+        {
+          "id": "TAMBO",
+          "name": "Río Tambo",
+          "ign_objectids": [
+            360,
+            519,
+            3588
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura.",
+          "limitations_es": [
+            "El embalse Pasto Grande deriva agua de la cuenca del Tambo hacia Moquegua (lista no exhaustiva)."
+          ]
+        }
+      ],
+      "quebradas_source": "ANA2016_17_CENTROS_POBLADOS"
     },
     {
       "department": "MOQUEGUA",
-      "status": "PENDIENTE",
-      "river_systems": [],
-      "quebradas_source": null
+      "status": "PILOTO_ACTIVO",
+      "river_systems": [
+        {
+          "id": "OSMORE",
+          "name": "Río Osmore (Moquegua)",
+          "ign_objectids": [
+            553
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura.",
+          "limitations_es": [
+            "Recibe agua del embalse Pasto Grande (cuenca del Tambo) (lista no exhaustiva)."
+          ]
+        },
+        {
+          "id": "TAMBO",
+          "name": "Río Tambo",
+          "ign_objectids": [
+            360,
+            519,
+            3588
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura.",
+          "limitations_es": [
+            "El embalse Pasto Grande deriva agua de la cuenca del Tambo hacia Moquegua (lista no exhaustiva)."
+          ]
+        }
+      ],
+      "quebradas_source": "ANA2016_17_CENTROS_POBLADOS"
     },
     {
       "department": "TACNA",
-      "status": "PENDIENTE",
-      "river_systems": [],
-      "quebradas_source": null
+      "status": "PILOTO_ACTIVO",
+      "river_systems": [
+        {
+          "id": "LOCUMBA",
+          "name": "Río Locumba – Salado (IGN)",
+          "ign_objectids": [
+            547,
+            549
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura.",
+          "limitations_es": [
+            "Laguna Aricota y centrales hidroeléctricas en la cuenca (lista no exhaustiva)."
+          ]
+        },
+        {
+          "id": "SAMA",
+          "name": "Río Sama",
+          "ign_objectids": [
+            520
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura."
+        },
+        {
+          "id": "CAPLINA",
+          "name": "Río Caplina",
+          "ign_objectids": [
+            3053
+          ],
+          "rain_zone": null,
+          "require_catchment_rain": true,
+          "rain_zone_note": "Ninguna zona de lluvia en vivo cubre esta cuenca: los puntos quedan grises hasta conectar su área aportante (HydroSHEDS) a la captura.",
+          "limitations_es": [
+            "Recibe trasvases (Uchusuma) para Tacna y no desemboca de forma permanente en el mar (lista no exhaustiva)."
+          ]
+        }
+      ],
+      "quebradas_source": "ANA2016_17_CENTROS_POBLADOS"
     }
   ],
   "quebrada_cluster_km": 2.0,

@@ -144,7 +144,12 @@ def river_checkpoints(dep, system, ign_by_id, in_dep, positions, coast_km, flow_
         g = f["geometry"]
         used_ids.append(oid)
         parts += [[p[:2] for p in ln] for ln in ([g["coordinates"]] if g["type"] == "LineString" else g["coordinates"])]
-    path, orient_ev = orient(chain(parts), coast_km, flow_acc, thr)
+    path = chain(parts)
+    on_path = sum(1 for q in parts if len(q) >= 2 and q[0] in path and q[-1] in path)
+    continuity = dict(parts=len(parts), parts_on_path=on_path, path_km=round(sum(km(a, b) for a, b in zip(path, path[1:])), 1),
+                      parts_km=round(sum(km(a, b) for q in parts for a, b in zip(q, q[1:])), 1))
+    continuity["status"] = "CONTINUO" if on_path == len(parts) else "PARTES_NO_UNIDAS"
+    path, orient_ev = orient(path, coast_km, flow_acc, thr)
     verified = orient_ev["status"].startswith("VERIFICADA")
     inside = [p for p in path if in_dep(p)]
     if len(inside) < 3:
@@ -155,7 +160,8 @@ def river_checkpoints(dep, system, ign_by_id, in_dep, positions, coast_km, flow_
         total += km(a, b)
         cum.append(total)
     out = []
-    for pos in positions:
+    prefix = system.get("_id_prefix") or dep[:3]
+    for pos in system.get("positions") or positions:
         target = pos["fraction"] * total
         k = min(range(len(inside)), key=lambda i: abs(cum[i] - target))
         x, y = inside[k]
@@ -164,7 +170,7 @@ def river_checkpoints(dep, system, ign_by_id, in_dep, positions, coast_km, flow_
         basis = ("aguas abajo según " + " y ".join({"DESEMBOCADURA": "la desembocadura en la costa",
                                                    "RED_DE_FLUJO_HYDROSHEDS": "la acumulación de flujo HydroSHEDS"}[e] for e in orient_ev["evidence"])) \
             if verified else "orden geográfico, sin sentido de flujo verificado"
-        out.append(dict(id=f"{dep[:3]}-R-{system['id']}-{pos['sector'].upper()}", name=f"{system['name']} · {label}",
+        out.append(dict(id=f"{prefix}-R-{system['id']}-{pos['sector'].upper()}", name=f"{system['name']} · {label}",
                         type="rio", location_kind="CAUCE_IGN", system_id=system["id"], system=system["name"], sector=sector,
                         sector_verified=verified, lat=round(y, 5), lon=round(x, 5),
                         location_basis=f"Vértice de la línea IGN 1:500.000 (OBJECTID {', '.join(map(str, used_ids))}) a ~{round(cum[k])} km "
@@ -173,7 +179,7 @@ def river_checkpoints(dep, system, ign_by_id, in_dep, positions, coast_km, flow_
                         location_confidence="MEDIA",
                         location_confidence_note="Posición sobre el cauce cartográfico 1:500.000 (generalizado); no es una estación ni un punto de aforo.",
                         rain_zone=system.get("rain_zone")))
-    return out, dict(id=system["id"], status="OK", ign_objectids=used_ids, km_in_department=round(total, 1), vertices=len(inside),
+    return out, dict(id=system["id"], status="OK", ign_objectids=used_ids, km_in_department=round(total, 1), vertices=len(inside), continuity=continuity,
                      orientation=orient_ev, rain_zone=system.get("rain_zone"), rain_zone_note=system.get("rain_zone_note") or system.get("rain_proxy_note"))
 
 
@@ -195,8 +201,9 @@ def qname(p):
     return None if q.lower() in ("", "s/n", "s/n.") else q
 
 
-def quebrada_checkpoints(dep, ana_pts, river_paths, max_km, mixto_km):
+def quebrada_checkpoints(dep, ana_pts, river_paths, max_km, mixto_km, prefix=None):
     out = []
+    prefix = prefix or dep[:3]
     for n, g in enumerate(sorted(clusters(ana_pts, max_km), key=lambda g: (-g[0]["lat"], g[0]["id"])), start=1):
         rep = g[0]  # documentary coordinate of the first ANA row of the group (no centroid)
         names = []
@@ -215,7 +222,7 @@ def quebrada_checkpoints(dep, ana_pts, river_paths, max_km, mixto_km):
             if d <= mixto_km and (near is None or d < near[2]):
                 near = (sid, sname, d)
         qs = ("quebrada " if len(names) == 1 else "quebradas ") + ", ".join(names[:3]) + (" y otras" if len(names) > 3 else "")
-        out.append(dict(id=f"{dep[:3]}-Q-{n:03d}", name=f"Poblado expuesto {towns[0] if towns else 'sin nombre'} · {qs}",
+        out.append(dict(id=f"{prefix}-Q-{n:03d}", name=f"Poblado expuesto {towns[0] if towns else 'sin nombre'} · {qs}",
                         type="mixto" if near else "quebrada", location_kind="POBLADO_ANA", system_id=near[0] if near else None,
                         system=(near[1] if near else "Quebradas documentadas ANA 2016-17"), sector=None,
                         lat=round(rep["lat"], 5), lon=round(rep["lon"], 5),
@@ -410,6 +417,7 @@ def build():
             return 0 <= j < grid.shape[0] and 0 <= i < grid.shape[1] and grid[j, i] == k
         sys_out, river_paths, cps = [], [], []
         for s in dcfg["river_systems"]:
+            s["_id_prefix"] = dcfg.get("id_prefix")
             pts, info = river_checkpoints(dep, s, ign_by_id, in_dep, systems["river_positions"], coast_km, flow_acc, systems["orientation_thresholds"])
             sys_out.append(info)
             cps += pts
@@ -420,7 +428,7 @@ def build():
             river_paths.append((s["id"], s["name"], [p for p in parts if in_dep(p)]))
         if dcfg.get("quebradas_source") == "ANA2016_17_CENTROS_POBLADOS":
             pts = [p for p in ana["points"] if p["department"] == dep and p.get("status") == "ADMITIDA_UBICACION_DOCUMENTAL"]
-            cps += quebrada_checkpoints(dep, pts, river_paths, systems["quebrada_cluster_km"], systems["mixto_max_distance_km"])
+            cps += quebrada_checkpoints(dep, pts, river_paths, systems["quebrada_cluster_km"], systems["mixto_max_distance_km"], dcfg.get("id_prefix"))
         for cp in cps:
             cp["department"] = dep
             cp["province"] = province_of(admin, dep, cp["lon"], cp["lat"])
