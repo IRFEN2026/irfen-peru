@@ -36,6 +36,8 @@ CFG = ROOT / "config/v091_live_refresh.json"
 BUNDLE = ROOT / "site/data/v09/surveillance_view_v0_1.json"
 SEMAFORO = ROOT / "data/v09/research/semaforo/semaforo_v0_1.json"
 REGISTRY = ("config/v09_semaforo_confirmations_v0_1.json", "config/v09_semaforo_rules_v0_1.json")
+BUILD_SOURCES = ("scripts/v09_build_surveillance_view.py", "scripts/v09_build_semaforo.py",
+                 "scripts/v091_catchment_live_view.py", "site/v09/vigilancia.html")
 GUARDS = dict(deployment_status="RESEARCH_ONLY", test_mode="TEST_ONLY", public_alerting=False, notifications_enabled=False,
               predictive=False, official_alert=False, merged_into_main=False)
 
@@ -78,6 +80,24 @@ def validate(raw: bytes | None, spec: dict, now: datetime) -> tuple[str, dict]:
     if doc.get("deployment_status", "RESEARCH_ONLY") != "RESEARCH_ONLY" or doc.get("production_use", False) is not False \
             or doc.get("operational_alerting_enabled", False) is not False or doc.get("public_alerting", False) is not False:
         return "GUARDAS_ALTERADAS", {}
+    if spec.get("kind") == "catchment_rain":
+        # Fail closed: the archive may inform the research viewer, never become an operational alert.
+        guards = {"deployment_status": "RESEARCH_ONLY", "test_mode": "TEST_ONLY",
+                  "production_use": False, "public_alerting": False,
+                  "notifications_enabled": False, "activation_gate": "BLOCKED",
+                  "map_publishable": False}
+        if any(doc.get(k) != v for k, v in guards.items()):
+            return "GUARDAS_ALTERADAS", {}
+        targets = doc.get("targets")
+        if not isinstance(targets, list) or not targets or any(not isinstance(t, dict) or not t.get("checkpoint_id") for t in targets):
+            return "ESQUEMA_INVALIDO", {}
+        if len(set(t["checkpoint_id"] for t in targets)) != len(targets):
+            return "ESQUEMA_INVALIDO", {}
+        for g in doc.get("granules", []):
+            if (not isinstance(g, dict) or not isinstance(g.get("time_utc"), str)
+                    or not isinstance(g.get("rate_mm_hr"), list) or not isinstance(g.get("covered_pct"), list)
+                    or len(g["rate_mm_hr"]) != len(targets) or len(g["covered_pct"]) != len(targets)):
+                return "ESQUEMA_INVALIDO", {}
     times = {}
     for tf in spec.get("time_fields", []):
         v = pick(doc, tf)
@@ -298,9 +318,10 @@ def main(argv=None) -> int:
     # a new capture attempt (even a failed one) is published, so the viewer says explicitly that the last capture failed
     # the event registry and the rules live in this branch: a new verified (or pending) report is a new cycle
     registry = {p: sha((ROOT / p).read_bytes()) for p in REGISTRY if (ROOT / p).is_file()}
+    build_sources = {p: sha((ROOT / p).read_bytes()) for p in BUILD_SOURCES if (ROOT / p).is_file()}
     fingerprint = sha(json.dumps(dict(inputs={p: v["sha256"] for p, v in inputs.items()},
                                       attempts={k: (v["run_id"], v["result"]) for k, v in attempts.items()},
-                                      registry=registry), sort_keys=True).encode())
+                                      registry=registry, build_sources=build_sources), sort_keys=True).encode())
     if prev and prev.get("inputs_fingerprint") == fingerprint and not a.force:
         print(json.dumps(dict(result="SIN_CAMBIOS", fingerprint=fingerprint, previous_cycle=prev.get("cycle_id")), ensure_ascii=False))
         return 10
