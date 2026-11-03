@@ -353,11 +353,18 @@ function hyPanel(cp){if(!CPH)return "";const h=CPH.points[cp.id];if(!h)return '<
   '<br><b>IMERG Early por cuenca (experimental, no equivale a caudal):</b> '+safe(available)+'. Último intervalo: '+safe(latest)+
   '. <b>'+ (current?"Observación reciente":"Observación antigua o no verificable al abrir")+'; no modifica el semáforo.</b>':
   '<br><b>IMERG por cuenca:</b> no disponible para este checkpoint; no se infiere lluvia aguas arriba.';
- const q4live=q4+liveLine;
+ const liveHasRain=cp.type==="rio"&&lv.status!=="NO_DISPONIBLE"&&Object.values(lw).some(w=>w?.status==="COMPLETA");
+ const q4live=(liveHasRain?
+  'Inventario de asociación previo a la conexión experimental: '+safe(h.z.replace(/_/g," ").toLowerCase())+
+  '. El archivo por cuenca que se muestra a continuación es más reciente que el inventario estático.':q4)+liveLine;
+ const missingNow=liveHasRain?h.miss.filter(x=>!x.startsWith("Lluvia en vivo calculada sobre el área aportante")):h.miss;
+ const whyNow=liveHasRain?
+  'La lluvia satelital de esta cuenca ya está archivada experimentalmente, pero aún no modifica el semáforo. No equivale a caudal, nivel ni evaluación de peligro.':
+  h.why;
  return '<details><summary class="note"><b>Cinco preguntas</b> · '+safe(HYEV[h.ev]||h.ev)+'</summary><ol class="note" style="padding-left:16px;margin:4px 0">'+
   '<li><b>Ubicación:</b> '+safe(h.q1)+'.</li><li><b>Cuerpo de agua:</b> '+safe(cp.system)+(cp.type==="rio"?"":" (población expuesta, no el cauce)")+'.</li>'+
   '<li><b>Área aportante:</b> '+q3+(h.infra.length?'<br>'+h.infra.map(safe).join(" "):"")+'</li><li><b>Lluvia asociada:</b> '+q4live+'</li>'+
-  '<li><b>Falta:</b> '+h.miss.map(safe).join(" ")+'</li></ol>'+(h.why?'<p class="note"><b>No evaluable:</b> '+safe(h.why)+'</p>':"")+'</details>';}
+  '<li><b>Falta:</b> '+missingNow.map(safe).join(" ")+'</li></ol>'+(whyNow?'<p class="note"><b>No evaluable:</b> '+safe(whyNow)+'</p>':"")+'</details>';}
 function hyShow(cp){if(!hyOutline)return;hyOutline.clearLayers();const f=HYO[cp.id];if(f)L.geoJSON(f,{pane:"sema",renderer:smRenderer,interactive:false,style:{color:"#1f4e79",weight:2,dashArray:"5,4",fill:true,fillOpacity:.06}}).addTo(hyOutline);}
 const smScope=(k,dep)=>SMS.avisos[k].scope_by_department?.[dep]==="PROVINCIA"?"provincias "+(SMS.avisos[k].provinces[dep]||[]).map(title).join(", "):"todo el departamento (el aviso no enumera provincias)";
 const smAv=(k,dep)=>{const a=SMS.avisos[k];return safe(a.product)+" Nº "+safe(a.number)+(a.level?" (nivel "+safe(a.level)+")":"")+" · "+safe(short(a.start))+"→"+safe(short(a.end))+" · "+safe(smScope(k,dep));};
