@@ -166,6 +166,25 @@ def run(data_dir: Path, next_cycle: Path | None, local_leaflet: Path | None, out
                 r["live_sources"] = page.evaluate("""[...document.querySelectorAll('#liveSources tbody tr')].map(tr=>({id:tr.dataset.src,
                     attempt:tr.dataset.attempt,cells:[...tr.cells].map(c=>c.innerText.replace(/\\s+/g,' ').trim())}))""")
                 page.locator("dialog[open] [data-close]").click()
+                # Exercise a real basin popup rather than merely checking that JS initialises.
+                if tag == "ciclo_1" and (bundle.get("semaforo") or {}).get("status") == "OK":
+                    cid = "PIU-R-PIURA-BAJO"
+                    if any(c["id"] == cid for c in bundle["semaforo"]["checkpoints"]):
+                        row = page.locator('a[data-sm="' + cid + '"]')
+                        if row.count() != 1:
+                            raise AssertionError("Missing river checkpoint link in semaforo table: " + cid)
+                        row.click()
+                        popup = page.locator(".leaflet-popup-content")
+                        popup.locator("details summary").first.click()
+                        text = popup.inner_text()
+                        if ("IMERG Early por cuenca" not in text or
+                                not all(k in text for k in ("1h:", "3h:", "6h:", "24h:", "72h:")) or
+                                "Cinco preguntas" not in text):
+                            raise AssertionError("River popup missing catchment rainfall/complete-window labels: " + text[:500])
+                        r["catchment_popup"] = dict(checkpoint=cid, rain_detail_present=True,
+                                                    text_preview=text[:800])
+                        page.screenshot(path=str(out / "live_catchment_popup.png"))
+                        page.locator(".leaflet-popup-close-button").click()
                 page.screenshot(path=str(out / f"live_{tag}.png"))
                 return r
 
