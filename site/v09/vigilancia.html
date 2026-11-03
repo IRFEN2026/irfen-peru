@@ -357,7 +357,7 @@ let smMode="AHORA",smType="ALL",smState="ALL",smDep="ALL";const smT=()=>smMode==
 const smLayer=map&&SM?L.layerGroup():null,smCtx=map&&SM?L.layerGroup():null,smMarks={};
 if(map&&SM){map.createPane("sema");map.getPane("sema").style.zIndex=640;smCtx.addTo(smLayer);}
 const smRenderer=map&&SM?L.svg({pane:"sema"}):null;
-const smPass=cp=>(smDep==="ALL"||cp.department===smDep)&&(smType==="ALL"||(smType==="rio"?cp.type!=="quebrada":cp.type!=="rio"));
+const smPass=cp=>(smDep==="ALL"||cp.department===smDep)&&(smType==="ALL"||cp.type===smType);
 const mm=v=>v===null||v===undefined?"n/d":v.toFixed(1).replace(".",",");
 // Per-checkpoint hydrological inventory (scripts/v091_checkpoint_hydrology.py): the five questions, static, experimental.
 const CPH=D.checkpoint_hydrology?.status==="OK"?D.checkpoint_hydrology:null,HYO={};if(CPH)CPH.outlines.features.forEach(f=>HYO[f.properties.id]=f);
@@ -609,7 +609,7 @@ $("searchForm").onsubmit=e=>{e.preventDefault();const q=norm($("search").value);
 // ---------- init
 function fitPeru(){if(!map)return;const wide=window.matchMedia("(min-width:901px)").matches&&!$("layers").hidden;map.fitBounds([[-18.4,-81.4],[-0.1,-68.7]],{paddingTopLeft:[wide?320:8,8],paddingBottomRight:[8,wide?60:90],animate:false});}
 setBase(BASE);drawRain();drawSemaforo();renderLayers();renderSummary();renderSemaforo();renderRainTab();renderAvisos();renderRivers();renderQuebradas();showTab("resumen");
-if(window.matchMedia("(min-width:901px)").matches){$("layers").hidden=false;$("bLayers").setAttribute("aria-pressed","true");}
+// The 300px layer list starts CLOSED on desktop and mobile; use the header «Capas» button to open it.
 fitPeru();cityZoom();hydroZoom();if(map)map.attributionControl.addAttribution("Natural Earth · INEI (SERFOR)");
 function fromHash(){const h=decodeURIComponent(location.hash.slice(1));if(h.startsWith("dep=")){const k=h.slice(4);if(DEPS.includes(k))selectDept(k);}}
 if(!SINGLE){fromHash();window.addEventListener("hashchange",fromHash);}
