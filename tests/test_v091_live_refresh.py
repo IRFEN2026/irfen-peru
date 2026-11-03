@@ -84,7 +84,12 @@ class Refresh(unittest.TestCase):
         self.assertTrue((self.dir / "cycles" / f"{m['cycle_id']}.json").is_file())
         self.assertFalse((self.dir / ".staging").exists())
         self.assertFalse(b["live"]["public_alerting"] or b["live"]["notifications_enabled"] or b["live"]["predictive"])
-        self.assertTrue(all(v["status"] == "ACEPTADA" and v["used"] == "MAIN" for v in m["inputs"].values()))
+        # The catchment archive lives in main, not in this research branch: an offline HEAD-based test may lack it.
+        for p, v in m["inputs"].items():
+            if self.real_show("HEAD", p) is not None:
+                self.assertEqual((v["status"], v["used"]), ("ACEPTADA", "MAIN"), p)
+            else:
+                self.assertEqual(v["used"], "NINGUNA", p)
         self.assertTrue(b["live"]["not_connected_es"])
         rc2, out = self.refresh(as_of=at(20))
         self.assertEqual(rc2, 10, out)  # same inputs: nothing rebuilt, nothing published
@@ -138,6 +143,29 @@ class Refresh(unittest.TestCase):
         self.assertEqual(LR.validate(b'{"public_alerting":true}', spec, now)[0], "GUARDAS_ALTERADAS")
         self.assertEqual(LR.validate(None, spec, now)[0], "AUSENTE")
         self.assertEqual(LR.validate(b"{", spec, now)[0], "JSON_INVALIDO")
+
+    def test_catchment_archive_is_private_validated_and_in_config(self):
+        p = "data/v09/rain/imerg_early_catchments_v0_1.json"
+        spec = next((s for s in CFG["inputs_from_main"] if s["path"] == p), None)
+        self.assertIsNotNone(spec)
+        self.assertEqual(spec["kind"], "catchment_rain")
+        now = LR.iso("2026-11-03T06:00:00+00:00")
+        doc = dict(deployment_status="RESEARCH_ONLY", test_mode="TEST_ONLY",
+                   production_use=False, public_alerting=False, notifications_enabled=False,
+                   activation_gate="BLOCKED", map_publishable=False,
+                   targets=[dict(checkpoint_id="PIU-R-PIURA-BAJO")],
+                   granules=[dict(time_utc="2026-11-02T20:30:00+00:00",
+                                  rate_mm_hr=[1.0], covered_pct=[100.0])],
+                   status=dict(latest_granule_start_utc="2026-11-02T20:30:00+00:00",
+                               written_at_utc="2026-11-03T01:47:00+00:00"))
+        self.assertEqual(LR.validate(json.dumps(doc).encode(), spec, now)[0], "ACEPTADA")
+        bad = dict(doc, public_alerting=True)
+        self.assertEqual(LR.validate(json.dumps(bad).encode(), spec, now)[0], "GUARDAS_ALTERADAS")
+        bad = dict(doc, targets=[dict(checkpoint_id="A"), dict(checkpoint_id="A")])
+        self.assertEqual(LR.validate(json.dumps(bad).encode(), spec, now)[0], "ESQUEMA_INVALIDO")
+        bad = dict(doc, granules=[dict(time_utc="2026-11-02T20:30:00Z",
+                                      rate_mm_hr=[], covered_pct=[100.0])])
+        self.assertEqual(LR.validate(json.dumps(bad).encode(), spec, now)[0], "ESQUEMA_INVALIDO")
 
     def test_quality_gate_on_real_package_over_time(self):
         b = json.loads((ROOT / "site/data/v09/surveillance_view_v0_1.json").read_text(encoding="utf-8"))
