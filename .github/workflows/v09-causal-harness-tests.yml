@@ -1,0 +1,26 @@
+name: "IRFEN research - causal rain cadence tests (TEST_ONLY)"
+on:
+  push:
+    branches:
+      - research/v09-causal-rain-harness-hardening-20261103
+  pull_request:
+    paths:
+      - scripts/v09_anticipation_harness.py
+      - tests/test_v09_rain_cadence_guards_20261103.py
+      - .github/workflows/v09-causal-harness-tests.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-synthetic-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install minimal numerical dependency
+        run: python -m pip install numpy
+      - name: Check synthetic rain cadence guard tests
+        run: python -m unittest discover -s tests -p 'test_v09_rain_cadence_guards_20261103.py' -v
