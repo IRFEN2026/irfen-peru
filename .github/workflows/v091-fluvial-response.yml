@@ -1,0 +1,45 @@
+name: IRFEN v0.9.1 - Respuesta fluvial historica (RESEARCH_ONLY)
+on:
+  pull_request:
+    paths:
+      - scripts/v091_fluvial_response.py
+      - tests/test_v091_fluvial_response.py
+      - .github/workflows/v091-fluvial-response.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  retrospective:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Instalar numpy para reproducir medias IMERG del archivo
+        run: python -m pip install -q "numpy>=1.26,<2"
+      - name: Contrapruebas fail closed
+        run: python -m unittest -v tests/test_v091_fluvial_response.py
+      - name: Analisis descriptivo sin calibracion operativa
+        run: |
+          python scripts/v091_fluvial_response.py --out "$RUNNER_TEMP/fluvial_response.json"
+          python - "$RUNNER_TEMP/fluvial_response.json" <<'PY'
+          import json,sys
+          d=json.load(open(sys.argv[1]))
+          assert d["deployment_status"]=="RESEARCH_ONLY" and d["activation_gate"]=="BLOCKED"
+          assert not d["production_use"] and not d["predictive_skill_claimed"]
+          assert not d["notifications_enabled"] and not d["public_alerting"]
+          assert len(d["stations"])==3
+          assert d["stations"][2]["analysis"]["status"]=="NOT_EVALUABLE_NO_MATCHED_DAILY_OBSERVED_FLOW"
+          for row in d["stations"][:2]:
+              assert row["analysis"]["status"]=="EXPLORATORIO_SIN_HABILIDAD_PREDICTIVA_VALIDADA"
+          print("GUARDS_OK", [(r["river"], r["analysis"].get("holdout")) for r in d["stations"]])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: irfen-v091-fluvial-response-research
+          path: ${{ runner.temp }}/fluvial_response.json
+          if-no-files-found: ignore
+          retention-days: 14
