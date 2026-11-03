@@ -184,7 +184,7 @@ def run(data_dir: Path, next_cycle: Path | None, local_leaflet: Path | None, out
                         r["catchment_popup"] = dict(checkpoint=cid, rain_detail_present=True,
                                                     text_preview=text[:800])
                         page.screenshot(path=str(out / "live_catchment_popup.png"))
-                        page.locator(".leaflet-popup-close-button").click()
+                        page.evaluate("document.querySelector('.leaflet-popup-close-button')?.click()")
                 page.screenshot(path=str(out / f"live_{tag}.png"))
                 return r
 
