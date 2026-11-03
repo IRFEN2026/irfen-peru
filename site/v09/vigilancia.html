@@ -345,9 +345,18 @@ const pct=v=>v===null||v===undefined?"n/d":Math.round(v*100)+" %",km2=v=>v===nul
 function hyPanel(cp){if(!CPH)return "";const h=CPH.points[cp.id];if(!h)return '<p class="note">Sin inventario hidrológico para este punto.</p>';
  const q3=h.q3==="APORTACION_DELIMITADA_EXPERIMENTAL"?"Área aportante HydroSHEDS (experimental, no oficial): <b>"+km2(h.a)+"</b>"+(h.out>0.05?" · "+pct(h.out)+" fuera del Perú":"")+" · ajuste al cauce modelado "+String(h.snap).replace(".",",")+" km"+(h.hr?" · HydroRIVERS ×"+String(h.hr).replace(".",","):"")+" · "+(h.conn==="ANIDADA_CON_EL_RESTO_DEL_SISTEMA"?"anidada con los demás puntos del río":"sin anidamiento comprobado"):safe(h.q3r||h.q3);
  const q4=(h.zf?"Zona en vivo: cubre "+pct(h.zf[0])+" del área aportante; "+pct(h.zf[1])+" de la zona drena al punto. ":"")+safe(h.z.replace(/_/g," ").toLowerCase())+(h.snapw?'<br>Instantánea archivada IMERG Early (no conectada, hasta '+safe(fmt(h.snap_end))+'): media del área aportante 24 h '+mm(h.snapw["24h"]?.[0])+' mm, 72 h '+mm(h.snapw["72h"]?.[0])+' mm; celda del punto 24 h '+mm(h.snapw["24h"]?.[1])+' mm.':"");
+ const lv=h.live||{}, lw=lv.windows||{}, available=["1h","3h","6h","24h","72h"].map(k=>k+": "+(lw[k]?.status==="COMPLETA"?mm(lw[k].mm)+" mm":"n/d")).join(" · ");
+ const latest=lv.observation_end_utc?fmt(lv.observation_end_utc):"sin observación";
+ const ageHr=lv.observation_end_utc?(Date.now()-Date.parse(lv.observation_end_utc))/3600000:null;
+ const current=ageHr!==null&&ageHr>=0&&ageHr<=12&&lv.status!=="FECHA_INCONSISTENTE";
+ const liveLine=cp.type==="rio"&&lv.status!=="NO_DISPONIBLE"?
+  '<br><b>IMERG Early por cuenca (experimental, no equivale a caudal):</b> '+safe(available)+'. Último intervalo: '+safe(latest)+
+  '. <b>'+ (current?"Observación reciente":"Observación antigua o no verificable al abrir")+"; no modifica el semáforo.</b>':
+  '<br><b>IMERG por cuenca:</b> no disponible para este checkpoint; no se infiere lluvia aguas arriba.';
+ const q4live=q4+liveLine;
  return '<details><summary class="note"><b>Cinco preguntas</b> · '+safe(HYEV[h.ev]||h.ev)+'</summary><ol class="note" style="padding-left:16px;margin:4px 0">'+
   '<li><b>Ubicación:</b> '+safe(h.q1)+'.</li><li><b>Cuerpo de agua:</b> '+safe(cp.system)+(cp.type==="rio"?"":" (población expuesta, no el cauce)")+'.</li>'+
-  '<li><b>Área aportante:</b> '+q3+(h.infra.length?'<br>'+h.infra.map(safe).join(" "):"")+'</li><li><b>Lluvia asociada:</b> '+q4+'</li>'+
+  '<li><b>Área aportante:</b> '+q3+(h.infra.length?'<br>'+h.infra.map(safe).join(" "):"")+'</li><li><b>Lluvia asociada:</b> '+q4live+'</li>'+
   '<li><b>Falta:</b> '+h.miss.map(safe).join(" ")+'</li></ol>'+(h.why?'<p class="note"><b>No evaluable:</b> '+safe(h.why)+'</p>':"")+'</details>';}
 function hyShow(cp){if(!hyOutline)return;hyOutline.clearLayers();const f=HYO[cp.id];if(f)L.geoJSON(f,{pane:"sema",renderer:smRenderer,interactive:false,style:{color:"#1f4e79",weight:2,dashArray:"5,4",fill:true,fillOpacity:.06}}).addTo(hyOutline);}
 const smScope=(k,dep)=>SMS.avisos[k].scope_by_department?.[dep]==="PROVINCIA"?"provincias "+(SMS.avisos[k].provinces[dep]||[]).map(title).join(", "):"todo el departamento (el aviso no enumera provincias)";
