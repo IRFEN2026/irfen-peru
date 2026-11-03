@@ -167,10 +167,28 @@ def audit(inventory, archive=None, config=None, geometry_raw=None):
         archive_stats["complete_targets_by_window_80pct"] = complete_by_window
         archive_stats["temporal_continuity_30min"] = all(
             b - a == timedelta(minutes=30) for a, b in zip(sorted(seen), sorted(seen)[1:])) if seen else False
+    high_priority = []
+    for r in records:
+        q3 = r.get("q3_contributing_area") or {}
+        ratio = q3.get("hydrorivers_ratio")
+        if not isinstance(ratio, (int, float)) or not math.isfinite(ratio) or abs(ratio - 1) <= .10:
+            continue
+        river = q3.get("hydrorivers") or {}
+        snap = q3.get("snap") or {}
+        high_priority.append(dict(checkpoint=r.get("id"),
+            name=r.get("name"), river_system=(r.get("q2_water_body") or {}).get("system"),
+            hydrosheds_area_km2=q3.get("area_km2"),
+            hydro_rivers_area_km2=river.get("upland_km2"),
+            hydrorivers_ratio=ratio, hyriv_id=river.get("hyriv_id"),
+            nearest_hydrorivers_km=river.get("distance_km"),
+            hydroshheds_snap_km=snap.get("snap_km"),
+            hydroshheds_snap_lon=snap.get("lon"), hydroshheds_snap_lat=snap.get("lat"),
+            geometry_status=q3.get("status")))
     return dict(schema_version="irfen_v091_independent_science_audit_v0_1",
         deployment_status="RESEARCH_ONLY", test_mode="TEST_ONLY",
         production_use=False, public_alerting=False, notifications_enabled=False,
         activation_gate="BLOCKED",
+        priority_review_gt_10pct=high_priority,
         inventory_count=len(records), types=dict(classified),
         delimited_rivers=sum(r.get("type")=="rio" and r.get("q3_contributing_area", {}).get("status")=="APORTACION_DELIMITADA_EXPERIMENTAL" for r in records),
         archive=archive_stats, issues=issues,
