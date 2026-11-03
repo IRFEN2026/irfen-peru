@@ -152,6 +152,30 @@ def future_rain_falsification(rain, flows, k, holdout, minimum=MIN_PAIRS):
                 no_tuning=True)
 
 
+def persistence_control(rain, flows, k, lag, holdout, minimum=MIN_PAIRS):
+    """Compare rain association with yesterday's observed flow on exactly same held-out dates.
+    It is not a simulation of real-time data availability and cannot establish a forecast.
+    """
+    lo, hi = holdout
+    rain_x, yesterday, today = [], [], []
+    for d, q in sorted(flows.items()):
+        if not lo <= d.year <= hi or d-timedelta(days=1) not in flows:
+            continue
+        mm=accum_at(rain,d-timedelta(days=lag),k)
+        if mm is None:
+            continue
+        rain_x.append(float(mm))
+        yesterday.append(float(flows[d-timedelta(days=1)]))
+        today.append(float(q))
+    rrain=spearman(rain_x,today) if len(today)>=minimum else None
+    rflow=spearman(yesterday,today) if len(today)>=minimum else None
+    return dict(n=len(today),
+                rain_vs_current_flow_spearman=round(rrain,5) if rrain is not None else None,
+                previous_day_flow_vs_current_flow_spearman=round(rflow,5) if rflow is not None else None,
+                same_matched_days=True,
+                interpretation="BENCHMARK_DESCRIPTIVE_ONLY_NO_INCREMENTAL_FORECAST_CLAIM")
+
+
 def evaluate_pair(rain, flows, min_pairs=MIN_PAIRS):
     candidates = []
     for k in ACC_DAYS:
@@ -172,7 +196,8 @@ def evaluate_pair(rain, flows, min_pairs=MIN_PAIRS):
                                  first=dates[0] if dates else None, last=dates[-1] if dates else None,
                                  status="DESCRIPTIVE_ONLY" if s is not None else "INSUFFICIENT_HOLDOUT_PAIRS",
                                  monthly_anomaly=monthly_anomaly_spearman(x,y,dates,min_pairs),
-                                 future_rain_control=future_rain_falsification(rain,flows,selected["acc_days"],PERIODS["holdout"],min_pairs))
+                                 future_rain_control=future_rain_falsification(rain,flows,selected["acc_days"],PERIODS["holdout"],min_pairs),
+                                 river_persistence_control=persistence_control(rain,flows,selected["acc_days"],selected["lag_days"],PERIODS["holdout"],min_pairs))
         # Negative control: circular shifts of the held-out paired rain vector. No claim of significance
         # when the available dates are sparse; shifts are illustrative only.
         if s is not None and len(x)>=60:
