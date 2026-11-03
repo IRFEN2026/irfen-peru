@@ -7,19 +7,19 @@
  "predictive": false,
  "official_alert": false,
  "merged_into_main": false,
- "cycle_id": "20261102T203720Z",
- "built_at_utc": "2026-11-02T20:37:20.378635+00:00",
+ "cycle_id": "20261103T012715Z",
+ "built_at_utc": "2026-11-03T01:27:15.273194+00:00",
  "main_ref": "origin/main",
- "main_sha": "c1787d8b47d4cf403817287084aa1e155f338f85",
- "inputs_fingerprint": "eb88d4b67e5a837088198bfbd31b97f75fb276c84f017492a4ed39cfcd96bd9f",
+ "main_sha": "a38977f9c5049bf036801e00573fd8b0ef0c0956",
+ "inputs_fingerprint": "fd1132ce78edf65ee2696e2705738b155667c561b64bb4da86293335337e3b93",
  "inputs": {
   "site/data/v09/dashboard_v0_1.json": {
    "status": "ACEPTADA",
    "used": "MAIN",
-   "sha256": "9f18aba27ebb6f413cfd9e3883668327dae450c0de785e40d0aaf1661ebe6d85",
+   "sha256": "a91eef6b3aabdf4b50acb51024d85483db3ab726b069c4171aea9b68691769d9",
    "source_times": {
-    "built_at_utc": "2026-11-02T20:26:47.895074+00:00",
-    "source.health.last_successful_check_utc": "2026-11-02T18:14:38.039759+00:00"
+    "built_at_utc": "2026-11-03T01:14:26.316282+00:00",
+    "source.health.last_successful_check_utc": "2026-11-03T01:13:42.442307+00:00"
    },
    "role": "avisos INDECI/COEN, zonas, GOES-19 por zona, salud de avisos",
    "producer": ".github/workflows/v09-rain-north.yml y v09-senamhi-avisos-capture.yml"
@@ -43,9 +43,9 @@
   "data/v09/senamhi_avisos/health_v0_1.json": {
    "status": "ACEPTADA",
    "used": "MAIN",
-   "sha256": "5c655ed62bca2d9a46fc6033439f1e38d3e9ffc123a63d84a878979ec2ad355c",
+   "sha256": "505fde7daf9803646a93fe58c1478b73551cd411b044278cb743959ebcbc1a0e",
    "source_times": {
-    "source_health.last_successful_check_utc": "2026-11-02T18:14:38.039759+00:00"
+    "source_health.last_successful_check_utc": "2026-11-03T01:13:42.442307+00:00"
    },
    "role": "salud de la captura de avisos",
    "producer": ".github/workflows/v09-senamhi-avisos-capture.yml"
@@ -55,24 +55,26 @@
   "semaforo": {
    "rc": 0,
    "log": [
-    "95 kB · checkpoints=39 · types={'rio': 9, 'quebrada': 28, 'mixto': 2} · at cutoff={'AMARILLO': 32, 'GRIS': 7}"
+    "303 kB · checkpoints=117 · types={'rio': 21, 'quebrada': 82, 'mixto': 14} · at cutoff={'AMARILLO': 32, 'GRIS': 85}"
    ]
   },
   "bundle": {
    "rc": 0,
    "log": [
-    "1.66 MB · admin=OK · coast_rain=OK · north=OK · avisos=96 · ana=619 · geoms=53 · uh=10"
+    "1.89 MB · admin=OK · coast_rain=OK · north=OK · avisos=100 · ana=619 · geoms=53 · uh=10"
    ]
   },
   "feed": {
    "rc": 0,
    "log": [
-    "{\"output\": \"/home/runner/work/irfen-peru/irfen-peru/../live-data/.staging/observation_feed_v0_1.json\", \"statuses\": {\"avisos_indeci_coen\": \"RECENT_ARCHIVED\", \"imerg_early_north\": \"RECENT_ARCHIVED\", \"goes19_rrqpe_north\": \"UNKNOWN\", \"imerg_early_coast_snapshot\": \"SNAPSHOT_ONLY\"}}"
+    "{\"output\": \"/home/runner/work/irfen-peru/irfen-peru/../live-data/.staging/observation_feed_v0_1.json\", \"statuses\": {\"avisos_indeci_coen\": \"RECENT_ARCHIVED\", \"imerg_early_north\": \"RECENT_ARCHIVED\", \"goes19_rrqpe_north\": \"STALE\", \"imerg_early_coast_snapshot\": \"SNAPSHOT_ONLY\"}}"
    ]
   }
  },
- "change_kind": "SOLO_INTENTO_DE_CAPTURA",
- "new_observations": [],
+ "change_kind": "OBSERVACIONES_NUEVAS",
+ "new_observations": [
+  "avisos_indeci_coen"
+ ],
  "registry": {
   "config/v09_semaforo_confirmations_v0_1.json": "714ea147d95258b5afa85a37f5c2cb3ea0b414715f80c984cc9cb9a351bdff74",
   "config/v09_semaforo_rules_v0_1.json": "1a5f36baa348fd81104cfe40798878bda3e04c354b9deaa2961b776da81a06e8"
@@ -102,54 +104,54 @@
    "source_id": "avisos_indeci_coen",
    "producer": "v09-senamhi-avisos-capture.yml",
    "basis": "ACTIONS",
-   "attempt_utc": "2026-11-02T18:14:07Z",
+   "attempt_utc": "2026-11-03T01:13:07Z",
    "result": "CORRECTO",
    "detail_es": "captura terminada y guardada",
-   "run_id": 41498606680,
-   "run_url": "https://github.com/IRFEN2026/irfen-peru/actions/runs/41498606680"
+   "run_id": 41558264131,
+   "run_url": "https://github.com/IRFEN2026/irfen-peru/actions/runs/41558264131"
   }
  },
  "sources": {
   "avisos_indeci_coen": {
    "status": "RECENT_ARCHIVED",
-   "source_time_utc": "2026-11-02T18:14:38.039759Z",
-   "age_minutes": 142.7,
-   "last_attempt_utc": "2026-11-02T18:14:07Z",
+   "source_time_utc": "2026-11-03T01:13:42.442307Z",
+   "age_minutes": 13.5,
+   "last_attempt_utc": "2026-11-03T01:13:07Z",
    "attempt_result": "CORRECTO"
   },
   "imerg_early_north": {
    "status": "RECENT_ARCHIVED",
    "source_time_utc": "2026-11-02T13:30:00Z",
-   "age_minutes": 427.3,
+   "age_minutes": 717.3,
    "last_attempt_utc": "2026-11-02T20:24:12Z",
    "attempt_result": "FALLIDO"
   },
   "goes19_rrqpe_north": {
-   "status": "UNKNOWN",
-   "source_time_utc": null,
-   "age_minutes": null,
+   "status": "STALE",
+   "source_time_utc": "2026-11-02T16:49:51.800000Z",
+   "age_minutes": 517.4,
    "last_attempt_utc": "2026-11-02T20:24:12Z",
    "attempt_result": "FALLIDO"
   },
   "imerg_early_coast_snapshot": {
    "status": "SNAPSHOT_ONLY",
    "source_time_utc": "2026-11-01T12:00:00Z",
-   "age_minutes": 1957.3,
+   "age_minutes": 2247.3,
    "last_attempt_utc": null,
    "attempt_result": null
   }
  },
  "semaforo_at_build": {
   "AMARILLO": 32,
-  "GRIS": 7
+  "GRIS": 85
  },
  "bundle": {
   "path": "current/surveillance_view_v0_1.json",
-  "sha256": "2512cd4cec5b45472e51ee50873af144a01d52e324cca9c679dbb8d5a4826952",
-  "bytes": 1665701
+  "sha256": "2f4f15d6a23c41e10a6ba6cca1d40ddfcef52764c91afbfbe2c95289aa7708b7",
+  "bytes": 1899166
  },
  "previous": {
-  "cycle_id": "20261102T191224Z",
-  "bundle_sha256": "0b6f385cf5684c537633f6f6702575899214707be44684a16c918d988c480c50"
+  "cycle_id": "20261102T203720Z",
+  "bundle_sha256": "2512cd4cec5b45472e51ee50873af144a01d52e324cca9c679dbb8d5a4826952"
  }
 }
