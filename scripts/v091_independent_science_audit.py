@@ -135,6 +135,34 @@ def audit(inventory, archive=None, config=None, geometry_raw=None):
                     flag("ERROR", "ZERO_COVERAGE_WITH_VALUE", tids[i], stamp)
         archive_stats["n_granules"] = len(archive.get("granules", []))
         archive_stats["newest_utc"] = max(seen).isoformat() if seen else None
+        # Windows are strict UTC half-hour sequences. A complete spatial grid is needed
+        # for each checkpoint independently; no interpolation and no missing=zero.
+        from datetime import timedelta
+        by_time = {dt(g["time_utc"]): g for g in archive["granules"] if isinstance(g.get("time_utc"), str)
+                   and g["time_utc"].count(":") >= 2}
+        complete_by_window = {}
+        if seen:
+            latest = max(seen)
+            for hours in (1, 3, 6, 24, 72):
+                required = [latest - timedelta(minutes=30 * k) for k in range(hours * 2)]
+                good = 0
+                for idx in range(len(tids)):
+                    ok = True
+                    for t in required:
+                        g = by_time.get(t)
+                        if not g or len(g.get("rate_mm_hr", [])) != len(tids) or len(g.get("covered_pct", [])) != len(tids):
+                            ok = False
+                            break
+                        v, pct = g["rate_mm_hr"][idx], g["covered_pct"][idx]
+                        if v is None or not isinstance(pct,(float,int)) or pct < 80:
+                            ok = False
+                            break
+                    if ok:
+                        good += 1
+                complete_by_window[f"{hours}h"] = good
+        archive_stats["complete_targets_by_window_80pct"] = complete_by_window
+        archive_stats["temporal_continuity_30min"] = all(
+            b - a == timedelta(minutes=30) for a, b in zip(sorted(seen), sorted(seen)[1:])) if seen else False
     return dict(schema_version="irfen_v091_independent_science_audit_v0_1",
         deployment_status="RESEARCH_ONLY", test_mode="TEST_ONLY",
         production_use=False, public_alerting=False, notifications_enabled=False,
