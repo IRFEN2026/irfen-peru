@@ -11,26 +11,135 @@
   "poll_minutes": 20,
   "max_hops_per_chain": 600,
   "data_branch": "research/v091-live-data",
-  "purpose_es": "Reconstruir el paquete del visor privado después de cada captura válida de los workflows existentes de main (IMERG Early norte, GOES-19 RRQPE norte y avisos INDECI/COEN). No captura nada: lee los archivos que esos workflows ya escriben en main.",
+  "purpose_es": "Reconstruir el paquete privado después de nuevas capturas de main (IMERG Early norte y cuencas experimentales de checkpoints, GOES-19, avisos INDECI/COEN) o cambios del código de representación. No captura, no publica y no habilita alertas.",
   "stop_es": "Para detener el ciclo: poner enabled=false (o adelantar expires_at_utc) en esta rama. El ciclo también se detiene solo en la fecha de caducidad. No hace falta ningún secreto.",
   "inputs_from_main": [
-    {"path": "site/data/v09/dashboard_v0_1.json", "role": "avisos INDECI/COEN, zonas, GOES-19 por zona, salud de avisos", "producer": ".github/workflows/v09-rain-north.yml y v09-senamhi-avisos-capture.yml",
-     "time_fields": [["built_at_utc"], ["source", "health", "last_successful_check_utc"]]},
-    {"path": "data/v09/rain/imerg_early_north_v0_1.json", "role": "IMERG Early 30 min, 22 zonas del norte", "producer": ".github/workflows/v09-rain-north.yml",
-     "time_fields": [["status", "written_at_utc"]]},
-    {"path": "data/v09/rain/goes19_rrqpe_north_v0_1.json", "role": "GOES-19 RRQPE por zona", "producer": ".github/workflows/v09-rain-north.yml",
-     "time_fields": [["status", "latest_scan_end"]]},
-    {"path": "data/v09/senamhi_avisos/health_v0_1.json", "role": "salud de la captura de avisos", "producer": ".github/workflows/v09-senamhi-avisos-capture.yml",
-     "time_fields": [["source_health", "last_successful_check_utc"]]}
+    {
+      "path": "site/data/v09/dashboard_v0_1.json",
+      "role": "avisos INDECI/COEN, zonas, GOES-19 por zona, salud de avisos",
+      "producer": ".github/workflows/v09-rain-north.yml y v09-senamhi-avisos-capture.yml",
+      "time_fields": [
+        [
+          "built_at_utc"
+        ],
+        [
+          "source",
+          "health",
+          "last_successful_check_utc"
+        ]
+      ]
+    },
+    {
+      "path": "data/v09/rain/imerg_early_north_v0_1.json",
+      "role": "IMERG Early 30 min, 22 zonas del norte",
+      "producer": ".github/workflows/v09-rain-north.yml",
+      "time_fields": [
+        [
+          "status",
+          "written_at_utc"
+        ]
+      ]
+    },
+    {
+      "path": "data/v09/rain/imerg_early_catchments_v0_1.json",
+      "role": "IMERG Early experimental por 134 cuencas de checkpoints; solo visualización informativa, no colores",
+      "producer": ".github/workflows/v09-rain-north.yml",
+      "kind": "catchment_rain",
+      "time_fields": [
+        [
+          "status",
+          "written_at_utc"
+        ],
+        [
+          "status",
+          "latest_granule_start_utc"
+        ]
+      ]
+    },
+    {
+      "path": "data/v09/rain/goes19_rrqpe_north_v0_1.json",
+      "role": "GOES-19 RRQPE por zona",
+      "producer": ".github/workflows/v09-rain-north.yml",
+      "time_fields": [
+        [
+          "status",
+          "latest_scan_end"
+        ]
+      ]
+    },
+    {
+      "path": "data/v09/senamhi_avisos/health_v0_1.json",
+      "role": "salud de la captura de avisos",
+      "producer": ".github/workflows/v09-senamhi-avisos-capture.yml",
+      "time_fields": [
+        [
+          "source_health",
+          "last_successful_check_utc"
+        ]
+      ]
+    }
   ],
   "capture_attempts_note_es": "Último intento de captura de cada fuente: el workflow consulta en modo lectura la última ejecución terminada en main de su productor (API de Actions con el GITHUB_TOKEN del job) y el estado que la propia captura guardó. Un intento fallido se muestra aunque siga vigente una observación anterior.",
   "capture_attempts": [
-    {"source_id": "imerg_early_north", "workflow": "v09-rain-north.yml", "step_match": "Archive every missing half-hour",
-     "file": "data/v09/rain/imerg_early_north_v0_1.json", "ok_field": ["status", "state"], "ok_values": ["AVAILABLE"], "error_field": ["status", "error"], "since_field": ["status", "since_utc"]},
-    {"source_id": "goes19_rrqpe_north", "workflow": "v09-rain-north.yml", "step_match": "GOES-19 RRQPE",
-     "file": "data/v09/rain/goes19_rrqpe_north_v0_1.json", "ok_field": ["status", "state"], "ok_values": ["AVAILABLE"], "error_field": ["status", "error"]},
-    {"source_id": "avisos_indeci_coen", "workflow": "v09-senamhi-avisos-capture.yml", "step_match": null,
-     "file": "data/v09/senamhi_avisos/health_v0_1.json", "ok_field": ["last_check", "ok"], "ok_values": [true], "error_field": ["source_health", "last_error"], "since_field": ["source_health", "last_check_utc"]}
+    {
+      "source_id": "imerg_early_north",
+      "workflow": "v09-rain-north.yml",
+      "step_match": "Archive every missing half-hour",
+      "file": "data/v09/rain/imerg_early_north_v0_1.json",
+      "ok_field": [
+        "status",
+        "state"
+      ],
+      "ok_values": [
+        "AVAILABLE"
+      ],
+      "error_field": [
+        "status",
+        "error"
+      ],
+      "since_field": [
+        "status",
+        "since_utc"
+      ]
+    },
+    {
+      "source_id": "goes19_rrqpe_north",
+      "workflow": "v09-rain-north.yml",
+      "step_match": "GOES-19 RRQPE",
+      "file": "data/v09/rain/goes19_rrqpe_north_v0_1.json",
+      "ok_field": [
+        "status",
+        "state"
+      ],
+      "ok_values": [
+        "AVAILABLE"
+      ],
+      "error_field": [
+        "status",
+        "error"
+      ]
+    },
+    {
+      "source_id": "avisos_indeci_coen",
+      "workflow": "v09-senamhi-avisos-capture.yml",
+      "step_match": null,
+      "file": "data/v09/senamhi_avisos/health_v0_1.json",
+      "ok_field": [
+        "last_check",
+        "ok"
+      ],
+      "ok_values": [
+        true
+      ],
+      "error_field": [
+        "source_health",
+        "last_error"
+      ],
+      "since_field": [
+        "source_health",
+        "last_check_utc"
+      ]
+    }
   ],
   "not_connected_es": [
     "IMERG para la costa centro y sur (La Libertad–Tacna): solo existe la instantánea de investigación del 01-11; no hay un workflow de main que la actualice.",
