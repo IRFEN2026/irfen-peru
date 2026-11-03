@@ -1,0 +1,46 @@
+name: IRFEN v0.9.1 - Auditoria cientifica independiente (TEST_ONLY)
+on:
+  pull_request:
+    paths:
+      - scripts/v091_independent_science_audit.py
+      - qa/replay_tools/test_v091_independent_science_audit.py
+      - .github/workflows/v091-independent-science-audit.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  scientific-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Contrapruebas sin red y sin dependencias cientificas
+        run: python -m unittest -v qa/replay_tools/test_v091_independent_science_audit.py
+      - name: Recuperar inputs reales de main solo lectura
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin main
+          mkdir -p data/v09/research/catchments
+          git show origin/main:data/v09/rain/imerg_early_catchments_v0_1.json > /tmp/irfen_catchment_rain.json
+          git show origin/main:config/v091_catchment_rain_targets_v0_1.json > /tmp/irfen_catchment_targets.json
+          git show origin/main:data/v09/research/catchments/checkpoint_catchments_v0_1.geojson > data/v09/research/catchments/checkpoint_catchments_v0_1.geojson
+      - name: Auditoria de 536 puntos y 134 cuencas - fallo cerrado
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/v091_independent_science_audit.py \
+            --inventory data/v09/research/semaforo/checkpoint_hydrology_v0_1.json \
+            --archive /tmp/irfen_catchment_rain.json \
+            --config /tmp/irfen_catchment_targets.json \
+            --output /tmp/irfen_science_audit.json --strict
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: irfen-science-audit
+          path: /tmp/irfen_science_audit.json
+          if-no-files-found: ignore
+          retention-days: 7
