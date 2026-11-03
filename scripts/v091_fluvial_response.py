@@ -40,8 +40,6 @@ def sha(path):
 def rank(values):
     idx = sorted(range(len(values)), key=lambda i: values[i])
     result = [0.0] * len(values)
-    for lo in range(len(values)):
-        pass
     i = 0
     while i < len(idx):
         j = i + 1
@@ -115,6 +113,45 @@ def paired(rain, flows, acc_days, lag, period):
     return r, q, dates
 
 
+def monthly_anomaly_spearman(x, y, dates, minimum=MIN_PAIRS):
+    """Remove within-calendar-month means, reducing wet-season confounding.
+    Diagnostic only; the sample is not independent in time and this is not predictive skill.
+    """
+    groups = {}
+    for i, d in enumerate(dates):
+        groups.setdefault(d[:7], []).append(i)
+    xa, ya = [], []
+    for indices in groups.values():
+        if len(indices) < 4:
+            continue
+        mx=mean(x[i] for i in indices)
+        my=mean(y[i] for i in indices)
+        xa += [x[i]-mx for i in indices]
+        ya += [y[i]-my for i in indices]
+    score = spearman(xa, ya) if len(xa)>=minimum else None
+    return dict(n=len(xa), spearman=round(score,5) if score is not None else None,
+                status="DESCRIPTIVE_WITHIN_MONTH" if score is not None else "INSUFFICIENT_WITHIN_MONTH")
+
+
+def future_rain_falsification(rain, flows, k, holdout, minimum=MIN_PAIRS):
+    """Non-causal control: precipitation *after* discharge cannot forecast past flow.
+    If future rain also tracks flow, shared seasonality/persistence can drive correlations.
+    """
+    lo, hi=holdout
+    x, y = [], []
+    for d, q in sorted(flows.items()):
+        if not lo <= d.year <= hi:
+            continue
+        vals=[rain.get(d+timedelta(days=i)) for i in range(1,k+1)]
+        if all(isinstance(v,(int,float)) and math.isfinite(v) and v>=0 for v in vals):
+            x.append(sum(vals))
+            y.append(q)
+    cor=spearman(x,y) if len(x)>=minimum else None
+    return dict(n=len(x),spearman=round(cor,5) if cor is not None else None,
+                interpretation="FUTURE_RAIN_NEGATIVE_CONTROL_NOT_PREDICTIVE",
+                no_tuning=True)
+
+
 def evaluate_pair(rain, flows, min_pairs=MIN_PAIRS):
     candidates = []
     for k in ACC_DAYS:
@@ -133,7 +170,9 @@ def evaluate_pair(rain, flows, min_pairs=MIN_PAIRS):
         s = spearman(x,y) if len(x)>=min_pairs else None
         result["holdout"] = dict(n=len(x), spearman=round(s,5) if s is not None else None,
                                  first=dates[0] if dates else None, last=dates[-1] if dates else None,
-                                 status="DESCRIPTIVE_ONLY" if s is not None else "INSUFFICIENT_HOLDOUT_PAIRS")
+                                 status="DESCRIPTIVE_ONLY" if s is not None else "INSUFFICIENT_HOLDOUT_PAIRS",
+                                 monthly_anomaly=monthly_anomaly_spearman(x,y,dates,min_pairs),
+                                 future_rain_control=future_rain_falsification(rain,flows,selected["acc_days"],PERIODS["holdout"],min_pairs))
         # Negative control: circular shifts of the held-out paired rain vector. No claim of significance
         # when the available dates are sparse; shifts are illustrative only.
         if s is not None and len(x)>=60:
@@ -193,7 +232,8 @@ def build(rain_by_catch=None, flows_by_column=None):
                               selection="maximum positive training Spearman across fixed grid; no holdout tuning",
                               leakage_rule="Do not use future rainfall, do not calibrate using holdout",
                               confounding="Regulation, canal transfers and unknown PECHP day convention remain unresolved",
-                              reporting="Station-specific exploratory associations; no warning thresholds or model activation"),
+                              reporting="Station-specific exploratory associations; no warning thresholds or model activation",
+                              falsification="Within-month demeaning and observed future rain are diagnostic controls only; not calibration or causality."),
                 stations=rows)
 
 
