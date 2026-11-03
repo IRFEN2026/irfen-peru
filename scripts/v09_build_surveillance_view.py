@@ -589,7 +589,7 @@ def build() -> dict:
                                                             departments=ref["departments"], cities_fields=ref["cities_fields"], cities=ref["cities"])
     layers_unavailable = [
         dict(id="nubosidad", label="Nubosidad / imagen de nubes", reason="No integrada en esta vista (no hay producto de nubes archivado)."),
-        dict(id="lluvia_tiempo_real", label="Lluvia en tiempo real", reason="No disponible: IMERG Early llega con horas de retraso y en esta versión está congelado."),
+        dict(id="lluvia_tiempo_real", label="Lluvia instantánea sin latencia", reason="No disponible: IMERG Early tiene horas de latencia. Las observaciones experimentales recientes de cuenca se consultan en «Cinco preguntas» y pueden caducar."),
         dict(id="goes_rrqpe", label="GOES-19 tasa de lluvia (RRQPE)", reason="Solo existe para zonas del norte en el panel «Lluvia y avisos (zonas)»; no se incluye aquí."),
         dict(id="caudal", label="Caudal o nivel de ríos en tiempo real", reason="No disponible (sin acceso automático permitido ni serie publicada)."),
     ]
