@@ -73,8 +73,10 @@ def check_target(s: Series, proto: dict) -> str | None:
     if s.statistic == "MEDIA_DIARIA" and not req["daily_means_allowed"]:
         return "MEDIAS_DIARIAS: no permiten horizontes de 3–24 h y no se desagregan"
     st = s.step_hours()
-    if st is None or st > req["max_time_step_hours"]:
+    if st is None or st <= 0 or st > req["max_time_step_hours"]:
         return f"PASO_TEMPORAL_INSUFICIENTE ({st} h > {req['max_time_step_hours']} h)"
+    if (np.diff(s.times) <= 0).any():
+        return "OBJETIVO_DUPLICADO_O_DESORDENADO"
     if not s.tz_declared:
         return "ZONA_HORARIA_NO_DECLARADA"
     return None
@@ -85,6 +87,10 @@ def check_rain(s: Series) -> str | None:
         return f"CATEGORIA_NO_ES_LLUVIA ({s.category})"
     if "FINAL" in s.product.upper() or s.product.upper().endswith("IMERGHH") or s.product.upper().endswith("IMERGDF"):
         return "IMERG_FINAL_PROHIBIDO_COMO_PREDICTOR (ORACULO_NO_OPERATIVO)"
+    if (np.diff(s.times) <= 0).any():
+        return "LLUVIA_DUPLICADA_O_DESORDENADA"
+    if s.latency_s < 0:
+        return "LATENCIA_NEGATIVA_NO_PERMITIDA"
     return None
 
 
@@ -106,9 +112,15 @@ def rain_accum(s: Series, t: int, k_h: int, extra_latency_s: int = 0):
     step = s.step_hours() or 0.5
     need = int(round(k_h / step))
     vals = s.values[i0:i1]
-    if i1 - i0 < need or np.isnan(vals).any():
+    times = s.times[i0:i1]
+    # Exact cadence is mandatory: equal row counts do not prove continuous intervals.
+    # Duplicate stamps, a displaced observation or a half-hour gap can otherwise
+    # silently produce a misleading k-hour total. Unknown is never zero rainfall.
+    expected = end - (np.arange(need - 1, -1, -1, dtype=np.int64) * int(step * H))
+    if (len(vals) != need or not np.array_equal(times, expected)
+            or not np.isfinite(vals).all() or (vals < 0).any()):
         return np.nan, None
-    return float(vals.sum()), int(s.times[i1 - 1])
+    return float(vals.sum()), int(times[-1])
 
 
 def target_at(s: Series, t: int):
