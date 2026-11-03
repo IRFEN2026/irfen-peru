@@ -1,0 +1,47 @@
+name: IRFEN v0.9.1 - Diagnostico navegador 536 checkpoints (NO PUBLICAR)
+on:
+  pull_request:
+    paths:
+      - site/v09/vigilancia.html
+      - qa/replay_tools/v091_live_page_check.py
+      - scripts/v09_build_surveillance_view.py
+      - scripts/v091_live_refresh.py
+      - config/v091_live_refresh.json
+      - .github/workflows/v091-private-browser-diagnostic.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  diagnostic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Instalar dependencias de reconstruccion privada
+        run: |
+          python -m pip install -q "numpy>=1.26,<2" "playwright==1.48.0"
+          python -m playwright install --with-deps chromium >/dev/null
+      - name: Leer datos existentes de main (solo lectura)
+        run: git fetch -q --no-tags --depth=1 origin main:refs/remotes/origin/main
+      - name: Reconstruir paquete experimental en runner aislado
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/irfen-data"
+          python scripts/v091_live_refresh.py --main-ref origin/main --data-dir "$RUNNER_TEMP/irfen-data" --force | tee "$RUNNER_TEMP/rebuild.json"
+          test -f "$RUNNER_TEMP/irfen-data/current/surveillance_view_v0_1.json"
+      - name: Validar pagina con Chromium y guardar diagnostico de JS
+        shell: bash
+        run: |
+          python qa/replay_tools/v091_live_page_check.py --data-dir "$RUNNER_TEMP/irfen-data" --out "$RUNNER_TEMP/page-check"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: irfen-private-browser-diagnostic
+          path: |
+            ${{ runner.temp }}/rebuild.json
+            ${{ runner.temp }}/page-check/
+          if-no-files-found: ignore
+          retention-days: 7
