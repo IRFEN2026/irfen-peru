@@ -22,7 +22,11 @@ jobs:
           python-version: '3.12'
       - name: Detectar sintaxis del JavaScript del visor con Node
         run: |
-          python -c 'from pathlib import Path; s=Path("site/v09/vigilancia.html").read_text(); Path("/tmp/irfen-app.js").write_text(s.split("<script id=\\"app\\">")[1].split("</script>")[0])'
+          python - <<'PY'
+          from pathlib import Path
+          s = Path("site/v09/vigilancia.html").read_text(encoding="utf-8")
+          Path("/tmp/irfen-app.js").write_text(s.split('<script id="app">', 1)[1].split("</script>", 1)[0])
+          PY
           node --check /tmp/irfen-app.js
       - name: Instalar dependencias de reconstruccion privada
         run: |
