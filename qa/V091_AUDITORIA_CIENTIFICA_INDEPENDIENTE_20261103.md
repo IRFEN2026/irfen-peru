@@ -4,6 +4,9 @@
 
 **Evidencia reproducible:** [GitHub Actions #41657305009](https://github.com/IRFEN2026/irfen-peru/actions/runs/41657305009). Se ejecutó el auditor en el inventario experimental de 536 checkpoints de la rama v0.9.1 y contra los datos IMERG y la geometría SHA-bloqueada de `main`: 134 cuencas, 170 gránulos, último inicio 2026-11-03 04:30 UTC. Diez contrapruebas superadas, cero errores bloqueantes y **32 asociaciones con diferencias >1% en el contraste de área HydroSHEDS/HydroRIVERS**.
 
+## Segunda ejecución: continuidad de ventanas
+La [ejecución CI #41657764509](https://github.com/IRFEN2026/irfen-peru/actions/runs/41657764509) validó el chequeo temporal adicional: 170 intervalos de 30 minutos **consecutivos**, sin huecos en el archivo archivado, y **134/134 cuencas con ventanas completas de 1, 3, 6, 24 y 72 horas**, usando un mínimo del 80 % de cobertura espacial en cada intervalo. Estos acumulados son *calculables* en el archivo con fecha final observada 2026-11-03 05:00 UTC (último gránulo con inicio 04:30 UTC); **no se ha validado su vigencia al momento de leerlos ni su habilidad para anticipar crecidas**. Diez contrapruebas en verde; cero errores bloqueantes; se mantienen los 32 casos que requieren revisión.
+
 ## Interpretación científica
 
 La validación informática y el anidamiento D8 no equivalen a una validación hidrológica observacional. El cociente `area_km2 / hydrorivers.UPLAND_SKM` compara una delimitación HydroSHEDS en el checkpoint con un área publicada en un tramo HydroRIVERS seleccionado por proximidad. La proximidad no demuestra identidad de sección hidráulica, y ambas capas comparten linaje científico: **no son dos evidencias completamente independientes**. Por ello, las discrepancias son señales para revisión, no pruebas automáticas de error ni justificación de un aviso de crecida.
