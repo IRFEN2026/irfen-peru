@@ -473,6 +473,9 @@ def checkpoint_hydrology(semaforo: dict) -> dict:
     rows = sorted((c["id"], c["lat"], c["lon"]) for c in semaforo["checkpoints"])
     if hashlib.sha256(json.dumps(rows, separators=(",", ":")).encode()).hexdigest() != h.get("checkpoints_fingerprint"):
         return dict(status="DESACTUALIZADO", note_es="El inventario hidrológico no corresponde a estos checkpoints: regenérelo.")
+    from scripts import v091_catchment_live_view as CL
+    live_archive = CL.load()
+    live = CL.build(live_archive, [r["id"] for r in h["checkpoints"]], semaforo["cutoff_utc"])["points"]
     out = {}
     for r in h["checkpoints"]:
         q3, q4 = r["q3_contributing_area"], r["q4_rain"]
@@ -485,7 +488,7 @@ def checkpoint_hydrology(semaforo: dict) -> dict:
                             zf=([q4["zone_overlap"]["fraction_of_catchment_in_zone"], q4["zone_overlap"]["fraction_of_zone_in_catchment"]]
                                 if q4.get("zone_overlap") else None),
                             snapw=({k: [v["mean_mm"], v["checkpoint_cell_mm"]] for k, v in w.items() if v["status"] == "COMPLETA"} or None),
-                            snap_end=sn.get("windows_end_utc"), miss=r["q5_missing"])
+                            snap_end=sn.get("windows_end_utc"), live=live.get(r["id"]), miss=r["q5_missing"])
     feats = []
     for f in h["catchment_outlines"]["features"]:
         g = f["geometry"]
