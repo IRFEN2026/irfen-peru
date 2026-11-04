@@ -1,0 +1,24 @@
+name: "IRFEN coast season evidence ledger (offline)"
+on:
+  push:
+    branches:
+      - research/v09-coast-season-prospective-ledger-20261104
+  pull_request:
+    paths:
+      - scripts/v09_coastal_season_ledger.py
+      - tests/test_v09_coastal_season_ledger.py
+      - .github/workflows/v09-coastal-season-ledger-tests.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify offline append-only ledger guards
+        run: python -m unittest discover -s tests -p 'test_v09_coastal_season_ledger.py' -v
