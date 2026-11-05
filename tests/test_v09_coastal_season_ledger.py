@@ -44,4 +44,17 @@ class SeasonTests(unittest.TestCase):
     def test_invalid_publication_order(self):
         self.m["published_at"]="2026-11-04T12:01:00Z"
         with self.assertRaises(ValueError):validate(self.m,b"raw",self.ing)
+    def test_expired_at_ingestion_is_archived_but_not_replay_eligible(self):
+        self.m["expires_at"]="2026-11-04T12:01:00Z"
+        result=validate(self.m,b"raw",self.ing)
+        self.assertFalse(result["fresh_at_ingestion"])
+        self.assertFalse(result["eligible_for_prospective_replay"])
+    def test_future_publication_rejected_without_available_at(self):
+        self.m["available_at"]=None
+        self.m["published_at"]="2026-11-04T12:10:00Z"
+        with self.assertRaises(ValueError):validate(self.m,b"raw",self.ing)
+    def test_valid_fresh_record_is_eligible(self):
+        result=validate(self.m,b"raw",self.ing)
+        self.assertTrue(result["fresh_at_ingestion"])
+        self.assertTrue(result["eligible_for_prospective_replay"])
 if __name__=="__main__":unittest.main()
