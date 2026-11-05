@@ -18,9 +18,9 @@ SOURCE_HTML = ROOT / "site/v09/vigilancia.html"
 SOURCE_BUNDLE = ROOT / "site/data/v09/surveillance_view_v0_1.json"
 
 
-def generate(output_dir: Path) -> dict:
+def generate(output_dir: Path, bundle_source: Path = SOURCE_BUNDLE) -> dict:
     html = SOURCE_HTML.read_text(encoding="utf-8")
-    bundle_raw = SOURCE_BUNDLE.read_text(encoding="utf-8")
+    bundle_raw = bundle_source.read_text(encoding="utf-8")
     bundle = json.loads(bundle_raw)
     guards = {
         "deployment_status": "RESEARCH_ONLY",
@@ -54,7 +54,7 @@ def generate(output_dir: Path) -> dict:
         "format": "irfen_private_html_snapshot_v0_1",
         "built_at_utc": stamp,
         "source_viewer": str(SOURCE_HTML.relative_to(ROOT)),
-        "source_bundle": str(SOURCE_BUNDLE.relative_to(ROOT)),
+        "source_bundle": str(bundle_source),
         "bundle_cutoff_utc": source_cutoff,
         "bundle_built_at_utc": bundle.get("built_at_utc"),
         "deployment_status": bundle["deployment_status"],
@@ -90,8 +90,9 @@ def generate(output_dir: Path) -> dict:
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--output-dir", type=Path, required=True)
+    p.add_argument("--bundle-source", type=Path, default=SOURCE_BUNDLE)
     args = p.parse_args()
-    generate(args.output_dir)
+    generate(args.output_dir, args.bundle_source)
 
 
 if __name__ == "__main__":
