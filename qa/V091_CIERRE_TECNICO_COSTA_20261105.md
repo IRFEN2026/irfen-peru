@@ -45,3 +45,8 @@ El JSON contiene las ventanas completas/incompletas, edad de observaciones, dife
 
 - GitHub Actions run 42056973070: **SUCCESS**, 22 pruebas sintéticas, 134 registros derivados creados en directorio temporal del runner, 0 huecos de lluvia en la lectura de main del momento, 34 áreas marcadas para revisión por el nuevo auditor. Las observaciones son derivadas de IMERG y no mediciones nuevas independientes ni un registro persistente en producción.
 - Documento de CI y código: PR #493. La auditoría de navegador del visor se ejecuta adicionalmente en otro ciclo y debe confirmarse por separado.
+
+## Segunda ejecución: visor privado, escritorio y móvil
+
+- [GitHub Actions #42057575091](https://github.com/IRFEN2026/irfen-peru/actions/runs/42057575091): **SUCCESS**. 22 pruebas en verde, lectura de lluvia con 0 huecos, 134 snapshots derivados temporales, 34 ratios geográficos a revisar, y smoke del visor en Chromium tanto escritorio como móvil: **0 errores JS y 0 enlaces internos rotos**; el reporte del navegador devolvió `ok=true`.
+- Este resultado confirma el artefacto de prueba de esa rama, no una publicación ni habilitación pública. La actualización viva alojada con acceso controlado, los datos hidrológicos independientes y el modelo predictivo siguen pendientes.
