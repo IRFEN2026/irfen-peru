@@ -1,0 +1,67 @@
+name: IRFEN v0.9.1 - cierre costa reproducible (SOLO INVESTIGACION)
+on:
+  pull_request:
+    paths:
+      - scripts/v09_coast_closeout.py
+      - tests/test_v09_coast_closeout.py
+      - .github/workflows/v091-coast-closeout.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  coastal-closeout:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validar barreras de integridad, causalidad y no-publicación
+        run: python -m unittest -v tests/test_v09_coast_closeout.py tests/test_v09_coastal_season_ledger.py
+      - name: Obtener los archivos YA archivados de main, solo lectura
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin main
+          git show origin/main:data/v09/rain/imerg_early_catchments_v0_1.json > "$RUNNER_TEMP/irfen-archived-imerg-catchments.json"
+          test -s "$RUNNER_TEMP/irfen-archived-imerg-catchments.json"
+      - name: Auditar el corte real sin imputar huecos ni calcular alertas
+        run: |
+          set -euo pipefail
+          python scripts/v09_coast_closeout.py \
+            --archive "$RUNNER_TEMP/irfen-archived-imerg-catchments.json" \
+            --hydrology data/v09/research/semaforo/checkpoint_hydrology_v0_1.json \
+            --ledger-dir "$RUNNER_TEMP/irfen-offline-derived-evidence" \
+            --report "$RUNNER_TEMP/irfen-coastal-closeout.json" \
+            --as-of "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+      - name: Revisar el resultado de forma fail-closed
+        run: |
+          python - "$RUNNER_TEMP/irfen-coastal-closeout.json" <<'PY'
+          import json, sys
+          d=json.load(open(sys.argv[1],encoding="utf-8"))
+          assert d["activation_gate"]=="BLOCKED"
+          assert d["deployment_status"]=="RESEARCH_ONLY"
+          assert d["public_alerting"] is False
+          assert d["production_ready"] is False
+          assert d["closure"]=="RESEARCH_PROTOTYPE_ONLY_PREDICTIVE_CLOSURE_REJECTED"
+          assert len(d["coastal_scope"])==11
+          assert set(d["rain_archived_observations"]["catchments_by_department"])==set(d["coastal_scope"])
+          assert len(d["prediction_by_horizon"])==5
+          assert all(x["predictive_skill_demonstrated"] is False
+                     for x in d["prediction_by_horizon"].values())
+          assert d["geography"]["verified_hydrologically"]==0
+          print("CLOSEOUT_QA_OK: research-only; no publication; no fabricated forecast skill")
+          print("rain_gaps:",d["rain_archived_observations"]["n_missing_halfhours"])
+          print("areas_requiring_review:",d["geography"]["areas_different_over_1pct"])
+          print("experimental_ledger_snapshots:",
+                d["prospective_evidence_staging"]["derived_snapshots_created"])
+          PY
+      - name: Instalar navegador para verificación del visor privado
+        run: |
+          python -m pip install -q "playwright==1.48.0"
+          python -m playwright install chromium
+      - name: Smoke real de la vista Tumbes-Tacna (escritorio y móvil)
+        run: |
+          python qa/replay_tools/v09_surveillance_view_smoke.py --out "$RUNNER_TEMP/irfen-private-view-smoke"
+      # Intentionally no artifact upload, deployment, Pages publication,
+      # push, email, alerts or write permission. Private evidence stays in runner temp.
