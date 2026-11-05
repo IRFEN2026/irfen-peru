@@ -1,0 +1,78 @@
+name: IRFEN vista privada descargable (NO PUBLICAR)
+on:
+  push:
+    branches:
+      - research/v091-private-preview-20261105
+    paths:
+      - scripts/v091_private_snapshot_package.py
+      - .github/workflows/v091-private-preview-snapshot.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  private-snapshot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Leer paquete privado reciente ya construido, sin escribir ni actualizar datos
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin research/v091-live-data:refs/remotes/origin/v091-live-data
+          git show refs/remotes/origin/v091-live-data:current/surveillance_view_v0_1.json > latest-bundle.json
+          python - latest-bundle.json <<'PY'
+          import json,sys
+          d=json.load(open(sys.argv[1],encoding="utf-8"))
+          assert d["deployment_status"]=="RESEARCH_ONLY"
+          assert d["test_mode"]=="TEST_ONLY"
+          assert d["public_alerting"] is False
+          assert d["production_use"] is False
+          assert d["predictive_engine_enabled"] is False
+          print("ACCEPTED PRIVATE BUNDLE, source cutoff:",d.get("cutoff_utc"))
+          PY
+      - name: Construir HTML individual (no publica web, no se conecta a fuentes)
+        run: |
+          python scripts/v091_private_snapshot_package.py \
+            --output-dir "preview-output" \
+            --bundle-source "latest-bundle.json"
+          test -s "preview-output/IRFEN Vista privada costera.html"
+      - name: Preparar navegador para capturas
+        run: |
+          python -m pip install -q playwright==1.48.0
+          python -m playwright install chromium
+      - name: Capturas reales de la vista empaquetada, escritorio y móvil
+        run: |
+          python - "preview-output" <<'PY'
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright
+          import sys,json
+          root=Path(sys.argv[1])
+          html=(root / "IRFEN Vista privada costera.html").resolve().as_uri()
+          results=[]
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True)
+              for name,w,h in [("escritorio",1440,900),("movil",390,844)]:
+                  page=browser.new_page(viewport={"width":w,"height":h},device_scale_factor=1)
+                  errors=[]
+                  page.on("pageerror",lambda err:errors.append(str(err)))
+                  page.goto(html,wait_until="load",timeout=30000)
+                  page.wait_for_selector('body[data-ready="1"]',timeout=30000)
+                  page.screenshot(path=str(root / ("Vista "+name+".png")),full_page=False)
+                  results.append({"viewport":name,"ready":True,"js_errors":errors,"page":page.title()})
+                  page.close()
+              browser.close()
+          (root/"capturas-qa.json").write_text(json.dumps(results,indent=2,ensure_ascii=False))
+          print(results)
+          assert all(x["ready"] and not x["js_errors"] for x in results)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IRFEN-vista-privada-20261105
+          path: preview-output/
+          retention-days: 7
+          if-no-files-found: error
+      # Downloadable research artifact, not GitHub Pages, no mail, no alert,
+      # no writes to main, no online production or public deployment.
