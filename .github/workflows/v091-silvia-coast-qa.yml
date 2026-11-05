@@ -1,0 +1,25 @@
+name: IRFEN - SILVIA costera (solo investigacion)
+on:
+  pull_request:
+    paths:
+      - scripts/v09_silvia_coast_import.py
+      - tests/test_v09_silvia_coast_import.py
+      - .github/workflows/v091-silvia-coast-qa.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  silvia-coast:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Dependencias para QA geoespacial offline
+        run: python -m pip install -q "pyshp>=2.3,<3" "shapely>=2,<3"
+      - name: Validar corte costero, geometrías, procedencia y bloqueo de alertas
+        run: python -m unittest -v tests/test_v09_silvia_coast_import.py
+      # The supplied 2026-11-04 ZIP must not be redistributed automatically.
+      # No network polling, source download, upload, Pages, alert or main write.
