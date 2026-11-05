@@ -46,6 +46,8 @@ def validate(meta, data, ingest_time):
         raise ValueError("availability before observation")
     if available is not None and utc(available)>ing:
         raise ValueError("unavailable at ingestion")
+    if published is not None and utc(published)>ing:
+        raise ValueError("publication from future at ingestion")
     if published is not None and available is not None and utc(available)<utc(published):
         raise ValueError("available before publication")
     if meta["product"]=="IMERG_EARLY" and meta.get("forecast",False):
@@ -57,13 +59,17 @@ def validate(meta, data, ingest_time):
     if meta["qc"]=="MISSING" and meta.get("value") is not None:
         raise ValueError("missing observation cannot contain numeric value")
     # Unknown availability is not estimated from the nominal 4h IMERG latency.
-    usable=available is not None and meta["qc"]=="VERIFIED" and coverage is not None and coverage>=0.9
+    # A record may be retained after expiry for audit, but it is not a valid
+    # live input at ingestion. Distinguish archival replay from operational freshness.
+    usable=(available is not None and meta["qc"]=="VERIFIED"
+            and coverage is not None and coverage>=0.9 and expiry>=ing)
     return dict(schema="irfen_coastal_season_evidence_v0_1",mode="RESEARCH_ONLY",
                 test_only=True,activation_gate="BLOCKED",operational_use=False,
                 observation=meta,ingest_time=ingest_time,
                 source_sha256=hashlib.sha256(data).hexdigest(),source_bytes=len(data),
                 observed_not_forecast=not meta.get("forecast",False),
                 available_at_verified=available is not None,
+                fresh_at_ingestion=expiry>=ing,
                 eligible_for_prospective_replay=bool(usable and obs<=utc(available)),
                 hydrologic_forecast_validated=False,horizons_hours=list(HORIZONS))
 def store(root, meta, data, ingest_time):
