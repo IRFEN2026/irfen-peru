@@ -16,6 +16,8 @@ on:
     paths:
       - .github/workflows/v091-live-refresh.yml
       - config/v091_live_refresh.json
+      - scripts/v09_build_semaforo.py
+      - tests/test_v091_river_catchment_colors.py
   workflow_dispatch:
     inputs:
       hop:
@@ -59,6 +61,10 @@ jobs:
       - name: Dependencias mínimas
         if: steps.ctl.outputs.run == 'true'
         run: pip install -q "numpy>=1.26,<2" "playwright==1.48.0"
+
+      - name: Probar señales satelitales sin contaminación por avisos
+        if: steps.ctl.outputs.run == 'true'
+        run: python -m unittest -v tests.test_v091_river_catchment_colors
 
       - name: Leer main (solo lectura) y la rama de datos
         if: steps.ctl.outputs.run == 'true'
