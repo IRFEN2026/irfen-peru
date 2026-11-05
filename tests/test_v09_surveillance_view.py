@@ -67,12 +67,13 @@ class Bundle(unittest.TestCase):
                 self.assertIs(sm[k], False, k)
                 self.assertIs(sm["rules"].get(k, False), False, k)
             self.assertEqual((sm["deployment_status"], sm["test_mode"]), ("RESEARCH_ONLY", "TEST_ONLY"))
-            self.assertEqual([x["code"] for x in sm["rules"]["states"]], ["ROJO", "AMARILLO", "VERDE", "GRIS"])
+            self.assertEqual([x["code"] for x in sm["rules"]["states"]], ["ROJO", "NARANJA", "AMARILLO", "VERDE", "GRIS"])
+            self.assertIs(next(x for x in sm["rules"]["states"] if x["code"] == "NARANJA")["operational"], False)
             self.assertIn("Ni la lluvia ni un aviso producen rojo", sm["rules"]["states"][0]["rule_es"])
             self.assertIn("no garantiza", PAGE)  # a verified report says the event happened, not that it is still active
-            self.assertIn("no evidencia de crecida ni de activación", sm["rules"]["states"][1]["rule_es"])
-            self.assertIn("Un aviso regional vigente no cambia el gris", sm["rules"]["states"][3]["rule_es"])
-            self.assertIn("nunca se convierte en verde", sm["rules"]["states"][3]["rule_es"])
+            self.assertIn("no evidencia de crecida ni de activación", next(x for x in sm["rules"]["states"] if x["code"] == "AMARILLO")["rule_es"])
+            self.assertIn("Un aviso regional vigente no cambia el gris", next(x for x in sm["rules"]["states"] if x["code"] == "GRIS")["rule_es"])
+            self.assertIn("nunca se convierte en verde", next(x for x in sm["rules"]["states"] if x["code"] == "GRIS")["rule_es"])
             self.assertIs(sm["rules"]["territorial_context"]["affects_colour"], False)
             self.assertEqual(sm["rules"]["flood_evidence"]["status"], "NO_DISPONIBLE")
             for c in sm["confirmations"]["confirmations"]:  # the only way to red: a sourced, verified record
@@ -177,7 +178,25 @@ class Bundle(unittest.TestCase):
             self.assertTrue(set(s["orientation"]["evidence"]) <= {"DESEMBOCADURA", "RED_DE_FLUJO_HYDROSHEDS"} and s["orientation"]["evidence"])
         self.assertTrue(all(c["sector_verified"] for c in lam if c["type"] == "rio"))
         self.assertTrue(any(c["type"] in ("quebrada", "mixto") for c in lam))
-        self.assertLessEqual(len(sm["checkpoints"]), 60)  # not saturating the map
+        # the whole coast is in the pilot (Tumbes–Tacna); saturation is handled in the page (department aggregates at national
+        # zoom, checked in the browser test), never by dropping documented points
+        self.assertEqual({c["department"] for c in sm["checkpoints"]}, set(D["coast_departments"]))
+        self.assertTrue(all(c["status"] == "PILOTO_ACTIVO" for c in sm["coverage"]))
+        zone_kind = {f["properties"]["zone_id"]: f["properties"].get("kind") for f in D["rain"]["north_zones"]["zones"]["features"]}
+        for c in sm["checkpoints"]:  # an administrative (province) mean never colours a point
+            if (c.get("rain_ref") or "").startswith("zone:"):
+                self.assertEqual(zone_kind[c["rain_ref"][5:]], "BASIN", c["id"])
+        for dep, rivers in (("TUMBES", {"TUMBES", "ZARUMILLA"}), ("PIURA", {"PIURA", "CHIRA"})):
+            pts = [c for c in sm["checkpoints"] if c["department"] == dep and c["type"] == "rio"]
+            self.assertEqual({c["system_id"] for c in pts}, rivers)
+        for c in sm["checkpoints"]:
+            if c["type"] != "rio" or c["department"] in ("LAMBAYEQUE", "LA LIBERTAD"):
+                continue
+            # Tumbes, Piura and south of La Libertad: no live zone covers a river catchment yet: grey with the reason,
+            # never the local cell
+            self.assertIsNone(c["rain_ref"], c["id"])
+            self.assertEqual(c["state_at_cutoff"]["state"], "GRIS", c["id"])
+            self.assertTrue(any("gris" in x for x in c["limitations"]), c["id"])
         for c in sm["checkpoints"]:
             for k in ("id", "name", "type", "system", "department", "lat", "lon", "sources", "limitations", "location_basis", "state_at_cutoff"):
                 self.assertIn(k, c)
@@ -209,8 +228,10 @@ class Bundle(unittest.TestCase):
             self.assertNotEqual(sem.evaluate(c, S, cut + timedelta(days=40))["state"], "ROJO")
         self.assertGreater(regional_stale, 0)  # the audited case (regional aviso in force, local data stale) is exercised
         river = next(c for c in sm["checkpoints"] if c["type"] == "rio")
-        fake = dict(system_id=river["system_id"], verified=True, source_kind="OFICIAL", observed_at_utc=cut.isoformat())
+        fake = dict(system_id=river["system_id"], verified=True, source_kind="OFICIAL", observed_at_utc=cut.isoformat(),
+                    source_url="https://portal.indeci.gob.pe/ejemplo")
         self.assertEqual(sem.evaluate(river, dict(S, confirmations=[fake]), cut)["state"], "ROJO")
+        self.assertNotEqual(sem.evaluate(river, dict(S, confirmations=[dict(fake, source_url=None)]), cut)["state"], "ROJO")  # no source: pending
         self.assertNotEqual(sem.evaluate(river, dict(S, confirmations=[dict(fake, verified=False)]), cut)["state"], "ROJO")
         self.assertNotEqual(sem.evaluate(river, dict(S, confirmations=[fake]), cut + timedelta(hours=73))["state"], "ROJO")
 
@@ -273,6 +294,12 @@ class Browser(unittest.TestCase):
                 self.assertEqual(sm["js_vs_python"]["mismatches"], 0, sm["js_vs_python"]["first"])
                 self.assertEqual(len(set(sm["selfcheck"].split("/"))), 1, sm["selfcheck"])
                 self.assertTrue(sm["guard"] and sm["popup_fields"] and sm["pending_dep_msg"])
+                # national scale: one aggregate per department, no individual points; a department shows its points
+                ndep = len({c["department"] for c in D["semaforo"]["checkpoints"]})
+                self.assertEqual((sm["national_aggregates"], sm["national_points"]), (ndep, 0))
+                self.assertEqual(sm["dep_aggregates"], 0)
+                self.assertEqual(sm["dep_points"], sum(c["department"] == "LIMA" for c in D["semaforo"]["checkpoints"]))
+                self.assertGreater(sm["catchment_outline"], 0)
 
 
 if __name__ == "__main__":

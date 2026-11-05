@@ -1,0 +1,121 @@
+{
+  "schema_version": "irfen_v091_anticipation_protocol_v0_1",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "production_use": false,
+  "activation_gate": "BLOCKED",
+  "public_alerting": false,
+  "notifications_enabled": false,
+  "predictive_skill_claimed": false,
+  "registered_before_results": true,
+  "purpose_es": "Reglas candidatas de precaución anticipada (NARANJA) para crecidas/desbordes de río y activaciones de quebrada, fijadas ANTES de calcular ningún resultado, con los eventos, métricas y criterios que tendrían que superar para habilitarse. Mientras no se cumplan todos los criterios, NARANJA es solo una simulación de investigación: no colorea el mapa operativo y no envía correos.",
+  "builds_on_es": [
+    "qa/V09_FLOOD_VALIDATION_PROTOCOL_20261031.md v0.1 y v0.3 (#458, #460): sin umbrales universales, lluvia ausente = desconocida, IMERG Final solo como referencia, protocolo previo a los datos.",
+    "Resultados de #459: con datos diarios, la lluvia de 3 días explica retrospectivamente el caudal del río Piura (ρ parcial 0,42–0,58) pero su anticipación más allá del caudal ya observado es ≈ 0 (2017) y ≈ 0,2 (2023).",
+    "#460: no hay series de caudal/nivel subdiarias públicas; la evaluación de 3–24 h es NO_EVALUABLE."
+  ],
+  "rain_product": {
+    "historical": "IMERG Final V07B diario (GPM_3IMERGDF), recuadro lat −6,5…−3,3, lon −81,3…−79,1 (data/v09/research/historical/imerg_final_daily_piura_chira_v0_1.json), temporadas dic–abr 2015-16 a 2022-23",
+    "day_convention": "día UTC (19:00–19:00 hora de Perú)",
+    "missing": "un día o una celda sin dato completo (precipitation_cnt < 48) deja la media de la unidad DESCONOCIDA; nunca 0",
+    "realtime_caveat_es": "IMERG Final no existe en tiempo real (≈ 3,5 meses de latencia). Los resultados con Final son una cota superior de lo que permitiría IMERG Early (4 h de latencia), que además tiene otro sesgo (#460: Early > Final el 26-03-2017 en todas las cuencas)."
+  },
+  "units": {
+    "RIO": {
+      "unit": "cuenca de aportación HydroSHEDS hasta la estación o la desembocadura (data/v09/research/anticipation/north_catchments_v0_1.json), media areal con fraction_inside de cada celda IMERG de 0,1°",
+      "requires_all_cells_in_box": true,
+      "not_used_es": "La lluvia sobre el punto del río NO se usa para crecidas/desbordes."
+    },
+    "QUEBRADA": {
+      "unit": "celda IMERG de 0,1° que contiene el punto expuesto (ANA 2016-17) o su microcuenca cuando exista geometría fiable",
+      "note_es": "Línea D (#458): huaicos y flujos de detritos son otro fenómeno: escalas pequeñas, intensidades de 1–3 h."
+    }
+  },
+  "climatology": {
+    "method_es": "Para cada unidad y cada acumulado A_k (suma de los k días UTC terminados en d, todos completos), percentil empírico sobre los días dic–abr de las DEMÁS temporadas (se excluye la temporada evaluada: sin fuga de información). En tiempo real se usarían todas las temporadas disponibles.",
+    "seasons": ["2015-16", "2016-17", "2017-18", "2018-19", "2019-20", "2020-21", "2021-22", "2022-23"],
+    "percentile_method": "lineal (numpy default)"
+  },
+  "candidate_rules": [
+    {
+      "id": "RIO_A3_P99",
+      "phenomenon": "CRECIDA_DESBORDE_RIO",
+      "unit": "RIO",
+      "rule_es": "Acumulado de 3 días en la cuenca de aportación ≥ percentil 99 de su propia climatología estacional (otras temporadas).",
+      "inputs": ["A3"],
+      "rationale_es": "Lluvia persistente y extensa sobre toda la cuenca; #459 encontró el máximo de A3 el mismo día del pico en Sánchez Cerro (2017).",
+      "status": "CANDIDATA_NO_VALIDADA"
+    },
+    {
+      "id": "RIO_A1P99_A10P90",
+      "phenomenon": "CRECIDA_DESBORDE_RIO",
+      "unit": "RIO",
+      "rule_es": "Lluvia de 1 día en la cuenca ≥ percentil 99 Y antecedente de 10 días ≥ percentil 90 (lluvia intensa sobre cuenca ya húmeda).",
+      "inputs": ["A1", "A10"],
+      "rationale_es": "Condición antecedente: la misma lluvia produce más escorrentía sobre suelo húmedo.",
+      "status": "CANDIDATA_NO_VALIDADA"
+    },
+    {
+      "id": "QDA_A1_P995",
+      "phenomenon": "ACTIVACION_QUEBRADA",
+      "unit": "QUEBRADA",
+      "rule_es": "Lluvia de 1 día en la celda del punto expuesto ≥ percentil 99,5 de su climatología.",
+      "inputs": ["A1"],
+      "rationale_es": "Precaución por lluvia diaria extraordinaria local; la escala diaria es demasiado gruesa para flujos de detritos (1–3 h).",
+      "status": "CANDIDATA_NO_VALIDADA"
+    },
+    {
+      "id": "QDA_I3H",
+      "phenomenon": "ACTIVACION_QUEBRADA",
+      "unit": "QUEBRADA",
+      "rule_es": "Intensidad de 3 h (IMERG 30 min o GOES-19) extraordinaria respecto de la climatología subdiaria de la celda.",
+      "inputs": ["I3h"],
+      "rationale_es": "La escala física de los flujos de detritos.",
+      "status": "NO_EVALUABLE_SIN_CLIMATOLOGIA_SUBDIARIA"
+    }
+  ],
+  "documented_events": [
+    {"id": "PIURA_SC_2017-03-27", "unit_id": "PUENTE_SANCHEZ_CERRO", "phenomenon": "CRECIDA_DESBORDE_RIO", "date": "2017-03-27", "kind": "DESBORDE_DOCUMENTADO",
+     "evidence_es": "Desborde del río Piura en la ciudad (config/historical_events.json PI-2017-03-27, confianza alta) y máximo caudal medio diario 2 754,5 m³/s en Puente Sánchez Cerro (PECHP, informe 2017-03, dos lectores)."},
+    {"id": "PIURA_SC_2023-03-15", "unit_id": "PUENTE_SANCHEZ_CERRO", "phenomenon": "CRECIDA_DESBORDE_RIO", "date": "2023-03-15", "kind": "PICO_HIDROMETRICO",
+     "evidence_es": "Ciclón Yaku: máximo caudal medio diario 1 561,5 m³/s en Puente Sánchez Cerro (PECHP 2023-03); control de crecida inspeccionado en el Bajo Piura el 13-03 (PI-2023-03-13, confianza media-alta). No consta desborde en la ciudad."},
+    {"id": "CHIRA_ELCIRUELO_2017-03-31", "unit_id": "EL_CIRUELO", "phenomenon": "CRECIDA_DESBORDE_RIO", "date": "2017-03-31", "kind": "PICO_HIDROMETRICO",
+     "evidence_es": "Máximo instantáneo 2 286,2 m³/s en El Ciruelo (PECHP, informe 2017-03, texto del informe)."},
+    {"id": "TUMBES_2019-03-02", "unit_id": "TUMBES_DESEMBOCADURA", "phenomenon": "CRECIDA_DESBORDE_RIO", "date": "2019-03-02", "kind": "UMBRAL_HIDROLOGICO_OFICIAL",
+     "evidence_es": "Umbral hidrológico naranja del río Tumbes en El Tigre según el boletín COE-Vivienda «Aviso Hidrológico Nº 033-2019» del 02-03-2019 (sin cifra de caudal).",
+     "source_url": "https://ww3.vivienda.gob.pe/grd/documentos/Bolet%C3%ADn%20Aviso%20Hidrol%C3%B3gico%20N%C2%BA%20033-2019%20Situaci%C3%B3n%20del%20caudal%20del%20r%C3%ADo%20Tumbes%20-%2002Mar%29.pdf"}
+  ],
+  "quebrada_events_in_box": [],
+  "quebrada_events_note_es": "No hay en IRFEN activaciones de quebrada con fecha y lugar dentro del recuadro IMERG archivado (Tumbes, Piura, norte de Lambayeque). Las de San Ildefonso (La Libertad) y Chosica/Huaycoloro (Lima) quedan fuera del recuadro. ANA 2016-17 documenta quebradas activadas en la temporada 2017, sin fecha por quebrada.",
+  "metrics": {
+    "hit_window_days": [-3, 0],
+    "hit_es": "Un evento se detecta si hay al menos un día de alarma entre E−3 y E. Plazo de anticipación = E − primer día de alarma de esa ventana (0 = el mismo día: no es anticipación).",
+    "episode_es": "Días de alarma consecutivos (huecos de 1 día se unen) forman un episodio.",
+    "false_alarm_es": "Episodio sin evento documentado de la misma unidad entre su inicio y su fin + 3 días. Es una COTA SUPERIOR: el catálogo de eventos está incompleto (ausencia de documento ≠ ausencia de impacto).",
+    "flow_corroboration_es": "Donde haya caudal diario PECHP en el mes (Sánchez Cerro, El Ciruelo), se informa el caudal máximo entre el inicio del episodio y su fin + 3 días frente a la mediana del mes. Descriptivo.",
+    "baseline_es": "Línea base de azar: 999 desplazamientos circulares de la serie de alarmas dentro de cada temporada (conserva el número y la agrupación de alarmas); p = (k+1)/(N+1) de obtener al menos los mismos aciertos.",
+    "uncertainty_es": "Con n eventos tan pequeño se informa la proporción con su intervalo de Wilson al 90 %."
+  },
+  "acceptance_criteria_for_validated_orange": {
+    "min_independent_events_per_phenomenon_and_region": 10,
+    "min_control_seasons": 3,
+    "pod_min": 0.7,
+    "pod_wilson90_lower_min": 0.5,
+    "false_alarm_ratio_max": 0.5,
+    "median_lead_days_min_with_realtime_product": 1,
+    "realtime_product_required": "IMERG Early (o el producto que se use en tiempo real), no Final",
+    "beats_chance_baseline_p_max": 0.05,
+    "reproducible_check": "scripts/v091_anticipation.py --check desde un checkout limpio",
+    "independent_review_required": true,
+    "owner_authorization_required": true,
+    "all_required": true,
+    "until_met_es": "La regla sigue CANDIDATA_NO_VALIDADA: NARANJA solo en la capa de simulación de investigación, nunca en el mapa operativo ni en correos."
+  },
+  "prohibited_es": [
+    "Elegir o ajustar percentiles, ventanas o acumulados a la vista de los resultados (cualquier cambio = versión nueva del protocolo, con motivo).",
+    "Presentar como predicción validada una regla que no ha superado todos los criterios.",
+    "Usar IMERG Final como predictor en tiempo real.",
+    "Tratar la lluvia ausente como 0.",
+    "Usar la lluvia sobre el punto del río para inferir desbordes."
+  ]
+}

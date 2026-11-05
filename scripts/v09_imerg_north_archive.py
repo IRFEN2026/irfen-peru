@@ -171,6 +171,23 @@ def select_downloads(indexed: list[tuple], have: set[str], budget: int = MAX_DOW
     return sorted((r for r in indexed if r[1] not in have), key=lambda r: r[0], reverse=True)[:budget]
 
 
+def download_granules(earthaccess, selected: list[tuple], local_path: str) -> tuple[list[str], list[dict]]:
+    """Download the selected granules. A failed download (e.g. HTTP 400 from GES DISC on 02-11-2026 10:04 UTC) is a
+    source failure of that granule, never an aborted run: the remaining granules and the GOES-19 step still run."""
+    if not selected:
+        return [], []
+    try:
+        return list(earthaccess.download([r[2] for r in selected], local_path=local_path, threads=4, show_progress=False)), []
+    except Exception:  # noqa: BLE001 - one bad granule must not lose the others: retry one by one, record each failure
+        paths, failures = [], []
+        for ts, name, granule in selected:
+            try:
+                paths += list(earthaccess.download([granule], local_path=local_path, threads=1, show_progress=False))
+            except Exception as exc:  # noqa: BLE001
+                failures.append(dict(granule=name, time_utc=ts.isoformat(), error=f"{type(exc).__name__}: {str(exc)[:200]}"))
+        return paths, failures
+
+
 def main() -> int:
     if not os.getenv("EARTHDATA_TOKEN"):
         print("::warning::EARTHDATA_TOKEN missing: nothing captured (not a zero-rain result)")
@@ -200,7 +217,15 @@ def main() -> int:
     selected = select_downloads(indexed, have)  # newest first, bounded; older backlog follows in the next runs
     new_rows = []
     with tempfile.TemporaryDirectory(prefix="irfen_v09_imerg_") as td:
-        paths = earthaccess.download([r[2] for r in selected], local_path=td, threads=4, show_progress=False) if selected else []
+        paths, failures = download_granules(earthaccess, selected, td)
+        if selected and failures and not paths:  # nothing could be downloaded: a source failure, never zero rain
+            state = dict(state="DOWNLOAD_FAILED", error=failures[0]["error"], download_failures=failures[:10])
+            if archive.get("status", {}).get("state") != state["state"]:
+                archive["status"] = dict(state, since_utc=now.isoformat())
+                OUT.parent.mkdir(parents=True, exist_ok=True)
+                OUT.write_text(json.dumps(archive, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+            print(f"::warning::IMERG Early download failed for all {len(selected)} granules: {state['error']}")
+            return 0
         by_name = {Path(p).name: p for p in paths}
         for ts, name, _ in selected:
             path = by_name.get(name)
@@ -230,7 +255,10 @@ def main() -> int:
     archive["policy"] = empty_archive()["policy"]  # the policy actually applied in this run
     archive["status"] = dict(state=run_state(latest, freshness), latest_granule_start_utc=latest,
                              catalog_granules_in_window=len(indexed), missing_in_window_after_run=max(0, len(missing) - len(new_rows)),
-                             contact_attempts=attempts, catalog_freshness=freshness, missing_half_hours_24h=gaps)
+                             contact_attempts=attempts, catalog_freshness=freshness, missing_half_hours_24h=gaps,
+                             download_failures=failures[:10])
+    if failures:
+        print(f"::warning::IMERG Early: {len(failures)} granule download(s) failed (retried next run): {failures[0]['error']}")
     if freshness["state"] != "WITHIN_NORMAL_LATENCY":
         print(f"::warning title=V09_IMERG_NORTH_SOURCE_DELAY::NASA catalog has no IMERG Early granule after "
               f"{freshness['newest_catalog_granule_start_utc']} (lag {freshness['lag_hours']} h > {CATALOG_DELAY_H} h). "

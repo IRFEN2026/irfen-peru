@@ -1,0 +1,179 @@
+name: IRFEN v0.9.1 - actualización automática del visor privado (RESEARCH_ONLY, sin publicar)
+
+# Reconstruye el paquete del visor después de cada captura válida de los workflows EXISTENTES de main
+# (v09-rain-north: IMERG Early norte + GOES-19 RRQPE por zona; v09-senamhi-avisos-capture: avisos INDECI/COEN).
+# No captura nada, no escribe en main, no publica una web, no envía notificaciones ni alertas.
+# Reloj: cada ejecución termina programando la siguiente (workflow_dispatch con GITHUB_TOKEN en esta rama), con
+# parada por config/v091_live_refresh.json (enabled=false o expires_at_utc). Sin secretos adicionales.
+# Una sola cadena: el grupo de concurrencia admite una ejecución en curso y una pendiente; GitHub cancela la pendiente
+# anterior si llega otra (p. ej. un push mientras la cadena duerme), así que dos cadenas se reducen a una.
+# Coste: la espera de 20 min ocupa un runner (repositorio público: 0 minutos facturables, comprobado con /timing).
+
+on:
+  push:
+    branches:
+      - research/v091-live-integration-20261102
+    paths:
+      - .github/workflows/v091-live-refresh.yml
+      - config/v091_live_refresh.json
+      - scripts/v09_build_semaforo.py
+      - tests/test_v091_river_catchment_colors.py
+  workflow_dispatch:
+    inputs:
+      hop:
+        description: "número de salto de la cadena"
+        default: "0"
+
+permissions:
+  contents: write   # solo para escribir la rama de datos research/v091-live-data
+  actions: write    # solo para programar la siguiente ejecución de este mismo workflow
+
+concurrency:
+  group: v091-live-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    outputs:
+      run: ${{ steps.ctl.outputs.run }}
+      poll: ${{ steps.ctl.outputs.poll }}
+      next: ${{ steps.ctl.outputs.next }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Control (activado, caducidad, salto)
+        id: ctl
+        env:
+          HOP: ${{ inputs.hop || '0' }}
+        run: |
+          set -euo pipefail
+          python3 scripts/v091_live_refresh.py --control --hop "$HOP" | tee -a "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-python@v6
+        if: steps.ctl.outputs.run == 'true'
+        with:
+          python-version: "3.12"
+
+      - name: Dependencias mínimas
+        if: steps.ctl.outputs.run == 'true'
+        run: pip install -q "numpy>=1.26,<2" "playwright==1.48.0"
+
+      - name: Probar señales satelitales sin contaminación por avisos
+        if: steps.ctl.outputs.run == 'true'
+        run: python -m unittest -v tests.test_v091_river_catchment_colors
+
+      - name: Leer main (solo lectura) y la rama de datos
+        if: steps.ctl.outputs.run == 'true'
+        env:
+          DB: ${{ steps.ctl.outputs.data_branch }}
+        run: |
+          set -euo pipefail
+          git fetch -q --no-tags --depth=1 origin main:refs/remotes/origin/main
+          if git ls-remote --exit-code origin "refs/heads/$DB" >/dev/null; then
+            git fetch -q --no-tags --depth=1 origin "$DB:refs/remotes/origin/live-data"
+            git worktree add -q ../live-data "refs/remotes/origin/live-data"
+            git -C ../live-data checkout -q -b live-local
+            prev=$(python3 -c "import json;print(json.load(open('../live-data/current/manifest.json')).get('main_sha') or '')" 2>/dev/null || true)
+            if [ -n "$prev" ]; then git fetch -q --no-tags --depth=1 origin "$prev" || echo "::warning::previous main commit not fetchable"; fi
+          else
+            git worktree add -q --detach ../live-data
+            git -C ../live-data checkout -q --orphan live-local
+            git -C ../live-data rm -rfq .
+          fi
+
+      - name: Último intento de captura de cada fuente en main (solo lectura)
+        if: steps.ctl.outputs.run == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/v091_live_refresh.py --fetch-attempts "$RUNNER_TEMP/attempts.json" --repo "$GITHUB_REPOSITORY" \
+            || echo "::warning::capture attempts not available; shown as unknown"
+
+      - name: Reconstruir si hay una captura nueva y válida (o un intento de captura nuevo)
+        id: build
+        if: steps.ctl.outputs.run == 'true'
+        run: |
+          set +e
+          python scripts/v091_live_refresh.py --main-ref origin/main --data-dir ../live-data --attempts "$RUNNER_TEMP/attempts.json" | tee "$RUNNER_TEMP/refresh.json"
+          rc=${PIPESTATUS[0]}
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          echo "### Ciclo: código $rc" >> "$GITHUB_STEP_SUMMARY"
+          head -c 3000 "$RUNNER_TEMP/refresh.json" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$rc" != "0" ] && [ "$rc" != "10" ]; then
+            python scripts/v091_live_refresh.py --record-failure "build exit $rc" --data-dir ../live-data --log "$RUNNER_TEMP/refresh.json"
+          fi
+          exit 0
+
+      - name: Comprobar la página con el paquete nuevo (navegador sin interfaz)
+        id: page
+        if: steps.ctl.outputs.run == 'true' && steps.build.outputs.rc == '0'
+        continue-on-error: true
+        run: |
+          python -m playwright install --with-deps chromium >/dev/null
+          python qa/replay_tools/v091_live_page_check.py --data-dir ../live-data --out "$RUNNER_TEMP/page_check"
+          cp "$RUNNER_TEMP/page_check/live_page_check.json" ../live-data/current/page_check.json
+
+      - name: Retirar el paquete si la página no pasa la comprobación
+        if: steps.page.outcome == 'failure'
+        run: |
+          cd ../live-data
+          if git rev-parse -q --verify HEAD >/dev/null; then git checkout -q HEAD -- current cycles 2>/dev/null || true; git clean -fdq current cycles; else rm -rf current cycles; fi
+          cd "$GITHUB_WORKSPACE"
+          python scripts/v091_live_refresh.py --record-failure "page check failed" --data-dir ../live-data --log "$RUNNER_TEMP/page_check/live_page_check.json"
+          echo "::error::page check failed: package not published, previous package kept"
+
+      - name: Publicar en la rama de datos (sin forzar)
+        if: always() && steps.ctl.outputs.run == 'true' && steps.build.outputs.rc != '10'
+        env:
+          DB: ${{ steps.ctl.outputs.data_branch }}
+        run: |
+          set -euo pipefail
+          cd ../live-data
+          if [ ! -f README.md ]; then
+            printf '%s\n' "# IRFEN v0.9.1 · datos del visor privado (RESEARCH_ONLY / TEST_ONLY)" "" \
+              "Rama de datos escrita solo por .github/workflows/v091-live-refresh.yml (rama research/v091-live-integration-20261102)." \
+              "Contiene el último paquete validado (current/) y el manifiesto de cada ciclo (cycles/). Sin página web: no es una publicación." \
+              "No es un sistema de alerta. La versión anterior de cada archivo es recuperable en el historial de esta rama." > README.md
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && { echo "nothing to publish"; exit 0; }
+          cyc=$(python3 -c "import json;print(json.load(open('current/manifest.json'))['cycle_id'])" 2>/dev/null || echo failure)
+          git commit -q -m "v0.9.1 live cycle $cyc (RESEARCH_ONLY)"
+          for i in 1 2 3; do
+            git push -q origin "HEAD:refs/heads/$DB" && exit 0
+            git fetch -q origin "$DB" && git rebase -q FETCH_HEAD || true
+            sleep 5
+          done
+          exit 1
+
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.ctl.outputs.run == 'true'
+        with:
+          name: v091-live-refresh-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/refresh.json
+            ${{ runner.temp }}/attempts.json
+            ${{ runner.temp }}/page_check
+          retention-days: 7
+          if-no-files-found: ignore
+
+  next:
+    needs: refresh
+    if: always() && needs.refresh.outputs.run == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Esperar el intervalo y programar el siguiente ciclo
+        env:
+          GH_TOKEN: ${{ github.token }}
+          POLL: ${{ needs.refresh.outputs.poll }}
+          NEXT: ${{ needs.refresh.outputs.next }}
+        run: |
+          sleep $(( POLL * 60 ))
+          gh workflow run v091-live-refresh.yml --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME" -f hop="$NEXT"

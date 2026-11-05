@@ -82,20 +82,31 @@ def semaforo_checks(page, out, name) -> dict:
     page.select_option("#smState", "ATENCION")
     r["rows_attention"] = page.locator("#tab-semaforo tbody tr").count()
     page.select_option("#smState", "ALL")
-    page.select_option("#smDep", "PIURA")
-    r["pending_dep_msg"] = "pendiente" in page.locator("#tab-semaforo .empty").inner_text()
+    # national scale: one aggregate per department while no department is selected and the zoom is national
+    page.evaluate("irfenMap.setZoom(5,{animate:false}),0")
+    page.wait_for_timeout(200)
+    r["national_aggregates"] = page.locator(".leaflet-sema-pane .sm-agg").count()
+    r["national_points"] = page.locator(".leaflet-sema-pane .sm-pt").count()
+    page.select_option("#smDep", "LIMA")  # the whole coast is in the pilot since 03-11 (no pending department)
+    page.wait_for_timeout(200)
+    r["dep_points"] = page.locator(".leaflet-sema-pane .sm-sq").count() + page.locator(".leaflet-sema-pane path.sm-pt").count()
+    r["dep_aggregates"] = page.locator(".leaflet-sema-pane .sm-agg").count()
+    r["pending_dep_msg"] = page.locator("#tab-semaforo tbody tr").count() > 0
     page.select_option("#smDep", "LAMBAYEQUE")
     page.locator("#tab-semaforo button[data-smmode=CORTE]").click()
     r["states_cutoff"] = sorted(set(page.eval_on_selector_all("#tab-semaforo tbody tr", "rs=>rs.map(x=>x.dataset.state)")))
+    page.select_option("#smType", "rio")  # a river point: it has a delineated contributing area
     page.locator("#tab-semaforo a[data-sm]").first.click()
     page.wait_for_selector(".leaflet-popup-content", timeout=5000)
     page.wait_for_timeout(400)  # popup fade-in
     pop = page.locator(".leaflet-popup-content").inner_text()
     r["popup_fields"] = all(k in pop for k in ("confianza", "Evaluado", "IMERG 24 h", "GOES-19", "no es una alerta oficial",
-                                                "Contexto territorial", "posible crecida"))
+                                                "Contexto territorial", "posible crecida", "Cinco preguntas"))
+    r["catchment_outline"] = page.locator(".leaflet-sema-pane path[stroke='#1f4e79']").count()
     page.screenshot(path=str(out / f"{name}_semaforo_popup.png"), full_page=False)
     page.locator(".leaflet-popup-close-button").click()
     page.locator("#tab-semaforo button[data-smmode=AHORA]").click()
+    page.select_option("#smType", "ALL")
     page.select_option("#smDep", "ALL")
     cases = semaforo_cases()
     got = page.evaluate("cs=>cs.map(c=>{const r=window.IRFEN_SEMAFORO_EVAL(c.cp,c.S,c.t);return [r.state,r.rule,r.confidence,r.context];})",

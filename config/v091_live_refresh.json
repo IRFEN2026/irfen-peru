@@ -1,0 +1,152 @@
+{
+  "schema_version": "irfen_v091_live_refresh_v0_1",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "public_alerting": false,
+  "notifications_enabled": false,
+  "predictive": false,
+  "merged_into_main": false,
+  "enabled": true,
+  "expires_at_utc": "2026-11-09T00:00:00Z",
+  "poll_minutes": 20,
+  "max_hops_per_chain": 600,
+  "data_branch": "research/v091-live-data",
+  "purpose_es": "Reconstruir el paquete privado después de nuevas capturas de main (IMERG Early norte y cuencas experimentales de checkpoints, GOES-19, avisos INDECI/COEN) o cambios del código de representación. No captura, no publica y no habilita alertas.",
+  "stop_es": "Para detener el ciclo: poner enabled=false (o adelantar expires_at_utc) en esta rama. El ciclo también se detiene solo en la fecha de caducidad. No hace falta ningún secreto.",
+  "inputs_from_main": [
+    {
+      "path": "site/data/v09/dashboard_v0_1.json",
+      "role": "avisos INDECI/COEN, zonas, GOES-19 por zona, salud de avisos",
+      "producer": ".github/workflows/v09-rain-north.yml y v09-senamhi-avisos-capture.yml",
+      "time_fields": [
+        [
+          "built_at_utc"
+        ],
+        [
+          "source",
+          "health",
+          "last_successful_check_utc"
+        ]
+      ]
+    },
+    {
+      "path": "data/v09/rain/imerg_early_north_v0_1.json",
+      "role": "IMERG Early 30 min, 22 zonas del norte",
+      "producer": ".github/workflows/v09-rain-north.yml",
+      "time_fields": [
+        [
+          "status",
+          "written_at_utc"
+        ]
+      ]
+    },
+    {
+      "path": "data/v09/rain/imerg_early_catchments_v0_1.json",
+      "role": "IMERG Early experimental por 134 cuencas de checkpoints; solo visualización informativa, no colores",
+      "producer": ".github/workflows/v09-rain-north.yml",
+      "kind": "catchment_rain",
+      "time_fields": [
+        [
+          "status",
+          "written_at_utc"
+        ],
+        [
+          "status",
+          "latest_granule_start_utc"
+        ]
+      ]
+    },
+    {
+      "path": "data/v09/rain/goes19_rrqpe_north_v0_1.json",
+      "role": "GOES-19 RRQPE por zona",
+      "producer": ".github/workflows/v09-rain-north.yml",
+      "time_fields": [
+        [
+          "status",
+          "latest_scan_end"
+        ]
+      ]
+    },
+    {
+      "path": "data/v09/senamhi_avisos/health_v0_1.json",
+      "role": "salud de la captura de avisos",
+      "producer": ".github/workflows/v09-senamhi-avisos-capture.yml",
+      "time_fields": [
+        [
+          "source_health",
+          "last_successful_check_utc"
+        ]
+      ]
+    }
+  ],
+  "capture_attempts_note_es": "Último intento de captura de cada fuente: el workflow consulta en modo lectura la última ejecución terminada en main de su productor (API de Actions con el GITHUB_TOKEN del job) y el estado que la propia captura guardó. Un intento fallido se muestra aunque siga vigente una observación anterior.",
+  "capture_attempts": [
+    {
+      "source_id": "imerg_early_north",
+      "workflow": "v09-rain-north.yml",
+      "step_match": "Archive every missing half-hour",
+      "file": "data/v09/rain/imerg_early_north_v0_1.json",
+      "ok_field": [
+        "status",
+        "state"
+      ],
+      "ok_values": [
+        "AVAILABLE"
+      ],
+      "error_field": [
+        "status",
+        "error"
+      ],
+      "since_field": [
+        "status",
+        "since_utc"
+      ]
+    },
+    {
+      "source_id": "goes19_rrqpe_north",
+      "workflow": "v09-rain-north.yml",
+      "step_match": "GOES-19 RRQPE",
+      "file": "data/v09/rain/goes19_rrqpe_north_v0_1.json",
+      "ok_field": [
+        "status",
+        "state"
+      ],
+      "ok_values": [
+        "AVAILABLE"
+      ],
+      "error_field": [
+        "status",
+        "error"
+      ]
+    },
+    {
+      "source_id": "avisos_indeci_coen",
+      "workflow": "v09-senamhi-avisos-capture.yml",
+      "step_match": null,
+      "file": "data/v09/senamhi_avisos/health_v0_1.json",
+      "ok_field": [
+        "last_check",
+        "ok"
+      ],
+      "ok_values": [
+        true
+      ],
+      "error_field": [
+        "source_health",
+        "last_error"
+      ],
+      "since_field": [
+        "source_health",
+        "last_check_utc"
+      ]
+    }
+  ],
+  "not_connected_es": [
+    "Los 398 puntos de población ANA no tienen cuencas de sus quebradas documentadas: una celda local no representa su área aportante.",
+    "La lluvia experimental por cuenca de los 134 puntos fluviales depende del archivo recurrente IMERG Early, que puede tener datos incompletos o antiguos y no es un aforo.",
+    "Imágenes de nubosidad GOES-19: no hay producto de nubes archivado en la vista privada.",
+    "Caudal y nivel de ríos en tiempo real: sin integración de series públicas verificadas; sin predicción de desbordes."
+  ],
+  "qa_browser_note_es": "Versión de visor con 536/536 checkpoints y ficha de lluvia del Piura verificada en Chromium (Actions 41663687545), sin contradicción de inventario y sin activar semáforo predictivo. Solicitud de reconstrucción de paquete privado; no publicar al público.",
+  "qa_cartographic_legend_es": "Código experimental del visor: círculo IGN río, cuadrado población ANA quebradas, rombo población ANA mixta; barra de leyenda compacta de 250 px y panel de capas cerrado por defecto. Prueba aislada en Chromium #41677485386: 536/536, 0 discrepancias, filtro mixto 111, panel explicativo funcional. No altera semáforo ni habilita alertas."
+}

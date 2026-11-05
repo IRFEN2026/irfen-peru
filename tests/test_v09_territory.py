@@ -201,7 +201,7 @@ class Isolation(unittest.TestCase):
         self.assertNotIn("territory_v0_1.json", (ROOT / "site/v09/index.html").read_text(encoding="utf-8"))
         for path in (ROOT / "scripts").glob("*.py"):  # and nothing else reads the surveillance view bundle
             if path.name not in ("v09_build_surveillance_view.py", "v09_build_surveillance_demo.py", "v09_pages_publication_gate.py",
-                                 "v09_ign_hydro_coverage_report.py"):
+                                 "v09_ign_hydro_coverage_report.py", "v091_live_refresh.py", "v091_private_viewer.py", "v091_red_alerts.py", "v091_anticipation.py"):
                 self.assertNotIn("surveillance_view_v0_1.json", path.read_text(encoding="utf-8"), path.name)
 
     def test_workflows_rebuild_it_without_blocking_capture(self):
@@ -829,6 +829,10 @@ class Browser(unittest.TestCase):
                 pass
 
         built = datetime.fromisoformat(BUNDLE["built_at_utc"].replace("Z", "+00:00"))
+        # 30 h after the newest of the two packages the pages read (validated with a newer main, the panel bundle is newer)
+        dash_built = json.loads((ROOT / "site/data/v09/dashboard_v0_1.json").read_text(encoding="utf-8")).get("built_at_utc")
+        if dash_built:
+            built = max(built, datetime.fromisoformat(dash_built.replace("Z", "+00:00")))
         stale_clock = built + timedelta(hours=30)
         rows = INV_VIEW["rows"]
         viewer_ids = {r["id"] for r in BUNDLE["inventory_rows"]}
