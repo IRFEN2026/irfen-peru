@@ -14,9 +14,9 @@
 
 ## Hallazgos comprobados previamente en main
 
-- 134 cuencas y 181 intervalos archivados. Último inicio disponible 2026-11-05 01:30 UTC; escrito a las 06:59 UTC.
-- Hueco entre 00:30 y 01:30 UTC del 5 de noviembre: falta la media hora de 01:00. Por tanto, las ventanas terminadas en el último gránulo que cruzan ese hueco son incompletas, aun si la cobertura espacial es 100%.
-- Auditoría independiente #486: 32 discrepancias de área >1%, entre ellas Supe Alto (-34,8%), La Leche Alto (-19%) y Caplina Alto (-12,3%). Cuatro puntos fluviales sin cuenca asociada evaluable. Concordar con HydroRIVERS no equivale a validación independiente.
+- 134 cuencas; 181 intervalos en la primera lectura, después 182 intervalos en el corte de main actualizado a 15:36:31 UTC. La medición más reciente de ese corte es 10:30 UTC. Son observaciones satelitales, no pronósticos.
+- Una lectura anterior mostraba un hueco a las 01:00 UTC del 5 de noviembre. **Estado posteriormente comprobado:** la captura de main escrita 2026-11-05 15:36:31 UTC incluye ese gránulo; 182 intervalos consecutivos, entre 2026-11-01 16:00 y 2026-11-05 10:30 UTC, 0 huecos, y 134/134 áreas con ventanas observacionales completas de 1/3/6/12/24/72 horas. Esta corrección procede de la captura existente, no del auditor nuevo; la continuidad debe comprobarse en cada ciclo.
+- Auditoría independiente #486: 32 discrepancias de área >1% en el informe independiente original, entre ellas Supe Alto (-34,8%), La Leche Alto (-19%) y Caplina Alto (-12,3%). La nueva ejecución de cierre señaló 34 en el inventario de la rama; los dos conteos requieren reconciliación por identidad de versión y criterio antes de aprobar geometrías. Cuatro puntos fluviales sin cuenca asociada evaluable. Concordar con HydroRIVERS no equivale a validación independiente.
 - PR #487 contiene asociaciones históricas diarias descriptivas en Chira/Piura, no demostración de anticipación en tiempo real ni desbordes.
 - No hay series subdiarias independientes y fechas de publicación verificadas para demostrar habilidad de predicción a 1/3/6/12/24 horas. Tampoco evaluación de activaciones reales de quebradas ni falsas alarmas.
 
@@ -33,10 +33,15 @@ El JSON contiene las ventanas completas/incompletas, edad de observaciones, dife
 
 | Frente | Hecho | Falta para darlo por concluido |
 | --- | --- | --- |
-| Continuidad de lluvia | Identificación programática de huecos y bloqueo de ventanas | Recuperar el verdadero gránulo NASA 01:00 UTC, si existe legalmente, o conservar SIN DATO. No inventar series. |
+| Continuidad de lluvia | Identificación programática de huecos y bloqueo de ventanas | Gránulo 01:00 UTC ya presente en main actualizado; volver a comprobar continuidad y frescura en cada captura. Si reaparecen huecos, conservar SIN DATO sin imputar. |
 | Archivo de observaciones | Conector offline de valores NASA derivados, trazables y no retrodatados | Reconstrucción de temporadas completas, versión de fuente y mediciones independientes verificadas; automatización supervisada. |
 | Predicción | Evaluador causal y comparador de línea base preparado | Validar por eventos con niveles/caudales/activaciones independientes; errores, falsas alarmas y anticipación efectiva a cada horizonte. |
 | Geografía | Clasificación de las 32 discrepancias y cuatro excluidos | Comprobación documental/espacial de sección y red fluvial, comenzando por tres >10%. |
 | Visor | Hereda integración privada #472 y suma auditoría de entrega | Smoke test de todo el artefacto consolidado, acceso privado seguro y aprobación técnica. No publicación pública. |
 
 **Dictamen:** la ingeniería puede entregarse como prototipo experimental con incertidumbre visible, pero NO se aprueba cierre predictivo hasta demostrar habilidad frente a observaciones y líneas base independientes. Mantener activation_gate=BLOCKED.
+
+## Primera ejecución de cierre verificable
+
+- GitHub Actions run 42056973070: **SUCCESS**, 22 pruebas sintéticas, 134 registros derivados creados en directorio temporal del runner, 0 huecos de lluvia en la lectura de main del momento, 34 áreas marcadas para revisión por el nuevo auditor. Las observaciones son derivadas de IMERG y no mediciones nuevas independientes ni un registro persistente en producción.
+- Documento de CI y código: PR #493. La auditoría de navegador del visor se ejecuta adicionalmente en otro ciclo y debe confirmarse por separado.
