@@ -260,6 +260,54 @@ def rain_refs(dash, nz, cr):
     return refs, zones
 
 
+def catchment_rain_refs():
+    """Connect only physically associated river checkpoints to continuous IMERG Early.
+
+    This supplies *observed rain* for a yellow display indicator, NOT a
+    river-flow forecast or a verified hazard threshold. An incomplete 24h
+    window stays None; a stale source becomes grey in evaluate() at view time.
+    Never extend these refs to ANA population points without catchment geometry.
+    """
+    path = ROOT / "data/v09/rain/imerg_early_catchments_v0_1.json"
+    if not path.is_file():
+        return {}
+    archive = json.loads(path.read_text(encoding="utf-8"))
+    guards = dict(deployment_status="RESEARCH_ONLY", test_mode="TEST_ONLY",
+                  production_use=False, public_alerting=False,
+                  notifications_enabled=False, activation_gate="BLOCKED",
+                  map_publishable=False)
+    if any(archive.get(k) != v for k, v in guards.items()):
+        return {}
+    from importlib.util import spec_from_file_location, module_from_spec
+    spec = spec_from_file_location("catchment_observation", ROOT / "scripts/v091_catchment_live_view.py")
+    module = module_from_spec(spec)
+    spec.loader.exec_module(module)
+    refs = {}
+    for target in archive.get("targets") or []:
+        cid = target.get("checkpoint_id")
+        if not isinstance(cid, str) or "-R-" not in cid:
+            continue
+        try:
+            # Summarize against the actual newest observed interval; source
+            # freshness is checked separately when evaluating the point.
+            latest = archive["granules"][-1]["time_utc"]
+            source_end = (iso(latest) + timedelta(minutes=30)).isoformat()
+            obs = module.summarize(archive, cid, source_end)
+        except (KeyError, TypeError, ValueError, IndexError):
+            continue
+        windows = {k: w["mm"] if w["status"] == "COMPLETA" else None
+                   for k, w in obs["windows"].items()}
+        refs["catchment:" + cid] = dict(
+            kind="catchment", connection="CONTINUA",
+            label="Lluvia en cuenca aportante experimental HydroSHEDS · " + cid,
+            goes=None,
+            imerg=dict(end_utc=obs["observation_end_utc"], windows=windows,
+                       source="NASA GPM IMERG Early V07 · área aportante experimental; NO aforo",
+                       quality="Controles estrictos de media hora y cobertura espacial >=80%;"
+                               " huecos = no disponible; se invalida por antigüedad a las 12h"))
+    return refs
+
+
 def coast_cell_ref(cr, lon, lat):
     if cr.get("status") != "OK":
         return None, None
@@ -400,6 +448,7 @@ def build():
         provs = avisos_idx[a["aviso_key"]]["provinces"]
         avisos_idx[a["aviso_key"]]["scope_by_department"] = {d: ("PROVINCIA" if provs.get(d) else "DEPARTAMENTO") for d in avisos_idx[a["aviso_key"]]["departments"]}
     refs, _ = rain_refs(dash, nz, cr)
+    refs.update(catchment_rain_refs())
     zone_geoms = {f["properties"]["zone_id"]: f["geometry"] for f in (nz.get("zones") or {}).get("features", []) if f.get("geometry")}
     zone_dep = {f["properties"]["zone_id"]: f["properties"].get("department") for f in (nz.get("zones") or {}).get("features", [])}
     # only hydrological units colour a point: province-context zones are administrative means (they would hide a local storm)
@@ -453,6 +502,19 @@ def build():
                     refs.setdefault(key, ref)
                 cp["rain_ref"] = key
                 cp["rain_basis"] = "Celda IMERG de 0,1° que contiene el punto (lluvia local, no de la cuenca aguas arriba)." if key else None
+            # Reemplazar proxy de zona/celda con observación sobre la cuenca
+            # aportante del propio río, solo cuando existe geometría archivada.
+            cref = "catchment:" + cp["id"]
+            if cp["type"] == "rio" and cref in refs:
+                cp["rain_ref"] = cref
+                cp["rain_basis"] = ("Lluvia observada por satélite sobre el área aportante "
+                                    "HydroSHEDS experimental de este tramo (no mide el caudal).")
+            elif cp["type"] == "rio" and cp["id"] not in {
+                    key.split(":", 1)[1] for key in refs if key.startswith("catchment:")}:
+                # No inventar una asociación fluvial con la celda local:
+                # los puntos sin cuenca delimitada continúan NO_EVALUABLE.
+                cp["rain_ref"] = None
+                cp["rain_basis"] = "No existe cuenca aportante verificable para lluvia fluvial."
             cp["avisos"] = related_avisos(avisos_idx, dep, cp["province"])
             src = ["IGN · Hidrografía 1:500.000 (posición del cauce)"] if cp["type"] == "rio" else \
                   ["ANA 2016-17 · centros poblados vulnerables por activación de quebradas (posición de la población expuesta y nombres)"]
