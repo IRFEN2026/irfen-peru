@@ -7,6 +7,8 @@ on:
     paths:
       - 'scripts/v09_precip_bias_shadow.py'
       - 'tests/test_v09_precip_bias_shadow.py'
+      - 'scripts/v09_imerg_seven_day_inventory.py'
+      - 'tests/test_v09_imerg_seven_day_inventory.py'
       - '.github/workflows/v09-precip-bias-shadow.yml'
 jobs:
   synthetic:
@@ -19,4 +21,6 @@ jobs:
         with:
           python-version: '3.11'
       - name: Run isolated fail-closed synthetic tests
-        run: python -m unittest discover -s tests -p 'test_v09_precip_bias_shadow.py' -v
+        run: |
+          python -m unittest discover -s tests -p 'test_v09_precip_bias_shadow.py' -v
+          python -m unittest discover -s tests -p 'test_v09_imerg_seven_day_inventory.py' -v
