@@ -5,16 +5,15 @@ Refuses any comparison if timestamps, units, coordinates or station provenance
 cannot be verified. A 3x3 neighborhood is diagnostic, not a gauge substitute.
 """
 from __future__ import annotations
-import argparse, datetime as dt, hashlib, json, re
+import argparse, datetime as dt, hashlib, json, re, math
 from pathlib import Path
 import numpy as np
 
 UTC=dt.timezone.utc
 START=dt.datetime(2026,11,4,12,tzinfo=UTC)
 END=dt.datetime(2026,11,5,12,tzinfo=UTC)
-STATIONS={"Rica Playa":112.5,"Aeropuerto Tumbes":112.2,"Cabo Inga":90.1,
-          "Cañaveral":88.9,"Huásimo":82.0,"La Cruz":75.0,
-          "Puente Tumbes":49.0,"Matapalo":10.4}
+STATIONS=("Rica Playa", "Aeropuerto Tumbes", "Cabo Inga", "Cañaveral",
+          "Huásimo", "La Cruz", "Puente Tumbes", "Matapalo")
 COAST={"TUM","PIU","LAM","LIB","ANC","LIM","CAL","ICA","ARE","MOQ","TAC"}
 PAT=re.compile(r"3B-HHR-E\.MS\.MRG\.3IMERG\.(\d{8})-S(\d{6})-E(\d{6})\..*\.V07[A-Z]?\.HDF5$",re.I)
 def slots():
@@ -50,34 +49,52 @@ def extract(rate,lon,lat,lon0,lat0):
     vals=np.array([get(a,b) for a in range(i-1,i+2) for b in range(j-1,j+2)])
     if not np.isfinite(vals).all() or (vals<0).any():
         raise ValueError("missing/negative IMERG cell: unknown, not zero")
-    return {"pixel_rate_mm_hr":float(get(i,j)),
+    return {"neighborhood_cell_rates_mm_hr":vals.tolist(),
+            "pixel_rate_mm_hr":float(get(i,j)),
             "neighborhood_mean_rate_mm_hr":float(vals.mean()),
             "neighborhood_max_rate_mm_hr":float(vals.max()),
             "neighborhood_p90_rate_mm_hr":float(np.percentile(vals,90)),
             "pixel_lon":float(lon[i]),"pixel_lat":float(lat[j])}
 def read_granule(path,lon0,lat0):
-    import h5py
-    with h5py.File(path,"r") as f:
-        g=f["Grid"]
-        ds=g["precipitation"]
-        units=ds.attrs.get("units",b"")
-        if isinstance(units,bytes):units=units.decode()
-        if str(units).strip().lower() not in {"mm/hr","mm h-1","mm/hour"}:
-            raise ValueError("IMERG variable unit not verified as mm/hr: "+str(units))
-        rate=np.asarray(ds[...])
-        if rate.ndim==3 and rate.shape[0]==1:rate=rate[0]
-        if rate.ndim!=2:raise ValueError("unexpected IMERG precipitation dimensions")
-        result=extract(rate,np.asarray(g["lon"]),np.asarray(g["lat"]),lon0,lat0)
-        result["granule_sha256"]=hashlib.sha256(Path(path).read_bytes()).hexdigest()
-        result["variable"]="Grid/precipitation"
-        return result
+    try:
+        from .imerg_original_audit import read_original
+    except ImportError:
+        from imerg_original_audit import read_original
+    lat,lon,rate,metadata=read_original(path)
+    result=extract(rate,lon,lat,lon0,lat0)
+    result["granule_sha256"]=metadata["sha256"]
+    result["variable"]=metadata["variable"]
+    return result
+
+def accumulated_neighborhood(obs):
+    # Keep the nine fixed pixels through time before taking spatial statistics.
+    cells=np.asarray([o["neighborhood_cell_rates_mm_hr"] for o in obs],dtype=float)
+    if cells.shape!=(48,9) or not np.isfinite(cells).all() or (cells<0).any():
+        raise ValueError("48 valid half-hours for all nine fixed cells required")
+    if len({(o["pixel_lon"],o["pixel_lat"]) for o in obs})!=1:
+        raise ValueError("Pixel location changed across time")
+    totals=cells.sum(axis=0)*0.5
+    return {"pixel_mm":float(totals[4]),"neighborhood_mean_mm":float(totals.mean()),
+            "neighborhood_max_mm":float(totals.max()),"neighborhood_p90_mm":float(np.percentile(totals,90))}
+
 def audit(folder,station_meta):
-    if set(station_meta)!=set(STATIONS):raise ValueError("all 8 stations require original metadata")
+    if not station_meta or not set(station_meta)<=set(STATIONS):raise ValueError("nonempty known station subset required")
     for name,s in station_meta.items():
         if not isinstance(s.get("lat"),(int,float)) or not isinstance(s.get("lon"),(int,float)):
             raise ValueError("missing verified station coordinates: "+name)
         if not s.get("station_id") or not s.get("official_source") or not s.get("source_sha256"):
             raise ValueError("station ID, official source and checksum mandatory: "+name)
+        if not (-90<=s["lat"]<=90 and -180<=s["lon"]<=180):
+            raise ValueError("invalid coordinates: "+name)
+        value=s.get("precipitation_mm")
+        if isinstance(value,bool) or not isinstance(value,(int,float)) or not math.isfinite(value) or value<0:
+            raise ValueError("original station precipitation required: "+name)
+        if s.get("units")!="mm" or s.get("quality_flag") not in {"VALIDATED","VALIDATED_PROVISIONAL"} or s.get("original_instrumental") is not True:
+            raise ValueError("verified instrumental source, units and quality required: "+name)
+        if s.get("coordinate_datum")!="WGS84":raise ValueError("verified WGS84 coordinates required")
+        original=Path(s.get("source_path", ""))
+        if not original.is_file() or hashlib.sha256(original.read_bytes()).hexdigest()!=s["source_sha256"]:
+            raise ValueError("station original document hash mismatch: "+name)
         if s.get("window_start")!=START.isoformat() or s.get("window_end")!=END.isoformat():
             raise ValueError("station window mismatch: "+name)
     files=list(Path(folder).glob("*.HDF5"))
@@ -87,22 +104,22 @@ def audit(folder,station_meta):
         if t in mapped:raise ValueError("duplicate granule: "+str(t))
         mapped[t]=f
     missing=[t.isoformat() for t in slots() if t not in mapped]
+    if len(mapped)!=48:raise ValueError("exactly 48 original intervals required")
     if missing:raise ValueError("NO_EVALUABLE missing original NASA granules: "+json.dumps(missing))
     result={"status":"P0_COMPARABLE_DIAGNOSTIC_ONLY","window_utc":[START.isoformat(),END.isoformat()],
+            "deployment_status":"RESEARCH_ONLY", "test_mode":"TEST_ONLY", "operational_alerting_enabled":False, "calibration_performed":False,
             "granules":48,"product":"GPM_3IMERGHHE V07 Early","stations":[]}
     for name,meta in station_meta.items():
         obs=[]
         for t in slots():
             obs.append(read_granule(mapped[t],meta["lon"],meta["lat"]))
-        accum={k:round(sum(x[k]*0.5 for x in obs),4) for k in
-               ["pixel_rate_mm_hr","neighborhood_mean_rate_mm_hr",
-                "neighborhood_max_rate_mm_hr","neighborhood_p90_rate_mm_hr"]}
-        gauge=STATIONS[name]
+        accum=accumulated_neighborhood(obs)
+        gauge=meta["precipitation_mm"]
         result["stations"].append({"name":name,"station_id":meta["station_id"],
           "gauge_mm":gauge,"gauge_source_sha256":meta["source_sha256"],
           "diagnostic_accumulations_mm":accum,
-          "point_pixel_absolute_difference_mm":round(accum["pixel_rate_mm_hr"]-gauge,4),
-          "point_pixel_relative_difference":round((accum["pixel_rate_mm_hr"]-gauge)/gauge,5),
+          "point_pixel_signed_difference_mm":round(accum["pixel_mm"]-gauge,4),
+          "point_pixel_relative_difference":round((accum["pixel_mm"]-gauge)/gauge,5) if gauge>0 else None,
           "source_granules":[{"time":slots()[i].isoformat(),"sha256":x["granule_sha256"]} for i,x in enumerate(obs)],
           "warning":"Pixel/3x3 is not a point gauge and does not prove model accuracy."})
     return result
@@ -113,6 +130,9 @@ def main():
     p.add_argument("--output",required=True)
     a=p.parse_args()
     meta=json.loads(Path(a.official_stations_json).read_text(encoding="utf-8"))
+    for station in meta.values():
+        if station.get("source_path"):
+            station["source_path"]=str(Path(a.official_stations_json).resolve().parent/station["source_path"])
     result=audit(a.hdf5_dir,meta)
     out=Path(a.output)
     if out.exists():raise FileExistsError("never overwrite frozen P0 audit")

@@ -1,0 +1,37 @@
+name: IRFEN 496 isolated original NASA replay
+on:
+  push:
+    branches: [research/issue496-nasa-replay-20261106]
+    paths:
+      - scripts/issue496_nasa_replay.py
+      - scripts/imerg_original_audit.py
+      - scripts/issue496_sampling_baseline.py
+      - research/issue496/baseline/**
+      - .github/workflows/issue496-original-replay.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install 'numpy>=1.26,<2' h5py 'shapely>=2,<3' pyproj 'earthaccess>=0.15,<1' pytest
+      - run: python -m pytest -q tests/test_issue496_nasa_replay.py tests/test_v09_p0_496_pixel_gauge_audit.py
+      - name: Download originals and compare without publishing
+        env:
+          EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
+        run: python scripts/issue496_nasa_replay.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: issue496-original-nasa-replay
+          path: issue496-output/
+          retention-days: 30
+          if-no-files-found: error

@@ -25,3 +25,23 @@ class P0496Tests(unittest.TestCase):
  def test_duplicate_axis(self):
   with self.assertRaises(ValueError):extract(np.ones((5,7)),np.array([0,1,1,3,4]),np.arange(7.),2,3)
 if __name__=="__main__":unittest.main()
+
+class P0496RegressionTests(unittest.TestCase):
+ def test_moving_maximum_must_not_be_summed(self):
+  from scripts.v09_p0_496_pixel_gauge_audit import accumulated_neighborhood
+  obs=[]
+  for i in range(48):
+   cells=[0.]*9;cells[i%2]=10.
+   obs.append(dict(neighborhood_cell_rates_mm_hr=cells,pixel_lon=-80.55,pixel_lat=-3.85))
+  result=accumulated_neighborhood(obs)
+  self.assertEqual(result['neighborhood_max_mm'],120.)
+  self.assertEqual(sum(max(o['neighborhood_cell_rates_mm_hr'])*.5 for o in obs),240.)
+ def test_news_values_are_not_instrumental_input(self):
+  from scripts.v09_p0_496_pixel_gauge_audit import audit
+  with self.assertRaisesRegex(ValueError,'original station precipitation required'):
+   audit('.',{'Rica Playa':dict(lat=-3.8119,lon=-80.505458,station_id='TEST',official_source='test',source_sha256='0'*64)})
+ def test_grid_change_rejected(self):
+  from scripts.v09_p0_496_pixel_gauge_audit import accumulated_neighborhood
+  obs=[dict(neighborhood_cell_rates_mm_hr=[1.]*9,pixel_lon=-80.55,pixel_lat=-3.85) for _ in range(48)]
+  obs[-1]['pixel_lon']=-80.45
+  with self.assertRaises(ValueError):accumulated_neighborhood(obs)
