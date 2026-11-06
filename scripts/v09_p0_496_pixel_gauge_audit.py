@@ -16,7 +16,7 @@ STATIONS={"Rica Playa":112.5,"Aeropuerto Tumbes":112.2,"Cabo Inga":90.1,
           "Cañaveral":88.9,"Huásimo":82.0,"La Cruz":75.0,
           "Puente Tumbes":49.0,"Matapalo":10.4}
 COAST={"TUM","PIU","LAM","LIB","ANC","LIM","CAL","ICA","ARE","MOQ","TAC"}
-PAT=re.compile(r"3B-HHR-E\\.MS\\.MRG\\.3IMERG\\.(\\d{8})-S(\\d{6})-E(\\d{6})\\..*\\.V07[A-Z]?\\.HDF5$",re.I)
+PAT=re.compile(r"3B-HHR-E\.MS\.MRG\.3IMERG\.(\d{8})-S(\d{6})-E(\d{6})\..*\.V07[A-Z]?\.HDF5$",re.I)
 def slots():
     return [START+dt.timedelta(minutes=30*i) for i in range(48)]
 def stamp(path):
