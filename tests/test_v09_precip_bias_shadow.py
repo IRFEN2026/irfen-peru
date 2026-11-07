@@ -30,6 +30,17 @@ class ShadowTests(unittest.TestCase):
     def test_reject_future_measurement(self):
         a=row(1); a["available_at"]="2026-11-04T13:00:00Z"
         self.assertEqual(evaluate([a])["status"], "NO_EVALUABLE")
+    def test_empty(self):
+        self.assertEqual(evaluate([])["status"], "NO_EVALUABLE")
+    def test_reject_noncoastal(self):
+        a=row(1); a["department"]="Loreto"
+        self.assertEqual(evaluate([a])["status"], "NO_EVALUABLE")
+    def test_reject_bad_timestamp(self):
+        a=row(1); a["available_at"]="2026-11-05T16:00:00"
+        self.assertEqual(evaluate([a])["status"], "NO_EVALUABLE")
+    def test_reject_invalid_order_with_mixed_formats(self):
+        a=row(1); a["observation_start"]="2026-11-05T13:00:00Z"
+        self.assertEqual(evaluate([a])["status"], "NO_EVALUABLE")
     def test_holdout_improvement(self):
         result=evaluate([row(i) for i in range(5)])
         self.assertEqual(result["status"], "EVALUATED_RESEARCH_ONLY")
