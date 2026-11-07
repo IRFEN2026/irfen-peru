@@ -1,0 +1,171 @@
+{
+ "schema_version": "irfen_v091_live_manifest_v0_1",
+ "deployment_status": "RESEARCH_ONLY",
+ "test_mode": "TEST_ONLY",
+ "public_alerting": false,
+ "notifications_enabled": false,
+ "predictive": false,
+ "official_alert": false,
+ "merged_into_main": false,
+ "cycle_id": "20261107T190036Z",
+ "built_at_utc": "2026-11-07T19:00:36.452658+00:00",
+ "main_ref": "origin/main",
+ "main_sha": "e002e2f87d5342c5da86fe5d8f26d94ba44f9864",
+ "inputs_fingerprint": "8bc38da40f27517d7a1b0d411380c49e2f2cdc4949dd0e5112d157c7f6b1f005",
+ "inputs": {
+  "site/data/v09/dashboard_v0_1.json": {
+   "status": "ACEPTADA",
+   "used": "MAIN",
+   "sha256": "5fd42760fbb779ccf46fefc5e306f30aea59a2fd749a573120fc700f59021519",
+   "source_times": {
+    "built_at_utc": "2026-11-07T18:52:14.012501+00:00",
+    "source.health.last_successful_check_utc": "2026-11-07T14:52:18.829859+00:00"
+   },
+   "role": "avisos INDECI/COEN, zonas, GOES-19 por zona, salud de avisos",
+   "producer": ".github/workflows/v09-rain-north.yml y v09-senamhi-avisos-capture.yml"
+  },
+  "data/v09/rain/imerg_early_north_v0_1.json": {
+   "status": "ACEPTADA",
+   "used": "MAIN",
+   "sha256": "6de0378ff7246ff904005e13e2958025e9c014e21787ba8b23ed57cc323f5d6e",
+   "source_times": {
+    "status.written_at_utc": "2026-11-07T18:52:00.937744+00:00"
+   },
+   "role": "IMERG Early 30 min, 22 zonas del norte",
+   "producer": ".github/workflows/v09-rain-north.yml"
+  },
+  "data/v09/rain/imerg_early_catchments_v0_1.json": {
+   "status": "ACEPTADA",
+   "used": "MAIN",
+   "sha256": "43591d27f3f0d807747d258bc6418bce15995006f8fc400100e3d9e6b70559ff",
+   "source_times": {
+    "status.written_at_utc": "2026-11-07T18:52:00.937744+00:00",
+    "status.latest_granule_start_utc": "2026-11-07T13:30:00+00:00"
+   },
+   "role": "IMERG Early experimental por 134 cuencas de checkpoints; solo visualización informativa, no colores",
+   "producer": ".github/workflows/v09-rain-north.yml"
+  },
+  "data/v09/rain/goes19_rrqpe_north_v0_1.json": {
+   "status": "ACEPTADA",
+   "used": "MAIN",
+   "sha256": "55f111bd4b8ba9b4b0576fbae6dfee4432bff704b7a15907146ba10eee178142",
+   "source_times": {},
+   "role": "GOES-19 RRQPE por zona",
+   "producer": ".github/workflows/v09-rain-north.yml"
+  },
+  "data/v09/senamhi_avisos/health_v0_1.json": {
+   "status": "ACEPTADA",
+   "used": "MAIN",
+   "sha256": "18569f0a26c2be20e585405c4f050c366acd0e7cc718e7308a4a0ed2998d332c",
+   "source_times": {
+    "source_health.last_successful_check_utc": "2026-11-07T14:52:18.829859+00:00"
+   },
+   "role": "salud de la captura de avisos",
+   "producer": ".github/workflows/v09-senamhi-avisos-capture.yml"
+  }
+ },
+ "steps": {
+  "semaforo": {
+   "rc": 0,
+   "log": [
+    "1311 kB · checkpoints=536 · types={'rio': 138, 'quebrada': 287, 'mixto': 111} · at cutoff={'AMARILLO': 175, 'GRIS': 352, 'VERDE': 9}"
+   ]
+  },
+  "bundle": {
+   "rc": 0,
+   "log": [
+    "4.64 MB · admin=OK · coast_rain=OK · north=OK · avisos=117 · ana=619 · geoms=53 · uh=10"
+   ]
+  },
+  "feed": {
+   "rc": 0,
+   "log": [
+    "{\"output\": \"/home/runner/work/irfen-peru/irfen-peru/../live-data/.staging/observation_feed_v0_1.json\", \"statuses\": {\"avisos_indeci_coen\": \"STALE\", \"imerg_early_north\": \"RECENT_ARCHIVED\", \"goes19_rrqpe_north\": \"STALE\", \"imerg_early_coast_snapshot\": \"SNAPSHOT_ONLY\"}}"
+   ]
+  }
+ },
+ "change_kind": "OBSERVACIONES_NUEVAS",
+ "new_observations": [
+  "imerg_early_north"
+ ],
+ "registry": {
+  "config/v09_semaforo_confirmations_v0_1.json": "714ea147d95258b5afa85a37f5c2cb3ea0b414715f80c984cc9cb9a351bdff74",
+  "config/v09_semaforo_rules_v0_1.json": "1a5f36baa348fd81104cfe40798878bda3e04c354b9deaa2961b776da81a06e8"
+ },
+ "attempts": {
+  "imerg_early_north": {
+   "source_id": "imerg_early_north",
+   "producer": "v09-rain-north.yml",
+   "basis": "ACTIONS",
+   "attempt_utc": "2026-11-07T18:51:06Z",
+   "result": "CORRECTO",
+   "detail_es": "captura terminada y guardada",
+   "run_id": 42403322504,
+   "run_url": "https://github.com/IRFEN2026/irfen-peru/actions/runs/42403322504"
+  },
+  "goes19_rrqpe_north": {
+   "source_id": "goes19_rrqpe_north",
+   "producer": "v09-rain-north.yml",
+   "basis": "ACTIONS",
+   "attempt_utc": "2026-11-07T18:51:06Z",
+   "result": "FALLIDO",
+   "detail_es": "la captura terminó sin datos nuevos: SOURCE_UNREACHABLE (RuntimeError: NO_RECENT_RRQPE_OBJECTS)",
+   "run_id": 42403322504,
+   "run_url": "https://github.com/IRFEN2026/irfen-peru/actions/runs/42403322504"
+  },
+  "avisos_indeci_coen": {
+   "source_id": "avisos_indeci_coen",
+   "producer": "v09-senamhi-avisos-capture.yml",
+   "basis": "ACTIONS",
+   "attempt_utc": "2026-11-07T14:51:48Z",
+   "result": "CORRECTO",
+   "detail_es": "captura terminada y guardada",
+   "run_id": 42383578798,
+   "run_url": "https://github.com/IRFEN2026/irfen-peru/actions/runs/42383578798"
+  }
+ },
+ "sources": {
+  "avisos_indeci_coen": {
+   "status": "STALE",
+   "source_time_utc": "2026-11-07T14:52:18.829859Z",
+   "age_minutes": 248.3,
+   "last_attempt_utc": "2026-11-07T14:51:48Z",
+   "attempt_result": "CORRECTO"
+  },
+  "imerg_early_north": {
+   "status": "RECENT_ARCHIVED",
+   "source_time_utc": "2026-11-07T13:30:00Z",
+   "age_minutes": 330.6,
+   "last_attempt_utc": "2026-11-07T18:51:06Z",
+   "attempt_result": "CORRECTO"
+  },
+  "goes19_rrqpe_north": {
+   "status": "STALE",
+   "source_time_utc": "2026-11-02T16:49:51.800000Z",
+   "age_minutes": 7330.7,
+   "last_attempt_utc": "2026-11-07T18:51:06Z",
+   "attempt_result": "FALLIDO"
+  },
+  "imerg_early_coast_snapshot": {
+   "status": "SNAPSHOT_ONLY",
+   "source_time_utc": "2026-11-01T12:00:00Z",
+   "age_minutes": 9060.6,
+   "last_attempt_utc": null,
+   "attempt_result": null
+  }
+ },
+ "semaforo_at_build": {
+  "AMARILLO": 175,
+  "GRIS": 352,
+  "VERDE": 9
+ },
+ "bundle": {
+  "path": "current/surveillance_view_v0_1.json",
+  "sha256": "8ffec98fef8bb711e33a0c2336f4cc019a7d9df5a3562574fc0e9b2f06a8d914",
+  "bytes": 4669928
+ },
+ "previous": {
+  "cycle_id": "20261107T151302Z",
+  "bundle_sha256": "f552d266b695505d42b11ae577aa1e00e4ef5c621096d44953fd11a0a7a005fa"
+ }
+}
