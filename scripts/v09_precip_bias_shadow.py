@@ -7,10 +7,21 @@ from __future__ import annotations
 import argparse
 import json
 import math
-import statistics
+from datetime import datetime, timezone
 from pathlib import Path
 
 HORIZONS = (1, 3, 6, 12, 24)
+COAST = frozenset(('Tumbes', 'Piura', 'Lambayeque', 'La Libertad', 'Áncash', 'Lima', 'Callao', 'Ica', 'Arequipa', 'Moquegua', 'Tacna'))
+
+def _utc(value):
+    if not isinstance(value, str) or not value.endswith('Z'):
+        raise ValueError('timestamp must be explicit UTC with Z suffix')
+    try:
+        parsed = datetime.fromisoformat(value.replace('Z', '+00:00'))
+    except ValueError as exc:
+        raise ValueError('invalid ISO UTC timestamp') from exc
+    return parsed.astimezone(timezone.utc)
+
 REQUIRED = ("station_id", "event_id", "department", "observation_start",
             "observation_end", "available_at", "station_source_sha256",
             "imerg_source_sha256", "station_mm", "pixel_mm", "qc")
@@ -30,10 +41,19 @@ def validate(row):
     for key in ("station_source_sha256", "imerg_source_sha256"):
         if len(row[key]) != 64 or any(c not in "0123456789abcdef" for c in row[key]):
             raise ValueError("invalid SHA256 " + key)
-    if row["observation_start"] >= row["observation_end"]:
+    start = _utc(row["observation_start"])
+    end = _utc(row["observation_end"])
+    available = _utc(row["available_at"])
+    if start >= end:
         raise ValueError("invalid time window")
-    if row["available_at"] < row["observation_end"]:
+    if available < end:
         raise ValueError("availability predates observation end")
+    if row["department"] not in COAST:
+        raise ValueError("outside 11 coastal departments")
+    if not isinstance(row["station_id"], str) or not row["station_id"].strip():
+        raise ValueError("station identity missing")
+    if not isinstance(row["event_id"], str) or not row["event_id"].strip():
+        raise ValueError("event identity missing")
     if row.get("spatial_match") != "STATION_PIXEL":
         raise ValueError("station must be compared with its pixel, not a basin mean")
     if row.get("window_complete") is not True:
@@ -62,6 +82,8 @@ def evaluate(pairs, min_training_events=3, min_test_events=2):
         rows = [validate(dict(r)) for r in pairs]
     except (ValueError, TypeError, KeyError) as exc:
         return {"status": "NO_EVALUABLE", "reason": str(exc), "n": 0}
+    if not rows:
+        return {"status": "NO_EVALUABLE", "reason": "no verified original pairs", "n": 0}
     events = sorted({r["event_id"] for r in rows})
     if len(events) < min_training_events + min_test_events:
         return {"status": "NO_EVALUABLE", "reason": "insufficient independent events",
