@@ -168,5 +168,43 @@ class NoChurn(unittest.TestCase):
             self.assertNotEqual(led.read_bytes(), before)  # becoming stale is a change worth recording
 
 
+
+class Safety(unittest.TestCase):
+    def test_original_archives_are_never_modified(self):
+        import hashlib
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            c, n = d / "c.json", d / "n.json"
+            c.write_text(json.dumps(archive(T0)), encoding="utf-8")
+            n.write_text(json.dumps(archive(T0)), encoding="utf-8")
+            before = [hashlib.sha256(p.read_bytes()).hexdigest() for p in (c, n)]
+            ok = lambda cmd, **kw: types.SimpleNamespace(returncode=0, stderr="", stdout="")
+            F.run_once(c, n, d / "l.json", T0 + timedelta(hours=5), "m", "1", ["gh"], False, runner=ok, defer=True)
+            F.dispatch_pending(d / "l.json", T0 + timedelta(hours=5), ["gh"], runner=ok)
+            self.assertEqual([hashlib.sha256(p.read_bytes()).hexdigest() for p in (c, n)], before)
+
+    def test_truncated_and_empty_archives_never_trigger(self):
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            full = json.dumps(archive(T0))
+            for i, text in enumerate((full[: len(full) // 2], "", json.dumps(dict(granules=[], status={})))):
+                (d / "c.json").write_text(text, encoding="utf-8")
+                r = F.run_once(d / "c.json", None, d / f"l{i}.json", T0 + timedelta(hours=5), "m", "1", ["gh"], True)
+                self.assertEqual(r["decision"]["action"], "NO", i)
+
+    def test_capture_workflow_serialises_runs_and_never_fails_on_freshness(self):
+        wf = (ROOT / ".github/workflows/v09-rain-north.yml").read_text(encoding="utf-8")
+        self.assertIn("concurrency:", wf)
+        self.assertIn("cancel-in-progress: false", wf)
+        self.assertEqual(wf.count("scripts/v091_capture_freshness.py"), 2)  # decide before the commit, dispatch after the push
+        self.assertGreaterEqual(wf.count("continue-on-error: true"), 2)      # never breaks the capture
+        self.assertIn("mode=after_capture", wf)
+        self.assertNotIn("mode=chain", wf)
+
+    def test_stale_but_new_observation_is_rebuilt_and_labelled_stale(self):
+        o = F.observation_state(archive(T0), b"x", T0 + timedelta(hours=20), "c")  # late backfill: new for us, but old
+        self.assertEqual((o["freshness"], F.decide(None, o, "m")["action"]), ("CADUCADA", "SI"))
+
+
 if __name__ == "__main__":
     unittest.main()
