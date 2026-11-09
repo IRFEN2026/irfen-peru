@@ -229,6 +229,32 @@ def main_stem_check(g, lon, lat, same_river_rows):
     return out
 
 
+def ana_units():
+    """Official ANA hydrographic units (layer 8, Pacific slope, archived in data/v09/sources/ana_hydrographic_units)."""
+    import glob
+    fs = []
+    for f in sorted(glob.glob(str(ROOT / "data/v09/sources/ana_hydrographic_units/uh_layer8_pacific_part*.geojson.gz"))):
+        fs += json.loads(gzip.decompress(Path(f).read_bytes()))["features"]
+    return fs
+
+
+def _in_ring(x, y, r):
+    c = False
+    for (x1, y1), (x2, y2) in zip(r, r[1:]):
+        if (y1 > y) != (y2 > y) and x < (x2 - x1) * (y - y1) / (y2 - y1) + x1:
+            c = not c
+    return c
+
+
+def ana_unit_of(units, lon, lat):
+    for f in units:
+        g = f["geometry"]
+        polys = g["coordinates"] if g["type"] == "MultiPolygon" else [g["coordinates"]]
+        if any(_in_ring(lon, lat, pl[0]) and not any(_in_ring(lon, lat, h) for h in pl[1:]) for pl in polys):
+            return dict(codigo=f["properties"]["CODIGO"], nombre=f["properties"]["NOMBRE"])
+    return None
+
+
 def audit_problem_points(g, rows, sem, systems, ign_by_id):
     cps = {c["id"]: c for c in sem["checkpoints"]}
     sys_oids = {(d["department"], s["id"]): s["ign_objectids"] for d in systems["departments"] for s in d.get("river_systems", [])}
@@ -254,6 +280,12 @@ def audit_problem_points(g, rows, sem, systems, ign_by_id):
             rec["ign_line_ends"] = [[round(e[0], 4), round(e[1], 4)] for e in ends]
             rec["d8_outlet_to_nearest_ign_end_km"] = round(min(km((float(end[0]), float(end[1])), e) for e in ends), 1)
             rec["ign_full_line_vs_model"] = ign_profile(g, ign_by_id, oids, (cp["lon"], cp["lat"]), radius_km=400)
+        units = ana_units()
+        same_sys = [c for c in sem["checkpoints"] if c.get("system_id") == sid and c["id"] != pid]
+        rec["ana_official_unit"] = dict(point=ana_unit_of(units, cp["lon"], cp["lat"]),
+                                        other_points_of_the_river=sorted({json.dumps(ana_unit_of(units, c["lon"], c["lat"]), ensure_ascii=False) for c in same_sys}),
+                                        note_es=("Contraste con las unidades hidrográficas oficiales ANA: confirma la cuenca del río, no el cauce "
+                                                 "concreto dentro de ella (la capa oficial de ríos de ANA no se pudo archivar: el servicio agotó el tiempo)."))
         out.append(rec)
     return out
 

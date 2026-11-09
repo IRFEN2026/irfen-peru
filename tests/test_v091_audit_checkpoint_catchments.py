@@ -52,6 +52,10 @@ class RealData(unittest.TestCase):
         self.assertGreater(pp["ARE-R-TAMBO-BAJO"]["main_stem"]["main_stem_from_upstream_point"]["distance_km"], 1.0)
         self.assertEqual(pp["ICA-R-SAN_JUAN-BAJO"]["inventory_status"], "ASOCIACION_INCONSISTENTE")
         self.assertGreater(pp["ICA-R-SAN_JUAN-BAJO"]["main_stem"]["main_stem_from_upstream_point"]["distance_km"], 3.0)
+        expected = {"TUM-R-ZARUMILLA-MEDIO": "Cuenca Zarumilla", "LIM-R-RIMAC-ALTO": "Cuenca Rímac", "ARE-R-TAMBO-BAJO": "Cuenca Tambo",
+                    "ICA-R-SAN_JUAN-BAJO": "Cuenca San Juan", "PIU-R-PIURA-BAJO": "Cuenca Piura"}
+        for pid, name in expected.items():  # official ANA unit = the named river's basin (river identity, not channel position)
+            self.assertEqual(pp[pid]["ana_official_unit"]["point"]["nombre"], name, pid)
         piura = pp["PIU-R-PIURA-BAJO"]
         self.assertLess(piura["main_stem"]["main_stem_from_upstream_point"]["distance_km"], 0.5)
         self.assertGreater(piura["d8_outlet_to_nearest_ign_end_km"], 10)  # the 1:500k line does not end at the modelled mouth
