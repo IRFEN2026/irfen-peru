@@ -29,3 +29,10 @@ jobs:
           done
           echo "--- muestra de claves de un producto vecino (ABI-L2-ACHAF) en la hora actual"
           p="ABI-L2-ACHAF/$(date -u +%Y/%j/%H)/"; curl -sS -m 30 "$B/?list-type=2&prefix=$p&max-keys=3" | grep -o "<Key>[^<]*</Key>" | head -3
+          echo "--- otros productos de disco completo, hora anterior"
+          t=$((now - 3600))
+          for prod in ABI-L2-CMIPF ABI-L2-ACMF ABI-L2-DSRF ABI-L1b-RadF ABI-L2-RRQPEF; do
+            p="$prod/$(date -u -d @$t +%Y/%j/%H)/"; n=$(curl -sS -m 30 "$B/?list-type=2&prefix=$p&max-keys=1000" | grep -o "<Key>" | wc -l); echo "PROD $p objects=$n"
+          done
+          echo "--- últimas claves RRQPEF publicadas (día 306)"
+          curl -sS -m 30 "$B/?list-type=2&prefix=ABI-L2-RRQPEF/2026/306/1&max-keys=1000" | grep -o "<Key>[^<]*</Key>" | sed 's/<[^>]*>//g' | tail -3
