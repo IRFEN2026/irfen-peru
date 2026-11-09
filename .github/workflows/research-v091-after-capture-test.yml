@@ -101,17 +101,45 @@ jobs:
           python scripts/v091_capture_freshness.py --phase dispatch --catchments data/v09/rain/imerg_early_catchments_v0_1.json \
             --ledger data/v09/rain/freshness_ledger_v0_1.json --dispatch-workflow v091-live-refresh.yml \
             --dispatch-ref "$GITHUB_REF_NAME" --dispatch-repo "$GITHUB_REPOSITORY" --dispatch-input mode=after_capture \
-            --dispatch-input "test_data_branch=$TEST_DB" --dispatch-input "source_ref=$CAP" --dispatch-input "capture_key=$GITHUB_RUN_ID"
-          python3 -c "import json,sys;d=json.load(open('data/v09/rain/freshness_ledger_v0_1.json'));r=(d.get('last_dispatch') or {}).get('result');print('dispatch',r,d.get('phase2'));sys.exit(0 if r in ('OK',None) or d['decision']['action']=='NO' else 1)" | tee -a "$GITHUB_STEP_SUMMARY"
+            --dispatch-input "test_data_branch=$TEST_DB" --dispatch-input "source_ref=$CAP" --dispatch-input "capture_key=$GITHUB_RUN_ID" \
+            --run-id "$GITHUB_RUN_ID" | tee "$RUNNER_TEMP/dispatch.out"
           cp data/v09/rain/freshness_ledger_v0_1.json "$RUNNER_TEMP/ledger_after_dispatch.json"
+          if grep -q '"action": "ENVIADA"' "$RUNNER_TEMP/dispatch.out"; then
+            python3 -c "import json,sys;d=json.load(open('data/v09/rain/freshness_ledger_v0_1.json'));r=d['last_dispatch']['result'];print('dispatch',r,d.get('phase2'));sys.exit(0 if r=='OK' else 1)" | tee -a "$GITHUB_STEP_SUMMARY"
+          elif grep -q NADA_PENDIENTE "$RUNNER_TEMP/dispatch.out"; then
+            # no new half-hour at NASA -> the mechanism correctly asks for nothing; the test then runs ONE controlled manual
+            # rebuild from the last real capture (same inputs, no dates touched) and says so.
+            echo "**Sin observación nueva: el mecanismo no pide nada (correcto). Reconstrucción MANUAL controlada con la última captura real.**" | tee -a "$GITHUB_STEP_SUMMARY"
+            gh workflow run v091-live-refresh.yml -R "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME" -f mode=after_capture \
+              -f "test_data_branch=$TEST_DB" -f "source_ref=$CAP" -f "capture_key=$GITHUB_RUN_ID-manual"
+          else
+            echo "::error::new capture but no rebuild request was sent"; cat "$RUNNER_TEMP/dispatch.out"; exit 1
+          fi
       - name: 4 · misma captura otra vez -> duplicado (no se pide nada)
         working-directory: ../cap
         run: |
           set -euo pipefail
+          # the decision is read from the script output: an unchanged observation with action NO is not written at all
+          # (no-churn), so the copied ledger keeps the previous SI; the proof of "no duplicate" is action=NO + same bytes.
           cp data/v09/rain/freshness_ledger_v0_1.json "$RUNNER_TEMP/l_dup.json"
+          before=$(sha256sum "$RUNNER_TEMP/l_dup.json" | cut -d' ' -f1)
           python scripts/v091_capture_freshness.py --phase decide --catchments data/v09/rain/imerg_early_catchments_v0_1.json \
-            --ledger "$RUNNER_TEMP/l_dup.json" --main-sha "$MAIN_SHA" --run-id "$GITHUB_RUN_ID-dup"
-          python3 -c "import json,sys;d=json.load(open('$RUNNER_TEMP/l_dup.json'));print('duplicate run:',d['decision']);sys.exit(0 if d['decision']['action']=='NO' else 1)" | tee -a "$GITHUB_STEP_SUMMARY"
+            --ledger "$RUNNER_TEMP/l_dup.json" --main-sha "$MAIN_SHA" --run-id "$GITHUB_RUN_ID-dup" | tee "$RUNNER_TEMP/dup.out"
+          after=$(sha256sum "$RUNNER_TEMP/l_dup.json" | cut -d' ' -f1)
+          line=$(grep -m1 'title=V091_FRESHNESS::' "$RUNNER_TEMP/dup.out")
+          echo "duplicate run: $line · ledger sha before=$before after=$after" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "$line" | grep -q ' action=NO ' && echo "$line" | grep -q 'duplicada' && [ "$before" = "$after" ]
+          # the COMMITTED ledger (capture commit, PEDIDA) + a later capture without new data: phase 2 must not resend it
+          git show "$CAP_SHA:data/v09/rain/freshness_ledger_v0_1.json" > "$RUNNER_TEMP/l_old.json"
+          b2=$(sha256sum "$RUNNER_TEMP/l_old.json" | cut -d' ' -f1)
+          python scripts/v091_capture_freshness.py --phase decide --catchments data/v09/rain/imerg_early_catchments_v0_1.json \
+            --ledger "$RUNNER_TEMP/l_old.json" --main-sha "$MAIN_SHA" --run-id "$GITHUB_RUN_ID-later" > "$RUNNER_TEMP/later.out"
+          python scripts/v091_capture_freshness.py --phase dispatch --catchments data/v09/rain/imerg_early_catchments_v0_1.json \
+            --ledger "$RUNNER_TEMP/l_old.json" --dispatch-workflow no-existe.yml --dispatch-ref "$GITHUB_REF_NAME" \
+            --dispatch-repo "$GITHUB_REPOSITORY" --run-id "$GITHUB_RUN_ID-later" | tee "$RUNNER_TEMP/later2.out"
+          a2=$(sha256sum "$RUNNER_TEMP/l_old.json" | cut -d' ' -f1)
+          echo "later capture, committed PEDIDA: $(grep -m1 'title=V091_FRESHNESS::' "$RUNNER_TEMP/later.out" | grep -o 'action=[A-Z]*') · phase2 $(cat "$RUNNER_TEMP/later2.out") · sha before=$b2 after=$a2" | tee -a "$GITHUB_STEP_SUMMARY"
+          grep -q NADA_PENDIENTE "$RUNNER_TEMP/later2.out" && [ "$b2" = "$a2" ]
       - name: 5 · fallo provocado -> registrado y pendiente; recuperación en simulación (sin segunda reconstrucción real)
         working-directory: ../cap
         run: |
@@ -127,7 +155,8 @@ jobs:
           python scripts/v091_capture_freshness.py --phase decide --catchments data/v09/rain/imerg_early_catchments_v0_1.json \
             --ledger "$RUNNER_TEMP/l_fail.json" --main-sha "$MAIN_SHA" --run-id "$GITHUB_RUN_ID-fail"
           python scripts/v091_capture_freshness.py --phase dispatch --catchments data/v09/rain/imerg_early_catchments_v0_1.json \
-            --ledger "$RUNNER_TEMP/l_fail.json" --dispatch-workflow no-existe.yml --dispatch-ref "$GITHUB_REF_NAME" --dispatch-repo "$GITHUB_REPOSITORY"
+            --ledger "$RUNNER_TEMP/l_fail.json" --dispatch-workflow no-existe.yml --dispatch-ref "$GITHUB_REF_NAME" --dispatch-repo "$GITHUB_REPOSITORY" \
+            --run-id "$GITHUB_RUN_ID-fail"
           python3 -c "import json,sys;d=json.load(open('$RUNNER_TEMP/l_fail.json'));print('failure:',d['last_dispatch']['result'],d.get('pending_retry'));sys.exit(0 if d['last_dispatch']['result']=='FALLO' and d.get('pending_retry') else 1)" | tee -a "$GITHUB_STEP_SUMMARY"
           python scripts/v091_capture_freshness.py --phase decide --catchments data/v09/rain/imerg_early_catchments_v0_1.json \
             --ledger "$RUNNER_TEMP/l_fail.json" --main-sha "$MAIN_SHA" --run-id "$GITHUB_RUN_ID-retry" --dry-run

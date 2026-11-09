@@ -204,6 +204,56 @@ class NoChurn(unittest.TestCase):
             r = F.run_once(d / "c.json", None, led, T0 + timedelta(hours=13), "m", "3", ["gh"], False, defer=True)
             self.assertNotEqual(led.read_bytes(), before)  # becoming stale is a change worth recording
 
+    def test_duplicate_after_successful_dispatch_is_not_requested_nor_written(self):
+        """Real e2e sequence (run 42668802320): decide -> dispatch OK -> same capture again = NO, ledger bytes unchanged."""
+        ok = lambda cmd, **kw: types.SimpleNamespace(returncode=0, stderr="", stdout="")
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            (d / "c.json").write_text(json.dumps(archive(T0)), encoding="utf-8")
+            led = d / "l.json"
+            r = F.run_once(d / "c.json", None, led, T0 + timedelta(hours=5), "m", "1", ["gh"], False, defer=True)
+            self.assertEqual(r["decision"]["action"], "SI")
+            F.dispatch_pending(led, T0 + timedelta(hours=5), ["gh"], runner=ok)
+            before = led.read_bytes()
+            r = F.run_once(d / "c.json", None, led, T0 + timedelta(hours=5, minutes=10), "m", "dup", ["gh"], False, defer=True)
+            self.assertEqual(r["decision"]["action"], "NO")
+            self.assertIn("duplicada", r["decision"]["reason"])
+            self.assertEqual(led.read_bytes(), before)
+            self.assertEqual(json.loads(before)["last_dispatch"]["result"], "OK")
+
+    def test_stale_pending_from_an_earlier_run_is_never_sent_again(self):
+        """#504 flow: phase 2 success is not committed, so the committed ledger keeps PEDIDA. A later capture without new
+        data leaves the file untouched (no churn); phase 2 of that later run must not send the old request again."""
+        calls = []
+        ok = lambda cmd, **kw: calls.append(cmd) or types.SimpleNamespace(returncode=0, stderr="", stdout="")
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            (d / "c.json").write_text(json.dumps(archive(T0)), encoding="utf-8")
+            led = d / "l.json"
+            F.run_once(d / "c.json", None, led, T0 + timedelta(hours=5), "m", "run1", ["gh"], False, defer=True)
+            committed = led.read_bytes()  # what the capture commit contains (PEDIDA)
+            F.dispatch_pending(led, T0 + timedelta(hours=5), ["gh"], runner=ok, run_id="run1")
+            self.assertEqual(len(calls), 1)
+            led.write_bytes(committed)  # next run starts from the committed ledger
+            r = F.run_once(d / "c.json", None, led, T0 + timedelta(hours=5, minutes=30), "m", "run2", ["gh"], False, defer=True)
+            self.assertEqual((r["decision"]["action"], r.get("written")), ("NO", False))
+            r = F.dispatch_pending(led, T0 + timedelta(hours=5, minutes=30), ["gh"], runner=ok, run_id="run2")
+            self.assertEqual(len(calls), 1)
+            self.assertEqual(r["phase2"]["action"], "NADA_PENDIENTE")
+            self.assertEqual(led.read_bytes(), committed)
+
+    def test_dispatch_phase_without_run_id_does_nothing(self):
+        calls = []
+        ok = lambda cmd, **kw: calls.append(cmd) or types.SimpleNamespace(returncode=0, stderr="", stdout="")
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            (d / "c.json").write_text(json.dumps(archive(T0)), encoding="utf-8")
+            led = d / "l.json"
+            F.run_once(d / "c.json", None, led, T0 + timedelta(hours=5), "m", "run1", ["gh"], False, defer=True)
+            before = led.read_bytes()
+            self.assertEqual(F.main(["--phase", "dispatch", "--catchments", str(d / "c.json"), "--ledger", str(led),
+                                     "--dispatch-workflow", "x.yml", "--dispatch-ref", "research/x"]), 0)
+            self.assertEqual(led.read_bytes(), before)
 
 
 class Safety(unittest.TestCase):

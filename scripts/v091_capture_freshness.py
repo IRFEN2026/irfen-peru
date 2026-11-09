@@ -132,13 +132,22 @@ def dispatch(cmd: list[str], sleep=time.sleep, run=subprocess.run) -> dict:
     return dict(result="FALLO", attempts=attempts, error=attempts[-1]["error"])
 
 
-def dispatch_pending(ledger_path: Path, now: datetime, dispatch_cmd: list[str], sleep=time.sleep, runner=subprocess.run) -> dict:
+def dispatch_pending(ledger_path: Path, now: datetime, dispatch_cmd: list[str], sleep=time.sleep, runner=subprocess.run,
+                     run_id: str | None = None) -> dict:
     """Phase 2 (after the capture commit is pushed, so the rebuild reads the new data): send the request that phase 1
-    recorded as PEDIDA. A failure becomes FALLO + pending_retry (retried by the next capture). Returns the ledger."""
+    recorded as PEDIDA. A failure becomes FALLO + pending_retry (retried by the next capture). Returns the ledger.
+
+    Only the request recorded by THIS capture run (`run_id`) is sent. A successful send is not committed (no churn), so
+    the committed ledger keeps an older PEDIDA; when the next capture has no new data phase 1 does not rewrite the file,
+    and without this guard phase 2 would send the same rebuild again every 30 min."""
     led = json.loads(ledger_path.read_text(encoding="utf-8"))
     last = led.get("last_dispatch") or {}
     if last.get("result") != "PEDIDA":
         led["phase2"] = dict(at_utc=now.isoformat(), action="NADA_PENDIENTE")
+        return led
+    if run_id is not None and last.get("capture_run_id") != run_id:
+        led["phase2"] = dict(at_utc=now.isoformat(), action="NADA_PENDIENTE",
+                             reason="la petición registrada es de otra ejecución de captura (ya tratada); no se repite")
         return led
     res = dispatch(dispatch_cmd, sleep=sleep, run=runner)
     last.update(result=res["result"], attempts=res["attempts"], sent_at_utc=now.isoformat())
@@ -238,7 +247,9 @@ def main(argv=None) -> int:
             cmd += ["-f", kv]
     try:
         if a.phase == "dispatch":
-            led = dispatch_pending(a.ledger, now, cmd) if cmd and not a.dry_run else json.loads(a.ledger.read_text(encoding="utf-8"))
+            if not a.run_id:
+                raise ValueError("--phase dispatch requiere --run-id (la misma ejecución que registró la petición)")
+            led = dispatch_pending(a.ledger, now, cmd, run_id=a.run_id) if cmd and not a.dry_run else json.loads(a.ledger.read_text(encoding="utf-8"))
             print(f"::notice title=V091_FRESHNESS_DISPATCH::{json.dumps(led.get('phase2'), ensure_ascii=False)}")
             return 0
         led = run_once(a.catchments, a.north, a.ledger, now, a.main_sha, a.run_id, cmd, a.dry_run, defer=a.phase == "decide")
