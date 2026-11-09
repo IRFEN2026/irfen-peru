@@ -11,17 +11,16 @@ name: "IRFEN research · prueba real de extremo a extremo de la actualización t
 on:
   push:
     branches:
-      - research/v091-freshness-viewer-20261109
-    paths:
-      - .github/workflows/research-v091-after-capture-test.yml
+      - research/v091-wfcheck-20261109
 permissions:
   contents: write  # solo ramas research/v091-e2e-capture-* y artefactos
   actions: write   # solo para pedir la reconstrucción única en esta misma rama
 concurrency:
-  group: research-v091-after-capture-test
+  group: wfcheck-wfcheck-new.yml
   cancel-in-progress: false
 jobs:
   e2e:
+    if: false
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
