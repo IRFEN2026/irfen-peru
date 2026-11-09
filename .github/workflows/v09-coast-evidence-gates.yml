@@ -1,0 +1,21 @@
+name: IRFEN coast evidence gates (research only)
+on:
+  push:
+    branches:
+      - research/coast-evidence-gates-20261108
+  pull_request:
+    paths:
+      - scripts/v09_coast_evidence_gates.py
+      - tests/test_v09_coast_evidence_gates.py
+      - .github/workflows/v09-coast-evidence-gates.yml
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m unittest discover -s tests -p 'test_v09_coast_evidence_gates.py' -v
