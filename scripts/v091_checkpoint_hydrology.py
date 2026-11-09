@@ -38,6 +38,8 @@ NORTH = ROOT / "data/v09/research/anticipation/north_catchments_v0_1.json"
 SNAPSHOT = ROOT / "data/v09/research/coast_rain/imerg_early_coast_snapshot_v0_1.json"
 IMERG_FINAL = ROOT / "data/v09/research/historical/imerg_final_daily_piura_chira_v0_1.json"
 OUT = ROOT / "data/v09/research/semaforo/checkpoint_hydrology_v0_1.json"
+_CT = ROOT / "config/v091_catchment_rain_targets_v0_1.json"
+CATCHMENT_TARGETS = set(json.loads(_CT.read_text(encoding="utf-8"))["targets"]) if _CT.is_file() else set()
 GUARDS = dict(deployment_status="RESEARCH_ONLY", test_mode="TEST_ONLY", production_use=False, public_alerting=False,
               notifications_enabled=False, activation_gate="BLOCKED", official_geometry=False)
 # a 1:500k IGN vertex is accepted on the modelled channel if the snap is short and the channel drains a real area
@@ -325,6 +327,13 @@ def build() -> dict:
                 q4["association"] = zone_association(ia / ca, ia / za if za else 0.0)
             else:
                 q4["association"] = "ZONA_QUE_CONTIENE_EL_PUNTO (aproximación local)" if cp["type"] != "rio" else "ZONA_SIN_COMPROBAR"
+        elif ref and ref.startswith("catchment:"):
+            # live IMERG Early mean over this checkpoint's OWN contributing area (hash-locked target of the main capture)
+            own = ref.split(":", 1)[1] == cp["id"] and cp["id"] in CATCHMENT_TARGETS and q3["status"] == "APORTACION_DELIMITADA_EXPERIMENTAL"
+            q4.update(live_product="IMERG Early V07 (30 min) sobre el área aportante del propio punto (archivo imerg_early_catchments de main)",
+                      association="AREA_APORTANTE_PROPIA" if own else "CUENCA_AJENA_O_NO_VERIFICADA",
+                      live_windows_note_es=("Ventanas 1/3/6/24/72 h del ciclo en vivo; la hora de la última observación y la antigüedad están en el "
+                                            "semáforo de cada ciclo, no en este inventario estático."))
         elif ref and ref.startswith("cell:"):
             q4.update(live_product=None, association="CELDA_LOCAL_INSTANTANEA_NO_CONECTADA")
         else:
@@ -338,7 +347,7 @@ def build() -> dict:
                                     covers_catchment=inbox, imerg_cells=len(cells))
         r["q4_rain"] = q4
         # rain status classes for the coverage report
-        if q4["association"] == "ZONA_REPRESENTA_LA_CUENCA":
+        if q4["association"] in ("ZONA_REPRESENTA_LA_CUENCA", "AREA_APORTANTE_PROPIA"):
             r["rain_class"] = "LLUVIA_EN_VIVO_DE_LA_CUENCA"
         elif q4["association"] in ("ZONA_MAS_AMPLIA_QUE_LA_CUENCA", "ZONA_CUBRE_PARTE_DE_LA_CUENCA"):
             r["rain_class"] = "LLUVIA_EN_VIVO_APROXIMACION_DOCUMENTADA"

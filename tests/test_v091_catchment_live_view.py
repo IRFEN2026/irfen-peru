@@ -26,7 +26,8 @@ class RainWindows(unittest.TestCase):
         d = A.summarize(archive(), "PIU-R-PIURA-BAJO", END.isoformat())
         self.assertEqual(d["status"], "RECIENTE")
         for h in (1,3,6,24):
-            self.assertEqual(d["windows"][f"{h}h"]["mm"], float(h))
+            # 2 mm/h during h hours = 2·h mm (each half-hour adds rate × 0.5 h); the earlier expectation of h mm was wrong
+            self.assertEqual(d["windows"][f"{h}h"]["mm"], 2.0 * h)
         self.assertIsNone(d["windows"]["72h"]["mm"])
         self.assertEqual(d["observation_end_utc"], END.isoformat())
 

@@ -23,6 +23,15 @@ on:
       hop:
         description: "número de salto de la cadena"
         default: "0"
+      mode:
+        description: "chain (cadena de 20 min) | after_capture (una reconstrucción tras una captura válida; no encadena)"
+        default: "chain"
+      test_data_branch:
+        description: "solo pruebas de after_capture: rama research/v091-live-data-test-* (nunca la rama de datos real)"
+        default: ""
+      capture_key:
+        description: "clave observación|sha que pidió la reconstrucción (trazabilidad)"
+        default: ""
 
 permissions:
   contents: write   # solo para escribir la rama de datos research/v091-live-data
@@ -40,6 +49,7 @@ jobs:
       run: ${{ steps.ctl.outputs.run }}
       poll: ${{ steps.ctl.outputs.poll }}
       next: ${{ steps.ctl.outputs.next }}
+      chain: ${{ steps.ctl.outputs.chain }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -49,9 +59,15 @@ jobs:
         id: ctl
         env:
           HOP: ${{ inputs.hop || '0' }}
+          MODE: ${{ inputs.mode || 'chain' }}
+          TEST_DB: ${{ inputs.test_data_branch || '' }}
+          KEY: ${{ inputs.capture_key || '' }}
         run: |
           set -euo pipefail
-          python3 scripts/v091_live_refresh.py --control --hop "$HOP" | tee -a "$GITHUB_OUTPUT"
+          extra=()
+          if [ -n "$TEST_DB" ]; then extra=(--test-data-branch "$TEST_DB"); fi
+          python3 scripts/v091_live_refresh.py --control --hop "$HOP" --mode "$MODE" "${extra[@]}" | tee -a "$GITHUB_OUTPUT"
+          echo "capture_key=$KEY" | tee -a "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/setup-python@v6
         if: steps.ctl.outputs.run == 'true'
@@ -108,6 +124,19 @@ jobs:
           fi
           exit 0
 
+      - name: Comprobar los valores de lluvia del paquete contra los archivos de main
+        id: src
+        if: steps.ctl.outputs.run == 'true' && steps.build.outputs.rc == '0'
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          sha=$(python3 -c "import json;print(json.load(open('../live-data/current/manifest.json'))['main_sha'])")
+          git fetch -q --no-tags --depth=1 origin "$sha" || true
+          git show "$sha:data/v09/rain/imerg_early_catchments_v0_1.json" > "$RUNNER_TEMP/src_c.json" || rm -f "$RUNNER_TEMP/src_c.json"
+          git show "$sha:data/v09/rain/imerg_early_north_v0_1.json" > "$RUNNER_TEMP/src_n.json" || rm -f "$RUNNER_TEMP/src_n.json"
+          python qa/replay_tools/v091_viewer_source_consistency.py --bundle ../live-data/current/surveillance_view_v0_1.json \
+            --catchments "$RUNNER_TEMP/src_c.json" --north "$RUNNER_TEMP/src_n.json" --out ../live-data/current/source_consistency.json
+
       - name: Comprobar la página con el paquete nuevo (navegador sin interfaz)
         id: page
         if: steps.ctl.outputs.run == 'true' && steps.build.outputs.rc == '0'
@@ -117,14 +146,14 @@ jobs:
           python qa/replay_tools/v091_live_page_check.py --data-dir ../live-data --out "$RUNNER_TEMP/page_check"
           cp "$RUNNER_TEMP/page_check/live_page_check.json" ../live-data/current/page_check.json
 
-      - name: Retirar el paquete si la página no pasa la comprobación
-        if: steps.page.outcome == 'failure'
+      - name: Retirar el paquete si la página o los datos no pasan la comprobación
+        if: steps.page.outcome == 'failure' || steps.src.outcome == 'failure'
         run: |
           cd ../live-data
           if git rev-parse -q --verify HEAD >/dev/null; then git checkout -q HEAD -- current cycles 2>/dev/null || true; git clean -fdq current cycles; else rm -rf current cycles; fi
           cd "$GITHUB_WORKSPACE"
-          python scripts/v091_live_refresh.py --record-failure "page check failed" --data-dir ../live-data --log "$RUNNER_TEMP/page_check/live_page_check.json"
-          echo "::error::page check failed: package not published, previous package kept"
+          python scripts/v091_live_refresh.py --record-failure "page or source-consistency check failed" --data-dir ../live-data --log "$RUNNER_TEMP/page_check/live_page_check.json"
+          echo "::error::page or source-consistency check failed: package not published, previous package kept"
 
       - name: Publicar en la rama de datos (sin forzar)
         if: always() && steps.ctl.outputs.run == 'true' && steps.build.outputs.rc != '10'
@@ -165,7 +194,8 @@ jobs:
 
   next:
     needs: refresh
-    if: always() && needs.refresh.outputs.run == 'true'
+    # only the 20-min chain schedules another run; an after_capture rebuild never does
+    if: always() && needs.refresh.outputs.run == 'true' && needs.refresh.outputs.chain == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     steps:

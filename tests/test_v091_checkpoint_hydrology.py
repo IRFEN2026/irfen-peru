@@ -138,23 +138,31 @@ class CheckpointHydrology(unittest.TestCase):
             self.assertTrue(self.rows[cid]["q3_contributing_area"]["infrastructure_es"], cid)
 
     def test_zone_rain_is_never_called_catchment_rain_unless_it_covers_it(self):
+        # catchment rain = a live zone covering ≥ 80 %/80 % of the area, or the point's OWN hash-locked contributing area
         for r in self.rows.values():
             q4 = r["q4_rain"]
-            ov = q4.get("zone_overlap")
-            if r["rain_class"] == "LLUVIA_EN_VIVO_DE_LA_CUENCA":
+            if r["rain_class"] != "LLUVIA_EN_VIVO_DE_LA_CUENCA":
+                continue
+            if q4["association"] == "AREA_APORTANTE_PROPIA":
+                self.assertEqual(q4["rain_ref"], "catchment:" + r["id"])
+                self.assertEqual(r["q3_contributing_area"]["status"], "APORTACION_DELIMITADA_EXPERIMENTAL")
+            else:
+                ov = q4["zone_overlap"]
                 self.assertGreaterEqual(ov["fraction_of_catchment_in_zone"], 0.8)
                 self.assertGreaterEqual(ov["fraction_of_zone_in_catchment"], 0.8)
-        # Motupe is wider than La Leche's contributing area: documented approximation, never validated
-        for cid in ("LAM-R-LA_LECHE-ALTO", "LAM-R-LA_LECHE-MEDIO", "LAM-R-LA_LECHE-BAJO"):
-            self.assertEqual(self.rows[cid]["q4_rain"]["association"], "ZONA_MAS_AMPLIA_QUE_LA_CUENCA")
-            self.assertNotEqual(self.rows[cid]["rain_class"], "LLUVIA_EN_VIVO_DE_LA_CUENCA")
+        for r in self.rows.values():  # never another point's catchment, never a catchment for a population point
+            ref = r["q4_rain"].get("rain_ref") or ""
+            if ref.startswith("catchment:"):
+                self.assertEqual(r["type"], "rio", r["id"])
+                self.assertEqual(ref, "catchment:" + r["id"])
 
-    def test_rivers_without_connected_catchment_rain_are_not_evaluable(self):
-        for cid in ("TUM-R-TUMBES-BAJO", "PIU-R-PIURA-MEDIO", "PIU-R-CHIRA-MEDIO"):
+    def test_rivers_without_their_own_area_stay_not_evaluable(self):
+        for cid in ("TUM-R-ZARUMILLA-MEDIO", "LIM-R-RIMAC-ALTO", "ARE-R-TAMBO-BAJO", "ICA-R-SAN_JUAN-BAJO"):
             r = self.rows[cid]
-            self.assertEqual(r["q4_rain"]["association"], "SIN_LLUVIA_CONECTADA")
-            self.assertEqual(r["evaluation_status"], "NO_EVALUABLE")
-            self.assertIn("captura", r["not_evaluable_reason_es"])
+            self.assertNotEqual(r["q4_rain"]["association"], "AREA_APORTANTE_PROPIA", cid)
+            self.assertEqual(r["evaluation_status"], "NO_EVALUABLE", cid)
+        for cid in ("TUM-R-TUMBES-BAJO", "PIU-R-PIURA-MEDIO", "PIU-R-CHIRA-MEDIO"):  # their own area is captured live now
+            self.assertEqual(self.rows[cid]["q4_rain"]["association"], "AREA_APORTANTE_PROPIA")
 
     def test_outlines_match_the_delineated_areas(self):
         feats = {f["properties"]["checkpoint_id"]: f for f in self.d["catchment_outlines"]["features"]}

@@ -112,21 +112,44 @@ def validate(raw: bytes | None, spec: dict, now: datetime) -> tuple[str, dict]:
     return "ACEPTADA", times
 
 
-def control(cfg: dict, now: datetime, hop: int) -> dict:
-    """Whether this link of the 20-min chain may run (and schedule the next one). Never extends the expiry."""
-    exp = iso(cfg["expires_at_utc"])
+TEST_DATA_BRANCH_PREFIX = "research/v091-live-data-test-"
+
+
+def control(cfg: dict, now: datetime, hop: int, mode: str = "chain", test_data_branch: str | None = None) -> dict:
+    """Whether this run may rebuild, and whether it may schedule another one. Never extends any expiry.
+
+    mode=chain: the 20-min polling chain (config `enabled` / `expires_at_utc` / `max_hops_per_chain`).
+    mode=after_capture: ONE rebuild requested by a valid capture (scripts/v091_capture_freshness.py); it never schedules
+    another run. Allowed only by its own switch `after_capture.enabled` and expiry, or as a test that writes to a
+    `research/v091-live-data-test-*` branch (never the real data branch)."""
     reasons = []
-    if cfg.get("enabled") is not True:
-        reasons.append("enabled=false")
-    if now >= exp:
-        reasons.append("caducado " + cfg["expires_at_utc"])
-    if hop >= int(cfg["max_hops_per_chain"]):
-        reasons.append("max_hops_per_chain")
+    data_branch = cfg["data_branch"]
+    if mode == "chain":
+        exp = iso(cfg["expires_at_utc"])
+        if cfg.get("enabled") is not True:
+            reasons.append("enabled=false")
+        if now >= exp:
+            reasons.append("caducado " + cfg["expires_at_utc"])
+        if hop >= int(cfg["max_hops_per_chain"]):
+            reasons.append("max_hops_per_chain")
+    elif mode == "after_capture":
+        ac = cfg.get("after_capture") or {}
+        if test_data_branch:
+            if not test_data_branch.startswith(TEST_DATA_BRANCH_PREFIX):
+                reasons.append("rama de datos de prueba no permitida")
+            data_branch = test_data_branch
+        else:
+            if ac.get("enabled") is not True:
+                reasons.append("after_capture.enabled=false")
+            if not ac.get("expires_at_utc") or now >= iso(ac["expires_at_utc"]):
+                reasons.append("after_capture caducado o sin caducidad")
+    else:
+        reasons.append(f"modo desconocido {mode!r}")
     for k in ("public_alerting", "notifications_enabled", "merged_into_main", "predictive"):
         if cfg.get(k) is not False:
             reasons.append(f"guarda {k}")
-    return dict(run="false" if reasons else "true", poll=int(cfg["poll_minutes"]), next=hop + 1, data_branch=cfg["data_branch"],
-                reason="; ".join(reasons) or "ok")
+    return dict(run="false" if reasons else "true", poll=int(cfg["poll_minutes"]), next=hop + 1, data_branch=data_branch,
+                chain="true" if mode == "chain" and not reasons else "false", mode=mode, reason="; ".join(reasons) or "ok")
 
 
 def gh_json(path: str):
@@ -271,9 +294,12 @@ def main(argv=None) -> int:
     ap.add_argument("--repo", default="IRFEN2026/irfen-peru")
     ap.add_argument("--control", action="store_true", help="only print the chain control outputs (key=value)")
     ap.add_argument("--hop", type=int, default=0)
+    ap.add_argument("--mode", default="chain", choices=("chain", "after_capture"))
+    ap.add_argument("--test-data-branch")
     a = ap.parse_args(argv)
     if a.control:
-        c = control(json.loads(CFG.read_text(encoding="utf-8")), iso(a.as_of) if a.as_of else datetime.now(timezone.utc), a.hop)
+        c = control(json.loads(CFG.read_text(encoding="utf-8")), iso(a.as_of) if a.as_of else datetime.now(timezone.utc), a.hop,
+                    a.mode, a.test_data_branch)
         print("\n".join(f"{k}={v}" for k, v in c.items()))
         return 0
     if a.fetch_attempts:

@@ -123,8 +123,12 @@ class Refresh(unittest.TestCase):
         S = dict(rules=sm["rules"], confirmations=[], aviso_check_utc=sm["aviso_check_utc"], avisos=sm["avisos"], rain_refs=sm["rain_refs"])
         t = sem.iso(at(0))
         for cp in sm["checkpoints"]:
-            if not (cp.get("rain_ref") or "").startswith("cell:"):
+            ref = cp.get("rain_ref") or ""
+            # the north archive is missing: every point fed by it (zones) or by nothing is grey, never green. Rivers fed by
+            # their own catchment archive (a different, still valid source) and the coast cells are not affected.
+            if not ref.startswith(("cell:", "catchment:")):
                 self.assertEqual(sem.evaluate(cp, S, t)["state"], "GRIS", cp["id"])  # no rain source → grey, not green
+        self.assertTrue(all(sem.evaluate(cp, S, t)["state"] == "GRIS" for cp in sm["checkpoints"] if (cp.get("rain_ref") or "").startswith("zone:")))
         LR.git_show = self.real_show
         self.fake_main(broken="site/data/v09/dashboard_v0_1.json")
         with redirect_stdout(io.StringIO()):

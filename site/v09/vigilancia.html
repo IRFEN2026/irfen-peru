@@ -310,6 +310,9 @@ function highlight(list,label){if(!map)return;hl.clearLayers();const fs=deps.fil
 // config/v09_semaforo_rules_v0_1.json (revision 0.2). smEval mirrors evaluate() in scripts/v09_build_semaforo.py (checked below).
 // The colour is the LOCAL state of each point; official avisos are territorial CONTEXT and never change it.
 const SM=D.semaforo?.status==="OK"?D.semaforo:null;
+// P0 #496: a low IMERG Early value does not rule out intense localized rain (evidence: qa/V091_P0_496_HDF5_RECONSTRUCTION_20261109.md)
+const RCAV=(D.rain_caveats&&D.rain_caveats.length?D.rain_caveats:[{id:"P0-496",text_es:"Una precipitación baja en IMERG Early no descarta lluvias intensas localizadas."}]);
+const rcavHtml=(cls)=>'<p class="'+(cls||"note")+' rcav" data-caveat="P0-496" style="border-left:4px solid #b26a00;padding-left:8px;margin:6px 0"><b>Atención:</b> '+RCAV.map(c=>safe(c.text_es)).join(" ")+'</p>';
 const SMS=SM?{rules:SM.rules,confirmations:SM.confirmations?.confirmations||[],aviso_check_utc:SM.aviso_check_utc,avisos:SM.avisos||{},rain_refs:SM.rain_refs||{}}:null;
 const SMC=SM?Object.fromEntries(SM.rules.states.map(x=>[x.code,x])):{};
 const SMT={rio:"Río",quebrada:"Quebrada",mixto:"Mixto"},SMRING={rio:"#1d4f91",quebrada:"#8a4b14",mixto:"#5b3a8a"};
@@ -412,6 +415,7 @@ function smPopup(cp){const t=smT(),r=smEval(cp,SMS,t),st=SMC[r.state],rr=r.rr;
   '<p style="margin:6px 0"><i class="sw" style="background:'+st.color+'"></i><b>'+safe(st.label_es)+'</b> · confianza '+safe(r.confidence.toLowerCase())+'<br><span class="note">Evaluado '+safe(fmt(new Date(t).toISOString()))+(smMode==="CORTE"?" · <b>reconstrucción al corte, no es el estado actual</b>":"")+'</span></p>'+
   '<ul style="margin:4px 0;padding-left:16px">'+smLocal(cp,r).map(x=>"<li>"+x+"</li>").join("")+'</ul>'+smContext(cp,r)+
   (rr?'<p class="note" style="margin:4px 0">Lluvia local: '+safe(rr.label)+' · '+wins+' mm, hasta '+safe(fmt(rr.imerg.end_utc))+(cp.rain_basis?'<br>'+safe(cp.rain_basis):"")+'</p>':"")+
+  (rr?rcavHtml():"")+
   hyPanel(cp)+'<details><summary class="note">Ubicación, fuentes y limitaciones</summary><p class="note">'+safe(cp.location_basis)+' '+safe(cp.location_confidence_note)+'</p>'+
   (cp.centros_poblados?.length?'<p class="note">Centros poblados (ANA): '+safe(cp.centros_poblados.join(", "))+'</p>':"")+
   '<p class="note"><b>Fuentes:</b> '+safe(cp.sources.join(" · "))+'</p><ul class="note" style="padding-left:16px">'+cp.limitations.map(x=>"<li>"+safe(x)+"</li>").join("")+'</ul></details>'+
@@ -458,7 +462,7 @@ function renderSemaforo(){const box=$("tab-semaforo");if(!SM){box.innerHTML='<p 
   '<p class="note" id="smCtx"><b>Contexto territorial:</b> sin avisos de lluvia vigentes relacionados en los boletines capturados hasta '+safe(fmt(SMS.aviso_check_utc))+'.</p>';
  const rainCell=r=>r.iFresh?(r.i24===null?"n/d":mm(r.i24)+" mm"):'<span class="note">antigua</span>';
  const ori=cov.flatMap(c=>(c.river_systems||[]).map(s=>safe(s.id.replace("_"," "))+": "+safe(s.orientation?.status||"sin dato")+(s.orientation?.flow_spearman!==undefined?" (ρ="+safe(s.orientation.flow_spearman)+")":"")+(s.orientation?.coast_km?" · extremos a "+safe(s.orientation.coast_km.join(" y "))+" km de la costa":""))).join("<br>");
- box.innerHTML='<div class="guard"><b>Capa experimental · no es una alerta oficial.</b> El color resume los <b>datos locales</b> de cada punto (lluvia satelital y eventos verificados). Los avisos oficiales se muestran aparte como contexto territorial. No predice crecidas ni huaicos y no sustituye a SENAMHI, INDECI ni a las autoridades. <b>Un dato ausente nunca se pinta de verde.</b></div>'+
+ box.innerHTML='<div class="guard"><b>Capa experimental · no es una alerta oficial.</b> El color resume los <b>datos locales</b> de cada punto (lluvia satelital y eventos verificados). Los avisos oficiales se muestran aparte como contexto territorial. No predice crecidas ni huaicos y no sustituye a SENAMHI, INDECI ni a las autoridades. <b>Un dato ausente nunca se pinta de verde.</b></div>'+rcavHtml()+
   '<h2 style="margin-top:10px">Semáforo de seguimiento</h2>'+
   '<div class="seg" role="group" aria-label="Momento de evaluación"><button type="button" data-smmode="AHORA" aria-pressed="'+(smMode==="AHORA")+'">Ahora</button><button type="button" data-smmode="CORTE" aria-pressed="'+(smMode==="CORTE")+'">Al corte de datos</button></div>'+
   '<p class="note">Evaluado: <b>'+safe(fmt(new Date(t).toISOString()))+'</b>'+(smMode==="CORTE"?' · <b>reconstrucción en la fecha del corte, no es el estado actual.</b>':(ANY?' · los datos locales están congelados y antiguos: por eso los puntos salen grises.':''))+'</p>'+
@@ -529,7 +533,7 @@ function renderSummary(k){
  $("tab-resumen").querySelectorAll("a[data-dep]").forEach(a=>a.onclick=e=>{e.preventDefault();selectDept(a.dataset.dep);});}
 function renderRainTab(){const C=D.rain?.coast,Z=D.rain?.north_zones;
  const zrows=(Z?.zones?.features||[]).map(f=>{const w=f.properties.windows;return "<tr><td>"+safe(f.properties.name)+"</td>"+["1h","3h","6h","24h","72h"].map(k=>'<td class="n">'+(w[k]?.status==="COMPLETA"?safe(w[k].mm.toFixed(1).replace(".",",")):'<span class="note">n/d</span>')+"</td>").join("")+"</tr>";}).join("");
- $("tab-lluvia").innerHTML='<h2>Lluvia estimada por satélite (IMERG Early)</h2><p class="note">Estimación de NASA con horas de latencia; <b>no es lluvia en tiempo real</b> ni un pluviómetro. Una ventana con alguna media hora ausente no se muestra (nunca cero). Sin umbrales. Nubosidad: no disponible en esta vista.</p>'+
+ $("tab-lluvia").innerHTML='<h2>Lluvia estimada por satélite (IMERG Early)</h2>'+rcavHtml()+'<p class="note">Estimación de NASA con horas de latencia; <b>no es lluvia en tiempo real</b> ni un pluviómetro. Una ventana con alguna media hora ausente no se muestra (nunca cero). Sin umbrales. Nubosidad: no disponible en esta vista.</p>'+
  '<h3>Costa completa · instantánea</h3>'+(C?.status==="OK"?'<p>Fin de ventana: <b>'+safe(fmt(C.end_utc))+'</b> ('+safe(ageTxt(C.end_utc))+(STALE.coast?', <b>congelada</b>':'')+'); capturada '+safe(fmt(C.captured_at_utc))+'. '+safe(C.cells.length)+' celdas de 0,1° en los 11 departamentos.</p><p class="note">'+safe(C.method)+' No se actualiza sola.</p>'+
  '<div class="tw"><table><thead><tr><th>Ventana</th><th>Estado</th><th class="n">Medias horas</th></tr></thead><tbody>'+Object.entries(C.windows).sort((a,b)=>parseInt(a[0])-parseInt(b[0])).map(([k,w])=>'<tr><td>'+safe(k.replace("h"," h"))+'</td><td>'+safe(w.status)+'</td><td class="n">'+safe(w.half_hours.join(" / "))+'</td></tr>').join("")+'</tbody></table></div>'
  :'<p class="empty">Sin instantánea costera archivada.</p>')+

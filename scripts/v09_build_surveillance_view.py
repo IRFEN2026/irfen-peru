@@ -40,6 +40,12 @@ EVAL = ROOT / "data/v09/research/anticipation/anticipation_evaluation_v0_1.json"
 REFERENCE = ROOT / "data/v09/sources/natural_earth_reference/peru_reference_v0_1.json"
 IGN_DIR = ROOT / "data/v09/sources/ign_hidrografia_500k"
 SEMAFORO = ROOT / "data/v09/research/semaforo/semaforo_v0_1.json"
+# P0 #496 (Tumbes, 04–05/11/2026): IMERG Early processing verified correct from the 48 original HDF5; the product
+# itself underestimated point rain. Shown wherever satellite rain is shown. Not a correction factor.
+RAIN_CAVEATS = [dict(id="P0-496", evidence="qa/V091_P0_496_HDF5_RECONSTRUCTION_20261109.md (PR #500)",
+                     text_es=("Una precipitación baja en IMERG Early no descarta lluvias intensas localizadas: en Tumbes, el 04–05/11/2026, "
+                              "IMERG dio como máximo 19–60 mm en las celdas de cuatro estaciones que reportaron 75–112 mm (valores de prensa pendientes del registro "
+                              "original SENAMHI). La lluvia satelital no sustituye a los pluviómetros ni a los avisos oficiales."))]
 HYDROLOGY = ROOT / "data/v09/research/semaforo/checkpoint_hydrology_v0_1.json"  # scripts/v091_checkpoint_hydrology.py  # built by scripts/v09_build_semaforo.py (run it first)
 IGN_CLASS = {"Río Principal": "RP", "Río Secundario": "RS", "Quebrada Húmeda": "QH", "Quebrada Seca": "QS", "Río Seco": "RX"}
 TUMBES_EV = ROOT / "site/data/validation/phase2_discovery_evidence/tumbes_rio_tumbes_initial_context_2019_2026.json"
@@ -473,7 +479,11 @@ def checkpoint_hydrology(semaforo: dict) -> dict:
     rows = sorted((c["id"], c["lat"], c["lon"]) for c in semaforo["checkpoints"])
     if hashlib.sha256(json.dumps(rows, separators=(",", ":")).encode()).hexdigest() != h.get("checkpoints_fingerprint"):
         return dict(status="DESACTUALIZADO", note_es="El inventario hidrológico no corresponde a estos checkpoints: regenérelo.")
-    import v091_catchment_live_view as CL
+    # load by path: importing by module name only works when this file is run as a script (tests import it by path)
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("v091_catchment_live_view_sv", ROOT / "scripts/v091_catchment_live_view.py")
+    CL = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(CL)
     live_archive = CL.load()
     live = CL.build(live_archive, [r["id"] for r in h["checkpoints"]], semaforo["cutoff_utc"])["points"]
     out = {}
@@ -597,7 +607,8 @@ def build() -> dict:
     semaforo = dict(status="PENDIENTE") if not sem or sem.get("built_from_dashboard_at_utc") != dash["built_at_utc"] else dict(status="OK", **sem)
     anticipation = anticipation_section(semaforo, nz)
     return dict(schema_version="irfen_v09_surveillance_view_v0_1", **GUARDS, built_from_dashboard_at_utc=dash["built_at_utc"],
-                semaforo=semaforo, checkpoint_hydrology=checkpoint_hydrology(semaforo), anticipation=anticipation, reference=reference, layers_unavailable=layers_unavailable, hydro_ign=hydro,
+                semaforo=semaforo, checkpoint_hydrology=checkpoint_hydrology(semaforo), anticipation=anticipation,
+                rain_caveats=RAIN_CAVEATS, reference=reference, layers_unavailable=layers_unavailable, hydro_ign=hydro,
                 disclaimer_es=("Vista privada de vigilancia científica (RESEARCH_ONLY / TEST_ONLY). No es un sistema de alerta, no predice crecidas, "
                                "huaicos ni inundaciones, y no sustituye a SENAMHI, INDECI ni a las autoridades. La ausencia de datos no significa ausencia de peligro."),
                 coast_departments=COAST, sources=sources, admin=admin, rain=dict(north_zones=nz, coast=cr, windows_h=WINDOWS), avisos=av,

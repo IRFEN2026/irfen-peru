@@ -189,14 +189,22 @@ class Bundle(unittest.TestCase):
         for dep, rivers in (("TUMBES", {"TUMBES", "ZARUMILLA"}), ("PIURA", {"PIURA", "CHIRA"})):
             pts = [c for c in sm["checkpoints"] if c["department"] == dep and c["type"] == "rio"]
             self.assertEqual({c["system_id"] for c in pts}, rivers)
+        hyd = json.loads((ROOT / "data/v09/research/semaforo/checkpoint_hydrology_v0_1.json").read_text(encoding="utf-8"))
+        delineated = {r["id"] for r in hyd["checkpoints"] if r["q3_contributing_area"]["status"] == "APORTACION_DELIMITADA_EXPERIMENTAL"}
         for c in sm["checkpoints"]:
-            if c["type"] != "rio" or c["department"] in ("LAMBAYEQUE", "LA LIBERTAD"):
+            if c["type"] != "rio":
+                self.assertFalse((c.get("rain_ref") or "").startswith("catchment:"), c["id"])  # population points: never a catchment
                 continue
-            # Tumbes, Piura and south of La Libertad: no live zone covers a river catchment yet: grey with the reason,
-            # never the local cell
-            self.assertIsNone(c["rain_ref"], c["id"])
-            self.assertEqual(c["state_at_cutoff"]["state"], "GRIS", c["id"])
-            self.assertTrue(any("gris" in x for x in c["limitations"]), c["id"])
+            ref = c.get("rain_ref")
+            if ref and ref.startswith("catchment:"):
+                # a river uses only the live rain of its OWN delineated contributing area (hash-locked capture target)
+                self.assertEqual(ref, "catchment:" + c["id"])
+                self.assertIn(c["id"], delineated)
+            elif c["department"] not in ("LAMBAYEQUE", "LA LIBERTAD"):
+                # no own area and no basin zone: grey with the reason, never the local cell
+                self.assertIsNone(ref, c["id"])
+                self.assertEqual(c["state_at_cutoff"]["state"], "GRIS", c["id"])
+                self.assertTrue(any("gris" in x for x in c["limitations"]), c["id"])
         for c in sm["checkpoints"]:
             for k in ("id", "name", "type", "system", "department", "lat", "lon", "sources", "limitations", "location_basis", "state_at_cutoff"):
                 self.assertIn(k, c)
