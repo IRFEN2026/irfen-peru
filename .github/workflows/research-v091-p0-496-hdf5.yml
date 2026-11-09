@@ -1,0 +1,64 @@
+name: "IRFEN research · P0 #496 reconstrucción IMERG desde HDF5 originales (RESEARCH_ONLY)"
+
+# Solo en la rama de investigación: descarga de lectura (NASA Earthdata, token del proyecto) de las 48 medias horas
+# originales de la ventana del incidente, reconstrucción independiente y comparación con lo archivado en main.
+# No calibra, no publica, no notifica, no toca el visor ni el capturador.
+on:
+  push:
+    branches:
+      - research/v091-p0-496-hdf5-reconstruction-20261109
+    paths:
+      - .github/workflows/research-v091-p0-496-hdf5.yml
+      - scripts/v091_p0_496_hdf5_reconstruction.py
+      - config/v091_p0_496_stations_v0_1.json
+
+permissions:
+  contents: write
+
+concurrency:
+  group: research-v091-p0-496-hdf5
+  cancel-in-progress: false
+
+jobs:
+  reconstruct:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      ARCHIVE_COMMIT: d214e8b974e14f2507bdab0003fa6a333da17c56  # main, 2026-11-05T21:37Z: first archive holding the 48 half-hours
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: |
+          pip install -q -r requirements.txt
+          pip install -q matplotlib
+      - name: Archived IRFEN values at the time of the incident (main)
+        run: |
+          git fetch -q --no-tags --depth=1 origin "$ARCHIVE_COMMIT"
+          mkdir -p "$RUNNER_TEMP/archived"
+          git show "$ARCHIVE_COMMIT:data/v09/rain/imerg_early_catchments_v0_1.json" > "$RUNNER_TEMP/archived/catchments.json"
+          git show "$ARCHIVE_COMMIT:data/v09/rain/imerg_early_north_v0_1.json" > "$RUNNER_TEMP/archived/north.json"
+          sha256sum "$RUNNER_TEMP"/archived/*.json
+      - name: Unit tests (synthetic, incl. HDF5 orientation)
+        run: python -m unittest tests.test_v091_p0_496_hdf5_reconstruction -v
+      - name: Reconstruct from the original HDF5
+        env:
+          EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
+        run: |
+          timeout --signal=TERM --kill-after=10s 1800s python scripts/v091_p0_496_hdf5_reconstruction.py --download \
+            --archived-catchments "$RUNNER_TEMP/archived/catchments.json" --archived-north "$RUNNER_TEMP/archived/north.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p0-496-hdf5-reconstruction
+          path: data/v09/research/p0_496/
+      - name: Commit the derived report (no HDF5; their SHA-256 are in the report)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/v09/research/p0_496
+          git diff --cached --quiet && exit 0
+          git commit -q -m "P0 #496: reconstrucción IMERG Early desde los HDF5 originales (run $GITHUB_RUN_ID)"
+          for i in 1 2 3; do git pull -q --rebase origin "$GITHUB_REF_NAME" && git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0; sleep 5; done; exit 1
