@@ -1,0 +1,19 @@
+name: "IRFEN research · auditoría científica v0.9.1 (RESEARCH_ONLY)"
+# Solo en la rama de auditoría: ejecuta las pruebas de la auditoría y de la asociación hidrológica. Lectura pura.
+on:
+  push:
+    branches:
+      - research/v091-scientific-audit-20261109
+permissions:
+  contents: read
+jobs:
+  audit-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -q -r requirements.txt
+      - run: python -m unittest -v tests.test_v091_audit_checkpoint_catchments tests.test_v091_checkpoint_hydrology tests.test_v091_checkpoint_hydrometeo_audit
