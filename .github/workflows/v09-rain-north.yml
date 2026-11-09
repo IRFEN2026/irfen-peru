@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: write
+  actions: write   # v0.9.1 research: only to request ONE private-viewer rebuild after a valid capture (see below)
 
 concurrency:
   group: v09-rain-north-${{ github.ref_name }}
@@ -47,6 +48,13 @@ jobs:
           python scripts/v09_zone_rain_engine.py
           python scripts/v09_zone_rain_engine.py --check
           python scripts/v09_build_dashboard_data.py
+      - name: Freshness ledger and rebuild decision (v0.9.1 research; never fails the capture)
+        if: always()
+        continue-on-error: true
+        run: |
+          python scripts/v091_capture_freshness.py --phase decide \
+            --catchments data/v09/rain/imerg_early_catchments_v0_1.json --north data/v09/rain/imerg_early_north_v0_1.json \
+            --ledger data/v09/rain/freshness_ledger_v0_1.json --main-sha "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID"
       - name: Persist (bot commit, bounded retries)
         shell: bash
         run: |
@@ -64,3 +72,24 @@ jobs:
             sleep $((attempt * 3))
           done
           exit 1
+      - name: Request ONE private-viewer rebuild after the push (v0.9.1 research; the viewer side only acts if its own after_capture switch is enabled)
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          python scripts/v091_capture_freshness.py --phase dispatch --catchments data/v09/rain/imerg_early_catchments_v0_1.json \
+            --ledger data/v09/rain/freshness_ledger_v0_1.json --dispatch-workflow v091-live-refresh.yml \
+            --dispatch-ref research/v091-live-integration-20261102 --dispatch-repo "$GITHUB_REPOSITORY" \
+            --dispatch-input mode=after_capture --dispatch-input "capture_key=$GITHUB_RUN_ID"
+          # only a failed request changes the ledger after the push: record it so the next capture retries
+          if ! git diff --quiet -- data/v09/rain/freshness_ledger_v0_1.json; then
+            git add data/v09/rain/freshness_ledger_v0_1.json
+            git commit -q -m "IRFEN v0.9.1: registro de frescura (petición de reconstrucción fallida, se reintentará)"
+            for attempt in 1 2 3; do
+              git fetch -q origin "$GITHUB_REF_NAME" && git rebase -q "origin/$GITHUB_REF_NAME" && git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0
+              git rebase --abort 2>/dev/null || true; sleep $((attempt * 3))
+            done
+            echo "::warning::freshness ledger not persisted (the next capture records it again)"
+          fi
