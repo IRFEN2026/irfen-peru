@@ -1,0 +1,31 @@
+name: "IRFEN research · diagnóstico GOES-19 RRQPE (solo lectura, RESEARCH_ONLY)"
+on:
+  push:
+    branches: [research/v091-goes19-diagnostic-20261109]
+    paths: [.github/workflows/research-v091-goes19-diagnostic.yml]
+permissions:
+  contents: read
+jobs:
+  diag:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Listado público del bucket noaa-goes19 (sin credenciales)
+        run: |
+          B=https://noaa-goes19.s3.amazonaws.com
+          now=$(date -u +%s)
+          for h in 0 1 2 3 6 24 72 168 192; do
+            t=$((now - h*3600)); p="ABI-L2-RRQPEF/$(date -u -d @$t +%Y/%j/%H)/"
+            n=$(curl -sS -m 30 "$B/?list-type=2&prefix=$p&max-keys=1000" | grep -o "<Key>" | wc -l)
+            echo "RRQPEF $p objects=$n"
+          done
+          echo "--- productos ABI-L2 de nivel superior (delimiter)"
+          curl -sS -m 30 "$B/?list-type=2&delimiter=/&max-keys=1000" | grep -o "<Prefix>[^<]*</Prefix>" | sed 's/<[^>]*>//g' | grep -i "ABI-L2-R\|RRQPE" | head -40
+          echo "--- última hora con RRQPEF (búsqueda 10 días hacia atrás, cada 6 h)"
+          for h in $(seq 0 6 240); do
+            t=$((now - h*3600)); p="ABI-L2-RRQPEF/$(date -u -d @$t +%Y/%j/%H)/"
+            n=$(curl -sS -m 30 "$B/?list-type=2&prefix=$p&max-keys=5" | grep -o "<Key>" | wc -l)
+            if [ "$n" -gt 0 ]; then echo "last hour with objects: $p ($h h ago)"; break; fi
+          done
+          echo "--- muestra de claves de un producto vecino (ABI-L2-ACHAF) en la hora actual"
+          p="ABI-L2-ACHAF/$(date -u +%Y/%j/%H)/"; curl -sS -m 30 "$B/?list-type=2&prefix=$p&max-keys=3" | grep -o "<Key>[^<]*</Key>" | head -3
