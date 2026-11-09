@@ -1,0 +1,64 @@
+name: "IRFEN research · prueba real de la actualización tras captura (RESEARCH_ONLY)"
+# Prueba de punta a punta, solo en esta rama y solo al tocar este archivo: lee los archivos IMERG reales de main,
+# registra la última observación disponible y pide UNA reconstrucción del visor en modo after_capture hacia una rama
+# de datos de PRUEBA (research/v091-live-data-test-*). Comprueba también la deduplicación y el registro de un fallo.
+# No captura, no escribe main, no toca la rama de datos real, no deja nada recurrente.
+on:
+  push:
+    branches:
+      - research/v091-freshness-viewer-20261109
+    paths:
+      - .github/workflows/research-v091-after-capture-test.yml
+permissions:
+  contents: read
+  actions: write   # solo para pedir la reconstrucción única (workflow_dispatch) en esta misma rama
+concurrency:
+  group: research-v091-after-capture-test
+  cancel-in-progress: false
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TEST_DB: research/v091-live-data-test-20261109
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Archivos IMERG reales de main (solo lectura)
+        run: |
+          set -euo pipefail
+          git fetch -q --no-tags --depth=1 origin main:refs/remotes/origin/main
+          echo "MAIN_SHA=$(git rev-parse origin/main)" >> "$GITHUB_ENV"
+          git show origin/main:data/v09/rain/imerg_early_catchments_v0_1.json > "$RUNNER_TEMP/c.json"
+          git show origin/main:data/v09/rain/imerg_early_north_v0_1.json > "$RUNNER_TEMP/n.json"
+      - name: 1 · captura válida -> una reconstrucción pedida
+        run: |
+          set -euo pipefail
+          python scripts/v091_capture_freshness.py --catchments "$RUNNER_TEMP/c.json" --north "$RUNNER_TEMP/n.json" \
+            --ledger "$RUNNER_TEMP/ledger.json" --main-sha "$MAIN_SHA" --run-id "$GITHUB_RUN_ID-1" \
+            --dispatch-workflow v091-live-refresh.yml --dispatch-ref "$GITHUB_REF_NAME" --dispatch-repo "$GITHUB_REPOSITORY" \
+            --dispatch-input mode=after_capture --dispatch-input "test_data_branch=$TEST_DB" --dispatch-input "capture_key=$MAIN_SHA"
+          python3 -c "import json,sys;d=json.load(open('$RUNNER_TEMP/ledger.json'));a=d['decision']['action'];r=d['last_dispatch']['result'];print(a,r);sys.exit(0 if (a,r)==('SI','OK') else 1)"
+      - name: 2 · misma captura otra vez -> duplicado, no se pide nada
+        run: |
+          set -euo pipefail
+          python scripts/v091_capture_freshness.py --catchments "$RUNNER_TEMP/c.json" --north "$RUNNER_TEMP/n.json" \
+            --ledger "$RUNNER_TEMP/ledger.json" --main-sha "$MAIN_SHA" --run-id "$GITHUB_RUN_ID-2" \
+            --dispatch-workflow v091-live-refresh.yml --dispatch-ref "$GITHUB_REF_NAME" --dispatch-repo "$GITHUB_REPOSITORY" \
+            --dispatch-input mode=after_capture --dispatch-input "test_data_branch=$TEST_DB"
+          python3 -c "import json,sys;d=json.load(open('$RUNNER_TEMP/ledger.json'));print(d['decision']);sys.exit(0 if d['decision']['action']=='NO' else 1)"
+      - name: 3 · petición que falla -> registrada y pendiente de reintento (sin romper)
+        run: |
+          set -euo pipefail
+          python scripts/v091_capture_freshness.py --catchments "$RUNNER_TEMP/c.json" --north "$RUNNER_TEMP/n.json" \
+            --ledger "$RUNNER_TEMP/ledger_fail.json" --main-sha "$MAIN_SHA" --run-id "$GITHUB_RUN_ID-3" \
+            --dispatch-workflow no-existe.yml --dispatch-ref "$GITHUB_REF_NAME" --dispatch-repo "$GITHUB_REPOSITORY"
+          python3 -c "import json,sys;d=json.load(open('$RUNNER_TEMP/ledger_fail.json'));print(d['last_dispatch']['result'],d.get('pending_retry'));sys.exit(0 if d['last_dispatch']['result']=='FALLO' and d.get('pending_retry') else 1)"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: after-capture-test-ledgers
+          path: ${{ runner.temp }}/ledger*.json
