@@ -182,5 +182,21 @@ class TwoPhase(unittest.TestCase):
             self.assertEqual(F.dispatch_pending(led, T0 + timedelta(hours=7), ["gh"], runner=ok)["phase2"]["action"], "NADA_PENDIENTE")
 
 
+
+class NoChurn(unittest.TestCase):
+    def test_unchanged_capture_does_not_rewrite_the_ledger(self):
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            (d / "c.json").write_text(json.dumps(archive(T0)), encoding="utf-8")
+            led = d / "l.json"
+            F.run_once(d / "c.json", None, led, T0 + timedelta(hours=5), "m", "1", ["gh"], False, defer=True)
+            before = led.read_bytes()
+            r = F.run_once(d / "c.json", None, led, T0 + timedelta(hours=5, minutes=30), "m", "2", ["gh"], False, defer=True)
+            self.assertEqual((r["decision"]["action"], r.get("written")), ("NO", False))
+            self.assertEqual(led.read_bytes(), before)
+            r = F.run_once(d / "c.json", None, led, T0 + timedelta(hours=13), "m", "3", ["gh"], False, defer=True)
+            self.assertNotEqual(led.read_bytes(), before)  # becoming stale is a change worth recording
+
+
 if __name__ == "__main__":
     unittest.main()

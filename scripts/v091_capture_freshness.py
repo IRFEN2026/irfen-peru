@@ -199,6 +199,11 @@ def run_once(catchments: Path, north: Path | None, ledger_path: Path, now: datet
         if dec["action"] == "REINTENTO" and res["result"] == "FALLO" and dec.get("retries", 0) >= MAX_RETRIES_ACROSS_RUNS:
             led.pop("pending_retry", None)
             led["gave_up"] = dict(key=dec["key"], at_utc=now.isoformat(), note_es="Reintentos agotados: el visor sigue con el último paquete bueno.")
+    if defer and dec["action"] == "NO" and prev:
+        po = prev.get("last_observation_available") or {}
+        if all(po.get(k) == obs.get(k) for k in ("last_observation_start_utc", "state", "freshness", "source_state")):
+            led["written"] = False  # nothing changed: no new commit in the capture repository (avoids churn every 30 min)
+            return led
     hist = (prev or {}).get("history", [])
     hist.append(dict(at_utc=now.isoformat(), capture_run_id=run_id, observation_start_utc=obs.get("last_observation_start_utc"),
                      age_hours=obs.get("age_hours"), freshness=obs.get("freshness"), state=obs.get("state"),
