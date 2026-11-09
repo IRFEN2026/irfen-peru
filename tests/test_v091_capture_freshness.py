@@ -148,6 +148,13 @@ class Control(unittest.TestCase):
         self.assertEqual((c["run"], c["chain"], c["data_branch"]), ("true", "false", "research/v091-live-data-test-x"))
         self.assertEqual(LR.control(self.CFG, T0, 0, "after_capture", "research/v091-live-data")["run"], "false")
 
+    def test_isolated_source_branch_only_for_test_rebuilds(self):
+        c = LR.control(self.CFG, T0, 0, "after_capture", "research/v091-live-data-test-x", "research/v091-e2e-capture-x")
+        self.assertEqual((c["run"], c["source_ref"], c["chain"]), ("true", "research/v091-e2e-capture-x", "false"))
+        self.assertEqual(LR.control(self.CFG, T0, 0, "after_capture", None, "research/v091-e2e-capture-x")["run"], "false")
+        self.assertEqual(LR.control(self.CFG, T0, 0, "after_capture", "research/v091-live-data-test-x", "main-copy")["run"], "false")
+        self.assertEqual(LR.control(self.CFG, T0, 0, "chain", None, "research/v091-e2e-capture-x")["run"], "false")
+
     def test_chain_still_obeys_its_expiry(self):
         self.assertEqual(LR.control(self.CFG, T0, 0)["chain"], "true")
         self.assertEqual(LR.control(self.CFG, T0 + timedelta(days=30), 0)["run"], "false")

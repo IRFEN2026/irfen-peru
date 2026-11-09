@@ -113,9 +113,11 @@ def validate(raw: bytes | None, spec: dict, now: datetime) -> tuple[str, dict]:
 
 
 TEST_DATA_BRANCH_PREFIX = "research/v091-live-data-test-"
+TEST_SOURCE_REF_PREFIX = "research/v091-e2e-capture-"
 
 
-def control(cfg: dict, now: datetime, hop: int, mode: str = "chain", test_data_branch: str | None = None) -> dict:
+def control(cfg: dict, now: datetime, hop: int, mode: str = "chain", test_data_branch: str | None = None,
+            source_ref: str | None = None) -> dict:
     """Whether this run may rebuild, and whether it may schedule another one. Never extends any expiry.
 
     mode=chain: the 20-min polling chain (config `enabled` / `expires_at_utc` / `max_hops_per_chain`).
@@ -145,11 +147,17 @@ def control(cfg: dict, now: datetime, hop: int, mode: str = "chain", test_data_b
                 reasons.append("after_capture caducado o sin caducidad")
     else:
         reasons.append(f"modo desconocido {mode!r}")
+    if source_ref:
+        # end-to-end tests only: read the captures of an isolated research branch instead of main, and only towards a
+        # test data branch (never the real one)
+        if not (mode == "after_capture" and test_data_branch and source_ref.startswith(TEST_SOURCE_REF_PREFIX)):
+            reasons.append("rama de origen de prueba no permitida")
     for k in ("public_alerting", "notifications_enabled", "merged_into_main", "predictive"):
         if cfg.get(k) is not False:
             reasons.append(f"guarda {k}")
     return dict(run="false" if reasons else "true", poll=int(cfg["poll_minutes"]), next=hop + 1, data_branch=data_branch,
-                chain="true" if mode == "chain" and not reasons else "false", mode=mode, reason="; ".join(reasons) or "ok")
+                chain="true" if mode == "chain" and not reasons else "false", mode=mode, source_ref=source_ref or "main",
+                reason="; ".join(reasons) or "ok")
 
 
 def gh_json(path: str):
@@ -296,10 +304,11 @@ def main(argv=None) -> int:
     ap.add_argument("--hop", type=int, default=0)
     ap.add_argument("--mode", default="chain", choices=("chain", "after_capture"))
     ap.add_argument("--test-data-branch")
+    ap.add_argument("--source-ref")
     a = ap.parse_args(argv)
     if a.control:
         c = control(json.loads(CFG.read_text(encoding="utf-8")), iso(a.as_of) if a.as_of else datetime.now(timezone.utc), a.hop,
-                    a.mode, a.test_data_branch)
+                    a.mode, a.test_data_branch, a.source_ref)
         print("\n".join(f"{k}={v}" for k, v in c.items()))
         return 0
     if a.fetch_attempts:

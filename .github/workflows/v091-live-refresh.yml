@@ -32,6 +32,9 @@ on:
       capture_key:
         description: "clave observación|sha que pidió la reconstrucción (trazabilidad)"
         default: ""
+      source_ref:
+        description: "solo pruebas de extremo a extremo: rama research/v091-e2e-capture-* con capturas aisladas (en vez de main)"
+        default: ""
 
 permissions:
   contents: write   # solo para escribir la rama de datos research/v091-live-data
@@ -62,10 +65,12 @@ jobs:
           MODE: ${{ inputs.mode || 'chain' }}
           TEST_DB: ${{ inputs.test_data_branch || '' }}
           KEY: ${{ inputs.capture_key || '' }}
+          SRC: ${{ inputs.source_ref || '' }}
         run: |
           set -euo pipefail
           extra=()
           if [ -n "$TEST_DB" ]; then extra=(--test-data-branch "$TEST_DB"); fi
+          if [ -n "$SRC" ]; then extra+=(--source-ref "$SRC"); fi
           python3 scripts/v091_live_refresh.py --control --hop "$HOP" --mode "$MODE" "${extra[@]}" | tee -a "$GITHUB_OUTPUT"
           echo "capture_key=$KEY" | tee -a "$GITHUB_STEP_SUMMARY"
 
@@ -88,7 +93,13 @@ jobs:
           DB: ${{ steps.ctl.outputs.data_branch }}
         run: |
           set -euo pipefail
-          git fetch -q --no-tags --depth=1 origin main:refs/remotes/origin/main
+          SRC="${{ steps.ctl.outputs.source_ref }}"
+          if [ -n "$SRC" ] && [ "$SRC" != "main" ]; then
+            # end-to-end test: the isolated capture branch plays the role of main (validated by the control step)
+            git fetch -q --no-tags --depth=1 origin "$SRC:refs/remotes/origin/main"
+          else
+            git fetch -q --no-tags --depth=1 origin main:refs/remotes/origin/main
+          fi
           if git ls-remote --exit-code origin "refs/heads/$DB" >/dev/null; then
             git fetch -q --no-tags --depth=1 origin "$DB:refs/remotes/origin/live-data"
             git worktree add -q ../live-data "refs/remotes/origin/live-data"
