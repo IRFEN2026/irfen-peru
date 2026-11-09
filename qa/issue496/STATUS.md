@@ -1,4 +1,44 @@
-# Estado de ejecución autónoma · #496 · 6 noviembre 2026
+# Actualización verificada · 9 noviembre 2026
+
+**RESEARCH_ONLY/TEST_ONLY. La ejecución ya terminó; el bloqueo de autorización mencionado más abajo quedó resuelto con el permiso posterior del usuario.** El texto del 6 noviembre se conserva como antecedente, no como estado actual.
+
+Run [42246018380](https://github.com/IRFEN2026/irfen-peru/actions/runs/42246018380), commit `7f6c97b54f2cab6771adac3f345638397c03e858`: 48 HDF5 IMERG Early V07C, 4 noviembre 12:00–5 noviembre 12:00 UTC. 7.488 comparaciones para 134 geometrías de cuenca/tramo y 22 zonas norte; cero diferencias superiores a 0,000051 mm/h. Máximo absoluto: 0,0000506419365 mm/h. Esto comprueba reproducción dentro de tolerancia, no exactitud pluviométrica.
+
+Verificación independiente del 9 noviembre: 48 hashes correctos y reproducción exacta de píxel, media, máximo, p50 y p90 de los cuatro candidatos geográficos mediante h5py, sin importar lectores ni muestreadores IRFEN. Run remoto: 12 pruebas dirigidas aprobadas. Artefacto `13518036065`, SHA256 ZIP `9806f9207767ff7a44552bd476cf40c4e2c9bf7245e69a482b57dd61619838fd`; retención hasta 6 diciembre. Preservar originales antes de su expiración.
+
+El control de reproducción abarca Tumbes, Piura, Lambayeque, La Libertad, Áncash, Lima, Callao, Ica, Arequipa, Moquegua y Tacna: 10 departamentos y Callao. No equivale a validar todas sus estaciones o cuencas.
+
+## Evidencia documental nueva
+
+El [boletín COEN 309](https://portal.indeci.gob.pe/wp-content/uploads/2026/11/BOLET%C3%8DN-INFORMATIVO-MONITOREO-DE-PELIGROS-Y-PERSPECTIVAS-N%C2%B0309-del-05-11-2026.pdf), página 5, reproduce datos SENAMHI para 4 noviembre 07:00–5 noviembre 07:00. Página comprobada visualmente. Se interpreta hora Perú UTC−05; la lámina no imprime zona horaria. Es evidencia institucional, **no registro instrumental original**.
+
+| Estación candidata | Boletín mm/24 h | Celda 0,1° mm | Media 3×3 mm | Máximo 3×3 mm | Diferencia celda/boletín |
+|---|---:|---:|---:|---:|---:|
+| Rica Playa | 112,50 | 36,90 | 31,07 | 59,60 | −67,20 % |
+| Puerto Pizarro | 40,08 | 25,15 | 29,35 | 61,12 | −37,24 % |
+| Matapalo | 10,40 | 8,69 | 9,31 | 23,90 | −16,44 % |
+
+También constan La Cruz 75, Cañaveral 88,9 y Papayal 22,4 mm. No se asigna celda sin revisar coordenadas. Coordenadas, centros de celda y procedencia están en `research/issue496/results-20261109/documentary-comparison.json`; datum aún no confirmado. El resultado NASA original conserva cero pares instrumentales.
+
+Rica Playa mantiene discrepancia incluso respecto al máximo del vecindario. Es un indicio documental del evento, no un sesgo transferible demostrado. Los cocientes distintos no justifican un multiplicador único. Estación puntual, celda y media de cuenca tienen distinto soporte espacial.
+
+## Limitaciones encontradas
+
+Los sectores Tumbes alto/medio/bajo dan 1,325 / 3,565 / 5,781 mm con ponderación equivalente: no representan la lluvia puntual en Rica Playa. De 156 geometrías, 140 tienen resultado equivalente y 16 quedan nulas por cobertura calculada inferior a 0,99999. Investigar precisión geométrica y límites de celda antes de relajar el umbral. No convertir nulos a cero.
+
+Entre los resultados evaluables, el cambio máximo frente a pesos en grados cuadrados fue 0,002877 mm (Ocoña bajo); en sectores Tumbes, inferior a 0,000341 mm. No explica la gran discrepancia del episodio. La reproducción usa geometrías y lógica de pesos históricas: no es validación independiente de la delimitación hidrológica.
+
+## Recomendación y alcance pendiente
+
+Cerrar solo la comprobación acotada NASA→archivo de estas 24 horas. Mantener #496 abierto para originales SENAMHI y período completo 31 octubre–6 noviembre: **se comprobó un día, no siete**. No aplicar multiplicador global ni declarar calibración. Faltan datum, calidad instrumental y más episodios para evaluación fuera de muestra.
+
+Reproducción offline: `python scripts/verify_issue496_artifact.py /ruta/artefacto --output /ruta/verificacion.json` (requiere numpy y h5py). Resultados y verificación: `research/issue496/results-20261109/`.
+
+No se fusionó, desplegó visor ni activaron alertas. Estimación para análisis completo: 1–2 jornadas desde disponer de originales y metadatos suficientes, según calidad/volumen. No hay fecha garantizada para obtener archivos restringidos y no se eluden login ni CAPTCHA. La recomendación actual ya está emitida.
+
+---
+
+# Antecedente: estado del 6 noviembre 2026 (superado por la actualización anterior)
 
 **Cierre científico pendiente. Sin ejecución remota nueva, sin fusión, sin despliegue ni alertas.**
 
