@@ -105,6 +105,29 @@ def check(bundle: dict, catchments: dict | None, north: dict | None) -> dict:
             v = w.get("mm") if w.get("status") == "COMPLETA" else None
             if k in rr["imerg"]["windows"] and not close(v, rr["imerg"]["windows"][k]):
                 mism.append(dict(kind="zone_copy_mismatch", zone=p["zone_id"], window=k, layer=v, semaforo=rr["imerg"]["windows"][k]))
+    # department summary: recent rain per contributing area (rain.catchments), never a departmental mean
+    cr = (bundle.get("rain") or {}).get("catchments") or {}
+    if cr.get("status") == "OK" and catchments is not None:
+        checked["summary_catchments"] = 0
+        rivers = {c["id"]: c["department"] for c in sm.get("checkpoints", []) if c["type"] == "rio"}
+        for dep, rows in cr["departments"].items():
+            for r in rows:
+                checked["summary_catchments"] += 1
+                if rivers.get(r["id"]) != dep:
+                    mism.append(dict(kind="summary_wrong_department", checkpoint=r["id"], department=dep))
+                end, exp = catchment_windows(catchments, r["id"])
+                if end is None:
+                    mism.append(dict(kind="summary_not_in_archive", checkpoint=r["id"]))
+                    continue
+                if cr.get("observation_end_utc") and iso(cr["observation_end_utc"]) != iso(end):
+                    mism.append(dict(kind="summary_end_mismatch", checkpoint=r["id"], bundle=cr["observation_end_utc"], source=end))
+                for k, v in exp.items():
+                    if k in r["windows"] and not close(r["windows"][k], v):
+                        mism.append(dict(kind="summary_window_mismatch", checkpoint=r["id"], window=k, bundle=r["windows"][k], source=v))
+        ids = {t["checkpoint_id"] for t in catchments["targets"]}
+        listed = {r["id"] for rows in cr["departments"].values() for r in rows}
+        if listed != ids & set(rivers):
+            mism.append(dict(kind="summary_target_set_mismatch", missing=sorted((ids & set(rivers)) - listed)[:10], extra=sorted(listed - ids)[:10]))
     return dict(schema_version="irfen_v091_viewer_source_consistency_v0_1", deployment_status="RESEARCH_ONLY", test_mode="TEST_ONLY",
                 checked=checked, mismatches=mism, ok=not mism and checked["refs"] > 0)
 

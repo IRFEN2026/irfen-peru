@@ -187,10 +187,17 @@ def run(out: Path, local_leaflet: Path | None) -> dict:
             page.screenshot(path=str(out / f"{name}_chiclayo.png"), full_page=False)
             page.fill("#search", "Arequipa (departamento)")
             page.locator("#searchForm button").click()
-            chk["summary_rows"] = page.locator("#tab-resumen tbody tr").count()
+            chk["summary_rows"] = page.locator("#sumTable tbody tr").count()
+            chk["summary_header"] = page.locator("#sumTable thead").inner_text()
+            chk["summary_freshness_tags"] = page.locator("#sumTable [data-freshness]").count()
+            chk["summary_freshness_states"] = sorted(set(page.eval_on_selector_all("#sumTable [data-freshness]", "e=>e.map(x=>x.dataset.freshness)")))
+            chk["summary_historical_sections"] = page.locator("#tab-resumen details[data-historical]").count()
+            chk["summary_historical_open"] = page.evaluate("[...document.querySelectorAll('#tab-resumen details[data-historical]')].some(d=>d.open)")
+            chk["summary_caveat"] = page.locator("#tab-resumen [data-caveat='P0-496']").count()
             chk["dept_card"] = page.locator("#tab-resumen .card h2").first.inner_text()
             page.select_option("#dept", "PIURA")
             chk["dept_card_select"] = page.locator("#tab-resumen .card h2").first.inner_text()
+            chk["dept_catchment_rows"] = page.locator("#tab-resumen table[data-crtable=PIURA] tbody tr").count()
             page.screenshot(path=str(out / f"{name}_piura.png"), full_page=False)
             tabs = {}
             for t in ("lluvia", "avisos", "rios", "quebradas"):

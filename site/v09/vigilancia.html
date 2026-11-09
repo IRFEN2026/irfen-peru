@@ -74,6 +74,7 @@ dialog .dh h2{margin:0}dialog .db{padding:10px 14px 14px;max-height:70vh;overflo
 #shapeKey button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media(max-width:560px){#shapeKey{right:7px;bottom:33px;gap:6px;font-size:10px;padding:4px 6px}#shapeKey .symbol{font-size:14px}}
 
+.fr-RECIENTE{background:#e6f4ea;color:#1e5631}.fr-CADUCADA{background:#fdecea;color:#8a1c1c}.fr-AUSENTE,.fr-FECHA_INCONSISTENTE{background:#eee;color:#444}details.hist{margin-top:10px;border-left:4px solid #999;padding-left:8px}
 .sm-agg{background:none;border:0}.sm-agg b{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);color:#fff;font:700 12px/1 system-ui,sans-serif;cursor:pointer}
 .ctx{border-left:4px dashed #7a5a00;background:var(--warn-bg);color:var(--warn-ink);padding:6px 8px;border-radius:4px;font-size:12.5px;margin:6px 0}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
@@ -223,7 +224,7 @@ let WIN="24h";
 const rainCoast=map?L.layerGroup():null,rainZones=map?L.layerGroup():null;
 const coastSub=()=>{const w=D.rain?.coast?.windows?.[WIN];return w?("IMERG Early "+WIN.replace("h"," h")+" hasta "+fmt(w.end_utc)+(STALE.coast?" · congelada ("+ageTxt(w.end_utc)+")":" · "+ageTxt(w.end_utc))):"sin instantánea";};
 const northSub=()=>"IMERG Early "+WIN.replace("h"," h")+" hasta "+fmt(D.rain?.north_zones?.end_utc)+(STALE.north?" · congelada ("+ageTxt(D.rain?.north_zones?.end_utc)+")":"");
-if(map){register("rainCoast",LV?"Lluvia estimada · costa completa (instantánea 01-11, no conectada)":"Lluvia estimada · costa completa (celdas 0,1°)",rainCoast,!LV,coastSub);
+if(map){register("rainCoast",(LV||STALE.coast)?"Histórico · lluvia costa completa (instantánea única, no actual)":"Lluvia estimada · costa completa (celdas 0,1°)",rainCoast,!LV&&!STALE.coast,coastSub);
  register("rainZones",LV?"Lluvia estimada · 22 zonas del norte (actualización automática)":"Lluvia estimada · 22 zonas del norte",rainZones,!!LV,northSub);}
 function drawRain(){if(!map)return;rainCoast.clearLayers();rainZones.clearLayers();const C=D.rain?.coast;let m="";
  if(C?.status==="OK"){const w=C.windows[WIN];
@@ -513,22 +514,42 @@ TABS.forEach(([id,label])=>{const b=document.createElement("button");b.type="but
 function showTab(id){TABS.forEach(([t])=>{$("tab-"+t).hidden=t!==id;$("t-"+t).setAttribute("aria-selected",String(t===id));});}
 const DEPS=D.coast_departments||[];const DS=D.departments||{};
 const r24=k=>{const s=DS[k]?.rain_coast?.[WIN];return s?.status==="COMPLETA"&&s.mean_mm!==null?s.mean_mm.toFixed(1).replace(".",",")+" / "+s.max_mm.toFixed(1).replace(".",","):"no disponible";};
+// Recent rain per contributing area (continuous archive of main). NOT a departmental mean; history kept apart.
+const CR=D.rain?.catchments?.status==="OK"?D.rain.catchments:null;
+const CRW=()=>CR&&CR.windows_h.includes(parseInt(WIN))?WIN:"24h";
+const crState=()=>{if(!CR||!CR.observation_end_utc)return["AUSENTE","sin dato"];const age=(NOW-Date.parse(CR.observation_end_utc))/3.6e6;
+ return age<0?["FECHA_INCONSISTENTE","fecha posterior a la hora actual"]:age<=CR.stale_after_hours?["RECIENTE","reciente · "+ageTxt(CR.observation_end_utc)]:["CADUCADA","caducada · "+ageTxt(CR.observation_end_utc)];};
+const crTag=()=>{const [k,t]=crState();return '<span class="tag fr-'+k+'" data-freshness="'+k+'">'+safe(t)+'</span>';};
+const mm1=v=>v===null||v===undefined?"n/d":v.toFixed(1).replace(".",",");
+function crTable(dep){if(!CR)return"";const rows=CR.departments[dep]||[];if(!rows.length)return"";
+ return '<div class="tw"><table data-crtable="'+safe(dep)+'"><thead><tr><th>Punto fluvial (cuenca aportante)</th><th class="n">km²</th>'+CR.windows_h.map(h=>'<th class="n">'+h+' h</th>').join("")+'</tr></thead><tbody>'+
+ rows.map(r=>'<tr><td>'+safe(r.name)+'</td><td class="n">'+(r.area_km2?Math.round(r.area_km2):"n/d")+'</td>'+CR.windows_h.map(h=>'<td class="n">'+mm1(r.windows[h+"h"])+'</td>').join("")+'</tr>').join("")+'</tbody></table></div>';}
+function crCell(dep){if(!CR)return'<span class="note">sin archivo por cuenca</span>';const rows=CR.departments[dep]||[],w=CRW(),N=CR.river_checkpoints[dep]||0;
+ const v=rows.map(r=>r.windows[w]).filter(x=>x!==null&&x!==undefined);
+ if(!rows.length)return'<span class="note">sin cuenca delimitada ('+N+' puntos de río)</span>';
+ return '<span data-crdep="'+safe(dep)+'">'+v.length+'/'+N+' cuencas · '+(v.length?mm1(Math.min(...v))+'–'+mm1(Math.max(...v))+' mm':'n/d')+'</span> '+crTag();}
+const crNote=()=>CR?'<p class="note">Lluvia por cuenca aportante: '+safe(CR.product)+' · ventana '+safe(CRW().replace("h"," h"))+' · fin de la observación <b>'+safe(fmt(CR.observation_end_utc))+'</b> ('+safe(crState()[1])+') · escrita en main '+safe(fmt(CR.archive_written_at_utc))+' · paquete del visor '+safe(fmt(D.live?.built_at_utc||D.built_from_dashboard_at_utc))+'. '+safe(CR.note_es)+'</p>':'<p class="note">Sin lluvia por cuenca en este paquete.</p>';
 const avNow=(k,st)=>AV.filter(a=>a.st===st&&(a.departments||[]).includes(k));
 function selectDept(k){if($("dept"))$("dept").value=k||"";if(!k){fitPeru();renderSummary();return;}
  const l=deptLayer[k];if(map&&l)map.fitBounds(l.getBounds(),{padding:[16,16]});if(!SINGLE)history.replaceState(null,"","#dep="+encodeURIComponent(k));renderSummary(k);showTab("resumen");if(PANEL_HIDDEN())togglePanel(true);}
 function renderSummary(k){
- const rows=DEPS.map(d=>{const v=avNow(d,"VIGENTE").length,f=avNow(d,"FUTURO").length;return '<tr><td><a href="#" data-dep="'+safe(d)+'">'+safe(title(d))+'</a></td><td class="n">'+v+(f?' <span class="note">(+'+f+')</span>':"")+'</td><td class="n">'+safe(r24(d))+'</td><td class="n">'+(DS[d]?.ana_points||0)+'</td><td class="n">'+(DS[d]?.inventory_rows||0)+'</td></tr>';}).join("");
+ const rows=DEPS.map(d=>{const v=avNow(d,"VIGENTE").length,f=avNow(d,"FUTURO").length;return '<tr><td><a href="#" data-dep="'+safe(d)+'">'+safe(title(d))+'</a></td><td class="n">'+v+(f?' <span class="note">(+'+f+')</span>':"")+'</td><td>'+crCell(d)+'</td><td class="n">'+(DS[d]?.ana_points||0)+'</td><td class="n">'+(DS[d]?.inventory_rows||0)+'</td></tr>';}).join("");
  let card="";
  if(k){const s=DS[k]||{};const va=avNow(k,"VIGENTE"),fa=avNow(k,"FUTURO");
   card='<div class="card"><h2>'+safe(title(k))+'</h2>'+
   '<p><b>Avisos vigentes ahora'+(STALE.avisos?' (solo boletines capturados hasta '+safe(fmt(AVCUT))+')':'')+':</b> '+(va.length?va.map(a=>'<span class="tag">'+safe(CAT[a.category]||a.product)+(a.level?" · "+safe(a.level):"")+'</span>').join(""):'<span class="note">ninguno en los boletines capturados</span>')+(fa.length?'<br><b>Próximos:</b> '+fa.length:"")+'</p>'+
-  '<p><b>Lluvia IMERG (media / máx. de celdas, mm, '+safe(WIN.replace("h"," h"))+'):</b> '+safe(r24(k))+'<br><span class="note">Media de todo el departamento, incluida la sierra · '+safe(coastSub())+'.</span></p>'+
+  '<p><b>Lluvia reciente por cuenca aportante (IMERG Early, mm):</b> '+crCell(k)+'</p>'+crTable(k)+crNote()+rcavHtml()+
+  '<p class="note" data-historical="coast-snapshot"><b>Histórico (no actual):</b> instantánea costera del '+safe(fmt(D.rain?.coast?.captured_at_utc))+', media / máx. de celdas '+safe(WIN.replace("h"," h"))+': '+safe(r24(k))+' mm.</p>'+
   '<p><b>Centros poblados ANA:</b> '+(s.ana_points||0)+' · <b>Inventario de quebradas:</b> '+(s.inventory_rows||0)+' · <b>Geometrías IRFEN:</b> '+(s.irfen_geometries||0)+' · <b>Zonas del norte con archivo continuo:</b> '+(s.north_rain_zones||0)+'</p>'+
   '<p><b>Crecidas de ríos:</b> '+(s.river_flood_research?'histórico PECHP y cuencas experimentales (pestaña «Crecidas de ríos»); sin caudal en tiempo real.':'<span class="note">sin información de crecidas integrada para este departamento.</span>')+'</p></div>';}
  $("tab-resumen").innerHTML='<label class="note">Departamento <select id="dept"><option value="">Toda la costa</option>'+DEPS.map(d=>'<option value="'+safe(d)+'"'+(d===k?" selected":"")+'>'+safe(title(d))+'</option>').join("")+'</select></label>'+card+
-  '<h2 style="margin-top:10px">Costa por departamento</h2><div class="tw"><table><thead><tr><th>Departamento</th><th class="n">Avisos vigentes'+(STALE.avisos?'*':'')+'</th><th class="n">Lluvia '+safe(WIN.replace("h"," h"))+' (mm) media / máx.</th><th class="n">Centros ANA</th><th class="n">Quebradas inv.</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+  '<h2 style="margin-top:10px">Costa por departamento</h2><div class="tw"><table id="sumTable"><thead><tr><th>Departamento</th><th class="n">Avisos vigentes'+(STALE.avisos?'*':'')+'</th><th title="Cuencas con dato / puntos de río · rango entre cuencas (mm) · frescura. No es una media departamental.">Lluvia '+safe(CRW().replace("h"," h"))+' por cuenca aportante (IMERG)</th><th class="n">Centros ANA</th><th class="n">Quebradas inv.</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
   (STALE.avisos?'<p class="note">* Solo boletines capturados hasta '+safe(fmt(AVCUT))+'; los avisos emitidos después no están incluidos.</p>':'')+
-  '<p class="note">Lluvia: '+safe(coastSub())+'. «No disponible» significa sin dato válido, nunca «sin lluvia». (+n) = avisos próximos.</p>';
+  crNote()+rcavHtml()+'<p class="note">«n/d» o «no disponible» significa sin dato válido, nunca «sin lluvia». Una lluvia baja no significa ausencia de peligro. Los avisos son oficiales (SENAMHI vía INDECI/COEN); la lluvia es una estimación satelital, no un pluviómetro. (+n) = avisos próximos.</p>'+
+  '<details class="hist" data-historical="coast-snapshot"><summary><b>Histórico</b> · instantánea costera IMERG Early (celdas 0,1°), '+safe(coastSub())+' · <b>no es dato actual</b></summary>'+
+  '<div class="tw"><table><thead><tr><th>Departamento</th><th class="n">Lluvia '+safe(WIN.replace("h"," h"))+' (mm) media / máx. de celdas</th></tr></thead><tbody>'+
+  DEPS.map(d=>'<tr><td>'+safe(title(d))+'</td><td class="n">'+safe(r24(d))+'</td></tr>').join("")+'</tbody></table></div>'+
+  '<p class="note">Captura única del '+safe(fmt(D.rain?.coast?.captured_at_utc))+', no conectada a la actualización. Se conserva solo como referencia histórica; no se mezcla con la lluvia reciente por cuenca.</p></details>';
  $("dept").onchange=e=>selectDept(e.target.value);
  $("tab-resumen").querySelectorAll("a[data-dep]").forEach(a=>a.onclick=e=>{e.preventDefault();selectDept(a.dataset.dep);});}
 function renderRainTab(){const C=D.rain?.coast,Z=D.rain?.north_zones;

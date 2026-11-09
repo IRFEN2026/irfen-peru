@@ -469,6 +469,47 @@ def ign_hydro(admin):
                 lines=dict(type="FeatureCollection", features=out), per_department=per_dep)
 
 
+def catchment_rain_summary(semaforo: dict) -> dict:
+    """Recent IMERG Early rain per contributing area of the river checkpoints, grouped by the checkpoint's department.
+
+    It is NOT a departmental mean: each value is the areal mean over one HydroSHEDS contributing area (which can extend
+    beyond the department, e.g. into Ecuador). Windows come from the continuous per-catchment archive of main; a window
+    with a missing half-hour or < 80 % coverage is null (unknown, never 0 mm). Freshness is judged by the page against
+    the time of viewing (observation end + 12 h)."""
+    import importlib.util
+    arch_path = ROOT / "data/v09/rain/imerg_early_catchments_v0_1.json"
+    if semaforo.get("status") != "OK" or not arch_path.is_file():
+        return dict(status="NO_DISPONIBLE", reason_es="Sin archivo de lluvia por cuenca o sin semáforo.")
+    spec = importlib.util.spec_from_file_location("v091_catchment_live_view_cs", ROOT / "scripts/v091_catchment_live_view.py")
+    CL = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(CL)
+    arch = json.loads(arch_path.read_text(encoding="utf-8"))
+    targets = {t["checkpoint_id"]: t for t in arch.get("targets", [])}
+    st = arch.get("status") or {}
+    deps = {d: [] for d in COAST}
+    obs_end = None
+    latest = max((g["time_utc"] for g in arch.get("granules", [])), default=None)
+    for cp in semaforo["checkpoints"]:
+        if cp["type"] != "rio" or cp["id"] not in targets or latest is None:
+            continue
+        end = (datetime.fromisoformat(latest) + timedelta(minutes=30)).isoformat()
+        sm = CL.summarize(arch, cp["id"], end)
+        obs_end = sm["observation_end_utc"]
+        deps.setdefault(cp["department"], []).append(dict(
+            id=cp["id"], name=cp["name"], system=cp.get("system"), area_km2=targets[cp["id"]].get("area_km2"),
+            windows={k: w["mm"] for k, w in sm["windows"].items()},
+            complete={k: w["status"] == "COMPLETA" for k, w in sm["windows"].items()}))
+    rivers = {d: sum(1 for c in semaforo["checkpoints"] if c["department"] == d and c["type"] == "rio") for d in COAST}
+    return dict(status="OK", source="data/v09/rain/imerg_early_catchments_v0_1.json (workflow v09-rain-north de main)",
+                product="NASA GPM IMERG Early V07 (30 min) · media areal por área aportante HydroSHEDS experimental",
+                kind="ESTIMACION_SATELITAL", observation_end_utc=obs_end, latest_granule_start_utc=st.get("latest_granule_start_utc"),
+                archive_written_at_utc=st.get("written_at_utc"), source_state=st.get("state"), stale_after_hours=12,
+                units="mm", windows_h=[1, 3, 6, 24, 72], river_checkpoints=rivers, departments=deps,
+                note_es=("No es una media departamental: cada valor es la lluvia media sobre el área aportante de un punto fluvial "
+                         "(puede extenderse fuera del departamento o del país). Una ventana incompleta se muestra como n/d, nunca 0 mm. "
+                         "Estimación satelital, no pluviómetro ni aviso oficial."))
+
+
 def checkpoint_hydrology(semaforo: dict) -> dict:
     """Compact per-checkpoint answers to the five questions + simplified contributing-area outlines, only when the static
     inventory was built for exactly these checkpoints (same ids and coordinates)."""
@@ -611,7 +652,7 @@ def build() -> dict:
                 rain_caveats=RAIN_CAVEATS, reference=reference, layers_unavailable=layers_unavailable, hydro_ign=hydro,
                 disclaimer_es=("Vista privada de vigilancia científica (RESEARCH_ONLY / TEST_ONLY). No es un sistema de alerta, no predice crecidas, "
                                "huaicos ni inundaciones, y no sustituye a SENAMHI, INDECI ni a las autoridades. La ausencia de datos no significa ausencia de peligro."),
-                coast_departments=COAST, sources=sources, admin=admin, rain=dict(north_zones=nz, coast=cr, windows_h=WINDOWS), avisos=av,
+                coast_departments=COAST, sources=sources, admin=admin, rain=dict(north_zones=nz, coast=cr, windows_h=WINDOWS, catchments=catchment_rain_summary(semaforo)), avisos=av,
                 rivers=rv, quebradas=qb, departments=deps, pending=pending, phenomena=phenomena)
 
 

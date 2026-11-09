@@ -142,6 +142,19 @@ class Bundle(unittest.TestCase):
             if not a["level"]:
                 self.assertTrue(a["level_note"])
 
+    def test_recent_rain_summary_is_per_catchment_for_the_11_departments(self):
+        cr = D["rain"]["catchments"]
+        self.assertEqual(cr["status"], "OK")
+        self.assertEqual(set(cr["departments"]), set(D["coast_departments"]))
+        self.assertEqual(sum(len(v) for v in cr["departments"].values()), 134)
+        self.assertIn("No es una media departamental", cr["note_es"])
+        self.assertEqual(cr["kind"], "ESTIMACION_SATELITAL")
+        for dep, rows in cr["departments"].items():
+            self.assertTrue(rows, dep)  # every coastal department has at least one delineated river catchment
+            for r in rows:
+                for k, v in r["windows"].items():
+                    self.assertEqual(v is None, not r["complete"][k], (r["id"], k))  # incomplete -> null, never 0
+
     def test_three_phenomena_and_gaps_are_declared(self):
         self.assertEqual({p["id"] for p in D["phenomena"]}, {"CRECIDA_RIO", "INUNDACION_PLUVIAL", "ACTIVACION_QUEBRADAS"})
         self.assertTrue(D["rivers"]["realtime_flow"].startswith("NO_DISPONIBLE"))
@@ -294,6 +307,15 @@ class Browser(unittest.TestCase):
             self.assertEqual(r["broken_internal_links"], [], r["name"])
             self.assertFalse(r["checks"]["overflow_x"], r["name"])
             self.assertEqual(r["checks"]["summary_rows"], 11)
+            # the department summary shows recent rain per contributing area, never a departmental mean of an old snapshot
+            self.assertNotIn("media / máx", r["checks"]["summary_header"])
+            self.assertIn("por cuenca aportante", r["checks"]["summary_header"])
+            self.assertEqual(r["checks"]["summary_freshness_tags"], 11)
+            self.assertTrue(set(r["checks"]["summary_freshness_states"]) <= {"RECIENTE", "CADUCADA", "AUSENTE", "FECHA_INCONSISTENTE"})
+            self.assertEqual((r["checks"]["summary_historical_sections"], r["checks"]["summary_historical_open"]), (1, False))
+            self.assertGreaterEqual(r["checks"]["summary_caveat"], 1)
+            cr = D["rain"]["catchments"]
+            self.assertEqual(r["checks"]["dept_catchment_rows"], len(cr["departments"]["PIURA"]))
             self.assertTrue(r["checks"]["leaflet"], "Leaflet not loaded (network to unpkg?)")
             self.assertGreater(r["checks"]["aviso_highlight_links"], 0)
             self.assertEqual(r["checks"]["river_chart"], 1)
