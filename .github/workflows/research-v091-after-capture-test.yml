@@ -79,15 +79,13 @@ jobs:
           set -euo pipefail
           python scripts/v091_capture_freshness.py --phase decide --catchments data/v09/rain/imerg_early_catchments_v0_1.json \
             --north data/v09/rain/imerg_early_north_v0_1.json --ledger data/v09/rain/freshness_ledger_v0_1.json \
-            --main-sha "$MAIN_SHA" --run-id "$GITHUB_RUN_ID"
-          python3 - <<'EOF' | tee -a "$GITHUB_STEP_SUMMARY"
-          import json
-          d = json.load(open("data/v09/rain/freshness_ledger_v0_1.json"))
-          o = d["last_observation_available"]
-          print("ledger:", o.get("state"), o.get("last_observation_end_utc"), "age_h", o.get("age_hours"), o.get("freshness"),
-                "latency_h", o.get("latency_at_write_hours"), "decision", d["decision"]["action"], (d.get("last_dispatch") or {}).get("result"))
-          assert o["state"] == "OK", o["problems"]
-          EOF
+            --main-sha "$MAIN_SHA" --run-id "$GITHUB_RUN_ID" | tee "$RUNNER_TEMP/decide.out"
+          # what this run decided comes from the script output (with no new observation the file is deliberately not
+          # rewritten, so its fields belong to the previous capture)
+          line=$(grep -m1 'title=V091_FRESHNESS::' "$RUNNER_TEMP/decide.out")
+          echo "decide (this run): ${line#*::}" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "$line" | grep -q ' state=OK ' || { echo "::error::capture archive not valid"; exit 1; }
+          if echo "$line" | grep -q ' action=SI '; then echo "REBUILD_KIND=AUTOMATICA" >> "$GITHUB_ENV"; else echo "REBUILD_KIND=MANUAL_CONTROLADA" >> "$GITHUB_ENV"; fi
           git add data/v09/rain site/data/v09 data/v09/surveillance 2>/dev/null || true
           git add -f data/v09/rain/freshness_ledger_v0_1.json
           git commit -q -m "e2e test capture (run $GITHUB_RUN_ID; isolated research branch, not main)" || echo "nothing to commit"
@@ -106,7 +104,7 @@ jobs:
           cp data/v09/rain/freshness_ledger_v0_1.json "$RUNNER_TEMP/ledger_after_dispatch.json"
           if grep -q '"action": "ENVIADA"' "$RUNNER_TEMP/dispatch.out"; then
             python3 -c "import json,sys;d=json.load(open('data/v09/rain/freshness_ledger_v0_1.json'));r=d['last_dispatch']['result'];print('dispatch',r,d.get('phase2'));sys.exit(0 if r=='OK' else 1)" | tee -a "$GITHUB_STEP_SUMMARY"
-          elif grep -q NADA_PENDIENTE "$RUNNER_TEMP/dispatch.out"; then
+          elif grep -q NADA_PENDIENTE "$RUNNER_TEMP/dispatch.out" && [ "$REBUILD_KIND" = MANUAL_CONTROLADA ]; then
             # no new half-hour at NASA -> the mechanism correctly asks for nothing; the test then runs ONE controlled manual
             # rebuild from the last real capture (same inputs, no dates touched) and says so.
             echo "**Sin observación nueva: el mecanismo no pide nada (correcto). Reconstrucción MANUAL controlada con la última captura real.**" | tee -a "$GITHUB_STEP_SUMMARY"
@@ -206,7 +204,9 @@ jobs:
           print("\n".join(rows))
           cav = [c["id"] for c in b.get("rain_caveats", [])]
           assert "P0-496" in cav
+          print("rebuild kind:", os.environ.get("REBUILD_KIND"), "| new capture bytes:", os.environ.get("NEW_CAPTURE"))
           json.dump(dict(cycle=m["cycle_id"], built=m["built_at_utc"], source_sha=m["main_sha"], obs_end=cr["observation_end_utc"],
+                         rebuild_kind=os.environ.get("REBUILD_KIND"), rebuild_run=os.environ.get("REBUILD_RUN"),
                          age_h=round(age, 2), departments=rows), open(d + "e2e_summary.json", "w"), ensure_ascii=False, indent=1)
           EOF
       - name: 8 · HTML descargable y navegador (escritorio y móvil)

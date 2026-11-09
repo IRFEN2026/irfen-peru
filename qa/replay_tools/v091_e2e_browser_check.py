@@ -9,6 +9,7 @@ the summary, the semáforo tab and a checkpoint popup, and the department card t
     python3 qa/replay_tools/v091_e2e_browser_check.py viewer.html out_dir   # exit 1 if any check fails
 """
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -20,7 +21,7 @@ def run(html: Path, out: Path, local_leaflet: Path | None = None) -> dict:
     with sync_playwright() as p:
         b = p.chromium.launch()
         for name, vp in (("escritorio", dict(width=1440, height=900)), ("movil", dict(width=390, height=844))):
-            ctx = b.new_context(viewport=vp, device_scale_factor=1)
+            ctx = b.new_context(viewport=vp, device_scale_factor=int(os.environ.get("IRFEN_SHOT_SCALE", "1")))
             page = ctx.new_page()
             errs = []
             page.on("pageerror", lambda e: errs.append(str(e)))
@@ -49,9 +50,13 @@ def run(html: Path, out: Path, local_leaflet: Path | None = None) -> dict:
             c["caveat_summary"] = page.locator("#tab-resumen [data-caveat='P0-496']").count()
             c["dept_cells"] = page.eval_on_selector_all("#sumTable [data-crdep]", "e=>e.map(x=>x.dataset.crdep+': '+x.textContent)")
             page.screenshot(path=str(out / f"{name}_resumen.png"), full_page=False)
+            page.locator("#sumTable").scroll_into_view_if_needed()  # on a phone the panel sits below the map
+            c["summary_table_visible"] = page.locator("#sumTable").is_visible()
+            page.screenshot(path=str(out / f"{name}_tabla_resumen.png"), full_page=False)
             page.select_option("#dept", "TACNA")
             page.wait_for_timeout(500)
             c["dept_table_rows_tacna"] = page.locator("#tab-resumen table[data-crtable=TACNA] tbody tr").count()
+            page.locator("#tab-resumen table[data-crtable=TACNA]").scroll_into_view_if_needed()
             page.screenshot(path=str(out / f"{name}_ficha_tacna.png"), full_page=False)
             page.locator("#t-semaforo").click()
             page.wait_for_timeout(600)
@@ -65,7 +70,7 @@ def run(html: Path, out: Path, local_leaflet: Path | None = None) -> dict:
             page.screenshot(path=str(out / f"{name}_ficha_punto.png"), full_page=False)
             ok = (not errs and c["leaflet"] and c["summary_rows"] == 11 and c["freshness_tags"] == 11 and "media / máx" not in c["summary_header"]
                   and c["historical_sections"] == 1 and not c["historical_open"] and c["caveat_summary"] >= 1 and c["caveat_semaforo"] >= 1
-                  and c["caveat_popup"] >= 1 and c["selfcheck"] == "536/536" and c["dept_table_rows_tacna"] > 0)
+                  and c["caveat_popup"] >= 1 and c["selfcheck"] == "536/536" and c["dept_table_rows_tacna"] > 0 and c["summary_table_visible"])
             c["ok"] = bool(ok)
             res[name] = c
             ctx.close()
