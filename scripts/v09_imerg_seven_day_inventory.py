@@ -27,13 +27,16 @@ def inventory(records):
     while t < END:
         expected.append(t)
         t += STEP
-    seen, duplicate, malformed = set(), [], []
+    seen, duplicate, malformed, out_of_window = set(), [], [], []
     for item in records:
         try:
             dt = parse_utc(item["observation_time"])
             sha = item["sha256"]
             if not isinstance(sha, str) or len(sha) != 64 or any(c not in "0123456789abcdef" for c in sha):
                 raise ValueError("invalid sha256")
+            if dt < START or dt >= END:
+                out_of_window.append(dt.isoformat())
+                continue
             if dt in seen:
                 duplicate.append(dt.isoformat())
             seen.add(dt)
@@ -41,12 +44,12 @@ def inventory(records):
             malformed.append(str(exc))
     missing = [t.isoformat() for t in expected if t not in seen]
     return {
-        "status": "COMPLETE" if not missing and not duplicate and not malformed else "INCOMPLETE",
+        "status": "COMPLETE" if not missing and not duplicate and not malformed and not out_of_window else "INCOMPLETE",
         "window_start": START.isoformat(), "window_end_exclusive": END.isoformat(),
         "expected_half_hours": len(expected),
         "present_half_hours": len(set(expected) & seen),
         "missing_half_hours": missing, "duplicate_half_hours": duplicate,
-        "invalid_records": malformed,
+        "invalid_records": malformed, "out_of_window": out_of_window,
         "note": "Completeness of metadata only; does not validate HDF5 values, spatial coverage or rain accuracy"
     }
 
