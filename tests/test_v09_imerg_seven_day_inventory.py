@@ -21,6 +21,10 @@ class SevenDayInventoryTests(unittest.TestCase):
     def test_duplicate(self):
         r=inventory([item(START),item(START)])
         self.assertEqual(len(r["duplicate_half_hours"]),1)
+    def test_outside_window_rejected(self):
+        r=inventory([item(START+i*STEP) for i in range(336)]+[item(START-STEP)])
+        self.assertEqual(r["status"],"INCOMPLETE")
+        self.assertEqual(len(r["out_of_window"]),1)
     def test_bad_sha(self):
         a=item(START);a["sha256"]="bad"
         self.assertEqual(len(inventory([a])["invalid_records"]),1)
