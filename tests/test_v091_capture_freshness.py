@@ -158,5 +158,29 @@ class Control(unittest.TestCase):
         self.assertEqual(LR.control(cfg, datetime(2026, 11, 9, 16, tzinfo=UTC), 0)["run"], "false")  # chain expired 09-11
 
 
+
+class TwoPhase(unittest.TestCase):
+    def test_decide_before_commit_then_dispatch_after_push(self):
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            (d / "c.json").write_text(json.dumps(archive(T0)), encoding="utf-8")
+            led = d / "l.json"
+            r = F.run_once(d / "c.json", None, led, T0 + timedelta(hours=5), "m", "1", ["gh"], False, defer=True)
+            self.assertEqual((r["decision"]["action"], r["last_dispatch"]["result"]), ("SI", "PEDIDA"))
+            # the same capture seen again before phase 2: not requested twice
+            self.assertEqual(F.run_once(d / "c.json", None, led, T0 + timedelta(hours=5), "m", "1b", ["gh"], False, defer=True)["decision"]["action"], "NO")
+            fail = lambda cmd, **kw: types.SimpleNamespace(returncode=1, stderr="HTTP 403", stdout="")
+            r2 = F.dispatch_pending(led, T0 + timedelta(hours=5, minutes=2), ["gh"], sleep=lambda s: None, runner=fail)
+            self.assertEqual(r2["last_dispatch"]["result"], "FALLO")
+            self.assertEqual(r2["pending_retry"]["key"], r2["last_dispatch"]["key"])
+            r3 = F.run_once(d / "c.json", None, led, T0 + timedelta(hours=6), "m", "2", ["gh"], False, defer=True)
+            self.assertEqual((r3["decision"]["action"], r3["last_dispatch"]["result"]), ("REINTENTO", "PEDIDA"))
+            ok = lambda cmd, **kw: types.SimpleNamespace(returncode=0, stderr="", stdout="")
+            r4 = F.dispatch_pending(led, T0 + timedelta(hours=6, minutes=2), ["gh"], sleep=lambda s: None, runner=ok)
+            self.assertEqual(r4["last_dispatch"]["result"], "OK")
+            self.assertNotIn("pending_retry", r4)
+            self.assertEqual(F.dispatch_pending(led, T0 + timedelta(hours=7), ["gh"], runner=ok)["phase2"]["action"], "NADA_PENDIENTE")
+
+
 if __name__ == "__main__":
     unittest.main()

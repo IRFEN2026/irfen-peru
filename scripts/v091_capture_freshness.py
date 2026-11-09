@@ -107,7 +107,7 @@ def decide(prev: dict | None, obs: dict, main_sha: str | None) -> dict:
         # recover a failed request even without new data (the newest key wins if the data advanced meanwhile)
         return dict(action="REINTENTO", reason=f"la petición anterior falló ({pending.get('error')}); reintento {pending.get('retries', 0) + 1}",
                     key=key, retries=pending.get("retries", 0) + 1)
-    if last.get("key") == key and last.get("result") == "OK":
+    if last.get("key") == key and last.get("result") in ("OK", "PEDIDA"):
         return dict(action="NO", reason="ejecución duplicada: esta observación ya se pidió con éxito", key=key)
     prev_obs = last.get("observation_start_utc")
     if prev_obs and iso(obs["last_observation_start_utc"]) <= iso(prev_obs):
@@ -132,8 +132,31 @@ def dispatch(cmd: list[str], sleep=time.sleep, run=subprocess.run) -> dict:
     return dict(result="FALLO", attempts=attempts, error=attempts[-1]["error"])
 
 
+def dispatch_pending(ledger_path: Path, now: datetime, dispatch_cmd: list[str], sleep=time.sleep, runner=subprocess.run) -> dict:
+    """Phase 2 (after the capture commit is pushed, so the rebuild reads the new data): send the request that phase 1
+    recorded as PEDIDA. A failure becomes FALLO + pending_retry (retried by the next capture). Returns the ledger."""
+    led = json.loads(ledger_path.read_text(encoding="utf-8"))
+    last = led.get("last_dispatch") or {}
+    if last.get("result") != "PEDIDA":
+        led["phase2"] = dict(at_utc=now.isoformat(), action="NADA_PENDIENTE")
+        return led
+    res = dispatch(dispatch_cmd, sleep=sleep, run=runner)
+    last.update(result=res["result"], attempts=res["attempts"], sent_at_utc=now.isoformat())
+    led["last_dispatch"] = last
+    if res["result"] == "FALLO":
+        led["pending_retry"] = dict(key=last["key"], retries=(led.get("decision") or {}).get("retries", 0), error=res.get("error"),
+                                    since_utc=now.isoformat())
+    else:
+        led.pop("pending_retry", None)
+    if led.get("history"):
+        led["history"][-1]["result"] = res["result"]
+    led["phase2"] = dict(at_utc=now.isoformat(), action="ENVIADA", result=res["result"])
+    ledger_path.write_text(json.dumps(led, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    return led
+
+
 def run_once(catchments: Path, north: Path | None, ledger_path: Path, now: datetime, main_sha: str | None, run_id: str | None,
-             dispatch_cmd: list[str] | None, dry_run: bool, sleep=time.sleep, runner=subprocess.run) -> dict:
+             dispatch_cmd: list[str] | None, dry_run: bool, sleep=time.sleep, runner=subprocess.run, defer: bool = False) -> dict:
     def load(p):
         if p is None or not p.is_file():
             return None, None
@@ -160,7 +183,9 @@ def run_once(catchments: Path, north: Path | None, ledger_path: Path, now: datet
         led["north_last_observation_available"] = obs_n
     led["decision"] = dec
     if dec["action"] in ("SI", "REINTENTO"):
-        if dry_run or not dispatch_cmd:
+        if defer:
+            res = dict(result="PEDIDA", attempts=[])  # sent by phase 2 after the capture commit is pushed
+        elif dry_run or not dispatch_cmd:
             res = dict(result="SIMULADO", attempts=[], command=dispatch_cmd)
         else:
             res = dispatch(dispatch_cmd, sleep=sleep, run=runner)
@@ -197,6 +222,8 @@ def main(argv=None) -> int:
     ap.add_argument("--dispatch-repo", default="IRFEN2026/irfen-peru")
     ap.add_argument("--dispatch-input", action="append", default=[], help="k=v passed with -f")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--phase", choices=("all", "decide", "dispatch"), default="all",
+                    help="decide: record the decision (PEDIDA) before the capture commit; dispatch: send it after the push")
     a = ap.parse_args(argv)
     now = iso(a.now) if a.now else datetime.now(UTC)
     cmd = None
@@ -205,7 +232,11 @@ def main(argv=None) -> int:
         for kv in a.dispatch_input:
             cmd += ["-f", kv]
     try:
-        led = run_once(a.catchments, a.north, a.ledger, now, a.main_sha, a.run_id, cmd, a.dry_run)
+        if a.phase == "dispatch":
+            led = dispatch_pending(a.ledger, now, cmd) if cmd and not a.dry_run else json.loads(a.ledger.read_text(encoding="utf-8"))
+            print(f"::notice title=V091_FRESHNESS_DISPATCH::{json.dumps(led.get('phase2'), ensure_ascii=False)}")
+            return 0
+        led = run_once(a.catchments, a.north, a.ledger, now, a.main_sha, a.run_id, cmd, a.dry_run, defer=a.phase == "decide")
     except Exception as exc:  # noqa: BLE001 - never break the capture
         print(f"::warning title=V091_FRESHNESS::{type(exc).__name__}: {exc}")
         return 0
