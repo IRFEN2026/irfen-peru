@@ -192,9 +192,11 @@ def run_once(catchments: Path, north: Path | None, ledger_path: Path, now: datet
         led["north_last_observation_available"] = obs_n
     led["decision"] = dec
     if dec["action"] in ("SI", "REINTENTO"):
-        if defer:
+        if dry_run:  # also in phase 1: with the dispatch switch off nothing is ever requested (no PEDIDA left behind)
+            res = dict(result="SIMULADO", attempts=[], command=dispatch_cmd)
+        elif defer:
             res = dict(result="PEDIDA", attempts=[])  # sent by phase 2 after the capture commit is pushed
-        elif dry_run or not dispatch_cmd:
+        elif not dispatch_cmd:
             res = dict(result="SIMULADO", attempts=[], command=dispatch_cmd)
         else:
             res = dispatch(dispatch_cmd, sleep=sleep, run=runner)

@@ -285,6 +285,19 @@ class Safety(unittest.TestCase):
         self.assertIn("needs.refresh.outputs.chain == 'true'", wf)                               # after_capture never chains
         self.assertIn("steps.src.outcome == 'failure'", wf)                                         # bad data -> package withdrawn
 
+    def test_dry_run_decide_never_leaves_a_pending_request(self):
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            (d / "c.json").write_text(json.dumps(archive(T0)), encoding="utf-8")
+            led = d / "l.json"
+            r = F.run_once(d / "c.json", None, led, T0 + timedelta(hours=5), "m", "1", None, True, defer=True)
+            self.assertEqual((r["decision"]["action"], r["last_dispatch"]["result"]), ("SI", "SIMULADO"))
+            calls = []
+            ok = lambda cmd, **kw: calls.append(cmd) or types.SimpleNamespace(returncode=0, stderr="", stdout="")
+            self.assertEqual(F.dispatch_pending(led, T0 + timedelta(hours=5), ["gh"], runner=ok, run_id="1")["phase2"]["action"],
+                             "NADA_PENDIENTE")
+            self.assertEqual(calls, [])
+
     def test_stale_but_new_observation_is_rebuilt_and_labelled_stale(self):
         o = F.observation_state(archive(T0), b"x", T0 + timedelta(hours=20), "c")  # late backfill: new for us, but old
         self.assertEqual((o["freshness"], F.decide(None, o, "m")["action"]), ("CADUCADA", "SI"))
