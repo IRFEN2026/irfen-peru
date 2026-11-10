@@ -1,0 +1,44 @@
+{
+ "schema_version": "irfen_v09_piura_station_points_v0_1",
+ "deployment_status": "RESEARCH_ONLY",
+ "test_mode": "TEST_ONLY",
+ "rule": "Solo coordenadas y áreas DOCUMENTADAS, con su fuente literal. Sin coordenada documentada no se delimita la cuenca; no se infieren coordenadas por el nombre del puente o del pueblo.",
+ "stations": [
+  {
+   "id": "PUENTE_SANCHEZ_CERRO",
+   "name": "Puente Sánchez Cerro (Piura) — sección de la presa Los Ejidos según la fuente",
+   "lat": -5.198611,
+   "lon": -80.622222,
+   "coordinate_as_printed": "5º11´55” latitud sur, 80º37´20” longitud oeste; 23.3 msnm",
+   "coordinate_datum": "NO_DECLARADO (documento de 2000: posiblemente PSAD56; desplazamiento posible de algunos cientos de metros)",
+   "coordinate_source": "PNUD 98/018 – CTAR Piura, «Estudio para el Tratamiento Integral del Río Piura, Apéndice D: Información hidrológica y del modelo hidrológico», mayo de 2000, §3.1 (data/v09/sources/historical_floods/docs/pnud_ctar_piura_2000_apendice_d.pdf)",
+   "drainage_area_km2_documented": [
+    {"value": 7790, "as_printed": "controla una cuenca de 7,790 km2 aproximadamente", "source": "PNUD-CTAR Piura 2000, Apéndice D §3.1"},
+    {"value": 7742, "as_printed": "con 7742 Km2 de cuenca colectora", "source": "Garbrecht (UTB, 1981), citado en PNUD-CTAR Piura 2000, Apéndice D §1.4.6"}
+   ],
+   "regulation": "Aguas abajo de la presa derivadora Los Ejidos (canal Biaggio Arbulú); el río recibe aguas arriba el trasvase Chira→Piura por el canal Daniel Escobar (C.H. Curumuy, 38 m3/s de caudal de fuente según el Plan de gestión de la cuenca Chira-Piura)"
+  },
+  {
+   "id": "PUENTE_NACARA",
+   "name": "Puente Ñácara (Chulucanas)",
+   "lat": null,
+   "lon": null,
+   "coordinate_source": "No encontrada en las fuentes archivadas (PNUD-CTAR 2000; Plan de gestión Chira-Piura; informes PECHP).",
+   "drainage_area_km2_documented": [],
+   "note": "PNUD-CTAR 2000 divide la cuenca en subcuencas con límites en Malacasí, Ñácara, Tambogrande y Sánchez Cerro, pero su Tabla 1 usa otros nombres (Bigote-Huarmaca, Chulucanas, Tambogrande, Medio y Bajo Piura): la correspondencia no es explícita y no se usa como área de drenaje."
+  },
+  {
+   "id": "TAMBOGRANDE",
+   "name": "Tambogrande",
+   "lat": null,
+   "lon": null,
+   "coordinate_source": "No encontrada en las fuentes archivadas.",
+   "drainage_area_km2_documented": []
+  }
+ ],
+ "subbasins_documented": {
+  "source": "PNUD-CTAR Piura 2000, Apéndice D, Tabla 1 «Subcuencas del río Piura»",
+  "km2": {"Bigote-Huarmaca": 1934.98, "Chulucanas": 2796.14, "Tambogrande": 1442.79, "Medio Piura": 1615.47, "Bajo Piura": 2440.26, "Total": 10229.64},
+  "check": "Bigote-Huarmaca + Chulucanas + Tambogrande + Medio Piura = 7789.38 km², coherente con los 7,790 km² hasta Sánchez Cerro del mismo documento"
+ }
+}
