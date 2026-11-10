@@ -43,7 +43,7 @@ capture() {
 
 # rebuild runs of the viewer created on the integration branch since $1
 rebuilds_since() {
-  gh run list -R "$R" --workflow v091-live-refresh.yml --branch "$INT" --event workflow_dispatch -L 20 \
+  gh run list -R "$R" --workflow v091-live-refresh.yml --branch "${VIEWER:-$INT}" --event workflow_dispatch -L 20 \
     --json databaseId,createdAt --jq "[.[]|select(.createdAt>=\"$1\")]|map(.databaseId)|join(\" \")"
 }
 

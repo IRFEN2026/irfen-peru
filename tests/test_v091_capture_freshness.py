@@ -345,6 +345,9 @@ class Safety(unittest.TestCase):
                 return dict(l.split("=", 1) for l in out.read_text().splitlines())
 
         self.assertEqual(run("main", "schedule")["on"], "false")                      # default: OFF
+        # default target: a research viewer branch that accepts mode=after_capture (the 02-11 live branch only takes `hop`)
+        self.assertEqual(run("main", "schedule", "true")["viewer_ref"], "research/v091-viewer-after-capture-20261110")
+        self.assertNotIn("research/v091-live-integration-20261102", g)
         self.assertEqual(run("main", "workflow_dispatch", "", "research/x", "research/v091-live-data-test-1")["on"], "false")
         self.assertEqual(run("main", "schedule", "true")["on"], "true")              # only an explicit repository switch
         ok = run("research/v091-e2e-capture-1", "workflow_dispatch", "", "research/v091-int", "research/v091-live-data-test-1")

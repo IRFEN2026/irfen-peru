@@ -1,4 +1,4 @@
-name: "IRFEN research · prueba integral definitiva #504 + #505 (RESEARCH_ONLY, ejecución manual única)"
+name: "IRFEN research · prueba integral #504 + #505 sobre main actual (RESEARCH_ONLY, ejecución manual única)"
 # Se ejecuta solo al tocar este archivo en la rama de integración experimental. Nada queda activo después:
 #   rama aislada research/v091-e2e-capture-20261110-<run> (copia del código integrado) + registro de partida
 #   -> captura REAL con el v09-rain-north.yml de #504 (workflow_dispatch manual, modo prueba) apuntando a una rama del
@@ -6,7 +6,7 @@ name: "IRFEN research · prueba integral definitiva #504 + #505 (RESEARCH_ONLY, 
 #   -> segunda captura real apuntando a esta rama: REINTENTO -> UNA reconstrucción (after_capture, rama de datos de PRUEBA)
 #   -> tercera captura real: sin observación nueva -> no se pide nada (deduplicación), sin segunda cadena
 #   -> paquete frente a los archivos de la captura -> HTML -> navegador escritorio/móvil + caducidad (+11,5 h / +12,5 h)
-# Re-ejecución 2 (la 1, run 42734812228, falló al leer los registros con gh; su captura 42734945221 decidió NO).
+# 10-11 tarde: misma prueba sobre la candidata basada en el main actual, con el destino real del envío (VIEWER).
 # No se modifican fechas. Si NASA no publica una media hora nueva tras las esperas, la prueba FALLA y lo dice (no replay).
 on:
   push:
@@ -28,8 +28,9 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       R: ${{ github.repository }}
       INT: ${{ github.ref_name }}
-      TEST_DB: research/v091-live-data-test-20261110
+      TEST_DB: research/v091-live-data-test-20261110-main
       BAD_REF: research/v091-no-existe-e2e-20261110
+      VIEWER: research/v091-viewer-after-capture-20261110  # the production default target of #504's switch
     steps:
       - uses: actions/checkout@v6
         with:
@@ -40,14 +41,14 @@ jobs:
       - name: Dependencias (navegador)
         run: |
           pip install -q -r requirements.txt
-          pip install -q "playwright==1.48.0"
+          pip install -q "playwright==1.48.0" pyyaml
           python -m playwright install --with-deps chromium >/dev/null
       - name: "0 · rama aislada con el código integrado y registro de partida (sin pedir nada)"
         run: |
           set -euo pipefail
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          CAP="research/v091-e2e-capture-20261110-$GITHUB_RUN_ID"
+          CAP="research/v091-e2e-capture-20261110m-$GITHUB_RUN_ID"
           echo "CAP=$CAP" >> "$GITHUB_ENV"; echo "START=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
           echo "INT_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
           echo "MAIN_BEFORE=$(git ls-remote origin refs/heads/main | cut -f1)" >> "$GITHUB_ENV"
@@ -61,6 +62,28 @@ jobs:
           { echo "## Prueba integral #504 + #505"; echo; echo "- integración \`$(git rev-parse --short HEAD~1)\` · rama aislada \`$CAP\`";
             echo "- partida: $(grep -m1 -o 'last_obs_end=[^ ]*' "$RUNNER_TEMP/base.out")"; echo;
             echo "| etapa | ejecución | interruptor | decisión (fase 1) | envío (fase 2) |"; echo "|---|---|---|---|---|"; } >> "$GITHUB_STEP_SUMMARY"
+      - name: "0b · destino del envío compatible con mode=after_capture y sin nada activado"
+        run: |
+          set -euo pipefail
+          git fetch -q --no-tags --depth=1 origin "$VIEWER:refs/remotes/origin/viewer"
+          default=$(grep -oE 'ref=research/[A-Za-z0-9._/-]+' .github/workflows/v09-rain-north.yml | head -1 | cut -d= -f2)
+          git show refs/remotes/origin/viewer:.github/workflows/v091-live-refresh.yml > "$RUNNER_TEMP/target_wf.yml"
+          git show refs/remotes/origin/viewer:config/v091_live_refresh.json > "$RUNNER_TEMP/target_cfg.json"
+          python3 - "$default" <<'EOF' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json, os, sys, yaml
+          wf = yaml.safe_load(open(os.environ["RUNNER_TEMP"] + "/target_wf.yml"))
+          on = wf.get(True) or wf.get("on")
+          inp = on["workflow_dispatch"]["inputs"]
+          assert sys.argv[1] == os.environ["VIEWER"], ("default target in v09-rain-north", sys.argv[1])
+          for k in ("mode", "capture_key", "test_data_branch", "source_ref"):
+              assert k in inp, k
+          assert "after_capture" in str(inp["mode"]), inp["mode"]
+          assert "schedule" not in on, "target must not be scheduled"
+          cfg = json.load(open(os.environ["RUNNER_TEMP"] + "/target_cfg.json"))
+          assert cfg["enabled"] is False and cfg["after_capture"]["enabled"] is False
+          print(f"\n- destino `{sys.argv[1]}`: entradas {sorted(inp)} · modo after_capture admitido · sin schedule · "
+                f"cadena enabled={cfg['enabled']} · after_capture.enabled={cfg['after_capture']['enabled']}\n")
+          EOF
       - name: "1 · captura real + observación nueva + fallo provocado (rama del visor inexistente)"
         run: |
           source qa/replay_tools/v091_integrated_e2e.sh
@@ -85,7 +108,7 @@ jobs:
       - name: "2 · captura real + recuperación: REINTENTO -> una sola reconstrucción"
         run: |
           source qa/replay_tools/v091_integrated_e2e.sh
-          capture C2 "$INT"
+          capture C2 "$VIEWER"
           grep -q ' action=REINTENTO ' <<<"$LAST_DECIDE" || { echo "::error::expected REINTENTO"; exit 1; }
           grep -q '"action": "ENVIADA", "result": "OK"' <<<"$LAST_PHASE2" || { echo "::error::recovery request not sent"; exit 1; }
           echo "SRC_SHA=$(git ls-remote origin "refs/heads/$CAP" | cut -f1)" >> "$GITHUB_ENV"
@@ -102,14 +125,14 @@ jobs:
           before=$(git ls-remote origin "refs/heads/$CAP" | cut -f1)
           git fetch -q --no-tags origin "$CAP"; lb=$(git show FETCH_HEAD:data/v09/rain/freshness_ledger_v0_1.json | sha256sum | cut -c1-64)
           expected="$REBUILD"
-          capture C3 "$INT"
+          capture C3 "$VIEWER"
           if grep -q ' action=SI ' <<<"$LAST_DECIDE"; then
             # NASA published yet another half-hour meanwhile: that ONE request is legitimate; check the duplicate again
             echo "NASA publicó otra media hora durante la prueba: esa petición es legítima; se repite la comprobación" | tee -a "$GITHUB_STEP_SUMMARY"
             sleep 60; expected="$(rebuilds_since "$START")"
             for r in $expected; do gh run watch "$r" -R "$R" --interval 15 >/dev/null 2>&1 || true; done
             git fetch -q --no-tags origin "$CAP"; lb=$(git show FETCH_HEAD:data/v09/rain/freshness_ledger_v0_1.json | sha256sum | cut -c1-64)
-            capture C4 "$INT"
+            capture C4 "$VIEWER"
           fi
           grep -q ' action=NO ' <<<"$LAST_DECIDE" || { echo "::error::expected NO"; exit 1; }
           grep -q 'NADA_PENDIENTE' <<<"$LAST_PHASE2" || { echo "::error::phase 2 should have nothing to send"; exit 1; }

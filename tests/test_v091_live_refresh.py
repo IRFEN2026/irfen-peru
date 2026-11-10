@@ -208,7 +208,13 @@ class Refresh(unittest.TestCase):
         self.assertEqual(m["new_observations"], [])
         feed = {s["id"]: s for s in json.loads((self.dir / "current/observation_feed_v0_1.json").read_text(encoding="utf-8"))["sources"]}
         im, go, av = feed["imerg_early_north"], feed["goes19_rrqpe_north"], feed["avisos_indeci_coen"]
-        self.assertEqual((im["attempt_result"], go["attempt_result"], av["attempt_result"]), ("FALLIDO", "NO_EJECUTADO", "CORRECTO"))
+        # avisos: the run succeeded, so the result is what that capture saved in its health file on this branch (the real
+        # file follows main's captures: when INDECI is unreachable its last_check.ok is false -> FALLIDO, never hidden)
+        health = json.loads(self.real_show("HEAD", "data/v09/senamhi_avisos/health_v0_1.json"))
+        av_expected = "CORRECTO" if (health.get("last_check") or {}).get("ok") is True else "FALLIDO"
+        self.assertEqual((im["attempt_result"], go["attempt_result"], av["attempt_result"]), ("FALLIDO", "NO_EJECUTADO", av_expected))
+        if av_expected == "FALLIDO":
+            self.assertTrue(av["attempt_detail_es"])  # the failure is stated, with the previous observation kept
         self.assertIn("DownloadFailure", im["attempt_detail_es"])
         self.assertEqual(im["last_attempt_utc"], at(-10))
         self.assertEqual(im["last_observation_utc"], im["source_time_utc"])  # last observation kept, separate from the attempt
@@ -307,9 +313,15 @@ class Attempts(unittest.TestCase):
         self.assertEqual((r["result"], r["basis"], r["attempt_utc"]), ("FALLIDO", "ARCHIVO", "2026-11-02T02:36:27Z"))
         self.assertEqual(a(self.SPEC, None, None)["result"], "DESCONOCIDO")
 
+    def test_repository_chain_cannot_run_at_any_time(self):
+        for t in ("2026-11-02T12:00:00Z", "2026-11-08T23:59:59Z", "2026-11-10T17:00:00Z", "2030-01-01T00:00:00Z"):
+            for mode in ("chain", "after_capture"):
+                self.assertEqual(LR.control(CFG, LR.iso(t), 0, mode=mode)["run"], "false", (t, mode))
+
     def test_chain_stops_at_expiry_and_is_not_extended(self):
         self.assertEqual(CFG["expires_at_utc"], "2026-11-09T00:00:00Z")  # not extended without authorization
-        c = lambda t, hop=3, **kw: LR.control(dict(CFG, **kw), LR.iso(t), hop)
+        # expiry logic tested on the recorded chain settings with enabled=True explicitly (the repository file is OFF)
+        c = lambda t, hop=3, **kw: LR.control(dict(CFG, **{"enabled": True, **kw}), LR.iso(t), hop)
         self.assertEqual(c("2026-11-08T23:59:59Z")["run"], "true")
         self.assertEqual(c("2026-11-09T00:00:00Z")["run"], "false")
         self.assertEqual(c("2026-11-09T00:20:00Z")["run"], "false")
@@ -359,7 +371,8 @@ class Workflow(unittest.TestCase):
         self.assertIn("v091_live_refresh.py --control", wf)  # tested stop logic (expiry, hops, enabled, guards)
         self.assertNotRegex(wf, r"gh api[^\n]*(-X|--method)")  # producer runs are only read
         self.assertEqual(CFG["data_branch"], "research/v091-live-data")
-        self.assertIs(CFG["enabled"], True)
+        # integration candidate: the expired 20-min chain is switched OFF (it is not renewed) and the date is kept as record
+        self.assertIs(CFG["enabled"], False)
         self.assertTrue(CFG["expires_at_utc"] and CFG["max_hops_per_chain"] > 0)
         for k in ("public_alerting", "notifications_enabled", "predictive", "merged_into_main"):
             self.assertIs(CFG[k], False, k)

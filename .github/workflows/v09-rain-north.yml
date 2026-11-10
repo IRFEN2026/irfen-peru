@@ -73,7 +73,7 @@ jobs:
           #  * production: repository variable IRFEN_V091_AFTER_CAPTURE_DISPATCH == "true" on main (not set: OFF);
           #  * one manual end-to-end test: workflow_dispatch on an isolated research/v091-e2e-capture-* branch, publishing
           #    to a research/v091-live-data-test-* branch (never the real data branch, never main).
-          on=false; ref=research/v091-live-integration-20261102; extra=""
+          on=false; ref=research/v091-viewer-after-capture-20261110; extra=""   # compatible target: its v091-live-refresh.yml accepts mode=after_capture
           if [ "$GITHUB_REF_NAME" = main ] && [ "$SWITCH" = true ]; then on=true
           elif [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] && [[ "$GITHUB_REF_NAME" == research/v091-e2e-capture-* ]] \
                && [[ "$E2E_VIEWER_REF" == research/* ]] && [[ "$E2E_TEST_DB" == research/v091-live-data-test-* ]]; then
