@@ -150,6 +150,17 @@ class ReviewPriority(unittest.TestCase):
         self.assertFalse(p["imerg_usable"] or p["goes_usable"])
         self.assertTrue(any("IMERG Early desactualizado" in m for m in p["missing_es"]))
         self.assertTrue(any("GOES-19 desactualizado" in m for m in p["missing_es"]))
+        # SYNTHETIC: the same evidence evaluated BEFORE its own timestamps (clock behind the data, or a mis-stamped
+        # source). Not current, never 'no signal': R5, both unusable, said why, and the end of each window is an edge.
+        early = T0  # IMERG ends at T0+30 min, GOES scan at T0+50 min
+        self.assertEqual(self.code([], self.FULL_ZERO, self.GOES_ZERO, early), "R5_DATOS_INSUFICIENTES")
+        self.assertEqual(self.code([], self.FULL_RAIN, self.GOES_RAIN, early), "R5_DATOS_INSUFICIENTES")
+        p = E.review_priority([], self.FULL_ZERO, self.GOES_ZERO, dict(status="NO_DISPONIBLE"), early)
+        self.assertFalse(p["imerg_usable"] or p["goes_usable"] or p["data_complete"])
+        self.assertTrue(any("IMERG Early con fecha posterior a la evaluación" in m for m in p["missing_es"]))
+        self.assertTrue(any("GOES-19 con fecha posterior a la evaluación" in m for m in p["missing_es"]))
+        self.assertEqual(p["next_change_utc"], (T0 + timedelta(minutes=30)).isoformat())
+        self.assertTrue(E.imerg_usable_at(self.FULL_ZERO, T0 + timedelta(minutes=30)))  # usable from its own end
 
     def test_goes_alone_goes_stale_after_ninety_minutes(self):
         just = T0 + timedelta(minutes=50 + 90)
@@ -216,6 +227,11 @@ class GeosWindows(unittest.TestCase):
         self.assertNotIn("windows", w)
         self.assertEqual(E.geos_windows_at(dict(status="NO_DISPONIBLE", reason="x"), at)["status"], "NO_DISPONIBLE")
         self.assertEqual(E.geos_windows_at(dict(self.geos(48), dataset_time_start=None), at)["status"], "NO_DISPONIBLE")
+        before = datetime(2026, 10, 12, 9, 0, tzinfo=timezone.utc)  # SYNTHETIC: cycle stamped after the evaluation
+        w = E.geos_windows_at(self.geos(48), before)
+        self.assertEqual(w["status"], "NO_DISPONIBLE")
+        self.assertIn("posterior a la evaluación", w["reason"])
+        self.assertNotIn("windows", w)
 
 
 class CommittedState(unittest.TestCase):
