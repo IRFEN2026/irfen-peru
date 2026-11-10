@@ -155,6 +155,19 @@ class Bundle(unittest.TestCase):
                 for k, v in r["windows"].items():
                     self.assertEqual(v is None, not r["complete"][k], (r["id"], k))  # incomplete -> null, never 0
 
+    def test_river_points_without_a_verified_catchment_are_named_and_carry_no_rain(self):
+        cr = D["rain"]["catchments"]
+        named = {x["id"]: dep for dep, rows in cr["without_catchment"].items() for x in rows}
+        rivers = {c["id"] for c in D["semaforo"]["checkpoints"] if c["type"] == "rio"}
+        listed = {r["id"] for rows in cr["departments"].values() for r in rows}
+        self.assertEqual(set(named), rivers - listed)
+        self.assertEqual(named, {"TUM-R-ZARUMILLA-MEDIO": "TUMBES", "LIM-R-RIMAC-ALTO": "LIMA",
+                                 "ICA-R-SAN_JUAN-BAJO": "ICA", "ARE-R-TAMBO-BAJO": "AREQUIPA"})
+        for rows in cr["without_catchment"].values():
+            for x in rows:
+                self.assertNotIn("windows", x)  # no rain value is attached, unknown is not 0 mm
+                self.assertIn("pendiente de verificación", x["reason_es"])
+
     def test_three_phenomena_and_gaps_are_declared(self):
         self.assertEqual({p["id"] for p in D["phenomena"]}, {"CRECIDA_RIO", "INUNDACION_PLUVIAL", "ACTIVACION_QUEBRADAS"})
         self.assertTrue(D["rivers"]["realtime_flow"].startswith("NO_DISPONIBLE"))

@@ -49,6 +49,8 @@ def run(html: Path, out: Path, local_leaflet: Path | None = None) -> dict:
             c["historical_open"] = page.evaluate("[...document.querySelectorAll('#tab-resumen details[data-historical]')].some(d=>d.open)")
             c["caveat_summary"] = page.locator("#tab-resumen [data-caveat='P0-496']").count()
             c["dept_cells"] = page.eval_on_selector_all("#sumTable [data-crdep]", "e=>e.map(x=>x.dataset.crdep+': '+x.textContent)")
+            c["without_catchment_named"] = page.eval_on_selector_all("#sumTable [data-nocatchment-count]", "e=>e.reduce((a,x)=>a+(+x.dataset.nocatchmentCount),0)")
+            c["observation_end_utc"] = page.evaluate("JSON.parse(document.getElementById('bundle').textContent).rain.catchments.observation_end_utc")
             page.screenshot(path=str(out / f"{name}_resumen.png"), full_page=False)
             page.locator("#sumTable").scroll_into_view_if_needed()  # on a phone the panel sits below the map
             c["summary_table_visible"] = page.locator("#sumTable").is_visible()
@@ -56,6 +58,7 @@ def run(html: Path, out: Path, local_leaflet: Path | None = None) -> dict:
             page.select_option("#dept", "TACNA")
             page.wait_for_timeout(500)
             c["dept_table_rows_tacna"] = page.locator("#tab-resumen table[data-crtable=TACNA] tbody tr").count()
+            c["tacna_table"] = page.locator("#tab-resumen table[data-crtable=TACNA]").inner_text()
             page.locator("#tab-resumen table[data-crtable=TACNA]").scroll_into_view_if_needed()
             page.screenshot(path=str(out / f"{name}_ficha_tacna.png"), full_page=False)
             page.locator("#t-semaforo").click()
@@ -70,9 +73,37 @@ def run(html: Path, out: Path, local_leaflet: Path | None = None) -> dict:
             page.screenshot(path=str(out / f"{name}_ficha_punto.png"), full_page=False)
             ok = (not errs and c["leaflet"] and c["summary_rows"] == 11 and c["freshness_tags"] == 11 and "media / máx" not in c["summary_header"]
                   and c["historical_sections"] == 1 and not c["historical_open"] and c["caveat_summary"] >= 1 and c["caveat_semaforo"] >= 1
-                  and c["caveat_popup"] >= 1 and c["selfcheck"] == "536/536" and c["dept_table_rows_tacna"] > 0 and c["summary_table_visible"])
+                  and c["caveat_popup"] >= 1 and c["selfcheck"] == "536/536" and c["dept_table_rows_tacna"] > 0 and c["summary_table_visible"]
+                  and c["without_catchment_named"] == 4)
             c["ok"] = bool(ok)
             res[name] = c
+            ctx.close()
+        # expiry: the same file opened 11.5 h and 12.5 h after the end of the observation (browser clock only; the data are
+        # untouched). Presentation must be RECIENTE then CADUCADA everywhere; the millimetres shown must be exactly the same.
+        from datetime import datetime, timedelta
+        end = datetime.fromisoformat(res["escritorio"]["observation_end_utc"])
+        for key, hours, expect in (("antes_12h", 11.5, "RECIENTE"), ("caducidad", 12.5, "CADUCADA")):
+            ctx = b.new_context(viewport=dict(width=1440, height=900), device_scale_factor=int(os.environ.get("IRFEN_SHOT_SCALE", "1")))
+            page = ctx.new_page()
+            errs = []
+            page.on("pageerror", lambda e: errs.append(str(e)))
+            if local_leaflet:
+                page.route("**/*", route)
+            page.clock.set_fixed_time(end + timedelta(hours=hours))
+            page.goto(html.resolve().as_uri())
+            page.wait_for_selector("body[data-ready='1']", timeout=30000)
+            page.wait_for_timeout(1500)
+            e = dict(errors=errs, opened_at_utc=(end + timedelta(hours=hours)).isoformat(), expected=expect)
+            e["freshness_states"] = sorted(set(page.eval_on_selector_all("#sumTable [data-freshness]", "e=>e.map(x=>x.dataset.freshness)")))
+            e["dept_cells"] = page.eval_on_selector_all("#sumTable [data-crdep]", "e=>e.map(x=>x.dataset.crdep+': '+x.textContent)")
+            page.locator("#sumTable").scroll_into_view_if_needed()
+            page.screenshot(path=str(out / f"escritorio_{key}_resumen.png"), full_page=False)
+            page.select_option("#dept", "TACNA")
+            page.wait_for_timeout(500)
+            e["tacna_table"] = page.locator("#tab-resumen table[data-crtable=TACNA]").inner_text()
+            e["ok"] = (not errs and e["freshness_states"] == [expect] and e["dept_cells"] == res["escritorio"]["dept_cells"]
+                       and e["tacna_table"] == res["escritorio"]["tacna_table"])
+            res[key] = e
             ctx.close()
         b.close()
     return res
@@ -81,6 +112,7 @@ def run(html: Path, out: Path, local_leaflet: Path | None = None) -> dict:
 if __name__ == "__main__":
     r = run(Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3]) if len(sys.argv) > 3 else None)
     Path(sys.argv[2], "browser_check.json").write_text(json.dumps(r, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-    print(json.dumps({k: {kk: v[kk] for kk in ("ok", "errors", "selfcheck", "freshness_states", "caveat_popup", "dept_table_rows_tacna")} for k, v in r.items()},
+    print(json.dumps({k: {kk: v.get(kk) for kk in ("ok", "errors", "selfcheck", "freshness_states", "caveat_popup", "dept_table_rows_tacna",
+                                                  "without_catchment_named", "opened_at_utc")} for k, v in r.items()},
                      ensure_ascii=False, indent=1))
     sys.exit(0 if all(v["ok"] for v in r.values()) else 1)

@@ -128,6 +128,10 @@ def check(bundle: dict, catchments: dict | None, north: dict | None) -> dict:
         listed = {r["id"] for rows in cr["departments"].values() for r in rows}
         if listed != ids & set(rivers):
             mism.append(dict(kind="summary_target_set_mismatch", missing=sorted((ids & set(rivers)) - listed)[:10], extra=sorted(listed - ids)[:10]))
+        named = {x["id"] for rows in (cr.get("without_catchment") or {}).values() for x in rows}
+        checked["summary_without_catchment"] = len(named)
+        if named != set(rivers) - ids:  # every river point without a verified area is named, and only those
+            mism.append(dict(kind="summary_without_catchment_mismatch", expected=sorted(set(rivers) - ids), named=sorted(named)))
     return dict(schema_version="irfen_v091_viewer_source_consistency_v0_1", deployment_status="RESEARCH_ONLY", test_mode="TEST_ONLY",
                 checked=checked, mismatches=mism, ok=not mism and checked["refs"] > 0)
 

@@ -500,11 +500,19 @@ def catchment_rain_summary(semaforo: dict) -> dict:
             windows={k: w["mm"] for k, w in sm["windows"].items()},
             complete={k: w["status"] == "COMPLETA" for k, w in sm["windows"].items()}))
     rivers = {d: sum(1 for c in semaforo["checkpoints"] if c["department"] == d and c["type"] == "rio") for d in COAST}
+    # river points whose contributing area is not in the hash-locked targets: named, never given a rain value
+    without = {}
+    for cp in semaforo["checkpoints"]:
+        if cp["type"] == "rio" and cp["id"] not in targets:
+            without.setdefault(cp["department"], []).append(dict(
+                id=cp["id"], name=cp["name"],
+                reason_es="Sin área aportante verificada: la asociación del punto con su cuenca está pendiente de "
+                          "verificación, por eso no se muestra lluvia (desconocida, no 0 mm)."))
     return dict(status="OK", source="data/v09/rain/imerg_early_catchments_v0_1.json (workflow v09-rain-north de main)",
                 product="NASA GPM IMERG Early V07 (30 min) · media areal por área aportante HydroSHEDS experimental",
                 kind="ESTIMACION_SATELITAL", observation_end_utc=obs_end, latest_granule_start_utc=st.get("latest_granule_start_utc"),
                 archive_written_at_utc=st.get("written_at_utc"), source_state=st.get("state"), stale_after_hours=12,
-                units="mm", windows_h=[1, 3, 6, 24, 72], river_checkpoints=rivers, departments=deps,
+                units="mm", windows_h=[1, 3, 6, 24, 72], river_checkpoints=rivers, departments=deps, without_catchment=without,
                 note_es=("No es una media departamental: cada valor es la lluvia media sobre el área aportante de un punto fluvial "
                          "(puede extenderse fuera del departamento o del país). Una ventana incompleta se muestra como n/d, nunca 0 mm. "
                          "Estimación satelital, no pluviómetro ni aviso oficial."))

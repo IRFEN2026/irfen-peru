@@ -523,13 +523,17 @@ const crState=()=>{if(!CR||!CR.observation_end_utc)return["AUSENTE","sin dato"];
  return age<0?["FECHA_INCONSISTENTE","fecha posterior a la hora actual"]:age<=CR.stale_after_hours?["RECIENTE","reciente · "+ageTxt(CR.observation_end_utc)]:["CADUCADA","caducada · "+ageTxt(CR.observation_end_utc)];};
 const crTag=()=>{const [k,t]=crState();return '<span class="tag fr-'+k+'" data-freshness="'+k+'">'+safe(t)+'</span>';};
 const mm1=v=>v===null||v===undefined?"n/d":v.toFixed(1).replace(".",",");
-function crTable(dep){if(!CR)return"";const rows=CR.departments[dep]||[];if(!rows.length)return"";
- return '<div class="tw"><table data-crtable="'+safe(dep)+'"><thead><tr><th>Punto fluvial (cuenca aportante)</th><th class="n">km²</th>'+CR.windows_h.map(h=>'<th class="n">'+h+' h</th>').join("")+'</tr></thead><tbody>'+
+const crWithout=dep=>(CR&&CR.without_catchment&&CR.without_catchment[dep])||[];
+function crWithoutHtml(dep){const w=crWithout(dep);if(!w.length)return"";
+ return '<p class="note" data-nocatchment="'+safe(dep)+'"><b>Sin cuenca verificada ('+w.length+'):</b> '+w.map(x=>safe(x.name)+' <span class="note">('+safe(x.id)+')</span>').join("; ")+'. '+safe(w[0].reason_es)+'</p>';}
+function crTable(dep){if(!CR)return"";const rows=CR.departments[dep]||[];if(!rows.length)return crWithoutHtml(dep);
+ return crWithoutHtml(dep)+'<div class="tw"><table data-crtable="'+safe(dep)+'"><thead><tr><th>Punto fluvial (cuenca aportante)</th><th class="n">km²</th>'+CR.windows_h.map(h=>'<th class="n">'+h+' h</th>').join("")+'</tr></thead><tbody>'+
  rows.map(r=>'<tr><td>'+safe(r.name)+'</td><td class="n">'+(r.area_km2?Math.round(r.area_km2):"n/d")+'</td>'+CR.windows_h.map(h=>'<td class="n">'+mm1(r.windows[h+"h"])+'</td>').join("")+'</tr>').join("")+'</tbody></table></div>';}
 function crCell(dep){if(!CR)return'<span class="note">sin archivo por cuenca</span>';const rows=CR.departments[dep]||[],w=CRW(),N=CR.river_checkpoints[dep]||0;
  const v=rows.map(r=>r.windows[w]).filter(x=>x!==null&&x!==undefined);
  if(!rows.length)return'<span class="note">sin cuenca delimitada ('+N+' puntos de río)</span>';
- return '<span data-crdep="'+safe(dep)+'">'+v.length+'/'+N+' cuencas · '+(v.length?mm1(Math.min(...v))+'–'+mm1(Math.max(...v))+' mm':'n/d')+'</span> '+crTag();}
+ const nw=crWithout(dep).length;
+ return '<span data-crdep="'+safe(dep)+'">'+v.length+'/'+N+' cuencas · '+(v.length?mm1(Math.min(...v))+'–'+mm1(Math.max(...v))+' mm':'n/d')+'</span>'+(nw?' <span class="note" data-nocatchment-count="'+nw+'" title="'+safe(crWithout(dep).map(x=>x.name).join("; "))+'">· '+nw+' sin cuenca verificada</span>':'')+' '+crTag();}
 const crNote=()=>CR?'<p class="note">Lluvia por cuenca aportante: '+safe(CR.product)+' · ventana '+safe(CRW().replace("h"," h"))+' · fin de la observación <b>'+safe(fmt(CR.observation_end_utc))+'</b> ('+safe(crState()[1])+') · escrita en main '+safe(fmt(CR.archive_written_at_utc))+' · paquete del visor '+safe(fmt(D.live?.built_at_utc||D.built_from_dashboard_at_utc))+'. '+safe(CR.note_es)+'</p>':'<p class="note">Sin lluvia por cuenca en este paquete.</p>';
 const avNow=(k,st)=>AV.filter(a=>a.st===st&&(a.departments||[]).includes(k));
 function selectDept(k){if($("dept"))$("dept").value=k||"";if(!k){fitPeru();renderSummary();return;}
