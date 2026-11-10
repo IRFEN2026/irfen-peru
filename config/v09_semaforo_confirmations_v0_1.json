@@ -1,0 +1,33 @@
+{
+  "schema_version": "irfen_v09_semaforo_confirmations_v0_1",
+  "rule_es": "Registro manual de eventos en un río o quebrada. Es la ÚNICA vía al rojo, durante 72 h desde la fecha del evento, y solo para entradas reportadas y verificadas: verified=true, fuente https verificable, fecha y lugar (checkpoint_id, o system_id para los puntos de cauce de ese río). Una entrada sin verificar (verified=false o sin enlace https) se muestra como «pendiente de verificación»: no pinta rojo y no envía correo. El rojo indica que el evento ocurrió, no que siga activo. Ni la lluvia ni los avisos crean entradas. No se rellena automáticamente.",
+  "fields_es": {
+    "id": "identificador único y estable de la entrada (se usa para no repetir correos)",
+    "checkpoint_id": "id del punto (o system_id para todo un sistema fluvial)",
+    "system_id": "opcional",
+    "event_es": "qué se observó (desborde, huaico, activación…)",
+    "observed_at_utc": "fecha y hora del evento (ISO 8601)",
+    "source_kind": "OFICIAL (INDECI/COEN, SENAMHI, ANA, municipalidad) o REGISTRO_VERIFICADO",
+    "source_title": "título de la fuente",
+    "source_url": "enlace",
+    "verified": "true solo tras revisar la fuente; false = pendiente de verificación (no pinta rojo)",
+    "recorded_by": "quién lo registró",
+    "location_es": "dónde se observó (sector, poblado o tramo)",
+    "event_kind": "ACTIVACION_QUEBRADA, DESBORDE_RIO u OTRO_EVENTO (título de la hoja de alerta)"
+  },
+  "confirmations": [],
+  "example_es": {
+    "id": "2026-11-02-la-leche-medio-1",
+    "checkpoint_id": "LAM-R-LA_LECHE-MEDIO",
+    "system_id": null,
+    "event_kind": "DESBORDE_RIO",
+    "event_es": "Desborde del río La Leche en el sector …",
+    "observed_at_utc": "2026-11-02T19:30:00Z",
+    "source_kind": "OFICIAL",
+    "source_title": "INDECI · Reporte complementario Nº …",
+    "source_url": "https://…",
+    "verified": true,
+    "recorded_by": "…",
+    "location_es": "Sector …, distrito de Pítipo"
+  }
+}

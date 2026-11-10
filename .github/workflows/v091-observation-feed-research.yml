@@ -1,0 +1,39 @@
+name: IRFEN v0.9.1 - verificar feed experimental de observaciones (sin publicar)
+
+on:
+  push:
+    branches:
+      - research/v091-observation-feed-research-20261102
+    paths:
+      - scripts/v091_build_observation_feed.py
+      - tests/test_v091_observation_feed.py
+      - .github/workflows/v091-observation-feed-research.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v091-observation-feed-research
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Test deterministic provenance and freshness guardrails
+        run: python -m unittest discover -s tests -p test_v091_observation_feed.py -v
+      - name: Build research source status only (no warning colors and no deployment)
+        run: |
+          python scripts/v091_build_observation_feed.py --output "$RUNNER_TEMP/observation_feed_v0_1.json"
+          python -m json.tool "$RUNNER_TEMP/observation_feed_v0_1.json" >/dev/null
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v091-observation-feed-research
+          path: ${{ runner.temp }}/observation_feed_v0_1.json
+          retention-days: 7
