@@ -302,6 +302,60 @@ class Safety(unittest.TestCase):
         o = F.observation_state(archive(T0), b"x", T0 + timedelta(hours=20), "c")  # late backfill: new for us, but old
         self.assertEqual((o["freshness"], F.decide(None, o, "m")["action"]), ("CADUCADA", "SI"))
 
+    def test_capture_workflow_serialises_runs_and_never_fails_on_freshness(self):
+        wf = (ROOT / ".github/workflows/v09-rain-north.yml").read_text(encoding="utf-8")
+        self.assertIn("concurrency:", wf)
+        self.assertIn("cancel-in-progress: false", wf)
+        self.assertEqual(wf.count("scripts/v091_capture_freshness.py"), 2)  # decide before the commit, dispatch after the push
+        self.assertGreaterEqual(wf.count("continue-on-error: true"), 2)      # never breaks the capture
+        self.assertIn("mode=after_capture", wf)
+        self.assertNotIn("mode=chain", wf)
+
+    def test_capture_workflow_commits_only_failed_requests_and_binds_the_run(self):
+        wf = (ROOT / ".github/workflows/v09-rain-north.yml").read_text(encoding="utf-8")
+        step = wf[wf.index("Request ONE private-viewer rebuild"):]
+        self.assertNotIn("if: always()", step.split("- name:", 1)[0])  # no rebuild request when the capture was not pushed
+        self.assertIn('--run-id "$GITHUB_RUN_ID"', step)
+        self.assertIn("=='FALLO'", step)                                # a success is never committed (no churn)
+        self.assertNotIn("git diff --quiet -- data/v09/rain/freshness_ledger_v0_1.json", step)
+
+    def test_rebuild_switch_is_off_by_default_and_only_opens_for_isolated_manual_tests(self):
+        import subprocess
+        import textwrap
+        wf = (ROOT / ".github/workflows/v09-rain-north.yml").read_text(encoding="utf-8")  # no PyYAML in CI: plain text
+
+        def step(marker):
+            i = wf.index(marker)
+            j = wf.find("\n      - ", i)
+            return wf[i:j if j > 0 else len(wf)]
+
+        g = step("id: gate")
+        gate = textwrap.dedent(g[g.index("run: |") + len("run: |") + 1:])
+        send = step("Request ONE private-viewer rebuild")
+        self.assertIn("if: steps.gate.outputs.on == 'true'", send)
+        self.assertIn('DRY=--dry-run; [ "$GATE_ON" = true ] && DRY=""', step("Freshness ledger and rebuild decision"))
+
+        def run(ref, event, switch="", viewer="", db=""):
+            with tempfile.TemporaryDirectory() as d:
+                out = Path(d) / "o"
+                out.write_text("")
+                env = dict(GITHUB_OUTPUT=str(out), GITHUB_REF_NAME=ref, GITHUB_EVENT_NAME=event, SWITCH=switch,
+                           E2E_VIEWER_REF=viewer, E2E_TEST_DB=db, PATH="/usr/bin:/bin")
+                subprocess.run(["bash", "-c", gate], env=env, check=True, capture_output=True)
+                return dict(l.split("=", 1) for l in out.read_text().splitlines())
+
+        self.assertEqual(run("main", "schedule")["on"], "false")                      # default: OFF
+        self.assertEqual(run("main", "workflow_dispatch", "", "research/x", "research/v091-live-data-test-1")["on"], "false")
+        self.assertEqual(run("main", "schedule", "true")["on"], "true")              # only an explicit repository switch
+        ok = run("research/v091-e2e-capture-1", "workflow_dispatch", "", "research/v091-int", "research/v091-live-data-test-1")
+        self.assertEqual((ok["on"], ok["viewer_ref"]), ("true", "research/v091-int"))
+        self.assertIn("source_ref=research/v091-e2e-capture-1", ok["extra"])
+        for bad in (("research/v091-e2e-capture-1", "workflow_dispatch", "", "research/v091-int", "research/v091-live-data"),
+                    ("research/v091-e2e-capture-1", "push", "", "research/v091-int", "research/v091-live-data-test-1"),
+                    ("research/v091-e2e-capture-1", "workflow_dispatch", "", "main", "research/v091-live-data-test-1"),
+                    ("research/other", "workflow_dispatch", "", "research/v091-int", "research/v091-live-data-test-1")):
+            self.assertEqual(run(*bad)["on"], "false", bad)
+
 
 if __name__ == "__main__":
     unittest.main()

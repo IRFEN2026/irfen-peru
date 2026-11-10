@@ -4,6 +4,15 @@ on:
   schedule:
     - cron: "22,52 * * * *"
   workflow_dispatch:
+    inputs:
+      e2e_viewer_ref:
+        description: "SOLO prueba manual en una rama research/v091-e2e-capture-*: rama del visor a la que pedir la reconstrucción"
+        required: false
+        default: ""
+      e2e_test_data_branch:
+        description: "SOLO prueba manual: rama de datos de PRUEBA research/v091-live-data-test-* donde publica la reconstrucción"
+        required: false
+        default: ""
   push:
     branches:
       - v09/rain-engine-dashboard
@@ -14,6 +23,7 @@ on:
 
 permissions:
   contents: write
+  actions: write   # v0.9.1 research: only to request ONE private-viewer rebuild after a valid capture (see below)
 
 concurrency:
   group: v09-rain-north-${{ github.ref_name }}
@@ -52,6 +62,36 @@ jobs:
         run: |
           python scripts/v09_build_territory_bundle.py > /dev/null
           python scripts/v09_build_territory_bundle.py --check
+      - name: After-capture rebuild switch (v0.9.1 research; OFF unless explicitly authorised)
+        id: gate
+        env:
+          SWITCH: ${{ vars.IRFEN_V091_AFTER_CAPTURE_DISPATCH }}
+          E2E_VIEWER_REF: ${{ inputs.e2e_viewer_ref }}
+          E2E_TEST_DB: ${{ inputs.e2e_test_data_branch }}
+        run: |
+          # Two ways only, both explicit:
+          #  * production: repository variable IRFEN_V091_AFTER_CAPTURE_DISPATCH == "true" on main (not set: OFF);
+          #  * one manual end-to-end test: workflow_dispatch on an isolated research/v091-e2e-capture-* branch, publishing
+          #    to a research/v091-live-data-test-* branch (never the real data branch, never main).
+          on=false; ref=research/v091-live-integration-20261102; extra=""
+          if [ "$GITHUB_REF_NAME" = main ] && [ "$SWITCH" = true ]; then on=true
+          elif [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] && [[ "$GITHUB_REF_NAME" == research/v091-e2e-capture-* ]] \
+               && [[ "$E2E_VIEWER_REF" == research/* ]] && [[ "$E2E_TEST_DB" == research/v091-live-data-test-* ]]; then
+            on=true; ref="$E2E_VIEWER_REF"; extra="test_data_branch=$E2E_TEST_DB source_ref=$GITHUB_REF_NAME"
+          fi
+          { echo "on=$on"; echo "viewer_ref=$ref"; echo "extra=$extra"; } >> "$GITHUB_OUTPUT"
+          echo "after-capture rebuild request: $on (ref $ref ${extra:+· $extra})"
+      - name: Freshness ledger and rebuild decision (v0.9.1 research; never fails the capture)
+        if: always()
+        continue-on-error: true
+        env:
+          GATE_ON: ${{ steps.gate.outputs.on }}
+        run: |
+          # with the switch OFF the decision is recorded as SIMULADO: nothing is requested, nothing is left pending
+          DRY=--dry-run; [ "$GATE_ON" = true ] && DRY=""
+          python scripts/v091_capture_freshness.py --phase decide $DRY \
+            --catchments data/v09/rain/imerg_early_catchments_v0_1.json --north data/v09/rain/imerg_early_north_v0_1.json \
+            --ledger data/v09/rain/freshness_ledger_v0_1.json --main-sha "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID"
       - name: Persist (bot commit, bounded retries)
         shell: bash
         run: |
@@ -69,3 +109,31 @@ jobs:
             sleep $((attempt * 3))
           done
           exit 1
+      - name: Request ONE private-viewer rebuild after the push (v0.9.1 research; the viewer side only acts if its own after_capture switch is enabled)
+        # no `always()`: if the capture was not pushed, no rebuild is requested (it would read data that is not in main)
+        if: steps.gate.outputs.on == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VIEWER_REF: ${{ steps.gate.outputs.viewer_ref }}
+          EXTRA: ${{ steps.gate.outputs.extra }}
+        run: |
+          set -uo pipefail
+          inputs=(--dispatch-input mode=after_capture --dispatch-input "capture_key=$GITHUB_RUN_ID")
+          for kv in $EXTRA; do inputs+=(--dispatch-input "$kv"); done
+          python scripts/v091_capture_freshness.py --phase dispatch --catchments data/v09/rain/imerg_early_catchments_v0_1.json \
+            --ledger data/v09/rain/freshness_ledger_v0_1.json --dispatch-workflow v091-live-refresh.yml \
+            --dispatch-ref "$VIEWER_REF" --dispatch-repo "$GITHUB_REPOSITORY" "${inputs[@]}" --run-id "$GITHUB_RUN_ID"
+          # only a FAILED request is committed (so the next capture retries it). A successful send is not committed: no
+          # extra commit per observation; phase 2 of later runs ignores the older PEDIDA because it carries this run id.
+          if python3 -c "import json,sys;d=json.load(open('data/v09/rain/freshness_ledger_v0_1.json'));sys.exit(0 if (d.get('last_dispatch') or {}).get('result')=='FALLO' and d.get('pending_retry') else 1)"; then
+            git add data/v09/rain/freshness_ledger_v0_1.json
+            git commit -q -m "IRFEN v0.9.1: registro de frescura (petición de reconstrucción fallida, se reintentará)"
+            for attempt in 1 2 3; do
+              git fetch -q origin "$GITHUB_REF_NAME" && git rebase -q "origin/$GITHUB_REF_NAME" && git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0
+              git rebase --abort 2>/dev/null || true; sleep $((attempt * 3))
+            done
+            echo "::warning::freshness ledger not persisted (the next capture records it again)"
+          else
+            git checkout -q -- data/v09/rain/freshness_ledger_v0_1.json 2>/dev/null || true
+          fi
