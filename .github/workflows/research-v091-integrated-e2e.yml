@@ -1,0 +1,202 @@
+name: "IRFEN research · prueba integral definitiva #504 + #505 (RESEARCH_ONLY, ejecución manual única)"
+# Se ejecuta solo al tocar este archivo en la rama de integración experimental. Nada queda activo después:
+#   rama aislada research/v091-e2e-capture-20261110-<run> (copia del código integrado) + registro de partida
+#   -> captura REAL con el v09-rain-north.yml de #504 (workflow_dispatch manual, modo prueba) apuntando a una rama del
+#      visor inexistente: si NASA trae una media hora nueva, la petición FALLA de verdad (fallo provocado)
+#   -> segunda captura real apuntando a esta rama: REINTENTO -> UNA reconstrucción (after_capture, rama de datos de PRUEBA)
+#   -> tercera captura real: sin observación nueva -> no se pide nada (deduplicación), sin segunda cadena
+#   -> paquete frente a los archivos de la captura -> HTML -> navegador escritorio/móvil + caducidad (+11,5 h / +12,5 h)
+# Re-ejecución 2 (la 1, run 42734812228, falló al leer los registros con gh; su captura 42734945221 decidió NO).
+# No se modifican fechas. Si NASA no publica una media hora nueva tras las esperas, la prueba FALLA y lo dice (no replay).
+on:
+  push:
+    branches:
+      - research/v091-integration-504-505-20261110
+    paths:
+      - .github/workflows/research-v091-integrated-e2e.yml
+permissions:
+  contents: write  # solo la rama aislada research/v091-e2e-capture-*
+  actions: write   # solo para lanzar a mano las tres capturas de prueba en la rama aislada
+concurrency:
+  group: research-v091-integrated-e2e
+  cancel-in-progress: false
+jobs:
+  e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 300
+    env:
+      GH_TOKEN: ${{ github.token }}
+      R: ${{ github.repository }}
+      INT: ${{ github.ref_name }}
+      TEST_DB: research/v091-live-data-test-20261110
+      BAD_REF: research/v091-no-existe-e2e-20261110
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Dependencias (navegador)
+        run: |
+          pip install -q -r requirements.txt
+          pip install -q "playwright==1.48.0"
+          python -m playwright install --with-deps chromium >/dev/null
+      - name: "0 · rama aislada con el código integrado y registro de partida (sin pedir nada)"
+        run: |
+          set -euo pipefail
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          CAP="research/v091-e2e-capture-20261110-$GITHUB_RUN_ID"
+          echo "CAP=$CAP" >> "$GITHUB_ENV"; echo "START=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+          echo "INT_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo "MAIN_BEFORE=$(git ls-remote origin refs/heads/main | cut -f1)" >> "$GITHUB_ENV"
+          python scripts/v091_capture_freshness.py --phase decide --dry-run --catchments data/v09/rain/imerg_early_catchments_v0_1.json \
+            --north data/v09/rain/imerg_early_north_v0_1.json --ledger data/v09/rain/freshness_ledger_v0_1.json \
+            --main-sha "$(git rev-parse HEAD)" --run-id "baseline-$GITHUB_RUN_ID" | tee "$RUNNER_TEMP/base.out"
+          git add -f data/v09/rain/freshness_ledger_v0_1.json
+          git commit -q -m "e2e baseline freshness ledger (run $GITHUB_RUN_ID; isolated research branch, decide --dry-run)"
+          git push -q origin "HEAD:refs/heads/$CAP"
+          echo "BASE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          { echo "## Prueba integral #504 + #505"; echo; echo "- integración \`$(git rev-parse --short HEAD~1)\` · rama aislada \`$CAP\`";
+            echo "- partida: $(grep -m1 -o 'last_obs_end=[^ ]*' "$RUNNER_TEMP/base.out")"; echo;
+            echo "| etapa | ejecución | interruptor | decisión (fase 1) | envío (fase 2) |"; echo "|---|---|---|---|---|"; } >> "$GITHUB_STEP_SUMMARY"
+      - name: "1 · captura real + observación nueva + fallo provocado (rama del visor inexistente)"
+        run: |
+          source qa/replay_tools/v091_integrated_e2e.sh
+          for attempt in 1 2 3 4 5; do
+            capture "C1_$attempt" "$BAD_REF"
+            if grep -q ' action=SI ' <<<"$LAST_DECIDE"; then echo "C1=C1_$attempt" >> "$GITHUB_ENV"; break; fi
+            grep -q ' action=NO ' <<<"$LAST_DECIDE" || { echo "::error::unexpected decision"; exit 1; }
+            [ "$attempt" = 5 ] && { echo "::error::NASA no publicó una media hora nueva tras 5 capturas: no hay observación nueva (no se simula)"; exit 1; }
+            echo "sin media hora nueva todavía; espera de 20 min (latencia de NASA)"; sleep 1200
+          done
+          grep -q '"result": "FALLO"' <<<"$LAST_PHASE2" || { echo "::error::the provoked failure was not recorded"; exit 1; }
+          ledger_at > "$RUNNER_TEMP/l1.json"
+          python3 - <<'EOF' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json, os
+          d = json.load(open(os.environ["RUNNER_TEMP"] + "/l1.json"))
+          ld, pr = d["last_dispatch"], d.get("pending_retry")
+          print(f"\n**Fallo provocado registrado en la rama aislada:** {ld['result']} · reintento pendiente {bool(pr)} · {(pr or {}).get('error','')[:160]}\n")
+          assert ld["result"] == "FALLO" and pr and pr["key"] == ld["key"]
+          EOF
+          sleep 60
+          test -z "$(rebuilds_since "$LAST_T0")" || { echo "::error::a rebuild started although the request failed"; exit 1; }
+      - name: "2 · captura real + recuperación: REINTENTO -> una sola reconstrucción"
+        run: |
+          source qa/replay_tools/v091_integrated_e2e.sh
+          capture C2 "$INT"
+          grep -q ' action=REINTENTO ' <<<"$LAST_DECIDE" || { echo "::error::expected REINTENTO"; exit 1; }
+          grep -q '"action": "ENVIADA", "result": "OK"' <<<"$LAST_PHASE2" || { echo "::error::recovery request not sent"; exit 1; }
+          echo "SRC_SHA=$(git ls-remote origin "refs/heads/$CAP" | cut -f1)" >> "$GITHUB_ENV"
+          for _ in $(seq 1 60); do ids=$(rebuilds_since "$LAST_T0"); [ -n "$ids" ] && break; sleep 10; done
+          [ -n "$ids" ] && [ "$(wc -w <<<"$ids")" = 1 ] || { echo "::error::expected exactly one rebuild, got: '$ids'"; exit 1; }
+          echo "REBUILD=$ids" >> "$GITHUB_ENV"
+          gh run watch "$ids" -R "$R" --interval 15 >/dev/null 2>&1 || true
+          gh api "repos/$R/actions/runs/$ids/jobs" --jq '.jobs[]|"- reconstrucción '"$ids"' · \(.name): \(.conclusion)"' | tee -a "$GITHUB_STEP_SUMMARY"
+          test "$(gh api "repos/$R/actions/runs/$ids/jobs" --jq '.jobs[]|select(.name=="refresh")|.conclusion')" = success
+          test "$(gh api "repos/$R/actions/runs/$ids/jobs" --jq '.jobs[]|select(.name=="next")|.conclusion')" = skipped
+      - name: "3 · captura real otra vez -> sin observación nueva no se pide nada (deduplicación, sin segunda cadena)"
+        run: |
+          source qa/replay_tools/v091_integrated_e2e.sh
+          before=$(git ls-remote origin "refs/heads/$CAP" | cut -f1)
+          git fetch -q --no-tags origin "$CAP"; lb=$(git show FETCH_HEAD:data/v09/rain/freshness_ledger_v0_1.json | sha256sum | cut -c1-64)
+          expected="$REBUILD"
+          capture C3 "$INT"
+          if grep -q ' action=SI ' <<<"$LAST_DECIDE"; then
+            # NASA published yet another half-hour meanwhile: that ONE request is legitimate; check the duplicate again
+            echo "NASA publicó otra media hora durante la prueba: esa petición es legítima; se repite la comprobación" | tee -a "$GITHUB_STEP_SUMMARY"
+            sleep 60; expected="$(rebuilds_since "$START")"
+            for r in $expected; do gh run watch "$r" -R "$R" --interval 15 >/dev/null 2>&1 || true; done
+            git fetch -q --no-tags origin "$CAP"; lb=$(git show FETCH_HEAD:data/v09/rain/freshness_ledger_v0_1.json | sha256sum | cut -c1-64)
+            capture C4 "$INT"
+          fi
+          grep -q ' action=NO ' <<<"$LAST_DECIDE" || { echo "::error::expected NO"; exit 1; }
+          grep -q 'NADA_PENDIENTE' <<<"$LAST_PHASE2" || { echo "::error::phase 2 should have nothing to send"; exit 1; }
+          git fetch -q --no-tags origin "$CAP"; la=$(git show FETCH_HEAD:data/v09/rain/freshness_ledger_v0_1.json | sha256sum | cut -c1-64)
+          echo "- registro de frescura antes/después de la captura duplicada: \`${lb:0:12}\` / \`${la:0:12}\`" | tee -a "$GITHUB_STEP_SUMMARY"
+          [ "$lb" = "$la" ] || { echo "::error::the duplicate capture rewrote the ledger"; exit 1; }
+          sleep 90
+          all=$(rebuilds_since "$START"); echo "- reconstrucciones del visor desde el inicio: $all (esperadas: $expected)" | tee -a "$GITHUB_STEP_SUMMARY"
+          [ "$(tr ' ' '\n' <<<"$all" | sort)" = "$(tr ' ' '\n' <<<"$expected" | sort)" ] || { echo "::error::duplicate or chained rebuild: $all"; exit 1; }
+      - name: "4 · commits de la rama aislada (sin commits innecesarios) y main intacta"
+        run: |
+          set -euo pipefail
+          git fetch -q --no-tags --shallow-since=2026-11-09 origin "$CAP:refs/remotes/origin/cap"
+          git log --format='%h %s' "$BASE_SHA..origin/cap" | tee "$RUNNER_TEMP/cap_commits.txt"
+          n_fail=$(grep -c 'petición de reconstrucción fallida' "$RUNNER_TEMP/cap_commits.txt" || true)
+          n_led=$(git log --format=%h "$BASE_SHA..origin/cap" -- data/v09/rain/freshness_ledger_v0_1.json | wc -l)
+          n_all=$(wc -l < "$RUNNER_TEMP/cap_commits.txt")
+          { echo; echo "- commits en la rama aislada tras la partida: $n_all (capturas) · solo-registro por fallo: $n_fail · que tocan el registro: $n_led"; } | tee -a "$GITHUB_STEP_SUMMARY"
+          [ "$n_fail" = 1 ] || { echo "::error::expected exactly one failure-record commit"; exit 1; }
+          for sha in $(git log --format=%H "$BASE_SHA..origin/cap"); do
+            other=$(git diff-tree --no-commit-id --name-only -r "$sha" | grep -vE '^(data/v09/|site/data/v09/)' || true)
+            [ -z "$other" ] || { echo "::error::commit $sha touches non-data files: $other"; exit 1; }
+          done
+          main_now=$(git ls-remote origin refs/heads/main | cut -f1)
+          git fetch -q --no-tags --shallow-since=2026-11-09 origin main
+          git log --format='%an|%s' "$MAIN_BEFORE..FETCH_HEAD" > "$RUNNER_TEMP/main_commits.txt" || true
+          echo "- main: $(wc -l < "$RUNNER_TEMP/main_commits.txt") commits nuevos durante la prueba, todos de sus propios workflows programados; ninguno de esta prueba" | tee -a "$GITHUB_STEP_SUMMARY"
+          ! grep -q 'e2e' "$RUNNER_TEMP/main_commits.txt"
+      - name: "5 · paquete publicado frente a los archivos de la captura (fechas y valores)"
+        run: |
+          set -euo pipefail
+          git fetch -q --no-tags --depth=1 origin "$TEST_DB:refs/remotes/origin/testdb"
+          git fetch -q --no-tags --depth=1 origin "$SRC_SHA"
+          mkdir -p "$RUNNER_TEMP/pkg"
+          for f in surveillance_view_v0_1.json manifest.json source_consistency.json page_check.json; do git show "refs/remotes/origin/testdb:current/$f" > "$RUNNER_TEMP/pkg/$f"; done
+          git show "$SRC_SHA:data/v09/rain/imerg_early_catchments_v0_1.json" > "$RUNNER_TEMP/pkg/src_c.json"
+          git show "$SRC_SHA:data/v09/rain/imerg_early_north_v0_1.json" > "$RUNNER_TEMP/pkg/src_n.json"
+          git show "$SRC_SHA:data/v09/rain/freshness_ledger_v0_1.json" > "$RUNNER_TEMP/pkg/ledger_src.json"
+          python qa/replay_tools/v091_viewer_source_consistency.py --bundle "$RUNNER_TEMP/pkg/surveillance_view_v0_1.json" \
+            --catchments "$RUNNER_TEMP/pkg/src_c.json" --north "$RUNNER_TEMP/pkg/src_n.json" --out "$RUNNER_TEMP/pkg/consistency_e2e.json" | tee -a "$GITHUB_STEP_SUMMARY"
+          python3 - <<'EOF' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json, os
+          from datetime import datetime, timezone
+          d = os.environ["RUNNER_TEMP"] + "/pkg/"
+          b = json.load(open(d + "surveillance_view_v0_1.json")); m = json.load(open(d + "manifest.json"))
+          src = json.load(open(d + "src_c.json")); led = json.load(open(d + "ledger_src.json"))
+          assert m["main_sha"] == os.environ["SRC_SHA"], (m["main_sha"], os.environ["SRC_SHA"])
+          assert m["deployment_status"] == "RESEARCH_ONLY" and not m.get("public_alerting") and not m.get("notifications_enabled")
+          sm, cr = b["semaforo"], b["rain"]["catchments"]
+          assert len(sm["checkpoints"]) == 536 and len({c["id"] for c in sm["checkpoints"]}) == 536
+          assert len(cr["departments"]) == 11 and sum(len(v) for v in cr["departments"].values()) == 134
+          named = sorted(x["id"] for v in cr["without_catchment"].values() for x in v)
+          assert named == ["ARE-R-TAMBO-BAJO", "ICA-R-SAN_JUAN-BAJO", "LIM-R-RIMAC-ALTO", "TUM-R-ZARUMILLA-MEDIO"], named
+          o = led["last_observation_available"]
+          assert cr["observation_end_utc"] and datetime.fromisoformat(cr["observation_end_utc"]) == datetime.fromisoformat(o["last_observation_end_utc"])
+          assert "P0-496" in [c["id"] for c in b.get("rain_caveats", [])]
+          built = datetime.fromisoformat(m["built_at_utc"]); end = datetime.fromisoformat(cr["observation_end_utc"])
+          lat = (built - end).total_seconds() / 3600
+          print(f"\n- paquete {m['cycle_id']} construido {m['built_at_utc']} desde `{m['main_sha'][:9]}` · fin de observación {cr['observation_end_utc']} · "
+                f"observación→paquete {lat:.2f} h · escrito {cr['archive_written_at_utc']}")
+          rows = []
+          for dep, v in cr["departments"].items():
+              ok = [r["windows"]["24h"] for r in v if r["windows"]["24h"] is not None]
+              rows.append(dict(departamento=dep, puntos_fluviales=cr["river_checkpoints"][dep], cuencas=len(v), con_24h=len(ok),
+                               min_24h=min(ok) if ok else None, max_24h=max(ok) if ok else None,
+                               sin_cuenca=[x["id"] for x in cr["without_catchment"].get(dep, [])], fin_obs=cr["observation_end_utc"]))
+              print(f"  - {dep}: {len(ok)}/{cr['river_checkpoints'][dep]} cuencas con 24 h · sin cuenca verificada {len(cr['without_catchment'].get(dep, []))}")
+          json.dump(dict(package=m["cycle_id"], built=m["built_at_utc"], source_sha=m["main_sha"], obs_end=cr["observation_end_utc"],
+                         obs_to_package_h=round(lat, 2), departments=rows), open(d + "e2e_summary.json", "w"), ensure_ascii=False, indent=1)
+          EOF
+      - name: "6 · HTML descargable y navegador (escritorio, móvil, caducidad +11,5 h / +12,5 h)"
+        run: |
+          set -euo pipefail
+          cp "$RUNNER_TEMP/pkg/surveillance_view_v0_1.json" site/data/v09/surveillance_view_v0_1.json
+          curl -fsSL -o "$RUNNER_TEMP/leaflet.css" https://unpkg.com/leaflet@1.9.4/dist/leaflet.css
+          python scripts/v09_build_surveillance_demo.py --leaflet-css "$RUNNER_TEMP/leaflet.css" --out "$RUNNER_TEMP/pkg/irfen_visor_privado_e2e_final.html"
+          git checkout -- site/data/v09/surveillance_view_v0_1.json
+          IRFEN_SHOT_SCALE=2 python qa/replay_tools/v091_e2e_browser_check.py "$RUNNER_TEMP/pkg/irfen_visor_privado_e2e_final.html" "$RUNNER_TEMP/pkg/browser" | tee -a "$GITHUB_STEP_SUMMARY"
+          sha256sum "$RUNNER_TEMP/pkg/irfen_visor_privado_e2e_final.html" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: "7 · estado final: nada activado"
+        run: |
+          set -euo pipefail
+          python3 -c "import json;c=json.load(open('config/v091_live_refresh.json'));a=c['after_capture'];print('after_capture.enabled =',a['enabled']);assert a['enabled'] is False" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "- fin: $(date -u +%Y-%m-%dT%H:%M:%SZ)" | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integrated-e2e-${{ github.run_id }}
+          path: ${{ runner.temp }}/pkg
+          retention-days: 30
