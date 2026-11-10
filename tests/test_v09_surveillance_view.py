@@ -55,6 +55,22 @@ class Bundle(unittest.TestCase):
                 self.assertEqual(_load("sem", "scripts/v09_build_semaforo.py").main(["--check"]), 0)
             self.assertEqual(B.main(["--check"]), 0)
 
+    def test_flow_spearman_is_deterministic_and_symmetric_with_ties(self):
+        sem = _load("sem_spearman", "scripts/v09_build_semaforo.py")
+        up, down = [5, 5, 5, 9, 9, 12, 12, 12], [12, 12, 12, 9, 9, 5, 5, 5]
+        # the same series read in either direction gives the same strength with opposite sign (average ranks); the old
+        # ordinal ranks gave +1.0 upward but -0.786 downward for this very series, depending on the tie order
+        ru, rd = sem.spearman(list(range(8)), up), sem.spearman(list(range(8)), down)
+        self.assertAlmostEqual(ru, -rd, places=12)
+        self.assertAlmostEqual(ru, 0.944911182523068, places=12)  # standard Spearman with ties (scipy.stats.spearmanr)
+        self.assertEqual(sem.spearman(list(range(6)), [1, 2, 3, 4, 5, 6]), 1.0)
+        ys = [3, 1, 3, 3, 2, 2, 7, 1, 3, 3, 5, 5]
+        r = sem.spearman(list(range(len(ys))), ys)
+        self.assertAlmostEqual(r, -sem.spearman(list(range(len(ys))), [-v for v in ys]), places=12)  # symmetric
+        self.assertEqual(len({sem.spearman(list(range(len(ys))), ys) for _ in range(20)}), 1)
+        self.assertEqual(list(sem._avg_ranks([2, 1, 2, 3])), [1.5, 0.0, 1.5, 3.0])
+        self.assertNotIn("np.argsort(np.argsort(", (ROOT / "scripts/v09_build_semaforo.py").read_text(encoding="utf-8"))
+
     def test_guards(self):
         for k, v in B.GUARDS.items():
             self.assertEqual(D[k], v, k)

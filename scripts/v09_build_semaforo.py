@@ -92,10 +92,31 @@ def chain(parts, join_km=2.0):
     return out
 
 
-def spearman(xs, ys):
+def _avg_ranks(v):
+    """Average ranks (ties share the mean of their positions): the standard Spearman ranking. Deterministic and
+    symmetric: a monotone series gives exactly +1 or -1 whatever its direction or its ties."""
     import numpy as np
-    rx = np.argsort(np.argsort(xs)).astype(float)
-    ry = np.argsort(np.argsort(ys)).astype(float)
+    a = np.asarray(v, dtype=float)
+    order = np.argsort(a, kind="stable")
+    ranks = np.empty(len(a), dtype=float)
+    sa = a[order]
+    i = 0
+    while i < len(a):
+        j = i
+        while j + 1 < len(a) and sa[j + 1] == sa[i]:
+            j += 1
+        ranks[order[i:j + 1]] = (i + j) / 2.0
+        i = j + 1
+    return ranks
+
+
+def spearman(xs, ys):
+    # Spearman with average ranks for ties (consecutive vertices often sample the same flow-accumulation cell).
+    # Before 10-11-2026 it used argsort(argsort(...)) with numpy's default sort: ties were ranked in a machine-dependent
+    # order (SIMD sort on AVX-512 CPUs), so this evidence value differed between CI runners, and ordinal ranks made a
+    # decreasing series with ties weaker than the same series increasing. Orientation decisions were unchanged by the fix.
+    import numpy as np
+    rx, ry = _avg_ranks(xs), _avg_ranks(ys)
     if rx.std() == 0 or ry.std() == 0:
         return 0.0
     return float(np.corrcoef(rx, ry)[0, 1])
