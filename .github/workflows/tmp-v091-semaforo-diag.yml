@@ -1,0 +1,145 @@
+name: TMP v0.9.1 diagnose semáforo reproducibility inside the pr-validation sequence (removed next commit)
+on:
+  push:
+    branches: [research/v091-integration-main-20261110]
+    paths: [.github/workflows/tmp-v091-semaforo-diag.yml]
+permissions:
+  contents: read
+jobs:
+  diag:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      IRFEN_REQUIRE_JSONSCHEMA: "1"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: |
+          pip install -q -r requirements.txt
+          pip install -q -r requirements-ci-test.txt
+      - name: "A · semáforo --check on a clean checkout"
+        run: python scripts/v09_build_semaforo.py --check || true
+      - name: Demostrar rechazo atómico de latest.json DEMO
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp site/data/forecast/imerg_verification_history.json /tmp/demo-history.json
+          cp /tmp/demo-history.json /tmp/demo-history.before.json
+          if python scripts/update_imerg_verification_history.py \
+            --source site/data/latest.json --history /tmp/demo-history.json
+          then
+            echo "ERROR: latest.json DEMO fue aceptado como evidencia científica" >&2
+            exit 1
+          fi
+          cmp /tmp/demo-history.before.json /tmp/demo-history.json
+          echo "DEMO_REJECTED_WITHOUT_MUTATION"
+
+      - name: Demostrar restauración durable sin GitHub Pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/restore_imerg_verification_history.py \
+            --durable site/data/forecast/imerg_verification_history.json \
+            --pages-candidate /tmp/pages-intentionally-unavailable.json \
+            --destination /tmp/restored-from-git.json \
+            --receipt /tmp/restored-from-git.receipt.json
+          cmp site/data/forecast/imerg_verification_history.json /tmp/restored-from-git.json
+          python - <<'PY'
+          import json
+          receipt=json.load(open('/tmp/restored-from-git.receipt.json',encoding='utf-8'))
+          assert receipt['restoration_mode']=='GIT_VERSIONED_DURABLE_RESTORE'
+          assert receipt['pages_candidate']['status']=='UNAVAILABLE'
+          assert receipt['scientific_fallback_used'] is False
+          print('GIT_DURABLE_RESTORE_OK')
+          PY
+
+      - name: Hidratar evidencia transitoria publicada
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://irfen2026.github.io/irfen-peru/data"
+          files=(
+            "latest.json"
+            "experimental_state.json"
+            "test_report.json"
+            "forecast/archive.json"
+            "forecast/historical_daily.json"
+            "forecast/verification.json"
+            "calibration/historical_replay.json"
+            "hydrology/piura_reference_model.json"
+            "hydrology/ana_catacaos_critical_segments_2026.geojson"
+            "hydrology/ana_catacaos_critical_segments_2026_validation.json"
+            "hydrology/glofas_catacaos_current.json"
+          )
+          for file in "${files[@]}"; do
+            mkdir -p "site/data/$(dirname "$file")"
+            curl -fsSL --connect-timeout 10 --max-time 35 --retry 3 --retry-all-errors \
+              "$BASE/$file?pr=${{ github.event.pull_request.number }}-${{ github.run_id }}" \
+              -o "site/data/$file"
+          done
+          cp site/data/forecast/verification.json /tmp/previous-verification.json
+          history="forecast/imerg_verification_history.json"
+          cp "site/data/$history" /tmp/imerg_verification_history.git-versioned.json
+          if curl -fsSL --connect-timeout 10 --max-time 35 --retry 3 --retry-all-errors \
+            "$BASE/$history?pr=${{ github.event.pull_request.number }}-${{ github.run_id }}" \
+            -o "/tmp/imerg_verification_history.pages-candidate.json"
+          then
+            echo "Réplica Pages descargada; debe preservar todo el ledger durable."
+          else
+            echo "Pages no disponible; se restaurará el histórico versionado en Git."
+          fi
+          python scripts/restore_imerg_verification_history.py \
+            --durable /tmp/imerg_verification_history.git-versioned.json \
+            --pages-candidate /tmp/imerg_verification_history.pages-candidate.json \
+            --destination "site/data/$history" \
+            --receipt /tmp/imerg_verification_history.restore-receipt.json
+
+      - name: Reconstruir verificación desde el histórico científico dedicado
+        run: python scripts/verify_geos_against_imerg.py --previous-verification /tmp/previous-verification.json
+
+      - name: Ejecutar pruebas focalizadas de intake externo
+        run: |
+          python -m unittest discover -s tests -p 'test_external_evidence_intake.py' -v
+          python scripts/build_external_evidence_intake_index.py --check
+          python -m json.tool config/external_evidence_package.schema.v1.json >/dev/null
+          python -m json.tool site/data/validation/external_evidence_intake_index.json >/dev/null
+
+      - name: Ejecutar puertas científicas v0.8
+        run: |
+          python scripts/build_lambayeque_hydrologic_units.py --check-only
+          python scripts/build_phase2_catalog.py --check-only
+          python scripts/build_map_layer_catalog.py --check-only
+          python scripts/validate_scientific_assets.py
+          python scripts/validate_pedregal_clean_room.py
+
+      - name: "B · after the pr-validation preparation steps"
+        run: |
+          git status --short | head -40
+          python scripts/v09_build_semaforo.py --check || true
+      - name: "C · run every test file except the surveillance view, then check again"
+        run: |
+          python -m pytest tests/ -q -p no:cacheprovider --ignore=tests/test_v09_surveillance_view.py > /tmp/py.txt 2>&1 || true
+          tail -3 /tmp/py.txt
+          echo "--- files modified by the tests:"; git status --short | head -40
+          python scripts/v09_build_semaforo.py --check || true
+          cp data/v09/research/semaforo/semaforo_v0_1.json /tmp/committed.json
+          python scripts/v09_build_semaforo.py > /dev/null
+          python - <<'PY'
+          import json
+          a = json.load(open("/tmp/committed.json")); b = json.load(open("data/v09/research/semaforo/semaforo_v0_1.json"))
+          out = []
+          def walk(x, y, p=""):
+              if len(out) > 25: return
+              if type(x) != type(y): out.append(f"TYPE {p}"); return
+              if isinstance(x, dict):
+                  for k in sorted(set(x) | set(y)):
+                      if x.get(k) != y.get(k): walk(x.get(k), y.get(k), p + "." + str(k))
+              elif isinstance(x, list):
+                  if len(x) != len(y): out.append(f"LEN {p} {len(x)} {len(y)}"); return
+                  for i, (u, v) in enumerate(zip(x, y)):
+                      if u != v: walk(u, v, p + f"[{i}]")
+              else: out.append(f"VAL {p} {str(x)[:90]!r} -> {str(y)[:90]!r}")
+          walk(a, b); print("\n".join(out) or "identical")
+          PY
