@@ -22,7 +22,9 @@ capture() {
   [ "$(gh api "repos/$R/actions/runs/$id" --jq .conclusion)" = success ] || { echo "::error::capture run $id ($label) did not succeed"; return 1; }
   [ "$(gh api "repos/$R/actions/runs/$id" --jq .head_branch)" = "$CAP" ] || { echo "::error::capture ran outside the isolated branch"; return 1; }
   job=$(gh api "repos/$R/actions/runs/$id/jobs" --jq '.jobs[0].id')
-  log=$(gh api "repos/$R/actions/jobs/$job/logs")
+  # raw job log via curl: newer gh refuses to print logs that contain terminal escape sequences
+  log=$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+        "https://api.github.com/repos/$R/actions/jobs/$job/logs")
   local dec p2 gate
   # GitHub renders `::notice title=X::msg` as `##[notice]msg` in the raw log; the script text (echoed as the run
   # command) never contains these literal results, so the first match is the real output.
