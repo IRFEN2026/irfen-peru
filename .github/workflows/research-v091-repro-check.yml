@@ -1,0 +1,280 @@
+name: "IRFEN research · reproducibilidad definitiva del paquete del visor sobre una instantánea de main (RESEARCH_ONLY)"
+# Ejecución manual única, solo al tocar este archivo en esta rama. Lee y construye; solo escribe en esta rama research.
+# No fusiona, no despliega, no activa la actualización automática, no envía alertas.
+on:
+  push:
+    branches:
+      - research/v091-repro-main-20261110
+    paths:
+      - .github/workflows/research-v091-repro-check.yml
+permissions:
+  contents: write  # solo esta rama research: los derivados reconstruidos y el manifiesto de la candidata
+concurrency:
+  group: research-v091-repro-check
+  cancel-in-progress: false
+jobs:
+  repro:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      R: ${{ github.repository }}
+      MAIN_SNAPSHOT: 86332508c40aee596724aa4a58f439aee821e9eb   # main fijado (2026-11-10T17:58:04Z)
+      CANDIDATE: 40a7c6ea6b2ee1a0b33e494d69e93c422711b27d       # cabeza del PR #507
+      SWITCH: ${{ vars.IRFEN_V091_AFTER_CAPTURE_DISPATCH }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Dependencias fijadas (requirements + CI) y faketime
+        run: |
+          pip install -q -r requirements.txt
+          pip install -q -r requirements-ci-test.txt
+          pip install -q "playwright==1.48.0"
+          python -m playwright install --with-deps chromium >/dev/null
+          sudo apt-get install -y -qq faketime >/dev/null
+          python -c "import numpy, sys; print('python', sys.version.split()[0], 'numpy', numpy.__version__)"
+          grep -m1 -o 'avx512f' /proc/cpuinfo || echo "sin avx512"
+      - name: "1 · instantánea fijada: SHA, ascendencia y ausencia de cambios de código"
+        run: |
+          set -euo pipefail
+          E="$RUNNER_TEMP/ev"; mkdir -p "$E"; echo "E=$E" >> "$GITHUB_ENV"
+          git merge-base --is-ancestor "$MAIN_SNAPSHOT" HEAD
+          git merge-base --is-ancestor "$CANDIDATE" HEAD
+          git diff --quiet "$CANDIDATE" HEAD -- scripts/ site/v09/ config/ tests/ \
+            || { echo "::error::code/config/test differ from the #507 candidate"; git diff --stat "$CANDIDATE" HEAD -- scripts/ site/v09/ config/ tests/; exit 1; }
+          echo "MAIN_AT_START=$(git ls-remote origin refs/heads/main | cut -f1)" >> "$GITHUB_ENV"
+          echo "LIVE_DATA_AT_START=$(git ls-remote origin refs/heads/research/v091-live-data | cut -f1)" >> "$GITHUB_ENV"
+          echo "START=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+          git diff --name-only "$CANDIDATE" HEAD > "$E/changed_since_candidate.txt"
+          { echo "## Reproducibilidad del paquete del visor v0.9.1"; echo;
+            echo "- rama examinada \`$GITHUB_REF_NAME\` @ \`$(git rev-parse --short HEAD)\` = #507 \`${CANDIDATE:0:8}\` + main \`${MAIN_SNAPSHOT:0:8}\`";
+            echo "- archivos cambiados respecto a #507 (solo datos): $(wc -l < "$E/changed_since_candidate.txt")"; } >> "$GITHUB_STEP_SUMMARY"
+          curl -fsSL -o "$RUNNER_TEMP/leaflet.css" https://unpkg.com/leaflet@1.9.4/dist/leaflet.css
+          echo "- leaflet.css (entrada de la demo): $(sha256sum "$RUNNER_TEMP/leaflet.css" | cut -c1-64)" >> "$GITHUB_STEP_SUMMARY"
+          for t in A B OLD C; do mkdir -p "$RUNNER_TEMP/tree$t"; done
+          git archive HEAD | tar -x -C "$RUNNER_TEMP/treeA"
+          git archive HEAD | tar -x -C "$RUNNER_TEMP/treeB"
+          git archive HEAD | tar -x -C "$RUNNER_TEMP/treeC"
+          git archive "$CANDIDATE" | tar -x -C "$RUNNER_TEMP/treeOLD"
+      - name: "2 · dos reconstrucciones independientes (semillas distintas; la B con el reloj desplazado +3 días)"
+        run: |
+          set -euo pipefail
+          T=qa/replay_tools/v091_repro_check.py
+          python $T build --tree "$RUNNER_TEMP/treeA" --leaflet-css "$RUNNER_TEMP/leaflet.css" --out "$E/A" --seed 0
+          faketime -f "+3d" python -c "import datetime; print('reloj desplazado:', datetime.datetime.now(datetime.timezone.utc).isoformat())"
+          faketime -f "+3d" python $T build --tree "$RUNNER_TEMP/treeB" --leaflet-css "$RUNNER_TEMP/leaflet.css" --out "$E/B" --seed 2718281828
+          python $T compare "$E/A" "$E/B" --out "$E/compare_A_B.json" | tee "$E/compare.txt"
+          python3 - <<'EOF' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json, os
+          c = json.load(open(os.environ["E"] + "/compare_A_B.json"))
+          print("\n| archivo derivado | SHA-256 A (semilla 0) | SHA-256 B (semilla 2718281828, reloj +3 d) | byte a byte |\n|---|---|---|---|")
+          for f in c["files"]:
+              print(f"| `{f['file']}` | `{f['sha256_a']}` | `{f['sha256_b']}` | {'IDÉNTICO' if f['byte_identical'] else 'DIFERENTE'} |")
+          print(f"\n- mismas entradas leídas en A y B: {c['same_reads']} · **resultado: {'IDÉNTICOS' if c['ok'] else 'DIFERENTES'}**\n")
+          EOF
+      - name: "3 · manifiesto de entradas (registradas por el hook de auditoría) y atribución de diferencias"
+        run: |
+          set -euo pipefail
+          T=qa/replay_tools/v091_repro_check.py
+          python $T inputs --tree "$RUNNER_TEMP/treeA" --trace "$E/A/trace.json" --repo . --rev HEAD --out "$E/input_manifest.json"
+          python $T build --tree "$RUNNER_TEMP/treeOLD" --leaflet-css "$RUNNER_TEMP/leaflet.css" --out "$E/OLD" --seed 12345
+          python3 - <<'EOF' | tee -a "$GITHUB_STEP_SUMMARY"
+          import hashlib, json, os, subprocess
+          E = os.environ["E"]; cand = os.environ["CANDIDATE"]
+          m = json.load(open(E + "/input_manifest.json")); reads = {r["path"] for r in m["inputs"]}
+          changed = set(open(E + "/changed_since_candidate.txt").read().split())
+          print(f"- entradas registradas: {m['n_inputs']} ({sum(r['kind']=='datos' for r in m['inputs'])} datos, "
+                f"{sum(r['kind']=='configuración' for r in m['inputs'])} configuración, {sum(r['kind']=='código' for r in m['inputs'])} código) + leaflet.css")
+          print(f"- cambiadas por main desde #507 **y leídas** por la construcción: {sorted(reads & changed)}")
+          print(f"- cambiadas por main pero **no leídas**: {sorted(changed - reads)}")
+          # code check: the same code with the #507 inputs reproduces the committed #507 outputs
+          old = json.load(open(E + "/OLD/trace.json"))["derived_sha256"]
+          rows = []
+          for rel, h in old.items():
+              committed = hashlib.sha256(subprocess.run(["git", "show", f"{cand}:{rel}"], capture_output=True).stdout).hexdigest()
+              rows.append((rel, h == committed))
+              print(f"- con las entradas de #507 se reproduce `{rel}` commiteado: {'SÍ' if h == committed else 'NO'}")
+          json.dump(dict(read_and_changed=sorted(reads & changed), changed_not_read=sorted(changed - reads),
+                         candidate_reproduced={r: ok for r, ok in rows}), open(E + "/attribution.json", "w"), indent=1)
+          assert all(ok for _, ok in rows), "the code does not reproduce the committed candidate outputs"
+          EOF
+          python3 - <<'EOF' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json, os, subprocess
+          E = os.environ["E"]; cand = os.environ["CANDIDATE"]
+          def walk(x, y, p, out):
+              if type(x) != type(y): out.append(p); return
+              if isinstance(x, dict):
+                  for k in set(x) | set(y):
+                      if x.get(k) != y.get(k): walk(x.get(k), y.get(k), f"{p}.{k}", out)
+              elif isinstance(x, list) and len(x) == len(y):
+                  for i, (u, v) in enumerate(zip(x, y)):
+                      if u != v: walk(u, v, f"{p}[{i}]", out)
+              elif x != y: out.append(p)
+          res = {}
+          for rel in ("data/v09/research/semaforo/semaforo_v0_1.json", "site/data/v09/surveillance_view_v0_1.json"):
+              old = json.loads(subprocess.run(["git", "show", f"{cand}:{rel}"], capture_output=True).stdout)
+              new = json.load(open(f"{E}/A/derived/{rel}"))
+              out = []; walk(old, new, "", out); res[rel] = out
+              print(f"- diferencias #507 → instantánea en `{rel}`: {len(out)} campo(s): {out[:6]}")
+          json.dump(res, open(E + "/output_diff_paths.json", "w"), indent=1)
+          EOF
+      - name: "4 · integridad del paquete reconstruido frente a los archivos originales de la instantánea"
+        run: |
+          set -euo pipefail
+          A="$RUNNER_TEMP/treeA"
+          python qa/replay_tools/v091_viewer_source_consistency.py --bundle "$E/A/derived/site/data/v09/surveillance_view_v0_1.json" \
+            --catchments "$A/data/v09/rain/imerg_early_catchments_v0_1.json" --north "$A/data/v09/rain/imerg_early_north_v0_1.json" \
+            --out "$E/consistency.json" | tee -a "$GITHUB_STEP_SUMMARY"
+          python3 - <<'EOF' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json, os
+          from datetime import datetime, timedelta
+          E = os.environ["E"]; A = os.environ["RUNNER_TEMP"] + "/treeA/"
+          b = json.load(open(E + "/A/derived/site/data/v09/surveillance_view_v0_1.json"))
+          src = json.load(open(A + "data/v09/rain/imerg_early_catchments_v0_1.json"))
+          cr, sm = b["rain"]["catchments"], b["semaforo"]
+          COAST = ["TUMBES", "PIURA", "LAMBAYEQUE", "LA LIBERTAD", "ANCASH", "LIMA", "CALLAO", "ICA", "AREQUIPA", "MOQUEGUA", "TACNA"]
+          assert sorted(cr["departments"]) == sorted(COAST), sorted(cr["departments"])
+          assert sum(len(v) for v in cr["departments"].values()) == 134 == len(src["targets"])
+          assert len(sm["checkpoints"]) == 536 == len({c["id"] for c in sm["checkpoints"]})
+          named = sorted(x["id"] for v in cr["without_catchment"].values() for x in v)
+          assert named == ["ARE-R-TAMBO-BAJO", "ICA-R-SAN_JUAN-BAJO", "LIM-R-RIMAC-ALTO", "TUM-R-ZARUMILLA-MEDIO"], named
+          assert all("windows" not in x for v in cr["without_catchment"].values() for x in v)           # no rain value attached
+          last = max(g["time_utc"] for g in src["granules"])
+          end = (datetime.fromisoformat(last.replace("Z", "+00:00")) + timedelta(minutes=30)).isoformat()
+          assert datetime.fromisoformat(cr["observation_end_utc"]) == datetime.fromisoformat(end), (cr["observation_end_utc"], end)
+          zero_as_missing = [(r["id"], k) for v in cr["departments"].values() for r in v for k, w in r["windows"].items()
+                             if (w is None) != (not r["complete"][k])]
+          assert not zero_as_missing, zero_as_missing[:5]                                                # missing -> null, never 0
+          assert "No es una media departamental" in cr["note_es"] and cr["kind"] == "ESTIMACION_SATELITAL"
+          assert not any(k in cr for k in ("department_mean", "mean_mm", "departmental_mean"))
+          assert "P0-496" in [c["id"] for c in b["rain_caveats"]] and "no descarta lluvias intensas localizadas" in b["rain_caveats"][0]["text_es"]
+          assert cr["stale_after_hours"] == 12
+          nulls = sum(1 for v in cr["departments"].values() for r in v for w in r["windows"].values() if w is None)
+          print(f"\n- 11 departamentos ✔ · 134 cuencas = 134 objetivos del archivo ✔ · 536 checkpoints únicos ✔ · 4 puntos sin cuenca nombrados y sin lluvia ✔")
+          print(f"- fin de observación {cr['observation_end_utc']} = último gránulo {last} + 30 min ✔ · ventanas nulas (incompletas) {nulls}, ninguna convertida en 0 ✔")
+          print(f"- sin media departamental ✔ · advertencia P0-496 ✔ · caducidad a las {cr['stale_after_hours']} h ✔")
+          rows = []
+          for d in COAST:
+              v = cr["departments"][d]; ok = [r["windows"]["24h"] for r in v if r["windows"]["24h"] is not None]
+              rows.append(dict(departamento=d, puntos_fluviales=cr["river_checkpoints"][d], cuencas=len(v), con_24h=len(ok),
+                               min_24h=min(ok) if ok else None, max_24h=max(ok) if ok else None,
+                               sin_cuenca=[x["id"] for x in cr["without_catchment"].get(d, [])], fin_obs=cr["observation_end_utc"]))
+          json.dump(rows, open(E + "/departments.json", "w"), indent=1, ensure_ascii=False)
+          print("\n| departamento | cuencas / puntos fluviales | 24 h completas | lluvia 24 h por cuenca (mm) | sin cuenca verificada |\n|---|---|---|---|---|")
+          for r in rows:
+              rng = f"{r['min_24h']:.1f}–{r['max_24h']:.1f}" if r["con_24h"] else "n/d"
+              print(f"| {r['departamento']} | {r['cuencas']}/{r['puntos_fluviales']} | {r['con_24h']}/{r['cuencas']} | {rng} | {', '.join(r['sin_cuenca']) or '—'} |")
+          EOF
+      - name: "5 · Spearman corregido frente al anterior: mismas decisiones en las 536 y determinista"
+        run: |
+          set -euo pipefail
+          python3 - <<'EOF'
+          import re, os
+          p = os.environ["RUNNER_TEMP"] + "/treeC/scripts/v09_build_semaforo.py"
+          s = open(p).read()
+          old = '''def spearman(xs, ys):
+              import numpy as np
+              rx = np.argsort(np.argsort(xs)).astype(float)
+              ry = np.argsort(np.argsort(ys)).astype(float)
+              if rx.std() == 0 or ry.std() == 0:
+                  return 0.0
+              return float(np.corrcoef(rx, ry)[0, 1])
+
+
+          '''.replace("\n          ", "\n")
+          s2 = re.sub(r"def _avg_ranks\(v\):.*?\n\n\ndef orient\(", lambda m: old + "def orient(", s, flags=re.S)
+          assert s2 != s and "np.argsort(np.argsort(xs))" in s2
+          open(p, "w").write(s2)
+          EOF
+          (cd "$RUNNER_TEMP/treeC" && python scripts/v09_build_semaforo.py > /dev/null)
+          python3 - <<'EOF' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json, os
+          E = os.environ["E"]
+          new = json.load(open(E + "/A/derived/data/v09/research/semaforo/semaforo_v0_1.json"))
+          old = json.load(open(os.environ["RUNNER_TEMP"] + "/treeC/data/v09/research/semaforo/semaforo_v0_1.json"))
+          kn = {c["id"]: c for c in new["checkpoints"]}; ko = {c["id"]: c for c in old["checkpoints"]}
+          diff = [i for i in kn if kn[i] != ko.get(i)]
+          sys_ = lambda d: [(c.get("department"), s.get("system") or s.get("name"), s["orientation"]["status"], s["orientation"].get("evidence"))
+                            for c in d["coverage"] for s in c.get("river_systems", [])]
+          rho = [(s["orientation"].get("flow_spearman"), t["orientation"].get("flow_spearman"))
+                 for c, d in zip(old["coverage"], new["coverage"]) for s, t in zip(c.get("river_systems", []), d.get("river_systems", []))]
+          moved = [(a, b) for a, b in rho if a != b]
+          print(f"\n- Spearman anterior vs corregido sobre la instantánea: checkpoints distintos {len(diff)} de 536 · "
+                f"orientación (estado + evidencia) idéntica en {len(sys_(new))} sistemas: {sys_(new) == sys_(old)} · "
+                f"valores flow_spearman que cambian: {len(moved)} (máx. |Δ| {max((abs(a - b) for a, b in moved), default=0):.3f})")
+          assert not diff and sys_(new) == sys_(old)
+          EOF
+      - name: "6 · commit de los derivados reconstruidos en esta rama y prueba byte a byte EJECUTADA (no omitida)"
+        run: |
+          set -euo pipefail
+          for rel in data/v09/research/semaforo/semaforo_v0_1.json site/data/v09/surveillance_view_v0_1.json research/v09/private_demo/irfen_vigilancia_privada_v091.html; do
+            cp "$E/A/derived/$rel" "$rel"; done
+          python3 - <<'EOF'
+          import json, hashlib
+          from pathlib import Path
+          p = Path("research/v09/V091_CANDIDATE_MANIFEST.json"); m = json.loads(p.read_text())
+          ch = [k for k in m["files"] if m["files"][k] != hashlib.sha256(Path(k).read_bytes()).hexdigest()]
+          for k in ch:
+              m["files"][k] = hashlib.sha256(Path(k).read_bytes()).hexdigest()
+          p.write_text(json.dumps(m, ensure_ascii=False, indent=2) + "\n"); print("rehashed:", ch)
+          EOF
+          python -m pytest tests/test_v09_surveillance_view.py tests/test_v091_viewer_source_consistency.py tests/test_v091_live_refresh.py \
+            tests/test_v091_capture_freshness.py tests/test_v091_river_catchment_colors.py -p no:cacheprovider -rA -q > "$E/pytest.txt" 2>&1 || true
+          tail -3 "$E/pytest.txt"
+          grep -E "PASSED tests/test_v09_surveillance_view.py::Bundle::test_rebuilds_byte_for_byte$" "$E/pytest.txt" \
+            || { echo "::error::test_rebuilds_byte_for_byte was not PASSED (skipped or failed)"; grep -E "test_rebuilds_byte_for_byte" "$E/pytest.txt"; exit 1; }
+          grep -qE "^(FAILED|ERROR) " "$E/pytest.txt" && { grep -E "^(FAILED|ERROR) " "$E/pytest.txt"; exit 1; } || true
+          { echo; echo "- pytest dirigido: $(tail -1 "$E/pytest.txt")"; echo "- \`test_rebuilds_byte_for_byte\`: **PASSED (ejecutada, no omitida)**";
+            grep -E "^SKIPPED" "$E/pytest.txt" | sed 's/^/  - omitida: /' || true; } >> "$GITHUB_STEP_SUMMARY"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/v09/research/semaforo/semaforo_v0_1.json site/data/v09/surveillance_view_v0_1.json \
+            research/v09/private_demo/irfen_vigilancia_privada_v091.html research/v09/V091_CANDIDATE_MANIFEST.json
+          git commit -q -m "Rebuilt v0.9.1 derived outputs from the main snapshot ${MAIN_SNAPSHOT:0:8} (run $GITHUB_RUN_ID; research only)"
+          for i in 1 2 3; do git fetch -q origin "$GITHUB_REF_NAME" && git rebase -q "origin/$GITHUB_REF_NAME" && git push -q origin "HEAD:$GITHUB_REF_NAME" && break; sleep 5; done
+          echo "- derivados reconstruidos commiteados en esta rama: \`$(git rev-parse --short HEAD)\`" >> "$GITHUB_STEP_SUMMARY"
+      - name: "7 · navegador: escritorio, móvil y caducidad (+11,5 h / +12,5 h) sobre la demo reconstruida"
+        run: |
+          python qa/replay_tools/v091_e2e_browser_check.py "$E/A/derived/research/v09/private_demo/irfen_vigilancia_privada_v091.html" "$E/browser" > "$E/browser.json" || true
+          cat "$E/browser.json" | tee -a "$GITHUB_STEP_SUMMARY"
+          python3 -c "import json,sys;d=json.load(open('$E/browser.json'));sys.exit(0 if all(v['ok'] for v in d.values()) and len(d)==4 else 1)"
+      - name: "8 · auditoría de seguridad (solo lectura; no cambia nada)"
+        run: |
+          set -euo pipefail
+          python3 - <<'EOF' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json, os
+          c = json.load(open("config/v091_live_refresh.json"))
+          sw = os.environ.get("SWITCH", "")
+          checks = {
+              "after_capture.enabled = false": c["after_capture"]["enabled"] is False,
+              "cadena de 20 min enabled = false": c["enabled"] is False,
+              "merged_into_main = false": c["merged_into_main"] is False,
+              "public_alerting / notifications_enabled / predictive = false": not (c["public_alerting"] or c["notifications_enabled"] or c["predictive"]),
+              "variable IRFEN_V091_AFTER_CAPTURE_DISPATCH sin definir (contexto vars vacío)": sw == "",
+              "v091-live-refresh.yml sin schedule": "schedule:" not in open(".github/workflows/v091-live-refresh.yml").read(),
+          }
+          print("\n| control | resultado |\n|---|---|")
+          for k, v in checks.items():
+              print(f"| {k} | {'✔' if v else '✘'} |")
+          assert all(checks.values())
+          EOF
+          main_now=$(git ls-remote origin refs/heads/main | cut -f1); live_now=$(git ls-remote origin refs/heads/research/v091-live-data | cut -f1)
+          git fetch -q origin main
+          auth=$(git log --format='%an' "$MAIN_AT_START..FETCH_HEAD" | sort -u | tr '\n' ' ')
+          echo "| main durante la prueba: \`${MAIN_AT_START:0:8}\` → \`${main_now:0:8}\`, autores: ${auth:-ninguno} | $([ -z "$(git log --format=%s "$MAIN_AT_START..FETCH_HEAD" | grep -i e2e || true)" ] && echo ✔ || echo ✘) |" >> "$GITHUB_STEP_SUMMARY"
+          [ "$live_now" = "$LIVE_DATA_AT_START" ]; echo "| rama de datos real research/v091-live-data sin cambios (\`${live_now:0:8}\`) | ✔ |" >> "$GITHUB_STEP_SUMMARY"
+          n=$(gh run list -R "$R" --workflow v091-live-refresh.yml -L 20 --json createdAt --jq "[.[]|select(.createdAt>=\"$START\")]|length")
+          echo "| reconstrucciones del visor lanzadas durante esta prueba: $n | $([ "$n" = 0 ] && echo ✔ || echo ✘) |" >> "$GITHUB_STEP_SUMMARY"; [ "$n" = 0 ]
+          d=$(gh api "repos/$R/deployments?per_page=1" --jq '.[0].created_at // "ninguno"')
+          echo "| último despliegue registrado en el repositorio: $d (debe ser anterior a $START) | $([[ "$d" == ninguno || "$d" < "$START" ]] && echo ✔ || echo ✘) |" >> "$GITHUB_STEP_SUMMARY"
+          [[ "$d" == ninguno || "$d" < "$START" ]]
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: repro-check-${{ github.run_id }}
+          path: ${{ runner.temp }}/ev
+          retention-days: 30
