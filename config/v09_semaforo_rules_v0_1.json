@@ -1,0 +1,100 @@
+{
+  "schema_version": "irfen_v09_semaforo_rules_v0_1",
+  "name": "Semáforo de seguimiento (experimental)",
+  "deployment_status": "RESEARCH_ONLY",
+  "test_mode": "TEST_ONLY",
+  "official_alert": false,
+  "public_alerting": false,
+  "notifications_enabled": false,
+  "predictive": false,
+  "purpose_es": "Ordenar visualmente el seguimiento de ríos y quebradas con los datos locales disponibles. No es una alerta oficial, no predice crecidas ni huaicos y no sustituye a SENAMHI, INDECI ni a las autoridades.",
+  "based_on": "Datos locales de cada punto (IMERG Early de su zona o celda, GOES-19 RRQPE donde existe) y el registro manual de eventos verificados. Los avisos oficiales se muestran como contexto territorial y no cambian el color.",
+  "freshness": {
+    "imerg_max_age_hours": 12,
+    "goes_max_age_minutes": 90,
+    "avisos_source_max_age_minutes": 180,
+    "confirmation_window_hours": 72
+  },
+  "rain_signal": {
+    "window_for_signal": "24h",
+    "display_resolution_mm": 0.1,
+    "note_es": "«Lluvia satelital detectada» significa ≥ 0,1 mm en la ventana completa de 24 h de IMERG Early (resolución de presentación) o tasa GOES-19 válida > 0. Es lluvia estimada por satélite, no un umbral de peligro ni evidencia de activación o crecida."
+  },
+  "states": [
+    {
+      "code": "ROJO",
+      "color": "#c62828",
+      "label_es": "Evento reportado y verificado",
+      "rule": "CONFIRMACION",
+      "rule_es": "Hay en el registro una entrada reportada y verificada (verified=true, fuente https, fecha y lugar) de un evento (desborde, huaico, activación) en ese punto —o en ese río, para sus puntos de cauce— ocurrido en las últimas 72 h. Indica que el evento ocurrió, no que siga activo. Los reportes sin verificar quedan «pendientes de verificación» y no pintan rojo. Ni la lluvia ni un aviso producen rojo."
+    },
+    {
+      "code": "NARANJA",
+      "color": "#e8711a",
+      "label_es": "Precaución anticipada (experimental)",
+      "rule": "ANTICIPACION_VALIDADA",
+      "operational": false,
+      "rule_es": "Solo cuando una regla de anticipación haya superado la validación histórica reproducible, la revisión independiente y la autorización del propietario (config/v091_anticipation_protocol_v0_1.json). Hoy ninguna regla está validada: este estado no se produce en el mapa operativo y no envía correos. Las señales candidatas se muestran solo en la capa de simulación de investigación."
+    },
+    {
+      "code": "AMARILLO",
+      "color": "#f2c230",
+      "label_es": "Lluvia satelital detectada (no es activación)",
+      "rule": "LLUVIA_SATELITAL",
+      "rule_es": "La lluvia estimada por satélite del punto es reciente y no nula: ventana IMERG de 24 h completa, de menos de 12 h, con ≥ 0,1 mm, o última muestra GOES-19 válida de menos de 90 min con tasa > 0. Es lluvia observada por satélite, no evidencia de crecida ni de activación; no hay umbral de peligro."
+    },
+    {
+      "code": "VERDE",
+      "color": "#2e9e5b",
+      "label_es": "Sin lluvia satelital en datos recientes",
+      "rule": "SIN_LLUVIA_SATELITAL",
+      "rule_es": "Ventana IMERG de 24 h completa, de menos de 12 h y < 0,1 mm; y, donde existe GOES-19, muestra válida de menos de 90 min y nula. No significa ausencia de peligro; los avisos regionales se muestran aparte."
+    },
+    {
+      "code": "GRIS",
+      "color": "#8a949c",
+      "label_es": "No evaluable (datos locales antiguos o ausentes)",
+      "rule": "NO_EVALUABLE",
+      "rule_es": "Cualquier otro caso: la lluvia del punto falta, está incompleta o es antigua, o GOES-19 existe pero está antiguo. Un aviso regional vigente no cambia el gris, y un dato ausente nunca se convierte en verde."
+    }
+  ],
+  "precedence": [
+    "ROJO",
+    "NARANJA",
+    "AMARILLO",
+    "VERDE",
+    "GRIS"
+  ],
+  "confidence_es": {
+    "ALTA": "Todas las fuentes locales aplicables (IMERG y, donde exista, GOES-19) están al día; en rojo, confirmación de fuente oficial.",
+    "MEDIA": "Una fuente local aplicable está al día y otra está antigua; en rojo, registro verificado no oficial.",
+    "BAJA": "Estado gris."
+  },
+  "not_used_es": [
+    "Avisos regionales para colorear puntos (se muestran como contexto territorial).",
+    "Umbrales de lluvia en milímetros, caudales, niveles o probabilidades de huaico (no validados para IRFEN).",
+    "Percentiles históricos y modelos predictivos."
+  ],
+  "orange_es": "No se usa naranja: no hay una regla validada que distinga una señal intermedia sin inventar umbrales.",
+  "modes_es": {
+    "AHORA": "Evaluación con la hora del dispositivo al abrir la vista: con datos congelados casi todo queda gris salvo avisos todavía vigentes por su texto.",
+    "AL_CORTE": "Evaluación en la fecha del corte de datos. Es una reconstrucción, no el estado actual."
+  },
+  "rules_revision": "0.2",
+  "revision_note_es": "Revisión 0.2 (auditoría del 02-11-2026 en #466): los avisos regionales pasan a ser contexto territorial y ya no colorean los puntos; la lluvia satelital se rotula como lluvia observada, no como activación; sin datos locales recientes el punto es gris; rojo solo para eventos reportados y verificados.",
+  "territorial_context": {
+    "affects_colour": false,
+    "products": [
+      "ACP-LLUVIAS",
+      "ACP-QUEBRADAS",
+      "AVISO-METEOROLOGICO"
+    ],
+    "relation_es": "Un aviso de lluvia (producto de la lista, marcado como relacionado con lluvia, sin cancelación ni sustitución) se muestra como contexto del punto si enumera su departamento y, cuando enumera provincias para ese departamento, también su provincia (límites INEI referenciales). Si no enumera provincias, el contexto es departamental: abarca todos los puntos del departamento y no aporta información sobre ninguno en particular.",
+    "display_es": "Contorno discontinuo del departamento o provincia citados y franja de contexto en el panel y en cada ventana; nunca cambia el color del punto.",
+    "stale_check_es": "Si la última comprobación de avisos tiene más de 180 min, el aviso se muestra como «vigente según el texto archivado»: pudo cancelarse, ampliarse o reemplazarse después."
+  },
+  "flood_evidence": {
+    "status": "NO_DISPONIBLE",
+    "note_es": "Evidencia de posible crecida o activación (caudal, nivel, reportes de campo): ninguna fuente integrada. La lluvia satelital no se usa como sustituto."
+  }
+}
