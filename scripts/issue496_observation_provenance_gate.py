@@ -43,12 +43,16 @@ def evaluate(row, source_bytes=None, issue_time_utc=None):
         reasons.append("datum_unverified")
     if row.get("instrument_qc") != "PASS":
         reasons.append("instrument_qc_not_pass")
+    if isinstance(row.get("observed_mm"), bool):
+        reasons.append("invalid_rainfall")
     try:
         amount = float(row["observed_mm"])
         if not math.isfinite(amount) or amount < 0:
             reasons.append("invalid_rainfall")
     except (ValueError, TypeError, KeyError):
         reasons.append("invalid_rainfall")
+    if isinstance(row.get("latitude"), bool) or isinstance(row.get("longitude"), bool):
+        reasons.append("invalid_coordinates")
     try:
         lat, lon = float(row["latitude"]), float(row["longitude"])
         if not (-90 <= lat <= 90 and -180 <= lon <= 180):
@@ -60,8 +64,8 @@ def evaluate(row, source_bytes=None, issue_time_utc=None):
         observed, available = _utc(row["observed_at_utc"]), _utc(row["available_at_utc"])
         if not start < end or not start <= observed <= end:
             reasons.append("invalid_observation_window")
-        if available < observed:
-            reasons.append("available_before_observation")
+        if available < end:
+            reasons.append("available_before_period_end")
         if issue_time_utc is not None and available > _utc(issue_time_utc):
             reasons.append("future_data_leakage")
     except (KeyError, ValueError, TypeError, AttributeError):

@@ -56,10 +56,15 @@ class ProvenanceGateTest(unittest.TestCase):
     def test_nan_rejected(self):
         row = dict(BASE, observed_mm=float("nan"))
         self.assertIn("invalid_rainfall", evaluate(row, RAW)[1])
+        self.assertIn("invalid_rainfall", evaluate(dict(BASE, observed_mm=True), RAW)[1])
 
     def test_zero_is_valid(self):
         row = dict(BASE, observed_mm=0)
         self.assertEqual(evaluate(row, RAW)[0], "PAIR_CANDIDATE")
+        premature = dict(BASE, available_at_utc="2026-11-05T11:59:59Z")
+        self.assertIn("available_before_period_end", evaluate(premature, RAW)[1])
+        bad_coord = dict(BASE, latitude=True)
+        self.assertIn("invalid_coordinates", evaluate(bad_coord, RAW)[1])
 
 
 if __name__ == "__main__":
