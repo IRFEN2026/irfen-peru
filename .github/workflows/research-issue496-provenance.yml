@@ -1,0 +1,20 @@
+name: IRFEN issue496 station provenance gate (TEST_ONLY)
+on:
+  pull_request:
+    paths:
+      - scripts/issue496_observation_provenance_gate.py
+      - tests/test_issue496_observation_provenance_gate.py
+      - .github/workflows/research-issue496-provenance.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic-provenance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run offline synthetic tests (no downloads, no publication)
+        run: python -m unittest discover -s tests -p 'test_issue496_observation_provenance_gate.py' -v
