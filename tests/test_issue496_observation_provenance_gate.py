@@ -56,6 +56,7 @@ class ProvenanceGateTest(unittest.TestCase):
     def test_nan_rejected(self):
         row = dict(BASE, observed_mm=float("nan"))
         self.assertIn("invalid_rainfall", evaluate(row, RAW)[1])
+        self.assertIn("invalid_rainfall", evaluate(dict(BASE, observed_mm=True), RAW)[1])
 
     def test_zero_is_valid(self):
         row = dict(BASE, observed_mm=0)
