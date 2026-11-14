@@ -1,6 +1,6 @@
 {
   "version": "0.8-experimental",
-  "generated_at": "2026-11-14T10:25:53.763524+00:00",
+  "generated_at": "2026-11-14T17:01:54.340540+00:00",
   "production_use": false,
   "production_ready": false,
   "purpose": "Bounded check for a documented machine-readable IGP/CENDEHUA Huaycoloro monitoring channel.",
@@ -13,94 +13,42 @@
     "official_monitoring_news_url": "https://www.gob.pe/institucion/igp/noticias/1343594-igp-refuerza-vigilancia-del-sistema-de-monitoreo-de-huaicos-en-las-quebradas-huaycoloro-y-rio-seco",
     "claimed_scope": "official 24/7 monitoring and alerts; not an IRFEN event label"
   },
-  "status": "HUAYCOLORO_STRUCTURED_CHANNEL_FOUND",
+  "status": "OFFICIAL_MONITOR_NOT_REACHABLE_FROM_GITHUB",
   "attempts": [
     {
       "start_url": "https://www.igp.gob.pe/servicios/centro-monitoreo-deslizamientos-huaicos/inicio",
-      "status_code": 200,
+      "status_code": 404,
       "final_url": "https://grd.igp.gob.pe/lahares-huaicos/",
       "content_type": "text/html",
       "redirect_chain": [
         "https://www.igp.gob.pe/servicios/centro-monitoreo-deslizamientos-huaicos/inicio",
         "https://grd.igp.gob.pe/lahares-huaicos/"
       ]
-    }
-  ],
-  "page": {
-    "url": "https://grd.igp.gob.pe/lahares-huaicos/",
-    "title": null,
-    "bytes_inspected": 3125
-  },
-  "references_inspected": 3,
-  "structured_candidates_found": [
+    },
     {
-      "url": "https://grd.igp.gob.pe/Lq5aA7wpZ77tSYiPg7YmjHi3VnkSJ9pE/medias",
-      "kind": "cendehua_station_media_api_candidate",
-      "discovered_in": "https://grd.igp.gob.pe/lahares-huaicos/assets/index-BHQt28Fd.js"
+      "start_url": "https://grd.igp.gob.pe/lahares-huaicos/",
+      "status_code": 404,
+      "final_url": "https://grd.igp.gob.pe/lahares-huaicos/",
+      "content_type": "text/html",
+      "redirect_chain": [
+        "https://grd.igp.gob.pe/lahares-huaicos/"
+      ]
     }
   ],
-  "candidate_probes": [
-    {
-      "url": "https://grd.igp.gob.pe/Lq5aA7wpZ77tSYiPg7YmjHi3VnkSJ9pE/medias",
-      "kind": "cendehua_station_media_api_candidate",
-      "discovered_in": "https://grd.igp.gob.pe/lahares-huaicos/assets/index-BHQt28Fd.js",
-      "http_status": 200,
-      "content_type": "application/json",
-      "final_url": "https://grd.igp.gob.pe/Lq5aA7wpZ77tSYiPg7YmjHi3VnkSJ9pE/medias",
-      "structured_response": true,
-      "bytes": 9697,
-      "huaycoloro_station_count": 2
-    }
-  ],
-  "usable_structured_candidates": [
-    {
-      "url": "https://grd.igp.gob.pe/Lq5aA7wpZ77tSYiPg7YmjHi3VnkSJ9pE/medias",
-      "kind": "cendehua_station_media_api_candidate",
-      "discovered_in": "https://grd.igp.gob.pe/lahares-huaicos/assets/index-BHQt28Fd.js",
-      "http_status": 200,
-      "content_type": "application/json",
-      "final_url": "https://grd.igp.gob.pe/Lq5aA7wpZ77tSYiPg7YmjHi3VnkSJ9pE/medias",
-      "structured_response": true,
-      "bytes": 9697,
-      "huaycoloro_station_count": 2
-    }
-  ],
+  "page": null,
+  "references_inspected": 0,
+  "structured_candidates_found": [],
+  "candidate_probes": [],
+  "usable_structured_candidates": [],
   "huaycoloro_ground_signal": {
     "status": "NO_RECENT_STRUCTURED_SIGNAL_OBSERVED",
-    "station_count": 2,
+    "station_count": 0,
     "recent_station_count": 0,
-    "observations": [
-      {
-        "station_id": "Huaycoloro1",
-        "station_name": "Huaycoloro 1",
-        "group": "lima/huaycos",
-        "ravine": "Huaycoloro",
-        "last_alert_update": "2026-09-23T13:47:16.513115+00:00",
-        "last_image_update": "2026-11-14T10:24:35.401577+00:00",
-        "alert_age_seconds_at_capture": 4480717.25,
-        "recent_signal": false,
-        "provider_activity_flag_raw": false,
-        "irfen_outcome_label": null,
-        "human_review_required": true
-      },
-      {
-        "station_id": "Huaycoloro2",
-        "station_name": "Huaycoloro 2",
-        "group": "lima/huaycos",
-        "ravine": "Huaycoloro",
-        "last_alert_update": "2026-09-23T14:34:50.498524+00:00",
-        "last_image_update": "2026-11-14T10:24:23.350302+00:00",
-        "alert_age_seconds_at_capture": 4477863.265,
-        "recent_signal": false,
-        "provider_activity_flag_raw": false,
-        "irfen_outcome_label": null,
-        "human_review_required": true
-      }
-    ],
+    "observations": [],
     "automatic_outcome_label": null,
     "human_review_required": true
   },
-  "next_action": "Archive TEST_ONLY station snapshots and submit dated outcomes to human review; never infer NONE from the provider activity flag.",
+  "next_action": "Retain the official IGP publications as documentary evidence and retry only the same URLs later.",
   "stop_rule": "Inspect only official page references and endpoint literals present in the official client; do not enumerate or guess undocumented endpoints.",
   "validation_guard": "This probe cannot classify an EVENT/NONE outcome or satisfy the Chosica validation contract by itself."
 }
