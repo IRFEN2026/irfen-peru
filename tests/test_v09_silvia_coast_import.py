@@ -92,6 +92,29 @@ class SilviaImportTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 load_mask(f)
 
+    def test_overlapping_department_masks_are_rejected(self):
+        mask = coast_mask()
+        # Piura overlaps the Tumbes polygon in positive area: fail closed.
+        mask["features"][1]["geometry"]["coordinates"] = [
+            rectangle(-80.6, -3.7, -80.3, -3.4)
+        ]
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "mask.geojson"
+            path.write_text(json.dumps(mask), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "overlapping coastal"):
+                load_mask(path)
+
+    def test_shared_border_is_not_overlapping_area(self):
+        mask = coast_mask()
+        # Shared line at x=-80.4 is valid administrative adjacency.
+        mask["features"][1]["geometry"]["coordinates"] = [
+            rectangle(-80.4, -3.8, -80.2, -3.2)
+        ]
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "mask.geojson"
+            path.write_text(json.dumps(mask), encoding="utf-8")
+            self.assertEqual(len(load_mask(path)), 11)
+
     def test_bowtie_geometry_counted_but_never_gives_prediction(self):
         _, audit = convert(shapefile_zip(invalid=True))
         self.assertEqual(audit["source_invalid_geometries"], 1)
