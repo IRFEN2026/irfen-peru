@@ -71,7 +71,19 @@ def load_mask(path: Path) -> dict:
     if missing:
         raise ValueError("missing coastal department polygons: " + ",".join(sorted(missing)))
     from shapely.ops import unary_union
-    return {k: unary_union(geoms) for k, geoms in parts.items()}
+    masks = {k: unary_union(geoms) for k, geoms in parts.items()}
+    # Adjacent departments may share a boundary, but never an area.
+    # Overlap would duplicate SILVIA hazard polygons and bias departmental counts.
+    for i, left in enumerate(COAST):
+        for right in COAST[i + 1:]:
+            if masks[left].intersects(masks[right]):
+                shared_area = masks[left].intersection(masks[right]).area
+                if shared_area > 1e-10:
+                    raise ValueError(
+                        f"overlapping coastal department masks: {left}/{right}; "
+                        f"intersection_area_degrees2={shared_area:.12g}"
+                    )
+    return masks
 
 
 def parse_source(raw: bytes) -> tuple[list, dict]:
