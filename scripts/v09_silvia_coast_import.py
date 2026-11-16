@@ -29,6 +29,7 @@ BY_NAME = {
     "".join(c for c in unicodedata.normalize("NFD", v).casefold() if
             unicodedata.category(c) != "Mn"): v for v in COAST
 }
+ALLOWED_LEVELS = frozenset({2, 3, 4})  # codes only; meanings/colors unverified
 PROPS = ("department", "departamento", "DEPARTAMENTO", "NOMBDEP",
          "NOMB_DEPA", "NOM_DEP", "name", "NOMBRE", "NOMBRE_DEP")
 
@@ -112,6 +113,8 @@ def parse_source(raw: bytes) -> tuple[list, dict]:
             code, date_raw = info.get("NIVEL"), info.get("Fecha")
             if isinstance(code, bool) or not isinstance(code, int):
                 raise ValueError("numeric SILVIA NIVEL required")
+            if code not in ALLOWED_LEVELS:
+                raise ValueError(f"unverified SILVIA NIVEL code: {code}")
             try:
                 date.fromisoformat(date_raw)
             except (ValueError, TypeError) as exc:
@@ -131,7 +134,11 @@ def parse_source(raw: bytes) -> tuple[list, dict]:
         }
 
 
-def convert(source_zip: bytes, coastal_masks: dict | None = None) -> tuple[dict | None, dict]:
+def convert(source_zip: bytes, coastal_masks: dict | None = None,
+            expected_sha256: str | None = None) -> tuple[dict | None, dict]:
+    # Verify original ZIP identity before any coastal geometry is exported.
+    if expected_sha256 is not None and hashlib.sha256(source_zip).hexdigest() != expected_sha256.lower():
+        raise ValueError("SILVIA source SHA-256 mismatch: export blocked")
     features, audit = parse_source(source_zip)
     if coastal_masks is None:
         audit["coast_only_export"] = "NOT_GENERATED_REQUIRES_ALL_11_COASTAL_DEPARTMENT_POLYGONS"
@@ -191,12 +198,18 @@ def main() -> None:
     parser.add_argument("--coast-mask", type=Path,
                         help="authoritative polygons of ALL 11 coastal departments in GeoJSON")
     parser.add_argument("--geojson-out", type=Path)
+    parser.add_argument("--expected-source-sha256",
+                        help="required for export: independently verified original ZIP SHA-256")
     parser.add_argument("--audit-out", type=Path, required=True)
     args = parser.parse_args()
     if bool(args.coast_mask) != bool(args.geojson_out):
         parser.error("--coast-mask and --geojson-out are required together")
+    if args.geojson_out and (not args.expected_source_sha256 or
+                             len(args.expected_source_sha256) != 64 or
+                             any(c not in "0123456789abcdefABCDEF" for c in args.expected_source_sha256)):
+        parser.error("--expected-source-sha256 must be a 64-character hex digest for export")
     mask = load_mask(args.coast_mask) if args.coast_mask else None
-    geojson, audit = convert(args.zip.read_bytes(), mask)
+    geojson, audit = convert(args.zip.read_bytes(), mask, args.expected_source_sha256)
     args.audit_out.parent.mkdir(parents=True, exist_ok=True)
     args.audit_out.write_text(json.dumps(audit, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     if geojson is not None:
