@@ -18,14 +18,14 @@ def rectangle(x1, y1, x2, y2):
     ]
 
 
-def shapefile_zip(invalid=False):
+def shapefile_zip(invalid=False, level=2):
     shp, shx, dbf = io.BytesIO(), io.BytesIO(), io.BytesIO()
     w = shapefile.Writer(shp=shp, shx=shx, dbf=dbf,
                          shapeType=shapefile.POLYGON)
     w.field("NIVEL", "N", 9, 0)
     w.field("Fecha", "C", 10)
     w.poly([rectangle(-80.6, -3.7, -80.2, -3.3)])
-    w.record(2, "2026-11-04")
+    w.record(level, "2026-11-04")
     if invalid:
         w.poly([[[-76.0, -4.0], [-75.6, -3.6],
                  [-76.0, -3.6], [-75.6, -4.0], [-76.0, -4.0]]])
@@ -114,6 +114,30 @@ class SilviaImportTests(unittest.TestCase):
             path = Path(td) / "mask.geojson"
             path.write_text(json.dumps(mask), encoding="utf-8")
             self.assertEqual(len(load_mask(path)), 11)
+
+    def test_unknown_silvia_level_is_rejected_before_export(self):
+        with self.assertRaisesRegex(ValueError, "unverified SILVIA NIVEL"):
+            convert(shapefile_zip(level=5))
+
+    def test_source_hash_mismatch_blocks_export(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "mask.geojson"
+            path.write_text(json.dumps(coast_mask()), encoding="utf-8")
+            mask = load_mask(path)
+        with self.assertRaisesRegex(ValueError, "SHA-256 mismatch"):
+            convert(shapefile_zip(), mask, expected_sha256="0" * 64)
+
+    def test_source_hash_match_allows_research_clipping(self):
+        import hashlib
+        source = shapefile_zip()
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "mask.geojson"
+            path.write_text(json.dumps(coast_mask()), encoding="utf-8")
+            mask = load_mask(path)
+        exported, audit = convert(
+            source, mask, expected_sha256=hashlib.sha256(source).hexdigest())
+        self.assertEqual(audit["coast_feature_count"], 1)
+        self.assertEqual(exported["features"][0]["properties"]["nivel_code"], 2)
 
     def test_bowtie_geometry_counted_but_never_gives_prediction(self):
         _, audit = convert(shapefile_zip(invalid=True))
