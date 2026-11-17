@@ -139,6 +139,12 @@ def convert(source_zip: bytes, coastal_masks: dict | None = None,
     # Verify original ZIP identity before any coastal geometry is exported.
     if expected_sha256 is not None and hashlib.sha256(source_zip).hexdigest() != expected_sha256.lower():
         raise ValueError("SILVIA source SHA-256 mismatch: export blocked")
+    # The Python API must enforce the same provenance gate as the CLI.
+    # Audit-only calls remain possible without a source digest.
+    if coastal_masks is not None:
+        if (not isinstance(expected_sha256, str) or len(expected_sha256) != 64 or
+                any(c not in "0123456789abcdefABCDEF" for c in expected_sha256)):
+            raise ValueError("expected 64-character SILVIA SHA-256 required for export")
     features, audit = parse_source(source_zip)
     if coastal_masks is None:
         audit["coast_only_export"] = "NOT_GENERATED_REQUIRES_ALL_11_COASTAL_DEPARTMENT_POLYGONS"
