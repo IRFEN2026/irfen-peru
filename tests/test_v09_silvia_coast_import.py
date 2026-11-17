@@ -1,5 +1,6 @@
 """IRFEN offline SILVIA importer: synthetic geospatial and provenance tests."""
 import io
+import hashlib
 import json
 import zipfile
 from pathlib import Path
@@ -70,7 +71,8 @@ class SilviaImportTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             f = Path(td) / "mask.geojson"
             f.write_text(json.dumps(coast_mask()), encoding="utf-8")
-            out, audit = convert(shapefile_zip(), load_mask(f))
+            source = shapefile_zip()
+            out, audit = convert(source, load_mask(f), expected_sha256=hashlib.sha256(source).hexdigest())
         self.assertEqual(audit["coast_feature_count"], 1)
         self.assertEqual(audit["coast_features_by_department"]["Tumbes"], 1)
         self.assertTrue(all(audit["coast_features_by_department"][d] == 0
@@ -118,6 +120,22 @@ class SilviaImportTests(unittest.TestCase):
     def test_unknown_silvia_level_is_rejected_before_export(self):
         with self.assertRaisesRegex(ValueError, "unverified SILVIA NIVEL"):
             convert(shapefile_zip(level=5))
+
+    def test_python_api_rejects_missing_source_hash_for_export(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "mask.geojson"
+            path.write_text(json.dumps(coast_mask()), encoding="utf-8")
+            mask = load_mask(path)
+        with self.assertRaisesRegex(ValueError, "SHA-256 required for export"):
+            convert(shapefile_zip(), mask)
+
+    def test_python_api_rejects_malformed_source_hash_for_export(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "mask.geojson"
+            path.write_text(json.dumps(coast_mask()), encoding="utf-8")
+            mask = load_mask(path)
+        with self.assertRaises(ValueError):
+            convert(shapefile_zip(), mask, expected_sha256="not-a-sha")
 
     def test_source_hash_mismatch_blocks_export(self):
         with tempfile.TemporaryDirectory() as td:
