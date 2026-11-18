@@ -117,6 +117,33 @@ class SilviaImportTests(unittest.TestCase):
             path.write_text(json.dumps(mask), encoding="utf-8")
             self.assertEqual(len(load_mask(path)), 11)
 
+    def test_python_api_rejects_incomplete_mask_dictionary(self):
+        from shapely.geometry import shape
+        masks = {f["properties"]["department"]: shape(f["geometry"])
+                 for f in coast_mask()["features"]}
+        masks.pop("Tacna")
+        source = shapefile_zip()
+        with self.assertRaisesRegex(ValueError, "complete 11-department"):
+            convert(source, masks, hashlib.sha256(source).hexdigest())
+
+    def test_python_api_rejects_overlapping_mask_dictionary(self):
+        from shapely.geometry import shape
+        masks = {f["properties"]["department"]: shape(f["geometry"])
+                 for f in coast_mask()["features"]}
+        masks["Piura"] = masks["Tumbes"]
+        source = shapefile_zip()
+        with self.assertRaisesRegex(ValueError, "overlapping coastal"):
+            convert(source, masks, hashlib.sha256(source).hexdigest())
+
+    def test_python_api_rejects_empty_mask_geometry(self):
+        from shapely.geometry import shape, Polygon
+        masks = {f["properties"]["department"]: shape(f["geometry"])
+                 for f in coast_mask()["features"]}
+        masks["Tacna"] = Polygon()
+        source = shapefile_zip()
+        with self.assertRaisesRegex(ValueError, "invalid coastal mask geometry"):
+            convert(source, masks, hashlib.sha256(source).hexdigest())
+
     def test_unknown_silvia_level_is_rejected_before_export(self):
         with self.assertRaisesRegex(ValueError, "unverified SILVIA NIVEL"):
             convert(shapefile_zip(level=5))
