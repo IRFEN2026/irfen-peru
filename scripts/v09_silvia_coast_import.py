@@ -145,6 +145,22 @@ def convert(source_zip: bytes, coastal_masks: dict | None = None,
         if (not isinstance(expected_sha256, str) or len(expected_sha256) != 64 or
                 any(c not in "0123456789abcdefABCDEF" for c in expected_sha256)):
             raise ValueError("expected 64-character SILVIA SHA-256 required for export")
+    # Direct Python callers must not bypass load_mask()'s completeness and
+    # non-overlap checks by supplying an arbitrary dictionary.
+    if coastal_masks is not None:
+        if not isinstance(coastal_masks, dict) or set(coastal_masks) != set(COAST):
+            raise ValueError("complete 11-department coastal mask required for export")
+        for dept in COAST:
+            geom = coastal_masks[dept]
+            if (not hasattr(geom, "geom_type") or geom.is_empty or
+                    not geom.is_valid or geom.area <= 0 or
+                    geom.geom_type not in ("Polygon", "MultiPolygon")):
+                raise ValueError("invalid coastal mask geometry: " + dept)
+        for i, left in enumerate(COAST):
+            for right in COAST[i + 1:]:
+                if (coastal_masks[left].intersects(coastal_masks[right]) and
+                        coastal_masks[left].intersection(coastal_masks[right]).area > 1e-10):
+                    raise ValueError("overlapping coastal department masks: " + left + "/" + right)
     features, audit = parse_source(source_zip)
     if coastal_masks is None:
         audit["coast_only_export"] = "NOT_GENERATED_REQUIRES_ALL_11_COASTAL_DEPARTMENT_POLYGONS"
