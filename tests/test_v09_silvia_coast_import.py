@@ -188,6 +188,21 @@ class SilviaImportTests(unittest.TestCase):
         _, audit = convert(shapefile_zip(invalid=True))
         self.assertEqual(audit["source_invalid_geometries"], 1)
 
+    def test_rejects_excessive_zip_members_before_parsing(self):
+        stream = io.BytesIO()
+        with zipfile.ZipFile(stream, "w") as z:
+            for i in range(129):
+                z.writestr(f"extra/{i}.txt", b"x")
+        with self.assertRaisesRegex(ValueError, "too many members"):
+            convert(stream.getvalue())
+
+    def test_rejects_high_ratio_zip_member_before_parsing(self):
+        stream = io.BytesIO()
+        with zipfile.ZipFile(stream, "w", compression=zipfile.ZIP_DEFLATED) as z:
+            z.writestr("extra/compressed.bin", b"x" * 2_000_000)
+        with self.assertRaisesRegex(ValueError, "compression ratio"):
+            convert(stream.getvalue())
+
     def test_incorrect_projection_is_not_silently_accepted(self):
         src = shapefile_zip()
         stream = io.BytesIO()

@@ -90,6 +90,14 @@ def load_mask(path: Path) -> dict:
 def parse_source(raw: bytes) -> tuple[list, dict]:
     """Read SILVIA shapefile ZIP; retain numeric levels, not inferred operational colors."""
     with zipfile.ZipFile(io.BytesIO(raw)) as z:
+        # Bound ZIP members before reading payloads; no extraction is performed.
+        members = z.infolist()
+        if len(members) > 128:
+            raise ValueError("SILVIA ZIP has too many members")
+        if any(m.file_size > 100_000_000 or
+               (m.file_size > 1_000_000 and m.file_size > 200 * max(1, m.compress_size))
+               for m in members):
+            raise ValueError("SILVIA ZIP member exceeds safe size or compression ratio")
         names = z.namelist()
         def one(suffix):
             matches = [x for x in names if x.lower().endswith("silvia." + suffix)]
