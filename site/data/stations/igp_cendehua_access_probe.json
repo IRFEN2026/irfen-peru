@@ -1,6 +1,6 @@
 {
   "version": "0.8-experimental",
-  "generated_at": "2026-11-20T20:07:04.500166+00:00",
+  "generated_at": "2026-11-21T01:27:45.294234+00:00",
   "production_use": false,
   "production_ready": false,
   "purpose": "Bounded check for a documented machine-readable IGP/CENDEHUA Huaycoloro monitoring channel.",
@@ -13,30 +13,25 @@
     "official_monitoring_news_url": "https://www.gob.pe/institucion/igp/noticias/1343594-igp-refuerza-vigilancia-del-sistema-de-monitoreo-de-huaicos-en-las-quebradas-huaycoloro-y-rio-seco",
     "claimed_scope": "official 24/7 monitoring and alerts; not an IRFEN event label"
   },
-  "status": "OFFICIAL_MONITOR_NOT_REACHABLE_FROM_GITHUB",
+  "status": "OFFICIAL_MONITOR_REACHED_NO_OBVIOUS_STRUCTURED_CHANNEL",
   "attempts": [
     {
       "start_url": "https://www.igp.gob.pe/servicios/centro-monitoreo-deslizamientos-huaicos/inicio",
-      "status_code": 404,
-      "final_url": "https://grd.igp.gob.pe/lahares-huaicos/",
+      "status_code": 200,
+      "final_url": "https://cenfluh.igp.gob.pe",
       "content_type": "text/html",
       "redirect_chain": [
         "https://www.igp.gob.pe/servicios/centro-monitoreo-deslizamientos-huaicos/inicio",
-        "https://grd.igp.gob.pe/lahares-huaicos/"
-      ]
-    },
-    {
-      "start_url": "https://grd.igp.gob.pe/lahares-huaicos/",
-      "status_code": 404,
-      "final_url": "https://grd.igp.gob.pe/lahares-huaicos/",
-      "content_type": "text/html",
-      "redirect_chain": [
-        "https://grd.igp.gob.pe/lahares-huaicos/"
+        "https://cenfluh.igp.gob.pe"
       ]
     }
   ],
-  "page": null,
-  "references_inspected": 0,
+  "page": {
+    "url": "https://cenfluh.igp.gob.pe",
+    "title": "CENFLUH | Instituto GeofÃ­sico del PerÃº",
+    "bytes_inspected": 2243
+  },
+  "references_inspected": 3,
   "structured_candidates_found": [],
   "candidate_probes": [],
   "usable_structured_candidates": [],
@@ -48,7 +43,7 @@
     "automatic_outcome_label": null,
     "human_review_required": true
   },
-  "next_action": "Retain the official IGP publications as documentary evidence and retry only the same URLs later.",
+  "next_action": "Keep CENDEHUA as an authoritative external/manual outcome channel; stop endpoint exploration.",
   "stop_rule": "Inspect only official page references and endpoint literals present in the official client; do not enumerate or guess undocumented endpoints.",
   "validation_guard": "This probe cannot classify an EVENT/NONE outcome or satisfy the Chosica validation contract by itself."
 }
