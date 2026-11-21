@@ -1,0 +1,18 @@
+name: Research issue496 causal availability QA
+on:
+  pull_request:
+    paths:
+      - 'research/issue496_causal_availability_qa.py'
+      - '.github/workflows/research-issue496-causality.yml'
+  workflow_dispatch:
+jobs:
+  offline-unit-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m unittest research/issue496_causal_availability_qa.py -v
