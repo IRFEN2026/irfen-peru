@@ -1,0 +1,19 @@
+name: Research issue496 spatial support QA
+on:
+  pull_request:
+    paths:
+      - 'scripts/v09_issue496_spatial_support_qa.py'
+      - 'tests/test_v09_issue496_spatial_support_qa.py'
+      - '.github/workflows/research-issue496-spatial-support.yml'
+  workflow_dispatch:
+jobs:
+  synthetic:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m unittest discover -s tests -p test_v09_issue496_spatial_support_qa.py -v
